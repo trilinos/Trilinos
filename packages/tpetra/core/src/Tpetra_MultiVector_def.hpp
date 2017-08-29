@@ -118,6 +118,32 @@ namespace Kokkos {
 
 namespace { // (anonymous)
 
+  // mfh 29 Aug 2017: Kokkos::DualView<const ValueType*, DeviceType>
+  // forbids sync, at run time.  If we want to sync it, we have to
+  // cast away const.
+  template<class ValueType, class DeviceType>
+  Kokkos::DualView<ValueType*, DeviceType>
+  castAwayConstDualView (const Kokkos::DualView<const ValueType*, DeviceType>& input_dv)
+  {
+    typedef Kokkos::DualView<const ValueType*, DeviceType> input_dual_view_type;
+    typedef typename input_dual_view_type::t_dev::non_const_type out_dev_view_type;
+    typedef typename input_dual_view_type::t_host::non_const_type out_host_view_type;
+
+    out_dev_view_type output_view_dev
+      (const_cast<ValueType*> (input_dv.d_view.data ()),
+       input_dv.d_view.dimension_0 ());
+    out_host_view_type output_view_host
+      (const_cast<ValueType*> (input_dv.h_view.data ()),
+       input_dv.h_view.dimension_0 ());
+
+    Kokkos::DualView<ValueType*, DeviceType> output_dv;
+    output_dv.d_view = output_view_dev;
+    output_dv.h_view = output_view_host;
+    output_dv.modified_device = input_dv.modified_device;
+    output_dv.modified_host = input_dv.modified_host;
+    return output_dv;
+  }
+
   /// \brief Allocate and return a 2-D Kokkos::DualView for Tpetra::MultiVector.
   ///
   /// This function takes the same first four template parameters as
@@ -818,11 +844,15 @@ namespace Tpetra {
     using KokkosRefactor::Details::permute_array_multi_column;
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
     using Kokkos::Compat::create_const_view;
-    typedef typename dual_view_type::t_dev::memory_space DMS;
-    typedef typename dual_view_type::t_host::memory_space HMS;
+    typedef typename device_type::memory_space DMS;
+    typedef Kokkos::HostSpace HMS;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
+
+    // Change this to 'true' if you want copious debug output on all
+    // MPI processes.
+    constexpr bool debug = false;
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (permuteToLIDs.dimension_0 () != permuteFromLIDs.dimension_0 (),
@@ -840,15 +870,29 @@ namespace Tpetra {
     // updated version (host or device) of sourceObj's data.
     //
     // If we need sync to device, then host has the most recent version.
-    const bool copyOnHost = sourceMV.template need_sync<device_type> ();
+    const bool copyOnHost = sourceMV.template need_sync<DMS> ();
+    if (debug) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": copyOnHost="
+         << (copyOnHost ? "true" : "false") << std::endl;
+      std::cerr << os.str ();
+    }
 
     if (copyOnHost) {
-      this->template sync<Kokkos::HostSpace> ();
-      this->template modify<Kokkos::HostSpace> ();
+      this->template sync<HMS> ();
+      this->template modify<HMS> ();
     }
     else {
-      this->template sync<device_type> ();
-      this->template modify<device_type> ();
+      this->template sync<DMS> ();
+      this->template modify<DMS> ();
+    }
+
+    if (debug) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": Copy source to target" << std::endl;
+      std::cerr << os.str ();
     }
 
     // TODO (mfh 15 Sep 2013) When we replace
@@ -914,21 +958,43 @@ namespace Tpetra {
     // If there are no permutations, we are done
     if (permuteFromLIDs.dimension_0 () == 0 ||
         permuteToLIDs.dimension_0 () == 0) {
+      if (debug) {
+        const int myRank = this->getMap ()->getComm ()->getRank ();
+        std::ostringstream os;
+        os << "Proc " << myRank << ": No permutations; done." << std::endl;
+        std::cerr << os.str ();
+      }
       return;
     }
 
-    // This gets around const-ness of the DualView input.  In
-    // particular, it gives us freedom to sync them where we need
-    // them.
-    Kokkos::DualView<const LocalOrdinal*, device_type> permuteToLIDs_nc =
-      permuteToLIDs;
-    Kokkos::DualView<const LocalOrdinal*, device_type> permuteFromLIDs_nc =
-      permuteFromLIDs;
+    if (debug) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": Permute source to target" << std::endl;
+      std::cerr << os.str ();
+    }
+
+    // mfh 29 Aug 2017: Kokkos::DualView annoyingly forbids (at run
+    // time, no less!) sync'ing a DualView<const T, D>.  We work
+    // around this by managing the copying and flags ourselves --
+    // essentially reimplementing sync and modify.
+    Kokkos::DualView<LocalOrdinal*, device_type> permuteToLIDs_nc =
+      castAwayConstDualView (permuteToLIDs);
+    Kokkos::DualView<LocalOrdinal*, device_type> permuteFromLIDs_nc =
+      castAwayConstDualView (permuteFromLIDs);
 
     // We could in theory optimize for the case where exactly one of
     // them is constant stride, but we don't currently do that.
     const bool nonConstStride =
       ! this->isConstantStride () || ! sourceMV.isConstantStride ();
+
+    if (debug) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": nonConstStride="
+         << (nonConstStride ? "true" : "false") << std::endl;
+      std::cerr << os.str ();
+    }
 
     // We only need the "which vectors" arrays if either the source or
     // target MV is not constant stride.  Since we only have one
@@ -989,7 +1055,13 @@ namespace Tpetra {
          << ".");
     }
 
-    if (copyOnHost) {
+    if (copyOnHost) { // permute on host too
+      if (debug) {
+        const int myRank = this->getMap ()->getComm ()->getRank ();
+        std::ostringstream os;
+        os << "Proc " << myRank << ": Set up permutation arrays on host" << std::endl;
+        std::cerr << os.str ();
+      }
       auto tgt_h = this->template getLocalView<HMS> ();
       auto src_h = create_const_view (sourceMV.template getLocalView<HMS> ());
       permuteToLIDs_nc.template sync<HMS> ();
@@ -999,6 +1071,12 @@ namespace Tpetra {
       auto permuteFromLIDs_h =
         create_const_view (permuteFromLIDs_nc.template view<HMS> ());
 
+      if (debug) {
+        const int myRank = this->getMap ()->getComm ()->getRank ();
+        std::ostringstream os;
+        os << "Proc " << myRank << ": Call permute kernel on host" << std::endl;
+        std::cerr << os.str ();
+      }
       if (nonConstStride) {
         // No need to sync first, because copyOnHost argument to
         // getDualViewCopyFromArrayView puts them in the right place.
@@ -1017,7 +1095,13 @@ namespace Tpetra {
                                     permuteFromLIDs_h, numCols);
       }
     }
-    else { // copy on device
+    else { // permute on device
+      if (debug) {
+        const int myRank = this->getMap ()->getComm ()->getRank ();
+        std::ostringstream os;
+        os << "Proc " << myRank << ": Set up permutation arrays on device" << std::endl;
+        std::cerr << os.str ();
+      }
       auto tgt_d = this->template getLocalView<DMS> ();
       auto src_d = create_const_view (sourceMV.template getLocalView<DMS> ());
       permuteToLIDs_nc.template sync<DMS> ();
@@ -1027,6 +1111,12 @@ namespace Tpetra {
       auto permuteFromLIDs_d =
         create_const_view (permuteFromLIDs_nc.template view<DMS> ());
 
+      if (debug) {
+        const int myRank = this->getMap ()->getComm ()->getRank ();
+        std::ostringstream os;
+        os << "Proc " << myRank << ": Call permute kernel on device" << std::endl;
+        std::cerr << os.str ();
+      }
       if (nonConstStride) {
         // No need to sync first, because copyOnHost argument to
         // getDualViewCopyFromArrayView puts them in the right place.
@@ -1044,6 +1134,13 @@ namespace Tpetra {
         permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
                                     permuteFromLIDs_d, numCols);
       }
+    }
+
+    if (debug) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": Done with copyAndPermuteNew" << std::endl;
+      std::cerr << os.str ();
     }
   }
 
@@ -2245,9 +2342,9 @@ namespace Tpetra {
           }
         }
         else {
-	  //TODO:mndevec below depends on impl namespace of KokkosKernels. 
-	  //We either need to move it to out of impl, or tpetra should implement it itself.
-	  
+          //TODO:mndevec below depends on impl namespace of KokkosKernels.
+          //We either need to move it to out of impl, or tpetra should implement it itself.
+
           // There's not as much parallelism now, but that's OK.  The
           // point of doing parallel dispatch here is to keep the norm
           // results on the device, thus avoiding a copy to the host and
