@@ -384,7 +384,7 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
   if(requireOrientations_){
     fieldPatterns_.push_back(Teuchos::rcp(new NodalFieldPattern(fieldPatterns_[0]->getCellTopology())));
   }
-  RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);;
+  RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);
   aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern(fieldPatterns_));
 
   connMngr_->buildConnectivity(*aggFieldPattern);

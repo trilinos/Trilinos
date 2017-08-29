@@ -1046,7 +1046,7 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
    if(requireOrientations_) 
      patVector.push_back(Teuchos::rcp(new NodalFieldPattern(patVector[0]->getCellTopology())));
 
-   RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);;
+   RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);
    aggFieldPattern->buildPattern(patVector);
 
    // setup connectivity mesh
