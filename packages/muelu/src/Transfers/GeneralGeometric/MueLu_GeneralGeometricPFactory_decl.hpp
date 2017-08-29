@@ -162,8 +162,8 @@ namespace MueLu {
       Array<int> coarseRate, endRate;
       Array<LO> lFineNodesPerDir, lCoarseNodesPerDir, offsets, ghostedCoarseNodesPerDir;
       Array<GO> startIndices, gFineNodesPerDir, gCoarseNodesPerDir, startGhostedCoarseNode;
-      std::vector< std::vector<GO> > meshData; // These are sorted later so they are in std::vector
-      bool ghostInterface[6] = {false, false, false, false, false, false};
+      std::vector<std::vector<GO> > meshData; // These are sorted later so they are in std::vector
+      bool ghostInterface[6] = {false};
 
       GeometricData() {
         coarseRate.resize(3);
@@ -181,10 +181,20 @@ namespace MueLu {
 
     void MeshLayoutInterface(RCP<GeometricData> myGeometry, const LO blkSize,
                              const int interpolationOrder, Array<Array<GO> >& lGhostNodesIDs,
+                             Array<GO>& lCoarseNodesGIDs,
                              const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords) const;
 
     void GetCoarsePoints(RCP<GeometricData> myGeometry, Array<GO>& ghostsGIDs,
                          const int interpolationOrder, const LO blkSize) const;
+
+    void MakeGeneralGeometricP2(RCP<GeometricData> myGeo,
+                                const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords,
+                                const LO nnzP, const LO dofsPerNode,
+                                RCP<const Map>& stridedDomainMapP,
+                                RCP<Matrix> & Amat, RCP<Matrix>& P,
+                                RCP<Xpetra::MultiVector<double,LO,GO,NO> >& cCoords,
+                                Array<Array<GO> > ghostsGIDs, Array<GO> coarseNodesGIDs,
+                                int interpolationOrder) const;
 
     void MakeGeneralGeometricP(RCP<GeometricData> myGeo,
                                const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords,
@@ -196,15 +206,16 @@ namespace MueLu {
 
     void ComputeStencil(const LO numDimension, const Array<GO> currentNodeIndices,
                         const Array<GO> coarseNodeIndices, const LO rate[3],
-                        const double coord[9][3], const int interpolationOrder, SC stencil[8])const;
+                        const Array<Array<double> > coord, const int interpolationOrder,
+                        std::vector<SC>& stencil)const;
 
     void ComputeConstantInterpolationStencil(const LO numDimension,
                                              const Array<GO> currentNodeIndices,
                                              const Array<GO> coarseNodeIndices,
-                                             const LO rate[3], SC stencil[8]) const;
+                                             const LO rate[3], std::vector<SC>& stencil) const;
 
-    void ComputeLinearInterpolationStencil(const LO numDimension, const double coord[9][3],
-                                           SC stencil[8]) const;
+    void ComputeLinearInterpolationStencil(const LO numDimension, const Array<Array<double> > coord,
+                                           std::vector<SC>& stencil) const;
     void GetInterpolationFunctions(const LO numDimension,
                                    const Teuchos::SerialDenseVector<LO,double> parameters,
                                    double functions[4][8]) const;

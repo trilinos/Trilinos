@@ -85,8 +85,10 @@ namespace MueLuTests {
     //@}
 
     void TestComputeLinearInterpolationStencil(const GeneralGeometricPFactory& fac,
-                                               const LO numDimension, const double coord[9][3],
-                                               SC stencil[8]) const{
+                                               const LO numDimension,
+                                               const Array<Array<double> > coord,
+                                               std::vector<SC>& stencil)
+      const{
       // Call the method to be tested.
       MueLu::GeneralGeometricPFactory<SC,LO,GO,Node> myGGPFactory;
       myGGPFactory.ComputeLinearInterpolationStencil(numDimension, coord, stencil);
@@ -120,16 +122,18 @@ namespace MueLuTests {
     GeneralGeometricPFactoryTester<SC,LO,GO,Node> factTester;
 
     LO numDimension = 3;
-    double coord[9][3] = {{0.3, 0.9, 0.1},
-                          {0.0, 0.0, 0.0},
-                          {1.0, 0.0, 0.0},
-                          {0.0, 1.0, 0.0},
-                          {1.0, 1.0, 0.0},
-                          {0.0, 0.0, 1.0},
-                          {1.0, 0.0, 1.0},
-                          {0.0, 1.0, 1.0},
-                          {1.0, 1.0, 1.0}};
-    SC stencil[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    Array<Array<double> > coord(9);
+    for(int node = 0; node < 9; ++node) {coord[node].resize(3);}
+    coord[0][0] = 0.3; coord[0][1] = 0.9; coord[0][2] = 0.1;
+    coord[1][0] = 0.0; coord[1][1] = 0.0; coord[1][2] = 0.0;
+    coord[2][0] = 1.0; coord[2][1] = 0.0; coord[2][2] = 0.0;
+    coord[3][0] = 0.0; coord[3][1] = 1.0; coord[3][2] = 0.0;
+    coord[4][0] = 1.0; coord[4][1] = 1.0; coord[4][2] = 0.0;
+    coord[5][0] = 0.0; coord[5][1] = 0.0; coord[5][2] = 1.0;
+    coord[6][0] = 1.0; coord[6][1] = 0.0; coord[6][2] = 1.0;
+    coord[7][0] = 0.0; coord[7][1] = 1.0; coord[7][2] = 1.0;
+    coord[8][0] = 1.0; coord[8][1] = 1.0; coord[8][2] = 1.0;
+    std::vector<SC> stencil(8);
     factTester.TestComputeLinearInterpolationStencil(ggPFact, numDimension, coord, stencil);
 
     SC x=0, y=0, z=0;
@@ -158,16 +162,18 @@ namespace MueLuTests {
     GeneralGeometricPFactoryTester<SC,LO,GO,Node> factTester;
 
     LO numDimension = 3;
-    double coord[9][3] = {{1.1, 0.3, 0.8},
-                          {0.0, 0.0, 0.0},
-                          {1.0, 0.0, 0.0},
-                          {0.0, 1.0, 0.0},
-                          {1.0, 1.0, 0.0},
-                          {0.0, 0.0, 1.0},
-                          {1.0, 0.0, 1.0},
-                          {0.0, 1.0, 1.0},
-                          {1.0, 1.0, 1.0}};
-    SC stencil[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    Array<Array<double> > coord(9);
+    for(int node = 0; node < 9; ++node) {coord[node].resize(3);}
+    coord[0][0] = 1.1; coord[0][1] = 0.3; coord[0][2] = 0.8;
+    coord[1][0] = 0.0; coord[1][1] = 0.0; coord[1][2] = 0.0;
+    coord[2][0] = 1.0; coord[2][1] = 0.0; coord[2][2] = 0.0;
+    coord[3][0] = 0.0; coord[3][1] = 1.0; coord[3][2] = 0.0;
+    coord[4][0] = 1.0; coord[4][1] = 1.0; coord[4][2] = 0.0;
+    coord[5][0] = 0.0; coord[5][1] = 0.0; coord[5][2] = 1.0;
+    coord[6][0] = 1.0; coord[6][1] = 0.0; coord[6][2] = 1.0;
+    coord[7][0] = 0.0; coord[7][1] = 1.0; coord[7][2] = 1.0;
+    coord[8][0] = 1.0; coord[8][1] = 1.0; coord[8][2] = 1.0;
+    std::vector<SC> stencil(8);
     factTester.TestComputeLinearInterpolationStencil(ggPFact, numDimension, coord, stencil);
 
     SC x=0, y=0, z=0;
