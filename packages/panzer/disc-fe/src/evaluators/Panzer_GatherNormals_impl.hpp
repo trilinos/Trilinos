@@ -160,6 +160,9 @@ evaluateFields(typename Traits::EvalData workset)
       gatherFieldNormals(c,f,1) = (faceTanU[2]*faceTanV[0] - faceTanU[0]*faceTanV[2])*dof_orientation(c,f);
       gatherFieldNormals(c,f,2) = (faceTanU[0]*faceTanV[1] - faceTanU[1]*faceTanV[0])*dof_orientation(c,f);
 
+      gatherFieldNormals(c,f,0) = 0.0;
+      gatherFieldNormals(c,f,1) = 0.0;
+      gatherFieldNormals(c,f,2) = 0.0;
     }
   }
 

@@ -49,6 +49,8 @@
 #include "Intrepid2_Cubature.hpp"
 #include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_OrientationTools.hpp"
+
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Kokkos_ViewFactory.hpp"
@@ -120,6 +122,8 @@ void panzer::ProjectToEdges<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
+  orientations = d.orientations_;
+
   // setup the field data object
   this->utils.setFieldData(result,fm);
   for(unsigned qp = 0; qp < vector_values.size(); ++qp)
@@ -171,11 +175,13 @@ evaluateFields(typename Traits::EvalData workset)
         result(cell,p) = ScalarT(0.0);
         for (int dim = 0; dim < num_dim; ++dim)
           result(cell,p) += vector_values[0](cell,p,dim) * tangents(cell,p,dim);
-        result(cell,p) *= refEdgeWt[p];
+        // result(cell,p) *= refEdgeWt[p];
       }
     }
 
   } else {
+
+    TEUCHOS_ASSERT(false);
     PHX::MDField<double,Cell,panzer::NODE,Dim> vertex_coords = workset.cell_vertex_coordinates;
     int subcell_dim = 1;
 
