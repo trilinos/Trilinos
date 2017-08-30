@@ -12,7 +12,13 @@
 declare PackageEnables=""
 
 #This could be improved. There are too many cases where you actually
-#don't need to build anything if something changes in the cmake directory
+#don't need to build anything if something changes in the cmake directory.
+#Right now the goal is to build everything for changes to general cmake
+#files, such as those in Trilinos/cmake/, and Trilinos/CTestConfig.cmake,
+#Trilinos/PackagesList.cmake, etc. as changes to those files can have
+#impact across packages. However, if files change in
+#Trilinos/packages/<package>/cmake, we will just build <package> and its
+#forward dependencies.
 
 if grep cmake gitchanges.txt |grep -qv packages; then
       PackageEnables+="-DTrilinos_ENABLE_ALL_PACKAGES=ON "
