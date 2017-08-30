@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2017-07-07 13:37:52 mhoemme"
+#+DATE: Time-stamp: "2017-08-29 19:37:57 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -729,4 +729,38 @@ specializes the Belos adapter, so the work-around for the latter is
 either to disable TSQR for Belos (~Belos_ENABLE_TSQR:BOOL=OFF~) or to
 disable TSQR altogether (the default behavior).
 
+** Adding ETI for a new Tpetra class or function broke Stokhos' build; why?
 
+Stokhos needs to instantiate Tpetra classes and functions for its own
+Scalar types.  If Tpetra does ETI for a class or function that takes a
+Scalar (or Packet; see Tpetra::DistObject) template parameter, Stokhos
+must also instantiate that Tpetra class or function for its own Scalar
+(or Packet) types.  Otherwise, if explicit template instantiation is
+enabled in Trilinos, you may see build or link errors.
+
+You may fix this by telling Stokhos about your new class or function.
+You only need to do this if doing explicit instantiation for your new
+class or function.
+
+Stokhos uses a CMake-based system for generating explicit
+instantiations automatically.  Its system is pickier than Tpetra's.
+For example, if the class is called ~Tpetra::TheClass~, the
+corresponding Tpetra header files must be ~Tpetra_TheClass_decl.hpp~
+and ~Tpetra_TheClass_def.hpp~, and the corresponding explicit
+instantiation macro must be called ~TPETRA_THECLASS_INSTANT~.  If the
+function is ~Tpetra::Details::theFunction~, the corresponding Tpetra
+header files must be ~Tpetra_Details_theFunction_decl.hpp~ and
+~Tpetra_Details_theFunction_def.hpp~, and the corresponding explicit
+instantiation macro must be called
+~TPETRA_DETAILS_THEFUNCTION_INSTANT~.  (Tpetra has a more general
+system that lets developers specify class, header, and macro names
+separately.)
+
+You must first follow these requirements for naming classes,
+functions, header files, and explicit instantiation macros.  You must
+then add your class or function to Stokhos' list of "Tpetra ETI
+classes."  Do this by editing the CMake file
+~Trilinos/packages/stokhos/src/CMakeLists.txt~, and adding the new
+Tpetra class or function to the list of ~TPETRA_ETI_CLASSES~.  This
+requires rerunning CMake before rebuilding (typing ~make~ will usually
+do that for you automaticaly).
