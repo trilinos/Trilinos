@@ -501,11 +501,11 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
-               const Teuchos::RCP<const map_type>& colMap,
-               const Teuchos::RCP<const map_type>& domainMap,
-               const Teuchos::RCP<const map_type>& rangeMap,
-               const local_matrix_type& lclMatrix,
+    CrsMatrix (const local_matrix_type& lclMatrix,
+               const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::RCP<const map_type>& colMap = Teuchos::null,
+               const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+               const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     // This friend declaration makes the clone() method work.

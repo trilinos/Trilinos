@@ -427,7 +427,7 @@ initialize ()
     // Construct new matrix
     local_matrix_type newLocalMatrix("Upermuted", numRows, numCols, numNnz, newval, newptr, newind);
 
-    A_crs_ = Teuchos::rcp(new crs_matrix_type(newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap(), newLocalMatrix));
+    A_crs_ = Teuchos::rcp(new crs_matrix_type(newLocalMatrix, newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap()));
 
     isInternallyChanged_ = true;
   }
