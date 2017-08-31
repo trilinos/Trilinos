@@ -1695,10 +1695,12 @@ namespace Tpetra {
         }
       }
       else {
+#ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX,
            std::invalid_argument, "Invalid CombineMode: " << CM << ".  Valid "
            "CombineMode values are ADD, REPLACE, INSERT, and ABSMAX.");
+#endif
       }
     }
 
