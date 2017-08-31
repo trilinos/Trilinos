@@ -210,7 +210,7 @@ struct VectorOptionalTraits {
              ---
   */
   static void plus( V& x, const V& y ) { 
-    
+    VFT::transform(x,[](auto xe, auto ye){xe+=ye;},y);  
   }
 
   /** \brief Compute \f$x \leftarrow \alpha x\f$ 
@@ -220,7 +220,9 @@ struct VectorOptionalTraits {
 
              ---
   */
-  static void scale( V& x, const ElementType alpha ) { }
+  static void scale( V& x, const ElementType alpha ) {
+    VFT::transform(x,[alpha](auto xe){xe*=alpha;} );
+  }
 
 
   /** \brief Compute \f$ \langle x,y \rangle \f$ 
@@ -231,14 +233,21 @@ struct VectorOptionalTraits {
 
              ---
   */
-  static auto dot( const V &x, const V &y ) { }    
+  static auto dot( const V &x, const V &y ) {
+    Sum<ElementType> sum;
+    return VFT::transform_and_reduce( [](auto xe,auto ye){return xe*ye;}, sum, x, y); 
+  }    
 
   /** \brief Returns \f$ \|x\| \f$
              @param[in]  x is a vector
              @return     The norm of x
   */
 
-  static auto norm( const V &x ) { }
+  static auto norm( const V &x ) {
+    Sum<ElementType> sum;
+    MagnitudeType norm2 = VFT::transform_and_reduce( [](auto xe,auto ye){return xe*xe;}, sum, x); 
+    return std::sqrt(norm2);
+  }
 
   /** \brief Compute \f$x \leftarrow \alpha x + y\f$ 
 
@@ -248,12 +257,16 @@ struct VectorOptionalTraits {
 
              ---
   */
-  static void axpy( V &x, const ElementType alpha, const V &y ) { }
+  static void axpy( V &x, const ElementType alpha, const V &y ) {
+    VFT::transform(x, [alpha](auto xe,auto ye){ return alpha*xe+ye; }, y);
+  }
 
 
   /** \brief Set vector to zeros 
   */
-  static void zero( V &x ) {}
+  static void zero( V &x ) {
+    VFT::transform(x,[](alpha xe){ return ElementType(0); });
+  }
 
 }; // VectorOptionalTraits
 
@@ -267,8 +280,13 @@ struct VectorPrintTraits {
 
 }; // VectorPrintTraits
 
-
-
+// Collect all traits
+template<class V> 
+struct VectorTraits<V> : VectorCreationTraits<V>,
+                         VectorSpaceTraits<V>,
+                         VectorFunctionTraits<V>,
+                         VectorOptionalTraits<V>,
+                         VectorPrintTraits<V> {};
 
 
 } // namespace XROL

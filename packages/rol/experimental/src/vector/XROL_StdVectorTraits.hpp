@@ -117,7 +117,7 @@ struct VectorFunctionTraits<std::vector<Element>> {
   }
 
   template<class Function, class R, class ...Vs>
-  static ElementType reduce( const Function &f, const Reduce<R> &r, const Vs&... vs ) {
+  static ElementType transform_and_reduce( const Function &f, const Reduce<R> &r, const Vs&... vs ) {
     VST::CheckDimensions(vs...);
     ElementType result = r(); 
     IndexType dim = VST::dimension(std::get<0>(std::make_tuple(vs...)));
