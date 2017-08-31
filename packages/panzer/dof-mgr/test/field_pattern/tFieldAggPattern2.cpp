@@ -89,18 +89,18 @@ namespace panzer {
     RCP<const FieldPattern> patternC = rcp(new Intrepid2FieldPattern(basisC));
 
     std::vector<int> closureIndices;
-    std::vector<RCP<const FieldPattern> > patternV;
-    std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+    std::vector<std::pair<FieldType,RCP<const FieldPattern>>> patternV;
+    std::vector<std::tuple<int,panzer::FieldType,RCP<const FieldPattern> > > patternM;
 
-    patternV.push_back(patternA);
-    patternV.push_back(patternB);
-    patternV.push_back(patternC);
+    patternV.push_back(std::make_pair(FieldType::CG,patternA));
+    patternV.push_back(std::make_pair(FieldType::CG,patternB));
+    patternV.push_back(std::make_pair(FieldType::CG,patternC));
 
     GeometricAggFieldPattern geom(patternV);
 
-    patternM.push_back(std::make_pair(7,patternA));
-    patternM.push_back(std::make_pair(3,patternB));
-    patternM.push_back(std::make_pair(4,patternC));
+    patternM.push_back(std::make_tuple(7,FieldType::CG,patternA));
+    patternM.push_back(std::make_tuple(3,FieldType::CG,patternB));
+    patternM.push_back(std::make_tuple(4,FieldType::CG,patternC));
 
     // test build of geometric field pattern
     {
@@ -172,8 +172,8 @@ namespace panzer {
 
     // test that single construction gives the same pattern
     {
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(3,patternB));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(3,FieldType::CG,patternB));
 
       FieldAggPattern agg(patternM); 
       agg.print(out); // for debugging purposes
@@ -228,9 +228,9 @@ namespace panzer {
 
     // test that single construction gives the same pattern
     {
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(3,patternB));
-      patternM.push_back(std::make_pair(7,patternA));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(3,FieldType::CG,patternB));
+      patternM.push_back(std::make_tuple(7,FieldType::CG,patternA));
 
       FieldAggPattern agg(patternM); 
       agg.print(out); // for debugging purposes
@@ -316,8 +316,8 @@ namespace panzer {
       
       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(3,pattern));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(3,FieldType::CG,pattern));
 
       FieldAggPattern agg(patternM);
       agg.print(out);
@@ -356,11 +356,11 @@ namespace panzer {
       RCP<const FieldPattern> patternC1 = rcp(new Intrepid2FieldPattern(basisC1));
       RCP<const FieldPattern> patternC2 = rcp(new Intrepid2FieldPattern(basisC2));
 
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(0,patternC2));
-      patternM.push_back(std::make_pair(1,patternC2));
-      patternM.push_back(std::make_pair(2,patternC2));
-      patternM.push_back(std::make_pair(3,patternC1));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(0,FieldType::CG,patternC2));
+      patternM.push_back(std::make_tuple(1,FieldType::CG,patternC2));
+      patternM.push_back(std::make_tuple(2,FieldType::CG,patternC2));
+      patternM.push_back(std::make_tuple(3,FieldType::CG,patternC1));
 
       FieldAggPattern agg(patternM);
       agg.print(out);

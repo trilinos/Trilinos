@@ -106,18 +106,18 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testA)
    RCP<const FieldPattern> patternC = rcp(new Intrepid2FieldPattern(basisB));
 
    std::vector<int> closureIndices;
-   std::vector<RCP<const FieldPattern> > patternV;
-   std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+   std::vector<std::pair<FieldType,RCP<const FieldPattern>>> patternV;
+   std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
 
-   patternV.push_back(patternA);
-   patternV.push_back(patternB);
-   patternV.push_back(patternC);
+   patternV.push_back(std::make_pair(FieldType::CG,patternA));
+   patternV.push_back(std::make_pair(FieldType::CG,patternB));
+   patternV.push_back(std::make_pair(FieldType::CG,patternC));
 
    GeometricAggFieldPattern geom(patternV);
 
-   patternM.push_back(std::make_pair(7,patternA));
-   patternM.push_back(std::make_pair(3,patternB));
-   patternM.push_back(std::make_pair(4,patternC));
+   patternM.push_back(std::make_tuple(7,FieldType::CG,patternA));
+   patternM.push_back(std::make_tuple(3,FieldType::CG,patternB));
+   patternM.push_back(std::make_tuple(4,FieldType::CG,patternC));
 
    // test build of geometric field pattern
    {
@@ -182,8 +182,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
 
    // test that single construction gives the same pattern
    {
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(3,patternB));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(3,FieldType::CG,patternB));
 
       FieldAggPattern agg(patternM); 
       agg.print(out); // for debugging purposes
@@ -224,9 +224,9 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
 
    // test that single construction gives the same pattern
    {
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(3,patternB));
-      patternM.push_back(std::make_pair(7,patternA));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(3,FieldType::CG,patternB));
+      patternM.push_back(std::make_tuple(7,FieldType::CG,patternA));
 
       FieldAggPattern agg(patternM); 
       agg.print(out); // for debugging purposes
@@ -315,8 +315,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
    {
       RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_TRI_C2_FEM<PHX::exec_space,double,double>);
       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(3,pattern));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(3,FieldType::CG,pattern));
 
       FieldAggPattern agg(patternM);
       agg.print(out);
@@ -332,8 +332,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
    {
       RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(3,pattern));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(3,FieldType::CG,pattern));
 
       FieldAggPattern agg(patternM);
       agg.print(out);
@@ -367,11 +367,11 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
       RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC2 = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
       RCP<const FieldPattern> patternC1 = rcp(new Intrepid2FieldPattern(basisC1));
       RCP<const FieldPattern> patternC2 = rcp(new Intrepid2FieldPattern(basisC2));
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(0,patternC2));
-      patternM.push_back(std::make_pair(1,patternC2));
-      patternM.push_back(std::make_pair(2,patternC2));
-      patternM.push_back(std::make_pair(3,patternC1));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(0,FieldType::CG,patternC2));
+      patternM.push_back(std::make_tuple(1,FieldType::CG,patternC2));
+      patternM.push_back(std::make_tuple(2,FieldType::CG,patternC2));
+      patternM.push_back(std::make_tuple(3,FieldType::CG,patternC1));
 
       FieldAggPattern agg(patternM);
       agg.print(out);
@@ -423,10 +423,10 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
       RCP<const FieldPattern> patternC1 = rcp(new Intrepid2FieldPattern(basisC1));
       RCP<const FieldPattern> patternDivI1 = rcp(new Intrepid2FieldPattern(basisDivI1));
       RCP<const FieldPattern> patternCurlI1 = rcp(new Intrepid2FieldPattern(basisCurlI1));
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(3,patternC1));
-      patternM.push_back(std::make_pair(9,patternDivI1));
-      patternM.push_back(std::make_pair(1,patternCurlI1));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(3,FieldType::CG,patternC1));
+      patternM.push_back(std::make_tuple(9,FieldType::CG,patternDivI1));
+      patternM.push_back(std::make_tuple(1,FieldType::CG,patternCurlI1));
 
       FieldAggPattern agg(patternM);
       agg.print(out);
@@ -461,8 +461,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
 /*
       RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_HEX_Cn_FEM<PHX::exec_space,double,double>(4,Intrepid2::POINTTYPE_EQUISPACED));
       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(3,pattern));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(3,FieldType::CG,pattern));
 
       FieldAggPattern agg(patternM);
       out << "4th order hex" << std::endl;
@@ -486,8 +486,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
    {
       RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
       RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
-      patternM.push_back(std::make_pair(3,pattern));
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_tuple(3,FieldType::CG,pattern));
 
       FieldAggPattern agg(patternM);
       agg.print(out);
@@ -557,11 +557,11 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
       RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basisC2 = rcp(new Intrepid2::Basis_HGRAD_HEX_C2_FEM<PHX::exec_space,double,double>);
       RCP<const FieldPattern> patternP = rcp(new Intrepid2FieldPattern(basisC1));
       RCP<const FieldPattern> patternU = rcp(new Intrepid2FieldPattern(basisC2));
-      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+      std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
       int numP = 8;
       int numU = 4;
-      patternM.push_back(std::make_pair(numP,patternP));
-      patternM.push_back(std::make_pair(numU,patternU));
+      patternM.push_back(std::make_tuple(numP,FieldType::CG,patternP));
+      patternM.push_back(std::make_tuple(numU,FieldType::CG,patternU));
 
       FieldAggPattern agg(patternM);
       agg.print(out);
@@ -691,15 +691,15 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testE)
    RCP<const FieldPattern> patternNode = rcp(new NodalFieldPattern(basisA->getBaseCellTopology()));
 
    std::vector<int> closureIndices;
-   std::vector<RCP<const FieldPattern> > patternV;
-   std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+   std::vector<std::pair<FieldType,RCP<const FieldPattern>>> patternV;
+   std::vector<std::tuple<int,FieldType,RCP<const FieldPattern> > > patternM;
 
-   patternV.push_back(patternA);
-   patternV.push_back(patternNode);
+   patternV.push_back(std::make_pair(FieldType::CG,patternA));
+   patternV.push_back(std::make_pair(FieldType::CG,patternNode));
 
    GeometricAggFieldPattern geom(patternV);
 
-   patternM.push_back(std::make_pair(7,patternA));
+   patternM.push_back(std::make_tuple(7,FieldType::CG,patternA));
 
    // test build of geometric field pattern
    {

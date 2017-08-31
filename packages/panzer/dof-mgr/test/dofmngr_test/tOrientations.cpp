@@ -179,10 +179,10 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_tri)
    }
 
    // lets now test an aggregate basis
-   std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > patterns;
-   patterns.push_back(std::make_pair(0,patternB));
-   patterns.push_back(std::make_pair(1,patternC));
-   patterns.push_back(std::make_pair(2,patternA));
+   std::vector<std::tuple<int,FieldType,Teuchos::RCP<const FieldPattern> > > patterns;
+   patterns.push_back(std::make_tuple(0,FieldType::CG,patternB));
+   patterns.push_back(std::make_tuple(1,FieldType::CG,patternC));
+   patterns.push_back(std::make_tuple(2,FieldType::CG,patternA));
    Teuchos::RCP<const FieldPattern> aggPattern = Teuchos::rcp(new FieldAggPattern(patterns));
 
    std::vector<signed char> orientations(aggPattern->numberIds(),0);
@@ -293,10 +293,10 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
    }
 
    // lets now test an aggregate basis
-   std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > patterns;
-   patterns.push_back(std::make_pair(0,patternB));
-   patterns.push_back(std::make_pair(1,patternC));
-   patterns.push_back(std::make_pair(2,patternA));
+   std::vector<std::tuple<int,FieldType,Teuchos::RCP<const FieldPattern> > > patterns;
+   patterns.push_back(std::make_tuple(0,FieldType::CG,patternB));
+   patterns.push_back(std::make_tuple(1,FieldType::CG,patternC));
+   patterns.push_back(std::make_tuple(2,FieldType::CG,patternA));
    Teuchos::RCP<const FieldPattern> aggPattern = Teuchos::rcp(new FieldAggPattern(patterns));
 
    std::vector<signed char> orientations(aggPattern->numberIds(),0);
@@ -406,10 +406,10 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
    }
 
    // lets now test an aggregate basis
-   std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > patterns;
-   patterns.push_back(std::make_pair(0,patternB));
-   patterns.push_back(std::make_pair(1,patternC));
-   patterns.push_back(std::make_pair(2,patternA));
+   std::vector<std::tuple<int,FieldType,Teuchos::RCP<const FieldPattern> > > patterns;
+   patterns.push_back(std::make_tuple(0,FieldType::CG,patternB));
+   patterns.push_back(std::make_tuple(1,FieldType::CG,patternC));
+   patterns.push_back(std::make_tuple(2,FieldType::CG,patternA));
    Teuchos::RCP<const FieldPattern> aggPattern = Teuchos::rcp(new FieldAggPattern(patterns));
 
    std::vector<signed char> orientations(aggPattern->numberIds(),0);
@@ -520,10 +520,10 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
    }
 
    // lets now test an aggregate basis
-   std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > patterns;
-   patterns.push_back(std::make_pair(0,patternB));
-   patterns.push_back(std::make_pair(1,patternC));
-   patterns.push_back(std::make_pair(2,patternA));
+   std::vector<std::tuple<int,FieldType,Teuchos::RCP<const FieldPattern> > > patterns;
+   patterns.push_back(std::make_tuple(0,FieldType::CG,patternB));
+   patterns.push_back(std::make_tuple(1,FieldType::CG,patternC));
+   patterns.push_back(std::make_tuple(2,FieldType::CG,patternA));
    Teuchos::RCP<const FieldPattern> aggPattern = Teuchos::rcp(new FieldAggPattern(patterns));
 
    std::vector<signed char> orientations(aggPattern->numberIds(),0);
