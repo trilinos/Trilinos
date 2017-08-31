@@ -1,4 +1,4 @@
-
+m 
 // @HEADER
 // ************************************************************************
 //
@@ -93,23 +93,40 @@ template<class Element>
 struct VectorFunctionTraits<std::vector<Element>> {
 
   using V = std::vector<Element>;
+  using VST = VectorSpaceTraits<V>;
 
   using IndexType     = typename ElementTraits<V>::IndexType;
   using ElementType   = typename ElementTraits<V>::ElementType;
   using MagnitudeType = typename ElementTraits<V>::MagnitudeType;
 
+  template<class T> Reduce = Elementwise::Reduce<T>;
+
   template<class Function, class ...Vs>
-  static void apply( V& x, const Function &f, const Vs&... vs ) {
-    
-    for(IndexType i=0; i<x.dimension(); ++i)
+  static void transform( V& x, const Function &f, const Vs&... vs ) {
+    VST::CheckDimensions(vs...);
+    // TODO: Add x to check
+    for(IndexType i=0; i<x.size(); ++i)
       x[i] = Elementwise::call(f,std::make_tuple(vs[i]...));
   } 
 
-  // TODO: implement reduce 
-  template<class Rule, class Function, class ...Vs>
-  static auto reduce( const Rule& r, const Function &f, const Vs&... vs ) {
-
+  template<class R>
+  static ElementType reduce( const Reduce<R>& r, const V& x ) {
+    ElementType result = r(); // Initial value
+    for( auto e : x ) result = r(e,result);
+    return result;
   }
+
+  template<class Function, class R, class ...Vs>
+  static ElementType reduce( const Function &f, const Reduce<R> &r, const Vs&... vs ) {
+    VST::CheckDimensions(vs...);
+    ElementType result = r(); 
+    IndexType dim = VST::dimension(std::get<0>(std::make_tuple(vs...)));
+    for(IndexType i=0; i<dim; ++i) {
+      result = r(result, Elementwise::call(f,std::make_tuple(vs[i]...)));
+    }
+    return result; 
+  }
+
 }; // VectorFunctionTraits
 
  

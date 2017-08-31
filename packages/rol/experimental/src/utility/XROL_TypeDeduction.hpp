@@ -50,6 +50,8 @@ namespace TypeCheckDetails {
     template<bool...> struct bool_pack;
     template<bool... bs>
     using all_true = std::is_same<bool_pack<bs..., true>, bool_pack<true, bs...>>;
+
+
 } // namespace TypeCheckDetails
 
 template <typename... Ts>
@@ -57,6 +59,10 @@ using all_true = TypeCheckDetails::all_true<Ts::value...>;
 
 template <typename T, typename... Ts>
 using all_same = all_true<std::is_same<T,Ts>...>;
+
+template<class T, class... Ts>
+using all_convertible = all_true<std::is_convertible<Ts,T>...>;
+
 
 /** \brief Generate a compile time error if the parameter pack does not have
            uniform types

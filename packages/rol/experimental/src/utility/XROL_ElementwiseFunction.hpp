@@ -69,61 +69,69 @@ namespace FunctionDetails {
         return f(std::get<N>(std::forward<Tuple>(t))...);
     }
   };
-
-
 }
 
+namespace Elementwise {
 
-template<class V> 
-struct Elementwise { 
+/* This will be replaced by std::apply in C++17 */
+template <class F, class Tuple>
+auto evaluate = []( const F& f, Tuple && t) {
+  // TODO: Type check the tuple
+  constexpr auto tsize = std::tuple_size<std::decay_t<Tuple>>::value;    
+  return detail::call_impl<F, Tuple, 0 == tsize, tsize>::call(f, std::forward<Tuple>(t));
+};
 
-  using ElementType   = typename ElementTraits<V>::ElementType;
-  using MagnitudeType = typename ElementTraits<V>::MagnitudeType;
 
-  template<class ...Es>
-  static ElementType product( Es... es ) {
-    UniformTypeCheck(es...);
-    ElementType ret{1.0};
-    ElementType _[] = { (ret *= es)... };
-    (void)_;
-    return ret;
+// Extract template type of template template class
+template<class> struct ValueTraits;
+template<class T, template<class> class C> struct ValueTraits<C<T>> { using type = T; };
+
+
+/* Implement reduction operations using the Curiously Recurring Template Pattern
+*/ 
+
+template<class ReduceType>
+struct Reduce {
+  using T = typename ValueTraits<ReduceType>::type;
+
+  // Initial value
+  T operator()(void) const {
+    return static_cast<const ReduceType&>(*this).initialValue_;
   }
- 
-  template<class ...Es>
-  static ElementType sum( Es... es ) {
-    UniformTypeCheck(es...);
-    ElementType ret{0.0};
-    ElementType _[] = { (ret *= es)... };
-    (void)_;
-    return ret;
+  
+  T operator( const T& x, const T& y ) const {
+    return static_cast<const ReduceType&>(*this)(x,y);
   }
- 
-  template<class ...Es>
-  static ElementType min( Es... es ) {
-    UniformTypeCheck(es...);
-    ElementType ret{std::numeric_limits<ElementType>::max()};
-    ElementType _[] = { (ret = std::min(ret,es))... };
-    (void)_;
-    return ret;
-  }
- 
-  template<class ...Es>
-  static ElementType max( Es... es ) {
-    UniformTypeCheck(es...);
-    ElementType ret{std::numeric_limits<ElementType>::lowest()};
-    ElementType _[] = { (ret = std::max(ret,es))... };
-    (void)_;
-    return ret;
-  }
+};
 
-  template <class F, class Tuple>
-  static ElementType call( const F& f, Tuple && t) {
-    // TODO: Type check the tuple
-    constexpr auto tsize = std::tuple_size<std::decay_t<Tuple>>::value;    
-    return detail::call_impl<F, Tuple, 0 == tsize, tsize>::call(f, std::forward<Tuple>(t));
-  }
-}; 
+template<class T> 
+struct Minimum : Reducer<Minimum<T>> {
+  static constexpr T initialValue_ = std::numeric_limits<T>::max();
+  T operator() ( const T& x, const T& y ) const { return x<y?x:y; }
+};
+template<class T> constexpr T Minimum<T>::initialValue_;
 
+template<class T> 
+struct Maximum : Reducer<Minimum<T>> {
+  static constexpr T initialValue_ = std::numeric_limits<T>::max();
+  T operator() ( const T& x, const T& y ) const { return x<y?x:y; }
+};
+template<class T> constexpr T Minimum<T>::initialValue_;
 
+template<class T>
+struct Sum : Reducer<Sum<T>> {
+  static constexpr T initialValue_ = T(0);
+  T operator()( const T& x, const T& y )  const { return x+y; }
+};
+template class<T> constexpr T Sum<T>::initialValue_;
+
+template<class T>
+struct Product : Reducer<Product<T>> {
+  static constexpr T initialValue_ = T(1);
+  T operator()( const T& x, const T& y ) const { return x*y; }
+};
+template<class T> constexpr T Product<T>::initialValue_;
+
+} // namespace Elementwise
 } // namespace XROL
 

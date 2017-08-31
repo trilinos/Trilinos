@@ -119,19 +119,24 @@ struct VectorSpaceTraits {
   */
   static void dual( V& vdual, const V& v ) { }
 
-};
-
   template<class ...Vs>
   static void CheckDimensions( Vs... vecs ) {
+    // TODO: Verify that Vs... consists of type V only
     UniformTypeCheck(values...);
     auto first = std::get<0>(std::make_tuple(vecs...)).dimension();
     auto cond = [first](auto i){ return i.dimension() == first; };
     bool match{true};
     bool _1[] = { ( match &= cond(vecs) )... }; (void)_1;
-    std::string dims;
-    bool _2[] = { ( dims += std::to_string( items.dimension() ) + " ")...};
-    if(!match) throw IncompatibleDimensions(dims);
+
+    if(!match) {
+      std::string dims;
+      bool _2[] = { ( dims += std::to_string( items.dimension() ) + " ")...}; (void)_2;
+      throw IncompatibleDimensions(dims);
+    }
   }
+
+
+};
 
 
 /** @ingroup la_group
@@ -147,25 +152,39 @@ struct VectorSpaceTraits {
 template<class V>
 struct VectorFunctionTraits {
 
-    /** Apply a callable function elementwise to a set of input vectors (vs)
-        and write the result to x
+    /** Apply a callable function elementwise to a set of input vectors 
+        \f$v^1,v^2,\hdots\f$ and write the result to x
   
-        /f$ x\leftarrow f(v_1,\hdots) \f$
+        /f$ x \leftarrow f(v^1,v^2,\hdots) \f$
         
     */
     template<class Function, class ...Vs>
-    static void apply(V& x, const Function& f, const Vs&... vs ) { }
+    static void transform(V& x, const Function& f, const Vs&... vs ) { }
 
-    /** Apply a callable function elementwise to a set of input vectors (vs)
+    /** Apply a reduce operation to a vector and return the result 
+        (e.g. max, min, sum,...) */
+   
+    template<class R>
+    static ElementType reduce( const Elementwise::Reduce<R> &r, const V& x ) {
+      return ElementType(0);
+    }    
+    
+
+    /** Combines transform and reduce into a single function. 
+        Applies a callable function elementwise to a set of input vectors (vs)
         and apply a reduction rule to obtain a scalar quantity
-  
-        /f$ x\leftarrow f(v_1,\hdots) \f$
+
+        
         
     */
-     template<class Rule, class Function, class ...Vs>
-    static auto reduce( const Rule& r, const Function &f, const Vs&... vs ) { 
+    template<class Function, class R, class ...Vs>
+    static auto transform_and_reduce( const Function &f, const Elementwise::Reduce<R> &r,  const Vs&... vs ) { 
       return ElementType(0);
     }
+
+
+
+
 
 }; // VectorFunctionTraits
 
@@ -237,24 +256,6 @@ struct VectorOptionalTraits {
   static void zero( V &x ) {}
 
 }; // VectorOptionalTraits
-
-
-/*
-template<class V>
-struct VectorElementAccessTraits {
-
-  using IndexType   = typename ElementTraits<V>::IndexType;
-  using ElementType = typename ElementTraits<V>::ElementType;
-  
-  static ElementType get(const V& x, IndexType i ) { 
-    static_assert(false,"get method not specialized");
-    return ElementType(0);
-  }
-
-  static ElementType set( V& x, IndexType i, const ElementType& val ) { 
-    static_assert(false,"set method not specialized");
-  }
-}; */
 
 
 
