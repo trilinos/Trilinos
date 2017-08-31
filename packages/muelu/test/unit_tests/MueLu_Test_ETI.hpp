@@ -81,7 +81,9 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   //
   // We call Kokkos::initialize() after MPI so that MPI has the chance to bind
   // processes correctly before Kokkos touches things.
+#ifdef HAVE_MUELU_KOKKOSCORE
   Kokkos::initialize(argc, argv);
+#endif
 
   bool success = true;
   bool verbose = true;
@@ -223,7 +225,9 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
+#ifdef HAVE_MUELU_KOKKOSCORE
   Kokkos::finalize();
+#endif
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
