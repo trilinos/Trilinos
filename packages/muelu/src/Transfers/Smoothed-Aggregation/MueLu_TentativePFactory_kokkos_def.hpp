@@ -81,6 +81,32 @@ namespace MueLu {
       RowType rows_;
     };
 
+    template<class LocalOrdinal, class View>
+    class ReduceMaxFunctor{
+    public:
+      ReduceMaxFunctor(View view) : view_(view) { }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LocalOrdinal &i, LocalOrdinal& vmax) const {
+        if (vmax < view_(i))
+          vmax = view_(i);
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void join (volatile LocalOrdinal& dst, const volatile LocalOrdinal& src) const {
+        if (dst < src) {
+          dst = src;
+        }
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void init (LocalOrdinal& dst) const {
+        dst = 0;
+      }
+    private:
+      View view_;
+    };
+
     // local QR decomposition
     template<class LOType, class GOType, class SCType,class DeviceType, class NspType, class aggRowsType, class maxAggDofSizeType, class agg2RowMapLOType, class statusType, class rowsType, class rowsAuxType, class colsAuxType, class valsAuxType>
     class LocalQRDecompFunctor {
@@ -505,7 +531,11 @@ namespace MueLu {
     // Aggregates map is based on the amalgamated column map
     // We can skip global-to-local conversion if LIDs in row map are
     // same as LIDs in column map
-    bool goodMap = isGoodMap(*rowMap, *colMap);
+    bool goodMap;
+    {
+      SubFactoryMonitor m2(*this, "Check good map", coarseLevel);
+      goodMap = isGoodMap(*rowMap, *colMap);
+    }
 
     // STEP 1: do unamalgamation
     // In contrast to the non-kokkos version which uses member functions from the AmalgamationInfo container
@@ -518,26 +548,12 @@ namespace MueLu {
     amalgInfo->GetStridingInformation(fullBlockSize, blockID, stridingOffset, stridedBlockSize, indexBase);
     GO globalOffset = amalgInfo->GlobalOffset();
 
-    // Store overlapping local node ids belonging to aggregates on the current processor in a view
-    // This has to be done in serial on the host
-    Teuchos::ArrayView<const GO> nodeGlobalEltsView = aggregates->GetMap()->getNodeElementList();
-    Kokkos::View<GO*, DeviceType> nodeGlobalElts("nodeGlobalElts", nodeGlobalEltsView.size());
-    for(size_t i = 0; i < nodeGlobalElts.size(); i++)
-      nodeGlobalElts(i) = nodeGlobalEltsView[i];
-
     // Extract aggregation info (already in Kokkos host views)
     auto procWinner   = aggregates->GetProcWinner()->getHostLocalView();
     auto vertex2AggId = aggregates->GetVertex2AggId()->getHostLocalView();
     const GO numAggregates = aggregates->GetNumAggregates();
 
-    // Create an Kokkos::UnorderedMap to store the mapping globalDofIndex -> bool (isNodeGlobalElement)
-    // We want to use that information within parallel kernels and cannot call Xpetra::Map routines in the
-    // parallel kernels
-    typedef Kokkos::UnorderedMap<LO, bool, DeviceType> map_type;
-    map_type isNodeGlobalElement(colMap->getNodeNumElements());
-
     int myPid = aggregates->GetMap()->getComm()->getRank();
-
 
     // Create Kokkos::View (on the device) to store the aggreate dof size
     // Later used to get aggregate dof offsets
@@ -557,6 +573,22 @@ namespace MueLu {
           }
         });
     } else {
+      Teuchos::ArrayView<const GO> nodeGlobalEltsView = aggregates->GetMap()->getNodeElementList();
+      Kokkos::View<GO*, DeviceType> nodeGlobalElts("nodeGlobalElts", nodeGlobalEltsView.size());
+      {
+        SubFactoryMonitor m2(*this, "Create isNodeGlobalElement", coarseLevel);
+        // Store overlapping local node ids belonging to aggregates on the current processor in a view
+        // This has to be done in serial on the host
+        for(size_t i = 0; i < nodeGlobalElts.size(); i++)
+          nodeGlobalElts(i) = nodeGlobalEltsView[i];
+      }
+
+      // Create an Kokkos::UnorderedMap to store the mapping globalDofIndex -> bool (isNodeGlobalElement)
+      // We want to use that information within parallel kernels and cannot call Xpetra::Map routines in the
+      // parallel kernels
+      typedef Kokkos::UnorderedMap<LO, bool, DeviceType> map_type;
+      map_type isNodeGlobalElement(colMap->getNodeNumElements());
+
       {
         SubFactoryMonitor m2(*this, "Create isNodeGlobalElement", coarseLevel);
 
@@ -595,16 +627,19 @@ namespace MueLu {
 
     // Find maximum dof size for aggregates
     // Later used to reserve enough scratch space for local QR decompositions
-    // TODO can be done with a parallel reduce
     LO maxAggSize = 0;
-    for(decltype(sizes.dimension_0()) i = 0; i < sizes.dimension_0(); i++) {
-      if(sizes(i) > maxAggSize) maxAggSize = sizes(i);
-    }
+    ReduceMaxFunctor<LO,decltype(sizes)> reduceMax(sizes);
+    Kokkos::parallel_reduce("MueLu:TentativePF:Build:max_agg_size", range_type(0, sizes.dimension_0()), reduceMax, maxAggSize);
 
     // parallel_scan (exclusive)
-    // The Kokkos::View sizes then contains the aggreate Dof offsets
-    ScanFunctor<LO,decltype(sizes)> scanFunctorAggSizes(sizes);
-    Kokkos::parallel_scan("MueLu:TentativePF:Build:aggregate_sizes:stage1_scan", range_type(0,numAggregates+1), scanFunctorAggSizes);
+    // The sizes View then contains the aggregate dof offsets
+    Kokkos::parallel_scan("MueLu:TentativePF:Build:aggregate_sizes:stage1_scan", range_type(0,numAggregates+1),
+      KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
+        upd += sizes(i);
+        if (final)
+          sizes(i) = upd;
+      });
+
     // Create Kokkos::View on the device to store mapping between (local) aggregate id and row map ids (LIDs)
     Kokkos::View<LO*, DeviceType> agg2RowMapLO("agg2row_map_LO", numRows); // initialized to 0
 
@@ -839,18 +874,44 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  bool TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::isGoodMap(const Map& rowMap, const Map& colMap) const {
-    ArrayView<const GO> rowElements = rowMap.getNodeElementList();
-    ArrayView<const GO> colElements = colMap.getNodeElementList();
-
-    const size_t numElements = rowElements.size();
-
+  bool TentativePFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
+  isGoodMap(const Map& rowMap, const Map& colMap) const {
     bool goodMap = true;
-    for (size_t i = 0; i < numElements; i++)
-      if (rowElements[i] != colElements[i]) {
-        goodMap = false;
-        break;
-      }
+    if (rowMap.lib() == Xpetra::UseEpetra) {
+      // Epetra version
+      // As Xpetra::Map is missing getLocalMap(), implement a serial variant
+      ArrayView<const GO> rowElements = rowMap.getNodeElementList();
+      ArrayView<const GO> colElements = colMap.getNodeElementList();
+
+      const size_t numElements = rowElements.size();
+
+      for (size_t i = 0; i < numElements; i++)
+        if (rowElements[i] != colElements[i]) {
+          goodMap = false;
+          break;
+        }
+    } else {
+      // Tpetra version
+      auto rowTMap = Utilities::Map2TpetraMap(rowMap);
+      auto colTMap = Utilities::Map2TpetraMap(colMap);
+
+      auto rowLocalMap = rowTMap->getLocalMap();
+      auto colLocalMap = colTMap->getLocalMap();
+
+      const size_t numRows = rowLocalMap.getNodeNumElements();
+      const size_t numCols = colLocalMap.getNodeNumElements();
+
+      if (numCols < numRows)
+        return false;
+
+      size_t numDiff = 0;
+      Kokkos::parallel_reduce("MueLu:TentativePF:isGoodMap", range_type(0, numRows),
+        KOKKOS_LAMBDA(const size_t i, size_t &diff) {
+          diff += (rowLocalMap.getGlobalElement(i) != colLocalMap.getGlobalElement(i));
+        }, numDiff);
+
+      goodMap = (numDiff == 0);
+    }
 
     return goodMap;
   }
