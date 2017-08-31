@@ -147,22 +147,22 @@ namespace MueLu {
 
     //@}
 
-    // CUDA 7.5 places a restriction on the placement of __device__ lambdas:
+    // CUDA 7.5 and 8.0 place a restriction on the placement of __device__ lambdas:
     //
     //     An explicit __device__ lambda cannot be defined in a member function
     //     that has private or protected access within its class.
     //
-    // Therefore, we expose BuildPuncoupled for now. An alternative solution
+    // Therefore, we expose BuildPuncoupled and isGoodMap for now. An alternative solution
     // could be writing an out of class implementation, and then calling it in
     // a member function.
     void BuildPuncoupled(Level& coarseLevel, RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
+    bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
   private:
 
     void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates_kokkos> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
                          RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
-    bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
   };
 
