@@ -46,28 +46,12 @@
 #ifndef FAKEKOKKOS_SERIALNODE_HPP_
 #define FAKEKOKKOS_SERIALNODE_HPP_
 
-#include <Teuchos_ParameterList.hpp>
+#include <Kokkos_SerialNode.hpp>
 
-// This is the node definition used if Epetra is enabled only
-// Epetra can be compiled using the SerialNode OR the OpenMP Node
-// If there is no Kokkos provide dummy classes for all Kokkos node
-// types that Epetra might be compiled for.
 namespace Kokkos {
-  void initialize(int& narg, char* arg[]);
-  void finalize();
-namespace Compat {
-  class KokkosSerialWrapperNode {
-  public:
-    KokkosSerialWrapperNode(Teuchos::ParameterList &pl) {}
-    KokkosSerialWrapperNode() {}
-  };
-
-  class KokkosOpenMPWrapperNode {
-  public:
-    KokkosOpenMPWrapperNode(Teuchos::ParameterList &pl) {}
-    KokkosOpenMPWrapperNode() {}
-  };
-} // end of Compat namespace
-} // end of Kokkos namespace
+void initialize(int& narg, char* arg[]) {}
+void finalize() {}
+}
 
 #endif
+
