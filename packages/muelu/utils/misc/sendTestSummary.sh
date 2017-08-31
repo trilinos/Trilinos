@@ -32,7 +32,7 @@ fi
 #########################################################################
 
 #Perl script to produce prettified HTML
-HTMLPERLSCRIPT=/home/jhu/bin/drakify-email.pl
+HTMLPERLSCRIPT="/home/jhu/bin/drakify-email.pl"
 #root of cdash testing directory
 TESTLOCATION="/home/jhu/code/trilinos-test"
 LOGBACKUPDIRECTORY="/home/jhu/code/trilinos-test/logs"
@@ -89,7 +89,6 @@ BEGIN {
   testctr=0
   gitUpdateFailed=0
   dashboardErrors=0
-  maxTrackNameLength=0 #for nice spacing
 }
 
 ###################################################
@@ -136,8 +135,6 @@ BEGIN {
     if (length(thisLine) > 0) {
       dashboardTrack[dashboardName] = thisLine
       trackTypes[thisLine]++
-      if (length(thisLine) > maxTrackNameLength)
-        maxTrackNameLength = length(thisLine)
     }
   }
 
@@ -212,6 +209,11 @@ BEGIN {
     getTestSummary=1
   }
 
+  if (getTestSummary && $0 ~ "No tests were found!!!")
+  {
+    getTestSummary=0
+  }
+
   #Calculate the number of failing, passing, and total tests.
   if (getTestSummary && $0 ~ "tests failed out of")
   {
@@ -259,14 +261,17 @@ END {
   thePluses="  "
   while (jj++<numPlusses)
     thePluses = thePluses "+"
-  numPlussesToTheRight = numPlusses - maxTrackNameLength - 4
-  while (kk++<numPlussesToTheRight)
-    plussesToTheRight = plussesToTheRight "+"
 
   printf("\n---------------------------------- Summary ----------------------------------\n") > summaryFile
   for (track in trackTypes) {
     printf("%s\n",thePluses) > summaryFile
-    printf("  ++ %*-s %s\n",maxTrackNameLength,track,plussesToTheRight) > summaryFile
+    trackNameLength = length(track)
+    numPlussesToTheRight = numPlusses - trackNameLength - 4
+    plussesToTheRight=""
+    kk = 0
+    while (kk++<numPlussesToTheRight)
+      plussesToTheRight = plussesToTheRight "+"
+    printf("  ++ %*-s %s\n",trackNameLength,track,plussesToTheRight) > summaryFile
     printf("%s\n",thePluses) > summaryFile
     for (i in listOfDashboardNames) {
       db=listOfDashboardNames[i]
