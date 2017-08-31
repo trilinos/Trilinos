@@ -73,6 +73,7 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("transpose: use implicit");
     SET_VALID_ENTRY("rap: shift");
 #undef  SET_VALID_ENTRY
 
@@ -160,7 +161,8 @@ namespace MueLu {
         Mc = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*R, false, *MP, false, Mc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
       }
 
-      // Get the shift:  FIXME
+      // Get the shift
+      // FIXME - We should really get rid of the shifts array and drive this the same way everything else works
       int level     = coarseLevel.GetLevelID();
       Scalar shift  = Teuchos::ScalarTraits<Scalar>::zero();
       if(level < (int)shifts_.size())

@@ -114,8 +114,9 @@ namespace MueLuTests {
     transPFactory.Build(fineLevel,coarseLevel);
 
     RAPShiftFactory rap;
-    std::vector<Scalar> shifts(2,Teuchos::ScalarTraits<Scalar>::one());
-    rap.SetShifts(shifts);
+    Teuchos::ParameterList rapList;
+    rapList.set("rap: shift", 1.0);
+    rap.SetParameterList(rapList);
 
     rap.SetFactory("P", rcpFromRef(sapFactory));
     rap.SetFactory("R", rcpFromRef(transPFactory));
@@ -157,8 +158,7 @@ namespace MueLuTests {
 
   } // Correctness test
 
-#if 0
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPFactory, ImplicitTranspose, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory, ImplicitTranspose, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
@@ -190,6 +190,8 @@ namespace MueLuTests {
 
     RCP<Matrix> Op = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(19*comm->getSize());
     fineLevel.Set("A",Op);
+    fineLevel.Set("K",Op);
+    fineLevel.Set("M",Op);
 
     TentativePFactory tentpFactory;
     SaPFactory sapFactory;
@@ -203,9 +205,11 @@ namespace MueLuTests {
     coarseLevel.Request(transPFactory);
     sapFactory.Build(fineLevel, coarseLevel);
     transPFactory.Build(fineLevel,coarseLevel);
-    RAPFactory rap;
+    RAPShiftFactory rap;
+
     Teuchos::ParameterList rapList = *(rap.GetValidParameterList());
     rapList.set("transpose: use implicit", true);
+    rapList.set("rap: shift",1.0);
     rap.SetParameterList(rapList);
     rap.SetFactory("P", rcpFromRef(sapFactory));
     rap.SetFactory("R", rcpFromRef(transPFactory));
@@ -218,22 +222,15 @@ namespace MueLuTests {
     RCP<Matrix> P = coarseLevel.Get< RCP<Matrix> >("P", &sapFactory);
     RCP<Matrix> R = coarseLevel.Get< RCP<Matrix> >("R", &transPFactory);
 
-    //std::string filename = "A.dat";
-    //Utils::Write(filename,Op);
-    //filename = "P.dat";
-    //Utils::Write(filename,P);
 
     RCP<MultiVector> workVec1 = MultiVectorFactory::Build(P->getRangeMap(),1);
     RCP<MultiVector> workVec2 = MultiVectorFactory::Build(Op->getRangeMap(),1);
     RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
     RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(),1);
     X->randomize();
-    //out.precision(12);
-    //out.setOutputToRootOnly(-1);
-    //X->describe(out,Teuchos::VERB_EXTREME);
 
-    //Calculate result1 = P^T*(A*(P*X))
-    P->apply(*X,*workVec1,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
+    //Calculate result1 = 2*P^T*(A*(P*X))
+    P->apply(*X,*workVec1,Teuchos::NO_TRANS,(Scalar)2.0,(Scalar)0.0);
     Op->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
     P->apply(*workVec2,*result1,Teuchos::TRANS,(Scalar)1.0,(Scalar)0.0);
 
@@ -245,7 +242,7 @@ namespace MueLuTests {
 
     Teuchos::Array<typename TST::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
-    out << "This test checks the correctness of the Galerkin triple "
+    out << "This test checks the correctness of the (Non-)Galerkin triple "
       << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit transpose of P." << std::endl;
     out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
@@ -253,13 +250,12 @@ namespace MueLuTests {
     TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
 
   } // ImplicitTranspose test
-#endif
+
 
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,Constructor,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,Correctness,Scalar,LO,GO,Node) 
-
-  //  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPFactory,ImplicitTranspose,Scalar,LO,GO,Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,Correctness,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,ImplicitTranspose,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
