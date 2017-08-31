@@ -1407,10 +1407,8 @@ namespace Tpetra {
     // anything).
     typedef Kokkos::HostSpace HMS;
 
-#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
     //const char suffix[] = "  Please report this bug to the Tpetra developers."; // unused
-#endif // HAVE_TPETRA_DEBUG
 
     // mfh 03 Aug 2017: Set this to true for copious debug output to
     // std::cerr on every MPI process.  This is unwise for runs with
