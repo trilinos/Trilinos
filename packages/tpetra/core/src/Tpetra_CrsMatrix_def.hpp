@@ -548,11 +548,11 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
+  CrsMatrix (const local_matrix_type& lclMatrix,
+             const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
              const Teuchos::RCP<const map_type>& domainMap,
              const Teuchos::RCP<const map_type>& rangeMap,
-             const local_matrix_type& lclMatrix,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     lclMatrix_ (lclMatrix),
