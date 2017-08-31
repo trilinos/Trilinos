@@ -83,7 +83,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
    RCP<Intrepid2::Basis<PHX::Device,double,double> > basis = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<PHX::Device,double,double>(order));
    RCP<const FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
-   std::vector<RCP<const FieldPattern> > patterns;
+   std::vector<std::pair<FieldType,RCP<const FieldPattern>>> patterns;
    std::vector<int> indices;
 
    {
@@ -98,7 +98,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
 
    {
       patterns.clear();
-      patterns.push_back(pattern);
+      patterns.push_back(std::make_pair(FieldType::CG,pattern));
 
       GeometricAggFieldPattern gfp;
       gfp.buildPattern(patterns);

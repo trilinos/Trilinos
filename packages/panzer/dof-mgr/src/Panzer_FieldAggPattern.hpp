@@ -44,9 +44,11 @@
 #define __Panzer_FieldAggPattern_hpp__
 
 #include "Panzer_FieldPattern.hpp"
+#include "Panzer_FieldType.hpp"
 
 #include <map>
 #include <vector>
+#include <tuple>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Tuple.hpp"
@@ -69,7 +71,7 @@ public:
 
    /** Automatically calls <code>buildPattern</code>
      */
-   FieldAggPattern(std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns,
+   FieldAggPattern(std::vector<std::tuple<int,panzer::FieldType,Teuchos::RCP<const FieldPattern> > > & patterns,
                    const Teuchos::RCP<const FieldPattern> & geomAggPattern=Teuchos::null);
 
    virtual ~FieldAggPattern() {}
@@ -82,7 +84,7 @@ public:
      * Patterns must be on the same geometry, otherwise this function throws a
      * std::logic_error
      */
-   virtual void buildPattern(const std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > & patterns,
+   virtual void buildPattern(const std::vector<std::tuple<int,panzer::FieldType,Teuchos::RCP<const FieldPattern> > > & patterns,
                              const Teuchos::RCP<const FieldPattern> & geomAggPattern=Teuchos::null);
 
    // functions from the abstract FieldPattern
@@ -102,6 +104,14 @@ public:
      * \returns Field pattern associated with a particular ID
      */
    virtual Teuchos::RCP<const FieldPattern> getFieldPattern(int fieldId) const;
+
+   /** Extract the field type associated with an argument
+     *
+     * \param[in] fieldId ID for field to lookup
+     *
+     * \returns Field type associated with a particular ID
+     */
+   virtual FieldType getFieldType(int fieldId) const;
 
    //! \defgroup FEISupport Support functions for building FEI patterns
    //@{ 
@@ -147,8 +157,18 @@ public:
      * basis functions for the closure indices. The first and second vectors should
      * have the same size.
      *
-     * \note You cannot depend on the order of the IDs will remain consistent in future
+     * \note You cannot depend on the order of the IDs remaining consistent in future
      *       versions.
+     *
+     * \note This function is normally used for boundary condition
+     * application and for DG and SKELETON fields returns values that
+     * can be inconsistent with what is returned from the
+     * localOffsets() method. In paticular, for DG and SKELETON fields
+     * we add all the DOFs to the interior cell (subcell index equal
+     * to the dimension of the cell). However these DOFs are
+     * associated with edges, faces and nodes. When applying boundary
+     * conditions, these interior DOFs must be returned in this
+     * function call to be set properly.
      */
    const std::pair<std::vector<int>,std::vector<int> > &
    localOffsets_closure(int fieldId,int subcellDim,int subcellId) const;
@@ -163,18 +183,32 @@ protected:
      */
    void buildFieldIdToPatternIdx();
 
-   /** merge the current set of patterns in the patterns_ vector
+   /** Merge the current set of patterns in the patterns_ vector
      * into the numFields_ and fieldIds_ vectors. This looks 
      * at the patterns_ vector and has side effects, wiping out
      * any previous state stored in those vectors.
      */
    void buildFieldIdsVector();
 
-   /** merge the current set of patterns in the patterns_ vector
-     * into the numFields_ and fieldIds_ vectors. This looks 
-     * at the patterns_ vector and has side effects.
+   /** Merge the current set of CG, DG or SKELETON patterns in the
+     * patterns_ vector into the numFields_ and fieldIds_
+     * vectors. This looks at the patterns_ vector and has side
+     * effects. This merges all the field patterns for only ONE
+     * FieldType (CG, DG or SKELETON) AT AT TIME. This that allows for
+     * easier mapping of the internal DG/SKELETON indices to subcells.
+     * 
+     * \param[in] fieldType - The type of field to build data for.
+     *
      */
-   void mergeFieldPatterns(int dim,int subcell);
+   void mergeFieldPatterns(const FieldType& fieldType);
+
+   /** Build additional information for DG and SKELETON FieldTypes for
+     *  mapping the closure offsets. Since DG and SKELETON DOFs are
+     *  added to the cell interior, we need additonal information to
+     *  map the DOFs back to subcells for getting closures for boundary
+     *  conditions. 
+     */
+   void buildDGAndSkeletonClosureOffsetData();
 
    /** Adds all the pattern's sub cell indices to the vector
      * specified.  The sub cell (dim and sub cell ordinal) is also specified.
@@ -192,7 +226,8 @@ protected:
    std::size_t dimension_;
    Teuchos::RCP<const FieldPattern> geomAggPattern_;
 
-   // field pattern data
+   //! Stores the local cell DOF indices for each (dim,subcell_id)
+   //! that are returned by calls to getSubcellIndices().
    std::vector<std::vector<std::vector<int> > > patternData_;
 
    // FEI patterns
@@ -200,7 +235,7 @@ protected:
    std::vector<int> fieldIds_;  // field IDs at each geometric ID
 
    // storage for patterns
-   std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > patterns_;
+   std::vector<std::tuple<int,panzer::FieldType,Teuchos::RCP<const FieldPattern> > > patterns_;
    std::map<int,int> fieldIdToPatternIdx_;
 
    mutable std::map<int, std::vector<int> > fieldOffsets_;
@@ -209,6 +244,18 @@ protected:
    { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
    mutable std::map<Teuchos::Tuple<int,3>, std::pair<std::vector<int>,std::vector<int> >,LessThan>
          fieldSubcellOffsets_closure_;
+  
+   //! Start of the DG DOFs
+   int dgOffset_;
+  
+   //! FieldAggPattern for just the DG DOFs. Used for offset closures. 
+   Teuchos::RCP<FieldAggPattern> dgAggPatterns_;
+
+   //! Start of the SKELETON DOFs
+   int skeletonOffset_;
+
+   //! FieldAggPattern for just the DG DOFs. Used for offset closures. 
+   Teuchos::RCP<FieldAggPattern> skeletonAggPatterns_;
 };
 
 }
