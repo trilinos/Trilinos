@@ -1852,7 +1852,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   int test_err=0;
   int MyPID = Comm->getRank();
   RCP<const MapType> MapSource, MapTarget;
-  Kokkos::DualView<char*, device_type> exports;
+
+  // mfh 01 Aug 2017: Deal with fix for #1088, by not using
+  // Kokkos::CudaUVMSpace for communication buffers.
+#ifdef KOKKOS_HAVE_CUDA
+  typedef typename std::conditional<
+  std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
+    Kokkos::CudaSpace,
+    typename device_type::memory_space>::type buffer_memory_space;
+#else
+  typedef typename device_type::memory_space buffer_memory_space;
+#endif // KOKKOS_HAVE_CUDA
+  typedef typename device_type::execution_space buffer_execution_space;
+  typedef Kokkos::Device<buffer_execution_space, buffer_memory_space> buffer_device_type;
+
+  Kokkos::DualView<char*, buffer_device_type> exports;
   Teuchos::Array<char> imports;
   Teuchos::Array<size_t> numImportPackets, numExportPackets;
   size_t constantNumPackets=0;

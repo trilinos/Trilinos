@@ -66,7 +66,7 @@
 #include "Tpetra_Details_Environment.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
-#include "Tpetra_Details_unpackCrsMatrix.hpp"
+#include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
 #include <typeinfo>
 #include <vector>
 
@@ -7971,11 +7971,12 @@ namespace Tpetra {
         destMat->numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
         Teuchos::ArrayView<size_t> numExportPacketsPerLID =
           getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-        Tpetra::Details::packCrsMatrixWithOwningPIDs (*this, destMat->exports_,
-                                                      numExportPacketsPerLID,
-                                                      ExportLIDs, SourcePids,
-                                                      constantNumPackets,
-                                                      Distor);
+        using Tpetra::Details::packCrsMatrixWithOwningPIDs;
+        packCrsMatrixWithOwningPIDs (*this, destMat->exports_,
+                                     numExportPacketsPerLID,
+                                     ExportLIDs, SourcePids,
+                                     constantNumPackets,
+                                     Distor);
       }
       catch (std::exception& e) {
         os << "Proc " << myRank << ": " << e.what ();

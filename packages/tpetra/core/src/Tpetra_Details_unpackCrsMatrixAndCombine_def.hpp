@@ -39,24 +39,26 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_DETAILS_UNPACKCRSMATRIX_HPP
-#define TPETRA_DETAILS_UNPACKCRSMATRIX_HPP
+#ifndef TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE_DEF_HPP
+#define TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE_DEF_HPP
 
 #include "TpetraCore_config.h"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayView.hpp"
-#include "Tpetra_Details_PackTraits.hpp"
-#include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
+#include "Tpetra_Details_createMirrorView.hpp"
+#include "Tpetra_Details_OrdinalTraits.hpp"
+#include "Tpetra_Details_PackTraits.hpp"
+#include "Tpetra_CrsMatrix_decl.hpp"
 #include "Kokkos_Core.hpp"
 #include <memory>
 #include <string>
 
-/// \file Tpetra_Details_unpackCrsMatrix.hpp
-/// \brief Functions for unpacking the entries of a Tpetra::CrsMatrix
-///   for communication, in the case where it is valid to go to the
-///   KokkosSparse::CrsMatrix (local sparse matrix data structure)
-///   directly.
+/// \file Tpetra_Details_unpackCrsMatrixAndCombine_def.hpp
+/// \brief Definition of functions for unpacking the entries of a
+///   Tpetra::CrsMatrix for communication, in the case where it is
+///   valid to go to the KokkosSparse::CrsMatrix (local sparse matrix
+///   data structure) directly.
 /// \warning This file, and its contents, are implementation details
 ///   of Tpetra.  The file itself or its contents may disappear or
 ///   change at any time.
@@ -606,18 +608,18 @@ do_unpack_and_combine(const LocalMatrix& local_matrix,
 /// of data, this procedure could be bypassed.
 template<typename ST, typename LO, typename GO, typename Node>
 void
-unpackCrsMatrixAndCombine(const CrsMatrix<ST, LO, GO, Node>& sourceMatrix,
-                          const Teuchos::ArrayView<const char>& imports,
-                          const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-                          const Teuchos::ArrayView<const LO>& importLIDs,
-                          size_t constantNumPackets,
-                          Distributor & distor,
-                          CombineMode combineMode,
-                          const bool atomic)
+unpackCrsMatrixAndCombine (const CrsMatrix<ST, LO, GO, Node, false>& sourceMatrix,
+                           const Teuchos::ArrayView<const char>& imports,
+                           const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+                           const Teuchos::ArrayView<const LO>& importLIDs,
+                           size_t constantNumPackets,
+                           Distributor & distor,
+                           CombineMode combineMode,
+                           const bool atomic)
 {
   using Kokkos::View;
   typedef typename Node::device_type device_type;
-  typedef typename CrsMatrix<ST,LO,GO,Node>::local_matrix_type local_matrix_type;
+  typedef typename CrsMatrix<ST,LO,GO,Node,false>::local_matrix_type local_matrix_type;
   static_assert (std::is_same<device_type, typename local_matrix_type::device_type>::value,
                  "Node::device_type and LocalMatrix::device_type must be the same.");
 
@@ -655,4 +657,16 @@ unpackCrsMatrixAndCombine(const CrsMatrix<ST, LO, GO, Node>& sourceMatrix,
 } // namespace Details
 } // namespace Tpetra
 
-#endif // TPETRA_DETAILS_UNPACKCRSMATRIX_HPP
+#define TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE_INSTANT( ST, LO, GO, NT ) \
+  template void \
+  Details::unpackCrsMatrixAndCombine<ST, LO, GO, NT> ( \
+    const CrsMatrix<ST, LO, GO, NT, false>&, \
+    const Teuchos::ArrayView<const char>&, \
+    const Teuchos::ArrayView<const size_t>&, \
+    const Teuchos::ArrayView<const LO>&, \
+    size_t, \
+    Distributor&, \
+    CombineMode, \
+    const bool);
+
+#endif // TPETRA_DETAILS_UNPACKCRSMATRIXANDCOMBINE_DEF_HPP

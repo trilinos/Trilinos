@@ -49,7 +49,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
-#include "Tpetra_Details_unpackCrsMatrix.hpp"
+#include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include <random>
 #include <set>
