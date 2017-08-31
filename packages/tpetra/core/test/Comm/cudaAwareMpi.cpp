@@ -55,15 +55,12 @@
 // test's behavior at run time.
 
 #include "Tpetra_TestingUtilities.hpp"
-// #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_assumeMpiIsCudaAware.hpp"
+#include "Tpetra_Map.hpp" // creating a Map ensures Kokkos initialization
 #include "Teuchos_CommHelpers.hpp"
 #include "Kokkos_TeuchosCommAdapters.hpp"
-#include "Tpetra_Map.hpp" // creating a Map ensures Kokkos initialization
-#include <cctype> // toupper
-#include <cstdlib> // getenv
 
 namespace { // (anonymous)
-  // using Tpetra::Details::gathervPrint;
   using Teuchos::Comm;
   using Teuchos::outArg;
   using Teuchos::REDUCE_MIN;
@@ -83,79 +80,6 @@ namespace { // (anonymous)
   typedef Tpetra::Map<>::global_ordinal_type GO;
   typedef Tpetra::Map<LO, GO, test_node_type> map_type;
 
-  // Should we assume that MPI is CUDA aware?
-  // Also, output diagnostics.
-  bool
-  assumeMpiIsCudaAware (Teuchos::FancyOStream& out)
-  {
-#ifdef TPETRA_ASSUME_CUDA_AWARE_MPI
-    const bool configureTimeDefault = true;
-#else
-    const bool configureTimeDefault = false;
-#endif // TPETRA_ASSUME_CUDA_AWARE_MPI
-    const char envVarName[] = "TPETRA_ASSUME_CUDA_AWARE_MPI";
-
-    out << "Test whether users want Trilinos to assume that MPI is CUDA aware."
-        << endl;
-    Teuchos::OSTab tab1 (out);
-
-    // Environment variable overrides default configure-time value.
-    const char* envVarVal = std::getenv (envVarName);
-    if (envVarVal == NULL) { // use configure-time default value
-      out << "Did not find environment variable \"" << envVarName
-          << "\"." << endl
-          << "Return configure-time default "
-          << (configureTimeDefault ? "true" : "false") << "." << endl;
-      return configureTimeDefault;
-    }
-    else {
-      out << "Found environment variable \"" << envVarName << "\"." << endl
-          << "Its value is \"" << envVarVal << "\"." << endl;
-      const std::string varVal ([=] { // compare to Lisp' LET (yay const!)
-          std::string varVal_nc (envVarVal);
-          for (auto& c : varVal_nc) {
-            c = toupper (c);
-          }
-          return varVal_nc;
-        } ());
-      // We include "" with the "true" values rather than the "false"
-      // values, since just setting a Boolean environment variable
-      // without setting its value suggests a true value.  Note that
-      // this requires actually setting the value to "".  For example,
-      // in bash, one must do this:
-      //
-      // export TPETRA_ASSUME_CUDA_AWARE_MPI=""
-      //
-      // not this:
-      //
-      // export TPETRA_ASSUME_CUDA_AWARE_MPI
-      //
-      // If you do the latter, getenv will return NULL.
-      const char* falseVals[] = {"0", "NO", "OFF", "FALSE"};
-      for (auto falseVal : falseVals) {
-        if (varVal == falseVal) {
-          out << "Reporting value of environment variable as \"false\"."
-              << endl;
-          return false;
-        }
-      }
-      const char* trueVals[] = {"", "1", "YES", "ON", "TRUE"};
-      for (auto trueVal : trueVals) {
-        if (varVal == trueVal) {
-          out << "Reporting value of environment variable as \"true\"."
-              << endl;
-          return true;
-        }
-      }
-
-      out << "Found environment variable, but didn't know how to "
-          << "interpret its value." << endl
-          << "Return configure-time default "
-          << (configureTimeDefault ? "true" : "false") << endl;
-      return configureTimeDefault;
-    }
-  }
-
   //
   // UNIT TESTS
   //
@@ -168,7 +92,7 @@ namespace { // (anonymous)
 
     out << "Testing CUDA-awareness of the MPI implementation" << endl;
     Teuchos::OSTab tab1 (out);
-    if (! assumeMpiIsCudaAware (out)) {
+    if (! Tpetra::Details::assumeMpiIsCudaAware (&out)) {
       out << "Trilinos (or you, the user) asserts that MPI is NOT CUDA aware."
           << endl
           << "That's OK; we consider the test having passed in this case,"
