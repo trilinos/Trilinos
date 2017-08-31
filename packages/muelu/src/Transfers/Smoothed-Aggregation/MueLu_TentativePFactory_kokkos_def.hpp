@@ -523,10 +523,13 @@ namespace MueLu {
 
     const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
-    auto aggGraph = aggregates->GetGraph();
+    typename Aggregates_kokkos::local_graph_type aggGraph;
+    {
+      SubFactoryMonitor m2(*this, "Get Aggregates graph", coarseLevel);
+      aggGraph = aggregates->GetGraph();
+    }
     auto aggRows  = aggGraph.row_map;
     auto aggCols  = aggGraph.entries;
-    //const GO numAggs  = aggregates->GetNumAggregates();
 
     // Aggregates map is based on the amalgamated column map
     // We can skip global-to-local conversion if LIDs in row map are
@@ -538,9 +541,10 @@ namespace MueLu {
     }
 
     // STEP 1: do unamalgamation
-    // In contrast to the non-kokkos version which uses member functions from the AmalgamationInfo container
-    // class to unamalgamate the data. The kokkos version of TentativePFacotry does the unamalgamation here
-    // and only uses the data of the AmalgamationInfo container class
+    // The non-kokkos version uses member functions from the AmalgamationInfo
+    // container class to unamalgamate the data. In contrast, the kokkos
+    // version of TentativePFactory does the unamalgamation here and only uses
+    // the data of the AmalgamationInfo container class
 
     // Extract information for unamalgamation
     LO fullBlockSize, blockID, stridingOffset, stridedBlockSize;
@@ -549,8 +553,8 @@ namespace MueLu {
     GO globalOffset = amalgInfo->GlobalOffset();
 
     // Extract aggregation info (already in Kokkos host views)
-    auto procWinner   = aggregates->GetProcWinner()->getHostLocalView();
-    auto vertex2AggId = aggregates->GetVertex2AggId()->getHostLocalView();
+    auto procWinner   = aggregates->GetProcWinner()->template getLocalView<DeviceType>();
+    auto vertex2AggId = aggregates->GetVertex2AggId()->template getLocalView<DeviceType>();
     const GO numAggregates = aggregates->GetNumAggregates();
 
     int myPid = aggregates->GetMap()->getComm()->getRank();
@@ -673,7 +677,6 @@ namespace MueLu {
 
     // STEP 2: prepare local QR decomposition
     // Reserve memory for tentative prolongation operator
-
     coarseNullspace = MultiVectorFactory::Build(coarseMap, NSDim);
 
     // Pull out the nullspace vectors so that we can have random access (on the device)
@@ -688,6 +691,7 @@ namespace MueLu {
     typedef typename local_matrix_type::index_type      cols_type;
     typedef typename local_matrix_type::values_type     vals_type;
 
+    // NOTE: the allocation (initialization) of these view takes noticeable time
     typename rows_type::non_const_type rowsAux("Ptent_aux_rows", numRows+1),    rows("Ptent_rows", numRows+1);
     typename cols_type::non_const_type colsAux("Ptent_aux_cols", nnzEstimate);
     typename vals_type::non_const_type valsAux("Ptent_aux_vals", nnzEstimate);
@@ -716,7 +720,8 @@ namespace MueLu {
     typename AppendTrait<decltype(fineNS), Kokkos::RandomAccess>::type fineNSRandom = fineNS;
     typename AppendTrait<status_type,      Kokkos::Atomic>      ::type statusAtomic = status;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(goodMap == false, Exceptions::RuntimeError, "Only works for non-overlapping aggregates (goodMap == true)");
+    TEUCHOS_TEST_FOR_EXCEPTION(goodMap == false, Exceptions::RuntimeError,
+        "Only works for non-overlapping aggregates (goodMap == true)");
 
     {
       // Stage 1: construct auxiliary arrays.
@@ -823,6 +828,7 @@ namespace MueLu {
       // Stage 2: compress the arrays
       SubFactoryMonitor m2(*this, "Stage 2 (CompressRows)", coarseLevel);
 
+      // FIXME: do we need compression for the scalar case??
       Kokkos::parallel_scan("MueLu:TentativePF:Build:compress_rows", range_type(0,numRows+1),
         KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
           upd += rows(i);
@@ -838,6 +844,7 @@ namespace MueLu {
     {
       SubFactoryMonitor m2(*this, "Stage 2 (CompressCols)", coarseLevel);
 
+      // FIXME: do we need compression for the scalar case??
       Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols_vals", numRows,
         KOKKOS_LAMBDA(const LO i) {
           LO rowStart = rows(i);
@@ -859,9 +866,14 @@ namespace MueLu {
       SubFactoryMonitor m2(*this, "Stage 3 (LocalMatrix+FillComplete)", coarseLevel);
 
       local_matrix_type lclMatrix = local_matrix_type("A", numRows, coarseMap->getNodeNumElements(), nnz, vals, rows, cols);
+#if 1
+      // FIXME: this should be gone once Xpetra propagate "local matrix + 4 maps" constructor
       auto PtentCrs = CrsMatrixFactory::Build(rowMap, coarseMap, lclMatrix);
       PtentCrs->resumeFill();  // we need that for rectangular matrices
       PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap());
+#else
+      auto PtentCrs = CrsMatrixFactory::Build(lclMatrix, rowMap, coarseMap, coarseMap, A->getDomainMap());
+#endif
       Ptentative = rcp(new CrsMatrixWrap(PtentCrs));
     }
   }
