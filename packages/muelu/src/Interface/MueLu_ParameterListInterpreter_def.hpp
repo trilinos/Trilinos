@@ -79,6 +79,7 @@
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_RAPShiftFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"

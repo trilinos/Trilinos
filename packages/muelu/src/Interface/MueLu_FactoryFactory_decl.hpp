@@ -109,6 +109,7 @@
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_RepartitionHeuristicFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_RAPShiftFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_ReorderBlockAFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -228,6 +229,7 @@ namespace MueLu {
       if (factoryName == "PgPFactory")                         return Build2<PgPFactory>                         (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SaPFactory")                         return Build2<SaPFactory>                         (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RAPFactory")                         return BuildRAPFactory<RAPFactory>                (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "RAPShiftFactory")                    return BuildRAPFactory<RAPShiftFactory>                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceAcFactory")                 return Build2<RebalanceAcFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceTransferFactory")           return Build2<RebalanceTransferFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ReorderBlockAFactory")               return Build2<ReorderBlockAFactory>               (paramList, factoryMapIn, factoryManagersIn);
