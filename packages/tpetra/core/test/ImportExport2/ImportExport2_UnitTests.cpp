@@ -60,6 +60,7 @@
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
+#include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
@@ -1919,7 +1920,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     distor.doPostsAndWaits<PacketType>(exports_av,numExportPackets(),imports(),numImportPackets());
 
     // Run the count... which should get the same NNZ as the traditional import
-    using Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount;
+    using Tpetra::Details::unpackAndCombineWithOwningPIDsCount;
     size_t nnz2 =
       unpackAndCombineWithOwningPIDsCount<Scalar, LO, GO, Node> (*A, Importer->getRemoteLIDs (),
                                                                  imports (), numImportPackets (),
@@ -1939,7 +1940,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     Teuchos::Array<Scalar>  vals (nnz2);
     Teuchos::Array<int>     TargetPids;
 
-    using Tpetra::Import_Util::unpackAndCombineIntoCrsArrays;
+    using Tpetra::Details::unpackAndCombineIntoCrsArrays;
     unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (*A,
                                                          Importer->getRemoteLIDs (),
                                                          imports (),

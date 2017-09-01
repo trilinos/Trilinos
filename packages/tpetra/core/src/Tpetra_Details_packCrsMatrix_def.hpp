@@ -426,14 +426,12 @@ packCrsMatrixRow (const ColumnMap& col_map,
   const size_t num_ent_beg = offset;
   const size_t num_ent_len = PackTraits<LO, BDT>::packValueCount (num_ent_LO);
 
-  const GO gid_example = 0; // packValueCount wants this
   const size_t gids_beg = num_ent_beg + num_ent_len;
-  const size_t gids_len = num_ent * PackTraits<GO, BDT>::packValueCount (gid_example);
+  const size_t gids_len = num_ent * PackTraits<GO, BDT>::packValueCount (GO (0));
 
-  const int pid_example = 0; // packValueCount wants this
   const size_t pids_beg = gids_beg + gids_len;
   const size_t pids_len = pack_pids ?
-    num_ent * PackTraits<int, BDT>::packValueCount (pid_example) :
+    num_ent * PackTraits<int, BDT>::packValueCount (int (0)) :
     static_cast<size_t> (0);
 
   const size_t vals_beg = gids_beg + gids_len + pids_len;
