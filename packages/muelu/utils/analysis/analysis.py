@@ -99,7 +99,7 @@ def setup_timers(input_files, display, top, ax = None):
         colors = tableau20()
 
         if diff_mode == False:
-            ax.barh(np.arange(len(timers_f))-height, width=dfs['maxT'], height=2*height, color=colors[0])
+            ax.barh(np.arange(len(timers_f)), width=dfs['maxT'], height=2*height, color=colors[0])
         else:
             ax.barh(np.arange(len(timers_f)), width=dfs['maxT'],  height=height, color=colors[0], label=input_files[0])
             ax.barh(np.arange(len(timers_f))-height, width=dfs1['maxT'], height=height, color=colors[1], label=input_files[1])
