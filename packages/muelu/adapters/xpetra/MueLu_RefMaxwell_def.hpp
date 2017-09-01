@@ -51,6 +51,7 @@
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
 #include "Xpetra_TripleMatrixMultiply.hpp"
+#include "Xpetra_CrsMatrixUtils.hpp"
 
 #include "MueLu_RefMaxwell_decl.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
@@ -354,16 +355,36 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
+  // The P11 matrix maps node based aggregrates { A_j } to edges { e_i }.
+  //
+  // The old implementation used
+  // P11(i, j*dim+k) = sum_{nodes n_l in e_i intersected with A_j}  0.5 * phi_k(e_i) * P(n_l, A_j)
+  // yet the paper gives
+  // P11(i, j*dim+k) = sum_{nodes n_l in e_i intersected with A_j}  0.5 * phi_k(e_i)
+  // where phi_k is the k-th nullspace vector.
+  //
+  // The graph of D0 contains the incidence from nodes to edges.
+  // The nodal prolongator P maps aggregates to nodes.
 
-  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-  out.setOutputToRootOnly(0);
-  out.setShowProcRank(true);
+  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
+  const SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
+  const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  size_t dim = Nullspace_->getNumVectors();
+  size_t numLocalRows = SM_Matrix_->getNodeNumRows();
+
+  // get nullspace vectors
+  ArrayRCP<ArrayView<const SC> > nullspace(dim);
+  for(size_t i=0; i<dim; i++) {
+    ArrayView<const SC> datavec = (Nullspace_->getData(i))();
+    nullspace[i]=datavec;
+  }
 
   // build prolongator: algorithm 1 in the reference paper
-  // First, aggregate nodal matrix by creating a 2-level hierarchy
-  Teuchos::RCP<Matrix> P;
+  // First, build nodal unsmoothed prolongator using the matrix A_nodal
+  RCP<Matrix> P_nodal;
   if (read_P_from_file_) {
-    P = Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Read(P_filename_, Xpetra::UseEpetra, P->getDomainMap()->getComm());
+    P_nodal = Xpetra::IO<SC, LO, GO, NO>::Read(P_filename_, A_nodal_Matrix_->getDomainMap());
   } else {
     Level fineLevel, coarseLevel;
     RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
@@ -373,6 +394,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
     fineLevel.SetLevelID(0);
     coarseLevel.SetLevelID(1);
     fineLevel.Set("A",A_nodal_Matrix_);
+    coarseLevel.setlib(A_nodal_Matrix_->getDomainMap()->lib());
+    fineLevel.setlib(A_nodal_Matrix_->getDomainMap()->lib());
 
     RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
     RCP<UncoupledAggregationFactory> Aggfact = rcp(new UncoupledAggregationFactory());
@@ -380,96 +403,115 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
 
     coarseLevel.Request("P",TentativePFact.get());
     TentativePFact->Build(fineLevel,coarseLevel);
-    P = coarseLevel.Get<RCP<Matrix> >("P",TentativePFact.get());
+    P_nodal = coarseLevel.Get<RCP<Matrix> >("P",TentativePFact.get());
   }
   if (dump_matrices_)
-    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("P.mat"), *P);
+    Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal.mat"), *P_nodal);
 
-  // make weighting matrix
-  Teuchos::RCP<Matrix> D0_Matrix_Abs=MatrixFactory2::BuildCopy(D0_Matrix_);
-  D0_Matrix_Abs -> resumeFill();
-  D0_Matrix_Abs -> setAllToScalar((Scalar)0.5);
-  // Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
-  // Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
-  D0_Matrix_Abs -> fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
+  RCP<CrsMatrix> D0Crs = rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix();
 
-  if (dump_matrices_)
-    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("AbsD0.mat"), *D0_Matrix_Abs);
+  // Import off-rank rows of P_nodal into P_nodal_imported
+  RCP<CrsMatrix> P_nodal_imported;
+  int numProcs = P_nodal->getDomainMap()->getComm()->getSize();
+  if (numProcs > 1) {
+    RCP<CrsMatrixWrap> P_nodal_temp;
+    RCP<const Map> targetMap = D0Crs->getColMap();
+    P_nodal_temp = Teuchos::rcp(new CrsMatrixWrap(targetMap, 0));
+    RCP<const Import> importer = D0Crs->getCrsGraph()->getImporter();
+    P_nodal_temp->doImport(*P_nodal, *importer, Xpetra::INSERT);
+    P_nodal_temp->fillComplete(rcp_dynamic_cast<CrsMatrixWrap>(P_nodal)->getCrsMatrix()->getDomainMap(),
+                               rcp_dynamic_cast<CrsMatrixWrap>(P_nodal)->getCrsMatrix()->getRangeMap());
+    P_nodal_imported = P_nodal_temp->getCrsMatrix();
+    if (dump_matrices_)
+      Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P_nodal_imported.mat"), *P_nodal_temp);
+  } else
+    P_nodal_imported = rcp_dynamic_cast<CrsMatrixWrap>(P_nodal)->getCrsMatrix();
 
-  Teuchos::RCP<Matrix> Ptent = MatrixFactory::Build(D0_Matrix_Abs->getRowMap(),0);
-  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_Abs,false,*P,false,*Ptent,true,true);
+  // Get data out of P_nodal_imported and D0.
+  ArrayRCP<const size_t>      Prowptr_RCP, D0rowptr_RCP;
+  ArrayRCP<const LO>          Pcolind_RCP, D0colind_RCP;
+  ArrayRCP<const SC>          Pvals_RCP, D0vals_RCP;
+  ArrayRCP<size_t>            P11rowptr_RCP;
+  ArrayRCP<LO>                P11colind_RCP;
+  ArrayRCP<SC>                P11vals_RCP;
 
-  if (dump_matrices_)
-    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("P_intermediate.mat"), *Ptent);
+  P_nodal_imported->getAllValues(Prowptr_RCP, Pcolind_RCP, Pvals_RCP);
+  // TODO: Is there an easier/cleaner way?
+  rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix()->getAllValues(D0rowptr_RCP, D0colind_RCP, D0vals_RCP);
 
-  Ptent->resumeFill();
-  Apply_BCsToMatrixRows(Ptent,BCrows_);
-  Ptent -> fillComplete(Ptent->getDomainMap(),Ptent->getRangeMap());
+  // For efficiency
+  // Refers to an issue where Teuchos::ArrayRCP::operator[] may be
+  // slower than Teuchos::ArrayView::operator[].
+  ArrayView<const size_t>     Prowptr, D0rowptr;
+  ArrayView<const LO>         Pcolind, D0colind;
+  ArrayView<const SC>         Pvals;
+  Prowptr  = Prowptr_RCP();   Pcolind  = Pcolind_RCP();   Pvals = Pvals_RCP();
+  D0rowptr = D0rowptr_RCP();  D0colind = D0colind_RCP();
 
-  if (dump_matrices_)
-    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("P_intermediate2.mat"), *Ptent);
+  LO maxP11col = dim * P_nodal_imported->getColMap()->getMaxLocalIndex();
+  Array<size_t> P11_status(dim*maxP11col, ST_INVALID);
+  // This is ad-hoc and should maybe be replaced with some better heuristics.
+  size_t nnz_alloc = dim*D0vals_RCP.size();
 
-  // put in entries to P11
-  size_t dim = Nullspace_->getNumVectors();
-  size_t numLocalRows = SM_Matrix_->getNodeNumRows();
-  Teuchos::RCP<Map> BlockColMap
-    = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getColMap(),dim);
-  P11_ = Teuchos::rcp(new CrsMatrixWrap(Ptent->getRowMap(),BlockColMap,0,Xpetra::StaticProfile));
+  // Create the matrix object
+  RCP<Map> blockColMap    = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal_imported->getColMap(), dim);
+  RCP<Map> blockDomainMap = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal->getDomainMap(), dim);
+  P11_ = Teuchos::rcp(new CrsMatrixWrap(SM_Matrix_->getRowMap(), blockColMap, 0, Xpetra::StaticProfile));
+  RCP<CrsMatrix> P11Crs = rcp_dynamic_cast<CrsMatrixWrap>(P11_)->getCrsMatrix();
+  P11Crs->allocateAllValues(nnz_alloc, P11rowptr_RCP, P11colind_RCP, P11vals_RCP);
 
-  std::vector< Teuchos::ArrayRCP<const Scalar> > nullspace(dim);
-  for(size_t i=0; i<dim; i++) {
-    Teuchos::ArrayRCP<const Scalar> datavec = Nullspace_->getData(i);
-    nullspace[i]=datavec;
-  }
+  ArrayView<size_t> P11rowptr = P11rowptr_RCP();
+  ArrayView<LO>     P11colind = P11colind_RCP();
+  ArrayView<SC>     P11vals   = P11vals_RCP();
 
-  size_t nnz=0;
-  std::vector<size_t>       rowPtrs;
-  std::vector<LocalOrdinal> blockCols;
-  std::vector<Scalar>       blockVals;
-  for(size_t i=0; i<numLocalRows; i++) {
-    rowPtrs.push_back(nnz);
-    Teuchos::ArrayView<const LocalOrdinal> localCols;
-    Teuchos::ArrayView<const Scalar>       localVals;
-    Ptent->getLocalRowView(i,localCols,localVals);
-    size_t numCols = localCols.size();
-    size_t nonzeros = 0;
-    for(size_t j=0; j<numCols; j++)
-      nonzeros += (std::abs(localVals[j])>1.0e-16);
-
-    for(size_t j=0; j<numCols; j++) {
-      for(size_t k=0; k<dim; k++) {
-        blockCols.push_back(localCols[j]*dim+k);
-        if (std::abs(localVals[j]) < 1.0e-16)
-          blockVals.push_back(0.);
-        else
-          blockVals.push_back(nullspace[k][i] / nonzeros);
-        nnz++;
+  size_t nnz = 0, nnz_old = 0;
+  for (size_t i = 0; i < numLocalRows; i++) {
+    P11rowptr[i] = nnz;
+    for (size_t ll = D0rowptr[i]; ll < D0rowptr[i+1]; ll++) {
+      LO l = D0colind[ll];
+      for (size_t jj = Prowptr[l]; jj < Prowptr[l+1]; jj++) {
+        LO j = Pcolind[jj];
+        SC v = Pvals[jj];
+        if (v == SC_ZERO)
+          continue;
+        for (size_t k = 0; k < dim; k++) {
+          LO jNew = dim*j+k;
+          SC n = nullspace[k][i];
+          if (n == SC_ZERO)
+            continue;
+          // do we already have an entry for (i, jNew)?
+          if (P11_status[jNew] == ST_INVALID || P11_status[jNew] < nnz_old) {
+            P11_status[jNew] = nnz;
+            P11colind[nnz] = jNew;
+            P11vals[nnz] = 0.5 * v * n;
+            // or should it be
+            // P11vals[nnz] = 0.5 * n;
+            nnz++;
+          } else {
+            P11vals[P11_status[jNew]] += 0.5 * v * n;
+            // or should it be
+            // P11vals[P11_status[jNew]] += 0.5 * n;
+          }
+        }
       }
     }
+    nnz_old = nnz;
   }
-  rowPtrs.push_back(nnz);
+  P11rowptr[numLocalRows] = nnz;
 
-  ArrayRCP<size_t>       rcpRowPtr;
-  ArrayRCP<LocalOrdinal> rcpColumns;
-  ArrayRCP<Scalar>       rcpValues;
+  if (blockDomainMap->lib() == Xpetra::UseTpetra) {
+    // Downward resize
+    // - Cannot resize for Epetra, as it checks for same pointers
+    // - Need to resize for Tpetra, as it checks ().size() == P11rowptr[numLocalRows]
+    P11vals_RCP.resize(nnz);
+    P11colind_RCP.resize(nnz);
+  }
 
-  RCP<CrsMatrix> TP11 = rcp_dynamic_cast<CrsMatrixWrap>(P11_)->getCrsMatrix();
-  TP11->allocateAllValues(nnz, rcpRowPtr, rcpColumns, rcpValues);
-
-  ArrayView<size_t>       rows    = rcpRowPtr();
-  ArrayView<LocalOrdinal> columns = rcpColumns();
-  ArrayView<Scalar>       values  = rcpValues();
-
-  for (size_t ii = 0; ii < rowPtrs.size();   ii++) rows[ii]    = rowPtrs[ii];
-  for (size_t ii = 0; ii < blockCols.size(); ii++) columns[ii] = blockCols[ii];
-  for (size_t ii = 0; ii < blockVals.size(); ii++) values[ii]  = blockVals[ii];
-  TP11->setAllValues(rcpRowPtr, rcpColumns, rcpValues);
-  Teuchos::RCP<Map> blockCoarseMap
-    = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getDomainMap(),dim);
-  TP11->expertStaticFillComplete(blockCoarseMap,SM_Matrix_->getDomainMap());
+  P11Crs->setAllValues(P11rowptr_RCP, P11colind_RCP, P11vals_RCP);
+  P11Crs->expertStaticFillComplete(blockDomainMap, SM_Matrix_->getRangeMap());
 
   if (dump_matrices_)
-    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("P11.mat"), *P11_);
+    Xpetra::IO<SC, LO, GO, NO>::Write(std::string("P11.mat"), *P11_);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
