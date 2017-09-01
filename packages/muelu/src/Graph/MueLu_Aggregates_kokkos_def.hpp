@@ -58,9 +58,9 @@
 
 namespace MueLu {
 
-  ///////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Aggregates_kokkos(LWGraph_kokkos graph) {
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Aggregates_kokkos(LWGraph_kokkos graph) {
     nAggregates_  = 0;
 
     vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap());
@@ -75,9 +75,9 @@ namespace MueLu {
     aggregatesIncludeGhosts_ = true;
   }
 
-  ///////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::Aggregates_kokkos(const RCP<const Map>& map) {
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Aggregates_kokkos(const RCP<const Map>& map) {
     nAggregates_ = 0;
 
     vertex2AggId_ = LOVectorFactory::Build(map);
@@ -92,29 +92,6 @@ namespace MueLu {
     aggregatesIncludeGhosts_ = true;
   }
 
-  ///////////////////////////////////////////////////////
-  template<class ProcWinnerType, class Vertex2AggIdType, class AggregateSizesType, class LO>
-  class ComputeAggregateSizesFunctor {
-  private:
-    ProcWinnerType      procWinner;
-    Vertex2AggIdType    vertex2AggId;
-    int                 myPID;
-    AggregateSizesType  aggregateSizes;
-
-  public:
-    ComputeAggregateSizesFunctor(ProcWinnerType procWinner_, Vertex2AggIdType vertex2AggId_, int myPID_, AggregateSizesType aggregateSizes_) :
-      procWinner(procWinner_),
-      vertex2AggId(vertex2AggId_),
-      myPID(myPID_),
-      aggregateSizes(aggregateSizes_)
-    { }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const LO k) const {
-      if (procWinner(k, 0) == myPID)
-        aggregateSizes(vertex2AggId(k, 0))++;
-    }
-  };
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::aggregates_sizes_type::const_type
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::ComputeAggregateSizes(bool forceRecompute, bool cacheSizes) const {
@@ -134,10 +111,11 @@ namespace MueLu {
       auto procWinner   = procWinner_  ->template getLocalView<DeviceType>();
 
       typename AppendTrait<decltype(aggregateSizes_), Kokkos::Atomic>::type aggregateSizesAtomic = aggregateSizes;
-
-      ComputeAggregateSizesFunctor<decltype(procWinner), decltype(vertex2AggId), decltype(aggregateSizesAtomic), LO>
-        computeAggSizesFunctor(procWinner, vertex2AggId, myPID, aggregateSizesAtomic);
-      Kokkos::parallel_for("MueLu:Aggregates:ComputeAggregateSizes:for", range_type(0,procWinner.size()), computeAggSizesFunctor);
+      Kokkos::parallel_for("MueLu:Aggregates:ComputeAggregateSizes:for", range_type(0,procWinner.size()),
+        KOKKOS_LAMBDA(const LO k) {
+          if (procWinner(k, 0) == myPID)
+            aggregateSizesAtomic(vertex2AggId(k, 0))++;
+        });
 
       if (cacheSizes)
         aggregateSizes_ = aggregateSizes;

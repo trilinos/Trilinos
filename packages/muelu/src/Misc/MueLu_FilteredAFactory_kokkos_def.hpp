@@ -143,96 +143,9 @@ namespace MueLu {
   // This trick allows us to bypass constructing a new matrix. Instead, we
   // make a deep copy of the original one, and fill it in with zeros, which
   // are ignored during the prolongator smoothing.
-  template<class MatrixType, class GraphType, class FilterType>
-  class BuildReuseFunctor {
-  private:
-    MatrixType localA, localFA;
-    size_t     blkSize;
-    GraphType  graph;
-    bool       lumping;
-    FilterType filter;
-
-    typedef typename MatrixType::ordinal_type LO;
-    typedef typename MatrixType::value_type   SC;
-    typedef Kokkos::ArithTraits<SC>           ATS;
-
-  public:
-    BuildReuseFunctor(MatrixType localA_, MatrixType localFA_, size_t blkSize_, GraphType graph_, bool lumping_, FilterType filter_) :
-      localA(localA_),
-      localFA(localFA_),
-      blkSize(blkSize_),
-      graph(graph_),
-      lumping(lumping_),
-      filter(filter_)
-    { }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const size_t i) const {
-      // Set up filtering array
-      typename GraphType::row_type indsG = graph.getNeighborVertices(i);
-      for (size_t j = 0; j < indsG.size(); j++)
-        for (size_t k = 0; k < blkSize; k++)
-          filter(indsG(j)*blkSize + k) = 1;
-
-      SC zero = ATS::zero();
-      for (size_t k = 0; k < blkSize; k++) {
-        LO row = i*blkSize + k;
-
-        auto rowA = localA.row (row);
-        auto nnz  = rowA.length;
-
-        if (nnz == 0)
-          continue;
-
-        auto rowFA = localFA.row (row);
-
-        for (decltype(nnz) j = 0; j < nnz; j++)
-          rowFA.value(j) = rowA.value(j);
-
-        if (lumping == false) {
-          for (decltype(nnz) j = 0; j < nnz; j++)
-            if (!filter(rowA.colidx(j)))
-              rowFA.value(j) = zero;
-
-        } else {
-          LO diagIndex = -1;
-          SC diagExtra = zero;
-
-          for (decltype(nnz) j = 0; j < nnz; j++) {
-            if (filter(rowA.colidx(j))) {
-              if (rowA.colidx(j) == row) {
-                // Remember diagonal position
-                diagIndex = j;
-              }
-              continue;
-            }
-
-            diagExtra += rowFA.value(j);
-
-            rowFA.value(j) = zero;
-          }
-
-          // Lump dropped entries
-          // NOTE
-          //  * Does it make sense to lump for elasticity?
-          //  * Is it different for diffusion and elasticity?
-          if (diagIndex != -1)
-            rowFA.value(diagIndex) += diagExtra;
-        }
-      }
-
-      // Reset filtering array
-      for (size_t j = 0; j < indsG.size(); j++)
-        for (size_t k = 0; k < blkSize; k++)
-          filter(indsG(j)*blkSize + k) = 0;
-    }
-  };
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void FilteredAFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   BuildReuse(const Matrix& A, const LWGraph_kokkos& graph, const bool lumping, Matrix& filteredA) const {
-    SC zero = Teuchos::ScalarTraits<SC>::zero();
-
     size_t blkSize = A.GetFixedBlockSize();
 
     auto localA  = A        .getLocalMatrix();
@@ -242,8 +155,69 @@ namespace MueLu {
 
     size_t numGRows = graph.GetNodeNumVertices();
 
-    BuildReuseFunctor<decltype(localA), LWGraph_kokkos, decltype(filter)> functor(localA, localFA, blkSize, graph, lumping, filter);
-    Kokkos::parallel_for("MueLu:FilteredAF:BuildReuse:for", numGRows, functor);
+
+    Kokkos::parallel_for("MueLu:FilteredAF:BuildReuse:for", Kokkos::RangePolicy<size_t, DeviceType>(0, numGRows),
+      KOKKOS_LAMBDA(const size_t i) {
+        typedef Kokkos::ArithTraits<SC> ATS;
+
+        // Set up filtering array
+        typename LWGraph_kokkos::row_type indsG = graph.getNeighborVertices(i);
+        for (size_t j = 0; j < indsG.size(); j++)
+          for (size_t k = 0; k < blkSize; k++)
+            filter(indsG(j)*blkSize + k) = 1;
+
+        SC zero = ATS::zero();
+        for (size_t k = 0; k < blkSize; k++) {
+          LO row = i*blkSize + k;
+
+          auto rowA = localA.row (row);
+          auto nnz  = rowA.length;
+
+          if (nnz == 0)
+            continue;
+
+          auto rowFA = localFA.row (row);
+
+          for (decltype(nnz) j = 0; j < nnz; j++)
+            rowFA.value(j) = rowA.value(j);
+
+          if (lumping == false) {
+            for (decltype(nnz) j = 0; j < nnz; j++)
+              if (!filter(rowA.colidx(j)))
+                rowFA.value(j) = zero;
+
+          } else {
+            LO diagIndex = -1;
+            SC diagExtra = zero;
+
+            for (decltype(nnz) j = 0; j < nnz; j++) {
+              if (filter(rowA.colidx(j))) {
+                if (rowA.colidx(j) == row) {
+                  // Remember diagonal position
+                  diagIndex = j;
+                }
+                continue;
+              }
+
+              diagExtra += rowFA.value(j);
+
+              rowFA.value(j) = zero;
+            }
+
+            // Lump dropped entries
+            // NOTE
+            //  * Does it make sense to lump for elasticity?
+            //  * Is it different for diffusion and elasticity?
+            if (diagIndex != -1)
+              rowFA.value(diagIndex) += diagExtra;
+          }
+        }
+
+        // Reset filtering array
+        for (size_t j = 0; j < indsG.size(); j++)
+          for (size_t k = 0; k < blkSize; k++)
+            filter(indsG(j)*blkSize + k) = 0;
+    });
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
