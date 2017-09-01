@@ -171,8 +171,11 @@ namespace MueLu {
 	shift  = Teuchos::as<Scalar>(pL.get<double>("rap: shift"));
 
       // recombine to get K+shift*M
-      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2));
-      Ac->fillComplete();
+      {
+	SubFactoryMonitor m2(*this, "Add: RKP + s*RMP", coarseLevel);
+	Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2));
+	Ac->fillComplete();
+      }
 
       if (checkAc_)
         CheckMainDiagonal(Ac);

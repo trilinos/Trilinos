@@ -967,6 +967,15 @@
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>rap: algorithm</name>
+      <type>string</type>
+      <default>galerkin</default>
+      <description>Whether to use the Galerkin RAP or the Shift version</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
   </rap>
 
   <matrixmatrix>
