@@ -10,7 +10,6 @@
 #define Tempus_StepperForwardEulerObserver_hpp
 
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperForwardEuler.hpp"
 
 
 namespace Tempus {

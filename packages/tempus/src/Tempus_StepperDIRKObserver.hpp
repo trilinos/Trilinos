@@ -10,7 +10,6 @@
 #define Tempus_StepperDIRKObserver_hpp
 
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperDIRK.hpp"
 
 
 namespace Tempus {
