@@ -51,8 +51,6 @@
 #include <Ifpack2_RILUK.hpp>
 
 //#define IFPACK2_RBILUK_INITIAL
-//#define IFPACK2_TIME_IMPROVE
-//#define IFPACK2_RBILUK_INITIAL
 
 #ifndef IFPACK2_RBILUK_INITIAL
 #include <KokkosBatched_Gemm_Decl.hpp>
@@ -963,7 +961,7 @@ std::string RBILUK<MatrixType>::description () const
 // handled internally via dynamic cast.
 
 #define IFPACK2_EXPERIMENTAL_RBILUK_INSTANT(S,LO,GO,N)                            \
-  template class Ifpack2::Experimental::RBILUK< Tpetra::Experimental::BlockCrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::Experimental::RBILUK< Tpetra::BlockCrsMatrix<S, LO, GO, N> >; \
   template class Ifpack2::Experimental::RBILUK< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif
