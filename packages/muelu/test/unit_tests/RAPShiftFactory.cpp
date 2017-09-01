@@ -62,6 +62,7 @@
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_FactoryManager.hpp"
+#include "MueLu_CreateXpetraPreconditioner.hpp"
 
 namespace MueLuTests {
 
@@ -252,11 +253,150 @@ namespace MueLuTests {
   } // ImplicitTranspose test
 
 
+
+/*********************************************************************************************************************/
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RAPShiftFactory,CreatePreconditionerHard, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+    typedef Scalar SC;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO;
+    typedef Node  NO;
+    typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
+
+    out << "version: " << MueLu::Version() << std::endl;
+    using Teuchos::RCP;
+
+    typedef typename Teuchos::ScalarTraits<Scalar> TST;
+    RCP<const Teuchos::Comm<int> > comm = Parameters::getDefaultComm();
+    RCP<Matrix> A = TestHelpers::TestFactory<Scalar, LO, GO, NO>::Build1DPoisson(1999*comm->getSize());
+
+    // The ugly way of managing input decks
+    std::string myInputString = 
+"<ParameterList name=\"MueLu\">"
+"  <ParameterList name=\"Factories\">"
+"   <ParameterList name=\"myCoalesceDropFact\">"
+"     <Parameter name=\"factory\"                             type=\"string\" value=\"CoalesceDropFactory\"/>"
+"     <Parameter name=\"lightweight wrap\"                    type=\"bool\"   value=\"true\"/>"
+"     <Parameter name=\"aggregation: drop tol\"               type=\"double\" value=\"0.02\"/>"
+"   </ParameterList>"
+"   <ParameterList name=\"UncoupledAggregationFact\">"
+"     <Parameter name=\"factory\"                             type=\"string\" value=\"UncoupledAggregationFactory\"/>"
+"     <Parameter name=\"Graph\"                               type=\"string\" value=\"myCoalesceDropFact\"/>"
+"     <Parameter name=\"DofsPerNode\"                         type=\"string\" value=\"myCoalesceDropFact\"/>"
+"     <Parameter name=\"aggregation: ordering\"                            type=\"string\" value=\"natural\"/>"
+"     <Parameter name=\"aggregation: max selected neighbors\"             type=\"int\"    value=\"0\"/>"
+"     <Parameter name=\"aggregation: min agg size\"           type=\"int\"    value=\"2\"/>"
+"   </ParameterList>"
+"   <ParameterList name=\"myFilteredAFact\">"
+"     <Parameter name=\"factory\"                             type=\"string\" value=\"FilteredAFactory\"/>"
+"     <Parameter name=\"Graph\"                               type=\"string\" value=\"myCoalesceDropFact\"/>"
+"     <Parameter name=\"filtered matrix: use lumping\"                             type=\"bool\"   value=\"true\"/>"
+"   </ParameterList>"
+"   <ParameterList name=\"myTentativePFact\">"
+"     <Parameter name=\"factory\"                             type=\"string\" value=\"TentativePFactory\"/>"
+"   </ParameterList>"
+"   <ParameterList name=\"myProlongatorFact\">"
+"     <Parameter name=\"factory\"                             type=\"string\" value=\"SaPFactory\"/>"
+"     <Parameter name=\"A\"                                   type=\"string\" value=\"myFilteredAFact\"/>"
+"     <Parameter name=\"P\"                                   type=\"string\" value=\"myTentativePFact\"/>"
+"   </ParameterList>"
+"   <ParameterList name=\"myRestrictorFact\">"
+"     <Parameter name=\"factory\"                             type=\"string\" value=\"TransPFactory\"/>"
+"     <Parameter name=\"P\"                                   type=\"string\" value=\"myProlongatorFact\"/>"
+"   </ParameterList>"
+"   <ParameterList name=\"myRAPFact\">"
+"     <Parameter name=\"factory\"                             type=\"string\" value=\"RAPShiftFactory\"/>"
+"     <Parameter name=\"P\"                                   type=\"string\" value=\"myProlongatorFact\"/>"
+"     <Parameter name=\"R\"                                   type=\"string\" value=\"myRestrictorFact\"/>"
+"     <Parameter name=\"rap: shift\"                          type=\"double\" value=\"1.0\"/>"
+"   </ParameterList>"
+"   <ParameterList name=\"Chebyshev\">"
+"     <Parameter name=\"factory\"                             type=\"string\" value=\"TrilinosSmoother\"/>"
+"     <Parameter name=\"type\"                                type=\"string\" value=\"CHEBYSHEV\"/>"
+"     <ParameterList name=\"ParameterList\">"
+"       <Parameter name=\"chebyshev: degree\"                 type=\"int\"     value=\"2\"/>>"
+"       <!-- 7 in 2D, 20 in 3D -->"
+"       <Parameter name=\"chebyshev: ratio eigenvalue\"       type=\"double\"  value=\"20\"/>"
+"       <Parameter name=\"chebyshev: min eigenvalue\"         type=\"double\"  value=\"1.0\"/>"
+"       <Parameter name=\"chebyshev: zero starting solution\" type=\"bool\"    value=\"true\"/>"
+"       <Parameter name=\"chebyshev: eigenvalue max iterations\" type=\"int\"    value=\"15\"/>"
+"     </ParameterList>"
+"   </ParameterList>"
+" </ParameterList>"
+" <ParameterList name=\"Hierarchy\">"
+"   <Parameter name=\"max levels\"                            type=\"int\"      value=\"10\"/> <!-- Max number of levels -->"
+"   <Parameter name=\"coarse: max size\"                      type=\"int\"      value=\"1000\"/> <!-- Min number of rows on coarsest level -->"
+"   <Parameter name=\"verbosity\"                             type=\"string\"   value=\"High\"/> <!--None, Low, Medium, High, Extreme -->"
+"   <ParameterList name=\"All\">"
+"     <Parameter name=\"startLevel\"                          type=\"int\"      value=\"0\"/>"
+"     <Parameter name=\"Smoother\"                            type=\"string\"   value=\"Chebyshev\"/>"
+"     <Parameter name=\"Aggregates\"                          type=\"string\"   value=\"UncoupledAggregationFact\"/>"
+"     <Parameter name=\"Nullspace\"                           type=\"string\"   value=\"myProlongatorFact\"/>"
+"     <Parameter name=\"Graph\"                               type=\"string\"   value=\"myCoalesceDropFact\"/>"
+"     <Parameter name=\"A\"                                   type=\"string\"   value=\"myRAPFact\"/>"
+"     <Parameter name=\"P\"                                   type=\"string\"   value=\"myProlongatorFact\"/>"
+"     <Parameter name=\"R\"                                   type=\"string\"   value=\"myRestrictorFact\"/>"
+"     <Parameter name=\"CoarseSolver\"                        type=\"string\"   value=\"DirectSolver\"/>"
+"   </ParameterList>"
+" </ParameterList>"
+"</ParameterList>"
+     ;
+
+    // Get the actual parameter list
+    RCP<Teuchos::ParameterList> Params = Teuchos::getParametersFromXmlString(myInputString);
+
+    Teuchos::ParameterList & pLevel0 = Params->sublist("level 0");
+    pLevel0.set("K",A);
+    pLevel0.set("M",A);
+
+    // Build hierarchy
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A,*Params);
+    
+
+    // Ready the test vector
+    RCP<Level> Level1 = H->GetLevel(1);
+    RCP<Matrix> P = Level1->Get< RCP<Matrix> >("P");
+    RCP<Matrix> R = Level1->Get< RCP<Matrix> >("R");
+    RCP<MultiVector> workVec1 = MultiVectorFactory::Build(P->getRangeMap(),1);
+    RCP<MultiVector> workVec2 = MultiVectorFactory::Build(A->getRangeMap(),1);
+    RCP<MultiVector> result1 = MultiVectorFactory::Build(P->getDomainMap(),1);
+    RCP<MultiVector> X = MultiVectorFactory::Build(P->getDomainMap(),1);
+    X->randomize();
+
+    //Calculate result1 = 2*P^T*(A*(P*X))
+    P->apply(*X,*workVec1,Teuchos::NO_TRANS,(Scalar)2.0,(Scalar)0.0);
+    A->apply(*workVec1,*workVec2,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
+    P->apply(*workVec2,*result1,Teuchos::TRANS,(Scalar)1.0,(Scalar)0.0);
+
+    RCP<Matrix> coarseOp = Level1->Get< RCP<Matrix> >("A");
+
+    //Calculate result2 = (R*A*P)*X
+    RCP<MultiVector> result2 = MultiVectorFactory::Build(P->getDomainMap(),1);
+    coarseOp->apply(*X,*result2,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)0.0);
+
+    Teuchos::Array<typename TST::magnitudeType> normX(1), normResult1(1),normResult2(1);
+    X->norm2(normX);
+    out << "This test checks the correctness of the (Non-)Galerkin triple "
+      << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit transpose of P." << std::endl;
+    out << "||X||_2 = " << normX << std::endl;
+    result1->norm2(normResult1);
+    result2->norm2(normResult2);
+    TEST_FLOATING_EQUALITY(normResult1[0], normResult2[0], 1e-12);
+    
+  }
+
+
+
 #define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,Constructor,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,Correctness,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,ImplicitTranspose,Scalar,LO,GO,Node)
-
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,ImplicitTranspose,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(RAPShiftFactory,CreatePreconditionerHard,Scalar,LO,GO,Node)
 #include <MueLu_ETI_4arg.hpp>
 
 } // namespace MueLuTests
