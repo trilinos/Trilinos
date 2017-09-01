@@ -841,7 +841,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(RBILUK, AdditiveSchwarzSubdomainSolver, Scalar
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, BandedBlockCrsMatrixWithDropping, Scalar, LocalOrdinal, GlobalOrdinal) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, BlockMatrixOps, Scalar, LocalOrdinal, GlobalOrdinal) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, DiagonalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, FullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, FullLocalBlockCrsMatrix, Scalar, LocalOrdinal, GlobalOrdinal) //\
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( RBILUK, AdditiveSchwarzSubdomainSolver, Scalar, LocalOrdinal, GlobalOrdinal)
 
 typedef Tpetra::MultiVector<>::scalar_type scalar_type;
