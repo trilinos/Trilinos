@@ -101,6 +101,8 @@ private:
   PHX::MDField<const ScalarT, Cell, IP, Dim, Dim, void, void, void, void>
     constJac_;
 
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
+
 };
 
 }
