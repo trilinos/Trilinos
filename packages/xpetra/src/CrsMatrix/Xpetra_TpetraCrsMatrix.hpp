@@ -555,9 +555,6 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
-      if(isFillComplete() == false)
-        throw std::runtime_error("Xpetra::EpetraCrsMatrix::getLocalMatrix: matrix must be filled and completed before you can access the data through the Kokkos interface!");
-
       return getTpetra_CrsMatrixNonConst()->getLocalMatrix();
     }
 #endif
@@ -939,10 +936,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
-      if(isFillComplete() == false)
-        throw std::runtime_error("Xpetra::EpetraCrsMatrix::getLocalMatrix: matrix must be filled and completed before you can access the data through the Kokkos interface!");
-      local_matrix_type ret;
-      return ret;
+      return getTpetra_CrsMatrixNonConst()->getLocalMatrix();
     }
 #endif
 #endif
@@ -1318,10 +1312,7 @@ namespace Xpetra {
 #ifdef HAVE_XPETRA_TPETRA
     /// \brief Access the local Kokkos::CrsMatrix data
     local_matrix_type getLocalMatrix () const {
-      if(isFillComplete() == false)
-        throw std::runtime_error("Xpetra::EpetraCrsMatrix::getLocalMatrix: matrix must be filled and completed before you can access the data through the Kokkos interface!");
-      local_matrix_type ret;
-      return ret;
+      return getTpetra_CrsMatrixNonConst()->getLocalMatrix();
     }
 #endif
 #endif
