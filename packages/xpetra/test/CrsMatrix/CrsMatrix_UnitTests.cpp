@@ -1180,11 +1180,6 @@ namespace {
                                 Teuchos::tuple<Scalar>(1.0) );
     }
 
-    // access data before fill complete!
-    bool bSuccess = true;
-    TEUCHOS_TEST_THROW(local_matrix_type view1 = A->getLocalMatrix(), std::runtime_error, std::cout, bSuccess);
-    TEST_EQUALITY(bSuccess, true);
-
     A->fillComplete();
 
     // access data after fill complete!
