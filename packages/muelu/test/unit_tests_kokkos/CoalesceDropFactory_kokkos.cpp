@@ -84,16 +84,13 @@ namespace MueLuTests {
     CoalesceDropFactory_kokkos dropFact;
     fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
-    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
     auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
     auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
-    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
 
     TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
-    TEST_EQUALITY(filtering,                   false);
 
     bool bCorrectGraph = false;
     if (comm->getSize() == 1) {
@@ -153,16 +150,13 @@ namespace MueLuTests {
 
     fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
-    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
     auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
     auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
-    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
 
     TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
-    TEST_EQUALITY(filtering,                   true);
     TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == 3*comm->getSize(), true);
 
     bool bCorrectGraph = false;
@@ -225,16 +219,13 @@ namespace MueLuTests {
 
     fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
-    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
     auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
     auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
-    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
 
     TEST_EQUALITY(as<int>(myDofsPerNode) == blockSize, true);
-    TEST_EQUALITY(filtering,                           false);
     TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
 
     bool bCorrectGraph = false;
@@ -311,16 +302,13 @@ namespace MueLuTests {
 
     fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
-    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
     auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
     auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
-    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
 
     TEST_EQUALITY(as<int>(myDofsPerNode) == 3, true);
-    TEST_EQUALITY(filtering,                            true);
     TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
 
     TEST_EQUALITY(graph->getNeighborVertices(0).size(), 1);
@@ -371,15 +359,12 @@ namespace MueLuTests {
 
     fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
-    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
     auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
     auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
-    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
     TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
-    TEST_EQUALITY(filtering, false);
 
     bool bCorrectGraph = false;
     if (comm->getSize() == 1) {

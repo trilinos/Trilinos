@@ -98,7 +98,6 @@
 #include "MueLu_CoalesceDropFactory_kokkos.hpp"
 #include "MueLu_CoarseMapFactory_kokkos.hpp"
 #include "MueLu_CoordinatesTransferFactory_kokkos.hpp"
-#include "MueLu_FilteredAFactory_kokkos.hpp"
 #include "MueLu_NullspaceFactory_kokkos.hpp"
 #include "MueLu_SaPFactory_kokkos.hpp"
 #include "MueLu_TentativePFactory_kokkos.hpp"
@@ -229,10 +228,10 @@ namespace MueLu {
 #define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
   RCP<Factory> varName; \
   if (!useKokkos_) varName = rcp(new oldFactory()); \
-  else            varName = rcp(new newFactory());
+  else             varName = rcp(new newFactory());
 #define MUELU_KOKKOS_FACTORY_NO_DECL(varName, oldFactory, newFactory) \
   if (!useKokkos_) varName = rcp(new oldFactory()); \
-  else            varName = rcp(new newFactory());
+  else             varName = rcp(new newFactory());
 #endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -872,6 +871,11 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
+      if (useKokkos_) {
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, dropParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, dropParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, dropParams);
+      }
       dropFactory->SetParameterList(dropParams);
     }
     manager.SetFactory("Graph", dropFactory);
@@ -964,102 +968,99 @@ namespace MueLu {
   UpdateFactoryManager_RAP(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager,
                            int levelID, std::vector<keep_pair>& keeps) const
   {
-    bool have_userA = false;
-    if (paramList.isParameter("A") && !paramList.get<RCP<Matrix> >("A").is_null())
-      have_userA  = true;
+    if (paramList.isParameter("A") && !paramList.get<RCP<Matrix> >("A").is_null()) {
+      // We have user matrix A
+      manager.SetFactory("A", NoFactory::getRCP());
+      return;
+    }
 
+    ParameterList RAPparams;
+
+    RCP<RAPFactory>      RAP;
+    RCP<RAPShiftFactory> RAPs;
+    // Allow for Galerkin or shifted RAP
+    // FIXME: Should this not be some form of MUELU_SET_VAR_2LIST?
+    std::string alg = paramList.get("rap: algorithm", "galerkin");
+    if (alg == "shift" || alg == "non-galerkin") {
+      RAPs = rcp(new RAPShiftFactory());
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift", double, RAPparams);
+
+    } else {
+      RAP = rcp(new RAPFactory());
+    }
+
+    if (paramList.isSublist("matrixmatrix: kernel params"))
+      RAPparams.sublist("matrixmatrix: kernel params", false) = paramList.sublist("matrixmatrix: kernel params");
+    if (defaultList.isSublist("matrixmatrix: kernel params"))
+      RAPparams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
+    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
+
+    try {
+      if (paramList.isParameter("aggregation: allow empty prolongator columns")) {
+        RAPparams.set("CheckMainDiagonal",  paramList.get<bool>("aggregation: allow empty prolongator columns"));
+        RAPparams.set("RepairMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
+      }
+      else if (defaultList.isParameter("aggregation: allow empty prolongator columns")) {
+        RAPparams.set("CheckMainDiagonal",  defaultList.get<bool>("aggregation: allow empty prolongator columns"));
+        RAPparams.set("RepairMainDiagonal", defaultList.get<bool>("aggregation: allow empty prolongator columns"));
+      }
+
+    } catch (Teuchos::Exceptions::InvalidParameterType) {
+      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType,
+          "Error: parameter \"aggregation: allow empty prolongator columns\" must be of type " << Teuchos::TypeNameTraits<bool>::name());
+    }
+
+    if (!RAP.is_null()) {
+      RAP->SetParameterList(RAPparams);
+      RAP->SetFactory("P", manager.GetFactory("P"));
+    } else {
+      RAPs->SetParameterList(RAPparams);
+      RAPs->SetFactory("P", manager.GetFactory("P"));
+    }
+
+    if (!this->implicitTranspose_) {
+       if (!RAP.is_null())
+         RAP->SetFactory("R", manager.GetFactory("R"));
+       else
+         RAPs->SetFactory("R", manager.GetFactory("R"));
+    }
+
+    if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
+      RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
+      ParameterList aggExportParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output filename",             std::string, aggExportParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: agg style",      std::string, aggExportParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: iter",                   int, aggExportParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: time step",              int, aggExportParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: fine graph edges",      bool, aggExportParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: coarse graph edges",    bool, aggExportParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: build colormap",        bool, aggExportParams);
+      aggExport->SetParameterList(aggExportParams);
+      aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
+
+      if (!RAP.is_null())
+        RAP->AddTransferFactory(aggExport);
+      else
+        RAPs->AddTransferFactory(aggExport);
+    }
+    if (!RAP.is_null())
+      manager.SetFactory("A", RAP);
+    else
+      manager.SetFactory("A", RAPs);
+
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type",      std::string, reuseType);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
     bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "rap: algorithm", std::string, rapAlgorithm);
 
-    // === RAP ===
-    if (have_userA) {
-      manager.SetFactory("A", NoFactory::getRCP());
-    } else {
-      ParameterList RAPparams;
-
-      RCP<RAPFactory>      RAP;
-      RCP<RAPShiftFactory> RAPs;
-      std::string alg = paramList.get("rap: algorithm","galerkin");
-      // Allow for Galerkin or shifted RAP
-      if (alg == "shift" || alg == "non-galerkin") {
-	RAPs = rcp(new RAPShiftFactory());
-	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift", double, RAPparams);
-
-      } else {
-	RAP = rcp(new RAPFactory());
-      }
-
-      if (paramList.isSublist("matrixmatrix: kernel params"))
-        RAPparams.sublist("matrixmatrix: kernel params", false) = paramList.sublist("matrixmatrix: kernel params");
-      if (defaultList.isSublist("matrixmatrix: kernel params"))
-        RAPparams.sublist("matrixmatrix: kernel params", false) = defaultList.sublist("matrixmatrix: kernel params");
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: fix zero diagonals", bool, RAPparams);
-
-      try {
-        if (paramList.isParameter("aggregation: allow empty prolongator columns")) {
-          RAPparams.set("CheckMainDiagonal",  paramList.get<bool>("aggregation: allow empty prolongator columns"));
-          RAPparams.set("RepairMainDiagonal", paramList.get<bool>("aggregation: allow empty prolongator columns"));
-        }
-        else if (defaultList.isParameter("aggregation: allow empty prolongator columns")) {
-          RAPparams.set("CheckMainDiagonal",  defaultList.get<bool>("aggregation: allow empty prolongator columns"));
-          RAPparams.set("RepairMainDiagonal", defaultList.get<bool>("aggregation: allow empty prolongator columns"));
-        }
-
-      } catch (Teuchos::Exceptions::InvalidParameterType) {
-        TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameterType,
-            "Error: parameter \"aggregation: allow empty prolongator columns\" must be of type " << Teuchos::TypeNameTraits<bool>::name());
-      }
-
+    if (reuseType == "RP" || (reuseType == "tP" && !filteringChangesMatrix)) {
       if (!RAP.is_null()) {
-        RAP->SetParameterList(RAPparams);
-        RAP->SetFactory("P", manager.GetFactory("P"));
+        keeps.push_back(keep_pair("AP reuse data",  RAP.get()));
+        keeps.push_back(keep_pair("RAP reuse data", RAP.get()));
+
       } else {
-        RAPs->SetParameterList(RAPparams);
-        RAPs->SetFactory("P", manager.GetFactory("P"));
-      }
-
-      if (!this->implicitTranspose_) {
-         if (!RAP.is_null())
-           RAP->SetFactory("R", manager.GetFactory("R"));
-	 else
-           RAPs->SetFactory("R", manager.GetFactory("R"));
-      }
-
-      if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
-        RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
-        ParameterList aggExportParams;
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output filename",             std::string, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: agg style",      std::string, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: iter",                   int, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: time step",              int, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: fine graph edges",      bool, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: coarse graph edges",    bool, aggExportParams);
-        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: build colormap",        bool, aggExportParams);
-        aggExport->SetParameterList(aggExportParams);
-        aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
-
-        if (!RAP.is_null())
-          RAP->AddTransferFactory(aggExport);
-	else
-          RAPs->AddTransferFactory(aggExport);
-      }
-      if (!RAP.is_null())
-        manager.SetFactory("A", RAP);
-      else
-        manager.SetFactory("A", RAPs);
-
-      if (reuseType == "RP" || (reuseType == "tP" && !filteringChangesMatrix)) {
-	if(!RAP.is_null()) {
-	  keeps.push_back(keep_pair("AP reuse data",  RAP.get()));
-	  keeps.push_back(keep_pair("RAP reuse data", RAP.get()));
-	}
-	else {
-	  keeps.push_back(keep_pair("AP reuse data",  RAPs.get()));
-	  keeps.push_back(keep_pair("RAP reuse data", RAPs.get()));
-	}
+        keeps.push_back(keep_pair("AP reuse data",  RAPs.get()));
+        keeps.push_back(keep_pair("RAP reuse data", RAPs.get()));
       }
     }
   }
@@ -1450,10 +1451,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   UpdateFactoryManager_SA(ParameterList& paramList, const ParameterList& defaultList, FactoryManager& manager, int levelID, std::vector<keep_pair>& keeps) const {
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
-    MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
-    bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
-
     // Smoothed aggregation
     MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
     ParameterList Pparams;
@@ -1465,22 +1462,35 @@ namespace MueLu {
     P->SetParameterList(Pparams);
 
     // Filtering
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
     if (useFiltering) {
-      MUELU_KOKKOS_FACTORY(filterFactory, FilteredAFactory, FilteredAFactory_kokkos);
-      ParameterList fParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, fParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, fParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
-      filterFactory->SetParameterList(fParams);
-      filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
-      // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
-      filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
-      P->SetFactory("A", filterFactory);
+      // NOTE: Here, non-Kokkos and Kokkos versions diverge in the way the
+      // dependency tree is setup. The Kokkos version has merged the the
+      // FilteredAFactory into the CoalesceDropFactory.
+      if (!useKokkos_) {
+        RCP<Factory> filterFactory = rcp(new FilteredAFactory());
+
+        ParameterList fParams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping",      bool, fParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph",      bool, fParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
+        filterFactory->SetParameterList(fParams);
+        filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
+        // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
+        filterFactory->SetFactory("Filtering",  manager.GetFactory("Graph"));
+
+        P->SetFactory("A", filterFactory);
+
+      } else {
+        P->SetFactory("A", manager.GetFactory("Graph"));
+      }
     }
 
     P->SetFactory("P", manager.GetFactory("Ptent"));
     manager.SetFactory("P", P);
 
+    bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     if (reuseType == "tP" && !filteringChangesMatrix)
       keeps.push_back(keep_pair("AP reuse data", P.get()));
   }
