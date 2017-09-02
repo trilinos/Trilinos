@@ -155,7 +155,9 @@ namespace MueLu {
 
     size_t numGRows = graph.GetNodeNumVertices();
 
-
+    // FIXME: this may only work in serial. The problem is that every thread
+    // will hit the filter array so there will be conflicts and races. Making
+    // it atomic won't help.
     Kokkos::parallel_for("MueLu:FilteredAF:BuildReuse:for", Kokkos::RangePolicy<size_t, DeviceType>(0, numGRows),
       KOKKOS_LAMBDA(const size_t i) {
         typedef Kokkos::ArithTraits<SC> ATS;
