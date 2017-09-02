@@ -56,7 +56,10 @@
 #include "Tpetra_Import_Util2.hpp"
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
+
+#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
 #include "KokkosSparse_spgemm.hpp"
+#endif
 
 
 /*! \file TpetraExt_MatrixMatrix_def.hpp
@@ -1661,7 +1664,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
 
 /*********************************************************************************************************/
 // AB NewMatrix Kernel wrappers (KokkosKernels/OpenMP Version)
-#if defined (HAVE_TPETRA_INST_OPENMP)
+#if defined(HAVE_KOKKOSKERNELS_EXPERIMENTAL) && defined (HAVE_TPETRA_INST_OPENMP)
 template<class Scalar,
            class LocalOrdinal,
            class GlobalOrdinal>
