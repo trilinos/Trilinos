@@ -130,29 +130,43 @@ namespace MueLu {
     typedef typename local_graph_type::row_map_type row_map_type;
     typedef typename local_graph_type::entries_type entries_type;
 
-    int myPID = GetMap()->getComm()->getRank();
+    auto numAggregates = nAggregates_;
 
-    ArrayRCP<LO> vertex2AggId = vertex2AggId_->getDataNonConst(0);
-    ArrayRCP<LO> procWinner   = procWinner_->getDataNonConst(0);
+    if (graph_.numRows() == numAggregates)
+      return graph_;
 
-    typename aggregates_sizes_type::const_type sizes = ComputeAggregateSizes();
+    auto vertex2AggId = vertex2AggId_->template getLocalView<DeviceType>();
+    auto procWinner   = procWinner_  ->template getLocalView<DeviceType>();
+    auto sizes        = ComputeAggregateSizes();
 
-    int numAggregates = nAggregates_;
+    typename row_map_type::non_const_type rows("Agg_rows", numAggregates+1);  // rows(0) = 0 automatically
+    Kokkos::deep_copy(Kokkos::subview(rows, Kokkos::make_pair(1, numAggregates+1)), sizes);
 
-    typename row_map_type::non_const_type rows("row_map", numAggregates+1);       // rows(0) = 0 automatically
-    for (LO i = 0; i < nAggregates_; i++) // TODO: replace by parallel_scan
-      rows(i+1) = rows(i) + sizes(i);
+    // parallel_scan (exclusive)
+    Kokkos::parallel_scan("MueLu:Aggregates:GetGraph:compute_rows", range_type(0, numAggregates+1),
+      KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
+        upd += rows(i);
+        if (final)
+          rows(i) = upd;
+      });
 
-    aggregates_sizes_type offsets("offsets", numAggregates);
-    for (LO i = 0; i < numAggregates; i++) // TODO: replace by parallel_for
-      offsets(i) = rows(i);
+    decltype(rows) offsets(Kokkos::ViewAllocateWithoutInitializing("Agg_offsets"), numAggregates+1); // +1 is just for ease
+    Kokkos::deep_copy(offsets, rows);
 
-    typename entries_type::non_const_type cols("entries", rows(nAggregates_));
-    for (LO i = 0; i < procWinner.size(); i++)
-      if (procWinner[i] == myPID)
-        cols(offsets(vertex2AggId[i])++) = i;
+    auto myPID = GetMap()->getComm()->getRank();
 
-    return local_graph_type(cols, rows);
+    typename entries_type::non_const_type cols("Agg_cols", rows(numAggregates));
+    Kokkos::parallel_for("MueLu:Aggregates:GetGraph:compute_cols", range_type(0, procWinner.size()),
+      KOKKOS_LAMBDA(const LO i) {
+        if (procWinner(i,0) == myPID) {
+          auto idx = Kokkos::atomic_fetch_add( &offsets(vertex2AggId(i,0)), 1);
+          cols(idx) = i;
+        }
+      });
+
+    graph_ = local_graph_type(cols, rows);
+
+    return graph_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>

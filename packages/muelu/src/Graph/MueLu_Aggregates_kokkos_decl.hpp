@@ -251,6 +251,10 @@ namespace MueLu {
     mutable
     aggregates_sizes_type aggregateSizes_;
 
+    //! Aggregates represented as Kokkos graph type
+    mutable
+    local_graph_type graph_;
+
     //! Get global number of aggregates
     // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.
     GO GetNumGlobalAggregates() const;
