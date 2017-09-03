@@ -190,15 +190,13 @@ namespace MueLu {
           valsAux(offset+diagID) += diag;
         }
 
-        if (rownnz == 1) {
-          // If the only element remaining after filtering is diagonal, mark node as boundary
-          // FIXME: this should really be replaced by the following
-          //    if (indices.size() == 1 && indices[0] == row)
-          //        boundaryNodes[row] = true;
-          // We do not do it this way now because there is no framework for distinguishing isolated
-          // and boundary nodes in the aggregation algorithms
-          bndNodes(row) = true;
-        }
+        // If the only element remaining after filtering is diagonal, mark node as boundary
+        // FIXME: this should really be replaced by the following
+        //    if (indices.size() == 1 && indices[0] == row)
+        //        boundaryNodes[row] = true;
+        // We do not do it this way now because there is no framework for distinguishing isolated
+        // and boundary nodes in the aggregation algorithms
+        bndNodes(row) = (rownnz == 1);
 
         nnz += rownnz;
       }
@@ -496,9 +494,9 @@ namespace MueLu {
       if (lumping)
         GetOStream(Runtime0) << "Lumping dropped entries" << std::endl;
 
-      // NOTE: the allocation (initialization) of these view takes noticeable time
+      // FIXME_KOKKOS: replace by ViewAllocateWithoutInitializing + setting a single value
       rows_type rows   ("FA_rows",     numRows+1);
-      cols_type colsAux("FA_aux_cols", nnzA);
+      cols_type colsAux(Kokkos::ViewAllocateWithoutInitializing("FA_aux_cols"), nnzA);
       vals_type valsAux;
       if (reuseGraph) {
         SubFactoryMonitor m2(*this, "CopyMatrix", currentLevel);
@@ -511,10 +509,10 @@ namespace MueLu {
 
       } else {
         // Need an extra array to compress
-        valsAux = vals_type("FA_aux_vals", nnzA);
+        valsAux = vals_type(Kokkos::ViewAllocateWithoutInitializing("FA_aux_vals"), nnzA);
       }
 
-      typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numRows);
+      typename boundary_nodes_type::non_const_type bndNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numRows);
 
       LO nnzFA = 0;
       {
@@ -560,10 +558,10 @@ namespace MueLu {
 
         // parallel_scan (exclusive)
         Kokkos::parallel_scan("MueLu:CoalesceDropF:Build:scalar_filter:compress_rows", range_type(0,numRows+1),
-          KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
-            upd += rows(i);
-            if (final)
-              rows(i) = upd;
+          KOKKOS_LAMBDA(const LO i, LO& update, const bool& final_pass) {
+            update += rows(i);
+            if (final_pass)
+              rows(i) = update;
           });
       }
 
@@ -572,7 +570,7 @@ namespace MueLu {
       // of the original row in the main loop, so we don't need to check for
       // INVALID here, and just stop when achieving the new number of elements
       // per row.
-      cols_type cols("FA_cols", nnzFA);
+      cols_type cols(Kokkos::ViewAllocateWithoutInitializing("FA_cols"), nnzFA);
       vals_type vals;
       if (reuseGraph) {
         // Only compress cols
@@ -591,7 +589,7 @@ namespace MueLu {
         // Compress cols and vals
         SubFactoryMonitor m2(*this, "CompressColsAndVals", currentLevel);
 
-        vals = vals_type("FA_vals", nnzFA);
+        vals = vals_type(Kokkos::ViewAllocateWithoutInitializing("FA_vals"), nnzFA);
 
         Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols", range_type(0,numRows),
           KOKKOS_LAMBDA(const LO i) {

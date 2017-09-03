@@ -112,7 +112,7 @@ namespace MueLu {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
     typedef DeviceType                                               device_type;
 
-    typedef Kokkos::View<LocalOrdinal*, DeviceType>             aggregates_sizes_type;
+    typedef Kokkos::View<LocalOrdinal*, DeviceType>                  aggregates_sizes_type;
     typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space> local_graph_type;
 
   private:
@@ -148,14 +148,14 @@ namespace MueLu {
 
     ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
     KOKKOS_INLINE_FUNCTION LO GetNumAggregates() const {
-      return nAggregates_;
+      return numAggregates_;
     }
 
     /*! @brief Set number of local aggregates on current processor.
 
         This has to be done by the aggregation routines.
     */
-    void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
+    void SetNumAggregates(LO nAggregates) { numAggregates_ = nAggregates; }
 
     //! @brief Record whether aggregates include DOFs from other processes.
     KOKKOS_INLINE_FUNCTION void AggregatesCrossProcessors(const bool& flag) {
@@ -228,7 +228,7 @@ namespace MueLu {
     void print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
 
   private:
-    LO   nAggregates_;              ///< Number of aggregates on this processor
+    LO   numAggregates_;              ///< Number of aggregates on this processor
 
     /*! vertex2AggId[k] gives a local id corresponding to the aggregate to which
      * local id k has been assigned. While k is the local id on my processor (MyPID),

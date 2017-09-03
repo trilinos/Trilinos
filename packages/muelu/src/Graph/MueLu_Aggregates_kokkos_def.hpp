@@ -61,7 +61,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   Aggregates_kokkos(LWGraph_kokkos graph) {
-    nAggregates_  = 0;
+    numAggregates_  = 0;
 
     vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap());
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
@@ -78,7 +78,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   Aggregates_kokkos(const RCP<const Map>& map) {
-    nAggregates_ = 0;
+    numAggregates_ = 0;
 
     vertex2AggId_ = LOVectorFactory::Build(map);
     vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
@@ -99,11 +99,8 @@ namespace MueLu {
       return aggregateSizes_;
 
     } else {
-
-      // invalidate previous sizes
-      aggregateSizes_ = aggregates_sizes_type("aggregates", 0);
-
-      aggregates_sizes_type aggregateSizes("aggregates", nAggregates_);
+      // It is necessary to initialize this to 0
+      aggregates_sizes_type aggregateSizes("aggregates", numAggregates_);
 
       int myPID = GetMap()->getComm()->getRank();
 
@@ -112,9 +109,9 @@ namespace MueLu {
 
       typename AppendTrait<decltype(aggregateSizes_), Kokkos::Atomic>::type aggregateSizesAtomic = aggregateSizes;
       Kokkos::parallel_for("MueLu:Aggregates:ComputeAggregateSizes:for", range_type(0,procWinner.size()),
-        KOKKOS_LAMBDA(const LO k) {
-          if (procWinner(k, 0) == myPID)
-            aggregateSizesAtomic(vertex2AggId(k, 0))++;
+        KOKKOS_LAMBDA(const LO i) {
+          if (procWinner(i, 0) == myPID)
+            aggregateSizesAtomic(vertex2AggId(i, 0))++;
         });
 
       aggregateSizes_ = aggregateSizes;
@@ -130,7 +127,7 @@ namespace MueLu {
     typedef typename local_graph_type::row_map_type row_map_type;
     typedef typename local_graph_type::entries_type entries_type;
 
-    auto numAggregates = nAggregates_;
+    auto numAggregates = numAggregates_;
 
     if (graph_.numRows() == numAggregates)
       return graph_;
@@ -139,30 +136,34 @@ namespace MueLu {
     auto procWinner   = procWinner_  ->template getLocalView<DeviceType>();
     auto sizes        = ComputeAggregateSizes();
 
+    // FIXME_KOKKOS: replace by ViewAllocateWithoutInitializing + rows(0) = 0.
     typename row_map_type::non_const_type rows("Agg_rows", numAggregates+1);  // rows(0) = 0 automatically
-    Kokkos::deep_copy(Kokkos::subview(rows, Kokkos::make_pair(1, numAggregates+1)), sizes);
 
     // parallel_scan (exclusive)
-    Kokkos::parallel_scan("MueLu:Aggregates:GetGraph:compute_rows", range_type(0, numAggregates+1),
-      KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
-        upd += rows(i);
-        if (final)
-          rows(i) = upd;
+    Kokkos::parallel_scan("MueLu:Aggregates:GetGraph:compute_rows", range_type(0, numAggregates),
+      KOKKOS_LAMBDA(const LO i, LO& update, const bool& final_pass) {
+        update += sizes(i);
+        if (final_pass)
+          rows(i+1) = update;
       });
 
     decltype(rows) offsets(Kokkos::ViewAllocateWithoutInitializing("Agg_offsets"), numAggregates+1); // +1 is just for ease
     Kokkos::deep_copy(offsets, rows);
 
-    auto myPID = GetMap()->getComm()->getRank();
+    int myPID = GetMap()->getComm()->getRank();
 
-    typename entries_type::non_const_type cols("Agg_cols", rows(numAggregates));
-    Kokkos::parallel_for("MueLu:Aggregates:GetGraph:compute_cols", range_type(0, procWinner.size()),
-      KOKKOS_LAMBDA(const LO i) {
-        if (procWinner(i,0) == myPID) {
+    typename entries_type::non_const_type cols(Kokkos::ViewAllocateWithoutInitializing("Agg_cols"), rows(numAggregates));
+    size_t realnnz = 0;
+    Kokkos::parallel_reduce("MueLu:Aggregates:GetGraph:compute_cols", range_type(0, procWinner.size()),
+      KOKKOS_LAMBDA(const LO i, size_t& nnz) {
+        if (procWinner(i, 0) == myPID) {
           auto idx = Kokkos::atomic_fetch_add( &offsets(vertex2AggId(i,0)), 1);
           cols(idx) = i;
+          nnz++;
         }
-      });
+      }, realnnz);
+    TEUCHOS_TEST_FOR_EXCEPTION(realnnz != rows(numAggregates), Exceptions::RuntimeError,
+        "MueLu: Internal error: Something is wrong with aggregates graph construction");
 
     graph_ = local_graph_type(cols, rows);
 

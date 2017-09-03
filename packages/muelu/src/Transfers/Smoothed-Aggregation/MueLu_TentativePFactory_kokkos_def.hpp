@@ -551,8 +551,8 @@ namespace MueLu {
     GO globalOffset = amalgInfo->GlobalOffset();
 
     // Extract aggregation info (already in Kokkos host views)
-    auto procWinner   = aggregates->GetProcWinner()->template getLocalView<DeviceType>();
-    auto vertex2AggId = aggregates->GetVertex2AggId()->template getLocalView<DeviceType>();
+    auto     procWinner    = aggregates->GetProcWinner()  ->template getLocalView<DeviceType>();
+    auto     vertex2AggId  = aggregates->GetVertex2AggId()->template getLocalView<DeviceType>();
     const GO numAggregates = aggregates->GetNumAggregates();
 
     int myPid = aggregates->GetMap()->getComm()->getRank();
@@ -560,21 +560,21 @@ namespace MueLu {
     // Create Kokkos::View (on the device) to store the aggreate dof size
     // Later used to get aggregate dof offsets
     // NOTE: This zeros itself on construction
-    typedef Kokkos::View<LO*, DeviceType> aggSizeType;
-    aggSizeType sizes("agg_dof_sizes", numAggregates + 1);
-    typename AppendTrait<aggSizeType, Kokkos::Atomic>::type sizesAtomic = sizes; // atomic access
+    typedef typename Aggregates_kokkos::aggregates_sizes_type::non_const_type AggSizeType;
+    AggSizeType sizes;
 
     if (stridedBlockSize == 1) {
       SubFactoryMonitor m2(*this, "Calc AggSizes", coarseLevel);
+      // FIXME_KOKKOS: use ViewAllocateWithoutInitializing + set a single value
+      sizes = AggSizeType("agg_dof_sizes", numAggregates+1);
 
-      Kokkos::parallel_for("MueLu:TentativePF:Build:aggSizes", range_type(0, vertex2AggId.dimension_0()),
-        KOKKOS_LAMBDA(const LO lnode) {
-          if (procWinner(lnode,0) == myPid) {
-            auto myAgg = vertex2AggId(lnode,0);
-            sizesAtomic(myAgg+1)++;
-          }
-        });
+      auto sizesConst = aggregates->ComputeAggregateSizes();
+      Kokkos::deep_copy(Kokkos::subview(sizes, Kokkos::make_pair(1, numAggregates+1)), sizesConst);
+
     } else {
+      sizes = AggSizeType("agg_dof_sizes", numAggregates + 1);
+      typename AppendTrait<AggSizeType, Kokkos::Atomic>::type sizesAtomic = sizes; // atomic access
+
       Teuchos::ArrayView<const GO> nodeGlobalEltsView = aggregates->GetMap()->getNodeElementList();
       Kokkos::View<GO*, DeviceType> nodeGlobalElts("nodeGlobalElts", nodeGlobalEltsView.size());
       {
@@ -636,20 +636,20 @@ namespace MueLu {
     // parallel_scan (exclusive)
     // The sizes View then contains the aggregate dof offsets
     Kokkos::parallel_scan("MueLu:TentativePF:Build:aggregate_sizes:stage1_scan", range_type(0,numAggregates+1),
-      KOKKOS_LAMBDA(const LO i, LO& upd, const bool& final) {
-        upd += sizes(i);
-        if (final)
-          sizes(i) = upd;
+      KOKKOS_LAMBDA(const LO i, LO& update, const bool& final_pass) {
+        update += sizes(i);
+        if (final_pass)
+          sizes(i) = update;
       });
 
     // Create Kokkos::View on the device to store mapping between (local) aggregate id and row map ids (LIDs)
-    Kokkos::View<LO*, DeviceType> agg2RowMapLO("agg2row_map_LO", numRows); // initialized to 0
-
+    // FIXME_KOKKOS: Does it need to be this complicated for scalar?
+    Kokkos::View<LO*, DeviceType> agg2RowMapLO(Kokkos::ViewAllocateWithoutInitializing("agg2row_map_LO"), numRows);
     {
       SubFactoryMonitor m2(*this, "Create Agg2RowMap", coarseLevel);
 
-      // NOTE: This zeros itself on construction
-      aggSizeType aggDofCount("aggDofCount", numAggregates);
+      // We need this initialized to 0, so no ViewAlloWithoutInitializing
+      AggSizeType aggDofCount("aggDofCount", numAggregates);
 
       Kokkos::parallel_for("MueLu:TentativePF:Build:createAgg2RowMap", range_type(0, vertex2AggId.dimension_0()),
         KOKKOS_LAMBDA(const LO lnode) {
@@ -713,9 +713,10 @@ namespace MueLu {
 
       nnz = numRows;
 
-      rows = decltype(rows)("Ptent_rows", numRows+1);
-      cols = decltype(cols)("Ptent_cols", numRows);
-      vals = decltype(vals)("Ptent_vals", numRows);
+      // FIXME_KOKKOS: use ViewAllocateWithoutInitializing + set a single value
+      rows = rows_type("Ptent_rows", numRows+1);
+      cols = cols_type(Kokkos::ViewAllocateWithoutInitializing("Ptent_cols"), numRows);
+      vals = vals_type(Kokkos::ViewAllocateWithoutInitializing("Ptent_vals"), numRows);
 
       // Set up team policy with numAggregates teams and one thread per team.
       // Each team handles a slice of the data associated with one aggregate
@@ -788,10 +789,10 @@ namespace MueLu {
 
         // NOTE: the allocation (initialization) of these view takes noticeable time
         size_t nnzEstimate = numRows * NSDim;
-        rows_type rowsAux("Ptent_aux_rows", numRows+1),     rows("Ptent_rows", numRows+1);
+        rows_type rowsAux("Ptent_aux_rows", numRows+1);
         cols_type colsAux("Ptent_aux_cols", nnzEstimate);
         vals_type valsAux("Ptent_aux_vals", nnzEstimate);
-
+        rows = rows_type("Ptent_rows", numRows+1);
         {
           // Stage 0: fill in views.
           SubFactoryMonitor m2(*this, "Stage 0 (InitViews)", coarseLevel);
