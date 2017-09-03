@@ -110,53 +110,72 @@ namespace MueLu {
     // logical blocks in the matrix
 
     ArrayView<const GO> elementAList = coarseMap->getNodeElementList();
-    LO                  blkSize      = 1;
+    GO                  indexBase    = coarseMap->getIndexBase();
+
+    LO blkSize = 1;
     if (rcp_dynamic_cast<const StridedMap>(coarseMap) != Teuchos::null)
       blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap)->getFixedBlockSize();
 
-    GO                  indexBase    = coarseMap->getIndexBase();
-    size_t              numElements  = elementAList.size() / blkSize;
-    Array<GO>           elementList(numElements);
+    Array<GO>           elementList;
+    ArrayView<const GO> elementListView;
+    if (blkSize == 1) {
+      // Scalar system
+      // No amalgamation required
+      elementListView = elementAList;
 
-    // Amalgamate the map
-    for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
-      elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
+    } else {
+      auto numElements = elementAList.size() / blkSize;
 
-    RCP<const Map>         uniqueMap      = fineCoords->getMap();
-    RCP<const Map>         coarseCoordMap = MapFactory::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
-    RCP<doubleMultiVector> coarseCoords   = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
+      elementList.resize(numElements);
+
+      // Amalgamate the map
+      for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
+        elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
+
+      elementListView = elementList;
+    }
+
+    auto uniqueMap      = fineCoords->getMap();
+    auto coarseCoordMap = MapFactory::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                            elementListView, indexBase, coarseMap->getComm());
+    RCP<doubleMultiVector> coarseCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
 
     // Create overlapped fine coordinates to reduce global communication
     RCP<doubleMultiVector> ghostedCoords = fineCoords;
     if (aggregates->AggregatesCrossProcessors()) {
-      RCP<const Map>    nonUniqueMap = aggregates->GetMap();
-      RCP<const Import> importer     = ImportFactory::Build(uniqueMap, nonUniqueMap);
+      auto nonUniqueMap = aggregates->GetMap();
+      auto importer     = ImportFactory::Build(uniqueMap, nonUniqueMap);
 
       ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, fineCoords->getNumVectors());
       ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
     }
 
-    // Get some info about aggregates
-    int  myPID        = uniqueMap->getComm()->getRank();
-    LO   numAggs      = aggregates->GetNumAggregates();
-    auto aggSizes     = aggregates->ComputeAggregateSizes(); // FIXME: not a view
-    auto vertex2AggID = aggregates->GetVertex2AggId()->template getLocalView<DeviceType>();
-    auto procWinner   = aggregates->GetProcWinner()  ->template getLocalView<DeviceType>();
+    // The good new is that his graph has already been constructed for the
+    // TentativePFactory and was cached in Aggregates. So this is a no-op.
+    auto aggGraph = aggregates->GetGraph();
+    auto rows     = aggGraph.row_map;
+    auto cols     = aggGraph.entries;
+    auto numAggs  = aggGraph.numRows();
 
     auto fineCoordsView   = fineCoords  ->template getLocalView<DeviceType>();
     auto coarseCoordsView = coarseCoords->template getLocalView<DeviceType>();
 
     // Fill in coarse coordinates
-    typename AppendTrait<decltype(coarseCoordsView), Kokkos::Atomic>::type coarseCoordsViewAtomic = coarseCoordsView;
-    for (size_t j = 0; j < fineCoords->getNumVectors(); j++) {
-      Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:coord", vertex2AggID.size(), KOKKOS_LAMBDA(const LO lnode) {
-        if (procWinner(lnode, 0) == myPID)
-          coarseCoordsViewAtomic(vertex2AggID(lnode, 0),j) += fineCoordsView(lnode,j);
-      });
+    {
+      SubFactoryMonitor m2(*this, "AverageCoords", coarseLevel);
 
-      Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:agg", numAggs, KOKKOS_LAMBDA(const LO agg) {
-        coarseCoordsView(agg,j) /= aggSizes[agg];
-      });
+      const auto dim = fineCoords->getNumVectors();
+      Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:coord", Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numAggs),
+        KOKKOS_LAMBDA(const LO i) {
+          for (size_t j = 0; j < dim; j++) {
+            // A row in this graph represents all node ids in the aggregate
+            // Therefore, averaging is very easy
+            for (size_t colID = rows(i); colID < rows(i+1); colID++)
+              coarseCoordsView(i,j) += fineCoordsView(cols(colID),j);
+
+            coarseCoordsView(i,j) /= (rows(i+1) - rows(i));
+          }
+        });
     }
 
     Set<RCP<doubleMultiVector> >(coarseLevel, "Coordinates", coarseCoords);
