@@ -83,21 +83,46 @@ namespace MueLu {
       RowType rows;
     };
 
-    template<class SC, class LO, class MatrixType, class GhostedViewType, class BndViewType>
+    template<class SC, class LO, class GhostedViewType>
+    class ClassicalDropFunctor {
+    private:
+      typedef          Kokkos::ArithTraits<SC>          ATS;
+      typedef typename ATS::magnitudeType               magnitudeType;
+
+      GhostedViewType   diag;   // corresponds to overlapped diagonal multivector (dim=2)
+      magnitudeType     eps;
+
+    public:
+      ClassicalDropFunctor(GhostedViewType ghostedDiag, magnitudeType threshold) :
+          diag(ghostedDiag),
+          eps(threshold)
+      { }
+
+      // Return true if we drop, false if not
+      KOKKOS_FORCEINLINE_FUNCTION
+      bool operator()(LO row, LO col, SC val) const {
+        // We avoid square root by using squared values
+        auto aiiajj = ATS::magnitude(diag(row, 0)) * ATS::magnitude(diag(col, 0));   // |a_ii|*|a_jj|
+        auto aij2   = ATS::magnitude(val)          * ATS::magnitude(val);            // |a_ij|^2
+
+        return (aij2 <= eps*eps * aiiajj);
+      }
+    };
+
+    template<class SC, class LO, class MatrixType, class BndViewType, class DropFunctorType>
     class ScalarFunctor {
     private:
-      typedef          MatrixType                       matrix_type;
-      typedef typename matrix_type::StaticCrsGraphType  graph_type;
+      typedef typename MatrixType::StaticCrsGraphType   graph_type;
       typedef typename graph_type::row_map_type         rows_type;
       typedef typename graph_type::entries_type         cols_type;
-      typedef typename matrix_type::values_type         vals_type;
+      typedef typename MatrixType::values_type          vals_type;
       typedef          Kokkos::ArithTraits<SC>          ATS;
       typedef typename ATS::magnitudeType               magnitudeType;
 
     private:
-      matrix_type                           A;
-      GhostedViewType                       ghostedDiag;
+      MatrixType                            A;
       BndViewType                           bndNodes;
+      DropFunctorType                       dropFunctor;
 
       rows_type                             rowsA;
 
@@ -107,24 +132,22 @@ namespace MueLu {
 
       bool                                  reuseGraph;
       bool                                  lumping;
-      SC                                    threshold;
       SC                                    zero;
 
     public:
-      ScalarFunctor(matrix_type A_, GhostedViewType ghostedDiag_, BndViewType bndNodes_,
+      ScalarFunctor(MatrixType A_, BndViewType bndNodes_, DropFunctorType dropFunctor_,
                     typename rows_type::non_const_type rows_,
                     typename cols_type::non_const_type colsAux_,
                     typename vals_type::non_const_type valsAux_,
                     bool reuseGraph_, bool lumping_, SC threshold_) :
           A(A_),
-          ghostedDiag(ghostedDiag_),
           bndNodes(bndNodes_),
+          dropFunctor(dropFunctor_),
           rows(rows_),
           colsAux(colsAux_),
           valsAux(valsAux_),
           reuseGraph(reuseGraph_),
-          lumping(lumping_),
-          threshold(threshold_)
+          lumping(lumping_)
       {
         rowsA = A.graph.row_map;
         zero = ATS::zero();
@@ -143,11 +166,7 @@ namespace MueLu {
           LO col = rowView.colidx(colID);
           SC val = rowView.value (colID);
 
-          // Avoid square root by using squared values
-          magnitudeType aiiajj = threshold*threshold * ATS::magnitude(ghostedDiag(row, 0))*ATS::magnitude(ghostedDiag(col, 0));   // eps^2*|a_ii|*|a_jj|
-          magnitudeType aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));                     // |a_ij|^2
-
-          if (aij2 > aiiajj || row == col) {
+          if (!dropFunctor(row, col, rowView.value(colID)) || row == col) {
             colsAux(offset+rownnz) = col;
 
             LO valID = (reuseGraph ? colID : rownnz);
@@ -501,10 +520,36 @@ namespace MueLu {
       {
         SubFactoryMonitor m2(*this, "MainLoop", currentLevel);
 
-        ScalarFunctor<SC, LO, local_matrix_type, decltype(ghostedDiag), decltype(bndNodes)>
-            scalarFunctor(kokkosMatrix, ghostedDiag, bndNodes, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
-        Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
-                                scalarFunctor, nnzFA);
+        if (algo == "classical") {
+          ClassicalDropFunctor<SC,LO, decltype(ghostedDiag)> dropFunctor(ghostedDiag, threshold);
+          ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
+              scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
+
+          Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
+                                  scalarFunctor, nnzFA);
+
+        } else if (algo == "distance laplacian") {
+#if 0
+          typedef Xpetra::MultiVector<double,LO,GO,NO> doubleMultiVector;
+          auto coords = Get<RCP<doubleMultiVector> >(currentLevel, "Coordinates");
+
+          RCP<const Import> importer;
+          {
+            SubFactoryMonitor m2(*this, "Import construction", currentLevel);
+            importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+          }
+          ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, Coords->getNumVectors());
+          ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
+
+          DistanceLaplacianDropFunctor<SC,LO, decltype(ghostedDiag)> dropFunctor(ghostedDiag, threshold);
+          ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
+              scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
+
+          Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
+                                  scalarFunctor, nnzFA);
+#endif
+        }
+
       }
       numDropped = nnzA - nnzFA;
 
@@ -592,13 +637,6 @@ namespace MueLu {
 #endif
         filteredA = rcp(new CrsMatrixWrap(filteredACrs));
       }
-
-#if 0
-      typedef Xpetra::MultiVector<double,LO,GO,NO> doubleMultiVector;
-      if (algo == "distance laplacian")
-        auto coords = Get<RCP<doubleMultiVector> >(currentLevel, "Coordinates");
-      else if (algo == "classical");
-#endif
 
       filteredA->SetFixedBlockSize(A->GetFixedBlockSize());
 
