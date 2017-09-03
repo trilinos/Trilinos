@@ -393,11 +393,6 @@ namespace MueLu {
         valsAux = vals_type("FA_aux_vals", nnzA);
       }
 
-      Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:init", range_type(0, nnzA),
-        KOKKOS_LAMBDA(const LO j) {
-          colsAux(j) = INVALID;
-        });
-
       typename boundary_nodes_type::non_const_type bndNodes("boundaryNodes", numRows);
 
       LO nnzFA = 0;
@@ -421,14 +416,17 @@ namespace MueLu {
               magnitudeType aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));                     // |a_ij|^2
 
               if (aij2 > aiiajj || row == col) {
-                colsAux(offset+colID) = col;
-                valsAux(offset+colID) = val;
-                rownnz++;
+                colsAux(offset+rownnz) = col;
+
+                LO valID = (reuseGraph ? colID : rownnz);
+                valsAux(offset+valID) = val;
                 if (row == col)
-                  diagID = colID;
+                  diagID = valID;
+
+                rownnz++;
 
               } else {
-                colsAux(offset+colID) = INVALID;
+                // Rewrite with zeros (needed for reuseGraph)
                 valsAux(offset+colID) = zero;
                 diag += val;
               }
@@ -470,6 +468,11 @@ namespace MueLu {
           });
       }
 
+      // Compress cols (and optionally vals)
+      // We use a trick here: we moved all remaining elements to the beginning
+      // of the original row in the main loop, so we don't need to check for
+      // INVALID here, and just stop when achieving the new number of elements
+      // per row.
       cols_type cols("FA_cols", nnzFA);
       vals_type vals;
       if (reuseGraph) {
@@ -478,13 +481,12 @@ namespace MueLu {
 
         Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols", range_type(0,numRows),
           KOKKOS_LAMBDA(const LO i) {
-            LO rowStart = rows(i);
-            size_t lnnz = 0;
-            for (size_t j = rowsA(i); j < rowsA(i+1); j++)
-              if (colsAux(j) != INVALID) {
-                cols(rowStart+lnnz) = colsAux(j);
-                lnnz++;
-              }
+            // Is there Kokkos memcpy?
+            LO rowStart  = rows(i);
+            LO rowAStart = rowsA(i);
+            size_t rownnz = rows(i+1) - rows(i);
+            for (size_t j = 0; j < rownnz; j++)
+              cols(rowStart+j) = colsAux(rowAStart+j);
           });
       } else {
         // Compress cols and vals
@@ -494,14 +496,13 @@ namespace MueLu {
 
         Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols", range_type(0,numRows),
           KOKKOS_LAMBDA(const LO i) {
-            LO rowStart = rows(i);
-            size_t lnnz = 0;
-            for (size_t j = rowsA(i); j < rowsA(i+1); j++)
-              if (colsAux(j) != INVALID) {
-                cols(rowStart+lnnz) = colsAux(j);
-                vals(rowStart+lnnz) = valsAux(j);
-                lnnz++;
-              }
+            LO rowStart  = rows(i);
+            LO rowAStart = rowsA(i);
+            size_t rownnz = rows(i+1) - rows(i);
+            for (size_t j = 0; j < rownnz; j++) {
+              cols(rowStart+j) = colsAux(rowAStart+j);
+              vals(rowStart+j) = colsAux(rowAStart+j);
+            }
           });
       }
 
