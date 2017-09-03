@@ -97,16 +97,16 @@ namespace MueLuTests {
       auto v0 = graph->getNeighborVertices(0);
       auto v1 = graph->getNeighborVertices(1);
       auto v2 = graph->getNeighborVertices(2);
-      if (v0.size() == 2 && ((v0(0) == 0 && v0(1) == 1) || (v0(0) == 1 && v0(1) == 0)) &&
-          v1.size() == 3 && v2.size() == 3)
+      if (v0.length == 2 && ((v0(0) == 0 && v0(1) == 1) || (v0(0) == 1 && v0(1) == 0)) &&
+          v1.length == 3 && v2.length == 3)
         bCorrectGraph = true;
     } else {
       if (comm->getRank() == 0 ) {
-        if (graph->getNeighborVertices(0).size() == 2)
+        if (graph->getNeighborVertices(0).length == 2)
           bCorrectGraph = true;
 
       } else {
-        if (graph->getNeighborVertices(0).size() == 3)
+        if (graph->getNeighborVertices(0).length == 3)
           bCorrectGraph = true;
       }
     }
@@ -164,17 +164,17 @@ namespace MueLuTests {
       auto v0 = graph->getNeighborVertices(0);
       auto v1 = graph->getNeighborVertices(1);
       auto v2 = graph->getNeighborVertices(2);
-      if (v0.size() == 1 &&   v0(0) == 0 &&
-          v1.size() == 2 && ((v1(0) == 0 && v1(1) == 1) || (v1(0) == 1 && v1(1) == 0)) &&
-          v2.size() == 2 && ((v2(0) == 1 && v2(1) == 2) || (v2(0) == 2 && v2(1) == 1)))
+      if (v0.length == 1 &&   v0(0) == 0 &&
+          v1.length == 2 && ((v1(0) == 0 && v1(1) == 1) || (v1(0) == 1 && v1(1) == 0)) &&
+          v2.length == 2 && ((v2(0) == 1 && v2(1) == 2) || (v2(0) == 2 && v2(1) == 1)))
         bCorrectGraph = true;
     } else {
       if (comm->getRank() == 0 ) {
-        if (graph->getNeighborVertices(0).size() == 1)
+        if (graph->getNeighborVertices(0).length == 1)
           bCorrectGraph = true;
 
       } else {
-        if (graph->getNeighborVertices(0).size() == 2)
+        if (graph->getNeighborVertices(0).length == 2)
           bCorrectGraph = true;
       }
     }
@@ -229,15 +229,15 @@ namespace MueLuTests {
     TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
 
     bool bCorrectGraph = false;
-    if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
+    if (comm->getSize() == 1 && graph->getNeighborVertices(0).length == 1) {
       bCorrectGraph = true;
     } else {
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        if (graph->getNeighborVertices(0).size() == 2)
+        if (graph->getNeighborVertices(0).length == 2)
           bCorrectGraph = true;
 
       } else {
-        if (as<int>(graph->getNeighborVertices(0).size()) == blockSize)
+        if (as<int>(graph->getNeighborVertices(0).length) == blockSize)
           bCorrectGraph = true;
       }
     }

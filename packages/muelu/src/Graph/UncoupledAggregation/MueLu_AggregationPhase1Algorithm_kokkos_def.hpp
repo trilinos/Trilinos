@@ -141,20 +141,20 @@ namespace MueLu {
       aggSize = 0;
       aggList[aggSize++] = rootCandidate;
 
-      typename LWGraph_kokkos::row_type neighOfINode = graph.getNeighborVertices(rootCandidate);
+      auto neighOfINode = graph.getNeighborVertices(rootCandidate);
 
       // If the number of neighbors is less than the minimum number of nodes
       // per aggregate, we know this is not going to be a valid root, and we
       // may skip it, but only for "natural" and "random" (for "graph" we still
       // need to fetch the list of local neighbors to continue)
       if ((ordering == O_NATURAL || ordering == O_RANDOM) &&
-          as<int>(neighOfINode.size()) < minNodesPerAggregate) {
+          as<int>(neighOfINode.length) < minNodesPerAggregate) {
         continue;
       }
 
       LO numAggregatedNeighbours = 0;
 
-      for (int j = 0; j < as<int>(neighOfINode.size()); j++) {
+      for (int j = 0; j < as<int>(neighOfINode.length); j++) {
         LO neigh = neighOfINode(j);
 
         if (neigh != rootCandidate && graph.isLocalNeighborVertex(neigh)) {
@@ -208,9 +208,9 @@ namespace MueLu {
         //  - if aggregate was accepted, we add neighbors of neighbors of the original candidate
         //  - if aggregate was not accepted, we add neighbors of the original candidate
         for (size_t k = 0; k < aggSize; k++) {
-          typename LWGraph_kokkos::row_type neighOfJNode = graph.getNeighborVertices(aggList[k]);
+          auto neighOfJNode = graph.getNeighborVertices(aggList[k]);
 
-          for (int j = 0; j < as<int>(neighOfJNode.size()); j++) {
+          for (int j = 0; j < as<int>(neighOfJNode.length); j++) {
             LO neigh = neighOfJNode(j);
 
             if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY)
