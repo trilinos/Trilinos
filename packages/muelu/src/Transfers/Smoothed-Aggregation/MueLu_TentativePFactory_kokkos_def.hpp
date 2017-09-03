@@ -857,6 +857,9 @@ namespace MueLu {
         {
           SubFactoryMonitor m2(*this, "Stage 2 (CompressCols)", coarseLevel);
 
+          // FIXME: this can be spedup by moving correct cols and vals values
+          // to the beginning of rows. See CoalesceDropFactory_kokkos for
+          // example.
           Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols_vals", numRows,
             KOKKOS_LAMBDA(const LO i) {
               LO rowStart = rows(i);
