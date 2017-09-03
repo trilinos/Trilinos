@@ -139,7 +139,7 @@ namespace MueLu {
     // Get some info about aggregates
     int  myPID        = uniqueMap->getComm()->getRank();
     LO   numAggs      = aggregates->GetNumAggregates();
-    auto aggSizes     = aggregates->ComputeAggregateSizes(true, true); // FIXME: not a view
+    auto aggSizes     = aggregates->ComputeAggregateSizes(); // FIXME: not a view
     auto vertex2AggID = aggregates->GetVertex2AggId()->template getLocalView<DeviceType>();
     auto procWinner   = aggregates->GetProcWinner()  ->template getLocalView<DeviceType>();
 

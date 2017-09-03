@@ -94,7 +94,7 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::aggregates_sizes_type::const_type
-  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::ComputeAggregateSizes(bool forceRecompute, bool cacheSizes) const {
+  Aggregates_kokkos<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::ComputeAggregateSizes(bool forceRecompute) const {
     if (aggregateSizes_.size() && !forceRecompute) {
       return aggregateSizes_;
 
@@ -117,8 +117,7 @@ namespace MueLu {
             aggregateSizesAtomic(vertex2AggId(k, 0))++;
         });
 
-      if (cacheSizes)
-        aggregateSizes_ = aggregateSizes;
+      aggregateSizes_ = aggregateSizes;
 
       return aggregateSizes;
     }

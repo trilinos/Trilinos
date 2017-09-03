@@ -212,12 +212,8 @@ namespace MueLu {
       stored sizes are returned.
 
       @param[in] forceRecompute if true, force recomputation of the aggregate sizes.
-
-      @param[in] cacheSizes if true and either forceRecompute==true or sizes haven't yet been calculated, compute and store the sizes.
-      If forceRecompute==false and sizes have been calculated previously, then this parameter has no effect.
-      Sizes should only be cached when the aggregation phases are complete, i.e, aggregate sizes are no longer changing!
      */
-    typename aggregates_sizes_type::const_type ComputeAggregateSizes(bool forceRecompute = true, bool cacheSizes = false) const;
+    typename aggregates_sizes_type::const_type ComputeAggregateSizes(bool forceRecompute = false) const;
 
     local_graph_type GetGraph() const;
 
