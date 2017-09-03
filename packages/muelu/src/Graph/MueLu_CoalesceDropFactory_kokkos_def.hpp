@@ -83,6 +83,108 @@ namespace MueLu {
       RowType rows;
     };
 
+    template<class SC, class LO, class MatrixType, class GhostedViewType, class BndViewType>
+    class ScalarFunctor {
+    private:
+      typedef          MatrixType                       matrix_type;
+      typedef typename matrix_type::StaticCrsGraphType  graph_type;
+      typedef typename graph_type::row_map_type         rows_type;
+      typedef typename graph_type::entries_type         cols_type;
+      typedef typename matrix_type::values_type         vals_type;
+      typedef          Kokkos::ArithTraits<SC>          ATS;
+      typedef typename ATS::magnitudeType               magnitudeType;
+
+    private:
+      matrix_type                           A;
+      GhostedViewType                       ghostedDiag;
+      BndViewType                           bndNodes;
+
+      rows_type                             rowsA;
+
+      typename rows_type::non_const_type    rows;
+      typename cols_type::non_const_type    colsAux;
+      typename vals_type::non_const_type    valsAux;
+
+      bool                                  reuseGraph;
+      bool                                  lumping;
+      SC                                    threshold;
+      SC                                    zero;
+
+    public:
+      ScalarFunctor(matrix_type A_, GhostedViewType ghostedDiag_, BndViewType bndNodes_,
+                    typename rows_type::non_const_type rows_,
+                    typename cols_type::non_const_type colsAux_,
+                    typename vals_type::non_const_type valsAux_,
+                    bool reuseGraph_, bool lumping_, SC threshold_) :
+          A(A_),
+          ghostedDiag(ghostedDiag_),
+          bndNodes(bndNodes_),
+          rows(rows_),
+          colsAux(colsAux_),
+          valsAux(valsAux_),
+          reuseGraph(reuseGraph_),
+          lumping(lumping_),
+          threshold(threshold_)
+      {
+        rowsA = A.graph.row_map;
+        zero = ATS::zero();
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      void operator()(const LO row, LO& nnz) const {
+        auto rowView = A.rowConst(row);
+        auto length  = rowView.length;
+        auto offset  = rowsA(row);
+
+        SC diag = zero;
+        LO rownnz = 0;
+        LO diagID = -1;
+        for (decltype(length) colID = 0; colID < length; colID++) {
+          LO col = rowView.colidx(colID);
+          SC val = rowView.value (colID);
+
+          // Avoid square root by using squared values
+          magnitudeType aiiajj = threshold*threshold * ATS::magnitude(ghostedDiag(row, 0))*ATS::magnitude(ghostedDiag(col, 0));   // eps^2*|a_ii|*|a_jj|
+          magnitudeType aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));                     // |a_ij|^2
+
+          if (aij2 > aiiajj || row == col) {
+            colsAux(offset+rownnz) = col;
+
+            LO valID = (reuseGraph ? colID : rownnz);
+            valsAux(offset+valID) = val;
+            if (row == col)
+              diagID = valID;
+
+            rownnz++;
+
+          } else {
+            // Rewrite with zeros (needed for reuseGraph)
+            valsAux(offset+colID) = zero;
+            diag += val;
+          }
+        }
+        // How to assert on the device?
+        // assert(diagIndex != -1);
+        rows(row+1) = rownnz;
+        if (lumping) {
+          // Add diag to the diagonal
+          valsAux(offset+diagID) += diag;
+        }
+
+        if (rownnz == 1) {
+          // If the only element remaining after filtering is diagonal, mark node as boundary
+          // FIXME: this should really be replaced by the following
+          //    if (indices.size() == 1 && indices[0] == row)
+          //        boundaryNodes[row] = true;
+          // We do not do it this way now because there is no framework for distinguishing isolated
+          // and boundary nodes in the aggregation algorithms
+          bndNodes(row) = true;
+        }
+
+        nnz += rownnz;
+      }
+    };
+
     // collect number nonzeros of blkSize rows in nnz_(row+1)
     template<class MatrixType, class NnzType, class blkSizeType>
     class Stage1aVectorFunctor {
@@ -302,11 +404,11 @@ namespace MueLu {
 
     typedef Teuchos::ScalarTraits<SC> STS;
     const SC zero    = STS::zero();
-    const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
     auto A         = Get< RCP<Matrix> >(currentLevel, "A");
     LO   blkSize   = A->GetFixedBlockSize();
     GO   indexBase = A->getRowMap()->getIndexBase();
+    (void)indexBase; // FIXME: remove once block systems are enabled
 
     auto amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
 
@@ -398,59 +500,11 @@ namespace MueLu {
       LO nnzFA = 0;
       {
         SubFactoryMonitor m2(*this, "MainLoop", currentLevel);
+
+        ScalarFunctor<SC, LO, local_matrix_type, decltype(ghostedDiag), decltype(bndNodes)>
+            scalarFunctor(kokkosMatrix, ghostedDiag, bndNodes, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
         Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
-          KOKKOS_LAMBDA(const LO row, LO& nnz) {
-            auto rowView = kokkosMatrix.rowConst(row);
-            auto length  = rowView.length;
-            auto offset  = rowsA(row);
-
-            SC diag = zero;
-            LO rownnz = 0;
-            LO diagID = -1;
-            for (decltype(length) colID = 0; colID < length; colID++) {
-              LO col = rowView.colidx(colID);
-              SC val = rowView.value (colID);
-
-              // Avoid square root by using squared values
-              magnitudeType aiiajj = threshold*threshold * ATS::magnitude(ghostedDiag(row, 0))*ATS::magnitude(ghostedDiag(col, 0));   // eps^2*|a_ii|*|a_jj|
-              magnitudeType aij2   = ATS::magnitude(rowView.value(colID)) * ATS::magnitude(rowView.value(colID));                     // |a_ij|^2
-
-              if (aij2 > aiiajj || row == col) {
-                colsAux(offset+rownnz) = col;
-
-                LO valID = (reuseGraph ? colID : rownnz);
-                valsAux(offset+valID) = val;
-                if (row == col)
-                  diagID = valID;
-
-                rownnz++;
-
-              } else {
-                // Rewrite with zeros (needed for reuseGraph)
-                valsAux(offset+colID) = zero;
-                diag += val;
-              }
-            }
-            // How to assert on the device?
-            // assert(diagIndex != -1);
-            rows(row+1) = rownnz;
-            if (lumping) {
-              // Add diag to the diagonal
-              valsAux(offset+diagID) += diag;
-            }
-
-            if (rownnz == 1) {
-              // If the only element remaining after filtering is diagonal, mark node as boundary
-              // FIXME: this should really be replaced by the following
-              //    if (indices.size() == 1 && indices[0] == row)
-              //        boundaryNodes[row] = true;
-              // We do not do it this way now because there is no framework for distinguishing isolated
-              // and boundary nodes in the aggregation algorithms
-              bndNodes(row) = true;
-            }
-
-            nnz += rownnz;
-          }, nnzFA);
+                                scalarFunctor, nnzFA);
       }
       numDropped = nnzA - nnzFA;
 
