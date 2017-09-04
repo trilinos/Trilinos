@@ -6549,6 +6549,7 @@ private:
 
     bool mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
     int mj_premigration_option;
+    int min_coord_per_rank_for_premigration;
 
     ArrayRCP<mj_part_t> comXAdj_; //communication graph xadj
     ArrayRCP<mj_part_t> comAdj_; //communication graph adj.
@@ -6568,7 +6569,7 @@ private:
 
     RCP<mj_partBoxVector_t> getGlobalBoxBoundaries() const;
     
-    bool mj_premigrate_to_subset(int migration_selection_option,
+    bool mj_premigrate_to_subset(int used_num_ranks, int migration_selection_option,
         RCP<const Environment> mj_env_,
         RCP<const Comm<int> > mj_problemComm_,
         int coord_dim_,
@@ -6607,7 +6608,7 @@ public:
                         max_concurrent_part_calculation(1),
                         check_migrate_avoid_migration_option(0), migration_type(0),
                         minimum_migration_imbalance(0.30),
-                        mj_keep_part_boxes(false), num_threads(1), mj_run_as_rcb(false),mj_premigration_option(0),
+                        mj_keep_part_boxes(false), num_threads(1), mj_run_as_rcb(false),mj_premigration_option(0), min_coord_per_rank_for_premigration(32000),
                         comXAdj_(), comAdj_(), coordinate_ArrayRCP_holder (NULL)
     {}
     ~Zoltan2_AlgMJ(){
@@ -6668,6 +6669,9 @@ public:
         "x > 0 for migration to consecutive processors, the subset will be 0,x,2x,3x,...subset ranks."
         , mj_premigration_option_validator);
 
+      pl.set("mj_premigration_coordinate_count", 32000, "How many coordinate to assign each rank in multijagged after premigration"
+        , Environment::getAnyIntValidator());
+
     }
 
     /*! \brief Multi Jagged  coordinate partitioning algorithm.
@@ -6702,7 +6706,7 @@ public:
 
 
 template <typename Adapter>
-bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
+bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset( int used_num_ranks, 
 				 int migration_selection_option,
 				 RCP<const Environment> mj_env_,
                                  RCP<const Comm<int> > mj_problemComm_,
@@ -6720,26 +6724,33 @@ bool Zoltan2_AlgMJ<Adapter>::mj_premigrate_to_subset(
                                  mj_scalar_t ** &result_mj_coordinates_,
                                  mj_scalar_t ** &result_mj_weights_,
                                  int * &result_actual_owner_rank_){
+  mj_env_->timerStart(MACRO_TIMERS, "MultiJagged - PreMigration DistributorPlanCreating");
 
   
   int myRank = mj_problemComm_->getRank();
-  mj_part_t i_am_sending_to = (myRank % num_global_parts_) * migration_selection_option;
+  int worldSize = mj_problemComm_->getSize();
+  
+  mj_part_t groupsize = worldSize / used_num_ranks;
 
+  //std::cout << "used_num_ranks:" << used_num_ranks << " groupsize:" << groupsize << std::endl;
+  
+  std::vector<mj_part_t> group_begins(used_num_ranks + 1, 0);
+
+  mj_part_t i_am_sending_to = 0;
   bool am_i_a_reciever = false;
-  {
-    std::vector<mj_part_t> result_processors(num_global_parts_);
-    for (size_t i = 0; i < num_global_parts_; ++i){
-      result_processors[i] = i * migration_selection_option;
-      if (myRank == result_processors[i]) am_i_a_reciever = true;
-    }
-    ArrayView<const mj_part_t> idView(&(result_processors[0]), num_global_parts_);
 
-    result_problemComm_ = mj_problemComm_->createSubcommunicator(idView);
-
+  for(int i = 0; i < used_num_ranks; ++i){
+    group_begins[i+ 1]  = group_begins[i] + groupsize;
+    if (worldSize % used_num_ranks > i) group_begins[i+ 1] += 1;
+    if (i == used_num_ranks) group_begins[i+ 1] = worldSize;
+    if (myRank >= group_begins[i] && myRank < group_begins[i + 1]) i_am_sending_to = group_begins[i];
+    if (myRank == group_begins[i])  am_i_a_reciever= true;
   }
+  
+  ArrayView<const mj_part_t> idView(&(group_begins[0]), used_num_ranks );
+  result_problemComm_ = mj_problemComm_->createSubcommunicator(idView);
 
-
-  mj_env_->timerStart(MACRO_TIMERS, "MultiJagged - PreMigration DistributorPlanCreating");
+   
   Tpetra::Distributor distributor(mj_problemComm_);
 
   std::vector<mj_part_t> coordinate_destinations(num_local_coords_, i_am_sending_to);
@@ -6862,14 +6873,13 @@ void Zoltan2_AlgMJ<Adapter>::partition(
    //For example, premigration may not help if 1000 processors are partitioning data to 10,
    //but each of them already have 1M coordinate. In that case, we premigration would not help.
    int current_world_size = this->mj_problemComm->getSize();
-   mj_lno_t threshold_num_local_coords = 10000;
+   mj_lno_t threshold_num_local_coords = this->min_coord_per_rank_for_premigration;
    bool is_pre_migrated = false;
    bool am_i_in_subset = true;
-   if (mj_premigration_option > 0 &&
+   if ( mj_premigration_option > 0 &&
        size_t (current_world_size) > this->num_global_parts &&
        this->num_global_coords < mj_gno_t (current_world_size * threshold_num_local_coords)){
      if (this->mj_keep_part_boxes){
-
        throw std::logic_error("Multijagged: mj_keep_part_boxes and mj_premigration_option are not supported together yet.");
      }
      is_pre_migrated =true;
@@ -6877,8 +6887,11 @@ void Zoltan2_AlgMJ<Adapter>::partition(
      if(migration_selection_option * this->num_global_parts > (size_t) (current_world_size)){
        migration_selection_option = current_world_size / this->num_global_parts;
      }
+     int used_num_ranks = int (this->num_global_coords / float (threshold_num_local_coords) + 0.5);
+     if (used_num_ranks == 0) used_num_ranks = 1;
 
      am_i_in_subset = this->mj_premigrate_to_subset(
+   	 used_num_ranks,
          migration_selection_option,
          this->mj_env,
          this->mj_problemComm,
@@ -7171,6 +7184,8 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 
         this->mj_run_as_rcb = false;
         this->mj_premigration_option = 0;
+	this->min_coord_per_rank_for_premigration = 32000;
+
         int mj_user_recursion_depth = -1;
         this->mj_keep_part_boxes = false;
         this->check_migrate_avoid_migration_option = 0;
@@ -7249,6 +7264,13 @@ void Zoltan2_AlgMJ<Adapter>::set_input_parameters(const Teuchos::ParameterList &
 		mj_premigration_option = pe->getValue(&mj_premigration_option);
         }else {
 		mj_premigration_option = 0;
+        }
+
+        pe = pl.getEntryPtr("mj_premigration_coordinate_count");
+        if (pe){
+        	min_coord_per_rank_for_premigration = pe->getValue(&mj_premigration_option);
+        }else {
+                min_coord_per_rank_for_premigration = 32000;
         }
 
         pe = pl.getEntryPtr("mj_recursion_depth");
