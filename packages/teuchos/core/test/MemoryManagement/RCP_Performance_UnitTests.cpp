@@ -88,11 +88,13 @@ TEUCHOS_STATIC_SETUP()
     "The ratio of the final CPU time ratio for adjusting the reference"
     "count of RCP objects versus a raw pointer."
     );
+#ifdef HAVE_TEUCHOSCORE_CXX11
   clp.setOption(
     "max-rcp-sp-adjust-ref-count-ratio", &maxRcpSpAdjustRefCountRatio,
     "The ratio of the final CPU time ratio for adjusting the reference"
     "count of RCP objects versus std::shared_ptr objects."
     );
+#endif
   clp.setOption(
     "max-rcp-raw-obj-access-ratio", &maxRcpRawObjAccessRatio,
     "The ratio of the final CPU time ratio for accessing the object for RCP"
@@ -135,7 +137,11 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
 
   out << "\n"
       << "Messuring the overhead of creating and destorying objects of different sizes\n"
-      << "using raw C++ pointers, shared_ptr, and using RCP.\n"
+      << "using raw C++ pointers,"
+#ifdef HAVE_TEUCHOSCORE_CXX11
+      << " shared_ptr,"
+#endif
+      << " and using RCP.\n"
       << "\n"
       << "Number of loops = relCpuSpeed/relTestCost = "
       << relCpuSpeed << "/" << relTestCost << " = " << numInnerLoops << "\n"
@@ -148,9 +154,13 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
   outputter.pushFieldSpec("obj size", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
   outputter.pushFieldSpec("raw", TO::DOUBLE);
+#ifdef HAVE_TEUCHOSCORE_CXX11
   outputter.pushFieldSpec("shared_ptr", TO::DOUBLE);
+#endif
   outputter.pushFieldSpec("RCP", TO::DOUBLE);
+#ifdef HAVE_TEUCHOSCORE_CXX11
   outputter.pushFieldSpec("shared_ptr/raw", TO::DOUBLE);
+#endif
   outputter.pushFieldSpec("RCP/raw", TO::DOUBLE);
 
   outputter.outputHeader();
@@ -191,6 +201,7 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
 
+#ifdef HAVE_TEUCHOSCORE_CXX11
     // shared_ptr
     {
       typedef std::shared_ptr<std::vector<char> > shared_ptr_t;
@@ -204,6 +215,7 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
       }
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, spTime);
+#endif
 
     // RCP
     {
@@ -217,9 +229,11 @@ TEUCHOS_UNIT_TEST( RCP, createDestroyOverhead )
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rcpTime);
 
+#ifdef HAVE_TEUCHOSCORE_CXX11
     // shared_ptr/rawPtr
     const double spRatio = spTime / rawPtrTime;
     outputter.outputField(spRatio);
+#endif
 
     // RCP/rawPtr
     const double rcpRatio = rcpTime / rawPtrTime;
@@ -250,7 +264,11 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
 
   out << "\n"
       << "Messuring the overhead of incrementing and deincrementing the reference count\n"
-      << "comparing RCP to raw pointer and std::shared_ptr.\n"
+      << "comparing RCP to raw pointer"
+#ifdef HAVE_TEUCHOSCORE_CXX11
+      << " and std::shared_ptr"
+#endif
+      << ".\n"
       << "\n";
 
   TabularOutputter outputter(out);
@@ -260,10 +278,14 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
   outputter.pushFieldSpec("array dim", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
   outputter.pushFieldSpec("raw", TO::DOUBLE);
+#ifdef HAVE_TEUCHOSCORE_CXX11
   outputter.pushFieldSpec("shared_ptr", TO::DOUBLE);
+#endif
   outputter.pushFieldSpec("RCP", TO::DOUBLE);
   outputter.pushFieldSpec("RCP/raw", TO::DOUBLE);
+#ifdef HAVE_TEUCHOSCORE_CXX11
   outputter.pushFieldSpec("RCP/shared_ptr", TO::DOUBLE);
+#endif
 
   outputter.outputHeader();
 
@@ -314,6 +336,7 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
 
+#ifdef HAVE_TEUCHOSCORE_CXX11
     // shared_ptr
     {
       typedef std::shared_ptr<char> shared_ptr_t;
@@ -329,6 +352,7 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
       }
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, spTime);
+#endif
 
     // RCP
     {
@@ -353,10 +377,12 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
     finalRcpRawRatio = TEUCHOS_MIN(rcpRawRatio, finalRcpRawRatio);
     outputter.outputField(rcpRawRatio);
 
+#ifdef HAVE_TEUCHOSCORE_CXX11
     // RCP/shared_ptr
     const double rcpSpRatio = rcpTime / spTime;
     finalRcpSpRatio = TEUCHOS_MIN(rcpSpRatio, finalRcpSpRatio);
     outputter.outputField(rcpSpRatio);
+#endif
 
     outputter.nextRow();
 
@@ -383,7 +409,11 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
   const double numInnerLoops = relCpuSpeed / relTestCost;
 
   out << "\n"
-      << "Messuring the overhead of dereferencing RCP, shared_ptr and a raw pointer.\n"
+      << "Measuring the overhead of dereferencing RCP"
+#ifdef HAVE_TEUCHOSCORE_CXX11
+      << ", shared_ptr"
+#endif
+      << " and a raw pointer.\n"
       << "\n";
 
   TabularOutputter outputter(out);
@@ -393,10 +423,14 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
   outputter.pushFieldSpec("array dim", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
   outputter.pushFieldSpec("raw", TO::DOUBLE);
+#ifdef HAVE_TEUCHOSCORE_CXX11
   outputter.pushFieldSpec("shared_ptr", TO::DOUBLE);
+#endif
   outputter.pushFieldSpec("RCP", TO::DOUBLE);
   outputter.pushFieldSpec("RCP/raw", TO::DOUBLE);
+#ifdef HAVE_TEUCHOSCORE_CXX11
   outputter.pushFieldSpec("RCP/shared_ptr", TO::DOUBLE);
+#endif
 
   outputter.outputHeader();
 
@@ -447,6 +481,7 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
     overall_dummy_int_out += dummy_int_out;
 
+#ifdef HAVE_TEUCHOSCORE_CXX11
     // shared_ptr
     {
       typedef std::shared_ptr<int> shared_ptr_t;
@@ -465,6 +500,7 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, spTime);
     overall_dummy_int_out += dummy_int_out;
+#endif
 
     // RCP
     {
@@ -489,9 +525,11 @@ TEUCHOS_UNIT_TEST( RCP, dereferenceOverhead )
     finalRcpRawRatio = TEUCHOS_MIN(rcpRawRatio, finalRcpRawRatio);
     outputter.outputField(rcpRawRatio);
 
+#ifdef HAVE_TEUCHOSCORE_CXX11
     // RCP/shared_ptr
     const double rcpSpRatio = rcpTime / spTime;
     outputter.outputField(rcpSpRatio);
+#endif
 
     outputter.nextRow();
 
@@ -527,7 +565,11 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
   const double numInnerLoops = relCpuSpeed / relTestCost;
 
   out << "\n"
-      << "Messuring the overhead of dereferencing RCP, shared_ptr and a raw pointer.\n"
+      << "Measuring the overhead of dereferencing RCP"
+#ifdef HAVE_TEUCHOSCORE_CXX11
+      << ", shared_ptr"
+#endif
+      << " and a raw pointer.\n"
       << "\n";
 
   TabularOutputter outputter(out);
@@ -537,10 +579,14 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
   outputter.pushFieldSpec("array dim", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
   outputter.pushFieldSpec("raw", TO::DOUBLE);
+#ifdef HAVE_TEUCHOSCORE_CXX11
   outputter.pushFieldSpec("shared_ptr", TO::DOUBLE);
+#endif
   outputter.pushFieldSpec("RCP", TO::DOUBLE);
   outputter.pushFieldSpec("RCP/raw", TO::DOUBLE);
+#ifdef HAVE_TEUCHOSCORE_CXX11
   outputter.pushFieldSpec("RCP/shared_ptr", TO::DOUBLE);
+#endif
 
   outputter.outputHeader();
 
@@ -590,6 +636,7 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
     overall_dummy_int_out += dummy_int_out;
 
+#ifdef HAVE_TEUCHOSCORE_CXX11
     // shared_ptr
     {
       typedef std::shared_ptr<SomeStruct> shared_ptr_t;
@@ -608,6 +655,7 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, spTime);
     overall_dummy_int_out += dummy_int_out;
+#endif
 
     // RCP
     {
@@ -632,9 +680,11 @@ TEUCHOS_UNIT_TEST( RCP, memberAccessOverhead )
     finalRcpRawRatio = TEUCHOS_MIN(rcpRawRatio, finalRcpRawRatio);
     outputter.outputField(rcpRawRatio);
 
+#ifdef HAVE_TEUCHOSCORE_CXX11
     // RCP/shared_ptr
     const double rcpSpRatio = rcpTime / spTime;
     outputter.outputField(rcpSpRatio);
+#endif
 
     outputter.nextRow();
 
