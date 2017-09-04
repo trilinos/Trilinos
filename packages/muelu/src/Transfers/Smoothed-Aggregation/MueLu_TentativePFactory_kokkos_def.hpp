@@ -572,6 +572,8 @@ namespace MueLu {
       Kokkos::deep_copy(Kokkos::subview(sizes, Kokkos::make_pair(1, numAggregates+1)), sizesConst);
 
     } else {
+      // FIXME_KOKKOS: This branch of code is completely unoptimized.
+
       sizes = AggSizeType("agg_dof_sizes", numAggregates + 1);
       typename AppendTrait<AggSizeType, Kokkos::Atomic>::type sizesAtomic = sizes; // atomic access
 
@@ -646,6 +648,8 @@ namespace MueLu {
     // FIXME_KOKKOS: Does it need to be this complicated for scalar?
     Kokkos::View<LO*, DeviceType> agg2RowMapLO(Kokkos::ViewAllocateWithoutInitializing("agg2row_map_LO"), numRows);
     {
+      // FIXME_KOKKOS: This chunk of code is completely unoptimized.
+
       SubFactoryMonitor m2(*this, "Create Agg2RowMap", coarseLevel);
 
       // We need this initialized to 0, so no ViewAlloWithoutInitializing
@@ -737,6 +741,8 @@ namespace MueLu {
           if (goodMap) {
             // Calculate QR by hand
             auto norm = ATS::magnitude(zero);
+            // FIXME: shouldn't there be stridedblock here?
+            // FIXME_KOKKOS: shouldn't there be stridedblock here?
             for (decltype(aggSize) k = 0; k < aggSize; k++) {
               auto dnorm = ATS::magnitude(fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0));
               norm += dnorm*dnorm;
@@ -764,7 +770,7 @@ namespace MueLu {
             }
 
           } else {
-            // FIXME: implement non-standard map QR
+            // FIXME_KOKKOS: implement non-standard map QR
             // Look at the original TentativeP for how to do that
             statusAtomic(0) = true;
             return;
@@ -784,6 +790,11 @@ namespace MueLu {
           }
 
       } else { // NSdim > 1
+        // FIXME_KOKKOS: This code branch is completely unoptimized.
+        // Work to do:
+        //   - Optimize QR decomposition
+        //   - Remove INVALID usage similarly to CoalesceDropFactory_kokkos by
+        //     packing new values in the beginning of each row
         // We do use auxilary view in this case, so keep a second rows view for
         // counting nonzeros in rows
 
@@ -858,7 +869,7 @@ namespace MueLu {
         {
           SubFactoryMonitor m2(*this, "Stage 2 (CompressCols)", coarseLevel);
 
-          // FIXME: this can be spedup by moving correct cols and vals values
+          // FIXME_KOKKOS: this can be spedup by moving correct cols and vals values
           // to the beginning of rows. See CoalesceDropFactory_kokkos for
           // example.
           Kokkos::parallel_for("MueLu:TentativePF:Build:compress_cols_vals", numRows,
@@ -884,7 +895,7 @@ namespace MueLu {
 
       local_matrix_type lclMatrix = local_matrix_type("A", numRows, coarseMap->getNodeNumElements(), nnz, vals, rows, cols);
 #if 1
-      // FIXME: this should be gone once Xpetra propagate "local matrix + 4 maps" constructor
+      // FIXME_KOKKOS: this should be gone once Xpetra propagate "local matrix + 4 maps" constructor
       auto PtentCrs = CrsMatrixFactory::Build(rowMap, coarseMap, lclMatrix);
       PtentCrs->resumeFill();  // we need that for rectangular matrices
       PtentCrs->expertStaticFillComplete(coarseMap, A->getDomainMap());
@@ -921,6 +932,8 @@ namespace MueLu {
         }
     } else {
       // Tpetra version
+
+      // FIXME_KOKKOS: move this map check to Tpetra::CrsGraph
       auto rowTMap = Utilities::Map2TpetraMap(rowMap);
       auto colTMap = Utilities::Map2TpetraMap(colMap);
 

@@ -107,7 +107,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonal(const Matrix& A) {
-    // FIXME Kokkos
+    // FIXME_KOKKOS
 
     size_t numRows = A.getRowMap()->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(numRows);
@@ -135,7 +135,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol) {
-    // FIXME Kokkos
+    // FIXME_KOKKOS
     RCP<const Map> rowMap = A.getRowMap();
     RCP<Vector> diag      = VectorFactory::Build(rowMap);
     ArrayRCP<SC> diagVals = diag->getDataNonConst(0);
@@ -169,7 +169,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLumpedMatrixDiagonal(const Matrix &A) {
-    // FIXME: Kokkos
+    // FIXME_KOKKOS
     size_t numRows = A.getRowMap()->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(numRows);
 
@@ -189,7 +189,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(const Matrix& A) {
-    // FIXME: Kokkos
+    // FIXME_KOKKOS
     RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
     RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
 
@@ -242,7 +242,7 @@ namespace MueLu {
         break;
 
       case Xpetra::UseEpetra:
-        // FIXME?
+        // FIXME_KOKKOS
         // Utils2_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Op, sv, doFillComplete, doOptimizeStorage);
         throw std::runtime_error("FIXME");
         break;

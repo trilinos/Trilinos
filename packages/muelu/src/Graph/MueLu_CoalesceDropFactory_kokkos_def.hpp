@@ -485,8 +485,6 @@ namespace MueLu {
 
     auto A         = Get< RCP<Matrix> >(currentLevel, "A");
     LO   blkSize   = A->GetFixedBlockSize();
-    GO   indexBase = A->getRowMap()->getIndexBase();
-    (void)indexBase; // FIXME: remove once block systems are enabled
 
     auto amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
 
