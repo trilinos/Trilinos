@@ -175,21 +175,6 @@ namespace MueLu {
       typedef          Kokkos::ArithTraits<SC>          ATS;
       typedef typename ATS::magnitudeType               magnitudeType;
 
-    private:
-      MatrixType                            A;
-      BndViewType                           bndNodes;
-      DropFunctorType                       dropFunctor;
-
-      rows_type                             rowsA;
-
-      typename rows_type::non_const_type    rows;
-      typename cols_type::non_const_type    colsAux;
-      typename vals_type::non_const_type    valsAux;
-
-      bool                                  reuseGraph;
-      bool                                  lumping;
-      SC                                    zero;
-
     public:
       ScalarFunctor(MatrixType A_, BndViewType bndNodes_, DropFunctorType dropFunctor_,
                     typename rows_type::non_const_type rows_,
@@ -261,6 +246,21 @@ namespace MueLu {
 
         nnz += rownnz;
       }
+
+    private:
+      MatrixType                            A;
+      BndViewType                           bndNodes;
+      DropFunctorType                       dropFunctor;
+
+      rows_type                             rowsA;
+
+      typename rows_type::non_const_type    rows;
+      typename cols_type::non_const_type    colsAux;
+      typename vals_type::non_const_type    valsAux;
+
+      bool                                  reuseGraph;
+      bool                                  lumping;
+      SC                                    zero;
     };
 
     // collect number nonzeros of blkSize rows in nnz_(row+1)
@@ -533,8 +533,6 @@ namespace MueLu {
     } else if (blkSize == 1 && threshold != zero) {
       // Scalar problem with dropping
 
-      RCP<Vector> ghostedDiag = Utilities_kokkos::GetMatrixOverlappedDiagonal(*A);
-
       typedef typename Matrix::local_matrix_type          local_matrix_type;
       typedef typename LWGraph_kokkos::local_graph_type   kokkos_graph_type;
       typedef typename kokkos_graph_type::row_map_type::non_const_type    rows_type;
@@ -577,6 +575,14 @@ namespace MueLu {
       LO nnzFA = 0;
       {
         if (algo == "classical") {
+          // Construct overlapped matrix diagonal
+          RCP<Vector> ghostedDiag;
+          {
+            SubFactoryMonitor m2(*this, "Ghosted diag construction", currentLevel);
+            ghostedDiag     = Utilities_kokkos::GetMatrixOverlappedDiagonal(*A);
+          }
+
+          // Filter out entries
           {
             SubFactoryMonitor m2(*this, "MainLoop", currentLevel);
 
