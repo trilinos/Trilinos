@@ -153,8 +153,6 @@ namespace MueLu {
     // The good new is that his graph has already been constructed for the
     // TentativePFactory and was cached in Aggregates. So this is a no-op.
     auto aggGraph = aggregates->GetGraph();
-    auto rows     = aggGraph.row_map;
-    auto cols     = aggGraph.entries;
     auto numAggs  = aggGraph.numRows();
 
     auto fineCoordsView   = fineCoords  ->template getLocalView<DeviceType>();
@@ -165,17 +163,25 @@ namespace MueLu {
       SubFactoryMonitor m2(*this, "AverageCoords", coarseLevel);
 
       const auto dim = fineCoords->getNumVectors();
-      Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:coord", Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numAggs),
-        KOKKOS_LAMBDA(const LO i) {
-          for (size_t j = 0; j < dim; j++) {
+
+      using ATS = Kokkos::ArithTraits<SC>;
+      auto zero = ATS::zero();
+
+      typename AppendTrait<decltype(fineCoordsView), Kokkos::RandomAccess>::type fineCoordsRandomView = fineCoordsView;
+      for (size_t j = 0; j < dim; j++) {
+        Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:coord", Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numAggs),
+          KOKKOS_LAMBDA(const LO i) {
+            auto aggregate = aggGraph.rowConst(i);
+
             // A row in this graph represents all node ids in the aggregate
             // Therefore, averaging is very easy
-            for (size_t colID = rows(i); colID < rows(i+1); colID++)
-              coarseCoordsView(i,j) += fineCoordsView(cols(colID),j);
+            SC sum = zero;
+            for (size_t colID = 0; colID < aggregate.length; colID++)
+              sum += fineCoordsRandomView(aggregate(colID),j);
 
-            coarseCoordsView(i,j) /= (rows(i+1) - rows(i));
-          }
-        });
+            coarseCoordsView(i,j) = sum / aggregate.length;
+          });
+        }
     }
 
     Set<RCP<doubleMultiVector> >(coarseLevel, "Coordinates", coarseCoords);
