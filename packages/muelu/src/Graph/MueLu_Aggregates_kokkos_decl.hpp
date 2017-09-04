@@ -194,13 +194,15 @@ namespace MueLu {
     const RCP<LOVector>& GetProcWinner() const   { return procWinner_;         }
 
     //! Returns true if node with given local node id is marked to be a root node
-    bool IsRoot(LO i) const                      { return isRoot_[i];          }
+    KOKKOS_INLINE_FUNCTION
+    bool IsRoot(LO i) const                      { return isRoot_(i);          }
 
     /*! @brief Set root node information.
 
     Used by aggregation methods only.
     */
-    void SetIsRoot(LO i, bool value = true)      { isRoot_[i] = value;         }
+    KOKKOS_INLINE_FUNCTION
+    void SetIsRoot(LO i, bool value = true)      { isRoot_(i) = value;         }
 
     const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
@@ -242,7 +244,7 @@ namespace MueLu {
      */
     RCP<LOVector> procWinner_;
 
-    Teuchos::ArrayRCP<bool> isRoot_;//< IsRoot[i] indicates whether vertex i is a root node.
+    Kokkos::View<bool*, DeviceType> isRoot_;
 
     //! Set to false iff aggregates do not include any DOFs belong to other processes.
     bool aggregatesIncludeGhosts_;
