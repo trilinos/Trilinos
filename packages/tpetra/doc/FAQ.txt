@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2017-09-03 18:08:42 mhoemme"
+#+DATE: Time-stamp: "2017-09-03 18:19:25 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -76,11 +76,11 @@ execution spaces, and asynchronous kernel launch.
 *** Assumptions
 
 Tpetra requires at least CUDA 7.5, and is regularly tested with CUDA
-8.0.  Tpetra itself requires C++11, but Tpetra does not currently need
-the "device lambdas" feature in order to build and pass tests.
-Trilinos currently tests CUDA builds only with MPI enabled, and only
-with the OpenMPI implementation of MPI. We recommend OpenMPI 1.8.x at
-a minimum, preferably newer.
+8.0.  Tpetra itself requires C++11 and depends on the optional "device
+lambdas" feature in order to build and pass tests.  Trilinos currently
+tests CUDA builds only with MPI enabled, and exercises the OpenMPI
+implementation of MPI most heavily.  We recommend OpenMPI 1.8.x at a
+minimum, preferably newer.  Other MPI implementations should work.
 
 Tpetra currently assumes Unified Virtual Memory (UVM) with CUDA.  It
 currently requires kernel launches to block.  In particular, it
@@ -114,18 +114,33 @@ variables that you would normally set:
 -D TPL_ENABLE_MPI:BOOL=ON
 -D TPL_ENABLE_CUDA:BOOL=ON
 -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON
--D Tpetra_INST_CUDA:BOOL=ON
+-D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON
+-D CMAKE_CXX_FLAGS:STRING="-std=c++11 -expt-extended-lambda" 
 #+END_EXAMPLE
 
-If the versions of ~nvcc~ and ~mpicxx~ that live in your path are
-correct, then this should work.
+If you already define `CMAKE_CXX_FLAGS` yourself, just make sure that
+you include the above options.  If the versions of ~nvcc~ and ~mpicxx~
+that live in your path are correct, then this should work.  The
+`-std=c++11` option is required, though it may cause harmless build
+warnings that look like this:
+
+#+BEGIN_EXAMPLE
+cc1: warning: command line option '-std=c++11' is valid for C++/ObjC++
+but not for C [enabled by default]
+#+END_EXAMPLE
 
 If you enable CUDA using the above instructions, Kokkos will enable
 its CUDA support by default.  If Kokkos enables its CUDA support,
 Tpetra will enable its CUDA support by default.  (See "How does Tpetra
 pick its default Kokkos execution space?" below.)  Avoid setting CMake
 options explicitly; this hinders portability and makes your build
-configuration unnecessarily complicated.
+configuration unnecessarily complicated.  However, if you wish to
+enable Tpetra's CUDA support explicitly, you may add the following
+CMake option:
+
+#+BEGIN_EXAMPLE
+-D Tpetra_INST_CUDA:BOOL=ON
+#+END_EXAMPLE
 
 *** Do I need a special MPI implementation to use CUDA?
 
@@ -144,7 +159,7 @@ configure time.  For example:
 #+END_EXAMPLE
 
 You may also tell Tpetra, via the environment variable
-TPETRA_ASSUME_CUDA_AWARE_MPI, whether to assume that the MPI
+~TPETRA_ASSUME_CUDA_AWARE_MPI~, whether to assume that the MPI
 implementation that Trilinos uses is CUDA aware.  To make Tpetra
 assume that MPI is CUDA aware, set this environment variable to some
 true value, like "1" or "TRUE".  To make Tpetra assume that MPI is
