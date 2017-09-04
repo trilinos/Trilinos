@@ -767,10 +767,13 @@ namespace MueLu {
       } else {
         filteredA->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
       }
-    }
-#if 0
-    else if (blkSize > 1 && threshold == zero) {
+
+    } else if (blkSize > 1 && threshold == zero) {
       // Case 3:  block problem without filtering
+      //
+      // FIXME_KOKKOS: this code is completely unoptimized. It really should do
+      // a very simple thing: merge rows and produce nodal graph. But the code
+      // seems very complicated. Can we do better?
 
       TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements() % blkSize != 0, MueLu::Exceptions::RuntimeError, "MueLu::CoalesceDropFactory: Number of local elements is " << A->getRowMap()->getNodeNumElements() << " but should be a multiply of " << blkSize);
 
@@ -860,8 +863,12 @@ namespace MueLu {
       numTotal = A->getNodeNumEntries();
 
       dofsPerNode = blkSize;
+
+      filteredA = A;
+
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu: CoalesceDropFactory_kokkos: Block filtering is not implemented");
     }
-#endif
 
     if (GetVerbLevel() & Statistics1) {
       GO numLocalBoundaryNodes  = 0;
