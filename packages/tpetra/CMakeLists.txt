@@ -483,11 +483,15 @@ LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
 # If ETI is OFF, #1 no longer holds, but #2 still holds.
 #
 # Currently, we always enable int, because MueLu requires it for
-# examples and tests (this is Bug 6358).  Furthermore, if Teuchos
-# enables long long support (which it now does by default with C++11)
-# and CUDA is OFF (CUDA doesn't seem to like GO=long long), we also
-# enable long long (which C++11 / C99 guarantees to be >= 64 bits).
-# We currently only enable other types if the user asks for them.
+# examples and tests (this is Bug 6358 (in the Bugzilla bug tracking
+# system).  Furthermore, if Teuchos enables long long support (which
+# it now does by default with C++11), we also enable long long (which
+# C++11 / C99 guarantees to be >= 64 bits).  We currently only enable
+# other types if the user asks for them.
+#
+# Enabling long long by default no longer depends on whether this is a
+# CUDA build, since we have fixed Trilinos GitHub issue #1683:
+# https://github.com/trilinos/Trilinos/issues/1683
 #
 # Note that long is 64 bits on some platforms, and 32 bits on other
 # platforms.  On the latter, you may use long long instead, which
@@ -502,24 +506,21 @@ LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
 # GO = int is enabled by default, but only because of Bug 6358.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
 
-# GO = long long is enabled by default if and only if CUDA is OFF.
-# However, if the user enabled GO = long EXPLICITLY, we disable GO =
-# long long by default, because we don't want to enable multiple
-# "long" GO types by default.
-IF (Kokkos_ENABLE_Cuda)
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
-ELSE ()
-  # Tpetra currently needs Teuchos to support long long.
-  # This may change in the future, though.
-  IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
-    IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
-      MESSAGE(WARNING "Do NOT set Teuchos_ENABLE_LONG_LONG_INT=OFF !  The default is ON.  We will VERY SOON require that this option be ON.  Don't set it explicitly!  Just use the default value.  See #1184: https://github.com/trilinos/Trilinos/issues/1184 and see also #1183: https://github.com/trilinos/Trilinos/issues/1183")
-    ENDIF ()
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
-  ELSE ()
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
+# GO = long long is enabled by default.  However, if the user enabled
+# GO = long EXPLICITLY, we disable GO = long long by default, because
+# we don't want to enable multiple "long" GO types by default.
+
+# Tpetra currently needs Teuchos to support long long.
+# This may change in the future, though.
+IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
+  IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
+    MESSAGE(WARNING "Do NOT set Teuchos_ENABLE_LONG_LONG_INT=OFF !  The default is ON.  We will VERY SOON require that this option be ON.  Don't set it explicitly!  Just use the default value.  See #1184: https://github.com/trilinos/Trilinos/issues/1184 and see also #1183: https://github.com/trilinos/Trilinos/issues/1183")
   ENDIF ()
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
+ELSE ()
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
 ENDIF ()
+
 IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
   IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
     # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn

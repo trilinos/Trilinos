@@ -5,6 +5,13 @@ Release Notes for Trilinos Package Tpetra
 Development version (12.??)
 ---------------------------
 
+* Fix #1683
+
+Tpetra now enables GO = long long by default, regardless of whether
+this is a CUDA build.
+
+* Fix #1088
+
 * Add CMake option for whether Tpetra should assume that MPI
   is CUDA aware (#1571)
 
