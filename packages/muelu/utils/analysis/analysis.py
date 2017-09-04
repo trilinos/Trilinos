@@ -113,7 +113,16 @@ def setup_timers(input_files, display, top, ax = None):
         ax.set_ylim([-0.5, len(timers_f)-0.5])
 
     else:
-        print(dfs['maxT'])
+        index = dfs.index.tolist()
+        d1    = dfs ['maxT']
+        d2    = dfs1['maxT']
+
+        max_len = len(max(index, key=len)) + 3
+
+        print('%s %10s %10s %10s' % ('timer name'.ljust(max_len, " "), 'file 1', 'file 2', 'ratio'))
+        for i in range(top-1, -1, -1):
+            print('%s %10.3f %10.3f %10.2f' % (dfs.index[i].ljust(max_len, " "), d1[i], d2[i], d2[i]/d1[i]))
+
 
 def muelu_strong_scaling(input_files, display, ax, top, style):
     """Show scalability of setup level specific timers ordered by size"""
