@@ -89,7 +89,7 @@ namespace MueLu {
       typedef          Kokkos::ArithTraits<SC>          ATS;
       typedef typename ATS::magnitudeType               magnitudeType;
 
-      GhostedViewType   diag;   // corresponds to overlapped diagonal multivector (dim=2)
+      GhostedViewType   diag;   // corresponds to overlapped diagonal multivector (2D View)
       magnitudeType     eps;
 
     public:
@@ -107,6 +107,62 @@ namespace MueLu {
 
         return (aij2 <= eps*eps * aiiajj);
       }
+    };
+
+    template<class SC, class LO, class CoordsType>
+    class DistanceFunctor {
+    private:
+      typedef          Kokkos::ArithTraits<SC>          ATS;
+      typedef typename ATS::magnitudeType               magnitudeType;
+
+    public:
+      DistanceFunctor(CoordsType coords_) : coords(coords_) { }
+
+      KOKKOS_INLINE_FUNCTION
+      magnitudeType distance2(LO row, LO col) const {
+        SC d = ATS::zero(), s;
+        for (size_t j = 0; j < coords.extent(1); j++) {
+          s = coords(row,j) - coords(col,j);
+          d += s*s;
+        }
+        return ATS::magnitude(d);
+      }
+    private:
+      CoordsType coords;
+    };
+
+    template<class SC, class LO, class GhostedViewType, class DistanceFunctor>
+    class DistanceLaplacianDropFunctor {
+    private:
+      typedef          Kokkos::ArithTraits<SC>          ATS;
+      typedef typename ATS::magnitudeType               magnitudeType;
+
+    public:
+      DistanceLaplacianDropFunctor(GhostedViewType ghostedLaplDiag, DistanceFunctor distFunctor_, magnitudeType threshold) :
+          diag(ghostedLaplDiag),
+          distFunctor(distFunctor_),
+          eps(threshold)
+      { }
+
+      // Return true if we drop, false if not
+      KOKKOS_INLINE_FUNCTION
+      bool operator()(LO row, LO col, SC val) const {
+        // We avoid square root by using squared values
+
+        // We ignore incoming value of val as we operate on an auxiliary
+        // distance Laplacian matrix
+        val = ATS::one() / distFunctor.distance2(row, col);
+
+        auto aiiajj = ATS::magnitude(diag(row, 0)) * ATS::magnitude(diag(col, 0));   // |a_ii|*|a_jj|
+        auto aij2   = ATS::magnitude(val)          * ATS::magnitude(val);            // |a_ij|^2
+
+        return (aij2 <= eps*eps * aiiajj);
+      }
+
+    private:
+      GhostedViewType   diag;   // corresponds to overlapped diagonal multivector (2D View)
+      DistanceFunctor   distFunctor;
+      magnitudeType     eps;
     };
 
     template<class SC, class LO, class MatrixType, class BndViewType, class DropFunctorType>
@@ -185,8 +241,13 @@ namespace MueLu {
         // How to assert on the device?
         // assert(diagIndex != -1);
         rows(row+1) = rownnz;
+        // if (lumping && diagID != -1) {
         if (lumping) {
           // Add diag to the diagonal
+
+          // NOTE_KOKKOS: valsAux was allocated with
+          // ViewAllocateWithoutInitializing. This is not a problem here
+          // because we explicitly set this value above.
           valsAux(offset+diagID) += diag;
         }
 
@@ -472,8 +533,7 @@ namespace MueLu {
     } else if (blkSize == 1 && threshold != zero) {
       // Scalar problem with dropping
 
-      RCP<Vector> ghostedDiagVec = Utilities_kokkos::GetMatrixOverlappedDiagonal(*A);
-      auto        ghostedDiag    = ghostedDiagVec->template getLocalView<DeviceType>();
+      RCP<Vector> ghostedDiag = Utilities_kokkos::GetMatrixOverlappedDiagonal(*A);
 
       typedef typename Matrix::local_matrix_type          local_matrix_type;
       typedef typename LWGraph_kokkos::local_graph_type   kokkos_graph_type;
@@ -516,36 +576,90 @@ namespace MueLu {
 
       LO nnzFA = 0;
       {
-        SubFactoryMonitor m2(*this, "MainLoop", currentLevel);
-
         if (algo == "classical") {
-          ClassicalDropFunctor<SC,LO, decltype(ghostedDiag)> dropFunctor(ghostedDiag, threshold);
-          ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-              scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
+          {
+            SubFactoryMonitor m2(*this, "MainLoop", currentLevel);
 
-          Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
-                                  scalarFunctor, nnzFA);
+            auto ghostedDiagView = ghostedDiag->template getLocalView<DeviceType>();
+
+            ClassicalDropFunctor<SC,LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
+            ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
+                scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
+
+            Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
+                                    scalarFunctor, nnzFA);
+          }
 
         } else if (algo == "distance laplacian") {
-#if 0
           typedef Xpetra::MultiVector<double,LO,GO,NO> doubleMultiVector;
           auto coords = Get<RCP<doubleMultiVector> >(currentLevel, "Coordinates");
 
+          auto uniqueMap    = A->getRowMap();
+          auto nonUniqueMap = A->getColMap();
+
+          // Construct ghosted coordinates
           RCP<const Import> importer;
           {
-            SubFactoryMonitor m2(*this, "Import construction", currentLevel);
+            SubFactoryMonitor m2(*this, "Coords Import construction", currentLevel);
             importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
           }
-          ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, Coords->getNumVectors());
-          ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
+          RCP<MultiVector> ghostedCoords;
+          {
+            SubFactoryMonitor m2(*this, "Ghosted coords construction", currentLevel);
+            ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, coords->getNumVectors());
+            ghostedCoords->doImport(*coords, *importer, Xpetra::INSERT);
+          }
 
-          DistanceLaplacianDropFunctor<SC,LO, decltype(ghostedDiag)> dropFunctor(ghostedDiag, threshold);
-          ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
-              scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
+          auto ghostedCoordsView = ghostedCoords->template getLocalView<DeviceType>();
+          DistanceFunctor<SC, LO, decltype(ghostedCoordsView)> distFunctor(ghostedCoordsView);
 
-          Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
-                                  scalarFunctor, nnzFA);
-#endif
+          // Construct Laplacian diagonal
+          RCP<Vector> localLaplDiag;
+          {
+            SubFactoryMonitor m2(*this, "Local Laplacian diag construction", currentLevel);
+
+            localLaplDiag = VectorFactory::Build(uniqueMap);
+
+            auto localLaplDiagView = localLaplDiag->template getLocalView<DeviceType>();
+            auto kokkosGraph = kokkosMatrix.graph;
+
+            Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:laplacian_diag", range_type(0,numRows),
+              KOKKOS_LAMBDA(const LO row) {
+                auto rowView = kokkosGraph.rowConst(row);
+                auto length  = rowView.length;
+
+                SC d = ATS::zero();
+                for (decltype(length) colID = 0; colID < length; colID++) {
+                  auto col = rowView(colID);
+                  if (row != col)
+                    d += ATS::one()/distFunctor.distance2(row, col);
+                }
+                localLaplDiagView(row,0) = d;
+              });
+          }
+
+          // Construct ghosted Laplacian diagonal
+          RCP<Vector> ghostedLaplDiag;
+          {
+            SubFactoryMonitor m2(*this, "Ghosted Laplacian diag construction", currentLevel);
+            ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
+            ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
+          }
+
+          // Filter out entries
+          {
+            SubFactoryMonitor m2(*this, "MainLoop", currentLevel);
+
+            auto ghostedLaplDiagView = ghostedLaplDiag->template getLocalView<DeviceType>();
+
+            DistanceLaplacianDropFunctor<SC,LO, decltype(ghostedLaplDiagView), decltype(distFunctor)>
+                dropFunctor(ghostedLaplDiagView, distFunctor, threshold);
+            ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
+                scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
+
+            Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:scalar_filter:main_loop", range_type(0,numRows),
+                                    scalarFunctor, nnzFA);
+          }
         }
 
       }
@@ -747,23 +861,24 @@ namespace MueLu {
       GO numLocalBoundaryNodes  = 0;
       GO numGlobalBoundaryNodes = 0;
 
-      // Convert to functors later
-      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:bnd", range_type(0, boundaryNodes.dimension_0()),
+      Kokkos::parallel_reduce("MueLu:CoalesceDropF:Build:bnd", range_type(0, boundaryNodes.extent(0)),
         KOKKOS_LAMBDA(const LO i, GO& n) {
           if (boundaryNodes(i))
             n++;
         }, numLocalBoundaryNodes);
 
-      RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+      auto comm = A->getRowMap()->getComm();
       MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
       GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
     }
 
     if ((GetVerbLevel() & Statistics1) && threshold != zero) {
-      RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+      auto comm = A->getRowMap()->getComm();
+
       GO numGlobalTotal, numGlobalDropped;
       MueLu_sumAll(comm, numTotal,   numGlobalTotal);
       MueLu_sumAll(comm, numDropped, numGlobalDropped);
+
       if (numGlobalTotal != 0) {
         GetOStream(Statistics1) << "Number of dropped entries: "
             << numGlobalDropped << "/" << numGlobalTotal
