@@ -506,8 +506,14 @@ namespace MueLu {
 
     prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
     SetPrecParameters();
-    prec_->initialize();
-    prec_->compute();
+    {
+      SubFactoryMonitor(*this, "Preconditioner init", currentLevel);
+      prec_->initialize();
+    }
+    {
+      SubFactoryMonitor(*this, "Preconditioner compute", currentLevel);
+      prec_->compute();
+    }
 
     if (lambdaMax == negone) {
       typedef Tpetra::RowMatrix<SC, LO, GO, NO> MatrixType;
