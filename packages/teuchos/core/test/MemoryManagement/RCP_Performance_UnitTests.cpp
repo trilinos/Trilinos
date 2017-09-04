@@ -58,7 +58,9 @@ double relCpuSpeed = 1e-2;
 int maxArraySize = 10000;
 double maxRcpRawCreateDestroyRatio = 10.0;
 double maxRcpRawAdjustRefCountRatio = 100.0;
+#ifdef HAVE_TEUCHOSCORE_CXX11
 double maxRcpSpAdjustRefCountRatio = 5.0;
+#endif
 double maxRcpRawObjAccessRatio = 13.5;
 
 const int intPrec = 8;
@@ -290,7 +292,9 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
   outputter.outputHeader();
 
   double finalRcpRawRatio = 100000.0;
+#ifdef HAVE_TEUCHOSCORE_CXX11
   double finalRcpSpRatio = 100000.0;
+#endif
   int arraySize = 64;
 
   for (
@@ -393,8 +397,10 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
   out << "\n";
   TEST_COMPARE( finalRcpRawRatio, <=, maxRcpRawAdjustRefCountRatio );
   out << "\n";
+#ifdef HAVE_TEUCHOSCORE_CXX11
   TEST_COMPARE( finalRcpSpRatio, <=, maxRcpSpAdjustRefCountRatio );
   out << "\n";
+#endif
 
 }
 
