@@ -111,7 +111,7 @@ namespace MueLu {
     const ParameterList& pL = GetParameterList();
     SC omega = pL.get<Scalar>("omega");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(omega == Teuchos::ScalarTraits<Scalar>::zero(), Exceptions::RuntimeError,
+    TEUCHOS_TEST_FOR_EXCEPTION(omega == zero, Exceptions::RuntimeError,
                                "MueLu::SchurComplementFactory::Build: Scaling parameter omega must not be zero to avoid division by zero.");
 
     RCP<Matrix> S = Teuchos::null;
@@ -129,9 +129,9 @@ namespace MueLu {
         diag = Utilities::GetLumpedMatrixDiagonal(A00);
       }
       // invert diagonal vector. Replace all entries smaller than 1e-4 by one!
-      RCP<Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, STS::one()));
+      RCP<Vector> D = (!fixing ? Utilities::GetInverse(diag) : Utilities::GetInverse(diag, 1e-4, one));
       // scale with -1/omega
-      D->scale(Teuchos::as<Scalar>(-STS::one()/omega));
+      D->scale(Teuchos::as<Scalar>(-one/omega));
       // left scale matrix T with (scaled) diagonal D
       // Copy the value of A01 so we can do the left scale.
       RCP<Matrix> T = MatrixFactory::BuildCopy(A01);
