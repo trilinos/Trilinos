@@ -72,7 +72,7 @@ class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
       if(indices_from) {
         // indices_from is currently copied from indices_to for the reverse
         // plan and ownership stays with the parent (forward) plan, so we don't
-        // delete here. TODO: Maybe add an ownership flag to make this more 
+        // delete here. TODO: Maybe add an ownership flag to make this more
         // literal
         //  delete indices_from; // DO NOT delete indices_from - copied
       }

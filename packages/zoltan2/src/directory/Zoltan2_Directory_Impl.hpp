@@ -107,7 +107,6 @@ Zoltan2_Directory<gid_t,lid_t,user_t>::Zoltan2_Directory(
 template <typename gid_t,typename lid_t,typename user_t>
 Zoltan2_Directory<gid_t,lid_t,user_t>::~Zoltan2_Directory()
 {
-  release();
 }
 
 template <typename gid_t,typename lid_t,typename user_t>
@@ -172,7 +171,10 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::allocate()
   size = sizeof(gid_t);
   remove_msg_size = size + sizeof(Zoltan2_DD_Remove_Msg<gid_t,lid_t>);
 
-  size = sizeof(lid_t) + size_of_value_type();
+  // Current form of find_local is passed so gid_t is the input and
+  // lid_t is the output so this guarantees that ptr is sufficient to
+  // cover both (uses the max).
+  size = std::max(sizeof(gid_t),sizeof(lid_t)) + size_of_value_type();
   find_msg_size = size + sizeof(Zoltan2_DD_Find_Msg<gid_t,lid_t>);
 
   /* force alignment */
@@ -224,19 +226,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::copy(
 }
 
 template <typename gid_t,typename lid_t,typename user_t>
-void Zoltan2_Directory<gid_t,lid_t,user_t>::release() {
-  const char * yo = "Zoltan2_Directory::release";
-
-  if (debug_level > 4) {
-    ZOLTAN2_TRACE_IN (comm->getRank(), yo, NULL);
-  }
-
-  if (debug_level > 4) {
-    ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
-  }
-}
-
-template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   const std::vector<gid_t>& gid, const std::vector<lid_t>& lid,
   const std::vector<user_t>& user, const std::vector<int>& partition,
@@ -274,6 +263,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     }
   }
 #endif
+
   update_setup.complete();
 
   if (debug_level > 6) {
@@ -403,7 +393,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
       *plid = lid[i];
     }
     else {
-      *plid = 0;
+      *plid = lid_t();
     }
 
     // TODO: Fix cast
@@ -651,10 +641,31 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
         node.partition = partition;
       }
 
-      // Response to multiple updates to a gid in 1 update cycle
-      if (debug_level > 0 && node.errcheck != owner) {
-        throw std::logic_error(
-          "Zoltan2_Directory::update_local() Multiply defined GID");
+      // TODO: Need to evaluate the role of errcheck as it seems the original
+      // setup had a bug and would generate warnings here which were not correct.
+      // See the note below where we now set: node.errcheck = -1
+      // For Replace mode, we expect this is only called once per gid, so we
+      // must have node.errcheck = -1.
+      if(debug_level) { // errcheck only reset to -1 when debug_level > 0
+        if (node.errcheck != -1) {
+          // Add and Aggregate are expected to have multiple procs all calling
+          // update to the same gid - but for Replace logically only one proc
+          // should manage this call. Throw if more than 1 proc tries to do
+          // replace. TODO: Discuss and verify this is the right design behavior.
+          if(mode == Replace && node.errcheck == node.owner) {
+            throw std::logic_error(
+              "Zoltan2_Directory::update_local() called twice for replace mode"
+              " with the correct owner. This is caused by calling update with"
+              " a gid list contaning duplicate ids. TODO: Discuss if this"
+              " should be allowed.");
+          }
+          if(node.owner != node.errcheck && node.errcheck != -1) {
+            throw std::logic_error(
+              "Zoltan2_Directory::update_local() called with a new owner when"
+              " a previous call used a different owner. This is an internal"
+              " error and should not be possible.");
+          }
+        }
       }
 
       node.errcheck = owner;
@@ -699,7 +710,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
     *puser = user_t();
   }
 #else
-  node.lid = lid ? (*lid) : 0;
+  node.lid = lid ? (*lid) : lid_t();
 
   if(user) {
     raw_to_user(user, node.userData);
@@ -712,7 +723,19 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
 
   node.partition = partition;
   node.owner = owner;
-  node.errcheck = owner;
+
+  // TODO: Discuss - this was originally setup as owner but I think that is
+  // incorrect (not causing the expected behavior). zoltan's original code will
+  // generate warnings (for debug_level >0) about multiply defined GID when it
+  // is actually ok it seems.
+  // When update calls with debug_level > 0, all errcheck values are reset to
+  // -1. If we want to use that as a reference for whether update was called
+  // twice or with the wrong owner, we should also set -1 here because update
+  // may be accessing nodes that already exist or creating new ones.
+  // Then we're guaranteed to have -1 for errcheck the first time we update
+  // a node which already exists. If the node does not exist there is no worry
+  // about wrong owner.
+  node.errcheck = -1;
 
 #ifdef CONVERT_DIRECTORY_RELIC
   // Add node to the linked list
@@ -907,9 +930,10 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     user_t * puser = (user_t*)(ptr->adjData + 1);
 
     // In original DD_Find_Local the first two values (gid and lid) are
-    // passed as the same, but not sure that is can mean - currently I've
-    // got the lid just set NULL and lid is not working
-    err = find_local(ptr->adjData, NULL,
+    // passed as the same, we send in gid and collect lid if it's used.
+    // that is why the find_msg_size is setup originally using max of
+    // sizeof(gid_t) and sizeof(lid_t)
+    err = find_local(ptr->adjData, (lid_t*)ptr->adjData,
       puser, &ptr->partition, &ptr->proc, throw_if_missing);
     track_offset_resized += rmsg_sizes_resized[i];
   }
@@ -973,8 +997,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     if (partition.size())
       partition[ptr->index] = ptr->partition ;
     if (lid.size()) {
-      // TODO - need to redo/fix the lid handling and make it correct
-      lid[ptr->index] = 0; // *((lid_t*)ptr->adjData);
+      // TODO: Fix cast
+      lid[ptr->index] = *((lid_t*)ptr->adjData);
     }
 
     user_t * pRead = (user_t*)(ptr->adjData+1);
@@ -1101,11 +1125,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find_local(
     ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
   }
 
-  if (debug_level > 0)  {
-    throw std::logic_error("GID not found");
-  }
-
   if(throw_if_missing) {
+    // TODO: This used to be linked to debug_level but wanted to discuss as it
+    // seems we would want an error always if this failed.
     throw std::logic_error("find_local did not succeed");
   }
 
@@ -1218,7 +1240,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::print() const
 #endif
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
-  for (int i = 0; i < node_map.size(); i++) {
+  for (size_t i = 0; i < node_map.size(); i++) {
       Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
         node_map.value_at(node_map.find(i));
       printf ("ZOLTAN DD Print(%d): \tList, \tGID ", comm->getRank());
@@ -1258,8 +1280,6 @@ Zoltan2_Directory<gid_t,lid_t,user_t> & Zoltan2_Directory<gid_t,lid_t,user_t>::
   operator=(const Zoltan2_Directory<gid_t,lid_t,user_t> &src)
 {
   throw std::logic_error("UNTESTED CHECKPOINT"); // needs unit testing
-
-  release();
 
   use_lid = src.use_lid;
   debug_level = src.debug_level;

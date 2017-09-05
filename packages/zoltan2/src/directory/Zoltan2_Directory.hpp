@@ -200,7 +200,6 @@ class Zoltan2_Directory {
   #endif
 
     void allocate();
-    void release(); // release all memory
     int copy(const Zoltan2_Directory<gid_t,lid_t,user_t> &dd);
 
   #ifdef CONVERT_DIRECTORY_RELIC
