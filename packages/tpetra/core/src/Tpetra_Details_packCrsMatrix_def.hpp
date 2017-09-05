@@ -469,9 +469,13 @@ packCrsMatrixRow (const ColumnMap& col_map,
         num_bytes_out += PackTraits<int, BDT>::packValue (pids_out, k, pid);
       }
     }
-    // Copy the values
+    // mfh 05 Sep 2017: See #1673 for the reason why vals_in needs to
+    // be converted to an unmanaged BDT View.  It's important that it
+    // be unmanaged!
+    Kokkos::View<const ST*, BDT, Kokkos::MemoryUnmanaged>
+      vals_in_bdt (vals_in.data (), vals_in.dimension_0 ());
     const auto p =
-      PackTraits<ST, BDT>::packArray (vals_out, vals_in, num_ent);
+      PackTraits<ST, BDT>::packArray (vals_out, vals_in_bdt, num_ent);
     error_code += p.first;
     num_bytes_out += p.second;
   }
