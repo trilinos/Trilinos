@@ -58,13 +58,23 @@ namespace Zoltan2 {
 class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
   public:
     Zoltan2_Directory_Plan() :
-      indices_to_allocated(false), indices_from_allocated(false),
+      indices_to(NULL), indices_from(NULL),
       sizes_allocated(false),
       maxed_recvs(0), recv_buff(NULL), bOwnRecvBuff(false) {
     }
     ~Zoltan2_Directory_Plan() {
       if(bOwnRecvBuff) {
         delete recv_buff;
+      }
+      if(indices_to) {
+        delete indices_to;
+      }
+      if(indices_from) {
+        // indices_from is currently copied from indices_to for the reverse
+        // plan and ownership stays with the parent (forward) plan, so we don't
+        // delete here. TODO: Maybe add an ownership flag to make this more 
+        // literal
+        //  delete indices_from; // DO NOT delete indices_from - copied
       }
     }
 
@@ -82,12 +92,10 @@ class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
     std::vector<int> starts_from;	  /* where in item lists each recv starts */
 
     /* Following arrays used is send/recv data not packed contiguously */
-    std::vector<int> indices_to;    /* indices of items I send in my msgs */
-    bool indices_to_allocated; // will need to rethink - new vector (loses NULL vs 0)
+    std::vector<int> *indices_to;    /* indices of items I send in my msgs */
 
-				/* ordered consistent with lengths_to */
-    std::vector<int> indices_from;  /* indices for where to put arriving data */
-    bool indices_from_allocated; // will need to rethink - new vector (loses NULL vs 0)
+    /* ordered consistent with lengths_to */
+    std::vector<int> *indices_from;  /* indices for where to put arriving data */
 
 				/* ordered consistent with lengths_from */
 
@@ -117,8 +125,6 @@ class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
     int       nvals_recv;	     /* number of values I own after remapping */
     int       nrecvs;		       /* number of msgs I'll recv (w/o self_msg) */
     int       nsends;		       /* number of msgs I'll send (w/o self_msg) */
-    int       nindices_to;
-    int       nindices_from;
     int       self_msg;		     /* do I have data for myself? */
     int       max_send_size;	 /* size of longest message I send (w/o self) */
     int       total_recv_size; /* total amount of data I'll recv (w/ self) */
