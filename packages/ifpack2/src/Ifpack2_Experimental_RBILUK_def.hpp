@@ -51,8 +51,9 @@
 #include <Ifpack2_RILUK.hpp>
 
 //#define IFPACK2_RBILUK_INITIAL
+#define IFPACK2_RBILUK_INITIAL_NOKK
 
-#ifndef IFPACK2_RBILUK_INITIAL
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
 #include <KokkosBatched_Gemm_Decl.hpp>
 #include <KokkosBatched_Gemm_Serial_Impl.hpp>
 #include <KokkosBatched_Util.hpp>
@@ -602,7 +603,7 @@ void RBILUK<MatrixType>::compute ()
 
         const little_block_type dmatInverse = D_block_->getLocalBlock(j,j);
         // alpha = 1, beta = 0
-#ifndef IFPACK2_RBILUK_INITIAL
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
         KokkosBatched::Experimental::SerialGemm
           <KokkosBatched::Experimental::Trans::NoTranspose,
           KokkosBatched::Experimental::Trans::NoTranspose,
@@ -627,7 +628,7 @@ void RBILUK<MatrixType>::compute ()
             if (kk > -1) {
               little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
               little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
-#ifndef IFPACK2_RBILUK_INITIAL
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
         KokkosBatched::Experimental::SerialGemm
           <KokkosBatched::Experimental::Trans::NoTranspose,
           KokkosBatched::Experimental::Trans::NoTranspose,
@@ -648,7 +649,7 @@ void RBILUK<MatrixType>::compute ()
             little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
             if (kk > -1) {
               little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
-#ifndef IFPACK2_RBILUK_INITIAL
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
         KokkosBatched::Experimental::SerialGemm
           <KokkosBatched::Experimental::Trans::NoTranspose,
           KokkosBatched::Experimental::Trans::NoTranspose,
@@ -661,7 +662,7 @@ void RBILUK<MatrixType>::compute ()
               //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(uumat.ptr_on_device ()), reinterpret_cast<impl_scalar_type*>(kkval.ptr_on_device ()), blockSize_, -STM::one(), STM::one());
             }
             else {
-#ifndef IFPACK2_RBILUK_INITIAL
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
         KokkosBatched::Experimental::SerialGemm
           <KokkosBatched::Experimental::Trans::NoTranspose,
           KokkosBatched::Experimental::Trans::NoTranspose,
@@ -720,7 +721,7 @@ void RBILUK<MatrixType>::compute ()
       for (local_ordinal_type j = 0; j < NumU; ++j) {
         little_block_type currentVal((typename little_block_type::value_type*) &InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride); // current_mults++;
         // scale U by the diagonal inverse
-#ifndef IFPACK2_RBILUK_INITIAL
+#ifndef IFPACK2_RBILUK_INITIAL_NOKK
         KokkosBatched::Experimental::SerialGemm
           <KokkosBatched::Experimental::Trans::NoTranspose,
           KokkosBatched::Experimental::Trans::NoTranspose,
