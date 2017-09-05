@@ -179,22 +179,22 @@ namespace MueLu {
       }
     };
 
-    void MeshLayoutInterface(RCP<GeometricData> myGeometry, const LO blkSize,
-                             const int interpolationOrder, Array<Array<GO> >& lGhostNodesIDs,
-                             Array<GO>& lCoarseNodesGIDs,
-                             const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords) const;
+    struct NodesIDs {
+      // This small struct just carries basic data associated with coarse nodes that is needed
+      // to compute colMapP and to fillComplete P,
 
-    void GetCoarsePoints(RCP<GeometricData> myGeometry, Array<GO>& ghostsGIDs,
-                         const int interpolationOrder, const LO blkSize) const;
+      Array<GO>  GIDs, coarseGIDs;
+      Array<int> PIDs;
+      Array<LO>  LIDs;
+    };
 
-    void MakeGeneralGeometricP2(RCP<GeometricData> myGeo,
-                                const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords,
-                                const LO nnzP, const LO dofsPerNode,
-                                RCP<const Map>& stridedDomainMapP,
-                                RCP<Matrix> & Amat, RCP<Matrix>& P,
-                                RCP<Xpetra::MultiVector<double,LO,GO,NO> >& cCoords,
-                                Array<Array<GO> > ghostsGIDs, Array<GO> coarseNodesGIDs,
-                                int interpolationOrder) const;
+    void MeshLayoutInterface(const int interpolationOrder, const LO blkSize,
+                             RCP<const Map> fineCoordsMap, RCP<GeometricData> myGeometry,
+                             RCP<NodesIDs> ghostedCoarseNodes, Array<GO>& lCoarseNodesGIDs) const;
+
+    void GetCoarsePoints(const int interpolationOrder, const LO blkSize,
+                         RCP<const Map> fineCoordsMap, RCP<GeometricData> myGeometry,
+                         RCP<NodesIDs> ghostedCoarseNodes, Array<GO>& lCoarseNodesGIDs) const;
 
     void MakeGeneralGeometricP(RCP<GeometricData> myGeo,
                                const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords,
@@ -202,12 +202,13 @@ namespace MueLu {
                                RCP<const Map>& stridedDomainMapP,
                                RCP<Matrix> & Amat, RCP<Matrix>& P,
                                RCP<Xpetra::MultiVector<double,LO,GO,NO> >& cCoords,
-                               Array<GO> ghostsGIDs, int interpolationOrder) const;
+                               RCP<NodesIDs> ghostedCoarseNodes, Array<GO> coarseNodesGIDs,
+                               int interpolationOrder) const;
 
     void ComputeStencil(const LO numDimension, const Array<GO> currentNodeIndices,
                         const Array<GO> coarseNodeIndices, const LO rate[3],
                         const Array<Array<double> > coord, const int interpolationOrder,
-                        std::vector<SC>& stencil)const;
+                        std::vector<SC>& stencil) const;
 
     void ComputeConstantInterpolationStencil(const LO numDimension,
                                              const Array<GO> currentNodeIndices,
