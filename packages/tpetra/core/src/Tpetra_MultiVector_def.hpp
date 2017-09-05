@@ -2389,6 +2389,30 @@ namespace Tpetra {
       } // lclNumRows != 0
     }
 
+    // Kokkos::parallel_for functor for applying square root to each
+    // entry of a 1-D Kokkos::View.
+    template<class ViewType>
+    class SquareRootFunctor {
+    public:
+      typedef typename ViewType::execution_space execution_space;
+      typedef typename ViewType::size_type size_type;
+
+      SquareRootFunctor (const ViewType& theView) :
+        theView_ (theView)
+      {}
+
+      KOKKOS_INLINE_FUNCTION void
+      operator() (const size_type& i) const
+      {
+        typedef typename ViewType::non_const_value_type value_type;
+        typedef Kokkos::Details::ArithTraits<value_type> KAT;
+        theView_(i) = KAT::sqrt (theView_(i));
+      }
+
+    private:
+      ViewType theView_;
+    };
+
     template<class RV>
     void
     gblNormImpl (const RV& normsOut,
@@ -2449,14 +2473,11 @@ namespace Tpetra {
           }
         }
         else {
-          //TODO:mndevec below depends on impl namespace of KokkosKernels.
-          //We either need to move it to out of impl, or tpetra should implement it itself.
-
           // There's not as much parallelism now, but that's OK.  The
           // point of doing parallel dispatch here is to keep the norm
-          // results on the device, thus avoiding a copy to the host and
-          // back again.
-          KokkosKernels::Impl::SquareRootFunctor<RV> f (normsOut);
+          // results on the device, thus avoiding a copy to the host
+          // and back again.
+          SquareRootFunctor<RV> f (normsOut);
           typedef typename RV::execution_space execution_space;
           typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
           Kokkos::parallel_for (range_type (0, numVecs), f);
