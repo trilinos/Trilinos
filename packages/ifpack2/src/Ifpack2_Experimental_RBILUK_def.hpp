@@ -583,7 +583,6 @@ void RBILUK<MatrixType>::compute ()
         colflag[InI[j]] = j;
       }
 
-      scalar_type diagmod = STM::zero (); // Off-diagonal accumulator
 #ifndef IFPACK2_RBILUK_INITIAL
       for (local_ordinal_type i = 0; i < blockSize_; ++i)
         for (local_ordinal_type j = 0; j < blockSize_; ++j){
@@ -592,6 +591,7 @@ void RBILUK<MatrixType>::compute ()
           }
         }
 #else
+      scalar_type diagmod = STM::zero (); // Off-diagonal accumulator
       Kokkos::deep_copy (diagModBlock, diagmod);
 #endif
 
