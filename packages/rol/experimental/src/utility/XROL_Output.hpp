@@ -1,7 +1,6 @@
 #pragma once 
 
-#include <ostream>
-
+#include "XROL.hpp"
 
 namespace XROL {
 
@@ -15,6 +14,13 @@ void to_ostream( std::ostream &os, const First& first, Args&&... args) {
   os << first;
   to_ostream(os,args...);
 }
+
+
+
+
+
+
+
 
 
 } // namespace XROL

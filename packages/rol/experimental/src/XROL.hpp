@@ -1,4 +1,3 @@
-
 // @HEADER
 // ************************************************************************
 //
@@ -44,22 +43,27 @@
 
 #pragma once
 
-#include<complex>
-
-namespace XROL {
-
-template<class Scalar> 
-struct MagnitudeTypeTraits {
-  using type = Scalar;
-};
-
-// Specialize for complex-valued scalar
-template<class Scalar> 
-struct MagnitudeTypeTraits<std::complex<Scalar>> {
-  using type = Scalar;
-};
+// C++ Includes
+#include <algorithm>
+#include <complex>
+#include <exception>
+#include <limits>
+#include <map>
+#include <memory>
+#include <tuple>
+#include <type_traits>
+#include <vector>
 
 
+// Utility
+#include "XROL_ElementwiseFunction.hpp"
+#include "XROL_Exception.hpp"
+#include "XROL_Magnitude.hpp"
+#include "XROL_Output.hpp"
 
-} // namespace XROL
+// Vector
+#include "XROL_VectorTraits.hpp"
+#include "XROL_StdVectorTraits.hpp"
+#include "XROL_CheckVector.hpp"
 
+// Objective

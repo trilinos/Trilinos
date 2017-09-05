@@ -44,9 +44,8 @@
 
 #pragma once
 
-#include <tuple>
 
-#include "XROL_Exception.hpp"
+#include "XROL.hpp"
 
 namespace XROL {
 
@@ -245,7 +244,7 @@ struct VectorOptionalTraits {
 
   static auto norm( const V &x ) {
     Sum<ElementType> sum;
-    MagnitudeType norm2 = VFT::transform_and_reduce( [](auto xe,auto ye){return xe*xe;}, sum, x); 
+    auto norm2 = VFT::transform_and_reduce( [](auto xe,auto ye){return xe*xe;}, sum, x); 
     return std::sqrt(norm2);
   }
 

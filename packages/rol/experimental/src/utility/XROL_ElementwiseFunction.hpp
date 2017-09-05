@@ -44,10 +44,7 @@
 
 #pragma once
 
-#include "XROL_VectorTraits.hpp"
-#include <algorithm>
-#include <limits>
-#include <tuple>
+#include "XROL.hpp"
 
 namespace XROL {
 

@@ -45,7 +45,7 @@
 #define ROL_OBJECTIVE_H
 
 #include "ROL_Vector.hpp"
-#include "ROL_Types.hpp"
+/#include "ROL_Types.hpp"
 #include <iostream>
 
 /** @ingroup func_group

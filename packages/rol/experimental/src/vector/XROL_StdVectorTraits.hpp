@@ -44,9 +44,7 @@ m
 
 #pragma once
 
-#include "XROL_VectorTraits.hpp"
-#include <vector>
-#include <memory>
+#include "XROL.hpp"
 
 /** @ingroup la_group
     \file XROL::StdVectorTraits
@@ -61,10 +59,9 @@ struct ElementTraits<std::vector<Element>> {
 
   using IndexType     = typename std::vector<Element>::size_type;
   using ElementType   = Element;
-  using MagnitudeType = MagnitudeTypeTraits<Element>::type;
+  using MagnitudeType = Magnitude<Element>::type;
 
 };
-
 
 
 template<class Element>

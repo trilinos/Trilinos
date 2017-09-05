@@ -49,19 +49,27 @@
 
 namespace XROL {
 
+template<class V> 
+struct Objective {
 
-class IncompatibleDimensions : public std::exception {
-private:
-  std::string msg_;
-public:
-  IncompatibleDimensions( const std::string &msg ) : 
-    msg_(msg) {}
-  const char* what () const throw() {
-    return msg_.c_str();
-  }
-}; // IncompatibleDimensions
+  virtual ~Objective() {}
+
+  virtual void update( /* args */ ) {}
+ 
+  virtual auto value( const V& x ) = 0;
+   
+  virtual void gradient( V& g, const V& x ) {}
+
+  virtual auto dirDeriv( const V& x, const V& d ) {}
+
+  virtual void hessVec( V& hv, const V& v, const V& x ) {} 
+
+  virtual void invHessVec( V& hv, const V& v, const V& x ) {}
+
+  virtual void precond( V& Pv, const V& v, const V& x ) {}
+
+};
 
 
 } // namespace XROL
-
 

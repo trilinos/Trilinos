@@ -46,22 +46,20 @@
 
 #include "XROL.hpp"
 
-
 namespace XROL {
 
+template<class Scalar> 
+struct Magnitude {
+  using type = Scalar;
+};
 
-class IncompatibleDimensions : public std::exception {
-private:
-  std::string msg_;
-public:
-  IncompatibleDimensions( const std::string &msg ) : 
-    msg_(msg) {}
-  const char* what () const throw() {
-    return msg_.c_str();
-  }
-}; // IncompatibleDimensions
+// Specialize for complex-valued scalar
+template<class Scalar> 
+struct Magnitude<std::complex<Scalar>> {
+  using type = Scalar;
+};
+
 
 
 } // namespace XROL
-
 
