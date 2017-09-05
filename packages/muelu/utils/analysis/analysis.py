@@ -16,6 +16,16 @@ Options:
 """
 
 import glob
+import matplotlib
+# Check if can connect to DISPLAY
+interactive = True
+import os
+r = os.system('python3 -c "import matplotlib.pyplot as plt; plt.figure()" &> /dev/null')
+if r != 0:
+    interactive = False
+    matplotlib.use('Agg')
+
+# The change of matplotlib backed must be done *before* importint pyplot
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from math import ceil
@@ -465,9 +475,10 @@ if __name__ == '__main__':
 
     valid_styles = ['stack', 'stack-percent', 'scaling']
     if not style in valid_styles:
-        print("Style must be one of ")
-        print(valid_styles)
-        raise
+        raise Exception('Style must be one of ', valid_styles)
+
+    if not interactive and output_file == None:
+        raise Exception('Could not connect to DISPLAY, and output file is not provided. Exiting...')
 
     ## Setup default plotting
     plt.figure(figsize=(12, 12))
