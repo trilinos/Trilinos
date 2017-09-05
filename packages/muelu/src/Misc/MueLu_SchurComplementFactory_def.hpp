@@ -90,7 +90,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", currentLevel);
 
     typedef Teuchos::ScalarTraits<SC> STS;
-    SC zero = STS::zero(), one = STS::one();
+    SC one = STS::one();
 
     RCP<Matrix>            A = Get<RCP<Matrix> >(currentLevel, "A");
     RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A);
