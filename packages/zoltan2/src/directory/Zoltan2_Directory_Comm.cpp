@@ -70,13 +70,11 @@ void Zoltan2_Directory_Plan::getInvertedValues(Zoltan2_Directory_Plan * from) {
   lengths_to    = from->lengths_from;
   procs_to      = from->procs_from;
   indices_to    = from->indices_from;
-  indices_to_allocated = from->indices_from_allocated;
 
   starts_to     = from->starts_from;
   lengths_from  = from->lengths_to;
   procs_from    = from->procs_to;
   indices_from  = from->indices_to;
-  indices_from_allocated = from->indices_to_allocated;
 
   starts_from   = from->starts_to;
   nrecvs        = from->nsends;
@@ -109,8 +107,8 @@ void Zoltan2_Directory_Plan::print(const std::string& headerMessage) const {
       PRINT_VECTOR(lengths_from)
       PRINT_VECTOR(starts_to)
       PRINT_VECTOR(starts_from)
-      PRINT_VECTOR(indices_to)
-      PRINT_VECTOR(indices_from)
+      if(indices_to) { PRINT_VECTOR((*indices_to)) }
+      if(indices_from) { PRINT_VECTOR((*indices_from)) }
       PRINT_VECTOR(sizes)
       PRINT_VECTOR(sizes_to)
       PRINT_VECTOR(sizes_from)
@@ -123,8 +121,6 @@ void Zoltan2_Directory_Plan::print(const std::string& headerMessage) const {
       PRINT_VAL(nvals_recv)
       PRINT_VAL(nrecvs)
       PRINT_VAL(nsends)
-      PRINT_VAL(nindices_to)
-      PRINT_VAL(nindices_from)
       PRINT_VAL(self_msg)
       PRINT_VAL(max_send_size)
       PRINT_VAL(total_recv_size)
@@ -186,8 +182,7 @@ Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
   std::vector<int> lengths_to;   /* lengths I'll send to */
   std::vector<int> procs_to;     /* processors I'll send to */
   std::vector<int> starts_to;	   /* where in list my sends begin */
-  std::vector<int> indices_to;	 /* local_id values I'll be sending */
-  bool indices_to_allocated = false;
+  std::vector<int> *indices_to = NULL;	 /* local_id values I'll be sending */
 
   int max_send_size = 0;	       /* size of longest message I send */
   int nsends = 0;		             /* # procs I'll send to (including self) */
@@ -242,13 +237,12 @@ Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
 
     starts[0] = 0;
 
-    indices_to_allocated = true;
-    indices_to.resize(nactive);
+    indices_to = new std::vector<int>(nactive);
 
     for (int i = 0; i < nvals; i++) {
       int proc = assign[i];
       if (proc >= 0) {
-        indices_to[starts[proc]] = i;
+        (*indices_to)[starts[proc]] = i;
         ++starts[proc];
       }
     }
@@ -315,7 +309,6 @@ Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
   plan_forward->starts_to = starts_to;
   plan_forward->procs_to = procs_to;
   plan_forward->indices_to = indices_to;
-  plan_forward->indices_to_allocated = indices_to_allocated;
   plan_forward->lengths_from = lengths_from;
   plan_forward->starts_from = starts_from;
   plan_forward->procs_from = procs_from;
@@ -323,7 +316,6 @@ Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
   plan_forward->nvals_recv = total_recv_size;
   plan_forward->nrecvs = nrecvs;
   plan_forward->nsends = nsends;
-  plan_forward->nindices_to = nactive;
   plan_forward->self_msg = self_msg;
   plan_forward->max_send_size = max_send_size;
   plan_forward->total_recv_size = total_recv_size;
@@ -596,7 +588,7 @@ int Zoltan2_Directory_Comm::do_post(
   }
 
   /* Post irecvs */
-  if (!plan->indices_from_allocated) {
+  if (!plan->indices_from) {
     /* Data can go directly into user space. */
     plan->recv_buff = &recv_data;
   }
@@ -648,7 +640,7 @@ int Zoltan2_Directory_Comm::do_post(
     }
   }
 
-  std::vector<char> send_buff(plan->indices_to_allocated ?
+  std::vector<char> send_buff(plan->indices_to ?
     (plan->max_send_size * nbytes) : 0);
 
   /* Barrier to ensure irecvs are posted before doing any sends. */
@@ -679,7 +671,7 @@ int Zoltan2_Directory_Comm::do_post(
   }
 
   if (!plan->sizes_allocated) {	/* Data all of same size */
-    if (!plan->indices_to_allocated) {	/* data already blocked by processor. */
+    if (!plan->indices_to) {	/* data already blocked by processor. */
       int self_num = 0;       /* where in send list my_proc appears */
       for (int i = proc_index, j = 0; j < nblocks; j++) {
         if (plan->procs_to[i] != my_proc) {
@@ -719,7 +711,7 @@ int Zoltan2_Directory_Comm::do_post(
           int j = plan->starts_to[i];
           for (int k = 0; k < plan->lengths_to[i]; k++) {
             memcpy(&send_buff[offset],
-            &send_data[(size_t)(plan->indices_to[j++]) * (size_t)nbytes], nbytes);
+            &send_data[(size_t)((*plan->indices_to)[j++]) * (size_t)nbytes], nbytes);
             offset += nbytes;
           }
           // TODO: Teuchos::readySend(...)
@@ -738,15 +730,16 @@ int Zoltan2_Directory_Comm::do_post(
       if (plan->self_msg) {	/* Copy data to self. */
         for (int k = 0; k < plan->lengths_to[self_num]; k++) {
           memcpy(&(plan->getRecvBuff())[self_recv_address],
-            &send_data[(size_t)(
-              plan->indices_to[self_index++]) * (size_t)nbytes], nbytes);
+            &send_data[
+              (size_t)((*plan->indices_to)[self_index++]) * (size_t)nbytes],
+              nbytes);
           self_recv_address += nbytes;
         }
       }
     }
   }
   else {                       /* Data of differing sizes */
-    if (!plan->indices_to_allocated) {        /* data already blocked by processor. */
+    if (!plan->indices_to) {        /* data already blocked by processor. */
       int self_num = 0;       /* where in send list my_proc appears */
       for (int i = proc_index, j = 0; j < nblocks; j++) {
         if (plan->procs_to[i] != my_proc) {
@@ -786,12 +779,12 @@ int Zoltan2_Directory_Comm::do_post(
           size_t offset = 0; /* offset into array I'm copying into */
           int j = plan->starts_to[i];
           for (int k = 0; k < plan->lengths_to[i]; k++) {
-            if (plan->sizes[plan->indices_to[j]]) {
+            if (plan->sizes[(*plan->indices_to)[j]]) {
               memcpy(&send_buff[offset],
                 &send_data[(size_t)(plan->indices_to_ptr[j]) * (size_t)nbytes],
-                (size_t)(plan->sizes[plan->indices_to[j]]) * (size_t)nbytes);
+                (size_t)(plan->sizes[(*plan->indices_to)[j]]) * (size_t)nbytes);
               offset +=
-                (size_t)(plan->sizes[plan->indices_to[j]]) * (size_t)nbytes;
+                (size_t)(plan->sizes[(*plan->indices_to)[j]]) * (size_t)nbytes;
             }
             j++;
           }
@@ -816,13 +809,13 @@ int Zoltan2_Directory_Comm::do_post(
             char* lrecv = &(plan->getRecvBuff())[self_recv_address];
             size_t send_idx = (size_t)kk * (size_t)nbytes;
             const char* lsend = &send_data[send_idx];
-            int sindex = plan->sizes[plan->indices_to[j]], idx;
+            int sindex = plan->sizes[(*plan->indices_to)[j]], idx;
             for (idx=0; idx<nbytes; idx++) {
               memcpy(lrecv, lsend, sindex);
               lrecv += sindex;
               lsend += sindex;
             }
-            self_recv_address += (size_t)(plan->sizes[plan->indices_to[j]])
+            self_recv_address += (size_t)(plan->sizes[(*plan->indices_to)[j]])
               * (size_t) nbytes;
             j++;
           }
@@ -852,7 +845,7 @@ int Zoltan2_Directory_Comm::do_wait(
 
   /* Wait for messages to arrive & unpack them if necessary. */
   /* Note: since request is in plan, could wait in later routine. */
-  if (!plan->indices_from_allocated) {	/* No copying required */
+  if (!plan->indices_from) {	/* No copying required */
     if (plan->nrecvs > 0) {
       // TODO: Teuchos::waitAllImpl(...)
       MPI_Waitall(plan->nrecvs, &(plan->request[0]), &(plan->status[0]));
@@ -884,7 +877,7 @@ int Zoltan2_Directory_Comm::do_wait(
       else {
         int k = plan->starts_from[self_num];
         for (int j = plan->lengths_from[self_num]; j; j--) {
-          memcpy(&recv_data[(size_t)(plan->indices_from[k]) * (size_t)nbytes],
+          memcpy(&recv_data[(size_t)((*plan->indices_from)[k]) * (size_t)nbytes],
             &(plan->getRecvBuff())[(size_t)k * (size_t)nbytes], nbytes);
           k++;
         }
@@ -922,7 +915,7 @@ int Zoltan2_Directory_Comm::do_wait(
       else {
         int k = plan->starts_from[index];
         for (int j = plan->lengths_from[index]; j; j--) {
-          memcpy(&recv_data[(size_t)(plan->indices_from[k]) * (size_t)nbytes],
+          memcpy(&recv_data[(size_t)((*plan->indices_from)[k]) * (size_t)nbytes],
                  &(plan->getRecvBuff())[(size_t)k * (size_t)nbytes], nbytes);
           k++;
         }
@@ -977,7 +970,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
   /* CREATE SEND BUFFER */
 
   int sorted = 0;
-  if (!plan->indices_to_allocated){
+  if (!plan->indices_to){
     sorted = 1;
     for (int i=1; i< nSendMsgs; i++){
       if (plan->starts_to[i] < plan->starts_to[i-1]){
@@ -1002,7 +995,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
       outbufLen += plan->sizes_to[i];
     }
 
-    if (plan->indices_to_allocated) {
+    if (plan->indices_to) {
       /*
        * items are not grouped by message
        */
@@ -1019,7 +1012,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
           if (plan->procs_to[i] == p){   /* procs_to is sorted */
 
             for (int j=0; j < plan->lengths_to[i]; j++,k++){
-              int itemSize = plan->sizes[plan->indices_to[k]] * nbytes;
+              int itemSize = plan->sizes[(*plan->indices_to)[k]] * nbytes;
               int offset = plan->indices_to_ptr[k] * nbytes;
 
               memcpy(pBufPtr, &(send_data[0]) + offset, itemSize);
@@ -1083,7 +1076,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
       }
     }
   }
-  else if (plan->indices_to_allocated) {
+  else if (plan->indices_to) {
     /*
      * item sizes are constant, however the items belonging in a given
      * message may not be contiguous in send_data
@@ -1100,7 +1093,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
       if (i < nSendMsgs){
         if (plan->procs_to[i] == p){   /* procs_to is sorted */
           for (int j=0; j < plan->lengths_to[i]; j++,k++) {
-            int offset = plan->indices_to[k] * nbytes;
+            int offset = (*plan->indices_to)[k] * nbytes;
             memcpy(pBufPtr, &(send_data[0]) + offset, nbytes);
             pBufPtr += nbytes;
           }
@@ -1165,7 +1158,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
 
   sorted = 0;
   int i;
-  if (!plan->indices_from_allocated) {
+  if (!plan->indices_from) {
     sorted = 1;
     for (i=1; i< nRecvMsgs; i++) {
       if (plan->starts_from[i] < plan->starts_from[i-1]){
@@ -1230,7 +1223,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
 
       /* each item in each message is nbytes long */
 
-      if (!plan->indices_from_allocated) {
+      if (!plan->indices_from) {
         for (i=0; i < nRecvMsgs; i++){
           int offset = plan->starts_from[i] * nbytes;
           int length = plan->lengths_from[i] * nbytes;
@@ -1243,7 +1236,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
         for (i=0; i < nRecvMsgs; i++) {
 
           for (int j=0; j < plan->lengths_from[i]; j++,k++){
-            int offset = plan->indices_from[k] * nbytes;
+            int offset = (*plan->indices_from)[k] * nbytes;
             memcpy(&(recv_data[0]) + offset, pBufPtr, nbytes);
             pBufPtr += nbytes;
           }
@@ -1397,7 +1390,7 @@ int Zoltan2_Directory_Comm::resize(
   MPI_Allreduce(&has_sizes, &var_sizes, 1, MPI_INT, MPI_LOR,
     Teuchos::getRawMpiComm(*plan->comm));
 
-  if (var_sizes && plan->indices_from_allocated) {
+  if (var_sizes && plan->indices_from) {
     // NEW METHOD
     // Allow this to run now - the below implementation is working but perhaps
     // not done correctly for other usage cases I have not considered yet.
@@ -1455,7 +1448,7 @@ int Zoltan2_Directory_Comm::resize(
      */
     starts_to_ptr.resize(nsends + self_msg);
 
-    if (!plan->indices_to_allocated) {
+    if (!plan->indices_to) {
       /* Simpler case; sends already blocked by processor */
       std::vector<int> index(nsends + self_msg);
       std::vector<int> sort_val(nsends + self_msg);
@@ -1500,8 +1493,8 @@ int Zoltan2_Directory_Comm::resize(
         starts_to_ptr[i] = sum;
         int j = plan->starts_to[i];
         for (int k = 0; k < plan->lengths_to[i]; k++) {
-          indices_to_ptr[j] = offset[plan->indices_to[j]];
-          sizes_to[i] += sizes[plan->indices_to[j++]];
+          indices_to_ptr[j] = offset[(*plan->indices_to)[j]];
+          sizes_to[i] += sizes[(*plan->indices_to)[j++]];
         }
         if (sizes_to[i] > plan->max_send_size &&
             plan->procs_to[i] != my_proc)
@@ -1520,7 +1513,7 @@ int Zoltan2_Directory_Comm::resize(
 
     starts_from_ptr.resize(nrecvs + self_msg);
 
-    if (!plan->indices_from_allocated) {
+    if (!plan->indices_from) {
       /* Simpler case; recvs already blocked by processor */
       std::vector<int> index(nrecvs + self_msg);
       std::vector<int> sort_val(nrecvs + self_msg);
