@@ -158,7 +158,7 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
-    typedef Teuchos::ScalarTraits<Scalar> TST;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
@@ -238,10 +238,10 @@ namespace MueLuTests {
     RCP<Matrix> PtentTPtent = MatrixMatrix::Multiply(*Ptent, true, *Ptent, false, out);
     RCP<Vector> diagVec     = VectorFactory::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
-    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
+    if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
       TEST_EQUALITY(diagVec->norm1(),                     diagVec->getGlobalLength());
     TEST_EQUALITY(diagVec->normInf()-1 < 1e-12,         true);
-    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
+    if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
     TEST_EQUALITY(diagVec->meanValue(),                 1.0);
     TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(),   diagVec->getGlobalLength());
   }
@@ -251,7 +251,7 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
-    typedef Teuchos::ScalarTraits<Scalar> TST;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
@@ -259,19 +259,18 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel;
     TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(200);
+    auto A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(200);
 
     A->SetFixedBlockSize(2);
 
     fineLevel.Set("A", A);
 
+    auto amalgFact = rcp(new AmalgamationFactory());
 
-    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
-
-    RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+    auto dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-    RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    auto aggFact = rcp(new UncoupledAggregationFactory_kokkos());
     ParameterList aggParams;
     aggParams.set("aggregation: ordering",              "natural");
     aggParams.set("aggregation: min agg size",           3);
@@ -280,10 +279,10 @@ namespace MueLuTests {
     aggFact->SetFactory("DofsPerNode",  dropFact);
     aggFact->SetFactory("Graph",        dropFact);
 
-    RCP<CoarseMapFactory_kokkos> coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+    auto coarseMapFact = rcp(new CoarseMapFactory_kokkos());
     coarseMapFact->SetFactory("Aggregates", aggFact);
 
-    RCP<TentativePFactory_kokkos> TentativePFact = rcp(new TentativePFactory_kokkos());
+    auto TentativePFact = rcp(new TentativePFactory_kokkos());
     TentativePFact->SetFactory("Aggregates",         aggFact);
     TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
     TentativePFact->SetFactory("CoarseMap",          coarseMapFact);
@@ -297,7 +296,7 @@ namespace MueLuTests {
     RCP<Matrix> Ptent;
     coarseLevel.Get("P",Ptent,TentativePFact.get());
 
-    RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace", TentativePFact.get());
+    auto coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace", TentativePFact.get());
 
     size_t NSdim = coarseNullSpace->getNumVectors();
     TEST_EQUALITY(NSdim, 2);
@@ -305,47 +304,43 @@ namespace MueLuTests {
     //coarseNullSpace->describe(out, Teuchos::VERB_EXTREME);
 
     // Check interpolation by computing ||fineNS - P*coarseNS||
-    RCP<MultiVector> PtN = MultiVectorFactory::Build(Ptent->getRangeMap(), NSdim);
+    auto PtN = MultiVectorFactory::Build(Ptent->getRangeMap(), NSdim);
     Ptent->apply(*coarseNullSpace, *PtN, Teuchos::NO_TRANS, 1.0, 0.0);
 
-    RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(), NSdim);
+    auto diff = MultiVectorFactory::Build(A->getRowMap(), NSdim);
     diff->putScalar(0.0);
 
     coarseLevel.Release("P",         TentativePFact.get()); // release Ptent
     coarseLevel.Release("Nullspace", TentativePFact.get());
 
-    RCP<NullspaceFactory_kokkos> nspFact = Teuchos::rcp(new NullspaceFactory_kokkos());
+    auto nspFact = Teuchos::rcp(new NullspaceFactory_kokkos());
     fineLevel.Request("Nullspace",nspFact.get());
 
     nspFact->Build(fineLevel);
 
-    RCP<MultiVector> fineNullSpace = fineLevel.Get<RCP<MultiVector> >("Nullspace", nspFact.get());
+    auto fineNullSpace = fineLevel.Get<RCP<MultiVector> >("Nullspace", nspFact.get());
 
     TEST_EQUALITY(fineNullSpace->getNumVectors(), 2);
 
     // diff = fineNS - (P*coarseNS)
     diff->update(1.0, *fineNullSpace, -1.0, *PtN, 0.0);
 
-    //diff->describe(out, Teuchos::VERB_EXTREME);
-
-    Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
+    Array<typename STS::magnitudeType> norms(NSdim);
     diff->norm2(norms);
-    for (decltype(NSdim) i = 0; i < NSdim; ++i) {
-      out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
+    for (decltype(NSdim) i = 0; i < NSdim; ++i)
       TEST_EQUALITY(norms[i] < 1e-12, true);
-    }
 
     // Check normalization and orthogonality of prolongator columns by
     // making sure that P^T*P = I
     RCP<Matrix> PtentTPtent = MatrixMatrix::Multiply(*Ptent, true, *Ptent, false, out);
     RCP<Vector> diagVec     = VectorFactory::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
-    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(diagVec->norm1() - diagVec->getGlobalLength() < 1e-14, true);
-    TEST_EQUALITY(diagVec->normInf()-1 < 1e-12,         true);
-    if (TST::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-    TEST_EQUALITY(Teuchos::ScalarTraits<SC>::magnitude(diagVec->meanValue()) - 1.0 < 1e-14, true);
-    TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(),   diagVec->getGlobalLength());
+    if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
+      TEST_EQUALITY(STS::magnitude(diagVec->norm1() - diagVec->getGlobalLength()) < 1e-14, true);
+    TEST_EQUALITY(STS::magnitude(diagVec->normInf() - 1.0) < 1e-12, true);
+    if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
+      TEST_EQUALITY(Teuchos::ScalarTraits<SC>::magnitude(diagVec->meanValue() - 1.0) < 1e-14, true);
+    TEST_EQUALITY(PtentTPtent->getGlobalNumEntries(), diagVec->getGlobalLength());
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(TentativePFactory_kokkos, MakeTentativeUsingDefaultNullSpace, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -353,7 +348,7 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(SC,GO,NO);
-    typedef Teuchos::ScalarTraits<Scalar> TST;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
 
     out << "version: " << MueLu::Version() << std::endl;
     out << "Test QR when nullspace isn't supplied by user" << std::endl;
@@ -361,17 +356,17 @@ namespace MueLuTests {
     Level fineLevel, coarseLevel;
     TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::createTwoLevelHierarchy(fineLevel, coarseLevel);
 
-    RCP<Matrix> A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(199);
+    auto A = TestHelpers_kokkos::TestFactory<SC, LO, GO, NO>::Build1DPoisson(199);
 
     fineLevel.Set("A", A);
 
 
-    RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+    auto amalgFact = rcp(new AmalgamationFactory());
 
-    RCP<CoalesceDropFactory_kokkos> dropFact = rcp(new CoalesceDropFactory_kokkos());
+    auto dropFact = rcp(new CoalesceDropFactory_kokkos());
     dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-    RCP<UncoupledAggregationFactory_kokkos> aggFact = rcp(new UncoupledAggregationFactory_kokkos());
+    auto aggFact = rcp(new UncoupledAggregationFactory_kokkos());
     ParameterList aggParams;
     aggParams.set("aggregation: ordering",              "natural");
     aggParams.set("aggregation: min agg size",           3);
@@ -380,10 +375,10 @@ namespace MueLuTests {
     aggFact->SetFactory("DofsPerNode",  dropFact);
     aggFact->SetFactory("Graph",        dropFact);
 
-    RCP<CoarseMapFactory_kokkos> coarseMapFact = rcp(new CoarseMapFactory_kokkos());
+    auto coarseMapFact = rcp(new CoarseMapFactory_kokkos());
     coarseMapFact->SetFactory("Aggregates", aggFact);
 
-    RCP<TentativePFactory_kokkos> TentativePFact = rcp(new TentativePFactory_kokkos());
+    auto TentativePFact = rcp(new TentativePFactory_kokkos());
     TentativePFact->SetFactory("Aggregates",         aggFact);
     TentativePFact->SetFactory("UnAmalgamationInfo", amalgFact);
     TentativePFact->SetFactory("CoarseMap",          coarseMapFact);
@@ -397,21 +392,21 @@ namespace MueLuTests {
     RCP<Matrix> Ptent;
     coarseLevel.Get("P",Ptent,TentativePFact.get());
 
-    RCP<MultiVector> coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",TentativePFact.get());
+    auto coarseNullSpace = coarseLevel.Get<RCP<MultiVector> >("Nullspace",TentativePFact.get());
 
     coarseLevel.Release("P",TentativePFact.get()); // release Ptent
     coarseLevel.Release("Nullspace",TentativePFact.get());   // release coarse nullspace
 
     //grab default fine level nullspace (vector of all ones)
-    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(A->getRowMap(), 1);
+    auto nullSpace = MultiVectorFactory::Build(A->getRowMap(), 1);
     nullSpace->putScalar(1.0);
 
     //check interpolation
     LO NSdim = 1;
-    RCP<MultiVector> PtN = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    auto PtN = MultiVectorFactory::Build(A->getRowMap(),NSdim);
     Ptent->apply(*coarseNullSpace,*PtN,Teuchos::NO_TRANS,1.0,0.0);
 
-    RCP<MultiVector> diff = MultiVectorFactory::Build(A->getRowMap(),NSdim);
+    auto diff = MultiVectorFactory::Build(A->getRowMap(),NSdim);
     diff->putScalar(0.0);
 
     //diff = fineNS + (-1.0)*(P*coarseNS) + 0*diff
@@ -419,10 +414,8 @@ namespace MueLuTests {
 
     Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(NSdim);
     diff->norm2(norms);
-    for (LO i=0; i<NSdim; ++i) {
-      out << "||diff_" << i << "||_2 = " << norms[i] << std::endl;
-      TEST_EQUALITY(norms[i]<1e-12, true);
-    }
+    for (LO i=0; i<NSdim; ++i)
+      TEST_EQUALITY(norms[i] < 1e-12, true);
 
   } //MakeTentativeUsingDefaultNullSpace
 
