@@ -128,26 +128,6 @@ FUNCTION(TRIBITS_UPDATE_GIT_EXTRAREPO  GIT_EXE  EXTRAREPO_SRC_DIR)
 ENDFUNCTION()
 
 
-
-#
-# Wrapper used for unit testing purposes
-#
-
-MACRO(EXTRAREPO_EXECUTE_PROCESS_WRAPPER)
-  IF (NOT CTEST_DEPENDENCY_HANDLING_UNIT_TESTING)
-    EXECUTE_PROCESS(${ARGN}
-      RESULT_VARIABLE  EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL)
-    IF (NOT EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL STREQUAL "0")
-      MESSAGE(SEND_ERROR
-        "Error: EXECUTE_PROCESS(${ARGN}) returned"
-	" '${EXTRAREPO_EXECUTE_PROCESS_WRAPPER_RTN_VAL}'")
-    ENDIF()
-  ELSE()
-    MESSAGE("EXECUTE_PROCESS(${ARGN})")
-  ENDIF()
-ENDMACRO()
-
-
 #
 # Update or clone a single extra repo
 #
@@ -663,6 +643,24 @@ MACRO(SELECT_FINAL_SET_OF_PACKAGES_TO_DIRECTLY_TEST)
 
   ENDFOREACH()
 
+ENDMACRO()
+
+
+#
+# Set mapping of labels to subprojects (i.e. TriBITS packages) for CDash.
+#
+# NOTE: Unlike for the inner CMake configure, only subprojects that are
+# explicitly tested will be marked as a CDash subproject.  This limits the
+# rows in CDash.  This does not seem to be a problem for when running ctest
+# locally.  When run locally, ctest will just report aggregated times for
+# subprojects that have 1 or more tests.  Not true for CDash.
+#
+
+MACRO(TRIBITS_CTEST_DRIVER_SET_LABELS_TO_SUBPROJECTS_MAPPING)
+  SET(CTEST_LABELS_FOR_SUBPROJECTS)
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES_TO_DIRECTLY_TEST})
+    LIST(APPEND CTEST_LABELS_FOR_SUBPROJECTS ${TRIBITS_PACKAGE})
+  ENDFOREACH()
 ENDMACRO()
 
 
@@ -1194,7 +1192,8 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
   # A) Define mapping from labels to subprojects and gather configure arguments
   #
 
-  TRIBITS_SET_LABELS_TO_SUBPROJECTS_MAPPING()
+  TRIBITS_CTEST_DRIVER_SET_LABELS_TO_SUBPROJECTS_MAPPING()
+  PRINT_VAR(CTEST_LABELS_FOR_SUBPROJECTS)
 
   MESSAGE("")
   MESSAGE("Configuring ...")
