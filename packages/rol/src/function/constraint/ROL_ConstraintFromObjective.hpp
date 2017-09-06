@@ -46,14 +46,15 @@
 
 #include "ROL_Objective.hpp"
 #include "ROL_Constraint.hpp"
+#include "ROL_SingletonVector.hpp"
 
 /** @ingroup func_group
     \class ROL::ConstraintFromObjective
-    \brief Creates a constraint from an objective function and a target value
+    \brief Creates a constraint from an objective function and a offset value
 
     Example:  Suppose we have an objective function f(x) and we wish to impose
-              a condition f(x) >= target, then this class creates the scalar
-              constraint c(x) = f(x)-target 
+              a condition f(x) >= offset, then this class creates the scalar
+              constraint c(x) = f(x)-offset 
 */
 
 
@@ -62,22 +63,38 @@ namespace ROL {
 template<class Real> 
 class ConstraintFromObjective : public Constraint<Real> {
 
-    template <typename T> using RCP = Teuchos::RCP<T>;
+  template <typename T> using RCP = Teuchos::RCP<T>;
 
-  using V    = ROL::Vector<Real>;
-  using Fill = ROL::Elementwise::Fill<Real>;
-  using Sum  = ROL::Elementwise::ReductionSum<Real>;
+  using V = ROL::Vector<Real>;
 
 private:
 
-  RCP<ROL::Objective<Real>>  obj_;
-  Real                       target_;
-  Sum                        sum_;
+  RCP<Objective<Real>>  obj_;
+  RCP<V>                dualVector_;
+  Real                  offset_;
+  bool                  isDualInitialized_;
+
+  Real getValue( const V& x ) { 
+    return Teuchos::dyn_cast<const SingletonVector<Real>>(x).value(); 
+  }
+ 
+  void setValue( V& x, Real val ) {
+    Teuchos::dyn_cast<const SingletonVector<Real>>(x).value() = val;
+  }
 
 public:
 
-  ConstraintFromObjective( const RCP<Objective<Real>>& obj, Real target ) :
-    obj_(obj), target_(target) {}
+  ConstraintFromObjective( const RCP<Objective<Real>>& obj, Real offset ) :
+    obj_(obj), dualVector_(Teuchos::null), offset_(offaset) {}
+
+  const RCP<Objective<Real>> getObjective(void) const { return obj_; }
+
+
+  void setParameter( const std::vector<Real> &param ) {
+    obj_->setParameter(param);
+    Constraint<Real>::setParameter(param);
+  }
+
 
   /** \brief Update constraint
   */
@@ -85,11 +102,11 @@ public:
     obj_->update(x,flag,iter);
   }
   
-  /** \brief Evaluate constraint c(x) = f(x)-target
+  /** \brief Evaluate constraint c(x) = f(x)-offset
   */
   void value( V& c, const V& x, Real& tol ) {
     Real f = obj->value(x,tol);
-    c.applyUnary(Fill(f-target_));
+    setValue(c, obj->value(x,tol) - offset_ ); 
   }
 
   /** \brief Apply the constraint Jacobian at \f$x\f$, \f$c'(x) \in L(\mathcal{X}, \mathcal{C})\f$,
@@ -98,9 +115,15 @@ public:
           c'(x)v = \lim_{t\rightarrow 0} \frac{d}{dt} f(x+tv) = \langle \nabla f(x),v\rangle 
       \f]
   */
-
   void applyJacobian( V& jv, const V& v, const V& x, Real& tol ) {
-    jv.applyUnary(Fill(obj->dirDeriv(x,v,tol)));
+    if ( !isDualInitialized_ ) {
+      dualVector_ = x.dual().clone();
+      isDualInitialized_ = true;
+    }
+    Teuchos::RCP<std::vector<Real> > jvp =
+      (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
+    obj_->gradient(*dualVector_,x,tol);
+    setValue(jv,v.dot(dualVector_->dual()));
   }
 
   /** \brief Apply the adjoint of the the constraint Jacobian at 
@@ -111,7 +134,7 @@ public:
   */
   void applyAdjointJacobian( V& ajv, const V& v, const V& x, Real& tol ) {
     obj->gradient(ajv,x,tol);
-    ajv.scale(v.reduce( sum_ ) );
+    ajv.scale(getValue(v));
   }
 
   /** \brief Apply the derivative of the adjoint of the constraint Jacobian at \f$x\f$
@@ -122,7 +145,7 @@ public:
   */
   void applyAdjointHessian( V& ahuv, const V& u, const V& v, const V& x, tol ) {
     obj->hessVec(ahuv,v,x,tol);
-    ahuv.scale(u.reduce( sum_ ) );
+    ahuv.scale(getValue(u));
   }
 };
 
