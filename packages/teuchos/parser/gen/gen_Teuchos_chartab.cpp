@@ -5,12 +5,13 @@
 #include <cassert>
 
 int main() {
-  int chartab[CHAR_MAX + 1];
-  char inv_chartab[CHAR_MAX + 1];
+  int chartab[SCHAR_MAX + 1];
+  typedef signed char schar;
+  schar inv_chartab[SCHAR_MAX + 1];
   int n = 0;
-  for (int i = 0; i <= CHAR_MAX; ++i) chartab[i] = -1;
-  for (int i = 0; i <= CHAR_MAX; ++i) {
-    switch (char(i)) {
+  for (int i = 0; i <= SCHAR_MAX; ++i) chartab[i] = -1;
+  for (int i = 0; i <= SCHAR_MAX; ++i) {
+    switch (schar(i)) {
       /* not using std::isspace, so we'll be dropping support for
          form feed and vertical tab. */
       case ' ':
@@ -18,35 +19,35 @@ int main() {
       case '\n':
       case '\r':
         chartab[i] = n;
-        inv_chartab[n] = char(i);
+        inv_chartab[n] = schar(i);
         ++n;
     }
   }
-  for (int i = 0; i <= CHAR_MAX; ++i) {
+  for (int i = 0; i <= SCHAR_MAX; ++i) {
     if (std::islower(i)) {
       chartab[i] = n;
-      inv_chartab[n] = char(i);
+      inv_chartab[n] = schar(i);
       ++n;
     }
   }
-  for (int i = 0; i <= CHAR_MAX; ++i) {
+  for (int i = 0; i <= SCHAR_MAX; ++i) {
     if (std::isupper(i)) {
       chartab[i] = n;
-      inv_chartab[n] = char(i);
+      inv_chartab[n] = schar(i);
       ++n;
     }
   }
-  for (int i = 0; i <= CHAR_MAX; ++i) {
+  for (int i = 0; i <= SCHAR_MAX; ++i) {
     if (std::isdigit(i)) {
       chartab[i] = n;
-      inv_chartab[n] = char(i);
+      inv_chartab[n] = schar(i);
       ++n;
     }
   }
-  for (int i = 0; i <= CHAR_MAX; ++i) {
+  for (int i = 0; i <= SCHAR_MAX; ++i) {
     if (std::ispunct(i)) {
       chartab[i] = n;
-      inv_chartab[n] = char(i);
+      inv_chartab[n] = schar(i);
       ++n;
     }
   }
@@ -61,7 +62,8 @@ int main() {
   chartab_hpp << "\n";
   chartab_hpp << "enum { NCHARS = " << n << " };\n";
   chartab_hpp << "\n";
-  chartab_hpp << "extern int const chartab[" << (CHAR_MAX + 1) << "];\n";
+  chartab_hpp << "#define TEUCHOS_CHARTAB_SIZE " << (SCHAR_MAX + 1) << '\n';
+  chartab_hpp << "extern int const chartab[TEUCHOS_CHARTAB_SIZE];\n";
   chartab_hpp << "extern char const inv_chartab[NCHARS];\n";
   chartab_hpp << "\n";
   chartab_hpp << "}  // end namespace Teuchos\n";
@@ -76,10 +78,10 @@ int main() {
   chartab_cpp << "\n";
   chartab_cpp << "namespace Teuchos {\n";
   chartab_cpp << "\n";
-  chartab_cpp << "int const chartab[" << (CHAR_MAX + 1) << "] = {\n";
-  for (int i = 0; i <= CHAR_MAX; ++i) {
+  chartab_cpp << "int const chartab[TEUCHOS_CHARTAB_SIZE] = {\n";
+  for (int i = 0; i <= SCHAR_MAX; ++i) {
     chartab_cpp << "  " << chartab[i];
-    if (i != CHAR_MAX) chartab_cpp << ',';
+    if (i != SCHAR_MAX) chartab_cpp << ',';
     chartab_cpp << '\n';
   }
   chartab_cpp << "};\n";
