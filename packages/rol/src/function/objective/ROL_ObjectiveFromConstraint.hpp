@@ -59,23 +59,21 @@
 namespace ROL {
 
 template <class Real>
-class ObjectiveFromConstraint : Objective<Real> {
-
-  template <typename T> using RCP = Teuchos::RCP<T>;
-
+class ObjectiveFromConstraint : public Objective<Real> {
 
 private:
 
-  RCP<Constraint<Real>> con_;
-  RCP<Vector<Real>>     l_;      // Lagrange multiplier 
-  RCP<Vector<Real>>     c_;      // Constraint vector
+  Teuchos::RCP<Constraint<Real> > con_;
+  Teuchos::RCP<Vector<Real> >     l_;      // Lagrange multiplier 
+  Teuchos::RCP<Vector<Real> >     c_;      // Constraint vector
 
 
 public:
 
-  ObjectiveFromConstraint( const RCP<Constraint<Real>> &con, 
+  ObjectiveFromConstraint( const Teuchos::RCP<Constraint<Real> > &con, 
                            const Vector<Real> &l ) :
     con_(con), l_(l.clone()), c_(l.dual().clone()) {
+    l_->set(l);
   }
 
   virtual ~ObjectiveFromConstraint() {}

@@ -63,31 +63,29 @@ namespace ROL {
 template<class Real> 
 class ConstraintFromObjective : public Constraint<Real> {
 
-  template <typename T> using RCP = Teuchos::RCP<T>;
-
   using V = ROL::Vector<Real>;
 
 private:
 
-  RCP<Objective<Real>>  obj_;
-  RCP<V>                dualVector_;
-  Real                  offset_;
-  bool                  isDualInitialized_;
+  Teuchos::RCP<Objective<Real>>  obj_;
+  Teuchos::RCP<V>                dualVector_;
+  Real                           offset_;
+  bool                           isDualInitialized_;
 
   Real getValue( const V& x ) { 
-    return Teuchos::dyn_cast<const SingletonVector<Real>>(x).value(); 
+    return Teuchos::dyn_cast<const SingletonVector<Real> >(x).getValue(); 
   }
  
   void setValue( V& x, Real val ) {
-    Teuchos::dyn_cast<const SingletonVector<Real>>(x).value() = val;
+    Teuchos::dyn_cast<SingletonVector<Real>>(x).setValue(val);
   }
 
 public:
 
-  ConstraintFromObjective( const RCP<Objective<Real>>& obj, Real offset ) :
-    obj_(obj), dualVector_(Teuchos::null), offset_(offaset) {}
+  ConstraintFromObjective( const Teuchos::RCP<Objective<Real> >& obj, Real offset=0 ) :
+    obj_(obj), dualVector_(Teuchos::null), offset_(offset) {}
 
-  const RCP<Objective<Real>> getObjective(void) const { return obj_; }
+  const Teuchos::RCP<Objective<Real> > getObjective(void) const { return obj_; }
 
 
   void setParameter( const std::vector<Real> &param ) {
@@ -105,8 +103,7 @@ public:
   /** \brief Evaluate constraint c(x) = f(x)-offset
   */
   void value( V& c, const V& x, Real& tol ) {
-    Real f = obj->value(x,tol);
-    setValue(c, obj->value(x,tol) - offset_ ); 
+    setValue(c, obj_->value(x,tol) - offset_ ); 
   }
 
   /** \brief Apply the constraint Jacobian at \f$x\f$, \f$c'(x) \in L(\mathcal{X}, \mathcal{C})\f$,
@@ -120,8 +117,6 @@ public:
       dualVector_ = x.dual().clone();
       isDualInitialized_ = true;
     }
-    Teuchos::RCP<std::vector<Real> > jvp =
-      (Teuchos::dyn_cast<ROL::StdVector<Real> >(jv)).getVector();
     obj_->gradient(*dualVector_,x,tol);
     setValue(jv,v.dot(dualVector_->dual()));
   }
@@ -133,7 +128,7 @@ public:
       \f[ c'(x)^\ast v = v\nabla f(x) \f]
   */
   void applyAdjointJacobian( V& ajv, const V& v, const V& x, Real& tol ) {
-    obj->gradient(ajv,x,tol);
+    obj_->gradient(ajv,x,tol);
     ajv.scale(getValue(v));
   }
 
@@ -143,11 +138,10 @@ public:
 
      \f[ c"(x)(v,\cdot)^\ast = u \frac{d}{dt} \nabla f(x+tv)\big|_{t=0}
   */
-  void applyAdjointHessian( V& ahuv, const V& u, const V& v, const V& x, tol ) {
-    obj->hessVec(ahuv,v,x,tol);
+  void applyAdjointHessian( V& ahuv, const V& u, const V& v, const V& x, Real& tol ) {
+    obj_->hessVec(ahuv,v,x,tol);
     ahuv.scale(getValue(u));
   }
-};
 
 }; // ConstraintFromObjective
 

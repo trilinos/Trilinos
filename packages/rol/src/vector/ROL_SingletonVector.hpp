@@ -58,24 +58,22 @@ namespace ROL {
 template<class Real>
 class SingletonVector : public Vector<Real> {
 
-  template<class T> using RCP      = Teuchos::RCP<T>;
-
   using V  = Vector<Real>;
 
 private:
 
   Real value_;
 
-  Real getValue( const V& x ) { 
-    return Teuchos::dyn_cast<const SingletonVector<Real>>(x).value(); 
+  Real getValue( const V& x ) const { 
+    return Teuchos::dyn_cast<const SingletonVector<Real> >(x).getValue(); 
   }
 
 public:
 
-  SingletonVector(const Real& value) : value_(value) {}
+  SingletonVector(const Real& value=0) : value_(value) {}
 
-  const Real& value() const { return value; }
-  Real& value() { return value; }
+  Real getValue() const { return value_; }
+  void setValue( const Real& v ) { value_=v; }
 
   void set( const V& x ) { 
     value_ = getValue(x);
@@ -86,7 +84,7 @@ public:
   }
 
   void axpy( const Real alpha, const V& x ) {
-     value_ *= alpha; value_ += getValue(x);
+     value_ += alpha*getValue(x);
   }
 
   void scale( const Real alpha ) {
@@ -94,25 +92,31 @@ public:
   }
 
   Real dot( const V& x ) const {
-    return value_*getValue(x);
+    Real xv = getValue(x);
+    xv *= value_;
+    return xv;
+  }
+
+  Real norm() const {
+    return std::abs(value_);
   }
   
-  RCP<V> clone() const {
-    return Teuchos::rcp( new SingletonVector(0); );
+  Teuchos::RCP<V> clone() const {
+    return Teuchos::rcp( new SingletonVector(0) );
   }
   
-  RCP<V> basis() const {
-    return Teuchos::rcp( new SingletonVector(1); );
+  Teuchos::RCP<V> basis() const {
+    return Teuchos::rcp( new SingletonVector(1) );
   }
 
   int dimension() const { return 1; };
 
   void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
-    f.apply(value_);
+    value_ = f.apply(value_);
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const V& x ) {
-    f.apply(value_,getValue(x));
+    value_ = f.apply(value_,getValue(x));
   }
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
