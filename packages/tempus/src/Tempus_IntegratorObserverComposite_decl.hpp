@@ -11,6 +11,7 @@
 
 #include "Tempus_IntegratorObserver.hpp"
 #include "Tempus_TimeStepControl.hpp"
+#include <vector>
 
 namespace Tempus {
 
@@ -66,9 +67,9 @@ protected:
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
   Teuchos::RCP<TimeStepControl<Scalar> > timeStepControl_;
 
-private: 
+private:
 
-  Teuchos::Array<Teuchos::RCP<IntegratorObserver<Scalar > > > observers_;
+  std::vector<Teuchos::RCP<IntegratorObserver<Scalar > > > observers_;
 
 };
 
