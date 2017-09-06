@@ -1,3 +1,4 @@
+
 // @HEADER
 // ************************************************************************
 //
@@ -41,40 +42,69 @@
 // ************************************************************************
 // @HEADER
 
+#pragma once
+
 #include "XROL.hpp"
 
 namespace XROL {
 
+template<class V>
+// std::unique_ptr<V> 
+auto clone( const V& x ) { 
+  static_assert("clone() must be specialized for type " +
+   typeid(x).name() );
+  return nullptr; 
+}
+
+template<class V> 
+// std::unique_ptr<V> 
+auto basis( const V& x, ElementTraits<V>::IndexType i ) {
+  static_assert("basis() must be specialized for type " +
+   typeid(x).name() );
+  return nullptr
+}
+
+template<class V>
+// ElementTraits<V>::IndexType 
+auto dimension( const V& x ) {
+  static_assert("dimension() be specialized for type " +
+   typeid(x).name() );
+  return 0;
+}
+
+template<class V>
+void plus( V& x, const V& y ) {
+  VectorFunctionTraits<V>::transform(x,[](auto xe, auto ye){xe+=ye;},y);
+}
+
+template<class V>
+void scale( V& x, const ElementTraits<V>::ElementType alpha ) {
+  VectorFunctionTraits::transform(x,[alpha](auto xe){xs*=alpha;},y);
+}
+
+template<class V>
+// ElementTraits<V>::ElementType
+auto dot( const V& x, const V &y ) {
+  using ElementType = ElementTraits<V>::ElementType;
+  Sum<ElementType> sum;
+  return VectorFunctionTraits<V>::transform_and_reduce( 
+    [](auto xe,auto ye){return xe*ye;}, sum, x, y); 
+}
+
+template<class V> 
+// ElementTraits<V>::MagnitudeType
+auto norm( const V& x ) {
+  using ElementType   = ElementTraits<V>::ElementType;
+  using MagnitudeType = ElementTraits<V>::MagnitudeType;
+  Sum<ElementType> sum;
+  auto norm2 = VFT::transform_and_reduce( [](auto xe){return xe*xe;}, sum, x);  
+  return std::sqrt(norm2);
+}
+
+template<class V>
+void axpy( V& x, const ElementTraits<V>::ElementType
 
 
-namespace TypeCheckDetails {
 
-    template<bool...> struct bool_pack;
-    template<bool... bs>
-    using all_true = std::is_same<bool_pack<bs..., true>, bool_pack<true, bs...>>;
+} // namespace XROL
 
-
-} // namespace TypeCheckDetails
-
-template <typename... Ts>
-using all_true = TypeCheckDetails::all_true<Ts::value...>;
-
-template <typename T, typename... Ts>
-using all_same = all_true<std::is_same<T,Ts>...>;
-
-template<class T, class... Ts>
-using all_convertible = all_true<std::is_convertible<Ts,T>...>;
-
-
-/** \brief Generate a compile time error if the parameter pack does not have
-           uniform types
-*/
-template<class... Ts>
-void UniformTypeCheck( Ts... values ) {
-  using ReturnType = std::common_type_t<decltype(values)...>;
-  static_assert(all_same<ReturnType,decltype(values)...>::value, "Error: Template parameters "
-    "must have the same type!");
-};
-
-
-} // namespace XROL 
