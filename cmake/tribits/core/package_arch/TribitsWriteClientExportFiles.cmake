@@ -207,6 +207,8 @@ FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
      ${ARGN}
      )
 
+  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+
   IF (NOT ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES)
     MESSAGE(SEND_ERROR "Error: Can't generate export depenency files because"
       " ${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES is not ON!")
@@ -674,8 +676,9 @@ FUNCTION(TRIBITS_WRITE_PROJECT_CLIENT_EXPORT_FILES)
   # Reversing the package list so that libraries will be produced in order of
   # most dependent to least dependent.
   SET(PACKAGE_LIST ${${PROJECT_NAME}_SE_PACKAGES})
-  LIST(REVERSE PACKAGE_LIST)
-
+  IF (PACKAGE_LIST)
+    LIST(REVERSE PACKAGE_LIST)
+  ENDIF()
 
   # Loop over all packages to determine which were enabled. Then build a list
   # of all their libraries/includes in the proper order for linking

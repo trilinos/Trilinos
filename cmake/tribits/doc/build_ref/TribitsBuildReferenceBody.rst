@@ -30,21 +30,25 @@ recommended) from:
 Installing CMake from source [developers and experienced users]
 ---------------------------------------------------------------
 
-If you have access to the <Project> git repositories, then install CMake with::
+If you have access to the <Project> git repositories (which which includes a
+snapshot of TriBITS), then install CMake with::
 
-  $ $TRIBITS_BASE_DIR/python/install-cmake.py \
+  $ cd <some-scratch-space>/
+  $ export TRIBITS_BASE_DIR=<project-base-dir>/cmake/tribits
+  $ $TRIBITS_BASE_DIR/devtools_install/install-cmake.py \
      --install-dir=<INSTALL_BASE_DIR> \
      --do-all
 
 This will result in cmake and related CMake tools being installed in
-<INSTALL_BASE_DIR>/bin.
+``<INSTALL_BASE_DIR>/bin/`` (see the instructions printed at the end on how to
+update your ``PATH`` env var).
 
-Getting help for installing CMake with this script::
+To get help for installing CMake with this script use::
 
-  $ $TRIBITS_BASE_DIR/python/install-cmake.py --help
+  $ $TRIBITS_BASE_DIR/devtools_install/install-cmake.py --help
 
 NOTE: you will want to read the help message about how to use sudo to
-install in a privileged location (like the default /usr/local/bin).
+install in a privileged location (like the default ``/usr/local/bin``).
 
 
 Getting CMake Help
