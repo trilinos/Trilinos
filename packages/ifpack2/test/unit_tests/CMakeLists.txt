@@ -227,7 +227,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
   )
 
   TRIBITS_ADD_TEST(
-    SGSMT Ifpack2_UnitTest_SGSMT_CopyFile
+    SGSMT
     NAME SGSMT_compare_with_Jacobi
     ARGS ""
     COMM serial mpi
