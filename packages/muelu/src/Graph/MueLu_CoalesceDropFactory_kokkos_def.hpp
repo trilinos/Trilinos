@@ -559,8 +559,13 @@ namespace MueLu {
 
         // Share graph with the original matrix
         filteredA = MatrixFactory::Build(A->getCrsGraph());
-        filteredA->resumeFill();
 
+        // Do a no-op fill-complete
+        RCP<ParameterList> fillCompleteParams(new ParameterList);
+        fillCompleteParams->set("No Nonlocal Changes", true);
+        filteredA->fillComplete(fillCompleteParams);
+
+        // No need to reuseFill, just modify in place
         valsAux = filteredA->getLocalMatrix().values;
 
       } else {
@@ -734,13 +739,7 @@ namespace MueLu {
 
       dofsPerNode = 1;
 
-      if (reuseGraph) {
-        RCP<ParameterList> fillCompleteParams(new ParameterList);
-        fillCompleteParams->set("No Nonlocal Changes", true);
-
-        filteredA->fillComplete(fillCompleteParams);
-
-      } else {
+      if (!reuseGraph) {
         SubFactoryMonitor m2(*this, "LocalMatrix+FillComplete", currentLevel);
 
         local_matrix_type localFA = local_matrix_type("A", numRows, kokkosMatrix.numCols(), nnzFA, vals, rows, cols);
