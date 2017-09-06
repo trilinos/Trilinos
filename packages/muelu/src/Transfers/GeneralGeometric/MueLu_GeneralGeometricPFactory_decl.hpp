@@ -190,11 +190,13 @@ namespace MueLu {
 
     void MeshLayoutInterface(const int interpolationOrder, const LO blkSize,
                              RCP<const Map> fineCoordsMap, RCP<GeometricData> myGeometry,
-                             RCP<NodesIDs> ghostedCoarseNodes, Array<GO>& lCoarseNodesGIDs) const;
+                             RCP<NodesIDs> ghostedCoarseNodes,
+                             Array<Array<GO> >& lCoarseNodesGIDs) const;
 
     void GetCoarsePoints(const int interpolationOrder, const LO blkSize,
                          RCP<const Map> fineCoordsMap, RCP<GeometricData> myGeometry,
-                         RCP<NodesIDs> ghostedCoarseNodes, Array<GO>& lCoarseNodesGIDs) const;
+                         RCP<NodesIDs> ghostedCoarseNodes,
+                         Array<Array<GO> >& lCoarseNodesGIDs) const;
 
     void MakeGeneralGeometricP(RCP<GeometricData> myGeo,
                                const RCP<Xpetra::MultiVector<double,LO,GO,NO> >& fCoords,
@@ -202,7 +204,7 @@ namespace MueLu {
                                RCP<const Map>& stridedDomainMapP,
                                RCP<Matrix> & Amat, RCP<Matrix>& P,
                                RCP<Xpetra::MultiVector<double,LO,GO,NO> >& cCoords,
-                               RCP<NodesIDs> ghostedCoarseNodes, Array<GO> coarseNodesGIDs,
+                               RCP<NodesIDs> ghostedCoarseNodes, Array<Array<GO> > coarseNodesGIDs,
                                int interpolationOrder) const;
 
     void ComputeStencil(const LO numDimension, const Array<GO> currentNodeIndices,

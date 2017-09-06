@@ -214,21 +214,19 @@ namespace MueLu {
 
     // Load the mesh layout type and the associated mesh data
     myGeometry->meshLayout = pL.get<std::string>("meshLayout");
-    {
-      Array<GO> tmp;
-      if(fineLevel.GetLevelID() == 0) {
-        if(myGeometry->meshLayout != "Global Lexicographic") {
-          tmp = fineLevel.Get<Array<GO> >("meshData", NoFactory::get());
+    if(fineLevel.GetLevelID() == 0) {
+      if(myGeometry->meshLayout == "Local Lexicographic") {
+        Array<GO> tmp;
+        tmp = fineLevel.Get<Array<GO> >("meshData", NoFactory::get());
+        myGeometry->meshData.resize(rowMap->getComm()->getSize());
+        for(int i = 0; i < rowMap->getComm()->getSize(); ++i) {
+          myGeometry->meshData[i].resize(10);
+          for(int j = 0; j < 10; ++j) {
+            myGeometry->meshData[i][j] = tmp[10*i + j];
+          }
         }
       }
-      myGeometry->meshData.resize(rowMap->getComm()->getSize());
-      for(int i = 0; i < rowMap->getComm()->getSize(); ++i) {
-        myGeometry->meshData[i].resize(10);
-        for(int j = 0; j < 10; ++j) {
-          myGeometry->meshData[i][j] = tmp[10*i + j];
-        }
-      }
-    } // End of scope for tmp
+    }
 
     int interpolationOrder = pL.get<int>("order");
     TEUCHOS_TEST_FOR_EXCEPTION((interpolationOrder < 0) || (interpolationOrder > 1),
@@ -249,10 +247,9 @@ namespace MueLu {
     }
     RCP<const Map> fineCoordsMap = fineCoords->getMap();
 
-
     // This struct stores PIDs, LIDs and GIDs on the fine mesh and GIDs on the coarse mesh.
     RCP<NodesIDs> ghostedCoarseNodes = rcp(new NodesIDs{});
-    Array<GO> lCoarseNodesGIDs;
+    Array<Array<GO> > lCoarseNodesGIDs(2);
     if((fineLevel.GetLevelID() == 0) && (myGeometry->meshLayout != "Global Lexicographic")) {
       std::cout << "Using fine level interface!" << std::endl;
       MeshLayoutInterface(interpolationOrder, blkSize, fineCoordsMap, myGeometry,
@@ -290,11 +287,6 @@ namespace MueLu {
     MakeGeneralGeometricP(myGeometry, fineCoords, nTerms, blkSize, stridedDomainMapP,
                            A, P, coarseCoords, ghostedCoarseNodes, lCoarseNodesGIDs,
                            interpolationOrder);
-
-    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Research/GMG/MueLu_GMG/MultiBlocks/data/colMapP.mat",
-                      *P->getColMap());
-    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Research/GMG/MueLu_GMG/MultiBlocks/data/domainMapP.mat",
-                      *P->getDomainMap());
     out << "Computed P" << std::endl;
 
     // set StridingInformation of P
@@ -303,6 +295,9 @@ namespace MueLu {
     } else {
       P->CreateView("stridedMaps", P->getRangeMap(), stridedDomainMapP);
     }
+
+    Xpetra::IO<double,LO,GO,NO>::Write("/home/lberge/Research/GMG/MueLu_GMG/MultiBlocks/data/coarseCoords.mat", *coarseCoords);
+    Xpetra::IO<double,LO,GO,NO>::Write("/home/lberge/Research/GMG/MueLu_GMG/MultiBlocks/data/coarseCoordsMap.mat", *(coarseCoords->getMap()));
 
     // store the transfer operator and node coordinates on coarse level
     Set(coarseLevel, "P", P);
@@ -326,7 +321,7 @@ namespace MueLu {
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   MeshLayoutInterface(const int interpolationOrder, const LO blkSize, RCP<const Map> fineCoordsMap,
                       RCP<GeometricData> myGeo, RCP<NodesIDs> ghostedCoarseNodes,
-                      Array<GO>& lCoarseNodesGIDs) const{
+                      Array<Array<GO> >& lCoarseNodesGIDs) const{
     // The goal here is to produce maps that globally labels the mesh lexicographically.
     // These maps will replace the current maps of A, the coordinate vector and the nullspace.
     // Ideally if the user provides the necessary maps then nothing needs to be done, otherwise
@@ -559,7 +554,8 @@ namespace MueLu {
     ghostedCoarseNodes->LIDs.resize(numGhosted);
     ghostedCoarseNodes->GIDs.resize(numGhosted);
     ghostedCoarseNodes->coarseGIDs.resize(numGhosted);
-    lCoarseNodesGIDs.resize(numGhosted - numGhosts);
+    lCoarseNodesGIDs[0].resize(numGhosted - numGhosts);
+    lCoarseNodesGIDs[1].resize(numGhosted - numGhosts);
 
     out << "numGhosts: " << numGhosts << std::endl;
     out << "numGhosted: " << numGhosted << std::endl;
@@ -605,12 +601,19 @@ namespace MueLu {
           ghostedCoarseNodes->LIDs[currentIndex] = myLID;
           ghostedCoarseNodes->GIDs[currentIndex] = myGID;
           ghostedCoarseNodes->coarseGIDs[currentIndex] = myCoarseGID;
-          if(myPID == myRank){lCoarseNodesGIDs[countCoarseNodes] = myCoarseGID; ++countCoarseNodes;}
+          if(myPID == myRank){
+            lCoarseNodesGIDs[0][countCoarseNodes] = myCoarseGID;
+            lCoarseNodesGIDs[1][countCoarseNodes] = myGID;
+            ++countCoarseNodes;
+          }
           out << "" << coarseNodeFineIndices << " <=> " << coarseNodeCoarseIndices
               << " PID=" << myPID << " LID=" << myLID << " GID=" << myGID << std::endl;
         }
       }
     }
+
+    out << "coarseNodesGIDs: " << lCoarseNodesGIDs[0] << std::endl;
+    out << "coarseNodesGIDs: " << lCoarseNodesGIDs[1] << std::endl;
 
   } // DataInterface
 
@@ -618,7 +621,7 @@ namespace MueLu {
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   GetCoarsePoints(const int interpolationOrder, const LO blkSize, RCP<const Map> fineCoordsMap,
                   RCP<GeometricData> myGeo, RCP<NodesIDs> ghostedCoarseNodes,
-                  Array<GO>& lCoarseNodesGIDs) const{
+                  Array<Array<GO> >& lCoarseNodesGIDs) const{
     // Assuming perfect global lexicographic ordering of the mesh, produce two arrays:
     //   1) lGhostNodesIDs that stores PID, LID, GID and coarseGID associated with the coarse nodes
     //      need to compute the local part of the prolongator.
@@ -777,7 +780,8 @@ namespace MueLu {
     ghostedCoarseNodes->LIDs.resize(numGhosted);
     ghostedCoarseNodes->GIDs.resize(numGhosted);
     ghostedCoarseNodes->coarseGIDs.resize(numGhosted);
-    lCoarseNodesGIDs.resize(numGhosted - numGhosts);
+    lCoarseNodesGIDs[0].resize(numGhosted - numGhosts);
+    lCoarseNodesGIDs[1].resize(numGhosted - numGhosts);
 
     out << "numGhosts: " << numGhosts << std::endl;
     out << "numGhosted: " << numGhosted << std::endl;
@@ -793,42 +797,42 @@ namespace MueLu {
     // We loop over all ghosted coarse nodes by increasing global lexicographic order
     out << "Ghost/Coarse nodes have the following indices: "
               << std::endl;
-    Array<LO> coarseNodeCoarseIndices(3), coarseNodeFineIndices(3);
+    Array<LO> coarseNodeCoarseIndices(3), coarseNodeFineIndices(3), ijk(3);
     LO currentIndex = -1, countCoarseNodes = 0;
-    for(int k = 0; k < myGeo->ghostedCoarseNodesPerDir[2]; ++k) {
-      for(int j = 0; j < myGeo->ghostedCoarseNodesPerDir[1]; ++j) {
-        for(int i = 0; i < myGeo->ghostedCoarseNodesPerDir[0]; ++i) {
-          currentIndex = k*myGeo->ghostedCoarseNodesPerDir[1]*myGeo->ghostedCoarseNodesPerDir[0]
-            + j*myGeo->ghostedCoarseNodesPerDir[0] + i;
-          coarseNodeCoarseIndices[0] = myGeo->startGhostedCoarseNode[0] + i;
+    for(ijk[2] = 0; ijk[2] < myGeo->ghostedCoarseNodesPerDir[2]; ++ijk[2]) {
+      for(ijk[1] = 0; ijk[1] < myGeo->ghostedCoarseNodesPerDir[1]; ++ijk[1]) {
+        for(ijk[0] = 0; ijk[0] < myGeo->ghostedCoarseNodesPerDir[0]; ++ijk[0]) {
+          currentIndex = ijk[2]*myGeo->ghostedCoarseNodesPerDir[1]*myGeo->ghostedCoarseNodesPerDir[0]
+            + ijk[1]*myGeo->ghostedCoarseNodesPerDir[0] + ijk[0];
+          coarseNodeCoarseIndices[0] = myGeo->startGhostedCoarseNode[0] + ijk[0];
           coarseNodeFineIndices[0] = coarseNodeCoarseIndices[0]*myGeo->coarseRate[0];
           if(coarseNodeFineIndices[0] > myGeo->gFineNodesPerDir[0] - 1) {
             coarseNodeFineIndices[0] = myGeo->gFineNodesPerDir[0] - 1;
           }
-          coarseNodeCoarseIndices[1] = myGeo->startGhostedCoarseNode[1] + j;
+          coarseNodeCoarseIndices[1] = myGeo->startGhostedCoarseNode[1] + ijk[1];
           coarseNodeFineIndices[1] = coarseNodeCoarseIndices[1]*myGeo->coarseRate[1];
           if(coarseNodeFineIndices[1] > myGeo->gFineNodesPerDir[1] - 1) {
             coarseNodeFineIndices[1] = myGeo->gFineNodesPerDir[1] - 1;
           }
-          coarseNodeCoarseIndices[2] = myGeo->startGhostedCoarseNode[2] + k;
+          coarseNodeCoarseIndices[2] = myGeo->startGhostedCoarseNode[2] + ijk[2];
           coarseNodeFineIndices[2] = coarseNodeCoarseIndices[2]*myGeo->coarseRate[2];
           if(coarseNodeFineIndices[2] > myGeo->gFineNodesPerDir[2] - 1) {
             coarseNodeFineIndices[2] = myGeo->gFineNodesPerDir[2] - 1;
           }
-          GO myGID = -1, myCoarseGID = -1;
+          GO myGID = 0, myCoarseGID = -1;
           GO factor[3] = {};
           factor[2] = myGeo->gNumFineNodes10;
           factor[1] = myGeo->gFineNodesPerDir[0];
           factor[0] = 1;
           for(int dim = 0; dim < 3; ++dim) {
             if(dim < myGeo->numDimensions) {
-              if(myGeo->startIndices[dim] - myGeo->offsets[dim] + i*myGeo->coarseRate[dim]
+              if(myGeo->startIndices[dim] - myGeo->offsets[dim] + ijk[dim]*myGeo->coarseRate[dim]
                  < myGeo->gFineNodesPerDir[dim] - 1) {
-                myGID += (myGeo->startIndices[dim] - myGeo->offsets[dim] + i*myGeo->coarseRate[dim])
-                  *factor[dim];
+                myGID += (myGeo->startIndices[dim] - myGeo->offsets[dim]
+                          + ijk[dim]*myGeo->coarseRate[dim])*factor[dim];
               } else {
                 myGID += (myGeo->startIndices[dim] - myGeo->offsets[dim]
-                          + (i - 1)*myGeo->coarseRate[dim] + myGeo->endRate[dim])*factor[dim];
+                          + (ijk[dim] - 1)*myGeo->coarseRate[dim] + myGeo->endRate[dim])*factor[dim];
               }
             }
           }
@@ -837,11 +841,14 @@ namespace MueLu {
             + coarseNodeCoarseIndices[2]*myGeo->gCoarseNodesPerDir[1]*myGeo->gCoarseNodesPerDir[0];
           ghostedCoarseNodes->GIDs[currentIndex] = myGID;
           ghostedCoarseNodes->coarseGIDs[currentIndex] = myCoarseGID;
-          if((!ghostedDir[0] || i != 0) && (!ghostedDir[2] || j != 0) && (!ghostedDir[4] || k != 0)
-             && (!ghostedDir[1] || i != myGeo->ghostedCoarseNodesPerDir[0] - 1)
-             && (!ghostedDir[3] || j != myGeo->ghostedCoarseNodesPerDir[1] - 1)
-             && (!ghostedDir[5] || k != myGeo->ghostedCoarseNodesPerDir[2] - 1)){
-            lCoarseNodesGIDs[countCoarseNodes] = myCoarseGID;
+          if((!ghostedDir[0] || ijk[0] != 0)
+             && (!ghostedDir[2] || ijk[1] != 0)
+             && (!ghostedDir[4] || ijk[2] != 0)
+             && (!ghostedDir[1] || ijk[0] != myGeo->ghostedCoarseNodesPerDir[0] - 1)
+             && (!ghostedDir[3] || ijk[1] != myGeo->ghostedCoarseNodesPerDir[1] - 1)
+             && (!ghostedDir[5] || ijk[2] != myGeo->ghostedCoarseNodesPerDir[2] - 1)){
+            lCoarseNodesGIDs[0][countCoarseNodes] = myCoarseGID;
+            lCoarseNodesGIDs[1][countCoarseNodes] = myGID;
             ++countCoarseNodes;
           }
         }
@@ -861,7 +868,7 @@ namespace MueLu {
                         const LO nnzP, const LO dofsPerNode,
                         RCP<const Map>& stridedDomainMapP,RCP<Matrix> & Amat, RCP<Matrix>& P,
                         RCP<Xpetra::MultiVector<double,LO,GO,Node> >& coarseCoords,
-                        RCP<NodesIDs> ghostedCoarseNodes, Array<GO> coarseNodesGIDs,
+                        RCP<NodesIDs> ghostedCoarseNodes, Array<Array<GO> > coarseNodesGIDs,
                         int interpolationOrder) const {
 
     /* On termination, return the number of local prolongator columns owned by
@@ -892,8 +899,6 @@ namespace MueLu {
     LO lNumCoarseNodes = ghostedCoarseNodes->PIDs.size();
     GO numGloCols      = dofsPerNode*myGeo->gNumCoarseNodes;
 
-    out << "Hello 1!" << std::endl;
-
     Array<GO> colGIDs(dofsPerNode*lNumCoarseNodes);
     for(LO ind = 0; ind < lNumCoarseNodes; ++ind) {
       for(LO dof = 0; dof < dofsPerNode; ++dof) {
@@ -901,23 +906,29 @@ namespace MueLu {
       }
     }
 
-    out << "Hello 1.5!" << std::endl;
+    out << "colGIDs: " << colGIDs << std::endl;
+    out << "coarseNodesGIDs[0]: " << coarseNodesGIDs[0] << std::endl;
+    out << "coarseNodesGIDs[1]: " << coarseNodesGIDs[1] << std::endl;
+    out << "ghostedCoarseNodes->GIDs: " << ghostedCoarseNodes->GIDs << std::endl;
 
     // Build maps necessary to create and fill complete the prolongator
     // note: rowMapP == rangeMapP and colMapP != domainMapP
     RCP<const Map> rowMapP = Amat->getDomainMap();
+    out << "rowMap created!" << std::endl;
 
     RCP<const Map> colMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),
                                                                  OTI,
                                                                  colGIDs(),
                                                                  rowMapP->getIndexBase(),
                                                                  rowMapP->getComm());
+    out << "colMap created!" << std::endl;
 
     RCP<const Map> domainMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),
                                                                     numGloCols,
-                                                                    coarseNodesGIDs(),
+                                                                    coarseNodesGIDs[0](),
                                                                     rowMapP->getIndexBase(),
                                                                     rowMapP->getComm());
+    out << "domainMap created!" << std::endl;
 
     std::vector<size_t> strideInfo(1);
     strideInfo[0] = dofsPerNode;
@@ -928,14 +939,23 @@ namespace MueLu {
     // communications during the importer creation.
     RCP<const Map> coarseCoordsMap = MapFactory::Build (fineCoords->getMap()->lib(),
                                                         myGeo->gNumCoarseNodes,
-                                                        coarseNodesGIDs(),
+                                                        coarseNodesGIDs[0](),
                                                         fineCoords->getMap()->getIndexBase(),
                                                         fineCoords->getMap()->getComm());
+    out << "coarseCoordsMap created!" << std::endl;
+    RCP<const Map> coarseCoordsFineMap = MapFactory::Build (fineCoords->getMap()->lib(),
+                                                            myGeo->gNumCoarseNodes,
+                                                            coarseNodesGIDs[1](),
+                                                            fineCoords->getMap()->getIndexBase(),
+                                                            fineCoords->getMap()->getComm());
+    out << "coarseCoordsFineMap created!" << std::endl;
 
-    RCP<const Import> coarseImporter = ImportFactory::Build(fineCoords->getMap(), coarseCoordsMap);
-    coarseCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordsMap,
+    RCP<const Import> coarseImporter = ImportFactory::Build(fineCoords->getMap(),
+                                                            coarseCoordsFineMap);
+    coarseCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordsFineMap,
                                                                       myGeo->numDimensions);
     coarseCoords->doImport(*fineCoords, *coarseImporter, Xpetra::INSERT);
+    coarseCoords->replaceMap(coarseCoordsMap);
 
     // Do the actual import using the fineCoords->getMap()
     RCP<const Map> ghostMap = Xpetra::MapFactory<LO,GO,NO>::Build(fineCoords->getMap()->lib(),
@@ -943,12 +963,16 @@ namespace MueLu {
                                                                ghostedCoarseNodes->GIDs(),
                                                                fineCoords->getMap()->getIndexBase(),
                                                                fineCoords->getMap()->getComm());
+    out << "ghostMap created!" << std::endl;
     RCP<const Import> ghostImporter = ImportFactory::Build(fineCoords->getMap(), ghostMap);
     RCP<xdMV> ghostCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(ghostMap,
                                                                               myGeo->numDimensions);
     ghostCoords->doImport(*fineCoords, *ghostImporter, Xpetra::INSERT);
 
-    out << "Hello 2!" << std::endl;
+    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Research/GMG/MueLu_GMG/MultiBlocks/data/colMapP.mat",
+                                   *colMapP);
+    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Research/GMG/MueLu_GMG/MultiBlocks/data/domainMapP.mat",
+                                   *domainMapP);
 
     P = rcp(new CrsMatrixWrap(rowMapP, colMapP, 0, Xpetra::StaticProfile));
     RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
@@ -995,8 +1019,6 @@ namespace MueLu {
       }
     }
 
-    out << "Hello 3!" << std::endl;
-
     GO tStencil = 0;
     for(int currentIndex = 0; currentIndex < myGeo->lNumFineNodes; ++currentIndex) {
       Array<GO> ghostedIndices(3), firstInterpolationIndices(3);
@@ -1032,8 +1054,6 @@ namespace MueLu {
         + firstInterpolationIndices[1]*myGeo->ghostedCoarseNodesPerDir[0]
         + firstInterpolationIndices[0];
 
-      out << "Hello 4!" << std::endl;
-
       // We extract the coordinates and PIDs associated with each coarse node used during
       // inteprolation in order to fill the prolongator correctly
       {
@@ -1045,29 +1065,22 @@ namespace MueLu {
               interpolationLIDs[ind] = firstInterpolationNodeIndex
                 + k*myGeo->ghostedCoarseNodesPerDir[1]*myGeo->ghostedCoarseNodesPerDir[0]
                 + j*myGeo->ghostedCoarseNodesPerDir[0] + i;
-              out << "Hello 4.25!" << std::endl;
               if(ghostedCoarseNodes->PIDs[interpolationLIDs[ind]] == rowMapP->getComm()->getRank()){
                 interpolationPIDs[ind] = -1;
               } else {
                 interpolationPIDs[ind] = ghostedCoarseNodes->PIDs[interpolationLIDs[ind]];
               }
-              out << "Hello 4.50!" << std::endl;
               interpolationGIDs[ind] = ghostedCoarseNodes->coarseGIDs[interpolationLIDs[ind]];
 
-              out << "Hello 4.75!" << std::endl;
               interpolationCoords[ind + 1].resize(3);
-              out << "Hello 4.8125!" << std::endl;
               for(int dim = 0; dim < 3; ++dim) {
                 interpolationCoords[ind + 1][dim]
                   = ghostedCoords[dim][interpolationLIDs[ind]];
               }
-              out << "Hello 4.825!" << std::endl;
             }
           }
         }
       } // End of ind scope
-
-      out << "Hello 5!" << std::endl;
 
       // Compute the actual geometric interpolation stencil
       LO stencilLength = static_cast<LO>(std::pow(interpolationOrder + 1, 3));
@@ -1118,8 +1131,6 @@ namespace MueLu {
         }
       }
 
-      out << "Hello 6!" << std::endl;
-
       // Here the values are filled in the Crs matrix arrays
       // This is basically the only place these variables are modified
       // Hopefully this makes handling system of PDEs easy!
@@ -1168,9 +1179,11 @@ namespace MueLu {
     }
 
     // Set the values of the prolongation operators into the CrsMatrix P and call FillComplete
+    out << "About to call setAllValues()" << std::endl;
     PCrs->setAllValues(iaP, jaP, valP);
+    out << "About to call expertStaticFillComplete()" << std::endl;
     PCrs->expertStaticFillComplete(domainMapP,rowMapP);
-  }
+  } // End MakeGeneralGeometricP
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeStencil(
