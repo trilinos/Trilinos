@@ -1407,7 +1407,9 @@ namespace Tpetra {
     // anything).
     typedef Kokkos::HostSpace HMS;
 
+#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
+#endif
     //const char suffix[] = "  Please report this bug to the Tpetra developers."; // unused
 
     // mfh 03 Aug 2017: Set this to true for copious debug output to
