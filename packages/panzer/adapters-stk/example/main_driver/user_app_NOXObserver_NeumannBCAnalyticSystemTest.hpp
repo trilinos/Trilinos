@@ -62,17 +62,17 @@ namespace user_app {
 
     }
       
-    void runPreIterate(const NOX::Solver::Generic& solver)
+    void runPreIterate(const NOX::Solver::Generic& /* solver */)
     {
 
     }
     
-    void runPostIterate(const NOX::Solver::Generic& solver)
+    void runPostIterate(const NOX::Solver::Generic& /* solver */)
     {
 
     }
     
-    void runPreSolve(const NOX::Solver::Generic& solver)
+    void runPreSolve(const NOX::Solver::Generic& /* solver */)
     {
 
     }

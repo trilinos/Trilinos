@@ -99,7 +99,7 @@ ScatterVectorFields(const std::string & scatterName,
   this->setName(scatterName+": STK-Scatter Vector Fields");
 }
 
-PHX_POST_REGISTRATION_SETUP(ScatterVectorFields,d,fm)
+PHX_POST_REGISTRATION_SETUP(ScatterVectorFields, /* d */, fm)
 {
   // this->utils.setFieldData(pointField_,fm);
 
@@ -109,7 +109,7 @@ PHX_POST_REGISTRATION_SETUP(ScatterVectorFields,d,fm)
   }
 }
 
-PHX_EVALUATE_FIELDS(ScatterVectorFields,workset)
+PHX_EVALUATE_FIELDS(ScatterVectorFields, /* workset */)
 {
    TEUCHOS_ASSERT(false);
 }

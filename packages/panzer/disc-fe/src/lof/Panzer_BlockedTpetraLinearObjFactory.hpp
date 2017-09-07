@@ -101,10 +101,10 @@ public:
 
 /*************** Linear object factory methods *******************/
 
-   virtual void readVector(const std::string & identifier,LinearObjContainer & loc,int id) const 
+   virtual void readVector(const std::string & /* identifier */, LinearObjContainer & /* loc */, int /* id */) const 
    { TEUCHOS_ASSERT(false); }
 
-   virtual void writeVector(const std::string & identifier,const LinearObjContainer & loc,int id) const
+   virtual void writeVector(const std::string & /* identifier */, const LinearObjContainer & /* loc */, int /* id */) const
    { TEUCHOS_ASSERT(false); }
 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;

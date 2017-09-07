@@ -101,7 +101,7 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DirichletResidual_FaceBasis,worksets,fm)
+PHX_POST_REGISTRATION_SETUP(DirichletResidual_FaceBasis, /* worksets */, fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(dof,fm);

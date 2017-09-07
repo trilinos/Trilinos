@@ -93,7 +93,7 @@ GatherTangents(
 // **********************************************************************
 template<typename EvalT,typename Traits>
 void panzer::GatherTangents<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData d, 
+postRegistrationSetup(typename Traits::SetupData /* d */, 
 		      PHX::FieldManager<Traits>& fm)
 {
   // setup the field data object

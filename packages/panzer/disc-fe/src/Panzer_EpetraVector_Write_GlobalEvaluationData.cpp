@@ -103,7 +103,7 @@ namespace panzer
   void 
   EpetraVector_Write_GlobalEvaluationData::
   ghostToGlobal(
-    int mem)
+    int /* mem */)
   {
     using std::invalid_argument;
     using std::logic_error;

@@ -249,9 +249,9 @@ public:
     
    /** The specific evaluators are registered with the field manager argument.
      */
-   void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<Traits>& fm,
-                                              const FieldLibrary& field_library,
-                                              const Teuchos::ParameterList& user_data) const {}
+   void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<Traits>& /* fm */,
+                                              const FieldLibrary& /* field_library */,
+                                              const Teuchos::ParameterList& /* user_data */) const {}
 
 };
 

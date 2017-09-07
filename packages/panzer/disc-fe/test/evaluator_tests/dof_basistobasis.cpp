@@ -102,14 +102,14 @@ PHX_EVALUATOR_CTOR(DummyFieldEvaluator,p)
   std::string n = "DummyFieldEvaluator: " + name;
   this->setName(n);
 }
-PHX_POST_REGISTRATION_SETUP(DummyFieldEvaluator,sd,fm)
+PHX_POST_REGISTRATION_SETUP(DummyFieldEvaluator, /* sd */, fm)
 {
   this->utils.setFieldData(fieldValue,fm);
 
   
 }
 
-PHX_EVALUATE_FIELDS(DummyFieldEvaluator,workset)
+PHX_EVALUATE_FIELDS(DummyFieldEvaluator, /* workset */)
 { 
   fieldValue(0,0) = 1.0;
   fieldValue(0,1) = 2.0;

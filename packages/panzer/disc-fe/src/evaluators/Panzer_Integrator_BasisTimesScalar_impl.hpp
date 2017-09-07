@@ -174,7 +174,7 @@ namespace panzer
   Integrator_BasisTimesScalar<EvalT, Traits>::
   postRegistrationSetup(
     typename Traits::SetupData sd,
-    PHX::FieldManager<Traits>& fm)
+    PHX::FieldManager<Traits>& /* fm */)
   {
     using panzer::getBasisIndex;
     using std::size_t;
@@ -201,7 +201,7 @@ namespace panzer
   void
   Integrator_BasisTimesScalar<EvalT, Traits>::
   operator()(
-    const FieldMultTag<NUM_FIELD_MULT>& tag,
+    const FieldMultTag<NUM_FIELD_MULT>& /* tag */,
     const size_t&                       cell) const
   {
     using panzer::EvaluatorStyle;

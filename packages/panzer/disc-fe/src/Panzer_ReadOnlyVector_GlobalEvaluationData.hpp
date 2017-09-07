@@ -74,7 +74,7 @@ public:
 
   /** For this class, this method does nothing.
     */
-  virtual void ghostToGlobal(int mem) {}
+  virtual void ghostToGlobal(int /* mem */) {}
 
   //! Set the owned vector
   virtual void setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & ownedVector) = 0;

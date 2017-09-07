@@ -157,7 +157,7 @@ scatterResponse()
 // Do nothing unless derivatives are actually required
 template <typename EvalT>
 void Response_Functional<EvalT>::
-setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & soln_vs) { }
+setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & /* soln_vs */) { }
 
 // derivatives are required for
 template < >
@@ -180,7 +180,7 @@ setSolnVectorSpace(const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & s
 // Do nothing unless derivatives are required
 template <typename EvalT>
 void Response_Functional<EvalT>::
-adjustForDirichletConditions(const GlobalEvaluationData & localBCRows,const GlobalEvaluationData & globalBCRows) { }
+adjustForDirichletConditions(const GlobalEvaluationData & /* localBCRows */, const GlobalEvaluationData & /* globalBCRows */) { }
 
 // Do nothing unless derivatives are required
 template < >

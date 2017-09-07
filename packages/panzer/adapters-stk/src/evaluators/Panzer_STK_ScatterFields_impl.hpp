@@ -120,7 +120,7 @@ initialize(const std::string & scatterName,
 
 template <typename EvalT,typename TraitsT>
 void ScatterFields<EvalT,TraitsT>::
-postRegistrationSetup(typename TraitsT::SetupData d, 
+postRegistrationSetup(typename TraitsT::SetupData /* d */, 
                       PHX::FieldManager<TraitsT>& fm)
 {
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
@@ -133,7 +133,7 @@ postRegistrationSetup(typename TraitsT::SetupData d,
 
 template <typename EvalT,typename TraitsT>
 void ScatterFields<EvalT,TraitsT>::
-evaluateFields(typename TraitsT::EvalData d)
+evaluateFields(typename TraitsT::EvalData /* d */)
 {
    TEUCHOS_ASSERT(false);
 }

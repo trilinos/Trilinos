@@ -60,7 +60,7 @@ ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
                                        const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
                                        const Teuchos::ParameterList& p,
-                                       bool useDiscreteAdjoint)
+                                       bool /* useDiscreteAdjoint */)
    : rowIndexers_(rIndexers)
    , colIndexers_(cIndexers)
    , globalDataKey_("Residual Scatter Container")
@@ -115,7 +115,7 @@ ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const Uniq
 template<typename TRAITS,typename LO,typename GO>
 void
 ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm) 
 {
   indexerIds_.resize(scatterFields_.size());

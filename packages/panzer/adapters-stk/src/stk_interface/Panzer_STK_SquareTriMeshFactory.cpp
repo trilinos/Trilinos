@@ -193,7 +193,7 @@ void SquareTriMeshFactory::initializeWithDefaults()
    setParameterList(validParams);
 }
 
-void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
+void SquareTriMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK_Interface & mesh) const
 {
    typedef shards::Triangle<> TriTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<TriTopo>();
@@ -238,7 +238,7 @@ void SquareTriMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_I
    mesh.endModification();
 }
 
-void SquareTriMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const
+void SquareTriMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */, int xBlock, int yBlock, STK_Interface& mesh) const
 {
    // grab this processors rank and machine size
    std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
@@ -295,7 +295,7 @@ void SquareTriMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlo
    }
 }
 
-std::pair<int,int> SquareTriMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> SquareTriMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int /* rank */) const
 {
    std::size_t xProcLoc = procTuple_[0];
    unsigned int minElements = nXElems_/size;
@@ -318,7 +318,7 @@ std::pair<int,int> SquareTriMeshFactory::determineXElemSizeAndStart(int xBlock,u
    return std::make_pair(start+nXElems_*xBlock,nume);
 }
 
-std::pair<int,int> SquareTriMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> SquareTriMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int /* rank */) const
 {
    std::size_t yProcLoc = procTuple_[1];
    unsigned int minElements = nYElems_/size;

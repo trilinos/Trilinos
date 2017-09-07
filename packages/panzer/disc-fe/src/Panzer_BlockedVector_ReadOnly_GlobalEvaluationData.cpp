@@ -108,7 +108,7 @@ namespace panzer
   BlockedVector_ReadOnly_GlobalEvaluationData::
   initialize(
     const Teuchos::RCP<const Thyra::VectorSpaceBase<double>>& ghostedSpace,
-    const Teuchos::RCP<const Thyra::VectorSpaceBase<double>>& ownedSpace,
+    const Teuchos::RCP<const Thyra::VectorSpaceBase<double>>& /* ownedSpace */,
     const std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>>&
       gedBlocks)
   {

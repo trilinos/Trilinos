@@ -165,7 +165,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 void panzer::FieldManagerBuilder::
 setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
                      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-                     const Teuchos::Ptr<const panzer::EquationSetFactory> & eqset_factory,
+                     const Teuchos::Ptr<const panzer::EquationSetFactory>& /* eqset_factory */,
                      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                      const panzer::BCStrategyFactory& bc_factory,
                      const Teuchos::ParameterList& closure_models,

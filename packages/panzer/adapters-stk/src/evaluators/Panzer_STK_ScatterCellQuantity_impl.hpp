@@ -87,7 +87,7 @@ PHX_EVALUATOR_CTOR(ScatterCellQuantity,p) :
   this->setName(scatterName+": STK-Scatter Cell Quantity Fields");
 }
 
-PHX_POST_REGISTRATION_SETUP(ScatterCellQuantity,d,fm)
+PHX_POST_REGISTRATION_SETUP(ScatterCellQuantity, /* d */, fm)
 {
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
     std::string fieldName = scatterFields_[fd].fieldTag().name();

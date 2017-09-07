@@ -58,7 +58,7 @@ PHX_EVALUATOR_CTOR(CoordinatesEvaluator,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(CoordinatesEvaluator,worksets,fm)
+PHX_POST_REGISTRATION_SETUP(CoordinatesEvaluator, /* worksets */, fm)
 {
   using namespace PHX;
   this->utils.setFieldData(coordinate,fm);

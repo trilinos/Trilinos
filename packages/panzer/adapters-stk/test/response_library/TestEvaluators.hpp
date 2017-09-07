@@ -77,7 +77,7 @@ PHX_EVALUATOR_CTOR(TestEvaluator,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(TestEvaluator,sd,fm)
+PHX_POST_REGISTRATION_SETUP(TestEvaluator, /* sd */, fm)
 {
   this->utils.setFieldData(dogValues,fm);
   this->utils.setFieldData(hrsValues,fm);

@@ -74,7 +74,7 @@ class ScatterResidual_BlockedTpetra
 public:
    typedef typename EvalT::ScalarT ScalarT;
  
-   ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
+   ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & /* indexer */)
    { }
    ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & gidProviders,
                                 const Teuchos::ParameterList& p);
@@ -82,9 +82,9 @@ public:
    virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
    { return Teuchos::rcp(new ScatterResidual_BlockedTpetra<EvalT,TRAITS,LO,GO,NodeT>(Teuchos::null,pl)); }
 
-  void postRegistrationSetup(typename TRAITS::SetupData d, PHX::FieldManager<TRAITS>& vm)
+  void postRegistrationSetup(typename TRAITS::SetupData /* d */, PHX::FieldManager<TRAITS>& /* vm */)
    { }
-  void evaluateFields(typename TRAITS::EvalData d)
+  void evaluateFields(typename TRAITS::EvalData /* d */)
    { std::cout << "unspecialized version of \"ScatterResidual_BlockedTpetra::evaluateFields\" on \""+PHX::typeAsString<EvalT>()+"\" should not be used!" << std::endl;
      TEUCHOS_ASSERT(false); }
 };
