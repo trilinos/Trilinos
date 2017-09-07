@@ -234,12 +234,12 @@ class Zoltan2_Directory {
     int table_length;                      /* # of heads of linked lists */
     unsigned int recommended_hash_size (unsigned int n);
      /* Memory for storing all nodes in the directory */
-    std::vector<Zoltan2_Directory_Node<gid_t,lid_t,user_t>> nodelist;
+    Teuchos::ArrayRCP<Zoltan2_Directory_Node<gid_t,lid_t,user_t>> nodelist;
     relice_idx_t nodelistlen;        /* Length of the nodelist. */
     /* Index of first free node in nodelist; -1 if no nodes are free */
     relice_idx_t nextfreenode;
     std::vector<relice_idx_t> table; /* Hash table heads of link lists */
-    std::vector<char> nodedata; /* Memory for storing data in the directory  */
+    Teuchos::ArrayRCP<char> nodedata; /* Memory for storing data in the directory  */
     size_t nodedata_size;          /* Malloc for GID & LID & user storage    */
   #endif
 
@@ -429,6 +429,13 @@ class Zoltan2_Directory_Vector : public Zoltan2_Directory<gid_t, lid_t, user_t> 
     }
 
     virtual size_t get_incoming_find_msg_size(Zoltan2_DD_Find_Msg<gid_t,lid_t>* msg) const {
+      if(msg->proc == -1) {
+        // this happens if we called find for an element which was removed
+        // eventually we might just throw on find_local but for the testing,
+        // this is allowed, the data is left untouched, and the test validates
+        // that the results are as expected based on remove events
+        return this->find_msg_size; // no extra data for unfound node
+      }
       user_val_t * pVal = (user_val_t*)(msg->adjData + 1);
       return this->find_msg_size + (*pVal) * sizeof(user_val_t);
     }
