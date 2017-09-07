@@ -2037,4 +2037,29 @@ public:
 
 //#include "Sacado_MP_Vector_SFS.hpp"
 
+#include "Kokkos_NumericTraits.hpp"
+
+namespace Kokkos {
+
+template <typename Storage>
+struct reduction_identity< Sacado::MP::Vector<Storage> > {
+  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename Storage::value_type scalar;
+  typedef reduction_identity<scalar> RIS;
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static Vector sum()  {
+    return Vector(RIS::sum());
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static Vector prod() {
+    return Vector(RIS::prod());
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static Vector max()  {
+    return Vector(RIS::max());
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static Vector min()  {
+    return Vector(RIS::min());
+  }
+};
+
+}
+
 #endif // SACADO_MP_VECTOR_HPP
