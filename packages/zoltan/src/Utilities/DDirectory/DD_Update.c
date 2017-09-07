@@ -86,6 +86,7 @@ int Zoltan_DD_Update (
    char             str[100];       /* build error message string      */
    char            *yo = "Zoltan_DD_Update";
 
+START_CLOCK(update_setup)
 
    /* input sanity checking */
    if (dd == NULL || count < 0 || (gid == NULL && count > 0))  {
@@ -109,6 +110,10 @@ int Zoltan_DD_Update (
    if (dd->debug_level > 6)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After reset errcheck");
 
+END_CLOCK(update_setup)
+
+START_CLOCK(update_alloc)
+
    /* allocate memory for list of processors to contact */
    if (count) {
       procs = (int*) ZOLTAN_MALLOC (sizeof(int) * count);
@@ -118,6 +123,10 @@ int Zoltan_DD_Update (
          goto fini;
       }
    }
+
+END_CLOCK(update_alloc)
+
+START_CLOCK(update_alloc_sbuff)
 
    /* allocate memory for DD_Update_Msg send buffer */
    if (count)  {
@@ -129,8 +138,12 @@ int Zoltan_DD_Update (
       }
    }
 
+END_CLOCK(update_alloc_sbuff)
+
    if (dd->debug_level > 6)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After mallocs");
+
+START_CLOCK(update_build_raw)
 
    /* for each GID given, fill in contact list and then message structure */
    sbufftmp = sbuff;
@@ -168,6 +181,10 @@ int Zoltan_DD_Update (
    if (dd->debug_level > 6)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill contact list");
 
+END_CLOCK(update_build_raw)
+
+START_CLOCK(update_build_plan)
+
    /* now create efficient communication plan */
    err = Zoltan_Comm_Create (&plan, count, procs, dd->comm,
     ZOLTAN_DD_UPDATE_MSG_TAG, &nrec);
@@ -179,6 +196,10 @@ int Zoltan_DD_Update (
    if (dd->debug_level > 6)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After Comm_Create");
 
+END_CLOCK(update_build_plan)
+
+START_CLOCK(update_build_hash)
+
    /* If dd has no nodes allocated (e.g., first call to DD_Update; 
     * create the nodelist and freelist 
     */
@@ -186,6 +207,8 @@ int Zoltan_DD_Update (
       DD_Memory_Alloc_Nodelist(dd, (DD_NodeIdx) nrec, 0.); 
                                /* TODO Add overalloc parameter */
    }
+
+END_CLOCK(update_build_hash)
 
    /* allocate receive buffer for nrec DD_Update_Msg structures */
    if (nrec)  {
@@ -197,6 +220,8 @@ int Zoltan_DD_Update (
       }
    }
 
+START_CLOCK(update_forward)
+
    /* send my update messages & receive updates directed to me */
    err = Zoltan_Comm_Do (plan, ZOLTAN_DD_UPDATE_MSG_TAG+1, sbuff,
     dd->update_msg_size, rbuff);
@@ -207,6 +232,10 @@ int Zoltan_DD_Update (
 
    if (dd->debug_level > 6)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After Comm_Do");
+
+END_CLOCK(update_forward)
+
+START_CLOCK(update_locals)
 
    /* for each message rec'd, update local directory information */
    errcount = 0;
@@ -230,6 +259,8 @@ int Zoltan_DD_Update (
    err = ZOLTAN_OK;
    if (dd->debug_level)  /* overwrite error return if extra checking is on */
       err = (errcount) ? ZOLTAN_WARN : ZOLTAN_OK;
+
+END_CLOCK(update_locals)
 
 fini:
    ZOLTAN_FREE (&procs);

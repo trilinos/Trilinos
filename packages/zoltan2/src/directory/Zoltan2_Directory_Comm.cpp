@@ -86,12 +86,14 @@ void Zoltan2_Directory_Plan::getInvertedValues(Zoltan2_Directory_Plan * from) {
 
 void Zoltan2_Directory_Plan::print(const std::string& headerMessage) const {
 
-  #define PRINT_VECTOR(v) \
-  std::cout << "  " << #v << " "; \
-  for(size_t n = 0; n < v.size(); ++n) { \
-    std::cout << v[n] << " "; \
-  } \
-  std::cout << std::endl;
+  #define PRINT_VECTOR(v)                        \
+  if(v != Teuchos::null) {                       \
+    std::cout << "  " << #v << " ";              \
+    for(Teuchos::ArrayRCP<int>::size_type n = 0; n < v.size(); ++n) { \
+      std::cout << v[n] << " ";                  \
+    }                                            \
+    std::cout << std::endl;                      \
+  }
 
   #define PRINT_VAL(val) std::cout << "  " << #val << ": " << val << std::endl;
 
@@ -107,8 +109,8 @@ void Zoltan2_Directory_Plan::print(const std::string& headerMessage) const {
       PRINT_VECTOR(lengths_from)
       PRINT_VECTOR(starts_to)
       PRINT_VECTOR(starts_from)
-      if(indices_to) { PRINT_VECTOR((*indices_to)) }
-      if(indices_from) { PRINT_VECTOR((*indices_from)) }
+      PRINT_VECTOR(indices_to)
+      PRINT_VECTOR(indices_from)
       PRINT_VECTOR(sizes)
       PRINT_VECTOR(sizes_to)
       PRINT_VECTOR(sizes_from)
@@ -125,7 +127,6 @@ void Zoltan2_Directory_Plan::print(const std::string& headerMessage) const {
       PRINT_VAL(max_send_size)
       PRINT_VAL(total_recv_size)
       PRINT_VAL(maxed_recvs)
-
     }
   }
   comm->barrier();
@@ -133,7 +134,7 @@ void Zoltan2_Directory_Plan::print(const std::string& headerMessage) const {
 
 Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
   int       nvals,	                    	/* number of values I currently own */
-  const std::vector<int>  &assign,  /* processor assignment for all my values */
+  const Teuchos::ArrayRCP<int>  &assign,  /* processor assignment for all my values */
   Teuchos::RCP<const Teuchos::Comm<int> > comm,               /* communicator */
   int       tag) :  	                               /* message tag I can use */
   plan_forward(NULL)
@@ -150,7 +151,10 @@ Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
 
   /* Make data structures that will allow me to traverse arrays quickly. */
   /* Begin by determining number of objects I'm sending to each processor. */
-  std::vector<int> starts(nprocs + 1, 0);
+  Teuchos::ArrayRCP<int> starts(new int[nprocs + 1], 0, nprocs + 1, true);
+  for(int n = 0; n < starts.size(); ++n) {
+    starts[n] = 0;
+  }
 
   /* Note: Negative assign value means ignore item. */
   /* Non-trailing negatives mean data not packed so need send_buf. */
@@ -179,10 +183,10 @@ Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
 
   int self_msg = (starts[my_proc] != 0);	/* do I have data for myself? */
 
-  std::vector<int> lengths_to;   /* lengths I'll send to */
-  std::vector<int> procs_to;     /* processors I'll send to */
-  std::vector<int> starts_to;	   /* where in list my sends begin */
-  std::vector<int> *indices_to = NULL;	 /* local_id values I'll be sending */
+  Teuchos::ArrayRCP<int> lengths_to;   /* lengths I'll send to */
+  Teuchos::ArrayRCP<int> procs_to;     /* processors I'll send to */
+  Teuchos::ArrayRCP<int> starts_to;	   /* where in list my sends begin */
+  Teuchos::ArrayRCP<int> indices_to;	 /* local_id values I'll be sending */
 
   int max_send_size = 0;	       /* size of longest message I send */
   int nsends = 0;		             /* # procs I'll send to (including self) */
@@ -237,12 +241,13 @@ Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
 
     starts[0] = 0;
 
-    indices_to = new std::vector<int>(nactive);
+    indices_to = (nactive > 0) ?
+      Teuchos::arcp(new int[nactive], 0, nactive, true) : Teuchos::null;
 
     for (int i = 0; i < nvals; i++) {
       int proc = assign[i];
       if (proc >= 0) {
-        (*indices_to)[starts[proc]] = i;
+        indices_to[starts[proc]] = i;
         ++starts[proc];
       }
     }
@@ -280,15 +285,17 @@ Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
   nsends -= self_msg;
 
   /* Determine how many messages & what length I'll receive. */
-  std::vector<int> lengths_from; /* lengths of messages I'll receive */
-  std::vector<int> procs_from; /* processors I'll receive from */
+  Teuchos::ArrayRCP<int> lengths_from; /* lengths of messages I'll receive */
+  Teuchos::ArrayRCP<int> procs_from; /* processors I'll receive from */
   int out_of_mem = 0; // TODO refactor this bit
+
   int comm_flag = invert_map(lengths_to, procs_to, nsends, self_msg,
     lengths_from, procs_from, &nrecvs, my_proc, nprocs,
     out_of_mem, tag, comm);
 
   /* pointers for where to put recv data */
-  std::vector<int> starts_from(nrecvs + self_msg);
+  Teuchos::ArrayRCP<int> starts_from(
+    new int[nrecvs + self_msg], 0, nrecvs + self_msg, true);
   int j = 0;
   for (int i = 0; i < nrecvs + self_msg; i++) {
     starts_from[i] = j;
@@ -338,8 +345,11 @@ Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
   }
 
   if (plan_forward->maxed_recvs == 0) {
+    // See notes in header for MPI_Request
     plan_forward->request.resize(plan_forward->nrecvs);
     plan_forward->status.resize(plan_forward->nrecvs);
+    //    plan_forward->request = Teuchos::arcp(new MPI_Request[plan_forward->nrecvs], 0, plan_forward->nrecvs, true);
+    //    plan_forward->status = Teuchos::arcp(new MPI_Status[plan_forward->nrecvs], 0, plan_forward->nrecvs, true);
   }
 
   nrec = total_recv_size;
@@ -352,12 +362,12 @@ Zoltan2_Directory_Comm::~Zoltan2_Directory_Comm()
 
 
 int Zoltan2_Directory_Comm::invert_map(
-  const std::vector<int> &lengths_to,  /* number of items I'm sending */
-  const std::vector<int> &procs_to,    /* procs I send to */
+  const Teuchos::ArrayRCP<int> &lengths_to,  /* number of items I'm sending */
+  const Teuchos::ArrayRCP<int> &procs_to,    /* procs I send to */
   int       nsends,                    /* number of messages I'll send */
   int       self_msg,                  /* do I copy data to myself? */
-  std::vector<int> &lengths_from,      /* number of items I'm receiving */
-  std::vector<int> &procs_from,        /* procs I recv lengths from */
+  Teuchos::ArrayRCP<int> &lengths_from,      /* number of items I'm receiving */
+  Teuchos::ArrayRCP<int> &procs_from,        /* procs I recv lengths from */
   int      *pnrecvs,                   /* number of messages I receive */
   int       my_proc,                   /* my processor number */
   int       nprocs,                    /* total number of processors */
@@ -365,8 +375,12 @@ int Zoltan2_Directory_Comm::invert_map(
   int       tag,                       /* message tag I can use */
   Teuchos::RCP<const Teuchos::Comm<int> > comm) /* communicator */
 {
-  std::vector<int> msg_count(nprocs, 0);
-  std::vector<int> counts(nprocs, 1);
+  Teuchos::ArrayRCP<int> msg_count(new int[nprocs], 0, nprocs, true);
+  Teuchos::ArrayRCP<int> counts(new int[nprocs], 0, nprocs, true);
+  for(int i = 0; i < nprocs; ++i) {
+    msg_count[i] = 0;
+    counts[i] = 1;
+  }
 
   for (int i = 0; i < nsends + self_msg; i++) {
     msg_count[procs_to[i]] = 1;
@@ -383,7 +397,7 @@ int Zoltan2_Directory_Comm::invert_map(
       MPI_SUM, comm);
   */
   Teuchos::reduceAll<int>(*comm, Teuchos::REDUCE_SUM, nprocs,
-    &(msg_count[0]), &(counts[0]));
+    msg_count.getRawPtr(), counts.getRawPtr());
 
   int nrecvs = 0;		/* number of messages I'll receive */
 
@@ -403,11 +417,15 @@ int Zoltan2_Directory_Comm::invert_map(
   // TODO: Teuchos::MpiComm<Ordinal>::broadcast(...)
   MPI_Bcast(&max_nrecvs, 1, MPI_INT, 0, Teuchos::getRawMpiComm(*comm));
 
-  lengths_from.resize(nrecvs);   /* number of items I'm receiving */
-  procs_from.resize(nrecvs);    /* processors I'll receive from  */
+  if(nrecvs > 0) {
+    lengths_from.resize(nrecvs);   /* number of items I'm receiving */
+    procs_from.resize(nrecvs);    /* processors I'll receive from  */
+  }
 
   if (MPI_RECV_LIMIT == 0 || max_nrecvs <= MPI_RECV_LIMIT) {
+    // See notes in header for MPI_Request
     std::vector<MPI_Request> req(nrecvs);
+    //Teuchos::ArrayRCP<MPI_Request> req(new MPI_Request[nrecvs], 0, nrecvs, true);
 
     /* Note: I'm counting on having a unique tag or some of my incoming */
     /* messages might get confused with others.                         */
@@ -432,12 +450,13 @@ int Zoltan2_Directory_Comm::invert_map(
       MPI_Wait(&(req[i]), &status);
       procs_from[i] = status.MPI_SOURCE;
     }
+
   }
   else { /* some large HPC machines have a limit on number of posted receives */
     throw std::logic_error("UNTESTED COMM 3"); // needs unit testing
 
-    std::vector<int> sendbuf(nprocs, 0);
-    std::vector<int> recvbuf(nprocs);
+    Teuchos::ArrayRCP<int> sendbuf(new int[nprocs], 0, nprocs, true);
+    Teuchos::ArrayRCP<int> recvbuf(new int[nprocs], 0, nprocs, true);
 
     for (int i=0; i < nsends + self_msg; i++) {
       sendbuf[procs_to[i]] = lengths_to[i];
@@ -467,17 +486,17 @@ int Zoltan2_Directory_Comm::invert_map(
 }
 
 int Zoltan2_Directory_Comm::sort_ints(
-  std::vector<int> &vals_sort,     /* values to be sorted */
-  std::vector<int> &vals_other)    /* other array to be reordered w/ sort */
+  Teuchos::ArrayRCP<int> &vals_sort,     /* values to be sorted */
+  Teuchos::ArrayRCP<int> &vals_other)    /* other array to be reordered w/ sort */
 {
   // TODO: Check - perhaps we can skip all of these for efficiency
-  if (vals_sort.size() == 0) {
+  if (vals_sort == Teuchos::null || vals_sort.size() == 0) {
     return 1;
   }
-  if (vals_other.size() == 0) {
+  if (vals_other == Teuchos::null || vals_other.size() == 0) {
     return 1;
   }
-  if (vals_sort.size() == 1) {
+  if (vals_sort == Teuchos::null || vals_sort.size() == 1) {
     return 0;           /* fastest way to sort 1 item is to return */
   }
 
@@ -486,7 +505,7 @@ int Zoltan2_Directory_Comm::sort_ints(
                               already sorted; can exit early and skip
                               memory allocations if it is.  */
   int top = vals_sort[0]; /* largest integer to sort, smallest is assumed 0 */
-  for (size_t i = 1; i < vals_sort.size(); i++) {
+  for (Teuchos::ArrayRCP<int>::size_type i = 1; i < vals_sort.size(); i++) {
     if (vals_sort[i-1] > vals_sort[i]) {
       already_sorted = 0;
     }
@@ -499,23 +518,34 @@ int Zoltan2_Directory_Comm::sort_ints(
     return 0;
   }
 
-  std::vector<int> store(top+2,0); // init to 0
-  std::vector<int> copy_sort = vals_sort;
-  std::vector<int> copy_other = vals_other;
+  Teuchos::ArrayRCP<int> store(new int[top+2], 0, top+2, true);
+  for(int n = 0; n < store.size(); ++n) {
+    store[n] = 0;
+  }
+
+  Teuchos::ArrayRCP<int> copy_sort(new int[vals_sort.size()], 0, vals_sort.size(), true);
+  for(Teuchos::ArrayRCP<int>::size_type n = 0; n < copy_sort.size(); ++n) {
+    copy_sort[n] = vals_sort[n]; // TODO - use deepCopy method?
+  }
+
+  Teuchos::ArrayRCP<int> copy_other(new int[vals_other.size()], 0, vals_other.size(), true);
+  for(Teuchos::ArrayRCP<int>::size_type n = 0; n < copy_other.size(); ++n) {
+    copy_other[n] = vals_other[n]; // TODO - use deepCopy method?
+  }
 
   // TODO: May want to modernize this ptr handling - however I didn't want
   // to introduce inefficiencies so for now have kept the original structure
   int *p = &(store[1]);
-  for (size_t i = 0; i < vals_sort.size(); i++) {
+  for (Teuchos::ArrayRCP<int>::size_type i = 0; i < vals_sort.size(); i++) {
     p[copy_sort[i]]++;                /* count number of occurances */
   }
 
   for (int i = 1; i < top+1; i++) {
     p[i] += p[i-1];                   /* compute partial sums */
   }
-                                      /* assert: p[top] = nvals */
+                                   /* assert: p[top] = nvals */
   p = &(store[0]);                    /* effectively shifts down by one */
-  for (size_t i = 0; i < vals_sort.size(); i++) {
+  for (Teuchos::ArrayRCP<int>::size_type i = 0; i < vals_sort.size(); i++) {
     vals_sort[p[copy_sort[i]]] = copy_sort[i];
     vals_other[p[copy_sort[i]]] = copy_other[i];
     ++p[copy_sort[i]];
@@ -526,9 +556,9 @@ int Zoltan2_Directory_Comm::sort_ints(
 
 int Zoltan2_Directory_Comm::do_forward(
   int tag,			                         /* message tag for communicating */
-  const std::vector<char> &send_data,		 /* array of data I currently own */
+  const Teuchos::ArrayRCP<char> &send_data,		 /* array of data I currently own */
   int nbytes,                            /* msg size */
-  std::vector<char> &recv_data)		       /* array of data I'll own after comm */
+  Teuchos::ArrayRCP<char> &recv_data)		 /* array of data I'll own after comm */
 {
   int status = 0;
 
@@ -541,15 +571,16 @@ int Zoltan2_Directory_Comm::do_forward(
   else {
     status = do_all_to_all(plan_forward, send_data, nbytes, recv_data);
   }
+
   return status;
 }
 
 int Zoltan2_Directory_Comm::do_post(
   Zoltan2_Directory_Plan *plan,          /* communication data structure  */
   int tag,			                         /* message tag for communicating */
-  const std::vector<char> &send_data,		 /* array of data I currently own */
+  const Teuchos::ArrayRCP<char> &send_data,		 /* array of data I currently own */
   int nbytes,                            /* msg size */
-  std::vector<char> &recv_data)		       /* array of data I'll own after comm */
+  Teuchos::ArrayRCP<char> &recv_data)     /* array of data I'll own after comm */
 {
   /* Check input parameters */
   if (!plan) {
@@ -563,7 +594,6 @@ int Zoltan2_Directory_Comm::do_post(
   }
 
   int my_proc = plan->comm->getRank();		/* processor ID */
-
   if ((plan->nsends + plan->self_msg) && !send_data.size()) {
     throw std::logic_error("UNTESTED COMM 5"); // needs unit testing
     size_t sum = 0;
@@ -576,10 +606,10 @@ int Zoltan2_Directory_Comm::do_post(
       throw std::logic_error("nsends not zero, but send_data = NULL");
     }
   }
-  if ((plan->nrecvs + plan->self_msg) && recv_data.size() == 0) {
+  if ((plan->nrecvs + plan->self_msg) && recv_data == Teuchos::null) {
     throw std::logic_error("UNTESTED COMM 6"); // needs unit testing
     size_t sum = 0;
-    if (plan->sizes_from.size())   /* Not an error if all sizes_from == 0 */
+    if (plan->sizes_from != Teuchos::null)   /* Not an error if all sizes_from == 0 */
       for (int i = 0; i < (plan->nrecvs + plan->self_msg); i++)
         sum += plan->sizes_from[i];
     if (!plan->sizes_from.size() || (plan->sizes_from.size() && sum)) {
@@ -588,24 +618,23 @@ int Zoltan2_Directory_Comm::do_post(
   }
 
   /* Post irecvs */
-  if (!plan->indices_from) {
+  if (plan->indices_from == Teuchos::null) {
     /* Data can go directly into user space. */
-    plan->recv_buff = &recv_data;
+    plan->recv_buff = recv_data;
   }
   else {			/* Need to buffer receive to reorder */
     size_t rsize = (size_t) (plan->total_recv_size) * (size_t) nbytes;
-    plan->recv_buff = new std::vector<char>(rsize);
-    plan->bOwnRecvBuff = true; // call delete on this
+    plan->recv_buff = Teuchos::arcp(new char[rsize], 0, rsize, true);
   }
 
   size_t self_recv_address = 0;  /* where in recv_data self info starts */
-  if (!plan->sizes_allocated) {	/* All data the same size */
+  if (!plan->using_sizes) {	/* All data the same size */
     int k = 0;
     for (int i = 0; i < plan->nrecvs + plan->self_msg; i++) {
       if (plan->procs_from[i] != my_proc) {
         // TODO: Teuchos::ireceiveImpl(...)
         MPI_Irecv((void *)
-          &(plan->getRecvBuff())[(size_t)(plan->starts_from[i])*(size_t)nbytes],
+          &plan->getRecvBuff().getRawPtr()[(size_t)(plan->starts_from[i])*(size_t)nbytes],
           plan->lengths_from[i] * nbytes,
           (MPI_Datatype) MPI_BYTE, plan->procs_from[i], tag,
           Teuchos::getRawMpiComm(*(plan->comm)), &plan->request[k]);
@@ -623,7 +652,7 @@ int Zoltan2_Directory_Comm::do_post(
         if (plan->sizes_from[i]) {
           // TODO: Teuchos::ireceiveImpl(...)
           MPI_Irecv((void *)
-            &(plan->getRecvBuff())[(size_t)(plan->starts_from_ptr[i])
+            &plan->getRecvBuff().getRawPtr()[(size_t)(plan->starts_from_ptr[i])
               * (size_t)nbytes],
             plan->sizes_from[i] * nbytes,
             (MPI_Datatype) MPI_BYTE, plan->procs_from[i],
@@ -635,13 +664,15 @@ int Zoltan2_Directory_Comm::do_post(
       }
       else {
         self_recv_address =
-        (size_t)(plan->starts_from_ptr[i]) * (size_t)nbytes;
+          (size_t)(plan->starts_from_ptr[i]) * (size_t)nbytes;
       }
     }
   }
 
-  std::vector<char> send_buff(plan->indices_to ?
-    (plan->max_send_size * nbytes) : 0);
+  Teuchos::ArrayRCP<char> send_buff;
+  if(plan->indices_to != Teuchos::null) {
+    send_buff = Teuchos::arcp(new char[plan->max_send_size * nbytes], 0, plan->max_send_size * nbytes, true);
+  }
 
   /* Barrier to ensure irecvs are posted before doing any sends. */
   /* Simultaneously see if anyone out of memory */
@@ -670,8 +701,8 @@ int Zoltan2_Directory_Comm::do_post(
     proc_index = 0;
   }
 
-  if (!plan->sizes_allocated) {	/* Data all of same size */
-    if (!plan->indices_to) {	/* data already blocked by processor. */
+  if (!plan->using_sizes) {	/* Data all of same size */
+    if (plan->indices_to == Teuchos::null) {	/* data already blocked by processor. */
       int self_num = 0;       /* where in send list my_proc appears */
       for (int i = proc_index, j = 0; j < nblocks; j++) {
         if (plan->procs_to[i] != my_proc) {
@@ -695,9 +726,10 @@ int Zoltan2_Directory_Comm::do_post(
         /* I use memmove because I'm not sure that the pointer are not
          overlapped. */
 
+        // TODO: Refactor to make C++ and remove getRawPtr, etc
         memmove(
-          plan->getRecvBuff()+self_recv_address,
-          &(send_data[0])+(size_t)(plan->starts_to[self_num])*(size_t)nbytes,
+          plan->getRecvBuff().getRawPtr()+self_recv_address,
+          send_data.getRawPtr()+(size_t)(plan->starts_to[self_num])*(size_t)nbytes,
           (size_t) (plan->lengths_to[self_num]) * (size_t) nbytes);
       }
     }
@@ -711,7 +743,7 @@ int Zoltan2_Directory_Comm::do_post(
           int j = plan->starts_to[i];
           for (int k = 0; k < plan->lengths_to[i]; k++) {
             memcpy(&send_buff[offset],
-            &send_data[(size_t)((*plan->indices_to)[j++]) * (size_t)nbytes], nbytes);
+            &send_data[(size_t)(plan->indices_to[j++]) * (size_t)nbytes], nbytes);
             offset += nbytes;
           }
           // TODO: Teuchos::readySend(...)
@@ -731,7 +763,7 @@ int Zoltan2_Directory_Comm::do_post(
         for (int k = 0; k < plan->lengths_to[self_num]; k++) {
           memcpy(&(plan->getRecvBuff())[self_recv_address],
             &send_data[
-              (size_t)((*plan->indices_to)[self_index++]) * (size_t)nbytes],
+              (size_t)(plan->indices_to[self_index++]) * (size_t)nbytes],
               nbytes);
           self_recv_address += nbytes;
         }
@@ -739,7 +771,7 @@ int Zoltan2_Directory_Comm::do_post(
     }
   }
   else {                       /* Data of differing sizes */
-    if (!plan->indices_to) {        /* data already blocked by processor. */
+    if (plan->indices_to == Teuchos::null) {        /* data already blocked by processor. */
       int self_num = 0;       /* where in send list my_proc appears */
       for (int i = proc_index, j = 0; j < nblocks; j++) {
         if (plan->procs_to[i] != my_proc) {
@@ -760,9 +792,9 @@ int Zoltan2_Directory_Comm::do_post(
       }
       if (plan->self_msg) {    /* Copy data to self. */
         if (plan->sizes_to[self_num]) {
-          char* lrecv = &(plan->getRecvBuff())[self_recv_address];
+          char* lrecv = &plan->getRecvBuff().getRawPtr()[self_recv_address];
           const char* lsend =
-          &send_data[(size_t)(plan->starts_to_ptr[self_num]) * (size_t)nbytes];
+          &send_data.getRawPtr()[(size_t)(plan->starts_to_ptr[self_num]) * (size_t)nbytes];
           int sindex = plan->sizes_to[self_num], idx;
           for (idx=0; idx<nbytes; idx++) {
             memcpy(lrecv, lsend, sindex);
@@ -779,12 +811,12 @@ int Zoltan2_Directory_Comm::do_post(
           size_t offset = 0; /* offset into array I'm copying into */
           int j = plan->starts_to[i];
           for (int k = 0; k < plan->lengths_to[i]; k++) {
-            if (plan->sizes[(*plan->indices_to)[j]]) {
+            if (plan->sizes[plan->indices_to[j]]) {
               memcpy(&send_buff[offset],
                 &send_data[(size_t)(plan->indices_to_ptr[j]) * (size_t)nbytes],
-                (size_t)(plan->sizes[(*plan->indices_to)[j]]) * (size_t)nbytes);
+                (size_t)(plan->sizes[plan->indices_to[j]]) * (size_t)nbytes);
               offset +=
-                (size_t)(plan->sizes[(*plan->indices_to)[j]]) * (size_t)nbytes;
+                (size_t)(plan->sizes[plan->indices_to[j]]) * (size_t)nbytes;
             }
             j++;
           }
@@ -809,13 +841,13 @@ int Zoltan2_Directory_Comm::do_post(
             char* lrecv = &(plan->getRecvBuff())[self_recv_address];
             size_t send_idx = (size_t)kk * (size_t)nbytes;
             const char* lsend = &send_data[send_idx];
-            int sindex = plan->sizes[(*plan->indices_to)[j]], idx;
+            int sindex = plan->sizes[plan->indices_to[j]], idx;
             for (idx=0; idx<nbytes; idx++) {
               memcpy(lrecv, lsend, sindex);
               lrecv += sindex;
               lsend += sindex;
             }
-            self_recv_address += (size_t)(plan->sizes[(*plan->indices_to)[j]])
+            self_recv_address += (size_t)(plan->sizes[plan->indices_to[j]])
               * (size_t) nbytes;
             j++;
           }
@@ -830,11 +862,10 @@ int Zoltan2_Directory_Comm::do_post(
 int Zoltan2_Directory_Comm::do_wait(
   Zoltan2_Directory_Plan *plan,          /* communication data structure */
   int tag,			                         /* message tag for communicating */
-  const std::vector<char> &send_data,		 /* array of data I currently own */
+  const Teuchos::ArrayRCP<char> &send_data, /* array of data I currently own */
   int nbytes,                            /* msg size */
-  std::vector<char> &recv_data)		       /* array of data I'll own after comm */
+  Teuchos::ArrayRCP<char> &recv_data)		 /* array of data I'll own after comm */
 {
-
   /* If not point to point, currently we do synchroneous communications */
   if (plan->maxed_recvs){
     /* Do nothing */
@@ -845,10 +876,11 @@ int Zoltan2_Directory_Comm::do_wait(
 
   /* Wait for messages to arrive & unpack them if necessary. */
   /* Note: since request is in plan, could wait in later routine. */
-  if (!plan->indices_from) {	/* No copying required */
+  if (plan->indices_from == Teuchos::null) {	/* No copying required */
     if (plan->nrecvs > 0) {
       // TODO: Teuchos::waitAllImpl(...)
-      MPI_Waitall(plan->nrecvs, &(plan->request[0]), &(plan->status[0]));
+      MPI_Waitall(plan->nrecvs, &plan->request[0], &plan->status[0]);
+      //MPI_Waitall(plan->nrecvs, plan->request.getRawPtr(), plan->status.getRawPtr());
     }
   }
   else {			 	/* Need to copy into recv_data. */
@@ -877,7 +909,7 @@ int Zoltan2_Directory_Comm::do_wait(
       else {
         int k = plan->starts_from[self_num];
         for (int j = plan->lengths_from[self_num]; j; j--) {
-          memcpy(&recv_data[(size_t)((*plan->indices_from)[k]) * (size_t)nbytes],
+          memcpy(&recv_data[(size_t)(plan->indices_from[k]) * (size_t)nbytes],
             &(plan->getRecvBuff())[(size_t)k * (size_t)nbytes], nbytes);
           k++;
         }
@@ -890,7 +922,8 @@ int Zoltan2_Directory_Comm::do_wait(
     for (int jj = 0; jj < plan->nrecvs; jj++) {
       MPI_Status status;		/* return from Waitany */
       int index;
-      MPI_Waitany(plan->nrecvs, &(plan->request[0]), &index, &status);
+      MPI_Waitany(plan->nrecvs, &plan->request[0], &index, &status);
+      //MPI_Waitany(plan->nrecvs, plan->request.getRawPtr(), &index, &status);
 
       if (index == MPI_UNDEFINED) {
         break;  /* No more receives */
@@ -908,15 +941,15 @@ int Zoltan2_Directory_Comm::do_wait(
         // we must sort here, or if it's fine to allow the sort to happen through
         // the index value. This needs furthe discussion.
         memcpy(&recv_data[offsetDst * (size_t)nbytes],
-          &(plan->getRecvBuff())[plan->starts_from_ptr[index] * (size_t)nbytes],
+          &plan->getRecvBuff().getRawPtr()[plan->starts_from_ptr[index] * (size_t)nbytes],
           plan->sizes_from[index] * (size_t)nbytes);
         offsetDst += plan->sizes_from[index];
       }
       else {
         int k = plan->starts_from[index];
         for (int j = plan->lengths_from[index]; j; j--) {
-          memcpy(&recv_data[(size_t)((*plan->indices_from)[k]) * (size_t)nbytes],
-                 &(plan->getRecvBuff())[(size_t)k * (size_t)nbytes], nbytes);
+          memcpy(&recv_data.getRawPtr()[(size_t)(plan->indices_from[k]) * (size_t)nbytes],
+                 &plan->getRecvBuff().getRawPtr()[(size_t)k * (size_t)nbytes], nbytes);
           k++;
         }
       }
@@ -932,10 +965,10 @@ int Zoltan2_Directory_Comm::do_wait(
 */
 
 int Zoltan2_Directory_Comm::do_all_to_all(
-  Zoltan2_Directory_Plan *plan,               /* communication data structure */
-  const std::vector<char> &send_data,		     /* array of data I currently own */
-  int nbytes,                            /* msg size */
-  std::vector<char> &recv_data)		       /* array of data I'll own after comm */
+  Zoltan2_Directory_Plan *plan,              /* communication data structure */
+  const Teuchos::ArrayRCP<char> &send_data,		     /* array of data I currently own */
+  int nbytes,                                /* msg size */
+  Teuchos::ArrayRCP<char> &recv_data)		 /* array of data I'll own after comm */
 {
   throw std::logic_error("UNTESTED COMM 10"); // needs unit testing
 
@@ -955,10 +988,10 @@ int Zoltan2_Directory_Comm::do_all_to_all(
 
   int nprocs = plan->comm->getSize();
 
-  std::vector<int> outbufCounts(nprocs,0);
-  std::vector<int> outbufOffsets(nprocs,0);
-  std::vector<int> inbufCounts(nprocs,0);
-  std::vector<int> inbufOffsets(nprocs,0);
+  Teuchos::ArrayRCP<int> outbufCounts(new int[nprocs], 0, nprocs, true);
+  Teuchos::ArrayRCP<int> outbufOffsets(new int[nprocs], 0, nprocs, true);
+  Teuchos::ArrayRCP<int> inbufCounts(new int[nprocs], 0, nprocs, true);
+  Teuchos::ArrayRCP<int> inbufOffsets(new int[nprocs], 0, nprocs, true);
 
   /* The *_to fields of the plan refer to the items in the send_data buffer,
    * and how to pull out the correct items for each receiver.  The
@@ -970,7 +1003,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
   /* CREATE SEND BUFFER */
 
   int sorted = 0;
-  if (!plan->indices_to){
+  if (plan->indices_to == Teuchos::null){
     sorted = 1;
     for (int i=1; i< nSendMsgs; i++){
       if (plan->starts_to[i] < plan->starts_to[i-1]){
@@ -980,9 +1013,9 @@ int Zoltan2_Directory_Comm::do_all_to_all(
     }
   }
 
-  std::vector<char> outbuf;
-  std::vector<char> inbuf;
-  std::vector<char> buf;
+  Teuchos::ArrayRCP<char> outbuf;
+  Teuchos::ArrayRCP<char> inbuf;
+  Teuchos::ArrayRCP<char> buf;
 
   if (plan->sizes_to.size()){
     /*
@@ -995,7 +1028,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
       outbufLen += plan->sizes_to[i];
     }
 
-    if (plan->indices_to) {
+    if (plan->indices_to != Teuchos::null) {
       /*
        * items are not grouped by message
        */
@@ -1012,7 +1045,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
           if (plan->procs_to[i] == p){   /* procs_to is sorted */
 
             for (int j=0; j < plan->lengths_to[i]; j++,k++){
-              int itemSize = plan->sizes[(*plan->indices_to)[k]] * nbytes;
+              int itemSize = plan->sizes[plan->indices_to[k]] * nbytes;
               int offset = plan->indices_to_ptr[k] * nbytes;
 
               memcpy(pBufPtr, &(send_data[0]) + offset, itemSize);
@@ -1076,7 +1109,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
       }
     }
   }
-  else if (plan->indices_to) {
+  else if (plan->indices_to != Teuchos::null) {
     /*
      * item sizes are constant, however the items belonging in a given
      * message may not be contiguous in send_data
@@ -1093,7 +1126,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
       if (i < nSendMsgs){
         if (plan->procs_to[i] == p){   /* procs_to is sorted */
           for (int j=0; j < plan->lengths_to[i]; j++,k++) {
-            int offset = (*plan->indices_to)[k] * nbytes;
+            int offset = plan->indices_to[k] * nbytes;
             memcpy(pBufPtr, &(send_data[0]) + offset, nbytes);
             pBufPtr += nbytes;
           }
@@ -1158,7 +1191,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
 
   sorted = 0;
   int i;
-  if (!plan->indices_from) {
+  if (plan->indices_from == Teuchos::null) {
     sorted = 1;
     for (i=1; i< nRecvMsgs; i++) {
       if (plan->starts_from[i] < plan->starts_from[i-1]){
@@ -1187,7 +1220,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
     if (i < nRecvMsgs){
       if (plan->procs_from[i] == p){
 
-        if (!plan->sizes_allocated){
+        if (!plan->using_sizes){
           length = plan->lengths_from[i] * nbytes;
         }
         else{
@@ -1208,7 +1241,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
    &(inbuf[0]), &(inbufCounts[0]), &(inbufOffsets[0]), MPI_BYTE,
    Teuchos::getRawMpiComm(*(plan->comm)));
 
-  // TODO: Restore optimizations - original just set ptr
+  // TODO: Restorecan we just copy optimizations - original just set ptr
   //if (outbuf != send_data){
   //  ZOLTAN_FREE(outbuf);
   //}
@@ -1219,11 +1252,11 @@ int Zoltan2_Directory_Comm::do_all_to_all(
 
     char * pBufPtr = &(inbuf[0]);
 
-    if (!plan->sizes_allocated){
+    if (!plan->using_sizes){
 
       /* each item in each message is nbytes long */
 
-      if (!plan->indices_from) {
+      if (plan->indices_from == Teuchos::null) {
         for (i=0; i < nRecvMsgs; i++){
           int offset = plan->starts_from[i] * nbytes;
           int length = plan->lengths_from[i] * nbytes;
@@ -1236,7 +1269,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
         for (i=0; i < nRecvMsgs; i++) {
 
           for (int j=0; j < plan->lengths_from[i]; j++,k++){
-            int offset = (*plan->indices_from)[k] * nbytes;
+            int offset = plan->indices_from[k] * nbytes;
             memcpy(&(recv_data[0]) + offset, pBufPtr, nbytes);
             pBufPtr += nbytes;
           }
@@ -1261,10 +1294,10 @@ int Zoltan2_Directory_Comm::do_all_to_all(
 
 int Zoltan2_Directory_Comm::do_reverse(
   int tag,			                             /* message tag for communicating */
-  const std::vector<char> &send_data,	       /* array of data I currently own */
+  const Teuchos::ArrayRCP<char> &send_data,	       /* array of data I currently own */
   int nbytes,                                /* msg size */
-  const std::vector<int> &sizes,
-  std::vector<char> &recv_data)	 /* array of data I'll own after reverse comm */
+  const Teuchos::ArrayRCP<int> &sizes,
+  Teuchos::ArrayRCP<char> &recv_data)	 /* array of data I'll own after reverse comm */
 {
   /* create plan->plan_reverse
    */
@@ -1275,7 +1308,12 @@ int Zoltan2_Directory_Comm::do_reverse(
   // This information is only available after the above create_reverse_plan is
   // called so we can setup the return data with proper buffer size now.
   // However should we do this here?
-  recv_data.resize(plan_forward->plan_reverse->total_recv_size*nbytes);
+  size_t new_size = plan_forward->plan_reverse->total_recv_size*nbytes;
+  if(new_size > 0) {
+    // have to be careful with new[0] which will for example turn a
+    // arrayRCP.getRawPtr() from a valid NULL read to a debug assert fail.
+    recv_data = Teuchos::arcp(new char[new_size], 0, new_size, true);
+  }
 
   if (status == 0) {
 
@@ -1319,7 +1357,7 @@ void Zoltan2_Directory_Comm::free_reverse_plan(Zoltan2_Directory_Plan *plan)
 
 int Zoltan2_Directory_Comm::create_reverse_plan(
   int tag,
-  const std::vector<int> &sizes)/* variable size of objects (if not size 0) */
+  const Teuchos::ArrayRCP<int> &sizes)/* variable size of objects (if not size 0) */
 {
   /* Check input parameters */
   if (!plan_forward){
@@ -1344,10 +1382,11 @@ int Zoltan2_Directory_Comm::create_reverse_plan(
   }
 
   if (plan_forward->plan_reverse->maxed_recvs == 0) {
-    plan_forward->plan_reverse->request.resize(
-      plan_forward->plan_reverse->nrecvs);
-    plan_forward->plan_reverse->status.resize(
-      plan_forward->plan_reverse->nrecvs);
+    // See notes in header for MPI_Request
+    //   plan_forward->plan_reverse->request = Teuchos::arcp(new MPI_Request[plan_forward->plan_reverse->nrecvs], 0, plan_forward->plan_reverse->nrecvs, true);
+    //   plan_forward->plan_reverse->status = Teuchos::arcp(new MPI_Status[plan_forward->plan_reverse->nrecvs], 0, plan_forward->plan_reverse->nrecvs, true);
+    plan_forward->plan_reverse->request.resize(plan_forward->plan_reverse->nrecvs);
+    plan_forward->plan_reverse->status.resize(plan_forward->plan_reverse->nrecvs);
   }
 
   int sum_recv_sizes;
@@ -1367,7 +1406,7 @@ int Zoltan2_Directory_Comm::create_reverse_plan(
 }
 
 int Zoltan2_Directory_Comm::resize(
-  const std::vector<int> &sizes,	 /* size of each item I'm sending */
+  const Teuchos::ArrayRCP<int> &sizes,	 /* size of each item I'm sending */
   int       tag,			             /* message tag I can use */
   int      *sum_recv_sizes)        /* sum of the sizes of the items I'll receive */
 {
@@ -1376,21 +1415,21 @@ int Zoltan2_Directory_Comm::resize(
 
 int Zoltan2_Directory_Comm::resize(
   Zoltan2_Directory_Plan *plan,    /* communication plan object */
-  const std::vector<int> &sizes,	 /* size of each item I'm sending */
+  const Teuchos::ArrayRCP<int> &sizes,	 /* size of each item I'm sending */
   int       tag,			             /* message tag I can use */
   int      *sum_recv_sizes)        /* sum of the sizes of the items I'll receive */
 {
   /* If sizes vary, then I need to compute and communicate message lengths */
   /* First check if sizes array is NULL on all procs. */
   int my_proc = plan->comm->getRank();		/* my processor ID */
-  int has_sizes = (sizes.size() != 0); // TODO - must distinguish 0 from original NULL case...
+  int has_sizes = (sizes.size() != 0);
   int var_sizes;        /* items have variable sizes? */
 
   // I think we'll need to do this raw, not with Teuchos
   MPI_Allreduce(&has_sizes, &var_sizes, 1, MPI_INT, MPI_LOR,
     Teuchos::getRawMpiComm(*plan->comm));
 
-  if (var_sizes && plan->indices_from) {
+  if (var_sizes && plan->indices_from != Teuchos::null) {
     // NEW METHOD
     // Allow this to run now - the below implementation is working but perhaps
     // not done correctly for other usage cases I have not considered yet.
@@ -1401,12 +1440,12 @@ int Zoltan2_Directory_Comm::resize(
   int nrecvs = plan->nrecvs; /* number of msgs I'll recv */
   int self_msg = plan->self_msg;
 
-  std::vector<int> sizes_to;
-  std::vector<int> sizes_from;
-  std::vector<int> starts_to_ptr;
-  std::vector<int> starts_from_ptr;
-  std::vector<int> indices_to_ptr;
-  std::vector<int> indices_from_ptr;
+  Teuchos::ArrayRCP<int> sizes_to;
+  Teuchos::ArrayRCP<int> sizes_from;
+  Teuchos::ArrayRCP<int> starts_to_ptr;
+  Teuchos::ArrayRCP<int> starts_from_ptr;
+  Teuchos::ArrayRCP<int> indices_to_ptr;
+  Teuchos::ArrayRCP<int> indices_from_ptr;
 
   if (!var_sizes) { /* Easy case.  Size = length */
     plan->total_recv_size = 0;
@@ -1434,10 +1473,19 @@ int Zoltan2_Directory_Comm::resize(
 
     // NEW CODE
     plan->sizes = sizes; // can we just copy?
-    plan->sizes_allocated = true;
+    plan->using_sizes = true;
 
-    sizes_to.resize(nsends + self_msg, 0);
-    sizes_from.resize(nrecvs + self_msg);
+    if(nsends + self_msg > 0) {
+      sizes_to = Teuchos::arcp(
+        new int[nsends + self_msg], 0, nsends + self_msg, true);
+      for(int n = 0; n < sizes_to.size(); ++n) {
+        sizes_to[n] = 0;
+      }
+    }
+    if(nrecvs + self_msg > 0) {
+      sizes_from = Teuchos::arcp(
+        new int[nrecvs + self_msg], 0, nrecvs + self_msg, true);
+    }
 
     /* Several cases:
      1. indices_to == NULL
@@ -1446,13 +1494,20 @@ int Zoltan2_Directory_Comm::resize(
      need to allocate, set indices_to_ptr
      3,4. mirror cases for _from
      */
-    starts_to_ptr.resize(nsends + self_msg);
-
-    if (!plan->indices_to) {
+    if(nsends + self_msg > 0) {
+      starts_to_ptr = Teuchos::arcp(
+        new int[nsends + self_msg], 0, nsends + self_msg, true);
+    }
+    if (plan->indices_to == Teuchos::null) {
       /* Simpler case; sends already blocked by processor */
-      std::vector<int> index(nsends + self_msg);
-      std::vector<int> sort_val(nsends + self_msg);
-
+      Teuchos::ArrayRCP<int> index;
+      Teuchos::ArrayRCP<int> sort_val;
+      if(nsends + self_msg > 0) {
+        index = Teuchos::arcp(
+          new int[nsends + self_msg], 0, nsends + self_msg, true);
+        sort_val = Teuchos::arcp(
+          new int[nsends + self_msg], 0, nsends + self_msg, true);
+      }
       for (int i = 0; i < nsends + self_msg; i++) {
         int j = plan->starts_to[i];
 
@@ -1463,13 +1518,11 @@ int Zoltan2_Directory_Comm::resize(
             plan->procs_to[i] != my_proc)
           plan->max_send_size = sizes_to[i];
       }
-
       for (int i = 0; i < nsends + self_msg; i++) {
         sort_val[i] = plan->starts_to[i];
         index[i] = i;
       }
       sort_ints(sort_val, index);
-
       int sum = 0;
       for (int i = 0; i < nsends + self_msg; i++) {
         starts_to_ptr[index[i]] = sum;
@@ -1477,7 +1530,10 @@ int Zoltan2_Directory_Comm::resize(
       }
     }
     else {		/* Harder case, sends not blocked */
-      std::vector<int> offset(plan->nvals);
+      Teuchos::ArrayRCP<int> offset;
+      if(plan->nvals > 0) {
+        offset = Teuchos::arcp(new int[plan->nvals], 0, plan->nvals, true);
+      }
       indices_to_ptr.resize(plan->nvals);
 
       /* Compute address for every item in send array */
@@ -1493,8 +1549,8 @@ int Zoltan2_Directory_Comm::resize(
         starts_to_ptr[i] = sum;
         int j = plan->starts_to[i];
         for (int k = 0; k < plan->lengths_to[i]; k++) {
-          indices_to_ptr[j] = offset[(*plan->indices_to)[j]];
-          sizes_to[i] += sizes[(*plan->indices_to)[j++]];
+          indices_to_ptr[j] = offset[plan->indices_to[j]];
+          sizes_to[i] += sizes[plan->indices_to[j++]];
         }
         if (sizes_to[i] > plan->max_send_size &&
             plan->procs_to[i] != my_proc)
@@ -1506,17 +1562,25 @@ int Zoltan2_Directory_Comm::resize(
     /* Note: This routine only gets message sizes, not object sizes. */
     /*	Anything requiring item sizes requires more code */
     /*      Should such functionality reside here? */
-
     exchange_sizes(sizes_to, plan->procs_to, nsends, self_msg,
-      &sizes_from, plan->procs_from, nrecvs,
+      sizes_from, plan->procs_from, nrecvs,
       &plan->total_recv_size, my_proc, tag, plan->comm);
 
-    starts_from_ptr.resize(nrecvs + self_msg);
+    if(nrecvs + self_msg > 0) {
+      starts_from_ptr = Teuchos::arcp(
+        new int[nrecvs + self_msg], 0, nrecvs + self_msg, true);
+    }
 
-    if (!plan->indices_from) {
+    if (plan->indices_from == Teuchos::null) {
       /* Simpler case; recvs already blocked by processor */
-      std::vector<int> index(nrecvs + self_msg);
-      std::vector<int> sort_val(nrecvs + self_msg);
+      Teuchos::ArrayRCP<int> index;
+      Teuchos::ArrayRCP<int> sort_val;
+      if(nrecvs + self_msg > 0) {
+        index = Teuchos::arcp(
+          new int[nrecvs + self_msg], 0, nrecvs + self_msg, true);
+        sort_val = Teuchos::arcp<int>(
+            new int[nrecvs + self_msg], 0, nrecvs + self_msg, true);
+      }
 
       for (int i = 0; i < nrecvs + self_msg; i++) {
         sort_val[i] = plan->starts_from[i];
@@ -1547,8 +1611,14 @@ int Zoltan2_Directory_Comm::resize(
       // original do_wait implementation it seemed it was setup to place the
       // elemenets in order, even though they would be sorted later, so that
       // part I need to discuss further
-      std::vector<int> index(nrecvs + self_msg);
-      std::vector<int> sort_val(nrecvs + self_msg);
+      Teuchos::ArrayRCP<int> index;
+      Teuchos::ArrayRCP<int> sort_val;
+      if(nrecvs + self_msg > 0) {
+        index = Teuchos::arcp(
+          new int[nrecvs + self_msg], 0, nrecvs + self_msg, true);
+        sort_val = Teuchos::arcp(
+          new int[nrecvs + self_msg], 0, nrecvs + self_msg, true);
+      }
 
       for (int i = 0; i < nrecvs + self_msg; i++) {
         sort_val[i] = plan->starts_from[i];
@@ -1563,7 +1633,6 @@ int Zoltan2_Directory_Comm::resize(
       }
     }
   }
-
   plan->sizes_to = sizes_to;
   plan->sizes_from = sizes_from;
   plan->starts_to_ptr = starts_to_ptr;
@@ -1579,12 +1648,12 @@ int Zoltan2_Directory_Comm::resize(
 }
 
 int Zoltan2_Directory_Comm::exchange_sizes(
-  const std::vector<int> &sizes_to,		/* value I need to exchange (size of true msg) */
-  const std::vector<int> &procs_to,		/* procs I send to */
+  const Teuchos::ArrayRCP<int> &sizes_to,		/* value I need to exchange (size of true msg) */
+  const Teuchos::ArrayRCP<int> &procs_to,		/* procs I send to */
   int       nsends,		                /* number of messages I'll send */
   int       self_msg,		              /* do I copy data to myself? */
-  std::vector<int> *sizes_from,	    	/* (returned) size of all my receives */
-  const std::vector<int> &procs_from, /* procs I recv from */
+  Teuchos::ArrayRCP<int> &sizes_from,	    	/* (returned) size of all my receives */
+  const Teuchos::ArrayRCP<int> &procs_from, /* procs I recv from */
   int       nrecvs,		                /* number of messages I receive */
   int      *total_recv_size,	        /* (returned) sum of all incoming sizes */
   int       my_proc,		              /* my processor number */
@@ -1605,17 +1674,18 @@ int Zoltan2_Directory_Comm::exchange_sizes(
   }
 
   *total_recv_size = 0;
+
   for (int i = 0; i < nrecvs + self_msg; i++) {
     if (procs_from[i] != my_proc) {
       MPI_Status status;		/* status of commuication operation */
       // TODO: Teuchos::receive(...)
-      MPI_Recv((void *) &((*sizes_from)[i]), 1, MPI_INT, procs_from[i],
+      MPI_Recv((void *) &(sizes_from[i]), 1, MPI_INT, procs_from[i],
         tag, Teuchos::getRawMpiComm(*comm), &status);
     }
     else {
-      (*sizes_from)[i] = sizes_to[self_index_to];
+      sizes_from[i] = sizes_to[self_index_to];
     }
-    *total_recv_size += (*sizes_from)[i];
+    *total_recv_size += sizes_from[i];
   }
   return 0;
 }

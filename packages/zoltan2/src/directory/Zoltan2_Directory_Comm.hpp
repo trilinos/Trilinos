@@ -50,6 +50,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <vector>
 #include <mpi.h>
+#include <Teuchos_ArrayRCP.hpp>
 
 #ifdef HAVE_MPI
 
@@ -57,66 +58,49 @@ namespace Zoltan2 {
 
 class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
   public:
-    Zoltan2_Directory_Plan() :
-      indices_to(NULL), indices_from(NULL),
-      sizes_allocated(false),
-      maxed_recvs(0), recv_buff(NULL), bOwnRecvBuff(false) {
+    Zoltan2_Directory_Plan() : using_sizes(false), maxed_recvs(0) {
     }
+
     ~Zoltan2_Directory_Plan() {
-      if(bOwnRecvBuff) {
-        delete recv_buff;
-      }
-      if(indices_to) {
-        delete indices_to;
-      }
-      if(indices_from) {
-        // indices_from is currently copied from indices_to for the reverse
-        // plan and ownership stays with the parent (forward) plan, so we don't
-        // delete here. TODO: Maybe add an ownership flag to make this more
-        // literal
-        //  delete indices_from; // DO NOT delete indices_from - copied
-      }
     }
 
     void getInvertedValues(Zoltan2_Directory_Plan * from);
 
     void print(const std::string& headerMessage) const;
 
-    std::vector<int> procs_to;      /* processors I'll send to */
-    std::vector<int> procs_from;    /* processors I'll receive from*/
-    std::vector<int> lengths_to;    /* # items I send in my messages */
-    std::vector<int> lengths_from;  /* # items I recv in my messages */
+    Teuchos::ArrayRCP<int> procs_to;      /* processors I'll send to */
+    Teuchos::ArrayRCP<int> procs_from;    /* processors I'll receive from*/
+    Teuchos::ArrayRCP<int> lengths_to;    /* # items I send in my messages */
+    Teuchos::ArrayRCP<int> lengths_from;  /* # items I recv in my messages */
 
     /* Following arrays used if send/recv data is packed contiguously */
-    std::vector<int> starts_to;	    /* where in item lists each send starts */
-    std::vector<int> starts_from;	  /* where in item lists each recv starts */
+    Teuchos::ArrayRCP<int> starts_to;	    /* where in item lists each send starts */
+    Teuchos::ArrayRCP<int> starts_from;	  /* where in item lists each recv starts */
 
     /* Following arrays used is send/recv data not packed contiguously */
-    std::vector<int> *indices_to;    /* indices of items I send in my msgs */
+    Teuchos::ArrayRCP<int> indices_to;    /* indices of items I send in my msgs */
 
     /* ordered consistent with lengths_to */
-    std::vector<int> *indices_from;  /* indices for where to put arriving data */
+    Teuchos::ArrayRCP<int> indices_from;  /* indices for where to put arriving data */
 
 				/* ordered consistent with lengths_from */
 
     /* Above information is sufficient if items are all of the same size */
     /* If item sizes are variable, then need following additional arrays */
-    std::vector<int> sizes;      /* size of each item to send (if items vary) */
-    bool sizes_allocated; // will need to rethink - new vector (loses NULL vs 0)
-				/* Note only on sending processor: */
-				/* assuming recv proc can figure it out */
+    Teuchos::ArrayRCP<int> sizes;      /* size of each item to send (if items vary) */
+    bool using_sizes; /* may refactor this so it's out - tracks whether we are in size mode even if 0 size */
 
-    std::vector<int> sizes_to;    /* size of each msg to send (if items vary) */
-    std::vector<int> sizes_from;  /* size of each msg to recv (if items vary) */
+    Teuchos::ArrayRCP<int> sizes_to;    /* size of each msg to send (if items vary) */
+    Teuchos::ArrayRCP<int> sizes_from;  /* size of each msg to recv (if items vary) */
 
     /* Following used if send/recv data is packed contiguously & items vary */
-    std::vector<int> starts_to_ptr;	  /* where in dense array sends starts */
-    std::vector<int> starts_from_ptr;	/* where in dense each recv starts */
+    Teuchos::ArrayRCP<int> starts_to_ptr;	  /* where in dense array sends starts */
+    Teuchos::ArrayRCP<int> starts_from_ptr;	/* where in dense each recv starts */
 
     /* Following used is send/recv data not packed contiguously & items vary */
-    std::vector<int> indices_to_ptr; /* where to find items I send in my msgs */
+    Teuchos::ArrayRCP<int> indices_to_ptr; /* where to find items I send in my msgs */
 				/* ordered consistent with lengths_to */
-    std::vector<int> indices_from_ptr; /* where to find items I recv */
+    Teuchos::ArrayRCP<int> indices_from_ptr; /* where to find items I recv */
 				/* ordered consistent with lengths_from */
 
     /* Note: ALL above arrays include data for self-msg */
@@ -130,22 +114,26 @@ class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
     int       total_recv_size; /* total amount of data I'll recv (w/ self) */
     int       maxed_recvs;     /* use MPI_Alltoallv if too many receives */
     Teuchos::RCP<const Teuchos::Comm<int> > comm; /* communicator */
+
+    // making this ArrayRCP is causing issues with name() demangling for gcc
+    // sems build, but not clang... will need to work on this further
+    // back to std::vector for the moment
+    // there is probably an option in the sems building turning on
+    // something that creates this conflict
     std::vector<MPI_Request> request;      /* MPI requests for posted recvs */
     std::vector<MPI_Status> status;		     /* MPI status for those recvs */
 
     Zoltan2_Directory_Plan* plan_reverse;    /* to support POST & WAIT */
 
-    std::vector<char> *recv_buff;            /* To support POST & WAIT */
-    char * getRecvBuff() const { return &((*recv_buff)[0]); }
-    size_t getRecvBuffSize() const { return recv_buff->size(); }
-    bool bOwnRecvBuff;
+    Teuchos::ArrayRCP<char> recv_buff;       /* To support POST & WAIT */
+    Teuchos::ArrayRCP<char> getRecvBuff() const { return recv_buff; }
 };
 
 class Zoltan2_Directory_Comm {
   public:
     Zoltan2_Directory_Comm(
       int       nvals,		                /* number of values I currently own */
-      const std::vector<int>  &assign, /* processor assignment for all values */
+      const Teuchos::ArrayRCP<int>  &assign, /* processor assignment for all values */
       Teuchos::RCP<const Teuchos::Comm<int> > comm,	          /* communicator */
       int       tag);			                           /* message tag I can use */
 
@@ -153,16 +141,16 @@ class Zoltan2_Directory_Comm {
 
     int do_forward(
       int tag,		      	                    /* message tag for communicating */
-      const std::vector<char> &send_data,	    /* array of data I currently own */
+      const Teuchos::ArrayRCP<char> &send_data,	    /* array of data I currently own */
       int nbytes,                             /* msg size */
-      std::vector<char> &recv_data);          /* array of data to receive */
+      Teuchos::ArrayRCP<char> &recv_data);     /* array of data to receive */
 
     int do_reverse(
       int tag,			                         /* message tag for communicating */
-      const std::vector<char> &send_data,    /* array of data I currently own */
+      const Teuchos::ArrayRCP<char> &send_data,    /* array of data I currently own */
       int nbytes,                            /* msg size */
-      const std::vector<int> &sizes,
-      std::vector<char> &recv_data);     /* array of data owned after reverse */
+      const Teuchos::ArrayRCP<int> &sizes,
+      Teuchos::ArrayRCP<char> &recv_data);     /* array of data owned after reverse */
 
     int getNRec() const { return nrec; } /* accessor for nrec */
 
@@ -170,46 +158,46 @@ class Zoltan2_Directory_Comm {
       return plan_forward->total_recv_size;
     }
 
-    int resize(const std::vector<int> &sizes, int tag,
+    int resize(const Teuchos::ArrayRCP<int> &sizes, int tag,
       int *sum_recv_sizes);
 
   private:
     int resize(Zoltan2_Directory_Plan *plan,
-      const std::vector<int> &sizes, int tag, int *sum_recv_sizes);
+      const Teuchos::ArrayRCP<int> &sizes, int tag, int *sum_recv_sizes);
 
     int do_post(Zoltan2_Directory_Plan *plan, int tag,
-      const std::vector<char> &send_data,
+      const Teuchos::ArrayRCP<char> &send_data,
       int nbytes,                            /* msg size */
-      std::vector<char> &recv_data);
+      Teuchos::ArrayRCP<char> &recv_data);
 
     int do_wait(Zoltan2_Directory_Plan *plan, int tag,
-      const std::vector<char> &send_data,
+      const Teuchos::ArrayRCP<char> &send_data,
       int nbytes,                            /* msg size */
-      std::vector<char> &recv_data);
+      Teuchos::ArrayRCP<char> &recv_data);
 
     int do_all_to_all(Zoltan2_Directory_Plan *plan,
-      const std::vector<char> &send_data,
+      const Teuchos::ArrayRCP<char> &send_data,
       int nbytes,                            /* msg size */
-      std::vector<char> &recv_data);
+      Teuchos::ArrayRCP<char> &recv_data);
 
-    int sort_ints(std::vector<int> &vals_sort, std::vector<int> &vals_other);
+    int sort_ints(Teuchos::ArrayRCP<int> &vals_sort, Teuchos::ArrayRCP<int> &vals_other);
 
-    int invert_map(const std::vector<int> &lengths_to,
-      const std::vector<int> &procs_to, int nsends, int self_msg,
-      std::vector<int> &lengths_from, std::vector<int> &procs_from,
+    int invert_map(const Teuchos::ArrayRCP<int> &lengths_to,
+      const Teuchos::ArrayRCP<int> &procs_to, int nsends, int self_msg,
+      Teuchos::ArrayRCP<int> &lengths_from, Teuchos::ArrayRCP<int> &procs_from,
       int *pnrecvs,	int my_proc,int nprocs,	int out_of_mem, int tag,
       Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
-    int exchange_sizes(const std::vector<int> &sizes_to,
-      const std::vector<int> &procs_to, int nsends,
-      int self_msg,	std::vector<int> *sizes_from,
-      const std::vector<int> &procs_from,
+    int exchange_sizes(const Teuchos::ArrayRCP<int> &sizes_to,
+      const Teuchos::ArrayRCP<int> &procs_to, int nsends,
+      int self_msg,	Teuchos::ArrayRCP<int> &sizes_from,
+      const Teuchos::ArrayRCP<int> &procs_from,
       int nrecvs, int *total_recv_size,	int my_proc, int tag,
       Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
     void free_reverse_plan(Zoltan2_Directory_Plan *plan);
 
-    int create_reverse_plan(int tag, const std::vector<int> &sizes);
+    int create_reverse_plan(int tag, const Teuchos::ArrayRCP<int> &sizes);
 
     Zoltan2_Directory_Plan * plan_forward; // for efficient MPI communication
     int nrec;

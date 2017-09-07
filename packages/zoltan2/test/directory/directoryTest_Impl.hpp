@@ -190,15 +190,6 @@ class IDs {
             std::cout << std::endl;
           }
 
-          std::cout << "Sub3: " << std::endl;
-          for(int proc = 0; proc < comm->getSize(); ++proc) {
-            std::cout << " rank " << proc << ": ";
-            for(size_t n = 0; n < totalIds; ++n) {
-              std::cout << subset3(n, proc);
-            }
-            std::cout << std::endl;
-          }
-
           // update
           std::cout << "update: " << std::endl;
           for(int proc = 0; proc < comm->getSize(); ++proc) {
@@ -277,13 +268,18 @@ class IDs {
           }
           std::cout << "Rank: " << proc << std::endl;
           print_gids(update_gids,  "Update gids"  );
-          print_lids(update_lids,  "Update lids"  );
+          if(bUseLocalIDs) {
+            print_lids(update_lids,  "Update lids"  );
+          }
           print_gids(remove_gids, "Remove gids" );
           print_gids(find_gids,   "Find gids"   );
-          print_lids(find_lids,   "Find lids"  );
-
+          if(bUseLocalIDs) {
+            print_lids(find_lids,   "Find lids"  );
+          }
           print_user_data();  // specific to single user or vector user type
-          print_lid_data(); // the lids we found, if bUseLocalIDs = true
+          if(bUseLocalIDs) {
+            print_lid_data(); // the lids we found, if bUseLocalIDs = true
+          }
 
           if(proc == comm->getSize()-1) {
             std::cout << std::endl;
@@ -314,12 +310,7 @@ class IDs {
 
     // some arbitrary subset
     bool subset2(int index, int rank) const {
-      return (((index+1) % (comm->getSize()+3)) == rank);
-    }
-
-    // some arbitrary subset
-    bool subset3(int index, int rank) const {
-      return (((index+2) % (comm->getSize()+7)) == rank);
+      return ((index % (comm->getSize()+3)) == rank);
     }
 
     virtual int convert_gid_to_index(const gid_t& gid) const = 0;
@@ -436,14 +427,12 @@ class IDs {
     virtual void print_user_data() const = 0;
 
     virtual void print_lid_data() const {
-      if(bUseLocalIDs) {
-        std::cout << "Find LIDs ";
-        for(size_t n = 0; n < this->find_gids.size(); ++n) {
-          std::cout << this->gid_to_string(this->find_gids[n]) << ":" <<
-            this->lid_to_string(this->find_lids[n]) << " ";
-        }
-        std::cout << std::endl;
+      std::cout << "Find LIDs ";
+      for(size_t n = 0; n < this->find_gids.size(); ++n) {
+        std::cout << this->gid_to_string(this->find_gids[n]) << ":" <<
+          this->lid_to_string(this->find_lids[n]) << " ";
       }
+      std::cout << std::endl;
     }
 
     virtual size_t gid_seed_value(const gid_t& gid) const = 0;
@@ -529,7 +518,7 @@ class IDs {
     void test_implement() {
       Zoltan2_Directory_Clock allClock("all");
 
-      const int debug_level = 0;
+      const int debug_level = 99;
 
 #ifdef CONVERT_DIRECTORY_ORIGINAL
       if (update_gids.size() > std::numeric_limits<int>::max())
@@ -1335,7 +1324,7 @@ int runPerformanceTest(Teuchos::RCP<const Teuchos::Comm<int> > comm,
 
   // just run 10000 and 100000000 for now. Tpetra has a lot of overhead so
   // looping that many times is too slow. This gives a good 1st performanct test.
-  std::vector<size_t> test_totalIds = { 10000, 10000000 };
+  std::vector<size_t> test_totalIds = { 10000000 };
   for(auto itr_totalIds = test_totalIds.begin();
     itr_totalIds != test_totalIds.end(); ++itr_totalIds) {
     const size_t & totalIds = (*itr_totalIds);
@@ -1412,6 +1401,10 @@ int runPerformanceDirectoryTests(int narg, char **arg) {
 // directoryTest_KokkosSimple which demonstrates a more natural usage of the
 // directory - that provides examples of how to use the directory which is
 // independent of all the above stuff.
+//
+// Setting print_output true below will print a lot of information about the
+// gid lists for update, remove, find, as well as the user data and associated
+// lids after running find.
 int runDirectoryTests(int narg, char **arg) {
 
   Teuchos::GlobalMPISession mpiSession(&narg,&arg);
@@ -1421,15 +1414,13 @@ int runDirectoryTests(int narg, char **arg) {
   // run the tests through a range of totalIds
   // we pick 0 and 1 and some low values for edge cases, then just
   // try to hit on some random spots
-  std::vector<size_t> run_with_totalIds = {0, 1, 5, 27, 63, 456, 1093};
-
+  std::vector<size_t> run_with_totalIds = {0, 1, 2, 3, 5, 27, 63, 456, 1093};
   int err = 0;
 
   const bool print_output = false; // noisy output with values for each gid
   const bool performance_test = false;
 
   for(int run_with_local_ids = 0; run_with_local_ids <= 1; ++run_with_local_ids) {
-
     #ifdef CONVERT_DIRECTORY_TPETRA
       if(run_with_local_ids == 1) {
         continue; // all modes support local ids except tpetra
