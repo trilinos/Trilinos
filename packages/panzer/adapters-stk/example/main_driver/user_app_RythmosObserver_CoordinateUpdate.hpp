@@ -67,12 +67,12 @@ namespace user_app {
     cloneIntegrationObserver() const
     { return Teuchos::rcp(new RythmosObserver_CoordinateUpdate(m_workset_container)); }
 
-    void resetIntegrationObserver(const Rythmos::TimeRange<double> &integrationTimeDomain)
+    void resetIntegrationObserver(const Rythmos::TimeRange<double>& /* integrationTimeDomain */)
     { }
 
-    void observeCompletedTimeStep(const Rythmos::StepperBase<double> &stepper,
-				  const Rythmos::StepControlInfo<double> &stepCtrlInfo,
-				  const int timeStepIter)
+    void observeCompletedTimeStep(const Rythmos::StepperBase<double>& /* stepper */,
+				  const Rythmos::StepControlInfo<double>& /* stepCtrlInfo */,
+				  const int /* timeStepIter */)
     { TEUCHOS_ASSERT(m_workset_container!=Teuchos::null); 
       m_workset_container->clear(); }
     

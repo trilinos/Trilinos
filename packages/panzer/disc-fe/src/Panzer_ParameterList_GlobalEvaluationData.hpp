@@ -60,8 +60,8 @@ public:
      : activeParameters_(activeParameters) {}
    virtual ~ParameterList_GlobalEvaluationData() {} 
 
-   virtual void ghostToGlobal(int mem) {}
-   virtual void globalToGhost(int mem) {}
+   virtual void ghostToGlobal(int /* mem */) {}
+   virtual void globalToGhost(int /* mem */) {}
 
    virtual bool requiresDirichletAdjustment() const { return false; }
 

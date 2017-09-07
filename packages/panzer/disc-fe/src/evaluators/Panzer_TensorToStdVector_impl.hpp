@@ -78,7 +78,7 @@ PHX_EVALUATOR_CTOR(TensorToStdVector, p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(TensorToStdVector, worksets, fm)
+PHX_POST_REGISTRATION_SETUP(TensorToStdVector, /* worksets */, fm)
 {
   for (std::size_t i=0; i < vector_fields.size(); ++i)
     this->utils.setFieldData(vector_fields[i], fm);

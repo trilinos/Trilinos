@@ -195,7 +195,7 @@ public:
    { static std::vector<int> empty; return empty; }
 
    //! Not used.
-   virtual const std::vector<int>& getAssociatedNeighbors(const LocalOrdinal& el) const
+   virtual const std::vector<int>& getAssociatedNeighbors(const LocalOrdinal& /* el */) const
    { static std::vector<int> empty; return empty; }
    //! Not used.
    virtual bool hasAssociatedNeighbors() const { return false; }

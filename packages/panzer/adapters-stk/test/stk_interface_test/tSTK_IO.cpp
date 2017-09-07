@@ -72,8 +72,8 @@ void buildLocalIds(const STK_Interface & mesh,
 void assignBlock(FieldContainer & block,FieldContainer & vertices, double (* func)(double,double));
 void assignBlock(FieldContainer & block,FieldContainer & vertices, double val);
 
-double xval(double x,double y) { return x; }
-double yval(double x,double y) { return y; }
+double xval(double x, double /* y */) { return x; }
+double yval(double /* x */, double y) { return y; }
 double block2(double x,double y) { return (x-0.5)*(x-0.5)+y; }
 
 // triangle tests

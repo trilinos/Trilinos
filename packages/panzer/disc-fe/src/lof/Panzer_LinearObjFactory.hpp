@@ -273,8 +273,8 @@ public:
    //! Get the range global indexer object associated with this factory
    virtual Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getRangeGlobalIndexer() const = 0;
 
-   virtual void beginFill(LinearObjContainer & loc) const {}
-   virtual void endFill(LinearObjContainer & loc) const {}
+   virtual void beginFill(LinearObjContainer & /* loc */) const {}
+   virtual void endFill(LinearObjContainer & /* loc */) const {}
 
 private:
    typedef PHX::TemplateManager<typename Traits::EvalTypes,

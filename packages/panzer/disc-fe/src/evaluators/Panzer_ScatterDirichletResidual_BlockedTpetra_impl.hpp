@@ -70,7 +70,7 @@
 
 template <typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterDirichletResidual_BlockedTpetra<EvalT,TRAITS,LO,GO,NodeT>::
-ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & /* indexer */,
                                        const Teuchos::ParameterList& p)
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
@@ -162,7 +162,7 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
 // **********************************************************************
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData d, 
+postRegistrationSetup(typename TRAITS::SetupData /* d */, 
                       PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
@@ -367,7 +367,7 @@ ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManage
 // **********************************************************************
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterDirichletResidual_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());

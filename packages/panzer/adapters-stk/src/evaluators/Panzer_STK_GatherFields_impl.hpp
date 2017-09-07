@@ -84,7 +84,7 @@ panzer_stk::GatherFields<EvalT, Traits>::
 // **********************************************************************
 template<typename EvalT, typename Traits> 
 void panzer_stk::GatherFields<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData d, 
+postRegistrationSetup(typename Traits::SetupData /* d */, 
 		      PHX::FieldManager<Traits>& fm)
 {
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {

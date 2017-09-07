@@ -202,7 +202,7 @@ void CubeTetMeshFactory::initializeWithDefaults()
    setParameterList(validParams);
 }
 
-void CubeTetMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
+void CubeTetMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK_Interface & mesh) const
 {
    typedef shards::Tetrahedron<4> TetTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<TetTopo>();
@@ -248,7 +248,7 @@ void CubeTetMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Int
    mesh.endModification();
 }
 
-void CubeTetMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,int zBlock,STK_Interface & mesh) const
+void CubeTetMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,int xBlock,int yBlock,int zBlock,STK_Interface & mesh) const
 {
    // grab this processors rank and machine size
    std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
@@ -375,7 +375,7 @@ void CubeTetMeshFactory::buildTetsOnHex(const Teuchos::Tuple<int,3> & meshDesc,
    }
 }
 
-std::pair<int,int> CubeTetMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> CubeTetMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int /* rank */) const
 {
    std::size_t xProcLoc = procTuple_[0];
    unsigned int minElements = nXElems_/size;
@@ -398,7 +398,7 @@ std::pair<int,int> CubeTetMeshFactory::determineXElemSizeAndStart(int xBlock,uns
    return std::make_pair(start+nXElems_*xBlock,nume);
 }
 
-std::pair<int,int> CubeTetMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> CubeTetMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int /* rank */) const
 {
    // int start = yBlock*nYElems_;
    // return std::make_pair(start,nYElems_);
@@ -424,7 +424,7 @@ std::pair<int,int> CubeTetMeshFactory::determineYElemSizeAndStart(int yBlock,uns
    return std::make_pair(start+nYElems_*yBlock,nume);
 }
 
-std::pair<int,int> CubeTetMeshFactory::determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> CubeTetMeshFactory::determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int /* rank */) const
 {
    // int start = zBlock*nZElems_;
    // return std::make_pair(start,nZElems_);

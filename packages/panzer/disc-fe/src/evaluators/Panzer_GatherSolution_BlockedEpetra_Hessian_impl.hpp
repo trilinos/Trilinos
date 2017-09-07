@@ -135,8 +135,8 @@ template<typename TRAITS, typename LO, typename GO>
 void
 panzer::GatherSolution_BlockedEpetra<panzer::Traits::Hessian, TRAITS, LO, GO>::
 postRegistrationSetup(
-  typename TRAITS::SetupData d,
-  PHX::FieldManager<TRAITS>& fm)
+  typename TRAITS::SetupData /* d  */,
+  PHX::FieldManager<TRAITS>& /* fm */)
 {
   using std::size_t;
   using std::string;

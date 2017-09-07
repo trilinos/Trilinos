@@ -78,7 +78,7 @@ const std::vector<int> & NodalFieldPattern::getSubcellIndices(int dim,int cellIn
    return empty_;
 }
 
-void NodalFieldPattern::getSubcellClosureIndices(int dim,int cellIndex,std::vector<int> & indices) const
+void NodalFieldPattern::getSubcellClosureIndices(int /* dim */, int /* cellIndex */, std::vector<int>& /* indices */) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                       "NodalFieldPattern::getSubcellClosureIndices should not be called"); 

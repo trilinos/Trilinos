@@ -152,7 +152,7 @@ namespace panzer
   void
   EpetraVector_ReadOnly_GlobalEvaluationData::
   globalToGhost(
-    int mem)
+    int /* mem */)
   {
     using std::logic_error;
     using Teuchos::RCP;
@@ -196,6 +196,18 @@ namespace panzer
         (*ghostedVector_)[lids[j]] = filteredPairs_[i].second;
     } // end loop over filteredPairs_
   } // end of initializeData()
+
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  //  ghostToGlobal()
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  void
+  EpetraVector_ReadOnly_GlobalEvaluationData::
+  ghostToGlobal(
+    int /* mem = 0 */)
+  {
+  } // end of ghostToGlobal()
 
   /////////////////////////////////////////////////////////////////////////////
   //

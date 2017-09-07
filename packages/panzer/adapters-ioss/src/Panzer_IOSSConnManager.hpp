@@ -229,7 +229,7 @@ public:
        * parallel operation. In many applications, the outcome indicating
        * correctness is that the returned vector is empty.
        */
-     std::vector<std::string> checkAssociateElementsInSidesets(const Teuchos::Comm<int>& comm) const {
+     std::vector<std::string> checkAssociateElementsInSidesets(const Teuchos::Comm<int>& /* comm */) const {
        std::vector<std::string> placeholder;
        return placeholder;
      };
@@ -237,7 +237,7 @@ public:
      /** Get elements, if any, associated with <code>el</code>, excluding
        * <code>el</code> itself.
        */
-     virtual const std::vector<LocalOrdinal>& getAssociatedNeighbors(const LocalOrdinal& el) const {
+     virtual const std::vector<LocalOrdinal>& getAssociatedNeighbors(const LocalOrdinal& /* el */) const {
        return placeholder_;
      };
 

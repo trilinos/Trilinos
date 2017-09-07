@@ -259,7 +259,7 @@ setIdentifiers(const WorksetDescriptor & wd,std::map<unsigned,Workset> & workset
 #if defined(__KK__)
 void WorksetContainer::
 applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
-                  const std::string & eBlock, 
+                  const std::string& /* eBlock */,
                   std::vector<Workset> & worksets) const
 {
   using Teuchos::RCP;
@@ -314,7 +314,7 @@ applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
 
 void WorksetContainer::
 applyOrientations(const std::vector<Intrepid2::Orientation> & orientations,
-                  const WorksetDescriptor & desc,
+                  const WorksetDescriptor& /* desc */,
                   std::map<unsigned,Workset> & worksets) const
 {
   using Teuchos::RCP;

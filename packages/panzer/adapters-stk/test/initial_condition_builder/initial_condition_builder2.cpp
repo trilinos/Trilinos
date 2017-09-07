@@ -226,7 +226,7 @@ namespace panzer {
   }
 
   void testInitialzation_blockStructure(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-			 std::vector<panzer::BC>& bcs)
+			 std::vector<panzer::BC>& /* bcs */)
   {
     // Physics block
     Teuchos::ParameterList& physics_block_a = ipb->sublist("PB A");

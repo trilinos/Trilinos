@@ -311,7 +311,7 @@ std::string STKConnManager<GO>::getBlockId(STKConnManager::LocalOrdinal localElm
 
 template <typename GO>
 void STKConnManager<GO>::applyPeriodicBCs( const panzer::FieldPattern & fp, GlobalOrdinal nodeOffset, GlobalOrdinal edgeOffset, 
-                                                                        GlobalOrdinal faceOffset, GlobalOrdinal cellOffset)
+                                                                        GlobalOrdinal faceOffset, GlobalOrdinal /* cellOffset */)
 {
    using Teuchos::RCP;
    using Teuchos::rcp;

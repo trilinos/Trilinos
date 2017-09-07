@@ -110,7 +110,7 @@ initialize(const RCP<const ImportType>& importer,
 template <typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void 
 TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-globalToGhost(int mem)
+globalToGhost(int /* mem */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(ownedVector_ == Teuchos::null, std::logic_error,
     "Owned vector has not been set, can't perform the halo exchange!");

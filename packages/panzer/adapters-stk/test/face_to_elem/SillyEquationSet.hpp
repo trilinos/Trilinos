@@ -57,9 +57,9 @@ public:
 
   }
 
-  void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-      const panzer::FieldLibrary& field_library,
-      const Teuchos::ParameterList& user_data) const{}
+  void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& /* fm */,
+      const panzer::FieldLibrary& /* field_library */,
+      const Teuchos::ParameterList& /* user_data */) const{}
 private:
   int dimension_;
 

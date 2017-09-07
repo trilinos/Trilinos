@@ -90,17 +90,17 @@ namespace user_app {
       m_response_library->addResponse("Main Field Output",eBlocks,builder);
     }
       
-    void runPreIterate(const NOX::Solver::Generic& solver)
+    void runPreIterate(const NOX::Solver::Generic& /* solver */)
     {
 
     }
     
-    void runPostIterate(const NOX::Solver::Generic& solver)
+    void runPostIterate(const NOX::Solver::Generic& /* solver */)
     {
 
     }
     
-    void runPreSolve(const NOX::Solver::Generic& solver)
+    void runPreSolve(const NOX::Solver::Generic& /* solver */)
     {
 
     }

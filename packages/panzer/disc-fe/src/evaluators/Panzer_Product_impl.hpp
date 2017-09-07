@@ -77,7 +77,7 @@ PHX_EVALUATOR_CTOR(Product,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Product,worksets,fm)
+PHX_POST_REGISTRATION_SETUP(Product, /* worksets */, fm)
 {
   this->utils.setFieldData(product,fm);
   for (std::size_t i=0; i < values.size(); ++i)
@@ -85,7 +85,7 @@ PHX_POST_REGISTRATION_SETUP(Product,worksets,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Product,workset)
+PHX_EVALUATE_FIELDS(Product, /* workset */)
 { 
     product.deep_copy(ScalarT(scaling));
     for (std::size_t j = 0; j < values.size(); ++j)

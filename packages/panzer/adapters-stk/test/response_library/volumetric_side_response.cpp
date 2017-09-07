@@ -460,9 +460,9 @@ namespace panzer_stk {
 
   void buildPhysicsBlocks(panzer_stk::STK_Interface & mesh,
                           std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
-                          panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
-                          Teuchos::ParameterList & closure_models,
-                          Teuchos::ParameterList & user_data)
+                          panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & /* cm_factory */,
+                          Teuchos::ParameterList & /* closure_models */,
+                          Teuchos::ParameterList & /* user_data */)
   {
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;

@@ -98,8 +98,8 @@ DOF_BasisToBasis(const std::string & fieldName,
 
 //**********************************************************************
 template <typename EvalT, typename TRAITST>
-void DOF_BasisToBasis<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::SetupData d,
-			                                  PHX::FieldManager<TRAITST>& fm)
+void DOF_BasisToBasis<EvalT,TRAITST>::postRegistrationSetup(typename TRAITST::SetupData /* d */,
+			                                  PHX::FieldManager<TRAITST>& /* fm */)
 {
   // not needed anymore
   // this->utils.setFieldData(dof_source_coeff,fm);

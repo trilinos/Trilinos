@@ -116,7 +116,7 @@ ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,
 template<typename TRAITS,typename LO,typename GO>
 void
 ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm) 
 {
   fieldIds_.resize(scatterFields_.size());
