@@ -302,6 +302,12 @@ The following parameters are used in the Chebyshev method:
      eigenvalue, if it is not provided by the user.}
 \cccc{eigen-analysis: iterations}
     {Same as {\tt "chebyshev: eigenvalue max iterations"}, for compatibility with \ml{}.}
+\ccc{chebyshev: eigenvalue tol}
+    {double}
+    {0.0}
+    {Tolerance used in power method heuristic to stop early. If it is not
+     provided by a user, the heuristic is disabled. While the best value depends on a
+     problem, it is recommended to start with 0.1 and then adjust.}
 \ccc{chebyshev: min diagonal value}
     {scalar}
     {0.0}

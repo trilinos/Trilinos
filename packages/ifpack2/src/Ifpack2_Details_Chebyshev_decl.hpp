@@ -471,6 +471,50 @@ private:
   //! Number of power method iterations for estimating the max eigenvalue.
   int eigMaxIters_;
 
+  /// \brief Tolerance for power method for estimating the max eigenvalue.
+  ///
+  /// We use a heuristic for stopping early if tolerance is specified.
+  /// It works the following way:
+  ///
+  /// Lets assume that
+  /// <OL>
+  ///   <LI>
+  ///       our estimate for lambdaMax increases monotonically.
+  ///       \f[ \lambda_{k+1} = \lambda_k + \delta_k \f]
+  ///   </LI>
+  ///   <LI>
+  ///       \f$ \delta_k \f$ asymptotically and monotonically go to \f$\beta < 1 \f$
+  ///       from below, i.e.,
+  ///       \f[ \beta_k = \delta_{k+1}/\delta_k \to \beta \mbox{from below} \f]
+  ///   </LI>
+  ///   <LI>
+  ///       That starting from some point
+  ///       \f[ (1) \beta_{k+1}/\beta_k \le 1 + \gamma \f]
+  ///   </LI>
+  ///
+  ///   Then, we can estimate that \f$ \beta \le (1 + \gamma) \beta_k\f$,
+  ///   and
+  ///   \f[ (2) \lambda_{max}
+  ///       \le \lambda_n + \delta_n \le \lambda_{n-1} + \delta_{n-1} + \delta_n
+  ///       \le \dots
+  ///       \le \lambda_k + \delta_k + \delta_{k+1} + \dots + \delta_{n}
+  ///       \le \lambda_k + \delta_k (1 + \beta + \beta^2 + \dots)
+  ///       \le \lambda_k + \delta_k / (1 - \beta)
+  ///       \le \lambda_k + \delta_k / (1 - (1 + \gamma) \beta_k)
+  ///   \f]
+  /// </OL>
+  ///
+  /// Throughout power method iterations, we check if the last few iterations
+  /// are monotonic in lambda. If they are, we check if we achieved (1). If we
+  /// did, we stop the iterations and set lambda estimate to be the rhs in
+  /// (2). We also set the boost factor to 1.0 as if all our assumptions are
+  /// true, we guarantee that this is a correct upper bound on lambda max.
+  ///
+  /// The \f$\gamma\f$ in this method is what we call tolerance, and provided by a user
+  /// through the parameter list. Larger values (0.1+) would stop earlier.
+  /// A reasonable starting value seems to be 0.1.
+  MT powerMethodTol_;
+
   //! Whether to assume that the X input to apply() is always zero.
   bool zeroStartingSolution_;
 
@@ -656,13 +700,14 @@ private:
   /// \param D_inv [in] Vector to use as implicit right scaling of A.
   /// \param numIters [in] Maximum number of iterations of the power
   ///   method.
+  //  \param tol [in] Tolerance of the power method.
   /// \param x [in/out] On input: Initial guess Vector for the power
   ///   method.  Its Map must be the same as that of the domain Map of
   ///   A.  This method may use this Vector as scratch space.
   ///
   /// \return Estimate of the maximum eigenvalue of A*D_inv.
   ST
-  powerMethodWithInitGuess (const op_type& A, const V& D_inv, const int numIters, V& x);
+  powerMethodWithInitGuess (const op_type& A, const V& D_inv, const int numIters, const MT powerMethodTol, V& x);
 
   /// \brief Use the power method to estimate the maximum eigenvalue
   ///   of A*D_inv.
@@ -671,10 +716,11 @@ private:
   /// \param D_inv [in] Vector to use as implicit right scaling of A.
   /// \param numIters [in] Maximum number of iterations of the power
   ///   method.
+  //  \param tol [in] Tolerance of the power method.
   ///
   /// \return Estimate of the maximum eigenvalue of A*D_inv.
   ST
-  powerMethod (const op_type& A, const V& D_inv, const int numIters);
+  powerMethod (const op_type& A, const V& D_inv, const int numIters, const MT powerMethodTol);
 
   //! The maximum infinity norm of all the columns of X.
   static MT maxNormInf (const MV& X);
