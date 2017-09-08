@@ -156,7 +156,9 @@ public:
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
-    Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(xvar_);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    xvar_ = (*Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(comp,index));
     vec_.assign(size_,static_cast<Real>(0));
     if ( firstReset_ ) {
       dualVector_ = (x0->dual()).clone();
@@ -169,7 +171,9 @@ public:
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
     v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector());
-    Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(vvar_);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    vvar_ = (*Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(comp,index));
   }
 
   void update(const Real val, const Real weight) {
@@ -208,7 +212,9 @@ public:
     for (int i = 0; i < size_; i++) {
       var[i] += coeff_[i];
     }
-    gs.setStatistic(var);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    gs.setStatistic(var,comp,index);
     gs.setVector(*dualVector_); 
   }
 
@@ -236,7 +242,9 @@ public:
 //    for (int i = 0; i < size_; i++) {
 //      var[i] *= coeff_[i]/(1.0-prob_[i]);
 //    }
-    hs.setStatistic(var);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    hs.setStatistic(var,comp,index);
     hs.setVector(*dualVector_);
   }
 };

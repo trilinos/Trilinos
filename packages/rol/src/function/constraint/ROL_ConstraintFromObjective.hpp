@@ -52,9 +52,9 @@
     \class ROL::ConstraintFromObjective
     \brief Creates a constraint from an objective function and a offset value
 
-    Example:  Suppose we have an objective function f(x) and we wish to impose
-              a condition f(x) >= offset, then this class creates the scalar
-              constraint c(x) = f(x)-offset 
+    Example:  Suppose we have an objective function f(x) and we wish to impose,
+	      e.g., a condition f(x)-offset = 0, then this class creates the
+              scalar constraint c(x) = f(x)-offset 
 */
 
 
@@ -67,10 +67,10 @@ class ConstraintFromObjective : public Constraint<Real> {
 
 private:
 
-  Teuchos::RCP<Objective<Real>>  obj_;
-  Teuchos::RCP<V>                dualVector_;
-  Real                           offset_;
-  bool                           isDualInitialized_;
+  const Teuchos::RCP<Objective<Real> > obj_;
+  Teuchos::RCP<V>                      dualVector_;
+  const Real                           offset_;
+  bool                                 isDualInitialized_;
 
   Real getValue( const V& x ) { 
     return Teuchos::dyn_cast<const SingletonVector<Real> >(x).getValue(); 
@@ -82,8 +82,8 @@ private:
 
 public:
 
-  ConstraintFromObjective( const Teuchos::RCP<Objective<Real> >& obj, Real offset=0 ) :
-    obj_(obj), dualVector_(Teuchos::null), offset_(offset) {}
+  ConstraintFromObjective( const Teuchos::RCP<Objective<Real> > &obj, const Real offset = 0 ) :
+    obj_(obj), dualVector_(Teuchos::null), offset_(offset), isDualInitialized_(false) {}
 
   const Teuchos::RCP<Objective<Real> > getObjective(void) const { return obj_; }
 

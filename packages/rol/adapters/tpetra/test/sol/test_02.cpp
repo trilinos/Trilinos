@@ -108,7 +108,9 @@ int main(int argc, char* argv[]) {
       (*d_rcp)[i]  = random<RealT>(comm);
       (*z_rcp)[i]  = initZ;
     }
-    ROL::RiskVector<RealT> zR(z,true), x1R(x1,true), dR(d,true);
+    Teuchos::RCP<Teuchos::ParameterList> cvarlist = Teuchos::rcp(new Teuchos::ParameterList);
+    cvarlist->sublist("SOL").sublist("Risk Measure").set("Name", "CVaR");
+    ROL::RiskVector<RealT> zR(cvarlist,z), x1R(cvarlist,x1), dR(cvarlist,d);
     // Build state and adjoint vectors
     Teuchos::RCP<std::vector<RealT> > u_rcp  = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
     ROL::StdVector<RealT> u(u_rcp);
@@ -197,8 +199,8 @@ int main(int argc, char* argv[]) {
       (*zvec_rcp)[i] = random<RealT>(comm);
       (*dvec_rcp)[i] = random<RealT>(comm);
     }
-    Teuchos::RCP<ROL::RiskVector<RealT> > rz = Teuchos::rcp(new ROL::RiskVector<RealT>(zvec, true));
-    Teuchos::RCP<ROL::RiskVector<RealT> > rd = Teuchos::rcp(new ROL::RiskVector<RealT>(dvec, true));
+    Teuchos::RCP<ROL::RiskVector<RealT> > rz = Teuchos::rcp(new ROL::RiskVector<RealT>(cvarlist, zvec));
+    Teuchos::RCP<ROL::RiskVector<RealT> > rd = Teuchos::rcp(new ROL::RiskVector<RealT>(cvarlist, dvec));
     ROL::Vector_SimOpt<RealT> x(xu, rz);
     ROL::Vector_SimOpt<RealT> v(vu, rd);
 

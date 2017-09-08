@@ -173,7 +173,7 @@ Real setUpAndSolve(Teuchos::ParameterList                    &list,
                    Teuchos::RCP<ROL::SampleGenerator<Real> > &sampler,
                    std::ostream & outStream) {
   ROL::OptimizationProblem<Real> optProblem(obj,x,bnd,con,mul,ibnd);
-  optProblem.setStochasticInequality(list,sampler);
+  optProblem.setAlmostSureInequality(sampler);
   optProblem.check(outStream);
   // Run ROL algorithm
   ROL::OptimizationSolver<Real> optSolver(optProblem, list);
@@ -273,7 +273,6 @@ int main(int argc, char* argv[]) {
       = Teuchos::rcp( new ROL::StdBoundConstraint<RealT>(lc,uc) );
     ibnd->deactivateLower();
     // Build multipliers
-    RealT tol(std::sqrt(ROL::ROL_EPSILON<RealT>()));
     std::vector<RealT> mean(sdim,zero), gmean(sdim,zero);
     for (int i = 0; i < sampler->numMySamples(); ++i) {
       std::vector<RealT> pt = sampler->getMyPoint(i);

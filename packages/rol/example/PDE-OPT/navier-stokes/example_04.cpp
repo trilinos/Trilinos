@@ -318,11 +318,12 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE MEAN PLUS CVAR **********************************/
     /*************************************************************************/
     RealT tol(1e-8);
-    parlist->sublist("SOL").set("Stochastic Optimization Type","BPOE");
-    parlist->sublist("SOL").sublist("BPOE").set("Moment Order",2.0);
+    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    plarist->sublist("SOL").sublist("Risk Measure").set("Name","BPOE");
+    parlist->sublist("SOL").sublist("Risk Measure").sublist("BPOE").set("Moment Order",2.0);
     for (int i = 0; i < N; ++i) {
       // Solve.
-      parlist->sublist("SOL").sublist("BPOE").set("Threshold",alpha[i]);
+      parlist->sublist("SOL").sublist("Risk Measure").sublist("BPOE").set("Threshold",alpha[i]);
       opt = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(objRed,zp,bnd));
       RealT stat(1);
       if ( i > 0 ) {
@@ -333,7 +334,7 @@ int main(int argc, char *argv[]) {
       setUpAndSolve<RealT>(*opt,*parlist,*outStream);
       // Output.
       ctrl.push_back(objCtrl->value(*up,*zp,tol));
-      var.push_back(opt->getSolutionStatistic(*parlist));
+      var.push_back(opt->getSolutionStatistic());
       std::stringstream nameCtrl;
       nameCtrl << "control_BPOE_" << i+1 << ".txt";
       pdecon->outputTpetraVector(z_rcp,nameCtrl.str().c_str());

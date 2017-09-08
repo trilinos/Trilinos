@@ -70,7 +70,7 @@ private:
   typedef typename std::vector<Real>::size_type uint;
 
   std::vector<Real> lambda_;
-  std::vector<Teuchos::ParameterList> parlist_;
+  std::vector<Teuchos::RCP<Teuchos::ParameterList> > parlist_;
   std::vector<Teuchos::RCP<RiskMeasure<Real> > > risk_;
   uint size_;
 
@@ -114,16 +114,17 @@ public:
     size_ = lambda_.size();
     // Build risk measures
     risk_.clear(); risk_.resize(size_,Teuchos::null);
-    parlist_.clear(); parlist_.resize(size_);
+    parlist_.clear(); parlist_.resize(size_,Teuchos::null);
     for (uint i = 0; i < size_; ++i) {
       std::ostringstream convert;
       convert << i;
       std::string si = convert.str();
       Teuchos::ParameterList &ilist = list.sublist(si);
       std::string name = ilist.get<std::string>("Name");
-      parlist_[i].sublist("SOL").sublist("Risk Measure").set("Name",name);
-      parlist_[i].sublist("SOL").sublist("Risk Measure").sublist(name) = ilist;
-      risk_[i] = RiskMeasureFactory<Real>(parlist_[i]);
+      parlist_[i] = Teuchos::rcp(new Teuchos::ParameterList);
+      parlist_[i]->sublist("SOL").sublist("Risk Measure").set("Name",name);
+      parlist_[i]->sublist("SOL").sublist("Risk Measure").sublist(name) = ilist;
+      risk_[i] = RiskMeasureFactory<Real>(*parlist_[i]);
     }
     // Check inputs
     checkInputs();
@@ -135,18 +136,20 @@ public:
     // Must make x a risk vector with appropriate statistic
     const RiskVector<Real> &xr = Teuchos::dyn_cast<const RiskVector<Real> >(x);
     Teuchos::RCP<const Vector<Real> > xptr = xr.getVector();
-    xr.getStatistic(stat);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    stat = (*xr.getStatistic(comp,index));
     x0 = Teuchos::rcp_const_cast<Vector<Real> >(xptr);
     for (uint i = 0; i < size_; ++i) {
       // Build temporary risk vector
       RiskVector<Real> xri(parlist_[i],x0);
       // Set statistic from original risk vector
-      xri.getStatistic(stati);
+      stati = (*xri.getStatistic(0));
       Ni = stati.size();
       for (int j = 0; j < Ni; ++j) {
         stati[j] = stat[N+j];
       }
-      xri.setStatistic(stati);
+      xri.setStatistic(stati,0);
       N += Ni;
       // Reset current risk measure
       risk_[i]->reset(x0,xri);
@@ -170,21 +173,23 @@ public:
     Teuchos::RCP<const Vector<Real> > vptr = vr.getVector();
     x0 = Teuchos::rcp_const_cast<Vector<Real> >(xptr);
     v0 = Teuchos::rcp_const_cast<Vector<Real> >(vptr);
-    xr.getStatistic(xstat);
-    vr.getStatistic(vstat);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    xstat = (*xr.getStatistic(comp,index));
+    vstat = (*vr.getStatistic(comp,index));
     for (uint i = 0; i < size_; ++i) {
       // Build temporary risk vector
       RiskVector<Real> xri(parlist_[i],x0), vri(parlist_[i],v0);
       // Set statistic from original risk vector
-      xri.getStatistic(xstati);
-      vri.getStatistic(vstati);
+      xstati = (*xri.getStatistic(0));
+      vstati = (*vri.getStatistic(0));
       Ni = xstati.size();
       for (int j = 0; j < Ni; ++j) {
         xstati[j] = xstat[N+j];
         vstati[j] = vstat[N+j];
       }
-      xri.setStatistic(xstati);
-      vri.setStatistic(vstati);
+      xri.setStatistic(xstati,0);
+      vri.setStatistic(vstati,0);
       N += Ni;
       // Reset current risk measure
       risk_[i]->reset(x0,xri,v0,vri);
@@ -225,12 +230,14 @@ public:
       RiskVector<Real> gri(parlist_[i],dualVector0_);
       risk_[i]->getGradient(gri,sampler);
       (gr.getVector())->axpy(lambda_[i],*dualVector0_);
-      gri.getStatistic(stati);
+      stati = (*gri.getStatistic(0));
       for (uint j = 0; j < stati.size(); ++j) {
         stat.push_back(lambda_[i]*stati[j]);
       }
     }
-    gr.setStatistic(stat);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    gr.setStatistic(stat,comp,index);
   }
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
@@ -249,12 +256,14 @@ public:
       RiskVector<Real> hvri(parlist_[i],dualVector0_);
       risk_[i]->getHessVec(hvri,sampler);
       (hvr.getVector())->axpy(lambda_[i],*dualVector0_);
-      hvri.getStatistic(stati);
+      stati = (*hvri.getStatistic(0));
       for (uint j = 0; j < stati.size(); ++j) {
         stat.push_back(lambda_[i]*stati[j]);
       }
     }
-    hvr.setStatistic(stat);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    hvr.setStatistic(stat,comp,index);
   }
 };
 

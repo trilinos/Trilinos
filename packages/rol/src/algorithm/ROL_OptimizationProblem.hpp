@@ -50,15 +50,20 @@
 
 // Stochastic Includes
 #include "ROL_SampleGenerator.hpp"
-#include "ROL_RiskNeutralObjective.hpp" 
-#include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskVector.hpp"
 #include "ROL_RiskBoundConstraint.hpp"
+// Objective includes
+#include "ROL_RiskNeutralObjective.hpp" 
+#include "ROL_RiskAverseObjective.hpp"
+#include "ROL_RiskLessObjective.hpp"
+// Constraint includes
+#include "ROL_RiskNeutralConstraint.hpp" 
+#include "ROL_RiskAverseConstraint.hpp" 
 #include "ROL_RiskLessConstraint.hpp"
+// Almost sure constraint includes
 #include "ROL_AlmostSureConstraint.hpp"
 #include "ROL_SimulatedBoundConstraint.hpp"
 #include "ROL_SimulatedVector.hpp"
-#include "ROL_BPOEObjective.hpp"
 
 namespace ROL {
 
@@ -89,8 +94,13 @@ private:
   Teuchos::RCP<SampleGenerator<Real> >               vsampler_;
   Teuchos::RCP<SampleGenerator<Real> >               gsampler_;
   Teuchos::RCP<SampleGenerator<Real> >               hsampler_;
-  std::vector<Teuchos::RCP<SampleGenerator<Real> > > esampler_;
-  std::vector<Teuchos::RCP<SampleGenerator<Real> > > isampler_;
+  std::vector<Teuchos::RCP<SampleGenerator<Real> > > exsampler_;
+  std::vector<Teuchos::RCP<BatchManager<Real> > >    ecbman_;
+  std::vector<Teuchos::RCP<SampleGenerator<Real> > > ixsampler_;
+  std::vector<Teuchos::RCP<BatchManager<Real> > >    icbman_;
+
+  Teuchos::RCP<Teuchos::ParameterList>               parlistObj_;
+  std::vector<Teuchos::RCP<Teuchos::ParameterList> > parlistCon_;
 
   Teuchos::RCP<Objective<Real> >       obj_;
   Teuchos::RCP<Vector<Real> >          sol_;
@@ -104,7 +114,10 @@ private:
 
   bool isInitialized_;
 
-  bool needRiskLess_;
+  bool              needRiskLessObj_;
+  std::vector<bool> needRiskLessEcon_;
+  std::vector<bool> needRiskLessIcon_;
+  bool              isStochastic_;
 
   void initialize( const Teuchos::RCP<Objective<Real> >                     &obj,
                    const Teuchos::RCP<Vector<Real> >                        &x,
@@ -122,14 +135,24 @@ private:
       std::vector<Teuchos::RCP<BoundConstraint<Real> > > bvec;
       for (int i = 0; i < esize; ++i) {
         if ( econ[i] != Teuchos::null ) {
-          cvec.push_back(setRiskLess(econ[i]));
+          if (isStochastic_) {
+            cvec.push_back(setRiskLessCon(econ[i],needRiskLessEcon_[i]));
+          }
+          else {
+            cvec.push_back(econ[i]);
+          }
           lvec.push_back(emul[i]);
           bvec.push_back(Teuchos::null);
         }
       }
       for (int i = 0; i < isize; ++i) {
         if ( icon[i] != Teuchos::null ) {
-          cvec.push_back(setRiskLess(icon[i]));
+          if (isStochastic_) {
+            cvec.push_back(setRiskLessCon(icon[i],needRiskLessIcon_[i]));
+          }
+          else {
+            cvec.push_back(icon[i]);
+          }
           lvec.push_back(imul[i]);
           bvec.push_back(ibnd[i]);
         }
@@ -140,11 +163,18 @@ private:
       mul_        = conManager_->getMultiplier();
       sol_        = conManager_->getOptVector();
       bnd_        = conManager_->getBoundConstraint();
-      if ( conManager_->hasInequality() ) {
-        obj_      = Teuchos::rcp( new SlacklessObjective<Real>(obj) );
+      Teuchos::RCP<Objective<Real> > obj0;
+      if (isStochastic_) {
+        obj0 = setRiskLessObj(obj,needRiskLessObj_);
       }
       else {
-        obj_      = obj;
+        obj0 = obj;
+      }
+      if ( conManager_->hasInequality() ) {
+        obj_      = Teuchos::rcp( new SlacklessObjective<Real>(obj0) );
+      }
+      else {
+        obj_      = obj0;
       }
 
       if ( conManager_->isNull() ) {
@@ -167,8 +197,8 @@ private:
     }
   }
 
-  const Teuchos::RCP<Constraint<Real> > setRiskLess(const Teuchos::RCP<Constraint<Real> > &con) const {
-    if (needRiskLess_) {
+  const Teuchos::RCP<Constraint<Real> > setRiskLessCon(const Teuchos::RCP<Constraint<Real> > &con, const bool needRiskLess) const {
+    if (needRiskLess) {
       return Teuchos::rcp(new RiskLessConstraint<Real>(con));
     }
     else {
@@ -176,7 +206,16 @@ private:
     }
   }
 
-  std::vector<Real> computeSampleMean(Teuchos::RCP<SampleGenerator<Real> > &sampler) {
+  const Teuchos::RCP<Objective<Real> > setRiskLessObj(const Teuchos::RCP<Objective<Real> > &obj, const bool needRiskLess) const {
+    if (needRiskLess) {
+      return Teuchos::rcp(new RiskLessObjective<Real>(obj));
+    }
+    else {
+      return obj;
+    }
+  }
+
+  std::vector<Real> computeSampleMean(const Teuchos::RCP<SampleGenerator<Real> > &sampler) const {
     // Compute mean value of inputs and set parameter in objective
     int dim = sampler->getMyPoint(0).size(), nsamp = sampler->numMySamples();
     std::vector<Real> loc(dim), mean(dim), pt(dim);
@@ -192,11 +231,56 @@ private:
     return mean;
   }
 
+  void initStochastic(void) {
+    if (!isStochastic_) {
+      int econSize = INPUT_econ_.size();
+      int iconSize = INPUT_icon_.size();
+      needRiskLessObj_ = true;
+      needRiskLessEcon_.clear(); needRiskLessEcon_.resize(econSize,true);
+      needRiskLessIcon_.clear(); needRiskLessIcon_.resize(iconSize,true);
+      parlistObj_ = Teuchos::null;
+      parlistCon_.clear(); parlistCon_.resize(iconSize,Teuchos::null);
+
+      exsampler_.clear(); exsampler_.resize(econSize,Teuchos::null);
+      ecbman_.clear();    ecbman_.resize(econSize,Teuchos::null);
+
+      ixsampler_.clear(); ixsampler_.resize(iconSize,Teuchos::null);
+      icbman_.clear();    icbman_.resize(iconSize,Teuchos::null);
+
+      isStochastic_ = true;
+    }
+  }
+
+  void buildRiskVec(Teuchos::RCP<Vector<Real> > &x) {
+    // Build risk vector and risk bound constraint
+    INTERMEDIATE_sol_
+      = Teuchos::rcp(new RiskVector<Real>(parlistObj_,parlistCon_,x));
+    if (parlistObj_ != Teuchos::null) {
+      Real statObj = parlistObj_->sublist("SOL").get("Initial Statistic",1.0);
+      Teuchos::rcp_dynamic_cast<RiskVector<Real> >(INTERMEDIATE_sol_)->setStatistic(statObj,0);
+    }
+    int nc = INPUT_icon_.size();
+    for (int i = 0; i < nc; ++i) {
+      if (parlistCon_[i] != Teuchos::null) {
+        Real statCon = parlistCon_[i]->sublist("SOL").get("Initial Statistic",1.0);
+        Teuchos::rcp_dynamic_cast<RiskVector<Real> >(INTERMEDIATE_sol_)->setStatistic(statCon,1,i);
+      }
+    }
+  }
+
+  void buildRiskBnd(Teuchos::RCP<BoundConstraint<Real> > &bnd) {
+    if ( INPUT_bnd_ != Teuchos::null ) {
+      INTERMEDIATE_bnd_
+        = Teuchos::rcp(new RiskBoundConstraint<Real>(parlistObj_,parlistCon_,bnd));
+    }
+  }
+
 public:
   virtual ~OptimizationProblem(void) {}
 
   // Default constructor [0]
-  OptimizationProblem(void) : isInitialized_(false), needRiskLess_(false) {}
+  OptimizationProblem(void)
+   : isInitialized_(false), isStochastic_(false) {}
 
   // Complete option constructor [1]
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >                     &obj,
@@ -213,7 +297,7 @@ public:
       INTERMEDIATE_obj_(obj), INTERMEDIATE_sol_(x), INTERMEDIATE_bnd_(bnd),
       INTERMEDIATE_econ_(econ), INTERMEDIATE_emul_(emul),
       INTERMEDIATE_icon_(icon), INTERMEDIATE_imul_(imul), INTERMEDIATE_ibnd_(ibnd),
-      isInitialized_(false), needRiskLess_(false) {}
+      isInitialized_(false), isStochastic_(false) {}
 
   OptimizationProblem( const Teuchos::RCP<Objective<Real> >                     &obj,
                        const Teuchos::RCP<Vector<Real> >                        &x,
@@ -227,7 +311,7 @@ public:
       INPUT_icon_(icon), INPUT_imul_(imul), INPUT_ibnd_(ibnd),
       INTERMEDIATE_obj_(obj), INTERMEDIATE_sol_(x), INTERMEDIATE_bnd_(bnd),
       INTERMEDIATE_icon_(icon), INTERMEDIATE_imul_(imul), INTERMEDIATE_ibnd_(ibnd),
-      isInitialized_(false), needRiskLess_(false) {
+      isInitialized_(false), isStochastic_(false) {
     std::vector<Teuchos::RCP<Constraint<Real> > > econ0(1,econ);
     std::vector<Teuchos::RCP<Vector<Real> > >     emul0(1,emul);
     INPUT_econ_ = econ0;
@@ -248,7 +332,7 @@ public:
       INPUT_econ_(econ), INPUT_emul_(emul),
       INTERMEDIATE_obj_(obj), INTERMEDIATE_sol_(x), INTERMEDIATE_bnd_(bnd),
       INTERMEDIATE_econ_(econ), INTERMEDIATE_emul_(emul),
-      isInitialized_(false), needRiskLess_(false) {
+      isInitialized_(false), isStochastic_(false) {
     std::vector<Teuchos::RCP<Constraint<Real> > >      icon0(1,icon);
     std::vector<Teuchos::RCP<Vector<Real> > >          imul0(1,imul);
     std::vector<Teuchos::RCP<BoundConstraint<Real> > > ibnd0(1,ibnd);
@@ -270,7 +354,7 @@ public:
                        const Teuchos::RCP<BoundConstraint<Real> >               &ibnd )
     : INPUT_obj_(obj), INPUT_sol_(x), INPUT_bnd_(bnd),
       INTERMEDIATE_obj_(obj), INTERMEDIATE_sol_(x), INTERMEDIATE_bnd_(bnd),
-      isInitialized_(false), needRiskLess_(false) {
+      isInitialized_(false), isStochastic_(false) {
     std::vector<Teuchos::RCP<Constraint<Real> > >      econ0(1,econ);
     std::vector<Teuchos::RCP<Vector<Real> > >          emul0(1,emul);
     std::vector<Teuchos::RCP<Constraint<Real> > >      icon0(1,icon);
@@ -448,10 +532,56 @@ public:
 
   /* Set Stochastic Methods */
 
-  void setStochasticObjective(Teuchos::ParameterList &parlist,
-                              const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
-                              const Teuchos::RCP<SampleGenerator<Real> > &gsampler = Teuchos::null,
-                              const Teuchos::RCP<SampleGenerator<Real> > &hsampler = Teuchos::null) {
+  /* Objective function */
+  /** \brief Set objective function to mean value objective.
+
+      We assume the objective function is parametrized by an additional
+      variable (other than the optimization variable).  This variable could,
+      e.g., be random.  The mean value objective function evaluates the
+      the parametrized objective function at the sample average of the
+      auxiliary variable.
+
+      @param[in]    sampler  is the SampleGenerator defining the distribution of the auxiliary parameter
+  */
+  void setMeanValueObjective(const Teuchos::RCP<SampleGenerator<Real> > &sampler) {
+    initStochastic();
+    // Set objective function samplers
+    vsampler_ = sampler;
+    gsampler_ = sampler;
+    hsampler_ = sampler;
+    // Construct risk-averse/probabilistic objective function
+    if ( vsampler_ == Teuchos::null ) {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setMeanValueObjective: Objective function value sampler is null!");
+    }
+    else {
+      std::vector<Real> mean = computeSampleMean(vsampler_);
+      INTERMEDIATE_obj_ = INPUT_obj_;
+      INTERMEDIATE_obj_->setParameter(mean);
+    }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
+    isInitialized_ = false;
+  }
+
+  /** \brief Set objective function to risk neutral objective.
+
+      We assume the objective function is parametrized by an additional
+      variable (other than the optimization variable).  This variable could,
+      e.g., be random.  The risk neutral objective function evaluates the
+      the average of parametrized objective function.
+
+      @param[in]    vsampler  is the SampleGenerator defining the distribution of the auxiliary parameter for the value
+      @param[in]    gsampler  is the SampleGenerator defining the distribution of the auxiliary parameter for the gradient
+      @param[in]    hsampler  is the SampleGenerator defining the distribution of the auxiliary parameter for the Hessian
+      @param[in]    storage   whether or not to store the sampled value and gradient
+  */
+  void setRiskNeutralObjective(const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
+                               const Teuchos::RCP<SampleGenerator<Real> > &gsampler = Teuchos::null,
+                               const Teuchos::RCP<SampleGenerator<Real> > &hsampler = Teuchos::null,
+                               const bool storage = true) {
+    initStochastic();
     // Set objective function samplers
     vsampler_ = vsampler;
     gsampler_ = gsampler;
@@ -464,82 +594,181 @@ public:
     }
     // Construct risk-averse/probabilistic objective function
     if ( vsampler_ == Teuchos::null ) {
-      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setStochasticObjective: Objective function value sampler is null!");
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setRiskNeutralObjective: Objective function value sampler is null!");
     }
     else {
-      // Determine Stochastic Optimization Type
-      std::string type = parlist.sublist("SOL").get("Stochastic Optimization Type","Risk Neutral");
-      if ( type == "Risk Neutral" ) {
-        bool storage = parlist.sublist("SOL").get("Store Sampled Value and Gradient",true);
-        INTERMEDIATE_obj_
-          = Teuchos::rcp(new RiskNeutralObjective<Real>(INPUT_obj_,vsampler_,gsampler_,hsampler_,storage));
-      }
-      else if ( type == "Risk Averse" ) {
-        needRiskLess_ = true;
-        INTERMEDIATE_obj_
-          = Teuchos::rcp(new RiskAverseObjective<Real>(INPUT_obj_,parlist,vsampler_,gsampler_,hsampler_));
-        INTERMEDIATE_sol_
-          = Teuchos::rcp(new RiskVector<Real>(parlist,INPUT_sol_));
-        Real stat = parlist.sublist("SOL").get("Initial Statistic",1.0);
-        Teuchos::rcp_dynamic_cast<RiskVector<Real> >(INTERMEDIATE_sol_)->setStatistic(stat);
-        if ( INPUT_bnd_ != Teuchos::null ) {
-          INTERMEDIATE_bnd_
-            = Teuchos::rcp(new RiskBoundConstraint<Real>(parlist,INPUT_bnd_));
-        }
-      }
-      else if ( type == "BPOE" ) {
-        needRiskLess_ = true;
-        Real order     = parlist.sublist("SOL").sublist("BPOE").get("Moment Order",1.);
-        Real threshold = parlist.sublist("SOL").sublist("BPOE").get("Threshold",0.);
-        INTERMEDIATE_obj_
-          = Teuchos::rcp(new BPOEObjective<Real>(INPUT_obj_,order,threshold,vsampler_,gsampler_,hsampler_)); 
-        Real stat = parlist.sublist("SOL").get("Initial Statistic",1.0);
-        std::vector<Real> svec(1,stat);
-        INTERMEDIATE_sol_
-          = Teuchos::rcp(new RiskVector<Real>(INPUT_sol_,svec,true));
-        if ( INPUT_bnd_ != Teuchos::null ) {
-          INTERMEDIATE_bnd_
-            = Teuchos::rcp(new RiskBoundConstraint<Real>(parlist,INPUT_bnd_));
-        }
-      }
-      else if ( type == "Mean Value" ) {
-        std::vector<Real> mean = computeSampleMean(vsampler_);
-        INTERMEDIATE_obj_->setParameter(mean);
-      }
-      else {
-        throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setStochasticObjective: Invalid stochastic optimization type!");
-      }
+      INTERMEDIATE_obj_
+        = Teuchos::rcp(new RiskNeutralObjective<Real>(INPUT_obj_,vsampler_,gsampler_,hsampler_,storage));
     }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
     isInitialized_ = false;
   }
 
-  void setStochasticEquality(Teuchos::ParameterList &parlist,
-                             const std::vector<Teuchos::RCP<SampleGenerator<Real> > > &sampler) {
+  /** \brief Set objective function to risk averse objective.
+
+      We assume the objective function is parametrized by an additional
+      variable (other than the optimization variable).  This variable could,
+      e.g., be random.  The risk averse objective function evaluates the
+      the ``risk'' of parametrized objective function.
+
+      @param[in]    parlist   contains the information defining the risk measure
+      @param[in]    vsampler  is the SampleGenerator defining the distribution of the auxiliary parameter for the value
+      @param[in]    gsampler  is the SampleGenerator defining the distribution of the auxiliary parameter for the gradient
+      @param[in]    hsampler  is the SampleGenerator defining the distribution of the auxiliary parameter for the Hessian
+  */
+  void setRiskAverseObjective(Teuchos::ParameterList &parlist,
+                              const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
+                              const Teuchos::RCP<SampleGenerator<Real> > &gsampler = Teuchos::null,
+                              const Teuchos::RCP<SampleGenerator<Real> > &hsampler = Teuchos::null) {
+    initStochastic();
+    // Set objective function samplers
+    vsampler_ = vsampler;
+    gsampler_ = gsampler;
+    hsampler_ = hsampler;
+    if ( gsampler == Teuchos::null ) {
+      gsampler_ = vsampler_;
+    }
+    if ( hsampler == Teuchos::null ) {
+      hsampler_ = gsampler_;
+    }
+    // Construct risk-averse/probabilistic objective function
+    if ( vsampler_ == Teuchos::null ) {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setRiskAverseObjective: Objective function value sampler is null!");
+    }
+    else {
+      needRiskLessObj_ = false;
+      parlistObj_      = Teuchos::rcpFromRef(parlist);
+      INTERMEDIATE_obj_
+        = Teuchos::rcp(new RiskAverseObjective<Real>(INPUT_obj_,parlist,vsampler_,gsampler_,hsampler_));
+    }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
+    isInitialized_ = false;
+  }
+
+  void setStochasticObjective(Teuchos::ParameterList &parlist,
+                              const Teuchos::RCP<SampleGenerator<Real> > &vsampler,
+                              const Teuchos::RCP<SampleGenerator<Real> > &gsampler = Teuchos::null,
+                              const Teuchos::RCP<SampleGenerator<Real> > &hsampler = Teuchos::null) {
+    // Determine Stochastic Objective Type
+    std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+    if ( type == "Risk Neutral" ) {
+      bool storage = parlist.sublist("SOL").get("Store Sampled Value and Gradient",true);
+      setRiskNeutralObjective(vsampler,gsampler,hsampler,storage);
+    }
+    else if ( type == "Risk Averse" ) {
+      setRiskAverseObjective(parlist,vsampler,gsampler,hsampler);
+    }
+    else if ( type == "Mean Value" ) {
+      setMeanValueObjective(vsampler);
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setStochasticObjective: Invalid stochastic optimization type!");
+    }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
+    isInitialized_ = false;
+  }
+
+  /* Equality Constraint */
+  void setMeanValueEquality(const Teuchos::RCP<SampleGenerator<Real> > &sampler, const int index = 0) {
+    initStochastic();
+    exsampler_[index] = sampler;
+    if ( INPUT_econ_[index] != Teuchos::null && sampler != Teuchos::null ) {
+      std::vector<Real> mean = computeSampleMean(sampler);
+      INTERMEDIATE_econ_[index] = INPUT_econ_[index];
+      INTERMEDIATE_econ_[index]->setParameter(mean);
+      INTERMEDIATE_emul_[index] = INPUT_emul_[index];
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setMeanValueEquality: Either SampleGenerator or Constraint is NULL!");
+    }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
+    isInitialized_ = false;
+  }
+
+  void setRiskNeutralEquality(const Teuchos::RCP<SampleGenerator<Real> > &xsampler,
+                              const Teuchos::RCP<BatchManager<Real> >    &cbman,
+                              const int index = 0) {
+    initStochastic();
+    exsampler_[index] = xsampler;
+    ecbman_[index]    = cbman;
+    if ( INPUT_econ_[index] != Teuchos::null
+         &&        xsampler != Teuchos::null
+         &&           cbman != Teuchos::null ) {
+      INTERMEDIATE_econ_[index]
+        = Teuchos::rcp(new RiskNeutralConstraint<Real>(INPUT_econ_[index],xsampler,cbman));
+      INTERMEDIATE_emul_[index] = INPUT_emul_[index];
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::SetRiskNeutralEquality: Either SampleGenerator, Constraint or BatchManager is NULL!");
+    }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
+    isInitialized_ = false;
+  }
+
+  void setAlmostSureEquality(const Teuchos::RCP<SampleGenerator<Real> > &sampler,
+                             const int index = 0) {
+    initStochastic();
+    exsampler_[index] = sampler;
+    if ( INPUT_econ_[index] != Teuchos::null && sampler != Teuchos::null ) {
+      int nsamp = sampler->numMySamples();
+      INTERMEDIATE_econ_[index]
+        = Teuchos::rcp(new AlmostSureConstraint<Real>(sampler,INPUT_econ_[index]));
+      std::vector<Teuchos::RCP<Vector<Real> > > emul(nsamp,Teuchos::null);
+      for (int j = 0; j < nsamp; ++j) {
+        emul[j] = INPUT_emul_[index]->clone();
+        emul[j]->set(*INPUT_emul_[index]);
+      }
+      INTERMEDIATE_emul_[index]
+        = Teuchos::rcp(new DualSimulatedVector<Real>(emul, sampler->getBatchManager(), sampler));
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::SetAlmostSureEquality: Either SampleGenerator or Constraint is NULL!");
+    }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
+    isInitialized_ = false;
+  }
+
+
+  void setStochasticEquality(std::vector<Teuchos::ParameterList> &parlist,
+                             const std::vector<Teuchos::RCP<SampleGenerator<Real> > > &xsampler,
+                             const std::vector<Teuchos::RCP<BatchManager<Real> > > &cbman) {
+    initStochastic();
     int nc = static_cast<int>(INPUT_econ_.size());
-    if ( nc != static_cast<int>(sampler.size()) ) {
+    if ( nc != static_cast<int>(xsampler.size()) || nc != static_cast<int>(cbman.size()) ) {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setStochasticEquality: Constraint vector and SampleGenerator vector are not the same size!");
     }
-    esampler_ = sampler;
-    INTERMEDIATE_econ_.clear(); INTERMEDIATE_econ_.resize(nc);
-    INTERMEDIATE_emul_.clear(); INTERMEDIATE_emul_.resize(nc);
     for (int i = 0; i < nc; ++i) {
-      if ( INPUT_econ_[i] != Teuchos::null ) {
-        if ( sampler[i] != Teuchos::null ) {
-          // Almost Sure Constraint
-          INTERMEDIATE_econ_[i]
-            = Teuchos::rcp(new AlmostSureConstraint<Real>(sampler[i],INPUT_econ_[i]));
-          std::vector<Teuchos::RCP<Vector<Real> > > emul;
-          for (int j = 0; j < sampler[i]->numMySamples(); ++j) {
-            emul.push_back(INPUT_emul_[i]->clone());
-            emul[j]->set(*INPUT_emul_[i]);
-          }
-          INTERMEDIATE_emul_[i]
-            = Teuchos::rcp(new DualSimulatedVector<Real>(emul, sampler[i]->getBatchManager(), sampler[i]));
+      if (xsampler[i] != Teuchos::null) {
+        std::string type = parlist[i].sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+        if ( type == "Risk Neutral" ) {
+          setRiskNeutralEquality(xsampler[i],cbman[i],i);
+        }
+        else if ( type == "Almost Sure" ) {
+          setAlmostSureEquality(xsampler[i],i);
+        }
+        else if ( type == "Mean Value" ) {
+          setMeanValue(xsampler[i],i);
         }
         else {
-          // Deterministic Constraint
-          INTERMEDIATE_emul_[i] = INPUT_emul_[i];
-          INTERMEDIATE_econ_[i] = INPUT_econ_[i];
+          throw Exception::NotImplemented(">>> ROL::OptimizationProblem::SetStochasticEquality: Invalid stochastic constraint type!");
         }
       }
       else {
@@ -547,46 +776,144 @@ public:
         INTERMEDIATE_emul_[i] = INPUT_emul_[i];
       }
     }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
     isInitialized_ = false;
   }
 
   void setStochasticEquality(Teuchos::ParameterList &parlist,
-                             const Teuchos::RCP<SampleGenerator<Real> > &sampler) {
-    std::vector<Teuchos::RCP<SampleGenerator<Real> > > csampler(1,sampler);
-    setStochasticEquality(parlist,csampler);
+                             const Teuchos::RCP<SampleGenerator<Real> > &xsampler,
+                             const Teuchos::RCP<BatchManager<Real> > &cbman) {
+    std::vector<Teuchos::ParameterList> cparlist(1,parlist);
+    std::vector<Teuchos::RCP<SampleGenerator<Real> > > cxsampler(1,xsampler);
+    std::vector<Teuchos::RCP<SampleGenerator<Real> > > ccbman(1,cbman);
+    setStochasticEquality(cparlist,cxsampler,ccbman);
   }
 
-  void setStochasticInequality(Teuchos::ParameterList &parlist,
-                               const std::vector<Teuchos::RCP<SampleGenerator<Real> > > &sampler) {
+  /* Inequality constraint */
+  void setMeanValueInequality(const Teuchos::RCP<SampleGenerator<Real> > &sampler,
+                              const int index = 0) {
+    initStochastic();
+    ixsampler_[index] = sampler;
+    if ( INPUT_icon_[index] != Teuchos::null && sampler != Teuchos::null ) {
+      std::vector<Real> mean = computeSampleMean(sampler);
+      INTERMEDIATE_icon_[index] = INPUT_icon_[index];
+      INTERMEDIATE_icon_[index]->setParameter(mean);
+      INTERMEDIATE_ibnd_[index] = INPUT_ibnd_[index];
+      INTERMEDIATE_imul_[index] = INPUT_imul_[index];
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::SetMeanValueInequality: Either Constraint or SampleGenerator is NULL!");
+    }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
+    isInitialized_ = false;
+  }
+
+  void setRiskNeutralInequality(const Teuchos::RCP<SampleGenerator<Real> > &xsampler,
+                                const Teuchos::RCP<BatchManager<Real> >    &cbman,
+                                const int index = 0) {
+    initStochastic();
+    ixsampler_[index] = xsampler;
+    icbman_[index]    = cbman;
+    if ( INPUT_icon_[index] != Teuchos::null
+         &&    xsampler     != Teuchos::null
+         &&       cbman     != Teuchos::null ) {
+      INTERMEDIATE_icon_[index]
+        = Teuchos::rcp(new RiskNeutralConstraint<Real>(INPUT_icon_[index],xsampler,cbman));
+      INTERMEDIATE_ibnd_[index] = INPUT_ibnd_[index];
+      INTERMEDIATE_imul_[index] = INPUT_imul_[index];
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::SetRiskNeutralInequality: Either Constraint, SampleGenerator or BatchManager is NULL!");
+    }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
+    isInitialized_ = false;
+  }
+
+  void setRiskAverseInequality(Teuchos::ParameterList &parlist,
+                               const Teuchos::RCP<SampleGenerator<Real> > &sampler,
+                               const int index = 0) {
+    initStochastic();
+    ixsampler_[index] = sampler;
+    if ( INPUT_icon_[index] != Teuchos::null && sampler != Teuchos::null ) {
+      needRiskLessIcon_[index] = false;
+      parlistCon_[index]       = Teuchos::rcpFromRef(parlist);
+      INTERMEDIATE_icon_[index]
+        = Teuchos::rcp(new RiskAverseConstraint<Real>(INPUT_icon_[index],sampler,parlist,index));
+      INTERMEDIATE_ibnd_[index] = INPUT_ibnd_[index];
+      INTERMEDIATE_imul_[index] = INPUT_imul_[index];
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::SetRiskAverseInequality: Either Constraint or SampleGenerator is NULL!");
+    }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
+    isInitialized_ = false;
+  }
+
+  void setAlmostSureInequality(const Teuchos::RCP<SampleGenerator<Real> > &sampler,
+                               const int index = 0) {
+    initStochastic();
+    ixsampler_[index] = sampler;
+    if ( INPUT_icon_[index] != Teuchos::null && sampler != Teuchos::null ) {
+      int nsamp = sampler->numMySamples();
+      INTERMEDIATE_icon_[index]
+        = Teuchos::rcp(new AlmostSureConstraint<Real>(sampler, INPUT_icon_[index]));
+      std::vector<Teuchos::RCP<Vector<Real> > > imul(nsamp,Teuchos::null);
+      for (int j = 0; j < nsamp; ++j) {
+        imul[j] = INPUT_imul_[index]->clone();
+        imul[j]->set(*INPUT_imul_[index]);
+      }
+      INTERMEDIATE_imul_[index]
+        = Teuchos::rcp(new DualSimulatedVector<Real>(imul, sampler->getBatchManager(), sampler));
+      INTERMEDIATE_ibnd_[index]
+        = Teuchos::rcp(new SimulatedBoundConstraint<Real>(sampler, INPUT_ibnd_[index]));
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::SetAlmostSureInequality: Either Constraint or SampleGenerator is NULL!");
+    }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
+    isInitialized_ = false;
+  }
+
+  void setStochasticInequality(std::vector<Teuchos::ParameterList> &parlist,
+                               const std::vector<Teuchos::RCP<SampleGenerator<Real> > > &xsampler,
+                               const std::vector<Teuchos::RCP<BatchManager<Real> > >    &cbman) {
+    initStochastic();
     int nc = static_cast<int>(INPUT_icon_.size());
-    if ( nc != static_cast<int>(sampler.size()) ) {
+    if ( nc != static_cast<int>(xsampler.size()) || nc != static_cast<int>(cbman.size()) ) {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::setStochasticInequality: Constraint vector and SampleGenerator vector are not the same size!");
     }
-    isampler_ = sampler;
-    INTERMEDIATE_icon_.clear(); INTERMEDIATE_icon_.resize(nc);
-    INTERMEDIATE_imul_.clear(); INTERMEDIATE_imul_.resize(nc);
-    INTERMEDIATE_ibnd_.clear(); INTERMEDIATE_ibnd_.resize(nc);
     for (int i = 0; i < nc; ++i) {
-      if ( INPUT_icon_[i] != Teuchos::null ) {
-        if ( sampler[i] != Teuchos::null ) {
-          // Almost Sure Constraint
-          INTERMEDIATE_icon_[i]
-            = Teuchos::rcp(new AlmostSureConstraint<Real>(sampler[i], INPUT_icon_[i]));
-          std::vector<Teuchos::RCP<Vector<Real> > > imul(sampler[i]->numMySamples());
-          for (int j = 0; j < sampler[i]->numMySamples(); ++j) {
-            imul[j] = INPUT_imul_[i]->clone();
-            imul[j]->set(*INPUT_imul_[i]);
-          }
-          INTERMEDIATE_imul_[i]
-            = Teuchos::rcp(new DualSimulatedVector<Real>(imul, sampler[i]->getBatchManager(), sampler[i]));
-          INTERMEDIATE_ibnd_[i]
-            = Teuchos::rcp(new SimulatedBoundConstraint<Real>(sampler[i], INPUT_ibnd_[i]));
+      if ( xsampler[i] != Teuchos::null ) {
+        std::string type = parlist[i].sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+        if ( type == "Risk Neutral" ) {
+          setRiskNeutralInequality(xsampler[i],cbman[i],i);
+        }
+        else if ( type == "Risk Averse" ) {
+          setRiskAverseInequality(parlist[i],xsampler[i],i);
+        }
+        else if ( type == "Almost Sure" ) {
+          setAlmostSureInequality(xsampler[i],i);
+        }
+        else if ( type == "Mean Value" ) {
+          setMeanValueInequality(xsampler[i],i);
         }
         else {
-          // Deterministic Constraint
-          INTERMEDIATE_imul_[i] = INPUT_imul_[i];
-          INTERMEDIATE_ibnd_[i] = INPUT_ibnd_[i];
-          INTERMEDIATE_icon_[i] = INPUT_icon_[i];
+          throw Exception::NotImplemented(">>> ROL::OptimizationProblem::SetStochasticInequality: Invalid stochastic constraint type!");
         }
       }
       else {
@@ -595,13 +922,88 @@ public:
         INTERMEDIATE_ibnd_[i] = INPUT_ibnd_[i];
       }
     }
+    // Set vector and bound constraint
+    buildRiskVec(INPUT_sol_);
+    buildRiskBnd(INPUT_bnd_);
+
     isInitialized_ = false;
   }
 
   void setStochasticInequality(Teuchos::ParameterList &parlist,
-                               const Teuchos::RCP<SampleGenerator<Real> > &sampler) {
-    std::vector<Teuchos::RCP<SampleGenerator<Real> > > csampler(1,sampler);
-    setStochasticInequality(parlist,csampler);
+                               const Teuchos::RCP<SampleGenerator<Real> > &xsampler,
+                               const Teuchos::RCP<BatchManager<Real> > &cbman) {
+    std::vector<Teuchos::ParameterList> cparlist(1,parlist);
+    std::vector<Teuchos::RCP<SampleGenerator<Real> > > cxsampler(1,xsampler);
+    std::vector<Teuchos::RCP<BatchManager<Real> > > ccbman(1,cbman);
+    setStochasticInequality(cparlist,cxsampler,ccbman);
+  }
+
+  /** \brief Returns the statistic from the soluton vector.
+
+      @param[in]    comp   is the component of the risk vector (0 for objective, 1 for inequality constraint)
+      @param[in]    index  is the inequality constraint index
+  */
+  Real getSolutionStatistic(int comp = 0, int index = 0) {
+    Teuchos::RCP<Teuchos::ParameterList> parlist;
+    if (comp == 0) {
+      parlist = parlistObj_;
+    }
+    else if (comp == 1) {
+      int np = parlistCon_.size();
+      if (np <= index || index < 0) {
+        throw Exception::NotImplemented(">>> ROL::OptimizationProblem::getSolutionStatistic: Index out of bounds!");
+      }
+      parlist = parlistCon_[index];
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::getSolutionStatistic: Component must be either 0 or 1!");
+    }
+    if (parlist != Teuchos::null) {
+      const RiskVector<Real> x
+        = Teuchos::dyn_cast<const RiskVector<Real> >(
+          Teuchos::dyn_cast<const Vector<Real> >(*INTERMEDIATE_sol_));
+      std::string type = parlist->sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+      Real val(0);
+      if ( type == "Risk Averse" ) {
+        Teuchos::ParameterList &list
+          = parlist->sublist("SOL").sublist("Risk Measure");
+        std::string risk = list.get("Name","CVaR");
+        if ( risk == "Mixed-Quantile Quadrangle" ) {
+          Teuchos::ParameterList &MQQlist = list.sublist("Mixed-Quantile Quadrangle");
+          Teuchos::Array<Real> coeff
+            = Teuchos::getArrayFromStringParameter<Real>(MQQlist,"Coefficient Array");
+          for (int i = 0; i < coeff.size(); i++) {
+            val += coeff[i]*(*x.getStatistic(comp,index))[i];
+          }
+        }
+        else if ( risk == "Super Quantile Quadrangle" ) {
+          SuperQuantileQuadrangle<Real> sqq(*parlist);
+          val = sqq.computeStatistic(*INTERMEDIATE_sol_);
+        }
+        else if ( risk == "Chebyshev-Kusuoka" ) {
+          ChebyshevKusuoka<Real> sqq(*parlist);
+          val = static_cast<SpectralRisk<Real> >(sqq).computeStatistic(*INTERMEDIATE_sol_);
+        }
+        else if ( risk == "Spectral Risk" ) {
+          SpectralRisk<Real> sqq(*parlist);
+          val = sqq.computeStatistic(*INTERMEDIATE_sol_);
+        }
+        else if ( risk == "Quantile-Radius Quadrangle" ) {
+          Real half(0.5);
+          val = half*((*x.getStatistic(comp,index))[0] + (*x.getStatistic(comp,index))[1]);
+        }
+        else {
+          val = (*x.getStatistic(comp,index))[0];
+        }
+      }
+      else {
+        val = (*x.getStatistic(comp,index))[0];
+      }
+      return val;
+    }
+    else {
+      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::getSolutionStatistic: ParameterList is NULL!");
+    }
   }
 
   // Check derivatives, and consistency 
@@ -617,59 +1019,6 @@ public:
 
       outStream << "Checking vector operations in optimization vector space X." << std::endl;
       x.checkVector(y,u,true,outStream);
-    }
-  }
-
-  /** \brief Returns the statistic from the soluton vector.
-
-      @param[in]    parlist   is the Teuchos::ParameterList with problem specifications
-  */
-  Real getSolutionStatistic(Teuchos::ParameterList &parlist) {
-    try {
-      const RiskVector<Real> x
-        = Teuchos::dyn_cast<const RiskVector<Real> >(
-          Teuchos::dyn_cast<const Vector<Real> >(*INTERMEDIATE_sol_));
-      std::string type = parlist.sublist("SOL").get("Stochastic Optimization Type","Risk Neutral");
-      Real val(0);
-      if ( type == "Risk Averse" ) {
-        Teuchos::ParameterList &list
-          = parlist.sublist("SOL").sublist("Risk Measure");
-        std::string risk = list.get("Name","CVaR");
-        if ( risk == "Mixed-Quantile Quadrangle" ) {
-          Teuchos::ParameterList &MQQlist = list.sublist("Mixed-Quantile Quadrangle");
-          Teuchos::Array<Real> coeff
-            = Teuchos::getArrayFromStringParameter<Real>(MQQlist,"Coefficient Array");
-          for (int i = 0; i < coeff.size(); i++) {
-            val += coeff[i]*x.getStatistic(i);
-          }
-        }
-        else if ( risk == "Super Quantile Quadrangle" ) {
-          SuperQuantileQuadrangle<Real> sqq(parlist);
-          val = sqq.computeStatistic(*INTERMEDIATE_sol_);
-        }
-        else if ( risk == "Chebyshev-Kusuoka" ) {
-          ChebyshevKusuoka<Real> sqq(parlist);
-          val = static_cast<SpectralRisk<Real> >(sqq).computeStatistic(*INTERMEDIATE_sol_);
-        }
-        else if ( risk == "Spectral Risk" ) {
-          SpectralRisk<Real> sqq(parlist);
-          val = sqq.computeStatistic(*INTERMEDIATE_sol_);
-        }
-        else if ( risk == "Quantile-Radius Quadrangle" ) {
-          Real half(0.5);
-          val = half*(x.getStatistic(0) + x.getStatistic(1));
-        }
-        else {
-          val = x.getStatistic(0);
-        }
-      }
-      else {
-        val = x.getStatistic(0);
-      }
-      return val;
-    }
-    catch (std::exception &e) {
-      return 0;
     }
   }
 
@@ -747,9 +1096,9 @@ public:
       checkObjective(*x,*u,*v,outStream,numSteps,order);
     }
     catch (std::exception &e) {
-      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::check: Elementwise is not implemented for optimization space vectors");
+//      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::check: Elementwise is not implemented for optimization space vectors");
     }
-    
+
     if(con_ != Teuchos::null) {
       Teuchos::RCP<Vector<Real> > c, l, w, q;
       try {

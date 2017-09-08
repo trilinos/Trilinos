@@ -146,10 +146,12 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new DualControlVector(gz_rcp,fem));
     Teuchos::RCP<ROL::Vector<RealT> > yzp
       = Teuchos::rcp(new PrimalControlVector(yz_rcp,fem));
-    std::vector<RealT> zvar(1,random<RealT>(comm));
-    std::vector<RealT> gvar(1,random<RealT>(comm));
-    std::vector<RealT> yvar(1,random<RealT>(comm));
-    ROL::RiskVector<RealT> z(zp,zvar,true), g(gzp,gvar,true), y(yzp,yvar,true);
+    RealT zvar = random<RealT>(comm);
+    RealT gvar = random<RealT>(comm);
+    RealT yvar = random<RealT>(comm);
+    Teuchos::RCP<Teuchos::ParameterList> bpoelist = Teuchos::rcp(new Teuchos::ParameterList);
+    bpoelist->sublist("SOL").sublist("Risk Measure").set("Name","BPOE");
+    ROL::RiskVector<RealT> z(bpoelist,zp,zvar), g(bpoelist,gzp,gvar), y(bpoelist,yzp,yvar);
     // INITIALIZE STATE VECTORS
     Teuchos::RCP<std::vector<RealT> > u_rcp
       = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
@@ -213,10 +215,8 @@ int main(int argc, char *argv[]) {
     }
     Teuchos::RCP<ROL::BoundConstraint<RealT> > Zbnd
       = Teuchos::rcp(new L2BoundConstraint<RealT>(Zlo,Zhi,fem));
-    Teuchos::ParameterList list;
-    list.sublist("SOL").set("Stochastic Optimization Type","BPOE");
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::RiskBoundConstraint<RealT>(list,Zbnd));
+      = Teuchos::rcp(new ROL::RiskBoundConstraint<RealT>(bpoelist,Zbnd));
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/

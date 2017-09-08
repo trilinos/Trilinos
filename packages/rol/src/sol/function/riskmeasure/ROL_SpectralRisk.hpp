@@ -208,7 +208,9 @@ public:
 
   Real computeStatistic(const Vector<Real> &x) const {
     std::vector<Real> xstat;
-    Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(xstat);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    xstat = (*Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(comp,index));
     Real stat(0);
     int nQuad = static_cast<int>(wts_.size());
     for (int i = 0; i < nQuad; ++i) {
