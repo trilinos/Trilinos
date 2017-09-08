@@ -518,7 +518,7 @@ class IDs {
     void test_implement() {
       Zoltan2_Directory_Clock allClock("all");
 
-      const int debug_level = 99;
+      const int debug_level = 0;
 
 #ifdef CONVERT_DIRECTORY_ORIGINAL
       if (update_gids.size() > std::numeric_limits<int>::max())
