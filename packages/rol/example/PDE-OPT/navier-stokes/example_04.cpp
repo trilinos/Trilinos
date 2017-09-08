@@ -319,7 +319,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     RealT tol(1e-8);
     parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
-    plarist->sublist("SOL").sublist("Risk Measure").set("Name","BPOE");
+    parlist->sublist("SOL").sublist("Risk Measure").set("Name","BPOE");
     parlist->sublist("SOL").sublist("Risk Measure").sublist("BPOE").set("Moment Order",2.0);
     for (int i = 0; i < N; ++i) {
       // Solve.
