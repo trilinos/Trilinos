@@ -1262,7 +1262,7 @@ unpackAndCombineIntoCrsArrays (
     const int MyTargetPID,
     const Teuchos::ArrayView<size_t>& CRS_rowptr,
     const Teuchos::ArrayView<GlobalOrdinal>& CRS_colind,
-    const Teuchos::ArrayView<Scalar>& CRS_vals,
+    const Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>::impl_scalar_type>& CRS_vals,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids)
 {
@@ -1343,9 +1343,29 @@ unpackAndCombineIntoCrsArrays (
     create_mirror_view_from_raw_host_array(outputDevice, CRS_colind.getRawPtr(),
         CRS_colind.size(), true, "crs_colidx");
 
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  static_assert (! std::is_same<
+      typename std::remove_const<
+        typename std::decay<
+          decltype (CRS_vals)
+        >::type::value_type
+      >::type,
+      std::complex<double> >::value,
+    "CRS_vals::value_type is std::complex<double>; this should never happen"
+    ", since std::complex does not work in Kokkos::View objects.");
+#endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
+
   auto crs_vals_d =
     create_mirror_view_from_raw_host_array(outputDevice, CRS_vals.getRawPtr(),
         CRS_vals.size(), true, "crs_vals");
+
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  static_assert (! std::is_same<
+      typename decltype (crs_vals_d)::non_const_value_type,
+      std::complex<double> >::value,
+    "crs_vals_d::non_const_value_type is std::complex<double>; this should "
+    "never happen, since std::complex does not work in Kokkos::View objects.");
+#endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
 
   auto src_pids_d =
     create_mirror_view_from_raw_host_array(outputDevice, SourcePids.getRawPtr(),
@@ -1382,6 +1402,14 @@ unpackAndCombineIntoCrsArrays (
                                     num_bytes_per_value_l,
                                     outArg(num_bytes_per_value));
   }
+
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  static_assert (! std::is_same<
+      typename decltype (crs_vals_d)::non_const_value_type,
+      std::complex<double> >::value,
+    "crs_vals_d::non_const_value_type is std::complex<double>; this should "
+    "never happen, since std::complex does not work in Kokkos::View objects.");
+#endif // HAVE_TPETRA_INST_COMPLEX_DOUBLE
 
   unpackAndCombineIntoCrsArraysImpl(local_matrix, local_col_map,
       import_lids_d, imports_d, num_packets_per_lid_d, permute_to_lids_d,
@@ -1439,7 +1467,7 @@ unpackAndCombineIntoCrsArrays (
     const int, \
     const Teuchos::ArrayView<size_t>&, \
     const Teuchos::ArrayView<GO>&, \
-    const Teuchos::ArrayView<ST>&, \
+    const Teuchos::ArrayView<CrsMatrix<ST, LO, GO, NT, false>::impl_scalar_type>&, \
     const Teuchos::ArrayView<const int>&, \
     Teuchos::Array<int>&); \
   template size_t \

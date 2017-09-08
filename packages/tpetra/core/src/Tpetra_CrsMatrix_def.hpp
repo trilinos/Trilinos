@@ -8170,7 +8170,8 @@ namespace Tpetra {
                                    numImportPacketsPerLID, constantNumPackets,
                                    Distor, INSERT, NumSameIDs, PermuteToLIDs,
                                    PermuteFromLIDs, N, mynnz, MyPID,
-                                   CSR_rowptr (), CSR_colind_GID (), CSR_vals (),
+                                   CSR_rowptr (), CSR_colind_GID (),
+                                   Teuchos::av_reinterpret_cast<impl_scalar_type> (CSR_vals ()),
                                    SourcePids (), TargetPids);
 
     /**************************************************************/

@@ -1846,6 +1846,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   typedef typename Tpetra::CrsMatrix<Scalar, LO, GO>::packet_type PacketType;
   typedef typename MapType::device_type device_type;
   typedef Tpetra::global_size_t GST;
+  typedef typename CrsMatrixType::impl_scalar_type IST;
 
   RCP<const Comm<int> > Comm = getDefaultComm();
   RCP<CrsMatrixType> A,B;
@@ -1941,24 +1942,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     Teuchos::Array<int>     TargetPids;
 
     using Tpetra::Details::unpackAndCombineIntoCrsArrays;
-    unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (*A,
-                                                         Importer->getRemoteLIDs (),
-                                                         imports (),
-                                                         numImportPackets (),
-                                                         constantNumPackets,
-                                                         distor,
-                                                         Tpetra::INSERT,
-                                                         Importer->getNumSameIDs (),
-                                                         Importer->getPermuteToLIDs (),
-                                                         Importer->getPermuteFromLIDs (),
-                                                         MapTarget->getNodeNumElements (),
-                                                         nnz2,
-                                                         MyPID,
-                                                         rowptr (),
-                                                         colind (),
-                                                         vals (),
-                                                         SourcePids (),
-                                                         TargetPids);
+    unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
+      *A,
+      Importer->getRemoteLIDs (),
+      imports (),
+      numImportPackets (),
+      constantNumPackets,
+      distor,
+      Tpetra::INSERT,
+      Importer->getNumSameIDs (),
+      Importer->getPermuteToLIDs (),
+      Importer->getPermuteFromLIDs (),
+      MapTarget->getNodeNumElements (),
+      nnz2,
+      MyPID,
+      rowptr (),
+      colind (),
+      Teuchos::av_reinterpret_cast<IST> (vals ()),
+      SourcePids (),
+      TargetPids);
     // Do the comparison
     Teuchos::ArrayRCP<const size_t>  Browptr;
     Teuchos::ArrayRCP<const LO>      Bcolind;

@@ -242,7 +242,7 @@ unpackAndCombineIntoCrsArrays (
     const int MyTargetPID,
     const Teuchos::ArrayView<size_t>& CRS_rowptr,
     const Teuchos::ArrayView<GlobalOrdinal>& CRS_colind,
-    const Teuchos::ArrayView<Scalar>& CRS_vals,
+    const Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>::impl_scalar_type>& CRS_vals,
     const Teuchos::ArrayView<const int>& SourcePids,
     Teuchos::Array<int>& TargetPids);
 
