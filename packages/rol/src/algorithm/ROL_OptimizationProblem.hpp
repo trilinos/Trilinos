@@ -1004,6 +1004,7 @@ public:
     else {
       throw Exception::NotImplemented(">>> ROL::OptimizationProblem::getSolutionStatistic: ParameterList is NULL!");
     }
+    return 0;
   }
 
   // Check derivatives, and consistency 
