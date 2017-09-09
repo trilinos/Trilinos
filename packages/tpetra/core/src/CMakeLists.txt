@@ -343,7 +343,9 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   LIST(APPEND SOURCES ${PACKCRSMATRIX_OUTPUT_FILES})
 
   # Generate ETI .cpp files for
-  # Tpetra::Details::unpackCrsMatrixAndCombine.  Do so for the same
+  # Tpetra::Details::unpackCrsMatrixAndCombine,
+  # Tpetra::Details::unpackAndCombineIntoCrsArrays, and
+  # Tpetra::Details::unpackAndCombineWithOwningPIDsCount.  Do so for the same
   # set of Scalar types as CrsMatrix (see above), because this
   # function is an implementation detail of CrsMatrix.
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(UNPACKCRSMATRIXANDCOMBINE_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Details_unpackCrsMatrixAndCombine" "DETAILS_UNPACKCRSMATRIXANDCOMBINE" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
@@ -382,5 +384,6 @@ SET_PROPERTY(
 # Make a trivial change to this comment if you add / remove a file
 # either to / from this directory, or to / from the 'impl'
 # subdirectory.  That ensures that running "make" will also rerun
-# CMake in order to regenerate Makefiles.
+# CMake in order to regenerate Makefiles.  Here is another such
+# change.
 #

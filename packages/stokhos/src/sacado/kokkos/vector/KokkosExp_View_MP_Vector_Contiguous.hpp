@@ -943,6 +943,7 @@ public:
                     , typename SrcTraits::array_layout >::value ||
         std::is_same< typename DstTraits::array_layout
                     , Kokkos::LayoutStride >::value ||
+        ( unsigned(DstTraits::rank) == 0 && unsigned(SrcTraits::rank) == 0 ) ||
         ( unsigned(DstTraits::rank) == 1 && unsigned(SrcTraits::rank) == 1 ) ,
         "View assignment must have compatible layout" );
 

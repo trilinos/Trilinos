@@ -1,4 +1,4 @@
-# -*- cmake -*-
+#! ${PYTHON_EXECUTABLE}
 
 # @HEADER
 # ***********************************************************************
@@ -42,18 +42,35 @@
 # ***********************************************************************
 # @HEADER
 
-# Generate the CMakeCacheVariables python script
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/CMakeCacheVariables.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/CMakeCacheVariables.py)
+"""
+configFix.py - This script will fix the file TrilinosConfig_install.cmake,
+located in the root of the build directory. The fix is to remove references to
+pytrilinos and PyTrilinos, so that projects that use this file to determine what
+to link against will not link against Python-dependent libraries.
+"""
 
-# Generate the MakefileVariables python script
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/MakefileVariables.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/MakefileVariables.py)
+__version__ = "1.0"
+__author__  = "Bill Spotz"
+__date__    = "Sep 9 2017"
 
-# Generate the copyWithCMakeSubstitutions python script
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/copyWithCMakeSubstitutions.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/copyWithCMakeSubstitutions.py)
+# Import python modules
+import os
+import sys
 
-# Generate the configfix python script
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/configfix.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/configFix.py)
+# Determine the name of the configuration file to be fixed
+thisDir   = os.path.split(os.path.abspath(__file__))[0]
+buildPath = os.path.abspath(os.path.join(thisDir,"..","..",".."))
+filename  = os.path.join(buildPath, "TrilinosConfig_install.cmake")
+
+# Fix the config file
+if os.path.isfile(filename):
+    backup = filename + ".bak"
+    backupFile = open(backup, "w")
+    for line in open(filename, "r"):
+        out = line.replace("pytrilinos;", "")
+        backupFile.write(out.replace("PyTrilinos;", ""))
+    backupFile.close()
+    os.rename(backup, filename)
+    print("File '%s' fixed" % filename)
+else:
+    print("File '%s' not found" % filename)

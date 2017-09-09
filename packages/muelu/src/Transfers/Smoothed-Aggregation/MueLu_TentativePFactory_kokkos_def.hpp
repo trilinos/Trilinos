@@ -358,14 +358,12 @@ namespace MueLu {
       void matrix_mul ( const shared_matrix & m1, const shared_matrix & m2, shared_matrix & m1m2) const {
         typedef Kokkos::ArithTraits<SC>     ATS;
         SC zero = ATS::zero();
-        for(decltype(m1.dimension_0()) i = 0; i < m1.dimension_0(); i++) {
-          for(decltype(m1.dimension_1()) j = 0; j < m1.dimension_1(); j++) {
+        for(decltype(m1.dimension_0()) i = 0; i < m1.dimension_0(); i++)
+          for(decltype(m2.dimension_1()) j = 0; j < m2.dimension_1(); j++) {
             m1m2(i,j) = zero;
-            for(decltype(m1.dimension_1()) k = 0; k < m1.dimension_1(); k++) {
+            for(decltype(m1.dimension_1()) k = 0; k < m1.dimension_1(); k++)
               m1m2(i,j) += m1(i,k) * m2(k,j);
-            }
           }
-        }
       }
 
       KOKKOS_FUNCTION
