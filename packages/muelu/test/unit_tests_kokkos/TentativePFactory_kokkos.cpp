@@ -336,7 +336,7 @@ namespace MueLuTests {
     RCP<Vector> diagVec     = VectorFactory::Build(PtentTPtent->getRowMap());
     PtentTPtent->getLocalDiagCopy(*diagVec);
     if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
-      TEST_EQUALITY(STS::magnitude(diagVec->norm1() - diagVec->getGlobalLength()) < 1e-14, true);
+      TEST_EQUALITY(STS::magnitude(diagVec->norm1() - diagVec->getGlobalLength()) < 1e-13, true);
     TEST_EQUALITY(STS::magnitude(diagVec->normInf() - 1.0) < 1e-12, true);
     if (STS::name().find("complex") == std::string::npos) //skip check for Scalar=complex
       TEST_EQUALITY(Teuchos::ScalarTraits<SC>::magnitude(diagVec->meanValue() - 1.0) < 1e-14, true);
