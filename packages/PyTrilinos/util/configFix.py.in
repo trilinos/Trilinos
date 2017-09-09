@@ -58,8 +58,9 @@ import os
 import sys
 
 # Determine the name of the configuration file to be fixed
-buildPath = os.abspath(os.path.join("..","..",".."))
-filename  = os.join(buildPath, "TrilinosConfig_install.cmake")
+thisDir   = os.path.split(os.path.abspath(__file__))[0]
+buildPath = os.path.abspath(os.path.join(thisDir,"..","..",".."))
+filename  = os.path.join(buildPath, "TrilinosConfig_install.cmake")
 
 # Fix the config file
 if os.path.isfile(filename):
