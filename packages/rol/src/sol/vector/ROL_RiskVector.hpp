@@ -471,16 +471,14 @@ public:
   /***************************************************************************/
   Teuchos::RCP<std::vector<Real> > getStatistic(const int comp = 0, const int index = 0) {
     if (comp == 0) {
-      if (!augmentedObj_) {
-        throw Exception::NotImplemented(">>> ERROR (ROL::RiskVector::getStatistic): vector is not augmented!");
+      if (augmentedObj_) {
+        return statObj_;
       }
-      return statObj_;
     }
     else if (comp == 1) {
-      if (!augmentedCon_) {
-        throw Exception::NotImplemented(">>> ERROR (ROL::RiskVector::getStatistic): vector is not augmented!");
+      if (augmentedCon_) {
+        return statCon_[index];
       }
-      return statCon_[index];
     }
     else {
       throw Exception::NotImplemented(">>> ROL::RiskVector::getStatistic: Component must be 0 or 1!");
@@ -490,16 +488,14 @@ public:
 
   Teuchos::RCP<const std::vector<Real> > getStatistic(const int comp = 0, const int index = 0) const {
     if (comp == 0) {
-      if (!augmentedObj_) {
-        throw Exception::NotImplemented(">>> ERROR (ROL::RiskVector::getStatistic): vector is not augmented!");
+      if (augmentedObj_) {
+        return statObj_;
       }
-      return statObj_;
     }
     else if (comp == 1) {
-      if (!augmentedCon_) {
-        throw Exception::NotImplemented(">>> ERROR (ROL::RiskVector::getStatistic): vector is not augmented!");
+      if (augmentedCon_) {
+        return statCon_[index];
       }
-      return statCon_[index];
     }
     else {
       throw Exception::NotImplemented(">>> ROL::RiskVector::getStatistic: Component must be 0 or 1!");

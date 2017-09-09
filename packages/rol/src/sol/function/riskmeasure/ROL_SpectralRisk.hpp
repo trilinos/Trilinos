@@ -94,6 +94,8 @@ private:
   std::vector<Real> wts_;
   std::vector<Real> pts_;
 
+  bool isSet_;
+
   void checkInputs(Teuchos::RCP<Distribution<Real> > &dist = Teuchos::null) const {
     TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == Teuchos::null, std::invalid_argument,
       ">>> ERROR (ROL::SpectralRisk): PlusFunction pointer is null!");
@@ -161,13 +163,23 @@ protected:
     }
   }
 
+  void setInfo(void) {
+    if (!isSet_) {
+      int comp = RiskMeasure<Real>::getComponent();
+      int index = RiskMeasure<Real>::getIndex();
+      mqq_->setRiskVectorInfo(comp,index);
+      isSet_ = true;
+    }
+  }
+
+
 public:
-  SpectralRisk(void) : RiskMeasure<Real>() {}
+  SpectralRisk(void) : RiskMeasure<Real>(), isSet_(false) {}
 
   SpectralRisk( const Teuchos::RCP<Distribution<Real> > &dist,
                 const int nQuad,
                 const Teuchos::RCP<PlusFunction<Real> > &pf)
-    : RiskMeasure<Real>() {
+    : RiskMeasure<Real>(), isSet_(false) {
     // Build generalized trapezoidal rule
     std::vector<Real> wts(nQuad), pts(nQuad);
     buildQuadFromDist(pts,wts,nQuad,dist);
@@ -178,7 +190,7 @@ public:
   }
 
   SpectralRisk(Teuchos::ParameterList &parlist)
-    : RiskMeasure<Real>() {
+    : RiskMeasure<Real>(), isSet_(false) {
     // Parse parameter list
     Teuchos::ParameterList &list
       = parlist.sublist("SOL").sublist("Risk Measure").sublist("Spectral Risk");
@@ -200,13 +212,14 @@ public:
 
   SpectralRisk( const std::vector<Real> &pts, const std::vector<Real> &wts,
                 const Teuchos::RCP<PlusFunction<Real> > &pf)
-    : RiskMeasure<Real>() {
+    : RiskMeasure<Real>(), isSet_(false) {
     buildMixedQuantile(pts,wts,pf);
     // Check inputs
     checkInputs();
   }
 
-  Real computeStatistic(const Vector<Real> &x) const {
+  Real computeStatistic(const Vector<Real> &x) {
+    setInfo();
     std::vector<Real> xstat;
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
@@ -220,11 +233,13 @@ public:
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
+    setInfo();
     mqq_->reset(x0,x);
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
+    setInfo();
     mqq_->reset(x0,x,v0,v);
   }
 

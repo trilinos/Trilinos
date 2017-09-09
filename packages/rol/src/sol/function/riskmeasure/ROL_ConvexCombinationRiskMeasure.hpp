@@ -131,25 +131,31 @@ public:
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
-    std::vector<Real> stat, stati;
+    Teuchos::RCP<std::vector<Real> > stati;
     int N = 0, Ni = 0;
     // Must make x a risk vector with appropriate statistic
     const RiskVector<Real> &xr = Teuchos::dyn_cast<const RiskVector<Real> >(x);
     Teuchos::RCP<const Vector<Real> > xptr = xr.getVector();
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
-    stat = (*xr.getStatistic(comp,index));
+    Teuchos::RCP<const std::vector<Real> > stat
+      = xr.getStatistic(comp,index);
     x0 = Teuchos::rcp_const_cast<Vector<Real> >(xptr);
     for (uint i = 0; i < size_; ++i) {
       // Build temporary risk vector
       RiskVector<Real> xri(parlist_[i],x0);
       // Set statistic from original risk vector
-      stati = (*xri.getStatistic(0));
-      Ni = stati.size();
-      for (int j = 0; j < Ni; ++j) {
-        stati[j] = stat[N+j];
+      stati = xri.getStatistic(0);
+      if (stati != Teuchos::null) {
+        Ni = stati->size();
+        for (int j = 0; j < Ni; ++j) {
+          (*stati)[j] = (*stat)[N+j];
+        }
+        xri.setStatistic(*stati,0);
       }
-      xri.setStatistic(stati,0);
+      else {
+        Ni = 0;
+      }
       N += Ni;
       // Reset current risk measure
       risk_[i]->reset(x0,xri);
@@ -164,7 +170,7 @@ public:
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
     ConvexCombinationRiskMeasure<Real>::reset(x0,x);
-    std::vector<Real> xstat, xstati, vstat, vstati;
+    Teuchos::RCP<std::vector<Real> > xstati, vstati;
     int N = 0, Ni = 0;
     // Must make x and v risk vectors with appropriate statistics
     const RiskVector<Real> &xr = Teuchos::dyn_cast<const RiskVector<Real> >(x);
@@ -175,21 +181,28 @@ public:
     v0 = Teuchos::rcp_const_cast<Vector<Real> >(vptr);
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
-    xstat = (*xr.getStatistic(comp,index));
-    vstat = (*vr.getStatistic(comp,index));
+    Teuchos::RCP<const std::vector<Real> > xstat
+      = xr.getStatistic(comp,index);
+    Teuchos::RCP<const std::vector<Real> > vstat
+      = vr.getStatistic(comp,index);
     for (uint i = 0; i < size_; ++i) {
       // Build temporary risk vector
       RiskVector<Real> xri(parlist_[i],x0), vri(parlist_[i],v0);
       // Set statistic from original risk vector
-      xstati = (*xri.getStatistic(0));
-      vstati = (*vri.getStatistic(0));
-      Ni = xstati.size();
-      for (int j = 0; j < Ni; ++j) {
-        xstati[j] = xstat[N+j];
-        vstati[j] = vstat[N+j];
+      xstati = xri.getStatistic(0);
+      vstati = vri.getStatistic(0);
+      if (xstati != Teuchos::null) {
+        Ni = xstati->size();
+        for (int j = 0; j < Ni; ++j) {
+          (*xstati)[j] = (*xstat)[N+j];
+          (*vstati)[j] = (*vstat)[N+j];
+        }
+        xri.setStatistic(*xstati,0);
+        vri.setStatistic(*vstati,0);
       }
-      xri.setStatistic(xstati,0);
-      vri.setStatistic(vstati,0);
+      else {
+        Ni = 0;
+      }
       N += Ni;
       // Reset current risk measure
       risk_[i]->reset(x0,xri,v0,vri);
@@ -225,19 +238,22 @@ public:
     g.zero();
     // g does not have the correct dimension if it is a risk vector
     RiskVector<Real> &gr = Teuchos::dyn_cast<RiskVector<Real> >(g);
-    std::vector<Real> stat, stati;
+    Teuchos::RCP<std::vector<Real> > stat, stati;
+    stat = Teuchos::rcp(new std::vector<Real>(0));
     for (uint i = 0; i < size_; ++i) {
       RiskVector<Real> gri(parlist_[i],dualVector0_);
       risk_[i]->getGradient(gri,sampler);
       (gr.getVector())->axpy(lambda_[i],*dualVector0_);
-      stati = (*gri.getStatistic(0));
-      for (uint j = 0; j < stati.size(); ++j) {
-        stat.push_back(lambda_[i]*stati[j]);
+      stati = gri.getStatistic(0);
+      if (stati != Teuchos::null) {
+        for (uint j = 0; j < stati->size(); ++j) {
+          stat->push_back(lambda_[i]*(*stati)[j]);
+        }
       }
     }
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
-    gr.setStatistic(stat,comp,index);
+    gr.setStatistic(*stat,comp,index);
   }
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
@@ -251,19 +267,22 @@ public:
     hv.zero();
     // hv does not have the correct dimension if it is a risk vector
     RiskVector<Real> &hvr = Teuchos::dyn_cast<RiskVector<Real> >(hv);
-    std::vector<Real> stat, stati;
+    Teuchos::RCP<std::vector<Real> > stat, stati;
+    stat = Teuchos::rcp(new std::vector<Real>(0));
     for (uint i = 0; i < size_; ++i) {
       RiskVector<Real> hvri(parlist_[i],dualVector0_);
       risk_[i]->getHessVec(hvri,sampler);
       (hvr.getVector())->axpy(lambda_[i],*dualVector0_);
-      stati = (*hvri.getStatistic(0));
-      for (uint j = 0; j < stati.size(); ++j) {
-        stat.push_back(lambda_[i]*stati[j]);
+      stati = hvri.getStatistic(0);
+      if (stati != Teuchos::null) {
+        for (uint j = 0; j < stati->size(); ++j) {
+          stat->push_back(lambda_[i]*(*stati)[j]);
+        }
       }
     }
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
-    hvr.setStatistic(stat,comp,index);
+    hvr.setStatistic(*stat,comp,index);
   }
 };
 

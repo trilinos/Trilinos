@@ -108,7 +108,8 @@ protected:
 public:
   virtual ~RiskMeasure() {}
 
-  RiskMeasure(void) : val_(0), gv_(0), firstReset_(true) {}
+  RiskMeasure(void) : val_(0), gv_(0), firstReset_(true),
+                      comp_(0), index_(0) {}
 
   void setRiskVectorInfo(const int comp, const int index) {
     comp_ = comp;
