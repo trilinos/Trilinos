@@ -171,11 +171,12 @@ namespace MueLu {
       for (size_t j = 0; j < dim; j++) {
         Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:coord", Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numAggs),
           KOKKOS_LAMBDA(const LO i) {
-            auto aggregate = aggGraph.rowConst(i);
-
             // A row in this graph represents all node ids in the aggregate
             // Therefore, averaging is very easy
-            SC sum = zero;
+
+            auto aggregate = aggGraph.rowConst(i);
+
+            double sum = 0.0; // do not use Scalar here (Stokhos)
             for (size_t colID = 0; colID < aggregate.length; colID++)
               sum += fineCoordsRandomView(aggregate(colID),j);
 

@@ -83,9 +83,10 @@ namespace MueLu {
       RowType rows;
     };
 
-    template<class SC, class LO, class GhostedViewType>
+    template<class LO, class GhostedViewType>
     class ClassicalDropFunctor {
     private:
+      typedef typename GhostedViewType::value_type      SC;
       typedef          Kokkos::ArithTraits<SC>          ATS;
       typedef typename ATS::magnitudeType               magnitudeType;
 
@@ -109,11 +110,15 @@ namespace MueLu {
       }
     };
 
-    template<class SC, class LO, class CoordsType>
+    template<class LO, class CoordsType>
     class DistanceFunctor {
     private:
+      typedef typename CoordsType::value_type           SC;
       typedef          Kokkos::ArithTraits<SC>          ATS;
       typedef typename ATS::magnitudeType               magnitudeType;
+
+    public:
+      typedef SC value_type;
 
     public:
       DistanceFunctor(CoordsType coords_) : coords(coords_) { }
@@ -131,9 +136,10 @@ namespace MueLu {
       CoordsType coords;
     };
 
-    template<class SC, class LO, class GhostedViewType, class DistanceFunctor>
+    template<class LO, class GhostedViewType, class DistanceFunctor>
     class DistanceLaplacianDropFunctor {
     private:
+      typedef typename GhostedViewType::value_type      SC;
       typedef          Kokkos::ArithTraits<SC>          ATS;
       typedef typename ATS::magnitudeType               magnitudeType;
 
@@ -151,10 +157,12 @@ namespace MueLu {
 
         // We ignore incoming value of val as we operate on an auxiliary
         // distance Laplacian matrix
-        val = ATS::one() / distFunctor.distance2(row, col);
+        typedef typename DistanceFunctor::value_type      dSC;
+        typedef          Kokkos::ArithTraits<dSC>         dATS;
+        auto fval = dATS::one() / distFunctor.distance2(row, col);
 
         auto aiiajj = ATS::magnitude(diag(row, 0)) * ATS::magnitude(diag(col, 0));   // |a_ii|*|a_jj|
-        auto aij2   = ATS::magnitude(val)          * ATS::magnitude(val);            // |a_ij|^2
+        auto aij2   = ATS::magnitude(fval)         * ATS::magnitude(fval);           // |a_ij|^2
 
         return (aij2 <= eps*eps * aiiajj);
       }
@@ -591,7 +599,7 @@ namespace MueLu {
 
             auto ghostedDiagView = ghostedDiag->template getLocalView<DeviceType>();
 
-            ClassicalDropFunctor<SC,LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
+            ClassicalDropFunctor<LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
             ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
                 scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);
 
@@ -612,7 +620,7 @@ namespace MueLu {
             SubFactoryMonitor m2(*this, "Coords Import construction", currentLevel);
             importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
           }
-          RCP<MultiVector> ghostedCoords;
+          RCP<doubleMultiVector> ghostedCoords;
           {
             SubFactoryMonitor m2(*this, "Ghosted coords construction", currentLevel);
             ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, coords->getNumVectors());
@@ -620,7 +628,7 @@ namespace MueLu {
           }
 
           auto ghostedCoordsView = ghostedCoords->template getLocalView<DeviceType>();
-          DistanceFunctor<SC, LO, decltype(ghostedCoordsView)> distFunctor(ghostedCoordsView);
+          DistanceFunctor<LO, decltype(ghostedCoordsView)> distFunctor(ghostedCoordsView);
 
           // Construct Laplacian diagonal
           RCP<Vector> localLaplDiag;
@@ -661,7 +669,7 @@ namespace MueLu {
 
             auto ghostedLaplDiagView = ghostedLaplDiag->template getLocalView<DeviceType>();
 
-            DistanceLaplacianDropFunctor<SC,LO, decltype(ghostedLaplDiagView), decltype(distFunctor)>
+            DistanceLaplacianDropFunctor<LO, decltype(ghostedLaplDiagView), decltype(distFunctor)>
                 dropFunctor(ghostedLaplDiagView, distFunctor, threshold);
             ScalarFunctor<SC, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
                 scalarFunctor(kokkosMatrix, bndNodes, dropFunctor, rows, colsAux, valsAux, reuseGraph, lumping, threshold);

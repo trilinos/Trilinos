@@ -139,8 +139,9 @@ namespace MueLu {
         // size of aggregate: number of DOFs in aggregate
         auto aggSize = aggRows(agg+1) - aggRows(agg);
 
-        const SC one  = ATS::one();
-        const SC zero = ATS::zero();
+        const SC one     = ATS::one();
+        const SC zero    = ATS::zero();
+        const auto zeroM = ATS::magnitude(zero);
 
         int m = aggSize;
         int n = fineNS.extent(1);
@@ -177,23 +178,23 @@ namespace MueLu {
 
           for (int k = 0; k < n; k++) {  // we ignore "n" instead of "n-1" to normalize
             // FIXME_KOKKOS: use team
-            Magnitude s = zero, norm, norm_x;
+            Magnitude s = zeroM, norm, norm_x;
             for (int i = k+1; i < m; i++)
-              s += r(i,k) * r(i,k);
-            norm = sqrt(r(k,k) * r(k,k) + s);
+              s += pow(ATS::magnitude(r(i,k)), 2);
+            norm = sqrt(pow(ATS::magnitude(r(k,k)), 2) + s);
 
             if (norm == zero) {
               isSingular = true;
               break;
             }
 
-            r(k,k) -= norm;
+            r(k,k) -= norm*one;
 
-            norm_x = sqrt(r(k,k)*r(k,k) + s);
-            if (norm_x == zero) {
+            norm_x = sqrt(pow(ATS::magnitude(r(k,k)), 2) + s);
+            if (norm_x == zeroM) {
               // We have a single diagonal element in the column.
               // No reflections required. Just need to restor r(k,k).
-              r(k,k) = norm;
+              r(k,k) = norm*one;
               continue;
             }
 
@@ -204,25 +205,25 @@ namespace MueLu {
             // Update R(k:m,k+1:n)
             for (int j = k+1; j < n; j++) {
               // FIXME_KOKKOS: use team in the loops
-              s = zero;
+              SC si = zero;
               for (int i = k; i < m; i++)
-                s += r(i,k) * r(i,j);
+                si += r(i,k) * r(i,j);
               for (int i = k; i < m; i++)
-                r(i,j) -= 2*s * r(i,k);
+                r(i,j) -= 2*si * r(i,k);
             }
 
             // Update Q^T (k:m,k:m)
             for (int j = k; j < m; j++) {
               // FIXME_KOKKOS: use team in the loops
-              s = zero;
+              SC si = zero;
               for (int i = k; i < m; i++)
-                s += r(i,k) * qt(i,j);
+                si += r(i,k) * qt(i,j);
               for (int i = k; i < m; i++)
-                qt(i,j) -= 2*s * r(i,k);
+                qt(i,j) -= 2*si * r(i,k);
             }
 
             // Fix R(k:m,k)
-            r(k,k) = norm;
+            r(k,k) = norm*one;
             for (int i = k+1; i < m; i++)
               r(i,k) = zero;
           }
