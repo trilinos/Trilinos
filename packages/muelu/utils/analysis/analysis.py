@@ -477,7 +477,7 @@ if __name__ == '__main__':
     if not style in valid_styles:
         raise Exception('Style must be one of ', valid_styles)
 
-    if not interactive and output_file == None:
+    if not interactive and display and output_file == None:
         raise Exception('Could not connect to DISPLAY, and output file is not provided. Exiting...')
 
     ## Setup default plotting
