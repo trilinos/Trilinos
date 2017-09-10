@@ -199,7 +199,7 @@ main (int argc, char* argv[])
   // This is a local (per MPI process) property.  Thus, we have to
   // all-reduce to find out whether it's true on all processes (which
   // is actually what we want to know).
-  const bool locallyFitted = Tpetra::Details::isLocallyFitted (*map1, *map2);
+  const bool locallyFitted = map1->isLocallyFitted (*map2);
   const int locallyFittedInt = locallyFitted ? 1 : 0;
   int globallyFittedInt = 0; // output argument
   reduceAll<int, int> (*comm, REDUCE_MIN, locallyFittedInt,
