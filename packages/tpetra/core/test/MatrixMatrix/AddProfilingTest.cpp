@@ -72,9 +72,9 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Comm;
 
-#define NUM_ROWS 10000
+#define NUM_ROWS 1000
 #define NNZ_PER_ROW 100
-#define TRIALS 10
+#define TRIALS 5
 
 //Produce a random matrix with given nnz per global row
 template<typename SC, typename LO, typename GO, typename NT>
