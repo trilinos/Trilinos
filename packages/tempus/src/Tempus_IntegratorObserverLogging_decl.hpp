@@ -10,7 +10,6 @@
 #define Tempus_IntegratorObserverLogging_decl_hpp
 
 #include "Tempus_IntegratorObserver.hpp"
-#include "Tempus_TimeStepControl.hpp"
 
 namespace Tempus {
 
@@ -26,9 +25,7 @@ class IntegratorObserverLogging
 public:
 
   /// Constructor
-  IntegratorObserverLogging(
-    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory,
-    const Teuchos::RCP<TimeStepControl<Scalar> >& timeStepControl);
+  IntegratorObserverLogging();
 
   /// Destructor
   virtual ~IntegratorObserverLogging();
@@ -36,29 +33,25 @@ public:
   /// \name Override IntegratorObserver basic methods
   //@{
     /// Observe the beginning of the time integrator.
-    virtual void observeStartIntegrator();
+    virtual void observeStartIntegrator(const Integrator<Scalar>& integrator) override;
 
     /// Observe the beginning of the time step loop.
-    virtual void observeStartTimeStep();
+    virtual void observeStartTimeStep(const Integrator<Scalar>& integrator) override;
 
     /// Observe after the next time step size is selected.
-    virtual void observeNextTimeStep(Status & integratorStatus);
+    virtual void observeNextTimeStep(const Integrator<Scalar>& integrator) override;
 
     /// Observe before Stepper takes step.
-    virtual void observeBeforeTakeStep();
+    virtual void observeBeforeTakeStep(const Integrator<Scalar>& integrator) override;
 
     /// Observe after Stepper takes step.
-    virtual void observeAfterTakeStep();
+    virtual void observeAfterTakeStep(const Integrator<Scalar>& integrator) override;
 
     /// Observe after accepting time step.
-    virtual void observeAcceptedTimeStep(Status & integratorStatus);
+    virtual void observeAcceptedTimeStep(const Integrator<Scalar>& integrator) override;
 
     /// Observe the end of the time integrator.
-    virtual void observeEndIntegrator(const Status integratorStatus);
-
-    virtual void setSolutionHistory(Teuchos::RCP<SolutionHistory<Scalar> > sh);
-
-    virtual void setTimeStepControl(Teuchos::RCP<TimeStepControl<Scalar> > tsc);
+    virtual void observeEndIntegrator(const Integrator<Scalar>& integrator) override;
   //@}
 
   void resetLogCounters();
@@ -79,11 +72,6 @@ public:
     const std::string nameObserveAcceptedTimeStep_;
     const std::string nameObserveEndIntegrator_;
   //@}
-
-protected:
-
-  Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
-  Teuchos::RCP<TimeStepControl<Scalar> > timeStepControl_;
 
 private:
 

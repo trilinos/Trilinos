@@ -13,48 +13,38 @@
 namespace Tempus {
 
 template<class Scalar>
-IntegratorObserverBasic<Scalar>::IntegratorObserverBasic(
-  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory,
-  const Teuchos::RCP<TimeStepControl<Scalar> >& timeStepControl)
-  : solutionHistory_(solutionHistory), timeStepControl_(timeStepControl)
-{}
+IntegratorObserverBasic<Scalar>::IntegratorObserverBasic(){}
 
 template<class Scalar>
 IntegratorObserverBasic<Scalar>::~IntegratorObserverBasic(){}
 
 template<class Scalar>
-void IntegratorObserverBasic<Scalar>::observeStartIntegrator(){}
-
-template<class Scalar>
-void IntegratorObserverBasic<Scalar>::observeStartTimeStep(){}
+void IntegratorObserverBasic<Scalar>::
+observeStartIntegrator(const Integrator<Scalar>& ){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeNextTimeStep(Status & integratorStatus){}
-
-template<class Scalar>
-void IntegratorObserverBasic<Scalar>::observeBeforeTakeStep(){}
-
-template<class Scalar>
-void IntegratorObserverBasic<Scalar>::observeAfterTakeStep(){}
+observeStartTimeStep(const Integrator<Scalar>& ){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeAcceptedTimeStep(Status & integratorStatus){}
+observeNextTimeStep(const Integrator<Scalar>& ){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeEndIntegrator(const Status integratorStatus){}
+observeBeforeTakeStep(const Integrator<Scalar>& ){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-setSolutionHistory(Teuchos::RCP<SolutionHistory<Scalar> > sh)
-{ solutionHistory_ = sh; return; }
+observeAfterTakeStep(const Integrator<Scalar>& ){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-setTimeStepControl(Teuchos::RCP<TimeStepControl<Scalar> > tsc)
-{ timeStepControl_ = tsc; return; }
+observeAcceptedTimeStep(const Integrator<Scalar>& ){}
+
+template<class Scalar>
+void IntegratorObserverBasic<Scalar>::
+observeEndIntegrator(const Integrator<Scalar>& ){}
 
 } // namespace Tempus
 #endif // Tempus_IntegratorObserverBasic_impl_hpp
