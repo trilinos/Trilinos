@@ -53,10 +53,8 @@ TEUCHOS_UNIT_TEST(Observer, IntegratorObserverLogging)
   RCP<Tempus::IntegratorBasic<double> > integrator =
     Tempus::integratorBasic<double>(pl, model);
 
-  RCP<Tempus::SolutionHistory<double> > sh  = integrator->getSolutionHistory();
-  RCP<Tempus::TimeStepControl<double> > tsc = integrator->getTimeStepControl();
   RCP<Tempus::IntegratorObserverLogging<double> > loggingObs =
-    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>(sh,tsc));
+    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>);
   integrator->setObserver(loggingObs);
 
   // Integrate to timeMax
@@ -146,65 +144,6 @@ TEUCHOS_UNIT_TEST(Observer, IntegratorObserverLogging)
   Teuchos::TimeMonitor::summarize();
 }
 
-/* This class is used to test that the composite observer sets the
-   solution history and time step control on all the underlying
-   observers */
-template<typename Scalar>
-class MockObserver : public Tempus::IntegratorObserver<Scalar> {
-
-  Teuchos::RCP<Tempus::SolutionHistory<Scalar> > sh_;
-  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc_;
-
-public:
-  void observeStartIntegrator() 
-  {
-    TEUCHOS_ASSERT(nonnull(sh_));
-    TEUCHOS_ASSERT(nonnull(tsc_));
-  }
-
-  void observeStartTimeStep() override
-  {
-    TEUCHOS_ASSERT(nonnull(sh_));
-    TEUCHOS_ASSERT(nonnull(tsc_));
-  }
-
-  void observeNextTimeStep(Tempus::Status & integratorStatus) override
-  {
-    TEUCHOS_ASSERT(nonnull(sh_));
-    TEUCHOS_ASSERT(nonnull(tsc_));
-  }
-
-  void observeBeforeTakeStep() override
-  {
-    TEUCHOS_ASSERT(nonnull(sh_));
-    TEUCHOS_ASSERT(nonnull(tsc_));
-  }
-
-  void observeAfterTakeStep() override
-  {
-    TEUCHOS_ASSERT(nonnull(sh_));
-    TEUCHOS_ASSERT(nonnull(tsc_));
-  }
-
-  void observeAcceptedTimeStep(Tempus::Status & integratorStatus) override
-  {
-    TEUCHOS_ASSERT(nonnull(sh_));
-    TEUCHOS_ASSERT(nonnull(tsc_));
-  }
-
-  void observeEndIntegrator(const Tempus::Status integratorStatus) override
-  {
-    TEUCHOS_ASSERT(nonnull(sh_));
-    TEUCHOS_ASSERT(nonnull(tsc_));
-  }
-
-  void setSolutionHistory(Teuchos::RCP<Tempus::SolutionHistory<Scalar> > sh) override
-  { sh_ = sh; }
-
-  void setTimeStepControl(Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc) override
-  { tsc_ = tsc; }
-};
-
 TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite) {
 
   // Read params from .xml file
@@ -223,43 +162,33 @@ TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite) {
   RCP<Tempus::IntegratorBasic<double> > integrator =
     Tempus::integratorBasic<double>(pl, model);
 
-  RCP<Tempus::SolutionHistory<double> > sh  = integrator->getSolutionHistory();
-  RCP<Tempus::TimeStepControl<double> > tsc = integrator->getTimeStepControl();
-
   RCP<Tempus::IntegratorObserverLogging<double> > loggingObs =
-    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>(sh,tsc));
+    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>);
 
   // creating another logging observer
   RCP<Tempus::IntegratorObserverLogging<double> > loggingObs2 =
-    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>(sh,tsc));
-
-  // Create the Mock observer. This will test that the sh and tsc
-  // parameters are set on the sub-observers correctly. We have cases
-  // where the observers are created without access to sh and tsc and
-  // need to be registered after time integrator construction.
-  RCP<Tempus::IntegratorObserver<double>> mockObs = rcp(new MockObserver<double>);
+    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>);
 
   RCP<Tempus::IntegratorObserverComposite<double> > compObs = 
-      Teuchos::rcp(new Tempus::IntegratorObserverComposite<double>(sh, tsc));
+      Teuchos::rcp(new Tempus::IntegratorObserverComposite<double>);
 
   compObs->addObserver(loggingObs);
   compObs->addObserver(loggingObs2);
-  compObs->addObserver(mockObs);
 
-  compObs->observeStartIntegrator();
-  compObs->observeStartTimeStep();
-  compObs->observeBeforeTakeStep();
-  compObs->observeAfterTakeStep();
-  compObs->observeAcceptedTimeStep(status);
+  compObs->observeStartIntegrator(*integrator);
+  compObs->observeStartTimeStep(*integrator);
+  compObs->observeBeforeTakeStep(*integrator);
+  compObs->observeAfterTakeStep(*integrator);
+  compObs->observeAcceptedTimeStep(*integrator);
 
 
   for (int i=0 ; i<10; ++i) {
-      compObs->observeStartTimeStep();
-      compObs->observeBeforeTakeStep();
-      compObs->observeAfterTakeStep();
-      compObs->observeAcceptedTimeStep(status);
+      compObs->observeStartTimeStep(*integrator);
+      compObs->observeBeforeTakeStep(*integrator);
+      compObs->observeAfterTakeStep(*integrator);
+      compObs->observeAcceptedTimeStep(*integrator);
   }
-  compObs->observeEndIntegrator(status);
+  compObs->observeEndIntegrator(*integrator);
 
  const std::map<std::string,int>& counters = *(loggingObs->getCounters());
 
@@ -287,33 +216,6 @@ TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite) {
         counters.find(loggingObs2->nameObserveAcceptedTimeStep_)->second,11);
   TEST_EQUALITY(
         counters.find(loggingObs2->nameObserveEndIntegrator_   )->second, 1);
-
-  // Test that setSolutionHistory and setTimeStepControl pass on new
-  // values to underlying objects
-  compObs->setSolutionHistory(Teuchos::null); // break history
-  TEST_THROW(compObs->observeStartIntegrator(),std::logic_error);
-  TEST_THROW(compObs->observeStartTimeStep(),std::logic_error);
-  TEST_THROW(compObs->observeBeforeTakeStep(),std::logic_error);
-  TEST_THROW(compObs->observeAfterTakeStep(),std::logic_error);
-  TEST_THROW(compObs->observeAcceptedTimeStep(status),std::logic_error);
-  TEST_THROW(compObs->observeEndIntegrator(status),std::logic_error);
-
-  compObs->setSolutionHistory(sh); // fix history
-  compObs->setTimeStepControl(Teuchos::null); // break ts control
-  TEST_THROW(compObs->observeStartIntegrator(),std::logic_error);
-  TEST_THROW(compObs->observeStartTimeStep(),std::logic_error);
-  TEST_THROW(compObs->observeBeforeTakeStep(),std::logic_error);
-  TEST_THROW(compObs->observeAfterTakeStep(),std::logic_error);
-  TEST_THROW(compObs->observeAcceptedTimeStep(status),std::logic_error);
-  TEST_THROW(compObs->observeEndIntegrator(status),std::logic_error);
-  
-  compObs->setTimeStepControl(tsc); // fix ts control
-  TEST_NOTHROW(compObs->observeStartIntegrator());
-  TEST_NOTHROW(compObs->observeStartTimeStep());
-  TEST_NOTHROW(compObs->observeBeforeTakeStep());
-  TEST_NOTHROW(compObs->observeAfterTakeStep());
-  TEST_NOTHROW(compObs->observeAcceptedTimeStep(status));
-  TEST_NOTHROW(compObs->observeEndIntegrator(status));
 }
 
 

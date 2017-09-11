@@ -90,15 +90,15 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, BallParabolic)
   // Plot sample solution and exact solution
   std::ofstream ftmp("Tempus_NewmarkExplicitAForm_BallParabolic.dat");
   ftmp.precision(16);
-  RCP<SolutionHistory<double> > solutionHistory =
+  RCP<const SolutionHistory<double> > solutionHistory =
     integrator->getSolutionHistory();
   bool passed = true;
   double err = 0.0;
   RCP<const Thyra::VectorBase<double> > x_exact_plot;
   for (int i=0; i<solutionHistory->getNumStates(); i++) {
-    RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+    RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
     double time = solutionState->getTime();
-    RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
+    RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
     x_exact_plot = model->getExactSolution(time).get_x();
     ftmp << time << "   "
          << get_ele(*(x_plot), 0) << "   "
@@ -175,13 +175,13 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, SinCos)
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_NewmarkExplicitAForm_SinCos.dat");
       ftmp.precision(16); 
-      RCP<SolutionHistory<double> > solutionHistory =
+      RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
-        RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
+        RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
         x_exact_plot = model->getExactSolution(time).get_x();
         ftmp << time << "   "
              << get_ele(*(x_plot), 0) << "   "
@@ -277,13 +277,13 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, HarmonicOscillatorDamped)
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_NewmarkExplicitAForm_HarmonicOscillator_Damped.dat");
       ftmp.precision(16);
-      RCP<SolutionHistory<double> > solutionHistory =
+      RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
-        RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
+        RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
         x_exact_plot = model->getExactSolution(time).get_x();
         ftmp << time << "   "
              << get_ele(*(x_plot), 0) << "   "
@@ -380,13 +380,13 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_SecondOrder)
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_SecondOrder.dat");
       ftmp.precision(16); 
-      RCP<SolutionHistory<double> > solutionHistory =
+      RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
-        RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
+        RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
         x_exact_plot = model->getExactSolution(time).get_x();
         ftmp << time << "   "
              << get_ele(*(x_plot), 0) << "   "
@@ -480,13 +480,13 @@ TEUCHOS_UNIT_TEST(NewmarkImplicitAForm, HarmonicOscillatorDamped_FirstOrder)
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_NewmarkImplicitAForm_HarmonicOscillator_Damped_FirstOrder.dat");
       ftmp.precision(16); 
-      RCP<SolutionHistory<double> > solutionHistory =
+      RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
-        RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
+        RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
         x_exact_plot = model->getExactSolution(time).get_x();
         ftmp << time << "   "
              << get_ele(*(x_plot), 0) << "   "

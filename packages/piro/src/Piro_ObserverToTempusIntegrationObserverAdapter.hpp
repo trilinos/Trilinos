@@ -60,8 +60,8 @@ public:
 
   // Constructor
   ObserverToTempusIntegrationObserverAdapter(
-    const Teuchos::RCP<Tempus::SolutionHistory<Scalar> >& solutionHistory,
-    const Teuchos::RCP<Tempus::TimeStepControl<Scalar> >& timeStepControl,
+    const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& solutionHistory,
+    const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> >& timeStepControl,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &wrappedObserver, 
     const bool supports_x_dotdot = false);
 
@@ -73,32 +73,32 @@ public:
   virtual ~ObserverToTempusIntegrationObserverAdapter();
 
   /// Observe the beginning of the time integrator.
-  virtual void observeStartIntegrator();
+  virtual void observeStartIntegrator(const Tempus::Integrator<Scalar>& integrator) override;
 
   /// Observe the beginning of the time step loop.
-  virtual void observeStartTimeStep();
+  virtual void observeStartTimeStep(const Tempus::Integrator<Scalar>& integrator) override;
 
   /// Observe after the next time step size is selected.
-  virtual void observeNextTimeStep(Tempus::Status & integratorStatus);
+  virtual void observeNextTimeStep(const Tempus::Integrator<Scalar>& integrator) override;
 
   /// Observe before Stepper takes step.
-  virtual void observeBeforeTakeStep();
+  virtual void observeBeforeTakeStep(const Tempus::Integrator<Scalar>& integrator) override;
 
   /// Observe after Stepper takes step.
-  virtual void observeAfterTakeStep();
+  virtual void observeAfterTakeStep(const Tempus::Integrator<Scalar>& integrator) override;
 
   /// Observe after accepting time step.
-  virtual void observeAcceptedTimeStep(Tempus::Status & integratorStatus);
+  virtual void observeAcceptedTimeStep(const Tempus::Integrator<Scalar>& integrator) override;
 
   /// Observe the end of the time integrator.
-  virtual void observeEndIntegrator(const Tempus::Status integratorStatus);
+  virtual void observeEndIntegrator(const Tempus::Integrator<Scalar>& integrator) override;
   //@}
 
 private:
 
   void observeTimeStep();
-  Teuchos::RCP<Tempus::SolutionHistory<Scalar> > solutionHistory_;
-  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl_;
+  Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory_;
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > timeStepControl_;
   Teuchos::RCP<Teuchos::FancyOStream> out_;
   bool hasSensitivities_;
   Teuchos::RCP<ObserverBase<Scalar> > wrappedObserver_;

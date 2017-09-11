@@ -146,8 +146,8 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
   Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
-  const RCP<Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
-  const RCP<Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
+  const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
+  const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
 
   const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer));
   integrator->setObserver(tempusObserver);
@@ -180,8 +180,8 @@ const RCP<TempusSolver<double> > solverNew(
   tempusPL->sublist("Demo Stepper").set("Solver Name", "Demo Solver");
   tempusPL->sublist("Demo Stepper").sublist("Demo Solver").sublist("NOX").sublist("Direction").set("Method","Newton");
   Teuchos::RCP<Tempus::IntegratorBasic<double> > integrator = Tempus::integratorBasic<double>(tempusPL, thyraModel);
-  const RCP<Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
-  const RCP<Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
+  const RCP<const Tempus::SolutionHistory<double> > solutionHistory = integrator->getSolutionHistory();
+  const RCP<const Tempus::TimeStepControl<double> > timeStepControl = integrator->getTimeStepControl();
 
   const Teuchos::RCP<Tempus::IntegratorObserver<double> > tempusObserver = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<double>(solutionHistory, timeStepControl, observer));
   integrator->setObserver(tempusObserver);

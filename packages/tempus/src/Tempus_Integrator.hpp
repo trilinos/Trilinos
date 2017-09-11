@@ -9,12 +9,18 @@
 #ifndef Tempus_Integrator_hpp
 #define Tempus_Integrator_hpp
 
-#include "Tempus_Stepper.hpp"
+#include "Tempus_Types.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 #include <string>
+
+namespace Tempus {
+  template<typename Scalar> class Stepper;
+  template<typename Scalar> class SolutionHistory;
+  template<typename Scalar> class TimeStepControl;
+}
 
 namespace Tempus {
 
@@ -64,11 +70,17 @@ public:
     virtual Scalar getTime() const = 0;
     /// Get current index
     virtual Scalar getIndex() const = 0;
+    /// Get the Status
+    virtual Tempus::Status getStatus() const = 0;
     /// Get the stepper
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const = 0;
     /// Return a copy of the Tempus ParameterList
     virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()	= 0;
     virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) = 0;
+    /// Returns the SolutionHistory for this Integrator
+    virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const = 0;
+    /// Returns the TimeStepControl for this Integrator
+    virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const = 0;
   //@}
 
 };
