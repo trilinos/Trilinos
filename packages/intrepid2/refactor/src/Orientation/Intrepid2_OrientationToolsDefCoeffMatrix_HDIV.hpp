@@ -223,9 +223,10 @@ namespace Intrepid2 {
       }
       case shards::Triangle<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  6) {
-          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
-          const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
-          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+          // in the basis of tet, it uses map to reference subcell and accounts for the left handed face
+          //const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
+          //const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
+          ort = subcellOrt; //(leftHanded ? leftOrt[subcellOrt] : subcellOrt);
         }
         break;
       }

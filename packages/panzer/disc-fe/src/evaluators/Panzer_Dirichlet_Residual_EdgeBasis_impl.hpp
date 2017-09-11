@@ -137,6 +137,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
     auto intrepid_basis = basis->getIntrepid2Basis();
     WorksetDetails & details = workset;
 
+    const bool is_normalize = true;
     auto work = Kokkos::createDynRankView(residual.get_static_view(),"work", 4, cellDim);
 
     // compute residual
@@ -152,10 +153,11 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
         for(index_t c=0;c<workset.num_cells;c++) {
           orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
           
-          Intrepid2::Orientation::getReferenceEdgeTangents(ortEdgeTan,
-                                                           subcellOrd,
-                                                           cellTopo,
-                                                           edgeOrts[subcellOrd]);
+          Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
+                                                          subcellOrd,
+                                                          cellTopo,
+                                                          edgeOrts[subcellOrd],
+                                                          is_normalize);
 
           for (int i=0;i<ndofsEdge;++i) {
             const int b = intrepid_basis->getDofOrdinal(1, subcellOrd, i);
@@ -189,7 +191,8 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
             Intrepid2::Orientation::getReferenceEdgeTangents(ortEdgeTan,
                                                              edgeOrd,
                                                              cellTopo,
-                                                             edgeOrts[edgeOrd]);
+                                                             edgeOrts[edgeOrd],
+                                                             is_normalize);
             
             for(int b=0;b<dof.extent_int(1);b++) {
               auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
@@ -216,7 +219,8 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
                                                            ortFaceTanV,
                                                            subcellOrd,
                                                            cellTopo,
-                                                           faceOrts[subcellOrd]);
+                                                           faceOrts[subcellOrd],
+                                                           is_normalize);
           
           for(int b=0;b<dof.extent_int(1);b++) {
             auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
