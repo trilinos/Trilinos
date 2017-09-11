@@ -107,7 +107,6 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesVector,sd,fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(vectorField,fm);
-  // this->utils.setFieldData(dof_orientation,fm);
   
   for (std::size_t i=0; i<field_multipliers.size(); ++i) {
     this->utils.setFieldData(field_multipliers[i],fm);

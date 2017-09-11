@@ -145,8 +145,6 @@ template<typename EvalT, typename TRAITS>
 void DOF_PointValues<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  // evaluateDOF_withSens(dof_basis,dof_ip,dof_orientation,is_vector_basis,workset.num_cells,basisValues.basis);
-
   if(is_vector_basis) {
     int spaceDim  = basisValues->basis_vector.dimension(3);
     if(spaceDim==3) {

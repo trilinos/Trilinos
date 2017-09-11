@@ -77,14 +77,11 @@ GatherTangents(
 
   // setup the orientation field
   std::string orientationFieldName = basis->name() + " Orientation";
-  dof_orientation = PHX::MDField<const ScalarT,Cell,NODE>(orientationFieldName, basis_layout);
-
   // setup all fields to be evaluated and constructed
   pointValues = panzer::PointValues2<ScalarT> (pointRule->getName()+"_",false);
   pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
-  this->addDependentField(dof_orientation);
   constJac_ = pointValues.jac;
   this->addDependentField(constJac_);
 
@@ -104,10 +101,7 @@ postRegistrationSetup(typename Traits::SetupData d,
 
   // setup the field data object
   this->utils.setFieldData(gatherFieldTangents,fm);
-  this->utils.setFieldData(dof_orientation,fm);
   this->utils.setFieldData(pointValues.jac,fm);
-
-  // edgeTan = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"edgeTan",gatherFieldTangents.dimension(0),gatherFieldTangents.dimension(1),gatherFieldTangents.dimension(2));
 }
 
 // **********************************************************************
@@ -122,22 +116,6 @@ evaluateFields(typename Traits::EvalData workset)
     const shards::CellTopology & parentCell = *basis->getCellTopology();
     int cellDim = parentCell.getDimension();
     int numEdges = gatherFieldTangents.dimension(1);
-
-    refEdgeTan = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"refEdgeTan",numEdges,cellDim);
-
-    for(int i=0;i<numEdges;i++) {
-      Kokkos::DynRankView<double,PHX::Device> refEdgeTan_local("refEdgeTan_local",cellDim);
-      Intrepid2::CellTools<PHX::exec_space>::getReferenceEdgeTangent(refEdgeTan_local, i, parentCell);
-
-      std::stringstream ss;
-      ss << "EDGE " << i << " = ";
-
-      for(int d=0;d<cellDim;d++) {
-        ss << refEdgeTan_local(d) << ", ";
-        refEdgeTan(i,d) = refEdgeTan_local(d);
-      }
-      std::cout << ss.str() << std::endl;
-    }
 
     auto workspace = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"workspace", 4, cellDim);
 
@@ -164,27 +142,9 @@ evaluateFields(typename Traits::EvalData workset)
         auto J = Kokkos::subview(worksetJacobians, c, pt, Kokkos::ALL(), Kokkos::ALL());
         Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);            
 
-/*
-        for(int i = 0; i < cellDim; i++) {
-          edgeTan(c, pt, i) = 0.0;
-          for(int j = 0; j < cellDim; j++){
-            edgeTan(c, pt, i) +=  pointValues.jac(c, pt, i, j)*refEdgeTan(pt,j);
-          }// for j
-        }// for i
-*/
       }// for pt
     }// for pCell
 
-/*
-    // Multiply tangent by orientation
-    for(index_t c=0;c<workset.num_cells;c++) {
-      for(int b=0;b<gatherFieldTangents.extent_int(1);b++) {
-        for(int d=0;d<gatherFieldTangents.extent_int(2);d++) {
-          gatherFieldTangents(c,b,d) = edgeTan(c,b,d)*dof_orientation(c,b); 
-        }
-      }
-    }
-*/
   }
 
 }
