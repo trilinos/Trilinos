@@ -178,7 +178,7 @@ evaluateFields(typename Traits::EvalData workset)
         result(cell,p) = ScalarT(0.0);
         for (int dim = 0; dim < num_dim; ++dim)
           result(cell,p) += vector_values[0](cell,p,dim) * normals(cell,p,dim);
-        // result(cell,p) *= refFaceWt[p];
+        result(cell,p) *= refFaceWt[p];
       }
     }
 

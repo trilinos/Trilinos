@@ -175,7 +175,7 @@ evaluateFields(typename Traits::EvalData workset)
         result(cell,p) = ScalarT(0.0);
         for (int dim = 0; dim < num_dim; ++dim)
           result(cell,p) += vector_values[0](cell,p,dim) * tangents(cell,p,dim);
-        // result(cell,p) *= refEdgeWt[p];
+        result(cell,p) *= refEdgeWt[p];
       }
     }
 
