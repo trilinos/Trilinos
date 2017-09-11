@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -82,13 +82,13 @@ namespace ShyLU{
   }
 
 
-  
- 
+
+
   template <class Matrix, class Vector>
   int
   DirectSolverInterface<Matrix,Vector>::factorAmesos()
   {
-    cout << "**Error**: Amesos is only supported for Epetra Matrices \n";
+    std::cout << "**Error**: Amesos is only supported for Epetra Matrices \n";
     exit(1);
   }
 
@@ -98,11 +98,11 @@ namespace ShyLU{
   int
   DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector>::factorAmesos()
   {
-  
+
     Teuchos::ParameterList subList = pList->sublist("Amesos Input");
-    string solvertype = Teuchos::getParameter<string>(subList, "Solver");
+    std::string solvertype = Teuchos::getParameter<std::string>(subList, "Solver");
     Teuchos::ParameterList subsubList = subList.sublist(solvertype + " Input");
-    
+
     problem_amesos.SetOperator(A);
     //future reference
     //setLHS(x)
@@ -115,7 +115,7 @@ namespace ShyLU{
     //Add error checking
     solver_amesos->SymbolicFactorization();
     solver_amesos->NumericFactorization();
-    
+
     return 0;
   }//end factorAmesos
 
@@ -124,9 +124,9 @@ namespace ShyLU{
   int DirectSolverInterface<Matrix,Vector>::factorAmesos2()
   {
     //#pragma message("solve amesos2 compiled")
-    //cout << "odd call";
+    //std::cout << "odd call";
     Teuchos::ParameterList subList = pList->sublist("Amesos2 Input");
-    string solvertype = Teuchos::getParameter<string>(subList, "Solver");
+    std::string solvertype = Teuchos::getParameter<std::string>(subList, "Solver");
     Teuchos::ParameterList subsubList = subList.sublist(solvertype + " Input");
     solver_amesos2 = Amesos2::create<Matrix, Vector>
       (solvertype, Teuchos::rcp(A,false) ); //right now only use default
@@ -135,24 +135,24 @@ namespace ShyLU{
     return 0;
   }//end factor_amesos2
 #endif
-   
+
 
    template <class Matrix, class Vector>
   int DirectSolverInterface<Matrix,Vector>::factor()
   {
-    #ifdef HAVE_SHYLUCORE_AMESOS2 
+    #ifdef HAVE_SHYLUCORE_AMESOS2
     return factorAmesos2();
     #else
     return 1;
     #endif
   }//end factor()
 
-  
+
   template < >
-  int 
+  int
   DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector>::factor()
   {
-    string solverpackage = Teuchos::getParameter<string>(*pList,"Direct Solver Package");
+    std::string solverpackage = Teuchos::getParameter<std::string>(*pList,"Direct Solver Package");
     int returnvalue = 1;
     if(solverpackage.compare("Amesos")==0)
       {
@@ -163,13 +163,13 @@ namespace ShyLU{
 #ifdef HAVE_SHYLUCORE_AMESOS2
         returnvalue = factorAmesos2();
 #else
-	cout << "Amesos2 is not installed \n";
-	exit(1);
+        std::cout << "Amesos2 is not installed \n";
+        exit(1);
 #endif
       }
     else
       {
-	cout << "No Direct Solver Package Found";
+        std::cout << "No Direct Solver Package Found";
       }
     return returnvalue;
   }//end factor<epetra>
@@ -180,21 +180,21 @@ namespace ShyLU{
 
 
 template <class Matrix, class Vector>
-int 
+int
 DirectSolverInterface<Matrix, Vector>::solveAmesos(Vector* b, Vector *x)
 {
-  cout << "**Error**: Amesos is only supported for Epetra Matrices \n";
+  std::cout << "**Error**: Amesos is only supported for Epetra Matrices \n";
   exit(1);
 }
 template <>
 int
 DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector>::solveAmesos(Epetra_MultiVector *b, Epetra_MultiVector *x)
 {
-  
+
   Teuchos::ParameterList subList = pList->sublist("Amesos Input");
-  string solvertype = Teuchos::getParameter<string>(subList, "Solver");
+  std::string solvertype = Teuchos::getParameter<std::string>(subList, "Solver");
   Teuchos::ParameterList subsubList = subList.sublist(solvertype + " Input");
- 
+
   //Epetra_LinearProblem Problem(A, x, b);
   //Amesos Factory;
   // Amesos_BaseSolver* Solver = Factory.Create(solvertype, Problem);
@@ -207,14 +207,14 @@ DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector>::solveAmesos(Epetra_
   //Solver->SymbolicFactorization();
   //Solver->NumericFactorization();
   solver_amesos->Solve();
-  
+
   return 0;
 }
 template <class Matrix, class Vector>
 int
 DirectSolverInterface<Matrix, Vector>::solve(Vector* b, Vector* x)
 {
-#ifdef HAVE_SHYLUCORE_AMESOS2 
+#ifdef HAVE_SHYLUCORE_AMESOS2
   return solveAmesos2(b, x);
 #else
   return 1;
@@ -222,10 +222,10 @@ DirectSolverInterface<Matrix, Vector>::solve(Vector* b, Vector* x)
 }
 
 template < >
-int 
+int
 DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector>::solve(Epetra_MultiVector*b ,Epetra_MultiVector* x)
 {
-  string solverpackage = Teuchos::getParameter<string>(*pList,"Direct Solver Package");
+  std::string solverpackage = Teuchos::getParameter<std::string>(*pList,"Direct Solver Package");
   int returnvalue = 1;
   if(solverpackage.compare("Amesos")==0)
     {
@@ -234,15 +234,15 @@ DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector>::solve(Epetra_MultiV
   else if(solverpackage.compare("Amesos2")==0)
     {
 #ifdef HAVE_SHYLUCORE_AMESOS2
-      	returnvalue = solveAmesos2(b,x);
+        returnvalue = solveAmesos2(b,x);
 #else
-	cout << "Amesos2 is not installed \n";
-	exit(1);
+        std::cout << "Amesos2 is not installed \n";
+        exit(1);
 #endif
     }
     else
       {
-	cout << "No Direct Solver Package Found";
+        std::cout << "No Direct Solver Package Found";
       }
     return returnvalue;
 }
@@ -251,9 +251,9 @@ template <class Matrix, class Vector>
 int DirectSolverInterface<Matrix,Vector>::solveAmesos2(Vector* b, Vector* x)
 {
   //#pragma message("solve amesos2 compiled")
-  //cout << "odd call";
+  //std::cout << "odd call";
   Teuchos::ParameterList subList = pList->sublist("Amesos2 Input");
-  string solvertype = Teuchos::getParameter<string>(subList, "Solver");
+  std::string solvertype = Teuchos::getParameter<std::string>(subList, "Solver");
   Teuchos::ParameterList subsubList = subList.sublist(solvertype + " Input");
   solver_amesos2->solve(x, b);
 

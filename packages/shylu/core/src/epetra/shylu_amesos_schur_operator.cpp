@@ -134,8 +134,8 @@ int AmesosSchurOperator::ApplyInverse(const Epetra_MultiVector& X,
 }
 
 //! Prints on stream basic information about \c this object.
-ostream& AmesosSchurOperator::Print(ostream& os) const
+std::ostream& AmesosSchurOperator::Print(std::ostream& os) const
 {
-    os << " !!!!!!!!! " << endl;
+    os << " !!!!!!!!! " << std::endl;
     return os;
 }
