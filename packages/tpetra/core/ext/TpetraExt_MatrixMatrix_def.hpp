@@ -1599,7 +1599,7 @@ addUnsortedGlobalCols(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("computing unsorted unmerged sum"))));
 #endif
-  UnmergedSumFunctor<scalar_type, ordinal_type, values_array, row_ptrs_array, col_ind_type>
+  UnmergedSumFunctor<impl_scalar_type, ordinal_type, values_array, row_ptrs_array, col_ind_type>
     unmergedSum(Avals, Arowptrs, Acolinds, scalarA, Bvals, Browptrs, Bcolinds, scalarB, CvalsOver, CrowptrTemp, CcolindOver);
   Kokkos::parallel_for(range_type(0, nrows), unmergedSum);
   {
