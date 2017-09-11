@@ -297,6 +297,11 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
 
         for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
           Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
+
+          // only apply orientations if its relevant to the current needs
+          if(layout->getBasis()->name()!=basis.name())
+            continue;
+
           TEUCHOS_ASSERT(layout!=Teuchos::null);
           TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
           if(layout->getBasis()->requiresOrientations()) {
@@ -364,6 +369,11 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
 
         for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
           Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
+
+          // only apply orientations if its relevant to the current needs
+          if(layout->getBasis()->name()!=basis.name())
+            continue;
+
           TEUCHOS_ASSERT(layout!=Teuchos::null);
           TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
           if(layout->getBasis()->requiresOrientations()) {

@@ -59,8 +59,6 @@ PANZER_EVALUATOR_CLASS(Integrator_BasisTimesVector)
     
   PHX::MDField<const ScalarT,Cell,IP,Dim> vectorField;
 
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
-
   std::vector<PHX::MDField<ScalarT,Cell,IP> > field_multipliers;
   Kokkos::View<Kokkos::View<ScalarT** >* > kokkos_field_multipliers;
 

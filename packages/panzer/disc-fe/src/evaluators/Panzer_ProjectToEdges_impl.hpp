@@ -181,7 +181,8 @@ evaluateFields(typename Traits::EvalData workset)
 
   } else {
 
-    TEUCHOS_ASSERT(false);
+    TEUCHOS_ASSERT(false); // this doesn't work since we modified the way orientations are handled
+
     PHX::MDField<double,Cell,panzer::NODE,Dim> vertex_coords = workset.cell_vertex_coordinates;
     int subcell_dim = 1;
 

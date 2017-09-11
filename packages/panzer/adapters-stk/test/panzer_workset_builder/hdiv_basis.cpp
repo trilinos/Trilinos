@@ -343,6 +343,10 @@ namespace panzer {
       out << std::endl;
     } // end c
 
+    double sign_diff =   hdiv_basis_vector(0,1,0,0)/std::fabs(hdiv_basis_vector(0,1,0,0))
+                       - hdiv_basis_vector(1,3,0,0)/std::fabs(hdiv_basis_vector(1,3,0,0));
+    TEST_ASSERT(std::fabs(sign_diff) <= 1e-15);
+
     out << "WEIGHTED BASIS VECTOR\n" << std::endl;
     for(size_t c=0;c<2;c++) {
       out << "cell " << c << " = ";

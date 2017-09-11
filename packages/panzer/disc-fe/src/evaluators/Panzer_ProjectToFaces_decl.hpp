@@ -90,8 +90,9 @@ private:
 
   ProjectToFaces();
 
-  PHX::MDField<const ScalarT,Cell,NODE> dof_orientation;
   PHX::MDField<ScalarT,Cell,NODE,Dim> gatherFieldNormals;
+
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 };
 
 }

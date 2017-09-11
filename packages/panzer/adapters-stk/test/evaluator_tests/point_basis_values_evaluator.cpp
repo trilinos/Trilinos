@@ -63,12 +63,15 @@ using Teuchos::rcp;
 #include "Panzer_Constant.hpp"
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_BasisValues2.hpp"
+#include "Panzer_DOFManager.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
+#include "Panzer_STKConnManager.hpp"
+#include "Panzer_STK_WorksetFactory.hpp"
 
 #include "RandomFieldEvaluator.hpp"
 
@@ -345,6 +348,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_values_evaluator, eval_vector)
   {
+    typedef Intrepid2::Basis<PHX::Device::execution_space,double,double> IntrepidBasis;
 
     const std::size_t workset_size = 4;
     const std::string fieldName = "U";
@@ -366,8 +370,41 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,integration_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                            physicsBlock->getWorksetNeeds()); 
+    std::map<std::string,WorksetNeeds> needs;
+    needs[physicsBlock->elementBlockID()] = physicsBlock->getWorksetNeeds();
+
+    // build DOF Manager (with a single HDiv basis)
+    /////////////////////////////////////////////////////////////
+ 
+    // build the connection manager 
+    const RCP<panzer::ConnManager<int,panzer::Ordinal64> > 
+      conn_manager = rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
+
+    RCP<panzer::DOFManager<int,panzer::Ordinal64> > dof_manager
+        = rcp(new panzer::DOFManager<int,panzer::Ordinal64>(conn_manager,MPI_COMM_WORLD));
+
+    // build an intrepid basis and a related field pattern for seeding the DOFManager
+    {
+       RCP<IntrepidBasis> hgrad_intrepid_basis;
+       hgrad_intrepid_basis
+           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HGrad",1,
+                                                                                      *mesh->getCellTopology(physicsBlock->elementBlockID()));
+      RCP<panzer::Intrepid2FieldPattern> hgrad_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hgrad_intrepid_basis));
+
+      dof_manager->addField(physicsBlock->elementBlockID(), fieldName, hgrad_field_pattern);
+    }
+    dof_manager->buildGlobalUnknowns();
+
+    /////////////////////////////////////////////////////////////
+    
+    RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = rcp(new panzer::WorksetContainer(wkstFactory,needs));
+    wkstContainer->setGlobalIndexer(dof_manager);
+    wkstContainer->setWorksetSize(workset_size);
+
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = wkstContainer->getWorksets(blockDescriptor(physicsBlock->elementBlockID()));
     panzer::Workset & workset = (*work_sets)[0];
     TEST_EQUALITY(work_sets->size(),1);
 
@@ -420,6 +457,7 @@ namespace panzer {
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
     panzer::Traits::SetupData sd;
+    sd.orientations_ = wkstContainer->getOrientations();
     fm.postRegistrationSetup(sd);
     fm.print(out);
 
@@ -472,6 +510,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(dof_point_values_evaluator, eval)
   {
+    typedef Intrepid2::Basis<PHX::Device::execution_space,double,double> IntrepidBasis;
 
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
@@ -495,9 +534,50 @@ namespace panzer {
     Teuchos::RCP<panzer::PhysicsBlock> physicsBlock = 
       Teuchos::rcp(new PhysicsBlock(ipb,eBlockID,default_int_order,cellData,eqset_factory,gd,false));
 
-    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
-                                                                                            physicsBlock->getWorksetNeeds()); 
+    std::map<std::string,WorksetNeeds> needs;
+    needs[physicsBlock->elementBlockID()] = physicsBlock->getWorksetNeeds();
+
+    // build DOF Manager (with a single HDiv basis)
+    /////////////////////////////////////////////////////////////
+ 
+    // build the connection manager 
+    const RCP<panzer::ConnManager<int,panzer::Ordinal64> > 
+      conn_manager = rcp(new panzer_stk::STKConnManager<panzer::Ordinal64>(mesh));
+
+    RCP<panzer::DOFManager<int,panzer::Ordinal64> > dof_manager
+        = rcp(new panzer::DOFManager<int,panzer::Ordinal64>(conn_manager,MPI_COMM_WORLD));
+
+    // build an intrepid basis and a related field pattern for seeding the DOFManager
+    {
+       RCP<IntrepidBasis> hgrad_intrepid_basis, hcurl_intrepid_basis;
+       hgrad_intrepid_basis
+           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HGrad",1,
+                                                                                      *mesh->getCellTopology(physicsBlock->elementBlockID()));
+       hcurl_intrepid_basis
+           = panzer::createIntrepid2Basis<PHX::Device::execution_space,double,double>("HCurl",1,
+                                                                                      *mesh->getCellTopology(physicsBlock->elementBlockID()));
+      RCP<panzer::Intrepid2FieldPattern> hgrad_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hgrad_intrepid_basis));
+      RCP<panzer::Intrepid2FieldPattern> hcurl_field_pattern = rcp(new panzer::Intrepid2FieldPattern(hcurl_intrepid_basis));
+
+      dof_manager->addField(physicsBlock->elementBlockID(), fieldName_q1, hgrad_field_pattern);
+      dof_manager->addField(physicsBlock->elementBlockID(), fieldName_qedge1, hcurl_field_pattern);
+    }
+    dof_manager->buildGlobalUnknowns();
+
+    /////////////////////////////////////////////////////////////
+    
+    RCP<panzer_stk::WorksetFactory> wkstFactory 
+       = rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = rcp(new panzer::WorksetContainer(wkstFactory,needs));
+    wkstContainer->setGlobalIndexer(dof_manager);
+    wkstContainer->setWorksetSize(workset_size);
+
+    // Teuchos::RCP<std::vector<panzer::Workset> > work_sets = panzer_stk::buildWorksets(*mesh,physicsBlock->elementBlockID(),
+    //                                                                                         physicsBlock->getWorksetNeeds()); 
+    Teuchos::RCP<std::vector<panzer::Workset> > work_sets = wkstContainer->getWorksets(blockDescriptor(physicsBlock->elementBlockID()));
     panzer::Workset & workset = (*work_sets)[0];
+
     TEST_EQUALITY(work_sets->size(),1);
 
     Teuchos::RCP<panzer::IntegrationRule> point_rule = buildIR(workset_size,integration_order);
@@ -556,6 +636,7 @@ namespace panzer {
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
     panzer::Traits::SetupData sd;
+    sd.orientations_ = wkstContainer->getOrientations();
     sd.worksets_ = work_sets;
     fm.postRegistrationSetup(sd);
     fm.print(out);
