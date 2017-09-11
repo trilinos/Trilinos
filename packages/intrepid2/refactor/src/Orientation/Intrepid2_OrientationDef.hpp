@@ -155,6 +155,7 @@ namespace Intrepid2 {
                               const elemNodeViewType elemNodes) {
     Orientation ort;
     const ordinal_type nedge = cellTopo.getEdgeCount();
+
     if (nedge > 0) {
       typename elemNodeViewType::non_const_value_type vertsSubCell[2];
       ordinal_type orts[12], nvertSubCell;
@@ -242,15 +243,22 @@ namespace Intrepid2 {
     const unsigned int v[2] = { cellTopo.getNodeMap(1, subcellOrd, 0),
                                 cellTopo.getNodeMap(1, subcellOrd, 1) };
 
-    auto normalize = [&](refTanType v, ordinal_type iend) {
+    auto normalize = [&](double *v, ordinal_type iend) {
       double norm = 0.0;
       for (ordinal_type i=0;i<iend;++i)
-        norm += v(i)*v(i);
+        norm += v[i]*v[i];
       norm = std::sqrt(norm);
       for (ordinal_type i=0;i<iend;++i)
-        v(i) /= norm;
+        v[i] /= norm;
+    };
+
+    auto assign_tangent = [&](refTanType t, double *v, ordinal_type iend) {
+      for (ordinal_type i=0;i<iend;++i)
+        t(i) = v[i];
     };
     
+    double t[3] = {};
+    const int cell_dim = cellTopo.getDimension();
     if        (cellBaseKey == shards::Hexahedron<>::key) {
       const double hex_verts[8][3] = { { -1.0, -1.0, -1.0 },
                                        {  1.0, -1.0, -1.0 },
@@ -263,10 +271,8 @@ namespace Intrepid2 {
                                        { -1.0,  1.0,  1.0 } };
       for (ordinal_type k=0;k<3;++k) {
         const ordinal_type *ii = &i[ort][0];
-        tanE(k) = hex_verts[v[ii[1]]][k] - hex_verts[v[ii[0]]][k];
+        t[k] = hex_verts[v[ii[1]]][k] - hex_verts[v[ii[0]]][k];
       }
-      if (is_normalize) normalize(tanE, 3);
-
     } else if (cellBaseKey == shards::Tetrahedron<>::key) {
       const double tet_verts[4][3] = { {  0.0,  0.0,  0.0 },
                                        {  1.0,  0.0,  0.0 },
@@ -274,9 +280,8 @@ namespace Intrepid2 {
                                        {  0.0,  0.0,  1.0 } };
       for (ordinal_type k=0;k<3;++k) {
         const ordinal_type *ii = &i[ort][0];
-        tanE(k) = tet_verts[v[ii[1]]][k] - tet_verts[v[ii[0]]][k];
+        t[k] = tet_verts[v[ii[1]]][k] - tet_verts[v[ii[0]]][k];
       }
-      if (is_normalize) normalize(tanE, 3);
     } else if (cellBaseKey == shards::Quadrilateral<>::key) {
       const double quad_verts[8][3] = { { -1.0, -1.0 },
                                         {  1.0, -1.0 },
@@ -284,22 +289,23 @@ namespace Intrepid2 {
                                         { -1.0,  1.0 } };
       for (ordinal_type k=0;k<2;++k) {
         const ordinal_type *ii = &i[ort][0];
-        tanE(k) = quad_verts[v[ii[1]]][k] - quad_verts[v[ii[0]]][k];
+        t[k] = quad_verts[v[ii[1]]][k] - quad_verts[v[ii[0]]][k];
       }
-      if (is_normalize) normalize(tanE, 2);
     } else if (cellBaseKey == shards::Triangle<>::key) {
       const double tri_verts[4][3] = { {  0.0,  0.0 },
                                        {  1.0,  0.0 },
                                        {  0.0,  1.0 } };
       for (ordinal_type k=0;k<2;++k) {
         const ordinal_type *ii = &i[ort][0];
-        tanE(k) = tri_verts[v[ii[1]]][k] - tri_verts[v[ii[0]]][k];
+        t[k] = tri_verts[v[ii[1]]][k] - tri_verts[v[ii[0]]][k];
       }
-      if (is_normalize) normalize(tanE, 2);
     } else {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     "cellTopo is not supported: try TET and HEX" );
     }
+
+    if (is_normalize) normalize(t, cell_dim);
+    assign_tangent(tanE, t, cell_dim);
   }
 
   template<typename refTanType>
@@ -313,15 +319,21 @@ namespace Intrepid2 {
                                         const bool is_normalize) {
     const auto cellBaseKey = cellTopo.getBaseKey();
 
-    auto normalize = [&](refTanType v, ordinal_type iend) {
+    auto normalize = [&](double *v, ordinal_type iend) {
       double norm = 0.0;
       for (ordinal_type i=0;i<iend;++i)
-        norm += v(i)*v(i);
+        norm += v[i]*v[i];
       norm = std::sqrt(norm);
       for (ordinal_type i=0;i<iend;++i)
-        v(i) /= norm;
+        v[i] /= norm;
     };
 
+    auto assign_tangent = [&](refTanType t, double *v, ordinal_type iend) {
+      for (ordinal_type i=0;i<iend;++i)
+        t(i) = v[i];
+    };
+
+    double tu[3], tv[3];
     if        (cellBaseKey == shards::Hexahedron<>::key) {
       INTREPID2_TEST_FOR_EXCEPTION( !(subcellOrd < 6),
                                     std::logic_error,
@@ -351,15 +363,10 @@ namespace Intrepid2 {
       for (ordinal_type k=0;k<3;++k) {
         const ordinal_type *ii = &i[ort][0];
 
-        tanU(k) = hex_verts[v[ii[1]]][k] - hex_verts[v[ii[0]]][k];
-        tanV(k) = hex_verts[v[ii[3]]][k] - hex_verts[v[ii[0]]][k];
+        tu[k] = hex_verts[v[ii[1]]][k] - hex_verts[v[ii[0]]][k];
+        tv[k] = hex_verts[v[ii[3]]][k] - hex_verts[v[ii[0]]][k];
       }
 
-      if (is_normalize) { 
-        normalize(tanU, 3);
-        normalize(tanV, 3);
-      }
-      
     } else if (cellBaseKey == shards::Tetrahedron<>::key) {
       INTREPID2_TEST_FOR_EXCEPTION( !(subcellOrd < 4),
                                     std::logic_error,
@@ -381,19 +388,22 @@ namespace Intrepid2 {
       for (ordinal_type k=0;k<3;++k) {
         const ordinal_type *ii = &i[ort][0];
 
-        tanU(k) = tet_verts[v[ii[1]]][k] - tet_verts[v[ii[0]]][k];
-        tanV(k) = tet_verts[v[ii[2]]][k] - tet_verts[v[ii[0]]][k];
-      }
-
-      if (is_normalize) { 
-        normalize(tanU, 3);
-        normalize(tanV, 3);
+        tu[k] = tet_verts[v[ii[1]]][k] - tet_verts[v[ii[0]]][k];
+        tv[k] = tet_verts[v[ii[2]]][k] - tet_verts[v[ii[0]]][k];
       }
 
     } else {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     "cellTopo is not supported: try TET and HEX" );
     }
+    
+    if (is_normalize) { 
+      normalize(tu, 3);
+      normalize(tv, 3);
+    }
+
+    assign_tangent(tanU, tu, 3);
+    assign_tangent(tanV, tv, 3);
   }
 
   template<typename refNormalType>
@@ -406,13 +416,18 @@ namespace Intrepid2 {
                                       const bool is_normalize) {
     const auto cellBaseKey = cellTopo.getBaseKey();
 
-    auto normalize = [&](refNormalType v, ordinal_type iend) {
+    auto normalize = [&](double *v, ordinal_type iend) {
       double norm = 0.0;
       for (ordinal_type i=0;i<iend;++i)
-        norm += v(i)*v(i);
+        norm += v[i]*v[i];
       norm = std::sqrt(norm);
       for (ordinal_type i=0;i<iend;++i)
-        v(i) /= norm;
+        v[i] /= norm;
+    };
+
+    auto assign_normal = [&](refNormalType n, double *v, ordinal_type iend) {
+      for (ordinal_type i=0;i<iend;++i)
+        n(i) = v[i];
     };
 
     double buf[2][3];
@@ -426,11 +441,13 @@ namespace Intrepid2 {
                              false);
 
     // cross product
-    normalV(0) = tanU(1)*tanV(2) - tanU(2)*tanV(1);
-    normalV(1) = tanU(2)*tanV(0) - tanU(0)*tanV(2);
-    normalV(2) = tanU(0)*tanV(1) - tanU(1)*tanV(0);
+    double v[3];
+    v[0] = tanU(1)*tanV(2) - tanU(2)*tanV(1);
+    v[1] = tanU(2)*tanV(0) - tanU(0)*tanV(2);
+    v[2] = tanU(0)*tanV(1) - tanU(1)*tanV(0);
 
-    if (is_normalize) normalize(normalV, 3);
+    if (is_normalize) normalize(v, 3);
+    assign_normal(normalV, v, 3);
   }
   
   KOKKOS_INLINE_FUNCTION

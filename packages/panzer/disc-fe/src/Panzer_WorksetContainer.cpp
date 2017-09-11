@@ -272,9 +272,9 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
   const WorksetNeeds & needs = lookupNeeds(eBlock);
   TEUCHOS_ASSERT(needs.bases.size()==needs.rep_field_name.size());
 
-  for(std::size_t i=0;i<needs.bases.size();i++) {
+  for(std::size_t w=0;w<needs.bases.size();w++) {
     //const std::string & fieldName = needs.rep_field_name[i];
-    const PureBasis & basis = *needs.bases[i];
+    const PureBasis & basis = *needs.bases[w];
 
     // no need for this if orientations are not required!
     if(!basis.requiresOrientations()) continue;
