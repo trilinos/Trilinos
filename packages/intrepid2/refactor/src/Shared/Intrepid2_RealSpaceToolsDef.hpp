@@ -297,15 +297,17 @@ namespace Intrepid2 {
           break;
         }
         
-        auto out = (rankDiff == 3 ? Kokkos::subview(_output, k0, k1, k2, Kokkos::ALL(), Kokkos::ALL()) :
-                    rankDiff == 2 ? Kokkos::subview(_output, k0, k1,     Kokkos::ALL(), Kokkos::ALL()) :
-                    rankDiff == 1 ? Kokkos::subview(_output, k0,         Kokkos::ALL(), Kokkos::ALL()) :
-                    /**/            Kokkos::subview(_output,             Kokkos::ALL(), Kokkos::ALL()));
+        auto out = (rankDiff == 3 ? Kokkos::subview(_output, k0, k1, k2, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) :
+                    rankDiff == 2 ? Kokkos::subview(_output, k0, k1,     Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) :
+                    rankDiff == 1 ? Kokkos::subview(_output, k0,         Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) :
+                    /**/            Kokkos::subview(_output,             Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()));
         const ordinal_type iend = _input.dimension(0);
         const ordinal_type jend = _input.dimension(1);
+        const ordinal_type kend = _input.dimension(2);
         for (ordinal_type i=0;i<iend;++i)
           for (ordinal_type j=0;j<jend;++j)
-            out(i,j) = _input(i,j);
+            for (ordinal_type k=0;k<kend;++k)
+              out(i,j,k) = _input(i,j,k);
       }
     };
   }
@@ -319,16 +321,21 @@ namespace Intrepid2 {
          const Kokkos::DynRankView<inputValueType,inputProperties...> input ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
-      // input is at most a matrx
-      INTREPID2_TEST_FOR_EXCEPTION( input.rank() > 2, std::invalid_argument,
-                                    ">>> ERROR (RealSpaceTools::clone): Input container has rank larger than 2.");
-      // total upto 7 rank is possible to clone
-      INTREPID2_TEST_FOR_EXCEPTION( output.rank() > 5, std::invalid_argument,
-                                    ">>> ERROR (RealSpaceTools::clone): Output container has rank larger than 5.");
+      // input has at most rank 3
+      INTREPID2_TEST_FOR_EXCEPTION( input.rank() > 3, std::invalid_argument,
+                                    ">>> ERROR (RealSpaceTools::clone): Input container has rank larger than 3.");
+
 
       INTREPID2_TEST_FOR_EXCEPTION( input.rank() > output.rank(), std::invalid_argument,
                                     ">>> ERROR (RealSpaceTools::clone): Input container rank should be smaller than ouput rank.");
+
       const size_type rankDiff = output.rank() - input.rank();
+
+      // Difference of output and input rank is at most 3.
+      INTREPID2_TEST_FOR_EXCEPTION( rankDiff > 3, std::invalid_argument,
+                                    ">>> ERROR (RealSpaceTools::clone): Difference between output container rank and input container rank is larger than 3.");
+
+
       for (size_type i=0;i<input.rank();++i) {
         INTREPID2_TEST_FOR_EXCEPTION( input.dimension(i) != output.dimension(rankDiff + i), std::invalid_argument,
                                       ">>> ERROR (RealSpaceTools::clone): Dimensions of array arguments do not agree!");

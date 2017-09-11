@@ -761,6 +761,26 @@ namespace Sacado {
       reference fastAccessCoeff(ordinal_type i) {
         return s[i];}
 
+       //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const_volatile_reference operator[](ordinal_type i) const volatile {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const_reference operator[](ordinal_type i) const {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      volatile_reference operator[](ordinal_type i) volatile {
+        return s[i];}
+
+      //! Returns term \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      reference operator[](ordinal_type i) {
+        return s[i];}
+
       template <int i>
       KOKKOS_INLINE_FUNCTION
       value_type getCoeff() const volatile {
@@ -2016,5 +2036,30 @@ public:
 #endif // HAVE_STOKHOS_SACADO
 
 //#include "Sacado_MP_Vector_SFS.hpp"
+
+#include "Kokkos_NumericTraits.hpp"
+
+namespace Kokkos {
+
+template <typename Storage>
+struct reduction_identity< Sacado::MP::Vector<Storage> > {
+  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename Storage::value_type scalar;
+  typedef reduction_identity<scalar> RIS;
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static Vector sum()  {
+    return Vector(RIS::sum());
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static Vector prod() {
+    return Vector(RIS::prod());
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static Vector max()  {
+    return Vector(RIS::max());
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static Vector min()  {
+    return Vector(RIS::min());
+  }
+};
+
+}
 
 #endif // SACADO_MP_VECTOR_HPP

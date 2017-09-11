@@ -52,30 +52,6 @@
 
 namespace PHX {
 
-  template<typename... extent_pack>
-  struct SetExtentsImpl;
-
-  //! Used to set the extents from a parameter pack. Can't use a simple initializer list due to narrowing from in size_type.
-  template<typename T, typename... extent_pack>
-  struct SetExtentsImpl<T,extent_pack...> {
-    static void setExtents(PHX::Device::size_type index,
-                           std::vector<PHX::Device::size_type>& extents,
-                           T val,
-                           extent_pack... pack)
-    {
-      extents[index] = val;
-      PHX::SetExtentsImpl<extent_pack...>::setExtents(index+1,extents,pack...);
-    }
-  };
-
-  //! Used to set the extents from a parameter pack. this implementation ends the recursion.
-  template<>
-  struct SetExtentsImpl<> {
-    static void setExtents(PHX::Device::size_type ,
-                           std::vector<PHX::Device::size_type>& )
-    {}
-  };
-
   //! Default DataLayout implementation that allows for runtime sizing.
   class Layout : public DataLayout {
 
@@ -110,7 +86,7 @@ namespace PHX {
       PHX::SetExtentsImpl<extent_pack...>::setExtents(0,m_extents,extents...);
     }
 
-    virtual ~Layout() {}
+    virtual ~Layout() noexcept {}
 
     virtual bool operator==(const DataLayout& src) const override;
 
@@ -128,11 +104,16 @@ namespace PHX {
 
     virtual std::string name(size_type ordinal) const override;
 
-    virtual void names(std::vector<std::string>& names) const override; 
+    virtual void names(std::vector<std::string>& names) const override;
 
     virtual std::string identifier() const override;
 
     virtual void print(std::ostream& os, int offset) const override;
+
+  protected:
+
+    virtual void
+    setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents) override;
 
   private:
 

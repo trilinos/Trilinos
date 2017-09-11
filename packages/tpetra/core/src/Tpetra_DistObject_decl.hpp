@@ -56,6 +56,7 @@
 #include "Tpetra_SrcDistObject.hpp"
 #include "Kokkos_NodeAPIConfigDefs.hpp" // enum KokkosClassic::ReadWriteOption
 #include "Kokkos_ArithTraits.hpp"
+#include <type_traits>
 
 // #ifndef HAVE_TPETRA_TRANSFER_TIMERS
 // #  define HAVE_TPETRA_TRANSFER_TIMERS 1
@@ -559,6 +560,37 @@ namespace Tpetra {
                    Distributor &distor,
                    ReverseOption revOp);
 
+    /// \typedef buffer_memory_space
+    /// \brief Kokkos memory space for communication buffers.
+    ///
+    /// See #1088 for why this is not just <tt>device_type::memory_space</tt>.
+#ifdef KOKKOS_HAVE_CUDA
+    typedef typename std::conditional<
+      std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
+      Kokkos::CudaSpace,
+      typename device_type::memory_space>::type buffer_memory_space;
+#else
+    typedef typename device_type::memory_space buffer_memory_space;
+#endif // KOKKOS_HAVE_CUDA
+
+  public:
+
+    /// \typedef buffer_device_type
+    /// \brief Kokkos::Device specialization for communication buffers.
+    ///
+    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+    ///
+    /// This needs to be public so that I can declare functions like
+    /// packAndPrepareWithOwningPIDs.
+    ///
+    /// \warning This is an implementation detail.  DO NOT DEPEND ON
+    ///   IT.  It may disappear or change at any time.
+    typedef Kokkos::Device<
+      typename device_type::execution_space,
+      buffer_memory_space> buffer_device_type;
+
+  protected:
+
     virtual void
     doTransferNew (const SrcDistObject& src,
                    const CombineMode CM,
@@ -672,8 +704,8 @@ namespace Tpetra {
     virtual void
     packAndPrepareNew (const SrcDistObject& source,
                        const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                       Kokkos::DualView<packet_type*, device_type>& exports,
-                       const Kokkos::DualView<size_t*, device_type>& numPacketsPerLID,
+                       Kokkos::DualView<packet_type*, buffer_device_type>& exports,
+                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                        size_t& constantNumPackets,
                        Distributor& distor)
     {}
@@ -737,8 +769,8 @@ namespace Tpetra {
     ///   imported entries with existing entries.
     virtual void
     unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
-                         const Kokkos::DualView<const packet_type*, device_type>& imports,
-                         const Kokkos::DualView<const size_t*, device_type>& numPacketsPerLID,
+                         const Kokkos::DualView<const packet_type*, buffer_device_type>& imports,
+                         const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
                          const size_t constantNumPackets,
                          Distributor& distor,
                          const CombineMode CM)
@@ -796,7 +828,7 @@ namespace Tpetra {
     /// Unfortunately, I had to declare these protected, because
     /// CrsMatrix uses them at one point.  Please, nobody else use
     /// them.
-    Kokkos::DualView<packet_type*, device_type> imports_;
+    Kokkos::DualView<packet_type*, buffer_device_type> imports_;
 
     /// \brief Reallocate imports_ if needed.
     ///
@@ -828,14 +860,14 @@ namespace Tpetra {
     ///
     /// Unfortunately, I had to declare this protected, because
     /// CrsMatrix uses it at one point.  Please, nobody else use it.
-    Kokkos::DualView<size_t*, device_type> numImportPacketsPerLID_;
+    Kokkos::DualView<size_t*, buffer_device_type> numImportPacketsPerLID_;
 
     /// \brief Buffer from which packed data are exported (sent to
     ///   other processes).
     ///
     /// Unfortunately, I had to declare this protected, because
     /// CrsMatrix uses it at one point.  Please, nobody else use it.
-    Kokkos::DualView<packet_type*, device_type> exports_;
+    Kokkos::DualView<packet_type*, buffer_device_type> exports_;
 
     /// \brief Number of packets to send for each send operation.
     ///
@@ -850,7 +882,14 @@ namespace Tpetra {
     ///
     /// Unfortunately, I had to declare this protected, because
     /// CrsMatrix uses them at one point.  Please, nobody else use it.
-    Kokkos::DualView<size_t*, device_type> numExportPacketsPerLID_;
+    Kokkos::DualView<size_t*, buffer_device_type> numExportPacketsPerLID_;
+
+#ifdef KOKKOS_HAVE_CUDA
+    /// \brief Whether to allow CUDA allocations for communication buffers.
+    ///
+    /// See #1088 and #1571 for discussion.
+    bool allowCudaCommBuffers_;
+#endif // KOKKOS_HAVE_CUDA
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
   private:

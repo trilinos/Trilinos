@@ -79,6 +79,7 @@
 #include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_RAPShiftFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
@@ -247,8 +248,13 @@ namespace MueLu {
     }
 
     // Check for Kokkos
-    MUELU_SET_VAR_2LIST(constParamList,constParamList, "use kokkos refactor", bool, useKokkos);
+    MUELU_SET_VAR_2LIST(constParamList, constParamList, "use kokkos refactor", bool, useKokkos);
     useKokkos_ = useKokkos;
+
+    // Check for timer synchronization
+    MUELU_SET_VAR_2LIST(constParamList, constParamList, "synchronize factory timers", bool, syncTimers);
+    if (syncTimers)
+        Factory::EnableTimerSync();
 
     // Translate cycle type parameter
     if (paramList.isParameter("cycle type")) {
@@ -938,15 +944,26 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
     MUELU_SET_VAR_2LIST(paramList, defaultList, "sa: use filtered matrix", bool, useFiltering);
     bool filteringChangesMatrix = useFiltering && !MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol", double, 0);
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "rap: algorithm", std::string, rapAlgorithm);
 
     // === RAP ===
-    RCP<RAPFactory> RAP;
     if (have_userA) {
       manager.SetFactory("A", NoFactory::getRCP());
-
     } else {
-      RAP = rcp(new RAPFactory());
       ParameterList RAPparams;
+
+      RCP<RAPFactory> RAP;
+      RCP<RAPShiftFactory> RAPs;
+      std::string alg = paramList.get("rap: algorithm","galerkin");
+      // Allow for Galerkin or shifted RAP
+      if(alg == "shift" || alg == "non-galerkin") {
+	RAPs = rcp(new RAPShiftFactory());
+	MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "rap: shift", double, RAPparams);
+      }
+      else {
+	RAP = rcp(new RAPFactory());
+      }
+
       if(paramList.isSublist("matrixmatrix: kernel params"))   RAPparams.sublist("matrixmatrix: kernel params",false)=paramList.sublist("matrixmatrix: kernel params");
       if(defaultList.isSublist("matrixmatrix: kernel params")) RAPparams.sublist("matrixmatrix: kernel params",false)=defaultList.sublist("matrixmatrix: kernel params");
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "transpose: use implicit", bool, RAPparams);
@@ -967,10 +984,14 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
                                             "Error: parameter \"aggregation: allow empty prolongator columns\" must be of type " << Teuchos::TypeNameTraits<bool>::name());
       }
 
-      RAP->SetParameterList(RAPparams);
-      RAP->SetFactory("P", manager.GetFactory("P"));
-      if (!this->implicitTranspose_)
-        RAP->SetFactory("R", manager.GetFactory("R"));
+      if(!RAP.is_null()) RAP->SetParameterList(RAPparams);
+      else RAPs->SetParameterList(RAPparams);
+      if(!RAP.is_null()) RAP->SetFactory("P", manager.GetFactory("P"));
+      else RAPs->SetFactory("P", manager.GetFactory("P"));
+      if (!this->implicitTranspose_) {
+         if(!RAP.is_null()) RAP->SetFactory("R", manager.GetFactory("R"));
+	 else RAPs->SetFactory("R", manager.GetFactory("R"));
+      }
 
       if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
         RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
@@ -984,13 +1005,22 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: build colormap",        bool, aggExportParams);
         aggExport->SetParameterList(aggExportParams);
         aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
-        RAP->AddTransferFactory(aggExport);
+        if(!RAP.is_null()) RAP->AddTransferFactory(aggExport);
+	else RAPs->AddTransferFactory(aggExport);
+	
       }
-      manager.SetFactory("A", RAP);
+      if(!RAP.is_null()) manager.SetFactory("A", RAP);
+      else manager.SetFactory("A", RAPs);
 
       if (reuseType == "RP" || (reuseType == "tP" && !filteringChangesMatrix)) {
-        keeps.push_back(keep_pair("AP reuse data",  RAP.get()));
-        keeps.push_back(keep_pair("RAP reuse data", RAP.get()));
+	if(!RAP.is_null()) {
+	  keeps.push_back(keep_pair("AP reuse data",  RAP.get()));
+	  keeps.push_back(keep_pair("RAP reuse data", RAP.get()));
+	}
+	else {
+	  keeps.push_back(keep_pair("AP reuse data",  RAPs.get()));
+	  keeps.push_back(keep_pair("RAP reuse data", RAPs.get()));
+	}
       }
     }
 }
@@ -1014,7 +1044,12 @@ void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Update
       manager.SetFactory("Coordinates", coords);
 
       RCP<RAPFactory> RAP = rcp_const_cast<RAPFactory>(rcp_dynamic_cast<const RAPFactory>(manager.GetFactory("A")));
-      RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
+      if(!RAP.is_null())
+	RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
+      else {
+	RCP<RAPShiftFactory> RAPs = rcp_const_cast<RAPShiftFactory>(rcp_dynamic_cast<const RAPShiftFactory>(manager.GetFactory("A")));
+	RAPs->AddTransferFactory(manager.GetFactory("Coordinates"));
+      }
     }
   }
 }

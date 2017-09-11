@@ -35,6 +35,7 @@ StepperDIRK<Scalar>::StepperDIRK(
   this->setParameterList(pList);
   this->setModel(appModel);
   this->setSolver();
+  this->setObserver();
   this->initialize();
 }
 
@@ -45,9 +46,6 @@ void StepperDIRK<Scalar>::setModel(
   this->validImplicitODE_DAE(appModel);
   wrapperModel_ =
     Teuchos::rcp(new WrapperModelEvaluatorBasic<Scalar>(appModel));
-
-  inArgs_  = wrapperModel_->getNominalValues();
-  outArgs_ = wrapperModel_->createOutArgs();
 }
 
 template<class Scalar>
@@ -157,6 +155,23 @@ void StepperDIRK<Scalar>::setTableau(
   description_ = DIRK_ButcherTableau_->description();
 }
 
+
+template<class Scalar>
+void StepperDIRK<Scalar>::setObserver(
+  Teuchos::RCP<StepperDIRKObserver<Scalar> > obs)
+{
+  if (obs == Teuchos::null) {
+    // Create default observer, otherwise keep current observer.
+    if (stepperDIRKObserver_ == Teuchos::null) {
+      stepperDIRKObserver_ =
+        Teuchos::rcp(new StepperDIRKObserver<Scalar>());
+    }
+  } else {
+    stepperDIRKObserver_ = obs;
+  }
+}
+
+
 template<class Scalar>
 void StepperDIRK<Scalar>::initialize()
 {
@@ -172,24 +187,6 @@ void StepperDIRK<Scalar>::initialize()
   assign(xTilde_.ptr(),    Teuchos::ScalarTraits<Scalar>::zero());
 }
 
-template <typename Scalar>
-std::function<void (const Thyra::VectorBase<Scalar> &,
-                          Thyra::VectorBase<Scalar> &)>
-StepperDIRK<Scalar>::xDotFunction(
-  Scalar s, Teuchos::RCP<const Thyra::VectorBase<Scalar> > stageXPartial)
-{
-  return [=](const Thyra::VectorBase<Scalar> & x,
-                   Thyra::VectorBase<Scalar> & x_dot)
-    {
-      // ith stage
-      // s = 1/(dt*a_ii)
-      // xOld = solution at beginning of time step
-      // stageXPartial = xOld + dt*(Sum_{j=1}^{i-1} a_ij x_dot_j)
-      // x_dot_i = s*x_i - s*stageXPartial
-      Thyra::V_StVpStV(Teuchos::ptrFromRef(x_dot),s,x,-s,*stageXPartial);
-    };
-}
-
 template<class Scalar>
 void StepperDIRK<Scalar>::takeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
@@ -198,6 +195,7 @@ void StepperDIRK<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperDIRK::takeStep()");
   {
+    stepperDIRKObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar dt = workingState->getTimeStep();
@@ -212,6 +210,7 @@ void StepperDIRK<Scalar>::takeStep(
     bool pass = true;
     Thyra::SolveStatus<double> sStatus;
     for (int i=0; i < numStages; ++i) {
+      stepperDIRKObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
       for (int j=0; j < i; ++j) {
         if (A(i,j) != Teuchos::ScalarTraits<Scalar>::zero()) {
@@ -230,29 +229,49 @@ void StepperDIRK<Scalar>::takeStep(
           assign(stageXDot_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
           typedef Thyra::ModelEvaluatorBase MEB;
-          inArgs_.set_x(xTilde_);
-          if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(ts);
-          if (inArgs_.supports(MEB::IN_ARG_x_dot))
-            inArgs_.set_x_dot(Teuchos::null);
-          outArgs_.set_f(stageXDot_[i]);
+          MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();
+          MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
+          inArgs.set_x(xTilde_);
+          if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(ts);
+          if (inArgs.supports(MEB::IN_ARG_x_dot))
+            inArgs.set_x_dot(Teuchos::null);
+          outArgs.set_f(stageXDot_[i]);
 
-          wrapperModel_->getAppModel()->evalModel(inArgs_,outArgs_);
+          stepperDIRKObserver_->observeBeforeDAEExplicit(solutionHistory,*this);
+          wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
         }
       } else {
         // Implicit stage for the ImplicitODE_DAE
-        Scalar alpha = 1.0/dt/A(i,i);
-        Scalar beta = 1.0;
+        Scalar alpha = 1.0/(dt*A(i,i));
 
-        // function used to compute time derivative
-        auto computeXDot = xDotFunction(alpha,xTilde_.getConst());
+        // Setup TimeDerivative
+        Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
+          Teuchos::rcp(new StepperDIRKTimeDerivative<Scalar>(
+            alpha,xTilde_.getConst()));
 
-        wrapperModel_->initialize(computeXDot, ts, alpha, beta);
+        // Setup InArgs and OutArgs
+        typedef Thyra::ModelEvaluatorBase MEB;
+        MEB::InArgs<Scalar>  inArgs  = wrapperModel_->getInArgs();
+        MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
+        inArgs.set_x(stageX_);
+        if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(stageXDot_[i]);
+        if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (ts);
+        if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
+        if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
+        if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
+
+        wrapperModel_->initialize(timeDer, inArgs, outArgs);
+
+        stepperDIRKObserver_->observeBeforeSolve(solutionHistory, *this);
 
         sStatus = this->solveNonLinear(wrapperModel_, *solver_, stageX_);
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED ) pass=false;
 
-        computeXDot(*stageX_, *(stageXDot_[i]));
+        stepperDIRKObserver_->observeAfterSolve(solutionHistory, *this);
+
+        timeDer->compute(stageX_, stageXDot_[i]);
       }
+      stepperDIRKObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: x_n = x_n-1 + Sum{ dt*b(i) * f(i) }
@@ -273,6 +292,7 @@ void StepperDIRK<Scalar>::takeStep(
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
     workingState->setOrder(this->getOrder());
+    stepperDIRKObserver_->observeEndTakeStep(solutionHistory, *this);
   }
   return;
 }

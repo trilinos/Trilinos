@@ -249,6 +249,16 @@ namespace Xpetra {
     //! Get the underlying Tpetra map
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const { return map_; }
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
+    using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
+    /// \brief Get the local Map for Kokkos kernels.
+    local_map_type getLocalMap () const {
+      return map_->getLocalMap();
+    }
+#endif
+#endif
+
     //@}
 
   protected:
@@ -516,6 +526,16 @@ namespace Xpetra {
     //! Get the underlying Tpetra map
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const { return Teuchos::null; }
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
+    using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
+    /// \brief Get the local Map for Kokkos kernels.
+    local_map_type getLocalMap () const {
+      return map_->getLocalMap();
+    }
+#endif
+#endif
+
     //@}
 
   }; // TpetraMap class (specialization for GO=int and NO=EpetraNode)
@@ -688,6 +708,17 @@ namespace Xpetra {
 
     //! Get the underlying Tpetra map
     RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > > getTpetra_Map() const { return Teuchos::null; }
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
+    using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
+    /// \brief Get the local Map for Kokkos kernels.
+    local_map_type getLocalMap () const {
+      // We will never be here, this is a stub class
+      return local_map_type();
+    }
+#endif
+#endif
 
     //@}
   }; // TpetraMap class (specialization for GO=int and NO=EpetraNode)

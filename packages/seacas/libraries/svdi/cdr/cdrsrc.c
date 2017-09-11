@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -314,8 +314,9 @@ extern struct onode
 void      cdr1ch_(n, string, nuchar) int *n;
 unsigned *string, *nuchar;
 {
-  if (*n > cdrcom_.KCPW)
+  if (*n > cdrcom_.KCPW) {
     return;
+  }
   *nuchar = (*string >> (cdrcom_.KWRDSZ - *n * cdrcom_.KBYTEL) & ~(~0 << cdrcom_.KBYTEL));
 }
 
@@ -339,8 +340,9 @@ unsigned *inchar, *buffer;
   int      i;
   unsigned temp, mask;
 
-  if (*n > cdrcom_.KCPW)
+  if (*n > cdrcom_.KCPW) {
     return;
+  }
   temp = *inchar << (i = cdrcom_.KWRDSZ - (*n * cdrcom_.KBYTEL));
   mask    = ~(~0 << cdrcom_.KBYTEL) << i;
   *buffer = ((mask & temp) | (~mask & *buffer));
@@ -382,8 +384,9 @@ unsigned *next, ibuf[];
   unsigned temp, mask;
 
   /* check boundries */
-  if (*iwidth > cdrcom_.KWRDSZ)
+  if (*iwidth > cdrcom_.KWRDSZ) {
     return;
+  }
 
   /* if bitlc is bigger than the word size, increment */
   if (*ibitlc >= cdrcom_.KWRDSZ) {
@@ -477,8 +480,9 @@ unsigned ibuf[], *next;
   unsigned char *p_temp, ctemp;
 #endif
   /* check boundries */
-  if (*iwidth > cdrcom_.KWRDSZ)
+  if (*iwidth > cdrcom_.KWRDSZ) {
     return;
+  }
 
   /* if ibitlc is bigger than word size, increment */
   if (*ibitlc >= cdrcom_.KWRDSZ) {
@@ -605,8 +609,9 @@ int *length;
   int i, ilen;
 
   ilen = *length / cdrcom_.KCPW;
-  for (i           = 0; i < ilen; i++)
-    ititle[i]      = title[i];
+  for (i = 0; i < ilen; i++) {
+    ititle[i] = title[i];
+  }
   ititle[ilen + 1] = 0;
 }
 
@@ -697,12 +702,14 @@ int *glen;
   char bslash = '\\';
 
   /* make sure name hasn't already been set */
-  if (cdrcm2_.KGNAME[0] != blank)
+  if (cdrcm2_.KGNAME[0] != blank) {
     return;
+  }
 
   /* store it in the external (and common) variables */
-  for (i              = 0; i < *glen; i++)
+  for (i = 0; i < *glen; i++) {
     cdrcm2_.KGNAME[i] = gname[i];
+  }
 
   /* append a backslash and an endofstring character */
   cdrcm2_.KGNAME[*glen]     = bslash;
@@ -752,17 +759,19 @@ void cdrinp_(icount, ibuffer, iprompt) int *icount;
 int *ibuffer, *iprompt;
 {
   char prompt[CDR_MAXLEN], buffer[CDR_MAXLEN];
-  int  i, icnt, istat, actcnt;
+  int  i, icnt, istat, actcnt = 0;
 
   /* check the input */
   icnt = *icount;
-  if (*icount > CDR_MAXLEN)
+  if (*icount > CDR_MAXLEN) {
     icnt = CDR_MAXLEN;
+  }
 
   /* if prompt count is greater than 0, output the prompt */
   if (iprompt[0] > 0) {
-    for (i          = 1; i <= iprompt[0]; i++)
+    for (i = 1; i <= iprompt[0]; i++) {
       prompt[i - 1] = (char)iprompt[i];
+    }
 
     if ((istat = write(1, prompt, iprompt[0])) == -1) {
       perror("CDRINP error:");
@@ -775,55 +784,61 @@ int *ibuffer, *iprompt;
   }
   else {
     /* strip off newline if there is one */
-    if (buffer[istat - 1] == '\n')
+    if (buffer[istat - 1] == '\n') {
       actcnt = istat - 1;
-    else
+    }
+    else {
       actcnt = istat;
+    }
+  }
 
-    /* load user's buffer  */
-    for (i       = 0; i < actcnt; i++)
-      ibuffer[i] = (int)buffer[i];
+  /* load user's buffer  */
+  for (i = 0; i < actcnt; i++) {
+    ibuffer[i] = (int)buffer[i];
+  }
 
-    /* zero fill left over buffer space */
-    if (actcnt < icnt)
-      for (i       = actcnt; i < icnt; i++)
-        ibuffer[i] = 0;
+  /* zero fill left over buffer space */
+  if (actcnt < icnt) {
+    for (i = actcnt; i < icnt; i++) {
+      ibuffer[i] = 0;
+    }
 
     /* if there wasn't a newline, flush input */
-    if (buffer[istat - 1] != '\n')
+    if (buffer[istat - 1] != '\n') {
       istat = read(1, buffer, CDR_MAXLEN);
+    }
   }
 }
 
 /*  *** CDRJOB ***
 
-  Get job information and set the vars in the vcjob common block:
-     process id -  max 12 chars
-     length of process id
-     user name  - max 12 chars
-     length of user name
-     routing info - max 12 chars
-     length of routing
-     security classification
-     date  86-12-15
-     time  12:23:59
-     machine - max 12 chars
-     length of machine
+Get job information and set the vars in the vcjob common block:
+process id -  max 12 chars
+length of process id
+user name  - max 12 chars
+length of user name
+routing info - max 12 chars
+length of routing
+security classification
+date  86-12-15
+time  12:23:59
+machine - max 12 chars
+length of machine
 */
 
 void cdrjob_() {}
 
 /*  *** CDRLWR ***
 
-  Convert character string to all lower case
+Convert character string to all lower case
 
-  Notes and Revisions:
-    Only converts characters
+Notes and Revisions:
+Only converts characters
 
-  Parameters:
-    in - IN - character string to be converted
-    iout - OUT - character string converted to all lower case
-    inlen - IN - length of character string in
+Parameters:
+in - IN - character string to be converted
+iout - OUT - character string converted to all lower case
+inlen - IN - length of character string in
 
 */
 
@@ -833,21 +848,23 @@ int *inlen;
   int i;
 
   for (i = 0; i <= *inlen - 1; i++) {
-    if (isupper(in[i]))
+    if (isupper(in[i])) {
       iout[i] = tolower(in[i]);
-    else
+    }
+    else {
       iout[i] = in[i];
+    }
   }
 }
 /*  *** CDRMON ***
 
-  Write out monitoring information.  This is a dummy routine to
-  satisfy calls from VDMONI. Monitoring isn't done on this system.
+Write out monitoring information.  This is a dummy routine to
+satisfy calls from VDMONI. Monitoring isn't done on this system.
 
-  Parameters:
-    mdev - IN -
-    mpkg - IN -
-    mpage - IN -
+Parameters:
+mdev - IN -
+mpkg - IN -
+mpage - IN -
 
 */
 
@@ -857,16 +874,16 @@ void cdrmon_(mdev, mpkg, mpages) int *mdev, *mpkg, *mpages;
 
 /*  *** CDROFS ***
 
-  Open a file for sequential access.
+Open a file for sequential access.
 
-  Notes and Revisions:
-    This routine uses the array KUNTFD, in the FORTRAN common and
-    the C external structure, cdrunx, to translate from FORTRAN
-    unit number to UNIX/C file descriptors.
+Notes and Revisions:
+This routine uses the array KUNTFD, in the FORTRAN common and
+the C external structure, cdrunx, to translate from FORTRAN
+unit number to UNIX/C file descriptors.
 
 
-  Parameters:
-    ifilcd - IN - the FORTRAN unit number of the file to open
+Parameters:
+ifilcd - IN - the FORTRAN unit number of the file to open
 
 */
 
@@ -888,17 +905,20 @@ void cdrofs_(ifilcd) int *ifilcd;
      unit isn't KOUTFL, default to file{unit}          */
 
   if (*ifilcd == cdrcom_.KOUTFL && cdrcm2_.KGNAME[0] != blank) {
-    while (cdrcm2_.KGNAME[i] != bslash)
+    while (cdrcm2_.KGNAME[i] != bslash) {
       symbol[i++] = cdrcm2_.KGNAME[j++];
-    symbol[i]     = '\0';
+    }
+    symbol[i] = '\0';
   }
-  else
+  else {
     sprintf(symbol, "file%d", *ifilcd);
+  }
 
   /* check the environment to see if a file name has been assigned */
   env = getenv(symbol);
-  if (env != 0 && strlen(env) < 1024)
+  if (env != 0 && strlen(env) < 1024) {
     sprintf(symbol, "%s", env);
+  }
 
   /* open the file  - if it doesn't exist, create it with mode 664 */
   if ((fd = open(symbol, (O_CREAT | O_RDWR), 0664)) == -1) {
@@ -907,15 +927,16 @@ void cdrofs_(ifilcd) int *ifilcd;
     sprintf(err, "SVDI ERROR NUMBER %d SEVERITY CODE %d", errnum, errsev);
     perror(err);
   }
-  else
+  else {
 
     /* associate fortran unit number with file descriptor */
     cdrunx_.KUNTFD[*ifilcd] = fd;
+  }
 }
 
 /*  *** CDROAB ***
 
-  Open file for the Abekas
+Open file for the Abekas
 
 */
 
@@ -937,15 +958,15 @@ int *frame;
 }
 /*  *** CDROF3 ***
 
-  Open a file for sequential access, fixed length, formatted
+Open a file for sequential access, fixed length, formatted
 
-  Notes and Revisions:
-    C file structures don't have the concept of record structure.
-    This routine calls CDROFS
+Notes and Revisions:
+C file structures don't have the concept of record structure.
+This routine calls CDROFS
 
-  Parameters:
-    ifilcd - IN - the FORTRAN unit number of the file to open
-    idum - IN - originally used for record length
+Parameters:
+ifilcd - IN - the FORTRAN unit number of the file to open
+idum - IN - originally used for record length
 
 */
 
@@ -956,14 +977,14 @@ int *idum;
 }
 /*  *** CDROFF ***
 
-  Open a file for sequential access, fixed length, formatted
+Open a file for sequential access, fixed length, formatted
 
-  Notes and Revisions:
-    C file structures don't have the concept of record structure.
-    This routine calls CDROFS
+Notes and Revisions:
+C file structures don't have the concept of record structure.
+This routine calls CDROFS
 
-  Parameters:
-    ifilcd - IN - the FORTRAN unit number of the file to open
+Parameters:
+ifilcd - IN - the FORTRAN unit number of the file to open
 
 */
 
@@ -974,10 +995,10 @@ void cdroff_(ifilcd) int *ifilcd;
 
 /*  *** CDRONO ***
 
-  Set flag to designate this file is going to the output node
+Set flag to designate this file is going to the output node
 
-  Parameters:
-    setono - IN - logical value
+Parameters:
+setono - IN - logical value
 
 */
 
@@ -989,11 +1010,11 @@ void cdrono_(setono) int *setono;
 
 /*  *** CDROUT ***
 
-  Transmit ICOUNT words from BUFFER to the terminal
+Transmit ICOUNT words from BUFFER to the terminal
 
-  Parameters:
-    ICOUNT - IN - number of characters to be sent to the terminal
-    BUFFER - IN - integer array containing the characters
+Parameters:
+ICOUNT - IN - number of characters to be sent to the terminal
+BUFFER - IN - integer array containing the characters
 
 */
 
@@ -1011,8 +1032,9 @@ int *buffer;
     c_count = (count > MAXBUFFER) ? MAXBUFFER : count;
     count   = count - c_count;
 
-    for (i        = 0; i < c_count; i++)
+    for (i = 0; i < c_count; i++) {
       c_buffer[i] = (char)buffer[j++];
+    }
 
     /* write to standard output */
     if ((istat = write(1, c_buffer, c_count)) == -1) {
@@ -1023,23 +1045,23 @@ int *buffer;
 
 /*  *** CDRRFS ***
 
-  Try to read LENGTH words from the file.  Return the actual number
-  of words read.
+Try to read LENGTH words from the file.  Return the actual number
+of words read.
 
-  Notes and Revisions:
-    This routine uses the array KUNTFD, in the FORTRAN common and
-    the C external structure, cdrunx, to translate from FORTRAN
-    unit number to UNIX/C file descriptors.
-    read() will not read beyond EOF. read() returns the actual
-    number of bytes read, or -1 for fail.
+Notes and Revisions:
+This routine uses the array KUNTFD, in the FORTRAN common and
+the C external structure, cdrunx, to translate from FORTRAN
+unit number to UNIX/C file descriptors.
+read() will not read beyond EOF. read() returns the actual
+number of bytes read, or -1 for fail.
 
-  Parameters:
-    ifilcd - IN - FORTRAN unit number of file to read
-    length - IN - number of words to try to read
-    buffer - OUT - array of size LENGTH into which the data is read
-    istat - OUT - status indicator: 0 = end of file;
-                                   >0 = actual number of words read;
-                                   <0 = error
+Parameters:
+ifilcd - IN - FORTRAN unit number of file to read
+length - IN - number of words to try to read
+buffer - OUT - array of size LENGTH into which the data is read
+istat - OUT - status indicator: 0 = end of file;
+>0 = actual number of words read;
+<0 = error
 
 */
 
@@ -1058,20 +1080,21 @@ char *buffer;
   }
 
   /* read the data as a byte stream */
-  if ((*istat = read(fd, buffer, (*length * cdrcom_.KCPW))) != -1)
+  if ((*istat = read(fd, buffer, (*length * cdrcom_.KCPW))) != -1) {
     *istat = *istat / cdrcom_.KCPW;
+  }
 }
 /*  *** CDRRVT ***
 
-  Convert from ASCII character set to internal character set.
+Convert from ASCII character set to internal character set.
 
-  Notes and Revisions:
-    This routine is here to satisify the call, since the internal
-    character set is ASCII.
+Notes and Revisions:
+This routine is here to satisify the call, since the internal
+character set is ASCII.
 
-  Parameters:
-    in - IN - character to be converted in ASCII
-    iout - OUT - character converted to internal format
+Parameters:
+in - IN - character to be converted in ASCII
+iout - OUT - character converted to internal format
 
 */
 
@@ -1082,31 +1105,32 @@ void cdrrvt_(in, iout) int *in, *iout;
 
 /*  *** CDRSTD ***
 
-  Copy the left-most N characters from the input character string
-  to the output word.
+Copy the left-most N characters from the input character string
+to the output word.
 
-  Parameters:
-    n - IN - number of characters to copy from string
-    string - IN - input character string
-    nuchar - OUT - word in which to put the n characters
+Parameters:
+n - IN - number of characters to copy from string
+string - IN - input character string
+nuchar - OUT - word in which to put the n characters
 
 */
 
 void      cdrstd_(n, string, nuchar) int *n;
 unsigned *string, *nuchar;
 {
-  if (*n > cdrcom_.KCPW)
+  if (*n > cdrcom_.KCPW) {
     return;
+  }
   *nuchar = (*string >> (cdrcom_.KWRDSZ - *n * cdrcom_.KBYTEL) & ~(~0 << (*n * cdrcom_.KBYTEL)));
 }
 /*  *** CDRTBK ***
-  Generate a traceback.  This is a dummy routine to satisfy
-  externals calls.
+    Generate a traceback.  This is a dummy routine to satisfy
+    externals calls.
 */
 void cdrtbk_() {}
 
 /*  *** CDRTIM ***
-  Pause TIM seconds. (dummy)
+    Pause TIM seconds. (dummy)
 */
 
 void cdrtim_(float *tim) {}
@@ -1119,12 +1143,12 @@ void cdrtod_()
 
 /*  *** CDRUPR ***
 
-  Convert character string to all upper case
+Convert character string to all upper case
 
-  Parameters:
-    in - IN - character string to be converted
-    iout - OUT - character string converted to all upper case
-    inlen - IN - length of character string in
+Parameters:
+in - IN - character string to be converted
+iout - OUT - character string converted to all upper case
+inlen - IN - length of character string in
 
 */
 
@@ -1134,20 +1158,21 @@ int *inlen;
   int i;
 
   for (i = 0; i <= *inlen; i++) {
-    if (islower(in[i]))
+    if (islower(in[i])) {
       iout[i] = toupper(in[i]);
+    }
   }
 }
 
 /*  *** CDRWFS ***
 
-  Write LENGTH words from BUFFER to the file.
+Write LENGTH words from BUFFER to the file.
 
-  Parameters:
-    ifilcd - IN - FORTRAN unit number of file to write
-    length - IN - number of words to be written
-    buffer - IN - array containing the words of data to be written
-    istat - OUT - status indicator. 0 = no error; 1 = error
+Parameters:
+ifilcd - IN - FORTRAN unit number of file to write
+length - IN - number of words to be written
+buffer - IN - array containing the words of data to be written
+istat - OUT - status indicator. 0 = no error; 1 = error
 
 */
 
@@ -1166,8 +1191,10 @@ char *buffer;
   }
 
   /* write out the data as a byte stream. */
-  if ((*istat = write(fd, buffer, (*length * cdrcom_.KCPW))) == -1)
+  if ((*istat = write(fd, buffer, (*length * cdrcom_.KCPW))) == -1) {
     *istat = 1;
-  else
+  }
+  else {
     *istat = 0;
+  }
 }

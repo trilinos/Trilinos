@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -93,8 +93,9 @@ void inits3d(struct vtx_data **graph,                /* graph data structure for
 
   /* Finally, determine the set sizes based on this splitter. */
 
-  for (i    = 0; i < nsets; i++)
+  for (i = 0; i < nsets; i++) {
     size[i] = 0;
+  }
 
   for (i = 1; i <= nvtxs; i++) {
     /* Which set is this vertex in? */
@@ -104,12 +105,14 @@ void inits3d(struct vtx_data **graph,                /* graph data structure for
       val = -dist[j] + 2 * (signx * xvecs[1][i] + signy * xvecs[2][i] + signz * xvecs[3][i]);
       if (j == 0 || val < bestval) {
         bestval = val;
-        bestset = (int)j;
+        bestset = j;
       }
-      if (signx == 1 && signy == 1)
+      if (signx == 1 && signy == 1) {
         signz *= -1;
-      if (signx == 1)
+      }
+      if (signx == 1) {
         signy *= -1;
+      }
       signx *= -1;
     }
     sets[i] = bestset;

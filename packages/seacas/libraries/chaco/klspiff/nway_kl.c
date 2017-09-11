@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -201,8 +201,9 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
 
   step_cutoff = KL_BAD_MOVES;
   cost_cutoff = maxdval * step_cutoff / 7;
-  if (cost_cutoff < step_cutoff)
+  if (cost_cutoff < step_cutoff) {
     cost_cutoff = step_cutoff;
+  }
 
   deltaminus = deltaplus = 0;
   for (i = 0; i < nsets; i++) {
@@ -229,8 +230,9 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
     /* Initialize various quantities. */
     balance_best = 0;
     for (i = 0; i < nsets; i++) {
-      for (j       = 0; j < nsets; j++)
+      for (j = 0; j < nsets; j++) {
         tops[i][j] = 2 * maxdval;
+      }
       weightsum[i] = startweight[i];
       loose[i]     = weightsum[i];
       locked[i]    = 0;
@@ -272,14 +274,15 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
       /* in which balance is preserved. */
       /* Break ties in some nonarbitrary manner. */
       bestval = -maxdval - 1;
-      for (i = 0; i < nsets; i++)
-        for (j = 0; j < nsets; j++)
+      for (i = 0; i < nsets; i++) {
+        for (j = 0; j < nsets; j++) {
           /* Only allow moves from large sets to small sets, or */
           /* moves which preserve balance. */
           if (i != j) {
             /* Find the best move from i to j. */
-            for (k = tops[i][j]; k >= 0 && buckets[i][j][k] == NULL; k--)
+            for (k = tops[i][j]; k >= 0 && buckets[i][j][k] == NULL; k--) {
               ;
+            }
             tops[i][j] = k;
 
             if (k >= 0) {
@@ -333,7 +336,8 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
               }
             }
           }
-
+        }
+      }
       if (bestval == -maxdval - 1) { /* No allowed moves */
         if (DEBUG_KL > 0) {
           printf("No KL moves at step %d.  bestg = %g at step %d.\n", step, bestg, beststep);
@@ -386,12 +390,15 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
 
       /* Monitor the stopping criteria. */
       if (bestval < 0) {
-        if (!enforce_balance || ever_balanced)
+        if (!enforce_balance || ever_balanced) {
           neg_steps++;
-        if (bestg != bestg_min)
+        }
+        if (bestg != bestg_min) {
           neg_cost = bestg - gtotal;
-        else
+        }
+        else {
           neg_cost = -maxdval - 1;
+        }
         if ((neg_steps > step_cutoff || neg_cost > cost_cutoff) &&
             !(enforce_balance && bestg == bestg_min) && (beststep != step)) {
           if (DEBUG_KL > 0) {
@@ -430,12 +437,14 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
 
       /* Now update the d-values of all the neighbors */
       edges = graph[bestvtx]->edges;
-      if (using_ewgts)
+      if (using_ewgts) {
         ewptr = graph[bestvtx]->ewgts;
+      }
       for (j = graph[bestvtx]->nedges - 1; j; j--) {
         neighbor = *(++edges);
-        if (using_ewgts)
+        if (using_ewgts) {
           eweight = *(++ewptr) * cut_cost + .5;
+        }
 
         /* First make sure neighbor is alive. */
         if (sets[neighbor] >= 0) {
@@ -459,8 +468,9 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
                          &buckets[group][k][dval + diff]);
               dvals[neighbor][l] += diff;
               dval += diff;
-              if (dval > tops[group][k])
+              if (dval > tops[group][k]) {
                 tops[group][k] = dval;
+              }
               l++;
             }
           }
@@ -481,7 +491,7 @@ int nway_kl(struct vtx_data **graph,       /* data structure for graph */
         bestto = (int)(unsigned long)bptr->prev;
         startweight[bestto] += graph[vtx]->vwgt;
         startweight[-sets[vtx] - 1] -= graph[vtx]->vwgt;
-        sets[vtx] = (int)bestto;
+        sets[vtx] = bestto;
         bptr      = bptr->next;
       }
 

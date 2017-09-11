@@ -170,6 +170,13 @@ namespace MueLu {
       return level.IsAvailable(varName, GetFactory(varName).get());
     }
 
+  public:
+    static void EnableTimerSync() { timerSync_ = true;  }
+    static void DisableTimerSync() { timerSync_ = false; }
+
+  protected:
+    static bool timerSync_;
+
 #ifdef HAVE_MUELU_DEBUG
   public:
     enum           multipleCallCheckEnum { ENABLED, DISABLED, FIRSTCALL };

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 1998 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -196,8 +196,8 @@ int ne_get_n_side_set(int          neid,               /* NetCDF/Exodus file ID 
                       void_int *   side_set_side_list  /* List of side IDs */
                       )
 {
-  return ex_get_partial_set(neid, EX_SIDE_SET, side_set_id, start_side_num, num_sides, side_set_elem_list,
-			    side_set_side_list);
+  return ex_get_partial_set(neid, EX_SIDE_SET, side_set_id, start_side_num, num_sides,
+                            side_set_elem_list, side_set_side_list);
 }
 
 int ne_put_n_side_set(int             neid,               /* NetCDF/Exodus file ID */
@@ -241,7 +241,8 @@ int ne_get_n_node_set(int          neid,              /* NetCDF/Exodus file ID *
                       void_int *   node_set_node_list /* List of nodes in node set */
                       )
 {
-  return ex_get_partial_set(neid, EX_NODE_SET, node_set_id, start_node_num, num_node, node_set_node_list, NULL);
+  return ex_get_partial_set(neid, EX_NODE_SET, node_set_id, start_node_num, num_node,
+                            node_set_node_list, NULL);
 }
 
 int ne_put_n_node_set(int             neid,              /* NetCDF/Exodus file ID */
@@ -318,7 +319,7 @@ int ne_put_n_elem_conn(int             neid,           /* NetCDF/Exodus file ID 
                        )
 {
   return ex_put_partial_conn(neid, EX_ELEM_BLOCK, elem_blk_id, start_elem_num, num_elems, connect,
-			     NULL, NULL);
+                             NULL, NULL);
 }
 
 int ne_get_n_elem_attr(int          neid,           /* NetCDF/Exodus file ID */

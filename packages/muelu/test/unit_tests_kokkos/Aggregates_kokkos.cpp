@@ -145,7 +145,7 @@ namespace MueLuTests {
     auto aggSizes = aggregates->ComputeAggregateSizes(true);
 
     bool foundAggNotSize3=false;
-    for (int i=0; i<aggSizes.size(); ++i)
+    for (int i=0; i < as<int>(aggSizes.size()); ++i)
       if (aggSizes[i] != 3) {
         foundAggNotSize3=true;
         break;
@@ -200,7 +200,7 @@ namespace MueLuTests {
     auto aggSizes = aggregates->ComputeAggregateSizes(true);
 
     bool foundAggNotSize3=false;
-    for (int i=0; i<aggSizes.size(); ++i)
+    for (int i=0; i < as<int>(aggSizes.size()); ++i)
       if (aggSizes[i] != 3) {
         foundAggNotSize3=true;
         break;
@@ -271,7 +271,7 @@ namespace MueLuTests {
     auto aggSizes = aggregates->ComputeAggregateSizes(true);
 
     bool foundAggNotSize2=false;
-    for (int i=0; i<aggSizes.size(); ++i)
+    for (int i=0; i < as<int>(aggSizes.size()); ++i)
       if (aggSizes[i] != 2) {
         foundAggNotSize2=true;
         break;

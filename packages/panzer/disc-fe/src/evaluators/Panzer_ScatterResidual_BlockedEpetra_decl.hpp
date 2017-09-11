@@ -57,9 +57,6 @@
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
-class Epetra_Vector;
-class Epetra_CrsMatrix;
-
 namespace Thyra {
   template <typename> class ProductVectorBase;
   template <typename> class BlockedLinearOpBase;

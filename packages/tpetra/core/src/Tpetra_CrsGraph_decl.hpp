@@ -55,7 +55,7 @@
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_Util.hpp" // need this here for sort2
 
-#include "Kokkos_Sparse_findRelOffset.hpp"
+#include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
 

@@ -46,7 +46,9 @@
 #include "Teuchos_TableFormat.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+
 #include <functional>
+#include <iomanip>
 
 
 namespace Teuchos {
@@ -928,6 +930,7 @@ namespace Teuchos {
 
     // Precision of floating-point numbers in the table.
     const int precision = format().precision();
+    const std::ios_base::fmtflags& flags = out.flags();
 
     // All columns of the table, in order.
     Array<TableColumn> tableColumns;
@@ -976,7 +979,7 @@ namespace Teuchos {
         localTimings.push_back (it->second.first);
         localNumCalls.push_back (static_cast<double> (it->second.second));
       }
-      TableColumn timeAndCalls (localTimings, localNumCalls, precision, true);
+      TableColumn timeAndCalls (localTimings, localNumCalls, precision, flags, true);
       tableColumns.append (timeAndCalls);
       columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
     }
@@ -997,7 +1000,7 @@ namespace Teuchos {
         }
         // Print the table column.
         titles.append ("Global time (num calls)");
-        TableColumn timeAndCalls (globalTimings, globalNumCalls, precision, true);
+        TableColumn timeAndCalls (globalTimings, globalNumCalls, precision, flags, true);
         tableColumns.append (timeAndCalls);
         columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
       }
@@ -1021,7 +1024,7 @@ namespace Teuchos {
           const std::string& statisticName = statNames[statInd];
           const std::string titleString = statisticName;
           titles.append (titleString);
-          TableColumn timeAndCalls (statTimings, statCallCounts, precision, true);
+          TableColumn timeAndCalls (statTimings, statCallCounts, precision, flags, true);
           tableColumns.append (timeAndCalls);
           columnWidths.append (format().computeRequiredColumnWidth (titles.back(), timeAndCalls));
         }

@@ -235,10 +235,15 @@ namespace Details {
     }
   };
 
-  template <typename DS, typename ... DP,
-            typename SS, typename ... SP,
-            typename IdxView, typename Op>
+  template <typename ExecutionSpace,
+            typename DS,
+            typename ... DP,
+            typename SS,
+            typename ... SP,
+            typename IdxView,
+            typename Op>
   struct UnpackArrayMultiColumn<
+    ExecutionSpace,
     Kokkos::View<Sacado::UQ::PCE<DS>**,DP...>,
     Kokkos::View<const Sacado::UQ::PCE<SS>*,SP...>,
     IdxView,
@@ -246,7 +251,7 @@ namespace Details {
   {
     typedef Kokkos::View<Sacado::UQ::PCE<DS>**,DP...> DstView;
     typedef Kokkos::View<const Sacado::UQ::PCE<SS>*,SP...> SrcView;
-    typedef typename DstView::execution_space execution_space;
+    typedef typename ExecutionSpace::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
     static const unsigned BlockSize = 32;
@@ -257,50 +262,75 @@ namespace Details {
     Op op;
     size_t numCols;
 
-    UnpackArrayMultiColumn(const DstView& dst_,
-                           const SrcView& src_,
-                           const IdxView& idx_,
-                           const Op& op_,
-                           size_t numCols_) :
-      dst(dst_), src(src_), idx(idx_), op(op_), numCols(numCols_) {}
+    UnpackArrayMultiColumn (const ExecutionSpace& /* execSpace */,
+                            const DstView& dst_,
+                            const SrcView& src_,
+                            const IdxView& idx_,
+                            const Op& op_,
+                            const size_t numCols_) :
+      dst (dst_),
+      src (src_),
+      idx (idx_),
+      op (op_),
+      numCols (numCols_)
+    {}
 
-    KOKKOS_INLINE_FUNCTION
-    void operator()( const size_type k ) const {
+    KOKKOS_INLINE_FUNCTION void
+    operator() (const size_type k) const
+    {
       const typename IdxView::value_type localRow = idx(k);
       const size_t offset = k*numCols;
-      for (size_t j = 0; j < numCols; ++j)
-        op( dst(localRow,j), src(offset+j) );
+      for (size_t j = 0; j < numCols; ++j) {
+        op (dst(localRow, j), src(offset+j));
+      }
     }
 
-    KOKKOS_INLINE_FUNCTION
-    void operator()( const size_type k, const size_type tidx ) const {
+    KOKKOS_INLINE_FUNCTION void
+    operator() (const size_type k, const size_type tidx) const
+    {
       const typename IdxView::value_type localRow = idx(k);
       const size_t offset = k*numCols;
-      for (size_t j = 0; j < numCols; ++j)
-        for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize)
-          op( dst(localRow,j).fastAccessCoeff(i),
-              src(offset+j).fastAccessCoeff(i) );
+      for (size_t j = 0; j < numCols; ++j) {
+        for (size_type i=tidx; i<Kokkos::dimension_scalar(dst); i+=BlockSize) {
+          op (dst(localRow, j).fastAccessCoeff(i),
+              src(offset+j).fastAccessCoeff(i));
+        }
+      }
     }
 
-    static void unpack(const DstView& dst,
-                       const SrcView& src,
-                       const IdxView& idx,
-                       const Op& op,
-                       size_t numCols) {
-      if ( Details::device_is_cuda<execution_space>::value )
-        Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
-          UnpackArrayMultiColumn(dst,src,idx,op,numCols) );
-      else
-        Kokkos::parallel_for( idx.size(),
-                              UnpackArrayMultiColumn(dst,src,idx,op,numCols) );
+    static void
+    unpack (const ExecutionSpace& execSpace,
+            const DstView& dst,
+            const SrcView& src,
+            const IdxView& idx,
+            const Op& op,
+            const size_t numCols)
+    {
+      if (Details::device_is_cuda<execution_space>::value) {
+        Kokkos::parallel_for
+          ("Tpetra::MultiVector (Sacado::UQ::PCE) unpack (constant stride)",
+           Kokkos::MPVectorWorkConfig<execution_space> (idx.size (), BlockSize),
+           UnpackArrayMultiColumn (execSpace, dst, src, idx, op, numCols));
+      }
+      else {
+        Kokkos::parallel_for
+          ("Tpetra::MultiVector (Sacado::UQ::PCE) unpack (constant stride)",
+           Kokkos::RangePolicy<execution_space, size_type> (0, idx.size ()),
+           UnpackArrayMultiColumn (execSpace, dst, src, idx, op, numCols));
+      }
     }
   };
 
-  template <typename DS, typename ... DP,
-            typename SS, typename ... SP,
-            typename IdxView, typename ColView, typename Op>
+  template <typename ExecutionSpace,
+            typename DS,
+            typename ... DP,
+            typename SS,
+            typename ... SP,
+            typename IdxView,
+            typename ColView,
+            typename Op>
   struct UnpackArrayMultiColumnVariableStride<
+    ExecutionSpace,
     Kokkos::View<Sacado::UQ::PCE<DS>**,DP...>,
     Kokkos::View<const Sacado::UQ::PCE<SS>*,SP...>,
     IdxView,
@@ -309,7 +339,7 @@ namespace Details {
   {
     typedef Kokkos::View<Sacado::UQ::PCE<DS>**,DP...> DstView;
     typedef Kokkos::View<const Sacado::UQ::PCE<SS>*,SP...> SrcView;
-    typedef typename DstView::execution_space execution_space;
+    typedef typename ExecutionSpace::execution_space execution_space;
     typedef typename execution_space::size_type size_type;
 
     static const unsigned BlockSize = 32;
@@ -321,12 +351,13 @@ namespace Details {
     Op op;
     size_t numCols;
 
-    UnpackArrayMultiColumnVariableStride(const DstView& dst_,
-                                         const SrcView& src_,
-                                         const IdxView& idx_,
-                                         const ColView& col_,
-                                         const Op& op_,
-                                         size_t numCols_) :
+    UnpackArrayMultiColumnVariableStride (const ExecutionSpace& /* execSpace */,
+                                          const DstView& dst_,
+                                          const SrcView& src_,
+                                          const IdxView& idx_,
+                                          const ColView& col_,
+                                          const Op& op_,
+                                          size_t numCols_) :
       dst(dst_), src(src_), idx(idx_), col(col_), op(op_), numCols(numCols_) {}
 
     KOKKOS_INLINE_FUNCTION
@@ -347,20 +378,29 @@ namespace Details {
               src(offset+j).fastAccessCoeff(i) );
     }
 
-    static void unpack(const DstView& dst,
-                       const SrcView& src,
-                       const IdxView& idx,
-                       const ColView& col,
-                       const Op& op,
-                       size_t numCols) {
-      if ( Details::device_is_cuda<execution_space>::value )
-        Kokkos::parallel_for(
-          Kokkos::MPVectorWorkConfig<execution_space>( idx.size(), BlockSize ),
-          UnpackArrayMultiColumnVariableStride(dst,src,idx,col,op,numCols) );
-      else
-        Kokkos::parallel_for( idx.size(),
-                              UnpackArrayMultiColumnVariableStride(
-                                dst,src,idx,col,op,numCols) );
+    static void
+    unpack (const ExecutionSpace& execSpace,
+            const DstView& dst,
+            const SrcView& src,
+            const IdxView& idx,
+            const ColView& col,
+            const Op& op,
+            const size_t numCols)
+    {
+      if ( Details::device_is_cuda<execution_space>::value ) {
+        Kokkos::parallel_for
+          ("Tpetra::MultiVector unpack (Sacado::UQ::PCE) (nonconstant stride)",
+           Kokkos::MPVectorWorkConfig<execution_space> (idx.size (), BlockSize),
+           UnpackArrayMultiColumnVariableStride (execSpace, dst, src,
+                                                 idx, col, op, numCols));
+      }
+      else {
+        Kokkos::parallel_for
+          ("Tpetra::MultiVector unpack (Sacado::UQ::PCE) (nonconstant stride)",
+           Kokkos::RangePolicy<execution_space, size_type> (0, idx.size ()),
+           UnpackArrayMultiColumnVariableStride (execSpace, dst, src,
+                                                 idx, col, op, numCols));
+      }
     }
   };
 

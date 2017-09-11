@@ -126,6 +126,8 @@
         
 \cbb{use kokkos refactor}{bool}{false}{Switch on the new Kokkos based version.}
         
+\cbb{synchronize factory timers}{bool}{false}{Add barriers before and after Factory Build() calls.}
+        
 \cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: see Table~\ref{t:mgs}.}
         
 \cbb{toggle: mode}{string}{semicoarsen}{Toggling strategy for transfer operators (default=semicoarsen)}
@@ -199,6 +201,10 @@
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
         
 \cbb{rap: fix zero diagonals}{bool}{false}{Set zero diagonals on coarse grids to one.}
+        
+\cbb{rap: shift}{double}{0.0}{Shift to use in the RAPShiftFactory}
+        
+\cbb{rap: algorithm}{string}{galerkin}{Whether to use the Galerkin RAP or the Shift version}
         
 \cba{matrixmatrix: kernel params}{parameterlist}{Controls the kernel algorithms for matrix-matrix operations}
         

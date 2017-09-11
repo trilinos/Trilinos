@@ -48,16 +48,12 @@ project votd
   : requirements
     $(sierra-warnings)
     <define>STK_BUILT_IN_SIERRA
-    <toolset>sun:<define>SUN10
     <runtime-link>shared:<define>SIERRA_DLOPEN_ENABLED
     <include>$(stk_util-root-inc)
   : usage-requirements
     <define>STK_BUILT_IN_SIERRA
-    <toolset>sun:<define>SUN10
     <runtime-link>shared:<define>SIERRA_DLOPEN_ENABLED
     <include>$(stk_util-root-inc)
-    <instrument>purify:<define>PURIFY_BUILD
-    <instrument>quantify:<define>PURIFY_BUILD
   : build-dir $(stk_util-builddir)
   ;
 
@@ -129,7 +125,6 @@ exe stk_util_doc_test
     stk_util_diag
     /tpl/boost-program-options//boost_program_options
     /mpi//mpi
-    /tpl/trilinos//tpi
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_doc_tests/stk_util
@@ -152,7 +147,6 @@ exe stk_util_utest
     stk_util_diag
     /tpl/boost-program-options//boost_program_options
     /mpi//mpi
-    /tpl/trilinos//tpi
     /tpl/gtest//gtest
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_unit_tests/stk_util

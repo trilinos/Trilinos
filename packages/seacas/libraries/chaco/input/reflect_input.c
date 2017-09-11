@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -72,10 +72,12 @@ void reflect_input(int    nvtxs,         /* number of vertices in graph */
 
   for (i = 0; i < 2; i++) {
     if (i == 1) {
-      if (ECHO < 0 && outfile != NULL)
+      if (ECHO < 0 && outfile != NULL) {
         tempfile = outfile;
-      else
+      }
+      else {
         break;
+      }
     }
     else {
       tempfile = stdout;
@@ -158,12 +160,15 @@ void reflect_input(int    nvtxs,         /* number of vertices in graph */
     }
     else if (architecture > 0) {
       fprintf(tempfile, "Partitioning target: %d-dimensional mesh of size ", architecture);
-      if (architecture == 1)
+      if (architecture == 1) {
         fprintf(tempfile, "%d\n", mesh_dims[0]);
-      else if (architecture == 2)
+      }
+      else if (architecture == 2) {
         fprintf(tempfile, "%dx%d\n", mesh_dims[0], mesh_dims[1]);
-      else if (architecture == 3)
+      }
+      else if (architecture == 3) {
         fprintf(tempfile, "%dx%dx%d\n", mesh_dims[0], mesh_dims[1], mesh_dims[2]);
+      }
     }
 
     if (ndims == 1) {
@@ -322,40 +327,52 @@ static void reflect_params(FILE *tempfile,      /* file or stdout */
     else {
       fprintf(tempfile, "  SRESTOL = %g ... autoset to square of eigen tolerance\n", SRESTOL);
     }
-    if (LANCZOS_MAXITNS > 0)
+    if (LANCZOS_MAXITNS > 0) {
       fprintf(tempfile, "  LANCZOS_MAXITNS = %d\n", LANCZOS_MAXITNS);
-    else
+    }
+    else {
       fprintf(tempfile, "  LANCZOS_MAXITNS = %d ... autoset to twice # vertices\n",
               LANCZOS_MAXITNS);
-    if (LANCZOS_SO_PRECISION == 1)
+    }
+    if (LANCZOS_SO_PRECISION == 1) {
       fprintf(tempfile, "  LANCZOS_SO_PRECISION = 1 ... single precision\n");
-    else
+    }
+    else {
       fprintf(tempfile, "  LANCZOS_SO_PRECISION = 2 ... double precision\n");
+    }
     fprintf(tempfile, "  LANCZOS_SO_INTERVAL = %d\n", LANCZOS_SO_INTERVAL);
-    if (LANCZOS_CONVERGENCE_MODE == 1)
+    if (LANCZOS_CONVERGENCE_MODE == 1) {
       fprintf(tempfile, "  LANCZOS_CONVERGENCE_MODE = 1 ... partition tolerance\n");
-    else
+    }
+    else {
       fprintf(tempfile, "  LANCZOS_CONVERGENCE_MODE = 0 ... residual tolerance\n");
+    }
     fprintf(tempfile, "  BISECTION_SAFETY = %g\n", BISECTION_SAFETY);
     if (LANCZOS_TYPE == 3 || LANCZOS_TYPE == 4) {
-      if (LANCZOS_TIME == 0)
+      if (LANCZOS_TIME == 0) {
         fprintf(tempfile, "  LANCZOS_TIME = 0 ... no detailed timing\n");
-      else
+      }
+      else {
         fprintf(tempfile, "  LANCZOS_TIME = 1 ... detailed timing\n");
+      }
     }
 
     if (WARNING_EVECS > 0) {
       fprintf(tempfile, "  WARNING_EVECS = %d\n", WARNING_EVECS);
     }
 
-    if (MAPPING_TYPE == 0)
+    if (MAPPING_TYPE == 0) {
       fprintf(tempfile, "  MAPPING_TYPE = 0 ... cut at origin\n");
-    else if (MAPPING_TYPE == 1)
+    }
+    else if (MAPPING_TYPE == 1) {
       fprintf(tempfile, "  MAPPING_TYPE = 1 ... min-cost assignment\n");
-    else if (MAPPING_TYPE == 2)
+    }
+    else if (MAPPING_TYPE == 2) {
       fprintf(tempfile, "  MAPPING_TYPE = 2 ... recursive median\n");
-    else if (MAPPING_TYPE == 3)
+    }
+    else if (MAPPING_TYPE == 3) {
       fprintf(tempfile, "  MAPPING_TYPE = 3 ... independent medians\n");
+    }
 
     fprintf(tempfile, "  MAKE_CONNECTED = %s\n", true_or_false(MAKE_CONNECTED));
     fprintf(tempfile, "  PERTURB = %s\n", true_or_false(PERTURB));
@@ -389,10 +406,12 @@ static void reflect_params(FILE *tempfile,      /* file or stdout */
 
   if (global_method == 2 && rqi_flag) {
     fprintf(tempfile, "  COARSE_NLEVEL_RQI = %d\n", COARSE_NLEVEL_RQI);
-    if (RQI_CONVERGENCE_MODE == 1)
+    if (RQI_CONVERGENCE_MODE == 1) {
       fprintf(tempfile, "  RQI_CONVERGENCE_MODE = 1 ... partition tolerance\n");
-    else
+    }
+    else {
       fprintf(tempfile, "  RQI_CONVERGENCE_MODE = 0 ... residual tolerance\n");
+    }
     fprintf(tempfile, "  COARSEN_RATIO_MIN = %g\n", COARSEN_RATIO_MIN);
     fprintf(tempfile, "  COARSEN_VWGTS = %s\n", true_or_false(COARSEN_VWGTS));
     fprintf(tempfile, "  COARSEN_EWGTS = %s\n", true_or_false(COARSEN_EWGTS));
@@ -441,40 +460,58 @@ static void reflect_params(FILE *tempfile,      /* file or stdout */
   }
 
   /* Now print out all the nonzero debug parameters. */
-  if (DEBUG_CONNECTED)
+  if (DEBUG_CONNECTED) {
     fprintf(tempfile, "  DEBUG_CONNECTED = %d\n", DEBUG_CONNECTED);
-  if (DEBUG_PERTURB)
+  }
+  if (DEBUG_PERTURB) {
     fprintf(tempfile, "  DEBUG_PERTURB = %d\n", DEBUG_PERTURB);
-  if (DEBUG_ASSIGN)
+  }
+  if (DEBUG_ASSIGN) {
     fprintf(tempfile, "  DEBUG_ASSIGN = %d\n", DEBUG_ASSIGN);
-  if (DEBUG_INERTIAL)
+  }
+  if (DEBUG_INERTIAL) {
     fprintf(tempfile, "  DEBUG_INERTIAL = %d\n", DEBUG_INERTIAL);
-  if (DEBUG_OPTIMIZE)
+  }
+  if (DEBUG_OPTIMIZE) {
     fprintf(tempfile, "  DEBUG_OPTIMIZE = %d\n", DEBUG_OPTIMIZE);
-  if (DEBUG_BPMATCH)
+  }
+  if (DEBUG_BPMATCH) {
     fprintf(tempfile, "  DEBUG_BPMATCH = %d\n", DEBUG_BPMATCH);
-  if (DEBUG_COARSEN)
+  }
+  if (DEBUG_COARSEN) {
     fprintf(tempfile, "  DEBUG_COARSEN = %d\n", DEBUG_COARSEN);
-  if (DEBUG_EVECS)
+  }
+  if (DEBUG_EVECS) {
     fprintf(tempfile, "  DEBUG_EVECS = %d\n", DEBUG_EVECS);
-  if (DEBUG_KL)
+  }
+  if (DEBUG_KL) {
     fprintf(tempfile, "  DEBUG_KL = %d\n", DEBUG_KL);
-  if (DEBUG_MEMORY)
+  }
+  if (DEBUG_MEMORY) {
     fprintf(tempfile, "  DEBUG_MEMORY = %d\n", DEBUG_MEMORY);
-  if (DEBUG_INPUT)
+  }
+  if (DEBUG_INPUT) {
     fprintf(tempfile, "  DEBUG_INPUT = %d\n", DEBUG_INPUT);
-  if (DEBUG_PARAMS)
+  }
+  if (DEBUG_PARAMS) {
     fprintf(tempfile, "  DEBUG_PARAMS = %d\n", DEBUG_PARAMS);
-  if (DEBUG_INTERNAL)
+  }
+  if (DEBUG_INTERNAL) {
     fprintf(tempfile, "  DEBUG_INTERNAL = %d\n", DEBUG_INTERNAL);
-  if (DEBUG_REFINE_PART)
+  }
+  if (DEBUG_REFINE_PART) {
     fprintf(tempfile, "  DEBUG_REFINE_PART = %d\n", DEBUG_REFINE_PART);
-  if (DEBUG_REFINE_MAP)
+  }
+  if (DEBUG_REFINE_MAP) {
     fprintf(tempfile, "  DEBUG_REFINE_MAP = %d\n", DEBUG_REFINE_MAP);
-  if (DEBUG_SIMULATOR)
+  }
+  if (DEBUG_SIMULATOR) {
     fprintf(tempfile, "  DEBUG_SIMULATOR = %d\n", DEBUG_SIMULATOR);
-  if (DEBUG_TRACE)
+  }
+  if (DEBUG_TRACE) {
     fprintf(tempfile, "  DEBUG_TRACE = %d\n", DEBUG_TRACE);
-  if (DEBUG_MACH_PARAMS)
+  }
+  if (DEBUG_MACH_PARAMS) {
     fprintf(tempfile, "  DEBUG_MACH_PARAMS = %d\n", DEBUG_MACH_PARAMS);
+  }
 }

@@ -54,9 +54,9 @@
 #include "Thyra_TpetraVectorSpace.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 
-using Teuchos::RCP;
-
 namespace panzer {
+
+using Teuchos::RCP;
 
 // ************************************************************
 // class TpetraLinearObjFactory

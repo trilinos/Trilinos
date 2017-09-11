@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -883,8 +883,9 @@ int main(int argc, char **argv)
         for (m = 0; m < num_elem_in_block[j]; m++) {
           elem_var_vals[m] = (float)(k + 1) + (float)(j + 2) + ((float)(m + 1) * time_value);
         }
-        if (k == 1 && j == 2)
+        if (k == 1 && j == 2) {
           continue; /* skip element block 3, variable 1 */
+        }
         else {
           error = ex_put_var(exoid, whole_time_step, EX_ELEM_BLOCK, k, ebids[j],
                              num_elem_in_block[j], elem_var_vals);

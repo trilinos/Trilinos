@@ -33,9 +33,7 @@ INCLUDE_DIRECTORIES(${DIR}/MueCentral)
 INCLUDE_DIRECTORIES(${DIR}/Rebalancing)
 INCLUDE_DIRECTORIES(${DIR}/Smoothers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BaseClass)
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
-ENDIF()
+INCLUDE_DIRECTORIES(${DIR}/Smoothers/BlockedSmoothers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/BlockedTransfers)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Generic)
 INCLUDE_DIRECTORIES(${DIR}/Transfers/Energy-Minimization)
@@ -452,8 +450,4 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
-# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

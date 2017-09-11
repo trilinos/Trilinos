@@ -503,7 +503,7 @@ template< class ExecutionSpace , BoxElemPart::ElemOrder Order , class Coordinate
           class CoeffFunctionType , class GatherScatterOp , class ScalarType >
 class ElementComputation
   < Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >
-  , Kokkos::CrsMatrix< MatrixVectorScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >
+  , KokkosSparse::CrsMatrix< MatrixVectorScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >
   , CoeffFunctionType
   , GatherScatterOp
   , ScalarType >
@@ -518,7 +518,7 @@ public:
   typedef ExecutionSpace   execution_space ;
   typedef ScalarType       scalar_type ;
 
-  typedef Kokkos::CrsMatrix< MatrixVectorScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef KokkosSparse::CrsMatrix< MatrixVectorScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
   typedef Kokkos::View< MatrixVectorScalarType* , Kokkos::LayoutLeft, execution_space > vector_type ;
@@ -566,7 +566,7 @@ public:
   const bool                isotropic ;
   const double              coeff_source ;
   const double              coeff_advection ;
-  const Kokkos::DeviceConfig dev_config ;
+  const KokkosSparse::DeviceConfig dev_config ;
 
   ElementComputation( const ElementComputation & rhs )
     : elem_data()
@@ -596,7 +596,7 @@ public:
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
                       const vector_type        & arg_residual ,
-                      const Kokkos::DeviceConfig arg_dev_config ,
+                      const KokkosSparse::DeviceConfig arg_dev_config ,
                       const QuadratureData<ExecutionSpace>& qd =
                         QuadratureData<ExecutionSpace>() ,
                       const GatherScatterOp    & arg_gather_scatter =
@@ -990,7 +990,7 @@ template< class ExecutionSpace , BoxElemPart::ElemOrder Order , class Coordinate
           typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType >
 class DirichletComputation<
   Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap > ,
-  Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType > >
+  KokkosSparse::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType > >
 {
 public:
 
@@ -1001,7 +1001,7 @@ public:
   typedef ExecutionSpace   execution_space ;
   typedef ScalarType   scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef KokkosSparse::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType                                       sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
   typedef Kokkos::View< scalar_type* , execution_space > vector_type ;
@@ -1035,7 +1035,7 @@ public:
   const unsigned            bc_plane ;
   const unsigned            node_count ;
         bool                init ;
-  const Kokkos::DeviceConfig dev_config ;
+  const KokkosSparse::DeviceConfig dev_config ;
   const bool                assemble_jacobian ;
   const unsigned            num_param ;
 
@@ -1047,7 +1047,7 @@ public:
                         const unsigned             arg_bc_plane ,
                         const bc_scalar_type       arg_bc_lower_value ,
                         const bc_scalar_type       arg_bc_upper_value ,
-                        const Kokkos::DeviceConfig arg_dev_config ,
+                        const KokkosSparse::DeviceConfig arg_dev_config ,
                         const multi_vector_type  & arg_solution_dp =
                           multi_vector_type() ,
                         const multi_vector_type  & arg_residual_dp =

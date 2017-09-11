@@ -62,17 +62,6 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_IFPACK2 OFF)
 ENDIF ()
 
-# Enable timer synchronization via barriers
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_TIMER_SYNCHRONIZATION
-  HAVE_${PACKAGE_NAME_UC}_TIMER_SYNCHRONIZATION
-  "Enable timer synchronization in MueLu via barriers."
-  NO)
-
-IF (${PACKAGE_NAME}_ENABLE_TIMER_SYNCHRONIZATION)
-  MESSAGE(STATUS "Enabling timer synchronization")
-ENDIF ()
-
 # Enable experimental code
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_Experimental
@@ -92,6 +81,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ADDITIVE_VARIANT
   HAVE_${PACKAGE_NAME_UC}_ADDITIVE_VARIANT
   "Enable Additive Variant."
+  NO)
+
+# Enable matrix splitting
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_REGION_SPLITTING
+  HAVE_${PACKAGE_NAME_UC}_REGION_SPLITTING
+  "Enable Region Splitting."
   NO)
 
 # cmake option to enable building of MueLu Tutorial

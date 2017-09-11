@@ -291,10 +291,15 @@ namespace Tacho {
         }
       } else {
         const ordinal_type nthreads = device_exec_space::thread_pool_size(0);
+        TACHO_TEST_FOR_EXCEPTION(t.dimension_0() < x.dimension_0() ||
+                                 t.dimension_1() < x.dimension_1(), std::logic_error, "Temporary rhs vector t is smaller than x");
+        auto tt = Kokkos::subview(t, 
+                                  Kokkos::pair<ordinal_type,ordinal_type>(0, x.dimension_0()),
+                                  Kokkos::pair<ordinal_type,ordinal_type>(0, x.dimension_1()));
         if (nthreads == 1)
-          _N.solveCholesky_Serial(x, b, t, _verbose);
+          _N.solveCholesky_Serial(x, b, tt, _verbose);
         else
-          _N.solveCholesky_Parallel(x, b, t, _verbose);
+          _N.solveCholesky_Parallel(x, b, tt, _verbose);
       }
       return 0;
     }

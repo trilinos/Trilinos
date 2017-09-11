@@ -4,10 +4,9 @@
 // * Single Base.
 // * ZoneGridConnectivity is 1to1 with point lists for unstructured
 
-// Copyright(C) 2015
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -20,7 +19,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -43,12 +43,12 @@
 #include <cgns/Iocgns_Utils.h>
 #include <cgnslib.h>
 #include <cstddef>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <numeric>
 #include <string>
 #include <sys/select.h>
-#include <time.h>
 #include <vector>
 
 #if !defined(CGNSLIB_H)
@@ -83,8 +83,6 @@
 
 extern char hdf5_access[64];
 
-#define IOSS_DEBUG_OUTPUT 1
-
 namespace Iocgns {
 
   DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string &filename,
@@ -95,7 +93,7 @@ namespace Iocgns {
   {
     dbState = Ioss::STATE_UNKNOWN;
 
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
     std::cout << "CGNS DatabaseIO using " << CG_SIZEOF_SIZE << "-bit integers.\n";
 #endif
     if (CG_SIZEOF_SIZE == 64) {
@@ -323,7 +321,7 @@ namespace Iocgns {
         auto donor_iter = m_zoneNameMap.find(donorname);
         if (donor_iter != m_zoneNameMap.end() && (*donor_iter).second < zone) {
           num_shared += npnts;
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
           std::cout << "Zone " << zone << " shares " << npnts << " nodes with " << donorname
                     << "\n";
 #endif
@@ -388,7 +386,7 @@ namespace Iocgns {
       if (parent_flag == 0 && total_elements > 0) {
         total_elements -= num_entity;
         std::string element_topo = Utils::map_cgns_to_topology_type(e_type);
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
         std::cout << "Added block " << zone_name << ": CGNS topology = '"
                   << cg_ElementTypeName(e_type) << "', IOSS topology = '" << element_topo
                   << "' with " << num_entity << " elements\n";
@@ -417,7 +415,7 @@ namespace Iocgns {
           block_name += "/";
           block_name += section_name;
           std::string face_topo = Utils::map_cgns_to_topology_type(e_type);
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
           std::cout << "Added sideset " << block_name << " of topo " << face_topo << " with "
                     << num_entity << " faces\n";
 #endif
@@ -494,7 +492,7 @@ namespace Iocgns {
     cgsize_t cell_dimension = 0;
     cgsize_t phys_dimension = 0;
     CGCHECK(cg_base_read(cgnsFilePtr, base, basename, &cell_dimension, &phys_dimension));
-#ifdef IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
     std::cout << "Physical dimension = " << phys_dimension << "\n";
 #endif
 
@@ -1327,7 +1325,7 @@ namespace Iocgns {
           }
           auto it = nodes.begin();
           it++;
-	  Ioss::Utils::uniquify(nodes, true);
+          Ioss::Utils::uniquify(nodes, true);
 
           // Now, we have the node count and cell count so we can create a zone...
           int      base    = 1;
@@ -1679,6 +1677,10 @@ namespace Iocgns {
 
   void DatabaseIO::write_results_meta_data() {}
 
-  unsigned DatabaseIO::entity_field_support() const { return Ioss::REGION; }
+  unsigned DatabaseIO::entity_field_support() const
+  {
+    return Ioss::NODEBLOCK | Ioss::ELEMENTBLOCK | Ioss::STRUCTUREDBLOCK | Ioss::NODESET |
+           Ioss::SIDESET | Ioss::REGION;
+  }
 
 } // namespace Iocgns

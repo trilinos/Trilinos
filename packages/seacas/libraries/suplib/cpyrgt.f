@@ -1,6 +1,6 @@
-C Copyright(C) 2009 Sandia Corporation. Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software.
+C Copyright(C) 2009 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
 C         
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
@@ -13,7 +13,8 @@ C     * Redistributions in binary form must reproduce the above
 C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
-C     * Neither the name of Sandia Corporation nor the names of its
+C 
+C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
 C 
@@ -73,13 +74,13 @@ C   --   LENSTR - (STRLIB) Find string length
       DATA BLANK / ' ' /
       DATA TEXT  /
      *  'Under the terms of Contract',
-     *  'DE-AC04-94AL85000 with Sandia Corporation, the' ,
+     *  'DE-NA0003525 with NTESS, the' ,
      *  'U.S. Government retains certain rights in this software.'/
 
       NCEN(LEN) = MAX (1, (80 - LEN + 1) / 2)
 
       write (banr, 100) year(:lenstr(year))
- 100  format (' Copyright ', a, ' Sandia Corporation')
+ 100  format (' Copyright ', a, ' NTESS')
       CALL SQZSTR (BANR, LBANR)
       IF (NOUT .LE. 0) THEN
          WRITE (*, 10000) BLANK(:NCEN(LBANR+8)),

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005-2016 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -330,7 +330,7 @@ int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws, int run
 #endif
   }
   else {
-    filesiz = (int)((my_mode & EX_64BIT_OFFSET) || (ex_large_model(-1) == 1));
+    filesiz = ((my_mode & EX_64BIT_OFFSET) || (ex_large_model(-1) == 1));
   }
 
   if (
@@ -455,7 +455,7 @@ int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws, int run
   }
 
   /* store Exodus file float word size  as an attribute */
-  lio_ws = (int)(*io_ws);
+  lio_ws = (*io_ws);
   if ((status = nc_put_att_int(exoid, NC_GLOBAL, ATT_FLT_WORDSIZE, NC_INT, 1, &lio_ws)) !=
       NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store Exodus II file float word size "

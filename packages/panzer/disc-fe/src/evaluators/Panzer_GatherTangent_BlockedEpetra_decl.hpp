@@ -76,10 +76,6 @@ namespace panzer
   template <typename LocalOrdinalT, typename GlobalOrdinalT>
   class UniqueGlobalIndexer;
 }
-namespace Thyra
-{
-  template<typename> class ProductVectorBase;
-}
 
 namespace panzer
 {

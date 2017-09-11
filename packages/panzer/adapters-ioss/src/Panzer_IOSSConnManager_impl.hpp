@@ -89,10 +89,10 @@
 #include "Ioss_NodeBlock.h"
 #include "Ioss_ElementBlock.h"
 
+namespace panzer_ioss {
+
 using Teuchos::RCP;
 using Teuchos::rcp;
-
-namespace panzer_ioss {
 
 template <typename GO>
 IOSSConnManager<GO>::IOSSConnManager(Ioss::DatabaseIO * iossMeshDB)

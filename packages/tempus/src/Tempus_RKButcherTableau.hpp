@@ -162,7 +162,7 @@ class RKButcherTableau :
 
     /* \brief Redefined from Teuchos::Describable */
     //@{
-      virtual std::string description() const { return "RK Butcher Tableau"; }
+      virtual std::string description() const = 0;
 
       virtual void describe( Teuchos::FancyOStream &out,
                              const Teuchos::EVerbosityLevel verbLevel) const

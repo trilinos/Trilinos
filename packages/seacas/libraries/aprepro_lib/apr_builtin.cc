@@ -1,15 +1,49 @@
+// Copyright (c) 2014 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+//
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//
+//     * Neither the name of NTESS nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+
 #include "apr_builtin.h"
 
 #include <cctype>
+#include <cerrno>
 #include <cfenv>
 #include <cmath>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <errno.h>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include <sys/stat.h>
 #ifdef _WIN32
 #include <io.h>
@@ -21,7 +55,7 @@
 #include "apr_util.h"
 #include "aprepro.h"
 #include "aprepro_parser.h"
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 
 #include <random>
@@ -42,7 +76,7 @@ namespace {
       errno = 0;
     }
   }
-}
+} // namespace
 
 namespace SEAMS {
 
@@ -73,7 +107,7 @@ namespace SEAMS {
   {
     double temp;
     reset_error();
-    temp = (double)(x < 0 ? -std::floor(-(x)) : std::floor(x));
+    temp = (x < 0 ? -std::floor(-(x)) : std::floor(x));
     SEAMS::math_error("int");
     return (temp);
   }
@@ -83,7 +117,7 @@ namespace SEAMS {
   {
     double temp;
     reset_error();
-    temp = (double)(x < 0 ? -std::floor(0.5 - x) : std::floor(x + 0.5));
+    temp = (x < 0 ? -std::floor(0.5 - x) : std::floor(x + 0.5));
     SEAMS::math_error("nint");
     return (temp);
   }
@@ -145,8 +179,9 @@ namespace SEAMS {
       y = x;
       x = r;
     }
-    if (x == 0.0)
+    if (x == 0.0) {
       return (y);
+    }
 
     for (i = 0; i < 3; i++) {
       r = y / x;
@@ -309,7 +344,7 @@ namespace SEAMS {
   /* do_srand(x) Seed the random generator with the specified integer value */
   double do_srand(double seed)
   {
-    rng.seed((size_t)seed);
+    rng.seed(static_cast<size_t>(seed));
     return (0);
   }
 
@@ -443,7 +478,7 @@ namespace SEAMS {
     feclearexcept(FE_ALL_EXCEPT);
     reset_error();
     temp = std::sqrt(x);
-    if (fetestexcept(FE_INVALID | FE_OVERFLOW | FE_DIVBYZERO)) {
+    if (fetestexcept(FE_INVALID | FE_OVERFLOW | FE_DIVBYZERO) != 0) {
       SEAMS::math_error("sqrt");
     }
     return (temp);
@@ -483,12 +518,13 @@ namespace SEAMS {
 
   double do_juldayhms(double mon, double day, double year, double h, double mi, double se)
   {
-    long   m = (long)mon, d = (long)day, y = (long)year;
+    long   m = static_cast<long>(mon), d = static_cast<long>(day), y = static_cast<long>(year);
     long   c, ya, j;
     double seconds = h * 3600.0 + mi * 60 + se;
 
-    if (m > 2)
+    if (m > 2) {
       m -= 3;
+    }
     else {
       m += 9;
       --y;
@@ -516,26 +552,25 @@ namespace SEAMS {
   double do_acosh(double x)
   {
     double t;
-    if (x > 1.0e20)
+    if (x > 1.0e20) {
       return (LOG1P(x) + std::log(2.0));
-    else {
-      t = std::sqrt(x - 1.0);
-      return (LOG1P(t * (t + std::sqrt(x + 1))));
     }
+    t = std::sqrt(x - 1.0);
+    return (LOG1P(t * (t + std::sqrt(x + 1))));
   }
 
   double do_asinh(double x)
   {
     double s, t;
-    if (1.0 + x * x == 1.0)
+    if (1.0 + x * x == 1.0) {
       return (x);
-    if (std::sqrt(1.0 + x * x) == 1.0)
-      return (do_sign(1.0, x) * (LOG1P(x) + std::log(2.0)));
-    else {
-      t = fabs(x);
-      s = 1.0 / t;
-      return (do_sign(1.0, x) * LOG1P(t + t / (s + std::sqrt(1 + s * s))));
     }
+    if (std::sqrt(1.0 + x * x) == 1.0) {
+      return (do_sign(1.0, x) * (LOG1P(x) + std::log(2.0)));
+    }
+    t = fabs(x);
+    s = 1.0 / t;
+    return (do_sign(1.0, x) * LOG1P(t + t / (s + std::sqrt(1 + s * s))));
   }
 
   double do_atanh(double x)
@@ -604,8 +639,9 @@ namespace SEAMS {
   {
     char *p = string;
     while (*p != '\0') {
-      if (isupper((int)*p))
-        *p = tolower((int)*p);
+      if (isupper(static_cast<int>(*p)) != 0) {
+        *p = tolower(static_cast<int>(*p));
+      }
       p++;
     }
     return (string);
@@ -615,8 +651,9 @@ namespace SEAMS {
   {
     char *p = string;
     while (*p != '\0') {
-      if (islower((int)*p))
-        *p = toupper((int)*p);
+      if (islower(static_cast<int>(*p)) != 0) {
+        *p = toupper(static_cast<int>(*p));
+      }
       p++;
     }
     return (string);
@@ -630,13 +667,12 @@ namespace SEAMS {
       new_string("0", &tmp);
       return (tmp);
     }
-    else {
-      SEAMS::symrec *format;
-      format = aprepro->getsym("_FORMAT");
-      (void)sprintf(tmpstr, format->value.svar, x);
-      new_string(tmpstr, &tmp);
-      return (tmp);
-    }
+
+    SEAMS::symrec *format;
+    format = aprepro->getsym("_FORMAT");
+    (void)sprintf(tmpstr, format->value.svar, x);
+    new_string(tmpstr, &tmp);
+    return (tmp);
   }
 
   const char *do_output(char *filename)
@@ -698,12 +734,12 @@ namespace SEAMS {
   {
     std::string              temp   = string;
     std::vector<std::string> tokens = tokenize(temp, delm);
-    return (double)tokens.size();
+    return static_cast<double>(tokens.size());
   }
 
   const char *do_get_word(double n, char *string, char *delm)
   {
-    size_t                   in     = (size_t)n;
+    size_t                   in     = static_cast<size_t>(n);
     std::string              temp   = string;
     std::vector<std::string> tokens = tokenize(temp, delm);
 
@@ -712,9 +748,8 @@ namespace SEAMS {
       new_string(tokens[in - 1].c_str(), &word);
       return word;
     }
-    else {
-      return nullptr;
-    }
+
+    return nullptr;
   }
 
   const char *do_file_to_string(char *filename)
@@ -722,7 +757,7 @@ namespace SEAMS {
     char *        ret_string = nullptr;
     std::fstream *file       = aprepro->open_file(filename, "r");
 
-    if (file) {
+    if (file != nullptr) {
       std::ostringstream lines;
       std::string        line;
       while (std::getline(*file, line)) {
@@ -738,17 +773,16 @@ namespace SEAMS {
   {
     char *tmp;
     char *ret_string;
-    if (env == nullptr)
+    if (env == nullptr) {
       return "";
-
-    tmp = (char *)getenv(env);
+    }
+    tmp = getenv(env);
     if (tmp != nullptr) {
       new_string(tmp, &ret_string);
       return (ret_string);
     }
-    else {
-      return "";
-    }
+
+    return "";
   }
 
   double do_strtod(char *string)
@@ -762,19 +796,19 @@ namespace SEAMS {
 
   const char *do_dumpsym()
   {
-    aprepro->dumpsym(SEAMS::Parser::token::VAR, 0);
+    aprepro->dumpsym(SEAMS::Parser::token::VAR, false);
     return (nullptr);
   }
 
   const char *do_dumpfunc()
   {
-    aprepro->dumpsym(SEAMS::Parser::token::FNCT, 1);
+    aprepro->dumpsym(SEAMS::Parser::token::FNCT, true);
     return (nullptr);
   }
 
   const char *do_dumpvar()
   {
-    aprepro->dumpsym(SEAMS::Parser::token::VAR, 1);
+    aprepro->dumpsym(SEAMS::Parser::token::VAR, true);
     return (nullptr);
   }
 
@@ -784,18 +818,18 @@ namespace SEAMS {
     current = -1;
 
     if (std::strcmp(option, "warning") == 0) {
-      current                         = aprepro->ap_options.warning_msg;
-      aprepro->ap_options.warning_msg = (value == 0.0) ? false : true;
+      current                         = static_cast<double>(aprepro->ap_options.warning_msg);
+      aprepro->ap_options.warning_msg = value != 0.0;
     }
 
     else if (std::strcmp(option, "info") == 0) {
-      current                      = aprepro->ap_options.info_msg;
-      aprepro->ap_options.info_msg = (value == 0.0) ? false : true;
+      current                      = static_cast<double>(aprepro->ap_options.info_msg);
+      aprepro->ap_options.info_msg = value != 0.0;
     }
 
     else if (std::strcmp(option, "debugging") == 0) {
-      current                       = aprepro->ap_options.debugging;
-      aprepro->ap_options.debugging = (value == 0.0) ? false : true;
+      current                       = static_cast<double>(aprepro->ap_options.debugging);
+      aprepro->ap_options.debugging = value != 0.0;
     }
 
     else if (std::strcmp(option, "statistics") == 0) {
@@ -832,11 +866,10 @@ namespace SEAMS {
       new_string("0", &tmp);
       return (tmp);
     }
-    else {
-      (void)sprintf(tmpstr, "%d", (int)intval);
-      new_string(tmpstr, &tmp);
-      return (tmp);
-    }
+
+    (void)sprintf(tmpstr, "%d", static_cast<int>(intval));
+    new_string(tmpstr, &tmp);
+    return (tmp);
   }
 
   const char *do_execute(char *string)
@@ -873,7 +906,7 @@ namespace SEAMS {
   const char *do_str_if(char *string)
   {
     std::string test(string);
-    aprepro->lexer->if_handler(!test.empty());
+    aprepro->lexer->if_handler(static_cast<double>(!test.empty()));
 
     return nullptr;
   }
@@ -881,7 +914,7 @@ namespace SEAMS {
   const char *do_str_notif(char *string)
   {
     std::string test(string);
-    aprepro->lexer->if_handler(test.empty());
+    aprepro->lexer->if_handler(static_cast<double>(test.empty()));
 
     return nullptr;
   }
@@ -889,7 +922,7 @@ namespace SEAMS {
   const char *do_str_elseif(char *string)
   {
     std::string test(string);
-    aprepro->lexer->elseif_handler(!test.empty());
+    aprepro->lexer->elseif_handler(static_cast<double>(!test.empty()));
 
     return nullptr;
   }
@@ -922,8 +955,9 @@ namespace SEAMS {
 
     if (std::strlen(begin) > 0) {
       start = std::strstr(string, begin);
-      if (start == nullptr)
+      if (start == nullptr) {
         return "";
+      }
     }
 
     len = std::strlen(start);
@@ -953,7 +987,7 @@ namespace SEAMS {
   {
     /* Print error message (to stderr) and exit */
     yyerror(*aprepro, error_string);
-    exit(EXIT_FAILURE);
+    throw std::runtime_error(std::string(error_string));
     /* NOTREACHED */
     return (nullptr);
   }
@@ -969,22 +1003,23 @@ namespace SEAMS {
       int idx = 0;
 
       for (int ir = 0; ir < rows; ir++) {
-        if (ir > 0)
+        if (ir > 0) {
           lines << "\n";
+        }
         lines << "\t";
         for (int ic = 0; ic < cols; ic++) {
           lines << my_array_data->data[idx++];
-          if (ic < cols - 1)
+          if (ic < cols - 1) {
             lines << "\t";
+          }
         }
       }
       char *ret_string;
       new_string(lines.str().c_str(), &ret_string);
       return ret_string;
     }
-    else {
-      return "";
-    }
+
+    return "";
   }
 
   const char *do_delete(char *string)
@@ -1029,11 +1064,11 @@ namespace SEAMS {
 
   array *do_csv_array(const char *filename, double skip)
   {
-    size_t rows_to_skip = (size_t)skip;
+    size_t rows_to_skip = static_cast<size_t>(skip);
 
     const char *  delim = ",\t ";
     std::fstream *file  = aprepro->open_file(filename, "r");
-    if (file) {
+    if (file != nullptr) {
 
       size_t rows = 0;
       size_t cols = 0;
@@ -1058,7 +1093,7 @@ namespace SEAMS {
       while (std::getline(*file, line)) {
         if (++rows > rows_to_skip) {
           std::vector<std::string> tokens = tokenize(line, delim);
-          for (size_t i = 0; i < (size_t)array_data->cols; i++) {
+          for (size_t i = 0; i < static_cast<size_t>(array_data->cols); i++) {
             if (i < tokens.size()) {
               array_data->data[idx++] = atof(tokens[i].c_str());
             }
@@ -1071,16 +1106,15 @@ namespace SEAMS {
       assert(rows - rows_to_skip == (size_t)array_data->rows);
       return array_data;
     }
-    else {
-      return nullptr;
-    }
+
+    return nullptr;
   }
 
   array *do_csv_array2(const char *filename, const char *comment)
   {
     const char *  delim = ",\t ";
     std::fstream *file  = aprepro->open_file(filename, "r");
-    if (file) {
+    if (file != nullptr) {
 
       size_t rows = 0;
       size_t cols = 0;
@@ -1106,7 +1140,7 @@ namespace SEAMS {
         if (line[0] != comment[0]) {
           rows++;
           std::vector<std::string> tokens = tokenize(line, delim);
-          for (size_t i = 0; i < (size_t)array_data->cols; i++) {
+          for (size_t i = 0; i < static_cast<size_t>(array_data->cols); i++) {
             if (i < tokens.size()) {
               array_data->data[idx++] = atof(tokens[i].c_str());
             }
@@ -1119,9 +1153,8 @@ namespace SEAMS {
       assert((int)rows == array_data->rows);
       return array_data;
     }
-    else {
-      return nullptr;
-    }
+
+    return nullptr;
   }
 
 } // namespace SEAMS

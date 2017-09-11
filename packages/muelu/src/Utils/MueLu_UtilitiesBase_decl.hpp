@@ -46,7 +46,10 @@
 #ifndef MUELU_UTILITIESBASE_DECL_HPP
 #define MUELU_UTILITIESBASE_DECL_HPP
 
-#include <unistd.h> //necessary for "sleep" function in debugging methods
+#ifndef _WIN32
+#include <unistd.h> //necessary for "sleep" function in debugging methods (PauseForDebugging)
+#endif
+
 #include <string>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -352,7 +355,6 @@ namespace MueLu {
     }
 
 #ifndef _WIN32
-#include <unistd.h>
     static void PauseForDebugger() {
       RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
       int myPID = comm->getRank();

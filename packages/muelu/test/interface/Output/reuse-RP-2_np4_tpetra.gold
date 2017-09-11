@@ -15,6 +15,8 @@ Level 0
   relaxation: fix tiny diagonal entries = 0   [default]
   relaxation: check diagonal entries = 0   [default]
   relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+  relaxation: symmetric matrix structure = 0   [default]
+  relaxation: ifpack2 dump matrix = 0   [default]
  
 Level 1
  Build (MueLu::RebalanceTransferFactory)
@@ -87,8 +89,7 @@ Level 1
    repartition: max imbalance = 1.2   [default]
    
    Build (MueLu::Zoltan2Interface)
-   rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x4e00580,node=0x4d7f610,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2652030,node=0x25b89d0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -120,6 +121,8 @@ Level 1
   relaxation: fix tiny diagonal entries = 0   [default]
   relaxation: check diagonal entries = 0   [default]
   relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+  relaxation: symmetric matrix structure = 0   [default]
+  relaxation: ifpack2 dump matrix = 0   [default]
  
 Level 2
  Build (MueLu::RebalanceTransferFactory)
@@ -192,8 +195,7 @@ Level 2
    repartition: max imbalance = 1.2   [default]
    
    Build (MueLu::Zoltan2Interface)
-   rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x4ebdf70,node=0x4d38ca0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2618550,node=0x2617b50,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -247,6 +249,8 @@ Level 0
   relaxation: fix tiny diagonal entries = 0   [default]
   relaxation: check diagonal entries = 0   [default]
   relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+  relaxation: symmetric matrix structure = 0   [default]
+  relaxation: ifpack2 dump matrix = 0   [default]
  
 Level 1
  Build (MueLu::RebalanceTransferFactory)
@@ -291,6 +295,8 @@ Level 1
   relaxation: fix tiny diagonal entries = 0   [default]
   relaxation: check diagonal entries = 0   [default]
   relaxation: local smoothing indices = Teuchos::ArrayRCP<int>{ptr=0,lowerOffset=0,upperOffset=-1,size=0,node=0,strong_count=0,weak_count=0}   [default]
+  relaxation: symmetric matrix structure = 0   [default]
+  relaxation: ifpack2 dump matrix = 0   [default]
  
 Level 2
  Build (MueLu::RebalanceTransferFactory)

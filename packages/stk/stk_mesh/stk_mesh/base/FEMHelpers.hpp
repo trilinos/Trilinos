@@ -111,15 +111,10 @@ NAMED_PAIR(EquivAndPositive, bool, is_equiv, bool, is_positive)
 EquivAndPositive is_side_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned sideOrdinal, const stk::mesh::Entity* candidateSideNodes);
 
 EquivAndPositive is_equivalent_and_positive(const stk::mesh::BulkData& mesh, stk::mesh::Entity element, unsigned ordinal, stk::mesh::EntityRank subRank, const stk::mesh::Entity* candidateNodes);
+
 /**
  * Given an entity, subcell_rank, and subcell_id, return the nodes
  * that make up the subcell in a correct order for the given polarity.
- *
- * \param entity
- * \param subcell_rank
- * \param subcell_identifier
- * \param subcell_nodes EntityVector output of the subcell nodes
- * \return topology of the requested subcell
  */
 stk::topology get_subcell_nodes(const BulkData& mesh,
     const Entity entity ,

@@ -56,8 +56,6 @@
 namespace panzer {
   struct Traits;
   struct Workset;
-  template <typename LO, typename GO> class ConnManager;
-  template <typename LO, typename GO> class DOFManager;
   struct EquationSetFactory;
   struct BCStrategyFactory;
   class PhysicsBlock;

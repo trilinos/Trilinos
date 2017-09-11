@@ -85,8 +85,7 @@ Level 1
    repartition: max imbalance = 1.327
    
    Build (MueLu::Zoltan2Interface)
-   rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x5d19678,node=0x5a8f490,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2290338,node=0x2355ca0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
@@ -196,8 +195,7 @@ Level 2
    repartition: max imbalance = 1.327
    
    Build (MueLu::Zoltan2Interface)
-   rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x5d19678,node=0x5a8f490,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2290338,node=0x2355ca0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
@@ -307,8 +305,7 @@ Level 3
    repartition: max imbalance = 1.327
    
    Build (MueLu::Zoltan2Interface)
-   rowWeight = 0   [default]
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x5d19678,node=0x5a8f490,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2290338,node=0x2355ca0,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1

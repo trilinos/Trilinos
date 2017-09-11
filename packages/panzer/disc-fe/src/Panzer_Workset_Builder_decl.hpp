@@ -52,10 +52,6 @@
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_WorksetNeeds.hpp"
 
-namespace shards {
-  class CellTopology;
-}
-
 namespace panzer {
   
   struct Workset;

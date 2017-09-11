@@ -66,7 +66,7 @@ const std::string PHX::Field<DataT,Rank>::m_field_data_error_msg =
 // **********************************************************************
 template<typename DataT,int Rank>
 PHX::Field<DataT,Rank>::
-Field(const std::string& name, const Teuchos::RCP<const PHX::DataLayout>& t) :
+Field(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
   m_tag(name,t)
 #ifdef PHX_DEBUG
   , m_tag_set(true),

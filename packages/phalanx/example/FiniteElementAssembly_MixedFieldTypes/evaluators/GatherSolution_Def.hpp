@@ -52,7 +52,7 @@
 template<typename Traits>
 GatherSolution<PHX::MyTraits::Residual, Traits>::
 GatherSolution(const std::string& field_name,
-               const Teuchos::RCP<const PHX::DataLayout>& layout,
+               const Teuchos::RCP<PHX::DataLayout>& layout,
                const int& in_num_equations,
                const int& in_field_index,
                const Kokkos::View<double*,PHX::Device>& in_x) :
@@ -93,7 +93,7 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 template<typename Traits>
 GatherSolution<PHX::MyTraits::Jacobian, Traits>::
 GatherSolution(const std::string& field_name,
-               const Teuchos::RCP<const PHX::DataLayout>& layout,
+               const Teuchos::RCP<PHX::DataLayout>& layout,
                const int& in_num_equations,
                const int& in_field_index,
                const Kokkos::View<double*,PHX::Device>& in_x) :

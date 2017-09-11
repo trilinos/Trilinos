@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -111,17 +111,21 @@ static void ex_fcdcpy(char *fstring, /* output string to be blank-filled */
 
   if (sstring != NULL) {
     len = strlen(sstring);
-    if (len > fslen)
+    if (len > fslen) {
       len = fslen;
+    }
 
-    for (i           = 0; i < len; i++)
+    for (i = 0; i < len; i++) {
       *(fstring + i) = *(sstring + i);
-    for (i           = len; i < fslen; i++)
+    }
+    for (i = len; i < fslen; i++) {
       *(fstring + i) = ' ';
+    }
   }
   else {
-    for (i           = 0; i < fslen; i++)
+    for (i = 0; i < fslen; i++) {
       *(fstring + i) = ' ';
+    }
   }
 }
 
@@ -132,12 +136,14 @@ static void ex_fstrncpy(char *target, /* space to be copied into */
 { /* maximum length of *source */
   int len = maxlen;
 
-  while (len-- && *source != '\0')
+  while (len-- && *source != '\0') {
     *target++ = *source++;
+  }
 
   len = maxlen;
-  while (len-- && *(--target) == ' ')
-    ;                 /* strip blanks */
+  while (len-- && *(--target) == ' ') {
+    ; /* strip blanks */
+  }
   *(++target) = '\0'; /* insert new EOS marker */
 }
 
@@ -146,9 +152,10 @@ static void ex_nstrncpy(char *target, /* space to be copied into */
                         char *source, /* string to be copied */
                         int   maxlen)
 { /* maximum length of *source */
-  while (maxlen-- && *source != ' ')
+  while (maxlen-- && *source != ' ') {
     *target++ = *source++;
-  *target     = '\0';
+  }
+  *target = '\0';
 }
 
 /* Above are utility functions used below                                   */
@@ -343,8 +350,9 @@ void F2C(expqa, EXPQA)(int *idexo, int *num_qa_records, char *qa_record, int *ie
   }
   *(sptr + iii) = 0; /* set last pointer to null */
 
-  if (ex_put_qa(*idexo, *num_qa_records, (void *)sptr) == EX_FATAL)
+  if (ex_put_qa(*idexo, *num_qa_records, (void *)sptr) == EX_FATAL) {
     *ierr = EX_FATAL;
+  }
 
   /* Free up the space we used */
   iii = 0;
@@ -517,11 +525,12 @@ void F2C(exginf, EXGINF)(int *idexo, char *info, int *ierr, int infolen)
     *ierr = EX_MEMFAIL;
     return;
   }
-  for (i = 0; i < num_info; i++)         /* Put pointers to the info records in ptr
-                                          * array */
-    *(aptr + i) = sptr + i * (slen + 1); /* put ptr in string ptr
-                                          * array */
-  *(aptr + i) = 0;                       /* null out last pointer */
+  for (i = 0; i < num_info; i++) { /* Put pointers to the info records in ptr
+                                  * array */
+    *(aptr + i) = sptr + i * (slen + 1);
+  }                /* put ptr in string ptr
+                                                            * array */
+  *(aptr + i) = 0; /* null out last pointer */
 
   /* Do exodus call to get info records */
   if (ex_get_info(*idexo, aptr) == EX_FATAL) {
@@ -674,8 +683,7 @@ void F2C(exgcon, EXGCON)(int *idexo, char *coord_names, int *ierr, int coord_nam
   }
 
   free(sptr); /* Free up string buffer space */
-  free(aptr); /* Finally, free up array ptr space */
-  return;
+  free(aptr);
 }
 
 /*
@@ -916,9 +924,10 @@ void F2C(exgean, EXGEAN)(int *idexo, entity_id *elem_blk_id, int *num_attr, char
     free(aptr); /* Free up string ptr array */
     return;
   }
-  for (i        = 0; i < *num_attr; i++)
+  for (i = 0; i < *num_attr; i++) {
     *(aptr + i) = sptr + i * (slen + 1); /* put address into ptr array */
-  *(aptr + i)   = 0;                     /* null out last ptr */
+  }
+  *(aptr + i) = 0; /* null out last ptr */
 
   *ierr = 0;
   if (ex_get_attr_names(*idexo, EX_ELEM_BLOCK, *elem_blk_id, aptr) == EX_FATAL) {
@@ -1103,9 +1112,10 @@ void F2C(exgnams, EXGNAMS)(int *idexo, int *type, int *num_obj, char *names, int
     free(aptr); /* Free up string ptr array */
     return;
   }
-  for (i        = 0; i < *num_obj; i++)
+  for (i = 0; i < *num_obj; i++) {
     *(aptr + i) = sptr + i * (slen + 1); /* put address into ptr array */
-  *(aptr + i)   = 0;                     /* null out last ptr */
+  }
+  *(aptr + i) = 0; /* null out last ptr */
 
   /* do Exodus C call to read results variables names */
   if (ex_get_names(*idexo, (ex_entity_type)*type, aptr) == EX_FATAL) {
@@ -1278,10 +1288,11 @@ void F2C(exgpn, EXGPN)(int *idexo, int *obj_type, char *prop_names, int *ierr, i
   }
   memset(sptr, 0, num_props * (slen + 1));
 
-  for (i        = 0; i < num_props; i++)
-    *(aptr + i) = sptr + i * (slen + 1); /* put ptrs to staging space
-                                          * into ptr array */
-  *(aptr + i) = 0;                       /* set last pointer to null */
+  for (i = 0; i < num_props; i++) {
+    *(aptr + i) = sptr + i * (slen + 1);
+  }                /* put ptrs to staging space
+                                                            * into ptr array */
+  *(aptr + i) = 0; /* set last pointer to null */
 
   /* do Exodus C call to get property name records */
   if (ex_get_prop_names(*idexo, (ex_entity_type)*obj_type, aptr) == EX_FATAL) {
@@ -1950,9 +1961,10 @@ void F2C(exgvan, EXGVAN)(int *idexo, char *var_type, int *num_vars, char *var_na
     free(aptr); /* Free up string ptr array */
     return;
   }
-  for (i        = 0; i < *num_vars; i++)
+  for (i = 0; i < *num_vars; i++) {
     *(aptr + i) = sptr + i * (slen + 1); /* put address into ptr array */
-  *(aptr + i)   = 0;                     /* null out last ptr */
+  }
+  *(aptr + i) = 0; /* null out last ptr */
 
   /* do Exodus C call to read results variables names */
   if (ex_get_variable_names(*idexo, obj_type, *num_vars, aptr) == EX_FATAL) {
@@ -2336,12 +2348,15 @@ void F2C(exgfrm, EXGFRM)(int *idexo, int *nframeo, void_int *cfids, real *coord,
     }
     /* Convert character tags back to integer tags for fortran */
     for (i = 0; i < nframe; i++) {
-      if (ctags[i] == 'R' || ctags[i] == 'r')
+      if (ctags[i] == 'R' || ctags[i] == 'r') {
         tags[i] = EX_CF_RECTANGULAR;
-      else if (ctags[i] == 'C' || ctags[i] == 'c')
+      }
+      else if (ctags[i] == 'C' || ctags[i] == 'c') {
         tags[i] = EX_CF_CYLINDRICAL;
-      else if (ctags[i] == 'S' || ctags[i] == 's')
+      }
+      else if (ctags[i] == 'S' || ctags[i] == 's') {
         tags[i] = EX_CF_SPHERICAL;
+      }
     }
     free(ctags);
   }
@@ -2362,12 +2377,15 @@ void F2C(expfrm, EXPFRM)(int *idexo, int *nframe, void_int *cfids, real *coord, 
     }
     /* Convert fortran integer tags to C API character tags */
     for (i = 0; i < *nframe; i++) {
-      if (tags[i] == EX_CF_RECTANGULAR)
+      if (tags[i] == EX_CF_RECTANGULAR) {
         ctags[i] = 'R';
-      else if (tags[i] == EX_CF_CYLINDRICAL)
+      }
+      else if (tags[i] == EX_CF_CYLINDRICAL) {
         ctags[i] = 'C';
-      else if (tags[i] == EX_CF_SPHERICAL)
+      }
+      else if (tags[i] == EX_CF_SPHERICAL) {
         ctags[i] = 'S';
+      }
     }
 
     *ierr = 0;
@@ -2670,8 +2688,9 @@ void F2C(exgii, EXGII)(int *idne, int *nproc, int *nproc_in_f, char *ftype, int 
     ex_err("negii", errmsg, EX_MSG);
   }
 
-  if (*ierr == 0)
+  if (*ierr == 0) {
     ex_fcdcpy(ftype, slen, file_type);
+  }
 
   free(file_type);
 }
@@ -3284,8 +3303,9 @@ void F2C(exgelt, EXGELT)(int *idne, entity_id *elem_blk_id, char *elem_type, int
     ex_err("negelt", errmsg, EX_MSG);
   }
 
-  if (*ierr == 0)
+  if (*ierr == 0) {
     ex_fcdcpy(elem_type, slen, etype);
+  }
 
   free(etype);
 }

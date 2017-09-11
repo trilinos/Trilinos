@@ -56,6 +56,12 @@
 #include "Epetra_config.h"
 #endif
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
+#include <Tpetra_Map.hpp>
+#endif
+#endif
+
 namespace Xpetra {
 
   // TODO move this typedef to another place
@@ -209,6 +215,14 @@ namespace Xpetra {
     // we cannot check for it by casting. This function allows us to avoid the restriction, as StridedMap redefines
     // it to return the base map.
     virtual RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getMap() const { return rcpFromRef(*this); }
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
+    typedef typename Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type local_map_type;
+    /// \brief Get the local Map for Kokkos kernels.
+    virtual local_map_type getLocalMap () const = 0;
+#endif
+#endif
 
     //@}
 

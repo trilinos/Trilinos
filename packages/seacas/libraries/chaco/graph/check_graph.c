@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -81,19 +81,22 @@ int check_graph(struct vtx_data **graph, /* graph data structure */
     }
 
     if (graph[i]->vwgt <= 0) {
-      if (!bad_vwgt_count)
+      if (!bad_vwgt_count) {
         printf("Vertex %d has bad vertex weight %d.\n", i, graph[i]->vwgt);
+      }
       ++bad_vwgt_count;
       flag = TRUE;
     }
 
-    if (using_ewgts)
+    if (using_ewgts) {
       wgt_sum = graph[i]->ewgts[0];
+    }
 
     for (j = 1; j < graph[i]->nedges; j++) {
       neighbor = graph[i]->edges[j];
-      if (using_ewgts)
+      if (using_ewgts) {
         wgt_sum += graph[i]->ewgts[j];
+      }
 
       /* Move it to the end and delete instead? */
       if (neighbor == i) {
@@ -136,8 +139,9 @@ int check_graph(struct vtx_data **graph, /* graph data structure */
     }
   }
 
-  if (bad_vwgt_count > 1)
+  if (bad_vwgt_count > 1) {
     printf("%d vertices have bad vertex weights\n", bad_vwgt_count);
+  }
 
   if (narcs != 2 * nedges) {
     printf(" twice nedges = %d, but I count %d\n", 2 * nedges, narcs);
@@ -155,10 +159,12 @@ int is_an_edge(struct vtx_data *vertex, /* data for a vertex */
 
   for (i = 1; i < vertex->nedges; i++) {
     if (vertex->edges[i] == v2) {
-      if (vertex->ewgts != NULL)
+      if (vertex->ewgts != NULL) {
         *weight2 = vertex->ewgts[i];
-      else
+      }
+      else {
         *weight2 = 1;
+      }
       return (TRUE);
     }
   }

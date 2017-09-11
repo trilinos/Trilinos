@@ -75,8 +75,6 @@ class Orientation;
 
 namespace panzer {
   
-  class LinearObjContainer;
-
   struct Traits {
 
     // ******************************************************************

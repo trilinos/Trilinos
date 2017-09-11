@@ -42,10 +42,10 @@
 
 #ifdef PANZER_HAVE_TEKO
 
+namespace panzer_stk {
+
 using Teuchos::RCP;
 using Teuchos::rcp;
-
-namespace panzer_stk {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT,typename Node>
 ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::ParameterListCallback(

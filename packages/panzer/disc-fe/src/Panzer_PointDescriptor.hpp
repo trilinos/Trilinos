@@ -49,10 +49,6 @@
 #include "Teuchos_RCP.hpp"
 
 // forward declarations
-namespace shards {
-class CellTopology;
-}
-
 namespace panzer {
 class PointGenerator;
 }

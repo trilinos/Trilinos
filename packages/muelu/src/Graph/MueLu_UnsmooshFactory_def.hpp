@@ -202,7 +202,7 @@ namespace MueLu {
     // could be gathered easily from the unamalgamated fine level operator A.
     std::vector<size_t> stridingInfo(1,maxDofPerNode);
 
-    GlobalOrdinal nCoarseDofs = amalgP->getDomainMap()->getGlobalNumElements() * maxDofPerNode;
+    GlobalOrdinal nCoarseDofs = amalgP->getDomainMap()->getNodeNumElements() * maxDofPerNode;
     GlobalOrdinal indexBase   = amalgP->getDomainMap()->getIndexBase();
     RCP<const Map> coarseDomainMap = StridedMapFactory::Build(amalgP->getDomainMap()->lib(),
         Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
@@ -212,12 +212,23 @@ namespace MueLu {
         amalgP->getDomainMap()->getComm(),
         -1 /* stridedBlockId */,
         0  /*domainGidOffset */);
-    // Assemble unamalgamated P
 
-    // TODO think about maximum number of entries per row
-    // Does this work for more than on nullspace vectors?
-    // We assume non-overlapping aggreagtes, i.e., colmap = domainmap
-    Teuchos::RCP<CrsMatrix> unamalgPCrs = CrsMatrixFactory::Build(unamalgA->getRowMap(),coarseDomainMap, 1);
+    size_t nColCoarseDofs = Teuchos::as<size_t>(amalgP->getColMap()->getNodeNumElements() * maxDofPerNode);
+    Teuchos::Array<GlobalOrdinal> unsmooshColMapGIDs(nColCoarseDofs);
+    for(size_t c = 0; c < amalgP->getColMap()->getNodeNumElements(); ++c) {
+      GlobalOrdinal gid = amalgP->getColMap()->getGlobalElement(c) * maxDofPerNode;
+      for(int i = 0; i < maxDofPerNode; ++i) {
+        unsmooshColMapGIDs[c * maxDofPerNode + i] = gid + i;
+      }
+    }
+    Teuchos::RCP<Map> coarseColMap = MapFactory::Build(amalgP->getDomainMap()->lib(),
+        Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+        unsmooshColMapGIDs(), //View,
+        indexBase,
+        amalgP->getDomainMap()->getComm());
+
+    // Assemble unamalgamated P
+    Teuchos::RCP<CrsMatrix> unamalgPCrs = CrsMatrixFactory::Build(unamalgA->getRowMap(),coarseColMap, 3);
     for (decltype(rowCount) i = 0; i < rowCount; i++) {
       unamalgPCrs->insertLocalValues(i, newPCols.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]),
           newPVals.view(newPRowPtr[i],newPRowPtr[i+1]-newPRowPtr[i]));

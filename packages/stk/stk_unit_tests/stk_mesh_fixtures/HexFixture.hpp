@@ -92,6 +92,14 @@ class HexFixture
               , size_t nx
               , size_t ny
               , size_t nz
+              , const std::string& coordinate_name
+              , ConnectivityMap const* connectivity_map = NULL
+            );
+
+  HexFixture(   stk::ParallelMachine pm
+              , size_t nx
+              , size_t ny
+              , size_t nz
               , bool auraOn
               , ConnectivityMap const* connectivity_map = NULL
             );

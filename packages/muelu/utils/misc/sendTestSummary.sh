@@ -32,7 +32,7 @@ fi
 #########################################################################
 
 #Perl script to produce prettified HTML
-HTMLPERLSCRIPT=/home/jhu/bin/drakify-email.pl
+HTMLPERLSCRIPT="/home/jhu/bin/drakify-email.pl"
 #root of cdash testing directory
 TESTLOCATION="/home/jhu/code/trilinos-test"
 LOGBACKUPDIRECTORY="/home/jhu/code/trilinos-test/logs"
@@ -126,13 +126,16 @@ BEGIN {
     dashBoardPattern="Test [ ]*#[0-9]*: " dashboardName
   }
 
-  # Record whether this dashboard is "Nightly" or "Experimental"
-  if (FOUND && $0 ~ "-- CTEST_TEST_TYPE=")
+# Record the "track" for this dashboard, which could be "Nightly", "Experimental", or "Specialized"
+  if (FOUND && $0 ~ "-- Trilinos_TRACK=")
   {
     thisLine=$0 
-    sub(/^[0-9]*: -- CTEST_TEST_TYPE=\x27/,"",thisLine)
+    sub(/^[0-9]*: -- Trilinos_TRACK=\x27/,"",thisLine)
     sub(/\x27/,"",thisLine)
-    dashboardType[dashboardName] = thisLine
+    if (length(thisLine) > 0) {
+      dashboardTrack[dashboardName] = thisLine
+      trackTypes[thisLine]++
+    }
   }
 
   if (FOUND && $0 ~ dashBoardPattern)
@@ -206,6 +209,11 @@ BEGIN {
     getTestSummary=1
   }
 
+  if (getTestSummary && $0 ~ "No tests were found!!!")
+  {
+    getTestSummary=0
+  }
+
   #Calculate the number of failing, passing, and total tests.
   if (getTestSummary && $0 ~ "tests failed out of")
   {
@@ -248,23 +256,28 @@ END {
     print "\n *** git update FAILED ***\n" > summaryFile
   }
 
-  printf("\n---------------------------------- Summary ----------------------------------\n") > summaryFile
-  printf("  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  printf("  ++ Nightly ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  printf("  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  for (i in listOfDashboardNames) {
-    db=listOfDashboardNames[i]
-    if (dashboardType[db] == "Nightly")
-      printf("  %61-s  ... %s\n",db,dashBoardSummary[db]) > summaryFile;
-  }
+  # do some nice formatting
+  numPlusses=73
+  thePluses="  "
+  while (jj++<numPlusses)
+    thePluses = thePluses "+"
 
-  printf("  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  printf("  ++ Experimental +++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  printf("  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  for (i in listOfDashboardNames) {
-    db=listOfDashboardNames[i]
-    if (dashboardType[db] == "Experimental")
-      printf("  %61-s  ... %s\n",db,dashBoardSummary[db]) > summaryFile;
+  printf("\n---------------------------------- Summary ----------------------------------\n") > summaryFile
+  for (track in trackTypes) {
+    printf("%s\n",thePluses) > summaryFile
+    trackNameLength = length(track)
+    numPlussesToTheRight = numPlusses - trackNameLength - 4
+    plussesToTheRight=""
+    kk = 0
+    while (kk++<numPlussesToTheRight)
+      plussesToTheRight = plussesToTheRight "+"
+    printf("  ++ %*-s %s\n",trackNameLength,track,plussesToTheRight) > summaryFile
+    printf("%s\n",thePluses) > summaryFile
+    for (i in listOfDashboardNames) {
+      db=listOfDashboardNames[i]
+      if (dashboardTrack[db] == track)
+        printf("  %61-s  ... %s\n",db,dashBoardSummary[db]) > summaryFile;
+    }
   }
   printf("-----------------------------------------------------------------------------\n\n") > summaryFile
 

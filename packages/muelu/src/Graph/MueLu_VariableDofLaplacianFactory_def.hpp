@@ -129,6 +129,8 @@ namespace MueLu {
     size_t nLocalNodes, nLocalPlusGhostNodes;
     this->assignGhostLocalNodeIds(A->getRowMap(), A->getColMap(), myLocalNodeIds, map, maxDofPerNode, nLocalNodes, nLocalPlusGhostNodes, comm);
 
+    //RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout)," ",0,false,10,false, true);
+
     TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(dofPresent.size()) != Teuchos::as<size_t>(nLocalNodes * maxDofPerNode),MueLu::Exceptions::RuntimeError,"VariableDofLaplacianFactory: size of provided DofPresent array is " << dofPresent.size() << " but should be " << nLocalNodes * maxDofPerNode << " on the current processor.");
 
     // put content of assignGhostLocalNodeIds here...
@@ -155,22 +157,27 @@ namespace MueLu {
       count++;
     }
 
-    // dofs belonging to the same node must be consecutively only for the local part of myLocalNodeIds[]
-    // fill amalgRowMapGIDs + local part of amalgColMapGIDs
     for(size_t i = 1; i < nLocalDofs; i++) {
-      if(myLocalNodeIds[i] != myLocalNodeIds[i-1]) {
-        amalgRowMapGIDs[count] = myGids[i];
-        count++;
-      }
+       if (myLocalNodeIds[i] != myLocalNodeIds[i-1]) {
+          amalgRowMapGIDs[count] = myGids[i];
+          amalgColMapGIDs[count] = myGids[i];
+          count++;
+       }
     }
 
-    size_t count2 = 1;
-    for(size_t i = 1; i < myLocalNodeIds.size(); i++) {
-      if(myLocalNodeIds[i] != myLocalNodeIds[i-1]) {
-        amalgColMapGIDs[count2] = myGids[i];
-        count2++;
-      }
-    }
+    RCP<GOVector> tempAmalgColVec = GOVectorFactory::Build(A->getDomainMap());
+    Teuchos::ArrayRCP<GlobalOrdinal> tempAmalgColVecData = tempAmalgColVec->getDataNonConst(0);
+    for (size_t i = 0; i < A->getDomainMap()->getNodeNumElements(); i++)
+      tempAmalgColVecData[i] = amalgColMapGIDs[ myLocalNodeIds[i]];
+
+    RCP<GOVector> tempAmalgColVecTarget = GOVectorFactory::Build(A->getColMap());
+    Teuchos::RCP<Import> dofImporter = ImportFactory::Build(A->getDomainMap(), A->getColMap());
+    tempAmalgColVecTarget->doImport(*tempAmalgColVec, *dofImporter, Xpetra::INSERT);
+    Teuchos::ArrayRCP<const GlobalOrdinal> tempAmalgColVecBData = tempAmalgColVecTarget->getData(0);
+
+    // copy from dof vector to nodal vector
+    for (size_t i = 0; i < myLocalNodeIds.size(); i++)
+       amalgColMapGIDs[ myLocalNodeIds[i]] = tempAmalgColVecBData[i];
 
     Teuchos::RCP<Map> amalgRowMap = MapFactory::Build(lib,
                Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(),
@@ -184,7 +191,6 @@ namespace MueLu {
                A->getRangeMap()->getIndexBase(),
                comm);
 
-    //RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     // end fill nodal maps
 
 
@@ -212,7 +218,6 @@ namespace MueLu {
     Teuchos::RCP<Vector> diagVecUnique = VectorFactory::Build(A->getRowMap());
     Teuchos::RCP<Vector> diagVec       = VectorFactory::Build(A->getColMap());
     A->getLocalDiagCopy(*diagVecUnique);
-    Teuchos::RCP<Import> dofImporter = ImportFactory::Build(diagVecUnique->getMap(), diagVec->getMap());
     diagVec->doImport(*diagVecUnique, *dofImporter, Xpetra::INSERT);
     Teuchos::ArrayRCP< const Scalar > diagVecData = diagVec->getData(0);
 
@@ -255,7 +260,6 @@ namespace MueLu {
     amalgCols.resize(amalgRowPtr[nLocalNodes]);
 
     // end variableDofAmalg
-
 
     // begin rm differentDofsCrossings
 
@@ -365,6 +369,8 @@ namespace MueLu {
           lapVals.view(amalgRowPtr[i],amalgRowPtr[i+1]-amalgRowPtr[i]));
     }
     lapCrsMat->fillComplete(amalgRowMap,amalgRowMap);
+
+    //lapCrsMat->describe(*fancy, Teuchos::VERB_EXTREME);
 
     Teuchos::RCP<Matrix> lapMat = Teuchos::rcp(new CrsMatrixWrap(lapCrsMat));
     Set(currentLevel,"A",lapMat);

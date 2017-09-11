@@ -81,7 +81,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetraKernels_ENABLE_Experimental:BOOL=ON"
   "-DTpetraKernels_ENABLE_TESTS:BOOL=ON"
   "-DMATLAB_ARCH:STRING=glnxa64"
-  "-DCMAKE_CXX_FLAGS:STRING='-g'"
+  "-DCMAKE_CXX_FLAGS:STRING='-g -fno-var-tracking'"
   "-DCMAKE_C_FLAGS:STRING='-g'"
   "-DCMAKE_Fortran_FLAGS:STRING='-g'"
 )

@@ -34,6 +34,8 @@
 #ifndef STK_UTIL_DIAG_String_h
 #define STK_UTIL_DIAG_String_h
 
+#include <string.h>
+
 #ifdef USE_CISTRING
 
 #include <stk_util/util/cistring.hpp>
@@ -47,64 +49,6 @@ typedef cistring ParamId;
 } // namespace sierra
 
 #else 
-
-/**
- * @file
- * @author  H. Carter Edwards
- *
- * Simple string value classes that avoid allocation for small strings.
- *
- * @par Assumption/Issue
- *
- *   The std::string class (typically) allocates memory to
- *   hold any non-zero length string.  The ISO C++ interface
- *   requirements also define a 'capacity' for std::string
- *   that may be larger than the string length.  Thus the
- *   std::string class must, at a minimum, have a pointer
- *   to the allocated memory, a length integer, and a capacity
- *   integer.  Furthermore, the std::string class may also
- *   support reference counting which is another integer.
- *   In addition to the std::string overhead there will also
- *   be some amount of allocated-memory management overhead.
- *   Somewhere between one and four words.
- *
- * @par Objective/Policy
- *
- *   In SIERRA numerous object types have 'name' members
- *   that are string labels for those objects.  These
- *   names are typically small, e.g. "density" or "temperature".
- *   The objective of the sierra::String class is to minimize
- *   the allocated memory overhead associated with these 'name'
- *   members.
- *
- * @par Design
- *
- *   The String type owns a character buffer that is used
- *   to store small strings.  If the input string is larger
- *   than the buffer then memory is allocated with an
- *   allocator (e.g. std::string::allocator_type).
- *
- * @par Specification of "small" string
- *
- *   The character buffer is sized to be (1) approximately
- *   equal to the overhead of an allocated std::string object
- *   and (2) have a 4word (16byte) alignment.
- *
- * @par std::string, Interoperability and Recommendations
- *
- *   String constructors and other methods are defined so that
- *   objects of the String type can be interoperable with the
- *   std::string class.  It is recommended that the a final
- *   string value for a 'name' or 'label' be stored in a
- *   sierra::String object.  Long strings or strings that will
- *   be manipulated (e.g. insert or append) should use the
- *   std::string class.  If a name is to be constructed via
- *   manipulation then generate the string via 'std::string'
- *   and assign the final result to the sierra::String.
- *   If string manipulation includes formatting operations
- *   then the std::ostringstream or std::istringstream classes
- *   should be used.
- */
 
 #include <iosfwd>
 #include <string>
@@ -270,31 +214,25 @@ namespace sierra {
 
 namespace implementation {
 
-union StringData {
+class StringData {
+public:
 
-  // Required: buf_len % sizeof(long) == 0 && buf_len > sizeof(Large)
-  enum { buf_len = 32 };
-  enum { off_len = buf_len - 1 };
-  enum { max_len = buf_len - 2 };
+  size_t len() const { return m_data.length(); }
 
-  struct Large {
-    char * ptr ; // Pointer to allocated memory
-    size_t len ; // Length of string
-    size_t siz ; // Allocated size
-  } large ;
+  //
+  //  NKC, Hmm, should really get rid of this entirely, non constant access to internal data really bad idea.
+  //
+  char * data() { return &*m_data.begin(); }
 
-  char small[ buf_len ];
-
-   StringData() { small[ max_len ] = small[ off_len ] = small[ 0 ] = 0 ; }
-  ~StringData() { mem(nullptr, 0); }
-
-  size_t len() const { return small[ max_len ] ? large.len : small[ off_len ] ; }
-
-        char * c_str() { return small[ max_len ] ? large.ptr : small ; }
-  const char * c_str() const { return small[ max_len ] ? large.ptr : small ; }
+  const char * c_str() const { return m_data.c_str(); }
 
   /** Assigns memory and copy contents */
-  char * mem( const char *, size_t n );
+  char * mem( const char* c, size_t n ) {
+    m_data.assign(c, n);
+    return data();
+  }
+private:
+  std::string m_data;
 };
 
 }
@@ -389,9 +327,6 @@ private:
  */
 struct char_simple_traits {
 public:
-  /** Length of null-terminated string */
-  static size_t length( const char * c1 );
-
   /** Convert 'n' characters, a no-op */
   static void convert( char *, size_t )
   {}
@@ -406,9 +341,6 @@ public:
  */
 struct char_label_traits {
 public:
-  /** Length of null-terminated string */
-  static size_t length( const char * c1 );
-
   /** Convert 'n' characters */
   static void convert( char * c, size_t n );
 
@@ -433,7 +365,7 @@ typename StringBase<CT>::size_type StringBase<CT>::size() const
 template<class CT>
 typename StringBase<CT>::iterator
 StringBase<CT>::begin()
-{ return data.c_str(); }
+{ return data.data(); }
 
 template<class CT>
 typename StringBase<CT>::const_iterator
@@ -443,7 +375,7 @@ StringBase<CT>::begin() const
 template<class CT>
 typename StringBase<CT>::iterator
 StringBase<CT>::end()
-{ return data.c_str() + data.len(); }
+{ return data.data() + data.len(); }
 
 template<class CT>
 typename StringBase<CT>::const_iterator
@@ -499,8 +431,10 @@ StringBase<CT>::StringBase( It l_begin, It l_end )
 template<class CT>
 StringBase<CT>::StringBase( const char * cs )
 {
-  const size_type n = traits_type::length(cs);
-  traits_type::convert( data.mem(cs, n), n );
+  if(cs != nullptr) {
+    const size_type n = strlen(cs);
+    traits_type::convert( data.mem(cs, n), n );
+  }
 }
 
 template<class CT>
@@ -520,8 +454,13 @@ StringBase<CT>::assign( const char * cs, const typename StringBase<CT>::size_typ
 }
 
 template<class CT>
-StringBase<CT> & StringBase<CT>::assign( const char * cs )
-{ return assign( cs, traits_type::length(cs) ); }
+StringBase<CT> & StringBase<CT>::assign( const char * cs ) { 
+  if(cs == nullptr) {
+    return assign( nullptr, 0 ); 
+  } else {
+    return assign( cs, strlen(cs) ); 
+  }
+}
 
 template<class CT>
 StringBase<CT> & StringBase<CT>::assign( const std::string & cs )
@@ -549,8 +488,13 @@ StringBase<CT>::operator= ( const StringBase<CT2> & cs ) {
 
 template<class CT>
 StringBase<CT>&
-StringBase<CT>::operator= ( const char * cs )
-{ return assign( cs, traits_type::length(cs) ); }
+StringBase<CT>::operator= ( const char * cs ) { 
+  if(cs == nullptr) {
+    return assign( nullptr, 0 ); 
+  } else {
+    return assign( cs, strlen(cs) ); 
+  }
+}
 
 template<class CT>
 StringBase<CT>&
@@ -590,8 +534,13 @@ StringBase<char_label_traits>::append( const char * cs, const StringBase<char_la
 }
 
 template<class CT>
-StringBase<CT> & StringBase<CT>::append( const char * cs )
-{ return append( cs, traits_type::length(cs) ); }
+StringBase<CT> & StringBase<CT>::append( const char * cs ){ 
+  if(cs == nullptr) {
+    return *this;
+  } else {
+    return append( cs, strlen(cs) ); 
+  }
+}
 
 template<class CT>
 StringBase<CT> & StringBase<CT>::append( const std::string & cs )
@@ -611,8 +560,13 @@ StringBase<CT>::operator+= ( const StringBase<CT2> & cs )
 
 template<class CT>
 StringBase<CT>&
-StringBase<CT>::operator+= ( const char * cs )
-{ return append( cs, traits_type::length(cs) ); }
+StringBase<CT>::operator+= ( const char * cs ){ 
+  if(cs == nullptr) {
+    return *this;
+  } else {
+    return append( cs, strlen(cs) ); 
+  }
+}
 
 template<class CT>
 StringBase<CT>&

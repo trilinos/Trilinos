@@ -32,6 +32,8 @@ echo "#if defined (KOKKOSKERNELS_INST_${Scalar_UpperCase}) \\" >> ${filename_cpp
 echo " && defined (KOKKOSKERNELS_INST_${Layout_UpperCase}) \\" >> ${filename_cpp} 
 echo " && defined (KOKKOSKERNELS_INST_EXECSPACE_${ExecSpace_UpperCase}) \\" >> ${filename_cpp} 
 echo " && defined (KOKKOSKERNELS_INST_MEMSPACE_${MemSpace_UpperCase})" >> ${filename_cpp} 
+echo " && defined (KOKKOSKERNELS_INST_ORDINAL_${MemSpace_UpperCase})" >> ${filename_cpp} 
+
 echo " ${Macro}_DEF(${Scalar}, int, ${OffsetType}, Kokkos::${Layout}, Kokkos::${ExecSpace}, Kokkos::${MemSpace})" >> ${filename_cpp}
 echo "#endif" >> ${filename_cpp}
 echo "} // Impl" >> ${filename_cpp} 

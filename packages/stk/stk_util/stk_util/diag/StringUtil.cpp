@@ -268,9 +268,6 @@ word_wrap(
       std::string
       demangle(const char * symbol)
      {
-     #ifdef PURIFY_BUILD
-       return symbol;
-     #else
        std::string s;
        int status;
 
@@ -285,16 +282,12 @@ word_wrap(
          s = std::string(symbol);
 
        return s;
-     #endif
      }
 
     #elif (__GNUC__ == 4)
       std::string
       demangle(const char * symbol)
       {
-      #ifdef PURIFY_BUILD
-        return symbol;
-      #else
         std::string s;
 
         int status = -1;
@@ -310,16 +303,12 @@ word_wrap(
           s = std::string(symbol);
 
         return s;
-      #endif
       }
 
     #elif (__GNUC__ >= 5)
       std::string
       demangle(const char * symbol)
       {
-      #ifdef PURIFY_BUILD
-        return symbol;
-      #else
         std::string s;
 
         int status = -1;
@@ -335,7 +324,6 @@ word_wrap(
           s = std::string(symbol);
 
         return s;
-      #endif
       }
       
     #endif // (__GNUC__ == 3)

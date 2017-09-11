@@ -577,18 +577,6 @@ namespace stk {
       static const std::string matrix_22("matrix_22");
       static const std::string matrix_33("matrix_33");
 
-#if 0
-      // Not currently handled...
-      static const std::string quaternion_2d("quaternion_2d");
-      static const std::string quaternion_3d("quaternion_3d");
-      static const std::string sym_tensor_13("sym_tensor_13");
-      static const std::string sym_tensor_11("sym_tensor_11");
-      static const std::string sym_tensor_10("sym_tensor_10");
-      static const std::string asym_tensor_03("asym_tensor_03");
-      static const std::string asym_tensor_02("asym_tensor_02");
-      static const std::string asym_tensor_01("asym_tensor_01");
-#endif
-
       const unsigned rank = field->field_array_rank();
       const shards::ArrayDimTag * const * const tags = field->dimension_tags();
 
@@ -661,15 +649,6 @@ namespace stk {
     }
 
     //----------------------------------------------------------------------
-    const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part)
-    {
-      const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
-      if (!entity || entity->type() == Ioss::INVALID_TYPE) {
-        return NULL;
-      } else {
-        return entity;
-      }
-    }
 
     void put_io_part_attribute(mesh::Part & part)
     {

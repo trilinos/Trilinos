@@ -24,12 +24,19 @@ IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
   MESSAGE(FATAL_ERROR "As of Trilinos 12.0, C++11 is REQUIRED when building Kokkos and its downstream packages, which include Tpetra.  You MUST enable C++11 when building these packages.  Trilinos should enable this by default, if your C++11 compiler supports C++11 (that is, if it's not too old).  If you set ${PROJECT_NAME}_ENABLE_CXX11=OFF, then you are disabling C++11.  DON'T DO THAT if you want to build Kokkos or its downstream packages, including Tpetra.  If you aren't happy about that, then you need to disable Kokkos explicitly, by setting ${PROJECT_NAME}_ENABLE_Kokkos=OFF.  This WILL disable Tpetra and its downstream packages.")
 ENDIF ()
 
-# As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
+# Checks that only matter if building with CUDA enabled.
 ASSERT_DEFINED(TPL_ENABLE_CUDA)
-IF (TPL_ENABLE_CUDA AND DEFINED CUDA_VERSION)
-  # Don't check a variable's value unless we know it is defined.
-  IF (CUDA_VERSION VERSION_LESS "7.5")
-     MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra requires at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
+IF (TPL_ENABLE_CUDA)
+  # As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
+  IF (DEFINED CUDA_VERSION)
+    # Don't check a variable's value unless we know it is defined.
+    IF (CUDA_VERSION VERSION_LESS "7.5")
+       MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra requires at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
+    ENDIF ()
+  ENDIF ()
+
+  IF (NOT DEFINED Kokkos_ENABLE_Cuda_Lambda OR NOT Kokkos_ENABLE_Cuda_Lambda)
+    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra requires that you set Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You should also make sure, at least with CUDA_VERSION 7.5 or 8.0, to add \"--expt-extended-lambda\" to CMAKE_CXX_FLAGS.")
   ENDIF ()
 ENDIF ()
 
@@ -483,11 +490,15 @@ LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
 # If ETI is OFF, #1 no longer holds, but #2 still holds.
 #
 # Currently, we always enable int, because MueLu requires it for
-# examples and tests (this is Bug 6358).  Furthermore, if Teuchos
-# enables long long support (which it now does by default with C++11)
-# and CUDA is OFF (CUDA doesn't seem to like GO=long long), we also
-# enable long long (which C++11 / C99 guarantees to be >= 64 bits).
-# We currently only enable other types if the user asks for them.
+# examples and tests (this is Bug 6358 (in the Bugzilla bug tracking
+# system).  Furthermore, if Teuchos enables long long support (which
+# it now does by default with C++11), we also enable long long (which
+# C++11 / C99 guarantees to be >= 64 bits).  We currently only enable
+# other types if the user asks for them.
+#
+# Enabling long long by default no longer depends on whether this is a
+# CUDA build, since we have fixed Trilinos GitHub issue #1683:
+# https://github.com/trilinos/Trilinos/issues/1683
 #
 # Note that long is 64 bits on some platforms, and 32 bits on other
 # platforms.  On the latter, you may use long long instead, which
@@ -502,24 +513,21 @@ LIST (APPEND ${PACKAGE_NAME}_ETI_LORDS "int")
 # GO = int is enabled by default, but only because of Bug 6358.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
 
-# GO = long long is enabled by default if and only if CUDA is OFF.
-# However, if the user enabled GO = long EXPLICITLY, we disable GO =
-# long long by default, because we don't want to enable multiple
-# "long" GO types by default.
-IF (Kokkos_ENABLE_Cuda)
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
-ELSE ()
-  # Tpetra currently needs Teuchos to support long long.
-  # This may change in the future, though.
-  IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
-    IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
-      MESSAGE(WARNING "Do NOT set Teuchos_ENABLE_LONG_LONG_INT=OFF !  The default is ON.  We will VERY SOON require that this option be ON.  Don't set it explicitly!  Just use the default value.  See #1184: https://github.com/trilinos/Trilinos/issues/1184 and see also #1183: https://github.com/trilinos/Trilinos/issues/1183")
-    ENDIF ()
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
-  ELSE ()
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
+# GO = long long is enabled by default.  However, if the user enabled
+# GO = long EXPLICITLY, we disable GO = long long by default, because
+# we don't want to enable multiple "long" GO types by default.
+
+# Tpetra currently needs Teuchos to support long long.
+# This may change in the future, though.
+IF (DEFINED Teuchos_ENABLE_LONG_LONG_INT)
+  IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
+    MESSAGE(WARNING "Do NOT set Teuchos_ENABLE_LONG_LONG_INT=OFF !  The default is ON.  We will VERY SOON require that this option be ON.  Don't set it explicitly!  Just use the default value.  See #1184: https://github.com/trilinos/Trilinos/issues/1184 and see also #1183: https://github.com/trilinos/Trilinos/issues/1183")
   ENDIF ()
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
+ELSE ()
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
 ENDIF ()
+
 IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
   IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
     # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn

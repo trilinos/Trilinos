@@ -45,9 +45,9 @@
 //**********************************************************************
 template<typename EvalT, typename Traits>
 DuplicateFieldEvaluator<EvalT,Traits>::
-DuplicateFieldEvaluator(const Teuchos::RCP<const PHX::DataLayout>& a_layout,
-                        const Teuchos::RCP<const PHX::DataLayout>& b_layout,
-                        const Teuchos::RCP<const PHX::DataLayout>& c_layout) :
+DuplicateFieldEvaluator(const Teuchos::RCP<PHX::DataLayout>& a_layout,
+                        const Teuchos::RCP<PHX::DataLayout>& b_layout,
+                        const Teuchos::RCP<PHX::DataLayout>& c_layout) :
   a("a",a_layout),
   b1("b",b_layout),
   b2("b",b_layout), // purposely duplicate b1 for corner case

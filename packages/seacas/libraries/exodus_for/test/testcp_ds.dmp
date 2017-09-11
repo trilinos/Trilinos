@@ -4,7 +4,7 @@ dimensions:
 	len_line = 81 ;
 	four = 4 ;
 	time_step = UNLIMITED ; // (0 currently)
-	len_name = 33 ;
+	len_name = 256 ;
 	num_dim = 3 ;
 	num_nodes = 26 ;
 	num_elem = 5 ;

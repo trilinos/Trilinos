@@ -78,18 +78,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     COMM serial mpi
   )
 
-ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_Experimental)
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    RBILUK
-    SOURCES 
-      Ifpack2_UnitTestRBILUK.cpp
-      ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS ""
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    )
-ENDIF ()
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+		RBILUK
+		SOURCES 
+		Ifpack2_UnitTestRBILUK.cpp
+		${TEUCHOS_STD_UNIT_TEST_MAIN}
+		ARGS ""
+		COMM serial mpi
+		STANDARD_PASS_OUTPUT
+		)
 
 #TRIBITS_ADD_EXECUTABLE(
 #    Distributed_SGS
@@ -230,7 +227,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
   )
 
   TRIBITS_ADD_TEST(
-    SGSMT Ifpack2_UnitTest_SGSMT_CopyFile
+    SGSMT
     NAME SGSMT_compare_with_Jacobi
     ARGS ""
     COMM serial mpi

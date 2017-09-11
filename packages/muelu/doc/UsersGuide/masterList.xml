@@ -601,6 +601,15 @@
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>synchronize factory timers</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Add barriers before and after Factory Build() calls.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
   </misc>
 
   <multigrid>
@@ -945,6 +954,24 @@
       <type>bool</type>
       <default>false</default>
       <description>Set zero diagonals on coarse grids to one.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: shift</name>
+      <type>double</type>
+      <default>0.0</default>
+      <description>Shift to use in the RAPShiftFactory</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: algorithm</name>
+      <type>string</type>
+      <default>galerkin</default>
+      <description>Whether to use the Galerkin RAP or the Shift version</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
     </parameter>

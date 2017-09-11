@@ -117,10 +117,10 @@ typedef unsigned int       flex_uint32_t;
 
 /* %if-c++-only */
 /* begin standard C++ headers. */
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <errno.h>
 #include <iostream>
 /* end standard C++ headers. */
 /* %endif */
@@ -972,50 +972,16 @@ static yyconst flex_int16_t yy_rule_linenum[102] = {
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 #line 1 "/scratch/gdsjaar/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
-/*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of Sandia Corporation nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- */
 /* -*- Mode: c++ -*- */
 #line 39 "/scratch/gdsjaar/seacas/packages/seacas/libraries/aprepro_lib/aprepro.ll"
 
+#include <cstdio>
+#include <cstring>
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <stack>
-#include <stdio.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "apr_getline_int.h"
@@ -1280,7 +1246,7 @@ YY_DECL
     yy_load_buffer_state();
   }
 
-  while (1) /* loops until end-of-file is reached */
+  while (true) /* loops until end-of-file is reached */
   {
     /* %% [8.0] yymore()-related code goes here */
     yy_cp = (yy_c_buf_p);
@@ -1998,7 +1964,7 @@ YY_DECL
         symrec *s;
         s = aprepro.getsym(yytext);
         if (s == nullptr)
-          s          = aprepro.putsym(yytext, SEAMS::Aprepro::UNDEFINED_VARIABLE, 0);
+          s          = aprepro.putsym(yytext, SEAMS::Aprepro::UNDEFINED_VARIABLE, false);
         yylval->tptr = s;
         return ((token::yytokentype)s->type);
       }
@@ -3157,7 +3123,7 @@ int yyFlexLexer::yy_top_state()
 void yyFlexLexer::LexerError(yyconst char msg[])
 {
   std::cerr << msg << '\n';
-  exit(YY_EXIT_FAILURE);
+  throw std::runtime_error(std::string(msg));
 }
 /* %endif */
 
@@ -3261,7 +3227,7 @@ namespace SEAMS {
     aprepro.outputStream.push(out);
   }
 
-  Scanner::~Scanner() {}
+  Scanner::~Scanner() = default;
 
   void Scanner::add_include_file(const std::string &filename, bool must_exist)
   {
@@ -3523,7 +3489,7 @@ namespace SEAMS {
       if_state[if_lvl] = IF_SKIP;
     }
     else {
-      suppress_nl         = 1;
+      suppress_nl         = true;
       if_state[if_lvl]    = INITIAL;
       if_case_run[if_lvl] = true;
     }

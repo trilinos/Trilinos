@@ -5,16 +5,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS "--matnames-file=\"matrixsystems.xml\" --v"
   )
-
 IF (KokkosKernels_ENABLE_Experimental)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    MatrixMatrixKernels_UnitTests
-    SOURCES 
-    MatrixMatrixKernels_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-    ARGS "--matnames-file=\"matrixsystems.xml\" --v"
-    NUM_MPI_PROCS 1
-    )
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+		MatrixMatrixKernels_UnitTests
+		SOURCES 
+		MatrixMatrixKernels_UnitTests.cpp
+		${TEUCHOS_STD_UNIT_TEST_MAIN}
+		ARGS "--matnames-file=\"matrixsystems.xml\" --v"
+		NUM_MPI_PROCS 1
+		)
 ENDIF()
 
 

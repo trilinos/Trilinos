@@ -178,8 +178,8 @@ void report_bandwidth(double numDoubles, double time)
 class EncapsulateKokkos : public MTK_Kokkos {};
 TEST_F(EncapsulateKokkos, MatrixVectorMultiply)
 {
-    const size_t numRows = 30000;
-    const size_t numCols = 2000;
+    const size_t numRows = 3000;
+    const size_t numCols = 200;
     stk::NgpMatrix matrix(numRows, numCols);
     stk::NgpVector vecIn(numCols, 1);
     stk::NgpVector vecOut(numRows);

@@ -62,7 +62,6 @@
 
 namespace panzer {
 
-  class LinearObjContainer;
   class WorksetNeeds;
 
   template<typename LO, typename GO>

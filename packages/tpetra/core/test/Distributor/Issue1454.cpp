@@ -43,6 +43,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Kokkos_Core.hpp"
+#include <type_traits>
 
 // Kokkos sometimes doesn't like functors in an anonymous namespace.
 namespace TpetraTest {
@@ -89,6 +90,18 @@ TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
 {
   typedef Tpetra::Map<> map_type;
   typedef map_type::device_type device_type;
+  // mfh 01 Aug 2017: Deal with fix for #1088, by not using
+  // Kokkos::CudaUVMSpace for communication buffers.
+#ifdef KOKKOS_HAVE_CUDA
+  typedef typename std::conditional<
+  std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
+    Kokkos::CudaSpace,
+    typename device_type::memory_space>::type buffer_memory_space;
+#else
+  typedef typename device_type::memory_space buffer_memory_space;
+#endif // KOKKOS_HAVE_CUDA
+  typedef typename device_type::execution_space buffer_execution_space;
+  typedef Kokkos::Device<buffer_execution_space, buffer_memory_space> buffer_device_type;
 
   auto comm = Tpetra::TestingUtilities::getDefaultComm ();
   // Create a Map just to ensure that Kokkos gets initialized and
@@ -114,16 +127,16 @@ TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
   Kokkos::deep_copy (proc_ids_host, proc_ids);
   const int n_imports =
     distributor.createFromSends (Teuchos::ArrayView<const int> (proc_ids_host.data (), n_exports));
-  Kokkos::View<int *, device_type> exports( "exports", n_exports );
+  Kokkos::View<int *, buffer_device_type> exports( "exports", n_exports );
   {
     typedef TpetraTest::Functor2<decltype (exports) > functor_type;
     Kokkos::parallel_for ("fill_exports",
-                          Kokkos::RangePolicy<ExecutionSpace> (0, n_exports),
+                          Kokkos::RangePolicy<buffer_execution_space> (0, n_exports),
                           functor_type (exports, comm_rank));
   }
   Kokkos::fence();
 
-  Kokkos::View<int *, device_type> imports( "imports", n_imports );
+  Kokkos::View<int *, buffer_device_type> imports( "imports", n_imports );
 
   distributor.doPostsAndWaits (exports, 1, imports);
   auto imports_host = Kokkos::create_mirror_view (imports);

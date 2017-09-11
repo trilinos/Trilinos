@@ -46,8 +46,8 @@
 template<typename EvalT, typename Traits>
 ProjectValueToQP<EvalT,Traits>::
 ProjectValueToQP(const std::string& field_name,
-                 const Teuchos::RCP<const PHX::DataLayout>& basis_layout,
-                 const Teuchos::RCP<const PHX::DataLayout>& qp_layout) :
+                 const Teuchos::RCP<PHX::DataLayout>& basis_layout,
+                 const Teuchos::RCP<PHX::DataLayout>& qp_layout) :
   field_at_basis(field_name,basis_layout),
   field_at_qp(field_name,qp_layout)
 {

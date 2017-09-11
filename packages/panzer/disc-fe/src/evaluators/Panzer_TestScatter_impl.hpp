@@ -43,10 +43,10 @@
 #ifndef PANZER_TEST_SCATTER_IMPL_HPP
 #define PANZER_TEST_SCATTER_IMPL_HPP
 
+namespace panzer {
+
 template <typename EvalT,typename TRAITS>
 int panzer::TestScatter<EvalT, TRAITS>::offset = 0;
-
-namespace panzer {
 
 PHX_EVALUATOR_CTOR(TestScatter,p)
 {

@@ -61,7 +61,7 @@ class Constant : public PHX::EvaluatorWithBaseImpl<Traits>,
   
 public:
   Constant(const std::string& field_name,
-           const Teuchos::RCP<const PHX::DataLayout>& layout,
+           const Teuchos::RCP<PHX::DataLayout>& layout,
            const double& value);
   void postRegistrationSetup(typename Traits::SetupData d,
                              PHX::FieldManager<Traits>& fm) override;

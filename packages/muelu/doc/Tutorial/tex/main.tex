@@ -28,7 +28,7 @@
 
 \usepackage{flowchart} % also loads tikz
 \usepackage{tikz}
-\usetikzlibrary{arrows,shapes,positioning}
+\usetikzlibrary{arrows,shapes,positioning,calc}
 \usepackage{dot2texi}
 
 \usepackage[explicit]{titlesec}
@@ -1974,6 +1974,79 @@ For the block smoothers we apply well-established block smoothers (e.g. block re
 \subsection{Setup of block transfer operators}
 \label{sec:blocktransfersetup}
 
+Figure \ref{fig:transferoperatorsetup} shows a typical layout for the setup of a $2\times 2$ blocked operator block transfer operators. We group factories for building transfer operators for the upper-left and lower-right blocks and build the corresponding blocked transfer operators. In general we can distinguish volume-coupled and interface-coupled problems. In the simpler case of volume-coupled problems we usually can use the same aggregates for the second block than we have built for the first block. That is, we reuse the same aggregates (built, e.g., by \texttt{myAggFact1}) for the second block. For interface-coupled problems we usually need a separate aggregation strategy for the interface DOFs. This can be a second standard aggregation factory object or an application-specific aggregation routine.
+
+In the following we give more details on the corresponding xml files for setting up the transfer operator layout given in Figure \ref{fig:transferoperatorsetup}.
+
+
+\begin{figure}
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+		\tikzstyle{style_factory}=[anchor=center,rectangle, draw=black, fill=white, text centered, anchor=north, text=black, text width=3cm, line width=0.5mm]%
+		\tikzstyle{style_var_output}=[anchor=center, rounded corners=3pt, draw=black, fill=white, text centered, anchor=north, text=black, text width=1.4cm, line width=0.5mm]%
+		\tikzstyle{myarrow}=[->, >=stealth, line width=0.5mm]
+		\begin{scope}[shift={(-2.5,0)}]		
+		\node[node distance=6.5] (SubBlockAFact1) [style_factory] { \tiny mySubBlockAFactory1 };
+		\node[node distance=25] (AggFact1) [style_factory,below of=SubBlockAFact1] { \tiny myAggFact1 };
+		\node[node distance=25] (CoarseMapFact1) [style_factory,below of=AggFact1] { \tiny myCoarseMap1 };		
+		\node[node distance=25] (TentativePFact1) [style_factory,below of=CoarseMapFact1] { \tiny myTentativePFact1 };				
+		\node[node distance=25] (NullspaceFact1) [style_factory,below of=TentativePFact1] { \tiny myNspFact1 };	
+		\node[node distance=80] (varA1) [style_var_output,left of=SubBlockAFact1] { \tiny A };					
+		\node[node distance=80] (varAgg1) [style_var_output,left of=AggFact1] { \tiny Aggregates };			
+		\node[node distance=80] (varCoarseMap1) [style_var_output,left of=CoarseMapFact1] { \tiny CoarseMap };					
+		\node[node distance=80] (varTentativeP1) [style_var_output,left of=TentativePFact1] { \tiny P };							
+		\node[node distance=80] (varNullspace1) [style_var_output,left of=NullspaceFact1] { \tiny Nullspace };
+		\draw[myarrow,->] (SubBlockAFact1) -- (varA1);
+		\draw[myarrow,->] (AggFact1) -- (varAgg1);
+		\draw[myarrow,->] (TentativePFact1) -- (varTentativeP1);
+		\draw[myarrow,->] (CoarseMapFact1) -- (varCoarseMap1);
+		\draw[myarrow,->] (NullspaceFact1) -- (varNullspace1);		
+		\draw[myarrow,->] (CoarseMapFact1) -- (TentativePFact1);										
+		\draw[myarrow,->] (TentativePFact1) -- (NullspaceFact1);												
+		\draw[red,thick,line width=0.5mm, dotted] ($(varA1.north west)+(-0.3,0.3)$) rectangle ($(NullspaceFact1.south east)+(0.3,-0.3)$);
+		\end{scope}
+%		
+		\begin{scope}[shift={(2.5,0)}]		
+		\node[node distance=6.5] (SubBlockAFact2) [style_factory] { \tiny mySubBlockAFactory2 };
+		\node[node distance=50] (CoarseMapFact2) [style_factory,below of=SubBlockAFact2] { \tiny myCoarseMap2 };		
+		\node[node distance=25] (TentativePFact2) [style_factory,below of=CoarseMapFact2] { \tiny myTentativePFact };				
+		\node[node distance=25] (NullspaceFact2) [style_factory,below of=TentativePFact2] { \tiny myNspFact2 };	
+		\node[node distance=80] (varA2) [style_var_output,right of=SubBlockAFact2] { \tiny A };					
+		\node[node distance=25] (varAgg2) [style_var_output,below of=varA2] { \tiny Aggregates };			
+		\node[node distance=80] (varCoarseMap2) [style_var_output,right of=CoarseMapFact2] { \tiny CoarseMap };					
+		\node[node distance=80] (varTentativeP2) [style_var_output,right of=TentativePFact2] { \tiny P };							
+		\node[node distance=80] (varNullspace2) [style_var_output,right of=NullspaceFact2] { \tiny Nullspace };
+		\draw[myarrow,->] (SubBlockAFact2) -- (varA2);
+		\draw[myarrow,->] (AggFact1) -- (varAgg2);
+		\draw[myarrow,->] (TentativePFact2) -- (varTentativeP2);
+		\draw[myarrow,->] (CoarseMapFact2) -- (varCoarseMap2);
+		\draw[myarrow,->] (NullspaceFact2) -- (varNullspace2);	
+		\draw[myarrow,->] (CoarseMapFact2) -- (TentativePFact2);										
+		\draw[myarrow,->] (TentativePFact2) -- (NullspaceFact2);		
+		\draw[red,thick,line width=0.5mm, dotted] ($(SubBlockAFact2.north west)+(-0.3,0.3)$) rectangle ($(varNullspace2.south east)+(0.3,-0.3)$);
+		\end{scope}
+		
+		\draw[myarrow,->] (CoarseMapFact1) -- (CoarseMapFact2);	
+		
+		
+		\node[node distance=50] (BlockedPFact) [style_factory,below of=NullspaceFact1] { \tiny myBlockedPFact };	
+		\node[node distance=50] (BlockedRFact) [style_factory,below of=NullspaceFact2] { \tiny myBlockedRFact };	
+		
+		\draw[myarrow,->] (BlockedPFact) -- (BlockedRFact);	
+		
+		\node[node distance=40] (BlockedRAPFact) [style_factory,below of=BlockedRFact] { \tiny myBlockedRAPFact };	
+		\draw[myarrow,->] (BlockedPFact) -- (BlockedRAPFact);	
+		\draw[myarrow,->] (BlockedRFact) -- (BlockedRAPFact);			
+
+		\draw[myarrow,red] ($(NullspaceFact1.south)+(0.0,-0.3)$) -- node[left]{\tiny myFirstGroup} (BlockedPFact);
+		\draw[myarrow,red] ($(NullspaceFact2.south)+(0.0,-0.3)$) -- node[above]{\tiny mySecondGroup} ($(BlockedPFact.north)+(+1.6,0.0)$);
+		
+    	%\draw[myarrow,green] ($(AggFact1.east)+(0.0,0.0)$) -|node[right, near end]{\tiny block2} ($(TentativePFact2.west)+(-0.5,0.0)$) -- ($(TentativePFact2.west)+(0.0,0.0)$);
+		
+\end{tikzpicture}
+\caption{Setup of $2\times 2$ block transfer operators}
+\label{fig:transferoperatorsetup}
+\end{figure}
+
 \subsubsection{Factory list}
 All the following definitions of factories are contained in the \texttt{Factories} sublist of the \texttt{MueLu} parameter list, which basically is meant as a factory collection for all used factories in the multigrid setup.
 To keep things simple, we only give the factories necessary to define the setup for the most upper-left block in the $n\times n$ block matrix.
@@ -2308,6 +2381,517 @@ Note, that all previous definitions and declarations have been made in the \text
 \end{lstlisting}
 
 The interesting part is the ``AllLevel'' sublist (you can freely choose the name of this list), which - in some sense - corresponds to the groups introduced before to setup the block transfers and block smoothers. In fact, this sublist defines the master \texttt{FactoryManager} for the overall multigrid method. Note, that all variables (``A'',``P'',``R'',\ldots) are generated by the block versions instead of the single block factories.
+
+
+\section{Exemplary setup for a $2\times 2$ problem with rebalancing}
+
+\subsection{Transfer operator setup}
+
+\begin{figure}
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+		\tikzstyle{style_factory}=[anchor=center,rectangle, draw=black, fill=white, text centered, anchor=north, text=black, text width=3cm, line width=0.5mm]%
+		\tikzstyle{style_var_output}=[anchor=center, rounded corners=3pt, draw=black, fill=white, text centered, anchor=north, text=black, text width=1.4cm, line width=0.5mm]%
+		\tikzstyle{myarrow}=[->, >=stealth, line width=0.5mm]
+		\begin{scope}[shift={(-2.5,0)}]		
+		\node[node distance=6.5] (SubBlockAFact1) [style_factory] { \tiny mySubBlockAFactory1 };
+		\node[node distance=25] (AggFact1) [style_factory,below of=SubBlockAFact1] { \tiny myAggFact1 };
+		\node[node distance=25] (CoarseMapFact1) [style_factory,below of=AggFact1] { \tiny myCoarseMap1 };		
+		\node[node distance=25] (TentativePFact1) [style_factory,below of=CoarseMapFact1] { \tiny myTentativePFact1 };				
+		\node[node distance=25] (NullspaceFact1) [style_factory,below of=TentativePFact1] { \tiny myNspFact1 };	
+		\node[node distance=80] (varA1) [style_var_output,left of=SubBlockAFact1] { \tiny A };					
+		\node[node distance=80] (varAgg1) [style_var_output,left of=AggFact1] { \tiny Aggregates };			
+		\node[node distance=80] (varCoarseMap1) [style_var_output,left of=CoarseMapFact1] { \tiny CoarseMap };					
+		\node[node distance=80] (varTentativeP1) [style_var_output,left of=TentativePFact1] { \tiny P };							
+		\node[node distance=80] (varNullspace1) [style_var_output,left of=NullspaceFact1] { \tiny Nullspace };
+		\draw[myarrow,->] (SubBlockAFact1) -- (varA1);
+		\draw[myarrow,->] (AggFact1) -- (varAgg1);
+		\draw[myarrow,->] (TentativePFact1) -- (varTentativeP1);
+		\draw[myarrow,->] (CoarseMapFact1) -- (varCoarseMap1);
+		\draw[myarrow,->] (NullspaceFact1) -- (varNullspace1);		
+		\draw[myarrow,->] (CoarseMapFact1) -- (TentativePFact1);										
+		\draw[myarrow,->] (TentativePFact1) -- (NullspaceFact1);												
+		\draw[red,thick,line width=0.5mm, dotted] ($(varA1.north west)+(-0.3,0.3)$) rectangle ($(NullspaceFact1.south east)+(0.3,-0.3)$);
+		\end{scope}
+%		
+		\begin{scope}[shift={(2.5,0)}]		
+		\node[node distance=6.5] (SubBlockAFact2) [style_factory] { \tiny mySubBlockAFactory2 };
+		\node[node distance=50] (CoarseMapFact2) [style_factory,below of=SubBlockAFact2] { \tiny myCoarseMap2 };		
+		\node[node distance=25] (TentativePFact2) [style_factory,below of=CoarseMapFact2] { \tiny myTentativePFact };				
+		\node[node distance=25] (NullspaceFact2) [style_factory,below of=TentativePFact2] { \tiny myNspFact2 };	
+		\node[node distance=80] (varA2) [style_var_output,right of=SubBlockAFact2] { \tiny A };					
+		\node[node distance=25] (varAgg2) [style_var_output,below of=varA2] { \tiny Aggregates };			
+		\node[node distance=80] (varCoarseMap2) [style_var_output,right of=CoarseMapFact2] { \tiny CoarseMap };					
+		\node[node distance=80] (varTentativeP2) [style_var_output,right of=TentativePFact2] { \tiny P };							
+		\node[node distance=80] (varNullspace2) [style_var_output,right of=NullspaceFact2] { \tiny Nullspace };
+		\draw[myarrow,->] (SubBlockAFact2) -- (varA2);
+		\draw[myarrow,->] (AggFact1) -- (varAgg2);
+		\draw[myarrow,->] (TentativePFact2) -- (varTentativeP2);
+		\draw[myarrow,->] (CoarseMapFact2) -- (varCoarseMap2);
+		\draw[myarrow,->] (NullspaceFact2) -- (varNullspace2);	
+		\draw[myarrow,->] (CoarseMapFact2) -- (TentativePFact2);										
+		\draw[myarrow,->] (TentativePFact2) -- (NullspaceFact2);		
+		\draw[red,thick,line width=0.5mm, dotted] ($(SubBlockAFact2.north west)+(-0.3,0.3)$) rectangle ($(varNullspace2.south east)+(0.3,-0.3)$);
+		\end{scope}
+		
+		\draw[myarrow,->] (CoarseMapFact1) -- (CoarseMapFact2);	
+		
+		
+		\node[node distance=50] (BlockedPFact) [style_factory,below of=NullspaceFact1] { \tiny myBlockedPFact };	
+		\node[node distance=50] (BlockedRFact) [style_factory,below of=NullspaceFact2] { \tiny myBlockedRFact };	
+		
+		\draw[myarrow,->] (BlockedPFact) -- (BlockedRFact);	
+		
+		\node[node distance=40] (BlockedRAPFact) at ($(BlockedRFact.west)+(-1.0,-1.0)$) [style_factory] { \tiny myBlockedRAPFact };	
+		\draw[myarrow,->] (BlockedPFact) -- (BlockedRAPFact);	
+		\draw[myarrow,->] (BlockedRFact) -- (BlockedRAPFact);			
+
+		\draw[myarrow,red] ($(NullspaceFact1.south)+(0.0,-0.3)$) -- node[left]{\tiny myFirstGroup} (BlockedPFact);
+		\draw[myarrow,red] ($(NullspaceFact2.south)+(0.0,-0.3)$) to [out=230,in=10] node[above,near end]{\tiny mySecondGroup} ($(BlockedPFact.north)+(+1.6,0.0)$);
+
+		
+		\node[node distance=40] (RepHeuristicFact) [style_factory,below of=BlockedRAPFact] { \tiny myRepartitionHeuristicFact };			
+
+		\node[node distance=100] (rebSubBlockAFact1) [style_factory, left of=RepHeuristicFact] { \tiny myRebSubBlockAFactory1 };
+     	\node[node distance=100] (rebSubBlockAFact2) [style_factory, right of=RepHeuristicFact] { \tiny myRebSubBlockAFactory2 };
+		
+		\node[node distance=25] (rebZoltanFact1) [style_factory, below of=rebSubBlockAFact1] { \tiny myZoltanInterface1 };
+     	\node[node distance=25] (rebZoltanFact2) [style_factory, below of=rebSubBlockAFact2] { \tiny myRepartitionInterface2 };
+
+		\node[node distance=25] (rebRepartitionFact1) [style_factory, below of=rebZoltanFact1] { \tiny myRepartitionFactory1 };
+     	\node[node distance=25] (rebRepartitionFact2) [style_factory, below of=rebZoltanFact2] { \tiny myRepartitionFactory2 };
+
+		\draw[blue,thick,line width=0.5mm, dotted] ($(RepHeuristicFact.north east)+(0.15,0.15)$) rectangle ($(rebRepartitionFact1.south west)+(-0.3,-0.3)$);
+		\draw[blue,thick,line width=0.5mm, dotted] ($(NullspaceFact1.north east)+(0.15,0.15)$) rectangle ($(varNullspace1.south west)+(-0.15,-0.15)$);
+		\draw[orange,thick,line width=0.5mm, dotted] ($(NullspaceFact2.north west)+(-0.15,0.15)$) rectangle ($(varNullspace2.south east)+(0.15,-0.15)$);
+		\draw[orange,thick,line width=0.5mm, dotted] ($(RepHeuristicFact.north west)+(-0.1,0.1)$) rectangle ($(rebRepartitionFact2.south east)+(+0.15,-0.15)$);
+
+		\draw[myarrow,->] (BlockedRAPFact) -- (RepHeuristicFact);
+		\draw[myarrow,->] (BlockedRAPFact) -- (rebSubBlockAFact1);
+		\draw[myarrow,->] (BlockedRAPFact) -- (rebSubBlockAFact2);
+		\draw[myarrow,->] (rebSubBlockAFact1) -- (rebZoltanFact1);
+		\draw[myarrow,->] (rebSubBlockAFact2) -- (rebZoltanFact2);				
+		\draw[myarrow,->] (rebZoltanFact1) -- (rebRepartitionFact1);
+		\draw[myarrow,->] (rebZoltanFact2) -- (rebRepartitionFact2);				
+		\draw[myarrow,->] (rebZoltanFact1) -- (rebZoltanFact2);
+		\draw[myarrow,->] (RepHeuristicFact) -- (rebZoltanFact1);
+		\draw[myarrow,->] (RepHeuristicFact) -- (rebZoltanFact2);		
+		\draw[myarrow,->] (RepHeuristicFact) to [out=270,in=10] (rebRepartitionFact1);		
+		\draw[myarrow,->] (RepHeuristicFact) to [out=270,in=170] (rebRepartitionFact2);		
+		
+		\node[node distance=50] (rebBlockedPFact) [style_factory,below of=rebRepartitionFact1] { \tiny myRebBlockedPFact };	
+		\node[node distance=50] (rebBlockedRFact) [style_factory,below of=rebRepartitionFact2] { \tiny myRebBlockedRFact };	
+			
+		\node[node distance=140] (rebBlockedRAPFact)[style_factory,below of=RepHeuristicFact] { \tiny myRebBlockedAcFact };	
+		%\draw[myarrow,->] (rebBlockedPFact) -- (rebBlockedRAPFact);	
+		%\draw[myarrow,->] (rebBlockedRFact) -- (rebBlockedRAPFact);			
+			
+		\draw[myarrow,blue]   ($(rebRepartitionFact1.south)+(0.0,-0.3)$)  -- node[left]{\tiny myRebFirstGroup} (rebBlockedPFact);
+		\draw[myarrow,orange] ($(rebRepartitionFact2.south)+(-5.0,-0.15)$) -- node[left]{} ($(rebBlockedPFact.north)+(+1.6,0.0)$);
+
+		\draw[myarrow,blue]   ($(rebRepartitionFact1.south)+(5.0,-0.3)$)  -- node[left]{} (rebBlockedRFact);
+		\draw[myarrow,orange] ($(rebRepartitionFact2.south)+(0.0,-0.15)$) -- node[right]{\tiny myRebSecondGroup} ($(rebBlockedRFact.north)+(0,0.0)$);
+
+		\draw[myarrow,blue]   ($(rebRepartitionFact1.south)+(3.0,-0.3)$)  -- node[left]{} ($(rebBlockedRAPFact.north)+(-0.5,0.0)$);
+		\draw[myarrow,orange] ($(rebRepartitionFact2.south)+(-3.0,-0.15)$) -- node[right]{} ($(rebBlockedRAPFact.north)+(0.5,0.0)$);
+			
+        \draw[myarrow]   (BlockedPFact)  -| node[left]{} ($(rebBlockedPFact.west)+(-1.8,0.0)$) -- (rebBlockedPFact);				
+        \draw[myarrow]   (BlockedRAPFact)  -| node[left]{} ($(rebBlockedRAPFact.west)+(-4.0,0.0)$) -- (rebBlockedRAPFact);				        
+		\draw[myarrow]   (BlockedRFact)  -| node[left]{} ($(rebBlockedRFact.east)+(1.8,0.0)$) -- (rebBlockedRFact);				
+\end{tikzpicture}
+\caption{Setup of $2\times 2$ block transfer operators with rebalancing}
+\label{fig:transferoperatorsetuprebalancing}
+\end{figure}
+
+Figure \ref{fig:transferoperatorsetuprebalancing} shows the basic setup for block transfer operators with rebalancing enabled. Please compare it with the complete XML input deck in Section \ref{sec:xmlinputdeckrebalancing}.
+
+As one can see from the upper part of Figure \ref{fig:transferoperatorsetuprebalancing} first we build blocked transfer operators and a blocked coarse level operator using sub-factory manager objects \texttt{myFirstGroup} and \texttt{mySecondGroup} in the factories \texttt{myBlockedPFact}, \texttt{myBlockedRFact} and \texttt{myBlockedRAPFact}. Then, we rebalance the coarse level blocked operator $A$ from \texttt{myBlockedRAPFact}. 
+
+The \texttt{myRepartitionHeuristicFact} object will decide whether rebalancing is necessary. If yes, then it will return the number of required partitions for the coarse level operator. This input is processed by the repartition interface and repartition factory objects that finally create \texttt{Xpetra::Importer} to do the rebalancing. The \texttt{myRebBlocked\{P,R,Ac\}Fact} objects use those \texttt{Importer} objects to perform the rebalancing.
+
+Please note, that we build additional helper factory manager objects \texttt{myRebFirstGroup} and \texttt{myRebSecondGroup} which contain all factories relevant for rebalancing the two blocks.
+
+\begin{mycomment}
+No changes are necessary when setting up the block smoothers as they use the matrices on the current level as input (which may or may not be rebalanced in the previous transfer operator setup process).
+\end{mycomment}
+
+\subsection{Complete XML input deck}
+
+The following listing shows the full input deck for a $2\times 2$ blocked operator multigrid setup including rebalancing and level smoothers.
+
+\label{sec:xmlinputdeckrebalancing}
+
+\begin{lstlisting}
+<ParameterList name="MueLu">
+
+  <!-- Factory collection -->
+  <ParameterList name="Factories">
+
+    <!-- Note that ParameterLists must be defined prior to being used -->
+
+    <!-- sub block factories -->
+
+    
+    <!-- BLOCK 1 (for submatrix A_{00}) VELOCITY PART -->
+    <ParameterList name="mySubBlockAFactory1">
+      <Parameter name="factory" type="string" value="SubBlockAFactory"/>
+      <Parameter name="block row"                 type="int"     value="0"/>
+      <Parameter name="block col"                 type="int"     value="0"/>
+      <Parameter name="Range map: Striding info"  type="string"  value="{ 4 }"/>
+      <Parameter name="Domain map: Striding info" type="string"  value="{ 4 }"/>
+    </ParameterList>
+
+    <!--<ParameterList name="myAggFact1">
+      <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="aggregation: min agg size" type="int" value="5"/>
+      <Parameter name="aggregation: max selected neighbors" type="int" value="1"/>
+    </ParameterList>-->
+
+    <!-- tell the tenative prolongator that we have 2 DOFs per node on the coarse levels -->
+    <ParameterList name="myCoarseMap1">
+      <Parameter name="factory" type="string" value="CoarseMapFactory"/>
+      <Parameter name="Striding info" type="string" value="{ 4 }"/>
+      <Parameter name="Strided block id" type="int" value="-1"/>
+    </ParameterList>
+
+    <ParameterList name="myAggFact1">
+      <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="aggregation: min agg size" type="int" value="5"/>
+      <Parameter name="aggregation: max selected neighbors" type="int" value="1"/>
+    </ParameterList>
+    
+    <ParameterList name="myTentativePFact1">
+      <Parameter name="factory" type="string" value="TentativePFactory"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
+      <Parameter name="Aggregates" type="string" value="myAggFact1"/>
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+    </ParameterList>
+
+    <ParameterList name="myRFact1">
+      <Parameter name="factory" type="string" value="TransPFactory"/>
+      <Parameter name="P" type="string" value="myTentativePFact1"/>
+    </ParameterList>
+    
+    <!-- We have to use Nullspace1 here. If "Nullspace1" is not set the 
+         Factory creates the default null space containing of constant 
+         vectors -->
+    <ParameterList name="myNspFact1">
+      <Parameter name="factory" type="string" value="NullspaceFactory"/>
+      <Parameter name="Fine level nullspace" type="string" value="Nullspace1"/>
+      <Parameter name="Nullspace1" type="string" value="myTentativePFact1"/>
+    </ParameterList>
+    
+    <!-- BLOCK 2 (for submatrix A_{22})-->
+    <ParameterList name="mySubBlockAFactory">
+      <Parameter name="factory" type="string" value="SubBlockAFactory"/>
+      <Parameter name="block row"                 type="int"     value="1"/>
+      <Parameter name="block col"                 type="int"     value="1"/>
+      <Parameter name="Range map: Striding info"  type="string"  value="{ 4 }"/>
+      <Parameter name="Domain map: Striding info" type="string"  value="{ 4 }"/>
+    </ParameterList>
+
+    <!-- tell the tenative prolongator that we have 1 DOF per node on the coarse levels -->
+    <!-- We use the factory "CoarseMapFactory" which always creates a standard coarse
+         level map starting with GIDs at 0. This is ok as we use Thyra like numbering
+         for the block operators. To obtain unique GIDs one would use the
+         BlockedCoarseMapFactory (see below) -->
+    <ParameterList name="myCoarseMap2">
+      <Parameter name="factory" type="string" value="CoarseMapFactory"/>
+      <Parameter name="Striding info" type="string" value="{ 4 }"/>
+      <Parameter name="Strided block id" type="int" value="-1"/>
+    </ParameterList>
+
+    <ParameterList name="myTentativePFact2">
+      <Parameter name="factory" type="string" value="TentativePFactory"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
+      <Parameter name="Aggregates" type="string" value="myAggFact1"/> <!-- use aggregates from velocity block! -->
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
+    </ParameterList>
+
+    <!-- We have to use Nullspace2 here. If "Nullspace2" is not set the 
+         Factory creates the default null space containing of constant 
+         vectors (here only one constant vector) -->
+    <ParameterList name="myNspFact2">
+      <Parameter name="factory" type="string" value="NullspaceFactory"/>
+      <Parameter name="Fine level nullspace" type="string" value="Nullspace2"/>
+      <Parameter name="Nullspace2" type="string" value="myTentativePFact2"/>
+    </ParameterList>
+
+    <!-- FACTORY MANAGERS -->
+
+    <!-- Multigrid setup for velocity block (A_{00}) -->
+    <ParameterList name="myFirstGroup">
+      <Parameter name="group" type="string" value="FactoryManager"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
+      <Parameter name="P" type="string" value="myTentativePFact1"/>
+      <Parameter name="R" type="string" value="myRFact1"/>
+      <Parameter name="Aggregates" type="string" value="myAggFact1"/>
+      <Parameter name="Nullspace" type="string" value="myNspFact1"/>
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+    </ParameterList>
+
+    <!-- Multigrid setup for pressure block (A_{22}) -->
+    <ParameterList name="mySecondGroup">
+      <Parameter name="group" type="string" value="FactoryManager"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
+      <Parameter name="P" type="string" value="myTentativePFact2"/>
+      <Parameter name="Aggregates" type="string" value="myAggFact1"/><!-- reuse aggs -->
+      <Parameter name="Nullspace" type="string" value="myNspFact2"/>
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
+    </ParameterList>
+
+    <!-- BLOCK TRANSFER operators -->
+
+    <!-- define block prolongation operator using above blocks -->
+    <ParameterList name="myBlockedPFact">
+      <Parameter name="factory" type="string" value="BlockedPFactory"/>
+      <!-- factory manager for block 1 -->
+      <ParameterList name="block1">
+         <Parameter name="group" type="string" value="myFirstGroup"/>
+      </ParameterList>
+      <!-- factory manager for block 2 -->
+      <ParameterList name="block2">
+        <Parameter name="group" type="string" value="mySecondGroup"/>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- define block restriction operator using above blocks -->
+    <!-- The block restriction operator is usually always of type
+         GenericRFactory since we want to be able to combine, e.g.,
+         SmoothedAggregation for block A_{00} with e.g. tentative
+         prolongation for block A_{11} (or any other kind of transfer
+         strategy for the subblocks -->
+    <ParameterList name="myBlockedRFact">
+      <Parameter name="factory" type="string" value="GenericRFactory"/>
+      <Parameter name="P" type="string" value="myBlockedPFact"/>
+    </ParameterList>
+
+    <ParameterList name="myTransferCoordinatesFact">
+      <Parameter name="factory" type="string" value="CoordinatesTransferFactory"/>
+      <!-- we need the factories from the first group -->      
+      <Parameter name="Aggregates" type="string" value="myAggFact1"/>
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+
+    </ParameterList>
+
+    <ParameterList name="myBlockedRAPFact">
+      <Parameter name="factory" type="string" value="BlockedRAPFactory"/>
+      <Parameter name="P" type="string" value="myBlockedPFact"/>
+      <Parameter name="R" type="string" value="myBlockedRFact"/>
+      <ParameterList name="TransferFactories">
+        <Parameter name="For Coordinates" type="string" value="myTransferCoordinatesFact"/>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- REBALANCING -->
+    
+    <ParameterList name="myRepartitionHeuristicFactory">
+      <Parameter name="factory" type="string" value="RepartitionHeuristicFactory"/>
+      <Parameter name="A"                               type="string"  value="myBlockedRAPFact"/>
+      <Parameter name="repartition: start level"        type="int"     value="2"/>
+      <Parameter name="repartition: min rows per proc"  type="int"     value="256"/>
+      <Parameter name="repartition: nonzeroImbalance"   type="double"  value="1.2"/>
+    </ParameterList> 
+    
+    <ParameterList name="myRebSubBlockAFactory1">
+      <Parameter name="factory" type="string" value="SubBlockAFactory"/>
+      <Parameter name="A"                         type="string"  value="myBlockedRAPFact"/>
+      <Parameter name="block row"                 type="int"     value="0"/>
+      <Parameter name="block col"                 type="int"     value="0"/>
+      <Parameter name="Range map: Striding info"  type="string"  value="{ 4 }"/>
+      <Parameter name="Domain map: Striding info" type="string"  value="{ 4 }"/>
+    </ParameterList>
+
+    <ParameterList name="myInputCoordsFact">
+      <Parameter name="factory" type="string" value="FineLevelInputDataFactory"/>      
+      <Parameter name="Variable" type="string" value="Coordinates"/>  
+      <Parameter name="Variable type" type="string" value="MultiVector"/>  
+      <Parameter name="Fine level factory" type="string" value="NoFactory"/>  
+      <!--<Parameter name="Coarse level factory" type="string" value="myTransferCoordinatesFact"/>-->
+      <!--<Parameter name="Coarse level factory" type="string" value="NoFactory"/> TO BE DEFINED LATER -->
+    </ParameterList>    
+    
+    <ParameterList name="myZoltanInterface1">
+      <Parameter name="factory"                             type="string" value="ZoltanInterface"/>
+      <Parameter name="A"                                   type="string" value="myRebSubBlockAFactory1"/>
+      <Parameter name="number of partitions"                type="string" value="myRepartitionHeuristicFactory"/>
+      <Parameter name="Coordinates"                         type="string" value="myInputCoordsFact"/>
+    </ParameterList>
+    
+    <ParameterList name="myRepartitionFactory1">
+      <Parameter name="factory" type="string" value="RepartitionFactory"/>
+      <Parameter name="A"                         type="string"  value="myRebSubBlockAFactory1"/>
+      <Parameter name="Partition"                 type="string"  value="myZoltanInterface1"/>
+      <Parameter name="number of partitions"      type="string"  value="myRepartitionHeuristicFactory"/>
+      <Parameter name="repartition: print partition distribution" type="bool" value="true"/>
+      <Parameter name="repartition: remap parts" type="bool" value="true"/>
+    </ParameterList>    
+      
+    <ParameterList name="myRebSubBlockAFactory2">
+      <Parameter name="factory" type="string" value="SubBlockAFactory"/>
+      <Parameter name="A"                         type="string"  value="myBlockedRAPFact"/>
+      <Parameter name="block row"                 type="int"     value="1"/>
+      <Parameter name="block col"                 type="int"     value="1"/>
+      <Parameter name="Range map: Striding info"  type="string"  value="{ 4 }"/>
+      <Parameter name="Domain map: Striding info" type="string"  value="{ 4 }"/>
+    </ParameterList>
+   
+    <ParameterList name="myRepartitionInterface2">
+      <Parameter name="factory" type="string" value="CloneRepartitionInterface"/>
+      <Parameter name="A"                         type="string"  value="myRebSubBlockAFactory2"/>
+      <Parameter name="number of partitions"      type="string"  value="myRepartitionHeuristicFactory"/>
+      <Parameter name="Partition"                 type="string"  value="myZoltanInterface1"/>
+    </ParameterList>
+    
+    <ParameterList name="myRepartitionFactory2">
+      <Parameter name="factory" type="string" value="RepartitionFactory"/>
+      <Parameter name="A"                         type="string"  value="myRebSubBlockAFactory2"/>
+      <Parameter name="Partition"                 type="string"  value="myRepartitionInterface2"/>
+      <Parameter name="number of partitions"      type="string"  value="myRepartitionHeuristicFactory"/>
+      <Parameter name="repartition: print partition distribution" type="bool" value="true"/>
+      <Parameter name="repartition: remap parts" type="bool" value="false"/>
+    </ParameterList>   
+    
+    <!-- Rebalanced groups for velocity block (A_{00}) -->
+    <ParameterList name="myRebFirstGroup">
+      <Parameter name="group" type="string" value="FactoryManager"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory1"/> <!-- non-rebalanced A11! -->
+      <Parameter name="Importer" type="string" value="myRepartitionFactory1"/>
+      <Parameter name="Nullspace" type="string" value="myNspFact1"/>
+      <Parameter name="number of partitions"      type="string"  value="myRepartitionHeuristicFactory"/>
+      <Parameter name="Coordinates" type="string" value="myInputCoordsFact"/>
+    </ParameterList>
+
+    <!-- Rebalanced groups for magnetics block (A_{22}) -->
+    <ParameterList name="myRebSecondGroup">
+      <Parameter name="group" type="string" value="FactoryManager"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory2"/> <!-- non-rebalanced ! -->
+      <Parameter name="Importer" type="string" value="myRepartitionFactory2"/>
+      <Parameter name="number of partitions"      type="string"  value="myRepartitionHeuristicFactory"/>
+      <Parameter name="Nullspace" type="string" value="myNspFact2"/>
+      <Parameter name="Coordinates" type="string" value="myInputCoordsFact"/>
+    </ParameterList>  
+
+    <ParameterList name="myRebBlockedPFact">
+      <Parameter name="factory" type="string" value="RebalanceBlockInterpolationFactory"/>
+      <Parameter name="A" type="string" value="myBlockedRAPFact"/>
+      <Parameter name="P" type="string" value="myBlockedPFact"/>
+      <ParameterList name="block1">
+         <Parameter name="group" type="string" value="myRebFirstGroup"/>
+      </ParameterList>
+      <ParameterList name="block2">
+        <Parameter name="group" type="string" value="myRebSecondGroup"/>
+      </ParameterList>      
+    </ParameterList>    
+   
+    <ParameterList name="myInputCoordsFactDeps">
+      <Parameter name="dependency for" type="string" value="myInputCoordsFact"/>
+      <Parameter name="Coarse level factory" type="string" value="myTransferCoordinatesFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRebBlockedRFact">
+      <Parameter name="factory" type="string" value="RebalanceBlockRestrictionFactory"/>
+      <Parameter name="R" type="string" value="myBlockedRFact"/>
+      <Parameter name="repartition: use subcommunicators" type="bool" value="false"/>
+      <ParameterList name="block1">
+         <Parameter name="group" type="string" value="myRebFirstGroup"/>
+      </ParameterList>
+      <ParameterList name="block2">
+        <Parameter name="group" type="string" value="myRebSecondGroup"/>
+      </ParameterList>            
+    </ParameterList>     
+    
+    <ParameterList name="myRebBlockedAcFact">
+      <Parameter name="factory" type="string" value="RebalanceBlockAcFactory"/>
+      <Parameter name="A" type="string" value="myBlockedRAPFact"/>
+      <Parameter name="repartition: use subcommunicators" type="bool" value="false"/>
+      <ParameterList name="block1">
+         <Parameter name="group" type="string" value="myRebFirstGroup"/>
+      </ParameterList>
+      <ParameterList name="block2">
+        <Parameter name="group" type="string" value="myRebSecondGroup"/>
+      </ParameterList>            
+    </ParameterList> 
+    
+    <!-- BLOCK SMOOTHERS -->
+
+    <ParameterList name="mySmooFact1">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type" type="string" value="RELAXATION"/>
+      <Parameter name="overlap" type="int" value="0"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type" type="string" value="symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+      </ParameterList>
+    </ParameterList>
+
+
+    <!-- block smoother for block A_{00} -->
+
+    <ParameterList name="mySmooFact2">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type" type="string" value="RELAXATION"/>
+      <Parameter name="overlap" type="int" value="0"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type" type="string" value="symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- Use BGS -->
+    <ParameterList name="myBlockSmoother">
+      <Parameter name="factory" type="string" value="BlockedGaussSeidelSmoother"/>
+      <Parameter name="Sweeps" type="int" value="1"/>
+      <Parameter name="Damping factor" type="double" value="0.4"/> 
+      <!-- factory manager for block 1 -->
+      <ParameterList name="block1">
+        <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
+        <Parameter name="Smoother" type="string" value="mySmooFact1"/>
+      </ParameterList>
+      <!-- factory manager for block 3 -->
+      <ParameterList name="block2">
+        <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
+        <Parameter name="Smoother" type="string" value="mySmooFact2"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="myBlockDirectSolver">
+      <Parameter name="factory" type="string" value="BlockedDirectSolver"/>
+    </ParameterList>
+
+  </ParameterList>
+  <!-- end Factories -->
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"          type="int"      value="10"/>
+    <Parameter name="coarse: max size"    type="int"      value="2500"/>
+    <Parameter name="verbosity"           type="string"   value="High"/>
+
+    <ParameterList name="AllLevel">
+      <Parameter name="startLevel"        type="int"      value="0"/>
+      <Parameter name="Smoother"          type="string"   value="myBlockSmoother"/>
+      <Parameter name="CoarseSolver"      type="string"   value="myBlockDirectSolver"/>
+      <Parameter name="P"                 type="string"   value="myRebBlockedPFact"/>
+      <Parameter name="R"                 type="string"   value="myRebBlockedRFact"/>
+      <Parameter name="A"                 type="string"   value="myRebBlockedAcFact"/>
+      <Parameter name="Coordinates"       type="string"   value="myRebBlockedPFact"/>
+    </ParameterList>
+
+  </ParameterList>
+
+</ParameterList>
+<!-- end "MueLu" -->
+\end{lstlisting}
+
+Note, that we are using a coordinate-based rebalancing method from the \texttt{Zoltan} package. The \texttt{myInputCoordsFact} provides the \texttt{Coordinates} variable to the \texttt{ZoltanInterface}. That is, \texttt{myInputCoordsFact} uses user-provided data on the finest level and switches to Coordinates provided by the \texttt{myTransferCoordinatesFact} on the coarser level. 
+
+\begin{mycomment}
+To deal with potential logical circular dependencies between factories you can use the \textit{dependency for} keyword as demonstrated for the \texttt{myTransferCoordinatesFact} and \texttt{myInputCoordsFact} in this example. Note: you can always use the \textit{dependency for} keyword to extend/change factory dependencies in the xml file.
+\end{mycomment}
+
 
 
 \section{Background}

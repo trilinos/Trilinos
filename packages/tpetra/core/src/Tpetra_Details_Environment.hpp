@@ -16,37 +16,45 @@ class DefaultEnvironmentVariables {
    *
    */
  public:
-  static const std::list<std::string> getDefaults() {
-    const std::list<std::string> defaultVariables {"TPETRA_DEBUG",
-      "TPETRA_USE_BLAS"};
-    return defaultVariables;
-  }
+  static std::list<std::string> getDefaults();
 };
 
-
+/// \class Environment
+/// \brief Access environment variables, and cache their values.
+///
+/// "Environment" here refers to the operating system or shell.  For
+/// example, PATH is a commonly used environment variable.  Tpetra can
+/// read any environment variable, but it would be wise to restrict
+/// yourself to variables that start with the prefix "TPETRA_".
+///
+/// First, get the singleton instance of this class:
+/// \code
+/// Environment& env = Environment::getInstance ();
+/// \endcode
+/// Then, use it to read the environment:
+/// \code
+/// const bool exists = env.variableExists ("TPETRA_DEBUG");
+/// const bool debug = exists && env.getBooleanValue ("TPETRA_DEBUG");
+/// const std::string val =
+///   env.getValues ("TPETRA_NAME_OF_THING", "DEFAULT_NAME");
+/// \endcode
+///
+/// This class is only allowed to get environment variable values; it
+/// is not allowed to set them.  This is in part because many
+/// third-party run-time libraries only read environment variables
+/// once, at some time outside of Tpetra's control.  Thus, we want to
+/// discourage Tpetra developers from assuming that they can set
+/// environment variables in order to control other libraries.  We
+/// also want to discourage use of environment variables as a means of
+/// communication between software components.
 class Environment {
- public:
-  // Get singleton instance
-  static Environment& getInstance() {
-    // The following construction guarantees that theInstance_ will be
-    // destroyed and is instantiated only on first use.
-    static Environment theInstance_;
-    return theInstance_;
-  }
+public:
+  //! Get singleton instance.
+  static Environment& getInstance();
 
- private:
-  Environment() {
-    // Initialize the instance
-    std::string variableValue;
-    std::list<std::string>::iterator variableName;
-    std::list<std::string> std_vars(DefaultEnvironmentVariables::getDefaults());
-    for (variableName = std_vars.begin();
-         variableName != std_vars.end();
-         ++variableName) {
-      // By getting the value, it will be cached
-      variableValue = getValue(*variableName);
-    }
-  }
+private:
+  Environment ();
+
   std::map<std::string, const char *> environCache_;
   void cacheVariable(const std::string& variableName,
                      const char* variableValue);
@@ -79,51 +87,42 @@ class Environment {
   */
   bool variableExists(const std::string& variableName);
 
-  /** @brief Gets value of the given environment variable.
+  /** @brief Get Boolean value of the given environment variable.
    *
-   *  This is nonconst because the implementation reserves the right to
-   *  cache the results.
+   *  This is nonconst because the implementation reserves the right
+   *  to cache the results.
    *
    *  @param variableName the name of the environment variable
-   *  @param defaultValue [optional, ""] the default value to return in the case
-   *         that the environment variable variableName does not exist
    *
-   *  @return false if the variable does not exist, is one of [0, NO, FALSE],
-   *          else true
+   *  @param defaultValue [optional, false] the default value to
+   *    return in the case that the environment variable does not
+   *    exist.
    *
+   *  @return If the variable does not exist, or if the upper-case
+   *    version of it is 0, "NO", or "FALSE", return false.
+   *    Otherwise, return true.
    */
-  bool getBooleanValue(const std::string& variableName,
-                       const std::string& defaultValue="");
+  bool
+  getBooleanValue (const std::string& variableName,
+                   const bool defaultValue = false);
 
-  /** @brief Gets value of the given environment variable.
+  /** @brief Get value of the given environment variable as a string.
    *
-   *  This is nonconst because the implementation reserves the right to
-   *  cache the results.
+   *  This is nonconst because the implementation reserves the right
+   *  to cache the results.
    *
-   *  @param variableName the name of the environment variable
-   *  @param defaultValue [optional, ""] the default value to return in the case
-   *         that the environment variable variableName does not exist
+   *  @param variableName [in] Name of the environment variable.  This
+   *    is case sensitive.
    *
-   *  @return the value of the environment variable (or default if it does not
-   *          exist)
+   *  @param defaultValue [in, optional, ""] Default value to return
+   *    in the case that the environment variable does not exist.
+   *
+   *  @return If the environment variable exists, its value as a
+   *    string; otherwise, defaultValue.
    *
    */
   std::string getValue(const std::string& variableName,
                        const std::string& defaultValue="");
-
-  // /* @brief Sets value of the given environment variable.
-  //  *
-  //  *  @param variableName the name of the environment variable
-  //  *  @param variableValue the value of the environment variable
-  //  *  @param overwrite [optional, 1] overwrite the variable if it already exists
-  //  *
-  //  *  @return void
-  //  *
-  //  */
-  // void setValue(const std::string& variableName,
-  //               const std::string& variableValue,
-  //               const int overwrite=1);
-
 
   void clearCache();
 };

@@ -36,11 +36,10 @@
 
 #include <stk_util/stk_config.h>
 #if defined ( STK_HAS_MPI )
-#  include <mpi.h>                        // for MPI_Comm
+#  include "mpi.h"                        // for MPI_Comm
 #endif
 #include <ios>                          // for ostream
 #include <string>                       // for string
-
 
 
 namespace sierra {
@@ -79,15 +78,10 @@ static const std::string PARAM_ON = "on";  ///< Option value when command line o
 /// @{
 ///
 
-//
-//  Provide single switch point for nemo interface options
-//
 enum NemoVersion {
   NEMO_UNKNOWN = 0,
   NEMO_1       = 101
 };
-
-NemoVersion GetNemoVersion(NemoVersion ver = NEMO_UNKNOWN);
 
 bool is_comm_valid();
 
@@ -150,19 +144,6 @@ std::string getInputFileName();
  * file for sm specific preprocessing.  The default behavior corresponds to false.
  */
 void set_sm_preprocessing(bool value);
-
-/**
- * @brief Function <b>set_zapotec</b> sets whether this code is
- * zaptoec.  The default behavior corresponds to false.
- * Send all function-related hate mail to Arne Gullerud.
- */
-void set_zapotec(bool value);
-
-/**
- * @brief Function <b>is_zapotec</b> returns whether this code is
- * zaptoec. Send all function-related hate mail to Arne Gullerud.
- */
-bool is_zapotec();
 
 /**
  * @ingroup EnvRuntimeInformationDetail
@@ -378,25 +359,6 @@ MPI_Comm parallel_intercomm();
  */
 int peer_group();
 
-
-/**
- * @brief Function <b>parallel_lag_master</b> returns the global rank of the Nemo Euler application.
- *
- * @return			a <b>int</b> value of the global rank of the Nemo Euler
- *				application.
- */
-int parallel_fluid_master();
-
-
-/**
- * @brief Function <b>parallel_lag_master</b> returns the global rank of the Sierra lagrangian application.
- *
- * @return			a <b>int</b> value of the global rank of the Sierra lagrangian
- *				application.
- */
-int parallel_lag_master();
-
-
 /**
  * @ingroup EnvMPIDetail
  * @brief function <b>parallel_size</b> returns the number of processors
@@ -406,7 +368,6 @@ int parallel_lag_master();
  *				the current mpi communicator.
  */
 int parallel_size();
-
 
 /**
  * @ingroup EnvMPIDetail

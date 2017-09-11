@@ -95,8 +95,8 @@ namespace MueLu {
     if (name == "cycle type") {
       std::stringstream temp1; temp1 << "\"" << "MGV" << "\"";
       std::stringstream temp2; temp2 << "\"" << "MGV" << "\"";
-      if (value == temp1.str() ) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"; }
-      else if (value == temp2.str()) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"W\"/>"; }
+      if (value == temp1.str() ) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"; return ss.str(); }
+      else if (value == temp2.str()) { ss << "<Parameter name=\"cycle type\" type=\"string\" value=\"W\"/>"; return ss.str(); }
       else TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MasterList::interpretParameterName, Line " << __LINE__ << ". "
                                            << "The parameter " << value << " is not supported by MueLu.");
       return ss.str();
@@ -204,6 +204,7 @@ namespace MueLu {
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"use kokkos refactor\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"synchronize factory timers\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
   "<Parameter name=\"toggle: mode\" type=\"string\" value=\"semicoarsen\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
@@ -241,6 +242,8 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"rap: shift\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"rap: algorithm\" type=\"string\" value=\"galerkin\"/>"
   "<ParameterList name=\"matrixmatrix: kernel params\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
@@ -470,6 +473,8 @@ namespace MueLu {
       
          ("use kokkos refactor","use kokkos refactor")
       
+         ("synchronize factory timers","synchronize factory timers")
+      
          ("energy minimization: enable","multigrid algorithm")
       
          ("toggle: mode","toggle: mode")
@@ -543,6 +548,10 @@ namespace MueLu {
          ("repartition: use subcommunicators","repartition: use subcommunicators")
       
          ("rap: fix zero diagonals","rap: fix zero diagonals")
+      
+         ("rap: shift","rap: shift")
+      
+         ("rap: algorithm","rap: algorithm")
       
          ("matrixmatrix: kernel params","matrixmatrix: kernel params")
       

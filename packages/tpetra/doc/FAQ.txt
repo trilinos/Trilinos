@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2017-07-07 13:37:52 mhoemme"
+#+DATE: Time-stamp: "2017-09-03 18:19:25 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -76,11 +76,11 @@ execution spaces, and asynchronous kernel launch.
 *** Assumptions
 
 Tpetra requires at least CUDA 7.5, and is regularly tested with CUDA
-8.0.  Tpetra itself requires C++11, but Tpetra does not currently need
-the "device lambdas" feature in order to build and pass tests.
-Trilinos currently tests CUDA builds only with MPI enabled, and only
-with the OpenMPI implementation of MPI. We recommend OpenMPI 1.8.x at
-a minimum, preferably newer.
+8.0.  Tpetra itself requires C++11 and depends on the optional "device
+lambdas" feature in order to build and pass tests.  Trilinos currently
+tests CUDA builds only with MPI enabled, and exercises the OpenMPI
+implementation of MPI most heavily.  We recommend OpenMPI 1.8.x at a
+minimum, preferably newer.  Other MPI implementations should work.
 
 Tpetra currently assumes Unified Virtual Memory (UVM) with CUDA.  It
 currently requires kernel launches to block.  In particular, it
@@ -114,18 +114,58 @@ variables that you would normally set:
 -D TPL_ENABLE_MPI:BOOL=ON
 -D TPL_ENABLE_CUDA:BOOL=ON
 -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON
--D Tpetra_INST_CUDA:BOOL=ON
+-D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON
+-D CMAKE_CXX_FLAGS:STRING="-std=c++11 -expt-extended-lambda" 
 #+END_EXAMPLE
 
-If the versions of ~nvcc~ and ~mpicxx~ that live in your path are
-correct, then this should work.
+If you already define `CMAKE_CXX_FLAGS` yourself, just make sure that
+you include the above options.  If the versions of ~nvcc~ and ~mpicxx~
+that live in your path are correct, then this should work.  The
+`-std=c++11` option is required, though it may cause harmless build
+warnings that look like this:
+
+#+BEGIN_EXAMPLE
+cc1: warning: command line option '-std=c++11' is valid for C++/ObjC++
+but not for C [enabled by default]
+#+END_EXAMPLE
 
 If you enable CUDA using the above instructions, Kokkos will enable
 its CUDA support by default.  If Kokkos enables its CUDA support,
 Tpetra will enable its CUDA support by default.  (See "How does Tpetra
 pick its default Kokkos execution space?" below.)  Avoid setting CMake
 options explicitly; this hinders portability and makes your build
-configuration unnecessarily complicated.
+configuration unnecessarily complicated.  However, if you wish to
+enable Tpetra's CUDA support explicitly, you may add the following
+CMake option:
+
+#+BEGIN_EXAMPLE
+-D Tpetra_INST_CUDA:BOOL=ON
+#+END_EXAMPLE
+
+*** Do I need a special MPI implementation to use CUDA?
+
+Some MPI implementations are "CUDA aware."  This means that they know
+how to send and receive from CUDA device buffers.  Tpetra attempts to
+detect whether the MPI implementation is CUDA aware at configure time.
+However, it currently (as of Aug / Sep 2017) only knows how to do so
+for OpenMPI.  Furthermore, automatic detection only works if not cross
+compiling, since it requires running an OpenMPI executable.  If
+automatic detection does not work, you may set the CMake variable
+~TPETRA_ASSUME_CUDA_AWARE_MPI~ to control the default assumption at
+configure time.  For example:
+
+#+BEGIN_EXAMPLE
+-D TPETRA_ASSUME_CUDA_AWARE_MPI:BOOL=ON
+#+END_EXAMPLE
+
+You may also tell Tpetra, via the environment variable
+~TPETRA_ASSUME_CUDA_AWARE_MPI~, whether to assume that the MPI
+implementation that Trilinos uses is CUDA aware.  To make Tpetra
+assume that MPI is CUDA aware, set this environment variable to some
+true value, like "1" or "TRUE".  To make Tpetra assume that MPI is
+/not/ CUDA aware, by setting this environment variable to some false
+value, like "0" or "FALSE".  (Tpetra interprets an empty string "" as
+true.)
 
 ** What about Pthreads?  Does Tpetra support that?
 
@@ -313,32 +353,28 @@ GO types it enables by default.
 
 ** How does Tpetra pick which GO types to enable by default?
 
-By default, Tpetra currently enables ~GO = int~, and exactly one of
-~GO = long long~ or ~GO = long~.  This ensures coverage of both the
-32-bit case (~int~) and the 64-bit case (~long long~ always, or ~long~
-on most platforms other than Windows).  Bug 6358 prevents Tpetra from
-disabling ~GO = int~ by default.  Tpetra does not enable more types by
-default, because that would increase build times and library sizes.
+By default, Tpetra currently enables ~GO = int~ and ~GO = long long~.
+Some build options affect Tpetra's default behavior; see below.
+Tpetra prefers ~GO = long long~, because the C++11 standard requires
+that ~long long~ have at least 64 bits.  Depending on the platform,
+~long~ could be either 32 or 64 bits.  Tpetra does not enable more
+types by default, because that would increase build times and library
+sizes.  Bug 6358 (in the Bugzilla bug tracking system) prevents Tpetra
+from disabling ~GO = int~ by default.
 
-If the user /explicitly/ enables either ~long long~ or ~long~ (by
-setting ~Tpetra_INST_INT_LONG_LONG=ON~
-resp. ~Tpetra_INST_INT_LONG=ON~), Tpetra uses that type and does not
-enable the other by default.
+Two build options control Tpetra's default-enabled GO types:
 
-If the user did /not/ explicitly enable either ~long long~ or ~long~,
-Tpetra picks one of these.  Tpetra /prefers/ ~GO = long long~.  This
-is because the C++11 standard requires that ~long long~ have at least
-64 bits, while it only requires that ~long~ have at least 32 bits.  In
-particular, ~long~ is 32 bits on Windows.  Thus, Tpetra enables ~GO =
-long long~ by default.  However, two things prevent Tpetra from doing
-this:
+  - If users enable ~GO = long~ (by setting
+    ~Tpetra_INST_INT_LONG:BOOL=ON~ explicitly), then Tpetra does not
+    enable ~GO = long long~ by default.
+  - Tpetra currently requires Teuchos to have support for ~long long~.
+    Specifically, the CMake option ~Teuchos_ENABLE_LONG_LONG_INT~ must
+    be ON (or ~NOT DEFINED~).  If it is ~DEFINED~ but OFF, then Tpetra
+    enables ~long~ by default instead.
 
-  1. CUDA lacks support for ~long long~, so Tpetra enables ~long~ by
-     default instead if CUDA is enabled.
-  2. Tpetra currently requires Teuchos to have support for ~long
-     long~.  Specifically, the CMake option
-     ~Teuchos_ENABLE_LONG_LONG_INT~ must be ON.  If it's not, Tpetra
-     enables ~long~ by default instead.
+These two options help Tpetra work around environments that lack
+correct ~long long~ support.  (This used to be the case for CUDA,
+but is not true any more.  See GitHub issue #1683.)
 
 ** What Scalar types does Tpetra allow?
 
@@ -729,4 +765,38 @@ specializes the Belos adapter, so the work-around for the latter is
 either to disable TSQR for Belos (~Belos_ENABLE_TSQR:BOOL=OFF~) or to
 disable TSQR altogether (the default behavior).
 
+** Adding ETI for a new Tpetra class or function broke Stokhos' build; why?
 
+Stokhos needs to instantiate Tpetra classes and functions for its own
+Scalar types.  If Tpetra does ETI for a class or function that takes a
+Scalar (or Packet; see Tpetra::DistObject) template parameter, Stokhos
+must also instantiate that Tpetra class or function for its own Scalar
+(or Packet) types.  Otherwise, if explicit template instantiation is
+enabled in Trilinos, you may see build or link errors.
+
+You may fix this by telling Stokhos about your new class or function.
+You only need to do this if doing explicit instantiation for your new
+class or function.
+
+Stokhos uses a CMake-based system for generating explicit
+instantiations automatically.  Its system is pickier than Tpetra's.
+For example, if the class is called ~Tpetra::TheClass~, the
+corresponding Tpetra header files must be ~Tpetra_TheClass_decl.hpp~
+and ~Tpetra_TheClass_def.hpp~, and the corresponding explicit
+instantiation macro must be called ~TPETRA_THECLASS_INSTANT~.  If the
+function is ~Tpetra::Details::theFunction~, the corresponding Tpetra
+header files must be ~Tpetra_Details_theFunction_decl.hpp~ and
+~Tpetra_Details_theFunction_def.hpp~, and the corresponding explicit
+instantiation macro must be called
+~TPETRA_DETAILS_THEFUNCTION_INSTANT~.  (Tpetra has a more general
+system that lets developers specify class, header, and macro names
+separately.)
+
+You must first follow these requirements for naming classes,
+functions, header files, and explicit instantiation macros.  You must
+then add your class or function to Stokhos' list of "Tpetra ETI
+classes."  Do this by editing the CMake file
+~Trilinos/packages/stokhos/src/CMakeLists.txt~, and adding the new
+Tpetra class or function to the list of ~TPETRA_ETI_CLASSES~.  This
+requires rerunning CMake before rebuilding (typing ~make~ will usually
+do that for you automaticaly).

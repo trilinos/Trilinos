@@ -57,9 +57,8 @@
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
 
-
 #ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
-#include "KokkosKernels_SPGEMM.hpp"
+#include "KokkosSparse_spgemm.hpp"
 #endif
 
 
@@ -1742,7 +1741,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   std::string alg = nodename+std::string(" algorithm");
   //  printf("DEBUG: Using kernel: %s\n",myalg.c_str());
   if(!params.is_null() && params->isParameter(alg)) myalg = params->get(alg,myalg);
-  KokkosKernels::Experimental::Graph::SPGEMMAlgorithm alg_enum = KokkosKernels::Experimental::Graph::StringToSPGEMMAlgorithm(myalg);
+  KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
   // We need to do this dance if either (a) We have Bimport or (b) We don't A's colMap is not the same as B's rowMap
   if(!Bview.importMatrix.is_null() || (Bview.importMatrix.is_null() && (&*Aview.origMatrix->getGraph()->getColMap() != &*Bview.origMatrix->getGraph()->getRowMap()))) {
@@ -1834,14 +1833,14 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   kh.create_spgemm_handle(alg_enum);
   kh.set_team_work_size(team_work_size);
 
-  KokkosKernels::Experimental::Graph::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bmerged->graph.row_map,Bmerged->graph.entries,false,row_mapC);
+  KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bmerged->graph.row_map,Bmerged->graph.entries,false,row_mapC);
 
   size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
   if (c_nnz_size){
     entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
     valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
   }
-  KokkosKernels::Experimental::Graph::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bmerged->graph.row_map,Bmerged->graph.entries,Bmerged->values,false,row_mapC,entriesC,valuesC);
+  KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bmerged->graph.row_map,Bmerged->graph.entries,Bmerged->values,false,row_mapC,entriesC,valuesC);
   kh.destroy_spgemm_handle();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS

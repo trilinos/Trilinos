@@ -46,8 +46,8 @@
 template<typename EvalT, typename Traits>
 ProjectGradientToQP<EvalT,Traits>::
 ProjectGradientToQP(const std::string& field_name,
-                    const Teuchos::RCP<const PHX::DataLayout>& basis_layout,
-                    const Teuchos::RCP<const PHX::DataLayout>& grad_qp_layout) :
+                    const Teuchos::RCP<PHX::DataLayout>& basis_layout,
+                    const Teuchos::RCP<PHX::DataLayout>& grad_qp_layout) :
   field_at_basis(field_name,basis_layout),
   grad_field_at_qp(field_name,grad_qp_layout)
 {

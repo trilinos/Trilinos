@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -162,7 +162,7 @@ int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t i
   }
 
   /* allocate space for stat array */
-  if (!(stat_vals = malloc((int)num_obj * sizeof(int)))) {
+  if (!(stat_vals = malloc(num_obj * sizeof(int)))) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to allocate memory for %s status array for file id %d",
              ex_name_of_object(var_type), exoid);

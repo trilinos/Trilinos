@@ -42,12 +42,10 @@ public:
     virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
       get_p_space(int i) const = 0;
 
-    virtual void initialize2(
-      std::function<void (const Thyra::VectorBase<Scalar> &,
-                                Thyra::VectorBase<Scalar> &)> computeXDot,
-                          Scalar ts, Scalar tHats,
-                          Scalar alpha, Scalar beta,
-                          Scalar stepSize, Scalar stageNumber) = 0;
+    /// Initialize to evaluate application ModelEvaluator.
+    virtual void initialize(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
+      Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
+      Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs) = 0;
   //@}
 
   //@{ \name Accessors
@@ -83,16 +81,6 @@ public:
       const Thyra::ModelEvaluatorBase::InArgs<Scalar> & in,
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> & out) const = 0;
   //@}
-
-  /// Evaluate the explicit model evaluator.
-  virtual void evalExplicitModel(
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X, Scalar time,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const = 0;
-
-  /// Evaluate the implicit model evaluator.
-  virtual void evalImplicitModel(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const = 0;
 };
 
 } // namespace Tempus

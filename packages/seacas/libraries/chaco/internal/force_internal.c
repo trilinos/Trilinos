@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -85,8 +85,9 @@ void force_internal(struct vtx_data **graph,       /* graph data structure */
   indices       = smalloc_ret(nsets_tot * sizeof(int));
   internal_vwgt = smalloc_ret(nsets_tot * sizeof(double));
   total_vwgt    = smalloc_ret(nsets_tot * sizeof(int));
-  if (indices == NULL || internal_vwgt == NULL || total_vwgt == NULL)
+  if (indices == NULL || internal_vwgt == NULL || total_vwgt == NULL) {
     goto skip;
+  }
 
   for (set = 0; set < nsets_tot; set++) {
     total_vwgt[set] = internal_vwgt[set] = 0;
@@ -113,16 +114,18 @@ void force_internal(struct vtx_data **graph,       /* graph data structure */
 
   /* Now sort all the internal_vwgt values. */
   space = smalloc_ret(nsets_tot * sizeof(int));
-  if (space == NULL)
+  if (space == NULL) {
     goto skip;
+  }
   mergesort(internal_vwgt, nsets_tot, indices, space);
   sfree(space);
   space = NULL;
 
   /* Now construct a doubly linked list of sorted, internal_vwgt values. */
   int_list = smalloc_ret((nsets_tot + 1) * sizeof(struct bidint));
-  if (int_list == NULL)
+  if (int_list == NULL) {
     goto skip;
+  }
 
   prev       = &(int_list[nsets_tot]);
   prev->prev = NULL;
@@ -144,8 +147,9 @@ void force_internal(struct vtx_data **graph,       /* graph data structure */
   /* Set up convenient data structure for navigating through sets. */
   set_list  = smalloc_ret(nsets_tot * sizeof(struct bidint));
   vtx_elems = smalloc_ret((nvtxs + 1) * sizeof(struct bidint));
-  if (set_list == NULL || vtx_elems == NULL)
+  if (set_list == NULL || vtx_elems == NULL) {
     goto skip;
+  }
 
   for (i = 0; i < nsets_tot; i++) {
     set_list[i].next = NULL;
@@ -162,8 +166,9 @@ void force_internal(struct vtx_data **graph,       /* graph data structure */
   }
 
   locked = smalloc_ret((nvtxs + 1) * sizeof(int));
-  if (locked == NULL)
+  if (locked == NULL) {
     goto skip;
+  }
 
   nlocked = 0;
   size    = (int)(&(int_list[1]) - &(int_list[0]));
@@ -192,8 +197,9 @@ void force_internal(struct vtx_data **graph,       /* graph data structure */
 
       progress = improve_internal(graph, nvtxs, assign, goal, int_list, set_list, vtx_elems, set,
                                   locked, &nlocked, using_ewgts, vwgt_max, total_vwgt);
-      if (progress)
+      if (progress) {
         any_change = TRUE;
+      }
       niter++;
     }
     npasses++;

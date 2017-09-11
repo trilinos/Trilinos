@@ -152,7 +152,7 @@ namespace PHX {
     typedef typename PHX::Device::size_type size_type;
     typedef typename array_type::execution_space execution_space;
  
-    MDField(const std::string& name, const Teuchos::RCP<const PHX::DataLayout>& t);
+    MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
     
     MDField(const PHX::Tag<DataT>& v);
 

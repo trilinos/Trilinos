@@ -162,7 +162,7 @@ TEUCHOS_UNIT_TEST(DynamicLayout, basic)
     Layout b("a",50,4,2); // matches a, but different object
     Layout c("c",50,4,2); // different identifier than a
     Layout d("a",50,4);   // different rank than a
-    Layout e("e",50,4,3); // different extent than a
+    Layout e("a",50,4,3); // different extent than a
 
     // Returns true if identifier rank and extents match
 
@@ -453,6 +453,70 @@ TEUCHOS_UNIT_TEST(DynamicLayout, basic)
     TEST_EQUALITY(e8.extent_int(5),6);
     TEST_EQUALITY(e8.extent_int(6),7);
     TEST_EQUALITY(e8.extent_int(7),8);
+  }
+
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // setExtents() from base class implementation
+  {
+    DataLayout& b1 = e1;
+    b1.setExtents(10);
+    TEST_EQUALITY(b1.extent(0),10);
+
+    DataLayout& b2 = e2;
+    b2.setExtents(10,20);
+    TEST_EQUALITY(b2.extent(0),10);
+    TEST_EQUALITY(b2.extent(1),20);
+
+    DataLayout& b3 = e3;
+    b3.setExtents(10,20,30);
+    TEST_EQUALITY(b3.extent(0),10);
+    TEST_EQUALITY(b3.extent(1),20);
+    TEST_EQUALITY(b3.extent(2),30);
+
+    DataLayout& b4 = e4;
+    b4.setExtents(10,20,30,40);
+    TEST_EQUALITY(b4.extent(0),10);
+    TEST_EQUALITY(b4.extent(1),20);
+    TEST_EQUALITY(b4.extent(2),30);
+    TEST_EQUALITY(b4.extent(3),40);
+
+    DataLayout& b5 = e5;
+    b5.setExtents(10,20,30,40,50);
+    TEST_EQUALITY(b5.extent(0),10);
+    TEST_EQUALITY(b5.extent(1),20);
+    TEST_EQUALITY(b5.extent(2),30);
+    TEST_EQUALITY(b5.extent(3),40);
+    TEST_EQUALITY(b5.extent(4),50);
+
+    DataLayout& b6 = e6;
+    b6.setExtents(10,20,30,40,50,60);
+    TEST_EQUALITY(b6.extent(0),10);
+    TEST_EQUALITY(b6.extent(1),20);
+    TEST_EQUALITY(b6.extent(2),30);
+    TEST_EQUALITY(b6.extent(3),40);
+    TEST_EQUALITY(b6.extent(4),50);
+    TEST_EQUALITY(b6.extent(5),60);
+
+    DataLayout& b7 = e7;
+    b7.setExtents(10,20,30,40,50,60,70);
+    TEST_EQUALITY(b7.extent(0),10);
+    TEST_EQUALITY(b7.extent(1),20);
+    TEST_EQUALITY(b7.extent(2),30);
+    TEST_EQUALITY(b7.extent(3),40);
+    TEST_EQUALITY(b7.extent(4),50);
+    TEST_EQUALITY(b7.extent(5),60);
+    TEST_EQUALITY(b7.extent(6),70);
+
+    DataLayout& b8 = e8;
+    b8.setExtents(10,20,30,40,50,60,70,80);
+    TEST_EQUALITY(b8.extent(0),10);
+    TEST_EQUALITY(b8.extent(1),20);
+    TEST_EQUALITY(b8.extent(2),30);
+    TEST_EQUALITY(b8.extent(3),40);
+    TEST_EQUALITY(b8.extent(4),50);
+    TEST_EQUALITY(b8.extent(5),60);
+    TEST_EQUALITY(b8.extent(6),70);
+    TEST_EQUALITY(b8.extent(7),80);
   }
 
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

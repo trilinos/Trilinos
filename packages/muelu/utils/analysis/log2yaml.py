@@ -43,14 +43,6 @@ from   docopt      import docopt
 from muelu_log2yaml     import MueLuLog
 from albany_log2yaml    import AlbanyLog
 
-def yaml_string2data(yaml_string):
-    try:
-        yaml_data = yaml.load(yaml_string)
-    except yaml.parser.ParserError:
-        raise RuntimeError('Could not parse YAML out. Did you select the right mode?')
-    return yaml_data
-
-
 if __name__ == '__main__':
 
     ## Process input
@@ -73,8 +65,7 @@ if __name__ == '__main__':
     else:
         raise
 
-    yaml_string = log.run(input_file)
-    yaml_data   = yaml_string2data(yaml_string)
+    yaml_data = log.run(input_file)
 
     ## Save output
     f = open(output_file, 'w')

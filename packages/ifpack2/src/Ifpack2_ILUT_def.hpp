@@ -50,7 +50,7 @@
 
 #include "Ifpack2_Heap.hpp"
 #include "Ifpack2_LocalFilter.hpp"
-#include "Ifpack2_LocalSparseTriangularSolver_decl.hpp"
+#include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Parameters.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_Time.hpp"

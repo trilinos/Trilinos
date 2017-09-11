@@ -1,6 +1,6 @@
 #include "ParallelGtestOutput.hpp"
 #include <gtest/gtest.h>                // for TestInfo, etc
-#include <mpi.h>                        // for MPI_Comm_rank, MPI_Finalize, etc
+#include "mpi.h"                        // for MPI_Comm_rank, MPI_Finalize, etc
 #include <stdarg.h>                     // for va_end, va_list, va_start
 #include <stdio.h>                      // for printf, vprintf, fflush, etc
 #include "gtest/gtest-test-part.h"      // for TestPartResult

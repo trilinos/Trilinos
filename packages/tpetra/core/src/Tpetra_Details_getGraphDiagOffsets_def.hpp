@@ -51,7 +51,7 @@
 
 #include "Tpetra_Details_OrdinalTraits.hpp"
 #include "Tpetra_Map.hpp"
-#include "Kokkos_Sparse_findRelOffset.hpp"
+#include "KokkosSparse_findRelOffset.hpp"
 
 namespace Tpetra {
 namespace Details {

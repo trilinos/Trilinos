@@ -29,10 +29,6 @@
 
 #ifdef HAVE_MUELU_TPETRA
 #include <Xpetra_TpetraCrsGraph.hpp>
-#include <Tpetra_CrsGraph.hpp>
-#ifdef HAVE_ISORROPIA_TPETRA
-#include <Isorropia_TpetraPartitioner.hpp>
-#endif // HAVE_ISORROPIA_TPETRA
 #endif
 #endif // ENDIF HAVE_MUELU_ISORROPIA
 
@@ -212,35 +208,8 @@ namespace MueLu {
 
 #ifdef HAVE_MUELU_TPETRA
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT
-
     RCP< Xpetra::TpetraCrsGraph<LO, GO, Node> > tpCrsGraph = Teuchos::rcp_dynamic_cast<Xpetra::TpetraCrsGraph<LO, GO, Node> >(crsGraph);
-    if(tpCrsGraph != Teuchos::null) {
-#ifdef HAVE_ISORROPIA_TPETRA
-      RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > tpetraCrsGraph = tpCrsGraph->getTpetra_CrsGraph();
-      RCP<Isorropia::Tpetra::Partitioner<Node> > isoPart = rcp(new Isorropia::Tpetra::Partitioner<Node>(tpetraCrsGraph, paramlist));
-
-      int size = 0;
-      const int* array = NULL;
-      isoPart->extractPartsView(size,array);
-
-      TEUCHOS_TEST_FOR_EXCEPTION(size != Teuchos::as<int>(nodeMap->getNodeNumElements()), Exceptions::RuntimeError, "length of array returned from extractPartsView does not match local length of rowMap");
-
-      RCP<Xpetra::Vector<GO, LO, GO, NO> > decomposition = Xpetra::VectorFactory<GO, LO, GO, NO>::Build(nodeMap, false);
-      ArrayRCP<GO> decompEntries = decomposition->getDataNonConst(0);
-
-      // fill vector with amalgamated information about partitioning
-      // TODO: we assume simple block maps here
-      // TODO: adapt this to usage of nodegid2dofgids
-      for(int i = 0; i<size; i++) {
-        decompEntries[i] = Teuchos::as<GO>(array[i]);
-      }
-
-      Set(level, "AmalgamatedPartition", decomposition);
-
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Tpetra is not enabled for Isorropia. Recompile Isorropia with Tpetra support.");
-#endif // ENDIF HAVE_ISORROPIA_TPETRA
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(tpCrsGraph != Teuchos::null, Exceptions::RuntimeError, "Tpetra is not supported with Isorropia.");
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "Isorropia is an interface to Zoltan which only has support for LO=GO=int and SC=double.");
 #endif // ENDIF HAVE_MUELU_INST_DOUBLE_INT_INT

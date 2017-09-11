@@ -565,7 +565,8 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
         int migration_processor_assignment_type,
         int migration_doMigration_type,
         bool test_boxes,
-        bool rectilinear
+        bool rectilinear,
+        int  mj_premigration_option   
 )
 {
     int ierr = 0;
@@ -653,6 +654,7 @@ int GeometricGenInterface(RCP<const Teuchos::Comm<int> > &comm,
 
     if(imbalance > 1)
         params->set("imbalance_tolerance", double(imbalance));
+    params->set("mj_premigration_option", mj_premigration_option);
 
     if(pqParts != "")
         params->set("mj_parts", pqParts);
@@ -724,7 +726,10 @@ int testFromDataFile(
         int migration_processor_assignment_type,
         int migration_doMigration_type,
         bool test_boxes,
-        bool rectilinear
+        bool rectilinear,
+        int  mj_premigration_option, 
+	int mj_premigration_coordinate_cutoff
+
 )
 {
     int ierr = 0;
@@ -763,6 +768,8 @@ int testFromDataFile(
     if(pqParts != ""){
         params->set("mj_parts", pqParts);
     }
+    params->set("mj_premigration_option", mj_premigration_option);
+
     if(numParts > 0){
         params->set("num_global_parts", numParts);
     }
@@ -775,6 +782,9 @@ int testFromDataFile(
     if(migration_imbalance_cut_off >= 0){
         params->set("mj_minimum_migration_imbalance",
                     double (migration_imbalance_cut_off));
+    }
+    if (mj_premigration_coordinate_cutoff > 0){
+        params->set("mj_premigration_coordinate_count", mj_premigration_coordinate_cutoff);
     }
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
@@ -915,6 +925,7 @@ void getCoords(zscalar_t **&coords, zlno_t &numLocal, int &dim, string fileName)
         }
     }
     fclose(f);
+    std::cout << "done reading:" << fileName << std::endl;
 }
 
 int testFromSeparateDataFiles(
@@ -931,7 +942,8 @@ int testFromSeparateDataFiles(
         int migration_processor_assignment_type,
         int migration_doMigration_type,
         int test_boxes,
-        bool rectilinear
+        bool rectilinear,
+ 	int  mj_premigration_option
 )
 {
     //std::string fname("simple");
@@ -976,13 +988,15 @@ int testFromSeparateDataFiles(
             new Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t>( mp, coordView.view(0, dim), dim));
 
 
-
     RCP<const tMVector_t> coordsConst = rcp_const_cast<const tMVector_t>(coords);
 
-    typedef Zoltan2::XpetraMultiVectorInput<tMVector_t> inputAdapter_t;
+    typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
     typedef Zoltan2::EvaluatePartition<inputAdapter_t> quality_t;
+
     inputAdapter_t *ia = new inputAdapter_t(coordsConst);
 
+    
+   
     Teuchos::RCP <Teuchos::ParameterList> params ;
 
     //Teuchos::ParameterList params("test params");
@@ -998,7 +1012,8 @@ int testFromSeparateDataFiles(
     if(imbalance > 1){
         params->set("imbalance_tolerance", double(imbalance));
     }
-
+ 
+    params->set("mj_premigration_option", mj_premigration_option);
     if(pqParts != ""){
         params->set("mj_parts", pqParts);
     }
@@ -1112,7 +1127,9 @@ void getArgVals(
         int &migration_processor_assignment_type,
         int &migration_doMigration_type,
         bool &test_boxes,
-        bool &rectilinear
+        bool &rectilinear,
+        int  &mj_premigration_option,
+	int &mj_coordinate_cutoff 
 )
 {
     bool isCset = false;
@@ -1174,6 +1191,22 @@ void getArgVals(
                 throw "Invalid argument at " + tmp;
             }
         }
+        else if(identifier == "PCC"){
+            if(value >=0 ){
+                mj_coordinate_cutoff = value;
+            } else {
+                throw "Invalid argument at " + tmp;
+            }
+        }
+
+        else if(identifier == "PM"){
+            if(value >=0 ){
+		mj_premigration_option = value;
+            } else {
+                throw "Invalid argument at " + tmp;
+            }
+        }
+
         else if(identifier == "DM"){
             if(value >=0 ){
                 migration_doMigration_type = value;
@@ -1279,6 +1312,9 @@ int main(int argc, char *argv[])
     zscalar_t migration_imbalance_cut_off = -1.15;
     int migration_processor_assignment_type = -1;
     int migration_doMigration_type = -1;
+    int  mj_premigration_option = 0;
+    int mj_premigration_coordinate_cutoff = 0;
+
     bool test_boxes = false;
     bool rectilinear = false;
 
@@ -1300,7 +1336,7 @@ int main(int argc, char *argv[])
                     migration_processor_assignment_type,
                     migration_doMigration_type,
                     test_boxes,
-                    rectilinear);
+                    rectilinear, mj_premigration_option, mj_premigration_coordinate_cutoff);
         }
         catch(std::string s){
             if(tcomm->getRank() == 0){
@@ -1327,7 +1363,7 @@ int main(int argc, char *argv[])
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes, rectilinear);
+                    migration_doMigration_type, test_boxes, rectilinear, mj_premigration_option, mj_premigration_coordinate_cutoff);
             break;
 #ifdef hopper_separate_test
         case 1:
@@ -1337,7 +1373,7 @@ int main(int argc, char *argv[])
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes, rectilinear);
+                    migration_doMigration_type, test_boxes, rectilinear, mj_premigration_option);
             break;
 #endif
         default:
@@ -1347,7 +1383,7 @@ int main(int argc, char *argv[])
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes, rectilinear);
+                    migration_doMigration_type, test_boxes, rectilinear, mj_premigration_option);
             break;
         }
 

@@ -137,7 +137,7 @@ namespace PHX {
     MDALayout(const std::string& prefix,
 	      size_type size1);
 
-    virtual ~MDALayout() {}
+    virtual ~MDALayout() noexcept {}
 
     virtual bool operator==(const DataLayout& right) const override;
 
@@ -175,6 +175,11 @@ namespace PHX {
     template<typename IndexType>
     typename std::enable_if<std::is_unsigned<IndexType>::value>::type
     checkForValidRank(const IndexType& ordinal) const;
+
+  protected:
+
+    virtual void 
+    setExtentsOnDerivedClass(const std::vector<PHX::Device::size_type>& extents) override;
 
   private:
 

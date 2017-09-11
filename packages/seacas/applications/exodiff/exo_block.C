@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -75,7 +75,7 @@ template <typename INT> EXOTYPE Exo_Block<INT>::exodus_type() const { return EX_
 template <typename INT> void Exo_Block<INT>::entity_load_params()
 {
   int      num_attr;
-  ex_block block;
+  ex_block block{};
   block.id   = id_;
   block.type = EX_ELEM_BLOCK;
   int err    = ex_get_block_param(fileId, &block);
@@ -118,7 +118,7 @@ template <typename INT> std::string Exo_Block<INT>::Load_Connectivity()
   conn = nullptr;
 
   if (numEntity && num_nodes_per_elmt) {
-    conn = new INT[(size_t)numEntity * num_nodes_per_elmt];
+    conn = new INT[numEntity * num_nodes_per_elmt];
     SMART_ASSERT(conn != nullptr);
 
     int err = ex_get_conn(fileId, EX_ELEM_BLOCK, id_, conn, nullptr, nullptr);
@@ -156,7 +156,7 @@ template <typename INT> const INT *Exo_Block<INT>::Connectivity(size_t elmt_inde
     return nullptr;
   }
 
-  return &conn[(size_t)elmt_index * num_nodes_per_elmt];
+  return &conn[elmt_index * num_nodes_per_elmt];
 }
 
 template <typename INT>

@@ -61,8 +61,8 @@ class ProjectGradientToQP : public PHX::EvaluatorWithBaseImpl<Traits>,
   
 public:
   ProjectGradientToQP(const std::string& field_name,
-                      const Teuchos::RCP<const PHX::DataLayout>& basis_layout,
-                      const Teuchos::RCP<const PHX::DataLayout>& grad_qp_layout);
+                      const Teuchos::RCP<PHX::DataLayout>& basis_layout,
+                      const Teuchos::RCP<PHX::DataLayout>& grad_qp_layout);
   void evaluateFields(typename Traits::EvalData workset) override;
   KOKKOS_INLINE_FUNCTION
   void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;

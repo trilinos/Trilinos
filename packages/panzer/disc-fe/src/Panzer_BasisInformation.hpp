@@ -50,8 +50,6 @@
 
 namespace panzer {
 
-  class CellData;
-
   //! Description and data layouts associated with a particular basis
   class BasisInformation { 
 

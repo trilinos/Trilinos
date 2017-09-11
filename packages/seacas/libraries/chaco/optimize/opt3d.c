@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -108,8 +108,9 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
   mfactor                     = 20.0;
   mstart                      = 5.0 * a;
 
-  for (i      = 0; i < 25; i++)
+  for (i = 0; i < 25; i++) {
     coeffs[i] = 0;
+  }
 
   aptr  = yvecs[1] + 1;
   bptr  = yvecs[2] + 1;
@@ -120,8 +121,9 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
     b = *bptr++;
     c = *cptr++;
     w = graph[i]->vwgt;
-    if (using_vwgts)
+    if (using_vwgts) {
       ws = *wsptr++;
+    }
     if (w == 1) {
       coeffs[0] += a * a * a * a;
       coeffs[1] += b * b * b * b;
@@ -186,11 +188,13 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
   /* This should make convergence criteria insensitive to problem size. */
   /* Note that the relative sizes of funcf and funcc depend on normalization of
      eigenvectors, and I'm assuming them normalized to 1. */
-  for (i = 0; i < 15; i++)
+  for (i = 0; i < 15; i++) {
     coeffs[i] *= nvtxs;
+  }
   a = sqrt((double)nvtxs);
-  for (i = 15; i < 25; i++)
+  for (i = 15; i < 25; i++) {
     coeffs[i] *= a;
+  }
 
   bestf    = 0;
   maxtries = OPT3D_NTRIES;
@@ -222,8 +226,9 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
         hesscon(&coeffs[15], hessc);
 
         /* If in final pass, tighten convergence criterion. */
-        if (funcc < max_constraint)
+        if (funcc < max_constraint) {
           step_min = final_step_min;
+        }
 
         kk = 0;
         if (kk) {
@@ -233,27 +238,32 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
         for (i = 0; i < 3; i++) {
           /* Note: I'm taking negative of gradient here. */
           grad[i] = -grad[i] - mult * gradc[i];
-          for (j = 0; j < 3; j++)
+          for (j = 0; j < 3; j++) {
             hess[i][j] += mult * hessc[i][j];
+          }
         }
 
         grad_norm = fabs(grad[0]) + fabs(grad[1]) + fabs(grad[2]);
         hess_min  = hfact * grad_norm / step_max;
-        if (hess_min < hess_tol)
+        if (hess_min < hess_tol) {
           hess_min = hess_tol;
+        }
 
         /* Find smallest eigenvalue of hess. */
         ch_evals3(hess, &eval, &res, &res);
 
         /* If eval < 0, add to diagonal to make pos def. */
-        if (eval < -pdtol)
+        if (eval < -pdtol) {
           pdflag = FALSE;
-        else
+        }
+        else {
           pdflag = TRUE;
+        }
 
         if (eval < hess_min) {
-          for (i = 0; i < 3; i++)
+          for (i = 0; i < 3; i++) {
             hess[i][i] += hess_min - eval;
+          }
         }
 
         /* Now solve linear system for step sizes. */
@@ -263,27 +273,32 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
         step_size = fabs(step[0]) + fabs(step[1]) + fabs(step[2]);
         if (step_size > step_max) {
           a = step_max / step_size;
-          for (i = 0; i < 3; i++)
+          for (i = 0; i < 3; i++) {
             step[i] *= a;
+          }
         }
 
         if ((step_size < step_min || grad_norm < grad_min) && !pdflag) {
           /* Convergence to non-min. */
-          for (i = 0; i < 3; i++)
+          for (i = 0; i < 3; i++) {
             hess[i][i] -= hess_min - eval;
+          }
           ch_eigenvec3(hess, eval, step, &res);
           step_size = fabs(step[0]) + fabs(step[1]) + fabs(step[2]);
           a         = step_min / step_size;
-          for (i = 0; i < 3; i++)
+          for (i = 0; i < 3; i++) {
             step[i] *= a;
+          }
           step_size = step_min;
         }
-        for (i = 0; i < 3; i++)
+        for (i = 0; i < 3; i++) {
           vars[i] += step[i];
+        }
         inner++;
       }
-      if (inner1 == 0)
+      if (inner1 == 0) {
         inner1 = inner;
+      }
       total += inner;
       mult *= mfactor;
     }
@@ -295,8 +310,9 @@ void opt3d(struct vtx_data **graph,   /* data structure containing vertex weight
 
     if (ntries == 1 || funcf < bestf) {
       bestf = funcf;
-      for (i    = 0; i < 3; i++)
+      for (i = 0; i < 3; i++) {
         best[i] = vars[i];
+      }
     }
   }
   *ptheta = best[0];

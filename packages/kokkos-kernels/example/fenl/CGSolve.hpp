@@ -48,7 +48,7 @@
 #include <limits>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Blas1.hpp>
-#include <Kokkos_Sparse.hpp>
+#include <KokkosSparse_spmv.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 #include <WrapMPI.hpp>
@@ -109,7 +109,7 @@ struct CGSolve< ImportType , SparseMatrixType , VectorType ,
 
     double old_rdot = Kokkos::Example::all_reduce( KokkosBlas::dot( r , r ) , import.comm );
 
-    norm_res  = std::sqrt( old_rdot );
+    norm_res  = sqrt( old_rdot );
     iteration = 0 ;
 
     Kokkos::Impl::Timer wall_clock ;

@@ -52,6 +52,10 @@
 
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#ifdef KOKKOS_HAVE_CUDA
+// mfh 03 Aug 2017: See #1088 and #1571.
+#  include "Tpetra_Details_Environment.hpp"
+#endif // KOKKOS_HAVE_CUDA
 
 namespace Tpetra {
 
@@ -59,7 +63,22 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   DistObject (const Teuchos::RCP<const map_type>& map) :
     map_ (map)
+#ifdef KOKKOS_HAVE_CUDA
+    , allowCudaCommBuffers_ (false)
+#endif // KOKKOS_HAVE_CUDA
   {
+#ifdef KOKKOS_HAVE_CUDA
+    {
+      using Tpetra::Details::Environment;
+      // The variable must not only exist, it must be set to some
+      // recognizably non-false value, e.g., "1", "ON", or "TRUE".
+      constexpr char paramName[] = "TPETRA_ASSUME_CUDA_AWARE_MPI";
+      Environment& env = Environment::getInstance ();
+      const bool allowCudaCommBuffers = env.getBooleanValue (paramName);
+      this->allowCudaCommBuffers_ = allowCudaCommBuffers;
+    }
+#endif // KOKKOS_HAVE_CUDA
+
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     using Teuchos::RCP;
     using Teuchos::Time;
@@ -111,6 +130,9 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>& rhs)
     : map_ (rhs.map_)
+#ifdef KOKKOS_HAVE_CUDA
+    , allowCudaCommBuffers_ (rhs.allowCudaCommBuffers_)
+#endif // KOKKOS_HAVE_CUDA
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -269,6 +291,18 @@ namespace Tpetra {
     const view_type remoteLIDs      = importer.getRemoteLIDs();
     const view_type permuteToLIDs   = importer.getPermuteToLIDs();
     const view_type permuteFromLIDs = importer.getPermuteFromLIDs();
+
+    // mfh 03 Aug 2017: Set this to true for copious debug output to
+    // std::cerr on every MPI process.  This is unwise for runs with
+    // large numbers of MPI processes.
+    constexpr bool debug = false;
+
+    if (debug) {
+      const int myRank = importer.getSourceMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": about to call doTransfer" << std::endl;
+      std::cerr << os.str ();
+    }
     this->doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
                       remoteLIDs, exportLIDs, importer.getDistributor (),
                       DoForward);
@@ -400,8 +434,19 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef device_type DT;
 
+    // mfh 03 Aug 2017: Set this to true for copious debug output to
+    // std::cerr on every MPI process.  This is unwise for runs with
+    // large numbers of MPI processes.
+    constexpr bool debug = false;
+
     if (this->useNewInterface ()) {
-      const bool commOnHost = false;
+#ifdef KOKKOS_HAVE_CUDA
+      const bool allowDeviceCommBuffers = this->allowCudaCommBuffers_;
+#else
+      const bool allowDeviceCommBuffers = false;
+#endif // KOKKOS_HAVE_CUDA
+      // Do we need all communication buffers to live on host?
+      const bool commOnHost = ! allowDeviceCommBuffers;
 
       // Convert arguments to Kokkos::DualView.  This currently
       // involves deep copy, either to host or to device (depending on
@@ -430,10 +475,22 @@ namespace Tpetra {
                                               "exportLIDs",
                                               commOnHost);
 
+      if (debug) {
+        const int myRank = this->getMap ()->getComm ()->getRank ();
+        std::ostringstream os;
+        os << "Proc " << myRank << ": about to call doTransferNew" << std::endl;
+        std::cerr << os.str ();
+      }
       doTransferNew (src, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
                      remoteLIDs, exportLIDs, distor, revOp, commOnHost);
     }
     else {
+      if (debug) {
+        const int myRank = this->getMap ()->getComm ()->getRank ();
+        std::ostringstream os;
+        os << "Proc " << myRank << ": about to call doTransferOld" << std::endl;
+        std::cerr << os.str ();
+      }
       doTransferOld (src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_,
                      remoteLIDs_, exportLIDs_, distor, revOp);
     }
@@ -445,13 +502,23 @@ namespace Tpetra {
   reallocImportsIfNeeded (const size_t newSize, const bool debug)
   {
     if (debug) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "*** Reallocate (if needed) imports_ from "
+      os << "Proc " << myRank << ": Reallocate (if needed) imports_ from "
          << imports_.dimension_0 () << " to " << newSize << std::endl;
       std::cerr << os.str ();
     }
     using Details::reallocDualViewIfNeeded;
-    return reallocDualViewIfNeeded (this->imports_, newSize, "imports");
+    const bool reallocated =
+      reallocDualViewIfNeeded (this->imports_, newSize, "imports");
+    if (debug) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": Finished reallocating imports_"
+         << std::endl;
+      std::cerr << os.str ();
+    }
+    return reallocated;
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -504,7 +571,11 @@ namespace Tpetra {
   {
     using Tpetra::Details::getArrayViewFromDualView;
     using Tpetra::Details::reallocDualViewIfNeeded;
-    const bool debug = false;
+
+    // mfh 03 Aug 2017: Set this to true for copious debug output to
+    // std::cerr on every MPI process.  This is unwise for runs with
+    // large numbers of MPI processes.
+    constexpr bool debug = false;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
@@ -886,11 +957,25 @@ namespace Tpetra {
     using Kokkos::Compat::create_const_view;
     typedef LocalOrdinal LO;
     typedef device_type DT;
+
     typedef typename Kokkos::DualView<LO*, DT>::t_dev::execution_space DES;
-    typedef typename Kokkos::DualView<LO*, DT>::t_dev::memory_space DMS;
-    //typedef typename Kokkos::DualView<LO*, DT>::t_dev::memory_space HMS;
-    typedef Kokkos::HostSpace HMS; // prevent DualView with CudaUVMSpace issues
-    const bool debug = false;
+    //typedef typename Kokkos::DualView<LO*, DT>::t_dev::memory_space DMS; // unused
+    //typedef typename Kokkos::DualView<LO*, DT>::t_dev::memory_space HMS; // unused
+
+    // DistObject's communication buffers (exports_,
+    // numExportPacketsPerLID_, imports_, and numImportPacketsPerLID_)
+    // may have different memory spaces than device_type would
+    // indicate.  See GitHub issue #1088.  Abbreviations: "communication
+    // host memory space" and "communication device memory space."
+    typedef typename Kokkos::DualView<size_t*,
+      buffer_device_type>::t_dev::memory_space CDMS;
+    typedef typename Kokkos::DualView<size_t*,
+      buffer_device_type>::t_host::memory_space CHMS;
+
+    // mfh 03 Aug 2017: Set this to true for copious debug output to
+    // std::cerr on every MPI process.  This is unwise for runs with
+    // large numbers of MPI processes.
+    constexpr bool debug = false;
 
     if (debug) {
       std::ostringstream os;
@@ -1049,11 +1134,11 @@ namespace Tpetra {
 
             size_t totalImportPackets = 0;
             if (commOnHost) {
-              this->numExportPacketsPerLID_.template sync<HMS> ();
-              this->numImportPacketsPerLID_.template sync<HMS> ();
-              this->numImportPacketsPerLID_.template modify<HMS> (); // output argument
-              auto numExp_h = create_const_view (this->numExportPacketsPerLID_.template view<HMS> ());
-              auto numImp_h = this->numImportPacketsPerLID_.template view<HMS> ();
+              this->numExportPacketsPerLID_.template sync<CHMS> ();
+              this->numImportPacketsPerLID_.template sync<CHMS> ();
+              this->numImportPacketsPerLID_.template modify<CHMS> (); // output argument
+              auto numExp_h = create_const_view (this->numExportPacketsPerLID_.template view<CHMS> ());
+              auto numImp_h = this->numImportPacketsPerLID_.template view<CHMS> ();
 
               // MPI communication happens here.
               distor.doReversePostsAndWaits (numExp_h, 1, numImp_h);
@@ -1063,11 +1148,11 @@ namespace Tpetra {
               totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_h);
             }
             else {
-              this->numExportPacketsPerLID_.template sync<DMS> ();
-              this->numImportPacketsPerLID_.template sync<DMS> ();
-              this->numImportPacketsPerLID_.template modify<DMS> (); // output argument
-              auto numExp_d = create_const_view (this->numExportPacketsPerLID_.template view<DMS> ());
-              auto numImp_d = this->numImportPacketsPerLID_.template view<DMS> ();
+              this->numExportPacketsPerLID_.template sync<CDMS> ();
+              this->numImportPacketsPerLID_.template sync<CDMS> ();
+              this->numImportPacketsPerLID_.template modify<CDMS> (); // output argument
+              auto numExp_d = create_const_view (this->numExportPacketsPerLID_.template view<CDMS> ());
+              auto numImp_d = this->numImportPacketsPerLID_.template view<CDMS> ();
 
               // MPI communication happens here.
               distor.doReversePostsAndWaits (numExp_d, 1, numImp_d);
@@ -1087,8 +1172,8 @@ namespace Tpetra {
             // launch MPI communication on host, we will need
             // numExportPacketsPerLID and numImportPacketsPerLID on
             // host.
-            this->numExportPacketsPerLID_.template sync<HMS> ();
-            this->numImportPacketsPerLID_.template sync<HMS> ();
+            this->numExportPacketsPerLID_.template sync<CHMS> ();
+            this->numImportPacketsPerLID_.template sync<CHMS> ();
 
             // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
             // doReversePostsAndWaits currently want
@@ -1108,17 +1193,17 @@ namespace Tpetra {
             this->imports_.modified_host() = 0;
 
             if (commOnHost) {
-              this->imports_.template modify<HMS> ();
-              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<HMS> ()),
+              this->imports_.template modify<CHMS> ();
+              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<CHMS> ()),
                                              numExportPacketsPerLID_av,
-                                             this->imports_.template view<HMS> (),
+                                             this->imports_.template view<CHMS> (),
                                              numImportPacketsPerLID_av);
             }
             else {
-              this->imports_.template modify<DMS> ();
-              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<DMS> ()),
+              this->imports_.template modify<CDMS> ();
+              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<CDMS> ()),
                                              numExportPacketsPerLID_av,
-                                             this->imports_.template view<DMS> (),
+                                             this->imports_.template view<CDMS> (),
                                              numImportPacketsPerLID_av);
             }
           }
@@ -1142,16 +1227,16 @@ namespace Tpetra {
             this->imports_.modified_host() = 0;
 
             if (commOnHost) {
-              this->imports_.template modify<HMS> ();
-              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<HMS> ()),
+              this->imports_.template modify<CHMS> ();
+              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<CHMS> ()),
                                              constantNumPackets,
-                                             this->imports_.template view<HMS> ());
+                                             this->imports_.template view<CHMS> ());
             }
             else { // pack on device
-              this->imports_.template modify<DMS> ();
-              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<DMS> ()),
+              this->imports_.template modify<CDMS> ();
+              distor.doReversePostsAndWaits (create_const_view (this->exports_.template view<CDMS> ()),
                                              constantNumPackets,
-                                             this->imports_.template view<DMS> ());
+                                             this->imports_.template view<CDMS> ());
             }
           }
         }
@@ -1170,11 +1255,11 @@ namespace Tpetra {
 
             size_t totalImportPackets = 0;
             if (commOnHost) {
-              this->numExportPacketsPerLID_.template sync<HMS> ();
-              this->numImportPacketsPerLID_.template sync<HMS> ();
-              this->numImportPacketsPerLID_.template modify<HMS> (); // output argument
-              auto numExp_h = create_const_view (this->numExportPacketsPerLID_.template view<HMS> ());
-              auto numImp_h = this->numImportPacketsPerLID_.template view<HMS> ();
+              this->numExportPacketsPerLID_.template sync<CHMS> ();
+              this->numImportPacketsPerLID_.template sync<CHMS> ();
+              this->numImportPacketsPerLID_.template modify<CHMS> (); // output argument
+              auto numExp_h = create_const_view (this->numExportPacketsPerLID_.template view<CHMS> ());
+              auto numImp_h = this->numImportPacketsPerLID_.template view<CHMS> ();
 
               // MPI communication happens here.
               distor.doPostsAndWaits (numExp_h, 1, numImp_h);
@@ -1184,11 +1269,11 @@ namespace Tpetra {
               totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_h);
             }
             else {
-              this->numExportPacketsPerLID_.template sync<DMS> ();
-              this->numImportPacketsPerLID_.template sync<DMS> ();
-              this->numImportPacketsPerLID_.template modify<DMS> (); // output argument
-              auto numExp_d = create_const_view (this->numExportPacketsPerLID_.template view<DMS> ());
-              auto numImp_d = this->numImportPacketsPerLID_.template view<DMS> ();
+              this->numExportPacketsPerLID_.template sync<CDMS> ();
+              this->numImportPacketsPerLID_.template sync<CDMS> ();
+              this->numImportPacketsPerLID_.template modify<CDMS> (); // output argument
+              auto numExp_d = create_const_view (this->numExportPacketsPerLID_.template view<CDMS> ());
+              auto numImp_d = this->numImportPacketsPerLID_.template view<CDMS> ();
 
               // MPI communication happens here.
               distor.doPostsAndWaits (numExp_d, 1, numImp_d);
@@ -1208,8 +1293,8 @@ namespace Tpetra {
             // launch MPI communication on host, we will need
             // numExportPacketsPerLID and numImportPacketsPerLID on
             // host.
-            this->numExportPacketsPerLID_.template sync<HMS> ();
-            this->numImportPacketsPerLID_.template sync<HMS> ();
+            this->numExportPacketsPerLID_.template sync<CHMS> ();
+            this->numImportPacketsPerLID_.template sync<CHMS> ();
 
             // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
             // doReversePostsAndWaits currently want
@@ -1229,17 +1314,17 @@ namespace Tpetra {
             this->imports_.modified_host() = 0;
 
             if (commOnHost) {
-              this->imports_.template modify<HMS> ();
-              distor.doPostsAndWaits (create_const_view (this->exports_.template view<HMS> ()),
+              this->imports_.template modify<CHMS> ();
+              distor.doPostsAndWaits (create_const_view (this->exports_.template view<CHMS> ()),
                                       numExportPacketsPerLID_av,
-                                      this->imports_.template view<HMS> (),
+                                      this->imports_.template view<CHMS> (),
                                       numImportPacketsPerLID_av);
             }
             else { // pack on device
-              this->imports_.template modify<DMS> ();
-              distor.doPostsAndWaits (create_const_view (this->exports_.template view<DMS> ()),
+              this->imports_.template modify<CDMS> ();
+              distor.doPostsAndWaits (create_const_view (this->exports_.template view<CDMS> ()),
                                       numExportPacketsPerLID_av,
-                                      this->imports_.template view<DMS> (),
+                                      this->imports_.template view<CDMS> (),
                                       numImportPacketsPerLID_av);
             }
           }
@@ -1263,16 +1348,30 @@ namespace Tpetra {
             this->imports_.modified_host() = 0;
 
             if (commOnHost) {
-              this->imports_.template modify<HMS> ();
-              distor.doPostsAndWaits (create_const_view (this->exports_.template view<HMS> ()),
+              this->imports_.template modify<CHMS> ();
+              if (debug) {
+                const int myRank = this->getMap ()->getComm ()->getRank ();
+                std::ostringstream os;
+                os << ">>> (Proc " << myRank << "): 7.2. Comm buffers on host"
+                   << std::endl;
+                std::cerr << os.str ();
+              }
+              distor.doPostsAndWaits (create_const_view (this->exports_.template view<CHMS> ()),
                                       constantNumPackets,
-                                      this->imports_.template view<HMS> ());
+                                      this->imports_.template view<CHMS> ());
             }
             else { // pack on device
-              this->imports_.template modify<DMS> ();
-              distor.doPostsAndWaits (create_const_view (this->exports_.template view<DMS> ()),
+              this->imports_.template modify<CDMS> ();
+              if (debug) {
+                const int myRank = this->getMap ()->getComm ()->getRank ();
+                std::ostringstream os;
+                os << ">>> (Proc " << myRank << "): 7.2. Comm buffers on device"
+                   << std::endl;
+                std::cerr << os.str ();
+              }
+              distor.doPostsAndWaits (create_const_view (this->exports_.template view<CDMS> ()),
                                       constantNumPackets,
-                                      this->imports_.template view<DMS> ());
+                                      this->imports_.template view<CDMS> ());
             }
           }
         }
@@ -1293,8 +1392,9 @@ namespace Tpetra {
           // FIXME (mfh 26 Apr 2016) Check that all input DualViews
           // were most recently updated in the same memory space, and
           // sync them to the same place (based on commOnHost) if not.
-          unpackAndCombineNew (remoteLIDs, imports_, numImportPacketsPerLID_,
-                               constantNumPackets, distor, CM);
+          this->unpackAndCombineNew (remoteLIDs, this->imports_,
+                                     this->numImportPacketsPerLID_,
+                                     constantNumPackets, distor, CM);
         }
       }
     } // if (CM != ZERO)

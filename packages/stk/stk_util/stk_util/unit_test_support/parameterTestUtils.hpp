@@ -30,6 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+#ifndef STK_PARAMETER_TEST_UTILS_H
+#define STK_PARAMETER_TEST_UTILS_H
 
 #include <gtest/gtest.h>
 #include <stk_util/util/ParameterList.hpp>
@@ -74,3 +76,4 @@ inline void validate_parameters_equal_value(const stk::util::Parameter &paramete
       ASSERT_EQ(1,0) << "Invalid type found in validate_parameters_equal_value";
     }
 }
+#endif

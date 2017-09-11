@@ -168,7 +168,7 @@ namespace Intrepid2 {
               if (cellBasis.requireOrientation()) {
                 if (testOrder == 1) {
                   const ordinal_type ndofBasis = cellBasis.getCardinality();
-                  Kokkos::DynRankView<double>
+                  Kokkos::DynRankView<double,HostSpaceType>
                     outputValues("output", ndofBasis, 3, 2),
                     inputPoints("input", 3, 2);
                   

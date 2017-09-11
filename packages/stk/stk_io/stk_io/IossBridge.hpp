@@ -451,8 +451,6 @@ void put_io_part_attribute( mesh::Part &part);
  */
 void remove_io_part_attribute(mesh::Part &part);
 
-const Ioss::GroupingEntity *get_associated_ioss_entity(const mesh::Part &part);
-
 size_t db_api_int_size(const Ioss::GroupingEntity *entity);
 
 void initialize_spatial_dimension(mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names);

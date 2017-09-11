@@ -46,7 +46,6 @@
 #ifndef MUELU_UTILITIES_DECL_HPP
 #define MUELU_UTILITIES_DECL_HPP
 
-#include <unistd.h> //necessary for "sleep" function in debugging methods
 #include <string>
 
 #include "MueLu_ConfigDefs.hpp"

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -66,50 +66,59 @@ void mapper(struct vtx_data **graph,        /* data structure with vertex weight
 
   using_vwgts = (vwgt_max != 1);
 
-  if (ndims == 1 && mediantype == 1)
+  if (ndims == 1 && mediantype == 1) {
     mediantype = 3; /* simpler call than normal option 1. */
+  }
 
   if (mediantype == 0) { /* Divide at zero instead of median. */
     bits      = 1;
     temp_sets = smalloc((nvtxs + 1) * sizeof(int));
-    for (j    = 1; j <= nvtxs; j++)
+    for (j = 1; j <= nvtxs; j++) {
       sets[j] = 0;
+    }
 
     for (i = 1; i <= ndims; i++) {
       temp_goal[0] = temp_goal[1] = 0;
       for (j = 0; j < (1 << ndims); j++) {
-        if (bits & j)
+        if (bits & j) {
           temp_goal[1] += goal[j];
-        else
+        }
+        else {
           temp_goal[0] += goal[j];
+        }
       }
       bits <<= 1;
 
       wbelow = wabove = 0;
       vweight         = 1;
       for (j = 1; j <= nvtxs; j++) {
-        if (using_vwgts)
+        if (using_vwgts) {
           vweight = graph[j]->vwgt;
-        if (xvecs[i][j] < 0)
+        }
+        if (xvecs[i][j] < 0) {
           wbelow += vweight;
-        else if (xvecs[i][j] > 0)
+        }
+        else if (xvecs[i][j] > 0) {
           wabove += vweight;
+        }
       }
 
-      median_assign(graph, xvecs[i], nvtxs, temp_goal, using_vwgts, temp_sets, wbelow, wabove,
-                    (double)0.0);
+      median_assign(graph, xvecs[i], nvtxs, temp_goal, using_vwgts, temp_sets, wbelow, wabove, 0.0);
 
-      for (j    = 1; j <= nvtxs; j++)
+      for (j = 1; j <= nvtxs; j++) {
         sets[j] = (sets[j] << 1) + temp_sets[j];
+      }
     }
     sfree(temp_sets);
   }
 
   else if (mediantype == 1) { /* Divide using min-cost assignment. */
-    if (ndims == 2)
+    if (ndims == 2) {
       map2d(graph, xvecs, nvtxs, sets, goal, vwgt_max);
-    else if (ndims == 3)
+    }
+    else if (ndims == 3) {
       map3d(graph, xvecs, nvtxs, sets, goal, vwgt_max);
+    }
   }
 
   else if (mediantype == 2) { /* Divide recursively using medians. */
@@ -119,22 +128,26 @@ void mapper(struct vtx_data **graph,        /* data structure with vertex weight
   else if (mediantype == 3) { /* Cut with independent medians => unbalanced. */
     bits      = 1;
     temp_sets = smalloc((nvtxs + 1) * sizeof(int));
-    for (j    = 1; j <= nvtxs; j++)
+    for (j = 1; j <= nvtxs; j++) {
       sets[j] = 0;
+    }
 
     for (i = 1; i <= ndims; i++) {
       temp_goal[0] = temp_goal[1] = 0;
       for (j = 0; j < (1 << ndims); j++) {
-        if (bits & j)
+        if (bits & j) {
           temp_goal[1] += goal[j];
-        else
+        }
+        else {
           temp_goal[0] += goal[j];
+        }
       }
       bits <<= 1;
 
       median(graph, xvecs[i], nvtxs, active, temp_goal, using_vwgts, temp_sets);
-      for (j    = 1; j <= nvtxs; j++)
+      for (j = 1; j <= nvtxs; j++) {
         sets[j] = (sets[j] << 1) + temp_sets[j];
+      }
     }
     sfree(temp_sets);
   }

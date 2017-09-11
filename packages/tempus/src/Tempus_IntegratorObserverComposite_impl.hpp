@@ -26,83 +26,79 @@ IntegratorObserverComposite<Scalar>::~IntegratorObserverComposite(){}
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::observeStartIntegrator()
 { 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeStartIntegrator();
+  for(auto& o : observers_)
+    o->observeStartIntegrator();
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::observeStartTimeStep()
 {
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeStartTimeStep();
+  for(auto& o : observers_)
+    o->observeStartTimeStep();
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
 observeNextTimeStep(Status & integratorStatus)
-{ 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeNextTimeStep( integratorStatus);
+{
+  for(auto& o : observers_)
+    o->observeNextTimeStep(integratorStatus);
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::observeBeforeTakeStep()
-{ 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeBeforeTakeStep();
+{
+  for(auto& o : observers_)
+    o->observeBeforeTakeStep();
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::observeAfterTakeStep()
-{ 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeAfterTakeStep();
+{
+  for(auto& o : observers_)
+    o->observeAfterTakeStep();
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
 observeAcceptedTimeStep(Status & integratorStatus)
-{ 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeAcceptedTimeStep( integratorStatus);
+{
+  for(auto& o : observers_)
+    o->observeAcceptedTimeStep(integratorStatus);
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
 observeEndIntegrator(const Status integratorStatus)
-{ 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeEndIntegrator( integratorStatus);
+{
+  for(auto& o : observers_)  
+    o->observeEndIntegrator(integratorStatus);
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
 setSolutionHistory(Teuchos::RCP<SolutionHistory<Scalar> > sh)
-{ solutionHistory_ = sh; return; }
+{
+  solutionHistory_ = sh;
+  for (auto& o : observers_)
+    o->setSolutionHistory(sh);
+}
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
 setTimeStepControl(Teuchos::RCP<TimeStepControl<Scalar> > tsc)
-{ timeStepControl_ = tsc; return; }
+{
+  timeStepControl_ = tsc;
+  for (auto& o : observers_)
+    o->setTimeStepControl(tsc);
+}
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
 addObserver(const Teuchos::RCP<IntegratorObserver<Scalar> > &observer)
 {
+    observer->setSolutionHistory(solutionHistory_);
+    observer->setTimeStepControl(timeStepControl_);
     observers_.push_back(observer);
 }
 

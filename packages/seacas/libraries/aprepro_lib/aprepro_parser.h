@@ -120,7 +120,7 @@ namespace SEAMS {
     /// Syntax errors thrown from user actions.
     struct syntax_error : std::runtime_error
     {
-      syntax_error(const std::string &m);
+      explicit syntax_error(const std::string &m);
     };
 
     /// Tokens.
@@ -207,7 +207,7 @@ namespace SEAMS {
       basic_symbol(const basic_symbol &other);
 
       /// Constructor for valueless symbols.
-      basic_symbol(typename Base::kind_type t);
+      explicit basic_symbol(typename Base::kind_type t);
 
       /// Constructor for symbols with semantic value.
       basic_symbol(typename Base::kind_type t, const semantic_type &v);
@@ -245,7 +245,7 @@ namespace SEAMS {
       typedef token_type kind_type;
 
       /// Constructor from (external) token numbers.
-      by_type(kind_type t);
+      explicit by_type(kind_type t);
 
       /// Record that this symbol is empty.
       void clear();
@@ -263,14 +263,14 @@ namespace SEAMS {
       /// The symbol type.
       /// \a empty_symbol when empty.
       /// An int, not token_number_type, to be able to store empty_symbol.
-      int type;
+      int type{};
     };
 
     /// "External" symbols: returned by the scanner.
     typedef basic_symbol<by_type> symbol_type;
 
     /// Build a parser object.
-    Parser(class Aprepro &aprepro_yyarg);
+    explicit Parser(class Aprepro &aprepro_yyarg);
     virtual ~Parser();
 
     /// Parse.
@@ -281,7 +281,7 @@ namespace SEAMS {
     /// The current debugging stream.
     std::ostream &debug_stream() const YY_ATTRIBUTE_PURE;
     /// Set the current debugging stream.
-    void set_debug_stream(std::ostream &);
+    void set_debug_stream(std::ostream & /*o*/);
 
     /// Type for debugging levels.
     typedef int debug_level_type;
@@ -293,10 +293,10 @@ namespace SEAMS {
 
     /// Report a syntax error.
     /// \param msg    a description of the syntax error.
-    virtual void error(const std::string &msg);
+    virtual void error(const std::string &m);
 
     /// Report a syntax error.
-    void error(const syntax_error &err);
+    void error(const syntax_error &yyexc);
 
   private:
     /// This class is not copyable.
@@ -364,7 +364,7 @@ namespace SEAMS {
     static const unsigned char yyr2_[];
 
     /// Convert the symbol name \a n to a form suitable for a diagnostic.
-    static std::string yytnamerr_(const char *n);
+    static std::string yytnamerr_(const char *yystr);
 
     /// For a symbol, its name in clear.
     static const char *const yytname_[];
@@ -372,7 +372,7 @@ namespace SEAMS {
     // YYRLINE[YYN] -- Source line where rule number YYN was defined.
     static const unsigned short int yyrline_[];
     /// Report on the debug stream that the rule \a r is going to be reduced.
-    virtual void yy_reduce_print_(int r);
+    virtual void yy_reduce_print_(int yyrule);
     /// Print the state stack on the debug stream.
     virtual void yystack_print_();
 
@@ -404,7 +404,7 @@ namespace SEAMS {
       typedef state_type kind_type;
 
       /// Constructor.
-      by_state(kind_type s);
+      explicit by_state(kind_type s);
 
       /// Copy constructor.
       by_state(const by_state &other);
@@ -424,7 +424,7 @@ namespace SEAMS {
 
       /// The state.
       /// \a empty when empty.
-      state_type state;
+      state_type state{};
     };
 
     /// "Internal" symbol: element of the stack.
@@ -435,7 +435,7 @@ namespace SEAMS {
       /// Construct an empty symbol.
       stack_symbol_type();
       /// Steal the contents from \a sym to build this.
-      stack_symbol_type(state_type s, symbol_type &sym);
+      stack_symbol_type(state_type s, symbol_type &that);
       /// Assignment, needed by push_back.
       stack_symbol_type &operator=(const stack_symbol_type &that);
     };
@@ -479,7 +479,7 @@ namespace SEAMS {
     class Aprepro &aprepro;
   };
 
-} // SEAMS
+} // namespace SEAMS
 #line 516 "aprepro_parser.h" // lalr1.cc:377
 
 #endif // !YY_SEAMS_APREPRO_PARSER_H_INCLUDED

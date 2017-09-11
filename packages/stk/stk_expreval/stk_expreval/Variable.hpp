@@ -72,7 +72,6 @@ public:
   /**
    * @brief Enumeration <b>Type</b> lists the variable data types.  <b>double</b> and
    * <b>int</b> are currently supported.
-   *
    */
   enum Type        {DOUBLE, INTEGER};
   enum Use         {DEPENDENT, INDEPENDENT};
@@ -80,7 +79,6 @@ public:
   
   /**
    * Creates a new <b>Variable</b> instance.
-   *
    */
   Variable(const std::string& name)
     : m_type(DOUBLE),
@@ -98,7 +96,6 @@ public:
    *
    * @param type		an <b>Type</b> value of the type of the new
    *				variable.
-   *
    */
   explicit Variable(Type type, const std::string& name)
     : m_type(type),
@@ -262,7 +259,7 @@ public:
     } else {
       std::stringstream error;
       error << "In analytic expression evaluator, processing variable '"<<m_name<<"'.  ";
-      error << "Invalid internal state of expression evalutor";
+      error << "Invalid internal state of expression evaluator";
       throw std::runtime_error(error.str());
       return m_doublePtr[0];
     }
@@ -346,7 +343,6 @@ public:
       throw std::runtime_error(error.str());
     }
 
-
     switch (m_type) {
     case DOUBLE:
       return *m_doublePtr;
@@ -372,14 +368,13 @@ private:
     double	m_doubleValue;		///< Local variable value as double
     int	        m_intValue;             ///< Local variable value as integer
   };
-  const std::string  m_name;                 ///< Name given to the variable, used for error messaging
+  const std::string  m_name;            ///< Name given to the variable, used for error messaging
 };
 
 
 /**
  * @brief Class <b>VariableMap</b> implements a mapping from name to a pointer to
  * a <b>Variable</b> object.  The mapping is case insensitive.
- *
  */
 class VariableMap : public std::map<std::string, Variable *, LessCase>
 {
@@ -387,7 +382,6 @@ public:
   /**
    * @brief Typedef <b>value_type</b> is the value_type of the
    * <b>std::map</b> subclass.  The mapping is case insensitive.
-   *
    */
   typedef std::map<std::string, Variable *, LessCase >::value_type value_type;
 
@@ -422,13 +416,15 @@ public:
      * @param it		a <b>VariableMap::iterator</b> reference to the
      *			variable whose name is to be resolved.
      */
-    virtual void resolve(VariableMap::iterator &it) = 0;
+    virtual void resolve(VariableMap::iterator &)
+    {
+    }
   };
 
 private:
   /**
    * @brief Member function <b>delete_variable</b> is a function which will delete
-   * the variabel pointed to by <b>t</b>.
+   * the variable pointed to by <b>t</b>.
    *
    * @param t			a <b>value_type</b> reference to the variable to be
    *				deleted.
@@ -451,20 +447,11 @@ private:
      */
     virtual ~DefaultResolver()
     {}
-
-    /**
-     * @brief Member function <b>resolve</b> implements the default resolvers
-     * function, which does nothing.  I.E. lets the local variable values stand.
-     */
-    virtual void resolve(VariableMap::iterator &)
-    {}
-    
   };
 
 public:
   /**
-   * @brief Member function <b>getDefaultResolver</b> returns a reference to the
-   * default resolver.
+   * @brief Member function <b>getDefaultResolver</b> returns a reference to the default resolver.
    */
   static Resolver &getDefaultResolver();
 
@@ -474,7 +461,6 @@ public:
    *
    * @param resolver		a <b>Resolver</b> reference to the variable name
    *				resolver for this variable map.
-   *
    */
   VariableMap(Resolver &resolver = getDefaultResolver())
     : std::map<std::string, Variable *, LessCase>(),
@@ -483,7 +469,6 @@ public:
 
   /**
    * Destroys a <b>VariableMap</b> instance.  All variables are destroyed.
-   *
    */
   virtual ~VariableMap() {
     std::for_each(begin(), end(), &delete_variable);

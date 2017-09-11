@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -365,8 +365,9 @@ void read_params(FILE *pfile /* file with new user parameters */
 
     /* Scan line for first non whitespace character. */
     ptr = line;
-    while (isspace(*ptr) && *ptr != '\0')
+    while (isspace(*ptr) && *ptr != '\0') {
       ptr++;
+    }
 
     if (*ptr == '%' || *ptr == '#' || *ptr == '\0') {
       /* This line is a comment or blank so don't process it. */
@@ -375,8 +376,9 @@ void read_params(FILE *pfile /* file with new user parameters */
     else {
       comment = FALSE;
       /* Scan line for character string. */
-      while (!isalpha(*ptr) && *ptr != '\0')
+      while (!isalpha(*ptr) && *ptr != '\0') {
         ptr++;
+      }
 
       idptr = id;
       /* Copy string to id and capitalize the letters. */
@@ -389,15 +391,17 @@ void read_params(FILE *pfile /* file with new user parameters */
     if (!comment && (int)strlen(id) > 0) { /* Don't bother if line blank */
 
       /* Check for exit condition. */
-      if (!strcmp(id, "STOP"))
+      if (!strcmp(id, "STOP")) {
         return;
+      }
 
       /* Set this flag TRUE when recognize string. */
       matched = FALSE;
 
       /* Now compare against the different identifiers. */
-      for (i = 0; ipnames[i] != NULL && strcmp(id, ipnames[i]); i++)
+      for (i = 0; ipnames[i] != NULL && strcmp(id, ipnames[i]) != 0; i++) {
         ;
+      }
       if (ipnames[i] != NULL) {
         matched = TRUE;
         flag    = read_intTF(ptr, iparams[i]);
@@ -419,8 +423,9 @@ void read_params(FILE *pfile /* file with new user parameters */
       }
 
       if (!matched) {
-        for (i = 0; TFpnames[i] != NULL && strcmp(id, TFpnames[i]); i++)
+        for (i = 0; TFpnames[i] != NULL && strcmp(id, TFpnames[i]) != 0; i++) {
           ;
+        }
         if (TFpnames[i] != NULL) {
           matched = TRUE;
           flag    = read_intTF(ptr, TFparams[i]);
@@ -443,8 +448,9 @@ void read_params(FILE *pfile /* file with new user parameters */
       }
 
       if (!matched) {
-        for (i = 0; lpnames[i] != NULL && strcmp(id, lpnames[i]); i++)
+        for (i = 0; lpnames[i] != NULL && strcmp(id, lpnames[i]) != 0; i++) {
           ;
+        }
         if (lpnames[i] != NULL) {
           matched = TRUE;
           flag    = read_long(ptr, lparams[i]);
@@ -467,8 +473,9 @@ void read_params(FILE *pfile /* file with new user parameters */
       }
 
       if (!matched) {
-        for (i = 0; cpnames[i] != NULL && strcmp(id, cpnames[i]); i++)
+        for (i = 0; cpnames[i] != NULL && strcmp(id, cpnames[i]) != 0; i++) {
           ;
+        }
         if (cpnames[i] != NULL) {
           matched = TRUE;
           flag    = read_string(ptr, cparams[i]);
@@ -491,8 +498,9 @@ void read_params(FILE *pfile /* file with new user parameters */
       }
 
       if (!matched) {
-        for (i = 0; dpnames[i] != NULL && strcmp(id, dpnames[i]); i++)
+        for (i = 0; dpnames[i] != NULL && strcmp(id, dpnames[i]) != 0; i++) {
           ;
+        }
         if (dpnames[i] != NULL) {
           matched = TRUE;
           flag    = read_double(ptr, dparams[i]);
@@ -536,16 +544,20 @@ static int read_intTF(char *ptr, /* pointer to string to parse */
   int nvals; /* number of values sucessfully read */
 
   while (*ptr != 'T' && *ptr != 't' && *ptr != 'F' && *ptr != 'f' && *ptr != '-' &&
-         !isdigit(*ptr) && *ptr != '\0')
+         !isdigit(*ptr) && *ptr != '\0') {
     ptr++;
-  if (*ptr == 'T' || *ptr == 't')
+  }
+  if (*ptr == 'T' || *ptr == 't') {
     *val = 1;
-  else if (*ptr == 'F' || *ptr == 'f')
+  }
+  else if (*ptr == 'F' || *ptr == 'f') {
     *val = 0;
+  }
   else {
     nvals = sscanf(ptr, "%d", val);
-    if (nvals != 1)
+    if (nvals != 1) {
       return (FALSE);
+    }
   }
 
   return (TRUE);
@@ -557,14 +569,17 @@ static int read_double(char *  ptr, /* pointer to string to parse */
 {
   int nvals; /* number of values sucessfully read */
 
-  while (*ptr != '-' && *ptr != '.' && !isdigit(*ptr) && *ptr != '\0')
+  while (*ptr != '-' && *ptr != '.' && !isdigit(*ptr) && *ptr != '\0') {
     ptr++;
+  }
 
   nvals = sscanf(ptr, "%lf", val);
-  if (nvals != 1)
+  if (nvals != 1) {
     return (FALSE);
-  else
+  }
+  else {
     return (TRUE);
+  }
 }
 
 static int read_long(char *ptr, /* pointer to string to parse */
@@ -573,14 +588,17 @@ static int read_long(char *ptr, /* pointer to string to parse */
 {
   int nvals; /* number of values sucessfully read */
 
-  while (*ptr != '-' && !isdigit(*ptr) && *ptr != '\0')
+  while (*ptr != '-' && !isdigit(*ptr) && *ptr != '\0') {
     ptr++;
+  }
 
   nvals = sscanf(ptr, "%ld", val);
-  if (nvals != 1)
+  if (nvals != 1) {
     return (FALSE);
-  else
+  }
+  else {
     return (TRUE);
+  }
 }
 
 static int read_string(char *ptr, /* pointer to string to parse */
@@ -589,17 +607,20 @@ static int read_string(char *ptr, /* pointer to string to parse */
 {
   char *sptr; /* loops through val */
 
-  while ((isspace(*ptr) || *ptr == '=') && *ptr != '\0')
+  while ((isspace(*ptr) || *ptr == '=') && *ptr != '\0') {
     ptr++;
+  }
 
-  if (*ptr == '\0')
+  if (*ptr == '\0') {
     return (FALSE);
+  }
 
   sptr = val;
 
-  while (!(isspace(*ptr) || *ptr == '\0'))
+  while (!(isspace(*ptr) || *ptr == '\0')) {
     *sptr++ = *ptr++;
-  *sptr     = '\0';
+  }
+  *sptr = '\0';
 
   return (TRUE);
 }
