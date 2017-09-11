@@ -252,6 +252,7 @@ int main(int argc, char* argv[]) {
       = Teuchos::rcp(new ROL::BatchManager<RealT>());
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
       = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,dist,bman));
+    sampler->print();
     // Build objective function
     Teuchos::RCP<ROL::Objective<RealT> > obj
       = Teuchos::rcp(new ObjectiveEx10<RealT>);
