@@ -24,12 +24,19 @@ IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
   MESSAGE(FATAL_ERROR "As of Trilinos 12.0, C++11 is REQUIRED when building Kokkos and its downstream packages, which include Tpetra.  You MUST enable C++11 when building these packages.  Trilinos should enable this by default, if your C++11 compiler supports C++11 (that is, if it's not too old).  If you set ${PROJECT_NAME}_ENABLE_CXX11=OFF, then you are disabling C++11.  DON'T DO THAT if you want to build Kokkos or its downstream packages, including Tpetra.  If you aren't happy about that, then you need to disable Kokkos explicitly, by setting ${PROJECT_NAME}_ENABLE_Kokkos=OFF.  This WILL disable Tpetra and its downstream packages.")
 ENDIF ()
 
-# As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
+# Checks that only matter if building with CUDA enabled.
 ASSERT_DEFINED(TPL_ENABLE_CUDA)
-IF (TPL_ENABLE_CUDA AND DEFINED CUDA_VERSION)
-  # Don't check a variable's value unless we know it is defined.
-  IF (CUDA_VERSION VERSION_LESS "7.5")
-     MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra requires at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
+IF (TPL_ENABLE_CUDA)
+  # As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
+  IF (DEFINED CUDA_VERSION)
+    # Don't check a variable's value unless we know it is defined.
+    IF (CUDA_VERSION VERSION_LESS "7.5")
+       MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra requires at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
+    ENDIF ()
+  ENDIF ()
+
+  IF (NOT DEFINED Kokkos_ENABLE_Cuda_Lambda OR NOT Kokkos_ENABLE_Cuda_Lambda)
+    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra requires that you set Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You should also make sure, at least with CUDA_VERSION 7.5 or 8.0, to add \"--expt-extended-lambda\" to CMAKE_CXX_FLAGS.")
   ENDIF ()
 ENDIF ()
 
