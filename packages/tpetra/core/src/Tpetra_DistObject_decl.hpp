@@ -631,8 +631,8 @@ namespace Tpetra {
     /// The "old" interface consists of copyAndPermute,
     /// packAndPrepare, and unpackAndCombine.  The "new" interface
     /// consists of copyAndPermuteNew, packAndPrepareNew, and
-    /// unpackAndCombineNew.  The new interface is preferred because
-    /// it facilitates thread parallelization using Kokkos data
+    /// unpackAndCombineNew.  We prefer the new interface, because it
+    /// facilitates thread parallelization using Kokkos data
     /// structures.
     ///
     /// At some point, we will remove the old interface, and rename

@@ -3539,14 +3539,43 @@ namespace Tpetra {
     //! @name Implementation of DistObject interface
     //@{
 
+    /// \typedef buffer_device_type
+    /// \brief Kokkos::Device specialization for communication buffers.
+    ///
+    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+    typedef typename DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node,
+                                classic>::buffer_device_type buffer_device_type;
+
     virtual bool
     checkSizes (const SrcDistObject& source);
+
+    /// \brief Whether the subclass implements the "old" or "new"
+    ///   (Kokkos-friendly) interface.
+    ///
+    /// The "old" interface consists of copyAndPermute,
+    /// packAndPrepare, and unpackAndCombine.  The "new" interface
+    /// consists of copyAndPermuteNew, packAndPrepareNew, and
+    /// unpackAndCombineNew.  We prefer the new interface, because it
+    /// facilitates thread parallelization using Kokkos data
+    /// structures.
+    ///
+    /// At some point, we will remove the old interface, and rename
+    /// the "new" interface (by removing "New" from the methods'
+    /// names), so that it becomes the only interface.
+    virtual bool
+    useNewInterface ();
 
     virtual void
     copyAndPermute (const SrcDistObject& source,
                     size_t numSameIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
                     const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
+
+    virtual void
+    copyAndPermuteNew (const SrcDistObject& source,
+                       const size_t numSameIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs);
 
     virtual void
     packAndPrepare (const SrcDistObject& source,
@@ -3556,6 +3585,14 @@ namespace Tpetra {
                     size_t& constantNumPackets,
                     Distributor& distor);
 
+    virtual void
+    packAndPrepareNew (const SrcDistObject& source,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                       Kokkos::DualView<char*, buffer_device_type>& exports,
+                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                       size_t& constantNumPackets,
+                       Distributor& distor);
+
   private:
     /// \brief Unpack the imported column indices and values, and
     ///   combine into matrix.
@@ -3563,10 +3600,22 @@ namespace Tpetra {
     unpackAndCombineImpl (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
                           const Teuchos::ArrayView<const char>& imports,
                           const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-                          size_t constantNumPackets,
+                          const size_t constantNumPackets,
                           Distributor& distor,
-                          CombineMode combineMode,
+                          const CombineMode combineMode,
                           const bool atomic = useAtomicUpdatesByDefault);
+
+    /// \brief Unpack the imported column indices and values, and
+    ///   combine into matrix.
+    void
+    unpackAndCombineNewImpl (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
+                             const Kokkos::DualView<const char*, buffer_device_type>& imports,
+                             const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+                             const size_t constantNumPackets,
+                             Distributor& distor,
+                             const CombineMode combineMode,
+                             const bool atomic = useAtomicUpdatesByDefault);
+
     void
     unpackAndCombineImplNonStatic (
         const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
@@ -3576,8 +3625,17 @@ namespace Tpetra {
         Distributor& distor,
         CombineMode combineMode);
 
+    void
+    unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
+                                      const Kokkos::DualView<const char*, buffer_device_type>& imports,
+                                      const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+                                      const size_t constantNumPackets,
+                                      Distributor& distor,
+                                      const CombineMode combineMode);
+
   public:
-    /// \brief Unpack the imported column indices and values, and combine into matrix.
+    /// \brief Unpack the imported column indices and values, and
+    /// combine into matrix; implements "old" DistObject interface.
     ///
     /// \warning The allowed \c combineMode depends on whether the
     ///   matrix's graph is static or dynamic.  ADD, REPLACE, and
@@ -3593,6 +3651,25 @@ namespace Tpetra {
                       size_t constantNumPackets,
                       Distributor& distor,
                       CombineMode combineMode);
+
+    /// \brief Unpack the imported column indices and values, and
+    ///   combine into matrix; implements "new" DistObject interface.
+    ///
+    /// \warning The allowed \c combineMode depends on whether the
+    ///   matrix's graph is static or dynamic.  ADD, REPLACE, and
+    ///   ABSMAX are valid for a static graph, but INSERT is not.
+    ///   ADD and INSERT are valid for a dynamic graph; ABSMAX and
+    ///   REPLACE have not yet been implemented (and would require
+    ///   serious changes to matrix assembly in order to implement
+    ///   sensibly).
+    void
+    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+                         const Kokkos::DualView<const char*, buffer_device_type>& imports,
+                         const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+                         const size_t constantNumPackets,
+                         Distributor& distor,
+                         const CombineMode CM);
+
     //@}
     //! @name Implementation of Packable interface
     //@{
@@ -3720,12 +3797,145 @@ namespace Tpetra {
           const Teuchos::ArrayView<size_t>& numPacketsPerLID,
           size_t& constantNumPackets,
           Distributor& distor) const;
+
+    /// \brief Pack this object's data for an Import or Export.
+    ///
+    /// \warning To be called only by the packAndPrepare method of
+    ///   appropriate classes of DistObject.
+    ///
+    /// \param exportLIDs [in] Local indices of the rows to pack.
+    /// \param exports [out] On output: array of packed matrix
+    ///   entries; allocated by method.
+    /// \param numPacketsPerLID [out] On output: numPacketsPerLID[i]
+    ///   is the number of bytes of the \c exports array used for
+    ///   storing packed local row \c exportLIDs[i].
+    /// \param constantNumPackets [out] If zero on output, the packed
+    ///   rows may have different numbers of entries.  If nonzero on
+    ///   output, then that number gives the constant number of
+    ///   entries for all packed rows <i>on all processes in the
+    ///   matrix's communicator</i>.
+    /// \param distor [in/out] The Distributor object which implements
+    ///   the Import or Export operation that is calling this method.
+    ///
+    /// \subsection Tpetra_CrsMatrix_packNew_summary Packing scheme
+    ///
+    /// The number of "packets" per row is the number of bytes per
+    /// row.  Each row has the following storage format:
+    ///
+    /// <tt>[numEnt, vals, inds]</tt>,
+    ///
+    /// where:
+    /// <ul>
+    /// <li> \c numEnt (\c LocalOrdinal): number of entries in the
+    ///      row. </li>
+    /// <li> \c vals: array of \c Scalar.  For the k-th entry in the
+    ///      row, \c vals[k] is its value and \c inds[k] its global
+    ///      column index. </li>
+    /// <li> \c inds: array of \c GlobalOrdinal.  For the k-th entry
+    ///      in the row, \c vals[k] is its value and \c inds[k] its
+    ///      global column index. </li>
+    /// </ul>
+    ///
+    /// We reserve the right to pad for alignment in the future.  In
+    /// that case, the number of bytes reported by \c numPacketsPerLID
+    /// will reflect padding to align each datum to its size, and the
+    /// row will have final padding as well to ensure that the
+    /// <i>next</i> row is aligned.  Rows with zero entries will still
+    /// take zero bytes, however.
+    ///
+    /// RowMatrix::pack will always use the same packing scheme as
+    /// this method.  This ensures correct Import / Export from a
+    /// RowMatrix to a CrsMatrix.
+    ///
+    /// We do <i>not</i> recommend relying on the details of this
+    /// packing scheme.  We describe it here more for Tpetra
+    /// developers and less for users.
+    ///
+    /// \subsection Tpetra_CrsMatrix_packNew_disc Discussion
+    ///
+    /// DistObject requires packing an object's entries as type
+    /// <tt>Packet</tt>, which is the first template parameter of
+    /// DistObject.  Since sparse matrices have both values and
+    /// indices, we use <tt>Packet=char</tt> and pack them into
+    /// buffers of <tt>char</tt> (really "byte").  Indices are stored
+    /// as global indices, in case the source and target matrices have
+    /// different column Maps (or don't have a column Map yet).
+    ///
+    /// Currently, we only pack values and column indices.  Row
+    /// indices are stored implicitly as the local indices (LIDs) to
+    /// pack (see \c exportLIDs).  This is because a DistObject
+    /// instance only has one Map, and currently we use the row Map
+    /// for CrsMatrix (and RowMatrix).  This makes redistribution of
+    /// matrices with 2-D distributions less efficient, but it works
+    /// for now.  This may change in the future.
+    ///
+    /// On output, \c numPacketsPerLID[i] gives the number of bytes
+    /// used to pack local row \c exportLIDs[i] of \c this object (the
+    /// source object of an Import or Export).  If \c offset is the
+    /// exclusive prefix sum-scan of \c numPacketsPerLID, then on
+    /// output, <tt>exports[offset[i] .. offset[i+1]]</tt>
+    /// (half-exclusive range) contains the packed entries for local
+    /// row \c exportLIDs[i].
+    ///
+    /// Entries for each row use a "struct of arrays" pattern to match
+    /// how sparse matrices actually store their data.  The number of
+    /// entries in the row goes first, all values go next, and all
+    /// column indices (stored as global indices) go last.  Values and
+    /// column indices occur in the same order.  Rows with zero
+    /// entries always take zero bytes (we do not store their number
+    /// of entries explicitly).  This ensures sparsity of storage and
+    /// communication in case most rows are empty.
+    ///
+    /// \subsection Tpetra_CrsMatrix_packNew_why Justification
+    ///
+    /// GCC >= 4.9 and recent-future versions of the Intel compiler
+    /// implement stricter aliasing rules that forbid unaligned type
+    /// punning.  If we were to pack as an "array of structs" -- in
+    /// this case, an array of <tt>(Scalar, GlobalOrdinal)</tt> pairs
+    /// -- then we would either have to pad each matrix entry for
+    /// alignment, or call memcpy twice per matrix entry to pack and
+    /// unpack.  The "struct of arrays" storage scheme reduces the
+    /// padding requirement to a constant per row, or reduces the
+    /// number of memcpy calls to two per row.
+    ///
+    /// We include the number of entries in each row in that row's
+    /// packed data, to make unpacking easier.  This saves us from an
+    /// error-prone computation to find the number of entries from the
+    /// number of bytes.  That computation gets even more difficult if
+    /// we have to introduce padding for alignment in the future.
+    /// Knowing the number of entries for each row also makes
+    /// parallelizing packing and unpacking easier.
+    void
+    packNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+             Kokkos::DualView<char*, buffer_device_type>& exports,
+             const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+             size_t& constantNumPackets,
+             Distributor& dist) const;
+
+    /// \brief Pack this matrix (part of implementation of packAndPrepare).
+    ///
+    /// Call this only when this matrix (which is the source matrix to
+    /// pack) does not yet have a KokkosSparse::CrsMatrix.
     void
     packNonStatic (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
                    Teuchos::Array<char>& exports,
                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                    size_t& constantNumPackets,
                    Distributor& distor) const;
+
+    /// \brief Pack this matrix (part of implementation of packAndPrepareNew).
+    ///
+    /// This variant of packNonStatic() helps implement the "new"
+    /// DistObject interface.
+    ///
+    /// Call this only when this matrix (which is the source matrix to
+    /// pack) does not yet have a KokkosSparse::CrsMatrix.
+    void
+    packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                      Kokkos::DualView<char*, buffer_device_type>& exports,
+                      const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                      size_t& constantNumPackets,
+                      Distributor& distor) const;
 
   private:
     /// \brief Pack data for the current row to send.
@@ -3816,6 +4026,9 @@ namespace Tpetra {
 
     /// \brief Allocate space for pack() to pack entries to send.
     ///
+    /// This is part of the implementation of packAndPrepare, which
+    /// helps implement the "old" DistObject interface.
+    ///
     /// \param exports [in/out] Pack buffer to (re)allocate.
     /// \param totalNumEntries [out] Total number of entries to send.
     /// \param exportLIDs [in] Local indices of the rows to send.
@@ -3823,6 +4036,19 @@ namespace Tpetra {
     allocatePackSpace (Teuchos::Array<char>& exports,
                        size_t& totalNumEntries,
                        const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs) const;
+
+    /// \brief Allocate space for packNew() to pack entries to send.
+    ///
+    /// This is part of the implementation of packAndPrepareNew, which
+    /// helps implement the "new" DistObject interface.
+    ///
+    /// \param exports [in/out] Pack buffer to (re)allocate.
+    /// \param totalNumEntries [out] Total number of entries to send.
+    /// \param exportLIDs [in] Local indices of the rows to send.
+    void
+    allocatePackSpaceNew (Kokkos::DualView<char*, buffer_device_type>& exports,
+                          size_t& totalNumEntries,
+                          const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs) const;
     //@}
 
   public:
