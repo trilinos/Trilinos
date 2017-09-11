@@ -153,9 +153,9 @@ struct Axpby< \
       axpby_print_specialization<AV,XV,BV,YV>(); \
       int N = X.extent(0); \
       int one = 1; \
-      zaxpy_(&N,static_cast<std::complex<double>* >(&alpha), \
-                static_cast<std::complex<double>* >(X.data()),&one, \
-                static_cast<std::complex<double>* >(Y.data()),&one); \
+      zaxpy_(&N,reinterpret_cast<const std::complex<double>* >(&alpha), \
+                reinterpret_cast<const std::complex<double>* >(X.data()),&one, \
+                reinterpret_cast<std::complex<double>* >(Y.data()),&one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
   } \
@@ -184,9 +184,9 @@ struct Axpby< \
       axpby_print_specialization<AV,XV,BV,YV>(); \
       int N = X.extent(0); \
       int one = 1; \
-      caxpy_(&N,static_cast<std::complex<float>* >(&alpha), \
-                static_cast<std::complex<float>* >(X.data()),&one, \
-                static_cast<std::complex<float>* >(Y.data()),&one); \
+      caxpy_(&N,reinterpret_cast<const std::complex<float>* >(&alpha), \
+                reinterpret_cast<const std::complex<float>* >(X.data()),&one, \
+                reinterpret_cast<std::complex<float>* >(Y.data()),&one); \
     } else \
       Axpby<AV,XV,BV,YV,YV::Rank,false,ETI_SPEC_AVAIL>::axpby(alpha,X,beta,Y); \
   } \

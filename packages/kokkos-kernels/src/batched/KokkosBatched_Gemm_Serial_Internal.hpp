@@ -45,26 +45,28 @@ namespace KokkosBatched {
            const ValueType *__restrict__ B, const int bs0, const int bs1,
            const ScalarType beta,
            /**/  ValueType *__restrict__ C, const int cs0, const int cs1) {
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value, 
+                    "SerialGemmInternal:: not valid template types");
+
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
       
-      typedef ValueType value_type;
+      const ScalarType one(1.0), zero(0.0);
+
+      if      (beta == zero) SerialSetInternal  ::invoke(m, n, zero, C, cs0, cs1);
+      else if (beta != one ) SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
       
-      if      (beta == 0) SerialSetInternal  ::invoke(m, n, 0,    C, cs0, cs1);
-      else if (beta != 1) SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
-      
-      if (alpha != 0) {
+      if (alpha != zero) {
         if (m <= 0 || n <= 0 || k <= 0) return 0;
         
-        const value_type alpha_value(alpha);
-        value_type
+        ValueType
           *__restrict__ pC = C;
         for (int p=0;p<k;++p) {
-          const value_type
+          const ValueType
             *__restrict__ pA = A+p*as1,
             *__restrict__ pB = B+p*bs0;
           for (int i=0;i<m;++i) {
-            const value_type tA(alpha_value*pA[i*as0]);
+            const ValueType tA(alpha*pA[i*as0]);
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
@@ -88,29 +90,33 @@ namespace KokkosBatched {
            const ValueType *__restrict__ B, const int bs0, const int bs1,
            const ScalarType beta,
            /**/  ValueType *__restrict__ C, const int cs0, const int cs1) {
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialGemmInternal:: not valid template types");
+
       // C = beta C + alpha A B
       // C (m x n), A(m x k), B(k x n)
 
-      typedef ValueType value_type;      
       enum : int {
         mbAlgo = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>(),
         nbAlgo = Algo::Gemm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>() 
       };
-          
-      if      (beta == 0) SerialSetInternal  ::invoke(m, n, 0,    C, cs0, cs1);
-      else if (beta != 1) SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
       
-      if (alpha != 0) {
+      const ScalarType one(1.0), zero(0.0);      
+      
+      if      (beta == zero) SerialSetInternal  ::invoke(m, n, zero, C, cs0, cs1);
+      else if (beta != one ) SerialScaleInternal::invoke(m, n, beta, C, cs0, cs1);
+      
+      if (alpha != zero) {
         if (m <= 0 || n <= 0 || k <= 0) return 0;
-        const value_type alpha_value(alpha);
+        const ValueType alpha_value(alpha);
 
         InnerGemmFixC<mbAlgo,nbAlgo> inner(as0, as1, bs0, bs1, cs0, cs1);
         auto gemm = [&](const int ib, 
                         const int jb,
                         const int pb,
-                        const value_type *__restrict__ AA,
-                        const value_type *__restrict__ BB,
-                        /**/  value_type *__restrict__ CC) {
+                        const ValueType *__restrict__ AA,
+                        const ValueType *__restrict__ BB,
+                        /**/  ValueType *__restrict__ CC) {
           const int mb = mbAlgo, nb = nbAlgo;
           for (int i=0;i<ib;i+=mb) 
             for (int j=0;j<jb;j+=nb)
@@ -138,9 +144,9 @@ namespace KokkosBatched {
           //     for (int ii=0;ii<m;ii+=mc) {
           //       const int ti = m-ii, ib = (ti < mc ? ti : mc);
               
-          //       const value_type *__restrict__ AA = A+ii*as0+pp*as1;
-          //       const value_type *__restrict__ BB = B+pp*bs0+jj*bs1;
-          //       /**/  value_type *__restrict__ CC = C+ii*cs0+jj*cs1;
+          //       const ValueType *__restrict__ AA = A+ii*as0+pp*as1;
+          //       const ValueType *__restrict__ BB = B+pp*bs0+jj*bs1;
+          //       /**/  ValueType *__restrict__ CC = C+ii*cs0+jj*cs1;
               
           //       gemm(ib, jb, pb, AA, BB, CC);                  
           //     } // for ii

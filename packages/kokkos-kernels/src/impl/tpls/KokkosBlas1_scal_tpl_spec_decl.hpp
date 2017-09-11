@@ -86,7 +86,7 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef typename XV::size_type size_type; \
   \
-  static void scal (RV& R, const double& alpha, const XV& X) \
+  static void scal (const RV& R, const double& alpha, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
@@ -117,7 +117,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef typename XV::size_type size_type; \
   \
-  static void scal (RV& R, const float& alpha, const XV& X) \
+  static void scal (const RV& R, const float& alpha, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
@@ -141,21 +141,21 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
 1,true, ETI_SPEC_AVAIL > { \
   \
-  typedef Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::HostSpace, \
+  typedef Kokkos::View<Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
   typedef Kokkos::complex<double> AV; \
   typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef typename XV::size_type size_type; \
   \
-  static void scal (RV& R, const Kokkos::complex<double>& alpha, const XV& X) \
+  static void scal (const RV& R, const Kokkos::complex<double>& alpha, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      zscal_(&N,static_cast<std::complex<double>*>(&alpha),static_cast<std::complex<double>*>(X.data()),&one); \
+      zscal_(&N,reinterpret_cast<const std::complex<double>*>(&alpha),reinterpret_cast<std::complex<double>*>(R.data()),&one); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \
@@ -172,21 +172,21 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
 1,true, ETI_SPEC_AVAIL > { \
   \
-  typedef Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::HostSpace, \
+  typedef Kokkos::View<Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
   typedef Kokkos::complex<float> AV; \
   typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef typename XV::size_type size_type; \
   \
-  static void scal (RV& R, const Kokkos::complex<float>& alpha, const XV& X) \
+  static void scal (const RV& R, const Kokkos::complex<float>& alpha, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
     if ((numElems < static_cast<size_type> (INT_MAX)) && (R.data() == X.data())) { \
       scal_print_specialization<RV,AV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      cscal_(&N,static_cast<std::complex<float>*>(&alpha),static_cast<std::complex<float>*>(X.data()),&one); \
+      cscal_(&N,reinterpret_cast<const std::complex<float>*>(&alpha),reinterpret_cast<std::complex<float>*>(R.data()),&one); \
     } else { \
       Scal<RV,AV,XV,1,false,ETI_SPEC_AVAIL>::scal(R,alpha,X); \
     } \

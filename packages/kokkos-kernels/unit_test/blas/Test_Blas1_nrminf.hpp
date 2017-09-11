@@ -38,6 +38,8 @@ namespace Test {
     for(int i=0;i<N;i++)
       if(AT::abs(h_a(i)) > expected_result) expected_result = AT::abs(h_a(i));
 
+    if(N == 0) expected_result = typename AT::mag_type(0);
+
     typename AT::mag_type nonconst_result = KokkosBlas::nrminf(a);
     EXPECT_NEAR_KK( nonconst_result, expected_result, eps*expected_result);
 
@@ -78,6 +80,7 @@ namespace Test {
       for(int i=0;i<N;i++) {
         if(AT::abs(h_a(i,j)) > expected_result[j]) expected_result[j] = AT::abs(h_a(i,j));
       }
+      if(N == 0) expected_result[j] = typename AT::mag_type(0);
     }
 
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;

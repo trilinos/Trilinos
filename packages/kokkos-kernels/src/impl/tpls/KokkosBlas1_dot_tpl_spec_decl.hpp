@@ -51,9 +51,9 @@ extern "C" double               ddot_( const int* N, const double* x, const int*
                                        const double* y, const int* y_inc);
 extern "C" float                sdot_( const int* N, const float* x, const int* x_inc,
                                        const float* y, const int* y_inc);
-extern "C" std::complex<double> zdot_( const int* N, const std::complex<double>* x, const int* x_inc,
+extern "C" std::complex<double> zdotu_( const int* N, const std::complex<double>* x, const int* x_inc,
                                        const std::complex<double>* y, const int* y_inc);
-extern "C" std::complex<float>  cdot_( const int* N, const std::complex<float>* x, const int* x_inc,
+extern "C" std::complex<float>  cdotu_( const int* N, const std::complex<float>* x, const int* x_inc,
                                        const std::complex<float>* y, const int* y_inc);
 
 namespace KokkosBlas {
@@ -155,8 +155,8 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
       dot_print_specialization<RV,XV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = zdot_(&N,static_cast<std::complex<double>* >(X.data()),&one, \
-                     static_cast<std::complex<double>* >(Y.data()),&one); \
+      R() = zdotu_(&N,reinterpret_cast<const std::complex<double>* >(X.data()),&one, \
+                     reinterpret_cast<const std::complex<double>* >(Y.data()),&one); \
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \
@@ -187,8 +187,8 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
       dot_print_specialization<RV,XV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = cdot_(&N,static_cast<std::complex<float>* >(X.data()),&one, \
-                     static_cast<std::complex<float>* >(Y.data()),&one); \
+      R() = cdotu_(&N,reinterpret_cast<const std::complex<float>* >(X.data()),&one, \
+                     reinterpret_cast<const std::complex<float>* >(Y.data()),&one); \
     } else { \
       Dot<RV,XV,XV,1,1,false,ETI_SPEC_AVAIL>::dot(R,X,Y); \
     } \

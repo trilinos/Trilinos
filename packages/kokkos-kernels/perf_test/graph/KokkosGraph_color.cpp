@@ -159,9 +159,6 @@ void run_experiment(
       <lno_view_t,lno_nnz_view_t, lno_nnz_view_t,
       ExecSpace, TempMemSpace,PersistentMemSpace > KernelHandle;
 
-  typedef typename lno_nnz_view_t::value_type lno_t;
-  //typedef typename lno_view_t::value_type size_type;
-
   KernelHandle kh;
   kh.set_team_work_size(chunk_size);
   kh.set_shmem_size(shmemsize);
@@ -175,8 +172,6 @@ void run_experiment(
   if (verbose){
     kh.set_verbose(true);
   }
-  const lno_t m = crsGraph.numRows();;
-
 
   for (int i = 0; i < repeat; ++i){
 

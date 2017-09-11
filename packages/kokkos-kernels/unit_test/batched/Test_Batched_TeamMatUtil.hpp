@@ -27,53 +27,58 @@ namespace Test {
            typename ScalarType, 
            typename AlgoTagType, 
            int TestID>
-  struct Functor {
+  struct Functor_TestBatchedTeamMatUtil {
           
     ScalarType _alpha;
     ViewType _a;
 
     KOKKOS_INLINE_FUNCTION
-    Functor(const ScalarType alpha, 
+    Functor_TestBatchedTeamMatUtil(const ScalarType alpha, 
             const ViewType &a) 
       : _alpha(alpha), _a(a) {}
     
+    template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void operator()(const KokkosKernelTag &, const int i) const {
+    void operator()(const KokkosKernelTag &, const MemberType &member) const {
+      const int i = member.league_rank();
       auto A = Kokkos::subview(_a, i, Kokkos::ALL(), Kokkos::ALL());
       switch (TestID) {
-      case BatchedSet:   SerialSet  ::invoke(_alpha, A); break;
-      case BatchedScale: SerialScale::invoke(_alpha, A); break;
+      case BatchedSet:   TeamSet  <MemberType>::invoke(member, _alpha, A); break;
+      case BatchedScale: TeamScale<MemberType>::invoke(member, _alpha, A); break;
       }
     }
 
+    template<typename MemberType>
     KOKKOS_INLINE_FUNCTION
-    void operator()(const NaiveTag &, const int k) const {
-      //MD Note: changing because of the error with -werror
-      auto A = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
-      const int m = A.dimension_0(), n = A.dimension_1();
-      switch (TestID) {
-      case BatchedSet: {
-        for (int i=0;i<m;++i) 
-          for (int j=0;j<n;++j)
-            A(i,j)  = _alpha;
-        break;
-      }
-      case BatchedScale: {
-        for (int i=0;i<m;++i) 
-          for (int j=0;j<n;++j)
-            A(i,j) *= _alpha;
-        break;
-      }
+    void operator()(const NaiveTag &, const MemberType &member) const {
+      if (member.team_rank() == 0) {
+        const int k = member.league_rank();
+        auto A = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
+        const int m = A.dimension_0(), n = A.dimension_1();
+        switch (TestID) {
+        case BatchedSet: {
+          for (int i=0;i<m;++i) 
+            for (int j=0;j<n;++j)
+              A(i,j)  = _alpha;
+          break;
+        }
+        case BatchedScale: {
+          for (int i=0;i<m;++i) 
+            for (int j=0;j<n;++j)
+              A(i,j) *= _alpha;
+          break;
+        }
+        }
       }
     }
 
     inline
     int run() {
-      Kokkos::RangePolicy<DeviceType,AlgoTagType> policy(0, _a.dimension_0());
+      const int league_size = _a.dimension_0();
+      Kokkos::TeamPolicy<DeviceType,AlgoTagType> policy(league_size, Kokkos::AUTO);
       Kokkos::parallel_for(policy, *this);
+
       return 0; 
-      //MD 08/2017 NOTE: compilation was failing with werror.
-      //I added dummy return.
     }      
   };
 
@@ -97,8 +102,8 @@ namespace Test {
     Kokkos::deep_copy(b, a);
 
     /// test body
-    Functor<DeviceType,ViewType,ScalarType,NaiveTag,       TestID>(alpha, a).run();
-    Functor<DeviceType,ViewType,ScalarType,KokkosKernelTag,TestID>(alpha, b).run();
+    Functor_TestBatchedTeamMatUtil<DeviceType,ViewType,ScalarType,NaiveTag,       TestID>(alpha, a).run();
+    Functor_TestBatchedTeamMatUtil<DeviceType,ViewType,ScalarType,KokkosKernelTag,TestID>(alpha, b).run();
 
     /// for comparison send it to host
     typename ViewType::HostMirror a_host = Kokkos::create_mirror_view(a);
@@ -142,36 +147,3 @@ int test_batched_matutil() {
   
   return 0;
 }
-  
-#if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F( TestCategory, batched_set_float_float_set ) {
-  test_batched_matutil<TestExecSpace,float,float,::Test::BatchedSet>();
-}
-TEST_F( TestCategory, batched_set_float_float_scale ) {
-  test_batched_matutil<TestExecSpace,float,float,::Test::BatchedScale>();
-}
-#endif
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_set_double_double_set ) {
-  test_batched_matutil<TestExecSpace,double,double,::Test::BatchedSet>();
-}
-TEST_F( TestCategory, batched_set_double_double_scale ) {
-  test_batched_matutil<TestExecSpace,double,double,::Test::BatchedScale>();
-}
-#endif
-
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F( TestCategory, batched_set_dcomplex_dcomplex_set ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,::Test::BatchedSet>();
-}
-TEST_F( TestCategory, batched_set_dcomplex_dcomplex_scale ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,Kokkos::complex<double>,::Test::BatchedScale>();
-}
-TEST_F( TestCategory, batched_set_dcomplex_double_set ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,double,::Test::BatchedSet>();
-}
-TEST_F( TestCategory, batched_set_dcomplex_double_scale ) {
-  test_batched_matutil<TestExecSpace,Kokkos::complex<double>,double,::Test::BatchedScale>();
-}
-#endif

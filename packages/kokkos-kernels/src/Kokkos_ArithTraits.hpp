@@ -134,6 +134,33 @@ intPowImpl (const IntType x, const IntType y)
 }
 
 
+// Warning free abs function for types where we don't know whether they are signed (like char)
+template<class T, bool is_signed = std::numeric_limits<T>::is_signed >
+struct integer_abs {
+  static
+  KOKKOS_INLINE_FUNCTION
+  T abs(const T& val);
+};
+
+template<class T>
+struct integer_abs<T,true> {
+  static
+  KOKKOS_INLINE_FUNCTION
+  T abs(const T& x) {
+    return x<0? -x:x;
+  }
+};
+
+template<class T>
+struct integer_abs<T,false> {
+  static
+  KOKKOS_INLINE_FUNCTION
+  T abs(const T& x) {
+    return x;
+  }
+};
+
+
 
 /// \fn intPowSigned
 /// \tparam IntType A built-in signed integer type.
@@ -143,7 +170,8 @@ intPowImpl (const IntType x, const IntType y)
 /// result of this function is undefined.  However, this function will
 /// not throw an exception in that case.
 template<class IntType>
-KOKKOS_FORCEINLINE_FUNCTION IntType
+KOKKOS_FORCEINLINE_FUNCTION 
+typename std::enable_if<std::numeric_limits<IntType>::is_signed,IntType>::type
 intPowSigned (const IntType x, const IntType y)
 {
   // It's not entirely clear what to return if x and y are both zero.
@@ -163,9 +191,23 @@ intPowSigned (const IntType x, const IntType y)
     else {
       return 0; // round the fraction to zero
     }
-  } else {
-    return intPowImpl<IntType> (x, y);
   }
+  return intPowImpl<IntType> (x, y);
+}
+template<class IntType>
+KOKKOS_FORCEINLINE_FUNCTION 
+typename std::enable_if<!std::numeric_limits<IntType>::is_signed,IntType>::type
+intPowSigned (const IntType x, const IntType y)
+{
+  // It's not entirely clear what to return if x and y are both zero.
+  // In the case of floating-point numbers, 0^0 is NaN.  Here, though,
+  // I think it's safe to return 0.
+  if (x == 0) {
+    return 0;
+  } else if (y == 0) {
+    return 1;
+  }
+  return intPowImpl<IntType> (x, y);
 }
 
 /// \fn intPowUnsigned
@@ -1471,10 +1513,8 @@ public:
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
-    // This may trigger a compiler warning if char is unsigned.  On
-    // all platforms I have encountered, char is signed, but the C(++)
-    // standard does not require this.
-    return x >= 0 ? x : -x;
+    // This avoids warnings based on whether char is signed or unsigned 
+    return integer_abs<char>::abs(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;

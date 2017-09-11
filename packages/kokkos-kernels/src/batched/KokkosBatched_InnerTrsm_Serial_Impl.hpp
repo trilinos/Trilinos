@@ -170,8 +170,6 @@ namespace KokkosBatched {
 	B[1*_bs0+p*_bs1] = b_1p;
 	B[2*_bs0+p*_bs1] = b_2p;
       };
-
-
         
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll

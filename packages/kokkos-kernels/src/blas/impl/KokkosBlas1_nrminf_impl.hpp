@@ -210,7 +210,16 @@ void
 V_NrmInf_Invoke (const RV& r, const XV& X)
 {
   typedef typename XV::execution_space execution_space;
+  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> AT;
+
   const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
+
+  // Avoid Max Reduction if this is a zero length view
+  if( numRows == 0 ) {
+    Kokkos::deep_copy(r,AT::zero());
+    return;
+  }
+
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   typedef V_NrmInf_Functor<RV, XV, SizeType> functor_type;
@@ -226,7 +235,16 @@ void
 MV_NrmInf_Invoke (const RV& r, const XMV& X)
 {
   typedef typename XMV::execution_space execution_space;
+  typedef Kokkos::Details::ArithTraits<typename RV::non_const_value_type> AT;
+
   const SizeType numRows = static_cast<SizeType> (X.dimension_0 ());
+
+  // Avoid Max Reduction if this is a zero length view
+  if( numRows == 0 ) {
+    Kokkos::deep_copy(r,AT::zero());
+    return;
+  }
+
   Kokkos::RangePolicy<execution_space, SizeType> policy (0, numRows);
 
   // If the input multivector (2-D View) has only one column, invoke
