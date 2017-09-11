@@ -1001,9 +1001,9 @@ public:
       }
       return val;
     }
-    else {
-      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::getSolutionStatistic: ParameterList is NULL!");
-    }
+//    else {
+//      throw Exception::NotImplemented(">>> ROL::OptimizationProblem::getSolutionStatistic: ParameterList is NULL!");
+//    }
     return 0;
   }
 

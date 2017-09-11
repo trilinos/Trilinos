@@ -126,7 +126,7 @@ public:
   // Objective risk only
   RiskVector( Teuchos::RCP<Teuchos::ParameterList> &parlist,
         const Teuchos::RCP<Vector<Real> >          &vec,
-        const Real stat = 1 )
+        const Real stat = 0 )
     : statObj_(Teuchos::null), statObj_vec_(Teuchos::null),
       augmentedObj_(false), nStatObj_(0),
       augmentedCon_(false),
@@ -137,7 +137,7 @@ public:
   // Inequality constraint risk only
   RiskVector( std::vector<Teuchos::RCP<Teuchos::ParameterList> > &parlist,
         const Teuchos::RCP<Vector<Real> > &vec,
-        const Real stat = 1 )
+        const Real stat = 0 )
     : statObj_(Teuchos::null), statObj_vec_(Teuchos::null),
       augmentedObj_(false), nStatObj_(0),
       augmentedCon_(false),
@@ -149,7 +149,7 @@ public:
   RiskVector( Teuchos::RCP<Teuchos::ParameterList> & parlistObj,
               std::vector<Teuchos::RCP<Teuchos::ParameterList> > &parlistCon,
         const Teuchos::RCP<Vector<Real> > &vec,
-        const Real stat = 1 )
+        const Real stat = 0 )
     : statObj_(Teuchos::null), statObj_vec_(Teuchos::null),
       augmentedObj_(false), nStatObj_(0),
       augmentedCon_(false),

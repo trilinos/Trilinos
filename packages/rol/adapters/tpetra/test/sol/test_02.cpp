@@ -142,10 +142,10 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Objective<RealT> > pObj
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,z,pp));
     //Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::rcp(new ROL::RiskNeutralObjective<RealT>(pObj, sampler, true));
-    Teuchos::RCP<ROL::Distribution<RealT> > dist = Teuchos::rcp(new ROL::Parabolic<RealT>(-0.5, 0.5));
+    Teuchos::RCP<ROL::Distribution<RealT> > dist  = Teuchos::rcp(new ROL::Parabolic<RealT>(-0.5, 0.5));
     Teuchos::RCP<ROL::PlusFunction<RealT> > pfunc = Teuchos::rcp(new ROL::PlusFunction<RealT>(dist, pfuncSmoothing));
-    Teuchos::RCP<ROL::RiskMeasure<RealT> > rmeas = Teuchos::rcp(new ROL::CVaR<RealT>(cvarLevel, 1.0, pfunc));
-    Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::rcp(new ROL::RiskAverseObjective<RealT>(pObj, rmeas, sampler));
+    Teuchos::RCP<ROL::RiskMeasure<RealT> >  rmeas = Teuchos::rcp(new ROL::CVaR<RealT>(cvarLevel, 1.0, pfunc));
+    Teuchos::RCP<ROL::Objective<RealT> >    obj   = Teuchos::rcp(new ROL::RiskAverseObjective<RealT>(pObj, rmeas, sampler));
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
     //x1.set(xr);
@@ -226,7 +226,7 @@ int main(int argc, char* argv[]) {
     ROL::SimulatedObjectiveCVaR<RealT> simobjExpval(sampler, pobjSimOpt, pfunc, 0.0);
     ROL::SimulatedObjectiveCVaR<RealT> simobjCVaR3(sampler, pobjSimOpt, pfunc, 0.3);
     ROL::SimulatedObjectiveCVaR<RealT> simobjCVaR6(sampler, pobjSimOpt, pfunc, 0.6);
-    ROL::SimulatedObjectiveCVaR<RealT> simobjCVaR7(sampler, pobjSimOpt, pfunc, 0.6);
+    ROL::SimulatedObjectiveCVaR<RealT> simobjCVaR7(sampler, pobjSimOpt, pfunc, 0.7);
     algo2.run(x, *vu, simobjExpval, simcon, true, *outStream);
     algo3.run(x, *vu, simobjCVaR3, simcon, true, *outStream);
     algo4.run(x, *vu, simobjCVaR6, simcon, true, *outStream);
