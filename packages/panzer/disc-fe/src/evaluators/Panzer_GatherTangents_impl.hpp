@@ -134,11 +134,11 @@ evaluateFields(typename Traits::EvalData workset)
         auto ortEdgeTan = Kokkos::subview(workspace, 1, Kokkos::ALL());
 
         // Apply parent cell Jacobian to ref. edge tangent
-        Intrepid2::Orientation::getReferenceEdgeTangents(ortEdgeTan,
-                                                         pt,
-                                                         parentCell,
-                                                         edgeOrts[pt]);
-
+        Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
+                                                        pt,
+                                                        parentCell,
+                                                        edgeOrts[pt]);
+        
         auto J = Kokkos::subview(worksetJacobians, c, pt, Kokkos::ALL(), Kokkos::ALL());
         Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);            
 
