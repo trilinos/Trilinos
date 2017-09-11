@@ -71,8 +71,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
     int *rows = rMap.MyGlobalElements();
     int totalElems = rMap.NumGlobalElements();
     int localElems = rMap.NumMyElements();
-    //cout << " totalElems in Schur Complement" << totalElems << endl;
-    //cout << myPID << " localElems" << localElems << endl;
+    //std::cout << " totalElems in Schur Complement" << totalElems << std::endl;
+    //std::cout << myPID << " localElems" << localElems << std::endl;
 
     // **************** Two collectives here *********************
 #ifdef TIMING_OUTPUT
@@ -81,7 +81,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
 #endif
     int prefixSum;
     G->Comm().ScanSum(&localElems, &prefixSum, 1);
-    //cout << " prefixSum" << prefixSum << endl;
+    //std::cout << " prefixSum" << prefixSum << std::endl;
     // Start the index in prefixSum-localElems
     int *mySGID = new int[totalElems];   // vector of size Schur complement !
     int *allSGID = new int[totalElems];   // vector of size Schur complement !
@@ -104,12 +104,12 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
 
 #ifdef TIMING_OUTPUT
     ftime.stop();
-    cout << "Time to Compute RowIDS" << ftime.totalElapsedTime() << endl;
+    std::cout << "Time to Compute RowIDS" << ftime.totalElapsedTime() << std::endl;
     ftime.reset();
 #endif
     // Now everyone knows the GIDs in the Schur complement
 
-    //cout << rMap << endl;
+    //std::cout << rMap << std::endl;
     j = 0;
     Teuchos::RCP<Epetra_CrsMatrix> Sbar = Teuchos::rcp(new Epetra_CrsMatrix(
                                             Copy, rMap, localElems));
@@ -154,7 +154,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
         {
             cindex = k+i;
             vecvalues = Scol[k];
-            //cout << "MAX" << maxvalue << endl;
+            //std::cout << "MAX" << maxvalue << std::endl;
             for (j = 0 ; j < localElems ; j++)
             {
                 nentries = 0; // inserting one entry in each row for now
@@ -202,7 +202,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
 #endif
         vecvalues = Scol[0];
         Scol.MaxValue(maxvalue);
-        //cout << "MAX" << maxvalue << endl;
+        //std::cout << "MAX" << maxvalue << std::endl;
         for (j = 0 ; j < localElems ; j++)
         {
             nentries = 0; // inserting one entry in each row for now
@@ -228,14 +228,14 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
     }
 #ifdef TIMING_OUTPUT
     ftime.stop();
-    cout << "Time in finding and dropping entries" << ftime.totalElapsedTime() << endl;
+    std::cout << "Time in finding and dropping entries" << ftime.totalElapsedTime() << std::endl;
     ftime.reset();
 #endif
 #ifdef TIMING_OUTPUT
-    cout << "Time in Apply of probing" << app_time.totalElapsedTime() << endl;
+    std::cout << "Time in Apply of probing" << app_time.totalElapsedTime() << std::endl;
 #endif
     Sbar->FillComplete();
-    cout << "#dropped entries" << dropped << endl;
+    std::cout << "#dropped entries" << dropped << std::endl;
     delete[] allSGID;
     delete[] mySGID;
     delete[] values;
@@ -284,8 +284,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     int nentries1, gid;
     // maxentries is the maximum of all three possible matrices as the arrays
     // are reused between the three
-    int maxentries = max(C->MaxNumEntries(), R->MaxNumEntries());
-    maxentries = max(maxentries, G->MaxNumEntries());
+    int maxentries = std::max(C->MaxNumEntries(), R->MaxNumEntries());
+    maxentries = std::max(maxentries, G->MaxNumEntries());
 
     double *values1 = new double[maxentries];
     double *values2 = new double[maxentries];
@@ -327,7 +327,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
         Sbar->InsertGlobalValues(gid, scnt, values3, indices3);
     }
     localG.FillComplete();
-    //cout << "Created local G matrix" << endl;
+    //std::cout << "Created local G matrix" << std::endl;
 
     int nvectors = 16;
     /*ShyLU_Probing_Operator probeop(&localG, &localR, LP, solver, &localC,
@@ -349,8 +349,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     //EpetraExt::RowMatrixToMatlabFile("localG.mat", t2G);
 #endif
 
-    //cout << " totalElems in Schur Complement" << totalElems << endl;
-    //cout << myPID << " localElems" << localElems << endl;
+    //std::cout << " totalElems in Schur Complement" << totalElems << std::endl;
+    //std::cout << myPID << " localElems" << localElems << std::endl;
 
     // **************** Two collectives here *********************
 #ifdef TIMING_OUTPUT
@@ -394,7 +394,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
             // of C, there might be null columns in C
             probevec.ReplaceGlobalValue(g_rows[cindex], k, 1.0);
             //if (mypid == 0)
-            //cout << "Changing row to 1.0 " << g_rows[cindex] << endl;
+            //std::cout << "Changing row to 1.0 " << g_rows[cindex] << std::endl;
         }
 
 #ifdef TIMING_OUTPUT
@@ -467,7 +467,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
         nentries = 0;
         for (int j = 0 ; j < g_localElems ; j++)
         {
-            //cout << "MAX" << maxvalue << endl;
+            //std::cout << "MAX" << maxvalue << std::endl;
             for (int k = 0; k < nvectors; k++)
             {
                 cindex = k+i;
@@ -495,10 +495,10 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
 
 #ifdef TIMING_OUTPUT
     ftime.stop();
-    cout << "Time in finding and dropping entries" << ftime.totalElapsedTime()
-                     << endl;
+    std::cout << "Time in finding and dropping entries" << ftime.totalElapsedTime()
+                     << std::endl;
     ftime.reset();
-    cout << "Time in Apply of probing" << app_time.totalElapsedTime() << endl;
+    std::cout << "Time in Apply of probing" << app_time.totalElapsedTime() << std::endl;
     probeop.PrintTimingInfo();
 #endif
     Sbar->FillComplete();
@@ -513,7 +513,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
 #endif
 
 #ifdef SHYLU_DEBUG
-    cout << "#dropped entries" << dropped << endl;
+    std::cout << "#dropped entries" << dropped << std::endl;
 #endif
     delete[] values;
     delete[] indices;
@@ -577,17 +577,17 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
     Epetra_Map R_localRMap (-1, r_localElems, r_rows, 0, LComm);
     Epetra_Map R_localCMap (-1, r_localcolElems, r_cols, 0, LComm);
 
-    //cout << "#local rows" << g_localElems << "#non zero local cols" << c_localcolElems << endl;
+    //std::cout << "#local rows" << g_localElems << "#non zero local cols" << c_localcolElems << std::endl;
 
 #ifdef DEBUG
-    cout << "DEBUG MODE" << endl;
+    std::cout << "DEBUG MODE" << std::endl;
     int nrows = C->RowMap().NumMyElements();
     assert(nrows == localDRowMap->NumGlobalElements());
 
     int gids[nrows], gids1[nrows];
     C_localRMap.MyGlobalElements(gids);
     localDRowMap->MyGlobalElements(gids1);
-    cout << "Comparing R's domain map with D's row map" << endl;
+    std::cout << "Comparing R's domain map with D's row map" << std::endl;
 
     for (int i = 0; i < nrows; i++)
     {
@@ -598,8 +598,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
     int nentries1, gid;
     // maxentries is the maximum of all three possible matrices as the arrays
     // are reused between the three
-    int maxentries = max(C->MaxNumEntries(), R->MaxNumEntries());
-    maxentries = max(maxentries, G->MaxNumEntries());
+    int maxentries = std::max(C->MaxNumEntries(), R->MaxNumEntries());
+    maxentries = std::max(maxentries, G->MaxNumEntries());
 
     double *values1 = new double[maxentries];
     double *values2 = new double[maxentries];
@@ -608,7 +608,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
     int *indices2 = new int[maxentries];
     int *indices3 = new int[maxentries];
 
-    //cout << "Creating local matrices" << endl;
+    //std::cout << "Creating local matrices" << std::endl;
     int err;
     Epetra_CrsMatrix localC(Copy, C_localRMap, C->MaxNumEntries(), false);
     for (i = 0; i < c_localElems ; i++)
@@ -625,7 +625,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
     }
     localC.FillComplete(G_localRMap, C_localRMap);
 
-    //cout << "Created local C matrix" << endl;
+    //std::cout << "Created local C matrix" << std::endl;
 
     Epetra_CrsMatrix localR(Copy, R_localRMap, R->MaxNumEntries(), false);
     for (i = 0; i < r_localElems ; i++)
@@ -635,7 +635,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
         localR.InsertGlobalValues(gid, nentries1, values1, indices1);
     }
     localR.FillComplete(*localDRowMap, R_localRMap);
-    //cout << "Created local R matrix" << endl;
+    //std::cout << "Created local R matrix" << std::endl;
 
     // Sbar - Approximate Schur complement
     Teuchos::RCP<Epetra_CrsMatrix> Sbar = Teuchos::rcp(new Epetra_CrsMatrix(
@@ -670,7 +670,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
         Sbar->InsertGlobalValues(gid, scnt, values3, indices3);
     }
     localG.FillComplete();
-    cout << "Created local G matrix" << endl;
+    std::cout << "Created local G matrix" << std::endl;
 
     int nvectors = 16;
     ShyLU_Probing_Operator probeop(config, ssym, &localG, &localR, LP, solver,
@@ -690,8 +690,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
     //EpetraExt::RowMatrixToMatlabFile("localG.mat", t2G);
 #endif
 
-    //cout << " totalElems in Schur Complement" << totalElems << endl;
-    //cout << myPID << " localElems" << localElems << endl;
+    //std::cout << " totalElems in Schur Complement" << totalElems << std::endl;
+    //std::cout << myPID << " localElems" << localElems << std::endl;
 
     // **************** Two collectives here *********************
 #ifdef TIMING_OUTPUT
@@ -735,7 +735,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
                 // Not much of use for Shasta 2x2 .. Later.
                 probevec.ReplaceGlobalValue(g_rows[cindex], k, 1.0);
                 //if (mypid == 0)
-                //cout << "Changing row to 1.0 " << g_rows[cindex] << endl;
+                //std::cout << "Changing row to 1.0 " << g_rows[cindex] << std::endl;
             }
 
 #ifdef TIMING_OUTPUT
@@ -751,7 +751,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
             {
                 cindex = k+i;
                 vecvalues = Scol[k];
-                //cout << "MAX" << maxvalue << endl;
+                //std::cout << "MAX" << maxvalue << std::endl;
                 for (int j = 0 ; j < g_localElems ; j++)
                 {
                     nentries = 0; // inserting one entry in each row for now
@@ -784,8 +784,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
                         if (vecvalues[j] != 0.0)
                         {
                             dropped++;
-                            //cout << "vecvalues[j]" << vecvalues[j] <<
-                                    // " max" << maxvalue[k] << endl;
+                            //std::cout << "vecvalues[j]" << vecvalues[j] <<
+                                    // " max" << maxvalue[k] << std::endl;
                         }
                     }
                 }
@@ -814,7 +814,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
 #endif
             vecvalues = Scol[0];
             Scol.MaxValue(maxvalue);
-            //cout << "MAX" << maxvalue << endl;
+            //std::cout << "MAX" << maxvalue << std::endl;
             for (int j = 0 ; j < g_localElems ; j++)
             {
                 nentries = 0; // inserting one entry in each row for now
@@ -847,11 +847,11 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
 
 #ifdef TIMING_OUTPUT
         ftime.stop();
-        cout << "Time in finding and dropping entries" << ftime.totalElapsedTime() << endl;
+        std::cout << "Time in finding and dropping entries" << ftime.totalElapsedTime() << std::endl;
         ftime.reset();
 #endif
 #ifdef TIMING_OUTPUT
-        cout << "Time in Apply of probing" << app_time.totalElapsedTime() << endl;
+        std::cout << "Time in Apply of probing" << app_time.totalElapsedTime() << std::endl;
 #endif
         probeop.PrintTimingInfo();
         Sbar->FillComplete();
@@ -868,7 +868,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
         EpetraExt::RowMatrixToMatlabFile("Schur.mat", t2S);
 #endif
 
-        cout << "#dropped entries" << dropped << endl;
+        std::cout << "#dropped entries" << dropped << std::endl;
         delete[] values;
         delete[] indices;
         delete[] maxvalue;
@@ -892,8 +892,8 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
         // Use the prober to probe the probeop for the sparsity pattern
         // add that to Sbar and call Fill complete
         int nvectors = data->guided_prober->getNumOrthogonalVectors();
-        cout << "Number of Orthogonal Vectors for guided probing" << nvectors
-                << endl;
+        std::cout << "Number of Orthogonal Vectors for guided probing" << nvectors
+                << std::endl;
 
         probeop.ResetTempVectors(nvectors);
         Teuchos::RCP<Epetra_CrsMatrix> blockdiag_Sbar =
