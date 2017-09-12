@@ -70,7 +70,6 @@ struct BlockTriDiContainerTester {
   static void
   zero_block (Tpetra_BlockCrsMatrix& A, const LO& row_lid, const LO& row_lid_to_match) {
     const auto& g = A.getCrsGraph();
-    const auto& rowptr = g.getLocalGraph().row_map;
     const auto row_map = g.getRowMap();
     const auto col_map = g.getColMap();
     const auto gid = row_map->getGlobalElement(row_lid_to_match);

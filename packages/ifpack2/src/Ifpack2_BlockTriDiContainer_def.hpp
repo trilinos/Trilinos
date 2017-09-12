@@ -1513,22 +1513,22 @@ public: // Intended to be private, but public for Cuda.
     int value_count;
     
     // Packed multivector <- Tpetra::MultiVector.
-    PermuteAndRepack (const mv_type& mv, typename Tridiags::PackedMultiVector& pmv,
-                      const LOList& part2rowidx0, const LOList& part2packrowidx0,
-                      const LOList& lclrow, const LOList& packptr)
+    PermuteAndRepack (const mv_type& mv_, typename Tridiags::PackedMultiVector& pmv_,
+                      const LOList& part2rowidx0_, const LOList& part2packrowidx0_,
+                      const LOList& lclrow_, const LOList& packptr_)
     {
       const auto one = Kokkos::ArithTraits<magnitude_type>::one();
-      init(mv, pmv, right, one, part2rowidx0, part2packrowidx0, lclrow, packptr);
+      init(mv_, pmv_, right, one, part2rowidx0_, part2packrowidx0_, lclrow_, packptr_);
     }
 
     // Tpetra::MultiVector <- packed multivector.
-    PermuteAndRepack (const typename Tridiags::PackedMultiVector& pmv, mv_type& mv,
-                      const impl_scalar_type& damping_factor, const LOList& part2rowidx0,
-                      const LOList& part2packrowidx0, const LOList& lclrow, const LOList& packptr,
-                      const bool y_is_zero, magnitude_type* norm2sqr = nullptr)
+    PermuteAndRepack (const typename Tridiags::PackedMultiVector& pmv_, mv_type& mv_,
+                      const impl_scalar_type& damping_factor_, const LOList& part2rowidx0_,
+                      const LOList& part2packrowidx0_, const LOList& lclrow_, const LOList& packptr_,
+                      const bool y_is_zero_, magnitude_type* norm2sqr_ = nullptr)
     {
-      init(mv, pmv, left, damping_factor, part2rowidx0, part2packrowidx0, lclrow, packptr,
-           y_is_zero, norm2sqr);
+      init(mv_, pmv_, left, damping_factor_, part2rowidx0_, part2packrowidx0_, lclrow_, packptr_,
+           y_is_zero_, norm2sqr_);
     }
 
     KOKKOS_INLINE_FUNCTION void init (magnitude_type* dst) const {
@@ -1701,15 +1701,15 @@ public: // Intended to be private, but public for Cuda.
         KokkosBatched::Details::Todo::Serial_LU_Internal_Unblocked_invoke(
           A.dimension_0(), A.dimension_1(), A.data(), A.stride_0(), A.stride_1(), diag_safety);
       else {
-        using namespace KokkosBatched::Experimental;
-        SerialLU<Algo::LU::Blocked>::invoke(A);
+        namespace kbe = KokkosBatched::Experimental;
+        kbe::SerialLU<kbe::Algo::LU::Blocked>::invoke(A);
       }
     }
 
     KOKKOS_INLINE_FUNCTION void factorize (const LO& packidx) const {
       using Kokkos::subview;
       using Kokkos::ALL;
-      using namespace KokkosBatched::Experimental;
+      namespace kbe = KokkosBatched::Experimental;
       const auto one = Kokkos::ArithTraits<magnitude_type>::one();
       Size i0 = pack_td_ptr(packptr(packidx));
       const LO nrows = Tridiags::ind2row(pack_td_ptr(packptr(packidx+1)) - i0 - 1) + 1;
@@ -1734,13 +1734,15 @@ public: // Intended to be private, but public for Cuda.
              3.  Factor d.
         */
         const auto B = subview(values, i0+1, ALL(), ALL());
-        SerialTrsm<Side::Left , Uplo::Lower, Trans::NoTranspose, Diag::Unit   , Algo::Trsm::Blocked>
+        kbe::SerialTrsm<kbe::Side::Left, kbe::Uplo::Lower, kbe::Trans::NoTranspose, kbe::Diag::Unit,
+                        kbe::Algo::Trsm::Blocked>
           ::invoke(one, A, B);
         const auto C = subview(values, i0+2, ALL(), ALL());
-        SerialTrsm<Side::Right, Uplo::Upper, Trans::NoTranspose, Diag::NonUnit, Algo::Trsm::Blocked>
+        kbe::SerialTrsm<kbe::Side::Right, kbe::Uplo::Upper, kbe::Trans::NoTranspose, kbe::Diag::NonUnit,
+                        kbe::Algo::Trsm::Blocked>
           ::invoke(one, A, C);
         A = subview(values, i0+3, ALL(), ALL());
-        SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::Blocked>
+        kbe::SerialGemm<kbe::Trans::NoTranspose, kbe::Trans::NoTranspose, kbe::Algo::Gemm::Blocked>
           ::invoke(-one, C, B, one, A);
         LU(A);
         i0 += 3;
@@ -1794,8 +1796,8 @@ public: // Intended to be private, but public for Cuda.
     KOKKOS_FORCEINLINE_FUNCTION static void
     trsmv (const Scalar& a, const MatA& A, MatX& X,
            typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) {
-      using namespace KokkosBatched::Experimental;
-      SerialTrsv<            UploType, Trans::NoTranspose, DiagType, Algo::Trsv::Unblocked>
+      namespace kbe = KokkosBatched::Experimental;
+      kbe::SerialTrsv<UploType, kbe::Trans::NoTranspose, DiagType, kbe::Algo::Trsv::Unblocked>
         ::invoke(a, A, X);
     }
     
@@ -1804,8 +1806,8 @@ public: // Intended to be private, but public for Cuda.
     KOKKOS_FORCEINLINE_FUNCTION static void
     trsmv (const Scalar& a, const MatA& A, MatX& X,
            typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) {
-      using namespace KokkosBatched::Experimental;
-      SerialTrsm<Side::Left, UploType, Trans::NoTranspose, DiagType, Algo::Trsm::Blocked>
+      namespace kbe = KokkosBatched::Experimental;
+      kbe::SerialTrsm<kbe::Side::Left, UploType, kbe::Trans::NoTranspose, DiagType, kbe::Algo::Trsm::Blocked>
         ::invoke(a, A, X);
     }
 
@@ -1814,16 +1816,16 @@ public: // Intended to be private, but public for Cuda.
     KOKKOS_FORCEINLINE_FUNCTION static void
     gemmv (const Scalar& a, const MatA& A, const MatB& B, const Scalar& b, MatC& C,
            typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) {
-      using namespace KokkosBatched::Experimental;
-      SerialGemv<Trans::NoTranspose, Algo::Gemv::Unblocked>::invoke(a, A, B, b, C);
+      namespace kbe = KokkosBatched::Experimental;
+      kbe::SerialGemv<kbe::Trans::NoTranspose, kbe::Algo::Gemv::Unblocked>::invoke(a, A, B, b, C);
     }
 
     template <typename Tag, typename Scalar, typename MatA, typename MatB, typename MatC>
     KOKKOS_FORCEINLINE_FUNCTION static void
     gemmv (const Scalar& a, const MatA& A, const MatB& B, const Scalar& b, MatC& C,
            typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) {
-      using namespace KokkosBatched::Experimental;
-      SerialGemm<Trans::NoTranspose, Trans::NoTranspose, Algo::Gemm::Blocked>
+      namespace kbe = KokkosBatched::Experimental;
+      kbe::SerialGemm<kbe::Trans::NoTranspose, kbe::Trans::NoTranspose, kbe::Algo::Gemm::Blocked>
         ::invoke(a, A, B, b, C);
     }
 
@@ -1839,7 +1841,7 @@ public: // Intended to be private, but public for Cuda.
     KOKKOS_INLINE_FUNCTION void operator() (const Tag&, const LO& packidx) const {
       using Kokkos::subview;
       using Kokkos::ALL;
-      using namespace KokkosBatched::Experimental;
+      namespace kbe = KokkosBatched::Experimental;
 
       const auto one = Kokkos::ArithTraits<magnitude_type>::one();
 
@@ -1851,7 +1853,7 @@ public: // Intended to be private, but public for Cuda.
       // Solve L x = x.
       auto A = subview(values, i0, ALL(), ALL());
       auto X1 = subview(X, r0, ALL(), ALL());
-      trsmv<Tag, Uplo::Lower, Diag::Unit>(one, A, X1);
+      trsmv<Tag, kbe::Uplo::Lower, kbe::Diag::Unit>(one, A, X1);
       for (LO i = 1; i < nrows; ++i) {
         const auto B = subview(values, i0+2, ALL(), ALL());
         r0++;
@@ -1859,12 +1861,12 @@ public: // Intended to be private, but public for Cuda.
         gemmv<Tag>(-one, B, X1, one, X2);
         i0 += 3;
         A = subview(values, i0, ALL(), ALL());
-        trsmv<Tag, Uplo::Lower, Diag::Unit>(one, A, X2);
+        trsmv<Tag, kbe::Uplo::Lower, kbe::Diag::Unit>(one, A, X2);
         X1 = X2;
       }
 
       // Solve U x = x.
-      trsmv<Tag, Uplo::Upper, Diag::NonUnit>(one, A, X1);
+      trsmv<Tag, kbe::Uplo::Upper, kbe::Diag::NonUnit>(one, A, X1);
       for (LO i = nrows; i > 1; --i) {
         i0 -= 3;
         const auto B = subview(values, i0+1, ALL(), ALL());
@@ -1872,7 +1874,7 @@ public: // Intended to be private, but public for Cuda.
         const auto X2 = subview(X, r0, ALL(), ALL());
         gemmv<Tag>(-one, B, X1, one, X2);
         A = subview(values, i0, ALL(), ALL());
-        trsmv<Tag, Uplo::Upper, Diag::NonUnit>(one, A, X2);
+        trsmv<Tag, kbe::Uplo::Upper, kbe::Diag::NonUnit>(one, A, X2);
         X1 = X2;
       }
     }
@@ -1920,8 +1922,8 @@ public: // Intended to be private, but public for Cuda.
     KOKKOS_FORCEINLINE_FUNCTION void
     trsmvlo (const magnitude_type& a, const LO& i0, const LO& r0,
              typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) const {
-      using namespace KokkosBatched::Experimental;
-      SerialTrsvInternalLower<Algo::Trsv::Unblocked>::invoke(
+      namespace kbe = KokkosBatched::Experimental;
+      kbe::SerialTrsvInternalLower<kbe::Algo::Trsv::Unblocked>::invoke(
         true,
         values.dimension_1(),
         a,
@@ -1933,8 +1935,8 @@ public: // Intended to be private, but public for Cuda.
     KOKKOS_FORCEINLINE_FUNCTION void
     trsmvlo (const magnitude_type& a, const LO& i0, const LO& r0,
              typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) const {
-      using namespace KokkosBatched::Experimental;
-      SerialTrsmInternalLeftLower<Algo::Trsm::Blocked>::invoke(
+      namespace kbe = KokkosBatched::Experimental;
+      kbe::SerialTrsmInternalLeftLower<kbe::Algo::Trsm::Blocked>::invoke(
         true,
         values.dimension_1(), X.dimension_2(),
         a,
@@ -1946,8 +1948,8 @@ public: // Intended to be private, but public for Cuda.
     KOKKOS_FORCEINLINE_FUNCTION void
     trsmvup (const magnitude_type& a, const LO& i0, const LO& r0,
              typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) const {
-      using namespace KokkosBatched::Experimental;
-      SerialTrsvInternalUpper<Algo::Trsv::Unblocked>::invoke(
+      namespace kbe = KokkosBatched::Experimental;
+      kbe::SerialTrsvInternalUpper<kbe::Algo::Trsv::Unblocked>::invoke(
         false,
         values.dimension_1(),
         a,
@@ -1959,8 +1961,8 @@ public: // Intended to be private, but public for Cuda.
     KOKKOS_FORCEINLINE_FUNCTION void
     trsmvup (const magnitude_type& a, const LO& i0, const LO& r0,
              typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) const {
-      using namespace KokkosBatched::Experimental;
-      SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::invoke(
+      namespace kbe = KokkosBatched::Experimental;
+      kbe::SerialTrsmInternalLeftUpper<kbe::Algo::Trsm::Blocked>::invoke(
         false,
         values.dimension_1(), X.dimension_2(),
         a,
@@ -1974,8 +1976,8 @@ public: // Intended to be private, but public for Cuda.
     KOKKOS_FORCEINLINE_FUNCTION void
     gemmv (const magnitude_type& a, const magnitude_type& b, const LO& a0, const LO& b0, const LO& c0,
            typename std::enable_if<std::is_same<Tag, VecTag>::value>::type* = 0) const {
-      using namespace KokkosBatched::Experimental;
-      SerialGemvInternal<Algo::Gemv::Unblocked>::invoke(
+      namespace kbe = KokkosBatched::Experimental;
+      kbe::SerialGemvInternal<kbe::Algo::Gemv::Unblocked>::invoke(
         values.dimension_1(), values.dimension_2(),
         a,
         values.data() + a0*bs2, values.stride_1(), values.stride_2(),
@@ -1988,8 +1990,8 @@ public: // Intended to be private, but public for Cuda.
     KOKKOS_FORCEINLINE_FUNCTION void
     gemmv (const magnitude_type& a, const magnitude_type& b, const LO& a0, const LO& b0, const LO& c0,
            typename std::enable_if<std::is_same<Tag, MatTag>::value>::type* = 0) const {
-      using namespace KokkosBatched::Experimental;
-      SerialGemmInternal<Algo::Gemm::Blocked>::invoke(
+      namespace kbe = KokkosBatched::Experimental;
+      kbe::SerialGemmInternal<kbe::Algo::Gemm::Blocked>::invoke(
         X.dimension_1(), X.dimension_2(), values.dimension_2(),
         a,
         values.data() + a0*bs2, values.stride_1(), values.stride_2(),
@@ -2011,7 +2013,7 @@ public: // Intended to be private, but public for Cuda.
     KOKKOS_INLINE_FUNCTION void operator() (const Tag&, const LO& packidx) const {
       using Kokkos::subview;
       using Kokkos::ALL;
-      using namespace KokkosBatched::Experimental;
+      namespace kbe = KokkosBatched::Experimental;
 
       const auto one = Kokkos::ArithTraits<magnitude_type>::one();
 
@@ -2238,7 +2240,6 @@ private:
     part2rowidx0(0) = 0;
     part2packrowidx0(0) = 0;
     LO pack_nrows = 0;
-    LO part_size = nparts > 0 ? (jacobi ? 1 : partitions[0].size()) : 0;
     for (LO ip = 0; ip < nparts; ++ip) {
       const auto* part = jacobi ? nullptr : &partitions[pp[ip]];
       const LO ipnrows = jacobi ? 1 : part->size();
@@ -2543,8 +2544,8 @@ public:
           LO nblks = 0; // Number of tridiag blocks, accounting for packing.
           for (LO pai = 0; pai < npacks; ++pai) {
             const LO pti = packptr(pai);
-            const LO nrows = partptr(pti+1) - partptr(pti);
-            nblks += Tridiags::row2ind(nrows);
+            const LO inrows = partptr(pti+1) - partptr(pti);
+            nblks += Tridiags::row2ind(inrows);
           }
           const auto bs = A_bcrs_->getBlockSize();
           btdm_.values = typename Tridiags::Values("btdm.values", nblks, bs, bs);
