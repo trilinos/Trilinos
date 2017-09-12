@@ -51,7 +51,7 @@
 #include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #include <Ifpack2_LocalFilter.hpp>
 #include <Ifpack2_ReorderFilter.hpp>
 
@@ -71,7 +71,7 @@ struct CrsArrayReader
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TCrsMatrix;
   typedef Ifpack2::LocalFilter<TRowMatrix> Filter;
   typedef Ifpack2::ReorderFilter<TRowMatrix> ReordFilter;
-  typedef Kokkos::CrsMatrix<Scalar, LocalOrdinal, execution_space> KCrsMatrix;
+  typedef KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, execution_space> KCrsMatrix;
   typedef Kokkos::View<LocalOrdinal*, execution_space> OrdinalArray;
   typedef Kokkos::View<Scalar*, execution_space> ScalarArray;
   typedef Kokkos::View<LocalOrdinal*, Kokkos::HostSpace> OrdinalArrayHost;

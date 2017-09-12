@@ -51,7 +51,7 @@
 #include <Tpetra_RowMatrix.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #include <Ifpack2_Preconditioner.hpp>
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 
@@ -79,7 +79,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     //! Tpetra multivector
     typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TMultiVec;
     //! Kokkos CRS matrix 
-    typedef Kokkos::CrsMatrix<Scalar, LocalOrdinal, execution_space> KCrsMatrix;
+    typedef KokkosSparse::CrsMatrix<Scalar, LocalOrdinal, execution_space> KCrsMatrix;
     //! Array of LocalOrdinal on device
     typedef Kokkos::View<LocalOrdinal *, execution_space> OrdinalArray;
     //! Array of LocalOrdinal on host
