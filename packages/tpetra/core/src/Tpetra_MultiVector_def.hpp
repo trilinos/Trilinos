@@ -52,6 +52,7 @@
 
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
 #include "Tpetra_Details_lclDot.hpp"
@@ -118,32 +119,6 @@ namespace Kokkos {
 #endif // HAVE_TPETRA_INST_FLOAT128
 
 namespace { // (anonymous)
-
-  // mfh 29 Aug 2017: Kokkos::DualView<const ValueType*, DeviceType>
-  // forbids sync, at run time.  If we want to sync it, we have to
-  // cast away const.
-  template<class ValueType, class DeviceType>
-  Kokkos::DualView<ValueType*, DeviceType>
-  castAwayConstDualView (const Kokkos::DualView<const ValueType*, DeviceType>& input_dv)
-  {
-    typedef Kokkos::DualView<const ValueType*, DeviceType> input_dual_view_type;
-    typedef typename input_dual_view_type::t_dev::non_const_type out_dev_view_type;
-    typedef typename input_dual_view_type::t_host::non_const_type out_host_view_type;
-
-    out_dev_view_type output_view_dev
-      (const_cast<ValueType*> (input_dv.d_view.data ()),
-       input_dv.d_view.dimension_0 ());
-    out_host_view_type output_view_host
-      (const_cast<ValueType*> (input_dv.h_view.data ()),
-       input_dv.h_view.dimension_0 ());
-
-    Kokkos::DualView<ValueType*, DeviceType> output_dv;
-    output_dv.d_view = output_view_dev;
-    output_dv.h_view = output_view_host;
-    output_dv.modified_device = input_dv.modified_device;
-    output_dv.modified_host = input_dv.modified_host;
-    return output_dv;
-  }
 
   /// \brief Allocate and return a 2-D Kokkos::DualView for Tpetra::MultiVector.
   ///
@@ -840,7 +815,8 @@ namespace Tpetra {
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteToLIDs,
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteFromLIDs)
   {
-    using Tpetra::Details::getDualViewCopyFromArrayView;
+    using ::Tpetra::Details::castAwayConstDualView;
+    using ::Tpetra::Details::getDualViewCopyFromArrayView;
     using ::Tpetra::Details::ProfilingRegion;
     using KokkosRefactor::Details::permute_array_multi_column;
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
@@ -1396,6 +1372,7 @@ namespace Tpetra {
                        const CombineMode CM)
   {
     using ::Tpetra::Details::ProfilingRegion;
+    using ::Tpetra::Details::castAwayConstDualView;
     using KokkosRefactor::Details::unpack_array_multi_column;
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;

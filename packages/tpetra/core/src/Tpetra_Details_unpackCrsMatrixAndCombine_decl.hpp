@@ -44,6 +44,8 @@
 
 #include "TpetraCore_config.h"
 #include "Tpetra_CombineMode.hpp"
+#include "Kokkos_DualView.hpp"
+#include "Tpetra_DistObject_decl.hpp"
 
 /// \file Tpetra_Details_unpackCrsMatrixAndCombine_decl.hpp
 /// \brief Declaration of functions for unpacking the entries of a
@@ -140,6 +142,17 @@ unpackCrsMatrixAndCombine (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
                            Distributor & distor,
                            CombineMode combineMode,
                            const bool atomic);
+
+template<typename ST, typename LO, typename GO, typename NT>
+void
+unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
+                              const Kokkos::DualView<const char*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& imports,
+                              const Kokkos::DualView<const size_t*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& numPacketsPerLID,
+                              const Kokkos::DualView<const LO*, typename NT::device_type>& importLIDs,
+                              const size_t constantNumPackets,
+                              Distributor & distor,
+                              const CombineMode combineMode,
+                              const bool atomic);
 
 /// \brief Special version of Tpetra::Details::unpackCrsMatrixAndCombine
 ///   that also unpacks owning process ranks.

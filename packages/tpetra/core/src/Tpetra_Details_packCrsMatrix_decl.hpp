@@ -135,6 +135,46 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
                Distributor& distor);
 
 /// \brief Pack specified entries of the given local sparse matrix for
+///   communication, for "new" DistObject interface.
+///
+/// \tparam ST The type of the entries of the matrix.  This must be
+///   the same as the Scalar template parameter of Tpetra::CrsMatrix.
+/// \tparam LO The type of local indices.  This must be the same as
+///   the LocalOrdinal template parameter of Tpetra::CrsMatrix.
+/// \tparam GO The type of global indices.  This must be the same as
+///   the GlobalOrdinal template parameter of Tpetra::CrsMatrix.
+/// \tparam NT The Node type.  This must be the same as the Node
+///   template parameter of Tpetra::CrsMatrix.
+///
+/// \param sourceMatrix [in] The "source" matrix to pack.
+///
+/// \param exports [in/out] Output pack buffer; resized if needed.
+///
+/// \param numPacketsPerLID [out] On output,
+///   numPacketsPerLID.d_view[k] is the number of bytes packed for row
+///   exportLIDs.d_view[k] of the local matrix.
+///
+/// \param exportLIDs [in] Local indices of the rows to pack.
+///
+/// \param constantNumPackets [out] Same as the constantNumPackets
+///   output argument of Tpetra::DistObject::packAndPrepareNew (which
+///   see).
+///
+/// \param distor [in] (Not used.)
+///
+/// This method implements CrsMatrix::packNew, and thus
+/// CrsMatrix::packAndPrepareNew, for the case where the matrix to
+/// pack has a valid KokkosSparse::CrsMatrix.
+template<typename ST, typename LO, typename GO, typename NT>
+void
+packCrsMatrixNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
+                  Kokkos::DualView<char*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& exports,
+                  const Kokkos::DualView<size_t*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& numPacketsPerLID,
+                  const Kokkos::DualView<const LO*, typename NT::device_type>& exportLIDs,
+                  size_t& constantNumPackets,
+                  Distributor& distor);
+
+/// \brief Pack specified entries of the given local sparse matrix for
 ///   communication.
 ///
 /// \tparam ST The type of the numerical entries of the matrix.
