@@ -18,7 +18,7 @@ if [ "$RESULTSDIR" == $SCRIPTDIR ]; then
     exit -1;
 fi
 
-for file in *.out; do 
+for file in *.out; do
     GOLDFILE=${file%%.out}.gold
 
     # Diff test the filtered files
@@ -28,7 +28,7 @@ for file in *.out; do
     # Only rebase diffing files"
     if [ "$returncode" -eq 1 ]; then
 	echo "$file diffs, rebasing"
-	cp $file $SCRIPTDIR/$GOLDFILE
+	cp ${file}_filtered $SCRIPTDIR/$GOLDFILE
     fi
 done
 
