@@ -13,8 +13,8 @@ RESULTSDIR=`pwd`
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Sanity
-if [ "$RESULTSDIR" == $SCRIPTDIR ]; then
-    echo "$0: Please run this from the packages/muelu/test/interface/Output directory"
+if [ "$RESULTSDIR" == $SCRIPTDIR ] || [ "$RESULTSDIR" !=~ *"/Output" ]; then
+    echo "$0: Please run this from the $BUILDDIR/packages/muelu/test/interface/Output directory"
     exit -1;
 fi
 
