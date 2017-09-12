@@ -51,6 +51,8 @@
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 
+#include "Phalanx_TypeStrings.hpp"
+
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Kokkos_ViewFactory.hpp"
 
@@ -94,7 +96,6 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   // the field manager will allocate all of these field
   constJac_ = pointValues.jac;
   this->addDependentField(constJac_);
-
   
   this->addEvaluatedField(residual);
   this->addDependentField(dof);
@@ -181,11 +182,13 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
         auto ortEdgeTan = Kokkos::subview(work, 1, Kokkos::ALL());
 
         const int numEdgesOfFace= cellTopo.getEdgeCount(2, subcellOrd);
-        for (int i=0;i<numEdgesOfFace;++i) {
-          const int edgeOrd = Intrepid2::Orientation::getEdgeOrdinalOfFace(i, subcellOrd, cellTopo);
-          
-          int edgeOrts[12] = {};
-          for(index_t c=0;c<workset.num_cells;c++) {
+
+        int edgeOrts[12] = {};
+        for(index_t c=0;c<workset.num_cells;c++) {
+          for (int i=0;i<numEdgesOfFace;++i) {
+
+            const int edgeOrd = Intrepid2::Orientation::getEdgeOrdinalOfFace(i, subcellOrd, cellTopo);
+            const int b = edgeOrd;
             orientations->at(details.cell_local_ids[c]).getEdgeOrientation(edgeOrts, numEdges);
             
             Intrepid2::Orientation::getReferenceEdgeTangent(ortEdgeTan,
@@ -194,7 +197,8 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
                                                             edgeOrts[edgeOrd],
                                                             is_normalize);
             
-            for(int b=0;b<dof.extent_int(1);b++) {
+            // for(int b=0;b<dof.extent_int(1);b++) 
+            {
               auto J = Kokkos::subview(worksetJacobians, c, b, Kokkos::ALL(), Kokkos::ALL());
               Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan, J, ortEdgeTan);
               
