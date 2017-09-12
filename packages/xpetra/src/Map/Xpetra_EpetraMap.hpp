@@ -1204,7 +1204,7 @@ namespace Xpetra {
     //! Replace this Map's communicator with a subset communicator.
     RCP<const Map<int,GlobalOrdinal,Node> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const {
       throw std::runtime_error("Xpetra::EpetraMapT::replaceCommWithSubset has not yet been implemented.");
-      return Teuchos::null;
+      // return Teuchos::null; // unreachable
     }
 
     //@}
