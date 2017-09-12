@@ -1278,6 +1278,51 @@ namespace Tpetra {
     }
   }
 
+  template <class LocalOrdinal,class GlobalOrdinal, class Node>
+  bool
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
+  {
+    if (this == &map)
+      return true;
+
+    // We are going to check if lmap1 is fitted into lmap2
+    auto lmap1 = map.getLocalMap();
+    auto lmap2 = this->getLocalMap();
+
+    auto numLocalElements1 = lmap1.getNodeNumElements();
+    auto numLocalElements2 = lmap2.getNodeNumElements();
+
+    if (numLocalElements1 > numLocalElements2) {
+      // There are more indices in the first map on this process than in second map.
+      return false;
+    }
+
+    if (lmap1.isContiguous () && lmap2.isContiguous ()) {
+      // When both Maps are contiguous, just check the interval inclusion.
+      return ((lmap1.getMinGlobalIndex () == lmap2.getMinGlobalIndex ()) &&
+              (lmap1.getMaxGlobalIndex () <= lmap2.getMaxGlobalIndex ()));
+    }
+
+    if (lmap1.getMinGlobalIndex () < lmap2.getMinGlobalIndex () ||
+        lmap1.getMaxGlobalIndex () > lmap2.getMaxGlobalIndex ()) {
+      // The second map does not include the first map bounds, and thus some of
+      // the first map global indices are not in the second map.
+      return false;
+    }
+
+    typedef Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space> range_type;
+
+    // Check all elements.
+    LocalOrdinal numDiff = 0;
+    Kokkos::parallel_reduce("isLocallyFitted", range_type(0, numLocalElements1),
+      KOKKOS_LAMBDA(const LocalOrdinal i, LocalOrdinal& diff) {
+        diff += (lmap1.getGlobalElement(i) != lmap2.getGlobalElement(i));
+      }, numDiff);
+
+    return (numDiff == 0);
+  }
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
@@ -1918,50 +1963,6 @@ namespace Tpetra {
     return global;
   }
 
-  template <class LocalOrdinal,class GlobalOrdinal, class Node>
-  bool
-  isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map1,
-                   const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map2)
-  {
-    if (&map1 == &map2)
-      return true;
-
-    auto lmap1 = map1.getLocalMap();
-    auto lmap2 = map2.getLocalMap();
-
-    auto numLocalElements1 = lmap1.getNodeNumElements();
-    auto numLocalElements2 = lmap2.getNodeNumElements();
-
-    if (numLocalElements1 > numLocalElements2) {
-      // There are more indices in the first map on this process than in second map.
-      return false;
-    }
-
-    if (lmap1.isContiguous () && lmap2.isContiguous ()) {
-      // When both Maps are contiguous, just check the interval inclusion.
-      return ((lmap1.getMinGlobalIndex () == lmap2.getMinGlobalIndex ()) &&
-              (lmap1.getMaxGlobalIndex () <= lmap2.getMaxGlobalIndex ()));
-    }
-
-    if (lmap1.getMinGlobalIndex () < lmap2.getMinGlobalIndex () ||
-        lmap1.getMaxGlobalIndex () > lmap2.getMaxGlobalIndex ()) {
-      // The second map does not include the first map bounds, and thus some of
-      // the first map global indices are not in the second map.
-      return false;
-    }
-
-    typedef Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space> range_type;
-
-    // Check all elements.
-    LocalOrdinal numDiff = 0;
-    Kokkos::parallel_reduce("isLocallyFitted", range_type(0, numLocalElements1),
-      KOKKOS_LAMBDA(const LocalOrdinal i, size_t& diff) {
-        diff += (lmap1.getGlobalElement(i) != lmap2.getGlobalElement(i));
-      }, numDiff);
-
-    return (numDiff == 0);
-  }
-
 } // namespace Tpetra
 
 template <class LocalOrdinal, class GlobalOrdinal>
@@ -2281,10 +2282,6 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   template Teuchos::RCP<const Map<LO,GO,NODE> > \
   createOneToOne (const Teuchos::RCP<const Map<LO,GO,NODE> >& M, \
                   const Tpetra::Details::TieBreak<LO,GO>& tie_break); \
-  \
-  template bool \
-  isLocallyFitted (const Tpetra::Map<LO, GO, NODE>& map1, \
-                   const Tpetra::Map<LO, GO, NODE>& map2);
 
 
 //! Explicit instantiation macro supporting the Map class, on the default node for specified ordinals.
