@@ -698,13 +698,11 @@ add (const Scalar& alpha,
     CrowMap = Bprime->getRowMap();
     //OLD: CcolMap = AddKern::makeColMapAndConvertGids(Aprime->getGlobalNumCols(), globalColinds, colinds, comm);
     //Get C's column map as the union of Aprime and Bprime col maps
-    auto Aimport = Aprime->getCrsGraph()->getImporter();
-    auto Bimport = Bprime->getCrsGraph()->getImporter();
-    Cimport = Aimport->setUnion(*Bimport);
-    CcolMap = Cimport->getTargetMap();
+    CcolMap = AddKern::makeColMapAndConvertGids(Aprime->getGlobalNumCols(), globalColinds, colinds, comm);
   }
   else
   {
+    //Aprime, Bprime and C all have the same column maps
     auto localA = Aprime->getLocalMatrix();
     auto localB = Bprime->getLocalMatrix();
     auto Avals = localA.values;
@@ -731,10 +729,6 @@ add (const Scalar& alpha,
     }
     CrowMap = Bprime->getRowMap();
     CcolMap = Bprime->getColMap();
-    if(!CDomainMap->isSameAs(*CcolMap))
-    {
-      Cimport = rcp(new import_type(CDomainMap, CcolMap));
-    }
     //note: Cexport created below (if it's needed)
   }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -744,6 +738,10 @@ add (const Scalar& alpha,
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Tpetra::Crs expertStaticFillComplete"))));
 #endif
+  if(!CDomainMap->isSameAs(*CcolMap))
+  {
+    Cimport = rcp(new import_type(CDomainMap, CcolMap));
+  }
   if(!CrowMap->isSameAs(*CRangeMap))
   {
     Cexport = rcp(new export_type(CrowMap, CRangeMap));
