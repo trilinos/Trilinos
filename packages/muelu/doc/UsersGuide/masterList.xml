@@ -895,7 +895,7 @@
       <name>repartition: target rows per proc</name>
       <type>int</type>
       <!-- We want to be backwards compatible at the moment. If the value is
-           -1, we set it to the value of `min rows per proc` in the code. -->
+           0, we set it to the value of `min rows per proc` in the code. -->
       <default>0</default>
       <description>Target number of rows per MPI process after rebalancing. If the value is set to 0, it will use the value of "repartition: min rows per proc"</description>
       <comment-ML>not supported by ML</comment-ML>
