@@ -106,11 +106,11 @@ public:
 
     N_ = a_->size();
     
-    dl_.reserve(N_-1);
-    d_.reserve(N_);
-    du_.reserve(N_-1);
-    du2_.reserve(N_-2);
-    ipiv_.reserve(N_);   
+    dl_.resize(N_-1);
+    d_.resize(N_);
+    du_.resize(N_-1);
+    du2_.resize(N_-2);
+    ipiv_.resize(N_);   
   }
 
   StdTridiagonalOperator( const RCP<const vector<Real> > &a,

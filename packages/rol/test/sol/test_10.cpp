@@ -77,21 +77,21 @@ public:
   }
 
   void gradient( std::vector<Real> &g, const std::vector<Real> &x, Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = g.size();
     for ( unsigned i = 0; i < size; i++ ) {
       g[i] = alpha_*x[i] + static_cast<Real>(1);
     }
   }
 
   void hessVec( std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = hv.size();
     for ( unsigned i = 0; i < size; i++ ) {
       hv[i] = alpha_*v[i];
     }
   }
 
   void precond( std::vector<Real> &pv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = pv.size();
     for ( unsigned i = 0; i < size; i++ ) {
       pv[i] = v[i]/alpha_;
     }
@@ -109,10 +109,11 @@ public:
   void value( std::vector<Real> &c,
               const std::vector<Real> &x,
               Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = c.size();
     const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
     for ( unsigned i = 0; i < size; ++i ) {
       c[i] = std::exp(param[7])/zeta_[i] - std::exp(param[i])*x[i];
+std::cout << "c(i)=" << c[i] << std::endl;
     }
   }
 
@@ -120,7 +121,7 @@ public:
                       const std::vector<Real> &v,
                       const std::vector<Real> &x,
                       Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = jv.size();
     const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
     for ( unsigned i = 0; i < size; ++i ) {
       jv[i] = -std::exp(param[i])*v[i];
@@ -131,7 +132,7 @@ public:
                               const std::vector<Real> &v,
                               const std::vector<Real> &x,
                               Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = ajv.size();
     const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
     for ( unsigned i = 0; i < size; ++i ) {
       ajv[i] = -std::exp(param[i])*v[i];
@@ -143,7 +144,7 @@ public:
                             const std::vector<Real> &v,
                             const std::vector<Real> &x,
                             Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = ahuv.size();
     for ( unsigned i = 0; i < size; ++i ) {
       ahuv[i] = static_cast<Real>(0);
     }
@@ -154,7 +155,7 @@ public:
                             const std::vector<Real> &x,
                             const std::vector<Real> &g,
                             Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = pv.size();
     const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
     for ( unsigned i = 0; i < size; ++i ) {
       pv[i] = v[i]/std::pow(std::exp(param[i]),2);
@@ -286,8 +287,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<std::vector<RealT> > scaling_vec
       = Teuchos::rcp( new std::vector<RealT>(dim,zero) );
     for (unsigned i = 0; i < dim; ++i) {
-      RealT cl = std::abs(gmean[sdim]/zeta[i] - gmean[i]*lx[i]);
-      RealT cu = std::abs(gmean[sdim]/zeta[i] - gmean[i]*ux[i]);
+      RealT cl = std::abs(gmean[dim]/zeta[i] - gmean[i]*lx[i]);
+      RealT cu = std::abs(gmean[dim]/zeta[i] - gmean[i]*ux[i]);
       RealT scale = static_cast<RealT>(1e2)/std::pow(std::max(cl,cu),two);
       (*scaling_vec)[i] = (scale > std::sqrt(ROL::ROL_EPSILON<RealT>()))
                             ? scale : one;

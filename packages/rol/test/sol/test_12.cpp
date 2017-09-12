@@ -285,8 +285,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<std::vector<RealT> > scaling_vec
       = Teuchos::rcp( new std::vector<RealT>(dim,zero) );
     for (unsigned i = 0; i < dim; ++i) {
-      RealT cl = std::abs(gmean[sdim]/zeta[i] - gmean[i]*lx[i]);
-      RealT cu = std::abs(gmean[sdim]/zeta[i] - gmean[i]*ux[i]);
+      RealT cl = std::abs(gmean[dim]/zeta[i] - gmean[i]*lx[i]);
+      RealT cu = std::abs(gmean[dim]/zeta[i] - gmean[i]*ux[i]);
       RealT scale = static_cast<RealT>(1e2)/std::pow(std::max(cl,cu),two);
       (*scaling_vec)[i] = (scale > std::sqrt(ROL::ROL_EPSILON<RealT>()))
                             ? scale : one;

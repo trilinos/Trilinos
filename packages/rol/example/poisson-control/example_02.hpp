@@ -194,7 +194,7 @@ public:
     int size = static_cast<int>(d.size());
     for ( int i = 0; i < size; ++i ) {
       jv[i]  = d[i]*v[i];
-      jv[i] += ((i>0) ? dl[i]*v[i-1] : 0.0);
+      jv[i] += ((i>0) ? dl[i-1]*v[i-1] : 0.0);
       jv[i] += ((i<size-1) ? du[i]*v[i+1] : 0.0);
     }
   }

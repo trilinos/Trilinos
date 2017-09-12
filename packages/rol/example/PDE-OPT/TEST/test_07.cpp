@@ -104,12 +104,13 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<static_cast<int>(sideSets.size()); ++i) {
       for (int j=0; j<static_cast<int>(sideSets[i].size()); ++j) {
         if (sideSets[i][j].size() > 0) {
-          for (int k=0; k<sideSets[i][j].size(); ++k) {
-            meshfile << sideSets[i][j][k] << std::endl;
+          for (int k=0; k<static_cast<int>(sideSets[i][j].size()); ++k) {
+            meshfile << i << " " << j << " " << k << " " << sideSets[i][j][k] << std::endl;
           }
         }
-        meshfile << std::endl << std::endl;
+        meshfile << std::endl;
       }
+      meshfile << std::endl << std::endl;
     }
     meshfile.close();
 

@@ -272,6 +272,8 @@ public:
 
     for (int ss=0; ss<numSideSets_; ++ss) {
 
+      ssCellIds.clear();
+
       bool processSSHeaderCell = true;
       while (processSSHeaderCell) {
 
@@ -297,7 +299,6 @@ public:
       bool processSSCell = true;
       if (token.find(semicolon) != std::string::npos) {
         processSSCell = false;
-        ssCellIds.clear();
       }
       while (processSSCell) {
 
