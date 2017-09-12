@@ -56,7 +56,6 @@ class AlmostSureConstraint : public Constraint<Real> {
 private:
   const Teuchos::RCP<SampleGenerator<Real> > sampler_;
   const Teuchos::RCP<Constraint<Real> >      con_;
-  const bool                                 useWeights_;
 
   Teuchos::RCP<Vector<Real> >                scratch1_;
   Teuchos::RCP<Vector<Real> >                scratch2_;
@@ -66,9 +65,8 @@ public:
   virtual ~AlmostSureConstraint() {}
 
   AlmostSureConstraint(const Teuchos::RCP<SampleGenerator<Real> > &sampler,
-                       const Teuchos::RCP<Constraint<Real> > &con,
-                       const bool useWeights = true)
-    : sampler_(sampler), con_(con), useWeights_(useWeights), isInitialized_(false) {}
+                       const Teuchos::RCP<Constraint<Real> > &con)
+    : sampler_(sampler), con_(con), isInitialized_(false) {}
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
 
@@ -79,14 +77,11 @@ public:
     SimulatedVector<Real> &pc = Teuchos::dyn_cast<SimulatedVector<Real> >(c);
 
     std::vector<Real> param;
-    Real weight(0), one(1);
     for (int i = 0; i < sampler_->numMySamples(); ++i) {
       param  = sampler_->getMyPoint(i);
-      weight = ((useWeights_) ? sampler_->getMyWeight(i) : one);
       con_->setParameter(param);
       con_->update(x);
       con_->value(*(pc.get(i)), x, tol);
-      pc.get(i)->scale(weight);
     }
   }
  
@@ -98,14 +93,11 @@ public:
     SimulatedVector<Real> &pjv = Teuchos::dyn_cast<SimulatedVector<Real> >(jv);
 
     std::vector<Real> param;
-    Real weight(0), one(1);
     for (int i = 0; i < sampler_->numMySamples(); ++i) {
       param  = sampler_->getMyPoint(i);
-      weight = ((useWeights_) ? sampler_->getMyWeight(i) : one);
       con_->setParameter(param);
       con_->update(x);
       con_->applyJacobian(*(pjv.get(i)), v, x, tol);
-      pjv.get(i)->scale(weight);
     }
   }
 
@@ -122,15 +114,13 @@ public:
     const SimulatedVector<Real> &pv = Teuchos::dyn_cast<const SimulatedVector<Real> >(v);
 
     std::vector<Real> param;
-    Real weight(0), one(1);
     scratch1_->zero(); scratch2_->zero();
     for (int i = 0; i < sampler_->numMySamples(); ++i) {
       param  = sampler_->getMyPoint(i);
-      weight = ((useWeights_) ? sampler_->getMyWeight(i) : one);
       con_->setParameter(param);
       con_->update(x);
       con_->applyAdjointJacobian(*scratch1_, *(pv.get(i)), x, tol);
-      scratch2_->axpy(weight,*scratch1_);
+      scratch2_->plus(*scratch1_);
     }
     sampler_->sumAll(*scratch2_, ajv);
   }
@@ -149,15 +139,13 @@ public:
     const SimulatedVector<Real> &pu = Teuchos::dyn_cast<const SimulatedVector<Real> >(u);
 
     std::vector<Real> param;
-    Real weight(0), one(1);
     scratch1_->zero(); scratch2_->zero();
     for (int i = 0; i < sampler_->numMySamples(); ++i) {
       param  = sampler_->getMyPoint(i);
-      weight = ((useWeights_) ? sampler_->getMyWeight(i) : one);
       con_->setParameter(param);
       con_->update(x);
       con_->applyAdjointHessian(*scratch1_, *(pu.get(i)), v, x, tol);
-      scratch2_->axpy(weight,*scratch1_);
+      scratch2_->plus(*scratch1_);
     }
     sampler_->sumAll(*scratch2_, ahuv);
   }
@@ -172,15 +160,12 @@ public:
     const SimulatedVector<Real> &pv = Teuchos::dyn_cast<const SimulatedVector<Real> >(v);
 
     std::vector<Real> param;
-    Real weight(0), one(1);
     scratch1_->zero(); scratch2_->zero();
     for (int i = 0; i < sampler_->numMySamples(); ++i) {
       param  = sampler_->getMyPoint(i);
-      weight = ((useWeights_) ? sampler_->getMyWeight(i) : one);
       con_->setParameter(param);
       con_->update(x);
       con_->applyPreconditioner(*(ppv.get(i)), *(pv.get(i)), x, g, tol);
-      ppv.get(i)->scale(one/(weight*weight));
     }
   }
 
