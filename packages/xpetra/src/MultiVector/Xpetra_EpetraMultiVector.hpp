@@ -928,8 +928,8 @@ namespace Xpetra {
     //! A simple one-line description of this object.
     std::string description() const {
       XPETRA_MONITOR("EpetraMultiVectorT::description");
-      TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
-      return "TODO";
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO");
+      //return "TODO"; // unreachable
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.

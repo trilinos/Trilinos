@@ -1588,7 +1588,7 @@ public:
 #endif
     } // end standard case (no product map)
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::VectorSpace to Xpetra::Map.");
-    return Teuchos::null;
+    // return Teuchos::null; // unreachable
   }
 
   // const version
@@ -1682,7 +1682,7 @@ public:
 #endif
     } // end standard case
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::MultiVector to Xpetra::MultiVector.");
-    return Teuchos::null;
+    // return Teuchos::null; // unreachable
   }
 
   // non-const version
