@@ -55,9 +55,26 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_FieldTag.hpp"
-#include "Phalanx_MDField.hpp"
 #include "Phalanx_EvaluationContainer_TemplateManager.hpp"
 
+// *******************************
+// Forward declarations
+// *******************************
+namespace PHX {
+  template<typename DataT, 
+           typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+           typename Tag4, typename Tag5, typename Tag6, typename Tag7> class MDField;
+
+  template<typename DataT,int Rank> class Field;
+}
+
+namespace Kokkos {
+  template<typename DataT,typename... Props> class View;
+}
+
+// *******************************
+// Field Manager
+// *******************************
 namespace PHX {
 
   template<typename Traits>
@@ -96,6 +113,16 @@ namespace PHX {
     void getFieldData(PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
 		      Tag6,Tag7>& f);
 
+    template<typename EvalT, typename DataT, int Rank>
+    void getFieldData(PHX::Field<DataT,Rank>& f);
+
+    template<typename EvalT, typename DataT, int Rank>
+    void getFieldData(PHX::Field<const DataT,Rank>& f);
+
+    template<typename EvalT, typename DataT>
+    void getFieldData(const PHX::FieldTag& ft,
+                      Kokkos::View<DataT,PHX::Device>& f);
+
     /*! \brief Allows the user to manage the memory allocation of a
         particular field and dynamically set/swap the memory at any
         time.
@@ -126,10 +153,41 @@ namespace PHX {
         user must allocate the field correctly (remember Sacado AD
         types must have the extra dimensions sized correctly).
     */
-    template<typename EvalT, typename DataT> 
+    template<typename EvalT, typename DataT>
     void setUnmanagedField(PHX::MDField<DataT>& f);
 
-    /* \brief Makes two fields point to (alias) the same memory for all evaluation types. 
+    /*! \brief Allows the user to manage the memory allocation of a
+        particular field and dynamically set/swap the memory at any
+        time.
+
+        This overrides the field allocated to this array in the
+        FieldManager. The fieldManager then sets this new memory
+        pointer in all evaluator fields that use it. 
+
+        NOTE: this is a very dangerous power user capability as the
+        user must allocate the field correctly (remember Sacado AD
+        types must have the extra dimensions sized correctly).
+    */
+    template<typename EvalT, typename DataT, int Rank>
+    void setUnmanagedField(PHX::Field<DataT,Rank>& f);
+
+    /*! \brief Allows the user to manage the memory allocation of a
+        particular field and dynamically set/swap the memory at any
+        time.
+
+        This overrides the field allocated to this array in the
+        FieldManager. The fieldManager then sets this new memory
+        pointer in all evaluator fields that use it. 
+
+        NOTE: this is a very dangerous power user capability as the
+        user must allocate the field correctly (remember Sacado AD
+        types must have the extra dimensions sized correctly).
+    */
+    template<typename EvalT, typename DataT>
+    void setUnmanagedField(const FieldTag& ft,
+                           Kokkos::View<DataT,PHX::Device>& f);
+
+    /*! \brief Makes two fields point to (alias) the same memory for all evaluation types. 
 
        WARNING: this is a very dangerous power user capability. This
        allows users to tell the FieldManager to create a new field
@@ -150,7 +208,7 @@ namespace PHX {
     void aliasFieldForAllEvaluationTypes(const PHX::FieldTag& aliasedField,
                                          const PHX::FieldTag& targetField);
 
-    /* \brief Makes two fields point to (alias) the same memory for a specific evaluation type. 
+    /*! \brief Makes two fields point to (alias) the same memory for a specific evaluation type. 
 
        WARNING: this is a very dangerous power user capability. This
        allows users to tell the FieldManager to create a new field
@@ -229,6 +287,35 @@ namespace PHX {
 
     template<typename EvalT>
     void analyzeGraph(double& speedup, double& parallelizability) const;
+
+    /*! Builds the DAG for the evalaution type. This should only be
+        called after all evaluators are registered and all required
+        fields are requested. This method is for power users
+        only. This is automatically called during
+        postRegistrationSetup() and normally does not have to be
+        called by the users. This method allows users to build the DAG
+        but then perform other activities prior to allocating the
+        fields. An example use case is to delay the sizing of the
+        fields in the DataLayouts until right before allocation. The
+        user could create the dag and access a list of required fields
+        and then do sizing based on information aboutrequired fields.
+    */
+    template<typename EvalT>
+    void buildDagForType();
+
+    /*! Returns the FieldTags for all fields involved in the
+        evaluation. Will return an empty vector unless the user has
+        built the DAG using one of the following calls:
+        postRegistrationSetup(), postRegistrationSetupForType() or
+        buildDagForType().
+
+        WARNING: This is a dangerous power user feature. It returns
+        non-const field tags so that the fields can be sized after the
+        DAG has been created.
+     */
+    template<typename EvalT>
+    const std::vector<Teuchos::RCP<PHX::FieldTag>>&
+    getFieldTagsForSizing();
 
   private:
 

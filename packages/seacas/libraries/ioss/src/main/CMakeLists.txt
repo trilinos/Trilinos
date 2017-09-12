@@ -164,6 +164,7 @@ else()
 endif()
 	     
 
+if ( CGNS_CGNSLIST_BINARY )
 TRIBITS_ADD_ADVANCED_TEST(generated_to_unstructured_cgns
    TEST_0 EXEC io_shell ARGS --in_type generated --out_type cgns 2x2x8+times:2+variables:nodal,2,element,3 generated.cgns
      NOEXEPREFIX NOEXESUFFIX
@@ -183,6 +184,7 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns
    TEST_2 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/exodus_to_unstructured_cgns.gold exodus_to_unstructured_cgns.out 
   COMM mpi serial
   )
+endif()
 
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} --out_type cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block.cgns
@@ -211,14 +213,28 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_to_unstructured
   COMM mpi serial
   )
 
+if ( CGNS_CGNSDIFF_BINARY )
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip
    TEST_0 EXEC io_shell ARGS --in_type cgns --out_type cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns sparc1.cgns
-     NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
+     NOEXEPREFIX NOEXESUFFIX
    TEST_1 EXEC io_shell ARGS --in_type cgns --out_type cgns sparc1.cgns sparc2.cgns
-     NOEXEPREFIX NOEXESUFFIX
      NUM_MPI_PROCS 1
+     NOEXEPREFIX NOEXESUFFIX
    TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/sparc1.cgns sparc2.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi serial
+  )
+
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_bump
+   TEST_0 EXEC io_shell ARGS --in_type cgns --out_type cgns ${CMAKE_CURRENT_SOURCE_DIR}/test/bump_str.cgns tmp.cgns
+     NUM_MPI_PROCS 1
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 EXEC io_shell ARGS --in_type cgns --out_type cgns tmp.cgns bump_str_out.cgns
+     NUM_MPI_PROCS 1
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/bump_str.cgns bump_str_out.cgns
+     NUM_MPI_PROCS 1
   COMM mpi serial
   )
 
@@ -233,6 +249,7 @@ TRIBITS_ADD_ADVANCED_TEST(pamgen_to_unstructured_cgns
   COMM mpi serial
   )
 ENDIF(TPL_ENABLE_Pamgen)
+endif()
 
-ENDIF()
+ENDIF(TPL_ENABLE_CGNS)
 

@@ -67,7 +67,7 @@ SET( CMAKE_MODULE_PATH
 INCLUDE(PrintVar)
 INCLUDE(SetDefaultAndFromEnv)
 
-INCLUDE(${CMAKE_CURRENT_LIST_DIR}/../ctest_driver/TribitsUpdateExtraRepo.cmake)
+INCLUDE(${CMAKE_CURRENT_LIST_DIR}/../ctest_driver/TribitsCTestDriverCoreHelpers.cmake)
 
 
 #
@@ -253,7 +253,7 @@ if (NOT TDD_IN_TESTING_MODE)
     SET(PULL_OUT_FILE "${CTEST_BINARY_DIRECTORY}/${EXTRA_PULL_DIR}.pull.out")
     set(CTEST_NOTES_FILES ${CTEST_NOTES_FILES} ${PULL_OUT_FILE})
     MESSAGE("Pull extra updates in '${EXTRA_PULL_DIR_ABS}' ...")
-    EXTRAREPO_CLEAN_FETCH_RESET("${git_exe}" "${EXTRA_PULL_DIR_ABS}")
+    TRIBITS_UPDATE_GIT_EXTRAREPO("${git_exe}" "${EXTRA_PULL_DIR_ABS}")
   endforeach()
 
 else()

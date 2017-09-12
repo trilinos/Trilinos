@@ -5,7 +5,37 @@
 
 #include "Tpetra_Details_Environment.hpp"
 
-using Tpetra::Details::Environment;
+namespace Tpetra {
+namespace Details {
+
+std::list<std::string>
+DefaultEnvironmentVariables::getDefaults ()
+{
+  return {"TPETRA_DEBUG", "TPETRA_USE_BLAS"};
+}
+
+Environment&
+Environment::getInstance ()
+{
+  // The following construction guarantees that theInstance_ will be
+  // destroyed and is instantiated only on first use.
+  static Environment theInstance_;
+  return theInstance_;
+}
+
+Environment::Environment ()
+{
+  // Initialize the instance
+  std::string variableValue;
+  std::list<std::string>::iterator variableName;
+  std::list<std::string> std_vars(DefaultEnvironmentVariables::getDefaults());
+  for (variableName = std_vars.begin();
+       variableName != std_vars.end();
+       ++variableName) {
+    // By getting the value, it will be cached
+    variableValue = getValue(*variableName);
+  }
+}
 
 void Environment::cacheVariable(const std::string& variableName,
                                 const char* variableValue) {
@@ -37,9 +67,11 @@ bool Environment::variableIsCached(const std::string& variableName) {
 }
 
 bool Environment::getBooleanValue(const std::string& variableName,
-                                  const std::string& defaultValue) {
+                                  const bool defaultValue) {
+
+
   // Get the value of the environment variable variableName.
-  std::string variableValue(getValue(variableName, defaultValue));
+  std::string variableValue (getValue (variableName, defaultValue ? "TRUE" : "FALSE"));
   std::transform(variableValue.begin(), variableValue.end(),
                  variableValue.begin(), ::toupper);
 
@@ -91,3 +123,7 @@ std::string Environment::getValue(const std::string& variableName,
 void Environment::clearCache() {
   environCache_.clear();
 }
+
+} // namespace Details
+} // namespace Tpetra
+

@@ -3,16 +3,16 @@
 #include "CJ_Version.h"  // for qainfo
 #include "SL_tokenize.h" // for tokenize
 #include <algorithm>     // for sort, transform
-#include <ctype.h>       // for tolower
+#include <cctype>        // for tolower
+#include <cstddef>       // for size_t
+#include <cstdlib>       // for exit, strtol, EXIT_SUCCESS, etc
 #include <iostream>      // for operator<<, basic_ostream, etc
-#include <stddef.h>      // for size_t
-#include <stdlib.h>      // for exit, strtol, EXIT_SUCCESS, etc
 #include <utility>       // for pair, make_pair
 #include <vector>        // for vector
 
 namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
-}
+} // namespace
 
 Excn::SystemInterface::SystemInterface()
     : outputName_(), debugLevel_(0), screenWidth_(0), omitNodesets_(false), omitSidesets_(false),
@@ -230,11 +230,10 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2009-2010 Sandia Corporation.\n"
+              << "Copyright(C) 2009-2010 National Technology & Engineering Solutions\n"
+              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
+              << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"
-              << "Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,\n"
-              << "the U.S. Government retains certain rights in this software.\n"
-              << "        \n"
               << "Redistribution and use in source and binary forms, with or without\n"
               << "modification, are permitted provided that the following conditions are\n"
               << "met:\n"
@@ -246,12 +245,12 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
               << "      copyright notice, this list of conditions and the following\n"
               << "      disclaimer in the documentation and/or other materials provided\n"
               << "      with the distribution.\n"
-              << "    * Neither the name of Sandia Corporation nor the names of its\n"
+              << "    * Neither the name of NTESS nor the names of its\n"
               << "      contributors may be used to endorse or promote products derived\n"
               << "      from this software without specific prior written permission.\n"
               << "\n"
               << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+              << "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
               << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
               << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
               << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
@@ -260,14 +259,14 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
               << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
               << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
               << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
+              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n";
     exit(EXIT_SUCCESS);
   }
 
   // Parse remaining options as directory paths.
   if (option_index < argc) {
     while (option_index < argc) {
-      inputFiles_.push_back(argv[option_index++]);
+      inputFiles_.emplace_back(argv[option_index++]);
     }
   }
   else {
@@ -297,7 +296,7 @@ namespace {
     return s;
   }
 
-  typedef std::vector<std::string> StringVector;
+  using StringVector = std::vector<std::string>;
   bool string_id_sort(const std::pair<std::string, int> &t1, const std::pair<std::string, int> &t2)
   {
     return t1.first < t2.first || (!(t2.first < t1.first) && t1.second < t2.second);
@@ -336,4 +335,4 @@ namespace {
       std::sort(variable_list->begin(), variable_list->end(), string_id_sort);
     }
   }
-}
+} // namespace

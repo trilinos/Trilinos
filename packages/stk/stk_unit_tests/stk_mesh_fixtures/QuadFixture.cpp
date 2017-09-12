@@ -73,6 +73,28 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
 
 QuadFixture::QuadFixture( stk::ParallelMachine pm ,
                           unsigned nx , unsigned ny,
+                          const std::string& coordsName,
+                          const std::vector<std::string>& rank_names )
+  : m_spatial_dimension(2),
+    m_meta( m_spatial_dimension, rank_names ),
+    m_bulk_data( m_meta, pm ),
+    m_quad_part( m_meta.declare_part_with_topology("quad_part", stk::topology::QUAD_4 ) ),
+    m_elem_parts(1, &m_quad_part),
+    m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
+    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, coordsName) ),
+    m_nx( nx ),
+    m_ny( ny )
+{
+  //put coord-field on all nodes:
+  put_field(
+      m_coord_field,
+      m_meta.universal_part(),
+      m_spatial_dimension
+      );
+}
+
+QuadFixture::QuadFixture( stk::ParallelMachine pm ,
+                          unsigned nx , unsigned ny,
                           bool auraOn )
   : m_spatial_dimension(2),
     m_meta( m_spatial_dimension),

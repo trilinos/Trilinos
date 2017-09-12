@@ -119,11 +119,23 @@ public:
     /// Get the current solution, x.
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() {return x_;}
 
+    /// Get the current solution, x.
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const
+      {return x_;}
+
     /// Get the current time derivative of the solution, xdot.
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDot() {return xdot_;}
 
+    /// Get the current time derivative of the solution, xdot.
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDot() const
+      {return xdot_;}
+
     /// Get the current time second derivative of the solution, xdotdot.
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotDot()
+      {return xdotdot_;}
+
+    /// Get the current time second derivative of the solution, xdotdot.
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const
       {return xdotdot_;}
 
     /// Get the StepperState

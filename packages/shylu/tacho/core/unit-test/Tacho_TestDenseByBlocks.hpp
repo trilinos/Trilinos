@@ -104,8 +104,8 @@ TEST( DenseByBlocks, chol ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*m);++p) {
-      norm += a(p)*a(p);
-      diff += (a(p) - a1(p))*(a(p) - a1(p));
+      norm += real(a(p)*conj(a(p)));
+      diff += real((a(p) - a1(p))*conj(a(p) - a1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -142,8 +142,8 @@ TEST( DenseByBlocks, chol ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*m);++p) {
-      norm += a(p)*a(p);
-      diff += (a(p) - a2(p))*(a(p) - a2(p));
+      norm += real(a(p)*conj(a(p)));
+      diff += real((a(p) - a2(p))*conj(a(p) - a2(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -264,8 +264,8 @@ TEST( DenseByBlocks, gemm ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*m);++p) {
-      norm += c(p)*c(p);
-      diff += (c(p) - c1(p))*(c(p) - c1(p));
+      norm += real(c(p)*conj(c(p)));
+      diff += real((c(p) - c1(p))*conj(c(p) - c1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -366,8 +366,8 @@ TEST( DenseByBlocks, herk ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(n*n);++p) {
-      norm += c(p)*c(p);
-      diff += (c(p) - c1(p))*(c(p) - c1(p));
+      norm += real(c(p)*conj(c(p)));
+      diff += real((c(p) - c1(p))*conj(c(p) - c1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;
@@ -477,8 +477,8 @@ TEST( DenseByBlocks, trsm ) {
   {
     double diff = 0.0, norm = 0.0;
     for (ordinal_type p=0;p<(m*n);++p) {
-      norm += b(p)*b(p);
-      diff += (b(p) - b1(p))*(b(p) - b1(p));
+      norm += real(b(p)*conj(b(p)));
+      diff += real((b(p) - b1(p))*conj(b(p) - b1(p)));
     }
     
     const double eps = std::numeric_limits<double>::epsilon()*100;

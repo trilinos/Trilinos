@@ -2432,7 +2432,7 @@ def checkinTest(tribitsDir, inOptions, configuration={}):
         runBuildCases = False
     else:
       if inOptions.allowNoPull:
-        print("\nNo pull was attemted but we are running the build/test cases "
+        print("\nNo pull was attempted but we are running the build/test cases "
               "anyway because --allow-no-pull was specified ...\n")
         runBuildCases = True
       elif os.path.exists(getInitialPullSuccessFileName()):

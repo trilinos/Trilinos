@@ -390,7 +390,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
                                                      const Epetra_CrsMatrix& epB,
                                                      Teuchos::FancyOStream& fos) {
       throw(Xpetra::Exceptions::RuntimeError("MLTwoMatrixMultiply only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)"));
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 #endif //ifdef HAVE_XPETRA_EPETRAEXT
 
@@ -431,12 +431,25 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             if (crmat1.is_null() || crmat2.is_null())
               continue;
-            if (crmat1->getGlobalNumEntries() == 0 || crmat2->getGlobalNumEntries() == 0)
-              continue;
 
             RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
             RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);
-            TEUCHOS_TEST_FOR_EXCEPTION((crop1==Teuchos::null) != (crop2==Teuchos::null), Xpetra::Exceptions::RuntimeError, "A and B must be either both (compatible) BlockedCrsMatrix objects or both CrsMatrixWrap objects.");
+            TEUCHOS_TEST_FOR_EXCEPTION(crop1.is_null() != crop2.is_null(), Xpetra::Exceptions::RuntimeError,
+                                       "A and B must be either both (compatible) BlockedCrsMatrix objects or both CrsMatrixWrap objects.");
+
+	    // Forcibly compute the global constants if we don't have them (only works for real CrsMatrices, not nested blocks)
+	    if (!crop1.is_null())
+	      Teuchos::rcp_const_cast<CrsGraph>(crmat1->getCrsGraph())->computeGlobalConstants();
+	    if (!crop2.is_null())
+	      Teuchos::rcp_const_cast<CrsGraph>(crmat2->getCrsGraph())->computeGlobalConstants();
+
+            TEUCHOS_TEST_FOR_EXCEPTION(!crmat1->haveGlobalConstants(), Exceptions::RuntimeError,
+                                       "crmat1 does not have global constants");
+            TEUCHOS_TEST_FOR_EXCEPTION(!crmat2->haveGlobalConstants(), Exceptions::RuntimeError,
+                                       "crmat2 does not have global constants");
+
+            if (crmat1->getGlobalNumEntries() == 0 || crmat2->getGlobalNumEntries() == 0)
+              continue;
 
             // temporary matrix containing result of local block multiplication
             RCP<Matrix> temp = Teuchos::null;
@@ -1108,7 +1121,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 #else // no MUELU_ML
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "No ML multiplication available. This feature is currently not supported by Xpetra.");
-      return Teuchos::null;
+       TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 #endif
     }
 #endif //ifdef HAVE_XPETRA_EPETRAEXT
@@ -1150,12 +1163,26 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             if (crmat1.is_null() || crmat2.is_null())
               continue;
-            if (crmat1->getGlobalNumEntries() == 0 || crmat2->getGlobalNumEntries() == 0)
-              continue;
 
             RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
             RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);
-            TEUCHOS_TEST_FOR_EXCEPTION((crop1==Teuchos::null) != (crop2==Teuchos::null), Xpetra::Exceptions::RuntimeError, "A and B must be either both (compatible) BlockedCrsMatrix objects or both CrsMatrixWrap objects.");
+            TEUCHOS_TEST_FOR_EXCEPTION(crop1.is_null() != crop2.is_null(), Xpetra::Exceptions::RuntimeError,
+                                       "A and B must be either both (compatible) BlockedCrsMatrix objects or both CrsMatrixWrap objects.");
+
+	    // Forcibly compute the global constants if we don't have them (only works for real CrsMatrices, not nested blocks)
+	    if (!crop1.is_null())
+	      Teuchos::rcp_const_cast<CrsGraph>(crmat1->getCrsGraph())->computeGlobalConstants();
+	    if (!crop2.is_null())
+	      Teuchos::rcp_const_cast<CrsGraph>(crmat2->getCrsGraph())->computeGlobalConstants();
+
+            TEUCHOS_TEST_FOR_EXCEPTION(!crmat1->haveGlobalConstants(), Exceptions::RuntimeError,
+                                       "crmat1 does not have global constants");
+            TEUCHOS_TEST_FOR_EXCEPTION(!crmat2->haveGlobalConstants(), Exceptions::RuntimeError,
+                                       "crmat2 does not have global constants");
+
+            if (crmat1->getGlobalNumEntries() == 0 || crmat2->getGlobalNumEntries() == 0)
+              continue;
+
 
             // temporary matrix containing result of local block multiplication
             RCP<Matrix> temp = Teuchos::null;
@@ -1277,7 +1304,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
       RCP<const Matrix> rcpB = Teuchos::rcpFromRef(B);
       RCP<const BlockedCrsMatrix> rcpBopA = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(rcpA);
       RCP<const BlockedCrsMatrix> rcpBopB = Teuchos::rcp_dynamic_cast<const BlockedCrsMatrix>(rcpB);
-   
+
       if(rcpBopA == Teuchos::null && rcpBopB == Teuchos::null) {
 
 
@@ -1712,7 +1739,7 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
                                                      Teuchos::FancyOStream& fos) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
                                  "No ML multiplication available. This feature is currently not supported by Xpetra.");
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 #endif //ifdef HAVE_XPETRA_EPETRAEXT
 
@@ -1753,12 +1780,25 @@ Note: this class is not in the Xpetra_UseShortNames.hpp
 
             if (crmat1.is_null() || crmat2.is_null())
               continue;
-            if (crmat1->getGlobalNumEntries() == 0 || crmat2->getGlobalNumEntries() == 0)
-              continue;
 
             RCP<CrsMatrixWrap> crop1 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat1);
             RCP<CrsMatrixWrap> crop2 = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(crmat2);
-            TEUCHOS_TEST_FOR_EXCEPTION((crop1==Teuchos::null) != (crop2==Teuchos::null), Xpetra::Exceptions::RuntimeError, "A and B must be either both (compatible) BlockedCrsMatrix objects or both CrsMatrixWrap objects.");
+            TEUCHOS_TEST_FOR_EXCEPTION(crop1.is_null() != crop2.is_null(), Xpetra::Exceptions::RuntimeError,
+                                       "A and B must be either both (compatible) BlockedCrsMatrix objects or both CrsMatrixWrap objects.");
+
+	    // Forcibly compute the global constants if we don't have them (only works for real CrsMatrices, not nested blocks)
+	    if (!crop1.is_null())
+	      Teuchos::rcp_const_cast<CrsGraph>(crmat1->getCrsGraph())->computeGlobalConstants();
+	    if (!crop2.is_null())
+	      Teuchos::rcp_const_cast<CrsGraph>(crmat2->getCrsGraph())->computeGlobalConstants();
+
+            TEUCHOS_TEST_FOR_EXCEPTION(!crmat1->haveGlobalConstants(), Exceptions::RuntimeError,
+                                       "crmat1 does not have global constants");
+            TEUCHOS_TEST_FOR_EXCEPTION(!crmat2->haveGlobalConstants(), Exceptions::RuntimeError,
+                                       "crmat2 does not have global constants");
+
+            if (crmat1->getGlobalNumEntries() == 0 || crmat2->getGlobalNumEntries() == 0)
+              continue;
 
             // temporary matrix containing result of local block multiplication
             RCP<Matrix> temp = Teuchos::null;

@@ -12,11 +12,11 @@
 
 #include "TachoExp_Graph.hpp"
 
-#if defined(HAVE_SHYLUTACHO_SCOTCH)
+#if defined(TACHO_HAVE_SCOTCH)
 #include "TachoExp_GraphTools_Scotch.hpp"
 #endif
 
-#if defined(HAVE_SHYLUTACHO_METIS)
+#if defined(TACHO_HAVE_METIS)
 #include "TachoExp_GraphTools_Metis.hpp"
 #endif
 
@@ -71,10 +71,11 @@ TEST( Graph, constructor ) {
   }
 }
 
-#if defined(HAVE_SHYLUTACHO_SCOTCH)
+#if defined(TACHO_HAVE_SCOTCH)
 TEST( Graph, scotch ) {
+  std::string inputfilename = MM_TEST_FILE + ".mtx";
   CrsMatrixBaseHostType Ah("A host");
-  Ah = MatrixMarket<ValueType>::read("test.mtx");
+  Ah = MatrixMarket<ValueType>::read(inputfilename);
 
   CrsMatrixBaseDeviceType Ad("A device");
   Ad.createMirror(Ah);
@@ -107,10 +108,11 @@ TEST( Graph, scotch ) {
 }
 #endif
 
-#if defined(HAVE_SHYLUTACHO_METIS)
+#if defined(TACHO_HAVE_METIS)
 TEST( Graph, metis ) {
+  std::string inputfilename = MM_TEST_FILE + ".mtx";
   CrsMatrixBaseHostType Ah("A host");
-  Ah = MatrixMarket<ValueType>::read("test.mtx");
+  Ah = MatrixMarket<ValueType>::read(inputfilename);
 
   CrsMatrixBaseDeviceType Ad("A device");
   Ad.createMirror(Ah);
@@ -135,11 +137,12 @@ TEST( Graph, metis ) {
 }
 #endif
 
-#if defined(HAVE_SHYLUTACHO_SCOTCH)
+#if defined(TACHO_HAVE_SCOTCH)
 TEST( Graph, camd ) {
+  std::string inputfilename = MM_TEST_FILE + ".mtx";
 
   CrsMatrixBaseHostType Ah("A host");
-  Ah = MatrixMarket<ValueType>::read("test.mtx");
+  Ah = MatrixMarket<ValueType>::read(inputfilename);
 
   CrsMatrixBaseDeviceType Ad("A device");
   Ad.createMirror(Ah);

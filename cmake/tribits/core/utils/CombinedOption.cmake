@@ -52,7 +52,7 @@ INCLUDE(ConcatStrings)
 #
 #   COMBINED_OPTION( <combinedOptionName>
 #     DEP_OPTIONS_NAMES <depOpName0> <depOptName1> ...
-#     DOCSTR "<docstr0>" "<docstr1" ...
+#     DOCSTR "<docstr0>" "<docstr1>" ...
 #     )
 #
 # This sets up a ``BOOL`` cache variable ``<combinedOptionName>`` which is
@@ -80,10 +80,12 @@ FUNCTION(COMBINED_OPTION  COMBINED_OPTION_NAME)
     ${ARGN}
     )
 
+  TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS()
+
   # ToDo: Assert that the right input was passed in!
 
   SET(DEFAULT_VAL ON)
-  FOREACH( DEP_OPTION_NAME ${PARSE_DEP_OPTIONS_NAMES})
+  FOREACH( DEP_OPTION_NAME ${PARSE_DEP_OPTIONS_NAMES} )
     IF (NOT ${DEP_OPTION_NAME})
       SET(DEFAULT_VAL OFF)
     ENDIF()
@@ -128,7 +130,7 @@ FUNCTION(COMBINED_OPTION  COMBINED_OPTION_NAME)
     MESSAGE(FATAL_ERROR
       "Error: you can not enable the option ${COMBINED_OPTION_NAME} unless"
       " you also enable the options ${OPTION_NAMES}.  The current option"
-      "values are:\n${OPTION_NAMES_AND_VALUES}" )
+      " values are:\n${OPTION_NAMES_AND_VALUES}" )
 
   ENDIF()
 

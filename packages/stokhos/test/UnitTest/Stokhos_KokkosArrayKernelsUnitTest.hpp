@@ -74,8 +74,9 @@
 #include "Stokhos_LexicographicBlockSparse3Tensor.hpp"
 
 #ifdef HAVE_STOKHOS_KOKKOSLINALG
-#include "Kokkos_Sparse.hpp"
-#include "Kokkos_Blas1_MV.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_spmv.hpp"
+#include "KokkosBlas1_update.hpp"
 #endif
 
 namespace KokkosKernelsUnitTest {

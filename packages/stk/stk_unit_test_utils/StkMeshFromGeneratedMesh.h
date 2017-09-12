@@ -6,7 +6,7 @@
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <mpi.h>
+#include "mpi.h"
 
 namespace unitTestUtils
 {

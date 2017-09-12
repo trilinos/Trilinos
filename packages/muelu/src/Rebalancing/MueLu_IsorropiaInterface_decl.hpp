@@ -23,10 +23,6 @@
 #include <Xpetra_EpetraCrsGraph.hpp>
 #endif
 
-#ifdef HAVE_MUELU_TPETRA
-#include <Xpetra_TpetraCrsGraph.hpp>
-#endif
-
 #include "MueLu_SingleLevelFactoryBase.hpp"
 
 #include "MueLu_Level_fwd.hpp"

@@ -47,8 +47,8 @@ namespace Tacho {
             Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
               ::invoke(sched, member, Diag::NonUnit(), 1.0, ATL, ATR);
 
-            TACHO_TEST_FOR_ABORT(ABR.dimension_0() != n ||
-                                 ABR.dimension_1() != n,
+            TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.dimension_0()) != n ||
+                                 static_cast<ordinal_type>(ABR.dimension_1()) != n,
                                  "ABR dimension does not match to supernodes");
             Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
               ::invoke(sched, member, -1.0, ATR, 0.0, ABR);
@@ -197,7 +197,7 @@ namespace Tacho {
         value_type *ptr = s.buf; 
 
         // panel is divided into diagonal and interface block
-        const ordinal_type m = s.m, n = s.n - s.m;
+        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.dimension_1();
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
@@ -205,13 +205,21 @@ namespace Tacho {
           UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
           auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
 
-          Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-            ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
-
+          if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+            Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
+              ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
+          else
+            Trsv<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+              ::invoke(sched, member, Diag::NonUnit(), AL, xT);
+            
           if (n > 0) {
             UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
-            Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::External>
-              ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
+            if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+              Gemm<Trans::ConjTranspose,Trans::NoTranspose,Algo::External>
+                ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
+            else
+              Gemv<Trans::ConjTranspose,Algo::External>
+                ::invoke(sched, member, -1.0, AR, xT, 0.0, xB);
           }
         }
         return 0;
@@ -230,18 +238,35 @@ namespace Tacho {
         //typedef SupernodeInfoType supernode_info_type;
         //typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-        const auto &s = info.supernodes(sid);
-        
-        const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
-        TACHO_TEST_FOR_ABORT(m != (s.n-s.m), "# of rows in xB does not match to super blocksize in sid");
+        const auto &cur = info.supernodes(sid);
+        const ordinal_type 
+          sbeg = cur.sid_col_begin + 1, send = cur.sid_col_end - 1;
 
-        const ordinal_type goffset = s.gid_col_begin + s.m;
-        for (ordinal_type j=0;j<n;++j)
-          for (ordinal_type i=0;i<m;++i) {
-            const ordinal_type row = info.gid_colidx(i+goffset);
-            Kokkos::atomic_fetch_add(&info.x(row, j), xB(i,j));
-            //x(row,j) += xB(i,j);
+        const ordinal_type m = xB.dimension_0(), n = xB.dimension_1();
+        TACHO_TEST_FOR_ABORT(m != (cur.n-cur.m), "# of rows in xB does not match to super blocksize in sid");
+        
+        for (ordinal_type i=sbeg,is=0;i<send;++i) {
+          const ordinal_type 
+            tbeg = info.sid_block_colidx(i).second,
+            tend = info.sid_block_colidx(i+1).second;
+          
+          // lock
+          const auto &s = info.supernodes(info.sid_block_colidx(i).first);
+          while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
+          Kokkos::store_fence();            
+          
+          // both src and tgt increase index
+          for (ordinal_type it=tbeg;it<tend;++it,++is) {
+            const ordinal_type row = info.gid_colidx(cur.gid_col_begin + it);
+            for (ordinal_type j=0;j<n;++j) 
+              info.x(row,j) += xB(is,j);
           }
+          
+          // unlock
+          s.lock = 0;
+          Kokkos::load_fence();          
+        }
+        
         return 0;
       }
       
@@ -269,7 +294,7 @@ namespace Tacho {
         value_type *ptr = s.buf;
 
         // panel is divided into diagonal and interface block
-        const ordinal_type m = s.m, n = s.n - s.m;
+        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.dimension_1();
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
@@ -280,11 +305,19 @@ namespace Tacho {
 
           if (n > 0) {
             const UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
-            Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::External>
-              ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
+            if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+              Gemm<Trans::NoTranspose,Trans::NoTranspose,Algo::External>
+                ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
+            else
+              Gemv<Trans::NoTranspose,Algo::External>
+                ::invoke(sched, member, -1.0, AR, xB, 1.0, xT);
           }
-          Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
-            ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
+          if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+            Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
+              ::invoke(sched, member, Diag::NonUnit(), 1.0, AL, xT);
+          else
+            Trsv<Uplo::Upper,Trans::NoTranspose,Algo::External>
+              ::invoke(sched, member, Diag::NonUnit(), AL, xT);
         }
         return 0;
       }
@@ -346,7 +379,8 @@ namespace Tacho {
         {
           const size_type n = s.n - s.m, bufsize_required = n*(n+1)*sizeof(value_type);
 
-          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
+          TACHO_TEST_FOR_ABORT(bufsize < static_cast<ordinal_type>(bufsize_required), 
+                               "bufsize is smaller than required");
 
           UnmanagedViewType<value_type_matrix> ABR((value_type*)buf, n, n);
 
@@ -392,7 +426,8 @@ namespace Tacho {
           const size_type n = s.n - s.m, nrhs = info.x.dimension_1(), 
             bufsize_required = n*nrhs*sizeof(value_type);
 
-          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
+          TACHO_TEST_FOR_ABORT(bufsize < static_cast<ordinal_type>(bufsize_required), 
+                               "bufsize is smaller than required");
 
           UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
 
@@ -428,8 +463,9 @@ namespace Tacho {
         {
           const size_type n = s.n - s.m, nrhs = info.x.dimension_1(), 
             bufsize_required = n*nrhs*sizeof(value_type);
-
-          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, "bufsize is smaller than required");
+          
+          TACHO_TEST_FOR_ABORT(bufsize < static_cast<ordinal_type>(bufsize_required), 
+                               "bufsize is smaller than required");
 
           UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
 

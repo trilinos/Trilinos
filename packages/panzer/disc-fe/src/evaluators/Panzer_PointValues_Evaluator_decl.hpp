@@ -55,9 +55,9 @@ namespace panzer {
 PANZER_EVALUATOR_CLASS(PointValues_Evaluator)
 
   // is anything other than ScalarT really needed here?
-  PointValues2<ScalarT,PHX::MDField> pointValues;
+  PointValues2<ScalarT> pointValues;
  
-  Kokkos::DynRankView<double,PHX::Device> refPointArray;
+  PHX::MDField<double,NODE,Dim> refPointArray;
 
   bool useBasisValuesRefArray; // if true then basis is non-null
   Teuchos::RCP<const panzer::PureBasis> basis;

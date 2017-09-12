@@ -62,9 +62,9 @@ class IntegrateDiffusionTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
   
 public:
   IntegrateDiffusionTerm(const std::string& flux_name,
-                         const Teuchos::RCP<const PHX::DataLayout>& flux_layout,
+                         const Teuchos::RCP<PHX::DataLayout>& flux_layout,
                          const std::string& residual_name,
-                         const Teuchos::RCP<const PHX::DataLayout>& residual_layout);
+                         const Teuchos::RCP<PHX::DataLayout>& residual_layout);
   void evaluateFields(typename Traits::EvalData workset) override;
   KOKKOS_INLINE_FUNCTION
   void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;

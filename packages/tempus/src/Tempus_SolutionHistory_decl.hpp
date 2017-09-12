@@ -106,6 +106,16 @@ public:
       return (*history_)[i];
     }
 
+    /// Subscript operator (const version)
+    Teuchos::RCP<const SolutionState<Scalar> > operator[](const int i) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        !((0 <= i) and (i < (int)history_->size())), std::out_of_range,
+        "Error - SolutionHistory index is out of range.\n"
+        << "    [Min, Max] = [ 0, " << history_->size()<< "]\n"
+        << "    index = " << i << "\n");
+      return (*history_)[i];
+    }
+
     /// Return the current state, i.e., the last accepted state
     Teuchos::RCP<SolutionState<Scalar> > getCurrentState() const
       { return currentState_; }

@@ -1,3 +1,32 @@
+Release Notes for PyTrilinos for Trilinos 12.12
+===============================================
+
+General
+  * PyTrilinos now works with both Python versions 2 and 3
+  * Internally, PyTrilinos now uses relative imports
+  * Protect against Doxygen version 1.8.13
+
+Teuchos
+  * Fix ParameterList __cmp__() operator
+  * Improved memory management for wrapped version of sublists
+  * Fixed a memory leak in the definitions for certain directorin
+    typemaps
+
+Epetra
+  * Add AsMap() method to Epetra.BlockMap class
+
+ML
+  * Fixed a dangling reference error in an ML example script.
+
+LOCA
+  * Fixed a memory leak in LOCA example script
+  * Fixed a memory leak in the wrappers for the
+    LOCA::Abstract::Iterator::StepStatus enumeration
+
+Anasazi
+  * Fixed a memory leak that PyTrilinos introduced with the
+    Eigensolution<...>::evecs() and espace() methods
+
 Release Notes for PyTrilinos for Trilinos 12.8
 ==============================================
 

@@ -78,8 +78,6 @@
 
 #cmakedefine HAVE_MUELU_BOOST
 
-#cmakedefine HAVE_MUELU_TIMER_SYNCHRONIZATION
-
 #cmakedefine HAVE_MUELU_MATLAB
 
 #cmakedefine HAVE_MUELU_AMGX

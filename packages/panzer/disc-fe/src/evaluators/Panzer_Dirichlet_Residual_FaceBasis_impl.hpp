@@ -49,7 +49,6 @@
 
 #include "Intrepid2_CellTools.hpp"
 
-#include "Panzer_CommonArrayFactories.hpp"
 #include "Kokkos_ViewFactory.hpp"
 
 namespace panzer {
@@ -83,16 +82,9 @@ PHX_EVALUATOR_CTOR(DirichletResidual_FaceBasis,p)
   dof      = PHX::MDField<const ScalarT,Cell,Point,Dim>(dof_name, vector_layout_dof);
   value    = PHX::MDField<const ScalarT,Cell,Point,Dim>(value_name, vector_layout_vector);
 
-  // setup the orientation field
-  // std::string orientationFieldName = basis->name() + " Orientation";
-  // dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(orientationFieldName,
-  //                                                    basis_layout);
-
-  // setup all basis fields that are required
-  panzer::MDFieldArrayFactory af_pv(pointRule->getName()+"_");
-
   // setup all fields to be evaluated and constructed
-  pointValues.setupArrays(pointRule,af_pv);
+  pointValues = PointValues2<ScalarT> (pointRule->getName()+"_",false);
+  pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
   constJac_ = pointValues.jac;

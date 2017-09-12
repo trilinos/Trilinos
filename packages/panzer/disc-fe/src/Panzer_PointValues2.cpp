@@ -53,20 +53,19 @@ namespace panzer {
 // do some explicit instantiation so things build faster.
 
 #define POINT_VALUES_INSTANTIATION(SCALAR) \
-template class PointValues2<SCALAR,PHX::MDField>;\
-template \
-void PointValues2<SCALAR,PHX::MDField>::setupArrays<MDFieldArrayFactory>( \
-                   const Teuchos::RCP<const panzer::PointRule>& pr, \
-                   const MDFieldArrayFactory & af); 
+template class PointValues2<SCALAR>;
 
 #define POINT_VALUES_INSTANTIATION2(SCALAR,SCALAR2)\
-template void PointValues2<SCALAR,PHX::MDField>::copyNodeCoords<PHX::MDField<SCALAR2> >(const PHX::MDField<SCALAR2> & in_node_coords); \
-template void PointValues2<SCALAR,PHX::MDField>::copyNodeCoords<PHX::MDField<SCALAR2,Cell,NODE,Dim> >(const PHX::MDField<SCALAR2,Cell,NODE,Dim> & in_node_coords); \
- template void PointValues2<SCALAR,PHX::MDField>::copyNodeCoords<Kokkos::DynRankView<SCALAR2,PHX::Device> >(const Kokkos::DynRankView<SCALAR2,PHX::Device> & in_node_coords); \
+template void PointValues2<SCALAR>::copyNodeCoords<PHX::MDField<SCALAR2> >(const PHX::MDField<SCALAR2> & in_node_coords); \
+template void PointValues2<SCALAR>::copyNodeCoords<PHX::MDField<SCALAR2,Cell,NODE,Dim> >(const PHX::MDField<SCALAR2,Cell,NODE,Dim> & in_node_coords); \
+template void PointValues2<SCALAR>::copyNodeCoords<Kokkos::DynRankView<SCALAR2,PHX::Device> >(const Kokkos::DynRankView<SCALAR2,PHX::Device> & in_node_coords); \
 \
-template void PointValues2<SCALAR,PHX::MDField>::copyPointCoords<PHX::MDField<SCALAR2> >(const PHX::MDField<SCALAR2> & in_node_coords); \
-template void PointValues2<SCALAR,PHX::MDField>::copyPointCoords<PHX::MDField<SCALAR2,BASIS,Dim> >(const PHX::MDField<SCALAR2,BASIS,Dim> & in_node_coords); \
- template void PointValues2<SCALAR,PHX::MDField>::copyPointCoords<Kokkos::DynRankView<SCALAR2,PHX::Device> >(const Kokkos::DynRankView<SCALAR2,PHX::Device> & in_node_coords);
+template void PointValues2<SCALAR>::copyPointCoords<PHX::MDField<SCALAR2> >(const PHX::MDField<SCALAR2> & in_node_coords); \
+template void PointValues2<SCALAR>::copyPointCoords<PHX::MDField<SCALAR2,BASIS,Dim> >(const PHX::MDField<SCALAR2,BASIS,Dim> & in_node_coords); \
+template void PointValues2<SCALAR>::copyPointCoords<Kokkos::DynRankView<SCALAR2,PHX::Device> >(const Kokkos::DynRankView<SCALAR2,PHX::Device> & in_node_coords);
+
+// special case for PointGenerator....yikes!
+template void PointValues2<double>::copyPointCoords<Kokkos::DynRankView<double> >(const Kokkos::DynRankView<double> & in_node_coords);
 
 POINT_VALUES_INSTANTIATION(panzer::Traits::RealType)
 POINT_VALUES_INSTANTIATION(panzer::Traits::FadType)

@@ -102,6 +102,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   #                      it's not an easy fix.
   #                      Reference: Trilinos issue #1393 (https://github.com/trilinos/Trilinos/issues/1393)
   "-DAnasazi_Epetra_ModalSolversTester_MPI_4_DISABLE:BOOL=ON"
+  "-DAnasazi_Epetra_OrthoManagerGenTester_0_MPI_4_DISABLE:BOOL=ON"
   "-DAnasazi_Epetra_OrthoManagerGenTester_1_MPI_4_DISABLE:BOOL=ON"
 )
 

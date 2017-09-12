@@ -36,19 +36,12 @@
 namespace stk {
 namespace expreval {
 
+constexpr const double s_e = 2.7182818284590452354;
+
 ConstantMap &
 getConstantMap()
 {
-  static ConstantMap s_constantMap;
-
-  if (s_constantMap.empty()) {
-    s_constantMap["E"]      = s_e;
-    s_constantMap["PI"]     = s_pi;
-    s_constantMap["TWO_PI"] = s_two_pi;
-    s_constantMap["FALSE"]  = s_false;
-    s_constantMap["TRUE"]   = s_true;
-  }
-
+  static ConstantMap s_constantMap = {{"E",s_e}, {"PI",s_pi}, {"TWO_PI",s_two_pi}, {"FALSE",s_false}, {"TRUE",s_true}};
   return s_constantMap;
 }
 

@@ -74,21 +74,18 @@
 #include "MueLu_EpetraOperator.hpp"
 #endif
 
-#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_SERIAL)
-
-#include "MueLu_UseDefaultTypes.hpp"
-
 namespace MueLuTests {
 
-#include "MueLu_UseShortNames.hpp"
-
-  typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
-
-  TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, CreatePreconditioner, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
     out << "version: " << MueLu::Version() << std::endl;
 
     using Teuchos::RCP;
+    typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -111,7 +108,7 @@ namespace MueLuTests {
       RCP<MultiVector> RHS1 = MultiVectorFactory::Build(map, 1);
       RHS1->setSeed(846930886);
       RHS1->randomize();
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
       RHS1->norm2(norms);
       RHS1->scale(1/norms[0]);
 
@@ -199,7 +196,7 @@ namespace MueLuTests {
       RCP<MultiVector> RHS1 = MultiVectorFactory::Build(map, 1);
       RHS1->setSeed(846930886);
       RHS1->randomize();
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
       RHS1->norm2(norms);
       RHS1->scale(1/norms[0]);
 
@@ -253,10 +250,16 @@ namespace MueLuTests {
   } //CreatePreconditioner
 
 
- TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner_XMLOnList)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, CreatePreconditioner_XMLOnList, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
     out << "version: " << MueLu::Version() << std::endl;
+
     using Teuchos::RCP;
+    typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -278,7 +281,7 @@ namespace MueLuTests {
       RCP<MultiVector> RHS1 = MultiVectorFactory::Build(map, 1);
       RHS1->setSeed(846930886);
       RHS1->randomize();
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
       RHS1->norm2(norms);
       RHS1->scale(1/norms[0]);
 
@@ -352,7 +355,7 @@ namespace MueLuTests {
       RCP<MultiVector> RHS1 = MultiVectorFactory::Build(map, 1);
       RHS1->setSeed(846930886);
       RHS1->randomize();
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
       RHS1->norm2(norms);
       RHS1->scale(1/norms[0]);
 
@@ -406,10 +409,16 @@ namespace MueLuTests {
   } //CreatePreconditioner_XMLOnList
 
 
-  TEUCHOS_UNIT_TEST(PetraOperator, CreatePreconditioner_PDESystem)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, CreatePreconditioner_PDESystem, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
     out << "version: " << MueLu::Version() << std::endl;
+
     using Teuchos::RCP;
+    typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -442,7 +451,7 @@ namespace MueLuTests {
         RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
         RHS1->setSeed(846930886);
         RHS1->randomize();
-        Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+        Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
         RHS1->norm2(norms);
         RHS1->scale(1/norms[0]);
 
@@ -498,7 +507,7 @@ namespace MueLuTests {
         RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
         RHS1->setSeed(846930886);
         RHS1->randomize();
-        Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+        Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
         RHS1->norm2(norms);
         RHS1->scale(1/norms[0]);
 
@@ -532,10 +541,16 @@ namespace MueLuTests {
 #endif // defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
   }
 
-  TEUCHOS_UNIT_TEST(PetraOperator, ReusePreconditioner)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, ReusePreconditioner, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
     out << "version: " << MueLu::Version() << std::endl;
+
     using Teuchos::RCP;
+    typedef MueLu::Utilities<SC,LO,GO,NO> Utils;
 
     Xpetra::UnderlyingLib          lib  = TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -555,7 +570,7 @@ namespace MueLuTests {
       RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
       RHS1->setSeed(846930886);
       RHS1->randomize();
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
       RHS1->norm2(norms);
       RHS1->scale(1/norms[0]);
 
@@ -597,7 +612,7 @@ namespace MueLuTests {
       RCP<MultiVector> RHS1 = MultiVectorFactory::Build(Op->getRowMap(), 1);
       RHS1->setSeed(846930886);
       RHS1->randomize();
-      Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
+      Teuchos::Array<typename Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
       RHS1->norm2(norms);
       RHS1->scale(1/norms[0]);
 
@@ -629,6 +644,12 @@ namespace MueLuTests {
     }
   }
 
-}//namespace MueLuTests
+#  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PetraOperator, CreatePreconditioner, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PetraOperator, CreatePreconditioner_XMLOnList, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PetraOperator, CreatePreconditioner_PDESystem, Scalar, LO, GO, Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PetraOperator, ReusePreconditioner, Scalar, LO, GO, Node) \
 
-#endif // HAVE_MUELU_EPETRA && HAVE_MUELU_SERIAL
+#include <MueLu_ETI_4arg.hpp>
+
+}//namespace MueLuTests

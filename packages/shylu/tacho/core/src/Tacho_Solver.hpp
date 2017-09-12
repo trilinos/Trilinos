@@ -31,9 +31,9 @@ namespace Tacho {
     typedef typename supernode_info_type::value_type_array value_type_array;
     typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
-#if   defined(HAVE_SHYLUTACHO_METIS)
+#if   defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
-#elif defined(HAVE_SHYLUTACHO_SCOTCH)
+#elif defined(TACHO_HAVE_SCOTCH)
     typedef GraphTools_Scotch graph_tools_type;
 #else
     typedef GraphTools_CAMD graph_tools_type;
@@ -43,6 +43,15 @@ namespace Tacho {
     typedef NumericTools<value_type,device_exec_space> numeric_tools_type;
 
   private:
+    enum : int { Cholesky = 1,
+                 UtDU = 2,
+                 SymLU = 3,
+                 LU = 4 };
+
+    // solver mode
+    bool _transpose;
+    ordinal_type _mode;
+
     // problem
     ordinal_type _m;
     size_type _nnz;
@@ -84,7 +93,10 @@ namespace Tacho {
     void setVerbose(const ordinal_type verbose = 1) {
       _verbose = verbose;
     }
-    void setSerialThresholdSize(const ordinal_type serial_thres_size = -1) {
+    void setSmallProblemThresholdsize(const ordinal_type small_problem_thres = 1024) {
+      _small_problem_thres = small_problem_thres;
+    }
+    void setSerialThresholdsize(const ordinal_type serial_thres_size = -1) {
       _serial_thres_size = serial_thres_size;
     }
     void setBlocksize(const ordinal_type mb = -1) {
@@ -93,8 +105,48 @@ namespace Tacho {
     void setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks = -1) {
       _max_num_superblocks = max_num_superblocks;
     }
-
-    /// need to figure out how HTS options are set here
+    void setTransposeSolve(const bool transpose) {
+      _transpose = transpose; // this option is not used yet
+    }
+    void setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric, 3 - hermitian
+                       const bool is_positive_definite) { 
+      switch (symmetric) {
+      case 0: { _mode = LU; break; }
+      case 1: { _mode = SymLU; break; }
+      case 2: {
+        if (is_positive_definite) {
+          if (std::is_same<ValueType,double>::value ||
+              std::is_same<ValueType,float>::value) { // real symmetric posdef
+            _mode = Cholesky;
+          } else { // complex symmetric posdef - does not exist; should be hermitian if the matrix is posdef
+            TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, 
+                                     "symmetric positive definite with complex values are not right combination: try hermitian positive definite");
+          }
+        } else { // real or complex symmetric indef
+          _mode = UtDU;
+        }
+        break;
+      }
+      case 3: {
+        if (is_positive_definite) { // real or complex hermitian posdef
+          _mode = Cholesky;
+        } else {
+          if (std::is_same<ValueType,double>::value ||
+              std::is_same<ValueType,float>::value) { // real symmetric indef 
+            _mode = UtDU;
+          } else { // complex hermitian indef
+            _mode = SymLU; 
+          }
+        }
+        break;
+      }
+      default: {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "symmetric argument is wrong");
+        break;
+      }
+      }
+      TACHO_TEST_FOR_EXCEPTION(_mode != Cholesky, std::logic_error, "Cholesky is only supported now");
+    }
 
     int analyze(const ordinal_type m,
                 const size_type_array &ap,
@@ -239,10 +291,15 @@ namespace Tacho {
         }
       } else {
         const ordinal_type nthreads = device_exec_space::thread_pool_size(0);
+        TACHO_TEST_FOR_EXCEPTION(t.dimension_0() < x.dimension_0() ||
+                                 t.dimension_1() < x.dimension_1(), std::logic_error, "Temporary rhs vector t is smaller than x");
+        auto tt = Kokkos::subview(t, 
+                                  Kokkos::pair<ordinal_type,ordinal_type>(0, x.dimension_0()),
+                                  Kokkos::pair<ordinal_type,ordinal_type>(0, x.dimension_1()));
         if (nthreads == 1)
-          _N.solveCholesky_Serial(x, b, t, _verbose);
+          _N.solveCholesky_Serial(x, b, tt, _verbose);
         else
-          _N.solveCholesky_Parallel(x, b, t, _verbose);
+          _N.solveCholesky_Parallel(x, b, tt, _verbose);
       }
       return 0;
     }
@@ -255,6 +312,17 @@ namespace Tacho {
 
       return _N.computeRelativeResidual(A, x, b);
     }
+
+    int release() {
+      if (_verbose) {
+        printf("TachoSolver: Release\n");
+        printf("====================\n");
+      }
+      _N.release(_verbose);
+
+      return 0;
+    }
+
   };
 
 }

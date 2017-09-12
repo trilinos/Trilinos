@@ -204,6 +204,7 @@ namespace MueLu {
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"use kokkos refactor\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"synchronize factory timers\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
   "<Parameter name=\"toggle: mode\" type=\"string\" value=\"semicoarsen\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
@@ -234,6 +235,7 @@ namespace MueLu {
   "<ParameterList name=\"repartition: params\"/>"
   "<Parameter name=\"repartition: start level\" type=\"int\" value=\"2\"/>"
   "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=\"800\"/>"
+  "<Parameter name=\"repartition: target rows per proc\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=\"1.2\"/>"
   "<Parameter name=\"repartition: remap parts\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"repartition: remap num values\" type=\"int\" value=\"4\"/>"
@@ -241,6 +243,8 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"rap: fix zero diagonals\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"rap: shift\" type=\"double\" value=\"0.0\"/>"
+  "<Parameter name=\"rap: algorithm\" type=\"string\" value=\"galerkin\"/>"
   "<ParameterList name=\"matrixmatrix: kernel params\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
@@ -470,6 +474,8 @@ namespace MueLu {
       
          ("use kokkos refactor","use kokkos refactor")
       
+         ("synchronize factory timers","synchronize factory timers")
+      
          ("energy minimization: enable","multigrid algorithm")
       
          ("toggle: mode","toggle: mode")
@@ -530,6 +536,8 @@ namespace MueLu {
       
          ("repartition: min per proc","repartition: min rows per proc")
       
+         ("repartition: target rows per proc","repartition: target rows per proc")
+
          ("repartition: max min ratio","repartition: max imbalance")
       
          ("repartition: remap parts","repartition: remap parts")
@@ -543,6 +551,10 @@ namespace MueLu {
          ("repartition: use subcommunicators","repartition: use subcommunicators")
       
          ("rap: fix zero diagonals","rap: fix zero diagonals")
+      
+         ("rap: shift","rap: shift")
+      
+         ("rap: algorithm","rap: algorithm")
       
          ("matrixmatrix: kernel params","matrixmatrix: kernel params")
       

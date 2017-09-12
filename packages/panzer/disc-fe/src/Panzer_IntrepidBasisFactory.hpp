@@ -46,12 +46,12 @@
 #include <sstream>
 #include <string>
 #include <map>
+
+
 #include "Teuchos_RCP.hpp"
 #include "Intrepid2_Basis.hpp"
 
 #include "Shards_CellTopology.hpp"
-
-#include "Intrepid2_Basis_Const_FEM.hpp"
 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_QUAD_C2_FEM.hpp"
@@ -90,6 +90,8 @@
 #include "Intrepid2_HDIV_HEX_I1_FEM.hpp"
 #include "Intrepid2_HDIV_HEX_In_FEM.hpp"
 
+#include "Intrepid2_L2_C0_FEM.hpp"
+
 namespace panzer {
 
 
@@ -127,7 +129,7 @@ namespace panzer {
     const Intrepid2::EPointType point_type = Intrepid2::POINTTYPE_EQUISPACED;
 
     if ( (basis_type == "Const") && (basis_order == 0) )
-      basis = Teuchos::rcp( new Intrepid2::Basis_Constant_FEM<ExecutionSpace,OutputValueType,PointValueType>(cell_topology) );
+      basis = Teuchos::rcp( new Intrepid2::Basis_L2_C0_FEM<ExecutionSpace,OutputValueType,PointValueType>(cell_topology) );
 
     else if ( (basis_type == "HGrad") && (cell_type == "Hexahedron") && (basis_order == 1) )
       basis = Teuchos::rcp( new Intrepid2::Basis_HGRAD_HEX_C1_FEM<ExecutionSpace,OutputValueType,PointValueType> );

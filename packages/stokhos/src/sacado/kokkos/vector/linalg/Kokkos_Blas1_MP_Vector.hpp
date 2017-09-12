@@ -47,7 +47,7 @@
 #include "Sacado_MP_Vector.hpp"
 #include "Kokkos_View_MP_Vector.hpp"
 #include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"
-#include "Kokkos_Blas1_MV.hpp"
+#include "KokkosBlas.hpp"
 
 //----------------------------------------------------------------------------
 // Specializations of Kokkos Vector/MultiVector math functions

@@ -121,6 +121,7 @@ private:
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
@@ -220,14 +221,14 @@ private:
 
 
   //APF Mesh construction helper functions modified and placed here to support arbitrary entity types
-  void constructElements(const gno_t* conn, lno_t nelem, const lno_t* offsets, 
+  void constructElements(const gno_t* conn, lno_t nelem, const offset_t* offsets,
                          const EntityTopologyType* tops, apf::GlobalToVert& globalToVert)
   {
     apf::ModelEntity* interior = m->findModelEntity(m->getDimension(), 0);
     for (lno_t i = 0; i < nelem; ++i) {
       apf::Mesh::Type etype = topologyZ2toAPF(tops[i]);
       apf::Downward verts;
-      for (int j = offsets[i]; j < offsets[i+1]; ++j)
+      for (offset_t j = offsets[i]; j < offsets[i+1]; ++j)
 	verts[j-offsets[i]] = globalToVert[conn[j]];
       buildElement(m, interior, etype, verts);
     }
@@ -441,7 +442,7 @@ public:
     //Get first adjacencies from elements to vertices
     if (!adapter->availAdjs(primary_type,MESH_VERTEX))
       throw "APF needs adjacency information from elements to vertices";
-    const lno_t* offsets;
+    const offset_t* offsets;
     const gno_t* adjacent_vertex_gids;
     adapter->getAdjsView(primary_type, MESH_VERTEX,offsets,adjacent_vertex_gids);
     

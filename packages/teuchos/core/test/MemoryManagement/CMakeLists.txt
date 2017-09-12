@@ -14,7 +14,6 @@ ELSE()
 ENDIF()
 
 
-
 IF (HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     GetBaseObjVoidPtr_UnitTests
@@ -140,7 +139,64 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MemoryManagement_MT_UnitTests
+  EXCLUDE_IF_NOT_TRUE
+    ${PARENT_PACKAGE_NAME}_ENABLE_THREAD_SAFE_UNIT_TESTS
+  SOURCES
+    Ptr_MT_UnitTests.cpp
+    ArrayView_MT_UnitTests.cpp
+    Array_MT_UnitTests.cpp
+    Tuple_MT_UnitTests.cpp
+    ArrayRCP_MT_UnitTests.cpp
+    RCP_MT_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
+  NUM_TOTAL_CORES_USED 4
+  ARGS --teuchos-suppress-startup-banner
+  STANDARD_PASS_OUTPUT
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  MemoryManagement_MT_Nightly_UnitTests
+  EXCLUDE_IF_NOT_TRUE
+    ${PARENT_PACKAGE_NAME}_ENABLE_THREAD_SAFE_UNIT_TESTS
+  SOURCES
+    Ptr_MT_Nightly_UnitTests.cpp
+    ArrayView_MT_Nightly_UnitTests.cpp
+    Array_MT_Nightly_UnitTests.cpp
+    Tuple_MT_Nightly_UnitTests.cpp
+    ArrayRCP_MT_Nightly_UnitTests.cpp
+    RCP_MT_Nightly_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  CATEGORIES NIGHTLY
+  NUM_MPI_PROCS 1
+  NUM_TOTAL_CORES_USED 4
+  ARGS --teuchos-suppress-startup-banner
+  STANDARD_PASS_OUTPUT
+  )
+
+
 ASSERT_DEFINED(${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
+
+IF (${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
+  TRIBITS_ADD_EXECUTABLE(
+    MemoryManagement_RCP_Abort
+    SOURCES
+      RCP_Abort.cpp
+    )
+
+  TRIBITS_ADD_ADVANCED_TEST(
+    MemoryManagement_RCP_Abort_Verify
+    TEST_0 EXEC MemoryManagement_RCP_Abort
+      ARGS  --enable-stacktrace
+      PASS_REGULAR_EXPRESSION_ALL
+        "PROGRAM ABORTING"
+    OVERALL_NUM_MPI_PROCS 1
+    )
+ENDIF()
+
 
 IF (HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR  AND  ${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
 

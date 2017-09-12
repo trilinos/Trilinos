@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,13 +34,13 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 /** \file shylu_partition_interface_def.hpp
-    
+
     \brief Epetra/Tpetra templated interface for calls to Zoltan(Isorropia)/Zoltans
 
     \author Joshua Dennis Booth
@@ -56,7 +56,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 
-#ifdef HAVE_SHYLUCORE_ZOLTAN2  
+#ifdef HAVE_SHYLUCORE_ZOLTAN2
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -77,9 +77,9 @@ namespace ShyLU {
 
 template <class Matrix, class Vector>
 PartitionInterface<Matrix, Vector>::PartitionInterface(Matrix* inA, Teuchos::ParameterList *inpList)
-{ 
+{
   A = inA;
-  pList = inpList;  
+  pList = inpList;
   ipart = NULL;
   ird = NULL;
 #ifdef HAVE_SHLY_ZOLTAN2
@@ -100,7 +100,7 @@ PartitionInterface<Matrix,Vector>::~PartitionInterface()
 template <class Matrix, class Vector>
 int PartitionInterface<Matrix, Vector>::partitionIsorropia()
 {
-  cout << " Not Supported \n";
+  std::cout << " Not Supported " << std::endl;
   return 1;
 }
 
@@ -119,7 +119,7 @@ int PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::partitionIsorropia
 template <class Matrix, class Vector>
 int PartitionInterface<Matrix, Vector>::partitionZoltan2()
 {
- 
+
   Teuchos::ParameterList subList = pList->sublist("Zoltan2 Input");
   Teuchos::RCP<Matrix> rA(A, false);
   zadapter = new Zoltan2::XpetraCrsMatrixAdapter<Matrix, Vector>(rA);
@@ -142,7 +142,7 @@ int PartitionInterface<Matrix,Vector>::partition()
 template <>
 int PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::partition()
 {
-  string partitioningPackage = Teuchos::getParameter<string>(*pList, "Partitioning Package");
+  std::string partitioningPackage = Teuchos::getParameter<std::string>(*pList, "Partitioning Package");
   if(partitioningPackage.compare("Isorropia") == 0)
     {
       return partitionIsorropia();
@@ -155,7 +155,7 @@ int PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::partition()
 #endif
   else
     {
-      cout << "**Error**: Paritioning package selected is not supported\n";
+      std::cout << "**Error**: Paritioning package selected is not supported" << std::endl;
     }
   return 1;
 }
@@ -164,12 +164,12 @@ template <class Matrix, class Vector>
 Matrix* PartitionInterface<Matrix,Vector>::reorderMatrix()
 {
   Matrix *B;
-  string partitioningPackage = Teuchos::getParameter<string>(*pList, "Partitioning Package");
+  std::string partitioningPackage = Teuchos::getParameter<std::string>(*pList, "Partitioning Package");
 
 #if defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)
   if(partitioningPackage.compare("Zoltan2") == 0)
     {
-      zadapter->applyPartitioningSolution(*A, B, zproblem->getSolution());     
+      zadapter->applyPartitioningSolution(*A, B, zproblem->getSolution());
     }
 #else
 B = NULL;
@@ -181,15 +181,15 @@ template < >
 Epetra_CrsMatrix* PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::reorderMatrix()
 {
   Epetra_CrsMatrix *B = NULL;
-  string partitioningPackage = Teuchos::getParameter<string>(*pList, "Partitioning Package");
+  std::string partitioningPackage = Teuchos::getParameter<std::string>(*pList, "Partitioning Package");
   if(partitioningPackage.compare("Isorropia") == 0)
     {
-      ird->redistribute(*A, B);  
+      ird->redistribute(*A, B);
     }
 #if defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)
   else if (partitioningPackage.compare("Zoltan2") == 0)
     {
-      zadapter->applyPartitioningSolution(*A, B, zproblem->getSolution());     
+      zadapter->applyPartitioningSolution(*A, B, zproblem->getSolution());
     }
 #endif
   return B;
@@ -199,8 +199,8 @@ template <class Matrix, class Vector>
 Vector* PartitionInterface<Matrix, Vector>::reorderVector(Vector* x)
 {
   Vector *b = NULL;
-  string partitioningPackage = Teuchos::getParameter<string>(*pList, "Partitioning Package");
-#if defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH) 
+  std::string partitioningPackage = Teuchos::getParameter<std::string>(*pList, "Partitioning Package");
+#if defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)
       Teuchos::RCP<Vector> rx(x, false);
       Zoltan2::XpetraMultiVectorAdapter<Vector> tempVecAdapter(rx);
       tempVecAdapter.applyPartitioningSolution(*x, b, zproblem->getSolution());
@@ -211,10 +211,10 @@ template < >
 Epetra_MultiVector* PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::reorderVector(Epetra_MultiVector* x )
 {
   Epetra_MultiVector *b = NULL;
-  string partitioningPackage = Teuchos::getParameter<string>(*pList, "Partitioning Package");
+  std::string partitioningPackage = Teuchos::getParameter<std::string>(*pList, "Partitioning Package");
   if(partitioningPackage.compare("Isorropia") == 0)
     {
-      ird->redistribute(*x, b);  
+      ird->redistribute(*x, b);
     }
 #if defined(HAVE_ZOLTAN2_PARMETIS) || defined(HAVE_ZOLTAN2_SCOTCH)
   else if (partitioningPackage.compare("Zoltan2") == 0)
@@ -227,5 +227,5 @@ Epetra_MultiVector* PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>::re
   return b;
 }
 
-} 
+}
 #endif

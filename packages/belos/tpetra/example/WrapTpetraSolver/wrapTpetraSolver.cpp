@@ -4,7 +4,7 @@
 #include "Tpetra_Core.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Kokkos_Blas1_MV.hpp"
+#include "KokkosBlas1_mult.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_ParameterList.hpp"

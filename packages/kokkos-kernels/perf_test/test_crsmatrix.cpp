@@ -51,7 +51,7 @@
 
 #include <Kokkos_Core.hpp>
 #include <Kokkos_MV.hpp>
-#include <Kokkos_Sparse.hpp>
+#include <KokkosSparse_spmv.hpp>
 #include <Kokkos_CrsMatrix.hpp>
 #include <impl/Kokkos_Timer.hpp>
 

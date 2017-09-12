@@ -163,6 +163,10 @@ void panzer::PureBasis::initialize(const std::string & in_basis_type,const int i
 							cardinality(),
 							dimension(),
 							dimension()));
+  
+  local_mat_layout = Teuchos::rcp(new PHX::MDALayout<panzer::Cell, panzer::BASIS, panzer::BASIS>(
+                     this->numCells(), this->cardinality(), this->cardinality()));  
+  
 }
 
 int panzer::PureBasis::cardinality() const

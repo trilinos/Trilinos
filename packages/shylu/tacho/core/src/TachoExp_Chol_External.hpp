@@ -5,7 +5,7 @@
 /// \brief LAPACK upper Cholesky factorization
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "Teuchos_LAPACK.hpp"
+#include "TachoExp_Lapack_External.hpp"
 
 namespace Tacho {
 
@@ -33,12 +33,10 @@ namespace Tacho {
         if (m > 0) {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-            Teuchos::LAPACK<ordinal_type,value_type> lapack;
-            const char lapack_uplo = ArgUplo::param;
-            lapack.POTRF(lapack_uplo,
-                         m, 
-                         A.data(), A.stride_1(),
-                         &r_val);
+            Lapack<value_type>::potrf(ArgUplo::param,
+                                      m,
+                                      A.data(), A.stride_1(),
+                                      &r_val);
 
             TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, 
                                      "LAPACK (potrf) returns non-zero error code.");

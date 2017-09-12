@@ -53,9 +53,9 @@
 #include "Intrepid2_Types.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ViewFactory.hpp"
-
-#include "Sacado_Traits.hpp"
+#ifdef HAVE_INTREPID2_SACADO
+  #include "Sacado_Traits.hpp"
+#endif
 
 namespace Intrepid2 {
 
@@ -155,6 +155,23 @@ namespace Intrepid2 {
   struct ExecSpace<ViewSpaceType,void> {
     typedef ViewSpaceType ExecSpaceType;
   };
+
+
+  ///
+  /// layout deduction (temporary meta-function)
+  ///
+
+  template <typename ViewType>
+  struct DeduceLayout {
+    using input_layout = typename ViewType::array_layout;
+    using default_layout = typename ViewType::device_type::execution_space::array_layout;
+    using result_layout  =
+      typename std::conditional<
+        std::is_same< input_layout, Kokkos::LayoutStride >::value,
+        default_layout,
+        input_layout >::type;
+  };
+
 
   ///
   /// utilities device compirable

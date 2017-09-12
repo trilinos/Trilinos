@@ -67,8 +67,6 @@ namespace shards {
 }
 
 namespace panzer {
-  class RegionFillData;
-  class MaterialModel;
   class PureBasis;
   class IntegrationRule;
   struct EquationSetFactory;

@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
-# Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
-# DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
-# retains certain rights in this software.
+# Copyright (c) 2005 National Technology & Engineering Solutions
+# of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+# NTESS, the U.S. Government retains certain rights in this software.
 # 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
 #       disclaimer in the documentation and/or other materials provided
 #       with the distribution.  
 # 
-#     * Neither the name of Sandia Corporation nor the names of its
+#     * Neither the name of NTESS nor the names of its
 #       contributors may be used to endorse or promote products derived
 #       from this software without specific prior written permission.
 # 
@@ -57,7 +57,8 @@ echo "testwt - single precision write test..."
 echo "begin testwt" > test.output
 ${PREFIX} ${BINDIR}/testwt${SUFFIX} >> test.output
 echo "end testwt" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
+# Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
 
 echo "testrd - single precision read test..."
 echo "begin testrd" >> test.output
@@ -161,7 +162,8 @@ echo "testwt_nc - write x y z components of coordinates separately..."
 echo "begin testwt_nc" >> test.output
 ${PREFIX} ${BINDIR}/testwt_nc${SUFFIX} >> test.output
 echo "end testwt_nc" >> test.output
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt_nc.res
+# Filter out the "maximum_name_length" attribute. Moves around in ncdump output for nc4 vs nc3
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt_nc.res
 
 echo "testrd_nc - read x y z components of coordinates separately..."
 echo "begin testrd_nc" >> test.output
@@ -274,21 +276,21 @@ echo "begin test_ts_files" >> test.output
 ${PREFIX} ${BINDIR}/test_ts_files${SUFFIX} >> test.output
 echo "end test_ts_files" >> test.output
 mv test0.exo test.exo
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files0.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files0.res
 mv test1.exo test.exo
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files1.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files1.res
 mv test2.exo test.exo
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files2.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files2.res
 mv test3.exo test.exo
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files3.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files3.res
 mv test4.exo test.exo
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files4.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files4.res
 mv test5.exo test.exo
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files5.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files5.res
 mv test6.exo test.exo
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files6.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files6.res
 mv test7.exo test.exo
-${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files7.res
+${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue |grep -v maximum_name_length | ${DIFF} - ${SRCDIR}/test.dmp | tee test_ts_files7.res
 echo "test_ts_errval - multiple threads calling ex_err and ex_get_err..."
 echo "begin test_ts_errval" >> test.output
 ${PREFIX} ${BINDIR}/test_ts_errval${SUFFIX} >> test.output

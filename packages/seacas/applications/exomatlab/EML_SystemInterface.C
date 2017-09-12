@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2011 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2011 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *   disclaimer in the documentation and/or other materials provided
  *   with the distribution.
  *
- * * Neither the name of Sandia Corporation nor the names of its
+ * * Neither the name of NTESS nor the names of its
  *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
@@ -30,7 +30,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
 #include "EML_CodeTypes.h" // for StringIdVector
@@ -40,12 +39,12 @@
 #include "SL_tokenize.h"   // for tokenize
 #include <Ioss_FileInfo.h> // for FileInfo
 #include <algorithm>       // for sort, transform
-#include <ctype.h>         // for tolower
+#include <cctype>          // for tolower
+#include <cstddef>         // for size_t
+#include <cstdlib>         // for exit, strtod, EXIT_SUCCESS, etc
+#include <cstring>         // for strcmp
 #include <iosfwd>          // for ostream
 #include <iostream>        // for operator<<, basic_ostream, etc
-#include <stddef.h>        // for size_t
-#include <stdlib.h>        // for exit, strtod, EXIT_SUCCESS, etc
-#include <string.h>        // for strcmp
 #include <utility>         // for pair, make_pair
 #include <vector>          // for vector
 
@@ -211,9 +210,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2011 Sandia Corporation.  Under the terms of Contract\n"
-              << "DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains\n"
-              << "certain rights in this software\n"
+              << "Copyright(C) 2011 National Technology & Engineering Solutions\n"
+              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
+              << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"
               << "Redistribution and use in source and binary forms, with or without\n"
               << "modification, are permitted provided that the following conditions are\n"
@@ -227,7 +226,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
               << "  disclaimer in the documentation and/or other materials provided\n"
               << "  with the distribution.\n"
               << "                        \n"
-              << "* Neither the name of Sandia Corporation nor the names of its\n"
+              << "* Neither the name of NTESS nor the names of its\n"
               << "  contributors may be used to endorse or promote products derived\n"
               << "  from this software without specific prior written permission.\n"
               << "                                                \n"
@@ -281,7 +280,7 @@ namespace {
     return s;
   }
 
-  typedef std::vector<std::string> StringVector;
+  using StringVector = std::vector<std::string>;
   bool string_id_sort(const std::pair<std::string, int> &t1, const std::pair<std::string, int> &t2)
   {
     return t1.first < t2.first || (!(t2.first < t1.first) && t1.second < t2.second);

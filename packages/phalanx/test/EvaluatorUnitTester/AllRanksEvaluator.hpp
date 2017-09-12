@@ -54,7 +54,7 @@
 */
 template<typename EvalT, typename Traits>
 class AllRanksEvaluator : public PHX::EvaluatorWithBaseImpl<Traits>,
-                        public PHX::EvaluatorDerived<EvalT, Traits>  {
+                          public PHX::EvaluatorDerived<EvalT, Traits>  {
 
   using ScalarT = typename EvalT::ScalarT;
   PHX::MDField<const ScalarT,R> f1;
@@ -71,12 +71,12 @@ class AllRanksEvaluator : public PHX::EvaluatorWithBaseImpl<Traits>,
   PHX::MDField<ScalarT,R,R,R,R,R,R> x6;
   
 public:
-  AllRanksEvaluator(const Teuchos::RCP<const PHX::DataLayout>& dl1,
-                    const Teuchos::RCP<const PHX::DataLayout>& dl2,
-                    const Teuchos::RCP<const PHX::DataLayout>& dl3,
-                    const Teuchos::RCP<const PHX::DataLayout>& dl4,
-                    const Teuchos::RCP<const PHX::DataLayout>& dl5,
-                    const Teuchos::RCP<const PHX::DataLayout>& dl6);
+  AllRanksEvaluator(const Teuchos::RCP<PHX::DataLayout>& dl1,
+                    const Teuchos::RCP<PHX::DataLayout>& dl2,
+                    const Teuchos::RCP<PHX::DataLayout>& dl3,
+                    const Teuchos::RCP<PHX::DataLayout>& dl4,
+                    const Teuchos::RCP<PHX::DataLayout>& dl5,
+                    const Teuchos::RCP<PHX::DataLayout>& dl6);
   void evaluateFields(typename Traits::EvalData workset) override;
   KOKKOS_INLINE_FUNCTION
   void operator () (const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const;

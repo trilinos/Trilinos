@@ -468,4 +468,94 @@ TEUCHOS_UNIT_TEST(tSTKInterface, edgeAddTest)
    TEST_EQUALITY(mesh->getEntityCounts(elmtRank),3);
 }
 
+/**
+ *  \brief Test the ability to add global variables to an Exodus output file.
+ *
+ *  Test whether or not we can add global variables (that is, data not
+ *  associated with nodes, elements, etc.) to an output Exodus file.
+ */
+TEUCHOS_UNIT_TEST(tSTKInterface, globalVariables)
+{
+  using std::string;
+  using std::vector;
+  using Teuchos::Array;
+  using Teuchos::RCP;
+
+  // Create the mesh database and ensure that it's writable.
+  RCP<STK_Interface> mesh = build2DMesh();
+  TEST_ASSERT(mesh->isWritable())
+
+  // Add global variables to be output.
+  int answer(42);
+  double perfection(1.61803398875);
+  vector<int> spiralEncoding{0, 1, 1, 2, 3, 5, 8, 13, 21};
+  vector<double> physicsFavorites{299792458, 6.67408e-11, 6.626070040e-34,
+    8.854187817e-12, 1.6021766208e-19};
+  mesh->addGlobalToExodus("Answer", answer);
+  mesh->addGlobalToExodus("Perfection", perfection);
+  mesh->addGlobalToExodus("Spiral Encoding", spiralEncoding);
+  mesh->addGlobalToExodus("Physics Favorites", physicsFavorites);
+
+  // Write out the mesh database to an Exodus file.
+  const string filename("globalVariables.exo");
+  mesh->writeToExodus(filename);
+
+  // Open the output file for reading.
+  stk::io::StkMeshIoBroker stkIo(MPI_COMM_WORLD);
+  stkIo.add_mesh_database(filename, stk::io::READ_RESTART);
+  stkIo.create_input_mesh();
+  stkIo.populate_bulk_data();
+  stkIo.read_defined_input_fields(0.0);
+
+  // Get the names of the global variables.
+  vector<string> globalNames;
+  stkIo.get_global_variable_names(globalNames);
+
+  // Ensure that we have the right global variable names.  Note that
+  // get_global_variable_names() transforms the strings such that they're
+  // lowercased and spaces are replaced with underscores.
+  TEST_EQUALITY(globalNames.size(), 4)
+  int found(0);
+  for (const auto& name : globalNames)
+  {
+    if (name == "answer")
+      found |= 1;
+    else if (name == "perfection")
+      found |= 2;
+    else if (name == "spiral_encoding")
+      found |= 4;
+    else if (name == "physics_favorites")
+      found |= 8;
+  } // end loop over globalNames
+  TEST_EQUALITY(found, 1 | 2 | 4 | 8)
+
+  // Get the global variables themselves from the file.
+  int answerFromFile(0);
+  double perfectionFromFile(0);
+  vector<int> spiralEncodingFromFile;
+  vector<double> physicsFavoritesFromFile;
+  for (const auto& name : globalNames)
+  {
+    if (name == "answer")
+      stkIo.get_global(name, answerFromFile);
+    else if (name == "perfection")
+      stkIo.get_global(name, perfectionFromFile);
+    else if (name == "spiral_encoding")
+      stkIo.get_global(name, spiralEncodingFromFile);
+    else if (name == "physics_favorites")
+      stkIo.get_global(name, physicsFavoritesFromFile);
+  } // end loop over globalNames
+
+  // Ensure that the global variables from the file match those we wrote
+  // earlier.
+  TEST_EQUALITY(answer, answerFromFile)
+  TEST_EQUALITY(perfection, perfectionFromFile)
+  Array<int> spiralEncodingA(spiralEncoding),
+    spiralEncodingFromFileA(spiralEncodingFromFile);
+  TEST_EQUALITY(spiralEncodingA, spiralEncodingFromFileA)
+  Array<double> physicsFavoritesA(physicsFavorites),
+    physicsFavoritesFromFileA(physicsFavoritesFromFile);
+  TEST_EQUALITY(physicsFavoritesA, physicsFavoritesFromFileA)
+} // end of tSTKInterface_globalVariables_UnitTest
+
 }

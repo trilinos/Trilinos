@@ -136,7 +136,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   typedef Teuchos::ScalarTraits<SC> STS;
   SC zero = STS::zero(), one = STS::one();
 
-  bool success = false;
+  bool success = true;
   bool verbose = true;
   try {
     RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -431,7 +431,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     }
     success = !failed;
 
-    out << std::endl << "End Result: TEST " << (failed ? "FAILED" : "PASSED") << std::endl;
+    // out << std::endl << "End Result: TEST " << (failed ? "FAILED" : "PASSED") << std::endl;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
@@ -445,6 +445,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 #include "MueLu_Test_ETI.hpp"
 
 int main(int argc, char *argv[]) {
-  return Automatic_Test_ETI(argc,argv);
+
+  Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  Teuchos::FancyOStream& out = *fancy;
+  out.setOutputToRootOnly(0);
+
+  bool status = Automatic_Test_ETI(argc,argv);
+  out << std::endl << "End Result: TEST " << (status ? "FAILED" : "PASSED") << std::endl;
+
+  return status;
 }
 

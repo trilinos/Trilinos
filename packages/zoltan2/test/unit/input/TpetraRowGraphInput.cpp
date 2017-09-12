@@ -72,8 +72,9 @@ using Teuchos::DefaultComm;
 typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> ztcrsgraph_t;
 typedef Tpetra::RowGraph<zlno_t, zgno_t, znode_t> ztrowgraph_t;
 
+template<typename offset_t>
 void printGraph(RCP<const Comm<int> > &comm, zlno_t nvtx,
-    const zgno_t *vtxIds, const zlno_t *offsets, const zgno_t *edgeIds)
+    const zgno_t *vtxIds, const offset_t *offsets, const zgno_t *edgeIds)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -83,7 +84,7 @@ void printGraph(RCP<const Comm<int> > &comm, zlno_t nvtx,
       std::cout << rank << ":" << std::endl;
       for (zlno_t i=0; i < nvtx; i++){
         std::cout << " vertex " << vtxIds[i] << ": ";
-        for (zlno_t j=offsets[i]; j < offsets[i+1]; j++){
+        for (offset_t j=offsets[i]; j < offsets[i+1]; j++){
           std::cout << edgeIds[j] << " ";
         }
         std::cout << std::endl;
@@ -99,6 +100,8 @@ template <typename User>
 int verifyInputAdapter(
   Zoltan2::TpetraRowGraphAdapter<User> &ia, ztrowgraph_t &graph)
 {
+  typedef typename Zoltan2::InputTraits<User>::offset_t offset_t;
+
   RCP<const Comm<int> > comm = graph.getComm();
   int fail = 0, gfail=0;
 
@@ -113,7 +116,7 @@ int verifyInputAdapter(
   gfail = globalFail(comm, fail);
 
   const zgno_t *vtxIds=NULL, *edgeIds=NULL;
-  const zlno_t *offsets=NULL;
+  const offset_t *offsets=NULL;
   size_t nvtx=0;
 
   if (!gfail){
@@ -128,7 +131,7 @@ int verifyInputAdapter(
     gfail = globalFail(comm, fail);
 
     if (gfail == 0){
-      printGraph(comm, nvtx, vtxIds, offsets, edgeIds);
+      printGraph<offset_t>(comm, nvtx, vtxIds, offsets, edgeIds);
     }
     else{
       if (!fail) fail = 10;

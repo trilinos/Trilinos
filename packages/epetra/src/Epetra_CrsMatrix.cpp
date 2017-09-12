@@ -4634,6 +4634,11 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & theDomainMap,c
       delete theImporter;
       D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_);
     }
+  } else {
+    if (D.Importer_ != 0) {
+      delete D.Importer_;
+      D.Importer_ = 0;
+    }
   }
 
   // Create export, if needed
@@ -4648,6 +4653,11 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & theDomainMap,c
     else {
       delete theExporter;
       D.Exporter_ = new Epetra_Export(D.RowMap_,D.RangeMap_);
+    }
+  } else {
+    if (D.Exporter_ != 0) {
+      delete D.Exporter_;
+      D.Exporter_ = 0;
     }
   }
 

@@ -453,12 +453,12 @@ namespace Intrepid2 {
     //                                                                        inputJac.dimension(0), 
     //                                                                        inputJac.dimension(1), 
     //                                                                        inputJac.dimension(2));
-    Kokkos::DynRankView<scratchValueType,scratchProperties...> faceNormals = 
-      Kokkos::createDynRankView(scratch,
-                                scratch.data(), 
-                                inputJac.dimension(0), 
-                                inputJac.dimension(1), 
-                                inputJac.dimension(2));
+    auto vcprop = Kokkos::common_view_alloc_prop(scratch);
+    typedef Kokkos::DynRankView<typename decltype(vcprop)::value_type> viewType;
+    viewType faceNormals(Kokkos::view_wrap(scratch.data(), vcprop),
+                         inputJac.dimension(0),
+                         inputJac.dimension(1),
+                         inputJac.dimension(2));
 
     // compute normals
     CellTools<SpT>::getPhysicalFaceNormals(faceNormals, inputJac, whichFace, parentCell);
@@ -499,13 +499,13 @@ namespace Intrepid2 {
     //                                                                         inputJac.dimension(0), 
     //                                                                         inputJac.dimension(1), 
     //                                                                         inputJac.dimension(2));
-    Kokkos::DynRankView<scratchValueType,scratchProperties...> edgeTangents = 
-      Kokkos::createDynRankView(scratch,
-                                scratch.data(), 
-                                inputJac.dimension(0), 
-                                inputJac.dimension(1), 
-                                inputJac.dimension(2));
-    
+    auto vcprop = Kokkos::common_view_alloc_prop(scratch);
+    typedef Kokkos::DynRankView<typename decltype(vcprop)::value_type> viewType;
+    viewType edgeTangents(Kokkos::view_wrap(scratch.data(), vcprop),
+                         inputJac.dimension(0),
+                         inputJac.dimension(1),
+                         inputJac.dimension(2));
+
     // compute normals
     CellTools<SpT>::getPhysicalEdgeTangents(edgeTangents, inputJac, whichEdge, parentCell);
 

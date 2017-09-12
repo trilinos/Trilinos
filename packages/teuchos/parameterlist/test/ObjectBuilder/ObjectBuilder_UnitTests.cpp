@@ -357,11 +357,10 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, create) {
 // catch invalid parameter lists before we use them.  This is particularly
 // important because we're storing a pointer to the parameter list and the user
 // can change it without ObjectBuilder knowing about it.
-// The parameter list is validated in four places:
+// The parameter list is validated in three places:
 // 1. setParameterList
 // 2. unsetParameterList (only in debug mode)
 // 3. create (only in debug mode)
-// 4. destructor (only in debug mode)
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
     RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
     ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
@@ -374,7 +373,6 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
 #ifdef TEUCHOS_DEBUG
     TEST_THROW( ob->unsetParameterList(), std::logic_error ); // 2.
     TEST_THROW( ob->create(), std::logic_error ); // 3.
-    TEST_THROW( ob = null, std::logic_error ); // 4.
 #else // TEUCHOS_DEBUG
     TEST_NOTHROW( ob->unsetParameterList() );
     RCP<Foo> foo;
@@ -454,7 +452,6 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, unsetParameterList) {
 #ifdef TEUCHOS_DEBUG
   TEST_THROW( newPL = ob->unsetParameterList(), std::logic_error ); // 2.
   TEST_EQUALITY_CONST( is_null(newPL), true );
-  TEST_THROW( ob = null, std::logic_error );
 #else // TEUCHOS_DEBUG
   TEST_NOTHROW( newPL = ob->unsetParameterList() );
   TEST_EQUALITY_CONST( pl.get(), newPL.get() ); // 1a.

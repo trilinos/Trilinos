@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <exo_fpp/Iofx_DatabaseIO.h>
-#include <mpi.h>
+#include "mpi.h"
 #include <Ioss_Region.h>
 #include <Ioss_DBUsage.h>
 #include <Ioss_PropertyManager.h>

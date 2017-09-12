@@ -1,7 +1,6 @@
-// Copyright(C) 2009-2010 Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright(C) 2009 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,7 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -32,11 +31,11 @@
 
 #include "smart_assert.h"
 
+#include <cstdlib>
 #include <fstream>
 #include <set>
 #include <sstream>
 #include <stdexcept>
-#include <stdlib.h>
 
 void break_into_debugger() { std::cerr << "Not Implemented.\n"; }
 
@@ -47,8 +46,9 @@ namespace {
     stream_holder() : out_(nullptr), owns_(false) {}
     ~stream_holder()
     {
-      if (owns_)
+      if (owns_) {
         delete out_;
+      }
       out_ = nullptr;
     }
     std::ostream *out_;
@@ -89,11 +89,13 @@ namespace smart_assert {
     out << "\n"
         << get_typeof_level(context.get_level()) << " in " << context.get_context_file() << ":"
         << context.get_context_line() << '\n';
-    if (!context.get_level_msg().empty())
+    if (!context.get_level_msg().empty()) {
       // we have a user-friendly message
       out << context.get_level_msg();
-    else
+    }
+    else {
       out << "\nExpression: " << context.get_expr();
+    }
     out << '\n';
   }
 
@@ -102,8 +104,9 @@ namespace smart_assert {
     out << "\n"
         << get_typeof_level(context.get_level()) << " in " << context.get_context_file() << ":"
         << context.get_context_line() << '\n';
-    if (!context.get_level_msg().empty())
+    if (!context.get_level_msg().empty()) {
       out << "User-friendly msg: '" << context.get_level_msg() << "'\n";
+    }
     out << "\nExpression: '" << context.get_expr() << "'\n";
 
     typedef assert_context::vals_array ac_vals_array;
@@ -131,8 +134,9 @@ namespace smart_assert {
 
   void default_logger(const assert_context &context)
   {
-    if (default_logger_info.out_ == nullptr)
+    if (default_logger_info.out_ == nullptr) {
       return;
+    }
     dump_context_detail(context, *(default_logger_info.out_));
   }
 

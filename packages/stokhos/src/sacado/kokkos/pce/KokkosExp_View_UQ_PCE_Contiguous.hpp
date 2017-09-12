@@ -1031,7 +1031,9 @@ public:
 #ifndef __CUDA_ARCH__
       if (m_cijk.dimension() == 0)
         m_cijk = getGlobalCijkTensor<cijk_type>();
-      if (m_sacado_size == 0)
+      // Use 0 or 1 to signal the size wasn't specified in the constructor,
+      // since now dimesion_i() == 1 for all i >= rank
+      if (m_sacado_size == 0 || m_sacado_size == 1)
         m_sacado_size = m_cijk.dimension();
 #endif
       m_is_contiguous = this->is_data_contiguous();
@@ -1062,7 +1064,9 @@ public:
     m_cijk = extract_cijk<cijk_type>(prop);
     if (m_cijk.dimension() == 0)
       m_cijk = getGlobalCijkTensor<cijk_type>();
-    if (m_sacado_size == 0)
+    // Use 0 or 1 to signal the size wasn't specified in the constructor,
+    // since now dimesion_i() == 1 for all i >= rank
+    if (m_sacado_size == 0 || m_sacado_size == 1)
       m_sacado_size = m_cijk.dimension();
     m_is_contiguous = true;
 
@@ -1654,7 +1658,8 @@ struct ViewFill< OutputView ,
     const size_type team_size = rows_per_block * vector_length;
     Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
-    if (input.size() != dimension_scalar(output) && input.size() != 1)
+    if (static_cast<unsigned>(input.size()) != dimension_scalar(output) &&
+        input.size() != 1)
       Kokkos::abort("ViewFill:  Invalid input value size");
 
     if (input.size() == 1)

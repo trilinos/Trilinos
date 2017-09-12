@@ -48,6 +48,8 @@
 
 #include "MueLu_config.hpp"
 
+#include <Teuchos_ConfigDefs.hpp>
+
 // Kokkos
 #include <Kokkos_DefaultNode.hpp> // default template parameter of many MueLu classes
 
@@ -104,5 +106,8 @@ namespace MueLu {
   using Teuchos::VERB_EXTREME;
 
 }
+
+// This include file defines macros to avoid warnings under CUDA.  See github issue #1133.
+#include "Teuchos_CompilerCodeTweakMacros.hpp"
 
 #endif /* MUELU_CONFIGDEFS_H */

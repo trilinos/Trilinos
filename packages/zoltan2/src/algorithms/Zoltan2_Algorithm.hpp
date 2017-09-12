@@ -59,6 +59,7 @@ class Algorithm;
 #include <Zoltan2_ColoringSolution.hpp>
 #include <Zoltan2_OrderingSolution.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_MatrixPartitioningSolution.hpp>
 #include <Zoltan2_MappingSolution.hpp>
 #include <Zoltan2_CoordinatePartitioningGraph.hpp>
 
@@ -111,6 +112,12 @@ public:
 
   //! \brief Partitioning method
   virtual void partition(const RCP<PartitioningSolution<Adapter> > &solution) 
+  {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  //! \brief Matrix Partitioning method
+  virtual void partitionMatrix(const RCP<MatrixPartitioningSolution<Adapter> > &solution) 
   {
     Z2_THROW_NOT_IMPLEMENTED
   }

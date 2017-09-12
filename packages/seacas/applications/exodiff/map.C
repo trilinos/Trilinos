@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -51,7 +51,7 @@ namespace {
 
   template <typename INT>
   void Compute_Node_Map(INT *&node_map, ExoII_Read<INT> &file1, ExoII_Read<INT> &file2);
-}
+} // namespace
 
 template <typename INT>
 void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
@@ -128,12 +128,12 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
             sum_z += z2_f[conn[j] - 1];
           }
         }
-        x2[e] = sum_x / (double)num_nodes_per_elmt;
+        x2[e] = sum_x / static_cast<double>(num_nodes_per_elmt);
         if (dim > 1) {
-          y2[e] = sum_y / (double)num_nodes_per_elmt;
+          y2[e] = sum_y / static_cast<double>(num_nodes_per_elmt);
         }
         if (dim > 2) {
-          z2[e] = sum_z / (double)num_nodes_per_elmt;
+          z2[e] = sum_z / static_cast<double>(num_nodes_per_elmt);
         }
 
         ++e;
@@ -199,12 +199,12 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
           mid_z += z1_f[conn1[j] - 1];
         }
       }
-      mid_x /= (double)num_nodes_per_elmt;
+      mid_x /= static_cast<double>(num_nodes_per_elmt);
       if (dim > 1) {
-        mid_y /= (double)num_nodes_per_elmt;
+        mid_y /= static_cast<double>(num_nodes_per_elmt);
       }
       if (dim > 2) {
-        mid_z /= (double)num_nodes_per_elmt;
+        mid_z /= static_cast<double>(num_nodes_per_elmt);
       }
 
       // Locate midpoint in sorted array.
@@ -458,12 +458,12 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
             sum_z += z2_f[conn[j] - 1];
           }
         }
-        x2[e] = sum_x / (double)num_nodes_per_elmt;
+        x2[e] = sum_x / static_cast<double>(num_nodes_per_elmt);
         if (dim > 1) {
-          y2[e] = sum_y / (double)num_nodes_per_elmt;
+          y2[e] = sum_y / static_cast<double>(num_nodes_per_elmt);
         }
         if (dim > 2) {
-          z2[e] = sum_z / (double)num_nodes_per_elmt;
+          z2[e] = sum_z / static_cast<double>(num_nodes_per_elmt);
         }
 
         ++e;
@@ -531,12 +531,12 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
           mid_z += z1_f[conn1[j] - 1];
         }
       }
-      mid_x /= (double)num_nodes_per_elmt;
+      mid_x /= static_cast<double>(num_nodes_per_elmt);
       if (dim > 1) {
-        mid_y /= (double)num_nodes_per_elmt;
+        mid_y /= static_cast<double>(num_nodes_per_elmt);
       }
       if (dim > 2) {
-        mid_z /= (double)num_nodes_per_elmt;
+        mid_z /= static_cast<double>(num_nodes_per_elmt);
       }
 
       // Locate midpoint in sorted array.
@@ -733,7 +733,7 @@ namespace {
     }
     return mapped;
   }
-}
+} // namespace
 
 template <typename INT>
 void Compute_FileId_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1,
@@ -1035,9 +1035,8 @@ namespace {
                 << '\n');
           return -1;
         }
-        else {
-          index = i;
-        }
+
+        index = i;
       }
     } while (++i < (INT)N && !interface.coord_tol.Diff(x[id[i]], x0));
 
@@ -1077,7 +1076,7 @@ namespace {
     }
     return rmax - rmin;
   }
-}
+} // namespace
 
 template <typename INT> double Find_Min_Coord_Sep(ExoII_Read<INT> &file)
 {

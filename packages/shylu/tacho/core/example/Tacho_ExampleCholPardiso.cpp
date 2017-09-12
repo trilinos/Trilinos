@@ -1,5 +1,3 @@
-#include "Teuchos_CommandLineProcessor.hpp"
-
 #include "ShyLUTacho_config.h"
 
 #include <Kokkos_Core.hpp>
@@ -11,7 +9,9 @@
 
 #include "TachoExp_NumericTools.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#include "TachoExp_CommandLineParser.hpp"
+
+#ifdef TACHO_HAVE_MKL
 #include "mkl_service.h"
 #include "Tacho_Pardiso.hpp"
 #endif
@@ -20,28 +20,20 @@ using namespace Tacho;
 using namespace Tacho::Experimental;
 
 int main (int argc, char *argv[]) {
-  Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program measure the performance of Pardiso Chol algorithms on Kokkos::OpenMP execution space.\n");
+  CommandLineParser opts("This example program measure the performance of Pardiso on Kokkos::OpenMP");
 
   int nthreads = 1;
-  clp.setOption("kokkos-threads", &nthreads, "Number of threads");
-
   bool verbose = true;
-  clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
-
   std::string file_input = "test.mtx";
-  clp.setOption("file", &file_input, "Input file (MatrixMarket SPD matrix)");
-
   int nrhs = 1;
-  clp.setOption("nrhs", &nrhs, "Number of RHS vectors");
 
-  clp.recogniseAllOptions(true);
-  clp.throwExceptions(false);
+  opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
+  opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
+  opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file_input);
+  opts.set_option<int>("nrhs", "Number of RHS vectors", &nrhs);
 
-  Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
-
-  if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
-  //if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
+  const bool r_parse = opts.parse(argc, argv);
+  if (r_parse) return 0; // print help return
 
   const bool skip_factorize = false, skip_solve = false;
   
@@ -49,7 +41,7 @@ int main (int argc, char *argv[]) {
   Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
 
   int r_val = 0;
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef TACHO_HAVE_MKL
   {
     typedef double value_type;
     typedef CrsMatrixBase<value_type> CrsMatrixBaseType;
@@ -212,7 +204,7 @@ int main (int argc, char *argv[]) {
   }
 #else
   r_val = -1;
-  cout << "MKL is NOT configured in Trilinos" << endl;
+  std::cout << "MKL is NOT configured in Trilinos" << endl;
 #endif
   
   Kokkos::finalize();

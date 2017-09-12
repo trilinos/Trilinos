@@ -84,32 +84,29 @@ namespace MueLuTests {
     CoalesceDropFactory_kokkos dropFact;
     fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
-    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
     auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
     auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
-    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
 
     TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
-    TEST_EQUALITY(filtering,                   false);
 
     bool bCorrectGraph = false;
     if (comm->getSize() == 1) {
       auto v0 = graph->getNeighborVertices(0);
       auto v1 = graph->getNeighborVertices(1);
       auto v2 = graph->getNeighborVertices(2);
-      if (v0.size() == 2 && ((v0(0) == 0 && v0(1) == 1) || (v0(0) == 1 && v0(1) == 0)) &&
-          v1.size() == 3 && v2.size() == 3)
+      if (v0.length == 2 && ((v0(0) == 0 && v0(1) == 1) || (v0(0) == 1 && v0(1) == 0)) &&
+          v1.length == 3 && v2.length == 3)
         bCorrectGraph = true;
     } else {
       if (comm->getRank() == 0 ) {
-        if (graph->getNeighborVertices(0).size() == 2)
+        if (graph->getNeighborVertices(0).length == 2)
           bCorrectGraph = true;
 
       } else {
-        if (graph->getNeighborVertices(0).size() == 3)
+        if (graph->getNeighborVertices(0).length == 3)
           bCorrectGraph = true;
       }
     }
@@ -153,16 +150,13 @@ namespace MueLuTests {
 
     fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
-    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
     auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
     auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
-    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
 
     TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
-    TEST_EQUALITY(filtering,                   true);
     TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == 3*comm->getSize(), true);
 
     bool bCorrectGraph = false;
@@ -170,17 +164,17 @@ namespace MueLuTests {
       auto v0 = graph->getNeighborVertices(0);
       auto v1 = graph->getNeighborVertices(1);
       auto v2 = graph->getNeighborVertices(2);
-      if (v0.size() == 1 &&   v0(0) == 0 &&
-          v1.size() == 2 && ((v1(0) == 0 && v1(1) == 1) || (v1(0) == 1 && v1(1) == 0)) &&
-          v2.size() == 2 && ((v2(0) == 1 && v2(1) == 2) || (v2(0) == 2 && v2(1) == 1)))
+      if (v0.length == 1 &&   v0(0) == 0 &&
+          v1.length == 2 && ((v1(0) == 0 && v1(1) == 1) || (v1(0) == 1 && v1(1) == 0)) &&
+          v2.length == 2 && ((v2(0) == 1 && v2(1) == 2) || (v2(0) == 2 && v2(1) == 1)))
         bCorrectGraph = true;
     } else {
       if (comm->getRank() == 0 ) {
-        if (graph->getNeighborVertices(0).size() == 1)
+        if (graph->getNeighborVertices(0).length == 1)
           bCorrectGraph = true;
 
       } else {
-        if (graph->getNeighborVertices(0).size() == 2)
+        if (graph->getNeighborVertices(0).length == 2)
           bCorrectGraph = true;
       }
     }
@@ -225,28 +219,25 @@ namespace MueLuTests {
 
     fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
-    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
     auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
     auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
-    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
 
     TEST_EQUALITY(as<int>(myDofsPerNode) == blockSize, true);
-    TEST_EQUALITY(filtering,                           false);
     TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
 
     bool bCorrectGraph = false;
-    if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
+    if (comm->getSize() == 1 && graph->getNeighborVertices(0).length == 1) {
       bCorrectGraph = true;
     } else {
       if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
-        if (graph->getNeighborVertices(0).size() == 2)
+        if (graph->getNeighborVertices(0).length == 2)
           bCorrectGraph = true;
 
       } else {
-        if (as<int>(graph->getNeighborVertices(0).size()) == blockSize)
+        if (as<int>(graph->getNeighborVertices(0).length) == blockSize)
           bCorrectGraph = true;
       }
     }
@@ -311,16 +302,13 @@ namespace MueLuTests {
 
     fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
-    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
     auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
     auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
-    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
 
     TEST_EQUALITY(as<int>(myDofsPerNode) == 3, true);
-    TEST_EQUALITY(filtering,                            true);
     TEST_EQUALITY(as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
 
     TEST_EQUALITY(graph->getNeighborVertices(0).size(), 1);
@@ -371,15 +359,12 @@ namespace MueLuTests {
 
     fineLevel.Request("Graph",       &dropFact);
     fineLevel.Request("DofsPerNode", &dropFact);
-    fineLevel.Request("Filtering",   &dropFact);
 
     dropFact.Build(fineLevel);
 
     auto graph         = fineLevel.Get<RCP<LWGraph_kokkos> >("Graph",       &dropFact);
     auto myDofsPerNode = fineLevel.Get<LO>                  ("DofsPerNode", &dropFact);
-    auto filtering     = fineLevel.Get<bool>                ("Filtering",   &dropFact);
     TEST_EQUALITY(as<int>(myDofsPerNode) == 1, true);
-    TEST_EQUALITY(filtering, false);
 
     bool bCorrectGraph = false;
     if (comm->getSize() == 1) {

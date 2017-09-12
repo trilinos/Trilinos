@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -84,15 +84,17 @@ void klvspiff(struct vtx_data **graph,     /* list of graph info for each vertex
   /* Find largest possible change. */
   maxdval = 0;
   for (i = 1; i <= nvtxs; i++) {
-    if (graph[i]->vwgt > maxdval)
+    if (graph[i]->vwgt > maxdval) {
       maxdval = graph[i]->vwgt;
-    dval      = -graph[i]->vwgt;
-    edges     = graph[i]->edges;
+    }
+    dval  = -graph[i]->vwgt;
+    edges = graph[i]->edges;
     for (j = graph[i]->nedges - 1; j; j--) {
       dval += graph[*(++edges)]->vwgt;
     }
-    if (dval > maxdval)
+    if (dval > maxdval) {
       maxdval = dval;
+    }
   }
 
   /* Allocate a bunch of space for KLV. */

@@ -438,6 +438,7 @@ struct IsSymbol<T, true> {
 template <typename T>
 struct IsSymbol<T, false> {
   static bool eval(T c) {
+    if (c >= TEUCHOS_CHARTAB_SIZE) return false;
     return 0 <= Teuchos::chartab[int(c)];
   }
 };

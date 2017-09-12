@@ -122,6 +122,11 @@ contains basic, general-purpose utilities.
 
   </ul>
 
+  By default, these classes are not thread-safe but when configured with
+  <tt>-DTeuchos_ENABLE_THREAD_SAFE=ON</tt> (or
+  <tt>-DTrilinos_ENABLE_THREAD_SAFE=ON</tt>), they become thread-safe.  (The
+  default may be switched to on in a future version.)
+
   All the Teuchos memory management classes are configured by default
   to be as efficient as possible.  When building Trilinos, you may set
   configure options to enable various run-time correctness and safety

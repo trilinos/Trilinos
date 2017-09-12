@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2014 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -13,9 +13,9 @@
  *     * Redistributions in binary form must reproduce the above
  *       copyright notice, this list of conditions and the following
  *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
+ *       with the distribution.  
  * 
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  * 
@@ -765,15 +765,17 @@ namespace SEAMS {
 
   int Scanner::LexerInput( char* buf, int max_size )
   {
-    if ( yyin->eof() || yyin->fail() )
+    if ( yyin->eof() || yyin->fail() ) {
       return 0;
+    }
 
     if (aprepro.ap_options.interactive && yyin == &std::cin &&
 	isatty(0) != 0 && isatty(1) != 0) {
       char *line = getline_int(nullptr);
 
-      if (strlen(line) == 0)
+      if (strlen(line) == 0) {
 	return 0;
+      }
 
       gl_histadd(line);
   
@@ -790,10 +792,11 @@ namespace SEAMS {
     else {
       (void) yyin->read( buf, max_size );
 
-      if ( yyin->bad() )
+      if ( yyin->bad() ) {
 	return -1;
-      else
+      } else {
 	return yyin->gcount();
+      }
     }
   }
 
@@ -808,12 +811,11 @@ namespace SEAMS {
     // our original state if parsing was cutoff prematurely.
     if(aprepro.string_interactive() && YY_START == PARSING)
       {  
-
-
-	if (switch_skip_to_endcase)
+	if (switch_skip_to_endcase) {
 	  BEGIN(END_CASE_SKIP);
-	else
+	} else {
 	  BEGIN(if_state[if_lvl]);
+	}
       }
 
 
@@ -826,19 +828,21 @@ namespace SEAMS {
     else {
       /* We are in an included or looping file */
       if (aprepro.ap_file_list.top().tmp_file) {
-        if (aprepro.ap_options.debugging)
+        if (aprepro.ap_options.debugging) {
           std::cerr << "DEBUG LOOP: Loop count = " << aprepro.ap_file_list.top().loop_count << "\n";
+	}
         if (--aprepro.ap_file_list.top().loop_count <= 0)  {
           // On Windows, you can't remove the temp file until all the references to the
           // file object have been released, so we will delete it here.
           delete yyin; yyin = nullptr;
 
           if (strcmp("_string_", aprepro.ap_file_list.top().name.c_str()) != 0) {
-            if (!aprepro.ap_options.debugging)
+            if (!aprepro.ap_options.debugging) {
               remove(aprepro.ap_file_list.top().name.c_str());	/* Delete file if temporary */
-
-            if(!aprepro.doLoopSubstitution)
+	    }
+            if(!aprepro.doLoopSubstitution) {
               yy_pop_state();
+	    }
           }
 
           aprepro.ap_file_list.pop();
@@ -858,8 +862,9 @@ namespace SEAMS {
         aprepro.ap_file_list.pop();
         yyFlexLexer::yypop_buffer_state();
 
-	if (aprepro.ap_file_list.top().name == "standard input")
+	if (aprepro.ap_file_list.top().name == "standard input") {
 	  yyin = &std::cin;
+	}
 
         /* Turn echoing back on at end of included files. */
         echo = true;
@@ -867,8 +872,9 @@ namespace SEAMS {
         // If we are not doing aprepro substitutions for the included file, but
         // just collecting lines, pop the state from VERBATIM back to what it
         // was previously.
-        if(!aprepro.doIncludeSubstitution)
+        if(!aprepro.doIncludeSubstitution) {
           yy_pop_state();
+	}
 
         /* Set immutable mode back to global immutable
 	 * state at end of included file*/
@@ -877,8 +883,9 @@ namespace SEAMS {
 
       // Reset the current character index.
       curr_index = 0;
-      if (yyin != nullptr)
+      if (yyin != nullptr) {
 	curr_index = yyin->tellg();
+      }
 
       return (0);
     }
@@ -972,8 +979,9 @@ namespace SEAMS {
 	if_state[if_lvl] = INITIAL;
 	if_case_run[if_lvl] = true;
       }
-      if (aprepro.ap_options.debugging) 
+      if (aprepro.ap_options.debugging) {
 	std::cerr << "DEBUG IF: If level " << if_lvl << " " << if_state[if_lvl] << "\n";
+      }
     }
     return(nullptr);
   }
@@ -987,8 +995,9 @@ namespace SEAMS {
       if_state[if_lvl] = INITIAL;
       if_case_run[if_lvl] = true;
     }
-    if (aprepro.ap_options.debugging) 
+    if (aprepro.ap_options.debugging) {
       std::cerr << "DEBUG IF: elseif at level " << if_lvl << " " << if_state[if_lvl] << "\n";
+    }
     return(nullptr);
   }
 
@@ -1029,14 +1038,16 @@ namespace SEAMS {
 
     if (!switch_case_run && x == switch_condition) {
       switch_case_run = true;
-      if (aprepro.ap_options.debugging) 
+      if (aprepro.ap_options.debugging) {
 	fprintf (stderr, "DEBUG SWITCH: 'case' condition = %g matches switch condition = %g at line %d\n",
 		 x, switch_condition, aprepro.ap_file_list.top().lineno);
+      }
     } 
     else {
-      if (aprepro.ap_options.debugging) 
+      if (aprepro.ap_options.debugging) {
 	fprintf (stderr, "DEBUG SWITCH: 'case' condition = %g does not match switch condition = %g (or case already matched) at line %d\n",
 		 x, switch_condition, aprepro.ap_file_list.top().lineno);
+      }
 
       // Need to skip all code until end of case
       switch_skip_to_endcase = true;

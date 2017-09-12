@@ -435,7 +435,7 @@ makeSolverManagerFromEnum (const EBelosSolverType solverType,
   // for an unreachable statement, but it will prevent a warning on
   // other compilers for a "missing return statement at end of
   // non-void function."
-  return Teuchos::null;
+  TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 }
 
 template<class SolverManagerBaseType, class SolverManagerType>

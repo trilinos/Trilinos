@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -45,13 +45,13 @@ int read_exo_weights(Problem_Description *    prob,    /* Pointer to problem inf
 
 template <typename INT>
 int read_mesh_params(const std::string &    exo_file, /* Name of ExodusII geometry file */
-                     Problem_Description *  prob,     /* Pointer to problem info structure */
+                     Problem_Description *  problem,  /* Pointer to problem info structure */
                      Mesh_Description<INT> *mesh,     /* Mesh information structure */
                      Sphere_Info *          sphere);  /* Sphere element info structure */
 
 template <typename INT>
 int read_mesh(const std::string &      exo_file, /* Name of ExodusII geometry file */
-              Problem_Description *    prob,     /* Problem information */
+              Problem_Description *    problem,  /* Problem information */
               Mesh_Description<INT> *  mesh,     /* Mesh information structure */
               Weight_Description<INT> *weight);  /* Weight specification structure */
 

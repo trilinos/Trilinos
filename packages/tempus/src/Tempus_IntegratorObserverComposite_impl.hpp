@@ -15,95 +15,72 @@
 namespace Tempus {
 
 template<class Scalar>
-IntegratorObserverComposite<Scalar>::IntegratorObserverComposite(
-  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory,
-  const Teuchos::RCP<TimeStepControl<Scalar> >& timeStepControl)
-  : solutionHistory_(solutionHistory), timeStepControl_(timeStepControl){}
+IntegratorObserverComposite<Scalar>::IntegratorObserverComposite(){}
 
 template<class Scalar>
 IntegratorObserverComposite<Scalar>::~IntegratorObserverComposite(){}
 
 template<class Scalar>
-void IntegratorObserverComposite<Scalar>::observeStartIntegrator()
+void IntegratorObserverComposite<Scalar>::
+observeStartIntegrator(const Integrator<Scalar>& integrator)
 { 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeStartIntegrator();
+  for(auto& o : observers_)
+    o->observeStartIntegrator(integrator);
 }
 
 template<class Scalar>
-void IntegratorObserverComposite<Scalar>::observeStartTimeStep()
+void IntegratorObserverComposite<Scalar>::
+observeStartTimeStep(const Integrator<Scalar>& integrator)
 {
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeStartTimeStep();
+  for(auto& o : observers_)
+    o->observeStartTimeStep(integrator);
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
-observeNextTimeStep(Status & integratorStatus)
-{ 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeNextTimeStep( integratorStatus);
-}
-
-template<class Scalar>
-void IntegratorObserverComposite<Scalar>::observeBeforeTakeStep()
-{ 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeBeforeTakeStep();
-}
-
-template<class Scalar>
-void IntegratorObserverComposite<Scalar>::observeAfterTakeStep()
-{ 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeAfterTakeStep();
+observeNextTimeStep(const Integrator<Scalar>& integrator)
+{
+  for(auto& o : observers_)
+    o->observeNextTimeStep(integrator);
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
-observeAcceptedTimeStep(Status & integratorStatus)
-{ 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeAcceptedTimeStep( integratorStatus);
+observeBeforeTakeStep(const Integrator<Scalar>& integrator)
+{
+  for(auto& o : observers_)
+    o->observeBeforeTakeStep(integrator);
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
-observeEndIntegrator(const Status integratorStatus)
-{ 
-    using Teuchos::as;
-
-    for( int i = 0; i < as<int>(observers_.size()); i++)
-        observers_[i]->observeEndIntegrator( integratorStatus);
+observeAfterTakeStep(const Integrator<Scalar>& integrator)
+{
+  for(auto& o : observers_)
+    o->observeAfterTakeStep(integrator);
 }
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
-setSolutionHistory(Teuchos::RCP<SolutionHistory<Scalar> > sh)
-{ solutionHistory_ = sh; return; }
+observeAcceptedTimeStep(const Integrator<Scalar>& integrator)
+{
+  for(auto& o : observers_)
+    o->observeAcceptedTimeStep(integrator);
+}
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
-setTimeStepControl(Teuchos::RCP<TimeStepControl<Scalar> > tsc)
-{ timeStepControl_ = tsc; return; }
+observeEndIntegrator(const Integrator<Scalar>& integrator)
+{
+  for(auto& o : observers_)  
+    o->observeEndIntegrator(integrator);
+}
 
 template<class Scalar>
 void IntegratorObserverComposite<Scalar>::
 addObserver(const Teuchos::RCP<IntegratorObserver<Scalar> > &observer)
 {
-    observers_.push_back(observer);
+  observers_.push_back(observer);
 }
 
 } // namespace Tempus

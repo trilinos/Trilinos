@@ -30,6 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+#ifndef STK_ELEM_H_
+#define STK_ELEM_H_
 
 #include <limits>
 #include <memory>
@@ -168,3 +170,6 @@ private :
 
 } // namespace transfer
 } // namespace stk
+
+#endif
+

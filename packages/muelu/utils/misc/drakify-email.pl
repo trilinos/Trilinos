@@ -46,7 +46,7 @@ sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 # my $trimmed = trim $trimTest;
 # print "Trimmed string: \"$trimmed\"\n";
 
-my @entries, my @entriesNightly, my @entriesExperimental;
+my @entries, my @entriesNightly, my @entriesExperimental, my@entriesSpecialized;
 my $gitFailure = "";
 
 my %testType;
@@ -71,6 +71,10 @@ for ($i=0; $i<$numLines; $i++)
     elsif ($line =~ /\++ Experimental \++/)
     {
       $testType = "Experimental";
+    }
+    elsif ($line =~ /\++ Specialized \++/)
+    {
+      $testType = "Specialized";
     }
     
     if ($line =~ /(.*)\s+\.\.\. [pF]/)
@@ -181,6 +185,10 @@ for ($i=0; $i<$numLines; $i++)
     {
       push @entriesExperimental, $entry;
     }
+    elsif ($testType{$name} eq "Specialized")
+    {
+      push @entriesSpecialized, $entry;
+    }
   }
 }
 
@@ -188,11 +196,13 @@ for ($i=0; $i<$numLines; $i++)
 
 my $theDate = $ARGV[0];
 my $cdashDate = $ARGV[1];
+my $cdashMachine = $ARGV[2];
+my $senderName = $ARGV[3];
 $theDate =~ s/_/ /g;
 
 print <<EOF;
-From: jhu\@sandia.gov
-Subject: geminga test summary, $theDate
+From: $senderName\@sandia.gov
+Subject: $cdashMachine test summary, $theDate
 Mime-Version: 1.0
 Content-Type: text/html
 
@@ -316,7 +326,7 @@ Content-Type: text/html
   <body>
 
 Go to the <a
-href="http://testing.sandia.gov/cdash/index.php?project=Trilinos&subproject=MueLu&filtercount=1&showfilters=1&field1=site&compare1=63&value1=geminga&date=$cdashDate">full report</a>
+href="http://testing.sandia.gov/cdash/index.php?project=Trilinos&subproject=MueLu&filtercount=1&showfilters=1&field1=site&compare1=63&value1=$cdashMachine&date=$cdashDate">full report</a>
 <br>
 
 
@@ -339,7 +349,7 @@ sub printTableHeader
 <tr class="grptr">
 <th>Test</th>
 <th class="grpth">pass</th>
-<th class="midth">fail</th>
+<th class="midth">fail/notrun</th>
 <th class="midth">errors</th>
 <th class="midth">warnings</th>
 <th class="grpth">errors</th>
@@ -430,6 +440,11 @@ EOE
 print "<h3>Nightly Tests</h3>\n";
 printTableHeader;
 printEntries(\@entriesNightly);
+printTableFooter;
+
+print "<h3>Specialized Tests</h3>\n";
+printTableHeader;
+printEntries(\@entriesSpecialized);
 printTableFooter;
 
 print "<h3>Experimental Tests</h3>\n";

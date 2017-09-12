@@ -10,17 +10,53 @@ SET(TRILINOS_INCDIR ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DI
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/impl)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(HEADERS ${DIR}/generated_specializations_hpp/*.hpp)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/impl/tpls)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+
+#Include BLAS
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/blas)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/blas/impl)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+
+#Include Sparse
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/sparse)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/sparse/impl)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+
+#Include graph
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/graph)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/graph/impl)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+
+#Include batched
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/batched)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/batched/impl)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+
+#Include Common
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/common)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/impl)
 
 IF (KokkosKernels_INST_EXECSPACE_SERIAL)
   IF (KokkosKernels_INST_DOUBLE)
-    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*specialization_double_*_Serial_*.cpp)
+    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*inst_double_*_Serial_*.cpp)
   ENDIF()
   IF (KokkosKernels_INST_FLOAT)
-    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*specialization_float_*_Serial_*.cpp)
+    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*inst_float_*_Serial_*.cpp)
   ENDIF()
   IF (KokkosKernels_INST_COMPLEX_DOUBLE)
     APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*_complex_double_*_Serial_*.cpp)
@@ -30,27 +66,27 @@ IF (KokkosKernels_INST_EXECSPACE_SERIAL)
   ENDIF()
 ENDIF()
 
-IF (KokkosKernels_INST_EXECSPACE_PTHREAD)
+IF (KokkosKernels_INST_EXECSPACE_THREADS)
   IF (KokkosKernels_INST_DOUBLE)
-    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*specialization_double_*_Pthread_*.cpp)
+    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*inst_double_*_Threads_*.cpp)
   ENDIF()
   IF (KokkosKernels_INST_FLOAT)
-    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*specialization_float_*_Pthread_*.cpp)
+    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*inst_float_*_Threads_*.cpp)
   ENDIF()
   IF (KokkosKernels_INST_COMPLEX_DOUBLE)
-    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*_complex_double_*_Pthread_*.cpp)
+    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*_complex_double_*_Threads_*.cpp)
   ENDIF()
   IF (KokkosKernels_INST_COMPLEX_FLOAT)
-    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*_complex_float_*_Pthread_*.cpp)
+    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*_complex_float_*_Threads_*.cpp)
   ENDIF()
 ENDIF()
 
 IF (KokkosKernels_INST_EXECSPACE_OPENMP)
   IF (KokkosKernels_INST_DOUBLE)
-    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*specialization_double_*_OpenMP_*.cpp)
+    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*inst_double_*_OpenMP_*.cpp)
   ENDIF()
   IF (KokkosKernels_INST_FLOAT)
-    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*specialization_float_*_OpenMP_*.cpp)
+    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*inst_float_*_OpenMP_*.cpp)
   ENDIF()
   IF (KokkosKernels_INST_COMPLEX_DOUBLE)
     APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*_complex_double_*_OpenMP_*.cpp)
@@ -62,10 +98,10 @@ ENDIF()
 
 IF (KokkosKernels_INST_EXECSPACE_CUDA)
   IF (KokkosKernels_INST_DOUBLE)
-    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*specialization_double_*_Cuda_*.cpp)
+    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*inst_double_*_Cuda_*.cpp)
   ENDIF()
   IF (KokkosKernels_INST_FLOAT)
-    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*specialization_float_*_Cuda_*.cpp)
+    APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*inst_float_*_Cuda_*.cpp)
   ENDIF()
   IF (KokkosKernels_INST_COMPLEX_DOUBLE)
     APPEND_GLOB(SOURCES ${DIR}/generated_specializations_cpp/*/*_complex_double_*_Cuda_*.cpp)
@@ -76,21 +112,9 @@ IF (KokkosKernels_INST_EXECSPACE_CUDA)
 ENDIF()
 
 LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h)
-LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_ETIHelperMacros.h)
+#LIST(APPEND HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_ETIHelperMacros.h)
 
 #-----------------------------------------------------------------------------
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stage/graph)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stage/graph/impl)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
-
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stage/graph/utils)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
 TRIBITS_ADD_LIBRARY(
   kokkoskernels

@@ -601,6 +601,15 @@
       <visible>false</visible>
     </parameter>
 
+    <parameter>
+      <name>synchronize factory timers</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Add barriers before and after Factory Build() calls.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
   </misc>
 
   <multigrid>
@@ -875,11 +884,21 @@
       <name>repartition: min rows per proc</name>
       <type>int</type>
       <default>800</default>
-      <description>Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.</description>
+      <description>Minimum number of rows per MPI process. If the actual number if smaller, then rebalancing occurs.</description>
       <name-ML>repartition: min per proc</name-ML>
       <default-ML>512</default-ML>
       <compatibility-ML>MLParameterListInterpreter</compatibility-ML>
-      <description-ML>Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.</description-ML>
+      <description-ML>Minimum number of rows per MPI process. If the actual number if smaller, then rebalancing occurs.</description-ML>
+    </parameter>
+
+    <parameter>
+      <name>repartition: target rows per proc</name>
+      <type>int</type>
+      <!-- We want to be backwards compatible at the moment. If the value is
+           0, we set it to the value of `min rows per proc` in the code. -->
+      <default>0</default>
+      <description>Target number of rows per MPI process after rebalancing. If the value is set to 0, it will use the value of "repartition: min rows per proc"</description>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
     <parameter>
@@ -945,6 +964,24 @@
       <type>bool</type>
       <default>false</default>
       <description>Set zero diagonals on coarse grids to one.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: shift</name>
+      <type>double</type>
+      <default>0.0</default>
+      <description>Shift to use in the RAPShiftFactory</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>rap: algorithm</name>
+      <type>string</type>
+      <default>galerkin</default>
+      <description>Whether to use the Galerkin RAP or the Shift version</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
     </parameter>

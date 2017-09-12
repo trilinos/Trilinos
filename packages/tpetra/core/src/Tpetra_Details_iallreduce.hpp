@@ -82,6 +82,10 @@ namespace Details {
 
 /// \brief Base class for the request (more or less a future)
 ///   representing a pending nonblocking MPI operation.
+///
+/// We recommend using <tt>auto</tt> to interact with this class.  For
+/// example, use <tt>auto</tt> for the type of the return value of
+/// iallreduce() (see below).
 class CommRequest {
 public:
   //! Destructor (virtual for memory safety of derived classes).

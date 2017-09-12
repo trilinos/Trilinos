@@ -51,6 +51,7 @@
 #include "Tpetra_Details_PackTriples.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
 #include <initializer_list>
@@ -1194,13 +1195,16 @@ protected:
     }
   }
 
+  //! Kokkos::Device specialization for DistObject communication buffers.
+  typedef typename ::Tpetra::DistObject<char, LO, GO, NT>::buffer_device_type buffer_device_type;
+
   /// \brief While we do use the "new" Kokkos::DualView - based
   ///   interface, we don't currently use device Views.
   virtual void
   packAndPrepareNew (const ::Tpetra::SrcDistObject& sourceObject,
                      const ::Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                     ::Kokkos::DualView<packet_type*, device_type>& exports,
-                     const ::Kokkos::DualView<size_t*, device_type>& numPacketsPerLID,
+                     ::Kokkos::DualView<packet_type*, buffer_device_type>& exports,
+                     const ::Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                      size_t& constantNumPackets,
                      ::Tpetra::Distributor& /* distor */)
   {
@@ -1208,7 +1212,6 @@ protected:
     using ::Teuchos::RCP;
     using std::endl;
     typedef CooMatrix<SC, LO, GO, NT> this_type;
-    typedef ::Kokkos::DualView<packet_type*, device_type> out_buf_dv_type;
     const char prefix[] = "Tpetra::Details::CooMatrix::packAndPrepareNew: ";
     const char suffix[] = "  This should never happen.  "
       "Please report this bug to the Tpetra developers.";
@@ -1239,11 +1242,10 @@ protected:
     // numPacketsPerLID with zeros.
     if (* (this->localError_)) {
       // Resize 'exports' to zero, so we won't be tempted to read it.
-      exports = out_buf_dv_type ("CooMatrix exports", 0);
+      Details::reallocDualViewIfNeeded (exports, 0, "CooMatrix exports");
       // Trick to get around const DualView& being const.
       {
-        using ::Kokkos::DualView;
-        DualView<size_t*, device_type> numPacketsPerLID_tmp = numPacketsPerLID;
+        auto numPacketsPerLID_tmp = numPacketsPerLID;
         numPacketsPerLID_tmp.template sync<Kokkos::HostSpace> ();
         numPacketsPerLID_tmp.template modify<Kokkos::HostSpace> ();
       }
@@ -1256,7 +1258,7 @@ protected:
 
     const size_t numExports = exportLIDs.dimension_0 ();
     if (numExports == 0) {
-      exports = out_buf_dv_type (exports.h_view.label (), 0);
+      Details::reallocDualViewIfNeeded (exports, 0, exports.h_view.label ());
       return; // nothing to send
     }
     RCP<const Comm<int> > comm = src->getMap ().is_null () ?
@@ -1278,8 +1280,7 @@ protected:
 
     // Trick to get around const DualView& being const.
     {
-      using ::Kokkos::DualView;
-      DualView<size_t*, device_type> numPacketsPerLID_tmp = numPacketsPerLID;
+      auto numPacketsPerLID_tmp = numPacketsPerLID;
       numPacketsPerLID_tmp.template sync<Kokkos::HostSpace> ();
       numPacketsPerLID_tmp.template modify<Kokkos::HostSpace> ();
     }
@@ -1366,9 +1367,13 @@ protected:
       return;
     }
 
-    if (static_cast<int> (exports.dimension_0 ()) != totalNumPackets) {
-      exports = out_buf_dv_type ("CooMatrix exports", totalNumPackets);
-      exports.template sync<Kokkos::HostSpace> (); // make sure alloc'd on host
+    {
+      const bool reallocated =
+        Details::reallocDualViewIfNeeded (exports, totalNumPackets,
+                                          "CooMatrix exports");
+      if (reallocated) {
+        exports.template sync<Kokkos::HostSpace> (); // make sure alloc'd on host
+      }
     }
     exports.template modify<Kokkos::HostSpace> ();
 
@@ -1398,19 +1403,25 @@ protected:
   ///   interface, we don't currently use device Views.
   virtual void
   unpackAndCombineNew (const ::Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
-                       const ::Kokkos::DualView<const packet_type*, device_type>& imports,
-                       const ::Kokkos::DualView<const size_t*, device_type>& numPacketsPerLID,
+                       const ::Kokkos::DualView<const packet_type*, buffer_device_type>& imports,
+                       const ::Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
                        const size_t /* constantNumPackets */, // we don't actually use this; we assume this is 0
                        ::Tpetra::Distributor& /* distor */,
                        const ::Tpetra::CombineMode /* CM */)
   {
-    using ::Kokkos::DualView;
     using ::Teuchos::Comm;
     using ::Teuchos::RCP;
     using std::endl;
-    //typedef ::Kokkos::DualView<const packet_type*, device_type> in_buf_dv_type;
-    typedef typename device_type::memory_space DMS;
-    typedef ::Kokkos::HostSpace HMS;
+
+    // (MPI) communication buffers may have different memory spaces
+    // then device_type Views.  See #1088.  "CDMS" stands for
+    // "communication device memory space" and "CHMS" for
+    // "communication host memory space."
+    typedef typename Kokkos::DualView<const size_t*, buffer_device_type>::t_dev::memory_space CDMS;
+    typedef typename Kokkos::DualView<const size_t*, buffer_device_type>::t_host::memory_space CHMS;
+    typedef typename Kokkos::DualView<const LO*, device_type>::t_dev::memory_space DMS;
+    typedef typename Kokkos::DualView<const LO*, device_type>::t_host::memory_space HMS;
+
     const char prefix[] = "Tpetra::Details::CooMatrix::unpackAndCombineNew: ";
     const char suffix[] = "  This should never happen.  "
       "Please report this bug to the Tpetra developers.";
@@ -1421,7 +1432,7 @@ protected:
     }
     else if (imports.dimension_0 () == 0) {
       std::ostream& err = this->markLocalErrorAndGetStream ();
-      typename DualView<const LO*, device_type>::t_host importLIDs_h;
+      typename Kokkos::DualView<const LO*, device_type>::t_host importLIDs_h;
       {
         if (importLIDs.template need_sync<HMS> ()) {
           // Device version of the DualView is the most recently updated.
@@ -1482,9 +1493,9 @@ protected:
     // It's forbidden to sync a DualView<const T>, so if the input
     // DualView are not in sync on host, we must make copies.
 
-    typename std::decay<decltype (importLIDs)>::type::t_host importLIDs_h;
-    typename std::decay<decltype (imports)>::type::t_host imports_h;
-    typename std::decay<decltype (numPacketsPerLID)>::type::t_host numPacketsPerLID_h;
+    typename Kokkos::DualView<const LO*, device_type>::t_host importLIDs_h;
+    typename Kokkos::DualView<const packet_type*, buffer_device_type>::t_host imports_h;
+    typename Kokkos::DualView<const size_t*, buffer_device_type>::t_host numPacketsPerLID_h;
     {
       if (importLIDs.template need_sync<HMS> ()) {
         // Device version of the DualView is the most recently updated.
@@ -1499,9 +1510,9 @@ protected:
         importLIDs_h = importLIDs.h_view; // importLIDs.template view<HMS> ();
       }
 
-      if (imports.template need_sync<HMS> ()) {
+      if (imports.template need_sync<CHMS> ()) {
         // Device version of the DualView is the most recently updated.
-        auto imports_d = imports.template view<DMS> ();
+        auto imports_d = imports.template view<CDMS> ();
         typedef typename decltype (imports_h)::non_const_type HVNC;
         HVNC imports_h_nc (imports_d.label (),
                            imports.dimension_0 ());
@@ -1512,9 +1523,9 @@ protected:
         imports_h = imports.h_view; // imports.template view<HMS> ();
       }
 
-      if (numPacketsPerLID.template need_sync<HMS> ()) {
+      if (numPacketsPerLID.template need_sync<CHMS> ()) {
         // Device version of the DualView is the most recently updated.
-        auto numPacketsPerLID_d = numPacketsPerLID.template view<DMS> ();
+        auto numPacketsPerLID_d = numPacketsPerLID.template view<CDMS> ();
         typedef typename decltype (numPacketsPerLID_h)::non_const_type HVNC;
         HVNC numPacketsPerLID_h_nc (numPacketsPerLID_d.label (),
                                     numPacketsPerLID.dimension_0 ());

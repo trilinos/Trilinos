@@ -726,13 +726,15 @@ public:
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Cast to TpetraCrsMatrix failed. Guess, matrix should be Epetra then, but no Epetra available.");
 #endif
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 #endif // endif HAVE_XPETRA_TPETRA
 
-#ifdef HAVE_XPETRA_EPETRA
+//4-Aug-2017 JJH Added 2nd condition to avoid "warning: dynamic initialization in unreachable code"
+//               If HAVE_XPETRA_TPETRA is defined, then this method will always return or throw in the if-then-else above.
+#if defined(HAVE_XPETRA_EPETRA) && !defined(HAVE_XPETRA_TPETRA)
     TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Epetra needs SC=double, LO=int, and GO=int or GO=long long");
-    return Teuchos::null;
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 #endif // endif HAVE_XPETRA_EPETRA
   }
 
@@ -959,8 +961,7 @@ public:
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xpMultVec));
       return xpMultVec;
     } // end standard case
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::MultiVector to Xpetra::MultiVector.");
-    return Teuchos::null;
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 
   // non-const version
@@ -1587,7 +1588,7 @@ public:
 #endif
     } // end standard case (no product map)
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::VectorSpace to Xpetra::Map.");
-    return Teuchos::null;
+    // return Teuchos::null; // unreachable
   }
 
   // const version
@@ -1681,7 +1682,7 @@ public:
 #endif
     } // end standard case
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error, "Cannot transform Thyra::MultiVector to Xpetra::MultiVector.");
-    return Teuchos::null;
+    // return Teuchos::null; // unreachable
   }
 
   // non-const version

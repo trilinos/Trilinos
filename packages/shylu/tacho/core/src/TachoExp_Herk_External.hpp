@@ -5,7 +5,8 @@
 /// \file  Tacho_Herk_External.hpp
 /// \brief BLAS hermitian rank-k update
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
-#include "Teuchos_BLAS.hpp"
+
+#include "TachoExp_Blas_External.hpp"
 
 namespace Tacho {
 
@@ -42,15 +43,13 @@ namespace Tacho {
         if (n > 0 && k > 0) {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-            Teuchos::BLAS<ordinal_type,value_type> blas;
-            
-            blas.HERK(ArgUplo::teuchos_param,
-                      ArgTrans::teuchos_param,
-                      n, k,
-                      alpha,
-                      A.data(), A.stride_1(),
-                      beta,
-                      C.data(), C.stride_1());
+            Blas<value_type>::herk(ArgUplo::param,
+                                   ArgTrans::param,
+                                   n, k,
+                                   value_type(alpha),
+                                   A.data(), A.stride_1(),
+                                   value_type(beta),
+                                   C.data(), C.stride_1());
 #else
             TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
 #endif

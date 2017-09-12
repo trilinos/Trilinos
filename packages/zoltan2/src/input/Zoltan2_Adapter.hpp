@@ -105,6 +105,7 @@ public:
   typedef typename InputTraits<User>::gno_t gno_t;
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::part_t part_t;  
+  typedef typename InputTraits<User>::offset_t offset_t;
 
   /*! \brief Returns the type of adapter.
    */

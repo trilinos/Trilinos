@@ -420,40 +420,36 @@ namespace Intrepid2 {
          }
          
         // Check mathematical correctness
-        DynRankViewHost ConstructWithLabel(normals, numFields,spaceDim); // normals at each point basis point
-        normals(0,0)  =  0.0; normals(0,1)  = -2.0;
-        normals(1,0)  =  2.0; normals(1,1)  =  0.0;
-        normals(2,0)  =  0.0; normals(2,1)  =  2.0;
-        normals(3,0)  = -2.0; normals(3,1)  =  0.0;
-
         DynRankView ConstructWithLabel(cvals_dev, numFields,spaceDim);
+        DynRankView ConstructWithLabel(dofCoeffs_dev, numFields, spaceDim);
         DynRankView ConstructWithLabel(bvals_dev, numFields, numFields, spaceDim); // last dimension is spatial dim
 
         quadBasis.getDofCoords(cvals_dev);
+        quadBasis.getDofCoeffs(dofCoeffs_dev);
         quadBasis.getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
 
         const auto bvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev);
         Kokkos::deep_copy(bvals, bvals_dev);
+        const auto dofCoeffs = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), dofCoeffs_dev);
+        Kokkos::deep_copy(dofCoeffs, dofCoeffs_dev);
         const auto cvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals_dev);
         Kokkos::deep_copy(cvals, cvals_dev);
 
-        ValueType expected_normal;
-        for (ordinal_type i=0;i<numFields;++i) {
+        for (ordinal_type i=0;i<numFields;++i)
           for (ordinal_type j=0;j<numFields;++j) {
 
-            ValueType normal = 0.0;
-            for (ordinal_type d=0;d<spaceDim;++d)
-               normal += bvals(i,j,d)*normals(j,d);
+            ValueType dofValue = 0.0;
+            for(ordinal_type d=0;d<spaceDim;++d)
+              dofValue += bvals(i,j,d)*dofCoeffs(j,d);
 
-            expected_normal = (i == j);
-            if (std::abs(normal - expected_normal) > tol) {
+            const ValueType expected_dofValue = (i == j);
+            if (std::abs(dofValue - expected_dofValue) > tol) {
               errorFlag++;
               std::stringstream ss;
-              ss << "\nNormal component of basis function " << i << " at (" << cvals(j,0) << ", " << cvals(j,1)<< ") is " << normal << " but should be " << expected_normal << "\n";
+              ss << "\nValue of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1) << ") is " << dofValue << " but should be " << expected_dofValue << "\n";
               *outStream << ss.str();
             }
           }
-        }
       } catch (std::logic_error err) { 
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;

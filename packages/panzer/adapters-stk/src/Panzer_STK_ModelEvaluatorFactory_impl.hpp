@@ -395,7 +395,7 @@ namespace panzer_stk {
 
     mesh->print(fout);
     if(p.sublist("Output").get<bool>("Write to Exodus"))
-      mesh->setupTransientExodusFile(p.sublist("Output").get<std::string>("File Name"));
+      mesh->setupExodusFile(p.sublist("Output").get<std::string>("File Name"));
 
     // build a workset factory that depends on STK
     ////////////////////////////////////////////////////////////////////////////////////////

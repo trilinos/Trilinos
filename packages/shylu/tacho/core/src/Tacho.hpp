@@ -42,6 +42,12 @@
 #include "TachoExp_Gemm_External.hpp"
 #include "TachoExp_Gemm_ByBlocks.hpp"
 
+#include "TachoExp_Trsv.hpp"
+#include "TachoExp_Trsv_External.hpp"
+
+#include "TachoExp_Gemv.hpp"
+#include "TachoExp_Gemv_External.hpp"
+
 #include "TachoExp_CholSupernodes.hpp"
 #include "TachoExp_CholSupernodes_Serial.hpp"
 
@@ -53,13 +59,9 @@
 
 #include "TachoExp_NumericTools.hpp"
 
+// Do not include this. 
+// In a gcc (4.9.x), this causes some multiple definition link error with gcc headers.
+// No idea yet why it happens as the code is guarded by Tacho::Experimental namespace.
+//#include "TachoExp_CommandLineParser.hpp" 
+
 #endif
-
-
-
-
-
-
-
-
-

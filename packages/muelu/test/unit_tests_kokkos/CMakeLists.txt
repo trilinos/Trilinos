@@ -52,7 +52,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
 
     TRIBITS_ADD_TEST(
       UnitTests_kokkos
-      NAME "UnitTestsEpetra"
+      NAME "UnitTestsEpetra_kokkos"
       ARGS "--linAlgebra=Epetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 1
@@ -61,7 +61,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
 
     TRIBITS_ADD_TEST(
       UnitTests_kokkos
-      NAME "UnitTestsEpetra"
+      NAME "UnitTestsEpetra_kokkos"
       ARGS "--linAlgebra=Epetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4
@@ -74,7 +74,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
 
     TRIBITS_ADD_TEST(
       UnitTests_kokkos
-      NAME "UnitTestsTpetra"
+      NAME "UnitTestsTpetra_kokkos"
       ARGS "--linAlgebra=Tpetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 1
@@ -83,7 +83,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri) #TMP
 
     TRIBITS_ADD_TEST(
       UnitTests_kokkos
-      NAME "UnitTestsTpetra"
+      NAME "UnitTestsTpetra_kokkos"
       ARGS "--linAlgebra=Tpetra"
       PASS_REGULAR_EXPRESSION "End Result: TEST PASSED"
       NUM_MPI_PROCS 4

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -52,30 +52,38 @@ int affirm(char *prompt)
   while (!done) {
     reply = getchar();
     /* while (reply == ' ' || reply== '\n') reply= getchar(); */
-    while (isspace(reply))
+    while (isspace(reply)) {
       reply = getchar();
+    }
 
-    if (reply == 'y' || reply == 'Y')
+    if (reply == 'y' || reply == 'Y') {
       done = 1;
-    else if (reply == 'n' || reply == 'N')
+    }
+    else if (reply == 'n' || reply == 'N') {
       done = 2;
-    else if (reply == 'q' || reply == 'Q')
+    }
+    else if (reply == 'q' || reply == 'Q') {
       done = 3;
-    else if (reply == 'x' || reply == 'X')
+    }
+    else if (reply == 'x' || reply == 'X') {
       done = 3;
-
+    }
     else {
       printf("Valid responses begin with: y Y n N q Q x X\n");
-      if (prompt != NULL)
+      if (prompt != NULL) {
         printf("%s? ", prompt);
+      }
       /* Flush rest of input line. */
-      while (reply != '\n')
+      while (reply != '\n') {
         reply = getchar();
+      }
     }
   }
-  if (done > 2)
+  if (done > 2) {
     bail(NULL, 0);
-  else if (done == 2)
+  }
+  else if (done == 2) {
     return (FALSE);
+  }
   return (TRUE);
 }

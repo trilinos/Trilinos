@@ -119,6 +119,42 @@ PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
 
 }
 
+PyramidFixture::PyramidFixture(   stk::ParallelMachine pm
+              , size_t nx
+              , size_t ny
+              , size_t nz
+              , std::string coordinate_name
+              , stk::mesh::BulkData::AutomaticAuraOption autoAuraOption
+              , ConnectivityMap const* connectivity_map
+            )
+  : m_spatial_dimension(3),
+    m_nx(2*nx),
+    m_ny(2*ny),
+    m_nz(2*nz),
+    m_meta_p( new MetaData(m_spatial_dimension) ),
+    m_bulk_p(  new BulkData(*m_meta_p
+                , pm
+                , autoAuraOption
+#ifdef SIERRA_MIGRATION
+                , false
+#endif
+                , connectivity_map)
+               ),
+    m_meta(*m_meta_p),
+    m_bulk_data(*m_bulk_p),
+    m_elem_parts( 1, &m_meta.declare_part_with_topology("pyramid_part", stk::topology::PYRAMID_5) ),
+    m_node_parts( 1, &m_meta.declare_part_with_topology("node_part", stk::topology::NODE) ),
+    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, coordinate_name) )
+{
+
+  //put coord-field on all nodes:
+  put_field(
+    m_coord_field,
+    m_meta.universal_part(),
+    m_spatial_dimension);
+
+}
+
 PyramidFixture::~PyramidFixture()
 {
   if( owns_mesh ) {

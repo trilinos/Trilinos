@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -41,12 +41,12 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
 #include <algorithm>
+#include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <stddef.h>
-#include <stdlib.h>
 #include <string>
 #include <sys/times.h>
 #include <unistd.h>
@@ -148,14 +148,15 @@ int main(int argc, char *argv[])
 #else
     int64_t mem = Ioss::Utils::get_memory_info();
     int64_t hwm = Ioss::Utils::get_hwm_memory_info();
-    if (rank == 0)
+    if (rank == 0) {
       std::cerr << "\n\tCurrent Memory:    " << mem / MiB << "M\n"
                 << "\n\tHigh Water Memory: " << hwm / MiB << "M\n";
+    }
 #endif
   }
-  if (rank == 0)
+  if (rank == 0) {
     std::cerr << "\n" << codename << " execution successful.\n";
-
+  }
 #ifdef SEACAS_HAVE_KOKKOS
   Kokkos::finalize();
 #endif
@@ -207,9 +208,10 @@ namespace {
       if (!interface.groupName.empty()) {
         bool success = dbi->open_group(interface.groupName);
         if (!success) {
-          if (rank == 0)
+          if (rank == 0) {
             std::cerr << "ERROR: Unable to open group '" << interface.groupName << "' in file '"
                       << inpfile << "\n";
+          }
           return;
         }
       }
@@ -287,7 +289,7 @@ namespace {
         }
       }
 
-      Ioss::MeshCopyOptions options;
+      Ioss::MeshCopyOptions options{};
       options.memory_statistics = interface.memory_statistics;
       options.debug             = interface.debug;
       options.verbose           = true;
@@ -361,7 +363,7 @@ namespace {
     }
 
     if (interface.memory_statistics) {
-      properties.add(Ioss::Property("DECOMP_SHOW_PROGRESS", true));
+      properties.add(Ioss::Property("DECOMP_SHOW_PROGRESS", 1));
     }
 
     if (!interface.decomp_method.empty()) {

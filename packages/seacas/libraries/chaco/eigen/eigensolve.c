@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -163,8 +163,9 @@ void eigensolve(struct vtx_data **graph,        /* graph data structure */
 
     twptr    = term_wgts[1];
     term_tot = 0;
-    for (i = 1; i <= nvtxs; i++)
+    for (i = 1; i <= nvtxs; i++) {
       term_tot += twptr[i];
+    }
     term_tot /= (w1 + w2);
     if (using_vwgts) {
       for (i = 1; i <= nvtxs; i++) {
@@ -188,8 +189,9 @@ void eigensolve(struct vtx_data **graph,        /* graph data structure */
     }
 
     sfree(g);
-    if (active != NULL)
+    if (active != NULL) {
       sfree(active);
+    }
     active = NULL;
 
     if (normal) {
@@ -338,13 +340,16 @@ void eigensolve(struct vtx_data **graph,        /* graph data structure */
   }
 
   /* Auto-reset (if necessary) some parameters for the eigen calculation */
-  if (autoset_maxitns)
+  if (autoset_maxitns) {
     LANCZOS_MAXITNS = prev_maxitns;
-  if (autoset_srestol)
+  }
+  if (autoset_srestol) {
     SRESTOL = prev_srestol;
+  }
 
-  if (active != NULL)
+  if (active != NULL) {
     sfree(active);
+  }
 
   if (DEBUG_TRACE > 1) {
     printf("<Leaving eigensolve>\n");

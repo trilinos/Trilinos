@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -77,11 +77,12 @@ namespace Ifpack2 {
     ///   enum may disappear or change name, or the values may change
     ///   names or values or disappear, at any time.
     enum RelaxationType {
-      JACOBI, //!< Jacobi
-      GS,     //!< Gauss-Seidel
-      SGS,    //!< Symmetric Gauss-Seidel
-      MTGS,   //!< Multicore Gauss-Seidel
-      MTSGS   //!< Multicore Symmetric Gauss-Seidel
+      JACOBI,  //!< Jacobi
+      GS,      //!< Gauss-Seidel
+      SGS,     //!< Symmetric Gauss-Seidel
+      MTGS,    //!< Multicore Gauss-Seidel
+      MTSGS,   //!< Multicore Symmetric Gauss-Seidel
+      MTSPLITJACOBI //!< Multicore split Jacobi; "split" refers to splitting A = D + R
     };
   } // namespace Details
 

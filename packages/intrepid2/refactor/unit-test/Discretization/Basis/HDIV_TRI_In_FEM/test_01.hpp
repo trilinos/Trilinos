@@ -96,20 +96,21 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
-  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+//  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+//  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
   *outStream
+  <<"\n"
   << "===============================================================================\n"
   << "|                                                                             |\n"
-  << "|                 Unit Test HDIV_TRI_In_FEM                                |\n"
+  << "|                 Unit Test HDIV_TRI_In_FEM                                   |\n"
   << "|                                                                             |\n"
   << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
   << "|                      Robert Kirby  (robert.c.kirby@ttu.edu),                |\n"
   << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
   << "|                      Kara Peterson (kjpeter@sandia.gov),                    |\n"
   << "|                      Kyungjoo Kim  (kyukim@sandia.gov),                     |\n"
-  << "|                      Mauro Perego  (mperego@sandia.gov).                     |\n"
+  << "|                      Mauro Perego  (mperego@sandia.gov).                    |\n"
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
@@ -135,38 +136,86 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
     *outStream
     << "\n"
     << "===============================================================================\n"
-    << "| TEST 1: Testing OPERATOR_VALUE (Kronecker property)                         |\n"
+    << "| TEST 1: Testing OPERATOR_VALUE (Kronecker property using getDofCoeffs)      |\n"
     << "===============================================================================\n";
 
 
     const ordinal_type order = std::min(4, maxOrder);
     TriBasisType triBasis(order, POINTTYPE_EQUISPACED);
 
-    shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
-    const ordinal_type polydim = triBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, polydim , dim);
+    const ordinal_type cardinality = triBasis.getCardinality();
+    DynRankView ConstructWithLabel(dofCoords, cardinality , dim);
     triBasis.getDofCoords(dofCoords);
 
-    DynRankView ConstructWithLabel(basisAtDofCoords, polydim , polydim, dim);
+    DynRankView ConstructWithLabel(dofCoeffs, cardinality , dim);
+    triBasis.getDofCoeffs(dofCoeffs);
+
+    DynRankView ConstructWithLabel(basisAtDofCoords, cardinality , cardinality, dim);
     triBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
     Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
 
-    // Dimensions for the output arrays:
-    const ordinal_type numFields = triBasis.getCardinality();
+    auto h_dofCoeffs = Kokkos::create_mirror_view(dofCoeffs);
+    Kokkos::deep_copy(h_dofCoeffs, dofCoeffs);
+
+    // test for Kronecker property
+    for (int i=0;i<cardinality;i++) {
+      for (int j=0;j<cardinality;j++) {
+        outputValueType dofValue = 0;
+        for (ordinal_type k=0;k<dim; k++)
+          dofValue += h_basisAtDofCoords(i,j,k)*h_dofCoeffs(j,k);
+
+        if ( i==j && std::abs( dofValue - 1.0 ) > tol ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not have unit value at its node (" << dofValue <<")\n";
+        }
+        if ( i!=j && std::abs( dofValue ) > tol ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
+        }
+
+      }
+    }
+  } catch (std::exception err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
+
+  try {
+
+    *outStream
+    << "\n"
+    << "=======================================================================================\n"
+    << "| TEST 2: Testing OPERATOR_VALUE (Kronecker property, reconstructing dofs using tags) |\n"
+    << "=======================================================================================\n";
+
+    const ordinal_type order = std::min(4, maxOrder);
+    TriBasisType triBasis(order, POINTTYPE_EQUISPACED);
+    const ordinal_type cardinality = triBasis.getCardinality();
+    DynRankView ConstructWithLabel(dofCoords, cardinality , dim);
+    triBasis.getDofCoords(dofCoords);
+
+    DynRankView ConstructWithLabel(basisAtDofCoords, cardinality , cardinality, dim);
+    triBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
+
+    auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
+    Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
 
     //Normals at each edge
-    DynRankViewHost ConstructWithLabel(normals, numFields,dim); // normals at each point basis point
+    DynRankViewHost ConstructWithLabel(normals, cardinality, dim); // normals at each point basis point
     normals(0,0)  =  0.0; normals(0,1)  = -1.0;
     normals(1,0)  =  1.0; normals(1,1)  =  1.0;
     normals(2,0)  = -1.0; normals(2,1)  =  0.0;
 
     const auto allTags = triBasis.getAllDofTags();
 
-    // test for Kronecker property
-    for (int i=0;i<numFields;i++) {
-      for (int j=0;j<numFields;j++) {
+    for (int i=0;i<cardinality;i++) {
+      for (int j=0;j<cardinality;j++) {
         outputValueType dofValue = 0;
         if(allTags(j,0) == dim-1) { //edge
           auto edgeId = allTags(j,1);
@@ -204,7 +253,7 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
     *outStream
     << "\n"
     << "===============================================================================\n"
-    << "| TEST 2: Testing OPERATOR_VALUE (FIAT Values)                                |\n"
+    << "| TEST 3: Testing OPERATOR_VALUE (FIAT Values)                                |\n"
     << "===============================================================================\n";
 
     constexpr ordinal_type order = 2;
@@ -213,18 +262,15 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
 
       shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
       const ordinal_type np_lattice = PointTools::getLatticeSize(tri_3, order,0);
-      const ordinal_type polydim = triBasis.getCardinality();
+      const ordinal_type cardinality = triBasis.getCardinality();
       DynRankView ConstructWithLabel(lattice, np_lattice , dim);
       PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
-      DynRankView ConstructWithLabel(basisAtLattice, polydim , np_lattice, dim);
+      DynRankView ConstructWithLabel(basisAtLattice, cardinality , np_lattice, dim);
       triBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
 
       auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
       Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
-
-      // Dimensions for the output arrays:
-      const ordinal_type numFields = triBasis.getCardinality();
 
       const double fiat_vals[] = {
           0.000000000000000e+00, -2.000000000000000e+00,
@@ -278,7 +324,7 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
       };
 
       ordinal_type cur=0;
-      for (ordinal_type i=0;i<numFields;i++) {
+      for (ordinal_type i=0;i<cardinality;i++) {
         for (ordinal_type j=0;j<np_lattice;j++) {
           for (ordinal_type k=0;k<dim; k++) {
             if (std::fabs( h_basisAtLattice(i,j,k) - fiat_vals[cur] ) > tol ) {
@@ -289,7 +335,7 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
               *outStream << " At multi-index { ";
               *outStream << i << " " << j << " " << k;
               *outStream << "}  computed value: " <<  h_basisAtLattice(i,j,k)
-                              << " but correct value: " << fiat_vals[cur] << "\n";
+                                  << " but correct value: " << fiat_vals[cur] << "\n";
               *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - fiat_vals[cur] ) << "\n";
             }
             cur++;
@@ -310,7 +356,7 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
     *outStream
     << "\n"
     << "===============================================================================\n"
-    << "| TEST 3: Testing Operator DIV                                              |\n"
+    << "| TEST 4: Testing Operator DIV                                                |\n"
     << "===============================================================================\n";
 
 
@@ -320,18 +366,15 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
 
       shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
       const ordinal_type np_lattice = PointTools::getLatticeSize(tri_3, order,0);
-      const ordinal_type polydim = triBasis.getCardinality();
+      const ordinal_type cardinality = triBasis.getCardinality();
       DynRankView ConstructWithLabel(lattice, np_lattice , dim);
       PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
-      DynRankView ConstructWithLabel(basisDivAtLattice, polydim , np_lattice);
+      DynRankView ConstructWithLabel(basisDivAtLattice, cardinality , np_lattice);
       triBasis.getValues(basisDivAtLattice, lattice, OPERATOR_DIV);
 
       auto h_basisDivAtLattice = Kokkos::create_mirror_view(basisDivAtLattice);
       Kokkos::deep_copy(h_basisDivAtLattice, basisDivAtLattice);
-
-      // Dimensions for the output arrays:
-      const ordinal_type numFields = triBasis.getCardinality();
 
       const double fiat_divs[] = {
           7.000000000000000e+00,
@@ -386,7 +429,7 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
 
 
       ordinal_type cur=0;
-      for (ordinal_type i=0;i<numFields;i++) {
+      for (ordinal_type i=0;i<cardinality;i++) {
         for (ordinal_type j=0;j<np_lattice;j++) {
           if (std::fabs( h_basisDivAtLattice(i,j) - fiat_divs[cur] ) > tol ) {
             errorFlag++;
@@ -396,7 +439,7 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
             *outStream << " At multi-index { ";
             *outStream << i << " " << j;
             *outStream << "}  computed value: " <<  h_basisDivAtLattice(i,j)
-                              << " but correct value: " << fiat_divs[cur] << "\n";
+                                  << " but correct value: " << fiat_divs[cur] << "\n";
             *outStream << "Difference: " << std::fabs(  h_basisDivAtLattice(i,j) - fiat_divs[cur] ) << "\n";
           }
           cur++;

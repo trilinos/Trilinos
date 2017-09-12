@@ -424,13 +424,13 @@ KLU2<Matrix,Vector>::solve_impl(
         Util::put_1d_data_helper<
           MultiVecAdapter<Vector>,slu_type>::do_put(X, bValues(),
               as<size_t>(ld_rhs),
-              ROOTED);
+              ROOTED, this->rowIndexBase_);
       }
       else {
         Util::put_1d_data_helper<
           MultiVecAdapter<Vector>,slu_type>::do_put(X, bValues(),
               as<size_t>(ld_rhs),
-              CONTIGUOUS_AND_ROOTED);
+              CONTIGUOUS_AND_ROOTED, this->rowIndexBase_);
       }
     } // end Timer scope
   } //end else

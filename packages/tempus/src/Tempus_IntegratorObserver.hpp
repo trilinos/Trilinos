@@ -11,6 +11,11 @@
 
 #include "Tempus_TimeStepControl.hpp"
 
+// Forward declarations
+namespace Tempus {
+  template<typename Scalar> class Integrator;
+}
+
 namespace Tempus {
 
 /** \brief IntegratorObserver class for time integrators.
@@ -40,31 +45,27 @@ public:
   /// \name Basic IntegratorObserver methods
   //@{
     /// Observe the beginning of the time integrator.
-    virtual void observeStartIntegrator() = 0;
+    virtual void observeStartIntegrator(const Integrator<Scalar>& integrator) = 0;
 
     /// Observe the beginning of the time step loop.
-    virtual void observeStartTimeStep() = 0;
+    virtual void observeStartTimeStep(const Integrator<Scalar>& integrator) = 0;
 
-    /// Observe after the next time step size is selected.
-    virtual void observeNextTimeStep(Status & integratorStatus) = 0;
+    /// Observe after the next time step size is selected. The
+    /// observer can choose to change the current integratorStatus.
+    virtual void observeNextTimeStep(const Integrator<Scalar>& integrator) = 0;
 
     /// Observe before Stepper takes step.
-    virtual void observeBeforeTakeStep() = 0;
+    virtual void observeBeforeTakeStep(const Integrator<Scalar>& integrator) = 0;
 
     /// Observe after Stepper takes step.
-    virtual void observeAfterTakeStep() = 0;
+    virtual void observeAfterTakeStep(const Integrator<Scalar>& integrator) = 0;
 
-    /// Observe after accepting time step.
-    virtual void observeAcceptedTimeStep(Status & integratorStatus) = 0;
+    /// Observe after accepting time step. The observer can choose to
+    /// change the current integratorStatus.
+    virtual void observeAcceptedTimeStep(const Integrator<Scalar>& integrator) = 0;
 
     /// Observe the end of the time integrator.
-    virtual void observeEndIntegrator(const Status integratorStatus) = 0;
-
-    virtual void setSolutionHistory(
-      Teuchos::RCP<SolutionHistory<Scalar> > sh) = 0;
-
-    virtual void setTimeStepControl(
-      Teuchos::RCP<TimeStepControl<Scalar> > tsc) = 0;
+    virtual void observeEndIntegrator(const Integrator<Scalar>& integrator) = 0;
   //@}
 
 };

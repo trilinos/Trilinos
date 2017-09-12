@@ -261,12 +261,12 @@ inline void scale_by(Box<T> &b, U const& c)
 
 template <typename T1, typename T2>
 inline void add_to_box(Box<T1> &box, const Box<T2>& addBox) {
-  box.set_box(std::min(box.get_x_min(), addBox.get_x_min()), 
-              std::min(box.get_y_min(), addBox.get_y_min()), 
-              std::min(box.get_z_min(), addBox.get_z_min()), 
-              std::max(box.get_x_max(), addBox.get_x_max()),
-              std::max(box.get_y_max(), addBox.get_y_max()), 
-              std::max(box.get_z_max(), addBox.get_z_max())); 
+  box.set_box(std::min(box.get_x_min(), static_cast<T1>(addBox.get_x_min())),
+              std::min(box.get_y_min(), static_cast<T1>(addBox.get_y_min())),
+              std::min(box.get_z_min(), static_cast<T1>(addBox.get_z_min())),
+              std::max(box.get_x_max(), static_cast<T1>(addBox.get_x_max())),
+              std::max(box.get_y_max(), static_cast<T1>(addBox.get_y_max())),
+              std::max(box.get_z_max(), static_cast<T1>(addBox.get_z_max())));
 }
 
 template <typename T1, typename T2>

@@ -1,6 +1,6 @@
-C    Copyright (c) 2014, Sandia Corporation.
-C    Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-C    the U.S. Government retains certain rights in this software.
+C    Copyright (c) 2005 National Technology & Engineering Solutions
+C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    NTESS, the U.S. Government retains certain rights in this software.
 C    
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
@@ -12,9 +12,9 @@ C
 C        * Redistributions in binary form must reproduce the above
 C          copyright notice, this list of conditions and the following
 C          disclaimer in the documentation and/or other materials provided
-C          with the distribution.
+C          with the distribution.  
 C    
-C        * Neither the name of Sandia Corporation nor the names of its
+C        * Neither the name of NTESS nor the names of its
 C          contributors may be used to endorse or promote products derived
 C          from this software without specific prior written permission.
 C    
@@ -320,7 +320,7 @@ c
       blk_names(4) = "block_d";
       blk_names(5) = "block_e";
 
-      call expnams(exoid, EXEBLK, num_elem_blk, blk_names, ierr)
+      call expnams(exoid, EX_ELEM_BLOCK, num_elem_blk, blk_names, ierr)
       write (iout, '("after expnams, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -331,38 +331,38 @@ c  write element block properties
 
       prop_names(1) = "MATL"
       prop_names(2) = "DENSITY"
-      call exppn(exoid,EXEBLK,2,prop_names,ierr)
+      call exppn(exoid,EX_ELEM_BLOCK,2,prop_names,ierr)
       write (iout, '("after exppn, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
 
-      call expp(exoid, EXEBLK, ebids(1), "MATL", 10, ierr)
+      call expp(exoid, EX_ELEM_BLOCK, ebids(1), "MATL", 10, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
-      call expp(exoid, EXEBLK, ebids(2), "MATL", 20, ierr)
+      call expp(exoid, EX_ELEM_BLOCK, ebids(2), "MATL", 20, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
-      call expp(exoid, EXEBLK, ebids(3), "MATL", 30, ierr)
+      call expp(exoid, EX_ELEM_BLOCK, ebids(3), "MATL", 30, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
-      call expp(exoid, EXEBLK, ebids(4), "MATL", 40, ierr)
+      call expp(exoid, EX_ELEM_BLOCK, ebids(4), "MATL", 40, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
-      call expp(exoid, EXEBLK, ebids(5), "MATL", 50, ierr)
+      call expp(exoid, EX_ELEM_BLOCK, ebids(5), "MATL", 50, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -595,7 +595,7 @@ c     write (iout, '("after expcns, error = ", i4)' ) ierr
       nset_names(1) = "nodeset_a1";
       nset_names(2) = "nodeset_b2";
 
-      call expnams(exoid, EXNSET, num_node_sets, nset_names, ierr)
+      call expnams(exoid, EX_NODE_SET, num_node_sets, nset_names, ierr)
       write (iout, '("after expnams, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -606,14 +606,14 @@ c     write (iout, '("after expcns, error = ", i4)' ) ierr
 c     write node set properties
 
       prop_names(1) = "FACE"
-      call expp(exoid, EXNSET, 20, prop_names(1), 4, ierr)
+      call expp(exoid, EX_NODE_SET, 20, prop_names(1), 4, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
 
-      call expp(exoid, EXNSET, 21, prop_names(1), 5, ierr)
+      call expp(exoid, EX_NODE_SET, 21, prop_names(1), 5, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -624,7 +624,7 @@ c     write node set properties
       prop_array(2) = 2000
 
       prop_names(1) = "VELOCITY"
-      call exppa(exoid, EXNSET, prop_names(1), prop_array, ierr)
+      call exppa(exoid, EX_NODE_SET, prop_names(1), prop_array, ierr)
       write (iout, '("after exppa, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -968,14 +968,14 @@ c    2             ierr)
 c     write (iout, '("after expcss, error = ", i4)' ) ierr
 
       prop_names(1) = "COLOR"
-      call expp(exoid, EXSSET, 30, prop_names(1), 100, ierr)
+      call expp(exoid, EX_SIDE_SET, 30, prop_names(1), 100, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
          call exit (0)
       endif
 
-      call expp(exoid, EXSSET, 31, prop_names(1), 101, ierr)
+      call expp(exoid, EX_SIDE_SET, 31, prop_names(1), 101, ierr)
       write (iout, '("after expp, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)
@@ -988,7 +988,7 @@ c     write (iout, '("after expcss, error = ", i4)' ) ierr
       sset_names(4) = "surf_fourth";
       sset_names(5) = "surf_fifth";
 
-      call expnams(exoid, EXSSET, num_side_sets, sset_names, ierr)
+      call expnams(exoid, EX_SIDE_SET, num_side_sets, sset_names, ierr)
       write (iout, '("after expnams, error = ", i4)' ) ierr
       if (ierr .ne. 0) then
          call exclos(exoid,ierr)

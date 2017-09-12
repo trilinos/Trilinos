@@ -540,6 +540,18 @@ namespace Tpetra {
             const Teuchos::RCP<const map_type>& colMap,
             const local_graph_type& k_local_graph_,
             const Teuchos::RCP<Teuchos::ParameterList>& params)
+    : CrsGraph(k_local_graph_, rowMap, colMap, Teuchos::null, Teuchos::null, params)
+  {
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  CrsGraph (const local_graph_type& k_local_graph_,
+            const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<const map_type>& colMap,
+            const Teuchos::RCP<const map_type>& domainMap,
+            const Teuchos::RCP<const map_type>& rangeMap,
+            const Teuchos::RCP<Teuchos::ParameterList>& params)
     : DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, node_type> (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
@@ -560,16 +572,8 @@ namespace Tpetra {
     , haveGlobalConstants_ (false)
     , sortGhostsAssociatedWithEachProcessor_(true)
   {
-    using Teuchos::arcp;
-    using Teuchos::ArrayRCP;
-    using Teuchos::ParameterList;
-    using Teuchos::parameterList;
-    using Teuchos::rcp;
-    typedef GlobalOrdinal GO;
-    typedef LocalOrdinal LO;
-
     staticAssertions();
-    const char tfecfFuncName[] = "CrsGraph(Map,Map,Kokkos::LocalStaticCrsGraph)";
+    const char tfecfFuncName[] = "CrsGraph(Kokkos::LocalStaticCrsGraph,Map,Map,Map,Map)";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       colMap.is_null (), std::runtime_error,
@@ -595,63 +599,14 @@ namespace Tpetra {
       ! lclInds2D_.is_null () || ! gblInds2D_.is_null (), std::logic_error,
       ": cannot have 2D data structures allocated.");
 
-    // NOTE (mfh 17 Mar 2014) We also need a version of this CrsGraph
-    // constructor that takes a domain and range Map, as well as a row
-    // and column Map.  In that case, we must pass the domain and
-    // range Map into the following method.
-    setDomainRangeMaps (rowMap_, rowMap_);
+    setDomainRangeMaps (domainMap.is_null() ? rowMap_ : domainMap,
+                        rangeMap .is_null() ? rowMap_ : rangeMap);
     makeImportExport ();
 
     k_lclInds1D_ = lclGraph_.entries;
     k_rowPtrs_ = lclGraph_.row_map;
 
-    typename local_graph_type::row_map_type d_ptrs = lclGraph_.row_map;
-    typename local_graph_type::entries_type d_inds = lclGraph_.entries;
-
-    // Reset local properties
-    upperTriangular_ = true;
-    lowerTriangular_ = true;
-    nodeMaxNumRowEntries_ = 0;
-    nodeNumDiags_         = 0;
-
-    // Compute triangular properties
-    const size_t numLocalRows = getNodeNumRows ();
-    for (size_t localRow = 0; localRow < numLocalRows; ++localRow) {
-      const GO globalRow = rowMap_->getGlobalElement (localRow);
-      const LO rlcid = colMap_->getLocalElement (globalRow);
-
-      // It's entirely possible that the local matrix has no entries
-      // in the column corresponding to the current row.  In that
-      // case, the column Map may not necessarily contain that GID.
-      // This is why we check whether rlcid is "invalid" (which means
-      // that globalRow is not a GID in the column Map).
-      if (rlcid != Teuchos::OrdinalTraits<LO>::invalid ()) {
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-          rlcid + 1 >= static_cast<LO> (d_ptrs.dimension_0 ()),
-          std::runtime_error, ": The given row Map and/or column Map is/are "
-          "not compatible with the provided local graph.");
-        if (d_ptrs(rlcid) != d_ptrs(rlcid + 1)) {
-          const size_t smallestCol =
-            static_cast<size_t> (d_inds(d_ptrs(rlcid)));
-          const size_t largestCol =
-            static_cast<size_t> (d_inds(d_ptrs(rlcid + 1)-1));
-          if (smallestCol < localRow) {
-            upperTriangular_ = false;
-          }
-          if (localRow < largestCol) {
-            lowerTriangular_ = false;
-          }
-          for (size_t i = d_ptrs(rlcid); i < d_ptrs(rlcid + 1); ++i) {
-            if (d_inds(i) == rlcid) {
-              ++nodeNumDiags_;
-            }
-          }
-        }
-        nodeMaxNumRowEntries_ =
-          std::max (static_cast<size_t> (d_ptrs(rlcid + 1) - d_ptrs(rlcid)),
-                    nodeMaxNumRowEntries_);
-      }
-    }
+    computeLocalTriangularProperties ();
 
     haveLocalConstants_ = true;
     computeGlobalConstants ();
@@ -659,7 +614,6 @@ namespace Tpetra {
     fillComplete_ = true;
     checkInternalState ();
   }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
@@ -935,11 +889,15 @@ namespace Tpetra {
           }
         }
         else { // k_numRowEntries_ is populated
-          // k_numRowEntries_ could actually be a host View, so run
-          // the sum in the View's native execution space.
-          typedef typename decltype (numEntPerRow)::execution_space
-            dev_exec_space;
-          typedef Kokkos::RangePolicy<dev_exec_space, LO> range_type;
+          // k_numRowEntries_ is actually be a host View, so we run
+          // the sum in its native execution space.  This also means
+          // that we can use explicit capture (which could perhaps
+          // improve build time) instead of KOKKOS_LAMBDA, and avoid
+          // any CUDA build issues with trying to run a __device__ -
+          // only function on host.
+          typedef typename num_row_entries_type::execution_space
+            host_exec_space;
+          typedef Kokkos::RangePolicy<host_exec_space, LO> range_type;
 
           const LO upperLoopBound = lclNumRows < numNumEntPerRow ?
             lclNumRows :
@@ -947,7 +905,7 @@ namespace Tpetra {
           size_t nodeNumEnt = 0;
           Kokkos::parallel_reduce ("Tpetra::CrsGraph::getNumNodeEntries",
                                    range_type (0, upperLoopBound),
-                                   KOKKOS_LAMBDA (const LO& k, size_t& lclSum) {
+                                   [=] (const LO& k, size_t& lclSum) {
                                      lclSum += numEntPerRow(k);
                                    }, nodeNumEnt);
           return nodeNumEnt;
@@ -3051,7 +3009,7 @@ namespace Tpetra {
         // we encounter a nonowned column index.
         std::vector<GlobalOrdinal> badColInds;
         bool allInColMap = true;
-        for (size_t k = 0; k < numInputInds; ++k) {
+        for (LO k = 0; k < numInputInds; ++k) {
           if (! colMap.isNodeGlobalElement (inputGblColInds[k])) {
             allInColMap = false;
             badColInds.push_back (inputGblColInds[k]);
@@ -3061,9 +3019,9 @@ namespace Tpetra {
           std::ostringstream os;
           os << "You attempted to insert entries in owned row " << gblRow
              << ", at the following column indices: [";
-          for (size_t k = 0; k < numInputInds; ++k) {
+          for (LO k = 0; k < numInputInds; ++k) {
             os << inputGblColInds[k];
-            if (k + size_t (1) < numInputInds) {
+            if (k + static_cast<LO> (1) < numInputInds) {
               os << ",";
             }
           }
@@ -3210,7 +3168,7 @@ namespace Tpetra {
     clearGlobalConstants ();
 
     if (k_numRowEntries_.dimension_0 () != 0) {
-      k_numRowEntries_(lrow) = 0;
+      this->k_numRowEntries_(lrow) = 0;
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -3612,9 +3570,9 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
+#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "resumeFill";
 
-#ifdef HAVE_TPETRA_DEBUG
     Teuchos::barrier( *rowMap_->getComm() );
 #endif // HAVE_TPETRA_DEBUG
     clearGlobalConstants();
@@ -4742,6 +4700,70 @@ namespace Tpetra {
       }
       haveLocalConstants_ = true;
     } // if my process doesn't have local constants
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  computeLocalTriangularProperties ()
+  {
+    using Teuchos::arcp;
+    using Teuchos::ArrayRCP;
+    using Teuchos::ParameterList;
+    using Teuchos::parameterList;
+    using Teuchos::rcp;
+    typedef GlobalOrdinal GO;
+    typedef LocalOrdinal LO;
+
+    typename local_graph_type::row_map_type d_ptrs = lclGraph_.row_map;
+    typename local_graph_type::entries_type d_inds = lclGraph_.entries;
+
+    const char tfecfFuncName[] = "computeLocalTriangularProperties()";
+
+    // Reset local properties
+    upperTriangular_ = true;
+    lowerTriangular_ = true;
+    nodeMaxNumRowEntries_ = 0;
+    nodeNumDiags_         = 0;
+
+    // Compute triangular properties
+    const size_t numLocalRows = getNodeNumRows ();
+    for (size_t localRow = 0; localRow < numLocalRows; ++localRow) {
+      const GO globalRow = rowMap_->getGlobalElement (localRow);
+      const LO rlcid = colMap_->getLocalElement (globalRow);
+
+      // It's entirely possible that the local matrix has no entries
+      // in the column corresponding to the current row.  In that
+      // case, the column Map may not necessarily contain that GID.
+      // This is why we check whether rlcid is "invalid" (which means
+      // that globalRow is not a GID in the column Map).
+      if (rlcid != Teuchos::OrdinalTraits<LO>::invalid ()) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          rlcid + 1 >= static_cast<LO> (d_ptrs.dimension_0 ()),
+          std::runtime_error, ": The given row Map and/or column Map is/are "
+          "not compatible with the provided local graph.");
+        if (d_ptrs(rlcid) != d_ptrs(rlcid + 1)) {
+          const size_t smallestCol =
+            static_cast<size_t> (d_inds(d_ptrs(rlcid)));
+          const size_t largestCol =
+            static_cast<size_t> (d_inds(d_ptrs(rlcid + 1)-1));
+          if (smallestCol < localRow) {
+            upperTriangular_ = false;
+          }
+          if (localRow < largestCol) {
+            lowerTriangular_ = false;
+          }
+          for (size_t i = d_ptrs(rlcid); i < d_ptrs(rlcid + 1); ++i) {
+            if (d_inds(i) == rlcid) {
+              ++nodeNumDiags_;
+            }
+          }
+        }
+        nodeMaxNumRowEntries_ =
+          std::max (static_cast<size_t> (d_ptrs(rlcid + 1) - d_ptrs(rlcid)),
+                    nodeMaxNumRowEntries_);
+      }
+    }
   }
 
 

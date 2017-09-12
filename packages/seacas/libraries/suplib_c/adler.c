@@ -57,8 +57,9 @@ size_t adler(size_t adler, const void *vbuf, size_t len)
   size_t s2 = (adler >> 16) & 0xffff;
   int    k  = 0;
 
-  if (buf == NULL || len == 0)
+  if (buf == NULL || len == 0) {
     return 1L;
+  }
 
   while (len > 0) {
     k = len < NMAX ? len : NMAX;
@@ -68,11 +69,12 @@ size_t adler(size_t adler, const void *vbuf, size_t len)
       buf += 16;
       k -= 16;
     }
-    if (k != 0)
+    if (k != 0) {
       do {
         s1 += *buf++;
         s2 += s1;
       } while (--k);
+    }
     s1 %= BASE;
     s2 %= BASE;
   }

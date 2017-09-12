@@ -58,7 +58,7 @@
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #endif
 #endif
 
@@ -276,10 +276,10 @@ namespace Xpetra {
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
     ///  The same as for Tpetra
-    typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,void,
+    typedef KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,void,
                               typename local_graph_type::size_type> local_matrix_type;
 
-    /// \brief Access the underlying local Kokkos::CrsMatrix object
+    /// \brief Access the underlying local KokkosSparse::CrsMatrix object
     virtual local_matrix_type getLocalMatrix () const = 0;
 #else
 #ifdef __GNUC__

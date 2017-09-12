@@ -75,7 +75,7 @@ namespace Intrepid2 {
       const auto input_x = Kokkos::subview(input, Kokkos::ALL(), range_type(0,1));
       const auto input_y = Kokkos::subview(input, Kokkos::ALL(), range_type(1,2));
 
-      const int fad = (Kokkos::is_view_fad<workViewType>::value ? Kokkos::dimension_scalar(work) : 1);
+      const int work_line_size = work.size()/3;
       
       switch (opType) {
       case OPERATOR_VALUE: {
@@ -83,15 +83,14 @@ namespace Intrepid2 {
 
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> work_line(ptr, card, npts);
-        ptr += (card*npts*fad);
+        ptr += work_line_size;
 
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> output_x(ptr, card, npts);
-        ptr += (card*npts*fad);
+        ptr += work_line_size;
 
         Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> output_y(ptr, card, npts);
-        ptr += (card*npts*fad);
         
         Impl::Basis_L2_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
           getValues(output_x, input_x, work_line, vinv);
@@ -126,7 +125,7 @@ namespace Intrepid2 {
 
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space> work_line(ptr, card, npts);
-          ptr += (card*npts*fad);
+          ptr += work_line_size;
           
           Kokkos::DynRankView<typename workViewType::value_type,
             typename workViewType::memory_space,Kokkos::MemoryUnmanaged> output_x, output_y;
@@ -137,13 +136,13 @@ namespace Intrepid2 {
           if (mult_x) {
             output_x = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts, 1);
-            ptr += (card*npts*fad);
+            ptr += work_line_size;
             Impl::Basis_L2_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
               getValues(output_x, input_x, work_line, vinv, mult_x);                           
           } else {
             output_x = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts);
-            ptr += (card*npts*fad);
+            ptr += work_line_size;
             Impl::Basis_L2_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
               getValues(output_x, input_x, work_line, vinv);                           
           }
@@ -151,13 +150,11 @@ namespace Intrepid2 {
           if (mult_y) {
             output_y = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts, 1);
-            ptr += (card*npts*fad);
             Impl::Basis_L2_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
               getValues(output_y, input_y, work_line, vinv, mult_y);                           
           } else {
             output_y = Kokkos::DynRankView<typename workViewType::value_type,
               typename workViewType::memory_space>(ptr, card, npts);
-            ptr += (card*npts*fad);
             Impl::Basis_L2_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
               getValues(output_y, input_y, work_line, vinv);                           
           }

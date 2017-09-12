@@ -1,5 +1,41 @@
 # Change Log
 
+## [2.04.04](https://github.com/kokkos/kokkos/tree/2.04.04) (2017-09-11)
+[Full Changelog](https://github.com/kokkos/kokkos/compare/2.04.00...2.04.04)
+
+**Implemented enhancements:**
+
+- OpenMP partition: set number of threads on nested level [\#1082](https://github.com/kokkos/kokkos/issues/1082)
+- Add StaticCrsGraph row\(\) method [\#1071](https://github.com/kokkos/kokkos/issues/1071)
+- Enhance Kokkos complex operator overloading [\#1052](https://github.com/kokkos/kokkos/issues/1052)
+- Tell Trilinos packages about host+device lambda [\#1019](https://github.com/kokkos/kokkos/issues/1019)
+- Function markup for defaulted class members [\#952](https://github.com/kokkos/kokkos/issues/952)
+- Add deterministic random number generator [\#857](https://github.com/kokkos/kokkos/issues/857)
+
+**Fixed bugs:**
+
+- Fix reduction\_identity\<T\>::max for floating point numbers [\#1048](https://github.com/kokkos/kokkos/issues/1048)
+- Fix MD iteration policy ignores lower bound on GPUs [\#1041](https://github.com/kokkos/kokkos/issues/1041)
+- (Experimental) HBWSpace  Linking issues in KokkosKernels [\#1094](https://github.com/kokkos/kokkos/issues/1094)
+- (Experimental) ROCm:  algorithms/unit\_tests test\_sort failing with segfault [\#1070](https://github.com/kokkos/kokkos/issues/1070)
+
+## [2.04.00](https://github.com/kokkos/kokkos/tree/2.04.00) (2017-08-16)
+[Full Changelog](https://github.com/kokkos/kokkos/compare/2.03.13...2.04.00)
+
+**Implemented enhancements:**
+
+- Added ROCm backend to support AMD GPUs
+- Kokkos::complex\<T\> behaves slightly differently from std::complex\<T\> [\#1011](https://github.com/kokkos/kokkos/issues/1011)
+- Kokkos::Experimental::Crs constructor arguments were in the wrong order [\#992](https://github.com/kokkos/kokkos/issues/992)
+- Work graph construction ease-of-use (one lambda for count and fill) [\#991](https://github.com/kokkos/kokkos/issues/991)
+- when\_all returns pointer of futures (improved interface) [\#990](https://github.com/kokkos/kokkos/issues/990)
+- Allow assignment of LayoutLeft to LayoutRight or vice versa for rank-0 Views [\#594](https://github.com/kokkos/kokkos/issues/594)
+- Changed the meaning of Kokkos\_ENABLE\_CXX11\_DISPATCH\_LAMBDA [\#1035](https://github.com/kokkos/kokkos/issues/1035)
+
+**Fixed bugs:**
+
+- memory pool default constructor does not properly set member variables. [\#1007](https://github.com/kokkos/kokkos/issues/1007)
+
 ## [2.03.13](https://github.com/kokkos/kokkos/tree/2.03.13) (2017-07-27)
 [Full Changelog](https://github.com/kokkos/kokkos/compare/2.03.05...2.03.13)
 

@@ -9,6 +9,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Search          stk_search           PT  OPTIONAL
   SearchUtil      stk_search_util      PT  OPTIONAL
   Transfer        stk_transfer         PT  OPTIONAL
+  Tools           stk_tools            PT  OPTIONAL
   Unit_tests      stk_unit_tests       PT  OPTIONAL
   Doc_tests       stk_doc_tests        PT  OPTIONAL
   Exp             stk_exp              EX  OPTIONAL

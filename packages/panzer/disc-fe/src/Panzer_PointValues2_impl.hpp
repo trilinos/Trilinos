@@ -45,47 +45,20 @@
 
 #include "Intrepid2_CellTools.hpp"
 
+#include "Panzer_CommonArrayFactories.hpp"
+
 // ***********************************************************
 // * Evaluation and SetupArrays are NOT specialized
 // ***********************************************************
 
 namespace panzer {
 
-  template <typename Scalar,
-            template <typename DataT,
-               typename Tag0, typename Tag1, typename Tag2,
-               typename Tag3, typename Tag4, typename Tag5,
-               typename Tag6, typename Tag7> class Array >
-  template<typename SourceScalar>
-  PointValues2<Scalar,Array>&
-  PointValues2<Scalar,Array>::operator=(const PointValues2<SourceScalar,Array>& source)
+  template <typename Scalar>
+  void PointValues2<Scalar>::
+  setupArrays(const Teuchos::RCP<const PointRule> & pr)
   {
-    // The separate template parameter for SourceScalar allows for
-    // assignment to a "const Scalar" from a non-const "Scalar", but
-    // we still need to enforce that the underlying scalar type is the
-    // same.
-    static_assert(std::is_same<typename std::decay<Scalar>::type,typename std::decay<SourceScalar>::type>::value,
-                  "ERROR: PointValues assignment requires consistent scalar types!");
+    MDFieldArrayFactory af(prefix_, ddims_, alloc_arrays_);
 
-    coords_ref = source.coords_ref;
-    node_coordinates = source.node_coordinates;
-    jac = source.jac;
-    jac_inv = source.jac_inv;
-    jac_det = source.jac_det;
-    point_coords = source.point_coords;
-    point_rule = source.point_rule;
-    return *this;
-  }
-
-  template <typename Scalar,
-            template <typename DataT,
-               typename Tag0, typename Tag1, typename Tag2,
-               typename Tag3, typename Tag4, typename Tag5,
-               typename Tag6, typename Tag7> class Array >
-  template <typename ArrayFactory>
-  void PointValues2<Scalar,Array>::
-  setupArrays(const Teuchos::RCP<const PointRule> & pr, const ArrayFactory & af)
-  {
     point_rule = pr;
     
     int num_nodes = point_rule->topology->getNodeCount();
@@ -109,13 +82,27 @@ namespace panzer {
     point_coords = af.template buildStaticArray<Scalar,Cell,IP,Dim>("point_coords",num_cells, num_points, num_space_dim);
   }
 
-  template <typename Scalar,
-            template <typename DataT,
-               typename Tag0, typename Tag1, typename Tag2,
-               typename Tag3, typename Tag4, typename Tag5,
-               typename Tag6, typename Tag7> class Array >
+  template <typename Scalar>
+  void PointValues2<Scalar>::
+  evaluateValues()
+  {
+    if (point_rule->isSide()) {
+       TEUCHOS_ASSERT(false); // not implemented!!!!
+    }
+    
+    Intrepid2::CellTools<PHX::exec_space> cell_tools;
+    
+    cell_tools.setJacobian(jac.get_view(), coords_ref.get_view(), node_coordinates.get_view(), *(point_rule->topology));
+    cell_tools.setJacobianInv(jac_inv.get_view(), jac.get_view());
+    cell_tools.setJacobianDet(jac_det.get_view(), jac.get_view());
+    
+    // IP coordinates
+    cell_tools.mapToPhysicalFrame(point_coords.get_view(), coords_ref.get_view(), node_coordinates.get_view(), *(point_rule->topology));
+  }
+
+  template <typename Scalar>
   template <typename CoordinateArray>
-  void PointValues2<Scalar,Array>::
+  void PointValues2<Scalar>::
   copyNodeCoords(const CoordinateArray& in_node_coords)
   {
     // copy cell node coordinates
@@ -131,13 +118,9 @@ namespace panzer {
     }
   }
 
-  template <typename Scalar,
-            template <typename DataT,
-               typename Tag0, typename Tag1, typename Tag2,
-               typename Tag3, typename Tag4, typename Tag5,
-               typename Tag6, typename Tag7> class Array >
+  template <typename Scalar>
   template <typename CoordinateArray>
-  void PointValues2<Scalar,Array>::
+  void PointValues2<Scalar>::
   copyPointCoords(const CoordinateArray& in_point_coords)
   {
     // copy reference point values

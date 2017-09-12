@@ -57,13 +57,5 @@ void fill_mesh_save_step_info(const std::string& inFile, stk::mesh::BulkData& in
     save_step_info(stkIo, numSteps, maxTime);
 }
 
-void fill_mesh_with_auto_decomp_and_save_step_info(const std::string& inFile, stk::mesh::BulkData& inBulk, int &numSteps, double &maxTime)
-{
-    stk::io::StkMeshIoBroker stkIo;
-    stkIo.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
-    stk::io::fill_mesh_preexisting(stkIo, inFile, inBulk);
-    save_step_info(stkIo, numSteps, maxTime);
-}
-
 }
 }

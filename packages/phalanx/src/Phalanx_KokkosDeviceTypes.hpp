@@ -16,27 +16,23 @@ namespace PHX {
 
   //#include <Kokkos_Cuda.hpp>
   typedef Kokkos::Cuda Device; 
-  typedef Kokkos::LayoutRight Layout;
   
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_OPENMP)
   
   //#include <Kokkos_hwloc.hpp>
   //#include <Kokkos_OpenMP.hpp>
   typedef Kokkos::OpenMP Device; 
-  typedef Kokkos::LayoutRight Layout;
 
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_THREAD)
   
 #include <Kokkos_hwloc.hpp>
   //#include <Kokkos_Threads.hpp>
   typedef Kokkos::Threads Device; 
-  typedef Kokkos::LayoutRight Layout;
   
 #elif defined(PHX_KOKKOS_DEVICE_TYPE_SERIAL)
   
   //#include <Kokkos_Serial.hpp>
   typedef Kokkos::Serial Device; 
-  typedef Kokkos::LayoutRight Layout;
   
 #endif
 

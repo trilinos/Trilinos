@@ -89,10 +89,10 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
 	                                                   basis_layout);
 
   // setup all basis fields that are required
-  panzer::MDFieldArrayFactory af_pv(pointRule->getName()+"_");
 
   // setup all fields to be evaluated and constructed
-  pointValues.setupArrays(pointRule,af_pv);
+  pointValues = PointValues2<ScalarT>(pointRule->getName()+"_",false);
+  pointValues.setupArrays(pointRule);
 
   // the field manager will allocate all of these field
   constJac_ = pointValues.jac;

@@ -72,25 +72,11 @@ enum {
 namespace {
 
 double
-quick_work()
+work(int repetitions = 100000)
 {
   double x = 1.0;
 
-  for (int i = 0; i < 10000; ++i) {
-    double di = i;
-    x += std::sin(di);
-  }
-  return x;
-}
-
-
-double
-work()
-{
-  double x = 1.0;
-
-  for (int i = 0; i < 100000; ++i) {
-//  for (int i = 0; i < 100; ++i) 
+  for (int i = 0; i < repetitions; ++i) {
     double di = i;
     x += std::sin(di);
   }
@@ -178,7 +164,7 @@ TEST(UnitTestTimer, UnitTest)
     static stk::diag::Timer lap_timer("One second Wall time twice", unitTestTimer());
     
     stk::diag::TimeBlock _time(lap_timer);
-    double x = quick_work();
+    double x = work(100);
     static_cast<void>(x);
     std::ostringstream oss;
     oss << x << std::endl;
@@ -200,7 +186,6 @@ TEST(UnitTestTimer, UnitTest)
     ASSERT_TRUE(lap_time >= 2.0);
   }
 
-  // 
   {
     static stk::diag::Timer run_timer("Run 100 times twice", unitTestTimer());
     

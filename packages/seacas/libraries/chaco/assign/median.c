@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -50,24 +50,30 @@ void median_assign(struct vtx_data **graph,       /* data structure with vertex 
   int i; /* loop counter */
 
   for (i = 1; i <= nvtxs; i++) {
-    if (vals[i] < guess)
+    if (vals[i] < guess) {
       sets[i] = 0;
-    else if (vals[i] > guess)
+    }
+    else if (vals[i] > guess) {
       sets[i] = 1;
+    }
     else {
       if (goal[0] - wlow > goal[1] - whigh) {
         sets[i] = 0;
-        if (using_vwgts)
+        if (using_vwgts) {
           wlow += graph[i]->vwgt;
-        else
+        }
+        else {
           wlow++;
+        }
       }
       else {
         sets[i] = 1;
-        if (using_vwgts)
+        if (using_vwgts) {
           whigh += graph[i]->vwgt;
-        else
+        }
+        else {
           whigh++;
+        }
       }
     }
   }
@@ -129,10 +135,12 @@ void median(struct vtx_data **graph,       /* data structure with vertex weights
   for (i = 2; i <= nvtxs; i++) {
     *aptr++ = i;
     val     = *(++vptr);
-    if (val > maxval)
+    if (val > maxval) {
       maxval = val;
-    if (val < minval)
+    }
+    if (val < minval) {
       minval = val;
+    }
   }
 
   /* Loop until all sets are partitioned correctly. */
@@ -161,26 +169,34 @@ void median(struct vtx_data **graph,       /* data structure with vertex weights
       vtx = *aptr++;
       val = vals[vtx];
       if (val > guess) {
-        if (using_vwgts)
+        if (using_vwgts) {
           wabove += graph[vtx]->vwgt;
-        else
+        }
+        else {
           wabove++;
-        if (val < nearup)
+        }
+        if (val < nearup) {
           nearup = val;
+        }
       }
       else if (val < guess) {
-        if (using_vwgts)
+        if (using_vwgts) {
           wbelow += graph[vtx]->vwgt;
-        else
+        }
+        else {
           wbelow++;
-        if (val > neardown)
+        }
+        if (val > neardown) {
           neardown = val;
+        }
       }
       else {
-        if (using_vwgts)
+        if (using_vwgts) {
           wexact += graph[vtx]->vwgt;
-        else
+        }
+        else {
           wexact++;
+        }
       }
     }
 
@@ -197,13 +213,15 @@ void median(struct vtx_data **graph,       /* data structure with vertex weights
         if (vals[*aptr] >= guess) {
           ++removed;
         }
-        else
+        else {
           *aptr2++ = *aptr;
+        }
         aptr++;
       }
       myactive -= removed;
-      if (myactive == 0)
+      if (myactive == 0) {
         done = TRUE;
+      }
     }
     else if (whigh + wabove - uweight > wlow + wbelow - lweight &&
              wlow + wbelow + wexact < lweight) {
@@ -216,13 +234,15 @@ void median(struct vtx_data **graph,       /* data structure with vertex weights
         if (vals[*aptr] <= guess) {
           ++removed;
         }
-        else
+        else {
           *aptr2++ = *aptr;
+        }
         aptr++;
       }
       myactive -= removed;
-      if (myactive == 0)
+      if (myactive == 0) {
         done = TRUE;
+      }
     }
     else { /* Perfect partition! */
       wlow += wbelow;

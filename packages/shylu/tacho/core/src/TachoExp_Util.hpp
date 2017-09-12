@@ -15,6 +15,7 @@
 #include <set>
 #include <map>
 #include <memory>
+#include <tuple>
 
 #include <cmath>
 #include <complex>
@@ -24,7 +25,9 @@
 #include "Kokkos_Core.hpp"
 #include "impl/Kokkos_Timer.hpp"
 
-#include "Teuchos_BLAS_types.hpp"
+#ifdef TACHO_HAVE_MKL
+#include "mkl.h"
+#endif
 
 /// \file TachoExp_Util.hpp
 /// \brief Utility functions and constant integer class like an enum class.
@@ -83,15 +86,27 @@ namespace Tacho {
     ///
     /// default ordinal and size type
     ///
+
+#if defined( TACHO_USE_INT_INT )
+    typedef int    ordinal_type;
+    typedef int    size_type;
+#elif defined( TACHO_USE_INT_SIZE_T )
     typedef int    ordinal_type;
     typedef size_t size_type;
+#else
+    typedef int    ordinal_type;
+    typedef size_t size_type;
+#endif
 
     ///
     /// label size used to identify object name
     ///
-    enum : int { LabelSize = 64,
-                 MaxDependenceSize = 4 };
-
+    enum : int { 
+      LabelSize = 64,
+      MaxDependenceSize = 4,
+      ThresholdSolvePhaseUsingBlas3 = 12 
+    };
+    
     template<typename T>
     struct TypeTraits;
 
@@ -99,42 +114,60 @@ namespace Tacho {
     struct TypeTraits<float> {
       typedef float type;
       typedef float value_type;
+      typedef float std_value_type;
+
       typedef float magnitude_type;
+      typedef float scalar_type;
     };
 
     template<>
     struct TypeTraits<double> {
       typedef double type;
       typedef double value_type;
+      typedef double std_value_type;
+
       typedef double magnitude_type;
+      typedef double scalar_type;
     };
 
     template<>
     struct TypeTraits<std::complex<float> > {
       typedef std::complex<float> type;
       typedef std::complex<float> value_type;
-      typedef std::complex<float> magnitude_type;
+      typedef std::complex<float> std_value_type;
+
+      typedef float magnitude_type;
+      typedef float scalar_type;
     };
 
     template<>
     struct TypeTraits<std::complex<double> > {
       typedef std::complex<double> type;
       typedef std::complex<double> value_type;
+      typedef std::complex<double> std_value_type;
+
       typedef double magnitude_type;
+      typedef double scalar_type;
     };
     
     template<>
     struct TypeTraits<Kokkos::complex<float> > {
       typedef Kokkos::complex<float> type;
       typedef Kokkos::complex<float> value_type;
+      typedef std::complex<float> std_value_type;
+
       typedef float magnitude_type;
+      typedef float scalar_type;
     };
 
     template<>
     struct TypeTraits<Kokkos::complex<double> > {
       typedef Kokkos::complex<double> type;
       typedef Kokkos::complex<double> value_type;
+      typedef std::complex<double> std_value_type;
+
       typedef double magnitude_type;
+      typedef double scalar_type;
     };
 
     // template<typename ValueType, typename ExecSpace>
@@ -199,20 +232,111 @@ namespace Tacho {
     template<typename Ta, typename Tb>
     KOKKOS_FORCEINLINE_FUNCTION
     static Ta min(const Ta a, const Tb b) {
-      return (a < b ? a : b);
+      return (a < static_cast<Ta>(b) ? a : static_cast<Ta>(b));
     }
 
     template<typename Ta, typename Tb>
     KOKKOS_FORCEINLINE_FUNCTION
     static Ta max(const Ta a, const Tb b) {
-      return (a > b ? a : b);
+      return (a > static_cast<Ta>(b) ? a : static_cast<Ta>(b));
     }
 
     template<typename Ta, typename Tb>
     KOKKOS_FORCEINLINE_FUNCTION
     static void swap(Ta &a, Tb &b) {
-      Ta c(a); a = b; b = c;
+      Ta c(a); a = static_cast<Ta>(b); b = static_cast<Tb>(c);
     }
+
+    /// complex conj
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static T conj(const T a);
+
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    double conj<double>(const double a) { 
+      return a;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    float conj<float>(const float a) { 
+      return a;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    Kokkos::complex<double> conj<Kokkos::complex<double> >(const Kokkos::complex<double> a) { 
+      return Kokkos::complex<double>(a.real(), -a.imag());
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    Kokkos::complex<float> conj<Kokkos::complex<float> >(const Kokkos::complex<float> a) { 
+      return Kokkos::complex<float>(a.real(), -a.imag());
+    }
+
+    /// complex real
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static typename TypeTraits<T>::scalar_type real(const T a);
+
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    double real<double>(const double a) { 
+      return a;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    float real<float>(const float a) { 
+      return a;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    double real<Kokkos::complex<double> >(const Kokkos::complex<double> a) { 
+      return a.real();
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    float real<Kokkos::complex<float> >(const Kokkos::complex<float> a) { 
+      return a.real();
+    }
+
+    /// complex imag
+
+    template<typename T>
+    KOKKOS_FORCEINLINE_FUNCTION
+    static typename TypeTraits<T>::scalar_type imag(const T a);
+
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    double imag<double>(const double a) { 
+      return 0.0;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    float imag<float>(const float a) { 
+      return 0.0;
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    double imag<Kokkos::complex<double> >(const Kokkos::complex<double> a) { 
+      return a.imag();
+    }
+    
+    template<>
+    KOKKOS_FORCEINLINE_FUNCTION
+    float imag<Kokkos::complex<float> >(const Kokkos::complex<float> a) { 
+      return a.imag();
+    }
+
 
     KOKKOS_FORCEINLINE_FUNCTION
     static void clear(char *buf, size_type bufsize) {
@@ -327,8 +451,21 @@ namespace Tacho {
     // };
 
     struct Uplo {
-      struct Upper        { enum : int { tag = 401 }; static constexpr char param = 'U'; static constexpr Teuchos::EUplo teuchos_param = Teuchos::UPPER_TRI; };
-      struct Lower        { enum : int { tag = 402 }; static constexpr char param = 'L'; static constexpr Teuchos::EUplo teuchos_param = Teuchos::LOWER_TRI; };
+      enum : int { tag = 400 };
+      struct Upper        { 
+        enum : int { tag = 401 }; 
+        static constexpr char param = 'U'; 
+#ifdef TACHO_HAVE_MKL  
+        static constexpr CBLAS_UPLO mkl_param = CblasUpper;
+#endif
+      };
+      struct Lower        { 
+        enum : int { tag = 402 }; 
+        static constexpr char param = 'L'; 
+#ifdef TACHO_HAVE_MKL  
+        static constexpr CBLAS_UPLO mkl_param = CblasLower;
+#endif
+      };
     };
     template<typename T>
     struct is_valid_uplo_tag {
@@ -342,8 +479,21 @@ namespace Tacho {
     
 
     struct Side {
-      struct Left         { enum : int { tag = 501 }; static constexpr char param = 'L'; static constexpr Teuchos::ESide teuchos_param = Teuchos::LEFT_SIDE; };
-      struct Right        { enum : int { tag = 502 }; static constexpr char param = 'R'; static constexpr Teuchos::ESide teuchos_param = Teuchos::RIGHT_SIDE; };
+      enum : int { tag = 500 };
+      struct Left         { 
+        enum : int { tag = 501 }; 
+        static constexpr char param = 'L'; 
+#ifdef TACHO_HAVE_MKL  
+        static constexpr CBLAS_SIDE mkl_param = CblasLeft;
+#endif
+      };
+      struct Right        { 
+        enum : int { tag = 502 }; 
+        static constexpr char param = 'R'; 
+#ifdef TACHO_HAVE_MKL  
+        static constexpr CBLAS_SIDE mkl_param = CblasRight;
+#endif
+      };
     };
     template<typename T>
     struct is_valid_side_tag {
@@ -356,8 +506,21 @@ namespace Tacho {
     template<>           struct flip_side_tag<Side::Right> { typedef Side::Left type; };
 
     struct Diag {
-      struct Unit         { enum : int { tag = 601 }; static constexpr char param = 'U'; static constexpr Teuchos::EDiag teuchos_param = Teuchos::UNIT_DIAG; };
-      struct NonUnit      { enum : int { tag = 602 }; static constexpr char param = 'N'; static constexpr Teuchos::EDiag teuchos_param = Teuchos::NON_UNIT_DIAG; };
+      enum : int { tag = 600 };
+      struct Unit         { 
+        enum : int { tag = 601 }; 
+        static constexpr char param = 'U'; 
+#ifdef TACHO_HAVE_MKL  
+        static constexpr CBLAS_DIAG mkl_param = CblasUnit;
+#endif
+      };
+      struct NonUnit      { 
+        enum : int { tag = 602 }; 
+        static constexpr char param = 'N'; 
+#ifdef TACHO_HAVE_MKL  
+        static constexpr CBLAS_DIAG mkl_param = CblasNonUnit;
+#endif
+      };
     };
     template<typename T>
     struct is_valid_diag_tag {
@@ -367,9 +530,28 @@ namespace Tacho {
     };
 
     struct Trans {
-      struct Transpose      { enum : int { tag = 701 }; static constexpr char param = 'T'; static constexpr Teuchos::ETransp teuchos_param = Teuchos::TRANS; };
-      struct ConjTranspose  { enum : int { tag = 702 }; static constexpr char param = 'C'; static constexpr Teuchos::ETransp teuchos_param = Teuchos::CONJ_TRANS; };
-      struct NoTranspose    { enum : int { tag = 703 }; static constexpr char param = 'N'; static constexpr Teuchos::ETransp teuchos_param = Teuchos::NO_TRANS; };
+      enum : int { tag = 700 };
+      struct Transpose      { 
+        enum : int { tag = 701 }; 
+        static constexpr char param = 'T'; 
+#ifdef TACHO_HAVE_MKL  
+        static constexpr CBLAS_TRANSPOSE mkl_param = CblasTrans;
+#endif
+      };
+      struct ConjTranspose  { 
+        enum : int { tag = 702 }; 
+        static constexpr char param = 'C'; 
+#ifdef TACHO_HAVE_MKL  
+        static constexpr CBLAS_TRANSPOSE mkl_param = CblasConjTrans;
+#endif
+      };
+      struct NoTranspose    { 
+        enum : int { tag = 703 }; 
+        static constexpr char param = 'N'; 
+#ifdef TACHO_HAVE_MKL  
+        static constexpr CBLAS_TRANSPOSE mkl_param = CblasNoTrans;
+#endif
+      };
     };
     template<typename T>
     struct is_valid_trans_tag {

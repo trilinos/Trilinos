@@ -33,22 +33,32 @@
 // 
  */
 
-#include <stk_util/stk_config.h>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <stk_util/parallel/mpi_filebuf.hpp>
+#include <assert.h>
+
+#include <stk_util/stk_config.h>
+
+#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
 #include <aprepro.h>
 #include <apr_tokenize.h>
-#include <assert.h>
+#endif
+
+#include <stk_util/parallel/mpi_filebuf.hpp>
+#include <stk_util/environment/Env.hpp>
 
 enum { buffer_default_length = 4096 };
 enum { buffer_putback_length =   16 };
 
 // --------------------------------------------------------------------
 namespace {
+
+#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
   void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines);
+#endif
+
   double mpi_wall_time()
   {
 #if defined(STK_HAS_MPI)
@@ -104,6 +114,7 @@ mpi_filebuf * mpi_filebuf::open(
   const std::ios_base::openmode file_mode ,
   const char * const   file_name )
 {
+#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
   const double start_time = mpi_wall_time();
 
   // If already open then abort
@@ -186,6 +197,7 @@ mpi_filebuf * mpi_filebuf::open(
       }
 
       SEAMS::Aprepro aprepro;
+      aprepro.set_error_streams(&sierra::Env::output(), &sierra::Env::output(), &sierra::Env::output());
 
       add_aprepro_defines(aprepro, aprepro_defines);
 
@@ -221,6 +233,7 @@ mpi_filebuf * mpi_filebuf::open(
 
   comm_time += mpi_wall_time() - start_time ;
 
+#endif
   return this ;
 }
 #else
@@ -241,6 +254,7 @@ mpi_filebuf * mpi_filebuf::open(
   char * const tmp_buf = static_cast<char*>(std::malloc( comm_buffer_len ));
   std::FILE *       tmp_fp  = std::fopen( file_name , ( ( ( mode == 'r' ) ? "r" :
 							  ( mode == 'w' ) ? "w" : "a" ) ) );
+#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
   // If input and use_aprepro, parse the file and store parsed results
   // into buffer on root_processor.
   if (use_aprepro && !comm_output) {
@@ -269,6 +283,7 @@ mpi_filebuf * mpi_filebuf::open(
     }
     aprepro_parsing_error_count = aprepro.get_error_count();
   }
+#endif
 
   //--------------------------------------------------------------------
   // All memory allocated and root processor opened the file
@@ -626,6 +641,7 @@ std::streambuf * mpi_filebuf::setbuf( char * s , std::streamsize n )
   return this ;
 }
 
+#if !defined(NOT_HAVE_STK_SEACASAPREPRO_LIB)
 namespace {
   void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines)
   {
@@ -664,3 +680,4 @@ namespace {
     }
   }
 }
+#endif

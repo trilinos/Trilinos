@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -308,7 +308,7 @@ void lanczos_FO(struct vtx_data **A,      /* graph data structure */
     if (version == 1) {
       splarax(Aq, A, n, q[j], vwsqrt, workn);
     }
-    else {
+    else if (version == 2) {
       symmlq_(&long_n, &(q[j][1]), &wv1[1], &wv2[1], &wv3[1], &wv4[1], &Aq[1], &wv5[1], &wv6[1],
               &checka, &goodb, &precon, &shift, &nout, &intlim, &rtol, &istop, &itn, &anorm, &acond,
               &rnorm, &ynorm, (double *)A, vwsqrt, (double *)orthlist2, &macheps, &normxlim,
@@ -383,8 +383,9 @@ void lanczos_FO(struct vtx_data **A,      /* graph data structure */
       scanmax(ritz, 1, j, &scanlist);
     }
     converged = TRUE;
-    if (j < d)
+    if (j < d) {
       converged = FALSE;
+    }
     else {
       curlnk = scanlist;
       while (curlnk != NULL) {

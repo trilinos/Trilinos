@@ -83,7 +83,6 @@ namespace MueLu {
     ----------|------|---------|:----------:|:---------:|:---------:|------------
     | A                                      | Factory | null  |   | * | * | Generating factory of the matrix A used during the prolongator smoothing process |
     | Coordinates                            | Factory | null  |   | * | * | Factory generating coordinates vector used for rebalancing (RCB algorithm)
-    | rowWeight                              | int     | 0     |   | * |   | Default weight to rows (total weight = nnz + rowWeight")
     | ParameterList                          | ParamterList | null |  | * |  | Zoltan2 parameters
     | number of partitions                   | GO      | - |  |  |  | Short-cut parameter set by RepartitionFactory. Avoid repartitioning algorithms if only one partition is necessary (see details below)
 

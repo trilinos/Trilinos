@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -81,15 +81,20 @@ void bucketsortsv(struct vtx_data **graph,      /* graph data structure */
     /* Don't need to reoder if about to randomize. */
     list_length = nvtxs;
     bsptr       = bspace;
-    if (parity)
-      for (i = 1; i <= nvtxs; i++)
+    if (parity) {
+      for (i = 1; i <= nvtxs; i++) {
         *bsptr++ = i;
-    else
-      for (i = nvtxs; i; i--)
+      }
+    }
+    else {
+      for (i = nvtxs; i; i--) {
         *bsptr++ = i;
+      }
+    }
   }
-  if (KL_RANDOM)
+  if (KL_RANDOM) {
     randomize(bspace - 1, list_length);
+  }
 
   /* Now compute d-vals by seeing which sets neighbors belong to. */
 
@@ -106,12 +111,15 @@ void bucketsortsv(struct vtx_data **graph,      /* graph data structure */
       for (j = graph[vtx]->nedges - 1; j; j--) {
         neighbor = *(++edges);
         set      = sets[neighbor];
-        if (set < 0)
+        if (set < 0) {
           set = -set - 1;
-        if (set == 0)
+        }
+        if (set == 0) {
           left_weight += graph[neighbor]->vwgt;
-        else if (set == 1)
+        }
+        else if (set == 1) {
           right_weight += graph[neighbor]->vwgt;
+        }
       }
 
       ldvals[vtx] = graph[vtx]->vwgt - right_weight;

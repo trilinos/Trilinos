@@ -54,6 +54,12 @@
 #include "Piro_TempusStepperFactory.hpp"
 #include "Piro_TempusStepControlFactory.hpp"
 
+// This "define" turns on the extended template interface in TempusSolver.
+// Is it necessary??
+#if defined(HAVE_PIRO_TEMPUS) 
+#define ALBANY_BUILD
+#endif
+
 #ifdef ALBANY_BUILD
 #include "Kokkos_DefaultNode.hpp"
 #endif
@@ -114,8 +120,7 @@ public:
 
   void initialize(
       const Teuchos::RCP<Teuchos::ParameterList> &appParams,
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
-      const Teuchos::RCP<Piro::ObserverBase<Scalar> > &piroObserver = Teuchos::null);
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model);
 
   /** \name Overridden from Thyra::ModelEvaluatorBase. */
   //@{
@@ -134,6 +139,41 @@ public:
 
   void addStepControlFactory(const std::string & stepControlName,
                              const Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > & step_control_strategy);
+
+  //! Set start time for time-integration
+  void
+  setStartTime(const Scalar start_time);
+
+  //! Get start time for time-integration
+  Scalar
+  getStartTime() const;
+
+  //! Set final time for time-integration
+  void
+  setFinalTime(const Scalar final_time);
+
+  //! Get final time for time-integration
+  Scalar
+  getFinalTime() const;
+  
+  //! Set initial time step for time-integration
+  void
+  setInitTimeStep(const Scalar init_time_step);
+  
+  //! Get initial time step for time-integration
+  Scalar
+  getInitTimeStep() const;
+
+  //! Set initial time, initial solution, velocity and acceleration
+  void setInitialState(Scalar t0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > x0,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
+
+  //! Return RCP to Tempus::SolutionHistory
+  Teuchos::RCP<Tempus::SolutionHistory<Scalar> > 
+  getSolutionHistory() const; 
+  
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
@@ -177,6 +217,14 @@ private:
   std::map<std::string,Teuchos::RCP<Piro::TempusStepControlFactory<Scalar> > > stepControlFactories;
 
   bool isInitialized;
+
+  Teuchos::RCP<Piro::ObserverBase<Scalar> > piroObserver_;
+
+  bool supports_x_dotdot_; 
+ 
+  //! Set observer
+  void setObserver(); 
+
 };
 
 /** \brief Non-member constructor function */

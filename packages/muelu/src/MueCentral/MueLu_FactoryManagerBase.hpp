@@ -80,7 +80,7 @@ namespace MueLu {
 
     //! Check
     // Return true if Factory associated with varName is registered
-    const virtual bool hasFactory(const std::string& varName) const = 0;
+    virtual bool hasFactory(const std::string& varName) const = 0;
 
     // Free temporarily hold data at the end of Hierarchy::Setup()
     // This method is const because the clean concerns only mutable data.

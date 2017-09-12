@@ -67,25 +67,6 @@
 #include <MueLu_ExplicitInstantiation.hpp>
 #endif
 
-template<class Matrix, class LO, class GO>
-class RowFunctor {
-  public:
-    RowFunctor(Matrix localMatrix_) :
-      localMatrix(localMatrix_)
-    { }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const LO row, GO& r) const {
-      auto rowView = localMatrix.row (row);
-      auto length  = rowView.length;
-
-      r += length;
-    }
-
-  private:
-    Matrix localMatrix;
-};
-
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -98,14 +79,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // =========================================================================
   // MPI initialization using Teuchos
   // =========================================================================
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
-  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  auto comm = Teuchos::DefaultComm<int>::getComm();
 
   // =========================================================================
   // Convenient definitions
   // =========================================================================
-  typedef Teuchos::ScalarTraits<SC> STS;
-  SC zero = STS::zero(), one = STS::one();
 
   // =========================================================================
   // Parameters initialization
@@ -152,12 +130,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   // Loop 1
   {
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #1: Xpetra")));
-
     GO validation = 0;
 
     ArrayView<const LocalOrdinal> indices;
     ArrayView<const Scalar> vals;
+
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #1: Xpetra")));
     for (int i = 0; i < loops; i++) {
       for (LocalOrdinal row = 0; row < numRows; row++) {
 
@@ -166,15 +144,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         validation += indices.size();
       }
     }
-    std::cout << "validation = " << validation << std::endl;
-
     tm = Teuchos::null;
+
+    std::cout << "validation = " << validation << std::endl;
   }
 
   // Loop 2
   {
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #2: Tpetra/Epetra")));
-
     GO validation = 0;
 
     if (lib == Xpetra::UseTpetra) {
@@ -186,6 +162,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
       ArrayView<const LocalOrdinal> indices;
       ArrayView<const Scalar> vals;
+
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #2: Tpetra/Epetra")));
       for (int i = 0; i < loops; i++)  {
         for (LocalOrdinal row = 0; row < numRows; row++) {
           tA->getLocalRowView(row, indices, vals);
@@ -193,6 +171,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           validation += indices.size();
         }
       }
+      tm = Teuchos::null;
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,
                                  "Tpetra is not available");
@@ -205,6 +184,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       TEUCHOS_TEST_FOR_EXCEPTION(eA.is_null(), MueLu::Exceptions::RuntimeError,
                                  "A is not a Epetra CrsMatrix");
 
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #2: Tpetra/Epetra")));
+
       for (int i = 0; i < loops; i++) {
         for (LocalOrdinal row = 0; row < numRows; row++) {
           int      numEntries;
@@ -216,27 +197,23 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           validation += numEntries;
         }
       }
+      tm = Teuchos::null;
 #else
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError,
                                  "Epetra is not available");
 #endif
     }
-      std::cout << "validation = " << validation << std::endl;
-
-    tm = Teuchos::null;
+    std::cout << "validation = " << validation << std::endl;
   }
 
 
   // Loop 3
   {
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #3: Kokkos-serial")));
-
-    typedef Kokkos::ArithTraits<SC> ATS;
-
     auto localMatrix = A->getLocalMatrix();
 
     GO validation = 0;
-    Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
+
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #3: Kokkos-serial")));
     for (int i = 0; i < loops; i++) {
       for (LocalOrdinal row = 0; row < numRows; row++) {
         auto rowView = localMatrix.row (row);
@@ -245,30 +222,31 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         validation += length;
       }
     }
-    std::cout << "validation = " << validation << std::endl;
-
     tm = Teuchos::null;
+
+    std::cout << "validation = " << validation << std::endl;
   }
 
   // Loop 4
   {
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #4: Kokkos-parallel (node)")));
-
-    typedef Kokkos::ArithTraits<SC> ATS;
-
     auto localMatrix = A->getLocalMatrix();
 
     GO validation = 0;
 
     typedef Kokkos::RangePolicy<typename NO::execution_space> RangePolicy;
 
-    Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
-    RowFunctor<decltype(localMatrix), LO, GO> functor(localMatrix);
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Loop #4: Kokkos-parallel (node)")));
     for (int i = 0; i < loops; i++)
-      Kokkos::parallel_reduce("Utils::DetectDirichletRows", RangePolicy(0, numRows), functor, validation);
-    std::cout << "validation = " << validation << std::endl;
+      Kokkos::parallel_reduce("Utils::DetectDirichletRows", RangePolicy(0, numRows),
+        KOKKOS_LAMBDA(const LO row, GO& r) {
+          auto rowView = localMatrix.row (row);
+          auto length  = rowView.length;
 
+          r += length;
+        }, validation);
     tm = Teuchos::null;
+
+    std::cout << "validation = " << validation << std::endl;
   }
 
   {

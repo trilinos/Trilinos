@@ -46,6 +46,8 @@
 #include <string>
 #include <functional>
 
+#include "Panzer_PointDescriptor.hpp"
+
 namespace panzer {
 
 class BasisDescriptor
@@ -88,8 +90,16 @@ public:
    */
   std::size_t getKey() const {return _key;}
 
+
+  /** \brief Build a point descriptor that builds reference points for
+   *  the DOF locations. This method throws if no points exist for this
+   *  basis.
+   */
+  PointDescriptor getPointDescriptor() const;
+
 protected:
 
+ 
   /// Basis type (HGrad, HDiv, HCurl,...)
   std::string _basis_type;
 

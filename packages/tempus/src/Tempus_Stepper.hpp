@@ -92,8 +92,8 @@ public:
     virtual void takeStep(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory) = 0;
 
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState()
-       = 0;
+    virtual Teuchos::RCP<Tempus::StepperState<Scalar> >
+      getDefaultStepperState() = 0;
     virtual Scalar getOrder() const = 0;
     virtual Scalar getOrderMin() const = 0;
     virtual Scalar getOrderMax() const = 0;

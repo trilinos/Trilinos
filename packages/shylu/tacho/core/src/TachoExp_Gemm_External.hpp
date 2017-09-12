@@ -6,7 +6,7 @@
 /// \brief BLAS general matrix matrix multiplication
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "Teuchos_BLAS.hpp"
+#include "TachoExp_Blas_External.hpp"
 
 namespace Tacho {
 
@@ -46,20 +46,17 @@ namespace Tacho {
           m = C.dimension_0(),
           n = C.dimension_1(),
           k = (std::is_same<ArgTransB,Trans::NoTranspose>::value ? B.dimension_0() : B.dimension_1());
-
+        
         if (m > 0 && n > 0 && k > 0) {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-            Teuchos::BLAS<ordinal_type,value_type> blas;
-            
-            blas.GEMM(ArgTransA::teuchos_param,
-                      ArgTransB::teuchos_param,
-                      m, n, k,
-                      alpha,
-                      A.data(), A.stride_1(),
-                      B.data(), B.stride_1(),
-                      beta,
-                      C.data(), C.stride_1());
+            Blas<value_type>::gemm(ArgTransA::param, ArgTransB::param,
+                                   m, n, k,
+                                   value_type(alpha),
+                                   A.data(), A.stride_1(),
+                                   B.data(), B.stride_1(),
+                                   value_type(beta),
+                                   C.data(), C.stride_1());
 #else
             TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
 #endif

@@ -13,11 +13,11 @@
 #include "TachoExp_Graph.hpp"
 #include "TachoExp_SymbolicTools.hpp"
 
-#if defined(HAVE_SHYLUTACHO_SCOTCH)
+#if defined(TACHO_HAVE_SCOTCH)
 #include "TachoExp_GraphTools_Scotch.hpp"
 #endif
 
-#if defined(HAVE_SHYLUTACHO_METIS)
+#if defined(TACHO_HAVE_METIS)
 #include "TachoExp_GraphTools_Metis.hpp"
 #endif
 
@@ -64,14 +64,15 @@ TEST( Numeric, constructor ) {
 }
 
 TEST( Numeric, Cholesky_Serial ) {
+  std::string inputfilename = MM_TEST_FILE + ".mtx";
   CrsMatrixBaseHostType A("A");
-  A = MatrixMarket<ValueType>::read("test.mtx");
+  A = MatrixMarket<ValueType>::read(inputfilename);
 
   Graph G(A);
 
-#if   defined(HAVE_SHYLUTACHO_METIS)
+#if   defined(TACHO_HAVE_METIS)
   GraphTools_Metis T(G);
-#elif defined(HAVE_SHYLUTACHO_SCOTCH)
+#elif defined(TACHO_HAVE_SCOTCH)
   GraphTools_Scotch T(G);
 #else
   GraphTools_CAMD T(G);
@@ -111,13 +112,13 @@ TEST( Numeric, Cholesky_Serial ) {
 
 // TEST( Numeric, factorizeCholesky_Parallel ) {
 //   CrsMatrixBaseHostType A("A");
-//   A = MatrixMarket<ValueType>::read("test.mtx");
+//   A = MatrixMarket<ValueType>::read("test_double.mtx");
 
 //   Graph G(A);
 
-// #if   defined(HAVE_SHYLUTACHO_METIS)
+// #if   defined(TACHO_HAVE_METIS)
 //   GraphTools_Metis T(G);
-// #elif defined(HAVE_SHYLUTACHO_SCOTCH)
+// #elif defined(TACHO_HAVE_SCOTCH)
 //   GraphTools_Scotch T(G);
 // #else
 //   GraphTools_CAMD T(G);

@@ -81,8 +81,9 @@ namespace Tacho {
         auto next  = Kokkos::subview(work, range_type(1*m, 2*m));
         auto stack = Kokkos::subview(work, range_type(2*m, 3*m));
 
-        //Kokkos::deep_copy(head, -1);        
-        for (size_type i=0;i<head.dimension_0();++i)
+        //Kokkos::deep_copy(head, -1);      
+        ordinal_type iend = head.dimension_0();
+        for (ordinal_type i=0;i<iend;++i)
           head(i) = -1;
 
         for (ordinal_type i=m-1;i>=0;--i) {
@@ -367,7 +368,7 @@ namespace Tacho {
           for (ordinal_type i=0;i<nsids;++i) flag(i) = i;
 
           std::sort(flag.data(), flag.data()+nsids, 
-                    [&](std::size_t i, std::size_t j){ return sididx(i) < sididx(j); });
+                    [&](std::size_t i, std::size_t j){ return cid(i) < cid(j); });
           std::transform(flag.data(), flag.data()+nsids, 
                          sididx.data(),[&](std::size_t i) { return cid(i); });
           std::transform(flag.data(), flag.data()+nsids, 
@@ -691,10 +692,10 @@ namespace Tacho {
             printf("\n");            
             printf("  Linear system A\n");
             printf("             number of equations:                             %10d\n", stat.nrows);
-            printf("             number of nonzeros:                              %10zu (%5.2f %% )\n", stat.nnz_a, double(stat.nnz_a)/(double(stat.nrows)*double(stat.nrows))*100.0);
+            printf("             number of nonzeros:                              %10.0f (%5.2f %% )\n", double(stat.nnz_a), double(stat.nnz_a)/(double(stat.nrows)*double(stat.nrows))*100.0);
             printf("\n");
             printf("  Factors U\n");
-            printf("             number of nonzeros:                              %10zu (%5.2f %% )\n", stat.nnz_u, double(stat.nnz_u)/(double(stat.nrows)*double(stat.nrows))*50.0);
+            printf("             number of nonzeros:                              %10.0f (%5.2f %% )\n", double(stat.nnz_u), double(stat.nnz_u)/(double(stat.nrows)*double(stat.nrows))*50.0);
             printf("             number of subgraphs:                             %10d\n", stat.nroots);
             printf("             number of supernodes:                            %10d\n", stat.nsupernodes);
             printf("             height of supernodal tree:                       %10d\n", stat.height);

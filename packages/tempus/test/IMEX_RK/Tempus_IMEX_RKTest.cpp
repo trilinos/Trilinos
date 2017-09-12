@@ -133,12 +133,12 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
         std::string fname = "Tempus_"+stepperName+"_VanDerPol-Ref.dat";
         if (n == 0) fname = "Tempus_"+stepperName+"_VanDerPol.dat";
         std::ofstream ftmp(fname);
-        RCP<SolutionHistory<double> > solutionHistory =
+        RCP<const SolutionHistory<double> > solutionHistory =
           integrator->getSolutionHistory();
         int nStates = solutionHistory->getNumStates();
         for (int i=0; i<nStates; i++) {
-          RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
-          RCP<Thyra::VectorBase<double> > x = solutionState->getX();
+          RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
+          RCP<const Thyra::VectorBase<double> > x = solutionState->getX();
           double ttime = solutionState->getTime();
           ftmp << ttime << "   " << get_ele(*x, 0) << "   " << get_ele(*x, 1)
                << std::endl;

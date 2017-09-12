@@ -1085,20 +1085,25 @@ namespace Xpetra {
 
     //@}
 
-    //! Special multiplication routine (for BGS smoother)
+    //! Special multiplication routine (for BGS/Jacobi smoother)
     //{@
 
-    //! \brief Computes the sparse matrix-multivector multiplication.
-    /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
-      - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
-      - calculates result only for blocked row "row"
-      - useful for BGS smoother in MueLu: there we have to calculate the residual for the current block row
-        we can skip the MatVec calls in all other block rows
-      */
-    virtual void bgs_apply(const MultiVector& X, MultiVector& Y, size_t row,
-                       Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                       Scalar alpha = ScalarTraits<Scalar>::one(),
-                       Scalar beta  = ScalarTraits<Scalar>::zero()) const
+    /*! \brief Computes the sparse matrix-multivector multiplication (plus linear combination with input/result vector)
+     *
+     *  Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exception:
+     *  - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
+     *  - calculates result only for blocked row "row"
+     *  - useful for BGS/Jacobi smoother in MueLu: there we have to calculate the residual for the current block row
+     *    we can skip the MatVec calls in all other block rows
+     */
+    virtual void bgs_apply(
+        const MultiVector& X, ///< Vector to be multiplied by matrix (input)
+        MultiVector& Y, ///< result vector
+        size_t row, ///< Index of block row to be treated
+        Teuchos::ETransp mode = Teuchos::NO_TRANS, ///< Transpose mode
+        Scalar alpha = ScalarTraits<Scalar>::one(), ///< scaling factor for result of matrix-vector product
+        Scalar beta  = ScalarTraits<Scalar>::zero() ///< scaling factor for linear combination with result vector
+        ) const
     {
       XPETRA_MONITOR("XpetraBlockedCrsMatrix::bgs_apply");
       //using Teuchos::RCP;

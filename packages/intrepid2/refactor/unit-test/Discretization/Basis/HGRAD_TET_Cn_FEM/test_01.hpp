@@ -252,13 +252,13 @@ namespace Intrepid2 {
         errorFlag = -1000;
       };
 
-
+#ifdef HAVE_INTREPID2_SACADO
       try {
 
         *outStream
           << "\n"
           << "===============================================================================\n"
-          << "| TEST 3: Testing OPERATOR_D2                                              |\n"
+          << "| TEST 4: Testing OPERATOR_D2                                                 |\n"
           << "===============================================================================\n";
 
 
@@ -295,7 +295,7 @@ namespace Intrepid2 {
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
       };
-
+#endif
 
 
       if (errorFlag != 0)

@@ -311,7 +311,7 @@ namespace Xpetra {
         return vv_[0]->getData(j);
       }
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::getData: Not (yet) supported by BlockedMultiVector.");
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 
     //! View of the local values in a particular vector of this multivector.
@@ -320,7 +320,7 @@ namespace Xpetra {
         return vv_[0]->getDataNonConst(j);
       }
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::getDataNonConst: Not (yet) supported by BlockedMultiVector.");
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 
     //@}
@@ -553,7 +553,7 @@ namespace Xpetra {
     //! Local number of rows on the calling process.
     virtual size_t getLocalLength() const {
       throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::getLocalLength: routine not implemented. It has no value as one must iterate on the partial vectors.");
-      return 0;
+      TEUCHOS_UNREACHABLE_RETURN(0);
     }
 
     //! Global number of rows in the multivector.
@@ -586,7 +586,7 @@ namespace Xpetra {
         // if this has more than 1 sub blocks but "map" is not a blocked map, they are very likely not compatible
         if (this->getBlockedMap()->getNumMaps() > 1) {
           throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::replaceMap: map is not of type BlockedMap. General implementation not available, yet.");
-          return;
+          TEUCHOS_UNREACHABLE_RETURN();
         }
         // special case: this is a blocked map with only one block
         // TODO add more debug check (especially for Thyra mode)
@@ -786,7 +786,7 @@ namespace Xpetra {
           // This is a problem and only works if bsrc has only one block
           if(bsrc->getBlockedMap()->getNumMaps() > 1) {
             throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::assign: source vector is of type BlockedMultiVector (with more than 1 blocks) and target is a MultiVector.");
-            return;
+            TEUCHOS_UNREACHABLE_RETURN();
           }
           RCP<MultiVector> ssrc = bsrc->getMultiVector(0,map_->getThyraMode());
           XPETRA_TEST_FOR_EXCEPTION(ssrc.is_null() == true, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::assign: cannot extract vector");

@@ -63,7 +63,6 @@ namespace panzer {
 
   class PureBasis;
   class IntegrationRule;
-  class BasisIRLayout;
   class FieldLibrary;
   class FieldLayoutLibrary;
 

@@ -88,11 +88,11 @@ namespace ShyLU
 
       //pList->sublist("Belos Input");
 
-    string solver_name;
+    std::string solver_name;
     if(belosList->isParameter("Solver"))
       {
         //solver_name = Teuchos::getParameter<string>(&belosList, "Solver");
-        solver_name = belosList->get<string>("Solver");
+        solver_name = belosList->get<std::string>("Solver");
       }
 
 
@@ -202,9 +202,9 @@ namespace ShyLU
   template <class Matrix, class Vector>
   int IterativeSolverInterface<Matrix,Vector>::solve(Vector *b, Vector* x)
   {
-    string solverpackage = Teuchos::getParameter<string>(*pList, "Iterative Solver Package");
+    std::string solverpackage = Teuchos::getParameter<std::string>(*pList, "Iterative Solver Package");
 
-    cout << "found package " << solverpackage << endl;
+    std::cout << "found package " << solverpackage << std::endl;
 
     if(solverpackage.compare("Aztec")==0)
       {

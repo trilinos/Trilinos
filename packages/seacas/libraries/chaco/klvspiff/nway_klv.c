@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -167,8 +167,9 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
 
   step_cutoff = KL_BAD_MOVES;
   cost_cutoff = maxdval * step_cutoff / 7;
-  if (cost_cutoff < step_cutoff)
+  if (cost_cutoff < step_cutoff) {
     cost_cutoff = step_cutoff;
+  }
 
   partial_weight = weightsum[0] + weightsum[1];
   ratio          = partial_weight / total_weight;
@@ -330,12 +331,15 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
 
       /* Monitor the stopping criteria. */
       if (bestval < 0) {
-        if (!enforce_balance || ever_balanced)
+        if (!enforce_balance || ever_balanced) {
           neg_steps++;
-        if (bestg != bestg_min)
+        }
+        if (bestg != bestg_min) {
           neg_cost = bestg - gtotal;
-        else
+        }
+        else {
           neg_cost = -maxdval - 1;
+        }
         if ((neg_steps > step_cutoff || neg_cost > cost_cutoff) &&
             !(enforce_balance && bestg == bestg_min)) {
           if (DEBUG_KL > 0) {
@@ -467,8 +471,9 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
                                     p1bucket(to_buckets, to_listspace, maxdval);
             */
 
-            if (gain > *to_top)
+            if (gain > *to_top) {
               *to_top = gain;
+            }
           }
         }
       }
@@ -503,8 +508,9 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
 
     /* First reset vertices moved out of the separator. */
     if (out_list) {
-      if (beststep < 0)
+      if (beststep < 0) {
         beststep = 0;
+      }
       for (i = step - 1; i > beststep; i--) {
         vtx = ((long)out_list - (long)llistspace) / sizeof(struct bilist);
         if (sets[vtx] != 2) {
@@ -559,12 +565,15 @@ int nway_klv(struct vtx_data **graph,      /* data structure for graph */
     gain = 0;
     j = k = 0;
     for (i = 1; i <= nvtxs; i++) {
-      if (sets[i] == 0)
+      if (sets[i] == 0) {
         j += graph[i]->vwgt;
-      else if (sets[i] == 1)
+      }
+      else if (sets[i] == 1) {
         k += graph[i]->vwgt;
-      else if (sets[i] == 2)
+      }
+      else if (sets[i] == 2) {
         gain += graph[i]->vwgt;
+      }
     }
     /*
             printf("\nAfter pass of KLV: sets = %d/%d, sep = %d  (bestg = %g)\n\n\n",

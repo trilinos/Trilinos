@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -72,65 +72,73 @@
 
 int is_hex(E_Type etype)
 {
-  return (etype == HEX8 || etype == HEX27 || etype == HEX20 || etype == HEXSHELL);
+  return static_cast<int>(etype == HEX8 || etype == HEX27 || etype == HEX20 || etype == HEXSHELL);
 }
 
 int is_tet(E_Type etype)
 {
-  return (etype == TET4 || etype == TET10 || etype == TET8 || etype == TET14 || etype == TET15);
+  return static_cast<int>(etype == TET4 || etype == TET10 || etype == TET8 || etype == TET14 ||
+                          etype == TET15);
 }
 
 int is_wedge(E_Type etype)
 {
-  return (etype == WEDGE6 || etype == WEDGE15 || etype == WEDGE16 || etype == WEDGE20 ||
-          etype == WEDGE21);
+  return static_cast<int>(etype == WEDGE6 || etype == WEDGE15 || etype == WEDGE16 ||
+                          etype == WEDGE20 || etype == WEDGE21);
 }
 
 int is_pyramid(E_Type etype)
 {
-  return (etype == PYRAMID5 || etype == PYRAMID13 || etype == PYRAMID14 || etype == PYRAMID18 ||
-          etype == PYRAMID19);
+  return static_cast<int>(etype == PYRAMID5 || etype == PYRAMID13 || etype == PYRAMID14 ||
+                          etype == PYRAMID18 || etype == PYRAMID19);
 }
 
 int is_3d_element(E_Type etype)
 {
-  return (is_hex(etype) || is_tet(etype) || is_wedge(etype) || is_pyramid(etype));
+  return static_cast<int>((is_hex(etype) != 0) || (is_tet(etype) != 0) || (is_wedge(etype) != 0) ||
+                          (is_pyramid(etype) != 0));
 }
 
 int ilog2i(size_t n)
 {
   size_t       i  = 0;
   unsigned int n1 = n;
-  while (n1 >>= 1)
+  while (n1 >>= 1 != 0u) {
     ++i;
+  }
 
-  if ((size_t)1 << i != n)
+  if (static_cast<size_t>(1) << i != n) {
     return (-1);
-  else
-    return (i);
+  }
+  return (i);
 }
 
 namespace {
   template <typename INT>
-  int nodal_dist(LB_Description<INT> *, Machine_Description *, Mesh_Description<INT> *,
-                 Graph_Description<INT> *);
+  int nodal_dist(LB_Description<INT> * /*lb*/, Machine_Description * /*machine*/,
+                 Mesh_Description<INT> * /*mesh*/, Graph_Description<INT> * /*graph*/);
 
   template <typename INT>
-  int elemental_dist(LB_Description<INT> *, Machine_Description *, Mesh_Description<INT> *,
-                     Graph_Description<INT> *, Problem_Description *);
+  int elemental_dist(LB_Description<INT> * /*lb*/, Machine_Description * /*machine*/,
+                     Mesh_Description<INT> * /*mesh*/, Graph_Description<INT> * /*graph*/,
+                     Problem_Description * /*problem*/);
 
   /* ZPINCH partitioning interface */
-  int ZPINCH_assign(Machine_Description *, int, float *, float *, float *, int *);
+  int ZPINCH_assign(Machine_Description * /*machine*/, int /*ndot*/, float * /*x*/, float * /*y*/,
+                    float * /*z*/, int * /*part*/);
 
   /* BRICK partitioning interface */
-  int BRICK_assign(Machine_Description *, int, float *, float *, float *, int *);
+  int BRICK_assign(Machine_Description * /*machine*/, int /*ndot*/, float * /*x*/, float * /*y*/,
+                   float * /*z*/, int * /*part*/);
 
 #ifdef USE_ZOLTAN
   /* ZOLTAN_RCB partitioning interface */
-  int ZOLTAN_assign(const char *, int, size_t, int *, float *, float *, float *, int, int *, int,
-                    char **);
+  int ZOLTAN_assign(const char * /*method*/, int /*totalproc*/, size_t /*ndot*/, int * /*vwgt*/,
+                    float * /*x*/, float * /*y*/, float * /*z*/, int /*ignore_z*/, int * /*part*/,
+                    int /*argc*/, char ** /*argv*/);
 #endif
-  void BALANCE_STATS(Machine_Description *, int *, size_t, int *);
+  void BALANCE_STATS(Machine_Description * /*machine*/, int * /*wgt*/, size_t /*ndot*/,
+                     int * /*part*/);
 
   template <typename INT>
   int identify_mechanisms(Machine_Description *machine, Problem_Description *problem,
@@ -139,7 +147,7 @@ namespace {
 
   int extract_connected_lists(int nrow, const int *columns, const int *rows, int *list,
                               std::vector<int> &list_ptr);
-}
+} // namespace
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -218,8 +226,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
      * Increment the graph vertices to start a "1" instead of "0",
      * as expected by Chaco.
      */
-    for (size_t cnt = 0; cnt < graph->nadj; cnt++)
+    for (size_t cnt = 0; cnt < graph->nadj; cnt++) {
       graph->adj[cnt]++;
+    }
   }
 
   if (((problem->type == NODAL) && (lb->type == INERTIAL)) ||
@@ -251,8 +260,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       break;
     }
   }
-  else
+  else {
     x_node_ptr = y_node_ptr = z_node_ptr = nullptr;
+  }
 
   /* now set the pointers that are being sent to Chaco */
   x_ptr = x_node_ptr;
@@ -312,10 +322,13 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
          (lb->type==INERTIAL||ZPINCH||BRICK||ZOLTAN))"*/
 
   /* Allocate memory for the vertex to processor vector */
-  if (problem->type == ELEMENTAL)
-    lb->vertex2proc = (int *)malloc(((problem->num_vertices) + sphere->num) * sizeof(int));
-  else
-    lb->vertex2proc = (int *)malloc(problem->num_vertices * sizeof(int));
+  if (problem->type == ELEMENTAL) {
+    lb->vertex2proc =
+        reinterpret_cast<int *>(malloc(((problem->num_vertices) + sphere->num) * sizeof(int)));
+  }
+  else {
+    lb->vertex2proc = reinterpret_cast<int *>(malloc(problem->num_vertices * sizeof(int)));
+  }
 
   if (!(lb->vertex2proc)) {
     Gen_Error(0, "fatal: insufficient memory");
@@ -324,17 +337,19 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
 
   if (machine->type == HCUBE) {
     arch      = 0;
-    num_level = ilog2i((unsigned int)machine->procs_per_box);
+    num_level = ilog2i(static_cast<unsigned int>(machine->procs_per_box));
   }
   if (machine->type == MESH) {
     arch      = machine->num_dims;
     num_level = 0;
   }
 
-  if (lb->refine == KL_REFINE)
+  if (lb->refine == KL_REFINE) {
     refine = 1;
-  else
+  }
+  else {
     refine = 2;
+  }
 
   if (lb->type == INFILE) {
     assignfile = lb->file.c_str();
@@ -369,8 +384,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
   }
 
   /* check if Chaco is supposed to make sure that the domains are connected */
-  if (lb->cnctd_dom)
+  if (lb->cnctd_dom) {
     CONNECTED_DOMAINS = 1;
+  }
 
   /*
    * check if the data needs to be sent to Chaco in groups, and
@@ -416,8 +432,10 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
 
     printf("=======================Call Chaco===========================\n");
     time1 = get_time();
-    if (lb->type == INFILE)
-      flag = input_assign(fp, (char *)assignfile, problem->num_vertices, lb->vertex2proc);
+    if (lb->type == INFILE) {
+      flag =
+          input_assign(fp, const_cast<char *>(assignfile), problem->num_vertices, lb->vertex2proc);
+    }
     if (lb->type == ZPINCH || lb->type == BRICK || lb->type == ZOLTAN_RCB ||
         lb->type == ZOLTAN_RIB || lb->type == ZOLTAN_HSFC) {
       fprintf(stderr, "KDD -- ZPINCH, BRICK, ZOLTAN_RCB, ZOLTAN_RIB, and "
@@ -425,12 +443,13 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       fprintf(stderr, "KDD -- Contact Karen Devine, kddevin@sandia.gov.\n");
       exit(-1);
     }
-    else
+    else {
       flag = interface(problem->num_vertices, (int *)TOPTR(graph->start), (int *)TOPTR(graph->adj),
                        TOPTR(weight->vertices), TOPTR(weight->edges), x_ptr, y_ptr, z_ptr,
-                       (char *)assignfile, (char *)nullptr, lb->vertex2proc, tmp_arch, tmp_lev, dim,
-                       goal, glob_method, refine, solve->rqi_flag, solve->vmax, lb->num_sects,
-                       solve->tolerance, seed);
+                       const_cast<char *>(assignfile), (char *)nullptr, lb->vertex2proc, tmp_arch,
+                       tmp_lev, dim, goal, glob_method, refine, solve->rqi_flag, solve->vmax,
+                       lb->num_sects, solve->tolerance, seed);
+    }
 
     time2 = get_time();
     printf("============================================================\n");
@@ -449,8 +468,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
 
     for (size_t ecnt = 0; ecnt < problem->num_vertices; ecnt++) {
       nelemg[lb->vertex2proc[ecnt]]++;
-      if (problem->alloc_graph == ELB_TRUE)
+      if (problem->alloc_graph == ELB_TRUE) {
         nadjg[lb->vertex2proc[ecnt]] += graph->start[ecnt + 1] - graph->start[ecnt];
+      }
 
       /*
        * use negative numbers to specify the groups, in order to
@@ -463,11 +483,14 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     max_vtx = 0;
     max_adj = 0;
     for (size_t iloop = 0; iloop < nloops; iloop++) {
-      if (nelemg[iloop] > (int)max_vtx)
+      if (nelemg[iloop] > static_cast<int>(max_vtx)) {
         max_vtx = nelemg[iloop];
-      if (problem->alloc_graph == ELB_TRUE)
-        if (nadjg[iloop] > (int)max_adj)
+      }
+      if (problem->alloc_graph == ELB_TRUE) {
+        if (nadjg[iloop] > static_cast<int>(max_adj)) {
           max_adj = nadjg[iloop];
+        }
+      }
     }
   }
 
@@ -488,41 +511,41 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       elem_map.resize(problem->num_vertices);
     }
     if (!weight->vertices.empty()) {
-      tmp_vwgts = (int *)malloc(max_adj * sizeof(int));
+      tmp_vwgts = reinterpret_cast<int *>(malloc(max_adj * sizeof(int)));
       if (!tmp_vwgts) {
         Gen_Error(0, "fatal: insufficient memory");
         goto cleanup;
       }
     }
     if (!weight->edges.empty()) {
-      tmp_ewgts = (float *)malloc(max_adj * sizeof(float));
+      tmp_ewgts = reinterpret_cast<float *>(malloc(max_adj * sizeof(float)));
       if (!tmp_ewgts) {
         Gen_Error(0, "fatal: insufficient memory");
         goto cleanup;
       }
     }
     if (x_ptr != nullptr) {
-      tmp_x = (float *)malloc(max_vtx * sizeof(float));
+      tmp_x = reinterpret_cast<float *>(malloc(max_vtx * sizeof(float)));
       if (!tmp_x) {
         Gen_Error(0, "fatal: insufficient memory");
         goto cleanup;
       }
     }
     if (y_ptr != nullptr) {
-      tmp_y = (float *)malloc(max_vtx * sizeof(float));
+      tmp_y = reinterpret_cast<float *>(malloc(max_vtx * sizeof(float)));
       if (!tmp_y) {
         Gen_Error(0, "fatal: insufficient memory");
         goto cleanup;
       }
     }
     if (z_ptr != nullptr) {
-      tmp_z = (float *)malloc(max_vtx * sizeof(float));
+      tmp_z = reinterpret_cast<float *>(malloc(max_vtx * sizeof(float)));
       if (!tmp_z) {
         Gen_Error(0, "fatal: insufficient memory");
         goto cleanup;
       }
     }
-    tmp_v2p = (int *)malloc(max_vtx * sizeof(int));
+    tmp_v2p = reinterpret_cast<int *>(malloc(max_vtx * sizeof(int)));
     if (!tmp_v2p) {
       Gen_Error(0, "fatal: insufficient memory");
       goto cleanup;
@@ -548,8 +571,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       /* Call chaco to generate the load balance */
 
       if (nloops > 1) {
-        if (nelemg[iloop] <= 0)
+        if (nelemg[iloop] <= 0) {
           continue;
+        }
 
         tmp_nv = nelemg[iloop];
 
@@ -563,10 +587,12 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
            */
           INT elemp = 1;
           for (size_t cnt = 0; cnt < problem->num_vertices; cnt++) {
-            if (group == -lb->vertex2proc[cnt])
+            if (group == -lb->vertex2proc[cnt]) {
               elem_map[cnt] = elemp++;
-            else
+            }
+            else {
               elem_map[cnt] = -1;
+            }
           }
 
           tmp_start[0] = 0;
@@ -582,22 +608,27 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
               for (int cnt = graph->start[ecnt]; cnt < graph->start[ecnt + 1]; cnt++) {
                 if (elem_map[graph->adj[cnt] - 1] > 0) {
                   tmp_adj[adjp] = elem_map[graph->adj[cnt] - 1];
-                  if (!weight->edges.empty())
+                  if (!weight->edges.empty()) {
                     tmp_ewgts[adjp] = weight->edges[cnt];
+                  }
                   adjp++;
                 }
               }
               tmp_start[elemp + 1] = adjp;
             }
-            if (!weight->vertices.empty())
+            if (!weight->vertices.empty()) {
               tmp_vwgts[elemp] = weight->vertices[ecnt];
+            }
 
-            if (x_ptr)
+            if (x_ptr) {
               tmp_x[elemp] = x_ptr[ecnt];
-            if (y_ptr)
+            }
+            if (y_ptr) {
               tmp_y[elemp] = y_ptr[ecnt];
-            if (z_ptr)
+            }
+            if (z_ptr) {
               tmp_z[elemp] = z_ptr[ecnt];
+            }
 
             elemp++; /* now increment the element # for the group */
           }
@@ -622,9 +653,10 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
             tmpdim[2] = 1;
             totalproc = nprocg[iloop];
           }
-          else
+          else {
             num_level = nprocg[iloop];
-          totalproc   = nprocg[iloop];
+          }
+          totalproc = nprocg[iloop];
         }
       }
       else {
@@ -638,21 +670,26 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         tmp_z     = z_ptr;
         tmp_v2p   = lb->vertex2proc;
 
-        for (int cnt  = 0; cnt < machine->num_dims; cnt++)
+        for (int cnt = 0; cnt < machine->num_dims; cnt++) {
           tmpdim[cnt] = machine->dim[cnt];
+        }
         if (machine->type == MESH) {
           totalproc = tmpdim[0];
-          if (tmpdim[1] != 0)
+          if (tmpdim[1] != 0) {
             totalproc *= tmpdim[1];
-          if (tmpdim[2] != 0)
+          }
+          if (tmpdim[2] != 0) {
             totalproc *= tmpdim[2];
+          }
         }
-        else
+        else {
           totalproc = num_level;
+        }
       }
 
-      if (lb->type == INFILE)
-        flag = input_assign(fp, (char *)assignfile, tmp_nv, tmp_v2p);
+      if (lb->type == INFILE) {
+        flag = input_assign(fp, const_cast<char *>(assignfile), tmp_nv, tmp_v2p);
+      }
       else if (lb->type == ZPINCH) {
         flag = ZPINCH_assign(machine, tmp_nv, tmp_x, tmp_y, tmp_z, tmp_v2p);
         BALANCE_STATS(machine, nullptr, tmp_nv, tmp_v2p);
@@ -690,8 +727,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         for (int iproc = 0; iproc < machine->num_procs; iproc++) {
           size_t start = end;
           end += cnt;
-          if (iproc < extra)
+          if (iproc < extra) {
             end++;
+          }
 
           for (size_t ecnt = start; ecnt < end; ecnt++) {
             lb->vertex2proc[ecnt] = iproc;
@@ -711,8 +749,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
           size_t iproc = 0;
           size_t elem  = e;
           size_t end   = elem + machine->num_procs;
-          if (end > mesh->num_elems)
+          if (end > mesh->num_elems) {
             end = mesh->num_elems;
+          }
           while (elem < end) {
             lb->vertex2proc[elem++] = iproc++;
           }
@@ -723,9 +762,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         printf("===================Call Chaco===========================\n");
         time1 = get_time();
         flag  = interface(tmp_nv, (int *)tmp_start, (int *)tmp_adj, tmp_vwgts, tmp_ewgts, tmp_x,
-                         tmp_y, tmp_z, (char *)assignfile, (char *)nullptr, tmp_v2p, arch,
-                         num_level, tmpdim, goal, glob_method, refine, solve->rqi_flag, solve->vmax,
-                         lb->num_sects, solve->tolerance, seed);
+                         tmp_y, tmp_z, const_cast<char *>(assignfile), (char *)nullptr, tmp_v2p,
+                         arch, num_level, tmpdim, goal, glob_method, refine, solve->rqi_flag,
+                         solve->vmax, lb->num_sects, solve->tolerance, seed);
         time2 = get_time();
         printf("========================================================\n");
         printf("Time in Chaco: %fs\n", time2 - time1);
@@ -737,16 +776,18 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       }
 
       if (nloops > 1) {
-        for (int ecnt = 0; ecnt < nelemg[iloop]; ecnt++)
+        for (int ecnt = 0; ecnt < nelemg[iloop]; ecnt++) {
           tmp_v2p[ecnt] += start_proc;
+        }
         start_proc += nprocg[iloop];
         /* copy the assignment data back into assignment */
         size_t elemp = 0;
-        for (size_t ecnt = 0; ecnt < problem->num_vertices; ecnt++)
-          if (-lb->vertex2proc[ecnt] == (int)group)
+        for (size_t ecnt = 0; ecnt < problem->num_vertices; ecnt++) {
+          if (-lb->vertex2proc[ecnt] == group) {
             lb->vertex2proc[ecnt] = tmp_v2p[elemp++];
+          }
+        }
       }
-
     } /* End: "for (iloop = 0; iloop < nloops; iloop++)" */
   }   /* End: "if (sphere->num < mesh->num_elems)" */
 
@@ -776,12 +817,15 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       free(tmp_ewgts);
       tmp_ewgts = nullptr;
     }
-    if (tmp_x)
+    if (tmp_x) {
       free(tmp_x);
-    if (tmp_y)
+    }
+    if (tmp_y) {
       free(tmp_y);
-    if (tmp_z)
+    }
+    if (tmp_z) {
       free(tmp_z);
+    }
     free(problem->group_no);
     free(mesh->eb_cnts);
     /* since Chaco didn't free the graph, need to do it here */
@@ -798,7 +842,8 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
      * distributed linearly to processors.
      */
     if (sphere->num > 0) {
-      // If type == LINEAR || SCATTERED, then the spheres were handled above (unless the model is
+      // If type == LINEAR || SCATTERED, then the spheres were handled above (unless the model
+      // is
       // all spheres...)
       if ((lb->type != LINEAR && lb->type != SCATTERED) || sphere->num == mesh->num_elems) {
 
@@ -810,8 +855,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
              * sphere assignments will be.
              */
             if (mesh->elem_type[ecnt] == SPHERE) {
-              for (size_t cnt        = (problem->num_vertices); cnt > ecnt; cnt--)
+              for (size_t cnt = (problem->num_vertices); cnt > ecnt; cnt--) {
                 lb->vertex2proc[cnt] = lb->vertex2proc[cnt - 1];
+              }
 
               lb->vertex2proc[ecnt] = -1;
               (problem->num_vertices)++;
@@ -837,7 +883,7 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
              * If the processor ID is lower than the remainder then that
              * processor gets an extra sphere
              */
-            if ((iproc + 1) <= (size_t)flag) {
+            if ((iproc + 1) <= static_cast<size_t>(flag)) {
               if (cnt2 >= (cnt + 1)) {
                 iproc++;
                 cnt2 = 0;
@@ -870,8 +916,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
         vec_free(weight->edges);
 
         if (!graph->sur_elem.empty()) {
-          for (size_t cnt = 0; cnt < mesh->num_nodes; cnt++)
+          for (size_t cnt = 0; cnt < mesh->num_nodes; cnt++) {
             vec_free(graph->sur_elem[cnt]);
+          }
           vec_free(graph->sur_elem);
         }
 
@@ -888,8 +935,9 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
          *
          */
 
-        for (size_t cnt = 0; cnt < graph->nadj; cnt++)
+        for (size_t cnt = 0; cnt < graph->nadj; cnt++) {
           graph->adj[cnt]++;
+        }
 
         identify_mechanisms(machine, problem, mesh, lb, graph, LOCAL_ISSUES);
 
@@ -909,19 +957,22 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
     vec_free(weight->vertices);
     vec_free(weight->edges);
   }
-  if (fp != nullptr)
+  if (fp != nullptr) {
     fclose(fp);
+  }
   return 1;
 
 cleanup:
   if (problem->read_coords == ELB_TRUE) {
     switch (mesh->num_dims) {
     case 1:
-      if (y_node_ptr)
+      if (y_node_ptr) {
         free(y_node_ptr); /* fall through */
+      }
     case 2:
-      if (z_node_ptr)
+      if (z_node_ptr) {
         free(z_node_ptr);
+      }
     }
   }
 
@@ -936,16 +987,21 @@ cleanup:
     }
     free(tmp_v2p);
     // FREE_GRAPH always zero if nloops > 1
-    if (tmp_vwgts)
+    if (tmp_vwgts) {
       free(tmp_vwgts);
-    if (tmp_ewgts)
+    }
+    if (tmp_ewgts) {
       free(tmp_ewgts);
-    if (tmp_x)
+    }
+    if (tmp_x) {
       free(tmp_x);
-    if (tmp_y)
+    }
+    if (tmp_y) {
       free(tmp_y);
-    if (tmp_z)
+    }
+    if (tmp_z) {
       free(tmp_z);
+    }
     free(problem->group_no);
     free(mesh->eb_cnts);
     /* since Chaco didn't free the graph, need to do it here */
@@ -1120,8 +1176,9 @@ namespace {
                 for (int i = graph->start[ecnt]; i < end; i++) {
                   int proc2 = lb->vertex2proc[graph->adj[i] - 1];
                   assert(proc2 < machine->num_procs);
-                  if (proc2 == proc)
+                  if (proc2 == proc) {
                     distance++;
+                  }
                 }
                 cnt++;
                 rows[cnt] = rows[cnt - 1] + distance;
@@ -1149,8 +1206,9 @@ namespace {
                   for (int i = graph->start[ecnt]; i < end; i++) {
                     int proc2 = lb->vertex2proc[graph->adj[i] - 1];
                     assert(proc2 < machine->num_procs);
-                    if (proc2 == proc)
+                    if (proc2 == proc) {
                       columns[kf++] = local_number[graph->adj[i] - 1];
+                    }
                   }
                 }
               }
@@ -1224,10 +1282,12 @@ namespace {
 
           int nsides = get_elem_info(NSIDES, etype);
           int proc   = 0;
-          if (check_type == LOCAL_ISSUES)
+          if (check_type == LOCAL_ISSUES) {
             proc = lb->vertex2proc[ecnt];
-          else
+          }
+          else {
             proc = 0;
+          }
           assert(proc < machine->num_procs);
 
           /* check each side of this element */
@@ -1257,8 +1317,9 @@ namespace {
                 E_Type etype2 = mesh->elem_type[el2];
 
                 int proc2 = 0;
-                if (check_type == LOCAL_ISSUES)
+                if (check_type == LOCAL_ISSUES) {
                   proc2 = lb->vertex2proc[el2];
+                }
                 assert(proc2 < machine->num_procs);
 
                 if (ecnt != el2 && proc == proc2) {
@@ -1285,8 +1346,9 @@ namespace {
                                           graph->sur_elem[side_nodes2[0]].size(),
                                           graph->sur_elem[side_nodes2[1]].size(), TOPTR(pt_list));
 
-                      for (int i     = 0; i < nhold2; i++)
+                      for (int i = 0; i < nhold2; i++) {
                         hold_elem[i] = graph->sur_elem[side_nodes2[0]][pt_list[i]];
+                      }
 
                       nelem = find_inter(TOPTR(hold_elem), TOPTR(graph->sur_elem[side_nodes2[2]]),
                                          nhold2, graph->sur_elem[side_nodes2[2]].size(),
@@ -1304,8 +1366,9 @@ namespace {
                      * then this is a mechanism.
                      */
 
-                    if (!count)
+                    if (!count) {
                       problems[node] = el2 + 1;
+                    }
                   }
                 }
               }
@@ -1322,15 +1385,16 @@ namespace {
                 printf("WARNING: On Processor %d Local Element " ST_ZU
                        " (%s) has a mechanism through Global Node " ST_ZU
                        " with Local Element " ST_ZU " (%s)\n",
-                       proc, (size_t)local_number[ecnt], elem_name_from_enum(etype), (size_t)node,
+                       proc, (size_t)local_number[ecnt], elem_name_from_enum(etype), node,
                        (size_t)local_number[el2], elem_name_from_enum(etype2));
-                if (problem->mech_add_procs == 1)
+                if (problem->mech_add_procs == 1) {
                   lb->vertex2proc[el2] = machine->num_procs;
+                }
               }
               else {
                 printf("WARNING: Element " ST_ZU " (%s) has a mechanism through Node " ST_ZU
                        " with Element " ST_ZU " (%s)\n",
-                       (size_t)ecnt + 1, elem_name_from_enum(etype), (size_t)node, (size_t)el2 + 1,
+                       ecnt + 1, elem_name_from_enum(etype), node, el2 + 1,
                        elem_name_from_enum(etype2));
               }
               num_found++;
@@ -1349,8 +1413,9 @@ namespace {
           }
         }
       }
-      else
+      else {
         printf("NO mechanisms found\n");
+      }
     }
 
     return 1;
@@ -1390,7 +1455,7 @@ namespace {
         elem   = graph->sur_elem[ncnt][ecnt];
         etype  = mesh->elem_type[elem];
         nnodes = get_elem_info(NNODES, etype);
-        for (i = 0; i < (size_t)nnodes; i++) {
+        for (i = 0; i < static_cast<size_t>(nnodes); i++) {
           proc_n = lb->vertex2proc[mesh->connect[elem][i]];
           assert(proc_n < machine->num_procs);
           if (proc_n != proc) {
@@ -1427,7 +1492,7 @@ namespace {
     for (size_t ecnt = 0; ecnt < mesh->num_elems; ecnt++) {
       etype  = mesh->elem_type[ecnt];
       nnodes = get_elem_info(NNODES, etype);
-      for (ncnt = 0; ncnt < (size_t)nnodes; ncnt++) {
+      for (ncnt = 0; ncnt < static_cast<size_t>(nnodes); ncnt++) {
         node = mesh->connect[ecnt][ncnt];
         proc = lb->vertex2proc[node];
         assert(proc < machine->num_procs);
@@ -1525,8 +1590,9 @@ namespace {
          */
 
         int nnodes = mesh->num_dims;
-        if (side_cnt < nnodes)
+        if (side_cnt < nnodes) {
           nnodes = side_cnt;
+        }
         nnodes--; /* decrement to find the number of intersections needed */
 
         nelem = 0; /* reset this in case no intersections are needed */
@@ -1543,8 +1609,9 @@ namespace {
           if (!((etype == BAR2 || etype == SHELL2) && side_nodes[0] == side_nodes[1])) {
 
             size_t nhold = graph->sur_elem[side_nodes[0]].size();
-            for (size_t ncnt  = 0; ncnt < nhold; ncnt++)
+            for (size_t ncnt = 0; ncnt < nhold; ncnt++) {
               hold_elem[ncnt] = graph->sur_elem[side_nodes[0]][ncnt];
+            }
 
             for (int ncnt = 0; ncnt < nnodes; ncnt++) {
               /* Find elements connnected to both node '0' and node 'ncnt+1' */
@@ -1552,12 +1619,14 @@ namespace {
                   find_inter(TOPTR(hold_elem), TOPTR(graph->sur_elem[side_nodes[(ncnt + 1)]]),
                              nhold, graph->sur_elem[side_nodes[(ncnt + 1)]].size(), TOPTR(pt_list));
 
-              if (nelem < 2)
+              if (nelem < 2) {
                 break;
+              }
               else {
                 nhold = nelem;
-                for (int ncnt2     = 0; ncnt2 < nelem; ncnt2++)
+                for (int ncnt2 = 0; ncnt2 < nelem; ncnt2++) {
                   hold_elem[ncnt2] = hold_elem[pt_list[ncnt2]];
+                }
               }
             }
           }
@@ -1578,10 +1647,12 @@ namespace {
 
           /* first need to check for a degenerate element */
           dflag = 0;
-          if (side_nodes[0] == side_nodes[1] || side_nodes[0] == side_nodes[3])
+          if (side_nodes[0] == side_nodes[1] || side_nodes[0] == side_nodes[3]) {
             dflag++;
-          if (side_nodes[2] == side_nodes[1] || side_nodes[2] == side_nodes[3])
+          }
+          if (side_nodes[2] == side_nodes[1] || side_nodes[2] == side_nodes[3]) {
             dflag++;
+          }
 
           /*
            * if both flags are set, then this face is the 2d line,
@@ -1617,8 +1688,9 @@ namespace {
               if (nelem > 1) {
                 if (ncnt == 0) {
                   nhold = nelem;
-                  for (int ncnt2     = 0; ncnt2 < nelem; ncnt2++)
+                  for (int ncnt2 = 0; ncnt2 < nelem; ncnt2++) {
                     hold_elem[ncnt2] = graph->sur_elem[side_nodes[inode]][pt_list[ncnt2]];
+                  }
 
                   if (dflag) {
                     /*
@@ -1626,10 +1698,12 @@ namespace {
                      * another (unique) point since nodes 0 and 2
                      * may represent an edge and not the diagonal
                      */
-                    if (side_nodes[1] != side_nodes[0] && side_nodes[1] != side_nodes[2])
+                    if (side_nodes[1] != side_nodes[0] && side_nodes[1] != side_nodes[2]) {
                       node = 1;
-                    else
+                    }
+                    else {
                       node = 3;
+                    }
                   }
                   else {
                     /*
@@ -1651,8 +1725,9 @@ namespace {
                      So, this time, only put an element in the list if
                      it was in the list before.
                   */
-                  for (size_t ncnt2  = 0; ncnt2 < nhold; ncnt2++)
+                  for (size_t ncnt2 = 0; ncnt2 < nhold; ncnt2++) {
                     hold_elem[ncnt2] = -hold_elem[ncnt2];
+                  }
                   for (int ncnt3 = 0; ncnt3 < nelem; ncnt3++) {
                     for (size_t ncnt2 = 0; ncnt2 < nhold; ncnt2++) {
                       if (-hold_elem[ncnt2] == graph->sur_elem[side_nodes[inode]][pt_list[ncnt3]]) {
@@ -1680,8 +1755,9 @@ namespace {
               else { /* nelem == 1 or 0 */
                 if (!dflag) {
                   nhold = graph->sur_elem[side_nodes[1]].size();
-                  for (size_t ncnt2  = 0; ncnt2 < nhold; ncnt2++)
+                  for (size_t ncnt2 = 0; ncnt2 < nhold; ncnt2++) {
                     hold_elem[ncnt2] = graph->sur_elem[side_nodes[1]][ncnt2];
+                  }
                 }
                 inode = 1;
                 node  = 3; /* The node diagonally opposite node 1 */
@@ -1760,8 +1836,9 @@ namespace {
                    * small kludge to handle 6 node faces butted up against
                    * 4 node faces
                    */
-                  if (etype == HEXSHELL && side_cnt == 6)
+                  if (etype == HEXSHELL && side_cnt == 6) {
                     side_cnt = 4;
+                  }
 
                   /*
                    * in order to get the correct side order for elem,
@@ -1801,7 +1878,7 @@ namespace {
                     strcat(cmesg, tmpstr);
                   }
                   Gen_Error(0, cmesg);
-                  sprintf(cmesg, "side id: " ST_ZU "", (size_t)(nscnt + 1));
+                  sprintf(cmesg, "side id: " ST_ZU "", static_cast<size_t>(nscnt + 1));
                   Gen_Error(0, cmesg);
                   strcpy(cmesg, "side nodes:");
                   for (int i = 0; i < side_cnt; i++) {
@@ -1963,8 +2040,9 @@ namespace {
          * that point forward.
          */
         ssize_t i = save_fv1;
-        while (i < size && procs[i] < pcnt2)
+        while (i < size && procs[i] < pcnt2) {
           i++;
+        }
         if (i >= size || procs[i] != pcnt2) {
           fv1 = -1;
           lv1 = -1;
@@ -1981,11 +2059,13 @@ namespace {
           }
         }
 
-        if (lv1 >= size)
+        if (lv1 >= size) {
           lv1 = size - 1;
+        }
 
-        if (lv1 != -1)
+        if (lv1 != -1) {
           save_fv1 = lv1 + 1;
+        }
 
 #if 0
 	/* Old method -- can use for verification by uncommenting this if block  */
@@ -2011,18 +2091,22 @@ namespace {
                           &lv2);
 #if 1
           if (lv2 - fv2 != lv1 - fv1) {
-            fprintf(stderr, "" ST_ZU ": " ST_ZU " to " ST_ZU "\n", (size_t)pcnt2, (size_t)fv1,
-                    (size_t)lv1);
-            for (i = fv1; i <= lv1; i++)
-              fprintf(stderr, "" ST_ZU ": " ST_ZU "\t" ST_ZU "\t" ST_ZU "\t" ST_ZU "\n", (size_t)i,
-                      (size_t)lb->e_cmap_elems[pcnt][i], (size_t)lb->e_cmap_neigh[pcnt][i],
-                      (size_t)lb->e_cmap_procs[pcnt][i], (size_t)lb->e_cmap_sides[pcnt][i]);
+            fprintf(stderr, "" ST_ZU ": " ST_ZU " to " ST_ZU "\n", static_cast<size_t>(pcnt2),
+                    (size_t)fv1, (size_t)lv1);
+            for (i = fv1; i <= lv1; i++) {
+              fprintf(stderr, "" ST_ZU ": " ST_ZU "\t" ST_ZU "\t" ST_ZU "\t" ST_ZU "\n",
+                      static_cast<size_t>(i), (size_t)lb->e_cmap_elems[pcnt][i],
+                      (size_t)lb->e_cmap_neigh[pcnt][i], (size_t)lb->e_cmap_procs[pcnt][i],
+                      (size_t)lb->e_cmap_sides[pcnt][i]);
+            }
             fprintf(stderr, "" ST_ZU ": " ST_ZU " to " ST_ZU "\n", (size_t)pcnt, (size_t)fv2,
                     (size_t)lv2);
-            for (i = fv2; i <= lv2; i++)
-              fprintf(stderr, "" ST_ZU ": " ST_ZU "\t" ST_ZU "\t" ST_ZU "\t" ST_ZU "\n", (size_t)i,
-                      (size_t)lb->e_cmap_elems[pcnt2][i], (size_t)lb->e_cmap_neigh[pcnt2][i],
-                      (size_t)lb->e_cmap_procs[pcnt2][i], (size_t)lb->e_cmap_sides[pcnt2][i]);
+            for (i = fv2; i <= lv2; i++) {
+              fprintf(stderr, "" ST_ZU ": " ST_ZU "\t" ST_ZU "\t" ST_ZU "\t" ST_ZU "\n",
+                      static_cast<size_t>(i), (size_t)lb->e_cmap_elems[pcnt2][i],
+                      (size_t)lb->e_cmap_neigh[pcnt2][i], (size_t)lb->e_cmap_procs[pcnt2][i],
+                      (size_t)lb->e_cmap_sides[pcnt2][i]);
+            }
           }
 #endif
           assert(lv2 - fv2 == lv1 - fv1);
@@ -2088,8 +2172,9 @@ namespace {
                               std::vector<int> &list_ptr)
   {
     int root, nordered, ni, nf, nni, nnf, i, ki, kf, k, j, components, too_many_components = 0;
-    if (nrow == 0)
+    if (nrow == 0) {
       return (0);
+    }
 
     /* Reasonable guess for number of components */
     int pieces = 10 + (nrow / 10);
@@ -2148,9 +2233,10 @@ namespace {
 
     /* Start over with list_ptr correctly allocated */
     list_ptr.resize(components);
-    std::vector<int>(list_ptr).swap(list_ptr);
-    for (i    = 0; i < nrow; i++)
+    list_ptr.shrink_to_fit();
+    for (i = 0; i < nrow; i++) {
       mask[i] = 1;
+    }
 
     components               = 1;
     nordered                 = 1;
@@ -2254,69 +2340,82 @@ namespace {
 
     /* Compute the maximum values of z */
     for (i = 0; i < ndot; i++) {
-      if (z[i] > zmax)
+      if (z[i] > zmax) {
         zmax = z[i];
-      if (z[i] < zmin)
+      }
+      if (z[i] < zmin) {
         zmin = z[i];
+      }
     }
     dz = zmax - zmin;
 
     /* Compute maximum z for each slice, using uniform partition of zmin - zmax */
     std::vector<double> slice_max_z(nslice);
-    for (i           = 0; i < nslice; i++)
-      slice_max_z[i] = zmin + (double)(i + 1) * dz / (double)nslice;
+    for (i = 0; i < nslice; i++) {
+      slice_max_z[i] = zmin + static_cast<double>(i + 1) * dz / static_cast<double>(nslice);
+    }
 
     /* Compute maximum angle for each wedge, using uniform partition of 2*M_PI */
     std::vector<double> wedge_max_theta(nwedge);
-    for (i               = 0; i < nwedge; i++)
-      wedge_max_theta[i] = (double)(i + 1) * (2. * M_PI) / (double)nwedge;
+    for (i = 0; i < nwedge; i++) {
+      wedge_max_theta[i] = static_cast<double>(i + 1) * (2. * M_PI) / static_cast<double>(nwedge);
+    }
 
     /* Compute the partition assignment for each set of coordinates */
     for (i = 0; i < ndot; i++) {
 
       /* Compute the z slice that the element is in. */
       if (dz > 0.) {
-        slice = (int)(nslice * (z[i] - zmin) / dz);
-        if (slice == nslice)
+        slice = static_cast<int>(nslice * (z[i] - zmin) / dz);
+        if (slice == nslice) {
           slice--; /* Handles z[i] == zmax correctly */
+        }
 
         /* Move dots within epsilon of upper end of slice into next slice */
         /* This step reduces jagged edges due to roundoff in coordinate values */
-        if (slice != nslice - 1 && z[i] > (slice_max_z[slice] - epsilon))
+        if (slice != nslice - 1 && z[i] > (slice_max_z[slice] - epsilon)) {
           slice++;
+        }
       }
-      else /* 2D problem */
+      else { /* 2D problem */
         slice = 0;
+      }
 
       /* Compute polar coordinate theta in x,y-plane for the element. */
       if (x[i] == 0.) {
-        if (y[i] >= 0.)
+        if (y[i] >= 0.) {
           theta = M_PI_2;
-        else
+        }
+        else {
           theta = 3. * M_PI_2;
+        }
       }
       else {
         theta = std::atan2(y[i], x[i]); /* In range -M_PI_2 to M_PI_2 */
 
         /* Convert to range 0 to 2*M_PI */
-        if (x[i] < 0.)
+        if (x[i] < 0.) {
           theta += M_PI;
-        else if (y[i] < 0.)
+        }
+        else if (y[i] < 0.) {
           theta += 2 * M_PI;
+        }
       }
 
       /* Compute the wedge that the element is in. */
-      wedge = (int)(nwedge * theta / (2 * M_PI));
-      if (wedge == nwedge)
+      wedge = static_cast<int>(nwedge * theta / (2 * M_PI));
+      if (wedge == nwedge) {
         wedge--; /* Handles theta == 2*M_PI correctly */
+      }
 
       /* Move dots within epsilon of upper angle of wedge into next wedge */
       /* This step reduces jagged edges due to roundoff in coordinate values */
-      if (theta > wedge_max_theta[wedge] - epsilon)
+      if (theta > wedge_max_theta[wedge] - epsilon) {
         wedge = (wedge + 1) % nwedge;
+      }
 
       /* Compute the part that the element is in. */
-      part[i] = (int)(slice * nwedge + wedge);
+      part[i] = (slice * nwedge + wedge);
     }
     return 0;
   }
@@ -2343,18 +2442,22 @@ namespace {
 
     /* Compute the minimum and maximum coordinate values */
     for (i = 0; i < ndot; i++) {
-      if (d[i] > *dmax)
+      if (d[i] > *dmax) {
         *dmax = d[i];
-      if (d[i] < *dmin)
+      }
+      if (d[i] < *dmin) {
         *dmin = d[i];
+      }
     }
     *delta = *dmax - *dmin;
 
     /* Compute maximum coordinate value for each slice,
        using uniform partition of dmax - dmin */
     slices_d.reserve(nslices_d);
-    for (i = 0; i < nslices_d; i++)
-      slices_d.push_back(*dmin + (double)(i + 1) * *delta / (double)nslices_d);
+    for (i = 0; i < nslices_d; i++) {
+      slices_d.push_back(*dmin +
+                         static_cast<double>(i + 1) * *delta / static_cast<double>(nslices_d));
+    }
   }
 
   /*****************************************************************************/
@@ -2374,17 +2477,20 @@ namespace {
     double epsilon = 5e-06; /* tolerance that allows a point to be in subdomain*/
 
     if (delta > 0.) {
-      d_slice = (int)(nslices_d * (d - dmin) / delta);
-      if (d_slice == nslices_d)
+      d_slice = static_cast<int>(nslices_d * (d - dmin) / delta);
+      if (d_slice == nslices_d) {
         d_slice--; /* Handles d == dmax correctly */
+      }
 
       /* Move dots within epsilon of upper end of slice into next slice */
       /* This step reduces jagged edges due to roundoff in coordinate values */
-      if (d_slice != nslices_d - 1 && d > (slices_d[d_slice] - epsilon))
+      if (d_slice != nslices_d - 1 && d > (slices_d[d_slice] - epsilon)) {
         d_slice++;
+      }
     }
-    else /* not a 3D problem */
+    else { /* not a 3D problem */
       d_slice = 0;
+    }
 
     return d_slice;
   }
@@ -2461,7 +2567,7 @@ namespace {
       int z_slice = BRICK_which_slice(nz, z[i], zmin, dz, slices_z);
 
       /* Compute the part that the element is in. */
-      part[i] = (int)(z_slice * (nx * ny) + y_slice * nx + x_slice);
+      part[i] = (z_slice * (nx * ny) + y_slice * nx + x_slice);
     }
     return 0;
   }
@@ -2472,7 +2578,7 @@ namespace {
   /***** Could implement Zoltan callbacks without global data structure,   *****/
   /***** but using the global data structure makes implementation quick.   *****/
 
-  static struct
+  struct
   {
     size_t ndot; /* Length of x, y, z, and part (== # of elements) */
     int *  vwgt; /* vertex weights */
@@ -2484,20 +2590,22 @@ namespace {
   /*****************************************************************************/
   /***** ZOLTAN CALLBACK FUNCTIONS *****/
 
-  int zoltan_num_dim(void *data, int *ierr)
+  int zoltan_num_dim(void * /*data*/, int *ierr)
   {
     /* Return dimensionality of coordinate data.
      * Using global data structure Zoltan_Data, initialized in ZOLTAN_RCB_assign.
      */
     *ierr = ZOLTAN_OK;
-    if (Zoltan_Data.z != nullptr)
+    if (Zoltan_Data.z != nullptr) {
       return 3;
-    if (Zoltan_Data.y != nullptr)
+    }
+    if (Zoltan_Data.y != nullptr) {
       return 2;
+    }
     return 1;
   }
 
-  int zoltan_num_obj(void *data, int *ierr)
+  int zoltan_num_obj(void * /*data*/, int *ierr)
   {
     /* Return number of objects.
      * Using global data structure Zoltan_Data, initialized in ZOLTAN_RCB_assign.
@@ -2506,8 +2614,8 @@ namespace {
     return Zoltan_Data.ndot;
   }
 
-  void zoltan_obj_list(void *data, int ngid_ent, int nlid_ent, ZOLTAN_ID_PTR gids,
-                       ZOLTAN_ID_PTR lids, int wdim, float *wgts, int *ierr)
+  void zoltan_obj_list(void * /*data*/, int /*ngid_ent*/, int /*nlid_ent*/, ZOLTAN_ID_PTR gids,
+                       ZOLTAN_ID_PTR /*lids*/, int wdim, float *wgts, int *ierr)
   {
     /* Return list of object IDs.
      * Return only global IDs; don't need local IDs since running in serial.
@@ -2516,16 +2624,16 @@ namespace {
      */
     for (size_t i = 0; i < Zoltan_Data.ndot; i++) {
       gids[i] = i;
-      if (wdim)
-        wgts[i] = (float)Zoltan_Data.vwgt[i];
+      if (wdim != 0) {
+        wgts[i] = static_cast<float>(Zoltan_Data.vwgt[i]);
+      }
     }
 
     *ierr = ZOLTAN_OK;
-    return;
   }
 
-  void zoltan_geom(void *data, int ngid_ent, int nlid_ent, int nobj, ZOLTAN_ID_PTR gids,
-                   ZOLTAN_ID_PTR lids, int ndim, double *geom, int *ierr)
+  void zoltan_geom(void * /*data*/, int /*ngid_ent*/, int /*nlid_ent*/, int nobj,
+                   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR /*lids*/, int ndim, double *geom, int *ierr)
   {
     /* Return coordinates for objects.
      * gids are array indices for coordinate arrays.
@@ -2535,14 +2643,15 @@ namespace {
     for (int i = 0; i < nobj; i++) {
       size_t j       = gids[i];
       geom[i * ndim] = Zoltan_Data.x[j];
-      if (ndim > 1)
+      if (ndim > 1) {
         geom[i * ndim + 1] = Zoltan_Data.y[j];
-      if (ndim > 2)
+      }
+      if (ndim > 2) {
         geom[i * ndim + 2] = Zoltan_Data.z[j];
+      }
     }
 
     *ierr = ZOLTAN_OK;
-    return;
   }
 
   /*****************************************************************************/
@@ -2581,7 +2690,7 @@ namespace {
     Zoltan_Data.vwgt = vwgt;
     Zoltan_Data.x    = x;
     Zoltan_Data.y    = y;
-    Zoltan_Data.z    = (ignore_z ? nullptr : z);
+    Zoltan_Data.z    = (ignore_z != 0 ? nullptr : z);
 
     /* Initialize Zoltan */
     ierr = Zoltan_Initialize(argc, argv, &ver);
@@ -2593,22 +2702,26 @@ namespace {
 
     /* Register Callback functions */
     /* Using global Zoltan_Data; could register it here instead as data field. */
-    ierr = Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE, (ZOLTAN_VOID_FN *)zoltan_num_dim, nullptr);
+    ierr = Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE,
+                         reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_num_dim), nullptr);
     if (ierr == ZOLTAN_FATAL) {
       fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n", __FILE__, __LINE__);
       goto End;
     }
-    ierr = Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE, (ZOLTAN_VOID_FN *)zoltan_num_obj, nullptr);
+    ierr = Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE,
+                         reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_num_obj), nullptr);
     if (ierr == ZOLTAN_FATAL) {
       fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n", __FILE__, __LINE__);
       goto End;
     }
-    ierr = Zoltan_Set_Fn(zz, ZOLTAN_OBJ_LIST_FN_TYPE, (ZOLTAN_VOID_FN *)zoltan_obj_list, nullptr);
+    ierr = Zoltan_Set_Fn(zz, ZOLTAN_OBJ_LIST_FN_TYPE,
+                         reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_obj_list), nullptr);
     if (ierr == ZOLTAN_FATAL) {
       fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n", __FILE__, __LINE__);
       goto End;
     }
-    ierr = Zoltan_Set_Fn(zz, ZOLTAN_GEOM_MULTI_FN_TYPE, (ZOLTAN_VOID_FN *)zoltan_geom, nullptr);
+    ierr = Zoltan_Set_Fn(zz, ZOLTAN_GEOM_MULTI_FN_TYPE,
+                         reinterpret_cast<ZOLTAN_VOID_FN *>(zoltan_geom), nullptr);
     if (ierr == ZOLTAN_FATAL) {
       fprintf(stderr, "Error returned from Zoltan_Set_Fn (%s:%d)\n", __FILE__, __LINE__);
       goto End;
@@ -2637,14 +2750,14 @@ namespace {
       goto End;
     }
     ierr = Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION_ASSIGNMENTS");
-    if (vwgt) {
+    if (vwgt != nullptr) {
       ierr = Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
       if (ierr == ZOLTAN_FATAL) {
         fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n", __FILE__, __LINE__);
         goto End;
       }
     }
-    if (ignore_z) {
+    if (ignore_z != 0) {
       ierr = Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1");
       if (ierr == ZOLTAN_FATAL) {
         fprintf(stderr, "Error returned from Zoltan_Set_Param (%s:%d)\n", __FILE__, __LINE__);
@@ -2656,27 +2769,28 @@ namespace {
     printf("Using Zoltan version %f, method %s\n", ver, method);
     ierr = Zoltan_LB_Partition(zz, &changes, &zngid_ent, &znlid_ent, &dummy0, &dummy1, &dummy2,
                                &dummy3, &dummy4, &znobj, &zgids, &zlids, &zprocs, &zparts);
-    if (ierr) {
+    if (ierr != 0) {
       fprintf(stderr, "Error returned from Zoltan_LB_Partition (%s:%d)\n", __FILE__, __LINE__);
       goto End;
     }
 
     /* Sanity check */
-    if (ndot != (size_t)znobj) {
-      fprintf(stderr, "Sanity check failed; ndot " ST_ZU " != znobj " ST_ZU ".\n", (size_t)ndot,
-              (size_t)znobj);
+    if (ndot != static_cast<size_t>(znobj)) {
+      fprintf(stderr, "Sanity check failed; ndot " ST_ZU " != znobj " ST_ZU ".\n", ndot,
+              static_cast<size_t>(znobj));
       goto End;
     }
 
     /* Convert data types from int to int. */
-    for (size_t i    = 0; i < ndot; i++)
+    for (size_t i = 0; i < ndot; i++) {
       part[zgids[i]] = zparts[i];
+    }
 
   End:
     /* Clean up */
     (void)Zoltan_LB_Free_Part(&zgids, &zlids, &zprocs, &zparts);
     (void)Zoltan_Destroy(&zz);
-    if (ierr) {
+    if (ierr != 0) {
       MPI_Finalize();
       exit(-1);
     }
@@ -2699,43 +2813,52 @@ namespace {
     int minwgt, maxwgt, sumwgt;
 
     std::vector<int> cnts(npart);
-    if (wgt)
+    if (wgt != nullptr) {
       cntwgt.resize(npart);
+    }
     for (size_t i = 0; i < ndot; i++) {
       cnts[part[i]]++;
-      if (wgt)
+      if (wgt != nullptr) {
         cntwgt[part[i]] += wgt[i];
+      }
     }
 
     int    max = 0;
     int    min = ndot;
     size_t sum = 0;
-    if (wgt) {
+    if (wgt != nullptr) {
       maxwgt = 0;
       minwgt = INT_MAX;
       sumwgt = 0;
     }
 
     for (int i = 0; i < npart; i++) {
-      if (cnts[i] > max)
+      if (cnts[i] > max) {
         max = cnts[i];
-      if (cnts[i] < min)
+      }
+      if (cnts[i] < min) {
         min = cnts[i];
+      }
       sum += cnts[i];
-      if (wgt) {
-        if (cntwgt[i] > maxwgt)
+      if (wgt != nullptr) {
+        if (cntwgt[i] > maxwgt) {
           maxwgt = cntwgt[i];
-        if (cntwgt[i] < minwgt)
+        }
+        if (cntwgt[i] < minwgt) {
           minwgt = cntwgt[i];
+        }
         sumwgt += cntwgt[i];
       }
-      if (cnts[i] == 0)
+      if (cnts[i] == 0) {
         printf("ZERO on %d\n", i);
+      }
     }
 
-    printf("CNT STATS:  min = %d  max = %d  avg = %f\n", min, max, (float)sum / (float)npart);
-    if (wgt)
+    printf("CNT STATS:  min = %d  max = %d  avg = %f\n", min, max,
+           static_cast<float>(sum) / static_cast<float>(npart));
+    if (wgt != nullptr) {
       printf("WGT STATS:  min = %d  max = %d  avg = %f\n", minwgt, maxwgt,
-             (float)sumwgt / (float)npart);
+             static_cast<float>(sumwgt) / static_cast<float>(npart));
+    }
   }
-}
+} // namespace

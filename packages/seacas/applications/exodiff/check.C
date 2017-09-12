@@ -1,6 +1,6 @@
-// Copyright(C) 2008 Sandia Corporation.  Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software
+// Copyright(C) 2008 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -63,8 +63,7 @@ namespace {
   template <typename INT>
   bool Check_Nodal(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *node_map,
                    const INT *id_map, bool check_only);
-  template <typename INT>
-  bool Check_Elmt_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool check_only);
+  template <typename INT> bool Check_Elmt_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2);
   template <typename INT>
   bool Check_Nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *node_map,
                      bool check_only);
@@ -78,7 +77,7 @@ namespace {
   template <typename INT>
   bool Check_Elmt_Block_Connectivity(Exo_Block<INT> * /*block1*/, Exo_Block<INT> * /*block2*/);
   bool close_compare(const std::string &st1, const std::string &st2);
-}
+} // namespace
 
 template <typename INT> bool Check_Global(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
 {
@@ -122,7 +121,7 @@ void Check_Compatible_Meshes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, boo
     is_diff = true;
   }
 
-  if (!Check_Elmt_Block(file1, file2, check_only)) {
+  if (!Check_Elmt_Block(file1, file2)) {
     is_diff = true;
   }
 
@@ -221,8 +220,7 @@ namespace {
     return is_same;
   }
 
-  template <typename INT>
-  bool Check_Elmt_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, bool check_only)
+  template <typename INT> bool Check_Elmt_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2)
   {
     bool is_same = true;
     // Verify that element blocks match in the two files...
@@ -251,7 +249,7 @@ namespace {
             }
             else {
               // Only do this check if Check_Elmt_Block_Params does not fail.
-              // TODO: Pass in node_map and node_id_map...
+              // TODO(gdsjaar): Pass in node_map and node_id_map...
               if (!interface.map_flag) {
                 if (!Check_Elmt_Block_Connectivity(block1, block2)) {
                   is_same = false;
@@ -595,7 +593,7 @@ namespace {
     }
     return true;
   }
-}
+} // namespace
 
 template bool Check_Global(ExoII_Read<int> &file1, ExoII_Read<int> &file2);
 template void Check_Compatible_Meshes(ExoII_Read<int> &file1, ExoII_Read<int> &file2,

@@ -49,7 +49,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #endif
 
 #include <Xpetra_ConfigDefs.hpp>
@@ -1179,11 +1179,6 @@ namespace {
                                 Teuchos::tuple<GO>(MyGlobalElements[i]),
                                 Teuchos::tuple<Scalar>(1.0) );
     }
-
-    // access data before fill complete!
-    bool bSuccess = true;
-    TEUCHOS_TEST_THROW(local_matrix_type view1 = A->getLocalMatrix(), std::runtime_error, std::cout, bSuccess);
-    TEST_EQUALITY(bSuccess, true);
 
     A->fillComplete();
 

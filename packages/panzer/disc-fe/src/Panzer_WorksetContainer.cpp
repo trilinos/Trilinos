@@ -116,6 +116,9 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
       if(worksetVector!=Teuchos::null && wd.applyOrientations())
         applyOrientations(wd.getElementBlock(),*worksetVector);
 
+      if(worksetVector!=Teuchos::null)
+        setIdentifiers(wd,*worksetVector);
+
       // store vector for reuse in the future
       worksets_[wd] = worksetVector;
    }
@@ -147,6 +150,9 @@ WorksetContainer::getSideWorksets(const WorksetDescriptor & desc)
       // apply orientations to the worksets for this side
       if(worksetMap!=Teuchos::null)
         applyOrientations(desc,*worksetMap);
+
+      if(worksetMap!=Teuchos::null)
+        setIdentifiers(desc,*worksetMap);
 
       // store map for reuse in the future
       sideWorksets_[desc] = worksetMap;
@@ -227,6 +233,27 @@ applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ug
     applyOrientations(itr->first,*itr->second);
   }
 #endif
+}
+
+void WorksetContainer::
+setIdentifiers(const WorksetDescriptor & wd,std::vector<Workset> & worksets)
+{
+  std::size_t hash = std::hash<WorksetDescriptor>()(wd); // this is really ugly, is this really a C++ standard?
+  for(std::size_t i=0;i<worksets.size();i++)
+    worksets[i].setIdentifier(hash+i);
+}
+
+void WorksetContainer::
+setIdentifiers(const WorksetDescriptor & wd,std::map<unsigned,Workset> & workset_map)
+{
+  std::size_t hash = std::hash<WorksetDescriptor>()(wd); // this is really ugly, is this really a C++ standard?
+  std::size_t offset = 0;
+  for(auto itr : workset_map) {
+    // itr.second.setIdentifier(hash+offset);
+    workset_map[itr.first].setIdentifier(hash+offset);
+
+    offset++;
+  }
 }
 
 #if defined(__KK__)

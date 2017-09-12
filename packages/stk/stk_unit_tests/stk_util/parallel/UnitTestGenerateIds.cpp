@@ -33,7 +33,7 @@
 
 #include <gtest/gtest.h>
 #include <vector>
-#include <mpi.h>
+#include "mpi.h"
 #include <algorithm>
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/environment/WallTime.hpp>

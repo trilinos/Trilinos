@@ -144,7 +144,7 @@ namespace MueLu {
 
     //! Check
     // Return true if Factory associated with varName is registered
-    const bool hasFactory(const std::string& varName) const;
+    bool hasFactory(const std::string& varName) const;
 
 
     //!

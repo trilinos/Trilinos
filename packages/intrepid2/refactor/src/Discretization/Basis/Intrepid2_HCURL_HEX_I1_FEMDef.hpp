@@ -336,6 +336,29 @@ namespace Intrepid2 {
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
+
+
+    // dofCoeffs on host and create its mirror view to device
+    Kokkos::DynRankView<typename scalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+      dofCoeffs("dofCoeffsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
+
+    // for HCURL_HEX_I1 dofCoeffs are the tangents on the hexahedron edges (with tangents magnitude equal to edges' lengths)
+    dofCoeffs(0,0)  =  2.0;   dofCoeffs(0,1)  =  0.0;   dofCoeffs(0,2)  =  0.0;
+    dofCoeffs(1,0)  =  0.0;   dofCoeffs(1,1)  =  2.0;   dofCoeffs(1,2)  =  0.0;
+    dofCoeffs(2,0)  = -2.0;   dofCoeffs(2,1)  =  0.0;   dofCoeffs(2,2)  =  0.0;
+    dofCoeffs(3,0)  =  0.0;   dofCoeffs(3,1)  = -2.0;   dofCoeffs(3,2)  =  0.0;
+    dofCoeffs(4,0)  =  2.0;   dofCoeffs(4,1)  =  0.0;   dofCoeffs(4,2)  =  0.0;
+    dofCoeffs(5,0)  =  0.0;   dofCoeffs(5,1)  =  2.0;   dofCoeffs(5,2)  =  0.0;
+    dofCoeffs(6,0)  = -2.0;   dofCoeffs(6,1)  =  0.0;   dofCoeffs(6,2)  =  0.0;
+    dofCoeffs(7,0)  =  0.0;   dofCoeffs(7,1)  = -2.0;   dofCoeffs(7,2)  =  0.0;
+    dofCoeffs(8,0)  =  0.0;   dofCoeffs(8,1)  =  0.0;   dofCoeffs(8,2)  =  2.0;
+    dofCoeffs(9,0)  =  0.0;   dofCoeffs(9,1)  =  0.0;   dofCoeffs(9,2)  =  2.0;
+    dofCoeffs(10,0) =  0.0;   dofCoeffs(10,1) =  0.0;   dofCoeffs(10,2) =  2.0;
+    dofCoeffs(11,0) =  0.0;   dofCoeffs(11,1) =  0.0;   dofCoeffs(11,2) =  2.0;
+
+    this->dofCoeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoeffs);
+    Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);
+
   }
 
 }// namespace Intrepid2

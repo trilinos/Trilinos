@@ -38,7 +38,6 @@
 #include <exception>                    // for uncaught_exception
 #include <stk_util/environment/Env.hpp>        // for cpu_now
 #include <stk_util/environment/FormatTime.hpp>  // for formatTime
-#include <stk_util/util/heap_usage.hpp>   // for get_heap_info
 #include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
 #include <string>                       // for basic_string, string, etc
 #include <utility>                      // for pair
@@ -233,7 +232,6 @@ Trace::Trace(
   : Traceback(function_name),
     m_diagWriter(dout),
     m_startCpuTime(0.0),
-    m_startMemAlloc(0),
     m_lineMask(line_mask),
     m_do_trace(do_trace),
     m_flags((dout.isTracing()
@@ -249,7 +247,6 @@ Trace::Trace(
 
     if (dout.shouldPrint(LOG_TRACE_STATS)) {
       m_startCpuTime = sierra::Env::cpu_now();
-      m_startMemAlloc = stk::get_heap_used();
     }
   }
 }
@@ -260,12 +257,10 @@ Trace::~Trace()
   if (m_do_trace && (m_flags & IN_TRACE_LIST)) {
     if (m_diagWriter.shouldPrint(LOG_TRACE_STATS)) {
       m_startCpuTime = sierra::Env::cpu_now() - m_startCpuTime;
-      m_startMemAlloc = stk::get_heap_used() - m_startMemAlloc;
     }
 
     if (m_diagWriter.shouldPrint(LOG_TRACE_STATS)) {
-      m_diagWriter.m(m_lineMask) << "[" << stk::formatTime(m_startCpuTime)
-                                 << "s, " << m_startMemAlloc << "]" << dendl;
+      m_diagWriter.m(m_lineMask) << "[" << stk::formatTime(m_startCpuTime) << "s]" << dendl;
     }
 
     m_diagWriter.m(m_lineMask) << (std::uncaught_exception() ? " (throw unwinding) " : "")
