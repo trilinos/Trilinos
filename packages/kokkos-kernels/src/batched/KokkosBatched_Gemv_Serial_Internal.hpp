@@ -45,21 +45,23 @@ namespace KokkosBatched {
            const ValueType *__restrict__ x, const int xs0,
            const ScalarType beta,
            /**/  ValueType *__restrict__ y, const int ys0) {
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialGemvInternal:: not valid template types");
+
+      const ScalarType one(1.0), zero(0.0);
+
       // y = beta y + alpha A x
       // y (m), A(m x n), B(n)
 
-      typedef ValueType value_type;
-
-      if      (beta == 0) SerialSetInternal  ::invoke(m, 0,    y, ys0);
-      else if (beta != 1) SerialScaleInternal::invoke(m, beta, y, ys0);
+      if      (beta == zero) SerialSetInternal  ::invoke(m, zero, y, ys0);
+      else if (beta != one)  SerialScaleInternal::invoke(m, beta, y, ys0);
       
-      if (alpha != 0) {
+      if (alpha != zero) {
         if (m <= 0 || n <= 0) return 0;
 
-        const value_type alpha_value(alpha);
         for (int i=0;i<m;++i) {
-          value_type t(0);
-          const value_type *__restrict__ tA = (A + i*as0);
+          ValueType t(0);
+          const ValueType *__restrict__ tA = (A + i*as0);
 
               
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
@@ -67,7 +69,7 @@ namespace KokkosBatched {
 #endif
           for (int j=0;j<n;++j)
             t += tA[j*as1]*x[j*xs0];
-          y[i*ys0] += alpha_value*t;
+          y[i*ys0] += alpha*t;
         }
       }
       return 0;
@@ -85,24 +87,28 @@ namespace KokkosBatched {
            const ValueType *__restrict__ x, const int xs0,
            const ScalarType beta,
            /**/  ValueType *__restrict__ y, const int ys0) {
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialGemvInternal:: not valid template types");
+
+      const ScalarType one(1.0), zero(0.0);
+
       // y = beta y + alpha A x
       // y (m), A(m x n), B(n)
 
-      typedef ValueType value_type;
       enum : int {
         mbAlgo = Algo::Gemv::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
 
-      if      (beta == 0) SerialSetInternal  ::invoke(m, 0,    y, ys0);
-      else if (beta != 1) SerialScaleInternal::invoke(m, beta, y, ys0);
+      if      (beta == zero) SerialSetInternal  ::invoke(m, zero, y, ys0);
+      else if (beta != one)  SerialScaleInternal::invoke(m, beta, y, ys0);
       
-      if (alpha != 0) {
+      if (alpha != zero) {
         if (m <= 0 || n <= 0) return 0;
-        const value_type alpha_value(alpha);
+
         InnerMultipleDotProduct<mbAlgo> inner(as0, as1, xs0, ys0);
         const int mb = mbAlgo;
         for (int i=0;i<m;i+=mb) 
-          inner.serial_invoke(alpha_value, A+i*as0, x, (i+mb) > m ? (m-i) : mb, n, y+i*ys0 );
+          inner.serial_invoke(alpha, A+i*as0, x, (i+mb) > m ? (m-i) : mb, n, y+i*ys0 );
       }
       return 0;
     }

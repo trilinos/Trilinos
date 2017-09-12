@@ -2,6 +2,7 @@
 
 TRILINOS_UPDATE_BRANCH=$1
 TRILINOS_PRISTINE_BRANCH=$2
+KOKKOS_UPDATE_BRANCH=$3
 
 if [ -z $TRILINOS_UPDATE_BRANCH ]
 then
@@ -34,7 +35,12 @@ git reset --hard origin/$TRILINOS_UPDATE_BRANCH
 git pull
 cd ..
 
+if [ -n $KOKKOS_UPDATE_BRANCH ]
+then
+  python ${TRILINOS_PRISTINE_PATH}/packages/kokkos/config/snapshot.py ${KOKKOS_PATH} ${TRILINOS_UPDATED_PATH}/packages
+fi
 python ${TRILINOS_PRISTINE_PATH}/packages/kokkos/config/snapshot.py ${KOKKOSKERNELS_PATH} ${TRILINOS_UPDATED_PATH}/packages
+
 
 cd ${TRILINOS_UPDATED_PATH}
 echo ""

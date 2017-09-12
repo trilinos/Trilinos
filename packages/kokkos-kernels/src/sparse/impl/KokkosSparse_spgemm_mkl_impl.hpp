@@ -96,7 +96,7 @@ namespace Impl{
 
     typedef typename KernelHandle::nnz_lno_t idx;
     typedef typename KernelHandle::size_type size_type;
-    typedef in_row_index_view_type idx_array_type;
+
 
     typedef typename KernelHandle::HandleTempMemorySpace HandleTempMemorySpace;
     typedef typename Kokkos::View<int *, HandleTempMemorySpace> int_temp_work_view_t;
@@ -106,9 +106,9 @@ namespace Impl{
     typedef typename KernelHandle::nnz_scalar_t value_type;
 
 
-    typedef typename in_row_index_view_type::device_type device1;
-    typedef typename in_nonzero_index_view_type::device_type device2;
-    typedef typename in_nonzero_value_view_type::device_type device3;
+    
+
+
 
     typedef typename KernelHandle::HandleExecSpace MyExecSpace;
 /*
@@ -121,6 +121,8 @@ namespace Impl{
       return;
     }
 */
+    if (verbose)
+    	std::cout << "runing mkl" << std::endl;
     if (Kokkos::Impl::is_same<idx, int>::value){
 
       int *a_xadj = NULL;
@@ -168,9 +170,7 @@ namespace Impl{
       int *b_adj = (int *)entriesB.ptr_on_device();
 
 
-      int nnzA = entriesA.dimension_0();
-      int nnzB = entriesB.dimension_0();
-
+ 
       value_type *a_ew = valuesA.ptr_on_device();
       value_type *b_ew = valuesB.ptr_on_device();
 

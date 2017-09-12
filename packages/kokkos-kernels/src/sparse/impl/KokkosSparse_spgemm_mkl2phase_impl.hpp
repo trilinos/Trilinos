@@ -84,8 +84,8 @@ void mkl2phase_symbolic(
 #ifdef HAVE_KOKKOSKERNELS_MKL
 
   typedef typename KernelHandle::nnz_lno_t idx;
-  typedef typename KernelHandle::size_type size_type;
-  typedef in_row_index_view_type idx_array_type;
+  
+
 
   typedef typename KernelHandle::HandlePersistentMemorySpace HandlePersistentMemorySpace;
 
@@ -94,8 +94,8 @@ void mkl2phase_symbolic(
 
 
 
-  typedef typename in_row_index_view_type::device_type device1;
-  typedef typename in_nonzero_index_view_type::device_type device2;
+  
+
 
   typedef typename KernelHandle::HandleExecSpace MyExecSpace;
   if (Kokkos::Impl::is_same<idx, int>::value){
@@ -141,8 +141,8 @@ void mkl2phase_symbolic(
       c_xadj = handle->persistent_c_xadj.ptr_on_device();
     }
 
-    int nnzA = entriesA.dimension_0();
-    int nnzB = entriesB.dimension_0();
+    
+    
     char trans = 'N';
     MKL_INT request = 1;
     MKL_INT sort = handle->get_mkl_sort_option();
@@ -219,8 +219,8 @@ void mkl2phase_symbolic(
 #ifdef HAVE_KOKKOSKERNELS_MKL
 
     typedef typename KernelHandle::nnz_lno_t idx;
-    typedef typename KernelHandle::size_type size_type;
-    typedef in_row_index_view_type idx_array_type;
+    
+
 
 
     typedef typename KernelHandle::HandlePersistentMemorySpace HandlePersistentMemorySpace;
@@ -232,9 +232,9 @@ void mkl2phase_symbolic(
     typedef typename KernelHandle::nnz_scalar_t value_type;
 
 
-    typedef typename in_row_index_view_type::device_type device1;
-    typedef typename in_nonzero_index_view_type::device_type device2;
-    typedef typename in_nonzero_value_view_type::device_type device3;
+    
+
+
 
     typedef typename KernelHandle::HandleExecSpace MyExecSpace;
     if (Kokkos::Impl::is_same<idx, int>::value){
@@ -246,7 +246,7 @@ void mkl2phase_symbolic(
 
       int *a_adj = (int *)entriesA.ptr_on_device();
       int *b_adj = (int *)entriesB.ptr_on_device();
-      int *c_adj = (int *)entriesC.ptr_on_device();
+      
 
       value_type *a_ew = valuesA.ptr_on_device();
       value_type *b_ew = valuesB.ptr_on_device();

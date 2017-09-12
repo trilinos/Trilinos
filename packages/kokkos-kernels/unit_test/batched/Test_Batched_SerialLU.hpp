@@ -18,20 +18,19 @@ namespace Test {
   template<typename DeviceType,
            typename ViewType,
            typename AlgoTagType>
-  struct Functor {
+  struct Functor_TestBatchedSerialLU {
     ViewType _a;
 
     KOKKOS_INLINE_FUNCTION
-    Functor(const ViewType &a) 
+    Functor_TestBatchedSerialLU(const ViewType &a) 
       : _a(a) {} 
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const int k) const {
       auto aa = Kokkos::subview(_a, k, Kokkos::ALL(), Kokkos::ALL());
 
-      const int iend = aa.dimension_0();
-      for (int i=0;i<iend;++i)
-        aa(i,i) = typename ViewType::value_type(10);
+      for (int i=0;i<static_cast<int>(aa.dimension_0());++i)
+        aa(i,i) += 10.0;
 
       SerialLU<AlgoTagType>::invoke(aa);
     }
@@ -59,8 +58,8 @@ namespace Test {
 
     Kokkos::deep_copy(a1, a0);
 
-    Functor<DeviceType,ViewType,Algo::LU::Unblocked>(a0).run();
-    Functor<DeviceType,ViewType,AlgoTagType>(a1).run();
+    Functor_TestBatchedSerialLU<DeviceType,ViewType,Algo::LU::Unblocked>(a0).run();
+    Functor_TestBatchedSerialLU<DeviceType,ViewType,AlgoTagType>(a1).run();
 
     /// for comparison send it to host
     typename ViewType::HostMirror a0_host = Kokkos::create_mirror_view(a0);
@@ -93,43 +92,22 @@ int test_batched_lu() {
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutLeft,DeviceType> ViewType;
     Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
-    Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(    10, 15);
-    Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(  1024,  9);
-    Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(132231,  3);
+    for (int i=0;i<10;++i) {                                                                                        
+      printf("Testing: LayoutLeft,  Blksize %d\n", i); 
+      Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
+    }
   }
 #endif
 #if defined(KOKKOSKERNELS_INST_LAYOUTRIGHT)
   {
     typedef Kokkos::View<ValueType***,Kokkos::LayoutRight,DeviceType> ViewType;
     Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(     0, 10);
-    Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(    10, 15);
-    Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(  1024,  9);
-    Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(132231,  3);
+    for (int i=0;i<10;++i) {                                                                                        
+      printf("Testing: LayoutLeft,  Blksize %d\n", i); 
+      Test::impl_test_batched_lu<DeviceType,ViewType,AlgoTagType>(1024,  i);
+    }
   }
 #endif
 
   return 0;
 }
-
-#if defined(KOKKOSKERNELS_INST_FLOAT)
-TEST_F( TestCategory, batched_scalar_lu_float ) {
-  typedef Algo::LU::Blocked algo_tag_type;
-  test_batched_lu<TestExecSpace,float,algo_tag_type>();
-}
-#endif
-
-
-#if defined(KOKKOSKERNELS_INST_DOUBLE)
-TEST_F( TestCategory, batched_scalar_lu_double ) {
-  typedef Algo::LU::Blocked algo_tag_type;
-  test_batched_lu<TestExecSpace,double,algo_tag_type>();
-}
-#endif
-
-
-#if defined(KOKKOSKERNELS_INST_COMPLEX_DOUBLE)
-TEST_F( TestCategory, batched_scalar_lu_dcomplex ) {
-  typedef Algo::LU::Blocked algo_tag_type;
-  test_batched_lu<TestExecSpace,Kokkos::complex<double>,algo_tag_type>();
-}
-#endif
