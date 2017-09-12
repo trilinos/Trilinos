@@ -279,7 +279,7 @@ class FastICPrec
             int n = nRows;
             *nzl = aRowMapHost[nRows] * (level + 2);
             *nzu = aRowMapHost[nRows] * (level + 2);
-            int i;
+            Ordinal i;
             int levfill = level;
             vector<int> lnklst(n);
             vector<int> curlev(n);
@@ -315,7 +315,7 @@ class FastICPrec
                 first = iwork[0];
                 curlev[first] = 0;
 
-                for (int j=0; j<=len-2; j++)
+                for (j=0; j<=len-2; j++)
                 {
                     lnklst[iwork[j]] = iwork[j+1];
                     curlev[iwork[j]] = 0;
@@ -439,7 +439,7 @@ class FastICPrec
             aRowIdx = OrdinalArray("aRowIds", knzl + knzu);
             Ordinal aRowPtr = 0;
             aRowMap[0] = 0;
-            for (Ordinal i = 0; i < nRows; i++) 
+            for (i = 0; i < nRows; i++) 
             {
                 #ifdef FASTIC_DEBUG_OUTPUT
                 std::cout << "***row:" << i << std::endl;

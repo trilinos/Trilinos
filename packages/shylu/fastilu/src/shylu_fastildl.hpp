@@ -282,7 +282,7 @@ class FastILDLPrec
             int n = nRows;
             *nzl = aRowMapHost[nRows] * (level + 2);
             *nzu = aRowMapHost[nRows] * (level + 2);
-            int i;
+            Ordinal i;
             int levfill = level;
             vector<int> lnklst(n);
             vector<int> curlev(n);
@@ -318,7 +318,7 @@ class FastILDLPrec
                 first = iwork[0];
                 curlev[first] = 0;
 
-                for (int j=0; j<=len-2; j++)
+                for (j=0; j<=len-2; j++)
                 {
                     lnklst[iwork[j]] = iwork[j+1];
                     curlev[iwork[j]] = 0;
@@ -445,7 +445,7 @@ class FastILDLPrec
             Ordinal aRowPtr = 0;
 
             aRowMap[0] = 0;
-            for (Ordinal i = 0; i < nRows; i++) 
+            for (i = 0; i < nRows; i++) 
             {
                 #ifdef FASTILDL_DEBUG_OUTPUT
                 std::cout << "***row:" << i << std::endl;
