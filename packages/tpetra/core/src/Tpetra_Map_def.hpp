@@ -1933,7 +1933,7 @@ namespace Tpetra {
     auto numLocalElements2 = lmap2.getNodeNumElements();
 
     if (numLocalElements1 > numLocalElements2) {
-      // There are fewer indices in the first map on this process than in second map.
+      // There are more indices in the first map on this process than in second map.
       return false;
     }
 
@@ -1953,8 +1953,8 @@ namespace Tpetra {
     typedef Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space> range_type;
 
     // Check all elements.
-    size_t numDiff = 0;
-    Kokkos::parallel_reduce(range_type(0, numLocalElements1),
+    LocalOrdinal numDiff = 0;
+    Kokkos::parallel_reduce("isLocallyFitted", range_type(0, numLocalElements1),
       KOKKOS_LAMBDA(const LocalOrdinal i, size_t& diff) {
         diff += (lmap1.getGlobalElement(i) != lmap2.getGlobalElement(i));
       }, numDiff);
