@@ -186,7 +186,9 @@
         
 \cbb{repartition: start level}{int}{2}{Minimum level to run partitioner. \muelu does not rebalance levels finer than this one.}
         
-\cbb{repartition: min rows per proc}{int}{800}{Minimum number of rows per processor. If the actual number if smaller, then rebalancing occurs.}
+\cbb{repartition: min rows per proc}{int}{800}{Minimum number of rows per MPI process. If the actual number if smaller, then rebalancing occurs.}
+
+\cbb{repartition: target rows per proc}{int}{0}{Target number of rows per MPI process after rebalancing. If the value is set to 0, it will use the value of "repartition: min rows per proc"}
         
 \cbb{repartition: max imbalance}{double}{1.2}{Maximum nonzero imbalance ratio. If the actual number is larger, the rebalancing occurs.}
         

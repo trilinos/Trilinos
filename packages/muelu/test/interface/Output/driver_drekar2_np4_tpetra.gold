@@ -85,10 +85,11 @@ Level 1
    Build (MueLu::RepartitionHeuristicFactory)
    repartition: start level = 1
    repartition: min rows per proc = 2000
+   repartition: target rows per proc = 0   [default]
    repartition: max imbalance = 1.327
    
    Build (MueLu::Zoltan2Interface)
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x25a2a48,node=0x25d8230,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x1566f88,node=0x1451c30,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1

@@ -78,6 +78,7 @@ Level 1
    Build (MueLu::RepartitionHeuristicFactory)
    repartition: start level = 2   [default]
    repartition: min rows per proc = 1000
+   repartition: target rows per proc = 0   [default]
    repartition: max imbalance = 1.2
    
    Build (MueLu::RepartitionInterface)
@@ -190,6 +191,7 @@ Level 2
    Build (MueLu::RepartitionHeuristicFactory)
    repartition: start level = 2   [default]
    repartition: min rows per proc = 1000
+   repartition: target rows per proc = 0   [default]
    repartition: max imbalance = 1.2
    
    Build (MueLu::RepartitionInterface)
@@ -302,6 +304,7 @@ Level 3
    Build (MueLu::RepartitionHeuristicFactory)
    repartition: start level = 2   [default]
    repartition: min rows per proc = 1000
+   repartition: target rows per proc = 0   [default]
    repartition: max imbalance = 1.2
    
    Build (MueLu::RepartitionInterface)
@@ -414,6 +417,7 @@ Level 4
    Build (MueLu::RepartitionHeuristicFactory)
    repartition: start level = 2   [default]
    repartition: min rows per proc = 1000
+   repartition: target rows per proc = 0   [default]
    repartition: max imbalance = 1.2
    
    Build (MueLu::RepartitionInterface)
