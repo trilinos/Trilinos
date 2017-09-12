@@ -218,8 +218,8 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     SingletonFilter
     SparseContainer
     SparsityFilter
-    TriDiContainer
     ContainerFactory
+    TriDiContainer
     Details::Chebyshev
     Details::DenseSolver
     Details::Factory
@@ -235,6 +235,9 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
   ENDIF()
   IF(Ifpack2_ENABLE_DEPRECATED_CODE)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES Krylov)
+  ENDIF()
+  IF(${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
+    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES BlockTriDiContainer)
   ENDIF()
 
   # Set the list of Ifpack2 classes templated on <LO, GO, Node> for

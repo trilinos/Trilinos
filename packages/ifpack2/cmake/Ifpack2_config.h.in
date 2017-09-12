@@ -47,6 +47,9 @@
 /* Define if Ifpack2::SupportGraph is enabled. */
 #cmakedefine HAVE_IFPACK2_SUPPORTGRAPH
 
+/* Enable timers in BlockTriDiContainer. */
+#cmakedefine HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
+
 /*
  * Package dependencies
  */
