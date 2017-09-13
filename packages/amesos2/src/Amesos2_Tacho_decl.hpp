@@ -220,11 +220,6 @@ private:
   Teuchos::Array<ordinal_type> colind_;
   /// Stores the row indices of the nonzero entries
   Teuchos::Array<size_type> rowptr_;
-
-  /// Persisting 1D store for X
-  Teuchos::Array<tacho_type> xvals_;  int ldx_;
-  /// Persisting 1D store for B
-  Teuchos::Array<tacho_type> bvals_;  int ldb_;
 };                              // End class Tacho
 
 
