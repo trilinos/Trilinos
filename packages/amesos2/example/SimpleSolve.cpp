@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
   typedef double Scalar;
-  typedef int LO;
-  typedef int GO;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
 
   typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
   typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
@@ -86,8 +86,8 @@ int main(int argc, char *argv[]) {
   // Before we do anything, check that SuperLU is enabled
   if( !Amesos2::query("SuperLU") ){
     std::cerr << "SuperLU not enabled.  Exiting..." << std::endl;
-    return EXIT_SUCCESS;	// Otherwise CTest will pick it up as
-				// failure, which it isn't really
+    return EXIT_SUCCESS;        // Otherwise CTest will pick it up as
+                                // failure, which it isn't really
   }
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm
