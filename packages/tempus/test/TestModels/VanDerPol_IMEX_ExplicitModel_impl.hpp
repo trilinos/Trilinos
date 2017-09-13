@@ -41,9 +41,15 @@ VanDerPol_IMEX_ExplicitModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
   x1_ic_ = 0.0;
   t0_ic_ = 0.0;
 
-  // Create x_space and f_space
-  x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim_);
-  f_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim_);
+  // Create using ProductVector so we can use in partitioned IMEX-RK Stepper.
+  using Teuchos::RCP;
+  Teuchos::Array<RCP<const Thyra::VectorSpaceBase<Scalar> > > yxSpaceArray;
+  RCP<const Thyra::VectorSpaceBase<Scalar> > xSpace =
+    Thyra::defaultSpmdVectorSpace<Scalar>(1);
+  for (int i=0; i < dim_; ++i) yxSpaceArray.push_back(xSpace);
+  x_space_ = Thyra::productVectorSpace<Scalar>(yxSpaceArray);
+  f_space_ = Thyra::productVectorSpace<Scalar>(yxSpaceArray);
+
   // Create p_space and g_space
   p_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(np_);
   g_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(ng_);
@@ -141,25 +147,26 @@ setupInOutArgs_() const
   nominalValues_ = inArgs_;
   if (haveIC_)
   {
+    using Teuchos::RCP;
+
     nominalValues_.set_t(t0_ic_);
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_ic=createMember(x_space_);
+    const RCP<Thyra::VectorBase<Scalar> > x_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_ic_view( *x_ic );
       x_ic_view[0] = x0_ic_;
       x_ic_view[1] = x1_ic_;
     }
     nominalValues_.set_x(x_ic);
+
     if (acceptModelParams_) {
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > p_ic =
-        createMember(p_space_);
+      const RCP<Thyra::VectorBase<Scalar> > p_ic = createMember(p_space_);
       {
         Thyra::DetachedVectorView<Scalar> p_ic_view( *p_ic );
         p_ic_view[0] = epsilon_;
       }
       nominalValues_.set_p(0,p_ic);
     }
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_ic =
-      createMember(x_space_);
+    const RCP<Thyra::VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_dot_ic_view( *x_dot_ic );
       x_dot_ic_view[0] = x1_ic_;
@@ -283,8 +290,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
       f_out_view[0] = x_in_view[1];
       f_out_view[1] = -x_in_view[0]/epsilon_;
-//    f_out_view[0] = 0.0;
-//    f_out_view[1] = -x_in_view[0]/epsilon_;
     }
   } else {
 
@@ -298,8 +303,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       Thyra::ConstDetachedVectorView<Scalar> x_dot_in_view( *x_dot_in );
       f_out_view[0] = x_dot_in_view[0] - x_in_view[1];
       f_out_view[1] = x_dot_in_view[1] + x_in_view[0]/epsilon_;
-//    f_out_view[0] = x_dot_in_view[0];
-//    f_out_view[1] = x_dot_in_view[1] + x_in_view[0]/epsilon_;
     }
     const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
     if (!is_null(W_out)) {
@@ -311,10 +314,6 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       W_view(0,1) = -beta;                                   // d(f0)/d(x1_n)
       W_view(1,0) = 1.0/epsilon_;                            // d(f1)/d(x0_n)
       W_view(1,1) = alpha;                                   // d(f1)/d(x1_n)
-//    W_view(0,0) = alpha;                                   // d(f0)/d(x0_n)
-//    W_view(0,1) = 0.0;                                     // d(f0)/d(x1_n)
-//    W_view(1,0) = 1.0/epsilon_;                            // d(f1)/d(x0_n)
-//    W_view(1,1) = alpha;                                   // d(f1)/d(x1_n)
       // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
     }
   }

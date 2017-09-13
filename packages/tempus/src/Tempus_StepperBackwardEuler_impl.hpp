@@ -254,7 +254,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
     if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (1.0/dt);
     if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
 
-    wrapperModel_->initialize(timeDer, inArgs, outArgs);
+    wrapperModel_->setForSolve(timeDer, inArgs, outArgs);
 
     stepperBEObserver_->observeBeforeSolve(solutionHistory, *this);
 

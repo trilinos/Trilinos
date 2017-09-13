@@ -17,7 +17,7 @@
 
 namespace Tempus_Test {
 
-/** \brief van der Pol model formulated for IMEX.
+/** \brief van der Pol model formulated for IMEX-RK.
  *
  *  This is a canonical equation of a nonlinear oscillator (Hairer, Norsett,
  *  and Wanner, pp. 111-115, and Hairer and Wanner, pp. 4-5) for an electrical
@@ -37,43 +37,43 @@ namespace Tempus_Test {
  *    \dot{x}_0(t_0=0) & = & x_1(t_0=0) = 0 \\
  *    \dot{x}_1(t_0=0) & = & [(1-x_0^2)x_1-x_0]/\epsilon = -2/\epsilon
  *  \f}
- *  For an IMEX time stepper, we need to rewrite this in the following form
+ *  For an IMEX-RK time stepper, we need to rewrite this in the following form
  *  \f{eqnarray*}{
- *    M(x,t)\, \dot{x}(x,t) + G(x,t) + F(x,t) & = & 0, \\
- *    \bar{G}(\dot{x},x,t) + F(x,t) & = & 0,
+ *    M(x,t)\, \dot{x} + G(x,t) + F(x,t) & = & 0, \\
+ *    \mathcal{G}(\dot{x},x,t) + F(x,t) & = & 0,
  *  \f}
- *  where \f$\bar{G}(\dot{x},x,t) = M(x,t)\, \dot{x} + G(x,t)\f$,
+ *  where \f$\mathcal{G}(\dot{x},x,t) = M(x,t)\, \dot{x} + G(x,t)\f$,
  *  \f$M(x,t)\f$ is the mass matrix, \f$F(x,t)\f$ is the operator
  *  representing the "slow" physics (and evolved explicitly), and
  *  \f$G(x,t)\f$ is the operator representing the "fast" physics.
  *  For the van der Pol problem, we can separate the terms as follows
  *  \f[
- *    x      = \left[\begin{array}{c} x_0 \\ x_1 \end{array}\right],\;
- *    F(x,t) = \left[\begin{array}{c} -x_1 \\ x_0/\epsilon\end{array}\right],
+ *    x      = \left\{\begin{array}{c} x_0 \\ x_1 \end{array}\right\},\;
+ *    F(x,t) = \left\{\begin{array}{c} -x_1 \\ x_0/\epsilon\end{array}\right\},
  *    \mbox{ and }
- *    G(x,t) = \left[\begin{array}{c} 0 \\
- *                   -(1-x_0^2)x_1/\epsilon \end{array}\right]
+ *    G(x,t) = \left\{\begin{array}{c} 0 \\
+ *                   -(1-x_0^2)x_1/\epsilon \end{array}\right\}
  *  \f]
  *  where \f$M(x,t)=I\f$ is the identity matrix.
  *
  *  Thus the explicit van der Pol model (VanDerPol_IMEX_ExplicitModel)
  *  formulated for IMEX is
  *  \f{eqnarray*}{
- *    \dot{x}_0(t) - x_1(t) & = & 0 \\
- *    \dot{x}_1(t) + x_0/\epsilon & = & 0
+ *    \mathcal{F}_0 & = & \dot{x}_0(t) - x_1(t) = 0 \\
+ *    \mathcal{F}_1 & = & \dot{x}_1(t) + x_0/\epsilon = 0
  *  \f}
  *  and the implicit van der Pol model (VanDerPol_IMEX_ImplicitModel)
  *  formulated for IMEX is
  *  \f{eqnarray*}{
- *    \dot{x}_0(t) & = & 0 \\
- *    \dot{x}_1(t) - (1-x_0^2)x_1/\epsilon & = & 0
+ *    \mathcal{G}_0 & = & \dot{x}_0(t) = 0 \\
+ *    \mathcal{G}_1 & = & \dot{x}_1(t) - (1-x_0^2)x_1/\epsilon = 0
  *  \f}
  *
  *  Recalling the defintion of the iteration matrix, \f$W\f$,
  *  \f[
- *    W_{ij} \equiv \frac{d\mathcal{F}_i}{dx_j} =
- *      \alpha \frac{\partial\mathcal{F}_i}{\partial \dot{x}_j}
- *    + \beta \frac{\partial\mathcal{F}_i}{\partial x_j}
+ *    W_{ij} \equiv \frac{d\mathcal{G}_i}{dx_j} =
+ *      \alpha \frac{\partial\mathcal{G}_i}{\partial \dot{x}_j}
+ *    + \beta \frac{\partial\mathcal{G}_i}{\partial x_j}
  *  \f]
  *  where
  *  \f[
@@ -88,17 +88,17 @@ namespace Tempus_Test {
  *  we can write for the implicit van der Pol model
  *  (VanDerPol_IMEX_ImplicitModel)
  *  \f{eqnarray*}{
- *    W_{00} = \alpha \frac{\partial\mathcal{F}_0}{\partial \dot{x}_0}
- *            + \beta \frac{\partial\mathcal{F}_0}{\partial x_0}
+ *    W_{00} = \alpha \frac{\partial\mathcal{G}_0}{\partial \dot{x}_0}
+ *            + \beta \frac{\partial\mathcal{G}_0}{\partial x_0}
  *         & = & \alpha \\
- *    W_{01} = \alpha \frac{\partial\mathcal{F}_0}{\partial \dot{x}_1}
- *            + \beta \frac{\partial\mathcal{F}_0}{\partial x_1}
+ *    W_{01} = \alpha \frac{\partial\mathcal{G}_0}{\partial \dot{x}_1}
+ *            + \beta \frac{\partial\mathcal{G}_0}{\partial x_1}
  *         & = & 0 \\
- *    W_{10} = \alpha \frac{\partial\mathcal{F}_1}{\partial \dot{x}_0}
- *            + \beta \frac{\partial\mathcal{F}_1}{\partial x_0}
+ *    W_{10} = \alpha \frac{\partial\mathcal{G}_1}{\partial \dot{x}_0}
+ *            + \beta \frac{\partial\mathcal{G}_1}{\partial x_0}
  *         & = & 2 \beta x_0 x_1/\epsilon \\
- *    W_{11} = \alpha \frac{\partial\mathcal{F}_1}{\partial \dot{x}_1}
- *            + \beta \frac{\partial\mathcal{F}_1}{\partial x_1}
+ *    W_{11} = \alpha \frac{\partial\mathcal{G}_1}{\partial \dot{x}_1}
+ *            + \beta \frac{\partial\mathcal{G}_1}{\partial x_1}
  *         & = & \alpha + \beta (x^2_0 - 1)/\epsilon \\
  *  \f}
  */

@@ -145,9 +145,6 @@ void StepperDIRK<Scalar>::setTableau(
 
   DIRK_ButcherTableau_ = createRKBT<Scalar>(stepperType,pList);
 
-  //Teuchos::SerialDenseMatrix<int,Scalar> A = DIRK_ButcherTableau_->A();
-  //std::cout << " A = \n" << A << std::endl;
-
   TEUCHOS_TEST_FOR_EXCEPTION( DIRK_ButcherTableau_->isDIRK() != true,
     std::logic_error,
        "Error - StepperDIRK did not receive a DIRK Butcher Tableau!\n"
@@ -260,7 +257,7 @@ void StepperDIRK<Scalar>::takeStep(
         if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
         if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
 
-        wrapperModel_->initialize(timeDer, inArgs, outArgs);
+        wrapperModel_->setForSolve(timeDer, inArgs, outArgs);
 
         stepperDIRKObserver_->observeBeforeSolve(solutionHistory, *this);
 
