@@ -98,13 +98,10 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
     size_type_array row_ptr;
     ordinal_type_array cols;
 
-#ifndef HAVE_TEUCHOS_COMPLEX
     if(single_process_optim_check()) {
       // in the optimized case we read the values directly from the matrix
       // without converting through the Teuchos::Array setup. Note that in
       // this case nzvals_, colind_, and rowptr_ are never set in loadA_impl.
-      // For HAVE_TEUCHOS_COMPLEX is_optimized_case() return false because we
-      // need nzvals_.
       auto sp_rowptr = this->matrixA_->returnRowPtr();
         TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
           std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null");
@@ -131,10 +128,9 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
 
       // TODO - For Tpetra, we could have a direct view like this...
       // Can we explot this here?
-      // row_ptr = size_type_array(sp_rowptr, this->globalNumRows_ + 1);
+      //row_ptr = size_type_array(sp_rowptr, this->globalNumRows_ + 1);
     }
     else
-#endif
     {
       // Non optimized case used the arrays set up in loadA_impl
       row_ptr = size_type_array(this->rowptr_.getRawPtr(), this->globalNumRows_ + 1);
@@ -159,7 +155,6 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
   if ( this->root_ ) {
     value_type_array values;
 
-#ifndef HAVE_TEUCHOS_COMPLEX
     if(single_process_optim_check()) {
       // in the optimized case we read the values directly from the matrix
       // without converting through the Teuchos::Array setup.
@@ -169,7 +164,6 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
       values = value_type_array(sp_values, this->globalNumNonZeros_);
     }
     else
-#endif
     {
       // Non optimized case used the arrays set up in loadA_impl
       values = value_type_array(this->nzvals_.getRawPtr(), this->globalNumNonZeros_);
@@ -208,36 +202,34 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
 
   int ierr = 0; // returned error code
 
-  if ( this->root_ ) {
-    {                           // Do solve!
-  #ifdef HAVE_AMESOS2_TIMER
-      Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
-  #endif
-      // validate
-      int i_ld_rhs = as<int>(ld_rhs);
-
-      for(size_t j = 0 ; j < nrhs; j++) {
-        // TODO: Decide how to organize this best for Amesos2
-        // Clarify behavior for Cuda - exception? configure error?
-#ifdef KOKKOS_HAVE_OPENMP
-        typedef Kokkos::OpenMP                                  DeviceSpaceType;
-#else
-        typedef Kokkos::Serial                                  DeviceSpaceType;
+  if ( this->root_ ) {  // Do solve!
+#ifdef HAVE_AMESOS2_TIMER
+    Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-        typedef typename Tacho::Solver<tacho_type,DeviceSpaceType>::
-          value_type_matrix solve_array_t;
+    // validate
+    int i_ld_rhs = as<int>(ld_rhs);
 
-        const int n = 1;
-        solve_array_t x(&xValues.getRawPtr()[j*i_ld_rhs], this->globalNumRows_, n);
-        solve_array_t b(&bValues.getRawPtr()[j*i_ld_rhs], this->globalNumRows_, n);
-        solve_array_t t("t", this->globalNumRows_, n);
-        data_.solver.solve(x, b, t);
+    for(size_t j = 0 ; j < nrhs; j++) {
+      // TODO: Decide how to organize this best for Amesos2
+      // Clarify behavior for Cuda - exception? configure error?
+#ifdef KOKKOS_HAVE_OPENMP
+      typedef Kokkos::OpenMP                                  DeviceSpaceType;
+#else
+      typedef Kokkos::Serial                                  DeviceSpaceType;
+#endif
+      typedef typename Tacho::Solver<tacho_type,DeviceSpaceType>::
+        value_type_matrix solve_array_t;
 
-        int status = 0; // TODO: determine what error handling will be
-        if(status != 0) {
-          ierr = status;
-          break;
-        }
+      const int n = 1;
+      solve_array_t x(&xValues.getRawPtr()[j*i_ld_rhs], this->globalNumRows_, n);
+      solve_array_t b(&bValues.getRawPtr()[j*i_ld_rhs], this->globalNumRows_, n);
+      solve_array_t t("t", this->globalNumRows_, n);
+      data_.solver.solve(x, b, t);
+
+      int status = 0; // TODO: determine what error handling will be
+      if(status != 0) {
+        ierr = status;
+        break;
       }
     }
   }
@@ -320,12 +312,10 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
     return(false);
   }
 
-#ifndef HAVE_TEUCHOS_COMPLEX
   if(single_process_optim_check()) {
     // Do nothing
   }
   else
-#endif
   {
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
