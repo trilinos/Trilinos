@@ -45,9 +45,10 @@
 #define ROL_AFFINE_HYPERPLANE_EQUALITY_CONSTRAINT_H
 
 #include "ROL_Vector.hpp"
-#include "ROL_StdVector.hpp"
+#include "ROL_SingletonVector.hpp"
 #include "ROL_Constraint.hpp"
 
+#include <vector>
 /** @ingroup func_group
     \class ROL::ScalarLinearConstraint
     \brief This equality constraint defines an affine hyperplane.
@@ -57,7 +58,7 @@
        c(x) := \langle a, x\rangle_{\mathcal{X}^*,\mathcal{X}} - b = 0
     \f]
     where \f$a\in\mathcal{X}^*\f$ and \f$b\in\mathbb{R}\f$.  The range space of
-    \f$c\f$ is an ROL::StdVector with dimension 1.
+    \f$c\f$ is an ROL::SingletonVector with dimension 1.
 
     Note: If \f$a\neq 0\f$ then there exists an explicit solution of the
     augmented system.  Namely,
@@ -88,24 +89,21 @@ public:
     : a_(a), b_(b) {}
 
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    StdVector<Real>    cc = Teuchos::dyn_cast<StdVector<Real> >(c);
-    std::vector<Real> &cp = *(cc.getVector());
-    cp[0] = a_->dot(x.dual()) - b_;
+    SingletonVector<Real> cc = Teuchos::dyn_cast<SingletonVector<Real> >(c);
+    cc.setValue(a_->dot(x.dual()) - b_);
   }
 
   void applyJacobian(Vector<Real> &jv, const Vector<Real> &v,
                const Vector<Real> &x,  Real &tol) {
-    StdVector<Real>    jc = Teuchos::dyn_cast<StdVector<Real> >(jv);
-    std::vector<Real> &jp = *(jc.getVector());
-    jp[0] = a_->dot(v.dual());
+    SingletonVector<Real> jc = Teuchos::dyn_cast<SingletonVector<Real> >(jv);
+    jc.setValue(a_->dot(v.dual()));
   }
 
   void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v,
                       const Vector<Real> &x,   Real &tol) {
-    const StdVector<Real>    vc = Teuchos::dyn_cast<const StdVector<Real> >(v);
-    const std::vector<Real> &vp = *(vc.getVector());
+    const SingletonVector<Real>    vc = Teuchos::dyn_cast<const SingletonVector<Real> >(v);
     ajv.set(*a_);
-    ajv.scale(vp[0]);
+    ajv.scale(vc.getValue());
   }
 
   void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u,
@@ -117,14 +115,12 @@ public:
   std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2,
                                    const Vector<Real> &b1, const Vector<Real> &b2,
                                    const Vector<Real> &x,  Real &tol) {
-    StdVector<Real>    v2c = Teuchos::dyn_cast<StdVector<Real> >(v2);
-    std::vector<Real> &v2p = *(v2c.getVector());
-    const StdVector<Real>    b2c = Teuchos::dyn_cast<const StdVector<Real> >(b2);
-    const std::vector<Real> &b2p = *(b2c.getVector());
+    SingletonVector<Real>    v2c = Teuchos::dyn_cast<SingletonVector<Real> >(v2);
+    const SingletonVector<Real>    b2c = Teuchos::dyn_cast<const SingletonVector<Real> >(b2);
 
-    v2p[0] = (a_->dot(b1.dual()) - b2p[0])/a_->dot(*a_);
+    v2c.setValue( (a_->dot(b1.dual()) - b2c.getValue() )/a_->dot(*a_) );
     v1.set(b1.dual());
-    v1.axpy(-v2p[0],a_->dual());
+    v1.axpy(-v2c.getValue(),a_->dual());
 
     std::vector<Real> out;
     return out;
