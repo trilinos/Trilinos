@@ -1185,11 +1185,11 @@ void Details::AddKernels<SC, LO, GO, NO>::
 addSorted(
   const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Avals,
   const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Acolinds, 
+  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Acolinds,
   const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
   const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
   const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds, 
+  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
   const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
   typename Details::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
   typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
@@ -1452,11 +1452,11 @@ void Details::AddKernels<SC, LO, GO, NO>::
 addUnsorted(
   const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Avals,
   const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Acolinds, 
+  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Acolinds,
   const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
   const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
   const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds, 
+  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
   const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
   GO numGlobalCols,
   typename Details::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
@@ -1534,18 +1534,18 @@ addUnsorted(
   CondenseArraysFunctor<LO, values_array, row_ptrs_array, col_ind_type>
     condense(Crowptrs, CrowptrTemp, CcolindOver, Ccolinds, CvalsOver, Cvals);
   Kokkos::parallel_for(range_type(0, nrows), condense);
-} 
+}
 
 template<typename SC, typename LO, typename GO, typename NO>
 void Details::AddKernels<SC, LO, GO, NO>::
 addUnsortedGlobalCols(
   const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Avals,
   const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Acolinds, 
+  const typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Acolinds,
   const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
   const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
   const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Bcolinds, 
+  const typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Bcolinds,
   const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
   GO numGlobalCols,
   typename Details::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
@@ -1558,7 +1558,7 @@ addUnsortedGlobalCols(
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
   typedef typename NO::device_type::execution_space execution_space;
-  typedef SC scalar_type;
+  // typedef SC scalar_type; // unused
   typedef LO ordinal_type;
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
 //  <Allocate CrowptrTemp>
