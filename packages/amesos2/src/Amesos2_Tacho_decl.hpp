@@ -220,6 +220,16 @@ private:
   Teuchos::Array<ordinal_type> colind_;
   /// Stores the row indices of the nonzero entries
   Teuchos::Array<size_type> rowptr_;
+
+  // TODO: Decide handling for CUDA - how to fail
+#ifdef KOKKOS_HAVE_OPENMP
+  typedef Kokkos::OpenM DeviceSpaceType;
+#else
+  typedef Kokkos::Serial DeviceSpaceType;
+#endif
+  typedef typename Tacho::Solver<tacho_type,DeviceSpaceType>::value_type_matrix
+    solve_array_t;
+  solve_array_t workspace_; // Will be allocated once
 };                              // End class Tacho
 
 

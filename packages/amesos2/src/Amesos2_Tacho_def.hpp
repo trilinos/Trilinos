@@ -208,21 +208,11 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
     int i_ld_rhs = as<int>(ld_rhs);
 
     for(size_t j = 0 ; j < nrhs; j++) {
-      // TODO: Decide how to organize this best for Amesos2
-      // Clarify behavior for Cuda - exception? configure error?
-#ifdef KOKKOS_HAVE_OPENMP
-      typedef Kokkos::OpenMP                                  DeviceSpaceType;
-#else
-      typedef Kokkos::Serial                                  DeviceSpaceType;
-#endif
-      typedef typename Tacho::Solver<tacho_type,DeviceSpaceType>::
-        value_type_matrix solve_array_t;
-
       const int n = 1;
       solve_array_t x(&xValues.getRawPtr()[j*i_ld_rhs], this->globalNumRows_, n);
       solve_array_t b(&bValues.getRawPtr()[j*i_ld_rhs], this->globalNumRows_, n);
-      solve_array_t t("t", this->globalNumRows_, n);
-      data_.solver.solve(x, b, t);
+
+      data_.solver.solve(x, b, workspace_);
 
       int status = 0; // TODO: determine what error handling will be
       if(status != 0) {
@@ -312,6 +302,9 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
   if(current_phase == SOLVE) {
     return(false);
   }
+
+  // Allocate this just once
+  workspace_ = solve_array_t("t", this->globalNumRows_, 1);
 
 /*
   // TODO: Decide if this is useful
