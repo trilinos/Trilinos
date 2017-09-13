@@ -571,8 +571,8 @@ RCP<MAggregates> loadDataFromMatlab<RCP<MAggregates>>(const mxArray* mxa)
   {
     agg->SetIsRoot(rootNodes_inArray[i], true);
   }
-  //Now recompute the aggSize array and cache the results in the object
-  agg->ComputeAggregateSizes(true, true);
+  //Now recompute the aggSize array the results in the object
+  agg->ComputeAggregateSizes(true);
   agg->AggregatesCrossProcessors(false);
   return agg;
 }
