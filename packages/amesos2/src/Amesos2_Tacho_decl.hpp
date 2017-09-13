@@ -199,7 +199,10 @@ private:
   /**
    * \brief is this special case to read ptrs directly
    */
+  /*
+  // TODO: Decide if this is useful
   bool single_process_optim_check() const;
+  */
 
   // struct holds all data necessary to make a tacho factorization or solve call
   mutable struct TACHOData {

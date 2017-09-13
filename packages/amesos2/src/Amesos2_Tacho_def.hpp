@@ -98,6 +98,9 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
     size_type_array row_ptr;
     ordinal_type_array cols;
 
+/*
+    // TODO: Decide if this is useful - not sure this will be worth anything unless
+    // we had further changes to Tacho to directly process incoming raw types
     if(single_process_optim_check()) {
       // in the optimized case we read the values directly from the matrix
       // without converting through the Teuchos::Array setup. Note that in
@@ -109,28 +112,20 @@ TachoSolver<Matrix,Vector>::symbolicFactorization_impl()
         TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
           std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null");
 
-      // Tacho uses size_type size_t which matches Tpetra but not Epetra (int)
-      // So we need a converter
+      // Tacho size_type is int or size_t based on -DTacho_ENABLE_INT_INT
       row_ptr = size_type_array("r", this->globalNumRows_ + 1);
       for(global_size_type n = 0; n < this->globalNumRows_ + 1; ++n) {
         row_ptr(n) = static_cast<size_type>(sp_rowptr[n]);
       }
 
-      // Now convert the cols - now on an earlier version I thought this was
-      // working as a straight conversion but then some things have changed
-      // and it seems we will need to convert. TODO: Assess this conversion.
-      // Can we do this more optimally and still work for all Epetra/Tpetra
-      // cases.
+      // Tacho oridinal_type is int
       cols = ordinal_type_array("c", this->globalNumNonZeros_);
       for(global_size_type n = 0; n < this->globalNumNonZeros_; ++n) {
         cols(n) = static_cast<ordinal_type>(sp_colind[n]);
       }
-
-      // TODO - For Tpetra, we could have a direct view like this...
-      // Can we explot this here?
-      //row_ptr = size_type_array(sp_rowptr, this->globalNumRows_ + 1);
     }
     else
+*/
     {
       // Non optimized case used the arrays set up in loadA_impl
       row_ptr = size_type_array(this->rowptr_.getRawPtr(), this->globalNumRows_ + 1);
@@ -155,6 +150,8 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
   if ( this->root_ ) {
     value_type_array values;
 
+/*
+    // TODO: Decide if this is useful
     if(single_process_optim_check()) {
       // in the optimized case we read the values directly from the matrix
       // without converting through the Teuchos::Array setup.
@@ -164,6 +161,7 @@ TachoSolver<Matrix,Vector>::numericFactorization_impl()
       values = value_type_array(sp_values, this->globalNumNonZeros_);
     }
     else
+*/
     {
       // Non optimized case used the arrays set up in loadA_impl
       values = value_type_array(this->nzvals_.getRawPtr(), this->globalNumNonZeros_);
@@ -296,6 +294,8 @@ TachoSolver<Matrix,Vector>::getValidParameters_impl() const
   return valid_params;
 }
 
+/*
+// TODO: Decide if this is useful
 template <class Matrix, class Vector>
 bool
 TachoSolver<Matrix,Vector>::single_process_optim_check() const {
@@ -303,6 +303,7 @@ TachoSolver<Matrix,Vector>::single_process_optim_check() const {
            (this->matrixA_->getComm()->getRank() == 0) &&
            (this->matrixA_->getComm()->getSize() == 1) );
 }
+*/
 
 template <class Matrix, class Vector>
 bool
@@ -312,10 +313,13 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
     return(false);
   }
 
+/*
+  // TODO: Decide if this is useful
   if(single_process_optim_check()) {
     // Do nothing
   }
   else
+*/
   {
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
