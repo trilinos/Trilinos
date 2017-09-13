@@ -417,6 +417,48 @@ shellSortKeys (KeyType keys[], const IndexType n)
   }
 }
 
+template<typename KeyType, typename ValueType, typename IndexType>
+KOKKOS_FUNCTION void
+shellSortKeysAndValues2(KeyType* keys, ValueType* values, IndexType n)
+{
+  IndexType ngaps = 10;
+  //Use Ciura's gap choices
+  IndexType gaps[] = {3548, 1577, 701, 301, 132, 57, 23, 10, 4, 1};
+  for(IndexType gapIndex = 0; gapIndex < ngaps; gapIndex++)
+  {
+    auto gap = gaps[gapIndex];
+    if(n < gap)
+      continue;
+    //insertion sort the array {keys[0*gap], keys[1*gap], keys[2*gap], ...}
+    for(IndexType gapOffset = 0; gapOffset < gap; gapOffset++)
+    {
+      for(IndexType i = gap + gapOffset; i < n; i += gap)
+      {
+        //avoid extra swaps: scan for the final position of keys[i]
+        if(keys[i - gap] > keys[i])
+        {
+          IndexType finalPos = i - gap;
+          while(finalPos - gap >= 0 && keys[finalPos - gap] > keys[i])
+          {
+            finalPos -= gap;
+          }
+          //save keys/values [i], then shift up all keys/values between finalPos and i-gap (inclusive)
+          auto tempKey = keys[i];
+          auto tempVal = values[i];
+          for(IndexType j = i - gap; j >= finalPos; j -= gap)
+          {
+            keys[j + gap] = keys[j];
+            values[j + gap] = values[j];
+          }
+          keys[finalPos] = tempKey;
+          values[finalPos] = tempVal;
+        }
+      }
+    }
+  }
+#undef SHELL_SWAP
+}
+
 } // namespace Details
 } // namespace Tpetra
 
