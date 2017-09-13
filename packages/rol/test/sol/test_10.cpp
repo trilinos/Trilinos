@@ -56,7 +56,7 @@
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_StdObjective.hpp"
 #include "ROL_BatchManager.hpp"
-#include "ROL_MonteCarloGenerator.hpp"
+#include "ROL_UserInputGenerator.hpp"
 
 typedef double RealT;
 
@@ -113,7 +113,6 @@ public:
     const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
     for ( unsigned i = 0; i < size; ++i ) {
       c[i] = std::exp(param[7])/zeta_[i] - std::exp(param[i])*x[i];
-std::cout << "c(i)=" << c[i] << std::endl;
     }
   }
 
@@ -232,28 +231,10 @@ int main(int argc, char* argv[]) {
     // Build samplers
     int nSamp = 50;
     unsigned sdim = dim + 1;
-    std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > dist(sdim);
-    for ( unsigned i = 0; i < 2; ++i ) {
-      //dist[i]
-      //  = Teuchos::rcp(new ROL::Gaussian<RealT>(static_cast<RealT>(4.5856),  static_cast<RealT>(0.0392)));
-      dist[i]
-        = Teuchos::rcp(new ROL::Uniform<RealT>(std::log(80.),std::log(120.)));
-    }
-    for ( unsigned i = 2; i < sdim-1; ++i ) {
-      //dist[i]
-      //  = Teuchos::rcp(new ROL::Gaussian<RealT>(static_cast<RealT>(5.2787),  static_cast<RealT>(0.0392)));
-      dist[i]
-        = Teuchos::rcp(new ROL::Uniform<RealT>(std::log(160.),std::log(240.)));
-    }
-    //dist[sdim-1]
-    //  = Teuchos::rcp(new ROL::Gaussian<RealT>(static_cast<RealT>(13.7413), static_cast<RealT>(0.1484)));
-    dist[sdim-1]
-      = Teuchos::rcp(new ROL::Uniform<RealT>(std::log(10.),std::log(40.)));
     Teuchos::RCP<ROL::BatchManager<RealT> > bman
       = Teuchos::rcp(new ROL::BatchManager<RealT>());
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,dist,bman));
-    sampler->print();
+      = Teuchos::rcp(new ROL::UserInputGenerator<RealT>("points.txt","weights.txt",nSamp,sdim,bman));
     // Build objective function
     Teuchos::RCP<ROL::Objective<RealT> > obj
       = Teuchos::rcp(new ObjectiveEx10<RealT>);
