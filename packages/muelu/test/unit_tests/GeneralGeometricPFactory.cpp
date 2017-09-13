@@ -598,7 +598,7 @@ namespace MueLuTests {
 
   } // PoissonOnCubeConstant
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, LocalLexicographic, Scalar,
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, LocalLexicographicLinear, Scalar,
                                     LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
@@ -617,34 +617,206 @@ namespace MueLuTests {
     // generate problem
     LocalOrdinal maxLevels = 3;
     // LocalOrdinal its=10;
-    GO nx = 9;
-    GO ny = 7;
-    GO nz = 4;
+    GO nx = 6;
+    GO ny = 6;
+    GO nz = 6;
     GO numPoints = nx*ny*nz;
     Array<GO> gNodesPerDim(3);
     gNodesPerDim[0] = nx;
     gNodesPerDim[1] = ny;
     gNodesPerDim[2] = nz;
+    Array<GO> meshData(comm->getSize()*10);
     Array<LO> lNodesPerDim(3);
     if(comm->getSize() == 1) {
       lNodesPerDim[0] = nx;
       lNodesPerDim[1] = ny;
-      lNodesPerDim[2] = nz;
+
+      meshData[0] = comm->getRank(); // my Parent rank
+      meshData[1] = comm->getRank(); // my rank
+      meshData[2] = 0; // block ID
+      meshData[3] = 0;
+      meshData[4] = nx - 1;
+      meshData[5] = 0;
+      meshData[6] = ny - 1;
+      meshData[7] = 0;
+      meshData[8] = nz - 1;
+      meshData[9] = 0;
     } else if(comm->getSize() == 4) {
-      if( (comm->getRank() == 0) || (comm->getRank() == 2)) {
-        lNodesPerDim[0] = 5;
-      } else {
-        lNodesPerDim[0] = 4;
+      lNodesPerDim[0] = nx/2;
+      lNodesPerDim[1] = ny/2;
+
+      for(int rank = 0; rank < comm->getSize(); ++rank) {
+        meshData[rank*10 + 0] = rank;         // my Parent rank
+        meshData[rank*10 + 1] = rank;         // my rank
+        meshData[rank*10 + 2] = 0;            // block ID
+        if(rank == 0 || rank == 2) {
+          meshData[rank*10 + 3] = 0;          // imin
+          meshData[rank*10 + 4] = nx/2 - 1;   // imax
+        } else {
+          meshData[rank*10 + 3] = nx/2;       // imin
+          meshData[rank*10 + 4] = nx - 1;     // imax
+        }
+        if(rank == 0 || rank == 1) {
+          meshData[rank*10 + 5] = 0;          // jmin
+          meshData[rank*10 + 6] = ny/2 - 1;   // jmax
+        } else {
+          meshData[rank*10 + 5] = ny/2;       // jmin
+          meshData[rank*10 + 6] = ny - 1;     // jmax
+        }
+        meshData[rank*10 + 7] = 0;            // kmin
+        meshData[rank*10 + 8] = nz - 1;       // kmax
+        meshData[rank*10 + 9] = rank*nz*ny*nx/4; // minGID on rank
       }
-      if(comm->getRank() < 2) {
-        lNodesPerDim[1] = 4;
-      } else {
-        lNodesPerDim[1] = 3;
-      }
-      lNodesPerDim[2] = nz;
+    }
+    lNodesPerDim[2] = nz;
+
+    // The map is still contiguous, we will just store different coodrinates to make it local
+    // lexicographic
+    const RCP<const Map> map = MapFactory::Build(lib,
+                                                 gNodesPerDim[0]*gNodesPerDim[1]*gNodesPerDim[2],
+                                                 lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2],
+                                                 0,
+                                                 comm);
+
+    Teuchos::ParameterList problemParamList;
+    problemParamList.set("nx",gNodesPerDim[0]);
+    problemParamList.set("ny",gNodesPerDim[1]);
+    problemParamList.set("nz",gNodesPerDim[2]);
+    // problemParamList.set("keepBCs", true);
+
+    // create Poisson problem and matrix
+    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList, map);
+    RCP<Matrix> Op = PoissonOnCube.BuildMatrix();
+
+    // build nullspace
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
+    nullSpace->putScalar( (Scalar) 1.0);
+    Teuchos::Array<magnitude_type> norms(1);
+    nullSpace->norm1(norms);
+    if (comm->getRank() == 0) {
+      out << "||NS|| = " << norms[0] << std::endl;
     }
 
-  } // LocalLexicographic
+    // build coordinates multivector
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates
+      = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, 3);
+    Array<LO> indsBounds(4);
+    if (comm->getSize() == 0) {
+      indsBounds[1] = 6;
+      indsBounds[3] = 6;
+    } else if (comm->getSize() == 4) {
+      if(comm->getRank() == 0 || comm->getRank() == 2) {
+        indsBounds[1] = 3;
+      } else if(comm->getRank() == 1 || comm->getRank() == 3) {
+        indsBounds[0] = 3;
+        indsBounds[1] = 6;
+      }
+      if(comm->getRank() == 0 || comm->getRank() == 1) {
+        indsBounds[3] = 3;
+      } else if(comm->getRank() == 2 || comm->getRank() == 3) {
+        indsBounds[2] = 3;
+        indsBounds[3] = 6;
+      }
+    }
+    Array<ArrayRCP<double> > localCoords(3);
+    localCoords[0] = coordinates->getDataNonConst(0);
+    localCoords[1] = coordinates->getDataNonConst(1);
+    localCoords[2] = coordinates->getDataNonConst(2);
+    for(LO k = 0; k < gNodesPerDim[2]; ++k) {
+      for(LO j = indsBounds[2]; j < indsBounds[3]; ++j) {
+        for(LO i = indsBounds[0]; i < indsBounds[1]; ++i) {
+          localCoords[0][k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0]+i]
+            = i / Teuchos::as<double>(gNodesPerDim[0] - 1);
+          localCoords[1][k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0]+i]
+            = j / Teuchos::as<double>(gNodesPerDim[1] - 1);
+          localCoords[2][k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0]+i]
+            = k / Teuchos::as<double>(gNodesPerDim[2] - 1);
+        }
+      }
+    }
+    std::cout << "p=" << comm->getRank() << " | indsBounds: " << indsBounds << std::endl;
+    std::cout << "p=" << comm->getRank() << " | local array 0: " << localCoords[0].size() << std::endl;
+    std::cout << "p=" << comm->getRank() << " | local array 1: " << localCoords[1].size() << std::endl;
+    std::cout << "p=" << comm->getRank() << " | local array 2: " << localCoords[2].size() << std::endl;
+
+    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/map.mat", *map);
+    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/coords.mat", *coordinates);
+
+    // fill hierarchy
+    RCP<Hierarchy> H = rcp( new Hierarchy() );
+    H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+
+    // create the factory manager and the factories
+    FactoryManager M;
+
+    RCP<Factory>      Pfact  = rcp( new GeneralGeometricPFactory() );
+    RCP<Factory>      Rfact  = rcp( new TransPFactory() );
+    RCP<Factory>      Tfact  = rcp( new CoordinatesTransferFactory() );
+    RCP<RAPFactory>   Acfact = rcp( new RAPFactory() );
+    RCP<Factory>      NSfact = rcp( new NullspaceFactory() );
+
+    // Set paramters needed by the factories
+    Pfact->SetParameter("Coarsen", Teuchos::ParameterEntry(std::string("{2,2,2}")));
+    Pfact->SetParameter("order", Teuchos::ParameterEntry(1));
+    Pfact->SetParameter("meshLayout", Teuchos::ParameterEntry(std::string("Local Lexicographic")));
+
+    Tfact->SetParameter("Geometric", Teuchos::ParameterEntry(true));
+
+    // Set interfactory dependencies
+    NSfact->SetFactory("Nullspace", Pfact);
+
+    Acfact->AddTransferFactory(Tfact);
+
+    // Set default factories in the manager
+    M.SetFactory("P",           Pfact);
+    M.SetFactory("R",           Rfact);
+    M.SetFactory("A",           Acfact);
+    M.SetFactory("Nullspace",   NSfact);
+    M.SetFactory("gNodesPerDim", Tfact);
+    M.SetFactory("lNodesPerDim", Tfact);
+    M.SetFactory("Coordinates",  Tfact);
+    M.SetFactory("coarseCoordinates",  Pfact);
+    M.SetFactory("gCoarseNodesPerDim", Pfact);
+    M.SetFactory("lCoarseNodesPerDim", Pfact);
+
+    // setup smoothers
+    Teuchos::ParameterList smootherParamList;
+    smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
+    smootherParamList.set("relaxation: sweeps", (LocalOrdinal) 1);
+    smootherParamList.set("relaxation: damping factor", (Scalar) 1.0);
+    RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
+    RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
+    Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+    RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
+
+    // Set smoothers and coarse solver in the manager
+    M.SetFactory("Smoother", SmooFact);
+    M.SetFactory("CoarseSolver", coarseSolveFact);
+
+    // Populate data on the finest level of the hierarchy
+    RCP<Level> Finest = H->GetLevel();
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+    Finest->Set("A",Op);                        // set fine level matrix
+    Finest->Set("Nullspace",nullSpace);         // set null space information for finest level
+    Finest->Set("Coordinates", coordinates);    // set fine level coordinates
+    Finest->Set("gNodesPerDim", gNodesPerDim);  // set GeneralGeometricPFactory specific info
+    Finest->Set("lNodesPerDim", lNodesPerDim);  // set GeneralGeometricPFactory specific info
+    Finest->Set("meshData", meshData);          // set GeneralGeometricPFactory specific info
+    Finest->SetFactoryManager(Teuchos::rcpFromRef(M));
+
+    // Setup the hierarchy
+    H->SetMaxCoarseSize(10);
+    H->Setup(M, 0, maxLevels);
+
+    // Extract the prolongator operator
+    RCP<Level> lvl1 = H->GetLevel(1);
+    RCP<Xpetra::Matrix<SC,LO,GO,Node> > P = lvl1->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
+    RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+
+    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/P.mat", *P);
+
+  } // End LocalLexicographicLinear
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, LocalLexicographicConstant, Scalar,
                                     LocalOrdinal, GlobalOrdinal, Node)
@@ -891,6 +1063,7 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(GeneralGeometricPFactory,LinearExtrapolation,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(GeneralGeometricPFactory,PoissonOnCubeLinear,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(GeneralGeometricPFactory,PoissonOnCubeConstant,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(GeneralGeometricPFactory,LocalLexicographicLinear,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(GeneralGeometricPFactory,LocalLexicographicConstant,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
