@@ -87,6 +87,12 @@
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_ZoltanInterface_fwd.hpp"
 #include "MueLu_Zoltan2Interface_fwd.hpp"
+#ifdef HAVE_MUELU_MATLAB
+#include "../matlab/src/MueLu_MatlabSmoother_fwd.hpp"
+#include "../matlab/src/MueLu_TwoLevelMatlabFactory_fwd.hpp"
+#include "../matlab/src/MueLu_SingleLevelMatlabFactory_fwd.hpp"
+#endif
+
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 #include "MueLu_CoalesceDropFactory_kokkos_fwd.hpp"

@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
 
   typedef double Scalar;
-  typedef int LO;
-  typedef int GO;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
 
   typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
   typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
    *   [ -1, 0,  0,  0,  4,  0 ]
    *   [ 0,  0,  0,  0,  0,  6 ] ]
    *
-   * And we will solve with A^T   
+   * And we will solve with A^T
    */
   // Construct matrix
   if( myRank == 0 ){
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
 
   // Check first whether SuperLU is supported
   if( Amesos2::query("Superlu") ){
-  
+
     // Constructor from Factory
     RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("Superlu", A, X, B);
 
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
     solver->symbolicFactorization().numericFactorization().solve();
 
     /* Print the solution
-     * 
+     *
      * Should be:
      *
      *  [[1]
