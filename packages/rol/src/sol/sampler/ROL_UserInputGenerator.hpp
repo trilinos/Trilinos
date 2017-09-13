@@ -138,7 +138,7 @@ public:
   UserInputGenerator(const std::string file_pt,
                      const std::string file_wt,
                      const int n,
-                     const int dim, 
+                     const int dim,
                      const Teuchos::RCP<BatchManager<Real> > &bman)
     : SampleGenerator<Real>(bman) {
     sample(file_pt,file_wt,n,dim,bman);

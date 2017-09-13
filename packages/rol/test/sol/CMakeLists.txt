@@ -120,6 +120,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(
     input_10.xml
     input_11.xml
     input_12.xml
+    points.txt
+    weights.txt
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
 )

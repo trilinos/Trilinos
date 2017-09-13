@@ -64,7 +64,7 @@ private:
 
   Real value_;
 
-  Real getValue( const V& x ) const { 
+  Real getValueX( const V& x ) const { 
     return Teuchos::dyn_cast<const SingletonVector<Real> >(x).getValue(); 
   }
 
@@ -76,15 +76,15 @@ public:
   void setValue( const Real& v ) { value_=v; }
 
   void set( const V& x ) { 
-    value_ = getValue(x);
+    value_ = getValueX(x);
   }
 
   void plus( const V& x ) {
-    value_ += getValue(x);
+    value_ += getValueX(x);
   }
 
   void axpy( const Real alpha, const V& x ) {
-     value_ += alpha*getValue(x);
+     value_ += alpha*getValueX(x);
   }
 
   void scale( const Real alpha ) {
@@ -92,7 +92,7 @@ public:
   }
 
   Real dot( const V& x ) const {
-    Real xv = getValue(x);
+    Real xv = getValueX(x);
     xv *= value_;
     return xv;
   }
@@ -116,14 +116,14 @@ public:
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const V& x ) {
-    value_ = f.apply(value_,getValue(x));
+    value_ = f.apply(value_,getValueX(x));
   }
 
   Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     return value_;
   }
 
-  void print( std::ostream& os ) {
+  void print( std::ostream& os ) const {
     os << value_ << std::endl;
   }
 
