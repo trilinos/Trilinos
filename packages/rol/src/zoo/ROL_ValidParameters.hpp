@@ -293,17 +293,17 @@ inline Teuchos::RCP<const Teuchos::ParameterList> getValidSOLParameters() {
 
   Teuchos::RCP<PL> sol = Teuchos::rcp( new PL("SOL") );
 
-  sol->set("Stochastic Optimization Type",  "Risk Neutral");
+  sol->set("Stochastic Component Type",  "Risk Neutral");
   sol->set("Store Sampled Value and Gradient", true);
-
-  /* ===== BPOE ================= */
-  PL &bpoe = sol->sublist("BPOE");
-    bpoe.set("Moment Order",   2.0);
-    bpoe.set("Threshold",      1.0);
     
   /* ===== RISK MEASURE ============== */
   PL &risk = sol->sublist("Risk Measure");
     risk.set("Name","CVaR");
+
+    /* ===== BPOE ================= */
+    PL &bpoe = risk.sublist("BPOE");
+      bpoe.set("Moment Order",   2.0);
+      bpoe.set("Threshold",      1.0);
 
     /* ===== EXPONENTIAL UTILITY =============== */
     PL &expo = risk.sublist("Exponential Utility");

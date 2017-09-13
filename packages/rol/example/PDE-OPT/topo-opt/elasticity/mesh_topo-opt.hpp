@@ -50,7 +50,7 @@ private:
 
   int nx_;
   int ny_;
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
 
 public: 
 
@@ -65,7 +65,7 @@ public:
   void computeSideSets() {
 
     int numSideSets = 4;
-    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(numSideSets));
+    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<std::vector<int> > >(numSideSets));
 
     //
     (*meshSideSets_)[0].resize(4);
@@ -93,23 +93,23 @@ public:
     (*meshSideSets_)[3][3].resize(ny_);
     
     for (int i=0; i<nx_; ++i) {
-      (*meshSideSets_)[0][0](i) = i;
+      (*meshSideSets_)[0][0][i] = i;
     }
     for (int i=0; i<ny_; ++i) {
-      (*meshSideSets_)[1][1](i) = (i+1)*nx_-1;
+      (*meshSideSets_)[1][1][i] = (i+1)*nx_-1;
     }
     for (int i=0; i<nx_; ++i) {
-      (*meshSideSets_)[2][2](i) = i + nx_*(ny_-1);
+      (*meshSideSets_)[2][2][i] = i + nx_*(ny_-1);
     }
     for (int i=0; i<ny_; ++i) {
-      (*meshSideSets_)[3][3](i) = i*nx_;
+      (*meshSideSets_)[3][3][i] = i*nx_;
     }
 
   } // computeSideSets
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
-      std::ostream & outStream = std::cout,
-      const bool verbose = false) const {
+  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const { 
     if ( verbose ) {
       outStream << "Mesh_TopoOpt: getSideSets called" << std::endl;
       outStream << "Mesh_TopoOpt: numSideSets = " << meshSideSets_->size() << std::endl;

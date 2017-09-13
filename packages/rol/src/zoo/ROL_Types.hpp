@@ -227,8 +227,8 @@ std::string NumberToString( T Number )
     return retString;
   }
 
-  inline int isCompatibleStep( EProblem p, EStep s ) {
-    int comp;
+  inline bool isCompatibleStep( EProblem p, EStep s ) {
+    bool comp = false;
     switch(p) {
 
       case TYPE_U:    comp = ( (s == STEP_LINESEARCH) ||
@@ -237,23 +237,23 @@ std::string NumberToString( T Number )
         break;
 
       case TYPE_B:    comp = ( (s == STEP_LINESEARCH)  ||
-                               (s == STEP_TRUSTREGION) || 
+                               (s == STEP_TRUSTREGION) ||
                                (s == STEP_MOREAUYOSIDAPENALTY) ||
                                (s == STEP_PRIMALDUALACTIVESET) ||
                                (s == STEP_INTERIORPOINT) );
         break;
 
-      case TYPE_E:    comp = ( (s == STEP_COMPOSITESTEP) || 
-                               (s == STEP_AUGMENTEDLAGRANGIAN) );  
+      case TYPE_E:    comp = ( (s == STEP_COMPOSITESTEP) ||
+                               (s == STEP_AUGMENTEDLAGRANGIAN) );
         break;
 
-      case TYPE_EB:   comp = ( (s == STEP_AUGMENTEDLAGRANGIAN) || 
+      case TYPE_EB:   comp = ( (s == STEP_AUGMENTEDLAGRANGIAN) ||
                                (s == STEP_MOREAUYOSIDAPENALTY) ||
                                (s == STEP_INTERIORPOINT) );
         break;
 
-      case TYPE_LAST: comp = 0; break;
-      default:        comp = 0;      
+      case TYPE_LAST: comp = false; break;
+      default:        comp = false;
     }
     return comp;
   }
@@ -310,12 +310,12 @@ std::string NumberToString( T Number )
 
   inline EStep StringToEStep(std::string s) {
     s = removeStringFormat(s);
-    for ( EStep tr = STEP_AUGMENTEDLAGRANGIAN; tr < STEP_LAST; tr++ ) {
-      if ( !s.compare(removeStringFormat(EStepToString(tr))) ) {
-        return tr;
+    for ( EStep st = STEP_AUGMENTEDLAGRANGIAN; st < STEP_LAST; ++st ) {
+      if ( !s.compare(removeStringFormat(EStepToString(st))) ) {
+        return st;
       }
     }
-    return STEP_TRUSTREGION;
+    return STEP_LAST;
   }
 
   /** \enum   ROL::EDescent

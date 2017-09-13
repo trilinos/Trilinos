@@ -60,11 +60,13 @@ private:
 
   Real targetFunc(const std::vector<Real> & x) const {
     int size = x.size();
-    Real val(0);
+    const Real eight(8), pi(M_PI);
+    Real s1(1), s2(1);
     for (int i = 0; i < size; ++i) {
-      val += x[i]*x[i];
+      s1 *= std::sin(eight*pi*x[i]);
+      s2 *= std::sin(pi*x[i]);
     }
-    return val;
+    return -s1 + s2;
   }
 
 public:
@@ -276,33 +278,5 @@ public:
   }
 
 }; // QoI_L2Penalty
-
-template <class Real>
-class StdObjective_Poisson : public ROL::StdObjective<Real> {
-private:
-  Real alpha_;
-
-public:
-  StdObjective_Poisson(Teuchos::ParameterList &parlist) {
-    alpha_ = parlist.sublist("Poisson Objective Function").get("Control Penalty",1.e-4);
-  }
-
-  Real value(const std::vector<Real> &x, Real &tol) {
-    return x[0] + alpha_*x[1];
-  }
-
-  void gradient(std::vector<Real> &g, const std::vector<Real> &x, Real &tol) {
-    const Real one(1);
-    g[0] = one;
-    g[1] = alpha_;
-  }
-
-  void hessVec(std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol) {
-    const Real zero(0);
-    hv[0] = zero;
-    hv[1] = zero;
-  }
-
-}; // OBJ_SCALAR
 
 #endif

@@ -49,7 +49,7 @@ private:
   int nx_;
   int ny_;
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
 
 public:
 
@@ -62,7 +62,7 @@ public:
   void computeSideSets() {
 
     int numSideSets = 5;
-    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(numSideSets));
+    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<std::vector<int> > >(numSideSets));
 
     // Bottom
     (*meshSideSets_)[0].resize(4);
@@ -101,33 +101,33 @@ public:
     
     // Bottom
     for (int i=0; i<nx_; ++i) {
-      (*meshSideSets_)[0][0](i) = i;
+      (*meshSideSets_)[0][0][i] = i;
     }
     // Right
     for (int i=0; i<ny_; ++i) {
-      (*meshSideSets_)[1][1](i) = (i+1)*nx_-1;
+      (*meshSideSets_)[1][1][i] = (i+1)*nx_-1;
     }
     // Left
     for (int i=0; i<ny_; ++i) {
-      (*meshSideSets_)[2][3](i) = i*nx_;
+      (*meshSideSets_)[2][3][i] = i*nx_;
     }
     // Top
     for (int i=0; i<nx_; ++i) {
-      (*meshSideSets_)[3][2](i) = i + nx_*(ny_-1);
+      (*meshSideSets_)[3][2][i] = i + nx_*(ny_-1);
     }
     // Pressure Pinning
     //int offset = nx_ * (ny_/2) + (nx_-1)/2;
-    //(*meshSideSets_)[4][0](0) = offset + nx_ + 1;
-    //(*meshSideSets_)[4][1](0) = offset + nx_;
-    //(*meshSideSets_)[4][2](0) = offset;
-    //(*meshSideSets_)[4][3](0) = offset + 1;
-    (*meshSideSets_)[4][0](0) = 0;
+    //(*meshSideSets_)[4][0][0] = offset + nx_ + 1;
+    //(*meshSideSets_)[4][1][0] = offset + nx_;
+    //(*meshSideSets_)[4][2][0] = offset;
+    //(*meshSideSets_)[4][3][0] = offset + 1;
+    (*meshSideSets_)[4][0][0] = 0;
 
   } // computeSideSets
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
-      std::ostream & outStream = std::cout,
-      const bool verbose = false) const {
+  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const { 
     return meshSideSets_;
   }
 

@@ -3,7 +3,7 @@
   <ParameterList name="Problem Description">
     <Parameter name="Number of Samples"                 type="int"    value="10"    />
     <Parameter name="Use Constraint Weights"            type="bool"   value="false" />
-    <Parameter name="Initial Control Guess"             type="double" value="-3.0"  />
+    <Parameter name="Initial Control Guess"             type="double" value="1.0"   />
     <Parameter name="CVaR Level"                        type="double" value="0.8"   />
     <Parameter name="Plus Function Smoothing Parameter" type="double" value="1e-4"  />
   </ParameterList>

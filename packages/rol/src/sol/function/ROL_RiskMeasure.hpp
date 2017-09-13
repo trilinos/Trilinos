@@ -102,10 +102,27 @@ protected:
   Teuchos::RCP<Vector<Real> > dualVector_;
   bool firstReset_;
 
+  int comp_;
+  int index_;
+
 public:
   virtual ~RiskMeasure() {}
 
-  RiskMeasure(void) : val_(0), gv_(0), firstReset_(true) {}
+  RiskMeasure(void) : val_(0), gv_(0), firstReset_(true),
+                      comp_(0), index_(0) {}
+
+  void setRiskVectorInfo(const int comp, const int index) {
+    comp_ = comp;
+    index_ = index;
+  }
+
+  int getComponent(void) const {
+    return comp_;
+  }
+
+  int getIndex(void) const {
+    return index_;
+  }
 
   /** \brief Reset internal risk measure storage.
              Called for value and gradient computation.

@@ -82,14 +82,16 @@ public:
   }
 
   BPOE(Teuchos::ParameterList &parlist) : RiskMeasure<Real>(), firstReset_(true) {
-    threshold_ = parlist.sublist("SOL").sublist("BPOE").get("Threshold",1.0);
-    order_     = parlist.sublist("SOL").sublist("BPOE").get("Moment Order",1.0);
+    threshold_ = parlist.sublist("SOL").sublist("Risk Measure").sublist("BPOE").get("Threshold",1.0);
+    order_     = parlist.sublist("SOL").sublist("Risk Measure").sublist("BPOE").get("Moment Order",1.0);
     hvec_.resize(5);
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
-    xvar_ = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(0);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    xvar_ = (*Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(comp,index))[0];
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
@@ -97,7 +99,9 @@ public:
     reset(x0,x);
     v0 = Teuchos::rcp_const_cast<Vector<Real> >(
          Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector());
-    vvar_ = Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(0);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    vvar_ = (*Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(comp,index))[0];
 
     if ( firstReset_ ) {
       dualVec1_ = (x0->dual()).clone();
@@ -153,7 +157,9 @@ public:
       gvec->scale(xvar_/norm);
       gvar = gvals[1]/norm;
     }
-    Teuchos::dyn_cast<RiskVector<Real> >(g).setStatistic(gvar);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    Teuchos::dyn_cast<RiskVector<Real> >(g).setStatistic(gvar,comp,index);
   }
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
@@ -210,7 +216,9 @@ public:
       sampler.sumAll(*dualVec2_,*RiskMeasure<Real>::hv_);
       hvec->axpy((order_-one)*xvar_*xvar_/norm0,*RiskMeasure<Real>::hv_);
     }
-    Teuchos::dyn_cast<RiskVector<Real> >(hv).setStatistic(hvar);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    Teuchos::dyn_cast<RiskVector<Real> >(hv).setStatistic(hvar,comp,index);
   }
 };
 

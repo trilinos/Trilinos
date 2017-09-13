@@ -94,7 +94,7 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION( !isSquare, std::invalid_argument,
       "Error: vector representation of matrix must have a square "
       "number of elements.");
-    ipiv_.reserve(N_);   
+    ipiv_.resize(N_);   
   }
 
   virtual ~StdLinearOperator() {}

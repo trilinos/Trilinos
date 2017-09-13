@@ -60,6 +60,10 @@ IF (ROL_ENABLE_ArrayFireCPU)
   ADD_SUBDIRECTORY(adapters/arrayfire)
 ENDIF()
 
+IF (ROL_ENABLE_Eigen)
+  ADD_SUBDIRECTORY(adapters/eigen)
+ENDIF()
+
 IF (ROL_ENABLE_TriKota)
   ADD_SUBDIRECTORY(adapters/trikota)
 ENDIF()
