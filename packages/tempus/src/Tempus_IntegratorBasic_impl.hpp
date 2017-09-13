@@ -261,14 +261,11 @@ void IntegratorBasic<Scalar>::setObserver(
     // Create default IntegratorObserverBasic, otherwise keep current observer.
     if (integratorObserver_ == Teuchos::null) {
       integratorObserver_ =
-        Teuchos::rcp(new IntegratorObserverBasic<Scalar>(solutionHistory_,
-                                                         timeStepControl_));
+        Teuchos::rcp(new IntegratorObserverBasic<Scalar>);
     }
   } else {
     integratorObserver_ = obs;
   }
-  integratorObserver_->setSolutionHistory(solutionHistory_);
-  integratorObserver_->setTimeStepControl(timeStepControl_);
 }
 
 
@@ -369,7 +366,7 @@ bool IntegratorBasic<Scalar>::advanceTime()
   TEMPUS_FUNC_TIME_MONITOR("Tempus::IntegratorBasic::advanceTime()");
   {
     startIntegrator();
-    integratorObserver_->observeStartIntegrator();
+    integratorObserver_->observeStartIntegrator(*this);
 
     while (integratorStatus_ == WORKING and
         timeStepControl_->timeInRange (solutionHistory_->getCurrentTime()) and
@@ -380,28 +377,28 @@ bool IntegratorBasic<Scalar>::advanceTime()
       solutionHistory_->initWorkingState();
 
       startTimeStep();
-      integratorObserver_->observeStartTimeStep();
+      integratorObserver_->observeStartTimeStep(*this);
 
       timeStepControl_->getNextTimeStep(solutionHistory_, integratorStatus_);
-      integratorObserver_->observeNextTimeStep(integratorStatus_);
+      integratorObserver_->observeNextTimeStep(*this);
 
       if (integratorStatus_ == FAILED) break;
       solutionHistory_->getWorkingState()->getMetaData()->
         setSolutionStatus(WORKING);
 
-      integratorObserver_->observeBeforeTakeStep();
+      integratorObserver_->observeBeforeTakeStep(*this);
 
       stepper_->takeStep(solutionHistory_);
 
-      integratorObserver_->observeAfterTakeStep();
+      integratorObserver_->observeAfterTakeStep(*this);
 
       stepperTimer_->stop();
       acceptTimeStep();
-      integratorObserver_->observeAcceptedTimeStep(integratorStatus_);
+      integratorObserver_->observeAcceptedTimeStep(*this);
     }
 
     endIntegrator();
-    integratorObserver_->observeEndIntegrator(integratorStatus_);
+    integratorObserver_->observeEndIntegrator(*this);
   }
 
   return (integratorStatus_ == Status::PASSED);

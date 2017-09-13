@@ -66,15 +66,16 @@
 namespace panzer
 {
   /**
-   *  \brief Computes \f$ Ma(x)b(x)\cdots\int\vec{s}(x)\phi(x)\,dx \f$.
+   *  \brief Computes \f$ Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\vec{\phi}(x)\,dx
+             \f$.
    *
    *  Evaluates the integral
    *  \f[
-        Ma(x)b(x)\cdots\int\vec{s}(x)\phi(x)\,dx,
+        Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\vec{\phi}(x)\,dx,
       \f]
    *  where \f$ M \f$ is some constant, \f$ a(x) \f$, \f$ b(x) \f$, etc., are
    *  some fields that depend on position, \f$ \vec{s} \f$ is some vector-
-   *  valued function, and \f$ \phi \f$ is some basis.
+   *  valued function, and \f$ \vec{\phi} \f$ is some vector basis.
    */
   template<typename EvalT, typename Traits>
   class Integrator_BasisTimesVector
@@ -89,11 +90,11 @@ namespace panzer
        *
        *  Creates an `Evaluator` to evaluate the integral
        *  \f[
-            Ma(x)b(x)\cdots\int\vec{s}(x)\phi(x)\,dx,
+            Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\vec{\phi}(x)\,dx,
           \f]
        *  where \f$ M \f$ is some constant, \f$ a(x) \f$, \f$ b(x) \f$, etc.,
        *  are some fields that depend on position, \f$ \vec{s} \f$ is some
-       *  vector-valued function, and \f$ \phi \f$ is some basis.
+       *  vector-valued function, and \f$ \vec{\phi} \f$ is some vector basis.
        *
        *  \param[in] evalStyle  An `enum` declaring the behavior of this
        *                        `Evaluator`, which is to either:
@@ -103,8 +104,8 @@ namespace panzer
        *                        field, depending on `evalStyle`.
        *  \param[in] valName    The name of the vector value being integrated
        *                        (\f$ \vec{s} \f$).
-       *  \param[in] basis      The basis that you'd like to use (\f$ \phi
-                                \f$).
+       *  \param[in] basis      The vector basis that you'd like to use (\f$
+                                \vec{\phi} \f$).
        *  \param[in] ir         The integration rule that you'd like to use.
        *  \param[in] multiplier The scalar multiplier out in front of the
        *                        integral you're computing (\f$ M \f$).  If not
@@ -134,11 +135,11 @@ namespace panzer
        *
        *  Creates an `Evaluator` to evaluate the integral
        *  \f[
-            Ma(x)b(x)\cdots\int\vec{s}(x)\phi(x)\,dx,
+            Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\vec{\phi}(x)\,dx,
           \f]
        *  where \f$ M \f$ is some constant, \f$ a(x) \f$, \f$ b(x) \f$, etc.,
        *  are some fields that depend on position, \f$ \vec{s} \f$ is some
-       *  vector-valued function, and \f$ \phi \f$ is some basis.
+       *  vector-valued function, and \f$ \vec{\phi} \f$ is some vector basis.
        *
        *  \note This constructor exists to preserve the older way of creating
        *        an `Evaluator` with a `ParameterList`; however, it is
@@ -162,8 +163,8 @@ namespace panzer
        *                 `Evaluator` is evaluating,
        *               - "Value Name" is the name of the vector value being
        *                 integrated (\f$ \vec{s} \f$),
-       *               - "Basis" is the basis that you'd like to use (\f$ \phi
-                         \f$),
+       *               - "Basis" is the vector basis that you'd like to use
+       *                 (\f$ \vec{\phi} \f$),
        *               - "IR" is the integration rule that you'd like to use,
        *               - "Multiplier" is the scalar multiplier out in front of
        *                 the integral you're computing (\f$ M \f$), and
@@ -195,7 +196,7 @@ namespace panzer
        *  \brief Evaluate Fields.
        *
        *  This actually performs the integration by calling `operator()()` in a
-       *  `parallel_for` over the cells in the `Workset`.
+       *  `Kokkos::parallel_for` over the cells in the `Workset`.
        *
        *  \param[in] workeset The `Workset` on which you're going to do the
        *                      integration.
@@ -291,8 +292,9 @@ namespace panzer
       std::vector<PHX::MDField<ScalarT, panzer::Cell, panzer::IP>> fieldMults_;
 
       /**
-       *  \brief The (possibly empty) list of fields that are multipliers out
-       *         in front of the integral (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
+       *  \brief The `Kokkos::View` representation of the (possibly empty) list
+       *         of fields that are multipliers out in front of the integral
+       *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
       Kokkos::View<Kokkos::View<ScalarT**>*> kokkosFieldMults_;
 
@@ -321,7 +323,7 @@ namespace panzer
        *  \brief The vector basis information necessary for integration.
        */
       PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP,
-        panzer::Dim> weightedBasisVector_;
+        panzer::Dim> basis_;
 
   }; // end of class Integrator_BasisTimesVector
 

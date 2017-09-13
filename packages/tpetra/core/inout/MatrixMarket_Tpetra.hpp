@@ -1649,34 +1649,51 @@ namespace Tpetra {
                            const bool tolerant=false,
                            const bool debug=false)
       {
-        return readSparseGraph (filename, pComm, Teuchos::null, callFillComplete, tolerant, debug);
+        // Call the overload below.
+        return readSparseGraphFile (filename, pComm, Teuchos::null,
+                                    callFillComplete, tolerant, debug);
       }
 
-      //! Variant of readSparseGraph that takes a Node object.
+      /// \brief Variant of readSparseGraphFile (filename, comm,
+      ///   callFillComplete, tolerant, debug) that takes a Node
+      ///   object.
+      ///
+      /// Please don't call this method; call the one above.
+      /// DO NOT CREATE EXPLICIT NODE OBJECTS.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraphFile (const std::string& filename,
-                           const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                           const Teuchos::RCP<node_type>& pNode,
+                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                           const Teuchos::RCP<node_type>& node,
                            const bool callFillComplete=true,
                            const bool tolerant=false,
                            const bool debug=false)
       {
-        const int myRank = pComm->getRank ();
+        using Teuchos::broadcast;
+        using Teuchos::outArg;
+
+        // Only open the file on Process 0.  Test carefully to make
+        // sure that the file opened successfully (and broadcast that
+        // result to all processes to prevent a hang on exception
+        // throw), since it's a common mistake to misspell a filename.
         std::ifstream in;
-
-        // Only open the file on Rank 0.
-        if (myRank == 0) {
-          in.open (filename.c_str ());
+        int opened = 0;
+        if (comm->getRank () == 0) {
+          try {
+            in.open (filename.c_str ());
+            opened = 1;
+          }
+          catch (...) {
+            opened = 0;
+          }
         }
-        // FIXME (mfh 16 Jun 2015) Do a broadcast to make sure that
-        // opening the file succeeded, before continuing.  That will
-        // avoid hangs if the read doesn't work.  On the other hand,
-        // readSparse could do that too, by checking the status of the
-        // std::ostream.
-
-        return readSparseGraph (in, pComm, pNode, callFillComplete, tolerant, debug);
+        broadcast<int, int> (*comm, 0, outArg (opened));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (opened == 0, std::runtime_error, "readSparseGraphFile: "
+           "Failed to open file \"" << filename << "\" on Process 0.");
+        return readSparseGraph (in, comm, node, callFillComplete,
+                                tolerant, debug);
         // We can rely on the destructor of the input stream to close
-        // the file on scope exit, even if readSparse() throws an
+        // the file on scope exit, even if readSparseGraph() throws an
         // exception.
       }
 
@@ -1710,33 +1727,63 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraphFile (const std::string& filename,
-                       const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                       const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                       const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
-                       const bool tolerant=false,
-                       const bool debug=false)
+                           const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                           const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                           const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                           const bool tolerant=false,
+                           const bool debug=false)
       {
-        return readSparseGraph (filename, pComm, Teuchos::null,
-                                constructorParams, fillCompleteParams,
-                                tolerant, debug);
+        // Call the overload below.
+        return readSparseGraphFile (filename, pComm, Teuchos::null,
+                                    constructorParams, fillCompleteParams,
+                                    tolerant, debug);
       }
 
-      //! Variant of readSparseFile above that takes a Node object.
+      /// \brief Variant of readSparseGraphFile (filename, comm,
+      ///   constructorParams, fillCompleteParams, tolerant, debug)
+      ///   that takes a Node object.
+      ///
+      /// Please don't call this method; call the one above.
+      /// DO NOT CREATE EXPLICIT NODE OBJECTS.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraphFile (const std::string& filename,
-                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                      const Teuchos::RCP<node_type>& pNode,
-                      const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                      const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
-                      const bool tolerant=false,
-                      const bool debug=false)
+                           const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                           const Teuchos::RCP<node_type>& pNode,
+                           const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                           const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                           const bool tolerant=false,
+                           const bool debug=false)
       {
+        using Teuchos::broadcast;
+        using Teuchos::outArg;
+
+        // Only open the file on Process 0.  Test carefully to make
+        // sure that the file opened successfully (and broadcast that
+        // result to all processes to prevent a hang on exception
+        // throw), since it's a common mistake to misspell a filename.
         std::ifstream in;
-        if (pComm->getRank () == 0) { // only open on Process 0
+        int opened = 0;
+        if (pComm->getRank () == 0) {
+          try {
+            in.open (filename.c_str ());
+            opened = 1;
+          }
+          catch (...) {
+            opened = 0;
+          }
+        }
+        broadcast<int, int> (*pComm, 0, outArg (opened));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (opened == 0, std::runtime_error, "readSparseGraphFile: "
+           "Failed to open file \"" << filename << "\" on Process 0.");
+        if (pComm->getRank () == 0) { // only open the input file on Process 0
           in.open (filename.c_str ());
         }
         return readSparseGraph (in, pComm, pNode, constructorParams,
-                           fillCompleteParams, tolerant, debug);
+                                fillCompleteParams, tolerant, debug);
+        // We can rely on the destructor of the input stream to close
+        // the file on scope exit, even if readSparseGraph() throws an
+        // exception.
       }
 
       /// \brief Read sparse graph from the given Matrix Market file,
@@ -1791,12 +1838,15 @@ namespace Tpetra {
         using Teuchos::outArg;
         using Teuchos::RCP;
 
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          rowMap.is_null (), std::invalid_argument,
-          "Row Map must be nonnull.");
-
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (rowMap.is_null (), std::invalid_argument,
+           "Input rowMap must be nonnull.");
         RCP<const Comm<int> > comm = rowMap->getComm ();
-        const int myRank = comm->getRank ();
+        if (comm.is_null ()) {
+          // If the input communicator is null on some process, then
+          // that process does not participate in the collective.
+          return Teuchos::null;
+        }
 
         // Only open the file on Process 0.  Test carefully to make
         // sure that the file opened successfully (and broadcast that
@@ -1804,7 +1854,7 @@ namespace Tpetra {
         // throw), since it's a common mistake to misspell a filename.
         std::ifstream in;
         int opened = 0;
-        if (myRank == 0) {
+        if (comm->getRank () == 0) {
           try {
             in.open (filename.c_str ());
             opened = 1;
@@ -1814,12 +1864,11 @@ namespace Tpetra {
           }
         }
         broadcast<int, int> (*comm, 0, outArg (opened));
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          opened == 0, std::runtime_error,
-          "readSparseGraph: Failed to open file \"" << filename << "\" on "
-          "Process 0.");
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (opened == 0, std::runtime_error, "readSparseGraphFile: "
+           "Failed to open file \"" << filename << "\" on Process 0.");
         return readSparseGraph (in, rowMap, colMap, domainMap, rangeMap,
-                           callFillComplete, tolerant, debug);
+                                callFillComplete, tolerant, debug);
       }
 
       /// \brief Read sparse graph from the given Matrix Market input stream.
@@ -1849,30 +1898,37 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraph (std::istream& in,
-                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                  const bool callFillComplete=true,
-                  const bool tolerant=false,
-                  const bool debug=false)
+                       const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                       const bool callFillComplete=true,
+                       const bool tolerant=false,
+                       const bool debug=false)
       {
-        return readSparseGraph (in, pComm, Teuchos::null, callFillComplete, tolerant, debug);
+        // Call the overload below.
+        return readSparseGraph (in, pComm, Teuchos::null, callFillComplete,
+                                tolerant, debug);
       }
 
       //! Variant of readSparseGraph() above that takes a Node object.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraph (std::istream& in,
-                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                  const Teuchos::RCP<node_type>& pNode,
-                  const bool callFillComplete=true,
-                  const bool tolerant=false,
-                  const bool debug=false)
+                       const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                       const Teuchos::RCP<node_type>& pNode,
+                       const bool callFillComplete=true,
+                       const bool tolerant=false,
+                       const bool debug=false)
       {
-        Teuchos::RCP<sparse_graph_type> graph = readSparseGraphHelper(in, pComm, pNode, Teuchos::null, Teuchos::null, Teuchos::null,tolerant,debug);
-        if(callFillComplete)
-          graph->FillComplete();
+        Teuchos::RCP<sparse_graph_type> graph =
+          readSparseGraphHelper (in, pComm, pNode, Teuchos::null,
+                                 Teuchos::null, Teuchos::null,
+                                 tolerant, debug);
+        if (callFillComplete) {
+          graph->FillComplete ();
+        }
         return graph;
       }
 
-      /// \brief Read sparse graph from the given Matrix Market input stream.
+      /// \brief Read sparse graph from the given Matrix Market input
+      ///   stream.
       ///
       /// This is a variant of readSparse() that lets you pass
       /// parameters to the CrsMatrix's constructor and to its
@@ -1908,23 +1964,25 @@ namespace Tpetra {
                        const bool tolerant=false,
                        const bool debug=false)
       {
+        // Call the overload below.
         return readSparseGraph (in, pComm, Teuchos::null, constructorParams,
-                           fillCompleteParams, tolerant, debug);
+                                fillCompleteParams, tolerant, debug);
       }
 
       //! Variant of the above readSparseGraph() method that takes a Kokkos Node.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraph (std::istream& in,
-                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
-                  const Teuchos::RCP<node_type>& pNode,
-                  const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
-                  const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
-                  const bool tolerant=false,
-                  const bool debug=false)
+                       const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                       const Teuchos::RCP<node_type>& pNode,
+                       const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                       const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                       const bool tolerant=false,
+                       const bool debug=false)
       {
-        Teuchos::RCP<sparse_graph_type> graph = readSparseGraphHelper(in, pComm, pNode,
-            Teuchos::null, Teuchos::null, constructorParams, tolerant, debug);
-        graph->FillComplete(fillCompleteParams);
+        Teuchos::RCP<sparse_graph_type> graph =
+          readSparseGraphHelper (in, pComm, pNode, Teuchos::null, Teuchos::null,
+                                 constructorParams, tolerant, debug);
+        graph->FillComplete (fillCompleteParams);
         return graph;
       }
 
@@ -1970,18 +2028,21 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_graph_type>
       readSparseGraph (std::istream& in,
-                  const Teuchos::RCP<const map_type>& rowMap,
-                  Teuchos::RCP<const map_type>& colMap,
-                  const Teuchos::RCP<const map_type>& domainMap,
-                  const Teuchos::RCP<const map_type>& rangeMap,
-                  const bool callFillComplete=true,
-                  const bool tolerant=false,
-                  const bool debug=false)
+                       const Teuchos::RCP<const map_type>& rowMap,
+                       Teuchos::RCP<const map_type>& colMap,
+                       const Teuchos::RCP<const map_type>& domainMap,
+                       const Teuchos::RCP<const map_type>& rangeMap,
+                       const bool callFillComplete=true,
+                       const bool tolerant=false,
+                       const bool debug=false)
       {
-        Teuchos::RCP<sparse_graph_type> graph = readSparseGraphHelper(in, rowMap->getComm(),
-            rowMap->getNode(), rowMap, colMap, Teuchos::null, tolerant, debug);
-        if(callFillComplete)
-          graph->fillComplete();
+        Teuchos::RCP<sparse_graph_type> graph =
+          readSparseGraphHelper (in, rowMap->getComm (), rowMap->getNode (),
+                                 rowMap, colMap, Teuchos::null, tolerant,
+                                 debug);
+        if (callFillComplete) {
+          graph->fillComplete (domainMap, rangeMap);
+        }
         return graph;
       }
 

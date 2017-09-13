@@ -89,7 +89,7 @@ namespace PHX {
                     "** ERROR ** PHX::Tag ctor: tag data types are not the same (excluding const)!");
     }
 
-    ~Tag();
+    ~Tag() noexcept;
 
     Teuchos::RCP<FieldTag> clone() const override;
 

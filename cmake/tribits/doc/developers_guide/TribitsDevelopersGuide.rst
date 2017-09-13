@@ -562,6 +562,8 @@ units are:
 * `TriBITS Repository`_: A collection of one or more `TriBITS Packages`_
   specified in a `<repoDir>/PackagesList.cmake`_ file and zero or more TPL
   declarations specified in a `<repoDir>/TPLsList.cmake`_ file.
+  As discussed below, Repositories can include Native Repositories and Version
+  Control (VC) Repositories.
 
 .. _TriBITS Projects:
 
@@ -855,7 +857,7 @@ using checkin-test.py`_.
 
 .. _<projectDir>/cmake/NativeRepositoriesList.cmake:
 
-**<projectDir>/cmake/NativeRepositoriesList.cmake**: [Optional] If present,
+**<projectDir>/cmake/NativeRepositoriesList.cmake**: [Deprecated] If present,
 this file gives the list of native repositories for the TriBITS project.  The
 file must contain a ``SET()`` statement defining the variable
 ``${PROJECT_NAME}_NATIVE_REPOSITORIES`` which is just a flat list of repository
@@ -873,8 +875,8 @@ backward compatibility since there may be some TriBITS projects that still use
 it.  It is recommended instead to define multiple repositories using the
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file as it allows for more
 flexibility in how extra repositories are specified and how they are accessed.
-The latter file allows the various tools to perform VC activities with these
-repos while "native repositories" do not.
+The latter file allows the various tools to perform version control (VC)
+activities with these repos while "native repositories" do not.
 
 If this file ``NativeRepositoriesList.cmake`` does not exist, then TriBITS
 sets ``${PROJECT_NAME}_NATIVE_REPOSITORIES`` equal to ".", or the base project
@@ -1903,8 +1905,8 @@ A TriBITS Subpackage:
   ``${PARENT_PACKAGE_NAME}_ENABLE_TESTS=ON``.
 
 The contents of a TriBITS Subpackage are almost identical to those of a
-TriBITS Package.  The differences are described below and in `How is a TriBITS
-Subpackage is different from a TriBITS Package?`_.
+TriBITS Package.  The differences are described below and in `How is a TriBITS 
+Subpackage different from a TriBITS Package?`_.
 
 For more details on the definition of a TriBITS Package (or subpackage), see:
 
@@ -2061,8 +2063,8 @@ subpackage's files are:
     The absolute path to the parent package's base binary directory.
 
 
-How is a TriBITS Subpackage is different from a TriBITS Package?
-................................................................
+How is a TriBITS Subpackage different from a TriBITS Package?
+.............................................................
 
 A common question this is natural to ask is how a TriBITS Subpackage is
 different from a TriBITS Package?  They contain the same basic files (i.e. a
@@ -2389,7 +2391,7 @@ configure command::
     -DTribitsExProj_TRACE_FILE_PROCESSING=ON \
     -DTribitsExProj_ENABLE_CPACK_PACKAGING=ON \
     -DTribitsExProj_DUMP_CPACK_SOURCE_IGNORE_FILES=ON \
-    <tribitsDir>/doc/examples/TribitsExampleProject \
+    <tribitsDir>/doc/TribitsExampleProject \
     | grep "^-- File Trace:"
 
 looks something like::
@@ -2621,7 +2623,7 @@ itself which allows the TriBITS system to be tested and installed from any
 TriBITS project that lists it, including the ``TriBITS`` project itself
 (see `Coexisting Projects, Repositories, and Packages`_).
 
-The directory ``tribits/doc/examples/`` contains some other example TriBITS
+The directory ``tribits/examples/`` contains some other example TriBITS
 projects and repositories as well that are referred to in this and other
 documents.
 
@@ -2632,7 +2634,7 @@ TribitsHelloWorld
 ``TribitsHelloWorld`` is about the simplest possible TriBITS project that you
 can imagine and is contained under the directory::
 
-  tribits/doc/examples/TribitsHelloWorld/
+  tribits/examples/TribitsHelloWorld/
 
 This example project contains only a single TriBITS package and no frills at
 all (does not support MPI or Fortran).  However, it does show how minimal a
@@ -2673,7 +2675,7 @@ TribitsExampleProject
 ``TribitsExampleProject`` in an example `TriBITS Project`_ and `TriBITS
 Repository`_ contained in the TriBITS source tree under::
 
-  tribits/doc/examples/TribitsExampleProject/
+  tribits/examples/TribitsExampleProject/
 
 When this is used as the base TriBITS project, this is the directory
 corresponds to ``<projectDir>`` and ``<repoDir>`` referenced in `TriBITS
@@ -6108,7 +6110,7 @@ by default) and then generates the read-only files::
 
 For a simple example of this, see::
 
-  tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
+  tribits/doc/build_ref/create-build-ref.sh
 
 A project-independent version of this file is provided in the
 `TribitsBuildReference`_.[rst,html,pdf] which is referred to many times in this
@@ -7722,6 +7724,7 @@ be documented in `TribitsBuildReference`_.
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
+* `${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`_
 * `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
 * `${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`_
 * `${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE`_
@@ -7754,6 +7757,74 @@ a given TriBITS project are:
 
 
 These options are described below.
+
+.. _${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS:
+
+**${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS**
+
+  The variable ``${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`` determines how
+  unparsed and otherwise ignored arguments are handled in TriBITS functions
+  that are called by the client TriBITS projects.  These are arguments that
+  are left over from parsing input options to functions and macros that take
+  both positional arguments and keyword arguments/options handled with the
+  ``CMAKE_PARSE_ARGUMENTS()`` function.  For example, for the a TriBITS
+  function declared like::
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(
+      <targetName>
+      [SOURCE_FILES <file1> <file2> ...]
+      [SOURCE_DIR <sourceDir>]
+      ...
+      )
+
+  the arguments ``SOURCE_FILES <file1> <file2> ...`` and those that follow are
+  parsed by the ``CMAKE_PARSE_ARGUMENTS()`` function while the argument
+  ``<targetName>`` is a positional argument.  The problem is that any
+  arguments passed between the first ``<targetName>`` argument and the
+  specified keyword arguments like ``SOURCE_FILES`` and ``SOURCE_DIR`` are
+  returned as unparsed arguments and are basically ignored (which is what
+  happened in earlier versions of TriBITS).  For example, calling the function
+  as::
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR( FooTestCopyFiles
+      ThisArgumentIsNotParsedAndIsIgnored
+      SOURCE_FILES file1.cpp file2.cpp ...
+      ...
+      )
+
+  would result in the unparsed argument
+  ``ThisArgumentIsNotParsedAndIsIgnored``.
+
+  The value of ``${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`` determines how
+  that ignored argument is handled.  If the value is ``WARNING``, then it will
+  just result in a ``MESSAGE(WARNING ...)`` command that states the warning
+  but configure is allowed to be completed. This would be the right value to
+  allow an old TriBITS project to keep configuring until the warnings can be
+  cleaned up.  If the value is ``SEND_ERROR``, then ``MESSAGE(SEND_ERROR
+  ...)`` is called.  This will result in the configure failing but will allow
+  configure to continue until the end (or a ``FATAL_ERROR`` is raised).  This
+  would be the right value when trying to upgrade a TriBITS project where you
+  wanted to see all of the warnings when upgrading TriBITS (so you could fix
+  them all in one shot).  Finally, the value of ``FATAL_ERROR`` will result in
+  ``MESSAGE(FATAL_ERROR ...)`` being called which will halt configure right
+  away.  This is the best value when developing on a TriBITS project that is
+  already clean but you want to catch new developer-inserted errors right
+  away.
+
+  The default value for ``${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`` is
+  ``WARNING``, so that it will be backward compatible for TriBITS projects
+  that might have previously undetected unparased and therefore ignored
+  argument .  However, a project can change the default by setting, for
+  example::
+
+    SET(${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS_DEFAULT FATAL_ERROR)
+
+  in the `<projectDir>/ProjectName.cmake`_ file.
+
+  The user of a TriBITS project should not be able to trigger this unparsed
+  arguments condition so this variable is not documented in the `TriBITS Build
+  Reference`_.  But it is still a CMake cache var that is documented in the
+  CMakeCache.txt file and can be set by the user or developer if desired.
 
 .. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND:
 

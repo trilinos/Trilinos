@@ -54,8 +54,8 @@
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 #include "MueLu_Aggregates_kokkos_fwd.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp" // FIXME (once we have kokkos version)
-#include "MueLu_AmalgamationInfo_fwd.hpp"    // FIXME (once we have kokkos version)
+#include "MueLu_AmalgamationFactory_fwd.hpp" // FIXME_KOKKOS (once we have kokkos version)
+#include "MueLu_AmalgamationInfo_fwd.hpp"    // FIXME_KOKKOS (once we have kokkos version)
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"

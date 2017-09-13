@@ -435,7 +435,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
   // Convenient definitions
   // =========================================================================
   typedef Teuchos::ScalarTraits<SC> STS;
-  SC zero = STS::zero(), one = STS::one();
+  SC one = STS::one();
 
   // =========================================================================
   // Parameters initialization
@@ -592,7 +592,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
           GO GID = domainMap->getGlobalElement(j) - indexBase;
 
           if ((GID-i) % blkSize == 0)
-            nsData[j] = Teuchos::ScalarTraits<SC>::one();
+            nsData[j] = one;
         }
       }
     }
@@ -635,7 +635,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
 #if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
       RCP<MueLu::AMGXOperator<SC,LO,GO,NO> > aH;
 #endif
-      A->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
+      A->SetMaxEigenvalueEstimate(-one);
 
       if (useAMGX) {
 #if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)

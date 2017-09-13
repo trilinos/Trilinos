@@ -93,12 +93,12 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
     Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
     Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToEdgeMapPtr = meshmgr.getCellToEdgeMap();
-    Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > sideSetsPtr = meshmgr.getSideSets(); 
+    Teuchos::RCP<std::vector<std::vector<std::vector<int> > > > sideSetsPtr = meshmgr.getSideSets(); 
 
     Intrepid::FieldContainer<RealT> &nodes = *nodesPtr;
     Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
     Intrepid::FieldContainer<int>   &cellToEdgeMap = *cellToEdgeMapPtr;
-    std::vector<std::vector<Intrepid::FieldContainer<int> > >  &sideSets = *sideSetsPtr;
+    std::vector<std::vector<std::vector<int> > >  &sideSets = *sideSetsPtr;
     *outStream << "Number of nodes = " << meshmgr.getNumNodes() << std::endl << nodes;
     *outStream << "Number of cells = " << meshmgr.getNumCells() << std::endl << cellToNodeMap;
     *outStream << "Number of edges = " << meshmgr.getNumEdges() << std::endl << cellToEdgeMap;
@@ -129,9 +129,9 @@ int main(int argc, char *argv[]) {
     meshfile.open("sideset.txt");
     for (int i=0; i<static_cast<int>(sideSets.size()); ++i) {
       for (int j=0; j<static_cast<int>(sideSets[i].size()); ++j) {
-        if (sideSets[i][j].rank() > 0) {
-          for (int k=0; k<sideSets[i][j].dimension(0); ++k) {
-            meshfile << sideSets[i][j](k) << std::endl;
+        if (sideSets[i][j].size() > 0) {
+          for (int k=0; k<static_cast<int>(sideSets[i][j].size()); ++k) {
+            meshfile << sideSets[i][j][k] << std::endl;
           }
         }
         meshfile << std::endl << std::endl;
@@ -157,6 +157,7 @@ int main(int argc, char *argv[]) {
     *outStream << "Number of node dofs = " << dofmgr.getNumNodeDofs() << std::endl << *(dofmgr.getNodeDofs());
     *outStream << "Number of edge dofs = " << dofmgr.getNumEdgeDofs() << std::endl << *(dofmgr.getEdgeDofs());
     *outStream << "Number of face dofs = " << dofmgr.getNumFaceDofs() << std::endl << *(dofmgr.getFaceDofs());
+    *outStream << "Number of void dofs = " << dofmgr.getNumVoidDofs() << std::endl << *(dofmgr.getVoidDofs());
     *outStream << "Total number of dofs = " << dofmgr.getNumDofs() << std::endl << *(dofmgr.getCellDofs());
 
     std::vector<std::vector<int> > fieldPattern = dofmgr.getFieldPattern();

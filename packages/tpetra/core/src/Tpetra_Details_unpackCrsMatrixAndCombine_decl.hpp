@@ -44,6 +44,8 @@
 
 #include "TpetraCore_config.h"
 #include "Tpetra_CombineMode.hpp"
+#include "Kokkos_DualView.hpp"
+#include "Tpetra_DistObject_decl.hpp"
 
 /// \file Tpetra_Details_unpackCrsMatrixAndCombine_decl.hpp
 /// \brief Declaration of functions for unpacking the entries of a
@@ -105,12 +107,12 @@ namespace Details {
 ///
 /// \param sourceMatrix [in] the CrsMatrix source
 ///
-/// \param ixports [in/out] Output pack buffer; resized if needed.
+/// \param imports [in] Input pack buffer
 ///
 /// \param numPacketsPerLID [out] Entry k gives the number of bytes
 ///   packed for row exportLIDs[k] of the local matrix.
 ///
-/// \param ixportLIDs [in] Local indices of the rows to pack.
+/// \param importLIDs [in] Local indices of the rows to pack.
 ///
 /// \param constantNumPackets [out] Setting this to zero tells the caller
 ///   to expect a possibly /// different ("nonconstant") number of packets per local index
@@ -140,6 +142,122 @@ unpackCrsMatrixAndCombine (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
                            Distributor & distor,
                            CombineMode combineMode,
                            const bool atomic);
+
+template<typename ST, typename LO, typename GO, typename NT>
+void
+unpackCrsMatrixAndCombineNew (const CrsMatrix<ST, LO, GO, NT, false>& sourceMatrix,
+                              const Kokkos::DualView<const char*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& imports,
+                              const Kokkos::DualView<const size_t*, typename DistObject<char, LO, GO, NT, false>::buffer_device_type>& numPacketsPerLID,
+                              const Kokkos::DualView<const LO*, typename NT::device_type>& importLIDs,
+                              const size_t constantNumPackets,
+                              Distributor & distor,
+                              const CombineMode combineMode,
+                              const bool atomic);
+
+/// \brief Special version of Tpetra::Details::unpackCrsMatrixAndCombine
+///   that also unpacks owning process ranks.
+///
+/// Perform the count for unpacking the imported column indices pids,
+/// and values, and combining them into matrix.  Return (a ceiling on)
+/// the number of local stored entries ("nonzeros") in the matrix.  If
+/// there are no shared rows in the sourceMatrix this count is exact.
+///
+/// Note: This routine also counts the copyAndPermute nonzeros in
+/// addition to those that come in via import.
+///
+/// \tparam ST The type of the numerical entries of the matrix.
+///   (You can use real-valued or complex-valued types here, unlike
+///   in Epetra, where the scalar type is always \c double.)
+/// \tparam LO The type of local indices.  See the
+///   documentation of Map for requirements.
+/// \tparam GO The type of global indices.  See the
+///   documentation of Map for requirements.
+/// \tparam Node The Kokkos Node type.  See the documentation of Map
+///   for requirements.
+///
+/// \param sourceMatrix [in] the CrsMatrix source
+///
+/// \param imports [in] Input pack buffer
+///
+/// \param numPacketsPerLID [out] Entry k gives the number of bytes
+///   packed for row exportLIDs[k] of the local matrix.
+///
+/// \param importLIDs [in] Local indices of the rows to pack.
+///
+/// \param constantNumPackets [out] Setting this to zero tells the caller
+///   to expect a possibly /// different ("nonconstant") number of packets per local index
+///   (i.e., a possibly different number of entries per row).
+///
+/// \param distor [in] The distributor (not used)
+///
+/// \param combineMode [in] the mode to use for combining values
+///
+/// \param numSameIds [in]
+///
+/// \param permuteToLIDs [in]
+///
+/// \param permuteFromLIDs [in]
+///
+/// \warning The allowed \c combineMode are:
+///   ADD, REPLACE, and ABSMAX. INSERT is not allowed.
+//
+/// \warning This method is intended for expert developer use
+///   only, and should never be called by user code.
+///
+/// Note: This is the public interface to the unpack and combine machinery and
+/// converts passed Teuchos::ArrayView objects to Kokkos::View objects (and
+/// copies back in to the Teuchos::ArrayView objects, if needed).  When
+/// CrsMatrix migrates fully to adopting Kokkos::DualView objects for its storage
+/// of data, this procedure could be bypassed.
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+size_t
+unpackAndCombineWithOwningPIDsCount (
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> & sourceMatrix,
+    const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+    const Teuchos::ArrayView<const char> &imports,
+    const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+    size_t constantNumPackets,
+    Distributor &distor,
+    CombineMode combineMode,
+    size_t numSameIDs,
+    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
+
+/// \brief unpackAndCombineIntoCrsArrays
+///
+/// \note You should call unpackAndCombineWithOwningPIDsCount first
+///   and allocate all arrays accordingly, before calling this
+///   function.
+///
+/// Note: The SourcePids vector (on input) should contain owning PIDs
+/// for each column in the (source) ColMap, as from
+/// Tpetra::Import_Util::getPids, with the "-1 for local" option being
+/// used.
+///
+/// Note: The TargetPids vector (on output) will contain owning PIDs
+/// for each entry in the matrix, with the "-1 for local" for locally
+/// owned entries.
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+void
+unpackAndCombineIntoCrsArrays (
+    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false> & sourceMatrix,
+    const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
+    const Teuchos::ArrayView<const char>& imports,
+    const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
+    const size_t constantNumPackets,
+    Distributor& distor,
+    const CombineMode combineMode,
+    const size_t numSameIDs,
+    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
+    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs,
+    size_t TargetNumRows,
+    size_t TargetNumNonzeros,
+    const int MyTargetPID,
+    const Teuchos::ArrayView<size_t>& CRS_rowptr,
+    const Teuchos::ArrayView<GlobalOrdinal>& CRS_colind,
+    const Teuchos::ArrayView<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>::impl_scalar_type>& CRS_vals,
+    const Teuchos::ArrayView<const int>& SourcePids,
+    Teuchos::Array<int>& TargetPids);
 
 } // namespace Details
 } // namespace Tpetra

@@ -4,6 +4,7 @@ ulimit -c 0
 KOKKOSKERNELS_BRANCH=$1
 TRILINOS_UPDATE_BRANCH=$2
 TRILINOS_PRISTINE_BRANCH=$3
+KOKKOS_UPDATE_BRANCH=$4
 
 if [ -z $KOKKOSKERNELS_BRANCH ]
 then
@@ -28,7 +29,7 @@ export JENKINS_DO_PTHREAD=OFF
 export JENKINS_DO_SERIAL=ON
 export JENKINS_DO_COMPLEX=OFF
 
-export JENKINS_ARCH_CXX_FLAG="-mcpu=power8 -arch=sm_37"
+export JENKINS_ARCH_CXX_FLAG="-mcpu=power8 -arch=sm_37 --expt-extended-lambda --std=c++11"
 export JENKINS_ARCH_C_FLAG="-mcpu=power8"
 export BLAS_LIBRARIES="${BLAS_ROOT}/lib/libblas.a;gfortran;gomp"
 export LAPACK_LIBRARIES="${LAPACK_ROOT}/lib/liblapack.a;gfortran;gomp"
@@ -53,10 +54,25 @@ git checkout $KOKKOSKERNELS_BRANCH
 git pull
 cd ..
 
+if [ -n $KOKKOS_UPDATE_BRANCH ]
+then
+  export KOKKOS_PATH=${PWD}/kokkos
+
+  #Already done:
+  if [ ! -d "${KOKKOS_PATH}" ]; then
+    git clone https://github.com/kokkos/kokkos ${KOKKOS_PATH}
+  fi
+
+  cd ${KOKKOS_PATH}
+  git checkout $KOKKOS_UPDATE_BRANCH
+  git pull
+  cd ..
+fi
+
 export CUDA_LAUNCH_BLOCKING=1
 export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 
-source ${KOKKOSKERNELS_PATH}/scripts/trilinos-integration/prepare_trilinos_repos.sh $TRILINOS_UPDATE_BRANCH $TRILINOS_PRISTINE_BRANCH
+source ${KOKKOSKERNELS_PATH}/scripts/trilinos-integration/prepare_trilinos_repos.sh $TRILINOS_UPDATE_BRANCH $TRILINOS_PRISTINE_BRANCH $KOKKOS_UPDATE_BRANCH
 
 export OMPI_CXX=${TRILINOS_UPDATED_PATH}/packages/kokkos/bin/nvcc_wrapper
 

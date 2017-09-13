@@ -245,12 +245,6 @@ namespace MueLu {
 
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os)       { return Utilities::MakeFancy(os); }
 
-    /*! @brief Squared distance between two rows in a multivector
-
-       Used for coordinate vectors.
-    */
-    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType Distance2(const MultiVector& v, LocalOrdinal i0, LocalOrdinal i1) { return Utilities::Distance2(v, i0, i1); }
-
     /*! @brief Detect Dirichlet rows
 
         @param[in] A matrix

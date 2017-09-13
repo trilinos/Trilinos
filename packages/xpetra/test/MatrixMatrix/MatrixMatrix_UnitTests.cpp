@@ -374,6 +374,7 @@ namespace {
     // The matrix reader does not work with complex scalars. Skip all tests then.
     return;
 #endif
+#ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef Xpetra::CrsMatrix<Scalar,LO,GO,Node> CrsMatrixClass;
@@ -383,7 +384,6 @@ namespace {
     //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     //yAB->describe(*fos, Teuchos::VERB_EXTREME);
 
-#ifdef HAVE_XPETRA_TPETRA
     { // Tpetra test
 
       // get a comm and node

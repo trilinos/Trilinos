@@ -44,7 +44,7 @@
 //
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_INTREPID
+#ifdef HAVE_MUELU_INTREPID2
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"

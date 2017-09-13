@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
       *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
       // Build CVaR risk measure
       Teuchos::ParameterList list;
-      list.sublist("SOL").set("Stochastic Optimization Type",ra);
+      list.sublist("SOL").set("Stochastic Component Type",ra);
       list.sublist("SOL").set("Store Sampled Value and Gradient",storage);
       list.sublist("SOL").sublist("Risk Measure").set("Name",rm);
       list.sublist("SOL").sublist("Risk Measure").sublist(rm).set("Confidence Level",cl);
@@ -180,7 +180,7 @@ int main(int argc, char* argv[]) {
       algo->run(*optProb,true,*outStream);
       *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
       // Get solution statistic
-      stat[i] = optProb->getSolutionStatistic(list);
+      stat[i] = optProb->getSolutionStatistic();
       // Update smoothing parameter
       eps *= static_cast<RealT>(1.e-2);
     }
@@ -189,7 +189,7 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     *outStream << "\nSOLVE NONSMOOTH CVAR PROBLEM WITH BUNDLE TRUST REGION\n";
     Teuchos::ParameterList list;
-    list.sublist("SOL").set("Stochastic Optimization Type",ra);
+    list.sublist("SOL").set("Stochastic Component Type",ra);
     list.sublist("SOL").set("Store Sampled Value and Gradient",storage);
     list.sublist("SOL").sublist("Risk Measure").set("Name",rm);
     list.sublist("SOL").sublist("Risk Measure").sublist(rm).set("Confidence Level",cl);
@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
     /************************* COMPUTE ERROR ******************************************************/
     /**********************************************************************************************/
     Teuchos::RCP<ROL::Vector<RealT> > cErr = zp->clone();
-    RealT zstat = optProb->getSolutionStatistic(list);
+    RealT zstat = optProb->getSolutionStatistic();
     *outStream << "\nSUMMARY:\n";
     *outStream << "  ---------------------------------------------\n";
     *outStream << "    True Value-At-Risk    = " << zstat << "\n";

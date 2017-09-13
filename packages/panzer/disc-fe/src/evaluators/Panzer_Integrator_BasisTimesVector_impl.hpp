@@ -49,17 +49,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Intrepid2
-#include "Intrepid2_FunctionSpaceTools.hpp"
-
 // Panzer
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
-
-// Phalanx
-#include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace panzer
 {
@@ -84,7 +77,6 @@ namespace panzer
     multiplier_(multiplier),
     basisName_(basis.name())
   {
-    using Kokkos::fence;                                                         // JMG:  Necessary?                              
     using Kokkos::View;
     using panzer::BASIS;
     using panzer::Cell;
@@ -189,7 +181,6 @@ namespace panzer
     PHX::FieldManager<Traits>& fm)
   {
     using panzer::getBasisIndex;
-    using panzer::MDFieldArrayFactory;
     using std::size_t;
 
     // Get the Kokkos::Views of the field multipliers.
@@ -221,11 +212,8 @@ namespace panzer
   {
     using panzer::EvaluatorStyle;
 
-    // Get the number of field multipliers and number of bases.
-    const int numFieldMults(kokkosFieldMults_.extent(0)),
-      numBases(weightedBasisVector_.extent(1));
-
     // Initialize the evaluated field.
+    const int numBases(basis_.extent(1));
     if (evalStyle_ == EvaluatorStyle::EVALUATES)
       for (int basis(0); basis < numBases; ++basis)
         field_(cell, basis) = 0.0;
@@ -236,7 +224,7 @@ namespace panzer
     if (NUM_FIELD_MULT == 0)
     {
       // Loop over the quadrature points and dimensions of our vector fields,
-      // scale the integrand by the multiplier, and perform the actual
+      // scale the integrand by the multiplier, and then perform the
       // integration, looping over the bases.
       for (int qp(0); qp < numQP_; ++qp)
       {
@@ -244,16 +232,15 @@ namespace panzer
         {
           tmp = multiplier_ * vector_(cell, qp, dim);
           for (int basis(0); basis < numBases; ++basis)
-            field_(cell, basis) += weightedBasisVector_(cell, basis, qp, dim) *
-              tmp;
-        } // end loop over the vector dimensions
+            field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp;
+        } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     }
     else if (NUM_FIELD_MULT == 1)
     {
       // Loop over the quadrature points and dimensions of our vector fields,
       // scale the integrand by the multiplier and the single field multiplier,
-      // and perform the actual integration, looping over the bases.
+      // and then perform the actual integration, looping over the bases.
       for (int qp(0); qp < numQP_; ++qp)
       {
         for (int dim(0); dim < numDim_; ++dim)
@@ -261,9 +248,8 @@ namespace panzer
           tmp = multiplier_ * vector_(cell, qp, dim) *
             kokkosFieldMults_(0)(cell, qp);
           for (int basis(0); basis < numBases; ++basis)
-            field_(cell, basis) += weightedBasisVector_(cell, basis, qp, dim) *
-              tmp;
-        } // end loop over the vector dimensions
+            field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp;
+        } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     }
     else
@@ -271,8 +257,9 @@ namespace panzer
       // Loop over the quadrature points and pre-multiply all the field
       // multipliers together.  Then loop over the dimensions of our vector
       // fields, scale the integrand by the multiplier and the combination of
-      // field multipliers, and perform the actual integration, looping over
-      // the bases.
+      // the field multipliers, and then perform the actual integration,
+      // looping over the bases.
+      const int numFieldMults(kokkosFieldMults_.extent(0));
       for (int qp(0); qp < numQP_; ++qp)
       {
         ScalarT fieldMultsTotal(1);
@@ -282,9 +269,8 @@ namespace panzer
         {
           tmp = multiplier_ * vector_(cell, qp, dim) * fieldMultsTotal;
           for (int basis(0); basis < numBases; ++basis)
-            field_(cell, basis) += weightedBasisVector_(cell, basis, qp, dim) *
-              tmp;
-        } // end loop over the vector dimensions
+            field_(cell, basis) += basis_(cell, basis, qp, dim) * tmp;
+        } // end loop over the dimensions of the vector field
       } // end loop over the quadrature points
     } // end if (NUM_FIELD_MULT == something)
   } // end of operator()()
@@ -304,8 +290,7 @@ namespace panzer
     using Kokkos::RangePolicy;
 
     // Grab the basis information.
-    weightedBasisVector_ =
-      this->wda(workset).bases[basisIndex_]->weighted_basis_vector;
+    basis_ = this->wda(workset).bases[basisIndex_]->weighted_basis_vector;
 
     // The following if-block is for the sake of optimization depending on the
     // number of field multipliers.  The parallel_fors will loop over the cells

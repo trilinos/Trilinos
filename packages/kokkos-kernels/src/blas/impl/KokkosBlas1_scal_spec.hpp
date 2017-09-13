@@ -121,7 +121,7 @@ template<class RV, class AV, class XV, int XV_Rank = XV::rank,
          bool tpl_spec_avail = scal_tpl_spec_avail<RV,AV,XV>::value,
          bool eti_spec_avail = scal_eti_spec_avail<RV,AV,XV>::value>
 struct Scal {
-  static void scal (RV& R, const AV& A, const XV& X);
+  static void scal (const RV& R, const AV& A, const XV& X);
 };
 
 #if !defined(KOKKOSKERNELS_ETI_ONLY) || KOKKOSKERNELS_IMPL_COMPILE_LIBRARY
@@ -134,7 +134,7 @@ struct Scal<RV,  typename XV::non_const_value_type, XV, 1, false, KOKKOSKERNELS_
   typedef Kokkos::Details::ArithTraits<typename XV::non_const_value_type> ATA;
 
   static void
-  scal (RV& R, const AV& alpha, const XV& X)
+  scal (const RV& R, const AV& alpha, const XV& X)
   {
     static_assert (Kokkos::Impl::is_view<RV>::value, "KokkosBlas::Impl::"
                    "Scal<1-D>: RV is not a Kokkos::View.");
@@ -188,7 +188,7 @@ struct Scal<RMV, AV, XMV, 2, false, KOKKOSKERNELS_IMPL_COMPILE_LIBRARY> {
   typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
 
   static void
-  scal (RMV& R, const AV& av, const XMV& X)
+  scal (const RMV& R, const AV& av, const XMV& X)
   {
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "Scal<2-D>: RMV is not a Kokkos::View.");
@@ -238,7 +238,7 @@ struct Scal<RMV, typename XMV::non_const_value_type, XMV, 2, false, KOKKOSKERNEL
   typedef Kokkos::Details::ArithTraits<typename XMV::non_const_value_type> ATA;
 
   static void
-  scal (RMV& R, const AV& alpha, const XMV& X)
+  scal (const RMV& R, const AV& alpha, const XMV& X)
   {
     static_assert (Kokkos::Impl::is_view<RMV>::value, "KokkosBlas::Impl::"
                    "Scal<2-D, AV=scalar>: RMV is not a Kokkos::View.");

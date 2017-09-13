@@ -811,21 +811,21 @@ namespace Xpetra {
       //@{
 
       //! TODO missing comment
-      int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(-1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      int dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { XPETRA_MONITOR("EpetraIntVectorT::dot"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
 
 
       //! Return 1-norm of this Vector.
-      Teuchos::ScalarTraits<int>::magnitudeType norm1() const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      Teuchos::ScalarTraits<int>::magnitudeType norm1() const { XPETRA_MONITOR("EpetraIntVectorT::norm1"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
 
 
       //! Compute 2-norm of this Vector.
-      Teuchos::ScalarTraits<int>::magnitudeType norm2() const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      Teuchos::ScalarTraits<int>::magnitudeType norm2() const { XPETRA_MONITOR("EpetraIntVectorT::norm2"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
 
       //! Compute Inf-norm of this Vector.
-      Teuchos::ScalarTraits<int>::magnitudeType normInf() const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      Teuchos::ScalarTraits<int>::magnitudeType normInf() const { XPETRA_MONITOR("EpetraIntVectorT::normInf"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
 
       //! Compute mean (average) value of this Vector.
-      int meanValue() const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); return -1; }
+      int meanValue() const { XPETRA_MONITOR("EpetraIntVectorT::meanValue"); TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO"); /* return -1; */ }
 
       //! Compute max value of this Vector.
       int maxValue() const { XPETRA_MONITOR("EpetraIntVectorT::maxValue"); return Teuchos::as<int>(vec_->MaxValue()); }

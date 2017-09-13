@@ -216,7 +216,7 @@ int main(int argc, char* argv[]) {
     /************************* MEAN VALUE *********************************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN VALUE\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Mean Value"); 
+    list.sublist("SOL").set("Stochastic Component Type","Mean Value"); 
     setRandomVector(*x_rcp,commptr);
     setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
     printSolution(*x_rcp,*outStream);
@@ -224,7 +224,7 @@ int main(int argc, char* argv[]) {
     /************************* RISK NEUTRAL *******************************************************/
     /**********************************************************************************************/
     *outStream << "\nRISK NEUTRAL\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Neutral"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Neutral"); 
     setRandomVector(*x_rcp,commptr);
     setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
     printSolution(*x_rcp,*outStream);
@@ -232,7 +232,7 @@ int main(int argc, char* argv[]) {
     /************************* MEAN PLUS DEVIATION ************************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS DEVIATION\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Deviation");
     list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation").set("Deviation Type","Absolute");
     setRandomVector(*x_rcp,commptr);
@@ -242,7 +242,7 @@ int main(int argc, char* argv[]) {
     /************************* MEAN PLUS VARIANCE *************************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS VARIANCE\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Variance");
     list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance").set("Deviation Type","Absolute");
     setRandomVector(*x_rcp,commptr);
@@ -252,7 +252,7 @@ int main(int argc, char* argv[]) {
     /************************* MEAN PLUS DEVIATION FROM TARGET ************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS DEVIATION FROM TARGET\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Deviation From Target");
     list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation From Target").set("Deviation Type","Absolute");
     setRandomVector(*x_rcp,commptr);
@@ -262,7 +262,7 @@ int main(int argc, char* argv[]) {
     /************************* MEAN PLUS VARIANCE FROM TARGET *************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS VARIANCE FROM TARGET\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Variance From Target");
     list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance From Target").set("Deviation Type","Absolute");
     setRandomVector(*x_rcp,commptr);
@@ -272,7 +272,7 @@ int main(int argc, char* argv[]) {
     /************************* MEAN PLUS SEMIDEVIATION ********************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS SEMIDEVIATION\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Deviation");
     list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation").set("Deviation Type","Upper");
     setRandomVector(*x_rcp,commptr);
@@ -282,7 +282,7 @@ int main(int argc, char* argv[]) {
     /************************* MEAN PLUS SEMIVARIANCE *********************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS SEMIVARIANCE\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Variance");
     list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance").set("Deviation Type","Upper");
     setRandomVector(*x_rcp,commptr);
@@ -292,7 +292,7 @@ int main(int argc, char* argv[]) {
     /************************* MEAN PLUS SEMIDEVIATION FROM TARGET ********************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS SEMIDEVIATION FROM TARGET\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Deviation From Target");
     list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Deviation From Target").set("Deviation Type","Upper");
     setRandomVector(*x_rcp,commptr);
@@ -302,7 +302,7 @@ int main(int argc, char* argv[]) {
     /************************* MEAN PLUS SEMIVARIANCE FROM TARGET *********************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS SEMIVARIANCE FROM TARGET\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Mean Plus Variance From Target");
     list.sublist("SOL").sublist("Risk Measure").sublist("Mean Plus Variance From Target").set("Deviation Type","Upper");
     setRandomVector(*x_rcp,commptr);
@@ -312,7 +312,7 @@ int main(int argc, char* argv[]) {
     /************************* MEAN PLUS CVAR *****************************************************/
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS CONDITIONAL VALUE AT RISK\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
     setRandomVector(*x_rcp,commptr);
     setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
@@ -321,7 +321,7 @@ int main(int argc, char* argv[]) {
     /************************* SMOOTHED CVAR QUADRANGLE *******************************************/
     /**********************************************************************************************/
     *outStream << "\nQUANTILE-BASED QUADRANGLE RISK MEASURE\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Based Quadrangle");
     setRandomVector(*x_rcp,commptr);
     setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
@@ -338,7 +338,7 @@ int main(int argc, char* argv[]) {
     /************************* EXPONENTIAL UTILITY FUNCTION ***************************************/
     /**********************************************************************************************/
     *outStream << "\nEXPONENTIAL UTILITY FUNCTION\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Averse"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
     list.sublist("SOL").sublist("Risk Measure").set("Name","Exponential Utility");
     setRandomVector(*x_rcp,commptr);
     setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
@@ -347,7 +347,8 @@ int main(int argc, char* argv[]) {
     /************************* BPOE ***************************************************************/
     /**********************************************************************************************/
     *outStream << "\nBUFFERED PROBABILITY OF EXCEEDANCE\n";
-    list.sublist("SOL").set("Stochastic Optimization Type","BPOE"); 
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","BPOE");
     setRandomVector(*x_rcp,commptr);
     setUpAndSolve(list,pObj,sampler,x,bnd,*outStream);
     printSolution(*x_rcp,*outStream);

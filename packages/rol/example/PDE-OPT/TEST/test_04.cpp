@@ -42,7 +42,7 @@
 // @HEADER
 
 /*! \file  test_04.cpp
-    \brief Unit test for the FE class.
+    \brief Unit test for the FE class on quads.
 */
 
 #include "ROL_Types.hpp"

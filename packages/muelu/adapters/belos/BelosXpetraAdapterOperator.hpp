@@ -161,7 +161,7 @@ namespace Belos {
     RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op_;
   };
 
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   /*! @class XpetraOp
    *
@@ -256,9 +256,9 @@ namespace Belos {
     RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op_;
   };
 #endif // !EPETRA_NO_32BIT_GLOBAL_INDICES
-#endif // HAVE_MUELU_EPETRA
+#endif // HAVE_XPETRA_EPETRA
 
-#ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_XPETRA_EPETRA
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   /*! @class XpetraOp
    *
@@ -354,7 +354,7 @@ namespace Belos {
     RCP<Xpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Op_;
   };
 #endif // !EPETRA_NO_64BIT_GLOBAL_INDICES
-#endif // HAVE_MUELU_EPETRA
+#endif // HAVE_XPETRA_EPETRA
 
   //@}
 

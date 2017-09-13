@@ -182,7 +182,13 @@ public:
     // Only does something if #rhs > current capacity.
     HTST::reset_max_nrhs(Timpl_.get(), X_view.dimension_1());
     // Switch alpha and beta because of HTS's opposite convention.
-    HTST::solve_omp(Timpl_.get(), X_view.data(), X_view.dimension_1(), Y_view.data(), beta, alpha);
+    HTST::solve_omp(Timpl_.get(),
+                    // For std/Kokkos::complex.
+                    reinterpret_cast<const scalar_type*>(X_view.data()),
+                    X_view.dimension_1(),
+                    // For std/Kokkos::complex.
+                    reinterpret_cast<scalar_type*>(Y_view.data()),
+                    beta, alpha);
 #endif
   }
 
@@ -427,7 +433,7 @@ initialize ()
     // Construct new matrix
     local_matrix_type newLocalMatrix("Upermuted", numRows, numCols, numNnz, newval, newptr, newind);
 
-    A_crs_ = Teuchos::rcp(new crs_matrix_type(newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap(), newLocalMatrix));
+    A_crs_ = Teuchos::rcp(new crs_matrix_type(newLocalMatrix, newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap()));
 
     isInternallyChanged_ = true;
   }

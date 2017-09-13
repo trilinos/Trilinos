@@ -110,6 +110,12 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enables a barrier in Ifpack2 Additive Schwarz so that timing information is useful"
   NO )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_BlockTriDiContainer_Timers
+  HAVE_IFPACK2_BLOCKTRIDICONTAINER_TIMERS
+  "Turn on timers in Ifpack2::BlockTriDiContainer."
+  NO )
+
 #
 # C) Add the libraries, tests, and examples
 #

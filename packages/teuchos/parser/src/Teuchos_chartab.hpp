@@ -8,7 +8,8 @@ namespace Teuchos {
 
 enum { NCHARS = 98 };
 
-extern int const chartab[128];
+#define TEUCHOS_CHARTAB_SIZE 128
+extern int const chartab[TEUCHOS_CHARTAB_SIZE];
 extern char const inv_chartab[NCHARS];
 
 }  // end namespace Teuchos

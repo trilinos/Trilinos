@@ -24,7 +24,7 @@ namespace KokkosBatched {
       template<typename ScalarType,
                typename ValueType>
       KOKKOS_INLINE_FUNCTION
-      static int
+      static int 
       invoke(const bool use_unit_diag,
              const int m, const int n, 
              const ScalarType alpha,
@@ -36,32 +36,35 @@ namespace KokkosBatched {
     template<typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
-    int 
+    int
     SerialTrsmInternalLeftLower<Algo::Trsm::Unblocked>::
     invoke(const bool use_unit_diag,
            const int m, const int n,
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      typedef ValueType value_type;
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialTrsmInternal:: not valid template types");
+
+      const ScalarType one(1.0), zero(0.0);
         
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
+      if (alpha == zero)   SerialSetInternal  ::invoke(m, n, zero,  B, bs0, bs1);
       else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
+        if (alpha != one)  SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
 
         for (int p=0;p<m;++p) {
           const int iend = m-p-1, jend = n;
           
-          const value_type
+          const ValueType
             *__restrict__ a21 = iend ? A+(p+1)*as0+p*as1 : NULL;
             
-          value_type
+          ValueType
             *__restrict__ b1t =        B+p*bs0,
             *__restrict__ B2  = iend ? B+(p+1)*bs0 : NULL;
           
           if (!use_unit_diag) {
-            const value_type alpha11 = A[p*as0+p*as1];
+            const ValueType alpha11 = A[p*as0+p*as1];
                 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -93,17 +96,18 @@ namespace KokkosBatched {
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      typedef ValueType value_type;
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialTrsmInternal:: not valid template types");
       enum : int {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
-      else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
-        if (m <= 0 || n <= 0) return 0;
+      const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
 
-        const value_type minus_one(-1);
+      if (alpha == zero)  SerialSetInternal  ::invoke(m, n, zero,  B, bs0, bs1);
+      else {
+        if (alpha != one) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
+        if (m <= 0 || n <= 0) return 0;
 
         InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, bs1);
         InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
@@ -111,15 +115,15 @@ namespace KokkosBatched {
         InnerGemmFixA<mbAlgo,mbAlgo> gemm(as0, as1, bs0, bs1, bs0, bs1);          
         auto trsm = [&](const int ib, 
                         const int jb,
-                        const value_type *__restrict__ AA,
-                        /**/  value_type *__restrict__ BB) {
+                        const ValueType *__restrict__ AA,
+                        /**/  ValueType *__restrict__ BB) {
           const int mb = mbAlgo;
           for (int p=0;p<ib;p+=mb) {
             const int pb = (p+mb) > ib ? (ib-p) : mb;
                 
             // trsm update
-            const value_type *__restrict__ Ap = AA+p*as0+p*as1;
-            /**/  value_type *__restrict__ Bp = BB+p*bs0;
+            const ValueType *__restrict__ Ap = AA+p*as0+p*as1;
+            /**/  ValueType *__restrict__ Bp = BB+p*bs0;
                 
             if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, jb, Bp);
             else               trsm_n.serial_invoke(Ap, pb, jb, Bp);
@@ -160,29 +164,31 @@ namespace KokkosBatched {
     template<typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
-    int 
+    int
     SerialTrsmInternalLeftUpper<Algo::Trsm::Unblocked>::
     invoke(const bool use_unit_diag,
            const int m, const int n,
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      typedef ValueType value_type;
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialTrsmInternal:: not valid template types");
+      const ScalarType one(1.0), zero(0.0);
   
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
+      if (alpha == zero)  SerialSetInternal  ::invoke(m, n, zero,  B, bs0, bs1);
       else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
+        if (alpha != one) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
         
-        value_type *__restrict__ B0 = B;
+        ValueType *__restrict__ B0 = B;
         for (int p=(m-1);p>=0;--p) {
           const int iend = p, jend = n;
 
-          const value_type *__restrict__ a01 = A+p*as1;
-          /**/  value_type *__restrict__ b1t = B+p*bs0;
+          const ValueType *__restrict__ a01 = A+p*as1;
+          /**/  ValueType *__restrict__ b1t = B+p*bs0;
             
           if (!use_unit_diag) {
-            const value_type alpha11 = A[p*as0+p*as1];
+            const ValueType alpha11 = A[p*as0+p*as1];
                 
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
@@ -206,24 +212,25 @@ namespace KokkosBatched {
     template<typename ScalarType,
              typename ValueType>
     KOKKOS_INLINE_FUNCTION
-    int 
+    int
     SerialTrsmInternalLeftUpper<Algo::Trsm::Blocked>::
     invoke(const bool use_unit_diag,
            const int m, const int n,
            const ScalarType alpha,
            const ValueType *__restrict__ A, const int as0, const int as1,
            /**/  ValueType *__restrict__ B, const int bs0, const int bs1) {
-      typedef ValueType value_type;
+      static_assert(is_same_mag_type<ScalarType,ValueType>::value && !is_vector<ScalarType>::value,
+                    "SerialTrsmInternal:: not valid template types");
+      const ScalarType one(1.0), zero(0.0), minus_one(-1.0);
+
       enum : int {
         mbAlgo = Algo::Trsm::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
 
-      if (alpha == 0)   SerialSetInternal::invoke(m, n, 0, B, bs0, bs1);
+      if (alpha == zero)  SerialSetInternal  ::invoke(m, n, zero,  B, bs0, bs1);
       else {
-        if (alpha != 1) SerialScaleInternal::invoke(m, n, value_type(alpha), B, bs0, bs1);
+        if (alpha != one) SerialScaleInternal::invoke(m, n, alpha, B, bs0, bs1);
         if (m <= 0 || n <= 0) return 0;
-
-        const value_type minus_one(-1);
 
         InnerTrsmLeftUpperUnitDiag<mbAlgo>    trsm_u(as0, as1, bs0, bs1);
         InnerTrsmLeftUpperNonUnitDiag<mbAlgo> trsm_n(as0, as1, bs0, bs1);
@@ -232,8 +239,8 @@ namespace KokkosBatched {
             
         auto trsm = [&](const int ib, 
                         const int jb,
-                        const value_type *__restrict__ AA,
-                        /**/  value_type *__restrict__ BB) {
+                        const ValueType *__restrict__ AA,
+                        /**/  ValueType *__restrict__ BB) {
           const int mb = mbAlgo;
           for (int pp=0;pp<ib;pp+=mb) {
             const int 
@@ -242,8 +249,8 @@ namespace KokkosBatched {
               pb = mb + (ptmp < 0)*ptmp;
                 
             // trsm update
-            const value_type *__restrict__ Ap = AA+p*as0+p*as1;
-            /**/  value_type *__restrict__ Bp = BB+p*bs0;
+            const ValueType *__restrict__ Ap = AA+p*as0+p*as1;
+            /**/  ValueType *__restrict__ Bp = BB+p*bs0;
                 
             if (use_unit_diag) trsm_u.serial_invoke(Ap, pb, jb, Bp);
             else               trsm_n.serial_invoke(Ap, pb, jb, Bp);

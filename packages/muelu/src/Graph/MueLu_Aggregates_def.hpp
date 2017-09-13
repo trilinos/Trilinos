@@ -94,7 +94,7 @@ namespace MueLu {
 
   ///////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<LocalOrdinal>  Aggregates<LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateSizes(bool forceRecompute, bool cacheSizes) const {
+  Teuchos::ArrayRCP<LocalOrdinal>  Aggregates<LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateSizes(bool forceRecompute) const {
 
     if (aggregateSizes_ != Teuchos::null && !forceRecompute) {
 
@@ -117,8 +117,7 @@ namespace MueLu {
         if (procWinner[k] == myPid) aggregateSizes[vertex2AggId[k]]++;
       }
 
-      if (cacheSizes)
-        aggregateSizes_ = aggregateSizes;
+      aggregateSizes_ = aggregateSizes;
 
       return aggregateSizes;
     }

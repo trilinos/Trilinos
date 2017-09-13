@@ -133,6 +133,7 @@ cmake \
   -D Isorropia_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Kokkos=ON \
   -D Kokkos_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON \
 -D Trilinos_ENABLE_KokkosKernels=ON \
   -D KokkosKernels_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_ML=ON \

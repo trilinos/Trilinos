@@ -14,10 +14,11 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Time.hpp"
-// Tempus
+// Thyra
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
 // Tempus
+#include "Tempus_Stepper.hpp"
 #include "Tempus_Integrator.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_IntegratorObserverBasic.hpp"
@@ -56,7 +57,7 @@ public:
     /// Advance the solution to timeMax, and return true if successful.
     virtual bool advanceTime();
     /// Advance the solution to timeFinal, and return true if successful.
-    virtual bool advanceTime(const Scalar timeFinal);
+    virtual bool advanceTime(const Scalar timeFinal) override;
     /// Perform tasks before start of integrator.
     virtual void startIntegrator();
     /// Start time step.
@@ -66,9 +67,9 @@ public:
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
     /// Return a copy of the Tempus ParameterList
-    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()
+    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override
     { return tempusPL_; }
-    virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl)
+    virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override
     {
       if (tempusPL_==Teuchos::null) tempusPL_=Teuchos::parameterList("Tempus");
       if (pl != Teuchos::null) *tempusPL_ = *pl;
@@ -79,12 +80,17 @@ public:
   /// \name Accessor methods
   //@{
     /// Get current time
-    virtual Scalar getTime() const {return solutionHistory_->getCurrentTime();}
+    virtual Scalar getTime() const override
+    {return solutionHistory_->getCurrentTime();}
     /// Get current index
-    virtual Scalar getIndex()const {return solutionHistory_->getCurrentIndex();}
+    virtual Scalar getIndex() const override
+    {return solutionHistory_->getCurrentIndex();}
+    /// Get Status
+    virtual Status getStatus() const override
+    {return integratorStatus_;}
     /// Get the Stepper
-    virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const
-      {return stepper_;}
+    virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override
+    {return stepper_;}
     /// Set the Stepper
     virtual void setStepper(Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model);
     /// Set the Stepper
@@ -98,13 +104,13 @@ public:
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
       Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
     /// Get the SolutionHistory
-    virtual Teuchos::RCP<SolutionHistory<Scalar> > getSolutionHistory()
+    virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override
       {return solutionHistory_;}
     /// Set the SolutionHistory
     virtual void setSolutionHistory(
       Teuchos::RCP<SolutionHistory<Scalar> > sh = Teuchos::null);
     /// Get the TimeStepControl
-    virtual Teuchos::RCP<TimeStepControl<Scalar> > getTimeStepControl()
+    virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override
       {return timeStepControl_;}
     /// Set the TimeStepControl
     virtual void setTimeStepControl(

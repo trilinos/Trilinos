@@ -33,19 +33,18 @@ namespace KokkosBatched {
     SerialLU_Internal<Algo::LU::Unblocked>::
     invoke(const int m, const int n,
            ValueType *__restrict__ A, const int as0, const int as1) {
-      typedef ValueType value_type;
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;
 
       for (int p=0;p<k;++p) {
         const int iend = m-p-1, jend = n-p-1;
 
-        const value_type 
+        const ValueType 
           // inv_alpha11 = 1.0/A(p,p),
           alpha11 = A[p*as0+p*as1],
           *__restrict__ a12t = A+(p  )*as0+(p+1)*as1;
         
-        value_type
+        ValueType
           *__restrict__ a21  = A+(p+1)*as0+(p  )*as1,
           *__restrict__ A22  = A+(p+1)*as0+(p+1)*as1;
         
@@ -71,11 +70,10 @@ namespace KokkosBatched {
     SerialLU_Internal<Algo::LU::Blocked>::
     invoke(const int m, const int n,
            ValueType *__restrict__ A, const int as0, const int as1) {
-      typedef ValueType value_type;
       enum : int {
         mbAlgo = Algo::LU::Blocked::mb<Kokkos::Impl::ActiveExecutionMemorySpace>()
       };
-          
+      const typename Kokkos::Details::ArithTraits<ValueType>::mag_type one(1.0), minus_one(-1.0);          
       const int k = (m < n ? m : n);
       if (k <= 0) return 0;
 
@@ -84,17 +82,16 @@ namespace KokkosBatched {
       InnerTrsmLeftLowerUnitDiag<mbAlgo>    trsm_llu(as0, as1, as0, as1);
       InnerTrsmLeftLowerNonUnitDiag<mbAlgo> trsm_run(as1, as0, as1, as0);
 
-      const value_type one(1), minus_one(-1);
       auto lu_factorize = [&](const int ib,
                               const int jb,
-                              value_type *__restrict__ AA) {
+                              ValueType *__restrict__ AA) {
         const int mb = mbAlgo;
         const int kb = ib < jb ? ib : jb; 
         for (int p=0;p<kb;p+=mb) {
           const int pb = (p+mb) > kb ? (kb-p) : mb;
 
           // diagonal block
-          value_type *__restrict__ Ap = AA+p*as0+p*as1;
+          ValueType *__restrict__ Ap = AA+p*as0+p*as1;
 
           // lu on a block             
           lu.serial_invoke(pb, Ap);

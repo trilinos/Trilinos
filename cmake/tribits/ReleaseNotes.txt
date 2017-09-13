@@ -2,6 +2,16 @@
 Release Notes for TriBITS
 ----------------------------------------
 
+2017/09/05:
+
+(*) MINOR: Unparsed and otherwise ignored arguments are now flagged (see
+    developers guide documentation for
+    ${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS).  The default value is
+    'WARNING' which results in simply printing a warning but allow configure
+    to complete.  This allows one to see the warnings but for the project to
+    continue to work as before.  But this can be changed to 'SEND_ERROR' or
+    'FATAL_ERROR' that will fail the configure.
+
 2017/06/24:
 
 (*) MINOR: Add new all-at-once more for CTest -S driver scripts using

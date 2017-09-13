@@ -1,5 +1,3 @@
-
-
 #
 # A) Define the package
 #
@@ -31,14 +29,12 @@ APPEND_SET(SOURCES
 
 TRIBITS_ADD_LIBRARY(
   gtest
-  NO_INSTALL_HEADERS ${HEADERS}
+  NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
 
 #install gtest header into the correct subdir.
 INSTALL(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/gtest/)
-
-
 
 #
 # D) Do standard postprocessing

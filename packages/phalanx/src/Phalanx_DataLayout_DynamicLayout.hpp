@@ -86,7 +86,7 @@ namespace PHX {
       PHX::SetExtentsImpl<extent_pack...>::setExtents(0,m_extents,extents...);
     }
 
-    virtual ~Layout() {}
+    virtual ~Layout() noexcept {}
 
     virtual bool operator==(const DataLayout& src) const override;
 

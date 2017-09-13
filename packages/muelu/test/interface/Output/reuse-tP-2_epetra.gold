@@ -80,10 +80,11 @@ Level 1
    Build (MueLu::RepartitionHeuristicFactory)
    repartition: start level = 2   [default]
    repartition: min rows per proc = 800   [default]
+   repartition: target rows per proc = 0   [default]
    repartition: max imbalance = 1.2   [default]
    
    Build (MueLu::Zoltan2Interface)
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2367210,node=0x227f280,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x272e7c0,node=0x272d280,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -188,10 +189,11 @@ Level 2
    Build (MueLu::RepartitionHeuristicFactory)
    repartition: start level = 2   [default]
    repartition: min rows per proc = 800   [default]
+   repartition: target rows per proc = 0   [default]
    repartition: max imbalance = 1.2   [default]
    
    Build (MueLu::Zoltan2Interface)
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x24dfaa0,node=0x246b2f0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2844790,node=0x2729170,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -392,10 +394,11 @@ Level 2
    Build (MueLu::RepartitionHeuristicFactory)
    repartition: start level = 2   [default]
    repartition: min rows per proc = 800   [default]
+   repartition: target rows per proc = 0   [default]
    repartition: max imbalance = 1.2   [default]
    
    Build (MueLu::Zoltan2Interface)
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x24dfaa0,node=0x246b2f0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0x2844790,node=0x2729170,strong_count=2,weak_count=0}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]

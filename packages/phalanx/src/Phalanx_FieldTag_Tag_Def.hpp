@@ -60,7 +60,7 @@ PHX::Tag<DataT>::Tag(const std::string& name,
 
 //**********************************************************************
 template<typename DataT>
-PHX::Tag<DataT>::~Tag()
+PHX::Tag<DataT>::~Tag() noexcept
 { }
 
 //**********************************************************************

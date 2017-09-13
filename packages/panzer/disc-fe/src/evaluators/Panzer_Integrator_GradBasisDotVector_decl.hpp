@@ -205,9 +205,8 @@ namespace panzer
       /**
        *  \brief Evaluate Fields.
        *
-       *  This actually performs the integration by looping over cells in the
-       *  `Workset`, then over bases and integration points on the cell, and
-       *  finally over the dimensions of the vector field.
+       *  This actually performs the integration by calling `operator()()` in a
+       *  `Kokkos::parallel_for` over the cells in the `Workset`.
        *
        *  \param[in] workset The `Workset` on which you're going to do the
        *                     integration.
@@ -215,6 +214,37 @@ namespace panzer
       void
       evaluateFields(
         typename Traits::EvalData d);
+
+      /**
+       *  \brief This empty struct allows us to optimize `operator()()`
+       *         depending on the number of field multipliers.
+       */
+      template<int NUM_FIELD_MULT>
+      struct FieldMultTag
+      {
+      }; // end of struct FieldMultTag
+
+      /**
+       *  \brief Perform the integration.
+       *
+       *  Generally speaking, for a given cell in the `Workset`, this routine    // JMG:  Fill this out.                          
+       *  loops over quadrature points, vector dimensions, and bases to perform
+       *  the integration, scaling the vector field to be integrated by the
+       *  multiplier (\f$ M \f$) and any field multipliers (\f$ a(x) \f$, \f$
+          b(x) \f$, etc.).
+       *
+       *  \note Optimizations are made for the cases in which we have no field
+       *        multipliers or only a single one.
+       *
+       *  \param[in] tag  An indication of the number of field multipliers we
+       *                  have; either 0, 1, or something else.
+       *  \param[in] cell The cell in the `Workset` over which to integrate.
+       */
+      template<int NUM_FIELD_MULT>
+      void
+      operator()(
+        const FieldMultTag<NUM_FIELD_MULT>& tag,
+        const std::size_t&                  cell) const;
 
     private:
 
@@ -234,7 +264,7 @@ namespace panzer
       /**
        *  \brief The scalar type.
        */
-      typedef typename EvalT::ScalarT ScalarT;
+      using ScalarT = typename EvalT::ScalarT;
 
       /**
        *  \brief An `enum` determining the behavior of this `Evaluator`.
@@ -257,7 +287,8 @@ namespace panzer
        *  \brief A field representing the vector-valued function we're
        *         integrating (\f$ \vec{s} \f$).
        */
-      PHX::MDField<const ScalarT, panzer::Cell, panzer::IP, panzer::Dim> flux_;
+      PHX::MDField<const ScalarT, panzer::Cell, panzer::IP, panzer::Dim>
+      vector_;
 
       /**
        *  \brief The scalar multiplier out in front of the integral (\f$ M
@@ -269,13 +300,14 @@ namespace panzer
        *  \brief The (possibly empty) list of fields that are multipliers out
        *         in front of the integral (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-      std::vector<PHX::MDField<const ScalarT, panzer::Cell, panzer::IP>>
-      fieldMults_;
+      std::vector<PHX::MDField<ScalarT, panzer::Cell, panzer::IP>> fieldMults_;
 
       /**
-       *  \brief The number of nodes for each cell.
+       *  \brief The `Kokkos::View` representation of the (possibly empty) list
+       *         of fields that are multipliers out in front of the integral
+       *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-      int numNodes_;
+      Kokkos::View<Kokkos::View<ScalarT**>*> kokkosFieldMults_;
 
       /**
        *  \brief The number of quadrature points for each cell.
@@ -299,10 +331,11 @@ namespace panzer
       std::size_t basisIndex_;
 
       /**
-       *  \brief A temporary `Kokkos::View` that we'll use in computing the
-       *         result  of this integral.
+       *  \brief The gradient vector basis information necessary for
+       *         integration.
        */
-      Kokkos::DynRankView<ScalarT,PHX::Device> tmp;
+      PHX::MDField<double, panzer::Cell, panzer::BASIS, panzer::IP,
+        panzer::Dim> basis_;
 
   }; // end of class Integrator_GradBasisDotVector
 

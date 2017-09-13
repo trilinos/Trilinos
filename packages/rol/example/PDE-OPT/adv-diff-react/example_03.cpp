@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
 
     std::string rm = "Risk Measure", sr = "Spectral Risk";
     std::string dist = "Distribution", pf = "Plus Function";
-    parlist->sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
+    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
     parlist->sublist("SOL").sublist(rm).set("Name",sr);
     parlist->sublist("SOL").sublist(rm).sublist(sr).set("Print Quadrature to Screen",!myRank);
     parlist->sublist("SOL").sublist(rm).sublist(sr).sublist(dist).set("Name","Beta");
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
         *outStream << "Optimization time: "
                    << static_cast<RealT>(std::clock()-timer)/static_cast<RealT>(CLOCKS_PER_SEC)
                    << " seconds." << std::endl << std::endl;
-        stat = opt->getSolutionStatistic(*parlist);
+        stat = opt->getSolutionStatistic();
         // Print control and statistic values to screen
         *outStream << std::endl << std::endl;
         *outStream << std::scientific << std::setprecision(15);

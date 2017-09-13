@@ -206,14 +206,14 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
       // Plot sample solution and exact solution
       if (n == 0) {
         std::ofstream ftmp("Tempus_"+RKMethod_+"_SinCos.dat");
-        RCP<SolutionHistory<double> > solutionHistory =
+        RCP<const SolutionHistory<double> > solutionHistory =
           integrator->getSolutionHistory();
         int nStates = solutionHistory->getNumStates();
         RCP<const Thyra::VectorBase<double> > x_exact_plot;
         for (int i=0; i<nStates; i++) {
-          RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+          RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
           double time = solutionState->getTime();
-          RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
+          RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
           x_exact_plot = model->getExactSolution(time).get_x();
           ftmp << time << "   "
                << Thyra::get_ele(*(x_plot), 0) << "   "
@@ -324,12 +324,12 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
       std::string fname = "Tempus_DIRK_VanDerPol-Ref.dat";
       if (n == 0) fname = "Tempus_DIRK_VanDerPol.dat";
       std::ofstream ftmp(fname);
-      RCP<SolutionHistory<double> > solutionHistory =
+      RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       int nStates = solutionHistory->getNumStates();
       for (int i=0; i<nStates; i++) {
-        RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
-        RCP<Thyra::VectorBase<double> > x = solutionState->getX();
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
+        RCP<const Thyra::VectorBase<double> > x = solutionState->getX();
         double ttime = solutionState->getTime();
         ftmp << ttime << "   " << get_ele(*x, 0) << "   " << get_ele(*x, 1)
              << std::endl;

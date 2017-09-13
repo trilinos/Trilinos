@@ -46,7 +46,7 @@
 #ifndef IFPACK2_EXPERIMENTALCRSRBILUK_DECL_HPP
 #define IFPACK2_EXPERIMENTALCRSRBILUK_DECL_HPP
 
-#include <Tpetra_Experimental_BlockCrsMatrix.hpp>
+#include <Tpetra_BlockCrsMatrix.hpp>
 
 #include <Ifpack2_RILUK.hpp>
 
@@ -55,7 +55,7 @@ namespace Ifpack2 {
 namespace Experimental {
 
 /** \class RBILUK
-\brief ILU(k) factorization of a given Tpetra::Experimental::BlockCrsMatrix.
+\brief ILU(k) factorization of a given Tpetra::BlockCrsMatrix.
 \tparam MatrixType A specialization of Tpetra::RowMatrix.
 
 This class implements a "relaxed" incomplete ILU (ILU) factorization with level k fill.  It is based upon the ILU algorithms
@@ -162,7 +162,7 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
       global_ordinal_type,
       node_type> crs_matrix_type;
 
-  typedef Tpetra::Experimental::BlockCrsMatrix<scalar_type,
+  typedef Tpetra::BlockCrsMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> block_crs_matrix_type;
@@ -177,7 +177,7 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
   /// \param A_in [in] The input matrix.
   RBILUK (const Teuchos::RCP<const row_matrix_type>& A_in);
 
-  /// \brief Constructor that takes a Tpetra::Experimental::BlockCrsMatrix
+  /// \brief Constructor that takes a Tpetra::BlockCrsMatrix
   ///
   /// \param A_in [in] The input matrix.
   RBILUK (const Teuchos::RCP<const block_crs_matrix_type>& A_in);

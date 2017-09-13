@@ -1,0 +1,11 @@
+<ParameterList name="Inputs">
+  <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
+  <ParameterList name="Geometry">
+
+    <!-- === rectangle === -->
+    <Parameter name="Width"             type="double"  value="1.0"  />
+    <Parameter name="X0"                type="double"  value="0.0"  />
+    <Parameter name="NX"                type="int"     value="4"    />
+
+  </ParameterList>
+</ParameterList>
