@@ -77,8 +77,6 @@ public:
 
   // Since typedef's are not inheritted, go grab them
   typedef typename super_type::scalar_type                      scalar_type;
-  typedef typename super_type::local_ordinal_type        local_ordinal_type;
-  typedef typename super_type::global_ordinal_type      global_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
 
   typedef TypeMap<Amesos2::TachoSolver,scalar_type>                type_map;
