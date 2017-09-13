@@ -227,7 +227,9 @@ private:
 #endif
   typedef typename Tacho::Solver<tacho_type,DeviceSpaceType>::value_type_matrix
     solve_array_t;
-  solve_array_t workspace_; // Will be allocated once
+
+  // used as an internal workspace - possibly we can store this better in TACHOData
+  mutable solve_array_t workspace_;
 };                              // End class Tacho
 
 

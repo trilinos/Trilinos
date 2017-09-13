@@ -204,21 +204,19 @@ TachoSolver<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector
 #ifdef HAVE_AMESOS2_TIMER
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
-    // validate
-    int i_ld_rhs = as<int>(ld_rhs);
+    // Bump up the workspace size if needed
+    if (workspace_.dimension_0() < this->globalNumRows_ || workspace_.dimension_1() < nrhs) {
+      workspace_ = solve_array_t("t", this->globalNumRows_, nrhs);
+    }
 
-    for(size_t j = 0 ; j < nrhs; j++) {
-      const int n = 1;
-      solve_array_t x(&xValues.getRawPtr()[j*i_ld_rhs], this->globalNumRows_, n);
-      solve_array_t b(&bValues.getRawPtr()[j*i_ld_rhs], this->globalNumRows_, n);
+    solve_array_t x(xValues.getRawPtr(), this->globalNumRows_, nrhs);
+    solve_array_t b(bValues.getRawPtr(), this->globalNumRows_, nrhs);
 
-      data_.solver.solve(x, b, workspace_);
+    data_.solver.solve(x, b, workspace_);
 
-      int status = 0; // TODO: determine what error handling will be
-      if(status != 0) {
-        ierr = status;
-        break;
-      }
+    int status = 0; // TODO: determine what error handling will be
+    if(status != 0) {
+      ierr = status;
     }
   }
 
@@ -302,9 +300,6 @@ TachoSolver<Matrix,Vector>::loadA_impl(EPhase current_phase)
   if(current_phase == SOLVE) {
     return(false);
   }
-
-  // Allocate this just once
-  workspace_ = solve_array_t("t", this->globalNumRows_, 1);
 
 /*
   // TODO: Decide if this is useful
