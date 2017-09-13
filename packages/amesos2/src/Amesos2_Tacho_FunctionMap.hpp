@@ -51,23 +51,6 @@
 #include "Amesos2_FunctionMap.hpp"
 #include "Amesos2_Tacho_TypeMap.hpp"
 
-namespace Amesos2 {
-
-  /* ==================== Specializations ====================
-   *
-   * \cond Tacho_function_specializations
-   */
-
-  /**
-   * \brief Pass function calls to Tacho based on data type.
-
-   */
-  // TODO : Do we need the specializations for Tacho ??
-
-
-  /* \endcond Tacho_function_specializations */
-
-
-} // end namespace Amesos2
+// No specializations
 
 #endif  // AMESOS2_TACHO_FUNCTIONMAP_HPP
