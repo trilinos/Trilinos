@@ -58,6 +58,9 @@
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Teuchos {
+  // forward declaration of Array
+  template<class T> class Array;
+
   // forward declaration of RCP
   template<class T> class RCP;
 } // namespace Teuchos
@@ -86,6 +89,9 @@ namespace Details {
 ///   zero on <i>all</i> processes in the communicator of
 ///   <tt>domMap</tt> (see below).  This may be the same (literally
 ///   the same object as) as <tt>domMap</tt>, depending on the graph.
+/// \param remotePIDs [out] The process ranks corresponding to the
+///   column Map's "remote" (not on the calling process in the domain
+///   Map) indices.
 /// \param domMap [in] The domain Map to use for creating the column
 ///   Map.  This need not be the same as graph.getDomainMap().  It's
 ///   OK for the latter to be null, in fact.  <tt>domMap</tt> needs to
@@ -126,6 +132,7 @@ namespace Details {
 template <class LO, class GO, class NT>
 int
 makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
+            Teuchos::Array<int>& remotePIDs,
             const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& domMap,
             const RowGraph<LO, GO, NT>& graph,
             const bool sortEachProcsGids = true,

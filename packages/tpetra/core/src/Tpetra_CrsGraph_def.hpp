@@ -601,7 +601,8 @@ namespace Tpetra {
 
     setDomainRangeMaps (domainMap.is_null() ? rowMap_ : domainMap,
                         rangeMap .is_null() ? rowMap_ : rangeMap);
-    makeImportExport ();
+    Teuchos::Array<int> remotePIDs (0); // unused output argument
+    this->makeImportExport (remotePIDs, false);
 
     k_lclInds1D_ = lclGraph_.entries;
     k_rowPtrs_ = lclGraph_.row_map;
@@ -3705,8 +3706,10 @@ namespace Tpetra {
     // the user constructor calling the version of the constructor
     // that takes a column Map, or from a previous fillComplete call),
     // then create it.
-    if (! hasColMap ()) {
-      this->makeColMap ();
+    Teuchos::Array<int> remotePIDs (0);
+    const bool mustBuildColMap = ! this->hasColMap ();
+    if (mustBuildColMap) {
+      this->makeColMap (remotePIDs); // resized on output
     }
 
     // Make indices local, if they aren't already.
@@ -3726,7 +3729,10 @@ namespace Tpetra {
     // not be called on all processes in the row Map's communicator.
     this->sortAndMergeAllIndices (this->isSorted (), this->isMerged ());
 
-    this->makeImportExport (); // Make Import and Export objects, if necessary
+    // Make Import and Export objects, if they haven't been made
+    // already.  If we made a column Map above, reuse information from
+    // that process to avoid communiation in the Import setup.
+    this->makeImportExport (remotePIDs, mustBuildColMap);
     this->computeGlobalConstants ();
     this->fillLocalGraph (params);
     this->fillComplete_ = true;
@@ -3840,7 +3846,8 @@ namespace Tpetra {
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIXmake"))));
 #endif
 
-    makeImportExport ();
+    Teuchos::Array<int> remotePIDs (0); // unused output argument
+    this->makeImportExport (remotePIDs, false);
 
     // Compute the constants
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -4994,7 +5001,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  makeColMap ()
+  makeColMap (Teuchos::Array<int>& remotePIDs)
   {
     using ::Tpetra::Details::ProfilingRegion;
 #ifdef HAVE_TPETRA_DEBUG
@@ -5026,8 +5033,8 @@ namespace Tpetra {
 
     std::ostringstream errStrm;
     const int lclErrCode =
-      Details::makeColMap (colMap, this->getDomainMap (), *this,
-                           sortEachProcsGids, &errStrm);
+      Details::makeColMap (colMap, remotePIDs, this->getDomainMap (),
+                           *this, sortEachProcsGids, &errStrm);
     auto comm = this->getComm ();
     if (! comm.is_null ()) {
       const int lclSuccess = (lclErrCode == 0) ? 1 : 0;
@@ -5044,8 +5051,8 @@ namespace Tpetra {
       }
     }
 #else // NOT HAVE_TPETRA_DEBUG
-    (void) Details::makeColMap (colMap, this->getDomainMap (), *this,
-                                sortEachProcsGids, NULL);
+    (void) Details::makeColMap (colMap, remotePIDs, this->getDomainMap (),
+                                *this, sortEachProcsGids, NULL);
 #endif // HAVE_TPETRA_DEBUG
     // See above.  We want to admit the possibility of makeColMap
     // actually revising an existing column Map, even though that
@@ -5096,7 +5103,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
-  makeImportExport ()
+  makeImportExport (Teuchos::Array<int>& remotePIDs,
+                    const bool useRemotePIDs)
   {
     using ::Tpetra::Details::ProfilingRegion;
     using Teuchos::ParameterList;
@@ -5121,10 +5129,24 @@ namespace Tpetra {
       // Create the Import instance if necessary.
       if (domainMap_ != colMap_ && (! domainMap_->isSameAs (*colMap_))) {
         if (params.is_null () || ! params->isSublist ("Import")) {
-          importer_ = rcp (new import_type (domainMap_, colMap_));
-        } else {
+          if (useRemotePIDs) {
+            importer_ = rcp (new import_type (domainMap_, colMap_, remotePIDs));
+          }
+          else {
+            importer_ = rcp (new import_type (domainMap_, colMap_));
+          }
+        }
+        else {
           RCP<ParameterList> importSublist = sublist (params, "Import", true);
-          importer_ = rcp (new import_type (domainMap_, colMap_, importSublist));
+          if (useRemotePIDs) {
+            RCP<import_type> newImp =
+              rcp (new import_type (domainMap_, colMap_, remotePIDs));
+            newImp->setParameterList (importSublist); // nonconst method
+            importer_ = newImp; // assign nonconst to const
+          }
+          else {
+            importer_ = rcp (new import_type (domainMap_, colMap_, importSublist));
+          }
         }
       }
     }
