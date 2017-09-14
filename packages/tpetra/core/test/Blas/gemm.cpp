@@ -189,24 +189,24 @@ namespace {
     mag_type C_norm = Kokkos::ArithTraits<mag_type>::zero ();
     {
       Kokkos::deep_copy (A2, A_orig);
-      for (int i = 0; i < A2.dimension_0 (); ++i) {
-        for (int j = 0; j < A2.dimension_1 (); ++j) {
+      for (LO i = 0; i < static_cast<LO> (A2.dimension_0 ()); ++i) {
+        for (LO j = 0; j < static_cast<LO> (A2.dimension_1 ()); ++j) {
           const mag_type curAbs =
             Kokkos::ArithTraits<entry_type>::abs (A2(i,j));
           A_norm = (curAbs > A_norm) ? curAbs : A_norm;
         }
       }
       Kokkos::deep_copy (B2, B_orig);
-      for (int i = 0; i < B2.dimension_0 (); ++i) {
-        for (int j = 0; j < B2.dimension_1 (); ++j) {
+      for (LO i = 0; i < static_cast<LO> (B2.dimension_0 ()); ++i) {
+        for (LO j = 0; j < static_cast<LO> (B2.dimension_1 ()); ++j) {
           const mag_type curAbs =
             Kokkos::ArithTraits<entry_type>::abs (B2(i,j));
           B_norm = (curAbs > B_norm) ? curAbs : B_norm;
         }
       }
       Kokkos::deep_copy (C2, A_orig);
-      for (int i = 0; i < C2.dimension_0 (); ++i) {
-        for (int j = 0; j < C2.dimension_1 (); ++j) {
+      for (LO i = 0; i < static_cast<LO> (C2.dimension_0 ()); ++i) {
+        for (LO j = 0; j < static_cast<LO> (C2.dimension_1 ()); ++j) {
           const mag_type curAbs =
             Kokkos::ArithTraits<entry_type>::abs (C2(i,j));
           C_norm = (curAbs > C_norm) ? curAbs : C_norm;
@@ -214,9 +214,9 @@ namespace {
       }
     }
 
-    const int A2_stride = Tpetra::Details::Blas::getStride2DView (A2);
-    const int B2_stride = Tpetra::Details::Blas::getStride2DView (B2);
-    const int C2_stride = Tpetra::Details::Blas::getStride2DView (C2);
+    const LO A2_stride = Tpetra::Details::Blas::getStride2DView (A2);
+    const LO B2_stride = Tpetra::Details::Blas::getStride2DView (B2);
+    const LO C2_stride = Tpetra::Details::Blas::getStride2DView (C2);
 
     typedef Kokkos::ArithTraits<coeff_type> KAT;
     const coeff_type zero = KAT::zero ();

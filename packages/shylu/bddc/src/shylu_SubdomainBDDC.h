@@ -98,6 +98,8 @@ public:
     if (m_interfacePreconditioner) {
       extractMatricesAndFactor(Parameters);
     }
+    m_subVec1.resize(m_numDofs);
+    m_subVec2.resize(m_numDofs);
   }
 
   ~SubdomainBDDC()
@@ -115,6 +117,11 @@ public:
   LO getNumDofs() const
   {
     return m_numDofs;
+  }
+
+  const std::vector<LO> & getEquivConstraintsBegin() const
+  {
+    return m_equivConstraintsBegin;
   }
 
   LO getNumBoundaryDofs() const
@@ -138,15 +145,54 @@ public:
     return numCoarse;
   }
 
-  const std::vector<LO> & getCoarseDofEquiv() const
+  const std::vector<LO> & getEquivLocalDofs(const LO equiv) const
   {
-    return m_coarseDofEquiv;
+    return m_equivConstraintsLocalDofs[equiv];
   }
 
   SM getBoundaryDiagValue(LO rowB)
   {
     LO row = m_boundaryDofs[rowB];
     return diagValue(row);
+  }
+
+  void getSubdomainVectors(SX* & vec1,
+			   SX* & vec2)
+  {
+    vec1 = m_subVec1.data();
+    vec2 = m_subVec2.data();
+  }
+
+  void multiplyByPhi(const SX* x, 
+		     SX* b, 
+		     bool interfacePreconditioner,
+		     bool transpose)
+  {
+    LO numBaseConstraints = m_pivotRows.size();
+    LO numCols = numBaseConstraints + m_numAuxConstraints;
+    LO numRows(0);
+    SX *Phi(0);
+    if (interfacePreconditioner == true) {
+      numRows = m_numBoundaryDofs;
+      Phi = m_PhiB.data();
+    }
+    else {
+      numRows = m_numDofs;
+      Phi = m_Phi.data();
+    }
+    Teuchos::BLAS<int, SX>  BLAS;
+    SX ALPHA(1), BETA(0);
+    int INCX(1), INCY(1);
+    if ((numRows > 0) && (numCols > 0)) {
+      if (transpose == false) {
+	BLAS.GEMV(Teuchos::NO_TRANS, numRows, numCols, ALPHA, Phi, numRows, 
+		  x, INCX, BETA, b, INCY);
+      }
+      else {
+	BLAS.GEMV(Teuchos::CONJ_TRANS, numRows, numCols, ALPHA, Phi, numRows, 
+		  x, INCX, BETA, b, INCY);
+      }
+    }
   }
 
   LO getNumInitialEquivConstraints(LO equiv) const
@@ -174,6 +220,11 @@ public:
   {
     return m_pivotRowsLocal[equiv];
 
+  }
+
+  void printSparseMatrix(const char* fileName) {
+    UtilBDDC<SX,SM>::printSparseMatrix(m_numDofs, m_rowBegin, m_columns,
+				       m_values, fileName);
   }
 
   void outputData(LO equiv,
@@ -275,9 +326,10 @@ public:
 			      SX* gSol)
   {
     if (m_interfacePreconditioner == true) {
+      bool restrictToBoundary = true;
       SX* gBscaled = &m_workNC1[0];
       bool applyTranspose = true;
-      applyWeights(g, applyTranspose, gBscaled);
+      applyWeights(g, applyTranspose, gBscaled, restrictToBoundary);
       m_workNC2.assign(m_numDofs, 0);
       SX* gFullScaled = &m_workNC2[0];
       for (LO i=0; i<m_numBoundaryDofs; i++) {
@@ -295,34 +347,36 @@ public:
 	solB[i] = solFull[m_boundaryDofs[i]];
       }
       applyTranspose = false;
-      applyWeights(solB, applyTranspose, gSol);
+      applyWeights(solB, applyTranspose, gSol, restrictToBoundary);
     }
     else {
     }
   }
 
-  void setInitialConstraints(std::vector<LO> & numEquivConstraints,
-			     std::vector< std::vector<SX> > & equivConstraints)
+  void setInitialConstraints
+    (std::vector< std::vector<LO> > & equivConstraintsLocalDofs,
+     std::vector< std::vector<SX> > & equivConstraints)
   {
+    m_equivConstraintsLocalDofs = equivConstraintsLocalDofs,
     m_equivConstraints = equivConstraints;
-    size_t numEquiv = numEquivConstraints.size();
+    size_t numEquiv = equivConstraintsLocalDofs.size();
+    std::vector<LO> numEquivConstraints(numEquiv);
+    for (size_t i=0; i<numEquiv; i++) {
+      numEquivConstraints[i] = equivConstraintsLocalDofs[i].size();
+    }
     m_pivotRowsLocal.resize(numEquiv);
     m_equivConstraintsBegin.resize(numEquiv+1, 0);
     for (size_t i=0; i<numEquiv; i++) {
       m_equivConstraintsBegin[i+1] = m_equivConstraintsBegin[i] +
-	numEquivConstraints[i];
+	equivConstraintsLocalDofs[i].size();
     }
     assert (numEquiv == m_equivClassDofs.size());
     m_pivotRows.resize(0);
-    m_coarseDofEquiv.resize(0);
     for (size_t i=0; i<numEquiv; i++) {
       size_t numTerms = numEquivConstraints[i]*m_equivClassDofs[i].size();
       assert (equivConstraints[i].size() == numTerms); 
       findPivotRows(numEquivConstraints[i], equivConstraints[i], 
 		    m_equivClassDofs[i], m_pivotRowsLocal[i], m_pivotRows);
-      for (LO j=0; j<numEquivConstraints[i]; j++) {
-	m_coarseDofEquiv.push_back(i);
-      }
     }
     std::vector<bool> flagRows(m_numDofs, false);
     for (size_t i=0; i<m_pivotRows.size(); i++) {
@@ -364,16 +418,17 @@ public:
     }
   }
 
-  void setAuxiliaryConstraints(std::vector<LO> & numAuxConstraints,
-			       std::vector< std::vector<SX> > & auxConstraints)
+  void setAuxiliaryConstraints
+    (std::vector< std::vector<LO> > & auxConstraintsLocalDofs,
+     std::vector< std::vector<SX> > & auxConstraints)
   {
-    size_t numEquiv = numAuxConstraints.size();
+    size_t numEquiv = auxConstraintsLocalDofs.size();
     if (numEquiv == 0) return;
     LO numRowsa = 0;
+    std::vector<LO> numAuxConstraints(numEquiv);
     for (size_t i=0; i<numEquiv; i++) {
-      for (LO j=0; j<numAuxConstraints[i]; j++) {
-	m_coarseDofEquiv.push_back(i);
-      }
+      m_equivConstraintsLocalDofs.push_back(auxConstraintsLocalDofs[i]);
+      numAuxConstraints[i] = auxConstraintsLocalDofs[i].size();
       numRowsa += numAuxConstraints[i];
     }
     m_numAuxConstraints = numRowsa;
@@ -738,54 +793,70 @@ public:
     }
   }
 
-  void calculateCoarseMatrices(std::vector<SX> & Phi,
-			       std::vector<SX> & Ac,
-			       bool restrictPhiToBoundary = false)
+  void calculateCoarseMatrices(std::vector<SX> & Ac,
+			       bool restrictPhiToBoundary = false,
+			       bool scaleRows = false)
   {
     LO numRows = m_numDofs;
     LO numBaseConstraints = m_pivotRows.size();
     LO numCols = numBaseConstraints + m_numAuxConstraints;
-    Phi.resize(numRows*numCols);
+    m_Phi.resize(numRows*numCols);
     std::vector<SX> eb(numBaseConstraints, 0), solLambdab(numBaseConstraints),
       ea(m_numAuxConstraints), solLambdaa(m_numAuxConstraints);
     m_work1.assign(numRows, 0);
     SX* g = &m_work1[0];
     for (LO i=0; i<numBaseConstraints; i++) {
       eb[i] = 1;
-      solveNeumann(g, &eb[0], &ea[0], &Phi[i*numRows], 
+      solveNeumann(g, &eb[0], &ea[0], &m_Phi[i*numRows], 
 		   &solLambdab[0], &solLambdaa[0]);
       eb[i] = 0;
     }
     for (LO i=0; i<m_numAuxConstraints; i++) {
       ea[i] = 1;
-      solveNeumann(g, &eb[0], &ea[0], &Phi[(i+numBaseConstraints)*numRows],
+      solveNeumann(g, &eb[0], &ea[0], &m_Phi[(i+numBaseConstraints)*numRows],
 		   &solLambdab[0], &solLambdaa[0]);
       ea[i] = 0;
     }
     std::vector<SX> APhi(numRows*numCols);
     for (LO i=0; i<numCols; i++) {
-      applyFullOperator(&Phi[i*numRows], &APhi[i*numRows]);
+      applyFullOperator(&m_Phi[i*numRows], &APhi[i*numRows]);
     }
     Ac.resize(numCols*numCols);
     Teuchos::BLAS<int, SX>  BLAS;
     SX ALPHA(1), BETA(0);
     if ((numRows > 0) && (numCols > 0)) {
       BLAS.GEMM(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, numCols, numCols, 
-		numRows, ALPHA, &Phi[0], numRows, &APhi[0], numRows, 
+		numRows, ALPHA, &m_Phi[0], numRows, &APhi[0], numRows, 
 		BETA, &Ac[0], numCols);
+    }
+    if (scaleRows == true) {
+      bool applyTranspose = false;
+      std::vector<SX> Phi(m_Phi);
+      for (LO i=0; i<numCols; i++) {
+	applyWeights(&Phi[i*numRows], applyTranspose, &m_Phi[i*numRows], false);
+      }
     }
     if (restrictPhiToBoundary == true) {
       LO numRowsB = m_numBoundaryDofs;
-      std::vector<SX> PhiOrig = Phi;
-      Phi.resize(numRowsB*numCols);
-      for (LO i=0; i<numRowsB; i++) {
-	for (LO j=0; j<numCols; j++) {
-	  Phi[i+j*numRowsB] = PhiOrig[m_boundaryDofs[i]+j*numRows];
+      m_PhiB.resize(numRowsB*numCols);
+      for (LO j=0; j<numCols; j++) {
+	for (LO i=0; i<numRowsB; i++) {
+	  m_PhiB[i+j*numRowsB] = m_Phi[m_boundaryDofs[i]+j*numRows];
 	}
       }
     }
   }
 
+  void getPhi(std::vector<SX> & Phi,
+	      bool restrictedToBoundary = false) const
+  {
+    if (restrictedToBoundary == true) {
+      Phi = m_PhiB;
+    }
+    else {
+      Phi = m_Phi;
+    }
+  }
   void applyFullOperator(SX* x,
 			 SX* Ax)
   {
@@ -804,7 +875,7 @@ public:
     const LO* rowBeginIB = &m_rowBeginIB[0];
     const LO* columnsIB = &m_columnsIB[0];
     const SX* valuesIB = &m_valuesIB[0];
-    SolverBase<SX,SM,LO,GO>* interiorSolver = m_interiorSolver;
+    SolverBase<SX>* interiorSolver = m_interiorSolver;
     if (m_useBlockPreconditioner == true) {
       rowBeginIB = &m_rowBeginIBOp[0];
       columnsIB = &m_columnsIBOp[0];
@@ -838,7 +909,7 @@ public:
     const SX* valuesBB = &m_valuesBB[0];
     const SX* valuesIB = &m_valuesIB[0];
     const SX* valuesBI = &m_valuesBI[0];
-    SolverBase<SX,SM,LO,GO>* interiorSolver = m_interiorSolver;
+    SolverBase<SX>* interiorSolver = m_interiorSolver;
     if ((matrixType == OPERATOR) && (m_useBlockPreconditioner == true)) {
       rowBeginBB = &m_rowBeginBBOp[0];
       rowBeginIB = &m_rowBeginIBOp[0];
@@ -871,7 +942,7 @@ public:
 			     const LO* rowBeginBI,
 			     const LO* columnsBI,
 			     const SX* valuesBI,
-			     SolverBase<SX,SM,LO,GO>* & interiorSolver)
+			     SolverBase<SX>* & interiorSolver)
   {
     LO numInteriorDofs = m_interiorDofs.size();
     SX* rhsSolver = &m_work1[0];
@@ -907,7 +978,7 @@ public:
     const LO* rowBeginBI = &m_rowBeginBI[0];
     const LO* columnsBI = &m_columnsBI[0];
     const SX* valuesBI = &m_valuesBI[0];
-    SolverBase<SX,SM,LO,GO>* interiorSolver = m_interiorSolver;
+    SolverBase<SX>* interiorSolver = m_interiorSolver;
     if (m_useBlockPreconditioner == true) {
       rowBeginBI = &m_rowBeginBIOp[0];
       columnsBI = &m_columnsBIOp[0];
@@ -926,12 +997,13 @@ public:
   
   void applyWeights(const SX* g,
 		    const bool applyTranspose,
-		    SX* gScaled)
+		    SX* gScaled,
+		    bool restrictToBoundary)
   {
     assert (m_rowBeginWeight.size() == m_equivClassDofs.size());
     LO numEquiv = m_rowBeginWeight.size();
-    if (m_interfacePreconditioner == true) {
-      if (m_equivToBoundaryMap.size() == 0) initializeEquivBoundaryMaps();
+    if (m_equivToBoundaryMap.size() == 0) initializeEquivBoundaryMaps();
+    if (restrictToBoundary == true) {
       for (LO i=0; i<m_numBoundaryDofs; i++) gScaled[i] = 0;
       for (LO i=0; i<numEquiv; i++) {
 	for (size_t j=0; j<m_equivClassDofs[i].size(); j++) {
@@ -949,6 +1021,30 @@ public:
 	}
       }
     }
+    else {
+      for (LO i=0; i<m_numDofs; i++) gScaled[i] = g[i];
+      for (LO i=0; i<m_numBoundaryDofs; i++) {
+	LO rowBB = m_boundaryDofs[i];
+	gScaled[rowBB] = 0;
+      }
+      for (LO i=0; i<numEquiv; i++) {
+	for (size_t j=0; j<m_equivClassDofs[i].size(); j++) {
+	  LO rowB = m_equivToBoundaryMap[i][j];
+	  LO rowBB = m_boundaryDofs[rowB];
+	  for (LO k=m_rowBeginWeight[i][j]; k<m_rowBeginWeight[i][j+1]; k++) {
+	    LO colEquiv = m_columnsWeight[i][k];
+	    LO colB = m_equivToBoundaryMap[i][colEquiv];
+	    LO colBB = m_boundaryDofs[colB];
+	    if (applyTranspose == false) {
+	      gScaled[rowBB] += m_valuesWeight[i][k]*g[colBB];
+	    }
+	    else {
+	      gScaled[colBB] += m_valuesWeight[i][k]*g[rowBB];
+	    }
+	  }
+	}
+      }
+    }
   }
 
  private: // member data
@@ -960,12 +1056,14 @@ public:
   bool m_interfacePreconditioner, m_useBlockPreconditioner;
   enum ProblemType m_problemType;
   std::vector<LO> m_interiorDofs;
-  SolverBase<SX,SM,LO,GO>  *m_interiorSolver, *m_NeumannSolver,
+  SolverBase<SX>  *m_interiorSolver, *m_NeumannSolver,
     *m_interiorSolverOp;
-  std::vector<SX> m_work1, m_work2, m_work3, m_workNC1, m_workNC2;
+  std::vector<SX> m_work1, m_work2, m_work3, m_workNC1, m_workNC2, 
+    m_Phi, m_PhiB, m_subVec1, m_subVec2;
   std::vector<LO> m_rowBeginIB, m_columnsIB, m_rowBeginBI, m_columnsBI,
     m_rowBeginBB, m_columnsBB, m_pivotRows, m_remainRows, 
-    m_equivConstraintsBegin, m_coarseDofEquiv;
+    m_equivConstraintsBegin;
+  std::vector< std::vector<LO> > m_equivConstraintsLocalDofs;
   std::vector<SX> m_valuesIB, m_valuesBI, m_valuesBB;
   std::vector< std::vector<LO> >  m_equivClassDofs, m_pivotRowsLocal;
   std::vector< std::vector<LO> > m_rowBeginWeight, m_columnsWeight,
@@ -1176,9 +1274,9 @@ public:
 		    LO* rowBegin, 
 		    LO* columns, 
 		    SX* values,
-		    SolverBase<SX,SM,LO,GO>* & solver)
+		    SolverBase<SX>* & solver)
   {
-    SolverFactory<SX,SM,LO,GO> Factory;
+    SolverFactory<SX> Factory;
     solver = Factory.Generate(numRows,
 			      rowBegin,
 			      columns,
@@ -1394,7 +1492,7 @@ public:
 				 std::vector<LO> & rowBeginBI, 
 				 std::vector<LO> & columnsBI, 
 				 std::vector<SX> & valuesBI,
-				 SolverBase<SX,SM,LO,GO>* & interiorSolver)
+				 SolverBase<SX>* & interiorSolver)
   {
     std::vector<LO> rowBeginII, columnsII;
     std::vector<SX> valuesII;

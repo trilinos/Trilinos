@@ -4,9 +4,6 @@
 2	number of subdomains in 1-direction (numSubDir1)
 2	number of subdomains in 2-direction (numSubDir2)
 2	number of subdomains in 3-direction (numSubDir3)
-2	number of smaller subdomains per processor in 1-direction (nsspp1)
-2	number of smaller subdomains per processor in 2-direction (nsspp2)
-2	number of smaller subdomains per processor in 3-direction (nsspp3)
 4	number of elements in each direction for the smaller subdomains (Hh)
 3	spatial dimension
 1	problem type (1 for scalar elliptic PDE, 2 for elasticity)
@@ -25,7 +22,6 @@
 1	number of coarse subdomains per MPI rank
 64	number of coarse elements per coarse subdomain
 1	coarsening option (0 graph-based, 1 RCB, 2 RIB)
-0	apply preconditioner only and not solver (0 for no, 1 for yes)
 2	number of solves (or application of preconditioner)
 
 Notes:
