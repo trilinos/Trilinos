@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_StepperIMEX_RKObserver_hpp
-#define Tempus_StepperIMEX_RKObserver_hpp
+#ifndef Tempus_StepperIMEX_RKPartObserver_hpp
+#define Tempus_StepperIMEX_RKPartObserver_hpp
 
 #include "Tempus_SolutionHistory.hpp"
 
@@ -15,9 +15,9 @@
 namespace Tempus {
 
 // Forward Declaration for recursive includes (this Observer <--> Stepper)
-template<class Scalar> class StepperIMEX_RK;
+template<class Scalar> class StepperIMEX_RK_Partition;
 
-/** \brief StepperIMEX_RKObserver class for StepperIMEX_RK.
+/** \brief StepperIMEX_RKPartObserver class for StepperIMEX_RK_Partition.
  *
  * This is a means for application developers to perform tasks
  * during the time steps, e.g.,
@@ -27,60 +27,60 @@ template<class Scalar> class StepperIMEX_RK;
  *   - ...
  *
  * <b>Design Considerations</b>
- *   - StepperIMEX_RKObserver is not stateless!  Developers may touch the
+ *   - StepperIMEX_RKPartObserver is not stateless!  Developers may touch the
  *     solution state!  Developers need to be careful not to break the
  *     restart (checkpoint) capability.
  */
 template<class Scalar>
-class StepperIMEX_RKObserver
+class StepperIMEX_RKPartObserver
 {
 public:
 
   /// Constructor
-  StepperIMEX_RKObserver(){}
+  StepperIMEX_RKPartObserver(){}
 
   /// Destructor
-  virtual ~StepperIMEX_RKObserver(){}
+  virtual ~StepperIMEX_RKPartObserver(){}
 
   /// Observe Stepper at beginning of takeStep.
   virtual void observeBeginTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
+    StepperIMEX_RK_Partition<Scalar> & stepperIMEX_RK_Part){}
 
   /// Observe Stepper at beginning of each stage.
   virtual void observeBeginStage(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
+    StepperIMEX_RK_Partition<Scalar> & stepperIMEX_RK_Part){}
 
   /// Observe Stepper before Explicit evalution of Implicit ODE ME.
   virtual void observeBeforeImplicitExplicitly(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
+    StepperIMEX_RK_Partition<Scalar> & stepperIMEX_RK_Part){}
 
   /// Observe Stepper before nonlinear solve.
   virtual void observeBeforeSolve(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
+    StepperIMEX_RK_Partition<Scalar> & stepperIMEX_RK_Part){}
 
   /// Observe Stepper after nonlinear solve.
   virtual void observeAfterSolve(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
+    StepperIMEX_RK_Partition<Scalar> & stepperIMEX_RK_Part){}
 
   /// Observe Stepper before Explicit ME evalution.
   virtual void observeBeforeExplicit(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
+    StepperIMEX_RK_Partition<Scalar> & stepperIMEX_RK_Part){}
 
   /// Observe Stepper at end of each stage.
   virtual void observeEndStage(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
+    StepperIMEX_RK_Partition<Scalar> & stepperIMEX_RK_Part){}
 
   /// Observe Stepper at end of takeStep.
   virtual void observeEndTakeStep(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
-    StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
+    StepperIMEX_RK_Partition<Scalar> & stepperIMEX_RK_Part){}
 };
 } // namespace Tempus
-#endif // Tempus_StepperIMEX_RKObserver_hpp
+#endif // Tempus_StepperIMEX_RKPartObserver_hpp

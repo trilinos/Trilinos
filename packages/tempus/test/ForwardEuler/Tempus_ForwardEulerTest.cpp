@@ -189,7 +189,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
-  const int nTimeStepSizes = 7;
+  const int nTimeStepSizes = 7;  // 8 for Error plot
   double dt = 0.2;
   double order = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {

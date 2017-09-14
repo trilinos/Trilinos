@@ -271,7 +271,7 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
-  const int nTimeStepSizes = 5;
+  const int nTimeStepSizes = 5;  // 8 for error plot
   double dt = 0.20;
   double order = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {

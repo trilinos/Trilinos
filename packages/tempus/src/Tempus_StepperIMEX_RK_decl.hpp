@@ -12,7 +12,7 @@
 #include "Tempus_config.hpp"
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
-#include "Tempus_WrapperModelEvaluatorPairIMEX.hpp"
+#include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
 #include "Tempus_StepperIMEX_RKObserver.hpp"
 
 
@@ -266,10 +266,10 @@ public:
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& appModel);
 
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel()
-     { return wrapperModelPairIMEX_->getExplicitModel(); }
+     { return wrapperModelPairIMEX_; }
 
     virtual void setModelPair(
-      const Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> > & modelPair);
+      const Teuchos::RCP<WrapperModelEvaluatorPairIMEX_Basic<Scalar> >& mePair);
 
     virtual void setModelPair(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
@@ -315,6 +315,11 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
+  void evalImplicitModelExplicitly(
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
+    Scalar time, Scalar stepSize, Scalar stageNumber,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & G) const;
+
   void evalExplicitModel(
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
     Scalar time, Scalar stepSize, Scalar stageNumber,
@@ -355,7 +360,7 @@ protected:
  *  \f]
  *  compute the IMEX RK stage time-derivative,
  *  \f[
- *    \dot{X}_i = \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
+ *    \dot{X}_i = \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}
  *  \f]
  *  \f$\ddot{x}\f$ is not used and set to null.
  */

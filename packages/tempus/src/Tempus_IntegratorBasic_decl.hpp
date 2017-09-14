@@ -145,17 +145,19 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
+      override;
+    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override;
+    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override;
+    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters()
+      const override;
   //@}
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    std::string description() const;
+    std::string description() const override;
     void describe(Teuchos::FancyOStream        & out,
-                  const Teuchos::EVerbosityLevel verbLevel) const;
+                  const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
 protected:
