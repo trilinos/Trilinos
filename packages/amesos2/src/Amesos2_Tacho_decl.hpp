@@ -77,6 +77,7 @@ public:
 
   // Since typedef's are not inheritted, go grab them
   typedef typename super_type::scalar_type                      scalar_type;
+  typedef typename super_type::local_ordinal_type        local_ordinal_type;
   typedef typename super_type::global_size_type            global_size_type;
 
   typedef TypeMap<Amesos2::TachoSolver,scalar_type>                type_map;
@@ -194,13 +195,11 @@ private:
    */
   bool loadA_impl(EPhase current_phase);
 
+
   /**
-   * \brief is this special case to read ptrs directly
+   * \brief can we optimize size_type and ordinal_type for straight pass through
    */
-  /*
-  // TODO: Decide if this is useful
-  bool single_process_optim_check() const;
-  */
+  bool do_optimization() const;
 
   // struct holds all data necessary to make a tacho factorization or solve call
   mutable struct TACHOData {
