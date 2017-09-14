@@ -1006,14 +1006,17 @@ namespace MueLu {
               || currentNodeGlobalFineIndices[1] == myGeo->gFineNodesPerDir[1] - 1)
           && ((ghostedIndices[2] % myGeo->coarseRate[2] == 0)
               || currentNodeGlobalFineIndices[2] == myGeo->gFineNodesPerDir[2] - 1) ) {
-        if(currentNodeGlobalFineIndices[0] == myGeo->gFineNodesPerDir[0] - 1) {
+        if((currentNodeGlobalFineIndices[0] == myGeo->gFineNodesPerDir[0] - 1) ||
+           (ghostedIndices[0] / myGeo->coarseRate[0] == myGeo->ghostedCoarseNodesPerDir[0] - 1)) {
           nzIndStencil[0] += 1;
         }
-        if((currentNodeGlobalFineIndices[1] == myGeo->gFineNodesPerDir[1] - 1)
+        if(((currentNodeGlobalFineIndices[1] == myGeo->gFineNodesPerDir[1] - 1) ||
+            (ghostedIndices[1] / myGeo->coarseRate[1] == myGeo->ghostedCoarseNodesPerDir[1] - 1))
            && (myGeo->numDimensions > 1)){
           nzIndStencil[0] += 2;
         }
-        if((currentNodeGlobalFineIndices[2] == myGeo->gFineNodesPerDir[2] - 1)
+        if(((currentNodeGlobalFineIndices[2] == myGeo->gFineNodesPerDir[2] - 1) ||
+            (ghostedIndices[2] / myGeo->coarseRate[2] == myGeo->ghostedCoarseNodesPerDir[2] - 1))
            && myGeo->numDimensions > 2) {
           nzIndStencil[0] += 4;
         }

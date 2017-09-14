@@ -973,9 +973,6 @@ namespace MueLuTests {
     RCP<Xpetra::Matrix<SC,LO,GO,Node> > P2 = lvl2->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
     RCP<CrsMatrix> P2Crs = rcp_dynamic_cast<CrsMatrixWrap>(P2)->getCrsMatrix();
 
-    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/map.mat", *(P2->getRangeMap()));
-    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/P.mat", *P2);
-
     // Construct vectors to check that a linear vector remains linear after projection
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector2 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getRangeMap(),1);
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector3 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getDomainMap(),1);
@@ -1002,7 +999,7 @@ namespace MueLuTests {
     P2Crs->apply(*vector3, *vector2, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
                 Teuchos::ScalarTraits<SC>::zero());
 
-    fine_data = vector0->getData(0);
+    fine_data = vector2->getData(0);
     bool is_linear_lvl2 = true, is_injected_lvl2 = true;
     if(comm->getRank() == 0) {
       fine_inds[0] =  0;
