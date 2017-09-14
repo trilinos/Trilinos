@@ -123,13 +123,13 @@ public:
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
   //@{
     virtual Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const
-      { return getImplicitModel()->create_W_op(); }
+      { return implicitModel_->create_W_op(); }
 
     Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
-      get_W_factory() const { return getImplicitModel()->get_W_factory(); }
+      get_W_factory() const { return implicitModel_->get_W_factory(); }
 
     virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-      get_f_space() const { return getImplicitModel()->get_f_space(); }
+      get_f_space() const { return explicitModel_->get_f_space(); }
 
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;

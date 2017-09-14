@@ -22,7 +22,7 @@ WrapperModelEvaluatorPairPartIMEX_Basic(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel,
   int numExplicitOnlyBlocks, int parameterIndex)
   : timeDer_(Teuchos::null), numExplicitOnlyBlocks_(numExplicitOnlyBlocks),
-    parameterIndex_(parameterIndex), implicitNominalValues_(false)
+    parameterIndex_(parameterIndex), useImplicitModel_(false)
 {
   setExplicitModel(explicitModel);
   setImplicitModel(implicitModel);
@@ -37,21 +37,22 @@ initialize()
 {
   using Teuchos::RCP;
 
-  setImplicitNominalValues(true);
+  useImplicitModel_ = true;
   wrapperImplicitInArgs_  = this->createInArgs();
-  setImplicitNominalValues(false);
   wrapperImplicitOutArgs_ = this->createOutArgs();
+  useImplicitModel_ = false;
 
-  // Explicit and Implicit IMEX vectors compatible?
   RCP<const Thyra::VectorBase<Scalar> > z =
     explicitModel_->getNominalValues().get_x();
-  int expXDim = getIMEXVector(z)->space()->dim();
-  int impXDim = implicitModel_->get_x_space()->dim();
-  TEUCHOS_TEST_FOR_EXCEPTION( expXDim != impXDim, std::logic_error,
-    "Error - WrapperModelEvaluatorPairPartIMEX_Basic::initialize()\n"
-    "  Explicit and Implicit IMEX vectors are incompatible!\n"
-    "  Explicit IMEX vector dim = " << expXDim << "\n"
-    "  Implicit IMEX vector dim = " << impXDim << "\n");
+
+  // A Thyra::VectorSpace requirement
+  TEUCHOS_TEST_FOR_EXCEPTION( !(getIMEXVector(z)->space()->isCompatible(
+                                       *(implicitModel_->get_x_space()))),
+    std::logic_error,
+    "Error - WrapperModelEvaluatorPairIMEX_Basic::initialize()\n"
+    "  Explicit and Implicit vector x spaces are incompatible!\n"
+    "  Explicit vector x space = " << *(getIMEXVector(z)->space())    << "\n"
+    "  Implicit vector x space = " << *(implicitModel_->get_x_space())<< "\n");
 
   // Valid number of blocks?
   RCP<const Thyra::ProductVectorBase<Scalar> > zPVector =
@@ -100,7 +101,9 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 get_x_space() const
 {
-  return this->explicitModel_->get_x_space();
+  if (useImplicitModel_ == true) return implicitModel_->get_x_space();
+
+  return explicitModel_->get_x_space();
 }
 
 template <typename Scalar>
@@ -108,7 +111,9 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 get_g_space(int i) const
 {
-  return this->implicitModel_->get_g_space(i);
+  if (useImplicitModel_ == true) return implicitModel_->get_g_space(i);
+
+  return explicitModel_->get_g_space(i);
 }
 
 template <typename Scalar>
@@ -116,7 +121,9 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 get_p_space(int i) const
 {
-  return this->implicitModel_->get_p_space(i);
+  if (useImplicitModel_ == true) return implicitModel_->get_p_space(i);
+
+  return explicitModel_->get_p_space(i);
 }
 
 template <typename Scalar>
@@ -126,7 +133,7 @@ setImplicitModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model )
 {
   implicitModel_ = model;
-  TEUCHOS_TEST_FOR_EXCEPTION( implicitModel_->Np() > 0, std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION( implicitModel_->Np() < 1, std::logic_error,
     "Error - WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()\n"
     "  Implicit model requires at least one parameter for partitioned\n"
     "  IMEX-RK to pass in the explicit-only vector."
@@ -205,8 +212,8 @@ setParameterIndex(int parameterIndex)
     }
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION( 0 <= parameterIndex_ and
-                                   parameterIndex_ < implicitModel_->Np(),
+  TEUCHOS_TEST_FOR_EXCEPTION( 0 > parameterIndex_ or
+                                  parameterIndex_ >= implicitModel_->Np(),
     std::logic_error,
     "Error - WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()\n"
     "  Invalid parameter index = " << parameterIndex_ << "\n"
@@ -214,6 +221,17 @@ setParameterIndex(int parameterIndex)
 
   return;
 }
+
+template <typename Scalar>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
+get_f_space() const
+{
+  if (useImplicitModel_ == true) return implicitModel_->get_f_space();
+
+  return explicitModel_->get_f_space();
+}
+
 
 template <typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
@@ -231,7 +249,7 @@ WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 createInArgs() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  if (implicitNominalValues_==true) {
+  if (useImplicitModel_ == true) {
     MEB::InArgsSetup<Scalar> inArgs(implicitModel_->getNominalValues());
     inArgs.setModelEvalDescription(this->description());
     return inArgs;
@@ -248,7 +266,13 @@ WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 createOutArgsImpl() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
-  MEB::OutArgsSetup<Scalar> outArgs(implicitModel_->createOutArgs());
+  if (useImplicitModel_ == true) {
+    MEB::OutArgsSetup<Scalar> outArgs(implicitModel_->createOutArgs());
+    outArgs.setModelEvalDescription(this->description());
+    return outArgs;
+  }
+
+  MEB::OutArgsSetup<Scalar> outArgs(explicitModel_->createOutArgs());
   outArgs.setModelEvalDescription(this->description());
   return outArgs;
 }

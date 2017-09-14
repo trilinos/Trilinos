@@ -26,7 +26,8 @@ namespace Tempus_Test {
 
 template<class Scalar>
 VanDerPol_IMEX_ExplicitModel<Scalar>::
-VanDerPol_IMEX_ExplicitModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
+VanDerPol_IMEX_ExplicitModel(
+  Teuchos::RCP<Teuchos::ParameterList> pList_, bool useProductVector)
 {
   isInitialized_ = false;
   dim_ = 2;
@@ -41,14 +42,19 @@ VanDerPol_IMEX_ExplicitModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
   x1_ic_ = 0.0;
   t0_ic_ = 0.0;
 
-  // Create using ProductVector so we can use in partitioned IMEX-RK Stepper.
-  using Teuchos::RCP;
-  Teuchos::Array<RCP<const Thyra::VectorSpaceBase<Scalar> > > yxSpaceArray;
-  RCP<const Thyra::VectorSpaceBase<Scalar> > xSpace =
-    Thyra::defaultSpmdVectorSpace<Scalar>(1);
-  for (int i=0; i < dim_; ++i) yxSpaceArray.push_back(xSpace);
-  x_space_ = Thyra::productVectorSpace<Scalar>(yxSpaceArray);
-  f_space_ = Thyra::productVectorSpace<Scalar>(yxSpaceArray);
+  if (useProductVector == false) {
+    x_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim_);
+    f_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim_);
+  } else {
+    // Create using ProductVector so we can use in partitioned IMEX-RK Stepper.
+    using Teuchos::RCP;
+    Teuchos::Array<RCP<const Thyra::VectorSpaceBase<Scalar> > > yxSpaceArray;
+    RCP<const Thyra::VectorSpaceBase<Scalar> > xSpace =
+      Thyra::defaultSpmdVectorSpace<Scalar>(1);
+    for (int i=0; i < dim_; ++i) yxSpaceArray.push_back(xSpace);
+    x_space_ = Thyra::productVectorSpace<Scalar>(yxSpaceArray);
+    f_space_ = Thyra::productVectorSpace<Scalar>(yxSpaceArray);
+  }
 
   // Create p_space and g_space
   p_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(np_);

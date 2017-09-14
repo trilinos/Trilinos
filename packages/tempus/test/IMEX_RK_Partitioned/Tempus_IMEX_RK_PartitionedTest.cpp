@@ -35,7 +35,7 @@ using Tempus::SolutionState;
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
+TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
 {
   std::vector<std::string> stepperTypes;
   stepperTypes.push_back("Partitioned IMEX RK 1st order");
@@ -83,8 +83,10 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
 
       // Setup the explicit VanDerPol ModelEvaluator
       RCP<ParameterList> vdpmPL = sublist(pList, "VanDerPolModel", true);
+      const bool useProductVector = true;
       RCP<VanDerPol_IMEX_ExplicitModel<double> > explicitModel =
-        Teuchos::rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
+        Teuchos::rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL,
+          useProductVector));
 
       // Setup the implicit VanDerPol ModelEvaluator (reuse vdpmPL)
       RCP<VanDerPol_IMEXPart_ImplicitModel<double> > implicitModel =

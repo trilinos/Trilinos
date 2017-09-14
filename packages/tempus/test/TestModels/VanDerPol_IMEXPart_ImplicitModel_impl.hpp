@@ -266,6 +266,7 @@ setupInOutArgs_() const
     outArgs.setModelEvalDescription(this->description());
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_f );
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_W_op );
+    outArgs.set_Np_Ng(Np_,Ng_);
     outArgs_ = outArgs;
   }
 

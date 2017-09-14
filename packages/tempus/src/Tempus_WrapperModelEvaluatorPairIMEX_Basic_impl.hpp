@@ -25,14 +25,23 @@ initialize()
   wrapperImplicitInArgs_  = this->createInArgs();
   wrapperImplicitOutArgs_ = this->createOutArgs();
 
-  // Explicit and Implicit IMEX vectors compatible?
-  int expXDim = explicitModel_->get_x_space()->dim();
-  int impXDim = implicitModel_->get_x_space()->dim();
-  TEUCHOS_TEST_FOR_EXCEPTION( expXDim != impXDim, std::logic_error,
+  // A Thyra::VectorSpace requirement
+  TEUCHOS_TEST_FOR_EXCEPTION( !(explicitModel_->get_x_space()->isCompatible(
+                                       *(implicitModel_->get_x_space()))),
+    std::logic_error,
     "Error - WrapperModelEvaluatorPairIMEX_Basic::initialize()\n"
-    "  Explicit and Implicit x vectors are incompatible!\n"
-    "  Explicit vector dim = " << expXDim << "\n"
-    "  Implicit vector dim = " << impXDim << "\n");
+    "  Explicit and Implicit vector x spaces are incompatible!\n"
+    "  Explicit vector x space = " << *(explicitModel_->get_x_space())<< "\n"
+    "  Implicit vector x space = " << *(implicitModel_->get_x_space())<< "\n");
+
+  // A Thyra::VectorSpace requirement
+  TEUCHOS_TEST_FOR_EXCEPTION( !(explicitModel_->get_f_space()->isCompatible(
+                                       *(implicitModel_->get_f_space()))),
+    std::logic_error,
+    "Error - WrapperModelEvaluatorPairIMEX_Basic::initialize()\n"
+    "  Explicit and Implicit vector f spaces are incompatible!\n"
+    "  Explicit vector f space = " << *(explicitModel_->get_f_space())<< "\n"
+    "  Implicit vector f space = " << *(implicitModel_->get_f_space())<< "\n");
 }
 
 template <typename Scalar>

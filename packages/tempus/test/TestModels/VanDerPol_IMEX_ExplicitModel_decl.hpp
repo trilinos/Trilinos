@@ -112,7 +112,8 @@ class VanDerPol_IMEX_ExplicitModel
 
   // Constructor
   VanDerPol_IMEX_ExplicitModel(
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null,
+    bool useProductVector = false);
 
   /** \name Public functions overridden from ModelEvaluator. */
   //@{

@@ -82,7 +82,7 @@ public:
       timeDer_ = timeDer;
       wrapperImplicitInArgs_.setArgs(inArgs);
       wrapperImplicitOutArgs_.setArgs(outArgs);
-      implicitNominalValues_ = true;
+      useImplicitModel_ = true;
     }
 
   //@}
@@ -137,9 +137,8 @@ public:
     /// Get the parameter index for explicit-only vector
     virtual int getParameterIndex() { return parameterIndex_; }
 
-    /// Set the parameter index for explicit-only vector
-    virtual void setImplicitNominalValues(bool tf)
-    { implicitNominalValues_ = tf; }
+    /// Set parameter to switch wrapperME base functions between explicit and implicit functions.
+    virtual void setUseImplicitModel(bool tf) { useImplicitModel_ = tf; }
   //@}
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
@@ -151,7 +150,7 @@ public:
       get_W_factory() const { return implicitModel_->get_W_factory(); }
 
     virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-      get_f_space() const { return explicitModel_->get_f_space(); }
+      get_f_space() const;
 
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
@@ -177,7 +176,7 @@ protected:
 
   int numExplicitOnlyBlocks_;
   int parameterIndex_;    //< implicit parameter index for explicit-only vector
-  bool implicitNominalValues_; //< if true, use implicitModel_->getNominalValues()
+  bool useImplicitModel_; //< if true, use implicitModel_ else explicitModel_
 };
 
 } // namespace Tempus

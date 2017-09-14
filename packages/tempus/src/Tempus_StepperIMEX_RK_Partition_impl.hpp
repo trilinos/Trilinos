@@ -573,7 +573,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
         sStatus = this->solveNonLinear(wrapperModelPairIMEX_,*solver_,stageX);
         if (sStatus.solveStatus != Thyra::SOLVE_STATUS_CONVERGED) pass = false;
 
-        wrapperModelPairIMEX_->setImplicitNominalValues(false);
+        wrapperModelPairIMEX_->setUseImplicitModel(false);
 
         stepperIMEX_RKPartObserver_->observeAfterSolve(solutionHistory, *this);
 
