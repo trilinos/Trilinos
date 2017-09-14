@@ -43,21 +43,16 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_SINGLELEVELMATLABFACTORY_FWD_HPP
-#define MUELU_SINGLELEVELMATLABFACTORY_FWD_HPP
-
-
-
+#ifndef MUELU_MATLABSMOOTHER_FWD_HPP
+#define MUELU_MATLABSMOOTHER_FWD_HPP
 
 namespace MueLu {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  class TwoLevelMatlabFactory;
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class MatlabSmoother;;
 }
 
-#ifndef MUELU_SINGLELEVELMATLABFACTORY_SHORT
-#define MUELU_SINGLELEVELMATLABFACTORY_SHORT
+#ifndef MUELU_MATLABSMOOTHER_SHORT
+#define MUELU_MATLABSMOOTHER_SHORT
 #endif
 
-
-
-#endif // MUELU_SINGLELEVELMATLABFACTORY_FWD_HPP
+#endif // MUELU_MATLABSMOOTHER_FWD_HPP
