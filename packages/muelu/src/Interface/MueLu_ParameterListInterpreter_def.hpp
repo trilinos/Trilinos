@@ -1204,14 +1204,15 @@ namespace MueLu {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
-#ifndef HAVE_MUELU_ZOLTAN
+
       bool switched = false;
+      (void)switched;
+#ifndef HAVE_MUELU_ZOLTAN
       if (partName == "zoltan") {
         this->GetOStream(Warnings0) << "Zoltan interface is not available, trying to switch to Zoltan2" << std::endl;
         partName = "zoltan2";
         switched = true;
       }
-      (void)switched;
 #endif
 #ifndef HAVE_MUELU_ZOLTAN2
       if (partName == "zoltan2" && !switched) {
