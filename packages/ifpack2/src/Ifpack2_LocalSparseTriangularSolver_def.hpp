@@ -146,7 +146,11 @@ public:
       typename HTST::PreprocessArgs args;
       args.T = T_hts.get();
       args.max_nrhs = 1;
+#ifdef _OPENMP
       args.nthreads = omp_get_max_threads();
+#else
+      args.nthreads = 1;
+#endif
       args.save_for_reprocess = true;
       typename HTST::Options opts;
       opts.levelset_block_size = levelset_block_size_;
