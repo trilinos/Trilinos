@@ -82,16 +82,14 @@ public:
     (std::vector< SubdomainBDDC<SX,SM,LO,GO>* > & Subdomain,
      RCP< PartitionOfUnity<SX,SM,LO,GO> > & Partition,
      RCP<Export> & exporterB,
-     RCP<Import> & importerB,
      const std::vector< std::vector<LO> > & subBoundaryDofs,
      const std::vector<SM> & diagBoundary,
      RCP<Teuchos::ParameterList> & Parameters) :
   m_Subdomain(Subdomain),
     m_Partition(Partition),
     m_exporterB(exporterB),
-    m_importerB(importerB),
     m_dofMapB(exporterB->getSourceMap()),
-    m_dofMapB1to1(importerB->getSourceMap()),
+    m_dofMapB1to1(exporterB->getTargetMap()),
     m_Comm(exporterB->getSourceMap()->getComm()),
     m_subBoundaryDofs(subBoundaryDofs),
     m_diagBoundary(diagBoundary),
@@ -118,7 +116,6 @@ private:
   std::vector< SubdomainBDDC<SX,SM,LO,GO>* > & m_Subdomain;
   RCP< PartitionOfUnity<SX,SM,LO,GO> > & m_Partition;
   RCP<Export> m_exporterB;
-  RCP<Import> m_importerB;
   RCP<const Map> m_dofMapB, m_dofMapB1to1;
   RCP<const Teuchos::Comm<int> > m_Comm;
   const std::vector< std::vector<LO> > m_subBoundaryDofs;
@@ -240,7 +237,7 @@ private:
     Sc1to1.doExport(Sc, *m_exporterB, Tpetra::ADD);
     Sc1to1.fillComplete(m_dofMapB1to1, m_dofMapB1to1);
     CrsMatrix ScSum(ScGraph);
-    ScSum.doImport(Sc1to1, *m_importerB, Tpetra::ADD);
+    ScSum.doImport(Sc1to1, *m_exporterB, Tpetra::ADD);
     ScSum.fillComplete(m_dofMapB1to1, m_dofMapB1to1);
     // calculate deluxe weight matrices
     std::vector<SX> ScEquiv;

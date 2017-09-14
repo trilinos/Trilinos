@@ -4644,8 +4644,10 @@ namespace Tpetra {
       this->myGraph_->setDomainRangeMaps (domainMap, rangeMap);
 
       // Make the graph's column Map, if necessary.
-      if (! this->myGraph_->hasColMap ()) {
-        this->myGraph_->makeColMap ();
+      Teuchos::Array<int> remotePIDs (0);
+      const bool mustBuildColMap = ! this->hasColMap ();
+      if (mustBuildColMap) {
+        this->myGraph_->makeColMap (remotePIDs);
       }
 
       // Make indices local, if necessary.  The method won't do
@@ -4664,8 +4666,10 @@ namespace Tpetra {
       const bool merged = this->myGraph_->isMerged ();
       this->sortAndMergeIndicesAndValues (sorted, merged);
 
-      // Make the Import and Export, if they haven't been made already.
-      this->myGraph_->makeImportExport ();
+      // Make Import and Export objects, if they haven't been made
+      // already.  If we made a column Map above, reuse information
+      // from that process to avoid communiation in the Import setup.
+      this->myGraph_->makeImportExport (remotePIDs, mustBuildColMap);
       this->myGraph_->computeGlobalConstants ();
       this->myGraph_->fillComplete_ = true;
       this->myGraph_->checkInternalState ();

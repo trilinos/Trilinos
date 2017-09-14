@@ -47,10 +47,6 @@
 #include <limits>
 #include "shylu_hts.hpp"
 
-#ifdef HAVE_SHYLUHTS_MKL
-# undef NO_BLAS
-#endif
-
 namespace Experimental {
 namespace htsimpl {
 

@@ -140,6 +140,7 @@ namespace MueLu {
         auto aggSize = aggRows(agg+1) - aggRows(agg);
 
         const SC one     = ATS::one();
+        const SC two     = one + one;
         const SC zero    = ATS::zero();
         const auto zeroM = ATS::magnitude(zero);
 
@@ -209,7 +210,7 @@ namespace MueLu {
               for (int i = k; i < m; i++)
                 si += r(i,k) * r(i,j);
               for (int i = k; i < m; i++)
-                r(i,j) -= 2*si * r(i,k);
+                r(i,j) -= two*si * r(i,k);
             }
 
             // Update Q^T (k:m,k:m)
@@ -219,7 +220,7 @@ namespace MueLu {
               for (int i = k; i < m; i++)
                 si += r(i,k) * qt(i,j);
               for (int i = k; i < m; i++)
-                qt(i,j) -= 2*si * r(i,k);
+                qt(i,j) -= two*si * r(i,k);
             }
 
             // Fix R(k:m,k)

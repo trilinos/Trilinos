@@ -579,7 +579,9 @@ template<typename Int, typename Size, typename Sclr>
 inline void Impl<Int, Size, Sclr>::
 throw_if_nthreads_not_ok (const int nthreads) {
   int nr;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   nr = omp_get_num_threads();
   std::string msg;
   if ( ! check_nthreads(nthreads, nr, msg))
@@ -747,16 +749,22 @@ locrsrow_schedule_sns1 (const ConstCrsMatrix& L, Array<Int>& w,
   w.optclear_and_resize(L.m);
   Int max_level = -1;
   volatile Int done = -1;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   {
+#ifdef _OPENMP
 #   pragma omp for
+#endif
     for (Int i = 0; i < L.m; ++i) w[i] = -1;
     const Size* const ir = L.ir;
     const Int* const jc = L.jc;
     for (Int c = 0; c < L.m; c += blksz) {
       const Int tlim = std::min<Int>(c + blksz, L.m);
       // On-diag serial triangle.
+#ifdef _OPENMP
 #     pragma omp single nowait
+#endif
       {
         for (Int r = c; r < tlim; ++r) {
           // w[r] contains the max level seen so far.
@@ -773,7 +781,9 @@ locrsrow_schedule_sns1 (const ConstCrsMatrix& L, Array<Int>& w,
       // Off-diag parallel block row.
       const Int rlim = std::min<Int>(tlim + blksz, L.m);
       while (done != c) ;
+#ifdef _OPENMP
 #     pragma omp for schedule(static, rows_per_thread)
+#endif
       for (Int r = tlim; r < rlim; ++r) {
         Int level = -1;
         const Size jlim = ir[r+1];
@@ -811,16 +821,22 @@ locrsrow_schedule (const ConstCrsMatrix& L, const Int sns, Array<Int>& w,
   for (Int i = 0; i < bnr; ++i) frontier[i] = L.ir[i];
   w.optclear_and_resize(Lm_sr);
   Int max_level = -1;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   {
+#ifdef _OPENMP
 #   pragma omp for
+#endif
     for (Int i = 0; i < Lm_sr; ++i) w[i] = -1;
     const Size* const ir = L.ir;
     const Int* const jc = L.jc;
     for (Int sc = 0; sc < Lm_sr; sc += blksz) {
       const Int stlim = std::min<Int>(sc + blksz, Lm_sr);
       // On-diag serial triangle.
+#ifdef _OPENMP
 #     pragma omp single nowait
+#endif
       {
         const Int c = sns*sc;
         for (Int sr = sc, r = c; sr < stlim; ++sr) {
@@ -838,11 +854,15 @@ locrsrow_schedule (const ConstCrsMatrix& L, const Int sns, Array<Int>& w,
       }
       if (stlim == Lm_sr) break;
       // Off-diag parallel block row.
+#ifdef _OPENMP
 #     pragma omp barrier
+#endif
       const Int
         srlim = std::min<Int>(stlim + blksz, Lm_sr),
         tlim = sns*stlim;
+#ifdef _OPENMP
 #     pragma omp for schedule(static, rows_per_thread)
+#endif
       for (Int sr = stlim; sr < srlim; ++sr) {
         Int level = -1;
         for (Int i = 0, r = sns*sr; i < sns; ++i, ++r) {
@@ -1022,12 +1042,18 @@ permute_to_other_tri (const ConstCrsMatrix& U) {
   const Int n = U.m;
   const Size nnz = U.ir[n];
   SparseData sd(n, nnz, "permute_to_other_tri");
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   {
+#ifdef _OPENMP
 #   pragma omp for schedule(static)
+#endif
     for (Int k = 1; k <= n; ++k)
       sd.ir[k] = nnz - U.ir[n-k];
+#ifdef _OPENMP
 #   pragma omp for schedule(static)
+#endif
     for (Size k = 0; k < nnz; ++k) {
       const Size i = nnz - k - 1;
       sd.jc[k] = n - U.jc[i] - 1;
@@ -1076,13 +1102,17 @@ typename Impl<Int, Size, Sclr>::Shape Impl<Int, Size, Sclr>::
 determine_shape (const ConstCrsMatrix& A) {
   int red_is_lower = 0, red_is_upper = 0, red_has_full_diag = 0,
     red_has_no_diag = 0, red_nthreads = 0;
+#ifdef _OPENMP
 # pragma omp parallel \
          reduction(+: red_is_lower, red_is_upper, red_has_full_diag, \
                       red_has_no_diag, red_nthreads)
+#endif
   {
     bool tid_used = false, has_full_diag = true, has_no_diag = true,
       is_lower = false, is_upper = false;
+#ifdef _OPENMP
 #   pragma omp for schedule(static, parfor_static_size)
+#endif
     for (Int r = 0; r < A.m; ++r) {
       tid_used = true;
       bool diag_fnd = false;
@@ -1174,7 +1204,9 @@ get_matrix_common_with_covers_all (
 {
   // Count nnz.
   Size nnz = 0;
+#ifdef _OPENMP
 # pragma omp parallel for reduction(+:nnz)
+#endif
   for (size_t i = 0; i < pv.size(); ++i) {
     const Int r = pv.get(i);
     nnz += A.ir[r+1] - A.ir[r];
@@ -1194,7 +1226,9 @@ get_matrix_common_with_covers_all (
   const int nthreads = omp_get_max_threads();
   Array<Int> start;
   const Int nseg = partition_ir<Int, Size>(pv.size(), sd.ir, nthreads, start);
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   do {
     const int tid = omp_get_thread_num();
     if (tid >= nseg) break;
@@ -1275,7 +1309,9 @@ void Impl<Int, Size, Sclr>::sort (
   CrsMatrix& A = *p.cm;
   assert(A.m == start.back());
   bool ok = true;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   do {
     const int tid = omp_get_thread_num();
     if (tid + 1 >= static_cast<int>(start.size())) break;
@@ -1312,7 +1348,9 @@ void Impl<Int, Size, Sclr>::sort (
 template<typename Int, typename Size, typename Sclr>
 inline void Impl<Int, Size, Sclr>::
 reverse_A_idxs (const Size nnz, Partition& p) {
+#ifdef _OPENMP
 # pragma omp for schedule(static)
+#endif
   for (Size i = 0; i < p.nnz; ++i)
     if (p.A_valid(i))
       p.A_idxs[i] = nnz - p.A_idxs[i] - 1;
@@ -1324,7 +1362,9 @@ copy_partition (const ConstCrsMatrix& A, Partition& p) {
   const Size ilim = p.nnz;
   if (A.unitdiag) {
     if (A.conj) {
+#ifdef _OPENMP
 #     pragma omp parallel for
+#endif
       for (Size i = 0; i < ilim; ++i) {
         if (p.A_valid(i)) {
           p.cm->d[i] = A.d[p.A_idxs[i]];
@@ -1334,19 +1374,25 @@ copy_partition (const ConstCrsMatrix& A, Partition& p) {
         }
       }
     } else {
+#ifdef _OPENMP
 #     pragma omp parallel for
+#endif
       for (Size i = 0; i < ilim; ++i)
         p.cm->d[i] = p.A_valid(i) ? A.d[p.A_idxs[i]] : static_cast<Sclr>(1);
     }
   } else {
     if (A.conj) {
+#ifdef _OPENMP
 #     pragma omp parallel for
+#endif
       for (Size i = 0; i < ilim; ++i) {
         p.cm->d[i] = A.d[p.A_idxs[i]];
         conjugate(p.cm->d[i]);
       }
     } else {
+#ifdef _OPENMP
 #     pragma omp parallel for
+#endif
       for (Size i = 0; i < ilim; ++i)
         p.cm->d[i] = A.d[p.A_idxs[i]];
     }
@@ -1375,7 +1421,9 @@ CrsSegmenter::count_nnz_by_row (Array<Int>& rcnt) {
   rcnt.optclear_and_resize(nr_);
   // Don't allow nested ||ism.
   if (omp_get_num_threads() == 1) {
+#ifdef _OPENMP
 #   pragma omp parallel for schedule(guided)
+#endif
     for (Int i = 0; i < nr_; ++i)
       count_nnz_by_row_loop(i, rcnt);
   } else
@@ -1545,7 +1593,9 @@ TMatrix::init (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
                const int tid_offset) {
   init_metadata(A, r0, c0, nr, nc, in, block_0_nnz_os, tid_offset);
   init_memory(in);
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   init_numeric(A, omp_get_thread_num());
 }
 
@@ -1555,7 +1605,9 @@ TMatrix::init (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
                const InitInfo& in, const CrsSegmenter& seg) {
   init_metadata(A, r0, c0, nr, nc, in, seg);
   init_memory(in);
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   init_numeric(A, omp_get_thread_num());
 }
 
@@ -1631,7 +1683,9 @@ init_metadata_with_seg (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
 template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::
 TMatrix::init_memory (const InitInfo& in) {
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   { const int tid = omp_get_thread_num(), id = tid - tid_os_;
     if (id >= 0 && id < (int) bs_.size())
       bs_[id].init_memory(in);
@@ -2018,7 +2072,9 @@ template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::
 OnDiagTri::inv_init_memory () {
   bool ok = true;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   {
     const int tid = omp_get_thread_num();
     if (tid < nthreads()) {
@@ -2111,7 +2167,9 @@ find_split_rows (const CrsMatrix& T, const Int r0, const Int c0,
                  std::vector<Int>& split_rows) {
   const Int sz = in.min_blksz / 2;
   bool ok = true;
+#ifdef _OPENMP
 # pragma omp parallel for schedule(static, parfor_static_size)
+#endif
   for (Int r = r0 + 1; r < r0 + n; ++r) {
     bool found = true;
     for (Int r1 = r, r1_lim = std::min<Int>(T.m, r + sz); r1 < r1_lim; ++r1)
@@ -2121,7 +2179,9 @@ find_split_rows (const CrsMatrix& T, const Int r0, const Int c0,
         break;
       }
     if (found) {
+#ifdef _OPENMP
 #     pragma omp critical (find_split_rows)
+#endif
       {
         try { split_rows.push_back(r); }
         catch (...) { ok = false; }
@@ -2310,14 +2370,20 @@ RecursiveTri::init (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
   if (mvp_block_nc)
     nd_.t[0].init(0, 0, mvp_block_nc);
   const Int i0 = mvp_block_nc ? 1 : 0;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   {
+#ifdef _OPENMP
 #   pragma omp for schedule(static)
+#endif
     for (Int i = i0; i < ntri; ++i) {
       const Box& b = bs[i0 + 2*(i - i0)];
       nd_.t[i].init_metadata(T, b.r0, b.c0, b.nr, in);
     }
+#ifdef _OPENMP
 #   pragma omp for schedule(static)
+#endif
     for (Int i = 0; i < nmvp; ++i) {
       const Box& b = bs[i0 + 2*(i - i0) + 1];
       nd_.s[i].init_metadata(T, b.r0, b.c0, b.nr, b.nc, in);
@@ -2333,13 +2399,19 @@ RecursiveTri::init (const CrsMatrix& T, const Int r0, const Int c0, const Int n,
   nd_.t.back().init_memory(in);
   // Initialize numerical data.
   init_invert_ondiag_tris_separately();
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   {
+#ifdef _OPENMP
 #   pragma omp for
+#endif
     for (Int i = i0; i < ntri; ++i)
       nd_.t[i].init_numeric(T, ! invert_separately_);
     const Size ilim = nmvp*nthreads_;
+#ifdef _OPENMP
 #   pragma omp for schedule(static, parfor_static_size)
+#endif
     for (Size i = 0; i < ilim; ++i) {
       const Int si = i / nthreads_, tid = i % nthreads_;
       nd_.s[si].init_numeric(T, tid);
@@ -2377,7 +2449,9 @@ DenseTrisInverter::DenseTrisInverter (Array<Tri>& tris)
 template<typename Int, typename Size, typename Sclr>
 inline void Impl<Int, Size, Sclr>::
 DenseTrisInverter::invert (Sclr* const T, const Int n, Sclr* const w) {
+#ifdef _OPENMP
 # pragma omp for schedule(static, 1)
+#endif
   for (Int c = 0; c < n; ++c) {
     // Solve for column c. That involves only the (n-c)x(n-c) lower-right
     // subblock of T. T is row major. w is col major.
@@ -2400,7 +2474,9 @@ DenseTrisInverter::invert (Sclr* const T, const Int n, Sclr* const w) {
 template<typename Int, typename Size, typename Sclr>
 inline void Impl<Int, Size, Sclr>::
 DenseTrisInverter::copy (Sclr* const T, const Int n, Sclr* const w) {
+#ifdef _OPENMP
 # pragma omp for schedule(static, 1)
+#endif
   for (Int c = 0; c < n; ++c) {
     const Int nt = ntri<Int>(c - 1);
     Sclr* Tc = T + 2*c + nt;
@@ -2420,7 +2496,9 @@ DenseTrisInverter::compute () {
     Tri& t = tris_[i];
     invert(t.d, t.n, w_.data());
     copy(t.d, t.n, w_.data());
+#ifdef _OPENMP
 #   pragma omp barrier
+#endif
   }
 }
 
@@ -2444,10 +2522,14 @@ RecursiveTri::invert_ondiag_tris () {
     }
   }
   DenseTrisInverter dti(dtris);
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   {
     dti.compute();
+#ifdef _OPENMP
 #   pragma omp for
+#endif
     for (size_t i = 0; i < dtris.size(); ++i)
       nd_.t[dtris[i].idx].inv_copy();
   }
@@ -2471,15 +2553,21 @@ RecursiveTri::clear () {
 template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::
 RecursiveTri::reinit_numeric (const CrsMatrix& T) {
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   {
     const Int n = static_cast<Int>(nd_.t.size());
+#ifdef _OPENMP
 #   pragma omp for
+#endif
     for (Int i = 0; i < n; ++i)
       nd_.t[i].reinit_numeric(T, ! invert_separately_);
     const Int nmvp = static_cast<Int>(nd_.s.size());
     const Size ilim = nmvp*nthreads_;
+#ifdef _OPENMP
 #   pragma omp for
+#endif
     for (Size i = 0; i < ilim; ++i) {
       const Int si = i / nthreads_;
       if (nd_.s[si].empty()) continue;
@@ -2570,7 +2658,9 @@ RecursiveTri::p2p_init () {
   nd_.s_ids.optclear_and_resize(nthreads_);
   nd_.s_idx.optclear_and_resize(nthreads_);
   bool ok = true;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   do {
     const int tid = omp_get_thread_num();
     try {
@@ -2630,7 +2720,9 @@ LevelSetTri::init (const CrsMatrix& T, const Int, const Int,
 
   ps_.optclear_and_resize(info.nthreads);
   bool ok = true;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   do {
     const int tid = omp_get_thread_num();
     Thread& t = t_[tid];
@@ -2646,8 +2738,10 @@ LevelSetTri::init (const CrsMatrix& T, const Int, const Int,
 
     // Get a thread's chunk of each level set.
     t.lsp[0] = 0;
+#ifdef _OPENMP
 #   pragma omp barrier
 #   pragma omp for
+#endif
     for (Int ils = 0; ils < nlvls_; ++ils) {
       const Int
         r0 = lsp_[ils],
@@ -2717,9 +2811,13 @@ void Impl<Int, Size, Sclr>::
 LevelSetTri::update_permutation (Array<Int>& lsis, const Partition& p) {
   Array<Int> old_lsis(lsis.size());
   Array<Int> q(p.cm->n);
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   {
+#ifdef _OPENMP
 #   pragma omp for
+#endif
     for (std::size_t i = 0; i < lsis.size(); ++i)
       old_lsis[i] = lsis[i];
     const int tid = omp_get_thread_num();
@@ -2736,7 +2834,9 @@ LevelSetTri::update_permutation (Array<Int>& lsis, const Partition& p) {
         q[p_ils + i] = start + k;
       }
     }
+#ifdef _OPENMP
 #   pragma omp barrier
+#endif
     for (Size i = 0, nnz = t.m->ir[t.m->m]; i < nnz; ++i) {
       Int& jci = t.m->jc[i];
       if (jci < mvp_block_nc_) continue;
@@ -2833,13 +2933,17 @@ fill_graph (const p2p_Pair* const pairs, Size* const g, Size* const gp,
 
   // Cumsum to get row pointers.
   Int max_gelen = 0;
+#ifdef _OPENMP
 # pragma omp barrier
 # pragma omp master
+#endif
   for (Size i = 1; i <= n; ++i) {
     if (static_cast<Int>(gp[i]) > max_gelen) max_gelen = gp[i];
     gp[i] += gp[i-1];
   }
+#ifdef _OPENMP
 # pragma omp barrier
+#endif
 
   // Fill g. Can reuse the data in Te. Everything in this loop is identical to
   // the previous except that we can now record the unique values.
@@ -2902,7 +3006,9 @@ prune_graph (const Size* const gc, const Size* const gp, Size* const g,
   Size* const mark = &wrk[tid*max_gelen];
   // I find that it's more efficient to use a parfor than to work on a thread's
   // own e's.
+#ifdef _OPENMP
 # pragma omp for schedule(static,1)
+#endif
   for (Size e = 0; e < n; ++e) {
     const Int gcelen = static_cast<Int>(gp[e+1] - gp[e]);
     gsz[e] = 0;
@@ -3048,13 +3154,19 @@ void Impl<Int, Size, Sclr>::LevelSetTri::p2p_init () {
 
   Int max_gelen;
   bool ok = true;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   do {
     find_task_responsible_for_variable(pairs.data());
+#ifdef _OPENMP
 #   pragma omp barrier
+#endif
     const Int max_gelen_t = fill_graph(pairs.data(), g, gp, wrk.data());
+#ifdef _OPENMP
 #   pragma omp barrier
 #   pragma omp master
+#endif
     {
       pairs.clear();
       // Tell all threads; only master's max_gelen_t is valid.
@@ -3068,12 +3180,16 @@ void Impl<Int, Size, Sclr>::LevelSetTri::p2p_init () {
       }
     }
     // Keep the original graph.
+#ifdef _OPENMP
 #   pragma omp for
+#endif
     for (Size i = 0; i < nnz; ++i)
       gc[i] = g[i];
     if ( ! ok) break;
     prune_graph(gc, gp, g, gsz.data(), wrk.data(), max_gelen);
+#ifdef _OPENMP
 #   pragma omp barrier
+#endif
     try { fill_dependencies(g, gp, gsz.data()); }
     catch (...) { ok = false; }
   } while (0);
@@ -3089,7 +3205,9 @@ template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::
 LevelSetTri::init_numeric (const CrsMatrix& T) {
   bool ok = true;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   {
     const int tid = omp_get_thread_num();
     del(t_[tid].m);
@@ -3105,7 +3223,9 @@ void Impl<Int, Size, Sclr>::
 LevelSetTri::reinit_numeric (const CrsMatrix& T) {
   bool nthreads_ok;
   std::string msg;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   do {
     nthreads_ok = check_nthreads(t_.size(), omp_get_num_threads(), msg);
     if ( ! nthreads_ok) break;
@@ -3253,12 +3373,18 @@ void transpose (
   const Size nnz = ir[m];
   if (transpose_perm) transpose_perm->optclear_and_resize(nnz);
   Array<Int> start;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   {
+#ifdef _OPENMP
 #   pragma omp for schedule(static)
+#endif
     for (Int i = 0; i <= m; ++i)
       irt[i] = 0;
+#ifdef _OPENMP
 #   pragma omp single
+#endif
     {
       // 1. Count the number of entries in each col.
       for (Size k = 0; k < nnz; ++k) {
@@ -3327,10 +3453,14 @@ template<typename Int, typename Size, typename Sclr>
 void Impl<Int, Size, Sclr>::
 compose_transpose (const Array<Size>& transpose_perm, Partition& p) {
   Array<Size> A_idxs_copy(p.nnz);
+#ifdef _OPENMP
 # pragma omp for schedule(static)
+#endif
   for (Size i = 0; i < p.nnz; ++i)
     A_idxs_copy[i] = p.A_idxs[i];
+#ifdef _OPENMP
 # pragma omp for schedule(static)
+#endif
   for (Size i = 0; i < p.nnz; ++i) {
     if (p.A_valid(i))
       p.A_idxs[i] = transpose_perm[A_idxs_copy[i]];
@@ -3791,7 +3921,9 @@ LevelSetTri::solve (const Sclr* b, Sclr* x, const Int ldx,
           while (*done != p2p_done_value) ;
         }
       }
+#ifdef _OPENMP
 #     pragma omp flush
+#endif
       for (Int r = mvp_block_nc_ + p[ils];
            i < lsp_ilsp1;
            ++i, ++r) {
@@ -3801,7 +3933,9 @@ LevelSetTri::solve (const Sclr* b, Sclr* x, const Int ldx,
           a -= x[jc[j]] * d[j];
         x[r] = a * d[j++];
       }
+#ifdef _OPENMP
 #     pragma omp flush
+#endif
       if (ils == lsp_size_m2) break;
       // This thread and level is done.
       p2p_done_[ls_p2p_sub2ind(ils, tid)] = p2p_done_value;
@@ -3810,7 +3944,9 @@ LevelSetTri::solve (const Sclr* b, Sclr* x, const Int ldx,
     b += ldx;
     // Increment the done indicator.
     ++p2p_done_value;
+#ifdef _OPENMP
 #   pragma omp barrier
+#endif
   }
 }
 
@@ -3828,7 +3964,9 @@ rbwait (volatile p2p_Done* const s_done, const Size* s_ids,
     ++id;
   }
   // Make sure x is updated.
+#ifdef _OPENMP
 # pragma omp flush
+#endif
 }
 
 template<typename Int, typename Size, typename Sclr>
@@ -3846,7 +3984,9 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
     { // Wait for the block row MVPs to finish.
       const Int done = (step << 1);
       inv_tri_done[tid] = done;
+#ifdef _OPENMP
 #   pragma omp flush
+#endif
       for (Int i = 0; i < nthreads; ++i)
         while (inv_tri_done[i] < done) ;
     }
@@ -3859,7 +3999,9 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
     { // Wait for the memcpy's to finish.
       const Int done = (step << 1) + 1;
       inv_tri_done[tid] = done;
+#ifdef _OPENMP
 #     pragma omp flush
+#endif
       //todo Not every thread necessarily needs this on-diag tri's solution, but
       // our dep graph doesn't encode that yet.
       for (Int i = 0; i < nthreads; ++i)
@@ -3867,7 +4009,9 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
     }
     if (tid == 0)
       *t_barrier = step;
+#ifdef _OPENMP
 #   pragma omp flush
+#endif
   }
 }
 
@@ -3909,12 +4053,16 @@ RecursiveTri::solve (const Sclr* b, Sclr* x, const Int ldx,
       rbwait(s_done, s_ids, s_idx, i, done_symbol);
       s.n1Axpy(x_osi, ldx, nrhs, x_os, ldx, tid);
       s_done[rb_p2p_sub2ind(i, tid)] = done_symbol;
+#ifdef _OPENMP
 #     pragma omp flush
+#endif
     }
     if (tid < t.nthreads()) {
       rbwait(s_done, t_ids, t_idx, i, done_symbol);
       ondiag_solve(t, x_os, ldx, nrhs, tid, i+1, t_barrier, inv_tri_done);
+#ifdef _OPENMP
 #     pragma omp flush
+#endif
     }
     os += t.get_n();
     x_osi = x + nd_.os[i+1];
@@ -3933,24 +4081,34 @@ TriSolver::solve (const Sclr* b, const Int nrhs, Sclr* x, const Sclr alpha,
   set_num_threads(nthreads_, nthreads_save);
   bool nthreads_ok;
   std::string msg;
+#ifdef _OPENMP
 # pragma omp parallel
+#endif
   do {
     nthreads_ok = check_nthreads(nthreads_, omp_get_num_threads(), msg);
     if ( ! nthreads_ok) break;
     Sclr* px = perm_.from_outside(b, nrhs, ldb);
     if (is_lo_) {
+#ifdef _OPENMP
 #     pragma omp barrier
+#endif
       lst_.solve(px, px, n_, nrhs);
       // No barrier needed here because lst_.solve does it.
       if (t_.get_n()) t_.solve(px, px, n_, nrhs);
+#ifdef _OPENMP
 #     pragma omp barrier
+#endif
       perm_.to_outside(x, nrhs, alpha, beta, ldx);
     } else {
       if (t_.get_n()) {
+#ifdef _OPENMP
 #       pragma omp barrier
+#endif
         t_.solve(px, px, n_, nrhs);
       }
+#ifdef _OPENMP
 #     pragma omp barrier
+#endif
       lst_.solve(px, px, n_, nrhs);
       // No barrier needed because of lst_.solve.
       perm_.to_outside(x, nrhs, alpha, beta, ldx);

@@ -7,22 +7,32 @@
 2	number of smaller subdomains per processor in 1-direction (nsspp1)
 2	number of smaller subdomains per processor in 2-direction (nsspp2)
 2	number of smaller subdomains per processor in 3-direction (nsspp3)
-8	number of elements in each direction for the smaller subdomains (Hh)
+4	number of elements in each direction for the smaller subdomains (Hh)
 3	spatial dimension
-2	problem type (1 for scalar elliptic PDE, 2 for elasticity)
-1.0001	diagonal scale factor (removes singularities for floating structures)
-8	number of threads for outer loop (nthreadOuter)
+1	problem type (1 for scalar elliptic PDE, 2 for elasticity)
+0	matrix type (0 symmetric, 1 non-symmetric)
+1.01	diagonal scale factor (removes singularities for floating structures)
+2	number of threads for outer loop (nthreadOuter)
 1	number of threads for inner loop (nthreadInner)
 1e-6	solver tolerance
 100	maximum number of iterations
-0	direct solver (see notes below)
+1	Krylov method (0 GCR, 1 PCG)
+1	estimate condition number (0 no, 1 yes)
+1	direct solver (see notes below)
+1	use corners in coarse space (0 no, 1 yes)
+1	use edges   in coarse space (0 no, 1 yes)
+0	use faces   in coarse space (0 no, 1 yes)
+1	number of coarse subdomains per MPI rank
+64	number of coarse elements per coarse subdomain
+1	coarsening option (0 graph-based, 1 RCB, 2 RIB)
 0	apply preconditioner only and not solver (0 for no, 1 for yes)
-10	number of solves (or application of preconditioner)
+2	number of solves (or application of preconditioner)
 
 Notes:
 direct solver options:
-0 for current workhorse serial solver for Sierra/SD-SM (aka Esmond solver)
-1 
+0 SuperLU
+1 Pardiso 
+2 Tacho
 
 The product numSubDir1*numSubDir2*numSubDir3 must equal the total
 number of processors for the run. The product nsspp1*nsspp2*nsspp3 is

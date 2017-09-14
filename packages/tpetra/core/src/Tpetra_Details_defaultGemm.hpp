@@ -62,6 +62,17 @@ namespace Details {
 namespace Blas {
 namespace Default {
 
+namespace { // (anonymous)
+
+  template<class ValueType>
+  ValueType
+  conditionalConjugate (const ValueType& x, const bool conj)
+  {
+    return conj ? Kokkos::Details::ArithTraits<ValueType>::conj (x) : x;
+  }
+
+} // namespace (anonymous)
+
 /// \brief Default implementation of dense matrix-matrix multiply on a
 ///   single MPI process: <tt>C := alpha*A*B + beta*C</tt>.
 ///
@@ -97,16 +108,13 @@ gemm (const char transA,
   const CoefficientType ONE = STS::one ();
 
   // Get the dimensions
-  IndexType m, n, k;
-  if (transA == 'N' || transA == 'n') {
-    m = static_cast<IndexType> (A.dimension_0 ());
-    n = static_cast<IndexType> (A.dimension_1 ());
-  }
-  else {
-    m = static_cast<IndexType> (A.dimension_1 ());
-    n = static_cast<IndexType> (A.dimension_0 ());
-  }
-  k = static_cast<IndexType> (C.dimension_1 ());
+  const IndexType m = C.dimension_0 ();
+  const IndexType n = C.dimension_1 ();
+  const IndexType k = (transA == 'N' || transA == 'n') ?
+    A.dimension_1 () : A.dimension_0 ();
+
+  const bool conjA = transA == 'C' || transA == 'c';
+  const bool conjB = transB == 'C' || transB == 'c';
 
   // quick return if possible
   if (alpha == ZERO && beta == ONE) {
@@ -117,18 +125,19 @@ gemm (const char transA,
   if (alpha == ZERO) {
     if (beta == ZERO) {
       for (IndexType i = 0; i < m; ++i) {
-        for (IndexType j = 0; j < k; ++j) {
+        for (IndexType j = 0; j < n; ++j) {
           C(i,j) = ZERO;
         }
       }
     }
     else {
       for (IndexType i = 0; i < m; ++i) {
-        for (IndexType j = 0; j < k; ++j) {
+        for (IndexType j = 0; j < n; ++j) {
           C(i,j) = beta*C(i,j);
         }
       }
     }
+    return;
   }
 
   // Start the operations
@@ -149,9 +158,9 @@ gemm (const char transA,
         for (IndexType l = 0; l < k; ++l) {
           // Don't use c_value_type here, since it unnecessarily
           // forces type conversion before we assign to C(i,j).
-          auto temp = alpha*B(l,j);
+          auto temp = alpha * conditionalConjugate (B(l,j), conjB);
           for (IndexType i = 0; i < m; ++i) {
-            C(i,j) = C(i,j) + temp*A(i,l);
+            C(i,j) = C(i,j) + temp * conditionalConjugate (A(i,l), conjA);
           }
         }
       }
@@ -162,13 +171,14 @@ gemm (const char transA,
         for (IndexType i = 0; i < m; ++i) {
           c_value_type temp = ZERO;
           for (IndexType l = 0; l < k; ++l) {
-            temp = temp + A(l,i)*B(l,j);
+            temp = temp + conditionalConjugate (A(l,i), conjA) *
+              conditionalConjugate (B(l,j), conjB);
           }
           if (beta == ZERO) {
             C(i,j) = alpha*temp;
           }
           else {
-            C(i,j) = alpha*temp + beta*C(i,j);
+            C(i,j) = alpha*temp + beta * C(i,j);
           }
         }
       }
@@ -191,9 +201,9 @@ gemm (const char transA,
         for (IndexType l = 0; l < k; ++l) {
           // Don't use c_value_type here, since it unnecessarily
           // forces type conversion before we assign to C(i,j).
-          auto temp = alpha*B(j,l);
+          auto temp = alpha * conditionalConjugate (B(j,l), conjB);
           for (IndexType i = 0; i < m; ++i) {
-            C(i,j) = C(i,j) + temp*A(i,l);
+            C(i,j) = C(i,j) + temp * conditionalConjugate (A(i,l), conjA);
           }
         }
       }
@@ -204,7 +214,8 @@ gemm (const char transA,
         for (IndexType i = 0; i < m; ++i) {
           c_value_type temp = ZERO;
           for (IndexType l = 0; l < k; ++l) {
-            temp = temp + A(l,i)*B(j,l);
+            temp = temp + conditionalConjugate (A(l,i), conjA) *
+              conditionalConjugate (B(j,l), conjB);
           }
           if (beta == ZERO) {
             C(i,j) = alpha*temp;

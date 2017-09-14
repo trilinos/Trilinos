@@ -347,7 +347,7 @@ namespace Tacho {
           memory_pool_type_host bufpool;
           timer.reset();
           {
-            const size_type
+            const size_t
               max_block_size = _m*sizeof(ordinal_type);
             
             typedef typename host_exec_space::memory_space memory_space;
@@ -376,7 +376,7 @@ namespace Tacho {
         timer.reset();
         {
           value_type_array_host buf("buf", _info.max_schur_size*(_info.max_schur_size + 1));
-          const size_type bufsize = buf.span()*sizeof(value_type);
+          const size_t bufsize = buf.span()*sizeof(value_type);
           track_alloc(bufsize);
           
           /// recursive tree traversal
@@ -426,7 +426,7 @@ namespace Tacho {
         timer.reset();
         {
           value_type_array_host buf("buf", _info.max_schur_size*x.dimension_1());
-          const size_type bufsize = buf.span()*sizeof(value_type);
+          const size_t bufsize = buf.span()*sizeof(value_type);
           track_alloc(bufsize);
           
           /// recursive tree traversal
@@ -472,10 +472,10 @@ namespace Tacho {
         
         sched_type_host sched;
         {
-          const size_type max_functor_size = sizeof(functor_type);
-          const size_type estimate_max_numtasks = _sid_block_colidx.dimension_0();
+          const size_t max_functor_size = sizeof(functor_type);
+          const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0();
           
-          const size_type
+          const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
             min_block_size  = 1,
             max_block_size  = max_functor_size,
@@ -493,16 +493,16 @@ namespace Tacho {
         
         memory_pool_type_host bufpool;
         {
-          const size_type
+          const size_t
             min_block_size  = 1,
             max_block_size  = max((_info.max_schur_size*_info.max_schur_size +
                                    _info.max_schur_size)*sizeof(value_type),
                                   _m*sizeof(ordinal_type));
           
-          size_type superblock_size = 1;
+          size_t superblock_size = 1;
           for ( ;superblock_size<max_block_size;superblock_size*=2);
           
-          const size_type
+          const size_t
             //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
             num_superblock  = min(host_exec_space::thread_pool_size(0), _max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
@@ -584,10 +584,10 @@ namespace Tacho {
           //typedef Kokkos::Future<int,host_exec_space> future_type;
           
           {
-            const size_type max_functor_size = max(sizeof(functor_lower_type), sizeof(functor_upper_type));
-            const size_type estimate_max_numtasks = _sid_block_colidx.dimension_0();
+            const size_t max_functor_size = max(sizeof(functor_lower_type), sizeof(functor_upper_type));
+            const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0();
             
-            const size_type
+            const size_t
               task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
               min_block_size  = 1,
               max_block_size  = max_functor_size,
@@ -606,14 +606,14 @@ namespace Tacho {
           }
           
           {
-            const size_type
+            const size_t
               min_block_size  = 1,
               max_block_size  = 2*_info.max_schur_size*sizeof(value_type)*x.dimension_1();
             
-            size_type superblock_size = 1;
+            size_t superblock_size = 1;
             for ( ;superblock_size<max_block_size;superblock_size*=2);
             
-            const size_type
+            const size_t
               //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
               num_superblock  = min(host_exec_space::thread_pool_size(0), _max_num_superblocks),
               memory_capacity = num_superblock*superblock_size;
@@ -671,17 +671,17 @@ namespace Tacho {
         typedef TaskFunctor_FactorizeCholByBlocks<value_type,host_exec_space> functor_type;
         typedef Kokkos::Future<int,host_exec_space> future_type;
         
-        const size_type 
+        const size_t 
           max_nrows_of_blocks = _info.max_supernode_size/blksize + 1,
           max_ncols_of_blocks = _info.max_schur_size/blksize + 1;
         
         sched_type_host sched;
         {
-          const size_type max_dep_future_size = max_ncols_of_blocks*max_ncols_of_blocks*sizeof(future_type);
-          const size_type max_functor_size = sizeof(functor_type);
-          const size_type estimate_max_numtasks = _sid_block_colidx.dimension_0();
+          const size_t max_dep_future_size = max_ncols_of_blocks*max_ncols_of_blocks*sizeof(future_type);
+          const size_t max_functor_size = sizeof(functor_type);
+          const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0();
           
-          const size_type
+          const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
             min_block_size  = 1,
             max_block_size  = ( max_dep_future_size + max_functor_size ),
@@ -699,7 +699,7 @@ namespace Tacho {
         
         memory_pool_type_host bufpool;
         {
-          const size_type
+          const size_t
             min_block_size  = 1,
             max_block_size  = max(( (_info.max_schur_size*_info.max_schur_size +
                                      _info.max_schur_size)*sizeof(value_type) +
@@ -708,10 +708,10 @@ namespace Tacho {
                                      max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(dense_block_type_host) ),
                                   _m*sizeof(ordinal_type));
                                   
-          size_type superblock_size = 1;
+          size_t superblock_size = 1;
           for ( ;superblock_size<max_block_size;superblock_size*=2);
           
-          const size_type
+          const size_t
             //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
             num_superblock  = min(host_exec_space::thread_pool_size(0), _max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;

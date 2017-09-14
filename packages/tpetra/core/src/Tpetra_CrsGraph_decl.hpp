@@ -1394,7 +1394,11 @@ namespace Tpetra {
     /// This method makes the column Map, even if the graph already
     /// has one.  It is the caller's responsibility not to call this
     /// method unnecessarily.
-    void makeColMap ();
+    ///
+    /// \param remotePIDs [out] The process ranks corresponding to the
+    ///   column Map's "remote" (not on the calling process in the
+    ///   domain Map) indices.
+    void makeColMap (Teuchos::Array<int>& remotePIDs);
 
     /// \brief Convert column indices from global to local.
     ///
@@ -1414,7 +1418,17 @@ namespace Tpetra {
     /// first return value is zero, then the string may be empty.
     std::pair<size_t, std::string> makeIndicesLocal ();
 
-    void makeImportExport ();
+    /// \brief Make the Import and Export objects, if needed.
+    ///
+    /// \param remotePIDs [in/out] On input: the output of
+    ///   makeColMap().  May be modified on output.
+    ///
+    /// \param useRemotePIDs [in] Whether to use remotePIDs.  Use it
+    ///   if we called makeColMap with this as the output argument,
+    ///   else don't use it.
+    void
+    makeImportExport (Teuchos::Array<int>& remotePIDs,
+                      const bool useRemotePIDs);
 
     //@}
     //! \name Methods for inserting indices or transforming values
