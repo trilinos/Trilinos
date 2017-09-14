@@ -418,11 +418,14 @@ static std::string escape_dot(std::string const& s) {
   std::string out;
   for (std::size_t i = 0; i < s.size(); ++i) {
     char c = s[i];
-    if (c == '\\' || c == '|' || c == '\"' || c == '<' || c == '>') {
+    if (c == '\\' || c == '|' || c == '\"' || c == '<' || c == '>' || c == '{' || c == '}') {
       out.push_back('\\');
       out.push_back(c);
     } else if (c == '.') {
-      out += "\'.\'";
+      out = "'";
+      out += s;
+      out += "'";
+      return out;
     } else {
       out.push_back(c);
     }
@@ -843,7 +846,8 @@ static void compute_context_set(
     Configs const& cs,
     std::vector<FirstSet> const& first_sets,
     GrammarPtr grammar,
-    bool verbose
+    bool verbose,
+    ParserInProgress const& pip
     ) {
   if (verbose) std::cerr << "Computing context set for $\\zeta_j$ = " << zeta_j_addr << "...\n";
   if (verbose) std::cerr << "BEGIN PROGRAM\n";
@@ -926,7 +930,11 @@ static void compute_context_set(
                 zeta_prime_addr, tests_failed, lane, in_lane, zeta_addr, stack,
                 verbose);
           } else {
-            throw ParserBuildFail("error: grammar is ambiguous.\n");
+            print_graphviz("ambiguous.dot", pip, true, std::cerr);
+            std::stringstream ss;
+            ss << "error: grammar is ambiguous.\n";
+            ss << "zeta_j is " << zeta_j_addr << ", zeta is " << zeta_addr << ", and zeta prime is " << zeta_prime_addr << '\n';
+            throw ParserBuildFail(ss.str());
           }
         } else {
           context_adding_routine(lane, zeta_pointer, contexts_generated, contexts,
@@ -1143,7 +1151,7 @@ ParserInProgress draft_lalr1_parser(GrammarPtr grammar, bool verbose) {
       if (config.dot != size(prod.rhs)) continue;
       int zeta_j_addr = at(states2scs, s_i, cis_i);
       compute_context_set(zeta_j_addr, contexts, complete, scs,
-          og, states, states2scs, cs, first_sets, grammar, verbose);
+          og, states, states2scs, cs, first_sets, grammar, verbose, out);
     }
   }
   /* update the context sets for all reduction state-configs
