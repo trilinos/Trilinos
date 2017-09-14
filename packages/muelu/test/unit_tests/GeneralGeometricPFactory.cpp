@@ -95,6 +95,175 @@ namespace MueLuTests {
     };
   };
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void GetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib,
+                      const LocalOrdinal numDimensions, const std::string mode,
+                      RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
+                      RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >&Coordinates,
+                      RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal> >& map,
+                      Array<GlobalOrdinal>& gNodesPerDim, Array<LocalOrdinal>& lNodesPerDim) {
+#include "MueLu_UseShortNames.hpp"
+
+    GO nx = 9;
+    GO ny = 9;
+    GO nz = (numDimensions < 3 ? 1 : 9);
+    GO gNumPoints = nx*ny*nz;
+
+    gNodesPerDim[0] = nx;
+    gNodesPerDim[1] = ny;
+    gNodesPerDim[2] = nz;
+
+    GO myOffset = 0, myGIDOffset = 0;
+    if(comm->getSize() == 1) {
+      myOffset = 0;
+      lNodesPerDim[0] = nx;
+      lNodesPerDim[1] = ny;
+      lNodesPerDim[2] = nz;
+    } else if(comm->getSize() == 4) {
+      if(comm->getRank() == 0) {
+        if(numDimensions == 2) {
+          myOffset = 0;
+          myGIDOffset = 0;
+          lNodesPerDim[0] = 5;
+          lNodesPerDim[1] = 5;
+          lNodesPerDim[2] = 1;
+        } else if(numDimensions == 3) {
+          myOffset = 0;
+          myGIDOffset = 0;
+          lNodesPerDim[0] = nx;
+          lNodesPerDim[1] = 5;
+          lNodesPerDim[2] = 5;
+        }
+      } else if(comm->getRank() == 1) {
+        if(numDimensions == 2) {
+          myOffset = 4;
+          myGIDOffset = 16;
+          lNodesPerDim[0] = 4;
+          lNodesPerDim[1] = 5;
+          lNodesPerDim[2] = 1;
+        } else if(numDimensions == 3) {
+          myOffset = 45;
+          myGIDOffset = 225;
+          lNodesPerDim[0] = nx;
+          lNodesPerDim[1] = 4;
+          lNodesPerDim[2] = 5;
+        }
+      } else if(comm->getRank() == 2) {
+        if(numDimensions == 2) {
+          myOffset = 21;
+          myGIDOffset = 28;
+          lNodesPerDim[0] = 5;
+          lNodesPerDim[1] = 4;
+          lNodesPerDim[2] = 1;
+        } else if(numDimensions == 3) {
+          myOffset = 405;
+          myGIDOffset = 405;
+          lNodesPerDim[0] = nx;
+          lNodesPerDim[1] = 5;
+          lNodesPerDim[2] = 4;
+        }
+      } else if(comm->getRank() == 3) {
+        if(numDimensions == 2) {
+          myOffset = 25;
+          myGIDOffset = 44;
+          lNodesPerDim[0] = 4;
+          lNodesPerDim[1] = 4;
+          lNodesPerDim[2] = 1;
+        } else if(numDimensions == 3) {
+          myOffset = 450;
+          myGIDOffset = 585;
+          lNodesPerDim[0] = nx;
+          lNodesPerDim[1] = 4;
+          lNodesPerDim[2] = 4;
+        }
+      }
+    }
+
+    GO myZoffset = 0, myYoffset = 0, myXoffset = 0;
+    if(numDimensions == 2) {
+      myZoffset = 0;
+      myYoffset = myOffset / gNodesPerDim[0];
+      myXoffset = myOffset % gNodesPerDim[0];
+    } else if(numDimensions == 3) {
+      myZoffset = myOffset / (gNodesPerDim[1]*gNodesPerDim[0]);
+      myYoffset = (myOffset - myZoffset*gNodesPerDim[1]*gNodesPerDim[0]) / gNodesPerDim[0];
+      myXoffset = (myOffset - myZoffset*gNodesPerDim[1]*gNodesPerDim[0]) % gNodesPerDim[0];
+    }
+    LO lNumPoints = lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2];
+
+    // Construct map and local coordinates
+    Teuchos::Array<GO>     myGIDs(lNumPoints);
+    Teuchos::Array<double> myXCoords(lNumPoints);
+    Teuchos::Array<double> myYCoords(lNumPoints);
+    Teuchos::Array<double> myZCoords(lNumPoints);
+    for(LO k = 0; k < lNodesPerDim[2]; ++k) {
+      for(LO j = 0; j < lNodesPerDim[1]; ++j) {
+        for(LO i = 0; i < lNodesPerDim[0]; ++i) {
+          if(mode == "Global Lexicographic") {
+            myGIDs[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = myOffset
+              + k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0] + i;
+          } else if(mode == "Local Lexicographic") {
+            myGIDs[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] = myGIDOffset
+              + k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i;
+          }
+          myXCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
+            (i + myXoffset) / Teuchos::as<double>(gNodesPerDim[0] - 1);
+          myYCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
+            (j + myYoffset) / Teuchos::as<double>(gNodesPerDim[1] - 1);
+          myZCoords[k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0] + i] =
+            (k + myZoffset) / Teuchos::as<double>(gNodesPerDim[2] - 1);
+        }
+      }
+    }
+
+    Teuchos::Array<Teuchos::ArrayView<const double> > myCoordinates(numDimensions);
+    if(numDimensions == 1) {
+      myCoordinates[0] = myXCoords();
+    } else if(numDimensions == 2) {
+      myCoordinates[0] = myXCoords();
+      myCoordinates[1] = myYCoords();
+    } else if(numDimensions == 3) {
+      myCoordinates[0] = myXCoords();
+      myCoordinates[1] = myYCoords();
+      myCoordinates[2] = myZCoords();
+    }
+
+    // Create the map and store coordinates using the above array views
+    map         = MapFactory::Build(lib, gNumPoints, myGIDs(), 0, comm);
+    Coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, myCoordinates(),
+                                                                     numDimensions);
+
+    // small parameter list for Galeri
+    Teuchos::ParameterList problemList;
+    if(numDimensions == 1) {
+      problemList.set("nx",gNodesPerDim[0]);
+    } else if(numDimensions == 2) {
+      problemList.set("nx",gNodesPerDim[0]);
+      problemList.set("ny",gNodesPerDim[1]);
+    } else if(numDimensions == 3) {
+      problemList.set("nx",gNodesPerDim[0]);
+      problemList.set("ny",gNodesPerDim[1]);
+      problemList.set("nz",gNodesPerDim[2]);
+    }
+    // problemList.set("keepBCs", true);
+
+    // create Poisson problem and matrix
+    if(numDimensions == 1) {
+      Galeri::Xpetra::Laplace1DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList,
+                                                                                       map);
+      Op = Problem.BuildMatrix();
+    } else if(numDimensions == 2) {
+      Galeri::Xpetra::Laplace2DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList,
+                                                                                       map);
+      Op = Problem.BuildMatrix();
+    } else if(numDimensions == 3) {
+      Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList,
+                                                                                       map);
+      Op = Problem.BuildMatrix();
+    }
+
+  }
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(GeneralGeometricPFactory, Constructor, Scalar, LocalOrdinal,
                                     GlobalOrdinal, Node)
   {
@@ -577,13 +746,7 @@ namespace MueLuTests {
       fine_inds[8] = 15;
       for(LO i = 0; i < 9; ++i) {
         if(fabs(fine_data[fine_inds[i]] - coarse_data[i]) > 1.0e-10) { is_injected = false; }
-        if(!is_injected) {
-          std::cout << "Coarse point: " << i << " seems not to be injected?" << std::endl;
-          std::cout << "diff=" << fine_data[fine_inds[i]]
-                    << ", coarse value=" << coarse_data[i] << std::endl;
-        }
       }
-      SC linear_avg = (coarse_data[0] + coarse_data[1] + coarse_data[3] + coarse_data[4]) / 4.0;
       if( (fabs(fine_data[1] - coarse_data[0]) > 1.0e-10) ||
           (fabs(fine_data[4] - coarse_data[0]) > 1.0e-10) ||
           (fabs(fine_data[5] - coarse_data[0]) > 1.0e-10)) { is_constant = false; }
@@ -614,79 +777,66 @@ namespace MueLuTests {
     // used Xpetra lib (for maps and smoothers)
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
+    LO numDimensions = 3;
+
+    RCP<Matrix> Op;
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
+    RCP<Map> map;
+    Array<GO> gNodesPerDim(3);
+    Array<LO> lNodesPerDim(3);
+    GetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, "Local Lexicographic", Op,
+                                coordinates, map, gNodesPerDim, lNodesPerDim);
+
+    Array<Array<GO> > indsBounds(4);
+    Array<GO> minGID(4);
+    indsBounds[0].resize(4);
+    if(comm->getSize() == 0) {
+      indsBounds[0][0] = 0;
+      indsBounds[0][1] = 8;
+      indsBounds[0][2] = 0;
+      indsBounds[0][3] = 8;
+    } else {
+      indsBounds[0][0] = 0;
+      indsBounds[0][1] = 4;
+      indsBounds[0][2] = 0;
+      indsBounds[0][3] = 4;
+    }
+    minGID[0] = 0;
+    indsBounds[1].resize(4);
+    indsBounds[1][0] = 5;
+    indsBounds[1][1] = 8;
+    indsBounds[1][2] = 0;
+    indsBounds[1][3] = 4;
+    minGID[1] = 225;
+    indsBounds[2].resize(4);
+    indsBounds[2][0] = 0;
+    indsBounds[2][1] = 4;
+    indsBounds[2][2] = 5;
+    indsBounds[2][3] = 8;
+    minGID[2] = 405;
+    indsBounds[3].resize(4);
+    indsBounds[3][0] = 5;
+    indsBounds[3][1] = 8;
+    indsBounds[3][2] = 5;
+    indsBounds[3][3] = 8;
+    minGID[3] = 585;
+
+    Array<GO> meshData(comm->getSize()*10);
+    for(int rank = 0 ; rank < comm->getSize(); ++rank) {
+      meshData[rank*10 + 0] = rank;
+      meshData[rank*10 + 1] = rank;
+      meshData[rank*10 + 2] = 0;
+      meshData[rank*10 + 3] = 0;
+      meshData[rank*10 + 4] = gNodesPerDim[0] - 1;
+      meshData[rank*10 + 5] = indsBounds[rank][0];
+      meshData[rank*10 + 6] = indsBounds[rank][1];
+      meshData[rank*10 + 7] = indsBounds[rank][2];
+      meshData[rank*10 + 8] = indsBounds[rank][3];
+      meshData[rank*10 + 9] = minGID[rank];
+    }
+
     // generate problem
     LocalOrdinal maxLevels = 3;
-    // LocalOrdinal its=10;
-    GO nx = 6;
-    GO ny = 6;
-    GO nz = 6;
-    GO numPoints = nx*ny*nz;
-    Array<GO> gNodesPerDim(3);
-    gNodesPerDim[0] = nx;
-    gNodesPerDim[1] = ny;
-    gNodesPerDim[2] = nz;
-    Array<GO> meshData(comm->getSize()*10);
-    Array<LO> lNodesPerDim(3);
-    if(comm->getSize() == 1) {
-      lNodesPerDim[0] = nx;
-      lNodesPerDim[1] = ny;
-
-      meshData[0] = comm->getRank(); // my Parent rank
-      meshData[1] = comm->getRank(); // my rank
-      meshData[2] = 0; // block ID
-      meshData[3] = 0;
-      meshData[4] = nx - 1;
-      meshData[5] = 0;
-      meshData[6] = ny - 1;
-      meshData[7] = 0;
-      meshData[8] = nz - 1;
-      meshData[9] = 0;
-    } else if(comm->getSize() == 4) {
-      lNodesPerDim[0] = nx/2;
-      lNodesPerDim[1] = ny/2;
-
-      for(int rank = 0; rank < comm->getSize(); ++rank) {
-        meshData[rank*10 + 0] = rank;         // my Parent rank
-        meshData[rank*10 + 1] = rank;         // my rank
-        meshData[rank*10 + 2] = 0;            // block ID
-        if(rank == 0 || rank == 2) {
-          meshData[rank*10 + 3] = 0;          // imin
-          meshData[rank*10 + 4] = nx/2 - 1;   // imax
-        } else {
-          meshData[rank*10 + 3] = nx/2;       // imin
-          meshData[rank*10 + 4] = nx - 1;     // imax
-        }
-        if(rank == 0 || rank == 1) {
-          meshData[rank*10 + 5] = 0;          // jmin
-          meshData[rank*10 + 6] = ny/2 - 1;   // jmax
-        } else {
-          meshData[rank*10 + 5] = ny/2;       // jmin
-          meshData[rank*10 + 6] = ny - 1;     // jmax
-        }
-        meshData[rank*10 + 7] = 0;            // kmin
-        meshData[rank*10 + 8] = nz - 1;       // kmax
-        meshData[rank*10 + 9] = rank*nz*ny*nx/4; // minGID on rank
-      }
-    }
-    lNodesPerDim[2] = nz;
-
-    // The map is still contiguous, we will just store different coodrinates to make it local
-    // lexicographic
-    const RCP<const Map> map = MapFactory::Build(lib,
-                                                 gNodesPerDim[0]*gNodesPerDim[1]*gNodesPerDim[2],
-                                                 lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2],
-                                                 0,
-                                                 comm);
-
-    Teuchos::ParameterList problemParamList;
-    problemParamList.set("nx",gNodesPerDim[0]);
-    problemParamList.set("ny",gNodesPerDim[1]);
-    problemParamList.set("nz",gNodesPerDim[2]);
-    // problemParamList.set("keepBCs", true);
-
-    // create Poisson problem and matrix
-    Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> PoissonOnCube(problemParamList, map);
-    RCP<Matrix> Op = PoissonOnCube.BuildMatrix();
 
     // build nullspace
     RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
@@ -696,51 +846,6 @@ namespace MueLuTests {
     if (comm->getRank() == 0) {
       out << "||NS|| = " << norms[0] << std::endl;
     }
-
-    // build coordinates multivector
-    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates
-      = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, 3);
-    Array<LO> indsBounds(4);
-    if (comm->getSize() == 0) {
-      indsBounds[1] = 6;
-      indsBounds[3] = 6;
-    } else if (comm->getSize() == 4) {
-      if(comm->getRank() == 0 || comm->getRank() == 2) {
-        indsBounds[1] = 3;
-      } else if(comm->getRank() == 1 || comm->getRank() == 3) {
-        indsBounds[0] = 3;
-        indsBounds[1] = 6;
-      }
-      if(comm->getRank() == 0 || comm->getRank() == 1) {
-        indsBounds[3] = 3;
-      } else if(comm->getRank() == 2 || comm->getRank() == 3) {
-        indsBounds[2] = 3;
-        indsBounds[3] = 6;
-      }
-    }
-    Array<ArrayRCP<double> > localCoords(3);
-    localCoords[0] = coordinates->getDataNonConst(0);
-    localCoords[1] = coordinates->getDataNonConst(1);
-    localCoords[2] = coordinates->getDataNonConst(2);
-    for(LO k = 0; k < gNodesPerDim[2]; ++k) {
-      for(LO j = indsBounds[2]; j < indsBounds[3]; ++j) {
-        for(LO i = indsBounds[0]; i < indsBounds[1]; ++i) {
-          localCoords[0][k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0]+i]
-            = i / Teuchos::as<double>(gNodesPerDim[0] - 1);
-          localCoords[1][k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0]+i]
-            = j / Teuchos::as<double>(gNodesPerDim[1] - 1);
-          localCoords[2][k*lNodesPerDim[1]*lNodesPerDim[0] + j*lNodesPerDim[0]+i]
-            = k / Teuchos::as<double>(gNodesPerDim[2] - 1);
-        }
-      }
-    }
-    std::cout << "p=" << comm->getRank() << " | indsBounds: " << indsBounds << std::endl;
-    std::cout << "p=" << comm->getRank() << " | local array 0: " << localCoords[0].size() << std::endl;
-    std::cout << "p=" << comm->getRank() << " | local array 1: " << localCoords[1].size() << std::endl;
-    std::cout << "p=" << comm->getRank() << " | local array 2: " << localCoords[2].size() << std::endl;
-
-    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/map.mat", *map);
-    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/coords.mat", *coordinates);
 
     // fill hierarchy
     RCP<Hierarchy> H = rcp( new Hierarchy() );
@@ -811,10 +916,121 @@ namespace MueLuTests {
 
     // Extract the prolongator operator
     RCP<Level> lvl1 = H->GetLevel(1);
-    RCP<Xpetra::Matrix<SC,LO,GO,Node> > P = lvl1->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
-    RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+    RCP<Xpetra::Matrix<SC,LO,GO,Node> > P1 = lvl1->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
+    RCP<CrsMatrix> P1Crs = rcp_dynamic_cast<CrsMatrixWrap>(P1)->getCrsMatrix();
 
-    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/P.mat", *P);
+    // Construct vectors to check that a linear vector remains linear after projection
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector0 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P1Crs->getRangeMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P1Crs->getDomainMap(),1);
+    ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
+    Array<LO> coarse_inds(8);
+    if(comm->getRank() == 0) {
+      coarse_inds[0] =  0;
+      coarse_inds[1] =  1;
+      coarse_inds[2] =  5;
+      coarse_inds[3] =  6;
+      coarse_inds[4] = 15;
+      coarse_inds[5] = 16;
+      coarse_inds[6] = 20;
+      coarse_inds[7] = 21;
+      coarse_data[coarse_inds[0]] = 5;
+      coarse_data[coarse_inds[1]] = 1;
+      coarse_data[coarse_inds[2]] = 7;
+      coarse_data[coarse_inds[3]] = 8;
+      coarse_data[coarse_inds[4]] = 0;
+      coarse_data[coarse_inds[5]] = 4;
+      coarse_data[coarse_inds[6]] = 0;
+      coarse_data[coarse_inds[7]] = 9;
+    }
+
+    P1Crs->apply(*vector1, *vector0, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
+                Teuchos::ScalarTraits<SC>::zero());
+
+    ArrayRCP<const SC> fine_data   = vector0->getData(0);
+    Array<LO> fine_inds(8);
+    bool is_linear_lvl1 = true, is_injected_lvl1 = true;
+    if(comm->getRank() == 0) {
+      fine_inds[0] =   0;
+      fine_inds[1] =   2;
+      fine_inds[2] =  18;
+      fine_inds[3] =  20;
+      fine_inds[4] =  90;
+      fine_inds[5] =  92;
+      fine_inds[6] = 108;
+      fine_inds[7] = 110;
+      for(LO i = 0; i < 8; ++i) {
+        if(fabs(fine_data[fine_inds[i]] - coarse_data[coarse_inds[i]]) > 1.0e-10) {
+          is_injected_lvl1 = false;
+        }
+      }
+      SC linear_avg = 0.0;
+      for(auto ind : coarse_inds) {linear_avg += coarse_data[ind]/8;}
+      if(fabs(fine_data[55] - linear_avg) > 1.0e-10) { is_linear_lvl1 = false; }
+    }
+
+    // Extract the prolongator operator
+    RCP<Level> lvl2 = H->GetLevel(2);
+    RCP<Xpetra::Matrix<SC,LO,GO,Node> > P2 = lvl2->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
+    RCP<CrsMatrix> P2Crs = rcp_dynamic_cast<CrsMatrixWrap>(P2)->getCrsMatrix();
+
+    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/map.mat", *(P2->getRangeMap()));
+    Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/P.mat", *P2);
+
+    // Construct vectors to check that a linear vector remains linear after projection
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector2 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getRangeMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector3 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getDomainMap(),1);
+    coarse_data = vector3->getDataNonConst(0);
+    if(comm->getRank() == 0) {
+      coarse_inds[0] =  0;
+      coarse_inds[1] =  1;
+      coarse_inds[2] =  3;
+      coarse_inds[3] =  4;
+      coarse_inds[4] =  6;
+      coarse_inds[5] =  7;
+      coarse_inds[6] =  9;
+      coarse_inds[7] = 10;
+      coarse_data[coarse_inds[0]] = 5;
+      coarse_data[coarse_inds[1]] = 1;
+      coarse_data[coarse_inds[2]] = 7;
+      coarse_data[coarse_inds[3]] = 8;
+      coarse_data[coarse_inds[4]] = 0;
+      coarse_data[coarse_inds[5]] = 4;
+      coarse_data[coarse_inds[6]] = 0;
+      coarse_data[coarse_inds[7]] = 9;
+    }
+
+    P2Crs->apply(*vector3, *vector2, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
+                Teuchos::ScalarTraits<SC>::zero());
+
+    fine_data = vector0->getData(0);
+    bool is_linear_lvl2 = true, is_injected_lvl2 = true;
+    if(comm->getRank() == 0) {
+      fine_inds[0] =  0;
+      fine_inds[1] =  2;
+      fine_inds[2] = 10;
+      fine_inds[3] = 12;
+      fine_inds[4] = 30;
+      fine_inds[5] = 32;
+      fine_inds[6] = 40;
+      fine_inds[7] = 42;
+      for(LO i = 0; i < 8; ++i) {
+        if(fabs(fine_data[fine_inds[i]] - coarse_data[coarse_inds[i]]) > 1.0e-10) {
+          is_injected_lvl2 = false;
+        }
+      }
+      SC linear_avg = 0.0;
+      for(auto ind : coarse_inds) {linear_avg += coarse_data[ind]/8;}
+      if(fabs(fine_data[21] - linear_avg) > 1.0e-10) { is_linear_lvl2 = false; }
+    }
+
+
+    TEST_EQUALITY(Op != Teuchos::null, true);
+    TEST_EQUALITY(H  != Teuchos::null, true);
+    TEST_EQUALITY(nullSpace != Teuchos::null, true);
+    TEST_EQUALITY(is_injected_lvl1, true);
+    TEST_EQUALITY(is_linear_lvl1, true);
+    TEST_EQUALITY(is_injected_lvl2, true);
+    TEST_EQUALITY(is_linear_lvl2, true);
 
   } // End LocalLexicographicLinear
 
@@ -1035,11 +1251,6 @@ namespace MueLuTests {
       fine_inds[8] = 15;
       for(LO i = 0; i < 9; ++i) {
         if(fabs(fine_data[fine_inds[i]] - coarse_data[i]) > 1.0e-10) { is_injected = false; }
-        if(!is_injected) {
-          std::cout << "Coarse point: " << i << " seems not to be injected?" << std::endl;
-          std::cout << "diff=" << fine_data[fine_inds[i]]
-                    << ", coarse value=" << coarse_data[i] << std::endl;
-        }
       }
       SC linear_avg = (coarse_data[0] + coarse_data[1] + coarse_data[3] + coarse_data[4]) / 4.0;
       if( (fabs(fine_data[1] - coarse_data[0]) > 1.0e-10) ||
