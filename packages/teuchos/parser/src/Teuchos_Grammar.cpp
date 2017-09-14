@@ -38,14 +38,15 @@ int find_goal_symbol(Grammar const& g) {
     }
   }
   int result = -1;
-  for (int s = g.nterminals; s < g.nsymbols; ++s)
+  for (int s = g.nterminals; s < g.nsymbols; ++s) {
     if (!nonterminals_in_rhss.count(s)) {
       TEUCHOS_TEST_FOR_EXCEPTION(result != -1, ParserFail,
           "ERROR: there is more than one root nonterminal ("
-          << at(g.symbol_names, result) << " and "
-          << at(g.symbol_names, s) << ") in this grammar\n");
+          << at(g.symbol_names, result) << " [" << result << "] and "
+          << at(g.symbol_names, s) << " [" << s << "]) in this grammar\n");
       result = s;
     }
+  }
   TEUCHOS_TEST_FOR_EXCEPTION(result == -1, ParserFail,
       "ERROR: the root nonterminal is unclear for this grammar\n"
       "usually this means all nonterminals appear in the RHS of a production\n"

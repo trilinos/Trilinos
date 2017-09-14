@@ -207,13 +207,14 @@ class Reader {
 
  private: // helper methods
 
-  void at_token();
+  void at_token(std::istream& stream);
   void indent_mismatch();
-  void at_token_indent();
+  void at_token_indent(std::istream& stream);
   void at_lexer_end(std::istream& stream);
   void backtrack_to_last_accept(std::istream& stream);
   void reset_lexer_state();
   void update_position(char c);
+  void error_print_line(std::istream& is, std::ostream& os);
 };
 
 class DebugReader : public Reader {
