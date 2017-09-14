@@ -40,25 +40,88 @@
 // ************************************************************************
 //@HEADER
 
-#include <gtest/gtest.h>
-#include <mpi.h>
-#include "ShyLUBDDC_config.h"
-#if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
-#include "Kokkos_Core.hpp"
-#endif
+#ifndef SOLVERLAPACKBDDC_H
+#define SOLVERLAPACKBDDC_H
+#include <stdio.h>
+#include <iostream>
+#include <fstream>
+#include <math.h>
+#include <string.h>
+#include <vector>
 
-int main(int argc, char **argv)
+#include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
+#include "shylu_SolverBaseBDDC.h"
+
+namespace bddc {
+
+template <class SX> 
+  class SolverLAPACK : public SolverBase<SX>
 {
-    MPI_Init(&argc, &argv);
-#if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
-    Kokkos::initialize(argc, argv);
-#endif
-    testing::InitGoogleTest(&argc, argv);
-    int returnVal = RUN_ALL_TESTS();
-#if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
-    Kokkos::finalize();
-#endif    
-    MPI_Finalize();
+public:
+  ~SolverLAPACK()
+  {
+  }
+  SolverLAPACK(int numRows,
+	       int* rowBegin,
+	       int* columns,
+	       SX* values,
+	       Teuchos::ParameterList & Parameters) :
+  SolverBase<SX>(numRows, rowBegin, columns, values, Parameters)
+    {
+    }
+  
+  int Initialize()
+  {
+    int numRows = this->m_numRows;
+    const int* rowBegin = this->m_rowBegin;
+    const int* columns = this->m_columns;
+    const SX* values = this->m_values;
+    int INFO;
+    m_factor.resize(numRows*numRows, 0); 
+    for (int i=0; i<numRows; i++) {
+      for (int j=rowBegin[i]; j<rowBegin[i+1]; j++) {
+	int col = columns[j];
+	m_factor[numRows*col+i] = values[j]; // column-major storage
+      }
+    }
+    m_IPIV.resize(numRows);
+    Teuchos::LAPACK<int, SX> LAPACK;
+    LAPACK.GETRF(numRows, numRows, m_factor.data(), numRows, 
+		 m_IPIV.data(), &INFO);
+    assert (INFO == 0);
+    return INFO;
+  }
 
-    return returnVal;
-}
+  bool IsDirectSolver()
+  {
+    return true;
+  }
+
+  void MySolve(int NRHS,
+	       SX* Rhs, 
+	       SX* Sol)
+  {
+    int numRows = this->m_numRows;
+    memcpy(Sol, Rhs, numRows*NRHS*sizeof(SX));
+    int INFO;
+    char NOTRANS = 'N';
+    Teuchos::LAPACK<int, SX> LAPACK;
+    LAPACK.GETRS(NOTRANS, numRows, NRHS, m_factor.data(), numRows, 
+		 m_IPIV.data(), Sol, numRows, &INFO);
+    assert (INFO == 0);
+  }
+
+  bool MyExactSolver() {
+    return true;
+  }
+
+private:
+  std::vector<SX> m_factor;
+  std::vector<int> m_IPIV;
+ };
+  
+} // namespace bddc
+
+#endif // SOLVERLAPACKBDDC_H
+  

@@ -55,9 +55,9 @@
 
 namespace bddc {
 
-template <class SX, class SM, class LO, class GO> 
+template <class SX> 
   class SolverPardiso : 
-  public SolverBase<SX,SM,LO,GO>
+  public SolverBase<SX>
 {
 public:
   ~SolverPardiso()
@@ -67,12 +67,12 @@ public:
     delete [] m_valuesP;
     delete [] m_perm;
   }
-  SolverPardiso(LO numRows,
-		LO* rowBegin,
-		LO* columns,
+  SolverPardiso(int numRows,
+		int* rowBegin,
+		int* columns,
 		SX* values,
 		Teuchos::ParameterList & Parameters) :
-  SolverBase<SX,SM,LO,GO>(numRows, rowBegin, columns, values, Parameters),
+  SolverBase<SX>(numRows, rowBegin, columns, values, Parameters),
     m_matrixIsSymmetric(true),
     m_rowBeginP(0),
     m_columnsP(0),
@@ -119,13 +119,13 @@ public:
   }
 
 private:
-  int InitializePardiso(LO numRows,
-			const LO* rowBegin,
-			const LO* columns,
+  int InitializePardiso(int numRows,
+			const int* rowBegin,
+			const int* columns,
 			const SX* values)
   {
     // get matrix in Pardiso format
-    UtilPardiso<LO,SX>::constructPardisoMatrix
+    UtilPardiso<int,SX>::constructPardisoMatrix
       (numRows, rowBegin, columns, values, m_matrixIsSymmetric,
        m_rowBeginP, m_columnsP, m_valuesP);
     // Pardiso initialization
@@ -138,7 +138,7 @@ private:
     m_iparam[0] = 0; // use default Pardiso parameters
     int phase = 12;    // analysis and factorization phase
     int one(1), NRHS(1), error(0);
-    double RHS[1], SOL[1];
+    SX RHS[1], SOL[1];
     double startWallTime = this->wall_time();
     pardiso((_MKL_DSS_HANDLE_t*)m_pt, &one, &one, &m_matrixType, &phase, &n, 
 	    m_valuesP, m_rowBeginP, m_columnsP, m_perm, &NRHS, m_iparam, 
@@ -155,7 +155,7 @@ private:
 
   bool m_matrixIsSymmetric;
   int *m_rowBeginP, *m_columnsP, *m_perm, m_matrixType;
-  double *m_valuesP;
+  SX *m_valuesP;
   int m_messageLevel;
   long m_pt[64];
   MKL_INT m_iparam[64];

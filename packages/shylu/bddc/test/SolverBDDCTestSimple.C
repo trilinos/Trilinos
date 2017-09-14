@@ -89,9 +89,6 @@ void readInputFile(double & lengthDir1,
 		   LO & numSubDir1, 
 		   LO & numSubDir2,
 		   LO & numSubDir3, 
-		   LO & numSubDir1PerProc, 
-		   LO & numSubDir2PerProc,
-		   LO & numSubDir3PerProc, 
 		   LO & Hh,
 		   LO & spatialDim,
 		   LO & problemTypeInt,
@@ -110,7 +107,6 @@ void readInputFile(double & lengthDir1,
 		   LO & numCoarseSubdomainsPerMpiRank,
 		   LO & numSubdomainsPerCoarseSubdomain,
 		   LO & coarseningOption,
-		   LO & applyOnlyPreconditioner,
 		   LO & numberOfSolves);
 
 int setParameters(double lengthDir1, 
@@ -146,7 +142,7 @@ int setParameters(double lengthDir1,
 void updateRhs(SX* rhs, 
 	       LO numRows);
 
-TEST(SolverBDDC, Test1)
+TEST(SolverBDDCSimple, Test1)
 {
   int numProc, myPID;
   MPI_Comm Comm = MPI_COMM_WORLD;
@@ -159,10 +155,10 @@ TEST(SolverBDDC, Test1)
     std::cout << "sizeof(GO) = " << sizeof(indexGO) << std::endl;
   }
   double lengthDir1, lengthDir2, lengthDir3, diagScaleFactor, solverTolerance;
-  LO numSubDir1, numSubDir2, numSubDir3, numSubDir1PerProc,
-    numSubDir2PerProc, numSubDir3PerProc, Hh, spatialDim, problemTypeInt,
+  LO numSubDir1, numSubDir2, numSubDir3, numSubDir1PerProc(1),
+    numSubDir2PerProc(1), numSubDir3PerProc(1), Hh, spatialDim, problemTypeInt,
     numThreadsOuter, numThreadsInner, maxIterations, directSolver,
-    applyOnlyPreconditioner, numberOfSolves, matrixType, cornerOption,
+    numberOfSolves, matrixType, cornerOption,
     edgeOption, faceOption, krylovMethod, estimateConditionNumber,
     numCoarseSubdomainsPerMpiRank, numSubdomainsPerCoarseSubdomain, 
     coarseningOption;
@@ -173,14 +169,13 @@ TEST(SolverBDDC, Test1)
   // for testing of threaded sparse direct solvers (see SparseSolverTest.C).
   //
   readInputFile(lengthDir1, lengthDir2, lengthDir3, numSubDir1, numSubDir2,
-		numSubDir3, numSubDir1PerProc, numSubDir2PerProc,
-		numSubDir3PerProc, Hh, spatialDim, problemTypeInt,
+		numSubDir3, Hh, spatialDim, problemTypeInt,
 		matrixType, diagScaleFactor, numThreadsOuter, numThreadsInner,
 		solverTolerance, maxIterations, krylovMethod, 
 		estimateConditionNumber, directSolver, cornerOption, 
 		edgeOption, faceOption, numCoarseSubdomainsPerMpiRank, 
 		numSubdomainsPerCoarseSubdomain, coarseningOption, 
-		applyOnlyPreconditioner, numberOfSolves);
+		numberOfSolves);
   RCP<Teuchos::ParameterList> Parameters;
   int returnValue = 
   setParameters(lengthDir1, lengthDir2, lengthDir3, numSubDir1, numSubDir2,
@@ -218,8 +213,6 @@ TEST(SolverBDDC, Test1)
     subColumnsPtr[i] = subColumns[i].data();
     subValuesPtr[i] = subValues[i].data();
   }
-  LO* nodeBegin = const_cast<LO*>(Problem->getNodeBegin());
-  LO* localDofs = const_cast<LO*>(Problem->getLocalDofs());
   const GO* nodeGlobalIDs = Problem->getNodeGlobalIDs();
   const SM* xCoord = Problem->getXcoord();
   const SM* yCoord = Problem->getYcoord();
@@ -236,16 +229,12 @@ TEST(SolverBDDC, Test1)
   omp_set_num_threads(numThreadsInner);
 #endif
   // initialize preconditioner
-  int level(0);
   RCP< bddc::PreconditionerBDDC<SX,SM,LO,GO> > Preconditioner =
     rcp( new bddc::PreconditionerBDDC<SX,SM,LO,GO>
-	 (numNode, nodeBegin, localDofs, nodeGlobalIDs, xCoord, yCoord, zCoord, 
-	  subNodes, subRowBeginPtr.data(), subColumnsPtr.data(), 
-	  subValuesPtr.data(), Parameters, Comm, level) );
+	 (numNode, nodeGlobalIDs, xCoord, yCoord, zCoord, 
+	  subRowBeginPtr.data()[0], subColumnsPtr.data()[0], 
+	  subValuesPtr.data()[0], Parameters, Comm) );
   RCP<const Map> dofMap = Preconditioner->getDofMap1to1();
-  if (applyOnlyPreconditioner) {
-    dofMap = Preconditioner->getDofMapB1to1();
-  }
   LO numDofs = dofMap->getNodeNumElements();
   // initialize right hand side
   std::vector<SX> rhs(numDofs, 0);
@@ -254,24 +243,15 @@ TEST(SolverBDDC, Test1)
     //  rhs[i] = 0.7*rand()/RAND_MAX;
     //    rhs[i] = 1;
   }
-  if (applyOnlyPreconditioner) {
-    std::vector<SX> Pr(numDofs), APr(numDofs);
-    for (int i=0; i<numberOfSolves; i++) {
-      updateRhs(rhs.data(), numDofs);
-      Preconditioner->Apply(rhs.data(), Pr.data(), APr.data());
-    }
+  openFiles(Preconditioner, krylovMethod);
+  RCP< bddc::KrylovSolver<SX,SM,LO,GO> > Solver =
+    rcp ( new bddc::KrylovSolver<SX,SM,LO,GO>(Preconditioner, Parameters) );
+  std::vector<SX> sol(numDofs);
+  for (int i=0; i<numberOfSolves; i++) {
+    if (i > 0) updateRhs(rhs.data(), numDofs);
+    Solver->Solve(rhs.data(), sol.data());
   }
-  else {
-    openFiles(Preconditioner, krylovMethod);
-    RCP< bddc::KrylovSolver<SX,SM,LO,GO> > Solver =
-      rcp ( new bddc::KrylovSolver<SX,SM,LO,GO>(Preconditioner, Parameters) );
-    std::vector<SX> sol(numDofs);
-    for (int i=0; i<numberOfSolves; i++) {
-      if (i > 0) updateRhs(rhs.data(), numDofs);
-      Solver->Solve(rhs.data(), sol.data());
-    }
-    printTimings(Preconditioner, Solver);
-  }
+  printTimings(Preconditioner, Solver);
 }
 
 void updateRhs(SX* rhs, 
@@ -288,9 +268,6 @@ void readInputFile(double & lengthDir1,
 		   LO & numSubDir1, 
 		   LO & numSubDir2,
 		   LO & numSubDir3, 
-		   LO & numSubDir1PerProc, 
-		   LO & numSubDir2PerProc,
-		   LO & numSubDir3PerProc, 
 		   LO & Hh,
 		   LO & spatialDim,
 		   LO & problemTypeInt,
@@ -309,7 +286,6 @@ void readInputFile(double & lengthDir1,
 		   LO & numCoarseSubdomainsPerMpiRank,
 		   LO & numSubdomainsPerCoarseSubdomain,
 		   LO & coarseningOption,
-		   LO & applyOnlyPreconditioner,
 		   LO & numberOfSolves)
 {
   char buff[101];
@@ -321,9 +297,6 @@ void readInputFile(double & lengthDir1,
   fin >> numSubDir1; fin.getline(buff,100);
   fin >> numSubDir2; fin.getline(buff,100);
   fin >> numSubDir3; fin.getline(buff,100);
-  fin >> numSubDir1PerProc; fin.getline(buff,100);
-  fin >> numSubDir2PerProc; fin.getline(buff,100);
-  fin >> numSubDir3PerProc; fin.getline(buff,100);
   fin >> Hh; fin.getline(buff,100);
   fin >> spatialDim; fin.getline(buff,100);
   fin >> problemTypeInt; fin.getline(buff,100);
@@ -342,7 +315,6 @@ void readInputFile(double & lengthDir1,
   fin >> numCoarseSubdomainsPerMpiRank; fin.getline(buff,100);
   fin >> numSubdomainsPerCoarseSubdomain; fin.getline(buff,100);
   fin >> coarseningOption; fin.getline(buff,100);
-  fin >> applyOnlyPreconditioner; fin.getline(buff,100);
   fin >> numberOfSolves; fin.getline(buff,100);
   fin.close();
 }
