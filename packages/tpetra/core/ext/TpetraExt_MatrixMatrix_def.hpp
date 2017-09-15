@@ -2597,10 +2597,14 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     const LocalOrdinal * Icol2Ccol_ptr = Icol2Ccol.getRawPtr();
 
     // Use a Kokkos::parallel_scan to build the rowptr
+    //
+    // NOTE (mfh 15 Sep 2017) This is specifically only for
+    // execution_space = Kokkos::OpenMP, so we neither need nor want
+    // KOKKOS_LAMBDA (with its mandatory __device__ marking).
     typedef Node::execution_space execution_space;
     typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
     Kokkos::parallel_scan (range_type (0, merge_numrows),
-      KOKKOS_LAMBDA (const size_t i, size_t& update, const bool final) {
+      [=] (const size_t i, size_t& update, const bool final) {
         if(final) Mrowptr(i) = update;
 
         // Get the row count
@@ -2621,10 +2625,14 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     scalar_view_t Mvalues("Mvals",merge_nnz);
 
     // Use a Kokkos::parallel_for to fill the rowptr/colind arrays
+    //
+    // NOTE (mfh 15 Sep 2017) This is specifically only for
+    // execution_space = Kokkos::OpenMP, so we neither need nor want
+    // KOKKOS_LAMBDA (with its mandatory __device__ marking).
     typedef Node::execution_space execution_space;
     typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
     Kokkos::parallel_for (range_type (0, merge_numrows),
-      KOKKOS_LAMBDA (const size_t i) {
+      [=] (const size_t i) {
         if(Acol2Brow_ptr[i]!=LO_INVALID) {
           size_t row   = Acol2Brow_ptr[i];
           size_t start = Bk.graph.row_map(row);
