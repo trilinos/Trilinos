@@ -583,10 +583,20 @@ add (const Scalar& alpha,
   typedef Import<LO,GO,NO>                  import_type;
   typedef Export<LO,GO,NO>                  export_type;
   typedef Details::AddKernels<SC,LO,GO,NO>           AddKern;
-  const char* prefix_mmm = "TpetraExt::MatrixMatrix::add(): ";
+  const char* prefix_mmm = "TpetraExt::MatrixMatrix::add: ";
+  constexpr bool debug = false;
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("transpose"))));
 #endif
+
+  if (debug) {
+    std::ostringstream os;
+    os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+       << "TpetraExt::MatrixMatrix::add" << std::endl;
+    std::cerr << os.str ();
+  }
+
   TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete () || !B.isFillComplete (), std::invalid_argument,
     prefix_mmm << "A and B must both be fill complete.");
 #ifdef HAVE_TPETRA_DEBUG
@@ -621,6 +631,12 @@ add (const Scalar& alpha,
   // Form the explicit transpose of B if necessary.
   RCP<const crs_matrix_type> Bprime = rcpFromRef(B);
   if (transposeB) {
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+         << "Form explicit xpose of B" << std::endl;
+      std::cerr << os.str ();
+    }
     transposer_type transposer(Bprime);
     Bprime = transposer.createTranspose ();
   }
@@ -677,6 +693,12 @@ add (const Scalar& alpha,
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("fallback to CrsMatrix::add"))));
 #endif
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+         << "Call Bprime->add(...)" << std::endl;
+      std::cerr << os.str ();
+    }
     return Teuchos::rcp_static_cast<crs_matrix_type>(Bprime->add(alpha, *Aprime, beta, CDomainMap, CRangeMap, params));
   }
   else if(!matchingColMaps)
@@ -688,10 +710,22 @@ add (const Scalar& alpha,
     auto Acolmap = Aprime->getColMap()->getMyGlobalIndices();
     auto Bcolmap = Bprime->getColMap()->getMyGlobalIndices();
     typename AddKern::global_col_inds_array globalColinds("", 0);
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+         << "Call AddKern::convertToGlobalAndAdd(...)" << std::endl;
+      std::cerr << os.str ();
+    }
     AddKern::convertToGlobalAndAdd(
       Aprime->getLocalMatrix(), alpha, Bprime->getLocalMatrix(), beta, Acolmap, Bcolmap,
       CRangeMap->getMinGlobalIndex(), Aprime->getGlobalNumCols(), vals, rowptrs, globalColinds);
     colinds = col_inds_array("C colinds", globalColinds.dimension_0());
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+         << "Finished AddKern::convertToGlobalAndAdd(...)" << std::endl;
+      std::cerr << os.str ();
+    }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("building optimized column map"))));
 #endif
@@ -717,6 +751,12 @@ add (const Scalar& alpha,
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("sorted entries full kernel"))));
 #endif
+      if (debug) {
+        std::ostringstream os;
+        os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+           << "Call AddKern::addSorted(...)" << std::endl;
+        std::cerr << os.str ();
+      }
       AddKern::addSorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, vals, rowptrs, colinds);
     }
     else
@@ -725,6 +765,12 @@ add (const Scalar& alpha,
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mm add unsorted entries full kernel"))));
 #endif
+      if (debug) {
+        std::ostringstream os;
+        os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+           << "Call AddKern::addUnsorted(...)" << std::endl;
+        std::cerr << os.str ();
+      }
       AddKern::addUnsorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, Aprime->getGlobalNumCols(), vals, rowptrs, colinds);
     }
     CrowMap = Bprime->getRowMap();
@@ -740,11 +786,30 @@ add (const Scalar& alpha,
 #endif
   if(!CDomainMap->isSameAs(*CcolMap))
   {
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+         << "Create Cimport" << std::endl;
+      std::cerr << os.str ();
+    }
     Cimport = rcp(new import_type(CDomainMap, CcolMap));
   }
   if(!CrowMap->isSameAs(*CRangeMap))
   {
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+         << "Create Cexport" << std::endl;
+      std::cerr << os.str ();
+    }
     Cexport = rcp(new export_type(CrowMap, CRangeMap));
+  }
+
+  if (debug) {
+    std::ostringstream os;
+    os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
+       << "Call C->expertStaticFillComplete(...)" << std::endl;
+    std::cerr << os.str ();
   }
   C->expertStaticFillComplete(CDomainMap, CRangeMap, Cimport, Cexport, params);
   return C;
@@ -1224,18 +1289,30 @@ addSorted(
   Kokkos::parallel_for(range_type(0, nrows), sumFunct);
 }
 
-template<typename GO, typename LocalIndicesType, typename GlobalIndicesType, typename ColMapType>
+template<typename GO,
+         typename LocalIndicesType,
+         typename GlobalIndicesType,
+         typename ColMapType>
 struct ConvertColIndsFunctor
 {
-  ConvertColIndsFunctor(GO minGlobal_, const LocalIndicesType& colindsOrig_, GlobalIndicesType& colindsConverted_, const ColMapType& colmap_) : minGlobal(minGlobal_), colindsOrig(colindsOrig_), colindsConverted(colindsConverted_), colmap(colmap_) {}
-  KOKKOS_INLINE_FUNCTION void operator()(const size_t i) const
+  ConvertColIndsFunctor (const GO minGlobal_,
+                         const LocalIndicesType& colindsOrig_,
+                         const GlobalIndicesType& colindsConverted_,
+                         const ColMapType& colmap_) :
+    minGlobal (minGlobal_),
+    colindsOrig (colindsOrig_),
+    colindsConverted (colindsConverted_),
+    colmap (colmap_)
+  {}
+  KOKKOS_INLINE_FUNCTION void
+  operator() (const size_t& i) const
   {
     colindsConverted[i] = colmap[colindsOrig[i]];
   }
   GO minGlobal;
-  const LocalIndicesType& colindsOrig;
-  GlobalIndicesType& colindsConverted;
-  const ColMapType& colmap;
+  LocalIndicesType colindsOrig;
+  GlobalIndicesType colindsConverted;
+  ColMapType colmap;
 };
 
 template<typename SC, typename LO, typename GO, typename NO>
@@ -1257,6 +1334,8 @@ convertToGlobalAndAdd(
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
+  constexpr bool debug = false;
+
   const values_array& Avals = A.values;
   const values_array& Bvals = B.values;
   const col_inds_array& Ainds = A.graph.entries;
@@ -1269,16 +1348,36 @@ convertToGlobalAndAdd(
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: " + std::string("column map conversion"))));
 #endif
   ConvertColIndsFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertA(minGlobalCol, Ainds, AindsConverted, AcolMap);
+  if (debug) {
+    std::ostringstream os;
+    os << "convertToGlobalAndAdd: parallel_for 1" << std::endl;
+    std::cerr << os.str ();
+  }
   Kokkos::parallel_for(range_type(0, Ainds.dimension_0()), convertA);
   ConvertColIndsFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertB(minGlobalCol, Binds, BindsConverted, BcolMap);
+  if (debug) {
+    std::ostringstream os;
+    os << "convertToGlobalAndAdd: parallel_for 2" << std::endl;
+    std::cerr << os.str ();
+  }
   Kokkos::parallel_for(range_type(0, Binds.dimension_0()), convertB);
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: " + std::string("unsorted addition"))));
 #endif
+  if (debug) {
+    std::ostringstream os;
+    os << "convertToGlobalAndAdd: Call addUnsortedGlobalCols" << std::endl;
+    std::cerr << os.str ();
+  }
   addUnsortedGlobalCols(
      Avals, Arowptrs, AindsConverted, scalarA,
      Bvals, Browptrs, BindsConverted, scalarB,
      numGlobalCols, Cvals, Crowptrs, Ccolinds);
+  if (debug) {
+    std::ostringstream os;
+    os << "convertToGlobalAndAdd: Done" << std::endl;
+    std::cerr << os.str ();
+  }
 }
 
 namespace AddUnsortedFunctors
@@ -1438,12 +1537,12 @@ struct CondenseArraysFunctor
       Cvals(Crowptr(i) + j) = CvalsOver(CrowptrTemp(i) + j);
     }
   }
-  const RowPtrs& Crowptr;
-  const RowPtrs& CrowptrTemp;
-  const ColInds& CcolindOver;
-  ColInds& Ccolind;
-  const Values& CvalsOver;
-  Values& Cvals;
+  RowPtrs Crowptr;
+  RowPtrs CrowptrTemp;
+  ColInds CcolindOver;
+  ColInds Ccolind;
+  Values CvalsOver;
+  Values Cvals;
 };
 }
 

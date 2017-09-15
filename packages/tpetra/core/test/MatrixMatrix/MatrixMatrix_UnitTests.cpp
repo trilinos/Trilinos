@@ -58,6 +58,7 @@
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 #include <cmath>
 
 namespace {
@@ -136,8 +137,8 @@ getIdentityMatrix (Teuchos::FancyOStream& out,
 template<class SC, class LO, class GO,class NT>
 RCP<CrsMatrix<SC, LO, GO, NT> >
 getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
-			  Teuchos::RCP<const Tpetra::Map<LO,GO,NT> >& identityRowMap,
-			  const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+                          Teuchos::RCP<const Tpetra::Map<LO,GO,NT> >& identityRowMap,
+                          const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   using Teuchos::RCP;
   using std::endl;
@@ -231,7 +232,8 @@ null_add_test (const Matrix_t& A,
                const bool AT,
                const bool BT,
                const Matrix_t& C,
-               Teuchos::FancyOStream& out)
+               Teuchos::FancyOStream& out,
+               bool& success)
 {
   typedef typename Matrix_t::scalar_type scalar_type;
   typedef typename Matrix_t::local_ordinal_type local_ordinal_type;
@@ -242,6 +244,9 @@ null_add_test (const Matrix_t& A,
   typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, NT> export_type;
   const scalar_type one = STS::one ();
 
+  RCP<const Comm<int> > comm = A.getMap ()->getComm ();
+  const int myRank = comm->getRank ();
+
   out << "  Computing Frobenius norm of the expected result C" << endl;
   add_test_results toReturn;
   toReturn.correctNorm = C.getFrobeniusNorm ();
@@ -249,9 +254,27 @@ null_add_test (const Matrix_t& A,
   out << "  Calling 3-arg add" << endl;
   RCP<const map_type> domainMap = BT ? B.getRangeMap () : B.getDomainMap ();
   RCP<const map_type> rangeMap = BT ? B.getDomainMap () : B.getRangeMap ();
-  RCP<Matrix_t> C_computed =
-    Tpetra::MatrixMatrix::add (one, AT, A, one, BT, B,
-                               domainMap, rangeMap, Teuchos::null);
+  RCP<Matrix_t> C_computed;
+  // for each MPI process to catch any exception message
+  std::ostringstream errStrm;
+  int lclSuccess = 1;
+  int gblSuccess = 0; // output argument
+  try {
+    C_computed =
+      Tpetra::MatrixMatrix::add (one, AT, A, one, BT, B,
+                                 domainMap, rangeMap, Teuchos::null);
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << myRank << ": add threw an exception: "
+      << e.what () << endl;
+    lclSuccess = 0;
+  }
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
+  if (gblSuccess != 1) {
+    Tpetra::Details::gathervPrint (out, errStrm.str (), *comm);
+  }
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     C_computed.is_null (), std::logic_error, "3-arg add returned null.");
 
@@ -398,9 +421,9 @@ mult_test_results multiply_test_autofc(
   C->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   std::cout<<"*** C->domainMap() ***"<<std::endl;
   C->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
-  
+
   if(C->getGraph()->getImporter().is_null()) std::cout<<"C->getImporter is null"<<std::endl;
-  else { 
+  else {
     std::cout<<"*** C->getImporter()->getTargetMap() ***"<<std::endl;
     C->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   }
@@ -408,8 +431,8 @@ mult_test_results multiply_test_autofc(
   std::cout<<"*** computedC->colMap() ***"<<std::endl;
   computedC->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   std::cout<<"*** computedC->domainMap() ***"<<std::endl;
-  computedC->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME); 
- 
+  computedC->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+
   if(computedC->getGraph()->getImporter().is_null()) std::cout<<"computedC->getImporter is null"<<std::endl;
   else {
     std::cout<<"*** computedC->getImporter()->getTargetMap() ***"<<std::endl;
@@ -433,7 +456,7 @@ mult_test_results multiply_test_autofc(
     name+"_calculated.mtx", computedC);
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_real.mtx", C);
- 
+
 #endif
   if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
   }
@@ -634,7 +657,7 @@ mult_test_results jacobi_reuse_test(
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT)  {
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
-  
+
   // NOTE: The matrix reader doesn't read real matrices into a complex data type, so we just swap down to MT here
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
   typedef CrsMatrix<MT,LO,GO,NT> Matrix_t;
@@ -667,7 +690,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       "Bad tag's name: " << it->first <<
       "Type name: " << it->second.getAny().typeName() <<
       endl << endl);
- 
+
     ParameterList currentSystem = matrixSystems->sublist (it->first);
     std::string name = currentSystem.name();
     std::string A_file = currentSystem.get<std::string> ("A");
@@ -782,7 +805,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
                                  "Before null_add_test: C is null");
 
-      results = null_add_test<Matrix_t> (*A, *B, AT, BT, *C, newOut);
+      results = null_add_test<Matrix_t> (*A, *B, AT, BT, *C,
+                                         newOut, success);
 
       TEST_COMPARE(results.epsilon, <, epsilon);
       newOut << "Null Add Test Results: " << endl;
@@ -1415,7 +1439,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
 }*/
 
 
-#define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )			\
+#define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, operations_test,SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
