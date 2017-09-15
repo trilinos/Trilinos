@@ -53,6 +53,7 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
+#include "Tpetra_Details_fill.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
 #include "Tpetra_Details_lclDot.hpp"
@@ -2596,70 +2597,20 @@ namespace Tpetra {
     }
   }
 
-  namespace { // (anonymous)
-
-    template<class TwoDViewType,
-             class ImplScalarType,
-             class ExecutionSpace,
-             class LocalOrdinalType>
-    void
-    putScalarImpl (const ExecutionSpace& /* execSpace */,
-                   const TwoDViewType& X_in,
-                   const ImplScalarType& theAlpha,
-                   const LocalOrdinalType lclNumRows,
-                   const LocalOrdinalType numVecs,
-                   const bool isConstantStride,
-                   const size_t whichVectors[])
-    {
-      using Kokkos::ALL;
-      using Kokkos::parallel_for;
-      using Kokkos::subview;
-      typedef LocalOrdinalType LO;
-      Kokkos::RangePolicy<ExecutionSpace, LO> rowRange (0, lclNumRows);
-      auto X = subview (X_in, std::pair<LO, LO> (0, lclNumRows), ALL ());
-
-      if (numVecs == 1) {
-        auto X_0 = subview (X, ALL (), 0);
-        parallel_for ("Tpetra::MultiVector::putScalar(1-D)", rowRange,
-          KOKKOS_LAMBDA (const LO& i) {
-            X_0(i) = theAlpha;
-          });
-      }
-      else if (isConstantStride) {
-        parallel_for ("Tpetra::MultiVector::putScalar(2-D)", rowRange,
-          KOKKOS_LAMBDA (const LO& i) {
-            for (LO j = 0; j < numVecs; ++j) {
-              X(i,j) = theAlpha;
-            }
-          });
-      }
-      else {
-        for (LO k = 0; k < numVecs; ++k) {
-          const LO col = static_cast<LO> (whichVectors[k]);
-          auto X_k = subview (X, ALL (), col);
-          parallel_for ("Tpetra::MultiVector::putScalar(1-D)", rowRange,
-            KOKKOS_LAMBDA (const LO& i) {
-              X_k(i) = theAlpha;
-            });
-        }
-      }
-    }
-
-  } // namespace (anonymous)
-
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   putScalar (const Scalar& alpha)
   {
+    using ::Tpetra::Details::ProfilingRegion;
+    using ::Tpetra::Details::Blas::fill;
     typedef typename dual_view_type::t_dev::memory_space DMS;
     //typedef typename dual_view_type::t_host::memory_space HMS;
     typedef Kokkos::HostSpace HMS; // avoid CudaUVMSpace issues
     typedef typename dual_view_type::t_dev::execution_space DES;
     typedef typename dual_view_type::t_host::execution_space HES;
     typedef LocalOrdinal LO;
-    ::Tpetra::Details::ProfilingRegion region ("Tpetra::MultiVector::putScalar");
+    ProfilingRegion region ("Tpetra::MultiVector::putScalar");
 
     // We need this cast for cases like Scalar = std::complex<T> but
     // impl_scalar_type = Kokkos::complex<T>.
@@ -2676,16 +2627,24 @@ namespace Tpetra {
     if (! useHostVersion) { // last modified in device memory
       this->template modify<DMS> (); // we are about to modify on the device
       auto X = this->template getLocalView<DMS> ();
-      putScalarImpl (DES (), X, theAlpha, lclNumRows, numVecs,
-                     this->isConstantStride (),
-                     this->whichVectors_.getRawPtr ());
+      if (this->isConstantStride ()) {
+        fill (DES (), X, theAlpha, lclNumRows, numVecs);
+      }
+      else {
+        fill (DES (), X, theAlpha, lclNumRows, numVecs,
+              this->whichVectors_.getRawPtr ());
+      }
     }
     else { // last modified in host memory, so modify data there.
       this->template modify<HMS> (); // we are about to modify on the host
       auto X = this->template getLocalView<HMS> ();
-      putScalarImpl (HES (), X, theAlpha, lclNumRows, numVecs,
-                     this->isConstantStride (),
-                     this->whichVectors_.getRawPtr ());
+      if (this->isConstantStride ()) {
+        fill (HES (), X, theAlpha, lclNumRows, numVecs);
+      }
+      else {
+        fill (HES (), X, theAlpha, lclNumRows, numVecs,
+              this->whichVectors_.getRawPtr ());
+      }
     }
   }
 
