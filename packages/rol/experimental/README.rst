@@ -1,7 +1,7 @@
 XROL - Experimental Rapid Optimization Library 
 ----------------------------------------------
 
-This subpackage contains experimental implementations of ROL 
+This "subpackage" contains experimental implementations of ROL 
 components aimed at reducing runtime overhead and leveraging
 new features that have been incorporated in the C++11 and 
 C++14 standard. There are no concrete plans yet as to when
@@ -19,3 +19,6 @@ clang 3.4+
 MSVC 19.0+ 
 Intel 17.0+
 
+Additionally CMake 3.1 or greater is needed to deduce compiler
+C++14 compatibility. To build experimental tests requires
+setting the CMake variable ROL_ENABLE_Experimental:BOOL=ON

@@ -46,17 +46,16 @@
 
 #include "XROL.hpp"
 
+
 namespace XROL {
 
-template<class Scalar> 
-struct Magnitude {
-  using type = Scalar;
-};
+template<class V>
+struct ObjectiveVisitor {
 
-// Specialize for complex-valued scalar
-template<class Scalar> 
-struct Magnitude<std::complex<Scalar>> {
-  using type = Scalar;
+//  virtual void visit( ConcreteObjective_1<V>& obj ) = 0;
+//  virtual void visit( ConcreteObjective_2<V>& obj ) = 0;
+//  virtual void visit( ConcreteObjective_3<V>& obj ) = 0;
+
 };
 
 

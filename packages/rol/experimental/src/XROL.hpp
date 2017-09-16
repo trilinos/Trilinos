@@ -47,23 +47,37 @@
 #include <algorithm>
 #include <complex>
 #include <exception>
+#include <iostream>
+#include <iomanip>
 #include <limits>
 #include <map>
 #include <memory>
+#include <random>
 #include <tuple>
 #include <type_traits>
 #include <vector>
 
 
+// Teuchos Includes
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+// ROL Includes
+#include "ROL_Types.hpp"
+
 // Utility
-#include "XROL_ElementwiseFunction.hpp"
+#include "XROL_Defines.hpp"
+#include "XROL_ElementTraits.hpp"
 #include "XROL_Exception.hpp"
-#include "XROL_Magnitude.hpp"
+#include "XROL_ElementwiseFunction.hpp"
 #include "XROL_Output.hpp"
 
 // Vector
-#include "XROL_VectorTraits.hpp"
-#include "XROL_StdVectorTraits.hpp"
+#include "XROL_Vector.hpp"
+#include "XROL_StdVector.hpp"
 #include "XROL_CheckVector.hpp"
 
 // Objective
+#include "XROL_Objective.hpp"
+#include "XROL_ObjectiveVisitor.hpp"

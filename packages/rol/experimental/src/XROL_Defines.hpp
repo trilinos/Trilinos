@@ -46,63 +46,10 @@
 
 #include "XROL.hpp"
 
+
 namespace XROL {
 
-template<class V>
-// std::unique_ptr<V> 
-auto clone( const V& x ) { 
-  static_assert("clone() must be specialized for type " +
-   typeid(x).name() );
-  return nullptr; 
-}
-
-template<class V> 
-// std::unique_ptr<V> 
-auto basis( const V& x, ElementTraits<V>::IndexType i ) {
-  static_assert("basis() must be specialized for type " +
-   typeid(x).name() );
-  return nullptr
-}
-
-template<class V>
-// ElementTraits<V>::IndexType 
-auto dimension( const V& x ) {
-  static_assert("dimension() be specialized for type " +
-   typeid(x).name() );
-  return 0;
-}
-
-template<class V>
-void plus( V& x, const V& y ) {
-  VectorFunctionTraits<V>::transform(x,[](auto xe, auto ye){xe+=ye;},y);
-}
-
-template<class V>
-void scale( V& x, const ElementTraits<V>::ElementType alpha ) {
-  VectorFunctionTraits::transform(x,[alpha](auto xe){xs*=alpha;},y);
-}
-
-template<class V>
-// ElementTraits<V>::ElementType
-auto dot( const V& x, const V &y ) {
-  using ElementType = ElementTraits<V>::ElementType;
-  Sum<ElementType> sum;
-  return VectorFunctionTraits<V>::transform_and_reduce( 
-    [](auto xe,auto ye){return xe*ye;}, sum, x, y); 
-}
-
-template<class V> 
-// ElementTraits<V>::MagnitudeType
-auto norm( const V& x ) {
-  using ElementType   = ElementTraits<V>::ElementType;
-  using MagnitudeType = ElementTraits<V>::MagnitudeType;
-  Sum<ElementType> sum;
-  auto norm2 = VFT::transform_and_reduce( [](auto xe){return xe*xe;}, sum, x);  
-  return std::sqrt(norm2);
-}
-
-template<class V>
-void axpy( V& x, const ElementTraits<V>::ElementType
+template<class... T> void ignore(T &&... ) {}
 
 
 

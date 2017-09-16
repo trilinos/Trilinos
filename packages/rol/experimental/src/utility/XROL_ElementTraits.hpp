@@ -1,3 +1,4 @@
+
 // @HEADER
 // ************************************************************************
 //
@@ -41,40 +42,22 @@
 // ************************************************************************
 // @HEADER
 
+#pragma once
+
 #include "XROL.hpp"
+
 
 namespace XROL {
 
 
+template<class>   struct ElementTraits;
+template<class T> struct Magnitude { using type = T; };
+template<class T> struct Magnitude<std::complex<T>> { using type = T; };
 
-namespace TypeCheckDetails {
-
-    template<bool...> struct bool_pack;
-    template<bool... bs>
-    using all_true = std::is_same<bool_pack<bs..., true>, bool_pack<true, bs...>>;
-
-
-} // namespace TypeCheckDetails
-
-template <typename... Ts>
-using all_true = TypeCheckDetails::all_true<Ts::value...>;
-
-template <typename T, typename... Ts>
-using all_same = all_true<std::is_same<T,Ts>...>;
-
-template<class T, class... Ts>
-using all_convertible = all_true<std::is_convertible<Ts,T>...>;
+template<class V> using element_t   = typename ElementTraits<V>::element_type;
+template<class V> using index_t     = typename ElementTraits<V>::index_type;
+template<class V> using magnitude_t = typename ElementTraits<V>::magnitude_type;
 
 
-/** \brief Generate a compile time error if the parameter pack does not have
-           uniform types
-*/
-template<class... Ts>
-void UniformTypeCheck( Ts... values ) {
-  using ReturnType = std::common_type_t<decltype(values)...>;
-  static_assert(all_same<ReturnType,decltype(values)...>::value, "Error: Template parameters "
-    "must have the same type!");
-};
+} // namespace XROL
 
-
-} // namespace XROL 

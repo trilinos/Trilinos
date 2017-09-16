@@ -49,24 +49,81 @@
 
 namespace XROL {
 
+
+template<class V> struct ObjectiveVisitor;
+
+struct ObjectiveParameters;
+
 template<class V> 
 struct Objective {
 
+private:
+
+  std::unique_ptr<ObjectiveParameters> param_;
+
+protected:
+
+  const decltype(auto) getParameters( void ) const {
+    return std::move(param_);
+  }
+
+public: 
+
+  virtual void setParameters( const std::unique_ptr<ObjectiveParameters> &param ) {
+    param_ = std::move(param);
+  }
+
+  Objective( const std::unique_ptr<ObjectiveParmeters> &param ) 
+    : param_(std::move(param)) {}
+
   virtual ~Objective() {}
+
+  virtual void accept( ObjectiveVisitor<V>& visitor ) = 0;
 
   virtual void update( /* args */ ) {}
  
   virtual auto value( const V& x ) = 0;
    
-  virtual void gradient( V& g, const V& x ) {}
+  virtual void gradient( V& g, const V& x ) { ignore(g,x); }
 
-  virtual auto dirDeriv( const V& x, const V& d ) {}
+  virtual auto dirDeriv( const V& x, const V& d ) { ignore(x,d); }
 
-  virtual void hessVec( V& hv, const V& v, const V& x ) {} 
+  virtual void hessVec( V& hv, const V& v, const V& x ) { ignore(hv,v,x); } 
 
-  virtual void invHessVec( V& hv, const V& v, const V& x ) {}
+  virtual void invHessVec( V& hv, const V& v, const V& x ) { ignore(hv,v,x); }
 
-  virtual void precond( V& Pv, const V& v, const V& x ) {}
+  virtual void precond( V& Pv, const V& v, const V& x ) { ignore(Pv,v,x); }
+
+  virtual auto checkGradient( const V& x, const V& d, std::ostream &os,
+                              Teuchos::ParameterList &parlist ) { 
+    ignore(x,d,os,parlist);  
+  }
+
+  virtual auto checkGradient( const V& x, const V &g, const V& d, std::ostream &os,
+                              Teuchos::ParameterList &parlist ) {    
+    ignore(x,g,d,os,parlist)
+  }
+
+  virtual auto checkHessVec( const V& x, const V&v, std::ostream &os,
+                             Teuchos::ParmeterList &parlist ) {
+    ignore(x,v,os,parlist);
+  }
+
+
+  virtual auto checkHessVec( const V& x, const V& hv, const V&v, std::ostream &os,
+                             Teuchos::ParmeterList &parlist ) {
+    ignore(x,hv,v,os,parlist);
+  }
+  
+  virtual auto checkHessSym( const V& x, const V& v, const V& w, std::ostream & os,
+                             Teuchos::parameterList& parlist ) {
+    ignore(x,v,w,os,parlist);
+  }             
+
+  virtual auto checkHessSym( const V& x, const V& hv, const V& v, const V& w, 
+                             std::ostream & os, Teuchos::parameterList& parlist ) {
+    ignore(x,hv,v,w,os,parlist);
+  }             
 
 };
 
