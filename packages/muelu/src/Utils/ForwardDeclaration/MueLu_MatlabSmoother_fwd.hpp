@@ -48,7 +48,7 @@
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class MatlabSmoother;;
+  class MatlabSmoother;
 }
 
 #ifndef MUELU_MATLABSMOOTHER_SHORT

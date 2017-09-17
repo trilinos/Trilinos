@@ -858,7 +858,7 @@ namespace MueLu {
 
     if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "matlab")) {
 #ifdef HAVE_MUELU_MATLAB
-      dropFactory = rcp(new SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>());
+      dropFactory = rcp(new SingleLevelMatlabFactory());
       ParameterList socParams  = paramList.sublist("strength-of-connection: params");
       dropFactory->SetParameterList(socParams);
 #else
