@@ -43,12 +43,12 @@ INCLUDE_DIRECTORIES(${DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 # function headers
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/vector)
-INCLUDE_DIRECTORIES(${DIR}
-                    ${DIR}/objective)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp
-                    ${DIR}/objective/*.hpp)
-
+#SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/function)
+#INCLUDE_DIRECTORIES(${DIR}
+#                    ${DIR}/objective)
+#APPEND_GLOB(HEADERS ${DIR}/*.hpp
+#                    ${DIR}/objective/*.hpp)
+ADD_SUBDIRECTORY(function)
 
 
 #IF (TPL_ENABLE_MPI)

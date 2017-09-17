@@ -49,7 +49,7 @@
 
 namespace XROL {
 
-template<class V>
+template<class XPrim, class XDual>
 struct ObjectiveVisitor {
 
 //  virtual void visit( ConcreteObjective_1<V>& obj ) = 0;

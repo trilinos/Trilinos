@@ -50,16 +50,21 @@
 namespace XROL {
 
 
-template<class V> struct ObjectiveVisitor;
+template<class PV, class  DV> struct ObjectiveVisitor;
 
-struct ObjectiveParameters;
+struct ObjectiveParameters{};
 
-template<class V> 
+template<class PV,class DV> class ObjectiveImpl;
+
+template<class XPrim, class XDual=XPrim> 
 struct Objective {
 
 private:
 
-  std::unique_ptr<ObjectiveParameters> param_;
+  std::unique_ptr<ObjectiveParameters>        param_;
+
+  std::unique_ptr<ObjectiveImpl<XPrim,XDual>> pObjImpl_;
+
 
 protected:
 
@@ -69,60 +74,59 @@ protected:
 
 public: 
 
+  using Scalar = element_t<XPrim>;
+  using Real   = magnitude_t<XPrim>;
+
+
   virtual void setParameters( const std::unique_ptr<ObjectiveParameters> &param ) {
     param_ = std::move(param);
   }
 
-  Objective( const std::unique_ptr<ObjectiveParmeters> &param ) 
+  Objective( const std::unique_ptr<ObjectiveParameters> &param ) 
     : param_(std::move(param)) {}
 
   virtual ~Objective() {}
 
-  virtual void accept( ObjectiveVisitor<V>& visitor ) = 0;
+  virtual void accept( ObjectiveVisitor<XPrim,XDual>& visitor ) = 0;
 
   virtual void update( /* args */ ) {}
  
-  virtual auto value( const V& x ) = 0;
+  virtual magnitude_t<XPrim> value( const XPrim& x ) = 0;
    
-  virtual void gradient( V& g, const V& x ) { ignore(g,x); }
-
-  virtual auto dirDeriv( const V& x, const V& d ) { ignore(x,d); }
-
-  virtual void hessVec( V& hv, const V& v, const V& x ) { ignore(hv,v,x); } 
-
-  virtual void invHessVec( V& hv, const V& v, const V& x ) { ignore(hv,v,x); }
-
-  virtual void precond( V& Pv, const V& v, const V& x ) { ignore(Pv,v,x); }
-
-  virtual auto checkGradient( const V& x, const V& d, std::ostream &os,
-                              Teuchos::ParameterList &parlist ) { 
-    ignore(x,d,os,parlist);  
+  virtual void gradient( XDual& g, const XPrim& x, element_t<XPrim>& tol ) { 
+    pObjImpl_->gradient(*this,g,x,tol);
   }
 
-  virtual auto checkGradient( const V& x, const V &g, const V& d, std::ostream &os,
+  virtual magnitude_t<XPrim> dirDeriv( const XPrim& x, const XPrim& d, element_t<XPrim>& tol  ) { 
+    return pObjImpl_->dirDeriv(*this,x,d);
+  }
+
+  virtual void hessVec( XDual& hv, const XPrim& v, const XPrim& x, element_t<XPrim>& tol ) { 
+    pObjImpl_->hessVec(*this,hv,v,x,tol); 
+  } 
+
+  virtual void invHessVec( XPrim& hv, const XDual& v, const XPrim& x, element_t<XPrim>& tol ) { 
+    ignore(hv,v,x);
+  }
+
+  virtual void precond( XPrim& Pv, const XDual& v, const XPrim& x, element_t<XPrim>& tol ) { 
+    ignore(Pv,v,x); 
+  }
+
+  auto checkGradient( const XPrim& x, const XDual &g, const XPrim& d, std::ostream &os,
                               Teuchos::ParameterList &parlist ) {    
-    ignore(x,g,d,os,parlist)
-  }
-
-  virtual auto checkHessVec( const V& x, const V&v, std::ostream &os,
-                             Teuchos::ParmeterList &parlist ) {
-    ignore(x,v,os,parlist);
+    return pObjImpl_->checkGradient(*this,x,g,d,os,parlist); 
   }
 
 
-  virtual auto checkHessVec( const V& x, const V& hv, const V&v, std::ostream &os,
-                             Teuchos::ParmeterList &parlist ) {
-    ignore(x,hv,v,os,parlist);
+  auto checkHessVec( const XPrim& x, const XDual& hv, const XPrim&v, std::ostream &os,
+                             Teuchos::ParameterList &parlist ) {
+    return pObjImpl_->checkHessVec(*this,x,hv,v,os,parlist);
   }
   
-  virtual auto checkHessSym( const V& x, const V& v, const V& w, std::ostream & os,
-                             Teuchos::parameterList& parlist ) {
-    ignore(x,v,w,os,parlist);
-  }             
-
-  virtual auto checkHessSym( const V& x, const V& hv, const V& v, const V& w, 
-                             std::ostream & os, Teuchos::parameterList& parlist ) {
-    ignore(x,hv,v,w,os,parlist);
+  auto checkHessSym( const XPrim& x, const XDual& hv, const XPrim& v, const XDual& w, 
+                             std::ostream & os, Teuchos::ParameterList& parlist ) {
+    return pObjImpl_->checkHessSym(*this,x,hv,v,w,os,parlist);
   }             
 
 };
