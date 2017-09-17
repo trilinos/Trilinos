@@ -89,6 +89,10 @@ inline int omp_get_thread_num () { return 0; }
 # include <mkl.h>
 #endif
 
+#ifdef HAVE_SHYLUHTS_KOKKOSKERNELS
+# include <Kokkos_ArithTraits.hpp>
+#endif
+
 #include "shylu_hts_impl.hpp"
 
 namespace Experimental {
@@ -1179,7 +1183,11 @@ Int partition_ir (const Int n, const Size* const ir, const Int nparts,
 }
 
 template <typename T> inline T& conjugate (T& v) {
+#ifdef HAVE_SHYLUHTS_KOKKOSKERNELS
+  v = Kokkos::Details::ArithTraits<T>::conj(v);
+#else
   v = T(v.real(), -v.imag());
+#endif
   return v;
 }
 template <> inline double& conjugate (double& v) { return v; }
@@ -3709,15 +3717,6 @@ OnDiagTri::solve_spars (const Sclr* b, const Int ldb, Sclr* x, const Int ldx,
 }
 
 template<typename Int, typename Size, typename Sclr>
-inline void Impl<Int, Size, Sclr>::
-SerialBlock::n1Axpy (const Sclr* x, const Int ldx, const Int nrhs,
-                     Sclr* y, const Int ldy) const {
-  if ( ! d_) return;
-  if (ir_) n1Axpy_spars(x + coff_, ldx, nrhs, y + roff_, ldy);
-  else n1Axpy_dense(x + coff_, ldx, nrhs, y + roff_, ldy);
-}
-
-template<typename Int, typename Size, typename Sclr>
 inline void SerialBlock_n1Axpy_spars (
   const Int nr_, const Int nc_, const Size* const ir_, const Int* const jc_,
   const Sclr* const d_, const Sclr* x, const Int ldx, const Int nrhs,
@@ -3762,34 +3761,69 @@ template<> inline void SerialBlock_n1Axpy_spars<MKL_INT, MKL_INT, double> (
 }
 #endif
 
-template<typename Int, typename Size, typename Sclr>
-inline void Impl<Int, Size, Sclr>::SerialBlock::
-n1Axpy_spars (const Sclr* x, const Int ldx, const Int nrhs,
-              Sclr* y, const Int ldy) const {
-  assert(ir_);
-  if (ir_[nr_] == 0) return;
-  SerialBlock_n1Axpy_spars(nr_, nc_, ir_, jc_, d_, x, ldx, nrhs, y, ldy);
-}
-
-template<typename Int, typename Size, typename Sclr>
-inline void Impl<Int, Size, Sclr>::SerialBlock::
-n1Axpy_dense (const Sclr* x, const Int ldx, const Int nrhs,
-              Sclr* y, const Int ldy) const {
-  assert(d_);
-#if defined(HAVE_SHYLUHTS_BLAS) || defined(HAVE_SHYLUHTS_MKL)
-  gemm<Sclr>('t', 'n', nr_, nrhs, nc_, -1, d_, nc_, x, ldx, 1, y, ldy);
-#else
+template<typename Int, typename Sclr>
+inline void SerialBlock_n1Axpy_dense (
+  const Int nr, const Int nc, const Sclr* d, const Sclr* x, const Int ldx,
+  const Int nrhs, Sclr* y, const Int ldy)
+{
   for (Int g = 0; ; ) {
-    for (Int i = 0, k = 0; i < nr_; ++i) {
+    for (Int i = 0, k = 0; i < nr; ++i) {
       Sclr a = 0;
-      for (Int j = 0; j < nc_; ++j, ++k) a += d_[k]*x[j];
+      for (Int j = 0; j < nc; ++j, ++k) a += d[k]*x[j];
       y[i] -= a;
     }
     if (++g == nrhs) break;
     x += ldx;
     y += ldy;
   }
-#endif
+}
+
+#if defined(HAVE_SHYLUHTS_BLAS) || defined(HAVE_SHYLUHTS_MKL)
+template<> inline void SerialBlock_n1Axpy_dense (
+  const blas_int nr, const blas_int nc, const float* d, const float* x,
+  const blas_int ldx, const blas_int nrhs, float* y, const blas_int ldy)
+{ gemm<float>('t', 'n', nr, nrhs, nc, -1, d, nc, x, ldx, 1, y, ldy); }
+
+template<> inline void SerialBlock_n1Axpy_dense (
+  const blas_int nr, const blas_int nc, const double* d, const double* x,
+  const blas_int ldx, const blas_int nrhs, double* y, const blas_int ldy)
+{ gemm<double>('t', 'n', nr, nrhs, nc, -1, d, nc, x, ldx, 1, y, ldy); }
+
+#ifdef HAVE_SHYLUHTS_COMPLEX
+template<> inline void SerialBlock_n1Axpy_dense (
+  const blas_int nr, const blas_int nc, const std::complex<float>* d,
+  const std::complex<float>* x, const blas_int ldx, const blas_int nrhs,
+  std::complex<float>* y, const blas_int ldy)
+{
+  gemm<std::complex<float> >('t', 'n', nr, nrhs, nc, -1, d, nc, x, ldx, 1,
+                             y, ldy);
+}
+
+template<> inline void SerialBlock_n1Axpy_dense (
+  const blas_int nr, const blas_int nc, const std::complex<double>* d,
+  const std::complex<double>* x, const blas_int ldx, const blas_int nrhs,
+  std::complex<double>* y, const blas_int ldy)
+{
+  gemm<std::complex<double> >('t', 'n', nr, nrhs, nc, -1, d, nc, x, ldx, 1,
+                              y, ldy);
+}
+#endif // HAVE_SHYLUHTS_COMPLEX
+#endif // HAVE_SHYLUHTS_BLAS || HAVE_SHYLUHTS_MKL
+
+template<typename Int, typename Size, typename Sclr>
+inline void Impl<Int, Size, Sclr>::
+SerialBlock::n1Axpy (const Sclr* x, const Int ldx, const Int nrhs,
+                     Sclr* y, const Int ldy) const {
+  if ( ! d_) return;
+  if (ir_) {
+    assert(ir_);
+    if (ir_[nr_] == 0) return;
+    SerialBlock_n1Axpy_spars(nr_, nc_, ir_, jc_, d_, x + coff_, ldx, nrhs,
+                             y + roff_, ldy);
+  } else {
+    SerialBlock_n1Axpy_dense(nr_, nc_, d_, x + coff_, ldx, nrhs,
+                             y + roff_, ldy);
+  }
 }
 
 // inside || {}
