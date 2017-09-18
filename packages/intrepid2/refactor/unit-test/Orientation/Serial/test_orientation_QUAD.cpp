@@ -41,20 +41,20 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Test for checking orientation tools for tetrahedral elements.
+    \brief  Test for checking orientation tools for quadrialateral elements.
     \author Created by Mauro Perego
 */
 
 #include "Kokkos_Core.hpp"
 
-#include "test_orientation_TET.hpp"
+#include "test_orientation_QUAD.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
   
-  const int r_val = Intrepid2::Test::OrientationTet<double,Kokkos::Serial>(verbose);
+  const int r_val = Intrepid2::Test::OrientationQuad<double,Kokkos::Serial>(verbose);
 
   Kokkos::finalize();
   return r_val;
