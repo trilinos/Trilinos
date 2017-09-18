@@ -15,6 +15,7 @@ export PATH=/home/vera_env/common_tools/master-20170917-214d0ce/bin:$PATH
 
 export CTEST_DASHBOARD_ROOT=$PWD
 
+env http_proxy= \
 ctest -V -S $DRIVER_SCRIPT_DIR/ctest_linux_mpi_debug_shared_pt_ci_aao.sems.cmake
 
 # ToDo: Put back the simple CI logic based on changed file!
