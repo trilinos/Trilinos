@@ -55,6 +55,7 @@
 #include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_fill.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_gemm.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
 #include "Tpetra_Details_lclDot.hpp"
 #include "Tpetra_Details_Profiling.hpp"
@@ -62,7 +63,6 @@
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
 
 #include "KokkosCompat_View.hpp"
-#include "Kokkos_MV_GEMM.hpp"
 #include "KokkosBlas.hpp"
 #include "KokkosKernels_Utils.hpp"
 #include "Kokkos_Random.hpp"

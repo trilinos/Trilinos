@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact A.M. Bradley (ambradl@sandia.gov) 
-// 
+// Questions? Contact A.M. Bradley (ambradl@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -78,15 +78,10 @@ inline int omp_get_thread_num () { return 0; }
 # include <complex>
 #endif
 #ifdef HAVE_SHYLUHTS_MKL
-# ifdef HAVE_SHYLUHTS_COMPLEX
-#  ifndef MKL_Complex8
-#   define MKL_Complex8 std::complex<float>
-#  endif
-#  ifndef MKL_Complex16
-#   define MKL_Complex16 std::complex<double>
-#  endif
-# endif
 # include <mkl.h>
+# ifdef HAVE_SHYLUHTS_COMPLEX
+#  include <type_traits> // std::is_same, etc.
+# endif // HAVE_SHYLUHTS_COMPLEX
 #endif
 
 #ifdef HAVE_SHYLUHTS_KOKKOSKERNELS
@@ -94,6 +89,8 @@ inline int omp_get_thread_num () { return 0; }
 #endif
 
 #include "shylu_hts_impl.hpp"
+
+
 
 namespace Experimental {
 namespace htsimpl {
@@ -228,13 +225,26 @@ template<> inline void hts_mkl_csrmm<std::complex<float> > (
   char transa = transp ? 'T' : 'N';
   static const char A_descr[6] = {'G', '*', '*', 'C', '*', '*'};
   std::complex<float> alpha(-1, 0), beta(1, 0);
-  for (int k = 0; k < nrhs; ++k)
+
+  static_assert (sizeof (std::complex<float>) == sizeof (MKL_Complex8),
+                 "This code assumes that sizeof(std::complex<float>) == "
+                 "sizeof(MKL_Complex8).");
+
+  const MKL_Complex8* alpha_ptr = const_cast<const MKL_Complex8*> (reinterpret_cast<MKL_Complex8*> (&alpha));
+  const MKL_Complex8* beta_ptr = const_cast<const MKL_Complex8*> (reinterpret_cast<MKL_Complex8*> (&beta));
+  const MKL_Complex8* val = reinterpret_cast<const MKL_Complex8*> (d);
+
+  for (int k = 0; k < nrhs; ++k) {
+    const MKL_Complex8* x_k = reinterpret_cast<const MKL_Complex8*> (x + k*ldx);
+    MKL_Complex8* y_k = reinterpret_cast<MKL_Complex8*>(y + k*ldy);
+
     mkl_ccsrmv(
-      &transa, const_cast<MKL_INT*>(&m), const_cast<MKL_INT*>(&n),
-      &alpha, const_cast<char*>(A_descr), const_cast<std::complex<float>*>(d),
-      const_cast<MKL_INT*>(jc), const_cast<MKL_INT*>(ir),
-      const_cast<MKL_INT*>(ir+1), const_cast<std::complex<float>*>(x + k*ldx),
-      &beta, y + k*ldy);
+      &transa, &m, &n,
+      alpha_ptr, const_cast<const char*>(A_descr), val,
+      jc, ir,
+      ir + 1, x_k,
+      beta_ptr, y_k);
+  }
 }
 
 template<> inline void hts_mkl_csrmm<std::complex<double> > (
@@ -246,13 +256,26 @@ template<> inline void hts_mkl_csrmm<std::complex<double> > (
   char transa = transp ? 'T' : 'N';
   static const char A_descr[6] = {'G', '*', '*', 'C', '*', '*'};
   std::complex<double> alpha(-1, 0), beta(1, 0);
-  for (int k = 0; k < nrhs; ++k)
+
+  static_assert (sizeof (std::complex<double>) == sizeof (MKL_Complex16),
+                 "This code assumes that sizeof(std::complex<double>) == "
+                 "sizeof(MKL_Complex16).");
+
+  const MKL_Complex16* alpha_ptr = const_cast<const MKL_Complex16*> (reinterpret_cast<MKL_Complex16*> (&alpha));
+  const MKL_Complex16* beta_ptr = const_cast<const MKL_Complex16*> (reinterpret_cast<MKL_Complex16*> (&beta));
+  const MKL_Complex16* val = reinterpret_cast<const MKL_Complex16*> (d);
+
+  for (int k = 0; k < nrhs; ++k) {
+    const MKL_Complex16* x_k = reinterpret_cast<const MKL_Complex16*> (x + k*ldx);
+    MKL_Complex16* y_k = reinterpret_cast<MKL_Complex16*>(y + k*ldy);
+
     mkl_zcsrmv(
-      &transa, const_cast<MKL_INT*>(&m), const_cast<MKL_INT*>(&n),
-      &alpha, const_cast<char*>(A_descr), const_cast<std::complex<double>*>(d),
-      const_cast<MKL_INT*>(jc), const_cast<MKL_INT*>(ir),
-      const_cast<MKL_INT*>(ir+1), const_cast<std::complex<double>*>(x + k*ldx),
-      &beta, y + k*ldy);
+      &transa, &m, &n,
+      alpha_ptr, const_cast<const char*>(A_descr), val,
+      jc, ir,
+      ir+1, x_k,
+      beta_ptr, y_k);
+  }
 }
 #endif
 #endif
@@ -904,7 +927,7 @@ find_row_level_sets_Lcrs (const ConstCrsMatrix& L, const Int sns,
 #else
   const Int max_level = locrsrow_schedule_serial(L, sns, w);
 #endif
- 
+
   // Count level set sizes.
   Array<Int> n(max_level+1, 0);
   for (size_t i = 0; i < w.size(); ++i)
@@ -959,7 +982,7 @@ find_col_level_sets_Ucrs (const ConstCrsMatrix& U, const Int sns,
 
   Array<Int> w;
   const Int max_level = upcrscol_schedule_serial(U, sns, w);
- 
+
   // Count level set sizes.
   Array<Int> n(max_level+1, 0);
   for (size_t i = 0; i < w.size(); ++i)
@@ -1099,7 +1122,7 @@ get_idxs (const Int n, const LevelSetter& lstr, Array<Int>& lsis,
 
   dpis.optclear_and_resize(n - lsis.size());
   for (size_t i = 0, dk = 0; i < dpisb.size(); ++i)
-    if (dpisb[i]) dpis[dk++] = i;  
+    if (dpisb[i]) dpis[dk++] = i;
 }
 
 template<typename Int, typename Size, typename Sclr>
@@ -1487,7 +1510,7 @@ smooth_spikes (const Array<Int>& rcnt, Array<Int>& p, Array<Size>& nnz,
       d = -1;
       s = std::max(nnz[s_i-1] + rnnz, nnz[s_i] - rnnz);
       if (s >= s_val) break;
-      ++p[s_i];      
+      ++p[s_i];
     } else {
       const Int
         idx_l = p[s_i] - p[0],
@@ -1628,7 +1651,7 @@ TMatrix::init_metadata (const CrsMatrix& A, Int r0, Int c0, Int nr, Int nc,
   clear();
   nr_ = nr;
   tid_os_ = tid_offset;
-  
+
   Box b;
   const Int nnz = crop_matrix(A, Box(r0, c0, nr, nc), b);
   const Int roff = b.r0 - r0;
@@ -2316,7 +2339,7 @@ void Impl<Int, Size, Sclr>::build_recursive_tri_r (
  *     | |\
  *     |1|2\
  *     |_|__\
- *   
+ *
  * where block 1 has mvp_block_nc columns, the top-left corner of block 1 is at
  * (r,c), and block 2 is nxn. Block 2 is recursively partitioned.
  *   b is returned in solution order.
@@ -2735,7 +2758,7 @@ LevelSetTri::init (const CrsMatrix& T, const Int, const Int,
   do {
     const int tid = omp_get_thread_num();
     Thread& t = t_[tid];
-    
+
     // Allocate and first touch.
     try {
       t.p.optclear_and_resize_ft(nlvls_);
@@ -3356,7 +3379,7 @@ void partition_irt (const Int n, const Size* const irt, const Size nnz,
   Int i0 = 1, j0 = 1;
   start.optclear_and_resize(nseg);
   start[0] = 0;
-  
+
   for (Int i = i0; i < nseg; ++i) {
     const double d = ((double) i / nseg)*nnz;
     Int j = static_cast<Int>(std::upper_bound(irt + j0, irt + n - 1, d) - irt);
@@ -3524,7 +3547,7 @@ TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
 
     // Find level sets.
     LevelSetter lstr;
-    const Int lstr_threshold = o.lset_min_size * 
+    const Int lstr_threshold = o.lset_min_size *
       (o.lset_min_size_scale_with_nthreads ? nthreads_ : 1);
     lstr.init(*T, lstr_threshold, is_lo_, o);
 

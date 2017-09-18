@@ -44,7 +44,7 @@
 
 #include "BelosTpetraAdapter.hpp"
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
-#include "Kokkos_MV_GEMM.hpp"
+#include "Tpetra_Details_gemm.hpp"
 
 #ifdef HAVE_BELOS_TSQR
 #  include <Tpetra_TsqrAdaptor_MP_Vector.hpp>
@@ -370,8 +370,8 @@ namespace Belos {
       Kokkos::deep_copy(B_view_dev, B_view_host);
 
       // Do local multiply
-      Kokkos::DeviceGEMM<dot_type,execution_space>::GEMM(
-        Teuchos::NO_TRANS, Teuchos::NO_TRANS,
+      ::Tpetra::Details::Blas::gemm (
+        'N', 'N',
         alpha, flat_A_view, B_view_dev, beta, flat_C_view);
 
       // Copy back to C if we made a copy
@@ -477,8 +477,8 @@ namespace Belos {
       c_view_type C_view_dev( C_1d_view_dev.ptr_on_device(), strideC, numColsC);
 
       // Do local multiply
-      Kokkos::DeviceGEMM<dot_type,execution_space>::GEMM(
-        Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,
+      ::Tpetra::Details::Blas::gemm(
+        'C', 'N',
         alpha, flat_A_view, flat_B_view,
         Kokkos::Details::ArithTraits<dot_type>::zero(),
         C_view_dev);
