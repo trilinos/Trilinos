@@ -203,10 +203,18 @@ namespace Intrepid2 {
           // edge hcurl is hgrad with gauss legendre points
           switch (subcellDim) {
           case 1: {
-            INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
+            //TODO: Hex, QUAD, TET and TRI element should have the same 1d basis
+            if ((cellBasisName.find("HEX") != std::string::npos) || (cellBasisName.find("QUAD") != std::string::npos)) {
+              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
                                           std::logic_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
                                           "subcellBasis function space (1d) is not consistent to cellBasis.");
+            } else if ((cellBasisName.find("TET") != std::string::npos) || (cellBasisName.find("TRI") != std::string::npos)) {
+              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("L2") == std::string::npos,
+                                          std::logic_error,
+                                          ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
+                                          "subcellBasis function space (1d) is not consistent to cellBasis.");
+            }
             break;
           }
           case 2: {
