@@ -174,60 +174,101 @@ sortCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   }
 }
 
+namespace Impl {
+
+template<class RowOffsetsType, class ColumnIndicesType, class ValuesType>
+class SortCrsEntries {
+private:
+  typedef typename ColumnIndicesType::non_const_value_type ordinal_type;
+  typedef typename ValuesType::non_const_value_type scalar_type;
+
+public:
+  SortCrsEntries (const RowOffsetsType& ptr,
+                  const ColumnIndicesType& ind,
+                  const ValuesType& val) :
+    ptr_ (ptr),
+    ind_ (ind),
+    val_ (val)
+  {
+    static_assert (std::is_signed<ordinal_type>::value, "The type of each "
+                   "column index -- that is, the type of each entry of ind "
+                   "-- must be signed in order for this functor to work.");
+  }
+
+  KOKKOS_FUNCTION void operator() (const size_t i) const
+  {
+    const size_t nnz = ind_.dimension_0 ();
+    const size_t start = ptr_(i);
+
+    if (start < nnz) {
+      const size_t NumEntries = ptr_(i+1) - start;
+
+      const ordinal_type n = static_cast<ordinal_type> (NumEntries);
+      ordinal_type m = 1;
+      while (m<n) m = m*3+1;
+      m /= 3;
+
+      while (m > 0) {
+        ordinal_type max = n - m;
+        for (ordinal_type j = 0; j < max; j++) {
+          for (ordinal_type k = j; k >= 0; k -= m) {
+            const size_t sk = start+k;
+            if (ind_(sk+m) >= ind_(sk)) {
+              break;
+            }
+            const scalar_type dtemp = val_(sk+m);
+            val_(sk+m)   = val_(sk);
+            val_(sk)     = dtemp;
+            const ordinal_type itemp = ind_(sk+m);
+            ind_(sk+m) = ind_(sk);
+            ind_(sk)   = itemp;
+          }
+        }
+        m = m/3;
+      }
+    }
+  }
+
+  static void
+  sortCrsEntries (const RowOffsetsType& ptr,
+                  const ColumnIndicesType& ind,
+                  const ValuesType& val)
+  {
+    // For each row, sort column entries from smallest to largest.
+    // Use shell sort. Stable sort so it is fast if indices are already sorted.
+    // Code copied from  Epetra_CrsMatrix::SortEntries()
+    // NOTE: This should not be taken as a particularly efficient way to sort
+    // rows of matrices in parallel.  But it is correct, so that's something.
+    if (ptr.dimension_0 () == 0) {
+      return; // no rows, so nothing to sort
+    }
+    const size_t NumRows = ptr.dimension_0 () - 1;
+
+    typedef size_t index_type; // what this function was using; not my choice
+    typedef typename ValuesType::execution_space execution_space;
+    // Specify RangePolicy explicitly, in order to use correct execution
+    // space.  See #1345.
+    typedef Kokkos::RangePolicy<execution_space, index_type> range_type;
+    Kokkos::parallel_for ("sortCrsEntries", range_type (0, NumRows),
+      SortCrsEntries (ptr, ind, val));
+  }
+
+private:
+  RowOffsetsType ptr_;
+  ColumnIndicesType ind_;
+  ValuesType val_;
+};
+
+} // namespace Impl
+
 template<typename rowptr_array_type, typename colind_array_type, typename vals_array_type>
 void
 sortCrsEntries (const rowptr_array_type& CRS_rowptr,
                 const colind_array_type& CRS_colind,
                 const vals_array_type& CRS_vals)
 {
-  // For each row, sort column entries from smallest to largest.
-  // Use shell sort. Stable sort so it is fast if indices are already sorted.
-  // Code copied from  Epetra_CrsMatrix::SortEntries()
-  // NOTE: This should not be taken as a particularly efficient way to sort
-  // rows of matrices in parallel.  But it is correct, so that's something.
-  if (CRS_rowptr.dimension_0 () == 0) {
-    return; // no rows, so nothing to sort
-  }
-  const size_t NumRows = CRS_rowptr.dimension_0() - 1;
-  const size_t nnz = CRS_colind.dimension_0();
-  typedef typename colind_array_type::traits::non_const_value_type Ordinal;
-  typedef typename vals_array_type::traits::non_const_value_type Scalar;
-
-  typedef size_t index_type; // what this function was using; not my choice
-  typedef typename vals_array_type::execution_space execution_space;
-  // Specify RangePolicy explicitly, in order to use correct execution
-  // space.  See #1345.
-  typedef Kokkos::RangePolicy<execution_space, index_type> range_type;
-
-  Kokkos::parallel_for (range_type (0, NumRows), KOKKOS_LAMBDA (const size_t i) {
-      size_t start=CRS_rowptr(i);
-      if(start < nnz) {
-        size_t NumEntries = CRS_rowptr(i+1) - start;
-
-        Ordinal n = (Ordinal) NumEntries;
-        Ordinal m = 1;
-        while (m<n) m = m*3+1;
-        m /= 3;
-
-        while(m > 0) {
-          Ordinal max = n - m;
-          for(Ordinal j = 0; j < max; j++) {
-            for(Ordinal k = j; k >= 0; k-=m) {
-              size_t sk = start+k;
-              if(CRS_colind(sk+m) >= CRS_colind(sk))
-                break;
-              Scalar dtemp     = CRS_vals(sk+m);
-              CRS_vals(sk+m)   = CRS_vals(sk);
-              CRS_vals(sk)     = dtemp;
-              Ordinal itemp    = CRS_colind(sk+m);
-              CRS_colind(sk+m) = CRS_colind(sk);
-              CRS_colind(sk)   = itemp;
-            }
-          }
-          m = m/3;
-        }
-      }
-    });
+  Impl::SortCrsEntries<rowptr_array_type, colind_array_type,
+    vals_array_type>::sortCrsEntries (CRS_rowptr, CRS_colind, CRS_vals);
 }
 
 // Note: This should get merged with the other Tpetra sort routines eventually.
