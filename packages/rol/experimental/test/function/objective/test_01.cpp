@@ -41,44 +41,73 @@
 // ************************************************************************
 // @HEADER
 
-#pragma once
 
-// C++ Includes
-#include <algorithm>
-#include <complex>
-#include <exception>
-#include <iostream>
-#include <iomanip>
-#include <limits>
-#include <map>
-#include <memory>
-#include <random>
-#include <tuple>
-#include <type_traits>
-#include <vector>
+/*! \file  test_01.cpp
+    \brief Test XROL::Objective interface
+*/
 
+#include "XROL.hpp"
 
-// Teuchos Includes
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_ParameterList.hpp"
-
-// ROL Includes
 #include "ROL_Types.hpp"
 
-// Utility
-#include "XROL_Defines.hpp"
-#include "XROL_ElementTraits.hpp"
-#include "XROL_Exception.hpp"
-#include "XROL_ElementwiseFunction.hpp"
-#include "XROL_Output.hpp"
+#include "ZakharovObjective.hpp"
 
-// Vector
-#include "XROL_Vector.hpp"
-#include "XROL_StdVector.hpp"
-#include "XROL_CheckVector.hpp"
+#include <iostream>
 
-// Objective
-#include "XROL_Objective.hpp"
-#include "XROL_Objective_ExtendedInterface.hpp"
-#include "XROL_TestObjective.hpp"
+int main( int argc, char *argv[] ) {
+
+  using namespace std;
+  using V        = vector<double>;
+  using RealT    = XROL::magnitude_t<V>;
+  using IndexT   = XROL::index_t<V>;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
+  default_random_engine generator;
+  uniform_real_distribution<> dist(-1.0,1.0);
+  
+  ostream *os;
+
+  IndexT dim    = 10;
+  int errorFlag = 0;
+
+  if( argc > 1 ) {
+    os = &cout;
+  }
+  else {
+    Teuchos::oblackholestream bhs;
+    os = &bhs;
+  }
+
+  try {
+  
+    Teuchos::ParameterList parlist;
+
+    // Create and randomize three vectors
+    V x(dim);    XROL::randomize(generator,dist,x);
+    V g(dim);    XROL::randomize(generator,dist,g);
+    V v(dim);    XROL::randomize(generator,dist,v);
+    V w(dim);    XROL::randomize(generator,dist,w);
+
+    auto k = make_unique<V>(dim);
+
+    for( XROL::index_t<V> i=0; i<k->size(); ++i ) {
+      (*k)[i] = 1.0*(1+i);
+    }
+
+    auto obj = Zakharov::make_objective(std::move(k));
+ 
+    obj->checkGradient(x,g,v,*os,parlist);
+    
+
+  }
+  catch( logic_error err ) {
+    *os << err.what() << endl;
+    errorFlag = -1000;
+  }; // end try
+
+  cout << "End Result: TEST " << ( errorFlag ? "FAILED" : "PASSED" ) << endl;
+  
+
+  return 0;
+}

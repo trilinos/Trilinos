@@ -46,64 +46,86 @@
 
 #include "XROL.hpp"
 
+namespace Zakharov {
 
-namespace XROL {
+template<class V> 
+class Objective : public XROL::TestObjective<V,V> {
+public:
 
-template<class A, class B> using pair = std::pair<A,B>;
-template<class T>          using ptr  = std::shared_ptr<T>;
+  using Real = XROL::element_t<V>;
 
+  Objective(std::unique_ptr<V> k ) : 
+    XROL::TestObjective<V,V>(), k_(std::move(k)) {
 
-template<class Sim, class Opt>
-using VSO = pair<ptr<Sim>,ptr<Opt>>;
-
-template<class U, class Z>
-struct VectorCreationTraits<VSO<U,Z>> {
-
-  using V = VSO<U,Z>;
-
-  
-
-  static auto clone( const V& x ) {
-
-    auto up = ST::clone(*std::get<0>(x));
-    auto zp = OT::clone(*std::get<1>(x));
-              
-    return std::make_shared<V>(std::make_pair(up,zp));
+    auto x0  = XROL::clone(*k);
+    auto sol = XROL::clone(*k);
+    XROL::fill(*x0,3.0);
+    XROL::zero(*sol);
+    std::vector<std::unique_ptr<V>> sol_set(1);
+    sol_set[0] = std::move(sol);
+    this->setInitialGuess(std::move(x0));
+    this->setSolutions(sol_set);
   }
 
-  // TODO: Implement basis
+  Real value( const V& x, Real& tol ) {
+    auto xdotx = XROL::dot(x,x);
+    auto kdotx = XROL::dot(*k_,x);
+    return xdotx + std::pow(kdotx,2)/4.0 + std::pow(kdotx,4)/16.0;
+  }
+
+  void gradient( V& g, const V& x, Real& tol ) {
+    auto kdotx = XROL::dot(x,*k_);
+    auto coeff = 0.25*(2.0*kdotx+std::pow(kdotx,3.0));
+    XROL::set(g,x);
+    XROL::scale(g,2.0);
+    XROL::axpy(g,coeff,*k_);
+  }
+
+  Real dirDeriv(const V& x, const V& d, Real& tol ) {
+    auto kdotd = XROL::dot(d,*k_);
+    auto kdotx = XROL::dot(x,*k_);
+    auto xdotd = XROL::dot(x,d);
+
+    auto coeff = 0.25*(2.0*kdotx+std::pow(kdotx,3.0));
+
+    return 2*xdotd + coeff*kdotd;
+ 
+  }
+
+  void hessVec( V& hv, const V& v, const V& x, Real& tol ) {
+    auto kdotx = XROL::dot(x,*k_);
+    auto kdotv = XROL::dot(v,*k_);
+    auto kdotk = XROL::dot(*k_,*k_);
+    auto coeff = -kdotv/(2.0*kdotk+16.0/(2.0+3.0*std::pow(kdotx,2.0)));
+
+    XROL::set(hv,v);
+    XROL::scale(hv,2.0);
+    XROL::axpy(hv,coeff,*k_);
+  }
+
+  void invHessVec( V& ihv, const V& v, const V& x, Real& tol ) {
+
+    auto kdotv = XROL::dot(*k_,v);
+    auto kdotx = XROL::dot(*k_,x);
+    auto kdotk = XROL::dot(*k_,*k_);
+    auto coeff = -kdotv/(2.0*kdotk+16.0/(2.0+3.0*std::pow(kdotx,2.0)));
+
+    XROL::set(ihv,v);
+    XROL::scale(ihv,0.5);
+    XROL::axpy(ihv,coeff,*k_);
+  }
+
+private:
+  std::unique_ptr<V> k_;
+
 };
 
-  
-template<class U, class Z>
-struct VectorSpaceTraits<VSO<U,Z>> {
-
-  using ST = VectorTraits<U>;
-  using OT = VectorTraits<Z>;
-
-  
-
-  static auto dimension( const V& x ) {
-    auto up = std::get<0>(x);
-    auto zp = std::get<1>(x);
-    return ST::dimension(*up) + OT::dimension(*zp);
-  }
-
-  static void dual( V& xdual, const V& x ) {
-    auto up  = std::get<0>(x);
-    auto zp  = std::get<1>(x);
-    auto udp = std::get<0>(xdual);
-    auto zdp = std::get<1>(xdual);
-
-    ST::dual(*udp,*up);
-    OT::dual(*udp,*up);
-    
-  }
-
-};
+template<class V>
+auto make_objective( std::unique_ptr<V> k ) {
+  return std::move(std::make_unique<Objective<V>>(std::move(k)));  
+}
 
 
 
-
-} // namespace XROL
+} // namespace Zakharov
 

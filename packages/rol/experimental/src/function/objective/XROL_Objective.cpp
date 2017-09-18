@@ -53,23 +53,25 @@ namespace XROL {
 */
 
 template<class XPrim, class XDual> 
-class ObjectiveImpl {  
+class Objective<XPrim,XDual>::Impl final : public Objective<XPrim,XDual> {  
 private:
 
   friend class Objective<XPrim,XDual>;
 
-  using Obj     = Objective<XPrim,XDual>;
-  using Real    = magnitude_t<XPrim>;
-  using Scalar  = element_t<XPrim>;
+  using Obj    = Objective<XPrim,XDual>;
+  using Real   = magnitude_t<XPrim>;
+  using Scalar = element_t<XPrim>;
 
 
   Real eps_;
   Real sqrt_eps_;
  
-  ObjectiveImpl() : eps_(ROL::ROL_EPSILON<Real>()), 
-                    sqrt_eps_(std::sqrt(ROL::ROL_EPSILON<Real>())) { }
+  Impl() : eps_(ROL::ROL_EPSILON<Real>()), 
+           sqrt_eps_(std::sqrt(ROL::ROL_EPSILON<Real>())) { }
 
-  virtual ~ObjectiveImpl(){};
+  virtual ~Impl(){};
+
+  auto value( const XPrim& x, Real &tol ) { ignore(x,tol); }
 
   auto dirDeriv( Obj& obj, const XPrim& x, const XPrim& d, Real& tol ) {
     auto ftol = sqrt_eps_;

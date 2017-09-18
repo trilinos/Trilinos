@@ -108,6 +108,10 @@ template<class V> void plus( V& x, const V& y ) {}
 */
 template<class V> void scale( V& x, const element_t<V> alpha ) {}
 
+/** \fn    fill
+    \brief Set every element to alpha,  \f$ x leftarrow \alpha e \f$
+*/
+template<class V> void fill( V& x, const element_t<V> alpha ) {}
 
 /** \fn    set
     \brief Set vector x equal to y,     \f$ x \leftarrow y
@@ -195,6 +199,7 @@ auto eval_function_and_reduce( const R& r, const F& f, const V, const Vs&... vs 
 template<class Generator, class Distribution, class V>
 void randomize( Generator& g, Distribution& d, V &v ) {
 }
+
 
 
 

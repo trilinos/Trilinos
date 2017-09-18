@@ -50,20 +50,36 @@
 namespace XROL {
 
 
-template<class PV, class  DV> struct ObjectiveVisitor;
+/** \file  XROL_Objective.hpp
+    \brief Defines the interfaces for objective functions 
+ */
 
+// Visitor type object that allows access to functionality not found
+// in the base class
+template<class PV, class  DV> struct Objective_ExtendedInterface;
+
+// Do-nothing general type
 struct ObjectiveParameters{};
 
-template<class PV,class DV> class ObjectiveImpl;
 
+
+
+/** \class XROL::Objective
+    \brief Basic abstract objective function with default implementations
+           based on finite differences 
+*/
 template<class XPrim, class XDual=XPrim> 
-struct Objective {
+class Objective {
 
 private:
 
-  std::unique_ptr<ObjectiveParameters>        param_;
+  // Class that implements nonvirtual and default virtual functions
+  class Impl;
 
-  std::unique_ptr<ObjectiveImpl<XPrim,XDual>> pObjImpl_;
+  std::unique_ptr<Impl> pObjImpl_; //!< Default finite difference
+                                                //!< implementations
+
+  std::unique_ptr<ObjectiveParameters> param_; //!< Objective-specific parameters
 
 
 protected:
@@ -77,21 +93,29 @@ public:
   using Scalar = element_t<XPrim>;
   using Real   = magnitude_t<XPrim>;
 
-
-  virtual void setParameters( const std::unique_ptr<ObjectiveParameters> &param ) {
-    param_ = std::move(param);
+  // Default no parameter case 
+  Objective() : param_(std::make_unique<ObjectiveParameters>) {
+    
   }
 
-  Objective( const std::unique_ptr<ObjectiveParameters> &param ) 
+  Objective( std::unique_ptr<ObjectiveParameters> param ) 
     : param_(std::move(param)) {}
 
   virtual ~Objective() {}
 
-  virtual void accept( ObjectiveVisitor<XPrim,XDual>& visitor ) = 0;
 
-  virtual void update( /* args */ ) {}
- 
-  virtual magnitude_t<XPrim> value( const XPrim& x ) = 0;
+  virtual void setParameters( std::unique_ptr<ObjectiveParameters> param ) {
+    param_ = std::move(param);
+  }
+
+
+  virtual void access( Objective_ExtendedInterface<XPrim,XDual>& objEI ) {
+    ignore(objEI);
+  };
+
+  virtual void update( const XPrim& x ) { ignore(x); }
+
+  virtual magnitude_t<XPrim> value( const XPrim& x, Real& tol ) = 0;
    
   virtual void gradient( XDual& g, const XPrim& x, element_t<XPrim>& tol ) { 
     pObjImpl_->gradient(*this,g,x,tol);

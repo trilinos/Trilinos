@@ -63,16 +63,16 @@ struct ElementTraits<std::vector<T>> {
 
 template<class T>
 auto clone( const std::vector<T>& v ) {
-  return std::make_shared<std::vector<T>>( v.size() ); 
+  return std::move(std::make_unique<std::vector<T>>( v.size() )); 
 }
 
 template<class T>
 auto basis( const std::vector<T>& v, 
             typename std::vector<T>::size_type i ) { 
-  auto b = std::make_shared<std::vector<T>>( v.size() ); 
+  auto b = std::make_unique<std::vector<T>>( v.size() ); 
   zero(*b);
   (*b)[i] = T(1.0);
-  return b;
+  return std::move(b);
 }
 
 template<class T>
@@ -96,6 +96,11 @@ void set( std::vector<T>& x, const std::vector<T>& y ) {
 template<class T> 
 void scale( std::vector<T>& x, const T alpha ) {
   for( auto &e : x ) e *= alpha;
+}
+
+template<class T> 
+void fill( std::vector<T>& x, const T alpha ) {
+  for( auto &e : x ) e = alpha;
 }
 
 template<class T>

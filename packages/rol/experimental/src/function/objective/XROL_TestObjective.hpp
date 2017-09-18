@@ -1,3 +1,4 @@
+
 // @HEADER
 // ************************************************************************
 //
@@ -43,42 +44,52 @@
 
 #pragma once
 
-// C++ Includes
-#include <algorithm>
-#include <complex>
-#include <exception>
-#include <iostream>
-#include <iomanip>
-#include <limits>
-#include <map>
-#include <memory>
-#include <random>
-#include <tuple>
-#include <type_traits>
-#include <vector>
+#include "XROL.hpp"
 
 
-// Teuchos Includes
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_ParameterList.hpp"
+namespace XROL {
 
-// ROL Includes
-#include "ROL_Types.hpp"
+/** \class XROL::TestObjective
+    \brief A test objective has an initial guess and a solution set
+*/
 
-// Utility
-#include "XROL_Defines.hpp"
-#include "XROL_ElementTraits.hpp"
-#include "XROL_Exception.hpp"
-#include "XROL_ElementwiseFunction.hpp"
-#include "XROL_Output.hpp"
+template<class XPrim, class XDual>
+class TestObjective : public Objective<XPrim,XDual> {
+ 
+  template<class U> using unique_ptr = std::unique_ptr<U>;
+  template<class U> using vector = std::vector<U>;
 
-// Vector
-#include "XROL_Vector.hpp"
-#include "XROL_StdVector.hpp"
-#include "XROL_CheckVector.hpp"
+public:
 
-// Objective
-#include "XROL_Objective.hpp"
-#include "XROL_Objective_ExtendedInterface.hpp"
-#include "XROL_TestObjective.hpp"
+  TestObjective() : Objective<XPrim,XDual>() {}
+
+  TestObjective( unique_ptr<ObjectiveParameters> param ) 
+    : Objective<XPrim,XDual>() {}
+
+  virtual ~TestObjective() {}
+
+  auto getInitialGuess() { 
+    return std::move(x0_);
+  }
+
+  auto getSolutions() { 
+    return std::move(sol_);
+  } 
+
+protected:
+ 
+  void setInitialGuess( unique_ptr<const XPrim> x0 ) {
+    x0_ = std::move(x0);
+  }
+ 
+  void setSolutions( vector<unique_ptr<const XPrim>> sol ) {
+    sol_ = std::move(sol);
+  }
+
+  unique_ptr<const XPrim>         x0_;
+  vector<unique_ptr<const XPrim>> sol_;
+
+};
+
+} // namespace XROL
+
