@@ -490,7 +490,7 @@ namespace Intrepid2 {
   Orientation::setFaceOrientation(const ordinal_type numFace, const ordinal_type faceOrt[]) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_ABORT( !( 4 <= numFace && numFace <= 6 ), 
-                              ">>> ERROR (Intrepid::Orientation::setEdgeOrientation): "
+                              ">>> ERROR (Intrepid::Orientation::setFaceOrientation): "
                               "Invalid numFace (4--6)");
 #endif
     _faceOrt = 0;

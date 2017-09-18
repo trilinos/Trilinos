@@ -165,13 +165,9 @@ namespace Intrepid2 {
       const shards::CellTopology cellTopo = basis->getBaseCellTopology();
       
       const ordinal_type 
-        numVerts = cellTopo.getVertexCount(), 
+        numVerts = cellTopo.getVertexCount()*ordinal_type(basis->getDofCount(0, 0) > 0),
         numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0),
         numFaces = cellTopo.getFaceCount();
-
-      const ordinal_type intrDim = ( numEdges == 0 ? 1 : 
-                                     numFaces == 0 ? 2 : 
-                                     /**/            3 );
       
       for (auto cell=0;cell<numCells;++cell) {
         auto out = Kokkos::subview(output, cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -188,11 +184,12 @@ namespace Intrepid2 {
         
         // interior copy
         {
-          const ordinal_type ordIntr = (static_cast<size_type>(intrDim) < tagToOrdinal.dimension(0) ? tagToOrdinal(intrDim, 0, 0) : -1);
+          const ordinal_type cellDim = cellTopo.getDimension();
+          const ordinal_type ordIntr = (static_cast<size_type>(cellDim) < tagToOrdinal.dimension(0) ? tagToOrdinal(cellDim, 0, 0) : -1);
           if (ordIntr != -1) {
             const ordinal_type ndofIntr = ordinalToTag(ordIntr, 3);
             for (ordinal_type i=0;i<ndofIntr;++i) {
-              const ordinal_type ii = tagToOrdinal(intrDim, 0, i);
+              const ordinal_type ii = tagToOrdinal(cellDim, 0, i);
               for (ordinal_type j=0;j<numPoints;++j)
                 for (ordinal_type k=0;k<dimBasis;++k)
                   out(ii, j, k) = in(ii, j, k);
