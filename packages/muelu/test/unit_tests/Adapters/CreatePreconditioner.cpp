@@ -76,6 +76,13 @@
 
 namespace MueLuTests {
 
+// Ignore all deprecated declarations
+// We could have done that for every call to Create[ET]petraPreconditioner, but
+// it's a pain, there are 25+ of those.
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(PetraOperator, CreatePreconditioner, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include "MueLu_UseShortNames.hpp"
@@ -650,6 +657,9 @@ namespace MueLuTests {
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::InvalidArgument, "Unknown Xpetra lib");
     }
   }
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(PetraOperator, CreatePreconditioner, Scalar, LO, GO, Node) \
