@@ -57,6 +57,7 @@
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include <algorithm>
+#include <type_traits>
 #include "Teuchos_FancyOStream.hpp"
 
 #ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
@@ -1155,7 +1156,15 @@ struct EntryCountingFunctor
     auto Arowlen = Arowptrs(i + 1) - Arowstart;
     auto Browstart = Browptrs(i);
     auto Browlen = Browptrs(i + 1) - Browstart;
-    while(ai < Arowlen && bi < Browlen)
+
+    // Ordinal and the type of Arowlen (and Browlen) might not have
+    // the same sign.  In order to avoid build warnings about signed /
+    // unsigned comparisons at the while loop below, we cast to the
+    // "common type" of the two values before comparing them.
+    typedef typename std::common_type<decltype (Arowlen), Ordinal>::type
+      common_type;
+    while (static_cast<common_type> (ai) < static_cast<common_type> (Arowlen) &&
+           static_cast<common_type> (bi) < static_cast<common_type> (Browlen))
     {
       //have an entry in C's row
       numEntries++;
@@ -1197,7 +1206,15 @@ struct SumFunctor
     Ordinal ai = 0;
     Ordinal bi = 0;
     Ordinal numInserted = 0;
-    while(ai < Arowlen && bi < Browlen)
+
+    // Ordinal and the type of Arowlen (and Browlen) might not have
+    // the same sign.  In order to avoid build warnings about signed /
+    // unsigned comparisons at the while loop below, we cast to the
+    // "common type" of the two values before comparing them.
+    typedef typename std::common_type<decltype (Arowlen), Ordinal>::type
+      common_type;
+    while (static_cast<common_type> (ai) < static_cast<common_type> (Arowlen) &&
+           static_cast<common_type> (bi) < static_cast<common_type> (Browlen))
     {
       Ordinal Acol = Acolinds(Arowstart + ai);
       Ordinal Bcol = Bcolinds(Browstart + bi);
@@ -1218,13 +1235,13 @@ struct SumFunctor
       Ccolinds(CrowStart + numInserted) = Ccol;
       numInserted++;
     }
-    for(; ai < Arowlen; ai++)
+    for(; static_cast<common_type> (ai) < static_cast<common_type> (Arowlen); ai++)
     {
       Cvals(CrowStart + numInserted) = scalarA * Avals(Arowstart + ai);
       Ccolinds(CrowStart + numInserted) = Acolinds(Arowstart + ai);
       numInserted++;
     }
-    for(; bi < Browlen; bi++)
+    for(; static_cast<common_type> (bi) < static_cast<common_type> (Browlen); bi++)
     {
       Cvals(CrowStart + numInserted) = scalarB * Bvals(Browstart + bi);
       Ccolinds(CrowStart + numInserted) = Bcolinds(Browstart + bi);
@@ -1435,13 +1452,20 @@ struct UnmergedSumFunctor
     auto arowlen = Arowptrs(i + 1) - arowstart;
     auto browstart = Browptrs(i);
     auto browlen = Browptrs(i + 1) - browstart;
-    for(Ordinal j = 0; j < arowlen; j++)
+
+    // Ordinal and the type of arowlen (and browlen) might not have
+    // the same sign.  In order to avoid build warnings about signed /
+    // unsigned comparisons at the for loops below, we cast to the
+    // "common type" of the two values before comparing them.
+    typedef typename std::common_type<decltype (arowlen), Ordinal>::type
+      common_type;
+    for(Ordinal j = 0; static_cast<common_type> (j) < static_cast<common_type> (arowlen); j++)
     {
       CvalsOver(rowStart + inserted) = scalarA * Avals(arowstart + j);
       CcolindsOver(rowStart + inserted) = Acolinds(arowstart + j);
       inserted++;
     }
-    for(Ordinal j = 0; j < browlen; j++)
+    for(Ordinal j = 0; static_cast<common_type> (j) < static_cast<common_type> (browlen); j++)
     {
       CvalsOver(rowStart + inserted) = scalarB * Bvals(browstart + j);
       CcolindsOver(rowStart + inserted) = Bcolinds(browstart + j);

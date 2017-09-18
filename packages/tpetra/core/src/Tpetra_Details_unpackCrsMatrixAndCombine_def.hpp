@@ -420,9 +420,11 @@ public:
   typedef Kokkos::View<const size_t*, BDT> num_packets_per_lid_type;
   typedef Kokkos::View<const size_t*, DT> offsets_type;
   typedef Kokkos::View<const char*, BDT> input_buffer_type;
+  // This needs to be public, since it appears in the argument list of
+  // public methods (see below).  Otherwise, build errors may happen.
+  typedef size_t value_type;
 
 private:
-  typedef size_t value_type;
   typedef Kokkos::pair<size_t,size_t> slice;
 
   num_packets_per_lid_type num_packets_per_lid;
