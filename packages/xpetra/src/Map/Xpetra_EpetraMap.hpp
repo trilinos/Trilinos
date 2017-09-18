@@ -457,7 +457,7 @@ namespace Xpetra {
       if (numGlobalElements == GSTI) {
         numGlobalElements = global_sum;}
 
-      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(static_cast<GlobalOrdinal>(numGlobalElements), numLocalElements, 1, indexBase, *toEpetra(comm))))));
+      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(static_cast<GlobalOrdinal>(numGlobalElements), static_cast<int>(numLocalElements), 1, indexBase, *toEpetra(comm))))));
     }
 
     //! Constructor with user-defined arbitrary (possibly noncontiguous) distribution.
@@ -468,9 +468,9 @@ namespace Xpetra {
                const Teuchos::RCP< Node > &node = defaultArgNode())
     {
       if (numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
-        IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(-1, elementList.size(), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
+        IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(-1, static_cast<int>(elementList.size()), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
       } else {
-        IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, elementList.size(), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
+        IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, static_cast<int>(elementList.size()), elementList.getRawPtr(), 1, indexBase, *toEpetra(comm))))));
       }
     }
 
@@ -510,10 +510,10 @@ namespace Xpetra {
     LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { XPETRA_MONITOR("EpetraMapT::getLocalElement"); return map_->LID(globalIndex); }
 
     //! Return the process ranks and corresponding local indices for the given global indices.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const { XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); }
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const { XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(static_cast<int>(GIDList.size()), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr())); }
 
     //! Return the process ranks for the given global indices.
-    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); }
+    LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const { XPETRA_MONITOR("EpetraMapT::getRemoteIndexList"); return toXpetra(map_->RemoteIDList(static_cast<int>(GIDList.size()), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0)); }
 
     //! Return a view of the global indices owned by this process.
     Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const { XPETRA_MONITOR("EpetraMapT::getNodeElementList"); return ArrayView< const int >(map_->MyGlobalElements(), map_->NumMyElements());  }
