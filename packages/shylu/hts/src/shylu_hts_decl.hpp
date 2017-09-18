@@ -159,9 +159,9 @@ struct HTS {
   typedef hts::NotFullDiagonalException NotFullDiagonalException;
 
   //! \brief Opaque CRS type to interact with the solver.
-  class CrsMatrix;
+  struct CrsMatrix;
   //! \brief Opaque handle containing symbolic analysis data.
-  class Impl;
+  struct Impl;
 
   /*! \brief Construct a shallow wrapper to the user's C[R|S]S matrix.
    *

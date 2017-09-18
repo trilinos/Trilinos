@@ -381,7 +381,7 @@ template<typename T>
 inline void Array<T>::optclear_and_resize (std::size_t n, const T& val) {
   optclear_and_resize(n);
   for (std::size_t i = 0; i < n_; ++i)
-    memcpy(p_ + i, &val, sizeof(val));
+    p_[i] = val;
 }
 
 template<typename T>
@@ -426,7 +426,7 @@ void Impl<Int, Size, Sclr>::Options::print (std::ostream& os) const {
      << " profile " << profile;
 }
 
-static void print_compiletime_options(std::ostream& os) {
+static inline void print_compiletime_options(std::ostream& os) {
 #ifdef HAVE_SHYLUHTS_BLAS
   os << " HAVE_SHYLUHTS_BLAS";
 #endif
@@ -784,7 +784,8 @@ locrsrow_schedule_sns1 (const ConstCrsMatrix& L, Array<Int>& w,
       if (tlim == L.m) break;
       // Off-diag parallel block row.
       const Int rlim = std::min<Int>(tlim + blksz, L.m);
-      while (done != c) ;
+      while (done != c)
+        ;
 #ifdef _OPENMP
 #     pragma omp for schedule(static, rows_per_thread)
 #endif
