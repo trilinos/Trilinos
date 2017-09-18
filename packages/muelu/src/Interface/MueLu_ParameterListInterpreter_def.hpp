@@ -1595,7 +1595,7 @@ namespace MueLu {
 #undef MUELU_TEST_AND_SET_PARAM_2LIST
 #undef MUELU_TEST_PARAM_2LIST
 
-  int LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t);
+  size_t LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t);
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Validate(const ParameterList& constParamList) const {
@@ -1648,12 +1648,12 @@ namespace MueLu {
         size_t nameEnd   = eString.find_first_of('"', nameStart);
         std::string name = eString.substr(nameStart, nameEnd - nameStart);
 
-        int bestScore = 100;
+        size_t bestScore = 100;
         std::string bestName  = "";
         for (ParameterList::ConstIterator it = validList.begin(); it != validList.end(); it++) {
           const std::string& pName = validList.name(it);
           this->GetOStream(Runtime1) << "| " << pName;
-          int score = LevenshteinDistance(name.c_str(), name.length(), pName.c_str(), pName.length());
+          size_t score = LevenshteinDistance(name.c_str(), name.length(), pName.c_str(), pName.length());
           this->GetOStream(Runtime1) << " -> " << score << std::endl;
           if (score < bestScore) {
             bestScore = score;
