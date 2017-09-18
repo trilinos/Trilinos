@@ -584,10 +584,10 @@ inline void restore_num_threads (const NumThreads& save) {
   // actually switching. Need to think about this more. Right now, the interface
   // does not promise OMP state will remain the same.
   return;
-  omp_set_num_threads(save.omp);
-#ifdef HAVE_SHYLUHTS_MKL
-  mkl_set_num_threads(save.mkl);
-#endif
+//   omp_set_num_threads(save.omp);
+// #ifdef HAVE_SHYLUHTS_MKL
+//   mkl_set_num_threads(save.mkl);
+// #endif
 }
 
 inline bool check_nthreads (const int nt_requested, const int nt_rcvd,
@@ -3634,7 +3634,7 @@ TriSolver::init (const ConstCrsMatrix* T, Int nthreads, const Int max_nrhs,
   } catch (...) {
     if (delete_T) del(T); else T->deallocate();
     throw;
-    restore_num_threads(nthreads_state);
+    // restore_num_threads(nthreads_state); // unreachable
   }
   restore_num_threads(nthreads_state);
 }
