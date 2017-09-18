@@ -171,7 +171,7 @@ public:
   {
     #ifdef HAVE_TEUCHOSCORE_CXX11
       size_t idx = 0;
-      double result = std::stoi(str, &idx); // can throw std::invalid_argument
+      int result = std::stoi(str, &idx); // can throw std::invalid_argument
       if(idx != str.length()) { // check for extra bad format characters
         throw std::invalid_argument( "String: '" + str + "' had bad formatting for converting to an int." );
       }
