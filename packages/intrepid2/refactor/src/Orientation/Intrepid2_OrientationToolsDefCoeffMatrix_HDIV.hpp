@@ -232,9 +232,23 @@ namespace Intrepid2 {
       }
       case shards::Quadrilateral<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  8) {
-          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 3);
-          const ordinal_type leftOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 };
-          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+        //some faces require special treatment because the dofs of the face bases are not consistent with the corresponding dofs of the hexahedron
+        //TODO: modify reference Hexahedron element so that the dofs of the subcell are consistent with those of the cell.
+        switch (subcellId) {
+            case 3:
+            case 4: {
+              const ordinal_type modifiedOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 }; //left hand orientation
+              ort = modifiedOrt[subcellOrt];
+              break;
+            }
+            case 2: {
+              const ordinal_type modifiedOrt[] = { 0, 3, 2, 1, 6, 5, 4, 7 };
+              ort = modifiedOrt[subcellOrt];
+              break;
+            }
+            default:
+              ort = subcellOrt;
+          }
         }
         break;
       }
