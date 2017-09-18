@@ -81,7 +81,8 @@ void openFiles
 
 void printTimings
 (RCP< bddc::PreconditionerBDDC<SX,SM,LO,GO> > & Preconditioner, 
- RCP< bddc::KrylovSolver<SX,SM,LO,GO> > & Solver);
+ RCP< bddc::KrylovSolver<SX,SM,LO,GO> > & Solver,
+ const LO krylovMethod);
 
 void readInputFile(double & lengthDir1, 
 		   double & lengthDir2, 
@@ -218,6 +219,17 @@ TEST(SolverBDDCSimple, Test1)
   const SM* yCoord = Problem->getYcoord();
   const SM* zCoord = Problem->getZcoord();
 
+  // adjust coordinates and nodeGlobalIDs to reflect node ordering
+  std::vector<SM> xUse(numNode), yUse(numNode), zUse(numNode);
+  std::vector<GO> nodeGlobalIDsUse(numNode);
+  for (LO i=0; i<numNode; i++) {
+    LO node = subNodes[0][i];
+    xUse[i] = xCoord[node];
+    yUse[i] = yCoord[node];
+    zUse[i] = zCoord[node];
+    nodeGlobalIDsUse[i] = nodeGlobalIDs[node];
+  }
+
   if (myPID == 0) {
     std::cout << "omp_get_nested() return " << omp_get_nested() << std::endl;
   }
@@ -231,13 +243,14 @@ TEST(SolverBDDCSimple, Test1)
   // initialize preconditioner
   RCP< bddc::PreconditionerBDDC<SX,SM,LO,GO> > Preconditioner =
     rcp( new bddc::PreconditionerBDDC<SX,SM,LO,GO>
-	 (numNode, nodeGlobalIDs, xCoord, yCoord, zCoord, 
+	 (numNode, nodeGlobalIDsUse.data(), 
+	  xUse.data(), yUse.data(), zUse.data(), 
 	  subRowBeginPtr.data()[0], subColumnsPtr.data()[0], 
 	  subValuesPtr.data()[0], Parameters, Comm) );
   RCP<const Map> dofMap = Preconditioner->getDofMap1to1();
   LO numDofs = dofMap->getNodeNumElements();
   // initialize right hand side
-  std::vector<SX> rhs(numDofs, 0);
+  std::vector<SX> rhs(numDofs, 0), Ax(numDofs);
   for (LO i=0; i<numDofs; i++) {
     if ((i % spatialDim) == 0) rhs[i] = 1;
     //  rhs[i] = 0.7*rand()/RAND_MAX;
@@ -251,7 +264,14 @@ TEST(SolverBDDCSimple, Test1)
     if (i > 0) updateRhs(rhs.data(), numDofs);
     Solver->Solve(rhs.data(), sol.data());
   }
-  printTimings(Preconditioner, Solver);
+  Preconditioner->ApplyFullOperator(sol.data(), Ax.data());
+  for (LO i=0; i<numDofs; i++) {
+    Ax[i] = rhs[i] - Ax[i];
+  }
+  SM normError = Preconditioner->Norm2(Ax.data(), numDofs);
+  SM normRhs = Preconditioner->Norm2(rhs.data(), numDofs);
+  EXPECT_LT(normError, 1.01*solverTolerance*normRhs);
+  printTimings(Preconditioner, Solver, krylovMethod);
 }
 
 void updateRhs(SX* rhs, 
@@ -290,7 +310,7 @@ void readInputFile(double & lengthDir1,
 {
   char buff[101];
   std::ifstream fin;
-  fin.open("SolverBDDCTest.inp");
+  fin.open("SolverBDDCTestSimple.inp");
   fin >> lengthDir1; fin.getline(buff,100);
   fin >> lengthDir2; fin.getline(buff,100);
   fin >> lengthDir3; fin.getline(buff,100);
@@ -483,7 +503,8 @@ int setParameters(double lengthDir1,
 
 void printTimings
 (RCP< bddc::PreconditionerBDDC<SX,SM,LO,GO> > & Preconditioner, 
- RCP< bddc::KrylovSolver<SX,SM,LO,GO> > & Solver)
+ RCP< bddc::KrylovSolver<SX,SM,LO,GO> > & Solver,
+ const LO krylovMethod)
 {
   RCP<const Teuchos::Comm<int> > Comm = Preconditioner->getComm();
   LO myPID = Comm->getRank();
@@ -504,10 +525,12 @@ void printTimings
 	      << timings[bddc::TIME_SUB_CORR] << std::endl;
   timingsFile << "apply operator               = "
 	      << timings[bddc::TIME_APPLY_OPER] << std::endl;
-  timingsFile << "OthogGCR:projections         = "
-	      << Solver->getProjectionTime() << std::endl;
-  timingsFile << "OthogGCR:orthogonalizations  = "
-	      << Solver->getOrthogonalizationTime() << std::endl;
+  if (krylovMethod == 0) {
+    timingsFile << "OthogGCR:projections         = "
+		<< Solver->getProjectionTime() << std::endl;
+    timingsFile << "OthogGCR:orthogonalizations  = "
+		<< Solver->getOrthogonalizationTime() << std::endl;
+  }
   timingsFile << "initialization time          = "
 	      << timings[bddc::TIME_INITIALIZATION] << std::endl;
   timingsFile.close();
@@ -537,7 +560,7 @@ void openFiles
     outputFileDD << "size of interface      = " << numDofsB << std::endl;
     std::string text = "GCR";
     if (krylovMethod == 1) text = "PCG";
-    outputFileDD << "Krylov Method        = " << text << std::endl;
+    outputFileDD << "Krylov Method          = " << text << std::endl;
     outputFileDD.close();
     outputFileKrylov.open("krylov_solver.dat", std::ios::out);
   }

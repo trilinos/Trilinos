@@ -88,9 +88,9 @@ namespace bddc {
     {
       if (this->m_numRows == 0) return 0;
 
-      // from parameterlist
+      // from parameterlist (maybe later)
       //      const int verbose = 1;
-      const int verbose = 1;
+      const int verbose = 0;
 
       //  -- by default it sets 4, but usually the solver performs better with 8
       const int max_num_superblocks = 8; 

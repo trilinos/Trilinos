@@ -1979,7 +1979,9 @@ private:
       }
       startRow += numDof;
     }
-    printCoarseMatrices();
+    if (m_Parameters->get("Print Coarse Matrices", false)) {
+      printCoarseMatrices();
+    }
   }
 
   void getSubdomainCoarseDofs(LO sub, 
@@ -2490,7 +2492,9 @@ private:
       }
     }
     sourceMatrix->fillComplete();
-    printSourceMatrix(sourceMatrix);
+    if (m_Parameters->get("Print Source Matrices", false)) {
+      printSourceMatrix(sourceMatrix);
+    }
   }
 
   void printSourceMatrix(RCP<CrsMatrix> sourceMatrix)

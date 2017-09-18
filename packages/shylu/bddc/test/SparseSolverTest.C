@@ -68,6 +68,7 @@ int setParameters(int numElemDir1,
 		  int matrixType,
 		  int precisionOption,
 		  int directSolver,
+		  int numProc,
 		  RCP<Teuchos::ParameterList> & Parameters);
   
 double clockIt()
@@ -116,7 +117,8 @@ TEST(SparseSolverBDDC, Test1)
   RCP<Teuchos::ParameterList> Parameters;
   int returnVal = 
     setParameters(numElemDir1, numElemDir2, numElemDir3, problemTypeInt,
-		  matrixType, precisionOption, directSolver, Parameters);
+		  matrixType, precisionOption, directSolver, numProc,
+		  Parameters);
   if (returnVal) {
     std::cout << "Error in setParameters\n";
     return;
@@ -254,6 +256,7 @@ int setParameters(int numElemDir1,
 		  int matrixType,
 		  int precisionOption,
 		  int directSolver,
+		  int numProc,
 		  RCP<Teuchos::ParameterList> & Parameters)
 {
   int spatialDim(3);
@@ -278,8 +281,8 @@ int setParameters(int numElemDir1,
   else {
     Parameters->set("Matrix Type", "NonSymmetric");
   }
-  double lengthDir1(1), lengthDir2(1), lengthDir3(1);
-  int numSubDir1(1), numSubDir2(1), numSubDir3(1);
+  double lengthDir1(numProc), lengthDir2(1), lengthDir3(1);
+  int numSubDir1(numProc), numSubDir2(1), numSubDir3(1);
   Parameters->set("Length Direction 1", lengthDir1);
   Parameters->set("Length Direction 2", lengthDir2);
   Parameters->set("Length Direction 3", lengthDir3);
