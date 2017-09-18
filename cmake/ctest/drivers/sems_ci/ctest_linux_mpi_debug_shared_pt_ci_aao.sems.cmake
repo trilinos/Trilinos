@@ -77,13 +77,8 @@ SET(BUILD_DIR_NAME MPI_RELEASE_DEBUG_SHARED_PT_CI_AAO)
 SET( CTEST_BUILD_FLAGS "-j8 -i" )
 SET( CTEST_PARALLEL_LEVEL "8" )
 
-SET(CTEST_DROP_SITE "testing-vm.sandia.gov")
-SET(CTEST_DROP_LOCATION "/CDash/submit.php?project=Trilinos")
-
-SET(TRIBITS_2ND_CTEST_DROP_SITE
-  "testing.sandia.gov" )
-SET(TRIBITS_2ND_CTEST_DROP_LOCATION
-  "/cdash/submit.php?project=Trilinos" )
+SET(TRIBITS_2ND_CTEST_DROP_SITE "testing-vm.sandia.gov")
+SET(TRIBITS_2ND_CTEST_DROP_LOCATION "/CDash/submit.php?project=Trilinos")
 
 SET(CTEST_TEST_TYPE Experimental)
 SET(Trilinos_CTEST_USE_NEW_AAO_FEATURES TRUE)
