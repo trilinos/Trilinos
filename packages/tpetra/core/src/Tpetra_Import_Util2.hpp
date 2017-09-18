@@ -185,8 +185,11 @@ sortCrsEntries (const rowptr_array_type& CRS_rowptr,
   // Code copied from  Epetra_CrsMatrix::SortEntries()
   // NOTE: This should not be taken as a particularly efficient way to sort
   // rows of matrices in parallel.  But it is correct, so that's something.
-  size_t NumRows = CRS_rowptr.dimension_0()-1;
-  size_t nnz = CRS_colind.dimension_0();
+  if (CRS_rowptr.dimension_0 () == 0) {
+    return; // no rows, so nothing to sort
+  }
+  const size_t NumRows = CRS_rowptr.dimension_0() - 1;
+  const size_t nnz = CRS_colind.dimension_0();
   typedef typename colind_array_type::traits::non_const_value_type Ordinal;
   typedef typename vals_array_type::traits::non_const_value_type Scalar;
 
@@ -239,12 +242,16 @@ sortAndMergeCrsEntries (const Teuchos::ArrayView<size_t> &CRS_rowptr,
   // sort. Stable sort so it is fast if indices are already sorted.
   // Code copied from Epetra_CrsMatrix::SortEntries()
 
-  size_t NumRows = CRS_rowptr.size()-1;
-  size_t nnz = CRS_colind.size();
-  size_t new_curr=CRS_rowptr[0], old_curr=CRS_rowptr[0];
+  if (CRS_rowptr.size () == 0) {
+    return; // no rows, so nothing to sort
+  }
+  const size_t NumRows = CRS_rowptr.size () - 1;
+  const size_t nnz = CRS_colind.size ();
+  size_t new_curr = CRS_rowptr[0];
+  size_t old_curr = CRS_rowptr[0];
 
   for(size_t i = 0; i < NumRows; i++){
-    size_t old_rowptr_i=CRS_rowptr[i];
+    const size_t old_rowptr_i=CRS_rowptr[i];
     CRS_rowptr[i] = old_curr;
     if(old_rowptr_i >= nnz) continue;
 
