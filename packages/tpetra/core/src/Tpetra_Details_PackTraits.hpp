@@ -314,7 +314,7 @@ struct PackTraits {
   /// \return The number of bytes used to pack \c inVal.
   KOKKOS_INLINE_FUNCTION
   static size_t
-  packValue (const output_buffer_type& outBuf,
+  packValue (char outBuf[],
              const T& inVal)
   {
     // It's actually OK for packValueCount to return an upper bound
@@ -324,7 +324,7 @@ struct PackTraits {
 
     // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
     // function.  It does what one would expect.
-    memcpy (outBuf.ptr_on_device (), &inVal, numBytes);
+    memcpy (outBuf, &inVal, numBytes);
     return numBytes;
   }
 
@@ -334,13 +334,14 @@ struct PackTraits {
   /// \pre \c outBuf has at least \c packValueCount(inVal) entries.
   ///
   /// \param outBuf [out] Output buffer of bytes.
-  /// \param outBufIndex [in] Index in to output buffer
+  /// \param outBufIndex [in] Index into output buffer (multiplied by
+  ///   the number of bytes needed to pack inVal).
   /// \param inVal [in] Input value to pack.
   ///
   /// \return The number of bytes used to pack \c inVal.
   KOKKOS_INLINE_FUNCTION
   static size_t
-  packValue (const output_buffer_type& outBuf,
+  packValue (char outBuf[],
              const size_t outBufIndex,
              const T& inVal)
   {
@@ -352,7 +353,7 @@ struct PackTraits {
 
     // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
     // function.  It does what one would expect.
-    memcpy (outBuf.ptr_on_device () + offset, &inVal, numBytes);
+    memcpy (outBuf + offset, &inVal, numBytes);
     return numBytes;
   }
 

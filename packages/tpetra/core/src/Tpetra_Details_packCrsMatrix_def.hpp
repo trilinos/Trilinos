@@ -438,15 +438,10 @@ packCrsMatrixRow (const ColumnMap& col_map,
   const size_t vals_beg = gids_beg + gids_len + pids_len;
   const size_t vals_len = num_ent * num_bytes_per_value;
 
-  auto num_ent_out =
-    subview (exports, pair_type (num_ent_beg, num_ent_beg + num_ent_len));
-  auto gids_out =
-    subview (exports, pair_type (gids_beg, gids_beg + gids_len));
-  auto pids_out = pack_pids ?
-    subview (exports, pair_type (pids_beg, pids_beg + pids_len)) :
-    decltype (gids_out) ();
-  auto vals_out =
-    subview (exports, pair_type (vals_beg, vals_beg + vals_len));
+  char* const num_ent_out = exports.data () + num_ent_beg;
+  char* const gids_out = exports.data () + gids_beg;
+  char* const pids_out = pack_pids ? exports.data () + pids_beg : NULL;
+  auto vals_out = subview (exports, pair_type (vals_beg, vals_beg + vals_len));
 
   size_t num_bytes_out = 0;
   int error_code = 0;

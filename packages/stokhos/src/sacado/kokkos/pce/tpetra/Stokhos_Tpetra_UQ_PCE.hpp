@@ -290,23 +290,23 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
 
   KOKKOS_INLINE_FUNCTION
   static size_t
-  packValue (const output_buffer_type& outBuf,
+  packValue (char outBuf[],
              const value_type& inVal)
   {
     const size_t numBytes = packValueCount (inVal);
-    memcpy (outBuf.ptr_on_device (), inVal.coeff (), numBytes);
+    memcpy (outBuf, inVal.coeff (), numBytes);
     return numBytes;
   }
 
   KOKKOS_INLINE_FUNCTION
   static size_t
-  packValue (const output_buffer_type& outBuf,
+  packValue (char outBuf[],
              const size_t outBufIndex,
              const value_type& inVal)
   {
     const size_t numBytes = packValueCount (inVal);
     const size_t offset = outBufIndex * numBytes;
-    memcpy (outBuf.ptr_on_device () + offset, inVal.coeff (), numBytes);
+    memcpy (outBuf + offset, inVal.coeff (), numBytes);
     return numBytes;
   }
 

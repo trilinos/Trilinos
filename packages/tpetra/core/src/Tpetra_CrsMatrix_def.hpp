@@ -6722,8 +6722,7 @@ namespace Tpetra {
     const size_t valsBeg = gidsBeg + gidsLen;
     const size_t valsLen = numEnt * numBytesPerValue;
 
-    output_buffer_type numEntOut =
-      subview (exports, pair_type (numEntBeg, numEntBeg + numEntLen));
+    char* const numEntOut = exports.data () + numEntBeg;
     output_buffer_type gidsOut =
       subview (exports, pair_type (gidsBeg, gidsBeg + gidsLen));
     output_buffer_type valsOut =
@@ -6809,6 +6808,7 @@ namespace Tpetra {
     const size_t valsBeg = gidsBeg + gidsLen;
     const size_t valsLen = numEnt * numBytesPerValue;
 
+    const char* const numEntIn = imports.data () + numEntBeg;
     input_buffer_type gidsIn =
       subview (imports, pair_type (gidsBeg, gidsBeg + gidsLen));
     input_buffer_type valsIn =
@@ -6817,7 +6817,7 @@ namespace Tpetra {
     size_t numBytesOut = 0;
     int errorCode = 0;
     LO numEntOut;
-    numBytesOut += PackTraits<LO, HES>::unpackValue (numEntOut, imports.data () + numEntBeg);
+    numBytesOut += PackTraits<LO, HES>::unpackValue (numEntOut, numEntIn);
     TEUCHOS_TEST_FOR_EXCEPTION(
         static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
         "unpackRow: Expected number of entries " << numEnt

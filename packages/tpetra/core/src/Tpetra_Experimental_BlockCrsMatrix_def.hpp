@@ -2691,8 +2691,7 @@ public:
       const size_t valsBeg = gidsBeg + gidsLen;
       const size_t valsLen = numScalarEnt * numBytesPerValue;
 
-      output_buffer_type numEntOut =
-        subview (exports, pair_type (numEntBeg, numEntBeg + numEntLen));
+      char* const numEntOut = exports.data () + numEntBeg;
       output_buffer_type gidsOut =
         subview (exports, pair_type (gidsBeg, gidsBeg + gidsLen));
       output_buffer_type valsOut =
