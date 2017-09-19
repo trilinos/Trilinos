@@ -3110,17 +3110,25 @@ public:
     const size_t maxRowNumEnt = graph_.getNodeMaxNumRowEntries ();
     const size_t maxRowNumScalarEnt = maxRowNumEnt * blockSize * blockSize;
 
+    // Determine the number of bytes in a Scalar instance.
     size_t numBytesPerValue;
-    {
-      // FIXME (mfh 17 Feb 2015) What do I do about Scalar types with
-      // run-time size?  We already assume that all entries in both
-      // the source and target matrices have the same size.  If the
-      // calling process owns at least one entry in either matrix, we
-      // can use that entry to set the size.  However, it is possible
-      // that the calling process owns no entries.  In that case,
-      // we're in trouble.  One way to fix this would be for each
-      // row's data to contain the run-time size.  This is only
-      // necessary if the size is not a compile-time constant.
+
+    // mfh 19 Sep 2017: Only Stokhos has Scalar types with run-time
+    // size.  For all of those types, any one allocated instance has
+    // the same size as any other allocated instance.  Thus, it
+    // suffices to find some allocated instance as a representative
+    // value.
+    if (this->val_.h_view.dimension_0 () != 0) {
+      const ST& val = this->val_.h_view[0];
+      numBytesPerValue = PackTraits<ST, HES>::packValueCount (val);
+    }
+    else {
+      // FIXME (mfh 19 Sep 2017): I don't have any values on my
+      // process, so I don't know how big the value should be, if it's
+      // run-time-sized.  The best I can do is use a default-allocated
+      // Scalar instance's size.  If we ever want to fix this, then
+      // each sending process should pack the run-time size.  This is
+      // only necessary if the size is not a compile-time constant.
       Scalar val;
       numBytesPerValue = PackTraits<ST, HES>::packValueCount (val);
     }

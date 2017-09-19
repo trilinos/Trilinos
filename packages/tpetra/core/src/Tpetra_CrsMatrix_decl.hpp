@@ -3956,11 +3956,11 @@ namespace Tpetra {
     ///
     /// \return \c true if the method succeeded, else \c false.
     size_t
-    packRow (const typename Tpetra::Details::PackTraits<LocalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_buffer_type& exports,
+    packRow (char exports[],
              const size_t offset,
              const size_t numEnt,
-             const typename Tpetra::Details::PackTraits<GlobalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_array_type& gidsIn,
-             const typename Tpetra::Details::PackTraits<impl_scalar_type, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_array_type& valsIn,
+             const GlobalOrdinal gidsIn[],
+             const impl_scalar_type valsIn[],
              const size_t numBytesPerValue) const;
 
     /// \brief Pack data for the current row to send, if the matrix's
@@ -4016,9 +4016,9 @@ namespace Tpetra {
     ///
     /// \return \c true if the method succeeded, else \c false.
     size_t
-    unpackRow (const typename Tpetra::Details::PackTraits<GlobalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_array_type& gidsOut,
-               const typename Tpetra::Details::PackTraits<impl_scalar_type, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_array_type& valsOut,
-               const typename Tpetra::Details::PackTraits<int, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_buffer_type& imports,
+    unpackRow (GlobalOrdinal gidsOut[],
+               impl_scalar_type valsOut[],
+               const char imports[],
                const size_t offset,
                const size_t numBytes,
                const size_t numEnt,
