@@ -370,7 +370,7 @@ struct PackTraits {
   /// output.
   KOKKOS_INLINE_FUNCTION
   static size_t
-  unpackValue (T& outVal, const input_buffer_type& inBuf)
+  unpackValue (T& outVal, const char inBuf[])
   {
     // It's actually OK for packValueCount to return an upper bound
     // (e.g., padding for alignment).  The memcpy call below will copy
@@ -379,7 +379,7 @@ struct PackTraits {
 
     // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
     // function.  It does what one would expect.
-    memcpy (&outVal, inBuf.ptr_on_device (), numBytes);
+    memcpy (&outVal, inBuf, numBytes);
     return numBytes;
   }
 }; // struct PackTraits

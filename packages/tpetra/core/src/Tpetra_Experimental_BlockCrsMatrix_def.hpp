@@ -2619,8 +2619,6 @@ public:
     {
       using Kokkos::subview;
       using Tpetra::Details::PackTraits;
-      typedef typename PackTraits<LO, D>::input_buffer_type input_buffer_type;
-      typedef typename input_buffer_type::size_type size_type;
 
       if (numBytes == 0) {
         // Empty rows always take zero bytes, to ensure sparsity.
@@ -2635,8 +2633,7 @@ public:
           "theNumBytes = " << theNumBytes << " < numBytes = " << numBytes
           << ".");
 #endif // HAVE_TPETRA_DEBUG
-        const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-        input_buffer_type inBuf = subview (imports, rng); // imports (offset, theNumBytes);
+        const char* const inBuf = imports.data () + offset;
         const size_t actualNumBytes = PackTraits<LO, D>::unpackValue (numEntLO, inBuf);
 #ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2777,8 +2774,7 @@ public:
       const size_t valsBeg = gidsBeg + gidsLen;
       const size_t valsLen = numScalarEnt * numBytesPerValue;
 
-      input_buffer_type numEntIn =
-        subview (imports, pair_type (numEntBeg, numEntBeg + numEntLen));
+      const char* const numEntIn = imports.data () + numEntBeg;
       input_buffer_type gidsIn =
         subview (imports, pair_type (gidsBeg, gidsBeg + gidsLen));
       input_buffer_type valsIn =

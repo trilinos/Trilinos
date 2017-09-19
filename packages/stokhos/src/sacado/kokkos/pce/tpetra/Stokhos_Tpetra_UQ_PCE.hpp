@@ -271,11 +271,9 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
         // guarranteed to be true for pce_size == 1, hence the check in
         // packArray().
         size_t numBytesTotal = 0;
-        const size_type in_dim = inBuf.dimension_0();
         for (size_t i=0; i<numEnt; ++i) {
-          input_buffer_type val_inBuf(inBuf.ptr_on_device()+numBytesTotal,
-                                      in_dim-numBytesTotal);
-          const size_t numBytes = unpackValue(outBuf(i), val_inBuf);
+          const char* inBufVal = inBuf.data () + numBytesTotal;
+          const size_t numBytes = unpackValue(outBuf(i), inBufVal);
           numBytesTotal += numBytes;
         }
         return return_type(errorCode, numBytesTotal);
@@ -314,10 +312,10 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
 
   KOKKOS_INLINE_FUNCTION
   static size_t
-  unpackValue (value_type& outVal, const input_buffer_type& inBuf)
+  unpackValue (value_type& outVal, const char inBuf[])
   {
     const size_t numBytes = packValueCount (outVal);
-    memcpy (outVal.coeff (), inBuf.ptr_on_device (), numBytes);
+    memcpy (outVal.coeff (), inBuf, numBytes);
     return numBytes;
   }
 }; // struct PackTraits

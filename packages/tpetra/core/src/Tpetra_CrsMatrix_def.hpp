@@ -6809,8 +6809,6 @@ namespace Tpetra {
     const size_t valsBeg = gidsBeg + gidsLen;
     const size_t valsLen = numEnt * numBytesPerValue;
 
-    input_buffer_type numEntIn =
-      subview (imports, pair_type (numEntBeg, numEntBeg + numEntLen));
     input_buffer_type gidsIn =
       subview (imports, pair_type (gidsBeg, gidsBeg + gidsLen));
     input_buffer_type valsIn =
@@ -6819,7 +6817,7 @@ namespace Tpetra {
     size_t numBytesOut = 0;
     int errorCode = 0;
     LO numEntOut;
-    numBytesOut += PackTraits<LO, HES>::unpackValue (numEntOut, numEntIn);
+    numBytesOut += PackTraits<LO, HES>::unpackValue (numEntOut, imports.data () + numEntBeg);
     TEUCHOS_TEST_FOR_EXCEPTION(
         static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
         "unpackRow: Expected number of entries " << numEnt
@@ -7610,7 +7608,6 @@ namespace Tpetra {
 
     typedef View<GO*, HES, MemoryUnmanaged> gids_out_type;
     typedef View<ST*, HES, MemoryUnmanaged> vals_out_type;
-    typedef typename PackTraits<GO, HES>::input_buffer_type input_buffer_type;
 
     const char tfecfFuncName[] = "unpackAndCombine: ";
 
@@ -7670,8 +7667,7 @@ namespace Tpetra {
           "theNumBytes = " << theNumBytes << " > numBytes = " << numBytes << ".");
 #endif // HAVE_TPETRA_DEBUG
 
-      const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-      input_buffer_type inBuf = subview (imports_k, rng); // imports (offset, theNumBytes);
+      const char* const inBuf = imports_k.data () + offset;
       const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -7720,9 +7716,7 @@ namespace Tpetra {
         continue; // empty buffer for that row means that the row is empty
       }
       LO numEntLO = 0;
-      const size_t theNumBytes = PackTraits<LO, HES>::packValueCount (numEntLO);
-      const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-      input_buffer_type inBuf = subview (imports_k, rng); // imports (offset, theNumBytes);
+      const char* const inBuf = imports_k.data () + offset;
       const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
       (void) actualNumBytes;
 
@@ -7776,7 +7770,6 @@ namespace Tpetra {
                       typename View<int*, HES>::size_type> pair_type;
     typedef View<GO*, HES, MemoryUnmanaged> gids_out_type;
     typedef View<ST*, HES, MemoryUnmanaged> vals_out_type;
-    typedef typename PackTraits<GO, HES>::input_buffer_type input_buffer_type;
     const char tfecfFuncName[] = "unpackAndCombineNewImplNonStatic: ";
 
     const size_type numImportLIDs = importLIDs.dimension_0 ();
@@ -7847,8 +7840,7 @@ namespace Tpetra {
          << theNumBytes << " > numBytes = " << numBytes << ".");
 #endif // HAVE_TPETRA_DEBUG
 
-      const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-      input_buffer_type inBuf = subview (imports_h, rng); // imports (offset, theNumBytes);
+      const char* const inBuf = imports_h.data () + offset;
       const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -7894,9 +7886,7 @@ namespace Tpetra {
         continue; // empty buffer for that row means that the row is empty
       }
       LO numEntLO = 0;
-      const size_t theNumBytes = PackTraits<LO, HES>::packValueCount (numEntLO);
-      const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-      input_buffer_type inBuf = subview (imports_h, rng); // imports (offset, theNumBytes);
+      const char* const inBuf = imports_h.data () + offset;
       const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
       (void) actualNumBytes;
 
