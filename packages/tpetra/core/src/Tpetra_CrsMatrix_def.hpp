@@ -6683,11 +6683,11 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  packRow (const typename Tpetra::Details::PackTraits<LocalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_buffer_type& exports,
+  packRow (char exports[],
            const size_t offset,
            const size_t numEnt,
-           const typename Tpetra::Details::PackTraits<GlobalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_array_type& gidsIn,
-           const typename Tpetra::Details::PackTraits<impl_scalar_type, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_array_type& valsIn,
+           const GlobalOrdinal gidsIn[],
+           const impl_scalar_type valsIn[],
            const size_t numBytesPerValue) const
   {
     using Kokkos::View;
@@ -6713,9 +6713,9 @@ namespace Tpetra {
     const size_t valsBeg = gidsBeg + gidsLen;
     const size_t valsLen = numEnt * numBytesPerValue;
 
-    char* const numEntOut = exports.data () + numEntBeg;
-    char* const gidsOut = exports.data () + gidsBeg;
-    char* const valsOut = exports.data () + valsBeg;
+    char* const numEntOut = exports + numEntBeg;
+    char* const gidsOut = exports + gidsBeg;
+    char* const valsOut = exports + valsBeg;
 
     size_t numBytesOut = 0;
     int errorCode = 0;
@@ -6723,24 +6723,23 @@ namespace Tpetra {
 
     {
       Kokkos::pair<int, size_t> p;
-      p = PackTraits<GO, HES>::packArray (gidsOut, gidsIn.data (), numEnt);
+      p = PackTraits<GO, HES>::packArray (gidsOut, gidsIn, numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
 
-      p = PackTraits<ST, HES>::packArray (valsOut, valsIn.data (), numEnt);
+      p = PackTraits<ST, HES>::packArray (valsOut, valsIn, numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
     }
 
     const size_t expectedNumBytes = numEntLen + gidsLen + valsLen;
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        numBytesOut != expectedNumBytes, std::logic_error, "packRow: "
-        "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
-        << expectedNumBytes << ".");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        errorCode != 0, std::runtime_error, "packRow: "
-        "PackTraits::packArray returned a nonzero error code");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (numBytesOut != expectedNumBytes, std::logic_error, "packRow: "
+       "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
+       << expectedNumBytes << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (errorCode != 0, std::runtime_error, "packRow: "
+       "PackTraits::packArray returned a nonzero error code");
 
     return numBytesOut;
   }
@@ -6748,9 +6747,9 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  unpackRow (const typename Tpetra::Details::PackTraits<GlobalOrdinal, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_array_type& gidsOut,
-             const typename Tpetra::Details::PackTraits<impl_scalar_type, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::output_array_type& valsOut,
-             const typename Tpetra::Details::PackTraits<int, typename Kokkos::View<int*, device_type>::HostMirror::execution_space>::input_buffer_type& imports,
+  unpackRow (GlobalOrdinal gidsOut[],
+             impl_scalar_type valsOut[],
+             const char imports[],
              const size_t offset,
              const size_t numBytes,
              const size_t numEnt,
@@ -6764,28 +6763,10 @@ namespace Tpetra {
     typedef impl_scalar_type ST;
     typedef typename View<int*, device_type>::HostMirror::execution_space HES;
 
-    // NOTE (mfh 02 Feb 2015) This assumes that input_buffer_type is the same,
-    // no matter what type we're unpacking.  It's a reasonable assumption, given
-    // that we go through the trouble of PackTraits just so that we can pack
-    // data of different types in the same buffer.
-    typedef typename PackTraits<LO, HES>::input_buffer_type input_buffer_type;
-    typedef typename input_buffer_type::size_type size_type;
-    typedef typename std::pair<size_type, size_type> pair_type;
-
     if (numBytes == 0) {
       // Rows with zero bytes always have zero entries.
       return 0;
     }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (imports.dimension_0 ()) <= offset,
-        std::logic_error, "unpackRow: imports.dimension_0() = "
-        << imports.dimension_0 () << " <= offset = " << offset << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (imports.dimension_0 ()) < offset + numBytes,
-        std::logic_error, "unpackRow: imports.dimension_0() = "
-        << imports.dimension_0 () << " < offset + numBytes = "
-        << (offset + numBytes) << ".");
 
     const GO gid = 0; // packValueCount wants this
     const LO lid = 0; // packValueCount wants this
@@ -6797,45 +6778,43 @@ namespace Tpetra {
     const size_t valsBeg = gidsBeg + gidsLen;
     const size_t valsLen = numEnt * numBytesPerValue;
 
-    const char* const numEntIn = imports.data () + numEntBeg;
-    input_buffer_type gidsIn =
-      subview (imports, pair_type (gidsBeg, gidsBeg + gidsLen));
-    input_buffer_type valsIn =
-      subview (imports, pair_type (valsBeg, valsBeg + valsLen));
+    const char* const numEntIn = imports + numEntBeg;
+    const char* const gidsIn = imports + gidsBeg;
+    const char* const valsIn = imports + valsBeg;
 
     size_t numBytesOut = 0;
     int errorCode = 0;
     LO numEntOut;
     numBytesOut += PackTraits<LO, HES>::unpackValue (numEntOut, numEntIn);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
-        "unpackRow: Expected number of entries " << numEnt
-        << " != actual number of entries " << numEntOut << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
+       "unpackRow: Expected number of entries " << numEnt
+       << " != actual number of entries " << numEntOut << ".");
 
     {
       Kokkos::pair<int, size_t> p;
-      p = PackTraits<GO, HES>::unpackArray (gidsOut.data (), gidsIn.data (), numEnt);
+      p = PackTraits<GO, HES>::unpackArray (gidsOut, gidsIn, numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
 
-      p = PackTraits<ST, HES>::unpackArray (valsOut.data (), valsIn.data (), numEnt);
+      p = PackTraits<ST, HES>::unpackArray (valsOut, valsIn, numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        numBytesOut != numBytes, std::logic_error, "unpackRow: numBytesOut = "
-        << numBytesOut << " != numBytes = " << numBytes << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (numBytesOut != numBytes, std::logic_error, "unpackRow: numBytesOut = "
+       << numBytesOut << " != numBytes = " << numBytes << ".");
 
     const size_t expectedNumBytes = numEntLen + gidsLen + valsLen;
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        numBytesOut != expectedNumBytes, std::logic_error, "unpackRow: "
-        "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
-        << expectedNumBytes << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (numBytesOut != expectedNumBytes, std::logic_error, "unpackRow: "
+       "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
+       << expectedNumBytes << ".");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        errorCode != 0, std::runtime_error, "unpackRow: "
-        "PackTraits::unpackArray returned a nonzero error code");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (errorCode != 0, std::runtime_error, "unpackRow: "
+       "PackTraits::unpackArray returned a nonzero error code");
 
     return numBytesOut;
   }
@@ -7102,7 +7081,8 @@ namespace Tpetra {
       size_t numBytesPerValue = PackTraits<ST,HES>::packValueCount (valsIn[0]);
 
       const size_t numBytes =
-        this->packRow (exports_k, offset, numEnt, gidsIn_k, valsIn_k, numBytesPerValue);
+        this->packRow (exports_k.data (), offset, numEnt, gidsIn_k.data (),
+                       valsIn_k.data (), numBytesPerValue);
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC (
           offset > bufSize || offset + numBytes > bufSize,
@@ -7239,8 +7219,8 @@ namespace Tpetra {
       const size_t numBytesPerValue =
         PackTraits<ST,HES>::packValueCount (valsIn[0]);
       const size_t numBytes =
-        this->packRow (exports_h, offset, numEnt, gidsIn_k,
-                       valsIn_k, numBytesPerValue);
+        this->packRow (exports_h.data (), offset, numEnt, gidsIn_k.data (),
+                       valsIn_k.data (), numBytesPerValue);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (offset > bufSize || offset + numBytes > bufSize, std::logic_error,
          "First invalid offset into 'exports' pack buffer at index i = " << i
@@ -7716,8 +7696,8 @@ namespace Tpetra {
       vals_out_type valsOut = subview (vals, pair_type (0, numEnt));
 
       const size_t numBytesOut =
-        unpackRow (gidsOut, valsOut, imports_k, offset, numBytes, numEnt,
-                   numBytesPerValue);
+        unpackRow (gidsOut.data (), valsOut.data (), imports_k.data (),
+                   offset, numBytes, numEnt, numBytesPerValue);
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC (
           numBytes != numBytesOut,
@@ -7886,8 +7866,8 @@ namespace Tpetra {
       vals_out_type valsOut = subview (vals, pair_type (0, numEnt));
 
       const size_t numBytesOut =
-        unpackRow (gidsOut, valsOut, imports_h, offset, numBytes, numEnt,
-                   numBytesPerValue);
+        unpackRow (gidsOut.data (), valsOut.data (), imports_h.data (),
+                   offset, numBytes, numEnt, numBytesPerValue);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numBytes != numBytesOut, std::logic_error, "At i = " << i << ", "
          << "numBytes = " << numBytes << " != numBytesOut = " << numBytesOut
