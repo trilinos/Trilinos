@@ -116,11 +116,11 @@ namespace panzer
     int i(0);
     fieldMults_.resize(fmNames.size());
     kokkosFieldMults_ =
-      View<View<ScalarT**>*>("BasisTimesScalar::KokkosFieldMultipliers",
+      View<View<const ScalarT**>*>("BasisTimesScalar::KokkosFieldMultipliers",
       fmNames.size());
     for (const auto& name : fmNames)
     {
-      fieldMults_[i++] = MDField<ScalarT, Cell, IP>(name, ir.dl_scalar);
+      fieldMults_[i++] = MDField<const ScalarT, Cell, IP>(name, ir.dl_scalar);
       this->addDependentField(fieldMults_[i - 1]);
     } // end loop over the field multipliers
 
