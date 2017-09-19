@@ -75,6 +75,7 @@ rem Configure using CMake
   -D Trilinos_ENABLE_DEBUG:BOOL=OFF ^
   -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON ^
   -D Trilinos_GENERATE_REPO_VERSION_FILE:BOOL=OFF ^
+  -D CMAKE_OBJECT_PATH_MAX=300 ^
   -D BLAS_LIBRARY_NAMES:STRING="blas;libf2c" ^
   -D BLAS_LIBRARY_DIRS:STRING="%SEMS_DIR%\tpl\clapack\3.2.1\VisualStudio\14.0\base\lib" ^
   -D LAPACK_LIBRARY_NAMES:STRING="lapack" ^
