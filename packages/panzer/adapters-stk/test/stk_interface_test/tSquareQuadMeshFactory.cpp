@@ -153,11 +153,6 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
       TEST_EQUALITY(block0.size(),6);
       TEST_EQUALITY(block1.size(),6);
 
-      for(std::size_t i=0;i<block0.size();i++) {
-         TEST_ASSERT(mesh->elementLocalId(block0[i])>=0);
-         TEST_ASSERT(mesh->elementLocalId(block1[i])>=0);
-      }
-
 /*
       {
          const double * coords = getNode(mesh,block0[0],0);
@@ -176,14 +171,6 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
       TEST_EQUALITY(block0.size(),3);
       TEST_EQUALITY(block1.size(),3);
 
-      for(std::size_t i=0;i<block0.size();i++) {
-         // TEST_EQUALITY(mesh->elementLocalId(block0[i]),i);
-         // TEST_EQUALITY(mesh->elementLocalId(block1[i]),i+3);
-
-         TEST_ASSERT(mesh->elementLocalId(block0[i])>=0);
-         TEST_ASSERT(mesh->elementLocalId(block1[i])>=0);
-      }
-
 /*
       {
          const double * coords = getNode(mesh,block0[0],0);
@@ -201,14 +188,6 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, local_ids)
    else if(numprocs==2 && rank==1) {
       TEST_EQUALITY(block0.size(),3);
       TEST_EQUALITY(block1.size(),3);
-
-      for(std::size_t i=0;i<block0.size();i++) {
-         // TEST_EQUALITY(mesh->elementLocalId(block0[i]),i);
-         // TEST_EQUALITY(mesh->elementLocalId(block1[i]),i+3);
-
-         TEST_ASSERT(mesh->elementLocalId(block0[i])>=0);
-         TEST_ASSERT(mesh->elementLocalId(block1[i])>=0);
-      }
 
 /*
       {
