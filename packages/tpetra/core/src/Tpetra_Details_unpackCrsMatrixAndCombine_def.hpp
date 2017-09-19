@@ -170,7 +170,8 @@ unpack_crs_matrix_row (typename PackTraits<GO, DT>::output_array_type& gids_out,
       num_bytes_out += p.second;
     }
 
-    p = PackTraits<ST, BDT>::unpackArray (vals_out, vals_in, num_ent);
+    typename PackTraits<ST, BDT>::output_array_type vals_out_bdt (vals_out.data (), vals_out.size ());
+    p = PackTraits<ST, BDT>::unpackArray (vals_out_bdt, vals_in, num_ent);
     if (p.first != 0) {
       return 23; // error code
     }
