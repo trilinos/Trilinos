@@ -614,12 +614,14 @@ namespace MueLu {
             RCP<Vector>  localLaplDiag     = VectorFactory::Build(uniqueMap);
             ArrayRCP<SC> localLaplDiagData = localLaplDiag->getDataNonConst(0);
             Array<LO> indicesExtra;
-            const size_t numVectors = ghostedCoords->getNumVectors();
             Teuchos::Array<Teuchos::ArrayRCP<const double>> coordData;
-            coordData.reserve(numVectors);
-            for (size_t j = 0; j < numVectors; j++) {
-              Teuchos::ArrayRCP<const double> tmpData=ghostedCoords->getData(j);
-              coordData.push_back(tmpData);
+            if (threshold != STS::zero()) {
+              const size_t numVectors = ghostedCoords->getNumVectors();
+              coordData.reserve(numVectors);
+              for (size_t j = 0; j < numVectors; j++) {
+                Teuchos::ArrayRCP<const double> tmpData=ghostedCoords->getData(j);
+                coordData.push_back(tmpData);
+              }
             }
             {
             SubFactoryMonitor m1(*this, "Laplacian local diagonal", currentLevel);
@@ -671,12 +673,14 @@ namespace MueLu {
           Array<LO> indicesExtra;
           {
           SubFactoryMonitor m1(*this, "Laplacian dropping", currentLevel);
-          const size_t numVectors = ghostedCoords->getNumVectors();
           Teuchos::Array<Teuchos::ArrayRCP<const double>> coordData;
-          coordData.reserve(numVectors);
-          for (size_t j = 0; j < numVectors; j++) {
-            Teuchos::ArrayRCP<const double> tmpData=ghostedCoords->getData(j);
-            coordData.push_back(tmpData);
+          if (threshold != STS::zero()) {
+            const size_t numVectors = ghostedCoords->getNumVectors();
+            coordData.reserve(numVectors);
+            for (size_t j = 0; j < numVectors; j++) {
+              Teuchos::ArrayRCP<const double> tmpData=ghostedCoords->getData(j);
+              coordData.push_back(tmpData);
+            }
           }
           for (LO row = 0; row < numRows; row++) {
             ArrayView<const LO> indices;
