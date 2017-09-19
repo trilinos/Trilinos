@@ -112,11 +112,6 @@ unpack_crs_matrix_row (typename PackTraits<GO, DT>::output_array_type& gids_out,
                        const size_t num_ent,
                        const size_t num_bytes_per_value)
 {
-  using Kokkos::subview;
-  typedef typename PackTraits<LO, BDT>::input_buffer_type input_buffer_type;
-  typedef typename input_buffer_type::size_type size_type;
-  typedef typename Kokkos::pair<size_type, size_type> slice;
-
   if (num_ent == 0) {
     // Empty rows always take zero bytes, to ensure sparsity.
     return 0;
@@ -138,14 +133,10 @@ unpack_crs_matrix_row (typename PackTraits<GO, DT>::output_array_type& gids_out,
   const size_t vals_beg = gids_beg + gids_len + pids_len;
   const size_t vals_len = num_ent * num_bytes_per_value;
 
-  auto num_ent_in =
-    subview (imports, slice (num_ent_beg, num_ent_beg + num_ent_len));
-  auto gids_in = subview (imports, slice (gids_beg, gids_beg + gids_len));
-  decltype (gids_in) pids_in;
-  if (unpack_pids) {
-    pids_in = subview (imports, slice (pids_beg, pids_beg + pids_len));
-  }
-  auto vals_in = subview (imports, slice (vals_beg, vals_beg + vals_len));
+  const char* const num_ent_in = imports.data () + num_ent_beg;
+  const char* const gids_in = imports.data () + gids_beg;
+  const char* const pids_in = unpack_pids ? imports.data () + pids_beg : NULL;
+  const char* const vals_in = imports.data () + vals_beg;
 
   size_t num_bytes_out = 0;
   LO num_ent_out;
@@ -156,22 +147,21 @@ unpack_crs_matrix_row (typename PackTraits<GO, DT>::output_array_type& gids_out,
 
   {
     Kokkos::pair<int, size_t> p;
-    p = PackTraits<GO, BDT>::unpackArray (gids_out, gids_in, num_ent);
+    p = PackTraits<GO, BDT>::unpackArray (gids_out.data (), gids_in, num_ent);
     if (p.first != 0) {
       return 21; // error code
     }
     num_bytes_out += p.second;
 
     if (unpack_pids) {
-      p = PackTraits<int, BDT>::unpackArray(pids_out, pids_in, num_ent);
+      p = PackTraits<int, BDT>::unpackArray (pids_out.data (), pids_in, num_ent);
       if (p.first != 0) {
         return 22; // error code
       }
       num_bytes_out += p.second;
     }
 
-    typename PackTraits<ST, BDT>::output_array_type vals_out_bdt (vals_out.data (), vals_out.size ());
-    p = PackTraits<ST, BDT>::unpackArray (vals_out_bdt, vals_in, num_ent);
+    p = PackTraits<ST, BDT>::unpackArray (vals_out.data (), vals_in, num_ent);
     if (p.first != 0) {
       return 23; // error code
     }
@@ -325,8 +315,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
 
     // Get the number of entries to expect in the received data for this row.
     LO num_ent_LO = 0;
-    const size_t num_ent_len = PackTraits<LO, BDT>::packValueCount (num_ent_LO);
-    auto in_buf = subview (imports, slice (offset, offset+num_ent_len));
+    const char* const in_buf = imports.data () + offset;
     (void) PackTraits<LO, BDT>::unpackValue (num_ent_LO, in_buf);
     const size_t num_ent = static_cast<size_t> (num_ent_LO);
 
@@ -446,11 +435,8 @@ public:
     // Get how many entries to expect in the received data for this row.
     const size_t num_bytes = num_packets_per_lid(i);
     if (num_bytes > 0) {
-      LO num_ent_LO = 0;
-      const size_t offset = offsets(i);
-      const size_t num_ent_len =
-        PackTraits<LO, BDT>::packValueCount (num_ent_LO);
-      auto in_buf = subview (imports, slice (offset, offset+num_ent_len));
+      LO num_ent_LO = 0; // output argument of unpackValue
+      const char* const in_buf = imports.data () + offsets(i);
       (void) PackTraits<LO, BDT>::unpackValue (num_ent_LO, in_buf);
       const size_t num_ent = static_cast<size_t> (num_ent_LO);
 
@@ -471,11 +457,8 @@ public:
     // Get how many entries to expect in the received data for this row.
     const size_t num_bytes = num_packets_per_lid(i);
     if (num_bytes > 0) {
-      LO num_ent_LO = 0;
-      const size_t offset = offsets(i);
-      const size_t num_ent_len =
-        PackTraits<LO, BDT>::packValueCount (num_ent_LO);
-      auto in_buf = subview (imports, slice (offset, offset+num_ent_len));
+      LO num_ent_LO = 0; // output argument of unpackValue
+      const char* const in_buf = imports.data () + offsets(i);
       (void) PackTraits<LO, BDT>::unpackValue (num_ent_LO, in_buf);
       tot_num_ent += static_cast<size_t> (num_ent_LO);
     }
@@ -695,15 +678,13 @@ unpack_crs_matrix_row_count (const Kokkos::View<const char*, BDT>& imports,
                              const size_t offset,
                              const size_t num_bytes)
 {
-  typedef typename PackTraits<LO, DT>::input_buffer_type input_buffer_type;
   LO num_ent_LO = 0;
   if (num_bytes > 0) {
     const size_t p_num_bytes = PackTraits<LO, DT>::packValueCount(num_ent_LO);
     if (p_num_bytes > num_bytes) {
       return OrdinalTraits<size_t>::invalid();
     }
-    Kokkos::pair<size_t, size_t> slice(offset, offset+p_num_bytes);
-    input_buffer_type in_buf = Kokkos::subview(imports, slice);
+    const char* const in_buf = imports.data () + offset;
     (void) PackTraits<LO,DT>::unpackValue(num_ent_LO, in_buf);
   }
   return static_cast<size_t>(num_ent_LO);

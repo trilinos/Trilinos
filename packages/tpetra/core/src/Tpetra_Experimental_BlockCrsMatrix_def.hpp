@@ -2619,8 +2619,6 @@ public:
     {
       using Kokkos::subview;
       using Tpetra::Details::PackTraits;
-      typedef typename PackTraits<LO, D>::input_buffer_type input_buffer_type;
-      typedef typename input_buffer_type::size_type size_type;
 
       if (numBytes == 0) {
         // Empty rows always take zero bytes, to ensure sparsity.
@@ -2635,8 +2633,7 @@ public:
           "theNumBytes = " << theNumBytes << " < numBytes = " << numBytes
           << ".");
 #endif // HAVE_TPETRA_DEBUG
-        const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-        input_buffer_type inBuf = subview (imports, rng); // imports (offset, theNumBytes);
+        const char* const inBuf = imports.data () + offset;
         const size_t actualNumBytes = PackTraits<LO, D>::unpackValue (numEntLO, inBuf);
 #ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2669,14 +2666,6 @@ public:
     {
       using Kokkos::subview;
       using Tpetra::Details::PackTraits;
-      // NOTE (mfh 02 Feb 2015) This assumes that output_buffer_type is
-      // the same, no matter what type we're packing.  It's a reasonable
-      // assumption, given that we go through the trouble of PackTraits
-      // just so that we can pack data of different types in the same
-      // buffer.
-      typedef typename PackTraits<LO, D>::output_buffer_type output_buffer_type;
-      typedef typename output_buffer_type::size_type size_type;
-      typedef typename std::pair<size_type, size_type> pair_type;
 
       if (numEnt == 0) {
         // Empty rows always take zero bytes, to ensure sparsity.
@@ -2694,12 +2683,9 @@ public:
       const size_t valsBeg = gidsBeg + gidsLen;
       const size_t valsLen = numScalarEnt * numBytesPerValue;
 
-      output_buffer_type numEntOut =
-        subview (exports, pair_type (numEntBeg, numEntBeg + numEntLen));
-      output_buffer_type gidsOut =
-        subview (exports, pair_type (gidsBeg, gidsBeg + gidsLen));
-      output_buffer_type valsOut =
-        subview (exports, pair_type (valsBeg, valsBeg + valsLen));
+      char* const numEntOut = exports.data () + numEntBeg;
+      char* const gidsOut = exports.data () + gidsBeg;
+      char* const valsOut = exports.data () + valsBeg;
 
       size_t numBytesOut = 0;
       int errorCode = 0;
@@ -2707,11 +2693,11 @@ public:
 
       {
         Kokkos::pair<int, size_t> p;
-        p = PackTraits<GO, D>::packArray (gidsOut, gidsIn, numEnt);
+        p = PackTraits<GO, D>::packArray (gidsOut, gidsIn.data (), numEnt);
         errorCode += p.first;
         numBytesOut += p.second;
 
-        p = PackTraits<ST, D>::packArray (valsOut, valsIn, numScalarEnt);
+        p = PackTraits<ST, D>::packArray (valsOut, valsIn.data (), numScalarEnt);
         errorCode += p.first;
         numBytesOut += p.second;
       }
@@ -2741,16 +2727,7 @@ public:
                           const size_t numBytesPerValue,
                           const size_t blockSize)
     {
-      using Kokkos::subview;
       using Tpetra::Details::PackTraits;
-      // NOTE (mfh 02 Feb 2015) This assumes that input_buffer_type is
-      // the same, no matter what type we're unpacking.  It's a
-      // reasonable assumption, given that we go through the trouble of
-      // PackTraits just so that we can pack data of different types in
-      // the same buffer.
-      typedef typename PackTraits<LO, D>::input_buffer_type input_buffer_type;
-      typedef typename input_buffer_type::size_type size_type;
-      typedef typename std::pair<size_type, size_type> pair_type;
 
       if (numBytes == 0) {
         // Rows with zero bytes always have zero entries.
@@ -2777,12 +2754,9 @@ public:
       const size_t valsBeg = gidsBeg + gidsLen;
       const size_t valsLen = numScalarEnt * numBytesPerValue;
 
-      input_buffer_type numEntIn =
-        subview (imports, pair_type (numEntBeg, numEntBeg + numEntLen));
-      input_buffer_type gidsIn =
-        subview (imports, pair_type (gidsBeg, gidsBeg + gidsLen));
-      input_buffer_type valsIn =
-        subview (imports, pair_type (valsBeg, valsBeg + valsLen));
+      const char* const numEntIn = imports.data () + numEntBeg;
+      const char* const gidsIn = imports.data () + gidsBeg;
+      const char* const valsIn = imports.data () + valsBeg;
 
       size_t numBytesOut = 0;
       int errorCode = 0;
@@ -2795,11 +2769,11 @@ public:
 
       {
         Kokkos::pair<int, size_t> p;
-        p = PackTraits<GO, D>::unpackArray (gidsOut, gidsIn, numEnt);
+        p = PackTraits<GO, D>::unpackArray (gidsOut.data (), gidsIn, numEnt);
         errorCode += p.first;
         numBytesOut += p.second;
 
-        p = PackTraits<ST, D>::unpackArray (valsOut, valsIn, numScalarEnt);
+        p = PackTraits<ST, D>::unpackArray (valsOut.data (), valsIn, numScalarEnt);
         errorCode += p.first;
         numBytesOut += p.second;
       }

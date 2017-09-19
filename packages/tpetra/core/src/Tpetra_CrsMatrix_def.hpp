@@ -6698,15 +6698,6 @@ namespace Tpetra {
     typedef impl_scalar_type ST;
     typedef typename View<int*, device_type>::HostMirror::execution_space HES;
 
-    // NOTE (mfh 02 Feb 2015) This assumes that output_buffer_type is
-    // the same, no matter what type we're packing.  It's a reasonable
-    // assumption, given that we go through the trouble of PackTraits
-    // just so that we can pack data of different types in the same
-    // buffer.
-    typedef typename PackTraits<LO, HES>::output_buffer_type output_buffer_type;
-    typedef typename output_buffer_type::size_type size_type;
-    typedef typename std::pair<size_type, size_type> pair_type;
-
     if (numEnt == 0) {
       // Empty rows always take zero bytes, to ensure sparsity.
       return 0;
@@ -6722,12 +6713,9 @@ namespace Tpetra {
     const size_t valsBeg = gidsBeg + gidsLen;
     const size_t valsLen = numEnt * numBytesPerValue;
 
-    output_buffer_type numEntOut =
-      subview (exports, pair_type (numEntBeg, numEntBeg + numEntLen));
-    output_buffer_type gidsOut =
-      subview (exports, pair_type (gidsBeg, gidsBeg + gidsLen));
-    output_buffer_type valsOut =
-      subview (exports, pair_type (valsBeg, valsBeg + valsLen));
+    char* const numEntOut = exports.data () + numEntBeg;
+    char* const gidsOut = exports.data () + gidsBeg;
+    char* const valsOut = exports.data () + valsBeg;
 
     size_t numBytesOut = 0;
     int errorCode = 0;
@@ -6735,11 +6723,11 @@ namespace Tpetra {
 
     {
       Kokkos::pair<int, size_t> p;
-      p = PackTraits<GO, HES>::packArray (gidsOut, gidsIn, numEnt);
+      p = PackTraits<GO, HES>::packArray (gidsOut, gidsIn.data (), numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
 
-      p = PackTraits<ST, HES>::packArray (valsOut, valsIn, numEnt);
+      p = PackTraits<ST, HES>::packArray (valsOut, valsIn.data (), numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
     }
@@ -6809,8 +6797,7 @@ namespace Tpetra {
     const size_t valsBeg = gidsBeg + gidsLen;
     const size_t valsLen = numEnt * numBytesPerValue;
 
-    input_buffer_type numEntIn =
-      subview (imports, pair_type (numEntBeg, numEntBeg + numEntLen));
+    const char* const numEntIn = imports.data () + numEntBeg;
     input_buffer_type gidsIn =
       subview (imports, pair_type (gidsBeg, gidsBeg + gidsLen));
     input_buffer_type valsIn =
@@ -6827,11 +6814,11 @@ namespace Tpetra {
 
     {
       Kokkos::pair<int, size_t> p;
-      p = PackTraits<GO, HES>::unpackArray (gidsOut, gidsIn, numEnt);
+      p = PackTraits<GO, HES>::unpackArray (gidsOut.data (), gidsIn.data (), numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
 
-      p = PackTraits<ST, HES>::unpackArray (valsOut, valsIn, numEnt);
+      p = PackTraits<ST, HES>::unpackArray (valsOut.data (), valsIn.data (), numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
     }
@@ -7610,7 +7597,6 @@ namespace Tpetra {
 
     typedef View<GO*, HES, MemoryUnmanaged> gids_out_type;
     typedef View<ST*, HES, MemoryUnmanaged> vals_out_type;
-    typedef typename PackTraits<GO, HES>::input_buffer_type input_buffer_type;
 
     const char tfecfFuncName[] = "unpackAndCombine: ";
 
@@ -7670,8 +7656,7 @@ namespace Tpetra {
           "theNumBytes = " << theNumBytes << " > numBytes = " << numBytes << ".");
 #endif // HAVE_TPETRA_DEBUG
 
-      const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-      input_buffer_type inBuf = subview (imports_k, rng); // imports (offset, theNumBytes);
+      const char* const inBuf = imports_k.data () + offset;
       const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -7720,9 +7705,7 @@ namespace Tpetra {
         continue; // empty buffer for that row means that the row is empty
       }
       LO numEntLO = 0;
-      const size_t theNumBytes = PackTraits<LO, HES>::packValueCount (numEntLO);
-      const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-      input_buffer_type inBuf = subview (imports_k, rng); // imports (offset, theNumBytes);
+      const char* const inBuf = imports_k.data () + offset;
       const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
       (void) actualNumBytes;
 
@@ -7776,7 +7759,6 @@ namespace Tpetra {
                       typename View<int*, HES>::size_type> pair_type;
     typedef View<GO*, HES, MemoryUnmanaged> gids_out_type;
     typedef View<ST*, HES, MemoryUnmanaged> vals_out_type;
-    typedef typename PackTraits<GO, HES>::input_buffer_type input_buffer_type;
     const char tfecfFuncName[] = "unpackAndCombineNewImplNonStatic: ";
 
     const size_type numImportLIDs = importLIDs.dimension_0 ();
@@ -7847,8 +7829,7 @@ namespace Tpetra {
          << theNumBytes << " > numBytes = " << numBytes << ".");
 #endif // HAVE_TPETRA_DEBUG
 
-      const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-      input_buffer_type inBuf = subview (imports_h, rng); // imports (offset, theNumBytes);
+      const char* const inBuf = imports_h.data () + offset;
       const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
 
 #ifdef HAVE_TPETRA_DEBUG
@@ -7894,9 +7875,7 @@ namespace Tpetra {
         continue; // empty buffer for that row means that the row is empty
       }
       LO numEntLO = 0;
-      const size_t theNumBytes = PackTraits<LO, HES>::packValueCount (numEntLO);
-      const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-      input_buffer_type inBuf = subview (imports_h, rng); // imports (offset, theNumBytes);
+      const char* const inBuf = imports_h.data () + offset;
       const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
       (void) actualNumBytes;
 

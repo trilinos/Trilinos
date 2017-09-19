@@ -170,21 +170,16 @@ struct PackTraits {
   //    packArray error code (success = 0)}
   KOKKOS_INLINE_FUNCTION
   static Kokkos::pair<int, size_t>
-  packArray (const output_buffer_type& outBuf,
-             const input_array_type& inBuf,
+  packArray (char outBuf[],
+             const value_type inBuf[],
              const size_t numEnt)
   {
     size_t numBytes = 0;
     int errorCode = 0;
     typedef Kokkos::pair<int, size_t> pair_type;
-    if (static_cast<size_t> (inBuf.dimension_0 ()) < numEnt) {
-      // inBuf.dimension_0() must be >= numEnt
-      errorCode = 1;
-      return pair_type(errorCode, numBytes);
-    }
 
     if (numEnt == 0) {
-      return pair_type(errorCode, numBytes);
+      return pair_type (errorCode, numBytes);
     }
     else {
       // NOTE (mfh 02 Feb 2015) This assumes that all instances of T
@@ -197,18 +192,12 @@ struct PackTraits {
       // T's size is run-time dependent, a default-constructed T might
       // not have the right size.  However, we require that all
       // entries of the input array have the correct size.
-      numBytes = numEnt * packValueCount (inBuf(0));
-
-      if (static_cast<size_t> (outBuf.dimension_0 ()) < numBytes) {
-        // outBuf.dimension_0() must be >= numEnt
-        errorCode = 2;
-        return pair_type(errorCode, numBytes);
-      }
+      numBytes = numEnt * packValueCount (inBuf[0]);
 
       // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
       // function.  It does what one would expect.
-      memcpy (outBuf.ptr_on_device (), inBuf.ptr_on_device (), numBytes);
-      return pair_type(errorCode, numBytes);
+      memcpy (outBuf, inBuf, numBytes);
+      return pair_type (errorCode, numBytes);
     }
   }
 
@@ -229,47 +218,36 @@ struct PackTraits {
   //    unpackArray error code (success = 0)}
   KOKKOS_INLINE_FUNCTION
   static Kokkos::pair<int, size_t>
-  unpackArray (const output_array_type& outBuf,
-               const input_buffer_type& inBuf,
+  unpackArray (value_type outBuf[],
+               const char inBuf[],
                const size_t numEnt)
   {
     size_t numBytes = 0;
     int errorCode = 0;
     typedef Kokkos::pair<int, size_t> pair_type;
 
-    if (static_cast<size_t> (outBuf.size ()) < numEnt) {
-      // outBuf.size() must be >= numEnt
-      errorCode = 1;
-      return pair_type(errorCode, numBytes);
-    }
-
     if (numEnt == 0) {
-      return pair_type(errorCode, numBytes);
+      return pair_type (errorCode, numBytes);
     }
     else {
-      // NOTE (mfh 02 Feb 2015) This assumes that all instances of T
-      // require the same number of bytes.  To generalize this, we
-      // would need to sum up the counts for all entries of inBuf.
-      // That of course would suggest that we would need to memcpy
-      // each entry separately.
+      // NOTE (mfh 02 Feb 2015) This assumes that all instances of
+      // value_type require the same number of bytes.  To generalize
+      // this, we would need to sum up the counts for all entries of
+      // inBuf.  That of course would suggest that we would need to
+      // memcpy each entry separately.
       //
-      // We can't just default construct an instance of T, because if
-      // T's size is run-time dependent, a default-constructed T might
-      // not have the right size.  However, we require that all
-      // entries of the input array have the correct size.
-      const T& val = outBuf(0);
+      // We can't just default construct an instance of value_type,
+      // because if value_type's size is run-time dependent, a
+      // default-constructed value_type might not have the right size.
+      // However, we require that all entries of the input array have
+      // the correct size.
+      const value_type& val = outBuf[0];
       numBytes = numEnt * packValueCount (val);
-
-      if (static_cast<size_t> (inBuf.dimension_0 ()) < numBytes) {
-        // inBuf.dimension_0() must be >= numBytes
-        errorCode = 1;
-        return pair_type(errorCode, numBytes);
-      }
 
       // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
       // function.  It does what one would expect.
-      memcpy (outBuf.ptr_on_device (), inBuf.ptr_on_device (), numBytes);
-      return pair_type(errorCode, numBytes);
+      memcpy (outBuf, inBuf, numBytes);
+      return pair_type (errorCode, numBytes);
     }
   }
 
@@ -314,7 +292,7 @@ struct PackTraits {
   /// \return The number of bytes used to pack \c inVal.
   KOKKOS_INLINE_FUNCTION
   static size_t
-  packValue (const output_buffer_type& outBuf,
+  packValue (char outBuf[],
              const T& inVal)
   {
     // It's actually OK for packValueCount to return an upper bound
@@ -324,7 +302,7 @@ struct PackTraits {
 
     // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
     // function.  It does what one would expect.
-    memcpy (outBuf.ptr_on_device (), &inVal, numBytes);
+    memcpy (outBuf, &inVal, numBytes);
     return numBytes;
   }
 
@@ -334,13 +312,14 @@ struct PackTraits {
   /// \pre \c outBuf has at least \c packValueCount(inVal) entries.
   ///
   /// \param outBuf [out] Output buffer of bytes.
-  /// \param outBufIndex [in] Index in to output buffer
+  /// \param outBufIndex [in] Index into output buffer (multiplied by
+  ///   the number of bytes needed to pack inVal).
   /// \param inVal [in] Input value to pack.
   ///
   /// \return The number of bytes used to pack \c inVal.
   KOKKOS_INLINE_FUNCTION
   static size_t
-  packValue (const output_buffer_type& outBuf,
+  packValue (char outBuf[],
              const size_t outBufIndex,
              const T& inVal)
   {
@@ -352,7 +331,7 @@ struct PackTraits {
 
     // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
     // function.  It does what one would expect.
-    memcpy (outBuf.ptr_on_device () + offset, &inVal, numBytes);
+    memcpy (outBuf + offset, &inVal, numBytes);
     return numBytes;
   }
 
@@ -370,7 +349,7 @@ struct PackTraits {
   /// output.
   KOKKOS_INLINE_FUNCTION
   static size_t
-  unpackValue (T& outVal, const input_buffer_type& inBuf)
+  unpackValue (T& outVal, const char inBuf[])
   {
     // It's actually OK for packValueCount to return an upper bound
     // (e.g., padding for alignment).  The memcpy call below will copy
@@ -379,7 +358,7 @@ struct PackTraits {
 
     // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
     // function.  It does what one would expect.
-    memcpy (&outVal, inBuf.ptr_on_device (), numBytes);
+    memcpy (&outVal, inBuf, numBytes);
     return numBytes;
   }
 }; // struct PackTraits
