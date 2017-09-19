@@ -177,38 +177,32 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
 
   KOKKOS_INLINE_FUNCTION
   static Kokkos::pair<int, size_t>
-  packArray (const output_buffer_type& outBuf,
-             const input_array_type& inBuf,
+  packArray (char outBuf[],
+             const value_type inBuf[],
              const size_t numEnt)
   {
     typedef Kokkos::pair<int, size_t> return_type;
     size_t numBytes = 0;
     int errorCode = 0;
-    if (static_cast<size_t> (inBuf.dimension_0 ()) < numEnt) {
-      // inBuf.dimension_0 () must be >= numEnt!
-      errorCode = 1;
-      return return_type(errorCode, numBytes);
-    }
 
     if (numEnt == 0) {
-      return return_type(errorCode, numBytes);
+      return return_type (errorCode, numBytes);
     }
     else {
       // Check whether input array is contiguously allocated based on the size
       // of the first entry.  We can only pack contiguously allocated data
       // since that is the only way we can guarrantee all of the PCE arrays
       // are the same size and the buffer will allocated correctly.
-      const size_t scalar_size = numValuesPerScalar(inBuf(0));
-      const size_t in_dim = inBuf.dimension_0();
-      const scalar_value_type* last_coeff = inBuf(in_dim-1).coeff();
+      const size_t scalar_size = numValuesPerScalar (inBuf[0]);
+      const scalar_value_type* last_coeff = inBuf[numEnt - 1].coeff ();
       const scalar_value_type* last_coeff_expected =
-        inBuf(0).coeff() + (in_dim-1)*scalar_size;
+        inBuf[0].coeff () + (numEnt - 1)*scalar_size;
       const bool is_contiguous = (last_coeff == last_coeff_expected);
-      if(!is_contiguous) {
+      if (! is_contiguous) {
         // Cannot pack non-contiguous PCE array since buffer size calculation
         // is likely wrong.
         errorCode = 3;
-        return return_type(errorCode, numBytes);
+        return return_type (errorCode, numBytes);
       }
 
       // Check we are packing length-1 PCE arrays (mean-based preconditioner).
@@ -221,12 +215,11 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
         // Cannot pack PCE array with pce_size > 1 since unpack array
         // may not be allocated correctly.
         errorCode = 4;
-        return return_type(errorCode, numBytes);
+        return return_type (errorCode, numBytes);
       }
 
       const size_t flat_numEnt = numEnt * scalar_size;
-      scalar_input_array_type flat_inBuf(inBuf(0).coeff(), flat_numEnt);
-      return SPT::packArray(outBuf, flat_inBuf, flat_numEnt);
+      return SPT::packArray (outBuf, inBuf[0].coeff (), flat_numEnt);
     }
   }
 

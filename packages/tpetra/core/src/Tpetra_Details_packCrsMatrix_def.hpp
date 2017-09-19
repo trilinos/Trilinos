@@ -416,7 +416,6 @@ packCrsMatrixRow (const ColumnMap& col_map,
   typedef typename ColumnMap::global_ordinal_type GO;
   typedef BufferDeviceType BDT;
   typedef Kokkos::pair<int, size_t> return_type;
-  typedef typename Kokkos::pair<size_t, size_t> pair_type;
 
   if (num_ent == 0) {
     // Empty rows always take zero bytes, to ensure sparsity.
@@ -441,7 +440,7 @@ packCrsMatrixRow (const ColumnMap& col_map,
   char* const num_ent_out = exports.data () + num_ent_beg;
   char* const gids_out = exports.data () + gids_beg;
   char* const pids_out = pack_pids ? exports.data () + pids_beg : NULL;
-  auto vals_out = subview (exports, pair_type (vals_beg, vals_beg + vals_len));
+  char* const vals_out = exports.data () + vals_beg;
 
   size_t num_bytes_out = 0;
   int error_code = 0;
@@ -463,13 +462,8 @@ packCrsMatrixRow (const ColumnMap& col_map,
         num_bytes_out += PackTraits<int, BDT>::packValue (pids_out, k, pid);
       }
     }
-    // mfh 05 Sep 2017: See #1673 for the reason why vals_in needs to
-    // be converted to an unmanaged BDT View.  It's important that it
-    // be unmanaged!
-    Kokkos::View<const ST*, BDT, Kokkos::MemoryUnmanaged>
-      vals_in_bdt (vals_in.data (), vals_in.dimension_0 ());
     const auto p =
-      PackTraits<ST, BDT>::packArray (vals_out, vals_in_bdt, num_ent);
+      PackTraits<ST, BDT>::packArray (vals_out, vals_in.data (), num_ent);
     error_code += p.first;
     num_bytes_out += p.second;
   }
