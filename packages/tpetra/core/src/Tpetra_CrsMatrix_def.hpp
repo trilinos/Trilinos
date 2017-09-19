@@ -6814,11 +6814,11 @@ namespace Tpetra {
 
     {
       Kokkos::pair<int, size_t> p;
-      p = PackTraits<GO, HES>::unpackArray (gidsOut, gidsIn, numEnt);
+      p = PackTraits<GO, HES>::unpackArray (gidsOut.data (), gidsIn.data (), numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
 
-      p = PackTraits<ST, HES>::unpackArray (valsOut, valsIn, numEnt);
+      p = PackTraits<ST, HES>::unpackArray (valsOut.data (), valsIn.data (), numEnt);
       errorCode += p.first;
       numBytesOut += p.second;
     }

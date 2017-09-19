@@ -112,11 +112,6 @@ unpack_crs_matrix_row (typename PackTraits<GO, DT>::output_array_type& gids_out,
                        const size_t num_ent,
                        const size_t num_bytes_per_value)
 {
-  using Kokkos::subview;
-  typedef typename PackTraits<LO, BDT>::input_buffer_type input_buffer_type;
-  typedef typename input_buffer_type::size_type size_type;
-  typedef typename Kokkos::pair<size_type, size_type> slice;
-
   if (num_ent == 0) {
     // Empty rows always take zero bytes, to ensure sparsity.
     return 0;
@@ -139,12 +134,9 @@ unpack_crs_matrix_row (typename PackTraits<GO, DT>::output_array_type& gids_out,
   const size_t vals_len = num_ent * num_bytes_per_value;
 
   const char* const num_ent_in = imports.data () + num_ent_beg;
-  auto gids_in = subview (imports, slice (gids_beg, gids_beg + gids_len));
-  decltype (gids_in) pids_in;
-  if (unpack_pids) {
-    pids_in = subview (imports, slice (pids_beg, pids_beg + pids_len));
-  }
-  auto vals_in = subview (imports, slice (vals_beg, vals_beg + vals_len));
+  const char* const gids_in = imports.data () + gids_beg;
+  const char* const pids_in = unpack_pids ? imports.data () + pids_beg : NULL;
+  const char* const vals_in = imports.data () + vals_beg;
 
   size_t num_bytes_out = 0;
   LO num_ent_out;
@@ -155,22 +147,21 @@ unpack_crs_matrix_row (typename PackTraits<GO, DT>::output_array_type& gids_out,
 
   {
     Kokkos::pair<int, size_t> p;
-    p = PackTraits<GO, BDT>::unpackArray (gids_out, gids_in, num_ent);
+    p = PackTraits<GO, BDT>::unpackArray (gids_out.data (), gids_in, num_ent);
     if (p.first != 0) {
       return 21; // error code
     }
     num_bytes_out += p.second;
 
     if (unpack_pids) {
-      p = PackTraits<int, BDT>::unpackArray(pids_out, pids_in, num_ent);
+      p = PackTraits<int, BDT>::unpackArray (pids_out.data (), pids_in, num_ent);
       if (p.first != 0) {
         return 22; // error code
       }
       num_bytes_out += p.second;
     }
 
-    typename PackTraits<ST, BDT>::output_array_type vals_out_bdt (vals_out.data (), vals_out.size ());
-    p = PackTraits<ST, BDT>::unpackArray (vals_out_bdt, vals_in, num_ent);
+    p = PackTraits<ST, BDT>::unpackArray (vals_out.data (), vals_in, num_ent);
     if (p.first != 0) {
       return 23; // error code
     }

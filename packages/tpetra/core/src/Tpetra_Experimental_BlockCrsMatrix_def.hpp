@@ -2727,16 +2727,7 @@ public:
                           const size_t numBytesPerValue,
                           const size_t blockSize)
     {
-      using Kokkos::subview;
       using Tpetra::Details::PackTraits;
-      // NOTE (mfh 02 Feb 2015) This assumes that input_buffer_type is
-      // the same, no matter what type we're unpacking.  It's a
-      // reasonable assumption, given that we go through the trouble of
-      // PackTraits just so that we can pack data of different types in
-      // the same buffer.
-      typedef typename PackTraits<LO, D>::input_buffer_type input_buffer_type;
-      typedef typename input_buffer_type::size_type size_type;
-      typedef typename std::pair<size_type, size_type> pair_type;
 
       if (numBytes == 0) {
         // Rows with zero bytes always have zero entries.
@@ -2764,10 +2755,8 @@ public:
       const size_t valsLen = numScalarEnt * numBytesPerValue;
 
       const char* const numEntIn = imports.data () + numEntBeg;
-      input_buffer_type gidsIn =
-        subview (imports, pair_type (gidsBeg, gidsBeg + gidsLen));
-      input_buffer_type valsIn =
-        subview (imports, pair_type (valsBeg, valsBeg + valsLen));
+      const char* const gidsIn = imports.data () + gidsBeg;
+      const char* const valsIn = imports.data () + valsBeg;
 
       size_t numBytesOut = 0;
       int errorCode = 0;
@@ -2780,11 +2769,11 @@ public:
 
       {
         Kokkos::pair<int, size_t> p;
-        p = PackTraits<GO, D>::unpackArray (gidsOut, gidsIn, numEnt);
+        p = PackTraits<GO, D>::unpackArray (gidsOut.data (), gidsIn, numEnt);
         errorCode += p.first;
         numBytesOut += p.second;
 
-        p = PackTraits<ST, D>::unpackArray (valsOut, valsIn, numScalarEnt);
+        p = PackTraits<ST, D>::unpackArray (valsOut.data (), valsIn, numScalarEnt);
         errorCode += p.first;
         numBytesOut += p.second;
       }

@@ -218,47 +218,36 @@ struct PackTraits {
   //    unpackArray error code (success = 0)}
   KOKKOS_INLINE_FUNCTION
   static Kokkos::pair<int, size_t>
-  unpackArray (const output_array_type& outBuf,
-               const input_buffer_type& inBuf,
+  unpackArray (value_type outBuf[],
+               const char inBuf[],
                const size_t numEnt)
   {
     size_t numBytes = 0;
     int errorCode = 0;
     typedef Kokkos::pair<int, size_t> pair_type;
 
-    if (static_cast<size_t> (outBuf.size ()) < numEnt) {
-      // outBuf.size() must be >= numEnt
-      errorCode = 1;
-      return pair_type(errorCode, numBytes);
-    }
-
     if (numEnt == 0) {
-      return pair_type(errorCode, numBytes);
+      return pair_type (errorCode, numBytes);
     }
     else {
-      // NOTE (mfh 02 Feb 2015) This assumes that all instances of T
-      // require the same number of bytes.  To generalize this, we
-      // would need to sum up the counts for all entries of inBuf.
-      // That of course would suggest that we would need to memcpy
-      // each entry separately.
+      // NOTE (mfh 02 Feb 2015) This assumes that all instances of
+      // value_type require the same number of bytes.  To generalize
+      // this, we would need to sum up the counts for all entries of
+      // inBuf.  That of course would suggest that we would need to
+      // memcpy each entry separately.
       //
-      // We can't just default construct an instance of T, because if
-      // T's size is run-time dependent, a default-constructed T might
-      // not have the right size.  However, we require that all
-      // entries of the input array have the correct size.
-      const T& val = outBuf(0);
+      // We can't just default construct an instance of value_type,
+      // because if value_type's size is run-time dependent, a
+      // default-constructed value_type might not have the right size.
+      // However, we require that all entries of the input array have
+      // the correct size.
+      const value_type& val = outBuf[0];
       numBytes = numEnt * packValueCount (val);
-
-      if (static_cast<size_t> (inBuf.dimension_0 ()) < numBytes) {
-        // inBuf.dimension_0() must be >= numBytes
-        errorCode = 1;
-        return pair_type(errorCode, numBytes);
-      }
 
       // As of CUDA 6, it's totally fine to use memcpy in a CUDA device
       // function.  It does what one would expect.
-      memcpy (outBuf.ptr_on_device (), inBuf.ptr_on_device (), numBytes);
-      return pair_type(errorCode, numBytes);
+      memcpy (outBuf, inBuf, numBytes);
+      return pair_type (errorCode, numBytes);
     }
   }
 

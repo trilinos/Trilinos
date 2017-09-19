@@ -225,38 +225,30 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
 
   KOKKOS_INLINE_FUNCTION
   static Kokkos::pair<int, size_t>
-  unpackArray (const output_array_type& outBuf,
-               const input_buffer_type& inBuf,
+  unpackArray (value_type outBuf[],
+               const char inBuf[],
                const size_t numEnt)
   {
     typedef Kokkos::pair<int, size_t> return_type;
     size_t numBytes = 0;
     int errorCode = 0;
 
-    if (static_cast<size_t> (outBuf.dimension_0 ()) < numEnt) {
-      // outBuf.dimension_0 () must be >= numEnt
-      errorCode = 1;
-      return return_type(errorCode, numBytes);
-    }
-
     if (numEnt == 0) {
-      return return_type(errorCode, numBytes);
+      return return_type (errorCode, numBytes);
     }
     else {
       // Check whether output array is contiguously allocated based on the size
       // of the first entry.  We have a simpler method to unpack in this case
-      const size_type scalar_size = numValuesPerScalar(outBuf(0));
-      const size_type out_dim = outBuf.dimension_0();
-      const scalar_value_type* last_coeff = outBuf(out_dim-1).coeff();
+      const size_type scalar_size = numValuesPerScalar (outBuf[0]);
+      const scalar_value_type* last_coeff = outBuf[numEnt - 1].coeff ();
       const scalar_value_type* last_coeff_expected =
-        outBuf(0).coeff() + (out_dim-1)*scalar_size;
+        outBuf[0].coeff () + (numEnt - 1) * scalar_size;
       const bool is_contiguous = (last_coeff == last_coeff_expected);
 
       if (is_contiguous) {
         // Unpack all of the PCE coefficients for the whole array
         const size_t flat_numEnt = numEnt * scalar_size;
-        scalar_output_array_type flat_outBuf(outBuf(0).coeff(), flat_numEnt);
-        return SPT::unpackArray(flat_outBuf, inBuf, flat_numEnt);
+        return SPT::unpackArray (outBuf[0].coeff (), inBuf, flat_numEnt);
       }
       else {
         // Unpack one entry at a time.  This assumes each entry of outBuf
@@ -264,12 +256,12 @@ struct PackTraits< Sacado::UQ::PCE<S>, D > {
         // guarranteed to be true for pce_size == 1, hence the check in
         // packArray().
         size_t numBytesTotal = 0;
-        for (size_t i=0; i<numEnt; ++i) {
-          const char* inBufVal = inBuf.data () + numBytesTotal;
-          const size_t numBytes = unpackValue(outBuf(i), inBufVal);
+        for (size_t i = 0; i < numEnt; ++i) {
+          const char* inBufVal = inBuf + numBytesTotal;
+          const size_t numBytes = unpackValue (outBuf[i], inBufVal);
           numBytesTotal += numBytes;
         }
-        return return_type(errorCode, numBytesTotal);
+        return return_type (errorCode, numBytesTotal);
       }
     }
   }
