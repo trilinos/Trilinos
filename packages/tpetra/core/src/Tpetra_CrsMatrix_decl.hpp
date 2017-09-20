@@ -3627,24 +3627,6 @@ namespace Tpetra {
 
   public:
     /// \brief Unpack the imported column indices and values, and
-    /// combine into matrix; implements "old" DistObject interface.
-    ///
-    /// \warning The allowed \c combineMode depends on whether the
-    ///   matrix's graph is static or dynamic.  ADD, REPLACE, and
-    ///   ABSMAX are valid for a static graph, but INSERT is not.
-    ///   ADD and INSERT are valid for a dynamic graph; ABSMAX and
-    ///   REPLACE have not yet been implemented (and would require
-    ///   serious changes to matrix assembly in order to implement
-    ///   sensibly).
-    void
-    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                      const Teuchos::ArrayView<const char> &imports,
-                      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                      size_t constantNumPackets,
-                      Distributor& distor,
-                      CombineMode combineMode);
-
-    /// \brief Unpack the imported column indices and values, and
     ///   combine into matrix; implements "new" DistObject interface.
     ///
     /// \warning The allowed \c combineMode depends on whether the
