@@ -3589,17 +3589,6 @@ namespace Tpetra {
     /// \brief Unpack the imported column indices and values, and
     ///   combine into matrix.
     void
-    unpackAndCombineImpl (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-                          const Teuchos::ArrayView<const char>& imports,
-                          const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-                          const size_t constantNumPackets,
-                          Distributor& distor,
-                          const CombineMode combineMode,
-                          const bool atomic = useAtomicUpdatesByDefault);
-
-    /// \brief Unpack the imported column indices and values, and
-    ///   combine into matrix.
-    void
     unpackAndCombineNewImpl (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
                              const Kokkos::DualView<const char*, buffer_device_type>& imports,
                              const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
@@ -3607,16 +3596,8 @@ namespace Tpetra {
                              Distributor& distor,
                              const CombineMode combineMode,
                              const bool atomic = useAtomicUpdatesByDefault);
-
-    void
-    unpackAndCombineImplNonStatic (
-        const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-        const Teuchos::ArrayView<const char>& imports,
-        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-        size_t constantNumPackets,
-        Distributor& distor,
-        CombineMode combineMode);
-
+    /// \brief Implementation of unpackAndCombineNewImpl for when the
+    ///   target matrix's structure may change.
     void
     unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
                                       const Kokkos::DualView<const char*, buffer_device_type>& imports,
