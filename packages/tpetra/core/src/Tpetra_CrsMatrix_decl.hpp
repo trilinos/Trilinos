@@ -3739,6 +3739,7 @@ namespace Tpetra {
              size_t& constantNumPackets,
              Distributor& dist) const;
 
+  private:
     /// \brief Pack this matrix (part of implementation of packAndPrepareNew).
     ///
     /// This method helps implement packAndPrepareNew.
@@ -3752,7 +3753,6 @@ namespace Tpetra {
                       size_t& constantNumPackets,
                       Distributor& distor) const;
 
-  private:
     /// \brief Pack data for the current row to send.
     ///
     /// \param numEntOut [out] Where to write the number of entries in
