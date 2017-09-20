@@ -1663,15 +1663,16 @@ namespace Tpetra {
     ///
     /// \param lclInds [out] Pointer to the local column indices of
     ///   the given row.
-    /// \param numEnt [out] Number of entries in the given row.
-    /// \param rowinfo [in] Result of getRowInfo(lclRow) for the row
+    /// \param capacity [out] Capacity of (number of entries that can
+    ///   fit in) the given row.
+    /// \param rowInfo [in] Result of getRowInfo(lclRow) for the row
     ///   \c lclRow to view.
     ///
     /// \return 0 if successful, else a nonzero error code.
     LocalOrdinal
     getLocalViewRawConst (const LocalOrdinal*& lclInds,
-                          LocalOrdinal& numEnt,
-                          const RowInfo& rowinfo) const;
+                          LocalOrdinal& capacity,
+                          const RowInfo& rowInfo) const;
 
   private:
 
@@ -1721,16 +1722,17 @@ namespace Tpetra {
     ///
     /// \param gblInds [out] Pointer to the global column indices of
     ///   the given row.
-    /// \param numEnt [out] Number of entries in the given row.
-    /// \param rowinfo [in] Result of
+    /// \param capacity [out] Capacity of (number of entries that can
+    ///   fit in) the given row.
+    /// \param rowInfo [in] Result of
     ///   getRowInfoFromGlobalRowIndex(gblRow) for the row to view,
     ///   whose global row index is \c gblRow.
     ///
     /// \return 0 if successful, else a nonzero error code.
     LocalOrdinal
     getGlobalViewRawConst (const GlobalOrdinal*& gblInds,
-                           LocalOrdinal& numEnt,
-                           const RowInfo& rowinfo) const;
+                           LocalOrdinal& capacity,
+                           const RowInfo& rowInfo) const;
 
   public:
     /// \brief Get the local graph.

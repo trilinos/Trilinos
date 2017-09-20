@@ -1324,35 +1324,35 @@ namespace Tpetra {
   LocalOrdinal
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getLocalViewRawConst (const LocalOrdinal*& lclInds,
-                        LocalOrdinal& numEnt,
-                        const RowInfo& rowinfo) const
+                        LocalOrdinal& capacity,
+                        const RowInfo& rowInfo) const
   {
     lclInds = NULL;
-    numEnt = 0;
+    capacity = 0;
 
-    if (rowinfo.allocSize != 0) {
+    if (rowInfo.allocSize != 0) {
       if (k_lclInds1D_.dimension_0 () != 0) { // 1-D storage
 #ifdef HAVE_TPETRA_DEBUG
-        if (rowinfo.offset1D + rowinfo.allocSize >
+        if (rowInfo.offset1D + rowInfo.allocSize >
             static_cast<size_t> (k_lclInds1D_.dimension_0 ())) {
           return static_cast<LocalOrdinal> (-1);
         }
 #endif // HAVE_TPETRA_DEBUG
-        lclInds = &k_lclInds1D_[rowinfo.offset1D];
-        numEnt = rowinfo.allocSize;
+        lclInds = &k_lclInds1D_[rowInfo.offset1D];
+        capacity = rowInfo.allocSize;
       }
       else { // 2-D storage
 #ifdef HAVE_TPETRA_DEBUG
-        if (rowinfo.localRow >= static_cast<size_t> (lclInds2D_.size ())) {
+        if (rowInfo.localRow >= static_cast<size_t> (lclInds2D_.size ())) {
           return static_cast<LocalOrdinal> (-1);
         }
 #endif // HAVE_TPETRA_DEBUG
         // Use a const reference so we don't touch the ArrayRCP's ref
         // count, since ArrayRCP's ref count is not thread safe.
-        const auto& curRow = lclInds2D_[rowinfo.localRow];
+        const auto& curRow = lclInds2D_[rowInfo.localRow];
         if (! curRow.empty ()) {
           lclInds = curRow.getRawPtr ();
-          numEnt = curRow.size ();
+          capacity = curRow.size ();
         }
       }
     }
@@ -1557,33 +1557,33 @@ namespace Tpetra {
   LocalOrdinal
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalViewRawConst (const GlobalOrdinal*& gblInds,
-                         LocalOrdinal& numEnt,
-                         const RowInfo& rowinfo) const
+                         LocalOrdinal& capacity,
+                         const RowInfo& rowInfo) const
   {
     gblInds = NULL;
-    numEnt = 0;
+    capacity = 0;
 
-    if (rowinfo.allocSize != 0) {
+    if (rowInfo.allocSize != 0) {
       if (k_gblInds1D_.dimension_0 () != 0) { // 1-D storage
 #ifdef HAVE_TPETRA_DEBUG
-        if (rowinfo.offset1D + rowinfo.allocSize >
+        if (rowInfo.offset1D + rowInfo.allocSize >
             static_cast<size_t> (k_gblInds1D_.dimension_0 ())) {
           return static_cast<LocalOrdinal> (-1);
         }
 #endif // HAVE_TPETRA_DEBUG
-        gblInds = &k_gblInds1D_[rowinfo.offset1D];
-        numEnt = rowinfo.allocSize;
+        gblInds = &k_gblInds1D_[rowInfo.offset1D];
+        capacity = rowInfo.allocSize;
       }
       else {
 #ifdef HAVE_TPETRA_DEBUG
-        if (rowinfo.localRow >= static_cast<size_t> (gblInds2D_.size ())) {
+        if (rowInfo.localRow >= static_cast<size_t> (gblInds2D_.size ())) {
           return static_cast<LocalOrdinal> (-1);
         }
 #endif // HAVE_TPETRA_DEBUG
-        const auto& curRow = gblInds2D_[rowinfo.localRow];
+        const auto& curRow = gblInds2D_[rowInfo.localRow];
         if (! curRow.empty ()) {
           gblInds = curRow.getRawPtr ();
-          numEnt = curRow.size ();
+          capacity = curRow.size ();
         }
       }
     }
@@ -5460,54 +5460,203 @@ namespace Tpetra {
         Teuchos::Array<GlobalOrdinal>& exports,
         const Teuchos::ArrayView<size_t>& numPacketsPerLID,
         size_t& constantNumPackets,
-        Distributor& distor) const
+        Distributor& /* distor */) const
   {
-    using Teuchos::Array;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    const char tfecfFuncName[] = "pack";
-    (void) distor; // forestall "unused argument" compiler warning
+    typedef typename Kokkos::View<size_t*,
+      device_type>::HostMirror::execution_space host_execution_space;
+    typedef typename device_type::execution_space device_execution_space;
+    const char tfecfFuncName[] = "pack: ";
+    constexpr bool debug = false;
+    const int myRank = debug ? this->getMap ()->getComm ()->getRank () : 0;
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      exportLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
-      ": exportLIDs and numPacketsPerLID must have the same size.");
+    const auto numExportLIDs = exportLIDs.size ();
+    if (debug) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": CrsGraph::pack: numExportLIDs = "
+         << numExportLIDs << std::endl;
+      std::cerr << os.str ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (numExportLIDs != numPacketsPerLID.size (), std::runtime_error,
+       "exportLIDs.size() = " << numExportLIDs << " != numPacketsPerLID.size()"
+       " = " << numPacketsPerLID.size () << ".");
 
-    const map_type& srcMap = * (this->getMap ());
+    // We may be accessing UVM data on host below, so ensure that the
+    // device is done accessing it.
+    device_execution_space::fence ();
+
+    const map_type& rowMap = * (this->getRowMap ());
+    const map_type* const colMapPtr = this->colMap_.getRawPtr ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isLocallyIndexed () && colMapPtr == NULL, std::logic_error,
+       "This graph claims to be locally indexed, but its column Map is NULL.  "
+       "This should never happen.  Please report this bug to the Tpetra "
+       "developers.");
+
+    // We may pack different amounts of data for different rows.
     constantNumPackets = 0;
 
-    // Set numPacketsPerLID[i] to the number of entries owned by the
-    // calling process in (local) row exportLIDs[i] of the graph, that
-    // the caller wants us to send out.  Compute the total number of
-    // packets (that is, entries) owned by this process in all the
-    // rows that the caller wants us to send out.
-    size_t totalNumPackets = 0;
-    Array<GO> row;
-    for (LO i = 0; i < exportLIDs.size (); ++i) {
-      const GO GID = srcMap.getGlobalElement (exportLIDs[i]);
-      size_t row_length = this->getNumEntriesInGlobalRow (GID);
-      numPacketsPerLID[i] = row_length;
-      totalNumPackets += row_length;
-    }
+    // mfh 20 Sep 2017: Teuchos::ArrayView isn't thread safe (well,
+    // it might be now, but we might as well be safe).
+    size_t* const numPacketsPerLID_raw = numPacketsPerLID.getRawPtr ();
+    const LO* const exportLIDs_raw = exportLIDs.getRawPtr ();
 
+    // Count the total number of packets (column indices, in the case
+    // of a CrsGraph) to pack.  While doing so, set
+    // numPacketsPerLID[i] to the number of entries owned by the
+    // calling process in (local) row exportLIDs[i] of the graph, that
+    // the caller wants us to send out.
+    Kokkos::RangePolicy<host_execution_space, LO> inputRange (0, numExportLIDs);
+    size_t totalNumPackets = 0;
+    size_t errCount = 0;
+    // lambdas turn what they capture const, so we can't
+    // atomic_add(&errCount,1).  Instead, we need a View to modify.
+    typedef Kokkos::Device<host_execution_space, Kokkos::HostSpace>
+      host_device_type;
+    Kokkos::View<size_t, host_device_type> errCountView (&errCount);
+    constexpr size_t ONE = 1;
+
+    Kokkos::parallel_reduce ("Tpetra::CrsGraph::pack: totalNumPackets",
+      inputRange,
+      [=] (const LO& i, size_t& curTotalNumPackets) {
+        const GO gblRow = rowMap.getGlobalElement (exportLIDs_raw[i]);
+        if (gblRow == Tpetra::Details::OrdinalTraits<GO>::invalid ()) {
+          Kokkos::atomic_add (&errCountView(), ONE);
+          numPacketsPerLID_raw[i] = 0;
+        }
+        else {
+          const size_t numEnt = this->getNumEntriesInGlobalRow (gblRow);
+          numPacketsPerLID_raw[i] = numEnt;
+          curTotalNumPackets += numEnt;
+        }
+      },
+      totalNumPackets);
+
+    if (debug) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": CrsGraph::pack: "
+         << "totalNumPackets = " << totalNumPackets << std::endl;
+      std::cerr << os.str ();
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (errCount != 0, std::logic_error, "totalNumPackets count encountered "
+       "one or more errors!  errCount = " << errCount
+       << ", totalNumPackets = " << totalNumPackets << ".");
+    errCount = 0;
+
+    // Allocate space for all the column indices to pack.
     exports.resize (totalNumPackets);
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->supportsRowViews (), std::logic_error,
+       "this->supportsRowViews() returns false; this should never happen.  "
+       "Please report this bug to the Tpetra developers.");
 
     // Loop again over the rows to export, and pack rows of indices
     // into the output buffer.
-    size_t exportsOffset = 0;
-    for (LO i = 0; i < exportLIDs.size (); ++i) {
-      const GO GID = srcMap.getGlobalElement (exportLIDs[i]);
-      size_t row_length = this->getNumEntriesInGlobalRow (GID);
-      row.resize (row_length);
-      size_t check_row_length = 0;
-      this->getGlobalRowCopy (GID, row (), check_row_length);
-      typename Array<GO>::const_iterator row_iter = row.begin();
-      typename Array<GO>::const_iterator row_end = row.end();
-      size_t j = 0;
-      for (; row_iter != row_end; ++row_iter, ++j) {
-        exports[exportsOffset+j] = *row_iter;
-      }
-      exportsOffset += row.size();
+
+    if (debug) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "Proc " << myRank << ": CrsGraph::pack: pack into exports" << std::endl;
+      std::cerr << os.str ();
     }
+
+    // Teuchos::ArrayView may not be thread safe, or may not be
+    // efficiently thread safe.  Better to use the raw pointer.
+    GO* const exports_raw = exports.getRawPtr ();
+    errCount = 0;
+    Kokkos::parallel_scan ("Tpetra::CrsGraph::pack: pack from views",
+      inputRange,
+      [=] (const LO& i, size_t& exportsOffset, const bool final) {
+        const size_t curOffset = exportsOffset;
+        const GO gblRow = rowMap.getGlobalElement (exportLIDs_raw[i]);
+        const RowInfo rowInfo = this->getRowInfoFromGlobalRowIndex (gblRow);
+
+        if (rowInfo.localRow == Tpetra::Details::OrdinalTraits<size_t>::invalid ()) {
+          if (debug) {
+            std::ostringstream os;
+            os << "Proc " << myRank << ": INVALID rowInfo: "
+               << "i = " << i << ", lclRow = " << exportLIDs_raw[i] << std::endl;
+            std::cerr << os.str ();
+          }
+          Kokkos::atomic_add (&errCountView(), ONE);
+        }
+        else if (curOffset + rowInfo.numEntries > totalNumPackets) {
+          if (debug) {
+            std::ostringstream os;
+            os << "Proc " << myRank << ": UH OH!  For i=" << i << ", lclRow="
+               << exportLIDs_raw[i] << ", gblRow=" << gblRow << ", curOffset "
+              "(= " << curOffset << ") + numEnt (= " << rowInfo.numEntries
+               << ") > totalNumPackets (= " << totalNumPackets << ")."
+               << std::endl;
+            std::cerr << os.str ();
+          }
+          Kokkos::atomic_add (&errCountView(), ONE);
+        }
+        else {
+          const LO numEnt = static_cast<LO> (rowInfo.numEntries);
+          if (this->isLocallyIndexed ()) {
+            const LO* lclColInds = NULL;
+            LO capacity = 0;
+            const LO errCode =
+              this->getLocalViewRawConst (lclColInds, capacity, rowInfo);
+            if (errCode == 0) {
+              if (final) {
+                for (LO k = 0; k < numEnt; ++k) {
+                  const LO lclColInd = lclColInds[k];
+                  const GO gblColInd = colMapPtr->getGlobalElement (lclColInd);
+                  // Pack it, even if it's wrong.  Let the receiving
+                  // process deal with it.  Otherwise, we'll miss out
+                  // on any correct data.
+                  exports_raw[curOffset + k] = gblColInd;
+                } // for each entry in the row
+              } // final pass?
+              exportsOffset = curOffset + numEnt;
+            }
+            else { // error in getting local row view
+              Kokkos::atomic_add (&errCountView(), ONE);
+            }
+          }
+          else if (this->isGloballyIndexed ()) {
+            const GO* gblColInds = NULL;
+            LO capacity = 0;
+            const LO errCode =
+              this->getGlobalViewRawConst (gblColInds, capacity, rowInfo);
+            if (errCode == 0) {
+              if (final) {
+                for (LO k = 0; k < numEnt; ++k) {
+                  const GO gblColInd = gblColInds[k];
+                  // Pack it, even if it's wrong.  Let the receiving
+                  // process deal with it.  Otherwise, we'll miss out
+                  // on any correct data.
+                  exports_raw[curOffset + k] = gblColInd;
+                } // for each entry in the row
+              } // final pass?
+              exportsOffset = curOffset + numEnt;
+            }
+            else { // error in getting global row view
+              Kokkos::atomic_add (&errCountView(), ONE);
+            }
+          }
+          // If neither globally nor locally indexed, then the graph
+          // has no entries in this row (or indeed, in any row on this
+          // process) to pack.
+        }
+      });
+
+    // We may have accessed UVM data on host above, so ensure that the
+    // device sees these changes.
+    device_execution_space::fence ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (errCount != 0, std::logic_error, "Packing encountered "
+       "one or more errors!  errCount = " << errCount
+       << ", totalNumPackets = " << totalNumPackets << ".");
   }
 
 
