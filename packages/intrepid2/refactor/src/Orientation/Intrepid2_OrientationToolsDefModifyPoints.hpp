@@ -84,6 +84,22 @@ namespace Intrepid2 {
       }
     }
     
+    template<typename JacobianViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    OrientationTools::
+    getLineJacobian(JacobianViewType jacobian, const ordinal_type ort) {
+#ifdef HAVE_INTREPID2_DEBUG
+      INTREPID2_TEST_FOR_ABORT( ort <0 || ort >1,
+                                ">>> ERROR (Intrepid2::OrientationTools::getLineJacobian): " \
+                                "Orientation is invalid (0--1)." );
+#endif
+
+      ordinal_type jac[2] = {  1,  -1 };
+
+      jacobian(0,0) = jac[ort];
+    }
+
     template<typename VT>
     KOKKOS_INLINE_FUNCTION
     void
@@ -126,6 +142,36 @@ namespace Intrepid2 {
       }
     }
 
+    template<typename JacobianViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    OrientationTools::
+    getTriangleJacobian(JacobianViewType jacobian, const ordinal_type ort) {
+#ifdef HAVE_INTREPID2_DEBUG
+      INTREPID2_TEST_FOR_ABORT( ort <0 || ort >5,
+                                ">>> ERROR (Intrepid2::OrientationTools::getTriangleJacobian): " \
+                                "Orientation is invalid (0--5)." );
+#endif
+
+      ordinal_type jac[6][2][2] = { { {  1,  0 },
+                                      {  0,  1 } }, // 0
+                                    { { -1, -1 },
+                                      {  1,  0 } }, // 1
+                                    { {  0,  1 },
+                                      { -1, -1 } }, // 2
+                                    { {  0,  1 },
+                                      {  1,  0 } }, // 3
+                                    { { -1, -1 },
+                                      {  0,  1 } }, // 4
+                                    { {  1,  0 },
+                                      { -1, -1 } } }; // 5
+
+      jacobian(0,0) = jac[ort][0][0];
+      jacobian(0,1) = jac[ort][0][1];
+      jacobian(1,0) = jac[ort][1][0];
+      jacobian(1,1) = jac[ort][1][1];
+    }
+
     template<typename VT>
     KOKKOS_INLINE_FUNCTION
     void
@@ -163,6 +209,40 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::OrientationTools::getModifiedQuadrilateralPoint): " \
                                   "Orientation is invalid (0--7)." );
       }
+    }
+
+    template<typename JacobianViewType>
+    KOKKOS_INLINE_FUNCTION
+    void
+    OrientationTools::
+    getQuadrilateralJacobian(JacobianViewType jacobian, const ordinal_type ort) {
+#ifdef HAVE_INTREPID2_DEBUG
+      INTREPID2_TEST_FOR_ABORT( ort <0 || ort >7,
+                                ">>> ERROR (Intrepid2::OrientationTools::getQuadrilateralJacobian): " \
+                                "Orientation is invalid (0--7)." );
+#endif
+
+      ordinal_type jac[8][2][2] = { { {  1,  0 },
+                                      {  0,  1 } }, // 0
+                                    { {  0, -1 },
+                                      {  1,  0 } }, // 1
+                                    { { -1,  0 },
+                                      {  0, -1 } }, // 2
+                                    { {  0,  1 },
+                                      { -1,  0 } }, // 3
+                                    { {  0,  1 },
+                                      {  1,  0 } }, // 4
+                                    { { -1,  0 },
+                                      {  0,  1 } }, // 5
+                                    { {  0, -1 },
+                                      { -1,  0 } }, // 6
+                                    { {  1,  0 },
+                                      {  0, -1 } } }; // 7
+
+      jacobian(0,0) = jac[ort][0][0];
+      jacobian(0,1) = jac[ort][0][1];
+      jacobian(1,0) = jac[ort][1][0];
+      jacobian(1,1) = jac[ort][1][1];
     }
 
     template<typename outPointViewType,
@@ -220,6 +300,54 @@ namespace Intrepid2 {
       }
       }
     }
+
+
+    template<typename outPointViewType>
+    inline
+    void
+    OrientationTools::
+    getJacobianOfOrientationMap(outPointViewType jacobian,
+                           const shards::CellTopology cellTopo,
+                           const ordinal_type cellOrt) {
+#ifdef HAVE_INTREPID2_DEBUG
+      {
+        const auto cellDim = cellTopo.getDimension();
+        INTREPID2_TEST_FOR_EXCEPTION( !( (1 <= cellDim) && (cellDim <= 2 ) ), std::invalid_argument,
+                                      ">>> ERROR (Intrepid::OrientationTools::getJacobianOfOrientationMap): " \
+                                      "Method defined only for 1 and 2-dimensional subcells.");
+
+        INTREPID2_TEST_FOR_ABORT( jacobian.rank() != 2,
+                                  ">>> ERROR (Intrepid2::OrientationTools::getJacobianOfOrientationMap): " \
+                                  "Jacobian should have rank 2" );
+
+        INTREPID2_TEST_FOR_EXCEPTION( ((jacobian.dimension(0) != cellDim) || (jacobian.dimension(1) != cellDim)), std::invalid_argument,
+                                      ">>> ERROR (Intrepid::OrientationTools::getJacobianOfOrientationMap): " \
+                                      "Size of jacobian is not compatible with cell topology.");
+      }
+#endif
+
+      const auto key = cellTopo.getBaseCellTopologyData()->key;
+      switch (key) {
+      case shards::Line<>::key :
+        getLineJacobian(jacobian, cellOrt);
+        break;
+      case shards::Triangle<>::key :
+          getTriangleJacobian(jacobian, cellOrt);
+        break;
+      case shards::Quadrilateral<>::key :
+          getQuadrilateralJacobian(jacobian, cellOrt);
+        break;
+      default: {
+        INTREPID2_TEST_FOR_WARNING( true,
+                                    ">>> ERROR (Intrepid2::OrientationTools::mapToModifiedReference): " \
+                                    "Invalid cell topology." );
+        break;
+      }
+      }
+    }
+
+
+
   }
 }
 

@@ -42,7 +42,15 @@
 
 
 /** \file   Intrepid_OrientationToolsDef.hpp
-    \brief  Definition file for the Intrepid2::OrientationTools class.
+    \brief  Creation of orientation matrix A of a face or edge for HGRAD elements
+    \li     \sum_k A_ik \psi_k(F_s (\eta_o (\xi_j))) \cdot (n_s det(J_\eta)) = \phi_i (\xi_j), where
+    \li     \psi_k are the basis functions of the reference cell,
+    \li     \phi_i are the basis function of the subcell,
+    \li     n_j is the side normal of subcell s (s == subcellId)
+    \li     F_s is the Jacobian of the map from the reference subcell to the subcell s of the reference cell (s == subcellId),
+    \li     \eta_o is the orientation map o associated to the subcell s (o == subcellOrt),
+    \li     J_{\eta} is the Jacobian of the map \eta_o,
+    \li     \xi_j are dof points of the subcell basis so that \phi_i (\xi_j) \dot t_j = \delta_ij
     \author Created by Kyungjoo Kim
 */
 #ifndef __INTREPID2_ORIENTATIONTOOLS_DEF_COEFF_MATRIX_HDIV_HPP__
@@ -61,102 +69,6 @@ namespace Intrepid2 {
   class Basis_HDIV_TET_In_FEM;
   
   namespace Impl {
-
-//    // we now have L2 basis functions, so we use that instead
-//    template<typename ExecSpaceType = void,
-//             typename outputValueType = double,
-//             typename pointValueType = double>
-//    class Basis_HDIV_TRI_Kn_FEM
-//      : public Basis<ExecSpaceType,outputValueType,pointValueType> {
-//    private:
-//      Intrepid2::Basis_HDIV_TET_In_FEM<ExecSpaceType,outputValueType,pointValueType> _tet;
-
-//    public:
-//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
-//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
-//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
-
-//      Basis_HDIV_TRI_Kn_FEM(const ordinal_type order,
-//                            const EPointType   pointType = POINTTYPE_EQUISPACED)
-//        : _tet(order, pointType) {
-//        this->basisCardinality_  = (order+1)*order/2;
-//        this->basisDegree_       = order;
-//        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
-//        this->basisType_         = BASIS_FEM_FIAT;
-//        this->basisCoordinates_  = COORDINATES_CARTESIAN;
-
-//        {
-//          // Basis-dependent initializations
-//          const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-//          const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
-//          const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-//          const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-//          
-//          constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*Parameters::MaxOrder/2;
-//          ordinal_type tags[maxCard][tagSize];
-//          
-//          for (ordinal_type i=0;i<this->basisCardinality_;++i) {
-//            tags[i][0] = 2; // elem dof
-//            tags[i][1] = 0; // elem id
-//            tags[i][2] = i; // local dof id
-//            tags[i][3] = this->basisCardinality_; // total number of dofs
-//          }
-
-//          ordinal_type_array_1d_host tagView(&tags[0][0], this->basisCardinality_*4);
-//          this->setOrdinalTagData(this->tagToOrdinal_,
-//                                  this->ordinalToTag_,
-//                                  tagView,
-//                                  this->basisCardinality_,
-//                                  tagSize,
-//                                  posScDim,
-//                                  posScOrd,
-//                                  posDfOrd);
-//        }
-//      }
-
-//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
-//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarType  scalarType;
-
-//      using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
-
-//      virtual
-//      void
-//      getValues( /* */ outputViewType outputValues, // F, P
-//                 const pointViewType  inputPoints, // P, D
-//                 const EOperator operatorType = OPERATOR_VALUE) const {
-//        INTREPID2_TEST_FOR_EXCEPTION( operatorType != OPERATOR_VALUE, std::invalid_argument,
-//                                      ">>> ERROR: (Intrepid2::Basis_HDIV_TET_Kn_FEM::getValues) OPERATOR_VALUE is only allowed");
-//        
-//        const ordinal_type F = _tet.getCardinality(), P = inputPoints.dimension_0(), D = 3;
-//        Kokkos::DynRankView<outputValueType,ExecSpaceType> output("output", F, P, D); 
-//        Kokkos::DynRankView<pointValueType,ExecSpaceType>  input("input", P, D); 
-
-//        // first triangle of tet
-//        for (ordinal_type i=0;i<P;++i) {
-//          input(i, 0) = inputPoints(i,0); 
-//          input(i, 1) = 0.0; 
-//          input(i, 2) = inputPoints(i,1); 
-//        }
-//        _tet.getValues(output, input, operatorType);
-//        
-//        if (_tet.getDofCount(2, 0) > 0) {
-//          for (ordinal_type j=0;j<P;++j) 
-//            for (ordinal_type i=0;i<this->getCardinality();++i) {
-//              const ordinal_type ii = _tet.getDofOrdinal(2, 0, i);
-//              outputValues(i, j) = output(ii, j, 1);
-//            }
-//        }
-//      }
-//      
-//      virtual
-//      const char*
-//      getName() const {
-//        return "Intrepid2_HDIV_TRI_Kn_FEM";
-//      }
-
-//    };
 
     template<typename outputViewType,
              typename subcellBasisType,
@@ -212,90 +124,6 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): " \
                                     "cellBasis must have quad, triangle, hexhedron or tetrahedron topology.");
 
-      // if node map has left handed system, orientation should be re-enumerated.
-      ordinal_type ort = -1;
-      switch (subcellBaseKey) {
-      case shards::Line<>::key: {
-        if (subcellOrt >= 0 && subcellOrt <  2)
-          ort = subcellOrt;
-        break;
-      }
-      case shards::Triangle<>::key: {
-        if (subcellOrt >= 0 && subcellOrt <  6) {
-          // in the basis of tet, it uses map to reference subcell and accounts for the left handed face
-          //const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
-          //const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
-          ort = subcellOrt; //(leftHanded ? leftOrt[subcellOrt] : subcellOrt);
-        }
-        break;
-      }
-      case shards::Quadrilateral<>::key: {
-        if (subcellOrt >= 0 && subcellOrt <  8) {
-        //some faces require special treatment because the dofs of the face bases are not consistent with the corresponding dofs of the hexahedron
-        //TODO: modify reference Hexahedron element so that the dofs of the subcell are consistent with those of the cell.
-        switch (subcellId) {
-            case 3:
-            case 4: {
-              const ordinal_type modifiedOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 }; //left hand orientation
-              ort = modifiedOrt[subcellOrt];
-              break;
-            }
-            case 2: {
-              const ordinal_type modifiedOrt[] = { 0, 3, 2, 1, 6, 5, 4, 7 };
-              ort = modifiedOrt[subcellOrt];
-              break;
-            }
-            default:
-              ort = subcellOrt;
-          }
-        }
-        break;
-      }
-      }
-      INTREPID2_TEST_FOR_EXCEPTION( ort == -1,
-                                    std::logic_error,
-                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): " \
-                                    "Orientation is not properly setup.");
-
-
-      ///
-      /// Scale is computed from Jacobian between reference subcell coord and oriented subcell coord
-      ///
-      double scale = -1.0;
-      switch (subcellBaseKey) {
-      case shards::Line<>::key: {
-        if        (cellBaseKey == shards::Quadrilateral<>::key ||
-                   cellBaseKey == shards::Hexahedron<>::key) {
-          scale = 1.0;
-        } else if (cellBaseKey == shards::Triangle<>::key) {
-          const double scale_edge[] = { 1.0, sqrt(2), 1.0 };
-          scale = scale_edge[subcellId];
-        } else if (cellBaseKey == shards::Tetrahedron<>::key) {
-          const double scale_edge[] = { 1.0, sqrt(2.0), 1.0,
-                                        1.0, sqrt(2.0), sqrt(2.0) };
-          scale = scale_edge[subcellId];
-        }
-        break;
-      }
-      case shards::Triangle<>::key: {
-        if (cellBaseKey == shards::Tetrahedron<>::key) {
-          const double scale_face[] = { 1.0, 2.0*sqrt(0.75), 1.0, 1.0 }; 
-          scale = scale_face[subcellId];
-        }
-        break;
-      }
-      case shards::Quadrilateral<>::key: {
-        if (cellBaseKey == shards::Hexahedron<>::key) {
-          scale = 1.0;
-        }
-        break;
-      }
-      }
-      INTREPID2_TEST_FOR_EXCEPTION( scale < 0,
-                                    std::logic_error,
-                                    ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): " \
-                                    "Scale is not properly setup.");
-
       ///
       /// Function space
       ///
@@ -346,8 +174,6 @@ namespace Intrepid2 {
       ///
       /// Collocation points
       ///
-      const ordinal_type degree = cellBasis.getDegree();
-
       const ordinal_type numCellBasis = cellBasis.getCardinality();
       const ordinal_type numSubcellBasis = subcellBasis.getCardinality();
 
@@ -360,203 +186,70 @@ namespace Intrepid2 {
       const ordinal_type ndofSubcell = cellBasis.getDofTag(ordSubcell)(3);
 
       // reference points on a subcell
-      DynRankViewHostType refPtsSubcell;
-
-      switch (subcellBaseKey) {
-      case shards::Line<>::key: {
-        // hdiv ndof: p-1, the interior points of p+1 with offset 1: p-1.
-        const ordinal_type ndofLine = PointTools::getLatticeSize(subcellTopo, degree+1, 1);
-        refPtsSubcell = DynRankViewHostType("refPtsSubcell", ndofLine, subcellDim);
-        PointTools::getLattice(refPtsSubcell,
-                               subcellTopo,
-                               degree+1,
-                               1, // offset by 1 so the points are located inside
-                               POINTTYPE_EQUISPACED);
-        break;
-      }
-      case shards::Triangle<>::key: {
-        // hdiv ndof: p-1, the interior points of p+1 with offset 1: p-1.
-        const ordinal_type ndofTrig = PointTools::getLatticeSize(subcellTopo, degree+2, 1);
-        refPtsSubcell = DynRankViewHostType("refPtsSubcell", ndofTrig, subcellDim);
-        PointTools::getLattice(refPtsSubcell,
-                               subcellTopo,
-                               degree+2,
-                               1, // offset by 1 so the points are located inside
-                               POINTTYPE_EQUISPACED);
-        break;
-      }
-      case shards::Quadrilateral<>::key: {
-        // hdiv ndof: (p-1)*(p-1), tensor product of interior points of p+1 with offset 1: (p-1)*(p-1).
-
-        // tensor product of lines
-        const auto lineTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
-        const ordinal_type ndofLine = PointTools::getLatticeSize(lineTopo, degree+1, 1);
-        DynRankViewHostType refPtsLine("refPtsLine", ndofLine, 1);
-        PointTools::getLattice(refPtsLine,
-                               lineTopo,
-                               degree+1,
-                               1, // offset by 1 so the points are located inside
-                               POINTTYPE_EQUISPACED);
-
-        refPtsSubcell = DynRankViewHostType("refPtsSubcell", ndofLine*ndofLine, subcellDim);
-        ordinal_type idx = 0;
-        for (ordinal_type j=0;j<ndofLine;++j) { // y
-          for (ordinal_type i=0;i<ndofLine;++i,++idx) { // x
-            refPtsSubcell(idx, 0) = refPtsLine(i,0);
-            refPtsSubcell(idx, 1) = refPtsLine(j,0);
-          }
-        }
-        INTREPID2_TEST_FOR_EXCEPTION( idx != ndofSubcell,
-                                      std::logic_error,
-                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): " \
-                                      "counted points on quad is less than ndofSubcell.");
-        break;
-      }
-      default: {
-        INTREPID2_TEST_FOR_EXCEPTION( subcellBaseKey != shards::Line<>::key ||
-                                      subcellBaseKey != shards::Quadrilateral<>::key ||
-                                      subcellBaseKey != shards::Triangle<>::key,
-                                      std::logic_error,
-                                      ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
-                                      "subcellBasis must have line, quad, or triangle topology.");
-      }
-      }
-
-      const ordinal_type nptsSubcell = refPtsSubcell.dimension(0);
+      DynRankViewHostType refPtsSubcell("refPtsSubcell", ndofSubcell, subcellDim);
+      DynRankViewHostType subcellDofCoords("subcellDofCoords", numSubcellBasis, subcellDim);
+      subcellBasis.getDofCoords(subcellDofCoords);
+      for(ordinal_type i=0; i<ndofSubcell; ++i)
+        for(ordinal_type d=0; d <subcellDim; ++d)
+          refPtsSubcell(i,d) = subcellDofCoords(subcellBasis.getDofOrdinal(subcellDim, 0, i),d);
 
       // modified points with orientation
-      DynRankViewHostType ortPtsSubcell("ortPtsSubcell", nptsSubcell, subcellDim);
+      DynRankViewHostType ortPtsSubcell("ortPtsSubcell", ndofSubcell, subcellDim);
       Impl::OrientationTools::mapToModifiedReference(ortPtsSubcell,
                                                      refPtsSubcell,
                                                      subcellTopo,
-                                                     ort);
+                                                     subcellOrt);
 
       // map to reference coordinates
-      DynRankViewHostType refPtsCell("refPtsCell", nptsSubcell, cellDim);
+      DynRankViewHostType refPtsCell("refPtsCell", ndofSubcell, cellDim);
       CellTools<host_space_type>::mapToReferenceSubcell(refPtsCell,
-                                                        refPtsSubcell,
+                                                        ortPtsSubcell,
                                                         subcellDim,
                                                         subcellId,
                                                         cellTopo);
-
       ///
       /// Basis evaluation on the collocation points
       ///
-
       // evaluate values on the reference cell
-      DynRankViewHostType refValues("refValues", numCellBasis, nptsSubcell, cellDim);
+      DynRankViewHostType refValues("refValues", numCellBasis, ndofSubcell, cellDim);
       cellBasis.getValues(refValues, refPtsCell, OPERATOR_VALUE);
 
-      // evaluate values on the modified cell
-      DynRankViewHostType outValues("outValues", numSubcellBasis, nptsSubcell);
 
-      auto orient_values = [ndofSubcell,&subcellBasis,subcellDim,nptsSubcell,&outValues](const ordinal_type c) {
-        for (ordinal_type i=0;i<ndofSubcell;++i) {
-          const ordinal_type ii = subcellBasis.getDofOrdinal(subcellDim, 0, i);
-          for (ordinal_type j=0;j<nptsSubcell;++j)
-            outValues(ii,j) *= c;
-        }
-      };
-
-      switch (subcellBaseKey) {
-      case shards::Line<>::key: { // hgrad p-1 open bubble
-        subcellBasis.getValues(outValues, ortPtsSubcell);
-        
-        // second dimension is dummy
-        const ordinal_type c[2] = { 1, -1 };
-        orient_values(c[ort]);
-        break;
-      }
-      case shards::Triangle<>::key: { // tri kernel (derived from tet 1st triangle)
-        subcellBasis.getValues(outValues, ortPtsSubcell);
-        const ordinal_type c[6] = {  1,  1,  1,
-                                    -1, -1, -1 };
-        orient_values(c[ort]);
-        break;
-      }
-      case shards::Quadrilateral<>::key: { // hgrad values p-1 open bubble x p-1 open bubble
-        subcellBasis.getValues(outValues, ortPtsSubcell);
-        const ordinal_type c[8] = {  1,  1,  1,  1,
-                                    -1, -1, -1, -1 };
-        orient_values(c[ort]);
-        break;
-      }
-      }
+      DynRankViewHostType ortJacobian("ortJacobian", subcellDim, subcellDim);
+      Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, subcellTopo, subcellOrt);
+      auto ortJacobianDet = (subcellDim == 1) ? ortJacobian(0,0) :
+                                 ortJacobian(0,0)*ortJacobian(1,1)-ortJacobian(1,0)*ortJacobian(0,1);
 
       ///
       /// Restrict vector valued basis functions on the subcell dimensions
       ///
-      auto normalize = [&](DynRankViewHostType v) {
-        value_type norm = 0.0;
-        const ordinal_type iend = v.dimension(0);
-        for (ordinal_type i=0;i<iend;++i)
-          norm += v(i)*v(i);
-        norm = std::sqrt(norm);
-        for (ordinal_type i=0;i<iend;++i)
-          v(i) /= norm;
-      };
+      DynRankViewHostType sideNormal("sideNormal", cellDim);
+      CellTools<host_space_type>::getReferenceSideNormal(sideNormal, subcellId, cellTopo);
 
-      switch (subcellBaseKey) {
-      case shards::Line<>::key: {
-        DynRankViewHostType edgeNormal("edgeNormal", cellDim);
-        CellTools<host_space_type>::getReferenceSideNormal(edgeNormal, subcellId, cellTopo);
+      if((cellBaseKey == shards::Triangle<>::key))
+        for(ordinal_type i=0; i<cellDim; ++i)
+          sideNormal(i) *= 2;  //scale by reference edge length
 
-        normalize(edgeNormal);
-        
-        DynRankViewHostType tmpValues("tmpValues", numCellBasis, nptsSubcell);
-        for (ordinal_type i=0;i<numCellBasis;++i)
-          for (ordinal_type j=0;j<nptsSubcell;++j)
-            for (ordinal_type k=0;k<cellDim;++k)
-              tmpValues(i,j) += refValues(i,j,k)*edgeNormal(k);
-        refValues = tmpValues;
-        break;
-      }
-      case shards::Quadrilateral<>::key:
-      case shards::Triangle<>::key: {
-        DynRankViewHostType faceNormal("faceNormal", cellDim);
-        CellTools<host_space_type>::getReferenceFaceNormal(faceNormal, subcellId, cellTopo);
-
-        normalize(faceNormal);
-
-        DynRankViewHostType tmpValues("tmpValues", numCellBasis, nptsSubcell);
-        for (ordinal_type i=0;i<numCellBasis;++i)
-          for (ordinal_type j=0;j<nptsSubcell;++j)
-            for (ordinal_type k=0;k<cellDim;++k)
-              tmpValues(i,j) += refValues(i,j,k)*faceNormal(k);
-        refValues = tmpValues;
-        break;
-      }
-      default: {
-        INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, "Should not come here" );
-      }
-      }
-
-      ///
-      /// Construct collocation matrix and solve problems
-      ///
-
-      // construct collocation matrix; using lapack, it should be left layout
       Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space_type>
-        refMat("refMat", nptsSubcell, ndofSubcell),
-        ortMat("ortMat", nptsSubcell, ndofSubcell),
-        pivVec("pivVec", nptsSubcell, 1);  
-
+        refMat("refMat", ndofSubcell, ndofSubcell),
+        ortMat("ortMat", ndofSubcell, ndofSubcell);
+      DynRankViewHostType tmpValues("tmpValues", numCellBasis, ndofSubcell);
       for (ordinal_type i=0;i<ndofSubcell;++i) {
-        const ordinal_type iref = cellBasis.getDofOrdinal(subcellDim, subcellId, i);
-        const ordinal_type iout = subcellBasis.getDofOrdinal(subcellDim, 0, i);
-
-        for (ordinal_type j=0;j<nptsSubcell;++j) {
-          refMat(j,i) = refValues(iref,j)*scale;
-          ortMat(j,i) = outValues(iout,j);
-        }
+        const ordinal_type ii = cellBasis.getDofOrdinal(subcellDim, subcellId, i);
+        for (ordinal_type j=0;j<ndofSubcell;++j)
+          for (ordinal_type k=0;k<cellDim;++k) {
+            refMat(i,j) += refValues(ii,j,k)*sideNormal(k)* ortJacobianDet;
+            ortMat(i,j) = (i==j);  //ortMat is the identity thanks to the kronecker property of the bases
+          }
       }
 
-      // solve the system
+       // solve the system
       {
         Teuchos::LAPACK<ordinal_type,value_type> lapack;
         ordinal_type info = 0;
+        Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", ndofSubcell, 1);
 
-        lapack.GESV(nptsSubcell, ndofSubcell,
+        lapack.GESV(ndofSubcell, ndofSubcell,
                     refMat.data(),
                     refMat.stride_1(),
                     (ordinal_type*)pivVec.data(),
@@ -575,12 +268,11 @@ namespace Intrepid2 {
         // clean up numerical noise
         {
           const double eps = threshold();
-          const ordinal_type
-            iend = ortMat.dimension(0),
-            jend = ortMat.dimension(1);
-          for (ordinal_type i=0;i<iend;++i)
-            for (ordinal_type j=0;j<jend;++j)
-              if (std::abs(ortMat(i,j)) < eps) ortMat(i,j) = 0;
+          for (ordinal_type i=0;i<ndofSubcell;++i)
+            for (ordinal_type j=0;j<ndofSubcell;++j) {
+              auto intOrtMat = std::round(ortMat(i,j));
+              ortMat(i,j) = (std::abs(ortMat(i,j) - std::round(ortMat(i,j))) < eps) ? intOrtMat : ortMat(i,j);
+            }
         }
       }
 

@@ -52,7 +52,7 @@
     This gives a total of 6 combinations.
     
     The test considers HGRAD, HCURL and HDIV elements and for each of them checks the following:
-    1. that the physical (oriented) dof coefficients related to edges are equivalent to the
+    1. that the physical (oriented) dof coefficients related to edges are proportional to the
        tangents (for HCURL) of edges or to the normals (for HDIV) of the edges.
     2. that the Kronecker property of the oriented basis evaluated at the physiscal dof coordinates holds.
     3. that given a function, the dofs of the function located at the common edge are the same
@@ -653,9 +653,11 @@ int OrientationTri(const bool verbose) {
         rst::clone(dofCoeffsTmp,dofCoeffs);
 
         { //orient DofCoeffs
+
           auto numEdgeDOFs = basis.getDofCount(1,0);
           DynRankView ConstructWithLabel(refEdgeTan,  dim);
 
+          const ValueType refEdgeLength = 2.0;
           for(ordinal_type i=0; i<numCells; ++i) {
 
             for(ordinal_type iedge=0; iedge<numElemEdges; iedge++) {
@@ -666,7 +668,7 @@ int OrientationTri(const bool verbose) {
               ct::getReferenceEdgeTangent(refEdgeTan, iedge, tri);
               ValueType edgeTan2d[dim] = {};
               for(ordinal_type d=0; d <dim; ++d)
-                edgeTan2d[d] = refEdgeTan(d)*((eOrt[iedge] == 0) ? 1 : -1)*2;
+                edgeTan2d[d] = refEdgeTan(d)*((eOrt[iedge] == 0) ? 1 : -1)*refEdgeLength;
 
               for(ordinal_type j=0; j<numEdgeDOFs; ++j) {
                 auto idof = basis.getDofOrdinal(1, iedge, j);
@@ -697,13 +699,13 @@ int OrientationTri(const bool verbose) {
                 bool areDifferent = false;
                 for(ordinal_type d=0; d <dim; ++d) {
                   tangent[d] = edgeTan[i][iedge][d];
-                  if(std::abs(dofCoeffsPhys(i,idof,d)- tangent[d])>tol)
+                  if(std::abs(dofCoeffsPhys(i,idof,d) - tangent[d])>tol)
                     areDifferent = true;
                 }
                 if(areDifferent) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT proportional to the tangent of edge " << iedge << "\n";
+                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT equivalent to the tangent of edge " << iedge << "\n";
                   *outStream << "Dof Coefficients are: (" << dofCoeffsPhys(i,idof,0) << ", " << dofCoeffsPhys(i,idof,1)  << ")\n";
                   *outStream << "Edge tangent is: (" << tangent[0] << ", " << tangent[1] << ")\n";
                 }
@@ -1024,6 +1026,7 @@ int OrientationTri(const bool verbose) {
 
           DynRankView ConstructWithLabel(refEdgeNormal,  dim);
 
+          const ValueType refEdgeLength = 2.0;
           for(ordinal_type i=0; i<numCells; ++i) {
             ordinal_type fOrt[numElemEdges];
             elemOrts(i).getEdgeOrientation(fOrt, numElemEdges);
@@ -1031,7 +1034,7 @@ int OrientationTri(const bool verbose) {
               ct::getReferenceSideNormal(refEdgeNormal, iedge, tri);
               ValueType edgeNormal2d[dim];
               for(ordinal_type d=0; d <dim; ++d)
-                edgeNormal2d[d] = refEdgeNormal(d)*c[fOrt[iedge]]*2;
+                edgeNormal2d[d] = refEdgeNormal(d)*c[fOrt[iedge]]*refEdgeLength;
               
               for(ordinal_type j=0; j<numEdgeDOFs; ++j) {
                 auto idof = basis.getDofOrdinal(dim-1, iedge, j);
@@ -1068,7 +1071,7 @@ int OrientationTri(const bool verbose) {
               bool areDifferent = false;
               for(ordinal_type d=0; d <dim; ++d) {
                 normal[d] = edgeNormal[i][iedge][d];
-                if(std::abs(dofCoeffsPhys(i,idof,d)- normal[d])>tol)
+                if(std::abs(dofCoeffsPhys(i,idof,d) - normal[d])>tol)
                   areDifferent = true;
               }
               if(areDifferent) {

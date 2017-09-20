@@ -855,45 +855,31 @@ int OrientationHex(const bool verbose) {
           auto numEdgeDOFs = basis.getDofCount(1,0);
           auto numFaceDOFs = basis.getDofCount(2,0);
 
-          const ValueType c[numElemEdges][2][2] = { { {  1,  0 },
-              {  0,  1 } }, // 0
-              { {  0,  1 },
-                  {  -1,  0 } }, // 1
-                  { { -1,  0 },
-                      {  0, -1 } }, // 2
-                      { {  0,  -1 },
-                          { 1,  0 } }, // 3
-                          { {  0,  1 },
-                              {  1,  0 } }, // 4
-                              { { -1,  0 },
-                                  {  0,  1 } }, // 5
-                                  { {  0, -1 },
-                                      { -1,  0 } }, // 6
-                                      { {  1,  0 },
-                                          {  0, -1 } } }; // 7
-
           DynRankView ConstructWithLabel(refEdgeTan,  dim);
-          DynRankView ConstructWithLabel(refFaceTanU,  dim);
-          DynRankView ConstructWithLabel(refFaceTanV,  dim);
+          DynRankView ConstructWithLabel(refFaceTangents, dim, 2);
 
 
+          DynRankView ortJacobian("ortJacobian", dim-1, dim-1);
+          Basis_HCURL_QUAD_In_FEM<DeviceSpaceType,ValueType,ValueType> quadBasis(order);
+          DynRankView ConstructWithLabel(quadDofCoeffs, quadBasis.getCardinality(), dim-1);
+          quadBasis.getDofCoeffs(quadDofCoeffs);
           for(ordinal_type i=0; i<numCells; ++i) {
 
             ordinal_type fOrt[numElemFaces];
             elemOrts(i).getFaceOrientation(fOrt, numElemFaces);
             for(ordinal_type iface=0; iface<numElemFaces; iface++) {
+              auto refFaceTanU = Kokkos::subview(refFaceTangents, Kokkos::ALL, 0);
+              auto refFaceTanV = Kokkos::subview(refFaceTangents, Kokkos::ALL, 1);
               ct::getReferenceFaceTangents(refFaceTanU, refFaceTanV, iface, hexa);
-              ValueType quadTan3d[2][3] = {};
-              for(ordinal_type itan=0; itan <2; ++itan) 
-                for(ordinal_type d=0; d <dim; ++d)
-                  quadTan3d[itan][d] = refFaceTanU(d)*c[fOrt[iface]][itan][0]+refFaceTanV(d)*c[fOrt[iface]][itan][1];
-              
+              Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, quad, fOrt[iface]);
               for(ordinal_type j=0; j<numFaceDOFs; ++j) {
-                ordinal_type itan = j/(numFaceDOFs/2);
                 auto idof = basis.getDofOrdinal(2, iface, j);
-
-                for(ordinal_type d=0; d <dim; ++d){
-                  dofCoeffsTmp(i,idof,d) = quadTan3d[itan][d];
+                auto jdof = quadBasis.getDofOrdinal(dim-1, 0, j);
+                for(ordinal_type d=0; d <dim; ++d) {
+                  dofCoeffsTmp(i,idof,d) = 0;
+                  for(ordinal_type k=0; k <dim-1; ++k)
+                    for(ordinal_type l=0; l <dim-1; ++l)
+                      dofCoeffsTmp(i,idof,d) += refFaceTangents(d,l)*ortJacobian(l,k)*quadDofCoeffs(jdof,k);
                 }
               }
             }
@@ -929,6 +915,7 @@ int OrientationHex(const bool verbose) {
         {
           auto numEdgeDOFs = basis.getDofCount(1,0);
           auto numFaceDOFs = basis.getDofCount(2,0);
+          const ValueType refEdgeLength = 2.0;
           for(ordinal_type i=0; i<numCells; ++i) {
 
             for(ordinal_type iface=0; iface<numElemFaces; iface++)
@@ -939,13 +926,13 @@ int OrientationHex(const bool verbose) {
                 bool areDifferent = false;
                 for(ordinal_type d=0; d <dim; ++d) {
                   tangent[d] = (itan == 0) ? faceTanU[i][iface][d] : faceTanV[i][iface][d];
-                  if(std::abs(dofCoeffsPhys(i,idof,d)- tangent[d]/2)>tol)
+                  if(std::abs(dofCoeffsPhys(i,idof,d)*refEdgeLength - tangent[d])>tol)
                     areDifferent = true;
                 }
                 if(areDifferent) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT proportional to tangent " << itan << " of face " << iface << "\n";
+                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << ", scaled by the reference edge length, are NOT equivalent to tangent " << itan << " of face " << iface << "\n";
                   *outStream << "Dof Coefficients are: (" << dofCoeffsPhys(i,idof,0) << ", " << dofCoeffsPhys(i,idof,1) << ", " << dofCoeffsPhys(i,idof,2) << ")\n";
                   *outStream << "Face tangent is: (" << tangent[0] << ", " << tangent[1] << ", " << tangent[2] << ")\n";
                 }
@@ -958,13 +945,13 @@ int OrientationHex(const bool verbose) {
                 bool areDifferent = false;
                 for(ordinal_type d=0; d <dim; ++d) {
                   tangent[d] = edgeTan[i][iedge][d];
-                  if(std::abs(dofCoeffsPhys(i,idof,d)- tangent[d]/2)>tol)
+                  if(std::abs(dofCoeffsPhys(i,idof,d)*refEdgeLength - tangent[d])>tol)
                     areDifferent = true;
                 }
                 if(areDifferent) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT proportional to the tangent of edge " << iedge << "\n";
+                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << ", scaled by the reference edge length, are NOT equivalent to the tangent of edge " << iedge << "\n";
                   *outStream << "Dof Coefficients are: (" << dofCoeffsPhys(i,idof,0) << ", " << dofCoeffsPhys(i,idof,1) << ", " << dofCoeffsPhys(i,idof,2) << ")\n";
                   *outStream << "Face tangent is: (" << tangent[0] << ", " << tangent[1] << ", " << tangent[2] << ")\n";
                 }
@@ -1002,6 +989,8 @@ int OrientationHex(const bool verbose) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                   *outStream << " Basis function " << k << " of cell " << i << " does not have unit value at its node (" << dofValue <<")\n";
+                  *outStream << " Fist tag: " << basis.getDofTag(k)[0] << " " << basis.getDofTag(k)[1]<< " " <<  basis.getDofTag(k)[2] << " Second tag: " <<
+                      basis.getDofTag(i)[0] << " " << basis.getDofTag(i)[1]<< " " <<  basis.getDofTag(i)[2] <<")\n";
                 }
                 if ( k!=j && std::abs( dofValue ) > tol ) {
                   errorFlag++;
@@ -1334,25 +1323,22 @@ int OrientationHex(const bool verbose) {
         { //orient DofCoeffs
           auto numFaceDOFs = basis.getDofCount(2,0);
 
-          const ordinal_type c[8] = {  1,  1,  1,  1,
-                                    -1, -1, -1, -1 };
-
           DynRankView ConstructWithLabel(refFaceNormal,  dim);
+          DynRankView ortJacobian("ortJacobian", dim-1, dim-1);
 
           for(ordinal_type i=0; i<numCells; ++i) {
             ordinal_type fOrt[numElemFaces];
             elemOrts(i).getFaceOrientation(fOrt, numElemFaces);
             for(ordinal_type iface=0; iface<numElemFaces; iface++) {
+              Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, quad, fOrt[iface]);
+              auto ortJacobianDet = ortJacobian(0,0)*ortJacobian(1,1)-ortJacobian(1,0)*ortJacobian(0,1);
+
               ct::getReferenceFaceNormal(refFaceNormal, iface, hexa);
-              ValueType faceNormal3d[3];
-              for(ordinal_type d=0; d <dim; ++d)
-                faceNormal3d[d] = refFaceNormal(d)*c[fOrt[iface]];
-              
+
               for(ordinal_type j=0; j<numFaceDOFs; ++j) {
                 auto idof = basis.getDofOrdinal(2, iface, j);
-
                 for(ordinal_type d=0; d <dim; ++d)
-                  dofCoeffsOriented(i,idof,d) = faceNormal3d[d];
+                  dofCoeffsOriented(i,idof,d) = refFaceNormal(d)*ortJacobianDet;
               }
             }
           }
@@ -1374,6 +1360,8 @@ int OrientationHex(const bool verbose) {
 
         //dofCoeffsPhys do not account for orientation. We overwrite dofCoeffs of tangents and edges.
         {
+
+          const ValueType refQuadArea = 4.0;
           auto numFaceDOFs = basis.getDofCount(2,0);
           for(ordinal_type i=0; i<numCells; ++i) {
             for(ordinal_type iface=0; iface<numElemFaces; iface++)
@@ -1383,13 +1371,13 @@ int OrientationHex(const bool verbose) {
               bool areDifferent = false;
               for(ordinal_type d=0; d <dim; ++d) {
                 normal[d] = faceNormal[i][iface][d];
-                if(std::abs(dofCoeffsPhys(i,idof,d)- normal[d]/4)>tol)
+                if(std::abs(dofCoeffsPhys(i,idof,d)*refQuadArea- normal[d])>tol)
                   areDifferent = true;
               }
               if(areDifferent) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT proportional to the normal of face " << iface << "\n";
+                *outStream << "Coefficients of Dof " << idof << " at cell "  << i << ", scaled by the area of the reference Quad, are NOT equivalent to the normal of face " << iface << "\n";
                 *outStream << "Dof Coefficients are: (" << dofCoeffsPhys(i,idof,0) << ", " << dofCoeffsPhys(i,idof,1) << ", " << dofCoeffsPhys(i,idof,2) << ")\n";
                 *outStream << "Face normal is: (" << normal[0] << ", " << normal[1] << ", " << normal[2] << ")\n";
               }

@@ -687,6 +687,7 @@ int OrientationQuad(const bool verbose) {
 
         //check whether dofCoeffs related to edges are proportional to edges' tangents
         {
+          const ValueType refEdgeLength = 2.0;
           auto numEdgeDOFs = basis.getDofCount(1,0);
           for(ordinal_type i=0; i<numCells; ++i) {
 
@@ -697,13 +698,13 @@ int OrientationQuad(const bool verbose) {
                 bool areDifferent = false;
                 for(ordinal_type d=0; d <dim; ++d) {
                   tangent[d] = edgeTan[i][iedge][d];
-                  if(std::abs(dofCoeffsPhys(i,idof,d)- tangent[d]/2)>tol)
+                  if(std::abs(dofCoeffsPhys(i,idof,d)*refEdgeLength - tangent[d])>tol)
                     areDifferent = true;
                 }
                 if(areDifferent) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT proportional to the tangent of edge " << iedge << "\n";
+                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << ", scaled by the length of the reference edge, are NOT equivalent to the tangent of edge " << iedge << "\n";
                   *outStream << "Dof Coefficients are: (" << dofCoeffsPhys(i,idof,0) << ", " << dofCoeffsPhys(i,idof,1)  << ")\n";
                   *outStream << "Edge tangent is: (" << tangent[0] << ", " << tangent[1] << ")\n";
                 }
@@ -1059,6 +1060,7 @@ int OrientationQuad(const bool verbose) {
 
         //dofCoeffsPhys do not account for orientation. We overwrite dofCoeffs of tangents and edges.
         {
+          const ValueType refEdgeLength = 2.0;
           auto numEdgeDOFs = basis.getDofCount(dim-1,0);
           for(ordinal_type i=0; i<numCells; ++i) {
             for(ordinal_type iedge=0; iedge<numElemEdges; iedge++)
@@ -1068,13 +1070,13 @@ int OrientationQuad(const bool verbose) {
               bool areDifferent = false;
               for(ordinal_type d=0; d <dim; ++d) {
                 normal[d] = edgeNormal[i][iedge][d];
-                if(std::abs(dofCoeffsPhys(i,idof,d)- normal[d]/2)>tol)
+                if(std::abs(dofCoeffsPhys(i,idof,d)*refEdgeLength - normal[d])>tol)
                   areDifferent = true;
               }
               if(areDifferent) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT proportional to the normal of edge " << iedge << "\n";
+                *outStream << "Coefficients of Dof " << idof << " at cell "  << i << ", scaled by the length of the reference edge, are NOT equivalent to the normal of edge " << iedge << "\n";
                 *outStream << "Dof Coefficients are: (" << dofCoeffsPhys(i,idof,0) << ", " << dofCoeffsPhys(i,idof,1) <<  ")\n";
                 *outStream << "Edge normal is: (" << normal[0] << ", " << normal[1]  << ")\n";
               }

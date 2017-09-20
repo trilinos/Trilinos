@@ -52,8 +52,8 @@
     This gives a total of 24 combinations
     
     The test considers HGRAD, HCURL and HDIV elements and for each of them checks the following:
-    1. that the physical (oriented) dof coefficients related to faces and edges are equivalent 
-       to the tangents (for HCURL) of faces/edges or to the normals (for HDIV) of faces.
+    1. that the physical (oriented) dof coefficients related to faces and edges are proportional
+       to the tangents (for HCURL) of the physical faces/edges or to the normals (for HDIV) of physical faces.
     2. that the Kronecker property of the oriented basis evaluated at the physiscal dof coordinates holds.
     3. that given a function, the dofs of the function located at the common faces/edges
        are the same when computed one the first and second tetrahedron.
@@ -802,44 +802,35 @@ int OrientationTet(const bool verbose) {
           auto numEdgeDOFs = basis.getDofCount(1,0);
           auto numFaceDOFs = basis.getDofCount(2,0);
 
-          const ValueType c[numElemEdges][2][2] = { { {  1,  0 },
-              {  0,  1 } }, // 0
-              { {  -1,  1 },
-                  { -1, 0 } }, // 1
-                  { { 0, -1 },
-                      {  1,  -1} }, // 2
-                      { {  0,  1 },
-                          {  1,  0 } }, // 3
-                          { { -1, 0 },
-                              {  -1,  1 } }, // 4
-                              { {  1,  -1 },
-                                  { 0, -1 } } }; // 5
-
           DynRankView ConstructWithLabel(refEdgeTan,  dim);
-          DynRankView ConstructWithLabel(refFaceTanU,  dim);
-          DynRankView ConstructWithLabel(refFaceTanV,  dim);
+          DynRankView ConstructWithLabel(refFaceTangents, dim, 2);
 
 
+          DynRankView ortJacobian("ortJacobian", dim-1, dim-1);
+          Basis_HCURL_TRI_In_FEM<DeviceSpaceType,ValueType,ValueType> triBasis(order);
+          DynRankView ConstructWithLabel(triDofCoeffs, triBasis.getCardinality(), dim-1);
+          triBasis.getDofCoeffs(triDofCoeffs);
           for(ordinal_type i=0; i<numCells; ++i) {
-
             ordinal_type fOrt[numElemFaces];
             elemOrts(i).getFaceOrientation(fOrt, numElemFaces);
             for(ordinal_type iface=0; iface<numElemFaces; iface++) {
+              auto refFaceTanU = Kokkos::subview(refFaceTangents, Kokkos::ALL, 0);
+              auto refFaceTanV = Kokkos::subview(refFaceTangents, Kokkos::ALL, 1);
               ct::getReferenceFaceTangents(refFaceTanU, refFaceTanV, iface, tet);
-              ValueType triTan3d[2][3] = {};
-              for(ordinal_type itan=0; itan <2; ++itan)
-                for(ordinal_type d=0; d <dim; ++d)
-                  triTan3d[itan][d] = refFaceTanU(d)*c[fOrt[iface]][itan][0]+refFaceTanV(d)*c[fOrt[iface]][itan][1];
+              Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, tri, fOrt[iface]);
               for(ordinal_type j=0; j<numFaceDOFs; ++j) {
-                ordinal_type itan = j%2;///(numFaceDOFs/2);
                 auto idof = basis.getDofOrdinal(2, iface, j);
-
-                for(ordinal_type d=0; d <dim; ++d){
-                  dofCoeffsTmp(i,idof,d) = triTan3d[itan][d];
+                auto jdof = triBasis.getDofOrdinal(dim-1, 0, j);
+                for(ordinal_type d=0; d <dim; ++d) {
+                  dofCoeffsTmp(i,idof,d) = 0;
+                  for(ordinal_type k=0; k <dim-1; ++k)
+                    for(ordinal_type l=0; l <dim-1; ++l)
+                      dofCoeffsTmp(i,idof,d) += refFaceTangents(d,l)*ortJacobian(l,k)*triDofCoeffs(jdof,k);
                 }
               }
             }
 
+            const ValueType refEdgeLength = 2.0;
             for(ordinal_type iedge=0; iedge<numElemEdges; iedge++) {
 
               ordinal_type eOrt[numElemEdges];
@@ -848,7 +839,7 @@ int OrientationTet(const bool verbose) {
               ct::getReferenceEdgeTangent(refEdgeTan, iedge, tet);
               ValueType edgeTan3d[3] = {};
               for(ordinal_type d=0; d <dim; ++d)
-                edgeTan3d[d] = refEdgeTan(d)*((eOrt[iedge] == 0) ? 1 : -1)*2;
+                edgeTan3d[d] = refEdgeTan(d)*((eOrt[iedge] == 0) ? 1 : -1)*refEdgeLength;
 
               for(ordinal_type j=0; j<numEdgeDOFs; ++j) {
                 auto idof = basis.getDofOrdinal(1, iedge, j);
@@ -900,7 +891,7 @@ int OrientationTet(const bool verbose) {
                 bool areDifferent = false;
                 for(ordinal_type d=0; d <dim; ++d) {
                   tangent[d] = edgeTan[i][iedge][d];
-                  if(std::abs(dofCoeffsPhys(i,idof,d)- tangent[d])>tol)
+                  if(std::abs(dofCoeffsPhys(i,idof,d) - tangent[d])>tol)
                     areDifferent = true;
                 }
                 if(areDifferent) {
@@ -1187,16 +1178,6 @@ int OrientationTet(const bool verbose) {
           DynRankView ConstructWithLabel(triDofCoords, triBasisCardinality, dim-1);
           DynRankView ConstructWithLabel(triInternalDofCoords, numInternalDofs, dim-1);
           triBasis.getDofCoords(triDofCoords);
-//          Impl::Basis_HDIV_TRI_Kn_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order);   
-//          ordinal_type triBasisCardinality = PointTools::getLatticeSize(tri, order+2, 1);
-//          ordinal_type numInternalDofs = triBasisCardinality;
-//          DynRankView ConstructWithLabel(triDofCoords, triBasisCardinality, dim-1);
-//          DynRankView ConstructWithLabel(triInternalDofCoords, numInternalDofs, dim-1);
-//          PointTools::getLattice(triDofCoords,
-//                               tri,
-//                               order+2,
-//                               1, // offset by 1 so the points are located inside
-//                               POINTTYPE_EQUISPACED);  
        
           for(ordinal_type i=0; i<numInternalDofs; ++i)
             for(ordinal_type d=0; d <dim-1; ++d)
@@ -1262,25 +1243,22 @@ int OrientationTet(const bool verbose) {
         { //orient DofCoeffs
           auto numFaceDOFs = basis.getDofCount(2,0);
 
-          const ordinal_type c[6] = {  1,  1,  1,
-                                    -1, -1, -1 };
-
           DynRankView ConstructWithLabel(refFaceNormal,  dim);
+          DynRankView ortJacobian("ortJacobian", dim-1, dim-1);
 
           for(ordinal_type i=0; i<numCells; ++i) {
             ordinal_type fOrt[numElemFaces];
             elemOrts(i).getFaceOrientation(fOrt, numElemFaces);
             for(ordinal_type iface=0; iface<numElemFaces; iface++) {
+              Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, tri, fOrt[iface]);
+              auto ortJacobianDet = ortJacobian(0,0)*ortJacobian(1,1)-ortJacobian(1,0)*ortJacobian(0,1);
+
               ct::getReferenceFaceNormal(refFaceNormal, iface, tet);
-              ValueType faceNormal3d[3];
-              for(ordinal_type d=0; d <dim; ++d)
-                faceNormal3d[d] = refFaceNormal(d)*c[fOrt[iface]];
-              
+
               for(ordinal_type j=0; j<numFaceDOFs; ++j) {
                 auto idof = basis.getDofOrdinal(2, iface, j);
-
                 for(ordinal_type d=0; d <dim; ++d)
-                  dofCoeffsOriented(i,idof,d) = faceNormal3d[d];
+                  dofCoeffsOriented(i,idof,d) = refFaceNormal(d)*ortJacobianDet;
               }
             }
           }

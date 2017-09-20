@@ -176,6 +176,51 @@ namespace Intrepid2 {
                              const shards::CellTopology cellTopo,
                              const ordinal_type cellOrt = 0);
 
+
+      /** \brief  Computes Jacobian of orientation map for line segment.
+
+          \param  jacobian    [out] - rank-2 (D,D) array with jacobian of the orientation map
+          \param  ort         [in]  - orientation number between 0 and 1
+      */
+      template<typename JacobianViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      getLineJacobian(JacobianViewType jacobian, const ordinal_type ort);
+
+      /** \brief  Computes Jacobian of orientation map for triangle.
+
+          \param  jacobian    [out] - rank-2 (D,D) array with jacobian of the orientation map
+          \param  ort         [in]  - orientation number between 0 and 5
+      */
+      template<typename JacobianViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      getTriangleJacobian(JacobianViewType jacobian, const ordinal_type ort);
+
+      /** \brief  Computes Jacobian of orientation map for quadrilateral.
+
+          \param  jacobian    [out] - rank-2 (D,D) array with jacobian of the orientation map
+          \param  ort         [in]  - orientation number between 0 and 7
+      */
+      template<typename JacobianViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      getQuadrilateralJacobian(JacobianViewType jacobian, const ordinal_type ort);
+
+
+      /** \brief  Computes jacobian of the parameterization maps of 1- and 2-subcells with orientation.
+
+          \param  jacobian        [out] - rank-2 (D,D) array with jacobian of the orientation map
+          \param  cellTopo        [in]  - cell topology of the parameterized domain (1- and 2-subcells)
+          \param  cellOrt         [in]  - cell orientation number (zero is aligned with shards default configuration
+      */
+      template<typename JacobianViewType>
+      inline
+      static void
+      getJacobianOfOrientationMap(JacobianViewType jacobian,
+                             const shards::CellTopology cellTopo,
+                             const ordinal_type cellOrt);
+
       // -----------------------------------------------------------------------------
       // Coefficient Matrix
       //
