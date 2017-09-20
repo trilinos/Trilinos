@@ -3670,134 +3670,6 @@ namespace Tpetra {
                          Distributor& distor,
                          const CombineMode CM);
 
-    //@}
-    //! @name Implementation of Packable interface
-    //@{
-
-    /// \brief Pack this object's data for an Import or Export.
-    ///
-    /// \warning To be called only by the packAndPrepare method of
-    ///   appropriate classes of DistObject.
-    ///
-    /// \param exportLIDs [in] Local indices of the rows to pack.
-    /// \param exports [out] On output: array of packed matrix
-    ///   entries; allocated by method.
-    /// \param numPacketsPerLID [out] On output: numPacketsPerLID[i]
-    ///   is the number of bytes of the \c exports array used for
-    ///   storing packed local row \c exportLIDs[i].
-    /// \param constantNumPackets [out] If zero on output, the packed
-    ///   rows may have different numbers of entries.  If nonzero on
-    ///   output, then that number gives the constant number of
-    ///   entries for all packed rows <i>on all processes in the
-    ///   matrix's communicator</i>.
-    /// \param distor [in/out] The Distributor object which implements
-    ///   the Import or Export operation that is calling this method.
-    ///
-    /// \subsection Tpetra_KR_CrsMatrix_pack_summary Packing scheme
-    ///
-    /// The number of "packets" per row is the number of bytes per
-    /// row.  Each row has the following storage format:
-    ///
-    /// <tt>[numEnt, vals, inds]</tt>,
-    ///
-    /// where:
-    /// <ul>
-    /// <li> \c numEnt (\c LocalOrdinal): number of entries in the
-    ///      row. </li>
-    /// <li> \c vals: array of \c Scalar.  For the k-th entry in the
-    ///      row, \c vals[k] is its value and \c inds[k] its global
-    ///      column index. </li>
-    /// <li> \c inds: array of \c GlobalOrdinal.  For the k-th entry
-    ///      in the row, \c vals[k] is its value and \c inds[k] its
-    ///      global column index. </li>
-    /// </ul>
-    ///
-    /// We reserve the right to pad for alignment in the future.  In
-    /// that case, the number of bytes reported by \c numPacketsPerLID
-    /// will reflect padding to align each datum to its size, and the
-    /// row will have final padding as well to ensure that the
-    /// <i>next</i> row is aligned.  Rows with zero entries will still
-    /// take zero bytes, however.
-    ///
-    /// RowMatrix::pack will always use the same packing scheme as
-    /// this method.  This ensures correct Import / Export from a
-    /// RowMatrix to a CrsMatrix.
-    ///
-    /// We do <i>not</i> recommend relying on the details of this
-    /// packing scheme.  We describe it here more for Tpetra
-    /// developers and less for users.
-    ///
-    /// \subsection Tpetra_KR_CrsMatrix_pack_disc Discussion
-    ///
-    /// DistObject requires packing an object's entries as type
-    /// <tt>Packet</tt>, which is the first template parameter of
-    /// DistObject.  Since sparse matrices have both values and
-    /// indices, we use <tt>Packet=char</tt> and pack them into
-    /// buffers of <tt>char</tt> (really "byte").  Indices are stored
-    /// as global indices, in case the source and target matrices have
-    /// different column Maps (or don't have a column Map yet).
-    ///
-    /// Currently, we only pack values and column indices.  Row
-    /// indices are stored implicitly as the local indices (LIDs) to
-    /// pack (see \c exportLIDs).  This is because a DistObject
-    /// instance only has one Map, and currently we use the row Map
-    /// for CrsMatrix (and RowMatrix).  This makes redistribution of
-    /// matrices with 2-D distributions less efficient, but it works
-    /// for now.  This may change in the future.
-    ///
-    /// On output, \c numPacketsPerLID[i] gives the number of bytes
-    /// used to pack local row \c exportLIDs[i] of \c this object (the
-    /// source object of an Import or Export).  If \c offset is the
-    /// exclusive prefix sum-scan of \c numPacketsPerLID, then on
-    /// output, <tt>exports[offset[i] .. offset[i+1]]</tt>
-    /// (half-exclusive range) contains the packed entries for local
-    /// row \c exportLIDs[i].
-    ///
-    /// Entries for each row use a "struct of arrays" pattern to match
-    /// how sparse matrices actually store their data.  The number of
-    /// entries in the row goes first, all values go next, and all
-    /// column indices (stored as global indices) go last.  Values and
-    /// column indices occur in the same order.  Rows with zero
-    /// entries always take zero bytes (we do not store their number
-    /// of entries explicitly).  This ensures sparsity of storage and
-    /// communication in case most rows are empty.
-    ///
-    /// \subsection Tpetra_KR_CrsMatrix_pack_why Justification
-    ///
-    /// GCC >= 4.9 and recent-future versions of the Intel compiler
-    /// implement stricter aliasing rules that forbid unaligned type
-    /// punning.  If we were to pack as an "array of structs" -- in
-    /// this case, an array of <tt>(Scalar, GlobalOrdinal)</tt> pairs
-    /// -- then we would either have to pad each matrix entry for
-    /// alignment, or call memcpy twice per matrix entry to pack and
-    /// unpack.  The "struct of arrays" storage scheme reduces the
-    /// padding requirement to a constant per row, or reduces the
-    /// number of memcpy calls to two per row.
-    ///
-    /// We include the number of entries in each row in that row's
-    /// packed data, to make unpacking easier.  This saves us from an
-    /// error-prone computation to find the number of entries from the
-    /// number of bytes.  That computation gets even more difficult if
-    /// we have to introduce padding for alignment in the future.
-    /// Knowing the number of entries for each row also makes
-    /// parallelizing packing and unpacking easier.
-    ///
-    /// \subsection Tpetra_KR_CrsMatrix_pack_assum Technical assumptions
-    ///
-    /// <ul>
-    /// <li> \c sizeof(Scalar) says how much data were used to
-    ///      represent a \c Scalar in its packed form. </li>
-    /// <li> \c sizeof returns the same value on all processes for
-    ///      <tt>Scalar</tt>, \c LocalOrdinal, and \c GlobalOrdinal.
-    ///      </li>
-    /// </ul>
-    virtual void
-    pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-          Teuchos::Array<char>& exports,
-          const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-          size_t& constantNumPackets,
-          Distributor& distor) const;
-
     /// \brief Pack this object's data for an Import or Export.
     ///
     /// \warning To be called only by the packAndPrepare method of
@@ -3912,21 +3784,9 @@ namespace Tpetra {
              size_t& constantNumPackets,
              Distributor& dist) const;
 
-    /// \brief Pack this matrix (part of implementation of packAndPrepare).
-    ///
-    /// Call this only when this matrix (which is the source matrix to
-    /// pack) does not yet have a KokkosSparse::CrsMatrix.
-    void
-    packNonStatic (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                   Teuchos::Array<char>& exports,
-                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                   size_t& constantNumPackets,
-                   Distributor& distor) const;
-
     /// \brief Pack this matrix (part of implementation of packAndPrepareNew).
     ///
-    /// This variant of packNonStatic() helps implement the "new"
-    /// DistObject interface.
+    /// This method helps implement packAndPrepareNew.
     ///
     /// Call this only when this matrix (which is the source matrix to
     /// pack) does not yet have a KokkosSparse::CrsMatrix.
@@ -4023,19 +3883,6 @@ namespace Tpetra {
                const size_t numBytes,
                const size_t numEnt,
                const size_t numBytesPerValue);
-
-    /// \brief Allocate space for pack() to pack entries to send.
-    ///
-    /// This is part of the implementation of packAndPrepare, which
-    /// helps implement the "old" DistObject interface.
-    ///
-    /// \param exports [in/out] Pack buffer to (re)allocate.
-    /// \param totalNumEntries [out] Total number of entries to send.
-    /// \param exportLIDs [in] Local indices of the rows to send.
-    void
-    allocatePackSpace (Teuchos::Array<char>& exports,
-                       size_t& totalNumEntries,
-                       const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs) const;
 
     /// \brief Allocate space for packNew() to pack entries to send.
     ///
