@@ -3578,14 +3578,6 @@ namespace Tpetra {
                        const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs);
 
     virtual void
-    packAndPrepare (const SrcDistObject& source,
-                    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                    Teuchos::Array<char>& exports,
-                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor& distor);
-
-    virtual void
     packAndPrepareNew (const SrcDistObject& source,
                        const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
                        Kokkos::DualView<char*, buffer_device_type>& exports,
