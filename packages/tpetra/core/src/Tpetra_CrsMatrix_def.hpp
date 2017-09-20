@@ -1505,7 +1505,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "fillLocalMatrix (called from fillComplete): ";
 #endif // HAVE_TPETRA_DEBUG
-    ProfilingRegion regionFLM ("Tpetra::CrsGraph::fillLocalMatrix");
+    ProfilingRegion regionFLM ("Tpetra::CrsMatrix::fillLocalMatrix");
 
     const size_t lclNumRows = getNodeNumRows();
     const map_type& rowMap = * (getRowMap ());
@@ -7081,7 +7081,7 @@ namespace Tpetra {
 #else
     constexpr bool debug = false;
 #endif // HAVE_TPETRA_DEBUG
-    ProfilingRegion regionUAC ("Tpetra::CrsMatrix::unpackAndCombine");
+    ProfilingRegion regionUAC ("Tpetra::CrsMatrix::unpackAndCombineNew");
 
     if (combineMode == ZERO) {
       return; // nothing to do
