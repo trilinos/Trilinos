@@ -932,6 +932,23 @@ namespace Tpetra {
     /// Maps' global indices are the same and occur in the same order.
     bool locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, node_type>& map) const;
 
+    /// \brief True if and only if \c map is locally fitted to this Map.
+    ///
+    /// For two maps, map1 and map2, we say that map1 is <i>locally
+    /// fitted</i> to map2 (on the calling process), when the indices of map1
+    /// (on the calling process) are the same and in the same order as the
+    /// initial indices of map2.  "Fittedness" is entirely a local (per MPI
+    /// process) property.
+    ///
+    /// The predicate "is map1 fitted to map2 ?" is <i>not</i>
+    /// symmetric.  For example, map2 may have more entries than map1.
+    ///
+    /// Fittedness on a process can let Tpetra avoid deep copies in
+    /// some Export or Import (communication) operations. Tpetra
+    /// could use this, for example, in optimizing its sparse
+    /// matrix-vector multiply.
+    bool isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const;
+
     //@}
     //! Accessors for the Teuchos::Comm and Kokkos Node objects.
     //@{
@@ -1574,30 +1591,6 @@ namespace Tpetra {
     return Teuchos::rcp (new out_map_type (cloner_type::clone (*this, nodeOut)));
   }
 
-  namespace Details {
-    /// \brief Is map1 locally fitted to map2?
-    ///
-    /// \param map1 [in] The first Map
-    /// \param map2 [in] The second Map
-    ///
-    /// For Map instances map1 and map2, we say that map1 is
-    /// <i>locally fitted</i> to map2 (on the calling process), when
-    /// the initial indices of map1 (on the calling process) are the
-    /// same and in the same order as those of map2.  "Fittedness" is
-    /// entirely a local (per MPI process) property.
-    ///
-    /// The predicate "is map1 fitted to map2 ?" is <i>not</i>
-    /// symmetric.  For example, map2 may have more entries than map1.
-    ///
-    /// Fittedness on a process can let Tpetra avoid deep copies in
-    /// some Export or Import (communication) operations.  Tpetra
-    /// could use this, for example, in optimizing its sparse
-    /// matrix-vector multiply.
-    template <class LocalOrdinal,class GlobalOrdinal, class Node>
-    bool
-    isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map1,
-                     const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map2);
-  } // namespace Details
 
 } // namespace Tpetra
 
