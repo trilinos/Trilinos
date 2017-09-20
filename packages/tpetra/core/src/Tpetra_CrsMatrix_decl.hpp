@@ -3565,12 +3565,16 @@ namespace Tpetra {
     virtual bool
     useNewInterface ();
 
-    virtual void
-    copyAndPermute (const SrcDistObject& source,
-                    size_t numSameIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
+  private:
 
+    void
+    copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+                        const size_t numSameIDs,
+                        const LocalOrdinal permuteToLIDs[],
+                        const LocalOrdinal permuteFromLIDs[],
+                        const size_t numPermutes);
+
+  protected:
     virtual void
     copyAndPermuteNew (const SrcDistObject& source,
                        const size_t numSameIDs,

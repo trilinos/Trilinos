@@ -6225,30 +6225,21 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  copyAndPermute (const SrcDistObject& source,
-                  size_t numSameIDs,
-                  const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-                  const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
+  copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& srcMat,
+                      const size_t numSameIDs,
+                      const LocalOrdinal permuteToLIDs[],
+                      const LocalOrdinal permuteFromLIDs[],
+                      const size_t numPermutes)
   {
     using Tpetra::Details::ProfilingRegion;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef node_type NT;
+
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
-    const char tfecfFuncName[] = "copyAndPermute: ";
-    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermute");
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (permuteToLIDs.size () != permuteFromLIDs.size (),
-      std::invalid_argument, "permuteToLIDs.size() = " << permuteToLIDs.size ()
-      << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
-
-    // This dynamic cast should succeed, because we've already tested
-    // it in checkSizes().
-    typedef RowMatrix<Scalar, LO, GO, NT> row_matrix_type;
-    const row_matrix_type& srcMat = dynamic_cast<const row_matrix_type&> (source);
+    const char tfecfFuncName[] = "copyAndPermuteImpl: ";
+    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteImpl");
 
     const bool sourceIsLocallyIndexed = srcMat.isLocallyIndexed ();
     //
@@ -6304,7 +6295,7 @@ namespace Tpetra {
       }
 
       // Combine the data into the target matrix.
-      if (isStaticGraph()) {
+      if (this->isStaticGraph ()) {
         // Applying a permutation to a matrix with a static graph
         // means REPLACE-ing entries.
         combineGlobalValues (targetGID, rowIndsConstView, rowValsConstView, REPLACE);
@@ -6321,8 +6312,7 @@ namespace Tpetra {
     // Permute the remaining rows.
     //
     const map_type& tgtRowMap = * (this->getRowMap ());
-    const size_t numPermuteToLIDs = static_cast<size_t> (permuteToLIDs.size ());
-    for (size_t p = 0; p < numPermuteToLIDs; ++p) {
+    for (size_t p = 0; p < numPermutes; ++p) {
       const GO sourceGID = srcRowMap.getGlobalElement (permuteFromLIDs[p]);
       const GO targetGID = tgtRowMap.getGlobalElement (permuteToLIDs[p]);
 
@@ -6379,7 +6369,7 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  copyAndPermuteNew (const SrcDistObject& source,
+  copyAndPermuteNew (const SrcDistObject& srcObj,
                      const size_t numSameIDs,
                      const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
                      const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
@@ -6388,7 +6378,6 @@ namespace Tpetra {
     using Tpetra::Details::ProfilingRegion;
     typedef Kokkos::HostSpace host_mem_space;
     using Teuchos::ArrayView;
-    typedef LocalOrdinal LO;
     typedef typename device_type::memory_space dev_mem_space;
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
@@ -6417,9 +6406,13 @@ namespace Tpetra {
     permuteFromLIDs_nc.template sync<host_mem_space> ();
     auto permuteFromLIDs_h = permuteFromLIDs.template view<host_mem_space> ();
 
-    ArrayView<const LO> permTo (permuteToLIDs_h.data (), numPermute);
-    ArrayView<const LO> permFrom (permuteFromLIDs_h.data (), numPermute);
-    this->copyAndPermute (source, numSameIDs, permTo, permFrom);
+    // This dynamic cast should succeed, because we've already tested
+    // it in checkSizes().
+    typedef ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> RMT;
+    const RMT& srcMat = dynamic_cast<const RMT&> (srcObj);
+
+    this->copyAndPermuteImpl (srcMat, numSameIDs, permuteToLIDs_h.data (),
+                              permuteFromLIDs_h.data (), numPermute);
 
     if (permuteToLIDs_sync_back) {
       permuteToLIDs_nc.template sync<dev_mem_space> ();
