@@ -586,7 +586,7 @@ namespace Xpetra {
         // if this has more than 1 sub blocks but "map" is not a blocked map, they are very likely not compatible
         if (this->getBlockedMap()->getNumMaps() > 1) {
           throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::replaceMap: map is not of type BlockedMap. General implementation not available, yet.");
-          TEUCHOS_UNREACHABLE_RETURN();
+          TEUCHOS_UNREACHABLE_RETURN(-1);
         }
         // special case: this is a blocked map with only one block
         // TODO add more debug check (especially for Thyra mode)
@@ -786,7 +786,7 @@ namespace Xpetra {
           // This is a problem and only works if bsrc has only one block
           if(bsrc->getBlockedMap()->getNumMaps() > 1) {
             throw Xpetra::Exceptions::RuntimeError("BlockedMultiVector::assign: source vector is of type BlockedMultiVector (with more than 1 blocks) and target is a MultiVector.");
-            TEUCHOS_UNREACHABLE_RETURN();
+            TEUCHOS_UNREACHABLE_RETURN(-1);
           }
           RCP<MultiVector> ssrc = bsrc->getMultiVector(0,map_->getThyraMode());
           XPETRA_TEST_FOR_EXCEPTION(ssrc.is_null() == true, Xpetra::Exceptions::RuntimeError, "BlockedMultiVector::assign: cannot extract vector");
