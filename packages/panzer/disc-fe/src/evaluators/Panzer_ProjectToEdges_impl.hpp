@@ -156,17 +156,34 @@ evaluateFields(typename Traits::EvalData workset)
   // One point quadrature if higher order quadrature not requested
   if (quad_degree == 0){
 
-    // Collect the reference edge information. For now, do nothing with the quadPts.
+    // this should be edge cubature and collecting weights are always 2.
+    // // Collect the reference edge information. For now, do nothing with the quadPts.
+    // const unsigned num_edges = parentCell.getEdgeCount();
+    // std::vector<double> refEdgeWt(num_edges, 0.0);
+    // for (unsigned e=0; e<num_edges; e++) {
+    //   edgeQuad = quadFactory.create<PHX::exec_space,double,double>(parentCell.getCellTopologyData(1,e), intDegree);
+    //   const int numQPoints = edgeQuad->getNumPoints();
+    //   Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",numQPoints);
+    //   Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",numQPoints,num_dim);
+    //   edgeQuad->getCubature(quadPts,quadWts);
+    //   for (int q=0; q<numQPoints; q++)
+    //     refEdgeWt[e] += quadWts(q);
+    // }
+
+    Kokkos::DynRankView<double,PHX::Device> v0("v0", num_dim), v1("v1", num_dim);
     const unsigned num_edges = parentCell.getEdgeCount();
     std::vector<double> refEdgeWt(num_edges, 0.0);
     for (unsigned e=0; e<num_edges; e++) {
-      edgeQuad = quadFactory.create<PHX::exec_space,double,double>(parentCell.getCellTopologyData(1,e), intDegree);
-      const int numQPoints = edgeQuad->getNumPoints();
-      Kokkos::DynRankView<double,PHX::Device> quadWts("quadWts",numQPoints);
-      Kokkos::DynRankView<double,PHX::Device> quadPts("quadPts",numQPoints,num_dim);
-      edgeQuad->getCubature(quadPts,quadWts);
-      for (int q=0; q<numQPoints; q++)
-        refEdgeWt[e] += quadWts(q);
+      const auto v0_id = parentCell.getNodeMap(1, e, 0);
+      const auto v1_id = parentCell.getNodeMap(1, e, 1);
+      Intrepid2::CellTools<PHX::exec_space>::getReferenceVertex(v0, parentCell, v0_id);
+      Intrepid2::CellTools<PHX::exec_space>::getReferenceVertex(v1, parentCell, v1_id);
+      
+      double norm = 0.0;
+      for (int d=0;d<num_dim;++d)
+        norm += (v0(d) - v1(d))*(v0(d) - v1(d));
+      
+      refEdgeWt[e] = sqrt(norm);
     }
 
     // Loop over the edges of the workset cells.
