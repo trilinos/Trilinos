@@ -1472,8 +1472,13 @@ private:
 
   RCP<const Teuchos::Comm<int> > comm_;
 
+  //! Handling node-to-region mappings etc.
   RCP<RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionHandler_;
+
+  //! The original (non-splitted) matrix
   RCP<Matrix> compositeMatrixData_;
+
+  //! The matrix after splitting according to region layout
   Array<RCP<Matrix> > regionMatrixData_;
 
   GlobalOrdinal num_total_elements_ = 0;

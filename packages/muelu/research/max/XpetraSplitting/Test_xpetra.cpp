@@ -54,6 +54,7 @@ int main(int argc, char* argv[])
   typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 
   typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
+  typedef Xpetra::MatrixSplitting<Scalar,LocalOrdinal,GlobalOrdinal,Node,Xpetra::UseTpetra, false> tpetra_splitting;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
@@ -105,10 +106,13 @@ int main(int argc, char* argv[])
   std::size_t num_total_elements = regionHandler->GetNumGlobalElements();
   std::size_t num_total_regions = regionHandler->GetNumTotalRegions();
 
+  // Read and split the matrix
+  Teuchos::RCP<tpetra_splitting> matrixSplitting = Teuchos::rcp(new tpetra_splitting(matrixFileName, regionHandler, comm));
+
   // Create region-wise AMG hierarchy
   int max_num_levels = 4;
   int coarsening_factor = 3;
-  Xpetra::RegionAMG<Scalar,LocalOrdinal,GlobalOrdinal,Node> preconditioner(matrixFileName, regionHandler, comm, mueluParams, max_num_levels, coarsening_factor);
+  Xpetra::RegionAMG<Scalar,LocalOrdinal,GlobalOrdinal,Node> preconditioner(matrixSplitting, regionHandler, comm, mueluParams, max_num_levels, coarsening_factor);
 
   // Setup vectors for test problem
   Teuchos::RCP<multivector_type> X = Xpetra::MultiVectorFactory< Scalar, LocalOrdinal, GlobalOrdinal, Node >::Build(preconditioner.getDomainMap(), 1) ;

@@ -105,7 +105,7 @@ public:
 };
 
   //! This is the actual constructor we are interested in calling
-  RegionAMG(const char* matrix_file_name,
+  RegionAMG(Teuchos::RCP<tpetra_splitting> matrixSplitting,
       Teuchos::RCP<Xpetra::RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionHandler,
       RCP<const Teuchos::Comm<int> > comm, Teuchos::ParameterList muelu,
       GlobalOrdinal num_levels, GlobalOrdinal coarsening_factor);
