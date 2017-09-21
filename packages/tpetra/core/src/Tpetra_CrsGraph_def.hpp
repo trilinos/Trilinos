@@ -5432,24 +5432,27 @@ namespace Tpetra {
                   Teuchos::Array<GlobalOrdinal> &exports,
                   const Teuchos::ArrayView<size_t> & numPacketsPerLID,
                   size_t& constantNumPackets,
-                  Distributor &distor)
+                  Distributor& distor)
   {
-    using Teuchos::Array;
-    const char tfecfFuncName[] = "packAndPrepare";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      exportLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
-      ": exportLIDs and numPacketsPerLID must have the same size.");
+    using Tpetra::Details::ProfilingRegion;
     typedef RowGraph<LocalOrdinal, GlobalOrdinal, node_type> row_graph_type;
+    const char tfecfFuncName[] = "packAndPrepare: ";
+    ProfilingRegion regionPackAndPrepare ("Tpetra::CrsGraph::packAndPrepare");
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (exportLIDs.size () != numPacketsPerLID.size (), std::runtime_error,
+       "exportLIDs.size() = " << exportLIDs.size ()
+       << " != numPacketsPerLID.size() = " << numPacketsPerLID.size () << ".");
     const row_graph_type& srcGraph = dynamic_cast<const row_graph_type&> (source);
 
     // We don't check whether src_graph has had fillComplete called,
     // because it doesn't matter whether the *source* graph has been
     // fillComplete'd. The target graph can not be fillComplete'd yet.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      this->isFillComplete (), std::runtime_error,
-      ": The target graph of an Import or Export must not be fill complete.");
-
-    srcGraph.pack (exportLIDs, exports, numPacketsPerLID, constantNumPackets, distor);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->isFillComplete (), std::runtime_error,
+       "The target graph of an Import or Export must not be fill complete.");
+    srcGraph.pack (exportLIDs, exports, numPacketsPerLID,
+                   constantNumPackets, distor);
   }
 
 
