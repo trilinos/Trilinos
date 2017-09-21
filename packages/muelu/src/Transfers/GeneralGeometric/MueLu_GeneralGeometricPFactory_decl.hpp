@@ -210,15 +210,15 @@ namespace MueLu {
     void ComputeStencil(const LO numDimension, const Array<GO> currentNodeIndices,
                         const Array<GO> coarseNodeIndices, const LO rate[3],
                         const Array<Array<double> > coord, const int interpolationOrder,
-                        std::vector<SC>& stencil) const;
+                        std::vector<double>& stencil) const;
 
     void ComputeConstantInterpolationStencil(const LO numDimension,
                                              const Array<GO> currentNodeIndices,
                                              const Array<GO> coarseNodeIndices,
-                                             const LO rate[3], std::vector<SC>& stencil) const;
+                                             const LO rate[3], std::vector<double>& stencil) const;
 
     void ComputeLinearInterpolationStencil(const LO numDimension, const Array<Array<double> > coord,
-                                           std::vector<SC>& stencil) const;
+                                           std::vector<double>& stencil) const;
     void GetInterpolationFunctions(const LO numDimension,
                                    const Teuchos::SerialDenseVector<LO,double> parameters,
                                    double functions[4][8]) const;

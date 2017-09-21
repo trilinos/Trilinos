@@ -277,10 +277,10 @@ namespace MueLu {
     // All coarse points are injected, other points are using polynomial interpolation
     // and have contribution from (interpolationOrder + 1)^numDimensions
     // Noticebly this leads to 1 when the order is zero, hence fancy MatMatMatMult can be used.
-    GO lnnzP = Teuchos::as<LO>(std::pow(2, myGeometry->numDimensions))
+    GO lnnzP = Teuchos::as<LO>(std::pow(interpolationOrder + 1, myGeometry->numDimensions))
       *(myGeometry->lNumFineNodes - myGeometry->lNumCoarseNodes) + myGeometry->lNumCoarseNodes;
     lnnzP = lnnzP*blkSize;
-    GO gnnzP = Teuchos::as<LO>(std::pow(2, myGeometry->numDimensions))
+    GO gnnzP = Teuchos::as<LO>(std::pow(interpolationOrder + 1, myGeometry->numDimensions))
       *(myGeometry->gNumFineNodes - myGeometry->gNumCoarseNodes) + myGeometry->gNumCoarseNodes;
     gnnzP = gnnzP*blkSize;
 
@@ -310,6 +310,16 @@ namespace MueLu {
     Set(coarseLevel, "coarseCoordinates", coarseCoords);
     Set<Array<GO> >(coarseLevel, "gCoarseNodesPerDim", myGeometry->gCoarseNodesPerDir);
     Set<Array<LO> >(coarseLevel, "lCoarseNodesPerDim", myGeometry->lCoarseNodesPerDir);
+
+    // if(coarseLevel.GetLevelID() == 1) {
+    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/colMapP_1.mat", *(P->getColMap()));
+    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/domMapP_1.mat", *(P->getDomainMap()));
+    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/P_1.mat", *P);
+    // } else if(coarseLevel.GetLevelID() == 2) {
+    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/colMapP_2.mat", *(P->getColMap()));
+    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/domMapP_2.mat", *(P->getDomainMap()));
+    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/P_2.mat", *P);
+    // }
 
     // rst: null space might get scaled here ... do we care. We could just inject at the cpoints,
     // but I don't feel that this is needed.
@@ -925,6 +935,10 @@ namespace MueLu {
         for(int dim = 0; dim < 3; ++dim) {
           ghostedIndices[dim] += myGeo->offsets[dim];
         }
+        // A special case appears when the mesh is really coarse: it is possible for a rank to
+        // have a single coarse node in a given direction. If this happens on the highest i, j or k
+        // we need to "grab" a coarse node with a lower i, j, or k which leads us to add to the
+        // value of ghostedIndices
       }
       // No we find the indices of the coarse nodes used for interpolation simply by integer
       // division.
@@ -972,10 +986,7 @@ namespace MueLu {
 
       // Compute the actual geometric interpolation stencil
       LO stencilLength = static_cast<LO>(std::pow(interpolationOrder + 1, 3));
-      // 09/07/17 - LBV: to be fixed, use the actual stencil length based on interpolationOrder
-      // and the number of spacial dimensions. This will help reduce fill in the prolongator (and
-      // coarse level matrices ?) for the constant interpolation case.
-      std::vector<SC> stencil(8);
+      std::vector<double> stencil(8);
       Array<GO> firstCoarseNodeFineIndices(3);
       int rate[3] = {};
       for(int dim = 0; dim < 3; ++dim) {
@@ -988,46 +999,67 @@ namespace MueLu {
           rate[dim] = myGeo->coarseRate[dim];
         }
       }
-      ComputeStencil(myGeo->numDimensions, ghostedIndices, firstCoarseNodeFineIndices, rate,
+      Array<GO> trueGhostedIndices(3);
+      // This handles the case of a rank having a single node that also happens to be the last node
+      // in any direction. It might be more efficient to re-write the algo so that this is
+      // incorporated in the definition of ghostedIndices directly...
+      for(int dim = 0; dim < 3; ++dim) {
+        if (myGeo->startIndices[dim] == myGeo->gFineNodesPerDir[dim] - 1) {
+          trueGhostedIndices[dim] = ghostedIndices[dim] + rate[dim];
+        } else {
+          trueGhostedIndices[dim] = ghostedIndices[dim];
+        }
+      }
+      ComputeStencil(myGeo->numDimensions, trueGhostedIndices, firstCoarseNodeFineIndices, rate,
                      interpolationCoords, interpolationOrder, stencil);
 
       // Finally check whether the fine node is on a coarse: node, edge or face
       // and select accordingly the non-zero values from the stencil and the
       // corresponding column indices
-      Array<LO> nzIndStencil(8);
-      Array<GO> currentNodeGlobalFineIndices(3);
-      for(int dim = 0; dim < 3; ++dim) {
-        currentNodeGlobalFineIndices[dim] = ghostedIndices[dim] - myGeo->offsets[dim]
-          + myGeo->startIndices[dim];
-      }
-      if( ((ghostedIndices[0] % myGeo->coarseRate[0] == 0)
-           || currentNodeGlobalFineIndices[0] == myGeo->gFineNodesPerDir[0] - 1)
-          && ((ghostedIndices[1] % myGeo->coarseRate[1] == 0)
-              || currentNodeGlobalFineIndices[1] == myGeo->gFineNodesPerDir[1] - 1)
-          && ((ghostedIndices[2] % myGeo->coarseRate[2] == 0)
-              || currentNodeGlobalFineIndices[2] == myGeo->gFineNodesPerDir[2] - 1) ) {
-        if((currentNodeGlobalFineIndices[0] == myGeo->gFineNodesPerDir[0] - 1) ||
-           (ghostedIndices[0] / myGeo->coarseRate[0] == myGeo->ghostedCoarseNodesPerDir[0] - 1)) {
-          nzIndStencil[0] += 1;
-        }
-        if(((currentNodeGlobalFineIndices[1] == myGeo->gFineNodesPerDir[1] - 1) ||
-            (ghostedIndices[1] / myGeo->coarseRate[1] == myGeo->ghostedCoarseNodesPerDir[1] - 1))
-           && (myGeo->numDimensions > 1)){
-          nzIndStencil[0] += 2;
-        }
-        if(((currentNodeGlobalFineIndices[2] == myGeo->gFineNodesPerDir[2] - 1) ||
-            (ghostedIndices[2] / myGeo->coarseRate[2] == myGeo->ghostedCoarseNodesPerDir[2] - 1))
-           && myGeo->numDimensions > 2) {
-          nzIndStencil[0] += 4;
-        }
+      Array<LO> nzIndStencil(8), permutation(8);
+      for(LO k = 0; k < 8; ++k) {permutation[k] = k;}
+      if(interpolationOrder == 0) {
         nStencil = 1;
         for(LO k = 0; k < 8; ++k) {
-          nzIndStencil[k] = nzIndStencil[0];
+          nzIndStencil[k] = static_cast<LO>(stencil[0]);
         }
-      } else {
-        nStencil = 8;
-        for(LO k = 0; k < 8; ++k) {
-          nzIndStencil[k] = k;
+        stencil[0] = 0.0;
+        stencil[nzIndStencil[0]] = 1.0;
+      } else if(interpolationOrder == 1) {
+        Array<GO> currentNodeGlobalFineIndices(3);
+        for(int dim = 0; dim < 3; ++dim) {
+          currentNodeGlobalFineIndices[dim] = ghostedIndices[dim] - myGeo->offsets[dim]
+            + myGeo->startIndices[dim];
+      }
+        if( ((ghostedIndices[0] % myGeo->coarseRate[0] == 0)
+             || currentNodeGlobalFineIndices[0] == myGeo->gFineNodesPerDir[0] - 1)
+            && ((ghostedIndices[1] % myGeo->coarseRate[1] == 0)
+                || currentNodeGlobalFineIndices[1] == myGeo->gFineNodesPerDir[1] - 1)
+            && ((ghostedIndices[2] % myGeo->coarseRate[2] == 0)
+                || currentNodeGlobalFineIndices[2] == myGeo->gFineNodesPerDir[2] - 1) ) {
+          if((currentNodeGlobalFineIndices[0] == myGeo->gFineNodesPerDir[0] - 1) ||
+             (ghostedIndices[0] / myGeo->coarseRate[0] == myGeo->ghostedCoarseNodesPerDir[0] - 1)) {
+            nzIndStencil[0] += 1;
+          }
+          if(((currentNodeGlobalFineIndices[1] == myGeo->gFineNodesPerDir[1] - 1) ||
+              (ghostedIndices[1] / myGeo->coarseRate[1] == myGeo->ghostedCoarseNodesPerDir[1] - 1))
+             && (myGeo->numDimensions > 1)){
+            nzIndStencil[0] += 2;
+          }
+          if(((currentNodeGlobalFineIndices[2] == myGeo->gFineNodesPerDir[2] - 1) ||
+              (ghostedIndices[2] / myGeo->coarseRate[2] == myGeo->ghostedCoarseNodesPerDir[2] - 1))
+             && myGeo->numDimensions > 2) {
+            nzIndStencil[0] += 4;
+          }
+          nStencil = 1;
+          for(LO k = 0; k < 8; ++k) {
+            nzIndStencil[k] = nzIndStencil[0];
+          }
+        } else {
+          nStencil = 8;
+          for(LO k = 0; k < 8; ++k) {
+            nzIndStencil[k] = k;
+          }
         }
       }
 
@@ -1037,8 +1069,6 @@ namespace MueLu {
 
       // Loop on dofsPerNode and process each row for the current Node
 
-      Array<LO> permutation(8);
-      for(LO k = 0; k < 8; ++k) {permutation[k] = k;}
 
       // Sort nodes by PIDs using stable sort to keep sublist ordered by LIDs and GIDs
       sh_sort2(interpolationPIDs.begin(),interpolationPIDs.end(),
@@ -1074,7 +1104,7 @@ namespace MueLu {
                                 const LO numDimensions, const Array<GO> currentNodeIndices,
                                 const Array<GO> coarseNodeIndices, const LO rate[3],
                                 const Array<Array<double> > coord, const int interpolationOrder,
-                                std::vector<SC>& stencil) const {
+                                std::vector<double>& stencil) const {
 
     TEUCHOS_TEST_FOR_EXCEPTION((interpolationOrder > 1) || (interpolationOrder < 0),
                                Exceptions::RuntimeError,
@@ -1093,7 +1123,7 @@ namespace MueLu {
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   ComputeConstantInterpolationStencil(const LO numDimensions, const Array<GO> currentNodeIndices,
                                       const Array<GO> coarseNodeIndices, const LO rate[3],
-                                      std::vector<SC>& stencil) const {
+                                      std::vector<double>& stencil) const {
 
     LO coarseNode = 0;
     if(numDimensions > 2) {
@@ -1109,14 +1139,14 @@ namespace MueLu {
     if((currentNodeIndices[0] - coarseNodeIndices[0]) > (rate[0] / 2)) {
       coarseNode += 1;
     }
-    stencil[coarseNode] = 1.0;
+    stencil[0] = coarseNode;
 
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   ComputeLinearInterpolationStencil(const LO numDimensions, const Array<Array<double> > coord,
-                                    std::vector<SC>& stencil)
+                                    std::vector<double>& stencil)
     const {
 
     //                7         8                Find xi, eta and zeta such that
