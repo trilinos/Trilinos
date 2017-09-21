@@ -58,7 +58,7 @@ namespace Xpetra{
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RegionAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RegionAMG(
-	Teuchos::RCP<tpetra_splitting> matrixSplitting,
+    Teuchos::RCP<tpetra_splitting> matrixSplitting,
     Teuchos::RCP<Xpetra::RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionHandler,
     RCP<const Teuchos::Comm<int> > comm, Teuchos::ParameterList muelu,
     GlobalOrdinal num_levels, GlobalOrdinal coarsening_factor) :
