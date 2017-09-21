@@ -1,0 +1,11 @@
+/*
+    ShyLU GDSW configuration.
+*/
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_SHYLUFROSCH_AMESOS
+
+#cmakedefine HAVE_SHYLUFROSCH_MUELU
+
+#cmakedefine HAVE_SHYLUFROSCH_ZOLTAN2
+
