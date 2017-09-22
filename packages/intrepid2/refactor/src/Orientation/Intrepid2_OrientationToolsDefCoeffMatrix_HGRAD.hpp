@@ -114,17 +114,32 @@ namespace Intrepid2 {
       }
       case shards::Triangle<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  6) {
-          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
-          const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
-          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+          // in the basis of tet, it uses map to reference subcell and accounts for the left handed face
+          //const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
+          //const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
+          ort = subcellOrt;
         }
         break;
       }
       case shards::Quadrilateral<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  8) {
-          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 3);
-          const ordinal_type leftOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 };
-          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+        //some faces require special treatment because the dofs of the face bases are not consistent with the corresponding dofs of the hexahedron
+        //TODO: modify reference Hexahedron element so that the dofs of the subcell are consistent with those of the cell.
+        switch (subcellId) {
+            case 3:
+            case 4: {
+              const ordinal_type modifiedOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 }; //left hand orientation
+              ort = modifiedOrt[subcellOrt];
+              break;
+            }
+            case 2: {
+              const ordinal_type modifiedOrt[] = { 0, 3, 2, 1, 6, 5, 4, 7 };
+              ort = modifiedOrt[subcellOrt];
+              break;
+            }
+            default:
+              ort = subcellOrt;
+          }
         }
         break;
       }
@@ -187,14 +202,14 @@ namespace Intrepid2 {
       switch (subcellBaseKey) {
       case shards::Line<>::key: 
       case shards::Triangle<>::key: {
-        const ordinal_type ndofLine = PointTools::getLatticeSize(subcellTopo, degree, 1);
-        refPtsSubcell = DynRankViewHostType("refPtsSubcell", ndofLine, subcellDim);
+        const ordinal_type ndof = PointTools::getLatticeSize(subcellTopo, degree, 1);
+        refPtsSubcell = DynRankViewHostType("refPtsSubcell", ndof, subcellDim);
         PointTools::getLattice(refPtsSubcell,
                                subcellTopo,
                                degree,
                                1, // offset by 1 so the points are located inside
                                POINTTYPE_EQUISPACED);
-        INTREPID2_TEST_FOR_EXCEPTION( ndofSubcell != ndofLine,
+        INTREPID2_TEST_FOR_EXCEPTION( ndofSubcell != ndof,
                                       std::logic_error,
                                       ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HGRAD): " \
                                       "The number of DOFs in line should be equal to the number of collocation points.");

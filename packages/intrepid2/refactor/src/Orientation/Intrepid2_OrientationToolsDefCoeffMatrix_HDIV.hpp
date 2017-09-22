@@ -62,102 +62,101 @@ namespace Intrepid2 {
   
   namespace Impl {
 
-    // we do not have triangle function to match with hdiv_tet_in
-    // so create one~
-    template<typename ExecSpaceType = void,
-             typename outputValueType = double,
-             typename pointValueType = double>
-    class Basis_HDIV_TRI_Kn_FEM
-      : public Basis<ExecSpaceType,outputValueType,pointValueType> {
-    private:
-      Intrepid2::Basis_HDIV_TET_In_FEM<ExecSpaceType,outputValueType,pointValueType> _tet;
+//    // we now have L2 basis functions, so we use that instead
+//    template<typename ExecSpaceType = void,
+//             typename outputValueType = double,
+//             typename pointValueType = double>
+//    class Basis_HDIV_TRI_Kn_FEM
+//      : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+//    private:
+//      Intrepid2::Basis_HDIV_TET_In_FEM<ExecSpaceType,outputValueType,pointValueType> _tet;
 
-    public:
-      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
-      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
-      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
+//    public:
+//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_1d_host ordinal_type_array_1d_host;
+//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_2d_host ordinal_type_array_2d_host;
+//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::ordinal_type_array_3d_host ordinal_type_array_3d_host;
 
-      Basis_HDIV_TRI_Kn_FEM(const ordinal_type order,
-                            const EPointType   pointType = POINTTYPE_EQUISPACED)
-        : _tet(order, pointType) {
-        this->basisCardinality_  = (order+1)*order/2;
-        this->basisDegree_       = order;
-        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
-        this->basisType_         = BASIS_FEM_FIAT;
-        this->basisCoordinates_  = COORDINATES_CARTESIAN;
+//      Basis_HDIV_TRI_Kn_FEM(const ordinal_type order,
+//                            const EPointType   pointType = POINTTYPE_EQUISPACED)
+//        : _tet(order, pointType) {
+//        this->basisCardinality_  = (order+1)*order/2;
+//        this->basisDegree_       = order;
+//        this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
+//        this->basisType_         = BASIS_FEM_FIAT;
+//        this->basisCoordinates_  = COORDINATES_CARTESIAN;
 
-        {
-          // Basis-dependent initializations
-          const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
-          const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
-          const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
-          const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-          
-          constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*Parameters::MaxOrder/2;
-          ordinal_type tags[maxCard][tagSize];
-          
-          for (ordinal_type i=0;i<this->basisCardinality_;++i) {
-            tags[i][0] = 2; // elem dof
-            tags[i][1] = 0; // elem id
-            tags[i][2] = i; // local dof id
-            tags[i][3] = this->basisCardinality_; // total number of dofs
-          }
+//        {
+//          // Basis-dependent initializations
+//          const ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+//          const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim
+//          const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
+//          const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
+//          
+//          constexpr ordinal_type maxCard = (Parameters::MaxOrder+1)*Parameters::MaxOrder/2;
+//          ordinal_type tags[maxCard][tagSize];
+//          
+//          for (ordinal_type i=0;i<this->basisCardinality_;++i) {
+//            tags[i][0] = 2; // elem dof
+//            tags[i][1] = 0; // elem id
+//            tags[i][2] = i; // local dof id
+//            tags[i][3] = this->basisCardinality_; // total number of dofs
+//          }
 
-          ordinal_type_array_1d_host tagView(&tags[0][0], this->basisCardinality_*4);
-          this->setOrdinalTagData(this->tagToOrdinal_,
-                                  this->ordinalToTag_,
-                                  tagView,
-                                  this->basisCardinality_,
-                                  tagSize,
-                                  posScDim,
-                                  posScOrd,
-                                  posDfOrd);
-        }
-      }
+//          ordinal_type_array_1d_host tagView(&tags[0][0], this->basisCardinality_*4);
+//          this->setOrdinalTagData(this->tagToOrdinal_,
+//                                  this->ordinalToTag_,
+//                                  tagView,
+//                                  this->basisCardinality_,
+//                                  tagSize,
+//                                  posScDim,
+//                                  posScOrd,
+//                                  posDfOrd);
+//        }
+//      }
 
-      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
-      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
-      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarType  scalarType;
+//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
+//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarViewType  scalarViewType;
+//      typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarType  scalarType;
 
-      using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
+//      using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
-      virtual
-      void
-      getValues( /* */ outputViewType outputValues, // F, P
-                 const pointViewType  inputPoints, // P, D
-                 const EOperator operatorType = OPERATOR_VALUE) const {
-        INTREPID2_TEST_FOR_EXCEPTION( operatorType != OPERATOR_VALUE, std::invalid_argument,
-                                      ">>> ERROR: (Intrepid2::Basis_HDIV_TET_Kn_FEM::getValues) OPERATOR_VALUE is only allowed");
-        
-        const ordinal_type F = _tet.getCardinality(), P = inputPoints.dimension_0(), D = 3;
-        Kokkos::DynRankView<outputValueType,ExecSpaceType> output("output", F, P, D); 
-        Kokkos::DynRankView<pointValueType,ExecSpaceType>  input("input", P, D); 
+//      virtual
+//      void
+//      getValues( /* */ outputViewType outputValues, // F, P
+//                 const pointViewType  inputPoints, // P, D
+//                 const EOperator operatorType = OPERATOR_VALUE) const {
+//        INTREPID2_TEST_FOR_EXCEPTION( operatorType != OPERATOR_VALUE, std::invalid_argument,
+//                                      ">>> ERROR: (Intrepid2::Basis_HDIV_TET_Kn_FEM::getValues) OPERATOR_VALUE is only allowed");
+//        
+//        const ordinal_type F = _tet.getCardinality(), P = inputPoints.dimension_0(), D = 3;
+//        Kokkos::DynRankView<outputValueType,ExecSpaceType> output("output", F, P, D); 
+//        Kokkos::DynRankView<pointValueType,ExecSpaceType>  input("input", P, D); 
 
-        // first triangle of tet
-        for (ordinal_type i=0;i<P;++i) {
-          input(i, 0) = inputPoints(i,0); 
-          input(i, 1) = 0.0; 
-          input(i, 2) = inputPoints(i,1); 
-        }
-        _tet.getValues(output, input, operatorType);
-        
-        if (_tet.getDofCount(2, 0) > 0) {
-          for (ordinal_type j=0;j<P;++j) 
-            for (ordinal_type i=0;i<this->getCardinality();++i) {
-              const ordinal_type ii = _tet.getDofOrdinal(2, 0, i);
-              outputValues(i, j) = output(ii, j, 1);
-            }
-        }
-      }
-      
-      virtual
-      const char*
-      getName() const {
-        return "Intrepid2_HDIV_TRI_Kn_FEM";
-      }
+//        // first triangle of tet
+//        for (ordinal_type i=0;i<P;++i) {
+//          input(i, 0) = inputPoints(i,0); 
+//          input(i, 1) = 0.0; 
+//          input(i, 2) = inputPoints(i,1); 
+//        }
+//        _tet.getValues(output, input, operatorType);
+//        
+//        if (_tet.getDofCount(2, 0) > 0) {
+//          for (ordinal_type j=0;j<P;++j) 
+//            for (ordinal_type i=0;i<this->getCardinality();++i) {
+//              const ordinal_type ii = _tet.getDofOrdinal(2, 0, i);
+//              outputValues(i, j) = output(ii, j, 1);
+//            }
+//        }
+//      }
+//      
+//      virtual
+//      const char*
+//      getName() const {
+//        return "Intrepid2_HDIV_TRI_Kn_FEM";
+//      }
 
-    };
+//    };
 
     template<typename outputViewType,
              typename subcellBasisType,
@@ -223,17 +222,32 @@ namespace Intrepid2 {
       }
       case shards::Triangle<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  6) {
-          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
-          const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
-          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+          // in the basis of tet, it uses map to reference subcell and accounts for the left handed face
+          //const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
+          //const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
+          ort = subcellOrt; //(leftHanded ? leftOrt[subcellOrt] : subcellOrt);
         }
         break;
       }
       case shards::Quadrilateral<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  8) {
-          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 3);
-          const ordinal_type leftOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 };
-          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+        //some faces require special treatment because the dofs of the face bases are not consistent with the corresponding dofs of the hexahedron
+        //TODO: modify reference Hexahedron element so that the dofs of the subcell are consistent with those of the cell.
+        switch (subcellId) {
+            case 3:
+            case 4: {
+              const ordinal_type modifiedOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 }; //left hand orientation
+              ort = modifiedOrt[subcellOrt];
+              break;
+            }
+            case 2: {
+              const ordinal_type modifiedOrt[] = { 0, 3, 2, 1, 6, 5, 4, 7 };
+              ort = modifiedOrt[subcellOrt];
+              break;
+            }
+            default:
+              ort = subcellOrt;
+          }
         }
         break;
       }
@@ -295,11 +309,18 @@ namespace Intrepid2 {
           const std::string subcellBasisName(subcellBasis.getName());
           switch (subcellDim) {
           case 1: {
-            // edge hcurl is hgrad with gauss legendre points
-            INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
+            //TODO: Hex, QUAD, TET and TRI element should have the same 1d basis
+            if ((cellBasisName.find("HEX") != std::string::npos) || (cellBasisName.find("QUAD") != std::string::npos)) {
+              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
                                           std::logic_error,
-                                          ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): "
-                                          "subcellBasis function space is not compatible, which should be opne line hgrad, order -1.");
+                                          ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_DIV): " 
+                                          "subcellBasis function space (1d) is not consistent to cellBasis, which should be open line hgrad, order -1.");
+            } else if ((cellBasisName.find("TET") != std::string::npos) || (cellBasisName.find("TRI") != std::string::npos)) {
+              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("L2") == std::string::npos,
+                                          std::logic_error,
+                                          ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_DIV): " 
+                                          "subcellBasis function space (1d) is not consistent to cellBasis, which should be L2 line, order -1.");
+            }
             break;
           }
           case 2: {
@@ -310,11 +331,11 @@ namespace Intrepid2 {
                                             ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): "
                                             "subcellBasis function space is not compatible, which should be open line hgrad, order -1.");
             } else if (subcellBaseKey == shards::Triangle<>::key) {
-              // triangle face basis comes from hdiv functions or hgrad ?????
-              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HDIV_TRI_Kn") == std::string::npos,
+              // triangle face basis comes from L2 basis
+              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("L2") == std::string::npos,
                                             std::logic_error,
                                             ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): "
-                                            "subcellBasis function space is not compatible, which should hdiv tri kn.");
+                                            "subcellBasis function space is not compatible, which should L2, order-1.");
             }
             break;
           }

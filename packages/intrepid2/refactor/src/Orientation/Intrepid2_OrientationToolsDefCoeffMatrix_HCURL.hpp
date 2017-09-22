@@ -121,17 +121,32 @@ namespace Intrepid2 {
       }
       case shards::Triangle<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  6) {
-          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
-          const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
-          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+          // in the basis of tet, it uses map to reference subcell and accounts for the left handed face
+          //const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 2);
+          //const ordinal_type leftOrt[] = { 0, 2, 1, 3, 5, 4 };
+          ort = subcellOrt; //(leftHanded ? leftOrt[subcellOrt] : subcellOrt);
         }
         break;
       }
       case shards::Quadrilateral<>::key: {
         if (subcellOrt >= 0 && subcellOrt <  8) {
-          const ordinal_type leftHanded = cellTopo.getNodeMap(2, subcellId, 1) > cellTopo.getNodeMap(2, subcellId, 3);
-          const ordinal_type leftOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 };
-          ort = (leftHanded ? leftOrt[subcellOrt] : subcellOrt);
+        //some faces require special treatment because the dofs of the face bases are not consistent with the corresponding dofs of the hexahedron
+        //TODO: modify reference Hexahedron element so that the dofs of the subcell are consistent with those of the cell.
+        switch (subcellId) {
+            case 3:
+            case 4: {
+              const ordinal_type modifiedOrt[] = { 0, 3, 2, 1, 4, 7, 6, 5 }; //left hand orientation
+              ort = modifiedOrt[subcellOrt];
+              break;
+            }
+            case 2: {
+              const ordinal_type modifiedOrt[] = { 0, 3, 2, 1, 6, 5, 4, 7 };
+              ort = modifiedOrt[subcellOrt];
+              break;
+            }
+            default:
+              ort = subcellOrt;
+          }
         }
         break;
       }
@@ -188,10 +203,18 @@ namespace Intrepid2 {
           // edge hcurl is hgrad with gauss legendre points
           switch (subcellDim) {
           case 1: {
-            INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
+            //TODO: Hex, QUAD, TET and TRI element should have the same 1d basis
+            if ((cellBasisName.find("HEX") != std::string::npos) || (cellBasisName.find("QUAD") != std::string::npos)) {
+              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HGRAD") == std::string::npos,
                                           std::logic_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
                                           "subcellBasis function space (1d) is not consistent to cellBasis.");
+            } else if ((cellBasisName.find("TET") != std::string::npos) || (cellBasisName.find("TRI") != std::string::npos)) {
+              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("L2") == std::string::npos,
+                                          std::logic_error,
+                                          ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " 
+                                          "subcellBasis function space (1d) is not consistent to cellBasis.");
+            }
             break;
           }
           case 2: {
@@ -328,6 +351,7 @@ namespace Intrepid2 {
         break;
       }
       case shards::Triangle<>::key: {
+        //Inverse of the gradinent of the orientation map
         subcellBasis.getValues(outValues, ortPtsSubcell);
         const ordinal_type c[6][2][2] = { { {  1,  0 },
                                             {  0,  1 } }, // 0
@@ -346,14 +370,15 @@ namespace Intrepid2 {
       }
       case shards::Quadrilateral<>::key: {
         subcellBasis.getValues(outValues, ortPtsSubcell);
+        //Transpose of the gradient of the orientation map
         const ordinal_type c[8][2][2] = { { {  1,  0 },
                                             {  0,  1 } }, // 0
-                                          { {  0, -1 },
-                                            {  1,  0 } }, // 1
+                                          { {  0,  1 },
+                                            { -1,  0 } }, // 1
                                           { { -1,  0 },
                                             {  0, -1 } }, // 2
-                                          { {  0,  1 },
-                                            { -1,  0 } }, // 3
+                                          { {  0, -1 },
+                                            {  1,  0 } }, // 3
                                           { {  0,  1 },
                                             {  1,  0 } }, // 4
                                           { { -1,  0 },

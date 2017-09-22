@@ -144,11 +144,10 @@ namespace Intrepid2 {
 
       INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(input.dimension(1)) != basis->getCardinality(), std::invalid_argument,
                                     ">>> ERROR (OrientationTools::modifyBasisByOrientation): Field dimension of input/output does not match to basis cardinality.");
-      if (input.rank() == 4)
-        INTREPID2_TEST_FOR_EXCEPTION( input.dimension(3) != basis->getBaseCellTopology().getDimension(), std::invalid_argument,
-                                      ">>> ERROR (OrientationTools::modifyBasisByOrientation): Space dimension of input/output does not match to topology dimension.");
     }
 #endif
+    typedef typename decltype(input)::non_const_value_type input_value_type;
+
     if (basis->requireOrientation()) {
       auto ordinalToTag = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofTags());
       auto tagToOrdinal = Kokkos::create_mirror_view(typename SpT::memory_space(), basis->getAllDofOrdinal());
@@ -166,13 +165,9 @@ namespace Intrepid2 {
       const shards::CellTopology cellTopo = basis->getBaseCellTopology();
       
       const ordinal_type 
-        numVerts = cellTopo.getVertexCount(), 
+        numVerts = cellTopo.getVertexCount()*ordinal_type(basis->getDofCount(0, 0) > 0),
         numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0),
         numFaces = cellTopo.getFaceCount();
-      
-      const ordinal_type intrDim = ( numEdges == 0 ? 1 : 
-                                     numFaces == 0 ? 2 : 
-                                     /**/            3 );
       
       for (auto cell=0;cell<numCells;++cell) {
         auto out = Kokkos::subview(output, cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -180,7 +175,7 @@ namespace Intrepid2 {
         
         // vertex copy (no orientation)
         for (ordinal_type vertId=0;vertId<numVerts;++vertId) {
-          const ordinal_type i = tagToOrdinal(0, vertId, 0);
+          const ordinal_type i = (static_cast<size_type>(vertId) < tagToOrdinal.dimension(1) ? tagToOrdinal(0, vertId, 0) : -1);
           if (i != -1) // if dof does not exist i returns with -1
             for (ordinal_type j=0;j<numPoints;++j)
               for (ordinal_type k=0;k<dimBasis;++k)
@@ -189,11 +184,12 @@ namespace Intrepid2 {
         
         // interior copy
         {
-          const ordinal_type ordIntr = (static_cast<size_type>(intrDim) < tagToOrdinal.dimension(0) ? tagToOrdinal(intrDim, 0, 0) : -1);
+          const ordinal_type cellDim = cellTopo.getDimension();
+          const ordinal_type ordIntr = (static_cast<size_type>(cellDim) < tagToOrdinal.dimension(0) ? tagToOrdinal(cellDim, 0, 0) : -1);
           if (ordIntr != -1) {
             const ordinal_type ndofIntr = ordinalToTag(ordIntr, 3);
             for (ordinal_type i=0;i<ndofIntr;++i) {
-              const ordinal_type ii = tagToOrdinal(intrDim, 0, i);
+              const ordinal_type ii = tagToOrdinal(cellDim, 0, i);
               for (ordinal_type j=0;j<numPoints;++j)
                 for (ordinal_type k=0;k<dimBasis;++k)
                   out(ii, j, k) = in(ii, j, k);
@@ -202,6 +198,7 @@ namespace Intrepid2 {
         }
         
         // edge transformation
+        ordinal_type existEdgeDofs = 0;
         if (numEdges > 0) {
           ordinal_type ortEdges[12];
           orts(cell).getEdgeOrientation(ortEdges, numEdges);
@@ -211,6 +208,7 @@ namespace Intrepid2 {
             const ordinal_type ordEdge = (1 < tagToOrdinal.dimension(0) ? (static_cast<size_type>(edgeId) < tagToOrdinal.dimension(1) ? tagToOrdinal(1, edgeId, 0) : -1) : -1);
             
             if (ordEdge != -1) {
+              existEdgeDofs = 1;
               const ordinal_type ndofEdge = ordinalToTag(ordEdge, 3);
               const auto mat = Kokkos::subview(matData, 
                                                edgeId, ortEdges[edgeId], 
@@ -221,7 +219,7 @@ namespace Intrepid2 {
                   const ordinal_type ii = tagToOrdinal(1, edgeId, i);
                   
                   for (ordinal_type k=0;k<dimBasis;++k) {
-                    inputValueType temp = 0.0;
+                    input_value_type temp = 0.0;
                     for (ordinal_type l=0;l<ndofEdge;++l) {
                       const ordinal_type ll = tagToOrdinal(1, edgeId, l);
                       temp += mat(i,l)*in(ll, j, k);
@@ -245,7 +243,7 @@ namespace Intrepid2 {
             if (ordFace != -1) {
               const ordinal_type ndofFace = ordinalToTag(ordFace, 3);
               const auto mat = Kokkos::subview(matData, 
-                                               numEdges+faceId, ortFaces[faceId], 
+                                               numEdges*existEdgeDofs+faceId, ortFaces[faceId], 
                                                Kokkos::ALL(), Kokkos::ALL());
               
               for (ordinal_type j=0;j<numPoints;++j) 
@@ -253,7 +251,7 @@ namespace Intrepid2 {
                   const ordinal_type ii = tagToOrdinal(2, faceId, i);
                   
                   for (ordinal_type k=0;k<dimBasis;++k) {
-                    inputValueType temp = 0.0;
+                    input_value_type temp = 0.0;
                     for (ordinal_type l=0;l<ndofFace;++l) {
                       const ordinal_type ll = tagToOrdinal(2, faceId, l);
                       temp += mat(i,l)*in(ll, j, k);

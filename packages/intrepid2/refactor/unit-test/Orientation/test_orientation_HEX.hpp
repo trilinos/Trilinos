@@ -42,23 +42,23 @@
 
 
 /** \file
-    \brief  Test for checking orientation tools for Tetrahedral elements
+    \brief  Test for checking orientation tools for Hexaedral elements
  
-    The test considers two tetrahedra in the physical space sharing a common face. 
-    In order to test significant configurations, we consider 4 mappings of the reference tetrahedron 
-    to the first (physical) tetrahedron, so that the common face is mapped from all the 4 faces 
-    of the reference tetrahedron.
-    Then, for each of the mappings, the global ids of the vertices of the common faces are permuted.
-    This gives a total of 24 combinations
+    The test considers two hexahedra in the physical space sharing a common face. 
+    In order to test significant configurations, we consider 6 mappings of the reference hexahedron
+    to the first (physical) hexahedron, so that the common face is mapped from all the 6 faces
+    of the reference hexahedron.
+    Then, for each of the mappings, the global ids of the vertices of the common face are permuted.
+    This gives a total of 144 combinations
     
     The test considers HGRAD, HCURL and HDIV elements and for each of them checks the following:
-    1. that the physical (oriented) dof coefficients related to faces and edges are equivalent 
-       to the tangents (for HCURL) of faces/edges or to the normals (for HDIV) of faces.
+    1. that the physical (oriented) dof coefficients related to faces and edges are proportional 
+       to the tangents (for HCURL) of the faces/edges or to the normals (for HDIV) of the faces.
     2. that the Kronecker property of the oriented basis evaluated at the physiscal dof coordinates holds.
-    3. that given a function, the dofs of the function located at the common faces/edges
-       are the same when computed one the first and second tetrahedron.
-    4. that a function, belonging to the considered H-space, is exactly at given points using the
-       oriented basis functions and the degrees of freedom of the function.
+    3. that given a function, the dofs of the function located at the common faces/edges are the same
+       when computed on the first and second hexahedron.
+    4. that a function, belonging to the considered H-space, is exactly reproduced at given points
+       using the oriented basis functions and the degrees of freedom of the function.
  
     
 
@@ -74,13 +74,13 @@
 #include "Intrepid2_Orientation.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 #include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_TET_C1_FEM.hpp"
-#include "Intrepid2_HGRAD_TET_Cn_FEM.hpp"
-#include "Intrepid2_HCURL_TET_In_FEM.hpp"
-#include "Intrepid2_HCURL_TRI_In_FEM.hpp"
+#include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
+#include "Intrepid2_HCURL_HEX_In_FEM.hpp"
+#include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
 #include "Intrepid2_L2_LINE_Cn_FEM.hpp"
-#include "Intrepid2_L2_TRI_Cn_FEM.hpp"
+#include "Intrepid2_L2_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
@@ -110,7 +110,7 @@ namespace Test {
     }
 
 template<typename ValueType, typename DeviceSpaceType>
-int OrientationTet(const bool verbose) {
+int OrientationHex(const bool verbose) {
 
   typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
   typedef Kokkos::DynRankView<ordinal_type,DeviceSpaceType> DynRankViewInt;
@@ -198,7 +198,7 @@ int OrientationTet(const bool verbose) {
   };
 
   typedef std::array<ordinal_type,2> edgeType;
-  typedef std::array<ordinal_type,3> faceType;
+  typedef std::array<ordinal_type,4> faceType;
   typedef CellTools<DeviceSpaceType> ct;
   typedef OrientationTools<DeviceSpaceType> ots;
   typedef Impl::OrientationTools iots;
@@ -208,17 +208,26 @@ int OrientationTet(const bool verbose) {
 
   constexpr ordinal_type dim = 3;
   constexpr ordinal_type numCells = 2;
-  constexpr ordinal_type numElemVertexes = 4;
-  constexpr ordinal_type numElemEdges = 6;
-  constexpr ordinal_type numElemFaces = 4;
-  constexpr ordinal_type numTotalVertexes = 5;
+  constexpr ordinal_type numElemVertexes = 8;
+  constexpr ordinal_type numElemEdges = 12;
+  constexpr ordinal_type numElemFaces = 6;
+  constexpr ordinal_type numTotalVertexes = 12;
 
-  ValueType  vertices_orig[numTotalVertexes][dim] = {{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,1,1}};
-  ordinal_type tets_orig[numCells][numElemVertexes] = {{0,1,2,3},{1,2,3,4}};  //common face is {1,2,3}
-  ordinal_type tets_rotated[numCells][numElemVertexes];
-  faceType common_face = {1,2,3};
+
+
+  ValueType  vertices_orig[numTotalVertexes][dim] = {{-1,-1,-1},{1,-1,-1},{1,1,-1},{-1,1,-1},{-1,-1,1},{1,-1,1},{1,1,1},{-1,1,1}, {-1,-1,2},{1,-1,2},{1,1,2},{-1,1,2}};
+  ordinal_type hexas_orig[numCells][numElemVertexes] = {{0,1,2,3,4,5,6,7},{4,5,6,7,8,9,10,11}};  //common face is {4,5,6,7}
+  faceType common_face = {4,5,6,7};
+  faceType faceLeft = {0, 3, 7, 4};
+  faceType faceRight = {1, 2, 6, 5};
+  faceType faceFront = {0, 4, 5, 1};
+  faceType faceBack = {2, 3, 7, 6};
+  ordinal_type hexas_rotated[numCells][numElemVertexes];
+  faceType faceLeftOriented, faceRightOriented, faceBackOriented, faceFrontOriented;
+
+
   std::set<edgeType> common_edges;
-  common_edges.insert(edgeType({1,2})); common_edges.insert(edgeType({1,3})); common_edges.insert(edgeType({2,3}));
+  common_edges.insert(edgeType({4,5})); common_edges.insert(edgeType({5,6})); common_edges.insert(edgeType({6,7})); common_edges.insert(edgeType({4,7}));
 
 
   *outStream
@@ -231,8 +240,10 @@ int OrientationTet(const bool verbose) {
 
  try {
 
-   const ordinal_type order = 4;
-   ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4};
+
+
+   const ordinal_type order = 3;
+   ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
 
    do {
      ordinal_type orderback[numTotalVertexes];
@@ -240,42 +251,58 @@ int OrientationTet(const bool verbose) {
        orderback[reorder[i]]=i;
      }
      ValueType vertices[numTotalVertexes][dim];
-     ordinal_type tets[numCells][numElemVertexes];
-     std::copy(&tets_orig[0][0], &tets_orig[0][0]+numCells*numElemVertexes, &tets_rotated[0][0]);
-     
-     for (ordinal_type shift=0; shift<4; ++shift) {
-       std::rotate_copy(&tets_orig[0][0], &tets_orig[0][0]+shift, &tets_orig[0][0]+4, &tets_rotated[0][0]);
+     ordinal_type hexas[numCells][numElemVertexes];
+     std::copy(&hexas_orig[0][0], &hexas_orig[0][0]+numCells*numElemVertexes, &hexas_rotated[0][0]);
+     for (ordinal_type shift=0; shift<6; ++shift) {
+       if(shift <4){
+         std::rotate_copy(faceLeft.begin(), faceLeft.begin()+shift, faceLeft.end(), faceLeftOriented.begin());
+         std::rotate_copy(faceRight.begin(), faceRight.begin()+shift, faceRight.end(), faceRightOriented.begin());
+         for(ordinal_type ii=0; ii<4; ii++) {
+           hexas_rotated[0][faceLeft[ii]] = hexas_orig[0][faceLeftOriented[ii]];
+           hexas_rotated[0][faceRight[ii]] = hexas_orig[0][faceRightOriented[ii]];
+         }
+       } else {
+         ordinal_type iirot = (shift==4) ? 1 : 3;
+         std::rotate_copy(faceFront.begin(), faceFront.begin()+iirot, faceFront.end(), faceFrontOriented.begin());
+         std::rotate_copy(faceBack.begin(), faceBack.begin()+iirot, faceBack.end(), faceBackOriented.begin());
+         for(ordinal_type ii=0; ii<4; ii++) {
+           hexas_rotated[0][faceFront[ii]] = hexas_orig[0][faceFrontOriented[ii]];
+           hexas_rotated[0][faceBack[ii]] = hexas_orig[0][faceBackOriented[ii]];
+         }
+       }
 
        for(ordinal_type i=0; i<numCells;++i)
          for(ordinal_type j=0; j<numElemVertexes;++j)
-           tets[i][j] = reorder[tets_rotated[i][j]];
+           hexas[i][j] = reorder[hexas_rotated[i][j]];
 
        for(ordinal_type i=0; i<numTotalVertexes;++i)
          for(ordinal_type d=0; d<dim;++d)
            vertices[i][d] = vertices_orig[orderback[i]][d];
 
-  *outStream <<  "Considering Tet 0: [ ";
+  *outStream <<  "Considering Hex 0: [ ";
        for(ordinal_type j=0; j<numElemVertexes;++j)
-  *outStream << tets[0][j] << " ";
-  *outStream << "] and Tet 1: [ ";
+  *outStream << hexas[0][j] << " ";
+  *outStream << "] and Hex 1: [ ";
        for(ordinal_type j=0; j<numElemVertexes;++j)
-  *outStream << tets[1][j] << " ";
+  *outStream << hexas[1][j] << " ";
   *outStream << "]\n";
 
-       shards::CellTopology tet(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-       shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
+       shards::CellTopology hexa(shards::getCellTopologyData<shards::Hexahedron<8> >());
+       shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
        shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
 
        //computing vertices coords
-       DynRankView ConstructWithLabel(physVertexes, numCells, tet.getNodeCount(), dim);
+       DynRankView ConstructWithLabel(physVertexes, numCells, hexa.getNodeCount(), dim);
        for(ordinal_type i=0; i<numCells; ++i)
-         for(std::size_t j=0; j<tet.getNodeCount(); ++j)
+         for(std::size_t j=0; j<hexa.getNodeCount(); ++j)
            for(ordinal_type k=0; k<dim; ++k)
-             physVertexes(i,j,k) = vertices[tets[i][j]][k];
+             physVertexes(i,j,k) = vertices[hexas[i][j]][k];
+
+
 
        //computing common face and edges
        ordinal_type faceIndex[numCells];
-       ordinal_type edgeIndexes[numCells][3];
+       ordinal_type edgeIndexes[numCells][4];
 
        {
          faceType face={};
@@ -283,16 +310,21 @@ int OrientationTet(const bool verbose) {
          //bool faceOrientation[numCells][4];
          for(ordinal_type i=0; i<numCells; ++i) {
            //compute faces' tangents
-           for (std::size_t is=0; is<tet.getSideCount(); ++is) {
-             for (std::size_t k=0; k<tet.getNodeCount(2,is); ++k)
-               face[k]= tets_rotated[i][tet.getNodeMap(2,is,k)];
-             std::sort(face.begin(),face.end());
+           for (std::size_t is=0; is<hexa.getSideCount(); ++is) {
+             for (std::size_t k=0; k<hexa.getNodeCount(2,is); ++k)
+               face[k]= hexas_rotated[i][hexa.getNodeMap(2,is,k)];
+             
+             //rotate and flip
+             auto minElPtr= std::min_element(face.begin(), face.end());
+             std::rotate(face.begin(),minElPtr,face.end());
+             if(face[3]<face[1]) {auto tmp=face[1]; face[1]=face[3]; face[3]=tmp;}
+             
              if(face == common_face) faceIndex[i]=is;
            }
            //compute edges' tangents
-           for (std::size_t ie=0; ie<tet.getEdgeCount(); ++ie) {
-             for (std::size_t k=0; k<tet.getNodeCount(1,ie); ++k)
-               edge[k]= tets_rotated[i][tet.getNodeMap(1,ie,k)];
+           for (std::size_t ie=0; ie<hexa.getEdgeCount(); ++ie) {
+             for (std::size_t k=0; k<hexa.getNodeCount(1,ie); ++k)
+               edge[k]= hexas_rotated[i][hexa.getNodeMap(1,ie,k)];
              std::sort(edge.begin(),edge.end());
              auto it=common_edges.find(edge);
              if(it !=common_edges.end()){
@@ -304,17 +336,17 @@ int OrientationTet(const bool verbose) {
        }
 
        //compute reference points
-       Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+       Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
        ordinal_type numRefCoords = warpBasis.getCardinality();
        DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
        warpBasis.getDofCoords(refPoints);
 
        // compute orientations for cells (one time computation)
-       DynRankViewInt elemNodes(&tets[0][0], numCells, numElemVertexes);
+       DynRankViewInt elemNodes(&hexas[0][0], 2, numElemVertexes);
        Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
-       ots::getOrientation(elemOrts, elemNodes, tet);
+       ots::getOrientation(elemOrts, elemNodes, hexa);
 
-       Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+       Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
        ordinal_type basisCardinality = basis.getCardinality();
 
        //compute DofCoords Oriented
@@ -323,7 +355,7 @@ int OrientationTet(const bool verbose) {
        basis.getDofCoords(dofCoords);
        {
          for(ordinal_type i=0; i<numCells; ++i)
-           for(ordinal_type ivertex=0; ivertex<4; ++ivertex) {
+           for(ordinal_type ivertex=0; ivertex<numElemVertexes; ++ivertex) {
              auto idof = basis.getDofOrdinal(0, ivertex, 0);
              for(ordinal_type d=0; d <dim; ++d)
                dofCoordsOriented(i,idof,d) = dofCoords(idof,d);
@@ -342,7 +374,7 @@ int OrientationTet(const bool verbose) {
            elemOrts(i).getEdgeOrientation(eOrt, numElemEdges);
            for(ordinal_type iedge=0; iedge<numElemEdges; iedge++) {
              iots::mapToModifiedReference(lineDofCoordsOriented,lineDofCoords,line,eOrt[iedge]);
-             ct::mapToReferenceSubcell(lineDofCoordsOriented3d, lineDofCoordsOriented, dim-2, iedge, tet);
+             ct::mapToReferenceSubcell(lineDofCoordsOriented3d, lineDofCoordsOriented, dim-2, iedge, hexa);
 
              for(ordinal_type j=0; j<numEdgeDOFs; ++j) {
                auto idof = basis.getDofOrdinal(1, iedge, j);
@@ -354,30 +386,31 @@ int OrientationTet(const bool verbose) {
            }
          }
         
-         Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType,ValueType,ValueType> triBasis(order);
-         ordinal_type triBasisCardinality = triBasis.getCardinality();
-         ordinal_type numInternalDofs = triBasis.getDofCount(dim-1,0);
-         DynRankView ConstructWithLabel(triDofCoords, triBasisCardinality, dim-1);
-         DynRankView ConstructWithLabel(triInternalDofCoords, numInternalDofs, dim-1);
-         triBasis.getDofCoords(triDofCoords);
+         Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType,ValueType,ValueType> quadBasis(order);
+         ordinal_type quadBasisCardinality = quadBasis.getCardinality();
+         ordinal_type numInternalDofs = quadBasis.getDofCount(dim-1,0);
+         DynRankView ConstructWithLabel(quadDofCoords, quadBasisCardinality, dim-1);
+         DynRankView ConstructWithLabel(quadInternalDofCoords, numInternalDofs, dim-1);
+         quadBasis.getDofCoords(quadDofCoords);
          for(ordinal_type i=0; i<numInternalDofs; ++i)
            for(ordinal_type d=0; d <dim-1; ++d)
-             triInternalDofCoords(i,d) = triDofCoords(triBasis.getDofOrdinal(dim-1, 0, i),d);
+             quadInternalDofCoords(i,d) = quadDofCoords(quadBasis.getDofOrdinal(dim-1, 0, i),d);
 
-         DynRankView ConstructWithLabel(triInternalDofCoordsOriented,  numInternalDofs, dim-1);
-         DynRankView ConstructWithLabel(triDofCoordsOriented3d, numInternalDofs, dim);
+         DynRankView ConstructWithLabel(quadInternalDofCoordsOriented,  numInternalDofs, dim-1);
+         DynRankView ConstructWithLabel(quadDofCoordsOriented3d, numInternalDofs, dim);
          ordinal_type fOrt[numElemFaces];
          for(ordinal_type i=0; i<numCells; ++i) {
            elemOrts(i).getFaceOrientation(fOrt, numElemFaces);
            for(ordinal_type iface=0; iface<numElemFaces; iface++) {
              ordinal_type ort = fOrt[iface];
-             iots::mapToModifiedReference(triInternalDofCoordsOriented,triInternalDofCoords,tri,ort);
-             ct::mapToReferenceSubcell(triDofCoordsOriented3d, triInternalDofCoordsOriented, dim-1, iface, tet);
+             iots::mapToModifiedReference(quadInternalDofCoordsOriented,quadInternalDofCoords,quad,ort);
+             ct::mapToReferenceSubcell(quadDofCoordsOriented3d, quadInternalDofCoordsOriented, dim-1, iface, hexa);
+             DynRankView ConstructWithLabel(quadDofs,  quadBasis.getCardinality(), quadBasisCardinality);
 
              for(ordinal_type j=0; j<numInternalDofs; ++j) {
                auto idof = basis.getDofOrdinal(2, iface, j);
                for(ordinal_type d=0; d <dim; ++d)
-                 dofCoordsOriented(i,idof,d) = triDofCoordsOriented3d(j,d);
+                 dofCoordsOriented(i,idof,d) = quadDofCoordsOriented3d(j,d);
              }
            }
          }
@@ -395,23 +428,23 @@ int OrientationTet(const bool verbose) {
        DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
        DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
        {
-         Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
-         DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
-         tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
-         DynRankView ConstructWithLabel(tetLinearBasisValuesAtDofCoords, numCells, tet.getNodeCount(), basisCardinality);
+         Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
+         DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
+         hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+         DynRankView ConstructWithLabel(hexaLinearBasisValuesAtDofCoords, numCells, hexa.getNodeCount(), basisCardinality);
          for(ordinal_type i=0; i<numCells; ++i)
            for(ordinal_type d=0; d<dim; ++d) {
              for(ordinal_type j=0; j<numRefCoords; ++j)
-               for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                 physRefCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtRefCoords(k,j);
+               for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
+                 physRefCoords(i,j,d) += vertices[hexas[i][k]][d]*hexaLinearBasisValuesAtRefCoords(k,j);
 
              auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
-             auto outView =Kokkos::subview( tetLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-             tetLinearBasis.getValues(outView, inView);
+             auto outView =Kokkos::subview( hexaLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+             hexaLinearBasis.getValues(outView, inView);
 
              for(ordinal_type j=0; j<basisCardinality; ++j)
-               for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                 physDofCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtDofCoords(i,k,j);
+               for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
+                 physDofCoords(i,j,d) += vertices[hexas[i][k]][d]*hexaLinearBasisValuesAtDofCoords(i,k,j);
            }
        }
 
@@ -484,11 +517,11 @@ int OrientationTet(const bool verbose) {
          if(areDifferent) {
            errorFlag++;
            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-           *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-           *outStream << "Function DOFs for Tet 0 are:";
+           *outStream << "Function DOFs on common face computed using Hex 0 basis functions are not consistent with those computed using Hex 1\n";
+           *outStream << "Function DOFs for Hex 0 are:";
            for(ordinal_type j=0;j<numFaceDOFs;j++)
              *outStream << " " << funDofs(0,basis.getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
-           *outStream << "\nFunction DOFs for Tet 1 are:";
+           *outStream << "\nFunction DOFs for Hex 1 are:";
            for(ordinal_type j=0;j<numFaceDOFs;j++)
              *outStream << " " << funDofs(1,basis.getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
            *outStream << std::endl;
@@ -507,11 +540,11 @@ int OrientationTet(const bool verbose) {
            if(areDifferent) {
              errorFlag++;
              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-             *outStream << "Function DOFs on common edge " << iEdge << " computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-             *outStream << "Function DOFs for Tet 0 are:";
+             *outStream << "Function DOFs on common edge " << iEdge << " computed using Hex 0 basis functions are not consistent with those computed using Hex 1\n";
+             *outStream << "Function DOFs for Hex 0 are:";
              for(ordinal_type j=0;j<numEdgeDOFs;j++)
                *outStream << " " << funDofs(0,basis.getDofOrdinal(1,edgeIndexes[0][iEdge],j));
-             *outStream << "\nFunction DOFs for Tet 1 are:";
+             *outStream << "\nFunction DOFs for Hex 1 are:";
              for(ordinal_type j=0;j<numEdgeDOFs;j++)
                *outStream << " " << funDofs(1,basis.getDofOrdinal(1,edgeIndexes[1][iEdge],j));
              *outStream << std::endl;
@@ -551,7 +584,7 @@ int OrientationTet(const bool verbose) {
          if(error>100*tol) {
            errorFlag++;
            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-           *outStream << "Function values at reference points differ from those computed using basis functions of Tet " << i << "\n";
+           *outStream << "Function values at reference points differ from those computed using basis functions of Hex " << i << "\n";
            *outStream << "Function values at reference points are:\n";
            for(ordinal_type j=0; j<numRefCoords; ++j)
              *outStream << " (" << funAtPhysRefCoords(i,j)  << ")";
@@ -563,7 +596,7 @@ int OrientationTet(const bool verbose) {
        }
 
      }
-   } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+   } while(std::next_permutation(&reorder[0]+4, &reorder[0]+8)); //reorder vertices of common face
 
  } catch (std::exception err) {
    std::cout << " Exeption\n";
@@ -585,7 +618,7 @@ int OrientationTet(const bool verbose) {
   try {
 
     const ordinal_type order = 3;
-    ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4};
+    ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
 
     do {
       ordinal_type orderback[numTotalVertexes];
@@ -593,15 +626,29 @@ int OrientationTet(const bool verbose) {
         orderback[reorder[i]]=i;
       }
       ValueType vertices[numTotalVertexes][dim];
-      ordinal_type tets[numCells][numElemVertexes];
-      std::copy(&tets_orig[0][0], &tets_orig[0][0]+numCells*numElemVertexes, &tets_rotated[0][0]);
-     
-     for (ordinal_type shift=0; shift<4; ++shift) {
-       std::rotate_copy(&tets_orig[0][0], &tets_orig[0][0]+shift, &tets_orig[0][0]+4, &tets_rotated[0][0]);
+      ordinal_type hexas[numCells][numElemVertexes];
+      std::copy(&hexas_orig[0][0], &hexas_orig[0][0]+numCells*numElemVertexes, &hexas_rotated[0][0]);
+      for (ordinal_type shift=0; shift<6; ++shift) {
+       if(shift <4){
+         std::rotate_copy(faceLeft.begin(), faceLeft.begin()+shift, faceLeft.end(), faceLeftOriented.begin());
+         std::rotate_copy(faceRight.begin(), faceRight.begin()+shift, faceRight.end(), faceRightOriented.begin());
+         for(ordinal_type ii=0; ii<4; ii++) {
+           hexas_rotated[0][faceLeft[ii]] = hexas_orig[0][faceLeftOriented[ii]];
+           hexas_rotated[0][faceRight[ii]] = hexas_orig[0][faceRightOriented[ii]];
+         }
+       } else {
+         ordinal_type iirot = (shift==4) ? 1 : 3;
+         std::rotate_copy(faceFront.begin(), faceFront.begin()+iirot, faceFront.end(), faceFrontOriented.begin());
+         std::rotate_copy(faceBack.begin(), faceBack.begin()+iirot, faceBack.end(), faceBackOriented.begin());
+         for(ordinal_type ii=0; ii<4; ii++) {
+           hexas_rotated[0][faceFront[ii]] = hexas_orig[0][faceFrontOriented[ii]];
+           hexas_rotated[0][faceBack[ii]] = hexas_orig[0][faceBackOriented[ii]];
+         }
+       }
 
-      for(ordinal_type i=0; i<numCells;++i)
+        for(ordinal_type i=0; i<numCells;++i)
           for(ordinal_type j=0; j<numElemVertexes;++j)
-            tets[i][j] = reorder[tets_rotated[i][j]];
+            hexas[i][j] = reorder[hexas_rotated[i][j]];
 
         for(ordinal_type i=0; i<numTotalVertexes;++i)
           for(ordinal_type d=0; d<dim;++d){
@@ -609,24 +656,24 @@ int OrientationTet(const bool verbose) {
           }
 
 
-        *outStream <<  "Considering Tet 0: [ ";
+        *outStream <<  "Considering Hex 0: [ ";
         for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << tets[0][j] << " ";
-        *outStream << "] and Tet 1: [ ";
+          *outStream << hexas[0][j] << " ";
+        *outStream << "] and Hex 1: [ ";
         for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << tets[1][j] << " ";
+          *outStream << hexas[1][j] << " ";
         *outStream << "]\n";
 
-        shards::CellTopology tet(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-        shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
+        shards::CellTopology hexa(shards::getCellTopologyData<shards::Hexahedron<8> >());
+        shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
         shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
 
         //computing vertices coords
-        DynRankView ConstructWithLabel(physVertexes, numCells, tet.getNodeCount(), dim);
+        DynRankView ConstructWithLabel(physVertexes, numCells, hexa.getNodeCount(), dim);
         for(ordinal_type i=0; i<numCells; ++i)
-          for(std::size_t j=0; j<tet.getNodeCount(); ++j)
+          for(std::size_t j=0; j<hexa.getNodeCount(); ++j)
             for(ordinal_type k=0; k<dim; ++k)
-              physVertexes(i,j,k) = vertices[tets[i][j]][k];
+              physVertexes(i,j,k) = vertices[hexas[i][j]][k];
 
 
 
@@ -635,7 +682,7 @@ int OrientationTet(const bool verbose) {
         ValueType faceTanU[numCells][numElemFaces][3];
         ValueType faceTanV[numCells][numElemFaces][3];
         ordinal_type faceIndex[numCells];
-        ordinal_type edgeIndexes[numCells][3];
+        ordinal_type edgeIndexes[numCells][4];
 
         {
           faceType face={};
@@ -643,29 +690,35 @@ int OrientationTet(const bool verbose) {
           //bool faceOrientation[numCells][4];
           for(ordinal_type i=0; i<numCells; ++i) {
             //compute faces' tangents
-            for (std::size_t is=0; is<tet.getSideCount(); ++is) {
-              for (std::size_t k=0; k<tet.getNodeCount(2,is); ++k)
-                face[k]= tets_rotated[i][tet.getNodeMap(2,is,k)];
+            for (std::size_t is=0; is<hexa.getSideCount(); ++is) {
+              for (std::size_t k=0; k<hexa.getNodeCount(2,is); ++k)
+                face[k]= hexas_rotated[i][hexa.getNodeMap(2,is,k)];
+             
+              //rotate and flip to compute common face
+              auto minElPtr= std::min_element(face.begin(), face.end());
+              std::rotate(face.begin(),minElPtr,face.end());
+              if(face[3]<face[1]) {auto tmp=face[1]; face[1]=face[3]; face[3]=tmp;}
               
-              //sort face and compute common face
-              std::sort(face.begin(),face.end());
-
               if(face == common_face) faceIndex[i]=is;
 
               //compute tangents using global ordering
-              for (std::size_t k=0; k<tet.getNodeCount(2,is); ++k)
+              for (std::size_t k=0; k<hexa.getNodeCount(2,is); ++k)
                 face[k]= reorder[face[k]];
 
-              std::sort(face.begin(),face.end());
+              //rotate and flip
+              minElPtr= std::min_element(face.begin(), face.end());
+              std::rotate(face.begin(),minElPtr,face.end());
+              if(face[3]<face[1]) {auto tmp=face[1]; face[1]=face[3]; face[3]=tmp;}
+              
               for(int d=0; d<dim; ++d) {
                 faceTanU[i][is][d] = vertices[face[1]][d]-vertices[face[0]][d];
-                faceTanV[i][is][d] = vertices[face[2]][d]-vertices[face[0]][d];
+                faceTanV[i][is][d] = vertices[face[3]][d]-vertices[face[0]][d];
               }
             }
             //compute edges' tangents
-            for (std::size_t ie=0; ie<tet.getEdgeCount(); ++ie) {
-              for (std::size_t k=0; k<tet.getNodeCount(1,ie); ++k)
-                edge[k]= tets_rotated[i][tet.getNodeMap(1,ie,k)];
+            for (std::size_t ie=0; ie<hexa.getEdgeCount(); ++ie) {
+              for (std::size_t k=0; k<hexa.getNodeCount(1,ie); ++k)
+                edge[k]= hexas_rotated[i][hexa.getNodeMap(1,ie,k)];
 
               //compute common edge        
               std::sort(edge.begin(),edge.end());
@@ -676,7 +729,7 @@ int OrientationTet(const bool verbose) {
               }
            
               //compute edge tangent using global numbering
-              for (std::size_t k=0; k<tet.getNodeCount(1,ie); ++k)
+              for (std::size_t k=0; k<hexa.getNodeCount(1,ie); ++k)
                 edge[k] = reorder[edge[k]];
               std::sort(edge.begin(),edge.end());
               for(int d=0; d<dim; ++d)
@@ -686,18 +739,18 @@ int OrientationTet(const bool verbose) {
         }
 
         //compute reference points
-        Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+        Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
         ordinal_type numRefCoords = warpBasis.getCardinality();
         DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
         warpBasis.getDofCoords(refPoints);
 
         // compute orientations for cells (one time computation)
-        DynRankViewInt elemNodes(&tets[0][0], numCells, numElemVertexes);
+        DynRankViewInt elemNodes(&hexas[0][0], 2, numElemVertexes);
         Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
-        ots::getOrientation(elemOrts, elemNodes, tet);
+        ots::getOrientation(elemOrts, elemNodes, hexa);
 
 
-        Basis_HCURL_TET_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+        Basis_HCURL_HEX_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
         ordinal_type basisCardinality = basis.getCardinality();
 
         //compute DofCoords Oriented
@@ -705,7 +758,7 @@ int OrientationTet(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_L2_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order-1);
+          Basis_HGRAD_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order-1,POINTTYPE_GAUSS);
           ordinal_type lineBasisCardinality = lineBasis.getCardinality();
           DynRankView ConstructWithLabel(lineDofCoords, lineBasisCardinality, dim-2);
           lineBasis.getDofCoords(lineDofCoords);
@@ -717,7 +770,7 @@ int OrientationTet(const bool verbose) {
             elemOrts(i).getEdgeOrientation(eOrt, numElemEdges);
             for(ordinal_type iedge=0; iedge<numElemEdges; iedge++) {
               iots::mapToModifiedReference(lineDofCoordsOriented,lineDofCoords,line,eOrt[iedge]);
-              ct::mapToReferenceSubcell(lineDofCoordsOriented3d, lineDofCoordsOriented, dim-2, iedge, tet);
+              ct::mapToReferenceSubcell(lineDofCoordsOriented3d, lineDofCoordsOriented, dim-2, iedge, hexa);
 
               for(ordinal_type j=0; j<numEdgeDOFs; ++j) {
                 auto idof = basis.getDofOrdinal(1, iedge, j);
@@ -729,30 +782,30 @@ int OrientationTet(const bool verbose) {
             }
           }
 
-          Basis_HCURL_TRI_In_FEM<DeviceSpaceType,ValueType,ValueType> triBasis(order);
-          ordinal_type triBasisCardinality = triBasis.getCardinality();
-          ordinal_type numInternalDofs = triBasis.getDofCount(dim-1,0);
-          DynRankView ConstructWithLabel(triDofCoords, triBasisCardinality, dim-1);
-          DynRankView ConstructWithLabel(triInternalDofCoords, numInternalDofs, dim-1);
-          triBasis.getDofCoords(triDofCoords);
+          Basis_HCURL_QUAD_In_FEM<DeviceSpaceType,ValueType,ValueType> quadBasis(order);
+          ordinal_type quadBasisCardinality = quadBasis.getCardinality();
+          ordinal_type numInternalDofs = quadBasis.getDofCount(dim-1,0);
+          DynRankView ConstructWithLabel(quadDofCoords, quadBasisCardinality, dim-1);
+          DynRankView ConstructWithLabel(quadInternalDofCoords, numInternalDofs, dim-1);
+          quadBasis.getDofCoords(quadDofCoords);
           for(ordinal_type i=0; i<numInternalDofs; ++i)
             for(ordinal_type d=0; d <dim-1; ++d)
-              triInternalDofCoords(i,d) = triDofCoords(triBasis.getDofOrdinal(dim-1, 0, i),d);
+              quadInternalDofCoords(i,d) = quadDofCoords(quadBasis.getDofOrdinal(dim-1, 0, i),d);
 
-          DynRankView ConstructWithLabel(triInternalDofCoordsOriented,  numInternalDofs, dim-1);
-          DynRankView ConstructWithLabel(triDofCoordsOriented3d, numInternalDofs, dim);
+          DynRankView ConstructWithLabel(quadInternalDofCoordsOriented,  numInternalDofs, dim-1);
+          DynRankView ConstructWithLabel(quadDofCoordsOriented3d, numInternalDofs, dim);
           ordinal_type fOrt[numElemFaces];
           for(ordinal_type i=0; i<numCells; ++i) {
             elemOrts(i).getFaceOrientation(fOrt, numElemFaces);
             for(ordinal_type iface=0; iface<numElemFaces; iface++) {
               ordinal_type ort = fOrt[iface];
-              iots::mapToModifiedReference(triInternalDofCoordsOriented,triInternalDofCoords,tri,ort);
-              ct::mapToReferenceSubcell(triDofCoordsOriented3d, triInternalDofCoordsOriented, dim-1, iface, tet);
+              iots::mapToModifiedReference(quadInternalDofCoordsOriented,quadInternalDofCoords,quad,ort);
+              ct::mapToReferenceSubcell(quadDofCoordsOriented3d, quadInternalDofCoordsOriented, dim-1, iface, hexa);
 
               for(ordinal_type j=0; j<numInternalDofs; ++j) {
-                auto idof = basis.getDofOrdinal(2, iface, j);
+                auto idof = basis.getDofOrdinal(dim-1, iface, j);
                 for(ordinal_type d=0; d <dim; ++d)
-                  dofCoordsOriented(i,idof,d) = triDofCoordsOriented3d(j,d);
+                  dofCoordsOriented(i,idof,d) = quadDofCoordsOriented3d(j,d);
               }
             }
           }
@@ -770,23 +823,23 @@ int OrientationTet(const bool verbose) {
         DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
         DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
         {
-          Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
-          tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
-          DynRankView ConstructWithLabel(tetLinearBasisValuesAtDofCoords, numCells, tet.getNodeCount(), basisCardinality);
+          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
+          DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
+          hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+          DynRankView ConstructWithLabel(hexaLinearBasisValuesAtDofCoords, numCells, hexa.getNodeCount(), basisCardinality);
           for(ordinal_type i=0; i<numCells; ++i)
             for(ordinal_type d=0; d<dim; ++d) {
               for(ordinal_type j=0; j<numRefCoords; ++j)
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                  physRefCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtRefCoords(k,j);
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
+                  physRefCoords(i,j,d) += vertices[hexas[i][k]][d]*hexaLinearBasisValuesAtRefCoords(k,j);
 
               auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
-              auto outView =Kokkos::subview( tetLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-              tetLinearBasis.getValues(outView, inView);
+              auto outView =Kokkos::subview( hexaLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+              hexaLinearBasis.getValues(outView, inView);
 
               for(ordinal_type j=0; j<basisCardinality; ++j)
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                  physDofCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtDofCoords(i,k,j);
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
+                  physDofCoords(i,j,d) += vertices[hexas[i][k]][d]*hexaLinearBasisValuesAtDofCoords(i,k,j);
             }
         }
 
@@ -804,16 +857,20 @@ int OrientationTet(const bool verbose) {
 
           const ValueType c[numElemEdges][2][2] = { { {  1,  0 },
               {  0,  1 } }, // 0
-              { {  -1,  1 },
-                  { -1, 0 } }, // 1
-                  { { 0, -1 },
-                      {  1,  -1} }, // 2
-                      { {  0,  1 },
-                          {  1,  0 } }, // 3
-                          { { -1, 0 },
-                              {  -1,  1 } }, // 4
-                              { {  1,  -1 },
-                                  { 0, -1 } } }; // 5
+              { {  0,  1 },
+                  {  -1,  0 } }, // 1
+                  { { -1,  0 },
+                      {  0, -1 } }, // 2
+                      { {  0,  -1 },
+                          { 1,  0 } }, // 3
+                          { {  0,  1 },
+                              {  1,  0 } }, // 4
+                              { { -1,  0 },
+                                  {  0,  1 } }, // 5
+                                  { {  0, -1 },
+                                      { -1,  0 } }, // 6
+                                      { {  1,  0 },
+                                          {  0, -1 } } }; // 7
 
           DynRankView ConstructWithLabel(refEdgeTan,  dim);
           DynRankView ConstructWithLabel(refFaceTanU,  dim);
@@ -825,17 +882,18 @@ int OrientationTet(const bool verbose) {
             ordinal_type fOrt[numElemFaces];
             elemOrts(i).getFaceOrientation(fOrt, numElemFaces);
             for(ordinal_type iface=0; iface<numElemFaces; iface++) {
-              ct::getReferenceFaceTangents(refFaceTanU, refFaceTanV, iface, tet);
-              ValueType triTan3d[2][3] = {};
-              for(ordinal_type itan=0; itan <2; ++itan)
+              ct::getReferenceFaceTangents(refFaceTanU, refFaceTanV, iface, hexa);
+              ValueType quadTan3d[2][3] = {};
+              for(ordinal_type itan=0; itan <2; ++itan) 
                 for(ordinal_type d=0; d <dim; ++d)
-                  triTan3d[itan][d] = refFaceTanU(d)*c[fOrt[iface]][itan][0]+refFaceTanV(d)*c[fOrt[iface]][itan][1];
+                  quadTan3d[itan][d] = refFaceTanU(d)*c[fOrt[iface]][itan][0]+refFaceTanV(d)*c[fOrt[iface]][itan][1];
+              
               for(ordinal_type j=0; j<numFaceDOFs; ++j) {
-                ordinal_type itan = j%2;///(numFaceDOFs/2);
+                ordinal_type itan = j/(numFaceDOFs/2);
                 auto idof = basis.getDofOrdinal(2, iface, j);
 
                 for(ordinal_type d=0; d <dim; ++d){
-                  dofCoeffsTmp(i,idof,d) = triTan3d[itan][d];
+                  dofCoeffsTmp(i,idof,d) = quadTan3d[itan][d];
                 }
               }
             }
@@ -845,10 +903,10 @@ int OrientationTet(const bool verbose) {
               ordinal_type eOrt[numElemEdges];
               elemOrts(i).getEdgeOrientation(eOrt, numElemEdges);
 
-              ct::getReferenceEdgeTangent(refEdgeTan, iedge, tet);
+              ct::getReferenceEdgeTangent(refEdgeTan, iedge, hexa);
               ValueType edgeTan3d[3] = {};
               for(ordinal_type d=0; d <dim; ++d)
-                edgeTan3d[d] = refEdgeTan(d)*((eOrt[iedge] == 0) ? 1 : -1)*2;
+                edgeTan3d[d] = refEdgeTan(d)*((eOrt[iedge] == 0) ? 1 : -1);
 
               for(ordinal_type j=0; j<numEdgeDOFs; ++j) {
                 auto idof = basis.getDofOrdinal(1, iedge, j);
@@ -863,7 +921,7 @@ int OrientationTet(const bool verbose) {
         //need to transform dofCoeff to physical space (they transform as tangents)
         DynRankView ConstructWithLabel(jacobian, numCells, basisCardinality, dim, dim);
         DynRankView ConstructWithLabel(jacobian_inv, numCells, basisCardinality, dim, dim);
-        ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, tet);
+        ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, hexa);
         ct::setJacobianInv (jacobian_inv, jacobian);
         rst::matvec(dofCoeffsPhys, jacobian, dofCoeffsTmp);
 
@@ -875,19 +933,19 @@ int OrientationTet(const bool verbose) {
 
             for(ordinal_type iface=0; iface<numElemFaces; iface++)
               for(ordinal_type j=0; j<numFaceDOFs; ++j) {
-                ordinal_type itan = j%2;///(numFaceDOFs/2);     //Convention here is different than for hexas!
+                ordinal_type itan = j/(numFaceDOFs/2);     //Convention here is different than for tets!
                 auto idof = basis.getDofOrdinal(2, iface, j);
                 ValueType tangent[dim];
                 bool areDifferent = false;
                 for(ordinal_type d=0; d <dim; ++d) {
                   tangent[d] = (itan == 0) ? faceTanU[i][iface][d] : faceTanV[i][iface][d];
-                  if(std::abs(dofCoeffsPhys(i,idof,d)- tangent[d])>tol)
+                  if(std::abs(dofCoeffsPhys(i,idof,d)- tangent[d]/2)>tol)
                     areDifferent = true;
                 }
                 if(areDifferent) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT equivalent to tangent " << itan << " of face " << iface << "\n";
+                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT proportional to tangent " << itan << " of face " << iface << "\n";
                   *outStream << "Dof Coefficients are: (" << dofCoeffsPhys(i,idof,0) << ", " << dofCoeffsPhys(i,idof,1) << ", " << dofCoeffsPhys(i,idof,2) << ")\n";
                   *outStream << "Face tangent is: (" << tangent[0] << ", " << tangent[1] << ", " << tangent[2] << ")\n";
                 }
@@ -900,15 +958,15 @@ int OrientationTet(const bool verbose) {
                 bool areDifferent = false;
                 for(ordinal_type d=0; d <dim; ++d) {
                   tangent[d] = edgeTan[i][iedge][d];
-                  if(std::abs(dofCoeffsPhys(i,idof,d)- tangent[d])>tol)
+                  if(std::abs(dofCoeffsPhys(i,idof,d)- tangent[d]/2)>tol)
                     areDifferent = true;
                 }
                 if(areDifferent) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT equivalent to the tangent of edge " << iedge << "\n";
+                  *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT proportional to the tangent of edge " << iedge << "\n";
                   *outStream << "Dof Coefficients are: (" << dofCoeffsPhys(i,idof,0) << ", " << dofCoeffsPhys(i,idof,1) << ", " << dofCoeffsPhys(i,idof,2) << ")\n";
-                  *outStream << "Edge tangent is: (" << tangent[0] << ", " << tangent[1] << ", " << tangent[2] << ")\n";
+                  *outStream << "Face tangent is: (" << tangent[0] << ", " << tangent[1] << ", " << tangent[2] << ")\n";
                 }
               }
           }
@@ -983,11 +1041,11 @@ int OrientationTet(const bool verbose) {
             if(areDifferent) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << "Function DOFs on common edge " << iEdge << " computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-              *outStream << "Function DOFs for Tet 0 are:";
+              *outStream << "Function DOFs on common edge " << iEdge << " computed using Hex 0 basis functions are not consistent with those computed using Hex 1\n";
+              *outStream << "Function DOFs for Hex 0 are:";
               for(ordinal_type j=0;j<numEdgeDOFs;j++)
                 *outStream << " " << funDofs(0,basis.getDofOrdinal(1,edgeIndexes[0][iEdge],j));
-              *outStream << "\nFunction DOFs for Tet 1 are:";
+              *outStream << "\nFunction DOFs for Hex 1 are:";
               for(ordinal_type j=0;j<numEdgeDOFs;j++)
                 *outStream << " " << funDofs(1,basis.getDofOrdinal(1,edgeIndexes[1][iEdge],j));
               *outStream << std::endl;
@@ -1007,11 +1065,11 @@ int OrientationTet(const bool verbose) {
           if(areDifferent) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-            *outStream << "Function DOFs for Tet 0 are:";
+            *outStream << "Function DOFs on common face computed using Hex 0 basis functions are not consistent with those computed using Hex 1\n";
+            *outStream << "Function DOFs for Hex 0 are:";
             for(ordinal_type j=0;j<numFaceDOFs;j++)
               *outStream << " " << funDofs(0,basis.getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
-            *outStream << "\nFunction DOFs for Tet 1 are:";
+            *outStream << "\nFunction DOFs for Hex 1 are:";
             for(ordinal_type j=0;j<numFaceDOFs;j++)
               *outStream << " " << funDofs(1,basis.getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
             *outStream << std::endl;
@@ -1037,7 +1095,7 @@ int OrientationTet(const bool verbose) {
         // transform basis values
         DynRankView ConstructWithLabel(jacobianAtRefCoords, numCells, numRefCoords, dim, dim);
         DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numCells, numRefCoords, dim, dim);
-        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, tet);
+        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
         ct::setJacobianInv (jacobianAtRefCoords_inv, jacobianAtRefCoords);
         fst::HCURLtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
             jacobianAtRefCoords_inv,
@@ -1068,7 +1126,7 @@ int OrientationTet(const bool verbose) {
         }
 
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+4, &reorder[0]+8)); //reorder vertices of common face
 
   } catch (std::exception err) {
     std::cout << " Exeption\n";
@@ -1088,7 +1146,7 @@ int OrientationTet(const bool verbose) {
   try {
 
     const ordinal_type order = 3;
-    ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4};
+    ordinal_type reorder[numTotalVertexes] = {0,1,2,3,4,5,6,7,8,9,10,11};
 
     do {
       ordinal_type orderback[numTotalVertexes];
@@ -1096,38 +1154,52 @@ int OrientationTet(const bool verbose) {
         orderback[reorder[i]]=i;
       }
       ValueType vertices[numTotalVertexes][dim];
-      ordinal_type tets[numCells][numElemVertexes];
-      std::copy(&tets_orig[0][0], &tets_orig[0][0]+numCells*numElemVertexes, &tets_rotated[0][0]);
-     
-     for (ordinal_type shift=0; shift<4; ++shift) {
-       std::rotate_copy(&tets_orig[0][0], &tets_orig[0][0]+shift, &tets_orig[0][0]+4, &tets_rotated[0][0]);
+      ordinal_type hexas[numCells][numElemVertexes];
+      std::copy(&hexas_orig[0][0], &hexas_orig[0][0]+numCells*numElemVertexes, &hexas_rotated[0][0]);
+      for (ordinal_type shift=0; shift<6; ++shift) {
+       if(shift <4){
+         std::rotate_copy(faceLeft.begin(), faceLeft.begin()+shift, faceLeft.end(), faceLeftOriented.begin());
+         std::rotate_copy(faceRight.begin(), faceRight.begin()+shift, faceRight.end(), faceRightOriented.begin());
+         for(ordinal_type ii=0; ii<4; ii++) {
+           hexas_rotated[0][faceLeft[ii]] = hexas_orig[0][faceLeftOriented[ii]];
+           hexas_rotated[0][faceRight[ii]] = hexas_orig[0][faceRightOriented[ii]];
+         }
+       } else {
+         ordinal_type iirot = (shift==4) ? 1 : 3;
+         std::rotate_copy(faceFront.begin(), faceFront.begin()+iirot, faceFront.end(), faceFrontOriented.begin());
+         std::rotate_copy(faceBack.begin(), faceBack.begin()+iirot, faceBack.end(), faceBackOriented.begin());
+         for(ordinal_type ii=0; ii<4; ii++) {
+           hexas_rotated[0][faceFront[ii]] = hexas_orig[0][faceFrontOriented[ii]];
+           hexas_rotated[0][faceBack[ii]] = hexas_orig[0][faceBackOriented[ii]];
+         }
+       }
 
         for(ordinal_type i=0; i<numCells;++i)
           for(ordinal_type j=0; j<numElemVertexes;++j)
-            tets[i][j] = reorder[tets_rotated[i][j]];
+            hexas[i][j] = reorder[hexas_rotated[i][j]];
 
         for(ordinal_type i=0; i<numTotalVertexes;++i)
           for(ordinal_type d=0; d<dim;++d)
             vertices[i][d] = vertices_orig[orderback[i]][d];
 
-        *outStream <<  "Considering Tet 0: [ ";
+        *outStream <<  "Considering Hex 0: [ ";
         for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << tets[0][j] << " ";
-        *outStream << "] and Tet 1: [ ";
+          *outStream << hexas[0][j] << " ";
+        *outStream << "] and Hex 1: [ ";
         for(ordinal_type j=0; j<numElemVertexes;++j)
-          *outStream << tets[1][j] << " ";
+          *outStream << hexas[1][j] << " ";
         *outStream << "]\n";
 
-        shards::CellTopology tet(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-        shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
+        shards::CellTopology hexa(shards::getCellTopologyData<shards::Hexahedron<8> >());
+        shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >());
         shards::CellTopology line(shards::getCellTopologyData<shards::Line<2> >());
 
         //computing vertices coords
-        DynRankView ConstructWithLabel(physVertexes, numCells, tet.getNodeCount(), dim);
+        DynRankView ConstructWithLabel(physVertexes, numCells, hexa.getNodeCount(), dim);
         for(ordinal_type i=0; i<numCells; ++i)
-          for(std::size_t j=0; j<tet.getNodeCount(); ++j)
+          for(std::size_t j=0; j<hexa.getNodeCount(); ++j)
             for(ordinal_type k=0; k<dim; ++k)
-              physVertexes(i,j,k) = vertices[tets[i][j]][k];
+              physVertexes(i,j,k) = vertices[hexas[i][j]][k];
 
 
         //computing edges and tangents
@@ -1141,16 +1213,26 @@ int OrientationTet(const bool verbose) {
           //bool faceOrientation[numCells][4];
           for(ordinal_type i=0; i<numCells; ++i) {
             //compute faces' normals
-            for (std::size_t is=0; is<tet.getSideCount(); ++is) {
-              for (std::size_t k=0; k<tet.getNodeCount(2,is); ++k)
-                face[k]= tets_rotated[i][tet.getNodeMap(2,is,k)];
-              std::sort(face.begin(),face.end());
+            for (std::size_t is=0; is<hexa.getSideCount(); ++is) {
+              for (std::size_t k=0; k<hexa.getNodeCount(2,is); ++k)
+                face[k]= hexas_rotated[i][hexa.getNodeMap(2,is,k)];
+             
+              //rotate and flip and compute common face id
+              auto minElPtr= std::min_element(face.begin(), face.end());
+              std::rotate(face.begin(),minElPtr,face.end());
+              if(face[3]<face[1]) {auto tmp=face[1]; face[1]=face[3]; face[3]=tmp;}
+
               if(face == common_face) faceIndex[i]=is;
 
               //Compute face tangents using global numbering
-              for (std::size_t k=0; k<tet.getNodeCount(2,is); ++k)
+              for (std::size_t k=0; k<hexa.getNodeCount(2,is); ++k)
                 face[k]= reorder[face[k]];
-              std::sort(face.begin(),face.end());
+              
+              //rotate and flip
+              minElPtr= std::min_element(face.begin(), face.end());
+              std::rotate(face.begin(),minElPtr,face.end());
+              if(face[3]<face[1]) {auto tmp=face[1]; face[1]=face[3]; face[3]=tmp;}
+              
               for(int d=0; d<dim; ++d) {
                 faceTanU[d] = vertices[face[1]][d]-vertices[face[0]][d];
                 faceTanV[d] = vertices[face[2]][d]-vertices[face[0]][d];
@@ -1163,17 +1245,17 @@ int OrientationTet(const bool verbose) {
         }
 
         // compute orientations for cells (one time computation)
-        DynRankViewInt elemNodes(&tets[0][0], numCells, numElemVertexes);
+        DynRankViewInt elemNodes(&hexas[0][0], numCells, numElemVertexes);
         Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
-        ots::getOrientation(elemOrts, elemNodes, tet);
+        ots::getOrientation(elemOrts, elemNodes, hexa);
 
         //compute reference points
-        Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+        Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
         ordinal_type numRefCoords = warpBasis.getCardinality();
         DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
         warpBasis.getDofCoords(refPoints);
 
-        Basis_HDIV_TET_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
+        Basis_HDIV_HEX_In_FEM<DeviceSpaceType,ValueType,ValueType> basis(order);
         ordinal_type basisCardinality = basis.getCardinality();
 
         //compute DofCoords Oriented
@@ -1181,40 +1263,30 @@ int OrientationTet(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_L2_TRI_Cn_FEM<DeviceSpaceType,ValueType,ValueType> triBasis(order-1);
-          ordinal_type triBasisCardinality = triBasis.getCardinality();
-          ordinal_type numInternalDofs = triBasis.getDofCount(dim-1,0);
-          DynRankView ConstructWithLabel(triDofCoords, triBasisCardinality, dim-1);
-          DynRankView ConstructWithLabel(triInternalDofCoords, numInternalDofs, dim-1);
-          triBasis.getDofCoords(triDofCoords);
-//          Impl::Basis_HDIV_TRI_Kn_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order);   
-//          ordinal_type triBasisCardinality = PointTools::getLatticeSize(tri, order+2, 1);
-//          ordinal_type numInternalDofs = triBasisCardinality;
-//          DynRankView ConstructWithLabel(triDofCoords, triBasisCardinality, dim-1);
-//          DynRankView ConstructWithLabel(triInternalDofCoords, numInternalDofs, dim-1);
-//          PointTools::getLattice(triDofCoords,
-//                               tri,
-//                               order+2,
-//                               1, // offset by 1 so the points are located inside
-//                               POINTTYPE_EQUISPACED);  
-       
+          //Basis_L2_QUAD_Cn_FEM<DeviceSpaceType,ValueType,ValueType> quadBasis(order-1);
+          Basis_HGRAD_QUAD_Cn_FEM<Kokkos::DefaultHostExecutionSpace> quadBasis(order-1, POINTTYPE_GAUSS);
+          ordinal_type quadBasisCardinality = quadBasis.getCardinality();
+          ordinal_type numInternalDofs = quadBasis.getDofCount(dim-1,0);
+          DynRankView ConstructWithLabel(quadDofCoords, quadBasisCardinality, dim-1);
+          DynRankView ConstructWithLabel(quadInternalDofCoords, numInternalDofs, dim-1);
+          quadBasis.getDofCoords(quadDofCoords);
           for(ordinal_type i=0; i<numInternalDofs; ++i)
             for(ordinal_type d=0; d <dim-1; ++d)
-              triInternalDofCoords(i,d) = triDofCoords(triBasis.getDofOrdinal(dim-1, 0, i),d);
+              quadInternalDofCoords(i,d) = quadDofCoords(quadBasis.getDofOrdinal(dim-1, 0, i),d);
 
-          DynRankView ConstructWithLabel(triInternalDofCoordsOriented,  numInternalDofs, dim-1);
-          DynRankView ConstructWithLabel(triDofCoordsOriented3d, numInternalDofs, dim);
+          DynRankView ConstructWithLabel(quadInternalDofCoordsOriented,  numInternalDofs, dim-1);
+          DynRankView ConstructWithLabel(quadDofCoordsOriented3d, numInternalDofs, dim);
           ordinal_type fOrt[numElemFaces];
           for(ordinal_type i=0; i<numCells; ++i) {
             elemOrts(i).getFaceOrientation(fOrt, numElemFaces);
             for(ordinal_type iface=0; iface<numElemFaces; iface++) {
               ordinal_type ort = fOrt[iface];
-              iots::mapToModifiedReference(triInternalDofCoordsOriented,triInternalDofCoords,tri,ort);
-              ct::mapToReferenceSubcell(triDofCoordsOriented3d, triInternalDofCoordsOriented, dim-1, iface, tet);
+              iots::mapToModifiedReference(quadInternalDofCoordsOriented,quadInternalDofCoords,quad,ort);
+              ct::mapToReferenceSubcell(quadDofCoordsOriented3d, quadInternalDofCoordsOriented, dim-1, iface, hexa);
               for(ordinal_type j=0; j<numInternalDofs; ++j) {
                 auto idof = basis.getDofOrdinal(dim-1, iface, j);
                 for(ordinal_type d=0; d <dim; ++d)
-                  dofCoordsOriented(i,idof,d) = triDofCoordsOriented3d(j,d);
+                  dofCoordsOriented(i,idof,d) = quadDofCoordsOriented3d(j,d);
               }
             }
           }
@@ -1232,23 +1304,23 @@ int OrientationTet(const bool verbose) {
         DynRankView ConstructWithLabel(physRefCoords, numCells, numRefCoords, dim);
         DynRankView ConstructWithLabel(physDofCoords, numCells, basisCardinality, dim);
         {
-          Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
-          tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
-          DynRankView ConstructWithLabel(tetLinearBasisValuesAtDofCoords, numCells, tet.getNodeCount(), basisCardinality);
+          Basis_HGRAD_HEX_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexaLinearBasis; //used for computing physical coordinates
+          DynRankView ConstructWithLabel(hexaLinearBasisValuesAtRefCoords, hexa.getNodeCount(), numRefCoords);
+          hexaLinearBasis.getValues(hexaLinearBasisValuesAtRefCoords, refPoints);
+          DynRankView ConstructWithLabel(hexaLinearBasisValuesAtDofCoords, numCells, hexa.getNodeCount(), basisCardinality);
           for(ordinal_type i=0; i<numCells; ++i)
             for(ordinal_type d=0; d<dim; ++d) {
               for(ordinal_type j=0; j<numRefCoords; ++j)
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                  physRefCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtRefCoords(k,j);
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
+                  physRefCoords(i,j,d) += vertices[hexas[i][k]][d]*hexaLinearBasisValuesAtRefCoords(k,j);
 
               auto inView = Kokkos::subview( dofCoordsOriented,i,Kokkos::ALL(),Kokkos::ALL());
-              auto outView =Kokkos::subview( tetLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
-              tetLinearBasis.getValues(outView, inView);
+              auto outView =Kokkos::subview( hexaLinearBasisValuesAtDofCoords,i,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL());
+              hexaLinearBasis.getValues(outView, inView);
 
               for(ordinal_type j=0; j<basisCardinality; ++j)
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                  physDofCoords(i,j,d) += vertices[tets[i][k]][d]*tetLinearBasisValuesAtDofCoords(i,k,j);
+                for(std::size_t k=0; k<hexa.getNodeCount(); ++k)
+                  physDofCoords(i,j,d) += vertices[hexas[i][k]][d]*hexaLinearBasisValuesAtDofCoords(i,k,j);
             }
         }
 
@@ -1262,8 +1334,8 @@ int OrientationTet(const bool verbose) {
         { //orient DofCoeffs
           auto numFaceDOFs = basis.getDofCount(2,0);
 
-          const ordinal_type c[6] = {  1,  1,  1,
-                                    -1, -1, -1 };
+          const ordinal_type c[8] = {  1,  1,  1,  1,
+                                    -1, -1, -1, -1 };
 
           DynRankView ConstructWithLabel(refFaceNormal,  dim);
 
@@ -1271,7 +1343,7 @@ int OrientationTet(const bool verbose) {
             ordinal_type fOrt[numElemFaces];
             elemOrts(i).getFaceOrientation(fOrt, numElemFaces);
             for(ordinal_type iface=0; iface<numElemFaces; iface++) {
-              ct::getReferenceFaceNormal(refFaceNormal, iface, tet);
+              ct::getReferenceFaceNormal(refFaceNormal, iface, hexa);
               ValueType faceNormal3d[3];
               for(ordinal_type d=0; d <dim; ++d)
                 faceNormal3d[d] = refFaceNormal(d)*c[fOrt[iface]];
@@ -1291,7 +1363,7 @@ int OrientationTet(const bool verbose) {
         DynRankView ConstructWithLabel(jacobian_inv, numCells, basisCardinality, dim, dim);
         DynRankView ConstructWithLabel(jacobian_invT, numCells, basisCardinality, dim, dim);
         DynRankView ConstructWithLabel(jacobian_det, numCells, basisCardinality);
-        ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, tet);
+        ct::setJacobian(jacobian, dofCoordsOriented, physVertexes, hexa);
         ct::setJacobianInv (jacobian_inv, jacobian);
         ct::setJacobianDet (jacobian_det, jacobian);
         rst::transpose(jacobian_invT,jacobian_inv);
@@ -1311,13 +1383,13 @@ int OrientationTet(const bool verbose) {
               bool areDifferent = false;
               for(ordinal_type d=0; d <dim; ++d) {
                 normal[d] = faceNormal[i][iface][d];
-                if(std::abs(dofCoeffsPhys(i,idof,d)- normal[d])>tol)
+                if(std::abs(dofCoeffsPhys(i,idof,d)- normal[d]/4)>tol)
                   areDifferent = true;
               }
               if(areDifferent) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT equivalent to the normal of face " << iface << "\n";
+                *outStream << "Coefficients of Dof " << idof << " at cell "  << i << " are NOT proportional to the normal of face " << iface << "\n";
                 *outStream << "Dof Coefficients are: (" << dofCoeffsPhys(i,idof,0) << ", " << dofCoeffsPhys(i,idof,1) << ", " << dofCoeffsPhys(i,idof,2) << ")\n";
                 *outStream << "Face normal is: (" << normal[0] << ", " << normal[1] << ", " << normal[2] << ")\n";
               }
@@ -1394,11 +1466,11 @@ int OrientationTet(const bool verbose) {
           if(areDifferent) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-            *outStream << "Function DOFs for Tet 0 are:";
+            *outStream << "Function DOFs on common face computed using Hex 0 basis functions are not consistent with those computed using Hex 1\n";
+            *outStream << "Function DOFs for Hex 0 are:";
             for(ordinal_type j=0;j<numFaceDOFs;j++)
               *outStream << " " << funDofs(0,basis.getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
-            *outStream << "\nFunction DOFs for Tet 1 are:";
+            *outStream << "\nFunction DOFs for Hex 1 are:";
             for(ordinal_type j=0;j<numFaceDOFs;j++)
               *outStream << " " << funDofs(1,basis.getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
             *outStream << std::endl;
@@ -1417,11 +1489,11 @@ int OrientationTet(const bool verbose) {
           if(areDifferent) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-            *outStream << "Function DOFs on common face computed using Tet 0 basis functions are not consistent with those computed using Tet 1\n";
-            *outStream << "Function DOFs for Tet 0 are:";
+            *outStream << "Function DOFs on common face computed using Hex 0 basis functions are not consistent with those computed using Hex 1\n";
+            *outStream << "Function DOFs for Hex 0 are:";
             for(ordinal_type j=0;j<numFaceDOFs;j++)
               *outStream << " " << funDofs(0,basis.getDofOrdinal(2,faceIndex[0],j)) << " | (" << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),0) << "," << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),1) << ", " << physDofCoords(0,basis.getDofOrdinal(2,faceIndex[0],j),2) << ") ||";
-            *outStream << "\nFunction DOFs for Tet 1 are:";
+            *outStream << "\nFunction DOFs for Hex 1 are:";
             for(ordinal_type j=0;j<numFaceDOFs;j++)
               *outStream << " " << funDofs(1,basis.getDofOrdinal(2,faceIndex[1],j))<< " | (" << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),0) << "," << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),1) << ", " << physDofCoords(1,basis.getDofOrdinal(2,faceIndex[1],j),2) << ") ||";
             *outStream << std::endl;
@@ -1446,7 +1518,7 @@ int OrientationTet(const bool verbose) {
         // transform basis values
         DynRankView ConstructWithLabel(jacobianAtRefCoords, numCells, numRefCoords, dim, dim);
         DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numCells, numRefCoords);
-        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, tet);
+        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, hexa);
         ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
         fst::HDIVtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
             jacobianAtRefCoords,
@@ -1478,7 +1550,7 @@ int OrientationTet(const bool verbose) {
         }
 
       }
-    } while(std::next_permutation(&reorder[0]+1, &reorder[0]+4)); //reorder vertices of common face
+    } while(std::next_permutation(&reorder[0]+4, &reorder[0]+8)); //reorder vertices of common face
 
   } catch (std::exception err) {
     std::cout << " Exeption\n";

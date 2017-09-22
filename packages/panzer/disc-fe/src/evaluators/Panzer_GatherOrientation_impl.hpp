@@ -166,6 +166,7 @@ evaluateFields(typename TRAITS::EvalData workset)
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             (gatherFieldOrientations_[fieldIndex])(worksetCellIndex,basis) = orientation[offset];
+            (gatherFieldOrientations_[fieldIndex])(worksetCellIndex,basis) = std::sqrt(-1.0);
          }
       }
    }

@@ -209,14 +209,152 @@ namespace Intrepid2 {
     // points are computed in the host and will be copied
     Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
       dofCoords("Hgrad::Tet::Cn::dofCoords", card, spaceDim);
+      
+    // Basis-dependent initializations
+    constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
+    constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
+    ordinal_type tags[maxCard][tagSize];
     
     // construct lattice
-    const ordinal_type offset = 0;
-    PointTools::getLattice( dofCoords,
-                            this->basisCellTopology_,
+
+    const ordinal_type numEdges = this->basisCellTopology_.getEdgeCount();
+    const ordinal_type numFaces = this->basisCellTopology_.getFaceCount();
+
+    shards::CellTopology edgeTop(shards::getCellTopologyData<shards::Line<2> >() );
+    shards::CellTopology faceTop(shards::getCellTopologyData<shards::Triangle<3> >() );
+
+    const int numVertexes = PointTools::getLatticeSize( this->basisCellTopology_ ,
+                                                          1 ,
+                                                          0 );
+
+    const int numPtsPerEdge = PointTools::getLatticeSize( edgeTop ,
+                                                          order ,
+                                                          1 );
+
+    const int numPtsPerFace = PointTools::getLatticeSize( faceTop ,
+                                                          order ,
+                                                          1 );
+
+    const int numPtsPerCell = PointTools::getLatticeSize( this->basisCellTopology_ ,
+                                                          order ,
+                                                          1 );
+
+    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> vertexes("Hcurl::Tet::In::vertexes", numVertexes , spaceDim );
+    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> linePts("Hcurl::Tet::In::linePts", numPtsPerEdge , 1 );
+    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> triPts("Hcurl::Tet::In::triPts", numPtsPerFace , 2 );
+
+    // construct lattice
+    const ordinal_type offset = 1;
+
+
+    PointTools::getLattice( vertexes,
+                            this->basisCellTopology_ ,
+                            1, 0,
+                            pointType );
+
+    PointTools::getLattice( linePts,
+                            edgeTop,
                             order, offset,
                             pointType );
-    
+
+    PointTools::getLattice( triPts,
+                            faceTop,
+                            order, offset,
+                            pointType );
+
+    // holds the image of the line points
+    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> edgePts("Hcurl::Tet::In::edgePts", numPtsPerEdge , spaceDim );
+    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> facePts("Hcurl::Tet::In::facePts", numPtsPerFace , spaceDim );
+
+    for (ordinal_type i=0;i<numVertexes;i++) {
+       auto i_card=i;
+       for(ordinal_type k=0; k<spaceDim; ++k)
+          dofCoords(i_card,k) = vertexes(i,k);
+        tags[i_card][0] = 0; // vertex dof
+        tags[i_card][1] = i; // vertex id
+        tags[i_card][2] = 0; // local dof id
+        tags[i_card][3] = 1; // total vert dof
+    }
+
+
+    // these are tangents scaled by the appropriate edge lengths.
+    for (ordinal_type i=0;i<numEdges;i++) {  // loop over edges
+      CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( edgePts ,
+                                                                            linePts ,
+                                                                            1 ,
+                                                                            i ,
+                                                                            this->basisCellTopology_ );
+
+
+      // loop over points (rows of V2)
+      for (ordinal_type j=0;j<numPtsPerEdge;j++) {
+
+        const ordinal_type i_card = numVertexes + numPtsPerEdge*i+j;
+
+        //save dof coordinates and coefficients
+        for(ordinal_type k=0; k<spaceDim; ++k) 
+          dofCoords(i_card,k) = edgePts(j,k);
+
+        tags[i_card][0] = 1; // edge dof
+        tags[i_card][1] = i; // edge id
+        tags[i_card][2] = j; // local dof id
+        tags[i_card][3] = numPtsPerEdge; // total edge dof
+
+      }
+    }
+
+    if(numPtsPerFace >0) {//handle faces if needed  (order >1)
+
+      for (ordinal_type i=0;i<numFaces;i++) {  // loop over faces
+
+        CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( facePts ,
+                                                                              triPts ,
+                                                                              2 ,
+                                                                              i ,
+                                                                              this->basisCellTopology_ );
+        for (ordinal_type j=0;j<numPtsPerFace;j++) {
+
+          const ordinal_type i_card = numVertexes+numEdges*numPtsPerEdge+numPtsPerFace*i+j;
+
+          //save dof coordinates
+          for(ordinal_type k=0; k<spaceDim; ++k) 
+            dofCoords(i_card,k) = facePts(j,k);
+
+          tags[i_card][0] = 2; // face dof
+          tags[i_card][1] = i; // face id
+          tags[i_card][2] = j; // local face id
+          tags[i_card][3] = numPtsPerFace; // total face dof
+        }
+      }
+    }
+
+
+    // internal dof, if needed
+    if (numPtsPerCell > 0) {
+      Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+        cellPoints( "Hcurl::Tet::In::cellPoints", numPtsPerCell , spaceDim );
+      PointTools::getLattice( cellPoints ,
+                              this->basisCellTopology_ ,
+                              order,
+                              1 ,
+                              pointType );
+
+      // copy values into right positions of V2
+      for (ordinal_type j=0;j<numPtsPerCell;j++) {
+
+        const ordinal_type i_card = numVertexes+numEdges*numPtsPerEdge+numFaces*numPtsPerFace+j;
+
+        //save dof coordinates
+        for(ordinal_type dim=0; dim<spaceDim; ++dim) 
+          dofCoords(i_card,dim) = cellPoints(j,dim);
+
+        tags[i_card][0] = spaceDim; // elem dof
+        tags[i_card][1] = 0; // elem id
+        tags[i_card][2] = j; // local dof id
+        tags[i_card][3] = numPtsPerCell; // total vert dof
+      }
+    }
+
     this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
 
@@ -266,126 +404,9 @@ namespace Intrepid2 {
     // initialize tags
     {
       // Basis-dependent initializations
-      constexpr ordinal_type tagSize  = 4;        // size of DoF tag, i.e., number of fields in the tag
       const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim 
       const ordinal_type posScOrd = 1;        // position in the tag, counting from 0, of the subcell ordinal
       const ordinal_type posDfOrd = 2;        // position in the tag, counting from 0, of DoF ordinal relative to the subcell
-      
-      constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
-      ordinal_type tags[maxCard][tagSize];
-
-      const ordinal_type 
-        numEdgeDof = Intrepid2::getPnCardinality<1>(order-2),
-        numFaceDof = (order > 2 ? Intrepid2::getPnCardinality<2>(order-3) : 0),
-        numElemDof = (order > 3 ? Intrepid2::getPnCardinality<3>(order-4) : 0);
-
-      scalarType xi0, xi1, xi2, xi3;
-      const scalarType eps = threshold();
-
-      ordinal_type edgeId[6] = {}, faceId[4] = {}, elemId = 0;
-      for (ordinal_type i=0;i<card;++i) {
-
-        //compute barycentric coordinates
-        const auto x = dofCoords(i,0);
-        const auto y = dofCoords(i,1);
-        const auto z = dofCoords(i,2);
-        xi0 = 1.0 - x - y - z;
-        xi1 = x;
-        xi2 = y;
-        xi3 = z;
-        
-        // vertex
-        if ((1.0 - xi0) < eps) { // vert 0
-          tags[i][0] = 0; // vertex dof
-          tags[i][1] = 0; // vertex id 
-          tags[i][2] = 0; // local dof id
-          tags[i][3] = 1; // total vert dof
-        } 
-        else if ((1.0 - xi1) < eps) { // vert 1
-          tags[i][0] = 0; // vertex dof
-          tags[i][1] = 1; // vertex id 
-          tags[i][2] = 0; // local dof id
-          tags[i][3] = 1; // total vert dof
-        } 
-        else if ((1.0 - xi2) < eps) { // vert 2
-          tags[i][0] = 0; // vertex dof
-          tags[i][1] = 2; // vertex id 
-          tags[i][2] = 0; // local dof id
-          tags[i][3] = 1; // total vert dof
-        } 
-        else if ((1.0 - xi3) < eps) { // vert 3
-          tags[i][0] = 0; // vertex dof
-          tags[i][1] = 3; // vertex id
-          tags[i][2] = 0; // local dof id
-          tags[i][3] = 1; // total vert dof
-        }
-        else if (xi2 < eps) { // face 0
-          if (xi3 < eps) { // edge 0
-            tags[i][0] = 1; // edge dof
-            tags[i][1] = 0; // edge id
-            tags[i][2] = edgeId[0]++; // local dof id
-            tags[i][3] = numEdgeDof; // total vert dof
-          } else if (xi1 < eps) { // edge 3
-            tags[i][0] = 1; // edge dof
-            tags[i][1] = 3; // edge id
-            tags[i][2] = edgeId[3]++; // local dof id
-            tags[i][3] = numEdgeDof; // total vert dof
-          } else if (xi0 < eps) { // edge 4
-            tags[i][0] = 1; // edge dof
-            tags[i][1] = 4; // edge id
-            tags[i][2] = edgeId[4]++; // local dof id
-            tags[i][3] = numEdgeDof; // total vert dof
-          } else {
-            tags[i][0] = 2; // face dof
-            tags[i][1] = 0; // face id
-            tags[i][2] = faceId[0]++; // local dof id
-            tags[i][3] = numFaceDof; // total vert dof
-          }
-        } 
-        else if (xi0 < eps) { // face 1
-          if (xi3 < eps) { // edge 1
-            tags[i][0] = 1; // edge dof
-            tags[i][1] = 1; // edge id
-            tags[i][2] = edgeId[1]++; // local dof id
-            tags[i][3] = numEdgeDof; // total vert dof
-          } else if (xi1 < eps) { // edge 5
-            tags[i][0] = 1; // edge dof
-            tags[i][1] = 5; // edge id
-            tags[i][2] = edgeId[5]++; // local dof id
-            tags[i][3] = numEdgeDof; // total vert dof
-          } else {
-            tags[i][0] = 2; // face dof
-            tags[i][1] = 1; // face id
-            tags[i][2] = faceId[1]++; // local dof id
-            tags[i][3] = numFaceDof; // total vert dof
-          }
-        } 
-        else if (xi1 < eps) { // face 2
-          if (xi3 < eps) { // edge 2
-            tags[i][0] = 1; // edge dof
-            tags[i][1] = 2; // edge id
-            tags[i][2] = edgeId[2]++; // local dof id
-            tags[i][3] = numEdgeDof; // total vert dof
-          } else {
-            tags[i][0] = 2; // face dof
-            tags[i][1] = 2; // face id
-            tags[i][2] = faceId[2]++; // local dof id
-            tags[i][3] = numFaceDof; // total vert dof
-          }
-        }
-        else if (xi3 < eps) { // face 3
-          tags[i][0] = 2; // face dof
-          tags[i][1] = 3; // face id
-          tags[i][2] = faceId[3]++; // local dof id
-          tags[i][3] = numFaceDof; // total vert dof
-        }
-        else { // elem
-          tags[i][0] = 3; // intr dof
-          tags[i][1] = 0; // intr id 
-          tags[i][2] = elemId++; // local dof id
-          tags[i][3] = numElemDof; // total vert dof
-        }
-      }
 
       ordinal_type_array_1d_host tagView(&tags[0][0], card*tagSize);
 

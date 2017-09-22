@@ -106,6 +106,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 
     Traits::SetupData setupData;
     setupData.worksets_ = getWorksetContainer()->getWorksets(wd);
+    setupData.orientations_ = getWorksetContainer()->getOrientations();
     if(setupData.worksets_->size()==0)
       continue;
 
@@ -273,6 +274,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
         Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
         worksets->push_back(wkst->second);
         setupData.worksets_ = worksets;
+        setupData.orientations_ = getWorksetContainer()->getOrientations();
 
         fm.postRegistrationSetup(setupData);
       }
@@ -325,6 +327,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 	  Teuchos::rcp(new(std::vector<panzer::Workset>));
 	worksets->push_back(wkst->second);
 	setupData.worksets_ = worksets;
+        setupData.orientations_ = getWorksetContainer()->getOrientations();
 
 	// setup derivative information
 	setKokkosExtendedDataTypeDimensions(element_block_id,*globalIndexer,user_data,fm);

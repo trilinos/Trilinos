@@ -141,14 +141,16 @@ namespace Intrepid2 {
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
           typedef typename outputValueViewType::value_type outputValueType;
+          typedef typename outputValueViewType::pointer_type outputPointerType;
+
           constexpr ordinal_type spaceDim = 2;
           constexpr ordinal_type bufSize = (opType == OPERATOR_DIV) ?
             spaceDim * CardinalityHDIvTri(Parameters::MaxOrder)*numPtsEval :
             CardinalityHDIvTri(Parameters::MaxOrder)*numPtsEval;
-          outputValueType buf[bufSize];
+          char buf[bufSize*sizeof(outputValueType)];
 
           Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+            Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
 
           switch (opType) {
           case OPERATOR_VALUE : {
