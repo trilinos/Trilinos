@@ -201,7 +201,6 @@ void FieldAggPattern::buildFieldIdsVector()
    this->mergeFieldPatterns(FieldType::CG);
    this->mergeFieldPatterns(FieldType::DG);
    this->mergeFieldPatterns(FieldType::SKELETON);
-   this->buildDGAndSkeletonClosureOffsetData();
 }
 
 void FieldAggPattern::mergeFieldPatterns(const FieldType& fieldType)
@@ -254,51 +253,6 @@ void FieldAggPattern::mergeFieldPatterns(const FieldType& fieldType)
     }
   }
 
-}
-
-void FieldAggPattern::buildDGAndSkeletonClosureOffsetData()
-{
-  using Teuchos::RCP;
-  std::vector<std::tuple<int,FieldType,RCP<const FieldPattern>>> cgPatterns;
-  std::vector<std::tuple<int,FieldType,RCP<const FieldPattern>>> dgPatterns;
-  std::vector<std::tuple<int,FieldType,RCP<const FieldPattern>>> skeletonPatterns;
-
-  // Separate the patterns
-  for (const auto& p : patterns_) {
-    const auto& fieldType = std::get<1>(p);
-    if (fieldType == FieldType::CG)
-      cgPatterns.push_back(p);
-    else if (fieldType == FieldType::DG)
-      dgPatterns.push_back(p);
-    else if (fieldType == FieldType::SKELETON)
-      skeletonPatterns.push_back(p);
-  }
-
-  // Compute offsets
-  dgOffset_ = 0;
-  for (const auto& p : cgPatterns)
-    dgOffset_ += std::get<2>(p)->numberIds();
-
-  skeletonOffset_ = dgOffset_;
-  for (const auto& p : dgPatterns)
-    skeletonOffset_ += std::get<2>(p)->numberIds();
-
-  // Create the aggregate patterns to get internal DOF offsets for
-  // closure offsets. We create aggregate field patterns for DG and
-  // SKELETON since we grouped all DOFs per FieldType. Use the CG
-  // FieldType in the construction of the aggregate so that the
-  // closures are properly associated with subcells.
-  if (dgPatterns.size() > 0) {
-    for (auto& p : dgPatterns)
-      std::get<1>(p) = FieldType::CG;
-    dgAggPatterns_ = rcp(new FieldAggPattern(dgPatterns));
-  }
-
-  if (skeletonPatterns.size() > 0) {
-    for (auto& p : skeletonPatterns)
-      std::get<1>(p) = FieldType::CG;
-    skeletonAggPatterns_ = rcp(new FieldAggPattern(skeletonPatterns));
-  }
 }
 
 void FieldAggPattern::buildFieldPatternData()
@@ -384,8 +338,21 @@ FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) 
    // build vector for sub cell closure indices
    ///////////////////////////////////////////////
 
-   // grab field offsets
-   const std::vector<int> & fieldOffsets = localOffsets(fieldId);
+   // Grab field offsets. For CG and DG, the full pattern is used so
+   // the fieldOffsets and closureOffsets are correct. For SKELETON,
+   // the fieldOffsets have the internal DOFs removed. This means that
+   // the array indices are mis-aligned. The simple fix was to store
+   // off the skeletonExtendedOffsets for the full pattern and use
+   // those. This is safe since the closures only index subcells that
+   // are less than the cell dimension.
+   const FieldType& fieldType = this->getFieldType(fieldId);
+   const std::vector<int> * fieldOffsets = &localOffsets(fieldId);
+   if (fieldType == FieldType::SKELETON) {
+     // NOTE: offsets use lazy initialization, so even in SKELETON
+     // case, we need to call localOffsets() above so that the
+     // skeleton map is populated correctly.
+     fieldOffsets = &(skeletonExtendedOffsetsMap_.find(fieldId)->second);
+   }
 
    // get offsets into field offsets for the closure indices (from field pattern)
    std::vector<int> closureOffsets;
@@ -398,7 +365,7 @@ FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) 
 
    std::vector<int> & closureIndices = indicesPair.first;
    for(std::size_t i=0;i<closureOffsets.size();i++)
-      closureIndices.push_back(fieldOffsets[closureOffsets[i]]);
+     closureIndices.push_back((*fieldOffsets)[closureOffsets[i]]);
 
    std::vector<int> & basisIndices = indicesPair.second;
    basisIndices.assign(closureOffsets.begin(),closureOffsets.end());
@@ -480,6 +447,11 @@ void FieldAggPattern::localOffsets_build(int fieldId,std::vector<int> & offsets)
        }
      }
    }
+
+   // Store off the skeletonExtendedOffsets for generating the closure
+   // offsets for SKELETON fields.
+   if (fieldType == FieldType::SKELETON)
+     skeletonExtendedOffsetsMap_.insert(std::make_pair(fieldId,std::move(skeletonExtendedOffsets)));
 
    // check for failure/bug
    for(std::size_t i=0;i<offsets.size();i++) {

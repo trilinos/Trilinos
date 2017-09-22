@@ -202,14 +202,6 @@ protected:
      */
    void mergeFieldPatterns(const FieldType& fieldType);
 
-   /** Build additional information for DG and SKELETON FieldTypes for
-     *  mapping the closure offsets. Since DG and SKELETON DOFs are
-     *  added to the cell interior, we need additonal information to
-     *  map the DOFs back to subcells for getting closures for boundary
-     *  conditions. 
-     */
-   void buildDGAndSkeletonClosureOffsetData();
-
    /** Adds all the pattern's sub cell indices to the vector
      * specified.  The sub cell (dim and sub cell ordinal) is also specified.
      */ 
@@ -238,24 +230,19 @@ protected:
    std::vector<std::tuple<int,panzer::FieldType,Teuchos::RCP<const FieldPattern> > > patterns_;
    std::map<int,int> fieldIdToPatternIdx_;
 
+   //! Stores the Field offsets for the fieldId key. Note that the key is the fieldId, not the index into the patterns_.
    mutable std::map<int, std::vector<int> > fieldOffsets_;
 
    struct LessThan  
    { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
    mutable std::map<Teuchos::Tuple<int,3>, std::pair<std::vector<int>,std::vector<int> >,LessThan>
          fieldSubcellOffsets_closure_;
-  
-   //! Start of the DG DOFs
-   int dgOffset_;
-  
-   //! FieldAggPattern for just the DG DOFs. Used for offset closures. 
-   Teuchos::RCP<FieldAggPattern> dgAggPatterns_;
 
-   //! Start of the SKELETON DOFs
-   int skeletonOffset_;
-
-   //! FieldAggPattern for just the DG DOFs. Used for offset closures. 
-   Teuchos::RCP<FieldAggPattern> skeletonAggPatterns_;
+  //! Maps the fieldId to the "extended" offsetes. This corresponds to
+  //! the offsets for a SKELETON field that includes interior
+  //! DOFs. This is needed for mapping closure values to DOF offsets
+  //! in the Aggregate.
+  mutable std::map<int,std::vector<int>> skeletonExtendedOffsetsMap_;
 };
 
 }
