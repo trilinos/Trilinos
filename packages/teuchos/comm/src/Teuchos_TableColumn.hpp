@@ -76,7 +76,7 @@ namespace Teuchos
                 bool spaceBeforeParentheses);
 
     /** */
-    int numRows() const {return data_.size();}
+    int numRows() const {return Teuchos::as<int>(data_.size());}
 
     /** */
     void addEntry(const RCP<TableEntry>& entry);

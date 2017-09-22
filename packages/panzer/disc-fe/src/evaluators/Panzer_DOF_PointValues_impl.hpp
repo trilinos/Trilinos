@@ -119,7 +119,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 //**********************************************************************
 template<typename EvalT, typename TRAITS>                   
 void DOF_PointValues<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd,
+postRegistrationSetup(typename TRAITS::SetupData /* sd */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(dof_basis,fm);
@@ -238,7 +238,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 //**********************************************************************
 template<typename TRAITS>                   
 void DOF_PointValues<typename TRAITS::Jacobian, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd,
+postRegistrationSetup(typename TRAITS::SetupData /* sd */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(dof_basis,fm);

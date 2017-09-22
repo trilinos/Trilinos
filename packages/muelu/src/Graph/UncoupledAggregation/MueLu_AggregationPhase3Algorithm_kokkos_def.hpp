@@ -84,12 +84,12 @@ namespace MueLu {
       if (aggStat[i] == AGGREGATED || aggStat[i] == IGNORED)
         continue;
 
-      typename LWGraph_kokkos::row_type neighOfINode = graph.getNeighborVertices(i);
+      auto neighOfINode = graph.getNeighborVertices(i);
 
       // We don't want a singleton. So lets see if there is an unaggregated
       // neighbor that we can also put with this point.
       bool isNewAggregate = false;
-      for (int j = 0; j < as<int>(neighOfINode.size()); j++) {
+      for (int j = 0; j < as<int>(neighOfINode.length); j++) {
         LO neigh = neighOfINode(j);
 
         if (neigh != i && graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY) {
@@ -114,7 +114,7 @@ namespace MueLu {
         // NOTE: This is very similar to phase 2b, but simpler: we stop with
         // the first found aggregate
         int j = 0;
-        for (; j < as<int>(neighOfINode.size()); j++) {
+        for (; j < as<int>(neighOfINode.length); j++) {
           LO neigh = neighOfINode(j);
 
           // We don't check (neigh != rootCandidate), as it is covered by checking (aggStat[neigh] == AGGREGATED)
@@ -122,7 +122,7 @@ namespace MueLu {
             break;
         }
 
-        if (j < as<int>(neighOfINode.size())) {
+        if (j < as<int>(neighOfINode.length)) {
           // Assign to an adjacent aggregate
           vertex2AggId[i] = vertex2AggId[neighOfINode(j)];
         } else if (error_on_isolated) {

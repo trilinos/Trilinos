@@ -51,7 +51,7 @@ private:
   int nx_;
   int ny_;
   Real width_;
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  meshSideSets_;
+  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
 
 public: 
 
@@ -67,7 +67,7 @@ public:
   void computeSideSets() {
 
     int numSideSets = 4;
-    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<Intrepid::FieldContainer<int> > >(numSideSets));
+    meshSideSets_ = Teuchos::rcp(new std::vector<std::vector<std::vector<int> > >(numSideSets));
 
     Real patchFrac = static_cast<Real>(1)/static_cast<Real>(6);
     int np1 = static_cast<int>(patchFrac * static_cast<Real>(nx_));   // Source
@@ -102,35 +102,35 @@ public:
     (*meshSideSets_)[3][3].resize(0);
     
     for (int i=0; i<nx_; ++i) {
-      (*meshSideSets_)[0][0](i) = i;
+      (*meshSideSets_)[0][0][i] = i;
     }
     for (int i=0; i<ny_; ++i) {
-      (*meshSideSets_)[0][1](i) = (i+1)*nx_-1;
+      (*meshSideSets_)[0][1][i] = (i+1)*nx_-1;
     }
     for (int i=0; i<ny_; ++i) {
-      (*meshSideSets_)[0][3](i) = i*nx_;
+      (*meshSideSets_)[0][3][i] = i*nx_;
     }
     for (int i=0; i<np1; ++i) {
-      (*meshSideSets_)[1][2](i) = i + nx_*(ny_-1);
+      (*meshSideSets_)[1][2][i] = i + nx_*(ny_-1);
     }
     for (int i=0; i<np2; ++i) {
-      (*meshSideSets_)[0][2](i) = i + np1 + nx_*(ny_-1);
+      (*meshSideSets_)[0][2][i] = i + np1 + nx_*(ny_-1);
     }
     for (int i=0; i<np3; ++i) {
-      (*meshSideSets_)[2][2](i) = i + (np1+np2) + nx_*(ny_-1);
+      (*meshSideSets_)[2][2][i] = i + (np1+np2) + nx_*(ny_-1);
     }
     for (int i=0; i<np4; ++i) {
-      (*meshSideSets_)[0][2](i) = i + (np1+np2+np3) + nx_*(ny_-1);
+      (*meshSideSets_)[0][2][i] = i + (np1+np2+np3) + nx_*(ny_-1);
     }
     for (int i=0; i<np5; ++i) {
-      (*meshSideSets_)[3][2](i) = i + (np1+np2+np3+np4) + nx_*(ny_-1);
+      (*meshSideSets_)[3][2][i] = i + (np1+np2+np3+np4) + nx_*(ny_-1);
     }
 
   } // computeSideSets
 
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > > getSideSets(
-      std::ostream & outStream = std::cout,
-      const bool verbose = false) const {
+  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > > getSideSets(
+              const bool verbose = false,
+              std::ostream & outStream = std::cout) const { 
     if ( verbose ) {
       outStream << "Mesh_TopoOpt: getSideSets called" << std::endl;
       outStream << "Mesh_TopoOpt: numSideSets = " << meshSideSets_->size() << std::endl;

@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     zp->zero(); // set zero initial guess
     algo_tr.run(opt, true, *outStream);
 
-    *outStream << " Solution Statistic: S(z) = " << opt.getSolutionStatistic(*parlist) << "\n";
+    *outStream << " Solution Statistic: S(z) = " << opt.getSolutionStatistic() << "\n";
 
     data->outputTpetraVector(z_rcp, "control.txt");
 

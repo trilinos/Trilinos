@@ -105,8 +105,6 @@
 #include "Amesos.h"
 #include "Amesos_BaseSolver.h"
 
-using namespace std;
-
 /** \brief ShyLU's interface to be used as an Ifpack Preconditioner
  *
  */
@@ -239,7 +237,7 @@ int JustTryIt() ;
     }
 
     //! Prints on stream basic information about \c this object.
-    virtual ostream& Print(ostream& os) const;
+    virtual std::ostream& Print(std::ostream& os) const;
 
     //! Returns the number of calls to Initialize().
     virtual int NumInitialize() const

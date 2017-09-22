@@ -27,7 +27,7 @@ class WrapperModelEvaluator : public Thyra::StateFuncModelEvaluatorBase<Scalar>
 {
 public:
 
-  /// \name Methods that apply to both explicit and implicit terms.
+  /// \name Vector Methods.
   //@{
     /// Get the x-solution space
     virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
@@ -46,7 +46,7 @@ public:
   virtual void setAppModel(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & me) = 0;
 
-  /// Get the underlying application model 'f'
+  /// Get the underlying application ModelEvaluator
   virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     getAppModel() const = 0;
 
@@ -62,8 +62,8 @@ public:
   /// Get OutArgs the wrapper ModelEvalutor.
   virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs() = 0;
 
-  /// Initialize to evaluate application ModelEvaluator.
-  virtual void initialize(Teuchos::RCP<TimeDerivative<Scalar> > td,
+  /// Set parameters for application implicit ModelEvaluator solve.
+  virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > td,
     Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs) = 0;
 };

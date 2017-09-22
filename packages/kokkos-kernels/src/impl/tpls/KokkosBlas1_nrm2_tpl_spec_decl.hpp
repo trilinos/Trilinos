@@ -47,10 +47,10 @@
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-extern "C" double               dnrm2_( const int* N, const double* x, const int* x_inc);
-extern "C" float                snrm2_( const int* N, const float* x, const int* x_inc);
-extern "C" std::complex<double> znrm2_( const int* N, const std::complex<double>* x, const int* x_inc);
-extern "C" std::complex<float>  cnrm2_( const int* N, const std::complex<float>* x, const int* x_inc);
+extern "C" double dnrm2_ ( const int* N, const double* x, const int* x_inc);
+extern "C" float  snrm2_ ( const int* N, const float* x, const int* x_inc);
+extern "C" double dznrm2_( const int* N, const std::complex<double>* x, const int* x_inc);
+extern "C" float  scnrm2_( const int* N, const std::complex<float>* x, const int* x_inc);
 
 namespace KokkosBlas {
 namespace Impl {
@@ -84,13 +84,13 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   { \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
-      nrm2_print_specialization<RV,XV,XV>(); \
+      nrm2_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
       R() = dnrm2_(&N,X.data(),&one); \
-      if(!take_sqrt) R() = R()*R();
+      if(!take_sqrt) R() = R()*R(); \
     } else { \
-      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X); \
+      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
   } \
 };
@@ -114,13 +114,13 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   { \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
-      nrm2_print_specialization<RV,XV,XV>(); \
+      nrm2_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
       R() = snrm2_(&N,X.data(),&one); \
-      if(!take_sqrt) R() = R()*R();
+      if(!take_sqrt) R() = R()*R(); \
     } else { \
-      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X); \
+      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
   } \
 };
@@ -128,7 +128,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
 #define KOKKOSBLAS1_ZNRM2_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
 struct Nrm2< \
-Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::HostSpace, \
+Kokkos::View<double, LAYOUT, Kokkos::HostSpace, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
 Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -144,13 +144,13 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   { \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
-      nrm2_print_specialization<RV,XV,XV>(); \
+      nrm2_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = znrm2_(&N,static_cast<std::complex<double>*>(X.data()),&one); \
-      if(!take_sqrt) R() = R()*R();
+      R() = dznrm2_(&N,reinterpret_cast<const std::complex<double>*>(X.data()),&one); \
+      if(!take_sqrt) R() = R()*R(); \
     } else { \
-      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X); \
+      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
   } \
 };
@@ -164,7 +164,7 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
 1,true, ETI_SPEC_AVAIL > { \
   \
-  typedef Kokkos::View<Kokkos::complex<float>, LAYOUT, Kokkos::HostSpace, \
+  typedef Kokkos::View<float, LAYOUT, Kokkos::HostSpace, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
   typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
@@ -174,13 +174,13 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
   { \
     const size_type numElems = X.extent(0); \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
-      nrm2_print_specialization<RV,XV,XV>(); \
+      nrm2_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = cnrm2_(&N,static_cast<std::complex<float>*>(X.data()),&one); \
-      if(!take_sqrt) R() = R()*R();
+      R() = scnrm2_(&N,reinterpret_cast<const std::complex<float>*>(X.data()),&one); \
+      if(!take_sqrt) R() = R()*R(); \
     } else { \
-      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X); \
+      Nrm2<RV,XV,1,false,ETI_SPEC_AVAIL>::nrm2(R,X,take_sqrt); \
     } \
   } \
 };

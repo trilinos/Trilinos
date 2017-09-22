@@ -79,6 +79,7 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("repartition: start level");
     SET_VALID_ENTRY("repartition: min rows per proc");
+    SET_VALID_ENTRY("repartition: target rows per proc");
     SET_VALID_ENTRY("repartition: max imbalance");
 #undef  SET_VALID_ENTRY
 
@@ -99,9 +100,13 @@ namespace MueLu {
     const Teuchos::ParameterList & pL = GetParameterList();
     // Access parameters here to make sure that we set the parameter entry flag to "used" even in case of short-circuit evaluation.
     // TODO (JG): I don't really know if we want to do this.
-    const int    startLevel          = pL.get<int>   ("repartition: start level");
-    const LO     minRowsPerProcessor = pL.get<LO>    ("repartition: min rows per proc");
-    const double nonzeroImbalance    = pL.get<double>("repartition: max imbalance");
+    const int    startLevel           = pL.get<int>   ("repartition: start level");
+    const LO     minRowsPerProcess    = pL.get<LO>    ("repartition: min rows per proc");
+          LO     targetRowsPerProcess = pL.get<LO>    ("repartition: target rows per proc");
+    const double nonzeroImbalance     = pL.get<double>("repartition: max imbalance");
+
+    if (targetRowsPerProcess == 0)
+      targetRowsPerProcess = minRowsPerProcess;
 
     RCP<const FactoryBase> Afact = GetFactory("A");
     if(Teuchos::rcp_dynamic_cast<const RAPFactory>(Afact) == Teuchos::null &&
@@ -165,9 +170,9 @@ namespace MueLu {
 
     // Test3: check whether number of rows on any processor satisfies the minimum number of rows requirement
     // NOTE: Test2 ensures that repartitionning is not done when there is only one processor (it may or may not satisfy Test3)
-    if (minRowsPerProcessor > 0) {
+    if (minRowsPerProcess > 0) {
       LO numMyRows = Teuchos::as<LO>(A->getNodeNumRows()), minNumRows, LOMAX = Teuchos::OrdinalTraits<LO>::max();
-      LO haveFewRows = (numMyRows < minRowsPerProcessor ? 1 : 0), numWithFewRows = 0;
+      LO haveFewRows = (numMyRows < minRowsPerProcess ? 1 : 0), numWithFewRows = 0;
       MueLu_sumAll(comm, haveFewRows, numWithFewRows);
       MueLu_minAll(comm, (numMyRows > 0 ? numMyRows : LOMAX), minNumRows);
 
@@ -177,7 +182,7 @@ namespace MueLu {
       if (numWithFewRows > 0)
         test3 = true;
 
-      msg3 = "\n  min # rows per proc = " + Teuchos::toString(minNumRows) + ", min allowable = " + Teuchos::toString(minRowsPerProcessor);
+      msg3 = "\n  min # rows per proc = " + Teuchos::toString(minNumRows) + ", min allowable = " + Teuchos::toString(minRowsPerProcess);
     }
 
     // Test4: check whether the balance in the number of nonzeros per processor is greater than threshold
@@ -215,13 +220,13 @@ namespace MueLu {
     // requests a certain number of partitions) and the *Interface classes which call the underlying partitioning algorithms
     // and produce the "Partition" array with the requested number of partitions.
     int numPartitions;
-    if (Teuchos::as<GO>(A->getGlobalNumRows()) < minRowsPerProcessor) {
+    if (Teuchos::as<GO>(A->getGlobalNumRows()) < targetRowsPerProcess) {
       // System is too small, migrate it to a single processor
       numPartitions = 1;
 
     } else {
-      // Make sure that each processor has approximately minRowsPerProcessor
-      numPartitions = A->getGlobalNumRows() / minRowsPerProcessor;
+      // Make sure that each processor has approximately targetRowsPerProcess
+      numPartitions = A->getGlobalNumRows() / targetRowsPerProcess;
     }
     numPartitions = std::min(numPartitions, comm->getSize());
 

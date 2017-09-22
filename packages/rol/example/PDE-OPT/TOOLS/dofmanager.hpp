@@ -62,25 +62,32 @@ private:
   Teuchos::RCP<MeshManager<Real> > meshManager_;
   std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > intrepidBasis_;
 
+  int cellDim_;          // cell dimension
+
   int numCells_;         // number of mesh cells
   int numNodes_;         // number of mesh nodes
   int numEdges_;         // number of mesh edges
+  int numFaces_;         // number of mesh faces
 
   Teuchos::RCP<Intrepid::FieldContainer<int> > meshCellToNodeMap_;
   Teuchos::RCP<Intrepid::FieldContainer<int> > meshCellToEdgeMap_;
+  Teuchos::RCP<Intrepid::FieldContainer<int> > meshCellToFaceMap_;
 
   // Local dof information.
   int numBases_;                                  // number of bases (fields)
   int numLocalNodes_;                             // number of nodes in the basic cell topology
   int numLocalEdges_;                             // number of edges in the basic cell topology
   int numLocalFaces_;                             // number of faces in the basic cell topology
+  int numLocalVoids_;                             // number of voids in the basic cell topology, =1
   int numLocalNodeDofs_;                          // number of local (single-cell) node dofs for all bases
   int numLocalEdgeDofs_;                          // number of local (single-cell) edge dofs for all bases
   int numLocalFaceDofs_;                          // number of local (single-cell) face dofs for all bases
+  int numLocalVoidDofs_;                          // number of local (single-cell) face dofs for all bases
   int numLocalDofs_;                              // total number of local (single-cell) face dofs for all bases
   std::vector<int> numDofsPerNode_;               // number of dofs per node in a cell (assumed constant), per basis
   std::vector<int> numDofsPerEdge_;               // number of dofs per edge in a cell (assumed constant), per basis
   std::vector<int> numDofsPerFace_;               // number of dofs per face in a cell (assumed constant), per basis
+  std::vector<int> numDofsPerVoid_;               // number of dofs per void in a cell (assumed constant), per basis
   std::vector<std::vector<int> > fieldPattern_;   // local indexing of fields into the array [0,1,...,numLocalDofs-1];
                                                   // contains [number of bases] index vectors, where each index vector
                                                   // is of size [basis cardinality]
@@ -88,13 +95,17 @@ private:
   int numNodeDofs_;  // number of global node dofs
   int numEdgeDofs_;  // number of global edge dofs
   int numFaceDofs_;  // number of global face dofs
+  int numVoidDofs_;  // number of global void dofs
   int numDofs_;      // total number of global dofs
 
   Teuchos::RCP<Intrepid::FieldContainer<int> > nodeDofs_;  // global node dofs, of size [numNodes_ x numLocalNodeDofs_]
   Teuchos::RCP<Intrepid::FieldContainer<int> > edgeDofs_;  // global edge dofs, of size [numEdges_ x numLocalEdgeDofs_]
   Teuchos::RCP<Intrepid::FieldContainer<int> > faceDofs_;  // global face dofs, of size [numFaces_ x numLocalFaceDofs_]
+  Teuchos::RCP<Intrepid::FieldContainer<int> > voidDofs_;  // global face dofs, of size [numFaces_ x numLocalFaceDofs_]
   Teuchos::RCP<Intrepid::FieldContainer<int> > cellDofs_;  // global cell dofs, of size [numCells_ x numLocalDofs_];
                                                            // ordered by subcell (node, then edge, then face) and basis index
+  std::vector<int> mapToIntrepidPattern_;
+  std::vector<int> mapToFieldPattern_;
 
   std::vector<Teuchos::RCP<Intrepid::FieldContainer<int> > > fieldDofs_;  // global cell dofs, indexed by field/basis, of size [numCells_ x basis cardinality];
                                                                           // ordered by subcell (node, then edge, then face)
@@ -106,31 +117,48 @@ public:
 
     meshManager_ = meshManager;
     intrepidBasis_ = intrepidBasis;
+    cellDim_  = intrepidBasis_[0]->getBaseCellTopology().getDimension();
     numCells_ = meshManager_->getNumCells();
     numNodes_ = meshManager_->getNumNodes();
     numEdges_ = meshManager_->getNumEdges();
+    numFaces_ = meshManager_->getNumFaces();
 
     // Mesh data structures.
     meshCellToNodeMap_ = meshManager_->getCellToNodeMap();
     meshCellToEdgeMap_ = meshManager_->getCellToEdgeMap();
+    meshCellToFaceMap_ = meshManager_->getCellToFaceMap();
 
     // Local degree-of-freedom footprint.
     numBases_ = static_cast<int>(intrepidBasis_.size());
     numDofsPerNode_.resize(numBases_, 0);
     numDofsPerEdge_.resize(numBases_, 0);
     numDofsPerFace_.resize(numBases_, 0);
+    numDofsPerVoid_.resize(numBases_, 0);
     numLocalDofs_ = 0;
     for (int i=0; i<numBases_; ++i) {
       std::vector<std::vector<int> > dofTags = (intrepidBasis_[i])->getAllDofTags();
-      for (int j=0; j<(intrepidBasis_[i])->getCardinality(); j++) {
+      for (int j=0; j<(intrepidBasis_[i])->getCardinality(); ++j) {
         if (dofTags[j][0] == 0) {
           numDofsPerNode_[i] = dofTags[j][3];
         }
         else if (dofTags[j][0] == 1) {
-          numDofsPerEdge_[i] = dofTags[j][3];
+          if (cellDim_ == 1) { // 1D
+            numDofsPerVoid_[i] = dofTags[j][3];
+          }
+          else { // 2D, 3D
+            numDofsPerEdge_[i] = dofTags[j][3];
+          }
         }
         else if (dofTags[j][0] == 2) {
-          numDofsPerFace_[i] = dofTags[j][3];
+          if (cellDim_ == 2) { // 2D
+            numDofsPerVoid_[i] = dofTags[j][3];
+          }
+          else { // 3D
+            numDofsPerFace_[i] = dofTags[j][3];
+          }
+        }
+        else if (dofTags[j][0] == 3) {
+          numDofsPerVoid_[i] = dofTags[j][3];
         }
       }
       numLocalDofs_ += (intrepidBasis_[i])->getCardinality();
@@ -138,20 +166,24 @@ public:
     numLocalNodeDofs_ = 0;
     numLocalEdgeDofs_ = 0;
     numLocalFaceDofs_ = 0;
+    numLocalVoidDofs_ = 0;
     for (int i=0; i<numBases_; ++i) {
       numLocalNodeDofs_ += numDofsPerNode_[i];
       numLocalEdgeDofs_ += numDofsPerEdge_[i];
       numLocalFaceDofs_ += numDofsPerFace_[i];
+      numLocalVoidDofs_ += numDofsPerVoid_[i];
     }
     numLocalNodes_ = static_cast<int>( (intrepidBasis_[0])->getBaseCellTopology().getVertexCount() );
     numLocalEdges_ = static_cast<int>( (intrepidBasis_[0])->getBaseCellTopology().getEdgeCount() );
-    numLocalFaces_ = 1;
+    numLocalFaces_ = static_cast<int>( (intrepidBasis_[0])->getBaseCellTopology().getFaceCount() );
+    numLocalVoids_ = 1;
     computeFieldPattern();
 
     // Global data structures.
     computeDofArrays();
     computeCellDofs();
     computeFieldDofs();
+    computeDofTransforms();
   }
 
 
@@ -167,6 +199,11 @@ public:
 
   Teuchos::RCP<Intrepid::FieldContainer<int> > getFaceDofs() const {
     return faceDofs_;
+  }
+
+
+  Teuchos::RCP<Intrepid::FieldContainer<int> > getVoidDofs() const {
+    return voidDofs_;
   }
 
 
@@ -200,6 +237,11 @@ public:
   }
 
 
+  int getNumVoidDofs() const {
+    return numVoidDofs_;
+  }
+
+
   int getNumDofs() const {
     return numDofs_;
   }
@@ -229,6 +271,73 @@ public:
     return fieldPattern_[fieldNumber];
   }
 
+  void transformToIntrepidPattern(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &array) const {
+    if ( array != Teuchos::null ) {
+      int rank = array->rank();
+      int nc   = array->dimension(0);
+      if ( rank == 2 ) {
+        int nf = array->dimension(1);
+        Intrepid::FieldContainer<Real> tmp(nc, nf);
+        for (int c = 0; c < nc; ++c) {
+          for (int f = 0; f < nf; ++f) {
+            tmp(c, mapToIntrepidPattern_[f]) = (*array)(c, f);
+          }
+        }
+        *array = tmp;
+      }
+      else if (rank == 3 ) {
+        int nf1 = array->dimension(1);
+        int nf2 = array->dimension(2);
+        Intrepid::FieldContainer<Real> tmp(nc, nf1, nf2);
+        for (int c = 0; c < nc; ++c) {
+          for (int f1 = 0; f1 < nf1; ++f1) {
+            for (int f2 = 0; f2 < nf2; ++f2) {
+              tmp(c, mapToIntrepidPattern_[f1], mapToIntrepidPattern_[f2]) = (*array)(c, f1, f2);
+            }
+          }
+        }
+        *array = tmp;
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+          ">>> PDE-OPT/TOOLS/dofmanager.hpp (transformToIntrepidPattern): Input array rank not 2 or 3!");
+      }
+    }
+  }
+
+  void transformToFieldPattern(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &array) const {
+    if ( array != Teuchos::null ) {
+      int rank = array->rank();
+      int nc   = array->dimension(0);
+      if ( rank == 2 ) {
+        int nf = array->dimension(1);
+        Intrepid::FieldContainer<Real> tmp(nc, nf);
+        for (int c = 0; c < nc; ++c) {
+          for (int f = 0; f < nf; ++f) {
+            tmp(c, mapToFieldPattern_[f]) = (*array)(c, f);
+          }
+        }
+        *array = tmp;
+      }
+      else if (rank == 3 ) {
+        int nf1 = array->dimension(1);
+        int nf2 = array->dimension(2);
+        Intrepid::FieldContainer<Real> tmp(nc, nf1, nf2);
+        for (int c = 0; c < nc; ++c) {
+          for (int f1 = 0; f1 < nf1; ++f1) {
+            for (int f2 = 0; f2 < nf2; ++f2) {
+              tmp(c, mapToFieldPattern_[f1], mapToFieldPattern_[f2]) = (*array)(c, f1, f2);
+            }
+          }
+        }
+        *array = tmp;
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+          ">>> PDE-OPT/TOOLS/dofmanager.hpp (transformToFieldPattern): Input array rank not 2 or 3!");
+      }
+    }
+  }
 
 private:
 
@@ -236,11 +345,13 @@ private:
 
     nodeDofs_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numNodes_, numLocalNodeDofs_));
     edgeDofs_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numEdges_, numLocalEdgeDofs_));
-    faceDofs_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, numLocalFaceDofs_));
+    faceDofs_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numFaces_, numLocalFaceDofs_));
+    voidDofs_ = Teuchos::rcp(new Intrepid::FieldContainer<int>(numCells_, numLocalVoidDofs_));
 
     Intrepid::FieldContainer<int> &nodeDofs = *nodeDofs_;
     Intrepid::FieldContainer<int> &edgeDofs = *edgeDofs_;
     Intrepid::FieldContainer<int> &faceDofs = *faceDofs_;
+    Intrepid::FieldContainer<int> &voidDofs = *voidDofs_;
 
     int dofCt = -1;
 
@@ -284,7 +395,7 @@ private:
     numEdgeDofs_ = dofCt+1-numNodeDofs_;
 
     // count face dofs
-    for (int i=0; i<numCells_; ++i) {
+    for (int i=0; i<numFaces_; ++i) {
       int locFaceCt = -1;
       for (int j=0; j<numBases_; ++j) {
         for (int k=0; k<numDofsPerFace_[j]; ++k) {
@@ -294,7 +405,18 @@ private:
     }
     numFaceDofs_ = dofCt+1-numNodeDofs_-numEdgeDofs_;
 
-    numDofs_ = numNodeDofs_+numEdgeDofs_+numFaceDofs_;
+    // count void dofs
+    for (int i=0; i<numCells_; ++i) {
+      int locVoidCt = -1;
+      for (int j=0; j<numBases_; ++j) {
+        for (int k=0; k<numDofsPerVoid_[j]; ++k) {
+          voidDofs(i, ++locVoidCt) = ++dofCt;
+        }
+      }
+    }
+    numVoidDofs_ = dofCt+1-numNodeDofs_-numEdgeDofs_-numFaceDofs_;
+
+    numDofs_ = numNodeDofs_+numEdgeDofs_+numFaceDofs_+numVoidDofs_;
 
   } // computeDofArrays
 
@@ -308,8 +430,10 @@ private:
     Intrepid::FieldContainer<int> &nodeDofs = *nodeDofs_;
     Intrepid::FieldContainer<int> &edgeDofs = *edgeDofs_;
     Intrepid::FieldContainer<int> &faceDofs = *faceDofs_;
+    Intrepid::FieldContainer<int> &voidDofs = *voidDofs_;
     Intrepid::FieldContainer<int> &ctn = *meshCellToNodeMap_;
     Intrepid::FieldContainer<int> &cte = *meshCellToEdgeMap_;
+    Intrepid::FieldContainer<int> &ctf = *meshCellToFaceMap_;
 
     for (int i=0; i<numCells_; ++i) {
       int ct = -1;
@@ -325,7 +449,12 @@ private:
       }
       for (int j=0; j<numLocalFaces_; ++j) {
         for (int k=0; k<numLocalFaceDofs_; ++k) {
-          cdofs(i,++ct) = faceDofs(i, k);
+          cdofs(i,++ct) = faceDofs(ctf(i,j), k);
+        }
+      }
+      for (int j=0; j<numLocalVoids_; ++j) {
+        for (int k=0; k<numLocalVoidDofs_; ++k) {
+          cdofs(i,++ct) = voidDofs(i, k);
         }
       }
     }
@@ -365,6 +494,15 @@ private:
       }
     }
 
+    // count void dofs
+    for (int i=0; i<numLocalVoids_; ++i) {
+      for (int j=0; j<numBases_; ++j) {
+        for (int k=0; k<numDofsPerVoid_[j]; ++k) {
+          fieldPattern_[j].push_back(++dofCt);
+        }
+      }
+    }
+
   } // computeFieldPattern
 
 
@@ -382,9 +520,75 @@ private:
         for (int j=0; j<basisCard; ++j) {
           fdofs(i,j) = cdofs(i, fieldPattern_[fieldNum][j]);
         }
-      }  
+      }
     }
   } // computeFieldDofs
+
+  void computeDofTransforms(void) {
+    // Build basis maps
+    std::vector<std::vector<int> > map2IP(numBases_);
+    std::vector<std::vector<int> > map2FP(numBases_);
+    for (int f=0; f<numBases_; ++f) { 
+      int basisDeg = intrepidBasis_[f]->getDegree();
+      if (cellDim_ == 1) {
+        if (basisDeg == 1) {
+          map2IP[f] = {0, 1};
+          map2FP[f] = {0, 1};
+        }
+        else if (basisDeg == 2) {
+          map2IP[f] = {0, 2, 1};
+          map2FP[f] = {0, 2, 1};
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+            ">>> PDE-OPT/TOOLS/dofmanager.hpp (ComputeDofTransforms): basisDeg > 2");
+        }
+      }
+      else if (cellDim_ == 2) {
+        if (basisDeg == 1) {
+          map2IP[f] = {0, 1, 2, 3};
+          map2FP[f] = {0, 1, 2, 3};
+        }
+        else if (basisDeg == 2) {
+          map2IP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+          map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+            ">>> PDE-OPT/TOOLS/dofmanager.hpp (ComputeDofTransforms): basisDeg > 2");
+        }
+      }
+      else if (cellDim_ == 3) {
+        if (basisDeg == 1) {
+          map2IP[f] = {0, 1, 2, 3, 4, 5, 6, 7};
+          map2FP[f] = {0, 1, 2, 3, 4, 5, 6, 7};
+        }
+        else if (basisDeg == 2) {
+          map2IP[f] = {0, 1, 2, 3, 4 ,5, 6, 7,                       // Nodes
+                       8, 9, 10, 11, 16, 17, 18, 19, 12, 13, 14, 15, // Edges
+                       25, 24, 26, 23, 21, 22,                       // Faces
+                       20};                                          // Voids
+          map2FP[f] = {0, 1, 2, 3, 4 ,5, 6, 7,                       // Nodes
+                       8, 9, 10, 11, 16, 17, 18, 19, 12, 13, 14, 15, // Edges
+                       26,                                           // Voids
+                       24, 25, 23, 21, 20, 22};                      // Faces
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+            ">>> PDE-OPT/TOOLS/dofmanager.hpp (ComputeDofTransforms): basisDeg > 2");
+        }
+      }
+    }
+    // Apply transformation to ind
+    mapToIntrepidPattern_.clear(); mapToIntrepidPattern_.resize(numDofs_);
+    mapToFieldPattern_.clear();    mapToFieldPattern_.resize(numDofs_);
+    for (int i = 0; i < numBases_; ++i) {
+      for (int j = 0; j < static_cast<int>(map2IP[i].size()); ++j) {
+        mapToIntrepidPattern_[fieldPattern_[i][j]] = fieldPattern_[i][map2IP[i][j]];
+        mapToFieldPattern_[fieldPattern_[i][j]]    = fieldPattern_[i][map2FP[i][j]];
+      }
+    }
+  }
 
 }; // DofManager
 

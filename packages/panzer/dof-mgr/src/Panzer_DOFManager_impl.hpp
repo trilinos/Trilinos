@@ -370,7 +370,7 @@ const std::vector<int> & DOFManager<LO,GO>::getGIDFieldOffsets(const std::string
 }
 
 template <typename LO, typename GO>
-void DOFManager<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO> & gids, const std::string & blockIdHint) const
+void DOFManager<LO,GO>::getElementGIDs(LO localElementID, std::vector<GO>& gids, const std::string& /* blockIdHint */) const
 {
   gids = elementGIDs_[localElementID];
 }

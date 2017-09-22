@@ -70,13 +70,23 @@ namespace MueLu {
                   LO& numNonAggregatedNodes) const {
     Monitor m(*this, "BuildAggregates");
 
-    std::string ordering        = params.get<std::string>("aggregation: ordering");
-    int maxNeighAlreadySelected = params.get<int>         ("aggregation: max selected neighbors");
-    int minNodesPerAggregate    = params.get<int>         ("aggregation: min agg size");
-    int maxNodesPerAggregate    = params.get<int>         ("aggregation: max agg size");
+    std::string orderingStr     = params.get<std::string>("aggregation: ordering");
+    int maxNeighAlreadySelected = params.get<int>        ("aggregation: max selected neighbors");
+    int minNodesPerAggregate    = params.get<int>        ("aggregation: min agg size");
+    int maxNodesPerAggregate    = params.get<int>        ("aggregation: max agg size");
 
     TEUCHOS_TEST_FOR_EXCEPTION(maxNodesPerAggregate < minNodesPerAggregate, Exceptions::RuntimeError,
                                "MueLu::UncoupledAggregationAlgorithm::BuildAggregates: minNodesPerAggregate must be smaller or equal to MaxNodePerAggregate!");
+
+    enum {
+      O_NATURAL,
+      O_RANDOM,
+      O_GRAPH
+    } ordering;
+    ordering = O_NATURAL; // initialize variable (fix CID 143665)
+    if (orderingStr == "natural") ordering = O_NATURAL;
+    if (orderingStr == "random" ) ordering = O_RANDOM;
+    if (orderingStr == "graph"  ) ordering = O_GRAPH;
 
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
@@ -87,7 +97,7 @@ namespace MueLu {
     LO numLocalAggregates = aggregates.GetNumAggregates();
 
     ArrayRCP<LO> randomVector;
-    if (ordering == "random") {
+    if (ordering == O_RANDOM) {
       randomVector = arcp<LO>(numRows);
       for (LO i = 0; i < numRows; i++)
         randomVector[i] = i;
@@ -104,9 +114,9 @@ namespace MueLu {
     for (LO i = 0; i < numRows; i++) {
       // Step 1: pick the next node to aggregate
       LO rootCandidate = 0;
-      if      (ordering == "natural") rootCandidate = i;
-      else if (ordering == "random")  rootCandidate = randomVector[i];
-      else if (ordering == "graph") {
+      if      (ordering == O_NATURAL) rootCandidate = i;
+      else if (ordering == O_RANDOM)  rootCandidate = randomVector[i];
+      else if (ordering == O_GRAPH) {
 
         if (graphOrderQueue.size() == 0) {
           // Current queue is empty for "graph" ordering, populate with one READY node
@@ -131,20 +141,20 @@ namespace MueLu {
       aggSize = 0;
       aggList[aggSize++] = rootCandidate;
 
-      typename LWGraph_kokkos::row_type neighOfINode = graph.getNeighborVertices(rootCandidate);
+      auto neighOfINode = graph.getNeighborVertices(rootCandidate);
 
       // If the number of neighbors is less than the minimum number of nodes
       // per aggregate, we know this is not going to be a valid root, and we
       // may skip it, but only for "natural" and "random" (for "graph" we still
       // need to fetch the list of local neighbors to continue)
-      if ((ordering == "natural" || ordering == "random") &&
-          as<int>(neighOfINode.size()) < minNodesPerAggregate) {
+      if ((ordering == O_NATURAL || ordering == O_RANDOM) &&
+          as<int>(neighOfINode.length) < minNodesPerAggregate) {
         continue;
       }
 
       LO numAggregatedNeighbours = 0;
 
-      for (int j = 0; j < as<int>(neighOfINode.size()); j++) {
+      for (int j = 0; j < as<int>(neighOfINode.length); j++) {
         LO neigh = neighOfINode(j);
 
         if (neigh != rootCandidate && graph.isLocalNeighborVertex(neigh)) {
@@ -192,15 +202,15 @@ namespace MueLu {
         aggSize = 1;
       }
 
-      if (ordering == "graph") {
+      if (ordering == O_GRAPH) {
         // Add candidates to the list of nodes
         // NOTE: the code have slightly different meanings depending on context:
         //  - if aggregate was accepted, we add neighbors of neighbors of the original candidate
         //  - if aggregate was not accepted, we add neighbors of the original candidate
         for (size_t k = 0; k < aggSize; k++) {
-          typename LWGraph_kokkos::row_type neighOfJNode = graph.getNeighborVertices(aggList[k]);
+          auto neighOfJNode = graph.getNeighborVertices(aggList[k]);
 
-          for (int j = 0; j < as<int>(neighOfJNode.size()); j++) {
+          for (int j = 0; j < as<int>(neighOfJNode.length); j++) {
             LO neigh = neighOfJNode(j);
 
             if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY)

@@ -643,6 +643,10 @@ public:
                                                   const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
                                                   const RCP<ParameterList> & params=Teuchos::null) {
      XPETRA_MONITOR("EpetraCrsMatrixT::expertStaticFillComplete");
+
+     // For Epetra matrices, resumeFill() is a fictive operation.
+     isFillResumed_ = false;
+
      int rv=0;
      const Epetra_Import * myimport =0;
      const Epetra_Export * myexport =0;
@@ -677,8 +681,8 @@ public:
   void fillComplete(const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &domainMap, const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rangeMap, const RCP< ParameterList > &params=Teuchos::null) {
     XPETRA_MONITOR("EpetraCrsMatrixT::fillComplete");
 
-    // For Epetra matrices, resumeFill() is a fictive operation. There is no need for a fillComplete after some resumeFill() operations.
-    if (isFillResumed_ == true) { isFillResumed_ = false; return; }
+    // For Epetra matrices, resumeFill() is a fictive operation.
+    isFillResumed_ = false;
 
     bool doOptimizeStorage = true;
     if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
@@ -1616,6 +1620,10 @@ public:
                                                   const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
                                                   const RCP<ParameterList> & params=Teuchos::null) {
      XPETRA_MONITOR("EpetraCrsMatrixT::expertStaticFillComplete");
+
+     // For Epetra matrices, resumeFill() is a fictive operation.
+     isFillResumed_ = false;
+
      int rv=0;
      const Epetra_Import * myimport =0;
      const Epetra_Export * myexport =0;

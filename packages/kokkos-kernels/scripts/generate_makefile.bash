@@ -4,7 +4,8 @@ KOKKOS_DEVICES=""
 
 KOKKOS_DO_EXAMPLES="1"
 
-KOKKOSKERNELS_OPTIONS="eti_only"
+KOKKOSKERNELS_OPTIONS="eti-only"
+KOKKOSKERNELS_ENABLE_TPLS=""
 
 while [[ $# > 0 ]]
 do
@@ -115,6 +116,9 @@ do
     --with-options*)
       KOKKOSKERNELS_OPTIONS="${key#*=}"
       ;;
+    --with-tpls*)
+      KOKKOSKERNELS_ENABLE_TPLS="${key#*=}"
+      ;;
     --with-kokkos-options*)
       KOKKOS_OPT="${key#*=}"
       ;;
@@ -127,6 +131,8 @@ do
       echo "--prefix=/Install/Path:               Path to install the Kokkos library."
       echo "--with-options=[OPT]:                 Set KokkosKernels Options:"
       echo "                                        eti_only: only allow ETI types to be enabled [default]"
+      echo "--with-tpls=[OPT]:                    Set KokkosKernels TPLs:"
+      echo "                                        mkl,blas,cublas,cusparse"
       echo ""
       echo "Kokkos configure options:"
       echo "--kokkos-path=/Path/To/Kokkos:        Path to the Kokkos root directory."
@@ -311,6 +317,14 @@ fi
 
 if [ ${#KOKKOSKERNELS_LAYOUTS} -gt 0 ]; then
   KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_LAYOUTS=${KOKKOSKERNELS_LAYOUTS}"
+fi
+
+if [ ${#KOKKOSKERNELS_ENABLE_TPLS} -gt 0 ]; then
+  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_ENABLE_TPLS=${KOKKOSKERNELS_ENABLE_TPLS}"
+fi
+
+if [ ${#KOKKOSKERNELS_OPTIONS} -gt 0 ]; then
+  KOKKOS_SETTINGS="${KOKKOS_SETTINGS} KOKKOSKERNELS_OPTIONS=${KOKKOSKERNELS_OPTIONS}"
 fi
 
 KOKKOS_SETTINGS_NO_KOKKOS_PATH="${KOKKOS_SETTINGS}"

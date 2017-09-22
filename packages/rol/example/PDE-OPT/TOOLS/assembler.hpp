@@ -60,6 +60,8 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
+#include "Intrepid_DefaultCubatureFactory.hpp"
+
 #include "fe.hpp"
 #include "fe_curl.hpp"
 #include "pde.hpp"
@@ -101,6 +103,14 @@ namespace ROL {
   }
 }
 #endif
+
+template<class Real>
+class Solution {
+public:
+  virtual ~Solution() {}
+  Solution(void) {}
+  virtual Real evaluate(const std::vector<Real> &x, const int fieldNumber) const = 0;
+};
 
 template<class Real>
 class Assembler {
@@ -154,7 +164,7 @@ private:
 
   // Set in SetCellNodes.
   Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
-  Teuchos::RCP<std::vector<std::vector<Intrepid::FieldContainer<int> > > >  bdryCellIds_;
+  Teuchos::RCP<std::vector<std::vector<std::vector<int> > > >  bdryCellIds_;
   //std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<int> > > >  bdryCellLocIds_;
   std::vector<std::vector<std::vector<int> > >  bdryCellLocIds_;
   std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
@@ -340,7 +350,7 @@ private:
       }
     }
     // Build boundary cell nodes
-    bdryCellIds_    = meshMgr_->getSideSets(outStream, (verbose_ && myRank_==0));
+    bdryCellIds_    = meshMgr_->getSideSets((verbose_ && myRank_==0), outStream);
     int numSideSets = bdryCellIds_->size();
     if (numSideSets > 0) {
       bdryCellNodes_.resize(numSideSets);
@@ -350,10 +360,10 @@ private:
         bdryCellNodes_[i].resize(numLocSides);
         bdryCellLocIds_[i].resize(numLocSides);
         for (int j=0; j<numLocSides; ++j) {
-          if ((*bdryCellIds_)[i][j].rank() > 0) {
-            int numCellsSide = (*bdryCellIds_)[i][j].dimension(0);
+          if ((*bdryCellIds_)[i][j].size() > 0) {
+            int numCellsSide = (*bdryCellIds_)[i][j].size();
             for (int k=0; k<numCellsSide; ++k) {
-              int idx = mapGlobalToLocalCellId((*bdryCellIds_)[i][j](k));
+              int idx = mapGlobalToLocalCellId((*bdryCellIds_)[i][j][k]);
               if (idx > -1) {
                 bdryCellLocIds_[i][j].push_back(idx);
                 //if (myRank_==1) {std::cout << "\nrank " << myRank_ << "   bcid " << i << "  " << j << "  " << k << "  " << myCellIds_[idx] << "  " << idx;}
@@ -404,9 +414,10 @@ private:
       Teuchos::ArrayRCP<const Real> xdata = xshared->get1dView();
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<lfs; ++j) {
-          (*xcoeff)(i, j) = xdata[xshared->getMap()->getLocalElement(cellDofs(myCellIds_[i],j))];
+          (*xcoeff)(i,j) = xdata[xshared->getMap()->getLocalElement(cellDofs(myCellIds_[i],j))];
         }
       }
+      dofMgr_->transformToIntrepidPattern(xcoeff);
     }
     else {
       xcoeff = Teuchos::null;
@@ -428,9 +439,10 @@ private:
       Teuchos::ArrayRCP<const Real> xdata = xshared->get1dView();
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<lfs; ++j) {
-          (*xcoeff)(i, j) = xdata[xshared->getMap()->getLocalElement(cellDofs(myCellIds_[i],j))];
+          (*xcoeff)(i,j) = xdata[xshared->getMap()->getLocalElement(cellDofs(myCellIds_[i],j))];
         }
       }
+      dofMgr_->transformToIntrepidPattern(xcoeff);
     }
     else {
       xcoeff = Teuchos::null;
@@ -507,6 +519,7 @@ public:
     getCoeffFromControlVector(z_coeff,z);
     // Compute PDE residual
     pde->residual(res,u_coeff,z_coeff,z_param);
+    dofMgr_->transformToFieldPattern(res);
     // assembly on the overlap map
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
@@ -537,6 +550,7 @@ public:
       // Compute PDE Jacobian
       Teuchos::RCP<Intrepid::FieldContainer<Real> > jac;
       pde->Jacobian_1(jac,u_coeff,z_coeff,z_param); // Throw if not implemented or is zero
+      dofMgr_->transformToFieldPattern(jac);
       // Initialize Jacobian matrices
       if ( J1 == Teuchos::null ) {
         J1 = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ1Graph_));
@@ -584,6 +598,7 @@ public:
       // Compute PDE Jacobian
       Teuchos::RCP<Intrepid::FieldContainer<Real> > jac;
       pde->Jacobian_2(jac,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(jac);
       // Initialize Jacobian matrices
       if ( J2 == Teuchos::null ) {
         J2 = Teuchos::rcp(new Tpetra::CrsMatrix<>(matJ2Graph_));
@@ -634,6 +649,9 @@ public:
         getCoeffFromControlVector(z_coeff,z);
         // Compute PDE local Jacobian wrt parametric controls
         pde->Jacobian_3(jac,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        for (int i = 0; i < size; ++i) {
+          dofMgr_->transformToFieldPattern(jac[i]);
+        }
         // Initialize Jacobian storage if not done so already
         if (J3 == Teuchos::null) {
           J3 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueResidualMap_, size, true));
@@ -692,6 +710,7 @@ public:
       getCoeffFromStateVector(l_coeff,l);
       // Compute PDE Hessian
       pde->Hessian_11(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(hess);
       // Initialize Hessian storage if not done so already
       if ( H11 == Teuchos::null ) {
         H11 = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH11Graph_));
@@ -741,6 +760,7 @@ public:
       getCoeffFromStateVector(l_coeff,l);
       // Compute PDE Hessian
       pde->Hessian_12(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(hess);
       // Initialize Hessian storage if not done so already
       if ( H12 == Teuchos::null ) {
         H12 = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH12Graph_));
@@ -793,6 +813,9 @@ public:
         getCoeffFromStateVector(l_coeff,l);
         // Compute PDE local Jacobian wrt parametric controls
         pde->Hessian_13(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        for (int i = 0; i < size; ++i) {
+          dofMgr_->transformToFieldPattern(hess[i]);
+        }
         // Initialize Jacobian storage if not done so already
         if (H13 == Teuchos::null) {
           H13 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, size, true));
@@ -851,6 +874,7 @@ public:
       getCoeffFromStateVector(l_coeff,l);
       // Compute PDE Hessian
       pde->Hessian_21(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(hess);
       // Initialize Hessian storage if not done so already
       if ( H21 == Teuchos::null ) {
         H21 = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH21Graph_));
@@ -900,6 +924,7 @@ public:
       getCoeffFromStateVector(l_coeff,l);
       // Compute PDE Hessian
       pde->Hessian_22(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(hess);
       // Initialize Hessian storage if not done so already
       if ( H22 == Teuchos::null ) {
         H22 = Teuchos::rcp(new Tpetra::CrsMatrix<>(matH22Graph_));
@@ -952,6 +977,9 @@ public:
         getCoeffFromStateVector(l_coeff,l);
         // Compute PDE local Jacobian wrt parametric controls
         pde->Hessian_23(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        for (int i = 0; i < size; ++i) {
+          dofMgr_->transformToFieldPattern(hess[i]);
+        }
         // Initialize Jacobian storage if not done so already
         if (H23 == Teuchos::null) {
           H23 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, size, true));
@@ -1038,6 +1066,11 @@ public:
         getCoeffFromStateVector(l_coeff,l);
         // Compute PDE local Jacobian wrt parametric controls
         pde->Hessian_33(hess,l_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        for (int i = 0; i < size; ++i) {
+          for (int j = 0; j < size; ++j) {
+            dofMgr_->transformToFieldPattern(hess[i][j]);
+          }
+        }
         // Initialize Jacobian storage if not done so already
         if (H33 == Teuchos::null) {
           std::vector<Real> col(size,static_cast<Real>(0));
@@ -1140,6 +1173,7 @@ public:
       // Compute local gradient
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locGrad;
       qoi->gradient_1(locGrad,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(locGrad);
       // Initialize state QoI gradient vectors
       if ( g1 == Teuchos::null ) {
         g1 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
@@ -1188,6 +1222,7 @@ public:
       // Compute local gradient
       Teuchos::RCP<Intrepid::FieldContainer<Real> > locGrad;
       qoi->gradient_2(locGrad,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(locGrad);
       // Initialize control gradient vectors
       if ( g2 == Teuchos::null ) {
         g2 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
@@ -1243,6 +1278,9 @@ public:
         getCoeffFromControlVector(z_coeff,z);
         // Compute gradient
         (*g3) = qoi->gradient_3(locGrad,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        for (int i = 0; i < size; ++i) {
+          dofMgr_->transformToFieldPattern(locGrad[i]);
+        }
         // Assembly
         std::vector<Real> myGrad(size,0), globGrad(size,0);
         for (int j = 0; j < size; ++j) {
@@ -1289,6 +1327,7 @@ public:
       getCoeffFromControlVector(z_coeff,z);
       // Compute local gradient
       qoi->HessVec_11(locHess, v_coeff, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(locHess);
       // Initialize state-state HessVec vectors
       if ( H11 == Teuchos::null ) {
         H11 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
@@ -1340,6 +1379,7 @@ public:
       getCoeffFromControlVector(z_coeff,z);
       // Compute local gradient
       qoi->HessVec_12(locHess, v_coeff, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(locHess);
       // Initialize state-control HessVec vectors
       if ( H12 == Teuchos::null ) {
         H12 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
@@ -1390,6 +1430,7 @@ public:
         getCoeffFromControlVector(z_coeff,z);
         // Compute local gradient
         qoi->HessVec_13(locHess, v, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
+        dofMgr_->transformToFieldPattern(locHess);
         // Initialize state-control HessVec vectors
         if ( H13 == Teuchos::null ) {
           H13 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueStateMap_, 1, true));
@@ -1445,6 +1486,7 @@ public:
       getCoeffFromControlVector(z_coeff,z);
       // Compute local gradient
       qoi->HessVec_21(locHess, v_coeff, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(locHess);
       // Initialize control-state HessVec vectors
       if ( H21 == Teuchos::null ) {
         H21 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
@@ -1496,6 +1538,7 @@ public:
       getCoeffFromControlVector(z_coeff,z);
       // Compute local gradient
       qoi->HessVec_22(locHess, v_coeff, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(locHess);
       // Initialize control-control HessVec vectors
       if ( H22 == Teuchos::null ) {
         H22 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
@@ -1546,6 +1589,7 @@ public:
         getCoeffFromControlVector(z_coeff,z);
         // Compute local gradient
         qoi->HessVec_23(locHess, v, u_coeff, z_coeff, z_param); // Throw if not implemented or zero
+        dofMgr_->transformToFieldPattern(locHess);
         // Initialize control-control HessVec vectors
         if ( H23 == Teuchos::null ) {
           H23 = Teuchos::rcp(new Tpetra::MultiVector<>(myUniqueControlMap_, 1, true));
@@ -1609,6 +1653,9 @@ public:
         getCoeffFromControlVector(z_coeff,z);
         // Compute gradient
         (*H31) = qoi->HessVec_31(locHess,v_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        for (int i = 0; i < size; ++i) {
+          dofMgr_->transformToFieldPattern(locHess[i]);
+        }
         // Assembly
         std::vector<Real> myHess(size,0), globHess(size,0);
         for (int j = 0; j < size; ++j) {
@@ -1662,6 +1709,9 @@ public:
         getCoeffFromControlVector(z_coeff,z);
         // Compute local hessian times a vector
         (*H32) = qoi->HessVec_32(locHess,v_coeff,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        for (int i = 0; i < size; ++i) {
+          dofMgr_->transformToFieldPattern(locHess[i]);
+        }
         // Assembly
         std::vector<Real> myHess(size,0), globHess(size,0);
         for (int j = 0; j < size; ++j) {
@@ -1713,6 +1763,9 @@ public:
         getCoeffFromControlVector(z_coeff,z);
         // Compute local hessian times a vector
         (*H33) = qoi->HessVec_33(locHess,v,u_coeff,z_coeff,z_param); // Throw if not implemented or zero
+        for (int i = 0; i < size; ++i) {
+          dofMgr_->transformToFieldPattern(locHess[i]);
+        }
         // Assembly
         std::vector<Real> myHess(size,0), globHess(size,0);
         for (int j = 0; j < size; ++j) {
@@ -1752,6 +1805,7 @@ public:
       // Compute local state Riesz matrix
       Teuchos::RCP<Intrepid::FieldContainer<Real> > riesz;
       pde->RieszMap_1(riesz); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(riesz);
       // Initialize Riesz matrix if not done so already
       if ( R1 == Teuchos::null ) {
       R1 = Teuchos::rcp(new Tpetra::CrsMatrix<>(matR1Graph_));
@@ -1794,6 +1848,7 @@ public:
       // Compute local control Riesz matrix
       Teuchos::RCP<Intrepid::FieldContainer<Real> > riesz;
       pde->RieszMap_2(riesz); // Throw if not implemented or zero
+      dofMgr_->transformToFieldPattern(riesz);
       // Initialize Riesz matrix if not done so already
       if ( R2 == Teuchos::null ) {
         R2 = Teuchos::rcp(new Tpetra::CrsMatrix<>(matR2Graph_));
@@ -1825,6 +1880,142 @@ public:
   /* End of functions for Riesz operator of optimization variables.          */
   /***************************************************************************/
 
+
+  /***************************************************************************/
+  /* Compute error routines.                                                 */
+  /***************************************************************************/
+  Real computeStateError(const Teuchos::RCP<const Tpetra::MultiVector<> > &soln,
+                         const Teuchos::RCP<Solution<Real> > &trueSoln,
+                         const int cubDeg = 6,
+                         const Teuchos::RCP<FieldHelper<Real> > &fieldHelper = Teuchos::null) const {
+    Real totalError(0);
+    // populate inCoeffs
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > inCoeffs0;
+    getCoeffFromStateVector(inCoeffs0, soln);
+    // split fields
+    int numFields = 1;
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > inCoeffs;
+    if (fieldHelper != Teuchos::null) {
+      numFields = fieldHelper->numFields();
+      fieldHelper->splitFieldCoeff(inCoeffs,inCoeffs0);
+    }
+    else {
+      inCoeffs.push_back(inCoeffs0);
+    }
+    // compute error
+    for (int fn = 0; fn < numFields; ++fn) {
+      // create fe object for error computation
+      Intrepid::DefaultCubatureFactory<Real> cubFactory;
+      shards::CellTopology cellType = basisPtrs_[fn]->getBaseCellTopology();
+      Teuchos::RCP<Intrepid::Cubature<Real> > cellCub = cubFactory.create(cellType, cubDeg);
+      Teuchos::RCP<FE<Real> > fe
+        = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrs_[fn],cellCub));
+
+      // get dimensions
+      int c = fe->gradN()->dimension(0);
+      int p = fe->gradN()->dimension(2);
+      int d = fe->gradN()->dimension(3);
+
+      // evaluate input coefficients on fe basis
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > funcVals
+        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      fe->evaluateValue(funcVals, inCoeffs[fn]);
+
+      // subtract off true solution
+      std::vector<Real> x(d);
+      for (int i=0; i<c; ++i) {
+        for (int j=0; j<p; ++j) {
+          for (int k=0; k<d; ++k) {
+            x[k] = (*fe->cubPts())(i, j, k);
+          }
+          (*funcVals)(i, j) -= trueSoln->evaluate(x,fn);
+        }
+      }
+
+      // compute norm squared of local error
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > normSquaredError
+        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
+      fe->computeIntegral(normSquaredError, funcVals, funcVals, false);
+
+      Real localErrorSum(0);
+      Real globalErrorSum(0);
+      for (int i=0; i<numCells_; ++i) {
+        localErrorSum += (*normSquaredError)(i);
+      }
+      Teuchos::reduceAll<int, Real>(*comm_, Teuchos::REDUCE_SUM, 1, &localErrorSum, &globalErrorSum);
+      totalError += globalErrorSum;
+    }
+
+    return std::sqrt(totalError);
+  }
+
+  Real computeControlError(const Teuchos::RCP<const Tpetra::MultiVector<> > &soln,
+                           const Teuchos::RCP<Solution<Real> > &trueSoln,
+                           const int cubDeg = 6,
+                           const Teuchos::RCP<FieldHelper<Real> > &fieldHelper = Teuchos::null) const {
+    Real totalError(0);
+    // populate inCoeffs
+    Teuchos::RCP<Intrepid::FieldContainer<Real> > inCoeffs0;
+    getCoeffFromControlVector(inCoeffs0, soln);
+    // split fields
+    int numFields = 1;
+    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > inCoeffs;
+    if (fieldHelper != Teuchos::null) {
+      numFields = fieldHelper->numFields();
+      fieldHelper->splitFieldCoeff(inCoeffs,inCoeffs0);
+    }
+    else {
+      inCoeffs.push_back(inCoeffs0);
+    }
+    // compute error
+    for (int fn = 0; fn < numFields; ++fn) {
+      // create fe object for error computation
+      Intrepid::DefaultCubatureFactory<Real> cubFactory;
+      shards::CellTopology cellType = basisPtrs_[fn]->getBaseCellTopology();
+      Teuchos::RCP<Intrepid::Cubature<Real> > cellCub = cubFactory.create(cellType, cubDeg);
+      Teuchos::RCP<FE<Real> > fe
+        = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtrs_[fn],cellCub));
+
+      // get dimensions
+      int c = fe->gradN()->dimension(0);
+      int p = fe->gradN()->dimension(2);
+      int d = fe->gradN()->dimension(3);
+
+      // evaluate input coefficients on fe basis
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > funcVals
+        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      fe->evaluateValue(funcVals, inCoeffs[fn]);
+
+      // subtract off true solution
+      std::vector<Real> x(d);
+      for (int i=0; i<c; ++i) {
+        for (int j=0; j<p; ++j) {
+          for (int k=0; k<d; ++k) {
+            x[k] = (*fe->cubPts())(i, j, k);
+          }
+          (*funcVals)(i, j) -= trueSoln->evaluate(x,fn);
+        }
+      }
+
+      // compute norm squared of local error
+      Teuchos::RCP<Intrepid::FieldContainer<Real> > normSquaredError
+        = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c));
+      fe->computeIntegral(normSquaredError, funcVals, funcVals, false);
+
+      Real localErrorSum(0);
+      Real globalErrorSum(0);
+      for (int i=0; i<numCells_; ++i) {
+        localErrorSum += (*normSquaredError)(i);
+      }
+      Teuchos::reduceAll<int, Real>(*comm_, Teuchos::REDUCE_SUM, 1, &localErrorSum, &globalErrorSum);
+      totalError += globalErrorSum;
+    }
+
+    return std::sqrt(totalError);
+  }
+  /***************************************************************************/
+  /* End of compute solution routines.                                       */
+  /***************************************************************************/
 
   /***************************************************************************/
   /* Output routines.                                                        */

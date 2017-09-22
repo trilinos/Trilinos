@@ -105,7 +105,7 @@ namespace panzer {
      this->addEvaluatedField(xcoord);
   }
 
-  PHX_POST_REGISTRATION_SETUP(XCoordinate,sd,fm)
+  PHX_POST_REGISTRATION_SETUP(XCoordinate, /* sd */, fm)
   { this->utils.setFieldData(xcoord,fm); }
 
   PHX_EVALUATE_FIELDS(XCoordinate,workset)

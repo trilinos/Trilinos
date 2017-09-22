@@ -24,7 +24,7 @@ void check_trsv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type b, y_vecto
   typedef typename scalar_view_t::value_type ScalarA;
   double eps = std::is_same<ScalarA,float>::value?2*1e-2:1e-7;
 
-
+  Kokkos::fence();
   KokkosSparse::trsv(uplo, "N", "N", input_mat, b, x);
 
   for (int i = 0; i < numMV; ++i){
@@ -61,7 +61,6 @@ void test_trsv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
   //this function creates a dense lower and upper triangular matrix.
   //TODO: SHOULD CHANGE IT TO SPARSE
   crsMat_t lower_part = KokkosKernels::Impl::kk_generate_triangular_sparse_matrix<crsMat_t>('L', numRows,numCols,nnz,row_size_variance, bandwidth);
-
   KokkosSparse::spmv("N", alpha, lower_part, b_x_copy, beta, b_y);
   Test::check_trsv_mv(lower_part, b_x, b_y, b_x_copy, numMV, "L");
   //typedef typename Kokkos::View<lno_t*, layout, Device> indexview;

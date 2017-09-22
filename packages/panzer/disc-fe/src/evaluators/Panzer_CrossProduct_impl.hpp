@@ -82,7 +82,7 @@ PHX_EVALUATOR_CTOR(CrossProduct,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(CrossProduct,sd,fm)
+PHX_POST_REGISTRATION_SETUP(CrossProduct, /* sd */, fm)
 {
   this->utils.setFieldData(vec_a_cross_vec_b,fm);
   this->utils.setFieldData(vec_a,fm);

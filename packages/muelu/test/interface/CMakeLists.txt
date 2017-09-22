@@ -28,14 +28,11 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     COMM serial mpi
     )
 
-  IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
-
-    TRIBITS_ADD_EXECUTABLE(
-       CreateOperator
-       SOURCES CreateOperator.cpp ../unit_tests/MueLu_TestHelpers.cpp
-       COMM serial mpi
-       )
-  ENDIF()
+  TRIBITS_ADD_EXECUTABLE(
+     CreateOperator
+     SOURCES CreateOperator.cpp ../unit_tests/MueLu_TestHelpers.cpp
+     COMM serial mpi
+     )
 
 
 ENDIF()
@@ -73,25 +70,22 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
         COMM mpi
         )
 
-      IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
-
-        TRIBITS_ADD_TEST(
-          CreateOperator
-          NAME "CreateOperatorEpetra"
-          ARGS "--linAlgebra=Epetra"
-          STANDARD_PASS_OUTPUT
-          NUM_MPI_PROCS 1
-          COMM mpi serial
-          )
-        TRIBITS_ADD_TEST(
-          CreateOperator
-          NAME "CreateOperatorEpetra"
-          ARGS "--linAlgebra=Epetra"
-          STANDARD_PASS_OUTPUT
-          NUM_MPI_PROCS 4
-          COMM mpi
-          )
-      ENDIF()
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorEpetra"
+        ARGS "--linAlgebra=Epetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        )
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorEpetra"
+        ARGS "--linAlgebra=Epetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
 
       # This test only runs on the dashboard, not at checkin.
       TRIBITS_ADD_TEST(
@@ -137,25 +131,22 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
         COMM mpi
         )
 
-      IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
-
-        TRIBITS_ADD_TEST(
-          CreateOperator
-          NAME "CreateOperatorTpetra"
-          ARGS "--linAlgebra=Tpetra"
-          STANDARD_PASS_OUTPUT
-          NUM_MPI_PROCS 1
-          COMM mpi serial
-          )
-        TRIBITS_ADD_TEST(
-          CreateOperator
-          NAME "CreateOperatorTpetra"
-          ARGS "--linAlgebra=Tpetra"
-          STANDARD_PASS_OUTPUT
-          NUM_MPI_PROCS 4
-          COMM mpi
-          )
-      ENDIF()
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorTpetra"
+        ARGS "--linAlgebra=Tpetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        )
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorTpetra"
+        ARGS "--linAlgebra=Tpetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
 
       # This test only runs on the dashboard, not at checkin.
       TRIBITS_ADD_TEST(

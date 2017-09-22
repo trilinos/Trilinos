@@ -4,6 +4,7 @@ ulimit -c 0
 KOKKOSKERNELS_BRANCH=$1
 TRILINOS_UPDATE_BRANCH=$2
 TRILINOS_PRISTINE_BRANCH=$3
+KOKKOS_UPDATE_BRANCH=$4
 
 if [ -z $KOKKOSKERNELS_BRANCH ]
 then
@@ -52,7 +53,22 @@ git checkout $KOKKOSKERNELS_BRANCH
 git pull
 cd ..
 
-source ${KOKKOSKERNELS_PATH}/scripts/trilinos-integration/prepare_trilinos_repos.sh $TRILINOS_UPDATE_BRANCH $TRILINOS_PRISTINE_BRANCH
+if [ -n $KOKKOS_UPDATE_BRANCH ]
+then
+  export KOKKOS_PATH=${PWD}/kokkos
+
+  #Already done:
+  if [ ! -d "${KOKKOS_PATH}" ]; then
+    git clone https://github.com/kokkos/kokkos ${KOKKOS_PATH}
+  fi
+
+  cd ${KOKKOS_PATH}
+  git checkout $KOKKOS_UPDATE_BRANCH
+  git pull
+  cd ..
+fi
+
+source ${KOKKOSKERNELS_PATH}/scripts/trilinos-integration/prepare_trilinos_repos.sh $TRILINOS_UPDATE_BRANCH $TRILINOS_PRISTINE_BRANCH $KOKKOS_UPDATE_BRANCH
 
 ${TRILINOS_UPDATED_PATH}/sampleScripts/Sandia-SEMS/run_repo_comparison_lsf ${TRILINOS_UPDATED_PATH} ${TRILINOS_PRISTINE_PATH} ${TRILINOS_UPDATED_PATH}/sampleScripts/Sandia-SEMS/configure-testbeds-jenkins-all TestCompare ${QUEUE}
 

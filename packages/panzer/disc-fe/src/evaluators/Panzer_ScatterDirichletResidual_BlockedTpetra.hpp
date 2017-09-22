@@ -81,7 +81,7 @@ class ScatterDirichletResidual_BlockedTpetra
     public panzer::CloneableEvaluator  {
 public:
    typedef typename EvalT::ScalarT ScalarT;
-   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer)
+   ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & /* indexer */)
    { }
 
    ScatterDirichletResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & gidProviders,
@@ -90,9 +90,9 @@ public:
   virtual Teuchos::RCP<CloneableEvaluator> clone(const Teuchos::ParameterList & pl) const
   { return Teuchos::rcp(new ScatterDirichletResidual_BlockedTpetra<EvalT,TRAITS,LO,GO,NodeT>(Teuchos::null,pl)); }
 
-  void postRegistrationSetup(typename TRAITS::SetupData d, PHX::FieldManager<TRAITS>& vm) 
+  void postRegistrationSetup(typename TRAITS::SetupData /* d */, PHX::FieldManager<TRAITS>& /* vm */) 
    { }
-  void evaluateFields(typename TRAITS::EvalData d) 
+  void evaluateFields(typename TRAITS::EvalData /* d */) 
    { std::cout << "unspecialized version of \"ScatterDirichletResidual_BlockedTpetra::evaluateFields\" on \""+PHX::typeAsString<EvalT>()+"\" should not be used!" << std::endl;
     TEUCHOS_ASSERT(false); }
 };

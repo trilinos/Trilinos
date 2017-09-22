@@ -81,12 +81,12 @@ MyClosureModelFactory<EvalT>::
 buildClosureModels(
   const std::string&                           modelId,
   const Teuchos::ParameterList&                models,
-  const panzer::FieldLayoutLibrary&            fl,
+  const panzer::FieldLayoutLibrary&            /* fl            */,
   const Teuchos::RCP<panzer::IntegrationRule>& ir,
-  const Teuchos::ParameterList&                defaultParams,
-  const Teuchos::ParameterList&                userData,
-  const Teuchos::RCP<panzer::GlobalData>&      globalData,
-  PHX::FieldManager<panzer::Traits>&           fm) const
+  const Teuchos::ParameterList&                /* defaultParams */,
+  const Teuchos::ParameterList&                /* userData      */,
+  const Teuchos::RCP<panzer::GlobalData>&      /* globalData    */,
+  PHX::FieldManager<panzer::Traits>&           /* fm            */) const
 {
   using   panzer::BasisIRLayout;
   using   panzer::Constant;

@@ -376,7 +376,7 @@ public:
 
 private:
   T *ptr_; //<! Pointer to the data
-  int size_; //<! Number of entries in the view
+  size_t size_; //<! Number of entries in the view
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   ArrayRCP<T> arcp_;
 #endif

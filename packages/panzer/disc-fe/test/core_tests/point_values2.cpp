@@ -62,10 +62,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(point_values2, md_field_setup)
   {
-    typedef PHX::KokkosViewFactory<double,PHX::Device> ViewFactory;
-    typedef PHX::MDField<double>::size_type size_type;
-
-
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 

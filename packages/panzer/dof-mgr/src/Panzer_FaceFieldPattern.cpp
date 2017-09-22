@@ -81,7 +81,7 @@ const std::vector<int> & FaceFieldPattern::getSubcellIndices(int dim,int cellInd
    return empty_;
 }
 
-void FaceFieldPattern::getSubcellClosureIndices(int dim,int cellIndex,std::vector<int> & indices) const
+void FaceFieldPattern::getSubcellClosureIndices(int /* dim */, int /* cellIndex */, std::vector<int>& /* indices */) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                       "FaceFieldPattern::getSubcellClosureIndices should not be called");

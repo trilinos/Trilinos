@@ -78,7 +78,7 @@ CurlSolution<EvalT,Traits>::CurlSolution(const std::string & name,
 //**********************************************************************
 template <typename EvalT,typename Traits>
 void CurlSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
-                                                       PHX::FieldManager<Traits>& fm)
+                                                       PHX::FieldManager<Traits>& /* fm */)
 {
   ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
 }

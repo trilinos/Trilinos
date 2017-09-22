@@ -64,7 +64,7 @@ template <typename EvalT>
 class Response_Residual : public ResponseBase {
 public:
   Response_Residual(const std::string & responseName,
-                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & lof) :
+                     const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & /* lof */) :
     ResponseBase(responseName) {}
   virtual ~Response_Residual() {}
   virtual void scatterResponse() {}

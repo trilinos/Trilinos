@@ -245,6 +245,7 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError, "MueLu::UncoupledAggregationFactory::Build: Leftover nodes found! Error!");
 
     aggregates->AggregatesCrossProcessors(false);
+    aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
 
     Set(currentLevel, "Aggregates", aggregates);
 

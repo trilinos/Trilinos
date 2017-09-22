@@ -7,6 +7,8 @@
 
 #cmakedefine HAVE_SHYLUHTS_COMPLEX
 
+#cmakedefine HAVE_SHYLUHTS_KOKKOSKERNELS
+
 #ifndef F77_BLAS_MANGLE
 # define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
 #endif

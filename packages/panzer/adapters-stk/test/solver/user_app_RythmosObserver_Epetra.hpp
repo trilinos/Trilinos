@@ -78,12 +78,12 @@ namespace user_app {
       return Teuchos::rcp(new RythmosObserver_Epetra(m_mesh, m_dof_manager, m_lof));
     }
 
-    void resetIntegrationObserver(const Rythmos::TimeRange<double> &integrationTimeDomain)
+    void resetIntegrationObserver(const Rythmos::TimeRange<double>& /* integrationTimeDomain */)
     { }
 
     void observeCompletedTimeStep(const Rythmos::StepperBase<double> &stepper,
-				  const Rythmos::StepControlInfo<double> &stepCtrlInfo,
-				  const int timeStepIter)
+				  const Rythmos::StepControlInfo<double>& /* stepCtrlInfo */,
+				  const int /* timeStepIter */)
     { 
       std::cout << "*************************ROGER in Time************************************"  << std::endl;
       std::cout << "time = " << stepper.getStepStatus().time << std::endl;

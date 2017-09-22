@@ -139,12 +139,18 @@ public:
   KOKKOS_INLINE_FUNCTION void
   operator () (const size_type& i, value_type& update, const bool final) const
   {
+    const auto curVal = (i < size_) ? counts_[i] : value_type ();
     if (final) {
       offsets_[i] = update;
     }
-    if (i < size_) {
-      update += counts_[i];
-    }
+    update += (i < size_) ? curVal : value_type ();
+
+    // if (final) {
+    //   offsets_[i] = update;
+    // }
+    // if (i < size_) {
+    //   update += counts_[i];
+    // }
   }
 
 private:

@@ -104,7 +104,7 @@ PHX_EVALUATOR_CTOR(Sum,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Sum,worksets,fm)
+PHX_POST_REGISTRATION_SETUP(Sum, /* worksets */, fm)
 {
   this->utils.setFieldData(sum,fm);
   for (std::size_t i=0; i < scalars.dimension_0(); ++i)
@@ -175,7 +175,7 @@ void Sum<EvalT, TRAITS>::operator() (PanzerSumTag<RANK>, const int &i) const{
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Sum,workset)
+PHX_EVALUATE_FIELDS(Sum, /* workset */)
 {   
 
   sum.deep_copy(ScalarT(0.0));
@@ -261,7 +261,7 @@ SumStatic(const Teuchos::ParameterList& p)
 
 template<typename EvalT, typename TRAITS,typename Tag0>
 void SumStatic<EvalT,TRAITS,Tag0,void,void>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(sum,fm);
@@ -273,7 +273,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
 template<typename EvalT, typename TRAITS,typename Tag0>
 void SumStatic<EvalT,TRAITS,Tag0,void,void>::
-evaluateFields(typename TRAITS::EvalData d)
+evaluateFields(typename TRAITS::EvalData /* d */)
 {
   sum.deep_copy(ScalarT(0.0));
   for (std::size_t i = 0; i < sum.dimension_0(); ++i)
@@ -338,7 +338,7 @@ SumStatic(const Teuchos::ParameterList& p)
 
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
 void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(sum,fm);
@@ -352,7 +352,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
 
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
 void SumStatic<EvalT,TRAITS,Tag0,Tag1,void>::
-evaluateFields(typename TRAITS::EvalData d)
+evaluateFields(typename TRAITS::EvalData /* d */)
 {
   sum.deep_copy(ScalarT(0.0));
 

@@ -108,7 +108,9 @@ int main(int argc, char* argv[]) {
       (*d_rcp)[i]  = random<RealT>(comm);
       (*z_rcp)[i]  = initZ;
     }
-    ROL::RiskVector<RealT> zR(z,true), x1R(x1,true), dR(d,true);
+    Teuchos::RCP<Teuchos::ParameterList> cvarlist = Teuchos::rcp(new Teuchos::ParameterList);
+    cvarlist->sublist("SOL").sublist("Risk Measure").set("Name", "CVaR");
+    ROL::RiskVector<RealT> zR(cvarlist,z), x1R(cvarlist,x1), dR(cvarlist,d);
     // Build state and adjoint vectors
     Teuchos::RCP<std::vector<RealT> > u_rcp  = Teuchos::rcp( new std::vector<RealT>(nx,1.0) );
     ROL::StdVector<RealT> u(u_rcp);
@@ -140,10 +142,10 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Objective<RealT> > pObj
       = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(pobjSimOpt,pconSimOpt,up,z,pp));
     //Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::rcp(new ROL::RiskNeutralObjective<RealT>(pObj, sampler, true));
-    Teuchos::RCP<ROL::Distribution<RealT> > dist = Teuchos::rcp(new ROL::Parabolic<RealT>(-0.5, 0.5));
+    Teuchos::RCP<ROL::Distribution<RealT> > dist  = Teuchos::rcp(new ROL::Parabolic<RealT>(-0.5, 0.5));
     Teuchos::RCP<ROL::PlusFunction<RealT> > pfunc = Teuchos::rcp(new ROL::PlusFunction<RealT>(dist, pfuncSmoothing));
-    Teuchos::RCP<ROL::RiskMeasure<RealT> > rmeas = Teuchos::rcp(new ROL::CVaR<RealT>(cvarLevel, 1.0, pfunc));
-    Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::rcp(new ROL::RiskAverseObjective<RealT>(pObj, rmeas, sampler));
+    Teuchos::RCP<ROL::RiskMeasure<RealT> >  rmeas = Teuchos::rcp(new ROL::CVaR<RealT>(cvarLevel, 1.0, pfunc));
+    Teuchos::RCP<ROL::Objective<RealT> >    obj   = Teuchos::rcp(new ROL::RiskAverseObjective<RealT>(pObj, rmeas, sampler));
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
     //x1.set(xr);
@@ -197,8 +199,8 @@ int main(int argc, char* argv[]) {
       (*zvec_rcp)[i] = random<RealT>(comm);
       (*dvec_rcp)[i] = random<RealT>(comm);
     }
-    Teuchos::RCP<ROL::RiskVector<RealT> > rz = Teuchos::rcp(new ROL::RiskVector<RealT>(zvec, true));
-    Teuchos::RCP<ROL::RiskVector<RealT> > rd = Teuchos::rcp(new ROL::RiskVector<RealT>(dvec, true));
+    Teuchos::RCP<ROL::RiskVector<RealT> > rz = Teuchos::rcp(new ROL::RiskVector<RealT>(cvarlist, zvec));
+    Teuchos::RCP<ROL::RiskVector<RealT> > rd = Teuchos::rcp(new ROL::RiskVector<RealT>(cvarlist, dvec));
     ROL::Vector_SimOpt<RealT> x(xu, rz);
     ROL::Vector_SimOpt<RealT> v(vu, rd);
 
@@ -224,7 +226,7 @@ int main(int argc, char* argv[]) {
     ROL::SimulatedObjectiveCVaR<RealT> simobjExpval(sampler, pobjSimOpt, pfunc, 0.0);
     ROL::SimulatedObjectiveCVaR<RealT> simobjCVaR3(sampler, pobjSimOpt, pfunc, 0.3);
     ROL::SimulatedObjectiveCVaR<RealT> simobjCVaR6(sampler, pobjSimOpt, pfunc, 0.6);
-    ROL::SimulatedObjectiveCVaR<RealT> simobjCVaR7(sampler, pobjSimOpt, pfunc, 0.6);
+    ROL::SimulatedObjectiveCVaR<RealT> simobjCVaR7(sampler, pobjSimOpt, pfunc, 0.7);
     algo2.run(x, *vu, simobjExpval, simcon, true, *outStream);
     algo3.run(x, *vu, simobjCVaR3, simcon, true, *outStream);
     algo4.run(x, *vu, simobjCVaR6, simcon, true, *outStream);

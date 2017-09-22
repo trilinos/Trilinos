@@ -113,7 +113,7 @@ class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,
 public:
 
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers)
+                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & /* cIndexers */)
      : rowIndexers_(rIndexers) {}
   
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
@@ -185,7 +185,7 @@ class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,G
 public:
 
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
-                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers)
+                                         const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & /* cIndexers */)
      : rowIndexers_(rIndexers) {}
   
   ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,

@@ -79,17 +79,16 @@ using Tpetra::MultiVector;
 using Tpetra::Map;
 
 typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-typedef Platform::NodeType Node;
 
 int main(int argc, char *argv[]){
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   typedef float SCALAR;
-  typedef int LO;
-  typedef int GO;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
   typedef std::complex<SCALAR> cmplx;
-  typedef CrsMatrix<cmplx,LO,GO,Node> MAT;
+  typedef CrsMatrix<cmplx,LO,GO> MAT;
   typedef ScalarTraits<cmplx> ST;
-  typedef MultiVector<cmplx,LO,GO,Node> MV;
+  typedef MultiVector<cmplx,LO,GO> MV;
   typedef ST::magnitudeType Mag;
   typedef ScalarTraits<Mag> MT;
   const size_t numVecs = 1;
@@ -99,18 +98,17 @@ int main(int argc, char *argv[]){
 
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   RCP<const Comm<int> > comm = platform.getComm();
-  RCP<Node>             node = platform.getNode();
 
   RCP<MAT> A =
-    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../test/matrices/amesos2_test_mat3.mtx",comm,node);
+    Tpetra::MatrixMarket::Reader<MAT>::readSparseFile("../test/matrices/amesos2_test_mat3.mtx",comm);
 
-  RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();
-  RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
+  RCP<const Map<LO,GO> > dmnmap = A->getDomainMap();
+  RCP<const Map<LO,GO> > rngmap = A->getRangeMap();
 
   // Create the know-solution vector
   std::map<GO,cmplx> xValues;
   xValues[0] = cmplx(-0.58657, 0.10646);
-  xValues[1] = cmplx(0.86716, 0.75421); 
+  xValues[1] = cmplx(0.86716, 0.75421);
   xValues[2] = cmplx(0.58970, 0.29876);
 
   std::map<GO,cmplx>::iterator it;

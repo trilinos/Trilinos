@@ -64,8 +64,8 @@ public:
   virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs()
   { return wrapperOutArgs_; }
 
-  /// Initialize WrapperModelEvalutor to evaluate application ModelEvaluator.
-  virtual void initialize(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
+  /// Set parameters for application implicit ModelEvaluator solve.
+  virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
     Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs,
     Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs)
   {

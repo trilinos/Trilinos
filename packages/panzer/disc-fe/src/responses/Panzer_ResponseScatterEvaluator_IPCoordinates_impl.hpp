@@ -94,7 +94,7 @@ preEvaluate(typename Traits::PreEvalData d)
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
 postRegistrationSetup(typename Traits::SetupData sd,
-                      PHX::FieldManager<Traits>& fm)
+                      PHX::FieldManager<Traits>& /* fm */)
 {
   ir_index_ = panzer::getIntegrationRuleIndex(ir_order_,(*sd.worksets_)[0], this->wda);
 }
@@ -124,7 +124,7 @@ evaluateFields(typename Traits::EvalData workset)
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
-postEvaluate(typename Traits::PostEvalData data)
+postEvaluate(typename Traits::PostEvalData /* data */)
 {
   std::vector<panzer::Traits::Residual::ScalarT> & coords = *responseObj_->getNonconstCoords();
   coords.clear();

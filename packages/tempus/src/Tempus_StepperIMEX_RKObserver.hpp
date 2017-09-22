@@ -53,7 +53,7 @@ public:
     StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
 
   /// Observe Stepper before Explicit evalution of Implicit ODE ME.
-  virtual void observeBeforeDAEExplicit(
+  virtual void observeBeforeImplicitExplicitly(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
     StepperIMEX_RK<Scalar> & stepperIMEX_RK){}
 

@@ -130,12 +130,12 @@ int create_matrices
 
     // Find the required no of diagonals
     /*int Sdiag = (int) SNumGlobalCols * Sdiagfactor;
-    //cout << "No of diagonals in Sbar =" << Sdiag << endl;
+    //std::cout << "No of diagonals in Sbar =" << Sdiag << std::endl;
     Sdiag = MIN(Sdiag, SNumGlobalCols-1);*/
     int Sdiag = (int) Snr * Sdiagfactor;
     Sdiag = MIN(Sdiag, Snr-1);
     Sdiag = MAX(Sdiag, 0);
-    //cout << "No of diagonals in Sbar =" << Sdiag << endl;
+    //std::cout << "No of diagonals in Sbar =" << Sdiag << std::endl;
     //assert (Sdiag <= SNumGlobalCols-1);
     if (Snr != 0) assert (Sdiag <= Snr-1);
 
@@ -187,8 +187,8 @@ int create_matrices
             }
             else
             { // R or S row
-                //cout << "proc/row " << myPID << "/" << gid;
-                //cout << " has Cols = " ;
+                //std::cout << "proc/row " << myPID << "/" << gid;
+                //std::cout << " has Cols = " ;
                 for (int j = 0 ; j < NumEntries ; j++)
                 { // O(nnz) ! Careful what you do inside
                     gcid = A->GCID(Ai[j]);
@@ -211,10 +211,10 @@ int create_matrices
                 GNumEntriesPerRow[scol++] = scnt;
                 RNumEntriesPerRow[rcol++] = rcnt;
             }
-            Dmaxnnz = max(Dmaxnnz, dcnt);
-            Smaxnnz = max(Smaxnnz, scnt);
-            Rmaxnnz = max(Rmaxnnz, rcnt);
-            Cmaxnnz = max(Cmaxnnz, ccnt);
+            Dmaxnnz = std::max(Dmaxnnz, dcnt);
+            Smaxnnz = std::max(Smaxnnz, scnt);
+            Rmaxnnz = std::max(Rmaxnnz, rcnt);
+            Cmaxnnz = std::max(Cmaxnnz, ccnt);
         }
         assert( dcol == Dnr);
         assert( scol == Snr);
@@ -287,8 +287,8 @@ int create_matrices
         //config->dm.print(5, "Created Sg graph");
     }
 
-    data->lmax = max(Dmaxnnz, Rmaxnnz);
-    data->rmax = max(Cmaxnnz, Smaxnnz);
+    data->lmax = std::max(Dmaxnnz, Rmaxnnz);
+    data->rmax = std::max(Cmaxnnz, Smaxnnz);
 
     delete[] DNumEntriesPerRow;
     delete[] GNumEntriesPerRow;
@@ -502,18 +502,18 @@ int extract_matrices
     delete[] RightIndex;
     delete[] RightValues;
 
-    //cout << msg << "S rows=" << S.NumGlobalRows() << " S cols=" <<
+    //std::cout << msg << "S rows=" << S.NumGlobalRows() << " S cols=" <<
         //S.NumGlobalCols() << "#cols in column map="<<
-        //S.ColMap().NumMyElements() << endl;
-    //cout << msg << "C rows=" << Cptr->NumGlobalRows() << " C cols=" <<
+        //S.ColMap().NumMyElements() << std::endl;
+    //std::cout << msg << "C rows=" << Cptr->NumGlobalRows() << " C cols=" <<
         //Cptr->NumGlobalCols() << "#cols in column map="<<
-        //Cptr->ColMap().NumMyElements() << endl;
-    //cout << msg << "D rows=" << D.NumGlobalRows() << " D cols=" <<
+        //Cptr->ColMap().NumMyElements() << std::endl;
+    //std::cout << msg << "D rows=" << D.NumGlobalRows() << " D cols=" <<
         //D.NumGlobalCols() << "#cols in column map="<<
-        //D.ColMap().NumMyElements() << endl;
-    //cout << msg << "R rows=" << Rptr->NumGlobalRows() << " R cols=" <<
+        //D.ColMap().NumMyElements() << std::endl;
+    //std::cout << msg << "R rows=" << Rptr->NumGlobalRows() << " R cols=" <<
         //Rptr->NumGlobalCols() << "#cols in column map="<<
-        //Rptr->ColMap().NumMyElements() << endl;
+        //Rptr->ColMap().NumMyElements() << std::endl;
     // ]
 
     return 0;
@@ -576,9 +576,9 @@ int shylu_symbolic_factor
      * S_i - A22 block corresponding to Schur complement part of A
      * Assemble all four blocks in local matrices. */
 
-     ostringstream ssmsg1;
+     std::ostringstream ssmsg1;
      ssmsg1 << "PID =" << myPID << " ";
-     string msg = ssmsg1.str();
+     std::string msg = ssmsg1.str();
      ssmsg1.clear(); ssmsg1.str("");
 
     // Find #cols in each block
@@ -621,12 +621,12 @@ int shylu_symbolic_factor
     // TODO : The above assignment may not be correct in the unsymetric case
 
     ////config->dm.print(2, msg + " Mycols=");
-    cout << msg << " Mycols="<< ncols << "Myrows ="<< nrows << endl;
-    cout << msg << " #rows and #cols in diagonal blk ="<< Dnr << endl;
-    cout << msg << " #columns in S ="<< Snc << endl;
-    cout << msg << " #rows in S ="<< Snr << endl;
+    std::cout << msg << " Mycols="<< ncols << "Myrows ="<< nrows << std::endl;
+    std::cout << msg << " #rows and #cols in diagonal blk ="<< Dnr << std::endl;
+    std::cout << msg << " #columns in S ="<< Snc << std::endl;
+    std::cout << msg << " #rows in S ="<< Snr << std::endl;
 
-    ostringstream pidstr;
+    std::ostringstream pidstr;
     pidstr <<  myPID ;
     // Create a row map for the D and S blocks [
     DRowElems = new int[Dnr];
@@ -758,7 +758,7 @@ int shylu_symbolic_factor
 
 #ifdef TIMING_OUTPUT
     ftime.stop();
-    cout << "Symbolic Factorization Time" << ftime.totalElapsedTime() << endl;
+    std::cout << "Symbolic Factorization Time" << ftime.totalElapsedTime() << std::endl;
     ftime.reset();
 #endif
 
@@ -781,7 +781,7 @@ int shylu_symbolic_factor
         prober->color();
 #ifdef TIMING_OUTPUT
         ftime.stop();
-        cout << "Time to color" << ftime.totalElapsedTime() << endl;
+        std::cout << "Time to color" << ftime.totalElapsedTime() << std::endl;
         ftime.reset();
         ftime.start();
 #endif
@@ -832,7 +832,7 @@ int shylu_symbolic_factor
     //data->amesosSchurTime = Teuchos::rcp(new Teuchos::Time("amesos schur time"));
 #ifdef TIMING_OUTPUT
     symtime.stop();
-    cout << "Symbolic Time" << symtime.totalElapsedTime() << endl;
+    std::cout << "Symbolic Time" << symtime.totalElapsedTime() << std::endl;
     symtime.reset();
 #endif
 
@@ -877,7 +877,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 
 #ifdef TIMING_OUTPUT
     ftime.stop();
-    cout << "Time to factor" << ftime.totalElapsedTime() << endl;
+    std::cout << "Time to factor" << ftime.totalElapsedTime() << std::endl;
     ftime.reset();
 #endif
 
@@ -907,12 +907,12 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
          (ssym->Solver).getRawPtr(), (ssym->ifSolver).getRawPtr(),
          (ssym->C).getRawPtr(), &LocalDRowMap, nvectors);
 
-        //cout << "Doing probing" << endl;
+        //std::cout << "Doing probing" << std::endl;
         Sbar = prober->probe(probeop);
-        //cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << endl;
+        //std::cout << "SIZE of SBAR = " << (*Sbar).NumGlobalRows() << std::endl;
 #ifdef TIMING_OUTPUT
         ftime.stop();
-        cout << "Time to probe" << ftime.totalElapsedTime() << endl;
+        std::cout << "Time to probe" << ftime.totalElapsedTime() << std::endl;
         ftime.reset();
 #endif
     }
@@ -920,7 +920,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     {
         // Compute and drop the entries in the Schur complement
         // Ignore the structure of the Schur complement
-        //cout << "Computing the Approx Schur complement" << endl;
+        //std::cout << "Computing the Approx Schur complement" << std::endl;
 #ifdef TIMING_OUTPUT
         ftime.start();
 #endif
@@ -938,13 +938,13 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
              (ssym->C).getRawPtr(),
              &LocalDRowMap);
 
-        //cout << *Sbar << endl;
+        //std::cout << *Sbar << std::endl;
 #ifdef TIMING_OUTPUT
         ftime.stop();
-        cout << "Time to Compute Approx Schur Complement" << ftime.totalElapsedTime() << endl;
+        std::cout << "Time to Compute Approx Schur Complement" << ftime.totalElapsedTime() << std::endl;
         ftime.reset();
 #endif
-        //cout << "Computed Approx Schur complement" << endl;
+        //std::cout << "Computed Approx Schur complement" << std::endl;
     }
     else if (config->schurApproxMethod == 3)
     {
@@ -1004,14 +1004,14 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
                         config->schurAmesosSolver, *(data->LP2));
 
         data->dsolver->SetParameters(aList);
-        //cout << "Created the direct Schur  Solver" << endl;
+        //std::cout << "Created the direct Schur  Solver" << std::endl;
 
         data->dsolver->SymbolicFactorization();
-        //cout << "Symbolic Factorization done for schur complement" << endl;
+        //std::cout << "Symbolic Factorization done for schur complement" << std::endl;
 
-        //cout << "In Numeric Factorization of Schur complement" << endl;
+        //std::cout << "In Numeric Factorization of Schur complement" << std::endl;
         data->dsolver->NumericFactorization();
-        //cout << "Numeric Factorization done for schur complement" << endl;
+        //std::cout << "Numeric Factorization done for schur complement" << std::endl;
 
     }
     else if (config->schurSolver == "AztecOO-Exact")
@@ -1072,7 +1072,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
             double condest;
             err = data->innersolver->ConstructPreconditioner(condest);
             assert (err == 0);
-            //cout << "Condition number of inner Sbar" << condest << endl;
+            //std::cout << "Condition number of inner Sbar" << condest << std::endl;
         }
         else
         {
@@ -1093,10 +1093,10 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         assert (0 == 1);
     }
 
-    //cout << " Out of factor" << endl ;
+    //std::cout << " Out of factor" << std::endl ;
 #ifdef TIMING_OUTPUT
     fact_time.stop();
-    cout << "Factor Time" << fact_time.totalElapsedTime() << endl;
+    std::cout << "Factor Time" << fact_time.totalElapsedTime() << std::endl;
     fact_time.reset();
 #endif
     return 0;

@@ -51,7 +51,7 @@
 
 namespace MueLu {
 
-  int LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t) {
+  size_t LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t) {
     // degenerate cases
     if (len_s == 0)                             return len_t;
     if (len_t == 0)                             return len_s;
@@ -59,8 +59,8 @@ namespace MueLu {
 
     // create two work vectors of integer distances
     size_t len = len_t + 1;
-    std::vector<int> v0(len);
-    std::vector<int> v1(len);
+    std::vector<size_t> v0(len);
+    std::vector<size_t> v1(len);
 
     // initialize v0 (the previous row of distances)
     // this row is A[0][i]: edit distance for an empty s
@@ -77,7 +77,7 @@ namespace MueLu {
 
       // use formula to fill in the rest of the row
       for (size_t j = 0; j < len_t; j++) {
-        int cost = (s[i] == t[j]) ? 0 : 1;
+        size_t cost = (s[i] == t[j]) ? 0 : 1;
         v1[j+1] = std::min(v1[j] + 1,
                   std::min(v0[j + 1] + 1,
                            v0[j] + cost));

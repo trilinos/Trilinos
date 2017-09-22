@@ -657,8 +657,8 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     requestedSensitivities = false;
 
   RCP<const Thyra::VectorBase<Scalar> > finalSolution;
-  RCP<Tempus::SolutionState<Scalar> > solutionState;
-  RCP<Tempus::SolutionHistory<Scalar> > solutionHistory;
+  RCP<const Tempus::SolutionState<Scalar> > solutionState;
+  RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory;
   if (!requestedSensitivities)
   {
     //
@@ -906,8 +906,8 @@ setObserver()
   Teuchos::RCP<Tempus::IntegratorObserverBasic<Scalar> > observer = Teuchos::null;
   if (Teuchos::nonnull(piroObserver_)) {
     //Get solutionHistory from integrator
-    const Teuchos::RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
-    const Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl = fwdStateIntegrator->getTimeStepControl();
+    const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
+    const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > timeStepControl = fwdStateIntegrator->getTimeStepControl();
     //Create Tempus::IntegratorObserverBasic object
     observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory,
                                 timeStepControl, piroObserver_, supports_x_dotdot_));

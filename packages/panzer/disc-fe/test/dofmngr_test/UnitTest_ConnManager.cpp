@@ -120,7 +120,7 @@ const typename ConnManager<GO>::GlobalOrdinal * ConnManager<GO>::getConnectivity
 }
 
 template <typename GO>
-typename ConnManager<GO>::LocalOrdinal ConnManager<GO>::getConnectivitySize(typename ConnManager<GO>::LocalOrdinal localElmtId) const
+typename ConnManager<GO>::LocalOrdinal ConnManager<GO>::getConnectivitySize(typename ConnManager<GO>::LocalOrdinal /* localElmtId */) const
 { return 4; }
 
 template <typename GO>

@@ -51,13 +51,8 @@
 
   <!-- ===========  STOCHASTIC OPTIMIZATION LIBRARY SUBLIST  =========== -->
   <ParameterList name="SOL">
-    <Parameter name = "Stochastic Optimization Type"     type="string" value="Risk Neutral" />
+    <Parameter name = "Stochastic Component Type"     type="string" value="Risk Neutral" />
     <Parameter name = "Store Sampled Value and Gradient" type="bool"   value="true"         />
-
-    <ParameterList name="BPOE">
-      <Parameter name="Moment Order" type="double" value="2.0" />
-      <Parameter name="Threshold"    type="double" value="1.0" />
-    </ParameterList>
 
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="CVaR" />
@@ -86,7 +81,11 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
+      <!-- ===========  BPOE SUBLIST  =========== -->
+      <ParameterList name="BPOE">
+        <Parameter name="Moment Order" type="double" value="2.0" />
+        <Parameter name="Threshold"    type="double" value="1.0" />
+      </ParameterList>
       <!-- ===========  HMCR SUBLIST  =========== -->
       <ParameterList name="HMCR">
         <Parameter name="Confidence Level"             type="double" value="0.8"   />

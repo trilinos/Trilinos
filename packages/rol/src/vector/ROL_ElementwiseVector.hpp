@@ -98,6 +98,14 @@ public:
     this->applyBinary(Elementwise::Set<Real>(),x);
   }
 
+  // MUST overload these three functions
+  virtual void applyUnary( const Elementwise::UnaryFunction<Real> &uf ) = 0;
+
+  virtual void applyBinary( const Elementwise::BinaryFunction<Real> &bf,
+                            const Vector<Real> &x ) = 0;
+
+  virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const = 0;
+
 }; // class ElementwiseVector
 
 

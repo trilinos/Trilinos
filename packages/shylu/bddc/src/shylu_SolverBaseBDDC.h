@@ -53,6 +53,8 @@
 #include <sys/time.h>
 #include <mpi.h>
 
+#include "Teuchos_ParameterList.hpp"  
+
 namespace bddc {
 
 enum MatrixTypeSolver{
@@ -60,14 +62,11 @@ enum MatrixTypeSolver{
   NonSymmetricMatrix = 1
 };
 
-template <class SX,
-          class SM,
-          class LO,
-          class GO> class SolverBase 
+template <class SX> class SolverBase 
 {
  protected: // variables
-  LO m_numRows;
-  LO *m_rowBegin, *m_columns;
+  int m_numRows;
+  int *m_rowBegin, *m_columns;
   SX *m_values;
   Teuchos::ParameterList & m_Parameters;
   MPI_Comm* m_pComm;
@@ -75,9 +74,9 @@ template <class SX,
  public: // functions
   SolverBase() { };
   
-  SolverBase(LO numRows,
-	     LO* rowBegin,
-	     LO* columns,
+  SolverBase(int numRows,
+	     int* rowBegin,
+	     int* columns,
 	     SX* values,
 	     Teuchos::ParameterList & Parameters,
 	     MPI_Comm* pComm = 0) :
@@ -90,7 +89,7 @@ template <class SX,
   {
   }
   
-  LO getNumRows() const {
+  int getNumRows() const {
     return m_numRows;
   }
   virtual ~SolverBase() { };

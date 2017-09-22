@@ -53,8 +53,6 @@
 // If there is no Kokkos provide dummy classes for all Kokkos node
 // types that Epetra might be compiled for.
 namespace Kokkos {
-  void initialize(int& narg, char* arg[]);
-  void finalize();
 namespace Compat {
   class KokkosSerialWrapperNode {
   public:

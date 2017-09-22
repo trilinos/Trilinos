@@ -1112,7 +1112,7 @@ getCubatureCV(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
 
 template <typename Scalar>
 void IntegrationValues2<Scalar>::
-evaluateValuesCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates)
+evaluateValuesCV(const PHX::MDField<Scalar, Cell, NODE, Dim>& /* in_node_coordinates */)
 {
 
   Intrepid2::CellTools<PHX::Device::execution_space> cell_tools;

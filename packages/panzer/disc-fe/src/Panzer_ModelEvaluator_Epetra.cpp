@@ -650,7 +650,7 @@ void panzer::ModelEvaluator_Epetra::evalModel_basic( const InArgs& inArgs,
 
 void 
 panzer::ModelEvaluator_Epetra::
-evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const
+evalModel_basic_g(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */, const OutArgs& outArgs) const
 {
    // optional sanity check
    // TEUCHOS_ASSERT(required_basic_g(outArgs));
@@ -672,7 +672,7 @@ evalModel_basic_g(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const Out
 
 void 
 panzer::ModelEvaluator_Epetra::
-evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const
+evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */, const OutArgs& outArgs) const
 {
    // optional sanity check
    TEUCHOS_ASSERT(required_basic_dgdx(outArgs));
@@ -700,7 +700,7 @@ evalModel_basic_dgdx(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const 
 
 void 
 panzer::ModelEvaluator_Epetra::
-evalModel_basic_dfdp(AssemblyEngineInArgs ae_inargs,const InArgs & inArgs,const OutArgs & outArgs) const
+evalModel_basic_dfdp(AssemblyEngineInArgs ae_inargs, const InArgs& /* inArgs */, const OutArgs& outArgs) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;

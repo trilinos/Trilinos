@@ -15,17 +15,14 @@
 namespace Tempus {
 
 template<class Scalar>
-IntegratorObserverLogging<Scalar>::IntegratorObserverLogging(
-  const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory,
-  const Teuchos::RCP<TimeStepControl<Scalar> >& timeStepControl)
+IntegratorObserverLogging<Scalar>::IntegratorObserverLogging()
   : nameObserveStartIntegrator_ ("observeStartIntegrator" ),
     nameObserveStartTimeStep_   ("observeStartTimeStep"   ),
     nameObserveNextTimeStep_    ("observeNextTimeStep"    ),
     nameObserveBeforeTakeStep_  ("observeBeforeTakeStep"  ),
     nameObserveAfterTakeStep_   ("observeAfterTakeStep"   ),
     nameObserveAcceptedTimeStep_("observeAcceptedTimeStep"),
-    nameObserveEndIntegrator_   ("observeEndIntegrator"   ),
-    solutionHistory_(solutionHistory), timeStepControl_(timeStepControl)
+    nameObserveEndIntegrator_   ("observeEndIntegrator"   )
 {
   counters_ = Teuchos::rcp(new std::map<std::string,int>);
   order_ = Teuchos::rcp(new std::list<std::string>);
@@ -36,45 +33,39 @@ template<class Scalar>
 IntegratorObserverLogging<Scalar>::~IntegratorObserverLogging(){}
 
 template<class Scalar>
-void IntegratorObserverLogging<Scalar>::observeStartIntegrator()
+void IntegratorObserverLogging<Scalar>::
+observeStartIntegrator(const Integrator<Scalar>& )
 { logCall(nameObserveStartIntegrator_); }
 
 template<class Scalar>
-void IntegratorObserverLogging<Scalar>::observeStartTimeStep()
+void IntegratorObserverLogging<Scalar>::
+observeStartTimeStep(const Integrator<Scalar>& )
 { logCall(nameObserveStartTimeStep_); }
 
 template<class Scalar>
 void IntegratorObserverLogging<Scalar>::
-observeNextTimeStep(Status & integratorStatus)
+observeNextTimeStep(const Integrator<Scalar>& )
 { logCall(nameObserveNextTimeStep_); }
 
 template<class Scalar>
-void IntegratorObserverLogging<Scalar>::observeBeforeTakeStep()
+void IntegratorObserverLogging<Scalar>::
+observeBeforeTakeStep(const Integrator<Scalar>& )
 { logCall(nameObserveBeforeTakeStep_); }
 
 template<class Scalar>
-void IntegratorObserverLogging<Scalar>::observeAfterTakeStep()
+void IntegratorObserverLogging<Scalar>::
+observeAfterTakeStep(const Integrator<Scalar>& )
 { logCall(nameObserveAfterTakeStep_); }
 
 template<class Scalar>
 void IntegratorObserverLogging<Scalar>::
-observeAcceptedTimeStep(Status & integratorStatus)
+observeAcceptedTimeStep(const Integrator<Scalar>& )
 { logCall(nameObserveAcceptedTimeStep_); }
 
 template<class Scalar>
 void IntegratorObserverLogging<Scalar>::
-observeEndIntegrator(const Status integratorStatus)
+observeEndIntegrator(const Integrator<Scalar>& )
 { logCall(nameObserveEndIntegrator_); }
-
-template<class Scalar>
-void IntegratorObserverLogging<Scalar>::
-setSolutionHistory(Teuchos::RCP<SolutionHistory<Scalar> > sh)
-{ solutionHistory_ = sh; return; }
-
-template<class Scalar>
-void IntegratorObserverLogging<Scalar>::
-setTimeStepControl(Teuchos::RCP<TimeStepControl<Scalar> > tsc)
-{ timeStepControl_ = tsc; return; }
 
 template<class Scalar>
 void IntegratorObserverLogging<Scalar>::resetLogCounters()

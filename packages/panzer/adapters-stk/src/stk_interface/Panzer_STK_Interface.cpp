@@ -1485,7 +1485,7 @@ Teuchos::RCP<Teuchos::MpiComm<int> > STK_Interface::getSafeCommunicator(stk::Par
    return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper (newComm,MPI_Comm_free)));
 }
 
-void STK_Interface::rebalance(const Teuchos::ParameterList & params)
+void STK_Interface::rebalance(const Teuchos::ParameterList & /* params */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Rebalance not currently supported");
 #if 0

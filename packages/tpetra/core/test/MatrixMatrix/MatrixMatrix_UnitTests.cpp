@@ -57,6 +57,8 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 #include <cmath>
 
 namespace {
@@ -135,8 +137,8 @@ getIdentityMatrix (Teuchos::FancyOStream& out,
 template<class SC, class LO, class GO,class NT>
 RCP<CrsMatrix<SC, LO, GO, NT> >
 getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
-			  Teuchos::RCP<const Tpetra::Map<LO,GO,NT> >& identityRowMap,
-			  const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+                          Teuchos::RCP<const Tpetra::Map<LO,GO,NT> >& identityRowMap,
+                          const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   using Teuchos::RCP;
   using std::endl;
@@ -230,7 +232,8 @@ null_add_test (const Matrix_t& A,
                const bool AT,
                const bool BT,
                const Matrix_t& C,
-               Teuchos::FancyOStream& out)
+               Teuchos::FancyOStream& out,
+               bool& success)
 {
   typedef typename Matrix_t::scalar_type scalar_type;
   typedef typename Matrix_t::local_ordinal_type local_ordinal_type;
@@ -241,6 +244,9 @@ null_add_test (const Matrix_t& A,
   typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, NT> export_type;
   const scalar_type one = STS::one ();
 
+  RCP<const Comm<int> > comm = A.getMap ()->getComm ();
+  const int myRank = comm->getRank ();
+
   out << "  Computing Frobenius norm of the expected result C" << endl;
   add_test_results toReturn;
   toReturn.correctNorm = C.getFrobeniusNorm ();
@@ -248,9 +254,27 @@ null_add_test (const Matrix_t& A,
   out << "  Calling 3-arg add" << endl;
   RCP<const map_type> domainMap = BT ? B.getRangeMap () : B.getDomainMap ();
   RCP<const map_type> rangeMap = BT ? B.getDomainMap () : B.getRangeMap ();
-  RCP<Matrix_t> C_computed =
-    Tpetra::MatrixMatrix::add (one, AT, A, one, BT, B,
-                               domainMap, rangeMap, Teuchos::null);
+  RCP<Matrix_t> C_computed;
+  // for each MPI process to catch any exception message
+  std::ostringstream errStrm;
+  int lclSuccess = 1;
+  int gblSuccess = 0; // output argument
+  try {
+    C_computed =
+      Tpetra::MatrixMatrix::add (one, AT, A, one, BT, B,
+                                 domainMap, rangeMap, Teuchos::null);
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << myRank << ": add threw an exception: "
+      << e.what () << endl;
+    lclSuccess = 0;
+  }
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
+  if (gblSuccess != 1) {
+    Tpetra::Details::gathervPrint (out, errStrm.str (), *comm);
+  }
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     C_computed.is_null (), std::logic_error, "3-arg add returned null.");
 
@@ -397,9 +421,9 @@ mult_test_results multiply_test_autofc(
   C->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   std::cout<<"*** C->domainMap() ***"<<std::endl;
   C->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
-  
+
   if(C->getGraph()->getImporter().is_null()) std::cout<<"C->getImporter is null"<<std::endl;
-  else { 
+  else {
     std::cout<<"*** C->getImporter()->getTargetMap() ***"<<std::endl;
     C->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   }
@@ -407,8 +431,8 @@ mult_test_results multiply_test_autofc(
   std::cout<<"*** computedC->colMap() ***"<<std::endl;
   computedC->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   std::cout<<"*** computedC->domainMap() ***"<<std::endl;
-  computedC->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME); 
- 
+  computedC->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+
   if(computedC->getGraph()->getImporter().is_null()) std::cout<<"computedC->getImporter is null"<<std::endl;
   else {
     std::cout<<"*** computedC->getImporter()->getTargetMap() ***"<<std::endl;
@@ -432,7 +456,7 @@ mult_test_results multiply_test_autofc(
     name+"_calculated.mtx", computedC);
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_real.mtx", C);
- 
+
 #endif
   if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
   }
@@ -544,7 +568,7 @@ mult_test_results jacobi_test(
 
   // Jacobi version
   RCP<Matrix_t> C = rcp(new Matrix_t(B->getRowMap(),0));
-  Tpetra::MatrixMatrix::Jacobi(omega,Dinv,*A,*B,*C);
+  Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C);
 
   // Multiply + Add version
   Dinv.putScalar(omega);
@@ -633,7 +657,7 @@ mult_test_results jacobi_reuse_test(
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT)  {
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
-  
+
   // NOTE: The matrix reader doesn't read real matrices into a complex data type, so we just swap down to MT here
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
   typedef CrsMatrix<MT,LO,GO,NT> Matrix_t;
@@ -666,7 +690,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       "Bad tag's name: " << it->first <<
       "Type name: " << it->second.getAny().typeName() <<
       endl << endl);
- 
+
     ParameterList currentSystem = matrixSystems->sublist (it->first);
     std::string name = currentSystem.name();
     std::string A_file = currentSystem.get<std::string> ("A");
@@ -781,7 +805,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
                                  "Before null_add_test: C is null");
 
-      results = null_add_test<Matrix_t> (*A, *B, AT, BT, *C, newOut);
+      results = null_add_test<Matrix_t> (*A, *B, AT, BT, *C,
+                                         newOut, success);
 
       TEST_COMPARE(results.epsilon, <, epsilon);
       newOut << "Null Add Test Results: " << endl;
@@ -1140,6 +1165,238 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
   }
   TEST_EQUALITY_CONST( gblSuccess, 1 );
 }
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  using Teuchos::RCP;
+  //First, make two local, random, sorted Kokkos sparse matrices
+  size_t nrows = 1000;
+  size_t nnzPerRow = 20;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
+  typedef typename crs_matrix_type::local_matrix_type KCRS;
+  typedef typename crs_matrix_type::impl_scalar_type ISC;
+  typedef typename KCRS::values_type::non_const_type ValuesType;
+  typedef typename KCRS::row_map_type::non_const_type RowptrsType;
+  typedef typename KCRS::index_type::non_const_type ColindsType;
+  //The 3 views are for A, B and C
+  ValuesType valsCRS[3];
+  RowptrsType rowptrsCRS[3];
+  ColindsType colindsCRS[3];
+  //Populate A and B
+  {
+    ISC* vals[2] = {new ISC[nrows * nnzPerRow], new ISC[nrows * nnzPerRow]};
+    LO* rowptrs[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
+    LO* colinds[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
+    //want consistent test results
+    srand(12);
+    for(LO m = 0; m < 2; m++)
+    {
+      for(size_t row = 0; row < nrows; row++)
+      {
+        //rows are sorted, so come up with nnzPerRow vals and cols and then sort them
+        std::vector<ISC> rowVals(nnzPerRow);
+        std::vector<LO> rowInds(nnzPerRow);
+        for(size_t entry = 0; entry < nnzPerRow; entry++)
+        {
+          rowVals[entry] = ((double) rand()) / RAND_MAX;
+          //don't allow repeats in col inds
+          LO ind;
+          do
+          {
+            ind = rand() % nrows;
+          }
+          while(std::find(rowInds.begin(), rowInds.end(), ind) != rowInds.end());
+          rowInds[entry] = ind;
+        }
+        std::sort(rowInds.begin(), rowInds.end());
+        //now insert new coordinates in big arrays
+        for(size_t entry = 0; entry < nnzPerRow; entry++)
+        {
+          vals[m][nnzPerRow * row + entry] = rowVals[entry];
+          colinds[m][nnzPerRow * row + entry] = rowInds[entry];
+        }
+      }
+      //set rowptrs
+      for(size_t row = 0; row <= nrows; row++)
+      {
+        rowptrs[m][row] = row * nnzPerRow;
+      }
+      valsCRS[m] = ValuesType("Values", nrows * nnzPerRow);
+      rowptrsCRS[m] = RowptrsType("RowPtrs", nrows + 1);
+      colindsCRS[m] = ColindsType("ColInds", nrows * nnzPerRow);
+      for(size_t i = 0; i < nrows + 1; i++)
+      {
+        rowptrsCRS[m](i) = rowptrs[m][i];
+      }
+      for(size_t i = 0; i < nrows * nnzPerRow; i++)
+      {
+        valsCRS[m](i) = vals[m][i];
+        colindsCRS[m](i) = colinds[m][i];
+      }
+    }
+    for(int i = 0; i < 2; i++)
+    {
+      delete[] vals[i];
+      delete[] rowptrs[i];
+      delete[] colinds[i];
+    }
+  }
+  //now run the threaded addition on mats[0] and mats[1]
+  ISC zero(0);
+  ISC one(1);
+  Tpetra::MatrixMatrix::Details::AddKernels<SC, LO, GO, NT>::
+    addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  //now scan through C's rows and entries to check they are correct
+  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
+      "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
+  for(size_t i = 0; i < nrows; i++)
+  {
+    //also compute what C's row should be (as dense values)
+    std::vector<ISC> correctVals(nrows, zero);
+    std::vector<bool> correctEntries(nrows, false);
+    for(size_t j = 0; j < nnzPerRow; j++)
+    {
+      int col1 = colindsCRS[0](i * nnzPerRow + j);
+      int col2 = colindsCRS[1](i * nnzPerRow + j);
+      correctVals[col1] += valsCRS[0](i * nnzPerRow + j);
+      correctEntries[col1] = true;
+      correctVals[col2] += valsCRS[1](i * nnzPerRow + j);
+      correctEntries[col2] = true;
+    }
+    size_t actualNNZ = 0;
+    for(size_t j = 0; j < nrows; j++)
+    {
+      if(correctEntries[j])
+        actualNNZ++;
+    }
+    size_t Crowstart = rowptrsCRS[2](i);
+    size_t Crowlen = rowptrsCRS[2](i + 1) - Crowstart;
+    TEUCHOS_TEST_FOR_EXCEPTION(Crowlen != actualNNZ, std::logic_error,
+        std::string("Threaded addition of sorted Kokkos::CrsMatrix produced row ") + std::to_string(i) + " with the wrong number of entries.");
+    for(size_t j = 0; j < Crowlen; j++)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(valsCRS[2](Crowstart + j) != correctVals[colindsCRS[2](Crowstart + j)], std::logic_error,
+          "Threaded addition of sorted Kokkos::CrsMatrix produced an incorrect value.");
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  using Teuchos::RCP;
+  //First, make two local, random, unsorted Kokkos sparse matrices
+  size_t nrows = 1000;
+  size_t nnzPerRow = 20;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
+  typedef typename crs_matrix_type::local_matrix_type KCRS;
+  typedef typename crs_matrix_type::impl_scalar_type ISC;
+  typedef typename KCRS::values_type::non_const_type ValuesType;
+  typedef typename KCRS::row_map_type::non_const_type RowptrsType;
+  typedef typename KCRS::index_type::non_const_type ColindsType;
+  //The 3 views are for A, B and C
+  ValuesType valsCRS[3];
+  RowptrsType rowptrsCRS[3];
+  ColindsType colindsCRS[3];
+  //Populate A and B
+  {
+    ISC* vals[2] = {new ISC[nrows * nnzPerRow], new ISC[nrows * nnzPerRow]};
+    LO* rowptrs[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
+    LO* colinds[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
+    //want consistent test results
+    srand(12);
+    for(LO m = 0; m < 2; m++)
+    {
+      for(size_t row = 0; row < nrows; row++)
+      {
+        //rows are sorted, so come up with nnzPerRow vals and cols and then sort them
+        std::vector<ISC> rowVals(nnzPerRow);
+        std::vector<LO> rowInds(nnzPerRow);
+        for(size_t entry = 0; entry < nnzPerRow; entry++)
+        {
+          rowVals[entry] = ((double) rand()) / RAND_MAX;
+          //don't allow repeats in col inds
+          LO ind;
+          do
+          {
+            ind = rand() % nrows;
+          }
+          while(std::find(rowInds.begin(), rowInds.end(), ind) != rowInds.end());
+          rowInds[entry] = ind;
+        }
+        //now insert new coordinates in big arrays
+        for(size_t entry = 0; entry < nnzPerRow; entry++)
+        {
+          vals[m][nnzPerRow * row + entry] = rowVals[entry];
+          colinds[m][nnzPerRow * row + entry] = rowInds[entry];
+        }
+      }
+      //set rowptrs
+      for(size_t row = 0; row <= nrows; row++)
+      {
+        rowptrs[m][row] = row * nnzPerRow;
+      }
+      valsCRS[m] = ValuesType("Values", nrows * nnzPerRow);
+      rowptrsCRS[m] = RowptrsType("RowPtrs", nrows + 1);
+      colindsCRS[m] = ColindsType("ColInds", nrows * nnzPerRow);
+      for(size_t i = 0; i < nrows + 1; i++)
+      {
+        rowptrsCRS[m](i) = rowptrs[m][i];
+      }
+      for(size_t i = 0; i < nrows * nnzPerRow; i++)
+      {
+        valsCRS[m](i) = vals[m][i];
+        colindsCRS[m](i) = colinds[m][i];
+      }
+    }
+    for(int i = 0; i < 2; i++)
+    {
+      delete[] vals[i];
+      delete[] rowptrs[i];
+      delete[] colinds[i];
+    }
+  }
+  //now run the threaded addition on mats[0] and mats[1]
+  ISC zero(0);
+  ISC one(1);
+  Tpetra::MatrixMatrix::Details::AddKernels<SC, LO, GO, NT>::
+    addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  //now scan through C's rows and entries to check they are correct
+  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
+      "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
+  for(size_t i = 0; i < nrows; i++)
+  {
+    //also compute what C's row should be (as dense values)
+    std::vector<ISC> correctVals(nrows, zero);
+    std::vector<bool> correctEntries(nrows, false);
+    for(size_t j = 0; j < nnzPerRow; j++)
+    {
+      int col1 = colindsCRS[0][i * nnzPerRow + j];
+      int col2 = colindsCRS[1][i * nnzPerRow + j];
+      correctVals[col1] += valsCRS[0](i * nnzPerRow + j);
+      correctEntries[col1] = true;
+      correctVals[col2] += valsCRS[1](i * nnzPerRow + j);
+      correctEntries[col2] = true;
+    }
+    size_t actualNNZ = 0;
+    for(size_t j = 0; j < nrows; j++)
+    {
+      if(correctEntries[j])
+        actualNNZ++;
+    }
+    size_t Crowstart = rowptrsCRS[2](i);
+    size_t Crowlen = rowptrsCRS[2](i + 1) - Crowstart;
+    TEUCHOS_TEST_FOR_EXCEPTION(Crowlen != actualNNZ, std::logic_error,
+        std::string("Threaded addition of unsorted Kokkos::CrsMatrix produced row ") + std::to_string(i) + " with the wrong number of entries (is " + std::to_string(Crowlen) + ", should be " + std::to_string(actualNNZ) + ")");
+    for(size_t j = 0; j < Crowlen; j++)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(valsCRS[2](Crowstart + j) != correctVals[colindsCRS[2](Crowstart + j)], std::logic_error,
+          "Threaded addition of unsorted Kokkos::CrsMatrix produced an incorrect value.");
+    }
+  }
+}
+
 /*
  * This test was added at the request of Chris Siefert
  * Turns out it fails because the original algorithm in
@@ -1182,11 +1439,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
 }*/
 
 
-#define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )			\
+#define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, operations_test,SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT)
-
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

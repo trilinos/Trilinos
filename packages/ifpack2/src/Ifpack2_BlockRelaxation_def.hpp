@@ -141,6 +141,9 @@ setParameters (const Teuchos::ParameterList& List)
     if (relaxType == "Jacobi") {
       PrecType_ = Ifpack2::Details::JACOBI;
     }
+    else if (relaxType == "MT Split Jacobi") {
+      PrecType_ = Ifpack2::Details::MTSPLITJACOBI;
+    }
     else if (relaxType == "Gauss-Seidel") {
       PrecType_ = Ifpack2::Details::GS;
     }
@@ -445,6 +448,9 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
   case Ifpack2::Details::SGS:
     ApplyInverseSGS(*X_copy,Y);
     break;
+  case Ifpack2::Details::MTSPLITJACOBI:
+    Container_->applyInverseJacobi(*X_copy, Y, ZeroStartingSolution_, NumSweeps_);
+  break;
   default:
     TEUCHOS_TEST_FOR_EXCEPTION
       (true, std::logic_error, "Ifpack2::BlockRelaxation::apply: Invalid "
@@ -547,90 +553,23 @@ initialize ()
     IsParallel_ = false;
   }
 
-  ++NumInitialize_;
-  Time_->stop ();
-  InitializeTime_ += Time_->totalElapsedTime ();
-  IsInitialized_ = true;
-}
-
-
-template<class MatrixType,class ContainerType>
-void
-BlockRelaxation<MatrixType,ContainerType>::
-computeBlockCrs ()
-{
-  // typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type>     map_type; // unused
-  // typedef Tpetra::Import<local_ordinal_type,global_ordinal_type, node_type> import_type; // unused
-  using Teuchos::Ptr;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-
-  Time_->start (true);
-
-  // reset values
-  IsComputed_ = false;
-
-  // Extract the submatrices
-  ExtractSubmatrices ();
-
-  // Compute the weight vector if we're doing overlapped Jacobi (and
-  // only if we're doing overlapped Jacobi).
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (PrecType_ == Ifpack2::Details::JACOBI && OverlapLevel_ > 0, std::runtime_error,
-     "Ifpack2::BlockRelaxation::computeBlockCrs: "
-     "We do not support overlapped Jacobi yet for Tpetra::BlockCrsMatrix.  Sorry!");
-
-  ++NumCompute_;
-  Time_->stop ();
-  ComputeTime_ += Time_->totalElapsedTime();
-  IsComputed_ = true;
-}
-
-
-template<class MatrixType,class ContainerType>
-void
-BlockRelaxation<MatrixType,ContainerType>::
-compute ()
-{
-  using Teuchos::rcp;
-  typedef Tpetra::Vector<scalar_type,
-    local_ordinal_type, global_ordinal_type, node_type> vector_type;
-  // typedef Tpetra::Import<local_ordinal_type,
-  //   global_ordinal_type, node_type> import_type; // unused
-
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (A_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::compute: "
-     "The matrix is null.  You must call setMatrix() with a nonnull matrix, "
-     "then call initialize(), before you may call this method.");
-
   // We should have checked for this in setParameters(), so it's a
   // logic_error, not an invalid_argument or runtime_error.
   TEUCHOS_TEST_FOR_EXCEPTION
-    (NumSweeps_ < 0, std::logic_error, "Ifpack2::BlockRelaxation::compute: "
+    (NumSweeps_ < 0, std::logic_error, "Ifpack2::BlockRelaxation::initialize: "
      "NumSweeps_ = " << NumSweeps_ << " < 0.");
 
-  if (! isInitialized ()) {
-    initialize ();
-  }
-
-  if (hasBlockCrsMatrix_) {
-    computeBlockCrs ();
-    return;
-  }
-
-  Time_->start (true);
-
-  // reset values
-  IsComputed_ = false;
-
   // Extract the submatrices
-  ExtractSubmatrices ();
+  ExtractSubmatricesStructure ();
 
   // Compute the weight vector if we're doing overlapped Jacobi (and
   // only if we're doing overlapped Jacobi).
   if (PrecType_ == Ifpack2::Details::JACOBI && OverlapLevel_ > 0) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (hasBlockCrsMatrix_, std::runtime_error,
+       "Ifpack2::BlockRelaxation::initialize: "
+       "We do not support overlapped Jacobi yet for Tpetra::BlockCrsMatrix.  Sorry!");      
+
     // weight of each vertex
     W_ = rcp (new vector_type (A_->getRowMap ()));
     W_->putScalar (STS::zero ());
@@ -646,6 +585,37 @@ compute ()
     }
     W_->reciprocal (*W_);
   }
+
+  ++NumInitialize_;
+  Time_->stop ();
+  InitializeTime_ += Time_->totalElapsedTime ();
+  IsInitialized_ = true;
+}
+
+
+template<class MatrixType,class ContainerType>
+void
+BlockRelaxation<MatrixType,ContainerType>::
+compute ()
+{
+  using Teuchos::rcp;
+
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (A_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::compute: "
+     "The matrix is null.  You must call setMatrix() with a nonnull matrix, "
+     "then call initialize(), before you may call this method.");
+
+  if (! isInitialized ()) {
+    initialize ();
+  }
+
+  Time_->start (true);
+
+  // reset values
+  IsComputed_ = false;
+
+  Container_->compute();   // compute each block matrix
+
   ++NumCompute_;
   Time_->stop ();
   ComputeTime_ += Time_->totalElapsedTime();
@@ -655,11 +625,11 @@ compute ()
 template<class MatrixType, class ContainerType>
 void
 BlockRelaxation<MatrixType, ContainerType>::
-ExtractSubmatrices ()
+ExtractSubmatricesStructure ()
 {
   TEUCHOS_TEST_FOR_EXCEPTION
     (Partitioner_.is_null (), std::runtime_error, "Ifpack2::BlockRelaxation::"
-     "ExtractSubmatrices: Partitioner object is null.");
+     "ExtractSubmatricesStructure: Partitioner object is null.");
 
   NumLocalBlocks_ = Partitioner_->numLocalParts ();
   std::string containerType = ContainerType::getName ();
@@ -683,7 +653,6 @@ ExtractSubmatrices ()
   Container_ = ContainerFactory<MatrixType>::build(containerType, A_, localRows, Importer_, OverlapLevel_, DampingFactor_);
   Container_->setParameters(List_);
   Container_->initialize();
-  Container_->compute();   //initialize + compute each block matrix
 }
 
 template<class MatrixType,class ContainerType>

@@ -52,7 +52,10 @@
 
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_castAwayConstDualView.hpp"
+#include "Tpetra_Details_fill.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Details_gemm.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
 #include "Tpetra_Details_lclDot.hpp"
 #include "Tpetra_Details_Profiling.hpp"
@@ -60,7 +63,6 @@
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels.hpp"
 
 #include "KokkosCompat_View.hpp"
-#include "Kokkos_MV_GEMM.hpp"
 #include "KokkosBlas.hpp"
 #include "KokkosKernels_Utils.hpp"
 #include "Kokkos_Random.hpp"
@@ -118,32 +120,6 @@ namespace Kokkos {
 #endif // HAVE_TPETRA_INST_FLOAT128
 
 namespace { // (anonymous)
-
-  // mfh 29 Aug 2017: Kokkos::DualView<const ValueType*, DeviceType>
-  // forbids sync, at run time.  If we want to sync it, we have to
-  // cast away const.
-  template<class ValueType, class DeviceType>
-  Kokkos::DualView<ValueType*, DeviceType>
-  castAwayConstDualView (const Kokkos::DualView<const ValueType*, DeviceType>& input_dv)
-  {
-    typedef Kokkos::DualView<const ValueType*, DeviceType> input_dual_view_type;
-    typedef typename input_dual_view_type::t_dev::non_const_type out_dev_view_type;
-    typedef typename input_dual_view_type::t_host::non_const_type out_host_view_type;
-
-    out_dev_view_type output_view_dev
-      (const_cast<ValueType*> (input_dv.d_view.data ()),
-       input_dv.d_view.dimension_0 ());
-    out_host_view_type output_view_host
-      (const_cast<ValueType*> (input_dv.h_view.data ()),
-       input_dv.h_view.dimension_0 ());
-
-    Kokkos::DualView<ValueType*, DeviceType> output_dv;
-    output_dv.d_view = output_view_dev;
-    output_dv.h_view = output_view_host;
-    output_dv.modified_device = input_dv.modified_device;
-    output_dv.modified_host = input_dv.modified_host;
-    return output_dv;
-  }
 
   /// \brief Allocate and return a 2-D Kokkos::DualView for Tpetra::MultiVector.
   ///
@@ -840,7 +816,8 @@ namespace Tpetra {
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteToLIDs,
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteFromLIDs)
   {
-    using Tpetra::Details::getDualViewCopyFromArrayView;
+    using ::Tpetra::Details::castAwayConstDualView;
+    using ::Tpetra::Details::getDualViewCopyFromArrayView;
     using ::Tpetra::Details::ProfilingRegion;
     using KokkosRefactor::Details::permute_array_multi_column;
     using KokkosRefactor::Details::permute_array_multi_column_variable_stride;
@@ -1396,6 +1373,7 @@ namespace Tpetra {
                        const CombineMode CM)
   {
     using ::Tpetra::Details::ProfilingRegion;
+    using ::Tpetra::Details::castAwayConstDualView;
     using KokkosRefactor::Details::unpack_array_multi_column;
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
@@ -2619,66 +2597,53 @@ namespace Tpetra {
     }
   }
 
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   putScalar (const Scalar& alpha)
   {
-    using Kokkos::ALL;
-    using Kokkos::deep_copy;
-    using Kokkos::subview;
-    typedef typename device_type::memory_space DMS;
-    typedef Kokkos::HostSpace HMS;
+    using ::Tpetra::Details::ProfilingRegion;
+    using ::Tpetra::Details::Blas::fill;
+    typedef typename dual_view_type::t_dev::memory_space DMS;
+    //typedef typename dual_view_type::t_host::memory_space HMS;
+    typedef Kokkos::HostSpace HMS; // avoid CudaUVMSpace issues
+    typedef typename dual_view_type::t_dev::execution_space DES;
+    typedef typename dual_view_type::t_host::execution_space HES;
+    typedef LocalOrdinal LO;
+    ProfilingRegion region ("Tpetra::MultiVector::putScalar");
 
     // We need this cast for cases like Scalar = std::complex<T> but
     // impl_scalar_type = Kokkos::complex<T>.
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
-    const size_t lclNumRows = this->getLocalLength ();
-    const size_t numVecs = this->getNumVectors ();
-    const std::pair<size_t, size_t> rowRng (0, lclNumRows);
-    const std::pair<size_t, size_t> colRng (0, numVecs);
+    const LO lclNumRows = static_cast<LO> (this->getLocalLength ());
+    const LO numVecs = static_cast<LO> (this->getNumVectors ());
 
     // Modify the most recently updated version of the data.  This
     // avoids sync'ing, which could violate users' expectations.
     //
     // If we need sync to device, then host has the most recent version.
-    const bool useHostVersion = this->template need_sync<device_type> ();
+    const bool useHostVersion = this->template need_sync<DMS> ();
 
     if (! useHostVersion) { // last modified in device memory
       this->template modify<DMS> (); // we are about to modify on the device
-      auto X = subview (this->template getLocalView<DMS> (), rowRng, ALL ());
-      if (numVecs == 1) {
-        auto X_0 = subview (X, ALL (), static_cast<size_t> (0));
-        deep_copy (X_0, theAlpha);
-      }
-      else if (isConstantStride ()) {
-        deep_copy (X, theAlpha);
+      auto X = this->template getLocalView<DMS> ();
+      if (this->isConstantStride ()) {
+        fill (DES (), X, theAlpha, lclNumRows, numVecs);
       }
       else {
-        for (size_t k = 0; k < numVecs; ++k) {
-          const size_t col = whichVectors_[k];
-          auto X_k = subview (X, ALL (), col);
-          deep_copy (X_k, theAlpha);
-        }
+        fill (DES (), X, theAlpha, lclNumRows, numVecs,
+              this->whichVectors_.getRawPtr ());
       }
     }
     else { // last modified in host memory, so modify data there.
       this->template modify<HMS> (); // we are about to modify on the host
-      auto X = subview (this->template getLocalView<HMS> (), rowRng, ALL ());
-      if (numVecs == 1) {
-        auto X_0 = subview (X, ALL (), static_cast<size_t> (0));
-        deep_copy (X_0, theAlpha);
-      }
-      else if (isConstantStride ()) {
-        deep_copy (X, theAlpha);
+      auto X = this->template getLocalView<HMS> ();
+      if (this->isConstantStride ()) {
+        fill (HES (), X, theAlpha, lclNumRows, numVecs);
       }
       else {
-        for (size_t k = 0; k < numVecs; ++k) {
-          const size_t col = whichVectors_[k];
-          auto X_k = subview (X, ALL (), col);
-          deep_copy (X_k, theAlpha);
-        }
+        fill (HES (), X, theAlpha, lclNumRows, numVecs,
+              this->whichVectors_.getRawPtr ());
       }
     }
   }

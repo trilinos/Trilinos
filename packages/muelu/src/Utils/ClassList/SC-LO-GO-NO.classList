@@ -31,7 +31,6 @@ FacadeClassFactory
 FactoryManager
 FakeSmootherPrototype
 FilteredAFactory
-FilteredAFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 FineLevelInputDataFactory
 GeneralGeometricPFactory
 GenericRFactory

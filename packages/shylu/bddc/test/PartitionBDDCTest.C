@@ -84,9 +84,7 @@ TEST(PartitionBDDC, Test1)
   
   enum bddc::ProblemType problemType = bddc::SCALARPDE; 
   // ELASTICITY or SCALARPDE
-  int spatialDim(2), numDofPerNode(0), loadDirection(0);
-  if (problemType == bddc::SCALARPDE) numDofPerNode = 1;
-  if (problemType == bddc::ELASTICITY) numDofPerNode = spatialDim;
+  int spatialDim(2), loadDirection(0);
   enum bddc::AnalysisType analysisType = bddc::STANDARD;
   RCP<Teuchos::ParameterList> Parameters;
   Parameters = Teuchos::rcp( new Teuchos::ParameterList() );
@@ -115,8 +113,6 @@ TEST(PartitionBDDC, Test1)
   Parameters->set("Generate Constraint Equations", false);
   Parameters->set("Interface Preconditioner", true);
   Parameters->set("Print Interior Matrices", false);
-  bool addCorners(true);
-  Parameters->set("Add Corners", addCorners);
 
   assert (numProc == numSubDir1*numSubDir2*numSubDir3);
   if (spatialDim == 2) assert (numProc == 4);
@@ -139,14 +135,21 @@ TEST(PartitionBDDC, Test1)
     outputSubdomainMatrices(subRowBegin, subColumns, subValues, myPID, "A");
   }
   LO numNode = Problem->getNumNode();
+  LO numSub = subRowBegin.size();
+  std::vector< LO* > subRowBeginPtr(numSub), subColumnsPtr(numSub);
+  std::vector< SX* > subValuesPtr(numSub);
+  for (LO i=0; i<numSub; i++) {
+    subRowBeginPtr[i] = subRowBegin[i].data();
+    subColumnsPtr[i] = subColumns[i].data();
+    subValuesPtr[i] = subValues[i].data();
+  }
   const GO* nodeGlobalIDs = Problem->getNodeGlobalIDs();
   RCP<const Teuchos::Comm<int> > tComm = rcp( new Teuchos::MpiComm<int>(Comm) );
-  LO *nodeOnBoundary(0);
   RCP< bddc::PartitionOfUnity<SX,SM,LO,GO> > Partition =
     rcp( new bddc::PartitionOfUnity<SX,SM,LO,GO>
 	 (numNode, nodeGlobalIDs, subNodeBegin, subNodes, 
-	  subRowBegin, subColumns, subValues, nodeOnBoundary, spatialDim, 
-	  addCorners, tComm) );
+	  subRowBeginPtr.data(), subColumnsPtr.data(), subValuesPtr.data(), 
+	  spatialDim, Parameters, tComm) );
   const std::vector< std::vector<LO> > & subdomainEquivClasses = 
     Partition->getSubdomainEquivClasses();
   const std::vector< std::vector<LO> > & equivClasses = 

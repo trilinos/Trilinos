@@ -73,7 +73,6 @@
 
 
 
-using namespace std;
 
 
 // Currently takes onle MpiComm
@@ -344,24 +343,24 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals)
 
 void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
         int Lnr, int *LeftElems,
-        int Rnr, int *RightElems, string s1, string s2, bool cols)
+        int Rnr, int *RightElems, std::string s1, std::string s2, bool cols)
 {
 
     int gid;
     int rcnt = 0; int lcnt = 0;
     // Assemble ids in two arrays
-    ostringstream ssmsg1;
-    ostringstream ssmsg2;
+    std::ostringstream ssmsg1;
+    std::ostringstream ssmsg2;
 
 #ifdef DUMP_MATRICES
-    ostringstream fnamestr;
+    std::ostringstream fnamestr;
     fnamestr << s1 << ".mat";
-    string fname = fnamestr.str();
+    std::string fname = fnamestr.str();
     ofstream outD(fname.c_str());
 
-    ostringstream fnamestrR;
+    std::ostringstream fnamestrR;
     fnamestrR << s2 << ".mat";
-    string fnameR = fnamestrR.str();
+    std::string fnameR = fnamestrR.str();
     ofstream outR(fnameR.c_str());
 #endif
 

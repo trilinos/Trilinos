@@ -225,7 +225,7 @@ void CubeHexMeshFactory::initializeWithDefaults()
    setParameterList(validParams);
 }
 
-void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
+void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK_Interface & mesh) const
 {
    typedef shards::Hexahedron<8> HexTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<HexTopo>();
@@ -290,7 +290,7 @@ void CubeHexMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Int
    mesh.endModification();
 }
 
-void CubeHexMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,int zBlock,STK_Interface & mesh) const
+void CubeHexMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */,int xBlock,int yBlock,int zBlock,STK_Interface & mesh) const
 {
    // grab this processors rank and machine size
    std::pair<panzer::Ordinal64,panzer::Ordinal64> sizeAndStartX = determineXElemSizeAndStart(xBlock,xProcs_,machRank_);
@@ -353,7 +353,7 @@ void CubeHexMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock
    }
 }
 
-std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
+std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int /* rank */) const
 {
    std::size_t xProcLoc = procTuple_[0];
    panzer::Ordinal64 minElements = nXElems_/size;
@@ -376,7 +376,7 @@ std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineXEle
    return std::make_pair(start+nXElems_*xBlock,nume);
 }
 
-std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
+std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int /* rank */) const
 {
    // int start = yBlock*nYElems_;
    // return std::make_pair(start,nYElems_);
@@ -402,7 +402,7 @@ std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineYEle
    return std::make_pair(start+nYElems_*yBlock,nume);
 }
 
-std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int rank) const
+std::pair<panzer::Ordinal64,panzer::Ordinal64> CubeHexMeshFactory::determineZElemSizeAndStart(int zBlock,unsigned int size,unsigned int /* rank */) const
 {
    // int start = zBlock*nZElems_;
    // return std::make_pair(start,nZElems_);

@@ -109,7 +109,7 @@ ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalI
 template<typename TRAITS,typename LO,typename GO>
 void
 ScatterResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm) 
 {
   indexerIds_.resize(scatterFields_.size());

@@ -54,18 +54,22 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "ShyLUBDDC_config.h"
 #include "shylu_SolverBaseBDDC.h"
+#include "shylu_SolverLAPACK.h"
 
-#if defined(USING_NOPIVOT)
-#include "shylu_SolverNoPivotT.h"
+/*
+#if defined(HAVE_SHYLUBDDC_TRILINOSSS)
+#include "shylu_SolverKLU2.h"
+#endif
+*/
+
+#if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
+#include "shylu_SolverTacho.h"
 #endif
 
-#if defined(USING_NPT)
-#include "shylu_SolverNPT.h"
-#endif
-
-#if defined(USING_ESMOND)
-#include "shylu_SolverEsmondBDDC.h"
+#if defined(HAVE_SHYLUBDDC_SUPERLU)
+#include "shylu_SolverSuperLU.h"
 #endif
 
 #if defined(HAVE_SHYLUBDDC_PARDISO_MKL)
@@ -78,80 +82,69 @@
 
 namespace bddc {
 
-template <class SX,
-          class SM,
-          class LO,
-          class GO> class SolverFactory 
+template <class SX> class SolverFactory 
 {
  public: // functions
   SolverFactory() { };
 
   ~SolverFactory() { };
 
-  SolverBase<SX,SM,LO,GO>* Generate(LO numRows,
-				    LO* rowBegin,
-				    LO* columns,
-				    SX* values,
-				    Teuchos::ParameterList & Parameters,
-				    MPI_Comm* pComm = 0)
+  SolverBase<SX>* Generate(int numRows,
+			   int* rowBegin,
+			   int* columns,
+			   SX* values,
+			   Teuchos::ParameterList & Parameters,
+			   MPI_Comm* pComm = 0)
   {
-    SolverBase<SX,SM,LO,GO>* SolverPtr = NULL;
-    std::string solverString = Parameters.get("Solver", "Esmond");
-    if (solverString == "NoPivotT") {
-#if defined(USING_NOPIVOT)
-      SolverPtr = new SolverNoPivotT<SX,SM,LO,GO>(numRows, 
-						  rowBegin,
-						  columns,
-						  values,
-						  Parameters);
-#else
-      std::cout << "Error: NoPivotT solver is not available" << std::endl;
-#endif
+    SolverBase<SX>* SolverPtr = NULL;
+    std::string solverString = Parameters.get("Solver", "SuperLU");
+    if (solverString == "SuperLU") {
+      SolverPtr = new SolverSuperLU<SX>(numRows,
+					rowBegin,
+					columns,
+					values,
+					Parameters);
     }
-    else if (solverString == "NPT") {
-#if defined(USING_NPT)
-      SolverPtr = new SolverNPT<SX,SM,LO,GO>(numRows, 
-					     rowBegin,
-					     columns,
-					     values,
-					     Parameters);
+    else if (solverString == "Tacho") {
+#if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
+      SolverPtr = new SolverTacho<SX>(numRows,
+				      rowBegin,
+				      columns,
+				      values,
+				      Parameters);
 #else
-      std::cout << "Error: NPT solver is not available" << std::endl;
-#endif
-    }
-    else if (solverString == "Esmond") {
-#if defined(USING_ESMOND)
-      SolverPtr = new SolverEsmond<SX,SM,LO,GO>(numRows, 
-						rowBegin,
-						columns,
-						values,
-						Parameters);
-#else
-      std::cout << "Error: Esmond solver is not available" << std::endl;
+      std::cout << "Error: Tacho solver is not available\n";
 #endif
     }
     else if (solverString == "Pardiso") {
 #if defined(HAVE_SHYLUBDDC_PARDISO_MKL)
-      SolverPtr = new SolverPardiso<SX,SM,LO,GO>(numRows, 
-						 rowBegin,
-						 columns,
-						 values,
-						 Parameters);
+      SolverPtr = new SolverPardiso<SX>(numRows, 
+					rowBegin,
+					columns,
+					values,
+					Parameters);
 #else
-      std::cout<< "Error: Pardiso solver is not available\n";
+      std::cout << "Error: Pardiso solver is not available\n";
 #endif
     }
     else if (solverString == "Cluster Pardiso") {
 #if defined(USE_INTEL_CLUSTER_PARDISO)
-      SolverPtr = new SolverClusterPardiso<SX,SM,LO,GO>(numRows, 
-							rowBegin,
-							columns,
-							values,
-							Parameters,
-							pComm);
+      SolverPtr = new SolverClusterPardiso<SX>(numRows, 
+					       rowBegin,
+					       columns,
+					       values,
+					       Parameters,
+					       pComm);
 #else
-      std::cout<< "Error: Cluster Pardiso solver is not available\n";
+      std::cout << "Error: Cluster Pardiso solver is not available\n";
 #endif
+    }
+    else if (solverString == "LAPACK") {
+      SolverPtr = new SolverLAPACK<SX>(numRows,
+				       rowBegin,
+				       columns,
+				       values,
+				       Parameters);
     }
     else {
       std::string msg("Error: no acceptable direct bddc solver.");

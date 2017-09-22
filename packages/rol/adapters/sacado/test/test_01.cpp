@@ -73,7 +73,6 @@ int main(int argc, char *argv[]) {
   typedef Teuchos::ParameterList PL;
 
   typedef Vector<RealT>              V;
-  typedef PartitionedVector<RealT>   PV;
   typedef OptimizationProblem<RealT> OPT;
   typedef NonlinearProgram<RealT>    NLP;
   typedef AlgorithmState<RealT>      STATE;

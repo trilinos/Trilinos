@@ -86,7 +86,11 @@ public:
       @param[in]          flag   is true if the iterate has changed.
       @param[in]          iter   is the outer algorithm iterations count.
   */
-  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
+  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    ROL_UNUSED(x);
+    ROL_UNUSED(flag);
+    ROL_UNUSED(iter);
+  }
 
   /** \brief Compute value.
 
@@ -139,6 +143,10 @@ public:
       @param[in]          tol is a tolerance for inexact objective function computation.
   */
   virtual void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    ROL_UNUSED(hv);
+    ROL_UNUSED(v);
+    ROL_UNUSED(x);
+    ROL_UNUSED(tol);
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::Objective): invHessVec not implemented!"); 
     //hv.set(v.dual());
@@ -153,6 +161,8 @@ public:
       @param[in]          tol is a tolerance for inexact objective function computation.
   */
   virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    ROL_UNUSED(x);
+    ROL_UNUSED(tol);
     Pv.set(v.dual());
   }
 

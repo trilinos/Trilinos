@@ -77,9 +77,10 @@
 #include "../../TOOLS/pdeobjective.hpp"
 #include "../../TOOLS/pdevector.hpp"
 #include "../../TOOLS/integralconstraint.hpp"
-#include "mesh_topo-opt.hpp"
-#include "pde_topo-opt.hpp"
 #include "obj_topo-opt.hpp"
+#include "mesh_topo-opt.hpp"
+#include "pde_elasticity.hpp"
+#include "pde_filter.hpp"
 
 typedef double RealT;
 
@@ -194,8 +195,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<MeshManager<RealT> > meshMgr
       = Teuchos::rcp(new MeshManager_TopoOpt<RealT>(*parlist));
     // Initialize PDE describing elasticity equations.
-    Teuchos::RCP<PDE_TopoOpt<RealT> > pde
-      = Teuchos::rcp(new PDE_TopoOpt<RealT>(*parlist));
+    Teuchos::RCP<PDE_Elasticity<RealT> > pde
+      = Teuchos::rcp(new PDE_Elasticity<RealT>(*parlist));
     Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
       = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
     // Initialize the filter PDE.
@@ -360,14 +361,14 @@ int main(int argc, char *argv[]) {
     if ( alphaZero ) {
       alpha.erase(alpha.begin()); --N;
       // Solve.
-      parlist->sublist("SOL").set("Stochastic Optimization Type","Risk Neutral");
+      parlist->sublist("SOL").set("Stochastic Component Type","Risk Neutral");
       opt = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(objRed,zp,bnd));
       parlist->sublist("SOL").set("Initial Statistic",one);
       opt->setStochasticObjective(*parlist,sampler);
       setUpAndSolve<RealT>(*opt,*parlist,*outStream);
       // Output.
       vol.push_back(volObj->value(*up,*zp,tol));
-      var.push_back(opt->getSolutionStatistic(*parlist));
+      var.push_back(opt->getSolutionStatistic());
       std::string DensRN = "density_RN.txt";
       pdecon->outputTpetraVector(z_rcp,DensRN);
       std::string ObjRN = "obj_samples_RN.txt";
@@ -377,7 +378,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE MEAN PLUS CVAR **********************************/
     /*************************************************************************/
-    parlist->sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
+    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
     parlist->sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Based Quadrangle");
     parlist->sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Convex Combination Parameter",0.0);
     parlist->sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Smoothing Parameter",1e-4);
@@ -393,7 +394,7 @@ int main(int argc, char *argv[]) {
       setUpAndSolve<RealT>(*opt,*parlist,*outStream);
       // Output.
       vol.push_back(volObj->value(*up,*zp,tol));
-      var.push_back(opt->getSolutionStatistic(*parlist));
+      var.push_back(opt->getSolutionStatistic());
       std::stringstream nameDens;
       nameDens << "density_CVaR_" << i+1 << ".txt";
       pdecon->outputTpetraVector(z_rcp,nameDens.str().c_str());

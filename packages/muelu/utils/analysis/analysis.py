@@ -16,6 +16,16 @@ Options:
 """
 
 import glob
+import matplotlib
+# Check if can connect to DISPLAY
+interactive = True
+import os
+r = os.system('python3 -c "import matplotlib.pyplot as plt; plt.figure()" &> /dev/null')
+if r != 0:
+    interactive = False
+    matplotlib.use('Agg')
+
+# The change of matplotlib backed must be done *before* importint pyplot
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from math import ceil
@@ -99,7 +109,7 @@ def setup_timers(input_files, display, top, ax = None):
         colors = tableau20()
 
         if diff_mode == False:
-            ax.barh(np.arange(len(timers_f))-height, width=dfs['maxT'], height=2*height, color=colors[0])
+            ax.barh(np.arange(len(timers_f)), width=dfs['maxT'], height=2*height, color=colors[0])
         else:
             ax.barh(np.arange(len(timers_f)), width=dfs['maxT'],  height=height, color=colors[0], label=input_files[0])
             ax.barh(np.arange(len(timers_f))-height, width=dfs1['maxT'], height=height, color=colors[1], label=input_files[1])
@@ -113,7 +123,16 @@ def setup_timers(input_files, display, top, ax = None):
         ax.set_ylim([-0.5, len(timers_f)-0.5])
 
     else:
-        print(dfs['maxT'])
+        index = dfs.index.tolist()
+        d1    = dfs ['maxT']
+        d2    = dfs1['maxT']
+
+        max_len = len(max(index, key=len)) + 3
+
+        print('%s %10s %10s %10s' % ('timer name'.ljust(max_len, " "), 'file 1', 'file 2', 'ratio'))
+        for i in range(top-1, -1, -1):
+            print('%s %10.3f %10.3f %10.2f' % (dfs.index[i].ljust(max_len, " "), d1[i], d2[i], d2[i]/d1[i]))
+
 
 def muelu_strong_scaling(input_files, display, ax, top, style):
     """Show scalability of setup level specific timers ordered by size"""
@@ -456,9 +475,10 @@ if __name__ == '__main__':
 
     valid_styles = ['stack', 'stack-percent', 'scaling']
     if not style in valid_styles:
-        print("Style must be one of ")
-        print(valid_styles)
-        raise
+        raise Exception('Style must be one of ', valid_styles)
+
+    if not interactive and display and output_file == None:
+        raise Exception('Could not connect to DISPLAY, and output file is not provided. Exiting...')
 
     ## Setup default plotting
     plt.figure(figsize=(12, 12))

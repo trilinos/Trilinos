@@ -137,17 +137,17 @@ int Ifpack_ShyLU::Initialize()
                     Sbar_, Sdiagfactor);*/
     slu_config_.sym =  Teuchos::getParameter<int>(List_,
                                                 "Symmetry");
-    slu_config_.libName = Teuchos::getParameter<string>(List_,
+    slu_config_.libName = Teuchos::getParameter<std::string>(List_,
                                                 "Outer Solver Library");
-    string schurApproxMethod = Teuchos::getParameter<string>(List_,
+    std::string schurApproxMethod = Teuchos::getParameter<std::string>(List_,
                                                 "Schur Approximation Method");
-    slu_config_.schurSolver = Teuchos::getParameter<string>(List_,
+    slu_config_.schurSolver = Teuchos::getParameter<std::string>(List_,
                                                 "Schur Complement Solver");
-    slu_config_.schurAmesosSolver = List_.get<string>("Schur Amesos Solver",
+    slu_config_.schurAmesosSolver = List_.get<std::string>("Schur Amesos Solver",
                                                 "Amesos_Klu");
     //slu_config_.diagonalBlockSolver =
-            //Teuchos::getParameter<string>(List_, "Diagonal Block Solver");
-    slu_config_.diagonalBlockSolver = List_.get<string>("Diagonal Block Solver",
+            //Teuchos::getParameter<std::string>(List_, "Diagonal Block Solver");
+    slu_config_.diagonalBlockSolver = List_.get<std::string>("Diagonal Block Solver",
                                                     "Amesos_Klu");
 
 
@@ -189,7 +189,7 @@ int Ifpack_ShyLU::Initialize()
         slu_data_.iqrSolver.reset(new IQR::IQRSolver(List_));
     }
 
-    slu_config_.schurPreconditioner = List_.get<string>("Schur Preconditioner",
+    slu_config_.schurPreconditioner = List_.get<std::string>("Schur Preconditioner",
                                                         "ILU stand-alone");
     slu_config_.silent_subiter = List_.get<bool>("Silent subiterations",
                                                  true);
@@ -199,7 +199,7 @@ int Ifpack_ShyLU::Initialize()
     slu_config_.inner_maxiters =  Teuchos::getParameter<int>(List_,
                                                 "Inner Solver MaxIters");
     slu_config_.overlap =  List_.get<int>("Schur Preconditioner Overlap", 0);
-    string sep_type = Teuchos::getParameter<string>(List_,
+    std::string sep_type = Teuchos::getParameter<std::string>(List_,
                                                     "Separator Type");
     // mfh 25 May 2015: dl is unused (don't declare it, or you'll get
     // build warnings).  However, two-argument get() has side effects,
@@ -306,8 +306,8 @@ double Ifpack_ShyLU::Condest(const Ifpack_CondestType CT,
 }
 
 //! Prints on stream basic information about \c this object.
-ostream& Ifpack_ShyLU::Print(ostream& os) const
+std::ostream& Ifpack_ShyLU::Print(std::ostream& os) const
 {
-    os << " !!!!!!!!! " << endl;
+    os << " !!!!!!!!! " << std::endl;
     return os;
 }

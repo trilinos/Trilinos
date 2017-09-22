@@ -77,25 +77,27 @@ void getEquivClasses(const LO spatialDim,
 		     const SM lengthDir3,
 		     std::vector<LO> & boundaryDofs,
 		     std::vector< std::vector<LO> > & equivClassDofs);
-void getEquivClassConstraints(const LO spatialDim,
-			      const LO numDofPerNode,
-			      const bool useCorners,
-			      const bool useEdges,
-			      const bool useFaces,
-			      std::vector< std::vector<LO> > & equivClassDofs,
-			      std::vector<LO> & numEquivConstraints,
-			      std::vector< std::vector<SX> > & equivConstraints);
+void getEquivClassConstraints
+  (const LO spatialDim,
+   const LO numDofPerNode,
+   const bool useCorners,
+   const bool useEdges,
+   const bool useFaces,
+   std::vector< std::vector<LO> > & equivClassDofs,
+   std::vector< std::vector<LO> > & equivConstraintsLocalDofs,
+   std::vector< std::vector<SX> > & equivConstraints);
 void addConstraints(const LO numNodes,
 		    const LO numDofPerNode,
-		    LO & numConstraints,
+		    std::vector<LO> & constraintsLocalDofs,
 		    std::vector<SX> & constraints);
-void getAuxiliaryConstraints(std::vector< std::vector<LO> > & equivClassDofs,
-			     const LO numDofPerNode,
-			     const SM* xCoord,
-			     const SM* yCoord,
-			     const SM* zCoord,
-			     std::vector<LO> & numAuxConstraints, 
-			     std::vector< std::vector<SX> > & auxConstraints);
+void getAuxiliaryConstraints
+  (std::vector< std::vector<LO> > & equivClassDofs,
+   const LO numDofPerNode,
+   const SM* xCoord,
+   const SM* yCoord,
+   const SM* zCoord,
+   std::vector< std::vector<LO> > & auxConstraintsLocalDofs, 
+   std::vector< std::vector<SX> > & auxConstraints);
 void getEquivalenceClassWeights
             (std::vector< std::vector<LO> > & equivClassDofs, 
 	     std::vector< std::vector<LO> > & rowBeginWeight, 
@@ -180,7 +182,7 @@ TEST(SubdomainBDDC, Test1)
   LO numNode = Problem->getNumNode();
   const LO* nodeBegin = Problem->getNodeBegin();
   const LO* localDofs = Problem->getLocalDofs();
-  const GO* nodeGIDs = Problem->getNodeGlobalIDs();
+  //  const GO* nodeGIDs = Problem->getNodeGlobalIDs();
   const LO* rowBegin = Problem->getRowBegin();
   const LO* columns = Problem->getColumns();
   const SX* values = Problem->getValues();
@@ -203,28 +205,31 @@ TEST(SubdomainBDDC, Test1)
   subdomainBDDC->setEquivalenceClasses(equivClassDofs);
   // original constrains
   bool useCorners(true), useEdges(true), useFaces(false);
-  std::vector<LO> numEquivConstraints;
+  std::vector< std::vector<LO> > equivConstraintsLocalDofs;
   std::vector< std::vector<SX> > equivConstraints;
   getEquivClassConstraints(spatialDim, numDofPerNode, useCorners, useEdges,
-			   useFaces, equivClassDofs, numEquivConstraints,
-			   equivConstraints);
-  subdomainBDDC->setInitialConstraints(numEquivConstraints, equivConstraints);
+			   useFaces, equivClassDofs, 
+			   equivConstraintsLocalDofs, equivConstraints);
+  subdomainBDDC->setInitialConstraints(equivConstraintsLocalDofs, 
+				       equivConstraints);
   std::vector<SX> Phi, Ac;
-  subdomainBDDC->calculateCoarseMatrices(Phi, Ac);
+  subdomainBDDC->calculateCoarseMatrices(Ac);
+  subdomainBDDC->getPhi(Phi);
   LO numRows = subdomainBDDC->getNumDofs();
   LO numCols = subdomainBDDC->getCoarseSpaceDimension();
   //  printMatrix(numCols, numCols, &Ac[0], "AcOrig.dat");
   checkCoarseMatrices(Phi, Ac, numRows, numCols, "Coarse Matrices Orig");
   // auxiliary constraints
-  std::vector<LO> numAuxConstraints;
+  std::vector< std::vector<LO> > auxConstraintsLocalDofs;
   std::vector< std::vector<SX> > auxConstraints;
   getAuxiliaryConstraints
     (equivClassDofs, numDofPerNode, 
      Problem->getXcoord(), Problem->getYcoord(), Problem->getZcoord(),
-     numAuxConstraints, auxConstraints);
-  subdomainBDDC->setAuxiliaryConstraints(numAuxConstraints,
+     auxConstraintsLocalDofs, auxConstraints);
+  subdomainBDDC->setAuxiliaryConstraints(auxConstraintsLocalDofs,
 					 auxConstraints);
-  subdomainBDDC->calculateCoarseMatrices(Phi, Ac);
+  subdomainBDDC->calculateCoarseMatrices(Ac);
+  subdomainBDDC->getPhi(Phi);
   numCols = subdomainBDDC->getCoarseSpaceDimension();
   //  printMatrix(numCols, numCols, &Ac[0], "AcAux.dat");
   checkCoarseMatrices(Phi, Ac, numRows, numCols, "Coarse Matrices Aux");
@@ -365,16 +370,17 @@ void getEquivalenceClassWeights
   }
 }
 
-void getAuxiliaryConstraints(std::vector< std::vector<LO> > & equivClassDofs,
-			     const LO numDofPerNode,
-			     const SM* xCoord,
-			     const SM* yCoord,
-			     const SM* zCoord,
-			     std::vector<LO> & numAuxConstraints, 
-			     std::vector< std::vector<SX> > & auxConstraints)
+void getAuxiliaryConstraints
+  (std::vector< std::vector<LO> > & equivClassDofs,
+   const LO numDofPerNode,
+   const SM* xCoord,
+   const SM* yCoord,
+   const SM* zCoord,
+   std::vector< std::vector<LO> > & auxConstraintsLocalDofs, 
+   std::vector< std::vector<SX> > & auxConstraints)
 {
   LO numEquiv = equivClassDofs.size();
-  numAuxConstraints.resize(numEquiv);
+  auxConstraintsLocalDofs.resize(numEquiv);
   auxConstraints.resize(numEquiv);
   for (LO i=0; i<numEquiv; i++) {
     LO numDofs = equivClassDofs[i].size();
@@ -403,9 +409,10 @@ void getAuxiliaryConstraints(std::vector< std::vector<LO> > & equivClassDofs,
 	}
       }
       if (centerNodePresent == true) {
-	numAuxConstraints[i] = numDofPerNode;
+	auxConstraintsLocalDofs[i].resize(numDofPerNode);
 	auxConstraints[i].resize(numDofPerNode*numDofs);
 	for (LO j=0; j<numDofPerNode; j++) {
+	  auxConstraintsLocalDofs[i][j] = j;
 	  LO index = numDofs*j + numDofPerNode*centerNode + j;
 	  auxConstraints[i][index] = 1;
 	}
@@ -490,17 +497,18 @@ void getEquivClasses(const LO spatialDim,
   }
 }
 
-void getEquivClassConstraints(const LO spatialDim,
-			      const LO numDofPerNode,
-			      const bool useCorners,
-			      const bool useEdges,
-			      const bool useFaces,
-			      std::vector< std::vector<LO> > & equivClassDofs,
-			      std::vector<LO> & numEquivConstraints,
-			      std::vector< std::vector<SX> > & equivConstraints)
+void getEquivClassConstraints
+  (const LO spatialDim,
+   const LO numDofPerNode,
+   const bool useCorners,
+   const bool useEdges,
+   const bool useFaces,
+   std::vector< std::vector<LO> > & equivClassDofs,
+   std::vector< std::vector<LO> > & equivConstraintsLocalDofs,
+   std::vector< std::vector<SX> > & equivConstraints)
 {
   size_t numEquiv = equivClassDofs.size();
-  numEquivConstraints.resize(numEquiv, 0);
+  equivConstraintsLocalDofs.resize(numEquiv);
   equivConstraints.resize(numEquiv);
   for (size_t i=0; i<numEquiv; i++) {
     if (spatialDim == 2) {
@@ -509,7 +517,7 @@ void getEquivClassConstraints(const LO spatialDim,
       if ((numNodes == 1) && (useCorners == true)) activateConstraints = true;
       if ((numNodes > 1) && (useEdges == true)) activateConstraints = true;
       if (activateConstraints == true) {
-	addConstraints(numNodes, numDofPerNode, numEquivConstraints[i], 
+	addConstraints(numNodes, numDofPerNode, equivConstraintsLocalDofs[i], 
 		       equivConstraints[i]);
       }
     }
@@ -518,13 +526,14 @@ void getEquivClassConstraints(const LO spatialDim,
 
 void addConstraints(const LO numNodes,
 		    const LO numDofPerNode,
-		    LO & numConstraints,
+		    std::vector<LO> & constraintsLocalDofs,
 		    std::vector<SX> & constraints)
 {
-  numConstraints = numDofPerNode;
   LO numDof = numNodes*numDofPerNode;
-  constraints.resize(numDof*numConstraints);
+  constraints.resize(numDof*numDofPerNode);
+  constraintsLocalDofs.resize(numDofPerNode);
   for (LO i=0; i<numDofPerNode; i++) {
+    constraintsLocalDofs[i] = i;
     LO begin = numDof*i;
     for (LO j=0; j<numNodes; j++) {
       constraints[begin+numDofPerNode*j+i] = SX(1)/numNodes;

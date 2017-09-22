@@ -141,7 +141,7 @@ namespace MueLuTests {
     TEST_EQUALITY(norms[0] < 1e-12, true);
   }
 
-  // FIXME: uncomment the test when we get all corresponding factories ported to kokkos
+  // FIXME_KOKKOS: uncomment the test when we get all corresponding factories ported to kokkos
 #if 0
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
   TEUCHOS_UNIT_TEST(SaPFactory_kokkos, EpetraVsTpetra)

@@ -151,8 +151,8 @@ void
 panzer::
 GatherSolution_BlockedEpetra<panzer::Traits::Residual, TRAITS, LO, GO>::
 postRegistrationSetup(
-  typename TRAITS::SetupData d,
-  PHX::FieldManager<TRAITS>& fm)
+  typename TRAITS::SetupData /* d  */,
+  PHX::FieldManager<TRAITS>& /* fm */)
 {
   using std::size_t;
   using std::string;
@@ -401,8 +401,8 @@ template<typename TRAITS, typename LO, typename GO>
 void
 panzer::GatherSolution_BlockedEpetra<panzer::Traits::Tangent, TRAITS, LO, GO>::
 postRegistrationSetup(
-  typename TRAITS::SetupData d,
-  PHX::FieldManager<TRAITS>& fm)
+  typename TRAITS::SetupData /* d  */,
+  PHX::FieldManager<TRAITS>& /* fm */)
 {
   using std::size_t;
   using std::string;
@@ -664,8 +664,8 @@ void
 panzer::
 GatherSolution_BlockedEpetra<panzer::Traits::Jacobian, TRAITS, LO, GO>::
 postRegistrationSetup(
-  typename TRAITS::SetupData d,
-  PHX::FieldManager<TRAITS>& fm)
+  typename TRAITS::SetupData /* d  */,
+  PHX::FieldManager<TRAITS>& /* fm */)
 {
   using std::size_t;
   using std::string;

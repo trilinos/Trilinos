@@ -128,6 +128,135 @@ void Add(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   Scalar scalarB );
 
+namespace Details
+{
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+struct AddKernels
+{
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+  typedef typename Node::device_type device_type;
+  typedef typename device_type::execution_space execution_space;
+  typedef typename crs_matrix_type::impl_scalar_type impl_scalar_type;
+  typedef typename crs_matrix_type::local_matrix_type KCRS;
+  typedef typename KCRS::values_type::non_const_type values_array;
+  typedef typename KCRS::row_map_type::non_const_type row_ptrs_array;
+  typedef typename KCRS::row_map_type row_ptrs_array_const;
+  typedef typename KCRS::index_type::non_const_type col_inds_array;
+  typedef typename Kokkos::View<const GlobalOrdinal*, device_type> local_map_type;
+  typedef typename Kokkos::View<GlobalOrdinal*, device_type> global_col_inds_array;
+  typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+
+  /// \brief Given two matrices in CRS format, return their sum
+  /// \pre A and B must both have column indices sorted within each row
+  /// \param Avals Values array for A
+  /// \param Arowptrs Row pointers array for A
+  /// \param Acolinds Column indices array for A
+  /// \param scalarA Scaling factor for A
+  /// \param Bvals Values array for B
+  /// \param Browptrs Row pointers array for B
+  /// \param Bcolinds Column indices array for B
+  /// \param scalarB Scaling factor for B
+  /// \param[Out] Cvals Values array for C (allocated inside function)
+  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
+  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
+  static void addSorted(
+    const values_array& Avals,
+    const row_ptrs_array_const& Arowptrs,
+    const col_inds_array& Acolinds, 
+    const impl_scalar_type scalarA,
+    const values_array& Bvals,
+    const row_ptrs_array_const& Browptrs,
+    const col_inds_array& Bcolinds, 
+    const impl_scalar_type scalarB,
+    values_array& Cvals,
+    row_ptrs_array& Crowptrs,
+    col_inds_array& Ccolinds);
+
+  /// \brief Given two matrices in CRS format, return their sum
+  /// \pre A and B don't need to be sorted, and column indices are given as global indices
+  /// \param A A (local) matrix
+  /// \param scalarA Scaling factor for A
+  /// \param B B (local) matrix
+  /// \param scalarB Scaling factor for B
+  /// \param minGlobalCol The minimum global index owned by this processor in the column map
+  /// \param globalNumCols The global size of the column map
+  /// \param[Out] Cvals Values array for C (allocated inside function)
+  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
+  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
+  static void convertToGlobalAndAdd(
+    const KCRS& A,
+    const impl_scalar_type scalarA,
+    const KCRS& B,
+    const impl_scalar_type scalarB,
+    const local_map_type& AcolMap,
+    const local_map_type& BcolMap,
+    GlobalOrdinal minGlobalCol,
+    GlobalOrdinal globalNumCols,
+    values_array& Cvals,
+    row_ptrs_array& Crowptrs,
+    global_col_inds_array& Ccolinds);
+
+  /// \brief Given two matrices in CRS format, return their sum
+  /// \pre A and B don't need to be sorted
+  /// \param Avals Values array for A
+  /// \param Arowptrs Row pointers array for A
+  /// \param Acolinds Column indices array for A
+  /// \param scalarA Scaling factor for A
+  /// \param Bvals Values array for B
+  /// \param Browptrs Row pointers array for B
+  /// \param Bcolinds Column indices array for B
+  /// \param scalarB Scaling factor for B
+  /// \param globalNumCols The global size of the column map
+  /// \param[Out] Cvals Values array for C (allocated inside function)
+  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
+  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
+  static void addUnsorted(
+    const values_array& Avals,
+    const row_ptrs_array_const& Arowptrs,
+    const col_inds_array& Acolinds, 
+    const impl_scalar_type scalarA,
+    const values_array& Bvals,
+    const row_ptrs_array_const& Browptrs,
+    const col_inds_array& Bcolinds, 
+    const impl_scalar_type scalarB,
+    GlobalOrdinal numGlobalCols,
+    values_array& Cvals,
+    row_ptrs_array& Crowptrs,
+    col_inds_array& Ccolinds);
+
+  /// \brief Given two matrices in CRS format, return their sum
+  /// \pre A and B don't need to be sorted
+  /// \param Avals Values array for A
+  /// \param Arowptrs Row pointers array for A
+  /// \param Acolinds Column indices array for A
+  /// \param scalarA Scaling factor for A
+  /// \param Bvals Values array for B
+  /// \param Browptrs Row pointers array for B
+  /// \param Bcolinds Column indices array for B
+  /// \param scalarB Scaling factor for B
+  /// \param globalNumCols The global size of the column map
+  /// \param[Out] Cvals Values array for C (allocated inside function)
+  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
+  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
+  static void addUnsortedGlobalCols(
+    const values_array& Avals,
+    const row_ptrs_array_const& Arowptrs,
+    const global_col_inds_array& Acolinds, 
+    const impl_scalar_type scalarA,
+    const values_array& Bvals,
+    const row_ptrs_array_const& Browptrs,
+    const global_col_inds_array& Bcolinds, 
+    const impl_scalar_type scalarB,
+    GlobalOrdinal numGlobalCols,
+    values_array& Cvals,
+    row_ptrs_array& Crowptrs,
+    global_col_inds_array& Ccolinds);
+
+  static Teuchos::RCP<map_type> makeColMapAndConvertGids(GlobalOrdinal ncols, const global_col_inds_array& gids, col_inds_array& lids, const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+};
+}
 
 /// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
 ///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
@@ -139,8 +268,8 @@ void Add(
 /// have different row Maps; the returned matrix will have the same
 /// row Map as the row Map of B.
 ///
-/// \pre If A and B are both fill complete, then they must have the
-///   same domain and range Maps.
+/// \pre A and B must both be fillComplete and have matching domain and
+///   range Maps.
 ///
 /// \param scalarA [in] Scalar multiplier for A in the sum.
 /// \param transposeA [in] If true, use the transpose of A.

@@ -47,10 +47,10 @@
 // Generic Host side BLAS (could be MKL or whatever)
 #ifdef KOKKOSKERNELS_ENABLE_TPL_BLAS
 
-extern "C" double               dasum_( const int* N, const double* x, const int* x_inc);
-extern "C" float                sasum_( const int* N, const float* x, const int* x_inc);
-extern "C" std::complex<double> zasum_( const int* N, const std::complex<double>* x, const int* x_inc);
-extern "C" std::complex<float>  casum_( const int* N, const std::complex<float>* x, const int* x_inc);
+extern "C" int idamax_( const int* N, const double* x, const int* x_inc);
+extern "C" int isamax_( const int* N, const float* x, const int* x_inc);
+extern "C" int izamax_( const int* N, const std::complex<double>* x, const int* x_inc);
+extern "C" int icamax_( const int* N, const std::complex<float>* x, const int* x_inc);
 
 namespace KokkosBlas {
 namespace Impl {
@@ -83,11 +83,13 @@ Kokkos::View<const double*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   static void nrminf (RV& R, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
+    if (numElems == 0) { R() = 0.0; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
-      nrminf_print_specialization<RV,XV,XV>(); \
+      nrminf_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = dasum_(&N,X.data(),&one); \
+      int idx = idamax_(&N,X.data(),&one)-1; \
+      R() = X(idx); \
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \
@@ -112,11 +114,13 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
   static void nrminf (RV& R, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
+    if (numElems == 0) { R() = 0.0f; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
-      nrminf_print_specialization<RV,XV,XV>(); \
+      nrminf_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = sasum_(&N,X.data(),&one); \
+      int idx = isamax_(&N,X.data(),&one)-1; \
+      R() = X(idx); \
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \
@@ -126,7 +130,7 @@ Kokkos::View<const float*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
 #define KOKKOSBLAS1_ZNRMINF_TPL_SPEC_DECL_BLAS( LAYOUT, MEMSPACE, ETI_SPEC_AVAIL ) \
 template<class ExecSpace> \
 struct NrmInf< \
-Kokkos::View<Kokkos::complex<double>, LAYOUT, Kokkos::HostSpace, \
+Kokkos::View<double, LAYOUT, Kokkos::HostSpace, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
 Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
@@ -137,15 +141,18 @@ Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, M
   typedef Kokkos::View<const Kokkos::complex<double>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef typename XV::size_type size_type; \
+  typedef Kokkos::Details::InnerProductSpaceTraits<Kokkos::complex<double>> IPT; \
   \
   static void nrminf (RV& R, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
+    if (numElems == 0) { R() = 0.0; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
-      nrminf_print_specialization<RV,XV,XV>(); \
+      nrminf_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = zasum_(&N,static_cast<std::complex<double>*>(X.data()),&one); \
+      int idx = izamax_(&N,reinterpret_cast<const std::complex<double>*>(X.data()),&one)-1; \
+      R() = IPT::norm(X(idx)); \
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \
@@ -161,20 +168,23 @@ Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, ME
              Kokkos::MemoryTraits<Kokkos::Unmanaged> >, \
 1,true, ETI_SPEC_AVAIL > { \
   \
-  typedef Kokkos::View<Kokkos::complex<float>, LAYOUT, Kokkos::HostSpace, \
+  typedef Kokkos::View<float, LAYOUT, Kokkos::HostSpace, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > RV; \
   typedef Kokkos::View<const Kokkos::complex<float>*, LAYOUT, Kokkos::Device<ExecSpace, MEMSPACE>, \
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> > XV; \
   typedef typename XV::size_type size_type; \
+  typedef Kokkos::Details::InnerProductSpaceTraits<Kokkos::complex<float>> IPT; \
   \
   static void nrminf (RV& R, const XV& X) \
   { \
     const size_type numElems = X.extent(0); \
+    if (numElems == 0) { R() = 0.0f; return; } \
     if (numElems < static_cast<size_type> (INT_MAX)) { \
-      nrminf_print_specialization<RV,XV,XV>(); \
+      nrminf_print_specialization<RV,XV>(); \
       int N = numElems; \
       int one = 1; \
-      R() = casum_(&N,static_cast<std::complex<float>*>(X.data()),&one); \
+      int idx = icamax_(&N,reinterpret_cast<const std::complex<float>*>(X.data()),&one)-1; \
+      R() = IPT::norm(X(idx)); \
     } else { \
       NrmInf<RV,XV,1,false,ETI_SPEC_AVAIL>::nrminf(R,X); \
     } \

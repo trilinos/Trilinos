@@ -127,7 +127,7 @@ const std::vector<short> & UniqueGlobalIndexer::getElementBlock(const std::strin
                       "Can't find block ID \"" << blockId << "\" in unit_test::UniqueGlobalIndexer");
 }
 
-void UniqueGlobalIndexer::getElementGIDs(short localElmtId,std::vector<int> & gids,const std::string & blockId) const
+void UniqueGlobalIndexer::getElementGIDs(short localElmtId,std::vector<int> & gids,const std::string & /* blockId */) const
 {
    if(localElmtId==0) {
       gids.resize(8);
@@ -209,8 +209,8 @@ const std::vector<int> & UniqueGlobalIndexer::getGIDFieldOffsets(const std::stri
 }
 
 const std::pair<std::vector<int>,std::vector<int> > & 
-UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
-                                                int subcellDim,int subcellId) const
+UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & /* blockId */, int /* fieldNum */,
+                                                int /* subcellDim */, int /* subcellId */) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                       "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure is not implemented yet.");

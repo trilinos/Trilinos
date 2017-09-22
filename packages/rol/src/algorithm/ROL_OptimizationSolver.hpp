@@ -46,10 +46,11 @@
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_OptimizationProblem.hpp"
+#include "ROL_CombinedStatusTest.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 
-/** \class ROL::OptimizationSolver 
+/** \class ROL::OptimizationSolver
     \brief Provides a simplified interface for solving a wide range of
            optimization problems
  */
@@ -60,10 +61,11 @@ template<class Real>
 class OptimizationSolver {
 private:
 
-  Teuchos::RCP<Algorithm<Real> >      algo_;
-  Teuchos::RCP<Step<Real> >           step_;
-  Teuchos::RCP<StatusTest<Real> >     status_;
-  Teuchos::RCP<AlgorithmState<Real> > state_;
+  Teuchos::RCP<Algorithm<Real> >          algo_;
+  Teuchos::RCP<Step<Real> >               step_;
+  Teuchos::RCP<StatusTest<Real> >         status0_;
+  Teuchos::RCP<CombinedStatusTest<Real> > status_;
+  Teuchos::RCP<AlgorithmState<Real> >     state_;
 
   Teuchos::RCP<Vector<Real> > x_;
   Teuchos::RCP<Vector<Real> > g_;
@@ -75,7 +77,7 @@ private:
   Teuchos::RCP<Constraint<Real> >      con_;
 
   std::vector<std::string>  output_;
-  
+
   EProblem problemType_;
 
 public:
@@ -85,22 +87,35 @@ public:
     // Get step name from parameterlist
     std::string stepname = parlist.sublist("Step").get("Type","Last Type (Dummy)");
     EStep stepType = StringToEStep(stepname);
-    TEUCHOS_TEST_FOR_EXCEPTION( !isValidStep(stepType), std::invalid_argument,
-                                "Invalid step name in OptimizationSolver constructor!" );
 
     // Get optimization problem type: U, E, B, EB
     problemType_ = opt.getProblemType();
-    TEUCHOS_TEST_FOR_EXCEPTION( !isCompatibleStep(problemType_, stepType), std::logic_error,
-      "Error in OptimizationSolver constructor: Step type " << stepname << " does not support "
-      << EProblemToString(problemType_) << " problems" << std::endl );
+
+    // Set default algorithm if provided step is incompatible with problem type
+    if ( !isCompatibleStep(problemType_, stepType) ) {
+      switch ( problemType_ ) {
+        case TYPE_U:
+          stepType = STEP_TRUSTREGION;          break;
+        case TYPE_B:
+          stepType = STEP_TRUSTREGION;          break;
+        case TYPE_E:
+          stepType = STEP_COMPOSITESTEP;        break;
+        case TYPE_EB:
+          stepType = STEP_AUGMENTEDLAGRANGIAN;  break;
+        case TYPE_LAST:
+        default:
+          throw Exception::NotImplemented(">>> ROL::OptimizationSolver: Unknown problem type!");
+      }
+    }
+    stepname = EStepToString(stepType);
 
     // Build algorithmic components
     StepFactory<Real>        stepFactory;
     StatusTestFactory<Real>  statusTestFactory;
-    step_   = stepFactory.getStep(stepname,parlist);
-    status_ = statusTestFactory.getStatusTest(stepname,parlist);
-    state_  = Teuchos::rcp( new AlgorithmState<Real> );
-    algo_   = Teuchos::rcp( new Algorithm<Real>( step_, status_, state_ ) );
+    step_    = stepFactory.getStep(stepname,parlist);
+    status0_ = statusTestFactory.getStatusTest(stepname,parlist);
+    status_  = Teuchos::rcp( new CombinedStatusTest<Real> );
+    state_   = Teuchos::rcp( new AlgorithmState<Real> );
 
     // Get optimization vector and a vector for the gradient
     x_ = opt.getSolutionVector();
@@ -134,26 +149,38 @@ public:
       obj_ = Teuchos::rcp( new InteriorPoint::PenalizedObjective<Real>(raw_obj,bnd_,*x_,parlist) );
     }
     else {
-      obj_   = opt.getObjective();   
+      obj_   = opt.getObjective();
       bnd_   = opt.getBoundConstraint();
       con_   = opt.getConstraint();
     }
   }
 
-  virtual std::vector<std::string> getOutput() {
+  std::vector<std::string> getOutput(void) const {
     return output_;
   }
 
-  virtual int solve() {
+  int solve(void) {
     Teuchos::oblackholestream bhs;
     return solve(bhs);
   }
 
-  virtual int solve( std::ostream &outStream ) {
+  int solve( std::ostream &outStream,
+       const Teuchos::RCP<StatusTest<Real> > &status = Teuchos::null,
+       const bool combineStatus = true ) {
+    // Build algorithm
+    status_->reset();       // Clear previous status test
+    status_->add(status0_); // Default StatusTest
+    if (status != Teuchos::null) {
+      if (!combineStatus) { // Use only user-defined StatusTest
+        status_->reset();
+      }
+      status_->add(status); // Add user-defined StatusTest
+    }
+    algo_ = Teuchos::rcp( new Algorithm<Real>( step_, status_, state_ ) );
 
     switch(problemType_) {
       case TYPE_U:
-        output_ = algo_->run(*x_,*g_,*obj_,true,outStream);    
+        output_ = algo_->run(*x_,*g_,*obj_,true,outStream);
       break;
       case TYPE_B:
         output_ = algo_->run(*x_,*g_,*obj_,*bnd_,true,outStream);
@@ -166,23 +193,24 @@ public:
       break;
       case TYPE_LAST:
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-          "Error in OptimizationSolver::solve() : Unsupported problem type"); 
+          "Error in OptimizationSolver::solve() : Unsupported problem type");
       break;
     }
 
     // TODO: Interrogate AlgorithmState and StatusTest to generate a return code
     //       that indicates why the solver has stopped
 
-
-    // Return an integer code 
+    // Return an integer code
     return 0;
   }
 
-  Teuchos::RCP<const AlgorithmState<Real> > getAlgorithmState() {
+  Teuchos::RCP<const AlgorithmState<Real> > getAlgorithmState(void) const {
     return state_;
   }
 
- 
+  void resetAlgorithmState(void) {
+    state_ = Teuchos::rcp( new AlgorithmState<Real> );
+  }
 
 }; // class OptimizationSolver
 

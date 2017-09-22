@@ -107,7 +107,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonal(const Matrix& A) {
-    // FIXME Kokkos
+    // FIXME_KOKKOS
 
     size_t numRows = A.getRowMap()->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(numRows);
@@ -135,7 +135,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol) {
-    // FIXME Kokkos
+    // FIXME_KOKKOS
     RCP<const Map> rowMap = A.getRowMap();
     RCP<Vector> diag      = VectorFactory::Build(rowMap);
     ArrayRCP<SC> diagVals = diag->getDataNonConst(0);
@@ -169,7 +169,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Scalar> Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLumpedMatrixDiagonal(const Matrix &A) {
-    // FIXME: Kokkos
+    // FIXME_KOKKOS
     size_t numRows = A.getRowMap()->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(numRows);
 
@@ -189,7 +189,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utilities_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(const Matrix& A) {
-    // FIXME: Kokkos
+    // FIXME_KOKKOS
     RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
     RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
 
@@ -242,7 +242,7 @@ namespace MueLu {
         break;
 
       case Xpetra::UseEpetra:
-        // FIXME?
+        // FIXME_KOKKOS
         // Utils2_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Op, sv, doFillComplete, doOptimizeStorage);
         throw std::runtime_error("FIXME");
         break;
@@ -339,50 +339,29 @@ namespace MueLu {
 #endif
   } //MyOldScaleMatrix_Tpetra()
 
-  template<class MatrixType, class BNodesType>
-  class DetectDirichletFunctor {
-  private:
-    typedef typename MatrixType::ordinal_type LO;
-    typedef typename MatrixType::value_type   SC;
-    typedef Kokkos::ArithTraits<SC>           ATS;
-
-    MatrixType localMatrix;
-    BNodesType boundaryNodes;
-    typename ATS::mag_type tol;
-
-  public:
-    DetectDirichletFunctor(MatrixType localMatrix_, BNodesType boundaryNodes_, SC tol_) :
-      localMatrix(localMatrix_),
-      boundaryNodes(boundaryNodes_)
-    {
-      tol = ATS::magnitude(tol_);
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const LO row) const {
-      auto rowView = localMatrix.row(row);
-      auto length  = rowView.length;
-
-      boundaryNodes(row) = true;
-      for (decltype(length) colID = 0; colID < length; colID++)
-        if ((rowView.colidx(colID) != row) && (ATS::magnitude(rowView.value(colID)) > tol)) {
-          boundaryNodes(row) = false;
-          break;
-        }
-    }
-  };
 
   template <class SC, class LO, class GO, class NO>
   Kokkos::View<const bool*, typename NO::device_type> DetectDirichletRows(const Xpetra::Matrix<SC,LO,GO,NO>& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
+    using ATS        = Kokkos::ArithTraits<SC>;
+    using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
+
     auto localMatrix = A.getLocalMatrix();
     LO   numRows     = A.getNodeNumRows();
 
-    Kokkos::View<bool*, typename NO::device_type> boundaryNodes("boundaryNodes", numRows);
+    Kokkos::View<bool*, typename NO::device_type> boundaryNodes(Kokkos::ViewAllocateWithoutInitializing("boundaryNodes"), numRows);
+    Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", range_type(0,numRows),
+      KOKKOS_LAMBDA(const LO row) {
+        auto rowView = localMatrix.row(row);
+        auto length  = rowView.length;
 
-    typedef Kokkos::RangePolicy<LO, typename NO::execution_space> range_type;
-
-    DetectDirichletFunctor<decltype(localMatrix), decltype(boundaryNodes)> functor(localMatrix, boundaryNodes, tol);
-    Kokkos::parallel_for("MueLu:Utils::DetectDirichletRows", range_type(0,numRows), functor);
+        boundaryNodes(row) = true;
+        for (decltype(length) colID = 0; colID < length; colID++)
+          if ((rowView.colidx(colID) != row) &&
+              (ATS::magnitude(rowView.value(colID)) > tol)) {
+            boundaryNodes(row) = false;
+            break;
+          }
+      });
 
     return boundaryNodes;
   }

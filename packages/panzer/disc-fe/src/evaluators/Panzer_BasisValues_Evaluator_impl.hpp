@@ -155,7 +155,7 @@ void BasisValues_Evaluator<EvalT,TRAITST>::initialize(const Teuchos::RCP<const p
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator,sd,fm)
+PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator, sd, fm)
 {
   int space_dim = basis->dimension();
 
@@ -208,7 +208,7 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(BasisValues_Evaluator,workset)
+PHX_EVALUATE_FIELDS(BasisValues_Evaluator, workset)
 { 
   // evaluate the point values (construct jacobians etc...)
   basisValues->evaluateValues(pointValues.coords_ref,

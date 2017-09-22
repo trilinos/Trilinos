@@ -284,14 +284,15 @@ namespace panzer
        *  \brief The (possibly empty) list of fields that are multipliers out
        *         in front of the integral (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-      std::vector<PHX::MDField<ScalarT, panzer::Cell, panzer::IP>> fieldMults_;
+      std::vector<PHX::MDField<const ScalarT, panzer::Cell, panzer::IP>>
+      fieldMults_;
 
       /**
        *  \brief The `Kokkos::View` representation of the (possibly empty) list
        *         of fields that are multipliers out in front of the integral
        *         (\f$ a(x) \f$, \f$ b(x) \f$, etc.).
        */
-      Kokkos::View<Kokkos::View<ScalarT**>*> kokkosFieldMults_;
+      Kokkos::View<Kokkos::View<const ScalarT**>*> kokkosFieldMults_;
 
       /**
        *  \brief The number of quadrature points for each cell.

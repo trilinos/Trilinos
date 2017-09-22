@@ -163,9 +163,9 @@ void panzer::EquationSet_DefaultImpl<EvalT>::setupDeprecatedDOFsSupport()
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                               const panzer::FieldLibrary& fl,
+                                               const panzer::FieldLibrary& /* fl */,
                                                const LinearObjFactory<panzer::Traits> & lof,
-                                               const Teuchos::ParameterList& user_data) const
+                                               const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -362,7 +362,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
                                              const panzer::FieldLayoutLibrary& fl,
                                              const Teuchos::RCP<panzer::IntegrationRule>& ir,
                                              const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
-                                             const Teuchos::ParameterList& user_data) const
+                                             const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -539,7 +539,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                  const panzer::FieldLibrary& fl,
+                                  const panzer::FieldLibrary& /* fl */,
                                   const LinearObjFactory<panzer::Traits> & lof,
                                   const Teuchos::ParameterList& user_data) const
 {
