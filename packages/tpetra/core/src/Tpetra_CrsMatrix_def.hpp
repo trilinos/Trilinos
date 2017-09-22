@@ -6236,9 +6236,10 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-
+#ifdef HAVE_TPETRA_DEBUG
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermuteImpl: ";
+#endif // HAVE_TPETRA_DEBUG
     ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteImpl");
 
     const bool sourceIsLocallyIndexed = srcMat.isLocallyIndexed ();

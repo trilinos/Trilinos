@@ -61,7 +61,7 @@ void Teuchos::updateParametersFromXmlFileAndBroadcast(
       FileInputSource xmlFile(xmlFileName);
       XMLObject xmlParams = xmlFile.getObject();
       std::string xmlString = toString(xmlParams);
-      int strsize = xmlString.size();
+      int strsize = static_cast<int>(xmlString.size());
       broadcast<int, int>(comm, 0, &strsize);
       broadcast<int, char>(comm, 0, strsize, &xmlString[0]);
       updateParametersFromXmlString(xmlString, paramList,overwrite);
