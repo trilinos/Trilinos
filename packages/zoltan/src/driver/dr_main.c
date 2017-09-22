@@ -82,8 +82,6 @@ extern "C" {
 #endif
 
 extern void Zoltan_write_linux_meminfo(int append, char *msg, int committedOnly);
-extern int Zoltan_get_global_id_type(char **name);
-
 int Debug_Driver = 1;
 int Number_Iterations = 1;
 int Driver_Action = 1;	/* Flag indicating coloring, load-balancing or ordering. */
@@ -651,11 +649,15 @@ static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob,
 PARIO_INFO_PTR pio, float zoltan_version)
 {
 int i;
+int idtypesize;
+char *idtypename;
 
   fprintf(fp, "Input values:\n");
   fprintf(fp, "  Zoltan version %g\n",zoltan_version);
   fprintf(fp, "  %s version %s\n", DRIVER_NAME, VER_STR);
   fprintf(fp, "  Total number of Processors = %d\n", Num_Proc);
+  idtypesize = Zoltan_get_global_id_type(&idtypename);
+  fprintf(fp, "  ZOLTAN_ID_TYPE size %d name %s\n", idtypesize, idtypename);
 
   fprintf(fp, "\n  Performing load balance using %s.\n", prob->method);
   fprintf(fp, "\tParameters:\n");
