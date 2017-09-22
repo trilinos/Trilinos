@@ -133,11 +133,6 @@ setImplicitModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model )
 {
   implicitModel_ = model;
-  TEUCHOS_TEST_FOR_EXCEPTION( implicitModel_->Np() < 1, std::logic_error,
-    "Error - WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()\n"
-    "  Implicit model requires at least one parameter for partitioned\n"
-    "  IMEX-RK to pass in the explicit-only vector."
-    "  implicitModel_->Np() = " << implicitModel_->Np() << "\n");
 }
 
 template <typename Scalar>
@@ -200,24 +195,31 @@ void
 WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 setParameterIndex(int parameterIndex)
 {
-  if(parameterIndex >= 0) {
-    parameterIndex_ = parameterIndex;
-  } else if (parameterIndex_ < 0) {
-    parameterIndex_ = 0;
-    for(int i=0; i<implicitModel_->Np(); i++) {
-      if((*implicitModel_->get_p_names(i))[0] == "EXPLICIT_ONLY_VECTOR") {
-        parameterIndex_ = i;
-        break;
+  if (implicitModel_->Np() == 0) {
+    TEUCHOS_TEST_FOR_EXCEPTION( 0 <= parameterIndex_, std::logic_error,
+      "Error - WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()\n"
+      "  Invalid parameter index = " << parameterIndex_ << "\n"
+      "  Should not be set since Np = "<<implicitModel_->Np()<<")\n");
+  } else {
+    if(parameterIndex >= 0) {
+      parameterIndex_ = parameterIndex;
+    } else if (parameterIndex_ < 0) {
+      parameterIndex_ = 0;
+      for(int i=0; i<implicitModel_->Np(); i++) {
+        if((*implicitModel_->get_p_names(i))[0] == "EXPLICIT_ONLY_VECTOR") {
+          parameterIndex_ = i;
+          break;
+        }
       }
     }
-  }
 
-  TEUCHOS_TEST_FOR_EXCEPTION( 0 > parameterIndex_ or
-                                  parameterIndex_ >= implicitModel_->Np(),
-    std::logic_error,
-    "Error - WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()\n"
-    "  Invalid parameter index = " << parameterIndex_ << "\n"
-    "  Should be in the interval [0, Np) = [0, "<<implicitModel_->Np()<<")\n");
+    TEUCHOS_TEST_FOR_EXCEPTION( 0 > parameterIndex_ or
+                                    parameterIndex_ >= implicitModel_->Np(),
+     std::logic_error,
+     "Error - WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()\n"
+     "  Invalid parameter index = " << parameterIndex_ << "\n"
+     "  Should be in the interval [0, Np) = [0, "<<implicitModel_->Np()<<")\n");
+  }
 
   return;
 }
