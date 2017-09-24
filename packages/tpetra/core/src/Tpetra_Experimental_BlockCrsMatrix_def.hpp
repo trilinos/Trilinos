@@ -2626,8 +2626,8 @@ public:
       }
       else {
         LO numEntLO = 0;
-        const size_t theNumBytes = PackTraits<LO, D>::packValueCount (numEntLO);
 #ifdef HAVE_TPETRA_DEBUG
+        const size_t theNumBytes = PackTraits<LO, D>::packValueCount (numEntLO);
         TEUCHOS_TEST_FOR_EXCEPTION(
           theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
           "theNumBytes = " << theNumBytes << " < numBytes = " << numBytes
