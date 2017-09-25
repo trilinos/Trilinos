@@ -115,9 +115,8 @@ generate_test_matrix (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
     col_gids_set.insert(distr(generator));
     num_passes += 1;
   }
-  if (col_gids_set.size() != num_gids_in_set) {
-    throw std::runtime_error("Random column IDs not generate");
-  }
+  TEUCHOS_TEST_FOR_EXCEPTION(col_gids_set.size() != num_gids_in_set,
+      std::runtime_error, "Random column IDs not generated");
 
   Array<GO> col_gids(col_gids_set.begin(), col_gids_set.end());
 
