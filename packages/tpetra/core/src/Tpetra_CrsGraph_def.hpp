@@ -5476,7 +5476,6 @@ namespace Tpetra {
 
     const auto numExportLIDs = exportLIDs.size ();
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
       os << "Proc " << myRank << ": CrsGraph::pack: numExportLIDs = "
          << numExportLIDs << std::endl;
@@ -5539,7 +5538,6 @@ namespace Tpetra {
       totalNumPackets);
 
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
       os << "Proc " << myRank << ": CrsGraph::pack: "
          << "totalNumPackets = " << totalNumPackets << std::endl;
@@ -5563,7 +5561,6 @@ namespace Tpetra {
     // into the output buffer.
 
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
       os << "Proc " << myRank << ": CrsGraph::pack: pack into exports" << std::endl;
       std::cerr << os.str ();
