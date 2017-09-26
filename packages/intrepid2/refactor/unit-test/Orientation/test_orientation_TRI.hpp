@@ -74,8 +74,8 @@
 #include "Intrepid2_HGRAD_LINE_C1_FEM.hpp"
 #include "Intrepid2_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid2_HCURL_TRI_In_FEM.hpp"
-#include "Intrepid2_L2_LINE_Cn_FEM.hpp"
-#include "Intrepid2_L2_TRI_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_LINE_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_TRI_Cn_FEM.hpp"
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
@@ -587,7 +587,7 @@ int OrientationTri(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_L2_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order-1);
+          Basis_HVOL_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order-1);
           ordinal_type lineBasisCardinality = lineBasis.getCardinality();
           DynRankView ConstructWithLabel(lineDofCoords, lineBasisCardinality, dim-1);
           lineBasis.getDofCoords(lineDofCoords);
@@ -952,7 +952,7 @@ int OrientationTri(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_L2_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> sideBasis(order-1);
+          Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> sideBasis(order-1);
           ordinal_type sideBasisCardinality = sideBasis.getCardinality();
           ordinal_type numInternalDofs = sideBasis.getDofCount(dim-1,0);
           DynRankView ConstructWithLabel(sideDofCoords, sideBasisCardinality, dim-1);

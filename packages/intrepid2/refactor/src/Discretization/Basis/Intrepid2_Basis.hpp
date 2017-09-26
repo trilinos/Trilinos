@@ -832,7 +832,7 @@ void getJacobyRecurrenceCoeffs (
                             const shards::CellTopology  cellTopo,
                             const ordinal_type          basisCard );
 
-  /** \brief  Runtime check of the arguments for the getValues method in an L2-conforming
+  /** \brief  Runtime check of the arguments for the getValues method in an HVOL-conforming
       FEM basis. Verifies that ranks and dimensions of <var>ViewType</var> input and output
       arrays are consistent with the specified <var>operatorType</var>.
 
@@ -844,7 +844,7 @@ void getJacobyRecurrenceCoeffs (
   */
   template<typename outputValueViewType,
            typename inputPointViewType>
-  void getValues_L2_Args( const outputValueViewType   outputValues,
+  void getValues_HVOL_Args( const outputValueViewType   outputValues,
                              const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology  cellTopo,

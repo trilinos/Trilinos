@@ -144,10 +144,10 @@ namespace Intrepid2 {
                                           ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_DIV): " 
                                           "subcellBasis function space (1d) is not consistent to cellBasis, which should be open line hgrad, order -1.");
             } else if ((cellBasisName.find("TET") != std::string::npos) || (cellBasisName.find("TRI") != std::string::npos)) {
-              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("L2") == std::string::npos,
+              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HVOL") == std::string::npos,
                                           std::logic_error,
                                           ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_DIV): " 
-                                          "subcellBasis function space (1d) is not consistent to cellBasis, which should be L2 line, order -1.");
+                                          "subcellBasis function space (1d) is not consistent to cellBasis, which should be HVOL line, order -1.");
             }
             break;
           }
@@ -159,11 +159,11 @@ namespace Intrepid2 {
                                             ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): "
                                             "subcellBasis function space is not compatible, which should be open line hgrad, order -1.");
             } else if (subcellBaseKey == shards::Triangle<>::key) {
-              // triangle face basis comes from L2 basis
-              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("L2") == std::string::npos,
+              // triangle face basis comes from HVOL basis
+              INTREPID2_TEST_FOR_EXCEPTION( subcellBasisName.find("HVOL") == std::string::npos,
                                             std::logic_error,
                                             ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): "
-                                            "subcellBasis function space is not compatible, which should L2, order-1.");
+                                            "subcellBasis function space is not compatible, which should HVOL, order-1.");
             }
             break;
           }

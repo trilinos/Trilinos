@@ -73,7 +73,7 @@
 
 #include "Intrepid2_HCURL_TRI_In_FEM.hpp"
 #include "Intrepid2_HCURL_TET_In_FEM.hpp"
-#include "Intrepid2_L2_LINE_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_LINE_Cn_FEM.hpp"
 
 // -- HDIV family
 #include "Intrepid2_HDIV_QUAD_In_FEM.hpp"
@@ -81,7 +81,7 @@
 
 #include "Intrepid2_HDIV_TRI_In_FEM.hpp"
 #include "Intrepid2_HDIV_TET_In_FEM.hpp"
-#include "Intrepid2_L2_TRI_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_TRI_Cn_FEM.hpp"
 
 // -- Lower order family
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
