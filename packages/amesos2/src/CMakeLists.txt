@@ -279,6 +279,23 @@ IF (${PACKAGE_NAME}_ENABLE_UMFPACK)
 
 ENDIF()
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tacho)
+IF (${PACKAGE_NAME}_ENABLE_Tacho)
+
+  APPEND_SET(HEADERS
+    Amesos2_Tacho.hpp
+    Amesos2_Tacho_decl.hpp
+    Amesos2_Tacho_def.hpp
+    Amesos2_Tacho_FunctionMap.hpp
+    Amesos2_Tacho_TypeMap.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_Tacho.cpp
+    )
+
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_SuperLU)
 
   APPEND_SET(HEADERS
