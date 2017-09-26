@@ -3,7 +3,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   #
   # New ShyLU subpackages:
   HTS                   hts               ST       OPTIONAL
-  Tacho                 tacho             EX       OPTIONAL
+  Tacho                 tacho             ST       OPTIONAL
   BDDC                  bddc              EX       OPTIONAL
   Basker                basker            EX       OPTIONAL
   FastILU               fastilu           EX       OPTIONAL
