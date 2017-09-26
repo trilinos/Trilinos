@@ -311,16 +311,6 @@ namespace MueLu {
     Set<Array<GO> >(coarseLevel, "gCoarseNodesPerDim", myGeometry->gCoarseNodesPerDir);
     Set<Array<LO> >(coarseLevel, "lCoarseNodesPerDim", myGeometry->lCoarseNodesPerDir);
 
-    // if(coarseLevel.GetLevelID() == 1) {
-    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/colMapP_1.mat", *(P->getColMap()));
-    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/domMapP_1.mat", *(P->getDomainMap()));
-    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/P_1.mat", *P);
-    // } else if(coarseLevel.GetLevelID() == 2) {
-    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/colMapP_2.mat", *(P->getColMap()));
-    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/domMapP_2.mat", *(P->getDomainMap()));
-    //   Xpetra::IO<SC,LO,GO,NO>::Write("/home/lberge/Desktop/P_2.mat", *P);
-    // }
-
     // rst: null space might get scaled here ... do we care. We could just inject at the cpoints,
     // but I don't feel that this is needed.
     RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(P->getDomainMap(),
@@ -509,7 +499,7 @@ namespace MueLu {
     }
     numGhosted = myGeo->ghostedCoarseNodesPerDir[2]*myGeo->ghostedCoarseNodesPerDir[1]
       *myGeo->ghostedCoarseNodesPerDir[0];
-    numGhosts= numGhosted - myGeo->lNumCoarseNodes;
+    numGhosts = numGhosted - myGeo->lNumCoarseNodes;
     ghostedCoarseNodes->PIDs.resize(numGhosted);
     ghostedCoarseNodes->LIDs.resize(numGhosted);
     ghostedCoarseNodes->GIDs.resize(numGhosted);
@@ -812,13 +802,22 @@ namespace MueLu {
     using xdMV                 = Xpetra::MultiVector<double,LO,GO,NO>;
     Xpetra::global_size_t OTI  = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
-    LO lNumCoarseNodes = ghostedCoarseNodes->PIDs.size();
+    LO myRank          = Amat->getRowMap()->getComm()->getRank();
+    LO lNumCoarseNodes = ghostedCoarseNodes->PIDs.size();         //This number includes ghost nodes
     GO numGloCols      = dofsPerNode*myGeo->gNumCoarseNodes;
 
+    LO colInd, countOwned = 0, countRemote = 0, remoteOffset = myGeo->lNumCoarseNodes;
     Array<GO> colGIDs(dofsPerNode*lNumCoarseNodes);
     for(LO ind = 0; ind < lNumCoarseNodes; ++ind) {
+      if(ghostedCoarseNodes->PIDs[ind] == myRank) {
+        colInd = countOwned;
+        ++countOwned;
+      } else {
+        colInd = countRemote + remoteOffset;
+        ++countRemote;
+      }
       for(LO dof = 0; dof < dofsPerNode; ++dof) {
-        colGIDs[dofsPerNode*ind + dof] = dofsPerNode*ghostedCoarseNodes->coarseGIDs[ind] + dof;
+        colGIDs[dofsPerNode*colInd + dof] = dofsPerNode*ghostedCoarseNodes->coarseGIDs[ind] + dof;
       }
     }
 

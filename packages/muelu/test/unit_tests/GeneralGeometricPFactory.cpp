@@ -790,7 +790,7 @@ namespace MueLuTests {
     Array<Array<GO> > indsBounds(4);
     Array<GO> minGID(4);
     indsBounds[0].resize(4);
-    if(comm->getSize() == 0) {
+    if(comm->getSize() == 1) {
       indsBounds[0][0] = 0;
       indsBounds[0][1] = 8;
       indsBounds[0][2] = 0;
@@ -924,7 +924,16 @@ namespace MueLuTests {
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P1Crs->getDomainMap(),1);
     ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
     Array<LO> coarse_inds(8);
-    if(comm->getRank() == 0) {
+    if(comm->getSize() == 1) {
+      coarse_inds[0] =  0;
+      coarse_inds[1] =  1;
+      coarse_inds[2] =  5;
+      coarse_inds[3] =  6;
+      coarse_inds[4] = 25;
+      coarse_inds[5] = 26;
+      coarse_inds[6] = 30;
+      coarse_inds[7] = 31;
+    } else if(comm->getSize() == 4 && comm->getRank() == 0) {
       coarse_inds[0] =  0;
       coarse_inds[1] =  1;
       coarse_inds[2] =  5;
@@ -933,15 +942,15 @@ namespace MueLuTests {
       coarse_inds[5] = 16;
       coarse_inds[6] = 20;
       coarse_inds[7] = 21;
-      coarse_data[coarse_inds[0]] = 5;
-      coarse_data[coarse_inds[1]] = 1;
-      coarse_data[coarse_inds[2]] = 7;
-      coarse_data[coarse_inds[3]] = 8;
-      coarse_data[coarse_inds[4]] = 0;
-      coarse_data[coarse_inds[5]] = 4;
-      coarse_data[coarse_inds[6]] = 0;
-      coarse_data[coarse_inds[7]] = 9;
     }
+    coarse_data[coarse_inds[0]] = 5;
+    coarse_data[coarse_inds[1]] = 1;
+    coarse_data[coarse_inds[2]] = 7;
+    coarse_data[coarse_inds[3]] = 8;
+    coarse_data[coarse_inds[4]] = 0;
+    coarse_data[coarse_inds[5]] = 4;
+    coarse_data[coarse_inds[6]] = 0;
+    coarse_data[coarse_inds[7]] = 9;
 
     P1Crs->apply(*vector1, *vector0, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
                 Teuchos::ScalarTraits<SC>::zero());
@@ -950,14 +959,25 @@ namespace MueLuTests {
     Array<LO> fine_inds(8);
     bool is_linear_lvl1 = true, is_injected_lvl1 = true;
     if(comm->getRank() == 0) {
-      fine_inds[0] =   0;
-      fine_inds[1] =   2;
-      fine_inds[2] =  18;
-      fine_inds[3] =  20;
-      fine_inds[4] =  90;
-      fine_inds[5] =  92;
-      fine_inds[6] = 108;
-      fine_inds[7] = 110;
+      if(comm->getSize() == 1) {
+        fine_inds[0] =   0;
+        fine_inds[1] =   2;
+        fine_inds[2] =  18;
+        fine_inds[3] =  20;
+        fine_inds[4] = 162;
+        fine_inds[5] = 164;
+        fine_inds[6] = 180;
+        fine_inds[7] = 182;
+      } else if(comm->getSize() == 4) {
+        fine_inds[0] =   0;
+        fine_inds[1] =   2;
+        fine_inds[2] =  18;
+        fine_inds[3] =  20;
+        fine_inds[4] =  90;
+        fine_inds[5] =  92;
+        fine_inds[6] = 108;
+        fine_inds[7] = 110;
+      }
       for(LO i = 0; i < 8; ++i) {
         if(fabs(fine_data[fine_inds[i]] - coarse_data[coarse_inds[i]]) > 1.0e-10) {
           is_injected_lvl1 = false;
@@ -965,7 +985,9 @@ namespace MueLuTests {
       }
       SC linear_avg = 0.0;
       for(auto ind : coarse_inds) {linear_avg += coarse_data[ind]/8;}
-      if(fabs(fine_data[55] - linear_avg) > 1.0e-10) { is_linear_lvl1 = false; }
+      LO fine_iref = 0;
+      if(comm->getSize() == 1) {fine_iref = 91;} else if(comm->getSize() == 4) {fine_iref = 55;}
+      if(fabs(fine_data[fine_iref] - linear_avg) > 1.0e-10) { is_linear_lvl1 = false; }
     }
 
     // Extract the prolongator operator
@@ -977,7 +999,16 @@ namespace MueLuTests {
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector2 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getRangeMap(),1);
     RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector3 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getDomainMap(),1);
     coarse_data = vector3->getDataNonConst(0);
-    if(comm->getRank() == 0) {
+    if(comm->getSize() == 1) {
+      coarse_inds[0] =  0;
+      coarse_inds[1] =  1;
+      coarse_inds[2] =  3;
+      coarse_inds[3] =  4;
+      coarse_inds[4] =  9;
+      coarse_inds[5] = 10;
+      coarse_inds[6] = 12;
+      coarse_inds[7] = 13;
+    } else if(comm->getSize() == 4 && comm->getRank() == 0) {
       coarse_inds[0] =  0;
       coarse_inds[1] =  1;
       coarse_inds[2] =  3;
@@ -986,15 +1017,15 @@ namespace MueLuTests {
       coarse_inds[5] =  7;
       coarse_inds[6] =  9;
       coarse_inds[7] = 10;
-      coarse_data[coarse_inds[0]] = 5;
-      coarse_data[coarse_inds[1]] = 1;
-      coarse_data[coarse_inds[2]] = 7;
-      coarse_data[coarse_inds[3]] = 8;
-      coarse_data[coarse_inds[4]] = 0;
-      coarse_data[coarse_inds[5]] = 4;
-      coarse_data[coarse_inds[6]] = 0;
-      coarse_data[coarse_inds[7]] = 9;
     }
+    coarse_data[coarse_inds[0]] = 5;
+    coarse_data[coarse_inds[1]] = 1;
+    coarse_data[coarse_inds[2]] = 7;
+    coarse_data[coarse_inds[3]] = 8;
+    coarse_data[coarse_inds[4]] = 0;
+    coarse_data[coarse_inds[5]] = 4;
+    coarse_data[coarse_inds[6]] = 0;
+    coarse_data[coarse_inds[7]] = 9;
 
     P2Crs->apply(*vector3, *vector2, Teuchos::NO_TRANS, Teuchos::ScalarTraits<SC>::one(),
                 Teuchos::ScalarTraits<SC>::zero());
@@ -1002,14 +1033,25 @@ namespace MueLuTests {
     fine_data = vector2->getData(0);
     bool is_linear_lvl2 = true, is_injected_lvl2 = true;
     if(comm->getRank() == 0) {
-      fine_inds[0] =  0;
-      fine_inds[1] =  2;
-      fine_inds[2] = 10;
-      fine_inds[3] = 12;
-      fine_inds[4] = 30;
-      fine_inds[5] = 32;
-      fine_inds[6] = 40;
-      fine_inds[7] = 42;
+      if(comm->getSize() == 1) {
+        fine_inds[0] =  0;
+        fine_inds[1] =  2;
+        fine_inds[2] = 10;
+        fine_inds[3] = 12;
+        fine_inds[4] = 50;
+        fine_inds[5] = 52;
+        fine_inds[6] = 60;
+        fine_inds[7] = 62;
+      } else if(comm->getSize() == 4) {
+        fine_inds[0] =  0;
+        fine_inds[1] =  2;
+        fine_inds[2] = 10;
+        fine_inds[3] = 12;
+        fine_inds[4] = 30;
+        fine_inds[5] = 32;
+        fine_inds[6] = 40;
+        fine_inds[7] = 42;
+      }
       for(LO i = 0; i < 8; ++i) {
         if(fabs(fine_data[fine_inds[i]] - coarse_data[coarse_inds[i]]) > 1.0e-10) {
           is_injected_lvl2 = false;
@@ -1017,7 +1059,9 @@ namespace MueLuTests {
       }
       SC linear_avg = 0.0;
       for(auto ind : coarse_inds) {linear_avg += coarse_data[ind]/8;}
-      if(fabs(fine_data[21] - linear_avg) > 1.0e-10) { is_linear_lvl2 = false; }
+      LO fine_iref = 0;
+      if(comm->getSize() == 1) {fine_iref = 31;} else if(comm->getSize() == 4) {fine_iref = 21;}
+      if(fabs(fine_data[fine_iref] - linear_avg) > 1.0e-10) { is_linear_lvl2 = false; }
     }
 
 
