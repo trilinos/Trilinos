@@ -101,12 +101,6 @@ namespace Amesos2 {
     }
 #endif
 
-#ifdef HAVE_AMESOS2_TACHO
-    if (solverName == "amesos2_tacho" || solverName == "tacho") {
-      return true;
-    }
-#endif
-
 #ifdef HAVE_AMESOS2_SUPERLU
     if (solverName == "amesos2_superlu" || solverName == "superlu") {
       return true;
