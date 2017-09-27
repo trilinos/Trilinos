@@ -95,7 +95,9 @@ public:
   static std::string concreteName( T t )
 #endif
     {
-      return demangleName(typeid(t).name());
+      const std::type_info& ti = typeid(t);
+      const char* n = ti.name();
+      return demangleName(n);
     }
 };
 

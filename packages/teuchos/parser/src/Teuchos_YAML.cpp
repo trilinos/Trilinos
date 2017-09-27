@@ -43,6 +43,7 @@ Language make_language() {
   prods[PROD_BMAP_SCALAR]("bmap_item") >> "scalar", ":", "WS*", "tag?", "scalar", "NEWLINE";
   prods[PROD_BMAP_BSCALAR]("bmap_item") >> "scalar", ":", "WS*", "bscalar";
   prods[PROD_BMAP_BMAP]("bmap_item") >> "scalar", ":", "WS*", "NEWLINE", "INDENT", "comment*", "bmap_items", "DEDENT";
+  /* TODO: allow a tag in this */
   prods[PROD_BMAP_BSEQ]("bmap_item") >> "scalar", ":", "WS*", "NEWLINE", "INDENT", "comment*", "bseq_items", "DEDENT";
   prods[PROD_BMAP_FMAP]("bmap_item") >> "scalar", ":", "WS*", "tag?", "fmap", "NEWLINE";
   prods[PROD_BMAP_FSEQ]("bmap_item") >> "scalar", ":", "WS*", "tag?", "fseq", "NEWLINE";
@@ -79,11 +80,13 @@ Language make_language() {
   prods[PROD_COMMENT_NEXT]("comment*") >> "comment*", "#", "any*", "NEWLINE";
   prods[PROD_TAG_EMPTY]("tag?");
   prods[PROD_TAG]("tag?") >> "!", "!", "OTHERCHAR+", "WS+";
-  prods[PROD_BSCALAR]("bscalar") >> "|", "WS*", "NEWLINE", "INDENT", "bscalar_items", "DEDENT";
+  prods[PROD_BSCALAR]("bscalar") >> "pipe", "WS*", "NEWLINE", "INDENT", "bscalar_items", "DEDENT";
   prods[PROD_BSCALAR_FIRST]("bscalar_items") >> "bscalar_item";
   prods[PROD_BSCALAR_NEXT]("bscalar_items") >> "bscalar_items", "bscalar_item";
   prods[PROD_BSCALAR_LINE]("bscalar_item") >> "any*", "NEWLINE";
   prods[PROD_BSCALAR_INDENT]("bscalar_item") >> "INDENT", "bscalar_items", "DEDENT";
+  prods[PROD_PIPE_NORMAL]("pipe") >> "|";
+  prods[PROD_PIPE_DASH]("pipe") >> "|", "-";
   prods[PROD_DQUOTED_EMPTY]("dquoted*");
   prods[PROD_DQUOTED_NEXT]("dquoted*") >> "dquoted*", "dquoted";
   prods[PROD_SQUOTED_EMPTY]("squoted*");
@@ -103,6 +106,7 @@ Language make_language() {
   prods[PROD_REST_SPACE]("rest") >> "WS";
   prods[PROD_REST_DOT]("rest") >> ".";
   prods[PROD_REST_DASH]("rest") >> "-";
+  prods[PROD_REST_SQUOT]("rest") >> "'";
   prods[PROD_REST_OTHER]("rest") >> "OTHERCHAR";
   prods[PROD_DESCAPED_DQUOT]("descaped") >> "\"";
   prods[PROD_DESCAPED_SLASH]("descaped") >> "\\";
@@ -131,8 +135,8 @@ Language make_language() {
   prods[PROD_COMMON_EXCL]("common") >> "!";
   prods[PROD_COMMON_OTHER]("common") >> "OTHERCHAR";
   prods[PROD_SPACE_STAR_EMPTY]("WS*");
-  prods[PROD_SPACE_START_NEXT]("WS*") >> "WS*", "WS";
-  prods[PROD_SPACE_PLUS_EMPTY]("WS+") >> "WS";
+  prods[PROD_SPACE_STAR_NEXT]("WS*") >> "WS*", "WS";
+  prods[PROD_SPACE_PLUS_FIRST]("WS+") >> "WS";
   prods[PROD_SPACE_PLUS_NEXT]("WS+") >> "WS+", "WS";
   return out;
 }
