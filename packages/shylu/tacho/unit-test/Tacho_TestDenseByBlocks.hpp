@@ -56,6 +56,14 @@ TEST( DenseByBlocks, chol ) {
       ::invoke(dummy, dummy, A);
   }
 
+  // temporary testing ldl as dummy
+  {
+    double a[10][10], work[10][10];
+    int ipiv[10], info;
+    Lapack<double>::sytrf('U', 10, &a[0][0], 10, &ipiv[0], &work[0][0], 100, &info);
+    printf("ldl tested\n");
+  }
+
   // test: chol by blocks with attached base buffer
   const ordinal_type bm = (m/mb) + (m%mb>0);
   Kokkos::View<DenseMatrixViewHostType*,HostSpaceType> h("h", bm*bm);
