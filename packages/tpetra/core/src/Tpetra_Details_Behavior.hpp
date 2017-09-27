@@ -37,6 +37,18 @@ namespace Details {
 /// variables made after using any Tpetra class or calling any Tpetra
 /// function.  Best practice would be to set any environment variables
 /// that you want to set, before starting the executable.
+///
+/// Our main goal with this class is to give both users and developers
+/// more run-time control in determining Tpetra's behavior, by setting
+/// environment variables.  This makes debugging much more efficient,
+/// since before, enabling debugging code would have required
+/// reconfiguring and recompiling.  Not all of Tpetra has bought into
+/// this system yet; some debug code is still protected by macros like
+/// <tt>HAVE_TPETRA_DEBUG</tt>.  However, our goal is that as much
+/// Tpetra debugging code as possible can be enabled or disabled via
+/// environment variable.  This will have the additional advantage of
+/// avoiding errors due to only building and testing in debug or
+/// release mode, but not both.
 class Behavior {
 public:
   /// \brief Whether Tpetra is in debug mode.
