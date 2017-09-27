@@ -152,8 +152,16 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
     order_ = 3;
 
   } else if (stepperType == "General Partitioned IMEX RK") {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-       "Error - 'General Partitioned IMEX RK' is not implemented yet!\n");
+    Teuchos::RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
+      new Teuchos::ParameterList(pList->sublist("IMEX-RK Explicit Stepper")));
+
+    Teuchos::RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
+      new Teuchos::ParameterList(pList->sublist("IMEX-RK Implicit Stepper")));
+
+    // TODO: should probably check the order of the tableau match
+    this->setExplicitTableau("General ERK",  explicitPL);
+    this->setImplicitTableau("General DIRK", implicitPL);
+
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
        "Error - Not a valid StepperIMEX_RK_Partition type!  Stepper Type = "
@@ -554,10 +562,14 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
 
         // Setup InArgs and OutArgs
         typedef Thyra::ModelEvaluatorBase MEB;
-        MEB::InArgs<Scalar>  inArgs  = wrapperModelPairIMEX_->getInArgs();
-        MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX_->getOutArgs();
+        //MEB::InArgs<Scalar>  inArgs  = wrapperModelPairIMEX_->getInArgs();
+        //MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX_->getOutArgs();
+        wrapperModelPairIMEX_->setUseImplicitModel(true);
+        MEB::InArgs<Scalar>  inArgs  = wrapperModelPairIMEX_->createInArgs();
+        MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX_->createOutArgs();
         inArgs.set_x(stageX);
-        inArgs.set_p(wrapperModelPairIMEX_->getParameterIndex(), stageY);
+        if (wrapperModelPairIMEX_->getParameterIndex() >= 0)
+          inArgs.set_p(wrapperModelPairIMEX_->getParameterIndex(), stageY);
         if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(stageGx_[i]);
         if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (ts);
         if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);

@@ -196,10 +196,25 @@ WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 setParameterIndex(int parameterIndex)
 {
   if (implicitModel_->Np() == 0) {
-    TEUCHOS_TEST_FOR_EXCEPTION( 0 <= parameterIndex_, std::logic_error,
-      "Error - WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()\n"
-      "  Invalid parameter index = " << parameterIndex_ << "\n"
-      "  Should not be set since Np = "<<implicitModel_->Np()<<")\n");
+    if (parameterIndex >= 0) {
+      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,
+        "WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()");
+      *out << "Warning -- \n"
+           << "  Invalid input parameter index = " << parameterIndex << "\n"
+           << "  Should not be set since Np = "<<implicitModel_->Np() << "\n"
+           << "  Not setting parameter index." << std::endl;
+    }
+    if (parameterIndex_ >= 0) {
+      Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Teuchos::OSTab ostab(out,1,
+        "WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()");
+      *out << "Warning -- \n"
+           << "  Invalid parameter index = " << parameterIndex_ << "\n"
+           << "  Should not be set since Np = "<<implicitModel_->Np() << "\n"
+           << "  Resetting to parameter index to unset state." << std::endl;
+      parameterIndex_ = -1;
+    }
   } else {
     if(parameterIndex >= 0) {
       parameterIndex_ = parameterIndex;
@@ -212,13 +227,6 @@ setParameterIndex(int parameterIndex)
         }
       }
     }
-
-    TEUCHOS_TEST_FOR_EXCEPTION( 0 > parameterIndex_ or
-                                    parameterIndex_ >= implicitModel_->Np(),
-     std::logic_error,
-     "Error - WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()\n"
-     "  Invalid parameter index = " << parameterIndex_ << "\n"
-     "  Should be in the interval [0, Np) = [0, "<<implicitModel_->Np()<<")\n");
   }
 
   return;

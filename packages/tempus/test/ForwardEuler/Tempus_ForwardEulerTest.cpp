@@ -290,5 +290,44 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
   Teuchos::TimeMonitor::summarize();
 }
 
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ForwardEuler, NumberTimeSteps)
+{
+
+  std::vector<double> StepSize;
+  std::vector<double> ErrorNorm;
+  //const int nTimeStepSizes = 7;
+  double dt = 0.2;
+  //double order = 0.0;
+
+    // Read params from .xml file
+    RCP<ParameterList> pList =
+      getParametersFromXmlFile("Tempus_ForwardEuler_NumberOfTimeSteps.xml");
+
+    // Setup the VanDerPolModel
+    RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
+    RCP<VanDerPolModel<double> > model =
+      Teuchos::rcp(new VanDerPolModel<double>(vdpm_pl));
+
+    // Setup the Integrator and reset initial time step
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+    dt = pl->sublist("Demo Integrator").sublist("Time Step Control").get<double>("Initial Time Step");
+    const int numTimeSteps = pl->sublist("Demo Integrator").sublist("Time Step Control").get<int>("Number of Time Steps");
+    const std::string integratorStepperType = pl->sublist("Demo Integrator").sublist("Time Step Control").get<std::string>("Integrator Step Type");
+    std::cout << dt << std::endl;
+
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+      Tempus::integratorBasic<double>(pl, model);
+
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
+
+        //check that the number of time steps taken is whats is set in the parameter list
+        std::cout << "SIDAFA: index = " << integrator->getIndex() << std::endl;
+    TEST_EQUALITY(numTimeSteps, integrator->getIndex());
+}
 
 } // namespace Tempus_Test
