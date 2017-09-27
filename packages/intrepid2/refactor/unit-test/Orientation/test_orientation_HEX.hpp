@@ -79,8 +79,8 @@
 #include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_HEX_In_FEM.hpp"
 #include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
-#include "Intrepid2_L2_LINE_Cn_FEM.hpp"
-#include "Intrepid2_L2_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_LINE_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
@@ -1252,7 +1252,7 @@ int OrientationHex(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          //Basis_L2_QUAD_Cn_FEM<DeviceSpaceType,ValueType,ValueType> quadBasis(order-1);
+          //Basis_HVOL_QUAD_Cn_FEM<DeviceSpaceType,ValueType,ValueType> quadBasis(order-1);
           Basis_HGRAD_QUAD_Cn_FEM<Kokkos::DefaultHostExecutionSpace> quadBasis(order-1, POINTTYPE_GAUSS);
           ordinal_type quadBasisCardinality = quadBasis.getCardinality();
           ordinal_type numInternalDofs = quadBasis.getDofCount(dim-1,0);

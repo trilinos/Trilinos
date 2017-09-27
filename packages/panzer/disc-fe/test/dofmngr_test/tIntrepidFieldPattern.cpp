@@ -48,6 +48,7 @@
 #include <string>
 #include <iostream>
 
+#include "../../../../intrepid2/refactor/src/Discretization/Basis/Intrepid2_HVOL_C0_FEM.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 // include some intrepid basis functions
@@ -62,8 +63,6 @@
 #include "Intrepid2_HGRAD_HEX_C2_FEM.hpp"
 
 #include "Intrepid2_HDIV_TRI_I1_FEM.hpp"
-
-#include "Intrepid2_L2_C0_FEM.hpp"
 
 #include "Shards_BasicTopologies.hpp"
 
@@ -716,7 +715,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >()); // i'm irritated there are 4 letters in quad!
 
    {
-     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_L2_C0_FEM<PHX::exec_space,double,double>(tet));
+     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::exec_space,double,double>(tet));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);
@@ -752,7 +751,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    }
 
    {
-     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_L2_C0_FEM<PHX::exec_space,double,double>(hex));
+     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::exec_space,double,double>(hex));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);
@@ -800,7 +799,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    }
 
    {
-     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_L2_C0_FEM<PHX::exec_space,double,double>(tri));
+     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::exec_space,double,double>(tri));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);
@@ -826,7 +825,7 @@ TEUCHOS_UNIT_TEST(tIntrepid2FieldPattern, constant_basis)
    }
 
    {
-     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_L2_C0_FEM<PHX::exec_space,double,double>(quad));
+     RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2::Basis_HVOL_C0_FEM<PHX::exec_space,double,double>(quad));
      RCP<FieldPattern> pattern = rcp(new Intrepid2FieldPattern(basis));
 
      pattern->print(out);
