@@ -97,7 +97,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Ifpack                packages/ifpack                   PT
   ML                    packages/ml                       PT
   Belos                 packages/belos                    PT
-  ShyLU_SDS             packages/shylu/shylu_sds          PT
+  ShyLU_Node            packages/shylu/shylu_node         PT
   Amesos2               packages/amesos2                  PT
   SEACAS                packages/seacas                   PT # Depends on netcdf, optionally hdf5, xdmf, pamgen
   Trios                 packages/trios                    EX #temporary

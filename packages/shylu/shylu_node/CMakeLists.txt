@@ -2,7 +2,7 @@
 # A) Define the package
 #
 
-TRIBITS_PACKAGE_DECL(ShyLU_SDS)
+TRIBITS_PACKAGE_DECL(ShyLU_Node)
 
 #
 # C) Add the libraries, tests, and examples
