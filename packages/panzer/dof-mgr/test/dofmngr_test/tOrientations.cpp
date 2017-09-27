@@ -48,7 +48,7 @@
 #include <string>
 #include <iostream>
 
-#include "../../../../intrepid2/refactor/src/Discretization/Basis/Intrepid2_HVOL_C0_FEM.hpp"
+#include "Intrepid2_HVOL_C0_FEM.hpp"
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
