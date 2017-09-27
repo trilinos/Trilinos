@@ -47,7 +47,7 @@ SET(UNIT_TEST_DRIVER
 ###############################################################################
 INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                     ${CMAKE_CURRENT_SOURCE_DIR}
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test)
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LinearObjFactory_Tests
@@ -58,7 +58,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
           tTpetra_GlbEvalData.cpp 
           tEpetra_GlbEvalData.cpp 
           UnitTest_UniqueGlobalIndexer.cpp 
-          ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test/UnitTest_ConnManager.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp
           ${UNIT_TEST_DRIVER}
   COMM mpi
   NUM_MPI_PROCS 2
@@ -66,7 +66,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   tCloneLOF
-  SOURCES tCloneLOF.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
+  SOURCES tCloneLOF.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
+  COMM mpi
+  NUM_MPI_PROCS 2
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tEpetra_LOF_FilteredUGI
+  SOURCES tEpetra_LOF_FilteredUGI.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../../../dof-mgr/test/dofmngr_test/UnitTest_ConnManager.cpp ${UNIT_TEST_DRIVER}
   COMM mpi
   NUM_MPI_PROCS 2
   )
