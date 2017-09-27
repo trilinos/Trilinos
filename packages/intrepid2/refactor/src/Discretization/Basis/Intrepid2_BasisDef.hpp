@@ -740,7 +740,7 @@ namespace Intrepid2 {
   
   template<typename outputValueViewType,
            typename inputPointViewType>
-  void getValues_L2_Args( const outputValueViewType   outputValues,
+  void getValues_HVOL_Args( const outputValueViewType   outputValues,
                              const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology  cellTopo,

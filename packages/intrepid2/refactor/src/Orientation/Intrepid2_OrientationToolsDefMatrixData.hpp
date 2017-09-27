@@ -521,7 +521,7 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HCURL_TRI_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                         const ordinal_type order) {
-    Basis_L2_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
+    Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
     Basis_HCURL_TRI_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
     
     const ordinal_type numEdge = 3, numOrt = 2;
@@ -541,7 +541,7 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HDIV_TRI_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                        const ordinal_type order) {
-    Basis_L2_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
+    Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
     Basis_HDIV_TRI_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
     
     const ordinal_type numEdge = 3, numOrt = 2;
@@ -603,7 +603,7 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HCURL_TET_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                         const ordinal_type order) {
-    Basis_L2_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
+    Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
     Basis_HCURL_TRI_In_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order);
     Basis_HCURL_TET_In_FEM<Kokkos::DefaultHostExecutionSpace>  cellBasis(order);
       
@@ -639,7 +639,7 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HDIV_TET_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                        const ordinal_type order) {
-    Basis_L2_TRI_Cn_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order-1);
+    Basis_HVOL_TRI_Cn_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order-1);
     Basis_HDIV_TET_In_FEM<Kokkos::DefaultHostExecutionSpace>  cellBasis(order);
     
     const ordinal_type numFace = 4, numOrt = 6;

@@ -79,8 +79,8 @@
 #include "Intrepid2_HGRAD_TET_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_TET_In_FEM.hpp"
 #include "Intrepid2_HCURL_TRI_In_FEM.hpp"
-#include "Intrepid2_L2_LINE_Cn_FEM.hpp"
-#include "Intrepid2_L2_TRI_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_LINE_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_TRI_Cn_FEM.hpp"
 #include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
@@ -705,7 +705,7 @@ int OrientationTet(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_L2_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order-1);
+          Basis_HVOL_LINE_Cn_FEM<DeviceSpaceType,ValueType,ValueType> lineBasis(order-1);
           ordinal_type lineBasisCardinality = lineBasis.getCardinality();
           DynRankView ConstructWithLabel(lineDofCoords, lineBasisCardinality, dim-2);
           lineBasis.getDofCoords(lineDofCoords);
@@ -1172,7 +1172,7 @@ int OrientationTet(const bool verbose) {
         DynRankView ConstructWithLabel(dofCoordsOriented, numCells, basisCardinality, dim);
         basis.getDofCoords(dofCoords);
         {
-          Basis_L2_TRI_Cn_FEM<DeviceSpaceType,ValueType,ValueType> triBasis(order-1);
+          Basis_HVOL_TRI_Cn_FEM<DeviceSpaceType,ValueType,ValueType> triBasis(order-1);
           ordinal_type triBasisCardinality = triBasis.getCardinality();
           ordinal_type numInternalDofs = triBasis.getDofCount(dim-1,0);
           DynRankView ConstructWithLabel(triDofCoords, triBasisCardinality, dim-1);

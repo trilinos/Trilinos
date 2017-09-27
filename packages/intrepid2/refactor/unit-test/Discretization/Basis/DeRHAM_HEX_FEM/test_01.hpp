@@ -43,7 +43,7 @@
 
 /** \file
     \brief  Test for checking the De Rham complex for FEM on HEX
-            Testing that HGRAD_Cn --(grad)--> HCURL_In --(curl)--> HDIV_In --(div)--> L2_C(n-1)
+            Testing that HGRAD_Cn --(grad)--> HCURL_In --(curl)--> HDIV_In --(div)--> HVOL_C(n-1)
             And that curl grad f = 0, and div curl f =0.
     \author Created by M. Perego
  */
@@ -62,7 +62,7 @@
 #include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_HEX_In_FEM.hpp"
 #include "Intrepid2_HDIV_HEX_In_FEM.hpp"
-#include "Intrepid2_L2_HEX_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_HEX_Cn_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -129,7 +129,7 @@ int DeRHAM_HEX_FEM_Test01(const bool verbose) {
   typedef Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> HexHGRADBasisType;
   typedef Basis_HCURL_HEX_In_FEM<DeviceSpaceType,outputValueType,pointValueType> HexHCURLBasisType;
   typedef Basis_HDIV_HEX_In_FEM<DeviceSpaceType,outputValueType,pointValueType> HexHDIVBasisType;
-  typedef Basis_L2_HEX_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> HexL2BasisType;
+  typedef Basis_HVOL_HEX_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> HexHVOLBasisType;
 
   constexpr ordinal_type dim = 3;
   constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
@@ -432,11 +432,11 @@ int DeRHAM_HEX_FEM_Test01(const bool verbose) {
     *outStream
     << "\n"
     << "=======================================================================================================\n"
-    << "| TEST 3: Testing that the divergence of HDIV_In functions belong to L2_C(n-1) space                  |\n"
+    << "| TEST 3: Testing that the divergence of HDIV_In functions belong to HVOL_C(n-1) space                  |\n"
     << "=======================================================================================================\n";
 
     /*
-     * For every order n<=maxOrder, we check that the div of a function in HDIV_In space is in the L2_C(n-1) space.
+     * For every order n<=maxOrder, we check that the div of a function in HDIV_In space is in the HVOL_C(n-1) space.
      */
 
     for (ordinal_type order=1; order <= maxOrder; ++order ) {
@@ -448,26 +448,26 @@ int DeRHAM_HEX_FEM_Test01(const bool verbose) {
       DynRankView ConstructWithLabel(refCoords, refCardinality, dim);
       hexHGradBasis.getDofCoords(refCoords);
 
-      //Creating HDIV and L2 basis
+      //Creating HDIV and HVOL basis
       HexHDIVBasisType hexHDivBasis(order, POINTTYPE_EQUISPACED);  //any point type is fine
-      HexL2BasisType hexL2Basis(order-1, POINTTYPE_EQUISPACED);   //any point type is fine
+      HexHVOLBasisType hexHVOLBasis(order-1, POINTTYPE_EQUISPACED);   //any point type is fine
 
       const ordinal_type hdivCardinality = hexHDivBasis.getCardinality();
-      const ordinal_type l2Cardinality = hexL2Basis.getCardinality();
+      const ordinal_type hvolCardinality = hexHVOLBasis.getCardinality();
 
-      //Getting DOF coordinates for HDIV and L2 elements
+      //Getting DOF coordinates for HDIV and HVOL elements
       DynRankView ConstructWithLabel(hdivDofCoords, hdivCardinality, dim);
       hexHDivBasis.getDofCoords(hdivDofCoords);
 
-      DynRankView ConstructWithLabel(l2DofCoords, l2Cardinality, dim);
-      hexL2Basis.getDofCoords(l2DofCoords);
+      DynRankView ConstructWithLabel(hvolDofCoords, hvolCardinality, dim);
+      hexHVOLBasis.getDofCoords(hvolDofCoords);
 
-      //Getting DOF coefficients for HDIV and L2 elements
+      //Getting DOF coefficients for HDIV and HVOL elements
       DynRankView ConstructWithLabel(hdivDofCoeffs, hdivCardinality, dim);
       hexHDivBasis.getDofCoeffs(hdivDofCoeffs);
 
-      DynRankView ConstructWithLabel(l2DofCoeffs, l2Cardinality);
-      hexL2Basis.getDofCoeffs(l2DofCoeffs);
+      DynRankView ConstructWithLabel(hvolDofCoeffs, hvolCardinality);
+      hexHVOLBasis.getDofCoeffs(hvolDofCoeffs);
 
       //Evaluating the function at HDIV dof coordinates
       DynRankView ConstructWithLabel(funAtHDivDofCoords, hdivCardinality, dim);
@@ -492,38 +492,38 @@ int DeRHAM_HEX_FEM_Test01(const bool verbose) {
           ifunDivAtRefCoords(i) += funHDivCoeffs(k)*divOfHDivBasisAtRefCoords(k,i);
 
 
-      //Computing the div of the (hdiv) interpolated function (ifun) at L2 dof coordinates
-      DynRankView ConstructWithLabel(divOfHDivBasisAtL2DofCoords, hdivCardinality , l2Cardinality);
-      hexHDivBasis.getValues(divOfHDivBasisAtL2DofCoords, l2DofCoords, OPERATOR_DIV);
-      DynRankView ConstructWithLabel(ifunDivAtL2DofCoords, l2Cardinality);
-      for(int i=0;i<l2Cardinality;i++)
+      //Computing the div of the (hdiv) interpolated function (ifun) at HVOL dof coordinates
+      DynRankView ConstructWithLabel(divOfHDivBasisAtHVOLDofCoords, hdivCardinality , hvolCardinality);
+      hexHDivBasis.getValues(divOfHDivBasisAtHVOLDofCoords, hvolDofCoords, OPERATOR_DIV);
+      DynRankView ConstructWithLabel(ifunDivAtHVOLDofCoords, hvolCardinality);
+      for(int i=0;i<hvolCardinality;i++)
         for(int k=0;k<hdivCardinality;k++)
-          ifunDivAtL2DofCoords(i) += funHDivCoeffs(k)*divOfHDivBasisAtL2DofCoords(k,i);
+          ifunDivAtHVOLDofCoords(i) += funHDivCoeffs(k)*divOfHDivBasisAtHVOLDofCoords(k,i);
 
 
-      //Interpolating the div of ifun in the L2 space by computing the degrees of freedom for the function
-      DynRankView ConstructWithLabel(ifunDivL2Coeffs, l2Cardinality);
-      for(int i=0;i<l2Cardinality;i++)
-        ifunDivL2Coeffs(i) += ifunDivAtL2DofCoords(i)*l2DofCoeffs(i); //not really needed for L2, l2DofCoeffs = 1
+      //Interpolating the div of ifun in the HVOL space by computing the degrees of freedom for the function
+      DynRankView ConstructWithLabel(ifunDivHVOLCoeffs, hvolCardinality);
+      for(int i=0;i<hvolCardinality;i++)
+        ifunDivHVOLCoeffs(i) += ifunDivAtHVOLDofCoords(i)*hvolDofCoeffs(i); //not really needed for HVOL, hvolDofCoeffs = 1
 
-      //Evaluating the div of ifun in the L2 space at HDIV dof coordinates and compare it with the div of ifun at the same coords
+      //Evaluating the div of ifun in the HVOL space at HDIV dof coordinates and compare it with the div of ifun at the same coords
       //We note if the two representations of the div of ifun are equal at the HDIV dof coordinates, they are equal everywhere.
-      DynRankView ConstructWithLabel(l2BasisAtRefCoords, l2Cardinality , refCardinality);
-      hexL2Basis.getValues(l2BasisAtRefCoords, refCoords, OPERATOR_VALUE);
-      DynRankView ConstructWithLabel(ifunDivInL2SpaceAtRefCoords, refCardinality);
+      DynRankView ConstructWithLabel(hvolBasisAtRefCoords, hvolCardinality , refCardinality);
+      hexHVOLBasis.getValues(hvolBasisAtRefCoords, refCoords, OPERATOR_VALUE);
+      DynRankView ConstructWithLabel(ifunDivInHVOLSpaceAtRefCoords, refCardinality);
       pointValueType diffErr(0);
       for(int i=0;i<refCardinality;i++) {
-        for(int k=0;k<l2Cardinality;k++)
-          ifunDivInL2SpaceAtRefCoords(i) += ifunDivL2Coeffs(k)*l2BasisAtRefCoords(k,i);
-        diffErr = std::max(diffErr, std::abs(ifunDivInL2SpaceAtRefCoords(i) - ifunDivAtRefCoords(i)));
+        for(int k=0;k<hvolCardinality;k++)
+          ifunDivInHVOLSpaceAtRefCoords(i) += ifunDivHVOLCoeffs(k)*hvolBasisAtRefCoords(k,i);
+        diffErr = std::max(diffErr, std::abs(ifunDivInHVOLSpaceAtRefCoords(i) - ifunDivAtRefCoords(i)));
       }
 
       //Check that the two representations of the div of ifun are consistent
       if(diffErr > pow(7, order-1)*tol) { //heuristic relation on how round-off error depends on order
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << "Div of HDIV_I" << order << " function does not belong to L2_C" << order-1 << "."<<
-            "\nIn fact the L2 interpolation of the function div is different from the function div."<<
+        *outStream << "Div of HDIV_I" << order << " function does not belong to HVOL_C" << order-1 << "."<<
+            "\nIn fact the HVOL interpolation of the function div is different from the function div."<<
             "\nThe max norm of the difference at HDIV DOF coordinates is: " <<  diffErr << std::endl;
       }
 
