@@ -80,7 +80,8 @@ namespace Sacado {
      * template classes.
      */
     template <typename ExprT, typename Spec>
-    struct Expr {
+    class Expr {
+    public:
       typedef ExprT value_type;
     };
 
