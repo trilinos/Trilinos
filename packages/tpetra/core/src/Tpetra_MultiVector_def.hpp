@@ -817,6 +817,7 @@ namespace Tpetra {
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteToLIDs,
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteFromLIDs)
   {
+    using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::castAwayConstDualView;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
     using ::Tpetra::Details::ProfilingRegion;
@@ -829,9 +830,16 @@ namespace Tpetra {
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
 
-    // Change this to 'true' if you want copious debug output on all
-    // MPI processes.
-    constexpr bool debug = false;
+    // mfh 03 Aug 2017, 27 Sep 2017: Set the TPETRA_VERBOSE
+    // environment variable to "1" (or "TRUE") for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool debug = Behavior::verbose ();
+    int myRank = 0;
+    if (debug && ! this->getMap ().is_null () &&
+        ! this->getMap ()->getComm ().is_null ()) {
+      myRank = this->getMap ()->getComm ()->getRank ();
+    }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (permuteToLIDs.dimension_0 () != permuteFromLIDs.dimension_0 (),
@@ -851,10 +859,9 @@ namespace Tpetra {
     // If we need sync to device, then host has the most recent version.
     const bool copyOnHost = sourceMV.template need_sync<DMS> ();
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": copyOnHost="
-         << (copyOnHost ? "true" : "false") << std::endl;
+      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+        "copyOnHost=" << (copyOnHost ? "true" : "false") << std::endl;
       std::cerr << os.str ();
     }
 
@@ -868,9 +875,9 @@ namespace Tpetra {
     }
 
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": Copy source to target" << std::endl;
+      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+        "Copy source to target" << std::endl;
       std::cerr << os.str ();
     }
 
@@ -938,18 +945,18 @@ namespace Tpetra {
     if (permuteFromLIDs.dimension_0 () == 0 ||
         permuteToLIDs.dimension_0 () == 0) {
       if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         std::ostringstream os;
-        os << "Proc " << myRank << ": No permutations; done." << std::endl;
+        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+          "No permutations; done." << std::endl;
         std::cerr << os.str ();
       }
       return;
     }
 
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": Permute source to target" << std::endl;
+      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+        "Permute source to target" << std::endl;
       std::cerr << os.str ();
     }
 
@@ -968,10 +975,9 @@ namespace Tpetra {
       ! this->isConstantStride () || ! sourceMV.isConstantStride ();
 
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": nonConstStride="
-         << (nonConstStride ? "true" : "false") << std::endl;
+      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+        "nonConstStride=" << (nonConstStride ? "true" : "false") << std::endl;
       std::cerr << os.str ();
     }
 
@@ -1036,9 +1042,9 @@ namespace Tpetra {
 
     if (copyOnHost) { // permute on host too
       if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         std::ostringstream os;
-        os << "Proc " << myRank << ": Set up permutation arrays on host" << std::endl;
+        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+          "Set up permutation arrays on host" << std::endl;
         std::cerr << os.str ();
       }
       auto tgt_h = this->template getLocalView<HMS> ();
@@ -1051,9 +1057,9 @@ namespace Tpetra {
         create_const_view (permuteFromLIDs_nc.template view<HMS> ());
 
       if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         std::ostringstream os;
-        os << "Proc " << myRank << ": Call permute kernel on host" << std::endl;
+        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+          "Call permute kernel on host" << std::endl;
         std::cerr << os.str ();
       }
       if (nonConstStride) {
@@ -1076,9 +1082,9 @@ namespace Tpetra {
     }
     else { // permute on device
       if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         std::ostringstream os;
-        os << "Proc " << myRank << ": Set up permutation arrays on device" << std::endl;
+        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+          "Set up permutation arrays on device" << std::endl;
         std::cerr << os.str ();
       }
       auto tgt_d = this->template getLocalView<DMS> ();
@@ -1091,9 +1097,9 @@ namespace Tpetra {
         create_const_view (permuteFromLIDs_nc.template view<DMS> ());
 
       if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         std::ostringstream os;
-        os << "Proc " << myRank << ": Call permute kernel on device" << std::endl;
+        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+          "Call permute kernel on device" << std::endl;
         std::cerr << os.str ();
       }
       if (nonConstStride) {
@@ -1116,9 +1122,8 @@ namespace Tpetra {
     }
 
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": Done with copyAndPermuteNew" << std::endl;
+      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: Done" << std::endl;
       std::cerr << os.str ();
     }
   }
