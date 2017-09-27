@@ -81,7 +81,6 @@ readProblemParams(const std::string xmlFileName,
   return probParamsRCP;
 }
 
-
 // =========== //
 // main driver //
 // =========== //
@@ -123,7 +122,6 @@ int main(int argc, char* argv[])
 
   if (comm->getSize() > 1)
     MueLu::Utilities<SC,LO,GO,NO>::PauseForDebugger();
-
 
   // wrap the output stream
   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
