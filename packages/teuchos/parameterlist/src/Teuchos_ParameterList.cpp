@@ -722,7 +722,7 @@ bool Teuchos::haveSameValues( const ParameterList& list1, const ParameterList& l
   }
   // Check that the two parameter lists are the same length:
   if ((itr1 != list1.end()) || (itr2 != list2.end())) {
-    std::cerr << "lists are not the same size\n";
+    if (verbose) std::cerr << "lists are not the same size\n";
     return false;
   }
   return true;

@@ -57,10 +57,6 @@
 
 #include <Teuchos_Parser.hpp>
 
-//DEBUG
-#include <Teuchos_YAML.hpp>
-#include <Teuchos_Reader.hpp>
-
 using Teuchos::ParameterList;
 using Teuchos::RCP;
 
