@@ -143,6 +143,7 @@ namespace { // (anonymous)
                  const bool zeroOut = true,
                  const bool allowPadding = false)
   {
+    using ::Tpetra::Details::Behavior;
     using Kokkos::AllowPadding;
     using Kokkos::view_alloc;
     using Kokkos::WithoutInitializing;
@@ -153,6 +154,7 @@ namespace { // (anonymous)
     // also allows a raw pointer as its first argument.  See
     // https://github.com/kokkos/kokkos/issues/434.
     const std::string label ("MV::DualView");
+    const bool debug = Behavior::debug ();
 
     // NOTE (mfh 18 Feb 2015, 12 Apr 2015, 22 Sep 2016) Our separate
     // creation of the DualView's Views works around
@@ -184,27 +186,28 @@ namespace { // (anonymous)
         d_view = dev_view_type (view_alloc (label, WithoutInitializing),
                                 lclNumRows, numCols);
       }
-#ifdef HAVE_TPETRA_DEBUG
-      // Filling with NaN is a cheap and effective way to tell if
-      // downstream code is trying to use a MultiVector's data without
-      // them having been initialized.  ArithTraits lets us call nan()
-      // even if the scalar type doesn't define it; it just returns some
-      // undefined value in the latter case.  This won't hurt anything
-      // because by setting zeroOut=false, users already agreed that
-      // they don't care about the contents of the MultiVector.
-      const ST nan = Kokkos::Details::ArithTraits<ST>::nan ();
-      KokkosBlas::fill (d_view, nan);
-#endif // HAVE_TPETRA_DEBUG
+      if (debug) {
+        // Filling with NaN is a cheap and effective way to tell if
+        // downstream code is trying to use a MultiVector's data
+        // without them having been initialized.  ArithTraits lets us
+        // call nan() even if the scalar type doesn't define it; it
+        // just returns some undefined value in the latter case.  This
+        // won't hurt anything because by setting zeroOut=false, users
+        // already agreed that they don't care about the contents of
+        // the MultiVector.
+        const ST nan = Kokkos::Details::ArithTraits<ST>::nan ();
+        KokkosBlas::fill (d_view, nan);
+      }
     }
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (static_cast<size_t> (d_view.dimension_0 ()) != lclNumRows ||
-       static_cast<size_t> (d_view.dimension_1 ()) != numCols, std::logic_error,
-       "allocDualView: d_view's dimensions actual dimensions do not match "
-       "requested dimensions.  d_view is " << d_view.dimension_0 () << " x " <<
-       d_view.dimension_1 () << "; requested " << lclNumRows << " x " << numCols
-       << ".  Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
+    if (debug) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (static_cast<size_t> (d_view.dimension_0 ()) != lclNumRows ||
+         static_cast<size_t> (d_view.dimension_1 ()) != numCols, std::logic_error,
+         "allocDualView: d_view's dimensions actual dimensions do not match "
+         "requested dimensions.  d_view is " << d_view.dimension_0 () << " x " <<
+         d_view.dimension_1 () << "; requested " << lclNumRows << " x " << numCols
+         << ".  Please report this bug to the Tpetra developers.");
+    }
 
     typename dual_view_type::t_host h_view = Kokkos::create_mirror_view (d_view);
 
@@ -817,6 +820,7 @@ namespace Tpetra {
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteToLIDs,
                      const Kokkos::DualView<const LocalOrdinal*, device_type>& permuteFromLIDs)
   {
+    using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::castAwayConstDualView;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
     using ::Tpetra::Details::ProfilingRegion;
@@ -829,9 +833,16 @@ namespace Tpetra {
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::MultiVector::copyAndPermute");
 
-    // Change this to 'true' if you want copious debug output on all
-    // MPI processes.
-    constexpr bool debug = false;
+    // mfh 03 Aug 2017, 27 Sep 2017: Set the TPETRA_VERBOSE
+    // environment variable to "1" (or "TRUE") for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool debug = Behavior::verbose ();
+    int myRank = 0;
+    if (debug && ! this->getMap ().is_null () &&
+        ! this->getMap ()->getComm ().is_null ()) {
+      myRank = this->getMap ()->getComm ()->getRank ();
+    }
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (permuteToLIDs.dimension_0 () != permuteFromLIDs.dimension_0 (),
@@ -851,10 +862,9 @@ namespace Tpetra {
     // If we need sync to device, then host has the most recent version.
     const bool copyOnHost = sourceMV.template need_sync<DMS> ();
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": copyOnHost="
-         << (copyOnHost ? "true" : "false") << std::endl;
+      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+        "copyOnHost=" << (copyOnHost ? "true" : "false") << std::endl;
       std::cerr << os.str ();
     }
 
@@ -868,9 +878,9 @@ namespace Tpetra {
     }
 
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": Copy source to target" << std::endl;
+      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+        "Copy source to target" << std::endl;
       std::cerr << os.str ();
     }
 
@@ -938,18 +948,18 @@ namespace Tpetra {
     if (permuteFromLIDs.dimension_0 () == 0 ||
         permuteToLIDs.dimension_0 () == 0) {
       if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         std::ostringstream os;
-        os << "Proc " << myRank << ": No permutations; done." << std::endl;
+        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+          "No permutations; done." << std::endl;
         std::cerr << os.str ();
       }
       return;
     }
 
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": Permute source to target" << std::endl;
+      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+        "Permute source to target" << std::endl;
       std::cerr << os.str ();
     }
 
@@ -968,10 +978,9 @@ namespace Tpetra {
       ! this->isConstantStride () || ! sourceMV.isConstantStride ();
 
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": nonConstStride="
-         << (nonConstStride ? "true" : "false") << std::endl;
+      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+        "nonConstStride=" << (nonConstStride ? "true" : "false") << std::endl;
       std::cerr << os.str ();
     }
 
@@ -1036,9 +1045,9 @@ namespace Tpetra {
 
     if (copyOnHost) { // permute on host too
       if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         std::ostringstream os;
-        os << "Proc " << myRank << ": Set up permutation arrays on host" << std::endl;
+        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+          "Set up permutation arrays on host" << std::endl;
         std::cerr << os.str ();
       }
       auto tgt_h = this->template getLocalView<HMS> ();
@@ -1051,9 +1060,9 @@ namespace Tpetra {
         create_const_view (permuteFromLIDs_nc.template view<HMS> ());
 
       if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         std::ostringstream os;
-        os << "Proc " << myRank << ": Call permute kernel on host" << std::endl;
+        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+          "Call permute kernel on host" << std::endl;
         std::cerr << os.str ();
       }
       if (nonConstStride) {
@@ -1076,9 +1085,9 @@ namespace Tpetra {
     }
     else { // permute on device
       if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         std::ostringstream os;
-        os << "Proc " << myRank << ": Set up permutation arrays on device" << std::endl;
+        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+          "Set up permutation arrays on device" << std::endl;
         std::cerr << os.str ();
       }
       auto tgt_d = this->template getLocalView<DMS> ();
@@ -1091,9 +1100,9 @@ namespace Tpetra {
         create_const_view (permuteFromLIDs_nc.template view<DMS> ());
 
       if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         std::ostringstream os;
-        os << "Proc " << myRank << ": Call permute kernel on device" << std::endl;
+        os << "(Proc " << myRank << ") MV::copyAndPermuteNew: "
+          "Call permute kernel on device" << std::endl;
         std::cerr << os.str ();
       }
       if (nonConstStride) {
@@ -1116,9 +1125,8 @@ namespace Tpetra {
     }
 
     if (debug) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": Done with copyAndPermuteNew" << std::endl;
+      os << "(Proc " << myRank << ") MV::copyAndPermuteNew: Done" << std::endl;
       std::cerr << os.str ();
     }
   }
@@ -1430,10 +1438,7 @@ namespace Tpetra {
     // space."  Otherwise, sync() won't fence (indeed, it won't do
     // anything).
     typedef Kokkos::HostSpace HMS;
-#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
-#endif
-    //const char suffix[] = "  Please report this bug to the Tpetra developers."; // unused
     ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombine");
 
     // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
@@ -1461,25 +1466,25 @@ namespace Tpetra {
     }
 
     const size_t numVecs = getNumVectors ();
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (imports.dimension_0 ()) !=
-      numVecs * importLIDs.dimension_0 (),
-      std::runtime_error,
-      "imports.dimension_0() = " << imports.dimension_0 ()
-      << " != getNumVectors() * importLIDs.dimension_0() = " << numVecs
-      << " * " << importLIDs.dimension_0 () << " = "
-      << numVecs * importLIDs.dimension_0 () << ".");
+    if (debugCheckIndices) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_t> (imports.dimension_0 ()) !=
+         numVecs * importLIDs.dimension_0 (),
+         std::runtime_error,
+         "imports.dimension_0() = " << imports.dimension_0 ()
+         << " != getNumVectors() * importLIDs.dimension_0() = " << numVecs
+         << " * " << importLIDs.dimension_0 () << " = "
+         << numVecs * importLIDs.dimension_0 () << ".");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (constantNumPackets == static_cast<size_t> (0), std::runtime_error,
-       "constantNumPackets input argument must be nonzero.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (constantNumPackets == static_cast<size_t> (0), std::runtime_error,
+         "constantNumPackets input argument must be nonzero.");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (static_cast<size_t> (numVecs) !=
-       static_cast<size_t> (constantNumPackets),
-       std::runtime_error, "constantNumPackets must equal numVecs.");
-#endif // HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_t> (numVecs) !=
+         static_cast<size_t> (constantNumPackets),
+         std::runtime_error, "constantNumPackets must equal numVecs.");
+    }
 
     // mfh 12 Apr 2016: Decide where to unpack based on the memory
     // space in which the imports buffer was last modified.
@@ -1715,14 +1720,6 @@ namespace Tpetra {
           }
         }
       }
-      else {
-#ifdef HAVE_TPETRA_DEBUG
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX,
-           std::invalid_argument, "Invalid CombineMode: " << CM << ".  Valid "
-           "CombineMode values are ADD, REPLACE, INSERT, and ABSMAX.");
-#endif
-      }
     }
 
     if (printDebugOutput) {
@@ -1803,6 +1800,7 @@ namespace Tpetra {
   dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
        const Kokkos::View<dot_type*, Kokkos::HostSpace>& dots) const
   {
+    using ::Tpetra::Details::Behavior;
     using Kokkos::create_mirror_view;
     using Kokkos::subview;
     using Teuchos::Comm;
@@ -1821,16 +1819,15 @@ namespace Tpetra {
     }
     const size_t lclNumRows = this->getLocalLength ();
     const size_t numDots = static_cast<size_t> (dots.dimension_0 ());
+    const bool debug = Behavior::debug ();
 
-#ifdef HAVE_TPETRA_DEBUG
-    {
+    if (debug) {
       const bool compat = this->getMap ()->isCompatible (* (A.getMap ()));
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        ! compat, std::invalid_argument, "Tpetra::MultiVector::dot: *this is "
-        "not compatible with the input MultiVector A.  We only test for this "
-        "in a debug build.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! compat, std::invalid_argument, "'*this' MultiVector is not "
+        "compatible with the input MultiVector A.  We only test for this "
+        "in debug mode.");
     }
-#endif //  HAVE_TPETRA_DEBUG
 
     // FIXME (mfh 11 Jul 2014) These exception tests may not
     // necessarily be thrown on all processes consistently.  We should
@@ -2088,18 +2085,21 @@ namespace Tpetra {
       "weights.getNumVectors() = " << weights.getNumVectors ()
       << " and this->getNumVectors() = " << numVecs << ".");
 
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      ! this->getMap ()->isCompatible (*weights.getMap ()), std::runtime_error,
-      "MultiVectors do not have compatible Maps:" << std::endl
-      << "this->getMap(): " << std::endl << *this->getMap()
-      << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
-#else
-    const size_t lclNumRows = this->getLocalLength ();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      lclNumRows != weights.getLocalLength (), std::runtime_error,
-      "MultiVectors do not have the same local length.");
-#endif // HAVE_TPETRA_DEBUG
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+
+    if (debug) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! this->getMap ()->isCompatible (*weights.getMap ()), std::runtime_error,
+         "MultiVectors do not have compatible Maps:" << std::endl
+         << "this->getMap(): " << std::endl << *this->getMap()
+         << "weights.getMap(): " << std::endl << *weights.getMap() << std::endl);
+    }
+    else {
+      const size_t lclNumRows = this->getLocalLength ();
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (lclNumRows != weights.getLocalLength (), std::runtime_error,
+         "MultiVectors do not have the same local length.");
+    }
 
     norms_view_type lclNrms ("Tpetra::MV::lclNrms", numVecs);
 
@@ -3315,6 +3315,7 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::subview;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    const char tfecfFuncName[] = "getData: ";
 
     // Any MultiVector method that called the (classic) Kokkos Node's
     // viewBuffer or viewBufferNonConst methods always implied a
@@ -3333,15 +3334,12 @@ namespace Tpetra {
     Teuchos::ArrayRCP<const impl_scalar_type> dataAsArcp =
       Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
 
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (static_cast<size_t> (hostView_j.dimension_0 ()) <
        static_cast<size_t> (dataAsArcp.size ()), std::logic_error,
-      "Tpetra::MultiVector::getData: hostView_j.dimension_0() = "
-      << hostView_j.dimension_0 () << " < dataAsArcp.size() = "
-      << dataAsArcp.size () << ".  "
-      "Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
+       "hostView_j.dimension_0() = " << hostView_j.dimension_0 ()
+       << " < dataAsArcp.size() = " << dataAsArcp.size () << ".  "
+       "Please report this bug to the Tpetra developers.");
 
     return Teuchos::arcp_reinterpret_cast<const Scalar> (dataAsArcp);
   }
@@ -3354,6 +3352,7 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::subview;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
+    const char tfecfFuncName[] = "getDataNonConst: ";
 
     // Any MultiVector method that called the (classic) Kokkos Node's
     // viewBuffer or viewBufferNonConst methods always implied a
@@ -3376,15 +3375,12 @@ namespace Tpetra {
     Teuchos::ArrayRCP<impl_scalar_type> dataAsArcp =
       Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
 
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (static_cast<size_t> (hostView_j.dimension_0 ()) <
        static_cast<size_t> (dataAsArcp.size ()), std::logic_error,
-      "Tpetra::MultiVector::getDataNonConst: hostView_j.dimension_0() = "
-      << hostView_j.dimension_0 () << " < dataAsArcp.size() = "
-      << dataAsArcp.size () << ".  "
-      "Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
+       "hostView_j.dimension_0() = " << hostView_j.dimension_0 ()
+       << " < dataAsArcp.size() = " << dataAsArcp.size () << ".  "
+       "Please report this bug to the Tpetra developers.");
 
     return Teuchos::arcp_reinterpret_cast<Scalar> (dataAsArcp);
   }
@@ -3500,6 +3496,9 @@ namespace Tpetra {
         " rows on this process.");
     }
 
+    // mfh 27 Sep 2017: This debugging code depends on being able to
+    // declare variables that we can use below, so it's too hard for
+    // now to use run-time control to enable this code.
 #ifdef HAVE_TPETRA_DEBUG
     const size_t strideBefore =
       X.isConstantStride () ? X.getStride () : static_cast<size_t> (0);
@@ -3668,6 +3667,7 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
   subView (const Teuchos::Range1D& colRng) const
   {
+    using ::Tpetra::Details::Behavior;
     using Kokkos::ALL;
     using Kokkos::subview;
     using Teuchos::Array;
@@ -3734,41 +3734,41 @@ namespace Tpetra {
       }
     }
 
-#ifdef HAVE_TPETRA_DEBUG
-    using Teuchos::Comm;
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
+    const bool debug = Behavior::debug ();
+    if (debug) {
+      using Teuchos::Comm;
+      using Teuchos::outArg;
+      using Teuchos::REDUCE_MIN;
+      using Teuchos::reduceAll;
 
-    RCP<const Comm<int> > comm = this->getMap ().is_null () ? Teuchos::null :
-      this->getMap ()->getComm ();
-    if (! comm.is_null ()) {
-      int lclSuccess = 1;
-      int gblSuccess = 1;
+      RCP<const Comm<int> > comm = this->getMap ().is_null () ?
+        Teuchos::null : this->getMap ()->getComm ();
+      if (! comm.is_null ()) {
+        int lclSuccess = 1;
+        int gblSuccess = 1;
 
-      if (X_ret.is_null ()) {
-        lclSuccess = 0;
+        if (X_ret.is_null ()) {
+          lclSuccess = 0;
+        }
+        reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (lclSuccess != 1, std::logic_error, "X_ret (the subview of this "
+           "MultiVector; the return value of this method) is null on some MPI "
+           "process in this MultiVector's communicator.  This should never "
+           "happen.  Please report this bug to the Tpetra developers.");
+        if (! X_ret.is_null () &&
+            X_ret->getNumVectors () != static_cast<size_t> (colRng.size ())) {
+          lclSuccess = 0;
+        }
+        reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+                             outArg (gblSuccess));
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (lclSuccess != 1, std::logic_error, "X_ret->getNumVectors() != "
+           "colRng.size(), on at least one MPI process in this MultiVector's "
+           "communicator.  This should never happen.  "
+           "Please report this bug to the Tpetra developers.");
       }
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        lclSuccess != 1, std::logic_error, "X_ret (the subview of this "
-        "MultiVector; the return value of this method) is null on some MPI "
-        "process in this MultiVector's communicator.  This should never "
-        "happen.  Please report this bug to the Tpetra developers.");
-
-      if (! X_ret.is_null () &&
-          X_ret->getNumVectors () != static_cast<size_t> (colRng.size ())) {
-        lclSuccess = 0;
-      }
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        lclSuccess != 1, std::logic_error,
-        "X_ret->getNumVectors() != colRng.size(), on at least one MPI process "
-        "in this MultiVector's communicator.  This should never happen.  "
-        "Please report this bug to the Tpetra developers.");
     }
-#endif // HAVE_TPETRA_DEBUG
-
     return X_ret;
   }
 
@@ -4127,8 +4127,7 @@ namespace Tpetra {
     typedef Kokkos::Details::ArithTraits<impl_scalar_type> ATS;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> MV;
-    const char errPrefix[] = "Tpetra::MultiVector::multiply: ";
-
+    const char tfecfFuncName[] = "multiply: ";
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::multiply");
 
     // This routine performs a variety of matrix-matrix multiply
@@ -4159,38 +4158,43 @@ namespace Tpetra {
 
     impl_scalar_type beta_local = beta; // local copy of beta; might be reassigned below
 
-    // In a debug build, check compatibility of local dimensions.  We
-    // only do this in a debug build, since we have to do an
-    // all-reduce to ensure correctness on all processses.  It's
-    // entirely possible that only some processes may have
-    // incompatible local dimensions.  Throwing an exception only on
-    // those processes could cause this method to hang.
-#ifdef HAVE_TPETRA_DEBUG
-    if (! this->getMap ().is_null () && ! this->getMap ()->getComm ().is_null ()) {
-      const size_t A_nrows = (transA != NO_TRANS) ? A.getNumVectors() : A.getLocalLength();
-      const size_t A_ncols = (transA != NO_TRANS) ? A.getLocalLength() : A.getNumVectors();
-      const size_t B_nrows = (transB != NO_TRANS) ? B.getNumVectors() : B.getLocalLength();
-      const size_t B_ncols = (transB != NO_TRANS) ? B.getLocalLength() : B.getNumVectors();
+    // In debug mode, check compatibility of local dimensions.  We
+    // only do this in debug mode, since it requires an all-reduce
+    // to ensure correctness on all processses.  It's entirely
+    // possible that only some processes may have incompatible local
+    // dimensions.  Throwing an exception only on those processes
+    // could cause this method to hang.
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      if (! this->getMap ().is_null () && ! this->getMap ()->getComm ().is_null ()) {
+        using Teuchos::Comm;
+        using Teuchos::RCP;
+        using Teuchos::REDUCE_MIN;
+        using Teuchos::reduceAll;
+        using Teuchos::outArg;
 
-      const bool lclBad = this->getLocalLength () != A_nrows ||
-        this->getNumVectors () != B_ncols || A_ncols != B_nrows;
+        RCP<const Comm<int> > comm = this->getMap ()->getComm ();
+        const size_t A_nrows =
+          (transA != NO_TRANS) ? A.getNumVectors () : A.getLocalLength ();
+        const size_t A_ncols =
+          (transA != NO_TRANS) ? A.getLocalLength () : A.getNumVectors ();
+        const size_t B_nrows =
+          (transB != NO_TRANS) ? B.getNumVectors () : B.getLocalLength ();
+        const size_t B_ncols =
+          (transB != NO_TRANS) ? B.getLocalLength () : B.getNumVectors ();
 
-      const int lclGood = lclBad ? 0 : 1;
-      int gblGood = 0;
+        const bool lclBad = this->getLocalLength () != A_nrows ||
+          this->getNumVectors () != B_ncols || A_ncols != B_nrows;
+        const int lclGood = lclBad ? 0 : 1;
+        int gblGood = 0;
+        reduceAll<int, int> (*comm, REDUCE_MIN, lclGood, outArg (gblGood));
 
-      using Teuchos::REDUCE_MIN;
-      using Teuchos::reduceAll;
-      using Teuchos::outArg;
-
-      auto comm = this->getMap ()->getComm (); // not null; see above
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclGood, outArg (gblGood));
-
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (gblGood != 1, std::runtime_error, errPrefix << "Local dimensions of "
-         "*this, op(A), and op(B) are not consistent on at least one process "
-         "in this object's communicator.");
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (gblGood != 1, std::runtime_error, "Local dimensions of '*this', "
+           "op(A), and op(B) are not consistent on at least one process "
+           "in this object's communicator.");
+      }
     }
-#endif // HAVE_TPETRA_DEBUG
 
     const bool A_is_local = ! A.isDistributed ();
     const bool B_is_local = ! B.isDistributed ();
@@ -4206,10 +4210,10 @@ namespace Tpetra {
       transA == NO_TRANS;
 
     // Test that we are considering a meaningful case
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! Case1 && ! Case2 && ! Case3, std::runtime_error, errPrefix
-      << "Multiplication of op(A) and op(B) into *this is not a "
-      "supported use case.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! Case1 && ! Case2 && ! Case3, std::runtime_error,
+       "Multiplication of op(A) and op(B) into *this is not a "
+       "supported use case.");
 
     if (beta != STS::zero () && Case2) {
       // If Case2, then C is local and contributions must be summed
@@ -4248,10 +4252,10 @@ namespace Tpetra {
       B_tmp = rcpFromRef (B);
     }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! C_tmp->isConstantStride () || ! B_tmp->isConstantStride () ||
-      ! A_tmp->isConstantStride (), std::logic_error, errPrefix
-      << "Failed to make temporary constant-stride copies of MultiVectors.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! C_tmp->isConstantStride () || ! B_tmp->isConstantStride () ||
+       ! A_tmp->isConstantStride (), std::logic_error,
+       "Failed to make temporary constant-stride copies of MultiVectors.");
 
     {
       typedef LocalOrdinal LO;
@@ -4609,20 +4613,19 @@ namespace Tpetra {
   {
     // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
     // touches the RCP's reference count, which isn't thread safe.
-    const LocalOrdinal MyRow = this->map_->getLocalElement (gblRow);
+    const LocalOrdinal lclRow = this->map_->getLocalElement (gblRow);
 #ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
-      std::runtime_error,
-      "Tpetra::MultiVector::replaceGlobalValue: Global row index " << gblRow
-      << "is not present on this process "
-      << this->getMap ()->getComm ()->getRank () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange (col), std::runtime_error,
-      "Tpetra::MultiVector::replaceGlobalValue: Vector index " << col
-      << " of the multivector is invalid.");
+    const char tfecfFuncName[] = "replaceGlobalValue: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
+       std::runtime_error,
+       "Global row index " << gblRow << "is not present on this process "
+       << this->getMap ()->getComm ()->getRank () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (this->vectorIndexOutOfRange (col), std::runtime_error,
+       "Vector index " << col << " of the MultiVector is invalid.");
 #endif // HAVE_TPETRA_DEBUG
-    this->replaceLocalValue (MyRow, col, ScalarValue);
+    this->replaceLocalValue (lclRow, col, ScalarValue);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
