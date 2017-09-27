@@ -108,6 +108,7 @@ namespace Kokkos {
 #include "Kokkos_TeuchosCommAdapters_UQ_PCE.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorDistObjectKernels_UQ_PCE.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy_UQ_PCE.hpp"
+#include "Tpetra_Details_fill_UQ_PCE.hpp"
 #include "Kokkos_Random_UQ_PCE.hpp"
 
 namespace Stokhos {
