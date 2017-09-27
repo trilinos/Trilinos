@@ -174,7 +174,7 @@ namespace LOCA {
      * Will throw an error if the solver does not exist yet.
      */
     virtual Teuchos::RCP<NOX::Solver::Generic>
-    getSolver() const;
+    getSolver();
 
     /*! @brief Return the current continuation parameter from the underlying LOCA::MultiContinuation::AbstractStrategy.
      *
@@ -184,11 +184,11 @@ namespace LOCA {
 
     //! Get parameter list
     Teuchos::ParameterList &
-    getParams() const;
+    getParams();
 
     //! Get step size parameter list
     Teuchos::ParameterList &
-    getStepSizeParams() const;
+    getStepSizeParams();
 
   protected:
 

@@ -145,21 +145,21 @@ Piro::LOCASolver<Scalar>::~LOCASolver()
 
 template<typename Scalar>
 Teuchos::RCP<NOX::Solver::Generic>
-Piro::LOCASolver<Scalar>::getSolver() const
+Piro::LOCASolver<Scalar>::getSolver()
 {
   return stepper_->getSolver();
 }
 
 template<typename Scalar>
 Teuchos::ParameterList &
-Piro::LOCASolver<Scalar>::getStepperParams() const
+Piro::LOCASolver<Scalar>::getStepperParams()
 {
   return stepper_->getParams();
 }
 
 template<typename Scalar>
 Teuchos::ParameterList &
-Piro::LOCASolver<Scalar>::getStepSizeParams() const
+Piro::LOCASolver<Scalar>::getStepSizeParams()
 {
   return stepper_->getStepSizeParams();
 }

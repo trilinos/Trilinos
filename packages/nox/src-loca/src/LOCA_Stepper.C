@@ -879,7 +879,7 @@ LOCA::Stepper::getList() const
 }
 
 Teuchos::RCP<NOX::Solver::Generic>
-LOCA::Stepper::getSolver() const
+LOCA::Stepper::getSolver()
 {
   if (solverPtr.get() == NULL) {
     globalData->locaErrorCheck->throwError(
@@ -1035,13 +1035,13 @@ LOCA::Stepper::withinThreshold()
 }
 
 Teuchos::ParameterList &
-LOCA::Stepper::getParams() const
+LOCA::Stepper::getParams()
 {
   return *stepperList;
 }
 
 Teuchos::ParameterList &
-LOCA::Stepper::getStepSizeParams() const
+LOCA::Stepper::getStepSizeParams()
 {
   return *parsedParams->getSublist("Step Size");
 }

@@ -74,15 +74,15 @@ public:
 
   //! Return the current nonlinear solver pointer.
   Teuchos::RCP<NOX::Solver::Generic>
-  getSolver() const;
+  getSolver();
 
   //! Return stepper parameters
   Teuchos::ParameterList &
-  getStepperParams() const;
+  getStepperParams();
 
   //! Return step size parameters
   Teuchos::ParameterList &
-  getStepSizeParams() const;
+  getStepSizeParams();
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
