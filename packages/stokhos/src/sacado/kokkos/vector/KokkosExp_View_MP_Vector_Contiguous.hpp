@@ -149,6 +149,54 @@ void deep_copy(
   Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
 }
 
+// Overload of deep_copy for MP::Vector views intializing to a constant scalar
+template< class ExecSpace , class DT, class ... DP >
+void deep_copy(
+  const ExecSpace &,
+  const View<DT,DP...> & view ,
+  const typename View<DT,DP...>::array_type::value_type & value
+  , typename std::enable_if<(
+  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
+  )>::type * = 0 )
+{
+  static_assert(
+    std::is_same< typename ViewTraits<DT,DP...>::value_type ,
+                  typename ViewTraits<DT,DP...>::non_const_value_type >::value
+    , "Can only deep copy into non-const type" );
+
+  typedef typename FlatArrayType< View<DT,DP...> >::type flat_array_type;
+  Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+}
+
+// Overload of deep_copy for MP::Vector views intializing to a constant MP::Vector
+template< class ExecSpace , class DT, class ... DP >
+void deep_copy(
+  const ExecSpace &,
+  const View<DT,DP...> & view ,
+  const typename View<DT,DP...>::value_type & value
+  , typename std::enable_if<(
+  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
+  )>::type * = 0 )
+{
+  static_assert(
+    std::is_same< typename ViewTraits<DT,DP...>::value_type ,
+                  typename ViewTraits<DT,DP...>::non_const_value_type >::value
+    , "Can only deep copy into non-const type" );
+
+  // static_assert(
+  //   Sacado::StaticSize< typename View<DT,DP...>::value_type >::value
+  //   ||
+  //   std::is_same< Kokkos::Impl::ActiveExecutionMemorySpace
+  //               , Kokkos::HostSpace >::value
+  //   , "Deep copy from a FAD type must be statically sized or host space" );
+
+  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+}
+
 /* Specialize for deep copy of MP::Vector */
 template< class DT , class ... DP , class ST , class ... SP >
 inline
