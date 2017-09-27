@@ -230,7 +230,6 @@ namespace Amesos2 {
     };
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_AMESOS2_KOKKOS)
-#include <Kokkos_Core.hpp>
     template < class T0 >
     struct getStdCplxType< T0, Kokkos::complex<T0>* >
     {
