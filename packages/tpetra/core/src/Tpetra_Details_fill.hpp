@@ -170,6 +170,7 @@ private:
   IndexType numCols_;
 };
 
+#if defined(KOKKOS_ENABLE_SERIAL)
 /// \brief Specialization for ExecutionSpace = Kokkos::Serial
 ///   and rank = 1.
 template<class ViewType,
@@ -209,7 +210,9 @@ struct Fill<ViewType,
     }
   }
 };
+#endif // defined(KOKKOS_ENABLE_SERIAL)
 
+#if defined(KOKKOS_ENABLE_SERIAL)
 /// \brief Specialization for ExecutionSpace = Kokkos::Serial
 ///   and rank = 2.
 template<class ViewType,
@@ -261,6 +264,7 @@ struct Fill<ViewType,
     }
   }
 };
+#endif // defined(KOKKOS_ENABLE_SERIAL)
 
 } // namespace Impl
 
