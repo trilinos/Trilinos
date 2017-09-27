@@ -41,25 +41,25 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
   stepperTypes.push_back("Partitioned IMEX RK 1st order");
   stepperTypes.push_back("Partitioned IMEX RK SSP2"     );
   stepperTypes.push_back("Partitioned IMEX RK ARS 233"  );
-  //stepperTypes.push_back("General Partitioned IMEX RK"  );
+  stepperTypes.push_back("General Partitioned IMEX RK"  );
 
   std::vector<double> stepperOrders;
   stepperOrders.push_back(1.21571);
   stepperOrders.push_back(1.94113);
   stepperOrders.push_back(3.14676);
-  //stepperOrders.push_back(1.0);
+  stepperOrders.push_back(1.98157);
 
   std::vector<double> stepperErrors;
   stepperErrors.push_back(0.136124);
   stepperErrors.push_back(0.0269125);
   stepperErrors.push_back(0.0309342);
-  //stepperErrors.push_back(1.38785e-05);
+  stepperErrors.push_back(0.0117654);
 
   std::vector<double> stepperInitDt;
   stepperInitDt.push_back(0.0125);
   stepperInitDt.push_back(0.05);
   stepperInitDt.push_back(0.05);
-  //stepperInitDt.push_back(0.025);
+  stepperInitDt.push_back(0.05);
 
   std::vector<std::string>::size_type m;
   for(m = 0; m != stepperTypes.size(); m++) {
@@ -103,7 +103,13 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
 
       // Set the Stepper
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-      pl->sublist("Default Stepper").set("Stepper Type", stepperType);
+
+      if (stepperType == "General Partitioned IMEX RK"){
+          // use the appropriate stepper sublist
+          pl->sublist("Default Integrator").set("Stepper Name", "General IMEX RK");
+      }  else {
+          pl->sublist("Default Stepper").set("Stepper Type", stepperType);
+      }
 
       // Set the step size
       if (n == nTimeStepSizes-1) dt /= 10.0;

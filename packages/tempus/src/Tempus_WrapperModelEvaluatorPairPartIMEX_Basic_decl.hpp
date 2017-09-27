@@ -103,6 +103,8 @@ public:
   //@}
 
   //@{ \name Accessors
+    virtual void setNumExplicitOnlyBlocks(int numExp)
+    {numExplicitOnlyBlocks_ = numExp; }
     virtual void setExplicitModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model )
     { explicitModel_ = model; }
@@ -112,6 +114,8 @@ public:
       getExplicitModel() const { return explicitModel_; }
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getImplicitModel() const { return implicitModel_; }
+    virtual int getNumExplicitOnlyBlocks() const
+    { return numExplicitOnlyBlocks_; }
 
     /// Extract IMEX vector from a full solution vector
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getIMEXVector(
@@ -161,7 +165,7 @@ public:
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> & out) const;
   //@}
 
-private:
+//private:
   /// Default constructor - not allowed
   WrapperModelEvaluatorPairPartIMEX_Basic(){}
 
