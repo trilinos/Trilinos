@@ -359,30 +359,16 @@ Basker<Matrix,Vector>::solve_impl(
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-    auto sp_rowptr = this->matrixA_->returnRowPtr();
-    TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
-    auto sp_colind = this->matrixA_->returnColInd();
-    TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
 #ifndef HAVE_TEUCHOS_COMPLEX
-    auto sp_values = this->matrixA_->returnValues();
     auto b_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B );
     auto x_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X );
 #else
     // NDE: 09/25/2017
     // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
     using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
-
-    complex_type * sp_values = nullptr;
-      sp_values = reinterpret_cast< complex_type * > ( this->matrixA_->returnValues() );
-
     complex_type * b_vector = reinterpret_cast< complex_type * >( Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B ) );
     complex_type * x_vector = reinterpret_cast< complex_type * >( Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X ) );
 #endif
-    TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
-
     TEUCHOS_TEST_FOR_EXCEPTION(b_vector == nullptr,
         std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
 
