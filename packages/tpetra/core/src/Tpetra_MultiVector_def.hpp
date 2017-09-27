@@ -52,6 +52,7 @@
 
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_fill.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
@@ -1132,6 +1133,7 @@ namespace Tpetra {
                      size_t& constantNumPackets,
                      Distributor & /* distor */ )
   {
+    using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
     using Kokkos::Compat::create_const_view;
     using Kokkos::Compat::getKokkosViewDeepCopy;
@@ -1146,19 +1148,29 @@ namespace Tpetra {
       dev_execution_space;
     ProfilingRegion regionPAP ("Tpetra::MultiVector::packAndPrepare");
 
-    // TODO (mfh 09 Sep 2016): The pack and unpack functions now have
-    // the option to check indices.  We do so in a debug build.  At
-    // some point, it would make sense to shift this to a run-time
-    // option, controlled by environment variable.
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debugCheckIndices = true;
-#else
-    constexpr bool debugCheckIndices = false;
-#endif // HAVE_TPETRA_DEBUG
+    // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
+    // have the option to check indices.  We do so when Tpetra is in
+    // debug mode.  It is in debug mode by default in a debug build,
+    // but you may control this at run time, before launching the
+    // executable, by setting the TPETRA_DEBUG environment variable to
+    // "1" (or "TRUE").
+    const bool debugCheckIndices = Behavior::debug ();
+    // mfh 03 Aug 2017, 27 Sep 2017: Set the TPETRA_VERBOSE
+    // environment variable to "1" (or "TRUE") for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool printDebugOutput = Behavior::verbose ();
 
-    const bool printDebugOutput = false;
+    int myRank = 0;
+    if (printDebugOutput && ! this->getMap ().is_null () &&
+        ! this->getMap ()->getComm ().is_null ()) {
+      myRank = this->getMap ()->getComm ()->getRank ();
+    }
+
     if (printDebugOutput) {
-      std::cerr << "$$$ MV::packAndPrepareNew" << std::endl;
+      std::ostringstream os;
+      os << "Proc " << myRank << ": MV::packAndPrepareNew" << std::endl;
+      std::cerr << os.str ();
     }
     // We've already called checkSizes(), so this cast must succeed.
     const MV& sourceMV = dynamic_cast<const MV&> (sourceObj);
@@ -1182,6 +1194,12 @@ namespace Tpetra {
     auto src_host = sourceMV.template getLocalView<host_memory_space> ();
     if (packOnHost) {
       if (sourceMV.template need_sync<Kokkos::HostSpace> ()) {
+        if (printDebugOutput) {
+          std::ostringstream os;
+          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
+            "Pack on host, need sync to host" << std::endl;
+          std::cerr << os.str ();
+        }
         // sourceMV was most recently updated on device; copy to host.
         // Allocate a new host mirror.  We'll use it for packing below.
         src_host = decltype (src_host) ("MV::DualView::h_view",
@@ -1192,6 +1210,12 @@ namespace Tpetra {
     }
     else { // pack on device
       if (sourceMV.template need_sync<device_type> ()) {
+        if (printDebugOutput) {
+          std::ostringstream os;
+          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
+            "Pack on device, need sync to device" << std::endl;
+          std::cerr << os.str ();
+        }
         // sourceMV was most recently updated on host; copy to device.
         // Allocate a new "device mirror."  We'll use it for packing below.
         src_dev = decltype (src_dev) ("MV::DualView::d_view",
@@ -1212,7 +1236,10 @@ namespace Tpetra {
     // goes _after_ setting constantNumPackets correctly.
     if (exportLIDs.dimension_0 () == 0) {
       if (printDebugOutput) {
-        std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
+        std::ostringstream os;
+        os << "Proc " << myRank << ": MV::packAndPrepareNew: "
+          "No exports on this proc, DONE" << std::endl;
+        std::cerr << os.str ();
       }
       return;
     }
@@ -1232,13 +1259,16 @@ namespace Tpetra {
     // needs to know how to index into that data.  Kokkos is good at
     // decoupling storage intent from data layout choice.
 
-    if (printDebugOutput) {
-      std::cerr << "$$$ MV::packAndPrepareNew realloc" << std::endl;
-    }
-
     const size_t numExportLIDs = exportLIDs.dimension_0 ();
     const size_t newExportsSize = numCols * numExportLIDs;
-
+    if (printDebugOutput) {
+      std::ostringstream os;
+      os << "Proc " << myRank << ": MV::packAndPrepareNew: realloc: "
+         << "numExportLIDs = " << numExportLIDs
+         << ", exports.dimension_0() = " << exports.dimension_0 ()
+         << ", newExportsSize = " << newExportsSize << std::endl;
+      std::cerr << os.str ();
+    }
     Details::reallocDualViewIfNeeded (exports, newExportsSize, "exports");
 
     // 'exports' may have different memory spaces than device_type
@@ -1273,7 +1303,10 @@ namespace Tpetra {
       if (sourceMV.isConstantStride ()) {
         using KokkosRefactor::Details::pack_array_single_column;
         if (printDebugOutput) {
-          std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 const stride" << std::endl;
+          std::ostringstream os;
+          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
+            "pack numCols=1 const stride" << std::endl;
+          std::cerr << os.str ();
         }
         if (packOnHost) {
           pack_array_single_column (exports.template view<EHMS> (),
@@ -1293,7 +1326,10 @@ namespace Tpetra {
       else {
         using KokkosRefactor::Details::pack_array_single_column;
         if (printDebugOutput) {
-          std::cerr << "$$$ MV::packAndPrepareNew pack numCols=1 nonconst stride" << std::endl;
+          std::ostringstream os;
+          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
+            "pack numCols=1 nonconst stride" << std::endl;
+          std::cerr << os.str ();
         }
         if (packOnHost) {
           pack_array_single_column (exports.template view<EHMS> (),
@@ -1315,7 +1351,10 @@ namespace Tpetra {
       if (sourceMV.isConstantStride ()) {
         using KokkosRefactor::Details::pack_array_multi_column;
         if (printDebugOutput) {
-          std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 const stride" << std::endl;
+          std::ostringstream os;
+          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
+            "pack numCols>1 const stride" << std::endl;
+          std::cerr << os.str ();
         }
         if (packOnHost) {
           pack_array_multi_column (exports.template view<EHMS> (),
@@ -1335,7 +1374,10 @@ namespace Tpetra {
       else {
         using KokkosRefactor::Details::pack_array_multi_column_variable_stride;
         if (printDebugOutput) {
-          std::cerr << "$$$ MV::packAndPrepareNew pack numCols>1 nonconst stride" << std::endl;
+          std::ostringstream os;
+          os << "Proc " << myRank << ": MV::packAndPrepareNew: "
+            "pack numCols>1 nonconst stride" << std::endl;
+          std::cerr << os.str ();
         }
         if (packOnHost) {
           pack_array_multi_column_variable_stride (exports.template view<EHMS> (),
@@ -1357,7 +1399,9 @@ namespace Tpetra {
     }
 
     if (printDebugOutput) {
-      std::cerr << "$$$ MV::packAndPrepareNew DONE" << std::endl;
+      std::ostringstream os;
+      os << "Proc " << myRank << ": MV::packAndPrepareNew: DONE" << std::endl;
+      std::cerr << os.str ();
     }
   }
 
@@ -1372,6 +1416,7 @@ namespace Tpetra {
                        Distributor& /* distor */,
                        const CombineMode CM)
   {
+    using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::ProfilingRegion;
     using ::Tpetra::Details::castAwayConstDualView;
     using KokkosRefactor::Details::unpack_array_multi_column;
@@ -1385,28 +1430,30 @@ namespace Tpetra {
     // space."  Otherwise, sync() won't fence (indeed, it won't do
     // anything).
     typedef Kokkos::HostSpace HMS;
-
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
 #endif
     //const char suffix[] = "  Please report this bug to the Tpetra developers."; // unused
-
-    // mfh 03 Aug 2017: Set this to true for copious debug output to
-    // std::cerr on every MPI process.  This is unwise for runs with
-    // large numbers of MPI processes.
-    constexpr bool debug = false;
-
     ProfilingRegion regionUAC ("Tpetra::MultiVector::unpackAndCombine");
 
-    // TODO (mfh 09 Sep 2016): The pack and unpack functions now have
-    // the option to check indices.  We do so in a debug build.  At
-    // some point, it would make sense to shift this to a run-time
-    // option, controlled by environment variable.
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debugCheckIndices = true;
-#else
-    constexpr bool debugCheckIndices = false;
-#endif // HAVE_TPETRA_DEBUG
+    // mfh 09 Sep 2016, 26 Sep 2017: The pack and unpack functions now
+    // have the option to check indices.  We do so when Tpetra is in
+    // debug mode.  It is in debug mode by default in a debug build,
+    // but you may control this at run time, before launching the
+    // executable, by setting the TPETRA_DEBUG environment variable to
+    // "1" (or "TRUE").
+    const bool debugCheckIndices = Behavior::debug ();
+
+    // mfh 03 Aug 2017, 27 Sep 2017: Set the TPETRA_VERBOSE
+    // environment variable to "1" (or "TRUE") for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool printDebugOutput = Behavior::verbose ();
+    int myRank = 0;
+    if (printDebugOutput && ! this->getMap ().is_null () &&
+        ! this->getMap ()->getComm ().is_null ()) {
+      myRank = this->getMap ()->getComm ()->getRank ();
+    }
 
     // If we have no imports, there is nothing to do
     if (importLIDs.dimension_0 () == 0) {
@@ -1443,9 +1490,8 @@ namespace Tpetra {
       imports.modified_host () != 0 &&
       imports.modified_host () > imports.modified_device ();
 
-    if (debug) {
+    if (printDebugOutput) {
       std::ostringstream os;
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       os << "(Proc " << myRank << ") MV::unpackAndCombine: unpackOnHost: "
          << (unpackOnHost ? "true" : "false") << std::endl;
       std::cerr << os.str ();
@@ -1457,9 +1503,8 @@ namespace Tpetra {
     // to be in the right place.
     auto theImportLIDs = castAwayConstDualView (importLIDs);
     if (unpackOnHost && importLIDs.modified_host () < importLIDs.modified_device ()) {
-      if (debug) {
+      if (printDebugOutput) {
         std::ostringstream os;
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         os << "(Proc " << myRank << ") MV::unpackAndCombine: sync importLIDs "
           "to host" << std::endl;
         std::cerr << os.str ();
@@ -1471,9 +1516,8 @@ namespace Tpetra {
       theImportLIDs.template sync<HMS> ();
     }
     else if (! unpackOnHost && importLIDs.modified_host () > importLIDs.modified_device ()) {
-      if (debug) {
+      if (printDebugOutput) {
         std::ostringstream os;
-        const int myRank = this->getMap ()->getComm ()->getRank ();
         os << "(Proc " << myRank << ") MV::unpackAndCombine: sync importLIDs "
           "to device" << std::endl;
         std::cerr << os.str ();
@@ -1484,9 +1528,8 @@ namespace Tpetra {
       // often has more) than importLIDs.
       theImportLIDs.template sync<DMS> ();
     }
-    else if (debug) {
+    else if (printDebugOutput) {
       std::ostringstream os;
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       os << "(Proc " << myRank << ") MV::unpackAndCombine: no need to sync "
         "importLIDs" << std::endl;
       std::cerr << os.str ();
@@ -1539,9 +1582,8 @@ namespace Tpetra {
       the data for a Packet (all data associated with an LID) is
       required to be contiguous. */
 
-    if (debug) {
+    if (printDebugOutput) {
       std::ostringstream os;
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       os << "(Proc " << myRank << ") MV::unpackAndCombine: unpacking"
          << std::endl;
       std::cerr << os.str ();
@@ -1683,9 +1725,8 @@ namespace Tpetra {
       }
     }
 
-    if (debug) {
+    if (printDebugOutput) {
       std::ostringstream os;
-      const int myRank = this->getMap ()->getComm ()->getRank ();
       os << "(Proc " << myRank << ") MV::unpackAndCombine: Done!"
          << std::endl;
       std::cerr << os.str ();
