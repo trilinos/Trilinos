@@ -480,7 +480,6 @@ namespace MueLu {
       *myGeo->lCoarseNodesPerDir[2];
 
     // For each direction, determine how many points (including ghosts) are required.
-    LO numGhosts = 0, numGhosted = 0;
     for(int dim = 0; dim < 3; ++dim) {
       // The first branch of this if-statement will be used if the rank contains only one layer
       // of nodes in direction i, that layer must also coincide with the boundary of the mesh
@@ -497,15 +496,16 @@ namespace MueLu {
       // Check whether face *hi needs ghost nodes
       if(myGeo->ghostInterface[2*dim + 1]) {myGeo->ghostedCoarseNodesPerDir[dim] += 1;}
     }
-    numGhosted = myGeo->ghostedCoarseNodesPerDir[2]*myGeo->ghostedCoarseNodesPerDir[1]
+    myGeo->lNumGhostedNodes = myGeo->ghostedCoarseNodesPerDir[2]*myGeo->ghostedCoarseNodesPerDir[1]
       *myGeo->ghostedCoarseNodesPerDir[0];
-    numGhosts = numGhosted - myGeo->lNumCoarseNodes;
-    ghostedCoarseNodes->PIDs.resize(numGhosted);
-    ghostedCoarseNodes->LIDs.resize(numGhosted);
-    ghostedCoarseNodes->GIDs.resize(numGhosted);
-    ghostedCoarseNodes->coarseGIDs.resize(numGhosted);
-    lCoarseNodesGIDs[0].resize(numGhosted - numGhosts);
-    lCoarseNodesGIDs[1].resize(numGhosted - numGhosts);
+    myGeo->lNumGhostNodes = myGeo->lNumGhostedNodes - myGeo->lNumCoarseNodes;
+    ghostedCoarseNodes->PIDs.resize(myGeo->lNumGhostedNodes);
+    ghostedCoarseNodes->LIDs.resize(myGeo->lNumGhostedNodes);
+    ghostedCoarseNodes->GIDs.resize(myGeo->lNumGhostedNodes);
+    ghostedCoarseNodes->coarseGIDs.resize(myGeo->lNumGhostedNodes);
+    ghostedCoarseNodes->colInds.resize(myGeo->lNumGhostedNodes);
+    lCoarseNodesGIDs[0].resize(myGeo->lNumCoarseNodes);
+    lCoarseNodesGIDs[1].resize(myGeo->lNumCoarseNodes);
 
     // Now the tricky part starts, the coarse nodes / ghosted coarse nodes need to be imported.
     // This requires finding what their GID on the fine mesh is. They need to be ordered
@@ -575,14 +575,10 @@ namespace MueLu {
         % (myGeo->gFineNodesPerDir[1]*myGeo->gFineNodesPerDir[0]);
       myGeo->startIndices[1] = tmp / myGeo->gFineNodesPerDir[0];
       myGeo->startIndices[0] = tmp % myGeo->gFineNodesPerDir[0];
-
-      myGeo->startIndices[5] = fineCoordsMap->getMaxGlobalIndex()
-        / (myGeo->gFineNodesPerDir[1]*myGeo->gFineNodesPerDir[0]);
-      tmp = fineCoordsMap->getMaxGlobalIndex()
-        % (myGeo->gFineNodesPerDir[1]*myGeo->gFineNodesPerDir[0]);
-      myGeo->startIndices[4] = tmp / myGeo->gFineNodesPerDir[0];
-      myGeo->startIndices[3] = tmp % myGeo->gFineNodesPerDir[0];
     } // End of scope for tmp
+    for(int dim = 0; dim < 3; ++dim) {
+      myGeo->startIndices[dim + 3] = myGeo->startIndices[dim] + myGeo->lFineNodesPerDir[dim] - 1;
+    }
 
     for(int dim = 0; dim < 3; ++dim) {
       if(dim < myGeo->numDimensions) {
@@ -668,7 +664,6 @@ namespace MueLu {
       *myGeo->lCoarseNodesPerDir[2];
 
     // For each direction, determine how many points (including ghosts) are required.
-    LO numGhosts = 0, numGhosted = 0;
     bool ghostedDir[6] = {false};
     for(int dim = 0; dim < 3; ++dim) {
       // The first branch of this if-statement will be used if the rank contains only one layer
@@ -692,15 +687,16 @@ namespace MueLu {
         ghostedDir[2*dim + 1] = true;
       }
     }
-    numGhosted = myGeo->ghostedCoarseNodesPerDir[2]*myGeo->ghostedCoarseNodesPerDir[1]
+    myGeo->lNumGhostedNodes = myGeo->ghostedCoarseNodesPerDir[2]*myGeo->ghostedCoarseNodesPerDir[1]
       *myGeo->ghostedCoarseNodesPerDir[0];
-    numGhosts= numGhosted - myGeo->lNumCoarseNodes;
-    ghostedCoarseNodes->PIDs.resize(numGhosted);
-    ghostedCoarseNodes->LIDs.resize(numGhosted);
-    ghostedCoarseNodes->GIDs.resize(numGhosted);
-    ghostedCoarseNodes->coarseGIDs.resize(numGhosted);
-    lCoarseNodesGIDs[0].resize(numGhosted - numGhosts);
-    lCoarseNodesGIDs[1].resize(numGhosted - numGhosts);
+    myGeo->lNumGhostNodes = myGeo->lNumGhostedNodes - myGeo->lNumCoarseNodes;
+    ghostedCoarseNodes->PIDs.resize(myGeo->lNumGhostedNodes);
+    ghostedCoarseNodes->LIDs.resize(myGeo->lNumGhostedNodes);
+    ghostedCoarseNodes->GIDs.resize(myGeo->lNumGhostedNodes);
+    ghostedCoarseNodes->coarseGIDs.resize(myGeo->lNumGhostedNodes);
+    ghostedCoarseNodes->colInds.resize(myGeo->lNumGhostedNodes);
+    lCoarseNodesGIDs[0].resize(myGeo->lNumCoarseNodes);
+    lCoarseNodesGIDs[1].resize(myGeo->lNumCoarseNodes);
 
     // Now the tricky part starts, the coarse nodes / ghosted coarse nodes need to be imported.
     // This requires finding what their GID on the fine mesh is. They need to be ordered
@@ -764,8 +760,8 @@ namespace MueLu {
         }
       }
     }
-    Array<int> ghostsPIDs(numGhosted);
-    Array<LO>  ghostsLIDs(numGhosted);
+    Array<int> ghostsPIDs(myGeo->lNumGhostedNodes);
+    Array<LO>  ghostsLIDs(myGeo->lNumGhostedNodes);
     fineCoordsMap->getRemoteIndexList(ghostedCoarseNodes->GIDs(),
                                       ghostedCoarseNodes->PIDs(),
                                       ghostedCoarseNodes->LIDs());
@@ -806,36 +802,60 @@ namespace MueLu {
     LO lNumCoarseNodes = ghostedCoarseNodes->PIDs.size();         //This number includes ghost nodes
     GO numGloCols      = dofsPerNode*myGeo->gNumCoarseNodes;
 
-    LO colInd, countOwned = 0, countRemote = 0, remoteOffset = myGeo->lNumCoarseNodes;
-    Array<GO> colGIDs(dofsPerNode*lNumCoarseNodes);
-    for(LO ind = 0; ind < lNumCoarseNodes; ++ind) {
-      if(ghostedCoarseNodes->PIDs[ind] == myRank) {
-        colInd = countOwned;
-        ++countOwned;
-      } else {
-        colInd = countRemote + remoteOffset;
-        ++countRemote;
-      }
-      for(LO dof = 0; dof < dofsPerNode; ++dof) {
-        colGIDs[dofsPerNode*colInd + dof] = dofsPerNode*ghostedCoarseNodes->coarseGIDs[ind] + dof;
-      }
-    }
-
     // Build maps necessary to create and fill complete the prolongator
     // note: rowMapP == rangeMapP and colMapP != domainMapP
     RCP<const Map> rowMapP = Amat->getDomainMap();
 
-    RCP<const Map> colMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),
-                                                                 OTI,
-                                                                 colGIDs(),
-                                                                 rowMapP->getIndexBase(),
-                                                                 rowMapP->getComm());
+    RCP<const Map> domainMapP;
 
-    RCP<const Map> domainMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),
-                                                                    numGloCols,
-                                                                    coarseNodesGIDs[0](),
-                                                                    rowMapP->getIndexBase(),
-                                                                    rowMapP->getComm());
+    RCP<const Map> colMapP;
+
+    // At this point we need to create the column map which is a delicate operation.
+    // The entries in that map need to be ordered as follows:
+    //         1) first owned entries ordered by LID
+    //         2) second order the remaining entries by PID
+    //         3) entries with the same remote PID are ordered by GID.
+    // One piece of good news: myGeo->lNumCoarseNodes is the number of ownedNodes and
+    // myGeo->lNumGhostNodes is the number of remote nodes. The sorting can be limited to remote
+    // nodes as the owned ones are alreaded ordered by LID!
+
+    {
+      std::vector<NodeID> colMapOrdering(myGeo->lNumGhostedNodes);
+      for(LO ind = 0; ind < myGeo->lNumGhostedNodes; ++ind) {
+        colMapOrdering[ind].GID = ghostedCoarseNodes->GIDs[ind];
+        if(ghostedCoarseNodes->PIDs[ind] == myRank) {
+          colMapOrdering[ind].PID = -1;
+        } else {
+          colMapOrdering[ind].PID = ghostedCoarseNodes->PIDs[ind];
+        }
+        colMapOrdering[ind].LID = ghostedCoarseNodes->LIDs[ind];
+        colMapOrdering[ind].lexiInd = ind;
+      }
+      std::sort(colMapOrdering.begin(), colMapOrdering.end(),
+                [](NodeID a, NodeID b)->bool{
+                  return ( (a.PID < b.PID) || ((a.PID == b.PID) && (a.GID < b.GID)) );
+                });
+
+      Array<GO> colGIDs(dofsPerNode*myGeo->lNumGhostedNodes);
+      for(LO ind = 0; ind < myGeo->lNumGhostedNodes; ++ind) {
+        // Save the permutation calculated to go from Lexicographic indexing to column map indexing
+        ghostedCoarseNodes->colInds[colMapOrdering[ind].lexiInd] = ind;
+        for(LO dof = 0; dof < dofsPerNode; ++dof) {
+          colGIDs[dofsPerNode*ind + dof] = dofsPerNode*colMapOrdering[ind].GID + dof;
+        }
+      }
+      domainMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),
+                                                       numGloCols,
+                                                       colGIDs.view(0,dofsPerNode*
+                                                                    myGeo->lNumCoarseNodes),
+                                                       rowMapP->getIndexBase(),
+                                                       rowMapP->getComm());
+      colMapP = Xpetra::MapFactory<LO,GO,NO>::Build(rowMapP->lib(),
+                                                    OTI,
+                                                    colGIDs.view(0, colGIDs.size()),
+                                                    rowMapP->getIndexBase(),
+                                                    rowMapP->getComm());
+    } // End of scope for colMapOrdering and colGIDs
 
     std::vector<size_t> strideInfo(1);
     strideInfo[0] = dofsPerNode;
@@ -1073,11 +1093,12 @@ namespace MueLu {
       sh_sort2(interpolationPIDs.begin(),interpolationPIDs.end(),
                permutation.begin(), permutation.end());
 
+      GO colInd;
       for(LO j = 0; j < dofsPerNode; ++j) {
         ia[currentIndex*dofsPerNode + j + 1] = ia[currentIndex*dofsPerNode + j] + nStencil;
         for(LO k = 0; k < nStencil; ++k) {
-          ja[ia[currentIndex*dofsPerNode + j] + k] =
-            interpolationLIDs[nzIndStencil[permutation[k]]]*dofsPerNode + j;
+          colInd = ghostedCoarseNodes->colInds[interpolationLIDs[nzIndStencil[permutation[k]]]];
+          ja[ia[currentIndex*dofsPerNode + j] + k] = colInd*dofsPerNode + j;
           val[ia[currentIndex*dofsPerNode + j] + k] = stencil[nzIndStencil[permutation[k]]];
         }
         // Add the stencil for each degree of freedom.

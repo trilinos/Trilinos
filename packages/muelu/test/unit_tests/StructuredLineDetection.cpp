@@ -239,7 +239,7 @@ namespace MueLuTests {
 
     LO numDimensions = 3;
 
-    LO maxLevels = 3, maxIter = 10;
+    LO maxLevels = 2, maxIter = 10;
     RCP<Matrix> Op;
     RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
     RCP<Xpetra::Map<LO,GO,NO> > map;

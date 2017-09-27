@@ -156,8 +156,8 @@ namespace MueLu {
 
       std::string meshLayout = "Global Lexicographic";
       int numDimensions;
-      LO lNumFineNodes = -1, lNumCoarseNodes = -1, lNumGhostNodes = -1, lNumFineNodes10 = -1;
-      LO myBlock = -1, numBlocks = -1;
+      LO lNumFineNodes = -1, lNumCoarseNodes = -1, lNumGhostNodes = -1,lNumGhostedNodes  = -1;
+      LO myBlock = -1, numBlocks = -1, lNumFineNodes10 = -1;
       GO gNumFineNodes = -1, gNumCoarseNodes = -1, gNumFineNodes10 = -1, minGlobalIndex = -1;
       Array<int> coarseRate, endRate;
       Array<LO> lFineNodesPerDir, lCoarseNodesPerDir, offsets, ghostedCoarseNodesPerDir;
@@ -186,6 +186,16 @@ namespace MueLu {
       Array<GO>  GIDs, coarseGIDs;
       Array<int> PIDs;
       Array<LO>  LIDs;
+      std::vector<GO> colInds;
+    };
+
+    struct NodeID {
+      // This small struct is similar to the one above but only for one node.
+      // It is used to create a vector of NodeID that can easily be sorted
+
+      GO  GID;
+      int PID;
+      LO  LID, lexiInd;
     };
 
     void MeshLayoutInterface(const int interpolationOrder, const LO blkSize,

@@ -374,7 +374,7 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
     // generate problem
-    LocalOrdinal maxLevels = 3;
+    LocalOrdinal maxLevels = 2;
     // LocalOrdinal its=10;
     GO nx = 4;
     GO ny = 4;
@@ -575,7 +575,7 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
     // generate problem
-    LocalOrdinal maxLevels = 3;
+    LocalOrdinal maxLevels = 2;
     // LocalOrdinal its=10;
     GO nx = 4;
     GO ny = 4;
@@ -1092,7 +1092,7 @@ namespace MueLuTests {
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
     // generate problem
-    LocalOrdinal maxLevels = 3;
+    LocalOrdinal maxLevels = 2;
     // LocalOrdinal its=10;
     GO nx = 4;
     GO ny = 4;
