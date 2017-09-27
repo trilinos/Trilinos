@@ -33,17 +33,25 @@ extern "C" {
   void F77_BLAS_MANGLE(ssytrf,SSYTRF)( const char*, 
                                        int*, 
                                        float*, int*,
-                                       int* );
+                                       int*,
+                                       float*, int*,
+                                       int*);
   void F77_BLAS_MANGLE(dsytrf,DSYTRF)( const char*, 
+                                       int*,
+                                       double*, int*,
                                        int*,
                                        double*, int*,
                                        int*);
   void F77_BLAS_MANGLE(csytrf,CSYTRF)( const char*, 
                                        int*,
                                        Kokkos::complex<float>*, int*,
+                                       int*,
+                                       Kokkos::complex<float>*, int *,
                                        int*);
   void F77_BLAS_MANGLE(zsytrf,ZSYTRF)( const char*, 
                                        int*, 
+                                       Kokkos::complex<double>*, int*,
+                                       int*,
                                        Kokkos::complex<double>*, int*,
                                        int*);
 
@@ -84,11 +92,13 @@ namespace Tacho {
                  int m,
                  T *a, int lda,
                  int *ipiv,
+                 T *work, int lwork,
                  int *info) {
         F77_FUNC_SSYTRF(&uplo,
                         &m,
                         a, &lda,
                         ipiv,
+                        work, &lwork,
                         info);
       }
     };
@@ -110,11 +120,13 @@ namespace Tacho {
                  int m,
                  T *a, int lda,
                  int *ipiv,
+                 T *work, int lwork,
                  int *info) {
         F77_FUNC_DSYTRF(&uplo,
                         &m,
                         a, &lda,
                         ipiv,
+                        work, &lwork,
                         info);
       }
 
@@ -145,18 +157,21 @@ namespace Tacho {
                  int m,
                  T *a, int lda,
                  int *ipiv,
+                 T *work, int lwork,
                  int *info) {
 #if defined( TACHO_HAVE_MKL )
         F77_FUNC_CSYTRF(&uplo,
                         &m,
                         (MKL_Complex8 *)a, &lda,
                         ipiv,
+                        (MKL_Complex8 *)work, &lwork,
                         info);
 #else
         F77_FUNC_CSYTRF(&uplo,
                         &m,
                         a, &lda,
                         ipiv,
+                        work, &lwork,
                         info);
 #endif
       }
@@ -187,18 +202,21 @@ namespace Tacho {
                  int m,
                  T *a, int lda,
                  int *ipiv,
+                 T* work, int lwork,
                  int *info) {
 #if defined( TACHO_HAVE_MKL )
         F77_FUNC_ZSYTRF(&uplo,
                         &m,
                         (MKL_Complex16 *)a, &lda,
                         ipiv,
+                        (MKL_Complex16 *)work, &lwork,
                         info);
 #else
         F77_FUNC_ZSYTRF(&uplo,
                         &m,
                         a, &lda,
                         ipiv,
+                        work, &lwork,
                         info);
 #endif
       }

@@ -53,6 +53,7 @@
 #include "Panzer_ConnManager.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_NodeType.hpp"
+#include "Panzer_FieldType.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -74,7 +75,7 @@ public:
 
   /** Constructor that sets the connection manager and communicator
     * objects. This is equivalent to calling the default constructor and
-    * then "setConnManager" routine.
+    * then "setConnManager(...)" routine.
     */
   DOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
 
@@ -95,15 +96,31 @@ public:
     *
     * \param[in] str Human readable name of the field
     * \param[in] pattern Pattern defining the basis function to be used
+    * \param[in] type Type of the Field (CG/DG) for generating GIDs
     *
     * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code> 
     *       or <code>registerFields</code>.
     */
-  int addField(const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern);
+  int addField(const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern,
+               const panzer::FieldType& type = panzer::FieldType::CG);
 
-  //! Adds a field with an option for specifying the block.
-  int addField(const std::string & blockID, const std::string & str, const Teuchos::RCP<const FieldPattern> & pattern);
-
+  /** \brief Add a field with an option for specifying the block.
+    *
+    * Add a field to the DOF manager. Immediately after
+    * adding the field the field number and field size
+    * will be available for a user to access
+    *
+    * \param[in] blockID Name of the element block that this field should be added to
+    * \param[in] str Human readable name of the field
+    * \param[in] pattern Pattern defining the basis function to be used
+    * \param[in] type Type of the Field (CG/DG) for generating GIDs
+    *
+    * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code> 
+    *       or <code>registerFields</code>.
+    */
+  int addField(const std::string & blockID, const std::string & str,
+               const Teuchos::RCP<const FieldPattern> & pattern,
+               const panzer::FieldType& type = panzer::FieldType::CG);
 
    /** \brief Find a field pattern stored for a particular block and field number. This will
      *        retrive the pattern added with <code>addField(blockId,fieldNum)</code>.
@@ -193,7 +210,7 @@ public:
   int getNumFields() const;
 
   /** gets the field pattern so you can find a particular
-    * field in the GIDs aray.
+    * field in the GIDs array.
     */
   const std::vector<int> & getGIDFieldOffsets(const std::string & blockID, int fieldNum) const;
 
@@ -388,6 +405,7 @@ protected:
   //Please note: AID=absolute ID. This is an attempt to remember that
   // fieldPatterns_ is unchanging storage for FPs.
   std::vector<Teuchos::RCP<const FieldPattern> > fieldPatterns_;
+  std::vector<FieldType> fieldTypes_; // FieldType for a Field Pattern. Use AID to access just like fieldPatterns_.
   std::map<std::string,int> fieldNameToAID_;
 
   std::vector<std::string> blockOrder_; // To be got from the ConnManager.

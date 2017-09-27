@@ -95,7 +95,7 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
    RCP<const FieldPattern> patternC = rcp(new Intrepid2FieldPattern(basisB));
 
-   std::vector<RCP<const FieldPattern> > patterns;
+   std::vector<std::pair<FieldType,RCP<const FieldPattern>>> patterns;
    std::vector<int> indices;
 
    {
@@ -111,9 +111,9 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
 
    {
       patterns.clear();
-      patterns.push_back(patternA);
-      patterns.push_back(patternB);
-      patterns.push_back(patternC);
+      patterns.push_back(std::make_pair(FieldType::CG,patternA));
+      patterns.push_back(std::make_pair(FieldType::CG,patternB));
+      patterns.push_back(std::make_pair(FieldType::CG,patternC));
 
       GeometricAggFieldPattern gfp;
       gfp.buildPattern(patterns);
@@ -144,8 +144,8 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test2d)
       patternB = rcp(new Intrepid2FieldPattern(basis));
 
       patterns.clear();
-      patterns.push_back(patternA);
-      patterns.push_back(patternB);
+      patterns.push_back(std::make_pair(FieldType::CG,patternA));
+      patterns.push_back(std::make_pair(FieldType::CG,patternB));
 
       GeometricAggFieldPattern gfp;
       gfp.buildPattern(patterns);
@@ -187,14 +187,14 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test3d)
    RCP<const FieldPattern> patternB = rcp(new Intrepid2FieldPattern(basisB));
    RCP<const FieldPattern> patternC = rcp(new Intrepid2FieldPattern(basisB));
 
-   std::vector<RCP<const FieldPattern> > patterns;
+   std::vector<std::pair<FieldType,RCP<const FieldPattern>>> patterns;
    std::vector<int> indices;
 
    {
       patterns.clear();
-      patterns.push_back(patternA);
-      patterns.push_back(patternB);
-      patterns.push_back(patternC);
+      patterns.push_back(std::make_pair(FieldType::CG,patternA));
+      patterns.push_back(std::make_pair(FieldType::CG,patternB));
+      patterns.push_back(std::make_pair(FieldType::CG,patternC));
 
       GeometricAggFieldPattern gfp;
       gfp.buildPattern(patterns);
@@ -231,8 +231,8 @@ TEUCHOS_UNIT_TEST(tGeometricFieldPattern, test3d)
       patternB = rcp(new Intrepid2FieldPattern(basis));
 
       patterns.clear();
-      patterns.push_back(patternA);
-      patterns.push_back(patternB);
+      patterns.push_back(std::make_pair(FieldType::CG,patternA));
+      patterns.push_back(std::make_pair(FieldType::CG,patternB));
 
       GeometricAggFieldPattern gfp;
       gfp.buildPattern(patterns);
