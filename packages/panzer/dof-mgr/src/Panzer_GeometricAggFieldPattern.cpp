@@ -97,9 +97,9 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<std::pair<FieldTyp
    }
 
    // Build geometric pattern: increment it logically over all the
-   // subcells. Start with CG fields first. Then all DG fields. Then
-   // all SKELETON fields. This is done so that we can use offsets
-   // when mapping DOFs to subcells.
+   // subcells. Start with CG fields first. Then all DG fields. This
+   // is done so that we can use individual field pattern offsets when
+   // mapping DOFs to subcells.
    int counter = 0;
    for(std::size_t d=0;d<dimension_+1;d++) {
       for(int s=0;s<subcellCount[d];s++) {
@@ -128,26 +128,6 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<std::pair<FieldTyp
            if ( (patterns[p].first) == FieldType::DG) {
               RCP<const FieldPattern> field = (patterns[p]).second;
               // if dofs exist, we have a geometric entity
-              const std::size_t num = ( (field->getSubcellIndices(d,s).size() > 0) ? 1 : 0 );
-              if(current.size()<num) { 
-                for(int i=num-current.size();i>0;i--,counter++) 
-                  current.push_back(counter);
-              }
-            }
-         } 
-      }
-   }
-
-   // Add SKELETON fields. These fields are considered internal "cell"
-   // fields for DOF numbering.
-   // NOTE: this loop is over dimension_, not dimension_+1 like CG and
-   // DG because we ignore interior DOFs in the SKELETON field types.
-   for(std::size_t d=0;d<dimension_;d++) {
-      for(int s=0;s<subcellCount[d];s++) {
-         std::vector<int> & current = patternData_[cellDim][0];
-         for(std::size_t p=0;p<patterns.size();p++) {
-           if ( (patterns[p].first) == FieldType::SKELETON) {
-              RCP<const FieldPattern> field = (patterns[p]).second;
               const std::size_t num = ( (field->getSubcellIndices(d,s).size() > 0) ? 1 : 0 );
               if(current.size()<num) { 
                 for(int i=num-current.size();i>0;i--,counter++) 

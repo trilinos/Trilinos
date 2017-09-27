@@ -160,15 +160,15 @@ public:
      * \note You cannot depend on the order of the IDs remaining consistent in future
      *       versions.
      *
-     * \note This function is normally used for boundary condition
-     * application and for DG and SKELETON fields returns values that
-     * can be inconsistent with what is returned from the
-     * localOffsets() method. In paticular, for DG and SKELETON fields
-     * we add all the DOFs to the interior cell (subcell index equal
-     * to the dimension of the cell). However these DOFs are
-     * associated with edges, faces and nodes. When applying boundary
-     * conditions, these interior DOFs must be returned in this
-     * function call to be set properly.
+     * \note This function is normally used for applying boundary
+     *  conditions. For DG fields, all the DOFs in the FieldPattern
+     *  are added to the interior cell (subcell index equal to the
+     *  dimension of the cell). However these DOFs are associated with
+     *  lower subcells of the element (edges, faces and nodes) in teh
+     *  actual FieldPatter. When applying boundary conditions, these
+     *  interior DOFs of DG field that are associated with lower
+     *  subcells must be returned in this function call to be set
+     *  properly.
      */
    const std::pair<std::vector<int>,std::vector<int> > &
    localOffsets_closure(int fieldId,int subcellDim,int subcellId) const;
@@ -190,12 +190,12 @@ protected:
      */
    void buildFieldIdsVector();
 
-   /** Merge the current set of CG, DG or SKELETON patterns in the
-     * patterns_ vector into the numFields_ and fieldIds_
-     * vectors. This looks at the patterns_ vector and has side
-     * effects. This merges all the field patterns for only ONE
-     * FieldType (CG, DG or SKELETON) AT AT TIME. This that allows for
-     * easier mapping of the internal DG/SKELETON indices to subcells.
+   /** Merge the current set of CG or DG patterns in the patterns_
+     * vector into the numFields_ and fieldIds_ vectors. This looks at
+     * the patterns_ vector and has side effects. This merges all the
+     * field patterns for only ONE FieldType (CG or DG) AT AT
+     * TIME. This that allows for easier mapping of the internal DG
+     * indices to subcells.
      * 
      * \param[in] fieldType - The type of field to build data for.
      *
@@ -237,12 +237,6 @@ protected:
    { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
    mutable std::map<Teuchos::Tuple<int,3>, std::pair<std::vector<int>,std::vector<int> >,LessThan>
          fieldSubcellOffsets_closure_;
-
-  //! Maps the fieldId to the "extended" offsetes. This corresponds to
-  //! the offsets for a SKELETON field that includes interior
-  //! DOFs. This is needed for mapping closure values to DOF offsets
-  //! in the Aggregate.
-  mutable std::map<int,std::vector<int>> skeletonExtendedOffsetsMap_;
 };
 
 }

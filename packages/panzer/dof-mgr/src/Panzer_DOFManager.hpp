@@ -96,7 +96,7 @@ public:
     *
     * \param[in] str Human readable name of the field
     * \param[in] pattern Pattern defining the basis function to be used
-    * \param[in] type Type of the Field (CG/DG/SKELETON) for generating GIDs
+    * \param[in] type Type of the Field (CG/DG) for generating GIDs
     *
     * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code> 
     *       or <code>registerFields</code>.
@@ -113,7 +113,7 @@ public:
     * \param[in] blockID Name of the element block that this field should be added to
     * \param[in] str Human readable name of the field
     * \param[in] pattern Pattern defining the basis function to be used
-    * \param[in] type Type of the Field (CG/DG/SKELETON) for generating GIDs
+    * \param[in] type Type of the Field (CG/DG) for generating GIDs
     *
     * \note <code>addField</code> cannot be called after <code>buildGlobalUnknowns</code> 
     *       or <code>registerFields</code>.

@@ -50,7 +50,6 @@ namespace panzer {
   {
     CG,       //! Continuous Galerkin Formulation
     DG,       //! Discontinuous Galerkin Formulation
-    SKELETON, //! Removes internal DOFS, used, e.g., for HDG
   };
 
 }

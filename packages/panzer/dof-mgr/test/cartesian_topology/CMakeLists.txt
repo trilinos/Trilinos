@@ -20,8 +20,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tCartesianDOFMgr_DG_SKELETON
-  SOURCES tCartesianDOFMgr_DG_SKELETON.cpp CartesianConnManager.cpp ${UNIT_TEST_DRIVER}
+  tCartesianDOFMgr_DG
+  SOURCES tCartesianDOFMgr_DG.cpp CartesianConnManager.cpp ${UNIT_TEST_DRIVER}
   NUM_MPI_PROCS 4
   COMM serial mpi
   )

@@ -98,7 +98,7 @@ std::string getElementBlock(const Triplet & element,
   return connManager.getBlockId(localElmtId);
 }
 
-TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG_SKELETON, basic)
+TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG, basic)
 {
   Teuchos::MpiComm<int> comm(MPI_COMM_WORLD);    
   int np = comm.getSize();
@@ -142,10 +142,9 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG_SKELETON, basic)
   RCP<const FieldPattern> hdiv = rcp(new Intrepid2FieldPattern(bhdiv));
   out << "HDIV2\n" << *hdiv << std::endl;
 
-  // Add fields. Use Hgrad2 for testing DG and SKELETON so that we
-  // have unknowns on all subcells.
+  // Add fields. Use Hgrad2 for testing DG so that we have unknowns on
+  // all subcells.
   dofManager->addField("DG",hgrad2,FieldType::DG);
-  dofManager->addField("SKELETON",hgrad2,FieldType::SKELETON);
   // the rest are CG. Testing includes mixing all FieldTypes
   dofManager->addField("UX",hgrad2);
   dofManager->addField("UY",hgrad2);
@@ -178,22 +177,19 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG_SKELETON, basic)
     const ord_t numHcurlFieldsCG = 1;
     const ord_t numHdivFieldsCG = 1;
     const ord_t numHgrad2FieldsDG = 1;
-    const ord_t numHgrad2FieldsSKELETON = 1;
     const ord_t numHgrad2UnknownsCG = (2*nx+1)*(2*ny+1)*(2*nz+1);
     const ord_t numHgrad1UnknownsCG = (nx+1)*(ny+1)*(nz+1);
     const ord_t numHcurlUnknownsCG = (nx+1) * ( (ny+1)*nz + (nz+1)*ny ) + (ny+1)*(nz+1)*nx;
     const ord_t numHdivUnknownsCG = (nx+1)*(ny*nz) + (ny+1)*(nx*nz) + (nz+1)*(nx*ny);
     const ord_t numCells = nx * ny * nz;
     const ord_t numHgrad2UnknownsDG = numCells * hgrad2->numberIds();
-    const ord_t numHgrad2UnknownsSKELETON = numCells * (hgrad2->numberIds() - 1); // subtract interior DOF
     
     const ord_t expectedTotalDOFs =
       numHgrad2FieldsCG * numHgrad2UnknownsCG 
       + numHgrad1FieldsCG * numHgrad1UnknownsCG
       + numHcurlFieldsCG * numHcurlUnknownsCG
       + numHdivFieldsCG * numHdivUnknownsCG
-      + numHgrad2FieldsDG * numHgrad2UnknownsDG 
-      + numHgrad2FieldsSKELETON * numHgrad2UnknownsSKELETON;
+      + numHgrad2FieldsDG * numHgrad2UnknownsDG;
     
     ord_t myNumDOFs = (ord_t) dofManager->getNumOwned();
     ord_t numDOFs = 0;
@@ -204,7 +200,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG_SKELETON, basic)
 
   // ***********************
   // Check that field DOFs on the face of adjoining elements are the
-  // same for CG but different for DG and SKELETON
+  // same for CG but different for DG
   // ***********************
   auto myOffset   = connManager->getMyOffsetTriplet();
   auto myNumElements = connManager->getMyElementsTriplet();
@@ -217,7 +213,6 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG_SKELETON, basic)
   int uxId = dofManager->getFieldNum("UX");
   int uyId = dofManager->getFieldNum("UY");
   int dgId = dofManager->getFieldNum("DG");
-  int skeletonId = dofManager->getFieldNum("SKELETON");
 
   {
     // choose an element in this MPI process workset that has at least one adjoining element local to this process.
@@ -308,43 +303,6 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG_SKELETON, basic)
       }
     }
 
-    // SKELETON in x (CG matched, use the exact same procedure, but
-    // make sure SKELETON is different)
-    {
-      out << "\nSKELETON in x" << std::endl; 
-      out << "Elements " << localElmtId << " " << localElmtId_px << std::endl;
-      auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,skeletonId,2,1); // +x
-      auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_px,skeletonId,2,3); // -x
-
-      TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
-      TEST_ASSERT(offsets.first.size() > 0);
-
-      std::vector<Ordinal64> gid_sub, gid_sub_px;
-      for(std::size_t i=0;i<offsets.first.size();i++) {
-        gid_sub.push_back(gids[offsets.first[i]]);
-        gid_sub_px.push_back(gids_px[offsets_n.first[i]]);
-      }
-
-      std::sort(gid_sub.begin(),gid_sub.end());
-      std::sort(gid_sub_px.begin(),gid_sub_px.end());
-
-      for(std::size_t i=0;i<gid_sub.size();i++) {
-        TEST_INEQUALITY(gid_sub[i],gid_sub_px[i]);
-      }
-      
-      // Now check that the closure gids are in the volume gid list
-      const auto& offsets_vol = dofManager->getGIDFieldOffsets(eblock,skeletonId);
-      std::vector<Ordinal64> gid_vol;
-      for(std::size_t i=0;i<offsets_vol.size();i++)
-        gid_vol.push_back(gids[offsets_vol[i]]);
-      TEST_EQUALITY(gid_vol.size(), 26);
-      TEST_EQUALITY(gid_sub.size(), 9);
-      for (auto gid : gid_sub) {
-        auto search = std::find(gid_vol.cbegin(),gid_vol.cend(),gid);
-        TEST_ASSERT(search != gid_vol.cend());
-      }
-    }
-
     // CG in y
     {
       out << "\nCG in y" << std::endl; 
@@ -396,42 +354,6 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG_SKELETON, basic)
       for(std::size_t i=0;i<offsets_vol.size();i++)
         gid_vol.push_back(gids[offsets_vol[i]]);
       TEST_EQUALITY(gid_vol.size(), 27);
-      TEST_EQUALITY(gid_sub.size(), 9);
-      for (auto gid : gid_sub) {
-        auto search = std::find(gid_vol.cbegin(),gid_vol.cend(),gid);
-        TEST_ASSERT(search != gid_vol.cend());
-      }
-    }
-
-    // SKELETON in y (CG matched, use the exact same procedure, but
-    // make sure SKELETON is different)
-    {
-      out << "\nSKELETON in y" << std::endl; 
-      out << "Elements " << localElmtId << " " << localElmtId_py << std::endl;
-      auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,skeletonId,2,2); // +y
-      auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_py,skeletonId,2,0); // -y
-
-      TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
-      TEST_ASSERT(offsets.first.size() > 0);
-
-      std::vector<Ordinal64> gid_sub, gid_sub_py;
-      for(std::size_t i=0;i<offsets.first.size();i++) {
-        gid_sub.push_back(gids[offsets.first[i]]);
-        gid_sub_py.push_back(gids_py[offsets_n.first[i]]);
-      }
-
-      std::sort(gid_sub.begin(),gid_sub.end());
-      std::sort(gid_sub_py.begin(),gid_sub_py.end());
-
-      for(std::size_t i=0;i<gid_sub.size();i++)
-        TEST_INEQUALITY(gid_sub[i],gid_sub_py[i]);
-
-      // Now check that the closure gids are in the volume gid list
-      const auto& offsets_vol = dofManager->getGIDFieldOffsets(eblock,skeletonId);
-      std::vector<Ordinal64> gid_vol;
-      for(std::size_t i=0;i<offsets_vol.size();i++)
-        gid_vol.push_back(gids[offsets_vol[i]]);
-      TEST_EQUALITY(gid_vol.size(), 26);
       TEST_EQUALITY(gid_sub.size(), 9);
       for (auto gid : gid_sub) {
         auto search = std::find(gid_vol.cbegin(),gid_vol.cend(),gid);
@@ -498,45 +420,9 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG_SKELETON, basic)
       }
     }
 
-    // SKELETON in z (CG matched, use the exact same procedure, but
-    // make sure SKELETON is different)
-    {
-      out << "\nSKELETON in z" << std::endl; 
-      out << "Elements " << localElmtId << " " << localElmtId_pz << std::endl;
-      auto offsets   = dofManager->getGIDFieldOffsets_closure(   eblock,skeletonId,2,5); // +z
-      auto offsets_n = dofManager->getGIDFieldOffsets_closure(eblock_pz,skeletonId,2,4); // -z
-
-      TEST_EQUALITY(offsets.first.size(),offsets_n.first.size());
-      TEST_ASSERT(offsets.first.size() > 0);
-
-      std::vector<Ordinal64> gid_sub, gid_sub_pz;
-      for(std::size_t i=0;i<offsets.first.size();i++) {
-        gid_sub.push_back(gids[offsets.first[i]]);
-        gid_sub_pz.push_back(gids_pz[offsets_n.first[i]]);
-      }
-
-      std::sort(gid_sub.begin(),gid_sub.end());
-      std::sort(gid_sub_pz.begin(),gid_sub_pz.end());
-
-      for(std::size_t i=0;i<gid_sub.size();i++)
-        TEST_INEQUALITY(gid_sub[i],gid_sub_pz[i]);
-
-      // Now check that the closure gids are in the volume gid list
-      const auto& offsets_vol = dofManager->getGIDFieldOffsets(eblock,skeletonId);
-      std::vector<Ordinal64> gid_vol;
-      for(std::size_t i=0;i<offsets_vol.size();i++)
-        gid_vol.push_back(gids[offsets_vol[i]]);
-      TEST_EQUALITY(gid_vol.size(), 26);
-      TEST_EQUALITY(gid_sub.size(), 9);
-      for (auto gid : gid_sub) {
-        auto search = std::find(gid_vol.cbegin(),gid_vol.cend(),gid);
-        TEST_ASSERT(search != gid_vol.cend());
-      }
-    }
-
   }
 
-  // assuming a 1d partition, check shared boundaries between processors
+  // assuming a 1d MPI partition, check shared boundaries between processors
   {
     Triplet element_l;
     element_l.x = myOffset.x;
@@ -590,7 +476,7 @@ TEUCHOS_UNIT_TEST(tCartesianDOFMgr_DG_SKELETON, basic)
         TEST_EQUALITY(gid_sub_r[i],gid_remote[i]);
     }
   }
-
+  
 }
 
 } // end unit test

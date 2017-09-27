@@ -24,8 +24,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  tFieldAggPattern_DG_SKELETON
-  SOURCES tFieldAggPattern_DG_SKELETON.cpp ${UNIT_TEST_DRIVER}
+  tFieldAggPattern_DG
+  SOURCES tFieldAggPattern_DG.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   )
 

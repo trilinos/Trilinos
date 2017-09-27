@@ -195,37 +195,27 @@ void FieldAggPattern::buildFieldIdsVector()
    // build numFields_ and fieldIds_ vectors
 
    // Merge the field patterns for multiple fields for each dimension
-   // and subcell. We do all the CG first, then all DG and finally all
-   // SKELETON. This allows us to use one offset for mapping DOFs to
-   // subcells later on.
+   // and subcell. We do all the CG first, then all DG. This allows us
+   // to use one offset for mapping DOFs to subcells later on.
    this->mergeFieldPatterns(FieldType::CG);
    this->mergeFieldPatterns(FieldType::DG);
-   this->mergeFieldPatterns(FieldType::SKELETON);
 }
 
 void FieldAggPattern::mergeFieldPatterns(const FieldType& fieldType)
 {
   auto geomAggPattern = getGeometricAggFieldPattern();
 
-  // For DG/SKELETON, all DOFs are added to the internal cell
+  // For DG, all DOFs are added to the internal cell
   const int cellDim = this->getDimension();
-
-  // For CG and DG, add in all DOFs. For SKELETON do not add in
-  // interior cell DOFs. We can do this by reducing the dimension
-  // count by one.
-  int numDimensions = 0;
-  if ( (fieldType == FieldType::CG) || (fieldType == FieldType::DG) )
-    numDimensions = getDimension()+1;
-  else if (fieldType == FieldType::SKELETON)
-    numDimensions = getDimension();
+  const int numDimensions = getDimension()+1;
 
   for(int dim=0;dim<numDimensions;dim++) {
     int numSubcell = geomAggPattern->getSubcellCount(dim);
     for(int subcell=0;subcell<numSubcell;subcell++) {
 
       // Get the geometric index to add the DOF indices to. CG adds to
-      // the subcell we are iterating over, (dim,subcel), while DG and
-      // SKELETON add to the internal cell (cellDim,0)
+      // the subcell we are iterating over, (dim,subcel), while DG
+      // adds to the internal cell (cellDim,0)
       const std::vector<int> * geomIndices = nullptr;
       if (fieldType == FieldType::CG)
         geomIndices = &(getGeometricAggFieldPattern()->getSubcellIndices(dim,subcell));
@@ -337,22 +327,7 @@ FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) 
 
    // build vector for sub cell closure indices
    ///////////////////////////////////////////////
-
-   // Grab field offsets. For CG and DG, the full pattern is used so
-   // the fieldOffsets and closureOffsets are correct. For SKELETON,
-   // the fieldOffsets have the internal DOFs removed. This means that
-   // the array indices are mis-aligned. The simple fix was to store
-   // off the skeletonExtendedOffsets for the full pattern and use
-   // those. This is safe since the closures only index subcells that
-   // are less than the cell dimension.
-   const FieldType& fieldType = this->getFieldType(fieldId);
-   const std::vector<int> * fieldOffsets = &localOffsets(fieldId);
-   if (fieldType == FieldType::SKELETON) {
-     // NOTE: offsets use lazy initialization, so even in SKELETON
-     // case, we need to call localOffsets() above so that the
-     // skeleton map is populated correctly.
-     fieldOffsets = &(skeletonExtendedOffsetsMap_.find(fieldId)->second);
-   }
+   const std::vector<int> & fieldOffsets = localOffsets(fieldId);
 
    // get offsets into field offsets for the closure indices (from field pattern)
    std::vector<int> closureOffsets;
@@ -365,7 +340,7 @@ FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) 
 
    std::vector<int> & closureIndices = indicesPair.first;
    for(std::size_t i=0;i<closureOffsets.size();i++)
-     closureIndices.push_back((*fieldOffsets)[closureOffsets[i]]);
+     closureIndices.push_back(fieldOffsets[closureOffsets[i]]);
 
    std::vector<int> & basisIndices = indicesPair.second;
    basisIndices.assign(closureOffsets.begin(),closureOffsets.end());
@@ -389,10 +364,7 @@ void FieldAggPattern::localOffsets_build(int fieldId,std::vector<int> & offsets)
    FieldType fieldType = getFieldType(fieldId);
 
    offsets.clear();
-   if ( (fieldType == FieldType::CG) || (fieldType == FieldType::DG) )
-     offsets.resize(fieldPattern->numberIds(),-111111); // fill with negative number for testing
-   else // SKELETON removes internal cell indices
-     offsets.resize((fieldPattern->numberIds() - fieldPattern->getSubcellIndices(getDimension(),0).size()), -222222);
+   offsets.resize(fieldPattern->numberIds(),-111111); // fill with negative number for testing
 
    // this will offsets for all IDs associated with the field
    // but using a geometric ordering
@@ -403,55 +375,19 @@ void FieldAggPattern::localOffsets_build(int fieldId,std::vector<int> & offsets)
    }
 
    // Check that number of DOFs line up
-   if ( (fieldType == FieldType::CG) || (fieldType == FieldType::DG) ) {
-     TEUCHOS_ASSERT((int) fieldIdsGeomOrder.size()==fieldPattern->numberIds());
-   } else { // SKELETON removes interior indices
-     const int maxSubcellDim = this->getDimension();
-     const int skeletonNumIds = fieldPattern->numberIds() - fieldPattern->getSubcellIndices(maxSubcellDim,0).size();
-     TEUCHOS_ASSERT( (int) fieldIdsGeomOrder.size()==skeletonNumIds);
-   }
+   TEUCHOS_ASSERT((int) fieldIdsGeomOrder.size()==fieldPattern->numberIds());
 
    // Build geometric ordering for this pattern: will index into fieldIdsGeomOrder
-   // NOTE: For skeleton offsets, we use the whole pattern to get the
-   // indices correct and then remove the internal nodes in a cleanup phase
-   std::vector<int> skeletonExtendedOffsets;
-   if (fieldType == FieldType::SKELETON)
-     skeletonExtendedOffsets.resize(fieldPattern->numberIds(),-222222);
-
    GeometricAggFieldPattern geomPattern(fieldType,fieldPattern);
    int cnt = 0;
    for(int dim=0;dim<geomPattern.getDimension()+1;dim++) {
        for(int sc=0;sc<geomPattern.getSubcellCount(dim);sc++) {
           const std::vector<int> & fIndices = fieldPattern->getSubcellIndices(dim,sc);
 
-          if ( (fieldType == FieldType::CG) || (fieldType == FieldType::DG) ) {
-            for(std::size_t i=0;i<fIndices.size();i++)
-              offsets[fIndices[i]] = fieldIdsGeomOrder[cnt++];
-          } else { // SKELETON must ignore interior dofs
-            if (dim != this->getDimension()) {
-              for(std::size_t i=0;i<fIndices.size();i++)
-                skeletonExtendedOffsets[fIndices[i]] = fieldIdsGeomOrder[cnt++];
-            }
-          }
+          for(std::size_t i=0;i<fIndices.size();i++)
+            offsets[fIndices[i]] = fieldIdsGeomOrder[cnt++];
        }
    }
-
-   // Skeleton is now marked with -222222 on the interior fields. We
-   // need to strip these out.
-   if (fieldType == FieldType::SKELETON) {
-     int i=0;
-     for (const auto& index : skeletonExtendedOffsets) {
-       if (index != -222222) {
-         offsets[i] = index;
-         ++i;
-       }
-     }
-   }
-
-   // Store off the skeletonExtendedOffsets for generating the closure
-   // offsets for SKELETON fields.
-   if (fieldType == FieldType::SKELETON)
-     skeletonExtendedOffsetsMap_.insert(std::make_pair(fieldId,std::move(skeletonExtendedOffsets)));
 
    // check for failure/bug
    for(std::size_t i=0;i<offsets.size();i++) {
