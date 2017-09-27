@@ -72,6 +72,18 @@ public:
   ~LOCASolver();
   //@}
 
+  //! Return the current nonlinear solver pointer.
+  Teuchos::RCP<NOX::Solver::Generic>
+  getSolver() const;
+
+  //! Return stepper parameters
+  Teuchos::ParameterList &
+  getStepperParams() const;
+
+  //! Return step size parameters
+  Teuchos::ParameterList &
+  getStepSizeParams() const;
+
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
   //@{

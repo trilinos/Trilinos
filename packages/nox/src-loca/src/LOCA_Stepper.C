@@ -878,7 +878,7 @@ LOCA::Stepper::getList() const
   return paramListPtr;
 }
 
-Teuchos::RCP<const NOX::Solver::Generic>
+Teuchos::RCP<NOX::Solver::Generic>
 LOCA::Stepper::getSolver() const
 {
   if (solverPtr.get() == NULL) {
@@ -1032,4 +1032,16 @@ LOCA::Stepper::withinThreshold()
   double conParam = curGroupPtr->getContinuationParameter();
 
   return (fabs(conParam-targetValue) < relt*fabs(initialStep));
+}
+
+Teuchos::ParameterList &
+LOCA::Stepper::getParams() const
+{
+  return *stepperList;
+}
+
+Teuchos::ParameterList &
+LOCA::Stepper::getStepSizeParams() const
+{
+  return *parsedParams->getSublist("Step Size");
 }
