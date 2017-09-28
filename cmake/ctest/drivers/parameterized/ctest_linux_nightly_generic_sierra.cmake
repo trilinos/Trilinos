@@ -115,6 +115,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_INST_FLOAT:BOOL=OFF"
   "-DTpetra_INST_DOUBLE:BOOL=ON"
   "-DTpetraCore_ENABLE_TSQR:BOOL=ON"
+  "-DTrilinos_ENABLE_TpetraTSQR=ON" 
 
   "-DMueLu_ENABLE_Epetra=OFF"
   "-DMueLu_ENABLE_Tpetra=ON"
