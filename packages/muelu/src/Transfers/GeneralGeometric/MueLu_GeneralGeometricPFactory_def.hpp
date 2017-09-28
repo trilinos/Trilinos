@@ -182,11 +182,13 @@ namespace MueLu {
     myGeometry->lNumFineNodes10 = myGeometry->lFineNodesPerDir[1]*myGeometry->lFineNodesPerDir[0];
     myGeometry->lNumFineNodes   = myGeometry->lFineNodesPerDir[2]*myGeometry->lNumFineNodes10;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(fineCoords->getLocalLength() != myGeometry->lNumFineNodes,
+    TEUCHOS_TEST_FOR_EXCEPTION(fineCoords->getLocalLength()
+                               != static_cast<size_t>(myGeometry->lNumFineNodes),
                                Exceptions::RuntimeError,
                                "The local number of elements in Coordinates is not equal to the"
                                " number of nodes given by: lNodesPerDim!");
-    TEUCHOS_TEST_FOR_EXCEPTION(fineCoords->getGlobalLength() != myGeometry->gNumFineNodes,
+    TEUCHOS_TEST_FOR_EXCEPTION(fineCoords->getGlobalLength()
+                               != static_cast<size_t>(myGeometry->gNumFineNodes),
                                Exceptions::RuntimeError,
                                "The global number of elements in Coordinates is not equal to the"
                                " number of nodes given by: gNodesPerDim!");

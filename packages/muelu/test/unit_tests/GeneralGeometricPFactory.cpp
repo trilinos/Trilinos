@@ -50,6 +50,8 @@
 #include "MueLu_TestHelpers.hpp"
 #include "MueLu_Version.hpp"
 
+#include <complex>
+
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Vector.hpp>
@@ -87,7 +89,7 @@ namespace MueLuTests {
     void TestComputeLinearInterpolationStencil(const GeneralGeometricPFactory& fac,
                                                const LO numDimension,
                                                const Array<Array<double> > coord,
-                                               std::vector<SC>& stencil)
+                                               std::vector<double>& stencil)
       const{
       // Call the method to be tested.
       MueLu::GeneralGeometricPFactory<SC,LO,GO,Node> myGGPFactory;
@@ -302,19 +304,19 @@ namespace MueLuTests {
     coord[6][0] = 1.0; coord[6][1] = 0.0; coord[6][2] = 1.0;
     coord[7][0] = 0.0; coord[7][1] = 1.0; coord[7][2] = 1.0;
     coord[8][0] = 1.0; coord[8][1] = 1.0; coord[8][2] = 1.0;
-    std::vector<SC> stencil(8);
+    std::vector<double> stencil(8);
     factTester.TestComputeLinearInterpolationStencil(ggPFact, numDimension, coord, stencil);
 
-    SC x=0, y=0, z=0;
+    double x = 0.0, y = 0.0, z = 0.0;
     for(LO i = 0; i < 8; ++i) {
       x += stencil[i]*coord[i+1][0];
       y += stencil[i]*coord[i+1][1];
       z += stencil[i]*coord[i+1][2];
     }
 
-    TEST_EQUALITY((std::fabs(x - coord[0][0]) < 1e-5)
-                  && (std::fabs(y - coord[0][1]) < 1e-5)
-                  && (std::fabs(z - coord[0][2]) < 1e-5), true);
+    TEST_EQUALITY((std::abs(x - coord[0][0]) < 1e-5)
+                  && (std::abs(y - coord[0][1]) < 1e-5)
+                  && (std::abs(z - coord[0][2]) < 1e-5), true);
 
   } // LinearInterpolation
 
@@ -342,18 +344,18 @@ namespace MueLuTests {
     coord[6][0] = 1.0; coord[6][1] = 0.0; coord[6][2] = 1.0;
     coord[7][0] = 0.0; coord[7][1] = 1.0; coord[7][2] = 1.0;
     coord[8][0] = 1.0; coord[8][1] = 1.0; coord[8][2] = 1.0;
-    std::vector<SC> stencil(8);
+    std::vector<double> stencil(8);
     factTester.TestComputeLinearInterpolationStencil(ggPFact, numDimension, coord, stencil);
 
-    SC x=0, y=0, z=0;
+    double x = 0.0, y = 0.0, z = 0.0;
     for(LO i = 0; i < 8; ++i) {
       x += stencil[i]*coord[i+1][0];
       y += stencil[i]*coord[i+1][1];
       z += stencil[i]*coord[i+1][2];
     }
 
-    TEST_EQUALITY((std::fabs(x - coord[0][0]) < 1e-5) && (std::fabs(y - coord[0][1]) < 1e-5)
-                  && (std::fabs(z - coord[0][2]) < 1e-5), true);
+    TEST_EQUALITY((std::abs(x - coord[0][0]) < 1e-5) && (std::abs(y - coord[0][1]) < 1e-5)
+                  && (std::abs(z - coord[0][2]) < 1e-5), true);
 
   } // LinearExtrapolation
 
@@ -514,8 +516,10 @@ namespace MueLuTests {
     RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
     // Construct vectors to check that a linear vector remains linear after projection
-    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector0 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getRangeMap(),1);
-    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getDomainMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector0
+      = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getRangeMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1
+      = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getDomainMap(),1);
     ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
     if(comm->getRank() == 0) {
       for(LO i = 0; i < 3; ++i) {
@@ -543,10 +547,13 @@ namespace MueLuTests {
       fine_inds[7] = 14;
       fine_inds[8] = 15;
       for(LO i = 0; i < 9; ++i) {
-        if(fabs(fine_data[fine_inds[i]] - coarse_data[i]) > 1.0e-10) { is_injected = false; }
+        if(std::abs(fine_data[fine_inds[i]] - coarse_data[i]) > 1.0e-10) { is_injected = false; }
       }
-      SC linear_avg = (coarse_data[0] + coarse_data[1] + coarse_data[3] + coarse_data[4]) / 4.0;
-      if(fabs(fine_data[5] - linear_avg) > 1.0e-10) { is_linear = false; }
+      double linear_avg = std::abs(  coarse_data[0]
+                                   + coarse_data[1]
+                                   + coarse_data[3]
+                                   + coarse_data[4]) / 4.0;
+      if(std::abs(fine_data[5] - linear_avg) > 1.0e-10) { is_linear = false; }
     }
 
 
@@ -716,8 +723,10 @@ namespace MueLuTests {
     RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
     // Construct vectors to check that a linear vector remains linear after projection
-    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector0 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getRangeMap(),1);
-    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getDomainMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector0
+      = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getRangeMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1
+      = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getDomainMap(),1);
     ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
     if(comm->getRank() == 0) {
       for(LO i = 0; i < 3; ++i) {
@@ -745,11 +754,11 @@ namespace MueLuTests {
       fine_inds[7] = 14;
       fine_inds[8] = 15;
       for(LO i = 0; i < 9; ++i) {
-        if(fabs(fine_data[fine_inds[i]] - coarse_data[i]) > 1.0e-10) { is_injected = false; }
+        if(std::abs(fine_data[fine_inds[i]] - coarse_data[i]) > 1.0e-10) { is_injected = false; }
       }
-      if( (fabs(fine_data[1] - coarse_data[0]) > 1.0e-10) ||
-          (fabs(fine_data[4] - coarse_data[0]) > 1.0e-10) ||
-          (fabs(fine_data[5] - coarse_data[0]) > 1.0e-10)) { is_constant = false; }
+      if( (std::abs(fine_data[1] - coarse_data[0]) > 1.0e-10) ||
+          (std::abs(fine_data[4] - coarse_data[0]) > 1.0e-10) ||
+          (std::abs(fine_data[5] - coarse_data[0]) > 1.0e-10)) { is_constant = false; }
     }
 
 
@@ -920,8 +929,10 @@ namespace MueLuTests {
     RCP<CrsMatrix> P1Crs = rcp_dynamic_cast<CrsMatrixWrap>(P1)->getCrsMatrix();
 
     // Construct vectors to check that a linear vector remains linear after projection
-    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector0 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P1Crs->getRangeMap(),1);
-    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P1Crs->getDomainMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector0
+      = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P1Crs->getRangeMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1
+      = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P1Crs->getDomainMap(),1);
     ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
     Array<LO> coarse_inds(8);
     if(comm->getSize() == 1) {
@@ -979,15 +990,15 @@ namespace MueLuTests {
         fine_inds[7] = 110;
       }
       for(LO i = 0; i < 8; ++i) {
-        if(fabs(fine_data[fine_inds[i]] - coarse_data[coarse_inds[i]]) > 1.0e-10) {
+        if(std::abs(fine_data[fine_inds[i]] - coarse_data[coarse_inds[i]]) > 1.0e-10) {
           is_injected_lvl1 = false;
         }
       }
-      SC linear_avg = 0.0;
-      for(auto ind : coarse_inds) {linear_avg += coarse_data[ind]/8;}
+      double linear_avg = 0.0;
+      for(auto ind : coarse_inds) {linear_avg += std::abs(coarse_data[ind]) / 8.0;}
       LO fine_iref = 0;
       if(comm->getSize() == 1) {fine_iref = 91;} else if(comm->getSize() == 4) {fine_iref = 55;}
-      if(fabs(fine_data[fine_iref] - linear_avg) > 1.0e-10) { is_linear_lvl1 = false; }
+      if(std::abs(fine_data[fine_iref] - linear_avg) > 1.0e-10) { is_linear_lvl1 = false; }
     }
 
     // Extract the prolongator operator
@@ -996,8 +1007,10 @@ namespace MueLuTests {
     RCP<CrsMatrix> P2Crs = rcp_dynamic_cast<CrsMatrixWrap>(P2)->getCrsMatrix();
 
     // Construct vectors to check that a linear vector remains linear after projection
-    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector2 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getRangeMap(),1);
-    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector3 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getDomainMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector2
+      = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getRangeMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector3
+      = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(P2Crs->getDomainMap(),1);
     coarse_data = vector3->getDataNonConst(0);
     if(comm->getSize() == 1) {
       coarse_inds[0] =  0;
@@ -1053,15 +1066,15 @@ namespace MueLuTests {
         fine_inds[7] = 42;
       }
       for(LO i = 0; i < 8; ++i) {
-        if(fabs(fine_data[fine_inds[i]] - coarse_data[coarse_inds[i]]) > 1.0e-10) {
+        if(std::abs(fine_data[fine_inds[i]] - coarse_data[coarse_inds[i]]) > 1.0e-10) {
           is_injected_lvl2 = false;
         }
       }
-      SC linear_avg = 0.0;
-      for(auto ind : coarse_inds) {linear_avg += coarse_data[ind]/8;}
+      double linear_avg = 0.0;
+      for(auto ind : coarse_inds) {linear_avg += std::abs(coarse_data[ind]) / 8.0;}
       LO fine_iref = 0;
       if(comm->getSize() == 1) {fine_iref = 31;} else if(comm->getSize() == 4) {fine_iref = 21;}
-      if(fabs(fine_data[fine_iref] - linear_avg) > 1.0e-10) { is_linear_lvl2 = false; }
+      if(std::abs(fine_data[fine_iref] - linear_avg) > 1.0e-10) { is_linear_lvl2 = false; }
     }
 
 
@@ -1261,8 +1274,10 @@ namespace MueLuTests {
     RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
 
     // Construct vectors to check that a linear vector remains linear after projection
-    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector0 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getRangeMap(),1);
-    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1 = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getDomainMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector0
+      = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getRangeMap(),1);
+    RCP<Xpetra::MultiVector<SC,LO,GO,NO> > vector1
+      = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(PCrs->getDomainMap(),1);
     ArrayRCP<SC> coarse_data = vector1->getDataNonConst(0);
     if(comm->getRank() == 0) {
       for(LO i = 0; i < 3; ++i) {
@@ -1291,12 +1306,11 @@ namespace MueLuTests {
       fine_inds[7] = 14;
       fine_inds[8] = 15;
       for(LO i = 0; i < 9; ++i) {
-        if(fabs(fine_data[fine_inds[i]] - coarse_data[i]) > 1.0e-10) { is_injected = false; }
+        if(std::abs(fine_data[fine_inds[i]] - coarse_data[i]) > 1.0e-10) { is_injected = false; }
       }
-      SC linear_avg = (coarse_data[0] + coarse_data[1] + coarse_data[3] + coarse_data[4]) / 4.0;
-      if( (fabs(fine_data[1] - coarse_data[0]) > 1.0e-10) ||
-          (fabs(fine_data[4] - coarse_data[0]) > 1.0e-10) ||
-          (fabs(fine_data[5] - coarse_data[0]) > 1.0e-10)) { is_constant = false; }
+      if( (std::abs(fine_data[1] - coarse_data[0]) > 1.0e-10) ||
+          (std::abs(fine_data[4] - coarse_data[0]) > 1.0e-10) ||
+          (std::abs(fine_data[5] - coarse_data[0]) > 1.0e-10)) { is_constant = false; }
     }
 
 
