@@ -49,5 +49,5 @@
 
 int main(int narg, char **arg)
 {
-  return runDirectoryTests(narg, arg);
+  return Zoltan2::runDirectoryTests(narg, arg);
 }

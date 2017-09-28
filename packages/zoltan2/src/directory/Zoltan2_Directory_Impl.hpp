@@ -44,31 +44,48 @@
  * @HEADER
  */
 
+// TODO: A note on the file structure
+// We currently have Zoltan2_Directory.hpp and Zoltan2_Directory_Impl.hpp
+// This evolved and the point of the second file is now doubtful so probably
+// should be all merged into one, especially since all templated now.
+// However there might be utility in keeping the API separate.
 #include "Zoltan2_Directory.hpp"
 
+// original points back to zoltan code - block this out completely to make
+// sure we don't have any dependencies - eventually this gets deleted
 #ifndef CONVERT_DIRECTORY_ORIGINAL
 
-#include <stdlib.h>
-#include <stdexcept>
-
+// Relic mode uses the new directory class but points back to the original
+// zoltan communicator. It's a halfway point between the new Kokkos mode
+// and the original mode which was useful for debugging some stuff.
 #ifdef CONVERT_DIRECTORY_RELIC
   #include <comm.h>
 #endif
 
+// Only Kokkos mode uses the new Zoltan2_Directory_Comm class which is pulled
+// from the original zoltan code and modified to handle variable length
+// user data.
 #ifdef CONVERT_DIRECTORY_KOKKOS
   #include "Zoltan2_Directory_Comm.hpp"
 #endif
 
 // Supplies the current hash - rolled over from zoltan
+// Right now the hash_proc method is still being used for the new Kokkos mode
+// which determines which proc will own a gid. TODO: Make this use a Kokkos
+// setup. The Kokkos mode is using the Kokkos unordered map for the node data.
+// I added the declaration here as inline to avoid the warnings generated
+// otherwise. All this should eventually go away and either use Kokkos methods
+// or implement the hash here so we don't have the links to zoltan
+static inline void MurmurHash3_x86_32 (
+  const void * key, int len, uint32_t seed, void * out);
 #include "murmur3.c"
-
-#ifdef CONVERT_DIRECTORY_TPETRA
-  #include <unordered_map>
-#endif
 
 namespace Zoltan2 {
 
-// To refactor
+// These macros were rolled over from the original zoltan code. I've preserved
+// them for now until we have further discussion on how we want debug levels
+// and logging to work in the new code. This should just be debug related and
+// not impact the behavior of the code.
 #define ZOLTAN2_PRINT_INFO(proc,yo,str) \
   printf("ZOLTAN2 (Processor %d) %s: %s\n", (proc), (yo), \
          ((str) != NULL ? (char *)(str) : " "));
@@ -83,31 +100,12 @@ namespace Zoltan2 {
 #define ZOLTAN2_TRACE_OUT(proc,yo,str) \
   ZOLTAN2_TRACE((proc),"Exiting",(yo),(str));
 
-/* Tags for MPI communications.  These need unique values. Arbitrary */
+// Tags for MPI communications.  These need unique values. Arbitrary
+// These were rolled over from the original zoltan code and still used.
 #define ZOLTAN2_DD_FIND_MSG_TAG     29137  /* needs 3 consecutive values */
 #define ZOLTAN2_DD_UPDATE_MSG_TAG   29140  /* needs 2 consecutive values */
 #define ZOLTAN2_DD_REMOVE_MSG_TAG   29142  /* needs 2 consecutive values */
 #define ZOLTAN2_DD_RESIZE_MSG_TAG   29150  /*  */
-
-
-
-
-template <typename gid_t,typename lid_t,typename user_t>
-Zoltan2_Directory<gid_t,lid_t,user_t>::Zoltan2_Directory(
-  const Zoltan2_Directory & src) : comm(src.comm), use_lid(src.use_lid),
-#ifdef CONVERT_DIRECTORY_RELIC
-    table_length(src.table_length),
-#endif
-    debug_level(src.debug_level),contiguous(src.contiguous)
-{
-  allocate();
-  copy(src);
-}
-
-template <typename gid_t,typename lid_t,typename user_t>
-Zoltan2_Directory<gid_t,lid_t,user_t>::~Zoltan2_Directory()
-{
-}
 
 template <typename gid_t,typename lid_t,typename user_t>
 void Zoltan2_Directory<gid_t,lid_t,user_t>::allocate()
@@ -130,8 +128,10 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::allocate()
   array[0] = sizeof(lid_t);
   array[1] = sizeof(gid_t);
   array[2] = sizeof(user_t);
-  Teuchos::reduceAll<int,size_t>(*comm, Teuchos::REDUCE_MAX, 3, array, max_array);
-  Teuchos::reduceAll<int,size_t>(*comm, Teuchos::REDUCE_MIN, 3, array, min_array);
+  Teuchos::reduceAll<int,size_t>(
+    *comm, Teuchos::REDUCE_MAX, 3, array, max_array);
+  Teuchos::reduceAll<int,size_t>(
+    *comm, Teuchos::REDUCE_MIN, 3, array, min_array);
   if (max_array[0] != min_array[0] || max_array[1] != min_array[1]
     || max_array[2] != min_array[2])  {
     throw std::invalid_argument(
@@ -144,47 +144,69 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::allocate()
   }
   table_length = recommended_hash_size(table_length);
 
-  // Note that in the original Zoltan implementaion memory was allocated for the
-  // main struct with additional memory for the table - so this step mimics
+  // Note that in the original Zoltan implementation memory was allocated for
+  // the main struct with additional memory for the table - so this step mimics
   // that part of the code where we allocate memory for the table
-  table.resize(table_length);
-  for(size_t i = 0; i < table.size(); ++i) {
+  table = Teuchos::arcp(new relice_idx_t[table_length], 0, table_length, true);
+  for(Teuchos::ArrayRCP<relice_idx_t>::size_type i = 0; i < table.size(); ++i) {
     table[i] = -1;
   }
 
   nodelistlen = 0;
   nextfreenode = -1;
-
 #endif
 
-  /* frequently used dynamic allocation computed sizes */
-  // for user_t int for Zoltan2_Directory_Single, size_of_value_type() is just int
-  // for user_t std::vector<int> for Zoltan2_Directory_Vector, size_of_value_type() is int
-  size_t size = sizeof(gid_t) + (use_lid?sizeof(lid_t):0) + size_of_value_type();
+  // get the base size of the user data component
+  // for simple mode, this is going to just be the sizeof(user_t)
+  // for vector mode, this is sizeof(size_t) for the std::vector length
+  // the actual data will be variable
+  size_t user_base_size = is_Zoltan2_Directory_Vector() ? sizeof(size_t) :
+    size_of_value_type();
+
+  // set up the base size to include the gid and the lid (if used) + user size
+  size_t size = sizeof(gid_t) + (use_lid?sizeof(lid_t):0) + user_base_size;
 
 #ifdef CONVERT_DIRECTORY_RELIC
   nodedata_size = size;
 #endif
 
+  // now calculate the full update msg size
   update_msg_size = size + sizeof(Zoltan2_DD_Update_Msg<gid_t,lid_t>);
 
+  // for remove message we just need the gid, not any other info
   size = sizeof(gid_t);
   remove_msg_size = size + sizeof(Zoltan2_DD_Remove_Msg<gid_t,lid_t>);
 
   // Current form of find_local is passed so gid_t is the input and
   // lid_t is the output so this guarantees that ptr is sufficient to
-  // cover both (uses the max).
-  size = std::max(sizeof(gid_t),sizeof(lid_t)) + size_of_value_type();
+  // cover both (uses the max). This handling is consistent with the original
+  // zoltan code but I initially found it very confusing.
+  // I suggest searching for all of the places where max_id_size is used and
+  // that represents the relevant code. This may be the most optimal way of
+  // doing this. I did not get to assessing it in detail.
+  //
+  // NOTE: To really test this thoroughly we would want to play around with
+  // the values GID_SET_LENGTH and LID_SET_LENGTH in the directoryTest_Impl.hpp
+  // setup. I made sure this works for gid larger than lid and the opposite.
+  // Probably should extend the unit tests to cover all these cases at once as
+  // originally I had some bugs where this would work fine except when lid
+  // size was greater than gid size. Now this all should be ok.
+  max_id_size = std::max(sizeof(gid_t),sizeof(lid_t));
+
+  size = max_id_size + user_base_size;
   find_msg_size = size + sizeof(Zoltan2_DD_Find_Msg<gid_t,lid_t>);
 
-  /* force alignment */
+  // TODO: Alignment is currently off for all of the modes for performance
+  // comparisons. I was not sure yet the implications of this and how it would
+  // best integrate if we have variable length user data
+/*
 #ifdef CONVERT_DIRECTORY_RELIC
-//  nodedata_size   = align_size_t(nodedata_size);
+    nodedata_size   = align_size_t(nodedata_size);
 #endif
-
-//  update_msg_size = align_size_t(update_msg_size);
-//  remove_msg_size = align_size_t(remove_msg_size);
-//  find_msg_size   = align_size_t(find_msg_size);
+    update_msg_size = align_size_t(update_msg_size);
+    remove_msg_size = align_size_t(remove_msg_size);
+    find_msg_size   = align_size_t(find_msg_size);
+*/
 
   if (debug_level > 4) {
     ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
@@ -195,42 +217,84 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::allocate()
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::copy(
   const Zoltan2_Directory<gid_t,lid_t,user_t> & src) {
+
 #ifdef CONVERT_DIRECTORY_RELIC
-  throw std::logic_error("copy not implemented.");
-  /*
-  if (nodelistlen) {
-    nodelist = (Zoltan2_Directory_Node<gid_t,lid_t> *)
-      ZOLTAN2_MALLOC(nodelistlen * sizeof(Zoltan2_Directory_Node<gid_t,lid_t>));
-    memcpy(nodelist, src.nodelist,
-      nodelistlen * sizeof(Zoltan2_Directory_Node<gid_t,lid_t>));
-
-    nodedata = (char *) ZOLTAN2_MALLOC(nodelistlen * nodedata_size);
-    memcpy(nodedata, src.nodedata, nodelistlen * nodedata_size);
-
-    for (relice_idx_t i = 0; i < nodelistlen; i++) {
-      nodelist[i].gid = static_cast<gid_t*>(nodedata + i*nodedata_size);
-    }
-  }
-  */
+  nodelist = src.nodelist;
+  nodedata = src.nodedata;
 #endif
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
-  throw std::logic_error("copy not implemented.");
+  node_map = src.node_map;
 #endif
 
 #ifdef CONVERT_DIRECTORY_TPETRA
-  throw std::logic_error("copy not implemented.");
+  oto_idMap = src.oto_idMap;
+  oto_idVec = src.oto_idVec;
 #endif
 
   return 0;
 }
 
+// Not yet implemented - was in progress and will be part of future work.
+// Two unit tests are disabled in CMakeLists.txt for tests/directory
+//  directoryTest_KokkosOptimized
+//  directoryTest_PerformanceKokkosOptimized
+// Those tests turn on this flag CONVERT_DIRECTORY_KOKKOS_OPTIMIZED
+// Eventually this would become the final version - this was in development.
+// Currently this code doesn't compile since I moved update_local back to being
+// protected. It needs to be available here as public and I didn't finish
+// figuring out how that should be setup. I had started setting up a first test
+// case where threads would optimize the application of update_local. Sort of
+// got it running but there was some issue with the data and I expect I'm making
+// bad assumptions about what is thread safe. The goal here was to get a simple
+// application of functors which would speed up the update_local calls.
+#ifdef CONVERT_DIRECTORY_KOKKOS_OPTIMIZED
+template <typename gid_t,typename lid_t,typename user_t>
+class update_local_functor {
+public:
+  typedef Kokkos::UnorderedMap<gid_t,
+    Zoltan2_Directory_Node<gid_t,lid_t,user_t>> node_map_t;
+  typedef Zoltan2_DD_Update_Msg<gid_t,lid_t> msg_t;
+  // Initialize all members
+  update_local_functor(
+    Teuchos::ArrayRCP<msg_t*> pMessagesIn,
+    Zoltan2_Directory<gid_t,lid_t,user_t> * pDirectoryIn,
+    const std::vector<user_t> * pUserIn) :
+      pMessages(pMessagesIn),
+      pDirectory(pDirectoryIn),
+      pUser(pUserIn) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const int i) const {
+    msg_t *ptr = pMessages[i];
+
+    user_t * puser = (ptr->user_flag) ?
+      reinterpret_cast<user_t*>(reinterpret_cast<char*>(ptr->adjData) +
+        sizeof(gid_t) + (pDirectory->is_use_lid()?sizeof(lid_t):0)) : NULL;
+
+    pDirectory->update_local(ptr->adjData,
+      (ptr->lid_flag) ? reinterpret_cast<lid_t*>(ptr->adjData + 1) : NULL,
+      puser,
+      (ptr->partition_flag) ? (ptr->partition) : -1,  // illegal partition
+      ptr->owner);
+  }
+
+  Teuchos::ArrayRCP<msg_t*> pMessages;
+  Zoltan2_Directory<gid_t,lid_t,user_t> * pDirectory;
+  const std::vector<user_t> * pUser;
+};
+#endif
+
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   const std::vector<gid_t>& gid, const std::vector<lid_t>& lid,
   const std::vector<user_t>& user, const std::vector<int>& partition,
-  Update_Mode mode)
+  Update_Mode update_mode)
 {
+  // for conveniece store but maybe this should be a construct property
+  // should a directory allow mixed modes (Replace, then Aggregate... for ex)
+  this->mode = update_mode;
+
   Zoltan2_Directory_Clock clock("update");
 
   const char * yo = "Zoltan2_Directory::update";
@@ -239,7 +303,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     ZOLTAN2_TRACE_IN(comm->getRank(), yo, NULL);
   }
 
-  Zoltan2_Directory_Clock update_setup("update_setup", 1);
+  Zoltan2_Directory_Clock update_setup_clock("update_setup", 1);
 
   // part of initializing the error checking process
   // for each linked list head, walk its list resetting errcheck
@@ -269,11 +333,16 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After reset errcheck");
   }
 
-  update_setup.complete();
+  update_setup_clock.complete();
 
   int err = 0;
 
 #ifdef CONVERT_DIRECTORY_TPETRA
+
+  // The purpose of this code was to implement a Tpetra form of the directory
+  // so we could do some performance comparisons. The Tpetra mode will support
+  // Add and Replace (not Aggregate) and can be run using the same API calls.
+
   // Compute global indexBase
   gid_t minId = gid.size() ?
     (*std::min_element(std::begin(gid), std::end(gid))) : 0;
@@ -293,12 +362,20 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     idData[i] = user[i];
   }
 
+  // I pulled this for now as I didn't want to have the API requiring the
+  // contiguous option just for Tpetra which is just a side show here anyways.
+  // If we want to restore this optimization we might scan the ids to auto
+  // determine if they are contiguous (or make a different API for Tpetra)
+  // I used to pass this in from the unit tests but eliminated that.
+  /*
   if (contiguous) {
     // For contigous ids, can use Tpetra default Map
     gid_t gnUnique = idMap->getMaxAllGlobalIndex() - indexBase + 1;
     oto_idMap = Teuchos::rcp(new map_t(gnUnique, indexBase, comm));
   }
-  else {
+  else
+  */
+  {
     // Since ids may not be contiguous, cannot use default Tpetra Map
     oto_idMap = Tpetra::createOneToOne(idMap);
   }
@@ -310,6 +387,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   // Create an exporter between the two maps
   rcp_export_t idExporter = Teuchos::rcp(new export_t(idMap, oto_idMap));
 
+  // Now we can use Tpetra for Replace or Add (doesn't support Aggregate)
   switch(mode) {
     case Update_Mode::Replace:
       oto_idVec->doExport(*idVec, *idExporter, Tpetra::REPLACE);
@@ -321,23 +399,30 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
       throw std::logic_error("Tpetra mode won't support Aggregate.");
       break;
   }
+
 #else
 
   Zoltan2_Directory_Clock update_alloc_clock("update_alloc", 1);
 
   // allocate memory for list of processors to contact
   Teuchos::ArrayRCP<int> procs;
-  Teuchos::ArrayRCP<int> msg_sizes;
   if(gid.size() > 0) {
     procs = Teuchos::arcp(new int[gid.size()], 0, gid.size(), true);
-    msg_sizes = Teuchos::arcp(new int[gid.size()], 0, gid.size(), true);
   }
 
+  // set up the msg sizes for vector mode only
+  Teuchos::ArrayRCP<int> msg_sizes;
   int sum_msg_size = 0;
-  for (size_t i = 0; i < gid.size(); i++) {
-    size_t msg_size = get_update_msg_size(user[i]);
-    sum_msg_size += msg_size;
-    msg_sizes[i] = msg_size;
+  if(is_Zoltan2_Directory_Vector() && gid.size() > 0) {
+    msg_sizes = Teuchos::arcp(new int[gid.size()], 0, gid.size(), true);
+    for (size_t i = 0; i < gid.size(); i++) {
+      size_t msg_size = get_update_msg_size(user[i]);
+      sum_msg_size += msg_size;
+      msg_sizes[i] = msg_size;
+    }
+  }
+  else {
+    sum_msg_size = update_msg_size * gid.size(); // simple case
   }
 
   update_alloc_clock.complete();
@@ -353,53 +438,73 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
 
   typedef Zoltan2_DD_Update_Msg<gid_t,lid_t> msg_t;
 
-  Zoltan2_Directory_Clock update_build_raw("update_build_raw", 1);
+  Zoltan2_Directory_Clock update_build_raw_clock("update_build_raw", 1);
 
+  // build update messages
   int track_offset = 0;
   char * trackptr = sbuff.getRawPtr();
   for (size_t i = 0; i < gid.size(); i++) {
+    // hash the gid to determine which proc will own it
     procs[i] = hash_proc(gid[i]);
 
+    // this ptr is the beginning of the message which can be different
+    // lengths for different gids if using Zoltan2_Directory_Vector
     msg_t *ptr = reinterpret_cast<msg_t*>(trackptr);
 
+    // write in all my info
     ptr->lid_flag       = (lid.size())  ? 1 : 0;
     ptr->user_flag      = (user.size()) ? 1 : 0;
     ptr->partition_flag = (partition.size()) ? 1 : 0;
     ptr->partition      = (partition.size()) ? partition[i] :  -1;
     ptr->owner          = comm->getRank();
 
+    // now deal with the gid
     gid_t * pgid = ptr->adjData;
-
     *pgid = gid[i];
 
-    lid_t * plid = reinterpret_cast<lid_t*>(ptr->adjData + 1);
-    if (lid.size()) {
-      if(!use_lid) {
+    // optionally write the lid if we are using that
+    if(use_lid) {
+      if(!lid.size()) {
         throw std::logic_error(
-          "Passed lid values but directory was created not to use them!");
+          "Did not pass lid values but directory was created to use them!");
       }
+      lid_t * plid = reinterpret_cast<lid_t*>(ptr->adjData + 1);
       *plid = lid[i];
     }
     else {
-      *plid = lid_t();
+      if(lid.size()) {
+        throw std::logic_error(
+          "Passed lid values but directory was created not to use them!");
+      }
     }
 
+    // find the spot where the user data begins
     user_t * puser = reinterpret_cast<user_t*>(
       reinterpret_cast<char*>(ptr->adjData) + sizeof(gid_t) +
         (use_lid?sizeof(lid_t):0));
 
+    // write in the user data - for Zoltan2_Directory_Simple this is a trival
+    // copy but for Zoltan2_Directory_Vector we write length and then write all
+    // of the elements in the vector.
     if (user.size()) {
       user_to_raw(user[i], puser);
     }
     else {
-      *puser = user_t(); // create a null version... how to handle
+      // The update msg contains space for the vector length (sizeof(size_t))
+      // if it's a Zoltan2_Directory_Vector
+      *puser = user_t(); // create an empty result
     }
 
-    size_t new_update_msg_size = get_update_msg_size(user[i]);
+    // vector will have different lengths but the simple mode will have all
+    // lengths just update_msg_size
+    size_t new_update_msg_size =
+      is_Zoltan2_Directory_Vector() ? msg_sizes[i] : update_msg_size;
     track_offset += new_update_msg_size;
     trackptr += new_update_msg_size;
   }
 
+  // this check just makes sure our internal logic above is correct
+  // we should have looped to total size sum_msg_size
   if(track_offset != sum_msg_size) {
     throw std::logic_error("Bad summing!");
   }
@@ -408,17 +513,19 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After fill contact list");
   }
 
-  update_build_raw.complete();
+  update_build_raw_clock.complete();
 
   // now create efficient communication plan
 
-  Zoltan2_Directory_Clock update_build_plan("update_build_plan", 1);
+  Zoltan2_Directory_Clock update_build_plan_clock("update_build_plan", 1);
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
+  // Kokkos mode uses the new refactored C++ communicator class
   Zoltan2_Directory_Comm directoryComm(gid.size(), procs, comm,
     ZOLTAN2_DD_UPDATE_MSG_TAG);
   int nrec = directoryComm.getNRec();
 #else
+  // The relic mode will be working with the original zoltan code
   ZOLTAN_COMM_OBJ *plan  = NULL;   // for efficient MPI communication
   int nrec = 0;       // number of receives to expect
   err = Zoltan_Comm_Create (&plan, gid.size(), procs.getRawPtr(),
@@ -433,18 +540,19 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Comm_Create");
   }
 
-  update_build_plan.complete();
+  update_build_plan_clock.complete();
 
-  Zoltan2_Directory_Clock update_resize("update_resize", 1);
+  Zoltan2_Directory_Clock update_resize_clock("update_resize", 1);
 
   int sum_recv_sizes = 0;
   if(is_Zoltan2_Directory_Vector()) {
+    // Only vector mode has to use the resizing options for getting receive info
 #ifdef CONVERT_DIRECTORY_KOKKOS
-  err = directoryComm.resize(msg_sizes,
-   ZOLTAN2_DD_RESIZE_MSG_TAG, &sum_recv_sizes);
+    err = directoryComm.resize(msg_sizes,
+      ZOLTAN2_DD_RESIZE_MSG_TAG, &sum_recv_sizes);
 #else
-  err = Zoltan_Comm_Resize(plan, msg_sizes.getRawPtr(),
-    ZOLTAN2_DD_RESIZE_MSG_TAG, &sum_recv_sizes);
+    err = Zoltan_Comm_Resize(plan, msg_sizes.getRawPtr(),
+      ZOLTAN2_DD_RESIZE_MSG_TAG, &sum_recv_sizes);
 #endif
   }
   else {
@@ -455,7 +563,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     throw std::logic_error("directoryComm.execute_resize error");
   }
 
-  update_resize.complete();
+  update_resize_clock.complete();
 
   // If dd has no nodes allocated (e.g., first call to DD_Update;
   // create the nodelist and freelist
@@ -484,14 +592,15 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   // allocate receive buffer for nrec DD_Update_Msg structures
   Teuchos::ArrayRCP<char> rbuff;
   if(sum_recv_sizes > 0) {
-    rbuff = Teuchos::arcp(new char[sum_recv_sizes], 0, sum_recv_sizes, true);   // receive buffer
+    rbuff = Teuchos::arcp(
+      new char[sum_recv_sizes], 0, sum_recv_sizes, true);   // receive buffer
   }
 
   // send my update messages & receive updates directed to me
   //if resizing we send size 1 because the sizes will be built individually
   const int nbytes = is_Zoltan2_Directory_Vector() ? 1 : update_msg_size;
 
-  Zoltan2_Directory_Clock update_forward("update_forward", 1);
+  Zoltan2_Directory_Clock update_forward_clock("update_forward", 1);
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
   err = directoryComm.do_forward(ZOLTAN2_DD_UPDATE_MSG_TAG+1,
@@ -501,7 +610,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     sbuff.getRawPtr(), nbytes, rbuff.getRawPtr());
 #endif
 
-  update_forward.complete();
+  update_forward_clock.complete();
 
   if (err) {
     throw std::logic_error("Zoltan2_Directory::update() Comm_Do error");
@@ -511,10 +620,38 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Comm_Do");
   }
 
-  Zoltan2_Directory_Clock update_locals("update_locals", 1);
+  Zoltan2_Directory_Clock update_locals_clock("update_locals", 1);
+
+  int errcount = 0;
+
+#ifdef CONVERT_DIRECTORY_KOKKOS_OPTIMIZED
+  // Note: This code was in progress - not live yet
+  // See note above where CONVERT_DIRECTORY_KOKKOS_OPTIMIZED is first used.
+
+  // build a map of message to buff location
+  // I wanted to pass this to a functor and then have the functor process the
+  // update_local calls in parallel using threads - this would be a first
+  // example of optimizing the directory. The parallel operations can happen
+  // any order so we need to precalculate the buffer locations since each
+  // msg can be a different size. This wasn't working yet.
+  Teuchos::ArrayRCP<msg_t*> message_locations(nrec);
+  trackptr = rbuff.getRawPtr();
+  for(int n = 0; n < nrec; ++n) {
+    msg_t *ptr = reinterpret_cast<msg_t*>(trackptr);
+
+    user_t * puser = (ptr->user_flag) ?
+      (user_t*)(reinterpret_cast<char*>(ptr->adjData) +
+        sizeof(gid_t) + (use_lid?sizeof(lid_t):0)) : NULL;
+    size_t delta_msg_size = get_update_msg_size(puser);
+    message_locations[n] = reinterpret_cast<msg_t*>(trackptr);
+    trackptr += delta_msg_size;
+  }
+
+  Kokkos::parallel_for (nrec,
+    update_local_functor<gid_t,lid_t,user_t>(message_locations, this, &user));
+#else
 
   // for each message rec'd, update local directory information
-  int errcount = 0;
   track_offset = 0;
   trackptr = rbuff.getRawPtr();
   for (int i = 0; i < nrec; i++) {
@@ -528,21 +665,27 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
       (ptr->lid_flag) ? reinterpret_cast<lid_t*>(ptr->adjData + 1) : NULL,
       puser,
       (ptr->partition_flag) ? (ptr->partition) : -1,  // illegal partition
-      ptr->owner, mode);
+      ptr->owner);
 
     if (err)
       ++errcount;
 
+    // in this case we are reading the raw data so we calculate the message
+    // size from it. For vector mode, this will find the length of the vector
+    // and calculate the full message size from that.
     size_t delta_msg_size = get_update_msg_size(puser);
     trackptr += delta_msg_size;
     track_offset += delta_msg_size;
   }
 
-  update_locals.complete();
-
+  // safety check - if all this internal logic is correct the ptr offset should
+  // not be exactly at the end of the recv buffer.
   if(track_offset != sum_recv_sizes) {
     throw std::logic_error("Did not sum!");
   }
+#endif
+
+  update_locals_clock.complete();
 
   if (debug_level > 6) {
     ZOLTAN2_PRINT_INFO(comm->getRank(), yo, "After Local update");
@@ -585,8 +728,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
  lid_t* lid,                 /* gid's LID (in), NULL if not needed        */
  user_t *user,               /* gid's user data (in), NULL if not needed  */
  int partition,              /* gid's partition (in), -1 if not used      */
- int owner,                  /* gid's current owner (proc number) (in)    */
- Update_Mode mode)
+ int owner)                  /* gid's current owner (proc number) (in)    */
 {
   const char * yo = "Zoltan2_Directory::update_local";
 
@@ -651,7 +793,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
         node.lid = *lid;
       }
       if (user) {
-        update_local_user(user, node.userData, mode);
+        update_local_user(user, node.userData);
       }
 #endif
 
@@ -699,7 +841,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
           // from different gids - so we would have to change the tests
           // to guarantee Replace was a unique gid lists for each proc.
           // That is easy to do but not ideal at the moment for performance
-          // testing reasons.
+          // testing reasons. I'd like the pattern of calls to be the same
+          // as Add and Aggregate as a reference.
 
           //   throw std::logic_error( "Two replace calls were detected on."
           //     " the same gid which can be an undefined results.");
@@ -719,8 +862,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
 #endif
   }
 
-
-  // gid not found. Create new Zoltan2_Directory_Node<gid_t,lid_t> and fill it in
+  // gid not found.
+  // Create new Zoltan2_Directory_Node<gid_t,lid_t> and fill it in
 #ifdef CONVERT_DIRECTORY_RELIC
   relice_idx_t nodeidx = allocate_node();
   Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node = nodelist[nodeidx];
@@ -741,7 +884,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
 
   user_t * puser = reinterpret_cast<user_t*>(
     reinterpret_cast<char*>(node.gid) + sizeof(gid_t)
-    + (use_lid?sizeof(lid_t):0));
+      + (use_lid?sizeof(lid_t):0));
   if (user) {
     *puser = *user;
   }
@@ -751,6 +894,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
 #else
   node.lid = lid ? (*lid) : lid_t();
 
+  // this is more or less doing what above relic commands did except for
+  // vector mode there is special handling to account for the variable length
+  // of the std::vector
   if(user) {
     raw_to_user(user, node.userData);
   }
@@ -771,7 +917,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
 #else
 
   if(node_map.insert(*gid, node).failed()) {
-    // need more nodes... a new update has added more to our local list
+    // Need more nodes (that's the assumption here if we have failure)
+    // A new update has added more to our local list and we need more capacity.
     // TODO: Decide most efficient scheme. Here we bump to at least 10 or if
     // we're already at the level, increase by 10% increments. I think this will
     // be less efficient for small scale problems, when we probably care less,
@@ -848,12 +995,13 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   /* allocate memory for processors to contact for directory info */
   Teuchos::ArrayRCP<int> procs;
   if(gid.size() > 0) {
-    procs = Teuchos::arcp(new int[gid.size()], 0, gid.size(), true);  // list of processors to contact
+    procs = Teuchos::arcp(
+      new int[gid.size()], 0, gid.size(), true); // processors to contact
   }
 
   /* Setup procs list */
   for (size_t i = 0; i < gid.size(); i++) {
-    procs[i] = hash_proc(gid[i]);
+    procs[i] = hash_proc(gid[i]); // determines the owner
   }
 
   // create efficient communication plan
@@ -882,7 +1030,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
 
   Teuchos::ArrayRCP<char> sbuff;
   if(gid.size() > 0) {
-    sbuff = Teuchos::arcp(new char[find_msg_size*gid.size()], 0, find_msg_size*gid.size(), true); // send buffer
+    sbuff = Teuchos::arcp(new char[find_msg_size*gid.size()],
+      0, find_msg_size*gid.size(), true); // send buffer
   }
   find_sbuff_alloc_clock.complete();
 
@@ -1001,7 +1150,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   for (int i = 0; i < nrec; i++) {
     typedef Zoltan2_DD_Find_Msg<gid_t,lid_t> find_msg_t;
     find_msg_t *ptr = reinterpret_cast<find_msg_t*>(track_ptr);
-    user_t * puser = reinterpret_cast<user_t*>(ptr->adjData + 1);
+    user_t * puser = reinterpret_cast<user_t*>(
+      reinterpret_cast<char*>(ptr->adjData) + max_id_size);
 
     // In original DD_Find_Local the first two values (gid and lid) are
     // passed as the same, we send in gid and collect lid if it's used.
@@ -1086,7 +1236,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
       lid[ptr->index] = *(reinterpret_cast<lid_t*>(ptr->adjData));
     }
 
-    user_t * pRead = reinterpret_cast<user_t*>(ptr->adjData+1);
+    user_t * pRead = reinterpret_cast<user_t*>(
+      reinterpret_cast<char*>(ptr->adjData) + max_id_size);
 
     // if find_local failed proc is set to -1. Then we can leave the data
     // untouched - the default behavior is to throw but the unit tests are
@@ -1094,7 +1245,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     // this the test overrides with an optional flag on find() and says do not
     // throw - and expects the data to remain untouched - then validates the
     // data is not changed.
-    if(ptr->proc != -1) {
+    if(ptr->proc != -1  && user.size()) {
       raw_to_user(pRead, user[ptr->index]);
     }
 
@@ -1139,7 +1290,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   if (debug_level > 4) {
     ZOLTAN2_TRACE_OUT(comm->getRank(), yo, NULL);
   }
-
 
   return err;
 }
@@ -1212,12 +1362,13 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find_local(
       if (debug_level > 5) {
         ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
       }
-      return 0;
+      return 0; // success point
 #ifdef CONVERT_DIRECTORY_RELIC
     }
 #endif
   }
 
+  // failure point
   if (owner != NULL)
     *owner = -1;    /* JDT Added -1 owner not found */
 
@@ -1239,7 +1390,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find_local(
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::allocate_node_list(
   relice_idx_t count,         /* Number of GIDs in update list  */
-  float overalloc           /* Percentage to extra nodes to
+  float overalloc             /* Percentage to extra nodes to
                                allocate (for future dynamic
                                additions).                    */
 )
@@ -1318,8 +1469,6 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::free_node(
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::print() const
 {
-  throw std::logic_error("UNTESTED CHECKPOINT"); // needs unit testing
-
   const char * yo = "Zoltan2_Directory::print";
 
   if (debug_level > 4) {
@@ -1327,7 +1476,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::print() const
   }
 
 #ifdef CONVERT_DIRECTORY_TPETRA
-  throw std::logic_error("Tpetra not iplemented");
+  printf( "Tpetra mode does not have print() method implemented.\n" );
 #else
 
 #ifdef CONVERT_DIRECTORY_RELIC
@@ -1344,8 +1493,21 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::print() const
 #ifdef CONVERT_DIRECTORY_KOKKOS
   for (size_t i = 0; i < node_map.size(); i++) {
       Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
-        node_map.value_at(node_map.find(i));
+        node_map.value_at(i);
       printf ("ZOLTAN DD Print(%d): \tList, \tGID ", comm->getRank());
+      printf("(");
+      //  the issue here is that gid could be a simple type (int/long) or it
+      //  could be an arbitrary structure such as:
+      //  struct some_type {
+      //    int x[4];
+      //  }
+      // Directory works for such arbitrary type but only knows sizeof,
+      // not details of the internal implementation. In the testing framework
+      // the length of above x array is stored so it can be printed.
+      // TODO: Decide how to handle this - if we want directory to be able to
+      // print nice output of the gid (and lid) then perhaps we need to require
+      // that such structs define a to_string() method.
+      printf( "TODO: Decide how to print gid of arbitrary type.");
 #endif
 
       printf(") ");
@@ -1357,7 +1519,8 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::print() const
 #endif
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
-         printf( "%zu ", static_cast<size_t>(node.lid));
+        // see above note on the gid and printing
+        printf( "TODO: Decide how to print lid of arbitrary type.");
 #endif
         printf(") ");
       }
@@ -1367,32 +1530,73 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::print() const
     }
 #endif
 
-
   }
 #endif // #ifndef CONVERT_DIRECTORY_TPETRA
+
   if (debug_level > 4) {
     ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
   }
   return 0;
 }
 
-// operator=
+// Stats block
 template <typename gid_t,typename lid_t,typename user_t>
-Zoltan2_Directory<gid_t,lid_t,user_t> & Zoltan2_Directory<gid_t,lid_t,user_t>::
-  operator=(const Zoltan2_Directory<gid_t,lid_t,user_t> &src)
+void Zoltan2_Directory<gid_t,lid_t,user_t>::stats() const
 {
-  throw std::logic_error("UNTESTED CHECKPOINT"); // needs unit testing
+  const char    *yo = "Zoltan2_Directory::stats";
 
-  use_lid = src.use_lid;
-  debug_level = src.debug_level;
+  if (debug_level > 4) {
+    ZOLTAN2_TRACE_IN (comm->getRank(), yo, NULL);
+  }
+
+#ifdef CONVERT_DIRECTORY_TPETRA
+  printf( "Tpetra mode does not have stats() method implemented.\n" );
+#else
+
+  char str[100];      // used to build message string
 
 #ifdef CONVERT_DIRECTORY_RELIC
-  table_length = src.table_length;
+  /* walk down each list in hash table to find every Node */
+  int node_count = 0;     /* counts Nodes in local directory      */
+  int maxlength  = 0;     /* length of longest linked list        */
+  int list_count = 0;     /* number of linked lints in hash table */
+  for (int i = 0; i < table_length; i++) {
+    int length = 0;                    /* reset length for next count */
+    if (table[i] != -1)
+      list_count++;               /* count of distict linked lists */
+    for (relice_idx_t nodeidx = table[i]; nodeidx != -1;
+      nodeidx = nodelist[nodeidx].next) {
+
+      if (debug_level > 6) {
+        char str2[100];      // used to build message string
+   //     sprintf(str, "GID %zu, Owner %d, Table Index %d.",
+   //       (size_t) *nodelist[nodeidx].gid, nodelist[nodeidx].owner, i);
+        ZOLTAN2_PRINT_INFO (comm->getRank(), yo, str2);
+      }
+
+      length++;                  /* linked list length */
+      node_count++;              /* count of Nodes */
+
+      if (length > maxlength)
+        maxlength = length;        /* save length of longest linked list */
+    }
+  }
+
+  sprintf(str, "Hash table size %d, %d nodes on %d lists, max list length %d.",
+          table_length, node_count, list_count, maxlength);
+#else
+  // not much to do here for equivalent to stats
+  // TODO: Consider removing stats()
+  sprintf(str, "Kokkos unordered map %d nodes.", node_map.size());
 #endif
 
-  allocate();
-  copy(src);
-  return *this;
+  ZOLTAN2_PRINT_INFO (comm->getRank(), yo, str);
+
+#endif // #ifndef CONVERT_DIRECTORY_TPETRA
+
+  if (debug_level > 4) {
+    ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
+  }
 }
 
 template <typename gid_t,typename lid_t,typename user_t>
@@ -1578,88 +1782,6 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove_local(
 #endif // CONVERT_DIRECTORY_TPETRA
 
 #ifdef CONVERT_DIRECTORY_RELIC
-/*
-template <typename gid_t,lid_t,typename user_t>
-double *Zoltan2_Directory<gid_t,lid_t,user_t>::array_alloc(
-  char *file, int lineno, int numdim, ...) {
-  const char *yo = "Zoltan2_Array_Alloc";
-  int i, j;
-  struct dimension {
-    long index;  // Number of elements in the dimension
-    long total;  // Total number of elements
-    long size;   // Size of a single element in bytes
-    long off;    // offset from beginning of array
-  } dim[4];      // Info about each dimension
-
-  va_list va;           // Current pointer in the argument list
-  va_start(va, numdim);
-
-  if (numdim <= 0) {
-    fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is <=0\n",
-            yo, file, lineno, numdim);
-    va_end(va);
-    return((double *) NULL);
-  }
-  else if (numdim > 4) {
-    fprintf(stderr, "%s (%s: %d) ERROR: number of dimensions, %d, is > 4\n",
-            yo, file, lineno, numdim);
-    va_end(va);
-    return((double *) NULL);
-  }
-
-  dim[0].index = va_arg(va, int);
-
-  if (dim[0].index <= 0) {
-    va_end(va);
-    return((double *) NULL);
-  }
-
-  dim[0].total = dim[0].index;
-  dim[0].size  = sizeof(void *);
-  dim[0].off   = 0;
-  for (i = 1; i < numdim; i++) {
-    dim[i].index = va_arg(va, int);
-    if (dim[i].index <= 0) {
-      fprintf(stderr, "WARNING: %s (%s: %d) called with dimension %d <= 0, "
-              "%ld; will return NULL\n",
-              yo, file, lineno, i+1, dim[i].index);
-      va_end(va);
-      return((double *) NULL);
-    }
-    dim[i].total = dim[i-1].total * dim[i].index;
-    dim[i].size  = sizeof(void *);
-    dim[i].off   = dim[i-1].off + dim[i-1].total * dim[i-1].size;
-  }
-
-  dim[numdim-1].size = va_arg(va, int);
-  va_end(va);
-
-  // Round up the last offset value so data is properly aligned.
-
-  dim[numdim-1].off = dim[numdim-1].size *
-    ((dim[numdim-1].off+dim[numdim-1].size-1)/dim[numdim-1].size);
-
-  long total = dim[numdim-1].off + dim[numdim-1].total * dim[numdim-1].size;
-
-  // TODO check me out - refactors from ptr malloc
-  std::vector<double> dfield(total);
-
-  // TODO make more C++ like...
-  char *field  = (char *) &(dfield[0]); // The multi-dimensional array
-  for (i = 0; i < numdim - 1; i++) {
-    char **ptr  = (char **) (field + dim[i].off); // Pointer offset
-    char *data = (char *) (field + dim[i+1].off); // Data offset
-    for (j = 0; j < dim[i].total; j++) {
-      ptr[j] = data + j * dim[i+1].size * dim[i+1].index;
-    }
-  }
-  // TODO - didn't finish refactoring this - make use std::vectors
-  return dfield;
-}
-*/
-#endif
-
-#ifdef CONVERT_DIRECTORY_RELIC
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::equal_id(int n, gid_t* a, gid_t* b) const
 {
@@ -1677,10 +1799,10 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::equal_id(int n, gid_t* a, gid_t* b) c
 #endif
 
 template <typename gid_t,typename lid_t,typename user_t>
-unsigned int Zoltan2_Directory<gid_t,lid_t,user_t>::hash_proc(const gid_t & key) const
+unsigned int Zoltan2_Directory<gid_t,lid_t,user_t>::hash_proc(const gid_t & gid) const
 {
   uint32_t k;
-  MurmurHash3_x86_32((void *)(&key), sizeof(gid_t), 14, (void *)&k);
+  MurmurHash3_x86_32((void *)(&gid), sizeof(gid_t), 14, (void *)&k);
   return(k % comm->getSize());
 }
 
@@ -1725,62 +1847,17 @@ Zoltan2_Directory<gid_t,lid_t,user_t>::recommended_hash_size(unsigned int n)
 }
 #endif
 
+/* TODO: Currently disabled - I need to review the benefits of this and see if
+   we need this in the new version. Also how do we best handle this for variable
+   sized data. */
+/*
 template <typename gid_t,typename lid_t,typename user_t>
 size_t Zoltan2_Directory<gid_t,lid_t,user_t>::align_size_t(size_t a) const
 {
   #define ZOLTAN2_ALIGN_VAL 7U
   return((ZOLTAN2_ALIGN_VAL + a) & ~ZOLTAN2_ALIGN_VAL);
 }
-
-// Stats block
-template <typename gid_t,typename lid_t,typename user_t>
-void Zoltan2_Directory<gid_t,lid_t,user_t>::stats() const
-{
-  throw std::logic_error("UNTESTED CHECKPOINT"); // needs unit testing
-
-  const char    *yo = "Zoltan2_Directory::stats";
-
-  if (debug_level > 4) {
-    ZOLTAN2_TRACE_IN (comm->getRank(), yo, NULL);
-  }
-
-#ifndef CONVERT_DIRECTORY_RELIC
-  throw std::logic_error( "stats not implemented yet..." );
-#else
-  /* walk down each list in hash table to find every Node */
-  int node_count = 0;     /* counts Nodes in local directory      */
-  int maxlength  = 0;     /* length of longest linked list        */
-  int list_count = 0;     /* number of linked lints in hash table */
-  for (int i = 0; i < table_length; i++) {
-    int length = 0;                    /* reset length for next count */
-    if (table[i] != -1)
-      list_count++;               /* count of distict linked lists */
-
-    for (relice_idx_t nodeidx = table[i]; nodeidx != -1;
-      nodeidx = nodelist[nodeidx].next) {
-      if (debug_level > 6) {
-        char str[100];      // used to build message string
-   //     sprintf(str, "GID %zu, Owner %d, Table Index %d.",
-   //       (size_t) *nodelist[nodeidx].gid, nodelist[nodeidx].owner, i);
-        ZOLTAN2_PRINT_INFO (comm->getRank(), yo, str);
-      }
-      length++;                  /* linked list length */
-      node_count++;              /* count of Nodes */
-    }
-    if (length > maxlength)
-      maxlength = length;        /* save length of longest linked list */
-  }
-
-  char str[100];      // used to build message string
-  sprintf(str, "Hash table size %d, %d nodes on %d lists, max list length %d.",
-          table_length, node_count, list_count, maxlength);
-  ZOLTAN2_PRINT_INFO (comm->getRank(), yo, str);
-
-  if (debug_level > 4) {
-    ZOLTAN2_TRACE_OUT (comm->getRank(), yo, NULL);
-  }
-#endif
-}
+*/
 
 } // end namespace Zoltan2
 
