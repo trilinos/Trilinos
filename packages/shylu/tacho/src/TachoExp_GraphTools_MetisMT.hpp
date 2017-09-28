@@ -17,11 +17,12 @@ namespace Tacho {
     class GraphTools_MetisMT {
     public:
       typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
+
       typedef Kokkos::View<mtmetis_vtx_type*,host_exec_space> mtmetis_vtx_type_array;
       typedef Kokkos::View<mtmetis_adj_type*,host_exec_space> mtmetis_adj_type_array;
       typedef Kokkos::View<mtmetis_wgt_type*,host_exec_space> mtmetis_wgt_type_array;
       typedef Kokkos::View<mtmetis_pid_type*,host_exec_space> mtmetis_pid_type_array;
-      typedef Kokkos::View<uidx_t*,host_exec_space> uidx_t_array;
+
       typedef Kokkos::View<ordinal_type*,host_exec_space> ordinal_type_array;
 
     private:
@@ -68,7 +69,7 @@ namespace Tacho {
           _adjncy(i) = g_col_idx(i);
 
         // default
-        for (ordinal_type i=0;<static_cast<ordinal_type>(MTMETIS_NOPTIONS);++i)
+        for (ordinal_type i=0;i<static_cast<ordinal_type>(MTMETIS_NOPTIONS);++i)
           _options[i] = MTMETIS_VAL_OFF;
 
         // by default, metis use
@@ -82,7 +83,7 @@ namespace Tacho {
         //   MTMETIS_VERBOSITY_MAXIMUM
 
         _options[MTMETIS_OPTION_NTHREADS]  = host_exec_space::thread_pool_size(0); // from kokkos
-        _options[MTMETIS_OPTION_SEED]      = 0; // for testing, use the same seed now
+        //_options[MTMETIS_OPTION_SEED]      = 0; // for testing, use the same seed now
         //_options[MTMETIS_OPTION_PTYPE]     = MTMETIS_PTYPE_ND; // when explicit interface is used
         //_options[MTMETIS_OPTION_VERBOSITY] = MTMETIS_VERBOSITY_NONE;
         //_options[MTMETIS_OPTION_METIS]     = 1; // flag to use serial metis
@@ -91,8 +92,8 @@ namespace Tacho {
         _peri_t = mtmetis_pid_type_array("pid_type_peri", _nvts);    
 
         // output
-        _perm  = ordinal_type_array("Metis::PermutationArray", _nvts);
-        _peri  = ordinal_type_array("Metis::InvPermutationArray", _nvts);    
+        _perm  = ordinal_type_array("MetisMT::PermutationArray", _nvts);
+        _peri  = ordinal_type_array("MetisMT::InvPermutationArray", _nvts);    
       }
       virtual~GraphTools_MetisMT() {}
 
@@ -101,7 +102,7 @@ namespace Tacho {
       ///
 
       void setVerbose(const bool verbose) { _verbose = verbose; }
-      void setOption(const int id, const uidx_t value) {
+      void setOption(const int id, const double value) {
         _options[id] = value;
       }
 
@@ -127,19 +128,19 @@ namespace Tacho {
                               perm, peri);
         t_metis = timer.seconds();
 
-        for (uidx_t i=0;i<_nvts;++i) {
+        for (mtmetis_vtx_type i=0;i<_nvts;++i) {
           _perm(i) = _perm_t(i);
           _peri(i) = _peri_t(i);
         }
 
-        TACHO_TEST_FOR_EXCEPTION(ierr != METIS_SUCCESS, 
+        TACHO_TEST_FOR_EXCEPTION(ierr != MTMETIS_SUCCESS, 
                                  std::runtime_error,
                                  "Failed in METIS_NodeND");
         _is_ordered = true;
 
         if (verbose) {
-          printf("Summary: GraphTools (Metis)\n");
-          printf("===========================\n");
+          printf("Summary: GraphTools (MetisMT)\n");
+          printf("=============================\n");
 
           switch (verbose) {
           case 1: {
@@ -161,7 +162,7 @@ namespace Tacho {
         os << std::scientific;
 
         if (_is_ordered)
-          os << " -- Metis Ordering -- " << std::endl
+          os << " -- MetisMT Ordering -- " << std::endl
              << "  PERM     PERI     " << std::endl;
         else 
           os << " -- Not Ordered -- " << std::endl;

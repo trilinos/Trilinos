@@ -31,8 +31,11 @@ namespace Tacho {
     typedef typename supernode_info_type::value_type_array value_type_array;
     typedef typename supernode_info_type::value_type_matrix value_type_matrix;
 
+    // mtmets produces very very bad ordering
 #if   defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
+#elif defined(TACHO_HAVE_METIS_MT)
+    typedef GraphTools_MetisMT graph_tools_type;
 #elif defined(TACHO_HAVE_SCOTCH)
     typedef GraphTools_Scotch graph_tools_type;
 #else

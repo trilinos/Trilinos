@@ -21,6 +21,7 @@
 #include "TachoExp_Graph.hpp"
 #include "TachoExp_GraphTools_CAMD.hpp"        
 #include "TachoExp_GraphTools_Metis.hpp"       
+#include "TachoExp_GraphTools_MetisMT.hpp"       
 #include "TachoExp_GraphTools_Scotch.hpp"      
 
 #include "TachoExp_SupernodeInfo.hpp"
