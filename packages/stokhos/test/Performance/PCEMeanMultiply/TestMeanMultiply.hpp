@@ -45,7 +45,8 @@
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 
 // Kokkos CrsMatrix
-#include "Kokkos_Sparse_CrsMatrix.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
+#include "KokkosSparse_spmv.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
 

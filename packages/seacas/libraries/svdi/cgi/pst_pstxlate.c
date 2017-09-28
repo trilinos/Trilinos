@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -392,8 +392,8 @@
 /* >> FUNCTION PROTOTYPES                                      */
 /*-------------------------------------------------------------*/
 /* cgi/vdi routines */
-static void xactivate(anything **params, anything **surf_list);
-static void xdeactivate(anything **params, anything **surf_list);
+static void xactivate(anything **surf_list);
+static void xdeactivate(anything **surf_list);
 static void xci(anything **params, int num_surfaces, anything **surf_list);
 static void xct(int num_surfaces, anything **surf_list);
 static void xcxdfac(int num_surfaces, anything **surf_list);
@@ -426,7 +426,7 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list);
 static void xclnt(anything **params, int num_surfaces, anything **surf_list);
 static void xclnw(anything **params, int num_surfaces, anything **surf_list);
 static void xclnc(anything **params, int num_surfaces, anything **surf_list);
-static void xcmkt(anything **params, int num_surfaces, anything **surf_list);
+static void xcmkt(int num_surfaces, anything **surf_list);
 static void xcmks(anything **params, int num_surfaces, anything **surf_list);
 static void xcmkc(anything **params, int num_surfaces, anything **surf_list);
 static void xctxp(anything **params, int num_surfaces, anything **surf_list);
@@ -511,8 +511,8 @@ anything *surf_list[];
 {
   /* Main entry point */
   switch (*(short *)params[0]) {
-  case ACTIVATE_FN: xactivate(params, surf_list); break;
-  case DEACTIVATE_FN: xdeactivate(params, surf_list); break;
+  case ACTIVATE_FN: xactivate(surf_list); break;
+  case DEACTIVATE_FN: xdeactivate(surf_list); break;
   case CI_FN: xci(params, num_surfaces, surf_list); break;
   case CT_FN: xct(num_surfaces, surf_list); break;
   case CXDFAC_FN: xcxdfac(num_surfaces, surf_list); break;
@@ -545,7 +545,7 @@ anything *surf_list[];
   case CLNT_FN: xclnt(params, num_surfaces, surf_list); break;
   case CLNW_FN: xclnw(params, num_surfaces, surf_list); break;
   case CLNC_FN: xclnc(params, num_surfaces, surf_list); break;
-  case CMKT_FN: xcmkt(params, num_surfaces, surf_list); break;
+  case CMKT_FN: xcmkt(num_surfaces, surf_list); break;
   case CMKS_FN: xcmks(params, num_surfaces, surf_list); break;
   case CMKC_FN: xcmkc(params, num_surfaces, surf_list); break;
   case CTXP_FN: xctxp(params, num_surfaces, surf_list); break;
@@ -578,7 +578,7 @@ anything *surf_list[];
 } /* end cgixxx */
 
 /* ACTIVATE */
-static void xactivate(anything **params, anything **surf_list)
+static void xactivate(anything **surf_list)
 {
   int new_state; /* index of new state to use */
 
@@ -612,7 +612,7 @@ static void xactivate(anything **params, anything **surf_list)
 } /* end xactivate */
 
 /* DEACTIVATE */
-static void xdeactivate(anything **params, anything **surf_list)
+static void xdeactivate(anything **surf_list)
 {
   /* deallocate memory allocated for cgi state list */
 
@@ -661,8 +661,9 @@ static void xci(anything **params, int num_surfaces, anything **surf_list)
       reset_vdi(cur_state);
 
       /* if prepare drawing surface, issue a new page */
-      if (*(int *)params[1] == CYES)
+      if (*(int *)params[1] == CYES) {
         vdnwpg();
+      }
     } /* end else surface initialized */
 
     /* initialize/reinitialize the default device state */
@@ -682,8 +683,9 @@ static void xct(int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* terminate and set state to uninitialized */
     vdterm();
@@ -700,8 +702,9 @@ static void xcxdfac(int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     vdbufl();
 
@@ -716,8 +719,9 @@ static void xcpds(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* new page if page has been marked or parameter is forced */
     if (cur_state->pic_dirty == CDIRTY || *(int *)params[1] == CFORCC) {
@@ -736,18 +740,20 @@ static void xcendpg(int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* perform an implicit execute deferred actions */
     vdbufl();
 
     /* for hardcopy, call new page only if page has been marked */
-    if (dev_descrip.copy_class == CHARD)
+    if (dev_descrip.copy_class == CHARD) {
       if (cur_state->pic_dirty == CDIRTY) {
         vdnwpg();
         cur_state->pic_dirty = CCLEAN;
       } /* end if dirty page */
+    }
 
   } /* end for each surface */
 } /* end xcendpg */
@@ -765,8 +771,9 @@ static void xcbc(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     set_background_color(cur_state, bg_color);
 
@@ -781,8 +788,9 @@ static void xcvdcx(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* store the values in the state list */
     /* default integer precision is 16 - check range */
@@ -795,12 +803,12 @@ static void xcvdcx(anything **params, int num_surfaces, anything **surf_list)
       return;
     } /* end if error */
 
-    else { /* no error */
-      cur_state->vdc1.x = *(float *)params[1];
-      cur_state->vdc1.y = *(float *)params[2];
-      cur_state->vdc2.x = *(float *)params[3];
-      cur_state->vdc2.y = *(float *)params[4];
-    } /* end else no error */
+    /* no error */
+    cur_state->vdc1.x = *(float *)params[1];
+    cur_state->vdc1.y = *(float *)params[2];
+    cur_state->vdc2.x = *(float *)params[3];
+    cur_state->vdc2.y = *(float *)params[4];
+    /* end else no error */
 
     /* VDC to viewport (in NDC) mapping */
     /* -- this routine sets effective viewport in VDC and
@@ -837,8 +845,9 @@ static void xcv(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* viewport  - default viewport specification mode is FRACTION OF
      * DRAWING SURFACE.  Thus, the viewport (0,0),(1,1) corresponds to
@@ -873,8 +882,9 @@ static void xccl(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* check for a legal enumerated value, store in state table
        and set the clipping region */
@@ -882,9 +892,10 @@ static void xccl(anything **params, int num_surfaces, anything **surf_list)
       cur_state->clip_indicator = *(int *)params[1];
       set_clipping(cur_state);
     }
-    else
+    else {
       /* error 1:-101 Enumerated parameter out of range. Function ignored */
       report_error(cur_state, 1, -101, *(short *)params[0]);
+    }
 
   } /* end for each surface */
 } /* end xccl */
@@ -897,8 +908,9 @@ static void xcdscl(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* check for a legal enumerated value, store in state table
        and set the clipping region */
@@ -906,9 +918,10 @@ static void xcdscl(anything **params, int num_surfaces, anything **surf_list)
       cur_state->ds_clip_indicator = *(int *)params[1];
       set_clipping(cur_state);
     }
-    else
+    else {
       /* error 1:-101 Enumerated parameter out of range. Function ignored */
       report_error(cur_state, 1, -101, *(short *)params[0]);
+    }
 
   } /* end for each surface */
 } /* end xcdscl */
@@ -921,8 +934,9 @@ static void xcdqerr(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* find the number of errors to be returned */
   max_ret = (*(int *)params[1] < cur_state->err_count) ? *(int *)params[1] : cur_state->err_count;
@@ -935,8 +949,9 @@ static void xcdqerr(anything **params, anything **surf_list)
 
     /* update the head of list ptr */
     cur_state->err_head_ptr++;
-    if (cur_state->err_head_ptr == ERROR_LIST_SIZE)
+    if (cur_state->err_head_ptr == ERROR_LIST_SIZE) {
       cur_state->err_head_ptr = 0;
+    }
 
     /* decrement the count of errors */
     cur_state->err_count--;
@@ -962,25 +977,28 @@ static void xcerhct(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* store error control level in state list */
     for (j = 0; j < *(int *)params[1]; j++) {
 
       /* check enumeration types */
       if (((int *)params[3])[j] != CEHON && ((int *)params[3])[j] != CEHROF &&
-          ((int *)params[3])[j] != CEHDOF)
+          ((int *)params[3])[j] != CEHDOF) {
         /* error 1:-101 Enumerated parameter out of range. Function ignored */
         report_error(cur_state, 1, -101, *(short *)params[0]);
 
-      /* check for legal index */
-      else if (((int *)params[2])[j] < 1 || ((int *)params[2])[j] > MAX_ERROR_CLASS)
+        /* check for legal index */
+      }
+      else if (((int *)params[2])[j] < 1 || ((int *)params[2])[j] > MAX_ERROR_CLASS) {
         /* error 1:-102 Index out of range. Function ignored */
         report_error(cur_state, 1, -102, *(short *)params[0]);
-
-      else
+      }
+      else {
         cur_state->err_flag[((int *)params[2])[j] - 1] = ((int *)params[3])[j];
+      }
     } /* end for j */
 
   } /* end for each surface */
@@ -996,16 +1014,18 @@ static void xccixp(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     if (*(int *)params[1] == 8 || *(int *)params[1] == 16 || *(int *)params[1] == 24 ||
-        *(int *)params[1] == 32)
+        *(int *)params[1] == 32) {
       cur_state->color_index_prec = *(int *)params[1];
-
-    else
+    }
+    else {
       /* error 3:204 Selected precision not supported */
       report_error(cur_state, 3, 204, *(short *)params[0]);
+    }
 
   } /* end for each surface */
 } /* end xccixp */
@@ -1044,8 +1064,9 @@ static void xcesc(anything **params, int num_surfaces, anything **surf_list)
 
       /* this function must be called before CI */
       /* ...error message if not?? check for legal file name?? */
-      if (cur_state->cgi_inited != CYES)
+      if (cur_state->cgi_inited != CYES) {
         strcpy(cur_state->filename, data);
+      }
 
       break;
 
@@ -1059,15 +1080,18 @@ static void xcesc(anything **params, int num_surfaces, anything **surf_list)
 
         /* SVDI takes care of 'graphics', check for 'alpha' */
         j = 0;
-        while ((c = data[j++]))
-          if (isalpha(c) && isupper(c))
+        while ((c = data[j++])) {
+          if (isalpha(c) && isupper(c)) {
             data[j - 1] = tolower(c);
+          }
+        }
 
         first = FALSE;
       } /* end if first */
 
-      if (strncmp(data, "alpha", 5) == 0)
+      if (strncmp(data, "alpha", 5) == 0) {
         vdbufl();
+      }
 
       break;
 
@@ -1143,8 +1167,9 @@ static void xcqid(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   if (!set) { /* values have't been set, inquire SVDI */
 
@@ -1182,8 +1207,9 @@ static void xcqd(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   if (!set) { /* values have't been set, inquire SVDI */
 
@@ -1192,12 +1218,15 @@ static void xcqd(anything **params, anything **surf_list)
     /* display type */
     qdc_index = 2;
     vdiqdc(&qdc_index, &value);
-    if (value == 0.)
+    if (value == 0.) {
       dev_descrip.display_type = CVECT;
-    else if (value == 1.)
+    }
+    else if (value == 1.) {
       dev_descrip.display_type = CRAST;
-    else
+    }
+    else {
       dev_descrip.display_type = COTHER;
+    }
 
     /* background color capability */
     qdc_index = 32;
@@ -1251,10 +1280,11 @@ static void xclf(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
-  for (i = 0; i < *(int *)params[1]; i++)
+  for (i = 0; i < *(int *)params[1]; i++) {
 
     switch (*(short *)params[0]) {
     case ACTIVATE_FN: ((int *)params[5])[i]   = CSYES; break;
@@ -1286,12 +1316,15 @@ static void xclf(anything **params, anything **surf_list)
     case CPM_FN: ((int *)params[5])[i]        = CSYES; break;
     case CTX_FN: ((int *)params[5])[i]        = CSYES; break;
     case CPG_FN:
-      if (poly_support == -1.)
+      if (poly_support == -1.) {
         vdiqdc(&qdc_index, &poly_support);
-      if (poly_support < 3.)
+      }
+      if (poly_support < 3.) {
         ((int *)params[5])[i] = CSNO;
-      else
+      }
+      else {
         ((int *)params[5])[i] = CSYES;
+      }
       break;
     case CCA_FN: ((int *)params[5])[i]   = CSYES; break;
     case CPXA_FN: ((int *)params[5])[i]  = CSYES; break;
@@ -1329,6 +1362,7 @@ static void xclf(anything **params, anything **surf_list)
     case CRQLC_FN: ((int *)params[5])[i] = CSYES; break;
     default: ((int *)params[5])[i]       = CSNO; break;
     } /* end switch */
+  }
 
   /* validity flag */
   *(int *)params[4] = CVAL;
@@ -1342,16 +1376,20 @@ static void xclpr(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
-  for (i = 0; i < *(int *)params[1]; i++)
-    if (strncmp((char *)((char **)params[2])[i], "1-WAY-OUTPUT", 12) ||
-        strncmp((char *)((char **)params[2])[i], "2-WAY-OUTPUT", 12) ||
-        strncmp((char *)((char **)params[2])[i], "SLATEC 1", 8))
+  for (i = 0; i < *(int *)params[1]; i++) {
+    if (strncmp(((char **)params[2])[i], "1-WAY-OUTPUT", 12) != 0 ||
+        strncmp(((char **)params[2])[i], "2-WAY-OUTPUT", 12) ||
+        strncmp(((char **)params[2])[i], "SLATEC 1", 8) != 0) {
       ((int *)params[4])[i] = CSYES;
-    else
+    }
+    else {
       ((int *)params[4])[i] = CSNO;
+    }
+  }
 
   /* validity flag */
   *(int *)params[3] = CVAL;
@@ -1363,8 +1401,9 @@ static void xcqsp(anything **params, anything **surf_list)
 {
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* this stuff is basically machine dependent. I return INVAL and
      leave it at that */
@@ -1381,10 +1420,11 @@ static void xclesc(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
-  for (i = 0; i < *(int *)params[1]; i++)
+  for (i = 0; i < *(int *)params[1]; i++) {
 
     /* return YES for supported escapes, else return NO */
     switch (((int *)params[2])[i]) {
@@ -1394,14 +1434,17 @@ static void xclesc(anything **params, anything **surf_list)
     case XEBELL: ((int *)params[4])[i] = CSYES; break;
     case XEPGSZ:
       vdiqes(&esc, &support);
-      if (support == 1 || support == 2)
+      if (support == 1 || support == 2) {
         ((int *)params[4])[i] = CSYES;
-      else
+      }
+      else {
         ((int *)params[4])[i] = CSNO;
+      }
       break;
 
     default: ((int *)params[4])[i] = CSNO; break;
     } /* end switch */
+  }
 
   /* validity flag */
   *(int *)params[3] = CVAL;
@@ -1413,8 +1456,9 @@ static void xcqp(anything **params, anything **surf_list)
 {
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* validity flag */
   *(int *)params[1] = CINVAL;
@@ -1426,8 +1470,9 @@ static void xcqcl(anything **params, anything **surf_list)
 {
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* clip indicator */
   *(int *)params[2] = cur_state->clip_indicator;
@@ -1471,8 +1516,9 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* do some error checking */
     if (MAX_POLYLINE != -1 && *(int *)params[1] > MAX_POLYLINE) {
@@ -1480,8 +1526,9 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
       report_error(cur_state, 6, 301, *(short *)params[0]);
       np = MAX_POLYLINE;
     }
-    else
+    else {
       np = *(int *)params[1];
+    }
 
     /* set SVDI foreground color if needed */
     set_foreground_color(cur_state, cur_state->line_color);
@@ -1493,10 +1540,12 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
         /* map VDC to NDC */
         cur_x = *((float *)params[2] + j) * cur_state->xscale + cur_state->xoffset;
         cur_y = *((float *)params[3] + j) * cur_state->yscale + cur_state->yoffset;
-        if (j == 0)
+        if (j == 0) {
           vdmova(&cur_x, &cur_y);
-        else
+        }
+        else {
           vdlina(&cur_x, &cur_y);
+        }
       } /* end for j */
     }   /* end no clipping on */
 
@@ -1515,20 +1564,23 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
 
       /* encode the point */
       prev_code = 0;
-      if ((cur_state->clipmax.y - prev_y) < 0)
+      if ((cur_state->clipmax.y - prev_y) < 0) {
         prev_code = prev_code | (1 << 3);
-
-      else if ((prev_y - cur_state->clipmin.y) < 0)
+      }
+      else if ((prev_y - cur_state->clipmin.y) < 0) {
         prev_code = prev_code | (1 << 2);
+      }
 
-      if ((cur_state->clipmax.x - prev_x) < 0)
+      if ((cur_state->clipmax.x - prev_x) < 0) {
         prev_code = prev_code | (1 << 1);
-
-      else if ((prev_x - cur_state->clipmin.x) < 0)
+      }
+      else if ((prev_x - cur_state->clipmin.x) < 0) {
         prev_code = prev_code | (1 << 0);
+      }
 
-      if (!prev_code)
+      if (!prev_code) {
         vdmova(&prev_x, &prev_y);
+      }
 
       j = 0;
       while (++j < np) {
@@ -1539,17 +1591,19 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
 
         /* encode the endpoint */
         cur_code = 0;
-        if ((cur_state->clipmax.y - cur_y) < 0)
+        if ((cur_state->clipmax.y - cur_y) < 0) {
           cur_code = cur_code | (1 << 3);
-
-        else if ((cur_y - cur_state->clipmin.y) < 0)
+        }
+        else if ((cur_y - cur_state->clipmin.y) < 0) {
           cur_code = cur_code | (1 << 2);
+        }
 
-        if ((cur_state->clipmax.x - cur_x) < 0)
+        if ((cur_state->clipmax.x - cur_x) < 0) {
           cur_code = cur_code | (1 << 1);
-
-        else if ((cur_x - cur_state->clipmin.x) < 0)
+        }
+        else if ((cur_x - cur_state->clipmin.x) < 0) {
           cur_code = cur_code | (1 << 0);
+        }
 
         /* determine which case this is */
         if (!prev_code && !cur_code) { /* trivial accept */
@@ -1568,13 +1622,17 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
 
         else {
           done = FALSE;
-          if (prev_code)
-            if (cur_code)
+          if (prev_code) {
+            if (cur_code) {
               mode = 2; /* both out */
-            else
+            }
+            else {
               mode = 1; /* prev out; cur in */
-          else
+            }
+          }
+          else {
             mode = 3; /* prev in; cur out */
+          }
         }
 
         while (!done) {
@@ -1618,17 +1676,19 @@ static void xcpl(anything **params, int num_surfaces, anything **surf_list)
 
             case 2: /* both were out, encode new point */
               prev_code = 0;
-              if ((cur_state->clipmax.y - prev_y) < 0)
+              if ((cur_state->clipmax.y - prev_y) < 0) {
                 prev_code = prev_code | (1 << 3);
-
-              else if ((prev_y - cur_state->clipmin.y) < 0)
+              }
+              else if ((prev_y - cur_state->clipmin.y) < 0) {
                 prev_code = prev_code | (1 << 2);
+              }
 
-              if ((cur_state->clipmax.x - prev_x) < 0)
+              if ((cur_state->clipmax.x - prev_x) < 0) {
                 prev_code = prev_code | (1 << 1);
-
-              else if ((prev_x - cur_state->clipmin.x) < 0)
+              }
+              else if ((prev_x - cur_state->clipmin.x) < 0) {
                 prev_code = prev_code | (1 << 0);
+              }
 
               if (prev_code) { /* reject it */
                 prev_x    = cur_x;
@@ -1699,8 +1759,9 @@ static void xcdjpl(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* check for errors */
     if (MAX_DJ_POLYLINE != -1 && *(int *)params[1] > MAX_DJ_POLYLINE) {
@@ -1708,8 +1769,9 @@ static void xcdjpl(anything **params, int num_surfaces, anything **surf_list)
       report_error(cur_state, 6, 301, *(short *)params[0]);
       np = MAX_DJ_POLYLINE;
     }
-    else
+    else {
       np = *(int *)params[1];
+    }
 
     /* set SVDI foreground color if needed */
     set_foreground_color(cur_state, cur_state->line_color);
@@ -1747,30 +1809,34 @@ static void xcdjpl(anything **params, int num_surfaces, anything **surf_list)
 
         /* encode the two points */
         code1 = 0;
-        if ((cur_state->clipmax.y - y1) < 0)
+        if ((cur_state->clipmax.y - y1) < 0) {
           code1 = code1 | (1 << 3);
-
-        else if ((y1 - cur_state->clipmin.y) < 0)
+        }
+        else if ((y1 - cur_state->clipmin.y) < 0) {
           code1 = code1 | (1 << 2);
+        }
 
-        if ((cur_state->clipmax.x - x1) < 0)
+        if ((cur_state->clipmax.x - x1) < 0) {
           code1 = code1 | (1 << 1);
-
-        else if ((x1 - cur_state->clipmin.x) < 0)
+        }
+        else if ((x1 - cur_state->clipmin.x) < 0) {
           code1 = code1 | (1 << 0);
+        }
 
         code2 = 0;
-        if ((cur_state->clipmax.y - y2) < 0)
+        if ((cur_state->clipmax.y - y2) < 0) {
           code2 = code2 | (1 << 3);
-
-        else if ((y2 - cur_state->clipmin.y) < 0)
+        }
+        else if ((y2 - cur_state->clipmin.y) < 0) {
           code2 = code2 | (1 << 2);
+        }
 
-        if ((cur_state->clipmax.x - x2) < 0)
+        if ((cur_state->clipmax.x - x2) < 0) {
           code2 = code2 | (1 << 1);
-
-        else if ((x2 - cur_state->clipmin.x) < 0)
+        }
+        else if ((x2 - cur_state->clipmin.x) < 0) {
           code2 = code2 | (1 << 0);
+        }
 
         /* determine which case this is */
         if (!code1 && !code2) { /* trivial accept - draw it */
@@ -1779,18 +1845,22 @@ static void xcdjpl(anything **params, int num_surfaces, anything **surf_list)
           done = TRUE;
         } /* end trivial accept */
 
-        else if (code1 & code2) /* trivial reject - do nothing */
+        else if (code1 & code2) { /* trivial reject - do nothing */
           done = TRUE;
-
+        }
         else {
           done = FALSE;
-          if (code1)
-            if (code2)
+          if (code1) {
+            if (code2) {
               mode = 2; /* both out */
-            else
+            }
+            else {
               mode = 1; /* x1,y1 out; x2,y2 in */
-          else
+            }
+          }
+          else {
             mode = 3; /* x1,y1 in;  x2,y2 out */
+          }
         }
 
         while (!done) {
@@ -1827,22 +1897,26 @@ static void xcdjpl(anything **params, int num_surfaces, anything **surf_list)
 
             case 2: /* both were out, encode new point */
               code1 = 0;
-              if ((cur_state->clipmax.y - y1) < 0)
+              if ((cur_state->clipmax.y - y1) < 0) {
                 code1 = code1 | (1 << 3);
-
-              else if ((y1 - cur_state->clipmin.y) < 0)
+              }
+              else if ((y1 - cur_state->clipmin.y) < 0) {
                 code1 = code1 | (1 << 2);
+              }
 
-              if ((cur_state->clipmax.x - x1) < 0)
+              if ((cur_state->clipmax.x - x1) < 0) {
                 code1 = code1 | (1 << 1);
-
-              else if ((x1 - cur_state->clipmin.x) < 0)
+              }
+              else if ((x1 - cur_state->clipmin.x) < 0) {
                 code1 = code1 | (1 << 0);
+              }
 
-              if (code1)
+              if (code1) {
                 done = TRUE; /* new point is out, reject */
-              else
+              }
+              else {
                 mode = 3; /* x1,y1 in; x2,y2 out; clip x2,y2 */
+              }
               break;
 
             } /* end inner switch */
@@ -1904,8 +1978,9 @@ static void xcpm(anything **params, int num_surfaces, anything **surf_list)
     y  = (float *)params[3];
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* check for errors */
     if (MAX_POLYMARKER != -1 && *(int *)params[1] > MAX_POLYMARKER) {
@@ -1913,8 +1988,9 @@ static void xcpm(anything **params, int num_surfaces, anything **surf_list)
       report_error(cur_state, 6, 301, *(short *)params[0]);
       np = MAX_POLYMARKER;
     }
-    else
+    else {
       np = *(int *)params[1];
+    }
 
     /* set SVDI foreground color if needed */
     set_foreground_color(cur_state, cur_state->mark_color);
@@ -1932,13 +2008,15 @@ static void xcpm(anything **params, int num_surfaces, anything **surf_list)
       y_vdi = y[j] * cur_state->yscale + cur_state->yoffset;
 
       ok = TRUE;
-      if (cur_state->clip_on) /* clip is on */
+      if (cur_state->clip_on) { /* clip is on */
         /* ...clip the whole polymarker - it's in or it's out */
         ok = ((x_vdi <= cur_state->clipmax.x && x_vdi >= cur_state->clipmin.x) &&
               (y_vdi <= cur_state->clipmax.y && y_vdi >= cur_state->clipmin.y));
+      }
 
-      if (ok)
+      if (ok) {
         vdpnta(&x_vdi, &y_vdi);
+      }
 
     } /* end for j */
 
@@ -1966,8 +2044,9 @@ static void xctx(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* error checking */
     if (*(int *)params[3] != CFINAL) {
@@ -1982,12 +2061,14 @@ static void xctx(anything **params, int num_surfaces, anything **surf_list)
       report_error(cur_state, 6, 301, *(short *)params[0]);
       np = MAX_TEXT_LENGTH;
     }
-    else
+    else {
       np = *(int *)params[5];
+    }
 
     /* if there is nothing to draw, break  */
-    if (np <= 0)
+    if (np <= 0) {
       break;
+    }
 
     x = *(float *)params[1];
     y = *(float *)params[2];
@@ -2095,8 +2176,9 @@ static void xcpg(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* error checking */
     if (MAX_POLYGON != -1 && (*(int *)params[1] > MAX_POLYGON || *(int *)params[1] > vdi_polymax)) {
@@ -2104,8 +2186,9 @@ static void xcpg(anything **params, int num_surfaces, anything **surf_list)
       report_error(cur_state, 6, 302, *(short *)params[0]);
       np = (MAX_POLYGON < vdi_polymax) ? MAX_POLYGON : vdi_polymax;
     }
-    else
+    else {
       np = *(int *)params[1];
+    }
 
     x = (float *)params[2];
     y = (float *)params[3];
@@ -2122,14 +2205,15 @@ static void xcpg(anything **params, int num_surfaces, anything **surf_list)
     } /* end for j */
 
     ok = TRUE;
-    if (cur_state->clip_on) /* clip is on */
+    if (cur_state->clip_on) { /* clip is on */
 
       /* poly clip returns new x,y values and a count */
       /* this routine should be done inline for efficiency */
       ok = poly_clip(&cur_state->clipmin, &cur_state->clipmax, xnew, ynew, np, xnew, ynew, &npnew);
-
-    else /* no clpping */
+    }
+    else { /* no clpping */
       npnew = np;
+    }
 
     if (ok) { /* everything's ok, do the polygon */
 
@@ -2145,16 +2229,18 @@ static void xcpg(anything **params, int num_surfaces, anything **surf_list)
         }
 
         vdmova(&xnew[0], &ynew[0]);
-        for (j = 1; j < npnew; j++)
+        for (j = 1; j < npnew; j++) {
           vdlina(&xnew[j], &ynew[j]);
+        }
         vdlina(&xnew[0], &ynew[0]);
         if (temp_array[4] != 0) { /* set line style back */
           vdi_ls = (int)temp_array[4];
           vdstls(&vdi_ls);
         }
-      }    /* end if hollow OR no poly support */
-      else /* solid polygon */
+      }      /* end if hollow OR no poly support */
+      else { /* solid polygon */
         vdpoly(xnew, ynew, &npnew);
+      }
 
       /* flag that the page has been marked */
       cur_state->pic_dirty = CDIRTY;
@@ -2183,8 +2269,9 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
   int   skipx, skipy; /* number of cells clipped in xmin,ymin */
 
   /* if there isn't anything to draw, return */
-  if (*(int *)params[7] == 0 || *(int *)params[8] == 0)
+  if (*(int *)params[7] == 0 || *(int *)params[8] == 0) {
     return;
+  }
 
   /* if cell array has negative dimension, use absolute values */
   nx = nx1 = abs(*(int *)params[7]);
@@ -2195,12 +2282,14 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* if color selection mode is in error, ignore function */
-    if (cur_state->csm == -1)
+    if (cur_state->csm == -1) {
       break;
+    }
 
     /* for now, only allow 4 cases (same as pixel array),
      * where nx runs only horizontal, and ny runs vertical.
@@ -2405,8 +2494,9 @@ static void xcca(anything **params, int num_surfaces, anything **surf_list)
 
           /* reorder the cell colors */
           for (k = 0; k < ny1; k++) {
-            for (j            = 0; j < nx1; j++)
+            for (j = 0; j < nx1; j++) {
               varray[count++] = cells[index--];
+            }
 
             /* if another row won't fit, or done, output varray */
             if (count + nx1 > MAX_ARRAY || k == ny1 - 1) {
@@ -2542,8 +2632,9 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
 
   /* if nx,ny,repx,or repy are non positive, nothing is drawn */
   if (*(int *)params[3] < 0 || *(int *)params[4] < 0 || *(int *)params[5] < 0 ||
-      *(int *)params[6] < 0)
+      *(int *)params[6] < 0) {
     return;
+  }
 
   /* set up initial values */
   nx = nx1 = *(int *)params[3];
@@ -2565,12 +2656,14 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* if color selection mode is in error, ignore function */
-    if (cur_state->csm == -1)
+    if (cur_state->csm == -1) {
       break;
+    }
 
     /* check enumerated types */
     if ((*(int *)params[7] != CINCR && *(int *)params[7] != CDECR) ||
@@ -2589,15 +2682,19 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
      * and x direction on the device is opposite of x direction in
      * VDC. Same holds for y (where "increasing" means bottom to top)
      */
-    if (cur_state->xscale > 0)
+    if (cur_state->xscale > 0) {
       xdir = *(int *)params[7];
-    else
+    }
+    else {
       xdir = (*(int *)params[7] == CINCR) ? CDECR : CINCR;
+    }
 
-    if (cur_state->yscale > 0)
+    if (cur_state->yscale > 0) {
       ydir = *(int *)params[8];
-    else
+    }
+    else {
       ydir = (*(int *)params[8] == CINCR) ? CDECR : CINCR;
+    }
 
     /* map to NDC */
 
@@ -2784,8 +2881,9 @@ static void xcpxa(anything **params, int num_surfaces, anything **surf_list)
 
           /* reorder the pixel colors */
           for (k = 0; k < ny1; k++) {
-            for (j            = 0; j < nx1; j++)
+            for (j = 0; j < nx1; j++) {
               varray[count++] = pxclrs[index--];
+            }
 
             /* if another row won't fit, or done, output varray */
             if (count + nx1 > MAX_ARRAY || k == ny1 - 1) {
@@ -2918,8 +3016,9 @@ static void xclnt(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* let SVDI catch any out of range indices */
     cur_state->line_type = *(int *)params[1];
@@ -2958,8 +3057,9 @@ static void xclnw(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* make sure it needs to be updated */
     if (*(float *)params[1] != cur_state->vdi_attrib.line_width) {
@@ -2991,12 +3091,14 @@ static void xclnc(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* if color selection mode is in error, ignore function */
-    if (cur_state->csm == -1)
+    if (cur_state->csm == -1) {
       break;
+    }
 
     if (cur_state->csm == CINDEX) { /* indexed mode */
 
@@ -3018,7 +3120,7 @@ static void xclnc(anything **params, int num_surfaces, anything **surf_list)
 } /* end xclnc */
 
 /* MARKER TYPE */
-static void xcmkt(anything **params, int num_surfaces, anything **surf_list)
+static void xcmkt(int num_surfaces, anything **surf_list)
 {
   /* CGI marker types: */
   /* 1: dot - supported
@@ -3057,12 +3159,14 @@ static void xcmkc(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* if color selection mode is in error, ignore function */
-    if (cur_state->csm == -1)
+    if (cur_state->csm == -1) {
       break;
+    }
 
     if (cur_state->csm == CINDEX) { /* indexed mode */
 
@@ -3099,12 +3203,14 @@ static void xctxc(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* if color selection mode is in error, ignore function */
-    if (cur_state->csm == -1)
+    if (cur_state->csm == -1) {
       break;
+    }
 
     if (cur_state->csm == CINDEX) { /* indexed mode */
 
@@ -3135,8 +3241,9 @@ static void xcchh(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* set SVDI character size if needed */
     if (*(float *)params[1] != cur_state->vdi_attrib.char_x) {
@@ -3184,16 +3291,18 @@ static void xcis(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* check for legal enumerated value */
-    if (*(int *)params[1] == CHOLLO || *(int *)params[1] == CSOLID)
+    if (*(int *)params[1] == CHOLLO || *(int *)params[1] == CSOLID) {
       cur_state->interior_style = *(int *)params[1];
-
-    else
+    }
+    else {
       /* error 1:-101 Enumerated parameter out of range. Function ignored */
       report_error(cur_state, 1, -101, *(short *)params[0]);
+    }
 
   } /* end for each surface */
 } /* end xcis */
@@ -3206,12 +3315,14 @@ static void xcflc(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* if color selection mode is in error, ignore function */
-    if (cur_state->csm == -1)
+    if (cur_state->csm == -1) {
       break;
+    }
 
     if (cur_state->csm == CINDEX) { /* indexed mode */
 
@@ -3240,21 +3351,22 @@ static void xccsm(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* check enumerated parameters */
-    if (*(int *)params[1] != CDRECT && *(int *)params[1] != CINDEX)
+    if (*(int *)params[1] != CDRECT && *(int *)params[1] != CINDEX) {
       /* error 1:-101 enumerated parameter out of range. Function ignored */
       report_error(cur_state, 1, -101, *(short *)params[0]);
-
+    }
     else {
 
       /* if the device supports both index and direct, or the
          request if only for index, everything is honky-dory */
-      if (dev_descrip.csm_avail == CCLRID || *(int *)params[1] == CINDEX)
+      if (dev_descrip.csm_avail == CCLRID || *(int *)params[1] == CINDEX) {
         cur_state->csm = *(int *)params[1];
-
+      }
       else { /* must be an error */
         /* error 3:305 - Color selection mode not supported. All
           functions with affected parameters ignored until reset */
@@ -3288,8 +3400,9 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
   for (i = 0; i < num_surfaces; ++i) {
 
     cur_state = (surf_statelist *)surf_list[i];
-    if (cur_state->cgi_inited != CYES)
+    if (cur_state->cgi_inited != CYES) {
       break;
+    }
 
     /* starting color index and number of colors */
     starti   = *(int *)params[1];
@@ -3298,8 +3411,9 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
     /* error checking */
     /* an out of range index in an index definition function should
        be ignored.  should an error be reported ?? */
-    if (starti < 0)
+    if (starti < 0) {
       starti = 0;
+    }
 
     if ((starti + num_cols - 1) > dev_descrip.num_cols) {
       /* error 6:308 - Too many color specifiers. Discard extras */
@@ -3354,21 +3468,26 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
     }
 
     /* 2. caller setting index 1  - set index fg_index */
-    if (starti <= 1 && (starti + num_cols > 1))
+    if (starti <= 1 && (starti + num_cols > 1)) {
       vdstco(&one, &dev_descrip.index_array[cur_state->fg_index], &color_array[1],
              &dev_descrip.col_mode);
+    }
 
     /* 3. caller setting index bg_index  - set index 0 */
-    if (cur_state->bg_index != 0) /* .. don't do it twice */
-      if (starti <= cur_state->bg_index && (starti + num_cols > cur_state->bg_index))
+    if (cur_state->bg_index != 0) { /* .. don't do it twice */
+      if (starti <= cur_state->bg_index && (starti + num_cols > cur_state->bg_index)) {
         vdstco(&one, &dev_descrip.index_array[0], &color_array[cur_state->bg_index],
                &dev_descrip.col_mode);
+      }
+    }
 
     /* 4. caller setting index fg_index  - set index 1 */
-    if (cur_state->fg_index != 1) /* .. don't do it twice */
-      if (starti <= cur_state->fg_index && (starti + num_cols > cur_state->fg_index))
+    if (cur_state->fg_index != 1) { /* .. don't do it twice */
+      if (starti <= cur_state->fg_index && (starti + num_cols > cur_state->fg_index)) {
         vdstco(&one, &dev_descrip.index_array[1], &color_array[cur_state->fg_index],
                &dev_descrip.col_mode);
+      }
+    }
 
     /* now do all the rest */
     /* ...sort for convenience */
@@ -3383,8 +3502,9 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
 
     maxindex = starti + num_cols - 1;
     indx_ptr = starti;
-    if (indx_ptr < 2)
+    if (indx_ptr < 2) {
       indx_ptr = 2;
+    }
 
     /* 1. set color table between index 1 and index1 */
     if (indx_ptr <= 2) {
@@ -3395,8 +3515,9 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
       }
     }
 
-    if (indx_ptr == index1) /* update indx_ptr */
+    if (indx_ptr == index1) { /* update indx_ptr */
       indx_ptr = indx_ptr + 1;
+    }
 
     /* 2. set color table between index1 and index2 */
     if (indx_ptr < index2) {
@@ -3408,15 +3529,17 @@ static void xcct(anything **params, int num_surfaces, anything **surf_list)
       }
     }
 
-    if (indx_ptr == index2) /* update indx_ptr */
+    if (indx_ptr == index2) { /* update indx_ptr */
       indx_ptr = indx_ptr + 1;
+    }
 
     /* 3. set color table after index 2 */
     if (indx_ptr >= index2 + 1) {
       num_set = maxindex - indx_ptr + 1;
-      if (num_set > 0)
+      if (num_set > 0) {
         vdstco(&num_set, &dev_descrip.index_array[indx_ptr], &color_array[indx_ptr],
                &dev_descrip.col_mode);
+      }
     }
 
   } /* end for each surface */
@@ -3432,8 +3555,9 @@ static void xcgtxx(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* find out actual height and width from SVDI for this size */
   /* ..save the old value */
@@ -3492,8 +3616,9 @@ static void xcqprl(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   if (!set) { /* values have't been set, inquire SVDI */
 
@@ -3565,8 +3690,9 @@ static void xcqln(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* set the validity flag */
   *(int *)params[1] = CVAL;
@@ -3603,8 +3729,9 @@ static void xcqlnt(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   if (!set) { /* values have't been set, inquire SVDI */
 
@@ -3618,9 +3745,11 @@ static void xcqlnt(anything **params, anything **surf_list)
     dev_descrip.line_types[ntotal++] = 0;
 
     /* find all SVDI linestyles supported by looking at bits */
-    for (i = 0; i < 5; i++)
-      if (((int)value & mask << i) >> i == 1)
+    for (i = 0; i < 5; i++) {
+      if (((int)value & mask << i) >> i == 1) {
         dev_descrip.line_types[ntotal++] = i + 1;
+      }
+    }
 
     /* map to CGI linestyles */
     /* cgi linestyles: 1 - solid 2 - dash 3 - dot,
@@ -3628,7 +3757,7 @@ static void xcqlnt(anything **params, anything **surf_list)
      * vdi linestyles: 0 - solid 1 - dotted 2 - dot dash
      *                 3 - short dash 4 - long dash 5 - medium dash
      */
-    for (i = 0; i < ntotal; i++)
+    for (i = 0; i < ntotal; i++) {
       switch (dev_descrip.line_types[i]) {
       case 0: dev_descrip.line_types[i] = 1; break;
       case 1: dev_descrip.line_types[i] = 3; break;
@@ -3641,35 +3770,39 @@ static void xcqlnt(anything **params, anything **surf_list)
       case 5: dev_descrip.line_types[i] = 2; break;
       default: break;
       } /* end switch */
+    }
 
     /* take out duplicates */
-    for (i = 0; i < ntotal; i++)
-      if (dev_descrip.line_types[i] == 2)
+    for (i = 0; i < ntotal; i++) {
+      if (dev_descrip.line_types[i] == 2) {
         break;
-    ntotal = i + 1;
-
+      }
+      ntotal = i + 1;
+    }
   } /* end if not set */
 
   /* set the total */
   *(int *)params[4] = ntotal;
 
   /* do some error checking */
-  if (*(int *)params[2] < 1)
+  if (*(int *)params[2] < 1) {
     /* error - set validity flag to invalid */
     *(int *)params[3] = CINVAL;
-
+  }
   else { /* send back only the ones requested -  zero out the rest */
 
     i                 = *(int *)params[2] - 1;
     j                 = 0;
     *(int *)params[5] = 0; /* actual number of list elements sent back */
-    while (j < ntotal)
+    while (j < ntotal) {
       if (j < *(int *)params[1] && i < ntotal) {
         ((int *)params[6])[j++] = dev_descrip.line_types[i++];
         (*(int *)params[5])++;
       }
-      else
+      else {
         ((int *)params[6])[j++] = 0;
+      }
+    }
 
     /* set validity flag */
     *(int *)params[3] = CVAL;
@@ -3687,8 +3820,9 @@ static void xcqslw(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   if (!set) { /* values have't been set, inquire SVDI */
 
@@ -3715,8 +3849,9 @@ static void xcqmk(anything **params, anything **surf_list)
 {
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* set the validity flag */
   *(int *)params[1] = CVAL;
@@ -3748,8 +3883,9 @@ static void xcqmkt(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   if (!set) { /* values have't been set, inquire SVDI */
 
@@ -3770,8 +3906,9 @@ static void xcqmkt(anything **params, anything **surf_list)
     *(int *)params[5]     = 1;
     ((int *)params[6])[0] = dev_descrip.mark_types[0];
   }
-  else
+  else {
     *(int *)params[5] = 0;
+  }
 
 } /* end xcqmkt */
 
@@ -3780,8 +3917,9 @@ static void xcqsms(anything **params, anything **surf_list)
 {
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* validity flag */
   *(int *)params[3] = CVAL;
@@ -3803,8 +3941,9 @@ static void xcqchh(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   if (!set) { /* values have't been set, inquire SVDI */
 
@@ -3833,8 +3972,9 @@ static void xcqchh(anything **params, anything **surf_list)
     *(int *)params[5] = CVAL;
   } /* end if */
 
-  else
+  else {
     *(int *)params[5] = CINVAL;
+  }
 
 } /* end xcqchh */
 
@@ -3846,8 +3986,9 @@ static void xcqfl(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   if (!set) { /* values have't been set */
 
@@ -3909,8 +4050,9 @@ static void xcqc(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   if (!set) { /* values have't been set, inquire SVDI */
 
@@ -3964,8 +4106,9 @@ static void xcqlna(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* validity flag */
   *(int *)params[1] = CVAL;
@@ -4003,8 +4146,9 @@ static void xcqmka(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* validity flag */
   *(int *)params[1] = CVAL;
@@ -4042,8 +4186,9 @@ static void xcqtxa(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* validity flag */
   *(int *)params[1] = CVAL;
@@ -4111,8 +4256,9 @@ static void xcqfla(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* validity flag */
   *(int *)params[1] = CVAL;
@@ -4171,19 +4317,22 @@ static void xcqcte(anything **params, anything **surf_list)
 
   /* there is only one surface for inquiries */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* number of requested elements, and the first index */
   nreq  = *(int *)params[1];
   first = *(int *)params[2];
 
   /* error checking */
-  if (first < 1)
+  if (first < 1) {
     first = 1;
+  }
 
-  if ((first + nreq - 1) > dev_descrip.num_cols)
+  if ((first + nreq - 1) > dev_descrip.num_cols) {
     nreq = dev_descrip.num_cols - first + 1;
+  }
 
   /* actual number of colors returned */
   *(int *)params[5] = nreq;
@@ -4208,19 +4357,20 @@ static void xcili(anything **params, anything **surf_list)
 {
   /* there is only one surface for input */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* only support locator  */
-  if (*(int *)params[1] != CLOCAT)
+  if (*(int *)params[1] != CLOCAT) {
     /* error 2:001 - Request for an unsupported feature. Function ignored */
     report_error(cur_state, 2, 001, *(short *)params[0]);
-
-  else if (*(int *)params[2] != 1)
+  }
+  else if (*(int *)params[2] != 1) {
     /* error 3:501 - LID index exceeds number of this class of LID.
        Function ignored */
     report_error(cur_state, 3, 501, *(short *)params[0]);
-
+  }
   else if (dev_descrip.dev_class == CINPUT ||
            dev_descrip.dev_class == COUTIN) { /* device does input */
 
@@ -4239,8 +4389,9 @@ static void xcrqlc(anything **params, anything **surf_list)
 
   /* there is only one surface for input */
   cur_state = (surf_statelist *)surf_list[0];
-  if (cur_state->cgi_inited != CYES)
+  if (cur_state->cgi_inited != CYES) {
     return;
+  }
 
   /* check if device has been initialized */
   /* ...only support input device index 1 */
@@ -4304,10 +4455,11 @@ static void init_state(surf_statelist *surf_state)
   int   one = 1;
 
   /* set default error control: class 1 : DETECTION OFF
-                                class 2 - MAX_ERROR_CLASS : REPORTING OFF */
+     class 2 - MAX_ERROR_CLASS : REPORTING OFF */
   surf_state->err_flag[0] = CEHDOF;
-  for (i                    = 1; i < MAX_ERROR_CLASS; i++)
+  for (i = 1; i < MAX_ERROR_CLASS; i++) {
     surf_state->err_flag[i] = CEHROF;
+  }
 
   /* initialize to 0 errors */
   surf_state->err_head_ptr = 0;
@@ -4460,10 +4612,12 @@ static void set_dev_descrip(void)
   /* set copy_class */
   qdc_index = 1;
   vdiqdc(&qdc_index, &value);
-  if (value == 0.)
+  if (value == 0.) {
     dev_descrip.copy_class = CHARD;
-  else
+  }
+  else {
     dev_descrip.copy_class = CSOFT;
+  }
 
   /* device corners in device coords */
   dev_descrip.dc1.x = 0;
@@ -4481,10 +4635,12 @@ static void set_dev_descrip(void)
   dev_descrip.svdi_type = (int)value;
 
   /* vector SVDI only does indexed color, raster does both */
-  if (dev_descrip.svdi_type == 0)
+  if (dev_descrip.svdi_type == 0) {
     dev_descrip.csm_avail = CCLRI;
-  else
+  }
+  else {
     dev_descrip.csm_avail = CCLRID;
+  }
 
   /* device class */
   qdc_index = 13;
@@ -4532,8 +4688,9 @@ static void set_dev_descrip(void)
   dev_descrip.num_cols = ((int)value > COLOR_TABLE_SIZE) ? COLOR_TABLE_SIZE : (int)value;
 
   /* set up a color index array for use in color table stuff */
-  for (j                       = 0; j < 256; j++)
+  for (j = 0; j < 256; j++) {
     dev_descrip.index_array[j] = j;
+  }
 
   /* set SVDI color mode */
   dev_descrip.col_mode = 0;
@@ -4579,12 +4736,14 @@ static void set_mapping(surf_statelist *surf_state)
   surf_state->xscale = (ndc_vp2.x - ndc_vp1.x) / (surf_state->vdc2.x - surf_state->vdc1.x);
   surf_state->yscale = (ndc_vp2.y - ndc_vp1.y) / (surf_state->vdc2.y - surf_state->vdc1.y);
 
-  if (fabs(surf_state->xscale) < fabs(surf_state->yscale))
+  if (fabs(surf_state->xscale) < fabs(surf_state->yscale)) {
     surf_state->yscale =
         (surf_state->yscale < 0) ? -1 * fabs(surf_state->xscale) : fabs(surf_state->xscale);
-  else
+  }
+  else {
     surf_state->xscale =
         (surf_state->xscale < 0) ? -1 * fabs(surf_state->yscale) : fabs(surf_state->yscale);
+  }
 
   /* x and y offset for VDC to NDC mapping */
   surf_state->xoffset = (ndc_vp1.x < ndc_vp2.x)
@@ -4736,8 +4895,9 @@ static void set_foreground_color(surf_statelist *surf_state, int *colors)
   int one  = 1;
 
   /* if color selection mode is in error, ignore function */
-  if (surf_state->csm == -1)
+  if (surf_state->csm == -1) {
     return;
+  }
 
   /* indexed or direct color? */
   /* --vector SVDI only does indexed color */
@@ -4752,16 +4912,21 @@ static void set_foreground_color(surf_statelist *surf_state, int *colors)
        *   if set bg_index --> set 0
        *   if set fg_index --> set 1
        */
-      if (colors[0] == 0)
+      if (colors[0] == 0) {
         vdstfc(&cur_state->bg_index);
-      else if (colors[0] == 1)
+      }
+      else if (colors[0] == 1) {
         vdstfc(&cur_state->fg_index);
-      else if (colors[0] == cur_state->bg_index)
+      }
+      else if (colors[0] == cur_state->bg_index) {
         vdstfc(&zero);
-      else if (colors[0] == cur_state->fg_index)
+      }
+      else if (colors[0] == cur_state->fg_index) {
         vdstfc(&one);
-      else
+      }
+      else {
         vdstfc(&colors[0]);
+      }
 
       /* update att_array */
       cur_state->vdi_attrib.fg_color = colors[0];
@@ -4856,9 +5021,9 @@ static void set_background_color(surf_statelist *surf_state, int *colors)
       }   /* end vector SVDI */
 
       /* is it close enough? */
-      if (dmin <= epsilon)
+      if (dmin <= epsilon) {
         cur_state->bg_index = index;
-
+      }
       else { /* not close enough, set SVDI color table */
 
         cur_state->bg_index = 0;
@@ -4878,15 +5043,16 @@ static void set_background_color(surf_statelist *surf_state, int *colors)
     } /* end else has been set */
 
     /* set the SVDI background color */
-    if (dev_descrip.svdi_type == 1) /* raster SVDI */
+    if (dev_descrip.svdi_type == 1) { /* raster SVDI */
       vdbrgb(&cur_state->vdi_attrib.bg_rgb[0], &cur_state->vdi_attrib.bg_rgb[1],
              &cur_state->vdi_attrib.bg_rgb[2]);
-
+    }
     else /* vector SVDI */
 
         /* once the ct has been set, bg_index never changes */
-        if (!cur_state->color_set)
+        if (!cur_state->color_set) {
       vdstbc(&cur_state->bg_index);
+    }
 
   } /* end does background need to be updated */
 } /* end set_background_color */
@@ -4902,8 +5068,9 @@ static void report_error(surf_statelist *surf_state, int e_class, int e_num, int
 
     /* figure out where the next slot is */
     err_slot = surf_state->err_head_ptr + surf_state->err_count;
-    if (err_slot >= ERROR_LIST_SIZE)
+    if (err_slot >= ERROR_LIST_SIZE) {
       err_slot = err_slot - ERROR_LIST_SIZE;
+    }
 
     /* store errors if there is room in the queue */
     if (surf_state->err_count < ERROR_LIST_SIZE) {
@@ -4918,9 +5085,9 @@ static void report_error(surf_statelist *surf_state, int e_class, int e_num, int
       /* if the most recent error is ERROR REPORTS LOST, increase count
          of errors lost by one (count is stored in func_id) */
       if (surf_state->err_queue[err_slot - 1].err_class == -1 &&
-          surf_state->err_queue[err_slot - 1].err_num == 0)
+          surf_state->err_queue[err_slot - 1].err_num == 0) {
         surf_state->err_queue[err_slot - 1].func_id++;
-
+      }
       else { /* create an ERROR REPORTS LOST error */
         /* The format for an ERROR REPORTS LOST has not yet
          * been defined.  For now, use error class -1, error
@@ -4953,8 +5120,9 @@ static void gettoken(int *index_p, int *numrecs_p, char *data_p, int max_chars, 
   num_chars = 0;
 
   workstate = 0;
-  if (*index_p >= (*numrecs_p * 80))
+  if (*index_p >= (*numrecs_p * 80)) {
     workstate = 2;
+  }
 
   while (workstate == 0) { /* while scanning whitespace */
     c = data_p[*index_p];
@@ -4973,8 +5141,9 @@ static void gettoken(int *index_p, int *numrecs_p, char *data_p, int max_chars, 
 
   while (workstate == 1) { /* while in token */
     c = data_p[*index_p];
-    if (num_chars >= max_chars)
+    if (num_chars >= max_chars) {
       workstate = 3;
+    }
     if ((c == ' ') || (c == '\t') || (c == '\r')) {
       workstate = 0;
     }
@@ -5008,8 +5177,9 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
   float ytemp[MAX_POLYGON];
 
   /* make sure there is something to clip */
-  if (vlen <= 0)
+  if (vlen <= 0) {
     return (FALSE);
+  }
 
   for (bnd = 0; bnd < 4; bnd++) { /* loop thru all boundries */
 
@@ -5086,11 +5256,10 @@ static int poly_clip(point *cmin, point *cmax, float *vx, float *vy, int vlen, f
 
   } /* end for bnd */
 
-  if (*lenout <= 0)
+  if (*lenout <= 0) {
     return (FALSE);
-  else
-    return (TRUE);
-
+  }
+  return (TRUE);
 } /* end poly_clip */
 
 /* inside_bnd */
@@ -5164,10 +5333,10 @@ static point intersect_bnd(point *p1, point *p2, point *bmin, point *bmax, int b
 
 /* cur_state is global - points to current statelist */
 /*
-Open file for sequential access.  FORTRAN unit number is ignored.
-File descriptor which is returned from open is stored in current
-statelist
- */
+  Open file for sequential access.  FORTRAN unit number is ignored.
+  File descriptor which is returned from open is stored in current
+  statelist
+*/
 void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for compatability */
 {
   int        errnum, errsev;
@@ -5185,10 +5354,12 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
     qdc_index = 23;
     vdiqdc(&qdc_index, &value);
     devid = get_devid_char(value);
-    if (devid != NULL)
+    if (devid != NULL) {
       sprintf(cur_state->filename, "cgi%s%d", devid, file_cnt++);
-    else
+    }
+    else {
       sprintf(cur_state->filename, "cgiout%d", file_cnt++);
+    }
   }
 
   /* copy filename to symbol */
@@ -5196,8 +5367,9 @@ void cdrofs(ifilcd) int *ifilcd; /* FORTRAN unit number ignored, provide for com
 
   /* check the environment to see if a file name has been assigned */
   env = getenv(symbol);
-  if (env != 0 && strlen(env) < 1024)
+  if (env != 0 && strlen(env) < 1024) {
     sprintf(symbol, "%s", env);
+  }
 
   /* open the file  - if it doesn't exist, create it with mode 664 */
   /* -- open returns a file descriptor which is stored in the statelist */
@@ -5223,40 +5395,45 @@ void cdroff(ifilcd, idum1, idum2, idum3) int *ifilcd, *idum1, *idum2, *idum3;
 }
 
 /*
-Try to read LENGTH words from the file. Return the actual number
-of words read. FORTRAN unit number is ignored, file descriptor is
-gotten from the current statelist
- */
+  Try to read LENGTH words from the file. Return the actual number
+  of words read. FORTRAN unit number is ignored, file descriptor is
+  gotten from the current statelist
+*/
 void  cdrrfs(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
 char *buffer;
 {
 
   /* if the file hasn't been opened, open it */
-  if (cur_state->file_d == -1)
+  if (cur_state->file_d == -1) {
     cdrofs(ifilcd);
+  }
 
   /* read the data as a byte stream */
-  if ((*istat = read(cur_state->file_d, buffer, (*length * cdrcom.KCPW))) != -1)
+  if ((*istat = read(cur_state->file_d, buffer, (*length * cdrcom.KCPW))) != -1) {
     *istat = *istat / cdrcom.KCPW;
+  }
 }
 
 /*
-Write LENGTH words from BUFFER to the file.  FORTRAN unit number is
-ignored, file descriptor is gotten from the current state list
+  Write LENGTH words from BUFFER to the file.  FORTRAN unit number is
+  ignored, file descriptor is gotten from the current state list
 */
 void  cdrwfs(ifilcd, length, buffer, istat) int *ifilcd, *length, *istat;
 char *buffer;
 {
 
   /* if the file hasn't been opened, open it */
-  if (cur_state->file_d == 0)
+  if (cur_state->file_d == 0) {
     cdrofs(ifilcd);
+  }
 
   /* write out the data as a byte stream. */
-  if ((*istat = write(cur_state->file_d, buffer, (*length * cdrcom.KCPW))) == -1)
+  if ((*istat = write(cur_state->file_d, buffer, (*length * cdrcom.KCPW))) == -1) {
     *istat = 1;
-  else
+  }
+  else {
     *istat = 0;
+  }
 }
 
 /*
@@ -5308,15 +5485,16 @@ char *outary;                             /* data to be buffered */
   if (*numwds <= 0 && cur_state->buff_ptr > 0) {
 
     /* write out the data as a byte stream. */
-    if ((istat = write(cur_state->file_d, cur_state->buffer, cur_state->buff_ptr)) == -1)
+    if ((istat = write(cur_state->file_d, cur_state->buffer, cur_state->buff_ptr)) == -1) {
       perror("PSTBUF: write error");
+    }
 
     /* reset buff pointer */
     cur_state->buff_ptr = 0;
 
   } /* end if buffer flush */
 
-  else /* pack outary into buffer */
+  else { /* pack outary into buffer */
 
     for (i = 0; i < *numwds; i++) {
       cur_state->buffer[cur_state->buff_ptr++] = outary[i];
@@ -5324,12 +5502,14 @@ char *outary;                             /* data to be buffered */
       if (cur_state->buff_ptr >= BUFFER_SIZE) {
 
         /* write out the data as a byte stream. */
-        if ((istat = write(cur_state->file_d, cur_state->buffer, cur_state->buff_ptr)) == -1)
+        if ((istat = write(cur_state->file_d, cur_state->buffer, cur_state->buff_ptr)) == -1) {
           perror("PSTBUF: write error");
+        }
 
         /* reset buff pointer */
         cur_state->buff_ptr = 0;
 
       } /* end if > BUFFER_SIZE */
     }   /* end for i=... */
+  }
 } /* end pstbuf */

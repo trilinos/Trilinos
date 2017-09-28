@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -74,8 +74,9 @@ void input_queries(FILE **fin,           /* input file */
   /* Name and open input graph file. */
   *fin = NULL;
   while (*fin == NULL) {
-    if (PROMPT)
+    if (PROMPT) {
       printf("Graph input file: ");
+    }
     (void)scanf("%s", inname);
 
     *fin = fopen(inname, "r");
@@ -86,15 +87,17 @@ void input_queries(FILE **fin,           /* input file */
 
   /* Name output assignment file. */
   if (OUTPUT_ASSIGN && !SEQUENCE) {
-    if (PROMPT)
+    if (PROMPT) {
       printf("Assignment output file: ");
+    }
     (void)scanf("%s", outassignname);
   }
 
   /* Name output results file. */
   if (ECHO < 0) {
-    if (PROMPT)
+    if (PROMPT) {
       printf("File name for saving run results: ");
+    }
     (void)scanf("%s", outfilename);
   }
 
@@ -126,8 +129,9 @@ void input_queries(FILE **fin,           /* input file */
 
   if (*global_method == 7) { /* Name and open input assignment file. */
     while (*finassign == NULL) {
-      if (PROMPT)
+      if (PROMPT) {
         printf("Assignment input file: ");
+      }
       (void)scanf("%s", inassignname);
 
       *finassign = fopen(inassignname, "r");
@@ -139,8 +143,9 @@ void input_queries(FILE **fin,           /* input file */
 
   else if (*global_method == 3) {
     while (*fingeom == NULL) {
-      if (PROMPT)
+      if (PROMPT) {
         printf("Geometry input file name: ");
+      }
       (void)scanf("%s", geomname);
 
       *fingeom = fopen(geomname, "r");
@@ -162,8 +167,9 @@ void input_queries(FILE **fin,           /* input file */
     if (eigensolver == 1) {
       if (MATCH_TYPE == 5) { /* geometric matching */
         while (*fingeom == NULL) {
-          if (PROMPT)
+          if (PROMPT) {
             printf("Geometry input file name: ");
+          }
           (void)scanf("%s", geomname);
 
           *fingeom = fopen(geomname, "r");
@@ -175,8 +181,9 @@ void input_queries(FILE **fin,           /* input file */
       *rqi_flag = 1;
       *vmax     = 0;
       while (*vmax <= 0) {
-        if (PROMPT)
+        if (PROMPT) {
           printf("Number of vertices to coarsen down to: ");
+        }
         *vmax = input_int();
       }
     }
@@ -184,8 +191,9 @@ void input_queries(FILE **fin,           /* input file */
   else if (*global_method == 1) {
     if (MATCH_TYPE == 5) { /* geometric matching */
       while (*fingeom == NULL) {
-        if (PROMPT)
+        if (PROMPT) {
           printf("Geometry input file name: ");
+        }
         (void)scanf("%s", geomname);
 
         *fingeom = fopen(geomname, "r");
@@ -196,8 +204,9 @@ void input_queries(FILE **fin,           /* input file */
     }
     *vmax = 0;
     while (*vmax <= 1) {
-      if (PROMPT)
+      if (PROMPT) {
         printf("Number of vertices to coarsen down to: ");
+      }
       *vmax = input_int();
     }
   }
@@ -217,8 +226,9 @@ void input_queries(FILE **fin,           /* input file */
 
   /* Get local method, if any */
   *local_method = 0;
-  if (*global_method == 1)
+  if (*global_method == 1) {
     *local_method = 1;
+  }
   else {
     while (*local_method < 1 || *local_method > 2) {
       if (PROMPT) {
@@ -235,8 +245,9 @@ void input_queries(FILE **fin,           /* input file */
     /* Get total number of hypercube dimensions in which to partition. */
     *ndims_tot = 0;
     while (*ndims_tot < 1) {
-      if (PROMPT)
+      if (PROMPT) {
         printf("Total number of target hypercube dimensions: ");
+      }
       *ndims_tot = input_int();
       if (*ndims_tot < 1) {
         printf(" Number of divisions must be at least 1\n");
@@ -248,21 +259,24 @@ void input_queries(FILE **fin,           /* input file */
   else { /* Get dimensions of mesh. */
     mesh_dims[1] = mesh_dims[2] = 1;
     if (*architecture == 2) {
-      if (PROMPT)
+      if (PROMPT) {
         printf("X and Y extent of of 2-D mesh: ");
+      }
       mesh_dims[0] = input_int();
       mesh_dims[1] = input_int();
     }
     else if (*architecture == 3) {
-      if (PROMPT)
+      if (PROMPT) {
         printf("X, Y and Z extent of 3-D mesh: ");
+      }
       mesh_dims[0] = input_int();
       mesh_dims[1] = input_int();
       mesh_dims[2] = input_int();
     }
     else { /* Anything else => 1-D mesh */
-      if (PROMPT)
+      if (PROMPT) {
         printf("Size of 1-D mesh: ");
+      }
       mesh_dims[0]  = input_int();
       *architecture = 1;
     }
@@ -275,8 +289,9 @@ void input_queries(FILE **fin,           /* input file */
     *ndims = 1;
   }
   else if (nprocs <= 7) {
-    if (PROMPT)
+    if (PROMPT) {
       printf("Partitioning dimension: \n");
+    }
     while (*ndims < 1 || *ndims > 2) {
       if (PROMPT) {
         printf("  (1) Bisection\n");
@@ -286,8 +301,9 @@ void input_queries(FILE **fin,           /* input file */
     }
   }
   else {
-    if (PROMPT)
+    if (PROMPT) {
       printf("Partitioning dimension: \n");
+    }
     while (*ndims < 1 || *ndims > 3) {
       if (PROMPT) {
         printf("  (1) Bisection\n");

@@ -246,7 +246,7 @@ sortAndOrderEvaluators()
   for (std::size_t i = 0; i < topoSortEvalIndex.size(); i++) {
     const auto& contrib_fields = (nodes_[topoSortEvalIndex[i]]).get()->contributedFields();
     for (auto& cfield : contrib_fields) {
-      const auto& check_it = std::find_if(fields_.begin(), fields_.end(),[&cfield](const Teuchos::RCP<PHX::FieldTag>& f)
+      const auto& check_it = std::find_if(fields_.begin(), fields_.end(),[&cfield](const Teuchos::RCP<const PHX::FieldTag>& f)
                                           {
                                             if (*f == *cfield)
                                               return true;
@@ -686,7 +686,7 @@ writeGraphvizDfsVisit(PHX::DagNode<Traits>& node,
 
 //=======================================================================
 template<typename Traits>
-const std::vector< Teuchos::RCP<PHX::FieldTag> >& 
+const std::vector<Teuchos::RCP<PHX::FieldTag>>& 
 PHX::DagManager<Traits>::getFieldTags()
 {
   return fields_;

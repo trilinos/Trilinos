@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2015
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -29,7 +29,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// Copyright 2001, 2008, 2009 Sandia Corporation, Albuquerque, NM.
 
 // This must appear before exodusII_int.h include.
 #define __STDC_FORMAT_MACROS
@@ -47,9 +46,9 @@ extern "C" {
 #include <cstddef>  // for size_t
 #include <cstdio>   // for sprintf, nullptr
 #include <cstdlib>  // for exit, EXIT_FAILURE
+#include <cstring>  // for strlen, strncpy, strcpy, etc
 #include <netcdf.h> // for NC_NOERR, nc_def_var, etc
 #include <ostream>  // for operator<<, etc
-#include <string.h> // for strlen, strncpy, strcpy, etc
 #include <string>   // for string, operator==, etc
 #include <vector>   // for vector
 
@@ -1547,6 +1546,19 @@ int Internals::put_metadata(const std::vector<ElemBlock> &blocks)
         return (EX_FATAL);
       }
       ex_compress_variable(exodusFilePtr, varid, 2);
+
+#if defined(PARALLEL_AWARE_EXODUS)
+      // There is currently a bug in netcdf-4.5.1-devel and earlier
+      // for partial parallel output of strided arrays in collective
+      // mode for netcdf-4-based output.  If the number of attribues >
+      // 1 and in parallel mode, set the mode to independent.
+      if (blocks[iblk].attributeCount > 1) {
+        struct ex_file_item *file = ex_find_file_item(exodusFilePtr);
+        if (file->is_parallel && file->is_mpiio) {
+          nc_var_par_access(exodusFilePtr, varid, NC_INDEPENDENT);
+        }
+      }
+#endif
 
       // Attribute name array...
       dims[0] = numattrdim;

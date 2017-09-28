@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2010 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -55,9 +55,9 @@
 
 #include "smart_assert.h"
 
-#include <cctype>
-#include <cstring>
-#include <ctime>
+#include <string>
+#include <utility>
+#include <vector>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -68,7 +68,7 @@
 #include <sys/utsname.h>
 #endif
 
-typedef std::vector<std::string> StringVector;
+using StringVector = std::vector<std::string>;
 
 #include "EP_ExodusEntity.h"
 #include "EP_ExodusFile.h"
@@ -88,7 +88,7 @@ typedef std::vector<std::string> StringVector;
 #include "add_to_log.h"
 #endif
 
-typedef std::vector<ex_entity_id> ExodusIdVector;
+using ExodusIdVector = std::vector<ex_entity_id>;
 
 extern double seacas_timer();
 namespace {
@@ -150,7 +150,7 @@ namespace {
     }
     return true;
   }
-}
+} // namespace
 
 std::string tsFormat = "[%H:%M:%S] ";
 
@@ -280,7 +280,7 @@ namespace {
                                std::vector<std::vector<Excn::SideSet<INT>>> &sidesets);
 
   int case_compare(const std::string &s1, const std::string &s2);
-}
+} // namespace
 
 unsigned int debug_level = 0;
 const float  FILL_VALUE  = FLT_MAX;
@@ -375,18 +375,19 @@ int main(int argc, char *argv[])
 
       if (ExodusFile::io_word_size() == 4) { // Reals are floats
         if (interface.int64()) {
-          error = epu(interface, start_part, part_count, cycle++, (float)0.0, (int64_t)0);
+          error = epu(interface, start_part, part_count, cycle++, static_cast<float>(0.0),
+                      static_cast<int64_t>(0));
         }
         else {
-          error = epu(interface, start_part, part_count, cycle++, (float)0.0, (int)0);
+          error = epu(interface, start_part, part_count, cycle++, static_cast<float>(0.0), 0);
         }
       }
       else { // Reals are doubles
         if (interface.int64()) {
-          error = epu(interface, start_part, part_count, cycle++, (double)0.0, (int64_t)0);
+          error = epu(interface, start_part, part_count, cycle++, 0.0, static_cast<int64_t>(0));
         }
         else {
-          error = epu(interface, start_part, part_count, cycle++, (double)0.0, (int)0);
+          error = epu(interface, start_part, part_count, cycle++, 0.0, 0);
         }
       }
 
@@ -414,25 +415,26 @@ int main(int argc, char *argv[])
 
       if (ExodusFile::io_word_size() == 4) { // Reals are floats
         if (interface.int64()) {
-          error = epu(interface, start_part, part_count, 0, (float)0.0, (int64_t)0);
+          error = epu(interface, start_part, part_count, 0, static_cast<float>(0.0),
+                      static_cast<int64_t>(0));
         }
         else {
-          error = epu(interface, start_part, part_count, 0, (float)0.0, (int)0);
+          error = epu(interface, start_part, part_count, 0, static_cast<float>(0.0), 0);
         }
       }
       else { // Reals are doubles
         if (interface.int64()) {
-          error = epu(interface, start_part, part_count, 0, (double)0.0, (int64_t)0);
+          error = epu(interface, start_part, part_count, 0, 0.0, static_cast<int64_t>(0));
         }
         else {
-          error = epu(interface, start_part, part_count, 0, (double)0.0, (int)0);
+          error = epu(interface, start_part, part_count, 0, 0.0, 0);
         }
       }
     }
 
 #ifndef _WIN32
     time_t end_time = time(nullptr);
-    add_to_log(argv[0], (int)(end_time - begin_time));
+    add_to_log(argv[0], static_cast<int>(end_time - begin_time));
 #endif
     return (error);
   }
@@ -496,7 +498,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
   // when we look for the nodal variable count.
   int64_t non_zero_node_count = -1;
   for (p = 0; p < part_count; p++) {
-    ex_init_params exodus;
+    ex_init_params exodus{};
     error = ex_get_init_ext(ExodusFile(p), &exodus);
     if (error < 0) {
       exodus_error(__LINE__);
@@ -878,7 +880,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     master_nodal_values[i] = new T[global.nodeCount];
   }
 
-  // TODO: Handle variables via a class instead of 3-D array.
+  // TODO(gdsjaar): Handle variables via a class instead of 3-D array.
   T ***master_element_values;
   allocate_master_values(element_vars, global, glob_blocks, master_element_values);
 
@@ -1558,7 +1560,7 @@ namespace {
           std::cout << "Block " << b << ", Id = " << block_id[b];
         }
 
-        ex_block temp_block;
+        ex_block temp_block{};
         temp_block.id   = block_id[b];
         temp_block.type = EX_ELEM_BLOCK;
         error           = ex_get_block_param(id, &temp_block);
@@ -1608,7 +1610,7 @@ namespace {
             exodus_error(__LINE__);
           }
           for (int i = 0; i < temp_block.num_attribute; i++) {
-            glob_blocks[b].attributeNames.push_back(std::string(names[i]));
+            glob_blocks[b].attributeNames.emplace_back(names[i]);
           }
           free_name_array(names, temp_block.num_attribute);
         }
@@ -1678,8 +1680,8 @@ namespace {
 
       // Initialize attributes list, if it exists
       if (glob_blocks[b].attributeCount > 0) {
-        attributes[b] =
-            new T[(size_t)glob_blocks[b].attributeCount * (size_t)glob_blocks[b].entity_count()];
+        attributes[b] = new T[static_cast<size_t>(glob_blocks[b].attributeCount) *
+                              glob_blocks[b].entity_count()];
       }
 
       int error = 0;
@@ -1725,7 +1727,7 @@ namespace {
 
           // Get attributes list,  if it exists
           if (blocks[p][b].attributeCount > 0) {
-            size_t max_attr = (size_t)blocks[p][b].entity_count() * blocks[p][b].attributeCount;
+            size_t         max_attr = blocks[p][b].entity_count() * blocks[p][b].attributeCount;
             std::vector<T> local_attr(max_attr);
 
             error = ex_get_attr(id, EX_ELEM_BLOCK, blocks[p][b].id, TOPTR(local_attr));
@@ -2188,7 +2190,7 @@ namespace {
       // The variable_list may contain multiple entries for each
       // variable if the user is specifying output only on certain
       // element blocks...
-      std::string var_name  = "";
+      std::string var_name;
       int         var_count = 0;
       for (auto &elem : variable_list) {
         if (var_name == elem.first) {
@@ -2643,7 +2645,7 @@ namespace {
                         std::vector<std::vector<SideSet<INT>>> &sets,
                         std::vector<SideSet<INT>> &glob_ssets, Excn::SystemInterface &interface)
   {
-    // TODO: See what work is really needed if in append mode...
+    // TODO(gdsjaar): See what work is really needed if in append mode...
 
     // Get a temporary vector to maintain the current
     // offset into the glob_ssets for storing sides
@@ -2812,7 +2814,7 @@ namespace {
     // truth table to match the specification.
     StringVector exo_names = get_exodus_variable_names(id, vars.type(), vars.count());
 
-    std::string var_name     = "";
+    std::string var_name;
     int         out_position = -1;
     for (auto &variable_name : variable_names) {
       if (variable_name.second > 0) {
@@ -3004,7 +3006,9 @@ namespace {
     strncpy(info_record, sinfo, size);
     info_record[size] = '\0';
 #else
-    struct utsname sys_info;
+    struct utsname sys_info
+    {
+    };
     uname(&sys_info);
 
     std::string info = "EPU: ";
@@ -3124,7 +3128,7 @@ namespace {
     // largest value.
     int width = 1;
     if (max_value >= 10) {
-      width = int(std::log10((double)max_value));
+      width = int(std::log10(static_cast<double>(max_value)));
     }
     return width + 1;
   }
@@ -3356,7 +3360,7 @@ namespace {
   {
     size_t max_ent = local_mesh[0].nodeCount;
     for (int p = 1; p < part_count; p++) {
-      if ((size_t)local_mesh[p].nodeCount > max_ent) {
+      if (static_cast<size_t>(local_mesh[p].nodeCount) > max_ent) {
         max_ent = local_mesh[p].nodeCount;
       }
     }
@@ -3388,4 +3392,4 @@ namespace {
     }
     return max_ent;
   }
-}
+} // namespace

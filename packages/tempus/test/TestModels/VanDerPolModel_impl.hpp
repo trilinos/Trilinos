@@ -194,7 +194,8 @@ evalModelImpl(
   TEUCHOS_TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setupInOutArgs_ must be called first!\n");
 
-  const RCP<const Thyra::VectorBase<Scalar> > x_in = inArgs.get_x().assert_not_null();
+  const RCP<const Thyra::VectorBase<Scalar> > x_in =
+    inArgs.get_x().assert_not_null();
   Thyra::ConstDetachedVectorView<Scalar> x_in_view( *x_in );
 
   //double t = inArgs.get_t();
@@ -359,8 +360,9 @@ setupInOutArgs_() const
   nominalValues_ = inArgs_;
   if (haveIC_)
   {
+    using Teuchos::RCP;
     nominalValues_.set_t(t0_ic_);
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_ic = createMember(x_space_);
+    const RCP<Thyra::VectorBase<Scalar> > x_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_ic_view( *x_ic );
       x_ic_view[0] = x0_ic_;
@@ -368,14 +370,14 @@ setupInOutArgs_() const
     }
     nominalValues_.set_x(x_ic);
     if (acceptModelParams_) {
-      const Teuchos::RCP<Thyra::VectorBase<Scalar> > p_ic = createMember(p_space_);
+      const RCP<Thyra::VectorBase<Scalar> > p_ic = createMember(p_space_);
       {
         Thyra::DetachedVectorView<Scalar> p_ic_view( *p_ic );
         p_ic_view[0] = epsilon_;
       }
       nominalValues_.set_p(0,p_ic);
     }
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
+    const RCP<Thyra::VectorBase<Scalar> > x_dot_ic = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<Scalar> x_dot_ic_view( *x_dot_ic );
       x_dot_ic_view[0] = x1_ic_;

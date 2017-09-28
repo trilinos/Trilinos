@@ -1,7 +1,7 @@
 /*
- * Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright(C) 2010 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -37,12 +37,12 @@
 #include "GetLongOpt.h"  // for GetLongOption, etc
 #include "SL_tokenize.h" // for tokenize
 #include <algorithm>     // for sort, transform
+#include <cctype>        // for tolower
+#include <climits>       // for INT_MAX
+#include <cstddef>       // for size_t
 #include <cstdlib>       // for strtol, abs, exit, strtoul, etc
 #include <cstring>       // for strchr, strlen
-#include <ctype.h>       // for tolower
 #include <iostream>      // for operator<<, basic_ostream, etc
-#include <limits.h>      // for INT_MAX
-#include <stddef.h>      // for size_t
 #include <string>        // for string, char_traits, etc
 #include <utility>       // for pair, make_pair
 #include <vector>        // for vector
@@ -62,7 +62,7 @@ namespace {
     }
   }
   void parse_variable_names(const char *tokens, Excn::StringIdVector *variable_list);
-}
+} // namespace
 
 Excn::SystemInterface::SystemInterface()
     : inExtension_(""), outExtension_(""), cwd_(""), rootDirectory_(), subDirectory_(""),
@@ -453,38 +453,39 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    std::cout << "\n"
-              << "Copyright(C) 2010 Sandia Corporation.  Under the terms of Contract\n"
-              << "DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains\n"
-              << "certain rights in this software\n"
-              << "\n"
-              << "Redistribution and use in source and binary forms, with or without\n"
-              << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n"
-              << "\n"
-              << "    * Redistributions of source code must retain the above copyright\n"
-              << "      notice, this list of conditions and the following disclaimer.\n"
-              << "\n"
-              << "    * Redistributions in binary form must reproduce the above\n"
-              << "      copyright notice, this list of conditions and the following\n"
-              << "      disclaimer in the documentation and/or other materials provided\n"
-              << "      with the distribution.\n"
-              << "\n"
-              << "    * Neither the name of Sandia Corporation nor the names of its\n"
-              << "      contributors may be used to endorse or promote products derived\n"
-              << "      from this software without specific prior written permission.\n"
-              << "\n"
-              << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
-              << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
-              << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
-              << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
-              << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
-              << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
-              << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
-              << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
-              << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
-              << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
+    std::cout
+        << "\n"
+        << "Copyright(C) 2010 National Technology & Engineering Solutions of Sandia, LLC (NTESS).\n"
+        << "Under the terms of Contract DE-NA0003525 with NTESS, the U.S. Government\n"
+        << "retains certain rights in this software\n."
+        << "\n"
+        << "Redistribution and use in source and binary forms, with or without\n"
+        << "modification, are permitted provided that the following conditions are\n"
+        << "met:\n"
+        << "\n"
+        << "    * Redistributions of source code must retain the above copyright\n"
+        << "      notice, this list of conditions and the following disclaimer.\n"
+        << "\n"
+        << "    * Redistributions in binary form must reproduce the above\n"
+        << "      copyright notice, this list of conditions and the following\n"
+        << "      disclaimer in the documentation and/or other materials provided\n"
+        << "      with the distribution.\n"
+        << "\n"
+        << "    * Neither the name of NTESS nor the names of its\n"
+        << "      contributors may be used to endorse or promote products derived\n"
+        << "      from this software without specific prior written permission.\n"
+        << "\n"
+        << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
+        << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+        << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
+        << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
+        << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"
+        << "SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT\n"
+        << "LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,\n"
+        << "DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY\n"
+        << "THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT\n"
+        << "(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\n"
+        << "OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n\n";
     exit(EXIT_SUCCESS);
   }
 
@@ -605,14 +606,14 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   // to handle leading and embedded '..' which tokenize threw away...
 
   // Get rid of the 'nn' which is not used at this time...
-  size_t ind = s.find_last_of(".", std::string::npos); // last '.'
+  size_t ind = s.find_last_of('.', std::string::npos); // last '.'
   if (ind == std::string::npos) {
     return false;
   }
   s.erase(ind);
 
   // Now find the processor count...
-  ind = s.find_last_of(".", std::string::npos);
+  ind = s.find_last_of('.', std::string::npos);
   if (ind == std::string::npos) {
     return false;
   }
@@ -627,7 +628,7 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   s.erase(ind);
 
   // Should now be an extension...
-  ind = s.find_last_of(".", std::string::npos);
+  ind = s.find_last_of('.', std::string::npos);
   if (ind == std::string::npos) {
     inExtension_ = "";
   }
@@ -640,7 +641,7 @@ bool Excn::SystemInterface::decompose_filename(const std::string &cs)
   // If there is no '/', then it is all basename_; otherwise the
   // basename_ is the portion following the '/' and the rootDirectory_
   // is the portion preceding the '/'
-  ind = s.find_last_of("/", std::string::npos);
+  ind = s.find_last_of('/', std::string::npos);
   if (ind != std::string::npos) {
     basename_      = s.substr(ind + 1, std::string::npos);
     rootDirectory_ = s.substr(0, ind);
@@ -668,7 +669,7 @@ namespace {
     return s;
   }
 
-  typedef std::vector<std::string> StringVector;
+  using StringVector = std::vector<std::string>;
   bool string_id_sort(const std::pair<std::string, int> &t1, const std::pair<std::string, int> &t2)
   {
     return t1.first < t2.first || (!(t2.first < t1.first) && t1.second < t2.second);
@@ -710,4 +711,4 @@ namespace {
       std::sort(variable_list->begin(), variable_list->end(), string_id_sort);
     }
   }
-}
+} // namespace

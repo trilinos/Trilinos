@@ -135,8 +135,10 @@ namespace Intrepid2 {
     // the following does not work for RCP; its * operator returns reference not the object
     //typedef typename decltype(*basis)::output_value_type gradValueType;
     //typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),SpT> gradViewType;
-    typedef Kokkos::DynRankView<pointValueType,SpT> gradViewType;
-    
+
+    auto vcprop = Kokkos::common_view_alloc_prop(points);
+    typedef Kokkos::DynRankView<typename decltype(vcprop)::value_type,SpT> gradViewType;
+
     gradViewType grads;
 
     typedef Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCellViewType;
@@ -145,7 +147,7 @@ namespace Intrepid2 {
     switch (pointRank) {
     case 2: {
       // For most FEMs
-      grads = Kokkos::createDynRankView(points, "CellTools::setJacobian::grads", basisCardinality, numPoints, spaceDim);
+      grads = gradViewType(Kokkos::view_alloc("CellTools::setJacobian::grads", vcprop),basisCardinality, numPoints, spaceDim);
       basis->getValues(grads, 
                        points, 
                        OPERATOR_GRAD);
@@ -153,7 +155,7 @@ namespace Intrepid2 {
     }
     case 3: { 
       // For CVFEM
-      grads = Kokkos::createDynRankView(points, "CellTools::setJacobian::grads", numCells, basisCardinality, numPoints, spaceDim);
+      grads = gradViewType(Kokkos::view_alloc("CellTools::setJacobian::grads", vcprop), numCells, basisCardinality, numPoints, spaceDim);
       for (ordinal_type cell=0;cell<numCells;++cell) 
         basis->getValues(Kokkos::subview( grads,  cell, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL() ),  
                          Kokkos::subview( points, cell, Kokkos::ALL(), Kokkos::ALL() ),  

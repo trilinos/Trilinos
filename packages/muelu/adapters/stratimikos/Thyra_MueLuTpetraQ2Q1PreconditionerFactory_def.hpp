@@ -600,9 +600,9 @@ namespace Thyra {
 
       LO diagIndex = -1;
       SC diag = Teuchos::ScalarTraits<SC>::zero();
-      for (size_t j = 0; j < inds.size(); j++) {
+      for (size_t j = 0; j < nnz; j++) {
         diag += vals[j];
-        if (inds[j] == i)
+        if (inds[j] == Teuchos::as<int>(i))
           diagIndex = j;
       }
       TEUCHOS_TEST_FOR_EXCEPTION(diagIndex == -1, MueLu::Exceptions::RuntimeError,

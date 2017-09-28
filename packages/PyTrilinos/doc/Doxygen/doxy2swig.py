@@ -263,7 +263,8 @@ class Doxy2SWIG:
 
     def do_parametername(self, node):
         self.add_text('\n')
-        self.add_text("%s: "%node.firstChild.data)
+        if hasattr(node.firstChild, 'data'):
+            self.add_text("%s: "%node.firstChild.data)
 
     def do_parameterdefinition(self, node):
         self.generic_parse(node, pad=1)

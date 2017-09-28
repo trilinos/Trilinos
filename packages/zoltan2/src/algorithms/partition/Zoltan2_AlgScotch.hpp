@@ -170,6 +170,7 @@ public:
   typedef GraphModel<typename Adapter::base_adapter_t> graphModel_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
@@ -409,7 +410,7 @@ void AlgPTScotch<Adapter>::partition(
 
   // Get edge info
   ArrayView<const gno_t> edgeIds;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
 
   size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
@@ -419,7 +420,7 @@ void AlgPTScotch<Adapter>::partition(
   const SCOTCH_Num edgelocsize = edgelocnbr;  // Assumes adj array is compact.
 
   SCOTCH_Num *vertloctab;  // starting adj/vtx
-  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_ARRAY(&vertloctab, offsets);
+  TPL_Traits<SCOTCH_Num, const offset_t>::ASSIGN_ARRAY(&vertloctab, offsets);
 
   SCOTCH_Num *edgeloctab;  // adjacencies
   TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_ARRAY(&edgeloctab, edgeIds);
@@ -759,7 +760,7 @@ int AlgPTScotch<Adapter>::localOrder(
 
   // Get edge info
   ArrayView<const gno_t> edgeIds;
-  ArrayView<const lno_t> offsets;
+  ArrayView<const offset_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
 
   size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
@@ -767,7 +768,7 @@ int AlgPTScotch<Adapter>::localOrder(
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN(edgenbr, nEdge);
   
   SCOTCH_Num *verttab;  // starting adj/vtx
-  TPL_Traits<SCOTCH_Num, const lno_t>::ASSIGN_ARRAY(&verttab, offsets);
+  TPL_Traits<SCOTCH_Num, const offset_t>::ASSIGN_ARRAY(&verttab, offsets);
 
   SCOTCH_Num *edgetab;  // adjacencies
   TPL_Traits<SCOTCH_Num, const gno_t>::ASSIGN_ARRAY(&edgetab, edgeIds);

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -126,10 +126,12 @@ int main(int argc, char **argv)
 
   x = (float *)calloc(num_nodes, sizeof(float));
   y = (float *)calloc(num_nodes, sizeof(float));
-  if (num_dim >= 3)
+  if (num_dim >= 3) {
     z = (float *)calloc(num_nodes, sizeof(float));
-  else
+  }
+  else {
     z = 0;
+  }
 
   error = ex_get_coord(exoid, x, y, z);
   printf("\nafter ex_get_coord, error = %3d\n", error);
@@ -141,8 +143,9 @@ int main(int argc, char **argv)
 
   free(x);
   free(y);
-  if (num_dim >= 3)
+  if (num_dim >= 3) {
     free(z);
+  }
 
   /* read nodal coordinate names */
 
@@ -234,8 +237,9 @@ int main(int argc, char **argv)
     }
   }
 
-  for (i = 0; i < num_props; i++)
+  for (i = 0; i < num_props; i++) {
     free(prop_names[i]);
+  }
 
   free(ids);
 
@@ -297,8 +301,9 @@ int main(int argc, char **argv)
     error = ex_put_prop_array(exoid2, EX_NODE_SET, prop_names[i], prop_values);
     printf("after ex_put_prop_array, error = %d\n", error);
   }
-  for (i = 0; i < num_props; i++)
+  for (i = 0; i < num_props; i++) {
     free(prop_names[i]);
+  }
   free(prop_values);
 
   /* read and write individual side sets */
@@ -369,8 +374,9 @@ int main(int argc, char **argv)
       }
     }
   }
-  for (i = 0; i < num_props; i++)
+  for (i = 0; i < num_props; i++) {
     free(prop_names[i]);
+  }
   free(ids);
 
   /* read and write QA records */

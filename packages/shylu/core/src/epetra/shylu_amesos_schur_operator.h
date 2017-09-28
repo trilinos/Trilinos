@@ -72,8 +72,6 @@
 #include "Amesos.h"
 #include "Amesos_BaseSolver.h"
 
-using namespace std;
-
 class AmesosSchurOperator: public Epetra_Operator
 {
     public:
@@ -195,7 +193,7 @@ class AmesosSchurOperator: public Epetra_Operator
     }
 
     //! Prints on stream basic information about \c this object.
-    virtual ostream& Print(ostream& os) const;
+    virtual std::ostream& Print(std::ostream& os) const;
 
     //! Returns the number of calls to Initialize().
     virtual int NumInitialize() const

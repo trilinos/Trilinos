@@ -1,4 +1,4 @@
-#include <mpi.h>
+#include "mpi.h"
 #include <iosfwd>
 #include <vector>
 #include <stk_tools/block_extractor/ParseCsv.hpp>

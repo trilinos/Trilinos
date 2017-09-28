@@ -48,7 +48,7 @@ HEADER
 #include "Ifpack2_UnitTestHelpers.hpp"
 #include "Ifpack2_Relaxation.hpp"
 #include "MatrixMarket_Tpetra.hpp"
-#include <KokkosKernels_GaussSeidel.hpp>
+#include <KokkosSparse_gauss_seidel.hpp>
 
 namespace { // (anonymous)
 

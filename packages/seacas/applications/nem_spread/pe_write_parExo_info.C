@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -58,9 +58,8 @@ template <typename INT> struct NODE_COMM_MAP;
 
 namespace {
   template <typename INT>
-  void reverse_map(INT *global, int p01, size_t gsize, INT *glmap, INT *index, size_t msize,
-                   INT *mapout);
-}
+  void reverse_map(INT *global, int p01, size_t gsize, INT *glmap, INT *index, INT *mapout);
+} // namespace
 /*
  * need this variable for the 0 processor to hold on to the correct
  * Exodus II database title
@@ -306,8 +305,8 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     printf("\tNumber External Nodes: " ST_ZU "\n", (size_t)globals.Num_External_Nodes[iproc]);
     printf("\tNumber Internal Elements: " ST_ZU "\n", (size_t)globals.Num_Internal_Elems[iproc]);
     printf("\tNumber Border Elements: " ST_ZU "\n", (size_t)globals.Num_Border_Elems[iproc]);
-    printf("\tNumber Nodal Cmaps: " ST_ZU "\n", (size_t)ncomm_cnt);
-    printf("\tNumber Elemental Cmaps: " ST_ZU "\n", (size_t)ecomm_cnt);
+    printf("\tNumber Nodal Cmaps: " ST_ZU "\n", static_cast<size_t>(ncomm_cnt));
+    printf("\tNumber Elemental Cmaps: " ST_ZU "\n", static_cast<size_t>(ecomm_cnt));
     printf("\tProccesor For: %d\n", proc_for);
   }
 
@@ -352,11 +351,11 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
   /* Convert Elem_Map to local element numbering */
   reverse_map(globals.Elem_Map[iproc], 0, itotal_elems, &globals.GElems[iproc][0], (INT *)nullptr,
-              itotal_elems, &globals.Elem_Map[iproc][0]);
+              &globals.Elem_Map[iproc][0]);
   /* Convert element IDs in the comm map to local numbering */
   for (int i0 = 0; i0 < ecomm_cnt; i0++) {
     reverse_map(e_comm_map[i0].elem_ids, 0, e_comm_map[i0].elem_cnt, &globals.GElems[iproc][0],
-                (INT *)nullptr, itotal_elems, e_comm_map[i0].elem_ids);
+                (INT *)nullptr, e_comm_map[i0].elem_ids);
   }
 
   /* Sort the globals.GNodes array using the index array 'loc_index' */
@@ -376,7 +375,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   /* Convert nodal IDs in the comm map to local numbering */
   for (int i0 = 0; i0 < ncomm_cnt; i0++) {
     reverse_map(n_comm_map[i0].node_ids, 0, n_comm_map[i0].node_cnt, &globals.GNodes[iproc][0],
-                loc_index, itotal_nodes, n_comm_map[i0].node_ids);
+                loc_index, n_comm_map[i0].node_ids);
   }
 
   PIO_Time_Array[3] = 0.0;
@@ -775,7 +774,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
                                      &EB_NperE[0], &EB_Nattr[0], 1);
     check_exodus_error(error, "ex_put_concat_elem_block");
 
-    safe_free((void **)&EB_Types);
+    safe_free(reinterpret_cast<void **>(&EB_Types));
 
     /* Output attribute names for each element block */
     for (int i1 = 0; i1 < globals.Num_Elem_Blk; i1++) {
@@ -921,7 +920,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
         INT *proc_local_conn = (INT *)array_alloc(__FILE__, __LINE__, 1, tmp_cnt, sizeof(INT));
 
         reverse_map(&globals.Proc_Elem_Connect[iproc][iIndex0], 1, tmp_cnt,
-                    &globals.GNodes[iproc][0], loc_index, itotal_nodes, proc_local_conn);
+                    &globals.GNodes[iproc][0], loc_index, proc_local_conn);
 
         bytes_out += globals.Proc_Nodes_Per_Elem[iproc][ilocal] *
                      globals.Proc_Num_Elem_In_Blk[iproc][ilocal] * sizeof(INT);
@@ -988,7 +987,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
         (INT *)array_alloc(__FILE__, __LINE__, 1, globals.Proc_NS_List_Length[iproc], sizeof(INT));
 
     reverse_map(&globals.Proc_NS_List[iproc][0], 1, globals.Proc_NS_List_Length[iproc],
-                &globals.GNodes[iproc][0], loc_index, itotal_nodes, proc_local_ns);
+                &globals.GNodes[iproc][0], loc_index, proc_local_ns);
   }
 
   safe_free((void **)&loc_index);
@@ -1060,7 +1059,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       }
     }
 
-    ex_set_specs set_specs;
+    ex_set_specs set_specs{};
     set_specs.sets_ids            = TOPTR(conc_ids);
     set_specs.num_entries_per_set = TOPTR(conc_nodes);
     set_specs.num_dist_per_set    = TOPTR(conc_df);
@@ -1084,8 +1083,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
     proc_local_ss = (INT *)array_alloc(__FILE__, __LINE__, 1,
                                        globals.Proc_SS_Elem_List_Length[iproc], sizeof(INT));
     reverse_map(&globals.Proc_SS_Elem_List[iproc][0], 0, globals.Proc_SS_Elem_List_Length[iproc],
-                &globals.GElems[iproc][0], (INT *)nullptr,
-                globals.Num_Internal_Elems[iproc] + globals.Num_Border_Elems[iproc], proc_local_ss);
+                &globals.GElems[iproc][0], (INT *)nullptr, proc_local_ss);
   }
 
   PIO_Time_Array[18] = 0.0;
@@ -1171,7 +1169,7 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
       }
     }
 
-    ex_set_specs set_specs;
+    ex_set_specs set_specs{};
     set_specs.sets_ids            = TOPTR(conc_ids);
     set_specs.num_entries_per_set = TOPTR(conc_sides);
     set_specs.num_dist_per_set    = TOPTR(conc_dist);
@@ -1231,8 +1229,6 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
   tt1 /= 1024.0;
 
   PIO_Time_Array[25] = tt1;
-
-  return;
 
 } /* END write_parExo_data() */
 
@@ -1457,8 +1453,7 @@ void NemSpread<T, INT>::write_var_timestep(int exoid, int proc, int time_step, I
 
 namespace {
   template <typename INT>
-  void reverse_map(INT *global, int p01, size_t gsize, INT *glmap, INT *index, size_t msize,
-                   INT *mapout)
+  void reverse_map(INT *global, int p01, size_t gsize, INT *glmap, INT *index, INT *mapout)
   {
     /*
      * The 'global' array is an array of node or element numbers
@@ -1519,4 +1514,4 @@ namespace {
     }
     safe_free((void **)&tmp_index);
   }
-}
+} // namespace

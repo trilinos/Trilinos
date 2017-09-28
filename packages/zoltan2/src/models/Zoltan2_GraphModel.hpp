@@ -89,6 +89,7 @@ public:
   typedef typename Adapter::user_t      user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
   typedef StridedData<lno_t, scalar_t>  input_t;
+  typedef typename Adapter::offset_t    offset_t;
 #endif
 
   //!  Destructor
@@ -210,7 +211,7 @@ public:
   // Vertex GNOs are returned as neighbors in edgeIds.
 
   size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
-    ArrayView<const lno_t> &offsets,
+    ArrayView<const offset_t> &offsets,
     ArrayView<input_t> &wgts) const
   {
     edgeIds = eGids_.view(0, nLocalEdges_);
@@ -277,7 +278,7 @@ private:
   size_t nLocalEdges_;                  // # local edges in built graph
   size_t nGlobalEdges_;                 // # global edges in built graph
   ArrayRCP<gno_t> eGids_;                 // edges of graph built in model
-  ArrayRCP<lno_t> eOffsets_;              // edge offsets build in model
+  ArrayRCP<offset_t> eOffsets_;           // edge offsets build in model
                                           // May be same as adapter's input 
                                           // or may differ
                                           // due to renumbering, self-edge
@@ -336,7 +337,7 @@ GraphModel<Adapter>::GraphModel(
 
   // Get the matrix from the input adapter
   gno_t const *vtxIds=NULL, *nborIds=NULL;
-  lno_t const *offsets=NULL;
+  offset_t const *offsets=NULL;
   try{
     nLocalVertices_ = ia->getLocalNumIDs();
     ia->getIDsView(vtxIds);
@@ -360,8 +361,8 @@ GraphModel<Adapter>::GraphModel(
                 arcp<const gno_t>(vtxIds, 0, nLocalVertices_, false));
   eGids_ = arcp_const_cast<gno_t>(
                 arcp<const gno_t>(nborIds, 0, nLocalEdges_, false));
-  eOffsets_ = arcp_const_cast<lno_t>(
-                   arcp<const lno_t>(offsets, 0, nLocalVertices_+1, false));
+  eOffsets_ = arcp_const_cast<offset_t>(
+                   arcp<const offset_t>(offsets, 0, nLocalVertices_+1, false));
 
   // Edge weights
   nWeightsPerEdge_ = 0;   // no edge weights from a matrix yet.
@@ -418,7 +419,7 @@ GraphModel<Adapter>::GraphModel(
   // Get the graph from the input adapter
 
   gno_t const *vtxIds=NULL, *nborIds=NULL;
-  lno_t const *offsets=NULL;
+  offset_t const *offsets=NULL;
   try{
     nLocalVertices_ = ia->getLocalNumVertices();
     ia->getVertexIDsView(vtxIds);
@@ -432,8 +433,8 @@ GraphModel<Adapter>::GraphModel(
                 arcp<const gno_t>(vtxIds, 0, nLocalVertices_, false));
   eGids_ = arcp_const_cast<gno_t>(
                 arcp<const gno_t>(nborIds, 0, nLocalEdges_, false));
-  eOffsets_ = arcp_const_cast<lno_t>(
-                   arcp<const lno_t>(offsets, 0, nLocalVertices_+1, false));
+  eOffsets_ = arcp_const_cast<offset_t>(
+                   arcp<const offset_t>(offsets, 0, nLocalVertices_+1, false));
 
   // Edge weights
   nWeightsPerEdge_ = ia->getNumWeightsPerEdge();
@@ -535,7 +536,7 @@ GraphModel<Adapter>::GraphModel(
     // Get the edges
     try {
       gno_t const *nborIds=NULL;
-      lno_t const *offsets=NULL;
+      offset_t const *offsets=NULL;
 
       ia->get2ndAdjsView(primaryEType, secondAdjEType, offsets, nborIds);
       // Save the pointers from the input adapter; we do not control the
@@ -543,8 +544,8 @@ GraphModel<Adapter>::GraphModel(
       nLocalEdges_ = offsets[nLocalVertices_];
       eGids_ = arcp_const_cast<gno_t>(
                arcp<const gno_t>(nborIds, 0, nLocalEdges_, false));
-      eOffsets_ = arcp_const_cast<lno_t>(
-                  arcp<const lno_t>(offsets, 0, nLocalVertices_+1, false));
+      eOffsets_ = arcp_const_cast<offset_t>(
+                  arcp<const offset_t>(offsets, 0, nLocalVertices_+1, false));
     }
     Z2_FORWARD_EXCEPTIONS;
   }
@@ -602,7 +603,7 @@ void GraphModel<Adapter>::shared_constructor(
   size_t adapterNLocalEdges = nLocalEdges_;
   ArrayRCP<gno_t> adapterVGids = vGids_;     // vertices of graph from adapter
   ArrayRCP<gno_t> adapterEGids = eGids_;     // edges of graph from adapter
-  ArrayRCP<lno_t> adapterEOffsets = eOffsets_;    // edge offsets from adapter
+  ArrayRCP<offset_t> adapterEOffsets = eOffsets_;    // edge offsets from adapter
   ArrayRCP<input_t> adapterEWeights = eWeights_;  // edge weights from adapter
 
   if (localGraph_) {
@@ -618,7 +619,7 @@ void GraphModel<Adapter>::shared_constructor(
                   0, nLocalVertices_, true);
     eGids_ = arcp(new gno_t[adapterNLocalEdges],
                   0, adapterNLocalEdges, true);  
-    eOffsets_ = arcp(new lno_t[nLocalVertices_+1],
+    eOffsets_ = arcp(new offset_t[nLocalVertices_+1],
                      0, nLocalVertices_+1, true);
 
     scalar_t **tmpEWeights = NULL;
@@ -642,7 +643,7 @@ void GraphModel<Adapter>::shared_constructor(
     lno_t ecnt = 0;
     for (size_t i = 0; i < nLocalVertices_; i++) {
       vGids_[i] = gno_t(i);
-      for (lno_t j = adapterEOffsets[i]; j < adapterEOffsets[i+1]; j++) {
+      for (offset_t j = adapterEOffsets[i]; j < adapterEOffsets[i+1]; j++) {
 
         if (removeSelfEdges && (adapterEGids[j] == adapterVGids[i]))
           continue;  // Skipping self edge
@@ -703,7 +704,7 @@ void GraphModel<Adapter>::shared_constructor(
     scalar_t **tmpEWeights = NULL;
     if (subsetGraph || removeSelfEdges) {
       // May change number of edges and, thus, the offsets 
-      eOffsets_ = arcp(new lno_t[nLocalVertices_+1],
+      eOffsets_ = arcp(new offset_t[nLocalVertices_+1],
                        0, nLocalVertices_+1, true);
       eOffsets_[0] = 0;
 
@@ -771,7 +772,7 @@ void GraphModel<Adapter>::shared_constructor(
       if (consecutiveIdsRequired)
         vGids_[i] = vtxDist_[me] + i;
 
-      for (lno_t j = adapterEOffsets[i]; j < adapterEOffsets[i+1]; j++) {
+      for (offset_t j = adapterEOffsets[i]; j < adapterEOffsets[i+1]; j++) {
 
         if (removeSelfEdges && (adapterVGids[i] == adapterEGids[j]))
           continue;  // Skipping self edge
@@ -910,7 +911,7 @@ void GraphModel<Adapter>::print()
 
   for (size_t i = 0; i < nLocalVertices_; i++) {
     *os << me << " " << i << " GID " << vGids_[i] << ": ";
-    for (lno_t j = eOffsets_[i]; j < eOffsets_[i+1]; j++)
+    for (offset_t j = eOffsets_[i]; j < eOffsets_[i+1]; j++)
       *os << eGids_[j] << " " ;
     *os << std::endl;
   }
@@ -927,7 +928,7 @@ void GraphModel<Adapter>::print()
   if (nWeightsPerEdge_) {
     for (size_t i = 0; i < nLocalVertices_; i++) {
       *os << me << " " << i << " EWGTS " << vGids_[i] << ": ";
-      for (lno_t j = eOffsets_[i]; j < eOffsets_[i+1]; j++) {
+      for (offset_t j = eOffsets_[i]; j < eOffsets_[i+1]; j++) {
         *os << eGids_[j] << " (";
         for (int w = 0; w < nWeightsPerEdge_; w++)
           *os << eWeights_[w][j] << " ";

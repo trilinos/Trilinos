@@ -105,8 +105,6 @@
 
 #include "shylu.h"
 
-using namespace std;
-
 int main(int argc, char *argv[])
 {
 #ifdef HAVE_SHYLUCORE_MPI
@@ -126,7 +124,7 @@ int main(int argc, char *argv[])
 
     if (myPID == 0)
     {
-        cout <<"Parallel execution: nProcs="<< nProcs << endl;
+        cout <<"Parallel execution: nProcs="<< nProcs << std::endl;
     }
 
     // =================== Read input xml file =============================
@@ -137,10 +135,10 @@ int main(int argc, char *argv[])
 
     if (myPID == 0)
     {
-        cout << "Input :" << endl;
-        cout << "ParaLU params " << endl;
+        cout << "Input :" << std::endl;
+        cout << "ParaLU params " << std::endl;
         pLUList.print(std::cout, 2, true, true);
-        cout << "Matrix market file name: " << MMFileName << endl;
+        cout << "Matrix market file name: " << MMFileName << std::endl;
     }
 
 

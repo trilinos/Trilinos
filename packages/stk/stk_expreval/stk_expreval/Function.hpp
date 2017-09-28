@@ -117,7 +117,6 @@ private:
 /**
  * @brief Class <b>CFunction</b> declares a base template for template instantiation
  * of C-like called functions.
- *
  */
 template <class S>
 class CFunction;
@@ -125,7 +124,6 @@ class CFunction;
 /**
  * @brief Class <b>CFunctionMap</b> maps (function names, num arguments) to c-style function pointers via
  * the <b>CFunctionBase</b> base class.  The mapping is case insensitive.
- *
  */
 class CFunctionMap : public std::multimap< std::string, CFunctionBase *, LessCase>
 {
@@ -134,13 +132,11 @@ public:
    * Creates a new <b>CFunctionMap</b> instance.
    *
    * The <b>CFunctionMap</b> is populated with common C functions on construction.
-   *
    */
   CFunctionMap();
 
   /**
    * Destroys a <b>CFunctionMap</b> instance.
-   *
    */
   ~CFunctionMap();
 };
@@ -164,8 +160,7 @@ CFunctionMap &getCFunctionMap();
  * @param function		a <b>CFunctionBase</b> pointer to the C-style
  *				function.
  */
-inline
-void addFunction(const std::string &name, CFunctionBase *function) {
+inline void addFunction(const std::string &name, CFunctionBase *function) {
   getCFunctionMap().insert(std::make_pair(name, function));
 }
 

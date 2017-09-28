@@ -69,7 +69,6 @@
 namespace panzer {
 
   class FieldManagerBuilder;
-  class EpetraLinearObjContainer;
   struct GlobalData;
 
   class ModelEvaluator_Epetra : public EpetraExt::ModelEvaluator {

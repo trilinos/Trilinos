@@ -62,10 +62,6 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(point_values2, md_field_setup)
   {
-    typedef PHX::KokkosViewFactory<double,PHX::Device> ViewFactory;
-    typedef PHX::MDField<double>::size_type size_type;
-
-
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
@@ -78,26 +74,24 @@ namespace panzer {
 
     TEST_EQUALITY(point_rule->num_points,Teuchos::as<int>(num_points));
   
-    panzer::PointValues2<double,PHX::MDField > point_values2;
-    panzer::MDFieldArrayFactory af("prefix_");
-
-    point_values2.setupArrays(point_rule,af);
+    panzer::PointValues2<double > point_values2("prefix_");
+    point_values2.setupArrays(point_rule);
 
     // check to make sure all data layouts and field names are as 
     // expected. In a simulation environment the field manager will
     // build these values.
 
     // check basis
-    TEST_EQUALITY(point_values2.coords_ref.fieldTag().dataLayout().rank(),2);
-    TEST_EQUALITY(point_values2.coords_ref.fieldTag().dataLayout().dimension(0),num_points);
-    TEST_EQUALITY(point_values2.coords_ref.fieldTag().dataLayout().extent_int(1),base_cell_dimension);
-    TEST_EQUALITY(point_values2.coords_ref.fieldTag().name(),"prefix_coords_ref");
+    TEST_EQUALITY(point_values2.getRefCoordinates().fieldTag().dataLayout().rank(),2);
+    TEST_EQUALITY(point_values2.getRefCoordinates().fieldTag().dataLayout().dimension(0),num_points);
+    TEST_EQUALITY(point_values2.getRefCoordinates().fieldTag().dataLayout().extent_int(1),base_cell_dimension);
+    TEST_EQUALITY(point_values2.getRefCoordinates().fieldTag().name(),"prefix_coords_ref");
 
-    TEST_EQUALITY(point_values2.node_coordinates.fieldTag().dataLayout().rank(),3);
-    TEST_EQUALITY(point_values2.node_coordinates.fieldTag().dataLayout().extent_int(0),num_cells);
-    TEST_EQUALITY(point_values2.node_coordinates.fieldTag().dataLayout().dimension(1),4);
-    TEST_EQUALITY(point_values2.node_coordinates.fieldTag().dataLayout().extent_int(2),base_cell_dimension);
-    TEST_EQUALITY(point_values2.node_coordinates.fieldTag().name(),"prefix_node_coordinates");
+    TEST_EQUALITY(point_values2.getVertexCoordinates().fieldTag().dataLayout().rank(),3);
+    TEST_EQUALITY(point_values2.getVertexCoordinates().fieldTag().dataLayout().extent_int(0),num_cells);
+    TEST_EQUALITY(point_values2.getVertexCoordinates().fieldTag().dataLayout().dimension(1),4);
+    TEST_EQUALITY(point_values2.getVertexCoordinates().fieldTag().dataLayout().extent_int(2),base_cell_dimension);
+    TEST_EQUALITY(point_values2.getVertexCoordinates().fieldTag().name(),"prefix_node_coordinates");
 
     TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().rank(),3);
     TEST_EQUALITY(point_values2.point_coords.fieldTag().dataLayout().extent_int(0),num_cells);
@@ -123,11 +117,6 @@ namespace panzer {
     TEST_EQUALITY(point_values2.jac_det.fieldTag().dataLayout().extent_int(0),num_cells);
     TEST_EQUALITY(point_values2.jac_det.fieldTag().dataLayout().dimension(1),num_points);
     TEST_EQUALITY(point_values2.jac_det.fieldTag().name(),"prefix_jac_det");
-
-    const size_type derivative_dim = 4;
-    const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
-
-    point_values2.coords_ref.setFieldData(ViewFactory::buildView(point_values2.coords_ref.fieldTag(),ddims));
   }
 
   TEUCHOS_UNIT_TEST(point_values2, md_field_evaluate)
@@ -149,14 +138,13 @@ namespace panzer {
     RCP<PointRule> point_rule = rcp(new PointRule("RandomPoints",num_points, cell_data));
 
     TEST_EQUALITY(point_rule->num_points,num_points);
-  
-    panzer::PointValues2<ScalarType,PHX::MDField > point_values2;
 
     const size_type derivative_dim = 4;
     const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
     panzer::MDFieldArrayFactory af("prefix_",ddims);
-
-    point_values2.setupArrays(point_rule,af);
+  
+    panzer::PointValues2<ScalarType> point_values2("prefix_",ddims);
+    point_values2.setupArrays(point_rule);
 
     // Set up node coordinates.  Here we assume the following
     // ordering.  This needs to be consistent with shards topology,
@@ -204,8 +192,9 @@ namespace panzer {
     point_coordinates(1,0) =  0.5; point_coordinates(1,1) = 0.5; // mid point of upper left quadrant
     point_coordinates(2,0) = -0.5; point_coordinates(2,1) = 0.0; // mid point of line from center to left side
 
-    point_values2.coords_ref.setFieldData(ViewFactory::buildView(point_values2.coords_ref.fieldTag(),ddims));
-    point_values2.node_coordinates.setFieldData(ViewFactory::buildView(point_values2.node_coordinates.fieldTag(),ddims));
+    point_values2.getRefCoordinates().setFieldData(ViewFactory::buildView(point_values2.getRefCoordinates().fieldTag(),ddims));
+    point_values2.getVertexCoordinates().setFieldData(ViewFactory::buildView(point_values2.getVertexCoordinates().fieldTag(),ddims));
+
     point_values2.point_coords.setFieldData(ViewFactory::buildView(point_values2.point_coords.fieldTag(),ddims));
     point_values2.jac.setFieldData(ViewFactory::buildView(point_values2.jac.fieldTag(),ddims));
     point_values2.jac_inv.setFieldData(ViewFactory::buildView(point_values2.jac_inv.fieldTag(),ddims));
@@ -216,7 +205,7 @@ namespace panzer {
     // check the reference values (ensure copying)
     for(int p=0;p<num_points;p++)
        for(size_type d=0;d<static_cast<size_type>(base_cell_dimension);d++)
-          TEST_EQUALITY(point_values2.coords_ref(p,d).val(),point_coordinates(p,d).val());
+          TEST_EQUALITY(point_values2.getRefCoordinates()(p,d).val(),point_coordinates(p,d).val());
 
     // check the shifted values (ensure physical mapping)
     for(int c=0;c<num_cells;c++) {

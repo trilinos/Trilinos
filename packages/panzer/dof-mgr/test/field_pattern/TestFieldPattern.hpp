@@ -56,7 +56,7 @@ public:
    /* This function has no functionality in this case.
     * If called it will throw an assertion failure
     */
-   virtual void getSubcellClosureIndices(int dim,int cellIndex,std::vector<int> & indices) const
+   virtual void getSubcellClosureIndices(int /* dim */, int /* cellIndex */, std::vector<int>& /* indices */) const
    { TEUCHOS_ASSERT(false); }
 
    virtual int getSubcellCount(int dim) const

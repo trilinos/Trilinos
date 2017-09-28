@@ -30,7 +30,6 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     OldElasticityDataCopy
-    OldElasticitySIMPDataCopy
     SOURCE_FILES
       input.xml
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"

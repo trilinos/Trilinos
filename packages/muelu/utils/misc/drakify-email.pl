@@ -46,7 +46,7 @@ sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 # my $trimmed = trim $trimTest;
 # print "Trimmed string: \"$trimmed\"\n";
 
-my @entries, my @entriesNightly, my @entriesExperimental;
+my @entries, my @entriesNightly, my @entriesExperimental, my@entriesSpecialized;
 my $gitFailure = "";
 
 my %testType;
@@ -71,6 +71,10 @@ for ($i=0; $i<$numLines; $i++)
     elsif ($line =~ /\++ Experimental \++/)
     {
       $testType = "Experimental";
+    }
+    elsif ($line =~ /\++ Specialized \++/)
+    {
+      $testType = "Specialized";
     }
     
     if ($line =~ /(.*)\s+\.\.\. [pF]/)
@@ -180,6 +184,10 @@ for ($i=0; $i<$numLines; $i++)
     elsif ($testType{$name} eq "Experimental")
     {
       push @entriesExperimental, $entry;
+    }
+    elsif ($testType{$name} eq "Specialized")
+    {
+      push @entriesSpecialized, $entry;
     }
   }
 }
@@ -341,7 +349,7 @@ sub printTableHeader
 <tr class="grptr">
 <th>Test</th>
 <th class="grpth">pass</th>
-<th class="midth">fail</th>
+<th class="midth">fail/notrun</th>
 <th class="midth">errors</th>
 <th class="midth">warnings</th>
 <th class="grpth">errors</th>
@@ -432,6 +440,11 @@ EOE
 print "<h3>Nightly Tests</h3>\n";
 printTableHeader;
 printEntries(\@entriesNightly);
+printTableFooter;
+
+print "<h3>Specialized Tests</h3>\n";
+printTableHeader;
+printEntries(\@entriesSpecialized);
 printTableFooter;
 
 print "<h3>Experimental Tests</h3>\n";

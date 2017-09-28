@@ -75,7 +75,7 @@ Parameter(const std::string parameter_name,
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
 void Parameter<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData worksets,
+postRegistrationSetup(typename TRAITS::SetupData /* worksets */,
 		      PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(target_field,fm);

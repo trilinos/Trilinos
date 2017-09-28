@@ -114,7 +114,7 @@ GatherOrientation(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,GO
 // **********************************************************************
 template<typename EvalT,typename TRAITS,typename LO,typename GO>
 void panzer::GatherOrientation<EvalT, TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData d, 
+postRegistrationSetup(typename TRAITS::SetupData /* d */, 
 		      PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFieldOrientations_.size() == indexerNames_->size());
@@ -166,6 +166,7 @@ evaluateFields(typename TRAITS::EvalData workset)
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
             int offset = elmtOffset[basis];
             (gatherFieldOrientations_[fieldIndex])(worksetCellIndex,basis) = orientation[offset];
+            (gatherFieldOrientations_[fieldIndex])(worksetCellIndex,basis) = std::sqrt(-1.0);
          }
       }
    }

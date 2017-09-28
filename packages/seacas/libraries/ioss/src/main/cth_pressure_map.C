@@ -1,7 +1,6 @@
-// Copyright(C) 1999-2010
-// Sandia Corporation. Under the terms of Contract
-// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-// certain rights in this software.
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -35,14 +35,14 @@
 #include <Ioss_Utils.h>
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
-#include <stddef.h>
 #include <stdexcept>
-#include <stdlib.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -79,17 +79,17 @@ namespace {
   struct Globals
   {
     enum FinalPressureType { FINAL, INITIAL, ZERO, OFFSET };
-    bool              debug;
-    bool              do_normals;
-    bool              reverse_normals;
-    bool              add_sset;
-    bool              convert_gage;
+    bool              debug{};
+    bool              do_normals{};
+    bool              reverse_normals{};
+    bool              add_sset{};
+    bool              convert_gage{};
     FinalPressureType final_pressure;
-    double            delta_time;
-    double            maximum_time;
-    double            minimum_time;
-    double            offset_time;
-    double            offset_pressure;
+    double            delta_time{};
+    double            maximum_time{};
+    double            minimum_time{};
+    double            offset_time{};
+    double            offset_pressure{};
     std::string       working_directory;
   };
 

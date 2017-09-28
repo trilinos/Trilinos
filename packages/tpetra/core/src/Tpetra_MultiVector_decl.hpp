@@ -632,6 +632,17 @@ namespace Tpetra {
                  const dual_view_type& view,
                  const dual_view_type& origView);
 
+  protected:
+
+    /// \brief Single-column subview constructor, for derived classes ONLY.
+    ///
+    /// \param X [in] Input MultiVector to view (in possibly nonconst fashion).
+    /// \param j [in] The column of X to view.
+    MultiVector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+                 const size_t j);
+
+  public:
+
     /// \brief Expert mode constructor for noncontiguous views.
     ///
     /// \warning This constructor is only for expert users.  We make
@@ -1554,7 +1565,18 @@ namespace Tpetra {
     /// \post <tt>dots(j) == (this->getVector[j])->dot (* (A.getVector[j]))</tt>
     void
     dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& A,
-         const Kokkos::View<dot_type*, device_type>& dots) const;
+         const Kokkos::View<dot_type*, Kokkos::HostSpace>& norms) const;
+
+    template<class ViewType>
+    void
+    dot (typename std::enable_if<std::is_same<typename ViewType::value_type,dot_type>::value &&
+                                 std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value,
+                                 const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>>::type& A,
+         const ViewType& dots) const {
+      const Kokkos::View<dot_type*, Kokkos::HostSpace> h_dots("Tpetra::Dots",dots.extent(0));
+      this->dot (A, h_dots);
+      Kokkos::deep_copy(dots,h_dots);
+    }
 
     /// \brief Compute the dot product of each corresponding pair of
     ///   vectors (columns) in A and B, storing the result in a device
@@ -1583,6 +1605,7 @@ namespace Tpetra {
       // case.  It could also come up for Kokkos::complex ->
       // std::complex conversions, but those two implementations
       // should generally be bitwise compatible.
+      // CT: no this can't possible work .....
       Kokkos::deep_copy (dots, dts);
     }
 
@@ -1674,7 +1697,16 @@ namespace Tpetra {
     /// documentation in particular, for details.  This matters only
     /// for "interesting" Scalar types, such as one might find in the
     /// Stokhos package.
-    void norm1 (const Kokkos::View<mag_type*, device_type>& norms) const;
+    template<class ViewType>
+      typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
+                              std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
+    norm1 (const ViewType& norms) const {
+      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
+      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
+      this->normImpl (h_norms, NORM_ONE);
+      Kokkos::deep_copy(norms,h_norms);
+    }
+    void norm1 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
     /// \brief Compute the one-norm of each vector (column), storing
     ///   the result in a device view.
@@ -1758,7 +1790,16 @@ namespace Tpetra {
     /// documentation in particular, for details.  This matters only
     /// for "interesting" Scalar types, such as one might find in the
     /// Stokhos package.
-    void norm2 (const Kokkos::View<mag_type*, device_type>& norms) const;
+    template<class ViewType>
+      typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
+                              std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
+    norm2 (const ViewType& norms) const {
+      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
+      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
+      this->normImpl (h_norms, NORM_TWO);
+      Kokkos::deep_copy(norms,h_norms);
+    }
+    void norm2 (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column), storing
     ///   the result in a device view.
@@ -1834,7 +1875,16 @@ namespace Tpetra {
     /// documentation in particular, for details.  This matters only
     /// for "interesting" Scalar types, such as one might find in the
     /// Stokhos package.
-    void normInf (const Kokkos::View<mag_type*, device_type>& norms) const;
+    template<class ViewType>
+      typename std::enable_if<std::is_same<typename ViewType::value_type,mag_type>::value &&
+                              std::is_same<typename ViewType::memory_space,typename device_type::memory_space>::value>::type
+    normInf (const ViewType& norms) const {
+      typedef typename Kokkos::View<mag_type*, Kokkos::HostSpace> host_norms_view_type;
+      host_norms_view_type h_norms("Tpetra::MV::h_norms",norms.extent(0));
+      this->normImpl (h_norms, NORM_INF);
+      Kokkos::deep_copy(norms,h_norms);
+    }
+    void normInf (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms) const;
 
     /// \brief Compute the two-norm of each vector (column), storing
     ///   the result in a device view.
@@ -2211,7 +2261,7 @@ namespace Tpetra {
     /// norms(j) is the norm (of the selected type) of column j of
     /// this MultiVector.
     void
-    normImpl (const Kokkos::View<mag_type*, device_type>& norms,
+    normImpl (const Kokkos::View<mag_type*, Kokkos::HostSpace>& norms,
               const EWhichNorm whichNorm) const;
 
     //@}
@@ -2289,6 +2339,13 @@ namespace Tpetra {
     //! Whether this class implements the old or new interface of DistObject.
     virtual bool useNewInterface () { return true; }
 
+    /// \typedef buffer_device_type
+    /// \brief Kokkos::Device specialization for communication buffers.
+    ///
+    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+    typedef typename DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node,
+                                classic>::buffer_device_type buffer_device_type;
+
     virtual void
     copyAndPermuteNew (const SrcDistObject& sourceObj,
                        const size_t numSameIDs,
@@ -2298,15 +2355,15 @@ namespace Tpetra {
     virtual void
     packAndPrepareNew (const SrcDistObject& sourceObj,
                        const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                       Kokkos::DualView<impl_scalar_type*, device_type>& exports,
-                       const Kokkos::DualView<size_t*, device_type>& /* numPacketsPerLID */,
+                       Kokkos::DualView<impl_scalar_type*, buffer_device_type>& exports,
+                       const Kokkos::DualView<size_t*, buffer_device_type>& /* numPacketsPerLID */,
                        size_t& constantNumPackets,
                        Distributor& /* distor */);
 
     virtual void
     unpackAndCombineNew (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
-                         const Kokkos::DualView<const impl_scalar_type*, device_type>& imports,
-                         const Kokkos::DualView<const size_t*, device_type>& /* numPacketsPerLID */,
+                         const Kokkos::DualView<const impl_scalar_type*, buffer_device_type>& imports,
+                         const Kokkos::DualView<const size_t*, buffer_device_type>& /* numPacketsPerLID */,
                          const size_t constantNumPackets,
                          Distributor& /* distor */,
                          const CombineMode CM);

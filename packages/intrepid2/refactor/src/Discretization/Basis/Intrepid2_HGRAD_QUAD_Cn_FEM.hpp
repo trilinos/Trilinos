@@ -116,7 +116,7 @@ namespace Intrepid2 {
           constexpr ordinal_type spaceDim = 2;
           constexpr ordinal_type bufSize = 
             (spaceDim+1) * Intrepid2::getPnCardinality<spaceDim,Parameters::MaxOrder>()*numPtsEval;// :
-          outputValueType buf[bufSize];
+          char buf[bufSize*sizeof(outputValueType)];
           
           Kokkos::DynRankView<outputValueType,
             Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
@@ -205,6 +205,20 @@ namespace Intrepid2 {
                                     ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getDofCoords) incorrect reference cell (1st) dimension in dofCoords array");
 #endif
       Kokkos::deep_copy(dofCoords, this->dofCoords_);
+    }
+
+    virtual
+    void
+    getDofCoeffs( scalarViewType dofCoeffs ) const {
+#ifdef HAVE_INTREPID2_DEBUG
+      // Verify rank of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 1, std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getdofCoeffs) rank = 1 required for dofCoeffs array");
+      // Verify 0th dimension of output array.
+      INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.dimension(0)) != this->getCardinality(), std::invalid_argument,
+                                    ">>> ERROR: (Intrepid2::Basis_HGRAD_QUAD_Cn_FEM::getdofCoeffs) mismatch in number of dof and 0th dimension of dofCoeffs array");
+#endif
+      Kokkos::deep_copy(dofCoeffs, 1.0);
     }
 
     virtual

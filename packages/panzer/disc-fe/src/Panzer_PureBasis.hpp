@@ -52,10 +52,6 @@
 #include "Intrepid2_Basis.hpp"
 #include "Panzer_IntrepidBasisFactory.hpp"
 
-#ifndef __KK__
-#define __KK__
-#endif
-
 namespace panzer {
 
   class CellData;
@@ -127,11 +123,7 @@ namespace panzer {
 
     bool requiresOrientations() const
     { 
-#if defined(__KK__)
       return intrepid_basis_->requireOrientation(); 
-#else 
-      return getElementSpace()==HCURL || getElementSpace()==HDIV; 
-#endif
     }
 
     bool supportsGrad() const
@@ -168,6 +160,8 @@ namespace panzer {
     Teuchos::RCP<PHX::DataLayout> functional_D2;
     //! <Cell,Basis,Dim>
     Teuchos::RCP<PHX::DataLayout> coordinates;
+    //! <Cell,Basis,Basis>
+    Teuchos::RCP<PHX::DataLayout> local_mat_layout;
 
   private:
     

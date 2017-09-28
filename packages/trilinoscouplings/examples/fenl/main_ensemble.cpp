@@ -762,9 +762,10 @@ void run_vps(
     cmd.USE_UQ_ENSEMBLE > 0 ? cmd.USE_UQ_ENSEMBLE : 1;
   EnsembleVPS vps(cmd.USE_UQ_DIM, cmd.USE_UQ_MAX_SAMPLES, ensemble_size,
                   comm.getRank());
+  double mean, sd;
   vps.run(
     [&](const size_t num_samples, const size_t dim, const double*const* x,
-        double* f, size_t* its)
+        double** f)
     {
       using Teuchos::Array;
       Array<double> responses(num_samples);
@@ -783,11 +784,14 @@ void run_vps(
                   iterations, ensemble_iterations,
                   perf_total);
       for (size_t iSample = 0; iSample < num_samples; iSample++) {
-        f[iSample] = responses[iSample];
-        its[iSample] = iterations[iSample];
+        f[iSample][0] = responses[iSample];
+        f[iSample][1] = iterations[iSample];
       }
       perf_total.uq_count += num_samples;
-    });
+    }, mean, sd);
+
+  perf_total.response_mean = mean;
+  perf_total.response_std_dev = sd;
 
   if (cmd.PRINT_ITS && 0 == comm.getRank()) {
     std::cout << "Total samples = " << perf_total.uq_count << std::endl;
@@ -800,6 +804,9 @@ void run_vps(
               << std::endl;
     std::cout << "Total newton time (s) = " << perf_total.newton_total_time
               << std::endl;
+    std::cout.precision(12);
+    std::cout << "Computed mean = " << perf_total.response_mean << std::endl;
+    std::cout << "Computed std dev = " << perf_total.response_std_dev << std::endl;
   }
 }
 

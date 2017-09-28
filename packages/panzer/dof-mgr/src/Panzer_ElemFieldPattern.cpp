@@ -78,7 +78,7 @@ const std::vector<int> & ElemFieldPattern::getSubcellIndices(int dim,int cellInd
    return empty_;
 }
 
-void ElemFieldPattern::getSubcellClosureIndices(int dim,int cellIndex,std::vector<int> & indices) const
+void ElemFieldPattern::getSubcellClosureIndices(int /* dim */, int /* cellIndex */, std::vector<int>& /* indices */) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                       "ElemFieldPattern::getSubcellClosureIndices should not be called");

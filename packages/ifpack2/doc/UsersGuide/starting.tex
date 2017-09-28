@@ -67,7 +67,6 @@ dependencies.
     \xpetra                      &          & $\times$ &          & $\times$  \\
     \zoltantwo                   &          & $\times$ &          & $\times$  \\
     \textsc{ThyraTpetraAdapters} &          & $\times$ &          & \\
-    \textsc{ShyLUBasker}         &          & $\times$ &          & $\times$ \\
     \textsc{ShyLUHTS}            &          & $\times$ &          & $\times$ \\
     \midrule
     % BLAS                         & $\times$ &          & $\times$ & \\
@@ -227,7 +226,7 @@ Then, one can define a \texttt{Belos::LinearProblem} object where the
 
  Teuchos::RCP<Belos_LinearProblem> problem =
    Teuchos::rcp( new Belos_LinearProblem( A, X, B ) );
- problem->setLeftPrec( mueLuPreconditioner );
+ problem->setLeftPrec( ifpack2Preconditioner );
  bool set = problem.setProblem();
 \end{lstlisting}
 

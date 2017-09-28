@@ -54,9 +54,9 @@
 #include "Thyra_TpetraVectorSpace.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 
-using Teuchos::RCP;
-
 namespace panzer {
+
+using Teuchos::RCP;
 
 // ************************************************************
 // class TpetraLinearObjFactory
@@ -292,8 +292,8 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void 
 TpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-applyDirichletBCs(const LinearObjContainer & counter,
-                  LinearObjContainer & result) const
+applyDirichletBCs(const LinearObjContainer & /* counter */,
+                  LinearObjContainer & /* result */) const
 {
   TEUCHOS_ASSERT(false); // not yet implemented
 }

@@ -460,7 +460,7 @@ namespace panzer {
       mesh_factory.completeMeshConstruction(*mesh,MPI_COMM_WORLD);
    }
 
-   mesh->setupTransientExodusFile("transient.exo"); 
+   mesh->setupExodusFile("transient.exo"); 
    
     // build worksets
     //////////////////////////////////////////////////////////////

@@ -80,7 +80,7 @@ public:
     Teuchos::RCP<const Vector<Real> > zptr = uz.get_2();
     const SimulatedVector<Real> &pu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*uptr);
     const RiskVector<Real> &rz = Teuchos::dyn_cast<const RiskVector<Real> >(*zptr);
-    Real t = rz.getStatistic(0);
+    Real t = (*rz.getStatistic(0))[0];
     Teuchos::RCP<const Vector<Real> > z = rz.getVector();
 
     std::vector<Real> param;
@@ -115,7 +115,7 @@ public:
     Teuchos::RCP<const Vector<Real> > xzptr = xuz.get_2();
     const SimulatedVector<Real> &pxu = Teuchos::dyn_cast<const SimulatedVector<Real> >(*xuptr);
     const RiskVector<Real> &rxz = Teuchos::dyn_cast<const RiskVector<Real> >(*xzptr);
-    Real xt = rxz.getStatistic(0);
+    Real xt = (*rxz.getStatistic(0))[0];
     Teuchos::RCP<const Vector<Real> > xz = rxz.getVector();
     // split g
     Vector_SimOpt<Real> &guz = Teuchos::dyn_cast<Vector_SimOpt<Real> >(g);
@@ -153,7 +153,7 @@ public:
     sampler_->sumAll(*tmp2, *gz);
     gz->scale(one/(one-alpha_));
     sampler_->sumAll(&tmpsum, &sum, 1);
-    rgz.setStatistic(one - (one/(one-alpha_))*sum);
+    rgz.setStatistic(one - (one/(one-alpha_))*sum,0);
   }
 
 /*

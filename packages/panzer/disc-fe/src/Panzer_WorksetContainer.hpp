@@ -53,10 +53,6 @@
 #include "Panzer_WorksetDescriptor.hpp" // what the workset is defined over
 #include "Panzer_WorksetNeeds.hpp"      // whats in a workset basis/integration rules
 
-#ifndef __KK__
-#define __KK__
-#endif
-
 namespace panzer {
 
 // forward declaration
@@ -147,6 +143,11 @@ public:
      */
    void addBasis(const std::string & type,int order,const std::string & rep_field);
 
+   /** Get the cell orientations used to build the basis values objects.
+     */
+   Teuchos::RCP<const std::vector<Intrepid2::Orientation> >  getOrientations() const
+   { return orientations_; }
+
    ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if 1
@@ -209,7 +210,6 @@ private:
      */
    void applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi);
 
-#if defined(__KK__)
    /** Using the stored global indexer, set the orientations for a volume workset on a
      * specified element block.
      */
@@ -222,7 +222,9 @@ private:
    void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations, 
                           const WorksetDescriptor & desc,
                           std::map<unsigned,Workset> & worksets) const;
-#endif
+
+   typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::vector<Workset> > > WorksetMap;
+   typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::map<unsigned,Workset> > > SideMap;
 
    /** Using the stored global indexer, set the orientations for a volume workset on a
      * specified element block.
@@ -233,9 +235,19 @@ private:
      */
    void applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & worksets) const;
 
-   // typedef std::map<std::string,Teuchos::RCP<std::vector<Workset> > > VolumeMap;
-   typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::vector<Workset> > > WorksetMap;
-   typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::map<unsigned,Workset> > > SideMap;
+   /** Set all the workset identifier in a vector.
+     *
+     * \param[in] wd       Workset descriptor, this defines the base point for the identifiers
+     * \param[in] worksets Set the unique identifiers on these worksets
+     */
+   void setIdentifiers(const WorksetDescriptor & wd,std::vector<Workset> & worksets);
+
+   /** Set all the workset identifier in a vector.
+     *
+     * \param[in] wd       Workset descriptor, this defines the base point for the identifiers
+     * \param[in] worksets Set the unique identifiers on these worksets
+     */
+   void setIdentifiers(const WorksetDescriptor & wd,std::map<unsigned,Workset> & wkstMap);
 
    Teuchos::RCP<const WorksetFactoryBase> wkstFactory_;      //! How to construct worksets
    std::map<std::string,WorksetNeeds> ebToNeeds_; //! Maps element blocks to input physics block objects
@@ -246,6 +258,8 @@ private:
    std::size_t worksetSize_;
 
    Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer_;
+
+   Teuchos::RCP<std::vector<Intrepid2::Orientation> >  orientations_;
 };
 
 /** Build a map of volume worksets from a list of element blocks. Note that this

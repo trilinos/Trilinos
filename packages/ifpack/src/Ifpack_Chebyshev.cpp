@@ -850,6 +850,9 @@ CG(const int MaximumIterations,
   IFPACK_CHK_ERR(-1);// NTS: This always seems to yield errors in AztecOO, ergo,
                      // I turned it off.
 
+  // Prevent build warning for unreachable statements.
+#if 0
+
   if(!UseBlockMode_) IFPACK_CHK_ERR(-1);
 
 #ifdef HAVE_IFPACK_AZTECOO
@@ -882,5 +885,7 @@ CG(const int MaximumIterations,
   cout << "in your configure script." << endl;
   IFPACK_CHK_ERR(-1);
 #endif
+
+#endif // 0
 }
-#endif
+#endif // HAVE_IFPACK_EPETRAEXT

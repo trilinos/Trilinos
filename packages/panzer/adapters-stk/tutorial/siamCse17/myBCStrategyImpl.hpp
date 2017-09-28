@@ -90,7 +90,7 @@ void
 MyBCStrategy<EvalT>::
 setup(
   const panzer::PhysicsBlock&   sidePB,
-  const Teuchos::ParameterList& userData)
+  const Teuchos::ParameterList& /* userData */)
 {
   using   std::runtime_error;
   using   Teuchos::is_null;
@@ -128,10 +128,10 @@ void
 MyBCStrategy<EvalT>::
 buildAndRegisterEvaluators(
   PHX::FieldManager<panzer::Traits>&                                 fm,
-  const panzer::PhysicsBlock&                                        pb,
-  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-  const Teuchos::ParameterList&                                      models,
-  const Teuchos::ParameterList&                                      userData)
+  const panzer::PhysicsBlock&                                        /* pb  */,
+  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& /* fac */,
+  const Teuchos::ParameterList&                                      /* mod */,
+  const Teuchos::ParameterList&                                      /* ud  */)
   const
 {
   using panzer::Constant;

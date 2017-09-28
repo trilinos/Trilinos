@@ -79,9 +79,8 @@ typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP, MODE_STATUS, MODE_AGGREGAT
 /* Debugging */
 //#define VERBOSE_OUTPUT
 
-/* Stuff for MATLAB R2006b vs. previous versions */
-#if(defined(MX_API_VER) && MX_API_VER >= 0x07030000)
-#else
+/* Compatibiliy with older version of MATLAB */
+#ifndef MWSIZE_MAX
 typedef int mwIndex;
 #endif
 

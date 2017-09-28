@@ -75,6 +75,8 @@ class QuadFixture
 
   QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny, const std::vector<std::string>& rank_names = std::vector<std::string>() );
 
+  QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny, const std::string& coordsName, const std::vector<std::string>& rank_names = std::vector<std::string>() );
+
   QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny, bool auraOn );
 
   ~QuadFixture() {}

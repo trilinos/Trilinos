@@ -53,19 +53,22 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
-#include "Tpetra_Details_copyOffsets.hpp"
+#include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
+#include "Tpetra_Details_copyOffsets.hpp"
+#include "Tpetra_Details_createMirrorView.hpp"
 #include "Tpetra_Details_getDiagCopyWithoutOffsets.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+
 //#include "Tpetra_Util.hpp" // comes in from Tpetra_CrsGraph_decl.hpp
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Kokkos_Sparse_getDiagCopy.hpp"
+#include "KokkosSparse_getDiagCopy.hpp"
 #include "Tpetra_Details_copyConvert.hpp"
 #include "Tpetra_Details_Environment.hpp"
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
-#include "Tpetra_Details_unpackCrsMatrix.hpp"
+#include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
 #include <typeinfo>
 #include <vector>
 
@@ -526,6 +529,59 @@ namespace Tpetra {
        "<const Map>, RCP<const Map>, local_graph_type[, RCP<ParameterList>]) "
        "did not produce a fill-complete graph.  Please report this bug to the "
        "Tpetra developers.");
+    // myGraph_ not null means that the matrix owns the graph.  This
+    // is true because the column indices come in as nonconst through
+    // the matrix, implying shared ownership.
+    myGraph_ = graph;
+    staticGraph_ = graph;
+    computeGlobalConstants ();
+
+    // Sanity checks at the end.
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillActive (), std::logic_error,
+      "We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillComplete (), std::logic_error,
+      "We're at the end of fillComplete(), but isFillComplete() is false.  "
+      "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+    checkInternalState ();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  CrsMatrix (const local_matrix_type& lclMatrix,
+             const Teuchos::RCP<const map_type>& rowMap,
+             const Teuchos::RCP<const map_type>& colMap,
+             const Teuchos::RCP<const map_type>& domainMap,
+             const Teuchos::RCP<const map_type>& rangeMap,
+             const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap),
+    lclMatrix_ (lclMatrix),
+    k_values1D_ (lclMatrix.values),
+    storageStatus_ (Details::STORAGE_1D_PACKED),
+    fillComplete_ (true),
+    frobNorm_ (-STM::one ())
+  {
+    const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
+      "RCP<const Map>, RCP<const Map>, RCP<const Map>, local_matrix_type[, "
+      "RCP<ParameterList>]): ";
+    Teuchos::RCP<crs_graph_type> graph;
+    try {
+      graph = Teuchos::rcp (new crs_graph_type (lclMatrix.graph, rowMap, colMap,
+                                                domainMap, rangeMap, params));
+    }
+    catch (std::exception& e) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
+         "RCP<const Map>, RCP<const Map>, RCP<const Map>, local_graph_type[, "
+         "RCP<ParameterList>]) threw an exception: " << e.what ());
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (!graph->isFillComplete (), std::logic_error, "CrsGraph constructor (RCP"
+       "<const Map>, RCP<const Map>, RCP<const Map>, RCP<const Map>, local_graph_type[, "
+       "RCP<ParameterList>]) did not produce a fill-complete graph.  Please report this "
+       "bug to the Tpetra developers.");
     // myGraph_ not null means that the matrix owns the graph.  This
     // is true because the column indices come in as nonconst through
     // the matrix, implying shared ownership.
@@ -1449,7 +1505,7 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "fillLocalMatrix (called from fillComplete): ";
 #endif // HAVE_TPETRA_DEBUG
-    ProfilingRegion regionFLM ("Tpetra::CrsGraph::fillLocalMatrix");
+    ProfilingRegion regionFLM ("Tpetra::CrsMatrix::fillLocalMatrix");
 
     const size_t lclNumRows = getNodeNumRows();
     const map_type& rowMap = * (getRowMap ());
@@ -4588,8 +4644,10 @@ namespace Tpetra {
       this->myGraph_->setDomainRangeMaps (domainMap, rangeMap);
 
       // Make the graph's column Map, if necessary.
-      if (! this->myGraph_->hasColMap ()) {
-        this->myGraph_->makeColMap ();
+      Teuchos::Array<int> remotePIDs (0);
+      const bool mustBuildColMap = ! this->hasColMap ();
+      if (mustBuildColMap) {
+        this->myGraph_->makeColMap (remotePIDs);
       }
 
       // Make indices local, if necessary.  The method won't do
@@ -4608,8 +4666,10 @@ namespace Tpetra {
       const bool merged = this->myGraph_->isMerged ();
       this->sortAndMergeIndicesAndValues (sorted, merged);
 
-      // Make the Import and Export, if they haven't been made already.
-      this->myGraph_->makeImportExport ();
+      // Make Import and Export objects, if they haven't been made
+      // already.  If we made a column Map above, reuse information
+      // from that process to avoid communiation in the Import setup.
+      this->myGraph_->makeImportExport (remotePIDs, mustBuildColMap);
       this->myGraph_->computeGlobalConstants ();
       this->myGraph_->fillComplete_ = true;
       this->myGraph_->checkInternalState ();
@@ -6155,32 +6215,32 @@ namespace Tpetra {
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  bool
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  useNewInterface ()
+  {
+    return true;
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  copyAndPermute (const SrcDistObject& source,
-                  size_t numSameIDs,
-                  const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-                  const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs)
+  copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& srcMat,
+                      const size_t numSameIDs,
+                      const LocalOrdinal permuteToLIDs[],
+                      const LocalOrdinal permuteFromLIDs[],
+                      const size_t numPermutes)
   {
     using Tpetra::Details::ProfilingRegion;
     using Teuchos::Array;
     using Teuchos::ArrayView;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    typedef node_type NT;
+#ifdef HAVE_TPETRA_DEBUG
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
-    const char tfecfFuncName[] = "copyAndPermute: ";
-    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermute");
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (permuteToLIDs.size () != permuteFromLIDs.size (),
-      std::invalid_argument, "permuteToLIDs.size() = " << permuteToLIDs.size ()
-      << "!= permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
-
-    // This dynamic cast should succeed, because we've already tested
-    // it in checkSizes().
-    typedef RowMatrix<Scalar, LO, GO, NT> row_matrix_type;
-    const row_matrix_type& srcMat = dynamic_cast<const row_matrix_type&> (source);
+    const char tfecfFuncName[] = "copyAndPermuteImpl: ";
+#endif // HAVE_TPETRA_DEBUG
+    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteImpl");
 
     const bool sourceIsLocallyIndexed = srcMat.isLocallyIndexed ();
     //
@@ -6236,7 +6296,7 @@ namespace Tpetra {
       }
 
       // Combine the data into the target matrix.
-      if (isStaticGraph()) {
+      if (this->isStaticGraph ()) {
         // Applying a permutation to a matrix with a static graph
         // means REPLACE-ing entries.
         combineGlobalValues (targetGID, rowIndsConstView, rowValsConstView, REPLACE);
@@ -6253,8 +6313,7 @@ namespace Tpetra {
     // Permute the remaining rows.
     //
     const map_type& tgtRowMap = * (this->getRowMap ());
-    const size_t numPermuteToLIDs = static_cast<size_t> (permuteToLIDs.size ());
-    for (size_t p = 0; p < numPermuteToLIDs; ++p) {
+    for (size_t p = 0; p < numPermutes; ++p) {
       const GO sourceGID = srcRowMap.getGlobalElement (permuteFromLIDs[p]);
       const GO targetGID = tgtRowMap.getGlobalElement (permuteToLIDs[p]);
 
@@ -6311,35 +6370,102 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  packAndPrepare (const SrcDistObject& source,
-                  const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                  Teuchos::Array<char>& exports,
-                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                  size_t& constantNumPackets,
-                  Distributor& distor)
+  copyAndPermuteNew (const SrcDistObject& srcObj,
+                     const size_t numSameIDs,
+                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
+                     const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
+  {
+    using Tpetra::Details::castAwayConstDualView;
+    using Tpetra::Details::ProfilingRegion;
+    typedef Kokkos::HostSpace host_mem_space;
+    using Teuchos::ArrayView;
+    typedef typename device_type::memory_space dev_mem_space;
+    // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
+    const char tfecfFuncName[] = "copyAndPermuteNew: ";
+    ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteNew");
+
+    const auto numPermute = permuteToLIDs.dimension_0 ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (numPermute != permuteFromLIDs.dimension_0 (),
+       std::invalid_argument, "permuteToLIDs.dimension_0() = "
+       << numPermute << "!= permuteFromLIDs.dimension_0() = "
+       << permuteFromLIDs.dimension_0 () << ".");
+
+    // We want to keep permuteToLIDs and permuteFromLIDs on device, if
+    // possible, but respect their current placement.  This is because
+    // DistObject might use their placement to decide where to pack
+    // and/or unpack.
+    const bool permuteToLIDs_sync_back =
+      permuteToLIDs.modified_device () >= permuteToLIDs.modified_host ();
+    auto permuteToLIDs_nc = castAwayConstDualView (permuteToLIDs);
+    permuteToLIDs_nc.template sync<host_mem_space> ();
+    auto permuteToLIDs_h = permuteToLIDs.template view<host_mem_space> ();
+
+    const bool permuteFromLIDs_sync_back =
+      permuteFromLIDs.modified_device () >= permuteFromLIDs.modified_host ();
+    auto permuteFromLIDs_nc = castAwayConstDualView (permuteFromLIDs);
+    permuteFromLIDs_nc.template sync<host_mem_space> ();
+    auto permuteFromLIDs_h = permuteFromLIDs.template view<host_mem_space> ();
+
+    // This dynamic cast should succeed, because we've already tested
+    // it in checkSizes().
+    typedef ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> RMT;
+    const RMT& srcMat = dynamic_cast<const RMT&> (srcObj);
+
+    this->copyAndPermuteImpl (srcMat, numSameIDs, permuteToLIDs_h.data (),
+                              permuteFromLIDs_h.data (), numPermute);
+
+    if (permuteToLIDs_sync_back) {
+      permuteToLIDs_nc.template sync<dev_mem_space> ();
+    }
+    if (permuteFromLIDs_sync_back) {
+      permuteFromLIDs_nc.template sync<dev_mem_space> ();
+    }
+  }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  packAndPrepareNew (const SrcDistObject& source,
+                     const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                     Kokkos::DualView<char*, buffer_device_type>& exports,
+                     const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                     size_t& constantNumPackets,
+                     Distributor& distor)
   {
     using Tpetra::Details::ProfilingRegion;
-    using Teuchos::Array;
-    using Teuchos::ArrayView;
-    using Teuchos::av_reinterpret_cast;
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MAX;
+    using Teuchos::reduceAll;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    const char tfecfFuncName[] = "packAndPrepare: ";
-    ProfilingRegion regionPAP ("Tpetra::CrsMatrix::packAndPrepare");
+    const char tfecfFuncName[] = "packAndPrepareNew: ";
+#ifdef HAVE_TPETRA_DEBUG
+    constexpr bool debug = true;
+#else
+    constexpr bool debug = false;
+#endif // HAVE_TPETRA_DEBUG
+    ProfilingRegion regionPAP ("Tpetra::CrsMatrix::packAndPrepareNew");
 
-    // Attempt to cast the source object to RowMatrix.  If the cast
-    // succeeds, use the source object's pack method to pack its data
-    // for communication.  If the source object is really a CrsMatrix,
-    // this will pick up the CrsMatrix's more efficient override.  If
-    // the RowMatrix cast fails, then the source object doesn't have
-    // the right type.
+    // Processes on which the communicator is null should not participate.
+    Teuchos::RCP<const Teuchos::Comm<int> > pComm = this->getComm ();
+    if (pComm.is_null ()) {
+      return;
+    }
+    const Teuchos::Comm<int>& comm = *pComm;
+
+    // Attempt to cast the source object to CrsMatrix.  If successful,
+    // use the source object's packNew() method to pack its data for
+    // communication.  Otherwise, attempt to cast to RowMatrix; if
+    // successful, use the source object's pack() method.  Otherwise,
+    // the source object doesn't have the right type.
     //
-    // FIXME (mfh 30 Jun 2013) We don't even need the RowMatrix to
-    // have the same Node type.  Unfortunately, we don't have a way to
-    // ask if the RowMatrix is "a RowMatrix with any Node type," since
-    // RowMatrix doesn't have a base class.  A hypothetical
-    // RowMatrixBase<Scalar, LO, GO> class, which does not currently
-    // exist, would satisfy this requirement.
+    // FIXME (mfh 30 Jun 2013, 11 Sep 2017) We don't even need the
+    // RowMatrix to have the same Node type.  Unfortunately, we don't
+    // have a way to ask if the RowMatrix is "a RowMatrix with any
+    // Node type," since RowMatrix doesn't have a base class.  A
+    // hypothetical RowMatrixBase<Scalar, LO, GO> class, which does
+    // not currently exist, would satisfy this requirement.
     //
     // Why RowMatrixBase<Scalar, LO, GO>?  The source object's Scalar
     // type doesn't technically need to match the target object's
@@ -6347,25 +6473,77 @@ namespace Tpetra {
     // and GO need not be the same, as long as there is no overflow of
     // the indices.  However, checking for index overflow is global
     // and therefore undesirable.
-    typedef RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
-    const row_matrix_type* srcRowMat =
-      dynamic_cast<const row_matrix_type*> (&source);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      srcRowMat == NULL, std::invalid_argument,
-      "The source object of the Import or Export operation is neither a "
-      "CrsMatrix (with the same template parameters as the target object), "
-      "nor a RowMatrix (with the same first four template parameters as the "
-      "target object).");
-#ifdef HAVE_TPETRA_DEBUG
-    {
-      using Teuchos::reduceAll;
 
-      const Teuchos::Comm<int>& comm = * (this->getComm ());
-      std::ostringstream msg;
-      int lclBad = 0;
-      int gblBad = 0; // output argument; to be set below
+    std::ostringstream msg; // for collecting error messages
+    int lclBad = 0; // to be set below
+
+    typedef CrsMatrix<Scalar, LO, GO, Node, classic> crs_matrix_type;
+    const crs_matrix_type* srcCrsMat =
+      dynamic_cast<const crs_matrix_type*> (&source);
+    if (srcCrsMat != NULL) {
       try {
-        srcRowMat->pack (exportLIDs, exports, numPacketsPerLID,
+        srcCrsMat->packNew (exportLIDs, exports, numPacketsPerLID,
+                            constantNumPackets, distor);
+      }
+      catch (std::exception& e) {
+        const int myRank = comm.getRank ();
+        lclBad = 1;
+        msg << "Proc " << myRank << ": " << e.what () << std::endl;
+      }
+    }
+    else {
+      using Tpetra::Details::castAwayConstDualView;
+      using Kokkos::HostSpace;
+      using Kokkos::subview;
+      typedef Kokkos::DualView<char*, buffer_device_type> exports_type;
+      typedef Kokkos::pair<size_t, size_t> range_type;
+
+      typedef RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
+      const row_matrix_type* srcRowMat =
+        dynamic_cast<const row_matrix_type*> (&source);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (srcRowMat == NULL, std::invalid_argument,
+         "The source object of the Import or Export operation is neither a "
+         "CrsMatrix (with the same template parameters as the target object), "
+         "nor a RowMatrix (with the same first four template parameters as the "
+         "target object).");
+
+      // For the RowMatrix case, we need to convert from
+      // Kokkos::DualView to Teuchos::Array*.  This doesn't need to be
+      // so terribly efficient, since packing a non-CrsMatrix
+      // RowMatrix for Import/Export into a CrsMatrix is not a
+      // critical case.  Thus, we may allocate Teuchos::Array objects
+      // here and copy to and from Kokkos::*View.
+
+      // Sync exportLIDs to host, and view its host data as a Teuchos::ArrayView.
+      {
+        auto exportLIDs_nc = castAwayConstDualView (exportLIDs);
+        exportLIDs_nc.template sync<HostSpace> ();
+      }
+      auto exportLIDs_h = exportLIDs.template view<HostSpace> ();
+      Teuchos::ArrayView<const LO> exportLIDs_av (exportLIDs_h.data (),
+                                                  exportLIDs_h.size ());
+
+      // pack() will allocate exports_a as needed.  We'll copy back
+      // into exports (after (re)allocating exports if needed) below.
+      Teuchos::Array<char> exports_a;
+
+      // View exportLIDs' host data as a Teuchos::ArrayView.  We don't
+      // need to sync, since we're doing write-only access, but we do
+      // need to mark the DualView as modified on host.
+      {
+        auto numPacketsPerLID_nc = numPacketsPerLID; // const DV& -> DV
+        numPacketsPerLID_nc.modified_device() = 0; // write-only host access
+        numPacketsPerLID_nc.modified_host() = 1;
+      }
+      auto numPacketsPerLID_h = numPacketsPerLID.template view<HostSpace> ();
+      Teuchos::ArrayView<size_t> numPacketsPerLID_av (numPacketsPerLID_h.data (),
+                                                      numPacketsPerLID_h.size ());
+
+      // Invoke RowMatrix's legacy pack() interface, using above
+      // Teuchos::Array* objects.
+      try {
+        srcRowMat->pack (exportLIDs_av, exports_a, numPacketsPerLID_av,
                          constantNumPackets, distor);
       }
       catch (std::exception& e) {
@@ -6373,129 +6551,218 @@ namespace Tpetra {
         lclBad = 1;
         msg << "Proc " << myRank << ": " << e.what () << std::endl;
       }
-      reduceAll<int, int> (comm, Teuchos::REDUCE_MAX,
-                           lclBad, Teuchos::outArg (gblBad));
+
+      // Allocate 'exports', and copy exports_a back into it.
+      const size_t newAllocSize = static_cast<size_t> (exports_a.size ());
+      if (static_cast<size_t> (exports.dimension_0 ()) < newAllocSize) {
+        const std::string oldLabel = exports.d_view.label ();
+        const std::string newLabel = (oldLabel == "") ? "exports" : oldLabel;
+        exports = exports_type (newLabel, newAllocSize);
+      }
+      // It's safe to assume that we're working on host anyway, so
+      // just keep exports sync'd to host.
+      exports.modified_device() = 0; // ignore current device contents
+      exports.modified_host() = 1;
+
+      auto exports_h = exports.template view<HostSpace> ();
+      auto exports_h_sub = subview (exports_h, range_type (0, newAllocSize));
+
+      // Kokkos::deep_copy needs a Kokkos::View input, so turn
+      // exports_a into a nonowning Kokkos::View first before copying.
+      typedef typename exports_type::t_host::execution_space HES;
+      typedef Kokkos::Device<HES, HostSpace> host_device_type;
+      Kokkos::View<const char*, host_device_type>
+        exports_a_kv (exports_a.getRawPtr (), newAllocSize);
+      Kokkos::deep_copy (exports_h_sub, exports_a_kv);
+    }
+
+    if (debug) {
+      int gblBad = 0; // output argument; to be set below
+      reduceAll<int, int> (comm, REDUCE_MAX, lclBad, outArg (gblBad));
       if (gblBad != 0) {
         Tpetra::Details::gathervPrint (std::cerr, msg.str (), comm);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::logic_error, "pack() threw an exception on one or "
-           "more participating processes.");
+          (true, std::logic_error, "packNew() or pack() threw an exception on "
+           "one or more participating processes.");
       }
-    }
-#else
-    srcRowMat->pack (exportLIDs, exports, numPacketsPerLID,
-                     constantNumPackets, distor);
-#endif // HAVE_TPETRA_DEBUG
-  }
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  bool
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  packRow (char* const numEntOut,
-           char* const valOut,
-           char* const indOut,
-           const size_t numEnt,
-           const LocalOrdinal lclRow) const
-  {
-    using Teuchos::ArrayView;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-
-    const LO numEntLO = static_cast<LO> (numEnt);
-    memcpy (numEntOut, &numEntLO, sizeof (LO));
-    if (this->isLocallyIndexed ()) {
-      // If the matrix is locally indexed on the calling process, we
-      // have to use its column Map (which it _must_ have in this
-      // case) to convert to global indices.
-      ArrayView<const LO> indIn;
-      ArrayView<const Scalar> valIn;
-      this->getLocalRowView (lclRow, indIn, valIn);
-      const map_type& colMap = * (this->getColMap ());
-      // Copy column indices one at a time, so that we don't need
-      // temporary storage.
-      for (size_t k = 0; k < numEnt; ++k) {
-        const GO gblIndIn = colMap.getGlobalElement (indIn[k]);
-        memcpy (indOut + k * sizeof (GO), &gblIndIn, sizeof (GO));
-      }
-      memcpy (valOut, valIn.getRawPtr (), numEnt * sizeof (Scalar));
-    }
-    else if (this->isGloballyIndexed ()) {
-      // If the matrix is globally indexed on the calling process,
-      // then we can use the column indices directly.  However, we
-      // have to get the global row index.  The calling process must
-      // have a row Map, since otherwise it shouldn't be participating
-      // in packing operations.
-      ArrayView<const GO> indIn;
-      ArrayView<const Scalar> valIn;
-      const map_type& rowMap = * (this->getRowMap ());
-      const GO gblRow = rowMap.getGlobalElement (lclRow);
-      this->getGlobalRowView (gblRow, indIn, valIn);
-      memcpy (indOut, indIn.getRawPtr (), numEnt * sizeof (GO));
-      memcpy (valOut, valIn.getRawPtr (), numEnt * sizeof (Scalar));
     }
     else {
-      if (numEnt != 0) {
-        return false;
-      }
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (lclBad != 0, std::logic_error, "packNew threw an exception on one "
+         "or more participating processes.  Here is this process' error "
+         "message: " << msg.str ());
     }
-    return true;
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
-  bool
+  size_t
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  unpackRow (impl_scalar_type* const valInTmp,
-             GlobalOrdinal* const indInTmp,
-             const size_t tmpSize,
-             const char* const valIn,
-             const char* const indIn,
-             const size_t numEnt,
-             const LocalOrdinal lclRow,
-             const Tpetra::CombineMode combineMode)
+  packRow (char exports[],
+           const size_t offset,
+           const size_t numEnt,
+           const GlobalOrdinal gidsIn[],
+           const impl_scalar_type valsIn[],
+           const size_t numBytesPerValue) const
   {
-    if (tmpSize < numEnt || (numEnt != 0 && (valInTmp == NULL || indInTmp == NULL))) {
-      return false;
+    using Kokkos::View;
+    using Kokkos::subview;
+    using Tpetra::Details::PackTraits;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef impl_scalar_type ST;
+    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
+
+    if (numEnt == 0) {
+      // Empty rows always take zero bytes, to ensure sparsity.
+      return 0;
     }
-    memcpy (valInTmp, valIn, numEnt * sizeof (Scalar));
-    memcpy (indInTmp, indIn, numEnt * sizeof (GlobalOrdinal));
 
-    // FIXME (mfh 23 Mar 2017) It would make sense to use the return
-    // value here as more than just a "did it succeed" Boolean test.
+    const GO gid = 0; // packValueCount wants this
+    const LO numEntLO = static_cast<size_t> (numEnt);
 
-    // FIXME (mfh 23 Mar 2017) CrsMatrix_NonlocalSumInto_Ignore test
-    // expects this method to ignore incoming entries that do not
-    // exist on the process that owns those rows.  We would like to
-    // distinguish between "errors" resulting from ignored entries,
-    // vs. actual errors.
+    const size_t numEntBeg = offset;
+    const size_t numEntLen = PackTraits<LO, HES>::packValueCount (numEntLO);
+    const size_t gidsBeg = numEntBeg + numEntLen;
+    const size_t gidsLen = numEnt * PackTraits<GO, HES>::packValueCount (gid);
+    const size_t valsBeg = gidsBeg + gidsLen;
+    const size_t valsLen = numEnt * numBytesPerValue;
 
-    //const LocalOrdinal numModified =
-      this->combineGlobalValuesRaw (lclRow, numEnt, valInTmp, indInTmp,
-                                    combineMode);
-    return true; // FIXME (mfh 23 Mar 2013) See above.
-    //return numModified == numEnt;
+    char* const numEntOut = exports + numEntBeg;
+    char* const gidsOut = exports + gidsBeg;
+    char* const valsOut = exports + valsBeg;
+
+    size_t numBytesOut = 0;
+    int errorCode = 0;
+    numBytesOut += PackTraits<LO, HES>::packValue (numEntOut, numEntLO);
+
+    {
+      Kokkos::pair<int, size_t> p;
+      p = PackTraits<GO, HES>::packArray (gidsOut, gidsIn, numEnt);
+      errorCode += p.first;
+      numBytesOut += p.second;
+
+      p = PackTraits<ST, HES>::packArray (valsOut, valsIn, numEnt);
+      errorCode += p.first;
+      numBytesOut += p.second;
+    }
+
+    const size_t expectedNumBytes = numEntLen + gidsLen + valsLen;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (numBytesOut != expectedNumBytes, std::logic_error, "packRow: "
+       "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
+       << expectedNumBytes << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (errorCode != 0, std::runtime_error, "packRow: "
+       "PackTraits::packArray returned a nonzero error code");
+
+    return numBytesOut;
   }
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  size_t
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  unpackRow (GlobalOrdinal gidsOut[],
+             impl_scalar_type valsOut[],
+             const char imports[],
+             const size_t offset,
+             const size_t numBytes,
+             const size_t numEnt,
+             const size_t numBytesPerValue)
+  {
+    using Kokkos::View;
+    using Kokkos::subview;
+    using Tpetra::Details::PackTraits;
+    typedef LocalOrdinal LO;
+    typedef GlobalOrdinal GO;
+    typedef impl_scalar_type ST;
+    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
+
+    if (numBytes == 0) {
+      // Rows with zero bytes always have zero entries.
+      return 0;
+    }
+
+    const GO gid = 0; // packValueCount wants this
+    const LO lid = 0; // packValueCount wants this
+
+    const size_t numEntBeg = offset;
+    const size_t numEntLen = PackTraits<LO, HES>::packValueCount (lid);
+    const size_t gidsBeg = numEntBeg + numEntLen;
+    const size_t gidsLen = numEnt * PackTraits<GO, HES>::packValueCount (gid);
+    const size_t valsBeg = gidsBeg + gidsLen;
+    const size_t valsLen = numEnt * numBytesPerValue;
+
+    const char* const numEntIn = imports + numEntBeg;
+    const char* const gidsIn = imports + gidsBeg;
+    const char* const valsIn = imports + valsBeg;
+
+    size_t numBytesOut = 0;
+    int errorCode = 0;
+    LO numEntOut;
+    numBytesOut += PackTraits<LO, HES>::unpackValue (numEntOut, numEntIn);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
+       "unpackRow: Expected number of entries " << numEnt
+       << " != actual number of entries " << numEntOut << ".");
+
+    {
+      Kokkos::pair<int, size_t> p;
+      p = PackTraits<GO, HES>::unpackArray (gidsOut, gidsIn, numEnt);
+      errorCode += p.first;
+      numBytesOut += p.second;
+
+      p = PackTraits<ST, HES>::unpackArray (valsOut, valsIn, numEnt);
+      errorCode += p.first;
+      numBytesOut += p.second;
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (numBytesOut != numBytes, std::logic_error, "unpackRow: numBytesOut = "
+       << numBytesOut << " != numBytes = " << numBytes << ".");
+
+    const size_t expectedNumBytes = numEntLen + gidsLen + valsLen;
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (numBytesOut != expectedNumBytes, std::logic_error, "unpackRow: "
+       "numBytesOut = " << numBytesOut << " != expectedNumBytes = "
+       << expectedNumBytes << ".");
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (errorCode != 0, std::runtime_error, "unpackRow: "
+       "PackTraits::unpackArray returned a nonzero error code");
+
+    return numBytesOut;
+  }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  allocatePackSpace (Teuchos::Array<char>& exports,
-                     size_t& totalNumEntries,
-                     const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs) const
+  allocatePackSpaceNew (Kokkos::DualView<char*, buffer_device_type>& exports,
+                        size_t& totalNumEntries,
+                        const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs) const
   {
     typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    //const char tfecfFuncName[] = "allocatePackSpace: ";
+    //const char tfecfFuncName[] = "allocatePackSpaceNew: ";
 
     // The number of export LIDs must fit in LocalOrdinal, assuming
     // that the LIDs are distinct and valid on the calling process.
-    const LO numExportLIDs = static_cast<LO> (exportLIDs.size ());
+    const LO numExportLIDs = static_cast<LO> (exportLIDs.dimension_0 ());
+
+    // We need to access exportLIDs on host, but Kokkos forbids
+    // sync'ing of a DualView of const.  We won't modify the entries,
+    // so it's fair to leave it const, except for sync'ing it.
+    {
+      Kokkos::DualView<local_ordinal_type*, device_type> exportLIDs_nc =
+        Tpetra::Details::castAwayConstDualView (exportLIDs);
+      exportLIDs_nc.template sync<Kokkos::HostSpace> ();
+    }
+    auto exportLIDs_h = exportLIDs.template view<Kokkos::HostSpace> ();
 
     // Count the total number of matrix entries to send.
     totalNumEntries = 0;
     for (LO i = 0; i < numExportLIDs; ++i) {
-      const LO lclRow = exportLIDs[i];
+      const LO lclRow = exportLIDs_h[i];
       size_t curNumEntries = this->getNumEntriesInLocalRow (lclRow);
       // FIXME (mfh 25 Jan 2015) We should actually report invalid row
       // indices as an error.  Just consider them nonowned for now.
@@ -6516,84 +6783,60 @@ namespace Tpetra {
     const size_t allocSize =
       static_cast<size_t> (numExportLIDs) * sizeof (LO) +
       totalNumEntries * (sizeof (IST) + sizeof (GO));
-    if (static_cast<size_t> (exports.size ()) < allocSize) {
-      exports.resize (allocSize);
+    if (static_cast<size_t> (exports.dimension_0 ()) < allocSize) {
+      typedef Kokkos::DualView<char*, buffer_device_type> exports_type;
+
+      const std::string oldLabel = exports.d_view.label ();
+      const std::string newLabel = (oldLabel == "") ? "exports" : oldLabel;
+      exports = exports_type (newLabel, allocSize);
     }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-        Teuchos::Array<char>& exports,
-        const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-        size_t& constantNumPackets,
-        Distributor& dist) const
+  packNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+           Kokkos::DualView<char*, buffer_device_type>& exports,
+           const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+           size_t& constantNumPackets,
+           Distributor& dist) const
   {
-    using Details::packCrsMatrix;
-
+    // The call to packNew in packAndPrepareNew catches and handles any exceptions.
     if (this->isStaticGraph ()) {
-      const map_type& colMap = * (this->staticGraph_->colMap_);
-      const auto lclColMap = colMap.getLocalMap ();
-      const int myRank =
-        colMap.getComm ().is_null () ? 0 : colMap.getComm ()->getRank ();
-      std::unique_ptr<std::string> errStr;
-#ifdef HAVE_TPETRA_DEBUG
-      using Teuchos::outArg;
-      using Teuchos::REDUCE_MIN;
-      using Teuchos::reduceAll;
-      const bool locallyCorrect =
-        packCrsMatrix (this->lclMatrix_, lclColMap, errStr,
-                       exports, numPacketsPerLID, constantNumPackets,
-                       exportLIDs, myRank, dist);
-      const int lclOK = locallyCorrect ? 1 : 0;
-      int gblOK = 1; // output argument
-      if (! colMap.getComm ().is_null ()) {
-        reduceAll<int, int> (* (colMap.getComm ()), REDUCE_MIN,
-                             lclOK, outArg (gblOK));
-        if (gblOK != 1) {
-          std::ostringstream out;
-          if (colMap.getComm ()->getRank () == 0) {
-            out << "Error in packCrsMatrix!" << std::endl;
-          }
-          using ::Tpetra::Details::gathervPrint;
-          const std::string errStr2 =
-            errStr.get () == NULL ? std::string ("") : *errStr;
-          gathervPrint (out, errStr2, * (colMap.getComm ()));
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, out.str ());
-        }
-      }
-#else // NOT HAVE_TPETRA_DEBUG
-      (void) packCrsMatrix (this->lclMatrix_, lclColMap, errStr,
-                            exports, numPacketsPerLID, constantNumPackets,
-                            exportLIDs, myRank, dist);
-#endif // HAVE_TPETRA_DEBUG
+      using Details::packCrsMatrixNew;
+      packCrsMatrixNew (*this, exports, numPacketsPerLID, exportLIDs,
+                        constantNumPackets, dist);
     }
     else {
-      this->packNonStatic (exportLIDs, exports, numPacketsPerLID,
-                           constantNumPackets, dist);
+      this->packNonStaticNew (exportLIDs, exports, numPacketsPerLID,
+                              constantNumPackets, dist);
     }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  packNonStatic (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                 Teuchos::Array<char>& exports,
-                 const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                 size_t& constantNumPackets,
-                 Distributor& distor) const
+  packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                    Kokkos::DualView<char*, buffer_device_type>& exports,
+                    const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                    size_t& constantNumPackets,
+                    Distributor& distor) const
   {
-    typedef impl_scalar_type IST;
+    using Kokkos::View;
+    using Tpetra::Details::PackTraits;
+    using Tpetra::Details::create_mirror_view_from_raw_host_array;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
-    const char tfecfFuncName[] = "pack: ";
+    typedef impl_scalar_type ST;
+    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
+    const char tfecfFuncName[] = "packNonStaticNew: ";
 
-    const size_t numExportLIDs = static_cast<size_t> (exportLIDs.size ());
+    const size_t numExportLIDs = static_cast<size_t> (exportLIDs.dimension_0 ());
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (numExportLIDs != static_cast<size_t> (numPacketsPerLID.size ()),
+      (numExportLIDs != static_cast<size_t> (numPacketsPerLID.dimension_0 ()),
        std::invalid_argument, "exportLIDs.size() = " << numExportLIDs
-       << " != numPacketsPerLID.size() = " << numPacketsPerLID.size () << ".");
+       << " != numPacketsPerLID.size() = " << numPacketsPerLID.dimension_0 ()
+       << ".");
 
     // Setting this to zero tells the caller to expect a possibly
     // different ("nonconstant") number of packets per local index
@@ -6604,29 +6847,28 @@ namespace Tpetra {
     // unallocated.  Do the first two parts of "Count, allocate, fill,
     // compute."
     size_t totalNumEntries = 0;
-    this->allocatePackSpace (exports, totalNumEntries, exportLIDs);
-    const size_t bufSize = static_cast<size_t> (exports.size ());
+    this->allocatePackSpaceNew (exports, totalNumEntries, exportLIDs);
+    const size_t bufSize = static_cast<size_t> (exports.dimension_0 ());
+
+    // Write-only host access
+    exports.modified_device() = 0;
+    exports.modified_host() = 1;
+    auto exports_h = exports.template view<Kokkos::HostSpace> ();
+
+    // Read-only host access
+    auto exportLIDs_h = exportLIDs.template view<Kokkos::HostSpace> ();
+
+    // Write-only host access
+    numPacketsPerLID.modified_device() = 0;
+    numPacketsPerLID.modified_host() = 1;
+    auto numPacketsPerLID_h = numPacketsPerLID.template view<Kokkos::HostSpace> ();
 
     // Compute the number of "packets" (in this case, bytes) per
     // export LID (in this case, local index of the row to send), and
     // actually pack the data.
-    //
-    // FIXME (mfh 24 Feb 2013, 25 Jan 2015) This code is only correct
-    // if sizeof(Scalar) is a meaningful representation of the amount
-    // of data in a Scalar instance.  (LO and GO are always built-in
-    // integer types.)
-
-    // Variables for error reporting in the loop.
-    size_t firstBadIndex = 0; // only valid if outOfBounds == true.
-    size_t firstBadOffset = 0;   // only valid if outOfBounds == true.
-    size_t firstBadNumBytes = 0; // only valid if outOfBounds == true.
-    bool outOfBounds = false;
-    bool packErr = false;
-
-    char* const exportsRawPtr = exports.getRawPtr ();
     size_t offset = 0; // current index into 'exports' array.
     for (size_t i = 0; i < numExportLIDs; ++i) {
-      const LO lclRow = exportLIDs[i];
+      const LO lclRow = exportLIDs_h[i];
 
       size_t numEnt;
       numEnt = this->getNumEntriesInLocalRow (lclRow);
@@ -6636,48 +6878,70 @@ namespace Tpetra {
       // number of packets, and will know that zero packets means zero
       // entries.
       if (numEnt == 0) {
-        numPacketsPerLID[i] = 0;
+        numPacketsPerLID_h[i] = 0;
+        continue;
       }
-      else {
-        char* const numEntBeg = exportsRawPtr + offset;
-        char* const numEntEnd = numEntBeg + sizeof (LO);
-        char* const valBeg = numEntEnd;
-        char* const valEnd = valBeg + numEnt * sizeof (Scalar);
-        char* const indBeg = valEnd;
-        const size_t numBytes = sizeof (LO) +
-          numEnt * (sizeof (IST) + sizeof (GO));
-        if (offset > bufSize || offset + numBytes > bufSize) {
-          firstBadIndex = i;
-          firstBadOffset = offset;
-          firstBadNumBytes = numBytes;
-          outOfBounds = true;
-          break;
-        }
-        packErr = ! this->packRow (numEntBeg, valBeg, indBeg, numEnt, lclRow);
-        if (packErr) {
-          firstBadIndex = i;
-          firstBadOffset = offset;
-          firstBadNumBytes = numBytes;
-          break;
-        }
-        // numPacketsPerLID[i] is the number of "packets" in the
-        // current local row i.  Packet=char (really "byte") so use
-        // the number of bytes of the packed data for that row.
-        numPacketsPerLID[i] = numBytes;
-        offset += numBytes;
-      }
-    }
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      outOfBounds, std::logic_error, "First invalid offset into 'exports' "
-      "pack buffer at index i = " << firstBadIndex << ".  exportLIDs[i]: "
-      << exportLIDs[firstBadIndex] << ", bufSize: " << bufSize << ", offset: "
-      << firstBadOffset << ", numBytes: " << firstBadNumBytes << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      packErr, std::logic_error, "First error in packRow() at index i = "
-      << firstBadIndex << ".  exportLIDs[i]: " << exportLIDs[firstBadIndex]
-      << ", bufSize: " << bufSize << ", offset: " << firstBadOffset
-      << ", numBytes: " << firstBadNumBytes << ".");
+      // Temporary buffer for global column indices.
+      View<GO*, HES> gidsIn_k;
+      {
+        GO gid = 0;
+        gidsIn_k = PackTraits<GO, HES>::allocateArray(gid, numEnt, "gids");
+      }
+
+      Teuchos::ArrayView<const Scalar> valsIn;
+      if (this->isLocallyIndexed ()) {
+        // If the matrix is locally indexed on the calling process, we
+        // have to use its column Map (which it _must_ have in this
+        // case) to convert to global indices.
+        Teuchos::ArrayView<const LO> lidsIn;
+        this->getLocalRowView (lclRow, lidsIn, valsIn);
+        const map_type& colMap = * (this->getColMap ());
+        for (size_t k = 0; k < numEnt; ++k) {
+          gidsIn_k[k] = colMap.getGlobalElement (lidsIn[k]);
+        }
+      }
+      else if (this->isGloballyIndexed ()) {
+        // If the matrix is globally indexed on the calling process,
+        // then we can use the column indices directly.  However, we
+        // have to get the global row index.  The calling process must
+        // have a row Map, since otherwise it shouldn't be participating
+        // in packing operations.
+        Teuchos::ArrayView<const GO> gblIndView;;
+        const map_type& rowMap = * (this->getRowMap ());
+        const GO gblRow = rowMap.getGlobalElement (lclRow);
+        this->getGlobalRowView (gblRow, gblIndView, valsIn);
+        for (size_t k = 0; k < numEnt; ++k) {
+          gidsIn_k[k] = gblIndView[k];
+        }
+      }
+      // mfh 11 Sep 2017: Currently, if the matrix is neither globally
+      // nor locally indexed, then it has no entries.  Therefore,
+      // there is nothing to pack.  No worries!
+
+      typename HES::device_type outputDevice;
+      auto valsIn_k =
+        create_mirror_view_from_raw_host_array (outputDevice,
+                                                reinterpret_cast<const ST*> (valsIn.getRawPtr ()),
+                                                valsIn.size (),
+                                                true, "valsIn");
+      const size_t numBytesPerValue =
+        PackTraits<ST,HES>::packValueCount (valsIn[0]);
+      const size_t numBytes =
+        this->packRow (exports_h.data (), offset, numEnt, gidsIn_k.data (),
+                       valsIn_k.data (), numBytesPerValue);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (offset > bufSize || offset + numBytes > bufSize, std::logic_error,
+         "First invalid offset into 'exports' pack buffer at index i = " << i
+         << ".  exportLIDs_h[i]: " << exportLIDs_h[i] << ", bufSize: " <<
+         bufSize << ", offset: " << offset << ", numBytes: " << numBytes <<
+         ".");
+      // numPacketsPerLID_h[i] is the number of "packets" in the
+      // current local row i.  Packet=char (really "byte") so use the
+      // number of bytes of the packed data for that row.
+      numPacketsPerLID_h[i] = numBytes;
+      offset += numBytes;
+    }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -6704,7 +6968,6 @@ namespace Tpetra {
     this->combineGlobalValues (gblRow, cols_av, vals_av, combineMode);
     return numEnt;
   }
-
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
@@ -6796,52 +7059,55 @@ namespace Tpetra {
     }
   }
 
-
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-                    const Teuchos::ArrayView<const char>& imports,
-                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                    size_t constantNumPackets,
-                    Distributor& distor,
-                    CombineMode combineMode)
+  unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+                       const Kokkos::DualView<const char*, buffer_device_type>& imports,
+                       const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+                       const size_t constantNumPackets,
+                       Distributor& distor,
+                       const CombineMode combineMode)
   {
     using Tpetra::Details::ProfilingRegion;
-    ProfilingRegion regionUAC ("Tpetra::CrsMatrix::unpackAndCombine");
+#ifdef HAVE_TPETRA_DEBUG
+    constexpr bool debug = true;
+#else
+    constexpr bool debug = false;
+#endif // HAVE_TPETRA_DEBUG
+    ProfilingRegion regionUAC ("Tpetra::CrsMatrix::unpackAndCombineNew");
 
-    if (combineMode == ZERO)   {
+    if (combineMode == ZERO) {
       return; // nothing to do
     }
 
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "unpackAndCombine: ";
-    const CombineMode validModes[4] = {ADD, REPLACE, ABSMAX, INSERT};
-    const char* validModeNames[4] = {"ADD", "REPLACE", "ABSMAX", "INSERT"};
-    const int numValidModes = 4;
+    if (debug) {
+      const char tfecfFuncName[] = "unpackAndCombineNew: ";
+      const CombineMode validModes[4] = {ADD, REPLACE, ABSMAX, INSERT};
+      const char* validModeNames[4] = {"ADD", "REPLACE", "ABSMAX", "INSERT"};
+      const int numValidModes = 4;
 
-    if (std::find (validModes, validModes+numValidModes, combineMode) ==
-        validModes+numValidModes) {
-      std::ostringstream os;
-      os << "Invalid combine mode.  Valid modes are {";
-      for (int k = 0; k < numValidModes; ++k) {
-        os << validModeNames[k];
-        if (k < numValidModes - 1) {
-          os << ", ";
+      if (std::find (validModes, validModes+numValidModes, combineMode) ==
+          validModes+numValidModes) {
+        std::ostringstream os;
+        os << "Invalid combine mode.  Valid modes are {";
+        for (int k = 0; k < numValidModes; ++k) {
+          os << validModeNames[k];
+          if (k < numValidModes - 1) {
+            os << ", ";
+          }
         }
+        os << "}.";
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::invalid_argument, os.str ());
       }
-      os << "}.";
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        true, std::invalid_argument, os.str ());
-    }
 
-    {
       using Teuchos::reduceAll;
       std::unique_ptr<std::ostringstream> msg (new std::ostringstream ());
       int lclBad = 0;
       try {
-        this->unpackAndCombineImpl (importLIDs, imports, numPacketsPerLID,
-                                    constantNumPackets, distor, combineMode);
+        this->unpackAndCombineNewImpl (importLIDs, imports, numPacketsPerLID,
+                                       constantNumPackets, distor, combineMode);
       } catch (std::exception& e) {
         lclBad = 1;
         *msg << e.what ();
@@ -6858,181 +7124,210 @@ namespace Tpetra {
         msg = std::unique_ptr<std::ostringstream> (new std::ostringstream ());
         ::Tpetra::Details::gathervPrint (*msg, os.str (), comm);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::logic_error, std::endl << "unpackAndCombineImpl() threw "
+          (true, std::logic_error, std::endl << "unpackAndCombineNewImpl() threw "
            "an exception on one or more participating processes:" << std::endl
            << msg->str ());
       }
     }
-#else
-    this->unpackAndCombineImpl (importLIDs, imports, numPacketsPerLID,
-                                constantNumPackets, distor, combineMode);
-#endif // HAVE_TPETRA_DEBUG
+    else {
+      this->unpackAndCombineNewImpl (importLIDs, imports, numPacketsPerLID,
+                                     constantNumPackets, distor, combineMode);
+    }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  unpackAndCombineImpl (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-                        const Teuchos::ArrayView<const char>& imports,
-                        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-                        size_t constantNumPackets,
-                        Distributor & distor,
-                        CombineMode combineMode,
-                        const bool atomic)
+  unpackAndCombineNewImpl (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
+                           const Kokkos::DualView<const char*, buffer_device_type>& imports,
+                           const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+                           const size_t constantNumPackets,
+                           Distributor & distor,
+                           const CombineMode combineMode,
+                           const bool atomic)
   {
-    if (this->isStaticGraph()) {
-      using Details::unpackCrsMatrixAndCombine;
-      const map_type& colMap = * (this->staticGraph_->colMap_);
-      const auto lclColMap = colMap.getLocalMap ();
-      const Teuchos::Comm<int>& comm = * (this->getComm ());
-      const int myRank = comm.getRank ();
-      std::unique_ptr<std::string> errStr;
-      bool locallyCorrect = unpackCrsMatrixAndCombine (
-          this->lclMatrix_, lclColMap, errStr, importLIDs, imports,
-          numPacketsPerLID, constantNumPackets, myRank, distor, combineMode, atomic);
-      TEUCHOS_TEST_FOR_EXCEPTION(!locallyCorrect, std::runtime_error, *errStr);
+    // Exception are caught and handled upstream, so we just call the
+    // implementations directly.
+    if (this->isStaticGraph ()) {
+      using Details::unpackCrsMatrixAndCombineNew;
+      unpackCrsMatrixAndCombineNew (*this, imports, numPacketsPerLID,
+                                    importLIDs, constantNumPackets,
+                                    distor, combineMode, atomic);
     }
     else {
-      this->unpackAndCombineImplNonStatic (importLIDs, imports, numPacketsPerLID,
-                                           constantNumPackets, distor, combineMode);
+      this->unpackAndCombineNewImplNonStatic (importLIDs, imports,
+                                              numPacketsPerLID,
+                                              constantNumPackets,
+                                              distor, combineMode);
     }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  unpackAndCombineImplNonStatic (
-      const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-      const Teuchos::ArrayView<const char>& imports,
-      const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-      size_t constantNumPackets,
-      Distributor & /* distor */,
-      CombineMode combineMode)
+  unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
+                                    const Kokkos::DualView<const char*, buffer_device_type>& imports,
+                                    const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+                                    const size_t constantNumPackets,
+                                    Distributor& distor,
+                                    const CombineMode combineMode)
   {
-    typedef impl_scalar_type IST;
+    using Kokkos::View;
+    using Kokkos::subview;
+    using Kokkos::MemoryUnmanaged;
+    using Tpetra::Details::castAwayConstDualView;
+    using Tpetra::Details::create_mirror_view_from_raw_host_array;
+    using Tpetra::Details::PackTraits;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
+    typedef impl_scalar_type ST;
     typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
-    const char tfecfFuncName[] = "unpackAndCombine: ";
+    typedef typename View<int*, device_type>::HostMirror::execution_space HES;
+    typedef std::pair<typename View<int*, HES>::size_type,
+                      typename View<int*, HES>::size_type> pair_type;
+    typedef View<GO*, HES, MemoryUnmanaged> gids_out_type;
+    typedef View<ST*, HES, MemoryUnmanaged> vals_out_type;
+    const char tfecfFuncName[] = "unpackAndCombineNewImplNonStatic: ";
 
-    const size_type numImportLIDs = importLIDs.size ();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      numImportLIDs != numPacketsPerLID.size (), std::invalid_argument,
-      "importLIDs.size() = " << numImportLIDs << "  != numPacketsPerLID.size()"
-      << " = " << numPacketsPerLID.size () << ".");
+    const size_type numImportLIDs = importLIDs.dimension_0 ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (numImportLIDs != static_cast<size_type> (numPacketsPerLID.dimension_0 ()),
+       std::invalid_argument, "importLIDs.size() = " << numImportLIDs
+       << " != numPacketsPerLID.size() = " << numPacketsPerLID.dimension_0 ()
+       << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (combineMode != ADD && combineMode != INSERT && combineMode != REPLACE &&
+       combineMode != ABSMAX && combineMode != ZERO, std::invalid_argument,
+       "Invalid CombineMode value " << combineMode << ".  Valid "
+       << "values include ADD, INSERT, REPLACE, ABSMAX, and ZERO.");
+    if (combineMode == ZERO || numImportLIDs == 0) {
+      return; // nothing to do; no need to combine entries
+    }
 
-    // If a sanity check fails, keep track of some state at the
-    // "first" place where it fails.  After the first failure, "run
-    // through the motions" until the end of this method, then raise
-    // an error with an informative message.
-    size_type firstBadIndex = 0;
-    size_t firstBadOffset = 0;
-    size_t firstBadExpectedNumBytes = 0;
-    size_t firstBadNumBytes = 0;
-    LO firstBadNumEnt = 0;
-    // We have sanity checks for three kinds of errors:
-    //
-    //   1. Offset into array of all the incoming data (for all rows)
-    //      is out of bounds
-    //   2. Too few bytes of incoming data for a row, given the
-    //      reported number of entries in those incoming data
-    //   3. Error in unpacking the row's incoming data
-    //
-    bool outOfBounds = false;
-    bool wrongNumBytes = false;
-    bool unpackErr = false;
+    // We're unpacking on host.  This is read-only host access of imports.
+    {
+      auto imports_nc = castAwayConstDualView (imports);
+      imports_nc.template sync<Kokkos::HostSpace> ();
+    }
+    auto imports_h = imports.template view<Kokkos::HostSpace> ();
 
-    const size_t bufSize = static_cast<size_t> (imports.size ());
-    const char* const importsRawPtr = imports.getRawPtr ();
+    // Read-only host access.
+    {
+      auto numPacketsPerLID_nc = castAwayConstDualView (numPacketsPerLID);
+      numPacketsPerLID_nc.template sync<Kokkos::HostSpace> ();
+    }
+    auto numPacketsPerLID_h = numPacketsPerLID.template view<Kokkos::HostSpace> ();
+
+    // Read-only host access.
+    {
+      auto importLIDs_nc = castAwayConstDualView (importLIDs);
+      importLIDs_nc.template sync<Kokkos::HostSpace> ();
+    }
+    auto importLIDs_h = importLIDs.template view<Kokkos::HostSpace> ();
+
+    size_t numBytesPerValue;
+    {
+      // FIXME (mfh 17 Feb 2015, tjf 2 Aug 2017) What do I do about Scalar types
+      // with run-time size?  We already assume that all entries in both the
+      // source and target matrices have the same size.  If the calling process
+      // owns at least one entry in either matrix, we can use that entry to set
+      // the size.  However, it is possible that the calling process owns no
+      // entries.  In that case, we're in trouble.  One way to fix this would be
+      // for each row's data to contain the run-time size.  This is only
+      // necessary if the size is not a compile-time constant.
+      Scalar val;
+      numBytesPerValue = PackTraits<ST, HES>::packValueCount (val);
+    }
+
+    // Determine the maximum number of entries in any one row
     size_t offset = 0;
-
-    // Temporary storage for incoming values and indices.  We need
-    // this because the receive buffer does not align storage; it's
-    // just contiguous bytes.  In order to avoid violating ANSI
-    // aliasing rules, we memcpy each incoming row's data into these
-    // temporary arrays.  We double their size every time we run out
-    // of storage.
-    std::vector<IST> valInTmp;
-    std::vector<GO> indInTmp;
+    size_t maxRowNumEnt = 0;
     for (size_type i = 0; i < numImportLIDs; ++i) {
-      const LO lclRow = importLIDs[i];
-      const size_t numBytes = numPacketsPerLID[i];
-
-      if (numBytes > 0) { // there is actually something in the row
-        const char* const numEntBeg = importsRawPtr + offset;
-        const char* const numEntEnd = numEntBeg + sizeof (LO);
-
-        // Now we know how many entries to expect in the received data
-        // for this row.
-        LO numEnt = 0;
-        memcpy (&numEnt, numEntBeg, sizeof (LO));
-
-        const char* const valBeg = numEntEnd;
-        const char* const valEnd =
-          valBeg + static_cast<size_t> (numEnt) * sizeof (IST);
-        const char* const indBeg = valEnd;
-        const size_t expectedNumBytes = sizeof (LO) +
-          static_cast<size_t> (numEnt) * (sizeof (IST) + sizeof (GO));
-
-        if (expectedNumBytes > numBytes) {
-          firstBadIndex = i;
-          firstBadOffset = offset;
-          firstBadExpectedNumBytes = expectedNumBytes;
-          firstBadNumBytes = numBytes;
-          firstBadNumEnt = numEnt;
-          wrongNumBytes = true;
-          break;
-        }
-        if (offset > bufSize || offset + numBytes > bufSize) {
-          firstBadIndex = i;
-          firstBadOffset = offset;
-          firstBadExpectedNumBytes = expectedNumBytes;
-          firstBadNumBytes = numBytes;
-          firstBadNumEnt = numEnt;
-          outOfBounds = true;
-          break;
-        }
-        size_t tmpNumEnt = static_cast<size_t> (valInTmp.size ());
-        if (tmpNumEnt < static_cast<size_t> (numEnt) ||
-            static_cast<size_t> (indInTmp.size ()) < static_cast<size_t> (numEnt)) {
-          // Double the size of the temporary arrays for incoming data.
-          tmpNumEnt = std::max (static_cast<size_t> (numEnt), tmpNumEnt * 2);
-          valInTmp.resize (tmpNumEnt);
-          indInTmp.resize (tmpNumEnt);
-        }
-        unpackErr =
-          ! unpackRow (valInTmp.data (), indInTmp.data (), tmpNumEnt,
-                       valBeg, indBeg, numEnt, lclRow, combineMode);
-        if (unpackErr) {
-          firstBadIndex = i;
-          firstBadOffset = offset;
-          firstBadExpectedNumBytes = expectedNumBytes;
-          firstBadNumBytes = numBytes;
-          firstBadNumEnt = numEnt;
-          break;
-        }
-        offset += numBytes;
+      const size_t numBytes = numPacketsPerLID_h[i];
+      if (numBytes == 0) {
+        continue; // empty buffer for that row means that the row is empty
       }
+
+      LO numEntLO = 0;
+
+#ifdef HAVE_TPETRA_DEBUG
+      const size_t theNumBytes = PackTraits<LO, HES>::packValueCount (numEntLO);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (theNumBytes > numBytes, std::logic_error, "theNumBytes = "
+         << theNumBytes << " > numBytes = " << numBytes << ".");
+#endif // HAVE_TPETRA_DEBUG
+
+      const char* const inBuf = imports_h.data () + offset;
+      const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
+
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (actualNumBytes > numBytes, std::logic_error, "actualNumBytes = "
+         << actualNumBytes << " > numBytes = " << numBytes << ".");
+#else
+      (void) actualNumBytes;
+#endif // HAVE_TPETRA_DEBUG
+
+      maxRowNumEnt = std::max (static_cast<size_t> (numEntLO), maxRowNumEnt);
+      offset += numBytes;
     }
 
-    if (wrongNumBytes || outOfBounds || unpackErr) {
-      std::ostringstream os;
-      os << "  importLIDs[i]: " << importLIDs[firstBadIndex]
-         << ", bufSize: " << bufSize
-         << ", offset: " << firstBadOffset
-         << ", numBytes: " << firstBadNumBytes
-         << ", expectedNumBytes: " << firstBadExpectedNumBytes
-         << ", numEnt: " << firstBadNumEnt;
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        wrongNumBytes, std::logic_error, "At index i = " << firstBadIndex
-        << ", expectedNumBytes > numBytes." << os.str ());
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        outOfBounds, std::logic_error, "First invalid offset into 'imports' "
-        "unpack buffer at index i = " << firstBadIndex << "." << os.str ());
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        unpackErr, std::logic_error, "First error in unpackRow() at index i = "
-        << firstBadIndex << "." << os.str ());
+    // Temporary space to cache incoming global column indices and
+    // values.  Column indices come in as global indices, in case the
+    // source object's column Map differs from the target object's
+    // (this's) column Map.
+    View<GO*, HES> gblColInds;
+    View<LO*, HES> lclColInds;
+    View<ST*, HES> vals;
+    {
+      GO gid = 0;
+      LO lid = 0;
+      // FIXME (mfh 17 Feb 2015, tjf 2 Aug 2017) What do I do about Scalar types
+      // with run-time size?  We already assume that all entries in both the
+      // source and target matrices have the same size.  If the calling process
+      // owns at least one entry in either matrix, we can use that entry to set
+      // the size.  However, it is possible that the calling process owns no
+      // entries.  In that case, we're in trouble.  One way to fix this would be
+      // for each row's data to contain the run-time size.  This is only
+      // necessary if the size is not a compile-time constant.
+      Scalar val;
+      gblColInds = PackTraits<GO, HES>::allocateArray (gid, maxRowNumEnt, "gids");
+      lclColInds = PackTraits<LO, HES>::allocateArray (lid, maxRowNumEnt, "lids");
+      vals = PackTraits<ST, HES>::allocateArray (val, maxRowNumEnt, "vals");
     }
+
+    offset = 0;
+    for (size_type i = 0; i < numImportLIDs; ++i) {
+      const size_t numBytes = numPacketsPerLID_h[i];
+      if (numBytes == 0) {
+        continue; // empty buffer for that row means that the row is empty
+      }
+      LO numEntLO = 0;
+      const char* const inBuf = imports_h.data () + offset;
+      const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
+      (void) actualNumBytes;
+
+      const size_t numEnt = static_cast<size_t>(numEntLO);;
+      const LO lclRow = importLIDs_h[i];
+
+      gids_out_type gidsOut = subview (gblColInds, pair_type (0, numEnt));
+      vals_out_type valsOut = subview (vals, pair_type (0, numEnt));
+
+      const size_t numBytesOut =
+        unpackRow (gidsOut.data (), valsOut.data (), imports_h.data (),
+                   offset, numBytes, numEnt, numBytesPerValue);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (numBytes != numBytesOut, std::logic_error, "At i = " << i << ", "
+         << "numBytes = " << numBytes << " != numBytesOut = " << numBytesOut
+         << ".");
+
+      const ST* const valsRaw = const_cast<const ST*> (valsOut.data ());
+      const GO* const gidsRaw = const_cast<const GO*> (gidsOut.data ());
+      this->combineGlobalValuesRaw (lclRow, numEnt, valsRaw, gidsRaw, combineMode);
+
+      // Don't update offset until current LID has succeeded.
+      offset += numBytes;
+    } // for each import LID i
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -7410,6 +7705,9 @@ namespace Tpetra {
                            const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
     using Tpetra::Details::getArrayViewFromDualView;
+    using Tpetra::Details::packCrsMatrixWithOwningPIDs;
+    using Tpetra::Details::unpackAndCombineWithOwningPIDsCount;
+    using Tpetra::Details::unpackAndCombineIntoCrsArrays;
     using Teuchos::ArrayRCP;
     using Teuchos::ArrayView;
     using Teuchos::Comm;
@@ -7775,17 +8073,8 @@ namespace Tpetra {
     // Tpetra-specific stuff
     size_t constantNumPackets = destMat->constantNumberOfPackets ();
     if (constantNumPackets == 0) {
-      // FIXME (mfh 25 Apr 2016) Once we've finished fixing #227, we
-      // may be able to remove these fences that protect allocations.
-      execution_space::fence ();
-      destMat->numExportPacketsPerLID_ =
-        decltype (destMat->numExportPacketsPerLID_) ("numExportPacketsPerLID",
-                                                     ExportLIDs.size ());
-      execution_space::fence ();
-      destMat->numImportPacketsPerLID_ =
-        decltype (destMat->numImportPacketsPerLID_) ("numImportPacketsPerLID",
-                                                     RemoteLIDs.size ());
-      execution_space::fence ();
+      destMat->reallocArraysForNumPacketsPerLid (ExportLIDs.size (),
+                                                 RemoteLIDs.size ());
     }
     else {
       // There are a constant number of packets per element.  We
@@ -7815,11 +8104,9 @@ namespace Tpetra {
         destMat->numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
         Teuchos::ArrayView<size_t> numExportPacketsPerLID =
           getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-        Import_Util::packAndPrepareWithOwningPIDs (*this, ExportLIDs,
-                                                   destMat->exports_,
-                                                   numExportPacketsPerLID,
-                                                   constantNumPackets, Distor,
-                                                   SourcePids);
+        packCrsMatrixWithOwningPIDs (*this, destMat->exports_,
+                                     numExportPacketsPerLID, ExportLIDs,
+                                     SourcePids, constantNumPackets, Distor);
       }
       catch (std::exception& e) {
         os << "Proc " << myRank << ": " << e.what ();
@@ -7831,7 +8118,7 @@ namespace Tpetra {
       }
       if (gblErr != 0) {
         if (myRank == 0) {
-          cerr << "packAndPrepareWithOwningPIDs threw an exception: " << endl;
+          cerr << "packCrsMatrixWithOwningPIDs threw an exception: " << endl;
         }
         std::ostringstream err;
         for (int r = 0; r < numProcs; ++r) {
@@ -7844,7 +8131,7 @@ namespace Tpetra {
         }
 
         TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::logic_error, "packAndPrepareWithOwningPIDs threw an "
+          true, std::logic_error, "packCrsMatrixWithOwningPIDs threw an "
           "exception.");
       }
     }
@@ -7855,11 +8142,9 @@ namespace Tpetra {
       destMat->numExportPacketsPerLID_.template modify<Kokkos::HostSpace> ();
       Teuchos::ArrayView<size_t> numExportPacketsPerLID =
         getArrayViewFromDualView (destMat->numExportPacketsPerLID_);
-      Import_Util::packAndPrepareWithOwningPIDs (*this, ExportLIDs,
-                                                 destMat->exports_,
-                                                 numExportPacketsPerLID,
-                                                 constantNumPackets, Distor,
-                                                 SourcePids);
+      packCrsMatrixWithOwningPIDs (*this, destMat->exports_,
+                                   numExportPacketsPerLID, ExportLIDs,
+                                   SourcePids, constantNumPackets, Distor);
     }
 #endif // HAVE_TPETRA_DEBUG
 
@@ -7983,14 +8268,10 @@ namespace Tpetra {
     Teuchos::ArrayView<const char> hostImports =
       getArrayViewFromDualView (destMat->imports_);
     size_t mynnz =
-      Import_Util::unpackAndCombineWithOwningPIDsCount (*this, RemoteLIDs,
-                                                        hostImports,
-                                                        numImportPacketsPerLID,
-                                                        constantNumPackets,
-                                                        Distor, INSERT,
-                                                        NumSameIDs,
-                                                        PermuteToLIDs,
-                                                        PermuteFromLIDs);
+      unpackAndCombineWithOwningPIDsCount (*this, RemoteLIDs, hostImports,
+                                           numImportPacketsPerLID,
+                                           constantNumPackets, Distor, INSERT,
+                                           NumSameIDs, PermuteToLIDs, PermuteFromLIDs);
     size_t N = BaseRowMap->getNodeNumElements ();
 
     // Allocations
@@ -8015,12 +8296,13 @@ namespace Tpetra {
     // in a huge list of arrays is icky.  Can't we have a bit of an
     // abstraction?  Implementing a concrete DistObject subclass only
     // takes five methods.
-    Import_Util::unpackAndCombineIntoCrsArrays (*this, RemoteLIDs, hostImports,
-                                                numImportPacketsPerLID,
-                                                constantNumPackets, Distor, INSERT, NumSameIDs,
-                                                PermuteToLIDs, PermuteFromLIDs, N, mynnz, MyPID,
-                                                CSR_rowptr (), CSR_colind_GID (), CSR_vals (),
-                                                SourcePids (), TargetPids);
+    unpackAndCombineIntoCrsArrays (*this, RemoteLIDs, hostImports,
+                                   numImportPacketsPerLID, constantNumPackets,
+                                   Distor, INSERT, NumSameIDs, PermuteToLIDs,
+                                   PermuteFromLIDs, N, mynnz, MyPID,
+                                   CSR_rowptr (), CSR_colind_GID (),
+                                   Teuchos::av_reinterpret_cast<impl_scalar_type> (CSR_vals ()),
+                                   SourcePids (), TargetPids);
 
     /**************************************************************/
     /**** 4) Call Optimized MakeColMap w/ no Directory Lookups ****/

@@ -6,7 +6,38 @@
  *    L'Ecuyer and Cote, ACM Transactions on Mathematical
  *       Software, March 1991
  *    Russian peasant algorithm -- Knuth, vol. II, pp. 442-43
- *  Copyright (c) 1994, 1995 by Gerald P. Dwyer, Jr.
+ *  Copyright (c) 2005 National Technology & Engineering Solutions
+ *  of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ *  NTESS, the U.S. Government retains certain rights in this software.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are
+ *  met:
+ *
+ *      * Redistributions of source code must retain the above copyright
+ *        notice, this list of conditions and the following disclaimer.
+ *
+ *      * Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials provided
+ *        with the distribution.
+ *
+ *      * Neither the name of NTESS nor the names of its
+ *        contributors may be used to endorse or promote products derived
+ *        from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #include <assert.h>
@@ -38,13 +69,15 @@ long init_rand_port(long seed)
   extern long rand_num;
   int         i;
 
-  if (seed < 1 || seed > MAX_VALUE) /* if seed out of range */
-    seed = get_init_rand_port();    /* get seed */
+  if (seed < 1 || seed > MAX_VALUE) { /* if seed out of range */
+    seed = get_init_rand_port();      /* get seed */
+  }
 
   rand_num = seed;
-  for (i = 0; i < STARTUP_RANDS; i++)    /* and throw away */
-    rand_num = genr_rand_port(rand_num); /* some initial
-                                     ones */
+  for (i = 0; i < STARTUP_RANDS; i++) { /* and throw away */
+    rand_num = genr_rand_port(rand_num);
+  } /* some initial
+                                        ones */
 
   return seed;
 }
@@ -92,8 +125,9 @@ long genr_rand_port(long init_rand)
 
   k       = init_rand / Q;
   residue = MULT * (init_rand - Q * k) - R * k;
-  if (residue < 0)
+  if (residue < 0) {
     residue += MOD;
+  }
 
   assert(residue >= 1 && residue <= MAX_VALUE);
   return residue;

@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include <vector>
-#include <mpi.h>
+#include "mpi.h"
 #include <stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp>
 #include <stk_mesh/baseImpl/elementGraph/ElemGraphShellConnections.hpp>

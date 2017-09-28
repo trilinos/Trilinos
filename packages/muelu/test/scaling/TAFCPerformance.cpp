@@ -235,13 +235,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   // MPI initialization using Teuchos
   // =========================================================================
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  //  int MyPID = comm->getRank();
-
-  // =========================================================================
-  // Convenient definitions
-  // =========================================================================
-  typedef Teuchos::ScalarTraits<SC> STS;
-  SC zero = STS::zero(), one = STS::one();
 
   // =========================================================================
   // Parameters initialization

@@ -1,3 +1,35 @@
+// Copyright (c) 2013, Sandia Corporation.
+ // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+ // the U.S. Government retains certain rights in this software.
+ // 
+ // Redistribution and use in source and binary forms, with or without
+ // modification, are permitted provided that the following conditions are
+ // met:
+ // 
+ //     * Redistributions of source code must retain the above copyright
+ //       notice, this list of conditions and the following disclaimer.
+ // 
+ //     * Redistributions in binary form must reproduce the above
+ //       copyright notice, this list of conditions and the following
+ //       disclaimer in the documentation and/or other materials provided
+ //       with the distribution.
+ // 
+ //     * Neither the name of Sandia Corporation nor the names of its
+ //       contributors may be used to endorse or promote products derived
+ //       from this software without specific prior written permission.
+ // 
+ // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #ifndef COMMON_SEARCH_UTIL_H_
 #define COMMON_SEARCH_UTIL_H_
 
@@ -9,13 +41,14 @@
 #include "stk_util/environment/WallTime.hpp"
 #include "stk_search/KDTree_BoundingBox.hpp"
 #include "stk_search/KDTree.hpp"
+#include "mpi.h"
 
 namespace stk {
   namespace search {
 
 
 
-    template <typename DomainBox>
+   template <typename DomainBox>
     inline void GlobalBoxCombine(DomainBox &box_array, MPI_Comm &communicator)
     {
       typedef typename DomainBox::value_type::coordinate_t coordinate_t;
@@ -64,6 +97,24 @@ namespace stk {
                                          all_box_max_global[ibox * 3 + 1],
                                          all_box_max_global[ibox * 3 + 2]);
       }
+    }
+
+
+    //
+    //  Exchange boxes so that current proc local box is sent to the global box on all processors.
+    //
+    template <typename DomainBox>
+    inline void AllGatherHelper(const DomainBox& localBox, std::vector<DomainBox> &global_box_array, MPI_Comm &comm)
+    {
+      int numProc;
+      MPI_Comm_size(comm, &numProc); 
+      global_box_array.clear();
+      global_box_array.resize(numProc);
+      const char* localDataConst = reinterpret_cast<const char*>(&localBox);
+      //  NKC, hack to support old MPI version used by Goodyear
+      char* localData = const_cast<char*>(localDataConst);
+
+      MPI_Allgather(localData, sizeof(DomainBox), MPI_CHAR, global_box_array.data(), sizeof(DomainBox), MPI_CHAR, comm);
     }
 
 
@@ -134,14 +185,12 @@ namespace stk {
       }
 #endif
 
-      std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > boxA_proc_box_array(num_procs);
-      boxA_proc_box_array[current_proc] = boxA_proc;
-
+      std::vector<stk::search::ObjectBoundingBox_T<DomainBox> > boxA_proc_box_array;
       //
       //  Do a global communication to communicate all processor boxA bounding boxes
       //  to all processors in the group
       //
-      GlobalBoxCombine(boxA_proc_box_array, comm);
+      stk::search::AllGatherHelper(boxA_proc, boxA_proc_box_array, comm);
       for(int iproc = 0; iproc < num_procs; ++iproc) {
         boxA_proc_box_array[iproc].set_object_number(iproc);
       }

@@ -68,7 +68,7 @@ namespace panzer_stk {
 				 const Teuchos::RCP<const panzer_stk::STK_Interface>& mesh,
 				 const std::string& sidesetName,
 				 const std::string& elementBlockName,
-				 std::ostream* out,
+				 std::ostream* /* out */,
 				 std::ostream* pout)
   {    
     using panzer::Cell;

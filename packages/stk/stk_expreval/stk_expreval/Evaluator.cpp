@@ -258,7 +258,6 @@ Node::eval() const
   case OPCODE_LOGICAL_OR: {
     double left = m_left->eval();
     double right = m_right->eval();
-    
     return (left != s_false) || (right != s_false) ? s_true : s_false;
   }
   case OPCODE_TIERNARY:
@@ -957,19 +956,32 @@ Eval::Eval(
     m_arrayOffsetType(arrayOffsetType)
 {}
 
+Eval::Eval(
+  const std::string & expression,
+  Variable::ArrayOffset arrayOffsetType)
+  : m_variableMap(VariableMap::getDefaultResolver()),
+    m_expression(expression),
+    m_syntaxStatus(false),
+    m_parseStatus(false),
+    m_headNode(nullptr),
+    m_arrayOffsetType(arrayOffsetType)
+{}
+
 Eval::~Eval()
 {
-  for (auto& node : m_nodes)
+  auto& myThreadData = m_nodes.getMyThreadEntry();
+  for (auto& node : myThreadData) {
     delete node;
+  }
 }
 
 Node *
 Eval::newNode(
   int           opcode)
 {
-  Node *new_node = new Node(static_cast<Opcode>(opcode), this);
-  m_nodes.push_back(new_node);
-  return new_node;
+  auto& myThreadData = m_nodes.getMyThreadEntry();
+  myThreadData.push_back(new Node(static_cast<Opcode>(opcode), this));
+  return myThreadData.back();
 }
 
 void
@@ -978,22 +990,24 @@ Eval::syntax()
   m_syntaxStatus = false;
   m_parseStatus = false;
 
-  try {
-    /* Validate the characters */
-    LexemVector lex_vector = tokenize(m_expression);
+#ifdef _OPENMP
+#pragma omp parallel for
+  for(int i = 0; i < omp_get_max_threads(); ++i)
+#endif
+  {
+    try {
+      // Validate the characters
+      LexemVector lex_vector = tokenize(m_expression);
 
-    /* Call the multiparse routine to parse subexpressions */
-    m_headNode = Parser::parseStatements(*this, lex_vector.begin(), lex_vector.end());
+      // Call the multiparse routine to parse subexpressions
+      m_headNode.getMyThreadEntry() = Parser::parseStatements(*this, lex_vector.begin(), lex_vector.end());
 
-    m_syntaxStatus = true;
-  }
-  catch (std::runtime_error & /* x */) {
-//     x << " while parsing expression: " << m_expression;
-//     stk::RuntimeDoomed() << x.what();
-    throw;
+      m_syntaxStatus = true;
+    }
+    catch (std::runtime_error &) {
+    }
   }
 }
-
 
 void
 Eval::parse()
@@ -1013,21 +1027,21 @@ Eval::parse()
       resolve();
 
       m_parseStatus = true;
+    } else {
+      throw std::runtime_error("");
     }
   }
-  catch (std::runtime_error & /* x */) {
-//     x << " while parsing expression: " << m_expression;
-//     stk::RuntimeDoomed() << x.what();
+  catch (std::runtime_error & ) {
     throw;
   }
 }
 
-
 void
 Eval::resolve()
 {
-  for (VariableMap::iterator it = m_variableMap.begin(); it != m_variableMap.end(); ++it) {
-    m_variableMap.getResolver().resolve(it);
+  auto& variableMap = m_variableMap.getMyThreadEntry();
+  for (VariableMap::iterator it = variableMap.begin(); it != variableMap.end(); ++it) {
+    variableMap.getResolver().resolve(it);
   }
 }
 
@@ -1042,9 +1056,9 @@ Eval::evaluate() const
   double returnValue = 0.0;
   try
   {
-    if(m_headNode != nullptr)
-    {
-      returnValue = m_headNode->eval();
+    auto headNode = m_headNode.getMyThreadEntry();
+    if(headNode) {
+      returnValue = headNode->eval();
     }
   }
   catch(expression_evaluation_exception &)
@@ -1058,8 +1072,9 @@ bool
 Eval::undefinedFunction() const
 {
   /* Check for an undefined function in any allocated node */
-  for (unsigned int i=0; i<m_nodes.size(); i++) {
-    if (m_nodes[i]->m_data.function.undefinedFunction) return true;
+  auto& myThreadData = m_nodes.getMyThreadEntry();
+  for (unsigned int i=0; i<myThreadData.size(); i++) {
+    if (myThreadData[i]->m_data.function.undefinedFunction) return true;
   }
   return false;
 }

@@ -1,3 +1,5 @@
+#ifndef SHYLUBBBDCCONFIG_H
+#define SHYLUBBBDCCONFIG_H
 /*
     ShyLU BDDC configuration.
 */
@@ -14,3 +16,9 @@
 #cmakedefine HAVE_SHYLUBDDC_PARDISO_MKL
 
 #cmakedefine HAVE_SHYLUBDDC_HTS
+
+#cmakedefine HAVE_SHYLUBDDC_SUPERLU
+
+#cmakedefine HAVE_SHYLUBDDC_SHYLUTACHO
+
+#endif // SHYLUBBBDCCONFIG_H

@@ -227,9 +227,67 @@ namespace Intrepid2 {
       };
 
       *outStream
+      << "\n"
+      << "===============================================================================\n"
+      << "| TEST 2: Testing OPERATOR_VALUE (Kronecker property using dof coeffs)        |\n"
+      << "===============================================================================\n";
+
+      try {
+
+        const ordinal_type order = std::min(3, maxOrder);
+        QuadBasisType quadBasis(order);
+        const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
+
+        const ordinal_type numFields = quadBasis.getCardinality();
+        DynRankView ConstructWithLabel(dofCoords, numFields, spaceDim);
+        quadBasis.getDofCoords(dofCoords);
+
+        DynRankView ConstructWithLabel(dofCoeffs, numFields, spaceDim);
+        quadBasis.getDofCoeffs(dofCoeffs);
+
+        DynRankView ConstructWithLabel(basisAtDofCoords, numFields, numFields, spaceDim);
+        quadBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
+
+        auto h_dofCoords = Kokkos::create_mirror_view(dofCoords);
+        Kokkos::deep_copy(h_dofCoords, dofCoords);
+
+        auto h_dofCoeffs = Kokkos::create_mirror_view(dofCoeffs);
+        Kokkos::deep_copy(h_dofCoeffs, dofCoeffs);
+
+        auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
+        Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
+
+        // test for Kronecker property
+        for (int i=0;i<numFields;i++) {
+          for (int j=0;j<numFields;j++) {
+
+            outputValueType dofValue = 0.0;
+            for(ordinal_type d=0;d<spaceDim;++d)
+              dofValue += h_basisAtDofCoords(i,j,d)*h_dofCoeffs(j,d);
+
+            // check values
+            const outputValueType expected_dofValue = (i == j);
+            if (std::abs(dofValue - expected_dofValue) > tol) {
+              errorFlag++;
+              std::stringstream ss;
+              ss << "\nValue of basis function " << i << " at (" << h_dofCoords(j,0) << ", " << h_dofCoords(j,1) << ") is " << dofValue << " but should be " << expected_dofValue << "\n";
+              *outStream << ss.str();
+            }
+
+          }
+        }
+
+      } catch (std::exception err) {
+        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+        *outStream << err.what() << '\n';
+        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+        errorFlag = -1000;
+      };
+
+      *outStream
         << "\n"
         << "===============================================================================\n"
-        << "| TEST 2: correctness of tag to enum and enum to tag lookups                  |\n"
+        << "| TEST 3: correctness of tag to enum and enum to tag lookups                  |\n"
         << "===============================================================================\n";
 
       try {
@@ -292,7 +350,7 @@ namespace Intrepid2 {
       *outStream
         << "\n"
         << "===============================================================================\n"
-        << "| TEST 3: correctness of basis function values                                |\n"
+        << "| TEST 4: correctness of basis function values                                |\n"
         << "===============================================================================\n";
 
       outStream->precision(20);

@@ -89,6 +89,15 @@ class WedgeFixture
               , ConnectivityMap const* connectivity_map = NULL
             );
 
+  WedgeFixture(   stk::ParallelMachine pm
+              , size_t nx
+              , size_t ny
+              , size_t nz
+              , std::string coordinate_name
+              , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
+              , ConnectivityMap const* connectivity_map = NULL
+            );
+
   ~WedgeFixture();
 
   const int         m_spatial_dimension;

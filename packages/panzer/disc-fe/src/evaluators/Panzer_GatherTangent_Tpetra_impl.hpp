@@ -96,7 +96,7 @@ GatherTangent_Tpetra(
 // **********************************************************************
 template<typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherTangent_Tpetra<EvalT, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());

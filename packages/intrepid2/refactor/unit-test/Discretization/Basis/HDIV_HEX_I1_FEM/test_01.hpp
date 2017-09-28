@@ -436,8 +436,8 @@ namespace Intrepid2 {
         << "===============================================================================\n";
     
       try{
-        const auto numFields = hexBasis.getCardinality();
-        const auto spaceDim  = hexBasis.getBaseCellTopology().getDimension();
+        const ordinal_type numFields = hexBasis.getCardinality();
+        const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
     
         // Check exceptions.
         ordinal_type nthrow = 0, ncatch = 0;
@@ -462,37 +462,33 @@ namespace Intrepid2 {
          }
 
         // Check mathematical correctness
-        DynRankViewHost ConstructWithLabel(normals, numFields,spaceDim); // normals at each point basis point
-        normals(0,0)  =  0.0; normals(0,1)  = -4.0; normals(0,2)  =  0.0;
-        normals(1,0)  =  4.0; normals(1,1)  =  0.0; normals(1,2)  =  0.0;
-        normals(2,0)  =  0.0; normals(2,1)  =  4.0; normals(2,2)  =  0.0;
-        normals(3,0)  = -4.0; normals(3,1)  =  0.0; normals(3,2)  =  0.0;
-        normals(4,0)  =  0.0; normals(4,1)  =  0.0; normals(4,2)  = -4.0;
-        normals(5,0)  =  0.0; normals(5,1)  =  0.0; normals(5,2)  =  4.0;
-
         DynRankView ConstructWithLabel(cvals_dev, numFields, spaceDim);
+        DynRankView ConstructWithLabel(dofCoeffs_dev, numFields, spaceDim);
         DynRankView ConstructWithLabel(bvals_dev, numFields, numFields, spaceDim); // last dimension is spatial dim
 
         hexBasis.getDofCoords(cvals_dev);
+        hexBasis.getDofCoeffs(dofCoeffs_dev);
         hexBasis.getValues(bvals_dev, cvals_dev, OPERATOR_VALUE);
 
         const auto bvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), bvals_dev);
         Kokkos::deep_copy(bvals, bvals_dev);
+        const auto dofCoeffs = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), dofCoeffs_dev);
+        Kokkos::deep_copy(dofCoeffs, dofCoeffs_dev);
         const auto cvals = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), cvals_dev);
         Kokkos::deep_copy(cvals, cvals_dev);
 
-        for (ordinal_type i=0;i<numFields;++i) 
+        for (ordinal_type i=0;i<numFields;++i)
           for (ordinal_type j=0;j<numFields;++j) {
 
-            ValueType normal = 0.0;
-            for(size_type d=0;d<spaceDim;++d)
-               normal += bvals(i,j,d)*normals(j,d);
+            ValueType dofValue = 0.0;
+            for(ordinal_type d=0;d<spaceDim;++d)
+              dofValue += bvals(i,j,d)*dofCoeffs(j,d);
 
-            const ValueType expected_normal = (i == j);
-            if (std::abs(normal - expected_normal) > tol) {
+            const ValueType expected_dofValue = (i == j);
+            if (std::abs(dofValue - expected_dofValue) > tol) {
               errorFlag++;
               std::stringstream ss;
-              ss << "\nNormal component of basis function " << i << " at (" << cvals(j,0) << ", " << cvals(j,1)<< ", " << cvals(j,2) << ") is " << normal << " but should be " << expected_normal << "\n";
+              ss << "\nValue of basis function " << i << " at (" << cvals(i,0) << ", " << cvals(i,1)<< ", " << cvals(i,2) << ") is " << dofValue << " but should be " << expected_dofValue << "\n";
               *outStream << ss.str();
             }
           }

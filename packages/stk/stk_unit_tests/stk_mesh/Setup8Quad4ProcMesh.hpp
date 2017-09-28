@@ -1,3 +1,6 @@
+#ifndef STK_SETUP_8QUAD4PROCMESH_H
+#define STK_SETUP_8QUAD4PROCMESH_H
+
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -135,3 +138,4 @@ void setup8Quad4ProcMesh2D(stk::mesh::BulkData& bulk)
   EXPECT_EQ(expectedNumElems, numElems);
 }
 
+#endif

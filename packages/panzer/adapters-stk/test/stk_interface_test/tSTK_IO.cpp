@@ -72,8 +72,8 @@ void buildLocalIds(const STK_Interface & mesh,
 void assignBlock(FieldContainer & block,FieldContainer & vertices, double (* func)(double,double));
 void assignBlock(FieldContainer & block,FieldContainer & vertices, double val);
 
-double xval(double x,double y) { return x; }
-double yval(double x,double y) { return y; }
+double xval(double x, double /* y */) { return x; }
+double yval(double /* x */, double y) { return y; }
 double block2(double x,double y) { return (x-0.5)*(x-0.5)+y; }
 
 // triangle tests
@@ -162,7 +162,7 @@ TEUCHOS_UNIT_TEST(tSTK_IO, exodus_factory_transient_fields)
    tblock0 = Kokkos::createDynRankView(tblock0,"tblock0",localIds["block_1"]->size(),4);
    tblock1 = Kokkos::createDynRankView(tblock1,"tblock1",localIds["block_2"]->size(),4);
 
-   mesh->setupTransientExodusFile("transient_exo.exo");
+   mesh->setupExodusFile("transient_exo.exo");
 
    out << "assigning 4.5" << std::endl;
    {
@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST(tSTK_IO, transient_fields)
    tblock0 = Kokkos::createDynRankView(tblock0,"tblock0",localIds["eblock-0_0"]->size(),4);
    tblock1 = Kokkos::createDynRankView(tblock1,"tblock1",localIds["eblock-1_0"]->size(),4);
 
-   mesh->setupTransientExodusFile("transient.exo");
+   mesh->setupExodusFile("transient.exo");
 
    out << "assigning 3.0" << std::endl;
    {

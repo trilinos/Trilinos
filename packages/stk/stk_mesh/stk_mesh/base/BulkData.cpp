@@ -1769,7 +1769,7 @@ void BulkData::copy_entity_fields_callback(EntityRank dst_rank, unsigned dst_buc
             return;
         }
 
-        const std::vector<FieldBase *>& allFields = mesh_meta_data().get_fields((stk::topology::rank_t) dst_rank);
+        const std::vector<FieldBase *>& allFields = mesh_meta_data().get_fields(dst_rank);
         for(int i = 0, iend = allFields.size(); i < iend; ++i)
         {
             const int src_size = allFields[i]->get_meta_data_for_field()[src_bucket_id].m_bytes_per_entity;
@@ -5875,7 +5875,8 @@ void BulkData::gather_shared_nodes(std::vector<Entity> & shared_nodes)
 }
 
 // these are for debugging, they're used to mark where we are in the packing/unpacking process
-#define USE_PACK_TAGS !defined(NDEBUG)
+//#define USE_PACK_TAGS !defined(NDEBUG)
+
 enum PackTags {
   PACK_TAG_INVALID = 12345600,
   PACK_TAG_SHARED_COUNT,

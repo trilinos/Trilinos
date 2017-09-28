@@ -501,31 +501,6 @@ void STK_Interface::addFaces()
   }
 }
 
-void STK_Interface::writeToExodus(const std::string & filename)
-{
-   PANZER_FUNC_TIME_MONITOR("STK_Interface::writeToExodus(filename)");
-
-   #ifdef PANZER_HAVE_IOSS
-      TEUCHOS_ASSERT(mpiComm_!=Teuchos::null);
-      stk::ParallelMachine comm = *mpiComm_->getRawMpiComm();
-
-      stk::io::StkMeshIoBroker meshData(comm);
-      meshData.set_bulk_data(bulkData_);
-      const int meshIndex = meshData.create_output_mesh(filename, stk::io::WRITE_RESULTS);
-      const stk::mesh::FieldVector &fields = metaData_->get_fields();
-      for (size_t i=0; i < fields.size(); i++) {
-        try {
-          meshData.add_field(meshIndex, *fields[i]);
-        }
-        catch (std::runtime_error const&) { }
-      }
-
-      meshData.process_output_request(meshIndex, 0.0);
-   #else
-      TEUCHOS_ASSERT(false);
-   #endif
-}
-
 stk::mesh::Entity STK_Interface::findConnectivityById(stk::mesh::Entity src, stk::mesh::EntityRank tgt_rank, unsigned rel_id) const
 {
   const size_t num_rels = bulkData_->num_connectivity(src, tgt_rank);
@@ -540,47 +515,266 @@ stk::mesh::Entity STK_Interface::findConnectivityById(stk::mesh::Entity src, stk
   return stk::mesh::Entity();
 }
 
-void STK_Interface::setupTransientExodusFile(const std::string & filename)
+///////////////////////////////////////////////////////////////////////////////
+//
+//  writeToExodus()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+STK_Interface::
+writeToExodus(
+  const std::string& filename)
 {
-   PANZER_FUNC_TIME_MONITOR("STK_Interface::setupTransientExodusFile(filename)");
+  setupExodusFile(filename);
+  writeToExodus(0.0);
+} // end of writeToExodus()
 
-   #ifdef PANZER_HAVE_IOSS
-      TEUCHOS_ASSERT(mpiComm_!=Teuchos::null);
-      stk::ParallelMachine comm = *mpiComm_->getRawMpiComm();
+///////////////////////////////////////////////////////////////////////////////
+//
+//  setupExodusFile()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+STK_Interface::
+setupExodusFile(
+  const std::string& filename)
+{
+  using std::runtime_error;
+  using stk::io::StkMeshIoBroker;
+  using stk::mesh::FieldVector;
+  using stk::ParallelMachine;
+  using Teuchos::rcp;
+  PANZER_FUNC_TIME_MONITOR("STK_Interface::setupExodusFile(filename)");
+#ifdef PANZER_HAVE_IOSS
+  TEUCHOS_ASSERT(not mpiComm_.is_null())
+  ParallelMachine comm = *mpiComm_->getRawMpiComm();
+  meshData_ = rcp(new StkMeshIoBroker(comm));
+  meshData_->set_bulk_data(bulkData_);
+  meshIndex_ = meshData_->create_output_mesh(filename, stk::io::WRITE_RESULTS);
+  const FieldVector& fields = metaData_->get_fields();
+  for (size_t i(0); i < fields.size(); ++i)
+  {
+    try
+    {
+      meshData_->add_field(meshIndex_, *fields[i]);
+    }
+    catch (const runtime_error&)
+    {
+    }
+  } // end loop over fields
+#else
+  TEUCHOS_ASSERT(false)
+#endif
+} // end of setupExodusFile()
 
-      meshData_ = Teuchos::rcp(new stk::io::StkMeshIoBroker(comm));
-      meshData_->set_bulk_data(bulkData_);
-      meshIndex_ = meshData_->create_output_mesh(filename, stk::io::WRITE_RESULTS);
-      const stk::mesh::FieldVector &fields = metaData_->get_fields();
-      for (size_t i=0; i < fields.size(); i++) {
-        try {
-          meshData_->add_field(meshIndex_, *fields[i]);
+///////////////////////////////////////////////////////////////////////////////
+//
+//  writeToExodus()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+STK_Interface::
+writeToExodus(
+  double timestep)
+{
+  using std::cout;
+  using std::endl;
+  using Teuchos::FancyOStream;
+  using Teuchos::rcpFromRef;
+  PANZER_FUNC_TIME_MONITOR("STK_Interface::writeToExodus(timestep)");
+#ifdef PANZER_HAVE_IOSS
+  if (not meshData_.is_null())
+  {
+    currentStateTime_ = timestep;
+    globalToExodus(GlobalVariable::ADD);
+    meshData_->begin_output_step(meshIndex_, currentStateTime_);
+    meshData_->write_defined_output_fields(meshIndex_);
+    globalToExodus(GlobalVariable::WRITE);
+    meshData_->end_output_step(meshIndex_);
+  }
+  else // if (meshData_.is_null())
+  {
+    FancyOStream out(rcpFromRef(cout));
+    out.setOutputToRootOnly(0);
+    out << "WARNING:  Exodus I/O has been disabled or not setup properly; "
+        << "not writing to Exodus." << endl;
+  } // end if (meshData_.is_null()) or not
+#else
+  TEUCHOS_ASSERT(false);
+#endif
+} // end of writeToExodus()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  globalToExodus()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+STK_Interface::
+globalToExodus(
+  const GlobalVariable& flag)
+{
+  using std::invalid_argument;
+  using std::string;
+  using Teuchos::Array;
+
+  // Loop over all the global variables to be added to the Exodus output file. 
+  // For each global variable, we determine the data type, and then add or
+  // write it accordingly, depending on the value of flag.
+  for (auto i = globalData_.begin(); i != globalData_.end(); ++i)
+  {
+    const string& name = globalData_.name(i);
+
+    // Integers.
+    if (globalData_.isType<int>(name))
+    {
+      const auto& value = globalData_.get<int>(name);
+      if (flag == GlobalVariable::ADD)
+      {
+        try
+        {
+          meshData_->add_global(meshIndex_, name, value,
+            stk::util::ParameterType::INTEGER);
         }
-        catch (std::runtime_error const&) { }
+        catch (...)
+        {
+          return;
+        }
       }
-   #else
-      TEUCHOS_ASSERT(false);
-   #endif
-}
+      else // if (flag == GlobalVariable::WRITE)
+        meshData_->write_global(meshIndex_, name, value,
+          stk::util::ParameterType::INTEGER);
+    }
 
-void STK_Interface::writeToExodus(double timestep)
+    // Doubles.
+    else if (globalData_.isType<double>(name))
+    {
+      const auto& value = globalData_.get<double>(name);
+      if (flag == GlobalVariable::ADD)
+      {
+        try
+        {
+          meshData_->add_global(meshIndex_, name, value,
+            stk::util::ParameterType::DOUBLE);
+        }
+        catch (...)
+        {
+          return;
+        }
+      }
+      else // if (flag == GlobalVariable::WRITE)
+        meshData_->write_global(meshIndex_, name, value,
+          stk::util::ParameterType::DOUBLE);
+    }
+
+    // Vectors of integers.
+    else if (globalData_.isType<Array<int>>(name))
+    {
+      const auto& value = globalData_.get<Array<int>>(name).toVector();
+      if (flag == GlobalVariable::ADD)
+      {
+        try
+        {
+          meshData_->add_global(meshIndex_, name, value,
+            stk::util::ParameterType::INTEGERVECTOR);
+        }
+        catch (...)
+        {
+          return;
+        }
+      }
+      else // if (flag == GlobalVariable::WRITE)
+        meshData_->write_global(meshIndex_, name, value,
+          stk::util::ParameterType::INTEGERVECTOR);
+    }
+
+    // Vectors of doubles.
+    else if (globalData_.isType<Array<double>>(name))
+    {
+      const auto& value = globalData_.get<Array<double>>(name).toVector();
+      if (flag == GlobalVariable::ADD)
+      {
+        try
+        {
+          meshData_->add_global(meshIndex_, name, value,
+            stk::util::ParameterType::DOUBLEVECTOR);
+        }
+        catch (...)
+        {
+          return;
+        }
+      }
+      else // if (flag == GlobalVariable::WRITE)
+        meshData_->write_global(meshIndex_, name, value,
+          stk::util::ParameterType::DOUBLEVECTOR);
+    }
+
+    // If the data type is something else, throw an exception.
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(true, invalid_argument,
+        "STK_Interface::globalToExodus():  The global variable to be added "  \
+        "to the Exodus output file is of an invalid type.  Valid types are "  \
+        "int and double, along with std::vectors of those types.")
+  } // end loop over globalData_
+} // end of globalToExodus()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  addGlobalToExodus()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+STK_Interface::
+addGlobalToExodus(
+  const std::string& key,
+  const int&         value)
 {
-   PANZER_FUNC_TIME_MONITOR("STK_Interface::writeToExodus(timestep)");
+  globalData_.set(key, value);
+} // end of addGlobalToExodus()
 
-   #ifdef PANZER_HAVE_IOSS
-      if(meshData_!=Teuchos::null) {
-        currentStateTime_ = timestep;
-        meshData_->process_output_request(meshIndex_, timestep);
-      }
-      else {
-        Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
-        out.setOutputToRootOnly(0);
-        out << "WARNING: Exodus I/O has been disabled or not setup properly, not writing to Exodus" << std::endl;
-      }
-   #else
-      TEUCHOS_ASSERT(false);
-   #endif
-}
+///////////////////////////////////////////////////////////////////////////////
+//
+//  addGlobalToExodus()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+STK_Interface::
+addGlobalToExodus(
+  const std::string& key,
+  const double&      value)
+{
+  globalData_.set(key, value);
+} // end of addGlobalToExodus()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  addGlobalToExodus()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+STK_Interface::
+addGlobalToExodus(
+  const std::string&      key,
+  const std::vector<int>& value)
+{
+  using Teuchos::Array;
+  globalData_.set(key, Array<int>(value));
+} // end of addGlobalToExodus()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  addGlobalToExodus()
+//
+///////////////////////////////////////////////////////////////////////////////
+void
+STK_Interface::
+addGlobalToExodus(
+  const std::string&         key,
+  const std::vector<double>& value)
+{
+  using Teuchos::Array;
+  globalData_.set(key, Array<double>(value));
+} // end of addGlobalToExodus()
 
 bool STK_Interface::isWritable() const
 {
@@ -1291,7 +1485,7 @@ Teuchos::RCP<Teuchos::MpiComm<int> > STK_Interface::getSafeCommunicator(stk::Par
    return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper (newComm,MPI_Comm_free)));
 }
 
-void STK_Interface::rebalance(const Teuchos::ParameterList & params)
+void STK_Interface::rebalance(const Teuchos::ParameterList & /* params */)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error, "Rebalance not currently supported");
 #if 0

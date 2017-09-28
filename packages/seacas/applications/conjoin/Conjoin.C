@@ -1,7 +1,6 @@
-// Copyright(C) 2009-2010 Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright(C) 2009-2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,7 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -48,9 +47,9 @@
 #include <limits>
 #include <unistd.h>
 
+#include <cctype>
 #include <cstring>
 #include <ctime>
-#include <ctype.h>
 #include <sys/times.h>
 #include <sys/utsname.h>
 
@@ -79,7 +78,7 @@ namespace {
     return (float)v1 == (float)v2;
 #endif
   }
-}
+} // namespace
 
 struct NodeInfo
 {
@@ -130,11 +129,11 @@ struct NodeInfo
   }
 };
 
-typedef std::vector<NodeInfo> GlobalMap;
-typedef GlobalMap::iterator   GMapIter;
+using GlobalMap = std::vector<NodeInfo>;
+using GMapIter  = GlobalMap::iterator;
 
 typedef std::vector<std::pair<int, size_t>> GlobalElemMap;
-typedef GlobalElemMap::iterator GElemMapIter;
+using GElemMapIter = GlobalElemMap::iterator;
 
 #include "CJ_ExodusEntity.h"
 #include "CJ_ExodusFile.h"
@@ -195,7 +194,7 @@ namespace {
     delete[] names;
     names = nullptr;
   }
-}
+} // namespace
 
 std::string tsFormat = "[%H:%M:%S] ";
 
@@ -281,10 +280,7 @@ namespace {
   void get_sideset_metadata(std::vector<Excn::Mesh<INT>> &                local_mesh,
                             std::vector<std::vector<Excn::SideSet<INT>>> &sets,
                             std::vector<Excn::SideSet<INT>> &             glob_ssets);
-  template <typename INT>
-  void get_put_sidesets(std::vector<Excn::Mesh<INT>> &                local_mesh,
-                        std::vector<std::vector<Excn::SideSet<INT>>> &sets,
-                        std::vector<Excn::SideSet<INT>> &             glob_ssets);
+  template <typename INT> void get_put_sidesets(std::vector<Excn::SideSet<INT>> &glob_ssets);
 
   template <typename T, typename INT>
   void add_status_variable(int id_out, const Excn::Mesh<INT> &global,
@@ -334,7 +330,7 @@ namespace {
     map.erase(std::unique(map.begin(), map.end()), map.end());
     map.shrink_to_fit();
   }
-}
+} // namespace
 
 unsigned int debug_level = 0;
 const float  FILL_VALUE  = FLT_MAX;
@@ -379,18 +375,18 @@ int main(int argc, char *argv[])
 
     if (Excn::ExodusFile::io_word_size() == 4) {
       if (int_byte_size == 4) {
-        error = conjoin(interface, (float)0.0, (int)0);
+        error = conjoin(interface, static_cast<float>(0.0), 0);
       }
       else {
-        error = conjoin(interface, (float)0.0, (int64_t)0);
+        error = conjoin(interface, static_cast<float>(0.0), static_cast<int64_t>(0));
       }
     }
     else {
       if (int_byte_size == 4) {
-        error = conjoin(interface, (double)0.0, (int)0);
+        error = conjoin(interface, 0.0, 0);
       }
       else {
-        error = conjoin(interface, (double)0.0, (int64_t)0);
+        error = conjoin(interface, 0.0, static_cast<int64_t>(0));
       }
     }
 
@@ -432,7 +428,7 @@ int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */
   std::string title0;
 
   for (size_t p = 0; p < part_count; p++) {
-    ex_init_params info;
+    ex_init_params info{};
     error += ex_get_init_ext(Excn::ExodusFile(p), &info);
 
     local_mesh[p].title          = info.title;
@@ -518,7 +514,7 @@ int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */
   std::reverse(global_times.begin(), global_times.end());
 
   // Need these throughout run, so declare outside of this block...
-  // TODO: Add these to the "Mesh" class.
+  // TODO(gdsjaar): Add these to the "Mesh" class.
   std::vector<Excn::Block>              glob_blocks(global.count(Excn::EBLK));
   std::vector<std::vector<Excn::Block>> blocks(part_count);
 
@@ -619,7 +615,7 @@ int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */
 
     T dummy = 0;
     put_element_blocks(local_mesh, blocks, glob_blocks, dummy);
-    get_put_sidesets(local_mesh, sidesets, glob_ssets);
+    get_put_sidesets(glob_ssets);
   }
   // ************************************************************************
   // 2. Get Coordinate Info.
@@ -1161,7 +1157,7 @@ namespace {
           std::cerr << "Block " << b << ", Id = " << glob_blocks[b].id;
         }
 
-        ex_block block_param;
+        ex_block block_param{};
         block_param.id   = glob_blocks[b].id;
         block_param.type = EX_ELEM_BLOCK;
 
@@ -1216,7 +1212,7 @@ namespace {
 
           ex_get_attr_names(id, EX_ELEM_BLOCK, block_id[b], names);
           for (int i = 0; i < block_param.num_attribute; i++) {
-            glob_blocks[b].attributeNames.push_back(std::string(names[i]));
+            glob_blocks[b].attributeNames.emplace_back(names[i]);
           }
           free_name_array(names, block_param.num_attribute);
         }
@@ -1274,8 +1270,7 @@ namespace {
       std::vector<INT> block_linkage(max_nodes);
 
       // Initialize attributes list, if it exists
-      std::vector<T> attributes((size_t)glob_blocks[b].attributeCount *
-                                (size_t)glob_blocks[b].entity_count());
+      std::vector<T> attributes(glob_blocks[b].attributeCount * glob_blocks[b].entity_count());
 
       int    error      = 0;
       size_t part_count = local_mesh.size();
@@ -1327,7 +1322,7 @@ namespace {
             SMART_ASSERT(blocks[p][b].attributeCount == glob_blocks[b].attributeCount)
             (p)(b)(blocks[p][b].attributeCount)(glob_blocks[b].attributeCount);
 
-            size_t max_attr = (size_t)blocks[p][b].entity_count() * blocks[p][b].attributeCount;
+            size_t         max_attr = blocks[p][b].entity_count() * blocks[p][b].attributeCount;
             std::vector<T> local_attr(max_attr);
 
             error += ex_get_attr(id, EX_ELEM_BLOCK, blocks[p][b].id, &local_attr[0]);
@@ -1625,7 +1620,7 @@ namespace {
     // sorted and there are no duplicates, we just need to see if the id
     // at global_node_map.size() == global_node_map.size();
     INT  max_id        = global_node_map[global->nodeCount - 1].id;
-    bool is_contiguous = (int64_t)max_id == (int64_t)global_node_map.size();
+    bool is_contiguous = (int64_t)max_id == static_cast<int64_t>(global_node_map.size());
     std::cerr << "Node map " << (is_contiguous ? "is" : "is not") << " contiguous.\n";
 
     // Create the map that maps from a local part node to the
@@ -1729,7 +1724,7 @@ namespace {
 
       // See if any of the variable names conflict with the status variable name...
       if (status != "NONE") {
-        for (size_t i = 0; i < (size_t)vars.count(Excn::OUT) - 1; i++) {
+        for (size_t i = 0; i < static_cast<size_t>(vars.count(Excn::OUT)) - 1; i++) {
           if (case_compare(output_name_list[i], status) == 0) {
             // Error -- duplicate element variable names on output database.
             std::cerr << "\nERROR: A " << vars.label()
@@ -1852,7 +1847,7 @@ namespace {
       // The variable_list may contain multiple entries for each
       // variable if the user is specifying output only on certain
       // element blocks...
-      std::string var_name  = "";
+      std::string var_name;
       int         var_count = 0;
       for (auto &elem : variable_list) {
         if (var_name == elem.first) {
@@ -2207,7 +2202,7 @@ namespace {
           sets[p][i].position_     = gi;
 
           // Get the parameters for this sideset...
-          ex_set set;
+          ex_set set{};
           set.type                     = EX_SIDE_SET;
           set.id                       = sets[p][i].id;
           set.entry_list               = nullptr;
@@ -2334,10 +2329,7 @@ namespace {
     }
   }
 
-  template <typename INT>
-  void get_put_sidesets(std::vector<Excn::Mesh<INT>> &                local_mesh,
-                        std::vector<std::vector<Excn::SideSet<INT>>> &sets,
-                        std::vector<Excn::SideSet<INT>> &             glob_ssets)
+  template <typename INT> void get_put_sidesets(std::vector<Excn::SideSet<INT>> &glob_ssets)
   {
     int exoid = Excn::ExodusFile::output(); // output file identifier
     for (auto &glob_sset : glob_ssets) {
@@ -2454,7 +2446,7 @@ namespace {
     // truth table to match the specification.
     StringVector exo_names = get_exodus_variable_names(id, vars.type(), vars.count());
 
-    std::string var_name     = "";
+    std::string var_name;
     int         out_position = -1;
     for (auto &variable_name : variable_names) {
       if (variable_name.second > 0) {
@@ -2601,7 +2593,9 @@ namespace {
     // Maximum size of string is 'size' (not including terminating nullptr)
     // This is used as information data in the concatenated results file
     // to help in tracking when/where/... the file was created
-    struct utsname sys_info;
+    struct utsname sys_info
+    {
+    };
     uname(&sys_info);
 
     std::string info = "CONJOIN: ";
@@ -2720,7 +2714,7 @@ namespace {
     // largest value.
     int width = 0;
     if (max_value >= 10) {
-      width = int(log10((double)max_value));
+      width = int(log10(static_cast<double>(max_value)));
     }
     return width + 1;
   }
@@ -2934,4 +2928,4 @@ namespace {
     }
     return max_ent;
   }
-}
+} // namespace

@@ -42,7 +42,7 @@
 #ifndef TPETRA_DETAILS_CRSMATRIXASSEMBLEELEMENT_HPP
 #define TPETRA_DETAILS_CRSMATRIXASSEMBLEELEMENT_HPP
 
-#include "Kokkos_Sparse_CrsMatrix.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 #include "Tpetra_Details_shortSort.hpp"
 #include <type_traits>
 

@@ -76,7 +76,6 @@ private:
   std::string basis_name;
   std::size_t basis_index;
 
-  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
   bool is_vector_basis;
 };
 

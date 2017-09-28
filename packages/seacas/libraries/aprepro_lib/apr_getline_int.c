@@ -1539,110 +1539,6 @@ static void gl_beep(void)
 #endif
 } /* gl_beep */
 
-static int gl_display_matches_sort_proc(const void *a, const void *b)
-{
-  return (strcasecmp(*((const char **)a), *((const char **)b)));
-} /* gl_display_matches_sort_proc */
-
-static void gl_display_matches(int nused)
-{
-  char   buf[256];
-  char   buf2[256];
-  size_t ilen, imaxlen;
-  int    i, j, k, l;
-  int    glen, allmatch;
-  int    nmax, ncol, colw, nrow;
-  char * cp1, *cp2, *lim, *itemp;
-
-  gl_putc('\n');
-  if (nused == 0) {
-    gl_beep();
-    gl_puts("    (no matches)");
-    gl_putc('\n');
-  }
-  else {
-    qsort(gl_matchlist, (size_t)nused, sizeof(char *), gl_display_matches_sort_proc);
-
-    /* Find the greatest amount that matches. */
-    glen = 1;
-    for (glen = 1;; glen++) {
-      allmatch = 1;
-      for (i = 1; i < nused; i++) {
-        if (gl_matchlist[0][glen] != gl_matchlist[i][glen]) {
-          allmatch = 0;
-          break;
-        }
-      }
-      if (allmatch == 0)
-        break;
-    }
-
-    while (glen > 0) {
-      if (!isalnum(gl_matchlist[0][glen - 1]))
-        break;
-      --glen;
-    }
-
-    nmax    = nused;
-    imaxlen = strlen(gl_matchlist[0]);
-    for (i = 1; i < nused; i++) {
-      ilen = strlen(gl_matchlist[i]);
-      if (ilen > imaxlen)
-        imaxlen = ilen;
-    }
-
-    /* Subtract amount we'll skip for each item. */
-    imaxlen -= glen;
-
-    ncol = (gl_termw - 8) / (imaxlen + 2);
-    if (ncol < 1)
-      ncol = 1;
-
-    colw = (gl_termw - 8) / ncol;
-    nrow = nmax / ncol;
-    if ((nused % ncol) != 0)
-      nrow++;
-
-    if (nrow > 10) {
-      nrow = 10;
-      nmax = ncol * nrow;
-    }
-
-    for (i    = 0; i < (int)sizeof(buf2); i++)
-      buf2[i] = ' ';
-
-    for (j = 0; j < nrow; j++) {
-      (void)memcpy(buf, buf2, sizeof(buf));
-      for (i = 0, k = j, l = 4; i < ncol; i++, k += nrow, l += colw) {
-        if (k >= nmax)
-          continue;
-        itemp = gl_matchlist[k] + glen;
-        cp1   = buf + l;
-        lim   = cp1 + (int)strlen(itemp);
-        if (lim > (buf + sizeof(buf) - 1))
-          continue;
-        cp2 = itemp;
-        while (cp1 < lim)
-          *cp1++ = *cp2++;
-      }
-      for (cp1 = buf + sizeof(buf); *--cp1 == ' ';)
-        ;
-      ++cp1;
-      if (cp1 != buf + sizeof(buf))
-        *cp1 = '\0';
-      gl_puts(buf);
-      gl_putc('\n');
-    }
-
-    if (nused > nmax) {
-      (void)sprintf(buf, "    ... %d others omitted ...", (nused - nmax));
-      gl_puts(buf);
-      gl_putc('\n');
-    }
-  }
-  gl_fixup(gl_prompt, -2, GL_BUF_SIZE);
-} /* gl_display_matches */
-
 static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabtab)
 {
   char * startp;
@@ -1787,10 +1683,6 @@ static int gl_do_tab_completion(char *buf, int *loc, size_t bufsize, int tabtab)
   if (nused == 1) {
     /* Exactly one match. */
     strtoadd = gl_matchlist[0];
-  }
-  else if (tabtab != 0) {
-    /* TAB-TAB: print all matches */
-    gl_display_matches(nused);
   }
   else if ((nused > 1) && (mlen > 0)) {
     /* Find the greatest amount that matches. */

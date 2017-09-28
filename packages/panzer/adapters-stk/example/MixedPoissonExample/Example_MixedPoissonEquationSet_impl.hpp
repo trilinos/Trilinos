@@ -132,8 +132,8 @@ MixedPoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
 template <typename EvalT>
 void Example::MixedPoissonEquationSet<EvalT>::
 buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-				      const panzer::FieldLibrary& fl,
-				      const Teuchos::ParameterList& user_data) const
+				      const panzer::FieldLibrary& /* fl */,
+				      const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;

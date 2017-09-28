@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -69,24 +69,28 @@ void checkbp(struct vtx_data **graph, /* graph data structure for vertex weights
 
   for (i = 1; i <= nvtxs; i++) {
     /* Is vertex closest to the set it is assigned to? */
-    for (j     = 0; j < MAXDIMS; j++)
+    for (j = 0; j < MAXDIMS; j++) {
       signs[j] = -1;
-    bestval    = 0;
+    }
+    bestval = 0;
     for (j = 0; j < nsets; j++) {
       val = -dists[j];
       for (k = 1; k <= ndims; k++) {
         val += 2 * signs[k - 1] * xvecs[k][i];
       }
-      if (j == sets[i])
+      if (j == sets[i]) {
         setval = val;
+      }
       if (j == 0 || val < bestval) {
         bestval = val;
         bestset = j;
       }
-      if (signs[0] == 1 && signs[1] == 1)
+      if (signs[0] == 1 && signs[1] == 1) {
         signs[2] *= -1;
-      if (signs[0] == 1)
+      }
+      if (signs[0] == 1) {
         signs[1] *= -1;
+      }
       signs[0] *= -1;
     }
     if (fabs(setval - bestval) >= tol * (fabs(setval) + fabs(bestval))) {
@@ -99,10 +103,12 @@ void checkbp(struct vtx_data **graph, /* graph data structure for vertex weights
   }
 
   printf(" Sizes:");
-  for (i = 0; i < nsets; i++)
+  for (i = 0; i < nsets; i++) {
     printf(" %d(%d)", sizes[i], weights[i]);
+  }
   printf("\n");
 
-  if (error)
+  if (error) {
     checkpnt("ERROR in checkbp");
+  }
 }

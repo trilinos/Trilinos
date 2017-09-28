@@ -98,7 +98,7 @@ private:
   void unwrap_const_CVaR_vector(Teuchos::RCP<Vector<Real> > &xvec, Real &xvar,
                           const Vector<Real> &x) {
     xvec = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(x).getVector());
-    xvar = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(0);
+    xvar = (*Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(0))[0];
     if ( !initialized_ ) {
       initialize(*xvec);
     }
@@ -275,7 +275,7 @@ public:
       gradient0_->scale(1.0/((1.0-prob_)*norm));
     }
     // Set gradient components of CVaR vector
-    gc.setStatistic(gvar);
+    gc.setStatistic(gvar,0);
     gc.setVector(*gradient0_);
   }
 
@@ -353,7 +353,7 @@ public:
       hessvec_->axpy((order_-1.0)/norm0,*gradient2_);
     }
     // Set gradient components of CVaR vector
-    hvc.setStatistic(hvar);
+    hvc.setStatistic(hvar,0);
     hvc.setVector(*hessvec_);
   }
 

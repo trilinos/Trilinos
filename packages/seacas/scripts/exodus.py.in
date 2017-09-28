@@ -2,39 +2,37 @@
 
 exodus.py v 1.05 (beta) is a python wrapper of some of the exodus II library
 
-Copyright (c) 2013, 2014, 2015, 2016 Sandia Corporation.
-
-Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-the U.S. Government retains certain rights in this software.
+Copyright(C) 2017 National Technology & Engineering Solutions of
+Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+NTESS, the U.S. Government retains certain rights in this software.
 
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
+modification, are permitted provided that the following conditions are
+met:
 
-1. Redistributions of source code must retain the above copyright
-  notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright
-  notice, this list of conditions and the following disclaimer in
-  the documentation and/or other materials provided with the
-  distribution.
-
-3. Neither the name of the Sandia Corporation nor the names of its
+* Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+          
+* Redistributions in binary form must reproduce the above
+  copyright notice, this list of conditions and the following
+  disclaimer in the documentation and/or other materials provided
+  with the distribution.
+                        
+* Neither the name of NTESS nor the names of its
   contributors may be used to endorse or promote products derived
   from this software without specific prior written permission.
-
+                                                
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 """
 
@@ -45,9 +43,10 @@ EXODUS_PY_VERSION = "1.05 (beta-cmake)"
 EXODUS_PY_COPYRIGHT = """
 You are using exodus.py v 1.05 (beta-cmake), a python wrapper of some of the exodus II library.
 
-Copyright (c) 2013, 2014, 2015, 2016, 2017 Sandia Corporation. Under
-the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, the
-U.S. Government retains certain rights in this software.
+Copyright (c) 2013, 2014, 2015, 2016, 2017 National Technology &
+Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
+Contract DE-NA0003525 with NTESS, the U.S. Government retains certain
+rights in this software.  
 """
 
 EXODUS_PY_CONTACTS = """
@@ -89,13 +88,15 @@ def getExodusVersion():
       return int(fields[2])
   return 0
 
-NETCDF_SO = "@NetCDF_C_LIBRARY@"
 if os.uname()[0] == 'Darwin':
   EXODUS_SO = "@ACCESSDIR@/lib/libexodus.dylib"
 else:
   EXODUS_SO = "@ACCESSDIR@/lib/libexodus.so"
-NETCDF_LIB = cdll.LoadLibrary(NETCDF_SO)
 EXODUS_LIB = cdll.LoadLibrary(EXODUS_SO)
+
+MAX_STR_LENGTH       = 32      # match exodus default
+MAX_NAME_LENGTH      = 256     # match exodus default
+MAX_LINE_LENGTH      = 80      # match exodus default
 
 EX_API_VERSION_NODOT = getExodusVersion()
 EX_VERBOSE =           1       #verbose mode message flag
@@ -106,13 +107,37 @@ else:
 EX_WRITE             = 0x0001  # ex_open(): open existing file for appending.
 EX_NOCLOBBER         = 0x0004  # does not overwrite existing exodus file
 EX_CLOBBER           = 0x0008  # overwrites existing exodus file
-MAX_STR_LENGTH       = 32      # match exodus default
-MAX_NAME_LENGTH      = 256     # match exodus default
-MAX_LINE_LENGTH      = 80      # match exodus default
-EX_MAPS_INT64_API    = 0x2000  # all maps (id, order, ...) store int64_t values
-EX_IDS_INT64_API     = 0x4000  # all entity ids (sets, blocks, maps) are int64_t
-EX_BULK_INT64_API    = 0x8000  # all integer bulk data (not ids) are int64_t
-EX_INQ_INT64_API     = 0x10000 # integers passed to/from ex_inquire are int64_t
+
+EX_NORMAL_MODEL      = 0x0010  # disable mods that permit storage of larger models 
+EX_64BIT_OFFSET      = 0x0020  # enable mods that permit storage of larger models 
+EX_LARGE_MODEL       = EX_64BIT_OFFSET # enable mods that permit storage of larger models 
+EX_64BIT_DATA        = 0x400000# CDF-5 format: classic model but 64 bit dimensions and sizes 
+EX_NETCDF4           = 0x0040  # use the hdf5-based netcdf4 output 
+EX_NOSHARE           = 0x0080  # Do not open netcdf file in "share" mode 
+EX_SHARE             = 0x0100  # Do open netcdf file in "share" mode 
+EX_NOCLASSIC         = 0x0200  # Do not force netcdf to classic mode in netcdf4 mode 
+
+EX_DISKLESS          = 0x100000 # Experimental 
+EX_MMAP              = 0x200000 # Experimental 
+
+# Need to distinguish between storage on database (DB in name) and
+# passed through the API functions (API in name).
+EX_MAPS_INT64_DB     = 0x0400  # All maps (id, order, ...) store int64_t values 
+EX_IDS_INT64_DB      = 0x0800  # All entity ids (sets, blocks, maps) are int64_t values 
+EX_BULK_INT64_DB     = 0x1000  # All integer bulk data (local indices, counts, maps); not ids
+EX_ALL_INT64_DB      = EX_MAPS_INT64_DB + EX_IDS_INT64_DB + EX_BULK_INT64_DB # All of the above... 
+
+EX_MAPS_INT64_API    = 0x2000  # All maps (id, order, ...) store int64_t values 
+EX_IDS_INT64_API     = 0x4000  # All entity ids (sets, blocks, maps) are int64_t values 
+EX_BULK_INT64_API    = 0x8000  # All integer bulk data (local indices, counts, maps); not ids 
+EX_INQ_INT64_API     = 0x10000 # Integers passed to/from ex_inquire are int64_t 
+# All of the above... 
+EX_ALL_INT64_API     = EX_MAPS_INT64_API + EX_IDS_INT64_API + EX_BULK_INT64_API + EX_INQ_INT64_API
+
+# Parallel IO mode flags... 
+EX_MPIIO             = 0x20000
+EX_MPIPOSIX          = 0x40000 # \deprecated As of libhdf5 1.8.13. 
+EX_PNETCDF           = 0x80000
 
 # set exodus error output option
 exErrPrintMode = c_int(EX_VERBOSE)

@@ -1,6 +1,6 @@
-// Copyright (c) 2014, Sandia Corporation.
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright (c) 2014 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
 //
-//     * Neither the name of Sandia Corporation nor the names of its
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -34,10 +34,10 @@
 #include "apr_util.h"     // for conv_string
 #include "aprepro.h"      // for Aprepro, symrec, etc
 #include "init_structs.h" // for svar_init, var_init
+#include <cstddef>        // for size_t
 #include <cstring>        // for strcmp
 #include <iomanip>        // for operator<<, setw, etc
 #include <ostream>        // for operator<<, basic_ostream, etc
-#include <stddef.h>       // for size_t
 #include <string>         // for char_traits, operator<<, etc
 
 namespace SEAMS {
@@ -322,7 +322,7 @@ struct unit_systems systems[] =
     {"in-lbf-s", in_lbf_s, in_lbf_s_label},
     {nullptr, nullptr, nullptr}
   };
-}
+} // namespace
 
 const char *do_Units(char *type)
 {
@@ -339,14 +339,14 @@ const char *do_Units(char *type)
     /* Found a match */
     for (j = 0; systems[i].label[j].vname != nullptr; j++) {
       if ((ptr = aprepro->getsym(systems[i].label[j].vname)) == nullptr) {
-	ptr = aprepro->putsym(systems[i].label[j].vname, SEAMS::Aprepro::STRING_VARIABLE, 1);
+	ptr = aprepro->putsym(systems[i].label[j].vname, SEAMS::Aprepro::STRING_VARIABLE, true);
       }
       ptr->value.svar = systems[i].label[j].value;
     }
 
     for (j = 0; systems[i].base[j].vname != nullptr; j++) {
       if ((ptr = aprepro->getsym(systems[i].base[j].vname)) == nullptr) {
-	ptr = aprepro->putsym(systems[i].base[j].vname, SEAMS::Aprepro::VARIABLE, 1);
+	ptr = aprepro->putsym(systems[i].base[j].vname, SEAMS::Aprepro::VARIABLE, true);
       }
       ptr->value.var = systems[i].base[j].value;
     }
@@ -354,9 +354,9 @@ const char *do_Units(char *type)
     load_conversion(systems[i].base, systems[i].label);
     return (" ");
   }
-  else {
+  
     return ("Aprepro: ERROR: Invalid units system type. Valid types are: 'si', 'cgs', 'cgs-ev', 'shock', 'swap', 'ft-lbf-s', 'ft-lbm-s', 'in-lbf-s'");
-  }
+  
 }
 
 void load_conversion(struct var_init *base, struct svar_init *label)
@@ -388,11 +388,12 @@ void load_conversion(struct var_init *base, struct svar_init *label)
 
   const char* comment = aprepro->getsym("_C_")->value.svar;
   std::string title_prefix = "\n";
-  for(size_t i = 0; i < 3; i++)
+  for(size_t i = 0; i < 3; i++) {
     title_prefix += comment;
+}
   title_prefix += " ";
 
-  if (echo) {
+  if (echo != 0) {
     *(aprepro->infoStream)
         << title_prefix << "Outputs\n" <<
            comment << " " << std::setw(10) << "Time"   << ":\t" << tout << "\n" <<
@@ -411,7 +412,7 @@ void load_conversion(struct var_init *base, struct svar_init *label)
            comment << '\n';
   }
 
-  if (echo) {
+  if (echo != 0) {
     *(aprepro->infoStream)
         << title_prefix << "Base Dimensions\n" <<
            comment << " 1 " << std::left << std::setw(10) << "meter" << "\t= "
@@ -430,8 +431,9 @@ void load_conversion(struct var_init *base, struct svar_init *label)
                    << std::setw(14) << std::setprecision(7) << rad << "  " << Aout << '\n';
   }
 
-  if (echo) *(aprepro->infoStream) << title_prefix << "Binary Prefixes" << '\n';
-  DEFINE_VAR("byte", 1, "byte");
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Binary Prefixes" << '\n';
+  
+}DEFINE_VAR("byte", 1, "byte");
   DEFINE_VAR("KiB",  1024.0, "byte");
   DEFINE_VAR("MiB",  1024.0*1024.0, "byte");
   DEFINE_VAR("GiB",  1024.0*1024.0*1024.0, "byte");
@@ -449,8 +451,9 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("ZB",   1.0e21, "byte");
   DEFINE_VAR("YB",   1.0e24, "byte");
 
-  if (echo) *(aprepro->infoStream) << title_prefix << "Time (T)" << '\n';
-  DEFINE_VAR("second",                                        sec,         tout);
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Time (T)" << '\n';
+  
+}DEFINE_VAR("second",                                        sec,         tout);
   DEFINE_VAR("usec",                                          sec / 1.0e6, tout);
   DEFINE_VAR("microsecond",                                   sec / 1.0e6, tout);
   DEFINE_VAR("msec",                                          sec / 1.0e3, tout);
@@ -464,8 +467,9 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("decade",       10. * 365.25 * 24. * 60. * 60. * sec,         tout);
   DEFINE_VAR("century",     100. * 365.25 * 24. * 60. * 60. * sec,         tout);
       
-  if (echo) *(aprepro->infoStream) << title_prefix << "Length (L)" << '\n';
-  DEFINE_VAR("meter",       m,         lout);
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Length (L)" << '\n';
+  
+}DEFINE_VAR("meter",       m,         lout);
   DEFINE_VAR("metre",       m,         lout);
   DEFINE_VAR("cm",          m / 100.,  lout);
   DEFINE_VAR("centimeter",  m / 100.,  lout);
@@ -489,12 +493,14 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("inch",        inch,      lout);
   DEFINE_VAR("mil",         inch / 1000., lout);
 
-  if (echo) *(aprepro->infoStream) << title_prefix << "Acceleration (L/T^2)" << '\n';
-  DEFINE_VAR("ga", 9.806650 * m / (sec*sec), aout);
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Acceleration (L/T^2)" << '\n';
+  
+}DEFINE_VAR("ga", 9.806650 * m / (sec*sec), aout);
 
   /* Force  (ML/T^2) */
-  if (echo) *(aprepro->infoStream) << title_prefix << "Force (ML/T^2)" << '\n';
-  DEFINE_VAR("newton",              1.0    * kg*m/(sec*sec), fout);
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Force (ML/T^2)" << '\n';
+  
+}DEFINE_VAR("newton",              1.0    * kg*m/(sec*sec), fout);
   DEFINE_VAR("N",                   1.0    * kg*m/(sec*sec), fout);
   DEFINE_VAR("dyne",                1.0e-5 * kg*m/(sec*sec), fout);
   DEFINE_VAR("lbf",        4.4482216152605 * kg*m/(sec*sec), fout);
@@ -506,16 +512,18 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("ounce",      4.4482216152605 * kg*m/(sec*sec)/16.0, fout);
 
   /* Mass (M) */
-  if (echo) *(aprepro->infoStream) << title_prefix << "Mass (M)" << '\n';
-  DEFINE_VAR("gram",              kg / 1000., mout);
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Mass (M)" << '\n';
+  
+}DEFINE_VAR("gram",              kg / 1000., mout);
   DEFINE_VAR("g",                 kg / 1000., mout);
   DEFINE_VAR("lbm",   453.59237 * kg / 1000., mout);
   DEFINE_VAR("slug",  453.59237 * kg / 1000. * 32.17404856, mout);
   DEFINE_VAR("lbfs2pin",  4.4482216152605 * kg/0.0254, mout);
   
   /* Velocity (L/T) */
-  if (echo) *(aprepro->infoStream) << title_prefix << "Velocity (L/T)" << '\n';
-  DEFINE_VAR("mps",  m/sec, vout);
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Velocity (L/T)" << '\n';
+  
+}DEFINE_VAR("mps",  m/sec, vout);
   DEFINE_VAR("fps",  foot / sec, vout);
   DEFINE_VAR("mph",  (foot * 5280.) / (60. * 60. * sec), vout);
   DEFINE_VAR("ips",  (inch) / sec, vout);
@@ -523,14 +531,16 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("kps",  (1000. * m) / sec, vout);
 
   /* Volume (L^3) */
-  if (echo) *(aprepro->infoStream) << title_prefix << "Volume (L^3)" << '\n';
-  DEFINE_VAR("liter",              (m*m*m)/1000., Vout);
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Volume (L^3)" << '\n';
+  
+}DEFINE_VAR("liter",              (m*m*m)/1000., Vout);
   DEFINE_VAR("gal",     3.785412 * (m*m*m)/1000., Vout);
   DEFINE_VAR("gallon",  3.785412 * (m*m*m)/1000., Vout);
 
   /* Density (M/L^3) */
-  if (echo) *(aprepro->infoStream) << title_prefix << "Density (M/L^3)" << '\n';
-  DEFINE_VAR("gpcc",      (kg/1000.)/((m/100.)*(m/100.)*(m/100.)), dout);
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Density (M/L^3)" << '\n';
+  
+}DEFINE_VAR("gpcc",      (kg/1000.)/((m/100.)*(m/100.)*(m/100.)), dout);
   DEFINE_VAR("kgpm3",      kg /(m*m*m), dout);
   DEFINE_VAR("lbfs2pin4",  (4.4482216152605 * kg*m/(sec*sec))*sec*sec / (inch*inch*inch*inch), dout);
   DEFINE_VAR("lbmpin3",    (453.59237 * kg / 1000.) / (inch*inch*inch), dout);
@@ -538,14 +548,16 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("slugpft3",   (453.59237 * kg / 1000. * 32.17404856) / (foot*foot*foot), dout);
 
   /* Power: (M L^2 / T^3) */
-  if (echo) *(aprepro->infoStream) << title_prefix << "Power (M L^2 / T^3)" << '\n';
-  DEFINE_VAR("W",    kg*m/(sec*sec)*m/sec, Pout);
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Power (M L^2 / T^3)" << '\n';
+  
+}DEFINE_VAR("W",    kg*m/(sec*sec)*m/sec, Pout);
   DEFINE_VAR("watt", kg*m/(sec*sec)*m/sec, Pout);
   DEFINE_VAR("Hp",   kg*m/(sec*sec)*m/sec * 746, Pout); /* --- (electric horsepower) */
 
   /* Energy (ML^2/T^2) */
-  if (echo) *(aprepro->infoStream) << title_prefix << "Energy (M L^2 / T^2)" << '\n';
-  DEFINE_VAR("joule",  kg*m/(sec*sec)*m, eout);
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Energy (M L^2 / T^2)" << '\n';
+  
+}DEFINE_VAR("joule",  kg*m/(sec*sec)*m, eout);
   DEFINE_VAR("J",      kg*m/(sec*sec)*m, eout);
   DEFINE_VAR("ftlbf",  kg*m/(sec*sec)*m * 1.355818, eout); 
   DEFINE_VAR("Btu",    kg*m/(sec*sec)*m * 1.05505585262e3, eout); /*--- I18n Table */
@@ -556,8 +568,9 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("tonTNT",  kg*m/(sec*sec)*m * 4.184e9, eout); 
 
   /* Pressure: (M/L/T^2) */
-  if (echo) *(aprepro->infoStream) << title_prefix << "Pressure (M/L/T^2)" << '\n';
-  DEFINE_VAR("Pa",      kg*m/(sec*sec) / (m*m), pout);
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Pressure (M/L/T^2)" << '\n';
+  
+}DEFINE_VAR("Pa",      kg*m/(sec*sec) / (m*m), pout);
   DEFINE_VAR("pascal",  kg*m/(sec*sec) / (m*m), pout);
   DEFINE_VAR("MPa",     kg*m/(sec*sec) / (m*m) * 1.0e6, pout); 
   DEFINE_VAR("GPa",     kg*m/(sec*sec) / (m*m) * 1.0e9, pout); 
@@ -576,8 +589,9 @@ void load_conversion(struct var_init *base, struct svar_init *label)
   DEFINE_VAR("ftH2O",   kg*m/(sec*sec) / (m*m) * 249.082 * 12.0, pout); 
 
   /* Temperature: */
-  if (echo) *(aprepro->infoStream) << title_prefix << "Temperature" << '\n';
-  DEFINE_VAR("kelvin",         degK, Tout); 
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Temperature" << '\n';
+  
+}DEFINE_VAR("kelvin",         degK, Tout); 
   DEFINE_VAR("degC",           degK, Tout); 
   DEFINE_VAR("degF",   5./9. * degK, Tout); 
   DEFINE_VAR("degR",   5./9. * degK, Tout);
@@ -586,8 +600,9 @@ void load_conversion(struct var_init *base, struct svar_init *label)
 
   /* Angular */
 #define PI  3.141592653589793238462643
-  if (echo) *(aprepro->infoStream) << title_prefix << "Angular" << '\n';
-  DEFINE_VAR("rev",    2.0 * PI * rad, Aout); 
+  if (echo != 0) { *(aprepro->infoStream) << title_prefix << "Angular" << '\n';
+  
+}DEFINE_VAR("rev",    2.0 * PI * rad, Aout); 
   DEFINE_VAR("deg",    2.0 * PI * rad / 360.0, Aout); 
   DEFINE_VAR("degree", 2.0 * PI * rad / 360.0, Aout); 
   DEFINE_VAR("arcmin", 2.0 * PI * rad / 360.0 / 60.0, Aout); 
@@ -596,4 +611,4 @@ void load_conversion(struct var_init *base, struct svar_init *label)
 }
 
 
-}
+}  // namespace SEAMS

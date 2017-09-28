@@ -87,14 +87,14 @@ int main(int argc, char *argv[]) {
   // Before we do anything, check that the solver is enabled
   if( !Amesos2::query(solver_name) ){
     std::cerr << solver_name << " not enabled.  Exiting..." << std::endl;
-    return EXIT_SUCCESS;	// Otherwise CTest will pick it up as
-				// failure, which it isn't really
+    return EXIT_SUCCESS;        // Otherwise CTest will pick it up as
+                                // failure, which it isn't really
   }
 
 
   typedef double Scalar;
-  typedef int LO;
-  typedef int GO;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
 
   typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
   typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
@@ -122,8 +122,8 @@ int main(int argc, char *argv[]) {
   if( numProcs != 2 ){
     std::cerr << "Example should be run with number of processes \
       equal to 2 (hard-coded example).  Exiting..." << std::endl;
-    return EXIT_SUCCESS;	// Otherwise CTest will pick it up as
-				// failure, which it isn't really
+    return EXIT_SUCCESS;        // Otherwise CTest will pick it up as
+                                // failure, which it isn't really
   }
 
   const GO numGlobalEntries = nrows;
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
   RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>(solver_name, A, X, B);
 
   if( Amesos2::query(solver_name) ) {
-  
+
     // Create a Teuchos::ParameterList to hold solver parameters
     Teuchos::ParameterList amesos2_params("Amesos2");
     amesos2_params.sublist(solver_name).set("IsContiguous", false, "Are GIDs Contiguous");

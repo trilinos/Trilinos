@@ -50,7 +50,7 @@
 // TpetraKernels.
 
 #include <Teuchos_BLAS.hpp>
-#include <Kokkos_Blas2_MV.hpp>
+#include <KokkosBlas2_gemv.hpp>
 #include "Tpetra_Details_gemm.hpp"
 
 namespace Teuchos {

@@ -1,5 +1,5 @@
 #include "TextMesh.hpp"
-#include <mpi.h>
+#include "mpi.h"
 #include <string>
 #include <sstream>
 #include <vector>

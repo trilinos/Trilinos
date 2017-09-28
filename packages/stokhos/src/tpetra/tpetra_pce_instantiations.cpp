@@ -52,7 +52,8 @@ typedef int GlobalOrdinal;
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp.hpp"
-
+#include "Tpetra_Details_packCrsMatrix.hpp"
+#include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 
@@ -65,6 +66,8 @@ typedef int GlobalOrdinal;
 #include "Tpetra_CrsGraph_def.hpp"
 #include "Tpetra_Details_getDiagCopyWithoutOffsets_def.hpp"
 #include "Tpetra_CrsMatrix_def.hpp"
+#include "Tpetra_Details_packCrsMatrix_def.hpp"
+#include "Tpetra_Details_unpackCrsMatrixAndCombine_def.hpp"
 
 #include "TpetraExt_MatrixMatrix_def.hpp"
 #include "Tpetra_RowMatrixTransposer_def.hpp"

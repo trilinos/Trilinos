@@ -332,6 +332,7 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
   }
 
   // do second order derivatives
+#ifdef HAVE_INTREPID2_SACADO
   try {
     *outStream << "\n"
         << "===============================================================================\n"
@@ -483,7 +484,7 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   }
-
+#endif
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else

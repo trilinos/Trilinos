@@ -23,5 +23,5 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Allocator_atexit
   SOURCES Allocator_atexit.cpp
   COMM serial mpi
-  PASS_REGULAR_EXPRESSION "Proc 0: Teuchos allocation tracking: Maximum allocation [(]B[)]: 120, Current allocation [(]B[)]: 0"
+  PASS_REGULAR_EXPRESSION "Proc 0: Teuchos allocation tracking: Maximum allocation [(]B[)]: [0-9]*, Current allocation [(]B[)]: 0"
   )

@@ -413,7 +413,7 @@ namespace Xpetra {
     //! Local number of rows on the calling process.
     virtual size_t getLocalLength() const {
       throw Xpetra::Exceptions::RuntimeError("BlockedVector::getLocalLength: routine not implemented. It has no value as one must iterate on the partial vectors.");
-      return 0;
+      TEUCHOS_UNREACHABLE_RETURN(0);
     }
 
     //! Global number of rows in the Vector.

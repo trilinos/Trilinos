@@ -79,7 +79,7 @@ panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
                               const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
                               const Teuchos::ParameterList& p,
-                              bool useDiscreteAdjoint)
+                              bool /* useDiscreteAdjoint */)
   : rowIndexers_(rIndexers) 
   , colIndexers_(cIndexers) 
   , globalDataKey_("Residual Scatter Container")
@@ -112,8 +112,6 @@ ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalI
 
   if (p.isType<std::string>("Global Data Key"))
      globalDataKey_ = p.get<std::string>("Global Data Key");
-  if (p.isType<bool>("Use Discrete Adjoint"))
-     useDiscreteAdjoint = p.get<bool>("Use Discrete Adjoint");
 
   this->setName(scatterName+" Scatter Residual");
 }
@@ -121,7 +119,7 @@ ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalI
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO> 
 void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Residual, TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData d, 
+postRegistrationSetup(typename TRAITS::SetupData /* d */, 
 		      PHX::FieldManager<TRAITS>& fm)
 {
   indexerIds_.resize(scatterFields_.size());
@@ -220,7 +218,7 @@ panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
 ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
                               const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
                               const Teuchos::ParameterList& p,
-                              bool useDiscreteAdjoint)
+                              bool /* useDiscreteAdjoint */)
   : rowIndexers_(rIndexers) 
   , colIndexers_(cIndexers) 
   , globalDataKey_("Residual Scatter Container")
@@ -260,7 +258,7 @@ ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalI
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO> 
 void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData d, 
+postRegistrationSetup(typename TRAITS::SetupData /* d */, 
 		      PHX::FieldManager<TRAITS>& fm)
 {
   indexerIds_.resize(scatterFields_.size());
@@ -411,7 +409,7 @@ ScatterResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalI
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO> 
 void panzer::ScatterResidual_BlockedEpetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
 		      PHX::FieldManager<TRAITS>& fm)
 {
   indexerIds_.resize(scatterFields_.size());

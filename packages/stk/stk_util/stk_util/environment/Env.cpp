@@ -83,19 +83,6 @@ format_time(
 
 namespace Env {
 
-//
-//  Set or get the nemo version, if passed value is not unknown, set the version, either way return the version
-//
-NemoVersion GetNemoVersion(NemoVersion ver) 
-{
-  static NemoVersion nemoVersion = NEMO_UNKNOWN;  //This is the default nemo version
-  if(ver != NEMO_UNKNOWN) {
-    nemoVersion = ver;
-  }
-  ThrowRequire(nemoVersion != NEMO_UNKNOWN);
-  return nemoVersion;
-}
-
 const std::string &
 product_name()
 {
@@ -151,16 +138,6 @@ void set_sm_preprocessing(bool value)
 {
     stk::EnvData::instance().m_checkSubCycle = value;
     stk::EnvData::instance().m_checkSmRegion = value;
-}
-
-void set_zapotec(bool value)
-{
-    stk::EnvData::instance().m_isZapotec = value;
-}
-
-bool is_zapotec()
-{
-    return stk::EnvData::instance().m_isZapotec;
 }
 
 const std::string &
@@ -280,16 +257,6 @@ MPI_Comm
 parallel_world_comm()
 {
   return stk::EnvData::instance().m_worldComm;
-}
-
-int parallel_lag_master() 
-{
-  return stk::EnvData::instance().m_execMap[EXEC_TYPE_LAG].m_master;
-}
-
-int parallel_fluid_master() 
-{
-  return stk::EnvData::instance().m_execMap[EXEC_TYPE_FLUID].m_master;
 }
 
 int peer_group() 

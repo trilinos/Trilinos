@@ -583,9 +583,6 @@ namespace MueLuTests {
         currentLevel.SetFactoryManager(factoryHandler);
 
         currentLevel.SetLevelID(0);
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-        currentLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
-#endif
       }
 
       // Needed to initialize correctly levels used for testing TwoLevel factory Build() methods.
@@ -599,10 +596,6 @@ namespace MueLuTests {
 
         fineLevel.SetLevelID(0);
         coarseLevel.SetLevelID(1);
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-        fineLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
-        coarseLevel.SetComm(TestHelpers::Parameters::getDefaultComm());
-#endif
       }
 
       static RCP<SmootherPrototype> createSmootherPrototype(const std::string& type="Gauss-Seidel", LO sweeps=1) {

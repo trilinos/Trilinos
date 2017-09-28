@@ -50,6 +50,8 @@
 #include "Panzer_WorksetNeeds.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_LocalMeshInfo.hpp"
+#include "Panzer_PointGenerator.hpp"
+#include "Panzer_PointValues2.hpp"
 
 #include "Panzer_SubcellConnectivity.hpp"
 
@@ -115,8 +117,9 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
   // DEPRECATED - makes sure deprecated arrays are filled with something - this will probably segfault or throw an error
   panzer::populateValueArrays(num_cells, false, needs, *this);
 
-  const std::vector<panzer::IntegrationDescriptor> & integration_descriptors = needs.getIntegrators();
   const std::vector<panzer::BasisDescriptor> & basis_descriptors = needs.getBases();
+  const std::vector<panzer::IntegrationDescriptor> & integration_descriptors = needs.getIntegrators();
+  const std::vector<panzer::PointDescriptor> & point_descriptors = needs.getPoints();
 
   // Create the pure basis
   for(const panzer::BasisDescriptor & basis_description : basis_descriptors){
@@ -182,6 +185,48 @@ void WorksetDetails::setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_to
 
   }
 
+  // Create the point terms and basis-integrator pairs
+  for(const panzer::PointDescriptor & point_description : point_descriptors){
+
+    // get the generaotr, and build some points from a topology
+    auto points = point_description.getGenerator().getPoints(*cell_topology);
+
+    // Create and store integration rule
+    Teuchos::RCP<panzer::PointRule> pr = Teuchos::rcp(new panzer::PointRule(point_description,
+                                                                            cell_topology,
+                                                                            num_cells));
+    _point_rule_map[point_description.getKey()] = pr;
+
+    // Create and store integration values
+    Teuchos::RCP<panzer::PointValues2<double> > pv = Teuchos::rcp(new panzer::PointValues2<double>("",true));
+    pv->setupArrays(pr);
+    pv->evaluateValues(cell_vertex_coordinates,points);
+
+    _point_map[point_description.getKey()] = pv;
+
+    // We need to generate a integration rule - basis pair for each basis
+    for(const panzer::BasisDescriptor & basis_description : basis_descriptors){
+
+      // Grab the basis that was pre-calculated
+      const Teuchos::RCP<const panzer::PureBasis> & basis = _pure_basis_map[basis_description.getKey()];
+
+      // Create a basis ir layout for this pair of integrator and basis
+      Teuchos::RCP<panzer::BasisIRLayout> b_layout = Teuchos::rcp(new panzer::BasisIRLayout(basis,*pr));
+
+      // Create and store basis values
+      Teuchos::RCP<panzer::BasisValues2<double> > bv = Teuchos::rcp(new panzer::BasisValues2<double>("",true,true));
+      bv->setupArrays(b_layout);
+
+      bv->evaluateValues(pv->coords_ref,
+                         pv->jac,
+                         pv->jac_det,
+                         pv->jac_inv);
+
+      _basis_map[basis_description.getKey()][point_description.getKey()] = bv;
+    }
+
+  }
+
 }
 
 const panzer::SubcellConnectivity &
@@ -208,14 +253,43 @@ WorksetDetails::getIntegrationRule(const panzer::IntegrationDescriptor & descrip
 }
 
 const panzer::BasisValues2<double> &
-WorksetDetails::getBasisValues(const panzer::BasisDescriptor & basis_description, const panzer::IntegrationDescriptor & integration_description) const
+WorksetDetails::getBasisValues(const panzer::BasisDescriptor & basis_description, 
+                               const panzer::PointDescriptor & point_description) const
 {
   const auto itr = _basis_map.find(basis_description.getKey());
-  TEUCHOS_ASSERT(itr != _basis_map.end());
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(itr == _basis_map.end(),
+                              "Workset::getBasisValues: Can't find basis \"" + basis_description.getType() + "\" " 
+                              "of order " + std::to_string(basis_description.getOrder()));
+  const auto & point_map = itr->second;
+  const auto itr2 = point_map.find(point_description.getKey());
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(itr2 == point_map.end(),
+                              "Workset::getBasisValues: Can't find point values \"" + point_description.getType() + "\""); 
+  return *(itr2->second);
+}
+
+const panzer::BasisValues2<double> &
+WorksetDetails::getBasisValues(const panzer::BasisDescriptor & basis_description, 
+                               const panzer::IntegrationDescriptor & integration_description) const
+{
+  const auto itr = _basis_map.find(basis_description.getKey());
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(itr == _basis_map.end(),
+                              "Workset::getBasisValues: Can't find basis \"" + basis_description.getType() + "\" " 
+                              "of order " + std::to_string(basis_description.getOrder()));
   const auto & integration_map = itr->second;
   const auto itr2 = integration_map.find(integration_description.getKey());
-  TEUCHOS_ASSERT(itr2 != integration_map.end());
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(itr2 == integration_map.end(),
+                              "Workset::getBasisValues: Can't find basis " + std::to_string(integration_description.getType()) + " " 
+                              "of order " + std::to_string(integration_description.getOrder()));
   return *(itr2->second);
+}
+
+const panzer::PointValues2<double> &
+WorksetDetails::getPointValues(const panzer::PointDescriptor & point_description) const
+{
+  const auto itr = _point_map.find(point_description.getKey());
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(itr == _point_map.end(),
+                              "Workset::getPointValues: Can't find point values \"" + point_description.getType() + "\""); 
+  return *(itr->second);
 }
 
 const panzer::PureBasis &

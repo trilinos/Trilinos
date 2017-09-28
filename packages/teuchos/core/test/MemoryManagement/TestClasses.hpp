@@ -131,40 +131,21 @@ class C : virtual public B1, virtual public B2
 {
 	int C_g_, C_f_;
 public:
-	C() : C_g_(C_g_return), C_f_(C_f_return), call_A_on_delete_(false)
+	C() : C_g_(C_g_return), C_f_(C_f_return)
     {
       A_g_on_delete_ = -2;
     }
   static Teuchos::RCP<C> create() { return Teuchos::rcp(new C); }
-	~C() TEUCHOS_NOEXCEPT_FALSE
+	~C()
     {
       C_g_ = -1; C_f_ = -1;
-      if (call_A_on_delete_) {
-        // VERY BAD THING TO DO!
-        A_g_on_delete_ = call_A_g();
-        // NOTE: If a_ is a weak pointer and the underlying 'A' object has
-        // already been deleted, then this destructor will throw an exception.
-        // This is *never* a good thing to do in production code.  However, I
-        // am allowing this destructor to throw an exception so I can write a
-        // unit test to detect this. The destructor must be declared as
-        // noexcept(false) in C++11 (using the TEUCHOS_NOEXCEPT_FALSE
-        // definition), otherwise it will terminate the program by calling
-        // std::terminate when the exception is thrown. When the ~C()
-        // destructor is declared as noexcept(false), then also the ~A()
-        // destructor must be declared as noexcept(false), because a method in
-        // a derived class cannot throw more exceptions than the corresponding
-        // virtual method in the superclass.
-      }
     }
 	virtual int C_g() { return C_g_; }
 	virtual int C_f() const { return C_f_; }
-  void call_A_on_delete(bool call_A_on_delete_in)
-    { call_A_on_delete_ = call_A_on_delete_in; }
   int call_A_g() { return a_->A_g(); }
   static int get_A_g_on_delete() { return A_g_on_delete_; }
 private:
   Teuchos::RCP<A> a_;
-  bool call_A_on_delete_;
   static int A_g_on_delete_;
 public:
   void set_A(const Teuchos::RCP<A> &a ) { a_ = a; }

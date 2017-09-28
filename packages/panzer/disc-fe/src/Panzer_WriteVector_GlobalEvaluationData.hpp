@@ -82,7 +82,7 @@ public:
 
   /** For this class, this method does nothing.
     */
-  virtual void globalToGhost(int mem) { }
+  virtual void globalToGhost(int /* mem */) { }
 
   /** For this class, this method does the halo exchange for the
     * vector.

@@ -2239,9 +2239,9 @@ void panzer::ModelEvaluator<Scalar>::
 buildDistroParamDgDp_RL(
        const Teuchos::RCP<panzer::WorksetContainer> & wc,
        const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-       const std::vector<panzer::BC> & bcs,
+       const std::vector<panzer::BC>& /* bcs */,
        const panzer::EquationSetFactory & eqset_factory,
-       const panzer::BCStrategyFactory& bc_factory,
+       const panzer::BCStrategyFactory& /* bc_factory */,
        const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
        const Teuchos::ParameterList& closure_models,
        const Teuchos::ParameterList& user_data,

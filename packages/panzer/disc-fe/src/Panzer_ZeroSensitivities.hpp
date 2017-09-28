@@ -53,7 +53,7 @@ namespace panzer {
   // void zeroSensitivities(ScalarT& s);
 
   //! Specialization for Residual
-  inline void zeroSensitivities(panzer::Traits::RealType& s) {}
+  inline void zeroSensitivities(panzer::Traits::RealType& /* s */) {}
 
   //! Specialization for Fad type Jacobian
   inline void zeroSensitivities(panzer::Traits::FadType& s) 

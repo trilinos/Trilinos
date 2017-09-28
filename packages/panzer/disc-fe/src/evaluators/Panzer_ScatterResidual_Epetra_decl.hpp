@@ -57,7 +57,6 @@
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 class Epetra_Vector;
-class Epetra_CrsMatrix;
 
 namespace panzer {
 
@@ -103,7 +102,7 @@ class ScatterResidual_Epetra<panzer::Traits::Residual,TRAITS,LO,GO>
   
 public:
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer=Teuchos::null,
+                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & /* cIndexer=Teuchos::null */,
                          bool useDiscreteAdjoint=false) 
      : globalIndexer_(indexer),useDiscreteAdjoint_(useDiscreteAdjoint)  {}
   
@@ -159,7 +158,7 @@ class ScatterResidual_Epetra<panzer::Traits::Tangent,TRAITS,LO,GO>
   
 public:
   ScatterResidual_Epetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
-                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer=Teuchos::null,
+                         const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & /* cIndexer=Teuchos::null */,
                          bool useDiscreteAdjoint=false) 
      : globalIndexer_(indexer),useDiscreteAdjoint_(useDiscreteAdjoint)  {}
   

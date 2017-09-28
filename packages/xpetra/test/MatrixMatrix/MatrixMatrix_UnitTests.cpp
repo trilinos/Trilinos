@@ -110,9 +110,6 @@ namespace {
   using Xpetra::DefaultPlatform;
   using Xpetra::Matrix;
   using Xpetra::CrsMatrix;
-#ifdef HAVE_XPETRA_TPETRA
-  using Xpetra::TpetraCrsMatrix; //TMP
-#endif
   using Xpetra::Map;
 
   using Xpetra::viewLabel_t;
@@ -121,7 +118,7 @@ namespace {
   double errorTolSlack = 1e+1;
 
 
-
+#if (defined(HAVE_XPETRA_EPETRA) && defined(HAVE_XPETRA_EPETRAEXT)) || (defined(HAVE_XPETRA_TPETRA))
   RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
@@ -129,6 +126,7 @@ namespace {
     }
     return rcp(new Teuchos::SerialComm<int>());
   }
+#endif
 
   /////////////////////////////////////////////////////
 
@@ -376,6 +374,7 @@ namespace {
     // The matrix reader does not work with complex scalars. Skip all tests then.
     return;
 #endif
+#ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::Map<LO, GO, Node> MapClass;
     typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
     typedef Xpetra::CrsMatrix<Scalar,LO,GO,Node> CrsMatrixClass;
@@ -385,7 +384,6 @@ namespace {
     //Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
     //yAB->describe(*fos, Teuchos::VERB_EXTREME);
 
-#ifdef HAVE_XPETRA_TPETRA
     { // Tpetra test
 
       // get a comm and node

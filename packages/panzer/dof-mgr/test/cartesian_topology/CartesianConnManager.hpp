@@ -221,10 +221,10 @@ public:
      */
    virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockId) const;
 
-   virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & s) const
+   virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & /* s */) const
    { return emptyVector_; }
 
-   virtual const std::vector<LocalOrdinal> & getAssociatedNeighbors(const LocalOrdinal& el) const
+   virtual const std::vector<LocalOrdinal> & getAssociatedNeighbors(const LocalOrdinal& /* el */) const
    { return emptyVector_; }
 
    virtual bool hasAssociatedNeighbors() const 

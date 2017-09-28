@@ -4,7 +4,7 @@
 #include <stk_io/StkIoUtils.hpp>
 
 #include <string>                       // for string
-#include <mpi.h>                        // for MPI_COMM_WORLD
+#include "mpi.h"                        // for MPI_COMM_WORLD
 #include <stk_io/DatabasePurpose.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>

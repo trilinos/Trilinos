@@ -54,17 +54,46 @@
 #include <Xpetra_VectorFactory.hpp>
 
 #include "MueLu_RAPShiftFactory_decl.hpp"
-
+#include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
+  /*********************************************************************************************************/
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RAPShiftFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RAPShiftFactory()
     : implicitTranspose_(false), checkAc_(false), repairZeroDiagonals_(false) { }
 
+
+  /*********************************************************************************************************/
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> RAPShiftFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("transpose: use implicit");
+    SET_VALID_ENTRY("rap: shift");
+#undef  SET_VALID_ENTRY
+
+    validParamList->set< RCP<const FactoryBase> >("M",              Teuchos::null, "Generating factory of the matrix M used during the non-Galerkin RAP");
+    validParamList->set< RCP<const FactoryBase> >("K",              Teuchos::null, "Generating factory of the matrix K used during the non-Galerkin RAP");
+    validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Prolongator factory");
+    validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Restrictor factory");
+
+    validParamList->set< bool >                  ("CheckMainDiagonal",  false, "Check main diagonal for zeros");
+    validParamList->set< bool >                  ("RepairMainDiagonal", false, "Repair zeros on main diagonal");
+
+    // Make sure we don't recursively validate options for the matrixmatrix kernels
+    ParameterList norecurse;
+    norecurse.disableRecursiveValidation();
+    validParamList->set<ParameterList> ("matrixmatrix: kernel params", norecurse, "MatrixMatrix kernel parameters");
+
+    return validParamList;
+  }
+
+  /*********************************************************************************************************/
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RAPShiftFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     if (implicitTranspose_ == false) {
@@ -84,7 +113,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RAPShiftFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const { // FIXME make fineLevel const
     {
-      FactoryMonitor m(*this, "Computing Ac", coarseLevel);
+      FactoryMonitor m(*this, "Computing Ac", coarseLevel);      
+      const Teuchos::ParameterList& pL = GetParameterList();
 
       // Inputs: K, M, P
       RCP<Matrix> K = Get< RCP<Matrix> >(fineLevel, "K");
@@ -95,10 +125,11 @@ namespace MueLu {
       RCP<Matrix> KP, MP;
 
       // Reuse pattern if available (multiple solve)
-      if (IsAvailable(coarseLevel, "AP Pattern")) {
-        KP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
-        MP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
-      }
+      // FIXME: Old style reuse doesn't work any kore
+      //      if (IsAvailable(coarseLevel, "AP Pattern")) {
+      //        KP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
+      //        MP = Get< RCP<Matrix> >(coarseLevel, "AP Pattern");
+      //      }
 
       {
         SubFactoryMonitor subM(*this, "MxM: K x P", coarseLevel);
@@ -130,11 +161,21 @@ namespace MueLu {
         Mc = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*R, false, *MP, false, Mc, GetOStream(Statistics2), doFillComplete, doOptimizedStorage);
       }
 
-      // recombine to get K+shift*M
+      // Get the shift
+      // FIXME - We should really get rid of the shifts array and drive this the same way everything else works
       int level     = coarseLevel.GetLevelID();
-      Scalar shift  = shifts_[level];
-      Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2));
-      Ac->fillComplete();
+      Scalar shift  = Teuchos::ScalarTraits<Scalar>::zero();
+      if(level < (int)shifts_.size())
+	shift = shifts_[level];
+      else 
+	shift  = Teuchos::as<Scalar>(pL.get<double>("rap: shift"));
+
+      // recombine to get K+shift*M
+      {
+	SubFactoryMonitor m2(*this, "Add: RKP + s*RMP", coarseLevel);
+	Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Kc, false, (Scalar) 1.0, *Mc, false, shift, Ac, GetOStream(Statistics2));
+	Ac->fillComplete();
+      }
 
       if (checkAc_)
         CheckMainDiagonal(Ac);
@@ -146,7 +187,7 @@ namespace MueLu {
       Set(coarseLevel, "A", Ac);
       Set(coarseLevel, "K", Kc);
       Set(coarseLevel, "M", Mc);
-      Set(coarseLevel, "RAP Pattern", Ac);
+      //      Set(coarseLevel, "RAP Pattern", Ac);
     }
 
     if (transferFacts_.begin() != transferFacts_.end()) {

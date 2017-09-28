@@ -20,7 +20,6 @@ TRIBITS_ADD_EXECUTABLE(
 
 TRIBITS_ADD_TEST(
   ml_read_maxwell
-  ReitzingerSchoeberlAMG
   ARGS "Ke.mat T.mat Kn.mat"
   NUM_MPI_PROCS 4
   COMM mpi

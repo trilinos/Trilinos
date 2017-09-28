@@ -122,6 +122,52 @@ void deep_copy(
   Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
 }
 
+// Overload of deep_copy for UQ::PCE views intializing to a constant scalar
+template< class ExecSpace , class DT, class ... DP >
+void deep_copy(
+  const ExecSpace &,
+  const View<DT,DP...> & view ,
+  const typename View<DT,DP...>::array_type::value_type & value
+  , typename std::enable_if<(
+  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+  )>::type * = 0 )
+{
+  static_assert(
+    std::is_same< typename ViewTraits<DT,DP...>::value_type ,
+                  typename ViewTraits<DT,DP...>::non_const_value_type >::value
+    , "Can only deep copy into non-const type" );
+
+  typedef View<DT,DP...> view_type;
+  typedef typename view_type::array_type::value_type scalar_type;
+  typedef typename FlatArrayType<view_type>::type flat_array_type;
+  if (value == scalar_type(0))
+    Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+  else
+    Kokkos::Impl::ViewFill< view_type>( view , value );
+}
+
+// Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
+template< class ExecSpace , class DT, class ... DP >
+void deep_copy(
+  const ExecSpace &,
+  const View<DT,DP...> & view ,
+  const typename View<DT,DP...>::value_type & value
+  , typename std::enable_if<(
+  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+  )>::type * = 0 )
+{
+  static_assert(
+    std::is_same< typename ViewTraits<DT,DP...>::value_type ,
+                  typename ViewTraits<DT,DP...>::non_const_value_type >::value
+    , "Can only deep copy into non-const type" );
+
+  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+}
+
 namespace Experimental {
 namespace Impl {
 
@@ -1031,7 +1077,9 @@ public:
 #ifndef __CUDA_ARCH__
       if (m_cijk.dimension() == 0)
         m_cijk = getGlobalCijkTensor<cijk_type>();
-      if (m_sacado_size == 0)
+      // Use 0 or 1 to signal the size wasn't specified in the constructor,
+      // since now dimesion_i() == 1 for all i >= rank
+      if (m_sacado_size == 0 || m_sacado_size == 1)
         m_sacado_size = m_cijk.dimension();
 #endif
       m_is_contiguous = this->is_data_contiguous();
@@ -1062,7 +1110,9 @@ public:
     m_cijk = extract_cijk<cijk_type>(prop);
     if (m_cijk.dimension() == 0)
       m_cijk = getGlobalCijkTensor<cijk_type>();
-    if (m_sacado_size == 0)
+    // Use 0 or 1 to signal the size wasn't specified in the constructor,
+    // since now dimesion_i() == 1 for all i >= rank
+    if (m_sacado_size == 0 || m_sacado_size == 1)
       m_sacado_size = m_cijk.dimension();
     m_is_contiguous = true;
 
@@ -1654,7 +1704,8 @@ struct ViewFill< OutputView ,
     const size_type team_size = rows_per_block * vector_length;
     Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
-    if (input.size() != dimension_scalar(output) && input.size() != 1)
+    if (static_cast<unsigned>(input.size()) != dimension_scalar(output) &&
+        input.size() != 1)
       Kokkos::abort("ViewFill:  Invalid input value size");
 
     if (input.size() == 1)

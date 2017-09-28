@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2009 Sandia Corporation.  Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
- * certain rights in this software
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
+ * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -81,7 +81,7 @@ struct Machine_Description
 {
   int type;
   int num_dims;
-  int dim[3];
+  int dim[3]{};
   int num_boxes;     /* added for cluster type machines */
   int procs_per_box; /* added for cluster type machines, if there is only
                         one box, then this is the same as num_procs */
@@ -215,7 +215,7 @@ template <typename INT> struct Mesh_Description
   size_t  num_side_sets;
   size_t  max_np_elem;
   size_t  ns_list_len;
-  char    title[MAX_LINE_LENGTH + 1];
+  char    title[MAX_LINE_LENGTH + 1]{};
   float * coords;
   E_Type *elem_type;
   INT **  connect;

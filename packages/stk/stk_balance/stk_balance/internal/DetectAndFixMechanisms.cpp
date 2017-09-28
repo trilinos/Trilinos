@@ -50,11 +50,12 @@ bool detectAndFixMechanisms(const stk::balance::BalanceSettings& graphSettings, 
         componentsToMove = get_components_to_move(bulk, elementsPerComponent);
     }
 
-    bool hasMechanisms = componentsToMove.size()>0;
+    bool hasMechanisms = elementsPerComponent.size()>1;
     bool globallyHaveMechanisms = stk::is_true_on_any_proc(bulk.parallel(), hasMechanisms);
 
-    if(globallyHaveMechanisms)
+    if(globallyHaveMechanisms) {
         move_components(zoltan2Graph, localIds, bulk, elementsPerComponent, componentsToMove);
+    }
 
     internal::destroy_custom_ghosting(bulk, customAura);
 

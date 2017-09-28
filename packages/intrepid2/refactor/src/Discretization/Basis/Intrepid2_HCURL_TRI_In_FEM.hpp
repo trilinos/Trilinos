@@ -133,15 +133,16 @@ public:
       const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
       typedef typename outputValueViewType::value_type outputValueType;
+      typedef typename outputValueViewType::pointer_type outputPointerType;
       constexpr ordinal_type spaceDim = 2;
       constexpr ordinal_type bufSize = (opType == OPERATOR_CURL) ?
                                        spaceDim * CardinalityHCurlTri(Parameters::MaxOrder)*numPtsEval :
                                        CardinalityHCurlTri(Parameters::MaxOrder)*numPtsEval;
 
-      outputValueType buf[bufSize];
+      char buf[bufSize*sizeof(outputValueType)];
 
       Kokkos::DynRankView<outputValueType,
-      Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+        Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
 
       switch (opType) {
       case OPERATOR_VALUE : {
@@ -225,6 +226,23 @@ class Basis_HCURL_TRI_In_FEM
     Kokkos::deep_copy(dofCoords, this->dofCoords_);
   }
 
+  virtual
+  void
+  getDofCoeffs( scalarViewType dofCoeffs ) const {
+#ifdef HAVE_INTREPID2_DEBUG
+    // Verify rank of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.rank() != 2, std::invalid_argument,
+        ">>> ERROR: (Intrepid2::Basis_HCURL_TRI_In_FEM::getDofCoeffs) rank = 2 required for dofCoeffs array");
+    // Verify 0th dimension of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( static_cast<ordinal_type>(dofCoeffs.dimension(0)) != this->getCardinality(), std::invalid_argument,
+        ">>> ERROR: (Intrepid2::Basis_HCURL_TRI_In_FEM::getDofCoeffs) mismatch in number of dof and 0th dimension of dofCoeffs array");
+    // Verify 1st dimension of output array.
+    INTREPID2_TEST_FOR_EXCEPTION( dofCoeffs.dimension(1) != this->getBaseCellTopology().getDimension(), std::invalid_argument,
+        ">>> ERROR: (Intrepid2::Basis_HCURL_TRI_In_FEM::getDofCoeffs) incorrect reference cell (1st) dimension in dofCoeffs array");
+#endif
+    Kokkos::deep_copy(dofCoeffs, this->dofCoeffs_);
+  }
+
   void
   getExpansionCoeffs( scalarViewType coeffs ) const {
     // has to be same rank and dimensions
@@ -240,7 +258,7 @@ class Basis_HCURL_TRI_In_FEM
   virtual
   bool
   requireOrientation() const {
-    return (this->basisDegree_ > 1);
+    return true;
   }
 
     private:

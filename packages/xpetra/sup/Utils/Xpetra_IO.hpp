@@ -104,7 +104,7 @@ namespace Xpetra {
   Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap (RCP<Epetra_CrsMatrix> &epAB) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
       "Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap cannot be used with Scalar != double, LocalOrdinal != int, GlobalOrdinal != int");
-    return Teuchos::null;
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
   }
 
   // specialization for the case of ScalarType=double and LocalOrdinal=GlobalOrdinal=int
@@ -418,7 +418,7 @@ namespace Xpetra {
         return A;
       }
 
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 
     } //Read()
 
@@ -538,7 +538,7 @@ namespace Xpetra {
         return A;
       }
 
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
     //@}
 
@@ -567,7 +567,7 @@ namespace Xpetra {
         throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
       }
 
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
 
     static RCP<const Map>   ReadMap         (const std::string& fileName, Xpetra::UnderlyingLib lib, const RCP<const Teuchos::Comm<int> >& comm) {
@@ -592,7 +592,7 @@ namespace Xpetra {
         throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
       }
 
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 
     }
 
@@ -975,7 +975,7 @@ namespace Xpetra {
         return A;
       }
 
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 
     } //Read()
 
@@ -1099,7 +1099,7 @@ namespace Xpetra {
         return A;
       }
 
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
     }
     //@}
 
@@ -1140,7 +1140,7 @@ namespace Xpetra {
         throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
       }
 
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 
     }
 
@@ -1184,7 +1184,7 @@ namespace Xpetra {
         throw Exceptions::RuntimeError("Utils::Read : you must specify Xpetra::UseEpetra or Xpetra::UseTpetra.");
       }
 
-      return Teuchos::null;
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
 
     }
 

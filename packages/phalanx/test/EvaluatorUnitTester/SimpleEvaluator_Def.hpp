@@ -45,9 +45,9 @@
 //**********************************************************************
 template<typename EvalT, typename Traits>
 SimpleEvaluator<EvalT,Traits>::
-SimpleEvaluator(const Teuchos::RCP<const PHX::DataLayout>& a_layout,
-                const Teuchos::RCP<const PHX::DataLayout>& b_layout,
-                const Teuchos::RCP<const PHX::DataLayout>& c_layout) :
+SimpleEvaluator(const Teuchos::RCP<PHX::DataLayout>& a_layout,
+                const Teuchos::RCP<PHX::DataLayout>& b_layout,
+                const Teuchos::RCP<PHX::DataLayout>& c_layout) :
   a("a",a_layout),
   b("b",b_layout),
   c("c",c_layout)

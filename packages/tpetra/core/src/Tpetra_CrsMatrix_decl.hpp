@@ -56,17 +56,17 @@
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Details_PackTraits.hpp"
 
 // localMultiply is templated on DomainScalar and RangeScalar, so we
 // have to include this header file here, rather than in the _def
 // header file, so that we can get KokkosSparse::spmv.
-#include "Kokkos_Sparse.hpp"
+#include "KokkosSparse.hpp"
 // localGaussSeidel and reorderedLocalGaussSeidel are templated on
 // DomainScalar and RangeScalar, so we have to include this header
 // file here, rather than in the _def header file, so that we can get
 // the interfaces to the corresponding local computational kernels.
-#include "Kokkos_Sparse_impl_sor.hpp"
-
+#include "KokkosSparse_sor_sequential_impl.hpp"
 
 namespace Tpetra {
   /// \class CrsMatrix
@@ -473,6 +473,39 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const local_matrix_type& lclMatrix,
+               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    /// \brief Constructor specifying column, domain and range Maps,
+    ///   and a local matrix, which the resulting CrsMatrix views.
+    ///
+    /// Unlike most other CrsMatrix constructors, successful
+    /// completion of this constructor will result in a fill-complete
+    /// matrix.
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param colMap [in] Distribution of columns of the matrix.
+    ///
+    /// \param domainMap [in] The matrix's domain Map.  MUST be one to
+    ///   one!
+    ///
+    /// \param rangeMap [in] The matrix's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    ///
+    /// \param lclMatrix [in] A local CrsMatrix containing all local
+    ///    matrix values as well as a local graph.  The graph's local
+    ///    row indices must come from the specified row Map, and its
+    ///    local column indices must come from the specified column
+    ///    Map.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsMatrix (const local_matrix_type& lclMatrix,
+               const Teuchos::RCP<const map_type>& rowMap,
+               const Teuchos::RCP<const map_type>& colMap = Teuchos::null,
+               const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+               const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     // This friend declaration makes the clone() method work.
@@ -2907,9 +2940,9 @@ namespace Tpetra {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
       typedef Tpetra::MultiVector<DomainScalar, LO, GO, Node, classic> DMV;
-      typedef Tpetra::MultiVector<RangeScalar, LO, GO, Node, classic> RMV;
       typedef Tpetra::MultiVector<Scalar, LO, GO, Node, classic> MMV;
-      typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
+      typedef typename Node::device_type::memory_space dev_mem_space;
+      typedef Kokkos::HostSpace host_mem_space;
       typedef typename Graph::local_graph_type k_local_graph_type;
       typedef typename k_local_graph_type::size_type offset_type;
       const char prefix[] = "Tpetra::CrsMatrix::localGaussSeidel: ";
@@ -2928,9 +2961,17 @@ namespace Tpetra {
          prefix << "B.getLocalLength() = " << B.getLocalLength ()
          << " != this->getNodeNumRows() = " << lclNumRows << ".");
 
-      typename DMV::dual_view_type::t_host B_lcl = B.template getLocalView<HMDT> ();
-      typename RMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
-      typename MMV::dual_view_type::t_host D_lcl = D.template getLocalView<HMDT> ();
+      // mfh 28 Aug 2017: The current local Gauss-Seidel kernel only
+      // runs on host.  (See comments below.)  Thus, we need to access
+      // the host versions of these data.
+      const_cast<DMV&> (B).template sync<host_mem_space> ();
+      X.template sync<host_mem_space> ();
+      X.template modify<host_mem_space> ();
+      const_cast<MMV&> (D).template sync<host_mem_space> ();
+
+      auto B_lcl = B.template getLocalView<host_mem_space> ();
+      auto X_lcl = X.template getLocalView<host_mem_space> ();
+      auto D_lcl = D.template getLocalView<host_mem_space> ();
 
       offset_type B_stride[8], X_stride[8], D_stride[8];
       B_lcl.stride (B_stride);
@@ -2947,6 +2988,11 @@ namespace Tpetra {
       const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
       const std::string dir ((direction == KokkosClassic::Forward) ? "F" : "B");
+      // NOTE (mfh 28 Aug 2017) This assumes UVM.  We can't get around
+      // that on GPUs without using a GPU-based sparse triangular
+      // solve to implement Gauss-Seidel.  This exists in cuSPARSE,
+      // but we would need to implement a wrapper with a fall-back
+      // algorithm for unsupported Scalar and LO types.
       KokkosSparse::Impl::Sequential::gaussSeidel (static_cast<LO> (lclNumRows),
                                                    static_cast<LO> (numVecs),
                                                    ptrRaw, indRaw, valRaw,
@@ -2955,6 +3001,9 @@ namespace Tpetra {
                                                    D_lcl.ptr_on_device (),
                                                    static_cast<impl_scalar_type> (dampingFactor),
                                                    dir.c_str ());
+      const_cast<DMV&> (B).template sync<dev_mem_space> ();
+      X.template sync<dev_mem_space> ();
+      const_cast<MMV&> (D).template sync<dev_mem_space> ();
     }
 
     /// \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
@@ -2995,9 +3044,9 @@ namespace Tpetra {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
       typedef Tpetra::MultiVector<DomainScalar, LO, GO, Node, classic> DMV;
-      typedef Tpetra::MultiVector<RangeScalar, LO, GO, Node, classic> RMV;
       typedef Tpetra::MultiVector<Scalar, LO, GO, Node, classic> MMV;
-      typedef typename DMV::dual_view_type::host_mirror_space HMDT ;
+      typedef typename Node::device_type::memory_space dev_mem_space;
+      typedef Kokkos::HostSpace host_mem_space;
       typedef typename Graph::local_graph_type k_local_graph_type;
       typedef typename k_local_graph_type::size_type offset_type;
       const char prefix[] = "Tpetra::CrsMatrix::reorderedLocalGaussSeidel: ";
@@ -3021,9 +3070,17 @@ namespace Tpetra {
          << rowIndices.size () << " < this->getNodeNumRows() = "
          << lclNumRows << ".");
 
-      typename DMV::dual_view_type::t_host B_lcl = B.template getLocalView<HMDT> ();
-      typename RMV::dual_view_type::t_host X_lcl = X.template getLocalView<HMDT> ();
-      typename MMV::dual_view_type::t_host D_lcl = D.template getLocalView<HMDT> ();
+      // mfh 28 Aug 2017: The current local Gauss-Seidel kernel only
+      // runs on host.  (See comments below.)  Thus, we need to access
+      // the host versions of these data.
+      const_cast<DMV&> (B).template sync<host_mem_space> ();
+      X.template sync<host_mem_space> ();
+      X.template modify<host_mem_space> ();
+      const_cast<MMV&> (D).template sync<host_mem_space> ();
+
+      auto B_lcl = B.template getLocalView<host_mem_space> ();
+      auto X_lcl = X.template getLocalView<host_mem_space> ();
+      auto D_lcl = D.template getLocalView<host_mem_space> ();
 
       offset_type B_stride[8], X_stride[8], D_stride[8];
       B_lcl.stride (B_stride);
@@ -3040,6 +3097,10 @@ namespace Tpetra {
       const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
       const std::string dir = (direction == KokkosClassic::Forward) ? "F" : "B";
+      // NOTE (mfh 28 Aug 2017) This assumes UVM.  We can't get around
+      // that on GPUs without using a GPU-based sparse triangular
+      // solve to implement Gauss-Seidel, and also handling the
+      // permutations correctly.
       KokkosSparse::Impl::Sequential::reorderedGaussSeidel (static_cast<LO> (lclNumRows),
                                                             static_cast<LO> (numVecs),
                                                             ptrRaw, indRaw, valRaw,
@@ -3052,6 +3113,9 @@ namespace Tpetra {
                                                             static_cast<LO> (lclNumRows),
                                                             static_cast<impl_scalar_type> (dampingFactor),
                                                             dir.c_str ());
+      const_cast<DMV&> (B).template sync<dev_mem_space> ();
+      X.template sync<dev_mem_space> ();
+      const_cast<MMV&> (D).template sync<dev_mem_space> ();
     }
 
     /// \brief Solves a linear system when the underlying matrix is
@@ -3081,6 +3145,10 @@ namespace Tpetra {
       using Teuchos::CONJ_TRANS;
       using Teuchos::NO_TRANS;
       using Teuchos::TRANS;
+      typedef MultiVector<RangeScalar, LocalOrdinal,
+        GlobalOrdinal, Node, classic> RMV;
+      typedef Kokkos::HostSpace host_memory_space;
+      typedef typename device_type::memory_space dev_memory_space;
       const char tfecfFuncName[] = "localSolve: ";
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -3130,25 +3198,37 @@ namespace Tpetra {
         (getNodeNumDiags () < getNodeNumRows ()) ? "U" : "N";
 
       local_matrix_type A_lcl = this->getLocalMatrix ();
-      X.template modify<device_type> (); // we will write to X
+
+      // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
+      // sequential, host-only code.  See
+      // https://github.com/kokkos/kokkos-kernels/issues/48.  This
+      // means that we need to sync to host, then sync back to device
+      // when done.
+      X.template sync<host_memory_space> ();
+      const_cast<RMV&> (Y).template sync<host_memory_space> ();
+      X.template modify<host_memory_space> (); // we will write to X
 
       if (X.isConstantStride () && Y.isConstantStride ()) {
-        auto X_lcl = X.template getLocalView<device_type> ();
-        auto Y_lcl = Y.template getLocalView<device_type> ();
+        auto X_lcl = X.template getLocalView<host_memory_space> ();
+        auto Y_lcl = Y.template getLocalView<host_memory_space> ();
         KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
                             A_lcl, Y_lcl, X_lcl);
       }
       else {
-        const size_t numVecs = std::min (X.getNumVectors (), Y.getNumVectors ());
+        const size_t numVecs =
+          std::min (X.getNumVectors (), Y.getNumVectors ());
         for (size_t j = 0; j < numVecs; ++j) {
           auto X_j = X.getVector (j);
           auto Y_j = X.getVector (j);
-          auto X_lcl = X_j->template getLocalView<device_type> ();
-          auto Y_lcl = Y_j->template getLocalView<device_type> ();
+          auto X_lcl = X_j->template getLocalView<host_memory_space> ();
+          auto Y_lcl = Y_j->template getLocalView<host_memory_space> ();
           KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
                               diag.c_str (), A_lcl, Y_lcl, X_lcl);
         }
       }
+
+      X.template sync<dev_memory_space> ();
+      const_cast<RMV&> (Y).template sync<dev_memory_space> ();
     }
 
     /// \brief Return another CrsMatrix with the same entries, but
@@ -3459,45 +3539,80 @@ namespace Tpetra {
     //! @name Implementation of DistObject interface
     //@{
 
+    /// \typedef buffer_device_type
+    /// \brief Kokkos::Device specialization for communication buffers.
+    ///
+    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+    typedef typename DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node,
+                                classic>::buffer_device_type buffer_device_type;
+
     virtual bool
     checkSizes (const SrcDistObject& source);
 
+    /// \brief Whether the subclass implements the "old" or "new"
+    ///   (Kokkos-friendly) interface.
+    ///
+    /// The "old" interface consists of copyAndPermute,
+    /// packAndPrepare, and unpackAndCombine.  The "new" interface
+    /// consists of copyAndPermuteNew, packAndPrepareNew, and
+    /// unpackAndCombineNew.  We prefer the new interface, because it
+    /// facilitates thread parallelization using Kokkos data
+    /// structures.
+    ///
+    /// At some point, we will remove the old interface, and rename
+    /// the "new" interface (by removing "New" from the methods'
+    /// names), so that it becomes the only interface.
+    virtual bool
+    useNewInterface ();
+
+  private:
+
+    void
+    copyAndPermuteImpl (const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& source,
+                        const size_t numSameIDs,
+                        const LocalOrdinal permuteToLIDs[],
+                        const LocalOrdinal permuteFromLIDs[],
+                        const size_t numPermutes);
+
+  protected:
     virtual void
-    copyAndPermute (const SrcDistObject& source,
-                    size_t numSameIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs,
-                    const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs);
+    copyAndPermuteNew (const SrcDistObject& source,
+                       const size_t numSameIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteToLIDs,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs);
 
     virtual void
-    packAndPrepare (const SrcDistObject& source,
-                    const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                    Teuchos::Array<char>& exports,
-                    const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                    size_t& constantNumPackets,
-                    Distributor& distor);
+    packAndPrepareNew (const SrcDistObject& source,
+                       const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                       Kokkos::DualView<char*, buffer_device_type>& exports,
+                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                       size_t& constantNumPackets,
+                       Distributor& distor);
 
   private:
     /// \brief Unpack the imported column indices and values, and
     ///   combine into matrix.
     void
-    unpackAndCombineImpl (const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-                          const Teuchos::ArrayView<const char>& imports,
-                          const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-                          size_t constantNumPackets,
-                          Distributor& distor,
-                          CombineMode combineMode,
-                          const bool atomic = useAtomicUpdatesByDefault);
+    unpackAndCombineNewImpl (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
+                             const Kokkos::DualView<const char*, buffer_device_type>& imports,
+                             const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+                             const size_t constantNumPackets,
+                             Distributor& distor,
+                             const CombineMode combineMode,
+                             const bool atomic = useAtomicUpdatesByDefault);
+    /// \brief Implementation of unpackAndCombineNewImpl for when the
+    ///   target matrix's structure may change.
     void
-    unpackAndCombineImplNonStatic (
-        const Teuchos::ArrayView<const LocalOrdinal>& importLIDs,
-        const Teuchos::ArrayView<const char>& imports,
-        const Teuchos::ArrayView<const size_t>& numPacketsPerLID,
-        size_t constantNumPackets,
-        Distributor& distor,
-        CombineMode combineMode);
+    unpackAndCombineNewImplNonStatic (const Kokkos::DualView<const LocalOrdinal*, device_type>& importLIDs,
+                                      const Kokkos::DualView<const char*, buffer_device_type>& imports,
+                                      const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+                                      const size_t constantNumPackets,
+                                      Distributor& distor,
+                                      const CombineMode combineMode);
 
   public:
-    /// \brief Unpack the imported column indices and values, and combine into matrix.
+    /// \brief Unpack the imported column indices and values, and
+    ///   combine into matrix; implements "new" DistObject interface.
     ///
     /// \warning The allowed \c combineMode depends on whether the
     ///   matrix's graph is static or dynamic.  ADD, REPLACE, and
@@ -3507,15 +3622,12 @@ namespace Tpetra {
     ///   serious changes to matrix assembly in order to implement
     ///   sensibly).
     void
-    unpackAndCombine (const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
-                      const Teuchos::ArrayView<const char> &imports,
-                      const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                      size_t constantNumPackets,
-                      Distributor& distor,
-                      CombineMode combineMode);
-    //@}
-    //! @name Implementation of Packable interface
-    //@{
+    unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
+                         const Kokkos::DualView<const char*, buffer_device_type>& imports,
+                         const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
+                         const size_t constantNumPackets,
+                         Distributor& distor,
+                         const CombineMode CM);
 
     /// \brief Pack this object's data for an Import or Export.
     ///
@@ -3536,7 +3648,7 @@ namespace Tpetra {
     /// \param distor [in/out] The Distributor object which implements
     ///   the Import or Export operation that is calling this method.
     ///
-    /// \subsection Tpetra_KR_CrsMatrix_pack_summary Packing scheme
+    /// \subsection Tpetra_CrsMatrix_packNew_summary Packing scheme
     ///
     /// The number of "packets" per row is the number of bytes per
     /// row.  Each row has the following storage format:
@@ -3570,7 +3682,7 @@ namespace Tpetra {
     /// packing scheme.  We describe it here more for Tpetra
     /// developers and less for users.
     ///
-    /// \subsection Tpetra_KR_CrsMatrix_pack_disc Discussion
+    /// \subsection Tpetra_CrsMatrix_packNew_disc Discussion
     ///
     /// DistObject requires packing an object's entries as type
     /// <tt>Packet</tt>, which is the first template parameter of
@@ -3605,7 +3717,7 @@ namespace Tpetra {
     /// of entries explicitly).  This ensures sparsity of storage and
     /// communication in case most rows are empty.
     ///
-    /// \subsection Tpetra_KR_CrsMatrix_pack_why Justification
+    /// \subsection Tpetra_CrsMatrix_packNew_why Justification
     ///
     /// GCC >= 4.9 and recent-future versions of the Intel compiler
     /// implement stricter aliasing rules that forbid unaligned type
@@ -3624,30 +3736,27 @@ namespace Tpetra {
     /// we have to introduce padding for alignment in the future.
     /// Knowing the number of entries for each row also makes
     /// parallelizing packing and unpacking easier.
-    ///
-    /// \subsection Tpetra_KR_CrsMatrix_pack_assum Technical assumptions
-    ///
-    /// <ul>
-    /// <li> \c sizeof(Scalar) says how much data were used to
-    ///      represent a \c Scalar in its packed form. </li>
-    /// <li> \c sizeof returns the same value on all processes for
-    ///      <tt>Scalar</tt>, \c LocalOrdinal, and \c GlobalOrdinal.
-    ///      </li>
-    /// </ul>
-    virtual void
-    pack (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-          Teuchos::Array<char>& exports,
-          const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-          size_t& constantNumPackets,
-          Distributor& distor) const;
     void
-    packNonStatic (const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs,
-                   Teuchos::Array<char>& exports,
-                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
-                   size_t& constantNumPackets,
-                   Distributor& distor) const;
+    packNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+             Kokkos::DualView<char*, buffer_device_type>& exports,
+             const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+             size_t& constantNumPackets,
+             Distributor& dist) const;
 
   private:
+    /// \brief Pack this matrix (part of implementation of packAndPrepareNew).
+    ///
+    /// This method helps implement packAndPrepareNew.
+    ///
+    /// Call this only when this matrix (which is the source matrix to
+    /// pack) does not yet have a KokkosSparse::CrsMatrix.
+    void
+    packNonStaticNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
+                      Kokkos::DualView<char*, buffer_device_type>& exports,
+                      const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
+                      size_t& constantNumPackets,
+                      Distributor& distor) const;
+
     /// \brief Pack data for the current row to send.
     ///
     /// \param numEntOut [out] Where to write the number of entries in
@@ -3665,12 +3774,13 @@ namespace Tpetra {
     /// build).
     ///
     /// \return \c true if the method succeeded, else \c false.
-    bool
-    packRow (char* const numEntOut,
-             char* const valOut,
-             char* const indOut,
+    size_t
+    packRow (char exports[],
+             const size_t offset,
              const size_t numEnt,
-             const LocalOrdinal lclRow) const;
+             const GlobalOrdinal gidsIn[],
+             const impl_scalar_type valsIn[],
+             const size_t numBytesPerValue) const;
 
     /// \brief Pack data for the current row to send, if the matrix's
     ///   graph is known to be static (and therefore fill complete,
@@ -3724,25 +3834,27 @@ namespace Tpetra {
     ///   the same row with the same column index).
     ///
     /// \return \c true if the method succeeded, else \c false.
-    bool
-    unpackRow (impl_scalar_type* const valInTmp,
-               GlobalOrdinal* const indInTmp,
-               const size_t tmpNumEnt,
-               const char* const valIn,
-               const char* const indIn,
+    size_t
+    unpackRow (GlobalOrdinal gidsOut[],
+               impl_scalar_type valsOut[],
+               const char imports[],
+               const size_t offset,
+               const size_t numBytes,
                const size_t numEnt,
-               const LocalOrdinal lclRow,
-               const Tpetra::CombineMode combineMode);
+               const size_t numBytesPerValue);
 
-    /// \brief Allocate space for pack() to pack entries to send.
+    /// \brief Allocate space for packNew() to pack entries to send.
+    ///
+    /// This is part of the implementation of packAndPrepareNew, which
+    /// helps implement the "new" DistObject interface.
     ///
     /// \param exports [in/out] Pack buffer to (re)allocate.
     /// \param totalNumEntries [out] Total number of entries to send.
     /// \param exportLIDs [in] Local indices of the rows to send.
     void
-    allocatePackSpace (Teuchos::Array<char>& exports,
-                       size_t& totalNumEntries,
-                       const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs) const;
+    allocatePackSpaceNew (Kokkos::DualView<char*, buffer_device_type>& exports,
+                          size_t& totalNumEntries,
+                          const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs) const;
     //@}
 
   public:

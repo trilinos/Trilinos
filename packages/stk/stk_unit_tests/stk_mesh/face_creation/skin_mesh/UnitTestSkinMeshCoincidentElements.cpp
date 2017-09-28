@@ -1,4 +1,4 @@
-#include <mpi.h>                        // for MPI_Comm, etc
+#include "mpi.h"                        // for MPI_Comm, etc
 #include <stddef.h>                     // for size_t
 #include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc

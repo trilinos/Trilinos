@@ -47,10 +47,6 @@
 #include <limits>
 #include "shylu_hts.hpp"
 
-#ifdef HAVE_SHYLUHTS_MKL
-# undef NO_BLAS
-#endif
-
 namespace Experimental {
 namespace htsimpl {
 
@@ -264,10 +260,6 @@ template<typename Int, typename Size, typename Sclr> struct Impl {
 
     void reinit_numeric_spars(const CrsMatrix& A);
     void reinit_numeric_dense(const CrsMatrix& A);
-    void n1Axpy_spars(const Sclr* x, const Int ldx, const Int nrhs,
-                      Sclr* y, const Int ldy) const;
-    void n1Axpy_dense(const Sclr* x, const Int ldx, const Int nrhs,
-                      Sclr* y, const Int ldy) const;
 
   public:
     SerialBlock ()

@@ -46,12 +46,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-# TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#   point_values 
-#   SOURCES point_values.cpp ${UNIT_TEST_DRIVER}
-#   NUM_MPI_PROCS 1
-#   )
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   point_values2 
   SOURCES point_values2.cpp ${UNIT_TEST_DRIVER}

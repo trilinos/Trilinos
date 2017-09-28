@@ -1,22 +1,22 @@
-C    Copyright (c) 2014, Sandia Corporation.
-C    Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-C    the U.S. Government retains certain rights in this software.
+C    Copyright(C) 2014 National Technology & Engineering Solutions of
+C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C    NTESS, the U.S. Government retains certain rights in this software.
 C    
 C    Redistribution and use in source and binary forms, with or without
 C    modification, are permitted provided that the following conditions are
 C    met:
 C    
-C        * Redistributions of source code must retain the above copyright
-C          notice, this list of conditions and the following disclaimer.
+C    * Redistributions of source code must retain the above copyright
+C       notice, this list of conditions and the following disclaimer.
 C    
-C        * Redistributions in binary form must reproduce the above
-C          copyright notice, this list of conditions and the following
-C          disclaimer in the documentation and/or other materials provided
-C          with the distribution.
+C    * Redistributions in binary form must reproduce the above
+C      copyright notice, this list of conditions and the following
+C      disclaimer in the documentation and/or other materials provided
+C      with the distribution.
 C    
-C        * Neither the name of Sandia Corporation nor the names of its
-C          contributors may be used to endorse or promote products derived
-C          from this software without specific prior written permission.
+C    * Neither the name of NTESS nor the names of its
+C      contributors may be used to endorse or promote products derived
+C      from this software without specific prior written permission.
 C    
 C    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 C    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -30,34 +30,6 @@ C    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C    
-
-C $Id: digit.F,v 1.2 1998/07/14 18:18:40 gdsjaar Exp $
-C $Log: digit.F,v $
-C Revision 1.2  1998/07/14 18:18:40  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1  1998/04/10 04:30:09  gdsjaar
-C Added the ifdef needsdoubleescape to the graphics symbol
-C plotting. Required moving some .f to .F files and specifying in Imakefile
-C
-C Revision 1.2  1991/03/22 19:57:12  gdsjaar
-C Initialized knum to 0
-C
-c Revision 1.1.1.1  1990/11/30  11:06:02  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:06:00  gdsjaar
-c Initial revision
-c 
-C
-CC* FILE: [.MAIN]DIGIT.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE DIGIT (MP, ML, MS, MR, MSNAP, MCOM, ICOM, JCOM, CIN,
      &   RIN, IIN, KIN, IDUMP, N, IPOINT, COOR, IPBOUN, ILINE, LTYPE,
      &   NINT, FACTOR, LCON, ILBOUN, ISBOUN, ISIDE, NLPS, IFLINE,

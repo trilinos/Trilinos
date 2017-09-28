@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
- * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government
- * retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -114,7 +114,7 @@ INT icbrt(unsigned x)
 void create_rr_elem_map(INT loc_num_elements, INT *elem_map, INT map_origin, INT num_domains,
                         INT current_domain);
 
-void create_elem_map(INT loc_num_elems, INT start, INT *elem_map, INT map_origin);
+void create_elem_map(INT loc_num_elems, INT elem_num, INT *elem_map, INT map_origin);
 
 void create_local_connect(INT *node_map, INT len_node_map, INT len_connect, INT *domain_connect,
                           INT *loc_connect, INT map_origin);
@@ -122,12 +122,13 @@ void create_local_connect(INT *node_map, INT len_node_map, INT len_connect, INT 
 void extract_connect(INT element_offset, INT num_elem, INT *elem_map, INT *connect,
                      INT *domain_connect, INT map_origin);
 
-void make_mesh(realtyp *x, realtyp *y, realtyp *z, INT *connect, INT map_origin, INT num_elements);
+void make_mesh(realtyp *x, realtyp *y, realtyp *z, INT *connect, INT map_origin,
+               INT num_elements_1d);
 
-void parse_input(int argc, char *argv[], int *debug, INT *map_origin, INT *num_elements,
+void parse_input(int argc, char *argv[], int *debug, INT *map_origin, INT *num_elements_1d,
                  INT *num_domains, INT *num_nodal_fields, INT *num_global_fields,
-                 INT *num_element_fields, INT *num_timesteps, char *device_name, char *file_name,
-                 int *exodus, int *compression_level, int *shuffle, int *int64bit);
+                 INT *num_element_fields, INT *num_timesteps, char *file_name, int *exodus,
+                 int *compression_level, int *shuffle, int *int64bit);
 
 void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, INT num_elements,
                     INT num_domains, INT num_nodal_fields, INT num_global_fields,
@@ -150,7 +151,6 @@ int main(int argc, char *argv[])
   INT *connect;
   int  debug = EX_FALSE; /* EX_TRUE, display debug information; EX_FALSE       */
   /* otherwise.                                 */
-  static char device_name[MAX_STRING_LEN];
   static char file_name[MAX_STRING_LEN] = DEFAULT_FILE_NAME;
   int         exodus                    = EX_TRUE;
   INT         map_origin                = DEFAULT_MAP_ORIGIN;
@@ -175,8 +175,8 @@ int main(int argc, char *argv[])
 
   /* Parse Input */
   parse_input(argc, argv, &debug, &map_origin, &num_elements, &num_domains, &num_nodal_fields,
-              &num_global_fields, &num_element_fields, &num_timesteps, device_name, file_name,
-              &exodus, &compression_level, &shuffle, &int64bit);
+              &num_global_fields, &num_element_fields, &num_timesteps, file_name, &exodus,
+              &compression_level, &shuffle, &int64bit);
 
   /* Create Coordinates and Connectivity Array */
   num_elements_1d = icbrt(num_elements);
@@ -219,19 +219,21 @@ int main(int argc, char *argv[])
  ***********************************************************************/
 void parse_input(int argc, char *argv[], int *debug, INT *map_origin, INT *num_elements_1d,
                  INT *num_domains, INT *num_nodal_fields, INT *num_global_fields,
-                 INT *num_element_fields, INT *num_timesteps, char *device_name, char *file_name,
-                 int *exodus, int *compression_level, int *shuffle, int *int64bit)
+                 INT *num_element_fields, INT *num_timesteps, char *file_name, int *exodus,
+                 int *compression_level, int *shuffle, int *int64bit)
 {
   int arg = 0; /* Argument index.      */
 
   while (++arg < argc) {
     if (strcmp("-c", argv[arg]) == 0) {
-      if (++arg < argc)
+      if (++arg < argc) {
         *num_nodal_fields = atoi(argv[arg]);
+      }
     }
     else if (strcmp("-compress", argv[arg]) == 0) {
-      if (++arg < argc)
+      if (++arg < argc) {
         *compression_level = atoi(argv[arg]);
+      }
     }
     else if (strcmp("-shuffle", argv[arg]) == 0) {
       *shuffle = 1;
@@ -240,39 +242,47 @@ void parse_input(int argc, char *argv[], int *debug, INT *map_origin, INT *num_e
       *int64bit = 1;
     }
     else if (strcmp("-nv", argv[arg]) == 0) {
-      if (++arg < argc)
+      if (++arg < argc) {
         *num_nodal_fields = atoi(argv[arg]);
+      }
     }
     else if (strcmp("-gv", argv[arg]) == 0) {
-      if (++arg < argc)
+      if (++arg < argc) {
         *num_global_fields = atoi(argv[arg]);
+      }
     }
     else if (strcmp("-ev", argv[arg]) == 0) {
-      if (++arg < argc)
+      if (++arg < argc) {
         *num_element_fields = atoi(argv[arg]);
+      }
     }
     else if (strcmp("-t", argv[arg]) == 0) {
-      if (++arg < argc)
+      if (++arg < argc) {
         *num_timesteps = atoi(argv[arg]);
+      }
     }
     else if (strcmp("-d", argv[arg]) == 0) {
       *debug = EX_TRUE;
     }
     else if (strcmp("-f", argv[arg]) == 0) {
-      if (++arg < argc)
+      if (++arg < argc) {
         strcpy(file_name, argv[arg]);
+      }
     }
     else if (strcmp("-m", argv[arg]) == 0) {
-      if (++arg < argc)
+      if (++arg < argc) {
         *map_origin = atoi(argv[arg]);
+      }
     }
     else if (strcmp("-n", argv[arg]) == 0) {
-      if (++arg < argc)
+      if (++arg < argc) {
         *num_elements_1d = StringToCount(argv[arg]);
+      }
     }
     else if (strcmp("-p", argv[arg]) == 0) {
-      if (++arg < argc)
+      if (++arg < argc) {
         *num_domains = atoi(argv[arg]);
+      }
     }
     else if (strcmp("-x", argv[arg]) == 0) {
       *exodus = EX_TRUE;
@@ -440,15 +450,18 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
       /* Determine local number of elements */
       if (num_elements < num_domains) {
         fprintf(stderr, "number of elements is less than number of domains.\n");
-        if (i < num_elements)
+        if (i < num_elements) {
           loc_num_elements = 1;
-        else
+        }
+        else {
           loc_num_elements = 0;
+        }
       }
       else {
         loc_num_elements = num_elements / num_domains;
-        if (i < (num_elements % num_domains))
+        if (i < (num_elements % num_domains)) {
           loc_num_elements++;
+        }
       }
 
       len_connect = NUM_NODES_PER_ELEM * loc_num_elements;
@@ -615,8 +628,9 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
 
     if (num_element_fields > 0) {
       elem_var_tab = malloc(num_element_fields * sizeof(int));
-      for (j            = 0; j < num_element_fields; j++)
+      for (j = 0; j < num_element_fields; j++) {
         elem_var_tab[j] = 1;
+      }
     }
     else {
       elem_var_tab = 0;
@@ -730,8 +744,9 @@ void write_exo_mesh(int debug, char *file_name, INT map_origin, INT num_nodes, I
     free(loc_zcoords);
     free(node_map);
   }
-  if (num_global_fields > 0)
+  if (num_global_fields > 0) {
     free(globals);
+  }
 }
 
 /***********************************************************************
@@ -859,12 +874,15 @@ INT bin_search2(INT value, INT num, INT List[])
   while (bottom <= top) {
     middle = (bottom + top) >> 1;
     g_mid  = List[middle];
-    if (value < g_mid)
+    if (value < g_mid) {
       top = middle - 1;
-    else if (value > g_mid)
+    }
+    else if (value > g_mid) {
       bottom = middle + 1;
-    else
+    }
+    else {
       return middle; /* found */
+    }
   }
   return -1;
 } /* bin_search2 */
@@ -912,8 +930,9 @@ void get_file_name(const char *base, const char *ext, int rank, int nprocs, cons
     /*
      * Append the proper number of zeros to the filename.
      */
-    for (i1 = 0; i1 < iMaxDigit - iMyDigit; i1++)
+    for (i1 = 0; i1 < iMaxDigit - iMyDigit; i1++) {
       strcat(output, "0");
+    }
 
     sprintf(cTemp, "%d", rank);
     strcat(output, cTemp);

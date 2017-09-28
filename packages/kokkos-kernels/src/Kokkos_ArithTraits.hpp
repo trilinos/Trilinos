@@ -134,6 +134,33 @@ intPowImpl (const IntType x, const IntType y)
 }
 
 
+// Warning free abs function for types where we don't know whether they are signed (like char)
+template<class T, bool is_signed = std::numeric_limits<T>::is_signed >
+struct integer_abs {
+  static
+  KOKKOS_INLINE_FUNCTION
+  T abs(const T& val);
+};
+
+template<class T>
+struct integer_abs<T,true> {
+  static
+  KOKKOS_INLINE_FUNCTION
+  T abs(const T& x) {
+    return x<0? -x:x;
+  }
+};
+
+template<class T>
+struct integer_abs<T,false> {
+  static
+  KOKKOS_INLINE_FUNCTION
+  T abs(const T& x) {
+    return x;
+  }
+};
+
+
 
 /// \fn intPowSigned
 /// \tparam IntType A built-in signed integer type.
@@ -143,7 +170,8 @@ intPowImpl (const IntType x, const IntType y)
 /// result of this function is undefined.  However, this function will
 /// not throw an exception in that case.
 template<class IntType>
-KOKKOS_FORCEINLINE_FUNCTION IntType
+KOKKOS_FORCEINLINE_FUNCTION 
+typename std::enable_if<std::numeric_limits<IntType>::is_signed,IntType>::type
 intPowSigned (const IntType x, const IntType y)
 {
   // It's not entirely clear what to return if x and y are both zero.
@@ -163,9 +191,23 @@ intPowSigned (const IntType x, const IntType y)
     else {
       return 0; // round the fraction to zero
     }
-  } else {
-    return intPowImpl<IntType> (x, y);
   }
+  return intPowImpl<IntType> (x, y);
+}
+template<class IntType>
+KOKKOS_FORCEINLINE_FUNCTION 
+typename std::enable_if<!std::numeric_limits<IntType>::is_signed,IntType>::type
+intPowSigned (const IntType x, const IntType y)
+{
+  // It's not entirely clear what to return if x and y are both zero.
+  // In the case of floating-point numbers, 0^0 is NaN.  Here, though,
+  // I think it's safe to return 0.
+  if (x == 0) {
+    return 0;
+  } else if (y == 0) {
+    return 1;
+  }
+  return intPowImpl<IntType> (x, y);
 }
 
 /// \fn intPowUnsigned
@@ -586,7 +628,7 @@ public:
     return 1.0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION float min () {
-    return FLT_MIN;
+    return -FLT_MAX;
   }
   static KOKKOS_FORCEINLINE_FUNCTION float max () {
     return FLT_MAX;
@@ -855,7 +897,7 @@ public:
     return 1.0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
-    return DBL_MIN;
+    return -DBL_MAX;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
     return DBL_MAX;
@@ -990,7 +1032,7 @@ public:
     return 1.0;
   }
   static val_type min () {
-    return LDBL_MIN;
+    return -LDBL_MAX;
   }
   static val_type max () {
     return LDBL_MAX;
@@ -1227,7 +1269,7 @@ public:
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
     return std::sqrt (::Kokkos::real (x) * ::Kokkos::real (x) +
-                 ::Kokkos::imag (x) * ::Kokkos::imag (x));
+                         ::Kokkos::imag (x) * ::Kokkos::imag (x));
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return val_type (ArithTraits<mag_type>::zero (), ArithTraits<mag_type>::zero ());
@@ -1253,9 +1295,9 @@ public:
   // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
   //   return ::pow (x, y);
   // }
-  // static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-  //   return ::sqrt (x);
-  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+    return ::Kokkos::sqrt (x);
+  }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
   //   return ::log (x);
   // }
@@ -1374,9 +1416,9 @@ public:
   // static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
   //   return ::pow (x, y);
   // }
-  // static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-  //   return ::sqrt (x);
-  // }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+     return ::Kokkos::sqrt (x);
+  }
   // static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
   //   return ::log (x);
   // }
@@ -1471,10 +1513,8 @@ public:
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
-    // This may trigger a compiler warning if char is unsigned.  On
-    // all platforms I have encountered, char is signed, but the C(++)
-    // standard does not require this.
-    return x >= 0 ? x : -x;
+    // This avoids warnings based on whether char is signed or unsigned 
+    return integer_abs<char>::abs(x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
     return 0;

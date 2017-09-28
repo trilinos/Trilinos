@@ -53,7 +53,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "KokkosCompat_View.hpp"
-#include "Kokkos_Blas1_MV.hpp"
+#include "KokkosBlas1_nrm2w_squared.hpp"
 
 namespace Tpetra {
 
@@ -97,6 +97,13 @@ namespace Tpetra {
           const dual_view_type& view,
           const dual_view_type& origView)
     : base_type (map, view, origView)
+  {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>::
+  Vector (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& X,
+          const size_t j)
+    : base_type (X, j)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>

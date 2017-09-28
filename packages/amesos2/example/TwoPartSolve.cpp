@@ -45,7 +45,7 @@
  * \file   TwoPartSolve.cpp
  * \author Eric Bavier <etbavie@sandia.gov>
  * \date   Wed Jun 22 11:56:12 2011
- * 
+ *
  * \brief  An example of using Amesos2 to factor a matrix before the X
  *         and B vectors are known, then solving once they are available.
  */
@@ -75,16 +75,14 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   typedef double Scalar;
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-  typedef int Ordinal;
 
   typedef double Scalar;
-  typedef int LO;
-  typedef int GO;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType           Platform;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> MAT;
-  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
+  typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
 
   using Tpetra::global_size_t;
   using Tpetra::Map;
@@ -95,12 +93,11 @@ int main(int argc, char *argv[]) {
   using Teuchos::Array;
 
 
-  // 
+  //
   // Get the default communicator
   //
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-  Teuchos::RCP<Node>             node = platform.getNode();
   int myRank  = comm->getRank();
 
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -125,7 +122,7 @@ int main(int argc, char *argv[]) {
 
   const size_t numVectors = 1;
 
-  RCP<MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(filename,comm,node);
+  RCP<MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(filename,comm);
   if( printMatrix ){
     A->describe(*fos, Teuchos::VERB_EXTREME);
   }
@@ -146,10 +143,10 @@ int main(int argc, char *argv[]) {
   solver->numericFactorization();
 
   // Now create X and B vectors
-  
+
   // get the matrix maps
-  RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();		
-  RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
+  RCP<const Map<LO,GO> > dmnmap = A->getDomainMap();
+  RCP<const Map<LO,GO> > rngmap = A->getRangeMap();
 
   // Create random X
   RCP<MV> X = rcp( new MV(dmnmap,numVectors) );

@@ -129,14 +129,6 @@ void all_reduce( ParallelMachine  arg_comm ,
 
   MPI_Op_create( arg_op , 0 , & mpi_op );
 
-  // The SUN was buggy when combining an
-  // MPI_Allreduce with a user defined operator,
-  // use reduce/broadcast instead.
-/*
-  const int result =
-    MPI_Allreduce(arg_in,arg_out,arg_len,MPI_BYTE,mpi_op,arg_comm);
-*/
-
   const int result_reduce =
     MPI_Reduce(arg_in,arg_out,arg_len,MPI_BYTE,mpi_op,0,arg_comm);
 

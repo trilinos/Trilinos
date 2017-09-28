@@ -123,6 +123,7 @@ public:
   typedef typename InputTraits<User>::scalar_t    scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
+  typedef typename InputTraits<User>::offset_t offset_t;
   typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef User user_t;
@@ -299,7 +300,7 @@ public:
   }
 
   void getAdjsView(MeshEntityType source, MeshEntityType target,
-		   const lno_t *&offsets, const gno_t *& adjacencyIds) const
+		   const offset_t *&offsets, const gno_t *& adjacencyIds) const
   {
     int dim_source = entityZ2toAPF(source);
     int dim_target = entityZ2toAPF(target);
@@ -342,7 +343,7 @@ public:
   }
 
   void get2ndAdjsView(MeshEntityType sourcetarget, MeshEntityType through, 
-		      const lno_t *&offsets, const gno_t *&adjacencyIds) const
+		      const offset_t *&offsets, const gno_t *&adjacencyIds) const
   {
     int dim_source = entityZ2toAPF(sourcetarget);
     int dim_target = entityZ2toAPF(through);
@@ -430,9 +431,9 @@ private:
   gno_t** gid_mapping; //[dimension][lid] corresponding global id numbers
   size_t* num_local; //[dimension] number of local entities
   EntityTopologyType** topologies; //[dimension] topologies for each entity
-  lno_t*** adj_offsets; //[first_dimension][second_dimension] array of offsets
+  offset_t*** adj_offsets; //[first_dimension][second_dimension] array of offsets
   std::vector<gno_t>** adj_gids; //[first_dimension][second_dimension] global_ids of first adjacencies
-  lno_t*** adj2_offsets; //[first_dimension][second_dimension] array of offsets for second adjacencies
+  offset_t*** adj2_offsets; //[first_dimension][second_dimension] array of offsets for second adjacencies
   std::vector<gno_t>** adj2_gids; //[first_dimension][second_dimension] global_ids of second adjacencies
   int coord_dimension; //dimension of coordinates (always 3 for APF)
   scalar_t** ent_coords; //[dimension] array of coordinates [xs ys zs]
@@ -552,10 +553,10 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
   }
   //First Adjacency and Second Adjacency data
   adj_gids = new std::vector<gno_t>*[m_dimension+1];
-  adj_offsets = new lno_t**[m_dimension+1];
+  adj_offsets = new offset_t**[m_dimension+1];
   if (needSecondAdj) {
     adj2_gids = new std::vector<gno_t>*[m_dimension+1];
-    adj2_offsets = new lno_t**[m_dimension+1];
+    adj2_offsets = new offset_t**[m_dimension+1];
   }
   else {
     adj2_gids=NULL;
@@ -571,10 +572,10 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
     if (!has(i))
       continue;
     adj_gids[i] = new std::vector<gno_t>[m_dimension+1];
-    adj_offsets[i] = new lno_t*[m_dimension+1];
+    adj_offsets[i] = new offset_t*[m_dimension+1];
     if (needSecondAdj) {
       adj2_gids[i] = new std::vector<gno_t>[m_dimension+1];
-      adj2_offsets[i] = new lno_t*[m_dimension+1];
+      adj2_offsets[i] = new offset_t*[m_dimension+1];
     }
     for (int j=0;j<=m_dimension;j++) {
       
@@ -589,10 +590,10 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
       apf::MeshIterator* itr = m->begin(i);
       apf::MeshEntity* ent;
       
-      adj_offsets[i][j] = new lno_t[num_local[i]+1];
+      adj_offsets[i][j] = new offset_t[num_local[i]+1];
       adj_offsets[i][j][0] =0;
       if (needSecondAdj) {
-        adj2_offsets[i][j] = new lno_t[num_local[i]+1];
+        adj2_offsets[i][j] = new offset_t[num_local[i]+1];
         adj2_offsets[i][j][0] =0;
       }
       int k=1;
@@ -878,12 +879,12 @@ void APFMeshAdapter<User>::print(int me,int verbosity)
           if (k==i)
             continue;
           std::cout<<"     First Adjacency of Dimension "<<k<<":";
-          for (lno_t l=adj_offsets[i][k][j];l<adj_offsets[i][k][j+1];l++)
+          for (offset_t l=adj_offsets[i][k][j];l<adj_offsets[i][k][j+1];l++)
             std::cout<<" "<<adj_gids[i][k][l];
           std::cout<<"\n";
           if (verbosity>=3) {
             std::cout<<"     Second Adjacency through Dimension "<<k<<":";
-            for (lno_t l=adj2_offsets[i][k][j];l<adj2_offsets[i][k][j+1];l++)
+            for (offset_t l=adj2_offsets[i][k][j];l<adj2_offsets[i][k][j+1];l++)
               std::cout<<" "<<adj2_gids[i][k][l];
             std::cout<<"\n";
           }

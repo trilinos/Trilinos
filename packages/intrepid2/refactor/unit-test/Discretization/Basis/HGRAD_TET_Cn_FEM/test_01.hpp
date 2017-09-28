@@ -144,7 +144,7 @@ namespace Intrepid2 {
         const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
         const ordinal_type polydim = tetBasis.getCardinality();
         DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-        PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_WARPBLEND);
+        tetBasis.getDofCoords(lattice);
 
         DynRankView ConstructWithLabel(basisAtLattice, polydim , np_lattice);
         tetBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
@@ -229,7 +229,7 @@ namespace Intrepid2 {
         const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
         const ordinal_type polydim = tetBasis.getCardinality();
         DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-        PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_EQUISPACED);
+        tetBasis.getDofCoords(lattice);
 
         DynRankView ConstructWithLabel(dbasisAtLattice, polydim , np_lattice , dim);
         tetBasis.getValues(dbasisAtLattice, lattice, OPERATOR_GRAD);
@@ -252,13 +252,13 @@ namespace Intrepid2 {
         errorFlag = -1000;
       };
 
-
+#ifdef HAVE_INTREPID2_SACADO
       try {
 
         *outStream
           << "\n"
           << "===============================================================================\n"
-          << "| TEST 3: Testing OPERATOR_D2                                              |\n"
+          << "| TEST 4: Testing OPERATOR_D2                                                 |\n"
           << "===============================================================================\n";
 
 
@@ -269,7 +269,7 @@ namespace Intrepid2 {
         const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
         const ordinal_type polydim = tetBasis.getCardinality();
         DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-        PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_EQUISPACED);
+        tetBasis.getDofCoords(lattice);
 
         int deriv_order = 2;
         DynRankView ConstructWithLabel(dbasisAtLattice, polydim , np_lattice , (deriv_order+1)*(deriv_order+2)/2);
@@ -295,7 +295,7 @@ namespace Intrepid2 {
         *outStream << "-------------------------------------------------------------------------------" << "\n\n";
         errorFlag = -1000;
       };
-
+#endif
 
 
       if (errorFlag != 0)

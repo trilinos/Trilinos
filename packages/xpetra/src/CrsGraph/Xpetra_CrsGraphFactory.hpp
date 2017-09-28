@@ -85,7 +85,7 @@ namespace Xpetra {
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(map->lib());
       XPETRA_FACTORY_END;
-      return null;
+      TEUCHOS_UNREACHABLE_RETURN(null);
     }
   };
 
@@ -118,7 +118,7 @@ namespace Xpetra {
         return rcp( new EpetraCrsGraphT<int, Node>(map, NumVectors, pftype) );
 
       XPETRA_FACTORY_END;
-      return null;
+      TEUCHOS_UNREACHABLE_RETURN(null);
     }
 
   };

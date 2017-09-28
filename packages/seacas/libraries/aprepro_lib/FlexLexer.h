@@ -48,7 +48,7 @@
 // Never included before - need to define base class.
 #define __FLEX_LEXER_H
 
-#include <iostream>
+#include "aprepro_parser.h"
 
 extern "C++" {
 
@@ -109,14 +109,14 @@ class yyFlexLexer : public FlexLexer
 public:
   // arg_yyin and arg_yyout default to the cin and cout, but we
   // only make that assignment when initializing in yylex().
-  yyFlexLexer(std::istream *arg_yyin = nullptr, std::ostream *arg_yyout = nullptr);
+  explicit yyFlexLexer(std::istream *arg_yyin = nullptr, std::ostream *arg_yyout = nullptr);
 
   virtual ~yyFlexLexer();
 
   void yy_switch_to_buffer(struct yy_buffer_state *new_buffer) override;
-  struct yy_buffer_state *yy_create_buffer(std::istream *s, int size) override;
+  struct yy_buffer_state *yy_create_buffer(std::istream *file, int size) override;
   void yy_delete_buffer(struct yy_buffer_state *b) override;
-  void yyrestart(std::istream *s) override;
+  void yyrestart(std::istream *input_file) override;
 
   void yypush_buffer_state(struct yy_buffer_state *new_buffer);
   void yypop_buffer_state();
@@ -130,11 +130,11 @@ protected:
   virtual void LexerOutput(const char *buf, int size);
   virtual void LexerError(const char *msg);
 
-  void yyunput(int c, char *buf_ptr);
+  void yyunput(int c, char *yy_bp);
   int yyinput();
 
   void yy_load_buffer_state();
-  void yy_init_buffer(struct yy_buffer_state *b, std::istream *s);
+  void yy_init_buffer(struct yy_buffer_state *b, std::istream *file);
   void yy_flush_buffer(struct yy_buffer_state *b);
 
   int  yy_start_stack_ptr;
@@ -146,7 +146,7 @@ protected:
   int  yy_top_state();
 
   yy_state_type yy_get_previous_state();
-  yy_state_type yy_try_NUL_trans(yy_state_type current_state);
+  yy_state_type yy_try_NUL_trans(yy_state_type yy_current_state);
   int yy_get_next_buffer();
 
   std::istream *yyin;  // input source for default LexerInput

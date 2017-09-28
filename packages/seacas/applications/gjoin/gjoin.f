@@ -1,6 +1,6 @@
-C Copyright (c) 2008 Sandia Corporation.  Under the terms of Contract
-C DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-C certain rights in this software
+C Copyright (c) 2008 National Technology & Engineering Solutions
+C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+C NTESS, the U.S. Government retains certain rights in this software.
 C 
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
@@ -14,7 +14,7 @@ C       copyright notice, this list of conditions and the following
 C       disclaimer in the documentation and/or other materials provided
 C       with the distribution.
 C 
-C     * Neither the name of Sandia Corporation nor the names of its
+C     * Neither the name of NTESS nor the names of its
 C       contributors may be used to endorse or promote products derived
 C       from this software without specific prior written permission.
 C 
@@ -31,16 +31,6 @@ C (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C 
 
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-C+++ Copyright 1988, Sandia Corporation. The United States Government
-C+++ retains a limited license in this software as prescribed in AL 88-1
-C+++ and AL 91-7. Export of this program may require a license from
-C+++ the United States Government.
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-C++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C -*- Mode: fortran -*-
 C=======================================================================
 C $Id: gjoin2.f,v 1.10 2008/07/31 20:15:56 gdsjaar Exp $

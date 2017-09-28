@@ -217,7 +217,7 @@ namespace Belos {
 			   "to the \"ortho\" command-line argument.");
 	// Placate the compiler if necessary; we should never reach
 	// this point.
-	return Teuchos::null; 
+    TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
       }
     }
 
@@ -265,7 +265,7 @@ namespace Belos {
 			   "to the \"ortho\" command-line argument.");
 	// Placate the compiler if necessary; we should never reach
 	// this point.
-	return Teuchos::null; 
+        TEUCHOS_UNREACHABLE_RETURN(Teuchos::null);
       }
     }
 
@@ -333,7 +333,7 @@ namespace Belos {
 			   "the test executables, the orthogonalization manager"
 			   " name often corresponds to the \"ortho\" command-"
 			   "line argument.");
-      return Teuchos::null; // Guard to avoid compiler warnings.
+      TEUCHOS_UNREACHABLE_RETURN(Teuchos::null); // Guard to avoid compiler warnings.
     }
 
     /// \brief Return an instance of the specified OrthoManager subclass.

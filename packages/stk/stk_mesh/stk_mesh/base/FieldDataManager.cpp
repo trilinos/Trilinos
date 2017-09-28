@@ -243,7 +243,7 @@ void DefaultFieldDataManager::initialize_entity_field_data(EntityRank rank, unsi
         const FieldBase & field = *fields[i];
         if(static_cast<unsigned>(field.entity_rank()) == rank)
         {
-            FieldMetaData field_meta_data = fields[i]->get_meta_data_for_field()[bucket_id];
+            const FieldMetaData& field_meta_data = fields[i]->get_meta_data_for_field()[bucket_id];
             const int num_bytes_per_entity = field_meta_data.m_bytes_per_entity;
 
             if(num_bytes_per_entity > 0)

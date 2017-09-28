@@ -62,7 +62,7 @@ PHX_EVALUATOR_CTOR(ConstantFlux,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(ConstantFlux,worksets,fm)
+PHX_POST_REGISTRATION_SETUP(ConstantFlux, /* worksets */, fm)
 {
   using namespace PHX;
   this->utils.setFieldData(flux,fm);
@@ -76,7 +76,7 @@ PHX_POST_REGISTRATION_SETUP(ConstantFlux,worksets,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(ConstantFlux,d)
+PHX_EVALUATE_FIELDS(ConstantFlux, /* d */)
 { }
 
 //**********************************************************************

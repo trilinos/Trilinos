@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -66,9 +66,10 @@ double read_val(FILE *infile,  /* file to read value from */
       length_left = LINE_LENGTH - save_pnt - 1;
       ptr2        = line;
       ptr         = &line[save_pnt];
-      for (i = length_left; i; i--)
+      for (i = length_left; i; i--) {
         *ptr2++ = *ptr++;
-      length    = save_pnt + 1;
+      }
+      length = save_pnt + 1;
     }
     else {
       length      = LINE_LENGTH;
@@ -82,7 +83,7 @@ double read_val(FILE *infile,  /* file to read value from */
 
     if (ptr2 == NULL) { /* We've hit end of file. */
       *end_flag = -1;
-      return ((double)0.0);
+      return (0.0);
     }
 
     if (line[LINE_LENGTH - 1] == '\0' && line[LINE_LENGTH - 2] != '\0' &&
@@ -114,14 +115,15 @@ double read_val(FILE *infile,  /* file to read value from */
     offset = 0;
   }
 
-  while (offset < LINE_LENGTH && isspace(line[offset]))
+  while (offset < LINE_LENGTH && isspace(line[offset])) {
     offset++;
+  }
   if (offset == LINE_LENGTH || line[offset] == '%' || line[offset] == '#') {
     *end_flag = 1;
     if (break_pnt < LINE_LENGTH) {
       flush_line(infile);
     }
-    return ((double)0.0);
+    return (0.0);
   }
 
   ptr = &(line[offset]);
@@ -130,11 +132,10 @@ double read_val(FILE *infile,  /* file to read value from */
   if (ptr2 == ptr) { /* End of input line. */
     offset    = 0;
     *end_flag = 1;
-    return ((double)0.0);
+    return (0.0);
   }
-  else {
-    offset = (int)(ptr2 - line) / sizeof(char);
-  }
+
+  offset = (int)(ptr2 - line) / sizeof(char);
 
   return (val);
 }
@@ -160,9 +161,10 @@ int read_int(FILE *infile,  /* file to read value from */
       length_left = LINE_LENGTH - save_pnt - 1;
       ptr2        = line;
       ptr         = &line[save_pnt];
-      for (i = length_left; i; i--)
+      for (i = length_left; i; i--) {
         *ptr2++ = *ptr++;
-      length    = save_pnt + 1;
+      }
+      length = save_pnt + 1;
     }
     else {
       length      = LINE_LENGTH;
@@ -208,8 +210,9 @@ int read_int(FILE *infile,  /* file to read value from */
     offset = 0;
   }
 
-  while (offset < LINE_LENGTH && isspace(line[offset]))
+  while (offset < LINE_LENGTH && isspace(line[offset])) {
     offset++;
+  }
   if (offset == LINE_LENGTH || line[offset] == '%' || line[offset] == '#') {
     *end_flag = 1;
     if (break_pnt < LINE_LENGTH) {
@@ -226,9 +229,8 @@ int read_int(FILE *infile,  /* file to read value from */
     *end_flag = 1;
     return (0);
   }
-  else {
-    offset = (int)(ptr2 - line) / sizeof(char);
-  }
+
+  offset = (int)(ptr2 - line) / sizeof(char);
 
   return (val);
 }
@@ -239,6 +241,7 @@ static void flush_line(FILE *infile)
 
   offset = 0;
   c      = getc(infile);
-  while (c != '\n' && c != '\f')
+  while (c != '\n' && c != '\f') {
     c = getc(infile);
+  }
 }

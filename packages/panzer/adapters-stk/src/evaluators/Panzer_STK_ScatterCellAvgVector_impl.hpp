@@ -91,7 +91,7 @@ PHX_EVALUATOR_CTOR(ScatterCellAvgVector,p) :
 }
 
 
-PHX_POST_REGISTRATION_SETUP(ScatterCellAvgVector,d,fm)
+PHX_POST_REGISTRATION_SETUP(ScatterCellAvgVector, /* d */, fm)
 {
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) 
   {

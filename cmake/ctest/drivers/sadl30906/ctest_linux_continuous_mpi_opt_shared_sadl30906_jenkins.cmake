@@ -90,7 +90,6 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_DEBUG:BOOL=ON"
   "-DTrilinos_ENABLE_DEBUG_SYMBOLS=OFF"
   "-DBUILD_SHARED_LIBS:BOOL=ON"
-  "-DMPI_BASE_DIR:PATH=/projects/install/rhel6-x86_64/sems/compiler/gcc/4.7.2/openmpi/1.6.5"
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DTPL_ENABLE_BoostLib:BOOL=ON"

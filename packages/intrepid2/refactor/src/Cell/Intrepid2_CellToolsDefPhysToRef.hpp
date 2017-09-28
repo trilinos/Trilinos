@@ -90,8 +90,11 @@ namespace Intrepid2 {
     const auto numPoints = physPoints.dimension(1);
     
     // init guess is created locally and non fad whatever refpoints type is 
-    auto initGuess = Kokkos::createDynRankView(refPoints, "CellTools::mapToReferenceFrame::initGuess",
-                                               numCells, numPoints, spaceDim);
+    using result_layout = typename DeduceLayout< decltype(refPoints) >::result_layout;
+    using device_type = typename decltype(refPoints)::device_type;
+    auto vcprop = Kokkos::common_view_alloc_prop(refPoints);
+    using common_value_type = typename decltype(vcprop)::value_type;
+    Kokkos::DynRankView< common_value_type, result_layout, device_type > initGuess ( Kokkos::view_alloc("CellTools::mapToReferenceFrame::initGuess", vcprop), numCells, numPoints, spaceDim );
     //refPointViewSpType initGuess("CellTools::mapToReferenceFrame::initGuess", numCells, numPoints, spaceDim);
     rst::clone(initGuess, cellCenter);
     
@@ -128,20 +131,23 @@ namespace Intrepid2 {
     typedef RealSpaceTools<SpT> rst;
     const auto tol = tolerence();
 
+    using result_layout = typename DeduceLayout< decltype(refPoints) >::result_layout;
+    using device_type = typename decltype(refPoints)::device_type;
+    auto vcprop = Kokkos::common_view_alloc_prop(refPoints);
+    typedef Kokkos::DynRankView<typename decltype(vcprop)::value_type, result_layout, device_type > viewType;
+
     // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
-    auto xOld = Kokkos::createDynRankView(refPoints, "CellTools::mapToReferenceFrameInitGuess::xOld",
-                                          numCells, numPoints, spaceDim);
-    auto xTmp = Kokkos::createDynRankView(refPoints, "CellTools::mapToReferenceFrameInitGuess::xTmp",
-                                          numCells, numPoints, spaceDim);
+    viewType xOld(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::xOld", vcprop), numCells, numPoints, spaceDim);
+    viewType xTmp(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::xTmp", vcprop), numCells, numPoints, spaceDim);
 
     // deep copy may not work with FAD but this is right thing to do as it can move data between devices
     Kokkos::deep_copy(xOld, initGuess);
 
     // jacobian should select fad dimension between xOld and worksetCell as they are input; no front interface yet
-    auto jacobian = Kokkos::createDynRankView(refPoints, "CellTools::mapToReferenceFrameInitGuess::jacobian", 
-                                              numCells, numPoints, spaceDim, spaceDim);
-    auto jacobianInv = Kokkos::createDynRankView(jacobian, "CellTools::mapToReferenceFrameInitGuess::jacobian", 
-                                                 numCells, numPoints, spaceDim, spaceDim);
+    auto vcpropJ = Kokkos::common_view_alloc_prop(refPoints, worksetCell);
+    typedef Kokkos::DynRankView<typename decltype(vcpropJ)::value_type, result_layout, device_type > viewTypeJ;
+    viewTypeJ jacobian(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::jacobian", vcpropJ), numCells, numPoints, spaceDim, spaceDim);
+    viewTypeJ jacobianInv(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::jacobianInv", vcpropJ), numCells, numPoints, spaceDim, spaceDim);
     
     typedef Kokkos::DynRankView<typename ScalarTraits<refPointValueType>::scalar_type,SpT> errorViewType;
     errorViewType
@@ -170,7 +176,7 @@ namespace Intrepid2 {
       rst::subtract(xTmp, xOld, refPoints);
 
       // extract values
-      rst::extractSacadoValues(xScalarTmp, xTmp);
+      rst::extractScalarValues(xScalarTmp, xTmp);
       rst::vectorNorm(errorPointwise, xScalarTmp, NORM_TWO);
 
       // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 

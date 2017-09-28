@@ -42,6 +42,7 @@
 
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
+#include "Intrepid2_HVOL_C0_FEM.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -52,8 +53,6 @@
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_STKConnManager.hpp"
-#include "Intrepid2_Basis_Const_FEM.hpp"
-
 #include "Shards_BasicTopologies.hpp"
 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
@@ -101,7 +100,7 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 
 RCP<const panzer::FieldPattern> buildConstantFieldPattern(const shards::CellTopology & ct)
 {
-   typedef Intrepid2::Basis_Constant_FEM<PHX::exec_space,double,double> Intrepid2Type;
+   typedef Intrepid2::Basis_HVOL_C0_FEM<PHX::exec_space,double,double> Intrepid2Type;
 
    // build a geometric pattern from a single basis
    RCP<Intrepid2::Basis<PHX::exec_space,double,double> > basis = rcp(new Intrepid2Type(ct));

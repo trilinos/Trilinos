@@ -82,13 +82,7 @@
 
 #endif
 
-#if defined(__PUMAGON__)
-extern "C" {
-#include <util.h>
-#include <sys/param.h>
-}
-
-#elif defined(__JVN)
+#if defined(__JVN)
 #include <sys/param.h>
 #include <sys/utsname.h>
 #include <sys/time.h>
@@ -109,12 +103,6 @@ extern "C" {
 #endif
 
 #include <stk_util/util/MallocUsed.h>
-
-//
-//  NKC 2/21/08 Some of the calls in this file bomb out purify.  Uncomment the line below if trying
-//  to build a purify executable.
-//
-//#define PURIFY_BUILD
 
 namespace sierra {
 namespace Env {
@@ -375,7 +363,6 @@ write_lock(
   return i != -1;
 }
 
-
 bool
 release_lock(
   int		fd)
@@ -384,14 +371,12 @@ release_lock(
   return i != -1;
 }
 
-
 bool
 read_lock(
   int		fd)
 {
   return ::fcntl(fd, F_SETLK, file_lock(F_RDLCK, SEEK_SET)) != -1;
 }
-
 
 bool
 append_lock(

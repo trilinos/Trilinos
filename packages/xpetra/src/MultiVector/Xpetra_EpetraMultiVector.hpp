@@ -313,7 +313,7 @@ namespace Xpetra {
     typename dual_view_type::t_dev_um getDeviceLocalView() const {
       throw std::runtime_error("Epetra does not support device views!");
       typename dual_view_type::t_dev_um ret;
-      return ret; // make compiler happy
+      TEUCHOS_UNREACHABLE_RETURN(ret);
     }
 
 #endif
@@ -380,7 +380,7 @@ namespace Xpetra {
       }
       double** rawArrayOfRawPtrs = const_cast<double**>(arrayOfRawPtrs.getRawPtr()); // This const_cast should be fine, because Epetra_DataAccess=Copy.
 
-      vec_ = Teuchos::rcp(new Epetra_MultiVector(Copy, toEpetra<GlobalOrdinal,Node>(map), rawArrayOfRawPtrs, NumVectors));
+      vec_ = Teuchos::rcp(new Epetra_MultiVector(Copy, toEpetra<GlobalOrdinal,Node>(map), rawArrayOfRawPtrs, static_cast<int>(NumVectors)));
     }
 
     //! MultiVector destructor.
@@ -525,7 +525,7 @@ namespace Xpetra {
     std::string description() const {
       XPETRA_MONITOR("EpetraMultiVectorT::description");
       TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
-      return "TODO";
+      TEUCHOS_UNREACHABLE_RETURN("TODO");
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.
@@ -928,8 +928,8 @@ namespace Xpetra {
     //! A simple one-line description of this object.
     std::string description() const {
       XPETRA_MONITOR("EpetraMultiVectorT::description");
-      TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
-      return "TODO";
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "TODO");
+      //return "TODO"; // unreachable
     }
 
     //! Print the object with the given verbosity level to a FancyOStream.

@@ -252,7 +252,7 @@ private:
   RCP<Export> m_exporterCoarse, m_exporterInterlevel;
   RCP<CrsMatrix> m_Phi, m_Ac, m_AcRoot;
   RCP<Vector> m_vecBoundary1to1, m_vecCoarse1to1, m_rootVec;
-  SolverBase<SX,SM,LO,GO>* m_coarseSolver;
+  SolverBase<SX>* m_coarseSolver;
 
   void determineReorder(LO sub, 
 			std::vector<LO> & reorder)
@@ -531,7 +531,7 @@ private:
 	UtilBDDC<SX,SM>::printSparseMatrix
 	  (numRows, &rowBegin[0], &columns[0], &values[0], "Ac.dat");
       }
-      SolverFactory<SX,SM,LO,GO> Factory;
+      SolverFactory<SX> Factory;
       m_coarseSolver = Factory.Generate(numRows,
 					&rowBegin[0],
 					&columns[0],
@@ -543,7 +543,7 @@ private:
 
   long getProcessorLoad()
   {
-    size_t s_now, s_hwm;
+    //    size_t s_now, s_hwm;
     // SRSR : We just retrun zero as the available memory. All the ranks
     // will have equal weight in the sorting that follows this call and
     // rank 0 will get picked based on tie-breaking. Consider finding the

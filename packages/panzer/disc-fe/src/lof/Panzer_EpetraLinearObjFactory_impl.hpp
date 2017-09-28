@@ -59,9 +59,9 @@
 #include "EpetraExt_VectorOut.h"
 #include "EpetraExt_VectorIn.h"
 
-using Teuchos::RCP;
-
 namespace panzer {
+
+using Teuchos::RCP;
 
 // ************************************************************
 // class EpetraLinearObjFactory

@@ -142,6 +142,7 @@ class AlgAMD : public Algorithm<Adapter>
 #else
       typedef typename Adapter::gno_t gno_t;
       typedef typename Adapter::lno_t lno_t;
+      typedef typename Adapter::offset_t offset_t;
       typedef typename Adapter::scalar_t scalar_t;
 
       int ierr= 0;
@@ -150,7 +151,7 @@ class AlgAMD : public Algorithm<Adapter>
 
       //cout << "Local num vertices" << nVtx << endl;
       ArrayView<const gno_t> edgeIds;
-      ArrayView<const lno_t> offsets;
+      ArrayView<const offset_t> offsets;
       ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
       // wgts are ignored in AMD
@@ -169,7 +170,7 @@ class AlgAMD : public Algorithm<Adapter>
       perm = (lno_t *) (solution->getPermutationRCP().getRawPtr());
 
       SuiteSparse_long *amd_offsets, *amd_edgeIds;
-      TPL_Traits<SuiteSparse_long, const lno_t>::ASSIGN_ARRAY(&amd_offsets,
+      TPL_Traits<SuiteSparse_long, const offset_t>::ASSIGN_ARRAY(&amd_offsets,
              offsets);
       // This might throw depending on how SuiteSparse was compiled
       // with long or long long and the size of both of them

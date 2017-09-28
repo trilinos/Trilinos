@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -69,15 +69,16 @@ void simple_part(struct vtx_data **graph,       /* data structure for graph */
     if (DEBUG_TRACE > 0) {
       printf("Generating scattered partition, nvtxs = %d\n", nvtxs);
     }
-    for (j    = 0; j < nsets; j++)
+    for (j = 0; j < nsets; j++) {
       wgts[j] = 0;
+    }
     for (i = 1; i <= nvtxs; i++) {
       best_ratio = 2;
       for (j = 0; j < nsets; j++) {
         ratio = wgts[j] / goal[j];
         if (ratio < best_ratio) {
           best_ratio = ratio;
-          set        = (int)j;
+          set        = j;
         }
       }
       if (using_vwgts) {
@@ -97,8 +98,9 @@ void simple_part(struct vtx_data **graph,       /* data structure for graph */
     }
     /* Construct random order in which to step through graph. */
     order = smalloc((nvtxs + 1) * sizeof(int));
-    for (i     = 1; i <= nvtxs; i++)
+    for (i = 1; i <= nvtxs; i++) {
       order[i] = i;
+    }
     randomize(order, nvtxs);
 
     weight = 0;
@@ -107,8 +109,9 @@ void simple_part(struct vtx_data **graph,       /* data structure for graph */
     vwgt   = 1;
     sum    = 0;
     for (i = 1; i <= nvtxs; i++) {
-      if (using_vwgts)
+      if (using_vwgts) {
         vwgt = graph[order[i]]->vwgt;
+      }
 
       if (set < nsets - 1 &&
           (weight >= cutoff ||
@@ -136,8 +139,9 @@ void simple_part(struct vtx_data **graph,       /* data structure for graph */
     vwgt   = 1;
     sum    = 0;
     for (i = 1; i <= nvtxs; i++) {
-      if (using_vwgts)
+      if (using_vwgts) {
         vwgt = graph[i]->vwgt;
+      }
 
       if (set < nsets - 1 &&
           (weight >= cutoff ||

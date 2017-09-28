@@ -11,7 +11,8 @@
 
 // Tempus
 #include "Tempus_Stepper.hpp"
-//Thrya
+#include "Tempus_TimeDerivative.hpp"
+// Thrya
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 

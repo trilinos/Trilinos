@@ -76,6 +76,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   OVIS            "cmake/TPLs/"    ST
   gpcd            "cmake/TPLs/"    ST
   METIS           "cmake/TPLs/"    TS
+  MTMETIS         "cmake/TPLs/"    EX
   ParMETIS        "cmake/TPLs/"    PT
   PuLP            "cmake/TPLs/"    EX
   TopoManager     "cmake/TPLs/"    EX

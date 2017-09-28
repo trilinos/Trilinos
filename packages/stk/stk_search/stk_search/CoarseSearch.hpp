@@ -37,7 +37,6 @@
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/CoarseSearchBoostRTree.hpp>
-#include <stk_search/OctTreeOps.hpp>
 #include <stk_search/SearchMethod.hpp>
 #include <stk_search/KDTree_stk_interface.hpp>
 
@@ -78,18 +77,12 @@ void coarse_search_nonIdentProc(
   case BOOST_RTREE:
     coarse_search_boost_rtree_output_locally<DomainBox, DomainIdent, RangeBox, RangeIdent>(domain,range,comm,intersections);
     break;
-  case OCTREE:
-    std::cerr << "coarse_search_octree(..) does not support std::search::coarse_search_nonIdentProc(..) yet" << std::endl;
-    std::abort();
-    // coarse_search_octree(domain,range,comm,intersections);
-    break;
   default:
     std::cerr << "coarse_search(..) interface used does not support std::search::coarse_search_nonIdentProc(..) yet" << method << std::endl;
     abort();
     break;
   }
 }
-
 
 // THIS MIGHT BE WHAT WE ACTUALLY WANT FOR THE INTERFACE.
 template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
@@ -128,8 +121,6 @@ void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain
     break;
 #endif
   case OCTREE:
-    coarse_search_octree(domain,range,comm,intersections,communicateRangeBoxInfo);
-    break;
   case KDTREE:
     kdtree_search(domain,range,comm,intersections,communicateRangeBoxInfo);
     break;
@@ -139,7 +130,6 @@ void coarse_search( std::vector<std::pair<DomainBox,DomainIdent> > const& domain
     break;
   }
 }
-
 
 }} // namespace stk::search
 

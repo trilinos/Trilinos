@@ -187,8 +187,6 @@ evalModelImpl(
       Thyra::DetachedVectorView<Scalar> f_out_view( *f_out );
       f_out_view[0] = 0;
       f_out_view[1] = (1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]/epsilon_;
-//    f_out_view[0] = x_in_view[1];
-//    f_out_view[1] = (1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]/epsilon_;
     }
   } else {
 
@@ -203,9 +201,6 @@ evalModelImpl(
       f_out_view[0] = x_dot_in_view[0];
       f_out_view[1] = x_dot_in_view[1]
         - (1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]/epsilon_;
-//    f_out_view[0] = x_dot_in_view[0] - x_in_view[1];
-//    f_out_view[1] = x_dot_in_view[1]
-//      - (1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]/epsilon_;
     }
     const RCP<Thyra::LinearOpBase<Scalar> > W_out = outArgs.get_W_op();
     if (!is_null(W_out)) {
@@ -218,12 +213,6 @@ evalModelImpl(
           2.0*beta*x_in_view[0]*x_in_view[1]/epsilon_;       // d(f1)/d(x0_n)
       W_view(1,1) = alpha
         - beta*(1.0 - x_in_view[0]*x_in_view[0])/epsilon_;   // d(f1)/d(x1_n)
-//    W_view(0,0) = alpha;                                   // d(f0)/d(x0_n)
-//    W_view(0,1) = -beta;                                   // d(f0)/d(x1_n)
-//    W_view(1,0) =
-//        2.0*beta*x_in_view[0]*x_in_view[1]/epsilon_;       // d(f1)/d(x0_n)
-//    W_view(1,1) = alpha
-//      - beta*(1.0 - x_in_view[0]*x_in_view[0])/epsilon_;   // d(f1)/d(x1_n)
       // Note: alpha = d(xdot)/d(x_n) and beta = d(x)/d(x_n)
     }
   }

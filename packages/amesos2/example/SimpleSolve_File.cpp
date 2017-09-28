@@ -66,13 +66,12 @@ int main(int argc, char *argv[]) {
   typedef double Scalar;
 
   typedef double Scalar;
-  typedef int LO;
-  typedef int GO;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType           Platform;
-  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Map<>::global_ordinal_type GO;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> MAT;
-  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
+  typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
 
   using Tpetra::global_size_t;
   using Tpetra::Map;
@@ -81,12 +80,11 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
 
-  // 
+  //
   // Get the default communicator
   //
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-  Teuchos::RCP<Node>                      node = platform.getNode();
   int myRank = comm->getRank();
 
   Teuchos::oblackholestream blackhole;
@@ -116,7 +114,7 @@ int main(int argc, char *argv[]) {
 
   const size_t numVectors = 1;
 
-  RCP<MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(filename, comm, node);
+  RCP<MAT> A = Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(filename, comm);
   if( printMatrix ){
     A->describe(*fos, Teuchos::VERB_EXTREME);
   }
@@ -125,14 +123,14 @@ int main(int argc, char *argv[]) {
   }
 
   // get the maps
-  RCP<const Map<LO,GO,Node> > dmnmap = A->getDomainMap();		
-  RCP<const Map<LO,GO,Node> > rngmap = A->getRangeMap();
+  RCP<const Map<LO,GO> > dmnmap = A->getDomainMap();
+  RCP<const Map<LO,GO> > rngmap = A->getRangeMap();
 
   GO nrows = dmnmap->getGlobalNumElements();
-  RCP<Map<LO,GO,Node> > root_map
-    = rcp( new Map<LO,GO,Node>(nrows,myRank == 0 ? nrows : 0,0,comm) );
+  RCP<Map<LO,GO> > root_map
+    = rcp( new Map<LO,GO>(nrows,myRank == 0 ? nrows : 0,0,comm) );
   RCP<MV> Xhat = rcp( new MV(root_map,numVectors) );
-  RCP<Import<LO,GO,Node> > importer = rcp( new Import<LO,GO,Node>(dmnmap,root_map) );
+  RCP<Import<LO,GO> > importer = rcp( new Import<LO,GO>(dmnmap,root_map) );
 
   // Create random X
   RCP<MV> X = rcp(new MV(dmnmap,numVectors));
@@ -151,7 +149,7 @@ int main(int argc, char *argv[]) {
    */
   RCP<MV> B = rcp(new MV(rngmap,numVectors));
   B->putScalar(10);
-  
+
 
   // Constructor from Factory
   RCP<Amesos2::Solver<MAT,MV> > solver;
@@ -159,7 +157,7 @@ int main(int argc, char *argv[]) {
     *fos << "SuperLU solver not enabled.  Exiting..." << std::endl;
     return EXIT_SUCCESS;
   }
-  
+
   solver = Amesos2::create<MAT,MV>("Superlu", A, X, B);
 
   solver->symbolicFactorization().numericFactorization().solve();
@@ -173,9 +171,9 @@ int main(int argc, char *argv[]) {
     } else {
       Xhat->doImport(*X,*importer,Tpetra::REPLACE);
       if( myRank == 0 ){
-	*fos << "Solution :" << std::endl;
-	Xhat->describe(*fos,Teuchos::VERB_EXTREME);
-	*fos << std::endl;
+        *fos << "Solution :" << std::endl;
+        Xhat->describe(*fos,Teuchos::VERB_EXTREME);
+        *fos << std::endl;
       }
     }
   }
@@ -185,7 +183,7 @@ int main(int argc, char *argv[]) {
     solver->printTiming(*fos);
   }
   Teuchos::TimeMonitor::summarize();
-  
+
   // We are done.
   return 0;
 }

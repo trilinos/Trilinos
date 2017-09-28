@@ -13,13 +13,13 @@ inline int size(std::string const& s) {
   return int(s.size());
 }
 
-inline typename std::string::reference at(std::string& s, int i) {
+inline std::string::reference at(std::string& s, int i) {
   TEUCHOS_DEBUG_ASSERT(0 <= i);
   TEUCHOS_DEBUG_ASSERT(i < int(s.size()));
   return s[std::size_t(i)];
 }
 
-inline typename std::string::const_reference at(std::string const& s, int i) {
+inline std::string::const_reference at(std::string const& s, int i) {
   TEUCHOS_DEBUG_ASSERT(0 <= i);
   TEUCHOS_DEBUG_ASSERT(i < int(s.size()));
   return s[std::size_t(i)];

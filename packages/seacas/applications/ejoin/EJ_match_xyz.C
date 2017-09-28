@@ -1,7 +1,6 @@
-// Copyright(C) 2010 Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright(C) 2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -29,18 +29,18 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include "EJ_index_sort.h" // for index_coord_sort
-#include "EJ_mapping.h"    // for eliminate_omitted_nodes
-#include "EJ_match_xyz.h"
+#include "EJ_CodeTypes.h"
+#include "EJ_index_sort.h"  // for index_coord_sort
+#include "EJ_mapping.h"     // for eliminate_omitted_nodes
 #include "EJ_vector3d.h"    // for vector3d
 #include "Ioss_NodeBlock.h" // for NodeBlock
 #include "Ioss_Property.h"  // for Property
 #include "Ioss_Region.h"    // for Region, NodeBlockContainer
 #include "smart_assert.h"   // for SMART_ASSERT
 #include <algorithm>        // for max, min
-#include <float.h>          // for FLT_MAX
+#include <cfloat>           // for FLT_MAX
+#include <cstddef>          // for size_t
 #include <iostream>         // for operator<<, cout, ostream, etc
-#include <stddef.h>         // for size_t
 
 namespace {
   template <typename INT>
@@ -106,7 +106,7 @@ namespace {
       }
     }
   }
-}
+} // namespace
 
 template <typename INT>
 void match_node_xyz(RegionVector &part_mesh, double tolerance, std::vector<INT> &global_node_map,
@@ -334,4 +334,4 @@ namespace {
     }
     std::cout << "\n";
   }
-}
+} // namespace

@@ -50,7 +50,7 @@
 ///   Tpetra::Details namespace.
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Kokkos_Sparse_OrdinalTraits.hpp"
+#include "KokkosSparse_OrdinalTraits.hpp"
 
 namespace Tpetra {
 namespace Details {

@@ -55,6 +55,19 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     CACHE  BOOL
     "Enable std::complex<double> scalar types in all Trilinos packages by default.")
 
+  OPTION(Trilinos_ENABLE_THREAD_SAFE
+    "Enable thread safe code including RCP classes." OFF )
+
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
+  IF (Trilinos_ENABLE_THREAD_SAFE AND NOT ${PROJECT_NAME}_ENABLE_CXX11)
+    MESSAGE(FATAL_ERROR
+      "You set Trilinos_ENABLE_THREAD_SAFE=ON, but ${PROJECT_NAME}' support"
+      " for CXX11 is not enabled (${PROJECT_NAME}_ENABLE_CXX11=OFF)."
+      "  This is not allowed.  Please enable ${PROJECT_NAME}_ENABLE_CXX11 in"
+      " ${PROJECT_NAME} before attempting to enable Trilinos_ENABLE_THREAD_SAFE"
+      " or leave Trilinos_ENABLE_THREAD_SAFE off.")
+  ENDIF ()
+
   #
   # Trilinos Data Dir?  Is this still being used anywhere?
   #

@@ -67,7 +67,7 @@ PHX_EVALUATOR_CTOR(Copy,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Copy,worksets,fm)
+PHX_POST_REGISTRATION_SETUP(Copy, /* worksets */, fm)
 {
   this->utils.setFieldData(input,fm);
   this->utils.setFieldData(output,fm);
@@ -76,7 +76,7 @@ PHX_POST_REGISTRATION_SETUP(Copy,worksets,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(Copy,workset)
+PHX_EVALUATE_FIELDS(Copy, /* workset */)
 { 
   output.deep_copy(input);
 }

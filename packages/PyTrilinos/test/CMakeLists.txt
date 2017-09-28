@@ -46,8 +46,7 @@ ENABLE_TESTING()
 INCLUDE(PyTrilinosMakeTest)
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
-  COMMAND ${PYTHON_EXECUTABLE}
-          ${PyTrilinos_BINARY_DIR}/util/copyWithCMakeSubstitutions.py
+  COMMAND ${PyTrilinos_BINARY_DIR}/util/copyWithCMakeSubstitutions.py
           ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in
 	  ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in)
@@ -132,6 +131,7 @@ IF(PyTrilinos_ENABLE_Anasazi)
 ENDIF(PyTrilinos_ENABLE_Anasazi)
 
 IF(PyTrilinos_ENABLE_Pliris)
+  PyTrilinos_MAKE_TEST(testPliris)
 ENDIF(PyTrilinos_ENABLE_Pliris)
 
 IF(PyTrilinos_ENABLE_ML)

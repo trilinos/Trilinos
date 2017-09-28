@@ -315,6 +315,28 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     ${${PROJECT_NAME}_ENABLE_CONFIGURE_DEBUG_DEFAULT} CACHE BOOL
     "Enable debug checking of the process which finds errors in the project's CMake files (off by default unless ${PROJECT_NAME}_ENABLE_DEBUG=ON)." )
 
+  IF ("${${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS_DEFAULT "WARNING")
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS
+    ${${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS_DEFAULT}
+    CACHE STRING
+    "Determins how unparsed arguments for TriBITS functions that use CMAKE_PARASE_ARUMENTS() internally are handled.  Valid choices are 'WARNING', 'SEND_ERROR', and 'FATAL_ERROR'.  The default is 'SEND_ERROR'."
+    )
+  IF (
+    (NOT ${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS STREQUAL "WARNING")
+     AND
+    (NOT ${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS STREQUAL "SEND_ERROR")
+     AND
+    (NOT ${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS STREQUAL "FATAL_ERROR")
+    )
+    MESSAGE(FATAL_ERROR "Error, the value of"
+      " ${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS ="
+      " '${${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS}' is invalid!"
+      " Valid valules include 'WANRING', 'SEND_ERROR', and 'FATAL_ERROR'"
+      )
+  ENDIF()
+
   SET(${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR ON
     CACHE BOOL
     "Enable support for Teuchos Time Monitors in all Trilinos packages that support it."
@@ -1741,7 +1763,12 @@ MACRO(TRIBITS_SETUP_ENV)
 
   # Set up MPI if MPI is being used
 
-  ASSERT_DEFINED(TPL_ENABLE_MPI)
+  IF ("${TPL_ENABLE_MPI}" STREQUAL "")
+    # If TPL_ENABLE_MPI is undefined or empty because this project does not
+    # define an MPI TPL, then explicitly disable it.
+    SET(TPL_ENABLE_MPI FALSE)
+  ENDIF()
+
   IF (TPL_ENABLE_MPI)
     TRIBITS_SETUP_MPI()
   ENDIF()
@@ -1966,20 +1993,18 @@ MACRO(TRIBITS_SETUP_ENV)
 ENDMACRO()
 
 #
-# Set mapping of labels to subprojects (i.e. TriBITS packages) for CTest and
-# CDash
+# Set mapping of labels to subprojects (i.e. TriBITS packages) for local CTest
+# only.
+#
+# NOTE: This macro is only used define mapping of labels to subprojects for
+# running ctest locally.  This results in summarizing the tests run for each
+# subproject (TriBITS package) if any tests were run.  Therefore, it is
+# harmless to define the mapping for every TriBITS package.  Only TriBITS
+# packages will be listed in the summary if they had one or more tests run.
 #
 
 MACRO(TRIBITS_SET_LABELS_TO_SUBPROJECTS_MAPPING)
-  IF (${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES)
-    SET(CTEST_LABELS_FOR_SUBPROJECTS)
-    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
-      TRIBITS_IS_PRIMARY_META_PROJECT_PACKAGE(${TRIBITS_PACKAGE}  PACKAGE_IS_PMPP)
-      IF (PACKAGE_IS_PMPP)
-        LIST(APPEND CTEST_LABELS_FOR_SUBPROJECTS ${TRIBITS_PACKAGE})
-       ENDIF()
-    ENDFOREACH()
-  ENDIF()
+  SET(CTEST_LABELS_FOR_SUBPROJECTS ${${PROJECT_NAME}_PACKAGES})
 ENDMACRO()
 
 
@@ -2284,12 +2309,19 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
           PRINT_VAR(${TRIBITS_PACKAGE}_BINARY_DIR)
         ENDIF()
 
-        TRIBITS_TRACE_FILE_PROCESSING(PACKAGE  ADD_SUBDIR
+        SET(TRIBITS_PACKAGE_CMAKELIST_FILE
           "${${TRIBITS_PACKAGE}_SOURCE_DIR}/CMakeLists.txt")
+        TRIBITS_TRACE_FILE_PROCESSING(PACKAGE  ADD_SUBDIR
+          "${TRIBITS_PACKAGE_CMAKELIST_FILE}")
         IF (NOT ${TRIBITS_PACKAGE}_SOURCE_DIR STREQUAL ${PROJECT_NAME}_SOURCE_DIR)
           ADD_SUBDIRECTORY(${${TRIBITS_PACKAGE}_SOURCE_DIR} ${${TRIBITS_PACKAGE}_BINARY_DIR})
 	ELSE()
-          INCLUDE("${${TRIBITS_PACKAGE}_SOURCE_DIR}/CMakeLists.txt")
+          INCLUDE("${TRIBITS_PACKAGE_CMAKELIST_FILE}")
+        ENDIF()
+        IF (NOT ${PACKAGE_NAME}_TRIBITS_PACAKGE_POSTPROCESS)
+          MESSAGE(FATAL_ERROR
+            "ERROR: Forgot to call TRIBITS_PACKAGE_POSTPROCESS() in ${TRIBITS_PACKAGE_CMAKELIST_FILE}"
+            )
         ENDIF()
 
         LIST(APPEND ENABLED_PACKAGE_LIBS_TARGETS ${TRIBITS_PACKAGE}_libs)

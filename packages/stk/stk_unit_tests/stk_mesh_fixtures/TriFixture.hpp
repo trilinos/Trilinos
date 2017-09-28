@@ -78,6 +78,13 @@ class TriFixture
               , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
               , ConnectivityMap const* connectivity_map = NULL
             );
+  TriFixture(   stk::ParallelMachine pm
+              , size_t nx
+              , size_t ny
+              , const std::string& coordsName
+              , stk::mesh::BulkData::AutomaticAuraOption = stk::mesh::BulkData::AUTO_AURA
+              , ConnectivityMap const* connectivity_map = NULL
+            );
 
   const int         m_spatial_dimension;
   const size_t      m_nx;

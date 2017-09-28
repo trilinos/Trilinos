@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -97,9 +97,8 @@
 
 #include "Isorropia_EpetraProber.hpp"
 
-using namespace std;
 
-Epetra_CrsMatrix* balanceAndRedistribute(Epetra_CrsMatrix* A, 
+Epetra_CrsMatrix* balanceAndRedistribute(Epetra_CrsMatrix* A,
                         Teuchos::ParameterList isoList);
 
 void checkMaps(Epetra_CrsMatrix *A);
@@ -110,7 +109,7 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals);
 
 void findBlockElems(Epetra_CrsMatrix *A, int nrows, int *rows, int *gvals,
         int Lnr, int *LeftElems,
-        int Rnr, int *RightElems, string s1, string s2, bool cols);
+        int Rnr, int *RightElems, std::string s1, std::string s2, bool cols);
 
 #ifdef SHYLU_DEBUG
 

@@ -111,7 +111,10 @@ namespace Intrepid2 {
   /// define constants
   class Parameters {
   public:
-    static constexpr ordinal_type MaxNumPtsPerBasisEval= 4;      /// The maximum number of points to eval in serial mode
+    // KK: do not chagne max num pts per basis eval bigger than 1. 
+    //     polylib point and order match needs to be first examined; now if it is set bigger than 1
+    //     it creates silent error.
+    static constexpr ordinal_type MaxNumPtsPerBasisEval= 1;      /// The maximum number of points to eval in serial mode
     static constexpr ordinal_type MaxOrder             = 6;      /// The maximum reconstruction order.
     static constexpr ordinal_type MaxIntegrationPoints = 1001;    /// The maximum number of integration points for direct cubature rules.
     static constexpr ordinal_type MaxCubatureDegreeEdge= 20;      /// The maximum degree of the polynomial that can be integrated exactly by a direct edge rule.

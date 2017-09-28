@@ -46,8 +46,6 @@
 #ifndef MUELU_BLOCKEDRAPFACTORY_DEF_HPP
 #define MUELU_BLOCKEDRAPFACTORY_DEF_HPP
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
-
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -241,7 +239,6 @@ namespace MueLu {
 } //namespace MueLu
 
 #define MUELU_BLOCKEDRAPFACTORY_SHORT
-#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif // MUELU_BLOCKEDRAPFACTORY_DEF_HPP
 
 // TODO add plausibility check

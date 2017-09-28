@@ -154,7 +154,6 @@ namespace bddc {
     if (m_maxNumVectors <= 0) return;
     if (m_numVectors+1 <= m_maxNumVectors) {
       double startTime = m_Preconditioner->GetTime();
-      int LDA = m_maxNumVectors;
       LO nRow = m_vectorLength;
       int nCol = m_numVectors;
       LO istart = nRow*nCol;

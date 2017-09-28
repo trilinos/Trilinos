@@ -115,6 +115,9 @@
 /* Define if user requested explicit instantiation of classes into libtpetra */
 #cmakedefine HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
+/* Define when Tpetra assumes that the MPI implementation is CUDA aware */
+#cmakedefine TPETRA_ASSUME_CUDA_AWARE_MPI
+
 /* List of enabled (LocalOrdinal, GlobalOrdinal) pairs */
 #cmakedefine HAVE_TPETRA_INST_INT_INT
 #cmakedefine HAVE_TPETRA_INST_INT_LONG

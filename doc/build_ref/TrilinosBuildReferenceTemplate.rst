@@ -72,6 +72,21 @@ various Trilinos packages can be enabled using the following options:
     ``-DTrilinos_ENABLE_COMPLEX=ON`` is set.
 
 
+Enabling/disabling thread safety
+--------------------------------
+
+By default, many Trilinos classes are not thread-safe.  However, some of these
+classes can be made thread safe by configuring with::
+
+  -D <Project>_ENABLE_THREAD_SAFE:BOOL=ON
+  
+This will set the default value ``Teuchos_ENABLE_THREAD_SAFE=ON`` which makes
+the Teuchos Memory Management classes (Teuchos::RCP, Teuchos::Ptr,
+Teuchos::Array, Teuchos::ArrayView, and Teuchos::ArrayRCP) thread-safe.  See
+documentation for other Trilinos packages for what parts become thread safe
+when setting this option.
+
+
 Enabling/disabling time monitors
 --------------------------------
 

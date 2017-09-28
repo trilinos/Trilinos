@@ -79,7 +79,7 @@ PHX_EVALUATOR_CTOR(SubcellSum,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(SubcellSum,sd,fm)
+PHX_POST_REGISTRATION_SETUP(SubcellSum, /* sd */, fm)
 {
   this->utils.setFieldData(inField,fm);
   this->utils.setFieldData(outField,fm);

@@ -150,11 +150,17 @@ void expect_equal_fields(stk::mesh::MetaData &newMeta, stk::mesh::FieldBase &old
     EXPECT_EQ(oldField.type_is<int>(), newField.type_is<int>());
     EXPECT_EQ(oldField.type_is<double>(), newField.type_is<double>());
     if(oldField.attribute<Ioss::Field::RoleType>() != nullptr)
+    {
         EXPECT_EQ(*oldField.attribute<Ioss::Field::RoleType>(), *newField.attribute<Ioss::Field::RoleType>());
+    }
     for(unsigned i = 0; i < oldField.field_array_rank(); ++i)
+    {
         EXPECT_EQ(oldField.dimension_tags()[i]->name(), newField.dimension_tags()[i]->name());
+    }
     for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<oldField.entity_rank(); rank++)
+    {
         EXPECT_EQ(oldField.max_size(rank), newField.max_size(rank));
+    }
     expect_equal_data_traits(oldField.data_traits(), newField.data_traits());
     expect_equal_field_initial_values(oldField, newField);
     expect_equal_field_restrictions(newMeta, oldField, newField);
@@ -165,8 +171,9 @@ void expect_all_fields_equal(stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &
     const stk::mesh::FieldVector &oldFields = oldMeta.get_fields();
     const stk::mesh::FieldVector &newFields = newMeta.get_fields();
     ASSERT_EQ(oldFields.size(), newFields.size());
-    for(size_t i=0; i<oldFields.size(); i++)
+    for(size_t i=0; i<oldFields.size(); i++) {
         expect_equal_fields(newMeta, *oldFields[i], *newFields[i]);
+    }
 }
 
 void expect_surface_to_block_mappings_equal(stk::mesh::MetaData &oldMeta, stk::mesh::MetaData &newMeta)
@@ -181,9 +188,9 @@ void expect_surface_to_block_mappings_equal(stk::mesh::MetaData &oldMeta, stk::m
         std::vector<const stk::mesh::Part*> oldBlocks = oldMeta.get_blocks_touching_surface(oldSurfacesInMap[i]);
         std::vector<const stk::mesh::Part*> newBlocks = newMeta.get_blocks_touching_surface(newSurfacesInMap[i]);
         ASSERT_EQ(oldBlocks.size(), newBlocks.size());
-        for(size_t i=0;i<oldBlocks.size();++i)
+        for(size_t j=0; j<oldBlocks.size(); ++j)
         {
-            EXPECT_EQ(oldBlocks[i]->name(), newBlocks[i]->name());
+            EXPECT_EQ(oldBlocks[j]->name(), newBlocks[j]->name());
         }
     }
 }

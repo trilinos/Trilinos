@@ -45,12 +45,12 @@
 //**********************************************************************
 template<typename EvalT, typename Traits>
 AllRanksEvaluator<EvalT,Traits>::
-AllRanksEvaluator(const Teuchos::RCP<const PHX::DataLayout>& dl1,
-                  const Teuchos::RCP<const PHX::DataLayout>& dl2,
-                  const Teuchos::RCP<const PHX::DataLayout>& dl3,
-                  const Teuchos::RCP<const PHX::DataLayout>& dl4,
-                  const Teuchos::RCP<const PHX::DataLayout>& dl5,
-                  const Teuchos::RCP<const PHX::DataLayout>& dl6) :
+AllRanksEvaluator(const Teuchos::RCP<PHX::DataLayout>& dl1,
+                  const Teuchos::RCP<PHX::DataLayout>& dl2,
+                  const Teuchos::RCP<PHX::DataLayout>& dl3,
+                  const Teuchos::RCP<PHX::DataLayout>& dl4,
+                  const Teuchos::RCP<PHX::DataLayout>& dl5,
+                  const Teuchos::RCP<PHX::DataLayout>& dl6) :
   f1("f1",dl1),
   f2("f2",dl2),
   f3("f3",dl3),

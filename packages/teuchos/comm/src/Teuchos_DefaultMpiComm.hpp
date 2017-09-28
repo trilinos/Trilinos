@@ -1209,7 +1209,7 @@ void MpiComm<Ordinal>::readySend(
 #endif // TEUCHOS_MPI_COMM_DUMP
 
   const int err =
-    MPI_Rsend (const_cast<char*>(sendBuffer.getRawPtr()), sendBuffer.size(),
+    MPI_Rsend (const_cast<char*>(sendBuffer.getRawPtr()), static_cast<int>(sendBuffer.size()),
                MPI_CHAR, destRank, tag_, *rawMpiComm_);
   TEUCHOS_TEST_FOR_EXCEPTION(err != MPI_SUCCESS, std::runtime_error,
     "Teuchos::MpiComm::readySend: MPI_Rsend() failed with error \""

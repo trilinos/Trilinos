@@ -1490,10 +1490,10 @@ describe (Teuchos::FancyOStream& out,
     {
       OSTab tab1 (rcpFromRef (out));
 
-      const std::string label = this->getObjectLabel ();
-      if (label != "") {
-        out << "label: " << label << endl;
-      }
+      // const std::string label = this->getObjectLabel ();
+      // if (label != "") {
+      //   out << "label: " << label << endl;
+      // }
       out << "Template parameters:" << endl;
       {
         OSTab tab2 (rcpFromRef (out));

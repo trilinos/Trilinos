@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -132,21 +132,25 @@ void bucketsort1(struct vtx_data **graph,       /* graph data structure */
     }
   }
   else {
-    for (j          = 0; j < nsets - 1; j++)
+    for (j = 0; j < nsets - 1; j++) {
       dvals[vtx][j] = 0;
+    }
   }
 
   /* First count the neighbors in each set. */
   edges = graph[vtx]->edges;
-  if (using_ewgts)
+  if (using_ewgts) {
     ewptr = graph[vtx]->ewgts;
+  }
   for (j = graph[vtx]->nedges - 1; j; j--) {
     set = sets[*(++edges)];
-    if (set < 0)
+    if (set < 0) {
       set = -set - 1;
-    if (using_ewgts)
+    }
+    if (using_ewgts) {
       weight = *(++ewptr) * cut_cost + .5;
-    myhop    = hops[myset][set];
+    }
+    myhop = hops[myset][set];
 
     l = 0;
     for (newset = 0; newset < nsets; newset++) {

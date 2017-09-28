@@ -47,8 +47,12 @@
 #include "Sacado_UQ_PCE.hpp"
 #include "Kokkos_View_UQ_PCE.hpp"
 #include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
-#include "Kokkos_CrsMatrix.hpp"
-#include "Kokkos_MV.hpp" // for some utilities
+#include "KokkosSparse_CrsMatrix.hpp"
+
+//MD 08/2017 Note: I commented out below, as this file is totally 
+//removed from KokkosKernels. It does not look like the 
+//included file is used anywhere in the file.
+//#include "Kokkos_MV.hpp" // for some utilities
 
 #include "Stokhos_Multiply.hpp"
 #include "Stokhos_CrsProductTensor.hpp"
@@ -90,7 +94,7 @@ template <typename MatrixStorage,
           typename ... InputP,
           typename OutputStorage,
           typename ... OutputP>
-class Multiply< Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                    MatrixOrdinal,
                                    Kokkos::Cuda,
                                    MatrixMemory,
@@ -110,7 +114,7 @@ public:
   typedef MatrixDevice execution_space;
   typedef execution_space::size_type size_type;
 
-  typedef Kokkos::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
                              MatrixOrdinal,
                              MatrixDevice,
                              MatrixMemory,
@@ -459,7 +463,7 @@ template <typename MatrixStorage,
           typename ... InputP,
           typename OutputStorage,
           typename ... OutputP>
-class Multiply< Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+class Multiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                    MatrixOrdinal,
                                    Kokkos::Cuda,
                                    MatrixMemory,
@@ -479,7 +483,7 @@ public:
   typedef MatrixDevice execution_space;
   typedef execution_space::size_type size_type;
 
-  typedef Kokkos::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
                              MatrixOrdinal,
                              MatrixDevice,
                              MatrixMemory,
@@ -536,7 +540,7 @@ template <typename MatrixStorage,
           typename ... InputP,
           typename OutputStorage,
           typename ... OutputP>
-class MeanMultiply< Kokkos::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
+class MeanMultiply< KokkosSparse::CrsMatrix< Sacado::UQ::PCE<MatrixStorage>,
                                        MatrixOrdinal,
                                        Kokkos::Cuda,
                                        MatrixMemory,
@@ -554,7 +558,7 @@ public:
 
   typedef Kokkos::Cuda MatrixDevice;
   typedef MatrixDevice execution_space;
-  typedef Kokkos::CrsMatrix< MatrixValue,
+  typedef KokkosSparse::CrsMatrix< MatrixValue,
                              MatrixOrdinal,
                              MatrixDevice,
                              MatrixMemory,

@@ -81,7 +81,7 @@ using Teuchos::ArrayView;
 
 typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> simpleUser_t;
 
-typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t>      tcrsMatrix_t;
+typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t>     tcrsMatrix_t;
 typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t>                 tcrsGraph_t;
 typedef Tpetra::Map<zlno_t, zgno_t, znode_t>                      tmap_t;
 
@@ -97,9 +97,10 @@ using std::string;
 using std::vector;
 
 /////////////////////////////////////////////////////////////////////////////
+template<typename offset_t>
 void printGraph(zlno_t nrows, const zgno_t *v,
     const zgno_t *elid, const zgno_t *egid,
-    const zlno_t *idx,
+    const offset_t *idx,
     const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
@@ -112,10 +113,10 @@ void printGraph(zlno_t nrows, const zgno_t *v,
       for (zlno_t i=0; i < nrows; i++){
         std::cout << "  Vtx " << i << ": ";
         if (elid)
-          for (zlno_t j=idx[i]; j < idx[i+1]; j++)
+          for (offset_t j=idx[i]; j < idx[i+1]; j++)
             std::cout << *elid++ << " ";
         else
-          for (zlno_t j=idx[i]; j < idx[i+1]; j++)
+          for (offset_t j=idx[i]; j < idx[i+1]; j++)
             std::cout << *egid++ << " ";
         std::cout << std::endl;
       }
@@ -137,6 +138,8 @@ void testAdapter(
     bool consecutiveIdsRequested, bool removeSelfEdges, bool buildLocalGraph)
 {
   typedef Zoltan2::StridedData<zlno_t, zscalar_t> input_t;
+  typedef typename
+    Zoltan2::InputTraits<typename BaseAdapter::user_t>::offset_t offset_t;
 
   int fail=0;
   int rank = comm->getRank();
@@ -423,7 +426,7 @@ void testAdapter(
 
   if (!buildLocalGraph) {
     ArrayView<const zgno_t> edgeGids;
-    ArrayView<const zlno_t> offsets;
+    ArrayView<const offset_t> offsets;
     size_t numEdges=0;
 
     try{
@@ -438,8 +441,9 @@ void testAdapter(
     TEST_FAIL_AND_EXIT(*comm, wgts.size() == 0, "edge weights present", 1)
 
     size_t num = 0;
-    for (ArrayView<const zlno_t>::size_type i=0; i < offsets.size()-1; i++){
-      size_t edgeListSize = offsets[i+1] - offsets[i];
+    for (typename ArrayView<const offset_t>::size_type i=0;
+      i < offsets.size()-1; i++){
+      offset_t edgeListSize = offsets[i+1] - offsets[i];
       num += edgeListSize;
       size_t val = numNbors[i];
       if (removeSelfEdges && haveDiag[i])
@@ -454,7 +458,7 @@ void testAdapter(
     if (nGlobalRows < SMALL_NUMBER_OF_ROWS){
       if (rank == 0)
         std::cout << "Printing graph now " << nGlobalRows << std::endl;
-      printGraph(nLocalRows, vertexGids.getRawPtr(), NULL,
+      printGraph<offset_t>(nLocalRows, vertexGids.getRawPtr(), NULL,
         edgeGids.getRawPtr(), offsets.getRawPtr(), comm);
     }
     else{
@@ -468,7 +472,7 @@ void testAdapter(
 
     if (rank == 0) std::cout << "        Checking local edges" << std::endl;
     ArrayView<const zgno_t> localEdges;
-    ArrayView<const zlno_t> localOffsets;
+    ArrayView<const offset_t> localOffsets;
     size_t numLocalNeighbors=0;
 
     try{
@@ -485,7 +489,7 @@ void testAdapter(
 
     size_t num = 0;
     for (zlno_t i=0; i < nLocalRows; i++){
-      size_t edgeListSize = localOffsets[i+1] - localOffsets[i];
+      offset_t edgeListSize = localOffsets[i+1] - localOffsets[i];
       num += edgeListSize;
       size_t val = numLocalNbors[i];
       if (removeSelfEdges && haveDiag[i])
@@ -515,7 +519,7 @@ void testAdapter(
         std::cout << "  Graph of local edges is empty" << std::endl; 
       }
       else{
-        printGraph(nLocalRows, vertexGids.getRawPtr(), 
+        printGraph<offset_t>(nLocalRows, vertexGids.getRawPtr(),
           localEdges.getRawPtr(), NULL, localOffsets.getRawPtr(), comm);
       }
     }

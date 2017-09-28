@@ -56,7 +56,7 @@
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_StdObjective.hpp"
 #include "ROL_BatchManager.hpp"
-#include "ROL_MonteCarloGenerator.hpp"
+#include "ROL_UserInputGenerator.hpp"
 
 typedef double RealT;
 
@@ -77,21 +77,21 @@ public:
   }
 
   void gradient( std::vector<Real> &g, const std::vector<Real> &x, Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = g.size();
     for ( unsigned i = 0; i < size; i++ ) {
       g[i] = alpha_*x[i] + static_cast<Real>(1);
     }
   }
 
   void hessVec( std::vector<Real> &hv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = hv.size();
     for ( unsigned i = 0; i < size; i++ ) {
       hv[i] = alpha_*v[i];
     }
   }
 
   void precond( std::vector<Real> &pv, const std::vector<Real> &v, const std::vector<Real> &x, Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = pv.size();
     for ( unsigned i = 0; i < size; i++ ) {
       pv[i] = v[i]/alpha_;
     }
@@ -109,7 +109,7 @@ public:
   void value( std::vector<Real> &c,
               const std::vector<Real> &x,
               Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = c.size();
     const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
     for ( unsigned i = 0; i < size; ++i ) {
       c[i] = std::exp(param[7])/zeta_[i] - std::exp(param[i])*x[i];
@@ -120,7 +120,7 @@ public:
                       const std::vector<Real> &v,
                       const std::vector<Real> &x,
                       Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = jv.size();
     const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
     for ( unsigned i = 0; i < size; ++i ) {
       jv[i] = -std::exp(param[i])*v[i];
@@ -131,7 +131,7 @@ public:
                               const std::vector<Real> &v,
                               const std::vector<Real> &x,
                               Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = ajv.size();
     const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
     for ( unsigned i = 0; i < size; ++i ) {
       ajv[i] = -std::exp(param[i])*v[i];
@@ -143,7 +143,7 @@ public:
                             const std::vector<Real> &v,
                             const std::vector<Real> &x,
                             Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = ahuv.size();
     for ( unsigned i = 0; i < size; ++i ) {
       ahuv[i] = static_cast<Real>(0);
     }
@@ -154,7 +154,7 @@ public:
                             const std::vector<Real> &x,
                             const std::vector<Real> &g,
                             Real &tol ) {
-    unsigned size = x.size();
+    unsigned size = pv.size();
     const std::vector<Real> param = ROL::Constraint<Real>::getParameter();
     for ( unsigned i = 0; i < size; ++i ) {
       pv[i] = v[i]/std::pow(std::exp(param[i]),2);
@@ -173,7 +173,7 @@ Real setUpAndSolve(Teuchos::ParameterList                    &list,
                    Teuchos::RCP<ROL::SampleGenerator<Real> > &sampler,
                    std::ostream & outStream) {
   ROL::OptimizationProblem<Real> optProblem(obj,x,bnd,con,mul,ibnd);
-  optProblem.setStochasticInequality(list,sampler);
+  optProblem.setAlmostSureInequality(sampler);
   optProblem.check(outStream);
   // Run ROL algorithm
   ROL::OptimizationSolver<Real> optSolver(optProblem, list);
@@ -231,27 +231,10 @@ int main(int argc, char* argv[]) {
     // Build samplers
     int nSamp = 50;
     unsigned sdim = dim + 1;
-    std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > dist(sdim);
-    for ( unsigned i = 0; i < 2; ++i ) {
-      //dist[i]
-      //  = Teuchos::rcp(new ROL::Gaussian<RealT>(static_cast<RealT>(4.5856),  static_cast<RealT>(0.0392)));
-      dist[i]
-        = Teuchos::rcp(new ROL::Uniform<RealT>(std::log(80.),std::log(120.)));
-    }
-    for ( unsigned i = 2; i < sdim-1; ++i ) {
-      //dist[i]
-      //  = Teuchos::rcp(new ROL::Gaussian<RealT>(static_cast<RealT>(5.2787),  static_cast<RealT>(0.0392)));
-      dist[i]
-        = Teuchos::rcp(new ROL::Uniform<RealT>(std::log(160.),std::log(240.)));
-    }
-    //dist[sdim-1]
-    //  = Teuchos::rcp(new ROL::Gaussian<RealT>(static_cast<RealT>(13.7413), static_cast<RealT>(0.1484)));
-    dist[sdim-1]
-      = Teuchos::rcp(new ROL::Uniform<RealT>(std::log(10.),std::log(40.)));
     Teuchos::RCP<ROL::BatchManager<RealT> > bman
       = Teuchos::rcp(new ROL::BatchManager<RealT>());
     Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nSamp,dist,bman));
+      = Teuchos::rcp(new ROL::UserInputGenerator<RealT>("points.txt","weights.txt",nSamp,sdim,bman));
     // Build objective function
     Teuchos::RCP<ROL::Objective<RealT> > obj
       = Teuchos::rcp(new ObjectiveEx10<RealT>);
@@ -273,7 +256,6 @@ int main(int argc, char* argv[]) {
       = Teuchos::rcp( new ROL::StdBoundConstraint<RealT>(lc,uc) );
     ibnd->deactivateLower();
     // Build multipliers
-    RealT tol(std::sqrt(ROL::ROL_EPSILON<RealT>()));
     std::vector<RealT> mean(sdim,zero), gmean(sdim,zero);
     for (int i = 0; i < sampler->numMySamples(); ++i) {
       std::vector<RealT> pt = sampler->getMyPoint(i);
@@ -286,8 +268,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<std::vector<RealT> > scaling_vec
       = Teuchos::rcp( new std::vector<RealT>(dim,zero) );
     for (unsigned i = 0; i < dim; ++i) {
-      RealT cl = std::abs(gmean[sdim]/zeta[i] - gmean[i]*lx[i]);
-      RealT cu = std::abs(gmean[sdim]/zeta[i] - gmean[i]*ux[i]);
+      RealT cl = std::abs(gmean[dim]/zeta[i] - gmean[i]*lx[i]);
+      RealT cu = std::abs(gmean[dim]/zeta[i] - gmean[i]*ux[i]);
       RealT scale = static_cast<RealT>(1e2)/std::pow(std::max(cl,cu),two);
       (*scaling_vec)[i] = (scale > std::sqrt(ROL::ROL_EPSILON<RealT>()))
                             ? scale : one;

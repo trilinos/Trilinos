@@ -47,7 +47,7 @@
 #include <cmath>
 #include <limits>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <KokkosSparse_CrsMatrix.hpp>
 #include <impl/Kokkos_Timer.hpp>
 #include <Kokkos_ArithTraits.hpp>
 

@@ -133,8 +133,8 @@ template<typename EvalT, typename TRAITS, typename LO, typename GO>
 void
 panzer::GatherTangent_BlockedEpetra<EvalT, TRAITS, LO, GO>::
 postRegistrationSetup(
-  typename TRAITS::SetupData d,
-  PHX::FieldManager<TRAITS>& fm)
+  typename TRAITS::SetupData /* d  */,
+  PHX::FieldManager<TRAITS>& /* fm */)
 {
   using std::size_t;
   using std::string;

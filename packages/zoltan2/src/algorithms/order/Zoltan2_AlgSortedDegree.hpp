@@ -72,6 +72,7 @@ class AlgSortedDegree : public Algorithm<Adapter>
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::offset_t offset_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   AlgSortedDegree(
@@ -104,20 +105,20 @@ class AlgSortedDegree : public Algorithm<Adapter>
     // Get local graph.
     const size_t nVtx = model->getLocalNumVertices();
     ArrayView<const gno_t> edgeIds;
-    ArrayView<const lno_t> offsets;
+    ArrayView<const offset_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts;
     model->getEdgeList(edgeIds, offsets, wgts);
 
   
     // Store degrees together with index so we can sort.
-    Teuchos::Array<std::pair<lno_t, size_t> >  degrees(nVtx);
+    Teuchos::Array<std::pair<lno_t, offset_t> >  degrees(nVtx);
     for (lno_t i=0; i<(lno_t)nVtx; i++){
       degrees[i].first = i;
       degrees[i].second  = offsets[i+1] - offsets[i];
     }
   
     // Sort degrees.
-    SortPairs<lno_t,size_t> zort;
+    SortPairs<lno_t,offset_t> zort;
     bool inc = true; // TODO: Add user parameter
     zort.sort(degrees, inc);
   

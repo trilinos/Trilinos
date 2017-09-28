@@ -95,8 +95,6 @@
 #ifndef __INTREPID2_POLYLIB_DEF_HPP__
 #define __INTREPID2_POLYLIB_DEF_HPP__
 
-#include "Kokkos_ViewFactory.hpp"
-
 namespace Intrepid2 {
 
   // -----------------------------------------------------------------------
@@ -622,7 +620,7 @@ namespace Intrepid2 {
       const double apb = alpha + beta;
 
       typename zViewType::value_type
-        poly[MaxPolylibPoint], polyn1[MaxPolylibPoint], polyn2[MaxPolylibPoint];
+        poly[MaxPolylibPoint]={}, polyn1[MaxPolylibPoint]={}, polyn2[MaxPolylibPoint]={};
 
       if (polyi.data()) 
         for (ordinal_type i=0;i<np;++i)

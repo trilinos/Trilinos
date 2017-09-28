@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <mpi.h>
+#include "mpi.h"
 #include "Ioss_Region.h"
 #include "stk_io/StkMeshIoBroker.hpp"
 #include "stk_io/ProcessSetsOrBlocks.hpp"

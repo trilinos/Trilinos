@@ -68,10 +68,13 @@
 // Debugging information
 //#include "Phalanx_TypeStrings.hpp"
 
+// forward declaration
+namespace Intrepid2 {
+class Orientation;
+}
+
 namespace panzer {
   
-  class LinearObjContainer;
-
   struct Traits {
 
     // ******************************************************************
@@ -117,6 +120,7 @@ namespace panzer {
 
     struct SD { 
       Teuchos::RCP< std::vector<panzer::Workset> > worksets_;
+      Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations_;
     };
     typedef SD SetupData;
 

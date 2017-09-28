@@ -162,7 +162,7 @@ void LineMeshFactory::initializeWithDefaults()
    setParameterList(validParams);
 }
 
-void LineMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
+void LineMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK_Interface & mesh) const
 {
    typedef shards::Line<2> LineTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<LineTopo>();
@@ -196,7 +196,7 @@ void LineMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interf
    mesh.endModification();
 }
 
-void LineMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,STK_Interface & mesh) const
+void LineMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */, int xBlock, STK_Interface& mesh) const
 {
    // grab this processors rank and machine size
    std::pair<int,int> sizeAndStartX = determineXElemSizeAndStart(xBlock,machSize_,machRank_);
@@ -230,7 +230,7 @@ void LineMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,ST
    }
 }
 
-std::pair<int,int> LineMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> LineMeshFactory::determineXElemSizeAndStart(int xBlock,unsigned int size,unsigned int /* rank */) const
 {
    std::size_t xProcLoc = procTuple_[0];
    unsigned int minElements = nXElems_/size;

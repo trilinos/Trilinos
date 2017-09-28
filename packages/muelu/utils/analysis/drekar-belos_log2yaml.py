@@ -1,38 +1,32 @@
 #!/bin/env python3
 import yaml
+from log import Log
+import logging
+import re
 from transitions import Machine, logger
 
 class DrekarBelosLog(Log):
-    """Log parser of transient Drekar simulations with Belos
+    """Log parser of transient Drekar simulations with Belos."""
 
-    Based on FSM."""
+    states = ['none', 'transient', 'nonlinear', 'linear', 'timers']
 
-    def states(self):
-        states = ['none', 'transient', 'nonlinear', 'linear', 'timers']
-        return states
+    transitions = [
+        { 'trigger': 'n2m',     'source': 'none',       'dest': 'timers'     },
+        { 'trigger': 'n2t',     'source': 'none',       'dest': 'transient'  },
+        { 'trigger': 't2n',     'source': 'transient',  'dest': 'none'       },
+        { 'trigger': 't2nl',    'source': 'transient',  'dest': 'nonlinear'  },
+        { 'trigger': 'nl2t',    'source': 'nonlinear',  'dest': 'transient'  },
+        { 'trigger': 'nl2l',    'source': 'nonlinear',  'dest': 'linear'     },
+        { 'trigger': 'l2nl',    'source': 'linear',     'dest': 'nonlinear'  },
+        { 'trigger': 'l2t',     'source': 'linear',     'dest': 'transient'  },
+        { 'trigger': 'm2n',     'source': 'timers',     'dest': 'none'       }
+    ]
 
-    def transitions(self):
-        transitions = [
-            { 'trigger': 'n2m',     'source': 'none',       'dest': 'timers'     },
-            { 'trigger': 'n2t',     'source': 'none',       'dest': 'transient'  },
-            { 'trigger': 't2n',     'source': 'transient',  'dest': 'none'       },
-            { 'trigger': 't2nl',    'source': 'transient',  'dest': 'nonlinear'  },
-            { 'trigger': 'nl2t',    'source': 'nonlinear',  'dest': 'transient'  },
-            { 'trigger': 'nl2l',    'source': 'nonlinear',  'dest': 'linear'     },
-            { 'trigger': 'l2nl',    'source': 'linear',     'dest': 'nonlinear'  },
-            { 'trigger': 'l2t',     'source': 'linear',     'dest': 'transient'  },
-            { 'trigger': 'm2n',     'source': 'timers',     'dest': 'none'       }
-        ]
-        return transitions
-
-    def run(self):
-        states      = states()
-        transitions = transitions()
-
+    def run(self, filename):
         logger.setLevel(logging.INFO)
 
-        machine = Drekar()
-        M = Machine(model=machine, states=states, transitions=transitions, initial='none')
+        machine = self
+        M = Machine(model=machine, states=self.states, transitions=self.transitions, initial='none')
 
         start_stepper                   = 'Entering Rythmos::.*::advanceStepperToTime'
         end_stepper                     = 'Leaving Rythmos::.*::advanceStepperToTime'

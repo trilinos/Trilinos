@@ -529,7 +529,6 @@ struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFad, ValueType >
   : fad_dim ( dimension_scalar(view) )
   {
     is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
-    printf(" fad_dim = %i\n",fad_dim);
   }
 
   // TODO If assumption is insufficient, better deduction on is_view...
@@ -538,7 +537,6 @@ struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFad, ValueType >
   : fad_dim ( dimension_scalar(view, views... ) )
   {
     is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
-    printf(" fad_dim = %i\n",fad_dim);
   }
 
 };
@@ -560,7 +558,6 @@ struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFadContiguous, Val
   : fad_dim ( dimension_scalar(view) )
   {
     is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
-    printf(" fad_dim = %i\n",fad_dim);
   }
 
   // TODO If assumption is insufficient, better deduction on is_view...
@@ -569,7 +566,6 @@ struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFadContiguous, Val
   : fad_dim ( dimension_scalar(view, views... ) )
   {
     is_view_type = (Kokkos::is_view<View>::value || Kokkos::is_view_fad<View>::value);
-    printf(" fad_dim = %i\n",fad_dim);
   }
 };
 

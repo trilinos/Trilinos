@@ -30,6 +30,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+#ifndef STK_MD_MESH_H
+#define STK_MD_MESH_H
+
 #include <memory>
 
 #include <stk_mesh/base/Entity.hpp>
@@ -154,3 +157,6 @@ private :
 
 } // transfer
 } // stk
+
+#endif
+

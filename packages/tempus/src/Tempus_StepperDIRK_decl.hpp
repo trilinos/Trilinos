@@ -13,9 +13,10 @@
 #include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
+#include "Tempus_StepperDIRKObserver.hpp"
+
 
 namespace Tempus {
-
 
 /** \brief Diagonally Implicit Runge-Kutta (DIRK) time stepper.
  *
@@ -104,6 +105,8 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL = Teuchos::null);
     virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual void setObserver(
+      Teuchos::RCP<StepperDIRKObserver<Scalar> > obs = Teuchos::null);
 
     void setTableau(
       Teuchos::RCP<Teuchos::ParameterList> pList,
@@ -148,7 +151,7 @@ protected:
 
   std::string                                            description_;
   Teuchos::RCP<Teuchos::ParameterList>                   stepperPL_;
-  Teuchos::RCP<WrapperModelEvaluator<Scalar> >          wrapperModel_;
+  Teuchos::RCP<WrapperModelEvaluator<Scalar> >           wrapperModel_;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >      solver_;
 
   Teuchos::RCP<const RKButcherTableau<Scalar> >          DIRK_ButcherTableau_;
@@ -157,17 +160,59 @@ protected:
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               stageX_;
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               xTilde_;
 
-  // Used only for explicit stages (a_ii = 0)
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>              inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>             outArgs_;
-
-  // Compute the balancing time derivative as a function of x
-  std::function<void (const Thyra::VectorBase<Scalar> &,
-                            Thyra::VectorBase<Scalar> &)>
-  xDotFunction(Scalar s, Teuchos::RCP<const Thyra::VectorBase<Scalar> > stageX);
+  Teuchos::RCP<StepperDIRKObserver<Scalar> >             stepperDIRKObserver_;
 
   Teuchos::RCP<Thyra::VectorBase<Scalar> >               ee_;
 };
+
+
+/** \brief Time-derivative interface for DIRK.
+ *
+ *  Given the stage state \f$X_i\f$ and
+ *  \f[
+ *    \tilde{X} = x_{n-1} +\Delta t \sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j},
+ *  \f]
+ *  compute the DIRK stage time-derivative,
+ *  \f[
+ *    \dot{X}_i = \frac{X_{i} - \tilde{X}}{a_{ii} \Delta t}\f$
+ *  \f]
+ *  \f$\ddot{x}\f$ is not used and set to null.
+ */
+template <typename Scalar>
+class StepperDIRKTimeDerivative
+  : virtual public Tempus::TimeDerivative<Scalar>
+{
+public:
+
+  /// Constructor
+  StepperDIRKTimeDerivative(
+    Scalar s, Teuchos::RCP<const Thyra::VectorBase<Scalar> > xTilde)
+  { initialize(s, xTilde); }
+
+  /// Destructor
+  virtual ~StepperDIRKTimeDerivative() {}
+
+  /// Compute the time derivative.
+  virtual void compute(
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > x,
+    Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDot,
+    Teuchos::RCP<      Thyra::VectorBase<Scalar> > xDotDot = Teuchos::null)
+  {
+    xDotDot = Teuchos::null;
+    Thyra::V_StVpStV(xDot.ptr(),s_,*x,-s_,*xTilde_);
+  }
+
+  virtual void initialize(Scalar s,
+    Teuchos::RCP<const Thyra::VectorBase<Scalar> > xTilde)
+  { s_ = s; xTilde_ = xTilde; }
+
+private:
+
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > xTilde_;
+  Scalar                                         s_;      // = 1/(dt*a_ii)
+};
+
+
 } // namespace Tempus
 
 #endif // Tempus_StepperDIRK_decl_hpp

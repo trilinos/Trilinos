@@ -46,20 +46,9 @@ namespace expreval {
 
   namespace bmp  = boost::math::policies;
 
-typedef boost::math::
-  weibull_distribution< double,
-                       boost::math::policies::policy< bmp::overflow_error<bmp::ignore_error> > >
-  weibull_dist;
-
-typedef boost::math::
-  gamma_distribution< double,
-                       bmp::policy< bmp::overflow_error<bmp::ignore_error> > >
-  gamma_dist;
-
-typedef boost::math::
-  normal_distribution< double,
-                       bmp::policy< bmp::overflow_error<bmp::ignore_error> > >
-  normal_dist;
+  using weibull_dist = boost::math::weibull_distribution< double, boost::math::policies::policy< bmp::overflow_error<bmp::ignore_error> > >;
+  using gamma_dist   = boost::math::gamma_distribution< double, bmp::policy< bmp::overflow_error<bmp::ignore_error> > >;
+  using normal_dist  = boost::math::normal_distribution< double, bmp::policy< bmp::overflow_error<bmp::ignore_error> > >;
 
 extern "C" {
   typedef double (*CExtern0)();
@@ -86,10 +75,11 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) {
-    if (argc != getArgCount())
-      throw std::runtime_error("Argument count mismatch, function should have 0 arguments");
-
+  virtual double operator()(int argc, const double *argv) 
+  {
+#ifndef NDEBUG
+    if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 0 arguments"); }
+#endif
     return (*m_function)();
   }
 
@@ -112,10 +102,11 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) {
-    if (argc != getArgCount())
-      throw std::runtime_error("Argument count mismatch, function should have 1 argument");
-
+  virtual double operator()(int argc, const double *argv) 
+  {
+#ifndef NDEBUG
+    if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 1 argument"); }
+#endif
     return (*m_function)(argv[0]);
   }
 
@@ -138,10 +129,11 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) {
-    if (argc != getArgCount())
-      throw std::runtime_error("Argument count mismatch, function should have 2 arguments");
-
+  virtual double operator()(int argc, const double *argv) 
+  {
+#ifndef NDEBUG
+    if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 2 arguments"); }
+#endif
     return (*m_function)(argv[0], argv[1]);
   }
 
@@ -163,10 +155,11 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) {
-    if (argc != getArgCount())
-      throw std::runtime_error("Argument count mismatch, function should have 3 arguments");
-
+  virtual double operator()(int argc, const double *argv) 
+  {
+#ifndef NDEBUG
+    if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 3 arguments"); }
+#endif
     return (*m_function)(argv[0], argv[1], argv[2]);
   }
 
@@ -188,10 +181,11 @@ public:
   virtual ~CFunction()
   {}
 
-  virtual double operator()(int argc, const double *argv) {
-    // KHP: Maybe only check in debug?
-    if (argc != getArgCount())
-      throw std::runtime_error("Argument count mismatch, function should have 4 arguments");
+  virtual double operator()(int argc, const double *argv) 
+  {
+#ifndef NDEBUG
+    if (argc != getArgCount()) { throw std::runtime_error("Argument count mismatch, function should have 4 arguments"); }
+#endif
     return (*m_function)(argv[0], argv[1], argv[2], argv[3]);
   }
 
@@ -215,7 +209,7 @@ extern "C" {
     }
     else if( t < t2 )
     {
-      return (t-t1)/(t2-t1)-1/(s_two_pi)*sin(s_two_pi/(t2-t1)*(t-t1));
+      return (t-t1)/(t2-t1)-1/(two_pi())*sin(two_pi()/(t2-t1)*(t-t1));
     }
     else 
     {
@@ -227,51 +221,52 @@ extern "C" {
 namespace {
 extern "C" {
   /// extract signed integral value from floating-point number
-  double ipart(double x) {
+  double ipart(double x) 
+  {
     double y;
     std::modf(x, &y);
     return y;
   }
 
   /// Extract fractional value from floating-point number
-  double fpart(double x) {
+  double fpart(double x) 
+  {
     double y;
     return std::modf(x, &y);
   }
 
   /// Interface to the pseudo-random number generator function rand
   /// provided by ANSI C math library.
-  double real_rand() {
+  double real_rand() 
+  {
     return static_cast<double>(std::rand()) / (static_cast<double>(RAND_MAX) + 1.0);
   }
 
-  /// Sets x as the "seed". Interface to the srand function provided by the
+  /// Sets x as the random number seed. Interface to the srand function provided by the
   /// ANSI C math library.
-  double real_srand(double x) {
+  double real_srand(double x) 
+  {
     std::srand(static_cast<int>(x));
     return 0.0;
   }
 
   /// Return the current time
-  double current_time() {
+  double current_time()
+  {
     return static_cast<double>(::time(nullptr));
   }
 
-  /// Sets the current time as the "seed" to randomize the next call to real_rand.
-  double randomize_based_on_time() {
-    std::srand(::time(nullptr));
-    return 0.0;
-  }
-
   /// Sets x as the "seed" for the pseudo-random number generator.
-  void random_seed(double x) {
+  void random_seed(double x) 
+  {
     int y = static_cast<int>(x);
     sRandomRangeHighValue =  y;
     sRandomRangeLowValue  = ~y;
   }
 
   /// Non-platform specific (pseudo) random number generator.
-  double random0() {
+  double random0() 
+  {
     sRandomRangeHighValue = (sRandomRangeHighValue<<8) + (sRandomRangeHighValue>>8);
     sRandomRangeHighValue += sRandomRangeLowValue;
     sRandomRangeLowValue += sRandomRangeHighValue;
@@ -280,64 +275,75 @@ extern "C" {
   }
 
   /// Non-platform specific (pseudo) random number generator.
-  double random1(double seed) {
+  double random1(double seed) 
+  {
     random_seed(seed);
     return random0();
   }
 
-  /// Returns the angle (given in radians) in degrees.
-  double deg(double a)  {
-    return (180.0 / s_pi) * a;
+  /// Returns the angle (input in radians) in degrees.
+  double deg(double a)  
+  {
+    return radian_to_degree() * a;
   }
 
-  /// Returns the angle (given in degrees) in radians.
-  double rad(double a)  {
-    return  (s_pi / 180.0) * a;
+  /// Returns the angle (input in degrees) in radians.
+  double rad(double a)  
+  {
+    return degree_to_radian() * a;
   }
 
   /// Returns the minimum value among its arguments
-  inline double min_2(double a, double b) {
+  double min_2(double a, double b) 
+  {
     return std::min(a, b);
   }
 
   /// Returns the minimum value among its arguments
-  inline double min_3(double a, double b, double c) {
+  double min_3(double a, double b, double c) 
+  {
     return std::min(std::min(a, b), c);
   }
 
   /// Returns the minimum value among its arguments
-  inline double min_4(double a, double b, double c, double d) {
+  double min_4(double a, double b, double c, double d) 
+  {
     return std::min(std::min(a, b), std::min(c,d));
   }
 
   /// Returns the maximum value among its arguments
-  inline double max_2(double a, double b) {
+  double max_2(double a, double b) 
+  {
     return std::max(a, b);
   }
 
   /// Returns the maximum value among its arguments
-  inline double max_3(double a, double b, double c) {
+  double max_3(double a, double b, double c) 
+  {
     return std::max(std::max(a, b), c);
   }
 
   /// Returns the maximum value among its arguments
-  double max_4(double a, double b, double c, double d) {
+  double max_4(double a, double b, double c, double d) 
+  {
     return std::max(std::max(a, b), std::max(c,d));
   }
 
   /// Convert rectangular coordinates into polar radius.
-  double recttopolr(double x, double y) {
+  double recttopolr(double x, double y) 
+  {
     return std::sqrt((x * x) + (y * y));
   }
 
-  double cosine_ramp3(double t, double t1, double t2) {
+  double cosine_ramp3(double t, double t1, double t2) 
+  {
     if( t < t1    )
     {
       return 0.0;
     }
     else if( t < t2 )
     {
-      return (1.0 - std::cos((t-t1)*s_pi/(t2-t1)))/2.0;
+      return (1.0 - std::cos((t-t1)*pi() /(t2-t1)))/2.0;
     }
     else 
     {
@@ -353,7 +359,7 @@ extern "C" {
     }
     else if( t < t2 )
     {
-      return std::pow(std::sin(s_pi*(t-t1)/(t2-t1)),2);
+      return std::pow(std::sin(pi() *(t-t1)/(t2-t1)),2);
     }
     else 
     {
@@ -361,13 +367,13 @@ extern "C" {
     }
   }
 
-
-
-  double cosine_ramp1(double t) {
+  double cosine_ramp1(double t) 
+  {
     return cosine_ramp3(t, 0.0, 1.0);
   }
 
-  double cosine_ramp2(double t, double rampEndTime) {
+  double cosine_ramp2(double t, double rampEndTime) 
+  {
     return cosine_ramp3(t, 0.0, rampEndTime);
   }
 
@@ -385,74 +391,53 @@ extern "C" {
     return boost::math::pdf(normal1, x);
   }
 
-  /// Uniform distribution probability distribution function.
-  double uniform_pdf(double lower_range, double upper_range)
-  {
-    // Note, no error checking here...
-    return 1.0/(upper_range - lower_range);
-  }
-  
   /// Exponential Uniform distribution probability distribution function
-  inline double exponential_pdf(double x, double beta)
-  { return std::exp(-x/beta)/beta; }
+  double exponential_pdf(double x, double beta)
+  { 
+    return std::exp(-x/beta)/beta; 
+  }
 
   /// Log Uniform distribution probability distribution function
-  inline double log_uniform_pdf(double x, double lower_range, double upper_range)
-  { return 1.0/(std::log(upper_range) - std::log(lower_range))/x; }
+  double log_uniform_pdf(double x, double lower_range, double upper_range) 
+  { 
+    return 1.0/(std::log(upper_range) - std::log(lower_range))/x; 
+  }
 
   /// Gamma continuous probability distribution function.
-  inline double gamma_pdf(double x, double shape, double scale)
+  double gamma_pdf(double x, double shape, double scale)
   {
     return boost::math::pdf(gamma_dist(shape,scale), x);
   }
 
-  inline double phi(double beta)
-  {
-    return boost::math::pdf(normal_dist(0.,1.), beta);
-  }
-
-  /// Returns a probability < 0.5 for negative beta and a probability > 0.5 for positive beta.
-  inline double Phi(double beta)
-  {
-    return boost::math::cdf(normal_dist(0.,1.), beta);
-  }
-
-  inline double bounded_normal_pdf(double x, double mean, double std_dev, double lwr, double upr)
-  {
-    double Phi_lms = (lwr > -std::numeric_limits<double>::max()) ? Phi((lwr-mean)/std_dev) : 0.;
-    double Phi_ums = (upr <  std::numeric_limits<double>::max()) ? Phi((upr-mean)/std_dev) : 1.;
-    return phi((x-mean)/std_dev)/(Phi_ums - Phi_lms)/std_dev;
-  }
-
   /// Returns -1 or 1 depending on whether x is negative or positive.
-  double sign(double a)  {
-    return (a >= 0.0 ) ? 1.0 : -1.0;
+  double sign(double a)  
+  {
+    return ( a >= 0.0 ) ? 1.0 : -1.0;
   }
 
   /// Returns 1.0 if the input value t is greater than tstart and less than tstop.
-  double unit_step3(double t, double tstart, double tstop)  {
+  double unit_step3(double t, double tstart, double tstop)  
+  {
     return (t < tstart || t > tstop) ? 0.0 : 1.0;
   }
 
   /// Convert rectangular coordinates into polar angle.
-  double recttopola(double x, double y) {
+  double recttopola(double x, double y) 
+  {
     double tmp = std::atan2(y, x);
-
-    /* Convert to 0.0 to 2 * PI */
-    if (tmp < 0.0) {
-      return tmp + (2.0 * s_pi);
-    } else {
-      return tmp;
-    }
+    // Convert to 0.0 to 2 * PI
+    return ( tmp < 0.0 ) ? tmp + two_pi() : tmp;
   }
 
   /// Convert polar coordinates (r,theta) into x coordinate.
-  double poltorectx(double r, double theta) {
+  double poltorectx(double r, double theta) 
+  {
     return r * std::cos(theta);
   }
 
   /// Convert polar coordinates (r,theta) into y coordinate.
-  double poltorecty(double r, double theta) {
+  double poltorecty(double r, double theta) 
+  {
     return r * std::sin(theta);
   }
 }
@@ -464,13 +449,12 @@ CFunctionMap::CFunctionMap()
   /// the ANSI C random number generator.
   (*this).insert(std::make_pair("rand",         new CFunction0(real_rand)));
   (*this).insert(std::make_pair("srand",        new CFunction1(real_srand)));
-  (*this).insert(std::make_pair("randomize",    new CFunction0(randomize_based_on_time)));
 
-  /// These random number functions support a non-platform
-  /// specific random number function.
-  (*this).insert(std::make_pair("time",            new CFunction0(current_time)));
+  /// These random number functions support a platform
+  /// independent random number function.
   (*this).insert(std::make_pair("random",          new CFunction0(random0)));
   (*this).insert(std::make_pair("random",          new CFunction1(random1)));
+  (*this).insert(std::make_pair("time",            new CFunction0(current_time)));
 
   (*this).insert(std::make_pair("exp",             new CFunction1(std::exp)));
   (*this).insert(std::make_pair("ln",              new CFunction1(std::log)));
@@ -486,9 +470,11 @@ CFunctionMap::CFunctionMap()
   (*this).insert(std::make_pair("asinh",           new CFunction1(std::asinh)));
   (*this).insert(std::make_pair("atan",            new CFunction1(std::atan)));
   (*this).insert(std::make_pair("atan2",           new CFunction2(std::atan2)));
+  (*this).insert(std::make_pair("atanh",           new CFunction1(std::atanh)));
   (*this).insert(std::make_pair("ceil",            new CFunction1(std::ceil)));
   (*this).insert(std::make_pair("cos",             new CFunction1(std::cos)));
   (*this).insert(std::make_pair("cosh",            new CFunction1(std::cosh)));
+  (*this).insert(std::make_pair("acosh",           new CFunction1(std::acosh)));
   (*this).insert(std::make_pair("floor",           new CFunction1(std::floor)));
   (*this).insert(std::make_pair("sin",             new CFunction1(std::sin)));
   (*this).insert(std::make_pair("sinh",            new CFunction1(std::sinh)));
@@ -530,13 +516,13 @@ CFunctionMap::CFunctionMap()
   (*this).insert(std::make_pair("normal_pdf",      new CFunction3(normal_pdf)));
   (*this).insert(std::make_pair("gamma_pdf",       new CFunction3(gamma_pdf)));
   (*this).insert(std::make_pair("log_uniform_pdf", new CFunction3(log_uniform_pdf)));
-  (*this).insert(std::make_pair("uniform_pdf",     new CFunction2(uniform_pdf)));
   (*this).insert(std::make_pair("exponential_pdf", new CFunction2(exponential_pdf)));
 }
 
 CFunctionMap::~CFunctionMap()
 {
-  for (CFunctionMap::iterator it = begin(); it != end(); ++it) {
+  for (CFunctionMap::iterator it = begin(); it != end(); ++it) 
+  {
     delete (*it).second;
   }
 }
@@ -545,7 +531,6 @@ CFunctionMap &
 getCFunctionMap()
 {
   static CFunctionMap s_functionMap;
-
   return s_functionMap;
 }
 

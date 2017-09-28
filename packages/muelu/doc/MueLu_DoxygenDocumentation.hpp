@@ -59,9 +59,6 @@
 
 - \ref muelu_overview
 - \ref muelu_documentation
-    - \ref muelu_doxygen
-    - \ref muelu_parameter_documentation
-    - \ref muelu_tutorial
 - \ref muelu_authors
 - \ref muelu_copyright
 - \ref muelu_questions
@@ -74,36 +71,26 @@ More information can be found at https://trilinos.org/packages/muelu.
 
 \section muelu_documentation Documentation
 
-\subsection muelu_doxygen Doxygen
-  Useful views of the Doxygen documentation are:
-    - Browsing the entire class documentation. Choose the <a href="classes.html">Class Index subtab</a>.
-    - Browsing the class documentation organized by logical groups.  Choose the <a href="modules.html">Modules tab</a>.
+Useful views of the Doxygen documentation are:
+  - Browsing the entire class documentation. Choose the <a href="classes.html">Class Index subtab</a>.
+  - Browsing the class documentation organized by logical groups.  Choose the <a href="modules.html">Modules tab</a>.
 
-\subsection muelu_parameter_documentation User's Guide and Parameter List Options
-  MueLu's parameters are exhaustively described in the MueLu User's Guide.
-  The Guide is located in muelu/doc/UsersGuide and at the
+The MueLu User's Guide is located in muelu/doc/UsersGuide and at the
 <a href=https://trilinos.org/packages/muelu/muelu-documentation>MueLu home page</a>.
-
-\subsection muelu_tutorial Tutorial
-  MueLu provides a self-guided tutorial.  See  the
-<a href=https://trilinos.org/packages/muelu/muelu-tutorial>MueLu tutorial page</a> for more information.
 
 
 \section muelu_authors Authors and Contributors
 
-  - Tom Benson, Lawrence Livermore National Lab
-  - Luc Berger Vergiat, Sandia National Labs
-  - Emily Furst, University of Washington (Sandia intern)
-  - Jeremie Gaidamour, CNRS (Nancy, France)
+  - Tom Benson, LLNL
+  - Emily Furst, University of Washington (summer intern, 2015)
+  - Jeremie Gaidamour, INRIA (Nancy, France)
   - Axel Gerstenberger, Rolls Royce
   - Jonathan Hu, Sandia National Labs
-  - Brian Kelley, Texas A&M (Sandia intern)
-  - Massimiliano Lupo Pasini, Emory University (Sandia intern)
+  - Brian Kelley, Texas A&M (summer intern, 2015)
   - Matthias Mayr, Sandia National Labs
-  - Andrey Prokopenko, Oak Ridge National Lab
-  - Nathan V. Roberts, Sandia National Labs
+  - Andrey Prokopenko, Sandia National Labs
   - Chris Siefert, Sandia National Labs
-  - Paul Tsuji, Lawrence Livermore National Lab
+  - Paul Tsuji, LLNL
   - Ray Tuminaro, Sandia National Labs
   - Tobias Wiesner, Sandia National Labs
 

@@ -46,6 +46,7 @@
 #include <stk_expreval/Function.hpp>
 #include <stk_expreval/Constants.hpp>
 #include <stk_expreval/Variable.hpp>
+#include <stk_util/util/ThreadLocalData.hpp>
 
 namespace stk {
 namespace expreval {
@@ -54,7 +55,6 @@ class Node;
 
 /**
  * Class <b>Eval</b> parses and evaluates mathematical expressions.
- *
  */
 class Eval
 {
@@ -64,14 +64,11 @@ public:
   /**
    * Creates a new <b>Eval</b> instance.
    *
-   * @param resolver		a <b>Resolver</b> reference to the variable name
-   *				resolver for this expression evaluator.
-   *
    * @param expr		a <b>std::string</b> const reference to the
    *				expression to be parsed.
-   *
    */
   Eval(VariableMap::Resolver &resolver = VariableMap::getDefaultResolver(), const std::string &expr = "", const Variable::ArrayOffset arrayOffsetType = Variable::ZERO_BASED_INDEX);
+  explicit Eval(const std::string &expr, const Variable::ArrayOffset arrayOffsetType = Variable::ZERO_BASED_INDEX);
 
 private:
   explicit Eval(const Eval &);
@@ -89,7 +86,7 @@ public:
    * @return			a <b>std::string</b> const reference to the
    *				expression.
    */
-  inline const std::string &getExpression() const {
+  const std::string &getExpression() const {
     return m_expression;
   }
 
@@ -103,7 +100,7 @@ public:
    * @return			an <b>Eval</b> reference to this expression
    *				evaluator.
    */
-  inline Eval &setExpression(const std::string &expression) {
+  Eval &setExpression(const std::string &expression) {
     m_expression = expression;
     m_parseStatus = false;
     return *this;
@@ -115,17 +112,17 @@ public:
    *
    * @return			a <b>VariableMap</b> reference to the variable map.
    */
-  inline VariableMap &getVariableMap() {
-    return m_variableMap;
+  VariableMap &getVariableMap() {
+    return m_variableMap.getMyThreadEntry();
   }
 
   /**
-   * @brief Member function <b>getVariableMap</b> returns a reference to the
+   * @brief Member function <b>getUndefinedFunctionSet</b> returns a reference to the
    * variable map of this expression.
    *
    * @return			a <b>VariableMap</b> reference to the variable map.
    */
-  inline UndefinedFunctionSet &getUndefinedFunctionSet() {
+  UndefinedFunctionSet &getUndefinedFunctionSet() {
     return m_undefinedFunctionSet;
   }
 
@@ -136,7 +133,7 @@ public:
    * @return			a <b>bool</b> value of true if the expression has
    *				been syntaxd successfully.
    */
-  inline bool getSyntaxStatus() const {
+  bool getSyntaxStatus() const {
     return m_syntaxStatus;
   }
 
@@ -147,13 +144,14 @@ public:
    * @return			a <b>bool</b> value of true if the expression has
    *				been parsed successfully.
    */
-  inline bool getParseStatus() const {
+  bool getParseStatus() const {
     return m_parseStatus;
   }
 
-  inline Eval &setValue(const std::string &name, double* value, int definedLength) {
-    VariableMap::iterator it = m_variableMap.find(name);
-    if (it != m_variableMap.end()) {
+  Eval &setValue(const std::string &name, double* value, int definedLength) {
+    auto& variableMap = m_variableMap.getMyThreadEntry();
+    VariableMap::iterator it = variableMap.find(name);
+    if (it != variableMap.end()) {
       (*it).second->bind(*value, definedLength);
     }
     return *this;
@@ -168,9 +166,10 @@ public:
    *
    * @return			a <b>double</b> value of the variable.
    */
-  inline double getValue(const std::string &name) {
-    VariableMap::iterator it = m_variableMap.find(name);
-    if (it == m_variableMap.end())
+  double getValue(const std::string &name) {
+    auto& variableMap = m_variableMap.getMyThreadEntry();
+    VariableMap::iterator it = variableMap.find(name);
+    if (it == variableMap.end())
       throw std::runtime_error(std::string("Variable ") + name  + " not defined");
     return (*it).second->getValue();
   }
@@ -197,10 +196,25 @@ public:
    *
    * @return			an <b>Eval</b> reference to this expression evaluator.
    */
-  inline Eval &bindVariable(const std::string &name, double &value_ref, int definedLength=std::numeric_limits<int>::max()) {
-    VariableMap::iterator it = m_variableMap.find(name);
-    if (it != m_variableMap.end()) {
+  Eval &bindVariable(const std::string &name, double &value_ref, int definedLength=std::numeric_limits<int>::max()) {
+    auto& variableMap = m_variableMap.getMyThreadEntry();
+    VariableMap::iterator it = variableMap.find(name);
+    if (it != variableMap.end()) {
       (*it).second->bind(value_ref, definedLength);
+    }
+    return *this;
+  }
+
+  Eval &bindVariable(const std::string &name, ThreadLocalData<double> &value_ref, int definedLength=std::numeric_limits<int>::max()) {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      auto& variableMap = m_variableMap.getMyThreadEntry();
+      VariableMap::iterator it = variableMap.find(name);
+      if (it != variableMap.end()) {
+        (*it).second->bind(value_ref.getMyThreadEntry(), definedLength);
+      }
     }
     return *this;
   }
@@ -215,11 +229,11 @@ public:
    * @return			a <b>Variable</b> reference to the specified
    *				variable.
    */
-  inline Variable &getVariable(const std::string &name) {
-    VariableMap::iterator it = m_variableMap.find(name);
-    if (it == m_variableMap.end())
+  Variable &getVariable(const std::string &name) {
+    auto& variableMap = m_variableMap.getMyThreadEntry();
+    VariableMap::iterator it = variableMap.find(name);
+    if (it == variableMap.end())
       throw std::runtime_error(std::string("Variable ") + name  + " not defined");
-
     return *(*it).second;
   }
 
@@ -231,7 +245,7 @@ public:
    *				expression to parse.
    *
    */
-  inline void syntaxCheck(const std::string &expr) {
+  void syntaxCheck(const std::string &expr) {
     setExpression(expr);
     syntax();
   }
@@ -249,7 +263,7 @@ public:
    * @param expr		a <b>std::string</b> const reference to the expression to parse.
    *
    */
-  inline void parse(const std::string &expr) {
+  void parse(const std::string &expr) {
     setExpression(expr);
     parse();
   }
@@ -287,15 +301,15 @@ public:
   Variable::ArrayOffset getArrayOffsetType() {return m_arrayOffsetType;}
 
 private:
-  VariableMap		m_variableMap;		///< Variable map
+  stk::ThreadLocalData<VariableMap>		m_variableMap;		///< Variable map
   UndefinedFunctionSet	m_undefinedFunctionSet;	///< Vector of undefined functions
 
   std::string		m_expression;		///< Expression which was parsed.
   bool			m_syntaxStatus;		///< True if syntax is correct
   bool			m_parseStatus;		///< True if parsed successfully
 
-  Node *		m_headNode;		///< Head of compiled expression
-  std::vector<Node *>   m_nodes;                ///< Allocated nodes
+  stk::ThreadLocalData<Node *>		m_headNode;		///< Head of compiled expression
+  stk::ThreadLocalData<std::vector<Node *>> m_nodes;                ///< Allocated nodes
   Variable::ArrayOffset m_arrayOffsetType;      ///< Zero or one based array indexing
 };
 

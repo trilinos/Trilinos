@@ -266,6 +266,16 @@ namespace Intrepid2 {
      */
     Kokkos::DynRankView<scalarType,ExecSpaceType> dofCoords_;
 
+    // dof coeffs
+    /** \brief Coefficients for computing degrees of freedom for Lagrangian basis
+        If P is an element of the space spanned by the basis,
+        \alpha_i := P(dofCoords_(i)) \cdot dofCoeffs_(i) are the nodal coefficients associated to basis functions i.
+
+        Rank-1 array for scalar basis with dimension (cardinality)
+        Rank-2 array for vector basis with dimensions (cardinality, cell dimension)
+     */
+    Kokkos::DynRankView<scalarType,ExecSpaceType> dofCoeffs_;
+
   public:
 
     Basis() = default;
@@ -349,18 +359,8 @@ namespace Intrepid2 {
     }
 
 
-    /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
-        <strong>reference Quadrilateral</strong>.
-
-        \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
-        dimensioned (F,D)
-    */
-    // virtual
-    // void
-    // getDofCoords( scalarViewType dofCoords ) const {
-    //   INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-    //                                 ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
-    // }
+    /** \brief  Returns spatial locations (coordinates) of degrees of freedom on the reference cell
+     */
 
     virtual
     void
@@ -368,6 +368,22 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getDofCoords): this method is not supported or should be over-riden accordingly by derived classes.");
     }
+
+    /** \brief Coefficients for computing degrees of freedom for Lagrangian basis
+        If P is an element of the space spanned by the basis,
+        \alpha_i := P(dofCoords(i)) \cdot dofCoeffs(i) are the nodal coefficients associated to basis function i.
+
+        Rank-1 array for scalar basis with dimension (cardinality)
+        Rank-2 array for vector basis with dimensions (cardinality, cell dimension)
+     */
+
+    virtual
+    void
+    getDofCoeffs( scalarViewType dofCoeffs ) const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (Basis::getDofCoeffs): this method is not supported or should be over-riden accordingly by derived classes.");
+    }
+
 
     /** \brief  Returns basis name
 
@@ -816,7 +832,7 @@ void getJacobyRecurrenceCoeffs (
                             const shards::CellTopology  cellTopo,
                             const ordinal_type          basisCard );
 
-  /** \brief  Runtime check of the arguments for the getValues method in an L2-conforming
+  /** \brief  Runtime check of the arguments for the getValues method in an HVOL-conforming
       FEM basis. Verifies that ranks and dimensions of <var>ViewType</var> input and output
       arrays are consistent with the specified <var>operatorType</var>.
 
@@ -828,7 +844,7 @@ void getJacobyRecurrenceCoeffs (
   */
   template<typename outputValueViewType,
            typename inputPointViewType>
-  void getValues_L2_Args( const outputValueViewType   outputValues,
+  void getValues_HVOL_Args( const outputValueViewType   outputValues,
                              const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology  cellTopo,

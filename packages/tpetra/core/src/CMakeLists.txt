@@ -335,6 +335,22 @@ IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   TPETRA_PROCESS_ALL_SLGN_TEMPLATES(GETDIAGCOPYWITHOUTOFFSETS_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Details_getDiagCopyWithoutOffsets" "DETAILS_GETDIAGCOPYWITHOUTOFFSETS" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
   LIST(APPEND SOURCES ${GETDIAGCOPYWITHOUTOFFSETS_OUTPUT_FILES})
 
+  # Generate ETI .cpp files for Tpetra::Details::packCrsMatrix and
+  # Tpetra::Details::packCrsMatrixWithOwningPIDs.  Do so for the same
+  # set of Scalar types as CrsMatrix (see above), because this
+  # function is an implementation detail of CrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(PACKCRSMATRIX_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Details_packCrsMatrix" "DETAILS_PACKCRSMATRIX" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
+  LIST(APPEND SOURCES ${PACKCRSMATRIX_OUTPUT_FILES})
+
+  # Generate ETI .cpp files for
+  # Tpetra::Details::unpackCrsMatrixAndCombine,
+  # Tpetra::Details::unpackAndCombineIntoCrsArrays, and
+  # Tpetra::Details::unpackAndCombineWithOwningPIDsCount.  Do so for the same
+  # set of Scalar types as CrsMatrix (see above), because this
+  # function is an implementation detail of CrsMatrix.
+  TPETRA_PROCESS_ALL_SLGN_TEMPLATES(UNPACKCRSMATRIXANDCOMBINE_OUTPUT_FILES "Tpetra_ETI_SC_LO_GO_NT.tmpl" "Details_unpackCrsMatrixAndCombine" "DETAILS_UNPACKCRSMATRIXANDCOMBINE" "${CrsMatrix_ETI_SCALARS}" "${TpetraCore_ETI_LORDS}" "${TpetraCore_ETI_GORDS}" "${TpetraCore_ETI_NODES}" TRUE)
+  LIST(APPEND SOURCES ${UNPACKCRSMATRIXANDCOMBINE_OUTPUT_FILES})
+
   # DistObject requires the same Scalar type instantiations as
   # MultiVector, plus Scalar = char (for CrsMatrix).
   SET (DistObject_ETI_SCALARS ${MultiVector_ETI_SCALARS})

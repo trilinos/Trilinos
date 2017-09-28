@@ -55,7 +55,7 @@
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_Util.hpp" // need this here for sort2
 
-#include "Kokkos_Sparse_findRelOffset.hpp"
+#include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
 
@@ -518,6 +518,37 @@ namespace Tpetra {
               const Teuchos::RCP<const map_type>& colMap,
               const local_graph_type& lclGraph,
               const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+    /// \brief Constructor specifying column, domain and range maps, and a
+    ///   local (sorted) graph, which the resulting CrsGraph views.
+    ///
+    /// Unlike most other CrsGraph constructors, successful completion
+    /// of this constructor will result in a fill-complete graph.
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param domainMap [in] The graph's domain Map. MUST be one to
+    ///   one!
+    ///
+    /// \param rangeMap [in] The graph's range Map.  MUST be one to
+    ///   one!  May be, but need not be, the same as the domain Map.
+    ///
+    /// \param lclGraph [in] A locally indexed Kokkos::StaticCrsGraph
+    ///   whose local row indices come from the specified row Map, and
+    ///   whose local column indices come from the specified column
+    ///   Map.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const local_graph_type& lclGraph,
+              const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::RCP<const map_type>& colMap = Teuchos::null,
+              const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Create a cloned CrsGraph for a different Node type.
     ///
@@ -1363,7 +1394,11 @@ namespace Tpetra {
     /// This method makes the column Map, even if the graph already
     /// has one.  It is the caller's responsibility not to call this
     /// method unnecessarily.
-    void makeColMap ();
+    ///
+    /// \param remotePIDs [out] The process ranks corresponding to the
+    ///   column Map's "remote" (not on the calling process in the
+    ///   domain Map) indices.
+    void makeColMap (Teuchos::Array<int>& remotePIDs);
 
     /// \brief Convert column indices from global to local.
     ///
@@ -1383,7 +1418,17 @@ namespace Tpetra {
     /// first return value is zero, then the string may be empty.
     std::pair<size_t, std::string> makeIndicesLocal ();
 
-    void makeImportExport ();
+    /// \brief Make the Import and Export objects, if needed.
+    ///
+    /// \param remotePIDs [in/out] On input: the output of
+    ///   makeColMap().  May be modified on output.
+    ///
+    /// \param useRemotePIDs [in] Whether to use remotePIDs.  Use it
+    ///   if we called makeColMap with this as the output argument,
+    ///   else don't use it.
+    void
+    makeImportExport (Teuchos::Array<int>& remotePIDs,
+                      const bool useRemotePIDs);
 
     //@}
     //! \name Methods for inserting indices or transforming values
@@ -1575,6 +1620,14 @@ namespace Tpetra {
     ///
     void computeLocalConstants();
 
+    /// \brief Forces computation of local triangular properties if they have
+    /// not been computed yet.
+    ///
+    /// \warning This method is only for expert users.
+    /// \warning We make no promises about backwards compatibility
+    ///   for this method. It may disappear or change at any time.
+    void computeLocalTriangularProperties();
+
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
     RowInfo getRowInfo (const LocalOrdinal myRow) const;
@@ -1610,15 +1663,16 @@ namespace Tpetra {
     ///
     /// \param lclInds [out] Pointer to the local column indices of
     ///   the given row.
-    /// \param numEnt [out] Number of entries in the given row.
-    /// \param rowinfo [in] Result of getRowInfo(lclRow) for the row
+    /// \param capacity [out] Capacity of (number of entries that can
+    ///   fit in) the given row.
+    /// \param rowInfo [in] Result of getRowInfo(lclRow) for the row
     ///   \c lclRow to view.
     ///
     /// \return 0 if successful, else a nonzero error code.
     LocalOrdinal
     getLocalViewRawConst (const LocalOrdinal*& lclInds,
-                          LocalOrdinal& numEnt,
-                          const RowInfo& rowinfo) const;
+                          LocalOrdinal& capacity,
+                          const RowInfo& rowInfo) const;
 
   private:
 
@@ -1668,16 +1722,17 @@ namespace Tpetra {
     ///
     /// \param gblInds [out] Pointer to the global column indices of
     ///   the given row.
-    /// \param numEnt [out] Number of entries in the given row.
-    /// \param rowinfo [in] Result of
+    /// \param capacity [out] Capacity of (number of entries that can
+    ///   fit in) the given row.
+    /// \param rowInfo [in] Result of
     ///   getRowInfoFromGlobalRowIndex(gblRow) for the row to view,
     ///   whose global row index is \c gblRow.
     ///
     /// \return 0 if successful, else a nonzero error code.
     LocalOrdinal
     getGlobalViewRawConst (const GlobalOrdinal*& gblInds,
-                           LocalOrdinal& numEnt,
-                           const RowInfo& rowinfo) const;
+                           LocalOrdinal& capacity,
+                           const RowInfo& rowInfo) const;
 
   public:
     /// \brief Get the local graph.
@@ -1879,14 +1934,33 @@ namespace Tpetra {
     /// for that row.
     Teuchos::ArrayRCP<Teuchos::Array<GlobalOrdinal> > gblInds2D_;
 
+    /// \brief The type of k_numRowEntries_ (see below).
+    ///
+    /// This View gets used only on host.  However, making this
+    /// literally a host View (of Kokkos::HostSpace) causes
+    /// inexplicable test failures only on CUDA.  Thus, I left it as a
+    /// HostMirror, which means (given Trilinos' current UVM
+    /// requirement) that it will be a UVM allocation.
+    typedef typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror num_row_entries_type;
+
+    // typedef Kokkos::View<
+    //   size_t*,
+    //   Kokkos::LayoutLeft,
+    //   Kokkos::Device<
+    //     typename Kokkos::View<
+    //       size_t*,
+    //       Kokkos::LayoutLeft,
+    //       device_type>::HostMirror::execution_space,
+    //     Kokkos::HostSpace> > num_row_entries_type;
+
     /// \brief The number of local entries in each locally owned row.
     ///
     /// This is deallocated in fillComplete() if fillComplete()'s
     /// "Optimize Storage" parameter is set to \c true.
     ///
     /// This may also exist with 1-D storage, if storage is unpacked.
-    typename Kokkos::View<size_t*, Kokkos::LayoutLeft, device_type>::HostMirror
-      k_numRowEntries_;
+    num_row_entries_type k_numRowEntries_;
+
     //@}
 
     /// \brief Status of the graph's storage, when not in a

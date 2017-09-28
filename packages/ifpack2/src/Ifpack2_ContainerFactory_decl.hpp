@@ -48,6 +48,7 @@
 #include "Ifpack2_DenseContainer.hpp"
 #include "Ifpack2_SparseContainer.hpp"
 #include "Ifpack2_BandedContainer.hpp"
+#include "Ifpack2_BlockTriDiContainer.hpp"
 #include "Ifpack2_Partitioner.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
 #ifdef HAVE_IFPACK2_AMESOS2
@@ -183,6 +184,9 @@ struct ContainerFactory
 #ifdef HAVE_IFPACK2_AMESOS2
     registerContainer<SparseContainer<MatrixType, Details::Amesos2Wrapper<MatrixType>>>("SparseAmesos");
     registerContainer<SparseContainer<MatrixType, Details::Amesos2Wrapper<MatrixType>>>("SparseAmesos2");
+#endif
+#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
+    registerContainer<Ifpack2::BlockTriDiContainer<MatrixType, scalar_type>>("BlockTriDi");
 #endif
     registeredDefaults = true;
   }

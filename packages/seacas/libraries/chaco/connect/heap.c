@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
- * the U.S. Government retains certain rights in this software.
+ * Copyright (c) 2005 National Technology & Engineering Solutions
+ * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+ * NTESS, the U.S. Government retains certain rights in this software.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -15,7 +15,7 @@
  *       disclaimer in the documentation and/or other materials provided
  *       with the distribution.
  *
- *     * Neither the name of Sandia Corporation nor the names of its
+ *     * Neither the name of NTESS nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
  *
@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define left(i) (2 * i)
+#define left(i) (2 * (i))
 #define right(i) (2 * (i) + 1)
 #define parent(i) ((int)((i) / 2))
 
@@ -60,13 +60,16 @@ void heapify(struct heap *heap,  /* array of vals/tag to make into heap */
   l = left(index);
   r = right(index);
 
-  if (l <= nvals && heap[l].val > heap[index].val)
+  if (l <= nvals && heap[l].val > heap[index].val) {
     largest = l;
-  else
+  }
+  else {
     largest = index;
+  }
 
-  if (r <= nvals && heap[r].val > heap[largest].val)
+  if (r <= nvals && heap[r].val > heap[largest].val) {
     largest = r;
+  }
 
   if (largest != index) { /* swap index with largest and recurse */
     swap_val = heap[index].val;
@@ -100,8 +103,9 @@ void heap_build(struct heap *heap,  /* array of vals/tag to make into heap */
   }
 
   if (map != NULL) {
-    for (i             = 1; i <= nvals; i++)
+    for (i = 1; i <= nvals; i++) {
       map[heap[i].tag] = i;
+    }
   }
 }
 

@@ -294,14 +294,14 @@ int main(int argc, char *argv[]) {
     if ( lambdaZero ) {
       lambda.erase(lambda.begin()); --N;
       // Solve.
-      parlist->sublist("SOL").set("Stochastic Optimization Type","Risk Neutral");
+      parlist->sublist("SOL").set("Stochastic Component Type","Risk Neutral");
       opt = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(robj,zp));
       parlist->sublist("SOL").set("Initial Statistic",one);
       opt->setStochasticObjective(*parlist,sampler);
       setUpAndSolve<RealT>(*opt,*parlist,*outStream);
       // Output.
       ctrl.push_back(objCtrl->value(*up,*zp,tol));
-      stat.push_back(opt->getSolutionStatistic(*parlist));
+      stat.push_back(opt->getSolutionStatistic());
       std::string CtrlRN = "control_RN.txt";
       pdecon->outputTpetraVector(z_rcp,CtrlRN);
       std::string ObjRN = "obj_samples_RN.txt";
@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE MEAN PLUS CVAR **********************************/
     /*************************************************************************/
-    parlist->sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
+    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
     parlist->sublist("SOL").sublist("Risk Measure").set("Name","Quantile-Based Quadrangle");
     parlist->sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Confidence Level",alpha);
     parlist->sublist("SOL").sublist("Risk Measure").sublist("Quantile-Based Quadrangle").set("Smoothing Parameter",1e-4);
@@ -327,7 +327,7 @@ int main(int argc, char *argv[]) {
       setUpAndSolve<RealT>(*opt,*parlist,*outStream);
       // Output.
       ctrl.push_back(objCtrl->value(*up,*zp,tol));
-      stat.push_back(opt->getSolutionStatistic(*parlist));
+      stat.push_back(opt->getSolutionStatistic());
       std::stringstream nameCtrl;
       nameCtrl << "control_MCVaR_" << i << ".txt";
       pdecon->outputTpetraVector(z_rcp,nameCtrl.str().c_str());

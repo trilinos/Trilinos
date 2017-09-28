@@ -1,7 +1,6 @@
-// Copyright(C) 2010 Sandia Corporation.
-//
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Copyright(C) 2010 National Technology & Engineering Solutions
+// of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+// NTESS, the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -14,7 +13,8 @@
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//     * Neither the name of Sandia Corporation nor the names of its
+//
+//     * Neither the name of NTESS nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
 //
@@ -43,8 +43,8 @@
  * in code that verifies that the array is sorted.
  */
 
+#include <cstdint>
 #include <iostream>
-#include <stdint.h>
 #include <unistd.h>
 
 #include "EJ_index_sort.h"
@@ -65,7 +65,7 @@ namespace {
   template <typename T, typename INT> int ex_int_median3(T *v, INT iv[], size_t left, size_t right)
   {
     size_t center;
-    center = ((ssize_t)left + (ssize_t)right) / 2;
+    center = (static_cast<ssize_t>(left) + static_cast<ssize_t>(right)) / 2;
 
     if (v[iv[left]] > v[iv[center]]) {
       ex_swap(iv, left, center);
@@ -129,7 +129,7 @@ namespace {
       }
     }
     /* Put smallest value in slot 0 */
-    ex_swap(iv, (size_t)0, ndx);
+    ex_swap(iv, static_cast<size_t>(0), ndx);
 
     for (size_t i = 1; i < N; i++) {
       INT tmp = iv[i];
@@ -157,7 +157,7 @@ namespace {
     }
 #endif
   }
-}
+} // namespace
 
 template <typename INT>
 void index_coord_sort(const std::vector<double> &xyz, std::vector<INT> &index, int axis)

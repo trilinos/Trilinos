@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -79,7 +79,7 @@ bool
 LocalFilter<MatrixType>::
 mapPairIsFitted (const map_type& map1, const map_type& map2)
 {
-  return Tpetra::Details::isLocallyFitted (map1, map2);
+  return map1.isLocallyFitted (map2);
 }
 
 

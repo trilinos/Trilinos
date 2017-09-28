@@ -429,31 +429,27 @@ inline stk::search::SearchMethod mapSearchMethodToStk( NewSearchMethod method )
     {
         return stk::search::BOOST_RTREE;
     }
-    else if ( method == OCTREE )
+
+    if ( method == OCTREE )
     {
-        return stk::search::OCTREE;
+        return stk::search::KDTREE;
     }
-    else if ( method == KDTREE )
+    
+    if ( method == KDTREE )
     {
       return stk::search::KDTREE;
     }
-    else
-    {
-        ThrowRequireMsg(false, "Unknown algorithm mysteriously specified");
-    }
+
+    ThrowRequireMsg(false, __FUNCTION__ << ", Unknown algorithm mysteriously specified");
     return stk::search::BOOST_RTREE;
 }
 
 template <typename Identifier>
 inline void coarse_search_new(std::vector< std::pair<FloatBox, Identifier> >& local_domain, std::vector< std::pair<FloatBox, Identifier> >& local_range, NewSearchMethod algorithm, MPI_Comm comm, std::vector<std::pair<Identifier,Identifier> >& searchResults)
 {
-    if ( algorithm == KDTREE )
+    if ( algorithm == KDTREE || algorithm == OCTREE )
     {
         kdtree_search(local_domain, local_range, comm, searchResults);
-    }
-    else if ( algorithm == OCTREE )
-    {
-        stk::search::coarse_search(local_domain, local_range, stk::search::OCTREE, comm, searchResults);
     }
     else if ( algorithm == BOOST_RTREE )
     {

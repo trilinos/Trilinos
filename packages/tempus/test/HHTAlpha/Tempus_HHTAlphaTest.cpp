@@ -88,15 +88,15 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, BallParabolic)
   // Plot sample solution and exact solution
   std::ofstream ftmp("Tempus_Newmark_BallParabolic.dat");
   ftmp.precision(16); 
-  RCP<SolutionHistory<double> > solutionHistory =
+  RCP<const SolutionHistory<double> > solutionHistory =
     integrator->getSolutionHistory();
   bool passed = true; 
   double err = 0.0; 
   RCP<const Thyra::VectorBase<double> > x_exact_plot;
   for (int i=0; i<solutionHistory->getNumStates(); i++) {
-    RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+    RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
     double time = solutionState->getTime();
-    RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
+    RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
     x_exact_plot = model->getExactSolution(time).get_x();
     ftmp << time << "   "
          << get_ele(*(x_plot), 0) << "   "
@@ -176,14 +176,14 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_SecondOrder)
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_Newmark_SinCos_SecondOrder.dat");
       ftmp.precision(16); 
-      RCP<SolutionHistory<double> > solutionHistory =
+      RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
-        RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
-        RCP<Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
+        RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
+        RCP<const Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
         x_exact_plot = model->getExactSolution(time).get_x();
         //kinetic energy = 0.5*m*xdot*xdot 
         double ke = Thyra::dot(*x_dot_plot, *x_dot_plot); 
@@ -291,14 +291,14 @@ TEUCHOS_UNIT_TEST(NewmarkImplicit, SinCos_FirstOrder)
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_Newmark_SinCos_FirstOrder.dat");
       ftmp.precision(16); 
-      RCP<SolutionHistory<double> > solutionHistory =
+      RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
-        RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
-        RCP<Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
+        RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
+        RCP<const Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
         x_exact_plot = model->getExactSolution(time).get_x();
         //kinetic energy = 0.5*m*xdot*xdot 
         double ke = Thyra::dot(*x_dot_plot, *x_dot_plot); 
@@ -406,14 +406,14 @@ TEUCHOS_UNIT_TEST(NewmarkExplicit, SinCos_CD)
     if (n == nTimeStepSizes-1) {
       std::ofstream ftmp("Tempus_Newmark_SinCos_ExplicitCD.dat");
       ftmp.precision(16); 
-      RCP<SolutionHistory<double> > solutionHistory =
+      RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
-        RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
-        RCP<Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
+        RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
+        RCP<const Thyra::VectorBase<double> > x_dot_plot = solutionState->getXDot();
         x_exact_plot = model->getExactSolution(time).get_x();
         //kinetic energy = 0.5*m*xdot*xdot 
         double ke = Thyra::dot(*x_dot_plot, *x_dot_plot); 

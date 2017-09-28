@@ -66,9 +66,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-class VectorBase;
-class VectorSpaceBase;
-
 namespace panzer
 {
   /**
@@ -190,9 +187,7 @@ namespace panzer
        */
       virtual void
       ghostToGlobal(
-        int mem = 0)
-      {
-      } // end of ghostToGlobal()
+        int mem = 0);
 
       /**
        *  \brief Determine if a Dirichlet adjustment is necessary.

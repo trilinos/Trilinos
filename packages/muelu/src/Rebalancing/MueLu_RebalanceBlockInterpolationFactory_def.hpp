@@ -46,8 +46,6 @@
 #ifndef MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_DEF_HPP_
 #define MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_DEF_HPP_
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
-
 #include <Teuchos_Tuple.hpp>
 
 #include "Xpetra_MultiVector.hpp"
@@ -422,5 +420,4 @@ void RebalanceBlockInterpolationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Nod
 
 } // namespace MueLu
 
-#endif /* HAVE_MUELU_EXPERIMENTAL */
 #endif /* MUELU_REBALANCEBLOCKINTERPOLATIONFACTORY_DEF_HPP_ */

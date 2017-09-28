@@ -3,7 +3,7 @@ dimensions:
 	len_string = 33 ;
 	len_line = 81 ;
 	four = 4 ;
-	len_name = 33 ;
+	len_name = 256 ;
 	time_step = UNLIMITED ; // (10 currently)
 	num_dim = 3 ;
 	num_nodes = 33 ;
@@ -184,7 +184,6 @@ variables:
 // global attributes:
 		:floating_point_word_size = 4 ;
 		:file_size = 1 ;
-		:maximum_name_length = 32 ;
 		:int64_status = 0 ;
 		:title = "This is a test" ;
 data:
@@ -494,7 +493,7 @@ data:
  name_elem_var =
   "this_variable_name_is_short",
   "this_variable_name_is_just_right",
-  "this_variable_name_is_tooooo_lon" ;
+  "this_variable_name_is_tooooo_long" ;
 
  name_nset_var =
   "ns_var0",
