@@ -43,11 +43,13 @@
 //
 // @HEADER
 
-#define CONVERT_DIRECTORY_TPETRA
+#define CONVERT_DIRECTORY_KOKKOS
+#define CONVERT_DIRECTORY_KOKKOS_OPTIMIZED
 
 #include "directoryTest_Impl.hpp"
 
+// a temporary test for performance evaluation
 int main(int narg, char **arg)
 {
-  return Zoltan2::runDirectoryTests(narg, arg);
+  return Zoltan2::runPerformanceDirectoryTests(narg, arg);
 }

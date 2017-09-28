@@ -6,6 +6,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM mpi
 )
 
+# In progress to implement optimization such as functors.
+# This was not brought to a working state yet.
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  directoryTest_KokkosOptimized
+#  SOURCES directoryTest_KokkosOptimized.cpp
+#  NUM_MPI_PROCS 4
+#  COMM mpi
+#)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   directoryTest_KokkosSimple
   SOURCES directoryTest_KokkosSimple.cpp
@@ -73,3 +82,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 4
   COMM mpi
 )
+
+# In progress to implement optimization such as functors.
+# This was not brought to a working state yet.
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  directoryTest_PerformanceKokkosOptimized
+#  CATEGORIES PERFORMANCE
+#  SOURCES directoryTest_PerformanceKokkosOptimized.cpp
+#  NUM_MPI_PROCS 4
+#  COMM mpi
+#)

@@ -43,7 +43,8 @@
 //
 // @HEADER
 
-#define CONVERT_DIRECTORY_TPETRA
+#define CONVERT_DIRECTORY_KOKKOS
+#define CONVERT_DIRECTORY_KOKKOS_OPTIMIZED
 
 #include "directoryTest_Impl.hpp"
 

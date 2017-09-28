@@ -50,5 +50,5 @@
 // a temporary test for performance evaluation
 int main(int narg, char **arg)
 {
-  return runPerformanceDirectoryTests(narg, arg);
+  return Zoltan2::runPerformanceDirectoryTests(narg, arg);
 }

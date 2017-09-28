@@ -50,6 +50,8 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <time.h>
 
+namespace Zoltan2 {
+
 // a temporary class to get some timing information out - to be deleted
 class Zoltan2_Directory_Clock {
   public:
@@ -149,5 +151,7 @@ class Zoltan2_Directory_Clock {
     double startTime;
     bool bCompleted;
 };
+
+} // namespace Zoltan2
 
 #endif

@@ -49,35 +49,63 @@
 #define CONVERT_DIRECTORY_KOKKOS
 #include "Zoltan2_Directory_Impl.hpp"
 
+// This type will be used by some of these tests
+class gid_struct {
+  public:
+  // Kokkos will need an empty constructor so either provide one or
+  // make a simple struct with no constructors will also work
+  gid_struct() {}
+  gid_struct(int v0, int v1, int v2, int v3) {
+    val[0] = v0;
+    val[1] = v1;
+    val[2] = v2;
+    val[3] = v3;
+  }
+  int val[4]; // can be any length but this can't have mem alloc (like std::vector)
+};
+
+// same as gid but for better coverage of testing, make it different
+class lid_struct {
+  public:
+  // Kokkos will need an empty constructor so either provide one or
+  // make a simple struct with no constructors will also work
+  lid_struct() {}
+  lid_struct(unsigned long v0, unsigned long  v1) {
+    val[0] = v0;
+    val[1] = v1;
+  }
+  unsigned long  val[2]; // can be any length but this can't have mem alloc (like std::vector)
+};
+
 // a very simple test of replace
+// after calling update and find we do a second round with new gids
+// to make sure repeated update calls will work.
 int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
 
   int err = 0;
 
   // define a few constants/helpers
-  typedef int lid_t; // fix this for now - not dealing with the lid testing yet
-
-  // if I used gid_t on all methods here I get shadow warnings for gcc
-  // not sure why gcc considers that a shadow so called by index
-  typedef int gid1_t;
+  typedef int lid_t; // lid will be ignored in this case
+  typedef int gid_t;
+  typedef int gidA_t;
   typedef long user_t;
 
   // set up the directory type - this is the single user mode (not vector user)
-  typedef Zoltan2::Zoltan2_Directory_Simple<gid1_t,lid_t,user_t> directory_t;
+  typedef Zoltan2::Zoltan2_Directory_Simple<gidA_t,lid_t,user_t> directory_t;
 
   // create the directory
-  directory_t directory(comm, false, 0, false);
+  directory_t directory(comm, false, 0);
 
   // now create some gids to write
   // to keep things interesting we'll have just proc 0 write 4 Ids and all the
   // other procs right the same gid (3).
-  std::vector<gid1_t> writeIds;
+  std::vector<gid_t> writeGIDs;
 
   if(comm->getRank() == 0) {
-    writeIds =  { 1, 5, 7, 10 };
+    writeGIDs =  { 1, 5, 7, 10 };
   }
   else {
-    writeIds = { 3 };
+    writeGIDs = { 3 };
   }
 
   // now create some user values associated with above gids
@@ -93,11 +121,11 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   // call update on the directory
   std::vector<lid_t> ignore_lid; // TODO: decide how to best handle this API
   std::vector<int> ignore_int;   // TODO: decide how to best handle this API
-  directory.update(writeIds, ignore_lid, writeUser, ignore_int,
+  directory.update(writeGIDs, ignore_lid, writeUser, ignore_int,
     directory_t::Replace);
 
   // now pick some gids to find
-  std::vector<gid1_t> findIds = { 3, 5 };
+  std::vector<gid_t> findIds = { 3, 5 };
 
   // now create a user space to accept the values
   // Setting this empty will turn off this option. The original directory uses
@@ -138,6 +166,58 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
     }
   }
 
+  // Phase 2
+  // now let's test further by updating with some more values
+  // we'll try a mix of preexisting values and new values
+  // this adds some unit testing coverage for the case when update is called
+  // twice on the same directory, not implemented in the general unit tests.
+  std::vector<gid_t> writeGIDs2;
+
+  if(comm->getRank() == 0) {
+    writeGIDs2 =  { 5, 700, 1000 };
+  }
+  else {
+    writeGIDs2 = { 3, 200 };
+  }
+
+  std::vector<user_t> writeUser2;
+  if(comm->getRank() == 0) {
+    writeUser2 = { 50, 7000, 10000 };
+  }
+  else {
+    writeUser2 = { 30, 2000 };
+  }
+
+  // call update on the directory (this will be the second round)
+  directory.update(writeGIDs2, ignore_lid, writeUser2, ignore_int,
+    directory_t::Replace);
+
+  // now pick some gids to find
+  std::vector<gid_t> findIds2 = { 1, 5, 1000 };
+
+  // now create a user space to accept the values
+  std::vector<user_t> findUser2(findIds2.size());
+  directory.find(findIds2, ignore_lid, findUser2, ignore_int, ignore_int);
+
+  // validate the results
+  // index 0 (gid 1) was updated on the first round (not second)
+  // index 1 (gid 5) was updated on both rounds
+  // index 2 (gid 1000) was updated on the second round (not first)
+  if(findUser2[0] != 10) {
+    std::cout << "We should have gotten 10 for this value. " << std::endl;
+    ++err;
+  }
+  if(findUser2[1] != 50) {
+    std::cout << "We should have gotten 50 for this value." << std::endl;
+    ++err;
+  }
+
+  // only proc 0 sent the second one - make sure all procs can read it
+  if(findUser2[2] != 10000) {
+    std::cout << "We should have gotten 10000 for this value." << std::endl;
+    ++err;
+  }
+
   return err;
 }
 
@@ -147,33 +227,30 @@ int test_aggregate(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   int err = 0;
 
   // define a few constants/helpers
-  typedef int lid_t; // fix this for now - not dealing with the lid testing yet
-
-  // if I used gid_t on all methods here I get shadow warnings for gcc
-  // not sure why gcc considers that a shadow so called by index
-  typedef long gid2_t;
+  typedef int lid_t; // lid will be ignored in this case
+  typedef long gid_t;
   typedef std::vector<long long> user_t; // now user is a vector of long long
 
   // set up the directory type - this is the vector user mode
   // the way things are setup right now a std::vector user_t must use this
   // class - maybe eventually this could all be handling by templating but
   // I think this might be cleaner and more performant
-  typedef Zoltan2::Zoltan2_Directory_Vector<gid2_t,lid_t,user_t> directory_t;
+  typedef Zoltan2::Zoltan2_Directory_Vector<gid_t,lid_t,user_t> directory_t;
 
   // create the directory
-  directory_t directory(comm, false, 0, false);
+  directory_t directory(comm, false, 0);
 
   // now create some gids to write based on the rank
-  std::vector<gid2_t> writeIds;
+  std::vector<gid_t> writeGIDs;
   switch(comm->getRank()) {
     case 0:
-      writeIds = { 3, 5 }; // rank 0 writes only 3 and 5
+      writeGIDs = { 3, 5 }; // rank 0 writes only 3 and 5
       break;
     case 1:
-      writeIds = { 3, 7 }; // rank 1 writes only 3 and 7
+      writeGIDs = { 3, 7 }; // rank 1 writes only 3 and 7
       break;
     default:
-      writeIds = { 5 }; // all other ranks write only 5
+      writeGIDs = { 5 }; // all other ranks write only 5
       break;
   }
 
@@ -195,11 +272,11 @@ int test_aggregate(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   // call update on the directory
   std::vector<lid_t> ignore_lid; // TODO: decide how to best handle this API
   std::vector<int> ignore_int;   // TODO: decide how to best handle this API
-  directory.update(writeIds, ignore_lid, writeUser, ignore_int,
+  directory.update(writeGIDs, ignore_lid, writeUser, ignore_int,
     directory_t::Aggregate);
 
   // now pick some gids to find - could make this rank specific
-  std::vector<gid2_t> findIds = { 3, 5 };
+  std::vector<gid_t> findIds = { 3, 5 };
 
   // now create a user space to accept the values
   // Setting this empty will turn off this option. The original directory uses
@@ -251,49 +328,28 @@ int test_multiple_gid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   int err = 0;
 
   // define a few constants/helpers
-  typedef int lid_t; // fix this for now - not dealing with the lid testing yet
-
-  // first set up some types - make the gid type be a full structure with
-  // sub elements - as long as the directory can call sizeof(gid_t) and
-  // do things like a = b for gid_t, it's fine. It can't contain any memory
-  // allocations (so it could not contain a std::vector for example).
-  class gid_struct {
-    public:
-    // Kokkos will need an empty constructor so either provide one or
-    // make a simple struct with no constructors will also work
-    gid_struct() {}
-    gid_struct(int v0, int v1, int v2, int v3) {
-      val[0] = v0;
-      val[1] = v1;
-      val[2] = v2;
-      val[3] = v3;
-    }
-    int val[4]; // can be any length but this can't have mem alloc (like std::vector)
-  };
-
-  // if I used gid_t on all methods here I get shadow warnings for gcc
-  // not sure why gcc considers that a shadow so called by index
-  typedef gid_struct gid3_t;
+  typedef int lid_t; // lid will be ignored in this case
+  typedef gid_struct gid_t;
   typedef int user_t;
 
   // set up the directory type - this is the single user mode (not vector user)
-  typedef Zoltan2::Zoltan2_Directory_Simple<gid3_t,lid_t,user_t> directory_t;
+  typedef Zoltan2::Zoltan2_Directory_Simple<gid_t,lid_t,user_t> directory_t;
 
   // create the directory
-  directory_t directory(comm, false, 0, false);
+  directory_t directory(comm, false, 0);
 
   // set up some test gids
   // in this case the entire set of values is the gid
-  std::vector<gid3_t> writeIds;
-  gid3_t gid1(1, 8, 7, 3);
-  gid3_t gid2(1, 8, 7, 4); // this is a completely different gid from the prior
+  std::vector<gid_t> writeGIDs;
+  gid_t gid1(1, 8, 7, 3);
+  gid_t gid2(1, 8, 7, 4); // this is a completely different gid from the prior
 
   // let's have rank 0 write gid1 and gid2 while other ranks write gid2 only
   if(comm->getRank() == 0) {
-    writeIds =  { gid1, gid2 };
+    writeGIDs =  { gid1, gid2 };
   }
   else {
-    writeIds = { gid2 };
+    writeGIDs = { gid2 };
   }
 
   // now create some user values associated with above gids
@@ -312,11 +368,11 @@ int test_multiple_gid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   // call update on the directory using add mode
   std::vector<lid_t> ignore_lid; // TODO: decide how to best handle this API
   std::vector<int> ignore_int;   // TODO: decide how to best handle this API
-  directory.update(writeIds, ignore_lid, writeUser, ignore_int,
+  directory.update(writeGIDs, ignore_lid, writeUser, ignore_int,
     directory_t::Add);
 
   // now check them on all ranks - this could be different for different ranks
-  std::vector<gid3_t> findIds = { gid1, gid2 };
+  std::vector<gid_t> findIds = { gid1, gid2 };
 
   // create a user space to accept the values
   // Setting this empty will turn off this option. The original directory uses
@@ -345,7 +401,114 @@ int test_multiple_gid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   return err;
 }
 
+// an example of using the directory with an lid defined as a struct
+// this is similar to the prior test but here we will use both
+// gid and lid as different structs and also do a find with user data
+// set ignored just to get some more coverage of the possibilities.
+int test_multiple_lid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
+
+  int err = 0;
+
+  // define a few constants/helpers
+  typedef gid_struct gid_t;
+  typedef lid_struct lid_t;
+  typedef int user_t;
+
+  typedef Zoltan2::Zoltan2_Directory_Simple<gid_t,lid_t,user_t> directory_t;
+
+  // create the directory
+  directory_t directory(comm, true, 0);
+
+  // set up some test gids
+  // in this case the entire set of values is the gid
+  std::vector<gid_t> writeGIDs;
+  gid_t gid1(1, 8, 7, 3);
+  gid_t gid2(1, 8, 7, 4); // this is a completely different gid from the prior
+
+  // set up some test lids
+  // in this case the entire set of values is the lid
+  std::vector<lid_t> writeLIDs;
+  lid_t lid1(500, 2009);
+  lid_t lid2(500, 8000); // this is a completely different lid from the prior
+
+  // let's have rank 0 write gid1 and gid2 while other ranks write gid2 only
+  if(comm->getRank() == 0) {
+    writeGIDs =  { gid1, gid2 };
+    writeLIDs =  { lid1, lid2 };
+  }
+  else {
+    writeGIDs = { gid2 };
+    writeLIDs = { lid2 };
+  }
+
+  std::vector<user_t> writeUser;
+  if(comm->getRank() == 0) {
+    writeUser = { 1, 1 }; // two values because rank 0 write both gid1 and gid2
+  }
+  else {
+    writeUser = { 1 }; // one value because other ranks only write gid2
+  }
+
+  // call update on the directory using add mode
+  std::vector<user_t> ignore_user; // TODO: decide how to best handle this API
+  std::vector<int> ignore_int;   // TODO: decide how to best handle this API
+  directory.update(writeGIDs, writeLIDs, writeUser, ignore_int,
+    directory_t::Replace);
+
+  // now check them on all ranks - this could be different for different ranks
+  std::vector<gid_t> findGIDs = { gid1, gid2 };
+
+  // create lid space to accept the lid values
+  std::vector<lid_t> findLIDs(findGIDs.size());
+
+  // now call find which will fill findLIDs
+  directory.find(findGIDs, findLIDs, ignore_user, ignore_int, ignore_int);
+
+  // now check element 0 in the array is matched to lid1
+  if(findLIDs[0].val[0] != lid1.val[0] || findLIDs[0].val[1] != lid1.val[1]) {
+    std::cout << "We should have gotten [500,2009] for lid1." << std::endl;
+    ++err;
+  }
+
+  // now check element 1 in the array is matched to lid2
+  if(findLIDs[1].val[0] != lid2.val[0] || findLIDs[1].val[1] != lid2.val[1]) {
+    std::cout << "We should have gotten [500,8000] for lid1." << std::endl;
+    ++err;
+  }
+
+  // make sure user data still empty
+  if(ignore_user.size()) {
+    std::cout << "User data was requested to be ignored ut filled it." << std::endl;
+    ++err;
+  }
+
+  // create user space to accept the user values
+  std::vector<user_t> findUser(findGIDs.size());
+
+  // now call find which will fill findLIDs and findUser
+  directory.find(findGIDs, findLIDs, findUser, ignore_int, ignore_int);
+
+  // now check element 0 in the array which should have value 1
+  if(findUser[0] != 1) {
+    std::cout << "We should have gotten 1 for gid1. Only rank 0 wrote to gid1"
+      " so the sum should have been 1." << std::endl;
+    ++err;
+  }
+
+  // now check element 1 in the array should have value comm->getSize()
+  // that is because each rank contributed 1 and we are in Add mode
+  if(findUser[1] != 1) {
+    std::cout << "We should have gotten the proc count " << comm->getSize()
+      << " since every rank wrote to gid2." << std::endl;
+    ++err;
+  }
+
+  return err;
+}
+
 int main(int narg, char **arg) {
+  Kokkos::initialize(narg, arg);
+
   Teuchos::GlobalMPISession mpiSession(&narg,&arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
@@ -357,6 +520,7 @@ int main(int narg, char **arg) {
   err += test_simple_replace(comm);
   err += test_aggregate(comm);
   err += test_multiple_gid(comm);
+  err += test_multiple_lid(comm);
 
   // Get the global err results so we fail properly if any proc failed
   int errGlobal;
@@ -373,5 +537,8 @@ int main(int narg, char **arg) {
       std::cout << "FAILED!" << std::endl;
     }
   }
+
+  Kokkos::finalize();
+
   return errGlobal;
 }

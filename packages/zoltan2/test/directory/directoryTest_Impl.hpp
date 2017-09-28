@@ -54,6 +54,8 @@
 #include "Zoltan2_Directory_Impl.hpp"
 #endif
 
+namespace Zoltan2 {
+
 // The directory also has modes but currently working with an Original mode
 // as well, which doesn't have it - so created this to have a universal
 // reference to use. Eventually will delete all but Kokkos and then eliminate
@@ -77,8 +79,8 @@ struct gid_set_t {
   int sub_gid[GID_SET_LENGTH];
 };
 
-// same as gid above
-#define LID_SET_LENGTH 3 // arbitrary for testing
+// same as gid above but this is for lid
+#define LID_SET_LENGTH 4 // just to mix things up - make it different than gid
 struct lid_set_t {
   int sub_lid[LID_SET_LENGTH];
 };
@@ -153,13 +155,13 @@ class IDs {
      *   \param[in] test_name_ is helper string used for logging info
      *
      *  Note that in the current setup the derived class is responsible
-     *  for calling setup() for proper initialization.
+     *  for calling execute() for proper initialization.
      */
     IDs(size_t totalIds_, size_t idBase_, size_t idStride_,
       Teuchos::RCP<const Teuchos::Comm<int> > &comm_, int mode_,
         const std::string& test_name_, bool print_detailed_output_,
         bool performance_test_, bool bUseLocalIDs_) :
-        totalIds(totalIds_), idBase(idBase_), contiguous(idStride_ == 1),
+        totalIds(totalIds_), idBase(idBase_),
         idStride(idStride_), comm(comm_), maxPrintSize(10), mode(mode_),
         did_setup(false), test_name(test_name_),
         print_detailed_output(print_detailed_output_),
@@ -172,6 +174,7 @@ class IDs {
         // map out the behaviors of the subsets
         comm->barrier();
         if(comm->getRank() == 0) {
+          // some arbitrary sub sets used for testing coverage
           std::cout << "Sub1: " << std::endl;
           for(int proc = 0; proc < comm->getSize(); ++proc) {
             std::cout << " rank " << proc << ": ";
@@ -181,6 +184,7 @@ class IDs {
             std::cout << std::endl;
           }
 
+          // some arbitrary sub sets using for testing coverage
           std::cout << "Sub2: " << std::endl;
           for(int proc = 0; proc < comm->getSize(); ++proc) {
             std::cout << " rank " << proc << ": ";
@@ -292,13 +296,14 @@ class IDs {
   protected:
     std::string get_mode_name() const {
       switch(mode) {
-        case TestMode::Add: return "Add"; break;
-        case TestMode::Replace: return "Replace"; break;
+        case TestMode::Add:       return "Add";       break;
+        case TestMode::Replace:   return "Replace";   break;
         case TestMode::Aggregate: return "Aggregate"; break;
         default: throw std::logic_error("Bad mode."); break;
       }
     }
 
+    // this is guaranteed to be true for at least one of the ranks
     bool trueForAtLeastOneProc(int index, int rank) const {
       return ((index % comm->getSize()) == rank);
     }
@@ -313,10 +318,17 @@ class IDs {
       return ((index % (comm->getSize()+3)) == rank);
     }
 
+    // given a gid convert it to an index 0, 1, 2, ...
+    // this removes stride and then we use index to determine placement
+    // in some arbitrary subsets to make a mix of update, remove, and find gids
+    // it's abstract because multiple gid structs will be generated differently
     virtual int convert_gid_to_index(const gid_t& gid) const = 0;
 
+    // reverse operation will bring an index back to a gid
+    // it's abstract because multiple gid structs will be generated differently
     virtual gid_t convert_index_to_gid(int index) const = 0;
 
+    // decide if this rank will update this gid (and how many duplicates to send)
     int proc_update_gid(gid_t gid, int rank) const {
       // this method should be guaranteed to return true for 1 of the procs
       // it can optionally return true for more than one to make a nice mix
@@ -335,6 +347,7 @@ class IDs {
       }
     }
 
+    // decide if this rank will find this gid (and how many duplicates to send)
     int proc_find_gid(gid_t gid, int rank) const {
       // this method can be anything - things should work even if this is empty;
       int index = convert_gid_to_index(gid); // convert back to 0,1,2,...indexing
@@ -354,6 +367,7 @@ class IDs {
       }
     }
 
+    // decide if this rank will remove this gid (and how many duplicates to send)
     int proc_remove_gid(gid_t gid, int rank) const {
       // this should include some proc_find_gid values but not all, but also other
       // values for good testing - we want to remove more than we wrote locally
@@ -373,18 +387,28 @@ class IDs {
       }
     }
 
+    // a special case for testing - we set the user data to a 'not found' state
+    // so we can confirm it was untouched if we call remove and then find on
+    // a gid which no longer exists.
     virtual user_t get_not_found_user() const = 0;
 
+    // same as for above gid - we want to have the lid set to a known state
+    // ahead of time.
     virtual lid_t get_not_found_lid() const = 0;
 
+    // fill the find_user with all the initial states
+    // this is only relevant for testing - not something a normal user will do
     virtual void initialize_with_not_found_user() {
       find_user = std::vector<user_t>(find_gids.size(), get_not_found_user());
     }
 
+    // fill the find_lids with all the initial states
+    // this is only relevant for testing - not something a normal user will do
     virtual void initialize_with_not_found_lid() {
       find_lids = std::vector<lid_t>(find_gids.size(), get_not_found_lid());
     }
 
+    // a global check for the testing framework - did any proc remove this gid?
     bool removedIDGlobally(gid_t gid) const {
       for(int proc = 0; proc < comm->getSize(); ++proc) {
         if(proc_remove_gid(gid, proc)) {
@@ -394,6 +418,9 @@ class IDs {
       return false;
     }
 
+    // a check for the testing framework - count how many times this gid was
+    // updated (currently we allow duplicate gids in one update call). This will
+    // count each case as +1.
     int sharedCount(gid_t gid) const {
       int count = 0;
       for(int proc = 0; proc < comm->getSize(); ++proc) {
@@ -402,6 +429,13 @@ class IDs {
       return count;
     }
 
+    // utility function to output a list of gids
+    // handles the gid as a struct as well using gid_to_string
+    // Note the testing framework (here) 'knows' how to deciper the structure
+    // of the gid but the directory does not, hence the directory doesn't have
+    // the ability to print out what the struct contents are. We might want to
+    // have some kind of print() method required for these structs to make log
+    // outputs easier. Something like gid_to_string implemented in this file.
     void print_gids(const std::vector<gid_t> &printIds, std::string name) const {
       std::cout << "  " << printIds.size() << " " << name << ": ";
       for (size_t i = 0; i < printIds.size() && i < maxPrintSize; i++) {
@@ -413,6 +447,8 @@ class IDs {
       std::cout << std::endl;
     }
 
+    // utility function to output a list of gids
+    // handles the lid as a struct as well using lid_to_string
     void print_lids(const std::vector<lid_t> &printIds, std::string name) const {
       std::cout << "  " << printIds.size() << " " << name << ": ";
       for (size_t i = 0; i < printIds.size() && i < maxPrintSize; i++) {
@@ -424,8 +460,10 @@ class IDs {
       std::cout << std::endl;
     }
 
+    // user data can be simple of std::vector so handled by derived classes
     virtual void print_user_data() const = 0;
 
+    // prints out the list of lids we found
     virtual void print_lid_data() const {
       std::cout << "Find LIDs ";
       for(size_t n = 0; n < this->find_gids.size(); ++n) {
@@ -435,20 +473,48 @@ class IDs {
       std::cout << std::endl;
     }
 
+    // to make some fixed conversions between gid and arbitrary user data the
+    // seed value is used. This is so the testing can validate final results are
+    // correct based on gid. For gid as a struct, this just uses the first
+    // element in the gid array.
     virtual size_t gid_seed_value(const gid_t& gid) const = 0;
 
+    // convert gid to nice output - handled gid as a struct if that is the case
     virtual std::string gid_to_string(gid_t gid) const = 0;
 
+    // convert lid to nice output - handled gid as a struct if that is the case
     virtual std::string lid_to_string(lid_t lid) const = 0;
 
+    // determine if the two lids are equal - used by testing to validate result
+    // matches expected result.
     virtual bool check_lid_equal(const lid_t & a, const lid_t & b) const = 0;
 
-    virtual user_t getExpectedValue(gid_t gid) const = 0;
+    // get_expected_user is the user data we expect to have returned after a
+    // find command. It would be the same as get_initial_value for Replace mode
+    // but for Add and Aggregate, this is the calculated result we expect the
+    // directory to have performed. So for example two difference procs may both
+    // update in Aggregate mode with a different vector. They would each have
+    // their own get_initial_user, say [1,3,5] for rank 0 and [1,5,7] for rank 1
+    // but that is for the same gid. That is why get_initial_user takes both
+    // gid and rank. However get_expected_user is the grand result which would
+    // be [1,3,5,7] and independent of rank. The tests here check the results
+    // returned by the directory find command and make sure they match the
+    // value calculated by get_expected_user.
+    virtual user_t get_expected_user(gid_t gid) const = 0;
 
-    virtual lid_t getExpectedlid(gid_t gid) const = 0;
+    // this is the user data the specific rank sent for gid
+    // for Add and Aggregate modes different ranks will be sending different
+    // data for the same gid. The final result that the directory is supposed
+    // to generate is calculated as get_expected_user above for verification.
+    virtual user_t get_initial_user(gid_t gid, int rank) const = 0;
 
-    virtual user_t getInitialValue(gid_t gid, int rank) const = 0;
+    // for a given gid, this determines some arbitrary lid to go with it. This
+    // value is sent to the directory and then can be checked later to be sure
+    // we got the right lid back.
+    virtual lid_t get_initial_lid(gid_t gid) const = 0;
 
+    // execute() is called by the derived class so that inheritance will be
+    // executing for all methods properly. This method handles everything.
     virtual void execute() {
       setup();   // get things ready
       test();    // run the actual directory code
@@ -457,16 +523,24 @@ class IDs {
       // debug_print_subsets_and_decisions();
     }
 
+    // preparation for running the test
     virtual void setup() {
       // this clock is not part of the actual directory work, just test setup
       Zoltan2_Directory_Clock setupClock("setup");
 
+      // sanity check - make sure we have our internal logic correct - in case
+      // the class hierarchy gets more complicated this is a reminder to make
+      // sure the execute() method is being called once by the highest level.
       if(did_setup) {
         throw std::logic_error(
           "setup already called - execute once in highest level class only.");
       }
       did_setup = true;
 
+      // sanity check on the proc_update_gid
+      // this verifies that at least one proc is actually going to write each
+      // gid which is not really a requirement but more to make sure the tests
+      // are running what we expected.
       for(size_t n = 0; n < totalIds; ++n) {
         gid_t gid = convert_index_to_gid(n);
         bool bAtLeastOne = false;
@@ -483,33 +557,44 @@ class IDs {
         }
       }
 
-      // create ids list - the count here is arbitrary and sets the complexity
-      // of the test
+      // now decide which gids we will update, remove, and find
+      // this is somewhat arbitrary and the methods here are use to make some
+      // nice mix up.
       for(size_t n = 0; n < totalIds; ++n) {
+        // first generate the gid from index (handles stride, base offset)
         gid_t gid = convert_index_to_gid(n);
 
+        // determine how many of this particular gid we will update
         int count_proc_update_gid = proc_update_gid(gid, comm->getRank());
         for(int i = 0; i < count_proc_update_gid; ++i) {
           update_gids.push_back(gid);
-          update_lids.push_back(getExpectedlid(gid));
+          update_lids.push_back(get_initial_lid(gid));
         }
 
-        for(int i = 0; i < proc_find_gid(gid, comm->getRank()); ++i) {
-          find_gids.push_back(gid);
-        }
-
+        // now make the lists of gids we will remove
+        // there is no purpose here - we just want to update a bunch, then
+        // remove some, then find some. The testing here will purposefully try
+        // to find gids which were removed and then verify they are in fact
+        // no longer in the directory.
         for(int i = 0; i < proc_remove_gid(gid, comm->getRank()); ++i) {
           remove_gids.push_back(gid);
         }
+
+        // now make the list of gids we will find
+        for(int i = 0; i < proc_find_gid(gid, comm->getRank()); ++i) {
+          find_gids.push_back(gid);
+        }
       }
 
-      // set up all the initial writes
+      // set up all the initial writes - update_user will be send to the
+      // directory with these values for Replace, Add, or Aggregate operations.
       this->update_user.resize(update_gids.size());
       for(size_t n = 0; n < update_user.size(); ++n) {
-        update_user[n] = getInitialValue(update_gids[n], comm->getRank());
+        update_user[n] = get_initial_user(update_gids[n], comm->getRank());
       }
     }
 
+    // this is where we actually make a directory and do things on it
     virtual void test() = 0;
 
 #ifndef CONVERT_DIRECTORY_ORIGINAL
@@ -523,21 +608,32 @@ class IDs {
 #ifdef CONVERT_DIRECTORY_ORIGINAL
       if (update_gids.size() > std::numeric_limits<int>::max())
         throw std::runtime_error("Problem too large for zoltan");
-      int gid_length = Zoltan2::TPL_Traits<ZOLTAN_ID_PTR, gid_t>::NUM_ID;
-      int lid_length = Zoltan2::TPL_Traits<ZOLTAN_ID_PTR, lid_t>::NUM_ID;
+      int gid_length = TPL_Traits<ZOLTAN_ID_PTR, gid_t>::NUM_ID;
+      int lid_length = TPL_Traits<ZOLTAN_ID_PTR, lid_t>::NUM_ID;
       MPI_Comm mpicomm = Teuchos::getRawMpiComm(*comm); // TODO comm fixes
       Zoltan2_Directory_Clock constructClock("construct");
-      Zoltan_DD zz(mpicomm, gid_length, lid_length, sizeof(user_t),
+      Zoltan_DD zz1(mpicomm, gid_length, lid_length, sizeof(user_t),
         update_gids.size(), debug_level);
       constructClock.complete(); // to match with new directory clocks...
+
+      // this step is not necessary but implemented to provide coverage of the
+      // copy constructor and the operator= method.
+      // Can be removed and then change above zz1 to just zz
+      Zoltan_DD zz2(zz1); // validate the copy constructor works
+      Zoltan_DD zz = zz2; // then validate the operator= works
 #else
 
     #ifdef CONVERT_DIRECTORY_RELIC
-      directory_t zz(comm, bUseLocalIDs, update_gids.size(),
-        debug_level, contiguous);
+      directory_t zz1(comm, bUseLocalIDs, update_gids.size(), debug_level);
     #else
-      directory_t zz(comm, bUseLocalIDs, debug_level, contiguous);
+      directory_t zz1(comm, bUseLocalIDs, debug_level);
     #endif
+
+      // this step is not necessary but implemented to provide coverage of the
+      // copy constructor and the operator= method.
+      // Can be removed and then change above zz1 to just zz
+      directory_t zz2(zz1);
+      directory_t zz = zz2;
 
 #endif // CONVERT_DIRECTORY_ORIGINAL
 
@@ -559,6 +655,7 @@ class IDs {
 
 #ifdef CONVERT_DIRECTORY_ORIGINAL
       // Original zoltan code only supports the replace mode
+      // the tests were setup so Original only runs Replace ... make sure:
       if(mode != Replace) {
         throw std::logic_error("Bad setup. Original mode can only run replace.");
       }
@@ -579,10 +676,16 @@ class IDs {
         bUseLocalIDs ? reinterpret_cast<ZOLTAN_ID_PTR>(&(find_lids[0])) : NULL,
         find_gids.size() ? reinterpret_cast<char*>(&(find_user[0])) : NULL,
         NULL, find_gids.size(), NULL);
-     findClock.complete(); // to match with new directory clocks...
+      findClock.complete(); // to match with new directory clocks...
 #else
-      // convert generic mode to Zoltan2Directory - this awkward step exists
-      // because the original mode doesn't have a directory - will improve.
+      // convert generic mode to Zoltan2Directory mode. This awkward step exists
+      // because the Original mode doesn't have a directory since it's the
+      // original zoltan code. When Original mode is running the new directory
+      // code does not exist and the directory_t::Update_Mode doesn't exist.
+      // So we have generic mode (just for the unit test) which everything can
+      // understand and then convert to the directory mode here since this is
+      // not Original mode. This could probaly be done better but it helped
+      // to avoid some special casing through out.
       auto directoryMode = directory_t::Update_Mode::Add;
       switch(mode) {
         case Add:
@@ -600,25 +703,39 @@ class IDs {
       std::vector<int> ignore_int; // TODO: decide how to best handle this API
       std::vector<lid_t> ignore_lids; // TODO: how to best handle this API
 
+      // now create the directory data with update - this will proces Replace,
+      // Add, or Aggregate, depending on the directoryMode.
       zz.update(update_gids,
         bUseLocalIDs ? update_lids : ignore_lids,
         update_user, ignore_int, directoryMode);
 
-      #ifndef CONVERT_DIRECTORY_TPETRA // tpetra won't set remove_gids currently
+      // tpetra was never implemented to call remove and it will throw if
+      // that is tried, so block it here. The remove_gids is setup to be empty
+      // for Tpetra so that the validation step will still work and it can pass.
+      // TODO: Fix this special case to make performance comparions easier.
+      #ifndef CONVERT_DIRECTORY_TPETRA
       zz.remove(remove_gids);
       #endif
 
+      // Now call find which will fill find_user with the correct data.
+      // Some of the tests use lids and will also fill find_lids with lid values.
       zz.find(find_gids,
         bUseLocalIDs ? find_lids : ignore_lids,
         find_user, ignore_int, ignore_int, false);
 #endif
-      comm->barrier();
     }
 
+    // set passed true/false based on the results gotten back from the directory
+    // here we use the methods of this class to calculate what the directory is
+    // supposed to have done and then compare to see if it's correct.
     void analyze() {
       passed = evaluateTests();
     }
 
+    // prints a bunch of output depending on flag settings
+    // this was mainly used for debugging but might be useful for learning about
+    // the tests. This is setup as a hard coded value named print_output which
+    // is set in runDirectoryTests.
     void output() {
       if(print_detailed_output) {
         print();
@@ -628,13 +745,14 @@ class IDs {
       }
     }
 
-    size_t totalIds;
-    size_t idBase;
-    bool contiguous;              // Flag indicating whether IDs are contiguous
-    size_t idStride;
-    Teuchos::RCP<const Teuchos::Comm<int> > comm;
+    // data stored by the class
+    size_t totalIds;                 // total gids across all procs
+    size_t idBase;                   // first gid value
+    size_t idStride;                 // stride between gid values
+    Teuchos::RCP<const
+      Teuchos::Comm<int> > comm;     // communicator sent to directory
     size_t maxPrintSize;             // print only this number for debugging
-    int mode;
+    int mode;                        // Replace, Add, or Aggregate
     std::vector<gid_t> update_gids;  // gids generated on this proc
     std::vector<lid_t> update_lids;  // corresponding lids generated on this proc
     std::vector<user_t> update_user; // user data we initially updated with
@@ -650,6 +768,12 @@ class IDs {
     bool bUseLocalIDs;               // should local ids be tested/applied
 };
 
+// Test classes are built using one of these:
+//    Single_GID   - gid is not a struct - just simple type like long
+//    Multiple_GID - gid is a struct such as struct { int a[4]; }
+// The two classes exist to handle all the special casing when using the
+// two different types of gid.
+// see base class abstract definitions for comments on each method
 template <typename gid_t,typename lid_t, typename user_t>
 class Single_GID : public virtual IDs<gid_t,lid_t,user_t>
 {
@@ -685,11 +809,17 @@ class Single_GID : public virtual IDs<gid_t,lid_t,user_t>
       return this->idBase + index * this->idStride;
     }
 
-    virtual lid_t getExpectedlid(gid_t gid) const {
+    virtual lid_t get_initial_lid(gid_t gid) const {
       return gid + 1; // this is for testing - make the lid equal to gid+1
     }
 };
 
+// Test classes are built using one of these:
+//    Single_GID   - gid is not a struct - just simple type like long
+//    Multiple_GID - gid is a struct such as struct { int a[4]; }
+// The two classes exist to handle all the special casing when using the
+// two different types of gid.
+// see base class abstract definitions for comments on each method
 template <typename gid_t,typename lid_t, typename user_t>
 class Multiple_GID : public virtual IDs<gid_t,lid_t,user_t>
 {
@@ -763,7 +893,7 @@ class Multiple_GID : public virtual IDs<gid_t,lid_t,user_t>
       return gid;
     }
 
-    virtual lid_t getExpectedlid(gid_t gid) const {
+    virtual lid_t get_initial_lid(gid_t gid) const {
       lid_t result;
       for(size_t n = 0; n < lid_length; ++n) {
         result.sub_lid[n] = n + gid.sub_gid[0] + 1; // lid will be gid[0]+1, gid[1]+2, gid[2]+3...
@@ -776,6 +906,12 @@ class Multiple_GID : public virtual IDs<gid_t,lid_t,user_t>
     size_t lid_length;
 };
 
+// Test classes are built using one of these:
+//    Single_User   - user data is a simple type like long
+//    Vector_User - user data is a std::vector<>
+// The two classes exist to handle all the special casing when using the
+// two different types of user data.
+// see base class abstract definitions for comments on each method
 template <typename gid_t,typename lid_t, typename user_t>
 class Single_User : public virtual IDs<gid_t,lid_t,user_t>
 {
@@ -797,10 +933,10 @@ class Single_User : public virtual IDs<gid_t,lid_t,user_t>
       return NOT_FOUND_VALUE;
     }
 
-    virtual user_t getExpectedValue(gid_t gid) const {
+    virtual user_t get_expected_user(gid_t gid) const {
       switch(this->mode) {
         case TestMode::Replace:
-          return this->getInitialValue(gid, this->comm->getRank());
+          return this->get_initial_user(gid, this->comm->getRank());
           break;
         case TestMode::Add:
           return this->sharedCount(gid); // should have summed
@@ -814,7 +950,7 @@ class Single_User : public virtual IDs<gid_t,lid_t,user_t>
       }
     }
 
-    virtual user_t getInitialValue(gid_t gid, int rank) const {
+    virtual user_t get_initial_user(gid_t gid, int rank) const {
       switch(this->mode) {
         case TestMode::Replace:
           // arbitrary - just make it something good to test
@@ -865,7 +1001,7 @@ class Single_User : public virtual IDs<gid_t,lid_t,user_t>
               }
             }
             else {
-              user_t expected_value = this->getExpectedValue(gid);
+              user_t expected_value = this->get_expected_user(gid);
               if(this->find_user[i] != expected_value) {
                 passRank = false;
                 std::cout << "Failed read user data for global ID: " <<
@@ -876,7 +1012,7 @@ class Single_User : public virtual IDs<gid_t,lid_t,user_t>
 
               if(this->bUseLocalIDs) {
                 const lid_t & find_lid = this->find_lids[i];
-                lid_t expected_lid = this->getExpectedlid(gid);
+                lid_t expected_lid = this->get_initial_lid(gid);
                 if(!this->check_lid_equal(find_lid, expected_lid)) {
                   passRank = false;
                   std::cout << "Failed read lid for global ID: " <<
@@ -925,6 +1061,12 @@ class Single_User : public virtual IDs<gid_t,lid_t,user_t>
     }
 };
 
+// Test classes are built using one of these:
+//    Single_User   - user data is a simple type like long
+//    Vector_User - user data is a std::vector<>
+// The two classes exist to handle all the special casing when using the
+// two different types of user data.
+// see base class abstract definitions for comments on each method
 template <typename gid_t,typename lid_t, typename user_t>
 class Vector_User : public virtual IDs<gid_t,lid_t,user_t>
 {
@@ -946,14 +1088,14 @@ class Vector_User : public virtual IDs<gid_t,lid_t,user_t>
       return user_t(1, NOT_FOUND_VALUE);
     }
 
-    virtual user_t getExpectedValue(gid_t gid) const {
+    virtual user_t get_expected_user(gid_t gid) const {
       switch(this->mode) {
         case TestMode::Add:
           return user_t(test_create_array_length(gid, this->comm->getRank()),
             this->sharedCount(gid)); // should have summed
           break;
         case TestMode::Replace:
-          return getInitialValue(gid, this->comm->getRank());
+          return get_initial_user(gid, this->comm->getRank());
           break;
         case TestMode::Aggregate:
           {
@@ -962,7 +1104,7 @@ class Vector_User : public virtual IDs<gid_t,lid_t,user_t>
             // loop through all possible updaters
             for(int proc = 0; proc < this->comm->getSize(); ++proc) {
               if(this->proc_update_gid(gid, proc)) { // did this proc update?
-                user_t proc_input = getInitialValue(gid, proc); // get original
+                user_t proc_input = get_initial_user(gid, proc); // get original
                 for(size_t i = 0; i < proc_input.size(); ++i) { // scan elements
                   auto val = proc_input[i]; // get the array element
                   if(final_aggregated.size() == 0 ||
@@ -994,7 +1136,7 @@ class Vector_User : public virtual IDs<gid_t,lid_t,user_t>
       }
     }
 
-    virtual user_t getInitialValue(gid_t gid, int rank) const {
+    virtual user_t get_initial_user(gid_t gid, int rank) const {
       // determine length of array
       size_t modLength = test_create_array_length(gid, rank);
       user_t array(modLength);
@@ -1049,7 +1191,7 @@ class Vector_User : public virtual IDs<gid_t,lid_t,user_t>
               }
             }
             else {
-              user_t expected_value = getExpectedValue(gid);
+              user_t expected_value = get_expected_user(gid);
               // first validate the array length is correct
               if(this->find_user[i].size() != expected_value.size()) {
                 std::cout << "  Rank: " << proc << " array size is incorrect for"
@@ -1064,7 +1206,7 @@ class Vector_User : public virtual IDs<gid_t,lid_t,user_t>
               // Generall these two methdos can perhaps be merged better now
               if(this->bUseLocalIDs) {
                 const lid_t & find_lid = this->find_lids[i];
-                lid_t expected_lid = this->getExpectedlid(gid);
+                lid_t expected_lid = this->get_initial_lid(gid);
                 if(!this->check_lid_equal(find_lid, expected_lid)) {
                   passRank = false;
                   std::cout << "Failed read lid for global ID: " <<
@@ -1157,6 +1299,10 @@ class Vector_User : public virtual IDs<gid_t,lid_t,user_t>
     }
 };
 
+// These classes build the test using a combination of the following classes:
+//    Single_User  or    Vector_User
+//    Single_GID   or    Multiple_GID
+// The class just calls execute and exists to assemble the required inheritance.
 template <typename gid_t,typename lid_t, typename user_t>
 class Single_User_Single_GID :
   public Single_User<gid_t,lid_t,user_t>, public Single_GID<gid_t,lid_t,user_t>
@@ -1178,6 +1324,10 @@ class Single_User_Single_GID :
     }
 };
 
+// These classes build the test using a combination of the following classes:
+//    Single_User  or    Vector_User
+//    Single_GID   or    Multiple_GID
+// The class just calls execute and exists to assemble the required inheritance.
 template <typename gid_t,typename lid_t, typename user_t>
 class Single_User_Multiple_GID :
   public Single_User<gid_t,lid_t,user_t>, public Multiple_GID<gid_t,lid_t,user_t>
@@ -1200,6 +1350,10 @@ class Single_User_Multiple_GID :
     }
 };
 
+// These classes build the test using a combination of the following classes:
+//    Single_User  or    Vector_User
+//    Single_GID   or    Multiple_GID
+// The class just calls execute and exists to assemble the required inheritance.
 template <typename gid_t,typename lid_t, typename user_t>
 class Vector_User_Single_GID :
   public Vector_User<gid_t,lid_t,user_t>, public Single_GID<gid_t,lid_t,user_t>
@@ -1221,6 +1375,10 @@ class Vector_User_Single_GID :
     }
 };
 
+// These classes build the test using a combination of the following classes:
+//    Single_User  or    Vector_User
+//    Single_GID   or    Multiple_GID
+// The class just calls execute and exists to assemble the required inheritance.
 template <typename gid_t,typename lid_t, typename user_t>
 class Vector_User_Multiple_GID :
   public Vector_User<gid_t,lid_t,user_t>, public Multiple_GID<gid_t,lid_t,user_t>
@@ -1316,14 +1474,27 @@ class TestManager {
     bool bUseLocalIDs;
 };
 
-
+// Performance tests are turned on with test category PERFORMANCE in CMake
+// Currently all the performance tests just run a Replace operation since all
+// modes can do that. The Kokkos performance test does the same, but then runs
+// a second test using aggregation, using the same gids for update, remove, find.
+// The log outputs will give some clock times and the most important would be:
+//    all - the total test time
+//      update - time for update call
+//      remove - time for remove call
+//      find - time for find call
+//
+// Since Kokkos is running Replace and then Aggregate, the test total time
+// should not be compared, instead compare the all time for the first Replace
+// test with the other modes. Also there is significant overhead for the setup
+// and evaluation steps so time to run the entire thing is not meaningful.
 int runPerformanceTest(Teuchos::RCP<const Teuchos::Comm<int> > comm,
   bool bVectorMode, TestMode mode) {
 
   int err = 0;
 
-  // just run 10000 and 100000000 for now. Tpetra has a lot of overhead so
-  // looping that many times is too slow. This gives a good 1st performanct test.
+  // just run 100000000 for now. Tpetra has a lot of overhead so
+  // looping that many times is too slow.
   std::vector<size_t> test_totalIds = { 10000000 };
   for(auto itr_totalIds = test_totalIds.begin();
     itr_totalIds != test_totalIds.end(); ++itr_totalIds) {
@@ -1335,6 +1506,9 @@ int runPerformanceTest(Teuchos::RCP<const Teuchos::Comm<int> > comm,
     const bool print_output = false; // noisy output with values for each gid
     const bool performance_test = true;
     const bool bUseLocalIDs = false;
+
+    // build the manager which mostly just provides some API calls to generate
+    // the testing classes.
     TestManager manager(comm, totalIds, print_output,
       performance_test, bUseLocalIDs);
 
@@ -1372,24 +1546,40 @@ int runPerformanceTest(Teuchos::RCP<const Teuchos::Comm<int> > comm,
 // runDirectoryTests below, which grinds through all combinations and validates
 // results are returned correctly.
 int runPerformanceDirectoryTests(int narg, char **arg) {
+
+#ifdef CONVERT_DIRECTORY_KOKKOS
+  Kokkos::initialize(narg, arg);
+#endif
+
   Teuchos::GlobalMPISession mpiSession(&narg,&arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
 
   int err = 0;
 
+  // What the performance tests currently do:
+  //   Original:   Replace
+  //   Relic:      Replace
+  //   Tpetra:     Replace
+  //   Kokkos:     Replace   then    Aggregate     ( 2 tests )
+
   // first run a simple replace - all modes can do this
   err += runPerformanceTest(comm, false, Replace);
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
   // then we can compare with a vector Aggregate
-  err += runPerformanceTest(comm, true, Aggregate);
+  err += runPerformanceTest(comm, true, Aggregate); // the 2nd Kokkos test
 #endif
 
   // Get the global err results so we fail properly if any proc failed
   int errGlobal;
   Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM, err,
     Teuchos::outArg(errGlobal));
+
+#ifdef CONVERT_DIRECTORY_KOKKOS
+  Kokkos::finalize();
+#endif
+
   return errGlobal; // only 0 if all tests and all proc return 0
 }
 
@@ -1407,6 +1597,10 @@ int runPerformanceDirectoryTests(int narg, char **arg) {
 // lids after running find.
 int runDirectoryTests(int narg, char **arg) {
 
+#ifdef CONVERT_DIRECTORY_KOKKOS
+  Kokkos::initialize(narg, arg);
+#endif
+
   Teuchos::GlobalMPISession mpiSession(&narg,&arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
@@ -1415,6 +1609,11 @@ int runDirectoryTests(int narg, char **arg) {
   // we pick 0 and 1 and some low values for edge cases, then just
   // try to hit on some random spots
   std::vector<size_t> run_with_totalIds = {0, 1, 2, 3, 5, 27, 63, 456, 1093};
+
+  // note setting run_with_totalIds to something simpler may help to see what
+  // the logs mean if print_output is turned on. For example:
+  // run_with_totalIds = { 20 };
+
   int err = 0;
 
   const bool print_output = false; // noisy output with values for each gid
@@ -1448,6 +1647,7 @@ int runDirectoryTests(int narg, char **arg) {
           continue; // only Kokkos supports Aggregate right now
         }
   #endif
+
   #ifdef CONVERT_DIRECTORY_ORIGINAL
         if(test_mode == Add) {
           continue; // Original mode does not support Add
@@ -1499,5 +1699,12 @@ int runDirectoryTests(int narg, char **arg) {
   int errGlobal;
   Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM, err,
     Teuchos::outArg(errGlobal));
+
+#ifdef CONVERT_DIRECTORY_KOKKOS
+  Kokkos::finalize();
+#endif
+
   return errGlobal; // only 0 if all tests and all proc return 0
 }
+
+} // namespace Zoltan2
