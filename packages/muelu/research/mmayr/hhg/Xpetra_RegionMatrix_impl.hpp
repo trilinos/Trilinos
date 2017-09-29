@@ -51,7 +51,10 @@ void Xpetra::RegionMatrix<SC,LO,GO,NO,lib,splitMethod>::setupCompositeMatrix(con
   if (comm_->getRank() == 0)
     std::cout << "Starting construction of Composite Map" << std::endl;
 
-  //Create Xpetra map for composite stiffness matrix
+  std::cout << "regionManager_->getNumNodes() = " << regionManager_->getNumNodes() << std::endl;
+  std::cout << "regionManager_->getCompositeRowMap().size() = " << regionManager_->getCompositeRowMap().size() << std::endl;
+
+  // Create Xpetra map for composite stiffness matrix
   Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > xpetraMap;
   xpetraMap = Xpetra::MapFactory<LO,GO,NO>::Build(lib, regionManager_->getNumNodes(), regionManager_->getCompositeRowMap(), 0, comm_);
 
@@ -297,7 +300,9 @@ void Xpetra::RegionMatrix<SC,LO,GO,NO,lib,splitMethod>::regionCollapse(
     GO region_node_idx_neighbor2 = 0;
 
     // Horizontal-Vertical Collapse
-    if(interface_iterator != interfaceNodesToRegions.end() && region_node_idx > ny && region_node_idx <= (nx-1)*ny && !coarse_point)
+    if (interface_iterator != interfaceNodesToRegions.end()
+        and region_node_idx > ny && region_node_idx <= (nx - 1) * ny
+        and !coarse_point)
     {
       region_node_idx_neighbor1 = region_node_idx - ny;
       region_node_idx_neighbor2 = region_node_idx + ny;

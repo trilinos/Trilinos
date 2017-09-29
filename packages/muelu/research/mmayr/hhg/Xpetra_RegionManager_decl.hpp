@@ -145,6 +145,10 @@ class RegionManager
     virtual void printProcsPerRegion(Teuchos::FancyOStream& out ///< output stream
         ) const;
 
+  //! \brief Print all regions that are (at least partially) owned by a processor
+  virtual void printRegionsPerProc(Teuchos::FancyOStream& out ///< output stream
+      ) const;
+
   //@}
 
   protected:
@@ -200,6 +204,15 @@ class RegionManager
    *  We collect each node-region pair in a std::tuple. If a node resides on an
    *  interface between two regions, it is part of two tuples (one for each
    *  region it is attached to).
+   *
+   *  The tuple is organized as follows:
+   *  - first entry: global node ID
+   *  - second entry: global region ID
+   *
+   *  After reading for file, we sort this list according to the region index.
+   *
+   *  \sa sortNodesByRegions()
+   *  \sa nodesSortedByRegions_
    */
   Teuchos::Array<std::tuple<GO,GO> > nodeRegionPairs_;
 
@@ -208,6 +221,10 @@ class RegionManager
    *  Interior nodes belong only to one region, while nodes on interfaces
    *  between regions belong to multiple regions.
    *
+   *  The tuple is organized as follows:
+   *  - first entry: global node ID
+   *  - second entry: list of regions this node belongs to.
+   *
    *  \note Size of #nodesToRegions_ always matches #numNodes_.
    */
   Teuchos::Array<std::tuple<GO,Teuchos::Array<GO> > > nodesToRegions_;
@@ -215,6 +232,10 @@ class RegionManager
   /*! \brief Mapping of interface nodes to regions
    *
    *  Collect regions IDs of those regions, that an interface node belongs to.
+   *
+   *  The tuple is organized as follows:
+   *  - first entry: global node ID
+   *  - second entry: list of regions this node belongs to.
    */
   Teuchos::Array<std::tuple<GO,Teuchos::Array<GO> > > interfaceNodesToRegions_;
 
@@ -223,10 +244,19 @@ class RegionManager
   //! Ordering of node and region lists
   //@{
 
-  //! \brief Sort the list of nodes by ascending regions IDs
+  /*! \brief Sort the list of nodes by ascending regions IDs
+   *
+   *  The list of node-region pairs #nodeRegionPairs_ is sorted by acending
+   *  region IDs. After sorting, #nodesSortedByRegions_ is set to \c true.
+   */
   virtual void sortNodesByRegions();
 
-  //! Have the nodes been sorted by ascending region IDs?
+  /*! \brief Have the nodes been sorted by ascending region IDs?
+   *
+   *  This flag indicates whether the sorting has been performed.
+   *
+   *  \sa sortNodesByRegions()
+   */
   bool nodesSortedByRegions_;
 
   //@}
@@ -259,18 +289,25 @@ class RegionManager
    *
    *  Otherwise, #regionsPerProc_ is empty.
    */
-    Teuchos::Array<GO> regionsPerProc_; // ToDo (mayr.mt) Do we really need this? Implementation seems to be wrong?
+  Teuchos::Array<GO> regionsPerProc_; // ToDo (mayr.mt) Do we really need this? Implementation seems to be wrong?
+
+  Teuchos::Array<std::tuple<GO,Teuchos::Array<GO> > > regionsPerProc2_;
 
   //! Lists of processes instantiated for each region
   Teuchos::Array<std::tuple<GO,Teuchos::Array<GO> > > procsPerRegion_; // ToDo (mayr.mt) Do we really need this? Implementation seems to be wrong?
 
   //@}
 
+  //! @name Maps
+  //@{
+
   //! Create the row maps
-  virtual void setupRowMaps();
+  virtual void setupRowMaps(); // ToDo (mayr.mt) split this into subroutines
 
   //! Maps used for composite and region operators
   Teuchos::RCP<Xpetra::SplittingMapsInfo<GO> > maps_;
+
+  //@}
 
 };
 

@@ -85,7 +85,7 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::readMappingFromFile(
     std::istringstream is(line);
     GO number;
     Teuchos::Array<GO> node; // array of all nodes
-    std::tuple<GO, GO> nodeRegionPair; // a single node-region pair
+    std::tuple<GO,GO> nodeRegionPair; // a single node-region pair
     Teuchos::Array<GO> compositeInfo;
 
     node.clear();
@@ -128,7 +128,7 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::readMappingFromFile(
 template<class SC, class LO, class GO, class NO>
 void Xpetra::RegionManager<SC,LO,GO,NO>::sortNodesByRegions()
 {
-  std::sort(nodeRegionPairs_.begin(), nodeRegionPairs_.end(), compareRegions<GO>);
+  std::sort(nodeRegionPairs_.begin(), nodeRegionPairs_.end(), Xpetra::compareRegions<GO>);
   nodesSortedByRegions_ = true;
 
   return;
@@ -141,7 +141,7 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupNodeToRegionMapping()
   interfaceNodesToRegions_.clear();
   Teuchos::Array<std::tuple<GO, GO> > nodesReordered;
   nodesReordered = nodeRegionPairs_;
-  std::sort(nodesReordered.begin(), nodesReordered.end(), compareNodes<GO>);
+  std::sort(nodesReordered.begin(), nodesReordered.end(), Xpetra::compareNodes<GO>);
 
   typename Teuchos::Array<std::tuple<GO,GO> >::iterator nodeIterator;
   nodeIterator = nodesReordered.begin();
@@ -201,63 +201,93 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupProcToRegionMapping()
   int myPID = comm_->getRank();
 
   regionsPerProc_.clear();
+  regionsPerProc2_.clear();
   procsPerRegion_.clear();
 
   /* If the number of processes is smaller than the total number of regions,
-   * each process owns entire regions. The number of regions per process is
-   * calculated to guarantee load balancing. After an initial distribution of
-   * regions, leftover regions that have not been assigned to any process yet
-   * are distributed in a round-robin fashion.
+   * each process owns at least one entire regions.
+   *
+   * The number of regions per process is calculated to guarantee load balancing.
+   * After an initial distribution of regions, leftover regions that have not
+   * been assigned to any process yet are distributed in a round-robin fashion.
    */
   if (numProcs < numRegions_)
   {
+//    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not properly tested, yet.");
+
     // compute minimum number of regions per processor
-    int min_nregions_proc = std::floor(static_cast<double>(numRegions_) / static_cast<double>(numProcs));
+    int minNumRegionsPerProc = std::floor(Teuchos::as<SC>(numRegions_) / Teuchos::as<SC>(numProcs));
+    std::cout << "Proc " << comm_->getRank() << " --- minNumRegionsPerProc = " << minNumRegionsPerProc << std::endl;
 
     // compute number of 'leftover' regions
-    int num_leftover_regions = numRegions_ % numProcs;
+    int numLeftoverRegions = numRegions_ % numProcs;
+    std::cout << "Proc " << comm_->getRank() << " --- numLeftoverRegions = " << numLeftoverRegions << std::endl;
 
-    for (int i = 1; i <= min_nregions_proc; ++i)
-      regionsPerProc_.push_back(myPID * min_nregions_proc + i);
+    for (int i = 0; i < minNumRegionsPerProc; ++i)
+    {
+      std::cout << "Proc " << comm_->getRank() << " --- i = " << i << std::endl;
+      regionsPerProc_.push_back(myPID * minNumRegionsPerProc + i + 1);
+    }
 
-    if (num_leftover_regions >= myPID + 1 && num_leftover_regions != 0)
-      regionsPerProc_.push_back(min_nregions_proc * numProcs + (myPID + 1));
+    if (numLeftoverRegions >= myPID + 1 && numLeftoverRegions != 0)
+      regionsPerProc_.push_back(minNumRegionsPerProc * numProcs + (myPID + 1));
+
+    for (int i = 0; i < comm_->getSize(); ++i)
+    {
+      Teuchos::Array<GO> regions;
+      regions.clear();
+      for (int j = 0; j < minNumRegionsPerProc; ++j)
+      {
+        GO regionID =  i * minNumRegionsPerProc + j;
+        regions.push_back(regionID);
+      }
+      std::tuple<GO,Teuchos::Array<GO> > auxTuple = std::make_tuple(i, regions);
+      regionsPerProc2_.push_back(auxTuple);
+    }
 
     for (int procID = 0; procID < comm_->getSize(); ++procID)
     {
       Teuchos::Array<GO> proc;
       proc.clear();
       proc.push_back(procID);
-      for (int i = 1; i <= min_nregions_proc; ++i)
+      for (int i = 0; i < minNumRegionsPerProc; ++i)
       {
-        GO region_index = (procID) * min_nregions_proc + i;
+        GO region_index = (procID) * minNumRegionsPerProc + i;
         std::tuple<GO,Teuchos::Array<GO> > tuple_aux = std::make_tuple(region_index, proc);
         procsPerRegion_.push_back(tuple_aux);
       }
 
-      if (num_leftover_regions >= procID + 1 && num_leftover_regions != 0)
+      if (numLeftoverRegions >= procID + 1 && numLeftoverRegions != 0)
       {
-        GO region_index = min_nregions_proc * numProcs + (procID + 1);
+        GO region_index = minNumRegionsPerProc * numProcs + (procID + 1);
         std::tuple<GO,Teuchos::Array<GO> > tuple_aux = std::make_tuple(region_index, proc);
         procsPerRegion_.push_back(tuple_aux);
       }
     }
-    TEUCHOS_TEST_FOR_EXCEPTION( !( procsPerRegion_.size()==numRegions_ ), Exceptions::RuntimeError, "PID: "<<comm_->getRank()<<" - Number of regions detected does not match with the initially declared one \n procsPerRegion_ tracks "<<procsPerRegion_.size()<<" regions whereas numRegions_ = "<<numRegions_<<"\n");
+    TEUCHOS_TEST_FOR_EXCEPTION(procsPerRegion_.size() != numRegions_, Exceptions::RuntimeError, "PID: "<<comm_->getRank()<<" - Number of regions detected does not match with the initially declared one \n procsPerRegion_ tracks "<<procsPerRegion_.size()<<" regions whereas numRegions_ = "<<numRegions_<<"\n");
   }
   //This is easy: if the number of regions coincides with the total number of processes instantiated, then
   //a one-to-one relation between processes and regions is created
   else if (numProcs == numRegions_)
   {
-    regionsPerProc_.push_back(myPID+1);
+    regionsPerProc_.push_back(myPID + 1);
 
-    for (int i = 0; i < numRegions_; ++i)
+    for (GO i = 0; i < numRegions_; ++i)
     {
-      GO region_index = i + 1;
       Teuchos::Array<GO> proc;
       proc.clear();
       proc.push_back(i);
-      std::tuple<GO,Teuchos::Array<GO> > tuple_aux = std::make_tuple(region_index, proc);
+      std::tuple<GO,Teuchos::Array<GO> > tuple_aux = std::make_tuple(i, proc);
       procsPerRegion_.push_back(tuple_aux);
+    }
+
+    for (int i = 0; i < comm_->getSize(); ++i)
+    {
+      Teuchos::Array<GO> regions;
+      regions.clear();
+      regions.push_back(i);
+      std::tuple<GO,Teuchos::Array<GO> > tuple_aux = std::make_tuple(i, regions);
+      regionsPerProc2_.push_back(std::make_tuple(i, regions));
     }
   }
   //If the number of processes exceeds the number of regions in the domain,
@@ -266,24 +296,26 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupProcToRegionMapping()
   //IN THIS CONFIGURATION EACH PROCESS IS CONFINED TO A SINGLE REGION
   else if (numProcs > numRegions_)
   {
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not properly tested, yet.");
+
     int num_procs_region = std::ceil(
         static_cast<double>(numProcs) / static_cast<double>(numRegions_));
     int num_regions_extra_proc = numProcs % numRegions_;
     int proc_count = 0;
     std::tuple<int, Teuchos::Array<GO> > region_tuple;
 
-    for (int i = 1; i <= numRegions_; ++i)
+    for (int i = 0; i < numRegions_; ++i)
     {
       Teuchos::Array<GO> procs;
       procs.clear();
-      if (i <= num_regions_extra_proc || num_regions_extra_proc == 0)
-        for (int j = 1; j <= num_procs_region; ++j)
+      if (i < num_regions_extra_proc || num_regions_extra_proc == 0)
+        for (int j = 0; j < num_procs_region; ++j)
         {
           procs.push_back(proc_count);
           proc_count++;
         }
       else
-        for (int j = 1; j <= num_procs_region - 1; ++j)
+        for (int j = 0; j < num_procs_region - 1; ++j)
         {
           procs.push_back(proc_count);
           proc_count++;
@@ -294,6 +326,10 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupProcToRegionMapping()
     }
     regionsPerProc_.clear();
   }
+
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  printProcsPerRegion(*out);
+  printRegionsPerProc(*out);
 
   return;
 }
@@ -325,14 +361,93 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRowMaps()
       Exceptions::RuntimeError,
       "Number of nodes declared in input file does not match with the effective number of nodes provided\n"<<"numNodes_ ="<<numNodes_<<" whereas nodeRegionPairs_ tracks "<<nodeRegionPairs_.size()<<" nodes \n");
   TEUCHOS_TEST_FOR_EXCEPTION(
-      numRegions_ != std::get<1>(*(nodeRegionPairs_.end() - 1)),
+      numRegions_ != std::get<1>(nodeRegionPairs_.back()) + 1,
       Exceptions::RuntimeError,
-      "Number of regions declared in input file does not match with the effective number of regions provided\n");
+      "Number of regions declared in input file does not match with the effective number of regions provided.\n");
+
+  if (comm_->getSize() <= numRegions_)
+  {
+    // Loop over all processors
+    typename Teuchos::Array<std::tuple<GO,Teuchos::Array<GO> > >::const_iterator procIt;
+    for (procIt = regionsPerProc2_.begin(); procIt < regionsPerProc2_.end(); ++procIt)
+    {
+      const Teuchos::Array<GO>& myRegions = std::get<1>(*procIt);
+      Teuchos::Array<GO> regionElements;
+
+      // Loop over all regions on each processor
+      typename Teuchos::Array<GO>::const_iterator regionIt;
+      for (regionIt = myRegions.begin(); regionIt < myRegions.end(); ++regionIt)
+      {
+        regionElements.clear();
+        Xpetra::CheckerNode<GO> unaryPredicate(*regionIt);
+        typename Teuchos::Array<std::tuple<GO,GO> >::const_iterator nodeItLow;
+        typename Teuchos::Array<std::tuple<GO,GO> >::const_iterator nodeItHigh;
+
+        /* We position an iterator at the beginning of the information associated
+         * with the a region owned by the calling process and another iterator
+         * right at the end of the information
+         */
+        nodeItLow = std::find_if<typename Teuchos::Array<std::tuple<GO,GO> >::const_iterator,
+                Xpetra::CheckerNode<GO> >(nodeRegionPairs_.begin(), nodeRegionPairs_.end(), unaryPredicate);
+        nodeItHigh = std::find_if_not<typename Teuchos::Array<std::tuple<GO,GO> >::const_iterator,
+                Xpetra::CheckerNode<GO> >(nodeItLow, nodeRegionPairs_.end(), unaryPredicate);
+
+        // Count the number of mesh nodes inside a region
+        int numMyNodes = nodeItHigh - nodeItLow;
+        comm_->barrier();
+        std::cout << "Proc " << comm_->getRank() << ", procIt = " << procIt << "regionIt =  " << regionIt << " --- numMyNodes = " << numMyNodes << std::endl;
+
+        // Extract list of nodes of this region
+        GO region_node_label = 0;
+        typename Teuchos::Array<std::tuple<GO,GO> >::const_iterator nodes_iterator_aux;
+        for (nodes_iterator_aux = nodes_iterator1;
+            nodes_iterator_aux != nodes_iterator2; ++nodes_iterator_aux)
+        {
+          GO nodeID = std::get<0>(*nodes_iterator_aux);
+          Xpetra::CheckerNodesToRegion<GO> unaryPredicateNode(node);
+          typename Teuchos::Array<std::tuple<GO,Teuchos::Array<GO> > >::const_iterator nodes_to_region_iterator;
+          nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::const_iterator,
+              Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
+          Teuchos::Array<GO> nodal_regions = std::get<1>(*nodes_to_region_iterator);
+
+          //By default, I choose that a node is owned by the process associated with the region that shows up first in its list of beloning
+          //This guarantees that each row of the composite stiffness matrix is owned only by a single process, as Trilinos requires
+          if (*iter_array == nodal_regions[0])
+            elements.push_back(node);
+
+          //Nodes on the interface still belong to multiple regions, so
+          //it is important to keep track of this for the row maps of region matrices
+          regionElements.push_back(region_node_label);
+
+          //If a process owns a region (or even a portion of it), we provide to it a map
+          //from region indices to composite indices for all the nodes inside that region,
+          //even if a specific node is not owned by the calling process
+          regionToAll[*iter_array].push_back(std::make_tuple(region_node_label, std::get<0>(*nodes_iterator_aux)));
+          ++region_node_label;
+        }
+
+        elements_per_region[*regionIt] = regionElements;
+      }
+    }
+  }
+
+  comm_->barrier();
+  if (comm_->getRank())
+  {
+    std::cout << "Region\tElements" << std::endl;
+    for (int i = 0; i < elements_per_region.size(); ++i)
+    {
+      std::cout << i << "\t" << elements_per_region[i] << std::endl;
+    }
+  }
+  comm_->barrier();
+
+  exit(0);
 
   if (!(regionsPerProc_.empty()))
   {
     typename Teuchos::Array<GO>::iterator iter_array;
-    for (iter_array = regionsPerProc_.begin(); iter_array != regionsPerProc_.end(); ++iter_array)
+    for (iter_array = regionsPerProc_.begin(); iter_array < regionsPerProc_.end(); ++iter_array)
     {
       region_elements.clear();
       Xpetra::CheckerNode<GO> unaryPredicate(*iter_array);
@@ -351,8 +466,8 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRowMaps()
       // Count the number of mesh nodes inside a region
       int num_region_nodes = nodes_iterator2 - nodes_iterator1;
 
-      //The policy assumes that in the input file the indexBase for the node label is 1
-      GO region_node_label = 1;
+      //The policy assumes that in the input file the indexBase for the node label is 1 // (mayr.mt) changed this to 0
+      GO region_node_label = 0;
       typename Teuchos::Array<std::tuple<GO,GO> >::iterator nodes_iterator_aux;
       for (nodes_iterator_aux = nodes_iterator1;
           nodes_iterator_aux != nodes_iterator2; ++nodes_iterator_aux)
@@ -375,21 +490,23 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRowMaps()
         //If a process owns a region (or even a portion of it), we provide to it a map
         //from region indices to composite indices for all the nodes inside that region,
         //even if a specific node is not owned by the calling process
-        regionToAll[*iter_array - 1].push_back(std::make_tuple(region_node_label, std::get<0>(*nodes_iterator_aux)));
+        regionToAll[*iter_array].push_back(std::make_tuple(region_node_label, std::get<0>(*nodes_iterator_aux)));
         ++region_node_label;
       }
 
-      // C++ indexing starts from 0, so everything is shofted backward by one to make it consistent with programming language's policies
-      for (typename Teuchos::Array<GO>::iterator iter = region_elements.begin();
-          iter != region_elements.end(); ++iter)
-      {
-        *iter = *iter - 1;
-      }
+//      // C++ indexing starts from 0, so everything is shifted backward by one to make it consistent with programming language's policies
+//      for (typename Teuchos::Array<GO>::iterator iter = region_elements.begin();
+//          iter != region_elements.end(); ++iter)
+//      {
+//        *iter = *iter - 1;
+//      }
 
       elements_per_region[*iter_array-1] = region_elements;
-      TEUCHOS_TEST_FOR_EXCEPTION( ( num_region_nodes!=regionToAll[*iter_array-1].size() ), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of region nodes does not match with number of nodes stored in regionToAll \n"<<"num_region_nodes= "<< num_region_nodes<<" whereas regionToAll["<<*iter_array-1<<"].size()= "<<regionToAll[*iter_array-1].size()<<"\n");
+      TEUCHOS_TEST_FOR_EXCEPTION((num_region_nodes != regionToAll[*iter_array-1].size()), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - Number of region nodes does not match with number of nodes stored in regionToAll \n"<<"num_region_nodes= "<< num_region_nodes<<" whereas regionToAll["<<*iter_array-1<<"].size()= "<<regionToAll[*iter_array-1].size()<<"\n");
     }
-    TEUCHOS_TEST_FOR_EXCEPTION( ( numRegions_!=regionToAll.size() ), Exceptions::RuntimeError, "regionToAll size has been corrupted\n"<<"numRegions_ = "<<numRegions_<<" whereas regionToAll.size() = "<<regionToAll.size()<<"\n");
+
+    TEUCHOS_TEST_FOR_EXCEPTION((numRegions_ != regionToAll.size()), Exceptions::RuntimeError,
+        "regionToAll size has been corrupted\n"<<"numRegions_ = "<<numRegions_<<" whereas regionToAll.size() = "<<regionToAll.size()<<"\n");
   }
   else {
     /* The code enters the scope of these curly brackets if the number of processes exceeds the number of regions in the domain.
@@ -406,9 +523,8 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRowMaps()
     Teuchos::Array<GO> region_procs;
     while (!region_found) {
       typename Teuchos::Array<GO>::iterator iter_proc;
-      for (GO region_index = 1; region_index <= procsPerRegion_.size();
-          ++region_index) {
-        region_procs = std::get < 1 > (procsPerRegion_[region_index - 1]);
+      for (GO region_index = 0; region_index < procsPerRegion_.size(); ++region_index) {
+        region_procs = std::get<1>(procsPerRegion_[region_index]);
         iter_proc = std::find(region_procs.begin(), region_procs.end(), myPID);
         if (iter_proc != region_procs.end()) {
           myRegion = region_index;
@@ -420,17 +536,15 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRowMaps()
     TEUCHOS_TEST_FOR_EXCEPTION((myRegion == -1 || !region_found),
         Exceptions::RuntimeError,
         ("Region containing PROC ID: " + std::to_string(myPID) + " NOT FOUND \n"));
-    region_procs = std::get<1>(procsPerRegion_[myRegion-1]);
+    region_procs = std::get<1>(procsPerRegion_[myRegion]);
 
     Xpetra::CheckerNode<GO> unaryPredicate(myRegion);
     typename Teuchos::Array<std::tuple<GO,GO> >::iterator nodes_iterator1;
     typename Teuchos::Array<std::tuple<GO,GO> >::iterator nodes_iterator2;
-    nodes_iterator1 = std::find_if<
-        typename Teuchos::Array<std::tuple<GO,GO> >::iterator,Xpetra::CheckerNode<GO> >(
-        nodeRegionPairs_.begin(), nodeRegionPairs_.end(), unaryPredicate);
-    nodes_iterator2 = std::find_if_not<
-        typename Teuchos::Array<std::tuple<GO,GO> >::iterator,Xpetra::CheckerNode<GO> >(
-        nodes_iterator1, nodeRegionPairs_.end(), unaryPredicate);
+    nodes_iterator1 = std::find_if<typename Teuchos::Array<std::tuple<GO,GO> >::iterator,
+        Xpetra::CheckerNode<GO> >(nodeRegionPairs_.begin(), nodeRegionPairs_.end(), unaryPredicate);
+    nodes_iterator2 = std::find_if_not<typename Teuchos::Array<std::tuple<GO,GO> >::iterator,
+        Xpetra::CheckerNode<GO> >(nodes_iterator1, nodeRegionPairs_.end(), unaryPredicate);
 
     int num_region_nodes = nodes_iterator2 - nodes_iterator1;
     int num_region_procs = region_procs.size();
@@ -466,53 +580,55 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRowMaps()
         region_elements.push_back(region_node_label);
       }
 
-      //If a process owns a region (or even a portion of it), we provide to it a map
-      //from region indices to composite indices for all the nodes inside that region,
-      //even if a specific node is not owned by the calling process
-      //If a process owns something of a region, then the process has a global view of who owns what for that region
-      //Although this may seem more information than what actually needed, it is important for the computation of the collapsing.
-      //If the collapsing is not calculated, then this structure actually overestimates what a process needs to know.
-      for( proc_iterator=region_procs_reduced.begin(); proc_iterator!=region_procs_reduced.end(); ++proc_iterator )
+      // If a process owns a region (or even a portion of it), we provide to it a map
+      // from region indices to composite indices for all the nodes inside that region,
+      // even if a specific node is not owned by the calling process
+      // If a process owns something of a region, then the process has a global view of who owns what for that region
+      // Although this may seem more information than what actually needed, it is important for the computation of the collapsing.
+      // If the collapsing is not calculated, then this structure actually overestimates what a process needs to know.
+      for(proc_iterator = region_procs_reduced.begin(); proc_iterator!=region_procs_reduced.end(); ++proc_iterator)
       {
-        GO node = std::get<0>( *( nodes_iterator1+(proc_iterator-region_procs_reduced.begin()+1) ) );
+        GO node = std::get<0>(*(nodes_iterator1+(proc_iterator-region_procs_reduced.begin()+1)));
         GO region_node_label = proc_iterator-region_procs_reduced.begin()+1;
         Xpetra::CheckerNodesToRegion<GO> unaryPredicateNode(node);
         typename Teuchos::Array< std::tuple<GO, Teuchos::Array<GO> > >::iterator nodes_to_region_iterator;
         nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator, Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
-        regionToAll[myRegion-1].push_back( std::make_tuple(region_node_label, node) );
+        regionToAll[myRegion].push_back( std::make_tuple(region_node_label, node) );
       }
 
     }
-    else if( num_region_nodes == num_region_procs )
+    else if (num_region_nodes == num_region_procs)
     {
       typename Teuchos::Array<GO>::iterator proc_iterator;
       proc_iterator = std::find<typename Teuchos::Array<GO>::iterator, GO>(region_procs.begin(), region_procs.end(), myPID);
 
       if( proc_iterator!=region_procs.end() )//This reasoning works because the PROC ID for each region has been previously sorted in ascending order
       {
-        GO node = std::get<0>( *( nodes_iterator1+(proc_iterator-region_procs.begin()+1) ) );
+        GO node = std::get<0>(*(nodes_iterator1+(proc_iterator-region_procs.begin()+1)));
         GO region_node_label = proc_iterator-region_procs.begin()+1;
         Xpetra::CheckerNodesToRegion<GO> unaryPredicateNode(node);
         typename Teuchos::Array< std::tuple<GO, Teuchos::Array<GO> > >::iterator nodes_to_region_iterator;
-        nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator, Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
+        nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator,
+            Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
         Teuchos::Array<GO> nodal_regions =  std::get<1>(*nodes_to_region_iterator);
-        if( myRegion == nodal_regions[0] )
+        if (myRegion == nodal_regions[0])
           elements.push_back( node );
 
         region_elements.push_back(region_node_label);
       }
 
-      //If a process owns a region (or even a portion of it), we provide to it a map
-      //from region indices to composite indices for all the nodes inside that region,
-      //even if a specific node is not owned by the calling process
-      for( proc_iterator=region_procs.begin(); proc_iterator!=region_procs.end(); ++proc_iterator )
+      // If a process owns a region (or even a portion of it), we provide to it a map
+      // from region indices to composite indices for all the nodes inside that region,
+      // even if a specific node is not owned by the calling process
+      for (proc_iterator = region_procs.begin(); proc_iterator != region_procs.end(); ++proc_iterator)
       {
-        GO node = std::get<0>( *( nodes_iterator1+(proc_iterator-region_procs.begin()+1) ) );
+        GO node = std::get<0>(*(nodes_iterator1+(proc_iterator-region_procs.begin()+1)));
         GO region_node_label = proc_iterator-region_procs.begin()+1;
         Xpetra::CheckerNodesToRegion<GO> unaryPredicateNode(node);
         typename Teuchos::Array< std::tuple<GO, Teuchos::Array<GO> > >::iterator nodes_to_region_iterator;
-        nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator, Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
-        regionToAll[myRegion-1].push_back( std::make_tuple(region_node_label, node) );
+        nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator,
+            Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
+        regionToAll[myRegion].push_back(std::make_tuple(region_node_label, node));
       }
     }
     else
@@ -523,19 +639,21 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRowMaps()
       int num_nodes_proc = std::ceil( static_cast<double>(num_region_nodes)/static_cast<double>(num_region_procs) );
       int num_procs_extra_node = num_region_nodes % num_region_procs;
 
-      if( proc_iterator-region_procs.begin()+1 <= num_procs_extra_node || num_procs_extra_node == 0 )
+      if (proc_iterator - region_procs.begin() < num_procs_extra_node + 1
+          or num_procs_extra_node == 0)
       {
         int init_node = num_nodes_proc * ( proc_iterator-region_procs.begin() );
-        for( int i=0; i<num_nodes_proc; ++i )
+        for (int i = 0; i < num_nodes_proc; ++i)
         {
           GO node = std::get<0>( *( nodes_iterator1 + init_node + i ) );
           GO region_node_label = init_node + i + 1;
           Xpetra::CheckerNodesToRegion<GO> unaryPredicateNode(node);
           typename Teuchos::Array< std::tuple<GO, Teuchos::Array<GO> > >::iterator nodes_to_region_iterator;
-          nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator, Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
+          nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator,
+              Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
           Teuchos::Array<GO> nodal_regions =  std::get<1>(*nodes_to_region_iterator);
-          if( myRegion == nodal_regions[0] )
-            elements.push_back( node );
+          if (myRegion == nodal_regions[0])
+            elements.push_back(node);
 
           region_elements.push_back(region_node_label);
         }
@@ -549,21 +667,23 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRowMaps()
           GO region_node_label = init_node + i + 1;
           Xpetra::CheckerNodesToRegion<GO> unaryPredicateNode(node);
           typename Teuchos::Array< std::tuple<GO, Teuchos::Array<GO> > >::iterator nodes_to_region_iterator;
-          nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator, Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
-          Teuchos::Array<GO> nodal_regions =  std::get<1>(*nodes_to_region_iterator);
-          if( myRegion == nodal_regions[0] )
-            elements.push_back( node );
+          nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator,
+              Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
+          Teuchos::Array<GO> nodal_regions = std::get<1>(*nodes_to_region_iterator);
+          if (myRegion == nodal_regions[0])
+            elements.push_back(node);
 
           region_elements.push_back(region_node_label);
         }
       }
 
-      //If a process owns a region (or even a portion of it), we provide to it a map
-      //from region indices to composite indices for all the nodes inside that region,
-      //even if a specific node is not owned by the calling process
-      for( proc_iterator=region_procs.begin(); proc_iterator!=region_procs.end(); ++proc_iterator )
+      // If a process owns a region (or even a portion of it), we provide to it a map
+      // from region indices to composite indices for all the nodes inside that region,
+      // even if a specific node is not owned by the calling process
+      for (proc_iterator = region_procs.begin(); proc_iterator != region_procs.end(); ++proc_iterator)
       {
-        if( proc_iterator-region_procs.begin()+1 <= num_procs_extra_node || num_procs_extra_node == 0 )
+        if (proc_iterator - region_procs.begin() < num_procs_extra_node
+            or num_procs_extra_node == 0)
         {
           int init_node = num_nodes_proc * ( proc_iterator-region_procs.begin() );
           for( int i=0; i<num_nodes_proc; ++i )
@@ -573,20 +693,21 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRowMaps()
             Xpetra::CheckerNodesToRegion<GO> unaryPredicateNode(node);
             typename Teuchos::Array< std::tuple<GO, Teuchos::Array<GO> > >::iterator nodes_to_region_iterator;
             nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator, Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
-            regionToAll[myRegion-1].push_back( std::make_tuple(region_node_label, node) );
+            regionToAll[myRegion].push_back( std::make_tuple(region_node_label, node) );
           }
         }
         else
         {
           int init_node = num_nodes_proc * num_procs_extra_node + (proc_iterator - region_procs.begin() - num_procs_extra_node) * (num_nodes_proc-1);
-          for( int i=0; i<num_nodes_proc-1; ++i )
+          for (int i = 0; i < num_nodes_proc - 1; ++i)
           {
-            GO node = std::get<0>( *( nodes_iterator1 + init_node + i ) );
+            GO node = std::get<0>(*(nodes_iterator1 + init_node + i));
             GO region_node_label = init_node + i + 1;
             Xpetra::CheckerNodesToRegion<GO> unaryPredicateNode(node);
             typename Teuchos::Array< std::tuple<GO, Teuchos::Array<GO> > >::iterator nodes_to_region_iterator;
-            nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator, Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
-            regionToAll[myRegion-1].push_back( std::make_tuple(region_node_label, node) );
+            nodes_to_region_iterator = std::find_if<typename Teuchos::Array< std::tuple< GO,Teuchos::Array<GO> > >::iterator,
+                Xpetra::CheckerNodesToRegion<GO> >(nodesToRegions_.begin(), nodesToRegions_.end(), unaryPredicateNode);
+            regionToAll[myRegion].push_back(std::make_tuple(region_node_label, node));
           }
         }
       }
@@ -594,16 +715,16 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRowMaps()
     }
     TEUCHOS_TEST_FOR_EXCEPTION( ( numRegions_!=regionToAll.size() ), Exceptions::RuntimeError, "Process ID: "<<comm_->getRank()<<" - regionToAll size has been corrupted\n"<<"numRegions_ = "<<numRegions_<<" whereas regionToAll.size()= "<<regionToAll.size()<<"\n");
 
-    //C++ indexing starts from 0, so everything is shifted backward by one to make it consistent with programming language's policies
-    for( typename Teuchos::Array<GO>::iterator iter = region_elements.begin(); iter!=region_elements.end(); ++iter )
-      *iter = *iter - 1;
+//    //C++ indexing starts from 0, so everything is shifted backward by one to make it consistent with programming language's policies
+//    for( typename Teuchos::Array<GO>::iterator iter = region_elements.begin(); iter!=region_elements.end(); ++iter )
+//      *iter = *iter - 1;
 
-    elements_per_region[myRegion-1] = region_elements;
+    elements_per_region[myRegion] = region_elements;
   }
 
-  //C++ indexing starts from 0, so everything is shifted backward by one to make it consistent with programming language's policies
-  for( typename Teuchos::Array<GO>::iterator iter = elements.begin(); iter!=elements.end(); ++iter )
-    *iter = *iter - 1;
+//  //C++ indexing starts from 0, so everything is shifted backward by one to make it consistent with programming language's policies
+//  for( typename Teuchos::Array<GO>::iterator iter = elements.begin(); iter!=elements.end(); ++iter )
+//    *iter = *iter - 1;
 
   // Finally, create and fill the maps_ object
   maps_ = Teuchos::rcp(new Xpetra::SplittingMapsInfo<GO>());
@@ -713,6 +834,7 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::printInterfaceNodesToRegionMapping(
           << std::endl;
     }
   }
+  comm_->barrier();
 
   return;
 }
@@ -728,6 +850,8 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::printInactiveProcs(
 
   if (maps_->compositeMap_.empty())
     out << "INACTIVE PROC ID: " << comm_->getRank() << std::endl;
+
+  comm_->barrier();
 
   return;
 }
@@ -747,6 +871,8 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::printProcsPerRegion(
         << "Number of rows in procsPerRegion_ structure: " << procsPerRegion_.size()
         << std::endl;
 
+    out << std::endl << "Region\tProcs" << std::endl;
+
     for (GO i = 0; i < procsPerRegion_.size(); ++i)
     {
       out << std::get<0>(procsPerRegion_[i])
@@ -754,6 +880,58 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::printProcsPerRegion(
           << std::endl;
     }
   }
+  comm_->barrier();
+
+  return;
+}
+
+template<class SC, class LO, class GO, class NO>
+void Xpetra::RegionManager<SC,LO,GO,NO>::printRegionsPerProc(
+    Teuchos::FancyOStream& out) const
+{
+  comm_->barrier();
+  if (comm_->getRank() == 0)
+  {
+    out << std::endl << "*** RegionsPerProc:" << std::endl
+        <<              "    ---------------" << std::endl;
+
+    out << "Total number of procs: " << comm_->getSize() << std::endl
+        << "Total number of mesh regions: " << numRegions_ << std::endl
+        << "Number of rows in regionsPerProc_ structure: " << regionsPerProc_.size()
+        << std::endl;
+
+    out << std::endl << "Proc\tRegions" << std::endl;
+
+    for (GO i = 0; i < regionsPerProc_.size(); ++i)
+    {
+      out << i
+          << "\t" << regionsPerProc_[i]
+          << std::endl;
+    }
+  }
+  comm_->barrier();
+
+  comm_->barrier();
+  if (comm_->getRank() == 0)
+  {
+    out << std::endl << "*** RegionsPerProc:" << std::endl
+        <<              "    ---------------" << std::endl;
+
+    out << "Total number of procs: " << comm_->getSize() << std::endl
+        << "Total number of mesh regions: " << numRegions_ << std::endl
+        << "Number of rows in regionsPerProc2_ structure: " << regionsPerProc2_.size()
+        << std::endl;
+
+    out << std::endl << "Proc\tRegions" << std::endl;
+
+    for (GO i = 0; i < regionsPerProc2_.size(); ++i)
+    {
+      out << std::get<0>(regionsPerProc2_[i])
+          << "\t" << std::get<1>(regionsPerProc2_[i])
+          << std::endl;
+    }
+  }
+  comm_->barrier();
 
   return;
 }
@@ -791,6 +969,7 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::printNumRegionsPerProc(
       }
     }
   }
+  comm_->barrier();
 
   return;
 }

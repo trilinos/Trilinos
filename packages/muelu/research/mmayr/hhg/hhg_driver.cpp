@@ -78,7 +78,8 @@ int main(int argc, char* argv[])
 //  }
 //  comm->barrier();
 
-  MueLu::Utilities<SC,LO,GO,NO>::PauseForDebugger();
+  if (comm->getSize() > 1)
+    MueLu::Utilities<SC,LO,GO,NO>::PauseForDebugger();
 
 
   // wrap the output stream
@@ -93,9 +94,9 @@ int main(int argc, char* argv[])
 
   // create the RegionManager to deal with node-to-region mappings
   Teuchos::RCP<RegionManager> regionManager = Teuchos::rcp(new RegionManager(mappingFileName, comm));
+  regionManager->printNodeRegionPairs(*out);
   regionManager->printNodesToRegionMapping(*out);
   regionManager->printInterfaceNodesToRegionMapping(*out);
-  regionManager->printNodeRegionPairs(*out);
   regionManager->printInactiveProcs(*out);
 //  regionManager->printNumRegionsPerProc(*out);
 //  regionManager->printProcsPerRegion(*out);
