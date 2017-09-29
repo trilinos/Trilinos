@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HDIV_TRI_In_FEM_Def.hpp
-    \brief  Definition file for FEM basis functions of degree n for H(grad) functions on TRI.
+/** \file   Intrepid2_HDIV_TRI_In_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree n for H(div) functions on TRI cells.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
     Kokkorized by Kyungjoo Kim
 */

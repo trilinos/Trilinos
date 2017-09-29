@@ -41,17 +41,19 @@
 // @HEADER
 
 
-/** \file   Intrepid_OrientationToolsDef.hpp
-    \brief  Creation of orientation matrix A of a face or edge for HGRAD elements
-    \li     \sum_k A_ik \psi_k(F_s (\eta_o (\xi_j))) \cdot (J_F J_\eta t_j) = \phi_i (\xi_j) \dot t_j where
-    \li     \psi_k are the basis functions of the reference cell,
-    \li     \phi_i are the basis function of the subcell,
-    \li     t_j is the tangent on the reference subcell associated to dof j
-    \li     F_s is the Jacobian of the map from the reference subcell to the subcell s of the reference cell (s == subcellId),
-    \li     J_F is the Jacobian of the map F_s,
-    \li     \eta_o is the orientation map o associated to the subcell s (o == subcellOrt),
-    \li     J_{\eta} is the Jacobian of the map \eta,
-    \li     \xi_j are dof points of the subcell basis so that \phi_i (\xi_j) \dot t_j = \delta_ij
+/** \file   Intrepid2_OrientationToolsDefCoeffMatrix_HCURL.hpp
+    \brief  Creation of orientation matrix A of a face or edge for HCURL elements
+
+    \li     \f$\sum_k A_ik \psi_k(F_s (\eta_o (\xi_j))) \cdot (J_F J_\eta t_j) = \phi_i (\xi_j) \dot t_j\f$ where
+    \li     \f$\psi_k\f$ are the basis functions of the reference cell,
+    \li     \f$\phi_i\f$ are the basis function of the subcell,
+    \li     \f$t_j\f$ is the tangent on the reference subcell associated to dof j
+    \li     \f$F_s\f$ is the Jacobian of the map from the reference subcell to the subcell s of the reference cell (s == subcellId),
+    \li     \f$J_F\f$ is the Jacobian of the map \f$F_s\f$,
+    \li     \f$\eta_o\f$ is the orientation map o associated to the subcell s (o == subcellOrt),
+    \li     \f$J_{\eta}\f$ is the Jacobian of the map \eta,
+    \li     \f$\xi_j\f$ are dof points of the subcell basis so that \f$\phi_i (\xi_j) \dot t_j = \delta_ij\f$
+
     \author Created by Kyungjoo Kim
 */
 #ifndef __INTREPID2_ORIENTATIONTOOLS_DEF_COEFF_MATRIX_HCURL_HPP__
@@ -86,9 +88,9 @@ namespace Intrepid2 {
 
       typedef Kokkos::DynRankView<value_type,host_space_type> DynRankViewHostType;
 
-      ///
-      /// Topology
-      ///
+      //
+      // Topology
+      //
       // populate points on a subcell and map to subcell
       const shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
       const shards::CellTopology subcellTopo = subcellBasis.getBaseCellTopology();
@@ -119,9 +121,9 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HCURL): " \
                                     "cellBasis must have quad, triangle, hexhedron or tetrahedron topology.");
 
-      ///
-      /// Function space
-      ///      
+      //
+      // Function space
+      //      
       {
         const std::string cellBasisName(cellBasis.getName());
         if (cellBasisName.find("HCURL") != std::string::npos) {
@@ -188,9 +190,9 @@ namespace Intrepid2 {
                                                         subcellId,
                                                         cellTopo);
 
-      ///
-      /// Basis evaluation on the reference points
-      ///
+      //
+      // Basis evaluation on the reference points
+      //
 
       // evaluate values on the reference cell
       DynRankViewHostType refValues("refValues", numCellBasis, ndofSubcell, cellDim);
@@ -201,9 +203,9 @@ namespace Intrepid2 {
       DynRankViewHostType ortJacobian("ortJacobian", subcellDim, subcellDim);
       Impl::OrientationTools::getJacobianOfOrientationMap(ortJacobian, subcellTopo, subcellOrt);
 
-      ///
-      /// Compute jacobianF
-      ///
+      //
+      // Compute jacobianF
+      //
 
       DynRankViewHostType jacobianF("jacobianF", cellDim, subcellDim );
       switch (subcellBaseKey) {
@@ -248,9 +250,9 @@ namespace Intrepid2 {
         }
       }
       
-      ///
-      /// Construct collocation matrix and solve problems
-      ///
+      //
+      // Construct collocation matrix and solve problems
+      //
 
       // solve the system using Lapack
       {

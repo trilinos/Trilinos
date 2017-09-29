@@ -89,7 +89,7 @@ ordered by listing its vertices <strong>first</strong>, i.e.,
 \f[ 
   \{{\bf q}_0,\ldots,{\bf q}_N\} = \{ {\bf v}_0,\ldots {\bf v}_V,{\bf p}_0,\ldots {\bf p}_P\} 
   \f]
-To manage cell topologies Intrepid uses the Shards package http://trilinos.sandia.gov/packages/shards .
+To manage cell topologies Intrepid uses the Shards package http://trilinos.org/packages/shards .
 Shards provides definitions for a standard set of base and extended cell topologies plus tools to
 construct custom, user defined cell topologies, such as arbitrary polyhedral cells. For further
 details see Shards documentation. 

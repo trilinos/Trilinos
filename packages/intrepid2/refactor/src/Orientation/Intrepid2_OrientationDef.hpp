@@ -41,7 +41,7 @@
 // @HEADER
 
 
-/** \file   Intrepid_OrientationDef.hpp
+/** \file   Intrepid2_OrientationDef.hpp
     \brief  Definition file for the Intrepid2::Orientation class.
     \author Created by Kyungjoo Kim
 */

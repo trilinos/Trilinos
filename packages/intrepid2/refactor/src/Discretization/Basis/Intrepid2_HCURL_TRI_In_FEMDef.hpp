@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HCURL_TRI_In_FEM_Def.hpp
-    \brief  Definition file for FEM basis functions of degree n for H(grad) functions on TRI.
+/** \file   Intrepid2_HCURL_TRI_In_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree n for H(curl) functions on TRI.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -66,9 +66,9 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HCURL_TRI_In_FEM::Serial<opType>::
-    getValues( /* */ outputViewType output,
+    getValues(       outputViewType output,
                const inputViewType  input,
-               /* */ workViewType   work,
+                     workViewType   work,
                const vinvViewType   coeffs ) {
 
       constexpr ordinal_type spaceDim = 2;
@@ -132,7 +132,7 @@ namespace Intrepid2 {
              typename vinvValueType,        class ...vinvProperties>
     void
     Basis_HCURL_TRI_In_FEM::
-    getValues( /* */ Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
+    getValues(       Kokkos::DynRankView<outputValueValueType,outputValueProperties...> outputValues,
                const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        coeffs,
                const EOperator operatorType) {

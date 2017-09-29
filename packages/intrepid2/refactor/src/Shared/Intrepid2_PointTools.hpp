@@ -40,9 +40,9 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_PointTools.hpp
-    \brief  Header file for utility class to provide point tools,
-            such as barycentric coordinates, equispaced lattices, and
+/** \file   Intrepid2_PointTools.hpp
+    \brief  Header file for Intrepid2::PointTools class to provide utilities for
+            barycentric coordinates, equispaced lattices, and
             warp-blend point distrubtions.
     \author Created by R. Kirby
  */
@@ -230,16 +230,16 @@ public:
         D - is the spatial dimension
         \endcode
 
-        \param  pts         [out] - Output array of point coords
+        \param  points      [out] - Output array of point coords
         \param  cellType    [in]  - type of reference cell (currently only supports the simplex)
         \param  order       [in]  - number of points per side, plus 1
+        \param  offset      [in]  - Number of points on boundary to skip
         \param  pointType   [in]  - flag for point distribution.  Currently equispaced and
         warp/blend points are supported
-        \param  offset      [in]  - Number of points on boundary to skip
    */
   template<typename pointValueType, class ...pointProperties>
   static void
-  getLattice( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+  getLattice(     Kokkos::DynRankView<pointValueType,pointProperties...> points,
       const shards::CellTopology cellType,
       const ordinal_type order,
       const ordinal_type offset = 0 ,
@@ -247,11 +247,11 @@ public:
 
   /** Retrieves the Gauss-Legendre points from PolyLib, but lets us
 	do it in an arbitrary ArrayType.
-	\param  pts         [out] - Output array of point coords (P,)
+	\param  points      [out] - Output array of point coords (P,)
 	\param  order       [out] - number of Gauss points - 1
    */
   template<typename pointValueType, class ...pointProperties>
-  static void getGaussPoints( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+  static void getGaussPoints(      Kokkos::DynRankView<pointValueType,pointProperties...> points,
       const ordinal_type order );
 
 private:
@@ -265,14 +265,14 @@ private:
         \endcode
 
         \param  points      [out] - Output array of point coords
+        \param  cellType    [in]  - type of reference cell (currently only supports the simplex)
         \param  order       [in]  - number of points per side, plus 1
         \param  offset      [in]  - Number of points on boundary to skip
-        \param  cellType    [in]  - type of reference cell (currently only supports the simplex)
 
    */
   template<typename pointValueType, class ...pointProperties>
   static void
-  getEquispacedLattice( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+  getEquispacedLattice(      Kokkos::DynRankView<pointValueType,pointProperties...> points,
       const shards::CellTopology cellType,
       const ordinal_type order,
       const ordinal_type offset = 0 );
@@ -287,14 +287,14 @@ private:
         \endcode
 
         \param  points      [out] - Output array of point coords
+        \param  cellType    [in]  - type of reference cell (currently only supports the simplex)
         \param  order       [in]  - number of points per side, plus 1
         \param  offset      [in]  - Number of points on boundary to skip
-        \param  cellType    [in]  - type of reference cell (currently only supports the simplex)
 
    */
   template<typename pointValueType, class ...pointProperties>
   static void
-  getWarpBlendLattice( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+  getWarpBlendLattice(     Kokkos::DynRankView<pointValueType,pointProperties...> points,
       const shards::CellTopology cellType,
       const ordinal_type order,
       const ordinal_type offset = 0 );
@@ -316,7 +316,7 @@ private:
    */
   template<typename pointValueType, class ...pointProperties>
   static void
-  getEquispacedLatticeLine( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+  getEquispacedLatticeLine(     Kokkos::DynRankView<pointValueType,pointProperties...> points,
       const ordinal_type order,
       const ordinal_type offset = 0 );
 
@@ -337,12 +337,12 @@ private:
    */
   template<typename pointValueType, class ...pointProperties>
   static void
-  getWarpBlendLatticeLine( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+  getWarpBlendLatticeLine(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
       const ordinal_type order ,
       const ordinal_type offset = 0 );
 
 
-  // /** \brief Converts Cartesian coordinates to barycentric coordinates
+  // /* \brief Converts Cartesian coordinates to barycentric coordinates
   //     on a batch of triangles.
   //     The input array cartValues is (C,P,2)
   //     The output array baryValues is (C,P,3).
@@ -363,7 +363,7 @@ private:
   //                                 const ArrayTypeIn2 & vertices );
 
 
-  // /** \brief Converts barycentric coordinates to Cartesian coordinates
+  // /* \brief Converts barycentric coordinates to Cartesian coordinates
   //     on a batch of triangles.
   //     The input array baryValues is (C,P,3)
   //     The output array cartValues is (C,P,2).
@@ -385,7 +385,7 @@ private:
   //                                 const ArrayTypeIn2 & vertices );
 
 
-  // /** \brief Converts Cartesian coordinates to barycentric coordinates
+  // /* \brief Converts Cartesian coordinates to barycentric coordinates
   //     on a batch of tetrahedra.
   //     The input array cartValues is (C,P,3)
   //     The output array baryValues is (C,P,4).
@@ -406,7 +406,7 @@ private:
   //                                    const ArrayTypeIn1 & cartValues ,
   //                                    const ArrayTypeIn2 & vertices );
 
-  // /** \brief Converts barycentric coordinates to Cartesian coordinates
+  // /* \brief Converts barycentric coordinates to Cartesian coordinates
   //     on a batch of tetrahedra.
   //     The input array baryValues is (C,P,4)
   //     The output array cartValues is (C,P,3).
@@ -434,7 +434,7 @@ private:
        order on the reference triangle.  The output array is
        (P,2), where
        \code
-       P - number of points, which is
+       P - number of points
        \endcode
 
        \param  points      [out] - Output Kokkos::DynRankView of point coords
@@ -454,7 +454,7 @@ private:
        order on the reference tetrahedron.  The output array is
        (P,3), where
        \code
-       P - number of points, which is
+       P - number of points
        \endcode
 
        \param  points      [out] - Output Kokkos::DynRankView of point coords

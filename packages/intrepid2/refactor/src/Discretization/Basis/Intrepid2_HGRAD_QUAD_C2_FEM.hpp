@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_G_QUAD_C2_FEM.hpp
-    \brief  Header file for the Intrepid2::G_QUAD_C2_FEM class.
+/** \file   Intrepid2_HGRAD_QUAD_C2_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HGRAD_QUAD_C2_FEM class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
  */
@@ -92,9 +92,15 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HGRAD_QUAD_C2_FEM
+    */
     class Basis_HGRAD_QUAD_C2_FEM {
     public:
       typedef struct Quadrilateral<9> cell_topology_type;
+      /**
+        \brief See Intrepid2::Basis_HGRAD_QUAD_C2_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputViewType,
@@ -114,6 +120,9 @@ namespace Intrepid2 {
                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                  const EOperator operatorType);
 
+      /**
+        \brief See Intrepid2::Basis_HGRAD_QUAD_C2_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                EOperator opType>

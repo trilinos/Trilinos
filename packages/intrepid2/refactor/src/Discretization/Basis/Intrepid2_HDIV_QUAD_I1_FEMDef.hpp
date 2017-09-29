@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HDIV_QUAD_I1_FEMDef.hpp
-    \brief  Definition file for FEM basis functions of degree 1 for H(div) functions on HEX cells.
+/** \file   Intrepid2_HDIV_QUAD_I1_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree 1 for H(div) functions on QUAD cells.
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
             Kokkorized by Kyungjoo Kim
 */

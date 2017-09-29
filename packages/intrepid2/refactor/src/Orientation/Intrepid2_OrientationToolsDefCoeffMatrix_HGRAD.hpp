@@ -41,14 +41,15 @@
 // @HEADER
 
 
-/** \file   Intrepid2_OrientationToolsDef.hpp
+/** \file   Intrepid2_OrientationToolsDefCoeffMatrix_HGRAD.hpp
     \brief  Creation of orientation matrix A of a face or edge for HGRAD elements
-    \li     \sum_k A_ik \psi_k(F_s (\eta_o (\xi_j))) = \phi_i (\xi_j) where
-    \li     \psi_k are the basis functions of the reference cell ,
-    \li     \phi_i are the basis function of the subcell
-    \li     F_s is the map from the reference subcell to the subcell s of the reference cell (s == subcellId)
-    \li     \eta_o is the orientation map o associated to the subcell s (o == subcellOrt)
-    \li     \xi_j are points in the reference subcell. We take them to be the dof points of the subcell basis so that \phi_i (\xi_j) = \delta_ij
+    \li     \f$\sum_k A_ik \psi_k(F_s (\eta_o (\xi_j))) = \phi_i (\xi_j) \f$ where
+    \li     \f$\psi_k\f$ are the basis functions of the reference cell ,
+    \li     \f$\phi_i\f$ are the basis function of the subcell
+    \li     \f$F_s\f$ is the map from the reference subcell to the subcell s of the reference cell (s == subcellId)
+    \li     \f$\eta_o\f$ is the orientation map o associated to the subcell s (o == subcellOrt)
+    \li     \f$\xi_j\f$ are points in the reference subcell. We take them to be the dof points of the subcell basis so that \f$\phi_i (\xi_j) = \delta_ij\f$
+
     \author Created by Kyungjoo Kim
 */
 #ifndef __INTREPID2_ORIENTATIONTOOLS_DEF_COEFF_MATRIX_HGRAD_HPP__
@@ -84,9 +85,9 @@ namespace Intrepid2 {
       typedef Kokkos::DynRankView<value_type,host_space_type> DynRankViewHostType;
 
 
-      ///
-      /// Topology
-      ///
+      //
+      // Topology
+      //
 
       // populate points on a subcell and map to subcell
       const shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
@@ -110,9 +111,9 @@ namespace Intrepid2 {
                                     "subcellBasis must have line, quad, or triangle topology.");
 
 
-      ///
-      /// Function space
-      ///
+      //
+      // Function space
+      //
       
       {
         const std::string cellBasisName(cellBasis.getName());
@@ -131,9 +132,9 @@ namespace Intrepid2 {
       }
 
 
-      ///
-      /// Collocation points
-      ///
+      //
+      // Collocation points
+      //
 
       const ordinal_type numCellBasis = cellBasis.getCardinality();
       const ordinal_type numSubcellBasis = subcellBasis.getCardinality();
@@ -169,17 +170,17 @@ namespace Intrepid2 {
                                                         subcellId,
                                                         cellTopo);
 
-      ///
-      /// Basis evaluation on the collocation points
-      ///
+      //
+      // Basis evaluation on the collocation points
+      //
 
       DynRankViewHostType refValues("refValues", numCellBasis, ndofSubcell);
       cellBasis.getValues(refValues, refPtsCell, OPERATOR_VALUE);
       
 
-      ///
-      /// Construct collocation matrix and solve problems
-      ///
+      //
+      // Construct collocation matrix and solve problems
+      //
 
       // construct collocation matrix; using lapack, it should be left layout
       Kokkos::View<value_type**,Kokkos::LayoutLeft,host_space_type>
@@ -216,7 +217,7 @@ namespace Intrepid2 {
           INTREPID2_TEST_FOR_EXCEPTION( true, std::runtime_error, ss.str().c_str() );
         }
 
-        // //Transpose matrix and clean up numerical noise
+        //Transpose matrix and clean up numerical noise
         {
           const double eps = threshold();
           for (ordinal_type i=0;i<ndofSubcell;++i)

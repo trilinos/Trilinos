@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_RealSpaceTools.hpp
-    \brief  Header file for classes providing basic linear algebra functionality in 1D, 2D and 3D.
+/** \file   Intrepid2_RealSpaceTools.hpp
+    \brief  Header file for Intrepid2::RealSpaceTools class providing basic linear algebra functionality in 1D, 2D and 3D.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -64,15 +64,15 @@ namespace Intrepid2 {
       Note:
       - Compiled on devices (KOKKOS_INLINE_FUNCTION)
       - Callable on devices and Kokkos functor (no temporary allocation)
-      - parallel_for inside of intrepid functions is dictated by the provided execution space
+      - parallel_for inside of Intrepid functions is dictated by the provided execution space
       - With Kokkos::Serial, functions (that already contain parallel_for) can be nested in
         Kokkos functors
       - When a function is decorated with KOKKOS_INLINE_FUNCTION, remove
-        Teuchos testings and std::vectors
-      - For norm and det computations, it choose the value_type from the first input container.
-      - As the name says, the class assume that input containers has "real type" and no complex type.
+        Teuchos testing and std::vectors
+      - For norm and det computations, the value_type is chosen from the first input container.
+      - As the name says, the class assumes that input containers are "real type" and not complex type.
       - Functions that are designed for small problems are not parallelized e.g., dot, norm and det.
-        These functions has non-void return types and expected to be used for small problems.
+        These functions have non-void return types and expect to be used for small problems.
         However, high level (working on cell-level) functions are parallelized.
   */
   template<typename ExecSpaceType = void>
@@ -128,16 +128,32 @@ namespace Intrepid2 {
       
     };
 
+    /** \brief Extract scalar type values from Sacado-based array
+
+        \param output   [out]  - output array
+        \param input     [in]  - input array
+
+    */
     template<typename outputValueType, class ...outputProperties,
              typename inputValueType,  class ...inputProperties>
     static void
-    extractScalarValues( /**/  Kokkos::DynRankView<outputValueType,outputProperties...>  output,
+    extractScalarValues(       Kokkos::DynRankView<outputValueType,outputProperties...>  output,
                          const Kokkos::DynRankView<inputValueType, inputProperties...>   input );
       
+    /** \brief Clone input array.
+
+        \param output   [out]  - output array
+        \param input     [in]  - input array
+
+        \note  Requirements (checked at runtime, in debug mode): \n
+        \li rank(<b><var>input</var></b>) <= 3
+        \li rank(<b><var>output</var></b>) >= rank(<b><var>input</var></b>)
+        \li rank(<b><var>output</var></b>) - rank(<b><var>input</var></b>) <= 3
+    */
     template<typename outputValueType, class ...outputProperties,
              typename inputValueType,  class ...inputProperties>
     static void
-    clone( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+    clone(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
            const Kokkos::DynRankView<inputValueType,inputProperties...>   input );
 
     /** \brief Computes absolute value of an array.
@@ -152,13 +168,13 @@ namespace Intrepid2 {
     template<typename absArrayValueType, class ...absArrayProperties, 
              typename inArrayValueType,  class ...inArrayProperties>
     static void 
-    absval( /**/  Kokkos::DynRankView<absArrayValueType,absArrayProperties...> absArray, 
+    absval(       Kokkos::DynRankView<absArrayValueType,absArrayProperties...> absArray, 
             const Kokkos::DynRankView<inArrayValueType, inArrayProperties...>   inArray );
 
 
     /** \brief Computes, in place, absolute value of an array.
 
-        \param inoutAbsArray  [in/out]  - input/output array
+        \param inoutArray  [in/out]  - input/output array
     */
     template<typename inoutArrayValueType, class ...inoutArrayProperties>
     static void 
@@ -181,7 +197,7 @@ namespace Intrepid2 {
     template<typename normArrayValueType, class ...normArrayProperties,
              typename inVecValueType,     class ...inVecProperties> 
     static void 
-    vectorNorm( /**/  Kokkos::DynRankView<normArrayValueType,normArrayProperties...> normArray, 
+    vectorNorm(       Kokkos::DynRankView<normArrayValueType,normArrayProperties...> normArray, 
                 const Kokkos::DynRankView<inVecValueType,    inVecProperties...>     inVecs, 
                 const ENorm normType );
     
@@ -202,7 +218,7 @@ namespace Intrepid2 {
     template<typename transposeMatValueType, class ...transposeMatProperties,
              typename inMatValueType,        class ...inMatProperties> 
     static void 
-    transpose( /**/  Kokkos::DynRankView<transposeMatValueType,transposeMatProperties...> transposeMats, 
+    transpose(       Kokkos::DynRankView<transposeMatValueType,transposeMatProperties...> transposeMats, 
                const Kokkos::DynRankView<inMatValueType,       inMatProperties...>        inMats );
     
     /** \brief Computes inverses of nonsingular matrices stored in
@@ -223,7 +239,7 @@ namespace Intrepid2 {
     template<typename inverseMatValueType, class ...inverseMatProperties, 
              typename inMatValueType,      class ...inMatProperties>
     static void 
-    inverse( /**/  Kokkos::DynRankView<inverseMatValueType,inverseMatProperties...> inverseMats, 
+    inverse(       Kokkos::DynRankView<inverseMatValueType,inverseMatProperties...> inverseMats, 
              const Kokkos::DynRankView<inMatValueType,     inMatProperties...>      inMats );
     
 
@@ -244,7 +260,7 @@ namespace Intrepid2 {
     template<typename detArrayValueType, class ...detArrayProperties,
              typename inMatValueType,    class ...inMatProperties>
     static void 
-    det( /**/  Kokkos::DynRankView<detArrayValueType,detArrayProperties...> detArray, 
+    det(       Kokkos::DynRankView<detArrayValueType,detArrayProperties...> detArray, 
          const Kokkos::DynRankView<inMatValueType,   inMatProperties...>    inMats );
     
     /** \brief Adds arrays <b><var>inArray1</var></b> and <b><var>inArray2</var></b>:\n
@@ -262,7 +278,7 @@ namespace Intrepid2 {
              typename inArray1ValueType, class ...inArray1Properties,
              typename inArray2ValueType, class ...inArray2Properties>
     static void
-    add( /**/  Kokkos::DynRankView<sumArrayValueType,sumArrayProperties...> sumArray, 
+    add(       Kokkos::DynRankView<sumArrayValueType,sumArrayProperties...> sumArray, 
          const Kokkos::DynRankView<inArray1ValueType,inArray1Properties...> inArray1, 
          const Kokkos::DynRankView<inArray2ValueType,inArray2Properties...> inArray2 );
 
@@ -279,7 +295,7 @@ namespace Intrepid2 {
     template<typename inoutSumArrayValueType, class ...inoutSumArrayProperties,
              typename inArrayValueType,       class ...inArrayProperties>
     static void
-    add( /**/  Kokkos::DynRankView<inoutSumArrayValueType,inoutSumArrayProperties...> inoutSumArray, 
+    add(       Kokkos::DynRankView<inoutSumArrayValueType,inoutSumArrayProperties...> inoutSumArray, 
          const Kokkos::DynRankView<inArrayValueType,      inArrayProperties...>       inArray );
 
     /** \brief Subtracts <b><var>inArray2</var></b> from <b><var>inArray1</var></b>:\n
@@ -297,14 +313,14 @@ namespace Intrepid2 {
              typename inArray1ValueType,  class ...inArray1Properties,
              typename inArray2ValueType,  class ...inArray2Properties>
     static void
-    subtract( /**/  Kokkos::DynRankView<diffArrayValueType,diffArrayProperties...> diffArray, 
+    subtract(       Kokkos::DynRankView<diffArrayValueType,diffArrayProperties...> diffArray, 
               const Kokkos::DynRankView<inArray1ValueType, inArray1Properties...>  inArray1, 
               const Kokkos::DynRankView<inArray2ValueType, inArray2Properties...>  inArray2 );
 
-    /** \brief Subtracts, in place, <b><var>inArray</var></b> from <b><var>inoutDiffArray</var></b>:\n
-        <b><var>inoutDiffArray</var></b> = <b><var>inoutDiffArray</var></b> - <b><var>inArray</var></b>.
+    /** \brief Subtracts, in place, <b><var>inArray</var></b> from <b><var>diffArray</var></b>:\n
+        <b><var>diffArray</var></b> = <b><var>diffArray</var></b> - <b><var>inArray</var></b>.
 
-        \param inoutDiffArray  [in/out]  - difference/minuend
+        \param diffArray  [in/out]  - difference/minuend
         \param inArray             [in]  - subtrahend
 
         \note  Requirements (checked at runtime, in debug mode): \n
@@ -314,7 +330,7 @@ namespace Intrepid2 {
     template<typename inoutDiffArrayValueType, class ...inoutDiffArrayProperties,
              typename inArrayValueType,        class ...inArrayProperties>
     static void
-    subtract( /**/  Kokkos::DynRankView<inoutDiffArrayValueType,inoutDiffArrayProperties...> diffArray,
+    subtract(       Kokkos::DynRankView<inoutDiffArrayValueType,inoutDiffArrayProperties...> diffArray,
               const Kokkos::DynRankView<inArrayValueType,       inArrayProperties...>        inArray );
 
     /** \brief Multiplies array <b><var>inArray</var></b> by the scalar <b><var>scalar</var></b> (componentwise):\n
@@ -332,7 +348,7 @@ namespace Intrepid2 {
              typename scaledArrayValueType, class ...scaledArrayProperties,
              typename inArrayValueType,     class ...inArrayProperties>
     static void
-    scale( /**/  Kokkos::DynRankView<scaledArrayValueType,scaledArrayProperties...> scaledArray,
+    scale(       Kokkos::DynRankView<scaledArrayValueType,scaledArrayProperties...> scaledArray,
            const Kokkos::DynRankView<inArrayValueType,    inArrayProperties...>     inArray,
            const ValueType alpha );
 
@@ -345,7 +361,7 @@ namespace Intrepid2 {
     template<typename ValueType,
              typename inoutScaledArrayValueType, class ...inoutScaledArrayProperties>
     static void
-    scale( /**/  Kokkos::DynRankView<inoutScaledArrayValueType,inoutScaledArrayProperties...> inoutScaledArray,
+    scale(       Kokkos::DynRankView<inoutScaledArrayValueType,inoutScaledArrayProperties...> inoutScaledArray,
            const ValueType alpha );
     
 
@@ -366,7 +382,7 @@ namespace Intrepid2 {
              typename inVec1ValueType,   class ...inVec1Properties,
              typename inVec2ValueType,   class ...inVec2Properties>
     static void
-    dot( /**/  Kokkos::DynRankView<dotArrayValueType,dotArrayProperties...> dotArray, 
+    dot(       Kokkos::DynRankView<dotArrayValueType,dotArrayProperties...> dotArray, 
          const Kokkos::DynRankView<inVec1ValueType,  inVec1Properties...>   inVecs1, 
          const Kokkos::DynRankView<inVec2ValueType,  inVec2Properties...>   inVecs2 );
 
@@ -392,7 +408,7 @@ namespace Intrepid2 {
              typename inMatValueType,  class ...inMatProperties,
              typename inVecValueType,  class ...inVecProperties>
     static void
-    matvec( /**/  Kokkos::DynRankView<matVecValueType,matVecProperties...> matVecs,
+    matvec(       Kokkos::DynRankView<matVecValueType,matVecProperties...> matVecs,
             const Kokkos::DynRankView<inMatValueType, inMatProperties...>  inMats,
             const Kokkos::DynRankView<inVecValueType, inVecProperties...>  inVecs );
     
@@ -413,7 +429,7 @@ namespace Intrepid2 {
              typename inLeftValueType,  class ...inLeftProperties,
              typename inRightValueType, class ...inRightProperties>
     static void
-    vecprod( /**/  Kokkos::DynRankView<vecProdValueType,vecProdProperties...> vecProd,
+    vecprod(       Kokkos::DynRankView<vecProdValueType,vecProdProperties...> vecProd,
              const Kokkos::DynRankView<inLeftValueType, inLeftProperties...>  inLeft,
              const Kokkos::DynRankView<inRightValueType,inRightProperties...> inRight );
     

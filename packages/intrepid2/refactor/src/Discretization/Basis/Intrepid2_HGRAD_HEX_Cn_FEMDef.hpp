@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_HEX_Cn_FEMDef.hpp
-    \brief  Definition file for the Intrepid2::HGRAD_HEX_Cn_FEM class.
+/** \file   Intrepid2_HGRAD_HEX_Cn_FEMDef.hpp
+    \brief  Definition file for basis function of degree n for H(grad) functions on HEX cells.
     \author Created by R. Kirby.
             Kokkorized by Kyungjoo Kim
 */
