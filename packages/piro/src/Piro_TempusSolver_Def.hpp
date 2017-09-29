@@ -627,7 +627,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     }
   }
 
-  *out << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel);
+  //*out << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel);
 
   //JF  may need a version of the following for multipoint, i.e. num_p>1, l+1, if we want sensitivities
   RCP<Thyra::MultiVectorBase<Scalar> > dgxdp_out;
