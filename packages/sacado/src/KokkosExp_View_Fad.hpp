@@ -516,6 +516,7 @@ template < class ValueType >
 struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFad, ValueType >
 {
   using value_type = ValueType;
+  using scalar_array_type = typename Sacado::ValueType< value_type >::type;
   unsigned fad_dim;
   bool is_view_type;
 
@@ -545,6 +546,7 @@ template < class ValueType >
 struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFadContiguous, ValueType >
 {
   using value_type = ValueType;
+  using scalar_array_type = typename Sacado::ValueType< value_type >::type;
   unsigned fad_dim;
   bool is_view_type;
 
