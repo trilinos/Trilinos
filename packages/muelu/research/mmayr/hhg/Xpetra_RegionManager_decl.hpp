@@ -241,6 +241,10 @@ class RegionManager
   //! Access mapping of interface nodes to regions
   virtual Teuchos::Array<std::tuple<int,Teuchos::Array<GO> > > getInterfaceNodesToRegions() const;
 
+  //! \brief Print all regions that are (at least partially) owned by a processor
+  virtual void printRegionsPerProc(Teuchos::FancyOStream& out ///< output stream
+      ) const;
+
   //@}
 
   protected:
@@ -322,6 +326,8 @@ class RegionManager
 
   //! Collection of region maps
   Teuchos::Array<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > regionMaps_;
+
+  //@}
 
   //@}
 
