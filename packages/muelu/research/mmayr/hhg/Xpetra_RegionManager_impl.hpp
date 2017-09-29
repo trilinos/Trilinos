@@ -284,6 +284,10 @@ Xpetra::RegionManager<SC,LO,GO,NO>::RegionManager(
 
   setupRowMaps();
 
+  //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  //printProcsPerRegion(*out);
+  //printRegionsPerProc(*out);
+
   return;
 }
 
@@ -427,6 +431,58 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRegionRowMaps()
 
     regionMaps_[i] = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra, nodes_->getNumNodesPerRegion(i), myNodesGIDs(), 0, comm_);
   }
+  comm_->barrier();
+
+  return;
+}
+
+template<class SC, class LO, class GO, class NO>
+void Xpetra::RegionManager<SC,LO,GO,NO>::printRegionsPerProc(
+    Teuchos::FancyOStream& out) const
+{
+  comm_->barrier();
+  if (comm_->getRank() == 0)
+  {
+    out << std::endl << "*** RegionsPerProc:" << std::endl
+        <<              "    ---------------" << std::endl;
+
+    out << "Total number of procs: " << comm_->getSize() << std::endl
+        << "Total number of mesh regions: " << numRegions_ << std::endl
+        << "Number of rows in regionsPerProc_ structure: " << regionsPerProc_.size()
+        << std::endl;
+
+    out << std::endl << "Proc\tRegions" << std::endl;
+
+    for (GO i = 0; i < regionsPerProc_.size(); ++i)
+    {
+      out << i
+          << "\t" << regionsPerProc_[i]
+          << std::endl;
+    }
+  }
+  comm_->barrier();
+
+  comm_->barrier();
+  if (comm_->getRank() == 0)
+  {
+    out << std::endl << "*** RegionsPerProc:" << std::endl
+        <<              "    ---------------" << std::endl;
+
+    out << "Total number of procs: " << comm_->getSize() << std::endl
+        << "Total number of mesh regions: " << numRegions_ << std::endl
+        << "Number of rows in regionsPerProc2_ structure: " << regionsPerProc2_.size()
+        << std::endl;
+
+    out << std::endl << "Proc\tRegions" << std::endl;
+
+    for (GO i = 0; i < regionsPerProc2_.size(); ++i)
+    {
+      out << std::get<0>(regionsPerProc2_[i])
+          << "\t" << std::get<1>(regionsPerProc2_[i])
+          << std::endl;
+    }
+  }
+  comm_->barrier();
 
   comm_->barrier();
 
@@ -436,6 +492,7 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRegionRowMaps()
     *out << std::endl << "regionMaps[" << i << "]_:" << std::endl;
     regionMaps_[i]->describe(*out, Teuchos::VERB_EXTREME);
   }
+  comm_->barrier();
 
   return;
 }
