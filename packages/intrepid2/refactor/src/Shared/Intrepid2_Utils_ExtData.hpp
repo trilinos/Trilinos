@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_Utils_ExtData.hpp
-    \brief  Intrepid utilities for external data.
+/** \file   Intrepid2_Utils_ExtData.hpp
+    \brief  Header file for external data utility functions.
     \author Created by P. Bochev and D. Ridzal and Kyungjoo Kim.
 */
 
@@ -57,26 +57,16 @@
 namespace Intrepid2 {
 
   /**
+     \brief Declarations of templated utility functions
+
      Note: 
      - NOT compiled on device (host only)
    */
-
-  /***************************************************************************************************
-   **                                                                                               **
-   **                      Declarations of templated utility functions                              **
-   **                                                                                               **
-   ***************************************************************************************************/
-
   enum TypeOfExactData{
     INTREPID2_UTILS_FRACTION = 0,
     INTREPID2_UTILS_SCALAR
   };
 
-  /***************************************************************************************************
-   *                                                                                                 *
-   *               Utility functions for handling external data in tests                             *
-   *                                                                                                 *
-   ***************************************************************************************************/
 
   /** \brief  Compares the values in the test matrix <var><b>testMat</b></var> to precomputed
       analytic values stored in a file, where the input matrix is an array of arrays.

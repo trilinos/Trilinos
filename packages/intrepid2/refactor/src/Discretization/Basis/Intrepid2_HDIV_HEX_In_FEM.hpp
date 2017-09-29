@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HDIV_HEX_In_FEM.hpp
-    \brief  Header file for the Intrepid2::HDIV_HEX_In_FEM class.
+/** \file   Intrepid2_HDIV_HEX_In_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HDIV_HEX_In_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal and K. Petrson.
             Kokkorized by Kyungjoo Kim
 */
@@ -56,9 +56,15 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HDIV_HEX_In_FEM
+    */
     class Basis_HDIV_HEX_In_FEM {
     public:
       typedef struct Hexahedron<8> cell_topology_type;
+      /**
+        \brief See Intrepid2::Basis_HDIV_HEX_In_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,
@@ -85,6 +91,9 @@ namespace Intrepid2 {
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvBubble,
                   const EOperator operatorType );
 
+      /**
+        \brief See Intrepid2::Basis_HDIV_HEX_In_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                typename vinvViewType,
@@ -144,6 +153,10 @@ namespace Intrepid2 {
 
   /** \class  Intrepid2::Basis_HDIV_HEX_In_FEM
       \brief  Implementation of the default H(div)-compatible FEM basis on Hexahedral cell
+
+              Implements Raviart-Thomas basis of degree n on the reference Hexahedral cell. The basis has
+              cardinality 3(n+1)n^2 and spans a INCOMPLETE polynomial space.
+
   */
   template<typename ExecSpaceType = void,
            typename outputValueType = double,

@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_QUAD_Cn_FEMDef.hpp
-    \brief  Definition file for the Intrepid2::HGRAD_QUAD_Cn_FEM class.
+/** \file   Intrepid2_HGRAD_QUAD_Cn_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree n for H(grad) functions on QUAD cells.
     \author Created by R. Kirby.
             Kokkorized by Kyungjoo Kim
 */

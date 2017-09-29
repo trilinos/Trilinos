@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_FunctionSpaceToolsDef.hpp
+/** \file   Intrepid2_FunctionSpaceToolsDef.hpp
     \brief  Definition file for the Intrepid2::FunctionSpaceTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
@@ -65,6 +65,9 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorFunctionSpaceTools {
+   /**
+       \brief Functor for calculation HGRADtransformGRAD, see Intrepid2::FunctionSpaceTools for more
+   */
     template <typename outputViewType,
               typename jacInverseViewType,
               typename inputViewType,
@@ -343,6 +346,9 @@ namespace Intrepid2 {
 
   // ------------------------------------------------------------------------------------  
   namespace FunctorFunctionSpaceTools {
+   /**
+       \brief Functor for calculation of cell measure, see Intrepid2::FunctionSpaceTools for more
+   */
     template<typename outputValViewType,
              typename inputDetViewType,
              typename inputWeightViewType>
@@ -733,6 +739,9 @@ namespace Intrepid2 {
 
   namespace FunctorFunctionSpaceTools {
 
+   /**
+       \brief Functor for applyLeftFieldSigns, see Intrepid2::FunctionSpaceTools for more
+   */
     template<typename inoutOperatorViewType,
              typename fieldSignViewType>
     struct F_applyLeftFieldSigns {
@@ -789,6 +798,9 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorFunctionSpaceTools {
+   /**
+       \brief Functor for applyRightFieldSigns, see Intrepid2::FunctionSpaceTools for more
+   */
     template<typename inoutOperatorViewType,
              typename fieldSignViewType>
     struct F_applyRightFieldSigns {
@@ -845,6 +857,9 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorFunctionSpaceTools {
+   /**
+       \brief Functor for applyFieldSigns, see Intrepid2::FunctionSpaceTools for more
+   */
     template<typename inoutFunctionViewType,
              typename fieldSignViewType>
     struct F_applyFieldSigns {
@@ -907,6 +922,9 @@ namespace Intrepid2 {
 
   namespace FunctorFunctionSpaceTools {
 
+   /**
+       \brief Functor to evaluate functions, see Intrepid2::FunctionSpaceTools for more
+   */
     template<typename outputPointViewType,
              typename inputCoeffViewType,
              typename inputFieldViewType>

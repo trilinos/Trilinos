@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HDIV_TRI_I1_FEMDef.hpp
-    \brief  Definition file for FEM basis functions of degree 1 for H(div) functions on Triangle cells.
+/** \file   Intrepid2_HDIV_TRI_I1_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree 1 for H(div) functions on TRI cells.
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
 */
 

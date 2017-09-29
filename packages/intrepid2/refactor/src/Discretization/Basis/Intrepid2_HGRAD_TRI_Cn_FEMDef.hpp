@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TRI_Cn_FEM_Def.hpp
-    \brief  Definition file for FEM basis functions of degree n for H(grad) functions on TRI.
+/** \file   Intrepid2_HGRAD_TRI_Cn_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree n for H(grad) functions on TRI cells.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */

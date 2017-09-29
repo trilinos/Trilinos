@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HDIV_TRI_In_FEM.hpp
-    \brief  Header file for the Intrepid2::HDIV_TRI_In_FEM class.
+/** \file   Intrepid2_HDIV_TRI_In_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HDIV_TRI_In_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
  */
@@ -57,7 +57,7 @@
 
 namespace Intrepid2 {
 
-/** \class  Intrepid::Basis_HDIV_TRI_In_FEM
+/** \class  Intrepid2::Basis_HDIV_TRI_In_FEM
     \brief  Implementation of the default H(div)-compatible Raviart-Thomas basis of arbitrary degree  on Triangle cell 
 
             Implements nodal basis of degree n (n>=1) on the reference Triangle cell. The basis has
@@ -89,10 +89,16 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HDIV_TRI_In_FEM
+    */
     class Basis_HDIV_TRI_In_FEM {
     public:
       typedef struct Triangle<3> cell_topology_type;
       template<EOperator opType>
+      /**
+        \brief See Intrepid2::Basis_HDIV_TRI_In_FEM
+      */
       struct Serial {
         template<typename outputValueViewType,
                  typename inputPointViewType,
@@ -121,6 +127,9 @@ namespace Intrepid2 {
                typename vinvViewType,
                EOperator opType,
                ordinal_type numPtsEval>
+      /**
+        \brief See Intrepid2::Basis_HDIV_TRI_In_FEM
+      */
       struct Functor {
         outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;

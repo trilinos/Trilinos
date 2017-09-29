@@ -64,14 +64,12 @@ namespace Intrepid2 {
   //============================================================================================//
 
   namespace FunctorCellTools {
+    /**
+     \brief Functor for calculation of Jacobian on cell workset see Intrepid2::CellTools for more
+    */
     template<typename jacobianViewType, 
              typename worksetCellType, 
              typename basisGradType>
-    /**
-     \brief Functor for calculation of Jacobian on cell workset  
-
-       See Intrepid2::CellTools::setJacobian for more documentation on calculation of Jacobians.
-    */
     struct F_setJacobian {
             jacobianViewType _jacobian;
       const worksetCellType  _worksetCells;

@@ -40,8 +40,26 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid2_CellTools_Serial.hpp
-    \brief  Header file for the Impl::Intrepid2::CellTools::Serial class.
+/** \file   Intrepid2_CellTopologyTags.hpp
+    \brief  Definition of cell topology information.
+
+    \verbatim
+    CellTopologyTags - compile time information
+    template<int N = # of nodal points>
+    struct CellTopo {
+       base_cell_topology_type - base cell topology type
+       dimension - dimension of the topology
+       numVert - # of vertices
+       numEdge - # of edges
+       numFace - # of faces 
+       numIntr - # of interior (volume or face according to dimension)
+       coords - coordinate points
+    
+    bool checkPointInclusion(point, threshold)
+       - point : input view (D)
+       - threshold : extra margin that include cell area (minus threshold is also possible)
+    \endverbatim
+
     \author Kyungjoo Kim
 */
 
@@ -58,26 +76,15 @@ namespace Intrepid2 {
 
   namespace Impl {
 
-    /// CellTopologyTags - compile time information
-    /// template<int N = # of nodal points>
-    /// struct CellTopo {
-    ///   base_cell_topology_type - base cell topology type
-    ///   dimension - dimension of the topology
-    ///   numVert - # of vertices
-    ///   numEdge - # of edges
-    ///   numFace - # of faces 
-    ///   numIntr - # of interior (volume or face according to dimension)
-    ///   coords - coordinate points
-    ///
-    /// bool checkPointInclusion(point, threshold)
-    ///   - point : input view (D)
-    ///   - threshold : extra margin that include cell area (minus threshold is also possible)
 
-    /// ---------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------
 
     template<int N>
     struct Line;
 
+    /** 
+     \brief Line topology, 2 nodes
+    */
     template<>
     struct Line<2> {
       typedef struct Line<2> base_cell_topology_type;
@@ -100,6 +107,9 @@ namespace Intrepid2 {
       }
     };
     
+    /** 
+     \brief Line topology, 3 nodes
+    */
     template<>
     struct Line<3> {
       typedef struct Line<2> base_cell_topology_type;
@@ -120,11 +130,14 @@ namespace Intrepid2 {
       }
     };
     
-    /// ---------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------
 
     template<int N>
     struct Triangle;
     
+    /** 
+     \brief Triangle topology, 3 nodes
+    */
     template<>
     struct Triangle<3> {
       typedef struct Triangle<3> base_cell_topology_type;
@@ -146,6 +159,9 @@ namespace Intrepid2 {
       }        
     };
     
+    /** 
+     \brief Triangle topology, 4 nodes
+    */
     template<>
     struct Triangle<4> {
       typedef struct Triangle<3> base_cell_topology_type;
@@ -166,6 +182,9 @@ namespace Intrepid2 {
       }
     };
     
+    /** 
+     \brief Triangle topology, 6 nodes
+    */
     template<>
     struct Triangle<6> {
       typedef struct Triangle<3> base_cell_topology_type;
@@ -187,11 +206,14 @@ namespace Intrepid2 {
       }
     };
 
-    /// ---------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------
 
     template<int N>
     struct Quadrilateral;
     
+    /** 
+     \brief Quadrilateral topology, 4 nodes
+    */
     template<>
     struct Quadrilateral<4> {
       typedef struct Quadrilateral<4> base_cell_topology_type;
@@ -214,6 +236,9 @@ namespace Intrepid2 {
       }
     };
     
+    /** 
+     \brief Quadrilateral topology, 8 nodes
+    */
     template<>
     struct Quadrilateral<8> {
       typedef struct Quadrilateral<4> base_cell_topology_type;
@@ -235,6 +260,9 @@ namespace Intrepid2 {
       }
     };
 
+    /** 
+     \brief Quadrilateral topology, 9 nodes
+    */
     template<>
     struct Quadrilateral<9> {
       typedef struct Quadrilateral<4> base_cell_topology_type;
@@ -256,11 +284,14 @@ namespace Intrepid2 {
       }
     };
 
-    /// ---------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------
 
     template<int N>
     struct Tetrahedron;
     
+    /** 
+     \brief Tetrahedron topology, 4 nodes
+    */
     template<>
     struct Tetrahedron<4> {
       typedef struct Tetrahedron<4> base_cell_topology_type;
@@ -284,6 +315,9 @@ namespace Intrepid2 {
       }
     };
 
+    /** 
+     \brief Tetrahedron topology, 8 nodes
+    */
     template<>
     struct Tetrahedron<8> {
       typedef struct Tetrahedron<4> base_cell_topology_type;
@@ -305,6 +339,9 @@ namespace Intrepid2 {
       }
     };
 
+    /** 
+     \brief Tetrahedron topology, 10 nodes
+    */
     template<>
     struct Tetrahedron<10> {
       typedef struct Tetrahedron<4> base_cell_topology_type;
@@ -326,6 +363,9 @@ namespace Intrepid2 {
       }
     };
 
+    /** 
+     \brief Tetrahedron topology, 11 nodes
+    */
     template<>
     struct Tetrahedron<11> {
       typedef struct Tetrahedron<4> base_cell_topology_type;
@@ -347,11 +387,14 @@ namespace Intrepid2 {
       }
     };
 
-    /// ---------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------
 
     template<int N>
     struct Hexahedron;
     
+    /** 
+     \brief Hexahedron topology, 8 nodes
+    */
     template<>
     struct Hexahedron<8> {
       typedef struct Hexahedron<8> base_cell_topology_type;
@@ -376,6 +419,9 @@ namespace Intrepid2 {
       }
     };
 
+    /** 
+     \brief Hexahedron topology, 20 nodes
+    */
     template<>
     struct Hexahedron<20> {
       typedef struct Hexahedron<8> base_cell_topology_type;
@@ -401,6 +447,9 @@ namespace Intrepid2 {
 
     };
 
+    /** 
+     \brief Hexahedron topology, 27 nodes
+    */
     template<>
     struct Hexahedron<27> {
       typedef struct Hexahedron<8> base_cell_topology_type;
@@ -427,11 +476,14 @@ namespace Intrepid2 {
       }
     };
 
-    /// ---------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------
 
     template<int N>
     struct Pyramid;
 
+    /** 
+     \brief Pyramid topology, 5 nodes
+    */
     template<>
     struct Pyramid<5> {
       typedef struct Pyramid<5> base_cell_topology_type;
@@ -457,6 +509,9 @@ namespace Intrepid2 {
       }
     };
 
+    /** 
+     \brief Pyramid topology, 13 nodes
+    */
     template<>
     struct Pyramid<13> {
       typedef struct Pyramid<5> base_cell_topology_type;
@@ -479,6 +534,9 @@ namespace Intrepid2 {
       }
     };
 
+    /** 
+     \brief Pyramid topology, 14 nodes
+    */
     template<>
     struct Pyramid<14> {
       typedef struct Pyramid<5> base_cell_topology_type;
@@ -501,11 +559,14 @@ namespace Intrepid2 {
       }
     };
     
-    /// ---------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------
 
     template<int N>
     struct Wedge;
 
+    /** 
+     \brief Wedge topology, 6 nodes
+    */
     template<>
     struct Wedge<6> {
       typedef struct Wedge<6> base_cell_topology_type;
@@ -528,6 +589,9 @@ namespace Intrepid2 {
       }
     };
 
+    /** 
+     \brief Wedge topology, 15 nodes
+    */
     template<>
     struct Wedge<15> {
       typedef struct Wedge<6> base_cell_topology_type;
@@ -550,6 +614,9 @@ namespace Intrepid2 {
       }
     };
     
+    /** 
+     \brief Wedge topology, 18 nodes
+    */
     template<>
     struct Wedge<18> {
       typedef struct Wedge<6> base_cell_topology_type;

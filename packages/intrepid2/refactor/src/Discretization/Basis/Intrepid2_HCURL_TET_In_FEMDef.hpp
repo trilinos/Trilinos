@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HCURL_TET_In_FEM_Def.hpp
-    \brief  Definition file for FEM basis functions of degree n for H(grad) functions on TET.
+/** \file   Intrepid2_HCURL_TET_In_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree n for H(curl) functions on TET.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
     Kokkorized by Kyungjoo Kim
 */

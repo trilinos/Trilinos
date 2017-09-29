@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubaturePolylib.hpp
+/** \file   Intrepid2_CubaturePolylib.hpp
     \brief  Header file for the Intrepid2::CubaturePolylib class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim

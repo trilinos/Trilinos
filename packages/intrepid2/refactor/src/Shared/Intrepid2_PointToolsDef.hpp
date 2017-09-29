@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_PointToolsDef.hpp
-    \brief  Definition file for utilities for barycentric coordinates and lattices
+/** \file   Intrepid2_PointToolsDef.hpp
+    \brief  Definition file for point tool utilities for barycentric coordinates and lattices
     \author Created by R. Kirby
             Kokkorized by Kyungjoo Kim
  */
@@ -98,7 +98,7 @@ getLatticeSize( const shards::CellTopology cellType,
 template<typename pointValueType, class ...pointProperties>
 void
 PointTools::
-getLattice( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+getLattice(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
     const shards::CellTopology cell,
     const ordinal_type         order,
     const ordinal_type         offset,
@@ -143,7 +143,7 @@ getLattice( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
 template<typename pointValueType, class ...pointProperties>
 void
 PointTools::
-getGaussPoints( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+getGaussPoints(      Kokkos::DynRankView<pointValueType,pointProperties...> points,
     const ordinal_type order ) {
 #ifdef HAVE_INTREPID2_DEBUG    
   INTREPID2_TEST_FOR_EXCEPTION( points.rank() != 2,
@@ -179,7 +179,7 @@ getGaussPoints( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> poi
 
 template<typename pointValueType, class ...pointProperties>
 void PointTools::
-getEquispacedLattice( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+getEquispacedLattice(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
     const shards::CellTopology cell,
     const ordinal_type order,
     const ordinal_type offset ) {
@@ -197,7 +197,7 @@ getEquispacedLattice( /**/  Kokkos::DynRankView<pointValueType,pointProperties..
 
 template<typename pointValueType, class ...pointProperties>
 void PointTools::
-getWarpBlendLattice( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+getWarpBlendLattice(      Kokkos::DynRankView<pointValueType,pointProperties...> points,
     const shards::CellTopology cell,
     const ordinal_type order,
     const ordinal_type offset ) {
@@ -217,7 +217,7 @@ getWarpBlendLattice( /**/  Kokkos::DynRankView<pointValueType,pointProperties...
 template<typename pointValueType, class ...pointProperties>
 void
 PointTools::
-getEquispacedLatticeLine( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+getEquispacedLatticeLine(      Kokkos::DynRankView<pointValueType,pointProperties...> points,
     const ordinal_type order,
     const ordinal_type offset ) {
   auto pointsHost = Kokkos::create_mirror_view(Kokkos::HostSpace::memory_space(), points);
@@ -237,7 +237,7 @@ getEquispacedLatticeLine( /**/  Kokkos::DynRankView<pointValueType,pointProperti
 template<typename pointValueType, class ...pointProperties>
 void
 PointTools::
-getWarpBlendLatticeLine( /**/  Kokkos::DynRankView<pointValueType,pointProperties...> points,
+getWarpBlendLatticeLine(       Kokkos::DynRankView<pointValueType,pointProperties...> points,
     const ordinal_type order,
     const ordinal_type offset ) {
   // order is order of polynomial degree.  The Gauss-Lobatto points are accurate

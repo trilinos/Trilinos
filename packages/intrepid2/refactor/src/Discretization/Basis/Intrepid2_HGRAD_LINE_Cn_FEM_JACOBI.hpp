@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp
-    \brief  Header file for the Intrepid2::HGRAD_LINE_Cn_FEM_JACOBI class.
+/** \file   Intrepid2_HGRAD_LINE_Cn_FEM_JACOBI.hpp
+    \brief  Header file for the Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -130,9 +130,15 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI
+    */
     class Basis_HGRAD_LINE_Cn_FEM_JACOBI {
     public:
 
+      /**
+        \brief See Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputViewType,
@@ -158,6 +164,9 @@ namespace Intrepid2 {
                   const double beta,
                   const EOperator operatorType );
       
+      /**
+        \brief See Intrepid2::Basis_HGRAD_LINE_Cn_FEM_JACOBI
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                EOperator opType,

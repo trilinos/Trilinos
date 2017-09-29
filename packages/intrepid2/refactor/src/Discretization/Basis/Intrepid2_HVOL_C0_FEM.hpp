@@ -40,7 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid2_Basis_Const_FEM.hpp
+/** \file   Intrepid2_HVOL_C0_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HVOL_C0_FEM class
     \author Created by Kyungjo Kim
 */
 
@@ -54,8 +55,14 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HVOL_C0_FEM
+    */
     class Basis_HVOL_C0_FEM {
     public:
+      /**
+        \brief See Intrepid2::Basis_HVOL_C0_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputViewType,
@@ -75,6 +82,9 @@ namespace Intrepid2 {
                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                  const EOperator operatorType);
 
+      /**
+        \brief See Intrepid2::Basis_HVOL_C0_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                EOperator opType>
@@ -113,6 +123,9 @@ namespace Intrepid2 {
     };
   }
 
+   /** \class  Intrepid2::Basis_HVOL_C0_FEM
+       \brief  Implementation of the default HVOL-compatible FEM contstant basis on triangle, quadrilateral, hexahedral and tetrahedral cells.
+  */
   template<typename ExecSpaceType = void,
            typename outputValueType = double,
            typename pointValueType = double>

@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HVOL_HEX_Cn_FEM.hpp
-    \brief  Header file for the Intrepid2::HVOL_HEX_Cn_FEM class.
+/** \file   Intrepid2_HVOL_HEX_Cn_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HVOL_HEX_Cn_FEM class.
     \author Created by M. Perego, based on the Intrepid2::HGRAD_HEX_Cn_FEM class
  */
 
@@ -54,9 +54,15 @@
 namespace Intrepid2 {
 
   namespace Impl {
+    /**
+      \brief See Intrepid2::Basis_HVOL_HEX_Cn_FEM
+    */
     class Basis_HVOL_HEX_Cn_FEM {
     public:
       typedef struct Hexahedron<8> cell_topology_type;
+      /**
+        \brief See Intrepid2::Basis_HVOL_HEX_Cn_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,
@@ -82,6 +88,9 @@ namespace Intrepid2 {
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                   const EOperator operatorType );
 
+      /**
+        \brief See Intrepid2::Basis_HVOL_HEX_Cn_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                typename vinvViewType,
@@ -141,7 +150,7 @@ namespace Intrepid2 {
   }
   
   /** \class  Intrepid2::Basis_HVOL_HEX_Cn_FEM
-      \brief  Implementation of the default HVOL-compatible FEM basis of degree 2 on Hexahedron cell
+      \brief  Implementation of the default HVOL-compatible FEM basis of degree n on Hexahedron cell
       
       Implements Lagrangian basis of degree n on the reference Hexahedron cell. The basis has
       cardinality (n+1)^3 and spans a COMPLETE polynomial space.

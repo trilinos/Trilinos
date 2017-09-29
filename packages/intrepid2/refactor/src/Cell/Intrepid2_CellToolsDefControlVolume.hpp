@@ -131,9 +131,7 @@ namespace Intrepid2 {
              typename cellCoordViewType,
              typename mapViewType>
     /**
-     \brief Functor for calculation of sub-control volume coordinates on polygons
-
-       See Intrepid2::CellTools::getSubcvCoords for more documentation.
+     \brief Functor for calculation of sub-control volume coordinates on polygons see Intrepid2::CellTools for more
     */
     struct F_getSubcvCoords_Polygon2D {
             subcvCoordViewType _subcvCoords;
@@ -183,9 +181,7 @@ namespace Intrepid2 {
              typename cellCoordViewType,
              typename mapViewType>
     /**
-     \brief Functor for calculation of sub-control volume coordinates on hexahedra
-
-       See Intrepid2::CellTools::getSubcvCoords for more documentation.
+     \brief Functor for calculation of sub-control volume coordinates on hexahedra see Intrepid2::CellTools for more
     */
     struct F_getSubcvCoords_Hexahedron {
             subcvCoordViewType _subcvCoords;
@@ -275,9 +271,7 @@ namespace Intrepid2 {
              typename cellCoordViewType,
              typename mapViewType>
     /**
-     \brief Functor for calculation of sub-control volume coordinates on tetrahedra
-
-       See Intrepid2::CellTools::getSubcvCoords for more documentation.
+     \brief Functor for calculation of sub-control volume coordinates on tetrahedra see Intrepid2::CellTools for more
     */
     struct F_getSubcvCoords_Tetrahedron {
             subcvCoordViewType _subcvCoords;
