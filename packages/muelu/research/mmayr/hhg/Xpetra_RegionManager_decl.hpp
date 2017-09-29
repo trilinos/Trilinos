@@ -210,6 +210,10 @@ class RegionManager
   //! Get total number of regions in the mesh
   GO getNumRegions() const { return numRegions_; }
 
+  //! \brief Print all regions that are (at least partially) owned by a processor
+  virtual void printRegionsPerProc(Teuchos::FancyOStream& out ///< output stream
+      ) const;
+
   //@}
 
   protected:
@@ -291,6 +295,8 @@ class RegionManager
 
   //! Collection of region maps
   Teuchos::Array<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > regionMaps_;
+
+  //@}
 
   //@}
 
