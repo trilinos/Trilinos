@@ -144,8 +144,7 @@
                     float k = 200.0;
                     float delta = 0.01;
                     float pi = acos(-1.0);
-                    ELECTRON_DENSITY = N*m*( 1.0 + delta*sin(pi*k*xin) );
-                 '/>
+                    ELECTRON_DENSITY = N*m*( 1.0 + delta*sin(pi*k*xin) );'/>
             </ParameterList>
 
             <ParameterList name="E_edge_Vector">
@@ -161,8 +160,7 @@
                     float epsilon = 8.85418782e-12;
                     E_edge_Vector[0] = -delta*q*N/pi/k/epsilon*cos(pi*k*xin);
                     E_edge_Vector[1] = 0.0;
-                    E_edge_Vector[2] = 0.0;
-                 '/>
+                    E_edge_Vector[2] = 0.0;'/>
                  <Parameter name="Project To Edges" type="bool" value="true"/>
                  <Parameter name="Edge DOF Name" type="string" value="E_edge"/>
             </ParameterList>

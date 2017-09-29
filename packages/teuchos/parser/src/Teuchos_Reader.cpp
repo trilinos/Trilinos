@@ -85,7 +85,16 @@ void Reader::at_token(std::istream& stream) {
       }
       resize(value_stack, size(value_stack) - size(prod.rhs));
       Teuchos::any reduce_result;
-      this->at_reduce(reduce_result, parser_action.production, reduction_rhs);
+      try {
+        this->at_reduce(reduce_result, parser_action.production, reduction_rhs);
+      } catch (const ParserFail& e) {
+        std::stringstream ss;
+        ss << "error: Parser failure at line " << line;
+        ss << " column " << column << " of " << stream_name << '\n';
+        error_print_line(stream, ss);
+        ss << '\n' << e.what();
+        throw ParserFail(ss.str());
+      }
       add_back(value_stack, reduce_result);
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -110,13 +119,14 @@ void Reader::at_token_indent(std::istream& stream) {
     at_token(stream);
     return;
   }
-  at_token(stream);
   std::size_t end_of_actual_newlines = 0;
   for (; end_of_actual_newlines < lexer_text.size(); ++end_of_actual_newlines) {
     char c = lexer_text[end_of_actual_newlines];
     if (c != '\n' && c != '\r') break;
   }
   std::string lexer_indent = lexer_text.substr(end_of_actual_newlines, std::string::npos);
+  // the at_token call is allowed to do anything to lexer_text
+  at_token(stream);
   lexer_text.clear();
   std::size_t minlen = std::min(lexer_indent.length(), indent_text.length());
   if (lexer_indent.length() > indent_text.length()) {

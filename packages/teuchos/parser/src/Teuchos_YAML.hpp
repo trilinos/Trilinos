@@ -1,6 +1,94 @@
 #ifndef TEUCHOS_YAML_HPP
 #define TEUCHOS_YAML_HPP
 
+/*! \file Teuchos_YAML.hpp
+    \brief A TeuchosParser Language for a subset of YAML
+
+This is a grammar for a subset of the YAML language.
+Since YAML is indentation-sensitive, it is not context-free.
+An extension has been made to Teuchos::Reader to emit
+INDENT and DEDENT tokens in order to make indentation detectable
+by a context-free grammar.
+
+Known limitations of this grammar compared to the full YAML language,
+in particular those which are relevant to Teuchos::ParameterList:
+
+<ol>
+<li> INDENT and DEDENT tokens must be matched, meaning the indentation of
+the YAML file itself must be nicely nested.
+Examples of valid YAML that this grammar cannot handle, and workarounds:
+
+\code{.yaml}
+# nested block sequences compressed onto one line:
+- - - one
+    - two
+    - three
+  - ten
+  - twenty
+- one hundred
+# do not compress the first line:
+-
+  -
+    - one
+    - two
+    - three
+  - ten
+  - twenty
+- one hundred
+\endcode
+\code{.yaml}
+# comments not indented the same as subsequent lines:
+all:
+   one: 1
+   two: 2
+#bad comment
+   three: 3
+# indent the comments:
+all:
+   one: 1
+   two: 2
+   #good comment
+   three: 3
+\endcode
+\code{.yaml}
+# flow sequences and maps that span multiple lines
+timesteps: [1, 2, 3,
+   4, 5]
+# keep it on one line, or use block sequences
+timesteps: [1, 2, 3, 4, 5]
+timesteps:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+\endcode
+\code{.yaml}
+# block scalars with non-nested indentation
+inline file: |
+   if (a == 5) {
+      strange();
+    indentation();
+  }
+# ensure block scalars have nested indentation
+inline file: |
+  if (a == 5) {
+    strange();
+    indentation();
+  }
+\endcode
+
+<li> Scalars can start with a '.' or '-', but not two such symbols in a row
+
+\code{.yaml}
+# ".." at the beginning of a scalar
+filepath: ../cube.exo
+# quote the scalar
+filepath: "../cube.exo"
+\endcode
+</ol>
+*/
+
 #include <Teuchos_Language.hpp>
 #include <Teuchos_ReaderTables.hpp>
 
@@ -61,6 +149,8 @@ enum {
   PROD_BSCALAR_NEXT,
   PROD_BSCALAR_LINE,
   PROD_BSCALAR_INDENT,
+  PROD_PIPE_NORMAL,
+  PROD_PIPE_DASH,
   PROD_DQUOTED_EMPTY,
   PROD_DQUOTED_NEXT,
   PROD_SQUOTED_EMPTY,
@@ -80,6 +170,7 @@ enum {
   PROD_REST_SPACE,
   PROD_REST_DOT,
   PROD_REST_DASH,
+  PROD_REST_SQUOT,
   PROD_REST_OTHER,
   PROD_DESCAPED_DQUOT,
   PROD_DESCAPED_SLASH,
@@ -108,8 +199,8 @@ enum {
   PROD_COMMON_EXCL,
   PROD_COMMON_OTHER,
   PROD_SPACE_STAR_EMPTY,
-  PROD_SPACE_START_NEXT,
-  PROD_SPACE_PLUS_EMPTY,
+  PROD_SPACE_STAR_NEXT,
+  PROD_SPACE_PLUS_FIRST,
   PROD_SPACE_PLUS_NEXT
 };
 
