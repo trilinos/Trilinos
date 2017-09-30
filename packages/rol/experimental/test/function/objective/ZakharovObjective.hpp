@@ -43,29 +43,21 @@
 // @HEADER
 
 #pragma once
-
+#include "XROL_StdVector.hpp"
 #include "XROL.hpp"
+
+using dvector = std::vector<double>;
 
 namespace Zakharov {
 
 template<class V> 
-class Objective : public XROL::TestObjective<V,V> {
+class Objective : public XROL::Objective<V> {
 public:
 
   using Real = XROL::element_t<V>;
 
   Objective(std::unique_ptr<V> k ) : 
-    XROL::TestObjective<V,V>(), k_(std::move(k)) {
-
-    auto x0  = XROL::clone(*k);
-    auto sol = XROL::clone(*k);
-    XROL::fill(*x0,3.0);
-    XROL::zero(*sol);
-    std::vector<std::unique_ptr<V>> sol_set(1);
-    sol_set[0] = std::move(sol);
-    this->setInitialGuess(std::move(x0));
-    this->setSolutions(sol_set);
-  }
+    k_(std::move(k)) {}
 
   Real value( const V& x, Real& tol ) {
     auto xdotx = XROL::dot(x,x);
@@ -95,8 +87,7 @@ public:
   void hessVec( V& hv, const V& v, const V& x, Real& tol ) {
     auto kdotx = XROL::dot(x,*k_);
     auto kdotv = XROL::dot(v,*k_);
-    auto kdotk = XROL::dot(*k_,*k_);
-    auto coeff = -kdotv/(2.0*kdotk+16.0/(2.0+3.0*std::pow(kdotx,2.0)));
+    auto coeff = 0.25*(2.0+3.0*std::pow(kdotx,2.0))*kdotv;
 
     XROL::set(hv,v);
     XROL::scale(hv,2.0);
@@ -120,10 +111,10 @@ private:
 
 };
 
-template<class V>
-auto make_objective( std::unique_ptr<V> k ) {
-  return std::move(std::make_unique<Objective<V>>(std::move(k)));  
-}
+//template<class V>
+//auto make_objective( std::unique_ptr<V> k ) {
+//  return std::move(std::make_unique<Objective<V>>(std::move(k)));  
+//}
 
 
 

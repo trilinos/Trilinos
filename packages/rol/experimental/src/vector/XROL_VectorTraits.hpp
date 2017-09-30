@@ -1,3 +1,4 @@
+
 // @HEADER
 // ************************************************************************
 //
@@ -43,40 +44,24 @@
 
 #pragma once
 
-#include "cxxstd.hpp"
 
-// Teuchos Includes
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_ParameterList.hpp"
+namespace XROL {
 
-// ROL Includes
-#include "ROL_Types.hpp"
+template<class T> struct Magnitude { using type = T; };
+// template<class T> struct Magnitude<std::complex<T>> { using type = T; };
 
+template<class V> struct VectorIndex;     // { using type = int; };
+template<class V> using  index_t     = typename VectorIndex<V>::type;
 
-// Depends only on cxxstd.hpp, 
-// Independent of other XROL headers
-#include "XROL_Defines.hpp"
-#include "XROL_ElementwiseFunction.hpp"
-#include "XROL_Exception.hpp"
-#include "XROL_Output.hpp"
-#include "XROL_VectorTraits.hpp"
-#include "XROL_Vector.hpp"
-#include "XROL_TypeCheck.hpp"
+template<class V> struct VectorElement;   // { using type = double; };
+template<class V> using  element_t   = typename VectorElement<V>::type;
+
+template<class V> struct VectorMagnitude; // { using type = double; };
+template<class V> using  magnitude_t = typename VectorMagnitude<V>::type;
+
+template<class V> struct VectorDual;      // { using type = V; };
+template<class V> using  dual_t      = typename VectorDual<V>::type;
 
 
+} // namespace XROL
 
-// Depends on XROL_VectorTraits.hpp and XROL_Vector.hpp
-#include "XROL_VectorCheck.hpp"
-#include "XROL_StdVector.hpp"
-#include "XROL_Objective.hpp"
-
-
-// Depends on XROL_Objective
-#include "XROL_ObjectiveImpl.hpp"
-#include "XROL_ObjectiveCheck.hpp"
-
-
-#include "XROL_Objective_ExtendedInterface.hpp"
-
-//#include "XROL_TestObjective.hpp"

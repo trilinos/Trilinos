@@ -44,9 +44,6 @@
 
 #pragma once
 
-#include "XROL.hpp"
-
-
 namespace XROL {
 
 
@@ -56,105 +53,49 @@ namespace XROL {
 
 // Visitor type object that allows access to functionality not found
 // in the base class
-template<class PV, class  DV> struct Objective_ExtendedInterface;
+// template<class X> struct Objective_ExtendedInterface;
 
 // Do-nothing general type
-struct ObjectiveParameters{};
-
-
+// struct ObjectiveParameters{};
 
 
 /** \class XROL::Objective
     \brief Basic abstract objective function with default implementations
-           based on finite differences 
 */
-template<class XPrim, class XDual=XPrim> 
+
+template<class X> 
 class Objective {
 
-private:
+//protected:
 
-  // Class that implements nonvirtual and default virtual functions
-  class Impl;
-
-  std::unique_ptr<Impl> pObjImpl_; //!< Default finite difference
-                                                //!< implementations
-
-  std::unique_ptr<ObjectiveParameters> param_; //!< Objective-specific parameters
-
-
-protected:
-
-  const decltype(auto) getParameters( void ) const {
-    return std::move(param_);
-  }
+//  const decltype(auto) getParameters( void ) const {}
 
 public: 
 
-  using Scalar = element_t<XPrim>;
-  using Real   = magnitude_t<XPrim>;
+  virtual ~Objective(){}
 
-  // Default no parameter case 
-  Objective() : param_(std::make_unique<ObjectiveParameters>) {
-    
-  }
+//  virtual void setParameters( std::unique_ptr<ObjectiveParameters> param ) {
+//    ignore(param);
+//  }
 
-  Objective( std::unique_ptr<ObjectiveParameters> param ) 
-    : param_(std::move(param)) {}
+//  virtual void access( Objective_ExtendedInterface<V,dual_t<V>>& objEI ) {
+//    ignore(objEI);
+//  }
+  virtual void update( const X& x );
 
-  virtual ~Objective() {}
-
-
-  virtual void setParameters( std::unique_ptr<ObjectiveParameters> param ) {
-    param_ = std::move(param);
-  }
-
-
-  virtual void access( Objective_ExtendedInterface<XPrim,XDual>& objEI ) {
-    ignore(objEI);
-  };
-
-  virtual void update( const XPrim& x ) { ignore(x); }
-
-  virtual magnitude_t<XPrim> value( const XPrim& x, Real& tol ) = 0;
+  virtual magnitude_t<X> value( const X& x, magnitude_t<X>& tol ) = 0;
    
-  virtual void gradient( XDual& g, const XPrim& x, element_t<XPrim>& tol ) { 
-    pObjImpl_->gradient(*this,g,x,tol);
-  }
+  virtual void gradient( dual_t<X>& g, const X& x, magnitude_t<X>& tol );
 
-  virtual magnitude_t<XPrim> dirDeriv( const XPrim& x, const XPrim& d, element_t<XPrim>& tol  ) { 
-    return pObjImpl_->dirDeriv(*this,x,d);
-  }
+  virtual magnitude_t<X> dirDeriv( const X& x, const X& d, magnitude_t<X>& tol );
 
-  virtual void hessVec( XDual& hv, const XPrim& v, const XPrim& x, element_t<XPrim>& tol ) { 
-    pObjImpl_->hessVec(*this,hv,v,x,tol); 
-  } 
+  virtual void hessVec( dual_t<X>& hv, const X& v, const X& x, magnitude_t<X>& tol );
 
-  virtual void invHessVec( XPrim& hv, const XDual& v, const XPrim& x, element_t<XPrim>& tol ) { 
-    ignore(hv,v,x);
-  }
+  virtual void invHessVec( X& hv, const dual_t<X>& v, const X& x, magnitude_t<X>& tol );
 
-  virtual void precond( XPrim& Pv, const XDual& v, const XPrim& x, element_t<XPrim>& tol ) { 
-    ignore(Pv,v,x); 
-  }
-
-  auto checkGradient( const XPrim& x, const XDual &g, const XPrim& d, std::ostream &os,
-                              Teuchos::ParameterList &parlist ) {    
-    return pObjImpl_->checkGradient(*this,x,g,d,os,parlist); 
-  }
-
-
-  auto checkHessVec( const XPrim& x, const XDual& hv, const XPrim&v, std::ostream &os,
-                             Teuchos::ParameterList &parlist ) {
-    return pObjImpl_->checkHessVec(*this,x,hv,v,os,parlist);
-  }
-  
-  auto checkHessSym( const XPrim& x, const XDual& hv, const XPrim& v, const XDual& w, 
-                             std::ostream & os, Teuchos::ParameterList& parlist ) {
-    return pObjImpl_->checkHessSym(*this,x,hv,v,w,os,parlist);
-  }             
+  virtual void precond( X& Pv, const dual_t<X>& v, const X& x, magnitude_t<X>& tol );
 
 };
-
 
 } // namespace XROL
 

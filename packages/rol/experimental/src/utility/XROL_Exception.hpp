@@ -44,11 +44,7 @@
 
 #pragma once
 
-#include "XROL.hpp"
-
-
 namespace XROL {
-
 
 class IncompatibleDimensions : public std::exception {
 private:

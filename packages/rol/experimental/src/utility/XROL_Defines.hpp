@@ -44,20 +44,9 @@
 
 #pragma once
 
-#include "XROL.hpp"
-
-
 namespace XROL {
 
-
-template<class>   struct ElementTraits;
-template<class T> struct Magnitude { using type = T; };
-template<class T> struct Magnitude<std::complex<T>> { using type = T; };
-
-template<class V> using element_t   = typename ElementTraits<V>::element_type;
-template<class V> using index_t     = typename ElementTraits<V>::index_type;
-template<class V> using magnitude_t = typename ElementTraits<V>::magnitude_type;
-
+template<class... T> void ignore(T &&... ) {}
 
 } // namespace XROL
 

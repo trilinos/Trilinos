@@ -43,23 +43,27 @@
 
 
 /*! \file  test_01.cpp
-    \brief Test XROL::Objective interface
+    \brief Test XROL::Objective interface - Compare values to those 
+           using the ROL implementation of vectors
 */
 
 #include "XROL.hpp"
-
-#include "ROL_Types.hpp"
 
 #include "ZakharovObjective.hpp"
 
 #include <iostream>
 
+
+
 int main( int argc, char *argv[] ) {
 
   using namespace std;
   using V        = vector<double>;
-  using RealT    = XROL::magnitude_t<V>;
   using IndexT   = XROL::index_t<V>;
+  using RealT    = XROL::magnitude_t<V>;
+
+  using XROL::Elementwise::evaluate_all;
+
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
@@ -83,22 +87,29 @@ int main( int argc, char *argv[] ) {
   
     Teuchos::ParameterList parlist;
 
-    // Create and randomize three vectors
-    V x(dim);    XROL::randomize(generator,dist,x);
-    V g(dim);    XROL::randomize(generator,dist,g);
-    V v(dim);    XROL::randomize(generator,dist,v);
-    V w(dim);    XROL::randomize(generator,dist,w);
+    // Need to capture references to generator and distribution
+    auto rnd = [&generator,&dist](auto &arg){
+      XROL::randomize(generator,dist,arg); 
+    };
+
+    // Create vectors
+    V x(dim);  V g(dim);  V v(dim);  V w(dim);
+    V hv(dim);  
+    V hw(dim);
+
+    evaluate_all(rnd,x,g,v,w);
 
     auto k = make_unique<V>(dim);
 
     for( XROL::index_t<V> i=0; i<k->size(); ++i ) {
       (*k)[i] = 1.0*(1+i);
     }
-
-    auto obj = Zakharov::make_objective(std::move(k));
- 
-    obj->checkGradient(x,g,v,*os,parlist);
-    
+   
+    Zakharov::Objective<V> obj(move(k));
+     
+    XROL::checkGradient(obj,x,g,v,*os,parlist);
+    XROL::checkHessVec(obj,x,g,v,*os,parlist);
+    XROL::checkHessSym(obj,x,g,w,v,*os,parlist);
 
   }
   catch( logic_error err ) {

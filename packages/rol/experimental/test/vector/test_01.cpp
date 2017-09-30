@@ -45,12 +45,9 @@
 /*! \file  test_01.cpp
     \brief Test std::vector interface using function overloading
 */
-
+#include "XROL_StdVector.hpp"
 #include "XROL.hpp"
 
-#include "ROL_Types.hpp"
-
-#include <iostream>
 
 int main( int argc, char *argv[] ) {
 
@@ -129,7 +126,7 @@ int main( int argc, char *argv[] ) {
     error_check( znorm-1 ); 
   
     // Repeat standard tests with a zero vector
-    XROL::zero(x);
+    XROL::fill(x,0);
     consistency = XROL::checkVector(x,x,x,*os);
     if( XROL::norm(consistency) > 0 ) 
       ++errorFlag;

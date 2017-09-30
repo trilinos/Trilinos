@@ -44,45 +44,19 @@
 
 #pragma once
 
-#include "XROL.hpp"
+#include "XROL_VectorTraits.hpp"
 
 namespace XROL {
 
+// Forward Declaration
+template<class...Vs> void check_dimension(Vs...);
+
+
+namespace Elementwise {
+
 namespace details {
-
+ 
 using namespace std;
-
-/* Generate compile time error if there are any different template types */
-template<class T, class... Ts>
-struct CheckType {
-  using u_type = typename CheckType<Ts...>::type;
-  static_assert(is_same<T,u_type>::value, "Incompatible types!");
-  using type = T;
-};  
-
-/* Terminating case */
-template<class T, class U>
-struct CheckType<U,T> {
-  static_assert(is_same<T,U>::value, "Incompatible types!");
-  using type = T;
-};
-
-/* Generate compile time error if there are any different template types
-    Ignores differences in const, volatile, raw pointer, or reference modifier
- */
-template<class T, class... Ts>
-struct CheckDecayType {
-  using u_type = decay_t<typename CheckDecayType<Ts...>::type>;
-  static_assert(is_same<decay_t<T>,u_type>::value,"Incompatible decay types!");
-};
-
-/* Terminating case */
-template<class T, class U>
-struct CheckDecayType<U,T> {
-  static_assert(is_same<decay_t<T>,decay_t<U>>::value, "Incompatible decay types!");
-  using u_type = decay_t<U>;
-};
-
 
 template <class F, class Tuple, bool Done, size_t Total, size_t... N>
 struct call_impl {
@@ -92,7 +66,6 @@ struct call_impl {
   }
 };
 
-
 // Specialize terminating case
 template <class F, class Tuple, size_t Total, size_t... N>
 struct call_impl<F, Tuple, true, Total, N...> {
@@ -101,46 +74,7 @@ struct call_impl<F, Tuple, true, Total, N...> {
   }
 };
 
-
-} // namespace details
-
-
-template<class... Ts>
-using check_type_t = typename details::CheckType<Ts...>::type;
-
-template<class... Ts>
-using check_decay_type_t = typename details::CheckDecayType<Ts...>::type;
-
-template<class... Ts>
-constexpr void check_types( Ts... ts ) {
-  check_type_t<Ts...> _;
-  (void)_;
-}
-
-template<class... Ts>
-constexpr void check_decay_types( Ts... ts ) {
-  check_decay_type_t<Ts...> _;
-  (void)_;
-}
-
-template<class ...Vs>
-void check_dimensions( Vs... vecs ) {
-
-  check_decay_type(vecs...);
-  auto first = std::get<0>(std::make_tuple(vecs...)).dimension();
-  auto cond = [first](auto i){ return i.dimension() == first; };
-  bool match{true};
-  bool _1[] = { ( match &= cond(vecs) )... }; (void)_1;
-
-  if(!match) {
-    std::string dims;
-    bool _2[] = { ( dims += std::to_string( vecs.dimension() ) + " ")...}; (void)_2;
-    throw IncompatibleDimensions(dims);
-  }
-}
-
-
-namespace Elementwise {
+} // namespace details 
 
 /** \fn         evaluate 
     \brief      Evaluate a variadic function using an input tuple and return the result
@@ -154,6 +88,7 @@ decltype(auto) evaluate( const F& f, Tuple && t ) {
   constexpr auto tsize = tuple_size<decay_t<Tuple>>::value;
   return details::call_impl<F,Tuple,0 == tsize,tsize>::call(f,forward<Tuple>(t));
 }
+
 /** \fn         evaluate_unary_composition 
     \brief      Apply a unary function to every element a tuple and 
                 a variadic function to each of the resulting values
@@ -170,6 +105,17 @@ decltype(auto) evaluate_unary_composition( const F&f, const U& u, Tuple && t ) {
   return details::call_impl<F,Tuple,0 == tsize,tsize>::call(f,forward<Tuple>(u(t)));
 }
 
+/** \fn         evaluate_all
+    \brief      Apply a unary modify-in-place function to every element of all of 
+                the supplied vectors
+    @param[in]      f   A function taking a non-const scalar argument 
+    @param[in,out]  vs  A set of vectors to be modified by f
+*/
+template<class F, class... Vs>
+void evaluate_all( const F& f, Vs&... vs ) {
+  using expand_type = int[];
+  expand_type{ (f(vs),0)...};
+} 
 
 /** CRTP implementation of common reduce types */
 template<class T, template<class> class ReduceType>

@@ -1,3 +1,4 @@
+
 // @HEADER
 // ************************************************************************
 //
@@ -43,40 +44,85 @@
 
 #pragma once
 
-#include "cxxstd.hpp"
+namespace XROL {
 
-// Teuchos Includes
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_ParameterList.hpp"
+namespace details {
 
-// ROL Includes
-#include "ROL_Types.hpp"
+using namespace std;
+
+/* Generate compile time error if there are any different template types */
+template<class T, class... Ts>
+struct CheckType {
+  using u_type = typename CheckType<Ts...>::type;
+  static_assert(is_same<T,u_type>::value, "Incompatible types!");
+  using type = T;
+};  
+
+/* Terminating case */
+template<class T, class U>
+struct CheckType<U,T> {
+  static_assert(is_same<T,U>::value, "Incompatible types!");
+  using type = T;
+};
+
+/* Generate compile time error if there are any different template types
+    Ignores differences in const, volatile, raw pointer, or reference modifier
+ */
+template<class T, class... Ts>
+struct CheckDecayType {
+  using u_type = decay_t<typename CheckDecayType<Ts...>::type>;
+  static_assert(is_same<decay_t<T>,u_type>::value,"Incompatible decay types!");
+};
+
+/* Terminating case */
+template<class T, class U>
+struct CheckDecayType<U,T> {
+  static_assert(is_same<decay_t<T>,decay_t<U>>::value, "Incompatible decay types!");
+  using u_type = decay_t<U>;
+};
+
+} // namespace details
 
 
-// Depends only on cxxstd.hpp, 
-// Independent of other XROL headers
-#include "XROL_Defines.hpp"
-#include "XROL_ElementwiseFunction.hpp"
-#include "XROL_Exception.hpp"
-#include "XROL_Output.hpp"
-#include "XROL_VectorTraits.hpp"
-#include "XROL_Vector.hpp"
-#include "XROL_TypeCheck.hpp"
+template<class... Ts>
+using check_type_t = typename details::CheckType<Ts...>::type;
+
+template<class... Ts>
+using check_decay_type_t = typename details::CheckDecayType<Ts...>::type;
+
+template<class... Ts>
+constexpr void check_types( Ts... ts ) {
+  check_type_t<Ts...> _;
+  (void)_;
+}
+
+template<class... Ts>
+constexpr void check_decay_types( Ts... ts ) {
+  check_decay_type_t<Ts...> _;
+  (void)_;
+}
+
+// Forward declaration
+struct IncompatibleDimensions;
+
+template<class ...Vs>
+void check_dimensions( Vs... vecs ) {
+
+  check_decay_type(vecs...);
+  auto first = std::get<0>(std::make_tuple(vecs...)).dimension();
+  auto cond = [first](auto i){ return i.dimension() == first; };
+  bool match{true};
+  bool _1[] = { ( match &= cond(vecs) )... }; (void)_1;
+
+  if(!match) {
+    std::string dims;
+    bool _2[] = { ( dims += std::to_string( vecs.dimension() ) + " ")...}; (void)_2;
+    throw IncompatibleDimensions(dims);
+  }
+}
 
 
 
-// Depends on XROL_VectorTraits.hpp and XROL_Vector.hpp
-#include "XROL_VectorCheck.hpp"
-#include "XROL_StdVector.hpp"
-#include "XROL_Objective.hpp"
 
+} // namespace XROL
 
-// Depends on XROL_Objective
-#include "XROL_ObjectiveImpl.hpp"
-#include "XROL_ObjectiveCheck.hpp"
-
-
-#include "XROL_Objective_ExtendedInterface.hpp"
-
-//#include "XROL_TestObjective.hpp"

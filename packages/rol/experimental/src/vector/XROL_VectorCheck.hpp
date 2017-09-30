@@ -44,7 +44,9 @@
 
 #pragma once
 
-#include "XROL.hpp"
+#include "XROL_VectorTraits.hpp"
+#include "XROL_Vector.hpp"
+
 
 namespace XROL {
 
@@ -58,7 +60,9 @@ auto checkVector( const V& x, const V& y, const V& z, std::ostream &os = std::co
   element_t<V> a{1.234};
   element_t<V> b{-0.4321};
 
-  auto v    = *clone(z);
+  unique_ptr<V> v_ptr = clone(z);
+
+  auto v    = *v_ptr;
   auto vtmp = *clone(z);
   auto xtmp = *clone(x);
   auto ytmp = *clone(y);
@@ -91,7 +95,7 @@ auto checkVector( const V& x, const V& y, const V& z, std::ostream &os = std::co
   println("Associativity of addition");
 
   reset();
-  XROL::zero(v); plus(v,x); axpy(v, -one, x); 
+  fill(v,0); plus(v,x); axpy(v, -one, x); 
   store();
   println("Identity element of addition");
 
