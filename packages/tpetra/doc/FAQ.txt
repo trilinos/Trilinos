@@ -1,6 +1,6 @@
 #+TITLE: Frequently asked questions (FAQ) about Tpetra
 #+AUTHOR: Mark Hoemmen
-#+DATE: Time-stamp: "2017-09-30 21:53:41 mhoemme"
+#+DATE: Time-stamp: "2017-09-30 21:57:31 mhoemme"
 
 * If this is just a text file, why does it have strange mark-up?
 
@@ -127,10 +127,10 @@ variables that you would normally set:
 -D Trilinos_CXX11_FLAGS:STRING="-std=c++11 -expt-extended-lambda" 
 #+END_EXAMPLE
 
-If you already define `CMAKE_CXX_FLAGS` yourself, just make sure that
+If you already define ~CMAKE_CXX_FLAGS~ yourself, just make sure that
 you include the above options.  If the versions of ~nvcc~ and ~mpicxx~
 that live in your path are correct, then this should work.  The
-`-std=c++11` option is required, though it may cause harmless build
+~-std=c++11~ option is required, though it may cause harmless build
 warnings that look like this:
 
 #+BEGIN_EXAMPLE
