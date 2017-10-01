@@ -77,7 +77,7 @@ namespace TeuchosTests
       RCP<ParameterList> yamlList = Teuchos::getParametersFromYamlFile(yamlFile);
       string xmlFile =  matchStems[i] + ".xml";
       RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile(xmlFile);
-      TEST_EQUALITY(Teuchos::haveSameValues(*xmlList, *yamlList), true);
+      TEST_EQUALITY(Teuchos::haveSameValues(*xmlList, *yamlList, true), true);
     }
   }
   TEUCHOS_UNIT_TEST(YAML, IntVsDouble)

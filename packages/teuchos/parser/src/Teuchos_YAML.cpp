@@ -74,6 +74,7 @@ Language make_language() {
   prods[PROD_SCALAR_NORMAL]("scalar") >> "OTHERCHAR", "rest*";
   prods[PROD_SCALAR_DOT]("scalar") >> ".", "OTHERCHAR", "rest*";
   prods[PROD_SCALAR_DASH]("scalar") >> "-", "OTHERCHAR", "rest*";
+  prods[PROD_SCALAR_DOT_DOT]("scalar") >> ".", ".", "OTHERCHAR", "rest*";
   prods[PROD_SCALAR_DQUOTED]("scalar") >> "\"", "dquoted*", "descape*", "\"";
   prods[PROD_SCALAR_SQUOTED]("scalar") >> "'", "squoted*", "sescape*", "'";
   prods[PROD_COMMENT_EMPTY]("comment*");

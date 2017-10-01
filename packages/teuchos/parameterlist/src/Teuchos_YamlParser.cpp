@@ -357,12 +357,15 @@ class Reader : public Teuchos::Reader {
         break;
       }
       case Teuchos::YAML::PROD_SCALAR_DOT:
-      case Teuchos::YAML::PROD_SCALAR_DASH: {
-        char second = any_cast<char>(rhs.at(1));
-        std::string& rest = any_ref_cast<std::string>(rhs.at(2));
+      case Teuchos::YAML::PROD_SCALAR_DASH:
+      case Teuchos::YAML::PROD_SCALAR_DOT_DOT: {
+        std::size_t offset = (prod == Teuchos::YAML::PROD_SCALAR_DOT_DOT) ? 1 : 0;
+        char second = any_cast<char>(rhs.at(offset + 1));
+        std::string& rest = any_ref_cast<std::string>(rhs.at(offset + 2));
         Scalar& scalar = make_any_ref<Scalar>(result_any);
         if (prod == Teuchos::YAML::PROD_SCALAR_DOT) scalar.text += '.';
-        if (prod == Teuchos::YAML::PROD_SCALAR_DASH) scalar.text += '-';
+        else if (prod == Teuchos::YAML::PROD_SCALAR_DASH) scalar.text += '-';
+        else if (prod == Teuchos::YAML::PROD_SCALAR_DOT_DOT) scalar.text += "..";
         scalar.text += second;
         scalar.text += rest;
         scalar.text = remove_trailing_whitespace(scalar.text);
