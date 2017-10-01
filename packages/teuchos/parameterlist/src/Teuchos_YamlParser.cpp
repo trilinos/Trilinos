@@ -248,18 +248,17 @@ class Reader : public Teuchos::Reader {
         map_item(result_any, rhs.at(0), rhs.at(3), Scalar::STRING);
         break;
       }
-      case Teuchos::YAML::PROD_BMAP_BMAP: {
-        TEUCHOS_ASSERT(rhs.at(6).type() == typeid(ParameterList));
-        map_item(result_any, rhs.at(0), rhs.at(6));
-        TEUCHOS_ASSERT(result_any.type() == typeid(PLPair));
-        PLPair& pair = any_ref_cast<PLPair>(result_any);
-        any& pair_rhs_any = pair.value.getAny(false);
-        TEUCHOS_ASSERT(pair_rhs_any.type() == typeid(ParameterList));
-        TEUCHOS_ASSERT(pair.value.isList());
+      case Teuchos::YAML::PROD_BMAP_BVALUE: {
+        map_item(result_any, rhs.at(0), rhs.at(4));
         break;
       }
-      case Teuchos::YAML::PROD_BMAP_BSEQ: {
-        map_item(result_any, rhs.at(0), rhs.at(6));
+      case Teuchos::YAML::PROD_BVALUE_EMPTY: {
+        result_any = ParameterList();
+        break;
+      }
+      case Teuchos::YAML::PROD_BVALUE_BMAP:
+      case Teuchos::YAML::PROD_BVALUE_BSEQ: {
+        swap(result_any, rhs.at(2));
         break;
       }
       case Teuchos::YAML::PROD_BMAP_FMAP: {

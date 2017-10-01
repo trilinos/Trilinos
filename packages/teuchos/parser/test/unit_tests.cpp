@@ -278,6 +278,8 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
       "    }\n"
       "  g: .125\n"
       "  i: -6.022e-23\n"
+      "  mesh path: ../meshes/cube.exo\n"
+      "  empty parameter list:\n"
       "...\n"
       , "1");
   test_reader(tables,

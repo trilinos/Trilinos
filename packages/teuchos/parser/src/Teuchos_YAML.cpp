@@ -42,9 +42,11 @@ Language make_language() {
   prods[PROD_BMAP_NEXT]("bmap_items") >> "bmap_items", "bmap_item", "comment*";
   prods[PROD_BMAP_SCALAR]("bmap_item") >> "scalar", ":", "WS*", "tag?", "scalar", "NEWLINE";
   prods[PROD_BMAP_BSCALAR]("bmap_item") >> "scalar", ":", "WS*", "bscalar";
-  prods[PROD_BMAP_BMAP]("bmap_item") >> "scalar", ":", "WS*", "NEWLINE", "INDENT", "comment*", "bmap_items", "DEDENT";
+  prods[PROD_BMAP_BVALUE]("bmap_item") >> "scalar", ":", "WS*", "NEWLINE", "bvalue";
+  prods[PROD_BVALUE_EMPTY]("bvalue");
+  prods[PROD_BVALUE_BMAP]("bvalue") >> "INDENT", "comment*", "bmap_items", "DEDENT";
   /* TODO: allow a tag in this */
-  prods[PROD_BMAP_BSEQ]("bmap_item") >> "scalar", ":", "WS*", "NEWLINE", "INDENT", "comment*", "bseq_items", "DEDENT";
+  prods[PROD_BVALUE_BSEQ]("bvalue") >> "INDENT", "comment*", "bseq_items", "DEDENT";
   prods[PROD_BMAP_FMAP]("bmap_item") >> "scalar", ":", "WS*", "tag?", "fmap", "NEWLINE";
   prods[PROD_BMAP_FSEQ]("bmap_item") >> "scalar", ":", "WS*", "tag?", "fseq", "NEWLINE";
   prods[PROD_BSEQ_FIRST]("bseq_items") >> "bseq_item", "comment*";
