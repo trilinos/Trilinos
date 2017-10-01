@@ -351,7 +351,7 @@ void StringValidatorDependency::validateDep() const{
   ValueToValidatorMap::const_iterator it = valuesAndValidators_.begin();
   RCP<const ParameterEntryValidator> firstVali = (it->second);
   //using the raw pointer avoids a Clang warning about side effects in typeid
-  const ParameterEntryValidator* rawFirstValidatorPtr;
+  const ParameterEntryValidator* rawFirstValidatorPtr = firstVali.get();
   ++it;
   for(; it != valuesAndValidators_.end(); ++it){
     const ParameterEntryValidator* rawValidatorPtr = it->second.get();
