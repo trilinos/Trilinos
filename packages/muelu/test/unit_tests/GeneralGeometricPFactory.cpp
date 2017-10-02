@@ -102,7 +102,7 @@ namespace MueLuTests {
                       const LocalOrdinal numDimensions, const std::string mode,
                       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
                       RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >&Coordinates,
-                      RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal> >& map,
+                      RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                       Array<GlobalOrdinal>& gNodesPerDim, Array<LocalOrdinal>& lNodesPerDim) {
 #include "MueLu_UseShortNames.hpp"
 
@@ -1291,7 +1291,6 @@ namespace MueLuTests {
                 Teuchos::ScalarTraits<SC>::zero());
 
     ArrayRCP<const SC> fine_data   = vector0->getData(0);
-    LO indk, indj, indi;
     bool is_constant = true, is_injected = true;
     Array<LO> fine_inds(9);
     Array<LO> coarse_inds(9);
