@@ -51,6 +51,9 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Ifpack2_ContainerFactory.hpp"
+#include "Ifpack2_DenseContainer.hpp"
+#include "Ifpack2_BandedContainer.hpp"
+#include "Ifpack2_TriDiContainer.hpp"
 #include "Ifpack2_Details_DenseSolver.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
