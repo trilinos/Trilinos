@@ -426,6 +426,7 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader_Match1 ) {
       "My Awesome Problem:\n"
       "  Particle Periodic:\n"
       "    X: \"-1.0, 1.0\"\n"
+      "  CONTAINS_UNDER_SCORES: happy_sad\n"
       "...\n",
       "Trilinos issue #1801 (part 2)");
 }
