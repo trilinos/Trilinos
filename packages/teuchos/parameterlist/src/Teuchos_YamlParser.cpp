@@ -248,18 +248,17 @@ class Reader : public Teuchos::Reader {
         map_item(result_any, rhs.at(0), rhs.at(3), Scalar::STRING);
         break;
       }
-      case Teuchos::YAML::PROD_BMAP_BMAP: {
-        TEUCHOS_ASSERT(rhs.at(6).type() == typeid(ParameterList));
-        map_item(result_any, rhs.at(0), rhs.at(6));
-        TEUCHOS_ASSERT(result_any.type() == typeid(PLPair));
-        PLPair& pair = any_ref_cast<PLPair>(result_any);
-        any& pair_rhs_any = pair.value.getAny(false);
-        TEUCHOS_ASSERT(pair_rhs_any.type() == typeid(ParameterList));
-        TEUCHOS_ASSERT(pair.value.isList());
+      case Teuchos::YAML::PROD_BMAP_BVALUE: {
+        map_item(result_any, rhs.at(0), rhs.at(4));
         break;
       }
-      case Teuchos::YAML::PROD_BMAP_BSEQ: {
-        map_item(result_any, rhs.at(0), rhs.at(6));
+      case Teuchos::YAML::PROD_BVALUE_EMPTY: {
+        result_any = ParameterList();
+        break;
+      }
+      case Teuchos::YAML::PROD_BVALUE_BMAP:
+      case Teuchos::YAML::PROD_BVALUE_BSEQ: {
+        swap(result_any, rhs.at(2));
         break;
       }
       case Teuchos::YAML::PROD_BMAP_FMAP: {
@@ -357,12 +356,15 @@ class Reader : public Teuchos::Reader {
         break;
       }
       case Teuchos::YAML::PROD_SCALAR_DOT:
-      case Teuchos::YAML::PROD_SCALAR_DASH: {
-        char second = any_cast<char>(rhs.at(1));
-        std::string& rest = any_ref_cast<std::string>(rhs.at(2));
+      case Teuchos::YAML::PROD_SCALAR_DASH:
+      case Teuchos::YAML::PROD_SCALAR_DOT_DOT: {
+        std::size_t offset = (prod == Teuchos::YAML::PROD_SCALAR_DOT_DOT) ? 1 : 0;
+        char second = any_cast<char>(rhs.at(offset + 1));
+        std::string& rest = any_ref_cast<std::string>(rhs.at(offset + 2));
         Scalar& scalar = make_any_ref<Scalar>(result_any);
         if (prod == Teuchos::YAML::PROD_SCALAR_DOT) scalar.text += '.';
-        if (prod == Teuchos::YAML::PROD_SCALAR_DASH) scalar.text += '-';
+        else if (prod == Teuchos::YAML::PROD_SCALAR_DASH) scalar.text += '-';
+        else if (prod == Teuchos::YAML::PROD_SCALAR_DOT_DOT) scalar.text += "..";
         scalar.text += second;
         scalar.text += rest;
         scalar.text = remove_trailing_whitespace(scalar.text);
