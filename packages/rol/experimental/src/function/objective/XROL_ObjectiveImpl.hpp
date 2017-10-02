@@ -52,45 +52,56 @@ namespace XROL {
 template<class X>
 magnitude_t<X>
 Objective<X>::dirDeriv( const X& x, const X& d, magnitude_t<X>& tol ) {
-  std::unique_ptr<X> xd = clone(d);
-  set(*xd,x);
-  axpy(*xd,tol,d);
-  return ( value(*xd,tol) - value(x,tol) )/tol;
+  vec_->allocate_x(x);
+  X& xd = vec_->x();
+  set(xd,x);
+  axpy(xd,tol,d);
+  return ( value(xd,tol) - value(x,tol) )/tol;
 } // dirDeriv
 
 
 template<class X>
 void Objective<X>::gradient( dual_t<X>& g, const X& x, magnitude_t<X>& tol ) {
+  vec_->allocate_x(x);
+  vec_->allocate_g(x);
+  X& exi = vec_->x();
+  X& egi = vec_->g();
   fill(g,0);
   magnitude_t<X> deriv = 0.0;
   magnitude_t<X> h     = 0.0;   
   magnitude_t<X> xi    = 0.0;
+  auto eps = std::numeric_limits<magnitude_t<X>>::epsilon();
   for( index_t<X> i=0; i<dimension(g); ++i ) {
-    std::unique_ptr<X> exi = basis(x,i);
-    std::unique_ptr<X> egi = basis(g,i);
-    xi     = std::abs(dot(x,*exi));
-    h      = ( xi < ROL::ROL_EPSILON<magnitude_t<X>>() ? 1.0 : xi )*tol;
-    deriv  = dirDeriv(x,*exi,h);
-    axpy(g,deriv,*egi);
+    basis(exi,i);
+    basis(egi,i);
+    xi     = std::abs(dot(x,exi));
+    h      = ( xi < eps ? 1.0 : xi )*tol;
+    deriv  = dirDeriv(x,exi,h);
+    axpy(g,deriv,egi);
   }
 } // gradient
 
 
 template<class X>
 void Objective<X>::hessVec( dual_t<X> &hv, const X &v, const X &x, magnitude_t<X>& tol ) {
+
+  vec_->allocate_g(x);
+  vec_->allocate_g(hv);
   magnitude_t<X> _one(1.0);
   magnitude_t<X> _zero(0.0);
- 
+  auto eps = std::numeric_limits<magnitude_t<X>>::epsilon();
+   
   if( norm(v) == _zero ) {
     fill(hv,_zero);
   }
   else {
-    auto gtol = std::sqrt(ROL::ROL_EPSILON<magnitude_t<X>>());
+    auto gtol = std::sqrt(eps);
     auto h = std::max(_one,norm(x)/norm(v))*tol;
-    auto g = *clone(hv);
+    dual_t<X>& g = vec_->g();
     gradient(g,x,gtol);
 
-    auto xnew = *clone(x);
+
+    X& xnew = vec_->x();
     set(xnew,x);
     axpy(xnew,h,v);
     update(xnew);

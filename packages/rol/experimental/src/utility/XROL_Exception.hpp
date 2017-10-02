@@ -50,12 +50,38 @@ class IncompatibleDimensions : public std::exception {
 private:
   std::string msg_;
 public:
-  IncompatibleDimensions( const std::string &msg ) : 
+  IncompatibleDimensions( const std::string& msg ) : 
     msg_(msg) {}
   const char* what () const throw() {
     return msg_.c_str();
   }
 }; // IncompatibleDimensions
+
+
+class UnallocatedVector : public std::exception {
+private:
+  std::string msg_;
+public:
+  UnallocatedVector( const std::string& msg="" ) :
+    msg_(msg){}
+  const char* what () const throw() {
+    std::string def_msg("Attempted to reference unallocated vector");
+    return (def_msg+msg_).c_str();
+  }
+}; // UnallocatedVector
+
+class ReallocatedVector : public std::exception {
+private:
+  std::string msg_;
+public:
+  ReallocatedVector( const std::string& msg="" ) :
+    msg_(msg){}
+  const char* what () const throw() {
+    std::string def_msg("Attempted to reallocate vector");
+    return (def_msg+msg_).c_str();
+  }
+}; // ReallocatedVector
+
 
 
 } // namespace XROL

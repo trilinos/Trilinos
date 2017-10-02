@@ -44,9 +44,28 @@
 
 #pragma once
 
+#include "XROL_ObjectiveVectors.hpp"
+
 namespace XROL {
 
+template<class X> class Objective;  
 
+// Forward declaration of check methods
+
+template<class X> 
+std::vector<std::vector<magnitude_t<X>>>
+checkGradient( Objective<X>& obj, const X& x, const dual_t<X>& g, 
+                 const X& d, std::ostream& os, Teuchos::ParameterList& parlist );
+template<class X>
+std::vector<std::vector<magnitude_t<X>>>
+checkHessVec( Objective<X>& obj, const X& x, const dual_t<X>& hv, const X& v, 
+                   std::ostream& os, Teuchos::ParameterList& parlist );
+
+template<class X>
+std::vector<magnitude_t<X>>
+checkHessSym( Objective<X>& obj, const X& x, const dual_t<X>& hv, const X& v, 
+              const X &w, std::ostream &os, Teuchos::ParameterList& parlist );
+ 
 /** \file  XROL_Objective.hpp
     \brief Defines the interfaces for objective functions 
  */
@@ -94,6 +113,30 @@ public:
   virtual void invHessVec( X& hv, const dual_t<X>& v, const X& x, magnitude_t<X>& tol );
 
   virtual void precond( X& Pv, const dual_t<X>& v, const X& x, magnitude_t<X>& tol );
+
+
+  // Friend functions for finite difference checks - give access to ObjectiveVectors
+  template<class V>
+  friend std::vector<std::vector<magnitude_t<V>>>
+  checkGradient( Objective<V>& obj, const V& x, const dual_t<V>& g, 
+                 const V& d, std::ostream& os, Teuchos::ParameterList& parlist );
+
+
+  template<class V>
+  friend std::vector<std::vector<magnitude_t<V>>>
+  checkHessVec( Objective<V>& obj, const V& x, const dual_t<V>& hv, const V& v,
+                std::ostream& os, Teuchos::ParameterList& parlist );
+
+  
+  template<class V>
+  friend std::vector<magnitude_t<V>>
+  checkHessSym( Objective<V>& obj, const V& x, const dual_t<V>& hv, const V& v,
+                const V& w, std::ostream& os, Teuchos::ParameterList& parlist );
+
+
+private:
+
+  std::unique_ptr<ObjectiveVectors<X>> vec_;
 
 };
 

@@ -1,3 +1,4 @@
+
 // @HEADER
 // ************************************************************************
 //
@@ -41,83 +42,70 @@
 // ************************************************************************
 // @HEADER
 
-
-/*! \file  test_01.cpp
-    \brief Test XROL::Objective interface - Compare values to those 
-           using the ROL implementation of vectors
-*/
+#pragma once
 
 #include "XROL.hpp"
 
-#include "ZakharovObjective.hpp"
+/** 
+    \file  XROL_ObjectiveVectors.hpp
+    \brief Simple containers for primal and dual
+           vectors needed to store intermediate 
+           values
+*/
 
-#include <iostream>
-
-
-
-int main( int argc, char *argv[] ) {
-
-  using namespace std;
-  using V        = vector<double>;
-  using IndexT   = XROL::index_t<V>;
-
-  using XROL::Elementwise::evaluate_all;
+namespace XROL {
 
 
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+template<class X> 
+class ObjectiveVectors {
 
-  default_random_engine generator;
-  uniform_real_distribution<> dist(-1.0,1.0);
-  
-  ostream *os;
+  template<class T> using vector     = std::vector<T>;
+  template<class T> using unique_ptr = std::unique_ptr<T>;
 
-  IndexT dim    = 10;
-  int errorFlag = 0;
-
-  if( argc > 1 ) {
-    os = &cout;
-  }
-  else {
-    Teuchos::oblackholestream bhs;
-    os = &bhs;
-  }
-
-  try {
-  
-    Teuchos::ParameterList parlist;
-
-    // Need to capture references to generator and distribution
-    auto rnd = [&generator,&dist](auto &arg){
-      XROL::randomize(generator,dist,arg); 
-    };
-
-    // Create vectors
-    V x(dim);  V g(dim);  V v(dim);  V w(dim);
-    V hv(dim);  
-    V hw(dim);
-
-    evaluate_all(rnd,x,g,v,w);
-
-    auto k = make_unique<V>(dim);
-
-    for( XROL::index_t<V> i=0; i<k->size(); ++i ) {
-      (*k)[i] = 1.0*(1+i);
+  using size_type = typename vector<X>::size_type;
+ 
+public:
+ 
+  void allocate_x( const X& x, size_type d=1 ) {
+    if( !is_xprim_allocated_ ) {
+      xprim_.resize(d);
+      for( size_type i=0; i<d; ++i ) 
+        xprim_.push_back(std::move(clone(x)));
+      is_xprim_allocated_ = true;
     }
-   
-    Zakharov::Objective<V> obj(move(k));
-     
-    XROL::checkGradient(obj,x,g,v,*os,parlist);
-    XROL::checkHessVec(obj,x,g,v,*os,parlist);
-    XROL::checkHessSym(obj,x,g,w,v,*os,parlist);
-
   }
-  catch( logic_error err ) {
-    *os << err.what() << endl;
-    errorFlag = -1000;
-  }; // end try
 
-  cout << "End Result: TEST " << ( errorFlag ? "FAILED" : "PASSED" ) << endl;
-  
+  void allocate_g( const dual_t<X>& g, size_type d=1 ) {
+    if( !is_xdual_allocated_ ) {
+      xdual_.resize(d);
+      for( size_type i=0; i<d; ++i ) 
+        xdual_.push_back(std::move(clone(g)));
+      is_xdual_allocated_ = true;
+    }
+  }
 
-  return 0;
-}
+  X& x( size_type i = 0 ) { 
+    if( !is_xprim_allocated_ ) 
+      throw UnallocatedVector(": optimization space"); 
+    return *(xprim_[i]); 
+  }
+
+
+  dual_t<X>& g( size_type i = 0 ) { 
+    if( !is_xdual_allocated_ )
+      throw UnallocatedVector(": optimization dual space");
+    return *(xdual_[i]); 
+  }
+
+private:
+ 
+  vector<unique_ptr<X>>         xprim_;
+  vector<unique_ptr<dual_t<X>>> xdual_;
+
+  bool is_xprim_allocated_; 
+  bool is_xdual_allocated_; 
+ 
+};
+
+} // namespace XROL
+

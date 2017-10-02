@@ -54,7 +54,6 @@ namespace XROL {
 // Forward declare operator
 template<class V> struct Operator;
 
-
 /** \fn         clone
     \brief      Create a new vector from the same vector space as x 
     @param[in]  x  The vector to clone
@@ -69,12 +68,11 @@ std::unique_ptr<V> clone( const V& x );// { return nullptr; }
        \f[ x = \begin{pmatrix} 0 & \hdots & 0 & 1 & 0 & \hdots & 0 \end{pmatrix},
                 \quad x_j = \delta_{ij}  \f]
 
-    @param[in]  x  Vector from which to create a basis vector
-    @param[in]  i  the index of the unit element   
-    \return        a pointer to a new canonical vector
+    @param[in,out]  x  Vector from which to create a basis vector
+    @param[in]      i  the index of the unit element   
 */ 
 template<class V> 
-std::unique_ptr<V> basis( const V& x, index_t<V> i );// { return nullptr; }
+void basis( V& x, index_t<V> i );// { return nullptr; }
 
 
 /** \fn          dual
@@ -200,6 +198,23 @@ auto eval_function_and_reduce( const R& r, const F& f, const V, const Vs&... vs 
 */
 template<class Generator, class Distribution, class V>
 void randomize( Generator& g, Distribution& d, V &v ); // {}
+
+/*
+template<class V> 
+element_t<V> norm( const V& x, const V& y ) {
+  auto sum = make_sum(x);
+  auto result = eval_function_and_reduce(sum,[](auto a, auto b){ return a*b; },x,y);
+  return std::sqrt(result);
+} 
+
+template<class V> 
+magnitude_t<V> norm( const V& x ) {
+  auto sum = make_sum(x);
+  auto result = eval_function_and_reduce(sum,[](auto v){ return v*v; },x);
+  return std::sqrt(result);
+} 
+*/
+
 
 
 } // namespace XROL

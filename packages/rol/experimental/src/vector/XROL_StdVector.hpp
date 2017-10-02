@@ -49,108 +49,122 @@
 
 /** @ingroup la_group
     \file XROL::StdVector
-    \brief Overload functions for std::vector
+    \brief Overload functions for StdVector
 */
 
 namespace XROL {
 
 // Traits specialization
+template<class T> using StdVector = std::vector<T>;
 
 template<class T>
-struct VectorIndex<std::vector<T>> {
-  using type = typename std::vector<T>::size_type;
+struct VectorIndex<StdVector<T>> {
+  using type = typename StdVector<T>::size_type;
 };
 
 template<class T>
-struct VectorElement<std::vector<T>> {
+struct VectorElement<StdVector<T>> {
   using type = T;
 };
 
 template<class T>
-struct VectorMagnitude<std::vector<T>> {
+struct VectorMagnitude<StdVector<T>> {
   using type = typename Magnitude<T>::type;
 };
 
 template<class T>
-struct VectorDual<std::vector<T>> {
-  using type = std::vector<T>;
+struct VectorDual<StdVector<T>> {
+  using type = StdVector<T>;
 };
 
+
+template<class V> 
+struct Std_dot  : std::false_type, VectorElement<V>   {};
+
+template<class V> 
+struct Std_norm : std::false_type, VectorMagnitude<V> {};
+
+template<class T> 
+struct Std_dot<StdVector<T>> : std::true_type, VectorElement<StdVector<T>> {};
+
+template<class T> 
+struct Std_norm<StdVector<T>> : std::true_type, VectorMagnitude<StdVector<T>> {};
+
+
+// Functions
+
+
+
 template<class T>
-std::unique_ptr<std::vector<T>>
-clone( const std::vector<T>& v ) {
-  return std::move(std::make_unique<std::vector<T>>( v.size() )); 
+std::unique_ptr<StdVector<T>>
+clone( const StdVector<T>& v ) {
+  return std::move(std::make_unique<StdVector<T>>( v.size() )); 
 }
 
 template<class T>
-index_t<std::vector<T>>
-dimension( const std::vector<T>& x ) {
+index_t<StdVector<T>>
+dimension( const StdVector<T>& x ) {
   return x.size();
 }
 
 template<class T>  
-void set( std::vector<T>& x, const std::vector<T>& y ) { 
+void set( StdVector<T>& x, const StdVector<T>& y ) { 
   std::transform( y.cbegin(), y.cend(), x.begin(),
   [](auto ye){ return ye; } );
 }
 
 template<class T>
-void dual( dual_t<std::vector<T>>& xdual, 
-            const std::vector<T>& xprim ) {
+void dual( dual_t<StdVector<T>>& xdual, 
+            const StdVector<T>& xprim ) {
   set(xdual,xprim);
 }
 
 template<class T>
-void plus( std::vector<T>& x, const std::vector<T>& y ) { 
+void plus( StdVector<T>& x, const StdVector<T>& y ) { 
   std::transform( x.begin(), x.end(), y.cbegin(), x.begin(), 
   [](auto xe, auto ye){ return xe+ye; } );
 }
 
 template<class T> 
-void scale( std::vector<T>& x, 
-            const element_t<std::vector<T>> alpha ) {
+void scale( StdVector<T>& x, 
+            const element_t<StdVector<T>> alpha ) {
   for( auto &e : x ) e *= alpha;
 }
 
 template<class T> 
-void fill( std::vector<T>& x,
-           const element_t<std::vector<T>> alpha ) {
+void fill( StdVector<T>& x,
+           const element_t<StdVector<T>> alpha ) {
   for( auto &e : x ) e = alpha;
 }
 
 template<class T>
-void axpy( std::vector<T> &x, 
-           const element_t<std::vector<T>> alpha, 
-           const std::vector<T> &y ) {
+void axpy( StdVector<T> &x, 
+           const element_t<StdVector<T>> alpha, 
+           const StdVector<T> &y ) {
   std::transform( x.begin(), x.end(), y.cbegin(), x.begin(), 
   [alpha]( auto xe, auto ye ) { return alpha*ye+xe; } );
 }
 
 template<class T>
-std::unique_ptr<std::vector<T>>
-basis( const std::vector<T>& v, 
-       index_t<std::vector<T>> i ) { 
-  auto b = std::make_unique<std::vector<T>>( v.size() ); 
-  fill(*b,0);
-  (*b)[i] = T(1.0);
-  return std::move(b);
+void basis( StdVector<T>& b, 
+            index_t<StdVector<T>> i ) { 
+  fill(b,0);
+  b[i] = T(1.0);
 }
 
 template<class T>
-element_t<std::vector<T>>
-dot( const std::vector<T>& x, const std::vector<T>& y ) {
-//  return std::inner_product(x.cbegin(), x.cend(), y.begin(), 0); 
-  using V = std::vector<T>;
+element_t<StdVector<T>> 
+dot( const StdVector<T>& x, const StdVector<T>& y ) {
+  using V = StdVector<T>;
   element_t<V> result = 0;
   for( index_t<V> i=0; i<x.size(); ++i ) result += x[i]*y[i];
   return result;
 }
 
 template<class T>
-magnitude_t<std::vector<T>>
-norm( const std::vector<T>& x ) {
-//  return std::inner_product(x.cbegin(), x.cend(), x.begin(), 0); 
-  using V = std::vector<T>;
+magnitude_t<StdVector<T>>
+norm( const StdVector<T>& x ) {
+  using V = StdVector<T>;
   magnitude_t<V> sum2 = 0;
   for( auto e: x ) sum2 += e*e;
   return std::sqrt(sum2);
@@ -158,7 +172,7 @@ norm( const std::vector<T>& x ) {
 
 
 template<class T>
-void print( std::vector<T> &x, std::ostream &os ) {
+void print( StdVector<T>& x, std::ostream& os ) {
   for( auto e : x ) 
     os << e << " ";
   os << std::endl;
@@ -166,7 +180,7 @@ void print( std::vector<T> &x, std::ostream &os ) {
 
 
 template<class R, class T>
-auto reduce( const R& r, const std::vector<T>& x ) {
+auto reduce( const R& r, const StdVector<T>& x ) {
   auto result = r(); 
   for( auto e : x ) result = r(e,result);
   return result;
@@ -174,7 +188,7 @@ auto reduce( const R& r, const std::vector<T>& x ) {
 
 
 template<class Generator, class Distribution, class T>
-void randomize( Generator& g, Distribution& d, std::vector<T>& x ) {
+void randomize( Generator& g, Distribution& d, StdVector<T>& x ) {
   for( auto &e : x ) e = d(g);
 }
 
@@ -188,7 +202,7 @@ decltype(auto) evaluate( const F& f, Tuple && t );
 
 
 template<class T, class Function, class ...Vs>
-void eval_function( std::vector<T>& x, const Function &f, const Vs&... vs ) {
+void eval_function( StdVector<T>& x, const Function &f, const Vs&... vs ) {
   check_dimensions(x,vs...);
   for(auto i=0; i<x.size(); ++i)
     x[i] = Elementwise::evaluate(f,std::make_tuple(vs[i]...));
@@ -197,7 +211,7 @@ void eval_function( std::vector<T>& x, const Function &f, const Vs&... vs ) {
 
 template<class R, class F, class T, class ...Vs>
 auto eval_function_and_reduce( const R& r, const F& f, 
-  const std::vector<T>& x, const Vs&... vs ) {
+  const StdVector<T>& x, const Vs&... vs ) {
 
   check_dimensions(x,vs...);
   auto result = r(); 

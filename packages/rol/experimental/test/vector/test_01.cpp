@@ -90,38 +90,38 @@ int main( int argc, char *argv[] ) {
     // Create and randomize three vectors
     V x(dim);
     V y(dim);
-    V z(dim);
+    V w(dim);
   
     *os << "\n\nGenerating three vectors of length " << dim 
         << " with randomly generated element values from udf([-1,1])" << endl;
 
     XROL::randomize(generator,dist,x);
     XROL::randomize(generator,dist,y);
-    XROL::randomize(generator,dist,z);
+    XROL::randomize(generator,dist,w);
 
+    *os << "\n ||w|| = " << XROL::norm(w) << endl;
     *os << "\n ||x|| = " << XROL::norm(x) << endl;
     *os << "\n ||y|| = " << XROL::norm(y) << endl;
-    *os << "\n ||z|| = " << XROL::norm(z) << endl;
 
      
     // Standard tests
-    auto consistency = XROL::checkVector(x, y, z, *os);
+    auto consistency = XROL::checkVector(x, y, w, *os);
     if( XROL::norm(consistency) > errtol ) {
       ++errorFlag;
     }
   
-    auto zp = XROL::basis(x,0);
-    auto znorm = XROL::norm(*zp);
+    auto z = *XROL::clone(x); XROL::basis(z,0);
+    auto znorm = XROL::norm(z);
     *os << "Norm of ROL::Vector z (first basis vector):    " << znorm << endl;
     error_check( znorm-1 ); 
   
-    zp = XROL::basis(x,dim/2);
-    znorm = XROL::norm(*zp);
+    XROL::basis(z,dim/2);
+    znorm = XROL::norm(z);
     *os << "Norm of ROL::Vector z ('middle' basis vector): " << znorm << endl;
     error_check( znorm-1 ); 
   
-    zp = XROL::basis(x,dim-1);
-    znorm = XROL::norm(*zp);
+    XROL::basis(z,dim-1);
+    znorm = XROL::norm(z);
     *os << "Norm of ROL::Vector z (last basis vector):     " << znorm << endl;
     error_check( znorm-1 ); 
   
