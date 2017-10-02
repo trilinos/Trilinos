@@ -158,6 +158,12 @@ private:
   bool enabled_;
   std::string name_;
   int numCalls_;
+#ifdef HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+  // We don't want to rely on incrementNumCalls being called,
+  // because this does not seem to always happen in the same order.
+  // Sometimes after start() is called, sometimes after stop().
+  int numCallsMassifSnapshots_;
+#endif
 };
 
 
