@@ -265,6 +265,14 @@ namespace Tpetra {
   /// as a Tpetra::CrsMatrix.
   namespace MatrixMatrix {
   }
+
+  /// \brief Distributed sparse triple matrix product.
+  ///
+  /// This namespace includes functions the product of three
+  /// distributed sparse matrices, each of which is represented as a
+  /// Tpetra::CrsMatrix.
+  namespace TripleMatrixMultiply {
+  }
 }
 
 namespace Tpetra {
