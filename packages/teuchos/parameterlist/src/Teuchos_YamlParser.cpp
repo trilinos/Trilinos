@@ -214,15 +214,15 @@ class Reader : public Teuchos::Reader {
         break;
       }
       case Teuchos::YAML::PROD_TOP_FIRST: {
-        if (rhs.at(0).type() != typeid(ParameterList)) break;
-        map_first_item(result_any, rhs.at(0));
+        if (rhs.at(0).type() == typeid(ParameterList)) {
+          swap(result_any, rhs.at(0));
+        }
         break;
       }
       case Teuchos::YAML::PROD_TOP_NEXT: {
         if (rhs.at(1).type() == typeid(ParameterList)) {
           TEUCHOS_TEST_FOR_EXCEPTION(!rhs.at(0).empty(), ParserFail,
-              "PROD_TOP_NEXT: top_items type is " << rhs.at(0).type().name()
-              << ", top_item type is " << rhs.at(1).type().name() << '\n');
+              "Can't specify multiple top-level ParameterLists in one YAML file!\n");
           swap(result_any, rhs.at(1));
         } else {
           swap(result_any, rhs.at(0));

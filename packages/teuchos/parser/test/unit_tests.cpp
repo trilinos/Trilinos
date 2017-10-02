@@ -422,6 +422,12 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader_Match1 ) {
       "  'aggregation: export visualization data': true\n"
       "...\n",
       "Match1.yaml (inline)");
+  reader.read_string(result,
+      "My Awesome Problem:\n"
+      "  Particle Periodic:\n"
+      "    X: \"-1.0, 1.0\"\n"
+      "...\n",
+      "Trilinos issue #1801 (part 2)");
 }
 
 TEUCHOS_UNIT_TEST( Parser, yaml_reader_Arrays ) {
