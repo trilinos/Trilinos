@@ -268,7 +268,7 @@ namespace FROSch {
         }
         sortunique(indicesOverlappingSubdomain);
         overlappingMap = Xpetra::MapFactory<LO,GO,NO>::Build(overlappingMap->lib(),-1,indicesOverlappingSubdomain(),0,overlappingMap->getComm());
-        overlappingMatrix->fillComplete();
+        overlappingMatrix->fillComplete(tmpMatrix->getDomainMap(),tmpMatrix->getRangeMap());
         
         return 0;
     }

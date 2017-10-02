@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
         }
         K->insertGlobalValues(UniqueMapEpetra->GID(i),indicesArray(),valuesArrayView);
     }
-    K->fillComplete();
+    K->fillComplete(UniqueMap,UniqueMap);
     
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > uniqueMap = Xpetra::MapFactory<LO,GO,NO>::Build(UniqueMap,1);
     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > overlappingMap = uniqueMap;
