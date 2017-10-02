@@ -236,7 +236,7 @@ namespace FROSch {
             UN length = parents->getNumEntities();
             for (UN j=0; j<length; j++) {
                 tmpVector = parents->getEntity(length-1-j)->getSubdomainsVector();
-                if (!binary_search(tmpVector.begin(),tmpVector.end(),SubdomainsVector_[i])) {
+                if (!std::binary_search(tmpVector.begin(),tmpVector.end(),SubdomainsVector_[i])) {
                     parents->removeEntity(length-1-j);
                 }
             }

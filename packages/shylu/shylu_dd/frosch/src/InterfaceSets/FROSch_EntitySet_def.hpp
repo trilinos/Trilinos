@@ -275,8 +275,8 @@ namespace FROSch {
             EntityVector_[i]->sortByGlobalID();
         }
         
-        sort(EntityVector_.begin(),EntityVector_.end(),compareInterfaceEntities<SC,LO,GO,NO>);
-        EntityVector_.erase(unique(EntityVector_.begin(),EntityVector_.end(),equalInterfaceEntities<SC,LO,GO,NO>),EntityVector_.end());
+        std::sort(EntityVector_.begin(),EntityVector_.end(),compareInterfaceEntities<SC,LO,GO,NO>);
+        EntityVector_.erase(std::unique(EntityVector_.begin(),EntityVector_.end(),equalInterfaceEntities<SC,LO,GO,NO>),EntityVector_.end());
         EntityMapIsUpToDate_ = false;
         return 0;
     }

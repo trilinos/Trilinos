@@ -640,7 +640,7 @@ namespace FROSch {
         typename GOVecVec::iterator classIterator;
         LOVecPtr localComponentIndices(NumMyNodes_);
         for (int i=0; i<NumMyNodes_; i++) {
-            classIterator = lower_bound(componentsSubdomainsUnique.begin(),componentsSubdomainsUnique.end(),componentsSubdomains[i]);
+            classIterator = std::lower_bound(componentsSubdomainsUnique.begin(),componentsSubdomainsUnique.end(),componentsSubdomains[i]);
             localComponentIndices[i] = classIterator - componentsSubdomainsUnique.begin();
         }
         
