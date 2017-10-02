@@ -112,13 +112,13 @@ public:
    /** For this class, this method does the halo exchange for the 
      * vector.
      */
-   virtual void globalToGhost(int mem);
+   virtual void ownedToGhosted(int mem);
 
    //! Clear out the ghosted vector 
    virtual void initializeData(); 
   
    //! For this class this method does nothing.
-   virtual void ghostToGlobal(int /* mem */) {} 
+   virtual void ghostedToOwned(int /* mem */) {} 
 
    //! Nothing to do (its read only)
    virtual bool requiresDirichletAdjustment() const { return false; }

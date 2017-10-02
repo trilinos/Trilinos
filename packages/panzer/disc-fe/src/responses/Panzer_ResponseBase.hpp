@@ -85,7 +85,7 @@ public:
    { return "RESPONSE_"+responseName; }
 
    //! Inherited from GlobalEvaluationData, 
-   virtual void ghostToGlobal(int) 
+   virtual void ghostedToOwned(int) 
    { scatterResponse(); }
 
    virtual void initializeData()

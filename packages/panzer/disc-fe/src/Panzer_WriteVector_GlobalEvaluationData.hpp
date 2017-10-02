@@ -82,12 +82,12 @@ public:
 
   /** For this class, this method does nothing.
     */
-  virtual void globalToGhost(int /* mem */) { }
+  virtual void ownedToGhosted(int /* mem */) { }
 
   /** For this class, this method does the halo exchange for the
     * vector.
     */
-  virtual void ghostToGlobal(int mem) = 0;
+  virtual void ghostedToOwned(int mem) = 0;
 
   //! Set the owned vector
   virtual void setOwnedVector(const Teuchos::RCP<Thyra::VectorBase<double> > & ownedVector) = 0;

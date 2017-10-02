@@ -70,10 +70,10 @@ public:
    Teuchos::RCP<GlobalEvaluationData> getDataObject(const std::string & key) const;
 
    //! Call ghost to global on all the containers
-   void ghostToGlobal(int p);
+   void ghostedToOwned(int p);
 
    //! Call global to ghost on all the containers
-   void globalToGhost(int p);
+   void ownedToGhosted(int p);
 
    //! Call initialize on all containers
    void initialize();
