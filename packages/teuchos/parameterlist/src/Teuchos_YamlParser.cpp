@@ -344,32 +344,38 @@ class Reader : public Teuchos::Reader {
         swap(result_any, rhs.at(1));
         break;
       }
-      case Teuchos::YAML::PROD_SCALAR_NORMAL: {
-        char first = any_cast<char>(rhs.at(0));
-        std::string& str = any_ref_cast<std::string>(rhs.at(1));
+      case Teuchos::YAML::PROD_SCALAR_QUOTED:
+      case Teuchos::YAML::PROD_MAP_SCALAR_QUOTED: {
+        swap(result_any, rhs.at(0));
+        break;
+      }
+      case Teuchos::YAML::PROD_SCALAR_RAW:
+      case Teuchos::YAML::PROD_MAP_SCALAR_RAW: {
         Scalar& scalar = make_any_ref<Scalar>(result_any);
-        scalar.text += first;
-        scalar.text += str;
-        scalar.text = remove_trailing_whitespace(scalar.text);
+        TEUCHOS_ASSERT(!rhs.at(0).empty());
+        scalar.text = any_ref_cast<std::string>(rhs.at(0));
+        scalar.text += any_ref_cast<std::string>(rhs.at(1));
+        if (prod == Teuchos::YAML::PROD_MAP_SCALAR_RAW) {
+          scalar.text += any_ref_cast<std::string>(rhs.at(2));
+        }
         scalar.source = Scalar::RAW;
         scalar.tag_type = -1;
         break;
       }
-      case Teuchos::YAML::PROD_SCALAR_DOT:
-      case Teuchos::YAML::PROD_SCALAR_DASH:
-      case Teuchos::YAML::PROD_SCALAR_DOT_DOT: {
-        std::size_t offset = (prod == Teuchos::YAML::PROD_SCALAR_DOT_DOT) ? 1 : 0;
-        char second = any_cast<char>(rhs.at(offset + 1));
-        std::string& rest = any_ref_cast<std::string>(rhs.at(offset + 2));
-        Scalar& scalar = make_any_ref<Scalar>(result_any);
-        if (prod == Teuchos::YAML::PROD_SCALAR_DOT) scalar.text += '.';
-        else if (prod == Teuchos::YAML::PROD_SCALAR_DASH) scalar.text += '-';
-        else if (prod == Teuchos::YAML::PROD_SCALAR_DOT_DOT) scalar.text += "..";
-        scalar.text += second;
-        scalar.text += rest;
-        scalar.text = remove_trailing_whitespace(scalar.text);
-        scalar.source = Scalar::RAW;
-        scalar.tag_type = -1;
+      case Teuchos::YAML::PROD_SCALAR_HEAD_OTHER:
+      case Teuchos::YAML::PROD_SCALAR_HEAD_DOT:
+      case Teuchos::YAML::PROD_SCALAR_HEAD_DASH:
+      case Teuchos::YAML::PROD_SCALAR_HEAD_DOT_DOT: {
+        std::size_t offset;
+        if (prod == Teuchos::YAML::PROD_SCALAR_HEAD_OTHER) offset = 0;
+        else if (prod == Teuchos::YAML::PROD_SCALAR_HEAD_DOT_DOT) offset = 2;
+        else offset = 1;
+        char second = any_cast<char>(rhs.at(offset));
+        std::string& result = make_any_ref<std::string>(result_any);
+        if (prod == Teuchos::YAML::PROD_SCALAR_HEAD_DOT) result += '.';
+        else if (prod == Teuchos::YAML::PROD_SCALAR_HEAD_DASH) result += '-';
+        else if (prod == Teuchos::YAML::PROD_SCALAR_HEAD_DOT_DOT) result += "..";
+        result += second;
         break;
       }
       case Teuchos::YAML::PROD_SCALAR_DQUOTED:
@@ -385,6 +391,17 @@ class Reader : public Teuchos::Reader {
           scalar.source = Scalar::SQUOTED;
         }
         scalar.tag_type = -1;
+        break;
+      }
+      case Teuchos::YAML::PROD_MAP_SCALAR_ESCAPED_EMPTY: {
+        result_any = std::string();
+        break;
+      }
+      case Teuchos::YAML::PROD_MAP_SCALAR_ESCAPED_NEXT: {
+        swap(result_any, rhs.at(0));
+        std::string& str = any_ref_cast<std::string>(result_any);
+        str += ',';
+        str += any_ref_cast<std::string>(rhs.at(2));
         break;
       }
       case Teuchos::YAML::PROD_TAG: {
@@ -469,8 +486,8 @@ class Reader : public Teuchos::Reader {
         str.push_back(any_cast<char>(rhs.at(0)));
         break;
       }
-      case Teuchos::YAML::PROD_REST_SPACE:
-      case Teuchos::YAML::PROD_REST_OTHER:
+      case Teuchos::YAML::PROD_SCALAR_TAIL_SPACE:
+      case Teuchos::YAML::PROD_SCALAR_TAIL_OTHER:
       case Teuchos::YAML::PROD_DESCAPED_DQUOTED:
       case Teuchos::YAML::PROD_DQUOTED_COMMON:
       case Teuchos::YAML::PROD_SQUOTED_COMMON:
@@ -484,7 +501,7 @@ class Reader : public Teuchos::Reader {
       case Teuchos::YAML::PROD_DQUOTED_NEXT:
       case Teuchos::YAML::PROD_SQUOTED_NEXT:
       case Teuchos::YAML::PROD_ANY_NEXT:
-      case Teuchos::YAML::PROD_REST_NEXT:
+      case Teuchos::YAML::PROD_SCALAR_TAIL_NEXT:
       case Teuchos::YAML::PROD_SPACE_STAR_NEXT:
       case Teuchos::YAML::PROD_SPACE_PLUS_NEXT: {
         TEUCHOS_TEST_FOR_EXCEPTION(rhs.at(0).empty(), ParserFail,
@@ -499,7 +516,7 @@ class Reader : public Teuchos::Reader {
       case Teuchos::YAML::PROD_ANY_EMPTY:
       case Teuchos::YAML::PROD_DESCAPE_EMPTY:
       case Teuchos::YAML::PROD_SESCAPE_EMPTY:
-      case Teuchos::YAML::PROD_REST_EMPTY:
+      case Teuchos::YAML::PROD_SCALAR_TAIL_EMPTY:
       case Teuchos::YAML::PROD_SPACE_STAR_EMPTY: {
         result_any = std::string();
         break;
@@ -516,7 +533,7 @@ class Reader : public Teuchos::Reader {
         result_any = '\\';
         break;
       }
-      case Teuchos::YAML::PROD_REST_SQUOT:
+      case Teuchos::YAML::PROD_SCALAR_TAIL_SQUOT:
       case Teuchos::YAML::PROD_DQUOTED_SQUOT:
       case Teuchos::YAML::PROD_ANY_SQUOT: {
         result_any = '\'';
@@ -526,12 +543,12 @@ class Reader : public Teuchos::Reader {
         result_any = ':';
         break;
       }
-      case Teuchos::YAML::PROD_REST_DOT:
+      case Teuchos::YAML::PROD_SCALAR_TAIL_DOT:
       case Teuchos::YAML::PROD_COMMON_DOT: {
         result_any = '.';
         break;
       }
-      case Teuchos::YAML::PROD_REST_DASH:
+      case Teuchos::YAML::PROD_SCALAR_TAIL_DASH:
       case Teuchos::YAML::PROD_COMMON_DASH: {
         result_any = '-';
         break;

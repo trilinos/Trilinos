@@ -92,12 +92,13 @@ namespace TeuchosTests
   {
     TEST_THROW(Teuchos::getParametersFromYamlFile("IllegalKeyString.yaml");, Teuchos::ParserFail);
   }
-  TEUCHOS_UNIT_TEST(YAML, Issue1801PartTwo)
+  TEUCHOS_UNIT_TEST(YAML, Issue1801)
   {
     Teuchos::getParametersFromYamlString(
         "My Awesome Problem:\n"
         "  Particle Periodic:\n"
         "    X: \"-1.0, 1.0\"\n"
+        "  emotions: happy_sad, indifferent\n"
         "...\n"
         );
   }
