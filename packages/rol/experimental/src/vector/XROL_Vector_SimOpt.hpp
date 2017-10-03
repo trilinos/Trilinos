@@ -55,7 +55,6 @@ using Vector_SimOpt = std::pair<std::unique_ptr<S>,
 
 // Traits specialization
 
-
 template<class S, class O>
 struct VectorIndex<Vector_SimOpt<S,O>> {
   using type = std::common_type_t<index_t<S>,index_t<O>>;
@@ -76,19 +75,6 @@ template<class S, class O>
 struct VectorDual<Vector_SimOpt<S,O>> {
   using type = Vector_SimOpt<dual_t<S>,dual_t<O>>;
 };
-
-
-template<class V> 
-struct SimOpt_dot  : std::false_type, VectorElement<V>   {};
-
-template<class V> 
-struct SimOpt_norm : std::false_type, VectorMagnitude<V> {};
-
-template<class S, class O> 
-struct SimOpt_dot<Vector_SimOpt<S,O>> : std::true_type, VectorElement<Vector_SimOpt<S,O>> {};
-
-template<class S, class O> 
-struct SimOpt_norm<Vector_SimOpt<S,O>> : std::true_type, VectorMagnitude<Vector_SimOpt<S,O>> {};
 
 
 // Functions
@@ -162,17 +148,17 @@ void basis( Vector_SimOpt<S,O>& b,
 
 template<class S, class O>
 element_t<Vector_SimOpt<S,O>>
-dot( const Vector_SimOpt<S,O>>& x
-     const Vector_SimOpt<S,O>>& y ) {
+dot( const Vector_SimOpt<S,O>& x,
+     const Vector_SimOpt<S,O>& y ) {
   return dot(*(x.first),*(y.first)) + 
          dot(*(x.second),*(y.second));
 }
 
 template<class S, class O>
 magnitude_t<Vector_SimOpt<S,O>>
-norm( const Vector_SimOpt<S,O>>& x ) {
-  return std::sqrt( dot(*(x.first),*(y.first)) + 
-                    dot(*(x.second),*(y.second)) );
+norm( const Vector_SimOpt<S,O>& x ) {
+  return std::sqrt( dot(*(x.first),*(x.first)) + 
+                    dot(*(x.second),*(x.second)) );
 }
 
 template<class S, class O>

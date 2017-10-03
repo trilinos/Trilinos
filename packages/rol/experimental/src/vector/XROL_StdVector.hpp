@@ -54,6 +54,8 @@
 
 namespace XROL {
 
+template<class T> using StdVector = std::vector<T>;
+
 // Traits specialization
 template<class T> using StdVector = std::vector<T>;
 
@@ -153,7 +155,7 @@ void basis( StdVector<T>& b,
 }
 
 template<class T>
-element_t<StdVector<T>> 
+element_t<StdVector<T>>
 dot( const StdVector<T>& x, const StdVector<T>& y ) {
   using V = StdVector<T>;
   element_t<V> result = 0;
@@ -168,7 +170,7 @@ norm( const StdVector<T>& x ) {
   magnitude_t<V> sum2 = 0;
   for( auto e: x ) sum2 += e*e;
   return std::sqrt(sum2);
-}
+} 
 
 
 template<class T>

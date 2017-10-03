@@ -43,80 +43,72 @@
 // @HEADER
 
 #pragma once
-#include "XROL_StdVector.hpp"
-#include "XROL.hpp"
 
-using dvector = std::vector<double>;
+#include "XROL_ConstraintVectors.hpp"
 
-namespace Zakharov {
 
-template<class V> 
-class Objective : public XROL::Objective<V> {
+namespace XROL {
+
+
+template<class X, class C>
+class Constraint {
+
 public:
 
-  using Real = XROL::element_t<V>;
+  Constraint();
 
-  Objective( std::unique_ptr<V> k ) : 
-    k_(std::move(k)) {}
+  virtual ~Constraint();
 
-  Real value( const V& x, Real& tol ) override {
-    auto xdotx = XROL::dot(x,x);
-    auto kdotx = XROL::dot(*k_,x);
-    return xdotx + std::pow(kdotx,2)/4.0 + std::pow(kdotx,4)/16.0;
-  }
+  virtual void update( const X& x );
 
-  void gradient( V& g, const V& x, Real& tol ) override {
-    auto kdotx = XROL::dot(x,*k_);
-    auto coeff = 0.25*(2.0*kdotx+std::pow(kdotx,3.0));
-    XROL::set(g,x);
-    XROL::scale(g,2.0);
-    XROL::axpy(g,coeff,*k_);
-  }
+  virtual void value( C& c, const X& x, magnitude_t<X>& tol ) = 0;
 
-  Real dirDeriv(const V& x, const V& d, Real& tol ) override {
-    auto kdotd = XROL::dot(d,*k_);
-    auto kdotx = XROL::dot(x,*k_);
-    auto xdotd = XROL::dot(x,d);
+  virtual void applyJacobian( C& jv, 
+                              const X& v, 
+                              const X& x, 
+                              magnitude_t<X>& tol );
 
-    auto coeff = 0.25*(2.0*kdotx+std::pow(kdotx,3.0));
+  virtual void applyAdjointJacobian( dual_t<X>& ajv, 
+                                     const dual_t<C>& v,
+                                     const X& x,
+                                     const C& vdual,
+                                     magnitude_t<X>& tol );
 
-    return 2*xdotd + coeff*kdotd;
+
+  virtual void applyAdjointHessian( dual_t<X>& ahuv,
+                                    const dual_t<C>& u,
+                                    const X& v,
+                                    const X& x,
+                                    magnitude_t<X>& tol );   
+/*
+  virtual std::vector<magnitude_t<X>>
+  solveAugmentedSystem( X&               v1,
+                        dual_t<C>&       v2,
+                        const dual_t<C>& b1,
+                        const C&         b2,
+                        const X&         x,
+                        magnitude_t<X>&  tol );
+*/
+
+  virtual void applyPreconditioner( dual_t<C>& pv,
+                                    const C& v, 
+                                    const X& x,
+                                    const dual_t<X>& g,
+                                    magnitude_t<X>& tol );
+  virtual void activate( void );
  
-  }
-
-  void hessVec( V& hv, const V& v, const V& x, Real& tol ) override {
-    auto kdotx = XROL::dot(x,*k_);
-    auto kdotv = XROL::dot(v,*k_);
-    auto coeff = 0.25*(2.0+3.0*std::pow(kdotx,2.0))*kdotv;
-
-    XROL::set(hv,v);
-    XROL::scale(hv,2.0);
-    XROL::axpy(hv,coeff,*k_);
-  }
-
-  void invHessVec( V& ihv, const V& v, const V& x, Real& tol ) override {
-
-    auto kdotv = XROL::dot(*k_,v);
-    auto kdotx = XROL::dot(*k_,x);
-    auto kdotk = XROL::dot(*k_,*k_);
-    auto coeff = -kdotv/(2.0*kdotk+16.0/(2.0+3.0*std::pow(kdotx,2.0)));
-
-    XROL::set(ihv,v);
-    XROL::scale(ihv,0.5);
-    XROL::axpy(ihv,coeff,*k_);
-  }
+  virtual void deactivate( void );
 
 private:
-  std::unique_ptr<V> k_;
 
+  bool activated_;
+
+  // Constraint space scratch vector in the event of default 
+  // adjoint Jacobian use
+  std::unique_ptr<ConstraintVectors<X,C>> convec_; 
+  
 };
 
-//template<class V>
-//auto make_objective( std::unique_ptr<V> k ) {
-//  return std::move(std::make_unique<Objective<V>>(std::move(k)));  
-//}
 
-
-
-} // namespace Zakharov
+} // namespace XROL
 

@@ -69,14 +69,14 @@
 // Depends on XROL_VectorTraits.hpp and XROL_Vector.hpp
 #include "XROL_VectorCheck.hpp"
 #include "XROL_StdVector.hpp"
-//#include "XROL_Vector_SimOpt.hpp"
+#include "XROL_Vector_SimOpt.hpp"
 #include "XROL_Objective.hpp"
 
 
 // Depends on XROL_Objective
 #include "XROL_ObjectiveImpl.hpp"
 #include "XROL_ObjectiveCheck.hpp"
-
+#include "XROL_ObjectiveVectors.hpp"
 
 #include "XROL_Objective_ExtendedInterface.hpp"
 

@@ -79,7 +79,7 @@ int main( int argc, char *argv[] ) {
 
   try {
    
-    auto error_check = [os,errtol,&errorFlag] ( auto val ) {
+    auto error_check = [&os,errtol,&errorFlag] ( auto val ) {
       if( abs(val) > errtol ) {
         *os << "---> POSSIBLE ERROR ABOVE!\n"; 
         ++errorFlag;
