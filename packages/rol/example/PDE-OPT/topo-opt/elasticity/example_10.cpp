@@ -234,11 +234,10 @@ int main(int argc, char *argv[]) {
     // Create objective, constraint, multiplier and bounds
     Teuchos::RCP<ROL::Objective<RealT> > obj;
     Teuchos::RCP<ROL::Constraint<RealT> > icon;
-    Teuchos::RCP<ROL::Vector<RealT> > imul, iup;
+    Teuchos::RCP<ROL::Vector<RealT> > iup;
     if (volMin) {
       obj  = obj_vol;
       icon = Teuchos::rcp(new ROL::ConstraintFromObjective<RealT>(robj_com));
-      imul = Teuchos::rcp(new ROL::SingletonVector<RealT>(0));
       // Set upper bound to average compliance for solid beam.
       RealT cmpFactor = parlist->sublist("Problem").get("Compliance Factor", 1.1);
       RealT mycomp(0), comp(0);
@@ -259,6 +258,8 @@ int main(int argc, char *argv[]) {
       RealT vol          = domainHeight*domainWidth*domainDepth;
       iup  = Teuchos::rcp(new ROL::SingletonVector<RealT>(volFraction*vol));
     }
+    Teuchos::RCP<ROL::Vector<RealT> > imul
+      = Teuchos::rcp(new ROL::SingletonVector<RealT>(0));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > ibnd
       = Teuchos::rcp(new ROL::Bounds<RealT>(*iup,false));
 
