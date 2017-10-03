@@ -116,7 +116,7 @@ private:
 		     std::vector<int> &bigraphCRSRowPtr, std::vector<int> &bigraphCRSCols,
 	             std::vector<int> &bigraphVMapU, std::vector<int> &bigraphVMapV);
 
-void buildPartTree(int level, int leftPart, int splitPart, int rightPart, std::vector<int> &partTree);
+  void buildPartTree(int level, int leftPart, int splitPart, int rightPart, std::vector<int> &partTree, int &maxLev);
 
 
 public:
@@ -193,6 +193,12 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     size_t numGlobalParts = partSoln->getTargetGlobalNumberOfParts();
 
     const part_t *parts = partSoln->getPartListView();
+
+    int numVerts = mGraphModel->getLocalNumVertices();
+    for(size_t i=0; i< numVerts; i++)
+    {
+      std::cout << "part[" << i << "] = " << parts[i] <<std::endl;
+    }
     //////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////
@@ -202,15 +208,21 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     //   -- eventually this will be obtained from PHG output
     //
     // Each separator i is represented by 4 integers/part_t? in the partTree
-    // structure:  partTree[4*i], partTree[4*i+1], partTree[4*i+2], partTree[4*i+3]
-    // These 4 integers are level of separator, smallest part in 1st half of separator,
-    // smallest part in 2nd half of separator, largest part in 2nd half of separator + 1
+    // structure:  
+    //             partTree[4*i]   - level of separator
+    //             partTree[4*i+1] - smallest part in 1st half of separator
+    //             partTree[4*i+2] - smallest part in 2nd half of separator 
+    //             partTree[4*i+3] - largest part in 2nd half of separator + 1
+    // 
+    // 
     //////////////////////////////////////////////////////////////////////
     // change int to something, part_t?
 
     std::vector<int> partTree;
 
-    buildPartTree( 0, 0, (numGlobalParts-1)/2 + 1, numGlobalParts, partTree);
+    int maxLevel = 0;
+
+    buildPartTree( 0, 0, (numGlobalParts-1)/2 + 1, numGlobalParts, partTree, maxLevel);
     unsigned int numSeparators = partTree.size() / 4;
 
     for(unsigned int i=0;i<partTree.size(); i++)
@@ -218,7 +230,7 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
       std::cout << "partTree: " << partTree[i] << std::endl;
     }
     std::cout << "NumSeparators: " << numSeparators << std::endl;
-
+    std::cout << "Max Level: " << maxLevel << std::endl;
     //////////////////////////////////////////////////////////////////////
 
 
@@ -227,7 +239,8 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     // the level of the hiearchy of the separator tree.  This allows us
     // to easily identify the boundary value vertices
     //////////////////////////////////////////////////////////////////////
-    int numLevels = partTree[4*(numSeparators-1)]+1;
+    //    int numLevels = partTree[4*(numSeparators-1)]+1;
+    int numLevels = maxLevel+1;
 
     std::vector<std::vector<int> > partLevelMap(numLevels,std::vector<int>(numGlobalParts));
 
@@ -256,8 +269,6 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     std::cout << "partLevelMap[0][0] = " << partLevelMap[0][0] << std::endl; 
     std::cout << "partLevelMap[0][1] = " << partLevelMap[0][1] << std::endl; 
 
-       std::cout << "HERE7" << std::endl;
-
     //////////////////////////////////////////////////////////////////////
 
     // Set of separator vertices.  Used to keep track of what vertices are
@@ -271,8 +282,6 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     //    1. Build boundary layer between parts
     //    2. Build vertex separator from boundary layer
     //////////////////////////////////////////////////////////////////////
-    std::cout << "HERE8" << std::endl;
-
     for(unsigned int level=0;level<numLevels;level++)
     {
       sepVertsByLevel[level].resize(sepsInLev[level]);
@@ -282,8 +291,6 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
         ///////////////////////////////////////////////////////////////
         // Build boundary layer between parts (edge separator)
         ///////////////////////////////////////////////////////////////
-	std::cout << "HERE9" << std::endl;
-
         int bigraphNumU=0, bigraphNumV=0, bigraphNumE=0;
 	std::vector<int> bigraphVMapU; 
         std::vector<int> bigraphVMapV;
@@ -322,7 +329,6 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
            }
 
 	}
-	std::cout << "HERE10" << std::endl;
         ///////////////////////////////////////////////////////////////
 
         ///////////////////////////////////////////////////////////////
@@ -390,11 +396,6 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     }
     //////////////////////////////////////////////////////////////////////
 
-
-
-
-       std::cout << "HERE20" << std::endl;
-
     //////////////////////////////////////////////////////////////////////
 
     // //TODO: calculate vertex separator for each layer, 
@@ -420,8 +421,6 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
 				   std::vector<int> &bigraphCRSRowPtr, std::vector<int> &bigraphCRSCols,
 				   std::vector<int> &bigraphVMapS, std::vector<int> &bigraphVMapT)
 {
-  std::cout << "HI1" << std::endl;
-
   typedef typename Adapter::lno_t lno_t;         // local ids
   typedef typename Adapter::offset_t offset_t;   // offset_t
   typedef typename Adapter::scalar_t scalar_t;   // scalars
@@ -587,26 +586,42 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
 
 template <typename Adapter>
 void AlgND<Adapter>::
-buildPartTree(int level, int leftPart, int splitPart, int rightPart, std::vector<int> &partTree)
+buildPartTree(int level, int leftPart, int splitPart, int rightPart, std::vector<int> &partTree, int &maxLev)
 {
   // Insert information for this separator
   partTree.push_back(level);
   partTree.push_back(leftPart);
   partTree.push_back(splitPart);
   partTree.push_back(rightPart);
+  maxLev=level;
+
+  int tmpMaxLev=maxLev;
 
   // Recurse down left side of tree
   if(splitPart-leftPart > 1)
   {
+
     int newSplit = leftPart+(splitPart-leftPart-1)/2 + 1;
-    buildPartTree(level+1,leftPart,newSplit,splitPart,partTree);
+    buildPartTree(level+1,leftPart,newSplit,splitPart,partTree,tmpMaxLev);
+
+    if(tmpMaxLev>maxLev)
+    {
+      maxLev = tmpMaxLev;
+    }
+
   }
 
   // Recurse down right side of tree
   if(rightPart-splitPart>1)
   {
     int newSplit = splitPart+(rightPart-splitPart-1)/2 + 1;
-    buildPartTree(level+1,splitPart,newSplit,rightPart,partTree);
+    buildPartTree(level+1,splitPart,newSplit,rightPart,partTree,tmpMaxLev);
+
+    if(tmpMaxLev>maxLev)
+    {
+      maxLev = tmpMaxLev;
+    }
+
   }
 }
 
