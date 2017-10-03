@@ -79,7 +79,7 @@ struct call_impl<F, Tuple, true, Total, N...> {
 /** \fn         evaluate 
     \brief      Evaluate a variadic function using an input tuple and return the result
     @param[in]  f  A function taking a nonzero number of arguments
-    @param[in]  t  A tuple of scalar values 
+    @param[in]  t  A tuple of values 
     \return     The value \f$f(t_1,t_2,\hdots)\f$
     Note: This can be replaced by std::apply in C++17 */
 template<class F, class Tuple>
@@ -94,7 +94,7 @@ decltype(auto) evaluate( const F& f, Tuple && t ) {
                 a variadic function to each of the resulting values
     @param[in]  f  A function taking a nonzero number of arguments
     @param[in]  u  A function taking a single argument
-    @param[in]  t  A tuple of scalar values 
+    @param[in]  t  A tuple of values 
     \return     The value \f$ f(u(t_1),u(t_2),...) \f$
  
 */
@@ -117,7 +117,12 @@ void evaluate_all( const F& f, Vs&... vs ) {
   expand_type{ (f(vs),0)...};
 } 
 
-/** CRTP implementation of common reduce types */
+/** CRTP implementation of common reduce types 
+
+    Alternately, we could redefine a reduce operation purely in terms
+    of elementwise lambdas with a captured initial value
+
+*/
 template<class T, template<class> class ReduceType>
 struct Reduce {
 

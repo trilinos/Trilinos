@@ -1,3 +1,4 @@
+
 // @HEADER
 // ************************************************************************
 //
@@ -43,43 +44,48 @@
 
 #pragma once
 
-#include "cxxstd.hpp"
-
-// Teuchos Includes
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_ParameterList.hpp"
-
-// ROL Includes
-#include "ROL_Types.hpp"
-
-
-// Depends only on cxxstd.hpp, 
-// Independent of other XROL headers
-#include "XROL_Defines.hpp"
-#include "XROL_ElementwiseFunction.hpp"
-#include "XROL_Exception.hpp"
-#include "XROL_Output.hpp"
 #include "XROL_VectorTraits.hpp"
-#include "XROL_Vector.hpp"
-#include "XROL_TypeCheck.hpp"
+
+
+namespace XROL {
+
+template<class... Vs>
+using PartitionedVector = std::tuple<std::unique_ptr<Vs>...>;
+
+// Traits specialization [Probably these are too restrictive!]
+
+template<class... Vs>
+struct VectorIndex<PartitionedVector<Vs...>> {
+  using type = std::common_type_t<index_t<Vs>...>;
+};
+
+template<class... Vs>
+struct VectorElement<PartitionedVector<Vs...>> {
+  using type = std::common_type_t<element_t<Vs>...>;
+};
+
+template<class... Vs>
+struct VectorMagnitude<PartitionedVector<Vs...>> {
+  using type = std::common_type_t<magnitude_t<Vs>...>;
+};
+
+template<class... Vs>
+struct VectorDual<PartitionedVector<Vs...>> {
+  using type = PartitionedVector<dual_t<Vs>...>;
+};
 
 
 
-// Depends on XROL_VectorTraits.hpp and XROL_Vector.hpp
-#include "XROL_VectorCheck.hpp"
-#include "XROL_StdVector.hpp"
-#include "XROL_ArrayVector.hpp"
-#include "XROL_Vector_SimOpt.hpp"
-#include "XROL_PartitionedVector.hpp"
-#include "XROL_Objective.hpp"
 
 
-// Depends on XROL_Objective
-#include "XROL_ObjectiveImpl.hpp"
-#include "XROL_ObjectiveCheck.hpp"
-#include "XROL_ObjectiveVectors.hpp"
+// Functions
+// template<class... Vs>
+//std::unique_ptr<PartitionedVector<Vs...>>
+//clone( const PartitionedVector<Vs...>& v ) {
+//  auto move_clone = []( auto x ) { return std::move(clone(x)); }
+//  return std::make_tuple( Elementwise::evaluate(move_clone,vs)... );
+//}
 
-#include "XROL_Objective_ExtendedInterface.hpp"
 
-//#include "XROL_TestObjective.hpp"
+} // namespace XROL
+
