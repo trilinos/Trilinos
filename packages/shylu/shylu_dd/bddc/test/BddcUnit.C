@@ -43,19 +43,19 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 #include "ShyLUBDDC_config.h"
-#if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
+#if defined(HAVE_SHYLUBDDC_SHYLU_NODETACHO)
 #include "Kokkos_Core.hpp"
 #endif
 
 int main(int argc, char **argv)
 {
     MPI_Init(&argc, &argv);
-#if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
+#if defined(HAVE_SHYLUBDDC_SHYLU_NODETACHO)
     Kokkos::initialize(argc, argv);
 #endif
     testing::InitGoogleTest(&argc, argv);
     int returnVal = RUN_ALL_TESTS();
-#if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
+#if defined(HAVE_SHYLUBDDC_SHYLU_NODETACHO)
     Kokkos::finalize();
 #endif    
     MPI_Finalize();

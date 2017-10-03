@@ -10,7 +10,7 @@ typedef double ValueType;
 
 int main (int argc, char *argv[]) {
   
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
   __itt_pause();
 #endif
 

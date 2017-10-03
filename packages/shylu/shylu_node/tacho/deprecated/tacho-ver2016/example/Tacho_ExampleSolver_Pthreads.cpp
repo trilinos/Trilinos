@@ -10,14 +10,14 @@ typedef size_t size_type;
 
 typedef Kokkos::Threads exec_space;
 
-#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD)))
+#if (defined(HAVE_SHYLU_NODETACHO_SCOTCH) && (defined(HAVE_SHYLU_NODETACHO_CHOLMOD)))
 #include "Tacho_ExampleSolver.hpp"
 using namespace Tacho;
 #endif
 
 int main (int argc, char *argv[]) {
 
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
   __itt_pause();
 #endif
 
@@ -81,7 +81,7 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
     
-#if (defined(HAVE_SHYLUTACHO_SCOTCH) && (defined(HAVE_SHYLUTACHO_CHOLMOD)))
+#if (defined(HAVE_SHYLU_NODETACHO_SCOTCH) && (defined(HAVE_SHYLU_NODETACHO_CHOLMOD)))
     r_val = exampleSolver<exec_space>
       (file_input, 
        treecut,

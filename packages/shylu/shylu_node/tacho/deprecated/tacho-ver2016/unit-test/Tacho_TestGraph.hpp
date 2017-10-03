@@ -12,11 +12,11 @@
 
 #include "TachoExp_Graph.hpp"
 
-#if defined(HAVE_SHYLUTACHO_SCOTCH)
+#if defined(HAVE_SHYLU_NODETACHO_SCOTCH)
 #include "TachoExp_GraphTools_Scotch.hpp"
 #endif
 
-#if defined(HAVE_SHYLUTACHO_METIS)
+#if defined(HAVE_SHYLU_NODETACHO_METIS)
 #include "TachoExp_GraphTools_Metis.hpp"
 #endif
 
@@ -71,7 +71,7 @@ TEST( Graph, constructor ) {
   }
 }
 
-#if defined(HAVE_SHYLUTACHO_SCOTCH)
+#if defined(HAVE_SHYLU_NODETACHO_SCOTCH)
 TEST( Graph, scotch ) {
   CrsMatrixBaseHostType Ah("A host");
   Ah = MatrixMarket<ValueType>::read("test.mtx");
@@ -107,7 +107,7 @@ TEST( Graph, scotch ) {
 }
 #endif
 
-#if defined(HAVE_SHYLUTACHO_METIS)
+#if defined(HAVE_SHYLU_NODETACHO_METIS)
 TEST( Graph, metis ) {
   CrsMatrixBaseHostType Ah("A host");
   Ah = MatrixMarket<ValueType>::read("test.mtx");
@@ -135,7 +135,7 @@ TEST( Graph, metis ) {
 }
 #endif
 
-#if defined(HAVE_SHYLUTACHO_SCOTCH)
+#if defined(HAVE_SHYLU_NODETACHO_SCOTCH)
 TEST( Graph, camd ) {
 
   CrsMatrixBaseHostType Ah("A host");

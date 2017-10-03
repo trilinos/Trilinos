@@ -58,11 +58,11 @@
 #include "Ifpack2_TriDiContainer.hpp"
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 
-#ifdef HAVE_IFPACK2_SHYLUFASTILU
+#ifdef HAVE_IFPACK2_SHYLU_NODEFASTILU
 #include "Ifpack2_Details_Fic.hpp"
 #include "Ifpack2_Details_Fildl.hpp"
 #include "Ifpack2_Details_Filu.hpp"
-#endif // HAVE_IFPACK2_SHYLUFASTILU
+#endif // HAVE_IFPACK2_SHYLU_NODEFASTILU
 
 #ifdef HAVE_IFPACK2_AMESOS2
 #  include "Ifpack2_Details_Amesos2Wrapper.hpp"
@@ -124,7 +124,7 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
     prec = rcp (new Experimental::RBILUK<row_matrix_type>(matrix));
   }
   else if (precTypeUpper == "FAST_IC" || precTypeUpper == "FAST_ILU" || precTypeUpper == "FAST_ILDL") {
-    #ifdef HAVE_IFPACK2_SHYLUFASTILU
+    #ifdef HAVE_IFPACK2_SHYLU_NODEFASTILU
     {
       if(precTypeUpper == "FAST_IC")
         prec = rcp (new Details::Fic<scalar_type, local_ordinal_type, global_ordinal_type, node_type>(matrix));
@@ -136,7 +136,7 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
     #else
     {
       throw std::invalid_argument("The Ifpack2 FastIC, FastILU and FastILDL preconditioners require the FastILU subpackage of ShyLU to be enabled\n"
-                                  "To enable FastILU, set the CMake option Trilinos_ENABLE_ShyLUFastILU=ON");
+                                  "To enable FastILU, set the CMake option Trilinos_ENABLE_ShyLU_NodeFastILU=ON");
     }
     #endif
   }

@@ -4,7 +4,7 @@
 /// \file Tacho_Gemm_NoTrans_NoTrans_ExternalBlas.hpp
 /// \brief BLAS matrix-matrix multiplication 
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
-#ifdef HAVE_SHYLUTACHO_TEUCHOS
+#ifdef HAVE_SHYLU_NODETACHO_TEUCHOS
 #include "Teuchos_BLAS.hpp"
 #endif
 
@@ -43,7 +43,7 @@ namespace Tacho {
     //                >::value,
     //                "Space type of input matrices does not match" );
 #if                                                     \
-  defined( HAVE_SHYLUTACHO_TEUCHOS ) &&                 \
+  defined( HAVE_SHYLU_NODETACHO_TEUCHOS ) &&                 \
   defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
     typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
     typedef typename DenseExecViewTypeA::value_type   value_type;

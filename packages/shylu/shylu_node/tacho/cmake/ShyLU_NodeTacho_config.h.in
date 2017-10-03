@@ -1,5 +1,5 @@
-#ifndef SHYLUTACHO_CONFIG_H
-#define SHYLUTACHO_CONFIG_H
+#ifndef SHYLU_NODETACHO_CONFIG_H
+#define SHYLU_NODETACHO_CONFIG_H
 
 /* Define if want to build with size_type (int)  enabled */
 #cmakedefine TACHO_USE_INT_INT

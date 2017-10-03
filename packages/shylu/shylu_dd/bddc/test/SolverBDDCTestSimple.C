@@ -487,7 +487,7 @@ int setParameters(double lengthDir1,
 #endif
     break;
   case 2: // Tacho solver
-#if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
+#if defined(HAVE_SHYLUBDDC_SHYLU_NODETACHO)
     Parameters->set("Solver", "Tacho");
 #else
     std::cout << "Tacho solver not available in this build\n";

@@ -4,7 +4,7 @@
 /// \file  Tacho_Chol_Upper_ExternalLapack.hpp
 /// \brief LAPACK Cholesky factorization
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
-#ifdef HAVE_SHYLUTACHO_TEUCHOS
+#ifdef HAVE_SHYLU_NODETACHO_TEUCHOS
 #include "Teuchos_LAPACK.hpp"
 #endif
 
@@ -49,7 +49,7 @@ namespace Tacho {
     int r_val = 0;      
     if (member.team_rank() == 0) {
 #if                                                     \
-  defined( HAVE_SHYLUTACHO_TEUCHOS ) &&                 \
+  defined( HAVE_SHYLU_NODETACHO_TEUCHOS ) &&                 \
   defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
       typedef typename DenseExecViewTypeA::value_type   value_type;

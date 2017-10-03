@@ -315,7 +315,7 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
         try {
           solver->setParameters (pl);
         } catch (...) {
-#ifdef HAVE_IFPACK2_SHYLUHTS
+#ifdef HAVE_IFPACK2_SHYLU_NODEHTS
           // This should not happen.
           isGblSuccess (false, out);
           return;
@@ -451,7 +451,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareInternalTo
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(LocalSparseTriangularSolver, CompareHTSToLocalSolve, Scalar, LocalOrdinal, GlobalOrdinal)
 {
-#ifdef HAVE_IFPACK2_SHYLUHTS
+#ifdef HAVE_IFPACK2_SHYLU_NODEHTS
   testCompareToLocalSolve<Scalar, LocalOrdinal, GlobalOrdinal> (success, out, TrisolverDetails::HTS);
 #else
   

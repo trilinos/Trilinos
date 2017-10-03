@@ -5,7 +5,7 @@
 /// \file herk_u_ct_external_blas.hpp
 /// \brief BLAS hermitian rank one update
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
-#ifdef HAVE_SHYLUTACHO_TEUCHOS
+#ifdef HAVE_SHYLU_NODETACHO_TEUCHOS
 #include "Teuchos_BLAS.hpp"
 
 namespace Tacho {

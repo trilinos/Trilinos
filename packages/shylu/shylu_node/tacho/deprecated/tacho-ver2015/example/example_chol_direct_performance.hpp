@@ -23,7 +23,7 @@
 
 #include "chol.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #endif
 
@@ -62,7 +62,7 @@ namespace Tacho {
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
     typedef SymbolicFactorHelper<CrsMatrixBaseType> SymbolicFactorHelperType;
 
-#ifdef HAVE_SHYLUTACHO_MKL 
+#ifdef HAVE_SHYLU_NODETACHO_MKL 
     typedef typename CrsMatrixBaseType::value_type_array value_type_array;
 #endif
 
@@ -82,7 +82,7 @@ namespace Tacho {
       t_reorder = 0.0,
       t_symbolic = 0.0,
       t_flat2hier = 0.0,
-#ifdef HAVE_SHYLUTACHO_MKL 
+#ifdef HAVE_SHYLU_NODETACHO_MKL 
       t_mkl = 0.0,
 #endif
       t_factor_seq = 0.0,   t_solve_seq = 0.0,

@@ -19,7 +19,7 @@
 #include "Tacho_Gemm.hpp"
 #include "Tacho_Herk.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #endif   
 
@@ -107,7 +107,7 @@ namespace Tacho {
 
       const double flop = DenseFlopCount<value_type>::Syrk(k, m);
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
       mkl_set_num_threads(mkl_nthreads);
 #endif
 

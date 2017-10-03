@@ -13,7 +13,7 @@
 #include "Tacho_MatrixMarket.hpp"
 #include "Tacho_CrsData.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #include "Tacho_ExamplePardiso.hpp"
 

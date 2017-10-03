@@ -12,11 +12,11 @@
 #include "TachoExp_Graph.hpp"
 #include "TachoExp_SymbolicTools.hpp"
 
-#if defined(HAVE_SHYLUTACHO_SCOTCH)
+#if defined(HAVE_SHYLU_NODETACHO_SCOTCH)
 #include "TachoExp_GraphTools_Scotch.hpp"
 #endif
 
-#if defined(HAVE_SHYLUTACHO_METIS)
+#if defined(HAVE_SHYLU_NODETACHO_METIS)
 #include "TachoExp_GraphTools_Metis.hpp"
 #endif
 
@@ -24,7 +24,7 @@
 
 #include "TachoExp_NumericTools.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #endif
 
@@ -118,9 +118,9 @@ int main (int argc, char *argv[]) {
 
     std::cout << "CholSerial:: analyze matrix" << std::endl;
     timer.reset();
-#if   defined(HAVE_SHYLUTACHO_METIS)
+#if   defined(HAVE_SHYLU_NODETACHO_METIS)
     GraphTools_Metis T(G);
-#elif defined(HAVE_SHYLUTACHO_SCOTCH)
+#elif defined(HAVE_SHYLU_NODETACHO_SCOTCH)
     GraphTools_Scotch T(G);
 #else
     GraphTools_CAMD T(G);

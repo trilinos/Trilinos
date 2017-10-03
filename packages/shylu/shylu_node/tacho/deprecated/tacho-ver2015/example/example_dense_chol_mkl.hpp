@@ -16,7 +16,7 @@
 #include "chol.hpp"
 #include "dense_flop.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #endif
 

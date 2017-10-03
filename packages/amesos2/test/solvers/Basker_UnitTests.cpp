@@ -70,7 +70,7 @@
 //#include "Amesos2_Basker_decl.hpp"
 //#include "Amesos2_Basker_def.hpp"
 
-//#ifdef SHYLUBASKER
+//#ifdef SHYLU_NODEBASKER
 //#pragma message("FLAG EXISTS")
 //#endif
 
@@ -297,7 +297,7 @@ namespace {
     RCP<const Comm<int> > comm = platform.getComm();
     RCP<Node>             node = platform.getNode();
 
-#ifdef SHYLUBASKER 
+#ifdef SHYLU_NODEBASKER 
     // NDE: Beginning changes towards passing parameter list to shylu basker
     // for controlling various parameters per test, matrix, etc.
 
@@ -360,7 +360,7 @@ namespace {
     RCP<Amesos2::Solver<MAT,MV> > solver
       = Amesos2::create<MAT,MV>("Basker", A, Xhat, B );
 
-#if SHYLUBASKER 
+#if SHYLU_NODEBASKER 
     solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
 #endif
 
@@ -777,8 +777,8 @@ namespace {
    * Instantiations
    */
 
-#if defined(HAVE_TEUCHOS_COMPLEX) && !defined(SHYLUBASKER)
-  //#ifndef SHYLUBASKER
+#if defined(HAVE_TEUCHOS_COMPLEX) && !defined(SHYLU_NODEBASKER)
+  //#ifndef SHYLU_NODEBASKER
 
   // mfh 11 Jan 2016: Clang 3.7 doesn't like the following
   // commented-out pragma.  It says: "error: pragma message requires
@@ -809,7 +809,7 @@ namespace {
 #  else
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
 #  endif//end complex_double
-       //#endif //SHYLUBASKER
+       //#endif //SHYLU_NODEBASKER
 #else  // !(defined HAVE_TEUCHOS_COMPLEX
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
@@ -834,7 +834,7 @@ namespace {
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
   //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( KLU2, SolveTrans, SCALAR, LO, GO )
 
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR )                \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Basker, NumericFactorization, SCALAR, LO, GO ) \

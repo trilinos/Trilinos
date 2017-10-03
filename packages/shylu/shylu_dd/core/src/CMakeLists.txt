@@ -81,7 +81,8 @@ APPEND_SET(SOURCES
   epetra/shylu_directsolver_interface.cpp
   )
 
-TRIBITS_ADD_LIBRARY(shylu
+TRIBITS_ADD_LIBRARY(
+  shylu_ddcore
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

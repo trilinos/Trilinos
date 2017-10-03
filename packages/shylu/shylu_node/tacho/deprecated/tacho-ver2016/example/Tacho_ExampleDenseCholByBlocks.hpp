@@ -22,7 +22,7 @@
 #include "Tacho_Trsm.hpp"
 #include "Tacho_Chol.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #endif
 
@@ -116,7 +116,7 @@ namespace Tacho {
 
       const double flop = DenseFlopCount<value_type>::Chol(m);
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
       mkl_set_num_threads(mkl_nthreads);
 #endif
       os << "DenseCholByBlocks:: m = " << m << "  ";

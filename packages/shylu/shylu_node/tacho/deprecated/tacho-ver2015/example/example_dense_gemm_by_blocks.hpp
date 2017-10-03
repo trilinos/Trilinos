@@ -20,7 +20,7 @@
 #include "gemm.hpp"
 #include "dense_flop.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #endif   
 
@@ -116,7 +116,7 @@ namespace Tacho {
 
       const double flop = get_flop_gemm<value_type>(m, m, k);
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
       mkl_set_num_threads(mkl_nthreads);
 #endif
 

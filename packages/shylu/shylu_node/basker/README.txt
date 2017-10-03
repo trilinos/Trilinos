@@ -24,7 +24,7 @@ See test for example.
 
 As a package WITH Amesos2.
 Do instruction with Amesos2, PLUS
--DCMAKE_CXX_FLAGS:STRING="-DSHYLUBASKER"
+-DCMAKE_CXX_FLAGS:STRING="-DSHYLU_NODEBASKER"
 
 <Current Limitations>
 Due to converting my experiemental code into a package that can easily be compiled in the Trilinos FrameWork, the following options where set.

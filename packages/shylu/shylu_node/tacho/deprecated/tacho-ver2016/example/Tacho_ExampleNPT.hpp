@@ -10,11 +10,11 @@
 //#include "Tacho_CrsMatrixView.hpp"
 //#include "Tacho_CrsRowView.hpp"
 
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
 #include "ittnotify.h"
 #endif
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #endif
 
@@ -39,7 +39,7 @@ namespace Tacho {
 
       //typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
 
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
       __itt_pause();
 #endif
 
@@ -313,7 +313,7 @@ namespace Tacho {
 //       /// Phase 4 : Perform numeric factorization 
 //       /// ------------------------------------------------------------------------------------
 
-// #ifdef HAVE_SHYLUTACHO_MKL
+// #ifdef HAVE_SHYLU_NODETACHO_MKL
 //       mkl_set_num_threads(mkl_nthreads);
 // #endif
 
@@ -427,7 +427,7 @@ namespace Tacho {
 //       timer.reset();    
 //       {
 //         CrsTaskHierViewHostType TA_factor(HA_factor);
-// #ifdef HAVE_SHYLUTACHO_VTUNE
+// #ifdef HAVE_SHYLU_NODETACHO_VTUNE
 //         __itt_resume();
 // #endif
 //         {
@@ -450,7 +450,7 @@ namespace Tacho {
 //           Kokkos::wait(policy);
 //           TACHO_TEST_FOR_ABORT(future.get(), "Fail to perform CholeskySuperNodesByBlocks");
 //         }
-// #ifdef HAVE_SHYLUTACHO_VTUNE
+// #ifdef HAVE_SHYLU_NODETACHO_VTUNE
 //         __itt_pause();
 // #endif
 //       }

@@ -12,7 +12,7 @@
 #include "crs_matrix_base.hpp"
 #include "dense_matrix_base.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #include "example_pardiso.hpp"
 

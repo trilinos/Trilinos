@@ -23,7 +23,7 @@
 
 #include "chol.hpp"
 
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
 #include "ittnotify.h"
 #endif
 
@@ -72,7 +72,7 @@ namespace Tacho {
     typedef CrsMatrixView<CrsHierMatrixBaseType> CrsHierMatrixViewType;
     typedef TaskView<CrsHierMatrixViewType,TaskFactoryType> CrsHierTaskViewType;
 
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
     __itt_pause();
 #endif
 
@@ -141,7 +141,7 @@ namespace Tacho {
       {
         SymbolicFactorHelperType F(PA, league_size);
         if (vtune_symbolic) {
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
           __itt_resume();
 #endif
         }
@@ -149,7 +149,7 @@ namespace Tacho {
         F.createNonZeroPattern(fill_level, Uplo::Upper, UU);
         t_symbolic = timer.seconds();
         if (vtune_symbolic) {
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
           __itt_pause();
 #endif
         }
@@ -205,7 +205,7 @@ namespace Tacho {
       {
         UU.copy(RR);
         if (vtune_serial) {
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
           __itt_resume();
 #endif
         }
@@ -218,7 +218,7 @@ namespace Tacho {
         }
         t_factor_seq = timer.seconds();
         if (vtune_serial) {
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
           __itt_pause();
 #endif
         }
@@ -242,7 +242,7 @@ namespace Tacho {
       {
         UU.copy(RR);
         if (vtune_task) {
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
           __itt_resume();
 #endif
         }
@@ -255,7 +255,7 @@ namespace Tacho {
         }
         t_factor_task += timer.seconds();
         if (vtune_task) {
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
         __itt_pause();
 #endif
         }

@@ -3,10 +3,10 @@
 
 #include "Tacho_Solver.hpp"
 
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
 #include "ittnotify.h"
 #endif
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #endif
 
@@ -36,7 +36,7 @@ namespace Tacho {
 
     typedef Solver<value_type,ordinal_type,size_type,DeviceSpaceType> SolverType;
 
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
     __itt_pause();
 #endif
 
@@ -190,18 +190,18 @@ namespace Tacho {
     ///
     /// Solver interface
     ///
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
     mkl_set_num_threads(mkl_nthreads);
 #endif
 
     TACHO_SOLVER_RUN(tacho.reorder(treecut, prunecut), t_reorder);
     TACHO_SOLVER_RUN(tacho.analyze(), t_analyze);
 
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
     __itt_resume();
 #endif
     TACHO_SOLVER_RUN(tacho.factorize(), t_factorize);
-#ifdef HAVE_SHYLUTACHO_VTUNE
+#ifdef HAVE_SHYLU_NODETACHO_VTUNE
     __itt_pause();
 #endif
 

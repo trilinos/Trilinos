@@ -6,7 +6,7 @@
 /// \brief Sparse triangular solve on given sparse patterns and multiple rhs.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///
-#ifdef HAVE_SHYLUTACHO_TEUCHOS
+#ifdef HAVE_SHYLU_NODETACHO_TEUCHOS
 #include "Teuchos_BLAS.hpp"
 
 namespace Tacho {

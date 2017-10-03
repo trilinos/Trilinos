@@ -58,7 +58,7 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(cout, true);
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
     cout << "DenseTrsmByBlocks:: ConjTranspose" << endl;
     mkl_set_num_threads(nthreads);
     r_val = exampleDenseTrsmMKL

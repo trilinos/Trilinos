@@ -93,7 +93,8 @@ APPEND_SET(SOURCES
   dummy.cpp
 )
 
-TRIBITS_ADD_LIBRARY(shyluFROSch
+TRIBITS_ADD_LIBRARY(
+  shylu_ddfrosch
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

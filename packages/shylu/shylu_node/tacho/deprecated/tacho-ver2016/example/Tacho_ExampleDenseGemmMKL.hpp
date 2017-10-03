@@ -9,7 +9,7 @@
 #include "Tacho_DenseMatrixBase.hpp"
 #include "Tacho_DenseFlopCount.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #endif
 

@@ -64,7 +64,7 @@
 #endif
 */
 
-#if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
+#if defined(HAVE_SHYLUBDDC_SHYLU_NODETACHO)
 #include "shylu_SolverTacho.h"
 #endif
 
@@ -106,7 +106,7 @@ template <class SX> class SolverFactory
 					Parameters);
     }
     else if (solverString == "Tacho") {
-#if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
+#if defined(HAVE_SHYLUBDDC_SHYLU_NODETACHO)
       SolverPtr = new SolverTacho<SX>(numRows,
 				      rowBegin,
 				      columns,

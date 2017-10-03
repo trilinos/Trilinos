@@ -2,7 +2,7 @@
 #ifndef __EXAMPLE_PARDISO_HPP__
 #define __EXAMPLE_PARDISO_HPP__
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 using namespace std;
 
 #include "util.hpp"

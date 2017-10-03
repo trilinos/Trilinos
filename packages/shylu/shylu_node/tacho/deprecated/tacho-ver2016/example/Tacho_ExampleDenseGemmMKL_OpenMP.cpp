@@ -58,7 +58,7 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
     std::cout << "DenseGemmByBlocks:: NoTranspose, NoTranspose" << std::endl;
     mkl_set_num_threads(nthreads);
     r_val = exampleDenseGemmMKL<exec_space>

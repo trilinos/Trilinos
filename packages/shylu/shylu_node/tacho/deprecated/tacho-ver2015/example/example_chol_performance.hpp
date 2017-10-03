@@ -23,7 +23,7 @@
 
 #include "chol.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_rci.h"
 #endif
 
@@ -63,7 +63,7 @@ namespace Tacho {
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
     typedef SymbolicFactorHelper<CrsMatrixBaseType> SymbolicFactorHelperType;
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
     typedef typename CrsMatrixBaseType::value_type_array value_type_array;
 #endif
 
@@ -83,7 +83,7 @@ namespace Tacho {
       t_reorder = 0.0,
       t_symbolic = 0.0,
       t_flat2hier = 0.0,
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
       t_mkl_seq = 0.0,
 #endif
       t_factor_seq = 0.0,
@@ -183,7 +183,7 @@ namespace Tacho {
     CrsMatrixBaseType RR("RR");
     RR.copy(UU);
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
     if (!skip_serial && mkl_interface) {
       cout << "CholPerformance:: MKL factorize the matrix" << endl;
       CrsMatrixBaseType MM("MM");
@@ -302,7 +302,7 @@ namespace Tacho {
     }
 
     if (!skip_serial) {
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
       cout << "CholPerformance:: mkl/chol scale [mkl/chol] = " << t_mkl_seq/t_factor_seq << endl;
       cout << "CholPerformance:: mkl/task  scale [mkl/task]  = " << t_mkl_seq/t_factor_task << endl;
 #else

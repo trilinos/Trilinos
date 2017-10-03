@@ -9,7 +9,7 @@
 #include "TachoExp_CrsMatrixBase.hpp"
 #include "TachoExp_MatrixMarket.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #include "Tacho_ExamplePardiso.hpp"
 #endif
@@ -47,7 +47,7 @@ int main (int argc, char *argv[]) {
   Kokkos::DefaultHostExecutionSpace::print_configuration(std::cout, false);
 
   int r_val = 0;
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
   {
     typedef double value_type;
     typedef CrsMatrixBase<value_type> CrsMatrixBaseType;

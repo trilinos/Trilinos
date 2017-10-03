@@ -24,7 +24,7 @@ APPEND_SET(SOURCES
 #-----------------------------------------------------------------------------
 
 TRIBITS_ADD_LIBRARY(
-    shylufastilu
+    shylu_nodefastilu
     HEADERS ${HEADERS_PUBLIC}
     NOINSTALLHEADERS ${HEADERS_PRIVATE}
     SOURCES ${SOURCES}

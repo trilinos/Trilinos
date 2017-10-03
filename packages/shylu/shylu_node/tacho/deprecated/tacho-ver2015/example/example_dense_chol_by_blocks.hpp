@@ -20,7 +20,7 @@
 #include "chol.hpp"
 #include "dense_flop.hpp"
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
 #include "mkl_service.h"
 #endif
 
@@ -106,7 +106,7 @@ namespace Tacho {
 
       const double flop = get_flop_chol<value_type>(m);
 
-#ifdef HAVE_SHYLUTACHO_MKL
+#ifdef HAVE_SHYLU_NODETACHO_MKL
       mkl_set_num_threads(1);
 #endif
       int ierr = 0;
