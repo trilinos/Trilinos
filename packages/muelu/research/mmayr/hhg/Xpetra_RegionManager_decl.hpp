@@ -210,11 +210,94 @@ class RegionManager
   //! Get total number of regions in the mesh
   GO getNumRegions() const { return numRegions_; }
 
-  //! \brief Print all regions that are (at least partially) owned by a processor
-  virtual void printRegionsPerProc(Teuchos::FancyOStream& out ///< output stream
-      ) const;
+/*! \class RegionManager
+ *
+ *  \author mayr.mt \date 09/2017
+ */
+template<class SC, class LO, class GO, class NO>
+class RegionManager
+{
+  public:
+
+  //! @name Construction/Destruction
+  //@{
+
+  //! Constructor (read node-to-region mapping from file)
+  RegionManager(const std::string& mappingFileName, ///< file name of file with nodes-to-region mapping information
+      Teuchos::RCP<const Teuchos::Comm<int> > comm ///< communicator
+      );
+
+  //! Destructor
+  virtual ~RegionManager(){};
 
   //@}
+
+  //! @name Access routines
+  //@{
+
+  //! Get total number of nodes in the mesh
+  GO getNumNodes() const { return numNodes_; }
+
+  //! Get total number of regions in the mesh
+  GO getNumRegions() const { return numRegions_; }
+
+//  //! Get number of nodes in region \c regionID
+//  GO getNumNodesPerRegion(GO regionID) const { return numNodesPerRegion_[regionID]; }
+//
+//  //! Get row map of composite matrix
+//  Teuchos::Array<GO> getCompositeRowMap() const { return maps_->compositeMap_; }
+//
+//  //! Get row map of region \c regionID
+//  Teuchos::Array<GO> getRegionRowMap(GO regionID) const;
+//
+//  Teuchos::Array<Teuchos::Array<GO> > getRegionRowMaps() const { return maps_->regionMaps_; };
+//
+//  //used as a map for a RegionToAll node index
+//  Teuchos::Array<Teuchos::Array< std::tuple<GO,GO> > > getRegionToAll() const { return maps_->regionToAll_; }
+//
+//  // used as a map for a RegionToAll node index
+//  Teuchos::Array< std::tuple<GO,GO> > getRegionToAll(GO) const;
+//
+//  //! Access mapping of interface nodes to regions
+//  Teuchos::Array<std::tuple<int,Teuchos::Array<GO> > > getInterfaceNodesToRegions() const { return interfaceNodesToRegions_; }
+
+  //@}
+
+//  //! @name Print routines
+//  //@{
+//
+//  //! Print all node-region pairs
+//  virtual void printNodeRegionPairs(Teuchos::FancyOStream& out ///< output stream
+//      ) const;
+//
+//  //! Print mapping of nodes to regions
+//  virtual void printNodesToRegionMapping(Teuchos::FancyOStream& out ///< output stream
+//      ) const;
+//
+//  //! Print mapping of interface nodes to regions
+//  virtual void printInterfaceNodesToRegionMapping(Teuchos::FancyOStream& out ///< output stream
+//      ) const;
+//
+//  /*! \brief Print inactive processors
+//   *
+//   *  Inactive processors are those, that do not hold a row in the composite matrix
+//   */
+//  virtual void printInactiveProcs(Teuchos::FancyOStream& out ///< output stream
+//      ) const;
+//
+//  //! \brief Print number of regions associated with each processor
+//  virtual void printNumRegionsPerProc(Teuchos::FancyOStream& out ///< output stream
+//      ) const;
+//
+//  //! \brief Print all processors for each region
+//    virtual void printProcsPerRegion(Teuchos::FancyOStream& out ///< output stream
+//        ) const;
+//
+//  //! \brief Print all regions that are (at least partially) owned by a processor
+//  virtual void printRegionsPerProc(Teuchos::FancyOStream& out ///< output stream
+//      ) const;
+//
+//  //@}
 
   protected:
 
@@ -295,8 +378,6 @@ class RegionManager
 
   //! Collection of region maps
   Teuchos::Array<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > regionMaps_;
-
-  //@}
 
   //@}
 
