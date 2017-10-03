@@ -400,7 +400,7 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
       "  sub-entry2: green\n"
       "...\n",
       "21");
-  test_debug_reader(tables,
+  test_reader(tables,
       "My Awesome Problem:\n"
       "  Particle Periodic:\n"
       "    X: \"-1.0, 1.0\"\n"
