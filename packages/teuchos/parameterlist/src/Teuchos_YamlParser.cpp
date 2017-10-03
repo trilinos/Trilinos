@@ -358,6 +358,7 @@ class Reader : public Teuchos::Reader {
         if (prod == Teuchos::YAML::PROD_MAP_SCALAR_RAW) {
           scalar.text += any_ref_cast<std::string>(rhs.at(2));
         }
+        scalar.text = remove_trailing_whitespace(scalar.text);
         scalar.source = Scalar::RAW;
         scalar.tag_type = -1;
         break;
