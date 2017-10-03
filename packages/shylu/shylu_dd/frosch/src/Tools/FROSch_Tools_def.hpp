@@ -388,8 +388,8 @@ namespace FROSch {
     template<class T>
     inline void sortunique(T &v)
     {
-        sort(v.begin(),v.end());
-        v.erase(unique(v.begin(),v.end()),v.end());
+        std::sort(v.begin(),v.end());
+        v.erase(std::unique(v.begin(),v.end()),v.end());
     }
 }
 
