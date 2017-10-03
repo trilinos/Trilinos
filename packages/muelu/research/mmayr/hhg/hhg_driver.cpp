@@ -5,8 +5,9 @@
 #include <Teuchos_DefaultComm.hpp>
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_LocalTestingHelpers.hpp"
-#include <Teuchos_StandardCatchMacros.hpp>
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_XMLParameterListCoreHelpers.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 // Xpetra
 #include "Xpetra_Map.hpp"
@@ -37,6 +38,47 @@
 
 // MueLu
 #include "MueLu_Utilities.hpp"
+
+/* Read xmlFile with all possible problem definitions and extract the one to be
+ * solved.
+ *
+ * All parameters are stored in \c xmlParams, while the problem-specific
+ * parameters are stored in \c probParams.
+ *
+ * \return probParams
+ */
+Teuchos::RCP<const Teuchos::ParameterList>
+readProblemParams(const std::string xmlFileName,
+    Teuchos::RCP<const Teuchos::Comm<int> > comm)
+{
+  // check for reasonable filename of xml-file to be read
+  Teuchos::RCP<Teuchos::ParameterList> xmlParams = Teuchos::null;
+  if (xmlFileName.length() && xmlFileName.rfind(".xml"))
+  {
+    // read the parameter list
+    xmlParams = Teuchos::getParametersFromXmlFile(xmlFileName.c_str());
+//    xmlParams->print(std::cout);
+  }
+  else
+    TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "The file name " << xmlFileName << " is not a valid XML file name.");
+
+  // Access sublist with data of current problem to be solved
+  const std::string probName = xmlParams->get<std::string>("problem type");
+  if (comm->getRank() == 0)
+    std::cout << "Reading parameter list for problem '"
+        << probName << "'." << std::endl;
+
+  const Teuchos::ParameterList& probParams = xmlParams->sublist(probName);
+
+  // Perform some sanity checks
+  TEUCHOS_TEST_FOR_EXCEPT_MSG(probParams.get<int>("number of processors") != comm->getSize(),
+      "Number of processes defined in input file does not match number of MPI ranks.");
+
+  // Wrap into RCP to return
+  Teuchos::RCP<const Teuchos::ParameterList> probParamsRCP = Teuchos::rcp(new Teuchos::ParameterList(probParams));
+
+  return probParamsRCP;
+}
 
 
 // =========== //
@@ -85,25 +127,31 @@ int main(int argc, char* argv[])
   // wrap the output stream
   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
-  TEUCHOS_TEST_FOR_EXCEPT_MSG(argc<4, "\nNot enough command line arguments!\n");
+//  TEUCHOS_TEST_FOR_EXCEPT_MSG(argc != 1, "Do only provide an input xml-file, nothing else.");
 
   // process input arguments
   std::string xmlFileName = argv[1]; // xml-file to configure MueLu
-  std::string matrixFileName = argv[2]; // file with matrix entries
-  std::string mappingFileName = argv[3]; // file with node-to-region mapping
+
+  // check for reasonable filename of xml-file to be read
+  Teuchos::RCP<const Teuchos::ParameterList> probParams = readProblemParams(xmlFileName, comm);
+  if (comm->getRank() == 0)
+    probParams->print(*out);
+
+  const std::string& mappingFileName = probParams->get<std::string>("mapping file name");
+//  const std::string& matrixFileName = probParams->get<std::string>("matrix file name");
 
   // create the RegionManager to deal with node-to-region mappings
   Teuchos::RCP<RegionManager> regionManager = Teuchos::rcp(new RegionManager(mappingFileName, comm));
-  regionManager->printNodeRegionPairs(*out);
-  regionManager->printNodesToRegionMapping(*out);
-  regionManager->printInterfaceNodesToRegionMapping(*out);
-  regionManager->printInactiveProcs(*out);
-//  regionManager->printNumRegionsPerProc(*out);
-//  regionManager->printProcsPerRegion(*out);
-
-
-  // create the RegionMatrix to access the assembled, the composite, and the regional matrix
-  Teuchos::RCP<RegionMatrix> regionMatrix = Teuchos::rcp(new RegionMatrix(matrixFileName, regionManager, comm));
+//  regionManager->printNodeRegionPairs(*out);
+//  regionManager->printNodesToRegionMapping(*out);
+//  regionManager->printInterfaceNodesToRegionMapping(*out);
+//  regionManager->printInactiveProcs(*out);
+////  regionManager->printNumRegionsPerProc(*out);
+////  regionManager->printProcsPerRegion(*out);
+//
+//
+//  // create the RegionMatrix to access the assembled, the composite, and the regional matrix
+//  Teuchos::RCP<RegionMatrix> regionMatrix = Teuchos::rcp(new RegionMatrix(matrixFileName, regionManager, comm));
 
 #ifdef HAVE_MPI
   MPI_Finalize();
