@@ -272,6 +272,7 @@ Xpetra::RegionManager<SC,LO,GO,NO>::RegionManager(
   setupRowMaps();
 
   setupMappingNodesPerRegion();
+
   if (comm_->getRank() == 0)
     nodes_->printRegionData(*out);
 
@@ -430,6 +431,30 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRegionRowMaps()
     const Teuchos::Array<GO>& myNodesGIDs = *myNodesGIDsRcp;
 
     regionMaps_[i] = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra, nodes_->getNumNodesPerRegion(i), myNodesGIDs(), 0, comm_);
+  }
+  comm_->barrier();
+
+  return;
+}
+
+template<class SC, class LO, class GO, class NO>
+void Xpetra::RegionManager<SC,LO,GO,NO>::setupCompositeRowMap()
+{
+  Teuchos::RCP<const Teuchos::Array<GO> > myNodesGIDsRcp = nodes_->getNodeGIDsPerProc(comm_->getRank());
+  const Teuchos::Array<GO>& myNodesGIDs = *myNodesGIDsRcp;
+
+  compositeMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra, nodes_->getNumNodes(), myNodesGIDs(), 0, comm_);
+
+//  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+//  compositeMap_->describe(*out, Teuchos::VERB_EXTREME);
+
+  comm_->barrier();
+
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  for (GO i = 0; i < numRegions_; ++i)
+  {
+    *out << std::endl << "regionMaps[" << i << "]_:" << std::endl;
+    regionMaps_[i]->describe(*out, Teuchos::VERB_EXTREME);
   }
   comm_->barrier();
 
