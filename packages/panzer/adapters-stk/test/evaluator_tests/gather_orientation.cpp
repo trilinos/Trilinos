@@ -192,8 +192,8 @@ namespace panzer {
     PHX::MDField<panzer::Traits::Residual::ScalarT> 
        fieldData_qedge1(evalField_qedge1->name(),basis_qedge1->functional);
 
-    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_q1);
-    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_qedge1);
+    fm.getFieldData<panzer::Traits::Residual>(fieldData_q1);
+    fm.getFieldData<panzer::Traits::Residual>(fieldData_qedge1);
 
     for(int i=0;i<static_cast<int>(fieldData_q1.size());i++) {
        TEST_EQUALITY(fieldData_q1[i],1);

@@ -148,7 +148,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
       ort.getFaceOrientation(faceOrts, numFaces); 
 
       // vertex count represent rotation count before it flips
-      const double ortVal = faceOrts[subcellOrd] < subcellTopo.getVertexCount() ? 1.0 : -1.0;
+      const double ortVal = faceOrts[subcellOrd] < static_cast<int>(subcellTopo.getVertexCount()) ? 1.0 : -1.0;
       for(int b=0;b<numFaceDofs;b++) {
         residual(c,b) = ScalarT(0.0);
         for(int d=0;d<cellDim;d++)

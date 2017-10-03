@@ -325,9 +325,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(refField);
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(dofPointField0);
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(dofPointField1);
+  fm->getFieldData<EvalType>(refField);
+  fm->getFieldData<EvalType>(dofPointField0);
+  fm->getFieldData<EvalType>(dofPointField1);
 
   // check names to make sure they are still correct
   TEST_EQUALITY(refField.fieldTag().name(),"TestField");

@@ -199,8 +199,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   typename PHX::MDField<ScalarT,Cell,BASIS> s("Pressure",sourceBasis->functional);
   typename PHX::MDField<ScalarT,Cell,BASIS> t("Pressure",targetBasis->functional);
 
-  fm->getFieldData<ScalarT,EvalType>(s);
-  fm->getFieldData<ScalarT,EvalType>(t);
+  fm->getFieldData<EvalType>(s);
+  fm->getFieldData<EvalType>(t);
 
   typename Teuchos::ScalarTraits<ScalarT>::magnitudeType tol =
     100.0 * Teuchos::ScalarTraits<ScalarT>::eps();
