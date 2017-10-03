@@ -421,7 +421,11 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
       "\t\t\tType: Quad\n"
       "\t\t\tElements: [     10,     10 ]\n"
       "...\n",
-      "Trilinos issue #1801");
+      "Trilinos issue #1801 part 2");
+  test_reader(tables,
+      "# Hi\n"
+      "My Awesome Problem: #other\n",
+      "Trilinos issue #1807");
 }
 
 TEUCHOS_UNIT_TEST( Parser, yaml_reader_Match1 ) {
