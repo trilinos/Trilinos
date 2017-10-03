@@ -80,7 +80,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
   }
   else if ( name == "Coherent Exponential Utility" ||
             name == "KL Divergence"                ||
-            name == "BPOE" ) {
+            name == "bPOE" ) {
     nStatistic = 1;
     isBoundActivated = true;
     lower.resize(nStatistic,zero);
@@ -155,7 +155,7 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
       }
       else if ( riskString[i] == "Coherent Exponential Utility" ||
                 riskString[i] == "KL Divergence"                ||
-                riskString[i] == "BPOE" ) {
+                riskString[i] == "bPOE" ) {
         nStatistic += 1;
         isBoundActivated = true;
         lower.push_back(zero);

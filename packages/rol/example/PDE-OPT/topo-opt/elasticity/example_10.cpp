@@ -41,9 +41,10 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_09.cpp
+/*! \file  example_10.cpp
     \brief Shows how to minimize volume subject to a constraint on
-           compliance.
+           compliance or minimize compliance subject to a constraint
+           on volume.
 */
 
 #include "Teuchos_Comm.hpp"
@@ -78,7 +79,7 @@
 #include "../../TOOLS/integralconstraint.hpp"
 #include "../../TOOLS/meshreader.hpp"
 #include "obj_topo-opt.hpp"
-#include "mesh_topo-opt.hpp"
+#include "mesh_ex06.hpp"
 #include "pde_elasticity.hpp"
 #include "pde_filter.hpp"
 
@@ -110,27 +111,27 @@ int main(int argc, char *argv[]) {
     RealT tol(1e-8), one(1);
 
     /*** Read in XML input ***/
-    std::string filename = "input_ex09.xml";
+    std::string filename = "input_ex10.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Retrieve parameters.
-    const RealT cmpFactor    = parlist->sublist("Problem").get("Compliance Factor", 1.1);
-    const RealT objFactor    = parlist->sublist("Problem").get("Objective Scaling", 1e-4);
+    int probDim      = parlist->sublist("Problem").get("Problem Dimension",2);
+    bool volMin      = parlist->sublist("Problem").get("Minimize Volume", true);
+    RealT cmpScaling = parlist->sublist("Problem").get("Compliance Scaling", 1e-4);
 
     /*** Initialize main data structure. ***/
-    int probDim = parlist->sublist("Problem").get("Problem Dimension",2);
     Teuchos::RCP<MeshManager<RealT> > meshMgr;
     if (probDim == 2) {
-      meshMgr = Teuchos::rcp(new MeshManager_TopoOpt<RealT>(*parlist));
+      meshMgr = Teuchos::rcp(new MeshManager_Example06<RealT>(*parlist));
     } else if (probDim == 3) {
       meshMgr = Teuchos::rcp(new MeshReader<RealT>(*parlist));
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> PDE-OPT/topo-opt/elasticity/example_09.cpp: Problem dim is not 2 or 3!");
+        ">>> PDE-OPT/topo-opt/elasticity/example_10.cpp: Problem dim is not 2 or 3!");
     }
-    // Initialize PDE describing elasticity equations.
+    // Initialize PDE defining elasticity equations.
     Teuchos::RCP<PDE_Elasticity<RealT> > pde
       = Teuchos::rcp(new PDE_Elasticity<RealT>(*parlist));
     Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
@@ -183,12 +184,10 @@ int main(int argc, char *argv[]) {
         distVec[i*dim + 2] = ROL::DistributionFactory<RealT>(aziList);
       }
     }
-    Teuchos::RCP<ROL::BatchManager<RealT> > xbman
+    Teuchos::RCP<ROL::BatchManager<RealT> > bman
       = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > xsampler
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,distVec,xbman));
-    Teuchos::RCP<ROL::BatchManager<RealT> > cbman
-      = Teuchos::rcp(new ROL::SingletonTeuchosBatchManager<RealT,int>(comm));
+    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
+      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,distVec,bman));
 
     // Initialize "filtered" of "unfiltered" constraint.
     Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pdeWithFilter;
@@ -204,24 +203,23 @@ int main(int argc, char *argv[]) {
     }
     pdeWithFilter->setSolveParameters(*parlist);
 
-    // Initialize volume objective.
+    // Compute compliance scaling
+    con->value(*rp, *up, *zp, tol);
+    RealT rnorm2 = rp->dot(*rp);
+    if (rnorm2 > 1e2*ROL::ROL_EPSILON<RealT>()) {
+      cmpScaling /= rnorm2;
+    }
+
+    // Initialize volume and compliance objective functions.
     Teuchos::RCP<QoI<RealT> > qoi_vol
       = Teuchos::rcp(new QoI_VolumeObj_TopoOpt<RealT>(pde->getFE(),pde->getFieldHelper()));
-    Teuchos::RCP<ROL::Objective<RealT> > vobj
+    Teuchos::RCP<ROL::Objective<RealT> > obj_vol
       = Teuchos::rcp(new IntegralOptObjective<RealT>(qoi_vol,assembler));
-
-    // Initialize compliance inequality constraint.
-    con->value(*rp, *up, *zp, tol);
-    RealT objScaling = objFactor, rnorm2 = rp->dot(*rp);
-    if (rnorm2 > 1e2*ROL::ROL_EPSILON<RealT>()) {
-      objScaling /= rnorm2;
-    }
-    std::vector<Teuchos::RCP<QoI<RealT> > > qoi_cmp(1,Teuchos::null);
-    qoi_cmp[0]
-      = Teuchos::rcp(new QoI_TopoOpt<RealT>(pde->getFE(), pde->getLoad(),
-                                            pde->getFieldHelper(), objScaling));
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > cobj
-      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_cmp,assembler));
+    Teuchos::RCP<QoI<RealT> > qoi_com
+      = Teuchos::rcp(new QoI_TopoOpt<RealT>(pde->getFE(),pde->getLoad(),
+                                            pde->getFieldHelper(),cmpScaling));
+    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj_com
+      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_com,assembler));
 
     // Initialize reduced compliance objective function.
     bool storage     = parlist->sublist("Problem").get("Use state storage",true);
@@ -229,39 +227,60 @@ int main(int argc, char *argv[]) {
     storage = (type == "Risk Neutral") ? false : storage;
     Teuchos::RCP<ROL::SimController<RealT> > stateStore
       = Teuchos::rcp(new ROL::SimController<RealT>());
-    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > cobjRed
-      = Teuchos::rcp(new  ROL::Reduced_Objective_SimOpt<RealT>(cobj,
+    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > robj_com
+      = Teuchos::rcp(new  ROL::Reduced_Objective_SimOpt<RealT>(obj_com,
                      pdeWithFilter,stateStore,up,zp,pp,storage));
 
-    // Create compliance constraint, multiplier and bounds
-    RealT mycomp(0), comp(0);
-    for (int i = 0; i < xsampler->numMySamples(); ++i) {
-      cobjRed->setParameter(xsampler->getMyPoint(i));
-      mycomp += xsampler->getMyWeight(i)*cobjRed->value(*zp,tol);
-    }
-    xsampler->sumAll(&mycomp,&comp,1);
-    Teuchos::RCP<ROL::Constraint<RealT> > icon
-      = Teuchos::rcp(new ROL::ConstraintFromObjective<RealT>(cobjRed));
-    Teuchos::RCP<std::vector<RealT> > imul_rcp, iup_rcp;
+    // Create objective, constraint, multiplier and bounds
+    Teuchos::RCP<ROL::Objective<RealT> > obj;
+    Teuchos::RCP<ROL::Constraint<RealT> > icon;
     Teuchos::RCP<ROL::Vector<RealT> > imul, iup;
-    imul = Teuchos::rcp(new ROL::SingletonVector<RealT>(0));
-    iup  = Teuchos::rcp(new ROL::SingletonVector<RealT>(cmpFactor*comp));
+    if (volMin) {
+      obj  = obj_vol;
+      icon = Teuchos::rcp(new ROL::ConstraintFromObjective<RealT>(robj_com));
+      imul = Teuchos::rcp(new ROL::SingletonVector<RealT>(0));
+      // Set upper bound to average compliance for solid beam.
+      RealT cmpFactor = parlist->sublist("Problem").get("Compliance Factor", 1.1);
+      RealT mycomp(0), comp(0);
+      for (int i = 0; i < sampler->numMySamples(); ++i) {
+        robj_com->setParameter(sampler->getMyPoint(i));
+        mycomp += sampler->getMyWeight(i)*robj_com->value(*zp,tol);
+      }
+      sampler->sumAll(&mycomp,&comp,1);
+      iup  = Teuchos::rcp(new ROL::SingletonVector<RealT>(cmpFactor*comp));
+    } else {
+      obj  = robj_com;
+      icon = Teuchos::rcp(new ROL::ConstraintFromObjective<RealT>(obj_vol));
+      // Set upper bound to fraction of total volume.
+      RealT domainWidth  = parlist->sublist("Geometry").get("Width", 2.0);
+      RealT domainHeight = parlist->sublist("Geometry").get("Height", 1.0);
+      RealT domainDepth  = parlist->sublist("Geometry").get("Depth", 1.0);
+      RealT volFraction  = parlist->sublist("Problem").get("Volume Fraction", 0.4);
+      RealT vol          = domainHeight*domainWidth*domainDepth;
+      iup  = Teuchos::rcp(new ROL::SingletonVector<RealT>(volFraction*vol));
+    }
     Teuchos::RCP<ROL::BoundConstraint<RealT> > ibnd
       = Teuchos::rcp(new ROL::Bounds<RealT>(*iup,false));
 
     // Initialize bound constraints.
-    Teuchos::RCP<Tpetra::MultiVector<> > lo_rcp, hi_rcp;
-    lo_rcp = assembler->createControlVector(); lo_rcp->putScalar(0.0);
-    hi_rcp = assembler->createControlVector(); hi_rcp->putScalar(1.0);
-    Teuchos::RCP<ROL::Vector<RealT> > lop, hip;
-    lop = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(lo_rcp,pde,assembler));
-    hip = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(hi_rcp,pde,assembler));
+    Teuchos::RCP<Tpetra::MultiVector<> > ll_rcp, uu_rcp;
+    ll_rcp = assembler->createControlVector(); ll_rcp->putScalar(0.0);
+    uu_rcp = assembler->createControlVector(); uu_rcp->putScalar(1.0);
+    Teuchos::RCP<ROL::Vector<RealT> > llp, uup;
+    llp = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(ll_rcp,pde,assembler));
+    uup = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(uu_rcp,pde,assembler));
     Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::Bounds<RealT>(lop,hip));
+      = Teuchos::rcp(new ROL::Bounds<RealT>(llp,uup));
 
     // Build optimization problem.
-    ROL::OptimizationProblem<RealT> optProb(vobj,zp,bnd,icon,imul,ibnd);
-    optProb.setStochasticInequality(*parlist,xsampler,cbman);
+    ROL::OptimizationProblem<RealT> optProb(obj,zp,bnd,icon,imul,ibnd);
+    if (volMin) {
+      Teuchos::RCP<ROL::BatchManager<RealT> > cbman
+        = Teuchos::rcp(new ROL::SingletonTeuchosBatchManager<RealT,int>(comm));
+      optProb.setStochasticInequality(*parlist,sampler,cbman);
+    } else {
+      optProb.setStochasticObjective(*parlist,sampler);
+    }
 
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
@@ -279,12 +298,12 @@ int main(int argc, char *argv[]) {
     // Output.
     pdecon->printMeshData(*outStream);
     up->zero(); pp->zero();
-    for (int i = 0; i < xsampler->numMySamples(); ++i) {
-      con->setParameter(xsampler->getMyPoint(i));
+    for (int i = 0; i < sampler->numMySamples(); ++i) {
+      con->setParameter(sampler->getMyPoint(i));
       con->solve(*rp,*up,*zp,tol);
-      pp->axpy(xsampler->getMyWeight(i),*up);
+      pp->axpy(sampler->getMyWeight(i),*up);
     }
-    xsampler->sumAll(*pp,*up);
+    sampler->sumAll(*pp,*up);
     pdecon->outputTpetraVector(u_rcp,"mean_state.txt");
     pdecon->outputTpetraVector(z_rcp,"density.txt");
 
