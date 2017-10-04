@@ -98,7 +98,7 @@ namespace Xpetra {
   }; // end class CrsMatrixUtils
 
 #ifdef HAVE_XPETRA_EPETRA
-// Specialization for double, int, int
+// Specialization for double, int, int, EpetraNode
   template <>
   class CrsMatrixUtils<double,int,int,EpetraNode> {
     typedef double          Scalar;
@@ -139,7 +139,7 @@ namespace Xpetra {
   }; // end class CrsMatrixUtils
 
 
-// Specialization for double, int, long long
+// Specialization for double, int, long long, EpetraNode
   template <>
   class CrsMatrixUtils<double,int,long long,EpetraNode> {
     typedef double          Scalar;

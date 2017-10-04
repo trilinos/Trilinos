@@ -63,29 +63,60 @@
 
 namespace {
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrixUtils, sortCrsEntries, SC, LO, GO, NO )
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrixUtils, sortCrsEntriesTpetra, SC, LO, GO, NO )
 {
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-// get a comm and node
-Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-
-std::vector<size_t> rowptr = {0, 5, 9, 13, 16};
-std::vector<LO>     colind = {5, 7, 0, 1, 2, 6, 0, 1, 3, 0, 8, 2, 3, 1, 2, 3};
-std::vector<SC>     values = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+  std::vector<size_t> rowptr = {0, 5, 9, 13, 16};
+  std::vector<LO>     colind = {5, 7, 0, 1, 2, 6, 0, 1, 3, 0, 8, 2, 3, 1, 2, 3};
+  std::vector<SC>     values = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
                                 13.0, 14.0, 15.0};
 
-Teuchos::ArrayView<size_t>  CRS_rowptr(rowptr);
-Teuchos::ArrayView<LO>      CRS_colind(colind);
-Teuchos::ArrayView<SC>      CRS_values(values);
+  Teuchos::ArrayView<size_t>  CRS_rowptr(rowptr);
+  Teuchos::ArrayView<LO>      CRS_colind(colind);
+  Teuchos::ArrayView<SC>      CRS_values(values);
 
- Xpetra::CrsMatrixUtils<SC,LO,GO,NO>::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_values, Xpetra::UseTpetra);
+  Xpetra::CrsMatrixUtils<SC,LO,GO,NO>::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_values,
+                                                      Xpetra::UseTpetra);
+  bool sorted = true;
+  for(size_t row = 1; row < CRS_rowptr.size(); ++row) { // Loop over the matrix rows
+    if(CRS_rowptr[row] - CRS_rowptr[row - 1] > 1) { // Check that the row has is more that one entry
+      for(size_t col = CRS_rowptr[row - 1] + 1; col < CRS_rowptr[row]; ++col) {
+        if(CRS_colind[col - 1] > CRS_colind[col]) {sorted = false;}
+      }
+    }
+  }
 
-std::cout << "CRS_colind: " << CRS_colind << std::endl;
-std::cout << "CRS_values: " << CRS_values << std::endl;
+  TEST_EQUALITY(sorted, true);
+}
 
-bool fake = true;
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrixUtils, sortCrsEntriesEpetra, SC, LO, GO, NO )
+{
+  // get a comm and node
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-TEST_EQUALITY(fake,true);
+  std::vector<size_t> rowptr = {0, 5, 9, 13, 16};
+  std::vector<LO>     colind = {5, 7, 0, 1, 2, 6, 0, 1, 3, 0, 8, 2, 3, 1, 2, 3};
+  std::vector<SC>     values = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0,
+                                13.0, 14.0, 15.0};
+
+  Teuchos::ArrayView<size_t>  CRS_rowptr(rowptr);
+  Teuchos::ArrayView<LO>      CRS_colind(colind);
+  Teuchos::ArrayView<SC>      CRS_values(values);
+
+  Xpetra::CrsMatrixUtils<SC,LO,GO,NO>::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_values,
+                                                      Xpetra::UseEpetra);
+  bool sorted = true;
+  for(size_t row = 1; row < CRS_rowptr.size(); ++row) { // Loop over the matrix rows
+    if(CRS_rowptr[row] - CRS_rowptr[row - 1] > 1) { // Check that the row has is more that one entry
+      for(size_t col = CRS_rowptr[row - 1] + 1; col < CRS_rowptr[row]; ++col) {
+        if(CRS_colind[col - 1] > CRS_colind[col]) {sorted = false;}
+      }
+    }
+  }
+
+  TEST_EQUALITY(sorted, true);
 }
 
 
@@ -96,15 +127,15 @@ TEST_EQUALITY(fake,true);
 
   // List of tests which run only with Tpetra
 #define XP_TPETRA_MATRIX_INSTANT(SC,LO,GO,NO) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixUtils, sortCrsEntries, SC, LO, GO, NO)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixUtils, sortCrsEntriesTpetra, SC, LO, GO, NO)
 
-//   // List of tests which run only with Epetra
-// #define XP_EPETRA_MATRIX_INSTANT(SC,LO,GO,NO) \
-//       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixUtils, sortCrsEntries, SC, LO, GO, NO)
+  // List of tests which run only with Epetra
+#define XP_EPETRA_MATRIX_INSTANT(SC,LO,GO,NO) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixUtils, sortCrsEntriesEpetra, SC, LO, GO, NO)
 
-//   // List of tests which run only with Epetra64
-// #define XP_EPETRA64_MATRIX_INSTANT(SC,LO,GO,NO) \
-//       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixUtils, sortCrsEntries, SC, LO, GO, NO)
+  // List of tests which run only with Epetra64
+#define XP_EPETRA64_MATRIX_INSTANT(SC,LO,GO,NO) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrixUtils, sortCrsEntriesEpetra, SC, LO, GO, NO)
 
 
 #if defined(HAVE_XPETRA_TPETRA)
@@ -118,18 +149,18 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR ( XP_TPETRA_MATRIX_INSTANT )
 #endif
 
 
-// #if defined(HAVE_XPETRA_EPETRA)
+#if defined(HAVE_XPETRA_EPETRA)
 
-// #include "Xpetra_Map.hpp" // defines EpetraNode
-// typedef Xpetra::EpetraNode EpetraNode;
-// #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-// XP_EPETRA_MATRIX_INSTANT(double,int,int,EpetraNode)
-// #endif
-// #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-// typedef long long LongLong;
-// XP_EPETRA64_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
-// #endif
+#include "Xpetra_Map.hpp" // defines EpetraNode
+typedef Xpetra::EpetraNode EpetraNode;
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+XP_EPETRA_MATRIX_INSTANT(double,int,int,EpetraNode)
+#endif
+#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+typedef long long LongLong;
+XP_EPETRA64_MATRIX_INSTANT(double,int,LongLong,EpetraNode)
+#endif
 
-// #endif
+#endif
 
 } // End of namespace
