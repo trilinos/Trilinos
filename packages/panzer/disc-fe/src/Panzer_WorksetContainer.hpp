@@ -148,61 +148,6 @@ public:
    Teuchos::RCP<const std::vector<Intrepid2::Orientation> >  getOrientations() const
    { return orientations_; }
 
-   ////////////////////////////////////////////////////////////////////////////////////////////////
-
-#if 1
-   /** Instantiate a workset object with a specified factory and input physics block
-     * map.
-     *
-     * \param[in] factory Factory to be used for constructing worksets
-     * \param[in] physicsBlocks Vector of physics blocks
-     * \param[in] wkstSz Number of elements in a workset built by this container
-     */ 
-   PANZER_DEPRECATED
-   WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
-                    const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks,
-                    std::size_t wkstSz);
-
-   //! Access, and construction of side worksets
-   PANZER_DEPRECATED
-   Teuchos::RCP<std::map<unsigned,Workset> > getSideWorksets(const BC & bc);
-
-   //! The physics block vector
-   PANZER_DEPRECATED
-   void setPhysicsBlockVector(const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks);
-
-   //! Access to volume worksets
-   PANZER_DEPRECATED
-   Teuchos::RCP<std::vector<Workset> > getVolumeWorksets(const std::string & eBlock);
-
-   //! Iterator access to volume worksets
-   PANZER_DEPRECATED
-   inline std::vector<Workset>::iterator begin(const std::string & eBlock)
-   { 
-     WorksetDescriptor wd = blockDescriptor(eBlock); 
-     return getWorksets(wd)->begin(); }
-
-   //! Iterator access to volume worksets
-   PANZER_DEPRECATED
-   inline std::vector<Workset>::iterator end(const std::string & eBlock)
-   { WorksetDescriptor wd = blockDescriptor(eBlock); 
-     return getWorksets(wd)->end(); }
-
-   //! Iterator access to side worksets
-   PANZER_DEPRECATED
-   inline std::map<unsigned,Workset>::iterator begin(const BC & bc)
-   { WorksetDescriptor desc = bcDescriptor(bc);
-     return getSideWorksets(desc)->begin(); }
-
-   //! Iterator access to side worksets
-   PANZER_DEPRECATED
-   inline std::map<unsigned,Workset>::iterator end(const BC & bc)
-   { WorksetDescriptor desc = bcDescriptor(bc);
-     return getSideWorksets(desc)->end(); }
-#endif
-
-   ////////////////////////////////////////////////////////////////////////////////////////////////
-
 private:
    /** Set the orientations. Can only be called once, this also sets the internally stored
      * global indexer. If an exception is raised, saying it wasn't null then this method
