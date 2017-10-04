@@ -50,34 +50,20 @@ def my_open_write(dest):
     else:
         return open(dest, 'w')
 
-###### def my_str() for PYTHON 2
-if sys.version_info[0] == 2:
-    def my_str(source):
-        if isinstance(source, unicode):
-            try:
-                result = str(source)
-            except UnicodeEncodeError:
-                result = unicodedata.normalize('NFKD',source).encode('ascii','ignore')
-        else:
-            result = source
-        return result
+def my_str(source):
+    try:
+        result = str(source)
+    except UnicodeEncodeError:
+        result = unicodedata.normalize('NFKD',source).encode('ascii','ignore')
+    return result
 
-###### def my_str() for PYTHON 3
-elif sys.version_info[0] == 3:
-    def my_str(source):
-        return source
-        # try:
-        #     return source.encode('ascii', 'ignore')
-        # except AttributeError:
-        #     return source
-
-class Doxy2SWIG:    
+class Doxy2SWIG:
     """
     Converts Doxygen generated XML files into a file containing
     docstrings that can be used by SWIG-1.3.x that have support for
     feature("docstring").  Once the data is parsed it is stored in
     self.pieces.
-    """    
+    """
 
     def __init__(self, src, include_function_definition=True):
         """
@@ -96,7 +82,6 @@ class Doxy2SWIG:
         # a CGI script.  This doesn't work in general, just for the specific
         # string that I know causes a problem.
         try:
-            f = my_str(f)
             self.xmldoc = minidom.parse(f).documentElement
         except:
             f.close()
@@ -225,7 +210,7 @@ class Doxy2SWIG:
         if pad:
             npiece = len(self.pieces)
             if pad == 2:
-                self.add_text('\n')                
+                self.add_text('\n')
         for n in node.childNodes:
             self.parse(n)
         if pad:
@@ -428,25 +413,25 @@ class Doxy2SWIG:
             else:
                 if i == '";':
                     if count:
-                        ret.append(my_str('\n'))
+                        ret.append('\n')
                 elif count > 2:
-                    ret.append(my_str('\n\n'))
+                    ret.append('\n\n')
                 elif count:
-                    ret.append(my_str('\n')*count)
+                    ret.append('\n'*count)
                 count = 0
                 ret.append(i)
 
-        _data = my_str("").join(ret)
+        _data = "".join(ret)
         ret = []
         for i in _data.split(my_str('\n\n')):
             if i == 'Parameters:':
-                ret.extend([my_str('Parameters:\n-----------'), my_str('\n\n')])
-            elif i.find(my_str('// File:')) > -1: # leave comments alone.
-                ret.extend([i, my_str('\n')])
+                ret.extend(['Parameters:\n-----------', '\n\n'])
+            elif i.find('// File:') > -1: # leave comments alone.
+                ret.extend([i, '\n'])
             else:
                 _tmp = textwrap.fill(i.strip(), break_long_words=False)
                 _tmp = self.lead_spc.sub(r'\1"\2', _tmp)
-                ret.extend([my_str(_tmp), my_str('\n\n')])
+                ret.extend([_tmp, '\n\n'])
         return ret
 
 
