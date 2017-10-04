@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! ${PYTHON_EXECUTABLE}
 
 """
 Create a Makefile dependency file that includes all of the names of the source
@@ -19,8 +19,9 @@ Output is to standard output.
 
 ########################################################################
 
+from   __future__ import print_function
+from   glob       import glob
 import fnmatch
-from   glob import glob
 import os
 import re
 import sys
@@ -210,7 +211,7 @@ if __name__ == "__main__":
     # Check the command line
     numArgs = len(sys.argv)
     if numArgs < 2 or numArgs > 3:
-        print __doc__
+        print(__doc__)
         sys.exit(-1)
 
     # Obtain the target and doxyfile names
@@ -222,10 +223,10 @@ if __name__ == "__main__":
 
     # Parse the doxyfile and output the dependencies
     doxyfile = Doxyfile(filename)
-    print "%s: \\" % target
+    print("%s: \\" % target)
     sources = doxyfile.sources()
     if len(sources): lastSrc = sources[-1]
     for src in sources:
-        print "   ", src,
-        if src is not lastSrc: print "\\",
-        print
+        print("   ", src, end="")
+        if src is not lastSrc: print("\\", end="")
+        print()

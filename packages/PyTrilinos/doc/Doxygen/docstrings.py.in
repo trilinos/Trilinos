@@ -1,6 +1,7 @@
-#! /usr/bin/env python
+#! ${PYTHON_EXECUTABLE}
 
 # System includes
+from __future__ import print_function
 import os
 import subprocess
 import sys
@@ -26,7 +27,7 @@ def create_docstrings(package,
     err_file = open(err_name, 'w')
 
     # Print message
-    print "Running doxygen on package", package, "...",
+    print("Running doxygen on package ", package, "...", end=" ")
     sys.stdout.flush()
 
     # Run and wait for completion
@@ -36,11 +37,11 @@ def create_docstrings(package,
 
     # Complete the message
     if result != 0:
-        print "ERRORS!"
-        print open(err_name).read()
+        print("ERRORS!")
+        print(open(err_name).read())
         sys.exit(result)
     else:
-        print "success"
+        print("success")
 
     ######################################################################
     # Run doxy2swig.py on the appropriate index.xml file
@@ -57,8 +58,8 @@ def create_docstrings(package,
     err_file = open(err_name, 'w')
 
     # Print message
-    print "Converting doxygen XML to SWIG docstring directives for", \
-          package, "...",
+    print("Converting doxygen XML to SWIG docstring directives for",
+          package, "...", end=" ")
     sys.stdout.flush()
 
     # Run and wait for completion
@@ -68,11 +69,11 @@ def create_docstrings(package,
 
     # Complete the message
     if result != 0:
-        print "ERRORS!"
-        print open(err_name).read()
+        print("ERRORS!", file=sys.stderr)
+        print(open(err_name).read(), file=sys.stderr)
         sys.exit(result)
     else:
-        print "success"
+        print("success")
 
     ######################################################################
     # Cleanup

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! ${PYTHON_EXECUTABLE}
 """
 Doxygen XML to SWIG docstring converter.
 
@@ -29,11 +29,11 @@ output will be written (the file will be clobbered).
 #
 ######################################################################
 
+from __future__ import print_function
 from xml.dom import minidom
 import re
 import textwrap
 import sys
-import types
 import os.path
 import optparse
 import unicodedata
@@ -50,13 +50,26 @@ def my_open_write(dest):
     else:
         return open(dest, 'w')
 
-def my_str(source):
-    try:
-        result = str(source)
-    except UnicodeEncodeError, e:
-        result = unicodedata.normalize('NFKD',source).encode('ascii','ignore')
-    return result
+###### def my_str() for PYTHON 2
+if sys.version_info[0] == 2:
+    def my_str(source):
+        if isinstance(source, unicode):
+            try:
+                result = str(source)
+            except UnicodeEncodeError:
+                result = unicodedata.normalize('NFKD',source).encode('ascii','ignore')
+        else:
+            result = source
+        return result
 
+###### def my_str() for PYTHON 3
+elif sys.version_info[0] == 3:
+    def my_str(source):
+        return source
+        # try:
+        #     return source.encode('ascii', 'ignore')
+        # except AttributeError:
+        #     return source
 
 class Doxy2SWIG:    
     """
@@ -83,11 +96,17 @@ class Doxy2SWIG:
         # a CGI script.  This doesn't work in general, just for the specific
         # string that I know causes a problem.
         try:
+            f = my_str(f)
             self.xmldoc = minidom.parse(f).documentElement
         except:
             f.close()
             f = my_open_read(src)
-            data = f.read()
+            try:
+                data = f.read()
+            except UnicodeDecodeError as e:
+                print('f =', f, file=sys.stderr)
+                print(e, file=sys.stderr)
+                sys.exit(-1)
             data = data.replace('&module=nox','')
             self.xmldoc = minidom.parseString(data).documentElement
         f.close()
@@ -172,7 +191,7 @@ class Doxy2SWIG:
         """
         Adds text corresponding to `value` into `self.pieces`.
         """
-        if type(value) in (types.ListType, types.TupleType):
+        if isinstance(value, (list, tuple)):
             self.pieces.extend(value)
         else:
             self.pieces.append(value)
@@ -232,13 +251,13 @@ class Doxy2SWIG:
         kind = node.attributes['kind'].value
         if kind in ('class', 'struct'):
             prot = node.attributes['prot'].value
-            if prot <> 'public':
+            if prot != 'public':
                 return
             names = ('compoundname', 'briefdescription',
                      'detaileddescription', 'includes')
             first = self.get_specific_nodes(node, names)
             for n in names:
-                if first.has_key(n):
+                if n in first:
                     self.parse(first[n])
             self.add_text(['";','\n'])
             for n in node.childNodes:
@@ -289,8 +308,7 @@ class Doxy2SWIG:
             if name[:8] == 'operator': # Don't handle operators yet.
                 return
 
-            if not first.has_key('definition') or \
-                   kind in ['variable', 'typedef']:
+            if not 'definition' in first or kind in ['variable', 'typedef']:
                 return
 
             if self.include_function_definition:
@@ -382,7 +400,7 @@ class Doxy2SWIG:
             fname = refid + '.xml'
             if not os.path.exists(fname):
                 fname = os.path.join(self.my_dir,  fname)
-            print "parsing file: %s"%fname
+            print("parsing file: %s" % fname)
             p = Doxy2SWIG(fname)
             p.generate()
             self.pieces.extend(self.clean_pieces(p.pieces))
@@ -404,32 +422,31 @@ class Doxy2SWIG:
         ret = []
         count = 0
         for i in pieces:
-            if isinstance(i, unicode):
-                i = my_str(i)
+            i = my_str(i)
             if i == '\n':
                 count = count + 1
             else:
                 if i == '";':
                     if count:
-                        ret.append('\n')
+                        ret.append(my_str('\n'))
                 elif count > 2:
-                    ret.append('\n\n')
+                    ret.append(my_str('\n\n'))
                 elif count:
-                    ret.append('\n'*count)
+                    ret.append(my_str('\n')*count)
                 count = 0
                 ret.append(i)
 
-        _data = "".join(ret)
+        _data = my_str("").join(ret)
         ret = []
-        for i in _data.split('\n\n'):
+        for i in _data.split(my_str('\n\n')):
             if i == 'Parameters:':
-                ret.extend(['Parameters:\n-----------', '\n\n'])
-            elif i.find('// File:') > -1: # leave comments alone.
-                ret.extend([i, '\n'])
+                ret.extend([my_str('Parameters:\n-----------'), my_str('\n\n')])
+            elif i.find(my_str('// File:')) > -1: # leave comments alone.
+                ret.extend([i, my_str('\n')])
             else:
                 _tmp = textwrap.fill(i.strip(), break_long_words=False)
                 _tmp = self.lead_spc.sub(r'\1"\2', _tmp)
-                ret.extend([_tmp, '\n\n'])
+                ret.extend([my_str(_tmp), my_str('\n\n')])
         return ret
 
 
