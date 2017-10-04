@@ -201,6 +201,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
   static int SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals);
 
+  //! Epetra_Util SortCrsEntries function
+  // For each row, sort column entries from smallest to largest.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  static int SortCrsEntries(int NumRows, const size_t *CRS_rowptr, int *CRS_colind, double *CRS_vals);
+
   //! Epetra_Util SortAndMergeCrsEntries function
   // For each row, sort column entries from smallest to largest, merging column ids that are identical by adding values.
   // Use shell sort. Stable sort so it is fast if indices are already sorted.

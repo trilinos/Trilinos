@@ -466,6 +466,44 @@ int Epetra_Util::SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_col
 }
 
 //----------------------------------------------------------------------------
+int Epetra_Util::SortCrsEntries(int NumRows, const size_t *CRS_rowptr, int *CRS_colind, double *CRS_vals){
+  // For each row, sort column entries from smallest to largest.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  // Code copied from  Epetra_CrsMatrix::SortEntries()
+  size_t nnz = CRS_rowptr[NumRows];
+
+  for(int i = 0; i < NumRows; i++){
+    size_t start = CRS_rowptr[i];
+    if(start >= nnz) continue;
+
+    double* locValues = &CRS_vals[start];
+    int NumEntries    = static_cast<int>(CRS_rowptr[i+1] - start);
+    int* locIndices   = &CRS_colind[start];
+
+    int n = NumEntries;
+    int m = n/2;
+
+    while(m > 0) {
+      int max = n - m;
+      for(int j = 0; j < max; j++) {
+        for(int k = j; k >= 0; k-=m) {
+          if(locIndices[k+m] >= locIndices[k])
+            break;
+          double dtemp = locValues[k+m];
+          locValues[k+m] = locValues[k];
+          locValues[k] = dtemp;
+          int itemp = locIndices[k+m];
+          locIndices[k+m] = locIndices[k];
+          locIndices[k] = itemp;
+        }
+      }
+      m = m/2;
+    }
+  }
+  return(0);
+}
+
+//----------------------------------------------------------------------------
 int Epetra_Util::SortAndMergeCrsEntries(int NumRows, int *CRS_rowptr, int *CRS_colind, double *CRS_vals){
   // For each row, sort column entries from smallest to largest, merging column ids that are identical by adding values.
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
