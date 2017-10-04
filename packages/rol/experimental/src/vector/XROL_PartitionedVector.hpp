@@ -45,7 +45,7 @@
 #pragma once
 
 #include "XROL_VectorTraits.hpp"
-
+#include "XROL_TupleFunctions.hpp"
 
 namespace XROL {
 
@@ -77,15 +77,15 @@ struct VectorDual<PartitionedVector<Vs...>> {
 
 
 
-
+/*
 // Functions
-// template<class... Vs>
-//std::unique_ptr<PartitionedVector<Vs...>>
-//clone( const PartitionedVector<Vs...>& v ) {
-//  auto move_clone = []( auto x ) { return std::move(clone(x)); }
-//  return std::make_tuple( Elementwise::evaluate(move_clone,vs)... );
-//}
-
+template<class... Vs>
+std::unique_ptr<PartitionedVector<Vs...>>
+clone( const PartitionedVector<Vs...>& v ) {
+  auto move_clone = []( auto x ) { return std::move(clone(x)); };
+  return std::make_tuple( unary_apply( move_clone,  v ) );
+}
+*/
 
 } // namespace XROL
 

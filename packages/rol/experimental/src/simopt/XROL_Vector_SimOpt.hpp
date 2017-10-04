@@ -94,21 +94,23 @@ struct implements_core<Vector_SimOpt<S,O>> :
 template<class S, class O>
 std::unique_ptr<Vector_SimOpt<S,O>> 
 clone( const Vector_SimOpt<S,O>& v ) {
-  return std::make_pair( std::move(clone(*(v.first))),
-                         std::move(clone(*(v.second))) );
+  using namespace std;
+  auto ptr = make_unique<Vector_SimOpt<S,O>>( move( clone( *(v.first) ) ) ,
+                                              move( clone( *(v.second) ) ) );
+  return std::move( ptr );
 }
 
 template<class S, class O>
 index_t<Vector_SimOpt<S,O>>
 dimension( const Vector_SimOpt<S,O>& x ) {
-  return dimension(*(x.first)) + 
-         dimension(*(x.second)); 
+  return dimension( *(x.first) ) + 
+         dimension( *(x.second) ); 
 }
 
 template<class S, class O>
 void set( Vector_SimOpt<S,O>& x, const Vector_SimOpt<S,O>& y ) {
-  set(*(x.first),*(y.first));
-  set(*(x.second),*(y.second));
+  set( *(x.first),  *(y.first)  );
+  set( *(x.second), *(y.second) );
 }
 
 template<class S, class O>
@@ -119,28 +121,28 @@ void dual( dual_t<Vector_SimOpt<S,O>>&  xdual,
 
 template<class S, class O>
 void plus( Vector_SimOpt<S,O>& x, const Vector_SimOpt<S,O>& y ) {
-  plus(*(x.first),*(y.first));
-  plus(*(x.second),*(y.second));
+  plus( *(x.first),  *(y.first)  );
+  plus( *(x.second), *(y.second) );
 }
 
 template<class S, class O>
 void scale( Vector_SimOpt<S,O>& x, const element_t<Vector_SimOpt<S,O>> alpha ) {
-  scale(*(x.first),alpha);
-  scale(*(x.second),alpha);
+  scale( *(x.first),  alpha );
+  scale( *(x.second), alpha );
 }
 
 template<class S, class O>
 void fill( Vector_SimOpt<S,O>& x, const element_t<Vector_SimOpt<S,O>> alpha ) {
-  fill(*(x.first),alpha);
-  fill(*(x.second),alpha);
+  fill( *(x.first),  alpha );
+  fill( *(x.second), alpha );
 }
 
 template<class S, class O>
 void scale( Vector_SimOpt<S,O>& x,  
             const element_t<Vector_SimOpt<S,O>> alpha,
             const Vector_SimOpt<S,O>& y ) {
-  axpy(*(x.first),alpha,*(y.first));
-  axpy(*(x.second),alpha,*(y.second));
+  axpy( *(x.first),  alpha, *(y.first)  );
+  axpy( *(x.second), alpha, *(y.second) );
 }
 
 
@@ -149,12 +151,12 @@ void basis( Vector_SimOpt<S,O>& b,
             index_t<Vector_SimOpt<S,O>> i ) {
   auto d = dimension(*(b.first));
   if(i < d ) {
-    basis(*(b.first));   
-    fill(*(b.second),0);
+    basis( *(b.first) );   
+    fill( *(b.second), 0 );
   }
   else {
-    fill(*(b.first),0);
-    basis(*(b.second),i-d);
+    fill( *(b.first), 0 );
+    basis( *(b.second), i-d );
   }
 }
 
@@ -162,49 +164,49 @@ template<class S, class O>
 element_t<Vector_SimOpt<S,O>>
 dot( const Vector_SimOpt<S,O>& x,
      const Vector_SimOpt<S,O>& y ) {
-  return dot(*(x.first),*(y.first)) + 
-         dot(*(x.second),*(y.second));
+  return dot( *(x.first),  *(y.first)  ) + 
+         dot( *(x.second), *(y.second) );
 }
 
 template<class S, class O>
 magnitude_t<Vector_SimOpt<S,O>>
 norm( const Vector_SimOpt<S,O>& x ) {
-  return std::sqrt( dot(*(x.first),*(x.first)) + 
-                    dot(*(x.second),*(x.second)) );
+  return std::sqrt( dot( *(x.first),  *(x.first)  ) + 
+                    dot( *(x.second), *(x.second) ) );
 }
 
 template<class S, class O>
 void print( const Vector_SimOpt<S,O>& x, std::ostream& os ) {
-  os << "Sim: "; print(*(x.first));
-  os << "Opt: "; print(*(x.second));
+  os << "Sim: "; print( *(x.first)  );
+  os << "Opt: "; print( *(x.second) );
 }
 
 template<class R, class S, class O>
 auto reduce( const R& r, const Vector_SimOpt<S,O>& x ) {
-  auto rfirst  = reduce(r,*(x.first));
-  auto rsecond = reduce(r,*(x.second));
+  auto rfirst  = reduce( r, *(x.first)  );
+  auto rsecond = reduce( r, *(x.second) );
   return r(rfirst,rsecond);
 }
 
 template<class Generator, class Distribution, class S, class O>
 void randomize( Generator& g, Distribution& d, Vector_SimOpt<S,O>& x ) {
-  randomize(g,d,*(x.first));
-  randomize(g,d,*(x.second));
+  randomize( g, d, *(x.first)  );
+  randomize( g, d, *(x.second) );
 }
 
 template<class S, class O, class Function, class... Vs>
 void eval_function( Vector_SimOpt<S,O>& x, const Function &f, const Vs&... vs ) {
-  eval_function( *(x.first),  f, std::make_tuple(*(vs.first)...));
-  eval_function( *(x.second), f, std::make_tuple(*(vs.second)...));
+  eval_function( *(x.first),  f, std::make_tuple( *(vs.first)  ... ) );
+  eval_function( *(x.second), f, std::make_tuple( *(vs.second) ... ) );
 }
 
 
 template<class R, class F, class S, class O, class... Vs>
 auto eval_function_and_reduce( const R& r, const F& f, 
-  const Vector_SimOpt<S,O>& x, const Vs&... vs) {
-  auto rfirst = eval_function_and_reduce(r,f,*(x.first),*(vs.first)...);
-  auto rsecond = eval_function_and_reduce(r,f,*(x.second),*(vs.second)...);
-  return r(rfirst,rsecond);
+  const Vector_SimOpt<S,O>& x, const Vs&... vs ) {
+  auto rfirst  = eval_function_and_reduce( r, f, *(x.first),  *(vs.first)  ... );
+  auto rsecond = eval_function_and_reduce( r, f, *(x.second), *(vs.second) ... );
+  return r( rfirst, rsecond );
 }
 
 } // namespace XROL
