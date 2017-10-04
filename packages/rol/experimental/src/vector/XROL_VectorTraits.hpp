@@ -63,5 +63,24 @@ template<class V> struct VectorDual;      // { using type = V; };
 template<class V> using  dual_t      = typename VectorDual<V>::type;
 
 
+/* Specialize this to inhereit from true_type when the elementwise 
+   functions  
+
+   eval_function(), reduce(), eval_function_and_reduce(), and randomize()  
+
+   are implemented
+*/ 
+template<class V> struct implements_elementwise : std::false_type {};
+  
+/* Specialize this to inherit from true_type when the core vector space
+   functions 
+
+   scale(), plus(), set(), dot()
+
+   are implemented
+*/
+
+template<class V> struct implements_core : std::false_type {};
+
 } // namespace XROL
 

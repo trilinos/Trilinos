@@ -77,7 +77,11 @@ struct VectorDual<StdVector<T>> {
   using type = StdVector<T>;
 };
 
+template<class T>
+struct implements_elementwise<StdVector<T>> : std::true_type {};
 
+template<class T>
+struct implements_core<StdVector<T>> : std::true_type {};
 
 // Functions
 

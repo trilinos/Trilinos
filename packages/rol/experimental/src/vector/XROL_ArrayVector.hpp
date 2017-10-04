@@ -78,6 +78,11 @@ struct VectorDual<ArrayVector<T,N>> {
   using type = ArrayVector<T,N>;
 };
 
+template<class T, std::size_t N>
+struct implements_elementwise<ArrayVector<T,N>> : std::true_type {};
+
+template<class T, std::size_t N>
+struct implements_core<ArrayVector<T,N>> : std::false_type {};
 
 // Functions
 

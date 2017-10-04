@@ -76,6 +76,18 @@ struct VectorDual<Vector_SimOpt<S,O>> {
   using type = Vector_SimOpt<dual_t<S>,dual_t<O>>;
 };
 
+template<class S, class O>
+struct implements_elementwise<Vector_SimOpt<S,O>> : 
+  std::integral_constant<bool,implements_elementwise<S>() 
+                          and implements_elementwise<O>()>{}; 
+
+template<class S, class O>
+struct implements_core<Vector_SimOpt<S,O>> : 
+  std::integral_constant<bool,implements_core<S>() 
+                          and implements_core<O>()>{}; 
+
+
+
 
 // Functions
 
