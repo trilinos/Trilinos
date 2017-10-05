@@ -43,7 +43,7 @@
 #include <gtest/gtest.h>
 #include <mpi.h>
 #include "ProblemMakerBDDC.h"
-#include "ShyLUBDDC_config.h"
+#include "ShyLU_DDBDDC_config.h"
 #include "shylu_PreconditionerBDDC.h"
 #include "shylu_KrylovSolver.h"
 #include "shylu_UtilBDDC.h"

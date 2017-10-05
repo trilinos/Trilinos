@@ -3,7 +3,7 @@
 #include <Kokkos_Threads.hpp>
 
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "ShyLUTacho_config.h"
+#include "ShyLU_NodeTacho_config.h"
 
 typedef double value_type;
 typedef int    ordinal_type;

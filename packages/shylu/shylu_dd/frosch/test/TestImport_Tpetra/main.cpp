@@ -63,17 +63,17 @@
 
 #include "Tools/FROSch_Tools_def.hpp"
 
-using namespace std;
-using namespace Teuchos;
-using namespace Xpetra;
-using namespace Belos;
-
 typedef unsigned UN;
 typedef double SC;
 typedef int LO;
 typedef int GO;
 typedef KokkosClassic::DefaultNode::DefaultNodeType EpetraNode;
 typedef EpetraNode NO;
+
+using namespace std;
+using namespace Teuchos;
+using namespace Xpetra;
+using namespace Belos;
 
 using namespace std;
 

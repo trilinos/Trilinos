@@ -1,4 +1,4 @@
-#include "ShyLUTacho_config.h"
+#include "ShyLU_NodeTacho_config.h"
 
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>

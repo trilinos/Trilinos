@@ -1,7 +1,7 @@
 #ifndef SHYLU_ITERATIVESOLVER_INTERFACE_DEF_HPP
 #define SHYLU_ITERATIVESOLVER_INTERFACE_DEF_HPP
 
-#include "ShyLUCore_config.h"
+#include "ShyLU_DDCore_config.h"
 #include "shylu_iterativesolver_interface_decl.hpp"
 
 #include <Teuchos_XMLParameterListHelpers.hpp>

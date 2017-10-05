@@ -10,7 +10,7 @@ typedef Kokkos::complex<double> ValueType;
 static const std::string MM_TEST_FILE="test_dcomplex";
 
 #define __TACHO_TEST_SERIAL__
-#include "ShyLUTacho_config.h"
+#include "ShyLU_NodeTacho_config.h"
 #include "Tacho_Test.hpp"
 
 using namespace Tacho::Experimental;

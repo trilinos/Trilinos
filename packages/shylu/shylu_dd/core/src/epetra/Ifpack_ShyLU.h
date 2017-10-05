@@ -61,7 +61,7 @@
    */
 #define BLOCK_DIAGONAL_Si
 
-#include "ShyLUCore_config.h"
+#include "ShyLU_DDCore_config.h"
 
 // Epetra includes
 #ifdef HAVE_SHYLUCORE_MPI

@@ -65,18 +65,18 @@
 
 //#include "Tools/FROSch_Tools_def.hpp"
 
+typedef unsigned UN;
+typedef double SC;
+typedef int LO;
+typedef int GO;
+typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode; // Hier Default verwenden???
+typedef EpetraNode NO;
+
 using namespace std;
 using namespace Teuchos;
 using namespace Xpetra;
 using namespace FROSch;
 using namespace Belos;
-
-typedef unsigned UN;
-typedef double SC;
-typedef int LO;
-typedef int GO;
-typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
-typedef EpetraNode NO;
 
 int main(int argc, char *argv[])
 {

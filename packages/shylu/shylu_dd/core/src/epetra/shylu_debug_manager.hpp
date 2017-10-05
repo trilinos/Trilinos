@@ -56,7 +56,7 @@
 // loop.
 //#define SHYLU_DEBUG
 
-#include "ShyLUCore_config.h"
+#include "ShyLU_DDCore_config.h"
 
 #ifdef HAVE_SHYLUCORE_MPI
 #include <mpi.h>

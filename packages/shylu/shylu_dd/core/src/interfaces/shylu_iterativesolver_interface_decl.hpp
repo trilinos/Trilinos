@@ -1,7 +1,7 @@
 #ifndef SHYLU_ITERATIVESOLVER_INTERFACE_DECL_HPP
 #define SHYLU_ITERATIVESOLVER_INTERFACE_DECL_HPP
 
-#include "ShyLUCore_config.h"
+#include "ShyLU_DDCore_config.h"
 
 //ShyLU
 #include <shylu.h>

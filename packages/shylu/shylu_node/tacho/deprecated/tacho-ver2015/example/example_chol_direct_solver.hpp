@@ -5,7 +5,7 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
-#include "ShyLUTacho_config.h"
+#include "ShyLU_NodeTacho_config.h"
 
 #include "direct_solver.hpp"
 

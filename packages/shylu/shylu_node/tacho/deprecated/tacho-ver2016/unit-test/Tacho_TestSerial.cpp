@@ -8,7 +8,7 @@ typedef Kokkos::Serial DeviceSpaceType;
 typedef double ValueType;
 
 #define __TACHO_TEST_SERIAL__
-#include "ShyLUTacho_config.h"
+#include "ShyLU_NodeTacho_config.h"
 #include "Tacho_Test.hpp"
 
 using namespace Tacho::Experimental;

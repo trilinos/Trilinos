@@ -49,7 +49,7 @@
 #ifndef SHYLU_PARTITION_INTERFACE_DEF_HPP
 #define SHYLU_PARTITION_INTERFACE_DEF_HPP
 
-#include "ShyLUCore_config.h"
+#include "ShyLU_DDCore_config.h"
 #include "shylu_partition_interface_decl.hpp"
 
 //#include "Zoltan2_config.h"

@@ -64,17 +64,17 @@
 
 #include <Tools/FROSch_Tools_decl.hpp>
 
-using namespace std;
-using namespace Teuchos;
-using namespace Xpetra;
-using namespace FROSch;
-
 typedef unsigned UN;
 typedef double SC;
 typedef int LO;
 typedef int GO;
 typedef Kokkos::Compat::KokkosSerialWrapperNode EpetraNode;
 typedef EpetraNode NO;
+
+using namespace std;
+using namespace Teuchos;
+using namespace Xpetra;
+using namespace FROSch;
 
 int main(int argc, char *argv[])
 {

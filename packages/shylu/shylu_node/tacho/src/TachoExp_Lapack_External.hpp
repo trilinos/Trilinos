@@ -5,7 +5,7 @@
 /// \brief BLAS wrapper
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "ShyLUTacho_config.h"
+#include "ShyLU_NodeTacho_config.h"
 #include "TachoExp_Util.hpp"
 
 extern "C" {

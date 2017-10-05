@@ -4,7 +4,7 @@
 
 #include "shylu.h"
 #include "shylu_iterativesolver_interface.hpp"
-#include "ShyLUCore_config.h"
+#include "ShyLU_DDCore_config.h"
 
 //Tperta
 #ifdef HAVE_SHYLUCORE_TPETRA

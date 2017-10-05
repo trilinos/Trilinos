@@ -5,7 +5,7 @@
 /// \brief Main header file
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "ShyLUTacho_config.h"
+#include "ShyLU_NodeTacho_config.h"
 
 #include "Tacho_Util.hpp"
 #include "Tacho_Control.hpp"

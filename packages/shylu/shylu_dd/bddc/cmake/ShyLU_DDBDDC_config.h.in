@@ -5,20 +5,20 @@
 */
 
 /* define if we want to use MPI */
-#cmakedefine HAVE_SHYLUBDDC_MPI
+#cmakedefine HAVE_SHYLU_DDBDDC_MPI
 
-#cmakedefine HAVE_SHYLUBDDC_TPETRA
+#cmakedefine HAVE_SHYLU_DDBDDC_TPETRA
 
-#cmakedefine HAVE_SHYLUBDDC_METIS
+#cmakedefine HAVE_SHYLU_DDBDDC_METIS
 
-#cmakedefine HAVE_SHYLUBDDC_MKL
+#cmakedefine HAVE_SHYLU_DDBDDC_MKL
 
-#cmakedefine HAVE_SHYLUBDDC_PARDISO_MKL
+#cmakedefine HAVE_SHYLU_DDBDDC_PARDISO_MKL
 
-#cmakedefine HAVE_SHYLUBDDC_HTS
+#cmakedefine HAVE_SHYLU_DDBDDC_HTS
 
-#cmakedefine HAVE_SHYLUBDDC_SUPERLU
+#cmakedefine HAVE_SHYLU_DDBDDC_SUPERLU
 
-#cmakedefine HAVE_SHYLUBDDC_SHYLU_NODETACHO
+#cmakedefine HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO
 
 #endif // SHYLUBBBDCCONFIG_H

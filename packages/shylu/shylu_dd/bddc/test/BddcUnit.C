@@ -42,7 +42,7 @@
 
 #include <gtest/gtest.h>
 #include <mpi.h>
-#include "ShyLUBDDC_config.h"
+#include "ShyLU_DDBDDC_config.h"
 #if defined(HAVE_SHYLUBDDC_SHYLU_NODETACHO)
 #include "Kokkos_Core.hpp"
 #endif

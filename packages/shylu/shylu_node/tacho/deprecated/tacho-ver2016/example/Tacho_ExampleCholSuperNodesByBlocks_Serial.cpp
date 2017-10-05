@@ -2,7 +2,7 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#include "ShyLUTacho_config.h"
+#include "ShyLU_NodeTacho_config.h"
 
 typedef double ValueType;
 typedef int    OrdinalType;

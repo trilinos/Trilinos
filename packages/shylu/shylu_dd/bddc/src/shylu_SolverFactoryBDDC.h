@@ -54,7 +54,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "ShyLUBDDC_config.h"
+#include "ShyLU_DDBDDC_config.h"
 #include "shylu_SolverBaseBDDC.h"
 #include "shylu_SolverLAPACK.h"
 

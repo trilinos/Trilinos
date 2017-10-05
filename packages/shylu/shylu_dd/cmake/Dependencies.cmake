@@ -4,6 +4,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   # New ShyLU subpackages:
   BDDC                  bddc              EX       OPTIONAL
   FROSch                frosch            EX       OPTIONAL
+  Core                  core              EX       OPTIONAL
   )
 
 SET(LIB_REQUIRED_DEP_PACKAGES)
