@@ -375,6 +375,7 @@ public:
     for (size_t i=0; i<numEquiv; i++) {
       size_t numTerms = numEquivConstraints[i]*m_equivClassDofs[i].size();
       assert (equivConstraints[i].size() == numTerms); 
+      (void)(numTerms);
       findPivotRows(numEquivConstraints[i], equivConstraints[i], 
 		    m_equivClassDofs[i], m_pivotRowsLocal[i], m_pivotRows);
     }

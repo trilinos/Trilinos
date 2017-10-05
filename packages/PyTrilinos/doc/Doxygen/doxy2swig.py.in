@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! ${PYTHON_EXECUTABLE}
 """
 Doxygen XML to SWIG docstring converter.
 
@@ -29,11 +29,11 @@ output will be written (the file will be clobbered).
 #
 ######################################################################
 
+from __future__ import print_function
 from xml.dom import minidom
 import re
 import textwrap
 import sys
-import types
 import os.path
 import optparse
 import unicodedata
@@ -53,18 +53,17 @@ def my_open_write(dest):
 def my_str(source):
     try:
         result = str(source)
-    except UnicodeEncodeError, e:
+    except UnicodeEncodeError:
         result = unicodedata.normalize('NFKD',source).encode('ascii','ignore')
     return result
 
-
-class Doxy2SWIG:    
+class Doxy2SWIG:
     """
     Converts Doxygen generated XML files into a file containing
     docstrings that can be used by SWIG-1.3.x that have support for
     feature("docstring").  Once the data is parsed it is stored in
     self.pieces.
-    """    
+    """
 
     def __init__(self, src, include_function_definition=True):
         """
@@ -87,7 +86,12 @@ class Doxy2SWIG:
         except:
             f.close()
             f = my_open_read(src)
-            data = f.read()
+            try:
+                data = f.read()
+            except UnicodeDecodeError as e:
+                print('f =', f, file=sys.stderr)
+                print(e, file=sys.stderr)
+                sys.exit(-1)
             data = data.replace('&module=nox','')
             self.xmldoc = minidom.parseString(data).documentElement
         f.close()
@@ -172,7 +176,7 @@ class Doxy2SWIG:
         """
         Adds text corresponding to `value` into `self.pieces`.
         """
-        if type(value) in (types.ListType, types.TupleType):
+        if isinstance(value, (list, tuple)):
             self.pieces.extend(value)
         else:
             self.pieces.append(value)
@@ -206,7 +210,7 @@ class Doxy2SWIG:
         if pad:
             npiece = len(self.pieces)
             if pad == 2:
-                self.add_text('\n')                
+                self.add_text('\n')
         for n in node.childNodes:
             self.parse(n)
         if pad:
@@ -232,13 +236,13 @@ class Doxy2SWIG:
         kind = node.attributes['kind'].value
         if kind in ('class', 'struct'):
             prot = node.attributes['prot'].value
-            if prot <> 'public':
+            if prot != 'public':
                 return
             names = ('compoundname', 'briefdescription',
                      'detaileddescription', 'includes')
             first = self.get_specific_nodes(node, names)
             for n in names:
-                if first.has_key(n):
+                if n in first:
                     self.parse(first[n])
             self.add_text(['";','\n'])
             for n in node.childNodes:
@@ -289,8 +293,7 @@ class Doxy2SWIG:
             if name[:8] == 'operator': # Don't handle operators yet.
                 return
 
-            if not first.has_key('definition') or \
-                   kind in ['variable', 'typedef']:
+            if not 'definition' in first or kind in ['variable', 'typedef']:
                 return
 
             if self.include_function_definition:
@@ -382,7 +385,7 @@ class Doxy2SWIG:
             fname = refid + '.xml'
             if not os.path.exists(fname):
                 fname = os.path.join(self.my_dir,  fname)
-            print "parsing file: %s"%fname
+            print("parsing file: %s" % fname)
             p = Doxy2SWIG(fname)
             p.generate()
             self.pieces.extend(self.clean_pieces(p.pieces))
@@ -404,8 +407,7 @@ class Doxy2SWIG:
         ret = []
         count = 0
         for i in pieces:
-            if isinstance(i, unicode):
-                i = my_str(i)
+            i = my_str(i)
             if i == '\n':
                 count = count + 1
             else:
@@ -421,7 +423,7 @@ class Doxy2SWIG:
 
         _data = "".join(ret)
         ret = []
-        for i in _data.split('\n\n'):
+        for i in _data.split(my_str('\n\n')):
             if i == 'Parameters:':
                 ret.extend(['Parameters:\n-----------', '\n\n'])
             elif i.find('// File:') > -1: # leave comments alone.

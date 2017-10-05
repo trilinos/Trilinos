@@ -23,7 +23,7 @@
 1	use edges   in coarse space (0 no, 1 yes)
 0	use faces   in coarse space (0 no, 1 yes)
 1	number of coarse subdomains per MPI rank
-64	number of coarse elements per coarse subdomain
+10000	number of coarse elements per coarse subdomain
 1	coarsening option (0 graph-based, 1 RCB, 2 RIB)
 0	apply preconditioner only and not solver (0 for no, 1 for yes)
 2	number of solves (or application of preconditioner)
