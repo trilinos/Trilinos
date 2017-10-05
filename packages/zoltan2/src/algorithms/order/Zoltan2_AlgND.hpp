@@ -106,21 +106,21 @@ private:
   //const RCP<const Adapter> mInputAdapter;
   const RCP<const typename Adapter::base_adapter_t> mBaseInputAdapter;                                                                                                                                 
 
-  void getBoundLayer(int levelIndx, const std::vector<part_t> &partMap,
+  void getBoundLayer(part_t levelIndx, const std::vector<part_t> &partMap,
 		     const part_t * parts, 
-		     const std::set<int> &excVerts,
-		     int &bigraphNumS, int &bigraphNumT, int &bigraphNumE,
-		     std::vector<int> &bigraphCRSRowPtr, std::vector<int> &bigraphCRSCols,
-	             std::vector<int> &bigraphVMapU, std::vector<int> &bigraphVMapV);
+		     const std::set<lno_t> &excVerts,
+		     lno_t &bigraphNumS, lno_t &bigraphNumT, lno_t &bigraphNumE,
+		     std::vector<lno_t> &bigraphCRSRowPtr, std::vector<lno_t> &bigraphCRSCols,
+	             std::vector<lno_t> &bigraphVMapU, std::vector<lno_t> &bigraphVMapV);
 
-  void buildPartTree(int level, part_t startV,
+  void buildPartTree(part_t level, part_t startV,
 	              const std::vector<part_t> &permPartNums,
 	              const std::vector<part_t> &splitRangeBeg,
 	              const std::vector<part_t> &splitRangeEnd,
 	              const std::vector<part_t> &treeVertParents,
-	              std::vector<unsigned int> &sepLevels,
+	              std::vector<part_t> &sepLevels,
 	              std::vector<std::set<part_t> > &sepParts1, std::vector<std::set<part_t> > &sepParts2,
-	              int &maxLev);
+	              part_t &maxLev);
 
 
 
@@ -215,8 +215,6 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 
     RCP<AlgZoltan<Adapter> > algZoltan = rcp(new AlgZoltan<Adapter>(partEnv, mProblemComm, this->mBaseInputAdapter));
 
-
-
     RCP<PartitioningSolution<Adapter> > partSoln;
     partSoln =
       RCP<PartitioningSolution<Adapter> > (new PartitioningSolution<Adapter>(partEnv, mProblemComm, nUserWts,algZoltan));
@@ -228,7 +226,7 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 
     const part_t *parts = partSoln->getPartListView();
 
-    int numVerts = mGraphModel->getLocalNumVertices();
+    size_t numVerts = mGraphModel->getLocalNumVertices();
     for(size_t i=0; i< numVerts; i++)
     {
       std::cout << "part[" << i << "] = " << parts[i] <<std::endl;
@@ -267,16 +265,16 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     //             sepParts2[i] - 2nd set of parts on other side of separator
     // 
     /////////////////////////////////////////////////////////////////
-    std::vector<unsigned int> sepLevels;
+    std::vector<part_t> sepLevels;
     std::vector<std::set<part_t> > sepParts1;
     std::vector<std::set<part_t> > sepParts2;
 
-    int maxLevel = 0;
+    part_t maxLevel = 0;
 
     buildPartTree(0, numTreeVerts, permPartNums, splitRangeBeg, splitRangeEnd, treeVertParents,
                    sepLevels, sepParts1, sepParts2, maxLevel);
 
-    unsigned int numSeparators = sepLevels.size();
+    part_t numSeparators = sepLevels.size();
     /////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////
 
@@ -285,15 +283,15 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     // the level of the hiearchy of the separator tree.  This allows us
     // to easily identify the boundary value vertices
     //////////////////////////////////////////////////////////////////////
-    int numLevels = maxLevel+1;
+    part_t numLevels = maxLevel+1;
 
-    std::vector<std::vector<int> > partLevelMap(numLevels,std::vector<int>(numGlobalParts));
+    std::vector<std::vector<part_t> > partLevelMap(numLevels,std::vector<part_t>(numGlobalParts));
 
-    std::vector<int> sepsInLev(numLevels,0);
+    std::vector<part_t> sepsInLev(numLevels,0);
 
-    for(unsigned int i=0;i<numSeparators;i++)
+    for(part_t i=0;i<numSeparators;i++)
     {
-      int level = sepLevels[i];
+      part_t level = sepLevels[i];
 
       for(typename std::set<part_t>::const_iterator iter = sepParts1[i].begin();
           iter!=sepParts1[i].end();++iter)
@@ -323,21 +321,26 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     //    1. Build boundary layer between parts
     //    2. Build vertex separator from boundary layer
     //////////////////////////////////////////////////////////////////////
-    for(unsigned int level=0;level<numLevels;level++)
+    for(part_t level=0;level<numLevels;level++)
     {
       sepVertsByLevel[level].resize(sepsInLev[level]);
 
-      for(unsigned int levIndx=0;levIndx<sepsInLev[level];levIndx++)
+      for(part_t levIndx=0;levIndx<sepsInLev[level];levIndx++)
       {
+
+
+//HERE
+
         ///////////////////////////////////////////////////////////////
         // Build boundary layer between parts (edge separator)
         ///////////////////////////////////////////////////////////////
-        int bigraphNumU=0, bigraphNumV=0, bigraphNumE=0;
-	std::vector<int> bigraphVMapU; 
-        std::vector<int> bigraphVMapV;
+        lno_t bigraphNumU=0, bigraphNumV=0; 
+        lno_t bigraphNumE=0; // Should probably be size_t, but making lno_t for Matcher
+	std::vector<lno_t> bigraphVMapU; 
+        std::vector<lno_t> bigraphVMapV;
 
-	std::vector<int> bigraphCRSRowPtr;
-	std::vector<int> bigraphCRSCols;
+	std::vector<lno_t> bigraphCRSRowPtr;
+	std::vector<lno_t> bigraphCRSCols;
 
 
         getBoundLayer(levIndx, partLevelMap[level], parts, sepVerts,
@@ -348,22 +351,22 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 	// std::cout << "Bipartite graph: " << bigraphNumU << " " << bigraphNumV << " " 
 	// 	  << bigraphNumE << std::endl;
 
-        // for (unsigned int i=0;i<bigraphVMapU.size();i++)
+        // for (size_t i=0;i<bigraphVMapU.size();i++)
 	// {
 	//   std::cout << "boundVertU: " << bigraphVMapU[i] << std::endl;
         // }
 
-        // for (unsigned int i=0;i<bigraphVMapV.size();i++)
+        // for (size_t i=0;i<bigraphVMapV.size();i++)
 	// {
 	//   std::cout << "boundVertV: " << bigraphVMapV[i] << std::endl;
         // }
 
 
 
-        // for (int rownum=0;rownum<bigraphNumU;rownum++)
+        // for (lno_t rownum=0;rownum<bigraphNumU;rownum++)
 	// {
 
-        //    for (int eIdx=bigraphCRSRowPtr[rownum];eIdx<bigraphCRSRowPtr[rownum+1];eIdx++)
+        //    for (lno_t eIdx=bigraphCRSRowPtr[rownum];eIdx<bigraphCRSRowPtr[rownum+1];eIdx++)
 	//    {          
 	//       std::cout << "bipartite E: " << bigraphVMapU[rownum] << ", " << bigraphVMapV[ bigraphCRSCols[eIdx]]
 	// 		<< " ( "  << rownum << "," << bigraphCRSCols[eIdx] << " )" << std::endl;
@@ -382,19 +385,19 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 	  Matcher<lno_t> bpMatch(bigraphCRSRowPtr.data(), bigraphCRSCols.data(), bigraphNumU, bigraphNumV, bigraphNumE);
           bpMatch.match();
 
-	  const std::vector<int> &vertUMatches = bpMatch.getVertexUMatches();
-	  const std::vector<int> &vertVMatches = bpMatch.getVertexVMatches();
+	  const std::vector<lno_t> &vertUMatches = bpMatch.getVertexUMatches();
+	  const std::vector<lno_t> &vertVMatches = bpMatch.getVertexVMatches();
           ///////////////////////////////////////////////////////////////
 
           ///////////////////////////////////////////////////////////////
           // Calculate vertex cover (which is vertex separator) from matching
           ///////////////////////////////////////////////////////////////
-	  std::vector<int> VC;
+	  std::vector<lno_t> VC;
 
           bpMatch.getVCfromMatching(bigraphCRSRowPtr,bigraphCRSCols,vertUMatches,vertVMatches,
 	 		  bigraphVMapU,bigraphVMapV,VC);
 
-          for(unsigned int i=0;i<VC.size();i++)
+          for(size_t i=0;i<VC.size();i++)
 	  {
             sepVerts.insert(VC[i]);
 
@@ -413,11 +416,11 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     // Output separators
     //////////////////////////////////////////////////////////////////////
     std::cout << "Separators: " << std::endl;
-    for(unsigned int level=0;level<sepVertsByLevel.size();level++)
+    for(part_t level=0;level<sepVertsByLevel.size();level++)
     {
       sepVertsByLevel[level].resize(sepsInLev[level]);
 
-      for(unsigned int levIndx=0;levIndx<sepVertsByLevel[level].size();levIndx++)
+      for(part_t levIndx=0;levIndx<sepVertsByLevel[level].size();levIndx++)
       {
 	std::cout << "  Separator " << level << " " << levIndx << ": ";
 
@@ -454,19 +457,19 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 // between all parts
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &partMap,
+void AlgND<Adapter>::getBoundLayer(part_t levelIndx, const std::vector<part_t> &partMap,
 				   const part_t * parts,
-				   const std::set<int> &excVerts,
-				   int &bigraphNumS, int &bigraphNumT, int &bigraphNumE,
-				   std::vector<int> &bigraphCRSRowPtr, std::vector<int> &bigraphCRSCols,
-				   std::vector<int> &bigraphVMapS, std::vector<int> &bigraphVMapT)
+				   const std::set<lno_t> &excVerts,
+				   lno_t &bigraphNumS, lno_t &bigraphNumT, lno_t &bigraphNumE,
+				   std::vector<lno_t> &bigraphCRSRowPtr, std::vector<lno_t> &bigraphCRSCols,
+				   std::vector<lno_t> &bigraphVMapS, std::vector<lno_t> &bigraphVMapT)
 {
   typedef typename Adapter::lno_t lno_t;         // local ids
   typedef typename Adapter::offset_t offset_t;   // offset_t
   typedef typename Adapter::scalar_t scalar_t;   // scalars
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  int numVerts = mGraphModel->getLocalNumVertices();
+  size_t numVerts = mGraphModel->getLocalNumVertices();
 
   //Teuchos ArrayView
   ArrayView< const lno_t > eIDs;
@@ -480,13 +483,13 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
   ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
 
 
-  std::map<int,std::set<int> > bigraphEs;
-  std::set<int> vSetS;
-  std::set<int> vSetT;
+  std::map<lno_t,std::set<lno_t> > bigraphEs;
+  std::set<lno_t> vSetS;
+  std::set<lno_t> vSetT;
 
   bigraphNumE=0;
 
-  for(int v1=0;v1<numVerts;v1++)
+  for(lno_t v1=0;v1<numVerts;v1++)
   {
 
     part_t vpart1 = partMap[parts[v1]];
@@ -511,7 +514,7 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
     for(offset_t j=vOffsets[v1];j<vOffsets[v1+1];j++)
     {
 
-      int v2 = eIDs[j];
+      lno_t v2 = eIDs[j];
 
       part_t vpart2 = partMap[parts[v2]];
 
@@ -540,7 +543,7 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
           // v1, v2          
           if(bigraphEs.find(v1)==bigraphEs.end())
 	  {
-            bigraphEs[v1] = std::set<int>();
+            bigraphEs[v1] = std::set<lno_t>();
 	  }
           bigraphEs[v1].insert(v2);
           bigraphNumE++;
@@ -568,10 +571,10 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
 
   bigraphVMapS.resize(bigraphNumS);
 
-  std::map<int,int> glob2LocTMap;
+  std::map<lno_t,lno_t> glob2LocTMap;
 
-  unsigned int indx=0;
-  for(std::set<int>::const_iterator iter=vSetS.begin(); iter!=vSetS.end(); ++iter)
+  lno_t indx=0;
+  for(typename std::set<lno_t>::const_iterator iter=vSetS.begin(); iter!=vSetS.end(); ++iter)
   {
     bigraphVMapS[indx] = *iter;
     indx++;
@@ -580,7 +583,7 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
 
   bigraphVMapT.resize(bigraphNumT);
   indx=0;
-  for(std::set<int>::const_iterator iter=vSetT.begin();iter!=vSetT.end();++iter)
+  for(typename std::set<lno_t>::const_iterator iter=vSetT.begin();iter!=vSetT.end();++iter)
   {
     bigraphVMapT[indx] = *iter;
     glob2LocTMap[*iter]=indx;
@@ -601,14 +604,14 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
   /////////////////////////////////////////////////////////////////////////
   bigraphCRSRowPtr[0]=0;
 
-  unsigned int rownum=0;
-  unsigned int nzIndx=0;
-  std::map<int,std::set<int> >::const_iterator iterM;
+  lno_t rownum=0;
+  size_t nzIndx=0;
+  typename std::map<lno_t,std::set<lno_t> >::const_iterator iterM;
   for (iterM=bigraphEs.begin();iterM!=bigraphEs.end();++iterM)
   {
     bigraphCRSRowPtr[rownum+1] = bigraphCRSRowPtr[rownum] + (*iterM).second.size();
 
-    for(std::set<int>::const_iterator iter=(*iterM).second.begin(); iter!=(*iterM).second.end(); ++iter)
+    for(typename std::set<lno_t>::const_iterator iter=(*iterM).second.begin(); iter!=(*iterM).second.end(); ++iter)
     {
       bigraphCRSCols[nzIndx] = glob2LocTMap[(*iter)];
 
@@ -626,18 +629,18 @@ void AlgND<Adapter>::getBoundLayer(int levelIndx, const std::vector<part_t> &par
 //////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 void AlgND<Adapter>::
-buildPartTree(int level, part_t startV,
-	       const std::vector<part_t> &permPartNums,
-	       const std::vector<part_t> &splitRangeBeg,
-	       const std::vector<part_t> &splitRangeEnd,
-	       const std::vector<part_t> &treeVertParents,
-	      std::vector<unsigned int> &sepLevels,
+buildPartTree(part_t level, part_t startV,
+	      const std::vector<part_t> &permPartNums,
+	      const std::vector<part_t> &splitRangeBeg,
+	      const std::vector<part_t> &splitRangeEnd,
+	      const std::vector<part_t> &treeVertParents,
+	      std::vector<part_t> &sepLevels,
 	      std::vector<std::set<part_t> > &sepParts1, std::vector<std::set<part_t> > &sepParts2,
-              int &maxLev)
+              part_t &maxLev)
 {
   // Insert information for this separator
   maxLev=level;
-  int tmpMaxLev=maxLev;
+  part_t tmpMaxLev=maxLev;
 
   //////////////////////////////////////////////////////////////////////
   // Search for indices that have parent startV
