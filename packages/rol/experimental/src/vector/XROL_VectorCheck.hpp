@@ -45,7 +45,6 @@
 #pragma once
 
 #include "XROL_VectorTraits.hpp"
-#include "XROL_Vector.hpp"
 
 
 namespace XROL {

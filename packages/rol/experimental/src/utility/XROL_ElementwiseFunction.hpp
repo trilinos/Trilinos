@@ -164,6 +164,7 @@ struct Product : Reduce<T,Product> {
 };
 template<class T> constexpr T Product<T>::initialValue_;
 
+
 } // namespace Elementwise
 
 
