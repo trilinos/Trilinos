@@ -78,9 +78,9 @@ namespace Xpetra {
 /// \brief Sort the entries of the (raw CSR) matrix by column index
 ///   within each row.
     static void sortCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
-      const Teuchos::ArrayView<LocalOrdinal>& CRS_colind,
-      const Teuchos::ArrayView<Scalar>&CRS_vals,
-      const UnderlyingLib lib) {
+                               const Teuchos::ArrayView<LocalOrdinal>& CRS_colind,
+                               const Teuchos::ArrayView<Scalar>&CRS_vals,
+                               const UnderlyingLib lib) {
 
       if(lib == Xpetra::UseEpetra) {
 #if defined(HAVE_XPETRA_EPETRA)
@@ -89,6 +89,26 @@ namespace Xpetra {
       } else if(lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
+#endif // HAVE_XPETRA_TPETRA
+      }
+
+      return;
+    }
+
+/// \brief Sort and merge the entries of the (raw CSR) matrix by column index
+///   within each row.
+    static void sortAndMergeCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
+                                       const Teuchos::ArrayView<LocalOrdinal>& CRS_colind,
+                                       const Teuchos::ArrayView<Scalar>&CRS_vals,
+                                       const UnderlyingLib lib) {
+
+      if(lib == Xpetra::UseEpetra) {
+#if defined(HAVE_XPETRA_EPETRA)
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra::CrsMatrixUtils::sortAndMergeCrsEntries only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)"));
+#endif // HAVE_XPETRA_EPETRA
+      } else if(lib == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+        Tpetra::Import_Util::sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
 #endif // HAVE_XPETRA_TPETRA
       }
 
@@ -112,9 +132,9 @@ namespace Xpetra {
 /// \brief Sort the entries of the (raw CSR) matrix by column index
 ///   within each row.
     static void sortCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
-      const Teuchos::ArrayView<LocalOrdinal>& CRS_colind,
-      const Teuchos::ArrayView<Scalar>&CRS_vals,
-      const UnderlyingLib lib) {
+                               const Teuchos::ArrayView<LocalOrdinal>& CRS_colind,
+                               const Teuchos::ArrayView<Scalar>&CRS_vals,
+                               const UnderlyingLib lib) {
 
       if(lib == Xpetra::UseEpetra) {
 #if defined(HAVE_XPETRA_EPETRA)
@@ -130,6 +150,33 @@ namespace Xpetra {
       } else if(lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
+#endif // HAVE_XPETRA_TPETRA
+      }
+
+      return;
+    }
+
+/// \brief Sort and merge the entries of the (raw CSR) matrix by column index
+///   within each row.
+    static void sortAndMergeCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
+                                       const Teuchos::ArrayView<LocalOrdinal>& CRS_colind,
+                                       const Teuchos::ArrayView<Scalar>&CRS_vals,
+                                       const UnderlyingLib lib) {
+
+      if(lib == Xpetra::UseEpetra) {
+#if defined(HAVE_XPETRA_EPETRA)
+        int rv = Epetra_Util::SortAndMergeCrsEntries(Teuchos::as<int>(CRS_rowptr.size()-1),
+                                                     CRS_rowptr.getRawPtr(),
+                                                     CRS_colind.getRawPtr(),
+                                                     CRS_vals.getRawPtr());
+        if (rv != 0) {
+          throw Exceptions::RuntimeError("Epetra_Util::SortCrsEntries() return value of "
+                                         + Teuchos::toString(rv));
+        }
+#endif // HAVE_XPETRA_EPETRA
+      } else if(lib == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+        Tpetra::Import_Util::sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
 #endif // HAVE_XPETRA_TPETRA
       }
 
@@ -153,9 +200,9 @@ namespace Xpetra {
 /// \brief Sort the entries of the (raw CSR) matrix by column index
 ///   within each row.
     static void sortCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
-      const Teuchos::ArrayView<LocalOrdinal>& CRS_colind,
-      const Teuchos::ArrayView<Scalar>&CRS_vals,
-      const UnderlyingLib lib) {
+                               const Teuchos::ArrayView<LocalOrdinal>& CRS_colind,
+                               const Teuchos::ArrayView<Scalar>&CRS_vals,
+                               const UnderlyingLib lib) {
 
       if(lib == Xpetra::UseEpetra) {
 #if defined(HAVE_XPETRA_EPETRA)
@@ -171,6 +218,33 @@ namespace Xpetra {
       } else if(lib == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
         Tpetra::Import_Util::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
+#endif // HAVE_XPETRA_TPETRA
+      }
+
+      return;
+    }
+
+/// \brief Sort and merge the entries of the (raw CSR) matrix by column index
+///   within each row.
+    static void sortAndMergeCrsEntries(const Teuchos::ArrayView<size_t>& CRS_rowptr,
+                                       const Teuchos::ArrayView<LocalOrdinal>& CRS_colind,
+                                       const Teuchos::ArrayView<Scalar>&CRS_vals,
+                                       const UnderlyingLib lib) {
+
+      if(lib == Xpetra::UseEpetra) {
+#if defined(HAVE_XPETRA_EPETRA)
+        int rv = Epetra_Util::SortAndMergeCrsEntries(Teuchos::as<int>(CRS_rowptr.size()-1),
+                                                     CRS_rowptr.getRawPtr(),
+                                                     CRS_colind.getRawPtr(),
+                                                     CRS_vals.getRawPtr());
+        if (rv != 0) {
+          throw Exceptions::RuntimeError("Epetra_Util::SortCrsEntries() return value of "
+                                         + Teuchos::toString(rv));
+        }
+#endif // HAVE_XPETRA_EPETRA
+      } else if(lib == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+        Tpetra::Import_Util::sortAndMergeCrsEntries(CRS_rowptr, CRS_colind, CRS_vals);
 #endif // HAVE_XPETRA_TPETRA
       }
 
