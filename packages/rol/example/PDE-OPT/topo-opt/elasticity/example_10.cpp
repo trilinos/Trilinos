@@ -79,7 +79,7 @@
 #include "../../TOOLS/integralconstraint.hpp"
 #include "../../TOOLS/meshreader.hpp"
 #include "obj_topo-opt.hpp"
-#include "mesh_ex06.hpp"
+#include "mesh_wheel.hpp"
 #include "pde_elasticity.hpp"
 #include "pde_filter.hpp"
 
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
     /*** Initialize main data structure. ***/
     Teuchos::RCP<MeshManager<RealT> > meshMgr;
     if (probDim == 2) {
-      meshMgr = Teuchos::rcp(new MeshManager_Example06<RealT>(*parlist));
+      meshMgr = Teuchos::rcp(new MeshManager_Wheel<RealT>(*parlist));
     } else if (probDim == 3) {
       meshMgr = Teuchos::rcp(new MeshReader<RealT>(*parlist));
     }
@@ -160,28 +160,55 @@ int main(int argc, char *argv[]) {
     rp = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler,*parlist));
 
     // Build sampler.
-    int nsamp  = parlist->sublist("Problem").get("Number of samples", 4);
-    Teuchos::Array<RealT> loadMag
-      = Teuchos::getArrayFromStringParameter<double>(parlist->sublist("Problem").sublist("Load"), "Magnitude");
-    int nLoads = loadMag.size();
-    int dim    = probDim;
-    std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > distVec(dim*nLoads);
-    for (int i = 0; i < nLoads; ++i) {
-      std::stringstream sli;
-      sli << "Stochastic Load " << i;
-      // Magnitude distribution.
-      Teuchos::ParameterList magList;
-      magList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Magnitude");
-      distVec[i*dim + 0] = ROL::DistributionFactory<RealT>(magList);
-      // Polar angle distribution.
-      Teuchos::ParameterList polList;
-      polList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Polar Angle");
-      distVec[i*dim + 1] = ROL::DistributionFactory<RealT>(polList);
-      // Azimuth angle distribution.
-      if (probDim == 3) {
-        Teuchos::ParameterList aziList;
-        aziList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Azimuth Angle");
-        distVec[i*dim + 2] = ROL::DistributionFactory<RealT>(aziList);
+    int nsamp    = parlist->sublist("Problem").get("Number of samples", 4);
+    int stochDim = 0;
+    std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > distVec;
+    if (parlist->sublist("Problem").isSublist("Load")) {
+      Teuchos::Array<RealT> loadMag
+        = Teuchos::getArrayFromStringParameter<double>(parlist->sublist("Problem").sublist("Load"), "Magnitude");
+      int nLoads = loadMag.size();
+      stochDim   = probDim*nLoads;
+      for (int i = 0; i < nLoads; ++i) {
+        std::stringstream sli;
+        sli << "Stochastic Load " << i;
+        // Magnitude distribution.
+        Teuchos::ParameterList magList;
+        magList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Magnitude");
+        distVec.push_back(ROL::DistributionFactory<RealT>(magList));
+        // Polar angle distribution.
+        Teuchos::ParameterList polList;
+        polList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Polar Angle");
+        distVec.push_back(ROL::DistributionFactory<RealT>(polList));
+        // Azimuth angle distribution.
+        if (probDim == 3) {
+          Teuchos::ParameterList aziList;
+          aziList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Azimuth Angle");
+          distVec.push_back(ROL::DistributionFactory<RealT>(aziList));
+        }
+      }
+    }
+    if (parlist->sublist("Problem").isSublist("Traction")) {
+      Teuchos::Array<RealT> tractionMag
+        = Teuchos::getArrayFromStringParameter<double>(parlist->sublist("Problem").sublist("Traction"), "Magnitude");
+      int nTractions = tractionMag.size();
+      stochDim      += probDim*nTractions;
+      for (int i = 0; i < nTractions; ++i) {
+        std::stringstream sli;
+        sli << "Stochastic Traction " << i;
+        // Magnitude distribution.
+        Teuchos::ParameterList magList;
+        magList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Magnitude");
+        distVec.push_back(ROL::DistributionFactory<RealT>(magList));
+        // Polar angle distribution.
+        Teuchos::ParameterList polList;
+        polList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Polar Angle");
+        distVec.push_back(ROL::DistributionFactory<RealT>(polList));
+        // Azimuth angle distribution.
+        if (probDim == 3) {
+          Teuchos::ParameterList aziList;
+          aziList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Azimuth Angle");
+          distVec.push_back(ROL::DistributionFactory<RealT>(aziList));
+        }
       }
     }
     Teuchos::RCP<ROL::BatchManager<RealT> > bman
@@ -216,7 +243,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Objective<RealT> > obj_vol
       = Teuchos::rcp(new IntegralOptObjective<RealT>(qoi_vol,assembler));
     Teuchos::RCP<QoI<RealT> > qoi_com
-      = Teuchos::rcp(new QoI_TopoOpt<RealT>(pde->getFE(),pde->getLoad(),
+      = Teuchos::rcp(new QoI_TopoOpt<RealT>(pde->getFE(),pde->getLoad(), // Volumetric Load
+                                            pde->getBdryFE(),pde->getBdryCellLocIds(),pde->getTraction(), // Traction
                                             pde->getFieldHelper(),cmpScaling));
     Teuchos::RCP<ROL::Objective_SimOpt<RealT> > obj_com
       = Teuchos::rcp(new PDE_Objective<RealT>(qoi_com,assembler));

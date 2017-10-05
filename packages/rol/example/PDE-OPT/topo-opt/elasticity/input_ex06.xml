@@ -20,7 +20,7 @@
     <Parameter name="Filter Radius"               type="double"  value="0.1"           />
     <!-- ===========  DIRICHLET BOUNDARIES SUBLIST  ============ -->
     <ParameterList name="Dirichlet">
-      <Parameter name="Sidesets" type="string" value="{0, 2}" />
+      <Parameter name="Sidesets" type="string" value="{0, 4}" />
       <Parameter name="Types"    type="string" value="{0, 2}" />
     </ParameterList>
     <!-- ===========  LOADING SPECIFICATION SUBLIST  =========== -->

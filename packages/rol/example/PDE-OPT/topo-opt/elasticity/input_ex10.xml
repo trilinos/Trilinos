@@ -4,7 +4,7 @@
     <!-- OUTPUT -->
     <Parameter name="Check derivatives"           type="bool"    value="false"         />
     <!-- PROBLEM DEFINITION -->
-    <Parameter name="Problem Dimension"           type="int"     value="3"             />
+    <Parameter name="Problem Dimension"           type="int"     value="2"             />
     <Parameter name="Minimize Volume"             type="bool"    value="true"          />
     <Parameter name="Use Plain Stress"            type="bool"    value="true"          />
     <Parameter name="Use Filter"                  type="bool"    value="true"          />
@@ -16,18 +16,52 @@
     <Parameter name="Maximum Density"             type="double"  value="1.0"           />
     <Parameter name="SIMP Power"                  type="double"  value="3.0"           />
     <Parameter name="Compliance Factor"           type="double"  value="4.0"           />
-    <Parameter name="Compliance Scaling"          type="double"  value="2.2e-5"        />
+    <Parameter name="Compliance Scaling"          type="double"  value="2.2e-4"        />
     <Parameter name="Volume Fraction"             type="double"  value="0.4"           />
     <Parameter name="Use state storage"           type="bool"    value="true"          />
     <!-- STOCHASTIC INFORMATION -->
-    <Parameter name="Number of samples"           type="int"     value="4"             />
-    <Parameter name="Number of output samples"    type="int"     value="4"             />
+    <Parameter name="Number of samples"           type="int"     value="1"           />
+    <Parameter name="Number of output samples"    type="int"     value="1"           />
     <!-- ===========  DIRICHLET BOUNDARIES SUBLIST  ============ -->
     <ParameterList name="Dirichlet">
-      <Parameter name="Sidesets" type="string" value="{0, 2}" />
+      <Parameter name="Sidesets" type="string" value="{0, 4}" />
       <Parameter name="Types"    type="string" value="{0, 2}" />
     </ParameterList>
+    <!-- ===========  TRACTION BOUNDARIES SUBLIST  ============ -->
+    <ParameterList name="Traction">
+      <Parameter name="Sidesets"      type="string"  value="{2}"     />
+      <Parameter name="Side IDs"      type="string"  value="{0}"     />
+      <Parameter name="Magnitude"     type="string"  value="{1.0}"   />
+      <Parameter name="Polar Angle"   type="string"  value="{270.0}" />
+      <Parameter name="Azimuth Angle" type="string"  value="{0.0}"   />
+    </ParameterList>
+    <ParameterList name="Stochastic Traction 0">
+      <ParameterList name="Magnitude">
+        <Parameter name="Name" type="string" value="Uniform" />
+        <ParameterList name="Uniform">
+          <Parameter name="Lower Bound" type="double" value="-0.5" />
+          <Parameter name="Upper Bound" type="double" value="0.5"  />
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Polar Angle">
+        <Parameter name="Name" type="string" value="Truncated Gaussian" />
+        <ParameterList name="Truncated Gaussian">
+          <Parameter name="Mean"               type="double" value="0.0"   />
+          <Parameter name="Standard Deviation" type="double" value="17.0"  />
+          <Parameter name="Lower Bound"        type="double" value="-90.0" />
+          <Parameter name="Upper Bound"        type="double" value="90.0"  />
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="Azimuth Angle">
+        <Parameter name="Name" type="string" value="Uniform" />
+        <ParameterList name="Uniform">
+          <Parameter name="Lower Bound" type="double" value="0.0"  />
+          <Parameter name="Upper Bound" type="double" value="90.0" />
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
     <!-- ===========  LOADING SPECIFICATION SUBLIST  =========== -->
+<!--
     <ParameterList name="Load">
       <Parameter name="Magnitude"     type="string"  value="{5000.0}"/>
       <Parameter name="Polar Angle"   type="string"  value="{270.0}" />
@@ -64,15 +98,16 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
+-->
     <!-- FINITE ELEMENT INFORMATION -->
-    <Parameter name="Cubature Degree"             type="int"     value="2"             />
+    <Parameter name="Cubature Degree" type="int" value="4" />
   </ParameterList>
 
   <!-- SOLVER INFORMATION -->
   <ParameterList name="Solver">
     <Parameter name="Use Direct Solver"           type="bool"    value="true"          />
     <ParameterList name="Direct">
-      <Parameter name="Solver Type"               type="string"  value="KLU2"          />
+      <Parameter name="Solver Type"               type="string"  value="PARDISOMKL"    />
     </ParameterList>
     <ParameterList name="MueLu">
       <Parameter name="verbosity"                 type="string"  value="none"          />
@@ -355,6 +390,6 @@
     <Parameter name="Gradient Tolerance"   type="double" value="1.e-3"    />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-5"    />
     <Parameter name="Step Tolerance"       type="double" value="-1.e-14"  />
-    <Parameter name="Iteration Limit"      type="int"    value="40"       />
+    <Parameter name="Iteration Limit"      type="int"    value="400"      />
   </ParameterList>
 </ParameterList>
