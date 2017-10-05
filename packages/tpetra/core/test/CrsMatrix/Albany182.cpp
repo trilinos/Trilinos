@@ -1043,11 +1043,11 @@ namespace { // (anonymous)
 
   typedef ::Tpetra::Map<>::node_type default_node_type;
 #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-  UNIT_TEST_GROUP( int, longlong, default_node_type );
+  UNIT_TEST_GROUP( int, longlong, default_node_type )
 #else
   typedef ::Tpetra::Map<>::local_ordinal_type default_local_ordinal_type;
   typedef ::Tpetra::Map<>::global_ordinal_type default_global_ordinal_type;
-  UNIT_TEST_GROUP( default_local_ordinal_type, default_global_ordinal_type, default_node_type );
+  UNIT_TEST_GROUP( default_local_ordinal_type, default_global_ordinal_type, default_node_type )
 #endif // HAVE_TPETRA_INST_INT_LONG_LONG
 
 } // namespace (anonymous)

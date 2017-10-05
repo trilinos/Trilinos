@@ -159,10 +159,10 @@ TEUCHOS_UNIT_TEST(unmanaged_mdfield, basic)
   MDField<double> c("c",dl);
   MDField<const double> d("d",dl); // test const accessor
   
-  fm.getFieldData<double,MyTraits::Residual,CELL,BASIS>(a);
-  fm.getFieldData<double,MyTraits::Residual,CELL,BASIS>(b);
-  fm.getFieldData<double,MyTraits::Residual>(c);
-  fm.getFieldData<double,MyTraits::Residual>(d);
+  fm.getFieldData<MyTraits::Residual,double,CELL,BASIS>(a);
+  fm.getFieldData<MyTraits::Residual,double,CELL,BASIS>(b);
+  fm.getFieldData<MyTraits::Residual>(c);
+  fm.getFieldData<MyTraits::Residual>(d);
 
   for (int cell = 0; cell < a.extent_int(0); ++cell) {
     for (int basis = 0; basis < a.extent_int(1); ++basis) {

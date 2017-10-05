@@ -484,8 +484,8 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData1_q1);
-       fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData2_q1);
+       fm.getFieldData<panzer::Traits::Residual>(fieldData1_q1);
+       fm.getFieldData<panzer::Traits::Residual>(fieldData2_q1);
 
        TEST_EQUALITY(fieldData1_q1.dimension(0),Teuchos::as<unsigned int>(4/numProcs));
        TEST_EQUALITY(fieldData1_q1.dimension(1),4);
@@ -506,7 +506,7 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_qedge1);
+       fm.getFieldData<panzer::Traits::Residual>(fieldData_qedge1);
  
        TEST_EQUALITY(fieldData_qedge1.dimension(0),Teuchos::as<unsigned int>(4/numProcs));
        TEST_EQUALITY(fieldData_qedge1.dimension(1),4);
@@ -524,8 +524,8 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
    
-       fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fieldData1_q1);
-       fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fieldData2_q1);
+       fm.getFieldData<panzer::Traits::Jacobian>(fieldData1_q1);
+       fm.getFieldData<panzer::Traits::Jacobian>(fieldData2_q1);
    
        for(unsigned int cell=0;cell<fieldData1_q1.dimension_0();++cell) { 
         for(unsigned int pt=0;pt<fieldData1_q1.dimension_1();pt++) {
@@ -544,7 +544,7 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
    
-       fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fieldData_qedge1);
+       fm.getFieldData<panzer::Traits::Jacobian>(fieldData_qedge1);
    
        for(unsigned int cell=0;cell<fieldData_qedge1.dimension_0();++cell) {
         for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();++pt) {
@@ -561,8 +561,8 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Tangent::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData1_q1);
-       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData2_q1);
+       fm.getFieldData<panzer::Traits::Tangent>(fieldData1_q1);
+       fm.getFieldData<panzer::Traits::Tangent>(fieldData2_q1);
 
        for(unsigned int cell=0;cell<fieldData1_q1.dimension_0();++cell) {
         for(unsigned int pt=0;pt<fieldData1_q1.dimension_1();pt++) {
@@ -599,7 +599,7 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Tangent::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData_qedge1);
+       fm.getFieldData<panzer::Traits::Tangent>(fieldData_qedge1);
 
        for(unsigned int cell=0;cell<fieldData_qedge1.dimension_0();++cell) {
         for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();++pt) {

@@ -31,7 +31,7 @@ Language make_language() {
   toks[TOK_POUND]("#", "#");
   toks[TOK_EXCL]("!", "!");
   toks[TOK_OTHER]("OTHERCHAR", "[^ \t:\\.\\-\"'\\\\\\|\\[\\]{},%#!\n\r]");
-  prods[PROD_DOC]("doc") >> "top_items";
+  prods[PROD_DOC]("doc") >> "comment*", "top_items";
   prods[PROD_TOP_FIRST]("top_items") >> "top_item";
   prods[PROD_TOP_NEXT]("top_items") >> "top_items", "top_item";
   prods[PROD_TOP_DIRECT]("top_item") >> "%", "any*", "NEWLINE";
@@ -42,7 +42,7 @@ Language make_language() {
   prods[PROD_BMAP_NEXT]("bmap_items") >> "bmap_items", "bmap_item", "comment*";
   prods[PROD_BMAP_SCALAR]("bmap_item") >> "scalar", ":", "WS*", "tag?", "map_scalar", "NEWLINE";
   prods[PROD_BMAP_BSCALAR]("bmap_item") >> "scalar", ":", "WS*", "bscalar";
-  prods[PROD_BMAP_BVALUE]("bmap_item") >> "scalar", ":", "WS*", "NEWLINE", "bvalue";
+  prods[PROD_BMAP_BVALUE]("bmap_item") >> "scalar", ":", "WS*", "comment?", "NEWLINE", "bvalue";
   prods[PROD_BVALUE_EMPTY]("bvalue");
   prods[PROD_BVALUE_BMAP]("bvalue") >> "INDENT", "comment*", "bmap_items", "DEDENT";
   /* TODO: allow a tag in this */
@@ -85,6 +85,8 @@ Language make_language() {
   prods[PROD_SCALAR_HEAD_DOT_DOT]("scalar_head") >> ".", ".", "OTHERCHAR";
   prods[PROD_MAP_SCALAR_ESCAPED_EMPTY]("map_scalar_escaped*");
   prods[PROD_MAP_SCALAR_ESCAPED_NEXT]("map_scalar_escaped*") >> "map_scalar_escaped*", ",", "scalar_tail*";
+  prods[PROD_COMMENT_ZERO]("comment?");
+  prods[PROD_COMMENT_ONE]("comment?") >> "#", "any*";
   prods[PROD_COMMENT_EMPTY]("comment*");
   prods[PROD_COMMENT_NEXT]("comment*") >> "comment*", "#", "any*", "NEWLINE";
   prods[PROD_TAG_EMPTY]("tag?");
