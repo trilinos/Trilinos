@@ -153,7 +153,7 @@ public:
           if (traction[i].size() > 0) {
             const int numLocalSideIds = bdryCellLocIds_[i].size();
             for (int j = 0; j < numLocalSideIds; ++j) {
-              const int numCellsSide  = bdryCellLocIds_[j].size();
+              const int numCellsSide  = bdryCellLocIds_[i][j].size();
               if (numCellsSide > 0 && traction[i][j].size() > 0) {
                 const int numCubPerSide = feBdry_[i][j]->cubPts()->dimension(1);
                 for (int k = 0; k < d; ++k) {
