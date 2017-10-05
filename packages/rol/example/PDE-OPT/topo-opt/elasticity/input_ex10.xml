@@ -20,8 +20,8 @@
     <Parameter name="Volume Fraction"             type="double"  value="0.4"           />
     <Parameter name="Use state storage"           type="bool"    value="true"          />
     <!-- STOCHASTIC INFORMATION -->
-    <Parameter name="Number of samples"           type="int"     value="1"           />
-    <Parameter name="Number of output samples"    type="int"     value="1"           />
+    <Parameter name="Number of samples"           type="int"     value="4"           />
+    <Parameter name="Number of output samples"    type="int"     value="4"           />
     <!-- ===========  DIRICHLET BOUNDARIES SUBLIST  ============ -->
     <ParameterList name="Dirichlet">
       <Parameter name="Sidesets" type="string" value="{0, 4}" />
@@ -107,7 +107,7 @@
   <ParameterList name="Solver">
     <Parameter name="Use Direct Solver"           type="bool"    value="true"          />
     <ParameterList name="Direct">
-      <Parameter name="Solver Type"               type="string"  value="PARDISOMKL"    />
+      <Parameter name="Solver Type"               type="string"  value="KLU2"          />
     </ParameterList>
     <ParameterList name="MueLu">
       <Parameter name="verbosity"                 type="string"  value="none"          />
@@ -118,7 +118,7 @@
     </ParameterList>
     <ParameterList name="Belos">
       <Parameter name="Block Size"                type="int"     value="1"             />
-      <Parameter name="Maximum Iterations"        type="int"     value="100"            />
+      <Parameter name="Maximum Iterations"        type="int"     value="100"           />
       <Parameter name="Convergence Tolerance"     type="double"  value="1e-10"         />
       <Parameter name="Output Style"              type="int"     value="1"             />
       <Parameter name="Output Frequency"          type="int"     value="1"             />
@@ -390,6 +390,6 @@
     <Parameter name="Gradient Tolerance"   type="double" value="1.e-3"    />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-5"    />
     <Parameter name="Step Tolerance"       type="double" value="-1.e-14"  />
-    <Parameter name="Iteration Limit"      type="int"    value="400"      />
+    <Parameter name="Iteration Limit"      type="int"    value="40"       />
   </ParameterList>
 </ParameterList>
