@@ -99,11 +99,16 @@ template <class SX> class SolverFactory
     SolverBase<SX>* SolverPtr = NULL;
     std::string solverString = Parameters.get("Solver", "SuperLU");
     if (solverString == "SuperLU") {
+#if defined(HAVE_SHYLUBDDC_SUPERLU)
       SolverPtr = new SolverSuperLU<SX>(numRows,
 					rowBegin,
 					columns,
 					values,
 					Parameters);
+#else
+      std::string msg("Error: SuperLU solver is not available");
+      throw msg;
+#endif
     }
     else if (solverString == "Tacho") {
 #if defined(HAVE_SHYLUBDDC_SHYLUTACHO)
@@ -113,7 +118,8 @@ template <class SX> class SolverFactory
 				      values,
 				      Parameters);
 #else
-      std::cout << "Error: Tacho solver is not available\n";
+      std::string msg("Error: Tacho solver is not available");
+      throw msg;
 #endif
     }
     else if (solverString == "Pardiso") {
@@ -124,7 +130,8 @@ template <class SX> class SolverFactory
 					values,
 					Parameters);
 #else
-      std::cout << "Error: Pardiso solver is not available\n";
+      std::string msg("Error: Pardiso solver is not available");
+      throw msg;
 #endif
     }
     else if (solverString == "Cluster Pardiso") {
@@ -136,7 +143,8 @@ template <class SX> class SolverFactory
 					       Parameters,
 					       pComm);
 #else
-      std::cout << "Error: Cluster Pardiso solver is not available\n";
+      std::string msg("Error: Cluster Sparse solver is not available");
+      throw msg;
 #endif
     }
     else if (solverString == "LAPACK") {

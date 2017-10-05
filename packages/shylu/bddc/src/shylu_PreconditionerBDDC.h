@@ -2821,6 +2821,8 @@ private:
 	LO numDofsLocal = nodeBeginSub[nodeLocal+1] - nodeBeginSub[nodeLocal];
 	LO numDofsGlobal = m_nodeBegin[nodeGlobal+1] - m_nodeBegin[nodeGlobal];
 	assert (numDofsLocal == numDofsGlobal);
+	(void)(numDofsLocal);
+	(void)(numDofsGlobal);
       }
     }
   }
