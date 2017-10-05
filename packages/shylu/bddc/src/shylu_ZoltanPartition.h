@@ -365,6 +365,7 @@ private:
       count[i] = Indices.size();
     }
     m_numMyObjects = numMyRows;
+    (void)(nodeNotOnAnyProcessors);
   }
 
   void ConstructGraphEntitiesForZoltan(LO numRows,
@@ -404,6 +405,7 @@ private:
     char **argv(0);
     int err = Zoltan_Initialize(argc, argv, &version);
     assert (err == ZOLTAN_OK);
+    (void)(err);
     m_zz = new Zoltan(m_Comm);
     m_MyPID = m_TComm->getRank();
     m_numProc = m_TComm->getSize();
