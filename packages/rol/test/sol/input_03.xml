@@ -83,7 +83,7 @@
         </ParameterList>
       </ParameterList>
       <!-- ===========  BPOE SUBLIST  =========== -->
-      <ParameterList name="BPOE">
+      <ParameterList name="bPOE">
         <Parameter name="Moment Order" type="double" value="2.0" />
         <Parameter name="Threshold"    type="double" value="1.0" />
       </ParameterList>
