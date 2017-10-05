@@ -254,39 +254,6 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 
     partSoln->getPartitionTree(numTreeVerts,permPartNums,splitRangeBeg,
     			      splitRangeEnd,treeVertParents);
-
-    std::cout << "numTreeVerts: " << numTreeVerts << std::endl;
-    std::cout << "permPartNums: ";
-    for(unsigned int i=0;i<permPartNums.size();i++)
-    {
-      std::cout << permPartNums[i] << " ";
-    }
-    std::cout << std::endl;
-
-
-    std::cout << "splitRangeBeg: ";
-    for(unsigned int i=0;i<splitRangeBeg.size();i++)
-    {
-      std::cout << splitRangeBeg[i] << " ";
-    }
-    std::cout << std::endl;
-
-
-    std::cout << "splitRangeEnd: ";
-    for(unsigned int i=0;i<splitRangeEnd.size();i++)
-    {
-      std::cout << splitRangeEnd[i] << " ";
-    }
-    std::cout << std::endl;
-
-
-    std::cout << "treeVertParents: ";
-    for(unsigned int i=0;i<treeVertParents.size();i++)
-    {
-      std::cout << treeVertParents[i] << " ";
-    }
-    std::cout << std::endl;
-
     /////////////////////////////////////////////////////////////////
 
     /////////////////////////////////////////////////////////////////
@@ -310,39 +277,8 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
                    sepLevels, sepParts1, sepParts2, maxLevel);
 
     unsigned int numSeparators = sepLevels.size();
-
-    std::cout << "NumSeparators: " << numSeparators << std::endl;
-    std::cout << "Max Level: " << maxLevel << std::endl;
-
-
-    for(unsigned int i=0;i<sepLevels.size(); i++)
-    {
-      std::cout << sepLevels[i] << " Separator Vs: ";
-      for(typename std::set<part_t>::const_iterator iter = sepParts1[i].begin();
-	  iter!=sepParts1[i].end();++iter)
-      {
-	  std::cout << *iter << " ";
-      }
-      std::cout << " - ";
-
-      for(typename std::set<part_t>::const_iterator iter = sepParts2[i].begin();
-	  iter!=sepParts2[i].end();++iter)
-      {
-        std::cout << *iter << " ";
-      }
-
-
-      std::cout  << std::endl;
-    }
-
     /////////////////////////////////////////////////////////////////
-
-
-
     //////////////////////////////////////////////////////////////////////
-
-
-
 
     //////////////////////////////////////////////////////////////////////
     // Create a map that maps each part number to a new number based on
@@ -372,16 +308,8 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 	partLevelMap[level][*iter] = 2*sepsInLev[level]+1;
       }
 
-
-
-
-
       sepsInLev[level]++;
     }
-
-    std::cout << "partLevelMap[0][0] = " << partLevelMap[0][0] << std::endl; 
-    std::cout << "partLevelMap[0][1] = " << partLevelMap[0][1] << std::endl; 
-
     //////////////////////////////////////////////////////////////////////
 
     // Set of separator vertices.  Used to keep track of what vertices are
@@ -417,31 +345,31 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 		      bigraphCRSRowPtr, bigraphCRSCols,
 		      bigraphVMapU,bigraphVMapV);
 
-	std::cout << "Bipartite graph: " << bigraphNumU << " " << bigraphNumV << " " 
-		  << bigraphNumE << std::endl;
+	// std::cout << "Bipartite graph: " << bigraphNumU << " " << bigraphNumV << " " 
+	// 	  << bigraphNumE << std::endl;
 
-        for (unsigned int i=0;i<bigraphVMapU.size();i++)
-	{
-	  std::cout << "boundVertU: " << bigraphVMapU[i] << std::endl;
-        }
+        // for (unsigned int i=0;i<bigraphVMapU.size();i++)
+	// {
+	//   std::cout << "boundVertU: " << bigraphVMapU[i] << std::endl;
+        // }
 
-        for (unsigned int i=0;i<bigraphVMapV.size();i++)
-	{
-	  std::cout << "boundVertV: " << bigraphVMapV[i] << std::endl;
-        }
+        // for (unsigned int i=0;i<bigraphVMapV.size();i++)
+	// {
+	//   std::cout << "boundVertV: " << bigraphVMapV[i] << std::endl;
+        // }
 
 
 
-        for (int rownum=0;rownum<bigraphNumU;rownum++)
-	{
+        // for (int rownum=0;rownum<bigraphNumU;rownum++)
+	// {
 
-           for (int eIdx=bigraphCRSRowPtr[rownum];eIdx<bigraphCRSRowPtr[rownum+1];eIdx++)
-	   {          
-	      std::cout << "bipartite E: " << bigraphVMapU[rownum] << ", " << bigraphVMapV[ bigraphCRSCols[eIdx]]
-			<< " ( "  << rownum << "," << bigraphCRSCols[eIdx] << " )" << std::endl;
-           }
+        //    for (int eIdx=bigraphCRSRowPtr[rownum];eIdx<bigraphCRSRowPtr[rownum+1];eIdx++)
+	//    {          
+	//       std::cout << "bipartite E: " << bigraphVMapU[rownum] << ", " << bigraphVMapV[ bigraphCRSCols[eIdx]]
+	// 		<< " ( "  << rownum << "," << bigraphCRSCols[eIdx] << " )" << std::endl;
+        //    }
 
-	}
+	// }
         ///////////////////////////////////////////////////////////////
 
         ///////////////////////////////////////////////////////////////
@@ -471,11 +399,10 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
             sepVerts.insert(VC[i]);
 
             sepVertsByLevel[level][levIndx].insert(VC[i]);
-	    std::cout << "VC: " << VC[i] << std::endl;
+	    //	    std::cout << "VC: " << VC[i] << std::endl;
 	  }        
           ///////////////////////////////////////////////////////////////
 	}
-
         //TODO: Copy data into separator structures?
 
 
