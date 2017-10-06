@@ -47,7 +47,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 // Panzer
-#include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_BlockedVector_Write_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalEvaluationData.hpp"
 
 // Thyra
@@ -62,8 +62,8 @@ namespace panzer
   //  Default Constructor
   //
   /////////////////////////////////////////////////////////////////////////////
-  BlockedVector_ReadOnly_GlobalEvaluationData::
-  BlockedVector_ReadOnly_GlobalEvaluationData()
+  BlockedVector_Write_GlobalEvaluationData::
+  BlockedVector_Write_GlobalEvaluationData()
     : isInitialized_(false)
   {
   } // end of Default Constructor
@@ -73,9 +73,9 @@ namespace panzer
   //  Copy Constructor
   //
   /////////////////////////////////////////////////////////////////////////////
-  BlockedVector_ReadOnly_GlobalEvaluationData::
-  BlockedVector_ReadOnly_GlobalEvaluationData(
-    const BlockedVector_ReadOnly_GlobalEvaluationData& src)
+  BlockedVector_Write_GlobalEvaluationData::
+  BlockedVector_Write_GlobalEvaluationData(
+    const BlockedVector_Write_GlobalEvaluationData& src)
     :
     isInitialized_(false)
   {
@@ -87,11 +87,11 @@ namespace panzer
   //  Initializing Constructor
   //
   /////////////////////////////////////////////////////////////////////////////
-  BlockedVector_ReadOnly_GlobalEvaluationData::
-  BlockedVector_ReadOnly_GlobalEvaluationData(
+  BlockedVector_Write_GlobalEvaluationData::
+  BlockedVector_Write_GlobalEvaluationData(
     const Teuchos::RCP<const Thyra::VectorSpaceBase<double>> ghostedSpace,
     const Teuchos::RCP<const Thyra::VectorSpaceBase<double>> ownedSpace,
-    const std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>>&
+    const std::vector<Teuchos::RCP<WriteVector_GlobalEvaluationData>>&
       gedBlocks)
     :
     isInitialized_(false)
@@ -105,11 +105,11 @@ namespace panzer
   //
   /////////////////////////////////////////////////////////////////////////////
   void
-  BlockedVector_ReadOnly_GlobalEvaluationData::
+  BlockedVector_Write_GlobalEvaluationData::
   initialize(
     const Teuchos::RCP<const Thyra::VectorSpaceBase<double>>& ghostedSpace,
     const Teuchos::RCP<const Thyra::VectorSpaceBase<double>>& /* ownedSpace */,
-    const std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>>&
+    const std::vector<Teuchos::RCP<WriteVector_GlobalEvaluationData>>&
       gedBlocks)
   {
     using std::logic_error;
@@ -120,35 +120,35 @@ namespace panzer
     // Assert that all the gedBlocks are initialized.
     for (size_t i(0); i < gedBlocks.size(); ++i)
       TEUCHOS_TEST_FOR_EXCEPTION(not gedBlocks[i]->isInitialized(),
-        logic_error, "BlockedVector_ReadOnly_GlobalEvaluationData::"          \
+        logic_error, "BlockedVector_Write_GlobalEvaluationData::"             \
         "initialize:  GED block " << i << " is not initialized.")
     gedBlocks_    = gedBlocks;
     ghostedSpace_ =
       rcp_dynamic_cast<const DefaultProductVectorSpace<double>>(ghostedSpace);
     TEUCHOS_TEST_FOR_EXCEPTION(ghostedSpace_.is_null(), logic_error,
-      "BlockedVector_ReadOnly_GlobalEvaluationData::initialize():  Ghosted "  \
+      "BlockedVector_Write_GlobalEvaluationData::initialize():  Ghosted "     \
       "space must be a Thyra::DefaultProductVectorSpace");
     isInitialized_ = true;
   } // end of initialize()
 
   /////////////////////////////////////////////////////////////////////////////
   //
-  //  globalToGhost()
+  //  ghostToGlobal()
   //
   /////////////////////////////////////////////////////////////////////////////
   void
-  BlockedVector_ReadOnly_GlobalEvaluationData::
-  globalToGhost(
+  BlockedVector_Write_GlobalEvaluationData::
+  ghostToGlobal(
     int mem)
   {
     using std::logic_error;
     using std::size_t;
     TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
-      "BlockedVector_ReadOnly_GlobalEvaluationData has not been "             \
-      "initialized; cannot call \"globalToGhost()\"!");
+      "BlockedVector_Write_GlobalEvaluationData has not been "                \
+      "initialized; cannot call \"ghostToGlobal()\"!");
     for (size_t i(0); i < gedBlocks_.size(); ++i)
-      gedBlocks_[i]->globalToGhost(mem);
-  } // end of globalToGhost()
+      gedBlocks_[i]->ghostToGlobal(mem);
+  } // end of ghostToGlobal()
 
   /////////////////////////////////////////////////////////////////////////////
   //
@@ -156,13 +156,13 @@ namespace panzer
   //
   /////////////////////////////////////////////////////////////////////////////
   void
-  BlockedVector_ReadOnly_GlobalEvaluationData::
+  BlockedVector_Write_GlobalEvaluationData::
   initializeData()
   {
     using std::logic_error;
     using std::size_t;
     TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
-      "BlockedVector_ReadOnly_GlobalEvaluationData has not been "             \
+      "BlockedVector_Write_GlobalEvaluationData has not been "                \
       "initialized; cannot call \"initializeData()\"!");
     for (size_t i(0); i < gedBlocks_.size(); ++i)
       gedBlocks_[i]->initializeData();
@@ -174,25 +174,25 @@ namespace panzer
   //
   /////////////////////////////////////////////////////////////////////////////
   void
-  BlockedVector_ReadOnly_GlobalEvaluationData::
+  BlockedVector_Write_GlobalEvaluationData::
   setOwnedVector(
-    const Teuchos::RCP<const Thyra::VectorBase<double>>& ownedVector)
+    const Teuchos::RCP<Thyra::VectorBase<double>>& ownedVector)
   {
     using std::logic_error;
     using std::size_t;
     using Teuchos::as;
     using Teuchos::RCP;
-    using Thyra::castOrCreateProductVectorBase;
+    using Thyra::castOrCreateNonconstProductVectorBase;
     using Thyra::ProductVectorBase;
     ownedVector_ = ownedVector;
-    RCP<const ProductVectorBase<double>> blocks =
-      castOrCreateProductVectorBase(ownedVector_);
+    RCP<ProductVectorBase<double>> blocks =
+      castOrCreateNonconstProductVectorBase(ownedVector_);
     TEUCHOS_TEST_FOR_EXCEPTION(blocks->productSpace()->numBlocks() !=
       as<int>(gedBlocks_.size()), logic_error,
-      "BlockedVector_ReadOnly_GlobalEvaluationData owned vector has the "     \
+      "BlockedVector_Write_GlobalEvaluationData owned vector has the "        \
       "wrong number of blocks!");
     for (size_t i(0); i < gedBlocks_.size(); ++i)
-      gedBlocks_[i]->setOwnedVector(blocks->getVectorBlock(i));
+      gedBlocks_[i]->setOwnedVector(blocks->getNonconstVectorBlock(i));
   } // end of setOwnedVector()
 
   /////////////////////////////////////////////////////////////////////////////
@@ -200,8 +200,8 @@ namespace panzer
   //  getOwnedVector()
   //
   /////////////////////////////////////////////////////////////////////////////
-  Teuchos::RCP<const Thyra::VectorBase<double>>
-  BlockedVector_ReadOnly_GlobalEvaluationData::
+  Teuchos::RCP<Thyra::VectorBase<double>>
+  BlockedVector_Write_GlobalEvaluationData::
   getOwnedVector() const
   {
     return ownedVector_;
@@ -213,7 +213,7 @@ namespace panzer
   //
   /////////////////////////////////////////////////////////////////////////////
   Teuchos::RCP<Thyra::VectorBase<double>>
-  BlockedVector_ReadOnly_GlobalEvaluationData::
+  BlockedVector_Write_GlobalEvaluationData::
   getGhostedVector() const
   {
     using std::logic_error;
@@ -224,7 +224,7 @@ namespace panzer
     using Thyra::defaultProductVector;
     using Thyra::VectorBase;
     TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
-      "BlockedVector_ReadOnly_GlobalEvaluationData has not been "             \
+      "BlockedVector_Write_GlobalEvaluationData has not been "                \
       "initialized; cannot call \"getGhostedVector()\"!");
     vector<RCP<VectorBase<double>>> blocks;
     for (size_t i(0); i < gedBlocks_.size(); ++i)
@@ -236,4 +236,4 @@ namespace panzer
 
 } // end of namespace panzer
 
-// end of Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.cpp
+// end of Panzer_BlockedVector_Write_GlobalEvaluationData.cpp
