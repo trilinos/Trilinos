@@ -189,6 +189,7 @@ template <class SX,
   {
     LO numEquiv = m_equivClasses.size();
     assert ((equiv >= 0) && (equiv < numEquiv));
+    (void)(numEquiv);
     return m_numActiveAncestors[equiv];
   }
 

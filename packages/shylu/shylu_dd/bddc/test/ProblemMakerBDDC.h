@@ -1342,6 +1342,7 @@ template <class LO, class GO, class SX, class SM> class ProblemMaker
       LO node2 = node1+1;
       size_t numDofNode2 = m_nodeBegin[node2+1]-m_nodeBegin[node2];
       assert (numDofNode2 == numDofNode1);
+      (void)(numDofNode2);
       for (size_t j=0; j<numDofNode1; j++) {
 	LO dof = m_nodeBegin[node1]+j;
 	m_rowsCT.push_back(dof);

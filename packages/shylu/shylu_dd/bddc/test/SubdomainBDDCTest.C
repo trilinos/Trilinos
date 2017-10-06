@@ -263,7 +263,7 @@ TEST(SubdomainBDDC, Test1)
   std::vector<SX> ScEquiv;
   subdomainBDDC->calculateSchurComplement(equivClass, ScEquiv);
   numRows = LO(std::sqrt(ScEquiv.size()));
-  //  printMatrix(numRows, numRows, &ScEquiv[0], "ScEquiv.dat");
+  if(0) printMatrix(numRows, numRows, &ScEquiv[0], "ScEquiv.dat");
   checkSymmetry(ScEquiv, numRows, "ScEquiv");
   // full Schur complement
   std::vector<SX> ScAll(numB*numB), xB(numB);

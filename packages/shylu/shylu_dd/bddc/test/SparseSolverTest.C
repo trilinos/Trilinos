@@ -309,7 +309,7 @@ int setParameters(int numElemDir1,
   }
   switch (directSolver) {
   case 0: // SuperLU
-#if defined(HAVE_SHYLUBDDC_SUPERLU)
+#if defined(HAVE_SHYLU_DDBDDC_SUPERLU)
     Parameters->set("Solver", "SuperLU");
 #else
     std::cout << "SuperLU solver not available in this build\n";

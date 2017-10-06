@@ -24,7 +24,7 @@ APPEND_SET(SOURCES
 #-----------------------------------------------------------------------------
 
 TRIBITS_ADD_LIBRARY(
-    shylu_ddbddc
+    shylubddc
     HEADERS ${HEADERS_PUBLIC}
     NOINSTALLHEADERS ${HEADERS_PRIVATE}
     SOURCES ${SOURCES}

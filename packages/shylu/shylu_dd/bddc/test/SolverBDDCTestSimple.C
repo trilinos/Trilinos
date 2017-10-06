@@ -469,7 +469,7 @@ int setParameters(double lengthDir1,
   Parameters->set("Solver", "Tacho");
   switch (directSolver) {
   case 0: // SuperLU
-#if defined(HAVE_SHYLUBDDC_SUPERLU)
+#if defined(HAVE_SHYLU_DDBDDC_SUPERLU)
     Parameters->set("Solver", "SuperLU");
 #else
     if (myPID == 0) {

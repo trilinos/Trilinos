@@ -251,8 +251,8 @@ TEST(SolverBDDC, Test1)
   // initialize right hand side
   std::vector<SX> rhs(numDofs, 0);
   for (LO i=0; i<numDofs; i++) {
-    if ((i % spatialDim) == 0) rhs[i] = 1;
-    //  rhs[i] = 0.7*rand()/RAND_MAX;
+    //    if ((i % spatialDim) == 0) rhs[i] = 1;
+    rhs[i] = 0.7*rand()/RAND_MAX;
     //    rhs[i] = 1;
   }
   if (applyOnlyPreconditioner) {
@@ -432,7 +432,7 @@ int setParameters(double lengthDir1,
 		  numElemPerSubDir2);
   Parameters->set("Number of Elements Per Subdomain Direction 3",
 		  numElemPerSubDir3);
-  Parameters->set("Apply Left Side Essential BCs", false);
+  Parameters->set("Apply Left Side Essential BCs", true);
   Parameters->set("Apply Right Side Essential BCs", false);
   Parameters->set("Load Direction", loadDirection);
   Parameters->set("Artificial Foundation Stiffness", 0.0);
@@ -485,7 +485,7 @@ int setParameters(double lengthDir1,
   Parameters->set("Solver", "Tacho");
   switch (directSolver) {
   case 0: // SuperLU
-#if defined(HAVE_SHYLUBDDC_SUPERLU)
+#if defined(HAVE_SHYLU_DDBDDC_SUPERLU)
     Parameters->set("Solver", "SuperLU");
 #else
     if (myPID == 0) {
