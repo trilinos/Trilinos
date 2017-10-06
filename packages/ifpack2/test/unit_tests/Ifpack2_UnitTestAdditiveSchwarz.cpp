@@ -1524,7 +1524,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastILDL, Scalar, Loca
 #  define IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal)
 #endif
 
-#if defined(HAVE_IFPACK2_SHYLUFASTILU)
+#if defined(HAVE_IFPACK2_SHYLU_NODEFASTILU)
   #define IFPACK2_FASTILU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, FastILU, Scalar, LocalOrdinal, GlobalOrdinal) \
     TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, FastIC, Scalar, LocalOrdinal, GlobalOrdinal) \

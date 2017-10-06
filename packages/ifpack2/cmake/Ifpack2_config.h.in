@@ -79,7 +79,7 @@
 #cmakedefine HAVE_IFPACK2_ZOLTAN2
 
 /* Define if we have ShyLU/HTS */
-#cmakedefine HAVE_IFPACK2_SHYLUHTS
+#cmakedefine HAVE_IFPACK2_SHYLU_NODEHTS
 
 /*
  * TPL (third-party library) dependencies
@@ -98,7 +98,7 @@
 #cmakedefine HAVE_IFPACK2_QD
 
 /* Define if we have ShyLU FastILU (an inner preconditioner for Additive Schwarz) */
-#cmakedefine HAVE_IFPACK2_SHYLUFASTILU
+#cmakedefine HAVE_IFPACK2_SHYLU_NODEFASTILU
 
 /*
  * If deprecated warnings are on, and the compiler supports them, then
