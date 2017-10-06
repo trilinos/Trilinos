@@ -157,6 +157,9 @@ void Epetra_Import::Construct_Expert( const Epetra_BlockMap &  targetMap, const 
     if(NumRemotePIDs==NumRemoteIDs_){
       // Since I need to sort these, I'll copy them
       for(i=0; i<NumRemoteIDs_; i++)  RemotePIDs[i] = UserRemotePIDs[i];
+    } else if(NumRemotePIDs > 0) {
+      // We have remote pids and they are not matching NumRemoteIDs
+      ReportError("Epetra_Import: UserRemotePIDs count wrong",-1);
     }
 
     //Get rid of IDs that don't exist in SourceMap
