@@ -56,40 +56,76 @@ public:
   static_assert( implements_elementwise<V>(), 
     "BoundConstraint requires either vector type V to implement elementwise "
     "functions or template specialization of BoundConstraint<V>." );
-  
+
+  using Real = magnitude_t<V>;  
+
   BoundConstraint( const V& x, 
                    bool isLower = true,
-                   magnitude_t<X> scale = 1 );
+                   Real scale = 1 );
 
   BoundConstraint( std::unique_ptr<V> lo, 
                    std::unique_ptr<V> up,
-                   magnitude_t<X> scale =1 );
+                   Real scale =1 );
 
   virtual ~BoundConstraint();
 
   virtual void update( const V& );
 
+  
+  /** \fn  project
+      \brief Project optimization variables onto the bounds.
+
+      This function implements the projection of \f$x\f$ onto the bounds, i.e.,
+      \f[
+         (P_{[a,b]}(x))(\xi) = \min\{b(\xi),\max\{a(\xi),x(\xi)\}\} \quad \text{for almost every }\xi\in\Xi.
+      \f]
+       @param[in,out]      x is the optimization variable.
+  */
   void project( V& x ) const;
   
+
+
+  /** \fn projectInterior 
+      \brief Project optimization variables into the interior of the feasible set.
+
+      This function implements the projection of \f$x\f$ into the interior of the
+      feasible set, i.e.,
+      \f[
+         (\bar{P}_{[a,b]}(x))(\xi) \in (a(\xi),b(\xi))
+           \quad \text{for almost every }\xi\in\Xi.
+      \f]
+       @param[in,out]      x is the optimization variable.
+  */
   void projectInterior( V& x ) const;
 
+  /** \fn pruneUpperActive
+      \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-active set.
+
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}^+_\epsilon(x)\f$.  Here,
+      the upper \f$\epsilon\f$-active set is defined as
+      \f[
+         \mathcal{A}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = b(\xi)-\epsilon\,\}.
+      \f]
+      @param[out]      v   is the variable to be pruned.
+      @param[in]       x   is the current optimization variable.
+      @param[in]       eps is the active-set tolerance \f$\epsilon\f$. */
   void pruneUpperActive( V& v, 
                          const V& x, 
-                         magnitude_t<V> eps = 0 ); 
+                         Real eps = 0 ); 
 
   void pruneUpperActive( V& v, 
                          const dual_t<V>& g, 
                          const V& x, 
-                         magnitude_t<V> eps = 0 ); 
+                         Real eps = 0 ); 
 
   void pruneLowerActive( V& v, 
                          const V& x, 
-                         magnitude_t<V> eps = 0 ); 
+                         Real eps = 0 ); 
 
   void pruneLowerActive( V& v, 
                          const dual_t<V>& g, 
                          const V& x, 
-                         magnitude_t<V> eps = 0 ); 
+                         Real eps = 0 ); 
 
   const V& getUpperBound( void ) const;
 
@@ -113,17 +149,17 @@ public:
 
   bool isLowerActivated( void ) const;
 
-  void pruneActive( V& v, const dual_t<V>& g, const V& x, magnitude_t<V> eps = 0 ) const;
+  void pruneActive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
 
-  void pruneUpperActive( V& v, const dual_t<V>& g, const V& x, magnitude_t<V> eps = 0 ) const;
+  void pruneUpperActive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
 
-  void pruneLowerActive( V& v, const dual_t<V>& g, const V& x, magnitude_t<V> eps = 0 ) const;
+  void pruneLowerActive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
 
-  void pruneInactive( V& v, const dual_t<V>& g, const V& x, magnitude_t<V> eps = 0 ) const;
+  void pruneInactive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
 
-  void pruneUpperInactive( V& v, const dual_t<V>& g, const V& x, magnitude_t<V> eps = 0 ) const;
+  void pruneUpperInactive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
 
-  void pruneLowerInactive( V& v, const dual_t<V>& g, const V& x, magnitude_t<V> eps = 0 ) const;
+  void pruneLowerInactive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
   
   void computeProjectedStep( V& v, const V& x ) const;
  
@@ -134,14 +170,14 @@ private:
   std::unique_ptr<V> x_lo_;
   std::unique_ptr<V> x_up_;
 
-  magnitude_t<V> scale_;
-  magnitude_t<V> min_diff_;
+  Real scale_;
+  Real min_diff_;
 
   bool Lactivated_;
   bool Uactivated_;
 
-  static constexpr auto INF_ {std::numeric_limits<magnitude_t<V>>::max()};
-  static constexpr auto NINF_{std::numeric_limits<magnitude_t<V>>::lowest()};
+  static constexpr auto INF_ {std::numeric_limits<Real>::max()};
+  static constexpr auto NINF_{std::numeric_limits<Real>::lowest()};
 
 };
 

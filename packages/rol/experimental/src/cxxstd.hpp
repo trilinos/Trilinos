@@ -47,6 +47,7 @@
 #include <algorithm>
 #include <complex>
 #include <exception>
+#include <functional>
 #include <iostream>
 #include <iomanip>
 #include <limits>

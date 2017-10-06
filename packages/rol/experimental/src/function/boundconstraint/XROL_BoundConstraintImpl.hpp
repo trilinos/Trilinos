@@ -53,9 +53,9 @@ namespace XROL {
 template<class V>
 BoundConstraint<V>::BoundConstraint( std::unique_ptr<V> x_lo, 
                                      std::unique_ptr<V> x_up,
-                                     magnitude_t<V> scale ) :
+                                     Real scale ) :
   x_lo_(std::move(x_lo)), x_up_(std::move(x_up)), 
-  mask_(std::move(clone(x_lo)),  
+  mask_(std::move(clone(x_lo))),  
   scale_(scale), Lactivated_(true), Uactivated_(true) {
 
   // Create a minimum function for this element type
@@ -71,7 +71,7 @@ BoundConstraint<V>::BoundConstraint( std::unique_ptr<V> x_lo,
 template<class V> 
 BoundConstraint<V>::BoundConstraint( const V& x, 
                                      bool isLower, 
-                                     magnitude_t<V> scale ) :
+                                     Real scale ) :
   x_lo_(std::move(clone(x))), 
   x_up_(std::move(clone(x))),
   scale_(scale),
@@ -87,6 +87,7 @@ BoundConstraint<V>::BoundConstraint( const V& x,
   }
 }
 
+
 template<class V>
 BoundConstraint<V>::~BoundConstraint() {}
 
@@ -95,31 +96,57 @@ template<class V>
 void BoundConstraint<V>::project( V& x ) const {
   // Scalar clipping function
   auto clip = []( auto ue, auto xe, auto le ) {
-    return std::min( ue, std::max(xe,le) );
+    return std::min( le, std::max(xe,ue) );
   };
 
   // x_i = min( u_i, max( l_i, x_i ) ) for all i
-  Elementwise::eval_function(x,clip,*x_up_,x,*x_lo_);
+  Elementwise::eval_function(x,clip,*x_lo_,x,*x_up_);
 }
 
-/* Make vector strictly feasible
 
-   x_i = min( umod_i, max( lmod_i, x_i ) ) for all i
-
-   where  
-*/
 template<class V>
 void BoundConstraint<V>::projectInterior( V& x ) const {
 
-  auto eps = std::numeric_limits<magnitude_t<V>>::epsilon();
+  /* Same as project with modifications to lower and upper bounds: 
+ 
+    \f[ \tilde \ell = \begin{cases} 
+                      (1-\epsilon)\ell   & \text{if } \ell < -tol \\
+                      (1+\epsilon)\ell   & \text{if } \ell >  tol
+                      \ell+\epsilon      & \text{otherwise } \\
+    \end{cases} \f]
+
+    \f[ \tilde u    = \begin{cases} 
+                      (1+\epsilon)u      & \text{if } u < 0 \\
+                      -\epsilon          & \text{if } u = 0 \\
+                      (1-\epsilon)\ell   & \text{if } u > 0
+    \end{cases} \f]
+  */
+
+  auto eps = std::numeric_limits<Real>::epsilon();
   auto tol = 100*eps;
-  magnitude_t<V> one(1);
+  Real one(1);
+
+  // Offset is positive for lower and negative for upper bounds
+  // 
+  auto mod = [eps,] ( auto offset, auto val ) { 
+    return (val == 0) ? offset : (1+signbit(val)*offset)*val;
+  };
+
+  auto clip = [tol,&mod]( auto le, auto xe, auto ue ) {
+    return std::min( mod(tol,le), std::max( xe, mod(-tol,ue) );
+  };
+
 }
 
+
+
+/*
+
+*/
 template<class V>
 void BoundConstraint<V>::pruneUpperActive( V& v, 
                                            const V& x,  
-                                           magnitude_t<V> eps ) {
+                                           Real eps ) {
   auto epsn(std::min(scale_*eps,min_diff_)); 
   auto active = [epsn]( auto xe, auto ye ) { return (y<=epsn) ? 0 : x; };
 
@@ -129,15 +156,16 @@ template<class V>
 void BoundConstraint<V>::pruneUpperActive( V& v, 
                                            const dual_t<V> &g, 
                                            const V& x,  
-                                           magnitude_t<V> eps ) {
+                                           Real eps ) {
   auto epsn(std::min(scale_*eps,min_diff_)); 
+  
 
 }
 
 template<class V>
 void BoundConstraint<V>::pruneLowerActive( V& v, 
                                            const V& x,  
-                                           magnitude_t<V> eps ) {
+                                           Real eps ) {
   auto epsn(std::min(scale_*eps,min_diff_)); 
 
 }
@@ -146,7 +174,7 @@ template<class V>
 void BoundConstraint<V>::pruneLowerActive( V& v, 
                                            const dual_t<V> &g, 
                                            const V& x,  
-                                           magnitude_t<V> eps ) {
+                                           Real eps ) {
   auto epsn(std::min(scale_*eps,min_diff_)); 
 
 }
@@ -163,7 +191,7 @@ const V& BoundConstraint<V>::getUpperBound( void ) const {
 
 bool isFeasible( const V& v ) const {
   auto is_between = []( auto l, auto v, auto u ) {
-    return ( (l<v) && (v<u) ) ? magnitude_t<V>(1) : magnitude_t<V>(0);
+    return ( (l<v) && (v<u) ) ? Real(1) : Real(0);
   }; 
   auto all_true = make_product(v);
   return (Elementwise::eval_function_and_reduce(all_true,is_between,*x_lo_,v,*x_up_) != 0);
