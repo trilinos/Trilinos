@@ -131,7 +131,7 @@ namespace MueLu {
 
     auto numAggregates = numAggregates_;
 
-    if (graph_.numRows() == numAggregates)
+    if (static_cast<LO>(graph_.numRows()) == numAggregates)
       return graph_;
 
     auto vertex2AggId = vertex2AggId_->template getLocalView<DeviceType>();
