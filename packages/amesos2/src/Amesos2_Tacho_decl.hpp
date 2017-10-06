@@ -220,7 +220,7 @@ private:
 
   // TODO: Decide handling for CUDA - how to fail
 #ifdef KOKKOS_HAVE_OPENMP
-  typedef Kokkos::OpenM DeviceSpaceType;
+  typedef Kokkos::OpenMP DeviceSpaceType;
 #else
   typedef Kokkos::Serial DeviceSpaceType;
 #endif

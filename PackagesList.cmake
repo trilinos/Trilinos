@@ -97,7 +97,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Ifpack                packages/ifpack                   PT
   ML                    packages/ml                       PT
   Belos                 packages/belos                    PT
-  ShyLU                 packages/shylu                    PT
+  ShyLU_Node            packages/shylu/shylu_node         PT
   Amesos2               packages/amesos2                  PT
   SEACAS                packages/seacas                   PT # Depends on netcdf, optionally hdf5, xdmf, pamgen
   Trios                 packages/trios                    EX #temporary
@@ -120,6 +120,8 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   NOX                   packages/nox                      PT
   Moertel               packages/moertel                  ST
   MueLu                 packages/muelu                    PT
+  ShyLU_DD              packages/shylu/shylu_dd           PT
+  ShyLU                 packages/shylu                    PT
   Rythmos               packages/rythmos                  PT
   Tempus                packages/tempus                   PT
   MOOCHO                packages/moocho                   ST

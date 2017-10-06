@@ -183,7 +183,7 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-IF(Ifpack2_ENABLE_ShyLUHTS)
+IF(Ifpack2_ENABLE_ShyLU_NodeHTS)
   TRIBITS_ADD_TEST(
     tif_belos
     NAME RILUK_HTS_hb_belos
@@ -276,7 +276,7 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-IF(Ifpack2_ENABLE_ShyLUFastILU)
+IF(Ifpack2_ENABLE_ShyLU_NodeFastILU)
   #calore1
   TRIBITS_ADD_TEST(
     tif_belos Ifpack2BelosCopyFiles
