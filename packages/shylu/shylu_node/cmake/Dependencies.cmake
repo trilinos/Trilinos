@@ -2,8 +2,8 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   #SubPackageName       Directory         Class    Req/Opt
   #
   # New ShyLU subpackages:
-  HTS                   hts               EX       OPTIONAL
-  Tacho                 tacho             EX       OPTIONAL
+  HTS                   hts               ST       OPTIONAL
+  Tacho                 tacho             ST       OPTIONAL
   Basker                basker            EX       OPTIONAL
   FastILU               fastilu           EX       OPTIONAL
   )
