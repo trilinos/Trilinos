@@ -198,8 +198,8 @@ class Reader : public Teuchos::Reader {
     using std::swap;
     switch (prod) {
       case Teuchos::YAML::PROD_DOC: {
-        TEUCHOS_ASSERT(!rhs.at(0).empty());
-        swap(result_any, rhs.at(0));
+        TEUCHOS_ASSERT(!rhs.at(1).empty());
+        swap(result_any, rhs.at(1));
         TEUCHOS_ASSERT(result_any.type() == typeid(ParameterList));
         break;
       }
@@ -249,7 +249,7 @@ class Reader : public Teuchos::Reader {
         break;
       }
       case Teuchos::YAML::PROD_BMAP_BVALUE: {
-        map_item(result_any, rhs.at(0), rhs.at(4));
+        map_item(result_any, rhs.at(0), rhs.at(5));
         break;
       }
       case Teuchos::YAML::PROD_BVALUE_EMPTY: {

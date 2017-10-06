@@ -376,9 +376,6 @@ namespace MueLu {
     static RCP<Teuchos::FancyOStream> MakeFancy(std::ostream& os) {
       return UtilitiesBase::MakeFancy(os);
     }
-    static typename Teuchos::ScalarTraits<SC>::magnitudeType Distance2(const MultiVector& v, LO i0, LO i1) {
-      return UtilitiesBase::Distance2(v,i0,i1);
-    }
     static void SetRandomSeed(const Teuchos::Comm<int> &comm) {
       UtilitiesBase::SetRandomSeed(comm);
     }

@@ -77,7 +77,7 @@ SET(Trilinos_TRACK  $ENV{JENKINS_JOB_TYPE})
 SET(CTEST_TEST_TIMEOUT 900)
 # SET(CTEST_DO_SUBMIT FALSE)
 
-SET(Trilinos_PACKAGES Amesos Amesos2 Anasazi AztecOO Belos Claps Epetra EpetraExt FEI Ifpack Ifpack2 Intrepid Kokkos ML MueLu NOX Pamgen RTOp Sacado Shards Teuchos Thyra Tpetra TrilinosSS Triutils Xpetra Zoltan Zoltan2)
+SET(Trilinos_PACKAGES Amesos Amesos2 Anasazi AztecOO Belos Epetra EpetraExt FEI Ifpack Ifpack2 Intrepid Kokkos ML MueLu NOX Pamgen RTOp Sacado Shards Teuchos Thyra Tpetra TrilinosSS Triutils Xpetra Zoltan Zoltan2)
 
 SET(EXTRA_EXCLUDE_PACKAGES Galeri Intrepid2 Isorropia Stratimikos Teko SEACAS STK)
 
@@ -93,6 +93,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   
   "-DFEI_AZTECOO:BOOL=ON"
   "-DTrilinos_ENABLE_AztecOO:BOOL=ON"
+
+  "-DTrilinos_ENABLE_EpetraExt:BOOL=ON"
 
   "-DKokkos_ENABLE_Pthread:BOOL=$ENV{JENKINS_DO_PTHREAD}"
   "-DKokkos_ENABLE_Cuda_UVM:BOOL=$ENV{JENKINS_DO_CUDA}"

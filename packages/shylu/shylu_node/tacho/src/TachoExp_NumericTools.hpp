@@ -169,6 +169,9 @@ namespace Tacho {
         stat.t_extra = 0;
         stat.m_used = 0;
         stat.m_peak = 0;
+#if defined( TACHO_PROFILE_TIME_PER_THREAD )
+        memset(g_time_per_thread, 0, sizeof(double)*2048);
+#endif
       }
 
       inline
@@ -195,6 +198,33 @@ namespace Tacho {
         printf("             gflop   for numeric factorization:               %10.2f GFLOP\n", flop/1024/1024/1024);
         printf("             gflop/s for numeric factorization:               %10.2f GFLOP/s\n", flop/stat.t_factor/1024/1024/1024);
         printf("\n");
+#if defined( TACHO_PROFILE_TIME_PER_THREAD )
+        const ordinal_type nthreads = host_exec_space::thread_pool_size(0);
+        double t_total = 0, t_min = g_time_per_thread[0], t_max = g_time_per_thread[0];
+        for (ordinal_type i=0;i<nthreads;++i) {
+          const double t = g_time_per_thread[i];
+          t_total += t;
+          t_min = min(t_min, t);
+          t_max = max(t_max, t);
+        }
+        const double t_avg = t_total / double(nthreads);
+        
+        double t_diff_min = fabs(g_time_per_thread[0] - t_avg), t_diff_max = fabs(g_time_per_thread[0] - t_avg), t_diff_var = 0;
+        for (ordinal_type i=0;i<nthreads;++i) {
+          const double diff = fabs(g_time_per_thread[i] - t_avg);
+          t_diff_min = min(t_diff_min, diff);
+          t_diff_max = max(t_diff_max, diff);
+          t_diff_var += diff*diff;
+        }
+        t_diff_var = sqrt(t_diff_var)/double(nthreads);
+
+        printf("  Time per thread\n");
+        for (ordinal_type i=0;i<nthreads;++i) 
+          printf("             time for external blas lapack (diff from avg):   %10.6f s, %10.6f s\n", g_time_per_thread[i], fabs(g_time_per_thread[i] - t_avg));
+        printf("             sum(time per thread)/(factor. time x nthreads):  %10.6f s\n", t_total/(stat.t_factor*nthreads));
+        printf("             time min, max, avg                               %10.6f s, %10.6f s, %10.6f\n", t_min, t_max, t_avg);
+        //printf("             diff min, max, variance:                         %10.6f s, %10.6f s, %10.6f s\n", t_diff_min, t_diff_max, t_diff_var);
+#endif
       }
       
       inline

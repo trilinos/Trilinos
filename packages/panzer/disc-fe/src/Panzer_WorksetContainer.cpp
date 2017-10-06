@@ -386,53 +386,6 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-#if 1
-
-//! Access, and construction of side worksets
-Teuchos::RCP<std::map<unsigned,Workset> >
-WorksetContainer::getSideWorksets(const BC & bc)
-{
-  WorksetDescriptor desc = bcDescriptor(bc);
-
-  return getSideWorksets(desc);
-}
-
-//! Access, and construction of volume worksets
-Teuchos::RCP<std::vector<Workset> >
-WorksetContainer::getVolumeWorksets(const std::string & eBlock)
-{
-   const WorksetDescriptor wd = blockDescriptor(eBlock);
-
-   return getWorksets(wd);
-}
-
-void WorksetContainer::setPhysicsBlockVector(const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks)
-{
-   using Teuchos::RCP;
-
-   for(std::size_t i=0;i<physicsBlocks.size();i++) {
-      WorksetNeeds needs = physicsBlocks[i]->getWorksetNeeds();
-
-     ebToNeeds_[physicsBlocks[i]->elementBlockID()] = needs;
-   }
-}
-
-WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
-                                   const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks,
-                                   std::size_t wkstSz)
-   : wkstFactory_(factory), worksetSize_(wkstSz)
-{
-   setPhysicsBlockVector(physicsBlocks);
-}
-
-#endif
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 void getVolumeWorksetsFromContainer(WorksetContainer & wc,
                                     const std::vector<std::string> & elementBlockNames,
                                     std::map<std::string,Teuchos::RCP<std::vector<Workset> > > & volumeWksts)
