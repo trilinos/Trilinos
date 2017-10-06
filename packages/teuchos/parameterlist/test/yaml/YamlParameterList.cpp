@@ -92,6 +92,30 @@ namespace TeuchosTests
   {
     TEST_THROW(Teuchos::getParametersFromYamlFile("IllegalKeyString.yaml");, Teuchos::ParserFail);
   }
+  TEUCHOS_UNIT_TEST(YAML, Issue1801)
+  {
+    Teuchos::getParametersFromYamlString(
+        "My Awesome Problem:\n"
+        "  Particle Periodic:\n"
+        "    X: \"-1.0, 1.0\"\n"
+        "  emotions: happy_sad, indifferent\n"
+        "...\n"
+        );
+  }
+  TEUCHOS_UNIT_TEST(YAML, PR1805)
+  {
+    RCP<ParameterList> params = Teuchos::getParametersFromYamlString(
+        "My Awesome Problem:\n"
+        "\tMesh:\n"
+        "\t\tInline:\n"
+        "\t\t\tType: Quad\n"
+        "\t\t\tElements: [     10,     10 ]\n"
+        "...\n"
+        );
+    ParameterList& mesh_pl = params->get<ParameterList>("Mesh");
+    ParameterList& inline_pl = mesh_pl.get<ParameterList>("Inline");
+    Teuchos::Array<int>& elems  = inline_pl.get<Teuchos::Array<int> >("Elements");
+  }
   TEUCHOS_UNIT_TEST(YAML, IntAndDoubleArray)
   {
     int correctInts[5] = {2, 3, 5, 7, 11};

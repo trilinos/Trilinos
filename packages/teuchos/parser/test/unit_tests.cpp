@@ -400,6 +400,28 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
       "  sub-entry2: green\n"
       "...\n",
       "21");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "  Particle Periodic:\n"
+      "    X: \"-1.0, 1.0\"\n"
+      "  emotions: happy_sad, indifferent\n"
+      "...\n",
+      "Trilinos issue #1801");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "  Particle Periodic:\n"
+      "    X: \"-1.0, 1.0\"\n"
+      "  emotions: happy_sad, indifferent\n"
+      "...\n",
+      "Trilinos issue #1801");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "\tMesh:\n"
+      "\t\tInline:\n"
+      "\t\t\tType: Quad\n"
+      "\t\t\tElements: [     10,     10 ]\n"
+      "...\n",
+      "Trilinos issue #1801");
 }
 
 TEUCHOS_UNIT_TEST( Parser, yaml_reader_Match1 ) {
