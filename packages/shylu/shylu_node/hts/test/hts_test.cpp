@@ -374,7 +374,7 @@ int main (int argc, char** argv) {
   }
   if (verbose >= 1) std::cout << "<int, int, double>\n";
   int nerr = Experimental::htsimpl::Tester<int, int, double>::test(verbose);
-#ifdef HAVE_SHYLUHTS_COMPLEX
+#ifdef HAVE_SHYLU_NODEHTS_COMPLEX
   if (verbose >= 1) std::cout << "\n<int, size_t, std::complex<double> >\n";
   nerr += Experimental::htsimpl::Tester<int, size_t, std::complex<double> >::test(verbose);
 #endif

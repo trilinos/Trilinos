@@ -58,7 +58,7 @@
 
 #include "ShyLU_DDCore_config.h"
 
-#ifdef HAVE_SHYLUCORE_MPI
+#ifdef HAVE_SHYLU_DDCORE_MPI
 #include <mpi.h>
 #endif
 
@@ -124,7 +124,7 @@ DebugManager::DebugManager(int debugLevel, const Teuchos::RCP<std::ostream> &os)
     debugLevel_(debugLevel),
     myOS_(os)
 {
-#ifdef HAVE_SHYLUCORE_MPI
+#ifdef HAVE_SHYLU_DDCORE_MPI
         int mpiStarted = 0;
         MPI_Initialized(&mpiStarted);
         if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &myPID_);

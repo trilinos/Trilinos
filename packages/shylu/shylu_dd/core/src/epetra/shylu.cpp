@@ -65,9 +65,9 @@
 #include "shylu_util.h"
 
 // Epetra includes
-#ifdef HAVE_SHYLUCORE_MPI
+#ifdef HAVE_SHYLU_DDCORE_MPI
 #  include "Epetra_MpiComm.h"
-#endif // HAVE_SHYLUCORE_MPI
+#endif // HAVE_SHYLU_DDCORE_MPI
 #include "Epetra_SerialComm.h"
 #include "Epetra_Time.h"
 #include "Epetra_CrsMatrix.h"
@@ -93,12 +93,12 @@
 
 
 // Amesos2 includes
-#ifdef HAVE_SHYLUCORE_AMESOS2
+#ifdef HAVE_SHYLU_DDCORE_AMESOS2
 #include <Amesos2.hpp>
 #endif
 
 // Tpetra includes
-#ifdef HAVE_SHYLUCORE_TPETRA
+#ifdef HAVE_SHYLU_DDCORE_TPETRA
 #include <Tpetra_CrsMatrix_decl.hpp>
 #include <Tpetra_CrsMatrix_def.hpp>
 #endif
@@ -107,7 +107,7 @@
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_SHYLUCORE_MPI
+#ifdef HAVE_SHYLU_DDCORE_MPI
     Teuchos::GlobalMPISession mpiSession(&argc, &argv, 0);
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else

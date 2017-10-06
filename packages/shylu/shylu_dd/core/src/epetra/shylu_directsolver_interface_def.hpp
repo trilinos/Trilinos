@@ -119,7 +119,7 @@ namespace ShyLU{
     return 0;
   }//end factorAmesos
 
-#ifdef HAVE_SHYLUCORE_AMESOS2
+#ifdef HAVE_SHYLU_DDCORE_AMESOS2
   template <class Matrix, class Vector>
   int DirectSolverInterface<Matrix,Vector>::factorAmesos2()
   {
@@ -140,7 +140,7 @@ namespace ShyLU{
    template <class Matrix, class Vector>
   int DirectSolverInterface<Matrix,Vector>::factor()
   {
-    #ifdef HAVE_SHYLUCORE_AMESOS2
+    #ifdef HAVE_SHYLU_DDCORE_AMESOS2
     return factorAmesos2();
     #else
     return 1;
@@ -160,7 +160,7 @@ namespace ShyLU{
       }
     else if(solverpackage.compare("Amesos2")==0)
       {
-#ifdef HAVE_SHYLUCORE_AMESOS2
+#ifdef HAVE_SHYLU_DDCORE_AMESOS2
         returnvalue = factorAmesos2();
 #else
         std::cout << "Amesos2 is not installed \n";
@@ -214,7 +214,7 @@ template <class Matrix, class Vector>
 int
 DirectSolverInterface<Matrix, Vector>::solve(Vector* b, Vector* x)
 {
-#ifdef HAVE_SHYLUCORE_AMESOS2
+#ifdef HAVE_SHYLU_DDCORE_AMESOS2
   return solveAmesos2(b, x);
 #else
   return 1;
@@ -233,7 +233,7 @@ DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector>::solve(Epetra_MultiV
     }
   else if(solverpackage.compare("Amesos2")==0)
     {
-#ifdef HAVE_SHYLUCORE_AMESOS2
+#ifdef HAVE_SHYLU_DDCORE_AMESOS2
         returnvalue = solveAmesos2(b,x);
 #else
         std::cout << "Amesos2 is not installed \n";
@@ -246,7 +246,7 @@ DirectSolverInterface<Epetra_CrsMatrix, Epetra_MultiVector>::solve(Epetra_MultiV
       }
     return returnvalue;
 }
-#ifdef HAVE_SHYLUCORE_AMESOS2
+#ifdef HAVE_SHYLU_DDCORE_AMESOS2
 template <class Matrix, class Vector>
 int DirectSolverInterface<Matrix,Vector>::solveAmesos2(Vector* b, Vector* x)
 {

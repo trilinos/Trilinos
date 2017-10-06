@@ -7,7 +7,7 @@
 #include "ShyLU_DDCore_config.h"
 
 //Tperta
-#ifdef HAVE_SHYLUCORE_TPETRA
+#ifdef HAVE_SHYLU_DDCORE_TPETRA
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -30,7 +30,7 @@
 #include "Epetra_LinearProblem.h"
 
 // Teuchos includes
-#ifdef HAVE_SHYLUCORE_TPETRA
+#ifdef HAVE_SHYLU_DDCORE_TPETRA
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"

@@ -59,12 +59,12 @@
 #include "shylu_SolverLAPACK.h"
 
 /*
-#if defined(HAVE_SHYLUBDDC_TRILINOSSS)
+#if defined(HAVE_SHYLU_DDBDDC_TRILINOSSS)
 #include "shylu_SolverKLU2.h"
 #endif
 */
 
-#if defined(HAVE_SHYLUBDDC_SHYLU_NODETACHO)
+#if defined(HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO)
 #include "shylu_SolverTacho.h"
 #endif
 
@@ -72,7 +72,7 @@
 #include "shylu_SolverSuperLU.h"
 #endif
 
-#if defined(HAVE_SHYLUBDDC_PARDISO_MKL)
+#if defined(HAVE_SHYLU_DDBDDC_PARDISO_MKL)
 #include "shylu_SolverPardisoBDDC.h"
 #endif
 
@@ -111,7 +111,7 @@ template <class SX> class SolverFactory
 #endif
     }
     else if (solverString == "Tacho") {
-#if defined(HAVE_SHYLUBDDC_SHYLU_NODETACHO)
+#if defined(HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO)
       SolverPtr = new SolverTacho<SX>(numRows,
 				      rowBegin,
 				      columns,
@@ -123,7 +123,7 @@ template <class SX> class SolverFactory
 #endif
     }
     else if (solverString == "Pardiso") {
-#if defined(HAVE_SHYLUBDDC_PARDISO_MKL)
+#if defined(HAVE_SHYLU_DDBDDC_PARDISO_MKL)
       SolverPtr = new SolverPardiso<SX>(numRows, 
 					rowBegin,
 					columns,

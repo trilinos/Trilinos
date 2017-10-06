@@ -1,7 +1,7 @@
 #include "shylu_iterativesolver_interface_decl.hpp"
 #include "shylu_iterativesolver_interface_def.hpp"
 
-#ifdef HAVE_SHYLUCORE_TPETRA
+#ifdef HAVE_SHYLU_DDCORE_TPETRA
 #include "Tpetra_ConfigDefs.hpp"
 #endif
 
@@ -23,7 +23,7 @@ namespace ShyLU {
     Tpetra::MultiVector<double, int, int> >;
 #endif // defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
 
-#endif // defined(HAVE_SHYLUCORE_TPETRA)
+#endif // defined(HAVE_SHYLU_DDCORE_TPETRA)
 
 }//end namespace Shylu
 

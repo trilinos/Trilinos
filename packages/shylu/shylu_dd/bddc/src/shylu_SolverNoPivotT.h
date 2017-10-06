@@ -52,7 +52,7 @@
 #include "NoPivotT.h"
 #include <metis.h>
 
-#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
+#if defined(_OPENMP) && defined(HAVE_SHYLU_DDBDDC_SHYLU_NODEHTS)
 #include "shylu_hts.hpp"
 #endif
 
@@ -76,7 +76,7 @@ public:
   ~SolverNoPivotT()
   {
     delete m_Solver;
-#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
+#if defined(_OPENMP) && defined(HAVE_SHYLU_DDBDDC_SHYLU_NODEHTS)
     if (m_useHtsForSolves) {
       HTST::delete_Impl(m_Uimpl);
       HTST::delete_Impl(m_Limpl);
@@ -150,7 +150,7 @@ public:
   {
     if (this->m_numRows == 0) return;
     if (m_useHtsForSolves) {
-#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
+#if defined(_OPENMP) && defined(HAVE_SHYLU_DDBDDC_SHYLU_NODEHTS)
       HTST::solve_omp(m_Limpl, Rhs, NRHS, Sol);
       HTST::solve_omp(m_Uimpl, Sol, NRHS);
 #endif
@@ -170,14 +170,14 @@ private:
   std::vector<idx_t> m_permInput;
   nopivot::NoPivotT<SX>* m_Solver;
   bool m_useHtsForSolves;
-#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
+#if defined(_OPENMP) && defined(HAVE_SHYLU_DDBDDC_SHYLU_NODEHTS)
   typedef Experimental::HTS<LO, LO, SM> HTST;
   typename HTST::Impl *m_Limpl, *m_Uimpl;
 #endif
 
   bool useHtsForSolves() 
   {
-#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
+#if defined(_OPENMP) && defined(HAVE_SHYLU_DDBDDC_SHYLU_NODEHTS)
     if (this->m_Parameters.get("Use HTS For Solves", false)) {
       return true;
     }
@@ -192,7 +192,7 @@ private:
   void initializeHts()
   {
     if ( ! m_useHtsForSolves) return;
-#if defined(_OPENMP) && defined(HAVE_SHYLUBDDC_HTS)
+#if defined(_OPENMP) && defined(HAVE_SHYLU_DDBDDC_SHYLU_NODEHTS)
     std::vector<int> ir, jc;
     std::vector<SX> d;
     std::vector<SX> diag;

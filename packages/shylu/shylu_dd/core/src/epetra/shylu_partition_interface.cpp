@@ -48,7 +48,7 @@
 #include "shylu_partition_interface_decl.hpp"
 #include "shylu_partition_interface_def.hpp"
 
-#ifdef HAVE_SHYLUCORE_TPETRA
+#ifdef HAVE_SHYLU_DDCORE_TPETRA
 #include "Tpetra_ConfigDefs.hpp"
 #endif
 
@@ -56,7 +56,7 @@ namespace ShyLU {
 
   template class PartitionInterface<Epetra_CrsMatrix, Epetra_MultiVector>;
 
-#if defined(HAVE_SHYLUCORE_TPETRA)
+#if defined(HAVE_SHYLU_DDCORE_TPETRA)
 
 #if defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_INT_INT)
   template class PartitionInterface<
@@ -70,6 +70,6 @@ namespace ShyLU {
     Tpetra::MultiVector<double, int, int> >;
 #endif // defined(HAVE_TPETRA_INST_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
 
-#endif // defined(HAVE_SHYLUCORE_TPETRA)
+#endif // defined(HAVE_SHYLU_DDCORE_TPETRA)
 
 } // namespace ShyLU

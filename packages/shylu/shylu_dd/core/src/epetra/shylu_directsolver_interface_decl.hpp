@@ -69,13 +69,13 @@
 #include <Isorropia_EpetraRedistributor.hpp>
 
 //Tperta
-#ifdef HAVE_SHYLUCORE_TPETRA
+#ifdef HAVE_SHYLU_DDCORE_TPETRA
 #include <Tpetra_CrsMatrix_decl.hpp>
 #include <Tpetra_CrsMatrix_def.hpp>
 #endif
 
 //#include <Zoltan2_config.h>
-#ifdef HAVE_SHYLUCORE_ZOLTAN2
+#ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -87,7 +87,7 @@
 #include <Amesos.h>
 #include <Amesos_BaseSolver.h>
 
-#ifdef HAVE_SHYLUCORE_AMESOS2
+#ifdef HAVE_SHYLU_DDCORE_AMESOS2
 #include <Amesos2.hpp>
 #endif
 
@@ -121,7 +121,7 @@ private:
   //Private Functions
   int factorAmesos();
   int solveAmesos(Vector* b, Vector *x );
-#ifdef HAVE_SHYLUCORE_AMESOS2
+#ifdef HAVE_SHYLU_DDCORE_AMESOS2
   int factorAmesos2();
   int solveAmesos2(Vector* b, Vector *x);
 #endif
@@ -136,7 +136,7 @@ private:
   Amesos_BaseSolver*    solver_amesos;
 
   //amesos2
-#ifdef HAVE_SHYLUCORE_AMESOS2
+#ifdef HAVE_SHYLU_DDCORE_AMESOS2
   Teuchos::RCP<Amesos2::Solver<Matrix,Vector> > solver_amesos2;
 #endif
 

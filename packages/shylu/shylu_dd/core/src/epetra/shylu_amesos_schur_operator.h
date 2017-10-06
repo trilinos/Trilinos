@@ -58,9 +58,9 @@
 #include "ShyLU_DDCore_config.h"
 
 // Epetra includes
-#ifdef HAVE_SHYLUCORE_MPI
+#ifdef HAVE_SHYLU_DDCORE_MPI
 #  include "Epetra_MpiComm.h"
-#endif // HAVE_SHYLUCORE_MPI
+#endif // HAVE_SHYLU_DDCORE_MPI
 #include "Epetra_SerialComm.h"
 #include "Epetra_Time.h"
 #include "Epetra_CrsMatrix.h"

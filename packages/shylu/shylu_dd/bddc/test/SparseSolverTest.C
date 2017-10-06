@@ -316,14 +316,14 @@ int setParameters(int numElemDir1,
 #endif
     break;
   case 1: // MKL Pardiso solver
-#if defined(HAVE_SHYLUBDDC_PARDISO_MKL)
+#if defined(HAVE_SHYLU_DDBDDC_PARDISO_MKL)
     Parameters->set("Solver", "Pardiso");
 #else
     std::cout << "Pardiso solver not available in this build\n";
 #endif
     break;
   case 2: // Tacho solver
-#if defined(HAVE_SHYLUBDDC_SHYLU_NODETACHO)
+#if defined(HAVE_SHYLU_DDBDDC_SHYLU_NODETACHO)
     Parameters->set("Solver", "Tacho");
 #else
     std::cout << "Tacho solver not available in this build\n";

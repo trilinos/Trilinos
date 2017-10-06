@@ -74,17 +74,17 @@ inline int omp_get_thread_num () { return 0; }
 #include <list>
 #include <algorithm>
 
-#ifdef HAVE_SHYLUHTS_COMPLEX
+#ifdef HAVE_SHYLU_NODEHTS_COMPLEX
 # include <complex>
 #endif
-#ifdef HAVE_SHYLUHTS_MKL
+#ifdef HAVE_SHYLU_NODEHTS_MKL
 # include <mkl.h>
-# ifdef HAVE_SHYLUHTS_COMPLEX
+# ifdef HAVE_SHYLU_NODEHTS_COMPLEX
 #  include <type_traits> // std::is_same, etc.
-# endif // HAVE_SHYLUHTS_COMPLEX
+# endif // HAVE_SHYLU_NODEHTS_COMPLEX
 #endif
 
-#ifdef HAVE_SHYLUHTS_KOKKOSKERNELS
+#ifdef HAVE_SHYLU_NODEHTS_KOKKOSKERNELS
 # include <Kokkos_ArithTraits.hpp>
 #endif
 
@@ -97,7 +97,7 @@ namespace htsimpl {
 
 static const int parfor_static_size = 20;
 
-#if defined(HAVE_SHYLUHTS_BLAS) || defined(HAVE_SHYLUHTS_MKL)
+#if defined(HAVE_SHYLU_NODEHTS_BLAS) || defined(HAVE_SHYLU_NODEHTS_MKL)
 //todo Make this configurable.
 typedef int blas_int;
 
@@ -113,7 +113,7 @@ extern "C" {
   void F77_BLAS_MANGLE(dgemm,DGEMM)(
     char*, char*, blas_int*, blas_int*, blas_int*, double*, double*, blas_int*,
     double*, blas_int*, double*, double*, blas_int*);
-#ifdef HAVE_SHYLUHTS_COMPLEX
+#ifdef HAVE_SHYLU_NODEHTS_COMPLEX
   void F77_BLAS_MANGLE(cgemm,CGEMM)(
     char*, char*, blas_int*, blas_int*, blas_int*, std::complex<float>*,
     std::complex<float>*, blas_int*, std::complex<float>*, blas_int*,
@@ -145,7 +145,7 @@ template<> inline void gemm<double> (
     const_cast<double*>(b), &ldb, &beta, const_cast<double*>(c), &ldc);
 }
 
-#ifdef HAVE_SHYLUHTS_COMPLEX
+#ifdef HAVE_SHYLU_NODEHTS_COMPLEX
 template<> inline void gemm<std::complex<float> > (
   char transa, char transb, blas_int m, blas_int nrhs, blas_int n,
   std::complex<float> alpha, const std::complex<float>* a, blas_int lda,
@@ -174,7 +174,7 @@ template<> inline void gemm<std::complex<double> > (
 #endif
 #endif
 
-#ifdef HAVE_SHYLUHTS_MKL
+#ifdef HAVE_SHYLU_NODEHTS_MKL
 // sparse A * dense x
 template<typename T> void hts_mkl_csrmm(
   const bool transp, const MKL_INT m, const MKL_INT n, const T* d,
@@ -215,7 +215,7 @@ template<> inline void hts_mkl_csrmm<double> (
       y + k*ldy);
 }
 
-#ifdef HAVE_SHYLUHTS_COMPLEX
+#ifdef HAVE_SHYLU_NODEHTS_COMPLEX
 template<> inline void hts_mkl_csrmm<std::complex<float> > (
   const bool transp, const MKL_INT m, const MKL_INT n,
   const std::complex<float>* d, const MKL_INT* ir, const MKL_INT* jc,
@@ -450,11 +450,11 @@ void Impl<Int, Size, Sclr>::Options::print (std::ostream& os) const {
 }
 
 static inline void print_compiletime_options(std::ostream& os) {
-#ifdef HAVE_SHYLUHTS_BLAS
-  os << " HAVE_SHYLUHTS_BLAS";
+#ifdef HAVE_SHYLU_NODEHTS_BLAS
+  os << " HAVE_SHYLU_NODEHTS_BLAS";
 #endif
-#ifdef HAVE_SHYLUHTS_MKL
-  os << " HAVE_SHYLUHTS_MKL";
+#ifdef HAVE_SHYLU_NODEHTS_MKL
+  os << " HAVE_SHYLU_NODEHTS_MKL";
 #endif
 }
 
@@ -563,12 +563,12 @@ struct NumThreads {
 
 inline void set_num_threads (const int nthreads, NumThreads& save) {
   save.omp = omp_get_max_threads();
-#ifdef HAVE_SHYLUHTS_MKL
+#ifdef HAVE_SHYLU_NODEHTS_MKL
   save.mkl = mkl_get_max_threads();
   save.mkl_dynamic = mkl_get_dynamic();
 #endif
   omp_set_num_threads(nthreads);
-#ifdef HAVE_SHYLUHTS_MKL
+#ifdef HAVE_SHYLU_NODEHTS_MKL
   // We never use MKL threading.
   mkl_set_dynamic(0);
   mkl_set_num_threads(1);
@@ -576,7 +576,7 @@ inline void set_num_threads (const int nthreads, NumThreads& save) {
 }
 
 inline void restore_num_threads (const NumThreads& save) {
-#ifdef HAVE_SHYLUHTS_MKL
+#ifdef HAVE_SHYLU_NODEHTS_MKL
   mkl_set_dynamic(save.mkl_dynamic);
 #endif
 
@@ -585,7 +585,7 @@ inline void restore_num_threads (const NumThreads& save) {
   // does not promise OMP state will remain the same.
   return;
 //   omp_set_num_threads(save.omp);
-// #ifdef HAVE_SHYLUHTS_MKL
+// #ifdef HAVE_SHYLU_NODEHTS_MKL
 //   mkl_set_num_threads(save.mkl);
 // #endif
 }
@@ -1207,7 +1207,7 @@ Int partition_ir (const Int n, const Size* const ir, const Int nparts,
 }
 
 template <typename T> inline T& conjugate (T& v) {
-#ifdef HAVE_SHYLUHTS_KOKKOSKERNELS
+#ifdef HAVE_SHYLU_NODEHTS_KOKKOSKERNELS
   v = Kokkos::Details::ArithTraits<T>::conj(v);
 #else
   v = T(v.real(), -v.imag());
@@ -3767,7 +3767,7 @@ inline void SerialBlock_n1Axpy_spars (
   }
 }
 
-#ifdef HAVE_SHYLUHTS_MKL
+#ifdef HAVE_SHYLU_NODEHTS_MKL
 template<> inline void SerialBlock_n1Axpy_spars<MKL_INT, MKL_INT, float> (
   const MKL_INT nr_, const MKL_INT nc_, const MKL_INT* const ir_,
   const MKL_INT* const jc_, const float* const d_, const float* x,
@@ -3802,7 +3802,7 @@ inline void SerialBlock_n1Axpy_dense (
   }
 }
 
-#if defined(HAVE_SHYLUHTS_BLAS) || defined(HAVE_SHYLUHTS_MKL)
+#if defined(HAVE_SHYLU_NODEHTS_BLAS) || defined(HAVE_SHYLU_NODEHTS_MKL)
 template<> inline void SerialBlock_n1Axpy_dense (
   const blas_int nr, const blas_int nc, const float* d, const float* x,
   const blas_int ldx, const blas_int nrhs, float* y, const blas_int ldy)
@@ -3813,7 +3813,7 @@ template<> inline void SerialBlock_n1Axpy_dense (
   const blas_int ldx, const blas_int nrhs, double* y, const blas_int ldy)
 { gemm<double>('t', 'n', nr, nrhs, nc, -1, d, nc, x, ldx, 1, y, ldy); }
 
-#ifdef HAVE_SHYLUHTS_COMPLEX
+#ifdef HAVE_SHYLU_NODEHTS_COMPLEX
 template<> inline void SerialBlock_n1Axpy_dense (
   const blas_int nr, const blas_int nc, const std::complex<float>* d,
   const std::complex<float>* x, const blas_int ldx, const blas_int nrhs,
@@ -3831,8 +3831,8 @@ template<> inline void SerialBlock_n1Axpy_dense (
   gemm<std::complex<double> >('t', 'n', nr, nrhs, nc, -1, d, nc, x, ldx, 1,
                               y, ldy);
 }
-#endif // HAVE_SHYLUHTS_COMPLEX
-#endif // HAVE_SHYLUHTS_BLAS || HAVE_SHYLUHTS_MKL
+#endif // HAVE_SHYLU_NODEHTS_COMPLEX
+#endif // HAVE_SHYLU_NODEHTS_BLAS || HAVE_SHYLU_NODEHTS_MKL
 
 template<typename Int, typename Size, typename Sclr>
 inline void Impl<Int, Size, Sclr>::

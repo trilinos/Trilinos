@@ -22,14 +22,14 @@
 #include <Isorropia_EpetraRedistributor.hpp>
 
 //Tperta
-#ifdef HAVE_SHYLUCORE_TPETRA
+#ifdef HAVE_SHYLU_DDCORE_TPETRA
 #include <Tpetra_CrsMatrix_decl.hpp>
 #include <Tpetra_CrsMatrix_def.hpp>
 #include <BelosTpetraAdapter.hpp>
 #endif
 
 //#include <Zoltan2_config.h>
-#ifdef HAVE_SHYLUCORE_ZOLTAN2
+#ifdef HAVE_SHYLU_DDCORE_ZOLTAN2
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
@@ -42,7 +42,7 @@
 #include <Amesos_BaseSolver.h>
 
 // Belos //May have to go back and add more
-//#ifdef HAVE_SHYLUCORE_BELOS
+//#ifdef HAVE_SHYLU_DDCORE_BELOS
 #include <BelosConfigDefs.hpp>
 #include <BelosSolverFactory.hpp>
 #include <BelosLinearProblem.hpp>
@@ -58,7 +58,7 @@ namespace ShyLU
   {
     //scalar type
     /*
-#ifdef HAVE_SHYLUCORE_TPETRA
+#ifdef HAVE_SHYLU_DDCORE_TPETRA
     typedef typename Matrix::scalar_type           scalar_type;   
     typedef typename Matrix::local_ordinal_type    local_ordinal_type;
     typedef typename Matrix::global_ordinal_type   global_ordinal_type;
