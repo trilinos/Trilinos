@@ -659,7 +659,9 @@ public:
     // Finite element definition.
     fe_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
     fidx_ = fe_->getBoundaryDofs();
-    traction_->setCellNodes(bdryCellNodes_,bdryCellLocIds_);
+    if (traction_ != Teuchos::null) {
+      traction_->setCellNodes(bdryCellNodes_,bdryCellLocIds_);
+    }
     dirichlet_->setCellNodes(bdryCellNodes_,bdryCellLocIds_,fidx_);
     matTensor_->setFE(fe_);
     // Construct boundary FE
