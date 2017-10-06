@@ -27,7 +27,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData()
    solutionStatus_(WORKING),
    output_        (false),
    outputScreen_  (false),
-   isRestartable_ (true),
+   isSynced_      (true),
    isInterpolated_(false),
    accuracy_      (0.0)
 {}
@@ -45,7 +45,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
   const Status solutionStatus,
   const bool   output,
   const bool   outputScreen,
-  const bool   isRestartable,
+  const bool   isSynced,
   const bool   isInterpolated,
   const Scalar accuracy)
   :time_          (time),
@@ -59,7 +59,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(
    solutionStatus_(solutionStatus),
    output_        (output),
    outputScreen_  (outputScreen),
-   isRestartable_ (isRestartable),
+   isSynced_      (isSynced),
    isInterpolated_(isInterpolated),
    accuracy_      (accuracy)
 {}
@@ -77,7 +77,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData
    solutionStatus_(ssmd.solutionStatus_),
    output_        (ssmd.output_),
    outputScreen_  (ssmd.outputScreen_),
-   isRestartable_ (ssmd.isRestartable_),
+   isSynced_      (ssmd.isSynced_),
    isInterpolated_(ssmd.isInterpolated_),
    accuracy_      (ssmd.accuracy_)
 {}
@@ -99,7 +99,7 @@ Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clon
       solutionStatus_,
       output_,
       outputScreen_,
-      isRestartable_,
+      isSynced_,
       isInterpolated_,
       accuracy_));
 
@@ -122,7 +122,7 @@ copy(Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd)
   solutionStatus_ = ssmd->solutionStatus_;
   output_         = ssmd->output_;
   outputScreen_   = ssmd->outputScreen_;
-  isRestartable_  = ssmd->isRestartable_;
+  isSynced_       = ssmd->isSynced_;
   isInterpolated_ = ssmd->isInterpolated_;
   accuracy_       = ssmd->accuracy_;
 }
@@ -154,7 +154,7 @@ void SolutionStateMetaData<Scalar>::describe(
         << "solutionStatus = " << toString(solutionStatus_) << std::endl
         << "output         = " << output_ << std::endl
         << "outputScreen   = " << outputScreen_ << std::endl
-        << "isRestartable  = " << isRestartable_ << std::endl
+        << "isSynced       = " << isSynced_ << std::endl
         << "isInterpolated = " << isInterpolated_ << std::endl
         << "accuracy       = " << accuracy_ << std::endl;
   }
