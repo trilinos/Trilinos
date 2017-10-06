@@ -195,7 +195,7 @@ private:
 
     /*Handle for Basker object*/
  
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
 #ifdef KOKKOS_HAVE_OPENMP
   /*
@@ -213,7 +213,7 @@ private:
    ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>
        *basker;
 #else
-  #pragma message("HAVE SHYLUBASKER AND NOT KOKKOS! ERROR")
+  #pragma message("HAVE SHYLU_NODEBASKER AND NOT KOKKOS! ERROR")
 #endif
 #else
    mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;

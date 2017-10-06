@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TRI_Cn_FEM_ORTHDef.hpp
+/** \file   Intrepid2_HGRAD_TRI_Cn_FEM_ORTHDef.hpp
     \brief  Definition file for FEM orthogonal basis functions of arbitrary degree
     for H(grad) functions on TRI.
     \author Created by R. Kirby

@@ -203,7 +203,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,basis,EvalType)
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(fmCoords);
+  fm->getFieldData<EvalType>(fmCoords);
 
   fmCoords.print(out,true);
 
@@ -338,7 +338,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(gather_coordinates,integration,EvalType)
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(fmCoords);
+  fm->getFieldData<EvalType>(fmCoords);
 
   fmCoords.print(out,true);
 

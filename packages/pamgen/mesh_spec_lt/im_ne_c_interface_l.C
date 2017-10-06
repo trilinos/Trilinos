@@ -294,6 +294,20 @@ int im_ne_get_ss_param_global_l(int neid,	    /* NetCDF/Exodus file ID */
 
 
 /*****************************************************************************/
+int im_ne_get_global_ijk_l(int neid,
+                long long *global_ijk)
+/*****************************************************************************/
+{
+  ms_lt::Mesh_Specification * ms = ms_lt::Mesh_Specification::first_ms_static_storage;
+  if(!ms)return -1;
+  
+  ms->Get_Global_IJK(global_ijk);
+
+  //IJK
+  return 0;
+}
+
+/*****************************************************************************/
 int im_ne_get_num_ijk_l(int neid,
                 long long *num_ijk)
 /*****************************************************************************/

@@ -137,8 +137,8 @@ namespace Amesos2 {
 #include "TpetraCore_ETIHelperMacros.h"
 
 #define AMESOS2_TACHO_LOCAL_INSTANT(S,LO,GO,N)                        \
-  template class Amesos2::Tacho<Tpetra::CrsMatrix<S, LO, GO, N>,      \
-                                  Tpetra::MultiVector<S, LO, GO,  N> >;
+  template class Amesos2::TachoSolver<Tpetra::CrsMatrix<S, LO, GO, N>,      \
+                                      Tpetra::MultiVector<S, LO, GO,  N> >;
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 

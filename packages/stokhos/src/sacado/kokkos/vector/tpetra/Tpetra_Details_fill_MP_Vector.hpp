@@ -63,7 +63,7 @@ fill (const ExecutionSpace& execSpace,
 {
   static_assert (std::is_integral<IndexType>::value,
                  "IndexType must be a built-in integer type.");
-  Kokkos::deep_copy(X, alpha);
+  Kokkos::deep_copy(execSpace, X, alpha);
 }
 
 template<class DT, class ... DP,
@@ -88,7 +88,7 @@ fill (const ExecutionSpace& execSpace,
   for (IndexType k = 0; k < numCols; ++k) {
     const IndexType j = whichVectors[k];
     auto X_j = Kokkos::subview (X, Kokkos::ALL (), j);
-    Kokkos::deep_copy(X_j, alpha);
+    Kokkos::deep_copy(execSpace, X_j, alpha);
   }
 }
 

@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TET_COMP12_FEMDef.hpp
+/** \file   Intrepid2_HGRAD_TET_COMP12_FEMDef.hpp
     \brief  Definition file for the composite H(grad)-compatible FEM basis
             of degree 1 on Tetrahedron cell with 12 sub-tetrahedrons.
     \author Created by P. Bochev, J. Ostien, K. Peterson and D. Ridzal.

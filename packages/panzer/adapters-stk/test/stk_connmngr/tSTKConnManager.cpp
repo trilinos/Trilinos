@@ -42,7 +42,7 @@
 
 #include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_UnitTestHarness.hpp>
-#include "../../../../intrepid2/refactor/src/Discretization/Basis/Intrepid2_HVOL_C0_FEM.hpp"
+#include "Intrepid2_HVOL_C0_FEM.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"

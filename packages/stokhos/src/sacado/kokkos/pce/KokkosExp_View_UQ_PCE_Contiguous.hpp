@@ -122,6 +122,52 @@ void deep_copy(
   Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
 }
 
+// Overload of deep_copy for UQ::PCE views intializing to a constant scalar
+template< class ExecSpace , class DT, class ... DP >
+void deep_copy(
+  const ExecSpace &,
+  const View<DT,DP...> & view ,
+  const typename View<DT,DP...>::array_type::value_type & value
+  , typename std::enable_if<(
+  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+  )>::type * = 0 )
+{
+  static_assert(
+    std::is_same< typename ViewTraits<DT,DP...>::value_type ,
+                  typename ViewTraits<DT,DP...>::non_const_value_type >::value
+    , "Can only deep copy into non-const type" );
+
+  typedef View<DT,DP...> view_type;
+  typedef typename view_type::array_type::value_type scalar_type;
+  typedef typename FlatArrayType<view_type>::type flat_array_type;
+  if (value == scalar_type(0))
+    Kokkos::Impl::ViewFill< flat_array_type >( view , value );
+  else
+    Kokkos::Impl::ViewFill< view_type>( view , value );
+}
+
+// Overload of deep_copy for UQ::PCE views intializing to a constant UQ::PCE
+template< class ExecSpace , class DT, class ... DP >
+void deep_copy(
+  const ExecSpace &,
+  const View<DT,DP...> & view ,
+  const typename View<DT,DP...>::value_type & value
+  , typename std::enable_if<(
+  Kokkos::Impl::is_execution_space< ExecSpace >::value &&
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewPCEContiguous >::value
+  )>::type * = 0 )
+{
+  static_assert(
+    std::is_same< typename ViewTraits<DT,DP...>::value_type ,
+                  typename ViewTraits<DT,DP...>::non_const_value_type >::value
+    , "Can only deep copy into non-const type" );
+
+  Kokkos::Impl::ViewFill< View<DT,DP...> >( view , value );
+}
+
 namespace Experimental {
 namespace Impl {
 

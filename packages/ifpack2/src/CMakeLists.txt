@@ -240,6 +240,15 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES BlockTriDiContainer)
   ENDIF()
 
+  IF(Ifpack2_ENABLE_ShyLU_NodeFastILU)
+    APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
+      Details::FastILU_Base
+      Details::Filu
+      Details::Fic
+      Details::Fildl
+    )
+  ENDIF()
+
   # Set the list of Ifpack2 classes templated on <LO, GO, Node> for
   # which we want to do ETI using this system.  These classes usually
   # operate on sparse graphs (instances of Tpetra::CrsGraph or

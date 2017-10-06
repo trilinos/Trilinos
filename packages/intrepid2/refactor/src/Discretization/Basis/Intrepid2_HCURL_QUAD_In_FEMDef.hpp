@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HCURL_QUAD_In_FEMDef.hpp
+/** \file   Intrepid2_HCURL_QUAD_In_FEMDef.hpp
     \brief  Definition file for FEM basis functions of degree n for H(curl) functions on QUAD cells.
     \author Created by R. Kirby, P. Bochev, D. Ridzal and K. Peterson.
             Kokkorized by Kyungjoo Kim

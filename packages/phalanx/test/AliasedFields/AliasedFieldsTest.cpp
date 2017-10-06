@@ -112,8 +112,8 @@ TEUCHOS_UNIT_TEST(aliased_fields, basic)
   
   MDField<double,CELL,BASIS> b("b",dl);
   MDField<double,CELL,BASIS> c("c",dl);
-  fm.getFieldData<double,MyTraits::Residual,CELL,BASIS>(b);
-  fm.getFieldData<double,MyTraits::Residual,CELL,BASIS>(c);
+  fm.getFieldData<MyTraits::Residual,double,CELL,BASIS>(b);
+  fm.getFieldData<MyTraits::Residual,double,CELL,BASIS>(c);
 
   const auto tol = std::numeric_limits<double>::epsilon() * 100.0;
 

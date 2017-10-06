@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HVOL_QUAD_Cn_FEM.hpp
-    \brief  Header file for the Intrepid2::HVOL_QUAD_Cn_FEM class.
+/** \file   Intrepid2_HVOL_QUAD_Cn_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HVOL_QUAD_Cn_FEM class.
     \author Created by M. Perego, based on the Intrepid2::HGRAD_QUAD_Cn_FEM class
 */
 
@@ -55,9 +55,15 @@ namespace Intrepid2 {
   
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HVOL_QUAD_Cn_FEM
+    */
     class Basis_HVOL_QUAD_Cn_FEM {
     public:
       typedef struct Quadrilateral<4> cell_topology_type;      
+      /**
+        \brief See Intrepid2::Basis_HVOL_QUAD_Cn_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,
@@ -83,6 +89,9 @@ namespace Intrepid2 {
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                   const EOperator operatorType );
       
+      /**
+        \brief See Intrepid2::Basis_HVOL_QUAD_Cn_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                typename vinvViewType,

@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HDIV_HEX_In_FEMDef.hpp
+/** \file   Intrepid2_HDIV_HEX_In_FEMDef.hpp
     \brief  Definition file for FEM basis functions of degree n for H(div) functions on HEX cells.
     \author Created by R. Kirby, P. Bochev, D. Ridzal and K. Peterson.
             Kokkorized by Kyungjoo Kim

@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_PYR_C1_FEMDef.hpp
-    \brief  Definition file for linear FEM basis functions for H(grad) functions on PYR cells.
+/** \file   Intrepid2_HGRAD_PYR_C1_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree 1 for H(grad) functions on PYR cells.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */

@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_LINE_Cn_FEM_Def.hpp
+/** \file   Intrepid2_HGRAD_LINE_Cn_FEMDef.hpp
     \brief  Definition file for FEM basis functions of degree n for H(grad) functions on LINE.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim

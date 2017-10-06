@@ -168,7 +168,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(normals,test2d,EvalType)
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(normals);
+  fm->getFieldData<EvalType>(normals);
 
   TEST_EQUALITY(normals.rank(),3);
   TEST_EQUALITY(static_cast<int>(normals.size()),numCells*quadRule->num_points*dim);

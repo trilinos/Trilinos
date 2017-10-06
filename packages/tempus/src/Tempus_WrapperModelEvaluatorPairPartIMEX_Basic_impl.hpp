@@ -250,6 +250,7 @@ getNominalValues() const
 {
   typedef Thyra::ModelEvaluatorBase MEB;
   MEB::InArgsSetup<Scalar> inArgs = this->createInArgs();
+  inArgs.set_Np(1);
   return inArgs;
 }
 
@@ -262,11 +263,13 @@ createInArgs() const
   if (useImplicitModel_ == true) {
     MEB::InArgsSetup<Scalar> inArgs(implicitModel_->getNominalValues());
     inArgs.setModelEvalDescription(this->description());
+    inArgs.set_Np(1);
     return inArgs;
   }
 
   MEB::InArgsSetup<Scalar> inArgs(explicitModel_->getNominalValues());
   inArgs.setModelEvalDescription(this->description());
+  inArgs.set_Np(1);
   return inArgs;
 }
 

@@ -40,7 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid2_Basis_Const_FEMDef.hpp
+/** \file  Intrepid2_HVOL_C0_FEMDef.hpp
+    \brief Definition file FEM basis functions of degree 0 for H(vol) functions on all supported topologies.
     \author Created by Kyungjoo Kim
 */
 

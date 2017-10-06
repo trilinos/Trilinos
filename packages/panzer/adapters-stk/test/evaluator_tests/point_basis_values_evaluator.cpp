@@ -193,23 +193,23 @@ namespace panzer {
 
     PHX::MDField<panzer::Traits::Residual::ScalarT> 
        point_coords(point_rule->getName()+"_"+"point_coords",point_rule->dl_vector);
-    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(point_coords);
+    fm.getFieldData<panzer::Traits::Residual>(point_coords);
 
     PHX::MDField<panzer::Traits::Residual::ScalarT> 
        point_coords_basis(point_rule_basis->getName()+"_"+"point_coords",point_rule_basis->dl_vector);
-    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(point_coords_basis);
+    fm.getFieldData<panzer::Traits::Residual>(point_coords_basis);
 
     PHX::MDField<panzer::Traits::Residual::ScalarT,Cell,IP> 
        point_coords_jac_det(point_rule_basis->getName()+"_"+"jac_det",point_rule_basis->dl_scalar);
-    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual,Cell,IP>(point_coords_jac_det);
+    fm.getFieldData<panzer::Traits::Residual,panzer::Traits::Residual::ScalarT,Cell,IP>(point_coords_jac_det);
 
     PHX::MDField<panzer::Traits::Residual::ScalarT,Cell,IP,Dim,Dim> 
        point_coords_jac(point_rule_basis->getName()+"_"+"jac",point_rule_basis->dl_tensor);
-    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual,Cell,IP,Dim,Dim>(point_coords_jac);
+    fm.getFieldData<panzer::Traits::Residual,panzer::Traits::Residual::ScalarT,Cell,IP,Dim,Dim>(point_coords_jac);
 
     PHX::MDField<panzer::Traits::Residual::ScalarT,Cell,IP,Dim,Dim> 
        point_coords_jac_inv(point_rule_basis->getName()+"_"+"jac_inv",point_rule_basis->dl_tensor);
-    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual,Cell,IP,Dim,Dim>(point_coords_jac_inv);
+    fm.getFieldData<panzer::Traits::Residual,panzer::Traits::Residual::ScalarT,Cell,IP,Dim,Dim>(point_coords_jac_inv);
 
     for(int c=0;c<basis_q1->numCells();c++) {
        double dx = 0.5;
@@ -329,7 +329,7 @@ namespace panzer {
 
     PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS,panzer::IP> 
        basis(basis_q1->name()+"_"+point_rule->getName()+"_"+"basis",layout->basis);
-    fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(basis);
+    fm.getFieldData<panzer::Traits::Jacobian>(basis);
     out << basis << std::endl;
 
     WorksetDetailsAccessor wda;
@@ -478,9 +478,9 @@ namespace panzer {
     PHX::MDField<panzer::Traits::Jacobian::ScalarT,Cell,IP,Dim,Dim> 
        jac_inv("CubaturePoints (Degree=4,volume)_jac_inv",point_rule->dl_tensor);
 
-    fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian,Cell,BASIS,IP,Dim>(basis);
-    fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian,Cell,BASIS,IP>(curl_basis);
-    fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian,Cell,IP,Dim,Dim>(jac_inv);
+    fm.getFieldData<panzer::Traits::Jacobian,panzer::Traits::Jacobian::ScalarT,Cell,BASIS,IP,Dim>(basis);
+    fm.getFieldData<panzer::Traits::Jacobian,panzer::Traits::Jacobian::ScalarT,Cell,BASIS,IP>(curl_basis);
+    fm.getFieldData<panzer::Traits::Jacobian,panzer::Traits::Jacobian::ScalarT,Cell,IP,Dim,Dim>(jac_inv);
 
     WorksetDetailsAccessor wda;
     std::size_t basisIndex = panzer::getBasisIndex(layout->name(), workset, wda);
@@ -656,8 +656,8 @@ namespace panzer {
 
     PHX::MDField<panzer::Traits::Jacobian::ScalarT> ref_field("TEMPERATURE",point_rule->dl_scalar);
     PHX::MDField<panzer::Traits::Jacobian::ScalarT> fut_field("TEMPERATURE_"+point_rule->getName(),point_rule->dl_scalar); // "field under test"
-    fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(ref_field);
-    fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fut_field);
+    fm.getFieldData<panzer::Traits::Jacobian>(ref_field);
+    fm.getFieldData<panzer::Traits::Jacobian>(fut_field);
 
     TEST_EQUALITY(ref_field.size(),fut_field.size());
     // for(int i=0;i<ref_field.size();i++) {

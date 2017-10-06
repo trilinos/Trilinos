@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TRI_Cn_FEM.hpp
-    \brief  Header file for the Intrepid2::HGRAD_TRI_Cn_FEM_ORTH class.
+/** \file   Intrepid2_HGRAD_TRI_Cn_FEM_ORTH.hpp
+    \brief  Header file for the Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH class.
     \author Created by Robert Kirby
             Kokkorized by Kyungjoo Kim and Mauro Perego
  */
@@ -64,6 +64,9 @@ namespace Intrepid2 {
 
 namespace Impl {
 
+/**
+   \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH
+*/
 template<typename outputViewType,
 typename inputViewType, bool hasDeriv, ordinal_type n>
 struct OrthPolynomialTri {
@@ -74,6 +77,9 @@ struct OrthPolynomialTri {
             const ordinal_type p );
 };
 
+/**
+   \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH
+*/
 template<typename outputViewType,
 typename inputViewType,
 bool hasDeriv>
@@ -85,6 +91,9 @@ struct OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,0> {
             const ordinal_type p );
 };
 
+/**
+   \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH
+*/
 template<typename outputViewType,
 typename inputViewType,
 bool hasDeriv>
@@ -96,9 +105,15 @@ struct OrthPolynomialTri<outputViewType,inputViewType,hasDeriv,1> {
       const ordinal_type p );
 };
 
+/**
+   \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH
+*/
 class Basis_HGRAD_TRI_Cn_FEM_ORTH {
 public:
 
+  /**
+     \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH
+  */
   template<EOperator opType>
   struct Serial {
     template<typename outputViewType,
@@ -119,6 +134,9 @@ public:
              const ordinal_type order,
              const EOperator operatorType );
 
+  /**
+     \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH
+  */
   template<typename outputValueViewType,
   typename inputPointViewType,
   EOperator opType,

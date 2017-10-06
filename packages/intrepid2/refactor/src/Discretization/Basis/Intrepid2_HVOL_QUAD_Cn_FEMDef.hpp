@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HVOL_QUAD_Cn_FEMDef.hpp
-    \brief  Definition file for the Intrepid2::HVOL_QUAD_Cn_FEM class.
+/** \file   Intrepid2_HVOL_QUAD_Cn_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree n for H(vol) functions on QUAD
     \author Created by M. Perego, based on the Intrepid2::HGRAD_QUAD_Cn_FEM class
 */
 

@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_Orientation.hpp
+/** \file   Intrepid2_Orientation.hpp
     \brief  Header file for the Intrepid2::Orientation class.
     \author Created by Kyungjoo Kim
 */
@@ -56,9 +56,12 @@
 
 namespace Intrepid2 {
 
-  // Orientation encoding and decoding
-  // - use input and output as pointer arrays which assumes that input/output
-  //   are located on the stack and contiguous.
+  /**
+    \brief Orientation encoding and decoding
+
+     Use input and output as pointer arrays which assumes that input/output
+     are located on the stack and contiguous.
+  */
   class Orientation {
   private:
     template<typename elemNodeViewType>

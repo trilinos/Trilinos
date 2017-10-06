@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
 
 //    Teuchos::ParameterList & sublist_params = amesos2_params.sublist(solver_name);
 //     sublist_params.set("IsContiguous", false, "Are GIDs Contiguous");
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
     if ( solver_name == "Basker" ) {
       amesos2_params.sublist(solver_name).set("num_threads", 1, "Number of threads");
 //      sublist_params.set("num_threads", 1, "Number of threads");

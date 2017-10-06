@@ -70,6 +70,9 @@ namespace PHX {
 
     typedef DataT value_type;
 
+    // Default constructor
+    Tag();
+
     Tag(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl);
 
     // Use SFINAE to remove this ctor if the data types are not the

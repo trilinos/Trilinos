@@ -603,17 +603,30 @@ namespace MueLu {
             {
               SubFactoryMonitor m1(*this, "Import construction", currentLevel);
               importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
-            }
+            } //subtimer
             ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, Coords->getNumVectors());
+            {
+            SubFactoryMonitor m1(*this, "Coordinate import", currentLevel);
             ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
+            } //subtimer
 
             // Construct Distance Laplacian diagonal
             RCP<Vector>  localLaplDiag     = VectorFactory::Build(uniqueMap);
             ArrayRCP<SC> localLaplDiagData = localLaplDiag->getDataNonConst(0);
             Array<LO> indicesExtra;
+            Teuchos::Array<Teuchos::ArrayRCP<const double>> coordData;
+            if (threshold != STS::zero()) {
+              const size_t numVectors = ghostedCoords->getNumVectors();
+              coordData.reserve(numVectors);
+              for (size_t j = 0; j < numVectors; j++) {
+                Teuchos::ArrayRCP<const double> tmpData=ghostedCoords->getData(j);
+                coordData.push_back(tmpData);
+              }
+            }
+            {
+            SubFactoryMonitor m1(*this, "Laplacian local diagonal", currentLevel);
             for (LO row = 0; row < numRows; row++) {
               ArrayView<const LO> indices;
-              indicesExtra.resize(0);
 
               if (blkSize == 1) {
                 ArrayView<const SC> vals;
@@ -621,21 +634,27 @@ namespace MueLu {
 
               } else {
                 // Merge rows of A
+                indicesExtra.resize(0);
                 MergeRows(*A, row, indicesExtra, colTranslation);
                 indices = indicesExtra;
               }
 
               LO nnz = indices.size();
               for (LO colID = 0; colID < nnz; colID++) {
-                LO col = indices[colID];
+                const LO col = indices[colID];
 
-                if (row != col)
-                  localLaplDiagData[row] += STS::one()/MueLu::Utilities<double,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                if (row != col) {
+                  localLaplDiagData[row] += STS::one()/MueLu::Utilities<double,LO,GO,NO>::Distance2(coordData, row, col);
+                }
               }
             }
+            } //subtimer
+            {
+            SubFactoryMonitor m1(*this, "Laplacian distributed diagonal", currentLevel);
             ghostedLaplDiag = VectorFactory::Build(nonUniqueMap);
             ghostedLaplDiag->doImport(*localLaplDiag, *importer, Xpetra::INSERT);
             ghostedLaplDiagData = ghostedLaplDiag->getDataNonConst(0);
+            } //subtimer
 
           } else {
             GetOStream(Runtime0) << "Skipping distance laplacian construction due to 0 threshold" << std::endl;
@@ -652,6 +671,17 @@ namespace MueLu {
           LO realnnz = 0;
           rows[0] = 0;
           Array<LO> indicesExtra;
+          {
+          SubFactoryMonitor m1(*this, "Laplacian dropping", currentLevel);
+          Teuchos::Array<Teuchos::ArrayRCP<const double>> coordData;
+          if (threshold != STS::zero()) {
+            const size_t numVectors = ghostedCoords->getNumVectors();
+            coordData.reserve(numVectors);
+            for (size_t j = 0; j < numVectors; j++) {
+              Teuchos::ArrayRCP<const double> tmpData=ghostedCoords->getData(j);
+              coordData.push_back(tmpData);
+            }
+          }
           for (LO row = 0; row < numRows; row++) {
             ArrayView<const LO> indices;
             indicesExtra.resize(0);
@@ -691,7 +721,7 @@ namespace MueLu {
                   continue;
                 }
 
-                SC laplVal = STS::one() / MueLu::Utilities<double,LO,GO,NO>::Distance2(*ghostedCoords, row, col);
+                SC laplVal = STS::one() / MueLu::Utilities<double,LO,GO,NO>::Distance2(coordData, row, col);
                 typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                 typename STS::magnitudeType aij    = STS::magnitude(laplVal*laplVal);
 
@@ -723,10 +753,15 @@ namespace MueLu {
             }
             rows[row+1] = realnnz;
           } //for (LO row = 0; row < numRows; row++)
+          } //subtimer
           columns.resize(realnnz);
 
-          RCP<GraphBase> graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
+          RCP<GraphBase> graph;
+          {
+          SubFactoryMonitor m1(*this, "Build amalgamated graph", currentLevel);
+          graph = rcp(new LWGraph(rows, columns, uniqueMap, nonUniqueMap, "amalgamated graph of A"));
           graph->SetBoundaryNodeMap(amalgBoundaryNodes);
+          } //subtimer
 
           if (GetVerbLevel() & Statistics1) {
             GO numLocalBoundaryNodes  = 0;

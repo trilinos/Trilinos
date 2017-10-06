@@ -72,7 +72,7 @@ namespace PHX {
     void setFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
 		      Tag6,Tag7>& f, PHX::FieldManager<Traits>& fm) 
     {
-      fm.template getFieldData<DataT,EvalT>(f);
+      fm.template getFieldData<EvalT>(f);
     }
 
     template <typename DataT,int Rank>

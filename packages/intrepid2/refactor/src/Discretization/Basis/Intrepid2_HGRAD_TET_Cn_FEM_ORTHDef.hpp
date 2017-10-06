@@ -40,9 +40,9 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TET_Cn_FEM_ORTHDef.hpp
-    \brief  Definition file for FEM orthogonal basis functions of arbitrary degree 
-    for H(grad) functions on TET.
+/** \file   Intrepid2_HGRAD_TET_Cn_FEM_ORTHDef.hpp
+    \brief  Definition file for FEM orthogonal basis functions of degree n
+    for H(grad) functions on TET cells.
     \author Created by R. Kirby
     Kokkorized by Kyungjoo Kim and Mauro Perego
 */

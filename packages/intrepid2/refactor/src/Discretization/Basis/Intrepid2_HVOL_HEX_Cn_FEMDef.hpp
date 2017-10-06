@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HVOL_HEX_Cn_FEMDef.hpp
-    \brief  Definition file for the Intrepid2::HVOL_HEX_Cn_FEM class.
+/** \file   Intrepid2_HVOL_HEX_Cn_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree n for H(vol) functions on HEX cells
     \author Created by M. Perego, based on the Intrepid2::HGRAD_HEX_Cn_FEM class
 */
 

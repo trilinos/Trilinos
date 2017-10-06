@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubatureDirectTriDefault.hpp
+/** \file   Intrepid2_CubatureDirectTriDefault.hpp
     \brief  Header file for the Intrepid2::CubatureDirectTriDefault class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
