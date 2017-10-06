@@ -35,6 +35,8 @@
 
 namespace Tacho {
 
+  extern double g_time_per_thread[2048];
+
   const char* Version();
 
   namespace Experimental {
