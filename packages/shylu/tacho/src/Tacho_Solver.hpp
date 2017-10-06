@@ -34,8 +34,8 @@ namespace Tacho {
     // mtmets produces very very bad ordering
 #if   defined(TACHO_HAVE_METIS)
     typedef GraphTools_Metis graph_tools_type;
-#elif defined(TACHO_HAVE_METIS_MT)
-    typedef GraphTools_MetisMT graph_tools_type;
+// #elif defined(TACHO_HAVE_METIS_MT)
+//     typedef GraphTools_MetisMT graph_tools_type;
 #elif defined(TACHO_HAVE_SCOTCH)
     typedef GraphTools_Scotch graph_tools_type;
 #else
@@ -66,7 +66,6 @@ namespace Tacho {
     ordinal_type_array _perm, _peri;
 
     // tools
-    graph_tools_type _G;
     symbolic_tools_type _S;
     numeric_tools_type _N;
 
@@ -153,7 +152,9 @@ namespace Tacho {
 
     int analyze(const ordinal_type m,
                 const size_type_array &ap,
-                const ordinal_type_array &aj) {
+                const ordinal_type_array &aj,
+                const ordinal_type_array &perm,
+                const ordinal_type_array &peri) {
       // assign graph structure
       _m = m;
       _nnz = ap(m);
@@ -176,15 +177,23 @@ namespace Tacho {
         }
         return 0;
       } else {
-        Graph graph(_m, _nnz, _ap, _aj);
-        _G = graph_tools_type(graph);
-        _G.reorder(_verbose);
+        _perm = perm;
+        _peri = peri;
 
-        _S = symbolic_tools_type(_m, _ap, _aj, _G.PermVector(), _G.InvPermVector());
+        _S = symbolic_tools_type(_m, _ap, _aj, _perm, _peri);
         _S.symbolicFactorize(_verbose);
       }
-      
       return 0;
+    }
+
+    int analyze(const ordinal_type m,
+                const size_type_array &ap,
+                const ordinal_type_array &aj) {
+      Graph graph(m, ap(m), ap, aj);
+      graph_tools_type G(graph);
+      G.reorder(_verbose);
+      
+      return analyze(m, ap, aj, G.PermVector(), G.InvPermVector());
     }
 
     int factorize(const value_type_array &ax) {
@@ -223,7 +232,7 @@ namespace Tacho {
         }
       } else {
         _N = numeric_tools_type(_m, _ap, _aj,
-                                _G.PermVector(), _G.InvPermVector(),
+                                _perm, _peri,
                                 _S.NumSupernodes(), _S.Supernodes(),
                                 _S.gidSuperPanelPtr(), _S.gidSuperPanelColIdx(),
                                 _S.sidSuperPanelPtr(), _S.sidSuperPanelColIdx(), _S.blkSuperPanelColIdx(),
