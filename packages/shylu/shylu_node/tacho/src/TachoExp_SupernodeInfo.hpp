@@ -54,7 +54,7 @@ namespace Tacho {
             max_decendant_schur_size(0),
             max_decendant_supernode_size(0),
             buf(NULL) {
-          for (ordinal_type i=0;i<nchildren;++i) children[i] = 0;
+          for (ordinal_type i=0;i<MaxDependenceSize;++i) children[i] = 0;
         }
 
         KOKKOS_INLINE_FUNCTION

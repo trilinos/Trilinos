@@ -81,21 +81,20 @@ namespace Tacho {
         auto next  = Kokkos::subview(work, range_type(1*m, 2*m));
         auto stack = Kokkos::subview(work, range_type(2*m, 3*m));
 
-        //Kokkos::deep_copy(head, -1);      
-        ordinal_type iend = head.dimension_0();
-        for (ordinal_type i=0;i<iend;++i)
+        for (ordinal_type i=0;i<m;++i)
           head(i) = -1;
 
         for (ordinal_type i=m-1;i>=0;--i) {
-          if (parent(i) == -1) continue;
-          next(i) = head(parent(i));;
-          head(parent(i)) = i;
+          const ordinal_type p = parent(i);
+          if (p != -1) {
+            next(i) = head(p);
+            head(p) = i;
+          }
         }
         ordinal_type k = 0;
-        for (ordinal_type i=0;i<m;++i) {
-          if (parent(i) != -1) continue;
-          k = TreeDepthFirstSearch(i, k, head, next, post, stack);
-        }
+        for (ordinal_type i=0;i<m;++i) 
+          if (parent(i) == -1) 
+            k = TreeDepthFirstSearch(i, k, head, next, post, stack);
       }
 
       // Tim Davis, Algorithm 849: A Concise Sparse Cholesky Factorization Package
@@ -593,7 +592,18 @@ namespace Tacho {
           for (ordinal_type i=0;i<_m;++i) _peri(_perm(i)) = i;
           
           // update elimination tree according to the updated permutation vector
-          computeEliminationTree(_m, _ap, _aj, _perm, _peri, parent, w);
+          // w(0*m:1*m) - updated parent 
+          // w(1*m:2*m) - inverse permutation of post
+          for (ordinal_type i=0;i<_m;++i) w(_m+post(i)) = i;
+          for (ordinal_type i=0;i<_m;++i) {
+            const ordinal_type p = parent(post(i));
+            if (p == -1) w(i) = p;
+            else         w(i) = w(_m+p);
+          }
+          for (ordinal_type i=0;i<_m;++i) parent(i) = w(i);
+
+          // do not compute etree again
+          //computeEliminationTree(_m, _ap, _aj, _perm, _peri, parent, w);
         }
         t_symfact += timer.seconds();
         
