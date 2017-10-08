@@ -181,9 +181,10 @@ namespace Tacho {
         for (ordinal_type i=0;i<m;++i) if (parent(i) >= 0) ++count(parent(i));
 
         // parent has more than a child, it becomes a supernode candidate 
-        for (ordinal_type i=0;i<m;++i) if (count(i) > 1) flag(i) = true;
+        // roots are supernodes
+        for (ordinal_type i=0;i<m;++i) if (count(i) > 1 || parent(i) < 0) flag(i) = true;
 
-        // accumulated subtree sizes are stored in count
+        // accumulate subtree sizes in count.
         for (ordinal_type i=0;i<m;++i) count(i) = 1;
         for (ordinal_type i=0;i<m;++i) if (parent(i) >= 0) count(parent(i)) += count(i);
 
@@ -586,21 +587,22 @@ namespace Tacho {
           computeEliminationTree(_m, _ap, _aj, _perm, _peri, parent, w);
           computePostOrdering(_m, parent, post, w);
           
-          // update permutation vector
-          for (ordinal_type i=0;i<_m;++i) w(i) = _perm(i);
-          for (ordinal_type i=0;i<_m;++i) _perm(i) = w(post(i));
-          for (ordinal_type i=0;i<_m;++i) _peri(_perm(i)) = i;
-          
-          // update elimination tree according to the updated permutation vector
-          // w(0*m:1*m) - updated parent 
-          // w(1*m:2*m) - inverse permutation of post
-          for (ordinal_type i=0;i<_m;++i) w(_m+post(i)) = i;
-          for (ordinal_type i=0;i<_m;++i) {
-            const ordinal_type p = parent(post(i));
-            if (p == -1) w(i) = p;
-            else         w(i) = w(_m+p);
+          // update permutation vector and elimination tree
+          ordinal_type *w0 = w.data(), *w1 = w0 + _m, *w2 = w1 + _m;
+          for (ordinal_type i=0;i<_m;++i) {  
+            w0[i]       = _perm(i);     
+            w1[post(i)] = i; 
           }
-          for (ordinal_type i=0;i<_m;++i) parent(i) = w(i);
+          for (ordinal_type i=0;i<_m;++i) { 
+            _perm(i) = w0[post(i)]; 
+            const ordinal_type p = parent(post(i));
+            if (p == -1) w2[i] = p;
+            else         w2[i] = w1[p];
+          }
+          for (ordinal_type i=0;i<_m;++i) { 
+            _peri(_perm(i)) = i; 
+            parent(i) = w2[i];
+          }
 
           // do not compute etree again
           //computeEliminationTree(_m, _ap, _aj, _perm, _peri, parent, w);
