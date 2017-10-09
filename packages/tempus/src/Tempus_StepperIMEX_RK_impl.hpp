@@ -152,15 +152,18 @@ void StepperIMEX_RK<Scalar>::setTableaus(
     order_ = 3;
 
   } else if (stepperType == "General IMEX RK") {
-     Teuchos::RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
-       new Teuchos::ParameterList(pList->sublist("IMEX-RK Explicit Stepper")));
+    Teuchos::RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
+      new Teuchos::ParameterList(pList->sublist("IMEX-RK Explicit Stepper")));
 
-     Teuchos::RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
-       new Teuchos::ParameterList(pList->sublist("IMEX-RK Implicit Stepper")));
+    Teuchos::RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
+      new Teuchos::ParameterList(pList->sublist("IMEX-RK Implicit Stepper")));
 
-     // TODO: should probably check the order of the tableau match
-     this->setExplicitTableau("General ERK",  explicitPL);
-     this->setImplicitTableau("General DIRK", implicitPL);
+    // TODO: should probably check the order of the tableau match
+    this->setExplicitTableau("General ERK",  explicitPL);
+    this->setImplicitTableau("General DIRK", implicitPL);
+    description_ = stepperType;
+    order_ = 0;  // TODO: Determine overall order
+
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
        "Error - Not a valid StepperIMEX_RK type!  Stepper Type = "

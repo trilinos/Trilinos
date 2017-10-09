@@ -126,13 +126,13 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
   RKMethods.push_back("SDIRK 5 Stage 5th order");
 
   std::vector<double> RKMethodErrors;
-  RKMethodErrors.push_back(0.0486418);
-  RKMethodErrors.push_back(0.000404087);
-  RKMethodErrors.push_back(8.91985e-05);
-  RKMethodErrors.push_back(1.38785e-05);
-  RKMethodErrors.push_back(1.61576e-05);
-  RKMethodErrors.push_back(8.46096e-08);
-  RKMethodErrors.push_back(1.38629e-08);
+  RKMethodErrors.push_back(0.0124201);
+  RKMethodErrors.push_back(2.52738e-05);
+  RKMethodErrors.push_back(1.40223e-06);
+  RKMethodErrors.push_back(2.17004e-07);
+  RKMethodErrors.push_back(6.41463e-08);
+  RKMethodErrors.push_back(3.30631e-10);
+  RKMethodErrors.push_back(1.35728e-11);
 
   for(std::vector<std::string>::size_type m = 0; m != RKMethods.size(); m++) {
 
@@ -141,8 +141,8 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
     std::replace(RKMethod_.begin(), RKMethod_.end(), '/', '.');
     std::vector<double> StepSize;
     std::vector<double> ErrorNorm;
-    const int nTimeStepSizes = 7;
-    double dt = 0.2;
+    const int nTimeStepSizes = 3; // 7 for error plots
+    double dt = 0.05;
     double order = 0.0;
     for (int n=0; n<nTimeStepSizes; n++) {
 
@@ -240,13 +240,13 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
     }
     ftmp.close();
 
-    if (RKMethods[m] == "SDIRK 5 Stage 4th order") {
-      StepSize.pop_back();  StepSize.pop_back();
-      ErrorNorm.pop_back(); ErrorNorm.pop_back();
-    } else if (RKMethods[m] == "SDIRK 5 Stage 5th order") {
-      StepSize.pop_back();  StepSize.pop_back();  StepSize.pop_back();
-      ErrorNorm.pop_back(); ErrorNorm.pop_back(); ErrorNorm.pop_back();
-    }
+    //if (RKMethods[m] == "SDIRK 5 Stage 4th order") {
+    //  StepSize.pop_back();  StepSize.pop_back();
+    //  ErrorNorm.pop_back(); ErrorNorm.pop_back();
+    //} else if (RKMethods[m] == "SDIRK 5 Stage 5th order") {
+    //  StepSize.pop_back();  StepSize.pop_back();  StepSize.pop_back();
+    //  ErrorNorm.pop_back(); ErrorNorm.pop_back(); ErrorNorm.pop_back();
+    //}
 
     // Check the order and intercept
     double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
@@ -255,7 +255,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
     std::cout << "  Expected order: " << order << std::endl;
     std::cout << "  Observed order: " << slope << std::endl;
     std::cout << "  =========================" << std::endl;
-    TEST_FLOATING_EQUALITY( slope, order, 0.01 );
+    TEST_FLOATING_EQUALITY( slope, order, 0.03 );
     TEST_FLOATING_EQUALITY( ErrorNorm[0], RKMethodErrors[m], 1.0e-4 );
 
   }
@@ -271,8 +271,8 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
-  const int nTimeStepSizes = 5;  // 8 for error plot
-  double dt = 0.20;
+  const int nTimeStepSizes = 3;  // 8 for error plot
+  double dt = 0.05;
   double order = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {
 
@@ -357,7 +357,7 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
   std::cout << "  Expected order: " << order << std::endl;
   std::cout << "  Observed order: " << slope << std::endl;
   std::cout << "  =========================" << std::endl;
-  TEST_FLOATING_EQUALITY( slope, order, 0.05 );
+  TEST_FLOATING_EQUALITY( slope, order, 0.06 );
   out << "\n\n ** Slope on " << RKMethod_ << " = " << slope
       << "\n" << std::endl;
 

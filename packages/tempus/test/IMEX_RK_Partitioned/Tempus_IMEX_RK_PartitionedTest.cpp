@@ -44,16 +44,16 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
   stepperTypes.push_back("General Partitioned IMEX RK"  );
 
   std::vector<double> stepperOrders;
-  stepperOrders.push_back(1.21571);
-  stepperOrders.push_back(1.94113);
-  stepperOrders.push_back(3.14676);
-  stepperOrders.push_back(1.98157);
+  stepperOrders.push_back(1.07964);
+  stepperOrders.push_back(2.00408);
+  stepperOrders.push_back(2.70655);
+  stepperOrders.push_back(2.00211);
 
   std::vector<double> stepperErrors;
-  stepperErrors.push_back(0.136124);
-  stepperErrors.push_back(0.0269125);
-  stepperErrors.push_back(0.0309342);
-  stepperErrors.push_back(0.0117654);
+  stepperErrors.push_back(0.0046423);
+  stepperErrors.push_back(0.0154534);
+  stepperErrors.push_back(0.000298908);
+  stepperErrors.push_back(0.0071546);
 
   std::vector<double> stepperInitDt;
   stepperInitDt.push_back(0.0125);
