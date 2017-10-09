@@ -72,7 +72,8 @@ readProblemParams(const std::string xmlFileName,
 
   // Perform some sanity checks
   TEUCHOS_TEST_FOR_EXCEPT_MSG(probParams.get<int>("number of processors") != comm->getSize(),
-      "Number of processes defined in input file does not match number of MPI ranks.");
+      "Number of processes defined in input file (" << probParams.get<int>("number of processors")
+      << ") does not match number of MPI ranks (" << comm->getSize() << ").");
 
   // Wrap into RCP to return
   Teuchos::RCP<const Teuchos::ParameterList> probParamsRCP = Teuchos::rcp(new Teuchos::ParameterList(probParams));
