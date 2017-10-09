@@ -10,6 +10,8 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+#include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 
