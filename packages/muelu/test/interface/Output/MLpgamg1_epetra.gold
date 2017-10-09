@@ -59,6 +59,7 @@ Level 1
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0
@@ -128,6 +129,7 @@ Level 2
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0
@@ -197,6 +199,7 @@ Level 3
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0
@@ -266,6 +269,7 @@ Level 4
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0
