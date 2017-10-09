@@ -258,7 +258,8 @@ namespace Tacho {
             if      (max_dense_size < 256)  _mb =  -1;
             else if (max_dense_size < 512)  _mb =  96;
             else if (max_dense_size < 1024) _mb = 128;
-            else                            _mb = 256;
+            else if (max_dense_size < 4096) _mb = 256;
+            else                            _mb = 512;
           }
           if (_mb > 0)
             _N.factorizeCholesky_ParallelByBlocks(ax, _mb, _verbose);
