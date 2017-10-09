@@ -247,20 +247,10 @@ Xpetra::RegionManager<SC,LO,GO,NO>::RegionManager(
   setupRowMaps();
 
   setupMappingNodesPerRegion();
-  comm_->barrier();
-  nodes_->printRegionData(*out);
+  if (comm_->getRank() == 0)
+    nodes_->printRegionData(*out);
 
   setupRowMaps();
-
-//  // Nodes are shuffled so that regions are sorted in ascending labeling order
-//  sortNodesByRegions();
-//
-//  // create some more mappings
-//  setupNodeToRegionMapping();
-//  setupProcToRegionMapping();
-//  setupRowMaps();
-//
-//  countNodesPerRegion();
 
   return;
 }
