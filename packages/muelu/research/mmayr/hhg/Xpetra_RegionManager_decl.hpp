@@ -138,11 +138,20 @@ public:
   //! get the node (read only)
   virtual const Xpetra::RegionNode<GO>& getNode(const GO nodeID) const;
 
-  //! get number of regions this node belongs to
+  //! get global number of nodes
   virtual const GO getNumNodes() const;
+
+  //! get number of nodes in region \c regionID
+  virtual const GO getNumNodesPerRegion(const GO regionID ///< ID of the region of interest
+      ) const;
 
   //! Get list of node GIDs per processor
   virtual Teuchos::RCP<const Teuchos::Array<GO> > getNodeGIDsPerProc(const int myRank ///< MPI rank
+      ) const;
+
+  //! Get list of node GIDs per region and per processor
+  virtual Teuchos::RCP<const Teuchos::Array<GO> > getNodeGIDsPerRegionAndProc(const GO regionID, ///< Region ID
+      const int myRank ///< MPI rank
       ) const;
 
   //@}
@@ -279,6 +288,9 @@ class RegionManager
 
   //! Composite map
   Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > compositeMap_;
+
+  //! Collection of region maps
+  Teuchos::Array<Teuchos::RCP<const Xpetra::Map<LO,GO,NO> > > regionMaps_;
 
   //@}
 

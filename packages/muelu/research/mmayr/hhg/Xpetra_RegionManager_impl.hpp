@@ -135,6 +135,12 @@ const GO Xpetra::RegionNodes<GO>::getNumNodes() const
 }
 
 template<class GO>
+const GO Xpetra::RegionNodes<GO>::getNumNodesPerRegion(const GO regionID) const
+{
+  return nodesPerRegion_[regionID].size();
+}
+
+template<class GO>
 Xpetra::RegionNode<GO>& Xpetra::RegionNodes<GO>::modifyNode(const GO nodeID)
 {
   return *nodes_[nodeID];
@@ -189,6 +195,27 @@ Teuchos::RCP<const Teuchos::Array<GO> > Xpetra::RegionNodes<GO>::getNodeGIDsPerP
   return myNodeGIDs;
 }
 
+template<class GO>
+Teuchos::RCP<const Teuchos::Array<GO> > Xpetra::RegionNodes<GO>::getNodeGIDsPerRegionAndProc(
+    const GO regionID, const int myRank) const
+{
+  Teuchos::RCP<Teuchos::Array<GO> > myNodeGIDs = Teuchos::rcp(new Teuchos::Array<GO>());
+  myNodeGIDs->clear();
+
+  typename Teuchos::Array<GO>::const_iterator it;
+  for (it = nodesPerRegion_[regionID].begin(); it < nodesPerRegion_[regionID].end(); ++it)
+  {
+    const Xpetra::RegionNode<GO>& node = *nodes_[*it];
+
+    if (node.getProc() == myRank)
+      myNodeGIDs->push_back(*it);
+  }
+
+  std::cout << "Region/Proc " << regionID << "/" << myRank << ": " << *myNodeGIDs << std::endl;
+
+  return myNodeGIDs;
+}
+
 template<class SC, class LO, class GO, class NO>
 Xpetra::RegionManager<SC,LO,GO,NO>::RegionManager(
     const std::string& mappingFileName,
@@ -204,24 +231,14 @@ Xpetra::RegionManager<SC,LO,GO,NO>::RegionManager(
 
   // Read node-to-region mapping from file
   readMappingFromFile(mappingFileName);
-  comm_->barrier();
-  nodes_->printAllNodes(*out);
+  if (comm_->getRank() == 0)
+    nodes_->printAllNodes(*out);
 
   setupMappingNodesPerRegion();
-  comm_->barrier();
-  nodes_->printRegionData(*out);
+  if (comm_->getRank() == 0)
+    nodes_->printRegionData(*out);
 
   setupRowMaps();
-
-//  // Nodes are shuffled so that regions are sorted in ascending labeling order
-//  sortNodesByRegions();
-//
-//  // create some more mappings
-//  setupNodeToRegionMapping();
-//  setupProcToRegionMapping();
-//  setupRowMaps();
-//
-//  countNodesPerRegion();
 
   return;
 }
@@ -338,6 +355,7 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupCompositeRowMap()
   compositeMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra, nodes_->getNumNodes(), myNodesGIDs(), 0, comm_);
 
   Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  *out << std::endl << "compositeMap_:" << std::endl;
   compositeMap_->describe(*out, Teuchos::VERB_EXTREME);
 
   return;
@@ -346,7 +364,33 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupCompositeRowMap()
 template<class SC, class LO, class GO, class NO>
 void Xpetra::RegionManager<SC,LO,GO,NO>::setupRegionRowMaps()
 {
+  comm_->barrier();
 
+  regionMaps_.clear();
+  regionMaps_.resize(numRegions_);
+
+  // loop over all regions and create map for each region
+  for (GO i = 0; i < numRegions_; ++i)
+  {
+    /* Access list of GIDs owned by each proc. Conversion of RCP<Array> to ArrayView
+     * is not done in the most elegant way, but it works.
+     *
+     * Note: operator() creates and ArrayView of the Array myNodesGID.
+     */
+    Teuchos::RCP<const Teuchos::Array<GO> > myNodesGIDsRcp = nodes_->getNodeGIDsPerRegionAndProc(i, comm_->getRank());
+    const Teuchos::Array<GO>& myNodesGIDs = *myNodesGIDsRcp;
+
+    regionMaps_[i] = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra, nodes_->getNumNodesPerRegion(i), myNodesGIDs(), 0, comm_);
+  }
+
+  comm_->barrier();
+
+  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  for (GO i = 0; i < numRegions_; ++i)
+  {
+    *out << std::endl << "regionMaps[" << i << "]_:" << std::endl;
+    regionMaps_[i]->describe(*out, Teuchos::VERB_EXTREME);
+  }
 
   return;
 }
