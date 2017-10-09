@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # To use:
 # 1) Make sure you've compiled with the CreateOperator tests and that they run.
@@ -29,6 +29,14 @@ for file in *.out; do
     if [ "$returncode" -eq 1 ]; then
 	echo "$file diffs, rebasing"
 	cp ${file}_filtered $SCRIPTDIR/$GOLDFILE
+    fi
+done
+
+echo ""
+for GOLDFILE in *.gold; do
+    OUTFILE=${GOLDFILE/.gold/.out}
+    if [ ! -f $OUTFILE ]; then
+        echo "The test corresponding to $GOLDFILE has not been run."
     fi
 done
 
