@@ -234,7 +234,7 @@ void StepperDIRK<Scalar>::takeStep(
             inArgs.set_x_dot(Teuchos::null);
           outArgs.set_f(stageXDot_[i]);
 
-          stepperDIRKObserver_->observeBeforeDAEExplicit(solutionHistory,*this);
+          stepperDIRKObserver_->observeBeforeExplicit(solutionHistory,*this);
           wrapperModel_->getAppModel()->evalModel(inArgs,outArgs);
         }
       } else {
