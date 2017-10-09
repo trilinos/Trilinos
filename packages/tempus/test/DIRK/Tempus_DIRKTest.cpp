@@ -256,7 +256,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
     std::cout << "  Observed order: " << slope << std::endl;
     std::cout << "  =========================" << std::endl;
     TEST_FLOATING_EQUALITY( slope, order, 0.03 );
-    TEST_FLOATING_EQUALITY( ErrorNorm[0], RKMethodErrors[m], 1.0e-4 );
+    TEST_FLOATING_EQUALITY( ErrorNorm[0], RKMethodErrors[m], 5.0e-4 );
 
   }
   Teuchos::TimeMonitor::summarize();
