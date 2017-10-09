@@ -161,6 +161,8 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
     // TODO: should probably check the order of the tableau match
     this->setExplicitTableau("General ERK",  explicitPL);
     this->setImplicitTableau("General DIRK", implicitPL);
+    description_ = stepperType;
+    order_ = 0;   // TODO: Determine overall order
 
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,

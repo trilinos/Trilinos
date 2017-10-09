@@ -21,7 +21,7 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Final Time"             type="double" value="3.0"/>
+        <Parameter name="Final Time"             type="double" value="0.3"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="500000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>

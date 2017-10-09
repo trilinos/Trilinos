@@ -42,7 +42,7 @@ SolutionState<Scalar>::SolutionState(
   const bool   output,
   const bool   outputScreen,
   const bool   isInterpolated,
-  const bool   isRestartable,
+  const bool   isSynced,
   const Scalar accuracy,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
   const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
@@ -65,7 +65,7 @@ SolutionState<Scalar>::SolutionState(
                                                     solutionStatus,
                                                     output,
                                                     outputScreen,
-                                                    isRestartable,
+                                                    isSynced,
                                                     isInterpolated,
                                                     accuracy));
 }

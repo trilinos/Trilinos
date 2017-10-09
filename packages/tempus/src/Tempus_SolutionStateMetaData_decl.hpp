@@ -43,7 +43,7 @@ public:
     const Status solutionStatus,
     const bool   output,
     const bool   outputScreen,
-    const bool   isRestartable,
+    const bool   isSynced,
     const bool   isInterpolated,
     const Scalar accuracy);
 
@@ -72,7 +72,7 @@ public:
     Status getSolutionStatus()       const {return solutionStatus_;}
     bool   getOutput()               const {return output_;}
     bool   getOutputScreen()         const {return outputScreen_;}
-    bool   getIsRestartable()        const {return isRestartable_;}
+    bool   getIsSynced()             const {return isSynced_;}
     bool   getIsInterpolated()       const {return isInterpolated_;}
     Scalar getAccuracy()             const {return accuracy_;}
 
@@ -89,7 +89,7 @@ public:
       {solutionStatus_ = solutionStatus;}
     void setOutput(bool output) {output_ = output;}
     void setOutputScreen(bool outputScreen) {outputScreen_ = outputScreen;}
-    void setIsRestartable(bool isRestartable) {isRestartable_=isRestartable;}
+    void setIsSynced(bool isSynced) {isSynced_=isSynced;}
     void setIsInterpolated(bool isInterpolated)
       {isInterpolated_ = isInterpolated;}
     void setAccuracy(Scalar accuracy) {accuracy_ = accuracy;}
@@ -112,7 +112,7 @@ protected:
   int nFailures_;            ///< Total number of stepper failures
   int nConsecutiveFailures_; ///< Consecutive number of stepper failures
 
-  /** The solutionStatus is used to indicate
+  /** \brief The solutionStatus is used to indicate
       - if the solution is still being worked on; WORKING
       - if the solution is accepted and completed (e.g., past solutions
         in SolutionHistory); PASSED.
@@ -120,11 +120,15 @@ protected:
         failing, or Integrator not accepting the time step.
   */
   Status solutionStatus_;
-  bool   output_;            ///< SolutionState should be or has been outputted
-  bool   outputScreen_;      ///< Output screen dump
-  bool   isRestartable_;     ///< T - soln can be used as a restart
-  bool   isInterpolated_;    ///< F - soln is time integrated; T - soln is interpolated
-  Scalar accuracy_;          ///< Interpolation accuracy of solution
+  bool   output_;         ///< SolutionState should be or has been outputted
+  bool   outputScreen_;   ///< Output screen dump
+  /** \brief True - all of soln (x, xDot, xDotDot) is at the same time level.
+   *  False - solution is at different time levels, e.g., leapfrog where
+   *  \f$x_n\f$ and \f$\dot{x}_{n+1/2}\f$
+   */
+  bool   isSynced_;
+  bool   isInterpolated_; ///< F - soln is time integrated; T - soln is interpolated
+  Scalar accuracy_;       ///< Interpolation accuracy of solution
 
 };
 } // namespace Tempus
