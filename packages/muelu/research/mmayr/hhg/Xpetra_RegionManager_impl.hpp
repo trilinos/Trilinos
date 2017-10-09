@@ -279,14 +279,10 @@ Xpetra::RegionManager<SC,LO,GO,NO>::RegionManager(
 
   setupMappingNodesPerRegion();
 
-  comm_->barrier();
-  nodes_->printRegionData(*out);
+  if (comm_->getRank() == 0)
+    nodes_->printRegionData(*out);
 
   setupRowMaps();
-
-  //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  //printProcsPerRegion(*out);
-  //printRegionsPerProc(*out);
 
   return;
 }
