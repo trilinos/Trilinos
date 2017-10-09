@@ -263,42 +263,6 @@ class RegionManager
 
   //@}
 
-//  //! @name Print routines
-//  //@{
-//
-//  //! Print all node-region pairs
-//  virtual void printNodeRegionPairs(Teuchos::FancyOStream& out ///< output stream
-//      ) const;
-//
-//  //! Print mapping of nodes to regions
-//  virtual void printNodesToRegionMapping(Teuchos::FancyOStream& out ///< output stream
-//      ) const;
-//
-//  //! Print mapping of interface nodes to regions
-//  virtual void printInterfaceNodesToRegionMapping(Teuchos::FancyOStream& out ///< output stream
-//      ) const;
-//
-//  /*! \brief Print inactive processors
-//   *
-//   *  Inactive processors are those, that do not hold a row in the composite matrix
-//   */
-//  virtual void printInactiveProcs(Teuchos::FancyOStream& out ///< output stream
-//      ) const;
-//
-//  //! \brief Print number of regions associated with each processor
-//  virtual void printNumRegionsPerProc(Teuchos::FancyOStream& out ///< output stream
-//      ) const;
-//
-//  //! \brief Print all processors for each region
-//    virtual void printProcsPerRegion(Teuchos::FancyOStream& out ///< output stream
-//        ) const;
-//
-//  //! \brief Print all regions that are (at least partially) owned by a processor
-//  virtual void printRegionsPerProc(Teuchos::FancyOStream& out ///< output stream
-//      ) const;
-//
-//  //@}
-
   protected:
 
   private:
