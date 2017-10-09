@@ -134,8 +134,8 @@ namespace Tacho {
       /// 
       /// solve phase memoyr pool (reused when it repeat solve)
       ///   - pool capacity returns garbage.
-      sched_type_host _sched_solve; size_type _sched_solve_capacity;
-      memory_pool_type_host _bufpool_solve; size_type _bufpool_solve_capacity;
+      sched_type_host _sched_solve; size_t _sched_solve_capacity;
+      memory_pool_type_host _bufpool_solve; size_t _bufpool_solve_capacity;
       
       ///
       /// statistics

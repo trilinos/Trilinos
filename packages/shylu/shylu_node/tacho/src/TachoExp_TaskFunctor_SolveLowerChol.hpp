@@ -65,7 +65,7 @@ namespace Tacho {
       ordinal_type 
       solve_internal(member_type &member, const ordinal_type n, const bool final) {
         const ordinal_type nrhs = _info.x.dimension_1();
-        const size_type bufsize = n*nrhs*sizeof(mat_value_type);
+        const size_t bufsize = n*nrhs*sizeof(mat_value_type);
         
         mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
         //TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");   

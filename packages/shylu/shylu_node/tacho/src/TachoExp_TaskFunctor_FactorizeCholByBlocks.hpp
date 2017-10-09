@@ -57,7 +57,7 @@ namespace Tacho {
 
       // abr and matrix of blocks (deallocated after tasks are completed)
       char *_buf;
-      size_type _bufsize;
+      size_t _bufsize;
 
     public:
       KOKKOS_INLINE_FUNCTION
@@ -96,11 +96,11 @@ namespace Tacho {
               m = _s.m, n = _s.n - _s.m,
               bm = m/_mb + (m%_mb > 0), bn = n/_mb + (n%_mb > 0);
 
-            const size_type
+            const size_t
               matrix_of_blocks_bufsize = (bm*bm + bm*bn + bn*bn)*sizeof(dense_block_type);
 
             char *buf = _buf + matrix_of_blocks_bufsize;
-            const size_type bufsize = _bufsize - matrix_of_blocks_bufsize;
+            const size_t bufsize = _bufsize - matrix_of_blocks_bufsize;
 
             UnmanagedViewType<mat_value_type_matrix> ABR((mat_value_type*)buf, n, n);
             CholSupernodes<Algo::Workflow::Serial>
@@ -130,7 +130,7 @@ namespace Tacho {
             const ordinal_type bm = m/_mb + (m%_mb > 0), bn = n/_mb + (n%_mb > 0);
 
             // allocation for matrix of blocks
-            const size_type
+            const size_t
               matrix_of_blocks_bufsize = (bm*bm + bm*bn + bn*bn)*sizeof(dense_block_type),
               abr_bufsize = (n*n + _info.max_schur_size)*sizeof(mat_value_type),
               bufsize = matrix_of_blocks_bufsize + abr_bufsize;
@@ -185,7 +185,7 @@ namespace Tacho {
               
               _state = 2;
               if (bn > 0) {
-                const size_type bn2 = bn*(bn+1)/2, depsize = bn2*sizeof(future_type);
+                const size_t bn2 = bn*(bn+1)/2, depsize = bn2*sizeof(future_type);
                 future_type *dep = (future_type*)_sched.memory()->allocate(depsize);
                 TACHO_TEST_FOR_ABORT(dep == NULL, "sched memory pool allocation fails");
                 clear((char*)dep, depsize);

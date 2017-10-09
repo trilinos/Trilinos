@@ -62,7 +62,7 @@ namespace Tacho {
 
       KOKKOS_INLINE_FUNCTION
       ordinal_type factorize_internal(member_type &member, const ordinal_type n, const bool final) {
-        const size_type bufsize = (n*n + _info.max_schur_size)*sizeof(mat_value_type);
+        const size_t bufsize = (n*n + _info.max_schur_size)*sizeof(mat_value_type);
         
         mat_value_type *buf = bufsize > 0 ? (mat_value_type*)_bufpool.allocate(bufsize) : NULL;
         //TACHO_TEST_FOR_ABORT(buf == NULL && bufsize != 0, "bufmemory pool allocation fails");

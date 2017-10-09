@@ -594,13 +594,14 @@ namespace Tacho {
             w1[post(i)] = i; 
           }
           for (ordinal_type i=0;i<_m;++i) { 
-            _perm(i) = w0[post(i)]; 
+            const ordinal_type q =  w0[post(i)];
+            _perm(i) = q;
+            _peri(q) = i; 
             const ordinal_type p = parent(post(i));
             if (p == -1) w2[i] = p;
             else         w2[i] = w1[p];
           }
           for (ordinal_type i=0;i<_m;++i) { 
-            _peri(_perm(i)) = i; 
             parent(i) = w2[i];
           }
 
