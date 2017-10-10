@@ -80,8 +80,15 @@ namespace FROSch {
         
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > tmpMatrix = matrix;
         matrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,2*tmpMatrix->getGlobalMaxNumRowEntries());
+#ifdef Tpetra_issue_1752
+        // AH 10/10/2017: Can we get away with using just one importer/exporter after the Tpetra issue is fixed?
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(uniqueMap,overlappingMap);
+        Teuchos::RCP<Xpetra::Export<LO,GO,NO> > gather = Xpetra::ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
+        
+        matrix->doImport(*tmpMatrix,*scatter,Xpetra::ADD);
+#else
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter;
-        Teuchos::RCP<Xpetra::Export<LO,GO,NO> > gather = Xpetra::ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap); 
+        Teuchos::RCP<Xpetra::Export<LO,GO,NO> > gather = Xpetra::ExportFactory<LO,GO,NO>::Build(overlappingMap,uniqueMap);
         
         if (matrix->getRowMap()->lib()==Xpetra::UseEpetra) {
             scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(uniqueMap,overlappingMap);
@@ -89,6 +96,7 @@ namespace FROSch {
         } else {
             matrix->doImport(*tmpMatrix,*gather,Xpetra::ADD);
         }
+#endif
         
         Teuchos::Array<SC> one(1,Teuchos::ScalarTraits<SC>::one());
         Teuchos::Array<GO> myPID(1,uniqueMap->getComm()->getRank());
@@ -134,7 +142,11 @@ namespace FROSch {
         commMatTmp2->fillComplete();
         commMatTmp.reset();
         commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(overlappingMap,10);
+#ifdef Tpetra_issue_1752
+        commMat->doImport(*commMatTmp2,*scatter,Xpetra::ADD);
+#else
         commMat->doImport(*commMatTmp2,*gather,Xpetra::ADD);
+#endif
         
         Teuchos::ArrayView<const GO> myGlobalElements = uniqueMap->getNodeElementList();
         Teuchos::Array<GO> repeatedIndices(uniqueMap->getNodeNumElements());
