@@ -588,6 +588,8 @@ namespace FROSch {
     {
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(LocalToGlobalNodesMap_,10);
         Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > commMatTmp = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(LocalToGlobalNodesUniqueMap_,10);
+        // AH 10/10/2017: Can we get away with using just one importer/exporter after the Tpetra issue is fixed?
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > commImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(LocalToGlobalNodesUniqueMap_,LocalToGlobalNodesMap_);
         Teuchos::RCP<Xpetra::Export<LO,GO,NO> > commExporter = Xpetra::ExportFactory<LO,GO,NO>::Build(LocalToGlobalNodesMap_,LocalToGlobalNodesUniqueMap_);
         
         Teuchos::Array<SC> one(1,Teuchos::ScalarTraits<SC>::one());
@@ -601,7 +603,7 @@ namespace FROSch {
         commMatTmp->fillComplete();
         
         commMat = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(LocalToGlobalNodesMap_,10);
-        commMat->doImport(*commMatTmp,*commExporter,Xpetra::INSERT);
+        commMat->doImport(*commMatTmp,*commImporter,Xpetra::INSERT);
         
         componentsSubdomains = GOVecVecPtr(NumMyNodes_);
         componentsSubdomainsUnique = GOVecVec(NumMyNodes_);
