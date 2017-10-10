@@ -39,7 +39,7 @@
 // ************************************************************************
 //@HEADER
 
-//#define Tpetra_issue_1752
+#define Tpetra_issue_1752
 
 #include <mpi.h>
 #include <Epetra_MpiComm.h>
