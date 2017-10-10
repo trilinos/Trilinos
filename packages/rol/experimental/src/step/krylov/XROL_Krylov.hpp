@@ -44,15 +44,40 @@
 
 #pragma once
 
+#include "XROL_VectorTraits.hpp"
+
 namespace XROL {
+	
+namespace Teuchos { class ParameterList; }
 
-template<class... T> void ignore(T &&... ) {}
+template<class> CRTP;
+template<class,class> LinearOperator;
 
-template<class T>
-struct CRTP {
-  T& impl() { return static_cast<T&>(*this); }
-  const T& impl() { return static_cast<T const&>(*this); }
+namespace Krylov {
+
+struct Output;
+
+template<class Method, class X, class Y=X>
+class Solver : public CRTP<Method> {
+public:
+
+  Solver( Teuchos::ParameterList& parlist ) :
+    this->impl()(parlist) {}
+
+  virtual ~Solver(){}
+
+  // Run without preconditioner
+  std::unique_ptr<Output> run( X& x, LinearOperator<X,Y> &A, const Y& b ) {
+    return std::move(this->impl().run(x,A,b));
+  };
+
+  // Run with preconditioner
+  std::unique_ptr<Output> run( X& x, LinearOperator<X,Y> &A, const Y& b, LinearOperator<X,Y> &M ) {
+    return std::move(this->impl().run(x,A,b,M));
+  }
 };
+
+} // namespace Krylov
 
 } // namespace XROL
 

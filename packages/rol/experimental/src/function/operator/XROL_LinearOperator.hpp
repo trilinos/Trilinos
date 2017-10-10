@@ -44,15 +44,27 @@
 
 #pragma once
 
+#include "XROL_VectorTraits.hpp"
+
+
 namespace XROL {
 
-template<class... T> void ignore(T &&... ) {}
+/** Operator that maps X -> Y 
+    and provides an interface for a mapping from Y -> X
+*/
 
-template<class T>
-struct CRTP {
-  T& impl() { return static_cast<T&>(*this); }
-  const T& impl() { return static_cast<T const&>(*this); }
+template<class X, class Y=X> 
+struct LinearOperator {
+  using Real = typename Magnitude<X>::type;
+
+  virtual ~LinearOperator();
+  virtual void update( const X& x ) {}
+  virtual void apply( Y& y, const X& x, Real& tol ) const = 0;
+  virtual void applyInverse( X& x, const Y& y, Real& tol ) {}
+
 };
+
+
 
 } // namespace XROL
 

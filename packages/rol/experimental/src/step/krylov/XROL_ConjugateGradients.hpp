@@ -44,15 +44,88 @@
 
 #pragma once
 
+#include "XROL_Vector.hpp"
+
 namespace XROL {
 
-template<class... T> void ignore(T &&... ) {}
+namespace Teuchos { class ParameterList; }
+template<class> LinearOperator;
 
-template<class T>
-struct CRTP {
-  T& impl() { return static_cast<T&>(*this); }
-  const T& impl() { return static_cast<T const&>(*this); }
+namespace Krylov {
+
+template<class X, class Y=X>
+class ConjugateGradients : public Solver<ConjugateGradients<X,Y>,X,Y> {
+public: 
+
+  ConjugateGradients( Teuchos::ParameterList& parlist ) : iter_(0), isInitialized_(false) {
+
+    auto &cglist = parlist.sublist("Krylov").sublist("Conjugate Gradients");
+    zeroInitialGuess_ = cglist.get("Zero Initial Guess", true);
+    maxit_ = cglist.get("Maximum Iterations",10);
+
+  }
+
+  std::unique_ptr<Output> run( X& x, LinearOperator<X,Y> &A, const Y& b ) {
+    initialize(x,b);
+
+    // Loop until maxit, negative dot product, or convergence
+    while() {
+
+
+    }
+
+  }
+
+  std::unique_ptr<Output> run( X& x, LinearOperator<X,Y> &A, const Y& b, LinearOperator<X,Y> &M ) {
+    initialize(x,b);
+    
+    while() {
+
+    }
+
+  }
+  
+
+
+private:
+
+  void initialize(const X& x, const Y& b) {
+    iter_ = 0;
+   
+    if( !isInitialized_ ) {
+      r_ = clone(x);   v_  = clone(x);
+      p_ = clone(x);   Ap_ = clone(x);
+      isInitialized_ = true;
+    }
+ 
+    if( zeroInitialGuess_ ) {
+      fill(x,element_t<V>(0));
+      set(*r_,b);
+      A.apply(*v_,x);
+      axpy(*r_,element_t<V>(-1),*v);  // r = b-Ax
+    }
+    else {
+      set(*r_,b);  // r = b
+    }
+  }
+
+
+  std::unique_ptr<V> r_;
+  std::unique_ptr<V> v_;
+  std::unique_ptr<V> p_;
+  std::unique_ptr<V> Ap_; 
+
+  std::size_t iter_;
+  std::size_t maxit_;
+ 
+  bool isInitialized_;
+  bool zeroInitialGuess_;
+  magnitude_t<V> tol_;
+
+
 };
+
+} // namespace Krylov
 
 } // namespace XROL
 
