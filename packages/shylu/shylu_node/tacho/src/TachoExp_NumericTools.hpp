@@ -143,6 +143,8 @@ namespace Tacho {
       struct {
         double t_factor, t_solve, t_copy, t_extra;
         double m_used, m_peak;
+        size_t b_min_block_size, b_max_block_size, b_capacity, b_num_superblocks;
+        size_t s_min_block_size, s_max_block_size, s_capacity, s_num_superblocks;
       } stat;
 
     private:
@@ -169,8 +171,14 @@ namespace Tacho {
         stat.t_extra = 0;
         stat.m_used = 0;
         stat.m_peak = 0;
+
+        stat.b_min_block_size = 0;
+        stat.b_max_block_size = 0;
+        stat.b_capacity = 0;
+        stat.b_num_superblocks = 0;
+
 #if defined( TACHO_PROFILE_TIME_PER_THREAD )
-        memset(g_time_per_thread, 0, sizeof(double)*2048);
+        resetTimePerThread();
 #endif
       }
 
@@ -194,36 +202,31 @@ namespace Tacho {
         printf("             memory used in factorization:                    %10.2f MB\n", stat.m_used/1024/1024);
         printf("             peak memory used in factorization:               %10.2f MB\n", stat.m_peak/1024/1024);
         printf("\n");
+        printf("  Buffer Pool\n");
+        printf("             number of superblocks:                           %10d\n", int(stat.b_num_superblocks));
+        printf("             min and max blocksize:                           %10.6f, %10.6f KB\n", double(stat.b_min_block_size)/1024, double(stat.b_max_block_size)/1024);
+        printf("             pool capacity:                                   %10.6f MB\n", double(stat.b_capacity)/1024/1024);
+        printf("\n");
+        printf("  Sched Memory Pool\n");
+        printf("             number of superblocks:                           %10d\n", int(stat.s_num_superblocks));
+        printf("             min and max blocksize:                           %10.6f, %10.6f KB\n", double(stat.s_min_block_size)/1024, double(stat.s_max_block_size)/1024);
+        printf("             pool capacity:                                   %10.6f MB\n", double(stat.s_capacity)/1024/1024);
+        printf("\n");
         printf("  FLOPs\n");
         printf("             gflop   for numeric factorization:               %10.2f GFLOP\n", flop/1024/1024/1024);
         printf("             gflop/s for numeric factorization:               %10.2f GFLOP/s\n", flop/stat.t_factor/1024/1024/1024);
         printf("\n");
 #if defined( TACHO_PROFILE_TIME_PER_THREAD )
         const ordinal_type nthreads = host_exec_space::thread_pool_size(0);
-        double t_total = 0, t_min = g_time_per_thread[0], t_max = g_time_per_thread[0];
-        for (ordinal_type i=0;i<nthreads;++i) {
-          const double t = g_time_per_thread[i];
-          t_total += t;
-          t_min = min(t_min, t);
-          t_max = max(t_max, t);
-        }
-        const double t_avg = t_total / double(nthreads);
-        
-        double t_diff_min = fabs(g_time_per_thread[0] - t_avg), t_diff_max = fabs(g_time_per_thread[0] - t_avg), t_diff_var = 0;
-        for (ordinal_type i=0;i<nthreads;++i) {
-          const double diff = fabs(g_time_per_thread[i] - t_avg);
-          t_diff_min = min(t_diff_min, diff);
-          t_diff_max = max(t_diff_max, diff);
-          t_diff_var += diff*diff;
-        }
-        t_diff_var = sqrt(t_diff_var)/double(nthreads);
+        double t_total = 0, t_avg = 0, t_min = 0, t_max = 0;
+        getTimePerThread(nthreads, t_total, t_avg, t_min, t_max);  
 
         printf("  Time per thread\n");
-        for (ordinal_type i=0;i<nthreads;++i) 
-          printf("             time for external blas lapack (diff from avg):   %10.6f s, %10.6f s\n", g_time_per_thread[i], fabs(g_time_per_thread[i] - t_avg));
+        // for (ordinal_type i=0;i<nthreads;++i) 
+        //   printf("             time for external blas lapack (diff from avg):   %10.6f s, %10.6f s\n", g_time_per_thread[i], fabs(g_time_per_thread[i] - t_avg));
         printf("             sum(time per thread)/(factor. time x nthreads):  %10.6f s\n", t_total/(stat.t_factor*nthreads));
-        printf("             time min, max, avg                               %10.6f s, %10.6f s, %10.6f\n", t_min, t_max, t_avg);
-        //printf("             diff min, max, variance:                         %10.6f s, %10.6f s, %10.6f s\n", t_diff_min, t_diff_max, t_diff_var);
+        printf("             time min, max, avg, factor                       %10.6f s, %10.6f s, %10.6f, %10.6f\n", t_min, t_max, t_avg, t_factor);
+        printf("\n");        
 #endif
       }
       
@@ -503,7 +506,7 @@ namespace Tacho {
         sched_type_host sched;
         {
           const size_t max_functor_size = sizeof(functor_type);
-          const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0();
+          const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
@@ -520,6 +523,11 @@ namespace Tacho {
           
           track_alloc(sched.memory()->capacity());
         }
+
+        stat.s_min_block_size  = sched.memory()->min_block_size();
+        stat.s_max_block_size  = sched.memory()->max_block_size();
+        stat.s_capacity        = sched.memory()->capacity();
+        stat.s_num_superblocks = sched.memory()->capacity()/sched.memory()->max_block_size();
         
         memory_pool_type_host bufpool;
         {
@@ -529,12 +537,14 @@ namespace Tacho {
                                    _info.max_schur_size)*sizeof(value_type),
                                   _m*sizeof(ordinal_type));
           
+          ordinal_type ishift = 0;
           size_t superblock_size = 1;
-          for ( ;superblock_size<max_block_size;superblock_size*=2);
-          
-          const size_t
-            //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-            num_superblock  = min(host_exec_space::thread_pool_size(0), _max_num_superblocks),
+          for ( ;superblock_size<max_block_size;superblock_size <<= 1,++ishift);
+
+          const size_t  // allows max 2 GB 
+            max_num_superblocks = _max_num_superblocks, //min(1ul << (ishift > 31 ? 0 : 31 - ishift), _max_num_superblocks),
+            //const size_t num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
+            num_superblock  = min(host_exec_space::thread_pool_size(0), max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
           
           bufpool = memory_pool_type_host(memory_space(),
@@ -546,7 +556,12 @@ namespace Tacho {
           track_alloc(bufpool.capacity());
         }
         stat.t_extra = timer.seconds();
-        
+
+        stat.b_min_block_size  = bufpool.min_block_size();
+        stat.b_max_block_size  = bufpool.max_block_size();
+        stat.b_capacity        = bufpool.capacity();
+        stat.b_num_superblocks = bufpool.capacity()/bufpool.max_block_size();
+
         timer.reset();
         {
           /// matrix values
@@ -615,7 +630,7 @@ namespace Tacho {
           
           {
             const size_t max_functor_size = max(sizeof(functor_lower_type), sizeof(functor_upper_type));
-            const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0();
+            const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0()/2;
             
             const size_t
               task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
@@ -709,7 +724,7 @@ namespace Tacho {
         {
           const size_t max_dep_future_size = max_ncols_of_blocks*max_ncols_of_blocks*sizeof(future_type);
           const size_t max_functor_size = sizeof(functor_type);
-          const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0();
+          const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
           
           const size_t
             task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
@@ -727,6 +742,11 @@ namespace Tacho {
           track_alloc(sched.memory()->capacity());
         }
         
+        stat.s_min_block_size  = sched.memory()->min_block_size();
+        stat.s_max_block_size  = sched.memory()->max_block_size();
+        stat.s_capacity        = sched.memory()->capacity();
+        stat.s_num_superblocks = sched.memory()->capacity()/sched.memory()->max_block_size();
+        
         memory_pool_type_host bufpool;
         {
           const size_t
@@ -738,14 +758,16 @@ namespace Tacho {
                                      max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(dense_block_type_host) ),
                                   _m*sizeof(ordinal_type));
                                   
+          ordinal_type ishift = 0;
           size_t superblock_size = 1;
-          for ( ;superblock_size<max_block_size;superblock_size*=2);
-          
-          const size_t
+          for ( ;superblock_size<max_block_size;superblock_size <<= 1,++ishift);
+
+          const size_t // max 2 GB allows
+            max_num_superblocks = _max_num_superblocks, //min(1ul << (ishift > 31 ? 0 : 31 - ishift), _max_num_superblocks),
             //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-            num_superblock  = min(host_exec_space::thread_pool_size(0), _max_num_superblocks),
+            num_superblock  = min(host_exec_space::thread_pool_size(0), max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
-          
+
           bufpool = memory_pool_type_host(memory_space(),
                                           memory_capacity,
                                           min_block_size,
@@ -756,6 +778,11 @@ namespace Tacho {
         }
         stat.t_extra += timer.seconds();
         
+        stat.b_min_block_size = bufpool.min_block_size();
+        stat.b_max_block_size = bufpool.max_block_size();
+        stat.b_capacity = bufpool.capacity();
+        stat.b_num_superblocks = bufpool.capacity()/bufpool.max_block_size();
+
         timer.reset();
         {
           /// matrix values

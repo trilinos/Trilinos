@@ -43,7 +43,7 @@ namespace Tacho {
                                       &r_val);
 
 #if defined( TACHO_PROFILE_TIME_PER_THREAD )
-            Kokkos::atomic_fetch_add(&g_time_per_thread[omp_get_thread_num()], timer.seconds());
+            g_time_per_thread[omp_get_thread_num()] += timer.seconds();
 #endif
             TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, 
                                      "LAPACK (potrf) returns non-zero error code.");

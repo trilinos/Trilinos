@@ -256,9 +256,9 @@ namespace Tacho {
           if (_mb < 0) {
             const ordinal_type max_dense_size = max(_N.getMaxSupernodeSize(),_N.getMaxSchurSize());
             if      (max_dense_size < 256)  _mb =  -1;
-            else if (max_dense_size < 512)  _mb =  96;
+            else if (max_dense_size < 512)  _mb =  64;
             else if (max_dense_size < 1024) _mb = 128;
-            else if (max_dense_size < 4096) _mb = 256;
+            else if (max_dense_size < 8192) _mb = 256;
             else                            _mb = 512;
           }
           if (_mb > 0)

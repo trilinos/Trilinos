@@ -36,7 +36,12 @@
 namespace Tacho {
 
   extern double g_time_per_thread[2048];
-
+  void resetTimePerThread();
+  void getTimePerThread(const int nthreads,
+                        double &t_total,
+                        double &t_avg,
+                        double &t_min,
+                        double &t_max);
   const char* Version();
 
   namespace Experimental {
