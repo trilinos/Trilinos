@@ -142,14 +142,15 @@ namespace Tacho {
     setMatrixOfBlocks(const MatrixOfBlocksViewType &H,
                       const ordinal_type m,
                       const ordinal_type n,
-                      const ordinal_type mb) {     
+                      const ordinal_type mb,
+                      const ordinal_type nb) {     
       const ordinal_type 
         bm = H.dimension_0(),
         bn = H.dimension_1();
       
       for (ordinal_type j=0;j<bn;++j) {
         const ordinal_type
-          jbeg = j*mb, jtmp = jbeg + mb,
+          jbeg = j*nb, jtmp = jbeg + nb,
           jend = jtmp > n ? n : jtmp,
           jdiff = (jend > jbeg)*(jend - jbeg);
 
@@ -163,6 +164,16 @@ namespace Tacho {
                           jbeg, jdiff);
         }
       }
+    }
+
+    template<typename MatrixOfBlocksViewType>
+    KOKKOS_INLINE_FUNCTION
+    void 
+    setMatrixOfBlocks(const MatrixOfBlocksViewType &H,
+                      const ordinal_type m,
+                      const ordinal_type n,
+                      const ordinal_type mb) {
+      setMatrixOfBlocks(H, m, n, mb, mb);
     }
 
     template<typename MatrixOfBlocksViewType,

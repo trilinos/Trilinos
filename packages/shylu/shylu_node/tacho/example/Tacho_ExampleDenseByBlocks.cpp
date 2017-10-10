@@ -21,6 +21,25 @@
 using namespace Tacho;
 using namespace Tacho::Experimental;
 
+#define RESET_TIME_PER_THREAD                   \
+  if (iter <= 0)                                \
+    resetTimePerThread();
+
+#define PRINT_TIME_PER_THREAD                   \
+  double t_total = 0, t_avg, t_min = 0, t_max = 0;                      \
+  getTimePerThread(nthreads, t_total, t_avg, t_min, t_max);             \
+  t_total /= niter; t_avg /= niter; t_min /= niter; t_max /= niter;     \
+                                                                        \
+  printf("  Time per thread\n");                                        \
+  printf("       min, max, avg, byblocks                         %10.6f s, %10.6f s, %10.6f s, %10.6f s\n", t_min, t_max, t_avg, t_byblocks); \
+  printf("       sum(time per thread)/(byblocks x nthreads):     %10.6f\n", t_total/(t_byblocks*nthreads)); \
+  printf("       byblocks/reference (speedup):                   %10.6f\n", t_reference/t_byblocks); \
+  printf("\n");                                                         
+
+  // for (ordinal_type i=0;i<nthreads;++i)                                 \
+  //    printf("  time for external blas lapack (diff from avg):       %10.6f s, %10.6f s\n", g_time_per_thread[i]/niter, fabs(g_time_per_thread[i] - t_avg)/niter); \
+
+
 int main (int argc, char *argv[]) {
   CommandLineParser opts("This example program measure the performance of dense-by-blocks on Kokkos::OpenMP");  
 
@@ -162,7 +181,10 @@ int main (int argc, char *argv[]) {
         {          
           for (ordinal_type iter=dry;iter<niter;++iter) {
             Kokkos::deep_copy(sub_a2, sub_a);
-            
+
+#if defined( TACHO_PROFILE_TIME_PER_THREAD )
+            RESET_TIME_PER_THREAD;
+#endif
             timer.reset();
             setMatrixOfBlocks(HA, m, m, mb);
             attachBaseBuffer(HA, A.data(), A.stride_0(), A.stride_1());
@@ -171,7 +193,7 @@ int main (int argc, char *argv[]) {
                                task_functor_chol(sched, HA));
             Kokkos::wait(sched);
             t_byblocks += (iter >=0)*timer.seconds();
-
+            
             clearFutureOfBlocks(HA);
           }
           t_byblocks /= niter;
@@ -198,6 +220,9 @@ int main (int argc, char *argv[]) {
         const double kilo = 1024, gflop = DenseFlopCount<value_type>::Chol(m)/kilo/kilo/kilo;
         printf("chol problem %10d, gflop %10.2f, gflop/s :: reference %10.2f, byblocks %10.2f\n", 
                m, gflop, gflop/t_reference, gflop/t_byblocks);
+#if defined( TACHO_PROFILE_TIME_PER_THREAD )
+        PRINT_TIME_PER_THREAD;
+#endif
       }
     }
     printf("\n\n");
@@ -269,6 +294,9 @@ int main (int argc, char *argv[]) {
           const double alpha = -1.0;
 
           for (ordinal_type iter=dry;iter<niter;++iter) {
+#if defined( TACHO_PROFILE_TIME_PER_THREAD )
+            RESET_TIME_PER_THREAD;
+#endif
             timer.reset();
             setMatrixOfBlocks(HA, m, m, mb);
             attachBaseBuffer(HA, A.data(), A.stride_0(), A.stride_1());
@@ -304,6 +332,9 @@ int main (int argc, char *argv[]) {
         const double kilo = 1024, gflop = DenseFlopCount<value_type>::Trsm(true, m, m)/kilo/kilo/kilo;
         printf("trsm problem %10d, gflop %10.2f, gflop/s :: reference %10.2f, byblocks %10.2f\n", 
                m, gflop, gflop/t_reference, gflop/t_byblocks);
+#if defined( TACHO_PROFILE_TIME_PER_THREAD )
+        PRINT_TIME_PER_THREAD;
+#endif
       }
     }
     printf("\n\n");
@@ -385,19 +416,34 @@ int main (int argc, char *argv[]) {
 
         HC.set_view(bm, bm);
         HC.attach_buffer(1, bm, hc.data());
+
+        // HA.set_view(bm, 1);
+        // HA.attach_buffer(1, bm, ha.data());
+
+        // HB.set_view(1, bm);
+        // HB.attach_buffer(1, bm, hb.data());
+
+        // HC.set_view(bm, bm);
+        // HC.attach_buffer(1, bm, hc.data());
         {
           const double alpha = -1.0, beta = 1.0;
 
           for (ordinal_type iter=dry;iter<niter;++iter) {
+#if defined( TACHO_PROFILE_TIME_PER_THREAD )
+            RESET_TIME_PER_THREAD;
+#endif
             timer.reset();
 
             setMatrixOfBlocks(HA, m, m, mb);
+            //setMatrixOfBlocks(HA, m, m, mb, m);
             attachBaseBuffer(HA, A.data(), A.stride_0(), A.stride_1());
             
             setMatrixOfBlocks(HB, m, m, mb);
+            //setMatrixOfBlocks(HB, m, m, m, mb);
             attachBaseBuffer(HB, B.data(), B.stride_0(), B.stride_1());
             
             setMatrixOfBlocks(HC, m, m, mb);
+            //setMatrixOfBlocks(HC, m, m, mb, mb);
             attachBaseBuffer(HC, C.data(), C.stride_0(), C.stride_1());
 
             Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
@@ -428,6 +474,9 @@ int main (int argc, char *argv[]) {
         const double kilo = 1024, gflop = DenseFlopCount<value_type>::Gemm(m, m, m)/kilo/kilo/kilo;
         printf("gemm problem %10d, gflop %10.2f, gflop/s :: reference %10.2f, byblocks %10.2f\n", 
                m, gflop, gflop/t_reference, gflop/t_byblocks);
+#if defined( TACHO_PROFILE_TIME_PER_THREAD )
+        PRINT_TIME_PER_THREAD;
+#endif
       }
     }
     printf("\n\n");

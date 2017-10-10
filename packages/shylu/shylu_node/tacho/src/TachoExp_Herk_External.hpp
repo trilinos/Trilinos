@@ -55,7 +55,7 @@ namespace Tacho {
                                    value_type(beta),
                                    C.data(), C.stride_1());
 #if defined( TACHO_PROFILE_TIME_PER_THREAD )
-            Kokkos::atomic_fetch_add(&g_time_per_thread[omp_get_thread_num()], timer.seconds());
+            g_time_per_thread[omp_get_thread_num()] += timer.seconds();
 #endif
 #else
             TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
