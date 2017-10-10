@@ -113,56 +113,218 @@ public:
                          const V& x, 
                          Real eps = 0 ); 
 
+  /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-binding set.
+
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}^+_\epsilon(x)\f$.  Here,
+      the upper \f$\epsilon\f$-binding set is defined as
+      \f[
+         \mathcal{B}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = b(\xi)-\epsilon,\;
+                g(\xi) < 0 \,\}.
+      \f]
+      @param[out]      v   is the variable to be pruned.
+      @param[in]       g   is the negative search direction.
+      @param[in]       x   is the current optimization variable.
+      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+  */
   void pruneUpperActive( V& v, 
                          const dual_t<V>& g, 
                          const V& x, 
                          Real eps = 0 ); 
 
+  /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-active set.
+
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}^-_\epsilon(x)\f$.  Here,
+      the lower \f$\epsilon\f$-active set is defined as
+      \f[
+         \mathcal{A}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = a(\xi)+\epsilon\,\}.
+      \f]
+      @param[out]      v   is the variable to be pruned.
+      @param[in]       x   is the current optimization variable.
+      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+  */
   void pruneLowerActive( V& v, 
                          const V& x, 
                          Real eps = 0 ); 
 
+  /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-binding set.
+
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}^-_\epsilon(x)\f$.  Here,
+      the lower \f$\epsilon\f$-binding set is defined as
+      \f[
+         \mathcal{B}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = a(\xi)+\epsilon,\;
+                g(\xi) > 0 \,\}.
+      \f]
+      @param[out]      v   is the variable to be pruned.
+      @param[in]       g   is the negative search direction.
+      @param[in]       x   is the current optimization variable.
+      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+  */
   void pruneLowerActive( V& v, 
                          const dual_t<V>& g, 
                          const V& x, 
                          Real eps = 0 ); 
 
+  /* \brief Returns a constant reference to the data in the upper bound vector */
   const V& getUpperBound( void ) const;
 
+
+  /* \brief Returns a constant reference to the data in the lower bound vector */
   const V& getLowerBound( void ) const;
- 
+
+
+  /** \brief Check if the vector, v, is feasible.
+
+      This function returns true if \f$v = P_{[a,b]}(v)\f$.
+      @param[in]    v   is the vector to be checked.
+  */  
   bool isFeasible( const Vector<Real> &v ) const;
 
+
+  /** \brief Turn on upper bound.
+
+      This function turns on upper bounds.
+  */
   void activateUpper( void );
 
+
+  /** \brief Turn on lower bound.
+
+      This function turns on lower bounds.
+  */
   void activateLower( void );
 
+  /** \brief Turn on bounds.
+   
+      This function turns the bounds on. 
+  */
   void activate( void );
 
+  /** \brief Turn off lower bound.
+
+      This function turns the lower bounds off.
+  */
   void deactivateLower( void );
 
+  /** \brief Turn off upper bound.
+
+      This function turns the upper bounds off.
+  */
   void deactivateUpper( void );
 
+  /** \brief Turn off bounds.
+
+      This function turns the bounds off.
+  */
   void deactivate( void );
 
+
+  /** \brief Check if upper bound are on.
+
+      This function returns true if the upper bounds are turned on.
+  */
   bool isUpperActivated( void ) const;
 
+  /** \brief Check if lower bound are on.
+
+      This function returns true if the lower bounds are turned on.
+  */  
   bool isLowerActivated( void ) const;
 
+  /** \brief Check if bounds are on.
+
+      This function returns true if the bounds are turned on.
+  */   
+  bool isActivated(void) const;
+
+  /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-active set.
+
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}_\epsilon(x)\f$.  Here,
+      the \f$\epsilon\f$-active set is defined as
+      \f[
+         \mathcal{A}_\epsilon(x) = \mathcal{A}^+_\epsilon(x)\cap\mathcal{A}^-_\epsilon(x).
+      \f]
+      @param[out]      v   is the variable to be pruned.
+      @param[in]       x   is the current optimization variable.
+      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+  */
+  void pruneActive( V& v, const V& x, Real eps = 0 ) const;
+
+  /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-binding set.
+  
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}_\epsilon(x)\f$.  Here, 
+      the \f$\epsilon\f$-binding set is defined as 
+      \f[
+         \mathcal{B}^+_\epsilon(x) = \mathcal{B}^+_\epsilon(x)\cap\mathcal{B}^-_\epsilon(x).
+      \f]
+      @param[out]      v   is the variable to be pruned.
+      @param[in]       g   is the negative search direction.
+      @param[in]       x   is the current optimization variable.
+      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+  */
   void pruneActive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
 
+
+  /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-inactive set.
+  
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\Xi\setminus\mathcal{A}_\epsilon(x)\f$.  Here, 
+      @param[out]      v   is the variable to be pruned.
+      @param[in]       x   is the current optimization variable.
+      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+  */
   void pruneUpperActive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
 
+  /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-inactive set.
+  
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\Xi\setminus\mathcal{A}_\epsilon(x)\f$.  Here, 
+      @param[out]      v   is the variable to be pruned.
+      @param[in]       x   is the current optimization variable.
+      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+  */
   void pruneLowerActive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
 
+  /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-inactive set.
+  
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\Xi\setminus\mathcal{A}_\epsilon(x)\f$.  Here, 
+      @param[out]      v   is the variable to be pruned.
+      @param[in]       x   is the current optimization variable.
+      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+  */
   void pruneInactive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
 
+  /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
+  
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\Xi\setminus\mathcal{B}_\epsilon(x)\f$.  
+      @param[out]      v   is the variable to be pruned.
+      @param[in]       x   is the current optimization variable.
+      @param[in]       g   is the negative search direction.
+      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+  */
   void pruneUpperInactive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
 
+  /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-nonbinding set.
+  
+      This function sets \f$v(\xi)=0\f$ if \f$\xi\in\Xi\setminus\mathcal{B}_\epsilon(x)\f$.  
+      @param[out]      v   is the variable to be pruned.
+      @param[in]       x   is the current optimization variable.
+      @param[in]       g   is the negative search direction.
+      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+  */
   void pruneLowerInactive( V& v, const dual_t<V>& g, const V& x, Real eps = 0 ) const;
   
+  /** \brief Compute projected step.
+
+      This function computes the projected step \f$P_{[a,b]}(x+v) - x\f$.
+      @param[in,out]         v  is the step variable.
+      @param[in]             x is the optimization variable.
+  */
   void computeProjectedStep( V& v, const V& x ) const;
- 
+
+  /** \brief Compute projected gradient.
+
+      This function projects the gradient \f$g\f$ onto the tangent cone.
+           @param[in,out]    g  is the gradient of the objective function at x.
+           @param[in]        x  is the optimization variable
+  */ 
   void computeProjectedGradient( dual_t<V>& g, const V& x ) const;
 
 private:
@@ -182,4 +344,6 @@ private:
 };
 
 } // namespace XROL
+
+#include "XROL_BoundConstraintImpl.hpp"
 

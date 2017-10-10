@@ -69,9 +69,7 @@ BoundConstraint<V>::BoundConstraint( std::unique_ptr<V> x_lo,
 }
 
 template<class V> 
-BoundConstraint<V>::BoundConstraint( const V& x, 
-                                     bool isLower, 
-                                     Real scale ) :
+BoundConstraint<V>::BoundConstraint( const V& x, bool isLower, Real scale ) :
   x_lo_(std::move(clone(x))), 
   x_up_(std::move(clone(x))),
   scale_(scale),
@@ -99,7 +97,7 @@ void BoundConstraint<V>::project( V& x ) const {
     return std::min( le, std::max(xe,ue) );
   };
 
-  // x_i = min( u_i, max( l_i, x_i ) ) for all i
+  /**  \f[ x_i = \min( u_i, \max( l_i, x_i ) ) \; \forall i \f] */
   Elementwise::eval_function(x,clip,*x_lo_,x,*x_up_);
 }
 
@@ -108,19 +106,8 @@ template<class V>
 void BoundConstraint<V>::projectInterior( V& x ) const {
 
   /* Same as project with modifications to lower and upper bounds: 
- 
-    \f[ \tilde \ell = \begin{cases} 
-                      (1-\epsilon)\ell   & \text{if } \ell < -tol \\
-                      (1+\epsilon)\ell   & \text{if } \ell >  tol
-                      \ell+\epsilon      & \text{otherwise } \\
-    \end{cases} \f]
-
-    \f[ \tilde u    = \begin{cases} 
-                      (1+\epsilon)u      & \text{if } u < 0 \\
-                      -\epsilon          & \text{if } u = 0 \\
-                      (1-\epsilon)\ell   & \text{if } u > 0
-    \end{cases} \f]
-  */
+     \f[ x_i = \min( \tilde u_i, \max( \tilde l_i, x_i ) ) \; \forall i \f]
+   */
 
   auto eps = std::numeric_limits<Real>::epsilon();
   auto tol = 100*eps;
@@ -136,48 +123,70 @@ void BoundConstraint<V>::projectInterior( V& x ) const {
     return std::min( mod(tol,le), std::max( xe, mod(-tol,ue) );
   };
 
-}
-
-
-
-/*
-
-*/
-template<class V>
-void BoundConstraint<V>::pruneUpperActive( V& v, 
-                                           const V& x,  
-                                           Real eps ) {
-  auto epsn(std::min(scale_*eps,min_diff_)); 
-  auto active = [epsn]( auto xe, auto ye ) { return (y<=epsn) ? 0 : x; };
+  Elementwise::eval_function(x,clip,*x_lo_,x,*x_up_);
 
 }
 
-template<class V>
-void BoundConstraint<V>::pruneUpperActive( V& v, 
-                                           const dual_t<V> &g, 
-                                           const V& x,  
-                                           Real eps ) {
-  auto epsn(std::min(scale_*eps,min_diff_)); 
-  
 
+
+template<class V>
+void BoundConstraint<V>::pruneUpperActive( V& v, const V& x, Real eps ) const {
+  auto epsn{std::min(scale_*eps,min_diff_)}; 
+  auto f = [epsn]( auto ve, auto xe, auto ue) { 
+    return ( (ue-xe)<=epsn ) ? 0 : ve; 
+  };
+  Elementwise::eval_function(v,f,x,*x_up_);
 }
 
 template<class V>
-void BoundConstraint<V>::pruneLowerActive( V& v, 
-                                           const V& x,  
-                                           Real eps ) {
-  auto epsn(std::min(scale_*eps,min_diff_)); 
-
+void BoundConstraint<V>::pruneUpperActive( V& v, const dual_t<V>& g, const V& x, Real eps ) const {
+  auto epsn{std::min(scale_*eps,min_diff_)}; 
+  auto f = [epsn]( auto ve, auto xe, auto ue, auto ge ) { 
+    return ( ((ue-xe)<=epsn) && ge<0 ) ? 0 : ve; 
+  };
+  Elementwise::eval_function(v,f,x,*x_up_,g);
 }
 
 template<class V>
-void BoundConstraint<V>::pruneLowerActive( V& v, 
-                                           const dual_t<V> &g, 
-                                           const V& x,  
-                                           Real eps ) {
-  auto epsn(std::min(scale_*eps,min_diff_)); 
-
+void BoundConstraint<V>::pruneLowerActive( V& v, const V& x, Real eps ) const {
+  auto epsn{std::min(scale_*eps,min_diff_)}; 
+  auto f = [epsn]( auto ve, auto xe, auto le) { 
+    return ( (xe-le)<=epsn ) ? 0 : ve; 
+  };
+  Elementwise::eval_function(v,f,x,*x_lo_);
 }
+
+template<class V>
+void BoundConstraint<V>::pruneLowerActive( V& v, const dual_t<V>& g, const V& x, Real eps ) const {
+  auto epsn{std::min(scale_*eps,min_diff_)}; 
+  auto f = [epsn]( auto ve, auto xe, auto le, auto ge ) { 
+    return ( ((xe-le)<=epsn) && ge>0 ) ? 0 : ve; 
+  };
+  Elementwise::eval_function(v,f,x,*x_lo_,g);
+}
+
+template<class V>
+void BoundConstraint<V>::pruneActive( V& v, const V& x, Real eps ) const {
+  if (isActivated()) {
+    auto epsn{std::min(scale_*eps,min_diff_)}; 
+    auto f = [epsn]( auto ve, auto xe, auto ue, auto le ) { 
+      return ( ((ue-xe)<=epsn) || ((xe-le)<=epsn) ) ? 0 : ve;
+    };
+    Elementwise::eval_function(v,f,x,*x_up_,*x_lo_);
+  }
+}
+
+template<class V>
+void BoundConstraint<V>::pruneActive( V& v, const dual_t<V>& g, const V& x, Real eps ) const {
+  if (isActivated()) {
+    auto epsn{std::min(scale_*eps,min_diff_)}; 
+    auto f = [epsn]( auto ve, auto xe, auto ue, auto le, auto ge ) { 
+      return ( ( ((ue-xe)<=epsn) && (ge<0) ) || ( ((xe-le)<=epsn) && (ge>0) ) ) ? 0 : ve;
+    };
+    Elementwise::eval_function(v,f,x,*x_up_,*x_lo_,g);
+  }
+}
+
 
 template<class V>
 const V& BoundConstraint<V>::getLowerBound( void ) const {
@@ -189,13 +198,125 @@ const V& BoundConstraint<V>::getUpperBound( void ) const {
   return *x_up_;
 }
 
-bool isFeasible( const V& v ) const {
+template<class V>
+bool BoundConstraint<V>::isFeasible( const V& v ) const {
   auto is_between = []( auto l, auto v, auto u ) {
     return ( (l<v) && (v<u) ) ? Real(1) : Real(0);
   }; 
   auto all_true = make_product(v);
   return (Elementwise::eval_function_and_reduce(all_true,is_between,*x_lo_,v,*x_up_) != 0);
 }
+
+template<class V>
+void BoundConstraint<V>::activateLower(void) {
+  Lactivated_ = true;
+}
+
+template<class V>
+void BoundConstraint<V>::activateUpper(void) {
+  Uactivated_ = true;
+}
+
+template<class V>
+void BoundConstraint<V>::activate(void) {
+  activateLower();
+  activateUpper();
+}
+
+template<class V>
+void BoundConstraint<V>::deactivateLower(void) {
+  Lactivated_ = false;
+}
+
+template<class V>
+void BoundConstraint<V>::deactivateUpper(void) {
+  Uactivated_ = false;
+}
+
+template<class V>
+void BoundConstraint<V>::deactivate(void) {
+  deactivateLower();
+  deactivateUpper();
+}
+
+template<class V>
+bool BoundConstraint<V>::isLowerActivated(void) const {
+  return Lactivated_;
+}
+
+template<class V>
+bool BoundConstraint<V>::isUpperActivated(void) const {
+  return Uactivated_;
+}
+
+template<class V>
+bool BoundConstraint<V>::isActivated(void) const {
+  return (isLowerActivated() || isUpperActivated());
+}
+
+
+template<class V>
+void BoundConstraint<V>::pruneLowerInactive( V& v, const V& x, Real eps ) {
+  if( !isLowerActivated() ) {
+    auto epsn{std::min(scale_*eps,min_diff_)}; 
+    auto f = [epsn]( auto ve, auto xe, auto le) { 
+      return ( (xe-le)<=epsn ) ? ve : 0; 
+    };
+    Elementwise::eval_function(v,f,x,*x_lo_);
+  }
+}
+
+template<class V>
+void BoundConstraint<V>::pruneLowerInactive( V& v, const dual_t<V>& g, const V& x, Real eps ) {
+  if( !isLowerActivated() ) {
+    auto epsn{std::min(scale_*eps,min_diff_)}; 
+    auto f = [epsn]( auto ve, auto xe, auto le, auto ge ) { 
+      return ( ((xe-le)<=epsn) && ge>0 ) ? ve : 0; 
+    };
+    Elementwise::eval_function(v,f,x,*x_lo_,g);
+  }
+}
+
+template<class V>
+void BoundConstraint<V>::pruneUpperInactive( V& v, const V& x, Real eps ) {
+  auto epsn{std::min(scale_*eps,min_diff_)}; 
+  auto f = [epsn]( auto ve, auto xe, auto ue) { 
+    return ( (ue-xe)<=epsn ) ? ve : 0; 
+  };
+  Elementwise::eval_function(v,f,x,*x_up_);
+}
+
+template<class V>
+void BoundConstraint<V>::pruneUpperInactive( V& v, const dual_t<V>& g, const V& x, Real eps ) {
+  auto epsn{std::min(scale_*eps,min_diff_)}; 
+  auto f = [epsn]( auto ve, auto xe, auto ue, auto ge ) { 
+    return ( ((ue-xe)<=epsn) && ge<0 ) ? ve : 0; 
+  };
+  Elementwise::eval_function(v,f,x,*x_up_,g);
+}
+
+template<class V>
+void BoundConstraint<V>::pruneInactive( V& v, const V& x, Real eps ) const {
+  if (isActivated()) {
+    auto epsn{std::min(scale_*eps,min_diff_)}; 
+    auto f = [epsn]( auto ve, auto xe, auto ue, auto le ) { 
+      return ( ((ue-xe)<=epsn) || ((xe-le)<=epsn) ) ? ve : 0;
+    };
+    Elementwise::eval_function(v,f,x,*x_up_,*x_lo_);
+  }
+}
+
+template<class V>
+void BoundConstraint<V>::pruneInactive( V& v, const dual_t<V>& g, const V& x, Real eps ) const {
+  if (isActivated()) {
+    auto epsn{std::min(scale_*eps,min_diff_)}; 
+    auto f = [epsn]( auto ve, auto xe, auto ue, auto le, auto ge ) { 
+      return ( ( ((ue-xe)<=epsn) && (ge<0) ) || ( ((xe-le)<=epsn) && (ge>0) ) ) ? ve : 0;
+    };
+    Elementwise::eval_function(v,f,x,*x_up_,*x_lo_,g);
+  }
+}
+
 
 } // namespace XROL
 
