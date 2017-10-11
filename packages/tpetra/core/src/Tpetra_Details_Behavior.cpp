@@ -13,6 +13,10 @@
 namespace Tpetra {
 namespace Details {
 
+namespace BehaviorDetails {
+std::map<std::string, bool> namedVariableMap_;
+}
+
 namespace { // (anonymous)
 
   enum EnvironmentVariableState
@@ -171,17 +175,16 @@ namespace { // (anonymous)
                                                  const char environmentVariableName[],
                                                  const bool defaultValue)
   {
+    using BehaviorDetails::namedVariableMap_;
     // The extra "initialized" check avoids the cost of synchronizing
     // on the std::call_once for every call to this function.  We want
     // it to be cheap to get the Boolean value, so that users aren't
     // tempted to try to cache it themselves.
-    static std::unique_ptr<std::map<std::string, bool>> valsMap;
     if (! initialized) {
-      valsMap = std::unique_ptr<std::map<std::string, bool>>(
-          new std::map<std::string, bool>({{"DEFAULT", defaultValue}}));
+      namedVariableMap_["DEFAULT"] = defaultValue;
       std::call_once (once_flag, [&] () {
           getEnvironmentVariableAsMap (environmentVariableName,
-                                       *valsMap, defaultValue);
+                                       namedVariableMap_, defaultValue);
           // http://preshing.com/20130922/acquire-and-release-fences/
           //
           // "A release fence prevents the memory reordering of any
@@ -205,9 +208,9 @@ namespace { // (anonymous)
           initialized = true;
         });
     }
-    if (valsMap->find(name) != valsMap->end())
-      return (*valsMap)[name];
-    return (*valsMap)["DEFAULT"];
+    if (namedVariableMap_.find(name) != namedVariableMap_.end())
+      return namedVariableMap_[name];
+    return namedVariableMap_["DEFAULT"];
   }
 
   constexpr bool debugDefault () {
