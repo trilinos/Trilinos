@@ -101,12 +101,12 @@ Teuchos::RCP<CRSM> createTpetraOp(const Teuchos::RCP<const Map>& map)
   Scalar posOne = ST::one();
   Scalar negOne = -1.0*posOne;
   for (std::size_t i = 0; i < map->getNodeNumElements(); ++i) {
-    GO row = map->getGlobalElement(static_cast<LO>(i));
+    const GO row = map->getGlobalElement(static_cast<LO>(i));
     if (row == 0) {
       mat->insertGlobalValues(row,
                               Teuchos::tuple(row+1),
                               Teuchos::tuple(posOne));
-    } else if (row == map->getGlobalNumElements()-1) {
+    } else if (row == static_cast<GO>(map->getGlobalNumElements()-1)) {
       mat->insertGlobalValues(row,
                               Teuchos::tuple(row-1),
                               Teuchos::tuple(negOne));
@@ -130,7 +130,7 @@ void checkMultiVectors(const Teuchos::RCP<TMV>& a,
                        bool& success)
 {
   TEUCHOS_ASSERT(a->getNumVectors() == b->getNumVectors());
-  TEUCHOS_ASSERT(a->getNumVectors() == expectedNorms.size());
+  TEUCHOS_ASSERT(static_cast<size_t>(a->getNumVectors()) == static_cast<size_t>(expectedNorms.size()));
   Scalar one = ST::one();
   b->update(-1.0*one, *a, one);
   std::vector<ST::magnitudeType> norms(expectedNorms.size());
