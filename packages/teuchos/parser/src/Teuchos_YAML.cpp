@@ -11,9 +11,9 @@ Language make_language() {
   Language::Tokens& toks = out.tokens;
   prods.resize(NPRODS);
   toks.resize(NTOKS);
-  toks[TOK_NEWLINE]("NEWLINE", "]NEWLINE[");
-  toks[TOK_INDENT]("INDENT", "]INDENT[");
-  toks[TOK_DEDENT]("DEDENT", "]DEDENT[");
+  toks[TOK_NEWLINE]("NEWLINE", "(\r?\n)+[ \t]*");
+  toks[TOK_INDENT]("INDENT", "(\r?\n)+[ \t]*");
+  toks[TOK_DEDENT]("DEDENT", "(\r?\n)+[ \t]*");
   toks[TOK_SPACE]("WS", "[ \t]");
   toks[TOK_COLON](":", ":");
   toks[TOK_DOT](".", "\\.");
