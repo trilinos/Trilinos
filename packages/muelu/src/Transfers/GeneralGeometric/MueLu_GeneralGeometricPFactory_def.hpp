@@ -1005,6 +1005,7 @@ namespace MueLu {
       } // End of ind scope
 
       // Compute the actual geometric interpolation stencil
+      // LO stencilLength = static_cast<LO>(std::pow(interpolationOrder + 1, 3));
       std::vector<double> stencil(8);
       Array<GO> firstCoarseNodeFineIndices(3);
       int rate[3] = {};
