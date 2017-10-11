@@ -157,6 +157,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   SimParasolid    "SCOREC/cmake/TPLs/"    EX
   SimAcis         "SCOREC/cmake/TPLs/"    EX
   SimField        "SCOREC/cmake/TPLs/"    EX
+  Valgrind        "cmake/TPLs/"    EX
   )
 
 # NOTES:
