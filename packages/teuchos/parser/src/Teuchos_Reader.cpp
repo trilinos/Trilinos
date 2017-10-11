@@ -119,12 +119,11 @@ void Reader::at_token_indent(std::istream& stream) {
     at_token(stream);
     return;
   }
-  std::size_t end_of_actual_newlines = 0;
-  for (; end_of_actual_newlines < lexer_text.size(); ++end_of_actual_newlines) {
-    char c = lexer_text[end_of_actual_newlines];
-    if (c != '\n' && c != '\r') break;
+  std::size_t last_newline_pos = lexer_text.find_last_of("\n");
+  if (last_newline_pos == std::string::npos) {
+    throw ParserFail("INDENT token did not contain a newline '\\n' !\n");
   }
-  std::string lexer_indent = lexer_text.substr(end_of_actual_newlines, std::string::npos);
+  std::string lexer_indent = lexer_text.substr(last_newline_pos + 1, std::string::npos);
   // the at_token call is allowed to do anything to lexer_text
   at_token(stream);
   lexer_text.clear();
