@@ -70,7 +70,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.sems.cmake")
 # Set the options specific to this build case
 #
 
-SET(BUILD_DIR_NAME MPI_RELEASE_DEBUG_SHARED_PT_CI_AAO)
+SET(BUILD_DIR_NAME MPI_RELEASE_DEBUG_SHARED_PT_CI_AAOP)
 #SET(CTEST_TEST_TIMEOUT 900)
 
 #override the default number of processors to run on.
