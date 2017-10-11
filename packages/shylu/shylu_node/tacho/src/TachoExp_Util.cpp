@@ -26,7 +26,7 @@ namespace Tacho {
   void resetTimePerThread() {
   // no-op
   }
-  void getTimePerThread(const ordinal_type nthreads, 
+  void getTimePerThread(const int nthreads, 
                         double &t_total,
                         double &t_avg,
                         double &t_min,

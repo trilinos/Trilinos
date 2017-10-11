@@ -225,7 +225,7 @@ namespace Tacho {
         // for (ordinal_type i=0;i<nthreads;++i) 
         //   printf("             time for external blas lapack (diff from avg):   %10.6f s, %10.6f s\n", g_time_per_thread[i], fabs(g_time_per_thread[i] - t_avg));
         printf("             sum(time per thread)/(factor. time x nthreads):  %10.6f s\n", t_total/(stat.t_factor*nthreads));
-        printf("             time min, max, avg, factor                       %10.6f s, %10.6f s, %10.6f, %10.6f\n", t_min, t_max, t_avg, t_factor);
+        printf("             time min, max, avg, factor                       %10.6f s, %10.6f s, %10.6f, %10.6f\n", t_min, t_max, t_avg, stat.t_factor);
         printf("\n");        
 #endif
       }
