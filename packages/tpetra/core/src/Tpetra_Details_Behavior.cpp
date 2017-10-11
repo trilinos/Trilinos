@@ -181,8 +181,8 @@ namespace { // (anonymous)
     // it to be cheap to get the Boolean value, so that users aren't
     // tempted to try to cache it themselves.
     if (! initialized) {
-      namedVariableMap_["DEFAULT"] = defaultValue;
       std::call_once (once_flag, [&] () {
+          namedVariableMap_["DEFAULT"] = defaultValue;
           getEnvironmentVariableAsMap (environmentVariableName,
                                        namedVariableMap_, defaultValue);
           // http://preshing.com/20130922/acquire-and-release-fences/
