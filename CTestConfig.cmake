@@ -19,5 +19,5 @@ IF (CTEST_DROP_METHOD STREQUAL "http" OR CTEST_DROP_METHOD STREQUAL "https")
   SET_DEFAULT_AND_FROM_ENV(TRIBITS_2ND_CTEST_DROP_SITE
     "testing-vm.sandia.gov")
   SET_DEFAULT_AND_FROM_ENV(TRIBITS_2ND_CTEST_DROP_LOCATION
-    "/CDash/submit.php?project=Trilinos")
+    "/cdash/submit.php?project=Trilinos")
 ENDIF()
