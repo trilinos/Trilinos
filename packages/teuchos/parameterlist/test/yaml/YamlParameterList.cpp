@@ -112,9 +112,6 @@ namespace TeuchosTests
         "\t\t\tElements: [     10,     10 ]\n"
         "...\n"
         );
-    ParameterList& mesh_pl = params->get<ParameterList>("Mesh");
-    ParameterList& inline_pl = mesh_pl.get<ParameterList>("Inline");
-    Teuchos::Array<int>& elems  = inline_pl.get<Teuchos::Array<int> >("Elements");
   }
   TEUCHOS_UNIT_TEST(YAML, IntAndDoubleArray)
   {
