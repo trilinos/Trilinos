@@ -8,11 +8,20 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <utility>
 
 namespace Tpetra {
 namespace Details {
 
 namespace { // (anonymous)
+
+  enum EnvironmentVariableState
+  {
+    EnvironmentVariableIsSet_ON,
+    EnvironmentVariableIsSet_OFF,
+    EnvironmentVariableIsSet,
+    EnvironmentVariableIsNotSet
+  };
 
   // See example here:
   //
@@ -24,9 +33,10 @@ namespace { // (anonymous)
     return s;
   }
 
-  template<class Func>
   void
-  split(const std::string& s, Func f, const char sep=':')
+  split(const std::string& s,
+        std::function<void(const std::string&)> f,
+        const char sep=':')
   {
     typedef std::string::size_type size_type;
     size_type cur_pos, last_pos=0, length=s.length();
@@ -46,24 +56,18 @@ namespace { // (anonymous)
     return;
   }
 
-  /// \brief Determine if environment variable is a boolean or not
-  ///
-  /// If the environment variable is "true", return 1
-  /// If the environment variable is "false", return 0
-  /// Otherwise, return -1
-  int
-  environmentVariableState(std::string environmentVariableValue)
+  EnvironmentVariableState
+  environmentVariableState(const std::string& environmentVariableValue)
   {
-    int state = -1;
     std::string v = stringToUpper(environmentVariableValue);
     if      (v == "1" || v == "YES" || v == "TRUE"  || v == "ON")
       // Environment variable is "ON"
-      return 1;
+      return EnvironmentVariableIsSet_ON;
     else if (v == "0" || v == "NO"  || v == "FALSE" || v == "OFF")
       // Environment variable is "OFF"
-      return 0;
+      return EnvironmentVariableIsSet_OFF;
     // Environment has some other non-boolean value
-    return -1;
+    return EnvironmentVariableIsSet;
   }
 
   void
@@ -76,27 +80,24 @@ namespace { // (anonymous)
     const char* varVal = std::getenv (environmentVariableName);
     if (varVal == NULL) {
       // Apply default value to all
-      valsMap.clear();
-      valsMap["ALL"] = defaultValue;
+      valsMap["DEFAULT"] = defaultValue;
       return;
     }
 
     // Variable is not empty.
     const string varStr(varVal);
     std::vector<string> names;
-    split(varStr, [&](string x){names.push_back(x);});
+    split(varStr, [&](const string& x){names.push_back(x);});
     for (auto name: names) {
-      int state = environmentVariableState(name);
-      if (state == 1) {
+      auto state = environmentVariableState(name);
+      if (state == EnvironmentVariableIsSet_ON) {
         // Global value takes precedence
-        valsMap.clear();
-        valsMap["ALL"] = true;
+        valsMap["DEFAULT"] = true;
         break;
       }
-      else if (state == 0) {
+      else if (state == EnvironmentVariableIsSet_OFF) {
         // Global value takes precedence
-        valsMap.clear();
-        valsMap["ALL"] = false;
+        valsMap["DEFAULT"] = false;
         break;
       }
       else {
@@ -115,9 +116,9 @@ namespace { // (anonymous)
 
     bool retVal = defaultValue;
     if (varVal != NULL) {
-      const int state = environmentVariableState(std::string(varVal));
-      if (state == 1) retVal = true;
-      else if (state == 0) retVal = false;
+      auto state = environmentVariableState(std::string(varVal));
+      if (state == EnvironmentVariableIsSet_ON) retVal = true;
+      else if (state == EnvironmentVariableIsSet_OFF) retVal = false;
     }
     return retVal;
   }
@@ -163,21 +164,24 @@ namespace { // (anonymous)
     return value;
   }
 
-  void
-  idempotentlyGetEnvironmentVariableAsMap (std::once_flag& once_flag,
-                                           std::map<std::string, bool>& valsMap,
-                                           bool& initialized,
-                                           const char environmentVariableName[],
-                                           const bool defaultValue)
+  bool
+  idempotentlyGetNamedEnvironmentVariableAsBool (const char name[],
+                                                 std::once_flag& once_flag,
+                                                 bool& initialized,
+                                                 const char environmentVariableName[],
+                                                 const bool defaultValue)
   {
     // The extra "initialized" check avoids the cost of synchronizing
     // on the std::call_once for every call to this function.  We want
     // it to be cheap to get the Boolean value, so that users aren't
     // tempted to try to cache it themselves.
+    static std::unique_ptr<std::map<std::string, bool>> valsMap;
     if (! initialized) {
+      valsMap = std::unique_ptr<std::map<std::string, bool>>(
+          new std::map<std::string, bool>({{"DEFAULT", defaultValue}}));
       std::call_once (once_flag, [&] () {
           getEnvironmentVariableAsMap (environmentVariableName,
-                                       valsMap, defaultValue);
+                                       *valsMap, defaultValue);
           // http://preshing.com/20130922/acquire-and-release-fences/
           //
           // "A release fence prevents the memory reordering of any
@@ -201,7 +205,9 @@ namespace { // (anonymous)
           initialized = true;
         });
     }
-    return;
+    if (valsMap->find(name) != valsMap->end())
+      return (*valsMap)[name];
+    return (*valsMap)["DEFAULT"];
   }
 
   constexpr bool debugDefault () {
@@ -275,44 +281,22 @@ bool Behavior::debug (const char name[])
 {
   static std::once_flag debugFlag_;
   static bool debugInitialized_ = false;
-  static std::map<std::string, bool> namedDebugValues_;
-  idempotentlyGetEnvironmentVariableAsMap (debugFlag_,
-                                           namedDebugValues_,
-                                           debugInitialized_,
-                                           "TPETRA_DEBUG",
-                                           debugDefault ());
-  if (namedDebugValues_.find("ALL") != namedDebugValues_.end()) {
-    // Global value takes precedence
-    return namedDebugValues_["ALL"];
-  }
-  else if (namedDebugValues_.find(name) == namedDebugValues_.end()) {
-    return debugDefault();
-  }
-  else {
-    return namedDebugValues_[name];
-  }
+  return idempotentlyGetNamedEnvironmentVariableAsBool (name,
+                                                        debugFlag_,
+                                                        debugInitialized_,
+                                                        "TPETRA_DEBUG",
+                                                        debugDefault ());
 }
 
 bool Behavior::verbose (const char name[])
 {
   static std::once_flag verboseFlag_;
   static bool verboseInitialized_ = false;
-  static std::map<std::string, bool> namedVerboseValues_;
-  idempotentlyGetEnvironmentVariableAsMap (verboseFlag_,
-                                           namedVerboseValues_,
-                                           verboseInitialized_,
-                                           "TPETRA_VERBOSE",
-                                           verboseDefault ());
-  if (namedVerboseValues_.find("ALL") != namedVerboseValues_.end()) {
-    // Global value takes precedence
-    return namedVerboseValues_["ALL"];
-  }
-  else if (namedVerboseValues_.find(name) == namedVerboseValues_.end()) {
-    return verboseDefault();
-  }
-  else {
-    return namedVerboseValues_[name];
-  }
+  return idempotentlyGetNamedEnvironmentVariableAsBool (name,
+                                                        verboseFlag_,
+                                                        verboseInitialized_,
+                                                        "TPETRA_VERBOSE",
+                                                        verboseDefault ());
 }
 
 } // namespace Details
