@@ -73,7 +73,7 @@ inline void seconds_initialize() {
 #endif // defined(__INTEL_COMPILER) && defined(_WIN32)
 
 #ifdef HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
-#include <valgrind/valgrind.h>
+#include <valgrind.h>
 #include <algorithm>
 #include <unistd.h>
 #endif
