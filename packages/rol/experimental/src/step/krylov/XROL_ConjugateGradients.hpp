@@ -66,22 +66,44 @@ public:
   }
 
   std::unique_ptr<Output> run( X& x, LinearOperator<X,Y> &A, const Y& b ) {
+
+    static_assert(is_same<X,Y>::value,"Preconditioner is required when x and b "
+                  "are elements of different vector spaces.");
+
     initialize(x,b);
 
+    auto rho0 = dot(*r_,*r_);
+   
+
+    set(*p_,*r_);
+
     // Loop until maxit, negative dot product, or convergence
-    while() {
+    for( iter_ = 0; iter_ < maxit_; ++iter ) {
+      
+      A.apply(*q_,*p_);
+      auto alpha = rho0/dot(*p_,*q_);
+      axpy(*x_, alpha,*p_);
+      axpy(*x_,-alpha,*q_);
+   
+
+    }
+
 
 
     }
 
   }
 
-  std::unique_ptr<Output> run( X& x, LinearOperator<X,Y> &A, const Y& b, LinearOperator<X,Y> &M ) {
+  std::unique_ptr<Output> run( X& x, LinearOperator<X,Y> &A, 
+                               const Y& b, LinearOperator<Y,X> &M ) {
     initialize(x,b);
     
-    while() {
+    // Loop until maxit, negative dot product, or convergence
+    for( iter_ = 0; iter_ < maxit_; ++iter ) {
+
 
     }
+
 
   }
   
@@ -93,34 +115,35 @@ private:
     iter_ = 0;
    
     if( !isInitialized_ ) {
-      r_ = clone(x);   v_  = clone(x);
-      p_ = clone(x);   Ap_ = clone(x);
+      v_ = clone(x);
+      p_ = clone(x);   
+      r_ = clone(b);   
+      q_ = clone(b);
       isInitialized_ = true;
     }
  
     if( zeroInitialGuess_ ) {
-      fill(x,element_t<V>(0));
+      fill(x,0.0);
       set(*r_,b);
       A.apply(*v_,x);
-      axpy(*r_,element_t<V>(-1),*v);  // r = b-Ax
+      axpy(*r_,-1.0,*v);  // r = b-Ax
     }
     else {
       set(*r_,b);  // r = b
     }
   }
 
-
-  std::unique_ptr<V> r_;
-  std::unique_ptr<V> v_;
-  std::unique_ptr<V> p_;
-  std::unique_ptr<V> Ap_; 
+  std::unique_ptr<X> x_;
+  std::unique_ptr<X> p_;
+  std::unique_ptr<Y> q_; 
+  std::unique_ptr<Y> r_;
 
   std::size_t iter_;
   std::size_t maxit_;
  
   bool isInitialized_;
   bool zeroInitialGuess_;
-  magnitude_t<V> tol_;
+  magnitude_t<X> tol_;
 
 
 };
