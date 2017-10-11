@@ -49,6 +49,26 @@ namespace Details {
 /// environment variable.  This will have the additional advantage of
 /// avoiding errors due to only building and testing in debug or
 /// release mode, but not both.
+///
+/// The behavior of Tpetra can be modified at runtime through two environment
+/// variables:
+///
+/// TPETRA_DEBUG: flags Tpetra to turn on debug checking.
+/// TPETRA_VERBOSE: flags Tpetra to turn on debug _output_.
+///
+/// These are two different things.  For example, TPETRA_DEBUG may do extra MPI
+/// communication in order to ensure correct error state propagation, but
+/// TPETRA_DEBUG should never print copious debug output if no errors occurred.
+/// The idea is that if users get a mysterious error or hang, they can rerun
+/// with TPETRA_DEBUG set.  TPETRA_VERBOSE is for Tpetra developers to use for
+/// debugging Tpetra.
+///
+/// The environment variables are understood to be "on" or "off" and recognized
+/// if specified in one of two ways.  The first is to specify the variable
+/// unconditionally ON or OFF.  e.g., TPETRA_VERBOSE=ON or TPETRA_VERBOSE=OFF.
+/// The second is to specify the variable on a per class/object basis, e.g.,
+/// TPETRA_VERBOSE=CrsGraph:CrsMatrix:Distributor means that verbose output
+/// will be enabled for CrsGraph, CrsMatrix, and Distributor classes.
 class Behavior {
 public:
   /// \brief Whether Tpetra is in debug mode.
@@ -58,6 +78,7 @@ public:
   /// also produce more detailed error messages, and more copious
   /// debug output.
   static bool debug ();
+  static bool debug (const char name[]);
 
   /// \brief Whether Tpetra is in verbose mode.
   ///
@@ -65,6 +86,7 @@ public:
   /// std::cerr on every MPI process.  This is a LOT of output!  You
   /// really don't want to do this when running on many MPI processes.
   static bool verbose ();
+  static bool verbose (const char name[]);
 
   /// \brief Whether to assume that MPI is CUDA aware.
   ///
