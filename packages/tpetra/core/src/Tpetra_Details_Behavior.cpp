@@ -8,7 +8,7 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <utility>
+#include <functional>
 
 namespace Tpetra {
 namespace Details {
@@ -178,7 +178,7 @@ namespace { // (anonymous)
     using BehaviorDetails::namedVariableMap_;
     // The extra "initialized" check avoids the cost of synchronizing
     // on the std::call_once for every call to this function.  We want
-    // it to be cheap to get the Boolean value, so that users aren't
+    // it to be cheap to fill the namedVariableMap_, so that users aren't
     // tempted to try to cache it themselves.
     if (! initialized) {
       std::call_once (once_flag, [&] () {
@@ -191,18 +191,16 @@ namespace { // (anonymous)
           // read or write which precedes it in program order with any
           // write which follows it in program order."
           //
-          // The point is to prevent the assignment to 'value' from
-          // getting reordered after the assignment to 'initialized'
-          // (the so-called "StoreStore" reordering).  That would be
-          // bad in this case, because then other threads might read
-          // 'initialized' as true, yet would fail to pick up the
-          // change to 'value'.
+          // The point is to prevent the assignment to 'namedValueMap' from
+          // getting reordered after the assignment to 'initialized' (the
+          // so-called "StoreStore" reordering).  That would be bad in this
+          // case, because then other threads might read 'initialized' as true,
+          // yet would fail to pick up the change to 'namedValueMap'.
           //
           // It's harmless if other threads don't see the write to
-          // 'initialized', but did see the write to 'value'.  In that
-          // case, they would just attempt and fail to enter the
-          // std::call_once, and return (the correct value of)
-          // 'value'.
+          // 'initialized', but did see the write to 'namedValueMap'.  In that
+          // case, they would just attempt and fail to enter the std::call_once,
+          // and return (the correct value of) 'namedValueMap'.
           std::atomic_thread_fence (std::memory_order_release);
 
           initialized = true;
