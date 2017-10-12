@@ -322,6 +322,19 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
+ASSERT_DEFINED(TPL_ENABLE_Valgrind)
+IF(TPL_ENABLE_Valgrind)
+  # Heap profiling using massif
+  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_TIME_MASSIF_SNAPSHOTS
+    HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+    "Enable memory profiling using massif."
+    OFF)
+  IF (${PACKAGE_NAME}_TIME_MASSIF_SNAPSHOTS)
+    MESSAGE(STATUS "Enabling memory profiling using massif")
+  ENDIF()
+ENDIF()
+
+
 #
 # D) Process the subpackages for Teuchos
 #
