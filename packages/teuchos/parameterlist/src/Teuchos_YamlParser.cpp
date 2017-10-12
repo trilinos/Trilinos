@@ -582,10 +582,6 @@ class Reader : public Teuchos::Reader {
         result_any = '%';
         break;
       }
-      case Teuchos::YAML::PROD_COMMON_POUND: {
-        result_any = '#';
-        break;
-      }
       case Teuchos::YAML::PROD_COMMON_EXCL: {
         result_any = '!';
         break;

@@ -66,6 +66,7 @@ void Reader::at_token(std::istream& stream) {
       }
       ss << "}\n";
       ss << "Got: " << at(grammar->symbol_names, lexer_token) << '\n';
+      ss << "Lexer text: \"" << lexer_text << "\"\n";
       ss << "Parser was in state " << parser_state << '\n';
       throw ParserFail(ss.str());
     } else if (parser_action.kind == ACTION_SHIFT) {
