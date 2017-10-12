@@ -78,10 +78,10 @@ namespace Teuchos {
 /// behavior in reentrant code.
 ///
 /// If Teuchos is compiled with
-/// Teuchos_TIME_MASSIF_SNAPSHOTS:BOOL=ON
+/// <tt>Teuchos_TIME_MASSIF_SNAPSHOTS=ON</tt>
 /// Valgrind Massif snapshots are taken before and after each timer.
 /// The resulting memory profile can be plotted using
-/// core/utils/plotMassifMemoryUsage.py
+/// <tt>core/utils/plotMassifMemoryUsage.py</tt>
 class TEUCHOSCORE_LIB_DLL_EXPORT Time {
 public:
   /// \brief Constructor
