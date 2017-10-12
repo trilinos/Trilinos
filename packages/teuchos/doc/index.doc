@@ -367,8 +367,9 @@ for SPMD parallel programs and useful utilities that depend on these.
     This may be used either by itself, or in combination with
     Teuchos::TimeMonitor for tracking global timer statistics over
     processes.
-    If Teuchos is compiled with <tt>Teuchos_TIME_MASSIF_SNAPSHOTS=ON</tt>
-    Valgrind Massif snapshots are taken before and after each timer.
+    If Teuchos is configured with <tt>TPL_ENABLE_Valgrind=ON</tt> and
+    <tt>Teuchos_TIME_MASSIF_SNAPSHOTS=ON</tt> Valgrind Massif snapshots are
+    taken before and after each Teuchos::Time invocation.
     The resulting memory profile can be plotted using the script
     <tt>core/utils/plotMassifMemoryUsage.py</tt>.
 

@@ -163,10 +163,10 @@ typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map
 /// statistics, if you wish to use them in your program or output them
 /// in a different format than that of these methods.
 ///
-/// If Teuchos is compiled with
-/// <tt>Teuchos_TIME_MASSIF_SNAPSHOTS=ON</tt>
-/// Valgrind Massif snapshots are taken before and after each timer.
-/// The resulting memory profile can be plotted using
+/// If Teuchos is configured with <tt>TPL_ENABLE_Valgrind=ON</tt>
+/// and <tt>Teuchos_TIME_MASSIF_SNAPSHOTS=ON</tt> Valgrind Massif
+/// snapshots are taken before and after each Time invocation. The
+/// resulting memory profile can be plotted using
 /// <tt>core/utils/plotMassifMemoryUsage.py</tt>
 ///
 /// \warning This class must only be used to time functions that are

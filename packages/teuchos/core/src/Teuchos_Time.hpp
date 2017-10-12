@@ -77,10 +77,10 @@ namespace Teuchos {
 /// TimeMonitor class (which see) for exception safety and correct
 /// behavior in reentrant code.
 ///
-/// If Teuchos is compiled with
-/// <tt>Teuchos_TIME_MASSIF_SNAPSHOTS=ON</tt>
-/// Valgrind Massif snapshots are taken before and after each timer.
-/// The resulting memory profile can be plotted using
+/// If Teuchos is configured with <tt>TPL_ENABLE_Valgrind=ON</tt>
+/// and <tt>Teuchos_TIME_MASSIF_SNAPSHOTS=ON</tt> Valgrind Massif
+/// snapshots are taken before and after Teuchos::Time invocation. The
+/// resulting memory profile can be plotted using
 /// <tt>core/utils/plotMassifMemoryUsage.py</tt>
 class TEUCHOSCORE_LIB_DLL_EXPORT Time {
 public:
