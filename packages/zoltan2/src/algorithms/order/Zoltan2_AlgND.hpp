@@ -64,9 +64,9 @@
  *  \brief The algorithm for ND based ordering
  */
 
-
 namespace Zoltan2
 {
+
 
 ////////////////////////////////////////////////////////////////////////////////
 /*! Nested dissection based ordering method.
@@ -83,7 +83,6 @@ namespace Zoltan2
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 class AlgND : public Algorithm<typename Adapter::base_adapter_t>
-//class AlgND : public Algorithm<Adapter>
 {
 
 private:
@@ -97,13 +96,9 @@ private:
   const RCP<const Environment> mEnv;
   const RCP<const Comm<int> > mProblemComm;
 
-  //  const RCP<const GraphModel<Adapter> > mGraphModel;
   const RCP<GraphModel<typename Adapter::base_adapter_t> > mGraphModel;
-  //  const RCP<const CoordinateModel<Adapter> > mIds;
   const RCP<CoordinateModel<typename Adapter::base_adapter_t> > mIds;
 
-  //const RCP<const Adapter> mBaseInputAdapter;
-  //const RCP<const Adapter> mInputAdapter;
   const RCP<const typename Adapter::base_adapter_t> mBaseInputAdapter;                                                                                                                                 
 
   void getBoundLayer(part_t levelIndx, const std::vector<part_t> &partMap,
@@ -113,15 +108,25 @@ private:
 		     std::vector<lno_t> &bigraphCRSRowPtr, std::vector<lno_t> &bigraphCRSCols,
 	             std::vector<lno_t> &bigraphVMapU, std::vector<lno_t> &bigraphVMapV);
 
-  void buildPartTree(part_t level, part_t startV,
-	              const std::vector<part_t> &permPartNums,
-	              const std::vector<part_t> &splitRangeBeg,
-	              const std::vector<part_t> &splitRangeEnd,
-	              const std::vector<part_t> &treeVertParents,
-	              std::vector<part_t> &sepLevels,
-	              std::vector<std::set<part_t> > &sepParts1, std::vector<std::set<part_t> > &sepParts2,
-	              part_t &maxLev);
+  void buildPartTree(part_t level, std::vector<part_t> &levIndx,
+                     part_t startV,
+	             const std::vector<part_t> &permPartNums,
+	             const std::vector<part_t> &splitRangeBeg,
+	             const std::vector<part_t> &splitRangeEnd,
+	             const std::vector<part_t> &treeVertParents,
+	             std::vector<part_t> &sepLevels,
+	             std::vector<std::set<part_t> > &sepParts1, std::vector<std::set<part_t> > &sepParts2,
+		     part_t &maxLev, 
+                     part_t &sepTreeIndx, 
+                     part_t *sepTreeView, std::vector<std::pair<part_t,part_t> > &treeIndxToSepLev);
 
+  void fillSolutionIperm(const part_t *parts, const std::set<lno_t> &sepVerts, 
+                         const std::vector<std::vector< std::set<lno_t> > > & sepVertsByLevel,
+                         const std::vector<std::pair<part_t,part_t> > &treeIndxToSepLev,
+                         lno_t * ipermView, lno_t *sepRangeView);
+
+  void getIdsOfPart(const part_t *parts, part_t targetPart,const std::set<lno_t> &idsToExcl,
+	            std::set<lno_t> &outIds);
 
 
 public:
@@ -175,8 +180,6 @@ template <typename Adapter>
 int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution_)
 {
     typedef typename Adapter::lno_t lno_t;     // local ids
-    // typedef typename Adapter::gno_t gno_t;     // global ids
-    // typedef typename Adapter::scalar_t scalar_t;   // scalars
 
     mEnv->debug(DETAILED_STATUS, std::string("Entering AlgND"));
 
@@ -211,8 +214,6 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 
     int nUserWts=0;
 
-    //AlgZoltan<Adapter> algZoltan(partEnv, mProblemComm, this->mBaseInputAdapter);
-
     RCP<AlgZoltan<Adapter> > algZoltan = rcp(new AlgZoltan<Adapter>(partEnv, mProblemComm, this->mBaseInputAdapter));
 
     RCP<PartitioningSolution<Adapter> > partSoln;
@@ -226,11 +227,11 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 
     const part_t *parts = partSoln->getPartListView();
 
-    size_t numVerts = mGraphModel->getLocalNumVertices();
-    for(size_t i=0; i< numVerts; i++)
-    {
-      std::cout << "part[" << i << "] = " << parts[i] <<std::endl;
-    }
+    // size_t numVerts = mGraphModel->getLocalNumVertices();
+    // for(size_t i=0; i< numVerts; i++)
+    // {
+    //   std::cout << "part[" << i << "] = " << parts[i] <<std::endl;
+    // }
     //////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////
@@ -265,14 +266,41 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
     //             sepParts2[i] - 2nd set of parts on other side of separator
     // 
     /////////////////////////////////////////////////////////////////
+    std::vector<part_t> levInds;
+
     std::vector<part_t> sepLevels;
     std::vector<std::set<part_t> > sepParts1;
     std::vector<std::set<part_t> > sepParts2;
 
+    std::vector<std::pair<part_t,part_t> > treeIndxToSepLev(treeVertParents.size());
+
     part_t maxLevel = 0;
 
-    buildPartTree(0, numTreeVerts, permPartNums, splitRangeBeg, splitRangeEnd, treeVertParents,
-                   sepLevels, sepParts1, sepParts2, maxLevel);
+    //View of separator tree structure of solution
+    part_t *sepTreeView = solution_->getSeparatorTreeView();
+ 
+    part_t sepTreeIndx= treeVertParents.size()-1;
+
+    sepTreeView[sepTreeIndx]=-1;
+
+    buildPartTree(0, levInds, numTreeVerts, permPartNums, splitRangeBeg, splitRangeEnd, treeVertParents,
+		  sepLevels, sepParts1, sepParts2, maxLevel, sepTreeIndx,sepTreeView,treeIndxToSepLev);
+
+    solution_->setHaveSeparatorTree(true);
+    
+    // std::cout << "sepTreeView: ";
+    // for(part_t i=0; i<treeVertParents.size(); i++)
+    // {
+    //   std::cout << sepTreeView[i] << " ";
+    // }
+    // std::cout << std::endl;
+
+
+    // std::cout << "treeIndxToSepLev:" << std::endl;
+    // for(part_t i=0; i<treeVertParents.size(); i++)
+    // {
+    //   std::cout << treeIndxToSepLev[i].first << " " << treeIndxToSepLev[i].second <<std::endl;
+    // }
 
     part_t numSeparators = sepLevels.size();
     /////////////////////////////////////////////////////////////////
@@ -327,9 +355,6 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 
       for(part_t levIndx=0;levIndx<sepsInLev[level];levIndx++)
       {
-
-
-//HERE
 
         ///////////////////////////////////////////////////////////////
         // Build boundary layer between parts (edge separator)
@@ -406,44 +431,64 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 	  }        
           ///////////////////////////////////////////////////////////////
 	}
-        //TODO: Copy data into separator structures?
-
-
       }
     }
+    //////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////
+    // Fill solution structures: invperm and separatorRange
+    //////////////////////////////////////////////////////////////////////
+    bool inverse=true;
+    lno_t *ipermView = solution_->getPermutationView(inverse);
+    lno_t *sepRangeView = solution_->getSeparatorRangeView();
+
+    fillSolutionIperm(parts, sepVerts,sepVertsByLevel,treeIndxToSepLev,ipermView, sepRangeView);
+
+    solution_->setHaveInverse(true);
+    solution_->setHaveSeparatorRange(true);
+    //////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////
     // Output separators
     //////////////////////////////////////////////////////////////////////
-    std::cout << "Separators: " << std::endl;
-    for(part_t level=0;level<sepVertsByLevel.size();level++)
-    {
-      sepVertsByLevel[level].resize(sepsInLev[level]);
+    // std::cout << "Separators: " << std::endl;
+    // for(part_t level=0;level<sepVertsByLevel.size();level++)
+    // {
+    //   sepVertsByLevel[level].resize(sepsInLev[level]);
 
-      for(part_t levIndx=0;levIndx<sepVertsByLevel[level].size();levIndx++)
-      {
-	std::cout << "  Separator " << level << " " << levIndx << ": ";
+    //   for(part_t levIndx=0;levIndx<sepVertsByLevel[level].size();levIndx++)
+    //   {
+    // 	std::cout << "  Separator " << level << " " << levIndx << ": ";
 
-
-
-
-	typename std::set<lno_t>::const_iterator iterS;
-	for (iterS=sepVertsByLevel[level][levIndx].begin();iterS!=sepVertsByLevel[level][levIndx].end();++iterS)
-	{
-	  std::cout << *iterS << " ";
-	}
-	std::cout << std::endl;
-
-
-      }
-    }
+    // 	typename std::set<lno_t>::const_iterator iterS;
+    // 	for (iterS=sepVertsByLevel[level][levIndx].begin();iterS!=sepVertsByLevel[level][levIndx].end();++iterS)
+    // 	{
+    // 	  std::cout << *iterS << " ";
+    // 	}
+    // 	std::cout << std::endl;
+    //   }
+    // }
     //////////////////////////////////////////////////////////////////////
 
+
+    // std::cout << "iPerm: ";
+    // for(part_t i=0; i<numVerts; i++)
+    // {
+    //   std::cout << ipermView[i] << " ";
+    // }
+    // std::cout << std::endl;
+
+    // std::cout << "sepRange: ";
+    // for(part_t i=0; i<treeVertParents.size()+1; i++)
+    // {
+    //   std::cout << sepRangeView[i] << " ";
+    // }
+    // std::cout << std::endl;
+
     //////////////////////////////////////////////////////////////////////
 
-    // //TODO: calculate vertex separator for each layer, 
-    // //TODO: using vertex separators, compute new ordering and store in solution
-    // //TODO: move to ordering directory
+
+    //////////////////////////////////////////////////////////////////////
 
     mEnv->debug(DETAILED_STATUS, std::string("Exiting AlgND"));
     return 0;
@@ -478,7 +523,6 @@ void AlgND<Adapter>::getBoundLayer(part_t levelIndx, const std::vector<part_t> &
 
   // For some reason getLocalEdgeList seems to be returning empty eIDs
   //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getLocalEdgeList(eIDs, vOffsets, wgts);
-
   //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
   ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
 
@@ -629,14 +673,16 @@ void AlgND<Adapter>::getBoundLayer(part_t levelIndx, const std::vector<part_t> &
 //////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 void AlgND<Adapter>::
-buildPartTree(part_t level, part_t startV,
+buildPartTree(part_t level, std::vector<part_t> &levIndx, 
+              part_t startV,
 	      const std::vector<part_t> &permPartNums,
 	      const std::vector<part_t> &splitRangeBeg,
 	      const std::vector<part_t> &splitRangeEnd,
 	      const std::vector<part_t> &treeVertParents,
 	      std::vector<part_t> &sepLevels,
 	      std::vector<std::set<part_t> > &sepParts1, std::vector<std::set<part_t> > &sepParts2,
-              part_t &maxLev)
+              part_t &maxLev, part_t &gIndx,
+              part_t *sepTreeView,std::vector<std::pair<part_t,part_t> > &treeIndxToSepLev)
 {
   // Insert information for this separator
   maxLev=level;
@@ -667,6 +713,22 @@ buildPartTree(part_t level, part_t startV,
   // If startV has children
   if(inds.size()==2)
   {
+
+
+    if(levIndx.size() < level+1)
+    {
+      levIndx.push_back(0);
+    }
+    else
+    {
+      levIndx[level]++;
+    }
+
+    // std::cout << "gIndx " << gIndx << ": separator " << level << " " << levIndx[level] << std::endl;
+
+    treeIndxToSepLev[gIndx].first = level;
+    treeIndxToSepLev[gIndx].second = levIndx[level];
+
     part_t v0 = inds[0];
     part_t v1 = inds[1];
 
@@ -691,22 +753,30 @@ buildPartTree(part_t level, part_t startV,
       (*setIter).insert(permPartNums[k]);
     }
 
+    part_t parentNode = gIndx;
+    gIndx--;
+    sepTreeView[gIndx] = parentNode;
 
     // Recursively call function on children
-    buildPartTree(level+1, v0,
-		   permPartNums, splitRangeBeg, splitRangeEnd, treeVertParents,
-		   sepLevels, sepParts1, sepParts2,
-		   tmpMaxLev);
+    buildPartTree(level+1, levIndx,v0,
+		  permPartNums, splitRangeBeg, splitRangeEnd, treeVertParents,
+		  sepLevels, sepParts1, sepParts2,
+		  tmpMaxLev,
+                  gIndx,sepTreeView,treeIndxToSepLev);
     if(tmpMaxLev>maxLev)
     {
       maxLev = tmpMaxLev;
     }
 
 
-    buildPartTree(level+1, v1,
-		   permPartNums, splitRangeBeg, splitRangeEnd, treeVertParents,
-		   sepLevels, sepParts1, sepParts2,
-		   tmpMaxLev);
+    gIndx--;
+    sepTreeView[gIndx] = parentNode;
+
+    buildPartTree(level+1, levIndx, v1,
+		  permPartNums, splitRangeBeg, splitRangeEnd, treeVertParents,
+		  sepLevels, sepParts1, sepParts2,
+		  tmpMaxLev,
+                  gIndx, sepTreeView,treeIndxToSepLev);
     if(tmpMaxLev>maxLev)
     {
       maxLev = tmpMaxLev;
@@ -716,6 +786,10 @@ buildPartTree(part_t level, part_t startV,
   }
   else // no children, so this is not a separator
   {
+    // std::cout << "gIndx " << gIndx << " leaf: " << permPartNums[splitRangeBeg[startV]] << std::endl;
+    treeIndxToSepLev[gIndx].first = -1;
+    treeIndxToSepLev[gIndx].second = permPartNums[splitRangeBeg[startV]];
+
     maxLev--;
   }
   //////////////////////////////////////////////////////////////////////
@@ -725,6 +799,84 @@ buildPartTree(part_t level, part_t startV,
 
 //////////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+template <typename Adapter>
+void AlgND<Adapter>::
+fillSolutionIperm(const part_t *parts, const std::set<lno_t> &sepVerts, 
+                  const std::vector<std::vector< std::set<lno_t> > > & sepVertsByLevel,
+                  const std::vector<std::pair<part_t,part_t> > &treeIndxToSepLev,
+                  lno_t * ipermView, lno_t *sepRangeView)
+{
+  lno_t permIndx=0;
+  lno_t sepRangeIndx=0;
+  sepRangeView[sepRangeIndx] = 0;
+
+  for(size_t i=0; i<treeIndxToSepLev.size();i++)
+  {
+    part_t lev = treeIndxToSepLev[i].first;
+    ////////////////////////////////////////////////////////////////////
+    // Leaf node of separator tree
+    ////////////////////////////////////////////////////////////////////
+    if(lev==-1)
+    {
+      std::set<lno_t> idSet;
+      getIdsOfPart(parts,treeIndxToSepLev[i].second,sepVerts,idSet);
+    
+      for(typename std::set<lno_t>::const_iterator setIter=idSet.begin(); setIter != idSet.end(); 
+          ++setIter)
+      {
+        ipermView[permIndx]=*setIter;
+        permIndx++;
+      }
+      sepRangeView[sepRangeIndx+1]=sepRangeView[sepRangeIndx]+idSet.size();
+      sepRangeIndx++; 
+      
+    }
+    ////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////
+    // Internal "separator node" of separator tree
+    ////////////////////////////////////////////////////////////////////
+    else
+    {
+      const std::set<lno_t> &idSet = sepVertsByLevel[lev][treeIndxToSepLev[i].second];
+
+      for(typename std::set<lno_t>::const_iterator setIter=idSet.begin(); 
+          setIter != idSet.end(); ++setIter)
+      {
+        ipermView[permIndx]=*setIter;
+        permIndx++;
+      }
+      sepRangeView[sepRangeIndx+1]=sepRangeView[sepRangeIndx]+idSet.size();
+      sepRangeIndx++; 
+
+    }
+    ////////////////////////////////////////////////////////////////////
+
+  }
+}
+//////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+template <typename Adapter>
+void AlgND<Adapter>::
+getIdsOfPart(const part_t *parts, part_t targetPart,const std::set<lno_t> &idsToExcl,
+	     std::set<lno_t> &outIds)
+{
+  size_t numVerts = mGraphModel->getLocalNumVertices();
+
+  for(size_t i=0; i<numVerts; i++)
+  {
+    if(parts[i]==targetPart && idsToExcl.find(i)==idsToExcl.end())
+    {
+      outIds.insert(i);
+    }
+  }
+
+}
+//////////////////////////////////////////////////////////////////////////////
 
 
 }   // namespace Zoltan2
