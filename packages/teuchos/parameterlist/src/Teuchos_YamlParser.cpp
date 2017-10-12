@@ -197,9 +197,11 @@ class Reader : public Teuchos::Reader {
   virtual void at_reduce(any& result_any, int prod, std::vector<any>& rhs) {
     using std::swap;
     switch (prod) {
-      case Teuchos::YAML::PROD_DOC: {
-        TEUCHOS_ASSERT(!rhs.at(1).empty());
-        swap(result_any, rhs.at(1));
+      case Teuchos::YAML::PROD_DOC:
+      case Teuchos::YAML::PROD_DOC2: {
+        std::size_t offset = prod == Teuchos::YAML::PROD_DOC2 ? 1 : 0;
+        TEUCHOS_ASSERT(!rhs.at(offset).empty());
+        swap(result_any, rhs.at(offset));
         TEUCHOS_ASSERT(result_any.type() == typeid(ParameterList));
         break;
       }
@@ -249,7 +251,7 @@ class Reader : public Teuchos::Reader {
         break;
       }
       case Teuchos::YAML::PROD_BMAP_BVALUE: {
-        map_item(result_any, rhs.at(0), rhs.at(5));
+        map_item(result_any, rhs.at(0), rhs.at(4));
         break;
       }
       case Teuchos::YAML::PROD_BVALUE_EMPTY: {
@@ -258,7 +260,7 @@ class Reader : public Teuchos::Reader {
       }
       case Teuchos::YAML::PROD_BVALUE_BMAP:
       case Teuchos::YAML::PROD_BVALUE_BSEQ: {
-        swap(result_any, rhs.at(2));
+        swap(result_any, rhs.at(1));
         break;
       }
       case Teuchos::YAML::PROD_BMAP_FMAP: {
@@ -296,11 +298,11 @@ class Reader : public Teuchos::Reader {
         throw ParserFail("Can't interpret a map inside a sequence as a Teuchos Parameter");
       }
       case Teuchos::YAML::PROD_BSEQ_BSEQ: {
-        swap(result_any, rhs.at(4));
+        swap(result_any, rhs.at(3));
         break;
       }
       case Teuchos::YAML::PROD_BSEQ_BSEQ_TRAIL: {
-        swap(result_any, rhs.at(5));
+        swap(result_any, rhs.at(4));
         break;
       }
       case Teuchos::YAML::PROD_BSEQ_FSEQ: {
