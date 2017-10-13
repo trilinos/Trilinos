@@ -196,7 +196,7 @@ TEUCHOS_UNIT_TEST(Distributor, ReverseDistributeToNonuniformMap)
   using Teuchos::outArg;
 
   typedef Tpetra::CrsMatrix<> matrix_type;
-  typedef typename matrix_type::scalar_type ST;
+  // typedef typename matrix_type::scalar_type ST; // unused
   typedef typename matrix_type::local_ordinal_type LO;
   typedef typename matrix_type::global_ordinal_type GO;
   typedef typename matrix_type::node_type NT;
@@ -315,8 +315,6 @@ TEUCHOS_UNIT_TEST(Distributor, ReverseDistributeToNonuniformMap)
   }
 
   TEST_EQUALITY_CONST(gblSuccess, 1);
-
-  return;
 }
 
 } // namespace (anonymous)
