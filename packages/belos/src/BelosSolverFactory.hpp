@@ -729,13 +729,15 @@ supportedSolverNames () const
   Teuchos::Array<std::string> names;
 
   // First, check the overriding factories.
-  for (std::size_t k = 0; k < factories_.size (); ++k) {
-    Teuchos::RCP<custom_solver_factory_type> factory = factories_[k];
+  const std::size_t numFactories = factories_.size ();
+  for (std::size_t factInd = 0; factInd < numFactories; ++factInd) {
+    Teuchos::RCP<custom_solver_factory_type> factory = factories_[factInd];
     if (! factory.is_null ()) {
       std::vector<std::string> supportedSolvers =
         factory->supportedSolverNames ();
-      for (std::size_t k = 0; k < supportedSolvers.size (); ++k) {
-        names.push_back (supportedSolvers[k]);
+      const std::size_t numSolvers = supportedSolvers.size ();
+      for (std::size_t solvInd = 0; solvInd < numSolvers; ++solvInd) {
+        names.push_back (supportedSolvers[solvInd]);
       }
     }
   }
@@ -762,9 +764,10 @@ SolverFactoryParent<Scalar, MV, OP>::
 isSupported (const std::string& solverName) const
 {
   // First, check the overriding factories.
-  for (std::size_t k = 0; k < factories_.size (); ++k) {
+  const std::size_t numFactories = factories_.size ();
+  for (std::size_t factInd = 0; factInd < numFactories; ++factInd) {
     using Teuchos::RCP;
-    RCP<custom_solver_factory_type> factory = factories_[k];
+    RCP<custom_solver_factory_type> factory = factories_[factInd];
     if (! factory.is_null ()) {
       if (factory->isSupported (solverName)) {
         return true;
