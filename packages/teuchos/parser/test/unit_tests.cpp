@@ -475,7 +475,7 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader_Arrays ) {
 
 TEUCHOS_UNIT_TEST( Parser, yaml_plasma ) {
   ReaderTablesPtr tables = YAML::ask_reader_tables();
-  DebugReader reader(tables, std::cerr);
+  Reader reader(tables);
   any result;
   reader.read_file(result, "plasma_oscillation_rtc.xml.yaml");
 }
