@@ -94,6 +94,9 @@ class NOXSolver
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model; 
 
   bool writeOnlyConvergedSol;
+
+  bool exitUponFailedNOXSolve; 
+
 };
 
 }

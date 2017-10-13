@@ -88,6 +88,8 @@ NOXSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
 
   std::string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
 
+  exitUponFailedNOXSolve = appParams->get("Exit on Failed NOX Solve", false); 
+
   if (jacobianSource == "Matrix-Free") {
     if (appParams->isParameter("Matrix-Free Perturbation")) {
       model = Teuchos::rcp(new Piro::MatrixFreeDecorator<Scalar>(model_,
@@ -127,10 +129,12 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
 
 //  MPerego: I think it is better not to throw an error when the solver does not converge. 
 //  One can look at the solver status to check whether the solution is converged.
-//    TEUCHOS_TEST_FOR_EXCEPTION(
-//        solve_status.solveStatus != ::Thyra::SOLVE_STATUS_CONVERGED,
-//        std::runtime_error,
-//       "Nonlinear solver failed to converge");
+    if (exitUponFailedNOXSolve == true) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          solve_status.solveStatus != ::Thyra::SOLVE_STATUS_CONVERGED,
+          std::runtime_error,
+         "Nonlinear solver failed to converge");
+    }
   }
 
   // Retrieve final solution to evaluate underlying model
