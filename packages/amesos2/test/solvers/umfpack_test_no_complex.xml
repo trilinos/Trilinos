@@ -1,0 +1,57 @@
+<ParameterList name="test_params">
+  <!-- Any of the test driver's command-line parameters may also be specified here -->
+  <ParameterList name="arc130.mtx">
+    <!-- Optional parameter, used for debugging and for deciding whether to use epetra -->
+    <Parameter name="complex" type="bool" value="false"/>
+    <ParameterList name="Umfpack">
+
+      <!-- Test Epetra objects first -->
+      <ParameterList name="epetra">
+	<!-- A non-list entry for epetra denotes a default run, name, type, and value are arbitrary -->
+	<Parameter name="defaultrun" type="bool" value="true"/>
+      </ParameterList>
+
+      <!-- Next test Tpetra objects -->
+      <ParameterList name="tpetra">
+	<!-- these `run*' sublist names are arbitrary -->
+	<ParameterList name="run0">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	</ParameterList>
+	  <!-- The `Node' parameter is not yet supported -->
+	<ParameterList name="run1">
+	  <Parameter name="Scalar" type="string" value="float"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	</ParameterList>
+	<ParameterList name="run2">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	</ParameterList>
+	<ParameterList name="run3">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="long int"/>
+	</ParameterList>
+	<ParameterList name="run4 - transpose">
+	  <Parameter name="Scalar" type="string" value="double"/>
+	  <Parameter name="LocalOrdinal" type="string" value="int"/>
+	  <Parameter name="GlobalOrdinal" type="string" value="int"/>
+	  <ParameterList name="amesos2_params">
+	    <Parameter name="Transpose" type="bool" value="true"/>
+	  </ParameterList>
+	</ParameterList>
+      </ParameterList>
+      <ParameterList name="solver_params">
+      </ParameterList>
+    </ParameterList> <!-- end Umfpack -->
+    <ParameterList name="all_solver_params">
+      <Parameter name="Transpose" type="bool" value="false"/>
+    </ParameterList>
+  </ParameterList> <!-- end arc130.mtx -->
+
+  <!-- currently identical to umfpack_test.xml except we removed the complex here -->
+  <!-- this is used only for old umfpack versions not supporting the complex re-im as a single array -->
+</ParameterList>
