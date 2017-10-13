@@ -71,7 +71,8 @@ void convertXmlToYaml(std::istream& xmlStream, std::ostream& yamlStream);
 //Class modeled after Teuchos::XMLParameterListReader
 namespace YAMLParameterList
 {
-  Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const std::string& text);
+  Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const std::string& text,
+      const std::string& name);
   Teuchos::RCP<Teuchos::ParameterList> parseYamlFile(const std::string& yamlFile);
   Teuchos::RCP<Teuchos::ParameterList> parseYamlStream(std::istream& yaml);
   void writeYamlStream(std::ostream& yamlFile, const Teuchos::ParameterList& pl);

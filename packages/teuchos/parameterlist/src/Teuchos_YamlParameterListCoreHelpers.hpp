@@ -103,7 +103,8 @@ TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT
 void updateParametersFromYamlString(
   const std::string &yamlStr,
   const Ptr<ParameterList> &paramList, 
-  bool overwrite
+  bool overwrite,
+  const std::string& name = ""
   );
 
 TEUCHOSPARAMETERLIST_LIB_DLL_EXPORT 
