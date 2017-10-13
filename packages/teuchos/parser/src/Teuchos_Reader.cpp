@@ -70,6 +70,9 @@ void Reader::at_token(std::istream& stream) {
       ss << "Parser was in state " << parser_state << '\n';
       throw ParserFail(ss.str());
     } else if (parser_action.kind == ACTION_SHIFT) {
+      if (sensing_indent) {
+        symbol_indentation_stack.push_back(indent_text.size());
+      }
       Teuchos::any shift_result;
       this->at_shift(shift_result, lexer_token, lexer_text);
       add_back(value_stack, shift_result);
@@ -97,6 +100,15 @@ void Reader::at_token(std::istream& stream) {
         throw ParserFail(ss.str());
       }
       add_back(value_stack, reduce_result);
+      if (sensing_indent) {
+        if (size(prod.rhs)) {
+          resize(symbol_indentation_stack,
+              (size(symbol_indentation_stack) + 1)
+              - size(prod.rhs));
+        } else {
+          symbol_indentation_stack.push_back(symbol_indentation_stack.back());
+        }
+      }
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "SERIOUS BUG: Action::kind enum value not in range\n");
@@ -326,6 +338,7 @@ void DebugReader::at_shift(any& result, int token, std::string& text) {
     }
   }
   os << "SHIFT (" << at(grammar->symbol_names, token) << ")[" << text_escaped << "]\n";
+  os << "symbol_indentation_stack.back() " << symbol_indentation_stack.back() << '\n';
 }
 
 void DebugReader::at_reduce(any& result, int prod_i, std::vector<any>& rhs) {
@@ -340,6 +353,7 @@ void DebugReader::at_reduce(any& result, int prod_i, std::vector<any>& rhs) {
   }
   const std::string& lhs_name = at(grammar->symbol_names, prod.lhs);
   os << " -> (" << lhs_name << ")[" << lhs_text << "]\n";
+  os << "symbol_indentation_stack.back() " << symbol_indentation_stack.back() << '\n';
 }
 
 }  // namespace Teuchos

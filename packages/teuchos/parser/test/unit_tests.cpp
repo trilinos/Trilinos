@@ -473,6 +473,13 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader_Arrays ) {
       "Match1.yaml (inline)");
 }
 
+TEUCHOS_UNIT_TEST( Parser, yaml_plasma ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  DebugReader reader(tables, std::cerr);
+  any result;
+  reader.read_file(result, "plasma_oscillation_rtc.xml.yaml");
+}
+
 TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {
   LanguagePtr lang = MathExpr::ask_language();
   GrammarPtr grammar = make_grammar(*lang);

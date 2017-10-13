@@ -412,13 +412,18 @@ class Reader : public Teuchos::Reader {
         break;
       }
       case Teuchos::YAML::PROD_BSCALAR: {
+        std::size_t parent_indent_level =
+          this->symbol_indentation_stack.at(
+              this->symbol_indentation_stack.size() - 5);
         std::string& header = any_ref_cast<std::string>(rhs.at(0));
         std::string& leading_empties_or_comments =
           any_ref_cast<std::string>(rhs.at(2));
         std::string& rest = any_ref_cast<std::string>(rhs.at(4));
         std::string& content = make_any_ref<std::string>(result_any);
         std::string comment;
-        handle_block_scalar(header, leading_empties_or_comments, rest,
+        handle_block_scalar(
+            parent_indent_level,
+            header, leading_empties_or_comments, rest,
             content, comment);
         break;
       }
@@ -794,22 +799,25 @@ class Reader : public Teuchos::Reader {
     }
   }
   void handle_block_scalar(
+      std::size_t parent_indent_level,
       std::string const& header,
       std::string const& leading_empties_or_comments,
       std::string const& rest,
       std::string& content,
       std::string& comment) {
+    std::cerr << "\nheader:\n" << header << '\n';
+    std::cerr << "leading_empties_or_comments:\n" << leading_empties_or_comments << '\n';
+    std::cerr << "rest:\n" << rest << '\n';
     char style;
     char chomping_indicator;
-  //int indentation_indicator = -1;
+    std::size_t indentation_indicator = 0;
     style = header[0];
     std::stringstream ss(header.substr(1,std::string::npos));
     if (header.size() > 1 && std::isdigit(header[1])) {
-      throw Teuchos::ParserFail("Teuchos YAML PL reader doesn't correctly "
-          "interpret indentation indicators\n");
-      // the indicator is *relative to parent indentation*... how do we get the
-      // parent's indentation??
-    //ss >> indentation_indicator;
+      ss >> indentation_indicator;
+      std::cerr << "indentation_indicator: " << indentation_indicator << '\n';
+      std::cerr << "parent_indent_level: " << parent_indent_level << '\n';
+      indentation_indicator += parent_indent_level;
     }
     if (!(ss >> chomping_indicator)) chomping_indicator = '\0';
     std::size_t first_newline = leading_empties_or_comments.find_first_of("\r\n");
@@ -819,26 +827,24 @@ class Reader : public Teuchos::Reader {
     } else {
       newline = "\n";
     }
-    comment = leading_empties_or_comments.substr(1, first_newline);
+    std::size_t keep_beg = first_newline + 1 - newline.size();
+    if (leading_empties_or_comments[0] == '#') {
+      comment = leading_empties_or_comments.substr(1, keep_beg);
+    }
     // according to the YAML spec, a tab is content, not indentation
     std::size_t content_beg = leading_empties_or_comments.find_first_not_of("\r\n ");
     if (content_beg == std::string::npos) content_beg = leading_empties_or_comments.size();
     std::size_t newline_before_content = leading_empties_or_comments.rfind("\n", content_beg);
     std::size_t num_indent_spaces = (content_beg - newline_before_content) - 1;
-  //TEUCHOS_TEST_FOR_EXCEPTION(int(num_indent_spaces) < indentation_indicator,
-  //    Teuchos::ParserFail,
-  //    "Indentation indicator " << indentation_indicator << " > leading spaces " << num_indent_spaces);
-  //if (indentation_indicator >= 0) num_indent_spaces = std::size_t(indentation_indicator);
-    content.clear();
-    if (style == '|') {
-      // prepend a leading content newline for every leading empty YAML line
-      for (std::size_t i = first_newline + 1; i < content_beg; ++i) {
-        if (leading_empties_or_comments[i] == '\n') content += newline;
-      }
+    if (indentation_indicator > 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION(num_indent_spaces < indentation_indicator,
+          Teuchos::ParserFail,
+          "Indentation indicator " << indentation_indicator << " > leading spaces " << num_indent_spaces);
+      num_indent_spaces = indentation_indicator;
     }
-    std::size_t unindent_pos = content.size();
-    content += leading_empties_or_comments.substr(content_beg, std::string::npos);
+    content = leading_empties_or_comments.substr(keep_beg, std::string::npos);
     content += rest;
+    std::size_t unindent_pos = 0;
     while (true) {
       std::size_t next_newline = content.find_first_of("\n", unindent_pos);
       if (next_newline == std::string::npos) break;
@@ -856,6 +862,10 @@ class Reader : public Teuchos::Reader {
     if (chomping_indicator != '+') {
       content = remove_trailing_whitespace_and_newlines(content);
       if (chomping_indicator != '-') content += newline;
+    }
+    if (style == '|') {
+      // if not already, remove the leading newline
+      content = content.substr(newline.size(), std::string::npos);
     }
   }
 };
@@ -1187,7 +1197,11 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
       // if the content has leading spaces, automatic indentation
       // detection would fail, in which case we must emit
       // an indentation indicator
-      if (str[0] == ' ') yaml << "2";
+      std::size_t first_non_newline_pos = str.find_first_not_of("\r\n");
+      if (first_non_newline_pos != std::string::npos &&
+          str[first_non_newline_pos] == ' ') {
+        yaml << "2";
+      }
       if (str[str.size() - 1] != '\n') yaml << "-";
       yaml << "\n";
       //for each line, apply indent then print the line verbatim
