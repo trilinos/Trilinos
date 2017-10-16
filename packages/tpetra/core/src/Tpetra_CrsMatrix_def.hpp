@@ -6717,8 +6717,25 @@ namespace Tpetra {
     typedef typename View<int*, device_type>::HostMirror::execution_space HES;
 
     if (numBytes == 0) {
-      // Rows with zero bytes always have zero entries.
+      // Rows with zero bytes should always have zero entries.
+      if (numEnt != 0) {
+        const int myRank = this->getMap ()->getComm ()->getRank ();
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::logic_error, "(Proc " << myRank << ") CrsMatrix::"
+           "unpackRow: The number of bytes to unpack numBytes=0, but the "
+           "number of entries to unpack (as reported by numPacketsPerLID) "
+           "for this row numEnt=" << numEnt << " != 0.");
+      }
       return 0;
+    }
+
+    if (numEnt == 0 && numBytes != 0) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "(Proc " << myRank << ") CrsMatrix::"
+         "unpackRow: The number of entries to unpack (as reported by "
+         "numPacketsPerLID) numEnt=0, but the number of bytes to unpack "
+         "numBytes=" << numBytes << " != 0.");
     }
 
     const GO gid = 0; // packValueCount wants this
@@ -6739,10 +6756,31 @@ namespace Tpetra {
     int errorCode = 0;
     LO numEntOut;
     numBytesOut += PackTraits<LO, HES>::unpackValue (numEntOut, numEntIn);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
-       "unpackRow: Expected number of entries " << numEnt
-       << " != actual number of entries " << numEntOut << ".");
+    if (static_cast<size_t> (numEntOut) != numEnt ||
+        numEntOut == static_cast<LO> (0)) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "(Proc " << myRank << ") CrsMatrix::unpackRow: ";
+      bool firstErrorCondition = false;
+      if (static_cast<size_t> (numEntOut) != numEnt) {
+        os << "Number of entries from numPacketsPerLID numEnt=" << numEnt
+           << " does not equal number of entries unpacked from imports "
+          "buffer numEntOut=" << numEntOut << ".";
+        firstErrorCondition = true;
+      }
+      if (numEntOut == static_cast<LO> (0)) {
+        if (firstErrorCondition) {
+          os << "  Also, ";
+        }
+        os << "Number of entries unpacked from imports buffer numEntOut=0, "
+          "but number of bytes to unpack for this row numBytes=" << numBytes
+           << " != 0.  This should never happen, since packRow should only "
+          "ever pack rows with a nonzero number of entries.  In this case, "
+          "the number of entries from numPacketsPerLID is numEnt=" << numEnt
+           << ".";
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, os.str ());
+    }
 
     {
       Kokkos::pair<int, size_t> p;
