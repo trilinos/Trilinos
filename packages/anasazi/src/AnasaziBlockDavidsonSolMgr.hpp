@@ -61,17 +61,12 @@
 #include "AnasaziStatusTestWithOrdering.hpp"
 #include "AnasaziStatusTestCombo.hpp"
 #include "AnasaziStatusTestOutput.hpp"
-#include "AnasaziBasicOutputManager.hpp"
+#include "AnasaziOutputManager.hpp"
+#include "AnasaziOutputStreamTraits.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#ifdef TEUCHOS_DEBUG
-#  include <Teuchos_FancyOStream.hpp>
-#endif
-#ifdef HAVE_MPI
-#include <mpi.h>
-#endif
-
+#include "Teuchos_FancyOStream.hpp"
 
 
 /** \example BlockDavidson/BlockDavidsonEpetraEx.cpp
@@ -143,18 +138,21 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
    * to a parameter list of options for the solver manager. These options include the following:
    *   - Solver parameters
    *      - \c "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "SR"
-   *      - \c "Block Size" - a \c int specifying the block size to be used by the underlying block Davidson solver. Default: problem->getNEV()
-   *      - \c "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 2
-   *      - \c "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
+   *      - \c "Block Size" - an \c int specifying the block size to be used by the underlying block Davidson solver. Default: problem->getNEV()
+   *      - \c "Num Blocks" - an \c int specifying the number of blocks allocated for the Krylov basis. Default: 2
+   *      - \c "Maximum Restarts" - an \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
    *      - \c "Verbosity" - a sum of MsgType specifying the verbosity. Default: ::Errors
+   *      - \c "Output Stream" - a reference-counted pointer to the formatted output stream where all
+   *                             solver output is sent.  Default: Teuchos::getFancyOStream ( Teuchos::rcpFromRef (std::cout) )
+   *      - \c "Output Processor" - an \c int specifying the MPI processor that will print solver/timer details.  Default: 0
    *   - Convergence parameters (if using default convergence test; see setGlobalStatusTest())
    *      - \c "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
    *      - \c "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
    *      - \c "Convergence Norm" - a \c string specifying the norm for convergence testing: "2" or "M" 
    *   - Locking parameters (if using default locking test; see setLockingStatusTest())
    *      - \c "Use Locking" - a \c bool specifying whether the algorithm should employ locking of converged eigenpairs. Default: false
-   *      - \c "Max Locked" - a \c int specifying the maximum number of eigenpairs to be locked. Default: problem->getNEV()
-   *      - \c "Locking Quorum" - a \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
+   *      - \c "Max Locked" - an \c int specifying the maximum number of eigenpairs to be locked. Default: problem->getNEV()
+   *      - \c "Locking Quorum" - an \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
    *      - \c "Locking Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide locking. Default: 0.1*convergence tolerance
    *      - \c "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
    *      - \c "Locking Norm" - a \c string specifying the norm for locking testing: "2" or "M" 
@@ -260,7 +258,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > lockingTest_; 
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > debugTest_;
   
-  Teuchos::RCP<BasicOutputManager<ScalarType> > printer_;
+  Teuchos::RCP<OutputManager<ScalarType> > printer_;
 };
 
 
@@ -393,49 +391,23 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
     }
   }
 
+  // Output manager
+  // Create a formatted output stream to print to.
+  // See if user requests output processor.
+  int osProc = pl.get("Output Processor", 0);
+
+  // If not passed in by user, it will be chosen based upon operator type.
+  Teuchos::RCP<Teuchos::FancyOStream> osp;
+
   // output stream
-  std::string fntemplate = "";
-  bool allProcs = false;
-  if (pl.isParameter("Output on all processors")) {
-    if (Teuchos::isParameterType<bool>(pl,"Output on all processors")) {
-      allProcs = pl.get("Output on all processors",allProcs);
-    } else {
-      allProcs = ( Teuchos::getParameter<int>(pl,"Output on all processors") != 0 );
-    }
-  }
-  fntemplate = pl.get("Output filename template",fntemplate);
-  int MyPID;
-# ifdef HAVE_MPI
-    // Initialize MPI
-    int mpiStarted = 0;
-    MPI_Initialized(&mpiStarted);
-    if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
-    else MyPID=0;
-# else 
-    MyPID = 0;
-# endif
-  if (fntemplate != "") {
-    std::ostringstream MyPIDstr;
-    MyPIDstr << MyPID;
-    // replace %d in fntemplate with MyPID
-    int pos, start=0;
-    while ( (pos = fntemplate.find("%d",start)) != -1 ) {
-      fntemplate.replace(pos,2,MyPIDstr.str());
-      start = pos+2;
-    }
-  }
-  Teuchos::RCP<ostream> osp;
-  if (fntemplate != "") {
-    osp = Teuchos::rcp( new std::ofstream(fntemplate.c_str(),std::ios::out | std::ios::app) );
-    if (!*osp) {
-      osp = Teuchos::rcpFromRef(std::cout);
-      std::cout << "Anasazi::BlockDavidsonSolMgr::constructor(): Could not open file for write: " << fntemplate << std::endl;
-    }
+  if (pl.isParameter("Output Stream")) {
+    osp = Teuchos::getParameter<Teuchos::RCP<Teuchos::FancyOStream> >(pl,"Output Stream");
   }
   else {
-    osp = Teuchos::rcpFromRef(std::cout);
+    osp = OutputStreamTraits<OP>::getOutputStream (*problem_->getOperator(), osProc);
   }
-  // Output manager
+
+  // verbosity
   int verbosity = Anasazi::Errors;
   if (pl.isParameter("Verbosity")) {
     if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
@@ -444,14 +416,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
       verbosity = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
     }
   }
-  if (allProcs) {
-    // print on all procs
-    printer_ = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity,osp,MyPID) );
-  }
-  else {
-    // print only on proc 0
-    printer_ = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity,osp,0) );
-  }
+  printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity,osp) );
+
 }
 
 
