@@ -92,6 +92,7 @@ namespace TeuchosTests
   {
     TEST_THROW(Teuchos::getParametersFromYamlFile("IllegalKeyString.yaml");, Teuchos::ParserFail);
   }
+
   TEUCHOS_UNIT_TEST(YAML, Issue1801)
   {
     Teuchos::getParametersFromYamlString(
@@ -102,6 +103,7 @@ namespace TeuchosTests
         "...\n"
         );
   }
+
   TEUCHOS_UNIT_TEST(YAML, PR1805)
   {
     RCP<ParameterList> params = Teuchos::getParametersFromYamlString(
@@ -112,10 +114,8 @@ namespace TeuchosTests
         "\t\t\tElements: [     10,     10 ]\n"
         "...\n"
         );
-    ParameterList& mesh_pl = params->get<ParameterList>("Mesh");
-    ParameterList& inline_pl = mesh_pl.get<ParameterList>("Inline");
-    Teuchos::Array<int>& elems  = inline_pl.get<Teuchos::Array<int> >("Elements");
   }
+
   TEUCHOS_UNIT_TEST(YAML, IntAndDoubleArray)
   {
     int correctInts[5] = {2, 3, 5, 7, 11};
@@ -195,5 +195,28 @@ namespace TeuchosTests
     std::string yamlString2 = yamlOutStream2.str();
     TEST_EQUALITY(yamlString2, expectedYamlString);
   }
+
+  TEUCHOS_UNIT_TEST(YAML, Issue1815)
+  {
+    Teuchos::getParametersFromYamlString(
+      "Header:\n"
+      "  Output:\n"
+      "    File Name: electrostatic.exo\n"
+      "    Cell Average Quantities:\n"
+      "      eblock-0_0: ES_POTENTIAL, E0\n"
+      "      \n"
+      "  Particle Dump:\n"
+      "    File Name: beam_emit2.h5part\n");
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, Issue1807part2)
+  {
+    Teuchos::getParametersFromYamlString(
+      "Header:\n"
+      "  Particle Dump:\n"
+      "    File Name: beam_emit2.h5part\n"
+      "#   Stride Time: 5.0e-12\n");
+  }
+
 } //namespace TeuchosTests
 

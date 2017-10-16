@@ -235,7 +235,6 @@ TEUCHOS_UNIT_TEST( Parser, xml_reader ) {
   test_xml_reader("<P name=\"foo&quot;&#72;bar\"/>");
 }
 
-// TODO: use this function to test most languages
 static void test_reader(ReaderTablesPtr tables, std::string const& str, std::string const& name) {
   Reader reader(tables);
   any result;
@@ -472,6 +471,13 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader_Arrays ) {
       "  'aggregation: export visualization data': true\n"
       "...\n",
       "Match1.yaml (inline)");
+}
+
+TEUCHOS_UNIT_TEST( Parser, yaml_plasma ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  any result;
+  reader.read_file(result, "plasma_oscillation_rtc.xml.yaml");
 }
 
 TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {

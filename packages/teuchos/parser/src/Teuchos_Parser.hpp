@@ -25,7 +25,7 @@ struct Action {
 };
 
 #ifdef HAVE_TEUCHOSCORE_CXX11
-extern template class Table<Action>;
+extern template struct Table<Action>;
 #endif
 
 struct Parser {

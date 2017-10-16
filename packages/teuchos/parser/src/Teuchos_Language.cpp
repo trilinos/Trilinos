@@ -155,35 +155,35 @@ static void make_indent_info(IndentInfo& out, Language const& language) {
   out.newline_token = -1;
   for (int tok_i = 0; tok_i < size(language.tokens); ++tok_i) {
     const Language::Token& token = at(language.tokens, tok_i);
-    if (token.regex == "]INDENT[") {
+    if (token.name == "INDENT") {
       TEUCHOS_TEST_FOR_EXCEPTION(out.indent_token != -1, ParserFail,
-          "error: Language has two or more ]INDENT[ tokens\n");
+          "error: Language has two or more INDENT tokens\n");
       out.indent_token = tok_i;
       out.is_sensitive = true;
-    } else if (token.regex == "]DEDENT[") {
+    } else if (token.name == "DEDENT") {
       TEUCHOS_TEST_FOR_EXCEPTION(out.dedent_token != -1, ParserFail,
-          "error: Language has two or more ]DEDENT[ tokens\n");
+          "error: Language has two or more DEDENT tokens\n");
       out.dedent_token = tok_i;
-    } else if (token.regex == "]NEWLINE[") {
+    } else if (token.name == "NEWLINE") {
       TEUCHOS_TEST_FOR_EXCEPTION(out.newline_token != -1, ParserFail,
-          "error: Language has two or more ]NEWLINE[ tokens\n");
+          "error: Language has two or more NEWLINE tokens\n");
       out.newline_token = tok_i;
     }
   }
   TEUCHOS_TEST_FOR_EXCEPTION(out.is_sensitive && out.indent_token == -1,
       ParserFail,
-      "error: Indentation-sensitive language has no ]INDENT[ token\n");
+      "error: Indentation-sensitive language has no INDENT token\n");
   TEUCHOS_TEST_FOR_EXCEPTION(out.is_sensitive && out.dedent_token == -1,
       ParserFail,
-      "error: Indentation-sensitive language has no ]DEDENT[ token\n");
+      "error: Indentation-sensitive language has no DEDENT token\n");
   TEUCHOS_TEST_FOR_EXCEPTION(out.is_sensitive && out.newline_token == -1,
       ParserFail,
-      "error: Indentation-sensitive language has no ]NEWLINE[ token\n");
+      "error: Indentation-sensitive language has no NEWLINE token\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
       (out.indent_token < out.newline_token ||
        out.dedent_token < out.newline_token),
       ParserFail,
-      "error: ]NEWLINE[ needs to come before all other indent tokens\n");
+      "error: NEWLINE needs to come before all other indent tokens\n");
 }
 
 ReaderTablesPtr make_reader_tables(Language const& language) {

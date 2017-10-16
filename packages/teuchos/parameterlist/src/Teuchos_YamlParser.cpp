@@ -197,9 +197,11 @@ class Reader : public Teuchos::Reader {
   virtual void at_reduce(any& result_any, int prod, std::vector<any>& rhs) {
     using std::swap;
     switch (prod) {
-      case Teuchos::YAML::PROD_DOC: {
-        TEUCHOS_ASSERT(!rhs.at(1).empty());
-        swap(result_any, rhs.at(1));
+      case Teuchos::YAML::PROD_DOC:
+      case Teuchos::YAML::PROD_DOC2: {
+        std::size_t offset = prod == Teuchos::YAML::PROD_DOC2 ? 1 : 0;
+        TEUCHOS_ASSERT(!rhs.at(offset).empty());
+        swap(result_any, rhs.at(offset));
         TEUCHOS_ASSERT(result_any.type() == typeid(ParameterList));
         break;
       }
@@ -249,7 +251,7 @@ class Reader : public Teuchos::Reader {
         break;
       }
       case Teuchos::YAML::PROD_BMAP_BVALUE: {
-        map_item(result_any, rhs.at(0), rhs.at(5));
+        map_item(result_any, rhs.at(0), rhs.at(4));
         break;
       }
       case Teuchos::YAML::PROD_BVALUE_EMPTY: {
@@ -258,7 +260,7 @@ class Reader : public Teuchos::Reader {
       }
       case Teuchos::YAML::PROD_BVALUE_BMAP:
       case Teuchos::YAML::PROD_BVALUE_BSEQ: {
-        swap(result_any, rhs.at(2));
+        swap(result_any, rhs.at(1));
         break;
       }
       case Teuchos::YAML::PROD_BMAP_FMAP: {
@@ -296,11 +298,11 @@ class Reader : public Teuchos::Reader {
         throw ParserFail("Can't interpret a map inside a sequence as a Teuchos Parameter");
       }
       case Teuchos::YAML::PROD_BSEQ_BSEQ: {
-        swap(result_any, rhs.at(4));
+        swap(result_any, rhs.at(3));
         break;
       }
       case Teuchos::YAML::PROD_BSEQ_BSEQ_TRAIL: {
-        swap(result_any, rhs.at(5));
+        swap(result_any, rhs.at(4));
         break;
       }
       case Teuchos::YAML::PROD_BSEQ_FSEQ: {
@@ -410,33 +412,19 @@ class Reader : public Teuchos::Reader {
         break;
       }
       case Teuchos::YAML::PROD_BSCALAR: {
-        int trim = any_cast<int>(rhs.at(0)); 
-        std::string& leading_newline_token = any_ref_cast<std::string>(rhs.at(2));
-        std::string& str = any_ref_cast<std::string>(rhs.at(4));
-        std::string leading_indent = leading_newline_token;
-        std::string newline;
-        if (leading_indent[0] == '\r') newline = "\r\n";
-        else newline = "\n";
-        // leading_indent may start with multiple newlines
-        leading_indent = newline + leading_indent.substr(leading_indent.find_first_of(" \t"));
-        // add any extra newlines at the start of the block scalar:
-        str = leading_newline_token.substr(0, leading_newline_token.size() - leading_indent.size()) + str;
-        // unindent the entire block of text
-        std::size_t next_start = 0;
-        std::size_t next_found;
-        while ((next_found = str.find(leading_indent, next_start)) != std::string::npos) {
-          str = str.substr(0, next_found) + newline + str.substr(next_found + leading_indent.size());
-          next_start = next_found + newline.size();
-        }
-        // remove all trailing whitespace and newlines
-        str = remove_trailing_whitespace_and_newlines(str);
-        // normal trimming leaves the last newline, dash trimming removes it
-        // in our case, its already gone, so put it back
-        if (trim == TRIM_NORMAL) str += newline;
-        Scalar& scalar = make_any_ref<Scalar>(result_any);
-        swap(scalar.text, str);
-        scalar.source = Scalar::BLOCK;
-        scalar.tag_type = -1;
+        std::size_t parent_indent_level =
+          this->symbol_indentation_stack.at(
+              this->symbol_indentation_stack.size() - 5);
+        std::string& header = any_ref_cast<std::string>(rhs.at(0));
+        std::string& leading_empties_or_comments =
+          any_ref_cast<std::string>(rhs.at(2));
+        std::string& rest = any_ref_cast<std::string>(rhs.at(4));
+        std::string& content = make_any_ref<std::string>(result_any);
+        std::string comment;
+        handle_block_scalar(
+            parent_indent_level,
+            header, leading_empties_or_comments, rest,
+            content, comment);
         break;
       }
       case Teuchos::YAML::PROD_BSCALAR_FIRST: {
@@ -457,14 +445,16 @@ class Reader : public Teuchos::Reader {
         swap(result_any, rhs.at(1));
         break;
       }
-      case Teuchos::YAML::PROD_PIPE_NORMAL: {
-        int trim = TRIM_NORMAL;
-        result_any = trim;
-        break;
-      }
-      case Teuchos::YAML::PROD_PIPE_DASH: {
-        int trim = TRIM_DASH;
-        result_any = trim;
+      case Teuchos::YAML::PROD_BSCALAR_HEADER_LITERAL:
+      case Teuchos::YAML::PROD_BSCALAR_HEADER_FOLDED: {
+        std::string& result = make_any_ref<std::string>(result_any);
+        if (prod == Teuchos::YAML::PROD_BSCALAR_HEADER_LITERAL) {
+          result += "|";
+        } else {
+          result += ">";
+        }
+        std::string& rest = any_ref_cast<std::string>(rhs.at(1));
+        result += rest;
         break;
       }
       case Teuchos::YAML::PROD_DESCAPE: {
@@ -494,7 +484,8 @@ class Reader : public Teuchos::Reader {
       case Teuchos::YAML::PROD_SQUOTED_COMMON:
       case Teuchos::YAML::PROD_ANY_COMMON:
       case Teuchos::YAML::PROD_COMMON_SPACE:
-      case Teuchos::YAML::PROD_COMMON_OTHER: {
+      case Teuchos::YAML::PROD_COMMON_OTHER:
+      case Teuchos::YAML::PROD_BSCALAR_HEAD_OTHER: {
         swap(result_any, rhs.at(0));
         break;
       }
@@ -504,7 +495,8 @@ class Reader : public Teuchos::Reader {
       case Teuchos::YAML::PROD_ANY_NEXT:
       case Teuchos::YAML::PROD_SCALAR_TAIL_NEXT:
       case Teuchos::YAML::PROD_SPACE_STAR_NEXT:
-      case Teuchos::YAML::PROD_SPACE_PLUS_NEXT: {
+      case Teuchos::YAML::PROD_SPACE_PLUS_NEXT:
+      case Teuchos::YAML::PROD_BSCALAR_HEAD_NEXT: {
         TEUCHOS_TEST_FOR_EXCEPTION(rhs.at(0).empty(), ParserFail,
             "leading characters in " << prod << ": any was empty\n");
         swap(result_any, rhs.at(0));
@@ -518,7 +510,8 @@ class Reader : public Teuchos::Reader {
       case Teuchos::YAML::PROD_DESCAPE_EMPTY:
       case Teuchos::YAML::PROD_SESCAPE_EMPTY:
       case Teuchos::YAML::PROD_SCALAR_TAIL_EMPTY:
-      case Teuchos::YAML::PROD_SPACE_STAR_EMPTY: {
+      case Teuchos::YAML::PROD_SPACE_STAR_EMPTY:
+      case Teuchos::YAML::PROD_BSCALAR_HEAD_EMPTY: {
         result_any = std::string();
         break;
       }
@@ -550,7 +543,8 @@ class Reader : public Teuchos::Reader {
         break;
       }
       case Teuchos::YAML::PROD_SCALAR_TAIL_DASH:
-      case Teuchos::YAML::PROD_COMMON_DASH: {
+      case Teuchos::YAML::PROD_COMMON_DASH:
+      case Teuchos::YAML::PROD_BSCALAR_HEAD_DASH: {
         result_any = '-';
         break;
       }
@@ -574,16 +568,16 @@ class Reader : public Teuchos::Reader {
         result_any = '}';
         break;
       }
+      case Teuchos::YAML::PROD_COMMON_RANGLE: {
+        result_any = '>';
+        break;
+      }
       case Teuchos::YAML::PROD_COMMON_COMMA: {
         result_any = ',';
         break;
       }
       case Teuchos::YAML::PROD_COMMON_PERCENT: {
         result_any = '%';
-        break;
-      }
-      case Teuchos::YAML::PROD_COMMON_POUND: {
-        result_any = '#';
         break;
       }
       case Teuchos::YAML::PROD_COMMON_EXCL: {
@@ -804,6 +798,76 @@ class Reader : public Teuchos::Reader {
           "bug in YAMLParameterList::Reader: unexpected type for next sequence item");
     }
   }
+  void handle_block_scalar(
+      std::size_t parent_indent_level,
+      std::string const& header,
+      std::string const& leading_empties_or_comments,
+      std::string const& rest,
+      std::string& content,
+      std::string& comment) {
+    std::cerr << "\nheader:\n" << header << '\n';
+    std::cerr << "leading_empties_or_comments:\n" << leading_empties_or_comments << '\n';
+    std::cerr << "rest:\n" << rest << '\n';
+    char style;
+    char chomping_indicator;
+    std::size_t indentation_indicator = 0;
+    style = header[0];
+    std::stringstream ss(header.substr(1,std::string::npos));
+    if (header.size() > 1 && std::isdigit(header[1])) {
+      ss >> indentation_indicator;
+      std::cerr << "indentation_indicator: " << indentation_indicator << '\n';
+      std::cerr << "parent_indent_level: " << parent_indent_level << '\n';
+      indentation_indicator += parent_indent_level;
+    }
+    if (!(ss >> chomping_indicator)) chomping_indicator = '\0';
+    std::size_t first_newline = leading_empties_or_comments.find_first_of("\r\n");
+    std::string newline;
+    if (first_newline > 0 && leading_empties_or_comments[first_newline - 1] == '\r') {
+      newline = "\r\n";
+    } else {
+      newline = "\n";
+    }
+    std::size_t keep_beg = first_newline + 1 - newline.size();
+    if (leading_empties_or_comments[0] == '#') {
+      comment = leading_empties_or_comments.substr(1, keep_beg);
+    }
+    // according to the YAML spec, a tab is content, not indentation
+    std::size_t content_beg = leading_empties_or_comments.find_first_not_of("\r\n ");
+    if (content_beg == std::string::npos) content_beg = leading_empties_or_comments.size();
+    std::size_t newline_before_content = leading_empties_or_comments.rfind("\n", content_beg);
+    std::size_t num_indent_spaces = (content_beg - newline_before_content) - 1;
+    if (indentation_indicator > 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION(num_indent_spaces < indentation_indicator,
+          Teuchos::ParserFail,
+          "Indentation indicator " << indentation_indicator << " > leading spaces " << num_indent_spaces);
+      num_indent_spaces = indentation_indicator;
+    }
+    content = leading_empties_or_comments.substr(keep_beg, std::string::npos);
+    content += rest;
+    std::size_t unindent_pos = 0;
+    while (true) {
+      std::size_t next_newline = content.find_first_of("\n", unindent_pos);
+      if (next_newline == std::string::npos) break;
+      std::size_t start_cut = next_newline + 1;
+      if (style == '>') start_cut -= newline.size();
+      std::size_t end_cut = next_newline + 1;
+      // this scanning and min are needed for trailing lines that are less indented
+      while (end_cut < content.size() && content[end_cut] == ' ')
+        ++end_cut;
+      end_cut = std::min(end_cut, next_newline + 1 + num_indent_spaces);
+      content = content.substr(0, start_cut) +
+        content.substr(end_cut, std::string::npos);
+      unindent_pos = start_cut;
+    }
+    if (chomping_indicator != '+') {
+      content = remove_trailing_whitespace_and_newlines(content);
+      if (chomping_indicator != '-') content += newline;
+    }
+    if (style == '|') {
+      // if not already, remove the leading newline
+      content = content.substr(newline.size(), std::string::npos);
+    }
+  }
 };
 
 } // end namespace YAMLParameterList
@@ -823,7 +887,7 @@ void updateParametersFromYamlCString(const char* const data,
                                      const Teuchos::Ptr<Teuchos::ParameterList>& paramList,
                                      bool overwrite)
 {
-  Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(data);
+  Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(data, "CString");
   if(overwrite)
   {
     paramList->setParameters(*updated);
@@ -836,9 +900,10 @@ void updateParametersFromYamlCString(const char* const data,
 
 void updateParametersFromYamlString(const std::string& yamlData,
                                   const Teuchos::Ptr<Teuchos::ParameterList>& paramList,
-                                  bool overwrite)
+                                  bool overwrite,
+                                  const std::string& name)
 {
-  Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(yamlData);
+  Teuchos::RCP<Teuchos::ParameterList> updated = YAMLParameterList::parseYamlText(yamlData, name);
   if(overwrite)
   {
     paramList->setParameters(*updated);
@@ -913,11 +978,11 @@ void convertXmlToYaml(std::istream& xmlStream, std::ostream& yamlStream)
 namespace YAMLParameterList
 {
 
-Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const std::string& text)
+Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const std::string& text, const std::string& name)
 {
   Teuchos::YAMLParameterList::Reader reader;
   any result;
-  reader.read_string(result, text, "parseYamlText");
+  reader.read_string(result, text, name);
   ParameterList& pl = any_ref_cast<ParameterList>(result);
   return Teuchos::rcp(new ParameterList(pl));
 }
@@ -1128,8 +1193,17 @@ void writeParameter(const std::string& paramName, const Teuchos::ParameterEntry&
     std::string& str = Teuchos::getValue<std::string>(entry);
     if(strchr(str.c_str(), '\n'))
     {
-      //need explicit indentation so that indentation in the string is preserved
-      yaml << "|-\n";
+      yaml << "|";
+      // if the content has leading spaces, automatic indentation
+      // detection would fail, in which case we must emit
+      // an indentation indicator
+      std::size_t first_non_newline_pos = str.find_first_not_of("\r\n");
+      if (first_non_newline_pos != std::string::npos &&
+          str[first_non_newline_pos] == ' ') {
+        yaml << "2";
+      }
+      if (str[str.size() - 1] != '\n') yaml << "-";
+      yaml << "\n";
       //for each line, apply indent then print the line verbatim
       size_t index = 0;
       while(true)
@@ -1187,7 +1261,7 @@ void generalWriteDouble(double d, std::ostream& yaml)
 }
 
 static bool containsSpecialCharacters(std::string const& s) {
-  char const* const control_chars = ":'.{}[],&*#?|-<>=!%@\\";
+  char const* const control_chars = ":'{}[],&*#?|<>=!%@\\";
   return s.find_first_of(control_chars) != std::string::npos;
 }
 
