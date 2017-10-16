@@ -44,6 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Util.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
 #include <algorithm>
 #include <type_traits>
@@ -250,6 +251,7 @@ namespace { // (anonymous)
   Teuchos::RCP<const MapType>
   buildDomainMap (Teuchos::FancyOStream& out,
                   bool& success,
+                  const bool verbose,
                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   {
     using Teuchos::RCP;
@@ -273,11 +275,13 @@ namespace { // (anonymous)
       RCP<const map_type> domainMap (new map_type (gblNumInds_domain,
                                                    lclNumInds_domain,
                                                    indexBase, comm));
-      if (myRank == 0) {
-        out << "Domain Map:" << std::endl;
+      if (verbose) {
+        if (myRank == 0) {
+          out << "Domain Map:" << std::endl;
+        }
+        Teuchos::OSTab tab1 (out);
+        printMap (out, *domainMap);
       }
-      Teuchos::OSTab tab1 (out);
-      printMap (out, *domainMap);
       return domainMap;
     }
   }
@@ -286,6 +290,7 @@ namespace { // (anonymous)
   Teuchos::RCP<const MapType>
   buildRangeMap (Teuchos::FancyOStream& out,
                  bool& success,
+                 const bool verbose,
                  const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   {
     using Teuchos::RCP;
@@ -309,11 +314,13 @@ namespace { // (anonymous)
       RCP<const map_type> rangeMap (new map_type (gblNumInds_range,
                                                   lclNumInds_range,
                                                   indexBase, comm));
-      if (myRank == 0) {
-        out << "Range Map:" << std::endl;
+      if (verbose) {
+        if (myRank == 0) {
+          out << "Range Map:" << std::endl;
+        }
+        Teuchos::OSTab tab1 (out);
+        printMap (out, *rangeMap);
       }
-      Teuchos::OSTab tab1 (out);
-      printMap (out, *rangeMap);
       return rangeMap;
     }
   }
@@ -322,6 +329,7 @@ namespace { // (anonymous)
   Teuchos::RCP<const MapType>
   buildOverlappingRowMap (Teuchos::FancyOStream& out,
                           bool& success,
+                          const bool verbose,
                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   {
     using Teuchos::RCP;
@@ -351,11 +359,13 @@ namespace { // (anonymous)
       RCP<const map_type> rowMap (new map_type (INVALID, rowMapInds.data (),
                                                 lclNumRowMapInds,
                                                 indexBase, comm));
-      if (myRank == 0) {
-        out << "Overlapping row Map:" << std::endl;
+      if (verbose) {
+        if (myRank == 0) {
+          out << "Overlapping row Map:" << std::endl;
+        }
+        Teuchos::OSTab tab1 (out);
+        printMap (out, *rowMap);
       }
-      Teuchos::OSTab tab1 (out);
-      printMap (out, *rowMap);
       return rowMap;
     }
   }
@@ -403,10 +413,88 @@ namespace { // (anonymous)
     }
   }
 
+  template<class CrsGraphType>
+  void
+  insertIntoOverlappingCrsGraph (CrsGraphType& G)
+  {
+    typedef typename CrsGraphType::local_ordinal_type LO;
+    typedef typename CrsGraphType::global_ordinal_type GO;
+
+    const int myRank = G.getMap ()->getComm ()->getRank ();
+    if (myRank == 0) {
+      const GO gblRow = 0;
+      constexpr LO numEnt = 5;
+      const GO inds[numEnt] = {0, 1, 3, 4, 5};
+      G.insertGlobalIndices (gblRow, numEnt, inds);
+    }
+    else if (myRank == 1) {
+      const GO gblRow = 0;
+      constexpr LO numEnt = 4;
+      const GO inds[numEnt] = {1, 2, 3, 5};
+      G.insertGlobalIndices (gblRow, numEnt, inds);
+    }
+    else if (myRank == 2) {
+      const GO gblRow = 1;
+      constexpr LO numEnt = 5;
+      const GO inds[numEnt] = {3, 4, 6, 7, 8};
+      G.insertGlobalIndices (gblRow, numEnt, inds);
+    }
+    else if (myRank == 3) {
+      const GO gblRow = 1;
+      constexpr LO numEnt = 5;
+      const GO inds[numEnt] = {4, 5, 6, 8, 9};
+      G.insertGlobalIndices (gblRow, numEnt, inds);
+    }
+  }
+
+  template<class CrsMatrixType>
+  void
+  fillIntoOverlappingCrsMatrix (CrsMatrixType& A)
+  {
+    typedef typename CrsMatrixType::scalar_type ST;
+    typedef typename CrsMatrixType::local_ordinal_type LO;
+    typedef typename CrsMatrixType::global_ordinal_type GO;
+    //typedef typename CrsMatrixType::map_type map_type;
+    static_assert (std::is_same<ST, double>::value,
+                   "CrsMatrixType::scalar_type must be double "
+                   "in order for this test to work.");
+
+    const int myRank = A.getMap ()->getComm ()->getRank ();
+    if (myRank == 0) {
+      const GO gblRow = 0;
+      constexpr LO numEnt = 5;
+      const GO inds[numEnt] = {0, 1, 3, 4, 5};
+      const ST vals[numEnt] = {0.0, 1.0, 3.0, 4.0, 5.0};
+      (void) A.replaceGlobalValues (gblRow, numEnt, vals, inds);
+    }
+    else if (myRank == 1) {
+      const GO gblRow = 0;
+      constexpr LO numEnt = 4;
+      const GO inds[numEnt] = {1, 2, 3, 5};
+      const ST vals[numEnt] = {1.0, 2.0, 3.0, 5.0};
+      (void) A.replaceGlobalValues (gblRow, numEnt, vals, inds);
+    }
+    else if (myRank == 2) {
+      const GO gblRow = 1;
+      constexpr LO numEnt = 5;
+      const GO inds[numEnt] = {3, 4, 6, 7, 8};
+      const ST vals[numEnt] = {3.0, 4.0, 6.0, 7.0, 8.0};
+      (void) A.replaceGlobalValues (gblRow, numEnt, vals, inds);
+    }
+    else if (myRank == 3) {
+      const GO gblRow = 1;
+      constexpr LO numEnt = 5;
+      const GO inds[numEnt] = {4, 5, 6, 8, 9};
+      const ST vals[numEnt] = {4.0, 5.0, 6.0, 8.0, 9.0};
+      (void) A.replaceGlobalValues (gblRow, numEnt, vals, inds);
+    }
+  }
+
   template<class CrsMatrixType>
   void
   testEntriesOfOverlappingCrsMatrix (Teuchos::FancyOStream& out,
                                      bool& success,
+                                     const bool /* verbose */,
                                      const CrsMatrixType& A)
   {
     using Teuchos::Comm;
@@ -562,24 +650,42 @@ namespace { // (anonymous)
   Teuchos::RCP<CrsMatrixType>
   buildOverlappingCrsMatrix (Teuchos::FancyOStream& out,
                              bool& success,
+                             const bool staticGraph,
+                             const bool verbose,
                              const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   {
     using Teuchos::RCP;
+    using Teuchos::rcp;
     //typedef Tpetra::global_size_t GST;
     //typedef typename CrsMatrixType::local_ordinal_type LO;
     //typedef typename CrsMatrixType::global_ordinal_type GO;
     typedef typename CrsMatrixType::map_type map_type;
 
-    RCP<const map_type> rangeMap = buildRangeMap<map_type> (out, success, comm);
-    RCP<const map_type> domainMap = buildDomainMap<map_type> (out, success, comm);
-    RCP<const map_type> rowMap = buildOverlappingRowMap<map_type> (out, success, comm);
+    RCP<const map_type> rangeMap = buildRangeMap<map_type> (out, success, verbose, comm);
+    RCP<const map_type> domainMap = buildDomainMap<map_type> (out, success, verbose, comm);
+    RCP<const map_type> rowMap = buildOverlappingRowMap<map_type> (out, success, verbose, comm);
 
-    RCP<CrsMatrixType> A (new CrsMatrixType (rowMap, 0));
-    insertIntoOverlappingCrsMatrix (*A);
+    RCP<CrsMatrixType> A;
+    if (! staticGraph) {
+      A = rcp (new CrsMatrixType (rowMap, 0));
+      insertIntoOverlappingCrsMatrix (*A);
+    }
+    else {
+      using Teuchos::rcp_const_cast;
+      typedef typename CrsMatrixType::crs_graph_type crs_graph_type;
+      RCP<crs_graph_type> G (new crs_graph_type (rowMap, 0));
+      insertIntoOverlappingCrsGraph (*G);
+      G->fillComplete (domainMap, rangeMap);
+      // typedef typename CrsMatrixType::device_type::execution_space execution_space;
+      // execution_space::fence ();
+      A = rcp (new CrsMatrixType (rcp_const_cast<const crs_graph_type> (G)));
+      fillIntoOverlappingCrsMatrix (*A);
+    }
     A->fillComplete (domainMap, rangeMap);
     // typedef typename CrsMatrixType::device_type::execution_space execution_space;
     // execution_space::fence ();
-    testEntriesOfOverlappingCrsMatrix (out, success, *A);
+    testEntriesOfOverlappingCrsMatrix (out, success, verbose, *A);
+
     return A;
   }
 
@@ -822,9 +928,26 @@ namespace { // (anonymous)
     typedef Tpetra::Export<typename map_type::local_ordinal_type,
       typename map_type::global_ordinal_type,
       typename map_type::node_type> export_type;
+    int lclSuccess = 1; // to be modified below
+    int gblSuccess = 0; // output argument
 
     RCP<const Comm<int> > comm = A_overlapping.getMap ()->getComm ();
     const int myRank = comm->getRank ();
+
+    Teuchos::OSTab tab0 (out);
+    out << "createAndExportAndTestCrsMatrix" << endl;
+    Teuchos::OSTab tab1 (out);
+
+    TEST_ASSERT( A_overlapping.isFillComplete () );
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY_CONST( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      if (myRank == 0) {
+        out << "Test FAILED on one or more processes; exiting early!" << endl;
+      }
+      return;
+    }
 
     RCP<const map_type> domMap = A_overlapping.getDomainMap ();
     RCP<const map_type> ranMap = A_overlapping.getRangeMap ();
@@ -837,12 +960,21 @@ namespace { // (anonymous)
       out << "Target matrix is {DynamicProfile, globally indexed}" << endl;
       Teuchos::OSTab tab2 (out);
 
+      out << "Create target matrix (A_nonoverlapping)" << endl;
       RCP<CrsMatrixType> A_nonoverlapping =
         rcp (new CrsMatrixType (rowMap_nonoverlapping, 0));
+
+      out << "Create Export object" << endl;
       export_type exp (A_overlapping.getRowMap (), rowMap_nonoverlapping);
+
+      out << "Export from source matrix to target matrix" << endl;
       A_nonoverlapping->doExport (A_overlapping, exp, Tpetra::ADD);
+
+      out << "Call fillComplete on the target matrix" << endl;
       A_nonoverlapping->fillComplete (domMap, ranMap);
       //execution_space::fence ();
+
+      out << "Test target matrix's column Map" << endl;
       const map_type* colMapPtr = A_nonoverlapping->getColMap ().getRawPtr ();
       const bool colMapsSame =
         testNonoverlappingColumnMapIsAsExpected (out, success, colMapPtr,
@@ -853,11 +985,12 @@ namespace { // (anonymous)
           "because looking at the actual matrix entries could help with "
           "debugging." << endl;
       }
+      out << "Test target matrix's entries" << endl;
       testEntriesOfNonoverlappingCrsMatrix (out, success,
                                             *A_nonoverlapping,
                                             *colMap_expected);
-      const int lclSuccess = success ? 1 : 0;
-      int gblSuccess = 0; // output argument
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0; // output argument
       reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
       TEST_EQUALITY_CONST( gblSuccess, 1 );
       if (gblSuccess != 1) {
@@ -866,13 +999,14 @@ namespace { // (anonymous)
         }
         return;
       }
+      out << "Target matrix is correct!" << endl;
     }
 
     using Tpetra::ProfileType;
     using Tpetra::DynamicProfile;
     using Tpetra::StaticProfile;
     for (ProfileType profileType : {DynamicProfile, StaticProfile}) {
-      out << "Target matrix is {";
+      out << ">>> Target matrix is {";
       if (profileType == Tpetra::DynamicProfile) {
         out << "DynamicProfile";
       }
@@ -914,7 +1048,7 @@ namespace { // (anonymous)
     }
 
     {
-      out << "Target matrix has a const CrsGraph, "
+      out << ">>> Target matrix has a const CrsGraph, "
         "and has been fill-completed once" << endl;
       Teuchos::OSTab tab2 (out);
 
@@ -983,33 +1117,66 @@ namespace { // (anonymous)
   void
   testCrsMatrixExport (Teuchos::FancyOStream& out,
                        bool& success,
+                       const bool verbose,
                        const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
   {
     using Teuchos::RCP;
     using Teuchos::outArg;
     using Teuchos::REDUCE_MIN;
     using Teuchos::reduceAll;
+    using std::endl;
     typedef CrsMatrixType crs_matrix_type;
     int lclSuccess = 1; // to be revised below
     int gblSuccess = 0; // output argument
 
+    const int myRank = comm->getRank ();
+    Teuchos::OSTab tab0 (out);
+    out << "testCrsMatrixExport" << endl;
+    Teuchos::OSTab tab1 (out);
 
-    RCP<crs_matrix_type> A_overlapping =
-      buildOverlappingCrsMatrix<crs_matrix_type> (out, success, comm);
-    lclSuccess = success ? 1 : 0;
-    gblSuccess = 0; // output argument
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY_CONST( gblSuccess, 1 );
-    if (gblSuccess != 1) {
-      out << "FAILED to build overlapping CrsMatrix correctly; returning from test early!" << std::endl;
-      return;
+    for (bool staticGraph : {true, false}) {
+      out << "Source matrix: staticGraph=" << (staticGraph ? "true" : "false")
+          << endl;
+      RCP<crs_matrix_type> A_overlapping =
+        buildOverlappingCrsMatrix<crs_matrix_type> (out, success,
+                                                    staticGraph,
+                                                    verbose,
+                                                    comm);
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0; // output argument
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      TEST_EQUALITY_CONST( gblSuccess, 1 );
+      if (gblSuccess != 1) {
+        out << "FAILED to build overlapping CrsMatrix correctly; "
+          "returning from test early!" << std::endl;
+        return;
+      }
+
+      TEST_ASSERT( A_overlapping->isFillComplete () );
+      TEST_EQUALITY( staticGraph, A_overlapping->isStaticGraph () );
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0; // output argument
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      TEST_EQUALITY_CONST( gblSuccess, 1 );
+      if (gblSuccess != 1) {
+        out << "FAILED to set up overlapping CrsMatrix correctly; "
+          "returning from test early!" << std::endl;
+        return;
+      }
+
+      createAndExportAndTestCrsMatrix (out, success, *A_overlapping);
+      lclSuccess = success ? 1 : 0;
+      gblSuccess = 0; // output argument
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+      TEST_EQUALITY_CONST( gblSuccess, 1 );
+      if (gblSuccess != 1) {
+        if (myRank == 0) {
+          out << "A_overlapping (source matrix of the Export) staticGraph="
+              << (staticGraph ? "true" : "false") << " case FAILED!" << endl;
+        }
+      }
     }
-    createAndExportAndTestCrsMatrix (out, success, *A_overlapping);
 
-    lclSuccess = success ? 1 : 0;
-    gblSuccess = 0; // output argument
-    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-    TEST_EQUALITY_CONST( gblSuccess, 1 );
   }
 
   //
@@ -1027,7 +1194,8 @@ namespace { // (anonymous)
     typedef Tpetra::CrsMatrix<double, LO, GO, Node> crs_matrix_type;
 
     RCP<const Comm<int> > comm = Tpetra::TestingUtilities::getDefaultComm ();
-    testCrsMatrixExport<crs_matrix_type> (out, success, comm);
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    testCrsMatrixExport<crs_matrix_type> (out, success, verbose, comm);
   }
 
   //
