@@ -53,6 +53,7 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
@@ -69,6 +70,7 @@
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
 #include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
+#include <sstream>
 #include <typeinfo>
 #include <vector>
 
@@ -6437,15 +6439,14 @@ namespace Tpetra {
     using Teuchos::outArg;
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "packAndPrepareNew: ";
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
     ProfilingRegion regionPAP ("Tpetra::CrsMatrix::packAndPrepareNew");
+
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
 
     // Processes on which the communicator is null should not participate.
     Teuchos::RCP<const Teuchos::Comm<int> > pComm = this->getComm ();
@@ -6453,6 +6454,20 @@ namespace Tpetra {
       return;
     }
     const Teuchos::Comm<int>& comm = *pComm;
+    const int myRank = comm.getSize ();
+
+    if (verbose) {
+      std::ostringstream os;
+      os << "(Proc " << myRank << ") "
+         << "Tpetra::CrsMatrix::packAndPrepareNew: " << endl
+         << "  exportLIDs.modified_host(): " << exportLIDs.modified_host () << endl
+         << "  exportLIDs.modified_device(): " << exportLIDs.modified_device () << endl
+         << "  exports.modified_host(): " << exports.modified_host () << endl
+         << "  exports.modified_device(): " << exports.modified_device () << endl
+         << "  numPacketsPerLID.modified_host(): " << numPacketsPerLID.modified_host () << endl
+         << "  numPacketsPerLID.modified_device(): " << numPacketsPerLID.modified_device () << endl;
+      std::cerr << os.str ();
+    }
 
     // Attempt to cast the source object to CrsMatrix.  If successful,
     // use the source object's packNew() method to pack its data for
@@ -6481,12 +6496,17 @@ namespace Tpetra {
     const crs_matrix_type* srcCrsMat =
       dynamic_cast<const crs_matrix_type*> (&source);
     if (srcCrsMat != NULL) {
+      if (verbose) {
+        std::ostringstream os;
+        os << "(Proc " << myRank << ") packAndPrepare: source matrix "
+          "same (CrsMatrix) type as target matrix; calling packNew" << endl;
+        std::cerr << os.str ();
+      }
       try {
         srcCrsMat->packNew (exportLIDs, exports, numPacketsPerLID,
                             constantNumPackets, distor);
       }
       catch (std::exception& e) {
-        const int myRank = comm.getRank ();
         lclBad = 1;
         msg << "Proc " << myRank << ": " << e.what () << std::endl;
       }
@@ -6497,6 +6517,13 @@ namespace Tpetra {
       using Kokkos::subview;
       typedef Kokkos::DualView<char*, buffer_device_type> exports_type;
       typedef Kokkos::pair<size_t, size_t> range_type;
+
+      if (verbose) {
+        std::ostringstream os;
+        os << "(Proc " << myRank << ") packAndPrepare: source matrix "
+          "NOT same (CrsMatrix) type as target matrix" << endl;
+        std::cerr << os.str ();
+      }
 
       typedef RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
       const row_matrix_type* srcRowMat =
@@ -6547,7 +6574,6 @@ namespace Tpetra {
                          constantNumPackets, distor);
       }
       catch (std::exception& e) {
-        const int myRank = comm.getRank ();
         lclBad = 1;
         msg << "Proc " << myRank << ": " << e.what () << std::endl;
       }
@@ -6591,6 +6617,19 @@ namespace Tpetra {
         (lclBad != 0, std::logic_error, "packNew threw an exception on one "
          "or more participating processes.  Here is this process' error "
          "message: " << msg.str ());
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << "(Proc " << myRank << ") "
+         << "packAndPrepareNew: Done!" << endl
+         << "  exportLIDs.modified_host(): " << exportLIDs.modified_host () << endl
+         << "  exportLIDs.modified_device(): " << exportLIDs.modified_device () << endl
+         << "  exports.modified_host(): " << exports.modified_host () << endl
+         << "  exports.modified_device(): " << exports.modified_device () << endl
+         << "  numPacketsPerLID.modified_host(): " << numPacketsPerLID.modified_host () << endl
+         << "  numPacketsPerLID.modified_device(): " << numPacketsPerLID.modified_device () << endl;
+      std::cerr << os.str ();
     }
   }
 
@@ -7070,23 +7109,59 @@ namespace Tpetra {
                        const CombineMode combineMode)
   {
     using Tpetra::Details::ProfilingRegion;
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
+    using std::endl;
+    const char tfecfFuncName[] = "unpackAndCombineNew: ";
     ProfilingRegion regionUAC ("Tpetra::CrsMatrix::unpackAndCombineNew");
 
-    if (combineMode == ZERO) {
-      return; // nothing to do
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    constexpr int numValidModes = 5;
+    const CombineMode validModes[numValidModes] =
+      {ADD, REPLACE, ABSMAX, INSERT, ZERO};
+    const char* validModeNames[numValidModes] =
+      {"ADD", "REPLACE", "ABSMAX", "INSERT", "ZERO"};
+
+    int myRank = 0;
+    if (verbose) {
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+
+      std::string combineModeStr;
+      switch (combineMode) {
+      case ADD:
+        combineModeStr = "ADD";
+      case REPLACE:
+        combineModeStr = "REPLACE";
+      case ABSMAX:
+        combineModeStr = "ABSMAX";
+      case INSERT:
+        combineModeStr = "INSERT";
+      case ZERO:
+        combineModeStr = "ZERO";
+      default:
+        combineModeStr = "INVALID";
+      }
+
+      std::ostringstream os;
+      os << "(Proc " << myRank << ") "
+         << "Tpetra::CrsMatrix::unpackAndCombineNew: " << endl
+         << "  importLIDs.modified_host(): " << importLIDs.modified_host () << endl
+         << "  importLIDs.modified_device(): " << importLIDs.modified_device () << endl
+         << "  imports.modified_host(): " << imports.modified_host () << endl
+         << "  imports.modified_device(): " << imports.modified_device () << endl
+         << "  numPacketsPerLID.modified_host(): " << numPacketsPerLID.modified_host () << endl
+         << "  numPacketsPerLID.modified_device(): " << numPacketsPerLID.modified_device () << endl
+         << "  constantNumPackets: " << constantNumPackets << endl
+         << "  combineMode: " << combineModeStr << endl;
+      std::cerr << os.str ();
     }
 
     if (debug) {
-      const char tfecfFuncName[] = "unpackAndCombineNew: ";
-      const CombineMode validModes[4] = {ADD, REPLACE, ABSMAX, INSERT};
-      const char* validModeNames[4] = {"ADD", "REPLACE", "ABSMAX", "INSERT"};
-      const int numValidModes = 4;
-
       if (std::find (validModes, validModes+numValidModes, combineMode) ==
           validModes+numValidModes) {
         std::ostringstream os;
@@ -7101,7 +7176,13 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (true, std::invalid_argument, os.str ());
       }
+    }
 
+    if (combineMode == ZERO) {
+      return; // nothing to do
+    }
+
+    if (debug) {
       using Teuchos::reduceAll;
       std::unique_ptr<std::ostringstream> msg (new std::ostringstream ());
       int lclBad = 0;
