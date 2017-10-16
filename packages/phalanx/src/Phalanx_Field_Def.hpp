@@ -51,6 +51,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Kokkos_DynRankView_Fad.hpp" // for copy/assignment specializations
+#include "Phalanx_FieldTag_Tag.hpp"
 
 // **********************************************************************
 #ifdef PHX_DEBUG
@@ -66,31 +67,37 @@ const std::string PHX::Field<DataT,Rank>::m_field_data_error_msg =
 // **********************************************************************
 template<typename DataT,int Rank>
 PHX::Field<DataT,Rank>::
-Field(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
-  m_tag(name,t)
+Field(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl)
 #ifdef PHX_DEBUG
-  , m_tag_set(true),
-  m_data_set(false)
+  : m_data_set(false)
+#endif
+{
+  m_tag = Teuchos::rcp(new PHX::Tag<DataT>(name,dl));
+}
+
+// **********************************************************************
+template<typename DataT,int Rank>
+PHX::Field<DataT,Rank>::Field(const PHX::FieldTag& t) :
+  m_tag(t.clone())
+#ifdef PHX_DEBUG
+  , m_data_set(false)
 #endif
 { }
 
 // **********************************************************************
 template<typename DataT,int Rank>
-PHX::Field<DataT,Rank>::Field(const PHX::Tag<DataT>& v) :
-  m_tag(v)
+PHX::Field<DataT,Rank>::Field(const Teuchos::RCP<const PHX::FieldTag>& t) :
+  m_tag(t)
 #ifdef PHX_DEBUG
-  ,m_tag_set(true),
-  m_data_set(false)
+  , m_data_set(false)
 #endif
 { }
 
 // **********************************************************************
 template<typename DataT,int Rank>
-PHX::Field<DataT,Rank>::Field() :
-  m_tag("???", Teuchos::null)
+PHX::Field<DataT,Rank>::Field()
 #ifdef PHX_DEBUG
-  ,m_tag_set(false),
-  m_data_set(false)
+  : m_data_set(false)
 #endif
 { }
 
@@ -101,8 +108,7 @@ PHX::Field<DataT,Rank>::Field(const Field<CopyDataT,Rank>& source) :
   m_tag(source.m_tag),
   m_field_data(source.m_field_data)
 #ifdef PHX_DEBUG
-  ,m_tag_set(source.m_tag_set),
-  m_data_set(source.m_data_set)
+  ,m_data_set(source.m_data_set)
 #endif
 {
   static_assert(std::is_same<typename std::decay<DataT>::type, typename std::decay<CopyDataT>::type>::value,
@@ -120,7 +126,18 @@ const PHX::FieldTag&
 PHX::Field<DataT,Rank>::fieldTag() const
 {
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
+#endif
+  return *m_tag;
+}
+
+// **********************************************************************
+template<typename DataT,int Rank>
+Teuchos::RCP<const PHX::FieldTag>
+PHX::Field<DataT,Rank>::fieldTagPtr() const
+{
+#if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
 #endif
   return m_tag;
 }
@@ -134,7 +151,6 @@ PHX::Field<DataT,Rank>::operator=(const Field<CopyDataT,Rank>& source)
   m_tag = source.m_tag;
   m_field_data = source.m_field_data;
 #ifdef PHX_DEBUG
-  m_tag_set = source.m_tag_set;
   m_data_set = source.m_data_set;
 #endif
   static_assert(std::is_same<typename std::decay<DataT>::type, typename std::decay<CopyDataT>::type>::value,
@@ -177,12 +193,17 @@ PHX::Field<DataT,Rank>::size() const
 
 // **********************************************************************
 template<typename DataT,int Rank>
-void PHX::Field<DataT,Rank>::setFieldTag(const PHX::Tag<DataT>& v)
+void PHX::Field<DataT,Rank>::setFieldTag(const PHX::FieldTag& t)
 {
-#ifdef PHX_DEBUG
-  m_tag_set = true;
-#endif
-  m_tag = v;
+  m_tag = t.clone();
+}
+
+// **********************************************************************
+template<typename DataT,int Rank>
+void PHX::Field<DataT,Rank>::
+setFieldTag(const Teuchos::RCP<const PHX::FieldTag>& t)
+{
+  m_tag = t;
 }
 
 // **********************************************************************
@@ -190,7 +211,7 @@ template<typename DataT,int Rank>
 void PHX::Field<DataT,Rank>::setFieldData(const PHX::any& a)
 {
 #if defined( PHX_DEBUG) && !defined (__CUDA_ARCH__ )
-  TEUCHOS_TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  TEUCHOS_TEST_FOR_EXCEPTION(m_tag.is_null(), std::logic_error, m_field_tag_error_msg);
   m_data_set = true;
 #endif
 
@@ -224,7 +245,8 @@ void PHX::Field<DataT,Rank>::print(std::ostream& os, bool printValues) const
   }
   os << "): ";
 
-  os << m_tag;
+  if (nonnull(m_tag))
+    os << *m_tag;
 
   if (printValues)
     os << "Error - Field no longer supports the \"printValues\" member of the MDField::print() method. Values may be on a device that does not support printing (e.g. GPU).  Please disconstinue the use of this call!" << std::endl;
