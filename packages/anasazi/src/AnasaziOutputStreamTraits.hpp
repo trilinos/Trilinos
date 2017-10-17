@@ -39,74 +39,46 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ANASAZI_BASIC_OUTPUT_MANAGER_HPP
-#define ANASAZI_BASIC_OUTPUT_MANAGER_HPP
+#ifndef ANASAZI_OUTPUT_STREAM_TRAITS_HPP
+#define ANASAZI_OUTPUT_STREAM_TRAITS_HPP
 
-/*!     \file AnasaziBasicOutputManager.hpp
-        \brief Basic output manager for sending information of select verbosity levels to the appropriate output stream
+/*!     \file AnasaziOutputStreamTraits.hpp
+        \brief Abstract class definition for Anasazi output stream.
 */
 
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziOutputManager.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "AnasaziTypes.hpp"
+
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_RCP.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
-/*!  \class Anasazi::BasicOutputManager
+/*!  \class Anasazi::OutputStreamTraits
 
-  \brief Anasazi's basic output manager for sending information of select verbosity levels
-  to the appropriate output stream.
+  \brief Output managers remove the need for the eigensolver to know any information
+  about the required output.  However, a formatted output stream is needed to control
+  the output during parallel computations.
 
-  \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
+  \author Mark Hoemmen and Heidi Thornquist
 */
 
 namespace Anasazi {
 
-  template <class ScalarType>
-  class BasicOutputManager : public OutputManager<ScalarType> {
+template<class OperatorType>
+struct OutputStreamTraits {
 
-    public:
-
-      //! @name Constructors/Destructor
-      //@{ 
-
-      //! Default constructor
-      BasicOutputManager(int vb = Anasazi::Errors, int rootRank = 0);
-
-      //! Constructor with specified verbosity and formatted output stream
-      BasicOutputManager(int vb,
-                         const Teuchos::RCP<Teuchos::FancyOStream>& fos)
-      : OutputManager<ScalarType>(vb, fos)
-      {};
-
-      //! Destructor.
-      virtual ~BasicOutputManager() {};
-      //@}
-
-
-    private:
-
-      //! @name Undefined methods
-      //@{ 
-
-      //! Copy constructor.
-      BasicOutputManager( const OutputManager<ScalarType>& OM );
-
-      //! Assignment operator.
-      BasicOutputManager<ScalarType>& operator=( const OutputManager<ScalarType>& OM );
-
-      //@}
-  };
-
-  template<class ScalarType>
-  BasicOutputManager<ScalarType>::BasicOutputManager(int vb, int rootRank)
-  : OutputManager<ScalarType>(vb)
+  // The input argument, op, is presumed to be a valid object that can be queried to
+  // determine the correct output stream.
+  static Teuchos::RCP<Teuchos::FancyOStream>
+  getOutputStream (const OperatorType& op, int rootRank = 0)
   {
+    Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+
 #ifdef HAVE_MPI
-    // The OutputManger constructor will create fos_ that outputs to std::cout
-    // This class will query MPI to print on processor 0, if parallel.
+    // The default implementation will output on processor 0, if parallel.
     int myRank = 0;
     int numProcs = 1;
     // Initialize MPI
@@ -117,13 +89,17 @@ namespace Anasazi {
       MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
       MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
     }
-    this->fos_->setProcRankAndSize(myRank, numProcs);
-    this->fos_->setOutputToRootOnly(rootRank);
+    fos->setProcRankAndSize(myRank, numProcs);
+    fos->setOutputToRootOnly(rootRank);
 #endif
+
+    return fos;
   }
+};
+
 
 } // end Anasazi namespace
 
 #endif
 
-// end of file AnasaziOutputManager.hpp
+// end of file AnasaziOutputStreamTraits.hpp

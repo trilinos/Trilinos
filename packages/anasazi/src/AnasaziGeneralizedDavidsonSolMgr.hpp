@@ -56,7 +56,8 @@
 #include "AnasaziBasicOrthoManager.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziICGSOrthoManager.hpp"
-#include "AnasaziBasicOutputManager.hpp"
+#include "AnasaziOutputManager.hpp"
+#include "AnasaziOutputStreamTraits.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziGeneralizedDavidson.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
@@ -110,6 +111,9 @@ class GeneralizedDavidsonSolMgr : public SolverManager<ScalarType,MV,OP>
          * - "Orthogonalization" -- a string specifying the desired orthogonalization: DGKS, SVQB, ICGS.
          *   Default: "SVQB"
          * - "Verbosity" -- a sum of MsgType specifying the verbosity.  Default: AnasaziErrors
+         * - "Output Stream" - a reference-counted pointer to the formatted output stream where all
+         *          solver output is sent.  Default: Teuchos::getFancyOStream ( Teuchos::rcpFromRef (std::cout) )
+         * - "Output Processor" - an int specifying the MPI processor that will print solver/timer details.  Default: 0
          * - "Convergence Tolerance" -- a MagnitudeType specifying the level that residual norms must
          *  reach to decide convergence.  Default: machine precision
          * - "Relative Convergence Tolerance" -- a bool specifying whether residual norms should be
@@ -291,9 +295,32 @@ GeneralizedDavidsonSolMgr<ScalarType,MV,OP>::GeneralizedDavidsonSolMgr(
     d_tester = Teuchos::rcp( new StatusTestWithOrdering<ScalarType,MV,OP>(resNormTest,d_sortMan,d_problem->getNEV()) );
 
     // Build output manager
-    int verbosity = pl.get<int>("Verbosity",Errors);
-    d_outputMan = Teuchos::rcp( new BasicOutputManager<ScalarType>() );
-    d_outputMan->setVerbosity( verbosity );
+
+    // Create a formatted output stream to print to.
+    // See if user requests output processor.
+    int osProc = pl.get("Output Processor", 0);
+    
+    // If not passed in by user, it will be chosen based upon operator type.
+    Teuchos::RCP<Teuchos::FancyOStream> osp; 
+
+    if (pl.isParameter("Output Stream")) {
+      osp = Teuchos::getParameter<Teuchos::RCP<Teuchos::FancyOStream> >(pl,"Output Stream");
+    }
+    else {
+      osp = OutputStreamTraits<OP>::getOutputStream (*d_problem->getOperator(), osProc);
+    }
+
+    // verbosity
+    int verbosity = Anasazi::Errors;
+    if (pl.isParameter("Verbosity")) {
+      if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
+        verbosity = pl.get("Verbosity", verbosity);
+      } else {
+        verbosity = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
+      }
+    }
+
+    d_outputMan = Teuchos::rcp( new OutputManager<ScalarType>(verbosity,osp) );
 
     // Build solver
     d_outputMan->stream(Debug) << " >> Anasazi::GeneralizedDavidsonSolMgr: Building solver" << std::endl;

@@ -49,6 +49,10 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_oblackholestream.hpp"
+
 /*!  \class Anasazi::OutputManager
 
   \brief Output managers remove the need for the eigensolver to know any information
@@ -69,7 +73,13 @@ class OutputManager {
   //@{ 
 
   //! Default constructor
-  OutputManager( int vb = Anasazi::Errors ) : vb_(vb) {};
+  OutputManager( int vb = Anasazi::Errors,
+                 const Teuchos::RCP<Teuchos::FancyOStream> &fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout)) )
+   : vb_(vb),
+     fos_(fos)
+  {
+    bh_fos_ = Teuchos::getFancyOStream(Teuchos::rcpFromRef( myBHS_ ));
+  };
 
   //! Destructor.
   virtual ~OutputManager() {};
@@ -84,6 +94,12 @@ class OutputManager {
   //! Get the message output types for this manager.
   virtual int getVerbosity( ) const { return vb_; }
 
+  //! Set the formatted output stream object for this manager.
+  virtual void setFancyOStream( const Teuchos::RCP<Teuchos::FancyOStream>& fos ) { fos_ = fos; }
+  
+  //! Get the formatted output stream object for this manager.
+  virtual const Teuchos::RCP<Teuchos::FancyOStream>& getFancyOStream( ) const { return fos_; }
+
   //@}
 
   //! @name Output methods
@@ -93,13 +109,13 @@ class OutputManager {
   /*! This method is used by the solver to determine whether computations are
       necessary for this message type.
   */
-  virtual bool isVerbosity( MsgType type ) const = 0;
+  virtual bool isVerbosity( MsgType type ) const;
 
   //! Send output to the output manager.
-  virtual void print( MsgType type, const std::string output ) = 0;
+  virtual void print( MsgType type, const std::string output );
 
   //! Create a stream for outputting to.
-  virtual std::ostream &stream( MsgType type ) = 0;
+  virtual Teuchos::FancyOStream &stream( MsgType type );
 
   //@}
 
@@ -118,7 +134,35 @@ class OutputManager {
 
   protected:
   int vb_;
+  Teuchos::RCP<Teuchos::FancyOStream> fos_, bh_fos_;
+  Teuchos::oblackholestream myBHS_;
 };
+
+template<class ScalarType>
+bool OutputManager<ScalarType>::isVerbosity( MsgType type ) const 
+{
+  if ( (type & vb_) == type ) {
+    return true;
+  }
+  return false;
+}
+
+template<class ScalarType>
+void OutputManager<ScalarType>::print( MsgType type, const std::string output ) 
+{
+  if ( (type & vb_) == type ) {
+    *fos_ << output;
+  }
+}
+
+template<class ScalarType>
+Teuchos::FancyOStream & OutputManager<ScalarType>::stream( MsgType type ) {
+  if ( (type & vb_) == type ) 
+  {
+    return *fos_;
+  }
+  return *bh_fos_;
+}
 
 } // end Anasazi namespace
 

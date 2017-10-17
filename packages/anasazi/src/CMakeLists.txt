@@ -79,6 +79,7 @@ APPEND_SET(HEADERS
   AnasaziOperatorTraits.hpp
   AnasaziOrthoManager.hpp
   AnasaziOutputManager.hpp
+  AnasaziOutputStreamTraits.hpp
   AnasaziRTRBase.hpp
   AnasaziRTRSolMgr.hpp
   AnasaziSaddleContainer.hpp
