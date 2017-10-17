@@ -157,8 +157,12 @@ preEvaluate(typename TRAITS::PreEvalData d)
 template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Hessian, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
-{ 
-  Kokkos::View<const int*, PHX::Device> cLIDs, rLIDs;
+{
+  using Kokkos::View;
+  using PHX::Device;
+  using std::vector;
+
+  Kokkos::View<const int*, PHX::Device> initial_cLIDs, rLIDs;
    std::vector<double> jacRow;
 
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
@@ -183,11 +187,16 @@ evaluateFields(typename TRAITS::EvalData workset)
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
       rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
-      cLIDs = colGlobalIndexer->getElementLIDs(cellLocalId);
+      initial_cLIDs = colGlobalIndexer->getElementLIDs(cellLocalId);
+      vector<int> cLIDs;
+      for (int i(0); i < static_cast<int>(initial_cLIDs.extent(0)); ++i)
+        cLIDs.push_back(initial_cLIDs(i));
       if (Teuchos::nonnull(workset.other)) {
         const std::size_t other_cellLocalId = workset.other->cell_local_ids[worksetCellIndex];
-        const std::vector<int> other_cLIDs = colGlobalIndexer->getElementLIDs(other_cellLocalId);
-        cLIDs.insert(cLIDs.end(), other_cLIDs.begin(), other_cLIDs.end());
+        View<const int*, Device> other_cLIDs =
+          colGlobalIndexer->getElementLIDs(other_cellLocalId);
+        for (int i(0); i < static_cast<int>(other_cLIDs.extent(0)); ++i)
+          cLIDs.push_back(other_cLIDs(i));
       }
 
       // loop over each field to be scattered
