@@ -32,6 +32,7 @@
 
 #include "TachoExp_CholSupernodes.hpp"
 #include "TachoExp_CholSupernodes_Serial.hpp"
+#include "TachoExp_CholSupernodes_SerialPanel.hpp"
 
 #include "TachoExp_TaskFunctor_FactorizeChol.hpp"
 #include "TachoExp_TaskFunctor_FactorizeCholByBlocks.hpp"
@@ -377,33 +378,15 @@ namespace Tacho {
                                const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
         {
-          memory_pool_type_host bufpool;
-          timer.reset();
-          {
-            const size_t
-              max_block_size = _m*sizeof(ordinal_type);
-            
-            typedef typename host_exec_space::memory_space memory_space;
-            bufpool = memory_pool_type_host(memory_space(),
-                                            max_block_size,
-                                            max_block_size,
-                                            max_block_size,
-                                            max_block_size);
-            
-            track_alloc(bufpool.capacity());
-          }
-          stat.t_extra = timer.seconds();
-          
           timer.reset();
           {
             /// matrix values
             _ax = ax;
             
             /// copy the input matrix into super panels
-            _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, bufpool);
+            _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
           }
           stat.t_copy = timer.seconds();
-          track_free(bufpool.capacity());
         }
 
         timer.reset();
@@ -425,6 +408,50 @@ namespace Tacho {
         if (verbose) {
           printf("Summary: NumericTools (SerialFactorization)\n");
           printf("===========================================\n");
+
+          print_stat_factor();
+        }
+      }
+
+      inline
+      void
+      factorizeCholesky_SerialPanel(const value_type_array_host &ax,
+                                    const ordinal_type panelsize,
+                                    const ordinal_type verbose = 0) {
+        Kokkos::Impl::Timer timer;
+        {
+          timer.reset();
+          {
+            /// matrix values
+            _ax = ax;
+            
+            /// copy the input matrix into super panels
+            _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
+          }
+          stat.t_copy = timer.seconds();
+        }
+
+        timer.reset();
+        {
+          value_type_array_host buf("buf", _info.max_schur_size*(panelsize + 1));
+          const size_t bufsize = buf.span()*sizeof(value_type);
+          track_alloc(bufsize);
+          
+          /// recursive tree traversal
+          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.dimension_0();
+          for (ordinal_type i=0;i<nroots;++i)
+            CholSupernodes<Algo::Workflow::SerialPanel>
+              ::factorize_recursive_serial(sched, member, 
+                                           _info, _stree_roots(i), 
+                                           true, buf.data(), bufsize, panelsize);
+          
+          track_free(bufsize);
+        }
+        stat.t_factor = timer.seconds();
+        
+        if (verbose) {
+          printf("Summary: NumericTools (SerialPanelFactorization)\n");
+          printf("================================================\n");
 
           print_stat_factor();
         }
@@ -568,7 +595,7 @@ namespace Tacho {
           _ax = ax;
           
           /// copy the input matrix into super panels
-          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, bufpool);
+          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
         }
         stat.t_copy = timer.seconds();
 
@@ -789,7 +816,7 @@ namespace Tacho {
           _ax = ax;
           
           /// copy the input matrix into super panels
-          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, bufpool);
+          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
         }
         stat.t_copy += timer.seconds();
 

@@ -251,7 +251,8 @@ namespace Tacho {
 
         const ordinal_type nthreads = device_exec_space::thread_pool_size(0);
         if (nthreads == 1) {
-          _N.factorizeCholesky_Serial(ax, _verbose);
+          _N.factorizeCholesky_SerialPanel(ax, 256, _verbose);
+          //_N.factorizeCholesky_Serial(ax, _verbose);
         } else {
           if (_mb < 0) {
             const ordinal_type max_dense_size = max(_N.getMaxSupernodeSize(),_N.getMaxSchurSize());

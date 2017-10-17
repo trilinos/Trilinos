@@ -584,7 +584,8 @@ namespace Tacho {
       struct ByBlocks { enum : int { tag = 1003 }; };
 
       struct Workflow {
-        struct Serial { enum : int { tag = 2001 }; };
+        struct Serial      { enum : int { tag = 2001 }; };
+        struct SerialPanel { enum : int { tag = 2002 }; };
       };
     };
 
