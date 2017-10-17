@@ -147,7 +147,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 {
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
-   std::vector<LO> LIDs;
+   Kokkos::View<const LO*, PHX::Device> LIDs;
 
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
@@ -271,7 +271,7 @@ template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
 evaluateFields(typename TRAITS::EvalData workset)
 {
-   std::vector<LO> LIDs;
+  Kokkos::View<const LO*, PHX::Device> LIDs;
 
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
@@ -458,7 +458,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
 #if 0
    std::vector<GO> GIDs;
-   std::vector<LO> cLIDs, rLIDs;
+   Kokkos::View<const LO*, PHX::Device> cLIDs, rLIDs;
    std::vector<double> jacRow;
 
    // for convenience pull out some objects from workset

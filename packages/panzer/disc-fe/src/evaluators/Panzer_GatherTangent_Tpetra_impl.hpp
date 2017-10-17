@@ -153,7 +153,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
-  std::vector<LO> LIDs;
+  Kokkos::View<const LO*, PHX::Device> LIDs;
 
   // for convenience pull out some objects from workset
   std::string blockId = this->wda(workset).block_id;

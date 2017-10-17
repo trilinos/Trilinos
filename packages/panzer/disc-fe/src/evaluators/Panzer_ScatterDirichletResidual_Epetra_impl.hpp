@@ -178,7 +178,7 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-   std::vector<int> LIDs;
+  Kokkos::View<const int*, PHX::Device> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
@@ -382,7 +382,7 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-   std::vector<int> LIDs;
+  Kokkos::View<const int*, PHX::Device> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
@@ -592,7 +592,7 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-   std::vector<int> cLIDs, rLIDs;
+  Kokkos::View<const int*, PHX::Device> cLIDs, rLIDs;
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
  
    // for convenience pull out some objects from workset

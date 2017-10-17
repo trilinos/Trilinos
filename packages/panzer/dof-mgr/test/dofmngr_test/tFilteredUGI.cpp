@@ -138,8 +138,8 @@ TEUCHOS_UNIT_TEST(tFilteredUGI,equivalence_test)
 
    // check the LIDs
    {
-     const std::vector<int> & lids = dofManager->getElementLIDs(0);
-     const std::vector<int> & lids_f = filtered_ugi.getElementLIDs(0);
+     Kokkos::View<const int*, PHX::Device> lids = dofManager->getElementLIDs(0);
+     Kokkos::View<const int*, PHX::Device> lids_f = filtered_ugi.getElementLIDs(0);
 
      TEST_EQUALITY(lids.size(),lids_f.size());
      for(std::size_t i=0;i<lids.size();i++) {
