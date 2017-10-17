@@ -52,12 +52,50 @@
 
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #ifdef KOKKOS_HAVE_CUDA
 // mfh 03 Aug 2017: See #1088 and #1571.
 #  include "Tpetra_Details_Environment.hpp"
 #endif // KOKKOS_HAVE_CUDA
 
+
 namespace Tpetra {
+
+  namespace { // (anonymous)
+
+    template<class DualViewType>
+    std::string dualViewStatusToString (const DualViewType& dv, const char name[])
+    {
+      const auto host = dv.modified_host ();
+      const auto dev = dv.modified_host ();
+
+      std::ostringstream os;
+      os << name << ": {size: " << dv.dimension_0 ()
+         << ", sync: {host: " << host << ", dev: " << dev << "}";
+      return os.str ();
+    }
+
+    std::string combineModeToString (const ::Tpetra::CombineMode combineMode)
+    {
+      std::string combineModeStr;
+      switch (combineMode) {
+      case ADD:
+        combineModeStr = "ADD";
+      case REPLACE:
+        combineModeStr = "REPLACE";
+      case ABSMAX:
+        combineModeStr = "ABSMAX";
+      case INSERT:
+        combineModeStr = "INSERT";
+      case ZERO:
+        combineModeStr = "ZERO";
+      default:
+        combineModeStr = "INVALID";
+      }
+      return combineModeStr;
+    }
+
+  } // namespace (anonymous)
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
@@ -434,10 +472,17 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef device_type DT;
 
-    // mfh 03 Aug 2017: Set this to true for copious debug output to
-    // std::cerr on every MPI process.  This is unwise for runs with
-    // large numbers of MPI processes.
-    constexpr bool debug = false;
+    // mfh 03 Aug 2017, 17 Oct 2017: Set TPETRA_VERBOSE to true for
+    // copious debug output to std::cerr on every MPI process.  This
+    // is unwise for runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "(Proc " << myRank << ") Tpetra::DistObject::doTransfer: ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+    }
 
     if (this->useNewInterface ()) {
 #ifdef KOKKOS_HAVE_CUDA
@@ -475,20 +520,18 @@ namespace Tpetra {
                                               "exportLIDs",
                                               commOnHost);
 
-      if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
+      if (verbose) {
         std::ostringstream os;
-        os << "Proc " << myRank << ": about to call doTransferNew" << std::endl;
+        os << *prefix << "Calling doTransferNew" << std::endl;
         std::cerr << os.str ();
       }
       doTransferNew (src, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
                      remoteLIDs, exportLIDs, distor, revOp, commOnHost);
     }
     else {
-      if (debug) {
-        const int myRank = this->getMap ()->getComm ()->getRank ();
+      if (verbose) {
         std::ostringstream os;
-        os << "Proc " << myRank << ": about to call doTransferOld" << std::endl;
+        os << *prefix << "Calling doTransferOld" << std::endl;
         std::cerr << os.str ();
       }
       doTransferOld (src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_,
@@ -499,22 +542,22 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   bool
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  reallocImportsIfNeeded (const size_t newSize, const bool debug)
+  reallocImportsIfNeeded (const size_t newSize, const bool verbose)
   {
-    if (debug) {
+    if (verbose) {
       const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": Reallocate (if needed) imports_ from "
+      os << "(Proc " << myRank << ") Reallocate (if needed) imports_ from "
          << imports_.dimension_0 () << " to " << newSize << std::endl;
       std::cerr << os.str ();
     }
     using Details::reallocDualViewIfNeeded;
     const bool reallocated =
       reallocDualViewIfNeeded (this->imports_, newSize, "imports");
-    if (debug) {
+    if (verbose) {
       const int myRank = this->getMap ()->getComm ()->getRank ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": Finished reallocating imports_"
+      os << "(Proc " << myRank << ") Finished reallocating imports_"
          << std::endl;
       std::cerr << os.str ();
     }
@@ -528,12 +571,27 @@ namespace Tpetra {
                                     const size_t numImportLIDs)
   {
     using Details::reallocDualViewIfNeeded;
-
+    using std::endl;
     // If an array is already allocated, and if is at least
     // tooBigFactor times bigger than it needs to be, free it and
     // reallocate to the size we need, in order to save space.
     // Otherwise, take subviews to reduce allocation size.
     constexpr size_t tooBigFactor = 10;
+
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    if (verbose) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "(Proc " << myRank << ") reallocArraysForNumPacketsPerLid before:"
+         << endl
+         << "(Proc " << myRank << ")   "
+         << dualViewStatusToString (this->numExportPacketsPerLID_, "numExportPacketsPerLID_")
+         << endl
+         << "(Proc " << myRank << ")   "
+         << dualViewStatusToString (this->numImportPacketsPerLID_, "numImportPacketsPerLID_")
+         << endl;
+      std::cerr << os.str ();
+    }
 
     // Reallocate numExportPacketsPerLID_ if needed.
     const bool firstReallocated =
@@ -550,9 +608,24 @@ namespace Tpetra {
     const bool secondReallocated =
       reallocDualViewIfNeeded (this->numImportPacketsPerLID_,
                                numImportLIDs,
-                               "numExportPacketsPerLID",
+                               "numImportPacketsPerLID",
                                tooBigFactor,
                                needFenceBeforeNextAlloc);
+
+    if (verbose) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "(Proc " << myRank << ") reallocArraysForNumPacketsPerLid before:"
+         << endl
+         << "(Proc " << myRank << ")   "
+         << dualViewStatusToString (this->numExportPacketsPerLID_, "numExportPacketsPerLID_")
+         << endl
+         << "(Proc " << myRank << ")   "
+         << dualViewStatusToString (this->numImportPacketsPerLID_, "numImportPacketsPerLID_")
+         << endl;
+      std::cerr << os.str ();
+    }
+
     return firstReallocated || secondReallocated;
   }
 
@@ -955,6 +1028,7 @@ namespace Tpetra {
     using Kokkos::Compat::getConstArrayView;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::Compat::create_const_view;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef device_type DT;
 
@@ -972,15 +1046,37 @@ namespace Tpetra {
     typedef typename Kokkos::DualView<size_t*,
       buffer_device_type>::t_host::memory_space CHMS;
 
-    // mfh 03 Aug 2017: Set this to true for copious debug output to
-    // std::cerr on every MPI process.  This is unwise for runs with
-    // large numbers of MPI processes.
-    constexpr bool debug = false;
-
-    if (debug) {
+    // mfh 03 Aug 2017, 17 Oct 2017: Set TPETRA_VERBOSE to true for
+    // copious debug output to std::cerr on every MPI process.  This
+    // is unwise for runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    // Prefix for verbose output.  Use a pointer, so we don't pay for
+    // string construction unless needed.  We set this below.
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      auto map = this->getMap ();
+      auto comm = map.is_null () ? Teuchos::null : map->getComm ();
+      const int myRank = comm.is_null () ? 0 : comm->getRank ();
       std::ostringstream os;
-      os << ">>> DistObject::doTransferNew: remoteLIDs.size() = "
-         << remoteLIDs.dimension_0 () << std::endl;
+      os << "(Proc " << myRank << ") ";
+      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::doTransferNew: Input arguments:" << endl
+         << *prefix << "  combineMode: " << combineModeToString (CM) << endl
+         << *prefix << "  numSameIDs: " << numSameIDs << endl
+         << *prefix << "  "
+         << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << endl
+         << *prefix << "  "
+         << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << endl
+         << *prefix << "  "
+         << dualViewStatusToString (remoteLIDs, "remoteLIDs") << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exportLIDs, "exportLIDs") << endl
+         << *prefix << "  revOp: Do" << (revOp == DoReverse ? "Reverse" : "Forward") << endl
+         << *prefix << "  commOnHost: " << (commOnHost ? "true" : "false") << endl;
       std::cerr << os.str ();
     }
 
@@ -988,32 +1084,51 @@ namespace Tpetra {
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-    if (debug) {
-      std::cerr << ">>> 1. checkSizes" << std::endl;
+    {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "1. checkSizes" << endl;
+        std::cerr << os.str ();
+      }
+      const bool checkSizesResult = this->checkSizes (src);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! checkSizesResult, std::invalid_argument,
+         "Tpetra::DistObject::doTransfer: checkSizes() indicates that the "
+         "destination object is not a legal target for redistribution from the "
+         "source object.  This probably means that they do not have the same "
+         "dimensions.  For example, MultiVectors must have the same number of "
+         "rows and columns.");
     }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! checkSizes (src), std::invalid_argument,
-      "Tpetra::DistObject::doTransfer(): checkSizes() indicates that the "
-      "destination object is not a legal target for redistribution from the "
-      "source object.  This probably means that they do not have the same "
-      "dimensions.  For example, MultiVectors must have the same number of "
-      "rows and columns.");
 
     // NOTE (mfh 26 Apr 2016) Chris Baker's implementation understood
     // that if CM == INSERT || CM == REPLACE, the target object could
     // be write only.  We don't optimize for that here.
 
-    if (debug) {
-      std::cerr << ">>> 2. copyAndPermuteNew" << std::endl;
-    }
-
     if (numSameIDs + permuteToLIDs.dimension_0 () != 0) {
       // There is at least one GID to copy or permute.
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "2. copyAndPermuteNew" << endl;
+        std::cerr << os.str ();
+      }
+      {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
-      Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
+        Teuchos::TimeMonitor copyAndPermuteMon (*copyAndPermuteTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-      copyAndPermuteNew (src, numSameIDs, permuteToLIDs, permuteFromLIDs);
+        this->copyAndPermuteNew (src, numSameIDs, permuteToLIDs,
+                                 permuteFromLIDs);
+      }
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "After copyAndPermuteNew:" << endl
+           << *prefix << "  "
+           << dualViewStatusToString (permuteToLIDs, "permuteToLIDs")
+           << endl
+           << *prefix << "  "
+           << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs")
+           << endl;
+        std::cerr << os.str ();
+      }
     }
 
     // The method may return zero even if the implementation actually
@@ -1025,6 +1140,11 @@ namespace Tpetra {
     // We only need this if CM != ZERO, but it has to be lifted out of
     // that scope because there are multiple tests for CM != ZERO.
     size_t constantNumPackets = this->constantNumberOfPackets ();
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "constantNumPackets=" << constantNumPackets << endl;
+      std::cerr << os.str ();
+    }
 
     // We only need to pack communication buffers if the combine mode
     // is not ZERO. A "ZERO combine mode" means that the results are
@@ -1032,8 +1152,11 @@ namespace Tpetra {
     // existing values. That means we don't need to communicate.
     if (CM != ZERO) {
       if (constantNumPackets == 0) {
-        if (debug) {
-          std::cerr << ">>> 3. Allocate num{Ex,Im}portPacketsPerLID" << std::endl;
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "3. (Re)allocate num{Ex,Im}portPacketsPerLID"
+             << endl;
+          std::cerr << os.str ();
         }
         // This only reallocates if necessary, that is, if the sizes
         // don't match.
@@ -1041,51 +1164,49 @@ namespace Tpetra {
                                                 remoteLIDs.dimension_0 ());
       }
 
-      if (debug) {
-        std::cerr << ">>> 4. packAndPrepareNew" << std::endl;
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "4. packAndPrepareNew: before, "
+           << dualViewStatusToString (this->exports_, "exports_")
+           << endl;
+        std::cerr << os.str ();
       }
-
       {
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
         Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-
-        if (debug) {
-          std::ostringstream os;
-          const int myRank = this->getMap ()->getComm ()->getRank ();
-          os << ">>> (Proc " << myRank << ") 5.0. Before packAndPrepareNew, "
-            "exports_.dimension_0()=" << exports_.dimension_0 () << std::endl;
-          std::cerr << os.str ();
-        }
         // Ask the source to pack data.  Also ask it whether there are
         // a constant number of packets per element
         // (constantNumPackets is an output argument).  If there are,
         // constantNumPackets will come back nonzero.  Otherwise, the
         // source will fill the numExportPacketsPerLID_ array.
-        packAndPrepareNew (src, exportLIDs, exports_, numExportPacketsPerLID_,
-                           constantNumPackets, distor);
-        if (debug) {
-          std::ostringstream os;
-          const int myRank = this->getMap ()->getComm ()->getRank ();
-          os << ">>> (Proc " << myRank << ") 5.0. After packAndPrepareNew, "
-            "exports_.dimension_0()=" << exports_.dimension_0 () << std::endl;
-          std::cerr << os.str ();
-        }
+        this->packAndPrepareNew (src, exportLIDs, this->exports_,
+                                 this->numExportPacketsPerLID_,
+                                 constantNumPackets, distor);
       }
-    }
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "5.1. After packAndPrepareNew, "
+           << dualViewStatusToString (this->exports_, "exports_")
+           << endl;
+        std::cerr << os.str ();
+      }
+    } // if (CM != ZERO)
 
     // We only need to send data if the combine mode is not ZERO.
     if (CM != ZERO) {
       if (constantNumPackets != 0) {
-        if (debug) {
-          std::cerr << ">>> 6. Realloc imports_" << std::endl;
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "6. Realloc imports_" << std::endl;
+          std::cerr << os.str ();
         }
         // There are a constant number of packets per element.  We
         // already know (from the number of "remote" (incoming)
         // elements) how many incoming elements we expect, so we can
         // resize the buffer accordingly.
         const size_t rbufLen = remoteLIDs.dimension_0 () * constantNumPackets;
-        reallocImportsIfNeeded (rbufLen, debug);
+        reallocImportsIfNeeded (rbufLen, verbose);
       }
 
       // Do we need to do communication (via doPostsAndWaits)?
@@ -1094,7 +1215,7 @@ namespace Tpetra {
       // This may be NULL.  It will be used below.
       const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
 
-      if (revOp == DoReverse && ! isDistributed ()) {
+      if (revOp == DoReverse && ! this->isDistributed ()) {
         needCommunication = false;
       }
       // FIXME (mfh 30 Jun 2013): Checking whether the source object
@@ -1109,6 +1230,13 @@ namespace Tpetra {
         needCommunication = false;
       }
 
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "needCommunication="
+           << (needCommunication ? "true" : "false") << endl;
+        std::cerr << os.str ();
+      }
+
       // FIXME (mfh 17 Feb 2014) Distributor doesn't actually inspect
       // the contents of the "exports" or "imports" arrays, other than
       // to do a deep copy in the (should be technically unnecessary,
@@ -1119,19 +1247,22 @@ namespace Tpetra {
 
       if (needCommunication) {
         if (revOp == DoReverse) {
-          if (debug) {
-            std::cerr << ">>> 7.0. Reverse mode" << std::endl;
+          if (verbose) {
+            std::ostringstream os;
+            os << *prefix << "7.0. Reverse mode" << endl;
+            std::cerr << os.str ();
           }
-
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            if (debug) {
-              std::cerr << ">>> 7.1. Variable # packets / LID: first comm"
-                        << std::endl;
+            if (verbose) {
+              std::ostringstream os;
+              os << *prefix << "7.1. Variable # packets / LID: first comm "
+                 << "(commOnHost = " << (commOnHost ? "true" : "false") << ")"
+                 << endl;
+              std::cerr << os.str ();
             }
-
             size_t totalImportPackets = 0;
             if (commOnHost) {
               this->numExportPacketsPerLID_.template sync<CHMS> ();
@@ -1162,10 +1293,17 @@ namespace Tpetra {
               totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_d);
             }
 
-            this->reallocImportsIfNeeded (totalImportPackets, debug);
-
-            if (debug) {
-              std::cerr << ">>> 7.3. Second comm" << std::endl;
+            if (verbose) {
+              std::ostringstream os;
+              os << *prefix << "totalImportPackets=" << totalImportPackets
+                 << endl;
+              std::cerr << os.str ();
+            }
+            this->reallocImportsIfNeeded (totalImportPackets, verbose);
+            if (verbose) {
+              std::ostringstream os;
+              os << *prefix << "7.3. Second comm" << std::endl;
+              std::cerr << os.str ();
             }
 
             // NOTE (mfh 25 Apr 2016, 01 Aug 2017) Since we need to
@@ -1208,13 +1346,15 @@ namespace Tpetra {
             }
           }
           else {
-            if (debug) {
-              const int myRank = this->getMap ()->getComm ()->getRank ();
+            if (verbose) {
               std::ostringstream os;
-              os << ">>> (Proc " << myRank << "): 7.1. Const # packets per "
-                "LID: exports_.dimension_0() = " << exports_.dimension_0 ()
-                 << ", imports_.dimension_0() = " << imports_.dimension_0 ()
-                 << std::endl;
+              os << *prefix << "7.1. Const # packets per LID: " << endl
+                 << *prefix << "  "
+                 << dualViewStatusToString (this->exports_, "exports_")
+                 << endl
+                 << *prefix << "  "
+                 << dualViewStatusToString (this->exports_, "imports_")
+                 << endl;
               std::cerr << os.str ();
             }
 
@@ -1241,7 +1381,7 @@ namespace Tpetra {
           }
         }
         else { // revOp == DoForward
-          if (debug) {
+          if (verbose) {
             std::cerr << ">>> 7.0. Forward mode" << std::endl;
           }
 
@@ -1249,7 +1389,7 @@ namespace Tpetra {
           Teuchos::TimeMonitor doPostsAndWaitsMon (*doPostsAndWaitsTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
           if (constantNumPackets == 0) { //variable num-packets-per-LID:
-            if (debug) {
+            if (verbose) {
               std::cerr << ">>> 7.1. Variable # packets / LID: first comm" << std::endl;
             }
 
@@ -1283,9 +1423,9 @@ namespace Tpetra {
               totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_d);
             }
 
-            this->reallocImportsIfNeeded (totalImportPackets, debug);
+            this->reallocImportsIfNeeded (totalImportPackets, verbose);
 
-            if (debug) {
+            if (verbose) {
               std::cerr << ">>> 7.3. Second comm" << std::endl;
             }
 
@@ -1328,17 +1468,15 @@ namespace Tpetra {
                                       numImportPacketsPerLID_av);
             }
           }
-          else {
-            if (debug) {
-              const int myRank = this->getMap ()->getComm ()->getRank ();
+          else { // constant number of packets per LID
+            if (verbose) {
               std::ostringstream os;
-              os << ">>> (Proc " << myRank << "): 7.1. Const # packets per "
-                "LID: exports_.dimension_0()=" << exports_.dimension_0 ()
+              os << *prefix << "7.1. Const # packets per LID: "
+                 << "exports_.dimension_0()=" << exports_.dimension_0 ()
                  << ", imports_.dimension_0() = " << imports_.dimension_0 ()
-                 << std::endl;
+                 << endl;
               std::cerr << os.str ();
             }
-
             // imports_ is for output only, so we don't need to sync
             // it before marking it as modified.  However, in order to
             // prevent spurious debug-mode errors (e.g., "modified on
@@ -1348,27 +1486,23 @@ namespace Tpetra {
             this->imports_.modified_host() = 0;
 
             if (commOnHost) {
-              this->imports_.template modify<CHMS> ();
-              if (debug) {
-                const int myRank = this->getMap ()->getComm ()->getRank ();
+              if (verbose) {
                 std::ostringstream os;
-                os << ">>> (Proc " << myRank << "): 7.2. Comm buffers on host"
-                   << std::endl;
+                os << *prefix << "7.2. Comm buffers on host" << endl;
                 std::cerr << os.str ();
               }
+              this->imports_.template modify<CHMS> ();
               distor.doPostsAndWaits (create_const_view (this->exports_.template view<CHMS> ()),
                                       constantNumPackets,
                                       this->imports_.template view<CHMS> ());
             }
             else { // pack on device
-              this->imports_.template modify<CDMS> ();
-              if (debug) {
-                const int myRank = this->getMap ()->getComm ()->getRank ();
+              if (verbose) {
                 std::ostringstream os;
-                os << ">>> (Proc " << myRank << "): 7.2. Comm buffers on device"
-                   << std::endl;
+                os << *prefix << "7.2. Comm buffers on device" << endl;
                 std::cerr << os.str ();
               }
+              this->imports_.template modify<CDMS> ();
               distor.doPostsAndWaits (create_const_view (this->exports_.template view<CDMS> ()),
                                       constantNumPackets,
                                       this->imports_.template view<CDMS> ());
@@ -1376,15 +1510,15 @@ namespace Tpetra {
           }
         }
 
-        if (debug) {
-          std::cerr << ">>> 8. unpackAndCombineNew" << std::endl;
-        }
-
         {
+          if (verbose) {
+            std::ostringstream os;
+            os << *prefix << "8. unpackAndCombineNew" << endl;
+            std::cerr << os.str ();
+          }
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
           Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-
           // NOTE (mfh 26 Apr 2016) We don't actually need to sync the
           // input DualViews, but they DO need to be most recently
           // updated in the same memory space.
@@ -1396,11 +1530,13 @@ namespace Tpetra {
                                      this->numImportPacketsPerLID_,
                                      constantNumPackets, distor, CM);
         }
-      }
+      } // if (needCommunication)
     } // if (CM != ZERO)
 
-    if (debug) {
-      std::cerr << ">>> 9. Done with doTransferNew" << std::endl;
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "9. Done!" << endl;
+      std::cerr << os.str ();
     }
   }
 
