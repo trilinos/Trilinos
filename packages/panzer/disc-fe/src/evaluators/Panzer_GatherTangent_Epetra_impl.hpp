@@ -202,7 +202,7 @@ evaluateFields(
     return;
 
   // For convenience, pull out some objects from the workset.
-  vector<int> LIDs;
+  Kokkos::View<const int*, PHX::Device> LIDs;
   string blockId(this->wda(workset).block_id);
   const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
   int numCells(localCellIds.size()), numFields(gatherFields_.size());

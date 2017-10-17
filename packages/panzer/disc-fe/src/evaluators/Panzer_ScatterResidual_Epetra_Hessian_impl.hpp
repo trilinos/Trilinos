@@ -158,7 +158,7 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Hessian, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-   std::vector<int> cLIDs, rLIDs;
+  Kokkos::View<const int*, PHX::Device> cLIDs, rLIDs;
    std::vector<double> jacRow;
 
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
