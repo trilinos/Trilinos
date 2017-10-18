@@ -1264,6 +1264,7 @@ bool stringNeedsQuotes(const std::string& s)
 {
   return s.empty() ||
          containsSpecialCharacters(s) ||
+         is_parseable_as_bool(s) ||
          is_parseable_as<int>(s) ||
          is_parseable_as<double>(s);
 }
