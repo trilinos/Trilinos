@@ -178,6 +178,11 @@ namespace Tacho {
         stat.b_capacity = 0;
         stat.b_num_superblocks = 0;
 
+        stat.s_min_block_size = 0;
+        stat.s_max_block_size = 0;
+        stat.s_capacity = 0;
+        stat.s_num_superblocks = 0;
+
 #if defined( TACHO_PROFILE_TIME_PER_THREAD )
         resetTimePerThread();
 #endif
@@ -205,13 +210,13 @@ namespace Tacho {
         printf("\n");
         printf("  Buffer Pool\n");
         printf("             number of superblocks:                           %10d\n", int(stat.b_num_superblocks));
-        printf("             min and max blocksize:                           %10.6f, %10.6f KB\n", double(stat.b_min_block_size)/1024, double(stat.b_max_block_size)/1024);
-        printf("             pool capacity:                                   %10.6f MB\n", double(stat.b_capacity)/1024/1024);
+        printf("             min and max blocksize:                           %e, %e Bytes\n", double(stat.b_min_block_size), double(stat.b_max_block_size));
+        printf("             pool capacity:                                   %10.2f MB\n", double(stat.b_capacity)/1024/1024);
         printf("\n");
         printf("  Sched Memory Pool\n");
         printf("             number of superblocks:                           %10d\n", int(stat.s_num_superblocks));
-        printf("             min and max blocksize:                           %10.6f, %10.6f KB\n", double(stat.s_min_block_size)/1024, double(stat.s_max_block_size)/1024);
-        printf("             pool capacity:                                   %10.6f MB\n", double(stat.s_capacity)/1024/1024);
+        printf("             min and max blocksize:                           %e, %e Bytes\n", double(stat.s_min_block_size), double(stat.s_max_block_size));
+        printf("             pool capacity:                                   %10.2f MB\n", double(stat.s_capacity)/1024/1024);
         printf("\n");
         printf("  FLOPs\n");
         printf("             gflop   for numeric factorization:               %10.2f GFLOP\n", flop/1024/1024/1024);
@@ -431,9 +436,10 @@ namespace Tacho {
           stat.t_copy = timer.seconds();
         }
 
+        const ordinal_type nb = panelsize > 0 ? panelsize : _info.max_schur_size;
         timer.reset();
         {
-          value_type_array_host buf("buf", _info.max_schur_size*(panelsize + 1));
+          value_type_array_host buf("buf", _info.max_schur_size*(nb + 1));
           const size_t bufsize = buf.span()*sizeof(value_type);
           track_alloc(bufsize);
           
@@ -443,15 +449,15 @@ namespace Tacho {
             CholSupernodes<Algo::Workflow::SerialPanel>
               ::factorize_recursive_serial(sched, member, 
                                            _info, _stree_roots(i), 
-                                           true, buf.data(), bufsize, panelsize);
+                                           true, buf.data(), bufsize, nb);
           
           track_free(bufsize);
         }
         stat.t_factor = timer.seconds();
         
         if (verbose) {
-          printf("Summary: NumericTools (SerialPanelFactorization)\n");
-          printf("================================================\n");
+          printf("Summary: NumericTools (SerialPanelFactorization: %3d)\n", nb);
+          printf("=====================================================\n");
 
           print_stat_factor();
         }

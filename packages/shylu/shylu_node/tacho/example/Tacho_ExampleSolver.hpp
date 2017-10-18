@@ -15,6 +15,8 @@ int driver (int argc, char *argv[]) {
   int sym = 3;
   int posdef = 1;
   int small_problem_thres = 1024;
+  int mb = -1;
+  int nb = -1;
 
   Tacho::Experimental::CommandLineParser opts("This example program measure the Tacho on Kokkos::OpenMP");
 
@@ -26,6 +28,8 @@ int driver (int argc, char *argv[]) {
   opts.set_option<int>("symmetric", "Symmetric type: 0 - unsym, 1 - structure sym, 2 - symmetric, 3 - hermitian", &sym);
   opts.set_option<int>("posdef", "Positive definite: 0 - indef, 1 - positive definite", &posdef);
   opts.set_option<int>("small-problem-thres", "LAPACK is used smaller than this thres", &small_problem_thres);
+  opts.set_option<int>("mb", "Internal block size", &mb);
+  opts.set_option<int>("nb", "Internal panel size", &nb);
 
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; // print help return
@@ -87,6 +91,8 @@ int driver (int argc, char *argv[]) {
     solver.setVerbose(verbose);
     solver.setMaxNumberOfSuperblocks(max_num_superblocks);
     solver.setSmallProblemThresholdsize(small_problem_thres);
+    solver.setBlocksize(mb);
+    solver.setPanelsize(nb);
 
     /// inputs are used for graph reordering and analysis
     solver.analyze(A.NumRows(),

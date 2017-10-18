@@ -179,16 +179,17 @@ namespace Tacho {
               while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
               Kokkos::store_fence();            
               
-              //const ordinal_type jjbeg = max(ijbeg, offn), jjend = min(srcsize, offn + nb);
-              for (ordinal_type jj=max(ijbeg,offn);jj<nn;++jj) 
+              for (ordinal_type jj=max(ijbeg,offn);jj<nn;++jj) {
+                const ordinal_type js = jj - offn;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
                 for (ordinal_type ii=ijbeg;ii<nn;++ii) {
                   const ordinal_type row = s2t[ii];
-                  if (row < s.m) A(row, s2t[jj]) += ABR(ii, jj-offn);
+                  if (row < s.m) A(row, s2t[jj]) += ABR(ii, js);
                   else break;
                 }
+              }
               // unlock
               s.lock = 0;
               Kokkos::load_fence();
