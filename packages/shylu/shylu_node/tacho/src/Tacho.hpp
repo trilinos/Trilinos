@@ -54,6 +54,7 @@
 #include "TachoExp_CholSupernodes_SerialPanel.hpp"
 
 #include "TachoExp_TaskFunctor_FactorizeChol.hpp"
+#include "TachoExp_TaskFunctor_FactorizeCholPanel.hpp"
 #include "TachoExp_TaskFunctor_FactorizeCholByBlocks.hpp"
 
 #include "TachoExp_TaskFunctor_SolveLowerChol.hpp"
