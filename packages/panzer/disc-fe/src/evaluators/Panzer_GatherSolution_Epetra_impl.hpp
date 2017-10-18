@@ -59,6 +59,7 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 // Teuchos
 #include "Teuchos_Assert.hpp"
@@ -191,15 +192,15 @@ preEvaluate(
   // First try the refactored ReadOnly container.
   RCP<GED> ged;
   string post(useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X");
-  if (d.gedc.containsDataObject(globalDataKey_ + post))
+  if (d.gedc->containsDataObject(globalDataKey_ + post))
   {
-    ged       = d.gedc.getDataObject(globalDataKey_ + post);
+    ged       = d.gedc->getDataObject(globalDataKey_ + post);
     xEvRoGed_ = rcp_dynamic_cast<EVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
 
   // Now try the old path.
-  ged = d.gedc.getDataObject(globalDataKey_);
+  ged = d.gedc->getDataObject(globalDataKey_);
   {
     // Try to extract the linear object container.
     auto epetraContainer = rcp_dynamic_cast<ELOC>(ged);
@@ -433,15 +434,15 @@ preEvaluate(
   // First try the refactored ReadOnly container.
   RCP<GED> ged;
   string post(useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X");
-  if (d.gedc.containsDataObject(globalDataKey_ + post))
+  if (d.gedc->containsDataObject(globalDataKey_ + post))
   {
-    ged       = d.gedc.getDataObject(globalDataKey_ + post);
+    ged       = d.gedc->getDataObject(globalDataKey_ + post);
     xEvRoGed_ = rcp_dynamic_cast<EVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
 
   // Now try the old path.
-  ged = d.gedc.getDataObject(globalDataKey_);
+  ged = d.gedc->getDataObject(globalDataKey_);
   {
     // Try to extract the linear object container.
     auto epetraContainer = rcp_dynamic_cast<ELOC>(ged);
@@ -690,15 +691,15 @@ preEvaluate(
   // First try the refactored ReadOnly container.
   RCP<GED> ged;
   string post(useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X");
-  if (d.gedc.containsDataObject(globalDataKey_ + post))
+  if (d.gedc->containsDataObject(globalDataKey_ + post))
   {
-    ged       = d.gedc.getDataObject(globalDataKey_ + post);
+    ged       = d.gedc->getDataObject(globalDataKey_ + post);
     xEvRoGed_ = rcp_dynamic_cast<EVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
 
   // Now try the old path.
-  ged = d.gedc.getDataObject(globalDataKey_);
+  ged = d.gedc->getDataObject(globalDataKey_);
   {
     // Try to extract the linear object container.
     auto epetraContainer = rcp_dynamic_cast<ELOC>(ged);

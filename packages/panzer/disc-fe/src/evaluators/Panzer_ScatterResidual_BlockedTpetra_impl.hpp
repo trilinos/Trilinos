@@ -54,6 +54,7 @@
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_HashUtils.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
@@ -161,7 +162,7 @@ void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,G
 preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -302,10 +303,10 @@ preEvaluate(typename TRAITS::PreEvalData d)
    using Teuchos::rcp_dynamic_cast;
 
    // extract linear object container
-   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_));
+   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_));
 
    if(blockedContainer_==Teuchos::null) {
-     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true);
+     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true);
      blockedContainer_ = rcp_dynamic_cast<const ContainerType>(gdata->getGhostedLOC());
    }
 }

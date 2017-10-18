@@ -127,7 +127,7 @@ evaluateFields(typename Traits::EvalData workset)
   auto refEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"ref_edges", 2, cellDim);
   auto phyEdges = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"phy_edges", 2, cellDim);
 
-  WorksetDetails & details = workset;
+  const WorksetDetails & details = workset;
   const auto worksetJacobians = pointValues.jac.get_view();
 
   // Loop over workset faces and edge points

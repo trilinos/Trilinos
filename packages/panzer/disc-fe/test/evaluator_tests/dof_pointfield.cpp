@@ -306,9 +306,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
      TEST_EQUALITY(ft->name(),"TestFieldRefCoord");
   }
 
-  panzer::Traits::SetupData setupData;
-  setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
-  setupData.worksets_->push_back(*workset);
+  panzer::Traits::SD setupData;
+  {
+    auto worksets = rcp(new std::vector<panzer::Workset>);
+    worksets->push_back(*workset);
+    setupData.worksets_ = worksets;
+  }
 
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(8);
@@ -319,7 +322,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   fm->postRegistrationSetup(setupData);
   fm->writeGraphvizFile();
 
-  panzer::Traits::PreEvalData preEvalData;
+  panzer::Traits::PED preEvalData;
 
   fm->preEvaluate<EvalType>(preEvalData);
   fm->evaluateFields<EvalType>(*workset);

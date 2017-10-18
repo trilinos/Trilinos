@@ -58,6 +58,7 @@
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_HashUtils.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
@@ -147,8 +148,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer ELOC;
 
    // extract linear object container
-   Teuchos::RCP<const BLOC> blockedContainer = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_));
-   Teuchos::RCP<const ELOC> epetraContainer  = Teuchos::rcp_dynamic_cast<const ELOC>(d.gedc.getDataObject(globalDataKey_));
+   Teuchos::RCP<const BLOC> blockedContainer = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc->getDataObject(globalDataKey_));
+   Teuchos::RCP<const ELOC> epetraContainer  = Teuchos::rcp_dynamic_cast<const ELOC>(d.gedc->getDataObject(globalDataKey_));
 
    // if its blocked do this
    if(blockedContainer!=Teuchos::null)
@@ -286,8 +287,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer ELOC;
 
    // extract linear object container
-   Teuchos::RCP<const BLOC> blockedContainer = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_));
-   Teuchos::RCP<const ELOC> epetraContainer  = Teuchos::rcp_dynamic_cast<const ELOC>(d.gedc.getDataObject(globalDataKey_));
+   Teuchos::RCP<const BLOC> blockedContainer = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc->getDataObject(globalDataKey_));
+   Teuchos::RCP<const ELOC> epetraContainer  = Teuchos::rcp_dynamic_cast<const ELOC>(d.gedc->getDataObject(globalDataKey_));
 
    // if its blocked do this
    if(blockedContainer!=Teuchos::null)
@@ -440,8 +441,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer ELOC;
 
    // extract linear object container
-   RCP<const BLOC> blockedContainer = rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_));
-   RCP<const ELOC> epetraContainer  = rcp_dynamic_cast<const ELOC>(d.gedc.getDataObject(globalDataKey_));
+   RCP<const BLOC> blockedContainer = rcp_dynamic_cast<const BLOC>(d.gedc->getDataObject(globalDataKey_));
+   RCP<const ELOC> epetraContainer  = rcp_dynamic_cast<const ELOC>(d.gedc->getDataObject(globalDataKey_));
 
    // if its blocked do this
    if(blockedContainer!=Teuchos::null) {

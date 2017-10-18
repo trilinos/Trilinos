@@ -57,6 +57,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 // Phalanx
 #include "Phalanx_DataLayout.hpp"
@@ -196,16 +197,16 @@ preEvaluate(
   // First try the refactored ReadOnly container.
   RCP<GED> ged;
   string post(useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X");
-  if (d.gedc.containsDataObject(globalDataKey_ + post))
+  if (d.gedc->containsDataObject(globalDataKey_ + post))
   {
-    ged       = d.gedc.getDataObject(globalDataKey_ + post);
+    ged       = d.gedc->getDataObject(globalDataKey_ + post);
     xBvRoGed_ = rcp_dynamic_cast<BVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
   
   // Now try the old path.
   {
-    ged = d.gedc.getDataObject(globalDataKey_);
+    ged = d.gedc->getDataObject(globalDataKey_);
 
     // Extract the linear object container.
     auto roGed = rcp_dynamic_cast<const BVROGED>(ged);
@@ -445,16 +446,16 @@ preEvaluate(
   // First try the refactored ReadOnly container.
   RCP<GED> ged;
   string post(useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X");
-  if (d.gedc.containsDataObject(globalDataKey_ + post))
+  if (d.gedc->containsDataObject(globalDataKey_ + post))
   {
-    ged       = d.gedc.getDataObject(globalDataKey_ + post);
+    ged       = d.gedc->getDataObject(globalDataKey_ + post);
     xBvRoGed_ = rcp_dynamic_cast<BVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
   
   // Now try the old path.
   {
-    ged = d.gedc.getDataObject(globalDataKey_);
+    ged = d.gedc->getDataObject(globalDataKey_);
 
     // Extract the linear object container.
     auto roGed = rcp_dynamic_cast<const BVROGED>(ged);
@@ -716,16 +717,16 @@ preEvaluate(
   // First try the refactored ReadOnly container.
   RCP<GED> ged;
   string post(useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X");
-  if (d.gedc.containsDataObject(globalDataKey_ + post))
+  if (d.gedc->containsDataObject(globalDataKey_ + post))
   {
-    ged       = d.gedc.getDataObject(globalDataKey_ + post);
+    ged       = d.gedc->getDataObject(globalDataKey_ + post);
     xBvRoGed_ = rcp_dynamic_cast<BVROGED>(ged, true);
     return;
   } // end of the refactored ReadOnly way
   
   // Now try the old path.
   {
-    ged = d.gedc.getDataObject(globalDataKey_);
+    ged = d.gedc->getDataObject(globalDataKey_);
 
     // Extract the linear object container.
     auto roGed = rcp_dynamic_cast<const BVROGED>(ged);
