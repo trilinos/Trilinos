@@ -503,33 +503,26 @@ namespace Tpetra {
     /// \param src [in] The source object, to redistribute into
     ///   the target object, which is <tt>*this</tt> object.
     ///
-    /// \param CM [in] The combine mode that describes how to combine
-    ///   values that map to the same global ID on the same process.
+    /// \param transfer [in] The Export or Import object representing
+    ///   the communication pattern.  (Details::Transfer is the common
+    ///   base class of these two objects.)
     ///
-    /// \param permuteToLIDs [in] See copyAndPermute().
-    ///
-    /// \param permuteFromLIDs [in] See copyAndPermute().
-    ///
-    /// \param remoteLIDs [in] List of entries (as local IDs) in the
-    ///   destination object to receive from other processes.
-    ///
-    /// \param exportLIDs [in] See packAndPrepare().
-    ///
-    /// \param distor [in/out] The Distributor object that knows how
-    ///   to redistribute data.
+    /// \param modeString [in] Human-readable string, for verbose
+    ///   debugging output and error output, explaining what function
+    ///   called this method.  Example: "doImport (forward)",
+    ///   "doExport (reverse)".
     ///
     /// \param revOp [in] Whether to do a forward or reverse mode
     ///   redistribution.
+    ///
+    /// \param CM [in] The combine mode that describes how to combine
+    ///   values that map to the same global ID on the same process.
     virtual void
     doTransfer (const SrcDistObject& src,
-                CombineMode CM,
-                size_t numSameIDs,
-                const Teuchos::ArrayView<const local_ordinal_type> &permuteToLIDs,
-                const Teuchos::ArrayView<const local_ordinal_type> &permuteFromLIDs,
-                const Teuchos::ArrayView<const local_ordinal_type> &remoteLIDs,
-                const Teuchos::ArrayView<const local_ordinal_type> &exportLIDs,
-                Distributor &distor,
-                ReverseOption revOp);
+                const Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                const char modeString[],
+                const ReverseOption revOp,
+                const CombineMode CM);
 
     /// \brief Reallocate numExportPacketsPerLID_ and/or
     ///   numImportPacketsPerLID_, if necessary.
