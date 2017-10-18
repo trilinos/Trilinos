@@ -6890,10 +6890,44 @@ namespace Tpetra {
                         size_t& totalNumEntries,
                         const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs) const
   {
+    using std::endl;
     typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     //const char tfecfFuncName[] = "allocatePackSpaceNew: ";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
+
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::allocatePackSpaceNew: Before:"
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exports, "exports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exportLIDs, "exportLIDs")
+         << endl;
+      std::cerr << os.str ();
+    }
 
     // The number of export LIDs must fit in LocalOrdinal, assuming
     // that the LIDs are distinct and valid on the calling process.
@@ -6940,6 +6974,19 @@ namespace Tpetra {
       const std::string newLabel = (oldLabel == "") ? "exports" : oldLabel;
       exports = exports_type (newLabel, allocSize);
     }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::allocatePackSpaceNew: After:"
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exports, "exports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exportLIDs, "exportLIDs")
+         << endl;
+      std::cerr << os.str ();
+    }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -6975,11 +7022,38 @@ namespace Tpetra {
     using Kokkos::View;
     using Tpetra::Details::PackTraits;
     using Tpetra::Details::create_mirror_view_from_raw_host_array;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef impl_scalar_type ST;
     typedef typename View<int*, device_type>::HostMirror::execution_space HES;
     const char tfecfFuncName[] = "packNonStaticNew: ";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
+
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::packNonStaticNew:" << endl;
+      std::cerr << os.str ();
+    }
 
     const size_t numExportLIDs = static_cast<size_t> (exportLIDs.dimension_0 ());
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -7480,8 +7554,9 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (offset + numBytes > static_cast<size_t> (imports_h.dimension_0 ()),
-         std::logic_error, "At i = " << i << ", offset (=" << offset
-         << ") + numBytes (=" << numBytes << ") > imports_h.dimension_0()="
+         std::logic_error, "At local row index importLIDs_h[i=" << i << "]="
+         << importLIDs_h[i] << ", offset (=" << offset << ") + numBytes (="
+         << numBytes << ") > imports_h.dimension_0()="
          << imports_h.dimension_0 () << ".");
 #endif // HAVE_TPETRA_DEBUG
 
@@ -7504,9 +7579,10 @@ namespace Tpetra {
          << ", actualNumBytes=" << actualNumBytes
          << " > numBytes=" << numBytes << ".");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (numEntLO == 0, std::logic_error, "At i = " << i << ", the number of "
-         "entries read from the packed data is numEntLO=" << numEntLO << ", "
-         "but numBytes=" << numBytes << " != 0.");
+        (numEntLO == 0, std::logic_error, "At local row index importLIDs_h[i="
+         << i << "]=" << importLIDs_h[i] << ", the number of entries read "
+         "from the packed data is numEntLO=" << numEntLO << ", but numBytes="
+         << numBytes << " != 0.");
 #else
       (void) actualNumBytes;
 #endif // HAVE_TPETRA_DEBUG
