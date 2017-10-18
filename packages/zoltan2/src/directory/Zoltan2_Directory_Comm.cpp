@@ -48,8 +48,6 @@
 #include <stdexcept>
 #include <memory>
 
-#ifdef HAVE_MPI
-
 namespace Zoltan2 {
 
 void Zoltan2_Directory_Plan::getInvertedValues(Zoltan2_Directory_Plan * from) {
@@ -137,7 +135,8 @@ Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
   const Teuchos::ArrayRCP<int>  &assign,  /* processor assignment for all my values */
   Teuchos::RCP<const Teuchos::Comm<int> > comm,               /* communicator */
   int       tag) :  	                               /* message tag I can use */
-  plan_forward(NULL)
+  plan_forward(NULL),
+  comm_(comm)
 {
   if (comm == Teuchos::null){
     throw std::logic_error("Invalid communicator: MPI_COMM_NULL.");
@@ -360,7 +359,6 @@ Zoltan2_Directory_Comm::~Zoltan2_Directory_Comm()
   delete plan_forward;
 }
 
-
 int Zoltan2_Directory_Comm::invert_map(
   const Teuchos::ArrayRCP<int> &lengths_to,  /* number of items I'm sending */
   const Teuchos::ArrayRCP<int> &procs_to,    /* procs I send to */
@@ -402,8 +400,7 @@ int Zoltan2_Directory_Comm::invert_map(
   int nrecvs = 0;		/* number of messages I'll receive */
 
   // TODO: Teuchos::scatterImpl(...)
-  MPI_Scatter(&(counts[0]), 1, MPI_INT, &nrecvs, 1, MPI_INT, 0,
-    Teuchos::getRawMpiComm(*comm));
+  MPI_Scatter(&(counts[0]), 1, MPI_INT, &nrecvs, 1, MPI_INT, 0, getRawComm());
 
   int max_nrecvs = 0;
   if (my_proc == 0) {
@@ -415,7 +412,11 @@ int Zoltan2_Directory_Comm::invert_map(
   }
 
   // TODO: Teuchos::MpiComm<Ordinal>::broadcast(...)
+#ifdef HAVE_MPI
   MPI_Bcast(&max_nrecvs, 1, MPI_INT, 0, Teuchos::getRawMpiComm(*comm));
+#else
+  MPI_Bcast(&max_nrecvs, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
 
   if(nrecvs > 0) {
     lengths_from.resize(nrecvs);   /* number of items I'm receiving */
@@ -433,7 +434,7 @@ int Zoltan2_Directory_Comm::invert_map(
     // TODO: Teuchos::ireceiveImpl(...)
     for (int i=0; i < nrecvs; i++) {
       MPI_Irecv(&(lengths_from[0]) + i, 1, MPI_INT, MPI_ANY_SOURCE,
-        tag, Teuchos::getRawMpiComm(*comm), &(req[i]));
+        tag, getRawComm(), &(req[i]));
     }
 
     // TODO: Teuchos::sendImpl(...)
@@ -442,7 +443,7 @@ int Zoltan2_Directory_Comm::invert_map(
       // Apparently in future versions this will become true const
       // Then the const_cast could be removed
       MPI_Send(const_cast<int*>(&lengths_to[i]), 1, MPI_INT, procs_to[i], tag,
-        Teuchos::getRawMpiComm(*comm));
+        getRawComm());
     }
 
     for (int i=0; i < nrecvs; i++) {
@@ -464,7 +465,7 @@ int Zoltan2_Directory_Comm::invert_map(
 
     // TODO: Teuchos
     MPI_Alltoall(&(sendbuf[0]), 1,  MPI_INT, &(recvbuf[0]), 1, MPI_INT,
-      Teuchos::getRawMpiComm(*comm));
+      getRawComm());
 
     for (int i=0, j=0; i < nprocs; i++) {
       if (recvbuf[i] > 0){
@@ -637,7 +638,7 @@ int Zoltan2_Directory_Comm::do_post(
           &plan->getRecvBuff().getRawPtr()[(size_t)(plan->starts_from[i])*(size_t)nbytes],
           plan->lengths_from[i] * nbytes,
           (MPI_Datatype) MPI_BYTE, plan->procs_from[i], tag,
-          Teuchos::getRawMpiComm(*(plan->comm)), &plan->request[k]);
+          getRawComm(), &plan->request[k]);
         k++;
       }
       else {
@@ -656,7 +657,7 @@ int Zoltan2_Directory_Comm::do_post(
               * (size_t)nbytes],
             plan->sizes_from[i] * nbytes,
             (MPI_Datatype) MPI_BYTE, plan->procs_from[i],
-            tag, Teuchos::getRawMpiComm(*plan->comm), &plan->request[k]);
+            tag, getRawComm(), &plan->request[k]);
         }
         else
           plan->request[k] = MPI_REQUEST_NULL;
@@ -710,7 +711,7 @@ int Zoltan2_Directory_Comm::do_post(
           MPI_Rsend(
             (void *) &send_data[(size_t)(plan->starts_to[i])*(size_t)nbytes],
             plan->lengths_to[i] * nbytes, (MPI_Datatype) MPI_BYTE,
-            plan->procs_to[i], tag, Teuchos::getRawMpiComm(*plan->comm));
+            plan->procs_to[i], tag, getRawComm());
         }
         else {
           self_num = i;
@@ -749,7 +750,7 @@ int Zoltan2_Directory_Comm::do_post(
           // TODO: Teuchos::readySend(...)
           MPI_Rsend((void *) &(send_buff[0]), plan->lengths_to[i] * nbytes,
                     (MPI_Datatype) MPI_BYTE, plan->procs_to[i], tag,
-                    Teuchos::getRawMpiComm(*plan->comm));
+                    getRawComm());
         }
         else {
           self_num = i;
@@ -781,7 +782,7 @@ int Zoltan2_Directory_Comm::do_post(
                       plan->starts_to_ptr[i]) * (size_t)nbytes],
                       plan->sizes_to[i] * nbytes,
                       (MPI_Datatype) MPI_BYTE, plan->procs_to[i],
-                      tag, Teuchos::getRawMpiComm(*plan->comm));
+                      tag, getRawComm());
           }
         }
         else
@@ -823,8 +824,7 @@ int Zoltan2_Directory_Comm::do_post(
           if (plan->sizes_to[i]) {
             // TODO: Teuchos::readySend(...)
             MPI_Rsend((void *) &(send_buff[0]), plan->sizes_to[i] * nbytes,
-              (MPI_Datatype) MPI_BYTE, plan->procs_to[i], tag,
-              Teuchos::getRawMpiComm(*plan->comm));
+              (MPI_Datatype) MPI_BYTE, plan->procs_to[i], tag, getRawComm());
           }
         }
         else
@@ -1238,8 +1238,7 @@ int Zoltan2_Directory_Comm::do_all_to_all(
 
   /* EXCHANGE DATA */
   MPI_Alltoallv(&(outbuf[0]), &(outbufCounts[0]), &(outbufOffsets[0]), MPI_BYTE,
-   &(inbuf[0]), &(inbufCounts[0]), &(inbufOffsets[0]), MPI_BYTE,
-   Teuchos::getRawMpiComm(*(plan->comm)));
+   &(inbuf[0]), &(inbufCounts[0]), &(inbufOffsets[0]), MPI_BYTE, getRawComm());
 
   // TODO: Restorecan we just copy optimizations - original just set ptr
   //if (outbuf != send_data){
@@ -1426,8 +1425,7 @@ int Zoltan2_Directory_Comm::resize(
   int var_sizes;        /* items have variable sizes? */
 
   // I think we'll need to do this raw, not with Teuchos
-  MPI_Allreduce(&has_sizes, &var_sizes, 1, MPI_INT, MPI_LOR,
-    Teuchos::getRawMpiComm(*plan->comm));
+  MPI_Allreduce(&has_sizes, &var_sizes, 1, MPI_INT, MPI_LOR, getRawComm());
 
   if (var_sizes && plan->indices_from != Teuchos::null) {
     // NEW METHOD
@@ -1665,8 +1663,7 @@ int Zoltan2_Directory_Comm::exchange_sizes(
   for (int i = 0; i < nsends + self_msg; i++) {
     if (procs_to[i] != my_proc) {
       // TODO: Teuchos::send(...)
-      MPI_Send((void *) &sizes_to[i], 1, MPI_INT, procs_to[i], tag,
-        Teuchos::getRawMpiComm(*comm));
+      MPI_Send((void *) &sizes_to[i], 1, MPI_INT, procs_to[i], tag, getRawComm());
     }
     else {
       self_index_to = i;
@@ -1680,7 +1677,7 @@ int Zoltan2_Directory_Comm::exchange_sizes(
       MPI_Status status;		/* status of commuication operation */
       // TODO: Teuchos::receive(...)
       MPI_Recv((void *) &(sizes_from[i]), 1, MPI_INT, procs_from[i],
-        tag, Teuchos::getRawMpiComm(*comm), &status);
+        tag, getRawComm(), &status);
     }
     else {
       sizes_from[i] = sizes_to[self_index_to];
@@ -1691,5 +1688,3 @@ int Zoltan2_Directory_Comm::exchange_sizes(
 }
 
 } // end namespace Zoltan2
-
-#endif // #ifdef HAVE_MPI

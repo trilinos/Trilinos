@@ -610,7 +610,11 @@ class IDs {
         throw std::runtime_error("Problem too large for zoltan");
       int gid_length = TPL_Traits<ZOLTAN_ID_PTR, gid_t>::NUM_ID;
       int lid_length = TPL_Traits<ZOLTAN_ID_PTR, lid_t>::NUM_ID;
+#ifdef HAVE_MPI
       MPI_Comm mpicomm = Teuchos::getRawMpiComm(*comm); // TODO comm fixes
+#else
+      MPI_Comm mpicomm = MPI_COMM_WORLD;
+#endif
       Zoltan2_Directory_Clock constructClock("construct");
       Zoltan_DD zz1(mpicomm, gid_length, lid_length, sizeof(user_t),
         update_gids.size(), debug_level);
@@ -1599,6 +1603,13 @@ int runDirectoryTests(int narg, char **arg) {
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
   Kokkos::initialize(narg, arg);
+#endif
+
+#ifndef HAVE_MPI
+  // TODO what is cleanest way to support a serial test case?
+  // We still have some non Teuchos MPI calls in the directory and this works
+  // but I think if this all gets incorporated into Teuchos we can clean this up.
+  MPI_Init(NULL, NULL);
 #endif
 
   Teuchos::GlobalMPISession mpiSession(&narg,&arg);

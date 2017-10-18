@@ -65,6 +65,15 @@
 
 #include <Teuchos_DefaultComm.hpp> // currently using Teuchos comm throughout
 
+#ifndef HAVE_MPI
+// support mpi serial - directory currently has a mix of Teuchos mpi commands
+// and original MPI commands so as this gets better organized the serial support
+// can be handled more naturally. Currently the tests call an MPI_Init for serial
+// so this can all work. I've mostly added the serial support just to make
+// debugging easier.
+#include <mpi.h>
+#endif
+
 #ifdef CONVERT_DIRECTORY_TPETRA
   #include <Tpetra_Vector.hpp> // tpetra impleemnts behavior with maps/vectors
 #endif
@@ -72,6 +81,7 @@
 #ifdef CONVERT_DIRECTORY_KOKKOS
   #include <Kokkos_UnorderedMap.hpp> // unordered map stores the local nodes
 #endif
+
 
 // This is temporary for timing and debugging - to be deleted eventually
 // The clock times a block of code and also has some debug printing options
@@ -92,11 +102,18 @@ namespace Zoltan2 {
 template <typename gid_t, typename lid_t, typename user_t>
 class Zoltan2_Directory_Node {
   public:
+    // TODO: This free is an outstanding issue - follows original format and
+    // allows me to search the Kokkos::UnorderedMap by index and distinguish
+    // between empty slots and filled. But I am not quite understanding this
+    // and is there a way to search the filled slots without referring to the
+    // keys.
+    Zoltan2_Directory_Node() : free(1) {}
     int owner;       /* processor hosting global ID object    */
     int partition;   /* Optional data                         */
     int errcheck;    /* Error checking(inconsistent updates)  */
     lid_t lid;       /* lid value */
     user_t userData; /* user data */
+    int free;        /* flag whether node is free or used     */
 };
 #endif
 
@@ -220,6 +237,33 @@ class Zoltan2_Directory {
     /*! \brief returns true if the directory is handling local ids. */
     bool is_use_lid() const { return use_lid; }
 
+  #ifdef CONVERT_DIRECTORY_KOKKOS
+    void remap_user_data_as_unique_gids() {
+      // This process follows the pattern of the original unique ids setup
+      // It assumes we have updated the directory with keys (as the gid_t) and
+      // also created empty user data. Each key is converted to a unique integer
+      // and written into the user data.
+      typedef long long mpi_t;
+      mpi_t nDDEntries = static_cast<mpi_t>(node_map.size());
+      mpi_t firstIdx;
+      MPI_Scan(&nDDEntries, &firstIdx, 1, MPI_LONG_LONG, MPI_SUM, getRawComm());
+      firstIdx -= nDDEntries;  // do not include this rank's entries in prefix sum
+      size_t cnt = 0;
+      for(size_t n = 0; n < node_map.capacity(); ++n) {
+        if(node_map.value_at(n).free == 0) {
+          Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
+            node_map.value_at(n);
+          node.userData = firstIdx + cnt;
+          cnt++;
+        }
+      }
+    }
+
+    size_t node_map_size() const {
+      return node_map.size();
+    }
+  #endif
+
   protected:
   #ifndef CONVERT_DIRECTORY_TPETRA
     // handled updating the local node information when the proc receives
@@ -258,9 +302,6 @@ class Zoltan2_Directory {
     int allocate_node_list(relice_idx_t count, float overalloc);
     relice_idx_t allocate_node();
     void free_node(relice_idx_t freenode);
-  #endif
-
-  #ifdef CONVERT_DIRECTORY_RELIC
     int equal_id(int n, gid_t* a, gid_t* b) const;
     unsigned int hash_table(const gid_t& key) const;
   #endif
@@ -314,6 +355,20 @@ class Zoltan2_Directory {
       Zoltan2_DD_Find_Msg<gid_t,lid_t>* msg) const                        = 0;
 
   private:
+    MPI_Comm getRawComm() {
+    #ifdef HAVE_MPI
+      return Teuchos::getRawMpiComm(*comm);
+    #else
+      return MPI_COMM_WORLD;
+    #endif
+    }
+
+  #ifdef CONVERT_DIRECTORY_KOKKOS
+    void rehash_node_map(size_t new_hash_size) {
+      node_map.rehash(new_hash_size);
+    }
+  #endif
+
   #ifdef CONVERT_DIRECTORY_TPETRA
     // Tpetra implemented as an example for comparison - in this case the
     // directory class is more of a wrapper which just implements standard

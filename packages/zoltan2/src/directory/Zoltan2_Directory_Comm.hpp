@@ -52,8 +52,6 @@
 #include <mpi.h>
 #include <Teuchos_ArrayRCP.hpp>
 
-#ifdef HAVE_MPI
-
 namespace Zoltan2 {
 
 class Zoltan2_Directory_Plan {	/* data for mapping between decompositions */
@@ -199,6 +197,15 @@ class Zoltan2_Directory_Comm {
 
     int create_reverse_plan(int tag, const Teuchos::ArrayRCP<int> &sizes);
 
+    MPI_Comm getRawComm() {
+    #ifdef HAVE_MPI
+      return Teuchos::getRawMpiComm(*comm_);
+    #else
+      return MPI_COMM_WORLD;
+    #endif
+    }
+
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
     Zoltan2_Directory_Plan * plan_forward; // for efficient MPI communication
     int nrec;
 };
@@ -223,7 +230,5 @@ class Zoltan2_Directory_Comm {
 // -----------------------------------------------------------------------------
 
 } // end namespace Zoltan2
-
-#endif // #ifdef HAVE_MPI
 
 #endif
