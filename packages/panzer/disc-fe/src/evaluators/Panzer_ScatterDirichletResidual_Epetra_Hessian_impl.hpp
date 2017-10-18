@@ -168,10 +168,13 @@ void
 ScatterDirichletResidual_Epetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset) 
 {
+  using panzer::ptrFromStlVector;
+  using std::vector;
+
    // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
    //                           "ScatterDirichletResidual_Epetra<Hessian> is not yet implemented"); // just in case
 
-   std::vector<int> cLIDs, rLIDs;
+  Kokkos::View<const int*, PHX::Device> cLIDs, rLIDs;
    std::vector<double> jacRow;
 
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
@@ -254,8 +257,7 @@ evaluateFields(typename TRAITS::EvalData workset)
     
             if(!preserveDiagonal_) {
               int err = Jac->ReplaceMyValues(row, cLIDs.size(), 
-                                             panzer::ptrFromStlVector(jacRow),
-                                             panzer::ptrFromStlVector(cLIDs));
+                ptrFromStlVector(jacRow), &cLIDs[0]);
               TEUCHOS_ASSERT(err==0); 
             }
          }

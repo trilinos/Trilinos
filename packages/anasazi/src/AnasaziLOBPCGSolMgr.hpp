@@ -62,9 +62,12 @@
 #include "AnasaziStatusTestWithOrdering.hpp"
 #include "AnasaziStatusTestCombo.hpp"
 #include "AnasaziStatusTestOutput.hpp"
-#include "AnasaziBasicOutputManager.hpp"
+#include "AnasaziOutputManager.hpp"
+#include "AnasaziOutputStreamTraits.hpp"
+
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 /// \example LOBPCGEpetra.cpp
 /// \brief Use LOBPCG with Epetra test problem from Galeri.
@@ -187,20 +190,23 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
    * to a parameter list of options for the solver manager. These options include the following:
    *   - Solver parameters
    *      - \c "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "SR"
-   *      - \c "Block Size" - a \c int specifying the block size to be used by the underlying LOBPCG solver. Default: problem->getNEV()
+   *      - \c "Block Size" - an \c int specifying the block size to be used by the underlying LOBPCG solver. Default: problem->getNEV()
    *      - \c "Full Ortho" - a \c bool specifying whether the underlying solver should employ the full orthogonalization scheme. Default: true
    *      - \c "Recover" - a \c bool specifying whether the solver manager should attempt to recover in the case of a LOBPCGRitzFailure when full orthogonalization is disabled. Default: true
    *      - \c "Verbosity" - a sum of MsgType specifying the verbosity. Default: ::Errors
    *      - \c "Init" - a LOBPCGState<ScalarType,MV> struct used to initialize the LOBPCG eigensolver.
+   *      - \c "Output Stream" - a reference-counted pointer to the formatted output stream where all
+   *                             solver output is sent.  Default: Teuchos::getFancyOStream ( Teuchos::rcpFromRef (std::cout) )
+   *      - \c "Output Processor" - an \c int specifying the MPI processor that will print solver/timer details.  Default: 0
    *   - Convergence parameters (if using default convergence test; see setGlobalStatusTest())
-   *      - \c "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 100
+   *      - \c "Maximum Iterations" - an \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 100
    *      - \c "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
    *      - \c "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
    *      - \c "Convergence Norm" - a \c string specifying the norm for convergence testing: "2" or "M"
    *   - Locking parameters (if using default locking test; see setLockingStatusTest())
    *      - \c "Use Locking" - a \c bool specifying whether the algorithm should employ locking of converged eigenpairs. Default: false
-   *      - \c "Max Locked" - a \c int specifying the maximum number of eigenpairs to be locked. Default: problem->getNEV()
-   *      - \c "Locking Quorum" - a \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
+   *      - \c "Max Locked" - an \c int specifying the maximum number of eigenpairs to be locked. Default: problem->getNEV()
+   *      - \c "Locking Quorum" - an \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
    *      - \c "Locking Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide locking. Default: 0.1*convergence tolerance
    *      - \c "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
    *      - \c "Locking Norm" - a \c string specifying the norm for locking testing: "2" or "M"
@@ -306,8 +312,11 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   bool recover_;
   Teuchos::RCP<LOBPCGState<ScalarType,MV> > state_;
   enum ResType convNorm_, lockNorm_;
+  int osProc_;
 
   Teuchos::RCP<Teuchos::Time> _timerSolve, _timerLocking;
+
+  Teuchos::RCP<Teuchos::FancyOStream> osp_;
 
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > globalTest_;
   Teuchos::RCP<StatusTest<ScalarType,MV,OP> > lockingTest_;
@@ -334,7 +343,8 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   maxLocked_(0),
   verbosity_(Anasazi::Errors),
   lockQuorum_(1),
-  recover_(true)
+  recover_(true),
+  osProc_(0)
 #ifdef ANASAZI_TEUCHOS_TIME_MONITOR
   , _timerSolve(Teuchos::TimeMonitor::getNewTimer("Anasazi: LOBPCGSolMgr::solve()")),
   _timerLocking(Teuchos::TimeMonitor::getNewTimer("Anasazi: LOBPCGSolMgr locking"))
@@ -427,6 +437,18 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   // full orthogonalization: default true
   fullOrtho_ = pl.get("Full Ortho",fullOrtho_);
 
+  // Create a formatted output stream to print to.
+  // See if user requests output processor.
+  osProc_ = pl.get("Output Processor", osProc_);
+
+  // If not passed in by user, it will be chosen based upon operator type.
+  if (pl.isParameter("Output Stream")) {
+    osp_ = Teuchos::getParameter<Teuchos::RCP<Teuchos::FancyOStream> >(pl,"Output Stream");
+  }
+  else {
+    osp_ = OutputStreamTraits<OP>::getOutputStream (*problem_->getOperator(), osProc_);
+  }
+
   // verbosity level
   if (pl.isParameter("Verbosity")) {
     if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
@@ -463,7 +485,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Output manager
-  Teuchos::RCP<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity_) );
+  Teuchos::RCP<OutputManager<ScalarType> > printer = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_,osp_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Status tests

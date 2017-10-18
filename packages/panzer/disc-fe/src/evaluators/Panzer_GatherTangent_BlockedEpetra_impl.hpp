@@ -229,7 +229,7 @@ evaluateFields(
     for (int cell(0); cell < numCells; ++cell)
     {
       LO cellLocalId = localCellIds[cell];
-      const vector<int>& LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+      Kokkos::View<const int*, PHX::Device> LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
       // Loop over the basis functions and fill the fields.
       for (int basis(0); basis < numBases; ++basis)

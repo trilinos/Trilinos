@@ -211,7 +211,7 @@ namespace panzer {
       using ROVGED  = panzer::ReadOnlyVector_GlobalEvaluationData;
       for (int i(0); i < num_tangent; ++i)
       {
-        RCP<ROVGED> tangentContainer = e_lof->buildDomainContainer();
+        RCP<ROVGED> tangentContainer = e_lof->buildReadOnlyDomainContainer();
         auto tanContainerEpetra = rcp_dynamic_cast<EVROGED>(tangentContainer);
         RCP<VectorBase<double>> tanVecOwned =
           tanContainerEpetra->getOwnedVector()->clone_v();

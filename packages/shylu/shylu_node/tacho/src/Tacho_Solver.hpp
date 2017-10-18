@@ -76,6 +76,7 @@ namespace Tacho {
     ordinal_type _small_problem_thres;  // smaller than this, use lapack
     ordinal_type _serial_thres_size;    // serialization threshold size
     ordinal_type _mb;                   // block size for byblocks algorithms
+    ordinal_type _nb;                   // panel size for panel algorithms
 
     // parallelism and memory constraint is made via this parameter
     ordinal_type _max_num_superblocks;  // # of superblocks in the memoyrpool
@@ -88,7 +89,8 @@ namespace Tacho {
         _verbose(0),
         _small_problem_thres(1024),
         _serial_thres_size(-1),
-        _mb(-1) {}
+        _mb(-1),
+        _nb(-1) {}
 
     Solver(const Solver &b) = default;
 
@@ -103,6 +105,9 @@ namespace Tacho {
     }
     void setBlocksize(const ordinal_type mb = -1) {
       _mb = mb;
+    }
+    void setPanelsize(const ordinal_type nb = -1) {
+      _nb = nb;
     }
     void setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks = -1) {
       _max_num_superblocks = max_num_superblocks;
@@ -251,20 +256,27 @@ namespace Tacho {
 
         const ordinal_type nthreads = device_exec_space::thread_pool_size(0);
         if (nthreads == 1) {
-          _N.factorizeCholesky_Serial(ax, _verbose);
+          if (_nb < 0) 
+            _N.factorizeCholesky_Serial(ax, _verbose);
+          else 
+            _N.factorizeCholesky_SerialPanel(ax, _nb, _verbose);
         } else {
-          if (_mb < 0) {
-            const ordinal_type max_dense_size = max(_N.getMaxSupernodeSize(),_N.getMaxSchurSize());
-            if      (max_dense_size < 256)  _mb =  -1;
-            else if (max_dense_size < 512)  _mb =  64;
-            else if (max_dense_size < 1024) _mb = 128;
-            else if (max_dense_size < 8192) _mb = 256;
-            else                            _mb = 512;
+          if (_nb < 0) {
+            if (_mb < 0) {
+              const ordinal_type max_dense_size = max(_N.getMaxSupernodeSize(),_N.getMaxSchurSize());
+              if      (max_dense_size < 256)  _mb =  -1;
+              else if (max_dense_size < 512)  _mb =  64;
+              else if (max_dense_size < 1024) _mb = 128;
+              else if (max_dense_size < 8192) _mb = 256;
+              else                            _mb = 512;
+            }
+            if (_mb > 0)
+              _N.factorizeCholesky_ParallelByBlocks(ax, _mb, _verbose);
+            else
+              _N.factorizeCholesky_Parallel(ax, _verbose);
+          } else {
+            _N.factorizeCholesky_ParallelPanel(ax, _nb, _verbose);            
           }
-          if (_mb > 0)
-            _N.factorizeCholesky_ParallelByBlocks(ax, _mb, _verbose);
-          else
-            _N.factorizeCholesky_Parallel(ax, _verbose);
         }
       }
       return 0;

@@ -801,7 +801,6 @@ namespace MueLu {
     Xpetra::global_size_t OTI  = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
     LO myRank          = Amat->getRowMap()->getComm()->getRank();
-    LO lNumCoarseNodes = ghostedCoarseNodes->PIDs.size();         //This number includes ghost nodes
     GO numGloCols      = dofsPerNode*myGeo->gNumCoarseNodes;
 
     // Build maps necessary to create and fill complete the prolongator
@@ -1006,7 +1005,7 @@ namespace MueLu {
       } // End of ind scope
 
       // Compute the actual geometric interpolation stencil
-      LO stencilLength = static_cast<LO>(std::pow(interpolationOrder + 1, 3));
+      // LO stencilLength = static_cast<LO>(std::pow(interpolationOrder + 1, 3));
       std::vector<double> stencil(8);
       Array<GO> firstCoarseNodeFineIndices(3);
       int rate[3] = {};

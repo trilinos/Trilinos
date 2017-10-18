@@ -32,8 +32,10 @@
 
 #include "TachoExp_CholSupernodes.hpp"
 #include "TachoExp_CholSupernodes_Serial.hpp"
+#include "TachoExp_CholSupernodes_SerialPanel.hpp"
 
 #include "TachoExp_TaskFunctor_FactorizeChol.hpp"
+#include "TachoExp_TaskFunctor_FactorizeCholPanel.hpp"
 #include "TachoExp_TaskFunctor_FactorizeCholByBlocks.hpp"
 
 #include "TachoExp_TaskFunctor_SolveLowerChol.hpp"
@@ -177,6 +179,11 @@ namespace Tacho {
         stat.b_capacity = 0;
         stat.b_num_superblocks = 0;
 
+        stat.s_min_block_size = 0;
+        stat.s_max_block_size = 0;
+        stat.s_capacity = 0;
+        stat.s_num_superblocks = 0;
+
 #if defined( TACHO_PROFILE_TIME_PER_THREAD )
         resetTimePerThread();
 #endif
@@ -204,13 +211,13 @@ namespace Tacho {
         printf("\n");
         printf("  Buffer Pool\n");
         printf("             number of superblocks:                           %10d\n", int(stat.b_num_superblocks));
-        printf("             min and max blocksize:                           %10.6f, %10.6f KB\n", double(stat.b_min_block_size)/1024, double(stat.b_max_block_size)/1024);
-        printf("             pool capacity:                                   %10.6f MB\n", double(stat.b_capacity)/1024/1024);
+        printf("             min and max blocksize:                           %e, %e Bytes\n", double(stat.b_min_block_size), double(stat.b_max_block_size));
+        printf("             pool capacity:                                   %10.2f MB\n", double(stat.b_capacity)/1024/1024);
         printf("\n");
         printf("  Sched Memory Pool\n");
         printf("             number of superblocks:                           %10d\n", int(stat.s_num_superblocks));
-        printf("             min and max blocksize:                           %10.6f, %10.6f KB\n", double(stat.s_min_block_size)/1024, double(stat.s_max_block_size)/1024);
-        printf("             pool capacity:                                   %10.6f MB\n", double(stat.s_capacity)/1024/1024);
+        printf("             min and max blocksize:                           %e, %e Bytes\n", double(stat.s_min_block_size), double(stat.s_max_block_size));
+        printf("             pool capacity:                                   %10.2f MB\n", double(stat.s_capacity)/1024/1024);
         printf("\n");
         printf("  FLOPs\n");
         printf("             gflop   for numeric factorization:               %10.2f GFLOP\n", flop/1024/1024/1024);
@@ -377,33 +384,15 @@ namespace Tacho {
                                const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
         {
-          memory_pool_type_host bufpool;
-          timer.reset();
-          {
-            const size_t
-              max_block_size = _m*sizeof(ordinal_type);
-            
-            typedef typename host_exec_space::memory_space memory_space;
-            bufpool = memory_pool_type_host(memory_space(),
-                                            max_block_size,
-                                            max_block_size,
-                                            max_block_size,
-                                            max_block_size);
-            
-            track_alloc(bufpool.capacity());
-          }
-          stat.t_extra = timer.seconds();
-          
           timer.reset();
           {
             /// matrix values
             _ax = ax;
             
             /// copy the input matrix into super panels
-            _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, bufpool);
+            _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
           }
           stat.t_copy = timer.seconds();
-          track_free(bufpool.capacity());
         }
 
         timer.reset();
@@ -425,6 +414,51 @@ namespace Tacho {
         if (verbose) {
           printf("Summary: NumericTools (SerialFactorization)\n");
           printf("===========================================\n");
+
+          print_stat_factor();
+        }
+      }
+
+      inline
+      void
+      factorizeCholesky_SerialPanel(const value_type_array_host &ax,
+                                    const ordinal_type panelsize,
+                                    const ordinal_type verbose = 0) {
+        Kokkos::Impl::Timer timer;
+        {
+          timer.reset();
+          {
+            /// matrix values
+            _ax = ax;
+            
+            /// copy the input matrix into super panels
+            _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
+          }
+          stat.t_copy = timer.seconds();
+        }
+
+        const ordinal_type nb = panelsize > 0 ? panelsize : _info.max_schur_size;
+        timer.reset();
+        {
+          value_type_array_host buf("buf", _info.max_schur_size*(nb + 1));
+          const size_t bufsize = buf.span()*sizeof(value_type);
+          track_alloc(bufsize);
+          
+          /// recursive tree traversal
+          const ordinal_type sched = 0, member = 0, nroots = _stree_roots.dimension_0();
+          for (ordinal_type i=0;i<nroots;++i)
+            CholSupernodes<Algo::Workflow::SerialPanel>
+              ::factorize_recursive_serial(sched, member, 
+                                           _info, _stree_roots(i), 
+                                           true, buf.data(), bufsize, nb);
+          
+          track_free(bufsize);
+        }
+        stat.t_factor = timer.seconds();
+        
+        if (verbose) {
+          printf("Summary: NumericTools (SerialPanelFactorization: %3d)\n", nb);
+          printf("=====================================================\n");
 
           print_stat_factor();
         }
@@ -568,7 +602,7 @@ namespace Tacho {
           _ax = ax;
           
           /// copy the input matrix into super panels
-          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, bufpool);
+          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
         }
         stat.t_copy = timer.seconds();
 
@@ -590,6 +624,109 @@ namespace Tacho {
         if (verbose) {
           printf("Summary: NumericTools (ParallelFactorization)\n");
           printf("=============================================\n");
+
+          print_stat_factor();
+        }
+      }
+
+      inline
+      void
+      factorizeCholesky_ParallelPanel(const value_type_array_host &ax,
+                                      const ordinal_type panelsize, 
+                                      const ordinal_type verbose = 0) {
+        Kokkos::Impl::Timer timer;
+
+        timer.reset();
+        typedef typename sched_type_host::memory_space memory_space;
+        typedef TaskFunctor_FactorizeCholPanel<value_type,host_exec_space> functor_type;
+        //typedef Kokkos::Future<int,host_exec_space> future_type;
+        
+        sched_type_host sched;
+        {
+          const size_t max_functor_size = sizeof(functor_type);
+          const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
+          
+          const size_t
+            task_queue_capacity = max(estimate_max_numtasks,128)*max_functor_size,
+            min_block_size  = 1,
+            max_block_size  = max_functor_size,
+            num_superblock  = 32, // various small size blocks
+            superblock_size = task_queue_capacity/num_superblock;
+          
+          sched = sched_type_host(memory_space(),
+                                  task_queue_capacity,
+                                  min_block_size,
+                                  max_block_size,
+                                  superblock_size);
+          
+          track_alloc(sched.memory()->capacity());
+        }
+
+        stat.s_min_block_size  = sched.memory()->min_block_size();
+        stat.s_max_block_size  = sched.memory()->max_block_size();
+        stat.s_capacity        = sched.memory()->capacity();
+        stat.s_num_superblocks = sched.memory()->capacity()/sched.memory()->max_block_size();
+        
+        memory_pool_type_host bufpool;
+        const ordinal_type nb = panelsize > 0 ? panelsize : _info.max_schur_size;
+        {
+          const size_t
+            min_block_size  = 1,
+            max_block_size  = max((nb*_info.max_schur_size + _info.max_schur_size)*sizeof(value_type), _m*sizeof(ordinal_type));
+          
+          ordinal_type ishift = 0;
+          size_t superblock_size = 1;
+          for ( ;superblock_size<max_block_size;superblock_size <<= 1,++ishift);
+
+          const size_t  // allows max 2 GB 
+            max_num_superblocks = _max_num_superblocks, 
+            //const size_t num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
+            num_superblock  = min(host_exec_space::thread_pool_size(0), max_num_superblocks),
+            memory_capacity = num_superblock*superblock_size;
+          
+          bufpool = memory_pool_type_host(memory_space(),
+                                          memory_capacity,
+                                          min_block_size,
+                                          max_block_size,
+                                          superblock_size);
+          
+          track_alloc(bufpool.capacity());
+        }
+        stat.t_extra = timer.seconds();
+
+        stat.b_min_block_size  = bufpool.min_block_size();
+        stat.b_max_block_size  = bufpool.max_block_size();
+        stat.b_capacity        = bufpool.capacity();
+        stat.b_num_superblocks = bufpool.capacity()/bufpool.max_block_size();
+
+        timer.reset();
+        {
+          /// matrix values
+          _ax = ax;
+          
+          /// copy the input matrix into super panels
+          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
+        }
+        stat.t_copy = timer.seconds();
+
+        timer.reset();
+        const ordinal_type nroots = _stree_roots.dimension_0();
+        for (ordinal_type i=0;i<nroots;++i)
+          Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                             functor_type(sched, bufpool, _info, _stree_roots(i), nb));
+        Kokkos::wait(sched);
+        stat.t_factor = timer.seconds();
+        
+        track_free(bufpool.capacity());
+        track_free(sched.memory()->capacity());
+
+        // reset solve scheduler and bufpool
+        _sched_solve_capacity = 0;
+        _bufpool_solve_capacity = 0;
+
+        if (verbose) {
+          printf("Summary: NumericTools (ParallelPanelFactorization: %3d)\n", nb);
+          printf("=======================================================\n");
 
           print_stat_factor();
         }
@@ -789,7 +926,7 @@ namespace Tacho {
           _ax = ax;
           
           /// copy the input matrix into super panels
-          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri, bufpool);
+          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
         }
         stat.t_copy += timer.seconds();
 

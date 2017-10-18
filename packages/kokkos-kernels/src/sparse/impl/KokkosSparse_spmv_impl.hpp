@@ -184,6 +184,8 @@ struct SPMV_Functor {
   KOKKOS_INLINE_FUNCTION
   void operator() (const team_member& dev) const
   {
+    typedef typename YVector::non_const_value_type y_value_type;
+
     Kokkos::parallel_for(Kokkos::TeamThreadRange(dev,0,rows_per_team), [&] (const ordinal_type& loop) {
 
       const ordinal_type iRow = static_cast<ordinal_type> ( dev.league_rank() ) * rows_per_team + loop;
@@ -192,9 +194,9 @@ struct SPMV_Functor {
       }
       const KokkosSparse::SparseRowViewConst<AMatrix> row = m_A.rowConst(iRow);
       const ordinal_type row_length = static_cast<ordinal_type> (row.length);
-      value_type sum = 0;
+      y_value_type sum = 0;
 
-      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev,row_length), [&] (const ordinal_type& iEntry, value_type& lsum) {
+      Kokkos::parallel_reduce(Kokkos::ThreadVectorRange(dev,row_length), [&] (const ordinal_type& iEntry, y_value_type& lsum) {
         const value_type val = conjugate ?
                 ATV::conj (row.value(iEntry)) :
                 row.value(iEntry);

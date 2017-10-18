@@ -147,7 +147,7 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-   std::vector<int> LIDs;
+  Kokkos::View<const int*, PHX::Device> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
@@ -264,7 +264,7 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-   std::vector<int> LIDs;
+  Kokkos::View<const int*, PHX::Device> LIDs;
  
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
@@ -393,7 +393,7 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-   std::vector<int> cLIDs, rLIDs;
+   Kokkos::View<const int*, PHX::Device> initial_cLIDs, rLIDs;
    std::vector<double> jacRow;
 
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
@@ -418,11 +418,15 @@ evaluateFields(typename TRAITS::EvalData workset)
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
       rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
-      cLIDs = colGlobalIndexer->getElementLIDs(cellLocalId);
+      initial_cLIDs = colGlobalIndexer->getElementLIDs(cellLocalId);
+      std::vector<int> cLIDs;
+      for (int i=0;i<initial_cLIDs.extent(0); ++i)
+        cLIDs.push_back(initial_cLIDs(i));
       if (Teuchos::nonnull(workset.other)) {
         const std::size_t other_cellLocalId = workset.other->cell_local_ids[worksetCellIndex];
-        const std::vector<int> other_cLIDs = colGlobalIndexer->getElementLIDs(other_cellLocalId);
-        cLIDs.insert(cLIDs.end(), other_cLIDs.begin(), other_cLIDs.end());
+        Kokkos::View<const int*, PHX::Device> other_cLIDs = colGlobalIndexer->getElementLIDs(other_cellLocalId);
+        for (int i=0;i<other_cLIDs.extent(0); ++i)
+          cLIDs.push_back(other_cLIDs(i));
       }
 
       // loop over each field to be scattered

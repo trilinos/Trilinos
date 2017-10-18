@@ -299,8 +299,8 @@ public:
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method.
      */
-   const std::vector<LocalOrdinalT> & getElementLIDs(LocalOrdinalT localElmtId) const
-   { return localIDs_[localElmtId]; }
+   const Kokkos::View<const LocalOrdinalT*,PHX::Device> getElementLIDs(LocalOrdinalT localElmtId) const
+    { return Kokkos::subview(localIDs_k_, localElmtId, Kokkos::ALL() ); }
 
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method. Note
@@ -378,8 +378,7 @@ protected:
      * access exteremly fast.
      */
    void setLocalIds(const std::vector<std::vector<LocalOrdinalT> > & localIDs)
-   { localIDs_ = localIDs; 
- 
+   {  
      // determine the maximium second dimension of the local IDs
      std::size_t max = 0;
      for(std::size_t i=0;i<localIDs.size();i++)
@@ -404,12 +403,10 @@ protected:
      */
    void shareLocalIDs(const UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> & src)
    {
-     localIDs_   = src.localIDs_;
      localIDs_k_ = src.localIDs_k_;
    }
 
 private:
-   std::vector<std::vector<LocalOrdinalT> > localIDs_; 
    Kokkos::View<const LocalOrdinalT**,PHX::Device> localIDs_k_;
 };
 

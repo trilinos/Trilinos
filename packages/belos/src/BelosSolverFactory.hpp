@@ -63,19 +63,183 @@
 #include <BelosBiCGStabSolMgr.hpp>
 
 #include "Belos_Details_EBelosSolverType.hpp"
+#include "BelosCustomSolverFactory.hpp"
 
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
-#include <algorithm>
-#include <locale>
 #include <map>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
 
 namespace Belos {
+namespace Impl {
+
+//! Print the given array of strings, in YAML format, to \c out.
+void
+printStringArray (std::ostream& out,
+                  const Teuchos::ArrayView<const std::string>& array);
+
+//! Print the given array of strings, in YAML format, to \c out.
+void
+printStringArray (std::ostream& out,
+                  const std::vector<std::string>& array);
+
+//! Return the upper-case version of s.
+std::string
+upperCase (const std::string& s);
+
+/// \brief Specializations of Belos::SolverFactory may inherit from
+///   this class to get basic SolverFactory functionality.
+///
+/// This class is not for Belos users.  It's really just for Belos
+/// developers who want to write a specialization of
+/// Belos::SolverFactory.  Those developers may make their
+/// specialization inherit from this class, in order to get basic
+/// Belos::SolverFactory functionality without reimplementing
+/// everything.
+///
+/// \tparam Scalar Same as template parameter 1 of
+///   Belos::SolverFactory (which see below).
+/// \tparam MV Same as template parameter 2 of
+///   Belos::SolverFactory (which see below).
+/// \tparam OP Same as template parameter 2 of
+///   Belos::SolverFactory (which see below).
+template<class Scalar, class MV, class OP>
+class SolverFactoryParent :
+    public Teuchos::Describable
+{
+public:
+  /// \brief The type of the solver returned by create().
+  ///
+  /// This is a specialization of SolverManager for the same scalar,
+  /// multivector, and operator types as the template parameters of
+  /// this factory.
+  typedef ::Belos::SolverManager<Scalar, MV, OP> solver_base_type;
+
+  /// \brief The type of a solver factory that users may give to
+  ///   addFactory() (which see below)
+  typedef CustomSolverFactory<Scalar, MV, OP> custom_solver_factory_type;
+
+protected:
+  /// \brief Return an instance of the specified solver, or
+  ///   Teuchos::null if this factory does not provide the requested
+  ///   solver.
+  ///
+  /// The preferred way to customize this method is not to inherit
+  /// from it, but rather to add a custom SolverFactory via
+  /// addFactory() (which see below).  Nevertheless, we leave open the
+  /// possibility of overriding this method, for example in order to
+  /// change the order in which users' solver factories are queried.
+  ///
+  /// \note To implementers: DO NOT THROW if this factory does not
+  ///   recognize and support the input solverName.  Instead, just
+  ///   return Teuchos::null.  This will make Belos::SolverFactory's
+  ///   implementation cleaner (and is also the reason why we gave
+  ///   this function a different name).
+  ///
+  /// \param solverName [in] Name of the solver.
+  ///
+  /// \param solverParams [in/out] List of parameters with which to
+  ///   configure the solver.  If null, we configure the solver with
+  ///   default parameters.  If nonnull, the solver may modify the
+  ///   list by filling in missing parameters with default values.
+  ///   You can then inspect the resulting list to learn what
+  ///   parameters the solver accepts.
+  ///
+  /// Some solvers may be accessed by multiple names ("aliases").
+  /// Each solver has a canonical name, and zero or more aliases.
+  /// Using some aliases (such as those that access Flexible GMRES
+  /// capability in GMRES-type solvers) may make this method set
+  /// certain parameters in your parameter list.
+  ///
+  /// The input parameter list is passed in as a Teuchos::RCP because
+  /// the factory passes it to the solver, and Belos solvers want
+  /// their input parameter list as a
+  /// Teuchos::RCP<Teuchos::ParameterList>.  We allow a null parameter
+  /// list only for convenience, and will use default parameter values
+  /// in that case.
+  virtual Teuchos::RCP<solver_base_type>
+  getSolver (const std::string& solverName,
+             const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
+
+public:
+  /// \brief Create, configure, and return the specified solver.
+  ///
+  /// \param solverName [in] Name of the solver.
+  ///
+  /// \param solverParams [in/out] List of parameters with which to
+  ///   configure the solver.
+  ///
+  /// This method differs from getSolver() (see above) only in that it
+  /// throws an exception if solverName is invalid.
+  virtual Teuchos::RCP<solver_base_type>
+  create (const std::string& solverName,
+          const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
+
+  /// \brief Number of supported solvers.
+  ///
+  /// This may differ from the number of supported solver
+  /// <i>names</i>, since we may accept multiple names ("aliases") for
+  /// some solvers.
+  virtual int numSupportedSolvers () const;
+
+  /// \brief List of supported solver names.
+  ///
+  /// The length of this list may differ from the number of supported
+  /// solvers, since we may accept multiple names ("aliases") for some
+  /// solvers.
+  virtual Teuchos::Array<std::string> supportedSolverNames () const;
+
+  //! Whether the given solver name names a supported solver.
+  virtual bool isSupported (const std::string& solverName) const;
+
+  /// \brief Add a custom solver factory.
+  ///
+  /// Any custom solver factories that you may define will override
+  /// this factory.  "Override" means that if the \c solverName
+  /// argument to create() or getSolver() matches any solvers that the
+  /// custom factories support, then one of the custom factories will
+  /// create it.
+  ///
+  /// \note To developers: This is an instance method, but it adds the
+  ///   factory for all current and future instances.
+  ///
+  /// \warning This method makes no promise of reentrancy or thread
+  ///   safety, with respect to other calls to this or other
+  ///   factories' methods.
+  void
+  addFactory (const Teuchos::RCP<custom_solver_factory_type>& factory);
+
+  //! @name Implementation of Teuchos::Describable interface
+  //@{
+
+  //! A string description of this object.
+  virtual std::string description() const;
+
+  /// \brief Describe this object.
+  ///
+  /// At higher verbosity levels, this method will print out the list
+  /// of names of supported solvers.  You can also get this list
+  /// directly by using the supportedSolverNames() method.
+  virtual void
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
+  //@}
+
+private:
+  //! The list of solver factories given to addFactory.
+  static std::vector<Teuchos::RCP<custom_solver_factory_type> > factories_;
+};
+
+template<class Scalar, class MV, class OP>
+std::vector<Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::custom_solver_factory_type> >
+SolverFactoryParent<Scalar, MV, OP>::factories_;
+
+} // namespace Impl
 
 /// \class SolverFactory
 /// \brief Factory for all solvers which Belos supports.
@@ -206,113 +370,24 @@ namespace Belos {
 /// </ol>
 ///
 template<class Scalar, class MV, class OP>
-class SolverFactory : public Teuchos::Describable {
+class SolverFactory :
+    public Impl::SolverFactoryParent<Scalar, MV, OP>
+{
+private:
+  typedef Impl::SolverFactoryParent<Scalar, MV, OP> parent_type;
 public:
   /// \brief The type of the solver returned by create().
   ///
   /// This is a specialization of SolverManager for the same scalar,
   /// multivector, and operator types as the template parameters of
   /// this factory.
-  typedef SolverManager<Scalar, MV, OP> solver_base_type;
+  typedef typename parent_type::solver_base_type solver_base_type;
 
-  //! Default constructor.
-  SolverFactory ();
-
-  /// \brief Create, configure, and return the specified solver.
-  ///
-  /// \param solverName [in] Name of the solver.
-  ///
-  /// \param solverParams [in/out] List of parameters with which to
-  ///   configure the solver.  If null, we configure the solver with
-  ///   default parameters.  If nonnull, the solver may modify the
-  ///   list by filling in missing parameters with default values.
-  ///   You can then inspect the resulting list to learn what
-  ///   parameters the solver accepts.
-  ///
-  /// Some solvers may be accessed by multiple names ("aliases").
-  /// Each solver has a canonical name, and zero or more aliases.
-  /// Using some aliases (such as those that access Flexible GMRES
-  /// capability in GMRES-type solvers) may make this method set
-  /// certain parameters in your parameter list.
-  ///
-  /// The input parameter list is passed in as a Teuchos::RCP because
-  /// the factory passes it to the solver, and Belos solvers want
-  /// their input parameter list as a
-  /// Teuchos::RCP<Teuchos::ParameterList>.  We allow a null parameter
-  /// list only for convenience, and will use default parameter values
-  /// in that case.
-  Teuchos::RCP<solver_base_type>
-  create (const std::string& solverName,
-          const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
-
-  /// \brief Number of supported solvers.
-  ///
-  /// This may differ from the number of supported solver
-  /// <i>names</i>, since we may accept multiple names ("aliases") for
-  /// some solvers.
-  int numSupportedSolvers () const;
-
-  /// \brief List of supported solver names.
-  ///
-  /// The length of this list may differ from the number of supported
-  /// solvers, since we may accept multiple names ("aliases") for some
-  /// solvers.
-  Teuchos::Array<std::string> supportedSolverNames () const;
-
-  //! Whether the given solver name names a supported solver.
-  bool isSupported (const std::string& solverName) const;
-
-  //! @name Implementation of Teuchos::Describable interface
-  //@{
-
-  //! A string description of this object.
-  std::string description() const;
-
-  /// \brief Describe this object.
-  ///
-  /// At higher verbosity levels, this method will print out the list
-  /// of names of supported solvers.  You can also get this list
-  /// directly by using the supportedSolverNames() method.
-  void describe (Teuchos::FancyOStream& out,
-                 const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const;
-  //@}
-
-private:
-  //! Print the given array of strings, in YAML format, to \c out.
-  static void
-  printStringArray (std::ostream& out,
-                    const Teuchos::ArrayView<const std::string>& array)
-  {
-    typedef Teuchos::ArrayView<std::string>::const_iterator iter_type;
-
-    out << "[";
-    for (iter_type iter = array.begin(); iter != array.end(); ++iter) {
-      out << "\"" << *iter << "\"";
-      if (iter + 1 != array.end()) {
-        out << ", ";
-      }
-    }
-    out << "]";
-  }
-
-  //! Print the given array of strings, in YAML format, to \c out.
-  static void
-  printStringArray (std::ostream& out,
-                    const std::vector<std::string>& array)
-  {
-    typedef std::vector<std::string>::const_iterator iter_type;
-
-    out << "[";
-    for (iter_type iter = array.begin(); iter != array.end(); ++iter) {
-      out << "\"" << *iter << "\"";
-      if (iter + 1 != array.end()) {
-        out << ", ";
-      }
-    }
-    out << "]";
-  }
+  /// \brief The type of a solver factory that users may give to
+  ///   addFactory() (which see).
+  typedef typename parent_type::custom_solver_factory_type
+    custom_solver_factory_type;
 };
-
 
 namespace Details {
 
@@ -468,31 +543,46 @@ makeSolverManagerTmpl (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
 } // namespace Details
 
+namespace Impl {
 
 template<class Scalar, class MV, class OP>
-SolverFactory<Scalar, MV, OP>::SolverFactory()
-{}
-
-template<class Scalar, class MV, class OP>
-Teuchos::RCP<typename SolverFactory<Scalar, MV, OP>::solver_base_type>
-SolverFactory<Scalar, MV, OP>::
+Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type>
+SolverFactoryParent<Scalar, MV, OP>::
 create (const std::string& solverName,
         const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
-  const char prefix[] = "Belos::SolverFactory: ";
+  using Teuchos::RCP;
+  RCP<solver_base_type> solver = this->getSolver (solverName, solverParams);
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (solver.is_null (), std::invalid_argument,
+     "Invalid or unsupported Belos solver name \"" << solverName << "\".");
+  return solver;
+}
 
-  // Upper-case version of the input solver name.
-  std::string solverNameUC (solverName);
-  {
-    typedef std::string::value_type char_t;
-    typedef std::ctype<char_t> facet_type;
-    const facet_type& facet = std::use_facet<facet_type> (std::locale ());
 
-    const std::string::size_type len = solverName.size ();
-    for (std::string::size_type k = 0; k < len; ++k) {
-      solverNameUC[k] = facet.toupper (solverName[k]);
+template<class Scalar, class MV, class OP>
+Teuchos::RCP<typename SolverFactoryParent<Scalar, MV, OP>::solver_base_type>
+SolverFactoryParent<Scalar, MV, OP>::
+getSolver (const std::string& solverName,
+           const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
+{
+  using Teuchos::RCP;
+  const char prefix[] = "Belos::SolverFactoryParent::getSolver: ";
+
+  // First, check the overriding factories.
+  for (std::size_t k = 0; k < factories_.size (); ++k) {
+    RCP<CustomSolverFactory<Scalar, MV, OP> > factory = factories_[k];
+    if (! factory.is_null ()) {
+      RCP<SolverManager<Scalar, MV, OP> > solver =
+        factory->getSolver (solverName, solverParams);
+      if (! solver.is_null ()) {
+        return solver;
+      }
     }
   }
+
+  // Upper-case version of the input solver name.
+  const std::string solverNameUC = Impl::upperCase (solverName);
 
   // Check whether the given name is an alias.
   std::pair<std::string, bool> aliasResult =
@@ -507,18 +597,14 @@ create (const std::string& solverName,
                                        solverNameUC);
   const bool validCanonicalName =
     (solverEnum != Details::SOLVER_TYPE_UPPER_BOUND);
-
-  // Check whether we found a canonical name.  If we didn't and the
-  // input name is a valid alias, that's a bug.  Otherwise, the input
-  // name is invalid.
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (! validCanonicalName && isAnAlias, std::logic_error,
-     prefix << "Valid alias \"" << solverName << "\" has candidate canonical "
-     "name \"" << candidateCanonicalName << "\", which is not a canonical "
-     "solver name.  Please report this bug to the Belos developers.");
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (! validCanonicalName && ! isAnAlias, std::invalid_argument,
-     prefix << "Invalid solver name \"" << solverName << "\".");
+  if (! validCanonicalName) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (isAnAlias, std::logic_error, prefix << "Valid alias \"" << solverName
+       << "\" has candidate canonical name \"" << candidateCanonicalName
+       << "\", which is not a canonical solver name.  "
+       "Please report this bug to the Belos developers.");
+    return Teuchos::null; // unsupported / invalid solver name
+  }
 
   // If the input list is null, we create a new list and use that.
   // This is OK because the effect of a null parameter list input is
@@ -537,8 +623,18 @@ create (const std::string& solverName,
 
 
 template<class Scalar, class MV, class OP>
+void
+SolverFactoryParent<Scalar, MV, OP>::
+addFactory (const Teuchos::RCP<CustomSolverFactory<Scalar, MV, OP> >& factory)
+{
+  factories_.push_back (factory);
+}
+
+
+template<class Scalar, class MV, class OP>
 std::string
-SolverFactory<Scalar, MV, OP>::description() const
+SolverFactoryParent<Scalar, MV, OP>::
+description () const
 {
   using Teuchos::TypeNameTraits;
 
@@ -547,17 +643,17 @@ SolverFactory<Scalar, MV, OP>::description() const
   if (this->getObjectLabel () != "") {
     out << "Label: " << this->getObjectLabel () << ", ";
   }
-  out << "Scalar: " << TypeNameTraits<Scalar>::name ()
-      << ", MV: " << TypeNameTraits<MV>::name ()
-      << ", OP: " << TypeNameTraits<OP>::name ()
-      << "}";
+  out << "Scalar: \"" << TypeNameTraits<Scalar>::name ()
+      << "\", MV: \"" << TypeNameTraits<MV>::name ()
+      << "\", OP: \"" << TypeNameTraits<OP>::name ()
+      << "\"}";
   return out.str ();
 }
 
 
 template<class Scalar, class MV, class OP>
 void
-SolverFactory<Scalar, MV, OP>::
+SolverFactoryParent<Scalar, MV, OP>::
 describe (Teuchos::FancyOStream& out,
           const Teuchos::EVerbosityLevel verbLevel) const
 {
@@ -584,9 +680,9 @@ describe (Teuchos::FancyOStream& out,
   {
     out << "Template parameters:" << endl;
     Teuchos::OSTab tab1 (out);
-    out << "Scalar: " << TypeNameTraits<Scalar>::name () << endl
-        << "MV: " << TypeNameTraits<MV>::name () << endl
-        << "OP: " << TypeNameTraits<OP>::name () << endl;
+    out << "Scalar: \"" << TypeNameTraits<Scalar>::name () << "\"" << endl
+        << "MV: \"" << TypeNameTraits<MV>::name () << "\"" << endl
+        << "OP: \"" << TypeNameTraits<OP>::name () << "\"" << endl;
   }
 
   // At higher verbosity levels, print out the list of supported solvers.
@@ -595,28 +691,56 @@ describe (Teuchos::FancyOStream& out,
     out << "Number of solvers: " << numSupportedSolvers ()
         << endl;
     out << "Canonical solver names: ";
-    printStringArray (out, Details::canonicalSolverNames ());
+    Impl::printStringArray (out, Details::canonicalSolverNames ());
     out << endl;
 
     out << "Aliases to canonical names: ";
-    printStringArray (out, Details::solverNameAliases ());
+    Impl::printStringArray (out, Details::solverNameAliases ());
     out << endl;
   }
 }
 
 template<class Scalar, class MV, class OP>
 int
-SolverFactory<Scalar, MV, OP>::numSupportedSolvers () const
+SolverFactoryParent<Scalar, MV, OP>::
+numSupportedSolvers () const
 {
-  return Details::numSupportedSolvers ();
+  int numSupported = 0;
+
+  // First, check the overriding factories.
+  for (std::size_t k = 0; k < factories_.size (); ++k) {
+    using Teuchos::RCP;
+    RCP<custom_solver_factory_type> factory = factories_[k];
+    if (! factory.is_null ()) {
+      numSupported += factory->numSupportedSolvers ();
+    }
+  }
+
+  // Now, see how many solvers this factory supports.
+  return numSupported + Details::numSupportedSolvers ();
 }
 
 template<class Scalar, class MV, class OP>
 Teuchos::Array<std::string>
-SolverFactory<Scalar, MV, OP>::supportedSolverNames () const
+SolverFactoryParent<Scalar, MV, OP>::
+supportedSolverNames () const
 {
   typedef std::vector<std::string>::const_iterator iter_type;
   Teuchos::Array<std::string> names;
+
+  // First, check the overriding factories.
+  const std::size_t numFactories = factories_.size ();
+  for (std::size_t factInd = 0; factInd < numFactories; ++factInd) {
+    Teuchos::RCP<custom_solver_factory_type> factory = factories_[factInd];
+    if (! factory.is_null ()) {
+      std::vector<std::string> supportedSolvers =
+        factory->supportedSolverNames ();
+      const std::size_t numSolvers = supportedSolvers.size ();
+      for (std::size_t solvInd = 0; solvInd < numSolvers; ++solvInd) {
+        names.push_back (supportedSolvers[solvInd]);
+      }
+    }
+  }
 
   {
     std::vector<std::string> aliases = Details::solverNameAliases ();
@@ -626,13 +750,52 @@ SolverFactory<Scalar, MV, OP>::supportedSolverNames () const
   }
   {
     std::vector<std::string> canonicalNames = Details::canonicalSolverNames ();
-    for (iter_type iter = canonicalNames.begin (); iter != canonicalNames.end (); ++iter) {
+    for (iter_type iter = canonicalNames.begin ();
+         iter != canonicalNames.end (); ++iter) {
       names.push_back (*iter);
     }
   }
   return names;
 }
 
+template<class Scalar, class MV, class OP>
+bool
+SolverFactoryParent<Scalar, MV, OP>::
+isSupported (const std::string& solverName) const
+{
+  // First, check the overriding factories.
+  const std::size_t numFactories = factories_.size ();
+  for (std::size_t factInd = 0; factInd < numFactories; ++factInd) {
+    using Teuchos::RCP;
+    RCP<custom_solver_factory_type> factory = factories_[factInd];
+    if (! factory.is_null ()) {
+      if (factory->isSupported (solverName)) {
+        return true;
+      }
+    }
+  }
+  // Now, check this factory.
+
+  // Upper-case version of the input solver name.
+  const std::string solverNameUC = Impl::upperCase (solverName);
+
+  // Check whether the given name is an alias.
+  std::pair<std::string, bool> aliasResult =
+    Details::getCanonicalNameFromAlias (solverNameUC);
+  const std::string candidateCanonicalName = aliasResult.first;
+  const bool isAnAlias = aliasResult.second;
+
+  // Get the canonical name.
+  const Details::EBelosSolverType solverEnum =
+    Details::getEnumFromCanonicalName (isAnAlias ?
+                                       candidateCanonicalName :
+                                       solverNameUC);
+  const bool validCanonicalName =
+    (solverEnum != Details::SOLVER_TYPE_UPPER_BOUND);
+  return validCanonicalName;
+}
+
+} // namespace Impl
 } // namespace Belos
 
 #endif // __Belos_SolverFactory_hpp

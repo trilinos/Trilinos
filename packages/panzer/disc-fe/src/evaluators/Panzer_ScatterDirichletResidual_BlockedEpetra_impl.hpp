@@ -240,7 +240,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-         const std::vector<LO> & LIDs = subRowIndexer->getElementLIDs(cellLocalId); 
+         Kokkos::View<const LO*, PHX::Device>  LIDs = subRowIndexer->getElementLIDs(cellLocalId); 
 
          if (!scatterIC_) {
            // this call "should" get the right ordering according to the Intrepid2 basis
@@ -460,7 +460,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-         const std::vector<LO> & LIDs = subRowIndexer->getElementLIDs(cellLocalId); 
+         Kokkos::View<const LO*, PHX::Device>  LIDs = subRowIndexer->getElementLIDs(cellLocalId); 
 
          if (!scatterIC_) {
            // this call "should" get the right ordering according to the Intrepid2 basis
@@ -674,7 +674,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-         const std::vector<LO> & rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
+         Kokkos::View<const LO*, PHX::Device> rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
 
          // loop over basis functions
          for(std::size_t basis=0;basis<subElmtOffset.size();basis++) {
@@ -743,7 +743,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                   continue;
 
                auto subColIndexer = colIndexers_[colIndexer];
-               const std::vector<LO> & cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
+               Kokkos::View<const LO*, PHX::Device> cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
 
                TEUCHOS_ASSERT(end-start==Teuchos::as<int>(cLIDs.size()));
 

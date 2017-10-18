@@ -246,7 +246,7 @@ evaluateFields(
   using Thyra::SpmdVectorBase;
 
   // For convenience, pull out some objects from the workset.
-  vector<int> LIDs;
+  Kokkos::View<const int*, PHX::Device> LIDs;
   string blockId(this->wda(workset).block_id);
   const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
   int numCells(localCellIds.size()), numFields(gatherFields_.size());
@@ -488,7 +488,7 @@ evaluateFields(
   using Thyra::SpmdVectorBase;
 
   // For convenience, pull out some objects from the workset.
-  vector<int> LIDs;
+  Kokkos::View<const int*, PHX::Device> LIDs;
   string blockId(this->wda(workset).block_id);
   const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
   int numCells(localCellIds.size()), numFields(gatherFields_.size());
@@ -797,7 +797,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         size_t cellLocalId(localCellIds[cell]);
-        const vector<int>& LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+        const Kokkos::View<const int*, PHX::Device> LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)
@@ -823,7 +823,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         size_t cellLocalId(localCellIds[cell]);
-        const vector<int>& LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+        const Kokkos::View<const int*, PHX::Device>& LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)

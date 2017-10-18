@@ -80,7 +80,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrixUtils, sortCrsEntriesTpetra, SC, LO, 
   Xpetra::CrsMatrixUtils<SC,LO,GO,NO>::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_values,
                                                       Xpetra::UseTpetra);
   bool sorted = true;
-  for(size_t row = 1; row < CRS_rowptr.size(); ++row) { // Loop over the matrix rows
+  for(decltype(CRS_rowptr.size()) row = 1; row < CRS_rowptr.size(); ++row) { // Loop over the matrix rows
     if(CRS_rowptr[row] - CRS_rowptr[row - 1] > 1) { // Check that the row has is more that one entry
       for(size_t col = CRS_rowptr[row - 1] + 1; col < CRS_rowptr[row]; ++col) {
         if(CRS_colind[col - 1] > CRS_colind[col]) {sorted = false;}
@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrixUtils, sortCrsEntriesEpetra, SC, LO, 
   Xpetra::CrsMatrixUtils<SC,LO,GO,NO>::sortCrsEntries(CRS_rowptr, CRS_colind, CRS_values,
                                                       Xpetra::UseEpetra);
   bool sorted = true;
-  for(size_t row = 1; row < CRS_rowptr.size(); ++row) { // Loop over the matrix rows
+  for(decltype(CRS_rowptr.size()) row = 1; row < CRS_rowptr.size(); ++row) { // Loop over the matrix rows
     if(CRS_rowptr[row] - CRS_rowptr[row - 1] > 1) { // Check that the row has is more that one entry
       for(size_t col = CRS_rowptr[row - 1] + 1; col < CRS_rowptr[row]; ++col) {
         if(CRS_colind[col - 1] > CRS_colind[col]) {sorted = false;}
@@ -153,7 +153,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrixUtils, sortAndMergeCrsEntriesTpetra, 
   }
 
   bool sorted = true;
-  for(size_t row = 1; row < CRS_rowptr.size(); ++row) { // Loop over the matrix rows
+  for(decltype(CRS_rowptr.size()) row = 1; row < CRS_rowptr.size(); ++row) { // Loop over the matrix rows
     if(CRS_rowptr[row] - CRS_rowptr[row - 1] > 1) { // Check that the row has is more that one entry
       for(size_t col = CRS_rowptr[row - 1] + 1; col < CRS_rowptr[row]; ++col) {
         if(CRS_colind[col - 1] > CRS_colind[col]) {sorted = false;}
@@ -204,7 +204,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrixUtils, sortAndMergeCrsEntriesEpetra, 
   }
 
   bool sorted = true;
-  for(size_t row = 1; row < CRS_rowptr.size(); ++row) { // Loop over the matrix rows
+  for(decltype(CRS_rowptr.size()) row = 1; row < CRS_rowptr.size(); ++row) { // Loop over the matrix rows
     if(CRS_rowptr[row] - CRS_rowptr[row - 1] > 1) { // Check that the row has is more that one entry
       for(size_t col = CRS_rowptr[row - 1] + 1; col < CRS_rowptr[row]; ++col) {
         if(CRS_colind[col - 1] > CRS_colind[col]) {sorted = false;}

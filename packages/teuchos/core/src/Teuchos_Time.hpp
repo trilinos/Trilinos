@@ -76,6 +76,12 @@ namespace Teuchos {
 /// and stop().  It is better to access this class through the
 /// TimeMonitor class (which see) for exception safety and correct
 /// behavior in reentrant code.
+///
+/// If Teuchos is configured with <tt>TPL_ENABLE_Valgrind=ON</tt>
+/// and <tt>Teuchos_TIME_MASSIF_SNAPSHOTS=ON</tt> Valgrind Massif
+/// snapshots are taken before and after Teuchos::Time invocation. The
+/// resulting memory profile can be plotted using
+/// <tt>core/utils/plotMassifMemoryUsage.py</tt>
 class TEUCHOSCORE_LIB_DLL_EXPORT Time {
 public:
   /// \brief Constructor
@@ -158,6 +164,12 @@ private:
   bool enabled_;
   std::string name_;
   int numCalls_;
+#ifdef HAVE_TEUCHOS_TIME_MASSIF_SNAPSHOTS
+  // We don't want to rely on incrementNumCalls being called,
+  // because this does not seem to always happen in the same order.
+  // Sometimes after start() is called, sometimes after stop().
+  int numCallsMassifSnapshots_;
+#endif
 };
 
 
