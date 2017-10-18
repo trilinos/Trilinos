@@ -193,7 +193,7 @@ evaluateFields(typename Traits::EvalData workset)
     auto refEdges = Kokkos::createDynRankView(result.get_static_view(),"ref_edges", 2, cellDim);
     auto phyEdges = Kokkos::createDynRankView(result.get_static_view(),"phy_edges", 2, cellDim);
 
-    WorksetDetails & details = workset;
+    const WorksetDetails & details = workset;
 
     // Loop over the faces of the workset cells
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {

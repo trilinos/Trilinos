@@ -152,13 +152,13 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
    // extract dirichlet counter from container
    Teuchos::RCP<const BLOC> blockContainer 
-         = rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
+         = rcp_dynamic_cast<const BLOC>(d.gedc->getDataObject("Dirichlet Counter"),true);
 
    dirichletCounter_ = rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_f(),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 
    // extract linear object container
-   blockContainer = rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
+   blockContainer = rcp_dynamic_cast<const BLOC>(d.gedc->getDataObject(globalDataKey_),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(blockContainer));
 
    Jac_ = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(blockContainer->get_A());

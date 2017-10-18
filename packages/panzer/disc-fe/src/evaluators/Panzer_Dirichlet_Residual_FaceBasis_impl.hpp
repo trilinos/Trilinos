@@ -140,7 +140,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_FaceBasis,workset)
     TEUCHOS_ASSERT(subcellTopo.getBaseKey() == shards::Triangle<>::key ||
                    subcellTopo.getBaseKey() == shards::Quadrilateral<>::key);
 
-    WorksetDetails & details = workset;
+    const WorksetDetails & details = workset;
 
     int faceOrts[6] = {};
     for(index_t c=0;c<workset.num_cells;c++) {

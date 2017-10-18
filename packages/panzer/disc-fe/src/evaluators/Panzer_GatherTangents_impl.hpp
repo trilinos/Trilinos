@@ -119,7 +119,7 @@ evaluateFields(typename Traits::EvalData workset)
 
     auto workspace = Kokkos::createDynRankView(gatherFieldTangents.get_static_view(),"workspace", 4, cellDim);
 
-    WorksetDetails & details = workset;
+    const WorksetDetails & details = workset;
 
     const auto worksetJacobians = pointValues.jac.get_view();
 

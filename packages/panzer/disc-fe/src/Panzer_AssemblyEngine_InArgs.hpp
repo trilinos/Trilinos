@@ -46,6 +46,8 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
+
 class Epetra_Vector;
 class Epetra_CrsMatrix;
 class Epetra_Map;

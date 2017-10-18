@@ -54,7 +54,7 @@
 namespace panzer {
 
   std::vector<std::string>::size_type 
-  getPureBasisIndex(std::string basis_name, panzer::Workset& workset, WorksetDetailsAccessor& wda)
+  getPureBasisIndex(std::string basis_name, const panzer::Workset& workset, WorksetDetailsAccessor& wda)
   {
     std::vector<std::string>::iterator basis = wda(workset).basis_names->begin();
     std::vector<std::string>::const_iterator last = wda(workset).basis_names->end();
@@ -77,7 +77,7 @@ namespace panzer {
   }
 
   std::vector<std::string>::size_type 
-  getBasisIndex(std::string basis_name, panzer::Workset& workset, WorksetDetailsAccessor& wda)
+  getBasisIndex(std::string basis_name, const panzer::Workset& workset, WorksetDetailsAccessor& wda)
   {
     std::vector<std::string>::iterator basis;
 
@@ -94,7 +94,7 @@ namespace panzer {
   }
 
   std::vector<std::string>::size_type
-  getIntegrationRuleIndex(int ir_degree, panzer::Workset& workset, WorksetDetailsAccessor& wda)
+  getIntegrationRuleIndex(int ir_degree, const panzer::Workset& workset, WorksetDetailsAccessor& wda)
   {
     std::vector<int>::iterator ir;
 
@@ -201,17 +201,17 @@ namespace panzer {
   }
 
   std::vector<std::string>::size_type 
-  getPureBasisIndex(std::string basis_name, panzer::Workset& workset) {
+  getPureBasisIndex(std::string basis_name, const panzer::Workset& workset) {
     WorksetDetailsAccessor wda;
     return getPureBasisIndex(basis_name, workset, wda);
   }
   std::vector<std::string>::size_type 
-  getBasisIndex(std::string basis_name, panzer::Workset& workset) {
+  getBasisIndex(std::string basis_name, const panzer::Workset& workset) {
     WorksetDetailsAccessor wda;
     return getBasisIndex(basis_name, workset, wda);
   }
   std::vector<int>::size_type
-  getIntegrationRuleIndex(int ir_degree, panzer::Workset& workset) {
+  getIntegrationRuleIndex(int ir_degree, const panzer::Workset& workset) {
     WorksetDetailsAccessor wda;
     return getIntegrationRuleIndex(ir_degree, workset, wda);
   }

@@ -57,6 +57,7 @@
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Intrepid2_FunctionSpaceTools.hpp"
 
@@ -120,7 +121,7 @@ preEvaluate(typename Traits::PreEvalData d)
   // extract linear object container
   responseObj_ =
     Teuchos::rcp_dynamic_cast<Response_Probe<EvalT> >(
-      d.gedc.getDataObject(ResponseBase::buildLookupName(responseName_)),
+      d.gedc->getDataObject(ResponseBase::buildLookupName(responseName_)),
       true);
 }
 

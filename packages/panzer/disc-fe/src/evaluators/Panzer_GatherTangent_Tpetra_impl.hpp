@@ -50,6 +50,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -125,8 +126,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
   // try to extract linear object container
-  if (d.gedc.containsDataObject(globalDataKey_)) {
-    RCP<GlobalEvaluationData> ged = d.gedc.getDataObject(globalDataKey_);
+  if (d.gedc->containsDataObject(globalDataKey_)) {
+    RCP<GlobalEvaluationData> ged = d.gedc->getDataObject(globalDataKey_);
     RCP<LOCPair_GlobalEvaluationData> loc_pair =
       rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
 

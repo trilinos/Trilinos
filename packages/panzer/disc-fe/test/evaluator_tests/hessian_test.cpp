@@ -258,11 +258,11 @@ TEUCHOS_UNIT_TEST(hessian_test,correctness)
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(derivative_dimensions);
 
-  panzer::Traits::SetupData setupData;
+  panzer::Traits::SD setupData;
   fm->postRegistrationSetup(setupData);
 
   panzer::Workset workset;
-  panzer::Traits::PreEvalData preEvalData;
+  panzer::Traits::PED preEvalData;
 
   fm->preEvaluate<panzer::Traits::Hessian>(preEvalData);
   fm->evaluateFields<panzer::Traits::Hessian>(workset);
