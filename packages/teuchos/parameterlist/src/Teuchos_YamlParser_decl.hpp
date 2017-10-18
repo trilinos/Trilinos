@@ -146,7 +146,13 @@ and looks better in YAML itself.
 #include <iomanip>
 #include <string>
 #include <vector>
+#idef(_WIN32)
+namespace std {
+#endif
 #include <cstdlib>
+#ifdef(_WIN32)
+};
+#endif
 #include <cstring>
 
 namespace Teuchos
