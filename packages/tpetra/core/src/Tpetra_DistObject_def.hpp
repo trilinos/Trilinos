@@ -75,26 +75,6 @@ namespace Tpetra {
       return os.str ();
     }
 
-    std::string combineModeToString (const ::Tpetra::CombineMode combineMode)
-    {
-      std::string combineModeStr;
-      switch (combineMode) {
-      case ADD:
-        combineModeStr = "ADD";
-      case REPLACE:
-        combineModeStr = "REPLACE";
-      case ABSMAX:
-        combineModeStr = "ABSMAX";
-      case INSERT:
-        combineModeStr = "INSERT";
-      case ZERO:
-        combineModeStr = "ZERO";
-      default:
-        combineModeStr = "INVALID";
-      }
-      return combineModeStr;
-    }
-
   } // namespace (anonymous)
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
