@@ -167,6 +167,7 @@ namespace TeuchosTests
       "    </ParameterList>\n"
       "    <ParameterList name=\"Discretization\">\n"
       "      <Parameter name=\"Node Set Associations\" type=\"TwoDArray(string)\" value=\"2x2:{1, 2, top, bottom}\"/>\n"
+      "      <Parameter name=\"Bool-looking String\" type=\"string\" value=\"TRUE\"/>\n"
       "    </ParameterList>\n"
       "  </ParameterList>\n";
     RCP<ParameterList> xmlParams = Teuchos::getParametersFromXmlString(xmlString);
@@ -184,6 +185,7 @@ namespace TeuchosTests
       "        BC Values: [[0.0], [10.0], [20.0]]\n"
       "  Discretization: \n"
       "    Node Set Associations: [['1', '2'], [top, bottom]]\n"
+      "    Bool-looking String: 'TRUE'\n"
       "...\n";
     TEST_EQUALITY(yamlString, expectedYamlString);
     std::stringstream yamlInStream(yamlString);
