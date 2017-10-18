@@ -153,6 +153,22 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
        smoother.set("relaxation: sweeps",         4);
        smoother.set("relaxation: damping factor", 1.0);
      }
+     ml_pl.set("repartition: enable",true);
+     ml_pl.set("repartition: partitioner","zoltan2");
+     ml_pl.set("repartition: start level",2);
+     ml_pl.set("repartition: min rows per proc",1024);
+     ml_pl.set("repartition: max imbalance",1.327);
+     ml_pl.set("repartition: remap parts",true);
+     ml_pl.set("repartition: rebalance P and R",true);
+     {
+       Teuchos::ParameterList& repartition = ml_pl.sublist("repartition: params");
+       repartition.set("algorithm","multijagged");
+     }
+     // add coordinates to parameter list 
+     {
+       Teuchos::ParameterList& required = ml_pl.sublist("Required Parameters");
+       required.set("Coordinates","B_face");
+     }
      invLib.addInverse("Q_B Solve"+name_append,ml_pl);
    }
 
@@ -173,6 +189,22 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
        Teuchos::ParameterList& smoother = ml_pl.sublist("smoother: params");
        smoother.set("relaxation: sweeps",         4);
      }
+     ml_pl.set("repartition: enable",true);
+     ml_pl.set("repartition: partitioner","zoltan2");
+     ml_pl.set("repartition: start level",2);
+     ml_pl.set("repartition: min rows per proc",1024);
+     ml_pl.set("repartition: max imbalance",1.327);
+     ml_pl.set("repartition: remap parts",true);
+     ml_pl.set("repartition: rebalance P and R",true);
+     {
+       Teuchos::ParameterList& repartition = ml_pl.sublist("repartition: params");
+       repartition.set("algorithm","multijagged");
+     }
+     // add coordinates to parameter list 
+     {
+       Teuchos::ParameterList& required = ml_pl.sublist("Required Parameters");
+       required.set("Coordinates","E_edge");
+     }
      invLib.addInverse("T_E Solve"+name_append,ml_pl);
    }
    else
@@ -192,6 +224,11 @@ void FullMaxwellPreconditionerFactory::initializeFromParameterList(const Teuchos
      {
        Teuchos::ParameterList& smoother = ml_pl.sublist("smoother: params");
        smoother.set("fact: iluk level-of-fill", 1);
+     }
+     // add coordinates to parameter list 
+     {
+       Teuchos::ParameterList& required = ml_pl.sublist("Required Parameters");
+       required.set("Coordinates","E_edge");
      }
      invLib.addInverse("T_E Solve"+name_append,ml_pl);
    }

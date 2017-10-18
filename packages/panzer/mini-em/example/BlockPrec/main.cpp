@@ -35,6 +35,7 @@
 
 // includes specific to this example
 #include "Thyra_BlockedLinearOpWithSolveBase.hpp"
+#include "Panzer_STK_ParameterListCallbackBlocked.hpp"
 #include "PanzerMiniEM_config.hpp"
 #include "MiniEM_EquationSetFactory.hpp"
 #include "MiniEM_BCStrategy_Factory.hpp"
@@ -154,8 +155,6 @@ int main(int argc,char * argv[])
 
     // data container for auxiliary linear operators used in preconditioning (mass matrix and gradient)
     Teuchos::RCP<panzer::GlobalEvaluationDataContainer> auxGlobalData = Teuchos::rcp(new panzer::GlobalEvaluationDataContainer);
-    Teuchos::RCP<Teko::RequestHandler> req_handler = Teuchos::rcp(new Teko::RequestHandler());
-    req_handler->addRequestCallback(Teuchos::rcp(new mini_em::OperatorRequestCallback(auxGlobalData)));
 
     // factory definitions
     Teuchos::RCP<mini_em::EquationSetFactory> eqset_factory = 
@@ -280,6 +279,17 @@ int main(int argc,char * argv[])
     // add maxwell solver to teko
     RCP<Teko::Cloneable> clone = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory>());
     Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner",clone);
+
+    // add callbacks to request handler. these are for requesting auxiliary operators and for providing
+    // coordinate information to MueLu
+    Teuchos::RCP<Teko::RequestHandler> req_handler = Teuchos::rcp(new Teko::RequestHandler());
+    req_handler->addRequestCallback(Teuchos::rcp(new mini_em::OperatorRequestCallback(auxGlobalData)));
+    Teuchos::RCP<panzer_stk::ParameterListCallbackBlocked<int,panzer::Ordinal64> > callback =
+                rcp(new panzer_stk::ParameterListCallbackBlocked<int,panzer::Ordinal64>(
+                           rcp_dynamic_cast<panzer_stk::STKConnManager<panzer::Ordinal64> >(conn_manager,true),
+                           rcp_dynamic_cast<panzer::BlockedDOFManager<int,panzer::Ordinal64> >(dofManager,true),
+                           rcp_dynamic_cast<panzer::BlockedDOFManager<int,panzer::Ordinal64> >(auxDofManager,true)));
+    req_handler->addRequestCallback(callback);
 
     // build linear solver
     RCP<Teuchos::ParameterList> lin_solver_pl = maxwellSolverParameterList(use_ilu,use_refmaxwell,print_diagnostics);
