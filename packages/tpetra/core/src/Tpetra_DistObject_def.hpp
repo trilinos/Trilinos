@@ -290,40 +290,39 @@ namespace Tpetra {
             const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
             CombineMode CM)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(*getMap() != *importer.getTargetMap(),
-      std::invalid_argument, "doImport: The target DistObject's Map is not "
-      "identical to the Import's target Map.");
-    {
-      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        srcDistObj != NULL && * (srcDistObj->getMap ()) != *importer.getSourceMap(),
-        std::invalid_argument, "doImport: The source is a DistObject, yet its "
-        "Map is not identical to the Import's source Map.");
-    }
-#endif // HAVE_TPETRA_DEBUG
-    size_t numSameIDs = importer.getNumSameIDs ();
+    using std::endl;
+    const char modeString[] = "doImport (forward mode)";
 
-    typedef Teuchos::ArrayView<const LocalOrdinal> view_type;
-    const view_type exportLIDs      = importer.getExportLIDs();
-    const view_type remoteLIDs      = importer.getRemoteLIDs();
-    const view_type permuteToLIDs   = importer.getPermuteToLIDs();
-    const view_type permuteFromLIDs = importer.getPermuteFromLIDs();
-
-    // mfh 03 Aug 2017: Set this to true for copious debug output to
-    // std::cerr on every MPI process.  This is unwise for runs with
-    // large numbers of MPI processes.
-    constexpr bool debug = false;
-
-    if (debug) {
-      const int myRank = importer.getSourceMap ()->getComm ()->getRank ();
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      prefix = [myRank] () {
+        std::ostringstream os;
+        os << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (os.str ()));
+      } ();
       std::ostringstream os;
-      os << "Proc " << myRank << ": about to call doTransfer" << std::endl;
+      os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
-                      remoteLIDs, exportLIDs, importer.getDistributor (),
-                      DoForward);
+    this->doTransfer (source, importer, modeString, DoForward, CM);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
+         << endl;
+      std::cerr << os.str ();
+    }
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -333,60 +332,81 @@ namespace Tpetra {
             const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
             CombineMode CM)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      *getMap() != *exporter.getTargetMap(), std::invalid_argument,
-      "doExport: The target DistObject's Map is not identical to the Export's "
-      "target Map.");
-    {
-      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        srcDistObj != NULL && * (srcDistObj->getMap ()) != *exporter.getSourceMap(),
-        std::invalid_argument, "doExport: The source is a DistObject, yet its "
-        "Map is not identical to the Export's source Map.");
-    }
-#endif // HAVE_TPETRA_DEBUG
-    size_t numSameIDs = exporter.getNumSameIDs();
+    using std::endl;
+    const char modeString[] = "doExport (forward mode)";
 
-    typedef Teuchos::ArrayView<const LocalOrdinal> view_type;
-    view_type exportLIDs      = exporter.getExportLIDs();
-    view_type remoteLIDs      = exporter.getRemoteLIDs();
-    view_type permuteToLIDs   = exporter.getPermuteToLIDs();
-    view_type permuteFromLIDs = exporter.getPermuteFromLIDs();
-    doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
-                exportLIDs, exporter.getDistributor (), DoForward);
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      prefix = [myRank] () {
+        std::ostringstream os;
+        os << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (os.str ()));
+      } ();
+      std::ostringstream os;
+      os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
+      std::cerr << os.str ();
+    }
+    this->doTransfer (source, exporter, modeString, DoForward, CM);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
+         << endl;
+      std::cerr << os.str ();
+    }
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   doImport (const SrcDistObject& source,
-            const Export<LocalOrdinal, GlobalOrdinal, Node> & exporter,
+            const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
             CombineMode CM)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      *getMap() != *exporter.getSourceMap(), std::invalid_argument,
-      "doImport (reverse mode): The target DistObject's Map is not identical "
-      "to the Export's source Map.");
-    {
-      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        srcDistObj != NULL && * (srcDistObj->getMap ()) != *exporter.getTargetMap(),
-        std::invalid_argument,
-        "doImport (reverse mode): The source is a DistObject, yet its "
-        "Map is not identical to the Export's target Map.");
-    }
-#endif // HAVE_TPETRA_DEBUG
-    size_t numSameIDs = exporter.getNumSameIDs();
+    using std::endl;
+    const char modeString[] = "doImport (reverse mode)";
 
-    typedef Teuchos::ArrayView<const LocalOrdinal> view_type;
-    view_type exportLIDs      = exporter.getRemoteLIDs();
-    view_type remoteLIDs      = exporter.getExportLIDs();
-    view_type permuteToLIDs   = exporter.getPermuteFromLIDs();
-    view_type permuteFromLIDs = exporter.getPermuteToLIDs();
-    doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
-                exportLIDs, exporter.getDistributor (), DoReverse);
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      prefix = [myRank] () {
+        std::ostringstream os;
+        os << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (os.str ()));
+      } ();
+      std::ostringstream os;
+      os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
+      std::cerr << os.str ();
+    }
+    this->doTransfer (source, exporter, modeString, DoReverse, CM);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
+         << endl;
+      std::cerr << os.str ();
+    }
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -396,29 +416,39 @@ namespace Tpetra {
             const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
             CombineMode CM)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      *getMap() != *importer.getSourceMap(), std::invalid_argument,
-      "doExport (reverse mode): The target object's Map "
-      "is not identical to the Import's source Map.");
-    {
-      const this_type* srcDistObj = dynamic_cast<const this_type*> (&source);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        srcDistObj != NULL && * (srcDistObj->getMap ()) != *importer.getTargetMap(),
-        std::invalid_argument,
-        "doExport (reverse mode): The source is a DistObject, yet its "
-        "Map is not identical to the Import's target Map.");
-    }
-#endif // HAVE_TPETRA_DEBUG
-    size_t numSameIDs = importer.getNumSameIDs();
+    using std::endl;
+    const char modeString[] = "doExport (reverse mode)";
 
-    typedef Teuchos::ArrayView<const LocalOrdinal> view_type;
-    view_type exportLIDs      = importer.getRemoteLIDs();
-    view_type remoteLIDs      = importer.getExportLIDs();
-    view_type permuteToLIDs   = importer.getPermuteFromLIDs();
-    view_type permuteFromLIDs = importer.getPermuteToLIDs();
-    doTransfer (source, CM, numSameIDs, permuteToLIDs, permuteFromLIDs, remoteLIDs,
-                exportLIDs, importer.getDistributor (), DoReverse);
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      prefix = [myRank] () {
+        std::ostringstream os;
+        os << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (os.str ()));
+      } ();
+      std::ostringstream os;
+      os << *prefix << "Tpetra::DistObject::" << modeString << ":" << endl;
+      std::cerr << os.str ();
+    }
+    this->doTransfer (source, importer, modeString, DoReverse, CM);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::DistObject::" << modeString << ": Done!"
+         << endl;
+      std::cerr << os.str ();
+    }
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -439,18 +469,66 @@ namespace Tpetra {
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   doTransfer (const SrcDistObject& src,
-              CombineMode CM,
-              size_t numSameIDs,
-              const Teuchos::ArrayView<const LocalOrdinal>& permuteToLIDs_,
-              const Teuchos::ArrayView<const LocalOrdinal>& permuteFromLIDs_,
-              const Teuchos::ArrayView<const LocalOrdinal>& remoteLIDs_,
-              const Teuchos::ArrayView<const LocalOrdinal>& exportLIDs_,
-              Distributor& distor,
-              ReverseOption revOp)
+              const Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+              const char modeString[],
+              const ReverseOption revOp,
+              const CombineMode CM)
   {
     using Tpetra::Details::getDualViewCopyFromArrayView;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef device_type DT;
+
+    // mfh 18 Oct 2017: Set TPETRA_DEBUG to true to enable extra debug
+    // checks.  These may communicate more.
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      if (revOp == DoForward) {
+        const bool myMapSameAsTransferTgtMap =
+          this->getMap ()->isSameAs (* (transfer.getTargetMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! myMapSameAsTransferTgtMap, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For forward-mode "
+           "communication, the target DistObject's Map must be the same "
+           "(in the sense of Tpetra::Map::isSameAs) as the input "
+           "Export/Import object's target Map.");
+      }
+      else { // revOp == DoReverse
+        const bool myMapSameAsTransferSrcMap =
+          this->getMap ()->isSameAs (* (transfer.getSourceMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! myMapSameAsTransferSrcMap, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For reverse-mode "
+           "communication, the target DistObject's Map must be the same "
+           "(in the sense of Tpetra::Map::isSameAs) as the input "
+           "Export/Import object's source Map.");
+      }
+
+      // SrcDistObject need not even _have_ Maps.  However, if the
+      // source object is a DistObject, it has a Map, and we may
+      // compare that Map with the Transfer's Maps.
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
+      if (srcDistObj != NULL) {
+        if (revOp == DoForward) {
+          const bool srcMapSameAsImportSrcMap =
+            srcDistObj->getMap ()->isSameAs (* (transfer.getSourceMap ()));
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! srcMapSameAsImportSrcMap, std::invalid_argument,
+             "Tpetra::DistObject::" << modeString << ": For forward-mode "
+             "communication, the source DistObject's Map must be the same "
+             "as the input Export/Import object's source Map.");
+        }
+        else { // revOp == DoReverse
+          const bool srcMapSameAsImportTgtMap =
+            srcDistObj->getMap ()->isSameAs (* (transfer.getTargetMap ()));
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! srcMapSameAsImportTgtMap, std::invalid_argument,
+             "Tpetra::DistObject::" << modeString << ": For reverse-mode "
+             "communication, the source DistObject's Map must be the same "
+             "as the input Export/Import object's target Map.");
+        }
+      }
+    }
 
     // mfh 03 Aug 2017, 17 Oct 2017: Set TPETRA_VERBOSE to true for
     // copious debug output to std::cerr on every MPI process.  This
@@ -458,11 +536,35 @@ namespace Tpetra {
     const bool verbose = ::Tpetra::Details::Behavior::verbose ();
     std::unique_ptr<std::string> prefix;
     if (verbose) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      prefix = [myRank] () {
+        std::ostringstream os;
+        os << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (os.str ()));
+      } ();
       std::ostringstream os;
-      os << "(Proc " << myRank << ") Tpetra::DistObject::doTransfer: ";
-      prefix = std::unique_ptr<std::string> (new std::string (os.str ()));
+      os << *prefix << "Tpetra::DistObject::doTransfer:" << endl;
+      std::cerr << os.str ();
     }
+
+    const size_t numSameIDs = transfer.getNumSameIDs ();
+    typedef Teuchos::ArrayView<const LocalOrdinal> view_type;
+    const view_type permuteToLIDs_ = (revOp == DoForward) ?
+      transfer.getPermuteToLIDs () : transfer.getPermuteFromLIDs ();
+    const view_type permuteFromLIDs_ = (revOp == DoForward) ?
+      transfer.getPermuteFromLIDs () : transfer.getPermuteToLIDs ();
+    const view_type exportLIDs_ = (revOp == DoForward) ?
+      transfer.getExportLIDs () : transfer.getRemoteLIDs ();
+    const view_type remoteLIDs_ = (revOp == DoForward) ?
+      transfer.getRemoteLIDs () : transfer.getExportLIDs ();
+    Distributor& distor = transfer.getDistributor ();
 
     if (this->useNewInterface ()) {
 #ifdef KOKKOS_HAVE_CUDA
@@ -472,6 +574,12 @@ namespace Tpetra {
 #endif // KOKKOS_HAVE_CUDA
       // Do we need all communication buffers to live on host?
       const bool commOnHost = ! allowDeviceCommBuffers;
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "doTransfer: Use new interface; "
+          "commOnHost=" << (commOnHost ? "true" : "false") << endl;
+        std::cerr << os.str ();
+      }
 
       // Convert arguments to Kokkos::DualView.  This currently
       // involves deep copy, either to host or to device (depending on
@@ -499,23 +607,23 @@ namespace Tpetra {
         getDualViewCopyFromArrayView<LO, DT> (exportLIDs_,
                                               "exportLIDs",
                                               commOnHost);
-
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Calling doTransferNew" << std::endl;
-        std::cerr << os.str ();
-      }
       doTransferNew (src, CM, numSameIDs, permuteToLIDs, permuteFromLIDs,
                      remoteLIDs, exportLIDs, distor, revOp, commOnHost);
     }
     else {
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "Calling doTransferOld" << std::endl;
+        os << *prefix << "doTransfer: Use old interface" << endl;
         std::cerr << os.str ();
       }
       doTransferOld (src, CM, numSameIDs, permuteToLIDs_, permuteFromLIDs_,
                      remoteLIDs_, exportLIDs_, distor, revOp);
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::DistObject::doTransfer: Done!" << endl;
+      std::cerr << os.str ();
     }
   }
 
