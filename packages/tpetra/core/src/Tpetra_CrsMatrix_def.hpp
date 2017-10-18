@@ -78,6 +78,38 @@ namespace Tpetra {
 
 namespace { // (anonymous)
 
+  template<class DualViewType>
+  std::string dualViewStatusToString (const DualViewType& dv, const char name[])
+  {
+    const auto host = dv.modified_host ();
+    const auto dev = dv.modified_host ();
+
+    std::ostringstream os;
+    os << name << ": {size: " << dv.dimension_0 ()
+       << ", sync: {host: " << host << ", dev: " << dev << "}";
+    return os.str ();
+  }
+
+  std::string combineModeToString (const ::Tpetra::CombineMode combineMode)
+  {
+    std::string combineModeStr;
+    switch (combineMode) {
+    case ADD:
+      combineModeStr = "ADD";
+    case REPLACE:
+      combineModeStr = "REPLACE";
+    case ABSMAX:
+      combineModeStr = "ABSMAX";
+    case INSERT:
+      combineModeStr = "INSERT";
+    case ZERO:
+      combineModeStr = "ZERO";
+    default:
+      combineModeStr = "INVALID";
+    }
+    return combineModeStr;
+  }
+
   template<class T, class BinaryFunction>
   T atomic_binary_function_update (volatile T* const dest,
                                    const T& inputVal,
@@ -6379,12 +6411,42 @@ namespace Tpetra {
   {
     using Tpetra::Details::castAwayConstDualView;
     using Tpetra::Details::ProfilingRegion;
+    using std::endl;
     typedef Kokkos::HostSpace host_mem_space;
-    using Teuchos::ArrayView;
     typedef typename device_type::memory_space dev_mem_space;
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteNew");
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+
+      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::copyAndPermuteNew: " << endl
+         << *prefix << "  "
+         << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << endl
+         << *prefix << "  "
+         << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << endl;
+      std::cerr << os.str ();
+    }
 
     const auto numPermute = permuteToLIDs.dimension_0 ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -6409,6 +6471,15 @@ namespace Tpetra {
     permuteFromLIDs_nc.template sync<host_mem_space> ();
     auto permuteFromLIDs_h = permuteFromLIDs.template view<host_mem_space> ();
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "permuteToLIDs_sync_back: "
+         << (permuteToLIDs_sync_back ? "true" : "false") << ", "
+         << "permuteFromLIDs_sync_back: "
+         << (permuteFromLIDs_sync_back ? "true" : "false") << endl;
+      std::cerr << os.str ();
+    }
+
     // This dynamic cast should succeed, because we've already tested
     // it in checkSizes().
     typedef ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> RMT;
@@ -6422,6 +6493,16 @@ namespace Tpetra {
     }
     if (permuteFromLIDs_sync_back) {
       permuteFromLIDs_nc.template sync<dev_mem_space> ();
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "copyAndPermuteNew: after:" << endl
+         << *prefix << "  "
+         << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << endl
+         << *prefix << "  "
+         << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << endl;
+      std::cerr << os.str ();
     }
   }
 
@@ -6456,16 +6537,26 @@ namespace Tpetra {
     const Teuchos::Comm<int>& comm = *pComm;
     const int myRank = comm.getSize ();
 
+    std::unique_ptr<std::string> prefix;
     if (verbose) {
+      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
+
       std::ostringstream os;
-      os << "(Proc " << myRank << ") "
-         << "Tpetra::CrsMatrix::packAndPrepareNew: " << endl
-         << "  exportLIDs.modified_host(): " << exportLIDs.modified_host () << endl
-         << "  exportLIDs.modified_device(): " << exportLIDs.modified_device () << endl
-         << "  exports.modified_host(): " << exports.modified_host () << endl
-         << "  exports.modified_device(): " << exports.modified_device () << endl
-         << "  numPacketsPerLID.modified_host(): " << numPacketsPerLID.modified_host () << endl
-         << "  numPacketsPerLID.modified_device(): " << numPacketsPerLID.modified_device () << endl;
+      os << *prefix << "Tpetra::CrsMatrix::packAndPrepareNew: " << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exportLIDs, "exportLIDs")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exports, "exports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (numPacketsPerLID, "numPacketsPerLID")
+         << endl;
       std::cerr << os.str ();
     }
 
@@ -6498,8 +6589,8 @@ namespace Tpetra {
     if (srcCrsMat != NULL) {
       if (verbose) {
         std::ostringstream os;
-        os << "(Proc " << myRank << ") packAndPrepare: source matrix "
-          "same (CrsMatrix) type as target matrix; calling packNew" << endl;
+        os << *prefix << "Source matrix same (CrsMatrix) type as target; "
+          "calling packNew" << endl;
         std::cerr << os.str ();
       }
       try {
@@ -6520,8 +6611,8 @@ namespace Tpetra {
 
       if (verbose) {
         std::ostringstream os;
-        os << "(Proc " << myRank << ") packAndPrepare: source matrix "
-          "NOT same (CrsMatrix) type as target matrix" << endl;
+        os << *prefix << "Source matrix NOT same (CrsMatrix) type as target"
+           << endl;
         std::cerr << os.str ();
       }
 
@@ -6621,14 +6712,16 @@ namespace Tpetra {
 
     if (verbose) {
       std::ostringstream os;
-      os << "(Proc " << myRank << ") "
-         << "packAndPrepareNew: Done!" << endl
-         << "  exportLIDs.modified_host(): " << exportLIDs.modified_host () << endl
-         << "  exportLIDs.modified_device(): " << exportLIDs.modified_device () << endl
-         << "  exports.modified_host(): " << exports.modified_host () << endl
-         << "  exports.modified_device(): " << exports.modified_device () << endl
-         << "  numPacketsPerLID.modified_host(): " << numPacketsPerLID.modified_host () << endl
-         << "  numPacketsPerLID.modified_device(): " << numPacketsPerLID.modified_device () << endl;
+      os << *prefix << "packAndPrepareNew: Done!" << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exportLIDs, "exportLIDs")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exports, "exports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (numPacketsPerLID, "numPacketsPerLID")
+         << endl;
       std::cerr << os.str ();
     }
   }
@@ -7159,6 +7252,7 @@ namespace Tpetra {
     const char* validModeNames[numValidModes] =
       {"ADD", "REPLACE", "ABSMAX", "INSERT", "ZERO"};
 
+    std::unique_ptr<std::string> prefix;
     int myRank = 0;
     if (verbose) {
       auto map = this->getMap ();
@@ -7168,34 +7262,27 @@ namespace Tpetra {
           myRank = comm->getRank ();
         }
       }
-
-      std::string combineModeStr;
-      switch (combineMode) {
-      case ADD:
-        combineModeStr = "ADD";
-      case REPLACE:
-        combineModeStr = "REPLACE";
-      case ABSMAX:
-        combineModeStr = "ABSMAX";
-      case INSERT:
-        combineModeStr = "INSERT";
-      case ZERO:
-        combineModeStr = "ZERO";
-      default:
-        combineModeStr = "INVALID";
-      }
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
 
       std::ostringstream os;
-      os << "(Proc " << myRank << ") "
-         << "Tpetra::CrsMatrix::unpackAndCombineNew: " << endl
-         << "  importLIDs.modified_host(): " << importLIDs.modified_host () << endl
-         << "  importLIDs.modified_device(): " << importLIDs.modified_device () << endl
-         << "  imports.modified_host(): " << imports.modified_host () << endl
-         << "  imports.modified_device(): " << imports.modified_device () << endl
-         << "  numPacketsPerLID.modified_host(): " << numPacketsPerLID.modified_host () << endl
-         << "  numPacketsPerLID.modified_device(): " << numPacketsPerLID.modified_device () << endl
-         << "  constantNumPackets: " << constantNumPackets << endl
-         << "  combineMode: " << combineModeStr << endl;
+      os << *prefix << "Tpetra::CrsMatrix::unpackAndCombineNew: " << endl
+         << *prefix << "  "
+         << dualViewStatusToString (importLIDs, "importLIDs")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (imports, "imports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (numPacketsPerLID, "numPacketsPerLID")
+         << endl
+         << *prefix << "  constantNumPackets: " << constantNumPackets
+         << endl
+         << *prefix << "  combineMode: " << combineModeToString (combineMode)
+         << endl;
       std::cerr << os.str ();
     }
 
@@ -7252,6 +7339,21 @@ namespace Tpetra {
       this->unpackAndCombineNewImpl (importLIDs, imports, numPacketsPerLID,
                                      constantNumPackets, distor, combineMode);
     }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "unpackAndCombineNew: Done!" << endl
+         << *prefix << "  "
+         << dualViewStatusToString (importLIDs, "importLIDs")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (imports, "imports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (numPacketsPerLID, "numPacketsPerLID")
+         << endl;
+      std::cerr << os.str ();
+    }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -7297,6 +7399,7 @@ namespace Tpetra {
     using Tpetra::Details::castAwayConstDualView;
     using Tpetra::Details::create_mirror_view_from_raw_host_array;
     using Tpetra::Details::PackTraits;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef impl_scalar_type ST;
@@ -7307,6 +7410,33 @@ namespace Tpetra {
     typedef View<GO*, HES, MemoryUnmanaged> gids_out_type;
     typedef View<ST*, HES, MemoryUnmanaged> vals_out_type;
     const char tfecfFuncName[] = "unpackAndCombineNewImplNonStatic: ";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
+
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::unpackAndCombineNewImplNonStatic:"
+         << endl; // we've already printed statuses of DualViews
+      std::cerr << os.str ();
+    }
 
     const size_type numImportLIDs = importLIDs.dimension_0 ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -7366,6 +7496,14 @@ namespace Tpetra {
       if (numBytes == 0) {
         continue; // empty buffer for that row means that the row is empty
       }
+      // We need to unpack a nonzero number of entries for this row.
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (offset + numBytes > static_cast<size_t> (imports_h.dimension_0 ()),
+         std::logic_error, "At i = " << i << ", offset (=" << offset
+         << ") + numBytes (=" << numBytes << ") > imports_h.dimension_0()="
+         << imports_h.dimension_0 () << ".");
+#endif // HAVE_TPETRA_DEBUG
 
       LO numEntLO = 0;
 
@@ -7377,12 +7515,18 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
       const char* const inBuf = imports_h.data () + offset;
-      const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
+      const size_t actualNumBytes =
+        PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
 
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (actualNumBytes > numBytes, std::logic_error, "actualNumBytes = "
-         << actualNumBytes << " > numBytes = " << numBytes << ".");
+        (actualNumBytes > numBytes, std::logic_error, "At i = " << i
+         << ", actualNumBytes=" << actualNumBytes
+         << " > numBytes=" << numBytes << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (numEntLO == 0, std::logic_error, "At i = " << i << ", the number of "
+         "entries read from the packed data is numEntLO=" << numEntLO << ", "
+         "but numBytes=" << numBytes << " != 0.");
 #else
       (void) actualNumBytes;
 #endif // HAVE_TPETRA_DEBUG
