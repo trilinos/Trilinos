@@ -805,9 +805,6 @@ class Reader : public Teuchos::Reader {
       std::string const& rest,
       std::string& content,
       std::string& comment) {
-    std::cerr << "\nheader:\n" << header << '\n';
-    std::cerr << "leading_empties_or_comments:\n" << leading_empties_or_comments << '\n';
-    std::cerr << "rest:\n" << rest << '\n';
     char style;
     char chomping_indicator;
     std::size_t indentation_indicator = 0;
@@ -815,8 +812,6 @@ class Reader : public Teuchos::Reader {
     std::stringstream ss(header.substr(1,std::string::npos));
     if (header.size() > 1 && std::isdigit(header[1])) {
       ss >> indentation_indicator;
-      std::cerr << "indentation_indicator: " << indentation_indicator << '\n';
-      std::cerr << "parent_indent_level: " << parent_indent_level << '\n';
       indentation_indicator += parent_indent_level;
     }
     if (!(ss >> chomping_indicator)) chomping_indicator = '\0';
