@@ -90,26 +90,6 @@ namespace { // (anonymous)
     return os.str ();
   }
 
-  std::string combineModeToString (const ::Tpetra::CombineMode combineMode)
-  {
-    std::string combineModeStr;
-    switch (combineMode) {
-    case ADD:
-      combineModeStr = "ADD";
-    case REPLACE:
-      combineModeStr = "REPLACE";
-    case ABSMAX:
-      combineModeStr = "ABSMAX";
-    case INSERT:
-      combineModeStr = "INSERT";
-    case ZERO:
-      combineModeStr = "ZERO";
-    default:
-      combineModeStr = "INVALID";
-    }
-    return combineModeStr;
-  }
-
   template<class T, class BinaryFunction>
   T atomic_binary_function_update (volatile T* const dest,
                                    const T& inputVal,
