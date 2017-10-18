@@ -509,6 +509,13 @@ int test_multiple_lid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
 int main(int narg, char **arg) {
   Kokkos::initialize(narg, arg);
 
+#ifndef HAVE_MPI
+  // TODO what is cleanest way to support a serial test case?
+  // We still have some non Teuchos MPI calls in the directory and this works
+  // but I think if this all gets incorporated into Teuchos we can clean this up.
+  MPI_Init(NULL, NULL);
+#endif
+
   Teuchos::GlobalMPISession mpiSession(&narg,&arg);
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();

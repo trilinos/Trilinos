@@ -3,7 +3,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   directoryTest_Kokkos
   SOURCES directoryTest_Kokkos.cpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
 )
 
 # In progress to implement optimization such as functors.
@@ -12,14 +12,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  directoryTest_KokkosOptimized
 #  SOURCES directoryTest_KokkosOptimized.cpp
 #  NUM_MPI_PROCS 4
-#  COMM mpi
+#  COMM serial mpi
 #)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   directoryTest_KokkosSimple
   SOURCES directoryTest_KokkosSimple.cpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
 )
 
 # Temporary tests for development and comparison
@@ -29,21 +29,21 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   directoryTest_Original
   SOURCES directoryTest_Original.cpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   directoryTest_Relic
   SOURCES directoryTest_Relic.cpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   directoryTest_Tpetra
   SOURCES directoryTest_Tpetra.cpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
 )
 
 
@@ -56,7 +56,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CATEGORIES PERFORMANCE
   SOURCES directoryTest_PerformanceOriginal.cpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -64,7 +64,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CATEGORIES PERFORMANCE
   SOURCES directoryTest_PerformanceRelic.cpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -72,7 +72,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CATEGORIES PERFORMANCE
   SOURCES directoryTest_PerformanceTpetra.cpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
 )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -80,7 +80,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CATEGORIES PERFORMANCE
   SOURCES directoryTest_PerformanceKokkos.cpp
   NUM_MPI_PROCS 4
-  COMM mpi
+  COMM serial mpi
 )
 
 # In progress to implement optimization such as functors.
@@ -90,5 +90,16 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  CATEGORIES PERFORMANCE
 #  SOURCES directoryTest_PerformanceKokkosOptimized.cpp
 #  NUM_MPI_PROCS 4
-#  COMM mpi
+#  COMM serial mpi
 #)
+
+
+# The purpose of this test is to duplicate the
+# result of findUniqueGids but using the new
+# Zoltan2Directory class.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  directoryTest_findUniqueGids.cpp
+  SOURCES directoryTest_findUniqueGids.cpp
+  COMM serial mpi
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)

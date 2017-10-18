@@ -529,7 +529,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   ZOLTAN_COMM_OBJ *plan  = NULL;   // for efficient MPI communication
   int nrec = 0;       // number of receives to expect
   err = Zoltan_Comm_Create (&plan, gid.size(), procs.getRawPtr(),
-    Teuchos::getRawMpiComm(*comm), ZOLTAN2_DD_UPDATE_MSG_TAG, &nrec);
+    getRawComm(), ZOLTAN2_DD_UPDATE_MSG_TAG, &nrec);
 #endif
 
   if (err) {
@@ -583,7 +583,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     // new gid set may be partially overlapped with the original. Currently the
     // update_local has a mechanism to rehash and increase this size if we run
     // out so skipping this call would be logically ok (but not best performance)
-    node_map.rehash(nrec);
+    rehash_node_map(nrec);
   }
 #endif
 
@@ -869,6 +869,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
   Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node = nodelist[nodeidx];
 #else
   Zoltan2_Directory_Node<gid_t,lid_t,user_t> node; // will add to hash at end
+  node.free = 0; // TODO - is this necessary - see notes in rehash_node_map
 #endif
 
 #ifdef CONVERT_DIRECTORY_RELIC
@@ -925,7 +926,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
     // but more efficient as we scale up.
     size_t new_guess_size = (node_map.size() < 10) ? 10 :
       ( node_map.size() + node_map.size()/10); // adds a minimum of 1
-    node_map.rehash(new_guess_size);
+    rehash_node_map(new_guess_size);
     if(node_map.insert(*gid, node).failed()) {
       throw std::logic_error("Hash insert failed. Mem sufficient?....");
     }
@@ -1008,8 +1009,14 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
 #ifdef CONVERT_DIRECTORY_RELIC
   ZOLTAN_COMM_OBJ *plan  = NULL;     // efficient MPI communication
   int nrec;                          // number of messages to receive
+#ifdef HAVE_MPI
   err = Zoltan_Comm_Create (&plan, gid.size(), procs.getRawPtr(),
     Teuchos::getRawMpiComm(*comm), ZOLTAN2_DD_FIND_MSG_TAG, &nrec);
+#else
+  err = Zoltan_Comm_Create (&plan, gid.size(), procs.getRawPtr(),
+    MPI_COMM_WORLD, ZOLTAN2_DD_FIND_MSG_TAG, &nrec);
+#endif
+
 #else
   Zoltan2_Directory_Comm directoryComm(gid.size(), procs, comm,
     ZOLTAN2_DD_FIND_MSG_TAG);
@@ -1324,7 +1331,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find_local(
   size_t node_index = node_map.find(*gid);
   if(node_map.valid_at(node_index))
   {
-    Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
+    const Zoltan2_Directory_Node<gid_t,lid_t,user_t> & node =
       node_map.value_at(node_index);
 #else
   int index = hash_table(*gid);
@@ -1648,7 +1655,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   ZOLTAN_COMM_OBJ *plan  = NULL;   // for efficient MPI communication
   int nrec;       // number of receives to expect
   err = Zoltan_Comm_Create (&plan, gid.size(), procs.getRawPtr(),
-    Teuchos::getRawMpiComm(*comm), ZOLTAN2_DD_REMOVE_MSG_TAG, &nrec);
+    getRawComm(), ZOLTAN2_DD_REMOVE_MSG_TAG, &nrec);
 #endif
 
   if (err) {
