@@ -113,7 +113,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       col=col-1;
       if(edge_map->isNodeGlobalElement(row)) {
         S_Matrix->insertGlobalValues(row,
-            Teuchos::ArrayView<LO>(&col,1),
+            Teuchos::ArrayView<GO>(&col,1),
             Teuchos::ArrayView<SC>(&entry,1));
       }
     }
