@@ -93,7 +93,7 @@ namespace MueLu {
 
     //! Constructor
     RefMaxwell() :
-      Hierarchy11_(Teuchos::null),
+      HierarchyH_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
       disable_addon_(true),
       mode_("additive")
@@ -101,8 +101,8 @@ namespace MueLu {
     }
 
     //! Constructor with Hierarchies
-    RefMaxwell(Teuchos::RCP<Hierarchy> H11, Teuchos::RCP<Hierarchy> H22) :
-      Hierarchy11_(H11),
+    RefMaxwell(Teuchos::RCP<Hierarchy> HH, Teuchos::RCP<Hierarchy> H22) :
+      HierarchyH_(HH),
       Hierarchy22_(H22),
       disable_addon_(false),
       mode_("additive")
@@ -110,16 +110,16 @@ namespace MueLu {
     }
 
     /** Constructor with Jacobian (with add on)
-      *
-      * \param[in] SM_Matrix Jacobian
-      * \param[in] D0_Matrix Discrete Gradient
-      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
-      * \param[in] M1_Matrix Edge mass matrix for the
-      * \param[in] Nullspace Null space (needed for periodic)
-      * \param[in] coords Nodal coordinates
-      * \param[in] precList Parameter list
-      * \param[in] ComputePrec If true, compute the preconditioner immediately
-      */
+     *
+     * \param[in] SM_Matrix Jacobian
+     * \param[in] D0_Matrix Discrete Gradient
+     * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
+     * \param[in] M1_Matrix Edge mass matrix for the
+     * \param[in] Nullspace Null space (needed for periodic)
+     * \param[in] coords Nodal coordinates
+     * \param[in] precList Parameter list
+     * \param[in] ComputePrec If true, compute the preconditioner immediately
+     */
     RefMaxwell(const Teuchos::RCP<Matrix> & SM_Matrix,
                const Teuchos::RCP<Matrix> & D0_Matrix,
                const Teuchos::RCP<Matrix> & M0inv_Matrix,
@@ -139,14 +139,14 @@ namespace MueLu {
     }
 
     /** Constructor without Jacobian (with add on)
-      *
-      * \param[in] D0_Matrix Discrete Gradient
-      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
-      * \param[in] M1_Matrix Edge mass matrix for the
-      * \param[in] Nullspace Null space (needed for periodic)
-      * \param[in] coords Nodal coordinates
-      * \param[in] precList Parameter list
-      */
+     *
+     * \param[in] D0_Matrix Discrete Gradient
+     * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
+     * \param[in] M1_Matrix Edge mass matrix for the
+     * \param[in] Nullspace Null space (needed for periodic)
+     * \param[in] coords Nodal coordinates
+     * \param[in] precList Parameter list
+     */
     RefMaxwell(const Teuchos::RCP<Matrix> & D0_Matrix,
                const Teuchos::RCP<Matrix> & M0inv_Matrix,
                const Teuchos::RCP<Matrix> & M1_Matrix,
@@ -158,15 +158,15 @@ namespace MueLu {
     }
 
     /** Constructor with Jacobian (no add on)
-      *
-      * \param[in] SM_Matrix Jacobian
-      * \param[in] D0_Matrix Discrete Gradient
-      * \param[in] M1_Matrix Edge mass matrix for the
-      * \param[in] Nullspace Null space (needed for periodic)
-      * \param[in] coords Nodal coordinates
-      * \param[in] precList Parameter list
-      * \param[in] ComputePrec If true, compute the preconditioner immediately
-      */
+     *
+     * \param[in] SM_Matrix Jacobian
+     * \param[in] D0_Matrix Discrete Gradient
+     * \param[in] M1_Matrix Edge mass matrix for the
+     * \param[in] Nullspace Null space (needed for periodic)
+     * \param[in] coords Nodal coordinates
+     * \param[in] precList Parameter list
+     * \param[in] ComputePrec If true, compute the preconditioner immediately
+     */
     RefMaxwell(const Teuchos::RCP<Matrix> & SM_Matrix,
                const Teuchos::RCP<Matrix> & D0_Matrix,
                const Teuchos::RCP<Matrix> & M1_Matrix,
@@ -185,13 +185,13 @@ namespace MueLu {
     }
 
     /** Constructor without Jacobian (no add on)
-      *
-      * \param[in] D0_Matrix Discrete Gradient
-      * \param[in] M1_Matrix Edge mass matrix for the
-      * \param[in] Nullspace Null space (needed for periodic)
-      * \param[in] coords Nodal coordinates
-      * \param[in] precList Parameter list
-      */
+     *
+     * \param[in] D0_Matrix Discrete Gradient
+     * \param[in] M1_Matrix Edge mass matrix for the
+     * \param[in] Nullspace Null space (needed for periodic)
+     * \param[in] coords Nodal coordinates
+     * \param[in] precList Parameter list
+     */
     RefMaxwell(const Teuchos::RCP<Matrix> & D0_Matrix,
                const Teuchos::RCP<Matrix> & M1_Matrix,
                const Teuchos::RCP<MultiVector>  & Nullspace,
@@ -243,9 +243,9 @@ namespace MueLu {
     //! \param[in]  X - MultiVector of dimension NumVectors to multiply with matrix.
     //! \param[out] Y - MultiVector of dimension NumVectors containing result.
     void apply (const MultiVector& X, MultiVector& Y,
-              Teuchos::ETransp mode = Teuchos::NO_TRANS,
-              Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-              Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+                Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
     //! Indicates whether this operator supports applying the adjoint operator.
     bool hasTransposeApply() const;
@@ -254,14 +254,14 @@ namespace MueLu {
     Teuchos::RCP< RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, NewNode> >
     clone (const RCP<NewNode>& new_node) const {
       return Teuchos::rcp (new RefMaxwell<Scalar, LocalOrdinal, GlobalOrdinal, NewNode>
-                           (Hierarchy11_->template clone<NewNode> (new_node),
+                           (HierarchyH_->template clone<NewNode> (new_node),
                             Hierarchy22_->template clone<NewNode> (new_node)));
     }
 
   private:
 
     void findDirichletRows(Teuchos::RCP<Matrix> A,
-                                  std::vector<LocalOrdinal>& dirichletRows) {
+                           std::vector<LocalOrdinal>& dirichletRows) {
       dirichletRows.resize(0);
       for(size_t i=0; i<A->getNodeNumRows(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
@@ -285,8 +285,8 @@ namespace MueLu {
     }
 
     void findDirichletCols(Teuchos::RCP<Matrix> A,
-                                  std::vector<LocalOrdinal>& dirichletRows,
-                                  std::vector<LocalOrdinal>& dirichletCols) {
+                           std::vector<LocalOrdinal>& dirichletRows,
+                           std::vector<LocalOrdinal>& dirichletCols) {
       Teuchos::RCP<const Map> domMap = A->getDomainMap();
       Teuchos::RCP<const Map> colMap = A->getColMap();
       Teuchos::RCP<Export> exporter = ExportFactory::Build(colMap,domMap);
@@ -314,7 +314,7 @@ namespace MueLu {
     }
 
     void Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
-                                      std::vector<LocalOrdinal>& dirichletRows) {
+                               std::vector<LocalOrdinal>& dirichletRows) {
       for(size_t i=0; i<dirichletRows.size(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
         Teuchos::ArrayView<const Scalar> values;
@@ -329,7 +329,7 @@ namespace MueLu {
     }
 
     void Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
-                                      std::vector<LocalOrdinal>& dirichletCols) {
+                               std::vector<LocalOrdinal>& dirichletCols) {
       for(size_t i=0; i<A->getNodeNumRows(); i++) {
         Teuchos::ArrayView<const LocalOrdinal> indices;
         Teuchos::ArrayView<const Scalar> values;
@@ -386,14 +386,14 @@ namespace MueLu {
 
 
     /** Initialize with matrices except the Jacobian (don't compute the preconditioner)
-      *
-      * \param[in] D0_Matrix Discrete Gradient
-      * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
-      * \param[in] M1_Matrix Edge mass matrix
-      * \param[in] Nullspace Null space (needed for periodic)
-      * \param[in] coords Nodal coordinates
-      * \param[in] precList Parameter list
-      */
+     *
+     * \param[in] D0_Matrix Discrete Gradient
+     * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
+     * \param[in] M1_Matrix Edge mass matrix
+     * \param[in] Nullspace Null space (needed for periodic)
+     * \param[in] coords Nodal coordinates
+     * \param[in] precList Parameter list
+     */
     void initialize(const Teuchos::RCP<Matrix> & D0_Matrix,
                     const Teuchos::RCP<Matrix> & M0inv_Matrix,
                     const Teuchos::RCP<Matrix> & M1_Matrix,
@@ -402,7 +402,8 @@ namespace MueLu {
                     Teuchos::ParameterList& List);
 
     //! Two hierarchies: one for the (1,1)-block, another for the (2,2)-block
-    Teuchos::RCP<Hierarchy> Hierarchy11_, Hierarchy22_, HierarchySmoother_;
+    Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
+    Teuchos::RCP<SmootherBase> Smoother_;
     //! Top Level
     Teuchos::RCP<Level> TopLevel_;
     //! Various matrices
@@ -418,7 +419,8 @@ namespace MueLu {
     bool disable_addon_, dump_matrices_, read_P_from_file_;
     std::string P_filename_;
     std::string mode_;
-
+    //! Temporary memory
+    mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_;
   };
 
 } // namespace
