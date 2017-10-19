@@ -5,6 +5,7 @@
 #include "ml_config.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT)
 #include <iostream>
+#include<fstream>
 #include <vector>
 #include <string.h>
 #include "ml_RefMaxwell.h"
@@ -223,6 +224,19 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   int numBCnodes=0;
   for(int i=0;i<Nn;i++){
     if((*BCnodes)[i]) numBCnodes++;
+  }
+
+  if (print_hierarchy) {
+  std::ofstream outBCrows("BCrows.dat");
+  for(int i=0;i<numBCrows;i++)
+    outBCrows<<BCrows[i]<<"\n";
+  outBCrows.close();
+
+  std::ofstream outBCnodes("BCnodes.dat");
+  for(int i=0;i<Nn;i++ )
+    if ((*BCnodes)[i])
+      outBCnodes<<i<<"\n";
+  outBCnodes.close();
   }
 
   /* Sanity Check: We have at least some Dirichlet nodes */
