@@ -96,32 +96,59 @@ namespace { // (anonymous)
     return false;
   }
 
+  constexpr bool assumeMpiIsCudaAwareDefault () {
+#ifdef TPETRA_ASSUME_CUDA_AWARE_MPI
+    return true;
+#else
+    return false;
+#endif // TPETRA_ASSUME_CUDA_AWARE_MPI
+  }
+
 } // namespace (anonymous)
 
 bool Behavior::debug ()
 {
-  static std::once_flag debugFlag_;
-  static bool debugValue_ = debugDefault ();
-  static bool debugInitialized_ = false;
+  constexpr char envVarName[] = "TPETRA_DEBUG";
+  constexpr bool defaultValue = debugDefault ();
 
-  return idempotentlyGetEnvironmentVariableAsBool (debugFlag_,
-                                                   debugValue_,
-                                                   debugInitialized_,
-                                                   "TPETRA_DEBUG",
-                                                   debugDefault ());
+  static std::once_flag flag_;
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool (flag_,
+                                                   value_,
+                                                   initialized_,
+                                                   envVarName,
+                                                   defaultValue);
 }
 
 bool Behavior::verbose ()
 {
-  static std::once_flag verboseFlag_;
-  static bool verboseValue_ = verboseDefault ();
-  static bool verboseInitialized_ = false;
+  constexpr char envVarName[] = "TPETRA_VERBOSE";
+  constexpr bool defaultValue = verboseDefault ();
 
-  return idempotentlyGetEnvironmentVariableAsBool (verboseFlag_,
-                                                   verboseValue_,
-                                                   verboseInitialized_,
-                                                   "TPETRA_VERBOSE",
-                                                   verboseDefault ());
+  static std::once_flag flag_;
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool (flag_,
+                                                   value_,
+                                                   initialized_,
+                                                   envVarName,
+                                                   defaultValue);
+}
+
+bool Behavior::assumeMpiIsCudaAware ()
+{
+  constexpr char envVarName[] = "TPETRA_ASSUME_CUDA_AWARE_MPI";
+  constexpr bool defaultValue = assumeMpiIsCudaAwareDefault ();
+
+  static std::once_flag flag_;
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool (flag_,
+                                                   value_,
+                                                   initialized_,
+                                                   envVarName,
+                                                   defaultValue);
 }
 
 } // namespace Details

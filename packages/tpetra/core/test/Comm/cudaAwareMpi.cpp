@@ -56,6 +56,7 @@
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Details_assumeMpiIsCudaAware.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Map.hpp" // creating a Map ensures Kokkos initialization
 #include "Teuchos_CommHelpers.hpp"
 #include "Kokkos_TeuchosCommAdapters.hpp"
@@ -92,7 +93,14 @@ namespace { // (anonymous)
 
     out << "Testing CUDA-awareness of the MPI implementation" << endl;
     Teuchos::OSTab tab1 (out);
-    if (! Tpetra::Details::assumeMpiIsCudaAware (&out)) {
+    const bool assumeMpiIsCudaAware =
+      Tpetra::Details::assumeMpiIsCudaAware (&out);
+    {
+      const bool fromBehavior =
+        ::Tpetra::Details::Behavior::assumeMpiIsCudaAware ();
+      TEST_EQUALITY( assumeMpiIsCudaAware, fromBehavior );
+    }
+    if (! assumeMpiIsCudaAware) {
       out << "Trilinos (or you, the user) asserts that MPI is NOT CUDA aware."
           << endl
           << "That's OK; we consider the test having passed in this case,"
