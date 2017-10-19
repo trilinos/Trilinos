@@ -461,6 +461,9 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply (const MultiVecto
       applyInverse121(X,Y);
     else if(mode_=="212")
       applyInverse212(X,Y);
+    else if(mode_=="none") {
+      // do nothing
+    }
     else
       applyInverseAdditive(X,Y);
 
