@@ -39,12 +39,9 @@
 // ************************************************************************
 //@HEADER
 
-//#ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
-//#else
-//#include "Epetra_SerialComm.h"
-//#endif
+
 #include "Epetra_Map.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
@@ -60,9 +57,9 @@
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_CrsMatrix.hpp"
 
-#include "InterfaceSets/FROSch_DDInterface_def.hpp"
+#include <FROSch_DDInterface_def.hpp>
 
-#include <Tools/FROSch_Tools_decl.hpp>
+#include <FROSch_Tools_decl.hpp>
 
 typedef unsigned UN;
 typedef double SC;
@@ -78,13 +75,8 @@ using namespace FROSch;
 
 int main(int argc, char *argv[])
 {
-    
-#ifdef HAVE_MPI
     MPI_Init(&argc,&argv);
     Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
-#else
-    Epetra_SerialComm CommWorld;
-#endif
     
     CommandLineProcessor My_CLP;
     

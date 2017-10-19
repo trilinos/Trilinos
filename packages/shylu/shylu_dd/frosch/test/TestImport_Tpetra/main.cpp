@@ -61,7 +61,7 @@
 #include <BelosSolverFactory.hpp>
 //#include <BelosPseudoBlockGmresSolMgr.hpp>
 
-#include "Tools/FROSch_Tools_def.hpp"
+#include "FROSch_Tools_def.hpp"
 
 typedef unsigned UN;
 typedef double SC;
@@ -130,9 +130,7 @@ int main(int argc, char *argv[])
     K->doImport(*tmpMatrix,*gather,Xpetra::ADD);
     TeuchosComm->barrier(); if (TeuchosComm->getRank()==0) std::cout << "AFTER IMPORT\n";
     
-#ifdef EPETRA_MPI
     MPI_Finalize();
-#endif
     
     return(EXIT_SUCCESS);
 }

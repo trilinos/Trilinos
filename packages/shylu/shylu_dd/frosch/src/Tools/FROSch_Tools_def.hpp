@@ -42,7 +42,7 @@
 #ifndef _FROSCH_TOOLS_DEF_HPP
 #define _FROSCH_TOOLS_DEF_HPP
 
-#include <Tools/FROSch_Tools_decl.hpp>
+#include <FROSch_Tools_decl.hpp>
 
 namespace FROSch {
     
@@ -56,7 +56,7 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::Vector<GO,LO,GO,NO> > globalIndices = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(linearMap);
         
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > importer = Xpetra::ImportFactory<LO,GO,NO>::Build(map,linearMap);
-        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > importer2 = Xpetra::ImportFactory<LO,GO,NO>::Build(linearMap,map); // Ist der notwendig??? Mit Epetra ging es auch ohne einen zweiten Importer und stattdessen mit einem Export
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > importer2 = Xpetra::ImportFactory<LO,GO,NO>::Build(linearMap,map); // AH 10/16/2017: Ist der notwendig??? Mit Epetra ging es auch ohne einen zweiten Importer und stattdessen mit einem Export
         globalIndices->doImport(*myIndices,*importer,Xpetra::INSERT);
         myIndices->putScalar(0);
         myIndices->doImport(*globalIndices,*importer2,Xpetra::ADD);

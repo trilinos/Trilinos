@@ -42,7 +42,7 @@
 #ifndef _FROSCH_SCHWARZOPERATOR_DEF_HPP
 #define _FROSCH_SCHWARZOPERATOR_DEF_HPP
 
-#include <SchwarzOperators/FROSch_SchwarzOperator_decl.hpp>
+#include <FROSch_SchwarzOperator_decl.hpp>
 
 namespace FROSch {
     

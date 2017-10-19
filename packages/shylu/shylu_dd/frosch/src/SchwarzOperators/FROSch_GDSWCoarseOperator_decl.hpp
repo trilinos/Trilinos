@@ -42,7 +42,7 @@
 #ifndef _FROSCH_GDSWCOARSEOPERATOR_DECL_HPP
 #define _FROSCH_GDSWCOARSEOPERATOR_DECL_HPP
 
-#include "SchwarzOperators/FROSch_CoarseOperator_def.hpp"
+#include <FROSch_CoarseOperator_def.hpp>
 
 // TODO:
 // -> Typedef
@@ -81,11 +81,11 @@ namespace FROSch {
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVec LOVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr LOVecPtr;
-        typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecView LOVecView;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::LOVecPtr2D LOVecPtr2D;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVec GOVec;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr GOVecPtr;
+        typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecView GOVecView;
         typedef typename SchwarzOperator<SC,LO,GO,NO>::GOVecPtr2D GOVecPtr2D;
         
         typedef typename SchwarzOperator<SC,LO,GO,NO>::SCVec SCVec;
@@ -207,8 +207,8 @@ namespace FROSch {
         int computeAndFillPhi(CrsMatrixPtr &repeatedMatrix,
                               MapPtr &repeatedMap,
                               MapPtr &coarseMap,
-                              LOVecView indicesGammaDofsAll,
-                              LOVecView indicesIDofsAll,
+                              GOVecView indicesGammaDofsAll,
+                              GOVecView indicesIDofsAll,
                               CrsMatrixPtr kII,
                               CrsMatrixPtr kIGamma);
         

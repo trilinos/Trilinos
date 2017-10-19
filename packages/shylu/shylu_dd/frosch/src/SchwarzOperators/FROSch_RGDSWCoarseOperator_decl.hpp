@@ -42,7 +42,7 @@
 #ifndef _FROSCH_RGDSWCOARSEOPERATOR_DECL_HPP
 #define _FROSCH_RGDSWCOARSEOPERATOR_DECL_HPP
 
-#include "SchwarzOperators/FROSch_GDSWCoarseOperator_def.hpp"
+#include <FROSch_GDSWCoarseOperator_def.hpp>
 
 namespace FROSch {
     

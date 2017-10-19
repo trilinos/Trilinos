@@ -42,7 +42,7 @@
 #ifndef _FROSCH_SCHWARZPRECONDITIONER_DEF_HPP
 #define _FROSCH_SCHWARZPRECONDITIONER_DEF_HPP
 
-#include <SchwarzPreconditioners/FROSch_SchwarzPreconditioner_decl.hpp>
+#include <FROSch_SchwarzPreconditioner_decl.hpp>
 
 namespace FROSch {
     

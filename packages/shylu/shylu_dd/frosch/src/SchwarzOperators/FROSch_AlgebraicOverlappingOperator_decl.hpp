@@ -42,7 +42,7 @@
 #ifndef _FROSCH_ALGEBRAICOVERLAPPINGOPERATOR_DECL_HPP
 #define _FROSCH_ALGEBRAICOVERLAPPINGOPERATOR_DECL_HPP
 
-#include "SchwarzOperators/FROSch_OverlappingOperator_def.hpp"
+#include <FROSch_OverlappingOperator_def.hpp>
 
 namespace FROSch {
     

@@ -60,10 +60,8 @@
 #include <BelosSolverFactory.hpp>
 //#include <BelosPseudoBlockGmresSolMgr.hpp>
 
-#include <SchwarzPreconditioners/FROSch_GDSWPreconditioner_def.hpp>
-#include <SchwarzPreconditioners/FROSch_RGDSWPreconditioner_def.hpp>
-
-//#include "Tools/FROSch_Tools_def.hpp"
+#include <FROSch_GDSWPreconditioner_def.hpp>
+#include <FROSch_RGDSWPreconditioner_def.hpp>
 
 typedef unsigned UN;
 typedef double SC;
@@ -80,13 +78,8 @@ using namespace Belos;
 
 int main(int argc, char *argv[])
 {
-    
-#ifdef HAVE_MPI
     MPI_Init(&argc,&argv);
     Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
-#else
-    Epetra_SerialComm CommWorld;
-#endif
     
     CommandLineProcessor My_CLP;
     
@@ -224,9 +217,7 @@ int main(int argc, char *argv[])
         
     }
     
-#ifdef EPETRA_MPI
     MPI_Finalize();
-#endif
     
     return(EXIT_SUCCESS);
 }

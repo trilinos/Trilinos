@@ -42,8 +42,7 @@
 #ifndef _FROSCH_ENTITYSET_DEF_HPP
 #define _FROSCH_ENTITYSET_DEF_HPP
 
-//#include "InterfaceSets/FROSch_InterfaceEntity_decl.hpp"
-#include "InterfaceSets/FROSch_EntitySet_decl.hpp"
+#include <FROSch_EntitySet_decl.hpp>
 
 namespace FROSch {
     
@@ -91,7 +90,7 @@ namespace FROSch {
     {
         if (!EntityMapIsUpToDate_) {
             LO localNumberEntities = getNumEntities();
-            GO globalNumberEntities = 0;
+            LO globalNumberEntities = 0; // AH 10/13/2017: Can we stick with LO here
             LO maxLocalNumberEntities = 0;
             reduceAll(*localToGlobalNodesMap->getComm(),Teuchos::REDUCE_SUM,localNumberEntities,Teuchos::ptr(&globalNumberEntities));
             reduceAll(*localToGlobalNodesMap->getComm(),Teuchos::REDUCE_MAX,localNumberEntities,Teuchos::ptr(&maxLocalNumberEntities));
