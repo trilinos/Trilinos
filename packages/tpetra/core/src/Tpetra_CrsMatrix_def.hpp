@@ -7078,6 +7078,12 @@ namespace Tpetra {
     exports.modified_device() = 0;
     exports.modified_host() = 1;
     auto exports_h = exports.template view<Kokkos::HostSpace> ();
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "After marking exports as modified on host, "
+         << dualViewStatusToString (exports, "exports") << endl;
+      std::cerr << os.str ();
+    }
 
     // Read-only host access
     auto exportLIDs_h = exportLIDs.template view<Kokkos::HostSpace> ();
@@ -7165,6 +7171,18 @@ namespace Tpetra {
       // number of bytes of the packed data for that row.
       numPacketsPerLID_h[i] = numBytes;
       offset += numBytes;
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::packNonStaticNew: After:" << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exports, "exports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exportLIDs, "exportLIDs")
+         << endl;
+      std::cerr << os.str ();
     }
   }
 
