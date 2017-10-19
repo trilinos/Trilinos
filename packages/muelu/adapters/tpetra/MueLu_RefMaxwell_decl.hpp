@@ -415,7 +415,8 @@ namespace MueLu {
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     //! Some options
-    bool disable_addon_;
+    bool disable_addon_, dump_matrices_, read_P_from_file_;
+    std::string P_filename_;
     std::string mode_;
 
   };

@@ -79,8 +79,11 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Sca
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::ParameterList& list) {
 
-  disable_addon_  =  list.get("refmaxwell: disable add-on",true);
-  mode_           =  list.get("refmaxwell: mode","additive");
+  disable_addon_    = list.get("refmaxwell: disable add-on",true);
+  mode_             = list.get("refmaxwell: mode","additive");
+  dump_matrices_    = list.get("refmaxwell: dump matrices",false);
+  read_P_from_file_ = list.get("refmaxwell: read_P_from_file_",false);
+  P_filename_       = list.get("refmaxwell: P_filename_",std::string("P.mat"));
 
   if(list.isSublist("refmaxwell: 11list"))
     precList11_     =  list.sublist("refmaxwell: 11list");
@@ -113,9 +116,19 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   out.setOutputToRootOnly(0);
   out.setShowProcRank(false);
 
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("SM.mat"), *SM_Matrix_);
+
   // clean rows associated with boundary conditions
   findDirichletRows(SM_Matrix_,BCrows_);
   findDirichletCols(D0_Matrix_,BCrows_,BCcols_);
+
+  if (dump_matrices_) {
+    std::ofstream outBCrows("BCrows.mat");
+    std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<int>(outBCrows, "\n"));
+    std::ofstream outBCcols("BCcols.mat");
+    std::copy(BCcols_.begin(), BCcols_.end(), std::ostream_iterator<int>(outBCcols, "\n"));
+  }
 
   // build nullspace if necessary
   if(Nullspace_ != Teuchos::null) {
@@ -152,11 +165,18 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
     for(size_t i=0;i<BCrows_.size();i++)
       datavec[BCrows_[i]]=0;
   }
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("nullspace.mat"), *Nullspace_);
+
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_clean.mat"), *D0_Matrix_);
   D0_Matrix_->resumeFill();
   Apply_BCsToMatrixRows(D0_Matrix_,BCrows_);
   Apply_BCsToMatrixCols(D0_Matrix_,BCcols_);
   D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
   //D0_Matrix_->describe(out,Teuchos::VERB_EXTREME);
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_nuked.mat"), *D0_Matrix_);
 
   // Form TMT_Matrix
   Teuchos::RCP<Matrix> C1 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
@@ -167,6 +187,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   Remove_Zeroed_Rows(TMT_Matrix_,1.0e-16);
   TMT_Matrix_->SetFixedBlockSize(1);
   //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("TMT.mat"), *TMT_Matrix_);
 
   // Form TMT_agg_Matrix
   Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
@@ -177,6 +199,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   Remove_Zeroed_Rows(TMT_Agg_Matrix_,1.0e-16);
   TMT_Agg_Matrix_->SetFixedBlockSize(1);
   //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("TMT_agg.mat"), *TMT_Agg_Matrix_);
 
   // build special prolongator for (1,1)-block
   if(P11_==Teuchos::null) {
@@ -253,31 +277,39 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
 
   // build prolongator: algorithm 1 in the reference paper
   // First, aggregate nodal matrix by creating a 2-level hierarchy
-  Teuchos::RCP<Hierarchy> auxHierarchy
-    = Teuchos::rcp( new Hierarchy(TMT_Matrix_) );
-  Teuchos::RCP<FactoryManager> auxManager
-    = Teuchos::rcp( new FactoryManager );
-  Teuchos::RCP<TentativePFactory> TentPfact
-    = Teuchos::rcp( new TentativePFactory );
-  Teuchos::RCP<SaPFactory> Pfact
-    = Teuchos::rcp( new SaPFactory );
-  Teuchos::RCP<UncoupledAggregationFactory> Aggfact
-    = Teuchos::rcp( new UncoupledAggregationFactory() );
-  Teuchos::ParameterList params;
-  params.set("sa: damping factor",0.0);
-  Pfact      -> SetParameterList(params);
-  auxManager -> SetFactory("P", Pfact);
-  auxManager -> SetFactory("Ptent", TentPfact);
-  auxManager -> SetFactory("Aggregates", Aggfact);
-  auxManager -> SetFactory("Smoother", Teuchos::null);
-  auxManager -> SetFactory("CoarseSolver", Teuchos::null);
-  auxHierarchy -> Keep("P", Pfact.get());
-  auxHierarchy -> SetMaxCoarseSize(1);
-  auxHierarchy -> Setup(*auxManager, 0, 2);
+  Teuchos::RCP<Matrix> P;
+  if (read_P_from_file_) {
+    P = Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Read(P_filename_, Xpetra::UseEpetra, P->getDomainMap()->getComm());
+  } else {
+    Teuchos::RCP<Hierarchy> auxHierarchy
+      = Teuchos::rcp( new Hierarchy(TMT_Agg_Matrix_) );
+    Teuchos::RCP<FactoryManager> auxManager
+      = Teuchos::rcp( new FactoryManager );
+    Teuchos::RCP<TentativePFactory> TentPfact
+      = Teuchos::rcp( new TentativePFactory );
+    Teuchos::RCP<SaPFactory> Pfact
+      = Teuchos::rcp( new SaPFactory );
+    Teuchos::RCP<UncoupledAggregationFactory> Aggfact
+      = Teuchos::rcp( new UncoupledAggregationFactory() );
+    Teuchos::ParameterList params;
+    params.set("sa: damping factor",0.0);
+    Pfact      -> SetParameterList(params);
+    auxManager -> SetFactory("P", Pfact);
+    auxManager -> SetFactory("Ptent", TentPfact);
+    auxManager -> SetFactory("Aggregates", Aggfact);
+    auxManager -> SetFactory("Smoother", Teuchos::null);
+    auxManager -> SetFactory("CoarseSolver", Teuchos::null);
+    auxHierarchy -> Keep("P", Pfact.get());
+    auxHierarchy -> SetMaxCoarseSize(1);
+    auxHierarchy -> Setup(*auxManager, 0, 2);
 
-  // pull out tentative P
-  Teuchos::RCP<Level> Level1 = auxHierarchy -> GetLevel(1);
-  Teuchos::RCP<Matrix> P = Level1 -> Get< Teuchos::RCP<Matrix> >("P",Pfact.get());
+    // pull out tentative P
+    Teuchos::RCP<Level> Level1 = auxHierarchy -> GetLevel(1);
+    P = Level1 -> Get< Teuchos::RCP<Matrix> >("P",Pfact.get());
+  }
+
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("P.mat"), *P);
 
   // make weighting matrix
   Teuchos::RCP<Matrix> D0_Matrix_Abs=MatrixFactory2::BuildCopy(D0_Matrix_);
@@ -286,12 +318,22 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
   // Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
   // Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
   D0_Matrix_Abs -> fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
+
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("AbsD0.mat"), *D0_Matrix_Abs);
+
   Teuchos::RCP<Matrix> Ptent = MatrixFactory::Build(D0_Matrix_Abs->getRowMap(),0);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_Abs,false,*P,false,*Ptent,true,true);
+
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("P_intermediate.mat"), *Ptent);
 
   Ptent->resumeFill();
   Apply_BCsToMatrixRows(Ptent,BCrows_);
   Ptent -> fillComplete(Ptent->getDomainMap(),Ptent->getRangeMap());
+
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("P_intermediate2.mat"), *Ptent);
 
   // put in entries to P11
   size_t dim = Nullspace_->getNumVectors();
@@ -352,6 +394,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
     = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getDomainMap(),dim);
   TP11->expertStaticFillComplete(blockCoarseMap,SM_Matrix_->getDomainMap());
 
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("P11.mat"), *P11_);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -399,6 +443,10 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
   // set fixed block size for vector nodal matrix
   size_t dim = Nullspace_->getNumVectors();
   AH_->SetFixedBlockSize(dim);
+
+  if (dump_matrices_)
+    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("AH.mat"), *AH_);
+
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
