@@ -445,18 +445,18 @@ namespace panzer {
       }
     }
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::Traits::PreEvalData ped;
-    ped.gedc.addDataObject("Solution Gather Container", loc);
+    panzer::Traits::PED ped;
+    ped.gedc->addDataObject("Solution Gather Container", loc);
     if (enable_tangents)
     {
       for (int i(0); i < num_tangent; ++i)
       {
         std::stringstream ss;
         ss << "Tangent Container " << i;
-        ped.gedc.addDataObject(ss.str(), tangentContainers[i]);
+        ped.gedc->addDataObject(ss.str(), tangentContainers[i]);
       }
     }
 

@@ -136,7 +136,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
     const int cellDim = cellTopo.getDimension();
 
     auto intrepid_basis = basis->getIntrepid2Basis();
-    WorksetDetails & details = workset;
+    const WorksetDetails & details = workset;
 
     const bool is_normalize = true;
     auto work = Kokkos::createDynRankView(residual.get_static_view(),"work", 4, cellDim);

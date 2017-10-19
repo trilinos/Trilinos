@@ -60,6 +60,7 @@ using Teuchos::rcp;
 #include "Panzer_GatherOrientation.hpp"
 #include "Panzer_ScatterResidual_BlockedEpetra.hpp"
 #include "Panzer_GatherSolution_BlockedEpetra.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -263,16 +264,16 @@ namespace panzer {
     derivative_dimensions.push_back(12);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     fm.postRegistrationSetup(sd);
 
     // panzer::Traits::PED ped;
     // ped.dirichletData.ghostedCounter = dd_loc;
     // fm.preEvaluate<panzer::Traits::Residual>(ped);
-    panzer::Traits::PreEvalData ped;
-    ped.gedc.addDataObject("Dirichlet Counter",dd_loc);
-    ped.gedc.addDataObject("Solution Gather Container",loc);
-    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    panzer::Traits::PED ped;
+    ped.gedc->addDataObject("Dirichlet Counter",dd_loc);
+    ped.gedc->addDataObject("Solution Gather Container",loc);
+    ped.gedc->addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Residual>(ped);
 
 
@@ -521,16 +522,16 @@ namespace panzer {
     derivative_dimensions.push_back(12);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     fm.postRegistrationSetup(sd);
 
     // panzer::Traits::PED ped;
     // ped.dirichletData.ghostedCounter = dd_loc;
     // fm.preEvaluate<panzer::Traits::Jacobian>(ped);
-    panzer::Traits::PreEvalData ped;
-    ped.gedc.addDataObject("Dirichlet Counter",dd_loc);
-    ped.gedc.addDataObject("Solution Gather Container",loc);
-    ped.gedc.addDataObject("Residual Scatter Container",loc);
+    panzer::Traits::PED ped;
+    ped.gedc->addDataObject("Dirichlet Counter",dd_loc);
+    ped.gedc->addDataObject("Solution Gather Container",loc);
+    ped.gedc->addDataObject("Residual Scatter Container",loc);
     fm.preEvaluate<panzer::Traits::Jacobian>(ped);
 
     // run tests

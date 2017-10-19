@@ -56,6 +56,7 @@
 #include "Panzer_BlockedDOFManager.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -190,13 +191,13 @@ preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract dirichlet counter from container
    Teuchos::RCP<const ContainerType> blockContainer 
-         = Teuchos::rcp_dynamic_cast<ContainerType>(d.gedc.getDataObject("Dirichlet Counter"),true);
+         = Teuchos::rcp_dynamic_cast<ContainerType>(d.gedc->getDataObject("Dirichlet Counter"),true);
 
    dirichletCounter_ = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_f(),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(blockedContainer_));
 }
 
@@ -396,13 +397,13 @@ preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract dirichlet counter from container
    Teuchos::RCP<const ContainerType> blockContainer 
-         = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject("Dirichlet Counter"),true);
+         = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject("Dirichlet Counter"),true);
 
    dirichletCounter_ = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_f(),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(blockedContainer_));
 }
 

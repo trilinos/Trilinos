@@ -52,6 +52,7 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GatherSolution_Input.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -151,11 +152,11 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
 
    if(tpetraContainer_==Teuchos::null) {
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
       tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
    }
 }
@@ -300,11 +301,11 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
 
    if(tpetraContainer_==Teuchos::null) {
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
       tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
    }
 }
@@ -504,8 +505,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
   // first try refactored ReadOnly container
   std::string post = useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X";
-  if(d.gedc.containsDataObject(globalDataKey_+post)) {
-    ged = d.gedc.getDataObject(globalDataKey_+post);
+  if(d.gedc->containsDataObject(globalDataKey_+post)) {
+    ged = d.gedc->getDataObject(globalDataKey_+post);
 
     RCP<RO_GED> ro_ged = rcp_dynamic_cast<RO_GED>(ged,true);
 
@@ -516,7 +517,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     return;
   }
 
-  ged = d.gedc.getDataObject(globalDataKey_);
+  ged = d.gedc->getDataObject(globalDataKey_);
 
   // try to extract linear object container
   {

@@ -218,7 +218,7 @@ PHX_EVALUATE_FIELDS(BasisValues_Evaluator, workset)
 
   // this can be over-ridden in basisValues e.g., DG element setting
   if(basis->requiresOrientations()) {
-    WorksetDetails & details = workset;
+    const WorksetDetails & details = workset;
     
     std::vector<Intrepid2::Orientation> ortPerWorkset;
     for (index_t c=0;c<workset.num_cells;++c)

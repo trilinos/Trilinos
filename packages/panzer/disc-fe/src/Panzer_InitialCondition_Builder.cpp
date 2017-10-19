@@ -48,6 +48,7 @@
 #include "Panzer_EquationSet_Factory.hpp"
 #include "Panzer_EquationSet_Factory_Defines.hpp"
 #include "Panzer_ThyraObjContainer.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 namespace panzer {
 
@@ -86,7 +87,7 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_model_name, ic_block_closure_models, lo_factory, user_data);
 
     // build the setup data using passed in information
-    Traits::SetupData setupData;
+    Traits::SD setupData;
     const WorksetDescriptor wd = blockDescriptor(blockId);
     setupData.worksets_ = wkstContainer.getWorksets(wd);
     setupData.orientations_ = wkstContainer.getOrientations();
@@ -138,7 +139,7 @@ setupInitialConditionFieldManagers(WorksetContainer & wkstContainer,
     pb->buildAndRegisterInitialConditionEvaluators(*fm, cm_factory, closure_model_name, ic_block_closure_models, lo_factory, user_data);
 
     // build the setup data using passed in information
-    Traits::SetupData setupData;
+    Traits::SD setupData;
     const WorksetDescriptor wd = blockDescriptor(blockId);
     setupData.worksets_ = wkstContainer.getWorksets(wd);
     setupData.orientations_ = wkstContainer.getOrientations();
@@ -159,7 +160,7 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
                          const double time_stamp)
 {
   typedef LinearObjContainer LOC;
-  panzer::Traits::PreEvalData ped;
+  panzer::Traits::PED ped;
 
   // allocate a ghosted container for the initial condition
   Teuchos::RCP<LOC> ghostedloc = lo_factory.buildGhostedLinearObjContainer();
@@ -173,8 +174,8 @@ evaluateInitialCondition(WorksetContainer & wkstContainer,
   lo_factory.initializeGhostedContainer(LOC::F,*localCounter); // store counter in F
   localCounter->initialize();
 
-  ped.gedc.addDataObject("Residual Scatter Container",ghostedloc);
-  ped.gedc.addDataObject("Dirichlet Counter",localCounter);
+  ped.gedc->addDataObject("Residual Scatter Container",ghostedloc);
+  ped.gedc->addDataObject("Dirichlet Counter",localCounter);
   ped.first_sensitivities_name = "";
 
   for(std::map< std::string,Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >::const_iterator itr=phx_ic_field_managers.begin();

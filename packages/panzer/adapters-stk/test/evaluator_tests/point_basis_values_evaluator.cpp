@@ -64,6 +64,7 @@ using Teuchos::rcp;
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_BasisValues2.hpp"
 #include "Panzer_DOFManager.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Panzer_STK_Version.hpp"
 #include "PanzerAdaptersSTK_config.hpp"
@@ -170,7 +171,7 @@ namespace panzer {
        fm.requireField<panzer::Traits::Jacobian>(*evaluator->evaluatedFields()[0]);
     }
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     sd.worksets_ = work_sets;
     // run tests
     /////////////////////////////////////////////////////////////
@@ -313,7 +314,7 @@ namespace panzer {
     derivative_dimensions.push_back(8);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     fm.postRegistrationSetup(sd);
     fm.print(out);
 
@@ -456,7 +457,7 @@ namespace panzer {
     derivative_dimensions.push_back(4);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     sd.orientations_ = wkstContainer->getOrientations();
     fm.postRegistrationSetup(sd);
     fm.print(out);
@@ -635,7 +636,7 @@ namespace panzer {
     derivative_dimensions.push_back(8);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     sd.orientations_ = wkstContainer->getOrientations();
     sd.worksets_ = work_sets;
     fm.postRegistrationSetup(sd);
@@ -649,7 +650,7 @@ namespace panzer {
     workset.time = 0.0;
     workset.evaluate_transient_terms = false;
 
-    panzer::Traits::PreEvalData ped;
+    panzer::Traits::PED ped;
     fm.preEvaluate<panzer::Traits::Jacobian>(ped);
     fm.evaluateFields<panzer::Traits::Jacobian>(workset);
     fm.postEvaluate<panzer::Traits::Jacobian>(NULL);

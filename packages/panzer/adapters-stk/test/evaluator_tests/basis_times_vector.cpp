@@ -203,7 +203,7 @@ namespace panzer {
     derivative_dimensions.push_back(8);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     sd.worksets_ = work_sets;
     fm.postRegistrationSetup(sd);
 
