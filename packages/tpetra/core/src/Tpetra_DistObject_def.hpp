@@ -81,22 +81,7 @@ namespace Tpetra {
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   DistObject (const Teuchos::RCP<const map_type>& map) :
     map_ (map)
-#ifdef KOKKOS_HAVE_CUDA
-    , allowCudaCommBuffers_ (false)
-#endif // KOKKOS_HAVE_CUDA
   {
-#ifdef KOKKOS_HAVE_CUDA
-    {
-      using Tpetra::Details::Environment;
-      // The variable must not only exist, it must be set to some
-      // recognizably non-false value, e.g., "1", "ON", or "TRUE".
-      constexpr char paramName[] = "TPETRA_ASSUME_CUDA_AWARE_MPI";
-      Environment& env = Environment::getInstance ();
-      const bool allowCudaCommBuffers = env.getBooleanValue (paramName);
-      this->allowCudaCommBuffers_ = allowCudaCommBuffers;
-    }
-#endif // KOKKOS_HAVE_CUDA
-
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
     using Teuchos::RCP;
     using Teuchos::Time;
@@ -146,11 +131,8 @@ namespace Tpetra {
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
-  DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>& rhs)
-    : map_ (rhs.map_)
-#ifdef KOKKOS_HAVE_CUDA
-    , allowCudaCommBuffers_ (rhs.allowCudaCommBuffers_)
-#endif // KOKKOS_HAVE_CUDA
+  DistObject (const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>& rhs) :
+    map_ (rhs.map_)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -567,13 +549,9 @@ namespace Tpetra {
     Distributor& distor = transfer.getDistributor ();
 
     if (this->useNewInterface ()) {
-#ifdef KOKKOS_HAVE_CUDA
-      const bool allowDeviceCommBuffers = this->allowCudaCommBuffers_;
-#else
-      const bool allowDeviceCommBuffers = false;
-#endif // KOKKOS_HAVE_CUDA
+      using ::Tpetra::Details::Behavior;
       // Do we need all communication buffers to live on host?
-      const bool commOnHost = ! allowDeviceCommBuffers;
+      const bool commOnHost = ! Behavior::assumeMpiIsCudaAware ();
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "doTransfer: Use new interface; "
@@ -1271,6 +1249,9 @@ namespace Tpetra {
         this->packAndPrepareNew (src, exportLIDs, this->exports_,
                                  this->numExportPacketsPerLID_,
                                  constantNumPackets, distor);
+        // FIXME (mfh 18 Oct 2017) if (! commOnHost), sync to device?
+        // Alternately, make packAndPrepareNew take a "commOnHost"
+        // argument to tell it where to leave the data?
       }
       if (verbose) {
         std::ostringstream os;
