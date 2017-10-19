@@ -250,7 +250,7 @@ namespace Tacho {
         _N.setSerialThresholdSize(_serial_thres_size);
 
         if (_max_num_superblocks < 0) { // set default values
-          _max_num_superblocks = 4;
+          _max_num_superblocks = 16;
         }
         _N.setMaxNumberOfSuperblocks(_max_num_superblocks);
 
