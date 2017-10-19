@@ -42,8 +42,8 @@
 #ifndef _FROSCH_GDSWPRECONDITIONER_DECL_HPP
 #define _FROSCH_GDSWPRECONDITIONER_DECL_HPP
 
-#include "SchwarzPreconditioners/FROSch_AlgebraicOverlappingPreconditioner_def.hpp"
-#include "SchwarzOperators/FROSch_GDSWCoarseOperator_def.hpp"
+#include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
+#include <FROSch_GDSWCoarseOperator_def.hpp>
 
 namespace FROSch {
     

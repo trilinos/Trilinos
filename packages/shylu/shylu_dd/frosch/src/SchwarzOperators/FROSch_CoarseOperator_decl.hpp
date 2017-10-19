@@ -42,7 +42,7 @@
 #ifndef _FROSCH_COARSEOPERATOR_DECL_HPP
 #define _FROSCH_COARSEOPERATOR_DECL_HPP
 
-#include "SchwarzOperators/FROSch_SchwarzOperator_def.hpp"
+#include <FROSch_SchwarzOperator_def.hpp>
 
 // TODO:
 // -> Member sortieren!

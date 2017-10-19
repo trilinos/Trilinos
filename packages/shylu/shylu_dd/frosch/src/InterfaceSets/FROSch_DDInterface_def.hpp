@@ -42,7 +42,7 @@
 #ifndef _FROSCH_DDINTERFACE_DEF_HPP
 #define _FROSCH_DDINTERFACE_DEF_HPP
 
-#include "InterfaceSets/FROSch_DDInterface_decl.hpp"
+#include <FROSch_DDInterface_decl.hpp>
 
 namespace FROSch {
     

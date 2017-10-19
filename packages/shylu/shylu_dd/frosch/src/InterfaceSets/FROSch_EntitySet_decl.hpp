@@ -44,11 +44,9 @@
 
 #define FROSCH_ASSERT(A,S) if(!(A)) { std::cerr<<"Assertion failed. "<<S<<std::endl; std::cout.flush(); throw std::out_of_range("Assertion.");};
 
-//#include <Xpetra_MapFactory.hpp>
+#include <FROSch_InterfaceEntity_def.hpp>
 
-#include <InterfaceSets/FROSch_InterfaceEntity_def.hpp>
-
-#include <Tools/FROSch_Tools_def.hpp>
+#include <FROSch_Tools_def.hpp>
 
 namespace FROSch {
     

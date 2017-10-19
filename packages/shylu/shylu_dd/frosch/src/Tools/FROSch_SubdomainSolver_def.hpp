@@ -42,7 +42,7 @@
 #ifndef _FROSCH_SUBDOMAINSOLVER_DEF_hpp
 #define _FROSCH_SUBDOMAINSOLVER_DEF_hpp
 
-#include <Tools/FROSch_SubdomainSolver_decl.hpp>
+#include <FROSch_SubdomainSolver_decl.hpp>
 
 namespace FROSch {
     
@@ -58,7 +58,7 @@ namespace FROSch {
     {
         if (!ParameterList_->get("SolverType","Amesos").compare("Amesos")) {
             FROSCH_ASSERT(K_->getRowMap()->lib()==Xpetra::UseEpetra,"UnderlyingLib!=Xpetra::UseEpetra");
-            
+            // AH 10/18/2017: Dies könnten wir nach initialize() verschieben, oder?
             Xpetra::CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<Xpetra::CrsMatrixWrap<SC,LO,GO,NO>&>(*K_);
             Xpetra::EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<Xpetra::EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
             EpetraCrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();

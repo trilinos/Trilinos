@@ -50,10 +50,10 @@
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_ExportFactory_fwd.hpp>
 
-#include "InterfaceSets/FROSch_EntitySet_def.hpp"
-#include "InterfaceSets/FROSch_InterfaceEntity_decl.hpp"
+#include <FROSch_EntitySet_def.hpp>
+#include <FROSch_InterfaceEntity_decl.hpp>
 
-#include "Tools/FROSch_ExtractSubmatrices_def.hpp"
+#include <FROSch_ExtractSubmatrices_def.hpp>
 
 // TODO
 // -> "Parent" -> "Anchestor"
