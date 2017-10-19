@@ -1252,6 +1252,17 @@ namespace Tpetra {
         // FIXME (mfh 18 Oct 2017) if (! commOnHost), sync to device?
         // Alternately, make packAndPrepareNew take a "commOnHost"
         // argument to tell it where to leave the data?
+        if (commOnHost) {
+          typedef typename Kokkos::View<char*, buffer_device_type>::HostMirror::device_type
+            buffer_host_device_type;
+          typedef typename buffer_host_device_type::memory_space
+            buffer_host_memory_space;
+          this->exports_.template sync<buffer_host_memory_space> ();
+        }
+        else { // ! commOnHost
+          typedef typename buffer_device_type::memory_space buffer_dev_memory_space;
+          this->exports_.template sync<buffer_dev_memory_space> ();
+        }
       }
       if (verbose) {
         std::ostringstream os;
