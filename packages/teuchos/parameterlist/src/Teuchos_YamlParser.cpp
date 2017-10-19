@@ -49,6 +49,7 @@
 #include <iomanip>
 #include <ios>
 #include <sstream>
+#include <cctype>
 
 #include "Teuchos_YamlParser_decl.hpp"
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"
@@ -57,9 +58,6 @@
 
 #include "Teuchos_Reader.hpp"
 #include "Teuchos_YAML.hpp"
-
-//DEBUG
-#include "Teuchos_vector.hpp"
 
 namespace Teuchos {
 
@@ -103,10 +101,22 @@ T parse_as(std::string const& text) {
   return value;
 }
 
+// http://en.cppreference.com/w/cpp/string/byte/tolower
+static char my_tolower(char ch)
+{
+  return std::tolower(static_cast<unsigned char>(ch));
+}
+
+// http://en.cppreference.com/w/cpp/string/byte/isdigit
+static bool my_isdigit(char ch)
+{
+  return std::isdigit(static_cast<unsigned char>(ch));
+}
+
 bool is_parseable_as_bool(std::string const& text) {
   std::string lower;
   for (std::size_t i = 0; i < text.size(); ++i) {
-    lower.push_back(std::tolower(text[i]));
+    lower.push_back(my_tolower(text[i]));
   }
   return lower == "true" || lower == "yes" ||
          lower == "false" || lower == "no";
@@ -115,7 +125,7 @@ bool is_parseable_as_bool(std::string const& text) {
 bool parse_as_bool(std::string const& text) {
   std::string lower;
   for (std::size_t i = 0; i < text.size(); ++i) {
-    lower.push_back(std::tolower(text[i]));
+    lower.push_back(my_tolower(text[i]));
   }
   return !(lower == "false" || lower == "no");
 }
@@ -810,7 +820,7 @@ class Reader : public Teuchos::Reader {
     std::size_t indentation_indicator = 0;
     style = header[0];
     std::stringstream ss(header.substr(1,std::string::npos));
-    if (header.size() > 1 && std::isdigit(header[1])) {
+    if (header.size() > 1 && my_isdigit(header[1])) {
       ss >> indentation_indicator;
       indentation_indicator += parent_indent_level;
     }
