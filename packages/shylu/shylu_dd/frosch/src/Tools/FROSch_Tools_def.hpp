@@ -361,6 +361,44 @@ namespace FROSch {
     }
     
     
+    template <class SC,class LO,class GO,class NO>
+    Teuchos::ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix,
+                                                     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &repeatedMap)
+    {
+        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > repeatedMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap,2*matrix->getGlobalMaxNumRowEntries());
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(matrix->getRowMap(),repeatedMap);
+        repeatedMatrix->doImport(*matrix,*scatter,Xpetra::ADD);
+        
+        Teuchos::ArrayRCP<GO> oneEntryOnlyRows(matrix->getNodeNumRows());
+        LO tmp = 0;
+        LO nnz;
+        GO row;
+        for (LO i=0; i<repeatedMatrix->getNodeNumRows(); i++) {
+            row = repeatedMap->getGlobalElement(i);
+            Teuchos::ArrayView<const GO> indices;
+            Teuchos::ArrayView<const SC> values;
+            repeatedMatrix->getGlobalRowView(row,indices,values);
+            nnz = indices.size();
+            if (indices.size()==1) {
+                oneEntryOnlyRows[tmp] = row;
+                tmp++;
+            } else {
+                for (LO j=0; j<values.size(); j++) {
+                    if (fabs(values[j])<1.0e-12) {
+                        nnz--;
+                    }
+                }
+                if (nnz == 1) {
+                    oneEntryOnlyRows[tmp] = row;
+                    tmp++;
+                }
+            }
+        }
+        oneEntryOnlyRows.resize(tmp);
+        return oneEntryOnlyRows;
+    }
+    
+    
     template <class SC,class LO>
     bool ismultiple(Teuchos::ArrayView<SC> A,
                     Teuchos::ArrayView<SC> B)

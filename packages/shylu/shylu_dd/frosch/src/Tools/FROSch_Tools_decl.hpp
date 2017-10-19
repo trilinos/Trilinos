@@ -72,6 +72,9 @@ namespace FROSch {
                      Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &repeatedNodesMap,
                      Teuchos::ArrayRCP<Teuchos::RCP<Xpetra::Map<LO,GO,NO> > > &repeatedDofMaps);
     
+    template <class SC,class LO,class GO,class NO>
+    Teuchos::ArrayRCP<GO> FindOneEntryOnly(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix);
+    
     template <class SC,class LO>
     bool ismultiple(Teuchos::ArrayView<SC> A,
                     Teuchos::ArrayView<SC> B);
