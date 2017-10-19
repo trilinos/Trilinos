@@ -210,7 +210,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     // set parameters
     Teuchos::ParameterList params, params11, params22;
-    params.set("refmaxwell: disable add-on",false);
+    params.set("refmaxwell: disable addon",false);
     params.set("refmaxwell: max coarse size",25);
     params.set("refmaxwell: max levels",4);
     params.set("smoother: type","CHEBYSHEV");

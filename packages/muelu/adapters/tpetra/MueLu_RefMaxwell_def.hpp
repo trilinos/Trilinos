@@ -79,7 +79,7 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Sca
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::ParameterList& list) {
 
-  disable_addon_    = list.get("refmaxwell: disable add-on",true);
+  disable_addon_    = list.get("refmaxwell: disable addon",true);
   mode_             = list.get("refmaxwell: mode","additive");
   dump_matrices_    = list.get("refmaxwell: dump matrices",false);
   read_P_from_file_ = list.get("refmaxwell: read_P_from_file_",false);
