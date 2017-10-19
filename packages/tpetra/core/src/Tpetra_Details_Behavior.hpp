@@ -65,6 +65,16 @@ public:
   /// std::cerr on every MPI process.  This is a LOT of output!  You
   /// really don't want to do this when running on many MPI processes.
   static bool verbose ();
+
+  /// \brief Whether to assume that MPI is CUDA aware.
+  ///
+  /// An MPI implementation is "CUDA aware" if it can accept CUDA
+  /// device buffers (Kokkos::CudaSpace) as send and receive buffers.
+  /// You may control this behavior at run time via the
+  /// <tt>TPETRA_ASSUME_CUDA_AWARE_MPI</tt> environment variable.
+  ///
+  /// For a discussion, see Trilinos GitHub issues #1571 and #1088.
+  static bool assumeMpiIsCudaAware ();
 };
 
 } // namespace Details
