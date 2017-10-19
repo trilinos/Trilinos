@@ -877,13 +877,6 @@ namespace Tpetra {
     /// CrsMatrix uses them at one point.  Please, nobody else use it.
     Kokkos::DualView<size_t*, buffer_device_type> numExportPacketsPerLID_;
 
-#ifdef KOKKOS_HAVE_CUDA
-    /// \brief Whether to allow CUDA allocations for communication buffers.
-    ///
-    /// See #1088 and #1571 for discussion.
-    bool allowCudaCommBuffers_;
-#endif // KOKKOS_HAVE_CUDA
-
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
   private:
     Teuchos::RCP<Teuchos::Time> doXferTimer_;
