@@ -61,22 +61,6 @@
 
 namespace Tpetra {
 
-  namespace { // (anonymous)
-
-    template<class DualViewType>
-    std::string dualViewStatusToString (const DualViewType& dv, const char name[])
-    {
-      const auto host = dv.modified_host ();
-      const auto dev = dv.modified_host ();
-
-      std::ostringstream os;
-      os << name << ": {size: " << dv.dimension_0 ()
-         << ", sync: {host: " << host << ", dev: " << dev << "}";
-      return os.str ();
-    }
-
-  } // namespace (anonymous)
-
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node, classic>::
   DistObject (const Teuchos::RCP<const map_type>& map) :
@@ -637,6 +621,7 @@ namespace Tpetra {
                                     const size_t numImportLIDs)
   {
     using Details::reallocDualViewIfNeeded;
+    using Details::dualViewStatusToString;
     using std::endl;
     // If an array is already allocated, and if is at least
     // tooBigFactor times bigger than it needs to be, free it and
@@ -1089,6 +1074,7 @@ namespace Tpetra {
                  const ReverseOption revOp,
                  const bool commOnHost)
   {
+    using Details::dualViewStatusToString;
     using Tpetra::Details::getArrayViewFromDualView;
     using Kokkos::Compat::getArrayView;
     using Kokkos::Compat::getConstArrayView;
