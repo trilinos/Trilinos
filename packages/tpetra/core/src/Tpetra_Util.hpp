@@ -928,6 +928,25 @@ namespace Tpetra {
       return x_out;
     }
 
+    /// \brief Return the status of the given Kokkos::DualView, as a
+    ///   human-readable string.
+    ///
+    /// This is meant for Tpetra developers as a debugging aid.
+    ///
+    /// \param dv [in] Kokkos::DualView
+    /// \param name [in] Human-readable name of the Kokkos::DualView
+    template<class DualViewType>
+    std::string dualViewStatusToString (const DualViewType& dv, const char name[])
+    {
+      const auto host = dv.modified_host ();
+      const auto dev = dv.modified_host ();
+
+      std::ostringstream os;
+      os << name << ": {size: " << dv.dimension_0 ()
+         << ", sync: {host: " << host << ", dev: " << dev << "}";
+      return os.str ();
+    }
+
   } // namespace Details
 } // namespace Tpetra
 

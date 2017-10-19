@@ -78,18 +78,6 @@ namespace Tpetra {
 
 namespace { // (anonymous)
 
-  template<class DualViewType>
-  std::string dualViewStatusToString (const DualViewType& dv, const char name[])
-  {
-    const auto host = dv.modified_host ();
-    const auto dev = dv.modified_host ();
-
-    std::ostringstream os;
-    os << name << ": {size: " << dv.dimension_0 ()
-       << ", sync: {host: " << host << ", dev: " << dev << "}";
-    return os.str ();
-  }
-
   template<class T, class BinaryFunction>
   T atomic_binary_function_update (volatile T* const dest,
                                    const T& inputVal,
@@ -6390,6 +6378,7 @@ namespace Tpetra {
                      const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
   {
     using Tpetra::Details::castAwayConstDualView;
+    using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
     using std::endl;
     typedef Kokkos::HostSpace host_mem_space;
@@ -6496,6 +6485,7 @@ namespace Tpetra {
                      size_t& constantNumPackets,
                      Distributor& distor)
   {
+    using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
     using Teuchos::outArg;
     using Teuchos::REDUCE_MAX;
@@ -6890,6 +6880,7 @@ namespace Tpetra {
                         size_t& totalNumEntries,
                         const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs) const
   {
+    using Tpetra::Details::dualViewStatusToString;
     using std::endl;
     typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
@@ -7020,6 +7011,7 @@ namespace Tpetra {
                     Distributor& distor) const
   {
     using Kokkos::View;
+    using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::PackTraits;
     using Tpetra::Details::create_mirror_view_from_raw_host_array;
     using std::endl;
@@ -7311,6 +7303,7 @@ namespace Tpetra {
                        Distributor& distor,
                        const CombineMode combineMode)
   {
+    using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
     using std::endl;
     const char tfecfFuncName[] = "unpackAndCombineNew: ";
