@@ -246,12 +246,12 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
   for(GlobalOrdinal i=minSourceGID; i<maxSourceGID; i++) {
     // Get the (source) owner.
     // Abuse reductions to make up for the fact we don't know the owner is.
-    // NOTE: If nobody owns this guy, it will get reported that Proc 0 does.  That's OK so long as nobody needs this guy in 
-    // the target either...
+    // NOTE: If nobody owns this guy, it we'll get -1.
     LocalOrdinal slid = source->getLocalElement(i);    
-    if(slid == LO_INVALID) TempPID = 0;
+    if(slid == LO_INVALID) TempPID = -1;
     else TempPID = MyPID;
-    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_SUM,TempPID, Teuchos::outArg(OwningPID));
+    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MAX,TempPID, Teuchos::outArg(OwningPID));
+
 
     // Check to see if I have this guy in the target.  If so, make sure I am receiving him from the owner
     LocalOrdinal tlid = target->getLocalElement(i);    
