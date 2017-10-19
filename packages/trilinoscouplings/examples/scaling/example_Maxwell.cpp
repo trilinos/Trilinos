@@ -165,6 +165,8 @@
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #endif
 
+#include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
+
 
 #define ABS(x) ((x)>0?(x):-(x))
 
@@ -343,6 +345,12 @@ int evalCurlCurlu(double & curlcurlu0,
 /******************************** MAIN ********************************************/
 /**********************************************************************************/
 int main(int argc, char *argv[]) {
+  // using namespace TrilinosCouplings;
+  // using IntrepidPoissonExample::parseCommandLineArguments;
+  // using IntrepidPoissonExample::setCommandLineArgumentDefaults;
+  // using IntrepidPoissonExample::setMaterialTensorOffDiagonalValue;
+  // using IntrepidPoissonExample::setUpCommandLineArguments;
+  using Teuchos::CommandLineProcessor;
 
   int error = 0;
 #ifdef HAVE_MPI
@@ -359,34 +367,86 @@ int main(int argc, char *argv[]) {
 #endif
   Epetra_Time Time(Comm);
 
-   //Check number of arguments
-  if (argc > 2) {
-      std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
-      std::cout <<"Usage:\n\n";
-      std::cout <<"  ./TrilinosCouplings_examples_scaling_Example_CurlLSFEM.exe [inputfile.xml] \n\n";
-      std::cout <<"   inputfile.xml(optional) - xml file with description of Pamgen mesh \n";
-      std::cout <<"                             and material parameters for each block \nn";
-      exit(1);
-   }
 
- if (MyPID == 0) {
-  std::cout \
-    << "===============================================================================\n" \
-    << "|                                                                             |\n" \
-    << "|    Example: Solve Div-Curl System on Hexahedral Mesh                        |\n" \
-    << "|               with Curl-conforming Elements                                 |\n" \
-    << "|                                                                             |\n" \
-    << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
-    << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
-    << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
-    << "|                                                                             |\n" \
-    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
-    << "|  Pamgen's website:   http://trilinos.sandia.gov/packages/pamgen             |\n" \
-    << "|  ML's website:       http://trilinos.sandia.gov/packages/ml                 |\n" \
-    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
-    << "|                                                                             |\n" \
-    << "===============================================================================\n";
+  // Did the user specify --help at the command line to print help
+  // with command-line arguments?
+  bool printedHelp = false;
+  // Values of command-line arguments.
+  int nx, ny, nz;
+  std::string xmlInFileName;
+  bool verbose, debug;
+  std::string solverName;
+
+  // Set default values of command-line arguments.
+  nx = 10;
+  ny = 10;
+  nz = 10;
+  xmlInFileName = "";
+  solverName = "MueLu";
+  verbose = false;
+  debug = false;
+  // Parse and validate command-line arguments.
+  Teuchos::CommandLineProcessor cmdp (false, true);
+  cmdp.setOption ("nx", &nx, "Number of cells along the x dimension");
+  cmdp.setOption ("ny", &ny, "Number of cells along the y dimension");
+  cmdp.setOption ("nz", &nz, "Number of cells along the z dimension");
+  cmdp.setOption ("inputParams", &xmlInFileName, "XML file of input "
+                  "parameters, which we read if specified and not \"\".  "
+                  "If it has a \"meshInput\" parameter, we use its "
+                  "std::string value as the Pamgen mesh specification.  "
+                  "Otherwise, we tell Pamgen to make a cube, using "
+                  "nx, ny, and nz.");
+  cmdp.setOption ("solverName", &solverName, "Name of iterative linear solver "
+                  "to use for solving the linear system.  You may use any name "
+                  "that Belos::SolverFactory understands.  Examples include "
+                  "\"GMRES\" and \"CG\".");
+  cmdp.setOption ("verbose", "quiet", &verbose,
+                  "Whether to print verbose status output.");
+  cmdp.setOption ("debug", "release", &debug,
+                  "Whether to print copious debugging output to stderr.");
+
+  if (MyPID == 0) {
+    std::cout                                                           \
+         << "===============================================================================\n" \
+         << "|                                                                             |\n" \
+         << "|    Example: Solve Div-Curl System on Hexahedral Mesh                        |\n" \
+         << "|               with Curl-conforming Elements                                 |\n" \
+         << "|                                                                             |\n" \
+         << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
+         << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
+         << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
+         << "|                                                                             |\n" \
+         << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+         << "|  Pamgen's website:   http://trilinos.sandia.gov/packages/pamgen             |\n" \
+         << "|  ML's website:       http://trilinos.sandia.gov/packages/ml                 |\n" \
+         << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+         << "|                                                                             |\n" \
+         << "===============================================================================\n";
   }
+
+  const CommandLineProcessor::EParseCommandLineReturn parseResult =
+    cmdp.parse (argc, argv);
+  if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
+    printedHelp = true;
+  }
+  else {
+    printedHelp = false;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
+      std::invalid_argument, "Failed to parse command-line arguments.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      xmlInFileName == "" && (nx <= 0 || ny <= 0 || nz <= 0),
+      std::invalid_argument, "If no XML parameters filename is specified (via "
+      "--inputParams), then the number of cells along each dimension of the "
+      "mesh (--nx, --ny, and --nz) must be positive.");
+  }
+
+  if (printedHelp) {
+      // The user specified --help at the command line to print help
+      // with command-line arguments.  We printed help already, so quit
+      // with a happy return code.
+      return EXIT_SUCCESS;
+    }
 
   long long *  node_comm_proc_ids   = NULL;
   long long *  node_cmap_node_cnts  = NULL;
@@ -407,33 +467,46 @@ int main(int argc, char *argv[]) {
 /********************************** GET XML INPUTS ********************************/
 /**********************************************************************************/
 
-  // Command line for xml file, otherwise use default
-    std::string   xmlInFileName;
-    if(argc>=2) xmlInFileName=string(argv[1]);
-    else xmlInFileName="Maxwell.xml";
-
-
   // Read xml file into parameter list
-    Teuchos::ParameterList inputList;
+  Teuchos::ParameterList inputList;
+  std::string meshInput;
 
-   if(xmlInFileName.length()) {
+  if(xmlInFileName.length()) {
     if (MyPID == 0) {
       std::cout << "\nReading parameter list from the XML file \""<<xmlInFileName<<"\" ...\n\n";
     }
-      Teuchos::updateParametersFromXmlFile(xmlInFileName,Teuchos::ptr (&inputList));
+    Teuchos::updateParametersFromXmlFile(xmlInFileName,Teuchos::ptr (&inputList));
     if (MyPID == 0) {
       inputList.print(std::cout,2,true,true);
       std::cout << "\n";
-     }
     }
-    else
-    {
-      std::cout << "Cannot read input file: " << xmlInFileName << "\n";
-      return 0;
+    // Get pamgen mesh definition
+    meshInput = Teuchos::getParameter<std::string>(inputList,"meshInput");
+  }
+  else {
+    meshInput =
+      "mesh                         \n"
+      "  brick                      \n"
+      "   zmin = 0.0                \n"
+      "   xmin = 0.0                \n"
+      "   ymin = 0.0                \n"
+      "   numz 1                    \n"
+      "     zblock 1 2.0 interval " + std::to_string(nz) + "\n" +
+      "   numx 1                    \n"
+      "     xblock 1 2.0 interval " + std::to_string(nx) + "\n" +
+      "   numy 1                    \n"
+      "     yblock 1 2.0 interval " + std::to_string(ny) + "\n" +
+      "  end                        \n"
+      "  set assign                 \n"
+      "     sideset, ilo, 1         \n"
+      "     sideset, jlo, 2         \n"
+      "     sideset, klo, 3         \n"
+      "     sideset, ihi, 4         \n"
+      "     sideset, jhi, 5         \n"
+      "     sideset, khi, 6         \n"
+      "  end                        \n"
+      "end                          \n";
     }
-
-  // Get pamgen mesh definition
-    std::string meshInput = Teuchos::getParameter<std::string>(inputList,"meshInput");
 
 
 /**********************************************************************************/
@@ -1813,6 +1886,7 @@ int main(int argc, char *argv[]) {
    Teuchos::ParameterList &MueList11=MueLuList.sublist("refmaxwell: 11list");
    Teuchos::ParameterList &MueList22=MueLuList.sublist("refmaxwell: 22list");
    MueLuList.set("aggregation: type","Uncoupled");
+   MueLuList.set("refmaxwell: disable add-on",false);
    MueLuList.set("smoother: type","CHEBYSHEV");
    MueList11.set("coarse: max size", 128);
    MueList11.set("smoother: type", "CHEBYSHEV");
@@ -1839,37 +1913,44 @@ int main(int argc, char *argv[]) {
    // Form the Stiffness+Mass Matrix
    StiffMatrixC.SetLabel("CurlCurl+Mass");
 
-   // ML version
-   TestMultiLevelPreconditioner_Maxwell(probType,MLList,StiffMatrixC,
+   if (solverName == "ML") {
+     // ML version
+     if(MyPID==0) {std::cout << "\n\nML solve \n";}
+     TestMultiLevelPreconditioner_Maxwell(probType,MLList,StiffMatrixC,
                                           DGrad,MassMatrixGinv,MassMatrixC,
                                           xh,rhsVector,
                                           TotalErrorResidual, TotalErrorExactSol);
-
-   // build coordinates multivector
-   Epetra_MultiVector coords(MassMatrixGinv.RowMap(),3);
-
-   double* xx = coords[0];
-   double* yy = coords[1];
-   double* zz = coords[2];
-   for(int i = 0; i < MassMatrixGinv.RowMap(). NumMyElements(); ++i) {
-     xx[i] = Nx[i];
-     yy[i] = Ny[i];
-     zz[i] = Nz[i];
    }
 
-   // MueLu RefMaxwell
-   TestMueLuMultiLevelPreconditioner_Maxwell(probType,MueLuList,StiffMatrixC,
-                                          DGrad,MassMatrixGinv,MassMatrixC,
-                                          coords,
-                                          xh,rhsVector,
-                                          TotalErrorResidual, TotalErrorExactSol);
+   if (solverName == "MueLu") {
+     // build coordinates multivector
+     Epetra_MultiVector coords(MassMatrixGinv.RowMap(),3);
 
-   // Nothing like solving twice!
+     double* xx = coords[0];
+     double* yy = coords[1];
+     double* zz = coords[2];
+     for(int i = 0; i < MassMatrixGinv.RowMap(). NumMyElements(); ++i) {
+       xx[i] = Nx[i];
+       yy[i] = Ny[i];
+       zz[i] = Nz[i];
+     }
+
+     // MueLu RefMaxwell
+     if(MyPID==0) {std::cout << "\n\nMueLu solve \n";}
+     TestMueLuMultiLevelPreconditioner_Maxwell(probType,MueLuList,StiffMatrixC,
+                                               DGrad,MassMatrixGinv,MassMatrixC,
+                                               coords,
+                                               xh,rhsVector,
+                                               TotalErrorResidual, TotalErrorExactSol);
+   }
 #ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
-   TestMultiLevelPreconditioner_Stratimikos(probType,MLList,StiffMatrixC,
-                                          DGrad,MassMatrixGinv,MassMatrixC,
-                                          xh,rhsVector,
-                                          TotalErrorResidual, TotalErrorExactSol);
+   if (solverName == "ML-Stratimikos") {
+     if(MyPID==0) {std::cout << "\n\nML Stratimikos solve \n";}
+     TestMultiLevelPreconditioner_Stratimikos(probType,MLList,StiffMatrixC,
+                                              DGrad,MassMatrixGinv,MassMatrixC,
+                                              xh,rhsVector,
+                                              TotalErrorResidual, TotalErrorExactSol);
+   }
 #endif
 
 /**********************************************************************************/
@@ -2431,4 +2512,3 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
 
    return 0;
  }
-

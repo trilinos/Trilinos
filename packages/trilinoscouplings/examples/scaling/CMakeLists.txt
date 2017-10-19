@@ -66,6 +66,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
     Example_Maxwell
     SOURCES example_Maxwell.cpp
       TrilinosCouplings_Pamgen_Utils.cpp
+    ARGS "--solverName=ML"
     NUM_MPI_PROCS 1
     )
 
