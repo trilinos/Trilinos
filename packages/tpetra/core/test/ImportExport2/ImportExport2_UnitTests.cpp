@@ -2411,6 +2411,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( RemoteOnlyImport, Basic, LO, GO )  {
     // Build remote-only import
     Import2 = Import1->createRemoteOnlyImport(Map0);
 
+    // Check validity
+    bool vv = Tpetra::Import_Util::checkImportValidity(*Import2);
+    if(!vv) lclErr=1;
+
     // Do remote-only import
     TestVector->doImport(*SourceVector,*Import2,Tpetra::INSERT);
 

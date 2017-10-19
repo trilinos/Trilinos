@@ -210,10 +210,10 @@ namespace Tacho {
       value_type val;
 
       Coo() = default;
-      Coo(const ordinal_type i,
-          const ordinal_type j,
-          const value_type val)
-        : i(i), j(j), val(val) {}
+      Coo(const ordinal_type ii,
+          const ordinal_type jj,
+          const value_type vval)
+        : i(ii), j(jj), val(vval) {}
       Coo(const Coo& b) = default;
 
       /// \brief Compare "less" index i and j only.

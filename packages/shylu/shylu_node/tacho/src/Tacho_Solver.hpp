@@ -250,7 +250,7 @@ namespace Tacho {
         _N.setSerialThresholdSize(_serial_thres_size);
 
         if (_max_num_superblocks < 0) { // set default values
-          _max_num_superblocks = 4;
+          _max_num_superblocks = 16;
         }
         _N.setMaxNumberOfSuperblocks(_max_num_superblocks);
 
@@ -261,21 +261,32 @@ namespace Tacho {
           else 
             _N.factorizeCholesky_SerialPanel(ax, _nb, _verbose);
         } else {
-          if (_nb < 0) {
-            if (_mb < 0) {
-              const ordinal_type max_dense_size = max(_N.getMaxSupernodeSize(),_N.getMaxSchurSize());
-              if      (max_dense_size < 256)  _mb =  -1;
-              else if (max_dense_size < 512)  _mb =  64;
-              else if (max_dense_size < 1024) _mb = 128;
-              else if (max_dense_size < 8192) _mb = 256;
-              else                            _mb = 512;
-            }
+          const ordinal_type max_dense_size = max(_N.getMaxSupernodeSize(),_N.getMaxSchurSize());
+          if (_nb < 0) { 
+            if      (max_dense_size < 256)  _nb =  -1;
+            else if (max_dense_size < 512)  _nb =  64;
+            else if (max_dense_size < 1024) _nb = 128;
+            else if (max_dense_size < 8192) _nb = 256;
+            else                            _nb = 256;
+          }
+          if (_mb < 0) {
+            if      (max_dense_size < 256)  _mb =  -1;
+            else if (max_dense_size < 512)  _mb =  64;
+            else if (max_dense_size < 1024) _mb = 128;
+            else if (max_dense_size < 8192) _mb = 256;
+            else                            _mb = 512;
+          }
+
+          if (_nb <= 0) {
             if (_mb > 0)
               _N.factorizeCholesky_ParallelByBlocks(ax, _mb, _verbose);
             else
               _N.factorizeCholesky_Parallel(ax, _verbose);
           } else {
-            _N.factorizeCholesky_ParallelPanel(ax, _nb, _verbose);            
+            if (_mb > 0) 
+              _N.factorizeCholesky_ParallelByBlocksPanel(ax, _mb, _nb, _verbose);
+            else
+              _N.factorizeCholesky_ParallelPanel(ax, _nb, _verbose);
           }
         }
       }

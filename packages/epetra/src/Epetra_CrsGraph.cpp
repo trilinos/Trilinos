@@ -1059,22 +1059,21 @@ int Epetra_CrsGraph::ComputeGlobalConstants()
     CrsGraphData_->MaxNumNonzeros_ = 0;  // We will determine the max number of nonzeros in any one block row
     int* RowElementSizeList = RowMap().ElementSizeList();
     int* ColElementSizeList = RowElementSizeList;
-    if(Importer() != 0)
-      ColElementSizeList = ColMap().ElementSizeList();
-      const Epetra_CrsGraphData::IndexData<int>& intData = CrsGraphData_->Data<int>();
+    if(Importer() != 0) ColElementSizeList = ColMap().ElementSizeList();
+    const Epetra_CrsGraphData::IndexData<int>& intData = CrsGraphData_->Data<int>();
     for(int i = 0; i < numMyBlockRows; i++){
       int NumEntries = CrsGraphData_->NumIndicesPerRow_[i];
       int* indices = intData.Indices_[i];
       if(NumEntries > 0) {
-  int CurNumNonzeros = 0;
-  int RowDim = RowElementSizeList[i];
-  for(int j = 0; j < NumEntries; j++) {
-    int ColDim = ColElementSizeList[indices[j]];
-    CurNumNonzeros += RowDim*ColDim;
-    CrsGraphData_->MaxColDim_ = EPETRA_MAX(CrsGraphData_->MaxColDim_, ColDim);
-  }
-  CrsGraphData_->MaxNumNonzeros_ = EPETRA_MAX(CrsGraphData_->MaxNumNonzeros_, CurNumNonzeros);
-  CrsGraphData_->NumMyNonzeros_ += CurNumNonzeros;
+        int CurNumNonzeros = 0;
+        int RowDim = RowElementSizeList[i];
+        for(int j = 0; j < NumEntries; j++) {
+          int ColDim = ColElementSizeList[indices[j]];
+          CurNumNonzeros += RowDim*ColDim;
+          CrsGraphData_->MaxColDim_ = EPETRA_MAX(CrsGraphData_->MaxColDim_, ColDim);
+        }
+        CrsGraphData_->MaxNumNonzeros_ = EPETRA_MAX(CrsGraphData_->MaxNumNonzeros_, CurNumNonzeros);
+        CrsGraphData_->NumMyNonzeros_ += CurNumNonzeros;
       }
     }
 

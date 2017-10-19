@@ -208,6 +208,104 @@ getRemotePIDs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
   }
 }
 
+
+ 
+/* Check some of the validity of an Import object
+   WARNING: This is a debugging routine only. */
+template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+bool
+checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer)
+{
+  using Teuchos::RCP;
+  RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > source = Importer.getSourceMap();
+  RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > target = Importer.getTargetMap();
+  RCP<const Teuchos::Comm<int> > comm = source->getComm();
+
+  // FIXME: We're only checking the recv end here... add the send end
+  int global_is_valid=0;
+  bool is_valid=true;
+ 
+  // We check validity by going through each ID in the source map one by one, broadcasting the sender's PID and then all
+  // receivers check it.
+  LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+  const int MyPID = comm->getRank();
+
+  GlobalOrdinal minSourceGID = source->getMinAllGlobalIndex();
+  GlobalOrdinal maxSourceGID = source->getMaxAllGlobalIndex();
+
+  Teuchos::ArrayView<const LocalOrdinal> permuteTarget = Importer.getPermuteToLIDs();
+  Teuchos::ArrayView<const LocalOrdinal> remoteLIDs = Importer.getRemoteLIDs();
+  Teuchos::Array<int> remotePIDs; getPids(Importer,remotePIDs,false);
+
+  // Generate remoteGIDs
+  Teuchos::Array<LocalOrdinal> remoteGIDs(remoteLIDs.size());
+  for(size_t i=0; i<(size_t)remoteLIDs.size(); i++)
+    remoteGIDs[i] = target->getGlobalElement(remoteLIDs[i]);
+
+  int TempPID , OwningPID;
+  for(GlobalOrdinal i=minSourceGID; i<maxSourceGID; i++) {
+    // Get the (source) owner.
+    // Abuse reductions to make up for the fact we don't know the owner is.
+    // NOTE: If nobody owns this guy, it will get reported that Proc 0 does.  That's OK so long as nobody needs this guy in 
+    // the target either...
+    LocalOrdinal slid = source->getLocalElement(i);    
+    if(slid == LO_INVALID) TempPID = 0;
+    else TempPID = MyPID;
+    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_SUM,TempPID, Teuchos::outArg(OwningPID));
+
+    // Check to see if I have this guy in the target.  If so, make sure I am receiving him from the owner
+    LocalOrdinal tlid = target->getLocalElement(i);    
+
+    if(tlid != LO_INVALID) {
+      // This guy is in my target map, now to check if I'm receiving him from the owner (which I now know)
+      bool is_ok = false;
+      if (OwningPID == MyPID) {
+	// I own this guy
+	if((size_t) tlid < Importer.getNumSameIDs()) {
+	  // Check sames
+	  is_ok = true;
+	}
+	else if ((size_t)tlid < Importer.getNumSameIDs() + Importer.getNumPermuteIDs()) {
+	  // Check permutes
+	  for (size_t j=0; j<(size_t)permuteTarget.size(); j++) {
+	    if(tlid == permuteTarget[j]) {
+	      is_ok=true; 
+	      break;
+	    }	      
+	  }
+	}
+      }
+      else {
+	// Check remotes
+	bool already_hit = false;
+	for(size_t j=0; j<(size_t)remoteGIDs.size(); j++) {
+	  if(i == remoteGIDs[j]) {
+	    // No double hits please
+	    if(already_hit) {
+	      is_ok=false; 
+	      break;
+	    }
+	    // GID's match:  Do procs?
+	    if(OwningPID == remotePIDs[j]) {
+	      is_ok = true;
+	      already_hit = true;
+	    }
+	  }
+	}
+      }
+      if(!is_ok) is_valid=false;
+    }
+
+  }//end for loop
+
+  // Do a reduction on the final bool status
+  Teuchos::reduceAll<int,int> (*comm, Teuchos::REDUCE_MIN,(int)is_valid, Teuchos::outArg(global_is_valid));
+
+  return global_is_valid>0;
+}
+
+
+
 } // namespace Import_Util
 } // namespace Tpetra
 
