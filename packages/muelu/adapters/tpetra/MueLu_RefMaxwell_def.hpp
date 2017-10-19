@@ -111,11 +111,47 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
 
   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
   out.setOutputToRootOnly(0);
-  out.setShowProcRank(true);
+  out.setShowProcRank(false);
 
   // clean rows associated with boundary conditions
   findDirichletRows(SM_Matrix_,BCrows_);
   findDirichletCols(D0_Matrix_,BCrows_,BCcols_);
+
+  // build nullspace if necessary
+  if(Nullspace_ != Teuchos::null) {
+    // no need to do anything - nullspace is built
+  }
+  else if(Nullspace_ == Teuchos::null && Coords_ != Teuchos::null) {
+    // typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+    Teuchos::Array<Scalar> norms(Coords_->getNumVectors());
+    Coords_->norm2(norms);
+    for (size_t i=0;i<Coords_->getNumVectors();i++) {
+      norms[i] = 1./norms[i];
+    }
+    // Coords_->scale(norms);
+    for(size_t j=0;j<Coords_->getNumVectors();j++) {
+      Teuchos::ArrayRCP<Scalar> datavec = Coords_->getDataNonConst(j);
+      for(size_t i=0;i<static_cast<size_t>(datavec.size());i++)
+        datavec[i] *= norms[j];
+    }
+
+    if (dump_matrices_)
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("coords.mat"), *Coords_);
+
+    Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
+    D0_Matrix_->apply(*Coords_,*Nullspace_);
+  }
+  else {
+    std::cerr << "MueLu::RefMaxwell::compute(): either the nullspace or the nodal coordinates must be provided." << std::endl;
+  }
+
+  /* Nuke the BC edges */
+  size_t dim = Nullspace_->getNumVectors();
+  for(size_t j=0;j<dim;j++) {
+    Teuchos::ArrayRCP<Scalar> datavec = Nullspace_->getDataNonConst(j);
+    for(size_t i=0;i<BCrows_.size();i++)
+      datavec[BCrows_[i]]=0;
+  }
   D0_Matrix_->resumeFill();
   Apply_BCsToMatrixRows(D0_Matrix_,BCrows_);
   Apply_BCsToMatrixCols(D0_Matrix_,BCcols_);
@@ -132,20 +168,22 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   TMT_Matrix_->SetFixedBlockSize(1);
   //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
 
-  // build nullspace if necessary
-  if(Nullspace_ != Teuchos::null) {
-    // no need to do anything - nullspace is built
-  }
-  else if(Nullspace_ == Teuchos::null && Coords_ != Teuchos::null) {
-    Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
-    D0_Matrix_->apply(*Coords_,*Nullspace_);
-  }
-  else {
-    std::cerr << "MueLu::RefMaxwell::compute(): either the nullspace or the nodal coordinates must be provided." << std::endl;
-  }
+  // Form TMT_agg_Matrix
+  Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+  TMT_Agg_Matrix_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
+  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C2,true,true);
+  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C2,false,*TMT_Agg_Matrix_,true,true);
+  TMT_Agg_Matrix_->resumeFill();
+  Remove_Zeroed_Rows(TMT_Agg_Matrix_,1.0e-16);
+  TMT_Agg_Matrix_->SetFixedBlockSize(1);
+  //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
 
   // build special prolongator for (1,1)-block
   if(P11_==Teuchos::null) {
+    out << "\n" \
+      "--------------------------------------------------------------------------------\n" \
+      "---           build special prolongator for (1,1)-block                      ---\n" \
+      "--------------------------------------------------------------------------------\n";
     buildProlongator();
   }
 
@@ -171,22 +209,34 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
     Manager22 = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(precList22_));
     ManagerSmoother = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(smootherList_));
   } else {
-    Manager11 = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(precList11_,A11_->getDomainMap()->getComm()));
+    Manager11 = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(precList11_,AH_->getDomainMap()->getComm()));
     Manager22 = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(precList22_,A22_->getDomainMap()->getComm()));
     ManagerSmoother = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(smootherList_,SM_Matrix_->getDomainMap()->getComm()));
   }
 
+  out << "\n" \
+    "--------------------------------------------------------------------------------\n" \
+    "---                  build MG for coarse (1,1)-block                         ---\n" \
+    "--------------------------------------------------------------------------------\n";
   Hierarchy11_=Manager11->CreateHierarchy();
   Hierarchy11_->setlib(Xpetra::UseTpetra);
-  Hierarchy11_->GetLevel(0)->Set("A", A11_);
+  Hierarchy11_->GetLevel(0)->Set("A", AH_);
   Manager11->SetupHierarchy(*Hierarchy11_);
 
+  out << "\n" \
+    "--------------------------------------------------------------------------------\n" \
+    "---                  build MG for (2,2)-block                                ---\n" \
+    "--------------------------------------------------------------------------------\n";
   Hierarchy22_=Manager22->CreateHierarchy();
   Hierarchy22_->setlib(Xpetra::UseTpetra);
   Hierarchy22_->GetLevel(0)->Set("A", A22_);
   Manager22->SetupHierarchy(*Hierarchy22_);
 
   // build ifpack2 preconditioners for pre and post smoothing
+  out << "\n" \
+    "--------------------------------------------------------------------------------\n" \
+    "---                  build smoother for (1,1)-block                          ---\n" \
+    "--------------------------------------------------------------------------------\n";
   HierarchySmoother_=ManagerSmoother->CreateHierarchy();
   HierarchySmoother_->setlib(Xpetra::UseTpetra);
   HierarchySmoother_->GetLevel(0)->Set("A", SM_Matrix_);
@@ -233,11 +283,15 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
   Teuchos::RCP<Matrix> D0_Matrix_Abs=MatrixFactory2::BuildCopy(D0_Matrix_);
   D0_Matrix_Abs -> resumeFill();
   D0_Matrix_Abs -> setAllToScalar((Scalar)0.5);
-  Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
-  Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
+  // Apply_BCsToMatrixRows(D0_Matrix_Abs,BCrows_);
+  // Apply_BCsToMatrixCols(D0_Matrix_Abs,BCcols_);
   D0_Matrix_Abs -> fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
   Teuchos::RCP<Matrix> Ptent = MatrixFactory::Build(D0_Matrix_Abs->getRowMap(),0);
   Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_Abs,false,*P,false,*Ptent,true,true);
+
+  Ptent->resumeFill();
+  Apply_BCsToMatrixRows(Ptent,BCrows_);
+  Ptent -> fillComplete(Ptent->getDomainMap(),Ptent->getRangeMap());
 
   // put in entries to P11
   size_t dim = Nullspace_->getNumVectors();
@@ -262,10 +316,17 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
     Teuchos::ArrayView<const Scalar>       localVals;
     Ptent->getLocalRowView(i,localCols,localVals);
     size_t numCols = localCols.size();
+    size_t nonzeros = 0;
+    for(size_t j=0; j<numCols; j++)
+      nonzeros += (std::abs(localVals[j])>1.0e-16);
+
     for(size_t j=0; j<numCols; j++) {
       for(size_t k=0; k<dim; k++) {
         blockCols.push_back(localCols[j]*dim+k);
-        blockVals.push_back(localVals[j]*nullspace[k][i]);
+        if (std::abs(localVals[j]) < 1.0e-16)
+          blockVals.push_back(0.);
+        else
+          blockVals.push_back(nullspace[k][i] / nonzeros);
         nnz++;
       }
     }
@@ -308,7 +369,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
 
   if(disable_addon_==true) {
     // if add-on is not chosen
-    A11_=Matrix1;
+    AH_=Matrix1;
   }
   else {
     // catch a failure
@@ -331,14 +392,13 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
     Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Z,true,*C2,false,*Matrix2,true,true);
     // add matrices together
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,A11_,*out);
-    A11_->fillComplete();
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,AH_,*out);
+    AH_->fillComplete();
   }
 
   // set fixed block size for vector nodal matrix
   size_t dim = Nullspace_->getNumVectors();
-  A11_->SetFixedBlockSize(dim);
-
+  AH_->SetFixedBlockSize(dim);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
