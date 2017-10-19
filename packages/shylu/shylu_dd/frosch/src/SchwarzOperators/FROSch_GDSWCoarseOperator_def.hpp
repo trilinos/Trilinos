@@ -194,7 +194,7 @@ namespace FROSch {
                                                           MapPtr &nodesMap,
                                                           MapPtrVecPtr &dofsMaps)
     {
-        GOVecPtr myGlobalDirichletBoundaryDofs(0);
+        GOVecPtr myGlobalDirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,nodesMap);
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,myGlobalDirichletBoundaryDofs);
         
         return 0;
@@ -221,7 +221,7 @@ namespace FROSch {
                                                           MapPtrVecPtr &dofsMaps,
                                                           SCVecPtr2D &localNodeList)
     {
-        GOVecPtr myGlobalDirichletBoundaryDofs(0);
+        GOVecPtr myGlobalDirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,nodesMap);
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,myGlobalDirichletBoundaryDofs,localNodeList);
         
         return 0;
