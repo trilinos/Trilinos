@@ -381,7 +381,7 @@ int main(int argc, char *argv[]) {
   nx = 10;
   ny = 10;
   nz = 10;
-  xmlInFileName = "";
+  xmlInFileName = "Maxwell.xml";
   solverName = "MueLu";
   verbose = false;
   debug = false;
@@ -469,7 +469,6 @@ int main(int argc, char *argv[]) {
 
   // Read xml file into parameter list
   Teuchos::ParameterList inputList;
-  std::string meshInput;
 
   if(xmlInFileName.length()) {
     if (MyPID == 0) {
@@ -480,33 +479,31 @@ int main(int argc, char *argv[]) {
       inputList.print(std::cout,2,true,true);
       std::cout << "\n";
     }
-    // Get pamgen mesh definition
-    meshInput = Teuchos::getParameter<std::string>(inputList,"meshInput");
   }
-  else {
-    meshInput =
-      "mesh                         \n"
-      "  brick                      \n"
-      "   zmin = 0.0                \n"
-      "   xmin = 0.0                \n"
-      "   ymin = 0.0                \n"
-      "   numz 1                    \n"
-      "     zblock 1 2.0 interval " + std::to_string(nz) + "\n" +
-      "   numx 1                    \n"
-      "     xblock 1 2.0 interval " + std::to_string(nx) + "\n" +
-      "   numy 1                    \n"
-      "     yblock 1 2.0 interval " + std::to_string(ny) + "\n" +
-      "  end                        \n"
-      "  set assign                 \n"
-      "     sideset, ilo, 1         \n"
-      "     sideset, jlo, 2         \n"
-      "     sideset, klo, 3         \n"
-      "     sideset, ihi, 4         \n"
-      "     sideset, jhi, 5         \n"
-      "     sideset, khi, 6         \n"
-      "  end                        \n"
-      "end                          \n";
-  }
+  // Get pamgen mesh definition
+  std::string meshInput =                       \
+    "mesh                         \n"
+    "  brick                      \n"
+    "   zmin = 0.0                \n"
+    "   xmin = 0.0                \n"
+    "   ymin = 0.0                \n"
+    "   numz 1                    \n"
+    "     zblock 1 2.0 interval " + std::to_string(nz) + "\n" +
+    "   numx 1                    \n"
+    "     xblock 1 2.0 interval " + std::to_string(nx) + "\n" +
+    "   numy 1                    \n"
+    "     yblock 1 2.0 interval " + std::to_string(ny) + "\n" +
+    "  end                        \n"
+    "  set assign                 \n"
+    "     sideset, ilo, 1         \n"
+    "     sideset, jlo, 2         \n"
+    "     sideset, klo, 3         \n"
+    "     sideset, ihi, 4         \n"
+    "     sideset, jhi, 5         \n"
+    "     sideset, khi, 6         \n"
+    "  end                        \n"
+    "end                          \n";
+  meshInput = inputList.get("meshInput", meshInput);
 
 
   /**********************************************************************************/
@@ -1861,57 +1858,72 @@ int main(int argc, char *argv[]) {
   /*********************************** SOLVE ****************************************/
   /**********************************************************************************/
 
+  double TotalErrorResidual=0, TotalErrorExactSol=0;
+
   // Parameter list for ML
   Teuchos::ParameterList MLList;
-  ML_Epetra::SetDefaultsRefMaxwell(MLList);
+  if(inputList.isSublist("ML")) {
+    MLList = inputList.sublist("ML");
+  } else {
+    ML_Epetra::SetDefaultsRefMaxwell(MLList);
+    Teuchos::ParameterList &List11=MLList.sublist("refmaxwell: 11list");
+    Teuchos::ParameterList &List11c=List11.sublist("edge matrix free: coarse");
+    Teuchos::ParameterList &List22=MLList.sublist("refmaxwell: 22list");
+    // MLList.set("refmaxwell: mode","none");
+    MLList.set("refmaxwell: mode","additive");
+    MLList.set("refmaxwell: disable addon",false);
+    MLList.set("aggregation: type","Uncoupled-MIS");
+    MLList.set("ML output",10);
+    MLList.set("smoother: type","Chebyshev");
+    // MLList.set("print hierarchy", 0);
+
+    List11.set("ML output",10);
+    // List11.set("print hierarchy", true);
+    List22.set("coarse: type","Amesos-KLU");
+    List22.set("ML output",10);
+
+    List11c.set("coarse: type","Amesos-KLU");
+    List11c.set("ML output",10);
+    List11c.set("PDE equations",3);
+  }
   Teuchos::ParameterList &List11=MLList.sublist("refmaxwell: 11list");
-  Teuchos::ParameterList &List11c=List11.sublist("edge matrix free: coarse");
-  Teuchos::ParameterList &List22=MLList.sublist("refmaxwell: 22list");
-  double TotalErrorResidual=0, TotalErrorExactSol=0;
-  // MLList.set("refmaxwell: mode","none");
-  MLList.set("refmaxwell: mode","additive");
-  MLList.set("refmaxwell: disable addon",false);
-  MLList.set("aggregation: type","Uncoupled-MIS");
-  MLList.set("ML output",10);
-  MLList.set("smoother: type","Chebyshev");
-  // MLList.set("print hierarchy", 0);
   List11.set("x-coordinates",&Nx[0]);
   List11.set("y-coordinates",&Ny[0]);
-  List11.set("ML output",10);
   List11.set("z-coordinates",&Nz[0]);
-  // List11.set("print hierarchy", true);
-  List22.set("coarse: type","Amesos-KLU");
-  List22.set("ML output",10);
-  List11c.set("coarse: type","Amesos-KLU");
-  List11c.set("ML output",10);
-  List11c.set("PDE equations",3);
+
 
   // Parameter list for MueLu
   Teuchos::ParameterList MueLuList;
-  Teuchos::ParameterList &MueList11=MueLuList.sublist("refmaxwell: 11list");
-  Teuchos::ParameterList &MueList22=MueLuList.sublist("refmaxwell: 22list");
-  MueLuList.set("aggregation: type","Uncoupled");
-  // MueLuList.set("refmaxwell: mode","none");
-  MueLuList.set("refmaxwell: mode","additive");
-  MueLuList.set("refmaxwell: disable addon",false);;
-  MueLuList.set("smoother: type","CHEBYSHEV");
-  Teuchos::ParameterList &MueLuSmootherList=MueLuList.sublist("smoother: params");
-  MueLuSmootherList.set("chebyshev: degree",2);
-  MueLuSmootherList.set("chebyshev: ratio eigenvalue",30.0);
-  MueList11.set("coarse: max size", 128);
-  MueList11.set("smoother: type", "CHEBYSHEV");
-  //MueList11.sublist("smoother: params").set("chebyshev: max eigenvalue",1.85123);
-  MueList11.sublist("smoother: params").set("chebyshev: ratio eigenvalue",30.0);
-  MueList11.sublist("smoother: params").set("chebyshev: degree",2);
-  //MueList11.set("coarse: type","Amesos-KLU");
-  MueList11.set("number of equations",3);
-  MueList22.set("coarse: max size", 128);
-  MueList22.set("smoother: type", "CHEBYSHEV");
-  //MueList22.sublist("smoother: params").set("chebyshev: max eigenvalue",1.431);
-  MueList22.sublist("smoother: params").set("chebyshev: ratio eigenvalue",30.0);
-  MueList22.sublist("smoother: params").set("chebyshev: degree",2);
-  //MueList22.set("coarse: type","Amesos-KLU");
+  if(inputList.isSublist("MueLu")) {
+    MueLuList = inputList.sublist("MueLu");
+  } else {
+    Teuchos::ParameterList &MueList11=MueLuList.sublist("refmaxwell: 11list");
+    Teuchos::ParameterList &MueList22=MueLuList.sublist("refmaxwell: 22list");
+    MueLuList.set("aggregation: type","Uncoupled");
+    // MueLuList.set("refmaxwell: mode","none");
+    MueLuList.set("refmaxwell: mode","additive");
+    MueLuList.set("refmaxwell: disable addon",false);;
+    MueLuList.set("smoother: type","CHEBYSHEV");
 
+    Teuchos::ParameterList &MueLuSmootherList=MueLuList.sublist("smoother: params");
+    MueLuSmootherList.set("chebyshev: degree",2);
+    MueLuSmootherList.set("chebyshev: ratio eigenvalue",30.0);
+
+    MueList11.set("coarse: max size", 128);
+    MueList11.set("smoother: type", "CHEBYSHEV");
+    //MueList11.sublist("smoother: params").set("chebyshev: max eigenvalue",1.85123);
+    MueList11.sublist("smoother: params").set("chebyshev: ratio eigenvalue",30.0);
+    MueList11.sublist("smoother: params").set("chebyshev: degree",2);
+    //MueList11.set("coarse: type","Amesos-KLU");
+    MueList11.set("number of equations",3);
+
+    MueList22.set("coarse: max size", 128);
+    MueList22.set("smoother: type", "CHEBYSHEV");
+    //MueList22.sublist("smoother: params").set("chebyshev: max eigenvalue",1.431);
+    MueList22.sublist("smoother: params").set("chebyshev: ratio eigenvalue",30.0);
+    MueList22.sublist("smoother: params").set("chebyshev: degree",2);
+    //MueList22.set("coarse: type","Amesos-KLU");
+  }
   Epetra_FEVector xh(rhsVector);
 
   MassMatrixC.SetLabel("M1");
