@@ -62,13 +62,8 @@ namespace Tacho {
              const ordinal_type np,   // ATR and ABR panel width
              const ordinal_type sid,
              const size_type bufsize, // ABR size + additional
-             /* */ void *buf) {
-// #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-// #if defined( TACHO_PROFILE_TIME_PER_THREAD )
-//         Kokkos::Impl::Timer timer;
-//         timer.reset();
-// #endif
-// #endif
+             /* */ void *buf,
+             const bool use_atomic = true) {
         typedef SupernodeInfoType supernode_info_type;
 
         typedef typename supernode_info_type::value_type value_type;
@@ -176,32 +171,40 @@ namespace Tacho {
               ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
               
               // lock
-              while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
-              Kokkos::store_fence();            
-              
-              for (ordinal_type jj=max(ijbeg,offn);jj<nn;++jj) {
-                const ordinal_type js = jj - offn;
+              if (use_atomic) {
+                for (ordinal_type jj=max(ijbeg,offn);jj<nn;++jj) {
+                  const ordinal_type js = jj - offn;
 #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
 #pragma unroll
 #endif
-                for (ordinal_type ii=ijbeg;ii<nn;++ii) {
-                  const ordinal_type row = s2t[ii];
-                  if (row < s.m) A(row, s2t[jj]) += ABR(ii, js);
-                  else break;
+                  for (ordinal_type ii=ijbeg;ii<nn;++ii) {
+                    const ordinal_type row = s2t[ii];
+                    if (row < s.m) Kokkos::atomic_fetch_add(&A(row, s2t[jj]), ABR(ii, js));
+                    else break;
+                  }
                 }
+              } else {
+                while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
+                Kokkos::store_fence();            
+                
+                for (ordinal_type jj=max(ijbeg,offn);jj<nn;++jj) {
+                  const ordinal_type js = jj - offn;
+#if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
+#pragma unroll
+#endif
+                  for (ordinal_type ii=ijbeg;ii<nn;++ii) {
+                    const ordinal_type row = s2t[ii];
+                    if (row < s.m) A(row, s2t[jj]) += ABR(ii, js);
+                    else break;
+                  }
+                }
+                // unlock
+                s.lock = 0;
+                Kokkos::load_fence();
               }
-              // unlock
-              s.lock = 0;
-              Kokkos::load_fence();
             }
           }
         }
-
-        // #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-        // #if defined( TACHO_PROFILE_TIME_PER_THREAD )
-        //           g_time_per_thread[omp_get_thread_num()] += timer.seconds();
-        // #endif
-        // #endif
         return 0;
       }
 
