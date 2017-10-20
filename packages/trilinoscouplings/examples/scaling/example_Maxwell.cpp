@@ -2191,6 +2191,10 @@ int main(int argc, char *argv[]) {
     delete [] comm_node_proc_ids;
   }
 
+  // Summarize timings
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  Teuchos::TimeMonitor::report (comm.ptr(), std::cout);
+
   return 0;
 }
 /**********************************************************************************/
@@ -2328,6 +2332,7 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
   typedef Xpetra::EpetraNode Node;
 #include "MueLu_UseShortNames.hpp"
 
+  Epetra_Time SetupTime(CurlCurl.Comm());
 
   Teuchos::RCP<CrsMatrix> ccMat = Teuchos::rcp(new Xpetra::EpetraCrsMatrixT<GO,NO>(Teuchos::rcpFromRef(CurlCurl)));
   Teuchos::RCP<CrsMatrixWrap> ccOp = Teuchos::rcp(new CrsMatrixWrap(ccMat));
@@ -2358,6 +2363,9 @@ void TestMueLuMultiLevelPreconditioner_Maxwell(char ProblemType[],
                                                        M1Op,Teuchos::null,xcoords,MLList) );
 
   MueLu::AztecEpetraOperator prec(preconditioner);
+
+  if(CurlCurl.Comm().MyPID()==0) {std::cout << "Setup time: " << SetupTime.ElapsedTime()
+                                            << " sec \n"; SetupTime.ResetStartTime();}
 
   Epetra_MultiVector x(xh);
   x.PutScalar(0.0);
@@ -2399,7 +2407,12 @@ void TestMultiLevelPreconditioner_Maxwell(char ProblemType[],
                                           double & TotalErrorExactSol){
   /* Build RMP */
 
+  Epetra_Time SetupTime(CurlCurl.Comm());
+
   ML_Epetra::RefMaxwellPreconditioner RMP(CurlCurl,D0clean,M1,M0inv,M1,MLList);
+
+  if(CurlCurl.Comm().MyPID()==0) {std::cout << "Setup time: " << SetupTime.ElapsedTime()
+                                            << " sec \n"; SetupTime.ResetStartTime();}
 
   /* Build the AztecOO stuff */
   Epetra_MultiVector x(xh);
