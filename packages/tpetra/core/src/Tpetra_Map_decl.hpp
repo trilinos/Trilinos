@@ -1248,7 +1248,9 @@ namespace Tpetra {
     /// getGlobalElement() (which is a host method, and therefore
     /// requires a host View) if necessary (only noncontiguous Maps
     /// need this).
+#ifndef SWIG
     mutable typename decltype (lgMap_)::HostMirror lgMapHost_;
+#endif
 
     //! Type of a mapping from global IDs to local IDs.
     typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal, device_type>
