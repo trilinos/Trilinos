@@ -7388,16 +7388,18 @@ namespace Tpetra {
       reduceAll<int, int> (comm, Teuchos::REDUCE_MAX,
                            lclBad, Teuchos::outArg (gblBad));
       if (gblBad != 0) {
-        const int myRank = comm.getRank ();
+        // mfh 22 Oct 2017: 'prefix' might be null, since it is only
+        // initialized in a debug build.  Thus, we get the process
+        // rank again here.  This is an error message, so the small
+        // run-time cost doesn't matter.  See #1887.
         std::ostringstream os;
-        os << "Proc " << myRank << ": " << msg->str () << std::endl;
-
+        os << "(Proc " << comm.getRank () << ") " << msg->str () << endl;
         msg = std::unique_ptr<std::ostringstream> (new std::ostringstream ());
         ::Tpetra::Details::gathervPrint (*msg, os.str (), comm);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::logic_error, std::endl << "unpackAndCombineNewImpl() threw "
-           "an exception on one or more participating processes:" << std::endl
-           << msg->str ());
+          (true, std::logic_error, std::endl << "unpackAndCombineNewImpl() "
+           "threw an exception on one or more participating processes: "
+           << endl << msg->str ());
       }
     }
     else {
