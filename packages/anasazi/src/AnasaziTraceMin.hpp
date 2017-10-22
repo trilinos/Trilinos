@@ -53,7 +53,9 @@
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziTraceMinBase.hpp"
 
-#include "Epetra_Operator.h"
+#ifdef HAVE_ANASAZI_EPETRA
+  #include "Epetra_Operator.h"
+#endif
 
 #include "AnasaziEigensolver.hpp"
 #include "AnasaziMultiVecTraits.hpp"
