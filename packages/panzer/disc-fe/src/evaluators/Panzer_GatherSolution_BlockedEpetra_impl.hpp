@@ -52,7 +52,6 @@
 // Panzer
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_GatherSolution_Input.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"

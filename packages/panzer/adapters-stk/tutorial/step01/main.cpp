@@ -61,7 +61,7 @@
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
 #include "Panzer_ModelEvaluator.hpp"
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
     {
       panzer::DOFManagerFactory<int,int> globalIndexerFactory;
       dofManager = globalIndexerFactory.buildUniqueGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
-      linObjFactory = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(comm,dofManager));
+      linObjFactory = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(comm,dofManager));
     }
 
     // build worksets
