@@ -1,4 +1,4 @@
-
+#include <cmath>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
 #include <Teuchos_RCP.hpp>
@@ -16,10 +16,20 @@ int main (int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, NULL);
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
+  // Processor decomp (only works on perfect squares)
+  int numProcs  = comm->getSize();
+  int sqrtProcs = sqrt(numProcs); 
+  if(sqrtProcs*sqrtProcs !=numProcs) return -1;
+  int procx = sqrtProcs;
+  int procy = sqrtProcs;
+
+
   // Generate the mesh
   int nex = 10;
   int ney = 10;
-  MeshDatabase mesh(comm,nex,ney);
+
+
+  MeshDatabase mesh(comm,nex,ney,procx,procy);
 
 
   // Build Tpetra Maps
