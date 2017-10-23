@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
 #include <Teuchos_RCP.hpp>
@@ -27,10 +28,8 @@ int main (int argc, char *argv[]) {
   // Generate the mesh
   int nex = 10;
   int ney = 10;
-
-
   MeshDatabase mesh(comm,nex,ney,procx,procy);
-
+  mesh.print(std::cout);
 
   // Build Tpetra Maps
 
