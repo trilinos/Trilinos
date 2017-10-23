@@ -162,7 +162,7 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
     for(GlobalOrdinal i=myElementStart_[0]; i<myElementStop_[0]; i++) {
       GlobalOrdinal idx=idx_from_ij(globalElements_[0],i,j);
       ownedElementGlobalIDs_(ect) = idx;
-      ect++;	
+      ect++;
     }
   }
   
@@ -173,7 +173,7 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
     for(GlobalOrdinal i=myNodeStart_[0]; i<myNodeStop_[0]; i++) {
       GlobalOrdinal idx=idx_from_ij(globalNodes_[0],i,j);
       ownedNodeGlobalIDs_(nct) = idx;
-      nct++;	
+      nct++;
     }
   }
   
@@ -205,9 +205,8 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
       if(i<0 || i>=globalElements_[0]) continue; // Ignore stuff off the mesh
       
       // Ignore proc interior
-      if( j>myElementStart_[1]-1 && j<myElementStop_[1] &&
-	  i>myElementStart_[0]-1 && i<myElementStop_[0])
-	continue;
+      if( j>myElementStart_[1]-1 && j<myElementStop_[1] && i>myElementStart_[0]-1 && i<myElementStop_[0])
+        continue;
       
       GlobalOrdinal idx=idx_from_ij(globalElements_[0],i,j);
       my_ghost_elements.push_back(idx);
@@ -237,7 +236,7 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
     for(size_t l=0; l<ownedElementToNode_.dimension(1); l++) {
       GlobalOrdinal nidx=ownedElementToNode_(k,l);
       if(!nodeIsOwned(nidx)) 
-	my_ghost_nodes.insert(nidx);
+        my_ghost_nodes.insert(nidx);
     }
   }
   Kokkos::resize(ghostNodeGlobalIDs_,my_ghost_nodes.size());
@@ -245,7 +244,6 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
     size_t kk = distance(my_ghost_nodes.begin(),k);
     ghostNodeGlobalIDs_(kk) = *k;
   }
-  
 }
 
 
@@ -269,7 +267,7 @@ void MeshDatabase::print(std::ostream & oss) {
     for(size_t i=0; i<ownedElementToNode_.dimension(0); i++) {
       oss<<"(";
       for(size_t j=0; j<ownedElementToNode_.dimension(1); j++)
-	oss<<ownedElementToNode_(i,j)<<" ";
+        oss<<ownedElementToNode_(i,j)<<" ";
       oss<<") ";
     }      
 
@@ -284,11 +282,9 @@ void MeshDatabase::print(std::ostream & oss) {
     for(size_t i=0; i<ghostElementToNode_.dimension(0); i++) {
       oss<<"(";
       for(size_t j=0; j<ghostElementToNode_.dimension(1); j++)
-	oss<<ghostElementToNode_(i,j)<<" ";
+        oss<<ghostElementToNode_(i,j)<<" ";
       oss<<") ";
     }      
-
-
     oss<<std::endl;
   }
 
@@ -301,3 +297,5 @@ void MeshDatabase::print(std::ostream & oss) {
 //}
 
 #endif
+
+
