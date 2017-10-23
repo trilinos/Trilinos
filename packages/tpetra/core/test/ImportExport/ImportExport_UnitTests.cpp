@@ -495,9 +495,9 @@ namespace {
 
       std::cout<<oss.str()<<std::endl;
     }
-    */
 
     TEST_EQUALITY(isvalid,true);
+    */
   }
 
   //
