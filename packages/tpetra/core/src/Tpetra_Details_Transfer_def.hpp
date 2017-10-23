@@ -237,9 +237,32 @@ localDescribeToString (const Teuchos::EVerbosityLevel vl) const
           << "exportPIDs count: " << getExportPIDs () << endl;
     }
     else { // vl = VERB_HIGH or VERB_EXTREME
+      // Build RemoteGIDs
+      RCP<const Map<LO,GO,NT> > tmap = getTargetMap();
+      Teuchos::Array<GO>  RemoteGIDs(getRemoteLIDs().size());
+      Teuchos::Array<int> RemotePIDs(getRemoteLIDs().size());
+      for(size_t i=0; i<(size_t)getRemoteLIDs().size(); i++)
+	RemoteGIDs[i] = tmap->getGlobalElement(getRemoteLIDs()[i]);
+      
+      
+      // Build RemotePIDs (taken from Tpetra_Import_Util.hpp)
+      const Tpetra::Distributor & D=getDistributor();
+      size_t NumReceives                           = D.getNumReceives();
+      Teuchos::ArrayView<const int> ProcsFrom      = D.getProcsFrom();
+      Teuchos::ArrayView<const size_t> LengthsFrom = D.getLengthsFrom();
+      for (size_t i = 0, j = 0; i < NumReceives; ++i) {
+	const int pid = ProcsFrom[i];
+	for (size_t k = 0; k < LengthsFrom[i]; ++k) {
+	  RemotePIDs[j] = pid;
+	  j++;
+	}
+      }
+
       out << "permuteFromLIDs: " << toString (getPermuteFromLIDs ()) << endl
           << "permuteToLIDs: " << toString (getPermuteToLIDs ()) << endl
           << "remoteLIDs: " << toString (getRemoteLIDs ()) << endl
+          << "remoteGIDs: " << toString (RemoteGIDs ()) << endl
+          << "remotePIDs: " << toString (RemotePIDs ()) << endl
           << "exportLIDs: " << toString (getExportLIDs ()) << endl
           << "exportPIDs: " << toString (getExportPIDs ()) << endl;
     }

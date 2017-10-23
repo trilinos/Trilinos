@@ -235,7 +235,7 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 
   Teuchos::ArrayView<const LocalOrdinal> permuteTarget = Importer.getPermuteToLIDs();
   Teuchos::ArrayView<const LocalOrdinal> remoteLIDs = Importer.getRemoteLIDs();
-  Teuchos::Array<int> remotePIDs; getPids(Importer,remotePIDs,false);
+  Teuchos::Array<int> remotePIDs; getRemotePIDs(Importer,remotePIDs);
 
   // Generate remoteGIDs
   Teuchos::Array<GlobalOrdinal> remoteGIDs(remoteLIDs.size());
@@ -271,7 +271,7 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 	    if(tlid == permuteTarget[j]) {
 	      is_ok=true; 
 	      break;
-	    }	      
+	    }
 	  }
 	}
       }
