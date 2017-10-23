@@ -238,7 +238,7 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
   Teuchos::Array<int> remotePIDs; getPids(Importer,remotePIDs,false);
 
   // Generate remoteGIDs
-  Teuchos::Array<LocalOrdinal> remoteGIDs(remoteLIDs.size());
+  Teuchos::Array<GlobalOrdinal> remoteGIDs(remoteLIDs.size());
   for(size_t i=0; i<(size_t)remoteLIDs.size(); i++)
     remoteGIDs[i] = target->getGlobalElement(remoteLIDs[i]);
 
