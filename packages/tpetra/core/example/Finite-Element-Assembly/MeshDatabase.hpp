@@ -144,10 +144,10 @@ public:
 
   // Data accessors
   global_ordinal_view_type getOwnedElementGlobalIDs() {return ownedElementGlobalIDs_;}
-  global_ordinal_view_type getGhostGlobalIDs() {return ghostElementGlobalIDs_;}
+  global_ordinal_view_type getGhostElementGlobalIDs() {return ghostElementGlobalIDs_;}
 
-  global_ordinal_view_type getOwnedElementNodeIDs() {return ownedNodeGlobalIDs_;}
-  global_ordinal_view_type getGhostNodeIDs() {return ghostNodeGlobalIDs_;}
+  global_ordinal_view_type getOwnedNodeGlobalIDs() {return ownedNodeGlobalIDs_;}
+  global_ordinal_view_type getGhostNodeGloballDs() {return ghostNodeGlobalIDs_;}
 
   local_ordinal_2d_array_type getOwnedElementToNode() {return ownedElementToNode_;}
   local_ordinal_2d_array_type getGhostElementToNode() {return ghostElementToNode_;}

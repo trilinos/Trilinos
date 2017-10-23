@@ -24,6 +24,8 @@ int main (int argc, char *argv[]) {
   int procx = sqrtProcs;
   int procy = sqrtProcs;
 
+  // Type 1 & 2 modes supported so far by mesh database
+
 
   // Generate the mesh
   int nex = 10;
