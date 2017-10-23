@@ -622,7 +622,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
       globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
-      Kokkos::View<const LO*, PHX::Device> LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {

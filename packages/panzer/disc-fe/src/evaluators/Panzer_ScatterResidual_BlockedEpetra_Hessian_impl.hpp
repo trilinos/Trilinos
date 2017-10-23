@@ -196,7 +196,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-         Kokkos::View<const LO*, PHX::Device> rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
+	 auto rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
 
          // loop over the basis functions (currently they are nodes)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {
@@ -223,7 +223,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                   continue;
 
                auto subColIndexer = colIndexers_[colIndexer];
-               Kokkos::View<const LO*, PHX::Device> cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
+	       auto cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
 
                TEUCHOS_ASSERT(end-start==Teuchos::as<int>(cLIDs.size()));
 

@@ -179,8 +179,6 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  Kokkos::View<const int*, PHX::Device> LIDs;
- 
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -198,7 +196,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -383,8 +381,6 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Tangent, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  Kokkos::View<const int*, PHX::Device> LIDs;
- 
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -403,7 +399,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
       // globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId); 
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -593,7 +589,7 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  Kokkos::View<const int*, PHX::Device> cLIDs, rLIDs;
+  Kokkos::View<const int*, Kokkos::LayoutRight, PHX::Device> cLIDs, rLIDs;
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
  
    // for convenience pull out some objects from workset

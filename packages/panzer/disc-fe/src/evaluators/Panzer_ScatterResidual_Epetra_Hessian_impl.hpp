@@ -162,7 +162,6 @@ evaluateFields(typename TRAITS::EvalData workset)
   using PHX::Device;
   using std::vector;
 
-  Kokkos::View<const int*, PHX::Device> initial_cLIDs, rLIDs;
    std::vector<double> jacRow;
 
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
@@ -186,15 +185,14 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
-      initial_cLIDs = colGlobalIndexer->getElementLIDs(cellLocalId);
+      auto rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+      auto initial_cLIDs = colGlobalIndexer->getElementLIDs(cellLocalId);
       vector<int> cLIDs;
       for (int i(0); i < static_cast<int>(initial_cLIDs.extent(0)); ++i)
         cLIDs.push_back(initial_cLIDs(i));
       if (Teuchos::nonnull(workset.other)) {
         const std::size_t other_cellLocalId = workset.other->cell_local_ids[worksetCellIndex];
-        View<const int*, Device> other_cLIDs =
-          colGlobalIndexer->getElementLIDs(other_cellLocalId);
+	auto other_cLIDs = colGlobalIndexer->getElementLIDs(other_cellLocalId);
         for (int i(0); i < static_cast<int>(other_cLIDs.extent(0)); ++i)
           cLIDs.push_back(other_cLIDs(i));
       }
