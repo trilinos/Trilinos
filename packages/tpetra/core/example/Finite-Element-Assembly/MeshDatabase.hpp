@@ -62,73 +62,7 @@ struct LLA {
 
 class MeshDatabase {
 public:
-  MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int global_elements_x, int global_elements_y, int procs_x, int procs_y):
-    globalElements_(global_elements_x,global_elements_y),
-    globalNodes_(global_elements_x+1,global_elements_y+1),
-    globalProcs_(procs_x,procs_y),
-    comm_(comm) {
-
-    // NOTE: Elements/nodes are numbered sequentially with x as the "fast" direction
-
-    // Get processor decomp information
-    MyRank_ = comm_->getRank();
-    ij_from_idx(globalProcs_[0],MyRank_,myProcIJ_[0],myProcIJ_[1]);
-
-    // Get local element & node start / stop
-    GlobalOrdinal num_my_elements=1, num_my_nodes=1;
-    for(int k=0; k<2; k++) {
-      GlobalOrdinal eper = globalElements_[k] / globalProcs_[k];
-
-      myElementStart_[k] = myProcIJ_[k] * eper;
-      myElementStop_[k]  = (myProcIJ_[k] == globalProcs_[k]-1) ? globalElements_[k] : (myProcIJ_[k]+1) * eper;
-      num_my_elements *= (myElementStop_[k]-myElementStart_[k]);
-
-      myNodeStart_[k] = myProcIJ_[k] * eper;
-      myNodeStop_[k]  = (myProcIJ_[k] == globalProcs_[k]-1) ? globalNodes_[k] : (myProcIJ_[k]+1) * eper;
-      num_my_nodes *= (myNodeStop_[k]-myNodeStart_[k]);
-    }
-
-
-    // Generate the owned element ids
-    Kokkos::resize(ownedElementGlobalIDs_,num_my_elements);
-    int ect=0;
-    for(GlobalOrdinal j=myElementStart_[1]; j<myElementStop_[1]; j++) {
-      for(GlobalOrdinal i=myElementStart_[0]; i<myElementStop_[0]; i++) {
-	GlobalOrdinal idx=idx_from_ij(globalElements_[0],i,j);
-	ownedElementGlobalIDs_[ect] = idx;
-	ect++;	
-      }
-    }
-   
-    // Generate the owned node ids
-    Kokkos::resize(ownedNodeGlobalIDs_,num_my_nodes);
-    int nct=0;
-    for(GlobalOrdinal j=myNodeStart_[1]; j<myNodeStop_[1]; j++) {
-      for(GlobalOrdinal i=myNodeStart_[0]; i<myNodeStop_[0]; i++) {
-	GlobalOrdinal idx=idx_from_ij(globalNodes_[0],i,j);
-	ownedNodeGlobalIDs_[nct] = idx;
-	nct++;	
-      }
-    }
-   
-    // Generate the element-to-node map
-    // NOTE: Hardwired to QUAD4's.  Nodes are ordered exodus-style (counter-clockwise) within an element
-    Kokkos::resize(ownedElementToNode_,num_my_elements,4);
-    int cct=0;
-    for(GlobalOrdinal j=myElementStart_[1]; j<myElementStop_[1]; j++) {
-      for(GlobalOrdinal i=myElementStart_[0]; i<myElementStop_[0]; i++) {
-	// The (i,j) of the bottom left corner matches for elements & nodes
-	GlobalOrdinal idx=idx_from_ij(globalNodes_[0],i,j);
-
-	ownedElementToNode_(cct,0) = idx;
-	ownedElementToNode_(cct,1) = idx+1;
-	ownedElementToNode_(cct,2) = idx+globalNodes_[0]+1;
-	ownedElementToNode_(cct,3) = idx+globalNodes_[0];
-	cct++;
-      }
-    }
-
-  }
+  MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int global_elements_x, int global_elements_y, int procs_x, int procs_y);
 
   ~MeshDatabase(){}
 
@@ -152,35 +86,13 @@ public:
   local_ordinal_2d_array_type getOwnedElementToNode() {return ownedElementToNode_;}
   local_ordinal_2d_array_type getGhostElementToNode() {return ghostElementToNode_;}
   
-
-  void print(std::ostream & oss) { 
-    std::ostringstream ss;
-    ss<<"["<<MyRank_<<","<<myProcIJ_[0]<<","<<myProcIJ_[1]<<"]";
-    oss<<ss.str()<<" Global Elements = ["<<globalElements_[0]<<"x"<<globalElements_[1]<<"] Nodes ="<<globalNodes_[0]<<"x"<<globalNodes_[1]<<"]\n";
-    oss<<ss.str()<<" Stop/Start Elements = ["<<myElementStart_[0]<<","<<myElementStop_[0]<<")x["<<myElementStart_[1]<<","<<myElementStop_[1]<<")\n";
-    oss<<ss.str()<<" Stop/Start Nodes    = ["<<myNodeStart_[0]<<","<<myNodeStop_[0]<<")x["<<myNodeStart_[1]<<","<<myNodeStop_[1]<<")\n";
-
-    oss<<ss.str()<<" Owned Global Elements = ";
-    for(size_t i=0; i<ownedElementGlobalIDs_.dimension(0); i++)
-      oss<<ownedElementGlobalIDs_[i]<<" ";
-
-    oss<<"\n"<<ss.str()<<" Owned Global Nodes   = ";
-    for(size_t i=0; i<ownedNodeGlobalIDs_.dimension(0); i++)
-      oss<<ownedNodeGlobalIDs_[i]<<" ";
-
-    oss<<"\n"<<ss.str()<<" Owned Element2Node   = ";
-    for(size_t i=0; i<ownedElementToNode_.dimension(0); i++) {
-      oss<<"(";
-      for(size_t j=0; j<ownedElementToNode_.dimension(1); j++)
-	oss<<ownedElementToNode_(i,j)<<" ";
-      oss<<") ";
-    }      
-
-    oss<<std::endl;
-  }
+  // Debuggign output
+  void print(std::ostream & oss);
 
 private:
 
+  inline bool nodeIsOwned(GlobalOrdinal idx) {GlobalOrdinal i,j; ij_from_idx(globalNodes_[0],idx,i,j); return nodeIsOwned(i,j);}
+  inline bool nodeIsOwned(GlobalOrdinal i, GlobalOrdinal j) { return myNodeStart_[0] <= i &&  i < myNodeStop_[0] && myNodeStart_[1] <= j &&  j < myNodeStop_[0];}
   inline GlobalOrdinal idx_from_ij(int num_x, GlobalOrdinal i, GlobalOrdinal j) const {return j*num_x+i;}
   inline void ij_from_idx(int num_x, GlobalOrdinal idx, GlobalOrdinal &i, GlobalOrdinal&j) const { 
     i = idx%num_x;
@@ -212,7 +124,173 @@ private:
   LLA myProcIJ_;
 
 
-  };
+};
+
+
+
+MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int global_elements_x, int global_elements_y, int procs_x, int procs_y):
+  globalElements_(global_elements_x,global_elements_y),
+  globalNodes_(global_elements_x+1,global_elements_y+1),
+  globalProcs_(procs_x,procs_y),
+  comm_(comm) {
+  
+  // NOTE: Elements/nodes are numbered sequentially with x as the "fast" direction
+  
+  // Get processor decomp information
+  MyRank_ = comm_->getRank();
+  ij_from_idx(globalProcs_[0],MyRank_,myProcIJ_[0],myProcIJ_[1]);
+  
+  // Get local element & node start / stop
+  GlobalOrdinal num_my_elements=1, num_my_nodes=1;
+  for(int k=0; k<2; k++) {
+    GlobalOrdinal eper = globalElements_[k] / globalProcs_[k];
+    
+    myElementStart_[k] = myProcIJ_[k] * eper;
+    myElementStop_[k]  = (myProcIJ_[k] == globalProcs_[k]-1) ? globalElements_[k] : (myProcIJ_[k]+1) * eper;
+    num_my_elements *= (myElementStop_[k]-myElementStart_[k]);
+    
+    myNodeStart_[k] = myProcIJ_[k] * eper;
+    myNodeStop_[k]  = (myProcIJ_[k] == globalProcs_[k]-1) ? globalNodes_[k] : (myProcIJ_[k]+1) * eper;
+    num_my_nodes *= (myNodeStop_[k]-myNodeStart_[k]);
+  }
+  
+  
+  // Generate the owned element ids
+  Kokkos::resize(ownedElementGlobalIDs_,num_my_elements);
+  int ect=0;
+  for(GlobalOrdinal j=myElementStart_[1]; j<myElementStop_[1]; j++) {
+    for(GlobalOrdinal i=myElementStart_[0]; i<myElementStop_[0]; i++) {
+      GlobalOrdinal idx=idx_from_ij(globalElements_[0],i,j);
+      ownedElementGlobalIDs_(ect) = idx;
+      ect++;	
+    }
+  }
+  
+  // Generate the owned node ids
+  Kokkos::resize(ownedNodeGlobalIDs_,num_my_nodes);
+  int nct=0;
+  for(GlobalOrdinal j=myNodeStart_[1]; j<myNodeStop_[1]; j++) {
+    for(GlobalOrdinal i=myNodeStart_[0]; i<myNodeStop_[0]; i++) {
+      GlobalOrdinal idx=idx_from_ij(globalNodes_[0],i,j);
+      ownedNodeGlobalIDs_(nct) = idx;
+      nct++;	
+    }
+  }
+  
+  // Generate the element-to-node map
+  // NOTE: Hardwired to QUAD4's.  Nodes are ordered exodus-style (counter-clockwise) within an element
+  Kokkos::resize(ownedElementToNode_,num_my_elements,4);
+  int cct=0;
+  for(GlobalOrdinal j=myElementStart_[1]; j<myElementStop_[1]; j++) {
+    for(GlobalOrdinal i=myElementStart_[0]; i<myElementStop_[0]; i++) {
+      // The (i,j) of the bottom left corner matches for elements & nodes
+      GlobalOrdinal nidx=idx_from_ij(globalNodes_[0],i,j);
+      
+      ownedElementToNode_(cct,0) = nidx;
+      ownedElementToNode_(cct,1) = nidx+1;
+      ownedElementToNode_(cct,2) = nidx+globalNodes_[0]+1;
+      ownedElementToNode_(cct,3) = nidx+globalNodes_[0];
+      cct++;
+    }
+  }
+  
+  
+  // Generate the list of "ghost" elements & ghostElement2NodeMap
+  // NOTE: This only generates a halo for elements where I own at least one node.  On the x/y hi sides,
+  // the highers element does not own all the nodes on that proc.  Ergo, no halo in that direction
+  std::vector<GlobalOrdinal> my_ghost_elements;
+  for(GlobalOrdinal j=myElementStart_[1]-1; j<myElementStop_[1]; j++) {
+    if(j<0 || j>=globalElements_[1]) continue; // Ignore stuff off the mesh
+    for(GlobalOrdinal i=myElementStart_[0]-1; i<myElementStop_[0]; i++) {
+      if(i<0 || i>=globalElements_[0]) continue; // Ignore stuff off the mesh
+      
+      // Ignore proc interior
+      if( j>myElementStart_[1]-1 && j<myElementStop_[1] &&
+	  i>myElementStart_[0]-1 && i<myElementStop_[0])
+	continue;
+      
+      GlobalOrdinal idx=idx_from_ij(globalElements_[0],i,j);
+      my_ghost_elements.push_back(idx);
+    }
+  }
+
+  // NOTE: This are not recorded in Aztec/Ifpack/ML ordering.  Because most apps don't do that.
+  Kokkos::resize(ghostElementGlobalIDs_,my_ghost_elements.size());
+  Kokkos::resize(ghostElementToNode_,my_ghost_elements.size(),4);
+  for(size_t k=0; k<my_ghost_elements.size(); k++) {
+    GlobalOrdinal i,j, eidx= my_ghost_elements[k];
+    ghostElementGlobalIDs_(k) = eidx;
+    ij_from_idx(globalElements_[0],eidx,i,j);
+
+    // The (i,j) of the bottom left corner matches for elements & nodes
+    GlobalOrdinal nidx=idx_from_ij(globalNodes_[0],i,j);
+      
+    ghostElementToNode_(k,0) = nidx;
+    ghostElementToNode_(k,1) = nidx+1;
+    ghostElementToNode_(k,2) = nidx+globalNodes_[0]+1;
+    ghostElementToNode_(k,3) = nidx+globalNodes_[0];
+  }
+ 
+  // Generate the list of "ghost" nodes (aka any node that exists on the ownedElement list that isn't owned
+  std::set<GlobalOrdinal> my_ghost_nodes;
+  for(size_t k=0; k<ownedElementToNode_.dimension(0); k++) {
+    for(size_t l=0; l<ownedElementToNode_.dimension(1); l++) {
+      GlobalOrdinal nidx=ownedElementToNode_(k,l);
+      if(!nodeIsOwned(nidx)) 
+	my_ghost_nodes.insert(nidx);
+    }
+  }
+  Kokkos::resize(ghostNodeGlobalIDs_,my_ghost_nodes.size());
+  for(auto k=my_ghost_nodes.begin(); k!=my_ghost_nodes.end(); k++) {
+    size_t kk = distance(my_ghost_nodes.begin(),k);
+    ghostNodeGlobalIDs_(kk) = *k;
+  }
+  
+}
+
+
+
+void MeshDatabase::print(std::ostream & oss) { 
+    std::ostringstream ss;
+    ss<<"["<<MyRank_<<","<<myProcIJ_[0]<<","<<myProcIJ_[1]<<"]";
+    oss<<ss.str()<<" Global Elements = ["<<globalElements_[0]<<"x"<<globalElements_[1]<<"] Nodes ="<<globalNodes_[0]<<"x"<<globalNodes_[1]<<"]\n";
+    oss<<ss.str()<<" Stop/Start Elements = ["<<myElementStart_[0]<<","<<myElementStop_[0]<<")x["<<myElementStart_[1]<<","<<myElementStop_[1]<<")\n";
+    oss<<ss.str()<<" Stop/Start Nodes    = ["<<myNodeStart_[0]<<","<<myNodeStop_[0]<<")x["<<myNodeStart_[1]<<","<<myNodeStop_[1]<<")\n";
+
+    oss<<ss.str()<<" Owned Global Elements = ";
+    for(size_t i=0; i<ownedElementGlobalIDs_.dimension(0); i++)
+      oss<<ownedElementGlobalIDs_[i]<<" ";
+
+    oss<<"\n"<<ss.str()<<" Owned Global Nodes   = ";
+    for(size_t i=0; i<ownedNodeGlobalIDs_.dimension(0); i++)
+      oss<<ownedNodeGlobalIDs_[i]<<" ";
+
+    oss<<"\n"<<ss.str()<<" Owned Element2Node   = ";
+    for(size_t i=0; i<ownedElementToNode_.dimension(0); i++) {
+      oss<<"(";
+      for(size_t j=0; j<ownedElementToNode_.dimension(1); j++)
+	oss<<ownedElementToNode_(i,j)<<" ";
+      oss<<") ";
+    }      
+
+    oss<<"\n"<<ss.str()<<" Ghost Global Elements = ";
+    for(size_t i=0; i<ghostElementGlobalIDs_.dimension(0); i++)
+      oss<<ghostElementGlobalIDs_[i]<<" ";
+    oss<<"\n"<<ss.str()<<" Ghost Global Nodes    = ";
+    for(size_t i=0; i<ghostNodeGlobalIDs_.dimension(0); i++)
+      oss<<ghostNodeGlobalIDs_[i]<<" ";
+
+    oss<<"\n"<<ss.str()<<" Ghost Element2Node   = ";
+    for(size_t i=0; i<ghostElementToNode_.dimension(0); i++) {
+      oss<<"(";
+      for(size_t j=0; j<ghostElementToNode_.dimension(1); j++)
+	oss<<ghostElementToNode_(i,j)<<" ";
+      oss<<") ";
+    }      
+
+
+    oss<<std::endl;
+  }
 
 
 // Generates a dummy finite element stiffness matrix for quads
