@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_Kernels.hpp
+/** \file   Intrepid2_Kernels.hpp
     \brief  Header file for small functions used in Intrepid2.
     \author Created by Kyungjoo Kim
 */
@@ -454,7 +454,7 @@ namespace Intrepid2 {
              typename alphaScalarType>
     KOKKOS_FORCEINLINE_FUNCTION
     static void
-    scale_mat( /**/  AViewType &A,
+    scale_mat(       AViewType &A,
                const alphaScalarType alpha ) {
       const ordinal_type
         iend = A.dimension(0),
@@ -469,7 +469,7 @@ namespace Intrepid2 {
              typename alphaScalarType>
     KOKKOS_FORCEINLINE_FUNCTION
     static void
-    inv_scale_mat( /**/  AViewType &A,
+    inv_scale_mat(       AViewType &A,
                    const alphaScalarType alpha ) {
       const ordinal_type
         iend = A.dimension(0),
@@ -485,7 +485,7 @@ namespace Intrepid2 {
              typename BViewType>
     KOKKOS_FORCEINLINE_FUNCTION
     static void
-    scalar_mult_mat( /**/  AViewType &A,
+    scalar_mult_mat(       AViewType &A,
                      const alphaScalarType alpha,
                      const BViewType &B ) {
       const ordinal_type
@@ -502,7 +502,7 @@ namespace Intrepid2 {
              typename BViewType>
     KOKKOS_FORCEINLINE_FUNCTION
     static void
-    inv_scalar_mult_mat( /**/  AViewType &A,
+    inv_scalar_mult_mat(       AViewType &A,
                          const alphaScalarType alpha,
                          const BViewType &B ) {
       const ordinal_type

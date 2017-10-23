@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_QUAD_C1_FEMDef.hpp
-    \brief  Definition file for bi-linear FEM basis functions for H(grad) functions on QUAD cells.
+/** \file   Intrepid2_HGRAD_QUAD_C1_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree 1 for H(grad) functions on QUAD cells.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */

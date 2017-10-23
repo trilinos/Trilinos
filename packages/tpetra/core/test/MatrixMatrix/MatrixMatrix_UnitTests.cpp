@@ -59,6 +59,7 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Import_Util.hpp"
 #include <cmath>
 
 namespace {
@@ -72,6 +73,7 @@ namespace {
   using Tpetra::DefaultPlatform;
   using Tpetra::global_size_t;
   using Tpetra::Map;
+  using Tpetra::Import;
   using Tpetra::RowMatrixTransposer;
   using Tpetra::Vector;
   using Teuchos::Array;
@@ -179,6 +181,7 @@ typedef struct mult_test_results_struct{
   double epsilon;
   double cNorm;
   double compNorm;
+  bool   isImportValid;
 } mult_test_results;
 
 
@@ -354,6 +357,7 @@ mult_test_results multiply_test_manualfc(
   typedef typename Matrix_t::global_ordinal_type GO;
   typedef typename Matrix_t::node_type NT;
   typedef Map<LO,GO,NT> Map_t;
+  typedef Import<LO,GO,NT> Import_t;
   RCP<const Map_t> map = C->getRowMap();
 
   RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 1));
@@ -378,6 +382,11 @@ mult_test_results multiply_test_manualfc(
   results.compNorm = diffMatrix->getFrobeniusNorm ();
   results.epsilon  = results.compNorm/results.cNorm;
 
+  // Check importer validity
+  RCP<const Import_t> myImport = C->getGraph()->getImporter();
+  if(!myImport.is_null()) results.isImportValid=Tpetra::Import_Util::checkImportValidity(*myImport);
+  else results.isImportValid=true;
+
   return results;
 }
 
@@ -397,6 +406,7 @@ mult_test_results multiply_test_autofc(
   typedef typename Matrix_t::global_ordinal_type GO;
   typedef typename Matrix_t::node_type NT;
   typedef Map<LO,GO,NT> Map_t;
+  typedef Import<LO,GO,NT> Import_t;
   RCP<const Map_t> map = C->getRowMap();
 
   RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 0));
@@ -461,6 +471,11 @@ mult_test_results multiply_test_autofc(
   if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
   }
 
+  // Check importer validity
+  RCP<const Import_t> myImport = C->getGraph()->getImporter();
+  if(!myImport.is_null()) results.isImportValid=Tpetra::Import_Util::checkImportValidity(*myImport);
+  else results.isImportValid=true;
+
 
   return results;
 }
@@ -482,6 +497,7 @@ mult_test_results multiply_reuse_test(
   typedef typename Matrix_t::global_ordinal_type GO;
   typedef typename Matrix_t::node_type NT;
   typedef Map<LO,GO,NT> Map_t;
+  typedef Import<LO,GO,NT> Import_t;
   typedef Vector<SC,LO,GO,NT> Vector_t;
 
   RCP<const Map_t> map = C->getRowMap();
@@ -541,6 +557,11 @@ mult_test_results multiply_reuse_test(
   results.cNorm    = C->getFrobeniusNorm ();
   results.compNorm = diffMatrix->getFrobeniusNorm ();
   results.epsilon  = results.compNorm/results.cNorm;
+
+  // Check importer validity
+  RCP<const Import_t> myImport = C->getGraph()->getImporter();
+  if(!myImport.is_null()) results.isImportValid=Tpetra::Import_Util::checkImportValidity(*myImport);
+  else results.isImportValid=true;
 
   return results;
 }
@@ -681,6 +702,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems =
     Teuchos::getParametersFromXmlFile(matnamesFile);
 
+
   for (Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
        it != matrixSystems->end();
        ++it) {
@@ -719,8 +741,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
         newOut << "\tEpsilon: "  << results.epsilon  << endl;
         newOut << "\tcNorm: "    << results.cNorm    << endl;
         newOut << "\tcompNorm: " << results.compNorm << endl;
+	newOut << "\tisImportValid: " <<results.isImportValid << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
+      //      TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("ManualFC: Import validity failed: ") + currentSystem.name());
 
       if (verbose)
         newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
@@ -732,8 +756,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
         newOut << "\tEpsilon: "  << results.epsilon  << endl;
         newOut << "\tcNorm: "    << results.cNorm    << endl;
         newOut << "\tcompNorm: " << results.compNorm << endl;
+	newOut << "\tisImportValid: " <<results.isImportValid << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
+      //      TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("AutoFC: Import validity failed: ") + currentSystem.name());
 
       if (verbose)
         newOut << "Running multiply reuse test for " << currentSystem.name() << endl;

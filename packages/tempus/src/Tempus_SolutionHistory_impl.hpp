@@ -253,7 +253,7 @@ void SolutionHistory<Scalar>::promoteWorkingState()
   md->setNFailures(std::max(0,md->getNFailures()-1));
   md->setNConsecutiveFailures(0);
   md->setSolutionStatus(Status::PASSED);
-  md->setIsRestartable(true);
+  //md->setIsSynced(true);
   md->setIsInterpolated(false);
   currentState_ = workingState_;
   workingState_ = Teuchos::null;

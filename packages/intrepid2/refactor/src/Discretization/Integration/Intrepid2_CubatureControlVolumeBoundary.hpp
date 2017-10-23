@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubatureControlVolumeBoundary.hpp
+/** \file   Intrepid2_CubatureControlVolumeBoundary.hpp
     \brief  Header file for the Intrepid2::CubatureControlVolumeBoundary class.
     \author Created by K. Peterson, P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim

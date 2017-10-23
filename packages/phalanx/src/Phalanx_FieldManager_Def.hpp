@@ -76,7 +76,7 @@ PHX::FieldManager<Traits>::~FieldManager()
 
 // **************************************************************
 template<typename Traits>
-template<typename DataT, typename EvalT,
+template<typename EvalT, typename DataT,
 	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 inline
@@ -92,7 +92,7 @@ getFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
 
 // **************************************************************
 template<typename Traits>
-template<typename DataT, typename EvalT,
+template<typename EvalT, typename DataT,
 	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 inline

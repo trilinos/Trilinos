@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubatureDirect.hpp
+/** \file   Intrepid2_CubatureDirect.hpp
     \brief  Header file for the Intrepid2::CubatureDirect class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
@@ -77,7 +77,9 @@ namespace Intrepid2 {
     : public Cubature<ExecSpaceType,pointValueType,weightValueType> {
   protected:
 
-    // data is defined on the host space and this is static
+    /**
+     \brief Cubature data is defined on the host space and is static
+    */
     struct CubatureDataStatic {
 
       /** \brief  Number of cubature points stored in the template.
@@ -93,7 +95,9 @@ namespace Intrepid2 {
       weightValueType weights_[Parameters::MaxIntegrationPoints];
     };
 
-    // data is defined on exec space and deep-copied when an object is created
+    /**
+     \brief Cubature data is defined on exec space and deep-copied when an object is created
+    */
     struct CubatureData {
 
       /** \brief  Number of cubature points stored in the template.

@@ -44,23 +44,15 @@
 #define IFPACK2_CONTAINERFACTORY_DECL_H
 
 #include "Ifpack2_Container.hpp"
-#include "Ifpack2_TriDiContainer.hpp"
-#include "Ifpack2_DenseContainer.hpp"
-#include "Ifpack2_SparseContainer.hpp"
-#include "Ifpack2_BandedContainer.hpp"
-#include "Ifpack2_BlockTriDiContainer.hpp"
 #include "Ifpack2_Partitioner.hpp"
-#include "Ifpack2_ILUT_decl.hpp"
 #ifdef HAVE_IFPACK2_AMESOS2
 #  include "Ifpack2_Details_Amesos2Wrapper.hpp"
 #endif
-#include "Tpetra_RowMatrix_decl.hpp"
+#include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Ptr.hpp"
-#include "Teuchos_ArrayViewDecl.hpp"
 #include <string>
 #include <map>
-#include <sstream>
 
 /// \file Ifpack2_ContainerFactory_decl.hpp
 /// \brief Ifpack2::ContainerFactory class declaration
@@ -175,21 +167,7 @@ struct ContainerFactory
   private:
   static std::map<std::string, Teuchos::RCP<Details::ContainerFactoryEntryBase<MatrixType>>> table;
   static bool registeredDefaults;     //this will initially be false
-  static void registerDefaults()
-  {
-    registerContainer<Ifpack2::TriDiContainer<MatrixType, scalar_type>>("TriDi");
-    registerContainer<Ifpack2::DenseContainer<MatrixType, scalar_type>>("Dense");
-    registerContainer<Ifpack2::BandedContainer<MatrixType, scalar_type>>("Banded");
-    registerContainer<SparseContainer<MatrixType, ILUT<MatrixType>>>("SparseILUT");
-#ifdef HAVE_IFPACK2_AMESOS2
-    registerContainer<SparseContainer<MatrixType, Details::Amesos2Wrapper<MatrixType>>>("SparseAmesos");
-    registerContainer<SparseContainer<MatrixType, Details::Amesos2Wrapper<MatrixType>>>("SparseAmesos2");
-#endif
-#ifdef HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES
-    registerContainer<Ifpack2::BlockTriDiContainer<MatrixType, scalar_type>>("BlockTriDi");
-#endif
-    registeredDefaults = true;
-  }
+  static void registerDefaults();
 };
 
 } // namespace Ifpack2

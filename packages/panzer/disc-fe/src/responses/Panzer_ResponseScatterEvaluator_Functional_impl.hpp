@@ -54,6 +54,7 @@
 
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
@@ -127,7 +128,7 @@ preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
   responseObj_ = Teuchos::rcp_dynamic_cast<Response_Functional<EvalT> >(
-                                   d.gedc.getDataObject(ResponseBase::buildLookupName(responseName_)),true);
+                                   d.gedc->getDataObject(ResponseBase::buildLookupName(responseName_)),true);
 }
 
 

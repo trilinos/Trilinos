@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HDIV_TET_In_FEM.hpp
-    \brief  Header file for the Intrepid2::HDIV_TET_In_FEM class.
+/** \file   Intrepid2_HDIV_TET_In_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HDIV_TET_In_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
     Kokkorized by Kyungjoo Kim
 */
@@ -57,7 +57,7 @@
 
 namespace Intrepid2 {
 
-  /** \class  Intrepid::Basis_HDIV_TET_In_FEM
+  /** \class  Intrepid2::Basis_HDIV_TET_In_FEM
       \brief  Implementation of the default H(div)-compatible Raviart-Thomas basis of arbitrary degree on Tetrahedral cells 
 
       Implements nodal basis of degree n (n>=1) on the reference Tetrahedron cell. The basis has
@@ -87,9 +87,15 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HDIV_TET_In_FEM
+    */
     class Basis_HDIV_TET_In_FEM {
     public:
 
+      /**
+        \brief See Intrepid2::Basis_HDIV_TET_In_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,
@@ -114,6 +120,9 @@ namespace Intrepid2 {
                  const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                  const EOperator operatorType);
       
+      /**
+        \brief See Intrepid2::Basis_HDIV_TET_In_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                typename vinvViewType,

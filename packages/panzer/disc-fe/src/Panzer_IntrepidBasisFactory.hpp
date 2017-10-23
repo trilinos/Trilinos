@@ -47,7 +47,7 @@
 #include <string>
 #include <map>
 
-#include "../../../intrepid2/refactor/src/Discretization/Basis/Intrepid2_HVOL_C0_FEM.hpp"
+#include "Intrepid2_HVOL_C0_FEM.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Intrepid2_Basis.hpp"

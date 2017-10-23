@@ -1,8 +1,8 @@
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  keep smoother data = 1
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   relaxation: type = Symmetric Gauss-Seidel
   relaxation: sweeps = 1
@@ -94,7 +94,7 @@ Level 1
    repartition: max imbalance = 1.2   [default]
    
    Build (MueLu::Zoltan2Interface)
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0xfac6f0,node=0xf939c0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -120,8 +120,8 @@ Level 1
  
  Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
  keep smoother data = 1
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   relaxation: type = Symmetric Gauss-Seidel
   relaxation: sweeps = 1
@@ -213,7 +213,7 @@ Level 2
    repartition: max imbalance = 1.2   [default]
    
    Build (MueLu::Zoltan2Interface)
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0xf91940,node=0xfac0c0,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1   [default]
@@ -237,10 +237,10 @@ Level 2
  Computing Ac (MueLu::RebalanceAcFactory)
  repartition: use subcommunicators = 1   [default]
  
- Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
+ Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
  keep smoother data = 1
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  presmoother -> 
   [empty list]
  
@@ -262,14 +262,14 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
-Smoother (level 2) pre  : KLU2 solver interface
+Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
 
 Level 0
  Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995})
  keep smoother data = 1
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   relaxation: type = Symmetric Gauss-Seidel
   relaxation: sweeps = 1
@@ -348,8 +348,8 @@ Level 1
  
  Setup Smoother ("Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997})
  keep smoother data = 1
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   relaxation: type = Symmetric Gauss-Seidel
   relaxation: sweeps = 1
@@ -426,10 +426,10 @@ Level 2
   
  repartition: use subcommunicators = 1   [default]
  
- Setup Smoother (KLU2 solver interface)
+ Setup Smoother (<Direct> solver interface)
  keep smoother data = 1
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  presmoother -> 
   [empty list]
  
@@ -451,6 +451,6 @@ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: t
 
 Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
 
-Smoother (level 2) pre  : KLU2 solver interface
+Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
 

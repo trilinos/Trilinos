@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_LINE_Cn_FEM_JACOBIDef.hpp
-    \brief  Definition file for FEM basis functions of degree n for H(grad) orthogonal on LINE.
+/** \file   Intrepid2_HGRAD_LINE_Cn_FEM_JACOBIDef.hpp
+    \brief  Definition file for FEM orthogonal basis functions of degree n for H(grad) functions on LINE.
     \author Created by P. Bochev and D. Ridzal and R. Kirby
             Kokkorized by Kyungjoo Kim
 */

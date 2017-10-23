@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubatureDirectLineGaussJacobi20.hpp
+/** \file   Intrepid2_CubatureDirectLineGaussJacobi20.hpp
     \brief  Header file for the Intrepid2::CubatureDirectLineGaussJacobi20 class.
     \author Created by P. Bochev, D. Ridzal and M. Perego
             Kokkorized by Kyungjoo Kim

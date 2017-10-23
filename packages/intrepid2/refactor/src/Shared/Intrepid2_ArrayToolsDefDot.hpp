@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_ArrayToolsDefDot.hpp
-    \brief  Definition file for dot-multiply operations of the array tools interface.
+    \brief  Definition file for dot-multiply operations of the array tools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -52,6 +52,9 @@
 namespace Intrepid2 {
 
     namespace FunctorArrayTools {
+    /**
+       \brief Functor for dotMultiply see Intrepid2::ArrayTools for more
+    */
     template < typename outputViewType, typename leftInputViewType, typename rightInputViewType >
     struct F_dotMultiply {
       outputViewType _output;
@@ -86,17 +89,17 @@ namespace Intrepid2 {
                              iter);
         
         auto result = ( _hasField ? Kokkos::subview(_output, cl, bf, pt) :
-                        /**/        Kokkos::subview(_output, cl,     pt));
+                                    Kokkos::subview(_output, cl,     pt));
         
         const auto left = (_leftInput.dimension(1) == 1) ? Kokkos::subview(_leftInput, cl, 0, Kokkos::ALL(), Kokkos::ALL()) :
-                            /**/                           Kokkos::subview(_leftInput, cl, pt, Kokkos::ALL(), Kokkos::ALL());
+                                                           Kokkos::subview(_leftInput, cl, pt, Kokkos::ALL(), Kokkos::ALL());
 
         
         const auto right = (rightRank == leftRank + ordinal_type(_hasField)) ?
                              ( _hasField ? Kokkos::subview(_rightInput, cl, bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                             /**/          Kokkos::subview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL())) :
+                                           Kokkos::subview(_rightInput, cl,     pt, Kokkos::ALL(), Kokkos::ALL())) :
                              ( _hasField ? Kokkos::subview(_rightInput,     bf, pt, Kokkos::ALL(), Kokkos::ALL()) :
-                             /**/          Kokkos::subview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()));
+                                           Kokkos::subview(_rightInput,         pt, Kokkos::ALL(), Kokkos::ALL()));
         
         const ordinal_type iend  = left.dimension(0);
         const ordinal_type jend  = left.dimension(1);
@@ -116,7 +119,7 @@ namespace Intrepid2 {
            typename rightInputValueType, class ...rightInputProperties>
   void
   ArrayTools<SpT>::Internal::
-  dotMultiply( /**/  Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
+  dotMultiply(       Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
                const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
                const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput, 
                const bool hasField ) {
@@ -128,7 +131,7 @@ namespace Intrepid2 {
     typedef typename ExecSpace< typename leftInputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
 
     const size_type loopSize = ( hasField ? output.dimension(0)*output.dimension(1)*output.dimension(2) :
-                                 /**/       output.dimension(0)*output.dimension(1) );
+                                            output.dimension(0)*output.dimension(1) );
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(output, leftInput, rightInput, hasField) );
   }
@@ -141,7 +144,7 @@ namespace Intrepid2 {
            typename inputFieldValueType,  class ...inputFieldProperties>
   void
   ArrayTools<ExecSpaceType>::
-  dotMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+  dotMultiplyDataField(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                         const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
                         const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields ) {
 
@@ -205,7 +208,7 @@ namespace Intrepid2 {
            typename inputDataRightValueType, class ...inputDataRightProperties>
   void
   ArrayTools<ExecSpaceType>::
-  dotMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+  dotMultiplyDataData(       Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                        const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                        const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight ) {
 

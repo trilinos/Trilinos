@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubaturePolylibDef.hpp
+/** \file   Intrepid2_CubaturePolylibDef.hpp
     \brief  Definition file for the Intrepid2::CubaturePolylib class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim

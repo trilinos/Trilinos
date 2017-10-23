@@ -41,7 +41,7 @@
 // @HEADER
 
 
-/** \file   Intrepid_OrientationToolsDef.hpp
+/** \file   Intrepid2_OrientationToolsDefModifyBasis.hpp
     \brief  Definition file for the Intrepid2::OrientationTools class.
     \author Created by Kyungjoo Kim
 */
@@ -106,7 +106,7 @@ namespace Intrepid2 {
            typename elemNodeValueType, class ...elemNodeProperties>
   void
   OrientationTools<SpT>::
-  getOrientation(/**/  Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
+  getOrientation(      Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
                  const Kokkos::DynRankView<elemNodeValueType,elemNodeProperties...> elemNodes,
                  const shards::CellTopology cellTopo) {
     // small meta data modification and it uses shards; let's do this on host
@@ -130,7 +130,7 @@ namespace Intrepid2 {
            typename BasisPtrType>
   void
   OrientationTools<SpT>::
-  modifyBasisByOrientation(/**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+  modifyBasisByOrientation(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
                            const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
                            const Kokkos::DynRankView<ortValueType,   ortProperties...>    orts,
                            const BasisPtrType basis ) {

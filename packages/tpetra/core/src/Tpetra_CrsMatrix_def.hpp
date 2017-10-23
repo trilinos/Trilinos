@@ -53,6 +53,7 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_castAwayConstDualView.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
@@ -69,6 +70,7 @@
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
 #include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
+#include <sstream>
 #include <typeinfo>
 #include <vector>
 
@@ -6376,13 +6378,44 @@ namespace Tpetra {
                      const Kokkos::DualView<const local_ordinal_type*, device_type>& permuteFromLIDs)
   {
     using Tpetra::Details::castAwayConstDualView;
+    using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
+    using std::endl;
     typedef Kokkos::HostSpace host_mem_space;
-    using Teuchos::ArrayView;
     typedef typename device_type::memory_space dev_mem_space;
     // Method name string for TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC.
     const char tfecfFuncName[] = "copyAndPermuteNew: ";
     ProfilingRegion regionCAP ("Tpetra::CrsMatrix::copyAndPermuteNew");
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+
+      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::copyAndPermuteNew: " << endl
+         << *prefix << "  "
+         << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << endl
+         << *prefix << "  "
+         << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << endl;
+      std::cerr << os.str ();
+    }
 
     const auto numPermute = permuteToLIDs.dimension_0 ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -6407,6 +6440,15 @@ namespace Tpetra {
     permuteFromLIDs_nc.template sync<host_mem_space> ();
     auto permuteFromLIDs_h = permuteFromLIDs.template view<host_mem_space> ();
 
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "permuteToLIDs_sync_back: "
+         << (permuteToLIDs_sync_back ? "true" : "false") << ", "
+         << "permuteFromLIDs_sync_back: "
+         << (permuteFromLIDs_sync_back ? "true" : "false") << endl;
+      std::cerr << os.str ();
+    }
+
     // This dynamic cast should succeed, because we've already tested
     // it in checkSizes().
     typedef ::Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> RMT;
@@ -6421,6 +6463,16 @@ namespace Tpetra {
     if (permuteFromLIDs_sync_back) {
       permuteFromLIDs_nc.template sync<dev_mem_space> ();
     }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "copyAndPermuteNew: after:" << endl
+         << *prefix << "  "
+         << dualViewStatusToString (permuteToLIDs, "permuteToLIDs") << endl
+         << *prefix << "  "
+         << dualViewStatusToString (permuteFromLIDs, "permuteFromLIDs") << endl;
+      std::cerr << os.str ();
+    }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -6433,19 +6485,19 @@ namespace Tpetra {
                      size_t& constantNumPackets,
                      Distributor& distor)
   {
+    using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
     using Teuchos::outArg;
     using Teuchos::REDUCE_MAX;
     using Teuchos::reduceAll;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     const char tfecfFuncName[] = "packAndPrepareNew: ";
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
     ProfilingRegion regionPAP ("Tpetra::CrsMatrix::packAndPrepareNew");
+
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
 
     // Processes on which the communicator is null should not participate.
     Teuchos::RCP<const Teuchos::Comm<int> > pComm = this->getComm ();
@@ -6453,6 +6505,30 @@ namespace Tpetra {
       return;
     }
     const Teuchos::Comm<int>& comm = *pComm;
+    const int myRank = comm.getSize ();
+
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
+
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::packAndPrepareNew: " << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exportLIDs, "exportLIDs")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exports, "exports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (numPacketsPerLID, "numPacketsPerLID")
+         << endl;
+      std::cerr << os.str ();
+    }
 
     // Attempt to cast the source object to CrsMatrix.  If successful,
     // use the source object's packNew() method to pack its data for
@@ -6481,12 +6557,17 @@ namespace Tpetra {
     const crs_matrix_type* srcCrsMat =
       dynamic_cast<const crs_matrix_type*> (&source);
     if (srcCrsMat != NULL) {
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Source matrix same (CrsMatrix) type as target; "
+          "calling packNew" << endl;
+        std::cerr << os.str ();
+      }
       try {
         srcCrsMat->packNew (exportLIDs, exports, numPacketsPerLID,
                             constantNumPackets, distor);
       }
       catch (std::exception& e) {
-        const int myRank = comm.getRank ();
         lclBad = 1;
         msg << "Proc " << myRank << ": " << e.what () << std::endl;
       }
@@ -6497,6 +6578,13 @@ namespace Tpetra {
       using Kokkos::subview;
       typedef Kokkos::DualView<char*, buffer_device_type> exports_type;
       typedef Kokkos::pair<size_t, size_t> range_type;
+
+      if (verbose) {
+        std::ostringstream os;
+        os << *prefix << "Source matrix NOT same (CrsMatrix) type as target"
+           << endl;
+        std::cerr << os.str ();
+      }
 
       typedef RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
       const row_matrix_type* srcRowMat =
@@ -6547,7 +6635,6 @@ namespace Tpetra {
                          constantNumPackets, distor);
       }
       catch (std::exception& e) {
-        const int myRank = comm.getRank ();
         lclBad = 1;
         msg << "Proc " << myRank << ": " << e.what () << std::endl;
       }
@@ -6591,6 +6678,21 @@ namespace Tpetra {
         (lclBad != 0, std::logic_error, "packNew threw an exception on one "
          "or more participating processes.  Here is this process' error "
          "message: " << msg.str ());
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "packAndPrepareNew: Done!" << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exportLIDs, "exportLIDs")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exports, "exports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (numPacketsPerLID, "numPacketsPerLID")
+         << endl;
+      std::cerr << os.str ();
     }
   }
 
@@ -6678,8 +6780,25 @@ namespace Tpetra {
     typedef typename View<int*, device_type>::HostMirror::execution_space HES;
 
     if (numBytes == 0) {
-      // Rows with zero bytes always have zero entries.
+      // Rows with zero bytes should always have zero entries.
+      if (numEnt != 0) {
+        const int myRank = this->getMap ()->getComm ()->getRank ();
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (true, std::logic_error, "(Proc " << myRank << ") CrsMatrix::"
+           "unpackRow: The number of bytes to unpack numBytes=0, but the "
+           "number of entries to unpack (as reported by numPacketsPerLID) "
+           "for this row numEnt=" << numEnt << " != 0.");
+      }
       return 0;
+    }
+
+    if (numEnt == 0 && numBytes != 0) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "(Proc " << myRank << ") CrsMatrix::"
+         "unpackRow: The number of entries to unpack (as reported by "
+         "numPacketsPerLID) numEnt=0, but the number of bytes to unpack "
+         "numBytes=" << numBytes << " != 0.");
     }
 
     const GO gid = 0; // packValueCount wants this
@@ -6700,10 +6819,31 @@ namespace Tpetra {
     int errorCode = 0;
     LO numEntOut;
     numBytesOut += PackTraits<LO, HES>::unpackValue (numEntOut, numEntIn);
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (static_cast<size_t> (numEntOut) != numEnt, std::logic_error,
-       "unpackRow: Expected number of entries " << numEnt
-       << " != actual number of entries " << numEntOut << ".");
+    if (static_cast<size_t> (numEntOut) != numEnt ||
+        numEntOut == static_cast<LO> (0)) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      std::ostringstream os;
+      os << "(Proc " << myRank << ") CrsMatrix::unpackRow: ";
+      bool firstErrorCondition = false;
+      if (static_cast<size_t> (numEntOut) != numEnt) {
+        os << "Number of entries from numPacketsPerLID numEnt=" << numEnt
+           << " does not equal number of entries unpacked from imports "
+          "buffer numEntOut=" << numEntOut << ".";
+        firstErrorCondition = true;
+      }
+      if (numEntOut == static_cast<LO> (0)) {
+        if (firstErrorCondition) {
+          os << "  Also, ";
+        }
+        os << "Number of entries unpacked from imports buffer numEntOut=0, "
+          "but number of bytes to unpack for this row numBytes=" << numBytes
+           << " != 0.  This should never happen, since packRow should only "
+          "ever pack rows with a nonzero number of entries.  In this case, "
+          "the number of entries from numPacketsPerLID is numEnt=" << numEnt
+           << ".";
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, os.str ());
+    }
 
     {
       Kokkos::pair<int, size_t> p;
@@ -6740,10 +6880,45 @@ namespace Tpetra {
                         size_t& totalNumEntries,
                         const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs) const
   {
+    using Tpetra::Details::dualViewStatusToString;
+    using std::endl;
     typedef impl_scalar_type IST;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     //const char tfecfFuncName[] = "allocatePackSpaceNew: ";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
+
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::allocatePackSpaceNew: Before:"
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exports, "exports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exportLIDs, "exportLIDs")
+         << endl;
+      std::cerr << os.str ();
+    }
 
     // The number of export LIDs must fit in LocalOrdinal, assuming
     // that the LIDs are distinct and valid on the calling process.
@@ -6790,6 +6965,19 @@ namespace Tpetra {
       const std::string newLabel = (oldLabel == "") ? "exports" : oldLabel;
       exports = exports_type (newLabel, allocSize);
     }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::allocatePackSpaceNew: After:"
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exports, "exports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exportLIDs, "exportLIDs")
+         << endl;
+      std::cerr << os.str ();
+    }
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
@@ -6823,13 +7011,41 @@ namespace Tpetra {
                     Distributor& distor) const
   {
     using Kokkos::View;
+    using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::PackTraits;
     using Tpetra::Details::create_mirror_view_from_raw_host_array;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef impl_scalar_type ST;
     typedef typename View<int*, device_type>::HostMirror::execution_space HES;
     const char tfecfFuncName[] = "packNonStaticNew: ";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
+
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::packNonStaticNew:" << endl;
+      std::cerr << os.str ();
+    }
 
     const size_t numExportLIDs = static_cast<size_t> (exportLIDs.dimension_0 ());
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -6854,6 +7070,12 @@ namespace Tpetra {
     exports.modified_device() = 0;
     exports.modified_host() = 1;
     auto exports_h = exports.template view<Kokkos::HostSpace> ();
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "After marking exports as modified on host, "
+         << dualViewStatusToString (exports, "exports") << endl;
+      std::cerr << os.str ();
+    }
 
     // Read-only host access
     auto exportLIDs_h = exportLIDs.template view<Kokkos::HostSpace> ();
@@ -6941,6 +7163,18 @@ namespace Tpetra {
       // number of bytes of the packed data for that row.
       numPacketsPerLID_h[i] = numBytes;
       offset += numBytes;
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::packNonStaticNew: After:" << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exports, "exports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (exportLIDs, "exportLIDs")
+         << endl;
+      std::cerr << os.str ();
     }
   }
 
@@ -7069,24 +7303,55 @@ namespace Tpetra {
                        Distributor& distor,
                        const CombineMode combineMode)
   {
+    using Tpetra::Details::dualViewStatusToString;
     using Tpetra::Details::ProfilingRegion;
-#ifdef HAVE_TPETRA_DEBUG
-    constexpr bool debug = true;
-#else
-    constexpr bool debug = false;
-#endif // HAVE_TPETRA_DEBUG
+    using std::endl;
+    const char tfecfFuncName[] = "unpackAndCombineNew: ";
     ProfilingRegion regionUAC ("Tpetra::CrsMatrix::unpackAndCombineNew");
 
-    if (combineMode == ZERO) {
-      return; // nothing to do
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    constexpr int numValidModes = 5;
+    const CombineMode validModes[numValidModes] =
+      {ADD, REPLACE, ABSMAX, INSERT, ZERO};
+    const char* validModeNames[numValidModes] =
+      {"ADD", "REPLACE", "ABSMAX", "INSERT", "ZERO"};
+
+    std::unique_ptr<std::string> prefix;
+    int myRank = 0;
+    if (verbose) {
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
+
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::unpackAndCombineNew: " << endl
+         << *prefix << "  "
+         << dualViewStatusToString (importLIDs, "importLIDs")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (imports, "imports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (numPacketsPerLID, "numPacketsPerLID")
+         << endl
+         << *prefix << "  constantNumPackets: " << constantNumPackets
+         << endl
+         << *prefix << "  combineMode: " << combineModeToString (combineMode)
+         << endl;
+      std::cerr << os.str ();
     }
 
     if (debug) {
-      const char tfecfFuncName[] = "unpackAndCombineNew: ";
-      const CombineMode validModes[4] = {ADD, REPLACE, ABSMAX, INSERT};
-      const char* validModeNames[4] = {"ADD", "REPLACE", "ABSMAX", "INSERT"};
-      const int numValidModes = 4;
-
       if (std::find (validModes, validModes+numValidModes, combineMode) ==
           validModes+numValidModes) {
         std::ostringstream os;
@@ -7101,7 +7366,13 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (true, std::invalid_argument, os.str ());
       }
+    }
 
+    if (combineMode == ZERO) {
+      return; // nothing to do
+    }
+
+    if (debug) {
       using Teuchos::reduceAll;
       std::unique_ptr<std::ostringstream> msg (new std::ostringstream ());
       int lclBad = 0;
@@ -7117,21 +7388,38 @@ namespace Tpetra {
       reduceAll<int, int> (comm, Teuchos::REDUCE_MAX,
                            lclBad, Teuchos::outArg (gblBad));
       if (gblBad != 0) {
-        const int myRank = comm.getRank ();
+        // mfh 22 Oct 2017: 'prefix' might be null, since it is only
+        // initialized in a debug build.  Thus, we get the process
+        // rank again here.  This is an error message, so the small
+        // run-time cost doesn't matter.  See #1887.
         std::ostringstream os;
-        os << "Proc " << myRank << ": " << msg->str () << std::endl;
-
+        os << "(Proc " << comm.getRank () << ") " << msg->str () << endl;
         msg = std::unique_ptr<std::ostringstream> (new std::ostringstream ());
         ::Tpetra::Details::gathervPrint (*msg, os.str (), comm);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::logic_error, std::endl << "unpackAndCombineNewImpl() threw "
-           "an exception on one or more participating processes:" << std::endl
-           << msg->str ());
+          (true, std::logic_error, std::endl << "unpackAndCombineNewImpl() "
+           "threw an exception on one or more participating processes: "
+           << endl << msg->str ());
       }
     }
     else {
       this->unpackAndCombineNewImpl (importLIDs, imports, numPacketsPerLID,
                                      constantNumPackets, distor, combineMode);
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "unpackAndCombineNew: Done!" << endl
+         << *prefix << "  "
+         << dualViewStatusToString (importLIDs, "importLIDs")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (imports, "imports")
+         << endl
+         << *prefix << "  "
+         << dualViewStatusToString (numPacketsPerLID, "numPacketsPerLID")
+         << endl;
+      std::cerr << os.str ();
     }
   }
 
@@ -7178,6 +7466,7 @@ namespace Tpetra {
     using Tpetra::Details::castAwayConstDualView;
     using Tpetra::Details::create_mirror_view_from_raw_host_array;
     using Tpetra::Details::PackTraits;
+    using std::endl;
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef impl_scalar_type ST;
@@ -7188,6 +7477,33 @@ namespace Tpetra {
     typedef View<GO*, HES, MemoryUnmanaged> gids_out_type;
     typedef View<ST*, HES, MemoryUnmanaged> vals_out_type;
     const char tfecfFuncName[] = "unpackAndCombineNewImplNonStatic: ";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = ::Tpetra::Details::Behavior::verbose ();
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      int myRank = 0;
+      auto map = this->getMap ();
+      if (! map.is_null ()) {
+        auto comm = map->getComm ();
+        if (! comm.is_null ()) {
+          myRank = comm->getRank ();
+        }
+      }
+      // Restrict pfxStrm to inner scope to reduce high-water memory usage.
+      prefix = [myRank] () {
+        std::ostringstream pfxStrm;
+        pfxStrm << "(Proc " << myRank << ") ";
+        return std::unique_ptr<std::string> (new std::string (pfxStrm.str ()));
+      } ();
+
+      std::ostringstream os;
+      os << *prefix << "Tpetra::CrsMatrix::unpackAndCombineNewImplNonStatic:"
+         << endl; // we've already printed statuses of DualViews
+      std::cerr << os.str ();
+    }
 
     const size_type numImportLIDs = importLIDs.dimension_0 ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -7247,6 +7563,15 @@ namespace Tpetra {
       if (numBytes == 0) {
         continue; // empty buffer for that row means that the row is empty
       }
+      // We need to unpack a nonzero number of entries for this row.
+#ifdef HAVE_TPETRA_DEBUG
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (offset + numBytes > static_cast<size_t> (imports_h.dimension_0 ()),
+         std::logic_error, "At local row index importLIDs_h[i=" << i << "]="
+         << importLIDs_h[i] << ", offset (=" << offset << ") + numBytes (="
+         << numBytes << ") > imports_h.dimension_0()="
+         << imports_h.dimension_0 () << ".");
+#endif // HAVE_TPETRA_DEBUG
 
       LO numEntLO = 0;
 
@@ -7258,12 +7583,19 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
       const char* const inBuf = imports_h.data () + offset;
-      const size_t actualNumBytes = PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
+      const size_t actualNumBytes =
+        PackTraits<LO, HES>::unpackValue (numEntLO, inBuf);
 
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (actualNumBytes > numBytes, std::logic_error, "actualNumBytes = "
-         << actualNumBytes << " > numBytes = " << numBytes << ".");
+        (actualNumBytes > numBytes, std::logic_error, "At i = " << i
+         << ", actualNumBytes=" << actualNumBytes
+         << " > numBytes=" << numBytes << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (numEntLO == 0, std::logic_error, "At local row index importLIDs_h[i="
+         << i << "]=" << importLIDs_h[i] << ", the number of entries read "
+         "from the packed data is numEntLO=" << numEntLO << ", but numBytes="
+         << numBytes << " != 0.");
 #else
       (void) actualNumBytes;
 #endif // HAVE_TPETRA_DEBUG

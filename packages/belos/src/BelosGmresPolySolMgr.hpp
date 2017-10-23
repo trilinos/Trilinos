@@ -1004,14 +1004,14 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::generatePoly()
   gmres_iter->initializeGmres(newstate);
 
   // Perform Gmres iteration
-  bool polyConverged = false;
+  //bool polyConverged = false; // mfh 30 Sep 2017: unused
   try {
     gmres_iter->iterate();
 
     // Check convergence first
     if ( convTst->getStatus() == Passed ) {
       // we have convergence
-      polyConverged = true;
+      //polyConverged = true; // mfh 30 Sep 2017: unused
     }
   }
   catch (GmresIterationOrthoFailure e) {
@@ -1020,20 +1020,22 @@ bool GmresPolySolMgr<ScalarType,MV,OP>::generatePoly()
 
     // Check to see if the most recent least-squares solution yielded convergence.
     polyTest->checkStatus( &*gmres_iter );
-    if (convTst->getStatus() == Passed)
-      polyConverged = true;
+    if (convTst->getStatus() == Passed) {
+      //polyConverged = true; // mfh 30 Sep 2017: unused
     }
-    catch (std::exception e) {
-    printer_->stream(Errors) << "Error! Caught exception in BlockGmresIter::iterate() at iteration "
-                             << gmres_iter->getNumIters() << std::endl
-                             << e.what() << std::endl;
+  }
+  catch (std::exception e) {
+    using std::endl;
+    printer_->stream(Errors) << "Error! Caught exception in "
+      "BlockGmresIter::iterate() at iteration " << gmres_iter->getNumIters()
+      << endl << e.what () << endl;
     throw;
   }
 
   // FIXME (mfh 27 Apr 2013) Why aren't we using polyConverged after
   // setting it?  I'm tired of the compile warning so I'll silence it
   // here, but I'm curious why we aren't using the variable.
-  (void) polyConverged;
+  //(void) polyConverged; // mfh 30 Sep 2017: unused
 
   // Get the solution for this polynomial, use in comparison below
   Teuchos::RCP<MV> currX = gmres_iter->getCurrentUpdate();

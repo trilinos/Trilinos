@@ -1745,9 +1745,11 @@ void RangeValidatorDependency<T>::validateDep() const{
   typename RangeToValidatorMap::const_iterator it =
     rangesAndValidators_.begin();
   RCP<const ParameterEntryValidator> firstValidator = it->second;
+  // getting the raw pointer avoids a Clang warning about side effects in typeid
+  const ParameterEntryValidator* rawValidatorPtr = firstValidator.get();
   ++it;
   for(; it!=rangesAndValidators_.end(); ++it){
-    TEUCHOS_TEST_FOR_EXCEPTION( typeid(*firstValidator) != typeid(*(it->second)),
+    TEUCHOS_TEST_FOR_EXCEPTION( typeid(*rawValidatorPtr) != typeid(*(it->second)),
       InvalidDependencyException,
       "Ay no! All of the validators in a RangeValidatorDependency "
       "must have the same type.");
@@ -1762,7 +1764,7 @@ void RangeValidatorDependency<T>::validateDep() const{
   TEUCHOS_TEST_FOR_EXCEPTION(
     nonnull(defaultValidator_)
     &&
-    typeid(*firstValidator) != typeid(*defaultValidator_),
+    typeid(*rawValidatorPtr) != typeid(*defaultValidator_),
     InvalidDependencyException,
     "Ay no! The default validator of a RangeValidatorDependency "
     "must have the same type as the validators in rangesAndValidators map."

@@ -372,23 +372,10 @@ in_tetrahedron(
     Vector<T, N> const & p3,
     T const tolerance)
 {
-  if (in_normal_side(p, p0, p1, p2, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p0, p3, p1, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p1, p3, p2, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p2, p3, p0, tolerance) == false) {
-
-    return false;
-
-  }
+  if (in_normal_side(p, p0, p1, p2, tolerance) == false) return false;
+  if (in_normal_side(p, p0, p3, p1, tolerance) == false) return false;
+  if (in_normal_side(p, p1, p3, p2, tolerance) == false) return false;
+  if (in_normal_side(p, p2, p3, p0, tolerance) == false) return false;
 
   return true;
 }
@@ -413,31 +400,12 @@ in_hexahedron(
     Vector<T, N> const & p7,
     T const tolerance)
 {
-  if (in_normal_side(p, p0, p1, p2, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p0, p4, p5, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p1, p5, p6, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p2, p6, p7, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p3, p7, p4, tolerance) == false) {
-
-    return false;
-
-  } else if (in_normal_side(p, p4, p7, p6, tolerance) == false) {
-
-    return false;
-
-  }
+  if (in_normal_side(p, p0, p1, p2, tolerance) == false) return false;
+  if (in_normal_side(p, p0, p4, p5, tolerance) == false) return false;
+  if (in_normal_side(p, p1, p5, p6, tolerance) == false) return false;
+  if (in_normal_side(p, p2, p6, p7, tolerance) == false) return false;
+  if (in_normal_side(p, p3, p7, p4, tolerance) == false) return false;
+  if (in_normal_side(p, p4, p7, p6, tolerance) == false) return false;
 
   return true;
 }

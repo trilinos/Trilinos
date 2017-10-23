@@ -69,7 +69,7 @@ void Teuchos::updateParametersFromYamlFileAndBroadcast(
       broadcast<int, int>(comm, 0, &strsize);
       char* ptr = (strsize) ? (&yamlString[0]) : 0;
       broadcast<int, char>(comm, 0, strsize, ptr);
-      updateParametersFromYamlString(yamlString, paramList,overwrite);
+      updateParametersFromYamlString(yamlString, paramList,overwrite, yamlFileName);
     }
     else {
       int strsize;

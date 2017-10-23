@@ -186,7 +186,7 @@ public:
   /// - "trisolver: reverse U" (\c bool): reverse storage for upper triangular matrices
   ///   to be more cache-efficient
   ///
-  /// If Trilinos_ENABLE_ShyLUHTS=TRUE, then these parameters are available:
+  /// If Trilinos_ENABLE_ShyLU_NodeHTS=TRUE, then these parameters are available:
   ///   - "trisolver: type" (\c string): One of {"Internal" (default), "HTS"}.
   ///   - "trisolver: block size" (\c int): The triangular matrix can usefully be
   ///     thought of as being blocked int little blocks of this size. Default

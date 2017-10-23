@@ -55,7 +55,7 @@
 #include <Teuchos_Exceptions.hpp>
 #include <Teuchos_TwoDArray.hpp>
 
-
+#include <Teuchos_Parser.hpp>
 
 using Teuchos::ParameterList;
 using Teuchos::RCP;
@@ -66,14 +66,18 @@ namespace TeuchosTests
   {
     using std::string;
     using std::vector;
-    vector<string> matchStems = {"Match1", "Match2", "Match3", "Match4"};
+    vector<string> matchStems;
+    matchStems.push_back("Match1");
+    matchStems.push_back("Match2");
+    matchStems.push_back("Match3");
+    matchStems.push_back("Match4");
     for(size_t i = 0; i < matchStems.size(); i++)
     {
-      string xmlFile =  matchStems[i] + ".xml";
       string yamlFile = matchStems[i] + ".yaml";
-      RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile(xmlFile);
       RCP<ParameterList> yamlList = Teuchos::getParametersFromYamlFile(yamlFile);
-      TEST_EQUALITY(Teuchos::haveSameValuesUnordered(*xmlList, *yamlList), true);
+      string xmlFile =  matchStems[i] + ".xml";
+      RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile(xmlFile);
+      TEST_EQUALITY(Teuchos::haveSameValues(*xmlList, *yamlList, true), true);
     }
   }
   TEUCHOS_UNIT_TEST(YAML, IntVsDouble)
@@ -82,53 +86,73 @@ namespace TeuchosTests
     //YAML reader should recognize the double and the param lists should not be equivalent
     RCP<ParameterList> xmlList = Teuchos::getParametersFromXmlFile("IntVsDouble.xml");
     RCP<ParameterList> yamlList = Teuchos::getParametersFromYamlFile("IntVsDouble.yaml");
-    TEST_EQUALITY(Teuchos::haveSameValuesUnordered(*xmlList, *yamlList), false);
+    TEST_EQUALITY(Teuchos::haveSameValues(*xmlList, *yamlList), false);
   }
   TEUCHOS_UNIT_TEST(YAML, IllegalKeyString)
   {
-    TEST_THROW(Teuchos::getParametersFromYamlFile("IllegalKeyString.yaml");, YAML::ParserException);
+    TEST_THROW(Teuchos::getParametersFromYamlFile("IllegalKeyString.yaml");, Teuchos::ParserFail);
   }
+
+  TEUCHOS_UNIT_TEST(YAML, Issue1801)
+  {
+    Teuchos::getParametersFromYamlString(
+        "My Awesome Problem:\n"
+        "  Particle Periodic:\n"
+        "    X: \"-1.0, 1.0\"\n"
+        "  emotions: happy_sad, indifferent\n"
+        "...\n"
+        );
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, PR1805)
+  {
+    RCP<ParameterList> params = Teuchos::getParametersFromYamlString(
+        "My Awesome Problem:\n"
+        "\tMesh:\n"
+        "\t\tInline:\n"
+        "\t\t\tType: Quad\n"
+        "\t\t\tElements: [     10,     10 ]\n"
+        "...\n"
+        );
+  }
+
   TEUCHOS_UNIT_TEST(YAML, IntAndDoubleArray)
   {
     int correctInts[5] = {2, 3, 5, 7, 11};
     //the last number with 10 dec digits of precision should test correct double conversion
     double correctDoubles[5] = {2.718, 3.14159, 1.618, 1.23456789, 42.1337};
-    TEST_NOTHROW({
-      RCP<Teuchos::ParameterList> params = Teuchos::getParametersFromYamlFile("Arrays.yaml");
-      //Retrieve arrays from a specific sublist (tests the mixed nesting of sequence/map)
-      ParameterList& sublist = params->get<ParameterList>("smoother: params");
-      Teuchos::Array<int>& intArr = sublist.get<Teuchos::Array<int> >("intArray");
-      Teuchos::Array<double>& doubleArr = sublist.get<Teuchos::Array<double> >("doubleArray");
-      TEST_EQUALITY(intArr.size(), 5);
-      TEST_EQUALITY(doubleArr.size(), 5);
-      for(int i = 0; i < 5; i++)
-      {
-        TEST_EQUALITY(correctInts[i], intArr[i]);
-        TEST_EQUALITY(correctDoubles[i], doubleArr[i]);
-      }
-    });
+    RCP<Teuchos::ParameterList> params = Teuchos::getParametersFromYamlFile("Arrays.yaml");
+    //Retrieve arrays from a specific sublist (tests the mixed nesting of sequence/map)
+    ParameterList& sublist = params->get<ParameterList>("smoother: params");
+    Teuchos::Array<int>& intArr = sublist.get<Teuchos::Array<int> >("intArray");
+    Teuchos::Array<double>& doubleArr = sublist.get<Teuchos::Array<double> >("doubleArray");
+    TEST_EQUALITY(intArr.size(), 5);
+    TEST_EQUALITY(doubleArr.size(), 5);
+    for(int i = 0; i < 5; i++)
+    {
+      TEST_EQUALITY(correctInts[i], intArr[i]);
+      TEST_EQUALITY(correctDoubles[i], doubleArr[i]);
+    }
   }
   TEUCHOS_UNIT_TEST(YAML, InconsistentArrayType)
   {
     std::string correctStrings[5] = {"2", "3", "5", "7", "imastring"};
     double correctDoubles[5] = {2, 3, 1.618, 1.23456789, 42.1337};
-    TEST_NOTHROW({
-      RCP<ParameterList> plist = Teuchos::getParametersFromYamlFile("InconsistentArray.yaml");
-      //verify that stringArray and doubleArray have the correct types and the correct values
-      const Teuchos::Array<std::string>& stringArr = plist->get<Teuchos::Array<std::string> >("stringArray");
-      const Teuchos::Array<double>& doubleArr = plist->get<Teuchos::Array<double> >("doubleArray");
-      for(int i = 0; i < 5; i++)
+    RCP<ParameterList> plist = Teuchos::getParametersFromYamlFile("InconsistentArray.yaml");
+    //verify that stringArray and doubleArray have the correct types and the correct values
+    const Teuchos::Array<std::string>& stringArr = plist->get<Teuchos::Array<std::string> >("stringArray");
+    const Teuchos::Array<double>& doubleArr = plist->get<Teuchos::Array<double> >("doubleArray");
+    for(int i = 0; i < 5; i++)
+    {
+      if(stringArr[i] != correctStrings[i])
       {
-        if(stringArr[i] != correctStrings[i])
-        {
-          throw std::runtime_error(std::string("stringArray[") + std::to_string(i) + "] is incorrect.");
-        }
-        if(doubleArr[i] != correctDoubles[i])
-        {
-          throw std::runtime_error(std::string("doubleArray value [") + std::to_string(i) + "] is incorrect.");
-        }
+        throw std::runtime_error(std::string("stringArray value is incorrect."));
       }
-    });
+      if(doubleArr[i] != correctDoubles[i])
+      {
+        throw std::runtime_error(std::string("doubleArray value is incorrect."));
+      }
+    }
   }
   TEUCHOS_UNIT_TEST(YAML, TwoDArrayConvert)
   {
@@ -143,10 +167,12 @@ namespace TeuchosTests
       "    </ParameterList>\n"
       "    <ParameterList name=\"Discretization\">\n"
       "      <Parameter name=\"Node Set Associations\" type=\"TwoDArray(string)\" value=\"2x2:{1, 2, top, bottom}\"/>\n"
+      "      <Parameter name=\"Bool-looking String\" type=\"string\" value=\"TRUE\"/>\n"
       "    </ParameterList>\n"
       "  </ParameterList>\n";
     RCP<ParameterList> xmlParams = Teuchos::getParametersFromXmlString(xmlString);
     std::stringstream yamlOutStream;
+    yamlOutStream << std::showpoint << std::fixed << std::setprecision(1);
     Teuchos::YAMLParameterList::writeYamlStream(yamlOutStream, *xmlParams);
     std::string yamlString = yamlOutStream.str();
     std::string expectedYamlString =
@@ -156,25 +182,43 @@ namespace TeuchosTests
       "  Problem: \n"
       "    Neumann BCs: \n"
       "      Time Dependent NBC on SS cyl_outside for DOF all set P: \n"
-      "        BC Values: [[0], [10], [20]]\n"
+      "        BC Values: [[0.0], [10.0], [20.0]]\n"
       "  Discretization: \n"
       "    Node Set Associations: [['1', '2'], [top, bottom]]\n"
+      "    Bool-looking String: 'TRUE'\n"
       "...\n";
     TEST_EQUALITY(yamlString, expectedYamlString);
     std::stringstream yamlInStream(yamlString);
     RCP<ParameterList> yamlParams;
     yamlParams = Teuchos::YAMLParameterList::parseYamlStream(yamlInStream);
     std::stringstream yamlOutStream2;
+    yamlOutStream2 << std::showpoint << std::fixed << std::setprecision(1);
     Teuchos::YAMLParameterList::writeYamlStream(yamlOutStream2, *yamlParams);
     std::string yamlString2 = yamlOutStream2.str();
-  /* There are issues with older versions of yaml-cpp not maintaining the order
-     of parameters in a list. see Trilinos issue #1268.
-     that is why we use the Unordered comparison instead of the pure text one. */
-  //TEST_EQUALITY(yamlString2, expectedYamlString);
-    std::stringstream yamlInStream2(yamlString2);
-    RCP<ParameterList> yamlParams2;
-    yamlParams2 = Teuchos::YAMLParameterList::parseYamlStream(yamlInStream2);
-    TEST_EQUALITY(Teuchos::haveSameValuesUnordered(*yamlParams, *yamlParams2), true);
+    TEST_EQUALITY(yamlString2, expectedYamlString);
   }
+
+  TEUCHOS_UNIT_TEST(YAML, Issue1815)
+  {
+    Teuchos::getParametersFromYamlString(
+      "Header:\n"
+      "  Output:\n"
+      "    File Name: electrostatic.exo\n"
+      "    Cell Average Quantities:\n"
+      "      eblock-0_0: ES_POTENTIAL, E0\n"
+      "      \n"
+      "  Particle Dump:\n"
+      "    File Name: beam_emit2.h5part\n");
+  }
+
+  TEUCHOS_UNIT_TEST(YAML, Issue1807part2)
+  {
+    Teuchos::getParametersFromYamlString(
+      "Header:\n"
+      "  Particle Dump:\n"
+      "    File Name: beam_emit2.h5part\n"
+      "#   Stride Time: 5.0e-12\n");
+  }
+
 } //namespace TeuchosTests
 

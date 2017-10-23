@@ -1369,7 +1369,7 @@ namespace panzer {
       Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory = panzer::cloneWithNewDomain(*ap.lof,dofManager);
 
       ap.param_dofManager = dofManager;
-      ap.param_ged = linObjFactory->buildDomainContainer();
+      ap.param_ged = linObjFactory->buildReadOnlyDomainContainer();
       ap.param_lof = linObjFactory;
     }
 

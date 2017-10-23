@@ -61,15 +61,46 @@ SET(${PROJECT_NAME}_ENABLE_PyTrilinos OFF CACHE BOOL "Set in SEMSDevEnv.cmake")
 # C) Set up the paths to the TPL includes and libs
 #
 
-# Define helper function for finding the serial version of a TPL of this is a
-# serial build.
-
 SET(SEMS_MPI_VERSION $ENV{SEMS_MPI_VERSION})
 #PRINT_VAR(SEMS_MPI_VERSION)
-SET(OPENMPI_VERSION_DIR "/openmpi/${SEMS_MPI_VERSION}/parallel")
-#PRINT_VAR(OPENMPI_VERSION_DIR)
 
+#
+# Define helper function for finding the serial version of a TPL of this is a
+# serial build.
+#
+# Called as:
+#
+#   SEMS_SELECT_TPL_ROOT_DIR( <semsTPLName> <tplRootDirOut>
+#     [PARALLEL_EXT <parallelExt> SERIAL_EXT <serialExt>] )
+#
+# If PARALLEL_EXT <parallelExt> SERIAL_EXT <serialExt> is not given, then it
+# is assumed that <parallelExt>=parallel and <serialExt>=base.
+#
 FUNCTION(SEMS_SELECT_TPL_ROOT_DIR  SEMS_TPL_NAME  TPL_ROOT_DIR_OUT)
+
+  CMAKE_PARSE_ARGUMENTS(
+     #prefix
+     PARSE
+     # options
+     ""
+     #one_value_keywords
+     ""
+     #multi_value_keywords
+     "PARALLEL_EXT;SERIAL_EXT"
+     ${ARGN}
+     )
+
+  IF (PARSE_PARALLEL_EXT)
+    SET(PARALLEL_EXT ${PARSE_PARALLEL_EXT})
+    SET(SERIAL_EXT ${PARSE_SERIAL_EXT})
+  ELSE()
+    SET(PARALLEL_EXT "parallel")
+    SET(SERIAL_EXT "base")
+  ENDIF()
+
+  SET(OPENMPI_VERSION_DIR "/openmpi/${SEMS_MPI_VERSION}/${PARALLEL_EXT}")
+  #PRINT_VAR(OPENMPI_VERSION_DIR)
+  
   #PRINT_VAR(SEMS_TPL_NAME)
   #PRINT_VAR(TPL_ROOT_DIR_OUT)
   SET(SEMS_TPL_ROOT_ENV_VAR_NAME SEMS_${SEMS_TPL_NAME}_ROOT)
@@ -77,6 +108,7 @@ FUNCTION(SEMS_SELECT_TPL_ROOT_DIR  SEMS_TPL_NAME  TPL_ROOT_DIR_OUT)
   ASSERT_DEFINED(ENV{${SEMS_TPL_ROOT_ENV_VAR_NAME}})
   SET(SEMS_TPL_ROOT_ENV_VAR $ENV{${SEMS_TPL_ROOT_ENV_VAR_NAME}})
   #PRINT_VAR(SEMS_TPL_ROOT_ENV_VAR)
+
   IF (TPL_ENABLE_MPI)
     SET(TPL_ROOT_DIR "${SEMS_TPL_ROOT_ENV_VAR}")
   ELSE()
@@ -85,30 +117,24 @@ FUNCTION(SEMS_SELECT_TPL_ROOT_DIR  SEMS_TPL_NAME  TPL_ROOT_DIR_OUT)
       OPENMPI_VERSION_DIR_IDX)
     #PRINT_VAR(OPENMPI_VERSION_DIR_IDX)
     IF ("${OPENMPI_VERSION_DIR_IDX}" STREQUAL "-1")
-      # This TPL is not pointing to a parallel version
+       #MESSAGE("-- " "This TPL is not pointing to a parallel version")
       SET(TPL_ROOT_DIR "${SEMS_TPL_ROOT_ENV_VAR}")
     ELSE()
-      # This TPL is pointing to a parallel version
+      #MESSAGE("-- " "This TPL is pointing to a parallel version")
       STRING(REPLACE "${OPENMPI_VERSION_DIR}" "" TPL_ROOT_DIR_BASE
         "${SEMS_TPL_ROOT_ENV_VAR}")
-      SET(TPL_ROOT_DIR "${TPL_ROOT_DIR_BASE}/base")
+      SET(TPL_ROOT_DIR "${TPL_ROOT_DIR_BASE}/${SERIAL_EXT}")
     ENDIF()
   ENDIF()
+
   #PRINT_VAR(TPL_ROOT_DIR)
   SET(${TPL_ROOT_DIR_OUT} "${TPL_ROOT_DIR}" PARENT_SCOPE)
+
 ENDFUNCTION()
 
 # Assume BLAS is found in default path!
 
 # Assume LAPACK is found in default path!
-
-# yaml-cpp
-SEMS_SELECT_TPL_ROOT_DIR(YAML_CPP YAML_CPP_ROOT)
-#PRINT_VAR(YAML_CPP_ROOT)
-SET(yaml-cpp_INCLUDE_DIRS "${YAML_CPP_ROOT}/include"
-  CACHE PATH "Set in SEMSDevEnv.cmake")
-SET(yaml-cpp_LIBRARY_DIRS "${YAML_CPP_ROOT}/lib"
-  CACHE PATH "Set in SEMSDevEnv.cmake")
 
 # Boost
 SEMS_SELECT_TPL_ROOT_DIR(BOOST Boost_ROOT)
@@ -168,7 +194,8 @@ SET(HDF5_LIBRARY_NAMES "hdf5_hl;hdf5;${Zlib_LIBRARY_NAMES}"
   CACHE STRING "Set in SEMSDevEnv.cmake")
 
 # Netcdf
-SEMS_SELECT_TPL_ROOT_DIR(NETCDF Netcdf_ROOT)
+SEMS_SELECT_TPL_ROOT_DIR(NETCDF Netcdf_ROOT
+  PARALLEL_EXT "exo_parallel" SERIAL_EXT "exo")
 #PRINT_VAR(Netcdf_ROOT)
 SET(TPL_Netcdf_INCLUDE_DIRS "${Netcdf_ROOT}/include;${TPL_HDF5_INCLUDE_DIRS}"
   CACHE PATH "Set in SEMSDevEnv.cmake")

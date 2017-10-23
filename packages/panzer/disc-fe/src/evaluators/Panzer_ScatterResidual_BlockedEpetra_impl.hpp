@@ -58,6 +58,7 @@
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_HashUtils.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
@@ -147,8 +148,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer ELOC;
 
    // extract linear object container
-   Teuchos::RCP<const BLOC> blockedContainer = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_));
-   Teuchos::RCP<const ELOC> epetraContainer  = Teuchos::rcp_dynamic_cast<const ELOC>(d.gedc.getDataObject(globalDataKey_));
+   Teuchos::RCP<const BLOC> blockedContainer = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc->getDataObject(globalDataKey_));
+   Teuchos::RCP<const ELOC> epetraContainer  = Teuchos::rcp_dynamic_cast<const ELOC>(d.gedc->getDataObject(globalDataKey_));
 
    // if its blocked do this
    if(blockedContainer!=Teuchos::null)
@@ -197,7 +198,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
           std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-         const std::vector<LO> & LIDs = subRowIndexer->getElementLIDs(cellLocalId); 
+          Kokkos::View<const LO*, PHX::Device> LIDs = subRowIndexer->getElementLIDs(cellLocalId); 
 
          // loop over basis functions
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
@@ -286,8 +287,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer ELOC;
 
    // extract linear object container
-   Teuchos::RCP<const BLOC> blockedContainer = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_));
-   Teuchos::RCP<const ELOC> epetraContainer  = Teuchos::rcp_dynamic_cast<const ELOC>(d.gedc.getDataObject(globalDataKey_));
+   Teuchos::RCP<const BLOC> blockedContainer = Teuchos::rcp_dynamic_cast<const BLOC>(d.gedc->getDataObject(globalDataKey_));
+   Teuchos::RCP<const ELOC> epetraContainer  = Teuchos::rcp_dynamic_cast<const ELOC>(d.gedc->getDataObject(globalDataKey_));
 
    // if its blocked do this
    if(blockedContainer!=Teuchos::null)
@@ -338,7 +339,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-         const std::vector<LO> & LIDs = subRowIndexer->getElementLIDs(cellLocalId); 
+         Kokkos::View<const LO*, PHX::Device> LIDs = subRowIndexer->getElementLIDs(cellLocalId); 
    
          // loop over basis functions
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
@@ -440,8 +441,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef BlockedEpetraLinearObjContainer ELOC;
 
    // extract linear object container
-   RCP<const BLOC> blockedContainer = rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_));
-   RCP<const ELOC> epetraContainer  = rcp_dynamic_cast<const ELOC>(d.gedc.getDataObject(globalDataKey_));
+   RCP<const BLOC> blockedContainer = rcp_dynamic_cast<const BLOC>(d.gedc->getDataObject(globalDataKey_));
+   RCP<const ELOC> epetraContainer  = rcp_dynamic_cast<const ELOC>(d.gedc->getDataObject(globalDataKey_));
 
    // if its blocked do this
    if(blockedContainer!=Teuchos::null) {
@@ -506,7 +507,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-         const std::vector<LO> & rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
+         Kokkos::View<const LO*, PHX::Device> rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
 
          // loop over the basis functions (currently they are nodes)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {
@@ -537,7 +538,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                   continue;
 
                auto subColIndexer = colIndexers_[colIndexer];
-               const std::vector<LO> & cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
+               Kokkos::View<const LO*, PHX::Device> cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
 
                TEUCHOS_ASSERT(end-start==Teuchos::as<int>(cLIDs.size()));
 

@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_FunctionSpaceTools.hpp
+/** \file   Intrepid2_FunctionSpaceTools.hpp
     \brief  Header file for the Intrepid2::FunctionSpaceTools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim

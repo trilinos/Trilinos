@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HCURL_HEX_I1_FEMDef.hpp
+/** \file   Intrepid2_HCURL_HEX_I1_FEMDef.hpp
     \brief  Definition file for FEM basis functions of degree 1 for H(curl) functions on HEX cells.
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
             Kokkorized by Kyungjoo Kim
@@ -61,7 +61,7 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HCURL_HEX_I1_FEM::Serial<opType>::
-    getValues( /**/  outputViewType output,
+    getValues(       outputViewType output,
                const inputViewType input ) {
 
       switch (opType) {

@@ -50,6 +50,7 @@
 /// want the declaration of Tpetra::CrsGraph, include
 /// "Tpetra_CrsGraph_decl.hpp".
 
+#include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
 #include "Tpetra_Details_copyOffsets.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
@@ -272,15 +273,17 @@ namespace Tpetra {
       << " != the local number of rows " << lclNumRows << " as specified by "
       "the input row Map.");
 
-#ifdef HAVE_TPETRA_DEBUG
-    for (size_t r = 0; r < lclNumRows; ++r) {
-      const size_t curRowCount = numEntPerRow[r];
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
-        std::invalid_argument, "numEntPerRow(" << r << ") specifies an invalid "
-        "number of entries (Teuchos::OrdinalTraits<size_t>::invalid()).");
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      for (size_t r = 0; r < lclNumRows; ++r) {
+        const size_t curRowCount = numEntPerRow[r];
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
+           std::invalid_argument, "numEntPerRow(" << r << ") "
+           "specifies an invalid number of entries "
+           "(Teuchos::OrdinalTraits<size_t>::invalid()).");
+      }
     }
-#endif // HAVE_TPETRA_DEBUG
 
     // Deep-copy the input (ArrayRCP, therefore host accessible) into
     // k_numAllocPerRow_.  The latter is a const View, so we have to
@@ -336,15 +339,17 @@ namespace Tpetra {
       numEntPerRow.dimension_0 () << " != the local number of rows " <<
       lclNumRows << " as specified by " "the input row Map.");
 
-#ifdef HAVE_TPETRA_DEBUG
-    for (size_t r = 0; r < lclNumRows; ++r) {
-      const size_t curRowCount = numEntPerRow.h_view(r);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
-        std::invalid_argument, "numEntPerRow(" << r << ") specifies an invalid "
-        "number of entries (Teuchos::OrdinalTraits<size_t>::invalid()).");
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      for (size_t r = 0; r < lclNumRows; ++r) {
+        const size_t curRowCount = numEntPerRow.h_view(r);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
+           std::invalid_argument, "numEntPerRow(" << r << ") "
+           "specifies an invalid number of entries "
+           "(Teuchos::OrdinalTraits<size_t>::invalid()).");
+      }
     }
-#endif // HAVE_TPETRA_DEBUG
 
     resumeFill (params);
     checkInternalState ();
@@ -388,15 +393,17 @@ namespace Tpetra {
       numEntPerRow.dimension_0 () << " != the local number of rows " <<
       lclNumRows << " as specified by " "the input row Map.");
 
-#ifdef HAVE_TPETRA_DEBUG
-    for (size_t r = 0; r < lclNumRows; ++r) {
-      const size_t curRowCount = numEntPerRow.h_view(r);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
-        std::invalid_argument, "numEntPerRow(" << r << ") specifies an invalid "
-        "number of entries (Teuchos::OrdinalTraits<size_t>::invalid()).");
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      for (size_t r = 0; r < lclNumRows; ++r) {
+        const size_t curRowCount = numEntPerRow.h_view(r);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
+           std::invalid_argument, "numEntPerRow(" << r << ") "
+           "specifies an invalid number of entries "
+           "(Teuchos::OrdinalTraits<size_t>::invalid()).");
+      }
     }
-#endif // HAVE_TPETRA_DEBUG
 
     resumeFill (params);
     checkInternalState ();
@@ -440,15 +447,17 @@ namespace Tpetra {
       << " != the local number of rows " << lclNumRows << " as specified by "
       "the input row Map.");
 
-#ifdef HAVE_TPETRA_DEBUG
-    for (size_t r = 0; r < lclNumRows; ++r) {
-      const size_t curRowCount = numEntPerRow[r];
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
-        std::invalid_argument, "numEntPerRow(" << r << ") specifies an invalid "
-        "number of entries (Teuchos::OrdinalTraits<size_t>::invalid()).");
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      for (size_t r = 0; r < lclNumRows; ++r) {
+        const size_t curRowCount = numEntPerRow[r];
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (curRowCount == Teuchos::OrdinalTraits<size_t>::invalid (),
+           std::invalid_argument, "numEntPerRow(" << r << ") "
+           "specifies an invalid number of entries "
+           "(Teuchos::OrdinalTraits<size_t>::invalid()).");
+      }
     }
-#endif // HAVE_TPETRA_DEBUG
 
     // Deep-copy the input (ArrayRCP, therefore host accessible) into
     // k_numAllocPerRow_.  The latter is a const View, so we have to
@@ -736,11 +745,12 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalNumDiags () const
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "getGlobalNumDiags()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!haveGlobalConstants_, std::logic_error,
-                                          ": The matrix does not have globalConstants computed, but the user has requested them.");
-#endif
+    const char tfecfFuncName[] = "getGlobalNumDiags: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->haveGlobalConstants_, std::logic_error,
+       "The graph does not have global constants computed, "
+       "but the user has requested them.");
+
     return globalNumDiags_;
   }
 
@@ -828,14 +838,12 @@ namespace Tpetra {
       k_numRowEntries_.dimension_0 () == 0 &&
       getNodeNumRows () > 0;
 
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "isStorageOptimized";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isOpt && getProfileType () == DynamicProfile, std::logic_error,
-      ": The matrix claims to have optimized storage, but getProfileType() "
+    const char tfecfFuncName[] = "isStorageOptimized: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (isOpt && getProfileType () == DynamicProfile, std::logic_error,
+      "The matrix claims to have optimized storage, but getProfileType() "
       "returns DynamicProfile.  This should never happen.  Please report this "
       "bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
 
     return isOpt;
   }
@@ -855,11 +863,12 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalNumEntries () const
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "getGlobalNumEntries()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!haveGlobalConstants_, std::logic_error,
-                                          ": The matrix does not have globalConstants computed, but the user has requested them.");
-#endif
+    const char tfecfFuncName[] = "getGlobalNumEntries: ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->haveGlobalConstants_, std::logic_error,
+       "The graph does not have global constants computed, "
+       "but the user has requested them.");
+
     return globalNumEntries_;
   }
 
@@ -924,13 +933,11 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   getGlobalMaxNumRowEntries () const
   {
-#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "getGlobalMaxNumRowEntries: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (!haveGlobalConstants_, std::logic_error,
-       "The matrix does not have global constants computed, "
+      (! this->haveGlobalConstants_, std::logic_error,
+       "The graph does not have global constants computed, "
        "but the user has requested them.");
-#endif // HAVE_TPETRA_DEBUG
 
     return globalMaxNumRowEntries_;
   }
@@ -2307,280 +2314,281 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   checkInternalState () const
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "checkInternalState: ";
-    const char suffix[] = "  Please report this bug to the Tpetra developers.";
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      const char tfecfFuncName[] = "checkInternalState: ";
+      const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
-    const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid ();
-    //const size_t         STI = Teuchos::OrdinalTraits<size_t>::invalid (); // unused
-    // check the internal state of this data structure
-    // this is called by numerous state-changing methods, in a debug build, to ensure that the object
-    // always remains in a valid state
+      const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid ();
+      //const size_t         STI = Teuchos::OrdinalTraits<size_t>::invalid (); // unused
+      // check the internal state of this data structure
+      // this is called by numerous state-changing methods, in a debug build, to ensure that the object
+      // always remains in a valid state
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->rowMap_.is_null (), std::logic_error,
-       "Row Map is null." << suffix);
-    // This may access the row Map, so we need to check first (above)
-    // whether the row Map is null.
-    const LocalOrdinal lclNumRows =
-      static_cast<LocalOrdinal> (this->getNodeNumRows ());
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isFillActive () == this->isFillComplete (), std::logic_error,
-       "Graph cannot be both fill active and fill complete." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isFillComplete () &&
-       (this->colMap_.is_null () ||
-        this->rangeMap_.is_null () ||
-        this->domainMap_.is_null ()),
-       std::logic_error,
-       "Graph is full complete, but at least one of {column, range, domain} "
-       "Map is null." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isStorageOptimized () && ! this->indicesAreAllocated (),
-       std::logic_error, "Storage is optimized, but indices are not "
-       "allocated, not even trivially." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->indicesAreAllocated_ &&
-       (this->storageStatus_ == Details::STORAGE_1D_PACKED ||
-        this->storageStatus_ == Details::STORAGE_1D_UNPACKED) &&
-       this->pftype_ == DynamicProfile, std::logic_error,
-       "Graph claims to have allocated indices and 1-D storage "
-       "(either packed or unpacked), but also claims to be DynamicProfile.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->indicesAreAllocated_ &&
-       this->storageStatus_ == Details::STORAGE_2D &&
-       this->pftype_ == StaticProfile, std::logic_error,
-       "Graph claims to have allocated indices and 2-D storage, "
-       "but also claims to be StaticProfile.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->indicesAreAllocated_ &&
-       this->storageStatus_ == Details::STORAGE_2D &&
-       this->isLocallyIndexed () &&
-       static_cast<LocalOrdinal> (this->lclInds2D_.size ()) != lclNumRows,
-       std::logic_error,
-       "Graph claims to have allocated indices, be locally indexed, and have "
-       "2-D storage, but lclInds2D_.size() = " << this->lclInds2D_.size ()
-       << " != getNodeNumRows() = " << lclNumRows << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->indicesAreAllocated_ &&
-       this->storageStatus_ == Details::STORAGE_2D &&
-       this->isGloballyIndexed () &&
-       static_cast<LocalOrdinal> (this->gblInds2D_.size ()) != lclNumRows,
-       std::logic_error,
-       "Graph claims to have allocated indices, be globally indexed, and have "
-       "2-D storage, but gblInds2D_.size() = " << this->gblInds2D_.size ()
-       << " != getNodeNumRows() = " << lclNumRows << ".");
-
-    size_t nodeAllocSize = 0;
-    try {
-      nodeAllocSize = this->getNodeAllocationSize ();
-    }
-    catch (std::logic_error& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "getNodeAllocationSize threw "
-         "std::logic_error: " << e.what ());
-    }
-    catch (std::exception& e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "getNodeAllocationSize threw an "
-         "std::exception: " << e.what ());
-    }
-    catch (...) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (true, std::runtime_error, "getNodeAllocationSize threw an exception "
-         "not a subclass of std::exception.");
-    }
+        (this->rowMap_.is_null (), std::logic_error,
+         "Row Map is null." << suffix);
+      // This may access the row Map, so we need to check first (above)
+      // whether the row Map is null.
+      const LocalOrdinal lclNumRows =
+        static_cast<LocalOrdinal> (this->getNodeNumRows ());
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isStorageOptimized () &&
-       nodeAllocSize != this->getNodeNumEntries (),
-       std::logic_error, "Storage is optimized, but "
-       "this->getNodeAllocationSize() = " << nodeAllocSize
-       << " != this->getNodeNumEntries() = " << this->getNodeNumEntries ()
-       << "." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! this->haveGlobalConstants_ &&
-       (this->globalNumEntries_ != GSTI ||
-        this->globalNumDiags_ != GSTI ||
-        this->globalMaxNumRowEntries_ != GSTI),
-       std::logic_error, "Graph claims not to have global constants, but "
-       "some of the global constants are not marked as invalid." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->haveGlobalConstants_ &&
-       (this->globalNumEntries_ == GSTI ||
-        this->globalNumDiags_ == GSTI ||
-        this->globalMaxNumRowEntries_ == GSTI),
-       std::logic_error, "Graph claims to have global constants, but "
-       "some of them are marked as invalid." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->haveGlobalConstants_ &&
-       (this->globalNumEntries_ < this->getNodeNumEntries () ||
-        this->globalNumDiags_ < this->nodeNumDiags_ ||
-        this->globalMaxNumRowEntries_ < this->nodeMaxNumRowEntries_),
-       std::logic_error, "Graph claims to have global constants, and "
-       "all of the values of the global constants are valid, but "
-       "some of the local constants are greater than "
-       "their corresponding global constants." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->indicesAreAllocated () &&
-       (this->numAllocForAllRows_ != 0 ||
-        this->k_numAllocPerRow_.dimension_0 () != 0),
-       std::logic_error, "The graph claims that its indices are allocated, but "
-       "either numAllocForAllRows_ (= " << this->numAllocForAllRows_ << ") is "
-       "nonzero, or k_numAllocPerRow_ has nonzero dimension.  In other words, "
-       "the graph is supposed to release its \"allocation specifications\" "
-       "when it allocates its indices." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isStorageOptimized () && this->pftype_ != StaticProfile,
-       std::logic_error,
-       "Storage is optimized, but graph is not StaticProfile." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isGloballyIndexed () &&
-       this->k_rowPtrs_.dimension_0 () != 0 &&
-       (static_cast<size_t> (this->k_rowPtrs_.dimension_0 ()) != static_cast<size_t> (lclNumRows + 1) ||
-        this->k_rowPtrs_(lclNumRows) != static_cast<size_t> (this->k_gblInds1D_.dimension_0 ())),
-       std::logic_error, "If k_rowPtrs_ has nonzero size and "
-       "the graph is globally indexed, then "
-       "k_rowPtrs_ must have N+1 rows, and "
-       "k_rowPtrs_(N) must equal k_gblInds1D_.dimension_0()." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->isLocallyIndexed () &&
-       this->k_rowPtrs_.dimension_0 () != 0 &&
-       (static_cast<size_t> (k_rowPtrs_.dimension_0 ()) != static_cast<size_t> (lclNumRows + 1) ||
-        this->k_rowPtrs_(lclNumRows) != static_cast<size_t> (this->k_lclInds1D_.dimension_0 ())),
-       std::logic_error, "If k_rowPtrs_ has nonzero size and "
-       "the graph is locally indexed, then "
-       "k_rowPtrs_ must have N+1 rows, and "
-       "k_rowPtrs_(N) must equal k_lclInds1D_.dimension_0()." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->isFillActive () == this->isFillComplete (), std::logic_error,
+         "Graph cannot be both fill active and fill complete." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->isFillComplete () &&
+         (this->colMap_.is_null () ||
+          this->rangeMap_.is_null () ||
+          this->domainMap_.is_null ()),
+         std::logic_error,
+         "Graph is full complete, but at least one of {column, range, domain} "
+         "Map is null." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->isStorageOptimized () && ! this->indicesAreAllocated (),
+         std::logic_error, "Storage is optimized, but indices are not "
+         "allocated, not even trivially." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->indicesAreAllocated_ &&
+         (this->storageStatus_ == Details::STORAGE_1D_PACKED ||
+          this->storageStatus_ == Details::STORAGE_1D_UNPACKED) &&
+         this->pftype_ == DynamicProfile, std::logic_error,
+         "Graph claims to have allocated indices and 1-D storage "
+         "(either packed or unpacked), but also claims to be DynamicProfile.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->indicesAreAllocated_ &&
+         this->storageStatus_ == Details::STORAGE_2D &&
+         this->pftype_ == StaticProfile, std::logic_error,
+         "Graph claims to have allocated indices and 2-D storage, "
+         "but also claims to be StaticProfile.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->indicesAreAllocated_ &&
+         this->storageStatus_ == Details::STORAGE_2D &&
+         this->isLocallyIndexed () &&
+         static_cast<LocalOrdinal> (this->lclInds2D_.size ()) != lclNumRows,
+         std::logic_error,
+         "Graph claims to have allocated indices, be locally indexed, and have "
+         "2-D storage, but lclInds2D_.size() = " << this->lclInds2D_.size ()
+         << " != getNodeNumRows() = " << lclNumRows << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->indicesAreAllocated_ &&
+         this->storageStatus_ == Details::STORAGE_2D &&
+         this->isGloballyIndexed () &&
+         static_cast<LocalOrdinal> (this->gblInds2D_.size ()) != lclNumRows,
+         std::logic_error,
+         "Graph claims to have allocated indices, be globally indexed, and have "
+         "2-D storage, but gblInds2D_.size() = " << this->gblInds2D_.size ()
+         << " != getNodeNumRows() = " << lclNumRows << ".");
 
-    if (this->pftype_ == DynamicProfile) {
+      size_t nodeAllocSize = 0;
+      try {
+        nodeAllocSize = this->getNodeAllocationSize ();
+      }
+      catch (std::logic_error& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "getNodeAllocationSize threw "
+           "std::logic_error: " << e.what ());
+      }
+      catch (std::exception& e) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "getNodeAllocationSize threw an "
+           "std::exception: " << e.what ());
+      }
+      catch (...) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::runtime_error, "getNodeAllocationSize threw an exception "
+           "not a subclass of std::exception.");
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->isStorageOptimized () &&
+         nodeAllocSize != this->getNodeNumEntries (),
+         std::logic_error, "Storage is optimized, but "
+         "this->getNodeAllocationSize() = " << nodeAllocSize
+         << " != this->getNodeNumEntries() = " << this->getNodeNumEntries ()
+         << "." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! this->haveGlobalConstants_ &&
+         (this->globalNumEntries_ != GSTI ||
+          this->globalNumDiags_ != GSTI ||
+          this->globalMaxNumRowEntries_ != GSTI),
+         std::logic_error, "Graph claims not to have global constants, but "
+         "some of the global constants are not marked as invalid." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->haveGlobalConstants_ &&
+         (this->globalNumEntries_ == GSTI ||
+          this->globalNumDiags_ == GSTI ||
+          this->globalMaxNumRowEntries_ == GSTI),
+         std::logic_error, "Graph claims to have global constants, but "
+         "some of them are marked as invalid." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->haveGlobalConstants_ &&
+         (this->globalNumEntries_ < this->getNodeNumEntries () ||
+          this->globalNumDiags_ < this->nodeNumDiags_ ||
+          this->globalMaxNumRowEntries_ < this->nodeMaxNumRowEntries_),
+         std::logic_error, "Graph claims to have global constants, and "
+         "all of the values of the global constants are valid, but "
+         "some of the local constants are greater than "
+         "their corresponding global constants." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->indicesAreAllocated () &&
-         this->getNodeNumRows () > 0 &&
-         this->lclInds2D_.is_null () &&
-         this->gblInds2D_.is_null (),
-         std::logic_error, "Graph has DynamicProfile, indices are allocated, and "
-         "the calling process has nonzero rows, but 2-D column index storage "
-         "(whether local or global) is not present." << suffix);
+         (this->numAllocForAllRows_ != 0 ||
+          this->k_numAllocPerRow_.dimension_0 () != 0),
+         std::logic_error, "The graph claims that its indices are allocated, but "
+         "either numAllocForAllRows_ (= " << this->numAllocForAllRows_ << ") is "
+         "nonzero, or k_numAllocPerRow_ has nonzero dimension.  In other words, "
+         "the graph is supposed to release its \"allocation specifications\" "
+         "when it allocates its indices." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->indicesAreAllocated () &&
-         this->getNodeNumRows () > 0 &&
-         this->k_numRowEntries_.dimension_0 () == 0,
-         std::logic_error, "Graph has DynamicProfile, indices are allocated, and "
-         "the calling process has nonzero rows, but k_numRowEntries_ is not "
-         "present." << suffix);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->k_lclInds1D_.dimension_0 () != 0 ||
-         this->k_gblInds1D_.dimension_0 () != 0,
-         std::logic_error, "Graph has DynamicProfile, but "
-         "1-D allocations are present." << suffix);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->k_rowPtrs_.dimension_0 () != 0,
-         std::logic_error, "Graph has DynamicProfile, but "
-         "row offsets are present." << suffix);
-    }
-    else if (this->pftype_ == StaticProfile) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->indicesAreAllocated () &&
-         nodeAllocSize > 0 &&
-         this->k_lclInds1D_.dimension_0 () == 0 &&
-         this->k_gblInds1D_.dimension_0 () == 0,
-         std::logic_error, "Graph has StaticProfile and is allocated "
-         "nonnontrivally, but 1-D allocations are not present." << suffix);
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->lclInds2D_ != Teuchos::null || this->gblInds2D_ != Teuchos::null,
-         std::logic_error, "Graph has StaticProfile, but 2-D allocations are "
-         "present." << suffix);
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (! this->indicesAreAllocated () &&
-      ((this->k_rowPtrs_.dimension_0 () != 0 ||
-        this->k_numRowEntries_.dimension_0 () != 0) ||
-       this->k_lclInds1D_.dimension_0 () != 0 ||
-       this->lclInds2D_ != Teuchos::null ||
-       this->k_gblInds1D_.dimension_0 () != 0 ||
-       this->gblInds2D_ != Teuchos::null),
-       std::logic_error, "If indices are not allocated, "
-       "then none of the buffers should be." << suffix);
-    // indices may be local or global only if they are allocated
-    // (numAllocated is redundant; could simply be indicesAreLocal_ ||
-    // indicesAreGlobal_)
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      ((this->indicesAreLocal_ || this->indicesAreGlobal_) &&
-       ! this->indicesAreAllocated_,
-       std::logic_error, "Indices may be local or global only if they are "
-       "allocated." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->indicesAreLocal_ && this->indicesAreGlobal_,
-       std::logic_error, "Indices may not be both local and global." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->indicesAreLocal_ &&
-       (this->k_gblInds1D_.dimension_0 () != 0 || ! this->gblInds2D_.is_null ()),
-       std::logic_error, "Indices are local, but either "
-       "k_gblInds1D_.dimension_0() (= "
-       << this->k_gblInds1D_.dimension_0 () << ") != 0, or "
-       "gblInds2D_ is not null.  In other words, if indices are local, "
-       "then global allocations should not be present." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->indicesAreGlobal_ &&
-       (this->k_lclInds1D_.dimension_0 () != 0 ||
-        ! this->lclInds2D_.is_null ()),
-       std::logic_error, "Indices are global, but either "
-       "k_lclInds1D_.dimension_0() (= "
-       << this->k_lclInds1D_.dimension_0 () << ") != 0, or "
-       "lclInds2D_ is not null.  In other words, if indices are global, "
-       "then local allocations should not be present." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->indicesAreLocal_ &&
-       nodeAllocSize > 0 &&
-       this->k_lclInds1D_.dimension_0 () == 0 &&
-       this->getNodeNumRows () > 0 &&
-       this->lclInds2D_.is_null (),
-       std::logic_error, "Indices are local, getNodeAllocationSize() = "
-       << nodeAllocSize << " > 0, k_lclInds1D_.dimension_0() = 0, "
-       "getNodeNumRows() = " << this->getNodeNumRows () << " > 0, and "
-       "lclInds2D_ is null." << suffix);
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->indicesAreGlobal_ &&
-       nodeAllocSize > 0 &&
-       this->k_gblInds1D_.dimension_0 () == 0 &&
-       this->getNodeNumRows () > 0 &&
-       this->gblInds2D_.is_null (),
-       std::logic_error, "Indices are global, getNodeAllocationSize() = "
-       << nodeAllocSize << " > 0, k_gblInds1D_.dimension_0() = 0, "
-       "getNodeNumRows() = " << this->getNodeNumRows () << " > 0, and "
-       "gblInds2D_ is null." << suffix);
-    // check the actual allocations
-    if (this->indicesAreAllocated () &&
-        this->pftype_ == StaticProfile &&
-        this->k_rowPtrs_.dimension_0 () != 0) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_t> (this->k_rowPtrs_.dimension_0 ()) !=
-         this->getNodeNumRows () + 1,
-         std::logic_error, "Graph is StaticProfile, indices are allocated, and "
-         "k_rowPtrs_ has nonzero length, but k_rowPtrs_.dimension_0() = "
-         << this->k_rowPtrs_.dimension_0 () << " != getNodeNumRows()+1 = "
-         << (this->getNodeNumRows () + 1) << "." << suffix);
-      const size_t actualNumAllocated =
-        Details::getEntryOnHost (this->k_rowPtrs_, this->getNodeNumRows ());
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (this->isLocallyIndexed () &&
-         static_cast<size_t> (this->k_lclInds1D_.dimension_0 ()) != actualNumAllocated,
-         std::logic_error, "Graph is StaticProfile and locally indexed, "
-         "indices are allocated, and k_rowPtrs_ has nonzero length, but "
-         "k_lclInds1D_.dimension_0() = " << this->k_lclInds1D_.dimension_0 ()
-         << " != actualNumAllocated = " << actualNumAllocated << suffix);
+        (this->isStorageOptimized () && this->pftype_ != StaticProfile,
+         std::logic_error,
+         "Storage is optimized, but graph is not StaticProfile." << suffix);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->isGloballyIndexed () &&
-         static_cast<size_t> (this->k_gblInds1D_.dimension_0 ()) != actualNumAllocated,
-         std::logic_error, "Graph is StaticProfile and globally indexed, "
-         "indices are allocated, and k_rowPtrs_ has nonzero length, but "
-         "k_gblInds1D_.dimension_0() = " << this->k_gblInds1D_.dimension_0 ()
-         << " != actualNumAllocated = " << actualNumAllocated << suffix);
+         this->k_rowPtrs_.dimension_0 () != 0 &&
+         (static_cast<size_t> (this->k_rowPtrs_.dimension_0 ()) != static_cast<size_t> (lclNumRows + 1) ||
+          this->k_rowPtrs_(lclNumRows) != static_cast<size_t> (this->k_gblInds1D_.dimension_0 ())),
+         std::logic_error, "If k_rowPtrs_ has nonzero size and "
+         "the graph is globally indexed, then "
+         "k_rowPtrs_ must have N+1 rows, and "
+         "k_rowPtrs_(N) must equal k_gblInds1D_.dimension_0()." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->isLocallyIndexed () &&
+         this->k_rowPtrs_.dimension_0 () != 0 &&
+         (static_cast<size_t> (k_rowPtrs_.dimension_0 ()) != static_cast<size_t> (lclNumRows + 1) ||
+          this->k_rowPtrs_(lclNumRows) != static_cast<size_t> (this->k_lclInds1D_.dimension_0 ())),
+         std::logic_error, "If k_rowPtrs_ has nonzero size and "
+         "the graph is locally indexed, then "
+         "k_rowPtrs_ must have N+1 rows, and "
+         "k_rowPtrs_(N) must equal k_lclInds1D_.dimension_0()." << suffix);
+
+      if (this->pftype_ == DynamicProfile) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (this->indicesAreAllocated () &&
+           this->getNodeNumRows () > 0 &&
+           this->lclInds2D_.is_null () &&
+           this->gblInds2D_.is_null (),
+           std::logic_error, "Graph has DynamicProfile, indices are allocated, and "
+           "the calling process has nonzero rows, but 2-D column index storage "
+           "(whether local or global) is not present." << suffix);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (this->indicesAreAllocated () &&
+           this->getNodeNumRows () > 0 &&
+           this->k_numRowEntries_.dimension_0 () == 0,
+           std::logic_error, "Graph has DynamicProfile, indices are allocated, and "
+           "the calling process has nonzero rows, but k_numRowEntries_ is not "
+           "present." << suffix);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (this->k_lclInds1D_.dimension_0 () != 0 ||
+           this->k_gblInds1D_.dimension_0 () != 0,
+           std::logic_error, "Graph has DynamicProfile, but "
+           "1-D allocations are present." << suffix);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (this->k_rowPtrs_.dimension_0 () != 0,
+           std::logic_error, "Graph has DynamicProfile, but "
+           "row offsets are present." << suffix);
+      }
+      else if (this->pftype_ == StaticProfile) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (this->indicesAreAllocated () &&
+           nodeAllocSize > 0 &&
+           this->k_lclInds1D_.dimension_0 () == 0 &&
+           this->k_gblInds1D_.dimension_0 () == 0,
+           std::logic_error, "Graph has StaticProfile and is allocated "
+           "nonnontrivally, but 1-D allocations are not present." << suffix);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (this->lclInds2D_ != Teuchos::null || this->gblInds2D_ != Teuchos::null,
+           std::logic_error, "Graph has StaticProfile, but 2-D allocations are "
+           "present." << suffix);
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (! this->indicesAreAllocated () &&
+         ((this->k_rowPtrs_.dimension_0 () != 0 ||
+           this->k_numRowEntries_.dimension_0 () != 0) ||
+          this->k_lclInds1D_.dimension_0 () != 0 ||
+          this->lclInds2D_ != Teuchos::null ||
+          this->k_gblInds1D_.dimension_0 () != 0 ||
+          this->gblInds2D_ != Teuchos::null),
+         std::logic_error, "If indices are not allocated, "
+         "then none of the buffers should be." << suffix);
+      // indices may be local or global only if they are allocated
+      // (numAllocated is redundant; could simply be indicesAreLocal_ ||
+      // indicesAreGlobal_)
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        ((this->indicesAreLocal_ || this->indicesAreGlobal_) &&
+         ! this->indicesAreAllocated_,
+         std::logic_error, "Indices may be local or global only if they are "
+         "allocated." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->indicesAreLocal_ && this->indicesAreGlobal_,
+         std::logic_error, "Indices may not be both local and global." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->indicesAreLocal_ &&
+         (this->k_gblInds1D_.dimension_0 () != 0 || ! this->gblInds2D_.is_null ()),
+         std::logic_error, "Indices are local, but either "
+         "k_gblInds1D_.dimension_0() (= "
+         << this->k_gblInds1D_.dimension_0 () << ") != 0, or "
+         "gblInds2D_ is not null.  In other words, if indices are local, "
+         "then global allocations should not be present." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->indicesAreGlobal_ &&
+         (this->k_lclInds1D_.dimension_0 () != 0 ||
+          ! this->lclInds2D_.is_null ()),
+         std::logic_error, "Indices are global, but either "
+         "k_lclInds1D_.dimension_0() (= "
+         << this->k_lclInds1D_.dimension_0 () << ") != 0, or "
+         "lclInds2D_ is not null.  In other words, if indices are global, "
+         "then local allocations should not be present." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->indicesAreLocal_ &&
+         nodeAllocSize > 0 &&
+         this->k_lclInds1D_.dimension_0 () == 0 &&
+         this->getNodeNumRows () > 0 &&
+         this->lclInds2D_.is_null (),
+         std::logic_error, "Indices are local, getNodeAllocationSize() = "
+         << nodeAllocSize << " > 0, k_lclInds1D_.dimension_0() = 0, "
+         "getNodeNumRows() = " << this->getNodeNumRows () << " > 0, and "
+         "lclInds2D_ is null." << suffix);
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->indicesAreGlobal_ &&
+         nodeAllocSize > 0 &&
+         this->k_gblInds1D_.dimension_0 () == 0 &&
+         this->getNodeNumRows () > 0 &&
+         this->gblInds2D_.is_null (),
+         std::logic_error, "Indices are global, getNodeAllocationSize() = "
+         << nodeAllocSize << " > 0, k_gblInds1D_.dimension_0() = 0, "
+         "getNodeNumRows() = " << this->getNodeNumRows () << " > 0, and "
+         "gblInds2D_ is null." << suffix);
+      // check the actual allocations
+      if (this->indicesAreAllocated () &&
+          this->pftype_ == StaticProfile &&
+          this->k_rowPtrs_.dimension_0 () != 0) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (static_cast<size_t> (this->k_rowPtrs_.dimension_0 ()) !=
+           this->getNodeNumRows () + 1,
+           std::logic_error, "Graph is StaticProfile, indices are allocated, and "
+           "k_rowPtrs_ has nonzero length, but k_rowPtrs_.dimension_0() = "
+           << this->k_rowPtrs_.dimension_0 () << " != getNodeNumRows()+1 = "
+           << (this->getNodeNumRows () + 1) << "." << suffix);
+        const size_t actualNumAllocated =
+          Details::getEntryOnHost (this->k_rowPtrs_, this->getNodeNumRows ());
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (this->isLocallyIndexed () &&
+           static_cast<size_t> (this->k_lclInds1D_.dimension_0 ()) != actualNumAllocated,
+           std::logic_error, "Graph is StaticProfile and locally indexed, "
+           "indices are allocated, and k_rowPtrs_ has nonzero length, but "
+           "k_lclInds1D_.dimension_0() = " << this->k_lclInds1D_.dimension_0 ()
+           << " != actualNumAllocated = " << actualNumAllocated << suffix);
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (this->isGloballyIndexed () &&
+           static_cast<size_t> (this->k_gblInds1D_.dimension_0 ()) != actualNumAllocated,
+           std::logic_error, "Graph is StaticProfile and globally indexed, "
+           "indices are allocated, and k_rowPtrs_ has nonzero length, but "
+           "k_gblInds1D_.dimension_0() = " << this->k_gblInds1D_.dimension_0 ()
+           << " != actualNumAllocated = " << actualNumAllocated << suffix);
+      }
     }
-#endif // HAVE_TPETRA_DEBUG
   }
 
 
@@ -4524,29 +4532,30 @@ namespace Tpetra {
       newDomainMap.is_null (), std::invalid_argument,
       prefix << "The new domain Map must be nonnull.");
 
-#ifdef HAVE_TPETRA_DEBUG
-    if (newImporter.is_null ()) {
-      // It's not a good idea to put expensive operations in a macro
-      // clause, even if they are side effect - free, because macros
-      // don't promise that they won't evaluate their arguments more
-      // than once.  It's polite for them to do so, but not required.
-      const bool colSameAsDom = colMap_->isSameAs (*newDomainMap);
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        colSameAsDom, std::invalid_argument, "If the new Import is null, "
-        "then the new domain Map must be the same as the current column Map.");
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) {
+      if (newImporter.is_null ()) {
+        // It's not a good idea to put expensive operations in a macro
+        // clause, even if they are side effect - free, because macros
+        // don't promise that they won't evaluate their arguments more
+        // than once.  It's polite for them to do so, but not required.
+        const bool colSameAsDom = colMap_->isSameAs (*newDomainMap);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (colSameAsDom, std::invalid_argument, "If the new Import is null, "
+           "then the new domain Map must be the same as the current column Map.");
+      }
+      else {
+        const bool colSameAsTgt =
+          colMap_->isSameAs (* (newImporter->getTargetMap ()));
+        const bool newDomSameAsSrc =
+          newDomainMap->isSameAs (* (newImporter->getSourceMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! colSameAsTgt || ! newDomSameAsSrc, std::invalid_argument, "If the "
+           "new Import is nonnull, then the current column Map must be the same "
+           "as the new Import's target Map, and the new domain Map must be the "
+           "same as the new Import's source Map.");
+      }
     }
-    else {
-      const bool colSameAsTgt =
-        colMap_->isSameAs (* (newImporter->getTargetMap ()));
-      const bool newDomSameAsSrc =
-        newDomainMap->isSameAs (* (newImporter->getSourceMap ()));
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        ! colSameAsTgt || ! newDomSameAsSrc, std::invalid_argument, "If the "
-        "new Import is nonnull, then the current column Map must be the same "
-        "as the new Import's target Map, and the new domain Map must be the "
-        "same as the new Import's source Map.");
-    }
-#endif // HAVE_TPETRA_DEBUG
 
     domainMap_ = newDomainMap;
     importer_ = Teuchos::rcp_const_cast<import_type> (newImporter);
@@ -5004,10 +5013,8 @@ namespace Tpetra {
   makeColMap (Teuchos::Array<int>& remotePIDs)
   {
     using ::Tpetra::Details::ProfilingRegion;
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "makeColMap: ";
-#endif // HAVE_TPETRA_DEBUG
     ProfilingRegion regionSortAndMerge ("Tpetra::CrsGraph::makeColMap");
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
 
     // this->colMap_ should be null at this point, but we accept the
     // future possibility that it might not be (esp. if we decide
@@ -5023,37 +5030,38 @@ namespace Tpetra {
     // Details::makeColMap does NOT promise that all processes will
     // notice that error.  This is the caller's responsibility.  For
     // now, we only propagate (to all processes) and report the error
-    // in a debug build.  In the future, we need to add the
-    // local/global error handling scheme used in BlockCrsMatrix to
-    // this class.
-#ifdef HAVE_TPETRA_DEBUG
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
+    // in debug mode.  In the future, we need to add the local/global
+    // error handling scheme used in BlockCrsMatrix to this class.
+    if (debug) {
+      using Teuchos::outArg;
+      using Teuchos::REDUCE_MIN;
+      using Teuchos::reduceAll;
+      const char tfecfFuncName[] = "makeColMap: ";
 
-    std::ostringstream errStrm;
-    const int lclErrCode =
-      Details::makeColMap (colMap, remotePIDs, this->getDomainMap (),
-                           *this, sortEachProcsGids, &errStrm);
-    auto comm = this->getComm ();
-    if (! comm.is_null ()) {
-      const int lclSuccess = (lclErrCode == 0) ? 1 : 0;
-      int gblSuccess = 0; // output argument
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
-                           outArg (gblSuccess));
-      if (gblSuccess != 1) {
-        std::ostringstream os;
-        Tpetra::Details::gathervPrint (os, errStrm.str (), *comm);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (true, std::runtime_error,
-           "makeColMap reports an error on at least one process."
-           << std::endl << os.str ());
+      std::ostringstream errStrm;
+      const int lclErrCode =
+        Details::makeColMap (colMap, remotePIDs, this->getDomainMap (),
+                             *this, sortEachProcsGids, &errStrm);
+      auto comm = this->getComm ();
+      if (! comm.is_null ()) {
+        const int lclSuccess = (lclErrCode == 0) ? 1 : 0;
+        int gblSuccess = 0; // output argument
+        reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess,
+                             outArg (gblSuccess));
+        if (gblSuccess != 1) {
+          std::ostringstream os;
+          Tpetra::Details::gathervPrint (os, errStrm.str (), *comm);
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (true, std::runtime_error, "An error happened on at least one "
+             "(MPI) process in the CrsGraph's communicator.  Here are all "
+             "processes' error messages:" << std::endl << os.str ());
+        }
       }
     }
-#else // NOT HAVE_TPETRA_DEBUG
-    (void) Details::makeColMap (colMap, remotePIDs, this->getDomainMap (),
-                                *this, sortEachProcsGids, NULL);
-#endif // HAVE_TPETRA_DEBUG
+    else {
+      (void) Details::makeColMap (colMap, remotePIDs, this->getDomainMap (),
+                                  *this, sortEachProcsGids, NULL);
+    }
     // See above.  We want to admit the possibility of makeColMap
     // actually revising an existing column Map, even though that
     // doesn't currently (as of 10 May 2017) happen.

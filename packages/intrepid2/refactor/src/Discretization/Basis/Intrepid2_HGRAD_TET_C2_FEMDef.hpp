@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TET_C2_FEMDef.hpp
-    \brief  Definition file for the default H(grad)-compatible FEM basis of degree 2 on Tetrahedron cell
+/** \file   Intrepid2_HGRAD_TET_C2_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree 2 for H(grad) functions on TET cells
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */

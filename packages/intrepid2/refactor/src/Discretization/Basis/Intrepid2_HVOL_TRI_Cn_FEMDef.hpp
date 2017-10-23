@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HVOL_TRI_Cn_FEM_Def.hpp
-    \brief  Definition file for FEM basis functions of degree n for H(grad) functions on TRI.
+/** \file   Intrepid2_HVOL_TRI_Cn_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree n for H(vol) functions on TRI.
     \author Created by M. Perego, based on the Intrepid2::HGRAD_TRI_Cn_FEM class
 */
 

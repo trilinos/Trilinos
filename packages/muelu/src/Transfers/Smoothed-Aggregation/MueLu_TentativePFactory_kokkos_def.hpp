@@ -741,7 +741,7 @@ namespace MueLu {
               LO rowStart = rows(i);
 
               size_t lnnz = 0;
-              for (typename decltype(cols)::value_type j = rowsAux(i); j < rowsAux(i+1); j++)
+              for (auto j = rowsAux(i); j < rowsAux(i+1); j++)
                 if (colsAux(j) != INVALID) {
                   cols(rowStart+lnnz) = colsAux(j);
                   vals(rowStart+lnnz) = valsAux(j);

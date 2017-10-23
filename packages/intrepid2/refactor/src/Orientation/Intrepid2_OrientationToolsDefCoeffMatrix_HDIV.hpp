@@ -41,16 +41,18 @@
 // @HEADER
 
 
-/** \file   Intrepid_OrientationToolsDef.hpp
-    \brief  Creation of orientation matrix A of a face or edge for HGRAD elements
-    \li     \sum_k A_ik \psi_k(F_s (\eta_o (\xi_j))) \cdot (n_s det(J_\eta)) = \phi_i (\xi_j), where
-    \li     \psi_k are the basis functions of the reference cell,
-    \li     \phi_i are the basis function of the subcell,
-    \li     n_j is the side normal of subcell s (s == subcellId)
-    \li     F_s is the Jacobian of the map from the reference subcell to the subcell s of the reference cell (s == subcellId),
-    \li     \eta_o is the orientation map o associated to the subcell s (o == subcellOrt),
-    \li     J_{\eta} is the Jacobian of the map \eta_o,
-    \li     \xi_j are dof points of the subcell basis so that \phi_i (\xi_j) \dot t_j = \delta_ij
+/** \file  Intrepid2_OrientationToolsDefCoeffMatrix_HDIV.hpp
+    \brief  Creation of orientation matrix A of a face or edge for HDIV elements
+
+    \li     \f$\sum_k A_ik \psi_k(F_s (\eta_o (\xi_j))) \cdot (n_s det(J_\eta)) = \phi_i (\xi_j)\f$, where
+    \li     \f$\psi_k\f$ are the basis functions of the reference cell,
+    \li     \f$\phi_i\f$ are the basis function of the subcell,
+    \li     \f$n_j\f$ is the side normal of subcell s (s == subcellId)
+    \li     \f$F_s\f$ is the Jacobian of the map from the reference subcell to the subcell s of the reference cell (s == subcellId),
+    \li     \f$\eta_o\f$ is the orientation map o associated to the subcell s (o == subcellOrt),
+    \li     \f$J_{\eta}\f$ is the Jacobian of the map \f$\eta_o\f$,
+    \li     \f$\xi_j\f$ are dof points of the subcell basis so that \f$\phi_i (\xi_j) \dot t_j = \delta_ij\f$
+
     \author Created by Kyungjoo Kim
 */
 #ifndef __INTREPID2_ORIENTATIONTOOLS_DEF_COEFF_MATRIX_HDIV_HPP__
@@ -90,9 +92,9 @@ namespace Intrepid2 {
 
       typedef Kokkos::DynRankView<value_type,host_space_type> DynRankViewHostType;
 
-      ///
-      /// Topology
-      ///
+      //
+      // Topology
+      //
 
       // populate points on a subcell and map to subcell
       const shards::CellTopology cellTopo = cellBasis.getBaseCellTopology();
@@ -124,9 +126,9 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid::OrientationTools::getCoeffMatrix_HDIV): " \
                                     "cellBasis must have quad, triangle, hexhedron or tetrahedron topology.");
 
-      ///
-      /// Function space
-      ///
+      //
+      // Function space
+      //
       {
         const std::string cellBasisName(cellBasis.getName());
         INTREPID2_TEST_FOR_EXCEPTION( cellBasisName.find("HDIV") == std::string::npos,
@@ -171,9 +173,9 @@ namespace Intrepid2 {
         }
       }
 
-      ///
-      /// Collocation points
-      ///
+      //
+      // Collocation points
+      //
       const ordinal_type numCellBasis = cellBasis.getCardinality();
       const ordinal_type numSubcellBasis = subcellBasis.getCardinality();
 
@@ -207,9 +209,9 @@ namespace Intrepid2 {
                                                         subcellDim,
                                                         subcellId,
                                                         cellTopo);
-      ///
-      /// Basis evaluation on the collocation points
-      ///
+      //
+      // Basis evaluation on the collocation points
+      //
       // evaluate values on the reference cell
       DynRankViewHostType refValues("refValues", numCellBasis, ndofSubcell, cellDim);
       cellBasis.getValues(refValues, refPtsCell, OPERATOR_VALUE);
@@ -220,9 +222,9 @@ namespace Intrepid2 {
       auto ortJacobianDet = (subcellDim == 1) ? ortJacobian(0,0) :
                                  ortJacobian(0,0)*ortJacobian(1,1)-ortJacobian(1,0)*ortJacobian(0,1);
 
-      ///
-      /// Restrict vector valued basis functions on the subcell dimensions
-      ///
+      //
+      // Restrict vector valued basis functions on the subcell dimensions
+      //
       DynRankViewHostType sideNormal("sideNormal", cellDim);
       CellTools<host_space_type>::getReferenceSideNormal(sideNormal, subcellId, cellTopo);
 

@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_CellTools_Serial.hpp
-    \brief  Header file for the Impl::Intrepid2::CellTools::Serial class.
+    \brief  Definition file for the Intrepid2::Impl::CellTools class.
     \author Kyungjoo Kim
 */
 
@@ -58,6 +58,9 @@ namespace Intrepid2 {
 
   namespace Impl {
     
+    /**
+    \brief See Intrepid2::CellTools
+    */
     class CellTools {
     public:
       typedef Kokkos::DynRankView<double,Kokkos::HostSpace> NodeDataHostView;
@@ -292,7 +295,7 @@ namespace Intrepid2 {
 
       inline
       static void
-      setSubcellParametrization(/* */ NodeDataHostView &subcellParam,
+      setSubcellParametrization(      NodeDataHostView &subcellParam,
                                 const ordinal_type subcellDim,
                                 const shards::CellTopology &parentCell ) {
         // get subcellParametrization dimensions: (sc, pcd, coeff)

@@ -99,7 +99,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // Read matrices in from files
     std::ifstream inputfile;
     int nnz_grad=1080, nnz_nodes=4096, nnz_edges=13440;
-    int nedges=540, nnodes=216, row, col;
+    int nedges=540, nnodes=216, row, tmp;
+    GO  col;
     double entry, x, y, z;
     // maps for nodal and edge matrices
     RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
@@ -108,12 +109,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<Matrix> S_Matrix = MatrixFactory::Build(edge_map,100);
     inputfile.open("S.txt");
     for(int i=0; i<nnz_edges; i++) {
-      inputfile >> row >> col >> entry ;
+      inputfile >> row >> tmp >> entry ;
       row=row-1;
-      col=col-1;
+      col=static_cast<GO>(tmp)-1;
       if(edge_map->isNodeGlobalElement(row)) {
         S_Matrix->insertGlobalValues(row,
-            Teuchos::ArrayView<LO>(&col,1),
+            Teuchos::ArrayView<GO>(&col,1),
             Teuchos::ArrayView<SC>(&entry,1));
       }
     }
@@ -124,12 +125,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<Matrix> M1_Matrix = MatrixFactory::Build(edge_map,100);
     inputfile.open("M1.txt");
     for(int i=0; i<nnz_edges; i++) {
-      inputfile >> row >> col >> entry ;
+      inputfile >> row >> tmp >> entry ;
       row=row-1;
-      col=col-1;
+      col=static_cast<GO>(tmp)-1;
       if(edge_map->isNodeGlobalElement(row)) {
         M1_Matrix->insertGlobalValues(row,
-            Teuchos::ArrayView<LO>(&col,1),
+            Teuchos::ArrayView<GO>(&col,1),
             Teuchos::ArrayView<SC>(&entry,1));
       }
     }
@@ -140,12 +141,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<Matrix> M0_Matrix = MatrixFactory::Build(node_map,100);
     inputfile.open("M0.txt");
     for(int i=0; i<nnz_nodes; i++) {
-      inputfile >> row >> col >> entry ;
+      inputfile >> row >> tmp >> entry ;
       row=row-1;
-      col=col-1;
+      col=static_cast<GO>(tmp)-1;
       if(node_map->isNodeGlobalElement(row)) {
         M0_Matrix->insertGlobalValues(row,
-            Teuchos::ArrayView<LO>(&col,1),
+            Teuchos::ArrayView<GO>(&col,1),
             Teuchos::ArrayView<SC>(&entry,1));
       }
     }
@@ -155,12 +156,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<Matrix> D0_Matrix = MatrixFactory::Build(edge_map,2);
     inputfile.open("D0.txt");
     for(int i=0; i<nnz_grad; i++) {
-      inputfile >> row >> col >> entry ;
+      inputfile >> row >> tmp >> entry ;
       row=row-1;
-      col=col-1;
+      col=static_cast<GO>(tmp)-1;
       if(edge_map->isNodeGlobalElement(row)) {
         D0_Matrix->insertGlobalValues(row,
-            Teuchos::ArrayView<LO>(&col,1),
+            Teuchos::ArrayView<GO>(&col,1),
             Teuchos::ArrayView<SC>(&entry,1));
       }
     }
@@ -191,12 +192,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<Matrix> M0inv_Matrix = MatrixFactory::Build(node_map,1);
     for(int i=0; i<nnodes; i++) {
       row = i;
-      col = i;
+      col = static_cast<GO>(i);
       if(node_map->isNodeGlobalElement(i)) {
         LocalOrdinal lclidx = node_map->getLocalElement(i);
         entry = invdiags[lclidx];
         M0inv_Matrix -> insertGlobalValues(row,
-            Teuchos::ArrayView<LO>(&col,1),
+            Teuchos::ArrayView<GO>(&col,1),
             Teuchos::ArrayView<SC>(&entry,1));
       }
     }

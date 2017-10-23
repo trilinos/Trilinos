@@ -41,8 +41,8 @@
 // @HEADER
 
 
-/** \file   Intrepid_OrientationToolsDef.hpp
-    \brief  Definition file for the Intrepid2::OrientationTools class.
+/** \file   Intrepid2_OrientationToolsDefModifyPoints.hpp
+    \brief  Definition file for functions that modify points due to orientation in the Intrepid2::Impl::OrientationTools class.
     \author Created by Kyungjoo Kim
 */
 #ifndef __INTREPID2_ORIENTATIONTOOLS_DEF_MODIFY_POINTS_HPP__

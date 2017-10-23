@@ -40,17 +40,21 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_LinearObjFactory_hpp__
-#define __Panzer_LinearObjFactory_hpp__
+#ifndef   __Panzer_LinearObjFactory_hpp__
+#define   __Panzer_LinearObjFactory_hpp__
 
-#include "Phalanx_TemplateManager.hpp"
-#include "Phalanx_Evaluator.hpp"
-#include "Phalanx_Evaluator_Derived.hpp"
-
+// Panzer
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_LinearObjContainer.hpp"
 #include "Panzer_ReadOnlyVector_GlobalEvaluationData.hpp"
+#include "Panzer_WriteVector_GlobalEvaluationData.hpp"
 
+// Phalanx
+#include "Phalanx_Evaluator.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_TemplateManager.hpp"
+
+// Teuchos
 #include "Teuchos_DefaultMpiComm.hpp"
 
 // #include "Sacado_mpl_placeholders.hpp"
@@ -166,7 +170,13 @@ public:
      * This is used primarily for gather operations and hides the allocation and usage
      * of the ghosted vector from the user.
      */
-   virtual Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> buildDomainContainer() const = 0;
+   virtual Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> buildReadOnlyDomainContainer() const = 0;
+
+   /** Build a GlobalEvaluationDataContainer that handles all domain communication.
+     * This is used primarily for gather operations and hides the allocation and usage
+     * of the ghosted vector from the user.
+     */
+   virtual Teuchos::RCP<WriteVector_GlobalEvaluationData> buildWriteDomainContainer() const = 0;
 
    virtual void globalToGhostContainer(const LinearObjContainer & container,
                                        LinearObjContainer & ghostContainer,int) const = 0;
@@ -386,4 +396,4 @@ buildGatherScatterEvaluators(const BuilderT & builder)
 
 }
 
-#endif
+#endif // __Panzer_LinearObjFactory_hpp__

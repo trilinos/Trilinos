@@ -235,7 +235,6 @@ TEUCHOS_UNIT_TEST( Parser, xml_reader ) {
   test_xml_reader("<P name=\"foo&quot;&#72;bar\"/>");
 }
 
-// TODO: use this function to test most languages
 static void test_reader(ReaderTablesPtr tables, std::string const& str, std::string const& name) {
   Reader reader(tables);
   any result;
@@ -278,6 +277,8 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
       "    }\n"
       "  g: .125\n"
       "  i: -6.022e-23\n"
+      "  mesh path: ../meshes/cube.exo\n"
+      "  empty parameter list:\n"
       "...\n"
       , "1");
   test_reader(tables,
@@ -398,8 +399,86 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
       "  sub-entry2: green\n"
       "...\n",
       "21");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "  Particle Periodic:\n"
+      "    X: \"-1.0, 1.0\"\n"
+      "  emotions: happy_sad, indifferent\n"
+      "...\n",
+      "Trilinos issue #1801");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "  Particle Periodic:\n"
+      "    X: \"-1.0, 1.0\"\n"
+      "  emotions: happy_sad, indifferent\n"
+      "...\n",
+      "Trilinos issue #1801");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "\tMesh:\n"
+      "\t\tInline:\n"
+      "\t\t\tType: Quad\n"
+      "\t\t\tElements: [     10,     10 ]\n"
+      "...\n",
+      "Trilinos issue #1801 part 2");
+  test_reader(tables,
+      "# Hi\n"
+      "My Awesome Problem: #other\n",
+      "Trilinos issue #1807");
 }
 
+TEUCHOS_UNIT_TEST( Parser, yaml_reader_Match1 ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  any result;
+  reader.read_string(result,
+      "%YAML 1.1\n"
+      "---\n"
+      "Muelu:\n"
+      "  'coarse: max size': 1000\n"
+      "  'multigrid algorithm': unsmoothed\n"
+      "  'smoother: type': RELAXATION\n"
+      "  'smoother: params':\n"
+      "    'relaxation: type': Jacobi\n"
+      "    'relaxation: sweeps': 5\n"
+      "    'relaxation: damping factor': 0.9\n"
+      "  'aggregation: type': uncoupled\n"
+      "  'aggregation: drop tol': 1e-7\n"
+      "  'aggregation: export visualization data': true\n"
+      "...\n",
+      "Match1.yaml (inline)");
+}
+
+TEUCHOS_UNIT_TEST( Parser, yaml_reader_Arrays ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  any result;
+  reader.read_string(result,
+      "%YAML 1.1\n"
+      "---\n"
+      "Muelu:\n"
+      "  'coarse: max size': 1000\n"
+      "  'multigrid algorithm': unsmoothed\n"
+      "  'smoother: type': RELAXATION\n"
+      "  'smoother: params':\n"
+      "    'relaxation: type': Jacobi\n"
+      "    'relaxation: sweeps': 5\n"
+      "    'relaxation: damping factor': 0.9\n"
+      "    intArray: !!seq [2, 3, 5, 7, 11]\n"
+      "    doubleArray: !!seq [2.718, 3.14159, 1.618, 1.23456789, 42.1337]\n"
+      "  'aggregation: type': uncoupled\n"
+      "  'aggregation: drop tol': 1e-7\n"
+      "  'aggregation: export visualization data': true\n"
+      "...\n",
+      "Match1.yaml (inline)");
+}
+
+TEUCHOS_UNIT_TEST( Parser, yaml_plasma ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  any result;
+  reader.read_file(result, "plasma_oscillation_rtc.xml.yaml");
+}
 
 TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {
   LanguagePtr lang = MathExpr::ask_language();

@@ -57,6 +57,7 @@
 #include "Panzer_GlobalEvaluationData.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 // Teuchos
 #include "Teuchos_Assert.hpp"
@@ -168,9 +169,9 @@ preEvaluate(
   using Teuchos::rcp_dynamic_cast;
   using EVROGED = EpetraVector_ReadOnly_GlobalEvaluationData;
   using GED     = GlobalEvaluationData;
-  if (d.gedc.containsDataObject(globalDataKey_))
+  if (d.gedc->containsDataObject(globalDataKey_))
   {
-    RCP<GED> ged = d.gedc.getDataObject(globalDataKey_);
+    RCP<GED> ged = d.gedc->getDataObject(globalDataKey_);
     dxdpEvRoGed_ = rcp_dynamic_cast<EVROGED>(ged, true);
   }
 } // end of preEvaluate()
@@ -202,7 +203,7 @@ evaluateFields(
     return;
 
   // For convenience, pull out some objects from the workset.
-  vector<int> LIDs;
+  Kokkos::View<const int*, PHX::Device> LIDs;
   string blockId(this->wda(workset).block_id);
   const vector<size_t>& localCellIds = this->wda(workset).cell_local_ids;
   int numCells(localCellIds.size()), numFields(gatherFields_.size());

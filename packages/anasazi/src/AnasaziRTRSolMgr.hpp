@@ -63,10 +63,11 @@
 #include "AnasaziStatusTestWithOrdering.hpp"
 #include "AnasaziStatusTestCombo.hpp"
 #include "AnasaziStatusTestOutput.hpp"
-#include "AnasaziBasicOutputManager.hpp"
+#include "AnasaziOutputManager.hpp"
+#include "AnasaziOutputStreamTraits.hpp"
 
-#include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_FancyOStream.hpp>
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 /*! \class Anasazi::RTRSolMgr
   \brief The Anasazi::RTRSolMgr provides a simple solver
@@ -101,10 +102,13 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - Solver parameters
    *      - \c "Skinny Solver" - a \c bool specifying whether a non-caching ("skinny") solver implementation is used. Determines whether the underlying solver is IRTR or SIRTR.
    *      - \c "Which" - a \c string specifying the desired eigenvalues: SR or LR, i.e., smallest or largest algebraic eigenvalues.
-   *      - \c "Block Size" - a \c int specifying the block size to be used by the underlying RTR solver. Default: problem->getNEV()
+   *      - \c "Block Size" - an \c int specifying the block size to be used by the underlying RTR solver. Default: problem->getNEV()
    *      - \c "Verbosity" - a sum of MsgType specifying the verbosity. Default: ::Errors
+   *      - \c "Output Stream" - a reference-counted pointer to the formatted output stream where all
+   *                             solver output is sent.  Default: Teuchos::getFancyOStream ( Teuchos::rcpFromRef (std::cout) )
+   *      - \c "Output Processor" - an \c int specifying the MPI processor that will print solver/timer details.  Default: 0
    *   - Convergence parameters
-   *      - \c "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 100
+   *      - \c "Maximum Iterations" - an \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 100
    *      - \c "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
    *      - \c "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
    *      - \c "Convergence Norm" - a \c string specifying the norm for convergence testing: "2" or "M"
@@ -167,10 +171,11 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
   enum ResType convNorm_;
   int numIters_;
   int numICGS_;
+  int blkSize_;
 
   Teuchos::RCP<Teuchos::Time> _timerSolve;
-  Teuchos::RCP<BasicOutputManager<ScalarType> > printer_;
-  Teuchos::ParameterList pl_;
+  Teuchos::RCP<OutputManager<ScalarType> > printer_;
+  Teuchos::ParameterList& pl_;
 };
 
 
@@ -227,49 +232,23 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
   // number if ICGS iterations
   numICGS_ = pl_.get("Num ICGS",2);
 
-  // output stream
-  std::string fntemplate = "";
-  bool allProcs = false;
-  if (pl_.isParameter("Output on all processors")) {
-    if (Teuchos::isParameterType<bool>(pl_,"Output on all processors")) {
-      allProcs = pl_.get("Output on all processors",allProcs);
-    } else {
-      allProcs = ( Teuchos::getParameter<int>(pl_,"Output on all processors") != 0 );
-    }
-  }
-  fntemplate = pl_.get("Output filename template",fntemplate);
-  int MyPID;
-# ifdef HAVE_MPI
-    // Initialize MPI
-    int mpiStarted = 0;
-    MPI_Initialized(&mpiStarted);
-    if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
-    else MyPID=0;
-# else
-    MyPID = 0;
-# endif
-  if (fntemplate != "") {
-    std::ostringstream MyPIDstr;
-    MyPIDstr << MyPID;
-    // replace %d in fntemplate with MyPID
-    int pos, start=0;
-    while ( (pos = fntemplate.find("%d",start)) != -1 ) {
-      fntemplate.replace(pos,2,MyPIDstr.str());
-      start = pos+2;
-    }
-  }
-  Teuchos::RCP<ostream> osp;
-  if (fntemplate != "") {
-    osp = Teuchos::rcp( new std::ofstream(fntemplate.c_str(),std::ios::out | std::ios::app) );
-    if (!*osp) {
-      osp = Teuchos::rcpFromRef(std::cout);
-      std::cout << "Anasazi::RTRSolMgr::constructor(): Could not open file for write: " << fntemplate << std::endl;
-    }
+  // block size
+  blkSize_ = pl_.get("Block Size", problem_->getNEV());
+
+  // Create a formatted output stream to print to.
+  // See if user requests output processor.
+  int osProc = pl.get("Output Processor", 0); 
+  
+  // If not passed in by user, it will be chosen based upon operator type.
+  Teuchos::RCP<Teuchos::FancyOStream> osp;
+
+  if (pl.isParameter("Output Stream")) {
+    osp = Teuchos::getParameter<Teuchos::RCP<Teuchos::FancyOStream> >(pl,"Output Stream");
   }
   else {
-    osp = Teuchos::rcpFromRef(std::cout);
+    osp = OutputStreamTraits<OP>::getOutputStream (*problem_->getOperator(), osProc);
   }
-  // Output manager
+
   int verbosity = Anasazi::Errors;
   if (pl_.isParameter("Verbosity")) {
     if (Teuchos::isParameterType<int>(pl_,"Verbosity")) {
@@ -278,14 +257,8 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
       verbosity = (int)Teuchos::getParameter<Anasazi::MsgType>(pl_,"Verbosity");
     }
   }
-  if (allProcs) {
-    // print on all procs
-    printer_ = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity,osp,MyPID) );
-  }
-  else {
-    // print only on proc 0
-    printer_ = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity,osp,0) );
-  }
+  printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity,osp) );
+
 }
 
 

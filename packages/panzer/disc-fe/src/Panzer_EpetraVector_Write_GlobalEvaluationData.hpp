@@ -152,7 +152,7 @@ namespace panzer
         int mem);
 
       /**
-       *  \brief Clear out the ghosted vector.
+       *  \brief Clear out the ghosted vector.                                   // JMG:  Is this right?                          
        */
       virtual void
       initializeData();

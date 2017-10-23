@@ -121,7 +121,7 @@ namespace panzer
     for (size_t i(0); i < gedBlocks.size(); ++i)
       TEUCHOS_TEST_FOR_EXCEPTION(not gedBlocks[i]->isInitialized(),
         logic_error, "BlockedVector_ReadOnly_GlobalEvaluationData::"          \
-        "initialize:  GED block is " << i << " is not initialized.")
+        "initialize:  GED block " << i << " is not initialized.")
     gedBlocks_    = gedBlocks;
     ghostedSpace_ =
       rcp_dynamic_cast<const DefaultProductVectorSpace<double>>(ghostedSpace);

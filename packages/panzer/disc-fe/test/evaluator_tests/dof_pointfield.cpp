@@ -306,9 +306,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
      TEST_EQUALITY(ft->name(),"TestFieldRefCoord");
   }
 
-  panzer::Traits::SetupData setupData;
-  setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
-  setupData.worksets_->push_back(*workset);
+  panzer::Traits::SD setupData;
+  {
+    auto worksets = rcp(new std::vector<panzer::Workset>);
+    worksets->push_back(*workset);
+    setupData.worksets_ = worksets;
+  }
 
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(8);
@@ -319,15 +322,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   fm->postRegistrationSetup(setupData);
   fm->writeGraphvizFile();
 
-  panzer::Traits::PreEvalData preEvalData;
+  panzer::Traits::PED preEvalData;
 
   fm->preEvaluate<EvalType>(preEvalData);
   fm->evaluateFields<EvalType>(*workset);
   fm->postEvaluate<EvalType>(0);
 
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(refField);
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(dofPointField0);
-  fm->getFieldData<typename EvalType::ScalarT,EvalType>(dofPointField1);
+  fm->getFieldData<EvalType>(refField);
+  fm->getFieldData<EvalType>(dofPointField0);
+  fm->getFieldData<EvalType>(dofPointField1);
 
   // check names to make sure they are still correct
   TEST_EQUALITY(refField.fieldTag().name(),"TestField");

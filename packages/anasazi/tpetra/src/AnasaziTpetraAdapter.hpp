@@ -85,12 +85,15 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Assert.hpp>
 #include <Teuchos_DefaultSerialComm.hpp>
+#include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_FancyOStream.hpp>
 
 #include <AnasaziConfigDefs.hpp>
 #include <AnasaziTypes.hpp>
 #include <AnasaziMultiVecTraits.hpp>
 #include <AnasaziOperatorTraits.hpp>
+#include <AnasaziOutputStreamTraits.hpp>
 
 #ifdef HAVE_ANASAZI_TSQR
 #  include <Tpetra_TsqrAdaptor.hpp>
@@ -726,6 +729,35 @@ namespace Anasazi {
       Op.apply (X, Y, Teuchos::NO_TRANS);
     }
   };
+
+
+template<class ST, class LO, class GO, class NT>
+struct OutputStreamTraits<Tpetra::Operator<ST, LO, GO, NT> > {
+  typedef Tpetra::Operator<ST, LO, GO, NT> operator_type;
+
+  static Teuchos::RCP<Teuchos::FancyOStream>
+  getOutputStream (const operator_type& op, int rootRank = 0)
+  {
+    Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = (op.getDomainMap())->getComm ();
+
+    // Select minimum MPI rank as the root rank for printing.
+    const int myRank = comm.is_null () ? 0 : comm->getRank ();
+    const int numProcs = comm.is_null () ? 1 : comm->getSize ();
+    if (rootRank < 0)
+    {
+      Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM,1,&myRank,&rootRank);
+    }
+
+    // This is irreversible, but that's only a problem if the input std::ostream
+    // is actually a Teuchos::FancyOStream on which this method has been
+    // called before, with a different root rank.
+    fos->setProcRankAndSize (myRank, numProcs);
+    fos->setOutputToRootOnly (rootRank);
+    return fos;
+  }
+};
+
 
 } // end of Anasazi namespace
 
