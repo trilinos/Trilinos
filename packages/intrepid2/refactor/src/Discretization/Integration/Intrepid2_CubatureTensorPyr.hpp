@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubatureTensorPyr.hpp
+/** \file   Intrepid2_CubatureTensorPyr.hpp
     \brief  Header file for the Intrepid2::CubatureTensorPyr class.
     \author Created by P. Bochev, D. Ridzal, M. Perego. 
             Kokkorized by Kyungjoo Kim

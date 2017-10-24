@@ -55,6 +55,7 @@
 
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Util.hpp"
+#include "Teuchos_Array.hpp"
 #include <set>
 #include <vector>
 
@@ -64,6 +65,7 @@ namespace Details {
 template <class LO, class GO, class NT>
 int
 makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
+            Teuchos::Array<int>& remotePIDs,
             const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& domMap,
             const RowGraph<LO, GO, NT>& graph,
             const bool sortEachProcsGids,
@@ -282,7 +284,11 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
     }
 
     // Make a list of process ranks corresponding to the remote GIDs.
-    Array<int> remotePIDs (numRemoteColGIDs);
+    // remotePIDs is an output argument of getRemoteIndexList below;
+    // its initial contents don't matter.
+    if (static_cast<size_t> (remotePIDs.size ()) != numRemoteColGIDs) {
+      remotePIDs.resize (numRemoteColGIDs);
+    }
     // Look up the remote process' ranks in the domain Map.
     {
       const LookupStatus stat =
@@ -319,7 +325,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
     // NOTE (mfh 02 Sep 2014) This needs to be a stable sort, so that
     // it respects either of the possible orderings of GIDs (sorted,
     // or original order) specified above.
-    sort2 (remotePIDs.begin(), remotePIDs.end(), remoteColGIDs.begin());
+    sort2 (remotePIDs.begin (), remotePIDs.end (), remoteColGIDs.begin ());
 
     // Copy the local GIDs into myColumns. Two cases:
     // 1. If the number of Local column GIDs is the same as the number
@@ -410,12 +416,19 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
     //    as process ranks, instead of the two-argument version that
     //    was used above)
     //
-    // 4. remotePIDs (which we have from the getRemoteIndexList()
-    //    call above)
+    // 4. remotePIDs (which we have from the getRemoteIndexList() call
+    //    above) -- NOTE (mfh 14 Sep 2017) Fix for Trilinos GitHub
+    //    Issue #628 (https://github.com/trilinos/Trilinos/issues/628)
+    //    addresses this.  remotePIDs is now an output argument of
+    //    both this function and CrsGraph::makeColMap, and
+    //    CrsGraph::makeImportExport now has an option to use that
+    //    information, if available (that is, if makeColMap was
+    //    actually called, which it would not be if the graph already
+    //    had a column Map).
     //
-    // 5. Sorting remotePIDs, and applying that permutation to
-    //    remoteGIDs and remoteLIDs (by calling sort3 above instead
-    //    of sort2)
+    // 5. Apply the permutation from sorting remotePIDs to both
+    //    remoteGIDs and remoteLIDs (by calling sort3 above instead of
+    //    sort2), instead of just to remoteLIDs alone.
     //
     // 6. Everything after the sort3 call in Import::setupExport():
     //    a. Create the Distributor via createFromRecvs(), which
@@ -456,6 +469,6 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
 //
 // Must be expanded from within the Tpetra::Details namespace!
 //
-#define TPETRA_DETAILS_MAKECOLMAP_INSTANT(LO,GO,NT) template int makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >&, const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >&, const RowGraph<LO, GO, NT>&, const bool, std::ostream*);
+#define TPETRA_DETAILS_MAKECOLMAP_INSTANT(LO,GO,NT) template int makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >&, Teuchos::Array<int>&, const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >&, const RowGraph<LO, GO, NT>&, const bool, std::ostream*);
 
 #endif // TPETRA_DETAILS_MAKECOLMAP_DEF_HPP

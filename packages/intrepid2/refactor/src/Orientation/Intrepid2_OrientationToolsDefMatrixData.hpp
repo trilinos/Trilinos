@@ -41,8 +41,8 @@
 // @HEADER
 
 
-/** \file   Intrepid_OrientationToolsDef.hpp
-    \brief  Definition file for the Intrepid2::OrientationTools class.
+/** \file   Intrepid2_OrientationToolsDefMatrixData.hpp
+    \brief  Definition file for matrix data in the Intrepid2::OrientationTools class.
     \author Created by Kyungjoo Kim
 */
 #ifndef __INTREPID2_ORIENTATIONTOOLS_DEF_MATRIX_DATA_HPP__
@@ -70,7 +70,7 @@ namespace Intrepid2 {
     // High order HGRAD Elements
     //
 
-    /**/   if (name == "Intrepid2_HGRAD_QUAD_Cn_FEM") {
+    if (name == "Intrepid2_HGRAD_QUAD_Cn_FEM") {
       if (order >1) {
         const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 4, numOrts = 2;
         matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_QUAD_Cn_FEM",
@@ -101,14 +101,19 @@ namespace Intrepid2 {
       }
     }
     else if (name == "Intrepid2_HGRAD_TRI_Cn_FEM") {
-      const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 3, numOrts = 2;
-      matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_TRI_Cn_FEM",
-                                        numEdges,
-                                        numOrts,
-                                        matDim, 
-                                        matDim);
-
-      init_HGRAD_TRI_Cn_FEM(matData, order);
+      if (order > 1) {
+        const ordinal_type matDim = ordinalToTag(tagToOrdinal(1, 0, 0), 3), numEdges = 3, numOrts = 2;      
+        matData = CoeffMatrixDataViewType("Orientation::CoeffMatrix::Intrepid2_HGRAD_TRI_Cn_FEM",
+                                          numEdges,
+                                          numOrts,
+                                          matDim, 
+                                          matDim);
+        
+        init_HGRAD_TRI_Cn_FEM(matData, order);
+      } else {
+        // add dummy
+        matData = CoeffMatrixDataViewType();
+      }        
     } 
     else if (name == "Intrepid2_HGRAD_TET_Cn_FEM") {
       const ordinal_type 
@@ -317,9 +322,9 @@ namespace Intrepid2 {
     return matData;
   }
 
-  ///
-  /// Quad elements
-  ///
+  //
+  // Quad elements
+  //
   
   template<typename SpT>
   void
@@ -383,9 +388,9 @@ namespace Intrepid2 {
       }
   }
 
-  ///
-  /// Hexahedral elements
-  ///
+  //
+  // Hexahedral elements
+  //
 
   template<typename SpT>
   void
@@ -484,9 +489,9 @@ namespace Intrepid2 {
     }
   }
   
-  ///
-  /// Triangle elements
-  ///
+  //
+  // Triangle elements
+  //
 
   template<typename SpT>
   void
@@ -516,7 +521,7 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HCURL_TRI_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                         const ordinal_type order) {
-    Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
+    Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
     Basis_HCURL_TRI_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
     
     const ordinal_type numEdge = 3, numOrt = 2;
@@ -536,7 +541,7 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HDIV_TRI_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                        const ordinal_type order) {
-    Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
+    Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
     Basis_HDIV_TRI_In_FEM<Kokkos::DefaultHostExecutionSpace> cellBasis(order);
     
     const ordinal_type numEdge = 3, numOrt = 2;
@@ -551,9 +556,9 @@ namespace Intrepid2 {
       }
   }
 
-  ///
-  /// Tetrahedral elements
-  ///
+  //
+  // Tetrahedral elements
+  //
   
   template<typename SpT>
   void
@@ -598,7 +603,7 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HCURL_TET_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                         const ordinal_type order) {
-    Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1, POINTTYPE_GAUSS);
+    Basis_HVOL_LINE_Cn_FEM<Kokkos::DefaultHostExecutionSpace> bubbleBasis(order-1);
     Basis_HCURL_TRI_In_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order);
     Basis_HCURL_TET_In_FEM<Kokkos::DefaultHostExecutionSpace>  cellBasis(order);
       
@@ -634,7 +639,7 @@ namespace Intrepid2 {
   OrientationTools<SpT>::
   init_HDIV_TET_In_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                        const ordinal_type order) {
-    Impl::Basis_HDIV_TRI_Kn_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order);
+    Basis_HVOL_TRI_Cn_FEM<Kokkos::DefaultHostExecutionSpace> triBasis(order-1);
     Basis_HDIV_TET_In_FEM<Kokkos::DefaultHostExecutionSpace>  cellBasis(order);
     
     const ordinal_type numFace = 4, numOrt = 6;
@@ -649,9 +654,9 @@ namespace Intrepid2 {
       }
   }
   
-  ///
-  /// Lower order I1 elements
-  ///
+  //
+  // Lower order I1 elements
+  //
   
   template<typename SpT>
   void
@@ -674,8 +679,8 @@ namespace Intrepid2 {
   init_TRI_FACE_ELEMENT_I1_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                                const ordinal_type faceId) {
     const ordinal_type numOrt = 6;
-    const double faceOrtCoeff[6] = { /**/  1.0,  1.0,  1.0, 
-                                     /**/ -1.0, -1.0, -1.0 };
+    const double faceOrtCoeff[6] = {   1.0,  1.0,  1.0, 
+                                      -1.0, -1.0, -1.0 };
     
     for (ordinal_type faceOrt=0;faceOrt<numOrt;++faceOrt) {
       auto mat = Kokkos::subview(matData, 
@@ -691,8 +696,8 @@ namespace Intrepid2 {
   init_QUAD_FACE_ELEMENT_I1_FEM(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
                                 const ordinal_type faceId) {
     const ordinal_type numOrt = 8;
-    const double faceOrtCoeff[8] = { /**/  1.0,  1.0,  1.0,  1.0, 
-                                     /**/ -1.0, -1.0, -1.0, -1.0 };
+    const double faceOrtCoeff[8] = {   1.0,  1.0,  1.0,  1.0, 
+                                      -1.0, -1.0, -1.0, -1.0 };
     
     for (ordinal_type faceOrt=0;faceOrt<numOrt;++faceOrt) {
       auto mat = Kokkos::subview(matData, 

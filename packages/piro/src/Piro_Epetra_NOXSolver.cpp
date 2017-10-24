@@ -66,6 +66,8 @@ Piro::Epetra::NOXSolver::NOXSolver(
 	Teuchos::rcp(&(piroParams->sublist("NOX")),false);
   Teuchos::ParameterList& printParams = noxParams->sublist("Printing");
 
+  exitUponFailedNOXSolve = piroParams->get("Exit on Failed NOX Solve", false);
+ 
   std::string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
   bool leanMatrixFree = piroParams->get("Lean Matrix Free",false);
 
@@ -366,6 +368,12 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
     //utils.out() << "Step Converged" << std::endl;
     ;
   else {
+    if (exitUponFailedNOXSolve == true) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          true,
+          std::runtime_error,
+         "Nonlinear solver failed to converge");
+    }
     utils.out() << "Nonlinear solver failed to converge!" << std::endl;
     outArgs.setFailed();
   }

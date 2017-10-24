@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_ModelEvaluatorIMEXPair_Basic_decl_hpp
-#define Tempus_ModelEvaluatorIMEXPair_Basic_decl_hpp
+#ifndef Tempus_ModelEvaluatorPairIMEX_Basic_decl_hpp
+#define Tempus_ModelEvaluatorPairIMEX_Basic_decl_hpp
 
 #include "Tempus_WrapperModelEvaluatorPairIMEX.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
@@ -44,16 +44,18 @@ public:
   WrapperModelEvaluatorPairIMEX_Basic(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel)
-    : explicitModel_(explicitModel), implicitModel_(implicitModel),
-      timeDer_(Teuchos::null)
+    : timeDer_(Teuchos::null)
   {
-    wrapperImplicitInArgs_  = this->createInArgs();
-    wrapperImplicitOutArgs_ = this->createOutArgs();
+    setExplicitModel(explicitModel);
+    setImplicitModel(implicitModel);
+    initialize();
   }
-
 
   /// Destructor
   virtual ~WrapperModelEvaluatorPairIMEX_Basic(){}
+
+  /// Initialize after setting member data.
+  virtual void initialize();
 
   /// \name Overridden from Tempus::WrapperModelEvaluatorPairIMEX
   //@{
@@ -78,8 +80,8 @@ public:
     virtual Thyra::ModelEvaluatorBase::OutArgs<Scalar> getOutArgs()
     { return wrapperImplicitOutArgs_; }
 
-    /// Initialize WrapperModelEvalutor to evaluate application ModelEvaluator.
-    virtual void initialize(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
+    /// Set parameters for application implicit ModelEvaluator solve.
+    virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
       Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
       Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs)
     {
@@ -121,13 +123,13 @@ public:
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
   //@{
     virtual Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const
-      { return getImplicitModel()->create_W_op(); }
+      { return implicitModel_->create_W_op(); }
 
     Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
-      get_W_factory() const { return getImplicitModel()->get_W_factory(); }
+      get_W_factory() const { return implicitModel_->get_W_factory(); }
 
     virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-      get_f_space() const { return getImplicitModel()->get_f_space(); }
+      get_f_space() const { return explicitModel_->get_f_space(); }
 
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
@@ -154,4 +156,4 @@ protected:
 
 } // namespace Tempus
 
-#endif // Tempus_ModelEvaluatorIMEXPair_Basic_decl_hpp
+#endif // Tempus_ModelEvaluatorPairIMEX_Basic_decl_hpp

@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TRI_Cn_FEM.hpp
-    \brief  Header file for the Intrepid2::HGRAD_TRI_Cn_FEM class.
+/** \file   Intrepid2_HGRAD_TRI_Cn_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HGRAD_TRI_Cn_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -80,9 +80,15 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM
+    */
     class Basis_HGRAD_TRI_Cn_FEM {
     public:
       typedef struct Triangle<3> cell_topology_type;
+      /**
+        \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,
@@ -107,6 +113,9 @@ namespace Intrepid2 {
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                   const EOperator operatorType);
 
+      /**
+        \brief See Intrepid2::Basis_HGRAD_TRI_Cn_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                typename vinvViewType,
@@ -132,14 +141,16 @@ namespace Intrepid2 {
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
           typedef typename outputValueViewType::value_type outputValueType;
+          typedef typename outputValueViewType::pointer_type outputPointerType; 
+
           constexpr ordinal_type spaceDim = 2;
           constexpr ordinal_type bufSize =
               (opType == OPERATOR_CURL)  ? spaceDim* Intrepid2::getPnCardinality<spaceDim,Parameters::MaxOrder>()*numPtsEval :
                                            Intrepid2::getDkCardinality<opType, spaceDim>()*Intrepid2::getPnCardinality<spaceDim,Parameters::MaxOrder>()*numPtsEval;
-          outputValueType buf[bufSize];
+          char buf[bufSize*sizeof(outputValueType)];
 
           Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+            Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
 
           switch (opType) {
           case OPERATOR_VALUE : {

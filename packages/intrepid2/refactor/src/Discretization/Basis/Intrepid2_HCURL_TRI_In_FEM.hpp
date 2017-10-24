@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HCURL_TRI_In_FEM.hpp
-    \brief  Header file for the Intrepid2::HCURL_TRI_In_FEM class.
+/** \file   Intrepid2_HCURL_TRI_In_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HCURL_TRI_In_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim and Mauro Perego
  */
@@ -59,8 +59,9 @@ namespace Intrepid2 {
 
 /** \class  Intrepid2::Basis_HCURL_TRI_In_FEM
     \brief  Implementation of the default H(curl)-compatible Nedelec (first kind) 
-            basis of arbitrary degree  on Triangle cell.  The lowest order space
-            is indexed with 1 rather than 0.
+            basis of arbitrary degree  on Triangle cell.  
+
+            The lowest order space is indexed with 1 rather than 0.
             Implements nodal basis of degree n (n>=1) on the reference Triangle cell. The basis has
             cardinality n(n+2) and spans an INCOMPLETE polynomial space of degree n. 
             Basis functions are dual to a unisolvent set of degrees-of-freedom (DoF) defined by
@@ -80,10 +81,16 @@ namespace Intrepid2 {
 
 namespace Impl {
 
+/**
+  \brief See Intrepid2::Basis_HCURL_TRI_In_FEM
+*/
 class Basis_HCURL_TRI_In_FEM {
 public:
   typedef struct Triangle<3> cell_topology_type;
 
+  /**
+    \brief See Intrepid2::Basis_HCURL_TRI_In_FEM
+  */
   template<EOperator opType>
   struct Serial {
     template<typename outputValueViewType,
@@ -108,6 +115,9 @@ public:
       const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
       const EOperator operatorType);
 
+  /**
+    \brief See Intrepid2::Basis_HCURL_TRI_In_FEM
+  */
   template<typename outputValueViewType,
   typename inputPointViewType,
   typename vinvViewType,
@@ -133,15 +143,16 @@ public:
       const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
       typedef typename outputValueViewType::value_type outputValueType;
+      typedef typename outputValueViewType::pointer_type outputPointerType;
       constexpr ordinal_type spaceDim = 2;
       constexpr ordinal_type bufSize = (opType == OPERATOR_CURL) ?
                                        spaceDim * CardinalityHCurlTri(Parameters::MaxOrder)*numPtsEval :
                                        CardinalityHCurlTri(Parameters::MaxOrder)*numPtsEval;
 
-      outputValueType buf[bufSize];
+      char buf[bufSize*sizeof(outputValueType)];
 
       Kokkos::DynRankView<outputValueType,
-      Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+        Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
 
       switch (opType) {
       case OPERATOR_VALUE : {

@@ -105,7 +105,7 @@ const std::vector<int> & UniqueGlobalIndexer::getElementBlock(const std::string 
    return *elements_;
 }
 
-void UniqueGlobalIndexer::getElementGIDs(int localElmtId,std::vector<int> & gids,const std::string & blockId) const
+void UniqueGlobalIndexer::getElementGIDs(int localElmtId,std::vector<int> & gids,const std::string & /* blockId */) const
 {
    gids.resize(8);
 
@@ -151,8 +151,8 @@ const std::vector<int> & UniqueGlobalIndexer::getGIDFieldOffsets(const std::stri
 }
 
 const std::pair<std::vector<int>,std::vector<int> > & 
-UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
-                                                int subcellDim,int subcellId) const
+UniqueGlobalIndexer::getGIDFieldOffsets_closure(const std::string & /* blockId */, int /* fieldNum */,
+                                                int /* subcellDim */,int /* subcellId */) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                       "unit_test::UniqueGlobalIndexer::getGIDFieldOffsets_closure is not implemented yet.");
@@ -257,7 +257,7 @@ void UniqueGlobalIndexer::ownedIndices(const std::vector<int> & indices,std::vec
 
 /** Get field numbers associated with a particular element block.
   */
-const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::string & blockId) const
+const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::string & /* blockId */) const
 {
    static std::vector<int> fieldNums;
    if(fieldNums.size()==0) {
@@ -272,12 +272,12 @@ const std::vector<int> & UniqueGlobalIndexer::getBlockFieldNumbers(const std::st
    return fieldNums;
 
 }
-int UniqueGlobalIndexer::getElementBlockGIDCount(const std::string & block) const
+int UniqueGlobalIndexer::getElementBlockGIDCount(const std::string & /* block */) const
 {
    return 8;
 }
 
-int UniqueGlobalIndexer::getElementBlockGIDCount(const std::size_t & block) const
+int UniqueGlobalIndexer::getElementBlockGIDCount(const std::size_t & /* block */) const
 {
    return 8;
 }

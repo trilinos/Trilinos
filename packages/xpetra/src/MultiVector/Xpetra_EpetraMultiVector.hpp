@@ -380,7 +380,7 @@ namespace Xpetra {
       }
       double** rawArrayOfRawPtrs = const_cast<double**>(arrayOfRawPtrs.getRawPtr()); // This const_cast should be fine, because Epetra_DataAccess=Copy.
 
-      vec_ = Teuchos::rcp(new Epetra_MultiVector(Copy, toEpetra<GlobalOrdinal,Node>(map), rawArrayOfRawPtrs, NumVectors));
+      vec_ = Teuchos::rcp(new Epetra_MultiVector(Copy, toEpetra<GlobalOrdinal,Node>(map), rawArrayOfRawPtrs, static_cast<int>(NumVectors)));
     }
 
     //! MultiVector destructor.

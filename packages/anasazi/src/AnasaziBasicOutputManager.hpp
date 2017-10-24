@@ -64,8 +64,6 @@
 
 namespace Anasazi {
 
-  using std::ostream;
-
   template <class ScalarType>
   class BasicOutputManager : public OutputManager<ScalarType> {
 
@@ -75,41 +73,18 @@ namespace Anasazi {
       //@{ 
 
       //! Default constructor
-      BasicOutputManager(int vb = Anasazi::Errors, 
-                         Teuchos::RCP<ostream> os = Teuchos::rcpFromRef(std::cout),
-                         int printingRank = 0);
+      BasicOutputManager(int vb = Anasazi::Errors, int rootRank = 0);
+
+      //! Constructor with specified verbosity and formatted output stream
+      BasicOutputManager(int vb,
+                         const Teuchos::RCP<Teuchos::FancyOStream>& fos)
+      : OutputManager<ScalarType>(vb, fos)
+      {};
 
       //! Destructor.
       virtual ~BasicOutputManager() {};
       //@}
 
-      //! @name Set/Get methods
-      //@{ 
-
-      //! Set the output stream for this manager.
-      void setOStream( Teuchos::RCP<ostream> os );
-
-      //! Get the output stream for this manager.
-      Teuchos::RCP<ostream> getOStream();
-
-      //@}
-
-      //! @name Output methods
-      //@{ 
-
-      //! Find out whether we need to print out information for this message type.
-      /*! This method is used by the solver to determine whether computations are
-        necessary for this message type.
-        */
-      bool isVerbosity( MsgType type ) const;
-
-      //! Send some output to this output stream.
-      void print( MsgType type, const std::string output );
-
-      //! Return a stream for outputting to.
-      ostream &stream( MsgType type );
-
-      //@}
 
     private:
 
@@ -123,60 +98,28 @@ namespace Anasazi {
       BasicOutputManager<ScalarType>& operator=( const OutputManager<ScalarType>& OM );
 
       //@}
-
-      Teuchos::RCP<ostream> myOS_;
-      Teuchos::oblackholestream myBHS_;
-      bool iPrint_;
   };
 
   template<class ScalarType>
-  BasicOutputManager<ScalarType>::BasicOutputManager(int vb, Teuchos::RCP<ostream> os, int printingRank)
-  : OutputManager<ScalarType>(vb), myOS_(os) {
-    // print only on proc 0
-    int MyPID;
+  BasicOutputManager<ScalarType>::BasicOutputManager(int vb, int rootRank)
+  : OutputManager<ScalarType>(vb)
+  {
 #ifdef HAVE_MPI
+    // The OutputManger constructor will create fos_ that outputs to std::cout
+    // This class will query MPI to print on processor 0, if parallel.
+    int myRank = 0;
+    int numProcs = 1;
     // Initialize MPI
     int mpiStarted = 0;
     MPI_Initialized(&mpiStarted);
-    if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
-    else MyPID=0;
-#else 
-    MyPID = 0;
+    if (mpiStarted)
+    {
+      MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+      MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    }
+    this->fos_->setProcRankAndSize(myRank, numProcs);
+    this->fos_->setOutputToRootOnly(rootRank);
 #endif
-    iPrint_ = (MyPID == printingRank);
-  }
-
-  template<class ScalarType>
-  void BasicOutputManager<ScalarType>::setOStream( Teuchos::RCP<ostream> os ) { 
-    myOS_ = os; 
-  }
-
-  template<class ScalarType>
-  Teuchos::RCP<ostream> BasicOutputManager<ScalarType>::getOStream() { 
-    return myOS_; 
-  }
-
-  template<class ScalarType>
-  bool BasicOutputManager<ScalarType>::isVerbosity( MsgType type ) const {
-    if ( (type & this->vb_) == type ) {
-      return true;
-    }
-    return false;
-  }
-
-  template<class ScalarType>
-  void BasicOutputManager<ScalarType>::print( MsgType type, const std::string output ) {
-    if ( (type & this->vb_) == type && iPrint_ ) {
-      *myOS_ << output;
-    }
-  }
-
-  template<class ScalarType>
-  ostream & BasicOutputManager<ScalarType>::stream( MsgType type ) {
-    if ( (type & this->vb_) == type && iPrint_ ) {
-      return *myOS_;
-    }
-    return myBHS_;
   }
 
 } // end Anasazi namespace

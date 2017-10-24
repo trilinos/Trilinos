@@ -28,15 +28,29 @@ ENDIF ()
 ASSERT_DEFINED(TPL_ENABLE_CUDA)
 IF (TPL_ENABLE_CUDA)
   # As of 10 Aug 2017, Tpetra requires CUDA >= 7.5.
-  IF (DEFINED CUDA_VERSION)
-    # Don't check a variable's value unless we know it is defined.
-    IF (CUDA_VERSION VERSION_LESS "7.5")
-       MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra requires at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
-    ENDIF ()
+  IF (DEFINED CUDA_VERSION AND (CUDA_VERSION VERSION_LESS "7.5"))
+    MESSAGE(FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require at least CUDA 7.5, and preferably CUDA >= 8.0.  Your CUDA_VERSION is ${CUDA_VERSION}.  For details, please refer to Trilinos issue #1278: https://github.com/trilinos/Trilinos/issues/1278")
+  ENDIF ()
+
+  # mfh 30 Sep 2017: Make sure that either Trilinos_CXX_FLAGS
+  # or CMAKE_CXX_FLAGS includes the "--expt-extended-lambda" 
+  # or "-expt-extended-lambda" (either is valid; see #1797 
+  # discussion) flag.
+  SET (TpetraCore_FOUND_CUDA_LAMBDA_FLAG OFF)
+  IF (DEFINED Trilinos_CXX_FLAGS AND Trilinos_CXX_FLAGS MATCHES "-expt-extended-lambda")
+    # mfh 30 Sep 2017: Even if you put the flag in Trilinos_CXX_FLAGS,
+    # Trilinos seems to move that flag into CMAKE_CXX_FLAGS for some
+    # reason.  Nevertheless, it doesn't hurt to check both.
+    SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
+  ELSEIF (DEFINED CMAKE_CXX_FLAGS AND CMAKE_CXX_FLAGS MATCHES "-expt-extended-lambda")
+    SET(TpetraCore_FOUND_CUDA_LAMBDA_FLAG ON)
+  ENDIF ()
+  IF (NOT TpetraCore_FOUND_CUDA_LAMBDA_FLAG)
+    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require, at least with CUDA_VERSION >= 7.5 and <= 9.0, that you add \"--expt-extended-lambda\" to either Trilinos_CXX11_FLAGS or CMAKE_CXX_FLAGS.  You must also set Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.")
   ENDIF ()
 
   IF (NOT DEFINED Kokkos_ENABLE_Cuda_Lambda OR NOT Kokkos_ENABLE_Cuda_Lambda)
-    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra requires that you set Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You should also make sure, at least with CUDA_VERSION 7.5 or 8.0, to add \"--expt-extended-lambda\" to CMAKE_CXX_FLAGS.")
+    MESSAGE (FATAL_ERROR "If building with CUDA, Tpetra and downstream packages require that you set the CMake option Kokkos_ENABLE_Cuda_Lambda:BOOL=ON, if it is not already ON by default.  For details, please refer to Trilinos issue #1682 (https://github.com/trilinos/Trilinos/issues/1682).  You must also add \"--expt-extended-lambda\" to either Trilinos_CXX11_FLAGS or CMAKE_CXX_FLAGS, at least with CUDA_VERSION >= 7.5 and <= 9.0.")
   ENDIF ()
 ENDIF ()
 

@@ -51,7 +51,6 @@
 #include "Phalanx_config.hpp"
 #include "Phalanx_any.hpp"
 #include "Teuchos_ArrayRCP.hpp"
-#include "Phalanx_FieldTag_Tag.hpp"
 #include "Kokkos_View.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
@@ -59,6 +58,9 @@
 #include "Sacado.hpp"
 
 namespace PHX {
+
+  class DataLayout;
+  class FieldTag;
 
   template<typename DataT, int Rank>
   struct KokkosDimType;
@@ -115,13 +117,15 @@ namespace PHX {
     typedef typename PHX::Device::size_type size_type;
     typedef typename array_type::execution_space execution_space;
 
-    Field(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
+    Field(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl);
 
-    Field(const PHX::Tag<DataT>& v);
+    Field(const PHX::FieldTag& t);
+
+    Field(const Teuchos::RCP<const PHX::FieldTag>& t);
 
     Field();
 
-    //! For const/non-const compaotibility
+    //! For const/non-const compatibility
     template<typename CopyDataT>
     Field(const Field<CopyDataT,Rank>& source);
 
@@ -130,6 +134,8 @@ namespace PHX {
     static const int ArrayRank=array_type::Rank;
 
     const PHX::FieldTag& fieldTag() const;
+
+    Teuchos::RCP<const PHX::FieldTag> fieldTagPtr() const;
 
     //! For const/non-const compatibility
     template<typename CopyDataT>
@@ -159,7 +165,9 @@ namespace PHX {
     KOKKOS_INLINE_FUNCTION
     size_type size() const;
 
-    void setFieldTag(const PHX::Tag<DataT>& t);
+    void setFieldTag(const PHX::FieldTag& t);
+
+    void setFieldTag(const Teuchos::RCP<const PHX::FieldTag>& t);
 
     void setFieldData(const PHX::any& a);
 
@@ -186,12 +194,11 @@ namespace PHX {
 
   private:
 
-    PHX::Tag<DataT> m_tag;
+    Teuchos::RCP<const PHX::FieldTag> m_tag;
 
     array_type m_field_data;
 
 #ifdef PHX_DEBUG
-    bool m_tag_set;
     bool m_data_set;
     static const std::string m_field_tag_error_msg;
     static const std::string m_field_data_error_msg;

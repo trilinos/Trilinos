@@ -40,9 +40,9 @@ namespace Tempus_Test {
  *  For an IMEX time stepper, we need to rewrite this in the following form
  *  \f{eqnarray*}{
  *    M(x,t)\, \dot{x}(x,t) + G(x,t) + F(x,t) & = & 0, \\
- *    \bar{G}(\dot{x},x,t) + F(x,t) & = & 0,
+ *    \mathcal{G}(\dot{x},x,t) + F(x,t) & = & 0,
  *  \f}
- *  where \f$\bar{G}(\dot{x},x,t) = M(x,t)\, \dot{x} + G(x,t)\f$,
+ *  where \f$\mathcal{G}(\dot{x},x,t) = M(x,t)\, \dot{x} + G(x,t)\f$,
  *  \f$M(x,t)\f$ is the mass matrix, \f$F(x,t)\f$ is the operator
  *  representing the "slow" physics (and evolved explicitly), and
  *  \f$G(x,t)\f$ is the operator representing the "fast" physics.
@@ -59,14 +59,14 @@ namespace Tempus_Test {
  *  Thus the explicit van der Pol model (VanDerPol_IMEX_ExplicitModel)
  *  formulated for IMEX is
  *  \f{eqnarray*}{
- *    \dot{x}_0(t) - x_1(t) & = & 0 \\
- *    \dot{x}_1(t) + x_0/\epsilon & = & 0
+ *    \mathcal{F}_0 & = & \dot{x}_0(t) - x_1(t) = 0 \\
+ *    \mathcal{F}_1 & = & \dot{x}_1(t) + x_0/\epsilon = 0
  *  \f}
  *  and the implicit van der Pol model (VanDerPol_IMEX_ImplicitModel)
  *  formulated for IMEX is
  *  \f{eqnarray*}{
- *    \dot{x}_0(t) & = & 0 \\
- *    \dot{x}_1(t) - (1-x_0^2)x_1/\epsilon & = & 0
+ *    \mathcal{G}_0 & = & \dot{x}_0(t) = 0 \\
+ *    \mathcal{G}_1 & = & \dot{x}_1(t) - (1-x_0^2)x_1/\epsilon = 0
  *  \f}
  *
  *  Recalling the defintion of the iteration matrix, \f$W\f$,
@@ -112,7 +112,8 @@ class VanDerPol_IMEX_ExplicitModel
 
   // Constructor
   VanDerPol_IMEX_ExplicitModel(
-    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+    Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null,
+    bool useProductVector = false);
 
   /** \name Public functions overridden from ModelEvaluator. */
   //@{

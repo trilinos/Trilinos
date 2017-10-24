@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TET_COMP12_FEM.hpp
-    \brief  Header file for the Intrepid2::HGRAD_TET_COMP12_FEM class.
+/** \file   Intrepid2_HGRAD_TET_COMP12_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HGRAD_TET_COMP12_FEM class.
     \author Created by P. Bochev, J. Ostien, K. Peterson and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -53,7 +53,7 @@
 
 namespace Intrepid2 {
   
-  /** \class  Intrepid2::Basis_HGRAD_TET_C2_FEM
+  /** \class  Intrepid2::Basis_HGRAD_TET_COMP12_FEM
       \brief  Implementation of the default H(grad)-compatible FEM basis of degree 2 on Tetrahedron cell
   
       Implements Lagrangian basis of degree 2 on the reference Tetrahedron cell. The basis has
@@ -99,9 +99,16 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HGRAD_TET_COMP12_FEM
+    */
     class Basis_HGRAD_TET_COMP12_FEM {
     public:
       typedef struct Tetrahedron<4> cell_topology_type;
+
+      /**
+        \brief See Intrepid2::Basis_HGRAD_TET_COMP12_FEM
+      */
       template<typename pointValueType>
       KOKKOS_INLINE_FUNCTION
       static ordinal_type
@@ -109,6 +116,9 @@ namespace Intrepid2 {
                       const pointValueType y,
                       const pointValueType z );
       
+      /**
+        \brief See Intrepid2::Basis_HGRAD_TET_COMP12_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,
@@ -128,6 +138,9 @@ namespace Intrepid2 {
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const EOperator operatorType );
       
+      /**
+        \brief See Intrepid2::Basis_HGRAD_TET_COMP12_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                EOperator opType>

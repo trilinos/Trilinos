@@ -316,8 +316,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockTriDi, Unit, Scalar, LO, GO) {
 IFPACK2_ETI_MANGLING_TYPEDEFS()
 IFPACK2_INSTANTIATE_SLG(UNIT_TEST_GROUP_SC_LO_GO)
 
-static Teuchos::RCP<Teuchos::Comm<int> > make_comm () {
-  return Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
+static Teuchos::RCP<const Teuchos::Comm<int> > make_comm () {
+  return Teuchos::DefaultComm<int>::getComm();
 }
 
 int main (int argc, char** argv) {
@@ -325,7 +325,7 @@ int main (int argc, char** argv) {
   Teuchos::GlobalMPISession mpi_session(&argc, &argv, nullptr); {
     Kokkos::initialize(argc, argv);
     do {
-      Teuchos::RCP<Teuchos::Comm<int> > comm;
+      Teuchos::RCP<const Teuchos::Comm<int> > comm;
       std::shared_ptr<Input> in;
       try {
         comm = make_comm();

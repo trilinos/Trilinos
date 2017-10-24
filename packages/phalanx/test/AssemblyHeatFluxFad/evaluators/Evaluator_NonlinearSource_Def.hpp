@@ -71,8 +71,8 @@ postRegistrationSetup(typename Traits::SetupData d,
   // compatiblity still works. We demonstrate both valid calling
   // pathways.
   this->utils.setFieldData(source,vm);
-  vm.template getFieldData<ScalarT,EvalT>(density);
-  vm.template getFieldData<ScalarT,EvalT>(temp);
+  vm.template getFieldData<EvalT>(density);
+  vm.template getFieldData<EvalT>(temp);
 
   cell_data_size = source.size() / source.dimension(0);
 }

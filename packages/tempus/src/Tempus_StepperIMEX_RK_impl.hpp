@@ -152,8 +152,18 @@ void StepperIMEX_RK<Scalar>::setTableaus(
     order_ = 3;
 
   } else if (stepperType == "General IMEX RK") {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
-       "Error - 'General IMEX RK' is not implemented yet!\n");
+    Teuchos::RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
+      new Teuchos::ParameterList(pList->sublist("IMEX-RK Explicit Stepper")));
+
+    Teuchos::RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
+      new Teuchos::ParameterList(pList->sublist("IMEX-RK Implicit Stepper")));
+
+    // TODO: should probably check the order of the tableau match
+    this->setExplicitTableau("General ERK",  explicitPL);
+    this->setImplicitTableau("General DIRK", implicitPL);
+    description_ = stepperType;
+    order_ = 0;  // TODO: Determine overall order
+
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
        "Error - Not a valid StepperIMEX_RK type!  Stepper Type = "
@@ -238,10 +248,19 @@ template<class Scalar>
 void StepperIMEX_RK<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > nc_model =
-    Teuchos::rcp_const_cast<Thyra::ModelEvaluator<Scalar> > (appModel);
-  Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> > modelPairIMEX =
-    Teuchos::rcp_dynamic_cast<WrapperModelEvaluatorPairIMEX<Scalar> > (nc_model);
+  using Teuchos::RCP;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcp_dynamic_cast;
+  RCP<Thyra::ModelEvaluator<Scalar> > ncModel =
+    rcp_const_cast<Thyra::ModelEvaluator<Scalar> > (appModel);
+  RCP<WrapperModelEvaluatorPairIMEX_Basic<Scalar> > modelPairIMEX =
+    rcp_dynamic_cast<WrapperModelEvaluatorPairIMEX_Basic<Scalar> > (ncModel);
+  TEUCHOS_TEST_FOR_EXCEPTION( modelPairIMEX == Teuchos::null, std::logic_error,
+    "Error - StepperIMEX_RK::setModel() was given a ModelEvaluator that\n"
+    "  could not be cast to a WrapperModelEvaluatorPairIMEX_Basic!\n"
+    "  From: " << appModel << "\n"
+    "  To  : " << modelPairIMEX << "\n"
+    "  Likely have given the wrong ModelEvaluator to this Stepper.\n");
 
   setModelPair(modelPairIMEX);
 }
@@ -253,20 +272,32 @@ void StepperIMEX_RK<Scalar>::setNonConstModel(
   this->setModel(appModel);
 }
 
-/** \brief Create WrapperModelPairIMEX from user-supplied ModelEvaluator pair
+/** \brief Create WrapperModelPairIMEX from user-supplied ModelEvaluator pair.
+ *
  *  The user-supplied ME pair can contain any user-specific IMEX interactions
  *  between explicit and implicit MEs.
  */
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::setModelPair(
-  const Teuchos::RCP<WrapperModelEvaluatorPairIMEX<Scalar> > & modelPairIMEX)
+  const Teuchos::RCP<WrapperModelEvaluatorPairIMEX_Basic<Scalar> > &
+    modelPairIMEX)
 {
   this->validExplicitODE    (modelPairIMEX->getExplicitModel());
   this->validImplicitODE_DAE(modelPairIMEX->getImplicitModel());
   wrapperModelPairIMEX_ = modelPairIMEX;
+  wrapperModelPairIMEX_->initialize();
+  int expXDim = wrapperModelPairIMEX_->getExplicitModel()->get_x_space()->dim();
+  int impXDim = wrapperModelPairIMEX_->getImplicitModel()->get_x_space()->dim();
+  TEUCHOS_TEST_FOR_EXCEPTION( expXDim != impXDim, std::logic_error,
+    "Error - \n"
+    "  Explicit and Implicit x vectors are incompatible!\n"
+    "  Explicit vector dim = " << expXDim << "\n"
+    "  Implicit vector dim = " << impXDim << "\n");
+
 }
 
 /** \brief Create WrapperModelPairIMEX from explicit/implicit ModelEvaluators.
+ *
  *  Use the supplied explicit/implicit MEs to create a WrapperModelPairIMEX
  *  with basic IMEX interactions between explicit and implicit MEs.
  */
@@ -379,7 +410,6 @@ void StepperIMEX_RK<Scalar>::initialize()
 {
   // Initialize the stage vectors
   const int numStages = explicitTableau_->numStages();
-  stageX_ = wrapperModelPairIMEX_->getNominalValues().get_x()->clone_v();
   stageF_.resize(numStages);
   stageG_.resize(numStages);
   for(int i=0; i < numStages; i++) {
@@ -395,6 +425,35 @@ void StepperIMEX_RK<Scalar>::initialize()
 
 
 template <typename Scalar>
+void StepperIMEX_RK<Scalar>::evalImplicitModelExplicitly(
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
+  Scalar time, Scalar stepSize, Scalar stageNumber,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> > & G) const
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar>  inArgs  = wrapperModelPairIMEX_->getInArgs();
+  inArgs.set_x(X);
+  if (inArgs.supports(MEB::IN_ARG_t))           inArgs.set_t(time);
+  if (inArgs.supports(MEB::IN_ARG_step_size))   inArgs.set_step_size(stepSize);
+  if (inArgs.supports(MEB::IN_ARG_stage_number))
+    inArgs.set_stage_number(stageNumber);
+
+  // For model evaluators whose state function f(x, x_dot, t) describes
+  // an implicit ODE, and which accept an optional x_dot input argument,
+  // make sure the latter is set to null in order to request the evaluation
+  // of a state function corresponding to the explicit ODE formulation
+  // x_dot = f(x, t)
+  if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(Teuchos::null);
+
+  MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX_->getOutArgs();
+  outArgs.set_f(G);
+
+  wrapperModelPairIMEX_->getImplicitModel()->evalModel(inArgs,outArgs);
+  Thyra::Vt_S(G.ptr(), -1.0);
+}
+
+
+template <typename Scalar>
 void StepperIMEX_RK<Scalar>::evalExplicitModel(
   const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X,
   Scalar time, Scalar stepSize, Scalar stageNumber,
@@ -402,33 +461,27 @@ void StepperIMEX_RK<Scalar>::evalExplicitModel(
 {
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  MEB::InArgs<Scalar> explicitInArgs =
+  MEB::InArgs<Scalar> inArgs =
     wrapperModelPairIMEX_->getExplicitModel()->createInArgs();
-  // Required inArgs
-  explicitInArgs.set_x(X);
-  // Optional inArgs
-  if (explicitInArgs.supports(MEB::IN_ARG_t))
-    explicitInArgs.set_t(time);
-  if (explicitInArgs.supports(MEB::IN_ARG_step_size))
-    explicitInArgs.set_step_size(stepSize);
-  if (explicitInArgs.supports(MEB::IN_ARG_stage_number))
-    explicitInArgs.set_stage_number(stageNumber);
+  inArgs.set_x(X);
+  if (inArgs.supports(MEB::IN_ARG_t))           inArgs.set_t(time);
+  if (inArgs.supports(MEB::IN_ARG_step_size))   inArgs.set_step_size(stepSize);
+  if (inArgs.supports(MEB::IN_ARG_stage_number))
+    inArgs.set_stage_number(stageNumber);
 
   // For model evaluators whose state function f(x, x_dot, t) describes
   // an implicit ODE, and which accept an optional x_dot input argument,
   // make sure the latter is set to null in order to request the evaluation
   // of a state function corresponding to the explicit ODE formulation
   // x_dot = f(x, t)
-  if (explicitInArgs.supports(MEB::IN_ARG_x_dot))
-    explicitInArgs.set_x_dot(Teuchos::null);
+  if (inArgs.supports(MEB::IN_ARG_x_dot)) inArgs.set_x_dot(Teuchos::null);
 
-  MEB::OutArgs<Scalar> explicitOutArgs =
+  MEB::OutArgs<Scalar> outArgs =
     wrapperModelPairIMEX_->getExplicitModel()->createOutArgs();
-  // Required outArgs
-  explicitOutArgs.set_f(F);
+  outArgs.set_f(F);
 
-  wrapperModelPairIMEX_->getExplicitModel()->evalModel(explicitInArgs,
-                                                       explicitOutArgs);
+  wrapperModelPairIMEX_->getExplicitModel()->evalModel(inArgs, outArgs);
+  Thyra::Vt_S(F.ptr(), -1.0);
 }
 
 
@@ -456,10 +509,12 @@ void StepperIMEX_RK<Scalar>::takeStep(
     const SerialDenseVector<int,Scalar> & b    = implicitTableau_->b();
     const SerialDenseVector<int,Scalar> & c    = implicitTableau_->c();
 
-    // Compute stage solutions
     bool pass = true;
     Thyra::SolveStatus<double> sStatus;
+    stageX_ = workingState->getX();
     Thyra::assign(stageX_.ptr(), *(currentState->getX()));
+
+    // Compute stage solutions
     for (int i = 0; i < numStages; ++i) {
       stepperIMEX_RKObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
@@ -481,20 +536,10 @@ void StepperIMEX_RK<Scalar>::takeStep(
           // stageG_[i] is not needed.
           assign(stageG_[i].ptr(), Teuchos::ScalarTraits<Scalar>::zero());
         } else {
-          typedef Thyra::ModelEvaluatorBase MEB;
-          MEB::InArgs<Scalar>  inArgs  = wrapperModelPairIMEX_->getInArgs();
-          MEB::OutArgs<Scalar> outArgs = wrapperModelPairIMEX_->getOutArgs();
           Thyra::assign(stageX_.ptr(), *xTilde_);
-          inArgs.set_x(stageX_);
-          if (inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(ts);
-          if (inArgs.supports(MEB::IN_ARG_x_dot))
-            inArgs.set_x_dot(Teuchos::null);
-          outArgs.set_f(stageG_[i]);
-
-          stepperIMEX_RKObserver_->observeBeforeDAEExplicit(solutionHistory,
-                                                            *this);
-          wrapperModelPairIMEX_->getImplicitModel()->evalModel(inArgs,outArgs);
-          Thyra::Vt_S(stageG_[i].ptr(), -1.0);
+          stepperIMEX_RKObserver_->
+            observeBeforeImplicitExplicitly(solutionHistory, *this);
+          evalImplicitModelExplicitly(stageX_, ts, dt, i, stageG_[i]);
         }
       } else {
         // Implicit stage for the ImplicitODE_DAE
@@ -502,7 +547,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
 
         // Setup TimeDerivative
         Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
-          Teuchos::rcp(new StepperDIRKTimeDerivative<Scalar>(
+          Teuchos::rcp(new StepperIMEX_RKTimeDerivative<Scalar>(
             alpha, xTilde_.getConst()));
 
         // Setup InArgs and OutArgs
@@ -518,7 +563,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
         if (inArgs.supports(MEB::IN_ARG_stage_number))
           inArgs.set_stage_number(i);
 
-        wrapperModelPairIMEX_->initialize(timeDer, inArgs, outArgs);
+        wrapperModelPairIMEX_->setForSolve(timeDer, inArgs, outArgs);
 
         stepperIMEX_RKObserver_->observeBeforeSolve(solutionHistory, *this);
 
@@ -531,16 +576,14 @@ void StepperIMEX_RK<Scalar>::takeStep(
         Thyra::V_StVpStV(stageG_[i].ptr(), -alpha, *stageX_, alpha, *xTilde_);
       }
 
-      // Evaluate the ExplicitODE
       stepperIMEX_RKObserver_->observeBeforeExplicit(solutionHistory, *this);
       evalExplicitModel(stageX_, tHats, dt, i, stageF_[i]);
-      Thyra::Vt_S(stageF_[i].ptr(), -1.0);
       stepperIMEX_RKObserver_->observeEndStage(solutionHistory, *this);
     }
 
     // Sum for solution: x_n = x_n-1 - dt*Sum{ bHat(i)*f(i) + b(i)*g(i) }
     Thyra::assign((workingState->getX()).ptr(), *(currentState->getX()));
-    for (int i=0 ; i < numStages ; ++i) {
+    for (int i=0; i < numStages; ++i) {
       if (bHat(i) != Teuchos::ScalarTraits<Scalar>::zero())
         Thyra::Vp_StV((workingState->getX()).ptr(), -dt*bHat(i), *(stageF_[i]));
       if (b   (i) != Teuchos::ScalarTraits<Scalar>::zero())

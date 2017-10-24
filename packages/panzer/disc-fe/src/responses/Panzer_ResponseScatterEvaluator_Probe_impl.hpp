@@ -57,6 +57,7 @@
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Intrepid2_FunctionSpaceTools.hpp"
 
@@ -120,14 +121,14 @@ preEvaluate(typename Traits::PreEvalData d)
   // extract linear object container
   responseObj_ =
     Teuchos::rcp_dynamic_cast<Response_Probe<EvalT> >(
-      d.gedc.getDataObject(ResponseBase::buildLookupName(responseName_)),
+      d.gedc->getDataObject(ResponseBase::buildLookupName(responseName_)),
       true);
 }
 
 
 template<typename EvalT, typename Traits, typename LO, typename GO>
 void ResponseScatterEvaluator_ProbeBase<EvalT,Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d,
+postRegistrationSetup(typename Traits::SetupData /* d */,
                       PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(field_,fm);

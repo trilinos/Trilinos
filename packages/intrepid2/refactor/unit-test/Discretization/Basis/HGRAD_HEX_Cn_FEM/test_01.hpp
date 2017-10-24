@@ -307,10 +307,78 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
     errorFlag = -1000;
   };
 
+      try {
+
+        *outStream
+          << "\n"
+          << "===============================================================================\n"
+          << "| TEST 3: Testing Kronecker property of basis functions                                              |\n"
+          << "===============================================================================\n";
+
+
+        const ordinal_type order = std::min(3,maxOrder);
+        HexBasisType hexBasis(order, POINTTYPE_WARPBLEND);
+        constexpr ordinal_type dim=3;
+        const ordinal_type basisCardinality = hexBasis.getCardinality();
+        DynRankView ConstructWithLabel(lattice, basisCardinality , dim);
+        hexBasis.getDofCoords(lattice);
+        //PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_WARPBLEND);
+
+        DynRankView ConstructWithLabel(basisAtLattice, basisCardinality, basisCardinality);
+        hexBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
+
+        auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
+        Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
+
+        for(ordinal_type iface =0; iface<6; iface++) {
+          auto numFaceDofs = hexBasis.getDofCount(2,iface);
+          for(ordinal_type i=0; i<numFaceDofs; i++) {
+            auto idof = hexBasis.getDofOrdinal(2,iface,i);
+            for(ordinal_type j=0; j<numFaceDofs; j++) {
+              auto jdof = hexBasis.getDofOrdinal(2,iface,j);
+              std::cout << idof << " " <<jdof << std::endl;
+              if ( idof==jdof && std::abs( h_basisAtLattice(idof,jdof) - 1.0 ) > tol ) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << " Basis function " << idof << " does not have unit value at its node (" << h_basisAtLattice(idof,jdof) <<")\n";
+              }
+              if ( i!=j && std::abs( h_basisAtLattice(idof,jdof) ) > tol ) {
+                errorFlag++;
+                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+                *outStream << " Basis function " << idof << " does not vanish at node " << jdof << "\n";
+                *outStream << " Basis function value is " << h_basisAtLattice(idof,jdof) << "\n";
+              }
+            }
+          }
+        }
+
+        // test for Kronecker property
+        for (int i=0;i<basisCardinality;i++) {
+          for (int j=0;j<basisCardinality;j++) {
+            if ( i==j && std::abs( h_basisAtLattice(i,j) - 1.0 ) > tol ) {
+              errorFlag++;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+              *outStream << " Basis function " << i << " does not have unit value at its node (" << h_basisAtLattice(i,j) <<")\n";
+            }
+            if ( i!=j && std::abs( h_basisAtLattice(i,j) ) > tol ) {
+              errorFlag++;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+              *outStream << " Basis function " << i << " does not vanish at node " << j << "\n";
+              *outStream << " Basis function value is " << h_basisAtLattice(i,j) << "\n";
+            }
+          }
+        }
+      } catch (std::exception err) {
+        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+        *outStream << err.what() << '\n';
+        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+        errorFlag = -1000;
+      };
+
   *outStream
   << "\n"
   << "===============================================================================\n"
-  << "| TEST 3: correctness of basis function values                                |\n"
+  << "| TEST 4: correctness of basis function values                                |\n"
   << "===============================================================================\n";
 
   outStream -> precision(20);

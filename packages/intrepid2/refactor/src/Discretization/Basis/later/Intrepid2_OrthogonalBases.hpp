@@ -59,7 +59,7 @@
 
 namespace Intrepid2 {
   
-  /** \class Intrepid2::OrthgonalBases
+  /** \class Intrepid2::OrthogonalBases
   \brief Basic implementation of general orthogonal polynomials on a
   range of shapes, including the triangle, and tetrahedron.
 

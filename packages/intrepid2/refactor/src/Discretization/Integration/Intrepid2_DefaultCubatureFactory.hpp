@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_DefaultCubatureFactory.hpp
+/** \file   Intrepid2_DefaultCubatureFactory.hpp
     \brief  Header file for the abstract base class Intrepid2::DefaultCubatureFactory.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim

@@ -53,6 +53,9 @@ namespace Intrepid2 {
 
 
     namespace FunctorArrayTools {
+    /**
+      \brief Functor to contractFieldField see Intrepid2::ArrayTools for more
+    */ 
     template < typename outFieldViewType , typename leftFieldViewType , typename rightFieldViewType >
     struct F_contractFieldField{
       outFieldViewType     _outputFields;
@@ -105,7 +108,7 @@ namespace Intrepid2 {
            typename rightFieldValueType,  class ...rightFieldProperties>
   void
   ArrayTools<SpT>::Internal::
-  contractFieldField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+  contractFieldField(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                       const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
                       const Kokkos::DynRankView<rightFieldValueType, rightFieldProperties...>  rightFields,
                       const bool sumInto ) {
@@ -124,6 +127,9 @@ namespace Intrepid2 {
 
 
     namespace FunctorArrayTools {
+    /**
+      \brief Functor to contractDataField see Intrepid2::ArrayTools for more
+    */ 
     template < typename outputFieldsViewType , typename inputDataViewType , typename inputFieldsViewType >
     struct F_contractDataField {
       outputFieldsViewType  _outputFields;
@@ -186,7 +192,7 @@ namespace Intrepid2 {
            typename inputFieldValueType,  class ...inputFieldProperties>
   void
   ArrayTools<SpT>::Internal::
-  contractDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>  outputFields,
+  contractDataField(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>  outputFields,
                      const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>    inputData,
                      const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>   inputFields,
                      const bool sumInto ) {
@@ -204,6 +210,9 @@ namespace Intrepid2 {
 
 
     namespace FunctorArrayTools {
+    /**
+      \brief Functor to contractDataData see Intrepid2::ArrayTools for more
+    */ 
     template < typename outputDataViewType , typename inputDataLeftViewType , typename inputDataRightViewType >
     struct F_contractDataData {
       outputDataViewType  _outputData;
@@ -254,7 +263,7 @@ namespace Intrepid2 {
            typename inputDataRightValueType, class ...inputDataRightProperties>
   void
   ArrayTools<SpT>::Internal::
-  contractDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>          outputData,
+  contractDataData(       Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>          outputData,
                     const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                     const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                     const bool sumInto ) {
@@ -277,7 +286,7 @@ namespace Intrepid2 {
            typename rightFieldValueType,  class ...rightFieldProperties>
   void
   ArrayTools<ExecSpaceType>::
-  contractFieldFieldScalar( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+  contractFieldFieldScalar(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                             const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
                             const Kokkos::DynRankView<rightFieldValueType, rightFieldProperties...>  rightFields,
                             const bool sumInto ) {
@@ -317,7 +326,7 @@ namespace Intrepid2 {
            typename rightFieldValueType,  class ...rightFieldProperties>
   void
   ArrayTools<ExecSpaceType>::
-  contractFieldFieldVector( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+  contractFieldFieldVector(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                             const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
                             const Kokkos::DynRankView<rightFieldValueType, rightFieldProperties...>  rightFields,
                             const bool sumInto ) {
@@ -358,7 +367,7 @@ namespace Intrepid2 {
            typename rightFieldValueType,  class ...rightFieldProperties>
   void
   ArrayTools<ExecSpaceType>::
-  contractFieldFieldTensor( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+  contractFieldFieldTensor(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                             const Kokkos::DynRankView<leftFieldValueType,  leftFieldProperties...>   leftFields,
                             const Kokkos::DynRankView<rightFieldValueType, rightFieldProperties...>  rightFields,
                             const bool sumInto ) {
@@ -401,7 +410,7 @@ namespace Intrepid2 {
            typename inputFieldValueType,  class ...inputFieldProperties>
   void
   ArrayTools<ExecSpaceType>::
-  contractDataFieldScalar( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>  outputFields,
+  contractDataFieldScalar(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...>  outputFields,
                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>    inputData,
                            const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>   inputFields,
                            const bool sumInto ) {
@@ -440,7 +449,7 @@ namespace Intrepid2 {
            typename inputFieldValueType,  class ...inputFieldProperties>
   void
   ArrayTools<ExecSpaceType>::
-  contractDataFieldVector( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+  contractDataFieldVector(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
                            const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
                            const bool sumInto ) {
@@ -481,7 +490,7 @@ namespace Intrepid2 {
            typename inputFieldValueType,  class ...inputFieldProperties>
   void
   ArrayTools<ExecSpaceType>::
-  contractDataFieldTensor( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+  contractDataFieldTensor(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
                            const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
                            const bool sumInto ) {
@@ -523,7 +532,7 @@ namespace Intrepid2 {
            typename inputDataRightValueType, class ...inputDataRightProperties>
   void
   ArrayTools<ExecSpaceType>::
-  contractDataDataScalar( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+  contractDataDataScalar(       Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                           const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                           const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                           const bool sumInto ) {
@@ -595,7 +604,7 @@ namespace Intrepid2 {
            typename inputDataRightValueType, class ...inputDataRightProperties>
   void
   ArrayTools<ExecSpaceType>::
-  contractDataDataTensor( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+  contractDataDataTensor(       Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                           const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                           const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                           const bool sumInto ) {

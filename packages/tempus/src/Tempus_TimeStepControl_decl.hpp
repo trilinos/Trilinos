@@ -116,6 +116,8 @@ public:
     virtual int getMaxConsecFailures() const
       { return tscPL_->
                get<int>("Maximum Number of Consecutive Stepper Failures"); }
+    virtual int getNumTimeSteps() const
+      { return tscPL_->get<int>("Number of Time Steps"); }
   //@}
 
   /// \name Set ParameterList values
@@ -155,6 +157,7 @@ public:
     virtual void setMaxConsecFailures(int MaxConsecFailures)
       { tscPL_->set<int>
         ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
+    virtual void setNumTimeSteps(int numTimeSteps);
   //@}
 
 private:

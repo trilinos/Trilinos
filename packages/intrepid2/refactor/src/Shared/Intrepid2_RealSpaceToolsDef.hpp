@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_RealSpaceToolsDef.hpp
+/** \file   Intrepid2_RealSpaceToolsDef.hpp
     \brief  Definition file for utility classes providing basic linear algebra functionality.
     \author Created by P. Bochev, D. Ridzal, and D. Day.
     Kokkorized by Kyungjoo Kim
@@ -217,6 +217,10 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+
+    /**
+      \brief Functor for extractScalarValues see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename outputViewType,
              typename inputViewType>
     struct F_extractScalarValues {
@@ -239,11 +243,7 @@ namespace Intrepid2 {
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
               for (ordinal_type m=0;m<mend;++m) {
-#ifdef HAVE_INTREPID2_SACADO
                 _output(i,j,k,l,m) = Sacado::Value<typename inputViewType::value_type>::eval(_input(i,j,k,l,m));
-#else
-                _output(i,j,k,l,m) = _input(i,j,k,l,m);
-#endif
               }
       }
     };
@@ -254,7 +254,7 @@ namespace Intrepid2 {
            typename inputValueType,  class ...inputProperties>
   void
   RealSpaceTools<SpT>::
-  extractScalarValues( /**/  Kokkos::DynRankView<outputValueType,outputProperties...>  output,
+  extractScalarValues(       Kokkos::DynRankView<outputValueType,outputProperties...>  output,
                        const Kokkos::DynRankView<inputValueType, inputProperties...>   input ) {
     typedef          Kokkos::DynRankView<outputValueType,outputProperties...> outputViewType;
     typedef          Kokkos::DynRankView<inputValueType,inputProperties...> inputViewType;
@@ -267,6 +267,9 @@ namespace Intrepid2 {
   }
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor for clone see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename outputViewType,
              typename inputViewType>
     struct F_clone {
@@ -304,7 +307,7 @@ namespace Intrepid2 {
         auto out = (rankDiff == 3 ? Kokkos::subview(_output, k0, k1, k2, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) :
                     rankDiff == 2 ? Kokkos::subview(_output, k0, k1,     Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) :
                     rankDiff == 1 ? Kokkos::subview(_output, k0,         Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()) :
-                    /**/            Kokkos::subview(_output,             Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()));
+                                    Kokkos::subview(_output,             Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()));
         const ordinal_type iend = _input.dimension(0);
         const ordinal_type jend = _input.dimension(1);
         const ordinal_type kend = _input.dimension(2);
@@ -321,7 +324,7 @@ namespace Intrepid2 {
            typename inputValueType,  class ...inputProperties>
   void
   RealSpaceTools<SpT>::
-  clone( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+  clone(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
          const Kokkos::DynRankView<inputValueType,inputProperties...> input ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
@@ -363,6 +366,9 @@ namespace Intrepid2 {
   }
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor to compute absolute value see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename absArrayViewType,
              typename inArrayViewType>
     struct F_absval {
@@ -397,7 +403,7 @@ namespace Intrepid2 {
            typename inArrayValueType,  class ...inArrayProperties>
   void
   RealSpaceTools<SpT>::
-  absval( /**/  Kokkos::DynRankView<absArrayValueType,absArrayProperties...> absArray,
+  absval(       Kokkos::DynRankView<absArrayValueType,absArrayProperties...> absArray,
           const Kokkos::DynRankView<inArrayValueType, inArrayProperties...>   inArray ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
@@ -436,6 +442,9 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor to compute vector norm see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename normArrayViewType,
              typename inVecViewType>
     struct F_vectorNorm {
@@ -458,7 +467,7 @@ namespace Intrepid2 {
                            iter );
 
         auto vec = ( _inVecs.rank() == 2 ? Kokkos::subview(_inVecs, i,    Kokkos::ALL()) :
-                     /**/                  Kokkos::subview(_inVecs, i, j, Kokkos::ALL()) );
+                                           Kokkos::subview(_inVecs, i, j, Kokkos::ALL()) );
 
         _normArray(i, j) = RealSpaceTools<>::Serial::vectorNorm(vec, _normType);
       }
@@ -470,7 +479,7 @@ namespace Intrepid2 {
            typename inVecValueType,     class ...inVecProperties>
   void
   RealSpaceTools<SpT>::
-  vectorNorm( /**/  Kokkos::DynRankView<normArrayValueType,normArrayProperties...> normArray,
+  vectorNorm(       Kokkos::DynRankView<normArrayValueType,normArrayProperties...> normArray,
               const Kokkos::DynRankView<inVecValueType,    inVecProperties...>     inVecs,
               const ENorm normType ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -500,6 +509,9 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor to compute transpose see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename transposeMatViewType,
              typename inMatViewType>
     struct F_transpose {
@@ -525,11 +537,11 @@ namespace Intrepid2 {
 
         auto dst = ( r == 2 ? Kokkos::subview(_transposeMats,       Kokkos::ALL(), Kokkos::ALL()) :
                      r == 3 ? Kokkos::subview(_transposeMats, _i,    Kokkos::ALL(), Kokkos::ALL()) :
-                     /**/     Kokkos::subview(_transposeMats, _i, _j, Kokkos::ALL(), Kokkos::ALL()) );
+                              Kokkos::subview(_transposeMats, _i, _j, Kokkos::ALL(), Kokkos::ALL()) );
 
         auto src = ( r == 2 ? Kokkos::subview(_inMats,       Kokkos::ALL(), Kokkos::ALL()) :
                      r == 3 ? Kokkos::subview(_inMats, _i,    Kokkos::ALL(), Kokkos::ALL()) :
-                     /**/     Kokkos::subview(_inMats, _i, _j, Kokkos::ALL(), Kokkos::ALL()) );
+                              Kokkos::subview(_inMats, _i, _j, Kokkos::ALL(), Kokkos::ALL()) );
 
         for (size_type i=0;i<src.dimension(0);++i) {
           dst(i, i) = src(i, i);
@@ -547,7 +559,7 @@ namespace Intrepid2 {
            typename inMatValueType,        class ...inMatProperties>
   void
   RealSpaceTools<SpT>::
-  transpose( /**/  Kokkos::DynRankView<transposeMatValueType,transposeMatProperties...> transposeMats,
+  transpose(       Kokkos::DynRankView<transposeMatValueType,transposeMatProperties...> transposeMats,
              const Kokkos::DynRankView<inMatValueType,       inMatProperties...>        inMats ) {
 
 #ifdef HAVE_INTREPID2_DEBUG
@@ -574,7 +586,7 @@ namespace Intrepid2 {
     const auto r = transposeMats.rank();
     const auto loopSize = ( r == 2 ? 1 :
                             r == 3 ? transposeMats.dimension(0) :
-                            /**/     transposeMats.dimension(0)*transposeMats.dimension(1) );
+                                     transposeMats.dimension(0)*transposeMats.dimension(1) );
 
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(transposeMats, inMats) );
@@ -583,6 +595,9 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor to compute inverse see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename inverseMatViewType,
              typename inMatViewType>
     struct F_inverse {
@@ -599,7 +614,7 @@ namespace Intrepid2 {
                typename invViewType>
       KOKKOS_FORCEINLINE_FUNCTION
       static void 
-      apply_inverse( /**/  invViewType inv,
+      apply_inverse(       invViewType inv,
                      const matViewType mat ) {
         // compute determinant
         const value_type val = RealSpaceTools<>::Serial::det(mat);
@@ -684,7 +699,7 @@ namespace Intrepid2 {
            typename inMatValueType,      class ...inMatProperties>
   void
   RealSpaceTools<SpT>::
-  inverse( /**/  Kokkos::DynRankView<inverseMatValueType,inverseMatProperties...> inverseMats,
+  inverse(       Kokkos::DynRankView<inverseMatValueType,inverseMatProperties...> inverseMats,
            const Kokkos::DynRankView<inMatValueType,     inMatProperties...>      inMats ) {
 
 #ifdef HAVE_INTREPID2_DEBUG
@@ -734,6 +749,9 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor to compute determinant see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename detArrayViewType,
              typename inMatViewType>
     struct F_det {
@@ -765,7 +783,7 @@ namespace Intrepid2 {
            typename inMatValueType,    class ...inMatProperties>
   void
   RealSpaceTools<SpT>::
-  det( /**/  Kokkos::DynRankView<detArrayValueType,detArrayProperties...> detArray,
+  det(       Kokkos::DynRankView<detArrayValueType,detArrayProperties...> detArray,
        const Kokkos::DynRankView<inMatValueType,   inMatProperties...>    inMats ) {
 
 #ifdef HAVE_INTREPID2_DEBUG
@@ -815,6 +833,9 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor to add md arrays see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename sumArrayViewType,
              typename inArray1Viewtype,
              typename inArray2ViewType>
@@ -851,7 +872,7 @@ namespace Intrepid2 {
            typename inArray2ValueType, class ...inArray2Properties>
   void
   RealSpaceTools<SpT>::
-  add( /**/  Kokkos::DynRankView<sumArrayValueType,sumArrayProperties...> sumArray,
+  add(       Kokkos::DynRankView<sumArrayValueType,sumArrayProperties...> sumArray,
        const Kokkos::DynRankView<inArray1ValueType,inArray1Properties...> inArray1,
        const Kokkos::DynRankView<inArray2ValueType,inArray2Properties...> inArray2 ) {
 
@@ -886,7 +907,7 @@ namespace Intrepid2 {
            typename inArrayValueType,       class ...inArrayProperties>
   void
   RealSpaceTools<SpT>::
-  add( /**/  Kokkos::DynRankView<inoutSumArrayValueType,inoutSumArrayProperties...> inoutSumArray,
+  add(       Kokkos::DynRankView<inoutSumArrayValueType,inoutSumArrayProperties...> inoutSumArray,
        const Kokkos::DynRankView<inArrayValueType,      inArrayProperties...>       inArray ) {
 
 #ifdef HAVE_INTREPID2_DEBUG
@@ -905,11 +926,14 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor to subtract md arrays see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename diffArrayViewType,
              typename inArray1ViewType,
              typename inArray2ViewType>
     struct F_subtract {
-      /**/  diffArrayViewType _diffArray;
+            diffArrayViewType _diffArray;
       const inArray1ViewType  _inArray1;
       const inArray2ViewType  _inArray2;
 
@@ -941,7 +965,7 @@ namespace Intrepid2 {
            typename inArray2ValueType,  class ...inArray2Properties>
   void
   RealSpaceTools<SpT>::
-  subtract( /**/  Kokkos::DynRankView<diffArrayValueType,diffArrayProperties...> diffArray,
+  subtract(       Kokkos::DynRankView<diffArrayValueType,diffArrayProperties...> diffArray,
             const Kokkos::DynRankView<inArray1ValueType, inArray1Properties...>  inArray1,
             const Kokkos::DynRankView<inArray2ValueType, inArray2Properties...>  inArray2 ) {
 
@@ -976,7 +1000,7 @@ namespace Intrepid2 {
            typename inArrayValueType,        class ...inArrayProperties>
   void
   RealSpaceTools<SpT>::
-  subtract( /**/  Kokkos::DynRankView<inoutDiffArrayValueType,inoutDiffArrayProperties...> inoutDiffArray,
+  subtract(       Kokkos::DynRankView<inoutDiffArrayValueType,inoutDiffArrayProperties...> inoutDiffArray,
             const Kokkos::DynRankView<inArrayValueType,       inArrayProperties...>        inArray ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
@@ -994,11 +1018,14 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor to scale md arrays see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename ValueType,
              typename scaledArrayViewType,
              typename inArrayViewType>
     struct F_scale {
-      /**/  scaledArrayViewType _scaledArray;
+            scaledArrayViewType _scaledArray;
       const inArrayViewType     _inArray;
       const ValueType           _alpha;
 
@@ -1031,7 +1058,7 @@ namespace Intrepid2 {
            typename inArrayValueType,     class ...inArrayProperties>
   void
   RealSpaceTools<SpT>::
-  scale( /**/  Kokkos::DynRankView<scaledArrayValueType,scaledArrayProperties...> scaledArray,
+  scale(       Kokkos::DynRankView<scaledArrayValueType,scaledArrayProperties...> scaledArray,
          const Kokkos::DynRankView<inArrayValueType,    inArrayProperties...>     inArray,
          const ValueType alpha ) {
 
@@ -1065,7 +1092,7 @@ namespace Intrepid2 {
            typename inoutScaledArrayValueType, class ...inoutScaledArrayProperties>
   void
   RealSpaceTools<SpT>::
-  scale( /**/  Kokkos::DynRankView<inoutScaledArrayValueType,inoutScaledArrayProperties...> inoutScaledArray,
+  scale(       Kokkos::DynRankView<inoutScaledArrayValueType,inoutScaledArrayProperties...> inoutScaledArray,
          const ValueType alpha ) {
     RealSpaceTools<SpT>::scale(inoutScaledArray, inoutScaledArray, alpha);
   }
@@ -1074,11 +1101,14 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor to compute dot product see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename dotArrayViewType,
              typename inVec1ViewType,
              typename inVec2ViewType>
     struct F_dot {
-      /**/  dotArrayViewType _dotArray;
+            dotArrayViewType _dotArray;
       const inVec1ViewType   _inVecs1;
       const inVec2ViewType   _inVecs2;
 
@@ -1099,9 +1129,9 @@ namespace Intrepid2 {
 
         const auto r = _inVecs1.rank();
         auto vec1 = ( r == 2 ? Kokkos::subview(_inVecs1, i,    Kokkos::ALL()) :
-                      /**/     Kokkos::subview(_inVecs1, i, j, Kokkos::ALL()) );
+                               Kokkos::subview(_inVecs1, i, j, Kokkos::ALL()) );
         auto vec2 = ( r == 2 ? Kokkos::subview(_inVecs2, i,    Kokkos::ALL()) :
-                      /**/     Kokkos::subview(_inVecs2, i, j, Kokkos::ALL()) );
+                               Kokkos::subview(_inVecs2, i, j, Kokkos::ALL()) );
 
         _dotArray(i,j) = RealSpaceTools<>::Serial::dot(vec1, vec2);
       }
@@ -1114,7 +1144,7 @@ namespace Intrepid2 {
            typename inVec2ValueType,   class ...inVec2Properties>
   void
   RealSpaceTools<SpT>::
-  dot( /**/  Kokkos::DynRankView<dotArrayValueType,dotArrayProperties...> dotArray,
+  dot(       Kokkos::DynRankView<dotArrayValueType,dotArrayProperties...> dotArray,
        const Kokkos::DynRankView<inVec1ValueType,  inVec1Properties...>   inVecs1,
        const Kokkos::DynRankView<inVec2ValueType,  inVec2Properties...>   inVecs2 ) {
 
@@ -1151,11 +1181,14 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor to compute matvec see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename matVecViewType,
              typename inMatViewType,
              typename inVecViewType>
     struct F_matvec {
-      /**/  matVecViewType _matVecs;
+            matVecViewType _matVecs;
       const inMatViewType  _inMats;
       const inVecViewType  _inVecs;
 
@@ -1178,15 +1211,15 @@ namespace Intrepid2 {
         
         auto mat    = ( rm == 2 ? Kokkos::subview(_inMats,        Kokkos::ALL(), Kokkos::ALL()) :
                         rm == 3 ? Kokkos::subview(_inMats,  _i,    Kokkos::ALL(), Kokkos::ALL()) :
-                        /**/      Kokkos::subview(_inMats,  _i, _j, Kokkos::ALL(), Kokkos::ALL()) );
+                                  Kokkos::subview(_inMats,  _i, _j, Kokkos::ALL(), Kokkos::ALL()) );
 
         auto vec    = ( rv == 1 ? Kokkos::subview(_inVecs,        Kokkos::ALL()) :
                         rv == 2 ? Kokkos::subview(_inVecs,  _i,    Kokkos::ALL()) :
-                        /**/      Kokkos::subview(_inVecs,  _i, _j, Kokkos::ALL()) );
+                                  Kokkos::subview(_inVecs,  _i, _j, Kokkos::ALL()) );
 
         auto result = ( rr == 1 ? Kokkos::subview(_matVecs,       Kokkos::ALL()) :
                         rr == 2 ? Kokkos::subview(_matVecs, _i,    Kokkos::ALL()) :
-                        /**/      Kokkos::subview(_matVecs, _i, _j, Kokkos::ALL()) );
+                                  Kokkos::subview(_matVecs, _i, _j, Kokkos::ALL()) );
 
         const ordinal_type iend = result.dimension(0);
         const ordinal_type jend = vec.dimension(0);
@@ -1206,7 +1239,7 @@ namespace Intrepid2 {
            typename inVecValueType,  class ...inVecProperties>
   void
   RealSpaceTools<SpT>::
-  matvec( /**/  Kokkos::DynRankView<matVecValueType,matVecProperties...> matVecs,
+  matvec(       Kokkos::DynRankView<matVecValueType,matVecProperties...> matVecs,
           const Kokkos::DynRankView<inMatValueType, inMatProperties...>  inMats,
           const Kokkos::DynRankView<inVecValueType, inVecProperties...>  inVecs ) {
 
@@ -1279,11 +1312,14 @@ namespace Intrepid2 {
   // ------------------------------------------------------------------------------------
 
   namespace FunctorRealSpaceTools {
+    /**
+      \brief Functor to compute vecprod see Intrepid2::RealSpaceTools for more
+    */ 
     template<typename vecProdViewType,
              typename inLeftViewType,
              typename inRightViewType>
     struct F_vecprod {
-      /**/  vecProdViewType _vecProd;
+            vecProdViewType _vecProd;
       const inLeftViewType  _inLeft;
       const inRightViewType _inRight;
       const bool _is_vecprod_3d;
@@ -1307,15 +1343,15 @@ namespace Intrepid2 {
 
         auto left   = ( r == 1 ? Kokkos::subview(_inLeft,         Kokkos::ALL()) :
                         r == 2 ? Kokkos::subview(_inLeft,   i,    Kokkos::ALL()) :
-                        /**/     Kokkos::subview(_inLeft,   i, j, Kokkos::ALL()) );
+                                 Kokkos::subview(_inLeft,   i, j, Kokkos::ALL()) );
 
         auto right  = ( r == 1 ? Kokkos::subview(_inRight,        Kokkos::ALL()) :
                         r == 2 ? Kokkos::subview(_inRight,  i,    Kokkos::ALL()) :
-                        /**/     Kokkos::subview(_inRight,  i, j, Kokkos::ALL()) );
+                                 Kokkos::subview(_inRight,  i, j, Kokkos::ALL()) );
 
         auto result = ( r == 1 ? Kokkos::subview(_vecProd,        Kokkos::ALL()) :
                         r == 2 ? Kokkos::subview(_vecProd,  i,    Kokkos::ALL()) :
-                        /**/     Kokkos::subview(_vecProd,  i, j, Kokkos::ALL()) );
+                                 Kokkos::subview(_vecProd,  i, j, Kokkos::ALL()) );
 
         // branch prediction is possible
         if (_is_vecprod_3d) {
@@ -1335,7 +1371,7 @@ namespace Intrepid2 {
            typename inRightValueType, class ...inRightProperties>
   void
   RealSpaceTools<SpT>::
-  vecprod( /**/  Kokkos::DynRankView<vecProdValueType,vecProdProperties...> vecProd,
+  vecprod(       Kokkos::DynRankView<vecProdValueType,vecProdProperties...> vecProd,
            const Kokkos::DynRankView<inLeftValueType, inLeftProperties...>  inLeft,
            const Kokkos::DynRankView<inRightValueType,inRightProperties...> inRight ) {
 
@@ -1376,7 +1412,7 @@ namespace Intrepid2 {
     const auto r = inLeft.rank();
     const auto loopSize = ( r == 1 ? 1 :
                             r == 2 ? inLeft.dimension(0) :
-                            /**/     inLeft.dimension(0)*inLeft.dimension(1) );
+                                     inLeft.dimension(0)*inLeft.dimension(1) );
     const bool is_vecprod_3d = (inLeft.dimension(inLeft.rank() - 1) == 3);
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(vecProd, inLeft, inRight, is_vecprod_3d) );
@@ -1415,7 +1451,7 @@ namespace Intrepid2 {
 //     // designed for small problems
 //     value_type r_val(0);
 
-//     // ** This is probably not necessary
+//     // * This is probably not necessary
 //     if (Kokkos::Impl::is_same<ExecSpace,Kokkos::Serial>::value) {
 //       const ordinal_type iend = iVec1.dimension(0);
 //       for (ordinal_type i=0;i<iend;++i)

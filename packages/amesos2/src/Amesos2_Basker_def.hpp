@@ -81,7 +81,7 @@ Basker<Matrix,Vector>::Basker(
   // TODO: use data_ here to init
    
   
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
 #ifdef KOKKOS_HAVE_OPENMP
   /*
@@ -118,7 +118,7 @@ Basker<Matrix,Vector>::Basker(
 template <class Matrix, class Vector>
 Basker<Matrix,Vector>::~Basker( )
 {  
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
   delete basker;
 #endif
@@ -145,7 +145,7 @@ template <class Matrix, class Vector>
 int
 Basker<Matrix,Vector>::symbolicFactorization_impl()
 {
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
 
   if(this->root_)
     {     
@@ -235,7 +235,7 @@ Basker<Matrix,Vector>::numericFactorization_impl()
   #endif
 
      
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
       // NDE: Special case 
       // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
@@ -368,7 +368,7 @@ Basker<Matrix,Vector>::solve_impl(
         Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
         ierr = basker->Solve(nrhs, b_vector, x_vector);
 #else
         ierr = basker.solveMultiple(nrhs, b_vector, x_vector);
@@ -416,7 +416,7 @@ Basker<Matrix,Vector>::solve_impl(
         Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
         ierr = basker->Solve(nrhs, bvals_.getRawPtr(), 
             xvals_.getRawPtr());
 #else
@@ -484,7 +484,7 @@ Basker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterL
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
     }
 
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
   if(parameterList->isParameter("num_threads"))
     {
       num_threads = parameterList->get<int>("num_threads");
@@ -551,7 +551,7 @@ Basker<Matrix,Vector>::getValidParameters_impl() const
   static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
 
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
   if( is_null(valid_params) )
     {
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
@@ -612,14 +612,14 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
   #endif
 
 
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
   // NDE: Can clean up duplicated code with the #ifdef guards
 
 #ifndef HAVE_TEUCHOS_COMPLEX
   bool case_check = ( (this->root_) && (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
 
   if ( case_check ) {
-  // NDE: Nothing is done in this special case - CRS raw pointers are passed to SHYLUBASKER and transpose of copies handled there
+  // NDE: Nothing is done in this special case - CRS raw pointers are passed to SHYLU_NODEBASKER and transpose of copies handled there
   // In this case, colptr_, rowind_, nzvals_ are invalid
   }
   else 
@@ -694,7 +694,7 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
                         std::runtime_error,
                         "Amesos2_Basker loadA_impl: Did not get the expected number of non-zero vals");
   }
-#endif //SHYLUBASKER
+#endif //SHYLU_NODEBASKER
   return true;
 }
 

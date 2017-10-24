@@ -674,7 +674,7 @@ bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2
 }
 
 
-bool Teuchos::haveSameValues( const ParameterList& list1, const ParameterList& list2 )
+bool Teuchos::haveSameValues( const ParameterList& list1, const ParameterList& list2, bool verbose )
 {
   // Check that the top-level names of the two parameter lists are the same
   //const std::string &paramListName1 = list1.name();
@@ -694,30 +694,35 @@ bool Teuchos::haveSameValues( const ParameterList& list1, const ParameterList& l
     const ParameterEntry &entry1       = list1.entry(itr1);
     const ParameterEntry &entry2       = list2.entry(itr2);
     if( entryName1 != entryName2 ) {
+      if (verbose) std::cerr << "entryName1 \"" << entryName1 << "\" != entryName2 \"" << entryName2 << "\"\n";
       return false;
     }
     if( entry1.isList() && entry2.isList() ) {
       if (
         !haveSameValues(
           getValue<ParameterList>(entry1),
-          getValue<ParameterList>(entry2))
+          getValue<ParameterList>(entry2),
+          verbose)
         )
       {
         // Note: Above we cast to a non-const ParameterList even through we
         // only need a const ParameterList.  We have to do this since a
         // non-const ParameterList is always added initially which determines
         // the value.
+        if (verbose) std::cerr << "sublists \"" << entryName1 << "\" differ\n";
         return false;
       }
     }
     else {
       if( entry1.getAny() != entry2.getAny() ) {
+        if (verbose) std::cerr << "for key \"" << entryName1 << "\", value \"" << entry1.getAny() << "\" != \"" << entry2.getAny() << "\"\n";
         return false;
       }
     }
   }
   // Check that the two parameter lists are the same length:
   if ((itr1 != list1.end()) || (itr2 != list2.end())) {
+    if (verbose) std::cerr << "lists are not the same size\n";
     return false;
   }
   return true;

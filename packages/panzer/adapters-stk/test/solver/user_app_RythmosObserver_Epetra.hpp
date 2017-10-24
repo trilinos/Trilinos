@@ -51,7 +51,7 @@
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 
 #include "Panzer_STK_Utilities.hpp"
 
@@ -66,7 +66,7 @@ namespace user_app {
     
     RythmosObserver_Epetra(const Teuchos::RCP<panzer_stk::STK_Interface>& mesh,
 			   const RCP<panzer::UniqueGlobalIndexer<int,int> >& dof_manager,
-			   const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof) :
+			   const Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >& lof) :
       m_mesh(mesh),
       m_dof_manager(dof_manager),
       m_lof(lof)
@@ -78,12 +78,12 @@ namespace user_app {
       return Teuchos::rcp(new RythmosObserver_Epetra(m_mesh, m_dof_manager, m_lof));
     }
 
-    void resetIntegrationObserver(const Rythmos::TimeRange<double> &integrationTimeDomain)
+    void resetIntegrationObserver(const Rythmos::TimeRange<double>& /* integrationTimeDomain */)
     { }
 
     void observeCompletedTimeStep(const Rythmos::StepperBase<double> &stepper,
-				  const Rythmos::StepControlInfo<double> &stepCtrlInfo,
-				  const int timeStepIter)
+				  const Rythmos::StepControlInfo<double>& /* stepCtrlInfo */,
+				  const int /* timeStepIter */)
     { 
       std::cout << "*************************ROGER in Time************************************"  << std::endl;
       std::cout << "time = " << stepper.getStepStatus().time << std::endl;
@@ -106,7 +106,7 @@ namespace user_app {
 
     Teuchos::RCP<panzer_stk::STK_Interface> m_mesh;
     Teuchos::RCP<panzer::UniqueGlobalIndexer<int,int> > m_dof_manager;
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > m_lof;
+    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > m_lof;
 
   };
 

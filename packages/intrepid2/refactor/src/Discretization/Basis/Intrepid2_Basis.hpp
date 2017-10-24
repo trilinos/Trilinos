@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_Basis.hpp
+/** \file   Intrepid2_Basis.hpp
     \brief  Header file for the abstract base class Intrepid2::Basis.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
@@ -560,9 +560,9 @@ namespace Intrepid2 {
   //                                                                                            //
   //--------------------------------------------------------------------------------------------//
 
-  ///
-  /// functions for orders, cardinality, etc.
-  ///
+  //
+  // functions for orders, cardinality, etc.
+  //
 
 
   /** \brief  Returns the rank of fields in a function space of the specified type.
@@ -773,9 +773,9 @@ void getJacobyRecurrenceCoeffs (
 
 
 
-  ///
-  /// Argument check
-  ///
+  //
+  // Argument check
+  //
 
 
   /** \brief  Runtime check of the arguments for the getValues method in an HGRAD-conforming
@@ -832,7 +832,7 @@ void getJacobyRecurrenceCoeffs (
                             const shards::CellTopology  cellTopo,
                             const ordinal_type          basisCard );
 
-  /** \brief  Runtime check of the arguments for the getValues method in an L2-conforming
+  /** \brief  Runtime check of the arguments for the getValues method in an HVOL-conforming
       FEM basis. Verifies that ranks and dimensions of <var>ViewType</var> input and output
       arrays are consistent with the specified <var>operatorType</var>.
 
@@ -844,7 +844,7 @@ void getJacobyRecurrenceCoeffs (
   */
   template<typename outputValueViewType,
            typename inputPointViewType>
-  void getValues_L2_Args( const outputValueViewType   outputValues,
+  void getValues_HVOL_Args( const outputValueViewType   outputValues,
                              const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology  cellTopo,
@@ -860,7 +860,7 @@ void getJacobyRecurrenceCoeffs (
 //                                                                                            //
 //--------------------------------------------------------------------------------------------//
 /**
- \page basis_page                       Intrepid basis class
+ \page basis_page                       Intrepid2 basis class
 
 
 
@@ -900,9 +900,10 @@ void getJacobyRecurrenceCoeffs (
 
  \section basis_md_array_sec            MD array template arguments for basis methods
 
- FEM and FVD basis evaluation methods use generic MD arrays (see \ref md_array_page for details) to
- pass the  evaluation points (and cell vertices for FVD evaluation) and to return the basis values.
- The ranks  and the dimensions of the MD array arguments for these methods are as follows.
+ FEM and FVD basis evaluation methods in Intrepid2 use <a href="https://github.com/kokkos/">Kokkos</a> 
+ dynamic rank views as the default MD arrays to pass the evaluation points (and cell vertices for FVD 
+ evaluation) and to return the basis values.
+ The ranks and the dimensions of the MD array arguments for these methods are as follows.
 
 
 

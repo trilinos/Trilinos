@@ -129,8 +129,8 @@ void
 MyEquationSet<EvalT>::
 buildAndRegisterEquationSetEvaluators(
   PHX::FieldManager<panzer::Traits>& fm,
-  const panzer::FieldLibrary&        fl,
-  const Teuchos::ParameterList&      userData) const
+  const panzer::FieldLibrary&        /* fl       */,
+  const Teuchos::ParameterList&      /* userData */) const
 {
   using panzer::BasisIRLayout;
   using panzer::IntegrationRule;

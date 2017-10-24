@@ -203,7 +203,7 @@ namespace panzer {
     derivative_dimensions.push_back(8);
     fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     sd.worksets_ = work_sets;
     fm.postRegistrationSetup(sd);
 
@@ -221,7 +221,7 @@ namespace panzer {
     PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
        fieldData_qedge1("Residual",basis_qedge1->functional);
 
-    fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_qedge1);
+    fm.getFieldData<panzer::Traits::Residual>(fieldData_qedge1);
 
     TEST_EQUALITY(fieldData_qedge1.dimension(0),1);
     TEST_EQUALITY(fieldData_qedge1.dimension(1),4);

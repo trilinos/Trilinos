@@ -41,7 +41,7 @@
 // @HEADER
 
 /** \file   Intrepid2_ArrayToolsDefScalar.hpp
-    \brief  Definition file for scalar multiply operations of the array tools interface.
+    \brief  Definition file for scalar multiply operations of the array tools class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
 */
@@ -52,13 +52,16 @@
 namespace Intrepid2 {
 
   namespace FunctorArrayTools {
+    /**
+       \brief Functor for scalarMultiply see Intrepid2::ArrayTools for more
+    */
     template<typename outputViewType,
              typename inputLeftViewType,
              typename inputRightViewType,
              bool equalRank,
              bool reciprocal>
     struct F_scalarMultiply {
-      /**/  outputViewType _output;
+            outputViewType _output;
       const inputLeftViewType _inputLeft;
       const inputRightViewType _inputRight;
 
@@ -125,7 +128,7 @@ namespace Intrepid2 {
            typename inputFieldValueType,  class ...inputFieldProperties>
   void
   ArrayTools<SpT>::
-  scalarMultiplyDataField( /**/  Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
+  scalarMultiplyDataField(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
                            const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
                            const bool reciprocal ) {
@@ -210,7 +213,7 @@ namespace Intrepid2 {
            typename inputDataRightValueType, class ...inputDataRightProperties>
   void
   ArrayTools<SpT>::
-  scalarMultiplyDataData( /**/  Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
+  scalarMultiplyDataData(       Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                           const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                           const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
                           const bool reciprocal ) {

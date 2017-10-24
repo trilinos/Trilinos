@@ -101,10 +101,10 @@ public:
 
 /*************** Linear object factory methods *******************/
 
-   virtual void readVector(const std::string & identifier,LinearObjContainer & loc,int id) const 
+   virtual void readVector(const std::string & /* identifier */, LinearObjContainer & /* loc */, int /* id */) const 
    { TEUCHOS_ASSERT(false); }
 
-   virtual void writeVector(const std::string & identifier,const LinearObjContainer & loc,int id) const
+   virtual void writeVector(const std::string & /* identifier */, const LinearObjContainer & /* loc */, int /* id */) const
    { TEUCHOS_ASSERT(false); }
 
    virtual Teuchos::RCP<LinearObjContainer> buildLinearObjContainer() const;
@@ -143,7 +143,13 @@ public:
      * This is used primarily for gather operations and hides the allocation and usage
      * of the ghosted vector from the user.
      */
-   virtual Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> buildDomainContainer() const;
+   virtual Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> buildReadOnlyDomainContainer() const;
+
+   /** Build a GlobalEvaluationDataContainer that handles all domain communication.
+     * This is used primarily for gather operations and hides the allocation and usage
+     * of the ghosted vector from the user.
+     */
+   virtual Teuchos::RCP<WriteVector_GlobalEvaluationData> buildWriteDomainContainer() const;
 
    Teuchos::MpiComm<int> getComm() const;
 

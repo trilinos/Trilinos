@@ -40,23 +40,26 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_BLOCKED_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
-#define PANZER_BLOCKED_EPETRA_LINEAR_OBJ_FACTORY_IMPL_HPP
+#ifndef   __Panzer_BlockedTpetraLinearObjFactory_impl_hpp__
+#define   __Panzer_BlockedTpetraLinearObjFactory_impl_hpp__
 
+// Panzer
+#include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
+#include "Panzer_EpetraVector_Write_GlobalEvaluationData.hpp"                    // JMG:  Remove this eventually.                 
+#include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
 
+// Thyra
+#include "Thyra_DefaultBlockedLinearOp.hpp"
+#include "Thyra_DefaultProductVectorSpace.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
+#include "Thyra_TpetraThyraWrappers.hpp"
+
+// Tpetra
+#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-
-#include "Thyra_TpetraThyraWrappers.hpp"
-#include "Thyra_DefaultProductVectorSpace.hpp"
-#include "Thyra_DefaultBlockedLinearOp.hpp"
-#include "Thyra_TpetraLinearOp.hpp"
-#include "Thyra_SpmdVectorBase.hpp"
-
-#include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
-#include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
 
 namespace panzer {
 
@@ -320,34 +323,62 @@ adjustForDirichletConditions(const VectorType & local_bcs,
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 void BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-applyDirichletBCs(const LinearObjContainer & counter,
-                  LinearObjContainer & result) const
+applyDirichletBCs(const LinearObjContainer & /* counter */,
+                  LinearObjContainer & /* result */) const
 {
   TEUCHOS_ASSERT(false); // not yet implemented
 }
 
-template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildReadOnlyDomainContainer()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename ScalarT, typename LocalOrdinalT,
+  typename GlobalOrdinalT, typename NodeT>
 Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>
-BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
-buildDomainContainer() const
+BlockedTpetraLinearObjFactory<Traits, ScalarT, LocalOrdinalT, GlobalOrdinalT,
+  NodeT>::
+buildReadOnlyDomainContainer() const
 {
+  using std::vector;
   using Teuchos::RCP;
   using Teuchos::rcp;
-
-  std::vector<RCP<ReadOnlyVector_GlobalEvaluationData> > gedBlocks;
-  for(int i=0;i<getBlockColCount();i++) {
-    RCP<TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT> > vec_ged
-      = rcp(new TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>);
-    vec_ged->initialize(getGhostedImport(i),getGhostedMap(i),getMap(i));
-
-    gedBlocks.push_back(vec_ged);
+  using BVROGED = panzer::BlockedVector_ReadOnly_GlobalEvaluationData;
+  using TVROGED = panzer::TpetraVector_ReadOnly_GlobalEvaluationData<ScalarT,
+    LocalOrdinalT, GlobalOrdinalT, NodeT>;
+  vector<RCP<ReadOnlyVector_GlobalEvaluationData>> gedBlocks;
+  for (int i(0); i < getBlockColCount(); ++i)
+  {
+    auto tvroged = rcp(new TVROGED);
+    tvroged->initialize(getGhostedImport(i), getGhostedMap(i), getMap(i));
+    gedBlocks.push_back(tvroged);
   }
-
-  RCP<BlockedVector_ReadOnly_GlobalEvaluationData> ged = rcp(new BlockedVector_ReadOnly_GlobalEvaluationData);
-  ged->initialize(getGhostedThyraDomainSpace(),getThyraDomainSpace(),gedBlocks);
-
+  auto ged = rcp(new BVROGED);
+  ged->initialize(getGhostedThyraDomainSpace(), getThyraDomainSpace(),
+    gedBlocks);
   return ged;
-}
+} // end of buildReadOnlyDomainContainer()
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  buildWriteDomainContainer()
+//
+///////////////////////////////////////////////////////////////////////////////
+template<typename Traits, typename ScalarT, typename LocalOrdinalT,
+  typename GlobalOrdinalT, typename NodeT>
+Teuchos::RCP<WriteVector_GlobalEvaluationData>
+BlockedTpetraLinearObjFactory<Traits, ScalarT, LocalOrdinalT, GlobalOrdinalT,
+  NodeT>::
+buildWriteDomainContainer() const
+{
+  using std::logic_error;
+  using Teuchos::rcp;
+  using EVWGED = panzer::EpetraVector_Write_GlobalEvaluationData;
+  auto ged = rcp(new EVWGED);
+  TEUCHOS_TEST_FOR_EXCEPTION(true, logic_error, "NOT YET IMPLEMENTED")
+  return ged;
+} // end of buildWriteDomainContainer()
 
 template <typename Traits,typename ScalarT,typename LocalOrdinalT,typename GlobalOrdinalT,typename NodeT>
 Teuchos::MpiComm<int> BlockedTpetraLinearObjFactory<Traits,ScalarT,LocalOrdinalT,GlobalOrdinalT,NodeT>::
@@ -1045,4 +1076,4 @@ endFill(LinearObjContainer & loc) const
 
 }
 
-#endif
+#endif // __Panzer_BlockedTpetraLinearObjFactory_impl_hpp__

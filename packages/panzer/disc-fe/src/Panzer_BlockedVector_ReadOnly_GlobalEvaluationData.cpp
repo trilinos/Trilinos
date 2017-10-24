@@ -108,7 +108,7 @@ namespace panzer
   BlockedVector_ReadOnly_GlobalEvaluationData::
   initialize(
     const Teuchos::RCP<const Thyra::VectorSpaceBase<double>>& ghostedSpace,
-    const Teuchos::RCP<const Thyra::VectorSpaceBase<double>>& ownedSpace,
+    const Teuchos::RCP<const Thyra::VectorSpaceBase<double>>& /* ownedSpace */,
     const std::vector<Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData>>&
       gedBlocks)
   {
@@ -121,7 +121,7 @@ namespace panzer
     for (size_t i(0); i < gedBlocks.size(); ++i)
       TEUCHOS_TEST_FOR_EXCEPTION(not gedBlocks[i]->isInitialized(),
         logic_error, "BlockedVector_ReadOnly_GlobalEvaluationData::"          \
-        "initialize:  GED block is " << i << " is not initialized.")
+        "initialize:  GED block " << i << " is not initialized.")
     gedBlocks_    = gedBlocks;
     ghostedSpace_ =
       rcp_dynamic_cast<const DefaultProductVectorSpace<double>>(ghostedSpace);

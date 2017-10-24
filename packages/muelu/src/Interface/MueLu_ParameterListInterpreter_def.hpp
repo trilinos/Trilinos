@@ -826,6 +826,8 @@ namespace MueLu {
         "BLOCK RELAXATION", "BLOCK_RELAXATION", "BLOCKRELAXATION" ,
         "SPARSE BLOCK RELAXATION", "SPARSE_BLOCK_RELAXATION", "SPARSEBLOCKRELAXATION",
         "LINESMOOTHING_BANDEDRELAXATION", "LINESMOOTHING_BANDED_RELAXATION", "LINESMOOTHING_BANDED RELAXATION",
+        "LINESMOOTHING_TRIDIRELAXATION", "LINESMOOTHING_TRIDI_RELAXATION", "LINESMOOTHING_TRIDI RELAXATION",
+        "LINESMOOTHING_TRIDIAGONALRELAXATION", "LINESMOOTHING_TRIDIAGONAL_RELAXATION", "LINESMOOTHING_TRIDIAGONAL RELAXATION",
         "TOPOLOGICAL"}).count(coarseType)) {
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       } else {
@@ -858,7 +860,7 @@ namespace MueLu {
 
     if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "matlab")) {
 #ifdef HAVE_MUELU_MATLAB
-      dropFactory = rcp(new SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>());
+      dropFactory = rcp(new SingleLevelMatlabFactory());
       ParameterList socParams  = paramList.sublist("strength-of-connection: params");
       dropFactory->SetParameterList(socParams);
 #else
@@ -1204,14 +1206,15 @@ namespace MueLu {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "repartition: partitioner", std::string, partName);
       TEUCHOS_TEST_FOR_EXCEPTION(partName != "zoltan" && partName != "zoltan2", Exceptions::InvalidArgument,
                                  "Invalid partitioner name: \"" << partName << "\". Valid options: \"zoltan\", \"zoltan2\"");
-#ifndef HAVE_MUELU_ZOLTAN
+
       bool switched = false;
+      (void)switched;
+#ifndef HAVE_MUELU_ZOLTAN
       if (partName == "zoltan") {
         this->GetOStream(Warnings0) << "Zoltan interface is not available, trying to switch to Zoltan2" << std::endl;
         partName = "zoltan2";
         switched = true;
       }
-      (void)switched;
 #endif
 #ifndef HAVE_MUELU_ZOLTAN2
       if (partName == "zoltan2" && !switched) {
@@ -1594,7 +1597,7 @@ namespace MueLu {
 #undef MUELU_TEST_AND_SET_PARAM_2LIST
 #undef MUELU_TEST_PARAM_2LIST
 
-  int LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t);
+  size_t LevenshteinDistance(const char* s, size_t len_s, const char* t, size_t len_t);
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Validate(const ParameterList& constParamList) const {
@@ -1647,12 +1650,12 @@ namespace MueLu {
         size_t nameEnd   = eString.find_first_of('"', nameStart);
         std::string name = eString.substr(nameStart, nameEnd - nameStart);
 
-        int bestScore = 100;
+        size_t bestScore = 100;
         std::string bestName  = "";
         for (ParameterList::ConstIterator it = validList.begin(); it != validList.end(); it++) {
           const std::string& pName = validList.name(it);
           this->GetOStream(Runtime1) << "| " << pName;
-          int score = LevenshteinDistance(name.c_str(), name.length(), pName.c_str(), pName.length());
+          size_t score = LevenshteinDistance(name.c_str(), name.length(), pName.c_str(), pName.length());
           this->GetOStream(Runtime1) << " -> " << score << std::endl;
           if (score < bestScore) {
             bestScore = score;

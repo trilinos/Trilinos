@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HDIV_QUAD_In_FEM.hpp
-    \brief  Header file for the Intrepid2::HDIV_QUAD_In_FEM class.
+/** \file   Intrepid2_HDIV_QUAD_In_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HDIV_QUAD_In_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal and K. Petrson.
             Kokkorized by Kyungjoo Kim
 */
@@ -56,9 +56,15 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HDIV_QUAD_In_FEM
+    */
     class Basis_HDIV_QUAD_In_FEM {
     public:
       typedef struct Quadrilateral<4> cell_topology_type;
+      /**
+        \brief See Intrepid2::Basis_HDIV_QUAD_In_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,
@@ -85,6 +91,9 @@ namespace Intrepid2 {
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvBubble,
                   const EOperator operatorType );
 
+      /**
+        \brief See Intrepid2::Basis_HDIV_QUAD_In_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                typename vinvViewType,
@@ -115,7 +124,7 @@ namespace Intrepid2 {
           typedef typename outputValueViewType::value_type outputValueType;
           typedef typename outputValueViewType::pointer_type outputPointerType;
           constexpr ordinal_type bufSize = 3*(Parameters::MaxOrder+1)*numPtsEval;
-          outputValueType buf[bufSize];
+          char buf[bufSize*sizeof(outputValueType)];
 
           Kokkos::DynRankView<outputValueType,
             Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);

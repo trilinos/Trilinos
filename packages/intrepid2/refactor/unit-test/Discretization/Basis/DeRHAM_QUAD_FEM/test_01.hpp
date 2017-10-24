@@ -43,7 +43,7 @@
 
 /** \file
     \brief  Test for checking the De Rham complex for FEM on QUAD
-            Testing that HGRAD_Cn --(grad)--> HCURL_In --(curl)--> HDIV_In --(div)--> L2_C(n-1)
+            Testing that HGRAD_Cn --(grad)--> HCURL_In --(curl)--> HDIV_In --(div)--> HVOL_C(n-1)
             And that curl grad f = 0, and div curl f =0.
     \author Created by M. Perego
  */
@@ -62,7 +62,7 @@
 #include "Intrepid2_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid2_HCURL_QUAD_In_FEM.hpp"
 #include "Intrepid2_HDIV_QUAD_In_FEM.hpp"
-#include "Intrepid2_L2_QUAD_Cn_FEM.hpp"
+#include "Intrepid2_HVOL_QUAD_Cn_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
@@ -129,7 +129,7 @@ int DeRHAM_QUAD_FEM_Test01(const bool verbose) {
   typedef Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> QuadHGRADBasisType;
   typedef Basis_HCURL_QUAD_In_FEM<DeviceSpaceType,outputValueType,pointValueType> QuadHCURLBasisType;
   typedef Basis_HDIV_QUAD_In_FEM<DeviceSpaceType,outputValueType,pointValueType> QuadHDIVBasisType;
-  typedef Basis_L2_QUAD_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> QuadL2BasisType;
+  typedef Basis_HVOL_QUAD_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> QuadHVOLBasisType;
 
   constexpr ordinal_type dim = 2;
   constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
@@ -429,12 +429,12 @@ int DeRHAM_QUAD_FEM_Test01(const bool verbose) {
     << "\n"
     << "=======================================================================================================\n"
     << "| TEST 3: Testing that the divergence of HDIV_In functions and the curl of HCURL_In functions         |\n"
-    << "|         belong to L2_C(n-1) space                                                                   |\n"
+    << "|         belong to HVOL_C(n-1) space                                                                   |\n"
     << "=======================================================================================================\n";
 
     /*
      * For every order n<=maxOrder, we check that the div of a function in HDIV_In space and the curl of a 
-     * function in HCURL_In space is in the L2_C(n-1) space.
+     * function in HCURL_In space is in the HVOL_C(n-1) space.
      */
 
     for (ordinal_type order=1; order <= maxOrder; ++order ) {
@@ -446,34 +446,34 @@ int DeRHAM_QUAD_FEM_Test01(const bool verbose) {
       DynRankView ConstructWithLabel(refCoords, refCardinality, dim);
       quadHGradBasis.getDofCoords(refCoords);
 
-      //Creating HDIV, HCURL and L2 basis
+      //Creating HDIV, HCURL and HVOL basis
       QuadHDIVBasisType quadHDivBasis(order, POINTTYPE_EQUISPACED);  //any point type is fine
       QuadHCURLBasisType quadHCurlBasis(order, POINTTYPE_EQUISPACED);  //any point type is fine
-      QuadL2BasisType quadL2Basis(order-1, POINTTYPE_WARPBLEND);   //any point type is fine
+      QuadHVOLBasisType quadHVOLBasis(order-1, POINTTYPE_WARPBLEND);   //any point type is fine
 
       const ordinal_type hdivCardinality = quadHDivBasis.getCardinality();
       const ordinal_type hcurlCardinality = quadHCurlBasis.getCardinality();
-      const ordinal_type l2Cardinality = quadL2Basis.getCardinality();
+      const ordinal_type hvolCardinality = quadHVOLBasis.getCardinality();
 
-      //Getting DOF coordinates for HCURL, HDIV and L2 elements
+      //Getting DOF coordinates for HCURL, HDIV and HVOL elements
       DynRankView ConstructWithLabel(hdivDofCoords, hdivCardinality, dim);
       quadHDivBasis.getDofCoords(hdivDofCoords);
 
       DynRankView ConstructWithLabel(hcurlDofCoords, hcurlCardinality, dim);
       quadHCurlBasis.getDofCoords(hcurlDofCoords);
 
-      DynRankView ConstructWithLabel(l2DofCoords, l2Cardinality, dim);
-      quadL2Basis.getDofCoords(l2DofCoords);
+      DynRankView ConstructWithLabel(hvolDofCoords, hvolCardinality, dim);
+      quadHVOLBasis.getDofCoords(hvolDofCoords);
 
-      //Getting DOF coefficients for HCURL, HDIV and L2 elements
+      //Getting DOF coefficients for HCURL, HDIV and HVOL elements
       DynRankView ConstructWithLabel(hdivDofCoeffs, hdivCardinality, dim);
       quadHDivBasis.getDofCoeffs(hdivDofCoeffs);
 
       DynRankView ConstructWithLabel(hcurlDofCoeffs, hcurlCardinality, dim);
       quadHCurlBasis.getDofCoeffs(hcurlDofCoeffs);
 
-      DynRankView ConstructWithLabel(l2DofCoeffs, l2Cardinality);
-      quadL2Basis.getDofCoeffs(l2DofCoeffs);
+      DynRankView ConstructWithLabel(hvolDofCoeffs, hvolCardinality);
+      quadHVOLBasis.getDofCoeffs(hvolDofCoeffs);
 
       //Evaluating the function at HDIV dof coordinates
       DynRankView ConstructWithLabel(funAtHDivDofCoords, hdivCardinality, dim);
@@ -498,38 +498,38 @@ int DeRHAM_QUAD_FEM_Test01(const bool verbose) {
           ifunDivAtRefCoords(i) += funHDivCoeffs(k)*divOfHDivBasisAtRefCoords(k,i);
 
 
-      //Computing the div of the (hdiv) interpolated function (ifun) at L2 dof coordinates
-      DynRankView ConstructWithLabel(divOfHDivBasisAtL2DofCoords, hdivCardinality , l2Cardinality);
-      quadHDivBasis.getValues(divOfHDivBasisAtL2DofCoords, l2DofCoords, OPERATOR_DIV);
-      DynRankView ConstructWithLabel(ifunDivAtL2DofCoords, l2Cardinality);
-      for(int i=0;i<l2Cardinality;i++)
+      //Computing the div of the (hdiv) interpolated function (ifun) at HVOL dof coordinates
+      DynRankView ConstructWithLabel(divOfHDivBasisAtHVOLDofCoords, hdivCardinality , hvolCardinality);
+      quadHDivBasis.getValues(divOfHDivBasisAtHVOLDofCoords, hvolDofCoords, OPERATOR_DIV);
+      DynRankView ConstructWithLabel(ifunDivAtHVOLDofCoords, hvolCardinality);
+      for(int i=0;i<hvolCardinality;i++)
         for(int k=0;k<hdivCardinality;k++)
-          ifunDivAtL2DofCoords(i) += funHDivCoeffs(k)*divOfHDivBasisAtL2DofCoords(k,i);
+          ifunDivAtHVOLDofCoords(i) += funHDivCoeffs(k)*divOfHDivBasisAtHVOLDofCoords(k,i);
 
 
-      //Interpolating the div of ifun in the L2 space by computing the degrees of freedom for the function
-      DynRankView ConstructWithLabel(ifunDivL2Coeffs, l2Cardinality);
-      for(int i=0;i<l2Cardinality;i++)
-        ifunDivL2Coeffs(i) += ifunDivAtL2DofCoords(i)*l2DofCoeffs(i); //not really needed for L2, l2DofCoeffs = 1
+      //Interpolating the div of ifun in the HVOL space by computing the degrees of freedom for the function
+      DynRankView ConstructWithLabel(ifunDivHVOLCoeffs, hvolCardinality);
+      for(int i=0;i<hvolCardinality;i++)
+        ifunDivHVOLCoeffs(i) += ifunDivAtHVOLDofCoords(i)*hvolDofCoeffs(i); //not really needed for HVOL, hvolDofCoeffs = 1
 
-      //Evaluating the div of ifun in the L2 space at HDIV dof coordinates and compare it with the div of ifun at the same coords
+      //Evaluating the div of ifun in the HVOL space at HDIV dof coordinates and compare it with the div of ifun at the same coords
       //We note if the two representations of the div of ifun are equal at the HDIV dof coordinates, they are equal everywhere.
-      DynRankView ConstructWithLabel(l2BasisAtRefCoords, l2Cardinality , refCardinality);
-      quadL2Basis.getValues(l2BasisAtRefCoords, refCoords, OPERATOR_VALUE);
-      DynRankView ConstructWithLabel(ifunDivInL2SpaceAtRefCoords, refCardinality);
+      DynRankView ConstructWithLabel(hvolBasisAtRefCoords, hvolCardinality , refCardinality);
+      quadHVOLBasis.getValues(hvolBasisAtRefCoords, refCoords, OPERATOR_VALUE);
+      DynRankView ConstructWithLabel(ifunDivInHVOLSpaceAtRefCoords, refCardinality);
       pointValueType diffErr(0);
       for(int i=0;i<refCardinality;i++) {
-        for(int k=0;k<l2Cardinality;k++)
-          ifunDivInL2SpaceAtRefCoords(i) += ifunDivL2Coeffs(k)*l2BasisAtRefCoords(k,i);
-        diffErr = std::max(diffErr, std::abs(ifunDivInL2SpaceAtRefCoords(i) - ifunDivAtRefCoords(i)));
+        for(int k=0;k<hvolCardinality;k++)
+          ifunDivInHVOLSpaceAtRefCoords(i) += ifunDivHVOLCoeffs(k)*hvolBasisAtRefCoords(k,i);
+        diffErr = std::max(diffErr, std::abs(ifunDivInHVOLSpaceAtRefCoords(i) - ifunDivAtRefCoords(i)));
       }
 
       //Check that the two representations of the div of ifun are consistent
       if(diffErr > pow(7, order-1)*tol) { //heuristic relation on how round-off error depends on order
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << "Div of HDIV_I" << order << " function does not belong to L2_C" << order-1 << "."<<
-            "\nIn fact the L2 interpolation of the function div is different from the function div."<<
+        *outStream << "Div of HDIV_I" << order << " function does not belong to HVOL_C" << order-1 << "."<<
+            "\nIn fact the HVOL interpolation of the function div is different from the function div."<<
             "\nThe max norm of the difference at HDIV DOF coordinates is: " <<  diffErr << std::endl;
       }
 
@@ -555,36 +555,36 @@ int DeRHAM_QUAD_FEM_Test01(const bool verbose) {
           ifunCurlAtRefCoords(i) += funHCurlCoeffs(k)*curlOfHCurlBasisAtRefCoords(k,i);
 
 
-      //Computing the curl of the (hcurl) interpolated function (ifun) at L2 dof coordinates
-      DynRankView ConstructWithLabel(curlOfHCurlBasisAtL2DofCoords, hcurlCardinality , l2Cardinality);
-      quadHCurlBasis.getValues(curlOfHCurlBasisAtL2DofCoords, l2DofCoords, OPERATOR_CURL);
-      DynRankView ConstructWithLabel(ifunCurlAtL2DofCoords, l2Cardinality);
-      for(int i=0;i<l2Cardinality;i++)
+      //Computing the curl of the (hcurl) interpolated function (ifun) at HVOL dof coordinates
+      DynRankView ConstructWithLabel(curlOfHCurlBasisAtHVOLDofCoords, hcurlCardinality , hvolCardinality);
+      quadHCurlBasis.getValues(curlOfHCurlBasisAtHVOLDofCoords, hvolDofCoords, OPERATOR_CURL);
+      DynRankView ConstructWithLabel(ifunCurlAtHVOLDofCoords, hvolCardinality);
+      for(int i=0;i<hvolCardinality;i++)
         for(int k=0;k<hcurlCardinality;k++)
-          ifunCurlAtL2DofCoords(i) += funHCurlCoeffs(k)*curlOfHCurlBasisAtL2DofCoords(k,i);
+          ifunCurlAtHVOLDofCoords(i) += funHCurlCoeffs(k)*curlOfHCurlBasisAtHVOLDofCoords(k,i);
 
 
-      //Interpolating the curl of ifun in the L2 space by computing the degrees of freedom for the function
-      DynRankView ConstructWithLabel(ifunCurlL2Coeffs, l2Cardinality);
-      for(int i=0;i<l2Cardinality;i++)
-        ifunCurlL2Coeffs(i) += ifunCurlAtL2DofCoords(i)*l2DofCoeffs(i); //not really needed for L2, l2DofCoeffs = 1
+      //Interpolating the curl of ifun in the HVOL space by computing the degrees of freedom for the function
+      DynRankView ConstructWithLabel(ifunCurlHVOLCoeffs, hvolCardinality);
+      for(int i=0;i<hvolCardinality;i++)
+        ifunCurlHVOLCoeffs(i) += ifunCurlAtHVOLDofCoords(i)*hvolDofCoeffs(i); //not really needed for HVOL, hvolDofCoeffs = 1
 
-      //Evaluating the curl of ifun in the L2 space at HCURL dof coordinates and compare it with the curl of ifun at the same coords
+      //Evaluating the curl of ifun in the HVOL space at HCURL dof coordinates and compare it with the curl of ifun at the same coords
       //We note if the two representations of the curl of ifun are equal at the HCURL dof coordinates, they are equal everywhere.
-      DynRankView ConstructWithLabel(ifunCurlInL2SpaceAtRefCoords, refCardinality);
+      DynRankView ConstructWithLabel(ifunCurlInHVOLSpaceAtRefCoords, refCardinality);
       pointValueType diffErrCurl(0);
       for(int i=0;i<refCardinality;i++) {
-        for(int k=0;k<l2Cardinality;k++)
-          ifunCurlInL2SpaceAtRefCoords(i) += ifunCurlL2Coeffs(k)*l2BasisAtRefCoords(k,i);
-        diffErrCurl = std::max(diffErrCurl, std::abs(ifunCurlInL2SpaceAtRefCoords(i) - ifunCurlAtRefCoords(i)));
+        for(int k=0;k<hvolCardinality;k++)
+          ifunCurlInHVOLSpaceAtRefCoords(i) += ifunCurlHVOLCoeffs(k)*hvolBasisAtRefCoords(k,i);
+        diffErrCurl = std::max(diffErrCurl, std::abs(ifunCurlInHVOLSpaceAtRefCoords(i) - ifunCurlAtRefCoords(i)));
       }
 
       //Check that the two representations of the div of ifun are consistent
       if(diffErrCurl > pow(7, order-1)*tol) { //heuristic relation on how round-off error depends on order
         errorFlag++;
         *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << "Curl of HCURL_I" << order << " function does not belong to L2_C" << order-1 << "."<<
-            "\nIn fact the L2 interpolation of the function curl is different from the function curl."<<
+        *outStream << "Curl of HCURL_I" << order << " function does not belong to HVOL_C" << order-1 << "."<<
+            "\nIn fact the HVOL interpolation of the function curl is different from the function curl."<<
             "\nThe max norm of the difference at HCURL DOF coordinates is: " <<  diffErrCurl << std::endl;
       }
 

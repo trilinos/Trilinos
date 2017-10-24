@@ -6,6 +6,7 @@ ANONYMOUS:
     Number of Subproblems: 3
     Number of Homogenization Problems: 2
     Verbose Output: true
+    Mesh Filename: ../meshes/cube.exo
     Objective Aggregator:
       Output Value Name: F
       Output Derivative Name: dFdTopo

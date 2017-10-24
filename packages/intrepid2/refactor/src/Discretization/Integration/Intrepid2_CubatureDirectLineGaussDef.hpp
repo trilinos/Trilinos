@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubatureDirectLineGaussDef.hpp
+/** \file   Intrepid2_CubatureDirectLineGaussDef.hpp
     \brief  Definition file for the Intrepid2::CubatureDirectLineGauss class.
     \author Created by P. Bochev, D. Ridzal, and D. Day.
             Kokkorized by Kyungjoo Kim

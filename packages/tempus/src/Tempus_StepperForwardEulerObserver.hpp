@@ -47,7 +47,7 @@ public:
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
     StepperForwardEuler<Scalar> & stepperFE){}
 
-  /// Observe Stepper before Explicit ME evalution.
+  /// Observe Stepper before Explicit ME evaluation.
   virtual void observeBeforeExplicit(
     Teuchos::RCP<SolutionHistory<Scalar> > sh,
     StepperForwardEuler<Scalar> & stepperFE){}

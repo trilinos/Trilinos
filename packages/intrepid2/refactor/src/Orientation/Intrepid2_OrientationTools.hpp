@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_OrientationTools.hpp
-    \brief  Header file for the Intrepid2::OrientationTools class.
+/** \file   Intrepid2_OrientationTools.hpp
+    \brief  Header file for the Intrepid2::OrientationTools and Intrepid2::Impl::OrientationTools classes.
     \author Created by Kyungjoo Kim
 */
 
@@ -73,6 +73,7 @@
 
 #include "Intrepid2_HCURL_TRI_In_FEM.hpp"
 #include "Intrepid2_HCURL_TET_In_FEM.hpp"
+#include "Intrepid2_HVOL_LINE_Cn_FEM.hpp"
 
 // -- HDIV family
 #include "Intrepid2_HDIV_QUAD_In_FEM.hpp"
@@ -80,6 +81,7 @@
 
 #include "Intrepid2_HDIV_TRI_In_FEM.hpp"
 #include "Intrepid2_HDIV_TET_In_FEM.hpp"
+#include "Intrepid2_HVOL_TRI_Cn_FEM.hpp"
 
 // -- Lower order family
 #include "Intrepid2_HCURL_QUAD_I1_FEM.hpp"
@@ -103,6 +105,9 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+     \brief Tools to compute orientations for degrees-of-freedom
+    */ 
     class OrientationTools {
     public:
 
@@ -174,19 +179,64 @@ namespace Intrepid2 {
                              const shards::CellTopology cellTopo,
                              const ordinal_type cellOrt = 0);
 
+
+      /** \brief  Computes Jacobian of orientation map for line segment.
+
+          \param  jacobian    [out] - rank-2 (D,D) array with jacobian of the orientation map
+          \param  ort         [in]  - orientation number between 0 and 1
+      */
+      template<typename JacobianViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      getLineJacobian(JacobianViewType jacobian, const ordinal_type ort);
+
+      /** \brief  Computes Jacobian of orientation map for triangle.
+
+          \param  jacobian    [out] - rank-2 (D,D) array with jacobian of the orientation map
+          \param  ort         [in]  - orientation number between 0 and 5
+      */
+      template<typename JacobianViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      getTriangleJacobian(JacobianViewType jacobian, const ordinal_type ort);
+
+      /** \brief  Computes Jacobian of orientation map for quadrilateral.
+
+          \param  jacobian    [out] - rank-2 (D,D) array with jacobian of the orientation map
+          \param  ort         [in]  - orientation number between 0 and 7
+      */
+      template<typename JacobianViewType>
+      KOKKOS_INLINE_FUNCTION
+      static void
+      getQuadrilateralJacobian(JacobianViewType jacobian, const ordinal_type ort);
+
+
+      /** \brief  Computes jacobian of the parameterization maps of 1- and 2-subcells with orientation.
+
+          \param  jacobian        [out] - rank-2 (D,D) array with jacobian of the orientation map
+          \param  cellTopo        [in]  - cell topology of the parameterized domain (1- and 2-subcells)
+          \param  cellOrt         [in]  - cell orientation number (zero is aligned with shards default configuration
+      */
+      template<typename JacobianViewType>
+      inline
+      static void
+      getJacobianOfOrientationMap(JacobianViewType jacobian,
+                             const shards::CellTopology cellTopo,
+                             const ordinal_type cellOrt);
+
       // -----------------------------------------------------------------------------
       // Coefficient Matrix
       //
       //
       
-      /** \brief  Compute coefficient matrix by collocating point values
+      /** \brief  Compute coefficient matrix for HGRAD by collocating point values
           
+          \param  output      [out]  - rank 2 coefficient matrix
           \param  subcellBasis [in]  - subcell basis function 
-          \param  cellBasis [in]  - cell basis function
+          \param  cellBasis    [in]  - cell basis function
           \param  subcellId    [in]  - subcell Id in the cell topology
           \param  subcellOrt   [in]  - orientation number between 0 and 1
 
-          \return rank 2 coefficient matrix
       */
       template<typename outputViewType,
                typename subcellBasisType,
@@ -199,6 +249,15 @@ namespace Intrepid2 {
                            const ordinal_type subcellId,
                            const ordinal_type subcellOrt);
 
+      /** \brief  Compute coefficient matrix for HCURL by collocating point values
+          
+          \param  output      [out]  - rank 2 coefficient matrix
+          \param  subcellBasis [in]  - subcell basis function 
+          \param  cellBasis    [in]  - cell basis function
+          \param  subcellId    [in]  - subcell Id in the cell topology
+          \param  subcellOrt   [in]  - orientation number between 0 and 1
+
+      */
       template<typename outputViewType,
                typename subcellBasisType,
                typename cellBasisType>
@@ -210,6 +269,15 @@ namespace Intrepid2 {
                            const ordinal_type subcellId,
                            const ordinal_type subcellOrt);
 
+      /** \brief  Compute coefficient matrix for HDIV by collocating point values
+          
+          \param  output      [out]  - rank 2 coefficient matrix
+          \param  subcellBasis [in]  - subcell basis function 
+          \param  cellBasis    [in]  - cell basis function
+          \param  subcellId    [in]  - subcell Id in the cell topology
+          \param  subcellOrt   [in]  - orientation number between 0 and 1
+
+      */
       template<typename outputViewType,
                typename subcellBasisType,
                typename cellBasisType>
@@ -223,13 +291,19 @@ namespace Intrepid2 {
     };
   }
 
+  /**
+    \brief Tools to compute orientations for degrees-of-freedom
+  */ 
   template<typename ExecSpaceType>
   class OrientationTools {
   public:
-    // subcell ordinal, orientation, matrix m x n
+    /** \brief  subcell ordinal, orientation, matrix m x n
+    */
     typedef Kokkos::View<double****,ExecSpaceType> CoeffMatrixDataViewType;
 
-    // key :: basis name, order, value :: matrix data view type 
+    // 
+    /** \brief  key :: basis name, order, value :: matrix data view type 
+    */
     static std::map<std::pair<std::string,ordinal_type>,CoeffMatrixDataViewType> ortCoeffData;
     
   private:
@@ -315,35 +389,53 @@ namespace Intrepid2 {
                                               const ordinal_type faceId);
     
   public:
+
+    /** \brief  Create coefficient matrix.
+          \param  basis      [in]  - basis type
+    */
     template<typename BasisPtrType>
     inline 
     static CoeffMatrixDataViewType createCoeffMatrix(BasisPtrType basis);
 
+    /** \brief  Clear coefficient matrix
+    */
     inline 
     static void clearCoeffMatrix();
 
-    // if an element is aligned left, it is an error.
+    /** \brief  Check if left-handed. If an element is alinged left, it is an error.
+          \param  pts      [in]  - points
+    */
     template<typename ptViewType>
     KOKKOS_INLINE_FUNCTION
     static bool 
     isLeftHandedCell(const ptViewType pts);
 
-    // compute orientations of cells in a workset
+    /** \brief  Compute orientations of cells in a workset
+          \param  elemOrts      [out]  - cell orientations
+          \param  elemNodes      [in]  - node coordinates
+          \param  cellTopo       [in]  - shards cell topology
+    */
     template<typename elemOrtValueType, class ...elemOrtProperties,
              typename elemNodeValueType, class ...elemNodeProperties>
     inline 
     static void
-    getOrientation(/**/  Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
+    getOrientation(      Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
                    const Kokkos::DynRankView<elemNodeValueType,elemNodeProperties...> elemNodes,
                    const shards::CellTopology cellTopo);
-        
+
+    /** \brief  Modify basis due to orientation
+          \param  output        [out]  - output array
+          \param  input          [in]  - input array
+          \param  orts           [in]  - orientations
+          \param  basis          [in]  - basis type
+    */
     template<typename outputValueType, class ...outputProperties,
              typename inputValueType,  class ...inputProperties,
              typename ortValueType,    class ...ortProperties,
              typename BasisPtrType>
     inline
     static void
-    modifyBasisByOrientation(/**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+    modifyBasisByOrientation(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
                              const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
                              const Kokkos::DynRankView<ortValueType,   ortProperties...> orts,
                              const BasisPtrType basis);

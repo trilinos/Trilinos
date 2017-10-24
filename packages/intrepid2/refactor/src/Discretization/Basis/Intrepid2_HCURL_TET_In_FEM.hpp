@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HCURL_TET_In_FEM.hpp
-    \brief  Header file for the Intrepid2::HCURL_TET_In_FEM class.
+/** \file   Intrepid2_HCURL_TET_In_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HCURL_TET_In_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim and Mauro Perego
  */
@@ -59,7 +59,9 @@ namespace Intrepid2 {
 
 /** \class  Intrepid2::Basis_HCURL_TET_In_FEM
     \brief  Implementation of the default H(curl)-compatible Nedelec (first kind) 
-            basis of arbitrary degree  on Tetrahedron cell.  The lowest order space
+            basis of arbitrary degree  on Tetrahedron cell.  
+
+            The lowest order space
             is indexted with 1 rather than 0.
             Implements nodal basis of degree n (n>=1) on the reference Tetrahedron cell. The basis has
             cardinality n*(n+2)*(n+3)/2 and spans an INCOMPLETE
@@ -91,9 +93,15 @@ namespace Intrepid2 {
 
 namespace Impl {
 
+/**
+ \brief See Intrepid2::Basis_HCURL_TET_In_FEM
+*/
 class Basis_HCURL_TET_In_FEM {
 public:
   typedef struct Tetrahedron<4> cell_topology_type;
+  /**
+   \brief See Intrepid2::Basis_HCURL_TET_In_FEM
+  */
   template<EOperator opType>
   struct Serial {
     template<typename outputValueViewType,
@@ -118,6 +126,9 @@ public:
       const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
       const EOperator operatorType);
 
+  /**
+   \brief See Intrepid2::Basis_HCURL_TET_In_FEM
+  */
   template<typename outputValueViewType,
   typename inputPointViewType,
   typename vinvViewType,
@@ -143,15 +154,16 @@ public:
       const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
       typedef typename outputValueViewType::value_type outputValueType;
+      typedef typename outputValueViewType::pointer_type outputPointerType;
       constexpr ordinal_type spaceDim = 3;
       constexpr ordinal_type bufSize = (opType == OPERATOR_CURL) ?
                                        spaceDim * CardinalityHCurlTet(Parameters::MaxOrder)*numPtsEval :
                                        CardinalityHCurlTet(Parameters::MaxOrder)*numPtsEval;
 
-      outputValueType buf[bufSize];
+      char buf[bufSize*sizeof(outputValueType)];
 
       Kokkos::DynRankView<outputValueType,
-      Kokkos::Impl::ActiveExecutionMemorySpace> work(&buf[0], bufSize);
+        Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
 
       switch (opType) {
       case OPERATOR_VALUE : {

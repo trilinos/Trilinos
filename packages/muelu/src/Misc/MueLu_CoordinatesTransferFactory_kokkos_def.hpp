@@ -164,9 +164,6 @@ namespace MueLu {
 
       const auto dim = fineCoords->getNumVectors();
 
-      using ATS = Kokkos::ArithTraits<SC>;
-      auto zero = ATS::zero();
-
       typename AppendTrait<decltype(fineCoordsView), Kokkos::RandomAccess>::type fineCoordsRandomView = fineCoordsView;
       for (size_t j = 0; j < dim; j++) {
         Kokkos::parallel_for("MueLu:CoordinatesTransferF:Build:coord", Kokkos::RangePolicy<local_ordinal_type, execution_space>(0, numAggs),
@@ -177,7 +174,7 @@ namespace MueLu {
             auto aggregate = aggGraph.rowConst(i);
 
             double sum = 0.0; // do not use Scalar here (Stokhos)
-            for (size_t colID = 0; colID < aggregate.length; colID++)
+            for (size_t colID = 0; colID < static_cast<size_t>(aggregate.length); colID++)
               sum += fineCoordsRandomView(aggregate(colID),j);
 
             coarseCoordsView(i,j) = sum / aggregate.length;

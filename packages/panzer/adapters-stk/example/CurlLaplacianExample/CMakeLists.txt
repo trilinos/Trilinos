@@ -23,33 +23,110 @@ TRIBITS_ADD_ADVANCED_TEST(
   COMM mpi
   )
 
-#FOREACH( ORDER 1 2 3 4 )
-FOREACH( ORDER 1 )
+FOREACH( ORDER 1 2 3 4 )
   TRIBITS_ADD_ADVANCED_TEST(
-    CurlLaplacianExample-ConvTest-Order-${ORDER}
+    CurlLaplacianExample-ConvTest-Quad-Order-${ORDER}
     TEST_0 EXEC CurlLaplacianExample 
-      ARGS --use-epetra --x-elements=5 --y-elements=5 --basis-order=${ORDER}
+      ARGS --use-epetra --use-twod --cell="Quad" --x-elements=4 --y-elements=4 --z-elements=4 --basis-order=${ORDER}
       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
       NUM_MPI_PROCS 4
-      OUTPUT_FILE MPE-ConvTest-${ORDER}-05
+      OUTPUT_FILE MPE-ConvTest-Quad-${ORDER}-04
     TEST_1 EXEC CurlLaplacianExample 
-      ARGS --use-epetra --x-elements=10 --y-elements=10 --basis-order=${ORDER}
+      ARGS --use-epetra --use-twod --cell="Quad" --x-elements=8 --y-elements=8 --z-elements=4 --basis-order=${ORDER}
       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
       NUM_MPI_PROCS 4
-      OUTPUT_FILE MPE-ConvTest-${ORDER}-10
+      OUTPUT_FILE MPE-ConvTest-Quad-${ORDER}-08
     TEST_2 EXEC CurlLaplacianExample 
-      ARGS --use-epetra --x-elements=20 --y-elements=20  --basis-order=${ORDER}
+      ARGS --use-epetra --use-twod --cell="Quad" --x-elements=16 --y-elements=16 --z-elements=4 --basis-order=${ORDER}
       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
       NUM_MPI_PROCS 4
-      OUTPUT_FILE MPE-ConvTest-${ORDER}-20
-    TEST_3 CMND python
+      OUTPUT_FILE MPE-ConvTest-Quad-${ORDER}-16
+    TEST_3 EXEC CurlLaplacianExample 
+      ARGS --use-epetra --use-twod --cell="Quad" --x-elements=32 --y-elements=32 --z-elements=4 --basis-order=${ORDER}
+      PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+      NUM_MPI_PROCS 4
+      OUTPUT_FILE MPE-ConvTest-Quad-${ORDER}-32
+    TEST_4 CMND python
       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
            ${ORDER}
-           MPE-ConvTest-${ORDER}-
-           5
-           10
-           20
+           MPE-ConvTest-Quad-${ORDER}-
+           4
+           8
+           16
+           32
       PASS_REGULAR_EXPRESSION "Test Passed"
     COMM mpi
     )
 ENDFOREACH() 
+
+# FOREACH( ORDER 1 2 3 4 )
+#   TRIBITS_ADD_ADVANCED_TEST(
+#     CurlLaplacianExample-ConvTest-Tri-Order-${ORDER}
+#     TEST_0 EXEC CurlLaplacianExample 
+#       ARGS --use-epetra --use-twod --cell="Tri" --x-elements=4 --y-elements=4 --z-elements=4 --basis-order=${ORDER}
+#       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+#       NUM_MPI_PROCS 4
+#       OUTPUT_FILE MPE-ConvTest-Tri-${ORDER}-04
+#     TEST_1 EXEC CurlLaplacianExample 
+#       ARGS --use-epetra --use-twod --cell="Tri" --x-elements=8 --y-elements=8 --z-elements=4 --basis-order=${ORDER}
+#       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+#       NUM_MPI_PROCS 4
+#       OUTPUT_FILE MPE-ConvTest-Tri-${ORDER}-08
+#     TEST_2 EXEC CurlLaplacianExample 
+#       ARGS --use-epetra --use-twod --cell="Tri" --x-elements=16 --y-elements=16 --z-elements=4 --basis-order=${ORDER}
+#       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+#       NUM_MPI_PROCS 4
+#       OUTPUT_FILE MPE-ConvTest-Tri-${ORDER}-16
+#     TEST_3 EXEC CurlLaplacianExample 
+#       ARGS --use-epetra --use-twod --cell="Tri" --x-elements=32 --y-elements=32 --z-elements=4 --basis-order=${ORDER}
+#       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+#       NUM_MPI_PROCS 4
+#       OUTPUT_FILE MPE-ConvTest-Tri-${ORDER}-32
+#     TEST_4 CMND python
+#       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
+#            ${ORDER}
+#            MPE-ConvTest-Tri-${ORDER}-
+#            4
+#            8
+#            16
+#            32
+#       PASS_REGULAR_EXPRESSION "Test Passed"
+#     COMM mpi
+#     )
+# ENDFOREACH() 
+
+# FOREACH( ORDER 1 2 3 4 )
+#   TRIBITS_ADD_ADVANCED_TEST(
+#     CurlLaplacianExample-ConvTest-Hex-Order-${ORDER}
+#     TEST_0 EXEC CurlLaplacianExample 
+#       ARGS --use-epetra --use-threed --x-elements=4 --y-elements=4 --z-elements=4 --basis-order=${ORDER} --
+#       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+#       NUM_MPI_PROCS 4
+#       OUTPUT_FILE MPE-ConvTest-Hex-${ORDER}-04
+#     TEST_1 EXEC CurlLaplacianExample 
+#       ARGS --use-epetra --use-threed --x-elements=8 --y-elements=8 --z-elements=4 --basis-order=${ORDER}
+#       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+#       NUM_MPI_PROCS 4
+#       OUTPUT_FILE MPE-ConvTest-Hex-${ORDER}-08
+#     TEST_2 EXEC CurlLaplacianExample 
+#       ARGS --use-epetra --use-threed --x-elements=16 --y-elements=16 --z-elements=4 --basis-order=${ORDER}
+#       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+#       NUM_MPI_PROCS 4
+#       OUTPUT_FILE MPE-ConvTest-Hex-${ORDER}-16
+#     TEST_3 EXEC CurlLaplacianExample 
+#       ARGS --use-epetra --use-threed --x-elements=32 --y-elements=32 --z-elements=4 --basis-order=${ORDER}
+#       PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
+#       NUM_MPI_PROCS 4
+#       OUTPUT_FILE MPE-ConvTest-Hex-${ORDER}-32
+#     TEST_4 CMND python
+#       ARGS ${CMAKE_CURRENT_SOURCE_DIR}/convergence_rate.py
+#            ${ORDER}
+#            MPE-ConvTest-Hex-${ORDER}-
+#            4
+#            8
+#            16
+#            32
+#       PASS_REGULAR_EXPRESSION "Test Passed"
+#     COMM mpi
+#     )
+# ENDFOREACH() 

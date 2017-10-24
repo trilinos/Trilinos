@@ -52,6 +52,13 @@
 
 //**********************************************************************
 template<typename DataT>
+PHX::Tag<DataT>::Tag() :
+  m_name("TAG_NAME_NOT_SET"),
+  m_data_layout(Teuchos::null)
+{ }
+
+//**********************************************************************
+template<typename DataT>
 PHX::Tag<DataT>::Tag(const std::string& name,
 		     const Teuchos::RCP<PHX::DataLayout>& dl) :
   m_name(name),
@@ -97,12 +104,18 @@ const std::string& PHX::Tag<DataT>::name() const
 //**********************************************************************
 template<typename DataT>
 const PHX::DataLayout& PHX::Tag<DataT>::dataLayout() const
-{ return *m_data_layout; }
+{
+  TEUCHOS_ASSERT(m_data_layout != Teuchos::null);
+  return *m_data_layout;
+}
 
 //**********************************************************************
 template<typename DataT>
 PHX::DataLayout& PHX::Tag<DataT>::nonConstDataLayout()
-{ return *m_data_layout; }
+{
+  TEUCHOS_ASSERT(m_data_layout != Teuchos::null);
+  return *m_data_layout;
+}
 
 //**********************************************************************
 template<typename DataT>

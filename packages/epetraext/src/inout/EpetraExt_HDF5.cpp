@@ -1080,9 +1080,9 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
       status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id,
                         plist_id_, LinearX->operator[](n));
       CHECK_STATUS(status);
+      H5Sclose(memspace_id);
     }
   H5Gclose(group_id);
-  H5Sclose(memspace_id);
   H5Sclose(filespace_id);
   H5Dclose(dset_id);
   H5Pclose(plist_id_);

@@ -239,7 +239,7 @@ namespace MueLuTests {
 
     LO numDimensions = 3;
 
-    LO maxLevels = 3, maxIter = 10;
+    LO maxLevels = 2, maxIter = 10;
     RCP<Matrix> Op;
     RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
     RCP<Xpetra::Map<LO,GO,NO> > map;
@@ -272,7 +272,6 @@ namespace MueLuTests {
 
     // Set paramters needed by the factories
     Pfact->SetParameter("Coarsen", Teuchos::ParameterEntry(std::string("{2,2,2}")));
-    Pfact->SetParameter("axisPermutation", Teuchos::ParameterEntry(std::string("{0,1,2}")));
     Pfact->SetParameter("order", Teuchos::ParameterEntry(1));
 
     LDfact->SetParameter("orientation", Teuchos::ParameterEntry(std::string("X")));

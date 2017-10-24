@@ -246,13 +246,13 @@ FAD_UNARYOP_MACRO(atanh,
                                                  expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(abs,
                   AbsOp,
-                  using std::abs;,
+                  using std::abs; using Sacado::if_then_else;,
                   abs(expr.val()),
                   if_then_else( expr.val() >= 0, expr.dx(i), value_type(-expr.dx(i)) ),
                   if_then_else( expr.val() >= 0, expr.fastAccessDx(i), value_type(-expr.fastAccessDx(i)) ) )
 FAD_UNARYOP_MACRO(fabs,
                   FAbsOp,
-                  using std::fabs;,
+                  using std::fabs; using Sacado::if_then_else;,
                   fabs(expr.val()),
                   if_then_else( expr.val() >= 0, expr.dx(i), value_type(-expr.dx(i)) ),
                   if_then_else( expr.val() >= 0, expr.fastAccessDx(i), value_type(-expr.fastAccessDx(i)) ) )
@@ -642,7 +642,7 @@ FAD_BINARYOP_MACRO(atan2,
                    (c.val()*expr1.fastAccessDx(i))/ (expr1.val()*expr1.val() + c.val()*c.val()))
 FAD_BINARYOP_MACRO(pow,
                    PowerOp,
-                   using std::pow; using std::log;,
+                   using std::pow; using std::log; using Sacado::if_then_else;,
                    pow(expr1.val(), expr2.val()),
                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type((expr2.fastAccessDx(i)*log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*pow(expr1.val(),expr2.val())) ),
@@ -654,7 +654,7 @@ FAD_BINARYOP_MACRO(pow,
                    if_then_else( expr1.val() == value_type(0.0), value_type(0.0), value_type(c.val()*expr1.fastAccessDx(i)/expr1.val()*pow(expr1.val(),c.val()))) )
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
-                   ;,
+                   using Sacado::if_then_else;,
                    if_then_else( expr1.val() >= expr2.val(),  expr1.val(), expr2.val() ),
                    if_then_else( expr1.val() >= expr2.val(), expr1.dx(i), expr2.dx(i) ),
                    if_then_else( expr1.val() >= expr2.val(), expr1.fastAccessDx(i), expr2.fastAccessDx(i) ),
@@ -666,7 +666,7 @@ FAD_BINARYOP_MACRO(max,
                    if_then_else( expr1.val() >= c.val(), expr1.fastAccessDx(i), value_type(0.0) ) )
 FAD_BINARYOP_MACRO(min,
                    MinOp,
-                   ;,
+                   using Sacado::if_then_else;,
                    if_then_else( expr1.val() <= expr2.val(), expr1.val(), expr2.val() ),
                    if_then_else( expr1.val() <= expr2.val(), expr1.dx(i), expr2.dx(i) ),
                    if_then_else( expr1.val() <= expr2.val(), expr1.fastAccessDx(i), expr2.fastAccessDx(i) ),
@@ -1038,16 +1038,19 @@ namespace Sacado {
 
       KOKKOS_INLINE_FUNCTION
       const value_type val() const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.val(), expr2.val() );
       }
 
       KOKKOS_INLINE_FUNCTION
       const value_type dx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.dx(i), expr2.dx(i) );
       }
 
       KOKKOS_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.fastAccessDx(i), expr2.fastAccessDx(i) );
       }
 
@@ -1110,16 +1113,19 @@ namespace Sacado {
 
       KOKKOS_INLINE_FUNCTION
       const value_type val() const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.val(), c.val() );
       }
 
       KOKKOS_INLINE_FUNCTION
       const value_type dx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.dx(i), value_type(0.0) );
       }
 
       KOKKOS_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, expr1.fastAccessDx(i), value_type(0.0) );
       }
 
@@ -1181,16 +1187,19 @@ namespace Sacado {
 
       KOKKOS_INLINE_FUNCTION
       const value_type val() const {
+        using Sacado::if_then_else;
         return if_then_else( cond, c.val(), expr2.val() );
       }
 
       KOKKOS_INLINE_FUNCTION
       const value_type dx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, value_type(0.0), expr2.dx(i) );
       }
 
       KOKKOS_INLINE_FUNCTION
       const value_type fastAccessDx(int i) const {
+        using Sacado::if_then_else;
         return if_then_else( cond, value_type(0.0), expr2.fastAccessDx(i) );
       }
 

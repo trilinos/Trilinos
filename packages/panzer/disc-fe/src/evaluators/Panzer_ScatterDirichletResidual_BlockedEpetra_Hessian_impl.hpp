@@ -60,7 +60,7 @@ ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
 ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & rIndexers,
                                        const std::vector<Teuchos::RCP<const UniqueGlobalIndexer<LO,int> > > & cIndexers,
                                        const Teuchos::ParameterList& p,
-                                       bool useDiscreteAdjoint)
+                                       bool /* useDiscreteAdjoint */)
    : rowIndexers_(rIndexers)
    , colIndexers_(cIndexers)
    , globalDataKey_("Residual Scatter Container")
@@ -115,7 +115,7 @@ ScatterDirichletResidual_BlockedEpetra(const std::vector<Teuchos::RCP<const Uniq
 template<typename TRAITS,typename LO,typename GO>
 void
 ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Hessian,TRAITS,LO,GO>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm) 
 {
   indexerIds_.resize(scatterFields_.size());
@@ -152,13 +152,13 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
    // extract dirichlet counter from container
    Teuchos::RCP<const BLOC> blockContainer 
-         = rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject("Dirichlet Counter"),true);
+         = rcp_dynamic_cast<const BLOC>(d.gedc->getDataObject("Dirichlet Counter"),true);
 
    dirichletCounter_ = rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(blockContainer->get_f(),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(dirichletCounter_));
 
    // extract linear object container
-   blockContainer = rcp_dynamic_cast<const BLOC>(d.gedc.getDataObject(globalDataKey_),true);
+   blockContainer = rcp_dynamic_cast<const BLOC>(d.gedc->getDataObject(globalDataKey_),true);
    TEUCHOS_ASSERT(!Teuchos::is_null(blockContainer));
 
    Jac_ = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(blockContainer->get_A());
@@ -210,7 +210,7 @@ evaluateFields(typename TRAITS::EvalData workset)
       for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
          std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-         const std::vector<LO> & rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
+	 auto rLIDs = subRowIndexer->getElementLIDs(cellLocalId); 
 
          // loop over basis functions
          for(std::size_t basis=0;basis<subElmtOffset.size();basis++) {
@@ -277,7 +277,7 @@ evaluateFields(typename TRAITS::EvalData workset)
                   continue;
 
                auto subColIndexer = colIndexers_[colIndexer];
-               const std::vector<LO> & cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
+	       auto cLIDs = subColIndexer->getElementLIDs(cellLocalId); 
 
                TEUCHOS_ASSERT(end-start==Teuchos::as<int>(cLIDs.size()));
 

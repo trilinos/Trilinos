@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_Orientation.hpp
+/** \file   Intrepid2_Orientation.hpp
     \brief  Header file for the Intrepid2::Orientation class.
     \author Created by Kyungjoo Kim
 */
@@ -56,9 +56,12 @@
 
 namespace Intrepid2 {
 
-  // Orientation encoding and decoding
-  // - use input and output as pointer arrays which assumes that input/output
-  //   are located on the stack and contiguous.
+  /**
+    \brief Orientation encoding and decoding
+
+     Use input and output as pointer arrays which assumes that input/output
+     are located on the stack and contiguous.
+  */
   class Orientation {
   private:
     template<typename elemNodeViewType>
@@ -80,6 +83,33 @@ namespace Intrepid2 {
     static Orientation getOrientation(const shards::CellTopology cellTopo,
                                       const elemNodeViewType elemNodes);
     
+    static ordinal_type getEdgeOrdinalOfFace(const ordinal_type subsubcellOrd,
+                                             const ordinal_type subcellOrd,
+                                             const shards::CellTopology cellTopo);
+
+    template<typename refTanViewType>
+    static void getReferenceEdgeTangent(const refTanViewType &tanE,
+                                        const ordinal_type subcellOrd,
+                                        const shards::CellTopology cellTopo,
+                                        const ordinal_type ort,
+                                        const bool is_normalize = true);
+    
+    template<typename refTanViewType>
+    static void getReferenceFaceTangents(const refTanViewType &tanU,
+                                         const refTanViewType &tanV,
+                                         const ordinal_type subcellOrd,
+                                         const shards::CellTopology cellTopo,
+                                         const ordinal_type ort,
+                                         const bool is_normalize = true);
+
+    template<typename refNormalViewType>
+    static void getReferenceFaceNormal(const refNormalViewType &normalV,
+                                       const ordinal_type subcellOrd,
+                                       const shards::CellTopology cellTopo,
+                                       const ordinal_type ort,
+                                       const bool is_normalize = true);
+
+      
   private:
     ordinal_type _edgeOrt, _faceOrt;
     

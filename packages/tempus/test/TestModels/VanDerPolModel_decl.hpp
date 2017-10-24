@@ -24,8 +24,8 @@ namespace Tempus_Test {
   * circuit.  In implicit ODE form, \f$ \mathcal{F}(\dot{x},x,t) = 0 \f$,
   * the scaled problem can be written as
   * \f{eqnarray*}{
-  *   \dot{x}_0(t) - x_1(t) & = & 0 \\
-  *   \dot{x}_1(t) - [(1-x_0^2)x_1-x_0]/\epsilon & = & 0
+  *   \mathcal{F}_0 & = & \dot{x}_0(t) - x_1(t) = 0 \\
+  *   \mathcal{F}_1 & = & \dot{x}_1(t) - [(1-x_0^2)x_1-x_0]/\epsilon = 0
   * \f}
   * where the initial conditions are
   * \f{eqnarray*}{
@@ -61,7 +61,7 @@ namespace Tempus_Test {
   *    + \frac{\partial t}{\partial x_j}
   *    \frac{\partial\mathcal{F}_i}{\partial t}
   * \f]
-  * but noting that \f$\partial\mathcal{F}_i/\partial t = 0\f$ and
+  * but noting that \f$\partial t/\partial x_j = 0\f$ and
   * \f[
   *    \frac{\partial x_k}{\partial x_j} = \left\{
   *      \begin{array}{c}

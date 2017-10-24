@@ -126,6 +126,9 @@ namespace Tpetra {
   setCombineModeParameter (Teuchos::ParameterList& plist,
                            const std::string& paramName);
 
+  //! Human-readable string representation of the given CombineMode.
+  std::string combineModeToString (const CombineMode combineMode);
+
 } // namespace Tpetra
 
 #endif // TPETRA_COMBINEMODE_HPP

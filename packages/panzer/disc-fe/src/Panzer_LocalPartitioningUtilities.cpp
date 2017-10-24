@@ -328,9 +328,9 @@ splitMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & mesh_info,
 
 template<typename LO, typename GO>
 void
-partitionMeshInfo(const panzer::LocalMeshInfoBase<LO,GO> & mesh_info,
-                 const size_t requested_partition_size,
-                 std::vector<panzer::LocalMeshPartition<LO,GO> > & partitions)
+partitionMeshInfo(const panzer::LocalMeshInfoBase<LO,GO>& /* mesh_info */,
+                 const size_t /* requested_partition_size */,
+                 std::vector<panzer::LocalMeshPartition<LO,GO>>& /* partitions */)
 {
   // Not yet sure how to do this
   TEUCHOS_ASSERT(false);

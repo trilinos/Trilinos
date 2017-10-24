@@ -2619,8 +2619,6 @@ public:
     {
       using Kokkos::subview;
       using Tpetra::Details::PackTraits;
-      typedef typename PackTraits<LO, D>::input_buffer_type input_buffer_type;
-      typedef typename input_buffer_type::size_type size_type;
 
       if (numBytes == 0) {
         // Empty rows always take zero bytes, to ensure sparsity.
@@ -2628,15 +2626,14 @@ public:
       }
       else {
         LO numEntLO = 0;
-        const size_t theNumBytes = PackTraits<LO, D>::packValueCount (numEntLO);
 #ifdef HAVE_TPETRA_DEBUG
+        const size_t theNumBytes = PackTraits<LO, D>::packValueCount (numEntLO);
         TEUCHOS_TEST_FOR_EXCEPTION(
           theNumBytes > numBytes, std::logic_error, "unpackRowCount: "
           "theNumBytes = " << theNumBytes << " < numBytes = " << numBytes
           << ".");
 #endif // HAVE_TPETRA_DEBUG
-        const std::pair<size_type, size_type> rng (offset, offset + theNumBytes);
-        input_buffer_type inBuf = subview (imports, rng); // imports (offset, theNumBytes);
+        const char* const inBuf = imports.data () + offset;
         const size_t actualNumBytes = PackTraits<LO, D>::unpackValue (numEntLO, inBuf);
 #ifdef HAVE_TPETRA_DEBUG
         TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2669,14 +2666,6 @@ public:
     {
       using Kokkos::subview;
       using Tpetra::Details::PackTraits;
-      // NOTE (mfh 02 Feb 2015) This assumes that output_buffer_type is
-      // the same, no matter what type we're packing.  It's a reasonable
-      // assumption, given that we go through the trouble of PackTraits
-      // just so that we can pack data of different types in the same
-      // buffer.
-      typedef typename PackTraits<LO, D>::output_buffer_type output_buffer_type;
-      typedef typename output_buffer_type::size_type size_type;
-      typedef typename std::pair<size_type, size_type> pair_type;
 
       if (numEnt == 0) {
         // Empty rows always take zero bytes, to ensure sparsity.
@@ -2694,12 +2683,9 @@ public:
       const size_t valsBeg = gidsBeg + gidsLen;
       const size_t valsLen = numScalarEnt * numBytesPerValue;
 
-      output_buffer_type numEntOut =
-        subview (exports, pair_type (numEntBeg, numEntBeg + numEntLen));
-      output_buffer_type gidsOut =
-        subview (exports, pair_type (gidsBeg, gidsBeg + gidsLen));
-      output_buffer_type valsOut =
-        subview (exports, pair_type (valsBeg, valsBeg + valsLen));
+      char* const numEntOut = exports.data () + numEntBeg;
+      char* const gidsOut = exports.data () + gidsBeg;
+      char* const valsOut = exports.data () + valsBeg;
 
       size_t numBytesOut = 0;
       int errorCode = 0;
@@ -2707,11 +2693,11 @@ public:
 
       {
         Kokkos::pair<int, size_t> p;
-        p = PackTraits<GO, D>::packArray (gidsOut, gidsIn, numEnt);
+        p = PackTraits<GO, D>::packArray (gidsOut, gidsIn.data (), numEnt);
         errorCode += p.first;
         numBytesOut += p.second;
 
-        p = PackTraits<ST, D>::packArray (valsOut, valsIn, numScalarEnt);
+        p = PackTraits<ST, D>::packArray (valsOut, valsIn.data (), numScalarEnt);
         errorCode += p.first;
         numBytesOut += p.second;
       }
@@ -2741,16 +2727,7 @@ public:
                           const size_t numBytesPerValue,
                           const size_t blockSize)
     {
-      using Kokkos::subview;
       using Tpetra::Details::PackTraits;
-      // NOTE (mfh 02 Feb 2015) This assumes that input_buffer_type is
-      // the same, no matter what type we're unpacking.  It's a
-      // reasonable assumption, given that we go through the trouble of
-      // PackTraits just so that we can pack data of different types in
-      // the same buffer.
-      typedef typename PackTraits<LO, D>::input_buffer_type input_buffer_type;
-      typedef typename input_buffer_type::size_type size_type;
-      typedef typename std::pair<size_type, size_type> pair_type;
 
       if (numBytes == 0) {
         // Rows with zero bytes always have zero entries.
@@ -2777,12 +2754,9 @@ public:
       const size_t valsBeg = gidsBeg + gidsLen;
       const size_t valsLen = numScalarEnt * numBytesPerValue;
 
-      input_buffer_type numEntIn =
-        subview (imports, pair_type (numEntBeg, numEntBeg + numEntLen));
-      input_buffer_type gidsIn =
-        subview (imports, pair_type (gidsBeg, gidsBeg + gidsLen));
-      input_buffer_type valsIn =
-        subview (imports, pair_type (valsBeg, valsBeg + valsLen));
+      const char* const numEntIn = imports.data () + numEntBeg;
+      const char* const gidsIn = imports.data () + gidsBeg;
+      const char* const valsIn = imports.data () + valsBeg;
 
       size_t numBytesOut = 0;
       int errorCode = 0;
@@ -2795,11 +2769,11 @@ public:
 
       {
         Kokkos::pair<int, size_t> p;
-        p = PackTraits<GO, D>::unpackArray (gidsOut, gidsIn, numEnt);
+        p = PackTraits<GO, D>::unpackArray (gidsOut.data (), gidsIn, numEnt);
         errorCode += p.first;
         numBytesOut += p.second;
 
-        p = PackTraits<ST, D>::unpackArray (valsOut, valsIn, numScalarEnt);
+        p = PackTraits<ST, D>::unpackArray (valsOut.data (), valsIn, numScalarEnt);
         errorCode += p.first;
         numBytesOut += p.second;
       }
@@ -3136,17 +3110,25 @@ public:
     const size_t maxRowNumEnt = graph_.getNodeMaxNumRowEntries ();
     const size_t maxRowNumScalarEnt = maxRowNumEnt * blockSize * blockSize;
 
+    // Determine the number of bytes in a Scalar instance.
     size_t numBytesPerValue;
-    {
-      // FIXME (mfh 17 Feb 2015) What do I do about Scalar types with
-      // run-time size?  We already assume that all entries in both
-      // the source and target matrices have the same size.  If the
-      // calling process owns at least one entry in either matrix, we
-      // can use that entry to set the size.  However, it is possible
-      // that the calling process owns no entries.  In that case,
-      // we're in trouble.  One way to fix this would be for each
-      // row's data to contain the run-time size.  This is only
-      // necessary if the size is not a compile-time constant.
+
+    // mfh 19 Sep 2017: Only Stokhos has Scalar types with run-time
+    // size.  For all of those types, any one allocated instance has
+    // the same size as any other allocated instance.  Thus, it
+    // suffices to find some allocated instance as a representative
+    // value.
+    if (this->val_.h_view.dimension_0 () != 0) {
+      const ST& val = this->val_.h_view[0];
+      numBytesPerValue = PackTraits<ST, HES>::packValueCount (val);
+    }
+    else {
+      // FIXME (mfh 19 Sep 2017): I don't have any values on my
+      // process, so I don't know how big the value should be, if it's
+      // run-time-sized.  The best I can do is use a default-allocated
+      // Scalar instance's size.  If we ever want to fix this, then
+      // each sending process should pack the run-time size.  This is
+      // only necessary if the size is not a compile-time constant.
       Scalar val;
       numBytesPerValue = PackTraits<ST, HES>::packValueCount (val);
     }

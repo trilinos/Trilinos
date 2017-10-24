@@ -143,6 +143,27 @@ Piro::LOCASolver<Scalar>::~LOCASolver()
   LOCA::destroyGlobalData(globalData_);
 }
 
+template<typename Scalar>
+Teuchos::RCP<NOX::Solver::Generic>
+Piro::LOCASolver<Scalar>::getSolver()
+{
+  return stepper_->getSolver();
+}
+
+template<typename Scalar>
+Teuchos::ParameterList &
+Piro::LOCASolver<Scalar>::getStepperParams()
+{
+  return stepper_->getParams();
+}
+
+template<typename Scalar>
+Teuchos::ParameterList &
+Piro::LOCASolver<Scalar>::getStepSizeParams()
+{
+  return stepper_->getStepSizeParams();
+}
+
 template <typename Scalar>
 void
 Piro::LOCASolver<Scalar>::evalModelImpl(

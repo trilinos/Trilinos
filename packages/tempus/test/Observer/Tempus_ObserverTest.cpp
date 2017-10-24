@@ -149,13 +149,11 @@ TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite) {
   // Read params from .xml file
   RCP<ParameterList> pList =
     getParametersFromXmlFile("Tempus_Observer_SinCos.xml");
-  //
+
   // Setup the SinCosModel
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
   RCP<SinCosModel<double> > model =
     Teuchos::rcp(new SinCosModel<double> (scm_pl));
-
-  Tempus::Status status = Tempus::Status::PASSED;
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
@@ -169,7 +167,7 @@ TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite) {
   RCP<Tempus::IntegratorObserverLogging<double> > loggingObs2 =
     Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>);
 
-  RCP<Tempus::IntegratorObserverComposite<double> > compObs = 
+  RCP<Tempus::IntegratorObserverComposite<double> > compObs =
       Teuchos::rcp(new Tempus::IntegratorObserverComposite<double>);
 
   compObs->addObserver(loggingObs);

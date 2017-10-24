@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_HEX_C2_FEMDef.hpp
-    \brief  Definition file for bi-linear FEM basis functions for H(grad) functions on Hexahedron cells.
+/** \file   Intrepid2_HGRAD_HEX_C2_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree 2 for H(grad) functions on HEX cells.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
  */

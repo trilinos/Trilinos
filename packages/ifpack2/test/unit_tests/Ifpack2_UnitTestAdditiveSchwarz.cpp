@@ -1249,12 +1249,288 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SGS_Overlap, Scalar, L
   TEST_COMPARE_FLOATING_ARRAYS(sol->get1dView(), x->get1dView(), 4*STS::eps ());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastILU, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::Map<LO,GO,Node> map_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  const Scalar one = STS::one ();
+  const Scalar two = STS::one () + STS::one ();
+
+  out << "Ifpack2::AdditiveSchwarz: FastILU" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  global_size_t num_rows_per_proc = 500;
+
+  out << "Creating row Map and CrsMatrix" << endl;
+
+  RCP<const map_type> rowmap =
+    tif_utest::create_tpetra_map<LO, GO, Node> (num_rows_per_proc);
+  RCP<const crs_matrix_type> crsmatrix =
+    tif_utest::create_test_matrix<Scalar, LO, GO, Node> (rowmap);
+
+  out << "Creating AdditiveSchwarz instance" << endl;
+
+  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (crsmatrix);
+  Teuchos::ParameterList params, zlist;
+
+  out << "Filling in ParameterList for AdditiveSchwarz" << endl;
+
+  zlist.set ("order_method", "rcm");
+  zlist.set ("order_method_type", "local");
+  params.set ("inner preconditioner name", "FAST_ILU");
+  {
+    Teuchos::ParameterList innerParams;
+    params.set ("inner preconditioner parameters", innerParams);
+  }
+  params.set ("schwarz: overlap level", 0);
+  params.set ("schwarz: combine mode", "Zero");
+
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+  params.set ("schwarz: use reordering", true);
+  params.set ("schwarz: reordering list", zlist);
+#else
+  params.set ("schwarz: use reordering", false);
+#endif
+
+  out << "Setting AdditiveSchwarz's parameters" << endl;
+
+  TEST_NOTHROW(prec.setParameters(params));
+
+  out << "Testing domain and range Maps of AdditiveSchwarz" << endl;
+
+  // FIXME (mfh 26 Jul 2015) The domain and range Maps of the
+  // preconditioner don't have to be the same object; they only need
+  // to be the same in the sense of Tpetra::Map::isSameAs().
+  //
+  //trivial tests to insist that the preconditioner's domain/range maps are
+  //identically those of the matrix:
+  const map_type* mtx_dom_map_ptr = &*crsmatrix->getDomainMap();
+  const map_type* mtx_rng_map_ptr = &*crsmatrix->getRangeMap();
+  const map_type* prec_dom_map_ptr = &*prec.getDomainMap();
+  const map_type* prec_rng_map_ptr = &*prec.getRangeMap();
+  TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
+  TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
+
+  out << "Calling AdditiveSchwarz's initialize()" << endl;
+  prec.initialize();
+
+  out << "Calling AdditiveSchwarz's compute()" << endl;
+  prec.compute();
+
+  MV x (rowmap, 2), y (rowmap, 2), z (rowmap, 2);
+  x.putScalar (one);
+
+  out << "Applying AdditiveSchwarz to a multivector" << endl;
+  prec.apply(x, y);
+
+  // The solution should now be full of 1/2s
+  z.putScalar (one / two);
+
+  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+  Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
+
+  TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*STS::eps ());
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastIC, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::Map<LO,GO,Node> map_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  const Scalar one = STS::one ();
+  const Scalar two = STS::one () + STS::one ();
+
+  out << "Ifpack2::AdditiveSchwarz: FastIC" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  global_size_t num_rows_per_proc = 500;
+
+  out << "Creating row Map and CrsMatrix" << endl;
+
+  RCP<const map_type> rowmap =
+    tif_utest::create_tpetra_map<LO, GO, Node> (num_rows_per_proc);
+  RCP<const crs_matrix_type> crsmatrix =
+    tif_utest::create_test_matrix<Scalar, LO, GO, Node> (rowmap);
+
+  out << "Creating AdditiveSchwarz instance" << endl;
+
+  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (crsmatrix);
+  Teuchos::ParameterList params, zlist;
+
+  out << "Filling in ParameterList for AdditiveSchwarz" << endl;
+
+  zlist.set ("order_method", "rcm");
+  zlist.set ("order_method_type", "local");
+  params.set ("inner preconditioner name", "FAST_IC");
+  {
+    Teuchos::ParameterList innerParams;
+    params.set ("inner preconditioner parameters", innerParams);
+  }
+  params.set ("schwarz: overlap level", static_cast<int> (0));
+  params.set ("schwarz: combine mode", "Zero");
+
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+  params.set ("schwarz: use reordering", true);
+  params.set ("schwarz: reordering list", zlist);
+#else
+  params.set ("schwarz: use reordering", false);
+#endif
+
+  out << "Setting AdditiveSchwarz's parameters" << endl;
+
+  TEST_NOTHROW(prec.setParameters(params));
+
+  out << "Testing domain and range Maps of AdditiveSchwarz" << endl;
+
+  // FIXME (mfh 26 Jul 2015) The domain and range Maps of the
+  // preconditioner don't have to be the same object; they only need
+  // to be the same in the sense of Tpetra::Map::isSameAs().
+  //
+  //trivial tests to insist that the preconditioner's domain/range maps are
+  //identically those of the matrix:
+  const map_type* mtx_dom_map_ptr = &*crsmatrix->getDomainMap();
+  const map_type* mtx_rng_map_ptr = &*crsmatrix->getRangeMap();
+  const map_type* prec_dom_map_ptr = &*prec.getDomainMap();
+  const map_type* prec_rng_map_ptr = &*prec.getRangeMap();
+  TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
+  TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
+
+  out << "Calling AdditiveSchwarz's initialize()" << endl;
+  prec.initialize();
+
+  out << "Calling AdditiveSchwarz's compute()" << endl;
+  prec.compute();
+
+  MV x (rowmap, 2), y (rowmap, 2), z (rowmap, 2);
+  x.putScalar (one);
+
+  out << "Applying AdditiveSchwarz to a multivector" << endl;
+  prec.apply(x, y);
+
+  // The solution should now be full of 1/2s
+  z.putScalar (one / two);
+
+  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+  Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
+
+  TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*STS::eps ());
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, FastILDL, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> crs_matrix_type;
+  typedef Tpetra::Map<LO,GO,Node> map_type;
+  typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
+  typedef Tpetra::RowMatrix<Scalar,LO,GO,Node> row_matrix_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  const Scalar one = STS::one ();
+  const Scalar two = STS::one () + STS::one ();
+
+  out << "Ifpack2::AdditiveSchwarz: FastILDL" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  global_size_t num_rows_per_proc = 500;
+
+  out << "Creating row Map and CrsMatrix" << endl;
+
+  RCP<const map_type> rowmap =
+    tif_utest::create_tpetra_map<LO, GO, Node> (num_rows_per_proc);
+  RCP<const crs_matrix_type> crsmatrix =
+    tif_utest::create_test_matrix<Scalar, LO, GO, Node> (rowmap);
+
+  out << "Creating AdditiveSchwarz instance" << endl;
+
+  Ifpack2::AdditiveSchwarz<row_matrix_type> prec (crsmatrix);
+  Teuchos::ParameterList params, zlist;
+
+  out << "Filling in ParameterList for AdditiveSchwarz" << endl;
+
+  zlist.set ("order_method", "rcm");
+  zlist.set ("order_method_type", "local");
+  params.set ("inner preconditioner name", "FAST_ILDL");
+  {
+    Teuchos::ParameterList innerParams;
+    params.set ("inner preconditioner parameters", innerParams);
+  }
+  params.set ("schwarz: overlap level", static_cast<int> (0));
+  params.set ("schwarz: combine mode", "Zero");
+
+#if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
+  params.set ("schwarz: use reordering", true);
+  params.set ("schwarz: reordering list", zlist);
+#else
+  params.set ("schwarz: use reordering", false);
+#endif
+
+  out << "Setting AdditiveSchwarz's parameters" << endl;
+
+  TEST_NOTHROW(prec.setParameters(params));
+
+  out << "Testing domain and range Maps of AdditiveSchwarz" << endl;
+
+  // FIXME (mfh 26 Jul 2015) The domain and range Maps of the
+  // preconditioner don't have to be the same object; they only need
+  // to be the same in the sense of Tpetra::Map::isSameAs().
+  //
+  //trivial tests to insist that the preconditioner's domain/range maps are
+  //identically those of the matrix:
+  const map_type* mtx_dom_map_ptr = &*crsmatrix->getDomainMap();
+  const map_type* mtx_rng_map_ptr = &*crsmatrix->getRangeMap();
+  const map_type* prec_dom_map_ptr = &*prec.getDomainMap();
+  const map_type* prec_rng_map_ptr = &*prec.getRangeMap();
+  TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr );
+  TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr );
+
+  out << "Calling AdditiveSchwarz's initialize()" << endl;
+  prec.initialize();
+
+  out << "Calling AdditiveSchwarz's compute()" << endl;
+  prec.compute();
+
+  MV x (rowmap, 2), y (rowmap, 2), z (rowmap, 2);
+  x.putScalar (one);
+
+  out << "Applying AdditiveSchwarz to a multivector" << endl;
+  prec.apply(x, y);
+
+  // The solution should now be full of 1/2s
+  z.putScalar (one / two);
+
+  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+  Teuchos::ArrayRCP<const Scalar> zview = z.get1dView();
+
+  TEST_COMPARE_FLOATING_ARRAYS(yview, zview, 4*STS::eps ());
+}
+
 #if defined(HAVE_IFPACK2_AMESOS2) and defined(HAVE_IFPACK2_XPETRA) and (defined(HAVE_AMESOS2_SUPERLU) || defined(HAVE_AMESOS2_KLU2))
 
 #  define IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, SparseDirectSolver, Scalar, LocalOrdinal, GlobalOrdinal)
 #else
 #  define IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal)
+#endif
+
+#if defined(HAVE_IFPACK2_SHYLU_NODEFASTILU)
+  #define IFPACK2_FASTILU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, FastILU, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, FastIC, Scalar, LocalOrdinal, GlobalOrdinal) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, FastILDL, Scalar, LocalOrdinal, GlobalOrdinal)
+#else
+  #define IFPACK2_FASTILU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)
 #endif
 
 #  define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
@@ -1269,7 +1545,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SGS_Overlap, Scalar, L
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, ILU_NonOverlap, Scalar, LocalOrdinal, GlobalOrdinal) \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, SGS_NonOverlap, Scalar, LocalOrdinal, GlobalOrdinal) \
      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2AdditiveSchwarz, SGS_Overlap, Scalar, LocalOrdinal, GlobalOrdinal) \
-     IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)
+     IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal) \
+     IFPACK2_FASTILU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)
 
 // mfh 26 Aug 2015: Ifpack2::AdditiveSchwarz was only getting tested
 // for Scalar = double, LocalOrdinal = int, GlobalOrdinal = int, and

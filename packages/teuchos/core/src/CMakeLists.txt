@@ -94,6 +94,11 @@ IF (NOT ${PROJECT_NAME}_ENABLE_CXX11)
 ENDIF()
 
 
+ASSERT_DEFINED(TPL_ENABLE_Valgrind)
+IF(TPL_ENABLE_Valgrind)
+  INCLUDE_DIRECTORIES(${TPL_Valgrind_INCLUDE_DIRS})
+ENDIF()
+
 #
 # C) Define the targets for package's library(s)
 #

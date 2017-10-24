@@ -78,7 +78,7 @@ PHX_EVALUATOR_CTOR(VectorToScalar,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(VectorToScalar,worksets,fm)
+PHX_POST_REGISTRATION_SETUP(VectorToScalar, /* worksets */, fm)
 {
   for (std::size_t i=0; i < scalar_fields.size(); ++i)
     this->utils.setFieldData(scalar_fields[i],fm);

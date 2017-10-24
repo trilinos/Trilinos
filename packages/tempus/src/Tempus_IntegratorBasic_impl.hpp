@@ -121,16 +121,23 @@ setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
     typedef Thyra::ModelEvaluatorBase MEB;
     Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgsIC =
       stepper_->getModel()->getNominalValues();
-    RCP<Thyra::VectorBase<Scalar> > x = inArgsIC.get_x()->clone_v();
+
+    using Teuchos::rcp_const_cast;
+    //RCP<Thyra::VectorBase<Scalar> > x = inArgsIC.get_x()->clone_v();
+    RCP<Thyra::VectorBase<Scalar> > x =
+      rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x());
     RCP<Thyra::VectorBase<Scalar> > xdot;
     if (inArgsIC.supports(MEB::IN_ARG_x_dot)) {
-      xdot = inArgsIC.get_x_dot()->clone_v();
+      //xdot = inArgsIC.get_x_dot()->clone_v();
+      xdot = rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x_dot());
     } else {
       xdot = x->clone_v();
     }
     RCP<Thyra::VectorBase<Scalar> > xdotdot;
     if (inArgsIC.supports(MEB::IN_ARG_x_dot_dot)) {
-      xdotdot = inArgsIC.get_x_dot_dot()->clone_v();
+      //xdotdot = inArgsIC.get_x_dot_dot()->clone_v();
+      xdotdot =
+        rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x_dot_dot());
     }
     else {
       xdotdot = x->clone_v();

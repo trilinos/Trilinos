@@ -639,6 +639,9 @@ public:
     ordinal_type numValid = 0; // number of valid local column indices
 
     for (ordinal_type i = 0; i < ncol; ++i) {
+      // NOTE (mfh 19 Sep 2017) This assumes that row_view stores
+      // column indices contiguously.  It does, but one could imagine
+      // changing that at some point.
       const ordinal_type offset =
         findRelOffset (&(row_view.colidx(0)), length, cols[i], hint, is_sorted);
       if (offset != length) {
@@ -648,9 +651,13 @@ public:
         else {
           row_view.value(offset) += vals[i];
         }
+        ++numValid;
+        // If the hint is out of range, findRelOffset will ignore it.
+        // Thus, while it's harmless to have a hint out of range, it
+        // may slow down searches for subsequent valid input column
+        // indices.
+        hint = offset + 1;
       }
-      hint = offset + 1;
-      ++numValid;
     }
     return numValid;
   }
@@ -672,6 +679,9 @@ public:
     ordinal_type numValid = 0; // number of valid local column indices
 
     for (ordinal_type i = 0; i < ncol; ++i) {
+      // NOTE (mfh 19 Sep 2017) This assumes that row_view stores
+      // column indices contiguously.  It does, but one could imagine
+      // changing that at some point.
       const ordinal_type offset =
         findRelOffset (&(row_view.colidx(0)), length, cols[i], hint, is_sorted);
       if (offset != length) {
@@ -681,9 +691,13 @@ public:
         else {
           row_view.value(offset) = vals[i];
         }
+        ++numValid;
+        // If the hint is out of range, findRelOffset will ignore it.
+        // Thus, while it's harmless to have a hint out of range, it
+        // may slow down searches for subsequent valid input column
+        // indices.
+        hint = offset + 1;
       }
-      hint = offset + 1;
-      ++numValid;
     }
     return numValid;
   }

@@ -42,12 +42,16 @@ GrammarPtr make_grammar(Language const& language) {
   for (Language::Tokens::const_iterator it = language.tokens.begin();
        it != language.tokens.end(); ++it) {
     const Language::Token& token = *it;
+    TEUCHOS_TEST_FOR_EXCEPTION(token.name.empty(), ParserFail,
+        "ERROR: token " << it - language.tokens.begin() << " has an empty name\n");
     symbol_map[token.name] = nterminals++;
   }
   int nsymbols = nterminals;
   for (Language::Productions::const_iterator it = language.productions.begin();
        it != language.productions.end(); ++it) {
     const Language::Production& production = *it;
+    TEUCHOS_TEST_FOR_EXCEPTION(production.lhs.empty(), ParserFail,
+        "ERROR: production " << it - language.productions.begin() << " has an empty LHS name\n");
     if (symbol_map.count(production.lhs)) continue;
     symbol_map[production.lhs] = nsymbols++;
   }
@@ -148,47 +152,38 @@ static void make_indent_info(IndentInfo& out, Language const& language) {
   out.is_sensitive = false;
   out.indent_token = -1;
   out.dedent_token = -1;
-  out.eqdent_token = -1;
-  out.nodent_token = -1;
+  out.newline_token = -1;
   for (int tok_i = 0; tok_i < size(language.tokens); ++tok_i) {
     const Language::Token& token = at(language.tokens, tok_i);
-    if (token.regex == "]INDENT[") {
+    if (token.name == "INDENT") {
       TEUCHOS_TEST_FOR_EXCEPTION(out.indent_token != -1, ParserFail,
-          "error: Language has two or more ]INDENT[ tokens\n");
+          "error: Language has two or more INDENT tokens\n");
       out.indent_token = tok_i;
       out.is_sensitive = true;
-    } else if (token.regex == "]DEDENT[") {
+    } else if (token.name == "DEDENT") {
       TEUCHOS_TEST_FOR_EXCEPTION(out.dedent_token != -1, ParserFail,
-          "error: Language has two or more ]DEDENT[ tokens\n");
+          "error: Language has two or more DEDENT tokens\n");
       out.dedent_token = tok_i;
-    } else if (token.regex == "]EQDENT[") {
-      TEUCHOS_TEST_FOR_EXCEPTION(out.eqdent_token != -1, ParserFail,
-          "error: Language has two or more ]EQDENT[ tokens\n");
-      out.eqdent_token = tok_i;
-    } else if (token.regex == "]NODENT[") {
-      TEUCHOS_TEST_FOR_EXCEPTION(out.nodent_token != -1, ParserFail,
-          "error: Language has two or more ]NODENT[ tokens\n");
-      out.nodent_token = tok_i;
+    } else if (token.name == "NEWLINE") {
+      TEUCHOS_TEST_FOR_EXCEPTION(out.newline_token != -1, ParserFail,
+          "error: Language has two or more NEWLINE tokens\n");
+      out.newline_token = tok_i;
     }
   }
   TEUCHOS_TEST_FOR_EXCEPTION(out.is_sensitive && out.indent_token == -1,
       ParserFail,
-      "error: Indentation-sensitive language has no ]INDENT[ token\n");
+      "error: Indentation-sensitive language has no INDENT token\n");
   TEUCHOS_TEST_FOR_EXCEPTION(out.is_sensitive && out.dedent_token == -1,
       ParserFail,
-      "error: Indentation-sensitive language has no ]DEDENT[ token\n");
-  TEUCHOS_TEST_FOR_EXCEPTION(out.is_sensitive && out.eqdent_token == -1,
+      "error: Indentation-sensitive language has no DEDENT token\n");
+  TEUCHOS_TEST_FOR_EXCEPTION(out.is_sensitive && out.newline_token == -1,
       ParserFail,
-      "error: Indentation-sensitive language has no ]EQDENT[ token\n");
-  TEUCHOS_TEST_FOR_EXCEPTION(out.is_sensitive && out.nodent_token == -1,
-      ParserFail,
-      "error: Indentation-sensitive language has no ]NODENT[ token\n");
+      "error: Indentation-sensitive language has no NEWLINE token\n");
   TEUCHOS_TEST_FOR_EXCEPTION(
-      (out.indent_token < out.nodent_token ||
-       out.dedent_token < out.nodent_token ||
-       out.eqdent_token < out.nodent_token),
+      (out.indent_token < out.newline_token ||
+       out.dedent_token < out.newline_token),
       ParserFail,
-      "error: ]NODENT[ needs to come before all other indent tokens\n");
+      "error: NEWLINE needs to come before all other indent tokens\n");
 }
 
 ReaderTablesPtr make_reader_tables(Language const& language) {

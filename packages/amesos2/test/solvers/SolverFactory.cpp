@@ -212,7 +212,7 @@ namespace {
     out << "Test solver \"" << solverName << "\" from Amesos2 package" << endl;
     Teuchos::OSTab tab1 (out);
 
-#ifdef SHYLUBASKER 
+#ifdef SHYLU_NODEBASKER 
     // NDE: Beginning changes towards passing parameter list to shylu basker
     // for controlling various parameters per test, matrix, etc.
 
@@ -251,7 +251,7 @@ namespace {
     RCP<Trilinos::Details::LinearSolver<MV, OP, mag_type> > solver;
     try {
       solver = Trilinos::Details::getLinearSolver<MV, OP, mag_type> ("Amesos2", solverName);
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
       solver->setParameters(Teuchos::rcpFromRef(amesos2_paramlist));
 #endif
 
@@ -349,7 +349,7 @@ namespace {
         try {
           solver = Amesos2::create<MAT, MV> (solverName, A, X, B);
 
-#ifdef SHYLUBASKER 
+#ifdef SHYLU_NODEBASKER 
           // NDE: Beginning changes towards passing parameter list to shylu basker
           // for controlling various parameters per test, matrix, etc.
 

@@ -55,6 +55,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"

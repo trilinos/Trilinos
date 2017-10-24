@@ -80,7 +80,7 @@ namespace panzer {
   * \param[in] xi Value of the x vector to seed with
   * \param[in] vi Value of the v vector to seed with
   */
-inline panzer::Traits::HessianType seed_second_deriv(int num_vars,int index,double xi,double vi)
+inline panzer::Traits::HessianType seed_second_deriv(int num_vars, int index, double /* xi */, double vi)
 {
   typedef panzer::Traits::HessianType SecondFadType;
 
@@ -106,7 +106,7 @@ public:
 PHX_EVALUATOR_CLASS_END
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(InputConditionsEvaluator,p)
+PHX_EVALUATOR_CTOR(InputConditionsEvaluator, /* p */)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -134,7 +134,7 @@ PHX_EVALUATOR_CTOR(InputConditionsEvaluator,p)
 
 //**********************************************************************
 
-PHX_POST_REGISTRATION_SETUP(InputConditionsEvaluator,sd,fm)
+PHX_POST_REGISTRATION_SETUP(InputConditionsEvaluator, /* sd */, fm)
 {
   this->utils.setFieldData(x,fm);
   this->utils.setFieldData(y,fm);
@@ -143,7 +143,7 @@ PHX_POST_REGISTRATION_SETUP(InputConditionsEvaluator,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(InputConditionsEvaluator,workset)
+PHX_EVALUATE_FIELDS(InputConditionsEvaluator, /* workset */)
 { 
   double x_val = 0.25;
   double y_val = 0.5;
@@ -169,7 +169,7 @@ public:
 PHX_EVALUATOR_CLASS_END
 
 //**********************************************************************
-PHX_EVALUATOR_CTOR(HessianTestEvaluator,p)
+PHX_EVALUATOR_CTOR(HessianTestEvaluator, /* p */)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -196,7 +196,7 @@ PHX_EVALUATOR_CTOR(HessianTestEvaluator,p)
 
 //**********************************************************************
 
-PHX_POST_REGISTRATION_SETUP(HessianTestEvaluator,sd,fm)
+PHX_POST_REGISTRATION_SETUP(HessianTestEvaluator, /* sd */, fm)
 {
   this->utils.setFieldData(x,fm);
   this->utils.setFieldData(y,fm);
@@ -204,7 +204,7 @@ PHX_POST_REGISTRATION_SETUP(HessianTestEvaluator,sd,fm)
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(HessianTestEvaluator,workset)
+PHX_EVALUATE_FIELDS(HessianTestEvaluator, /* workset */)
 { 
   // Grad = y * std::cos(x*y)
   //      = x * std::cos(x*y)-0.25*std::sin(y)
@@ -258,11 +258,11 @@ TEUCHOS_UNIT_TEST(hessian_test,correctness)
   derivative_dimensions.push_back(4);
   fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Hessian>(derivative_dimensions);
 
-  panzer::Traits::SetupData setupData;
+  panzer::Traits::SD setupData;
   fm->postRegistrationSetup(setupData);
 
   panzer::Workset workset;
-  panzer::Traits::PreEvalData preEvalData;
+  panzer::Traits::PED preEvalData;
 
   fm->preEvaluate<panzer::Traits::Hessian>(preEvalData);
   fm->evaluateFields<panzer::Traits::Hessian>(workset);

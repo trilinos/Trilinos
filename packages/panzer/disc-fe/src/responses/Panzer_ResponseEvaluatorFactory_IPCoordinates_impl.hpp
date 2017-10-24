@@ -78,8 +78,8 @@ template <typename EvalT>
 void ResponseEvaluatorFactory_IPCoordinates<EvalT>::
 buildAndRegisterEvaluators(const std::string & responseName,
                            PHX::FieldManager<panzer::Traits> & fm,
-                           const panzer::PhysicsBlock & physicsBlock,
-                           const Teuchos::ParameterList & user_data) const
+                           const panzer::PhysicsBlock& /* physicsBlock */,
+                           const Teuchos::ParameterList& /* user_data */) const
 {
    using Teuchos::RCP;
    using Teuchos::rcp;

@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HDIV_HEX_I1_FEM.hpp
-    \brief  Header file for the Intrepid2::HDIV_HEX_I1_FEM class.
+/** \file   Intrepid2_HDIV_HEX_I1_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HDIV_HEX_I1_FEM class.
     \author Created by P. Bochev and D. Ridzal and K. Petrson.
             Kokkorized by Kyungjoo Kim
  */
@@ -104,9 +104,15 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HDIV_HEX_I1_FEM
+    */
     class Basis_HDIV_HEX_I1_FEM {
     public:
       typedef struct Hexahedron<8> cell_topology_type;
+      /**
+        \brief See Intrepid2::Basis_HDIV_HEX_I1_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputViewType,
@@ -125,6 +131,9 @@ namespace Intrepid2 {
                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                  const EOperator operatorType);
 
+      /**
+        \brief See Intrepid2::Basis_HDIV_HEX_I1_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                EOperator opType>

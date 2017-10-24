@@ -104,7 +104,7 @@ namespace { // (anonymous)
         TEST_ASSERT( compat );
         const bool same = map1.isSameAs (map2);
         TEST_ASSERT( same );
-        const bool fitted = Tpetra::Details::isLocallyFitted (map1, map2);
+        const bool fitted = map2.isLocallyFitted (map1);
         TEST_ASSERT( fitted );
       }
 
@@ -121,7 +121,7 @@ namespace { // (anonymous)
         TEST_ASSERT( ! compat );
         const bool same = map1.isSameAs (map2);
         TEST_ASSERT( ! same );
-        const bool fitted = Tpetra::Details::isLocallyFitted (map1, map2);
+        const bool fitted = map2.isLocallyFitted (map1);
         // Always fitted on Process 0, never on other processes.
         TEST_ASSERT( (fitted && myRank == 0) || (! fitted && myRank != 0) );
       }
@@ -142,7 +142,7 @@ namespace { // (anonymous)
         TEST_ASSERT( compat );
         const bool same = map1.isSameAs (map2);
         TEST_ASSERT( same );
-        const bool fitted = Tpetra::Details::isLocallyFitted (map1, map2);
+        const bool fitted = map2.isLocallyFitted (map1);
         TEST_ASSERT( fitted );
       }
 
@@ -164,7 +164,7 @@ namespace { // (anonymous)
         TEST_ASSERT( compat );
         const bool same = map1.isSameAs (map2);
         TEST_ASSERT( ! same );
-        const bool fitted = Tpetra::Details::isLocallyFitted (map1, map2);
+        const bool fitted = map2.isLocallyFitted (map1);
         TEST_ASSERT( ! fitted );
       }
 
@@ -192,7 +192,7 @@ namespace { // (anonymous)
         TEST_ASSERT( ! compat );
         const bool same = map1.isSameAs (map2);
         TEST_ASSERT( ! same );
-        const bool fitted = Tpetra::Details::isLocallyFitted (map1, map2);
+        const bool fitted = map2.isLocallyFitted (map1);
         TEST_ASSERT( fitted );
       }
 
@@ -217,7 +217,7 @@ namespace { // (anonymous)
         TEST_ASSERT( ! compat );
         const bool same = map1.isSameAs (map2);
         TEST_ASSERT( ! same );
-        const bool fitted = Tpetra::Details::isLocallyFitted (map1, map2);
+        const bool fitted = map2.isLocallyFitted (map1);
         TEST_ASSERT( ! fitted );
       }
     } // map1 is uniform contiguous
@@ -251,7 +251,7 @@ namespace { // (anonymous)
         TEST_ASSERT( compat );
         const bool same = map1.isSameAs (map2);
         TEST_ASSERT( same );
-        const bool fitted = Tpetra::Details::isLocallyFitted (map1, map2);
+        const bool fitted = map2.isLocallyFitted (map1);
         TEST_ASSERT( fitted );
       }
 
@@ -271,7 +271,7 @@ namespace { // (anonymous)
         TEST_ASSERT( compat );
         const bool same = map1.isSameAs (map2);
         TEST_ASSERT( ! same );
-        const bool fitted = Tpetra::Details::isLocallyFitted (map1, map2);
+        const bool fitted = map2.isLocallyFitted (map1);
         TEST_ASSERT( ! fitted );
       }
 
@@ -299,7 +299,7 @@ namespace { // (anonymous)
         TEST_ASSERT( ! compat );
         const bool same = map1.isSameAs (map2);
         TEST_ASSERT( ! same );
-        const bool fitted = Tpetra::Details::isLocallyFitted (map1, map2);
+        const bool fitted = map2.isLocallyFitted (map1);
         TEST_ASSERT( fitted );
       }
 
@@ -324,7 +324,7 @@ namespace { // (anonymous)
         TEST_ASSERT( ! compat );
         const bool same = map1.isSameAs (map2);
         TEST_ASSERT( ! same );
-        const bool fitted = Tpetra::Details::isLocallyFitted (map1, map2);
+        const bool fitted = map2.isLocallyFitted (map1);
         TEST_ASSERT( ! fitted );
       }
     } // map1 is noncontiguous

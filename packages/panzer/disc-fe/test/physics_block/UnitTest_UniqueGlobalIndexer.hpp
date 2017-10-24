@@ -128,7 +128,7 @@ public:
      */
    virtual void getElementGIDs(int localElmtId,std::vector<int> & gids,const std::string & blockId="") const;
 
-   virtual void getElementOrientation(int localElmtId,std::vector<double> & gidsOrientation) const
+   virtual void getElementOrientation(int /* localElmtId */, std::vector<double>& /* gidsOrientation */) const
    { TEUCHOS_ASSERT(false); }
 
    /** \brief Use the field pattern so that you can find a particular

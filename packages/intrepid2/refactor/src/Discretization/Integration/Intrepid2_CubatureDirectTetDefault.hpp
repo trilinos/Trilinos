@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubatureDirectTetDefault.hpp
+/** \file   Intrepid2_CubatureDirectTetDefault.hpp
     \brief  Header file for the Intrepid2::CubatureDirectTetDefault class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim

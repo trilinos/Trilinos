@@ -44,6 +44,13 @@
 
 SET(ADDITIONAL_CLEAN_FILES "")
 
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/docstrings.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/docstrings.py)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/doxy2swig.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/doxy2swig.py)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/makedeps.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/makedeps.py)
+
 FOREACH(Package ${PyTrilinos_PACKAGES})
 
   IF(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${Package}_dox.i)
@@ -56,9 +63,15 @@ FOREACH(Package ${PyTrilinos_PACKAGES})
           ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile_${Package}
           @ONLY
           )
-        EXECUTE_PROCESS(COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/docstrings.py
+        EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/docstrings.py
           --doxygen=${DOXYGEN_EXECUTABLE} ${Package}
-          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+          ERROR_VARIABLE Doxy_CONVERT_ERROR)
+        IF(Doxy_CONVERT_ERROR)
+          MESSAGE(FATAL_ERROR
+            "Error converting ${Package} C++ Doxygen comments to Python docstrings:\n  "
+            ${Doxy_CONVERT_ERROR})
+        ENDIF(Doxy_CONVERT_ERROR)
 
       ENDIF()
 

@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HCURL_HEX_In_FEM.hpp
-    \brief  Header file for the Intrepid2::HCURL_HEX_In_FEM class.
+/** \file   Intrepid2_HCURL_HEX_In_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HCURL_HEX_In_FEM class.
     \author Created by R. Kirby and P. Bochev and D. Ridzal and K. Petrson.
             Kokkorized by Kyungjoo Kim
 */
@@ -56,10 +56,16 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+     \brief See Intrepid2::Basis_HCURL_HEX_In_FEM
+    */
     class Basis_HCURL_HEX_In_FEM {
     public:
       typedef struct Hexahedron<8> cell_topology_type;
 
+      /**
+       \brief See Intrepid2::Basis_HCURL_HEX_In_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputValueViewType,
@@ -86,6 +92,9 @@ namespace Intrepid2 {
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvBubble,
                   const EOperator operatorType );
 
+      /**
+       \brief See Intrepid2::Basis_HCURL_HEX_In_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                typename vinvViewType,
@@ -116,7 +125,7 @@ namespace Intrepid2 {
           typedef typename outputValueViewType::value_type outputValueType;
           typedef typename outputValueViewType::pointer_type outputPointerType;
           constexpr ordinal_type bufSize = 6*(Parameters::MaxOrder+1)*numPtsEval;
-          outputValueType buf[bufSize];
+          char buf[bufSize*sizeof(outputValueType)];
 
           Kokkos::DynRankView<outputValueType,
             Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
@@ -145,6 +154,10 @@ namespace Intrepid2 {
 
   /** \class  Intrepid2::Basis_HCURL_HEX_In_FEM
       \brief  Implementation of the default H(curl)-compatible FEM basis on Hexahedral cell
+
+              Implements Nedelec basis of degree n on the reference Hexahedral cell. The basis has
+              cardinality 3n (n+1)^2 and spans a INCOMPLETE polynomial space.
+
   */
   template<typename ExecSpaceType = void,
            typename outputValueType = double,

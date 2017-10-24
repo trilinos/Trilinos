@@ -40,14 +40,14 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_Utils.cpp
-    \brief  Implementation file for Intrepid_Utils.hpp.
+/** \file   Intrepid2_UtilsDef.hpp
+    \brief  Definition file for Intrepid2 utilities.
     \author Created by P. Bochev and D. Ridzal and Kyungjoo Kim.
 */
 
-///
-/// functions here are moved to basis class
-///
+//
+// functions here are moved to basis class
+//
 
 #ifndef __INTREPID2_UTILS_DEF_HPP__
 #define __INTREPID2_UTILS_DEF_HPP__

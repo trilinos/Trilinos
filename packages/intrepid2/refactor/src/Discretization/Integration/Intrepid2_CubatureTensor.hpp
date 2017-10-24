@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubatureTensor.hpp
+/** \file   Intrepid2_CubatureTensor.hpp
     \brief  Header file for the Intrepid2::CubatureTensor class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim

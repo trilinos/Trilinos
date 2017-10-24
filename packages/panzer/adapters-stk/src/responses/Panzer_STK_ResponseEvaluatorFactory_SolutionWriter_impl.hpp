@@ -36,10 +36,10 @@ buildResponseObject(const std::string & responseName) const
    
 template <typename EvalT> 
 void ResponseEvaluatorFactory_SolutionWriter<EvalT>:: 
-buildAndRegisterEvaluators(const std::string & responseName,
+buildAndRegisterEvaluators(const std::string& /* responseName */,
                            PHX::FieldManager<panzer::Traits> & fm,
                            const panzer::PhysicsBlock & physicsBlock,
-                           const Teuchos::ParameterList & user_data) const
+                           const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;

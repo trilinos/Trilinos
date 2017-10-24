@@ -79,7 +79,7 @@ const std::vector<int> & EdgeFieldPattern::getSubcellIndices(int dim,int cellInd
    return empty_;
 }
 
-void EdgeFieldPattern::getSubcellClosureIndices(int dim,int cellIndex,std::vector<int> & indices) const
+void EdgeFieldPattern::getSubcellClosureIndices(int /* dim */, int /* cellIndex */, std::vector<int>& /* indices */) const
 {
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                       "EdgeFieldPattern::getSubcellClosureIndices should not be called"); 

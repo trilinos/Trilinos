@@ -123,11 +123,17 @@ namespace MueLu {
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     this->Input(currentLevel, "A");
 
-    if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
-        type_ == "LINESMOOTHING_BANDED RELAXATION" ||
-        type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
-        type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
-        type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+    if (type_ == "LINESMOOTHING_TRIDI_RELAXATION"        ||
+        type_ == "LINESMOOTHING_TRIDI RELAXATION"        ||
+        type_ == "LINESMOOTHING_TRIDIRELAXATION"         ||
+        type_ == "LINESMOOTHING_TRIDIAGONAL_RELAXATION"  ||
+        type_ == "LINESMOOTHING_TRIDIAGONAL RELAXATION"  ||
+        type_ == "LINESMOOTHING_TRIDIAGONALRELAXATION"   ||
+        type_ == "LINESMOOTHING_BANDED_RELAXATION"       ||
+        type_ == "LINESMOOTHING_BANDED RELAXATION"       ||
+        type_ == "LINESMOOTHING_BANDEDRELAXATION"        ||
+        type_ == "LINESMOOTHING_BLOCK_RELAXATION"        ||
+        type_ == "LINESMOOTHING_BLOCK RELAXATION"        ||
         type_ == "LINESMOOTHING_BLOCKRELAXATION") {
       this->Input(currentLevel, "CoarseNumZLayers");            // necessary for fallback criterion
       this->Input(currentLevel, "LineDetection_VertLineIds");   // necessary to feed block smoother
@@ -148,11 +154,17 @@ namespace MueLu {
     if      (type_ == "SCHWARZ")
       SetupSchwarz(currentLevel);
 
-    else if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
-             type_ == "LINESMOOTHING_BANDED RELAXATION" ||
-             type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
-             type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
-             type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+    else if (type_ == "LINESMOOTHING_TRIDI_RELAXATION"       ||
+             type_ == "LINESMOOTHING_TRIDI RELAXATION"       ||
+             type_ == "LINESMOOTHING_TRIDIRELAXATION"        ||
+             type_ == "LINESMOOTHING_TRIDIAGONAL_RELAXATION" ||
+             type_ == "LINESMOOTHING_TRIDIAGONAL RELAXATION" ||
+             type_ == "LINESMOOTHING_TRIDIAGONALRELAXATION"  ||
+             type_ == "LINESMOOTHING_BANDED_RELAXATION"      ||
+             type_ == "LINESMOOTHING_BANDED RELAXATION"      ||
+             type_ == "LINESMOOTHING_BANDEDRELAXATION"       ||
+             type_ == "LINESMOOTHING_BLOCK_RELAXATION"       ||
+             type_ == "LINESMOOTHING_BLOCK RELAXATION"       ||
              type_ == "LINESMOOTHING_BLOCKRELAXATION")
       SetupLineSmoothing(currentLevel);
 
@@ -422,6 +434,13 @@ namespace MueLu {
           type_ == "LINESMOOTHING_BANDED RELAXATION" ||
           type_ == "LINESMOOTHING_BANDEDRELAXATION")
         type_ = "BANDEDRELAXATION";
+      else if (type_ == "LINESMOOTHING_TRIDI_RELAXATION"       ||
+               type_ == "LINESMOOTHING_TRIDI RELAXATION"       ||
+               type_ == "LINESMOOTHING_TRIDIRELAXATION"        ||
+               type_ == "LINESMOOTHING_TRIDIAGONAL_RELAXATION" ||
+               type_ == "LINESMOOTHING_TRIDIAGONAL RELAXATION" ||
+               type_ == "LINESMOOTHING_TRIDIAGONALRELAXATION")
+        type_ = "TRIDIAGONALRELAXATION";
       else
         type_ = "BLOCKRELAXATION";
     } else {

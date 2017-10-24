@@ -112,7 +112,7 @@ void panzer::BCStrategy_Dirichlet_DefaultImpl<EvalT>::
 buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                   const panzer::PhysicsBlock& pb,
 			          const LinearObjFactory<panzer::Traits> & lof,
-			          const Teuchos::ParameterList& user_data) const
+			          const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
@@ -203,7 +203,7 @@ void panzer::BCStrategy_Dirichlet_DefaultImpl<EvalT>::
 buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 	                                       const panzer::PhysicsBlock& pb,
 					       const LinearObjFactory<panzer::Traits> & lof,
-					       const Teuchos::ParameterList& user_data) const
+					       const Teuchos::ParameterList& /* user_data */) const
 {
   using Teuchos::ParameterList;
   using Teuchos::RCP;

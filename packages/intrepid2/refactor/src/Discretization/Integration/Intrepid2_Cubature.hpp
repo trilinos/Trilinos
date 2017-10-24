@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_Cubature.hpp
+/** \file   Intrepid2_Cubature.hpp
     \brief  Header file for the Intrepid2::Cubature class.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
@@ -216,12 +216,12 @@ namespace Intrepid2 {
 
   Current release of %Intrepid2 includes the following features:
   \li Default finite element basis functions for <em>H(grad)</em>, <em>H(curl)</em>,
-       <em>H(div)</em> and <em>L2</em> spaces of orders up to 2 on standard cell
+       <em>H(div)</em> and <em>H(vol)</em> spaces of orders up to 2 on standard cell
        topologies in 1D, 2D and 3D</li>
   \li High-order (up to 10) basis functions for <em>H(grad)</em>, <em>H(curl)</em>,
-       <em>H(div)</em> and <em>L2</em> spaces on select cell topologies</li>
+       <em>H(div)</em> and <em>H(vol)</em> spaces on select cell topologies</li>
   \li Pullbacks (transformations) from reference coordinate frame of <em>H(grad)</em>,
-       <em>H(curl)</em>, <em>H(div)</em> and <em>L2</em> fields</li>
+       <em>H(curl)</em>, <em>H(div)</em> and <em>H(vol)</em> fields</li>
   \li Pullbacks of gradient, curl and divergence of <em>H(grad)</em>, <em>H(curl)</em>,
        <em>H(div)</em> fields</li>
   \li Cubature rules of orders up to 20 on most standard 1D, 2D and 3D cell topologies</li>

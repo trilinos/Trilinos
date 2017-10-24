@@ -53,6 +53,7 @@
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_MATLAB)
 #include <Tpetra_CrsMatrix.hpp>
 #include "MueLu_SmootherPrototype.hpp"
+#include "MueLu_MatlabSmoother_fwd.hpp"
 #include "MueLu_MatlabUtils_decl.hpp"
 
 namespace MueLu {

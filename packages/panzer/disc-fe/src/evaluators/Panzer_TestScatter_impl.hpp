@@ -68,7 +68,7 @@ PHX_EVALUATOR_CTOR(TestScatter,p)
   this->setName(n);
 }
 
-PHX_POST_REGISTRATION_SETUP(TestScatter,setupData,fm)
+PHX_POST_REGISTRATION_SETUP(TestScatter, /* setupData */, fm)
 {
   this->utils.setFieldData(scatter_value,fm);
   this->utils.setFieldData(value,fm);

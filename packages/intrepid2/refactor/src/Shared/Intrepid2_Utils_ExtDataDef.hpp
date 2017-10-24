@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_Utils.cpp
-    \brief  Implementation file for Intrepid_Utils.hpp.
+/** \file   Intrepid2_Utils_ExtDataDef.hpp
+    \brief  Definition file for utility functions for handling external data in tests
     \author Created by P. Bochev and D. Ridzal and Kyungjoo Kim.
 */
 

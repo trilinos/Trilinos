@@ -5,23 +5,20 @@
 
 // Note: pragma warnings available since gcc 4.2
 //       pragma push/pop available since gcc 4.6
+// We no longer check for gcc version as Trilinos requires a minimum 4.7.2.
 
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_BOOST) && defined(HAVE_MUELU_BOOST_FOR_REAL)
 
 #ifdef __GNUC__
-# if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
-#endif // GCC_VERSION
 #endif // __GNUC__
 
 #include <boost/graph/graphviz.hpp>
 
 #ifdef __GNUC__
-# if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
 #pragma GCC diagnostic pop
-#endif // GCC_VERSION
 #endif // __GNUC__
 
 // define boost graph types

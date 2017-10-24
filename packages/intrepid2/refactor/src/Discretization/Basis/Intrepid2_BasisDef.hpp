@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_BasisDef.hpp
+/** \file   Intrepid2_BasisDef.hpp
     \brief  Implementation file for the abstract base class Intrepid2::Basis.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
@@ -59,9 +59,9 @@ namespace Intrepid2 {
   //                                                                                            //
   //--------------------------------------------------------------------------------------------//
 
-  ///
-  ///    functions for orders, cardinality and etc. of differential operators
-  ///
+  //
+  //    functions for orders, cardinality and etc. of differential operators
+  //
 
   KOKKOS_INLINE_FUNCTION
   ordinal_type getFieldRank(const EFunctionSpace spaceType) {
@@ -468,9 +468,9 @@ namespace Intrepid2 {
 
 
 
-  ///
-  /// Argument check
-  ///
+  //
+  // Argument check
+  //
 
 
   template<typename outputValueViewType,
@@ -740,7 +740,7 @@ namespace Intrepid2 {
   
   template<typename outputValueViewType,
            typename inputPointViewType>
-  void getValues_L2_Args( const outputValueViewType   outputValues,
+  void getValues_HVOL_Args( const outputValueViewType   outputValues,
                              const inputPointViewType    inputPoints,
                              const EOperator             operatorType,
                              const shards::CellTopology  cellTopo,

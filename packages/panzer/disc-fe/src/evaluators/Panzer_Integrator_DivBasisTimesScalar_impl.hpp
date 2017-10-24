@@ -102,7 +102,6 @@ PHX_POST_REGISTRATION_SETUP(Integrator_DivBasisTimesScalar,sd,fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(scalar,fm);
-  // this->utils.setFieldData(dof_orientation,fm);
 
   for (auto & field : field_multipliers)
     this->utils.setFieldData(field,fm);

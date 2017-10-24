@@ -3,9 +3,7 @@ TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT
 
 SET(unit_test_sources ParameterList_UnitTest_Parallel.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN})
 
-IF(TeuchosCore_ENABLE_yaml-cpp)
-  APPEND_SET(unit_test_sources ParameterList_yaml_Parallel.cpp)
-ENDIF()
+APPEND_SET(unit_test_sources ParameterList_yaml_Parallel.cpp)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ParameterList_UnitTest_Parallel

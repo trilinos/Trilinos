@@ -40,8 +40,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HDIV_TRI_I1_FEM.hpp
-    \brief  Header file for the Intrepid2::HDIV_TRI_I1_FEM class.
+/** \file   Intrepid2_HDIV_TRI_I1_FEM.hpp
+    \brief  Header file for the Intrepid2::Basis_HDIV_TRI_I1_FEM class.
     \author Created by P. Bochev and D. Ridzal and K. Peterson.
             Kokkorized by Kyungjoo Kim
 */
@@ -100,9 +100,15 @@ namespace Intrepid2 {
 
   namespace Impl {
 
+    /**
+      \brief See Intrepid2::Basis_HDIV_TRI_I1_FEM
+    */
     class Basis_HDIV_TRI_I1_FEM {
     public:
       typedef struct Triangle<3> cell_topology_type;
+      /**
+        \brief See Intrepid2::Basis_HDIV_TRI_I1_FEM
+      */
       template<EOperator opType>
       struct Serial {
         template<typename outputViewType,
@@ -122,6 +128,9 @@ namespace Intrepid2 {
                  const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                  const EOperator operatorType);
 
+      /**
+        \brief See Intrepid2::Basis_HDIV_TRI_I1_FEM
+      */
       template<typename outputValueViewType,
                typename inputPointViewType,
                EOperator opType>

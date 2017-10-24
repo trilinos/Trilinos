@@ -107,6 +107,9 @@
 #ifdef HAVE_AMESOS2_UMFPACK     // Umfpack
 #include "Amesos2_Umfpack.hpp"
 #endif
+#ifdef HAVE_AMESOS2_TACHO       // Tacho
+#include "Amesos2_Tacho.hpp"
+#endif
 #ifdef HAVE_AMESOS2_SUPERLU     // Sequential SuperLU
 #include "Amesos2_Superlu.hpp"
 #endif
@@ -552,6 +555,13 @@ struct throw_no_scalar_support_exception {
     if((solverName == "amesos2_umfpack") ||
        (solverName == "umfpack")){
       return handle_solver_type_support<Umfpack,Matrix,Vector>::apply(A, X, B);
+    }
+#endif
+
+#ifdef HAVE_AMESOS2_TACHO
+    if((solverName == "amesos2_tacho") ||
+       (solverName == "tacho")){
+      return handle_solver_type_support<TachoSolver,Matrix,Vector>::apply(A, X, B);
     }
 #endif
 

@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_ArrayToolsDefCloneScale.hpp
+/** \file   Intrepid2_ArrayToolsDefCloneScale.hpp
     \brief  Definition file for clone / scale operations of the array tools interface.
     \author Created by P. Bochev and D. Ridzal.
             Kokkorized by Kyungjoo Kim
@@ -53,11 +53,14 @@ namespace Intrepid2 {
   
   namespace FunctorArrayTools {
 
+    /**
+      \brief Functor for clone see Intrepid2::ArrayTools for more
+    */ 
     template<typename outputViewType,
              typename inputViewType,
              ordinal_type valRank>
     struct F_clone {
-      /**/  outputViewType _output;
+            outputViewType _output;
       const inputViewType _input;
 
       KOKKOS_INLINE_FUNCTION
@@ -129,7 +132,7 @@ namespace Intrepid2 {
   template<typename outputValueType, class ...outputProperties,
            typename inputValueType,  class ...inputProperties>
   void ArrayTools<SpT>::
-  cloneFields( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+  cloneFields(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
                const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {
@@ -182,7 +185,7 @@ namespace Intrepid2 {
   template<typename outputValueType, class ...outputProperties,
            typename inputValueType,  class ...inputProperties>
   void ArrayTools<SpT>::
-  cloneData( /**/  Kokkos::DynRankView<outputValueType,outputProperties...> output,
+  cloneData(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
              const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
 #ifdef HAVE_INTREPID2_DEBUG
     {

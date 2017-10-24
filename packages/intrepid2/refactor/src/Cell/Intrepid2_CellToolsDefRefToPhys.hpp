@@ -63,14 +63,12 @@ namespace Intrepid2 {
   //============================================================================================//
 
   namespace FunctorCellTools {
+    /**
+     \brief Functor for mapping reference points to physical frame see Intrepid2::CellTools for more
+    */
     template<typename physPointViewType,
              typename worksetCellType,
              typename basisValType>
-    /**
-     \brief Functor for mapping reference points to physical frame
-
-       See Intrepid2::CellTools::mapToPhysicalFrame for more documentation.
-    */
     struct F_mapToPhysicalFrame {
             physPointViewType _physPoints;
       const worksetCellType   _worksetCells;

@@ -123,7 +123,7 @@ namespace PHX {
     /*! Build the DAG. This is automatically called by the
         postRegistrationSetup() method. This function is a power user
         feature that allows for cases where the user would like to
-        build the dag and query it to use information form the DAG
+        build the dag and query it to use information from the DAG
         prior to allocating and binding the memory to fields.
      */
     void buildDag();

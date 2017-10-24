@@ -102,14 +102,14 @@ PHX_EVALUATOR_CTOR(DummyFieldEvaluator,p)
   std::string n = "DummyFieldEvaluator: " + name;
   this->setName(n);
 }
-PHX_POST_REGISTRATION_SETUP(DummyFieldEvaluator,sd,fm)
+PHX_POST_REGISTRATION_SETUP(DummyFieldEvaluator, /* sd */, fm)
 {
   this->utils.setFieldData(fieldValue,fm);
 
   
 }
 
-PHX_EVALUATE_FIELDS(DummyFieldEvaluator,workset)
+PHX_EVALUATE_FIELDS(DummyFieldEvaluator, /* workset */)
 { 
   fieldValue(0,0) = 1.0;
   fieldValue(0,1) = 2.0;
@@ -174,9 +174,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   Teuchos::RCP<panzer::Workset> workset = Teuchos::rcp(new panzer::Workset);
   workset->num_cells = numCells;
 
-  panzer::Traits::SetupData setupData;
-  setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
-  setupData.worksets_->push_back(*workset);
+  panzer::Traits::SD setupData;
+  {
+    auto worksets = rcp(new std::vector<panzer::Workset>);
+    worksets->push_back(*workset);
+    setupData.worksets_ = worksets;
+  }
 
   std::vector<PHX::index_size_type> derivative_dimensions;
   derivative_dimensions.push_back(4);
@@ -188,7 +191,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 
   //fm->writeGraphvizFile();
 
-  panzer::Traits::PreEvalData preEvalData;
+  panzer::Traits::PED preEvalData;
 
   fm->preEvaluate<EvalType>(preEvalData);
   fm->evaluateFields<EvalType>(*workset);
@@ -199,8 +202,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   typename PHX::MDField<ScalarT,Cell,BASIS> s("Pressure",sourceBasis->functional);
   typename PHX::MDField<ScalarT,Cell,BASIS> t("Pressure",targetBasis->functional);
 
-  fm->getFieldData<ScalarT,EvalType>(s);
-  fm->getFieldData<ScalarT,EvalType>(t);
+  fm->getFieldData<EvalType>(s);
+  fm->getFieldData<EvalType>(t);
 
   typename Teuchos::ScalarTraits<ScalarT>::magnitudeType tol =
     100.0 * Teuchos::ScalarTraits<ScalarT>::eps();

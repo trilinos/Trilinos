@@ -41,8 +41,8 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Unit tests for Orientation class.
-    \author Created by Kyungjoo Kim
+    \brief  Test for checking orientation tools for tetrahedral elements.
+    \author Created by Mauro Perego
 */
 
 #include "Kokkos_Core.hpp"

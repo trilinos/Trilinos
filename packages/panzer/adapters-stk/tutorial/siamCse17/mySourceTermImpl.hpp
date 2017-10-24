@@ -104,7 +104,7 @@ void
 MySourceTerm<EvalT, Traits>::
 postRegistrationSetup(
   typename Traits::SetupData sd,
-  PHX::FieldManager<Traits>& fm)
+  PHX::FieldManager<Traits>& /* fm */)
 {
   using panzer::getIntegrationRuleIndex;
   irIndex_ = getIntegrationRuleIndex(irDegree_, (*sd.worksets_)[0]);

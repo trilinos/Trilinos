@@ -208,6 +208,168 @@ getRemotePIDs (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer,
   }
 }
 
+
+ 
+/* Check some of the validity of an Import object
+   WARNING: This is a debugging routine only. */
+template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+bool
+checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Importer)
+{
+  using Teuchos::RCP;
+  RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > source = Importer.getSourceMap();
+  RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > target = Importer.getTargetMap();
+  RCP<const Teuchos::Comm<int> > comm = source->getComm();
+
+  int global_is_valid=0;
+  bool is_valid=true;
+ 
+  // We check validity by going through each ID in the source map one by one, broadcasting the sender's PID and then all
+  // receivers check it.
+  LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+  const int MyPID    = comm->getRank();
+  const int NumProcs = comm->getSize();
+
+  GlobalOrdinal minSourceGID = source->getMinAllGlobalIndex();
+  GlobalOrdinal maxSourceGID = source->getMaxAllGlobalIndex();
+  GlobalOrdinal minTargetGID = target->getMinAllGlobalIndex();
+  GlobalOrdinal maxTargetGID = target->getMaxAllGlobalIndex();
+
+
+  /***********************************************/
+  /*              Check recv side                */
+  /***********************************************/
+
+  Teuchos::ArrayView<const LocalOrdinal> permuteTarget = Importer.getPermuteToLIDs();
+  Teuchos::ArrayView<const LocalOrdinal> remoteLIDs    = Importer.getRemoteLIDs();
+  Teuchos::ArrayView<const LocalOrdinal> exportLIDs    = Importer.getExportLIDs();
+  Teuchos::ArrayView<const LocalOrdinal> exportPIDs    = Importer.getExportPIDs();
+  Teuchos::Array<int> remotePIDs; getRemotePIDs(Importer,remotePIDs);
+
+  // Generate remoteGIDs
+  Teuchos::Array<GlobalOrdinal> remoteGIDs(remoteLIDs.size());
+  for(size_t i=0; i<(size_t)remoteLIDs.size(); i++)
+    remoteGIDs[i] = target->getGlobalElement(remoteLIDs[i]);
+
+  int TempPID , OwningPID;
+  for(GlobalOrdinal i=minSourceGID; i<maxSourceGID; i++) {
+    // Get the (source) owner.
+    // Abuse reductions to make up for the fact we don't know the owner is.
+    // NOTE: If nobody owns this guy, it we'll get -1.
+    LocalOrdinal slid = source->getLocalElement(i);    
+    if(slid == LO_INVALID) TempPID = -1;
+    else TempPID = MyPID;
+    Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MAX,TempPID, Teuchos::outArg(OwningPID));
+
+    // Check to see if I have this guy in the target.  If so, make sure I am receiving him from the owner
+    LocalOrdinal tlid = target->getLocalElement(i);    
+
+    if(tlid != LO_INVALID) {
+      // This guy is in my target map, now to check if I'm receiving him from the owner (which I now know)
+      bool is_ok = false;
+      if (OwningPID == MyPID) {
+	// I own this guy
+	if((size_t) tlid < Importer.getNumSameIDs()) {
+	  // Check sames
+	  is_ok = true;
+	}
+	else {
+	  // Check permutes
+	  for (size_t j=0; j<(size_t)permuteTarget.size(); j++) {
+	    if(tlid == permuteTarget[j]) {
+	      is_ok=true; 
+	      break;
+	    }
+	  }
+	}
+      }
+      else {
+	// Check remotes
+	bool already_hit = false;
+	for(size_t j=0; j<(size_t)remoteGIDs.size(); j++) {
+	  if(i == remoteGIDs[j]) {
+	    // No double hits please
+	    if(already_hit) {
+	      is_ok=false; 
+	      break;
+	    }
+	    // GID's match:  Do procs?
+	    if(OwningPID == remotePIDs[j]) {
+	      is_ok = true;
+	      already_hit = true;
+	    }
+	  }
+	}
+      }
+      if(!is_ok) {
+	printf("[%d] ERROR: GID %d should be remoted from PID %d, but isn't.\n",MyPID,(int)i,OwningPID);
+	is_valid=false;
+      }
+    }
+
+  }//end for loop
+
+  /***********************************************/
+  /*              Check send side                */
+  /***********************************************/
+  Teuchos::Array<int> local_proc_mask(NumProcs,0), global_proc_mask(NumProcs,0);
+
+
+  for(GlobalOrdinal i=minTargetGID; i<maxTargetGID; i++) {
+
+    // If I have the target guy, set the proc mask
+    LocalOrdinal tlid = target->getLocalElement(i);    
+    LocalOrdinal slid = source->getLocalElement(i);    
+
+    if(tlid==LO_INVALID) local_proc_mask[MyPID] = 0;
+    else local_proc_mask[MyPID] = 1;
+
+    Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,NumProcs, &local_proc_mask[0],&global_proc_mask[0]);
+
+
+    if(slid !=LO_INVALID) {
+      // If I own this unknown on the src I should check to make sure I'm exporting it to each guy in the global_proc_mask who wants it
+      for(int j=0; j<NumProcs; j++) {
+	if(j==MyPID) continue; // skip self unknowns
+	if(global_proc_mask[j]==1) {
+	  bool is_ok = false;
+	  // This guy needs the unknown
+	  bool already_hit = false;
+	  for(size_t k=0; k<(size_t)exportPIDs.size(); k++) {
+	    if (exportPIDs[k] == j && source->getGlobalElement(exportLIDs[k]) == i) {
+	    // No double hits please
+	    if(already_hit) {
+	      is_ok=false; 
+	      break;
+	    }
+	    else {
+	      is_ok=true;
+	      already_hit=true;
+	    }
+	    }
+	  }
+	  if(!is_ok) {
+	    printf("[%d] ERROR: GID %d should be sent to PID %d, but isn't.\n",MyPID,(int)i,j);
+	    is_valid=false;
+	  }
+	}
+      }
+    }
+  }
+  
+
+
+
+
+
+  // Do a reduction on the final bool status
+  Teuchos::reduceAll<int,int> (*comm, Teuchos::REDUCE_MIN,(int)is_valid, Teuchos::outArg(global_is_valid));
+
+  return global_is_valid>0;
+}
+
+
+
 } // namespace Import_Util
 } // namespace Tpetra
 

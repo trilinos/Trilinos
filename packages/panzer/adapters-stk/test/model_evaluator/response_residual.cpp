@@ -61,7 +61,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
@@ -222,7 +222,7 @@ namespace panzer {
     RCP<Response_Residual<Traits::Jacobian> > response_jacobian = 
       rcp_dynamic_cast<Response_Residual<Traits::Jacobian> >(rLibrary->getResponse<Traits::Jacobian>("RESIDUAL"));
 
-    Teuchos::RCP<panzer::ReadOnlyVector_GlobalEvaluationData> resp_param_ged = ap.param_lof->buildDomainContainer();
+    Teuchos::RCP<panzer::ReadOnlyVector_GlobalEvaluationData> resp_param_ged = ap.param_lof->buildReadOnlyDomainContainer();
     resp_param_ged->setOwnedVector(param_density);
 
     // evaluate residual responses
@@ -231,8 +231,8 @@ namespace panzer {
       RCP<LinearObjContainer> loc = ap.lof->buildLinearObjContainer();
       RCP<LinearObjContainer> gloc = ap.lof->buildGhostedLinearObjContainer();
 
-      RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
-      RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
+      RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildReadOnlyDomainContainer();
+      RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildReadOnlyDomainContainer();
 
       xContainer->setOwnedVector(x);
       xdotContainer->setOwnedVector(x_dot);
@@ -268,8 +268,8 @@ namespace panzer {
       // allocate fill vectors
       RCP<LinearObjContainer> gloc = ap.lof->buildGhostedLinearObjContainer();
 
-      RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
-      RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
+      RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildReadOnlyDomainContainer();
+      RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildReadOnlyDomainContainer();
 
       xContainer->setOwnedVector(x);
       xdotContainer->setOwnedVector(x_dot);
@@ -375,7 +375,7 @@ namespace panzer {
     RCP<Response_Residual<Traits::Jacobian> > response_jacobian = 
       rcp_dynamic_cast<Response_Residual<Traits::Jacobian> >(rLibrary->getResponse<Traits::Jacobian>("RESIDUAL"));
 
-    Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> resp_param_ged = ap.param_lof->buildDomainContainer();
+    Teuchos::RCP<ReadOnlyVector_GlobalEvaluationData> resp_param_ged = ap.param_lof->buildReadOnlyDomainContainer();
 
     RCP<VectorType> param_density = Thyra::createMember(th_param_lof->getThyraDomainSpace());
     Thyra::assign(param_density.ptr(),3.7);
@@ -387,8 +387,8 @@ namespace panzer {
       RCP<LinearObjContainer> loc = ap.lof->buildLinearObjContainer();
       RCP<LinearObjContainer> gloc = ap.param_lof->buildGhostedLinearObjContainer();
 
-      RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildDomainContainer();
-      RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildDomainContainer();
+      RCP<ReadOnlyVector_GlobalEvaluationData> xContainer = ap.lof->buildReadOnlyDomainContainer();
+      RCP<ReadOnlyVector_GlobalEvaluationData> xdotContainer = ap.lof->buildReadOnlyDomainContainer();
 
       xContainer->setOwnedVector(x);
       xdotContainer->setOwnedVector(x_dot);
@@ -996,7 +996,7 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
+          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
       ap.lof = linObjFactory;
     }
     else {
@@ -1028,7 +1028,7 @@ namespace panzer {
       Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory = panzer::cloneWithNewDomain(*ap.lof,dofManager);
 
       ap.param_dofManager = dofManager;
-      ap.param_ged = linObjFactory->buildDomainContainer();
+      ap.param_ged = linObjFactory->buildReadOnlyDomainContainer();
       ap.param_lof = linObjFactory;
     }
 

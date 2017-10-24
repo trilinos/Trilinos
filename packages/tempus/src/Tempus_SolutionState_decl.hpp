@@ -70,7 +70,7 @@ public:
     const Status solutionStatus,
     const bool   output,
     const bool   outputScreen,
-    const bool   isRestartable,
+    const bool   isSynced,
     const bool   isInterpolated,
     const Scalar accuracy,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
@@ -107,6 +107,18 @@ public:
     /// Return the Solution status
     virtual Status getSolutionStatus() const
       {return metaData_->getSolutionStatus();};
+
+    /// Get IsSynced
+    virtual bool getOutput() const {return metaData_->getOutput();}
+
+    /// Set IsSynced
+    virtual void setOutput(bool output) {metaData_->setOutput(output);}
+
+    /// Get IsSynced
+    virtual bool getIsSynced() const {return metaData_->getIsSynced();}
+
+    /// Set IsSynced
+    virtual void setIsSynced(bool isSynced) {metaData_->setIsSynced(isSynced);}
 
     /// Return the Stepper status
     virtual Status getStepperStatus() const

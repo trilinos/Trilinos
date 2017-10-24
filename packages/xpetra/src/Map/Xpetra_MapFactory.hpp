@@ -376,7 +376,7 @@ namespace Xpetra {
         return rcp(new Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>(*bmap));
       }
 
-      LocalOrdinal N = map->getNodeNumElements();
+      LocalOrdinal N = Teuchos::as<LocalOrdinal>(map->getNodeNumElements());
       Teuchos::ArrayView<const GlobalOrdinal> oldElements = map->getNodeElementList();
       Teuchos::Array<GlobalOrdinal> newElements(map->getNodeNumElements()*numDofPerNode);
       for (LocalOrdinal i = 0; i < N; i++)
