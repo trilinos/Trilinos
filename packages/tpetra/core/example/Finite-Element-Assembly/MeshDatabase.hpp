@@ -122,8 +122,6 @@ private:
   Teuchos::RCP<const Teuchos::Comm<int> > comm_;
   int MyRank_;
   LLA myProcIJ_;
-
-
 };
 
 
@@ -132,7 +130,8 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
   globalElements_(global_elements_x,global_elements_y),
   globalNodes_(global_elements_x+1,global_elements_y+1),
   globalProcs_(procs_x,procs_y),
-  comm_(comm) {
+  comm_(comm) 
+{
   
   // NOTE: Elements/nodes are numbered sequentially with x as the "fast" direction
   
@@ -153,7 +152,6 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
     myNodeStop_[k]  = (myProcIJ_[k] == globalProcs_[k]-1) ? globalNodes_[k] : (myProcIJ_[k]+1) * eper;
     num_my_nodes *= (myNodeStop_[k]-myNodeStart_[k]);
   }
-  
   
   // Generate the owned element ids
   Kokkos::resize(ownedElementGlobalIDs_,num_my_elements);
@@ -248,45 +246,46 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
 
 
 
-void MeshDatabase::print(std::ostream & oss) { 
-    std::ostringstream ss;
-    ss<<"["<<MyRank_<<","<<myProcIJ_[0]<<","<<myProcIJ_[1]<<"]";
-    oss<<ss.str()<<" Global Elements = ["<<globalElements_[0]<<"x"<<globalElements_[1]<<"] Nodes ="<<globalNodes_[0]<<"x"<<globalNodes_[1]<<"]\n";
-    oss<<ss.str()<<" Stop/Start Elements = ["<<myElementStart_[0]<<","<<myElementStop_[0]<<")x["<<myElementStart_[1]<<","<<myElementStop_[1]<<")\n";
-    oss<<ss.str()<<" Stop/Start Nodes    = ["<<myNodeStart_[0]<<","<<myNodeStop_[0]<<")x["<<myNodeStart_[1]<<","<<myNodeStop_[1]<<")\n";
+void MeshDatabase::print(std::ostream & oss) 
+{ 
+  std::ostringstream ss;
+  ss<<"["<<MyRank_<<","<<myProcIJ_[0]<<","<<myProcIJ_[1]<<"]";
+  oss<<ss.str()<<" Global Elements = ["<<globalElements_[0]<<"x"<<globalElements_[1]<<"] Nodes ="<<globalNodes_[0]<<"x"<<globalNodes_[1]<<"]\n";
+  oss<<ss.str()<<" Stop/Start Elements = ["<<myElementStart_[0]<<","<<myElementStop_[0]<<")x["<<myElementStart_[1]<<","<<myElementStop_[1]<<")\n";
+  oss<<ss.str()<<" Stop/Start Nodes    = ["<<myNodeStart_[0]<<","<<myNodeStop_[0]<<")x["<<myNodeStart_[1]<<","<<myNodeStop_[1]<<")\n";
 
-    oss<<ss.str()<<" Owned Global Elements = ";
-    for(size_t i=0; i<ownedElementGlobalIDs_.dimension(0); i++)
-      oss<<ownedElementGlobalIDs_[i]<<" ";
+  oss<<ss.str()<<" Owned Global Elements = ";
+  for(size_t i=0; i<ownedElementGlobalIDs_.dimension(0); i++)
+    oss<<ownedElementGlobalIDs_[i]<<" ";
 
-    oss<<"\n"<<ss.str()<<" Owned Global Nodes   = ";
-    for(size_t i=0; i<ownedNodeGlobalIDs_.dimension(0); i++)
-      oss<<ownedNodeGlobalIDs_[i]<<" ";
+  oss<<"\n"<<ss.str()<<" Owned Global Nodes   = ";
+  for(size_t i=0; i<ownedNodeGlobalIDs_.dimension(0); i++)
+    oss<<ownedNodeGlobalIDs_[i]<<" ";
 
-    oss<<"\n"<<ss.str()<<" Owned Element2Node   = ";
-    for(size_t i=0; i<ownedElementToNode_.dimension(0); i++) {
-      oss<<"(";
-      for(size_t j=0; j<ownedElementToNode_.dimension(1); j++)
-        oss<<ownedElementToNode_(i,j)<<" ";
-      oss<<") ";
-    }      
+  oss<<"\n"<<ss.str()<<" Owned Element2Node   = ";
+  for(size_t i=0; i<ownedElementToNode_.dimension(0); i++) {
+    oss<<"(";
+    for(size_t j=0; j<ownedElementToNode_.dimension(1); j++)
+      oss<<ownedElementToNode_(i,j)<<" ";
+    oss<<") ";
+  }      
 
-    oss<<"\n"<<ss.str()<<" Ghost Global Elements = ";
-    for(size_t i=0; i<ghostElementGlobalIDs_.dimension(0); i++)
-      oss<<ghostElementGlobalIDs_[i]<<" ";
-    oss<<"\n"<<ss.str()<<" Ghost Global Nodes    = ";
-    for(size_t i=0; i<ghostNodeGlobalIDs_.dimension(0); i++)
-      oss<<ghostNodeGlobalIDs_[i]<<" ";
+  oss<<"\n"<<ss.str()<<" Ghost Global Elements = ";
+  for(size_t i=0; i<ghostElementGlobalIDs_.dimension(0); i++)
+    oss<<ghostElementGlobalIDs_[i]<<" ";
+  oss<<"\n"<<ss.str()<<" Ghost Global Nodes    = ";
+  for(size_t i=0; i<ghostNodeGlobalIDs_.dimension(0); i++)
+    oss<<ghostNodeGlobalIDs_[i]<<" ";
 
-    oss<<"\n"<<ss.str()<<" Ghost Element2Node   = ";
-    for(size_t i=0; i<ghostElementToNode_.dimension(0); i++) {
-      oss<<"(";
-      for(size_t j=0; j<ghostElementToNode_.dimension(1); j++)
-        oss<<ghostElementToNode_(i,j)<<" ";
-      oss<<") ";
-    }      
-    oss<<std::endl;
-  }
+  oss<<"\n"<<ss.str()<<" Ghost Element2Node   = ";
+  for(size_t i=0; i<ghostElementToNode_.dimension(0); i++) {
+    oss<<"(";
+    for(size_t j=0; j<ghostElementToNode_.dimension(1); j++)
+      oss<<ghostElementToNode_(i,j)<<" ";
+    oss<<") ";
+  }      
+  oss<<std::endl;
+}
 
 
 // Generates a dummy finite element stiffness matrix for quads

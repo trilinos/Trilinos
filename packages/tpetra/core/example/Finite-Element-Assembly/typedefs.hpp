@@ -43,11 +43,14 @@
 #ifndef TYPEDEFS_HPP
 #define TYPEDEFS_HPP
 
-#include "Kokkos_View.hpp"
+#include <Kokkos_View.hpp>
+#include <Tpetra_DefaultPlatform.hpp>
 
 typedef int LocalOrdinal;
 typedef long long GlobalOrdinal;
 typedef double Scalar;
+
+typedef Tpetra::Details::DefaultTypes::node_type NT;
 
 typedef Kokkos::DefaultExecutionSpace ExecutionSpace;
 
@@ -57,8 +60,6 @@ typedef Kokkos::View<GlobalOrdinal*,ExecutionSpace> global_ordinal_view_type;
 typedef Kokkos::View<LocalOrdinal*[4],ExecutionSpace> local_ordinal_2d_array_type;
 typedef Kokkos::View<Scalar*[4],ExecutionSpace> scalar_2d_array_type;
 
-
-
-
-
 #endif
+
+
