@@ -77,7 +77,7 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
     // Coarsen can come in two forms, either a single char that will be interpreted as an integer
-    // which is used as the coarsening rate in every spatial dimentions, 
+    // which is used as the coarsening rate in every spatial dimentions,
     // or it can be a longer string that will then be interpreted as an array of integers.
     // By default coarsen is set as "{2}", hence a coarsening rate of 2 in every spatial dimension
     // is the default setting!
@@ -261,19 +261,21 @@ namespace MueLu {
     // are local then all the data associated with the coarse
     // nodes O and the fine nodes * needs to be imported.
     //
-    //                  o--+--+--o--+--+--O
-    //                  |  |  |  |  |  |  |
-    //                  +--+--+--+--+--+--*
-    //                  |  |  |  |  |  |  |
-    //                  +--+--+--+--+--+--*
-    //                  |  |  |  |  |  |  |
-    //                  o--+--+--o--+--+--O
-    //                  |  |  |  |  |  |  |
-    //                  +--+--+--+--+--+--*
-    //                  |  |  |  |  |  |  |
-    //                  *--*--*--*--*--*--*
-    //                  |  |  |  |  |  |  |
-    //                  O--*--*--O--*--*--O
+    //                  *--*--*--*--*--*--*--*
+    //                  |  |  |  |  |  |  |  |
+    //                  o--+--+--o--+--+--O--*
+    //                  |  |  |  |  |  |  |  |
+    //                  +--+--+--+--+--+--*--*
+    //                  |  |  |  |  |  |  |  |
+    //                  +--+--+--+--+--+--*--*
+    //                  |  |  |  |  |  |  |  |
+    //                  o--+--+--o--+--+--O--*
+    //                  |  |  |  |  |  |  |  |
+    //                  +--+--+--+--+--+--*--*
+    //                  |  |  |  |  |  |  |  |
+    //                  *--*--*--*--*--*--*--*
+    //                  |  |  |  |  |  |  |  |
+    //                  O--*--*--O--*--*--O--*
     //
     // Creating that local matrix is easy enough using proper range
     // and domain maps to import data from A.
@@ -314,6 +316,7 @@ namespace MueLu {
         }
       }
     }
+    std::cout << "p=" << A->getRowMap()->getComm()->getRank() << " | ghostRowGIDs: " << ghostRowGIDs << std::endl;
     RCP<const Map> ghostedRowMap = Xpetra::MapFactory<LO,GO,NO>::Build(A->getRowMap()->lib(),
                                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                            ghostRowGIDs(),
@@ -1047,6 +1050,8 @@ namespace MueLu {
     out << "Face Nodes:     " << countFace << std::endl;
     out << "Edge Nodes:     " << countEdge << std::endl;
     out << "Corner Nodes:   " << countCorner << std::endl;
+    out << "dofType: " << dofType << std::endl;
+    out << "lDofInd: " << lDofInd << std::endl;
 
     LO numInteriorNodes = 0, numFaceNodes = 0, numEdgeNodes = 0, numCornerNodes = 8;
     numInteriorNodes = (elementNodesPerDir[0] - 2)*(elementNodesPerDir[1] - 2)

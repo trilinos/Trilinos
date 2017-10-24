@@ -165,7 +165,8 @@ namespace MueLu {
                              const Array<LO> lCoarseElementsPerDir,
                              const LO numDimensions, const Array<LO> lFineNodesPerDir,
                              const Array<GO> gFineNodesPerDir, const Array<GO> gIndices,
-                             const Array<LO> lCoarseNodesPerDir, Array<bool> ghostInterface) const;
+                             const Array<LO> lCoarseNodesPerDir,
+                             const Array<bool> ghostInterface) const;
 
     void CollapseStencil(const int type, const int orientation, Array<SC>& stencil) const ;
 

@@ -183,7 +183,7 @@ namespace MueLuTests {
         }
       } else if(comm->getRank() == 2) {
         if(numDimensions == 2) {
-          myOffset = 21;
+          myOffset = 28;
           lNodesPerDim[0] = 4;
           lNodesPerDim[1] = 3;
           lNodesPerDim[2] = 1;
@@ -195,7 +195,7 @@ namespace MueLuTests {
         }
       } else if(comm->getRank() == 3) {
         if(numDimensions == 2) {
-          myOffset = 25;
+          myOffset = 32;
           lNodesPerDim[0] = 3;
           lNodesPerDim[1] = 3;
           lNodesPerDim[2] = 1;
@@ -251,6 +251,8 @@ namespace MueLuTests {
       myCoordinates[1] = myYCoords();
       myCoordinates[2] = myZCoords();
     }
+
+    std::cout << "p=" << comm->getRank() << " | myGIDs: " << myGIDs() << std::endl;
 
     // Create the map and store coordinates using the above array views
     map         = MapFactory::Build(lib, gNumPoints, myGIDs(), 0, comm);
@@ -329,6 +331,7 @@ namespace MueLuTests {
     Array<LO> lNodesPerDim(3);
     GetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim,
                                 lNodesPerDim);
+    std::cout << "Generating problem data: done" << std::endl;
 
     Array<LO> coarseRate(3);
     coarseRate[0] = 2;
@@ -350,6 +353,8 @@ namespace MueLuTests {
     for(LO dim = 0; dim < numDimensions; ++dim) {
       fineNodes[dim] = coordinates->getData(dim)();
     }
+
+    std::cout << "Running the BlackBox geometry kernel" << std::endl;
     factTester.TestGetGeometricData(coordinates, coarseRate, gNodesPerDim, lNodesPerDim, 1,
                                     gIndices, gCoarseNodesPerDir, ghostGIDs, coarseNodesGIDs,
                                     colGIDs, gNumCoarseNodes, myOffset, lCoarseNodesPerDir,
