@@ -3,10 +3,9 @@
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
-// #include <Tpetra_Map_decl.hpp>
-#include <Tpetra_Map_def.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_FancyOStream.hpp>
 
 #include "typedefs.hpp"
 #include "MeshDatabase.hpp"
@@ -30,20 +29,29 @@ int main (int argc, char *argv[]) {
 
 
   // Generate the mesh
-  int nex = 10;
-  int ney = 10;
+  int nex = 3;
+  int ney = 3;
   MeshDatabase mesh(comm,nex,ney,procx,procy);
   mesh.print(std::cout);
 
   // Build Tpetra Maps
   // -----------------
-  // - https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
-  Tpetra::Map<LocalOrdinal, GlobalOrdinal, NT> map(nex*ney, mesh.getOwnedElementGlobalIDs(), 0, comm);
+  // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
+  RCP<const MapType> obj_map = rcp(new MapType(nex*ney, mesh.getOwnedElementGlobalIDs(), 0, comm));
 
+  auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
+  obj_map->describe(*out);
 
 
   // Build graphs multiple ways
+  // --------------------------
 
+  // - Type 1 Graph Construction
+  //
+
+
+  // - Type 2 Graph Construction
+  //
 
 
   // Build matrices 

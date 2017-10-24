@@ -45,6 +45,7 @@
 
 #include <Kokkos_View.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Map_decl.hpp>
 
 typedef int LocalOrdinal;
 typedef long long GlobalOrdinal;
@@ -59,6 +60,8 @@ typedef Kokkos::View<GlobalOrdinal*,ExecutionSpace> global_ordinal_view_type;
 // NOTE: Arrays are hardwired for QUAD4
 typedef Kokkos::View<LocalOrdinal*[4],ExecutionSpace> local_ordinal_2d_array_type;
 typedef Kokkos::View<Scalar*[4],ExecutionSpace> scalar_2d_array_type;
+
+typedef typename Tpetra::Map<LocalOrdinal, GlobalOrdinal, NT> MapType;
 
 #endif
 
