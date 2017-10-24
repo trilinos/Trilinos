@@ -91,90 +91,21 @@ int main(int argc, char *argv[]) {
     int commrank = comm->getRank();
 
     // Read matrices in from files
-    std::ifstream inputfile;
-    int nnz_grad=1080, nnz_nodes=4096, nnz_edges=13440;
-    int nedges=540, nnodes=216, row, col;
-    double entry, x, y, z;
+    Xpetra::global_size_t nedges=540, nnodes=216;
     // maps for nodal and edge matrices
     RCP<TMap> edge_map = rcp( new TMap(nedges,0,comm) );
     RCP<TMap> node_map = rcp( new TMap(nnodes,0,comm) );
     // edge stiffness matrix
-    RCP<TCRS> S_Matrix = rcp( new TCRS(edge_map,100) );
-    inputfile.open("S.txt");
-    for(int i=0; i<nnz_edges; i++) {
-      inputfile >> row >> col >> entry ;
-      row=row-1;
-      col=col-1;
-      std::complex<double> centry(entry,0.0);
-      if(edge_map->isNodeGlobalElement(row)) {
-        S_Matrix->insertGlobalValues(row,
-            Teuchos::ArrayView<LO>(&col,1),
-            Teuchos::ArrayView<SC>(&centry,1));
-      }
-    }
-    S_Matrix->fillComplete();
-    inputfile.close();
+    RCP<Matrix> S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("S.txt", edge_map);
     // edge mass matrix
-    RCP<TCRS> M1_Matrix = rcp( new TCRS(edge_map,100) );
-    inputfile.open("M1.txt");
-    for(int i=0; i<nnz_edges; i++) {
-      inputfile >> row >> col >> entry ;
-      row=row-1;
-      col=col-1;
-      std::complex<double> centry(entry,0.0);
-      if(edge_map->isNodeGlobalElement(row)) {
-        M1_Matrix->insertGlobalValues(row,
-            Teuchos::ArrayView<LO>(&col,1),
-            Teuchos::ArrayView<SC>(&centry,1));
-      }
-    }
-    M1_Matrix->fillComplete();
-    inputfile.close();
+    RCP<Matrix> M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M1.txt", edge_map);
     // nodal mass matrix
-    RCP<TCRS> M0_Matrix = rcp( new TCRS(node_map,100) );
-    inputfile.open("M0.txt");
-    for(int i=0; i<nnz_nodes; i++) {
-      inputfile >> row >> col >> entry ;
-      row=row-1;
-      col=col-1;
-      std::complex<double> centry(entry,0.0);
-      if(node_map->isNodeGlobalElement(row)) {
-        M0_Matrix->insertGlobalValues(row,
-            Teuchos::ArrayView<LO>(&col,1),
-            Teuchos::ArrayView<SC>(&centry,1));
-      }
-    }
-    M0_Matrix->fillComplete();
-    inputfile.close();
+    RCP<Matrix> M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M0.txt", node_map);
     // gradient matrix
-    RCP<TCRS> D0_Matrix = rcp( new TCRS(edge_map,2) );
-    inputfile.open("D0.txt");
-    for(int i=0; i<nnz_grad; i++) {
-      inputfile >> row >> col >> entry ;
-      row=row-1;
-      col=col-1;
-      std::complex<double> centry(entry,0.0);
-      if(edge_map->isNodeGlobalElement(row)) {
-        D0_Matrix->insertGlobalValues(row,
-            Teuchos::ArrayView<LO>(&col,1),
-            Teuchos::ArrayView<SC>(&centry,1));
-      }
-    }
-    D0_Matrix->fillComplete(node_map,edge_map);
-    inputfile.close();
+    RCP<Matrix> D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0.txt", edge_map, Teuchos::null, node_map, edge_map);
     // coordinates
-    RCP<TMV> coords = rcp( new TMV(node_map,3) );
-    inputfile.open("coords.txt");
-    for(int i=0; i<nnodes; i++) {
-      inputfile >> x >> y >> z ;
-      std::complex<double> cx(x,0.0), cy(y,0.0), cz(z,0.0);
-      if(node_map->isNodeGlobalElement(i)) {
-        coords->replaceGlobalValue(i,0,cx);
-        coords->replaceGlobalValue(i,1,cy);
-        coords->replaceGlobalValue(i,2,cz);
-      }
-    }
-    inputfile.close();
+    RCP<MultiVector> coords = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector("coords.txt", node_map);
+
     // build lumped mass matrix inverse (M0inv_Matrix)
     RCP<TMV> ones = rcp( new TMV(node_map,1) );
     RCP<TMV> diag = rcp( new TMV(node_map,1) );
@@ -183,6 +114,8 @@ int main(int argc, char *argv[]) {
     M0_Matrix->apply(*ones,*diag);
     invdiag->reciprocal(*diag);
     Teuchos::ArrayRCP<const SC> invdiags = invdiag->getData(0);
+    GO row, col;
+    SC entry;
     RCP<TCRS> M0inv_Matrix = rcp( new TCRS(node_map,1) );
     for(int i=0; i<nnodes; i++) {
       row = i;
