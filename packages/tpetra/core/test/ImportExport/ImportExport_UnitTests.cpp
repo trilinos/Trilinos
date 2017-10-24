@@ -487,7 +487,7 @@ namespace {
     }
     TEST_EQUALITY(all_is_well,true);
 
-    /*
+    
     bool isvalid=Tpetra::Import_Util::checkImportValidity(Importer);
     if(!isvalid) {
       std::ostringstream oss;
@@ -497,7 +497,7 @@ namespace {
     }
 
     TEST_EQUALITY(isvalid,true);
-    */
+    
   }
 
   //

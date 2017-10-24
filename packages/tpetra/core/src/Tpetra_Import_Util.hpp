@@ -252,7 +252,6 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
     else TempPID = MyPID;
     Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MAX,TempPID, Teuchos::outArg(OwningPID));
 
-
     // Check to see if I have this guy in the target.  If so, make sure I am receiving him from the owner
     LocalOrdinal tlid = target->getLocalElement(i);    
 
@@ -265,7 +264,7 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 	  // Check sames
 	  is_ok = true;
 	}
-	else if ((size_t)tlid < Importer.getNumSameIDs() + Importer.getNumPermuteIDs()) {
+	else {
 	  // Check permutes
 	  for (size_t j=0; j<(size_t)permuteTarget.size(); j++) {
 	    if(tlid == permuteTarget[j]) {
@@ -293,7 +292,10 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 	  }
 	}
       }
-      if(!is_ok) is_valid=false;
+      if(!is_ok) {
+	printf("[%d] ERROR: GID %d should be remoted from PID %d, but isn't\n",MyPID,i,OwningPID);
+	is_valid=false;
+      }
     }
 
   }//end for loop
