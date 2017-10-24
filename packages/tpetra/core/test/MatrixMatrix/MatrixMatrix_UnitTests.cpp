@@ -744,7 +744,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
 	newOut << "\tisImportValid: " <<results.isImportValid << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
-      //      TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("ManualFC: Import validity failed: ") + currentSystem.name());
+      TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("ManualFC: Import validity failed: ") + currentSystem.name());
 
       if (verbose)
         newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
@@ -759,7 +759,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
 	newOut << "\tisImportValid: " <<results.isImportValid << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
-      //      TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("AutoFC: Import validity failed: ") + currentSystem.name());
+      TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("AutoFC: Import validity failed: ") + currentSystem.name());
 
       if (verbose)
         newOut << "Running multiply reuse test for " << currentSystem.name() << endl;

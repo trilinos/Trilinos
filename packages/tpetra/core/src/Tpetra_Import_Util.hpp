@@ -293,7 +293,7 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 	}
       }
       if(!is_ok) {
-	printf("[%d] ERROR: GID %d should be remoted from PID %d, but isn't\n",MyPID,i,OwningPID);
+	printf("[%d] ERROR: GID %d should be remoted from PID %d, but isn't.\n",MyPID,(int)i,OwningPID);
 	is_valid=false;
       }
     }
