@@ -83,8 +83,8 @@ public:
   global_ordinal_view_type getOwnedNodeGlobalIDs() {return ownedNodeGlobalIDs_;}
   global_ordinal_view_type getGhostNodeGloballDs() {return ghostNodeGlobalIDs_;}
 
-  local_ordinal_2d_array_type getOwnedElementToNode() {return ownedElementToNode_;}
-  local_ordinal_2d_array_type getGhostElementToNode() {return ghostElementToNode_;}
+  global_ordinal_2d_array_type getOwnedElementToNode() {return ownedElementToNode_;}
+  global_ordinal_2d_array_type getGhostElementToNode() {return ghostElementToNode_;}
   
   // Debuggign output
   void print(std::ostream & oss);
@@ -104,8 +104,8 @@ private:
   global_ordinal_view_type ownedNodeGlobalIDs_;
   global_ordinal_view_type ghostNodeGlobalIDs_;
 
-  local_ordinal_2d_array_type ownedElementToNode_;  
-  local_ordinal_2d_array_type ghostElementToNode_;
+  global_ordinal_2d_array_type ownedElementToNode_;  
+  global_ordinal_2d_array_type ghostElementToNode_;
 
   // Global Mesh Info
   LLA globalElements_;
