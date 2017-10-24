@@ -41,40 +41,19 @@
 // ************************************************************************
 // @HEADER
 
-#include "XROL.hpp"
+#pragma once
 
-namespace XROL {
-
-
-
-namespace TypeCheckDetails {
-
-    template<bool...> struct bool_pack;
-    template<bool... bs>
-    using all_true = std::is_same<bool_pack<bs..., true>, bool_pack<true, bs...>>;
-
-
-} // namespace TypeCheckDetails
-
-template <typename... Ts>
-using all_true = TypeCheckDetails::all_true<Ts::value...>;
-
-template <typename T, typename... Ts>
-using all_same = all_true<std::is_same<T,Ts>...>;
-
-template<class T, class... Ts>
-using all_convertible = all_true<std::is_convertible<Ts,T>...>;
-
-
-/** \brief Generate a compile time error if the parameter pack does not have
-           uniform types
-*/
-template<class... Ts>
-void UniformTypeCheck( Ts... values ) {
-  using ReturnType = std::common_type_t<decltype(values)...>;
-  static_assert(all_same<ReturnType,decltype(values)...>::value, "Error: Template parameters "
-    "must have the same type!");
-};
-
-
-} // namespace XROL 
+// C++ Includes
+#include <algorithm>
+#include <complex>
+#include <exception>
+#include <functional>
+#include <iostream>
+#include <iomanip>
+#include <limits>
+#include <map>
+#include <memory>
+#include <random>
+#include <tuple>
+#include <type_traits>
+#include <vector>

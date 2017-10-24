@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
     RealT gvar = random<RealT>(comm);
     RealT yvar = random<RealT>(comm);
     Teuchos::RCP<Teuchos::ParameterList> bpoelist = Teuchos::rcp(new Teuchos::ParameterList);
-    bpoelist->sublist("SOL").sublist("Risk Measure").set("Name","BPOE");
+    bpoelist->sublist("SOL").sublist("Risk Measure").set("Name","bPOE");
     ROL::RiskVector<RealT> z(bpoelist,zp,zvar), g(bpoelist,gzp,gvar), y(bpoelist,yzp,yvar);
     // INITIALIZE STATE VECTORS
     Teuchos::RCP<std::vector<RealT> > u_rcp

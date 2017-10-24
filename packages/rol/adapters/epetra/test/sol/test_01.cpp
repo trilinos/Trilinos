@@ -352,8 +352,8 @@ int main(int argc, char* argv[]) {
     /************************* BPOE ***************************************************************/
     /**********************************************************************************************/
     *outStream << "\nBUFFERED PROBABILITY OF EXCEEDANCE\n";
-    list.sublist("SOL").set("Stochastic Component Type","BPOE"); 
-    list.sublist("SOL").sublist("Risk Measure").set("Name","BPOE");
+    list.sublist("SOL").set("Stochastic Component Type","Risk Averse"); 
+    list.sublist("SOL").sublist("Risk Measure").set("Name","bPOE");
     setRandomVector(*x_rcp,comm);
     setUpAndSolve(list,pObj,sampler,x,d,bnd,*outStream);
     printSolution(*x_rcp,*outStream);

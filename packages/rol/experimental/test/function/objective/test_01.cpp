@@ -1,4 +1,3 @@
-
 // @HEADER
 // ************************************************************************
 //
@@ -42,24 +41,83 @@
 // ************************************************************************
 // @HEADER
 
-#pragma once
+
+/*! \file  test_01.cpp
+    \brief Test XROL::Objective interface - Compare values to those 
+           using the ROL implementation of vectors
+*/
 
 #include "XROL.hpp"
 
-namespace XROL {
+#include "ZakharovObjective.hpp"
 
-template<class Scalar> 
-struct Magnitude {
-  using type = Scalar;
-};
-
-// Specialize for complex-valued scalar
-template<class Scalar> 
-struct Magnitude<std::complex<Scalar>> {
-  using type = Scalar;
-};
+#include <iostream>
 
 
 
-} // namespace XROL
+int main( int argc, char *argv[] ) {
 
+  using namespace std;
+  using V        = vector<double>;
+  using IndexT   = XROL::index_t<V>;
+
+  using XROL::Elementwise::evaluate_all;
+
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
+  default_random_engine generator;
+  uniform_real_distribution<> dist(-1.0,1.0);
+  
+  ostream *os;
+
+  IndexT dim    = 10;
+  int errorFlag = 0;
+
+  if( argc > 1 ) {
+    os = &cout;
+  }
+  else {
+    Teuchos::oblackholestream bhs;
+    os = &bhs;
+  }
+
+  try {
+  
+    Teuchos::ParameterList parlist;
+
+    // Need to capture references to generator and distribution
+    auto rnd = [&generator,&dist](auto &arg){
+      XROL::randomize(generator,dist,arg); 
+    };
+
+    // Create vectors
+    V x(dim);  V g(dim);  V v(dim);  V w(dim);
+    V hv(dim);  
+    V hw(dim);
+
+    evaluate_all(rnd,x,g,v,w);
+
+    auto k = make_unique<V>(dim);
+
+    for( XROL::index_t<V> i=0; i<k->size(); ++i ) {
+      (*k)[i] = 1.0*(1+i);
+    }
+   
+    Zakharov::Objective<V> obj(move(k));
+     
+    XROL::checkGradient(obj,x,g,v,*os,parlist);
+    XROL::checkHessVec(obj,x,g,v,*os,parlist);
+    XROL::checkHessSym(obj,x,g,w,v,*os,parlist);
+
+  }
+  catch( logic_error err ) {
+    *os << err.what() << endl;
+    errorFlag = -1000;
+  }; // end try
+
+  cout << "End Result: TEST " << ( errorFlag ? "FAILED" : "PASSED" ) << endl;
+  
+
+  return 0;
+}

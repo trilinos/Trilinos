@@ -43,27 +43,43 @@
 
 #pragma once
 
-// C++ Includes
-#include <algorithm>
-#include <complex>
-#include <exception>
-#include <limits>
-#include <map>
-#include <memory>
-#include <tuple>
-#include <type_traits>
-#include <vector>
+#include "cxxstd.hpp"
+
+// Teuchos Includes
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+// ROL Includes
+#include "ROL_Types.hpp"
 
 
-// Utility
+// Depends only on cxxstd.hpp, 
+// Independent of other XROL headers
+#include "XROL_Defines.hpp"
 #include "XROL_ElementwiseFunction.hpp"
 #include "XROL_Exception.hpp"
-#include "XROL_Magnitude.hpp"
 #include "XROL_Output.hpp"
-
-// Vector
 #include "XROL_VectorTraits.hpp"
-#include "XROL_StdVectorTraits.hpp"
-#include "XROL_CheckVector.hpp"
+#include "XROL_Vector.hpp"
+#include "XROL_TypeCheck.hpp"
 
-// Objective
+
+
+// Depends on XROL_VectorTraits.hpp and XROL_Vector.hpp
+#include "XROL_VectorCheck.hpp"
+#include "XROL_StdVector.hpp"
+#include "XROL_ArrayVector.hpp"
+#include "XROL_Vector_SimOpt.hpp"
+#include "XROL_PartitionedVector.hpp"
+#include "XROL_Objective.hpp"
+
+
+// Depends on XROL_Objective
+#include "XROL_ObjectiveImpl.hpp"
+#include "XROL_ObjectiveCheck.hpp"
+#include "XROL_ObjectiveVectors.hpp"
+
+#include "XROL_Objective_ExtendedInterface.hpp"
+
+//#include "XROL_TestObjective.hpp"

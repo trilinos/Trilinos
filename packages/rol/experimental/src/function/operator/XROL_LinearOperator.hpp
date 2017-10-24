@@ -44,51 +44,27 @@
 
 #pragma once
 
-#include <ostream>
+#include "XROL_VectorTraits.hpp"
+
 
 namespace XROL {
 
-class VectorOptionalMethod {
-private:
-  template<class C>
-  struct DualCheck {
-    template<class U, const U&(U::*)() const> struct Check {};
-    template<class U> static char test(Test<U,&U::dual> *);
-    template<class U> static int test(...);
-    static constexpr bool value = (sizeof(test<C>(0)) == sizeof(char));
-  }; // DualCheck
-  template<class C>
-  struct PrintCheck {
-    template<class U, void (U::*)(std::ostream) const> struct Check {};
-    template<class U> static char test(Test<U,&U::print> *);
-    template<class U> static int test(...);
-    static constexpr bool value = (sizeof(test<V>(0)) == sizeof(char));
-  }; // PrintCheck
+/** Operator that maps X -> Y 
+    and provides an interface for a mapping from Y -> X
+*/
 
-public:
+template<class X, class Y=X> 
+struct LinearOperator {
+  using Real = typename Magnitude<X>::type;
 
-  template<class V>
-  using HasDual = std::integral_constant<bool, DualCheck<V>::value>;
+  virtual ~LinearOperator();
+  virtual void update( const X& x ) {}
+  virtual void apply( Y& y, const X& x, Real& tol ) const = 0;
+  virtual void applyInverse( X& x, const Y& y, Real& tol ) {}
 
-  template<class V>
-  static typename std::enable_if<HasDual<V>::value, const V&>::type
-  dual( const V& v ) { return v.dual(); }
+};
 
-  template<class V> 
-  static typename std::enable_if<!HasDual<V>::value, const V&>::type
-  dual( const V& v ) { return v; }
 
-  template<class V>
-  using HasPrint = std::integral_constant<bool, PrintCheck<V>::value>;
-
-  template<class V>
-  static typename std::enable_if<HasPrint<V>::value, const V&>::type
-  print( const V& v, std::ostream &os ) { v.print(os); }
-
-  template<class V> 
-  static typename std::enable_if<!HasPrint<V>::value, const V&>::type
-  print( const V& v, std::ostream &os ) { return v; }
-
-}; // VectorOptionalMethod
 
 } // namespace XROL
+

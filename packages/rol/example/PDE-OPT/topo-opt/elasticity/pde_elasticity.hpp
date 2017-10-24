@@ -54,6 +54,7 @@
 #include "../../TOOLS/fieldhelper.hpp"
 
 #include "dirichlet.hpp"
+#include "traction.hpp"
 #include "load.hpp"
 #include "materialtensor.hpp"
 
@@ -82,7 +83,7 @@ private:
   std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
   // Finite element definition
   Teuchos::RCP<FE<Real> > fe_;
-  std::vector<Teuchos::RCP<FE<Real> > > feBdry_;
+  std::vector<std::vector<Teuchos::RCP<FE<Real> > > > feBdry_;
   // Local degrees of freedom on boundary, for each side of the reference cell (first index).
   std::vector<std::vector<int> > fidx_;
   // Coordinates of degrees freedom on boundary cells.
@@ -98,6 +99,7 @@ private:
   Teuchos::RCP<Load<Real> >           load_; 
   Teuchos::RCP<MaterialTensor<Real> > matTensor_;
   Teuchos::RCP<Dirichlet<Real> >      dirichlet_;
+  Teuchos::RCP<Traction<Real> >       traction_;
   Teuchos::RCP<FieldHelper<Real> >    fieldHelper_;
 
 public:
@@ -145,7 +147,12 @@ public:
     bdryCub_ = cubFactory.create(bdryCellType, bdryCubDegree);
 
     matTensor_ = Teuchos::rcp(new MaterialTensor<Real>(parlist.sublist("Problem")));
-    load_      = Teuchos::rcp(new Load<Real>(parlist.sublist("Problem")));
+    if (parlist.sublist("Problem").isSublist("Load")) {
+      load_    = Teuchos::rcp(new Load<Real>(parlist.sublist("Problem")));
+    }
+    if (parlist.sublist("Problem").isSublist("Traction")) {
+      traction_= Teuchos::rcp(new Traction<Real>(parlist.sublist("Problem")));
+    }
     dirichlet_ = Teuchos::rcp(new Dirichlet<Real>(parlist.sublist("Problem")));
 
     numDofs_ = 0;
@@ -196,32 +203,43 @@ public:
     Teuchos::RCP<Intrepid::FieldContainer<Real> > rhoUMat =
       Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, matd));
     std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > gradDisp_eval(d);
-    std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > load(d);
     for (int i=0; i<d; ++i) {
       gradDisp_eval[i] =  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-      load[i] =  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    }
-    for (int i=0; i<d; ++i) {
       fe_->evaluateGradient(gradDisp_eval[i], U[i]);
     }
     fe_->evaluateValue(valZ_eval, Z[0]);
+
+    // EVALUATE MATERIAL TENSOR
     matTensor_->computeUmat(UMat, gradDisp_eval);
     matTensor_->computeDensity(rho, valZ_eval);
-    load_->compute(load, fe_, PDE<Real>::getParameter(), -1.0);
     Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoUMat, *rho, *UMat);
-
-    /*** Evaluate weak form of the residual. ***/
     for (int i=0; i<d; ++i) {
       Intrepid::FunctionSpaceTools::integrate<Real>(*R[i],
                                                     *rhoUMat,               // rho B U
                                                     *matTensor_->CBdetJ(i), // B' C
                                                     Intrepid::COMP_CPP,
                                                     false);
-      Intrepid::FunctionSpaceTools::integrate<Real>(*R[i],
-                                                    *load[i],           // F
-                                                    *fe_->NdetJ(),      // N
-                                                    Intrepid::COMP_CPP,
-                                                    true);
+    }
+
+    // EVALUATE LOAD
+    if (load_ != Teuchos::null) {
+      std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > load(d);
+      for (int i=0; i<d; ++i) {
+        load[i] =  Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+      }
+      load_->compute(load, fe_, PDE<Real>::getParameter(), static_cast<Real>(-1));
+      for (int i=0; i<d; ++i) {
+        Intrepid::FunctionSpaceTools::integrate<Real>(*R[i],
+                                                      *load[i],           // F
+                                                      *fe_->NdetJ(),      // N
+                                                      Intrepid::COMP_CPP,
+                                                      true);
+      }
+    }
+
+    // APPLY TRACTION CONDITIONS
+    if (traction_ != Teuchos::null) {
+      traction_->apply(R, feBdry_, PDE<Real>::getParameter(), static_cast<Real>(-1));
     }
 
     // APPLY DIRICHLET CONDITIONS
@@ -641,8 +659,25 @@ public:
     // Finite element definition.
     fe_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
     fidx_ = fe_->getBoundaryDofs();
+    if (traction_ != Teuchos::null) {
+      traction_->setCellNodes(bdryCellNodes_,bdryCellLocIds_);
+    }
     dirichlet_->setCellNodes(bdryCellNodes_,bdryCellLocIds_,fidx_);
     matTensor_->setFE(fe_);
+    // Construct boundary FE
+    int numSideSets = bdryCellLocIds_.size();
+    if (numSideSets > 0) {
+      feBdry_.resize(numSideSets);
+      for (int i = 0; i < numSideSets; ++i) {
+        int numLocSides = bdryCellNodes[i].size();
+        feBdry_[i].resize(numLocSides);
+        for (int j = 0; j < numLocSides; ++j) {
+          if (bdryCellNodes[i][j] != Teuchos::null) {
+            feBdry_[i][j] = Teuchos::rcp(new FE<Real>(bdryCellNodes[i][j],basisPtr_,bdryCub_,j));
+          }
+        }
+      }
+    }
   }
 
   void setFieldPattern(const std::vector<std::vector<int> > & fieldPattern) {
@@ -654,12 +689,12 @@ public:
     return fe_;
   }
 
-  const std::vector<Teuchos::RCP<FE<Real> > > getBdryFE(void) const {
+  const std::vector<std::vector<Teuchos::RCP<FE<Real> > > > getBdryFE(void) const {
     return feBdry_;
   }
 
-  const std::vector<std::vector<int> > getBdryCellLocIds(const int sideset = 6) const {
-    return bdryCellLocIds_[sideset];
+  const std::vector<std::vector<std::vector<int> > > getBdryCellLocIds(void) const {
+    return bdryCellLocIds_;
   }
 
   const Teuchos::RCP<FieldHelper<Real> > getFieldHelper(void) const {
@@ -668,6 +703,10 @@ public:
 
   const Teuchos::RCP<Load<Real> > getLoad(void) const {
     return load_;
+  }
+
+  const Teuchos::RCP<Traction<Real> > getTraction(void) const {
+    return traction_;
   }
 
   const Teuchos::RCP<MaterialTensor<Real> > getMaterialTensor(void) const {

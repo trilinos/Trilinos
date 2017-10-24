@@ -44,66 +44,70 @@
 
 #pragma once
 
-#include "XROL.hpp"
+#include "XROL_ConstraintVectors.hpp"
+
 
 namespace XROL {
 
-template<class V>
-// std::unique_ptr<V> 
-auto clone( const V& x ) { 
-  static_assert("clone() must be specialized for type " +
-   typeid(x).name() );
-  return nullptr; 
-}
 
-template<class V> 
-// std::unique_ptr<V> 
-auto basis( const V& x, ElementTraits<V>::IndexType i ) {
-  static_assert("basis() must be specialized for type " +
-   typeid(x).name() );
-  return nullptr
-}
+template<class X, class C>
+class Constraint {
 
-template<class V>
-// ElementTraits<V>::IndexType 
-auto dimension( const V& x ) {
-  static_assert("dimension() be specialized for type " +
-   typeid(x).name() );
-  return 0;
-}
+public:
 
-template<class V>
-void plus( V& x, const V& y ) {
-  VectorFunctionTraits<V>::transform(x,[](auto xe, auto ye){xe+=ye;},y);
-}
+  Constraint();
 
-template<class V>
-void scale( V& x, const ElementTraits<V>::ElementType alpha ) {
-  VectorFunctionTraits::transform(x,[alpha](auto xe){xs*=alpha;},y);
-}
+  virtual ~Constraint();
 
-template<class V>
-// ElementTraits<V>::ElementType
-auto dot( const V& x, const V &y ) {
-  using ElementType = ElementTraits<V>::ElementType;
-  Sum<ElementType> sum;
-  return VectorFunctionTraits<V>::transform_and_reduce( 
-    [](auto xe,auto ye){return xe*ye;}, sum, x, y); 
-}
+  virtual void update( const X& x );
 
-template<class V> 
-// ElementTraits<V>::MagnitudeType
-auto norm( const V& x ) {
-  using ElementType   = ElementTraits<V>::ElementType;
-  using MagnitudeType = ElementTraits<V>::MagnitudeType;
-  Sum<ElementType> sum;
-  auto norm2 = VFT::transform_and_reduce( [](auto xe){return xe*xe;}, sum, x);  
-  return std::sqrt(norm2);
-}
+  virtual void value( C& c, const X& x, magnitude_t<X>& tol ) = 0;
 
-template<class V>
-void axpy( V& x, const ElementTraits<V>::ElementType
+  virtual void applyJacobian( C& jv, 
+                              const X& v, 
+                              const X& x, 
+                              magnitude_t<X>& tol );
 
+  virtual void applyAdjointJacobian( dual_t<X>& ajv, 
+                                     const dual_t<C>& v,
+                                     const X& x,
+                                     const C& vdual,
+                                     magnitude_t<X>& tol );
+
+
+  virtual void applyAdjointHessian( dual_t<X>& ahuv,
+                                    const dual_t<C>& u,
+                                    const X& v,
+                                    const X& x,
+                                    magnitude_t<X>& tol );   
+/*
+  virtual std::vector<magnitude_t<X>>
+  solveAugmentedSystem( X&               v1,
+                        dual_t<C>&       v2,
+                        const dual_t<C>& b1,
+                        const C&         b2,
+                        const X&         x,
+                        magnitude_t<X>&  tol );
+*/
+
+  virtual void applyPreconditioner( dual_t<C>& pv,
+                                    const C& v, 
+                                    const X& x,
+                                    const dual_t<X>& g,
+                                    magnitude_t<X>& tol );
+  virtual void activate( void );
+ 
+  virtual void deactivate( void );
+
+private:
+
+  bool activated_;
+
+  // Constraint space scratch vector in the event of default 
+  // adjoint Jacobian use
+  std::unique_ptr<ConstraintVectors<X,C>> convec_; 
+  
+};
 
 
 } // namespace XROL

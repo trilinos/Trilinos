@@ -82,8 +82,8 @@ public:
   }
 
   BPOE(Teuchos::ParameterList &parlist) : RiskMeasure<Real>(), firstReset_(true) {
-    threshold_ = parlist.sublist("SOL").sublist("Risk Measure").sublist("BPOE").get("Threshold",1.0);
-    order_     = parlist.sublist("SOL").sublist("Risk Measure").sublist("BPOE").get("Moment Order",1.0);
+    threshold_ = parlist.sublist("SOL").sublist("Risk Measure").sublist("bPOE").get("Threshold",1.0);
+    order_     = parlist.sublist("SOL").sublist("Risk Measure").sublist("bPOE").get("Moment Order",1.0);
     hvec_.resize(5);
   }
 

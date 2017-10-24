@@ -306,11 +306,11 @@ int main(int argc, char *argv[]) {
     plvec[4].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
     plvec[4].sublist("SOL").sublist("Risk Measure").set("Name","Exponential Utility");
     plvec[4].sublist("SOL").sublist("Risk Measure").sublist("Exponential Utility").set("Rate", 1.0);
-    // BPOE
+    // bPOE
     plvec[5].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
-    plvec[5].sublist("SOL").sublist("Risk Measure").set("Name","BPOE");
-    plvec[5].sublist("SOL").sublist("Risk Measure").sublist("BPOE").set("Moment Order", 2.0);
-    plvec[5].sublist("SOL").sublist("Risk Measure").sublist("BPOE").set("Threshold", 6.0);
+    plvec[5].sublist("SOL").sublist("Risk Measure").set("Name","bPOE");
+    plvec[5].sublist("SOL").sublist("Risk Measure").sublist("bPOE").set("Moment Order", 2.0);
+    plvec[5].sublist("SOL").sublist("Risk Measure").sublist("bPOE").set("Threshold", 6.0);
     // KL-divergence distributionally robust optimization
     plvec[6].sublist("SOL").set("Stochastic Component Type", "Risk Averse");
     plvec[6].sublist("SOL").sublist("Risk Measure").set("Name","KL Divergence");

@@ -44,65 +44,57 @@
 
 #pragma once
 
-#include "XROL_StdVectorTraits.hpp"
+#include "XROL_VectorTraits.hpp"
+
 
 namespace XROL {
 
 template<class V> 
 auto checkVector( const V& x, const V& y, const V& z, std::ostream &os = std::cout ) {
 
-  using VT = VectorTraits<V>;
+  using namespace std;
 
-  using IndexType     = typename ElementTraits<V>::IndexType;
-  using ElementType   = typename ElementTraits<V>::ElementType;
-  using MagnitudeType = typename ElementTraits<V>::MagnitudeType;
+  element_t<V> zero{0.0};
+  element_t<V> one{1.0};
+  element_t<V> a{1.234};
+  element_t<V> b{-0.4321};
 
-  // Define these function pointer aliases so we don't have to write VT:: all the time
-  auto axpy  = &VT::axpy;
-  auto clone = &VT::clone;
-  auto dual  = &VT::dual;
-  auto norm  = &VT::norm; 
-  auto plus  = &VT::plus;
-  auto set   = &VT::set;
-  auto zero  = &VT::zero;
+  unique_ptr<V> v_ptr = clone(z);
 
-  ElementType zero{0.0};
-  ElementType one{1.0};
-  ElementType a{1.234};
-  ElementType b{-0.4321};
-
-  auto v    = *clone(z);
+  auto v    = *v_ptr;
   auto vtmp = *clone(z);
   auto xtmp = *clone(x);
   auto ytmp = *clone(y);
 
-  std::vector<ElementType> vCheck;
+  vector<element_t<V>> vCheck;
+  //vCheck.resize(dimension(x));
 
-  auto println = [os,vCheck]( auto text ) { 
-    to_ostream(os, std::setw(94), std::left, text);
+  auto store = [&vCheck,v]() { vCheck.push_back(norm(v)); };
+  auto reset = [x,y,z,&xtmp,&ytmp,&v]() { set(v,z);  set(xtmp,x);  set(ytmp,y); };
+  auto println = [&os,&vCheck]( auto text ) { 
+    to_ostream(os, setw(76), left, text);
     os << ". Consistency error:  " << vCheck.back() << "\n";
   };
 
-  auto reset = [x,y,z,xtmp,ytmp,v]() { set(v,z);  set(xtmp,x);  set(ytmp,y); };
-  auto store = [vCheck,v]() { vCheck.push_back(norm(v)); };
 
 
-  os << "\n" << std::setw(96) << std::left << fill('*') << 
+  os << "\n" << setw(96) << left << setfill('*') << 
     "********** Begin verification of linear algebra. " << "\n\n";
   
   reset();
   plus(v,x); plus(xtmp,z); axpy(v,-one,xtmp); 
   store();
-  os << std::scientific << std::setprecision(12) << std::setfill('>');
+  os << scientific << setprecision(12) << setfill('.');
   println("Commutativity of addition");
 
-  reset();
+  reset(); 
   plus(ytmp,x); plus(v,ytmp); plus(xtmp,z); plus(xtmp,y); 
+  axpy(v,-one,xtmp);
   store();
   println("Associativity of addition");
 
   reset();
-  zero(v); plus(v,x); axpy(v, -one, x); 
+  fill(v,0); plus(v,x); axpy(v, -one, x); 
   store();
   println("Identity element of addition");
 
@@ -117,13 +109,14 @@ auto checkVector( const V& x, const V& y, const V& z, std::ostream &os = std::co
   println("Identity element of scalar multiplication");
 
   reset();
+  set(v,z); set(vtmp,z);
   scale(v,b); scale(v,a); scale(vtmp,a*b); axpy(v,-one,vtmp); 
   store();
   println("Consistency of scalar multiplication with field multiplication");
 
   set(v,z); set(vtmp,z);
   scale(v,a+b); scale(vtmp,a); axpy(vtmp,b,z); axpy(v,-one,vtmp); 
-  stpre();
+  store();
   println("Distributivity of scalar multiplication with respect to field addition");
 
   reset();
@@ -131,15 +124,17 @@ auto checkVector( const V& x, const V& y, const V& z, std::ostream &os = std::co
   store();
   println("Distributivity of scalar multiplication with respect to vector addition");
 
-  vCheck.push_back(std::abs(dot(z,x) - dot(x,z)));
+  vCheck.push_back(abs(dot(z,x) - dot(x,z)));
   println("Commutativity of dot (inner) product over the field of reals");
 
   set(xtmp,x);
   plus(xtmp,y); 
   auto zxt = dot(z,xtmp);
-  auto zx = dot(z,x);
-  auto zy = dot(z,y);
-  vCheck.push_back(std::abs(zxt - zx - zy)/std::max(std::abs(zxt), std::max(std::abs(zx), std::abs(zy))));
+  auto zx  = dot(z,x);
+  auto zy  = dot(z,y);
+  {
+    vCheck.push_back(abs(zxt - zx - zy)/max(abs(zxt), max(abs(zx), abs(zy))));
+  }
   println("Additivity of dot (inner) product");
 
   set(v,z);
@@ -161,9 +156,9 @@ auto checkVector( const V& x, const V& y, const V& z, std::ostream &os = std::co
   store();
   println("Reflexivity"); 
   os << "\n";
-
+  os << setfill('*');
   // Restore format state of pStream used for the header info.
-  os << std::setw(96) << std::left << "********** End verification of linear algebra. " << "\n\n";
+  os << std::setw(96) << std::left << "********** End verification of linear algebra." << "\n\n";
 
   return vCheck;
 
