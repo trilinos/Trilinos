@@ -50,6 +50,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -125,8 +126,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
   // try to extract linear object container
-  if (d.gedc.containsDataObject(globalDataKey_)) {
-    RCP<GlobalEvaluationData> ged = d.gedc.getDataObject(globalDataKey_);
+  if (d.gedc->containsDataObject(globalDataKey_)) {
+    RCP<GlobalEvaluationData> ged = d.gedc->getDataObject(globalDataKey_);
     RCP<LOCPair_GlobalEvaluationData> loc_pair =
       rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(ged);
 
@@ -152,9 +153,6 @@ evaluateFields(typename TRAITS::EvalData workset)
     return;
 
   typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
-
-  Kokkos::View<const LO*, PHX::Device> LIDs;
-
   // for convenience pull out some objects from workset
   std::string blockId = this->wda(workset).block_id;
   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -176,7 +174,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
     std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-    LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+    auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
     // loop over the fields to be gathered
     for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {

@@ -49,10 +49,10 @@
 
 #include <Teuchos_DefaultSerialComm.hpp>
 
-#include <InterfaceSets/FROSch_DDInterface_def.hpp>
-#include <InterfaceSets/FROSch_EntitySet_def.hpp>
+#include <FROSch_DDInterface_def.hpp>
+#include <FROSch_EntitySet_def.hpp>
 
-#include <Tools/FROSch_SubdomainSolver_def.hpp>
+#include <FROSch_SubdomainSolver_def.hpp>
 
 // TODO
 // -> Auf const überprüfen
@@ -116,6 +116,7 @@ namespace FROSch {
         
         typedef Teuchos::Array<GO> GOVec;
         typedef Teuchos::ArrayRCP<GO> GOVecPtr;
+        typedef Teuchos::ArrayView<GO> GOVecView;
         typedef Teuchos::ArrayView<const GO> ConstGOVecView;
         typedef Teuchos::ArrayRCP<GOVecPtr> GOVecPtr2D;
         

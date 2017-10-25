@@ -54,7 +54,7 @@
 #include "Galeri_CrsMatrices.h"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#include "Tools/FROSch_Tools_def.hpp"
+#include "FROSch_Tools_def.hpp"
 
 using namespace std;
 

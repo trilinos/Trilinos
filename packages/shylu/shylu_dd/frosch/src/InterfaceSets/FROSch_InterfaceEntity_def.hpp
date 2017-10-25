@@ -42,8 +42,7 @@
 #ifndef _FROSCH_INTERFACEENTITY_DEF_HPP
 #define _FROSCH_INTERFACEENTITY_DEF_HPP
 
-#include "InterfaceSets/FROSch_InterfaceEntity_decl.hpp"
-//#include "InterfaceSets/FROSch_EntitySet_decl.hpp"
+#include <FROSch_InterfaceEntity_decl.hpp>
 
 namespace FROSch {
     
@@ -256,7 +255,7 @@ namespace FROSch {
         if (getNumNodes()>=2) {
             sortByGlobalID();
             
-            LOVecPtr mapVector(getNumNodes());
+            GOVecPtr mapVector(getNumNodes());
             for (UN i=0; i<getNumNodes(); i++) {
                 mapVector[i] = NodeVector_[i].DofsGamma_[0];
             }

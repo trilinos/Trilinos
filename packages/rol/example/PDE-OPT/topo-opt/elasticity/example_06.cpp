@@ -74,7 +74,7 @@
 #include "../../TOOLS/pdevector.hpp"
 #include "../../TOOLS/integralconstraint.hpp"
 #include "obj_topo-opt.hpp"
-#include "mesh_ex06.hpp"
+#include "mesh_wheel.hpp"
 #include "pde_elasticity.hpp"
 #include "pde_filter.hpp"
 #include "printCDF.hpp"
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
     /*** Initialize main data structure. ***/
     Teuchos::RCP<MeshManager<RealT> > meshMgr
-      = Teuchos::rcp(new MeshManager_Example06<RealT>(*parlist));
+      = Teuchos::rcp(new MeshManager_Wheel<RealT>(*parlist));
     // Initialize PDE describing elasticity equations.
     Teuchos::RCP<PDE_Elasticity<RealT> > pde
       = Teuchos::rcp(new PDE_Elasticity<RealT>(*parlist));

@@ -51,6 +51,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -120,8 +121,8 @@ void panzer::GatherTangent_BlockedTpetra<EvalT, TRAITS,S,LO,GO,NodeT>::
 preEvaluate(typename TRAITS::PreEvalData d)
 {
   // try to extract linear object container
-  if (d.gedc.containsDataObject(globalDataKey_)) {
-    blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
+  if (d.gedc->containsDataObject(globalDataKey_)) {
+    blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_),true);
   }
 }
 

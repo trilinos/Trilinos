@@ -57,7 +57,7 @@ using Teuchos::rcp;
 #include "Panzer_InitialCondition_Builder.hpp"
 #include "Panzer_WorksetContainer.hpp"
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 
 #include "PanzerAdaptersSTK_config.hpp"
 #include "Panzer_STK_Version.hpp"
@@ -134,8 +134,8 @@ namespace panzer {
     dofManager->addField(condDesc.fieldName, hgradFP);
     dofManager->buildGlobalUnknowns();
 
-    Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > elof 
-          = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+    Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > elof 
+          = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
 
     Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > lof = elof;
 

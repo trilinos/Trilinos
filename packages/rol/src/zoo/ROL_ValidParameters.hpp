@@ -301,7 +301,7 @@ inline Teuchos::RCP<const Teuchos::ParameterList> getValidSOLParameters() {
     risk.set("Name","CVaR");
 
     /* ===== BPOE ================= */
-    PL &bpoe = risk.sublist("BPOE");
+    PL &bpoe = risk.sublist("bPOE");
       bpoe.set("Moment Order",   2.0);
       bpoe.set("Threshold",      1.0);
 

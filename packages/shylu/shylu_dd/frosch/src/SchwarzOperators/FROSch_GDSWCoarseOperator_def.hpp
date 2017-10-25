@@ -42,7 +42,7 @@
 #ifndef _FROSCH_GDSWCOARSEOPERATOR_DEF_HPP
 #define _FROSCH_GDSWCOARSEOPERATOR_DEF_HPP
 
-#include "SchwarzOperators/FROSch_GDSWCoarseOperator_decl.hpp"
+#include <FROSch_GDSWCoarseOperator_decl.hpp>
 
 namespace FROSch {
     
@@ -194,7 +194,7 @@ namespace FROSch {
                                                           MapPtr &nodesMap,
                                                           MapPtrVecPtr &dofsMaps)
     {
-        GOVecPtr myGlobalDirichletBoundaryDofs(0);
+        GOVecPtr myGlobalDirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,nodesMap);
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,myGlobalDirichletBoundaryDofs);
         
         return 0;
@@ -221,7 +221,7 @@ namespace FROSch {
                                                           MapPtrVecPtr &dofsMaps,
                                                           SCVecPtr2D &localNodeList)
     {
-        GOVecPtr myGlobalDirichletBoundaryDofs(0);
+        GOVecPtr myGlobalDirichletBoundaryDofs = FindOneEntryOnlyRowsGlobal(this->K_,nodesMap);
         buildCoarseSpace(dimension,dofsPerNode,nodesMap,dofsMaps,myGlobalDirichletBoundaryDofs,localNodeList);
         
         return 0;
@@ -574,8 +574,8 @@ namespace FROSch {
         CrsMatrixPtr repeatedMatrix = FROSch::ExtractLocalSubdomainMatrix(this->K_,repeatedMap);
         
         // Extract submatrices
-        LOVec indicesGammaDofsAll(0);
-        LOVec indicesIDofsAll(0);
+        GOVec indicesGammaDofsAll(0);
+        GOVec indicesIDofsAll(0);
         LO tmp = 0;
         
         for (UN i=0; i<NumberOfBlocks_; i++) {
@@ -973,8 +973,8 @@ namespace FROSch {
     int GDSWCoarseOperator<SC,LO,GO,NO>::computeAndFillPhi(CrsMatrixPtr &repeatedMatrix,
                                                            MapPtr &repeatedMap,
                                                            MapPtr &coarseMap,
-                                                           LOVecView indicesGammaDofsAll,
-                                                           LOVecView indicesIDofsAll,
+                                                           GOVecView indicesGammaDofsAll,
+                                                           GOVecView indicesIDofsAll,
                                                            CrsMatrixPtr kII,
                                                            CrsMatrixPtr kIGamma)
     {

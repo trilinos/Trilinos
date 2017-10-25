@@ -42,7 +42,7 @@
 #ifndef _FROSCH_TOOLS_DEF_HPP
 #define _FROSCH_TOOLS_DEF_HPP
 
-#include <Tools/FROSch_Tools_decl.hpp>
+#include <FROSch_Tools_decl.hpp>
 
 namespace FROSch {
     
@@ -56,7 +56,7 @@ namespace FROSch {
         Teuchos::RCP<Xpetra::Vector<GO,LO,GO,NO> > globalIndices = Xpetra::VectorFactory<GO,LO,GO,NO>::Build(linearMap);
         
         Teuchos::RCP<Xpetra::Import<LO,GO,NO> > importer = Xpetra::ImportFactory<LO,GO,NO>::Build(map,linearMap);
-        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > importer2 = Xpetra::ImportFactory<LO,GO,NO>::Build(linearMap,map); // Ist der notwendig??? Mit Epetra ging es auch ohne einen zweiten Importer und stattdessen mit einem Export
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > importer2 = Xpetra::ImportFactory<LO,GO,NO>::Build(linearMap,map); // AH 10/16/2017: Ist der notwendig??? Mit Epetra ging es auch ohne einen zweiten Importer und stattdessen mit einem Export
         globalIndices->doImport(*myIndices,*importer,Xpetra::INSERT);
         myIndices->putScalar(0);
         myIndices->doImport(*globalIndices,*importer2,Xpetra::ADD);
@@ -358,6 +358,44 @@ namespace FROSch {
             repeatedDofMaps[j] = Xpetra::MapFactory<LO,GO,NO>::Build(repeatedMap->lib(),-1,repeatedDofs[j](),0,repeatedMap->getComm());
         }
         return 0;
+    }
+    
+    
+    template <class SC,class LO,class GO,class NO>
+    Teuchos::ArrayRCP<GO> FindOneEntryOnlyRowsGlobal(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &matrix,
+                                                     Teuchos::RCP<Xpetra::Map<LO,GO,NO> > &repeatedMap)
+    {
+        Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > repeatedMatrix = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(repeatedMap,2*matrix->getGlobalMaxNumRowEntries());
+        Teuchos::RCP<Xpetra::Import<LO,GO,NO> > scatter = Xpetra::ImportFactory<LO,GO,NO>::Build(matrix->getRowMap(),repeatedMap);
+        repeatedMatrix->doImport(*matrix,*scatter,Xpetra::ADD);
+        
+        Teuchos::ArrayRCP<GO> oneEntryOnlyRows(matrix->getNodeNumRows());
+        LO tmp = 0;
+        LO nnz;
+        GO row;
+        for (LO i=0; i<repeatedMatrix->getNodeNumRows(); i++) {
+            row = repeatedMap->getGlobalElement(i);
+            Teuchos::ArrayView<const GO> indices;
+            Teuchos::ArrayView<const SC> values;
+            repeatedMatrix->getGlobalRowView(row,indices,values);
+            nnz = indices.size();
+            if (indices.size()==1) {
+                oneEntryOnlyRows[tmp] = row;
+                tmp++;
+            } else {
+                for (LO j=0; j<values.size(); j++) {
+                    if (fabs(values[j])<1.0e-12) {
+                        nnz--;
+                    }
+                }
+                if (nnz == 1) {
+                    oneEntryOnlyRows[tmp] = row;
+                    tmp++;
+                }
+            }
+        }
+        oneEntryOnlyRows.resize(tmp);
+        return oneEntryOnlyRows;
     }
     
     

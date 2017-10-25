@@ -42,7 +42,7 @@
 #ifndef _FROSCH_SUMOPERATOR_DEF_HPP
 #define _FROSCH_SUMOPERATOR_DEF_HPP
 
-#include "SchwarzOperators/FROSch_SumOperator_decl.hpp"
+#include <FROSch_SumOperator_decl.hpp>
 
 namespace FROSch {
     

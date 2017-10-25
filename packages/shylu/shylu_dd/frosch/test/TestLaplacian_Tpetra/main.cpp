@@ -62,8 +62,8 @@
 #include <BelosSolverFactory.hpp>
 //#include <BelosPseudoBlockGmresSolMgr.hpp>
 
-#include <SchwarzPreconditioners/FROSch_GDSWPreconditioner_def.hpp>
-#include <SchwarzPreconditioners/FROSch_RGDSWPreconditioner_def.hpp>
+#include <FROSch_GDSWPreconditioner_def.hpp>
+#include <FROSch_RGDSWPreconditioner_def.hpp>
 
 //#include "Tools/FROSch_Tools_def.hpp"
 
@@ -82,13 +82,8 @@ using namespace Belos;
 
 int main(int argc, char *argv[])
 {
-    
-#ifdef HAVE_MPI
     MPI_Init(&argc,&argv);
     Epetra_MpiComm CommWorld(MPI_COMM_WORLD);
-#else
-    Epetra_SerialComm CommWorld;
-#endif
     
     CommandLineProcessor My_CLP;
     
@@ -186,15 +181,6 @@ int main(int argc, char *argv[])
         }
         K->fillComplete();
         
-//        RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
-//        RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
-//        xSolution->putScalar(0.0);
-//        xRightHandSide->putScalar(1.0);
-//        SubdomainSolver<SC,LO,GO,NO> solver(K,sublist(sublist(sublist(parameterList,"GDSWPreconditioner"),"OneLevelOperator"),"Solver"));
-//        solver.initialize();
-//        solver.compute();
-//        solver.apply(*xRightHandSide,*xSolution);
-        
         if (Comm->MyPID()==0) cout << "done" << endl << "CONSTRUCTING PRECONDITIONER...";
         RCP<SchwarzPreconditioner<SC,LO,GO,NO> > Preconditioner;
         if (!Reduced) {
@@ -211,7 +197,6 @@ int main(int argc, char *argv[])
         Preconditioner->compute();
         if (Comm->MyPID()==0) cout << "done" << endl << "SOLVING EQUATION SYSTEM...";
         
-        //RCP<Epetra_Operator> matrix = K;
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
         RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
         
@@ -242,9 +227,7 @@ int main(int argc, char *argv[])
         if (Comm->MyPID()==0) cout << "done" << endl;
     }
     
-#ifdef EPETRA_MPI
     MPI_Finalize();
-#endif
     
     return(EXIT_SUCCESS);
 }

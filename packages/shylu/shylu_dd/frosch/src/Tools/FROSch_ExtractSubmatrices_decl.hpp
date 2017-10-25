@@ -66,7 +66,7 @@ namespace FROSch {
     
     template <class SC,class LO,class GO,class NO>
     int BuildSubmatrices(Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > k,
-                         Teuchos::ArrayView<LO> indI,
+                         Teuchos::ArrayView<GO> indI,
                          Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kII,
                          Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kIJ,
                          Teuchos::RCP<Xpetra::Matrix<SC,LO,GO,NO> > &kJI,

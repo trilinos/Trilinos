@@ -20,7 +20,7 @@
     <Parameter name="Filter Radius"               type="double"  value="0.1"           />
     <!-- ===========  DIRICHLET BOUNDARIES SUBLIST  ============ -->
     <ParameterList name="Dirichlet">
-      <Parameter name="Sidesets" type="string" value="{0, 2}" />
+      <Parameter name="Sidesets" type="string" value="{0, 4}" />
       <Parameter name="Types"    type="string" value="{0, 2}" />
     </ParameterList>
     <!-- ===========  LOADING SPECIFICATION SUBLIST  =========== -->
@@ -131,7 +131,7 @@
         <Parameter name="Name" type="string" value="KL Divergence" />
         <Parameter name="Name" type="string" value="Quantile-Based Quadrangle" />
         <Parameter name="Name" type="string" value="Log-Quantile Quadrangle" />
-        <Parameter name="Name" type="string" value="BPOE" />
+        <Parameter name="Name" type="string" value="bPOE" />
       -->
 
       <ParameterList name="KL Divergence">
@@ -168,7 +168,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="BPOE">
+      <ParameterList name="bPOE">
         <Parameter name="Moment Order" type="double" value="2.0" />
         <Parameter name="Threshold"    type="double" value="6.0" />
       </ParameterList>

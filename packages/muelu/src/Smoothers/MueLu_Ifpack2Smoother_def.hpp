@@ -74,15 +74,10 @@
 #include "MueLu_Monitor.hpp"
 
 #ifdef HAVE_MUELU_INTREPID2
-  #include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
-  #include "MueLu_IntrepidPCoarsenFactory_def.hpp"
-  #include "Intrepid2_Basis.hpp"
-
-  #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-    #include "Kokkos_DynRankView.hpp"
-  #else
-    #include "Intrepid2_FieldContainer.hpp"
-  #endif
+#include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
+#include "MueLu_IntrepidPCoarsenFactory_def.hpp"
+#include "Intrepid2_Basis.hpp"
+#include "Kokkos_DynRankView.hpp"
 #endif
 
 // #define IFPACK2_HAS_PROPER_REUSE
@@ -322,11 +317,7 @@ namespace MueLu {
     
     typedef typename Node::device_type::execution_space ES;
     
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
-    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCO; // "Field Container" for ordinals
-#else
-    typedef Intrepid2::FieldContainer<LocalOrdinal> FCO;
-#endif
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCO; //
     
     LocalOrdinal  lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
     
@@ -340,11 +331,7 @@ namespace MueLu {
     // of stuff in the guts of Intrepid2 that doesn't play well with Stokhos as of yet.  Here, we only
     // care about the assignment of basis ordinals to topological entities, so this code is actually
     // independent of the Scalar type--hard-coding double here won't hurt us.
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     auto basis = MueLuIntrepid::BasisFactory<double,ES>(basisString, degree);
-#else
-    auto basis = MueLuIntrepid::BasisFactory<double>(basisString, degree);
-#endif
     
     string topologyTypeString = paramList.get<string>("smoother: neighborhood type");
     int dimension;

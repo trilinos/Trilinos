@@ -100,13 +100,13 @@ IF (DEFINED ${PACKAGE_NAME}_ENABLE_Tpetra)
     IF (NOT DEFINED Tpetra_INST_INT_INT OR NOT Tpetra_INST_INT_INT)
       SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
     ENDIF ()
-    IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_INT_SERIAL)
-      IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_INT_OPENMP)
+    IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
+      IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
         SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
       ENDIF ()
     ENDIF ()
-    IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_INT_OPENMP)
-      IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_INT_SERIAL)
+    IF (NOT DEFINED Tpetra_INST_OPENMP OR NOT Tpetra_INST_OPENMP)
+      IF (NOT DEFINED Tpetra_INST_SERIAL OR NOT Tpetra_INST_SERIAL)
         MESSAGE (STATUS "MueLu's tutorial requires that either the Serial or OpenMP Nodes in Tpetra be enabled.  Thus, I am disabling MueLu's tutorial by default.")
         SET(${PACKAGE_NAME}_ENABLE_Tutorial_DEFAULT NO)
       ENDIF ()
@@ -183,14 +183,6 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
   "Enable MueLu code refactored to use Kokkos."
   NO)
-
-# Intrepid2 Refactor support
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_Intrepid2_Refactor
-  HAVE_${PACKAGE_NAME_UC}_INTREPID2_REFACTOR
-  "Enable Intrepid2 Refactor."
-  "${Intrepid2_ENABLE_KokkosDynRankView}")
-
 
 
 IF (${PACKAGE_NAME}_ENABLE_Kokkos_Refactor AND NOT Xpetra_ENABLE_Kokkos_Refactor)

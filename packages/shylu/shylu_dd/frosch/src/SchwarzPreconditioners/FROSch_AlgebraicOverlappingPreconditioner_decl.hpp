@@ -42,7 +42,7 @@
 #ifndef _FROSCH_ALGEBRAICOVERLAPPINGPRECONDITIONER_DECL_HPP
 #define _FROSCH_ALGEBRAICOVERLAPPINGPRECONDITIONER_DECL_HPP
 
-#include "SchwarzPreconditioners/FROSch_SchwarzPreconditioner_def.hpp"
+#include <FROSch_SchwarzPreconditioner_def.hpp>
 
 namespace FROSch {
     

@@ -104,7 +104,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     RCP<panzer::PhysicsBlock> pb = physicsBlocks[blkInd];
     const WorksetDescriptor wd = wkstDesc[blkInd];
 
-    Traits::SetupData setupData;
+    Traits::SD setupData;
     setupData.worksets_ = getWorksetContainer()->getWorksets(wd);
     setupData.orientations_ = getWorksetContainer()->getOrientations();
     if(setupData.worksets_->size()==0)
@@ -270,7 +270,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
         }
 
         // Set up the field manager
-        Traits::SetupData setupData;
+        Traits::SD setupData;
         Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
         worksets->push_back(wkst->second);
         setupData.worksets_ = worksets;
@@ -322,7 +322,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 	}
 
 	// Setup the fieldmanager
-	Traits::SetupData setupData;
+	Traits::SD setupData;
 	Teuchos::RCP<std::vector<panzer::Workset> > worksets = 
 	  Teuchos::rcp(new(std::vector<panzer::Workset>));
 	worksets->push_back(wkst->second);

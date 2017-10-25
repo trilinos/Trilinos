@@ -46,8 +46,8 @@
 
 #include <Xpetra_VectorFactory_fwd.hpp>
 
-#include "Tools/FROSch_ExtractSubmatrices_def.hpp"
-#include "Tools/FROSch_Tools_def.hpp"
+#include <FROSch_ExtractSubmatrices_def.hpp>
+#include <FROSch_Tools_def.hpp>
 
 // TODO
 // -> "InterfaceEntity" -> "Entity"

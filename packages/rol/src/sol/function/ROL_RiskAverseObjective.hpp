@@ -189,20 +189,20 @@ public:
     : RiskAverseObjective(pObj,parlist,sampler,sampler,sampler,comp,index) {}
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    RiskMeasure_->reset(x_,x);
     if ( firstUpdate_ ) {
-      RiskMeasure_->reset(x_,x);
       g_  = (x_->dual()).clone();
       hv_ = (x_->dual()).clone();
       firstUpdate_ = false;
     }
-    ParametrizedObjective_->update(x,flag,iter);
-    ValueSampler_->update(x);
+    ParametrizedObjective_->update(*x_,flag,iter);
+    ValueSampler_->update(*x_);
     if ( storage_ ) {
       value_storage_.clear();
     }
     if ( flag ) {
-      GradientSampler_->update(x);
-      HessianSampler_->update(x);
+      GradientSampler_->update(*x_);
+      HessianSampler_->update(*x_);
       if ( storage_ ) {
         gradient_storage_.clear();
       }

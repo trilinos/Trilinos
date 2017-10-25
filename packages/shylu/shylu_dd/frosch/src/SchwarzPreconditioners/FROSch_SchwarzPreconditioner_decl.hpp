@@ -45,10 +45,10 @@
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
-#include "SchwarzOperators/FROSch_AlgebraicOverlappingOperator_def.hpp"
-#include <SchwarzOperators/FROSch_SumOperator_def.hpp>
-#include <SchwarzOperators/FROSch_GDSWCoarseOperator_def.hpp>
-#include <SchwarzOperators/FROSch_RGDSWCoarseOperator_def.hpp>
+#include <FROSch_AlgebraicOverlappingOperator_def.hpp>
+#include <FROSch_SumOperator_def.hpp>
+#include <FROSch_GDSWCoarseOperator_def.hpp>
+#include <FROSch_RGDSWCoarseOperator_def.hpp>
 
 namespace FROSch {
     

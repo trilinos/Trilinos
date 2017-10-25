@@ -55,6 +55,7 @@
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 namespace panzer {
 
@@ -87,7 +88,7 @@ preEvaluate(typename Traits::PreEvalData d)
 {
   // extract response object
   responseObj_ = Teuchos::rcp_dynamic_cast<Response_IPCoordinates<EvalT> >(
-                                   d.gedc.getDataObject(ResponseBase::buildLookupName(responseName_)),true);
+                                   d.gedc->getDataObject(ResponseBase::buildLookupName(responseName_)),true);
 }
 
 

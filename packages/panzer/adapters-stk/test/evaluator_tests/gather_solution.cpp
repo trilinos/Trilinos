@@ -61,7 +61,6 @@
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
@@ -188,8 +187,8 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    Teuchos::RCP<EpetraLinearObjFactory<panzer::Traits,int> > e_lof 
-       = Teuchos::rcp(new EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > e_lof 
+       = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = e_lof;
     Teuchos::RCP<LinearObjContainer> loc = e_lof->buildGhostedLinearObjContainer();
     e_lof->initializeGhostedContainer(LinearObjContainer::X,*loc);
@@ -445,18 +444,18 @@ namespace panzer {
       }
     }
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::Traits::PreEvalData ped;
-    ped.gedc.addDataObject("Solution Gather Container", loc);
+    panzer::Traits::PED ped;
+    ped.gedc->addDataObject("Solution Gather Container", loc);
     if (enable_tangents)
     {
       for (int i(0); i < num_tangent; ++i)
       {
         std::stringstream ss;
         ss << "Tangent Container " << i;
-        ped.gedc.addDataObject(ss.str(), tangentContainers[i]);
+        ped.gedc->addDataObject(ss.str(), tangentContainers[i]);
       }
     }
 

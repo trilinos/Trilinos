@@ -42,7 +42,7 @@
 #ifndef _FROSCH_GDSWPRECONDITIONER_DEF_HPP
 #define _FROSCH_GDSWPRECONDITIONER_DEF_HPP
 
-#include "SchwarzPreconditioners/FROSch_GDSWPreconditioner_decl.hpp"
+#include <FROSch_GDSWPreconditioner_decl.hpp>
 
 namespace FROSch {
     
