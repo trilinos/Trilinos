@@ -839,45 +839,44 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
     std::string op = currentSystem.get<std::string> ("op");
 
     RCP<Matrix_t> A, B, C, D;
-    const RCP<NT> my_node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
     if (A_file != ""){
       if (A_domainmap_file == "" || A_rangemap_file == "" || A_rowmap_file == "" || A_colmap_file == "")
         A = Reader<Matrix_t>::readSparseFile (A_file, comm);
       else {
-        RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (A_domainmap_file, comm, my_node);
-        RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (A_rangemap_file, comm, my_node);
-        RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (A_rowmap_file, comm, my_node);
-        RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (A_colmap_file, comm, my_node);
+        RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (A_domainmap_file, comm);
+        RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (A_rangemap_file, comm);
+        RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (A_rowmap_file, comm);
+        RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (A_colmap_file, comm);
         A = Reader<Matrix_t>::readSparseFile (A_file, rowmap, colmap, domainmap, rangemap);
       }
     }
     if (B_domainmap_file == "" || B_rangemap_file == "" || B_rowmap_file == "" || B_colmap_file == "")
       B = Reader<Matrix_t>::readSparseFile (B_file, comm);
     else {
-      RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (B_domainmap_file, comm, my_node);
-      RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (B_rangemap_file, comm, my_node);
-      RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (B_rowmap_file, comm, my_node);
-      RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (B_colmap_file, comm, my_node);
+      RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (B_domainmap_file, comm);
+      RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (B_rangemap_file, comm);
+      RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (B_rowmap_file, comm);
+      RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (B_colmap_file, comm);
       B = Reader<Matrix_t>::readSparseFile (B_file, rowmap, colmap, domainmap, rangemap);
     }
     if (C_domainmap_file == "" || C_rangemap_file == "" || C_rowmap_file == "" || C_colmap_file == "")
       C = Reader<Matrix_t>::readSparseFile (C_file, comm);
     else {
-      RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (C_domainmap_file, comm, my_node);
-      RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (C_rangemap_file, comm, my_node);
-      RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (C_rowmap_file, comm, my_node);
-      RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (C_colmap_file, comm, my_node);
+      RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (C_domainmap_file, comm);
+      RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (C_rangemap_file, comm);
+      RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (C_rowmap_file, comm);
+      RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (C_colmap_file, comm);
       C = Reader<Matrix_t>::readSparseFile (C_file, rowmap, colmap, domainmap, rangemap);
     }
     if (D_file != "") {
       if (D_domainmap_file == "" || D_rangemap_file == "" || D_rowmap_file == "" || D_colmap_file == "")
         D = Reader<Matrix_t>::readSparseFile (D_file, comm);
       else {
-        RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (D_domainmap_file, comm, my_node);
-        RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (D_rangemap_file, comm, my_node);
-        RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (D_rowmap_file, comm, my_node);
-        RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (D_colmap_file, comm, my_node);
+        RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (D_domainmap_file, comm);
+        RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (D_rangemap_file, comm);
+        RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (D_rowmap_file, comm);
+        RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (D_colmap_file, comm);
         D = Reader<Matrix_t>::readSparseFile (D_file, rowmap, colmap, domainmap, rangemap);
       }
     }
@@ -900,7 +899,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
         newOut << "\tEpsilon: "  << results.epsilon  << endl;
         newOut << "\tcNorm: "    << results.cNorm    << endl;
         newOut << "\tcompNorm: " << results.compNorm << endl;
-	newOut << "\tisImportValid: " <<results.isImportValid << endl;
+        newOut << "\tisImportValid: " <<results.isImportValid << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
       TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("ManualFC: Import validity failed: ") + currentSystem.name());
@@ -915,7 +914,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
         newOut << "\tEpsilon: "  << results.epsilon  << endl;
         newOut << "\tcNorm: "    << results.cNorm    << endl;
         newOut << "\tcompNorm: " << results.compNorm << endl;
-	newOut << "\tisImportValid: " <<results.isImportValid << endl;
+        newOut << "\tisImportValid: " <<results.isImportValid << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
       TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("AutoFC: Import validity failed: ") + currentSystem.name());
