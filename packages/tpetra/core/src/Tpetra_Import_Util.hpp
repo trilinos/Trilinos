@@ -357,9 +357,70 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
     }
   }
   
+  // cbl check that for each of my remote GIDs I receive a corresponding export id. 
 
+  Teuchos::Array<int> proc_num_exports_recv(NumProcs,0);
 
+  Teuchos::Array<GlobalOrdinal> exportGIDs(exportLIDs.size(),-1);
+  Teuchos::Array<int> remoteGIDcount(remoteGIDs.size(),0);
 
+  for(size_t l=0;l<(size_t)exportLIDs.size();++l) {
+    exportGIDs[l]=source->getGlobalElement(exportLIDs[l]);
+    if(exportGIDs[l]<0) {
+      std::cerr<<MyPID<<" exportLIDs->gid is invalid "<<exportGIDs[l]<<std::endl;
+      is_valid=false;
+    }
+  }
+  
+  int allexpsiz=0;
+  Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,exportGIDs.size(),  Teuchos::outArg(allexpsiz));
+  
+  for(int i=0;i<allexpsiz;++i) {
+    Teuchos::Array<GlobalOrdinal> myexpgid(NumProcs,-2), yourexpgid(NumProcs,-2);
+    Teuchos::Array<int> myexppid(NumProcs,-2), yourexppid(NumProcs,-2);
+    if(i<exportGIDs.size()) {
+      myexpgid[MyPID] = exportGIDs[i];
+      myexppid[MyPID] = exportPIDs[i];
+    }
+    Teuchos::reduceAll<int,GlobalOrdinal>(*comm,Teuchos::REDUCE_MAX,NumProcs, &myexpgid[0],&yourexpgid[0]);
+    Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,NumProcs, &myexppid[0],&yourexppid[0]);
+    for(int p=0;p<NumProcs;++p) { // check one to one and onto
+      GlobalOrdinal cgid = yourexpgid[p];
+      // ignore -2's. 
+      if(cgid == -2) continue;
+      if(cgid < 0) {
+        std::cerr<<MyPID<<" received exportLIDs->gid is invalid "<<cgid<<std::endl;
+        is_valid=false;
+      }
+      bool foundit=false;
+      for(size_t k=0;k<(size_t)remoteGIDs.size();++k) {
+        if(cgid == remoteGIDs[k] && yourexppid[p] == MyPID ) {
+          if(p != remotePIDs[k]) {
+            std::cerr<<MyPID<<" receive export from wrong pid "<<p<<" expected "<<remotePIDs[k]<<std::endl<<std::flush;
+            is_valid = false;
+          }
+          remoteGIDcount[k]++;
+          if(foundit) {
+            std::cerr<<MyPID<<" found multiple GIDs from correct pid "<<std::endl<<std::flush;
+            is_valid = false;
+          }
+          foundit = true;
+        }
+      }
+      if(!foundit &&  yourexppid[p] == MyPID ) {
+        std::cerr<<MyPID<<" receive gid  "<<cgid<<" that is not in my remote gid list, from pid  "<<p<<std::endl<<std::flush;
+        is_valid = false;
+      }
+
+    }
+  }
+  // now check that remoteGIDcount is only 1's.
+  for(size_t i = 0; i< (size_t) remoteGIDcount.size(); ++i) {
+    int rc = remoteGIDcount[i];
+    if(rc == 1) continue;
+    std::cerr<<MyPID<<" my remote at "<<i<<" gid "<<remoteGIDs[i]<<" has count "<<rc<<std::endl<<std::flush;
+    is_valid = false;
+  }
 
 
   // Do a reduction on the final bool status
