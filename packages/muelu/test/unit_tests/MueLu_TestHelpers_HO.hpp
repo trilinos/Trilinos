@@ -50,7 +50,6 @@
 //Intrepid
 #ifdef HAVE_MUELU_INTREPID2
 #include "Kokkos_DynRankView.hpp"
-#endif
 
 #include "MueLu_TestHelpers.hpp"
 
