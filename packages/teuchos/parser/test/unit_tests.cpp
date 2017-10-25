@@ -143,7 +143,7 @@ void test_regex_reader(std::string const& regex,
     std::vector<std::string> const& expect_matches,
     std::vector<std::string> const& expect_non_matches) {
   regex::Reader reader(42);
-  any result_any;
+  Teuchos::any result_any;
   reader.read_string(result_any, regex, "test_regex_reader");
   FiniteAutomaton& result = any_ref_cast<FiniteAutomaton>(result_any);
   for (std::vector<std::string>::const_iterator it = expect_matches.begin();
@@ -223,7 +223,7 @@ TEUCHOS_UNIT_TEST( Parser, xml_language ) {
 
 void test_xml_reader(std::string const& str) {
   Reader reader(XML::ask_reader_tables());
-  any result;
+  Teuchos::any result;
   reader.read_string(result, str, "test_xml_reader");
 }
 
@@ -237,7 +237,7 @@ TEUCHOS_UNIT_TEST( Parser, xml_reader ) {
 
 static void test_reader(ReaderTablesPtr tables, std::string const& str, std::string const& name) {
   Reader reader(tables);
-  any result;
+  Teuchos::any result;
   reader.read_string(result, str, name);
 }
 
@@ -430,7 +430,7 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
 TEUCHOS_UNIT_TEST( Parser, yaml_reader_Match1 ) {
   ReaderTablesPtr tables = YAML::ask_reader_tables();
   Reader reader(tables);
-  any result;
+  Teuchos::any result;
   reader.read_string(result,
       "%YAML 1.1\n"
       "---\n"
@@ -452,7 +452,7 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader_Match1 ) {
 TEUCHOS_UNIT_TEST( Parser, yaml_reader_Arrays ) {
   ReaderTablesPtr tables = YAML::ask_reader_tables();
   Reader reader(tables);
-  any result;
+  Teuchos::any result;
   reader.read_string(result,
       "%YAML 1.1\n"
       "---\n"
@@ -476,7 +476,7 @@ TEUCHOS_UNIT_TEST( Parser, yaml_reader_Arrays ) {
 TEUCHOS_UNIT_TEST( Parser, yaml_plasma ) {
   ReaderTablesPtr tables = YAML::ask_reader_tables();
   Reader reader(tables);
-  any result;
+  Teuchos::any result;
   reader.read_file(result, "plasma_oscillation_rtc.xml.yaml");
 }
 
@@ -488,7 +488,7 @@ TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {
 
 void test_mathexpr_reader(std::string const& str) {
   Reader reader(MathExpr::ask_reader_tables());
-  any result;
+  Teuchos::any result;
   reader.read_string(result, str, "test_mathexpr_reader");
 }
 
