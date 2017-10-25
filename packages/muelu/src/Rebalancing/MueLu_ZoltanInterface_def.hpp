@@ -84,12 +84,12 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", level);
 
     RCP<Matrix>      A        = Get< RCP<Matrix> >     (level, "A");
-    RCP<const Map>   rowMap   = A->getRowMap();
+    //    RCP<const Map>   rowMap   = A->getRowMap();
 
     typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> double_multivector_type;
     RCP<double_multivector_type> Coords   = Get< RCP<double_multivector_type> >(level, "Coordinates");
+    RCP<const Map>   rowMap   = Coords->getMap();
     size_t           dim      = Coords->getNumVectors();
-
     int numParts = Get<int>(level, "number of partitions");
 
     if (numParts == 1 || numParts == -1) {

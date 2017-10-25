@@ -16,6 +16,8 @@
 
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>
+#include <Xpetra_BlockedMap.hpp>
+#include <Xpetra_BlockedCrsMatrix.hpp>
 
 #ifdef HAVE_MUELU_ISORROPIA
 #include <Isorropia_Exception.hpp>
@@ -64,6 +66,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void IsorropiaInterface<LocalOrdinal, GlobalOrdinal, Node>::Build(Level& level) const {
     FactoryMonitor m(*this, "Build", level);
+    typedef Xpetra::BlockedMap<LocalOrdinal, GlobalOrdinal, Node>  BlockMap;
 
     RCP<Matrix> A                  = Get< RCP<Matrix> >(level, "A");
     RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(level, "UnAmalgamationInfo");
@@ -123,8 +126,12 @@ namespace MueLu {
 
     // 2) get row map for amalgamated matrix (graph of A)
     //    with same distribution over all procs as row map of A
-    RCP<const Map> nodeMap = amalInfo->getNodeRowMap();
+    RCP<const Map> nodeMap= amalInfo->getNodeRowMap();
+    RCP<const BlockedMap> bnodeMap = Teuchos::rcp_dynamic_cast<const BlockedMap>(nodeMap);
+    if(!bnodeMap.is_null()) nodeMap=bnodeMap->getMap();
+
     GetOStream(Statistics0) << "IsorropiaInterface:Build(): nodeMap " << nodeMap->getNodeNumElements() << "/" << nodeMap->getGlobalNumElements() << " elements" << std::endl;
+    
 
     // 3) create graph of amalgamated matrix
     RCP<CrsGraph> crsGraph = CrsGraphFactory::Build(nodeMap, 10, Xpetra::DynamicProfile);

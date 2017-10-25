@@ -615,6 +615,8 @@ public:
 
   // JG: Added:
 
+  bool hasCrsGraph() const {return true;}
+
   //! Returns the CrsGraph associated with this matrix.
   RCP<const CrsGraph> getCrsGraph() const { return matrixData_->getCrsGraph(); }
 

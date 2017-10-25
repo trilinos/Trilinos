@@ -119,12 +119,19 @@ namespace MueLu {
     RCP<MultiVector>      fineNullspace = Get< RCP<MultiVector> >     (fineLevel, "Nullspace");
     RCP<const Map>        coarseMap     = Get< RCP<const Map> >       (fineLevel, "CoarseMap");
 
+    // Sanity checking
+    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getNodeNumElements() != fineNullspace->getMap()->getNodeNumElements(),
+			       Exceptions::RuntimeError,"MueLu::TentativePFactory::MakeTentative: Size mismatch between A and Nullspace");
+
     RCP<Matrix>           Ptentative;
     RCP<MultiVector>      coarseNullspace;
     if (!aggregates->AggregatesCrossProcessors())
       BuildPuncoupled(A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace,coarseLevel.GetLevelID());
     else
       BuildPcoupled  (A, aggregates, amalgInfo, fineNullspace, coarseMap, Ptentative, coarseNullspace);
+
+
+                                     
 
     // If available, use striding information of fine level matrix A for range
     // map and coarseMap as domain map; otherwise use plain range map of
