@@ -66,33 +66,44 @@ int main (int argc, char *argv[]) {
   //     (check ???)
   // - Insert the clique into the graph
   //    think crs_graph->insertGlobalIndices();
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
+  auto owned_element_to_node_ids = mesh.getOwnedElementToNode();        // <-- owned_element_to_node_ids is a Kokkos::View
   //global_ordinal_view_type global_ids_in_row("global_ids_in_row", owned_element_to_node_ids.extent(1) );
   
-  Teuchos::Array<GlobalOrdinal> global_ids_in_row(4);
+  Teuchos::Array<GlobalOrdinal> global_ids_in_row(4);   // Teuchos Array of size 4 because this example uses quads.
 
   std::cout << "  # owned elements: " << owned_element_to_node_ids.extent(0) << std::endl;   // Number of owned elements  (extent() == dimension())
   std::cout << "  # nodes/element : " << owned_element_to_node_ids.extent(1) << std::endl;   // Number of nodes per element
 
   // for each element:
-  for(size_t id=0; id<mesh.getNumOwnedElements(); id++)
+  for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
-    std::cout << "element: " << id << std::endl;
+    std::cout << "element: " << element_gidx << std::endl;
 
-    // filling global_ids_in_row   
-    // copy ith row from owned_element_to_node_ids into global_ids_in_row
-    //
+    // Fill global_ids_in_row   
+    // - Copy the node ids for the current element into an array containing the global
+    //   ids for the row.  Since each element's contribution is a clique, we can use
+    //   this for the contribution of every row associated with this element.
+    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
+    {
+      global_ids_in_row[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
+      std::cout << global_ids_in_row[element_node_idx] << " ";
+    }
+    std::cout << std::endl;
 
-    for(size_t n_idx=0; n_idx<owned_element_to_node_ids.extent(1); n_idx++)
-      global_ids_in_row[n_idx] = owned_element_to_node_ids(id, n_idx);
-    
-
+    // Add the contributions from the current row into the graph.
+    // - The nodes in each element form a clique.
+    // Loop over the nodes for each element and insert the adjacencies into the graph.
+    // For example, if Element 0 contains nodes [0,1,4,5] then we insert the nodes:
+    //   - node 0 inserts [0, 1, 4, 5]
+    //   - node 1 inserts [0, 1, 4, 5]
+    //   - node 4 inserts [0, 1, 4, 5]
+    //   - node 5 inserts [0, 1, 4, 5]
     std::cout << "  ";
     // for each node_id in element i
-    for(size_t n_idx=0; n_idx<owned_element_to_node_ids.extent(1); n_idx++)
+    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
-       // std::cout << std::setw(2) << owned_element_to_node_ids(id, n_idx) << " ";
-       crs_graph->insertGlobalIndices(global_ids_in_row[n_idx], global_ids_in_row());
+       // std::cout << std::setw(2) << owned_element_to_node_ids(id, element_node_idx) << " ";
+       crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
     }
     std::cout << std::endl;
     
