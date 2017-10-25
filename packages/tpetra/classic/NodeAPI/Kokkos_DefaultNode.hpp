@@ -45,8 +45,15 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "KokkosClassic_DefaultNode_config.h"
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
-#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+namespace Teuchos {
+  // Dear users: This is just a forward declaration.
+  // Please skip over it.
+  class ParameterList;
+} // namespace Teuchos
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 namespace KokkosClassic {
 
@@ -71,18 +78,23 @@ namespace Details {
   /// This is true for all the Node types implemented in Kokkos.
   template<class NodeType>
   Teuchos::RCP<NodeType>
-  getNode (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) {
-    static Teuchos::RCP<NodeType> theNode;
-    if (theNode.is_null ()) {
-      if (params.is_null ()) {
-        Teuchos::ParameterList defaultParams;
-        theNode = Teuchos::rcp (new NodeType (defaultParams));
-      } else {
-        theNode = Teuchos::rcp (new NodeType (*params));
-      }
-    }
-    return theNode;
-  }
+  getNode (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+#ifdef KOKKOS_ENABLE_CUDA
+  extern template Teuchos::RCP< ::Kokkos::Compat::KokkosCudaWrapperNode> getNode< ::Kokkos::Compat::KokkosCudaWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
+#endif // KOKKOS_ENABLE_CUDA
+
+#ifdef KOKKOS_ENABLE_OPENMP
+  extern template Teuchos::RCP< ::Kokkos::Compat::KokkosOpenMPWrapperNode> getNode< ::Kokkos::Compat::KokkosOpenMPWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
+#endif // KOKKOS_ENABLE_OPENMP
+
+#ifdef KOKKOS_ENABLE_SERIAL
+  extern template Teuchos::RCP< ::Kokkos::Compat::KokkosSerialWrapperNode> getNode< ::Kokkos::Compat::KokkosSerialWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
+#endif // KOKKOS_ENABLE_SERIAL
+
+#ifdef KOKKOS_ENABLE_PTHREAD
+  extern template Teuchos::RCP< ::Kokkos::Compat::KokkosThreadsWrapperNode> getNode< ::Kokkos::Compat::KokkosThreadsWrapperNode> (const Teuchos::RCP<Teuchos::ParameterList>& );
+#endif // KOKKOS_ENABLE_PTHREAD
 
 } // namespace Details
 

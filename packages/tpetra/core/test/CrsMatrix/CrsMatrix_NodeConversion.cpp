@@ -50,7 +50,6 @@ namespace {
   using Tpetra::TestingUtilities::getDefaultComm;
   using std::endl;
 
-  using Teuchos::TypeTraits::is_same;
   using Teuchos::as;
   using Teuchos::FancyOStream;
   using Teuchos::RCP;
