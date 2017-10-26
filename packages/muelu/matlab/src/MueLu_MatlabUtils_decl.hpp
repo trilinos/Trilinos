@@ -74,11 +74,7 @@
 #include "Xpetra_VectorFactory.hpp"
 #include <Tpetra_DefaultPlatform.hpp>
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
 #include "Kokkos_DynRankView.hpp"
-#else
-#include "Intrepid2_FieldContainer.hpp"
-#endif
 
 
 namespace MueLu
@@ -133,11 +129,7 @@ typedef MueLu::AmalgamationInfo<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAmalInfo;
 typedef MueLu::GraphBase<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MGraph;
 
 #ifdef HAVE_MUELU_INTREPID2
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
   typedef Kokkos::DynRankView<mm_LocalOrd,typename mm_node_t::device_type> FieldContainer_ordinal;
-#else
-  typedef Intrepid2::FieldContainer<mm_LocalOrd> FieldContainer_ordinal;
-#endif
 #endif
 
 class MuemexArg
