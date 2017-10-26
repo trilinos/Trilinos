@@ -109,6 +109,12 @@ KLU2<Matrix,Vector>::~KLU2( )
   //}
 }
 
+template <class Matrix, class Vector>
+bool
+KLU2<Matrix,Vector>::single_proc_optimization() const {
+  return (this->root_ && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_);
+}
+
 template<class Matrix, class Vector>
 int
 KLU2<Matrix,Vector>::preOrdering_impl()
@@ -132,9 +138,7 @@ KLU2<Matrix,Vector>::symbolicFactorization_impl()
                          (&(data_.symbolic_), &(data_.common_)) ;
   }
 
-#ifndef HAVE_TEUCHOS_COMPLEX
-  bool single_process_optim_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
-  if ( single_process_optim_check ) {
+  if ( single_proc_optimization() ) {
 
     auto sp_rowptr = this->matrixA_->returnRowPtr(); 
     TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
@@ -142,7 +146,15 @@ KLU2<Matrix,Vector>::symbolicFactorization_impl()
     auto sp_colind = this->matrixA_->returnColInd();
     TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
         std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
+#ifndef HAVE_TEUCHOS_COMPLEX
     auto sp_values = this->matrixA_->returnValues();
+#else
+    // NDE: 09/25/2017
+    // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
+    using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
+    complex_type * sp_values = nullptr;
+    sp_values = reinterpret_cast< complex_type * > ( this->matrixA_->returnValues() );
+#endif
     TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
         std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
@@ -160,7 +172,6 @@ KLU2<Matrix,Vector>::symbolicFactorization_impl()
        sp_colind, &(data_.common_)) ;
   }
   else
-#endif
   {
     data_.symbolic_ = ::KLU2::klu_analyze<slu_type, local_ordinal_type>
       ((local_ordinal_type)this->globalNumCols_, colptr_.getRawPtr(),
@@ -183,7 +194,7 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
   // Only rank 0 has valid pointers, TODO: for KLU2
 
   int info = 0;
-  if ( this->root_ ){
+  if ( this->root_ ) {
 
     { // Do factorization
 #ifdef HAVE_AMESOS2_TIMERS
@@ -202,9 +213,7 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
           (&(data_.numeric_), &(data_.common_)) ;
       }
 
-#ifndef HAVE_TEUCHOS_COMPLEX
-      bool single_process_optim_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
-      if ( single_process_optim_check ) {
+      if ( single_proc_optimization() ) {
 
         auto sp_rowptr = this->matrixA_->returnRowPtr();
         TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
@@ -212,7 +221,15 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
         auto sp_colind = this->matrixA_->returnColInd();
         TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
+#ifndef HAVE_TEUCHOS_COMPLEX
         auto sp_values = this->matrixA_->returnValues();
+#else
+        // NDE: 09/25/2017
+        // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
+        using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
+        complex_type * sp_values = nullptr;
+        sp_values = reinterpret_cast< complex_type * > ( this->matrixA_->returnValues() );
+#endif
         TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
@@ -229,10 +246,7 @@ KLU2<Matrix,Vector>::numericFactorization_impl()
           (sp_rowptr_with_common_type.getRawPtr(), sp_colind, sp_values,
            data_.symbolic_, &(data_.common_)) ;
       }
-      else 
-#endif
-      {
-
+      else {
         data_.numeric_ = ::KLU2::klu_factor<slu_type, local_ordinal_type>
           (colptr_.getRawPtr(), rowind_.getRawPtr(), nzvals_.getRawPtr(),
            data_.symbolic_, &(data_.common_)) ;
@@ -276,29 +290,25 @@ KLU2<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-  bool single_process_optim_check = false;
-#ifndef HAVE_TEUCHOS_COMPLEX
-  single_process_optim_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
-  if ( single_process_optim_check && (nrhs == 1) ) {
+  if ( single_proc_optimization() && nrhs == 1 ) {
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-    auto sp_rowptr = this->matrixA_->returnRowPtr();
-      TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
-    auto sp_colind = this->matrixA_->returnColInd();
-      TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
-    auto sp_values = this->matrixA_->returnValues();
-      TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
-
+#ifndef HAVE_TEUCHOS_COMPLEX
     auto b_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B );
-      TEUCHOS_TEST_FOR_EXCEPTION(b_vector == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
     auto x_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X );
-      TEUCHOS_TEST_FOR_EXCEPTION(x_vector  == nullptr,
+#else
+    // NDE: 09/25/2017
+    // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
+    using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
+    complex_type * b_vector = reinterpret_cast< complex_type * >( Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B ) );
+    complex_type * x_vector = reinterpret_cast< complex_type * >( Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X ) );
+#endif
+    TEUCHOS_TEST_FOR_EXCEPTION(b_vector == nullptr,
+        std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
+
+    TEUCHOS_TEST_FOR_EXCEPTION(x_vector  == nullptr,
         std::runtime_error, "Amesos2 Runtime Error: x_vector returned null ");
 
     // For this case, Crs matrix raw pointers wereused, so the non-transpose default solve 
@@ -323,9 +333,9 @@ KLU2<Matrix,Vector>::solve_impl(
     /* All processes should have the same error code */
     Teuchos::broadcast(*(this->getComm()), 0, &ierr);
 
-  } // end single_process_optim_check
-  else 
-#endif
+  } // end single_process_optim_check && nrhs == 1
+  else  // single proc optimizations but nrhs > 1,
+        // or distributed over processes case
   {
     const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
     Teuchos::Array<slu_type> bValues(val_store_size);
@@ -360,7 +370,7 @@ KLU2<Matrix,Vector>::solve_impl(
         // For this case, Crs matrix raw pointers wereused, so the non-transpose default solve 
         // is actually the transpose solve as klu_solve expects Ccs matrix pointers
         // Thus, if the transFlag_ is true, the non-transpose solve should be used
-          if ( single_process_optim_check == true ) {
+          if ( single_proc_optimization() ) {
           ::KLU2::klu_tsolve<slu_type, local_ordinal_type>
             (data_.symbolic_, data_.numeric_,
              (local_ordinal_type)this->globalNumCols_,
@@ -380,7 +390,7 @@ KLU2<Matrix,Vector>::solve_impl(
         // For this case, Crs matrix raw pointers wereused, so the non-transpose default solve 
         // is actually the transpose solve as klu_solve expects Ccs matrix pointers
         // Thus, if the transFlag_ is true, the non-transpose solve should be used
-          if ( single_process_optim_check == true ) {
+          if ( single_proc_optimization() ) {
           ::KLU2::klu_solve<slu_type, local_ordinal_type>
             (data_.symbolic_, data_.numeric_,
              (local_ordinal_type)this->globalNumCols_,
@@ -516,13 +526,10 @@ KLU2<Matrix,Vector>::loadA_impl(EPhase current_phase)
 
   if(current_phase == SOLVE)return(false);
 
-#ifndef HAVE_TEUCHOS_COMPLEX
-  bool single_process_optim_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
-  if ( single_process_optim_check ) {
+  if ( single_proc_optimization() ) {
     // Do nothing in this case - Crs raw pointers will be used
   }
   else 
-#endif
   {
 
 #ifdef HAVE_AMESOS2_TIMERS
