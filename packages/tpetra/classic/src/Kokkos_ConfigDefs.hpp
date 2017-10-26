@@ -44,15 +44,6 @@
 
 #include "TpetraClassic_config.h"
 
-//! Namespace for Kokkos classes and methods
-namespace KokkosClassic {
-  //! Sweep direction for Gauss-Seidel or Symmetric Over-Relaxation (SOR).
-  enum ESweepDirection {
-    Forward = 0,
-    Backward
-  };
-} // namespace KokkosClassic
-
 namespace Kokkos {
   namespace Compat {
     /// \struct NodeDevice
