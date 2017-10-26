@@ -604,6 +604,10 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   # Submit the results to the dashboard or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
 
+  # Control the number of submit retries and the delay
+  SET_DEFAULT_AND_FROM_ENV( CTEST_SUBMIT_RETRY_COUNT 5 ) # Default defined by ctest 
+  SET_DEFAULT_AND_FROM_ENV( CTEST_SUBMIT_RETRY_DELAY 3 ) # Default defined by ctest?
+
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE OFF )
 
   # List of additional packges that will be enabled over the current set
