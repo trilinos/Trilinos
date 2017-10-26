@@ -227,8 +227,10 @@ namespace MueLu {
 
           SubFactoryMonitor m2(*this, "MxMxM: R x A x P (implicit)", coarseLevel);
 
-          TripleMatrixMultiply::MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac,
-                                            doFillComplete, doOptimizeStorage, std::string("MueLu::R*A*P-implicit-")+levelstr.str(), RAPparams);
+          Xpetra::TripleMatrixMultiply<SC,LO,GO,NO>::
+            MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
+                        doOptimizeStorage, std::string("MueLu::R*A*P-implicit-")+levelstr.str(),
+                        RAPparams);
 
         } else {
           RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
@@ -236,8 +238,10 @@ namespace MueLu {
 
           SubFactoryMonitor m2(*this, "MxMxM: R x A x P (explicit)", coarseLevel);
 
-          TripleMatrixMultiply::MultiplyRAP(*R, !doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac,
-                                            doFillComplete, doOptimizeStorage, std::string("MueLu::R*A*P-explicit-")+levelstr.str(), RAPparams);
+          Xpetra::TripleMatrixMultiply<SC,LO,GO,NO>::
+            MultiplyRAP(*R, !doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
+                        doOptimizeStorage, std::string("MueLu::R*A*P-explicit-")+levelstr.str(),
+                        RAPparams);
         }
         CheckRepairMainDiagonal(Ac);
 
