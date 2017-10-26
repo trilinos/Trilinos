@@ -58,8 +58,12 @@ namespace Kokkos {
     /// \struct NodeDevice
     /// \tparam Node Kokkos (Classic) Node type
     /// \brief Determine KokkosCore device type from KokkosClassic node type.
+    ///
+    /// \warning This struct is DEPRECATED and will be removed soon.
     template <typename Node>
-    struct NodeDevice {};
+    struct TPETRA_DEPRECATED NodeDevice {
+      typedef typename Node::device_type device_type;
+    };
   }
 }
 
