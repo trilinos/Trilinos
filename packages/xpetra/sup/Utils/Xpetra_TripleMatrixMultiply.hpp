@@ -151,6 +151,108 @@ namespace Xpetra {
 
   }; // class TripleMatrixMultiply
 
+#ifdef HAVE_XPETRA_EPETRA
+  // specialization TripleMatrixMultiply for SC=double, LO=GO=int
+  template <>
+  class TripleMatrixMultiply<double,int,int,EpetraNode> {
+    typedef double          Scalar;
+    typedef int             LocalOrdinal;
+    typedef int             GlobalOrdinal;
+    typedef EpetraNode      Node;
+#include "Xpetra_UseShortNames.hpp"
+
+  public:
+
+    /** Given CrsMatrix objects A, B and C, form the product C = A*B.
+      In a parallel setting, A and B need not have matching distributions,
+      but C needs to have the same row-map as A (if transposeA is false).
+      At this time C=AT*B and C=A*BT are known to not work. However,
+      C=A*B and C=AT*BT are known to work, Kurtis Nusbaum 03/24/2011
+
+      @param A Input, must already have had 'FillComplete()' called.
+      @param transposeA Input, whether to use transpose of matrix A.
+      @param B Input, must already have had 'FillComplete()' called.
+      @param transposeB Input, whether to use transpose of matrix B.
+      @param C Result. On entry to this method, it doesn't matter whether
+      FillComplete() has already been called on C or not. If it has,
+      then C's graph must already contain all nonzero locations that
+      will be produced when forming the product A*B. On exit,
+      C.FillComplete() will have been called, unless the last argument
+      to this function is specified to be false.
+      @param call_FillComplete_on_result Optional argument, defaults to true.
+      Power users may specify this argument to be false if they *DON'T*
+      want this function to call C.FillComplete. (It is often useful
+      to allow this function to call C.FillComplete, in cases where
+      one or both of the input matrices are rectangular and it is not
+      trivial to know which maps to use for the domain- and range-maps.)
+
+*/
+    static void MultiplyRAP(const Matrix& R, bool transposeR,
+                            const Matrix& A, bool transposeA,
+                            const Matrix& P, bool transposeP,
+                            Matrix& Ac,
+                            bool call_FillComplete_on_result = true,
+                            bool doOptimizeStorage           = true,
+                            const std::string & label        = std::string(),
+                            const RCP<ParameterList>& params = null) {
+
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
+
+    } // end Multiply
+
+  }; // end specialization on SC=double, GO=int and NO=EpetraNode
+
+  // specialization MatrixMatrix for SC=double, GO=long long and NO=EptraNode
+  template <>
+  class TripleMatrixMultiply<double,int,long long,EpetraNode> {
+    typedef double          Scalar;
+    typedef int             LocalOrdinal;
+    typedef long long       GlobalOrdinal;
+    typedef EpetraNode      Node;
+#include "Xpetra_UseShortNames.hpp"
+
+  public:
+
+    /** Given CrsMatrix objects A, B and C, form the product C = A*B.
+      In a parallel setting, A and B need not have matching distributions,
+      but C needs to have the same row-map as A (if transposeA is false).
+      At this time C=AT*B and C=A*BT are known to not work. However,
+      C=A*B and C=AT*BT are known to work, Kurtis Nusbaum 03/24/2011
+
+      @param A Input, must already have had 'FillComplete()' called.
+      @param transposeA Input, whether to use transpose of matrix A.
+      @param B Input, must already have had 'FillComplete()' called.
+      @param transposeB Input, whether to use transpose of matrix B.
+      @param C Result. On entry to this method, it doesn't matter whether
+      FillComplete() has already been called on C or not. If it has,
+      then C's graph must already contain all nonzero locations that
+      will be produced when forming the product A*B. On exit,
+      C.FillComplete() will have been called, unless the last argument
+      to this function is specified to be false.
+      @param call_FillComplete_on_result Optional argument, defaults to true.
+      Power users may specify this argument to be false if they *DON'T*
+      want this function to call C.FillComplete. (It is often useful
+      to allow this function to call C.FillComplete, in cases where
+      one or both of the input matrices are rectangular and it is not
+      trivial to know which maps to use for the domain- and range-maps.)
+
+*/
+    static void MultiplyRAP(const Matrix& R, bool transposeR,
+                            const Matrix& A, bool transposeA,
+                            const Matrix& P, bool transposeP,
+                            Matrix& Ac,
+                            bool call_FillComplete_on_result = true,
+                            bool doOptimizeStorage           = true,
+                            const std::string & label        = std::string(),
+                            const RCP<ParameterList>& params = null) {
+
+      throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
+
+    } // end Multiply
+
+  }; // end specialization on GO=long long and NO=EpetraNode
+#endif
+
 } // end namespace Xpetra
 
 #define XPETRA_TRIPLEMATRIXMULTIPLY_SHORT
