@@ -14,8 +14,6 @@
 
 namespace Test {
 
-
-
 template <typename crsMat_t, typename x_vector_type, typename y_vector_type>
 void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
     typename y_vector_type::non_const_value_type alpha, typename y_vector_type::non_const_value_type beta){

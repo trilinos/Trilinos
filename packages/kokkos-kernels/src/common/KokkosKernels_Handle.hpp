@@ -44,6 +44,7 @@
 #include "KokkosGraph_GraphColorHandle.hpp"
 #include "KokkosSparse_gauss_seidel_handle.hpp"
 #include "KokkosSparse_spgemm_handle.hpp"
+#include "KokkosSparse_spadd_handle.hpp"
 #ifndef _KOKKOSKERNELHANDLE_HPP
 #define _KOKKOSKERNELHANDLE_HPP
 
@@ -102,6 +103,13 @@ public:
       <in_lno_row_view_t, in_lno_nnz_view_t, in_scalar_nnz_view_t,
       ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> SPGEMMHandleType;
 
+  typedef typename KokkosSparse::SPADDHandle
+         <lno_row_view_t_,
+          lno_nnz_view_t_,
+          scalar_nnz_view_t_,
+          ExecutionSpace,
+          TemporaryMemorySpace> SPADDHandleType;
+
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> size_type_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
@@ -120,6 +128,7 @@ private:
   GraphColoringHandleType *gcHandle;
   GaussSeidelHandleType *gsHandle;
   SPGEMMHandleType *spgemmHandle;
+  SPADDHandleType *spaddHandle;
   int team_work_size;
   size_t shared_memory_size;
   int suggested_team_size;
@@ -130,10 +139,8 @@ private:
   int vector_size;
 public:
 
-
-
   KokkosKernelsHandle():
-      gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL),
+      gcHandle(NULL), gsHandle(NULL),spgemmHandle(NULL),spaddHandle(NULL),
       team_work_size (-1), shared_memory_size(16128),
       suggested_team_size(-1),
       my_exec_space(KokkosKernels::Impl::kk_get_exec_space_type<HandleExecSpace>()),
@@ -144,7 +151,6 @@ public:
     this->destroy_graph_coloring_handle();
     this->destroy_spgemm_handle();
   }
-
 
   void set_verbose(bool verbose_){
     this->KKVERBOSE = verbose_;
@@ -331,6 +337,22 @@ public:
   }
 
 
+  SPADDHandleType *get_spadd_handle(){
+    return this->spaddHandle;
+  }
+
+  void create_spadd_handle(bool input_sorted) {
+    this->destroy_spadd_handle();
+    this->spaddHandle = new SPADDHandleType(input_sorted);
+  }
+
+  void destroy_spadd_handle(){
+    if (this->spaddHandle != NULL)
+    {
+      delete this->spaddHandle;
+      this->spaddHandle = NULL;
+    }
+  }
 
 };
 
