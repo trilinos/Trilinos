@@ -196,7 +196,33 @@ namespace Xpetra {
                             const std::string & label        = std::string(),
                             const RCP<ParameterList>& params = null) {
 
-      throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
+      TEUCHOS_TEST_FOR_EXCEPTION(transposeR == false && Ac.getRowMap()->isSameAs(*R.getRowMap()) == false,
+        Exceptions::RuntimeError, "XpetraExt::TripleMatrixMultiply::MultiplyRAP: row map of Ac is not same as row map of R");
+      TEUCHOS_TEST_FOR_EXCEPTION(transposeR == true && Ac.getRowMap()->isSameAs(*R.getDomainMap()) == false,
+        Exceptions::RuntimeError, "XpetraExt::TripleMatrixMultiply::MultiplyRAP: row map of Ac is not same as domain map of R");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(!R.isFillComplete(), Exceptions::RuntimeError, "R is not fill-completed");
+      TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
+      TEUCHOS_TEST_FOR_EXCEPTION(!P.isFillComplete(), Exceptions::RuntimeError, "P is not fill-completed");
+
+      bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
+
+      if (Ac.getRowMap()->lib() == Xpetra::UseEpetra) {
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
+      } else if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpR = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(R);
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpP = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(P);
+        Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpAc = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Ac);
+
+        // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
+        // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
+        Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
+#else
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
+#endif
+      }
 
     } // end Multiply
 
@@ -246,7 +272,33 @@ namespace Xpetra {
                             const std::string & label        = std::string(),
                             const RCP<ParameterList>& params = null) {
 
-      throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
+      TEUCHOS_TEST_FOR_EXCEPTION(transposeR == false && Ac.getRowMap()->isSameAs(*R.getRowMap()) == false,
+        Exceptions::RuntimeError, "XpetraExt::TripleMatrixMultiply::MultiplyRAP: row map of Ac is not same as row map of R");
+      TEUCHOS_TEST_FOR_EXCEPTION(transposeR == true && Ac.getRowMap()->isSameAs(*R.getDomainMap()) == false,
+        Exceptions::RuntimeError, "XpetraExt::TripleMatrixMultiply::MultiplyRAP: row map of Ac is not same as domain map of R");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(!R.isFillComplete(), Exceptions::RuntimeError, "R is not fill-completed");
+      TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
+      TEUCHOS_TEST_FOR_EXCEPTION(!P.isFillComplete(), Exceptions::RuntimeError, "P is not fill-completed");
+
+      bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
+
+      if (Ac.getRowMap()->lib() == Xpetra::UseEpetra) {
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
+      } else if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
+#ifdef HAVE_XPETRA_TPETRA
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpR = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(R);
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
+        const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpP = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(P);
+        Tpetra::CrsMatrix<SC,LO,GO,NO> &       tpAc = Xpetra::Helpers<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Ac);
+
+        // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
+        // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
+        Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
+#else
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
+#endif
+      }
 
     } // end Multiply
 
