@@ -789,7 +789,9 @@ MACRO(TRIBITS_CTEST_SUBMIT_DRIVER)
   # If using a recent enough ctest with RETRY_COUNT, use it to overcome
   # failed submits:
   SET(retry_args "")
-  SET(retry_args RETRY_COUNT 25 RETRY_DELAY 120)
+  SET(retry_args
+    RETRY_COUNT ${CTEST_SUBMIT_RETRY_COUNT}
+    RETRY_DELAY ${CTEST_SUBMIT_RETRY_DELAY})
   MESSAGE("info: using retry_args='${retry_args}' for _ctest_submit call")
 
   # Call the original CTEST_SUBMIT and pay attention to its RETURN_VALUE:
@@ -1273,8 +1275,8 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
   
     # Submit configure results and the notes to the dashboard
     IF (CTEST_DO_SUBMIT)
-      MESSAGE("\nSubmitting configure and notes ...")
-      TRIBITS_CTEST_SUBMIT( PARTS configure notes )
+      MESSAGE("\nSubmitting update, configure and notes ...")
+      TRIBITS_CTEST_SUBMIT( PARTS update configure notes )
     ENDIF()
 
   ENDIF()

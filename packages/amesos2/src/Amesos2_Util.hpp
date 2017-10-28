@@ -214,6 +214,28 @@ namespace Amesos2 {
     /// Prints a line of 70 "-"s on std::cout.
     void printLine( Teuchos::FancyOStream &out );
 
+    // Helper function used to convert Kokkos::complex pointer
+    // to std::complex pointer; needed for optimized code path
+    // when retrieving the CRS raw pointers
+    template < class T0, class T1 >
+    struct getStdCplxType
+    {
+      using type = T0;
+    };
+
+    template < class T0, class T1 >
+    struct getStdCplxType< T0, T1* >
+    {
+      using type = T1;
+    };
+
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_AMESOS2_KOKKOS)
+    template < class T0 >
+    struct getStdCplxType< T0, Kokkos::complex<T0>* >
+    {
+      using type = std::complex<T0>;
+    };
+#endif
 
     //////////////////////////////////
     // Matrix/MultiVector Utilities //
