@@ -33,6 +33,11 @@ then
   CXX11_FLAGS_STRING="--expt-extended-lambda -std=c++11"
 fi
 
+if [ ${PTHREAD} == "ON" ]
+then
+  EXTRA_ARGS="$EXTRA_ARGS -DPhalanx_KOKKOS_DEVICE_TYPE="THREAD""
+fi
+
 #--------------------------------------------------
 #--------------------------------------------------
 

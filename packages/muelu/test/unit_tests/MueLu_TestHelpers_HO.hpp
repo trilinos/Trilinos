@@ -49,11 +49,7 @@
 
 //Intrepid
 #ifdef HAVE_MUELU_INTREPID2
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
 #include "Kokkos_DynRankView.hpp"
-#else
-#include "Intrepid2_FieldContainer.hpp"
-#endif
 
 #include "MueLu_TestHelpers.hpp"
 
@@ -97,11 +93,7 @@ namespace MueLuTests {
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
     Build1DPseudoPoissonHigherOrder(GlobalOrdinal nx, int degree,
-#                                 if defined(HAVE_MUELU_INTREPID2_REFACTOR)
                                     Kokkos::DynRankView<LocalOrdinal,typename Node::device_type>
-#                                 else
-                                    Intrepid2::FieldContainer<LocalOrdinal>
-#                                 endif
                                     & elem_to_node,
                                     Xpetra::UnderlyingLib lib)
     {
@@ -215,11 +207,7 @@ namespace MueLuTests {
 
       // Fill elem_to_node using Kirby-style ordering
       // Ownership rule: I own the element if I own the left node in said element
-#     ifdef HAVE_MUELU_INTREPID2_REFACTOR
       Kokkos::resize(elem_to_node,local_num_elements,degree+1);
-#     else
-      elem_to_node.resize(local_num_elements,degree+1);
-#     endif
       for(size_t i=0; i<local_num_elements; i++) {
         // End Nodes
         // NTS: This only works for lines

@@ -32,7 +32,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml scaling-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml rap.xml smoother.xml
+    SOURCE_FILES scaling.xml scaling-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml rap.xml smoother.xml tripleMatrixProduct.xml
    )
 
  TRIBITS_ADD_EXECUTABLE(
@@ -179,6 +179,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       Driver
       NAME "DriverTpetra"
       ARGS "--linAlgebra=Tpetra"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
+
+    TRIBITS_ADD_TEST(
+      Driver
+      NAME "DriverTpetraTripleMatrixProduct"
+      ARGS "--linAlgebra=Tpetra --xml=tripleMatrixProduct.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )

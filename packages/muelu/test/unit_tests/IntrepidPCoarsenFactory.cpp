@@ -76,11 +76,7 @@
 //#include "Intrepid2_HGRAD_TRI_Cn_FEM.hpp"
 #include "Intrepid2_HGRAD_HEX_Cn_FEM.hpp"
 //#include "Intrepid2_HGRAD_TET_Cn_FEM.hpp"
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
 #include "Kokkos_DynRankView.hpp"
-#else
-#include "Intrepid2_FieldContainer.hpp"
-#endif
 
 
 namespace MueLuTests {
@@ -159,21 +155,12 @@ namespace MueLuTests {
     // are part of the specified side
     auto subcellEntities = subcellEntitiesForSide(basis->getBaseCellTopology(), sideOrdinal);
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     auto dofOrdinalData = basis->getAllDofOrdinal();
-#else
-    // dofOrdinalData has entries like: dofOrdinalData[subcellDim][subcellOrdinal][subcellDofOrdinal]
-    auto dofOrdinalData = basis->getDofOrdinalData();
-#endif
 
     // determine size of first two parts of dofOrdinalData container
     // for dimensions > 0, there may no entries at all (for lower-order bases)
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     int maxDim = dofOrdinalData.dimension(0);
     int maxSubcellOrdinal = dofOrdinalData.dimension(1);
-#else
-    int maxDim = dofOrdinalData.size();
-#endif
 
     vector<int> localDofOrdinals;
 
@@ -184,21 +171,14 @@ namespace MueLuTests {
 
       if (subcellDim >= maxDim) continue; // no entries
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
       int dofContainerSize = dofOrdinalData.dimension(2); // 3rd dimension: max dof count
-#else
-      int dofContainerSize = dofOrdinalData[subcellDim][subcellOrdinal].size();
-      int maxSubcellOrdinal = dofOrdinalData[subcellDim].size();
-#endif
+
       if (subcellOrdinal >= maxSubcellOrdinal) continue; // no entries
 
       for (int entryOrdinal = 0; entryOrdinal < dofContainerSize; entryOrdinal++)
       {
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         int localDofOrdinal = dofOrdinalData(subcellDim,subcellOrdinal,entryOrdinal);
-#else
-        int localDofOrdinal = dofOrdinalData[subcellDim][subcellOrdinal][entryOrdinal];
-#endif
+
         if (localDofOrdinal >= 0)
           localDofOrdinals.push_back(localDofOrdinal);
         else
@@ -516,19 +496,12 @@ namespace MueLuTests {
 
     ArrayScalar refDofCoords, cellDofCoords;
     ArrayOrdinal cellDofIDs; // for each cell, stores the global ordinal assigned to local ordinal
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     resize(cellWorkset,numCells,vertexCount,spaceDim);
     resize(refDofCoords,basis->getCardinality(),spaceDim);
     resize(cellDofCoords,numCells,basis->getCardinality(),spaceDim);
     resize(cellDofIDs,numCells,basis->getCardinality());
     resize(elemToNodeMap,numCells,basis->getCardinality());
-#else
-    cellWorkset.resize(numCells,vertexCount,spaceDim);
-    refDofCoords.resize(basis->getCardinality(),spaceDim);
-    cellDofCoords.resize(numCells,basis->getCardinality(),spaceDim);
-    cellDofIDs.resize(numCells,basis->getCardinality());
-    elemToNodeMap.resize(numCells,basis->getCardinality());
-#endif
+
     basis->getDofCoords(refDofCoords);
 
     subcellCountForDimension.resize(spaceDim+1);
@@ -703,16 +676,10 @@ namespace MueLuTests {
 
     using namespace Kokkos;
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     using namespace Kokkos::Experimental;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Kokkos::DynRankView<OT,typename Node::device_type> FCO; // FC of ordinals
     typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> Basis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::FieldContainer<OT> FCO; // FC of ordinals
-    typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> Basis;
-#endif
 
     FC physDofCoords;
     FCO cellGIDs;
@@ -720,13 +687,9 @@ namespace MueLuTests {
       { 9,10,11,12,13,14, 0, 1, 2},
       {11,15,16,14,17,18, 2,19,20}};
     int numCells = 3, numPointsPerCell = 9, spaceDim = 2;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     resize(physDofCoords,numCells,numPointsPerCell,spaceDim);
     resize(cellGIDs,numCells,numPointsPerCell);
-#else
-    physDofCoords.resize(numCells,numPointsPerCell,spaceDim);
-    cellGIDs.resize(numCells,numPointsPerCell);
-#endif
+
     // x,y coords of lower-left vertices for each cell:
     vector<double> x0s = {0.0,0.0,1.0};
     vector<double> y0s = {1.0,0.0,0.0};
@@ -782,16 +745,10 @@ namespace MueLuTests {
 
     using namespace Kokkos;
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     using namespace Kokkos::Experimental;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Kokkos::DynRankView<OT,typename Node::device_type> FCO; // FC of ordinals
     typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> Basis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::FieldContainer<OT> FCO; // FC of ordinals
-    typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> Basis;
-#endif
 
     int polyOrder = 2, spaceDim = 2;
     RCP<Basis> basis = rcp( new Basis(polyOrder, Intrepid2::EPointType::POINTTYPE_EQUISPACED) );
@@ -900,11 +857,7 @@ namespace MueLuTests {
         int remainder = numElements - (numElements / numRanks) * numRanks;
         if (remainder > rank) numRankLocalElements++;
         FCO rankLocalElementToNodeMap;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         resize(rankLocalElementToNodeMap,numCells,basis->getCardinality());
-#else
-        rankLocalElementToNodeMap.resize(numCells,basis->getCardinality());
-#endif
         vector<set<LocalOrdinal>> expectedSeedsSets(spaceDim+1);
 
         auto isRankLocal = [startingGID,numRankLocalElements](GlobalOrdinal GID) -> bool {
@@ -1140,7 +1093,6 @@ namespace MueLuTests {
 
 
   /******* Begin typedefs for FindSeeds tests by Nate ********/
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
 #define FIND_SEEDS_MACROS \
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;         \
   typedef typename Node::device_type::execution_space ES;                   \
@@ -1149,16 +1101,6 @@ namespace MueLuTests {
   typedef Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ES,MT,MT> LineBasis;           \
   typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> QuadBasis;           \
   typedef Intrepid2::Basis_HGRAD_HEX_Cn_FEM<ES,MT,MT> HexBasis;
-#else
-#define FIND_SEEDS_MACROS \
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;         \
-  typedef typename Node::device_type::execution_space ES;                   \
-  typedef Intrepid2::FieldContainer<MT> FC;                                 \
-  typedef Intrepid2::FieldContainer<LocalOrdinal> FCO;                      \
-  typedef Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ES,MT,MT> LineBasis;           \
-  typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> QuadBasis;           \
-  typedef Intrepid2::Basis_HGRAD_HEX_Cn_FEM<ES,MT,MT> HexBasis;
-#endif
 
   /******* End typedefs for FindSeeds tests by Nate ********/
 
@@ -1228,14 +1170,9 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef typename Node::device_type::execution_space ES;
     typedef Intrepid2::Basis<ES,MT,MT> Basis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::Basis<MT,FC> Basis;
-#endif
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -1243,26 +1180,15 @@ namespace MueLuTests {
 
     {
       // QUAD
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
       RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT>());
-#else
-      RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC>());
-#endif
+
 
       for(int i=0;i<max_degree; i++) {
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(i,Intrepid2::POINTTYPE_EQUISPACED));
-#else
-        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(i,Intrepid2::POINTTYPE_EQUISPACED));
-#endif
         std::vector<size_t> lo_node_in_hi;
         FC hi_dofCoords;
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
-#else
-        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo,lo_node_in_hi,hi_dofCoords);
-#endif
         TEST_EQUALITY((size_t)hi_dofCoords.dimension(0),(size_t)hi->getCardinality());
         TEST_EQUALITY((size_t)hi_dofCoords.dimension(1),(size_t)hi->getBaseCellTopology().getDimension());
         TEST_EQUALITY(lo_node_in_hi.size(),(size_t)lo->getCardinality());
@@ -1278,24 +1204,16 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-#endif
+
     out << "version: " << MueLu::Version() << std::endl;
 
     // QUAD
     int degree;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c1",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
     {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c2",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
     {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> >(MueLu::MueLuIntrepid::BasisFactory<MT,ES>("hgrad_quad_c3",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
-#else
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c1",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c2",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
-    {bool test= rcp_dynamic_cast<Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> >(MueLu::MueLuIntrepid::BasisFactory<MT>("hgrad_quad_c3",degree)) !=Teuchos::null;TEST_EQUALITY(test,true);}
-#endif
+
   }
 
 
@@ -1307,16 +1225,10 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
     typedef typename Node::device_type::execution_space ES;
     typedef Intrepid2::Basis<ES,MT,MT> Basis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::FieldContainer<LO> FCi;
-    typedef Intrepid2::Basis<MT,FC> Basis;
-#endif
 
     out << "version: " << MueLu::Version() << std::endl;
     int max_degree = (Intrepid2::Parameters::MaxOrder < 5 ) ? Intrepid2::Parameters::MaxOrder : 5;
@@ -1325,31 +1237,19 @@ namespace MueLuTests {
     {
       //QUAD
       // A one element test with Kirby-numbered nodes where the top edge is not owned
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
       RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT>());
-#else
-      RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC>());
-#endif
 
       for(int degree=2; degree < max_degree; degree++) {
         int Nn = (degree+1)*(degree+1);
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(degree,Intrepid2::POINTTYPE_EQUISPACED));
         FCi hi_e2n("hi_e2n",1,Nn), lo_e2n;
-#else
-        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(degree,Intrepid2::POINTTYPE_EQUISPACED));
-        FCi hi_e2n(1,Nn), lo_e2n;
-#endif
+
         std::vector<bool> hi_owned(Nn,false),lo_owned;
         std::vector<size_t> lo_node_in_hi;
         std::vector<LO> hi_to_lo_map;
         int lo_numOwnedNodes=0;
         FC hi_dofCoords;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
-#else
-        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
-#endif
 
         for(int i=0; i<Nn; i++) {
           hi_e2n(0,i)=i;
@@ -1382,16 +1282,10 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
     typedef typename Node::device_type::execution_space ES;
     typedef Intrepid2::Basis<ES,MT,MT> Basis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::FieldContainer<LO> FCi;
-    typedef Intrepid2::Basis<MT,FC> Basis;
-#endif
 
     out << "version: " << MueLu::Version() << std::endl;
     int max_degree = (Intrepid2::Parameters::MaxOrder < 5 ) ? Intrepid2::Parameters::MaxOrder : 5;
@@ -1400,31 +1294,19 @@ namespace MueLuTests {
     {
       //QUAD
       // A one element test with Kirby-numbered nodes where the top edge is not owned
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
       RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT>());
-#else
-      RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC>());
-#endif
 
       for(int degree=2; degree < max_degree; degree++) {
         int Nn = (degree+1)*(degree+1);
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(degree,Intrepid2::POINTTYPE_EQUISPACED));
         FCi hi_e2n("hi_e2n",1,Nn), lo_e2n;
-#else
-        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(degree,Intrepid2::POINTTYPE_EQUISPACED));
-        FCi hi_e2n(1,Nn), lo_e2n;
-#endif
+
         std::vector<bool> hi_owned(Nn,false),lo_owned;
         std::vector<size_t> lo_node_in_hi;
         std::vector<LO> hi_to_lo_map;
         int lo_numOwnedNodes=0;
         FC hi_dofCoords;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
-#else
-        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
-#endif
 
         for(int i=0; i<Nn; i++) {
           hi_e2n(0,i)=i;
@@ -1525,11 +1407,8 @@ void TestPseudoPoisson(Teuchos::FancyOStream &out, int num_p1_nodes, int degree,
     typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
+
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -1732,11 +1611,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
 
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -1803,11 +1678,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
 
     out << "version: " << MueLu::Version() << std::endl;
     using Teuchos::RCP;
@@ -1872,11 +1743,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_p
     typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
 
     out << "version: " << MueLu::Version() << std::endl;
     using Teuchos::RCP;
@@ -1932,11 +1799,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     typedef Node  NO;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     typedef Intrepid2::CellTools<typename Node::device_type::execution_space> CellTools;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-#endif
+
     out << "version: " << MueLu::Version() << std::endl;
 
     bool success = true;
@@ -1956,17 +1820,11 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     double xTranslationForCell1 = 2.0; // shift to the right by 2
     double pointTol = 1e-12;
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     resize(physCellVertices,numCells,vertexCount,spaceDim);
     resize(physCellVerticesPermuted,numCells,vertexCount,spaceDim);
     resize(refCellVertices,vertexCount,spaceDim);
     resize(refCellVertex,3);
-#else
-    physCellVertices.resize(numCells,vertexCount,spaceDim);
-    physCellVerticesPermuted.resize(numCells,vertexCount,spaceDim);
-    refCellVertices.resize(vertexCount,spaceDim);
-    refCellVertex.resize(3);
-#endif
+
     // regardless of spatial dimension, CellTools::getReferenceVertex() populates 3 slots
     for (int vertexOrdinal=0; vertexOrdinal<vertexCount; vertexOrdinal++)
     {
@@ -1987,16 +1845,10 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
     for(int highPolyDegree=1; highPolyDegree<max_degree; highPolyDegree++) {
       FC hi_DofCoords, lo_DofCoords;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
       RCP<Basis> hi = rcp(new Basis(highPolyDegree,ptype));
       Kokkos::resize(hi_DofCoords,hi->getCardinality(),hi->getBaseCellTopology().getDimension());
       hi->getDofCoords(hi_DofCoords);
-#else
-      RCP<Basis> hi = rcp(new Basis(highPolyDegree,ptype));
-      RCP<Intrepid2::DofCoordsInterface<FC> > hi_dci = rcp_dynamic_cast<Basis>(hi);
-      hi_DofCoords.resize(hi->getCardinality(),hi->getBaseCellTopology().getDimension());
-      hi_dci->getDofCoords(hi_DofCoords);
-#endif
+
 
       // we'll want to create a global numbering for both high and low order bases
       // --> we make a lambda function that accepts FC with dof coords as argument
@@ -2035,16 +1887,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
 
       for(int lowPolyDegree=1; lowPolyDegree<highPolyDegree; lowPolyDegree++) {
         out << "Testing with high order " << highPolyDegree << ", low order " << lowPolyDegree << endl;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         RCP<Basis> lo = rcp(new Basis(lowPolyDegree,ptype));
         Kokkos::resize(lo_DofCoords,lo->getCardinality(),lo->getBaseCellTopology().getDimension());
         lo->getDofCoords(lo_DofCoords);
-#else
-        RCP<Basis> lo = rcp(new Basis(lowPolyDegree,ptype));
-        RCP<Intrepid2::DofCoordsInterface<FC> > lo_dci = rcp_dynamic_cast<Basis>(lo);
-        lo_DofCoords.resize(lo->getCardinality(),lo->getBaseCellTopology().getDimension());
-        lo_dci->getDofCoords(lo_DofCoords);
-#endif
         UniqueNumbering loNumbering = getTwoCellNumbering(lo_DofCoords);
 
         // print out the high/low global numbering along the x=1 interface:
@@ -2180,13 +2025,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
             }
             // get the mapped dof coords for lo and high bases:
             FC lo_physDofCoords, hi_physDofCoords;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
             Kokkos::resize(lo_physDofCoords, numCells, lo->getCardinality(), cellTopo.getDimension());
             Kokkos::resize(hi_physDofCoords, numCells, hi->getCardinality(), cellTopo.getDimension());
-#else
-            lo_physDofCoords.resize(numCells,lo->getCardinality(),cellTopo.getDimension());
-            hi_physDofCoords.resize(numCells,hi->getCardinality(),cellTopo.getDimension());
-#endif
+
             CellTools::mapToPhysicalFrame(lo_physDofCoords, lo_DofCoords, physCellVerticesPermuted, cellTopo);
             CellTools::mapToPhysicalFrame(hi_physDofCoords, hi_DofCoords, physCellVerticesPermuted, cellTopo);
             int cell1Side = searchForX1Side(1);
@@ -2319,15 +2160,10 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Intrepid2::Basis_HGRAD_LINE_Cn_FEM<ES,MT,MT> Basis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::Basis_HGRAD_LINE_Cn_FEM<MT,FC> Basis;
 
-#endif
 
     bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_LINE_EQUISPACED",Intrepid2::POINTTYPE_EQUISPACED,MAX_LINE_DEGREE);
     TEST_EQUALITY(rv,true);
@@ -2342,15 +2178,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> Basis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> Basis;
-
-#endif
 
     bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_QUAD_EQUISPACED",Intrepid2::POINTTYPE_EQUISPACED,MAX_QUAD_DEGREE);
     TEST_EQUALITY(rv,true);
@@ -2365,15 +2195,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> Basis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC> Basis;
-
-#endif
 
     const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
     bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_QUAD_SPECTRAL",POINTTYPE_SPECTRAL,MAX_QUAD_DEGREE);
@@ -2390,15 +2214,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Intrepid2::Basis_HGRAD_HEX_Cn_FEM<ES,MT,MT> Basis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::Basis_HGRAD_HEX_Cn_FEM<MT,FC> Basis;
-
-#endif
 
     bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_HEX_EQUISPACED",Intrepid2::POINTTYPE_EQUISPACED,MAX_HEX_DEGREE);
     TEST_EQUALITY(rv,true);
@@ -2413,14 +2231,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Intrepid2::Basis_HGRAD_HEX_Cn_FEM<ES,MT,MT> Basis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::Basis_HGRAD_HEX_Cn_FEM<MT,FC> Basis;
-#endif
 
     const Intrepid2::EPointType POINTTYPE_SPECTRAL = static_cast<Intrepid2::EPointType>(1);// Not sure why I have to do this...
     bool rv = test_representative_basis<Scalar,LocalOrdinal,GlobalOrdinal,Node,Basis>(out," GenerateRepresentativeBasisNodes_HEX_SPECTRAL",POINTTYPE_SPECTRAL,MAX_HEX_DEGREE);
@@ -2440,18 +2253,12 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     typedef LocalOrdinal LO;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef typename Node::device_type::execution_space ES;
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Kokkos::DynRankView<LO,typename Node::device_type> FCi;
     typedef Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT> LoBasis;
     typedef Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT> HiBasis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::FieldContainer<LO> FCi;
-    typedef Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC> LoBasis;
-    typedef Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC> HiBasis;
-#endif
+
     out << "version: " << MueLu::Version() << std::endl;
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
@@ -2471,15 +2278,9 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
       // The quad-only stuff
       std::vector<size_t> lo_node_in_hi;
       FC hi_dofCoords;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
       MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
       FCi hi_e2n("hi_e2n",1,numHi);
       FCi lo_e2n("lo_e2n",1,numLo);
-#else
-      MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
-      FCi hi_e2n(1,numHi);
-      FCi lo_e2n(1,numLo);
-#endif
 
       // Dummy elem2node map
       Teuchos::Array<GO> hi_colids(numHi);
@@ -2521,16 +2322,10 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<MT,typename Node::device_type> FC;
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
     typedef typename Node::device_type::execution_space ES;
     typedef Intrepid2::Basis<ES,MT,MT> Basis;
-#else
-    typedef Intrepid2::FieldContainer<MT> FC;
-    typedef Intrepid2::FieldContainer<LO> FCi;
-    typedef Intrepid2::Basis<MT,FC> Basis;
-#endif
     GO gst_invalid = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
 
     out << "version: " << MueLu::Version() << std::endl;
@@ -2542,21 +2337,14 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     {
       //QUAD
       // A one element test with Kirby-numbered nodes where the top edge is not owned
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
       RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<ES,MT,MT>());
-#else
-      RCP<Basis> lo = rcp(new Intrepid2::Basis_HGRAD_QUAD_C1_FEM<MT,FC>());
-#endif
+
 
       for(int degree=2; degree < max_degree; degree++) {
         int Nn = (degree+1)*(degree+1);
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<ES,MT,MT>(degree,Intrepid2::POINTTYPE_EQUISPACED));
         FCi hi_e2n("hi_e2n",1,Nn), lo_e2n, lo_e2n_mk2;
-#else
-        RCP<Basis> hi = rcp(new Intrepid2::Basis_HGRAD_QUAD_Cn_FEM<MT,FC>(degree,Intrepid2::POINTTYPE_EQUISPACED));
-        FCi hi_e2n(1,Nn), lo_e2n, lo_e2n_mk2;
-#endif
+
         std::vector<bool> hi_owned(Nn,false),lo_owned, lo_owned_mk2;
         std::vector<size_t> lo_node_in_hi;
         std::vector<LO> hi_to_lo_map,  hi_to_lo_map_mk2;
@@ -2574,11 +2362,7 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
         Teuchos::ArrayRCP<const int> is_dirichlet(Nn,0);
 
         /*** Do stuff the injection way ***/
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
         MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,typename Node::device_type>(hi,lo_node_in_hi,hi_dofCoords);
-#else
-        MueLu::MueLuIntrepid::IntrepidGetP1NodeInHi<MT,FC>(hi,lo_node_in_hi,hi_dofCoords);
-#endif
         MueLu::MueLuIntrepid::BuildLoElemToNode(hi_e2n,hi_owned,lo_node_in_hi,is_dirichlet,lo_e2n,lo_owned,hi_to_lo_map,lo_numOwnedNodes);
 
         /*** Do stuff the representative way ***/
@@ -2763,11 +2547,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
 
     out << "version: " << MueLu::Version() << std::endl;
     using Teuchos::RCP;
@@ -2832,11 +2612,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
+
 
     out << "version: " << MueLu::Version() << std::endl;
     using Teuchos::RCP;
@@ -2901,11 +2678,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
 
     out << "version: " << MueLu::Version() << std::endl;
     using Teuchos::RCP;
@@ -2971,11 +2744,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
+
 
     out << "version: " << MueLu::Version() << std::endl;
     using Teuchos::RCP;
@@ -3057,11 +2827,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
 
     out << "version: " << MueLu::Version() << std::endl;
     using Teuchos::RCP;
@@ -3133,11 +2899,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
 
     out << "version: " << MueLu::Version() << std::endl;
     using Teuchos::RCP;
@@ -3212,11 +2974,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(IntrepidPCoarsenFactory,BuildP_PseudoPoisson_L
     typedef Node  NO;
     typedef TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> test_factory;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-    typedef Intrepid2::FieldContainer<LO> FCi;
-#endif
 
     out << "version: " << MueLu::Version() << std::endl;
     using Teuchos::RCP;

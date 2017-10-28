@@ -45,6 +45,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include "TpetraExt_MatrixMatrix.hpp"
+#include "TpetraExt_TripleMatrixMultiply.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Vector.hpp"
@@ -482,6 +483,93 @@ mult_test_results multiply_test_autofc(
 
 
 template<class Matrix_t>
+mult_test_results multiply_RAP_test_autofc(
+  const std::string& name,
+  RCP<Matrix_t> R,
+  RCP<Matrix_t> A,
+  RCP<Matrix_t> P,
+  bool RT,
+  bool AT,
+  bool PT,
+  RCP<Matrix_t> Ac,
+  RCP<const Comm<int> > comm,
+  FancyOStream& out)
+{
+  typedef typename Matrix_t::scalar_type SC;
+  typedef typename Matrix_t::local_ordinal_type LO;
+  typedef typename Matrix_t::global_ordinal_type GO;
+  typedef typename Matrix_t::node_type NT;
+  typedef Map<LO,GO,NT> Map_t;
+
+  RCP<const Map_t> map = Ac->getRowMap();
+
+  RCP<Matrix_t> computedAc = rcp( new Matrix_t(map, 0));
+  SC one = Teuchos::ScalarTraits<SC>::one();
+
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedAc, true);
+
+  if(!Ac->getDomainMap()->isSameAs(*computedAc->getDomainMap())) throw std::runtime_error("Domain map mismatch");
+  if(!Ac->getRangeMap()->isSameAs(*computedAc->getRangeMap())) throw std::runtime_error("Range map mismatch");
+  if(!Ac->getRowMap()->isSameAs(*computedAc->getRowMap())) throw std::runtime_error("Row map mismatch");
+
+#if 0
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_calculated.mtx", computedAc);
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_real.mtx", Ac);
+#endif
+
+#if 0
+  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  std::cout<<"*** Ac->colMap() ***"<<std::endl;
+  Ac->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  std::cout<<"*** Ac->domainMap() ***"<<std::endl;
+  Ac->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+
+  if(Ac->getGraph()->getImporter().is_null()) std::cout<<"Ac->getImporter is null"<<std::endl;
+  else {
+    std::cout<<"*** Ac->getImporter()->getTargetMap() ***"<<std::endl;
+    Ac->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  }
+
+  std::cout<<"*** computedAc->colMap() ***"<<std::endl;
+  computedAc->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  std::cout<<"*** computedAc->domainMap() ***"<<std::endl;
+  computedAc->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+
+  if(computedAc->getGraph()->getImporter().is_null()) std::cout<<"computedAc->getImporter is null"<<std::endl;
+  else {
+    std::cout<<"*** computedAc->getImporter()->getTargetMap() ***"<<std::endl;
+    computedAc->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  }
+#endif
+
+
+  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(Ac->getRowMap());
+  Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedAc, false, one, diffMatrix);
+  diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
+
+  mult_test_results results;
+  results.cNorm    = Ac->getFrobeniusNorm ();
+  results.compNorm = diffMatrix->getFrobeniusNorm ();
+  results.epsilon  = results.compNorm/results.cNorm;
+
+  if(results.epsilon > 1e-3) {
+#if 0
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_calculated.mtx", computedAc);
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_real.mtx", Ac);
+
+#endif
+  if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
+  }
+
+
+  return results;
+}
+
+template<class Matrix_t>
 mult_test_results multiply_reuse_test(
   const std::string& name,
   RCP<Matrix_t> A,
@@ -681,6 +769,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
 
   // NOTE: The matrix reader doesn't read real matrices into a complex data type, so we just swap down to MT here
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+  typedef Map<LO,GO,NT>                     map_type;
   typedef CrsMatrix<MT,LO,GO,NT> Matrix_t;
   const int myRank = comm->getRank ();
   //const int numProcs = comm->getSize();
@@ -716,19 +805,89 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
     ParameterList currentSystem = matrixSystems->sublist (it->first);
     std::string name = currentSystem.name();
     std::string A_file = currentSystem.get<std::string> ("A");
+    std::string A_domainmap_file = currentSystem.get<std::string> ("A_domainmap", "");
+    std::string A_rangemap_file = currentSystem.get<std::string> ("A_rangemap", "");
+    std::string A_rowmap_file = currentSystem.get<std::string> ("A_rowmap", "");
+    std::string A_colmap_file = currentSystem.get<std::string> ("A_colmap", "");
+
     std::string B_file = currentSystem.get<std::string> ("B");
+    std::string B_domainmap_file = currentSystem.get<std::string> ("B_domainmap", "");
+    std::string B_rangemap_file = currentSystem.get<std::string> ("B_rangemap", "");
+    std::string B_rowmap_file = currentSystem.get<std::string> ("B_rowmap", "");
+    std::string B_colmap_file = currentSystem.get<std::string> ("B_colmap", "");
+
     std::string C_file = currentSystem.get<std::string> ("C");
+    std::string C_domainmap_file = currentSystem.get<std::string> ("C_domainmap", "");
+    std::string C_rangemap_file = currentSystem.get<std::string> ("C_rangemap", "");
+    std::string C_rowmap_file = currentSystem.get<std::string> ("C_rowmap", "");
+    std::string C_colmap_file = currentSystem.get<std::string> ("C_colmap", "");
+
+    std::string D_file = currentSystem.get<std::string> ("D", "");
+    std::string D_domainmap_file = currentSystem.get<std::string> ("D_domainmap", "");
+    std::string D_rangemap_file = currentSystem.get<std::string> ("D_rangemap", "");
+    std::string D_rowmap_file = currentSystem.get<std::string> ("D_rowmap", "");
+    std::string D_colmap_file = currentSystem.get<std::string> ("D_colmap", "");
+
     const bool AT = currentSystem.get<bool> ("TransA");
     const bool BT = currentSystem.get<bool> ("TransB");
+    const bool CT = currentSystem.get<bool> ("TransC", false);
+    const int numProcs = currentSystem.get<int> ("numProcs", 0);
+    if(numProcs > 0 && comm->getSize() != numProcs)
+      throw std::runtime_error("Test requires exactly " + std::to_string(numProcs) +" MPI ranks.");
+
     double epsilon = currentSystem.get<double> ("epsilon", defaultEpsilon);
     std::string op = currentSystem.get<std::string> ("op");
 
-    RCP<Matrix_t> A = Reader<Matrix_t>::readSparseFile (A_file, comm);
-    RCP<Matrix_t> B = Reader<Matrix_t>::readSparseFile (B_file, comm);
-    RCP<Matrix_t> C = Reader<Matrix_t>::readSparseFile (C_file, comm);
+    RCP<Matrix_t> A, B, C, D;
+    const RCP<NT> my_node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
 
-    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
-      "Unrecognized Matrix Operation: " << op);
+    if (A_file != ""){
+      if (A_domainmap_file == "" || A_rangemap_file == "" || A_rowmap_file == "" || A_colmap_file == "")
+        A = Reader<Matrix_t>::readSparseFile (A_file, comm);
+      else {
+        RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (A_domainmap_file, comm, my_node);
+        RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (A_rangemap_file, comm, my_node);
+        RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (A_rowmap_file, comm, my_node);
+        RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (A_colmap_file, comm, my_node);
+        A = Reader<Matrix_t>::readSparseFile (A_file, rowmap, colmap, domainmap, rangemap);
+      }
+    }
+    if (B_domainmap_file == "" || B_rangemap_file == "" || B_rowmap_file == "" || B_colmap_file == "")
+      B = Reader<Matrix_t>::readSparseFile (B_file, comm);
+    else {
+      RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (B_domainmap_file, comm, my_node);
+      RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (B_rangemap_file, comm, my_node);
+      RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (B_rowmap_file, comm, my_node);
+      RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (B_colmap_file, comm, my_node);
+      B = Reader<Matrix_t>::readSparseFile (B_file, rowmap, colmap, domainmap, rangemap);
+    }
+    if (C_domainmap_file == "" || C_rangemap_file == "" || C_rowmap_file == "" || C_colmap_file == "")
+      C = Reader<Matrix_t>::readSparseFile (C_file, comm);
+    else {
+      RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (C_domainmap_file, comm, my_node);
+      RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (C_rangemap_file, comm, my_node);
+      RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (C_rowmap_file, comm, my_node);
+      RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (C_colmap_file, comm, my_node);
+      C = Reader<Matrix_t>::readSparseFile (C_file, rowmap, colmap, domainmap, rangemap);
+    }
+    if (D_file != "") {
+      if (D_domainmap_file == "" || D_rangemap_file == "" || D_rowmap_file == "" || D_colmap_file == "")
+        D = Reader<Matrix_t>::readSparseFile (D_file, comm);
+      else {
+        RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (D_domainmap_file, comm, my_node);
+        RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (D_rangemap_file, comm, my_node);
+        RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (D_rowmap_file, comm, my_node);
+        RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (D_colmap_file, comm, my_node);
+        D = Reader<Matrix_t>::readSparseFile (D_file, rowmap, colmap, domainmap, rangemap);
+      }
+    }
+
+    if (A_file == "") {
+      A = C;
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add" && op != "RAP", std::runtime_error,
+                               "Unrecognized Matrix Operation: " << op);
 
     if (op == "multiply") {
       if (verbose)
@@ -854,6 +1013,46 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
         newOut << "\tComputed norm: " << results.computedNorm << endl;
         newOut << "\tEpsilon: " << results.epsilon << endl;
       }
+    }
+    else if (op == "RAP") {
+      // if (verbose)
+      //   newOut << "Running RAP multiply test (manual FC) for " << currentSystem.name() << endl;
+
+      // mult_test_results results = multiply_RAP_test_manualfc(name, A, B, C, AT, BT, CT, D, comm, newOut);
+
+      // if (verbose) {
+      //   newOut << "Results:"     << endl;
+      //   newOut << "\tEpsilon: "  << results.epsilon  << endl;
+      //   newOut << "\tcNorm: "    << results.cNorm    << endl;
+      //   newOut << "\tcompNorm: " << results.compNorm << endl;
+      // }
+      // TEST_COMPARE(results.epsilon, <, epsilon);
+
+      if (verbose)
+        newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
+
+      mult_test_results results = multiply_RAP_test_autofc(name, A, B, C, AT, BT, CT, D, comm, newOut);
+
+      if (verbose) {
+        newOut << "Results:"     << endl;
+        newOut << "\tEpsilon: "  << results.epsilon  << endl;
+        newOut << "\tcNorm: "    << results.cNorm    << endl;
+        newOut << "\tcompNorm: " << results.compNorm << endl;
+      }
+      TEST_COMPARE(results.epsilon, <, epsilon);
+
+      // if (verbose)
+      //   newOut << "Running multiply reuse test for " << currentSystem.name() << endl;
+
+      // results = multiply_reuse_test(name, A, B, AT, BT, C, comm, newOut);
+
+      // if (verbose) {
+      //   newOut << "Results:"     << endl;
+      //   newOut << "\tEpsilon: "  << results.epsilon  << endl;
+      //   newOut << "\tcNorm: "    << results.cNorm    << endl;
+      //   newOut << "\tcompNorm: " << results.compNorm << endl;
+      // }
+      // TEST_COMPARE(results.epsilon, <, epsilon);
     }
   }
 
@@ -1478,4 +1677,3 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
 
 
   } //namespace Tpetra
-

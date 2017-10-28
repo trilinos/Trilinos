@@ -64,11 +64,7 @@
 #include "MueLu_PerfUtils.hpp"
 
 #ifdef HAVE_MUELU_INTREPID2
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
 #include "Kokkos_DynRankView.hpp"
-#else
-#include "Intrepid2_FieldContainer.hpp"
-#endif
 #endif
 
 namespace MueLu {
@@ -252,11 +248,7 @@ namespace MueLu {
       WriteData<MultiVector>(H, nullspaceToPrint_,  "Nullspace");
       WriteData<MultiVector>(H, coordinatesToPrint_,  "Coordinates");
 #ifdef HAVE_MUELU_INTREPID2
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
       typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
-#else
-      typedef Intrepid2::FieldContainer<LocalOrdinal> FCi;
-#endif
       WriteDataFC<FCi>(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map","el2node");
 #endif
 

@@ -57,11 +57,7 @@
 
 //TODO/FIXME: DeclareInput(, **this**) cannot be used here
 #ifdef HAVE_MUELU_INTREPID2
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
 #include "Kokkos_DynRankView.hpp"
-#else
-#include "Intrepid2_FieldContainer.hpp"
-#endif
 #endif
 
 namespace MueLu {
@@ -124,11 +120,7 @@ namespace MueLu {
           else if (name == "pcoarsen: element to node map")
           {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
             level->Set(name, Teuchos::getValue<RCP<Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> > >(it2->second), NoFactory::get());
-#else
-            level->Set(name, Teuchos::getValue<RCP< Intrepid2::FieldContainer<LocalOrdinal> > >(it2->second), NoFactory::get());
-#endif
           }
 #endif
           else
