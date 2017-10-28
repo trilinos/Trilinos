@@ -63,7 +63,6 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
-
 namespace Intrepid2 {
 
 namespace Test {
@@ -80,8 +79,7 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-
-template<typename ValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
 int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -120,19 +118,19 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;     
 
-  const ValueType tol = tolerence();
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+  const scalar_type tol = tolerence();
   int errorFlag = 0;
 
-  // for virtual function, value and point types are declared in the class
-  typedef ValueType outputValueType;
-  typedef ValueType pointValueType;
+  typedef Basis_HVOL_HEX_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> HexBasisType;
+  constexpr ordinal_type maxOrder = Parameters::MaxOrder;
 
-  typedef Basis_HVOL_HEX_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> HexBasisType;
-
-  constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
   *outStream
   << "\n"
@@ -149,7 +147,7 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
       HexBasisType hexBasis(order);
 
       // Define array containing array of nodes to evaluate
-      DynRankView ConstructWithLabel(hexNodes, 27, 3);
+      DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 27, 3);
 
       // Generic array for the output values; needs to be properly resized depending on the operator type
       const ordinal_type numFields = hexBasis.getCardinality();
@@ -158,7 +156,7 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
 
       // exception 1 - 2: CURL and DIV is not supported.
       {
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, 3);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, 3);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_CURL) );
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_DIV) );
       }
@@ -176,24 +174,24 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
       // Exceptions 8-18 test exception handling with incorrectly dimensioned input/output arrays
       // exception #8: input points array must be of rank-2
       {
-        DynRankView ConstructWithLabel(vals, numFields, numPoints);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints);
         {
           // exception #8: input points array must be of rank-2
-          DynRankView ConstructWithLabel(badPoints, 4, 5, 3);
+          DynRankViewPointValueType ConstructWithLabelPointView(badPoints, 4, 5, 3);
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
         }
         {
           // exception #9: dimension 1 in the input point array must equal space dimension of the cell
-          DynRankView ConstructWithLabel(badPoints, 4, 4);
+          DynRankViewPointValueType ConstructWithLabelPointView(badPoints, 4, 4);
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
         }
         {
           // exception #10: output values must be of rank-2 for OPERATOR_VALUE
-          DynRankView ConstructWithLabel(badVals, 4, 3, 1);
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, 4, 3, 1);
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE) );
         }
         {
-          DynRankView ConstructWithLabel(badVals, 4, 3);
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, 4, 3);
 
           // exception #11: output values must be of rank-3 for OPERATOR_GRAD
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_GRAD) );
@@ -207,21 +205,21 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
       }
       {
         // exception #14: incorrect 0th dimension of output array (must equal number of basis functions)
-        DynRankView ConstructWithLabel(badVals, hexBasis.getCardinality() + 1, hexNodes.dimension(0));
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality() + 1, hexNodes.dimension(0));
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE) );
       }
       {
         // exception #15: incorrect 1st dimension of output array (must equal number of points)
-        DynRankView ConstructWithLabel(badVals, hexBasis.getCardinality(), hexNodes.dimension(0) + 1);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.dimension(0) + 1);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE) );
       }
       {
         // exception #16: incorrect 2nd dimension of output array (must equal spatial dimension)
-        DynRankView ConstructWithLabel(badVals, hexBasis.getCardinality(), hexNodes.dimension(0), 2);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.dimension(0), 2);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_GRAD) );
       }
       {
-        DynRankView ConstructWithLabel(badVals, hexBasis.getCardinality(), hexNodes.dimension(0), 40);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.dimension(0), 40);
 
         // exception #17: incorrect 2nd dimension of output array (must equal spatial dimension)
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D2) );
@@ -281,6 +279,7 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
             << myTag(3) << "}\n";
       }
     }
+
     // Now do the same but loop over basis functions
     for(ordinal_type bfOrd=0;bfOrd<numFields;++bfOrd) {
       const auto myTag  = hexBasis.getDofTag(bfOrd);
@@ -323,23 +322,25 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
 
         const auto numDofs   = hexBasis.getCardinality();
         const auto numPoints = hexBasis.getCardinality();
-        const auto spaceDim  = hexBasis.getBaseCellTopology().getDimension();
+        const auto dim  = hexBasis.getBaseCellTopology().getDimension();
+        
+        DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numPoints , dim);
+        DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numPoints , dim);
+        hexBasis.getDofCoords(dofCoords_scalar);
+        RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
 
-        DynRankView ConstructWithLabel(dofCoords, numPoints, spaceDim);
-        hexBasis.getDofCoords(dofCoords);
-
-        DynRankView ConstructWithLabel(vals, numDofs, numPoints);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numDofs, numPoints);
         hexBasis.getValues(vals, dofCoords, OPERATOR_VALUE);
 
         // host mirror for comparison
-        auto valsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        auto valsHost = Kokkos::create_mirror_view(vals);
         Kokkos::deep_copy(valsHost, vals);
 
         for (auto i=0;i<numDofs;++i)
           for (int j=0;j<numPoints;++j) {
-            const ValueType exactVal = (i == j);
+            const scalar_type exactVal = (i == j);
             const auto val = valsHost(i,j);
-            if (std::isnan(val) || std::abs(val-exactVal) > tol) {
+            if (std::isnan(extract_scalar_value(val)) || std::abs(val-exactVal) > tol) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
               *outStream << " Basis function at i= " << i << ", j=" << j << ": "

@@ -79,7 +79,7 @@ namespace Intrepid2 {
     }
 
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
     int HVOL_TET_Cn_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -112,20 +112,18 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-//      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+      typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+      typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+      typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
 
-      const ValueType tol = tolerence();
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+      const scalar_type tol = tolerence();
       int errorFlag = 0;
 
-      // for virtual function, value and point types are declared in the class
-      typedef ValueType outputValueType;
-      typedef ValueType pointValueType;
-
-      typedef Basis_HVOL_TET_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> TetBasisType;
-
-      constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
+      typedef Basis_HVOL_TET_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> TetBasisType;
+      constexpr ordinal_type maxOrder = Parameters::MaxOrder;
       const ordinal_type dim = 3;
 
       try {
@@ -140,23 +138,23 @@ namespace Intrepid2 {
         const ordinal_type order = std::min(2,maxOrder);
         TetBasisType tetBasis(order, POINTTYPE_WARPBLEND);
 
-        shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-        const ordinal_type polydim = tetBasis.getCardinality();
-        DynRankView ConstructWithLabel(lattice, polydim , dim);
-        tetBasis.getDofCoords(lattice);
+        const ordinal_type numFields = tetBasis.getCardinality();
+        const ordinal_type numPoints = tetBasis.getCardinality();
+        DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, numPoints, dim);
+        DynRankViewPointValueType ConstructWithLabelPointView(lattice, numPoints , dim);
 
-        DynRankView ConstructWithLabel(basisAtLattice, polydim , polydim);
+        tetBasis.getDofCoords(lattice_scalar);
+        RealSpaceTools<DeviceSpaceType>::clone(lattice, lattice_scalar);        
+
+        DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, numFields , numPoints);
         tetBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
 
         auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
         Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
-
-            // Dimensions for the output arrays:
-        const ordinal_type numFields = tetBasis.getCardinality();
         
             // test for Kronecker property
         for (int i=0;i<numFields;i++) {
-          for (int j=0;j<polydim;j++) {
+          for (int j=0;j<numPoints;j++) {
             if ( i==j && std::abs( h_basisAtLattice(i,j) - 1.0 ) > tol ) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -229,11 +227,15 @@ namespace Intrepid2 {
         shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
         const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
         const ordinal_type polydim = tetBasis.getCardinality();
-        DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-        PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_EQUISPACED);
+        
+        DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice, dim);
+        DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
+        PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
+        RealSpaceTools<DeviceSpaceType>::clone(lattice, lattice_scalar);        
+        
 
         int deriv_order = 2;
-        DynRankView ConstructWithLabel(dbasisAtLattice, polydim , np_lattice , (deriv_order+1)*(deriv_order+2)/2);
+        DynRankViewOutValueType ConstructWithLabelOutView(dbasisAtLattice, polydim , np_lattice , (deriv_order+1)*(deriv_order+2)/2);
         tetBasis.getValues(dbasisAtLattice, lattice, OPERATOR_D2);
 
         auto h_dbasisAtLattice = Kokkos::create_mirror_view(dbasisAtLattice);

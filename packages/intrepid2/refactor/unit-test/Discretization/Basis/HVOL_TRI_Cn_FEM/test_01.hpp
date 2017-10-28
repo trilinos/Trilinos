@@ -79,7 +79,7 @@ namespace Intrepid2 {
     }
 
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
     int HVOL_TRI_Cn_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -112,22 +112,20 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-//      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+      typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+      typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+      typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
 
-      const ValueType tol = tolerence();
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+      const scalar_type tol = tolerence();
       int errorFlag = 0;
 
-      // for virtual function, value and point types are declared in the class
-      typedef ValueType outputValueType;
-      typedef ValueType pointValueType;
-
-      typedef Basis_HVOL_TRI_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> TriBasisType;
-
+      typedef Basis_HVOL_TRI_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> TriBasisType;
       constexpr ordinal_type maxOrder = Parameters::MaxOrder;
 
-      const ordinal_type dim = 2;
+      const ordinal_type spaceDim = 2;
 
       try {
 
@@ -141,23 +139,23 @@ namespace Intrepid2 {
         const ordinal_type order = maxOrder;
         TriBasisType triBasis(order, POINTTYPE_WARPBLEND);
 
-        shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
         const ordinal_type polydim = triBasis.getCardinality();
-        DynRankView ConstructWithLabel(lattice, polydim , dim);
-        triBasis.getDofCoords(lattice);
+        const ordinal_type numPoints = triBasis.getCardinality();
+        DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, numPoints, spaceDim);
+        DynRankViewPointValueType ConstructWithLabelPointView(lattice, numPoints , spaceDim);
 
-        DynRankView ConstructWithLabel(basisAtLattice, polydim , polydim);
+        triBasis.getDofCoords(lattice_scalar);
+        RealSpaceTools<DeviceSpaceType>::clone(lattice, lattice_scalar);        
+
+        DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, polydim , numPoints);
         triBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
 
         auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
         Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
 
-            // Dimensions for the output arrays:
-        const ordinal_type numFields = triBasis.getCardinality();
-        
             // test for Kronecker property
-        for (int i=0;i<numFields;i++) {
-          for (int j=0;j<polydim;j++) {
+        for (int i=0;i<polydim;i++) {
+          for (int j=0;j<numPoints;j++) {
             if ( i==j && std::abs( h_basisAtLattice(i,j) - 1.0 ) > tol ) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";

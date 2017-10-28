@@ -47,6 +47,9 @@
 
 #include "Kokkos_Core.hpp"
 
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__)
+
 #include "test_01.hpp"
 
 int main(int argc, char *argv[]) {
@@ -54,7 +57,7 @@ int main(int argc, char *argv[]) {
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
 
-  const int r_val = Intrepid2::Test::HGRAD_TET_Cn_FEM_Test01<double,Kokkos::OpenMP>(verbose);
+  const int r_val = Intrepid2::Test::HGRAD_TET_Cn_FEM_Test01<double, double, Kokkos::OpenMP>(verbose);
 
   Kokkos::finalize();
   return r_val;

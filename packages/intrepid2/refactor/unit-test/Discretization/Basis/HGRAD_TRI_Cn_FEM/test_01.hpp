@@ -61,7 +61,6 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
-
 namespace Intrepid2 {
 
   namespace Test {
@@ -79,7 +78,7 @@ namespace Intrepid2 {
     }
 
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
     int HGRAD_TRI_Cn_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -112,16 +111,22 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-//      typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+      typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+      typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+      typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+//      typedef Kokkos::DynRankView<PointValueType,HostSpaceType>   DynRankViewHostPointValueType;
 
-      const ValueType tol = tolerence();
+
+
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+      const scalar_type tol = tolerence();
       int errorFlag = 0;
 
       // for virtual function, value and point types are declared in the class
-      typedef ValueType outputValueType;
-      typedef ValueType pointValueType;
+      typedef OutValueType outputValueType;
+      typedef PointValueType pointValueType;
 
       typedef Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> TriBasisType;
 
@@ -144,10 +149,14 @@ namespace Intrepid2 {
         shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
         const ordinal_type np_lattice = PointTools::getLatticeSize(tri_3, order,0);
         const ordinal_type polydim = triBasis.getCardinality();
-        DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-        PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_WARPBLEND);
 
-        DynRankView ConstructWithLabel(basisAtLattice, polydim , np_lattice);
+        //Need to use Scalar type for lattice because PointTools dont's work with FAD types
+        DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+        PointTools::getLattice(lattice_scalar, tri_3, order, 0, POINTTYPE_WARPBLEND);
+        DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
+
+        RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+        DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, polydim , np_lattice);
         triBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
 
         auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
@@ -168,6 +177,7 @@ namespace Intrepid2 {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
               *outStream << " Basis function " << i << " does not vanish at node " << j << "\n";
+              *outStream << " Basis function value is " << h_basisAtLattice(i,j) << "\n";
             }
           }
         }
@@ -229,10 +239,15 @@ namespace Intrepid2 {
         shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
         const ordinal_type np_lattice = PointTools::getLatticeSize(tri_3, order,0);
         const ordinal_type polydim = triBasis.getCardinality();
-        DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-        PointTools::getLattice(lattice, tri_3, order, 0, POINTTYPE_WARPBLEND);
 
-        DynRankView ConstructWithLabel(basisAtLattice, polydim , np_lattice , dim);
+        //Need to use Scalar type for lattice because PointTools dont's work with FAD types
+        DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+        PointTools::getLattice(lattice_scalar, tri_3, order, 0, POINTTYPE_WARPBLEND);
+        DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
+
+        RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+
+        DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, polydim , np_lattice , dim);
         triBasis.getValues(basisAtLattice, lattice, OPERATOR_CURL);
 
         auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);

@@ -80,7 +80,7 @@ namespace Test {
     }
 
 
-template<typename ValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
 int HCURL_TET_In_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -97,8 +97,8 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
-  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  //  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+  //  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
   *outStream
   << "===============================================================================\n"
@@ -114,16 +114,20 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+  typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-  const ValueType tol = tolerence();
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+  const scalar_type tol = tolerence();
   int errorFlag = 0;
 
   // for virtual function, value and point types are declared in the class
-  typedef ValueType outputValueType;
-  typedef ValueType pointValueType;
+  typedef OutValueType outputValueType;
+  typedef PointValueType pointValueType;
 
   typedef Basis_HCURL_TET_In_FEM<DeviceSpaceType,outputValueType,pointValueType> TetBasisType;
 
@@ -143,13 +147,16 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     TetBasisType tetBasis(order, POINTTYPE_WARPBLEND);
 
     const ordinal_type cardinality = tetBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, cardinality , dim);
-    tetBasis.getDofCoords(dofCoords);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality , dim);
+    tetBasis.getDofCoords(dofCoords_scalar);
 
-    DynRankView ConstructWithLabel(dofCoeffs, cardinality , dim);
+    DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
+    RealSpaceTools<DeviceSpaceType>::clone(dofCoords, dofCoords_scalar);
+
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, cardinality , dim);
     tetBasis.getDofCoeffs(dofCoeffs);
 
-    DynRankView ConstructWithLabel(basisAtDofCoords, cardinality , cardinality, dim);
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
     tetBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
@@ -196,13 +203,17 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
 
     const ordinal_type order = std::min(3, maxOrder);
     TetBasisType tetBasis(order, POINTTYPE_WARPBLEND);
-
     shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
-    const ordinal_type polydim = tetBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, polydim , dim);
-    tetBasis.getDofCoords(dofCoords);
+    
 
-    DynRankView ConstructWithLabel(basisAtDofCoords, polydim , polydim, dim);
+    const ordinal_type cardinality = tetBasis.getCardinality();
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality , dim);
+    tetBasis.getDofCoords(dofCoords_scalar);
+
+    DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
+    RealSpaceTools<DeviceSpaceType>::clone(dofCoords, dofCoords_scalar);
+
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
     tetBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
@@ -212,12 +223,10 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     const ordinal_type numFields = tetBasis.getCardinality();
 
     //Normals at each edge
-    DynRankViewHost ConstructWithLabel(tangents, numFields,dim); // normals at each point basis point
-
-
-    DynRankViewHost ConstructWithLabel(edgeTan, dim );
-    DynRankViewHost ConstructWithLabel(faceTan1, dim );
-    DynRankViewHost ConstructWithLabel(faceTan2, dim );
+    DynRankViewHostScalarValueType ConstructWithLabelScalar(tangents, numFields,dim); // normals at each point basis point
+    DynRankViewHostScalarValueType ConstructWithLabelScalar(edgeTan, dim );
+    DynRankViewHostScalarValueType ConstructWithLabelScalar(faceTan1, dim );
+    DynRankViewHostScalarValueType ConstructWithLabelScalar(faceTan2, dim );
 
     const auto allTags = tetBasis.getAllDofTags();
 
@@ -231,19 +240,17 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
               edgeId ,
               tet_4 );
 
-
-
           for (ordinal_type jj=0;jj<dim;jj++)
-                edgeTan(jj) *= 2.0;
+            edgeTan(jj) *= 2.0;
           for (ordinal_type k=0;k<dim; k++)
             dofValue += h_basisAtDofCoords(i,j,k)*edgeTan(k);
         }
         else if(allTags(j,0) == 2) { //face
           auto faceId = allTags(j,1);
           CellTools<Kokkos::HostSpace::execution_space>::getReferenceFaceTangents( faceTan1 ,
-                    faceTan2,
-                    faceId ,
-                    tet_4  );
+              faceTan2,
+              faceId ,
+              tet_4  );
 
           auto faceDofId =  allTags(j,2);
           dofValue = 0;
@@ -294,11 +301,15 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
 
     shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
     const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
-    const ordinal_type polydim = tetBasis.getCardinality();
-    DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-    PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_EQUISPACED);
+    const ordinal_type cardinality = tetBasis.getCardinality();
 
-    DynRankView ConstructWithLabel(basisAtLattice, polydim , np_lattice, dim);
+    //Need to use Scalar type for lattice because PointTools dont's work with FAD types
+    DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+    PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
+    DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
+    RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, cardinality , np_lattice, dim);
     tetBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
 
     auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
@@ -307,31 +318,31 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     // Dimensions for the output arrays:
     const ordinal_type numFields = tetBasis.getCardinality();
 
-    const double fiat_vals[] = {
-1.000000000000001e+00, -2.498001805406602e-16, -1.665334536937735e-16,
-9.999999999999998e-01, 1.000000000000000e+00, 1.000000000000000e+00,
-5.828670879282072e-16, 1.110223024625157e-16, 2.498001805406602e-16,
-7.771561172376096e-16, 8.326672684688674e-17, 1.110223024625157e-16,
-2.081668171172169e-16, -2.914335439641036e-16, 1.280865063236792e-16,
--3.191891195797325e-16, 1.000000000000000e+00, -4.293998586504916e-17,
--9.999999999999994e-01, 2.081668171172169e-16, 2.400576428367544e-16,
-2.220446049250313e-16, -5.551115123125783e-17, 1.084013877651281e-16,
-3.469446951953614e-16, -1.000000000000000e+00, 1.387778780781446e-16,
--1.804112415015879e-16, 1.942890293094024e-16, -1.387778780781446e-16,
--9.999999999999993e-01, -9.999999999999996e-01, -9.999999999999998e-01,
-5.551115123125783e-17, -2.220446049250313e-16, -8.326672684688674e-17,
--2.220446049250313e-16, -5.551115123125783e-17, 9.999999999999999e-01,
-1.665334536937735e-16, 1.110223024625157e-16, -6.383782391594650e-16,
-1.110223024625157e-16, 1.110223024625157e-16, -1.110223024625157e-16,
-9.999999999999990e-01, 9.999999999999994e-01, 9.999999999999996e-01,
-1.387778780781446e-16, -2.496931404305374e-17, -1.665334536937735e-16,
--2.498001805406602e-16, -2.149987498083074e-16, 1.000000000000000e+00,
-8.326672684688674e-17, -3.769887250591415e-17, 8.326672684688674e-17,
--9.999999999999994e-01, 1.556977698723022e-16, 2.220446049250313e-16,
--9.422703950001342e-18, 1.665334536937735e-16, -2.359223927328458e-16,
--9.422703950001268e-18, -8.326672684688674e-17, 1.387778780781446e-17,
--7.525083148581445e-17, 2.775557561562891e-17, 1.000000000000000e+00,
-2.789513560273035e-16, -9.999999999999998e-01, -5.551115123125783e-17
+    const scalar_type fiat_vals[] = {
+        1.000000000000001e+00, -2.498001805406602e-16, -1.665334536937735e-16,
+        9.999999999999998e-01, 1.000000000000000e+00, 1.000000000000000e+00,
+        5.828670879282072e-16, 1.110223024625157e-16, 2.498001805406602e-16,
+        7.771561172376096e-16, 8.326672684688674e-17, 1.110223024625157e-16,
+        2.081668171172169e-16, -2.914335439641036e-16, 1.280865063236792e-16,
+        -3.191891195797325e-16, 1.000000000000000e+00, -4.293998586504916e-17,
+        -9.999999999999994e-01, 2.081668171172169e-16, 2.400576428367544e-16,
+        2.220446049250313e-16, -5.551115123125783e-17, 1.084013877651281e-16,
+        3.469446951953614e-16, -1.000000000000000e+00, 1.387778780781446e-16,
+        -1.804112415015879e-16, 1.942890293094024e-16, -1.387778780781446e-16,
+        -9.999999999999993e-01, -9.999999999999996e-01, -9.999999999999998e-01,
+        5.551115123125783e-17, -2.220446049250313e-16, -8.326672684688674e-17,
+        -2.220446049250313e-16, -5.551115123125783e-17, 9.999999999999999e-01,
+        1.665334536937735e-16, 1.110223024625157e-16, -6.383782391594650e-16,
+        1.110223024625157e-16, 1.110223024625157e-16, -1.110223024625157e-16,
+        9.999999999999990e-01, 9.999999999999994e-01, 9.999999999999996e-01,
+        1.387778780781446e-16, -2.496931404305374e-17, -1.665334536937735e-16,
+        -2.498001805406602e-16, -2.149987498083074e-16, 1.000000000000000e+00,
+        8.326672684688674e-17, -3.769887250591415e-17, 8.326672684688674e-17,
+        -9.999999999999994e-01, 1.556977698723022e-16, 2.220446049250313e-16,
+        -9.422703950001342e-18, 1.665334536937735e-16, -2.359223927328458e-16,
+        -9.422703950001268e-18, -8.326672684688674e-17, 1.387778780781446e-17,
+        -7.525083148581445e-17, 2.775557561562891e-17, 1.000000000000000e+00,
+        2.789513560273035e-16, -9.999999999999998e-01, -5.551115123125783e-17
     };
 
     ordinal_type cur=0;
@@ -346,7 +357,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
             *outStream << " At multi-index { ";
             *outStream << i << " " << j << " " << k;
             *outStream << "}  computed value: " <<  h_basisAtLattice(i,j,k)
-                          << " but correct value: " << fiat_vals[cur] << "\n";
+                              << " but correct value: " << fiat_vals[cur] << "\n";
             *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - fiat_vals[cur] ) << "\n";
           }
           cur++;
@@ -375,11 +386,14 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
 
     shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
     const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
-    const ordinal_type polydim = tetBasis.getCardinality();
-    DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-    PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_EQUISPACED);
+    const ordinal_type cardinality = tetBasis.getCardinality();
+    
+    DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+    PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
+    DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
+    RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
 
-    DynRankView ConstructWithLabel(curlBasisAtLattice, polydim , np_lattice, dim);
+    DynRankViewOutValueType ConstructWithLabelOutView(curlBasisAtLattice, cardinality , np_lattice, dim);
     tetBasis.getValues(curlBasisAtLattice, lattice, OPERATOR_CURL);
 
     auto h_curlBasisAtLattice = Kokkos::create_mirror_view(curlBasisAtLattice);
@@ -388,31 +402,31 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     // Dimensions for the output arrays:
     const ordinal_type numFields = tetBasis.getCardinality();
 
-    const double fiat_curls[] = {
-      -5.551115123125783e-16, -2.000000000000000e+00, 2.000000000000000e+00,
-      -5.551115123125783e-16, -2.000000000000000e+00, 2.000000000000000e+00,
-      -5.551115123125783e-16, -2.000000000000000e+00, 2.000000000000000e+00,
-      -5.551115123125783e-16, -2.000000000000000e+00, 2.000000000000000e+00,
-      -4.440892098500626e-16, -2.775557561562891e-16, 2.000000000000000e+00,
-      -4.440892098500626e-16, -2.775557561562891e-16, 2.000000000000000e+00,
-      -4.440892098500626e-16, -2.775557561562891e-16, 2.000000000000000e+00,
-      -4.440892098500626e-16, -2.775557561562891e-16, 2.000000000000000e+00,
-      -2.000000000000000e+00, 5.551115123125783e-17, 2.000000000000000e+00,
-      -2.000000000000000e+00, 5.551115123125783e-17, 2.000000000000000e+00,
-      -2.000000000000000e+00, 5.551115123125783e-17, 2.000000000000000e+00,
-      -2.000000000000000e+00, 5.551115123125783e-17, 2.000000000000000e+00,
-      -2.000000000000000e+00, 2.000000000000000e+00, 9.861075762086680e-17,
-      -2.000000000000000e+00, 2.000000000000000e+00, 9.861075762086680e-17,
-      -2.000000000000000e+00, 2.000000000000000e+00, 9.861075762086680e-17,
-      -2.000000000000000e+00, 2.000000000000000e+00, 9.861075762086680e-17,
-      -2.775557561562891e-17, -2.000000000000000e+00, 4.287451790760826e-16,
-      -2.775557561562891e-17, -2.000000000000000e+00, 4.287451790760826e-16,
-      -2.775557561562891e-17, -2.000000000000000e+00, 4.287451790760826e-16,
-      -2.775557561562891e-17, -2.000000000000000e+00, 4.287451790760826e-16,
-      2.000000000000000e+00, -2.185751579730777e-16, 1.526556658859590e-16,
-      2.000000000000000e+00, -2.185751579730777e-16, 1.526556658859590e-16,
-      2.000000000000000e+00, -2.185751579730777e-16, 1.526556658859590e-16,
-      2.000000000000000e+00, -2.185751579730777e-16, 1.526556658859590e-16
+    const scalar_type fiat_curls[] = {
+        -5.551115123125783e-16, -2.000000000000000e+00, 2.000000000000000e+00,
+        -5.551115123125783e-16, -2.000000000000000e+00, 2.000000000000000e+00,
+        -5.551115123125783e-16, -2.000000000000000e+00, 2.000000000000000e+00,
+        -5.551115123125783e-16, -2.000000000000000e+00, 2.000000000000000e+00,
+        -4.440892098500626e-16, -2.775557561562891e-16, 2.000000000000000e+00,
+        -4.440892098500626e-16, -2.775557561562891e-16, 2.000000000000000e+00,
+        -4.440892098500626e-16, -2.775557561562891e-16, 2.000000000000000e+00,
+        -4.440892098500626e-16, -2.775557561562891e-16, 2.000000000000000e+00,
+        -2.000000000000000e+00, 5.551115123125783e-17, 2.000000000000000e+00,
+        -2.000000000000000e+00, 5.551115123125783e-17, 2.000000000000000e+00,
+        -2.000000000000000e+00, 5.551115123125783e-17, 2.000000000000000e+00,
+        -2.000000000000000e+00, 5.551115123125783e-17, 2.000000000000000e+00,
+        -2.000000000000000e+00, 2.000000000000000e+00, 9.861075762086680e-17,
+        -2.000000000000000e+00, 2.000000000000000e+00, 9.861075762086680e-17,
+        -2.000000000000000e+00, 2.000000000000000e+00, 9.861075762086680e-17,
+        -2.000000000000000e+00, 2.000000000000000e+00, 9.861075762086680e-17,
+        -2.775557561562891e-17, -2.000000000000000e+00, 4.287451790760826e-16,
+        -2.775557561562891e-17, -2.000000000000000e+00, 4.287451790760826e-16,
+        -2.775557561562891e-17, -2.000000000000000e+00, 4.287451790760826e-16,
+        -2.775557561562891e-17, -2.000000000000000e+00, 4.287451790760826e-16,
+        2.000000000000000e+00, -2.185751579730777e-16, 1.526556658859590e-16,
+        2.000000000000000e+00, -2.185751579730777e-16, 1.526556658859590e-16,
+        2.000000000000000e+00, -2.185751579730777e-16, 1.526556658859590e-16,
+        2.000000000000000e+00, -2.185751579730777e-16, 1.526556658859590e-16
     };
 
 
@@ -420,7 +434,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     for (ordinal_type i=0;i<numFields;i++) {
       for (ordinal_type j=0;j<np_lattice;j++) {
         for (ordinal_type k=0;k<dim; k++) {
-          if (std::fabs( h_curlBasisAtLattice(i,j,k) - fiat_curls[cur] ) > tol ) {
+          if (std::abs( h_curlBasisAtLattice(i,j,k) - fiat_curls[cur] ) > tol ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -428,7 +442,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
             *outStream << " At multi-index { ";
             *outStream << i << " " << j;
             *outStream << "}  computed value: " <<  h_curlBasisAtLattice(i,j,k)
-                            << " but correct value: " << fiat_curls[cur] << "\n";
+                                << " but correct value: " << fiat_curls[cur] << "\n";
             *outStream << "Difference: " << std::fabs(  h_curlBasisAtLattice(i,j,k) - fiat_curls[cur] ) << "\n";
           }
           cur++;

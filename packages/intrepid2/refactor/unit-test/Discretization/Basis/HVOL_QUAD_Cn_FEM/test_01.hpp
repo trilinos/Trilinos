@@ -40,7 +40,7 @@
 // ************************************************************************
 // @HEADER
 
-/** \file test_01.cpp
+/** \file test_01.hpp
     \brief  Unit tests for the Intrepid2::HVOL_QUAD_Cn_FEM class.
     \author Created by P. Bochev, D. Ridzal, K. Peterson, Kyungjoo Kim
 */
@@ -79,7 +79,7 @@ namespace Intrepid2 {
     }
 
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
     int HVOL_QUAD_Cn_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -118,19 +118,20 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+      typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+      typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+      typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
 
-      const ValueType tol = tolerence();
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+      const scalar_type tol = tolerence();
       int errorFlag = 0;
 
-      // for virtual function, value and point types are declared in the class
-      typedef ValueType outputValueType;
-      typedef ValueType pointValueType;
-
-      typedef Basis_HVOL_QUAD_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> QuadBasisType;
-
+      typedef Basis_HVOL_QUAD_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> QuadBasisType;
       constexpr ordinal_type maxOrder = Parameters::MaxOrder;
+
+
       *outStream
         << "\n"
         << "===============================================================================\n"
@@ -145,7 +146,7 @@ namespace Intrepid2 {
           QuadBasisType quadBasis(order);
 
           // Define array containing array of nodes to evaluate
-          DynRankView ConstructWithLabel(quadNodes, 10, 2);
+          DynRankViewPointValueType ConstructWithLabelPointView(quadNodes, 10, 2);
 
           // Generic array for the output values; needs to be properly resized depending on the operator type
           const auto numFields = quadBasis.getCardinality();
@@ -164,24 +165,24 @@ namespace Intrepid2 {
 
           // Exceptions 6-16 test exception handling with incorrectly dimensioned input/output arrays
           {
-            DynRankView ConstructWithLabel(vals, numFields, numPoints);
+            DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints);
             {
               // exception #6: input points array must be of rank-2
-              DynRankView ConstructWithLabel(badPoints, 4, 5, 3);
+              DynRankViewPointValueType ConstructWithLabelPointView(badPoints, 4, 5, 3);
               INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
             }
             {
               // exception #7: dimension 1 in the input point array must equal space dimension of the cell
-              DynRankView ConstructWithLabel(badPoints, 4, 3);
+              DynRankViewPointValueType ConstructWithLabelPointView(badPoints, 4, 3);
               INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
             }
             {
               // exception #8: output values must be of rank-2 for OPERATOR_VALUE
-              DynRankView ConstructWithLabel(badVals, 4, 3, 1);
+              DynRankViewOutValueType ConstructWithLabelOutView(badVals, 4, 3, 1);
               INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
             }
             {
-              DynRankView ConstructWithLabel(badVals, 4, 3);
+              DynRankViewOutValueType ConstructWithLabelOutView(badVals, 4, 3);
 
               // exception #9: output values must be of rank-3 for OPERATOR_GRAD
               INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_GRAD) );
@@ -198,21 +199,21 @@ namespace Intrepid2 {
           }
           {
             // exception #13: incorrect 0th dimension of output array (must equal number of basis functions)
-            DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality() + 1, quadNodes.dimension(0));
+            DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality() + 1, quadNodes.dimension(0));
             INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
           }
           {
             // exception #14: incorrect 1st dimension of output array (must equal number of points)
-            DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0) + 1);
+            DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.dimension(0) + 1);
             INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
           }
           {
             // exception #15: incorrect 2nd dimension of output array (must equal spatial dimension)
-            DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 3);
+            DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 3);
             INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_GRAD) );
           }
           {
-            DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 40);
+            DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), 40);
 
             // exception #16: incorrect 2nd dimension of output array (must equal spatial dimension)
             INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_D2) );
@@ -316,20 +317,23 @@ namespace Intrepid2 {
             const auto numPoints = quadBasis.getCardinality();
             const auto spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
-            DynRankView ConstructWithLabel(dofCoords, numPoints, spaceDim);
-            quadBasis.getDofCoords(dofCoords);
+            DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numPoints, spaceDim);
+            DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numDofs , spaceDim);
 
-            DynRankView ConstructWithLabel(vals, numDofs, numPoints);
+            quadBasis.getDofCoords(dofCoords_scalar);
+            RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+
+            DynRankViewOutValueType ConstructWithLabelOutView(vals, numDofs, numPoints);
             quadBasis.getValues(vals, dofCoords, OPERATOR_VALUE);
 
             // host mirror for comparison
-            auto valsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+            auto valsHost = Kokkos::create_mirror_view(vals);
             Kokkos::deep_copy(valsHost, vals);
 
             for (auto i=0;i<numDofs;++i)
               for (int j=0;j<numPoints;++j) {
-                const ValueType exactVal = (i == j);
-                const auto val = valsHost(i,j);
+                const scalar_type exactVal = (i == j);
+                const auto val = extract_scalar_value(valsHost(i,j));
                 if (std::isnan(val) || std::abs(val-exactVal) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";

@@ -62,7 +62,6 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
-
 namespace Intrepid2 {
 
 namespace Test {
@@ -79,10 +78,8 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-
-template<typename ValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
 int HDIV_HEX_In_FEM_Test01(const bool verbose) {
-
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
@@ -101,33 +98,32 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
   *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
   *outStream << "\n"
-  << "===============================================================================\n"
-  << "|                                                                             |\n"
-  << "|                      Unit Test HDIV_HEX_In_FEM                              |\n"
-  << "|                                                                             |\n"
-  << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
-  << "|                      Robert Kirby  (robert.c.kirby@ttu.edu),                |\n"
-  << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
-  << "|                      Kara Peterson (kjpeter@sandia.gov),                    |\n"
-  << "|                      Kyungjoo Kim  (kyukim@sandia.gov),                     |\n"
-  << "|                      Mauro Perego  (mperego@sandia.gov).                    |\n"
-  << "|                                                                             |\n"
-  << "===============================================================================\n";
+      << "===============================================================================\n"
+      << "|                                                                             |\n"
+      << "|                      Unit Test HDIV_HEX_In_FEM                              |\n"
+      << "|                                                                             |\n"
+      << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
+      << "|                      Robert Kirby  (robert.c.kirby@ttu.edu),                |\n"
+      << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
+      << "|                      Kara Peterson (kjpeter@sandia.gov),                    |\n"
+      << "|                      Kyungjoo Kim  (kyukim@sandia.gov),                     |\n"
+      << "|                      Mauro Perego  (mperego@sandia.gov).                    |\n"
+      << "|                                                                             |\n"
+      << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+  typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-  const ValueType tol = tolerence();
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+  const scalar_type tol = tolerence();
   int errorFlag = 0;
 
-  // for virtual function, value and point types are declared in the class
-  typedef ValueType outputValueType;
-  typedef ValueType pointValueType;
-
-  typedef Basis_HDIV_HEX_In_FEM<DeviceSpaceType,outputValueType,pointValueType> HexBasisType;
-
-  constexpr ordinal_type maxOrder = Parameters::MaxOrder;
+  typedef Basis_HDIV_HEX_In_FEM<DeviceSpaceType,OutValueType,PointValueType> HexBasisType;
+  constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
   constexpr ordinal_type dim = 3;
 
   *outStream
@@ -140,115 +136,118 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
 
 #ifdef HAVE_INTREPID2_DEBUG
 
-     ordinal_type nthrow = 0, ncatch = 0;
+    ordinal_type nthrow = 0, ncatch = 0;
 
-     const ordinal_type order = 1;
-     HexBasisType hexBasis(order);
+    const ordinal_type order = 1;
+    HexBasisType hexBasis(order);
 
-     // Array of reference hex nodes - used for evaluation of basis
-     DynRankViewHost ConstructWithLabel(hexNodesHost, 8, 3);
-    
-     hexNodesHost(0,0) = -1.0; hexNodesHost(0,1) = -1.0; hexNodesHost(0,2) = -1.0;
-     hexNodesHost(1,0) =  1.0; hexNodesHost(1,1) = -1.0; hexNodesHost(1,2) = -1.0;
-     hexNodesHost(2,0) = -1.0; hexNodesHost(2,1) =  1.0; hexNodesHost(2,2) = -1.0;
-     hexNodesHost(3,0) =  1.0; hexNodesHost(3,1) =  1.0; hexNodesHost(3,2) = -1.0;
-     hexNodesHost(4,0) = -1.0; hexNodesHost(4,1) = -1.0; hexNodesHost(4,2) =  1.0;
-     hexNodesHost(5,0) =  1.0; hexNodesHost(5,1) = -1.0; hexNodesHost(5,2) =  1.0;
-     hexNodesHost(6,0) = -1.0; hexNodesHost(6,1) =  1.0; hexNodesHost(6,2) =  1.0;
-     hexNodesHost(7,0) =  1.0; hexNodesHost(7,1) =  1.0; hexNodesHost(7,2) =  1.0;
- 
-     auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
-     Kokkos::deep_copy(hexNodes, hexNodesHost);
- 
+    // Array of reference hex nodes - used for evaluation of basis
+    DynRankViewHostScalarValueType ConstructWithLabelScalar(hexNodesHost, 8, 3);
+
+    hexNodesHost(0,0) = -1.0; hexNodesHost(0,1) = -1.0; hexNodesHost(0,2) = -1.0;
+    hexNodesHost(1,0) =  1.0; hexNodesHost(1,1) = -1.0; hexNodesHost(1,2) = -1.0;
+    hexNodesHost(2,0) = -1.0; hexNodesHost(2,1) =  1.0; hexNodesHost(2,2) = -1.0;
+    hexNodesHost(3,0) =  1.0; hexNodesHost(3,1) =  1.0; hexNodesHost(3,2) = -1.0;
+    hexNodesHost(4,0) = -1.0; hexNodesHost(4,1) = -1.0; hexNodesHost(4,2) =  1.0;
+    hexNodesHost(5,0) =  1.0; hexNodesHost(5,1) = -1.0; hexNodesHost(5,2) =  1.0;
+    hexNodesHost(6,0) = -1.0; hexNodesHost(6,1) =  1.0; hexNodesHost(6,2) =  1.0;
+    hexNodesHost(7,0) =  1.0; hexNodesHost(7,1) =  1.0; hexNodesHost(7,2) =  1.0;
+
+    auto hexNodes_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
+    Kokkos::deep_copy(hexNodes_scalar, hexNodesHost);
+
+    DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 8, 3);
+    RealSpaceTools<DeviceSpaceType>::clone(hexNodes, hexNodes_scalar);
+
     // Array dimensions
-     const ordinal_type numFields = hexBasis.getCardinality();
-     const ordinal_type numPoints = hexNodes.dimension(0);
-     const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
+    const ordinal_type numFields = hexBasis.getCardinality();
+    const ordinal_type numPoints = hexNodes.dimension(0);
+    const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
 
-       {
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+    {
+      DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, spaceDim);
 
-        // exception #1: GRAD cannot be applied to HDIV functions
-        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_GRAD) );
+      // exception #1: GRAD cannot be applied to HDIV functions
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_GRAD) );
 
-        // exception #2: CURL cannot be applied to HDIV functions
-        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_CURL) );
-       }
+      // exception #2: CURL cannot be applied to HDIV functions
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_CURL) );
+    }
 
-       {
-        // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
-        // getDofTag() to access invalid array elements thereby causing bounds check exception
-        //
-         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(3,0,0) );
-         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(1,1,1) );
-         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(0,4,1) );
-         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(12) );
-         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(-1) );
-       }
+    {
+      // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
+      // getDofTag() to access invalid array elements thereby causing bounds check exception
+      //
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(3,0,0) );
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(1,1,1) );
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofOrdinal(0,4,1) );
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(12) );
+      INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getDofTag(-1) );
+    }
 
-       {
-        // Exceptions 8-15 test exception handling with incorrectly dimensioned input/output arrays
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
-        
-         {
-          // Exception #8: input points array must be of rank-2
-          DynRankView ConstructWithLabel(badPoints,4,5,3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE));
-         } 
+    {
+      // Exceptions 8-15 test exception handling with incorrectly dimensioned input/output arrays
+      DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, spaceDim);
 
-         {
-          // Exception #9: dimension 1 in the input point array must equal space dimension of the cell
-          DynRankView ConstructWithLabel(badPoints,4,2);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE));
-         } 
-
-         {
-          // Exception #10: output values must be of rank-3 for OPERATOR_VALUE
-          DynRankView ConstructWithLabel(badVals,4,3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
-         } 
-
-         {
-          // Exception #11: output values must be of rank-2 for OPERATOR_DIV
-          DynRankView ConstructWithLabel(badVals,4,3,3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_DIV));
-         } 
-
-         {
-          // Exception #12: incorrect 0th dimension of output array (must equal number of basis functions)
-          DynRankView ConstructWithLabel(badVals,numFields+1,numPoints,3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
-         } 
-
-         {
-          // Exception #13: incorrect 0th dimension of output array (must equal number of basis functions)
-          DynRankView ConstructWithLabel(badVals,numFields+1,numPoints);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_DIV));
-         } 
-
-         {
-          // Exception #14: incorrect 1st dimension of output array (must equal number of points)
-          DynRankView ConstructWithLabel(badVals,numFields,numPoints+1,3);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
-         } 
-
-         {
-          // Exception #15: incorrect 1st dimension of output array (must equal number of points)
-          DynRankView ConstructWithLabel(badVals,numFields,numPoints + 1);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_DIV));
-         } 
-         {
-          // Exception #16: incorrect 2nd dimension of output array (must equal the space dimension)
-          DynRankView ConstructWithLabel(badVals,numFields,numPoints,4);
-          INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
-         } 
-       }
-
-      if (nthrow != ncatch) {
-        errorFlag++;
-        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-        *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
+      {
+        // Exception #8: input points array must be of rank-2
+        DynRankViewPointValueType ConstructWithLabelPointView(badPoints,4,5,3);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE));
       }
+
+      {
+        // Exception #9: dimension 1 in the input point array must equal space dimension of the cell
+        DynRankViewPointValueType ConstructWithLabelPointView(badPoints,4,2);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE));
+      }
+
+      {
+        // Exception #10: output values must be of rank-3 for OPERATOR_VALUE
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,4,3);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
+      }
+
+      {
+        // Exception #11: output values must be of rank-2 for OPERATOR_DIV
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,4,3,3);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_DIV));
+      }
+
+      {
+        // Exception #12: incorrect 0th dimension of output array (must equal number of basis functions)
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,numFields+1,numPoints,3);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
+      }
+
+      {
+        // Exception #13: incorrect 0th dimension of output array (must equal number of basis functions)
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,numFields+1,numPoints);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_DIV));
+      }
+
+      {
+        // Exception #14: incorrect 1st dimension of output array (must equal number of points)
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,numFields,numPoints+1,3);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
+      }
+
+      {
+        // Exception #15: incorrect 1st dimension of output array (must equal number of points)
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,numFields,numPoints + 1);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_DIV));
+      }
+      {
+        // Exception #16: incorrect 2nd dimension of output array (must equal the space dimension)
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,numFields,numPoints,4);
+        INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
+      }
+    }
+
+    if (nthrow != ncatch) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+      *outStream << "# of catch ("<< ncatch << ") is different from # of throw (" << nthrow << ")\n";
+    }
 #endif
   } catch (std::exception err) {
     *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
@@ -269,14 +268,16 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
     HexBasisType hexBasis(order);
 
     const ordinal_type numFields = hexBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, numFields, dim);
-    hexBasis.getDofCoords(dofCoords);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numFields, dim);
+    hexBasis.getDofCoords(dofCoords_scalar);
 
-    DynRankView ConstructWithLabel(dofCoeffs, numFields, dim);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, numFields, dim);
     hexBasis.getDofCoeffs(dofCoeffs);
 
-    // test for Kronecker property
-    DynRankView ConstructWithLabel(basisAtDofCoords, numFields, numFields, dim);
+    DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , dim);
+    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, numFields, numFields, dim);
     hexBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_dofCoords = Kokkos::create_mirror_view(dofCoords);
@@ -291,12 +292,12 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
     for (int i=0;i<numFields;i++) {
       for (int j=0;j<numFields;j++) {
 
-        outputValueType dofValue = 0.0;
+        OutValueType dofValue = 0.0;
         for(ordinal_type d=0;d<dim;++d)
           dofValue += h_basisAtDofCoords(i,j,d)*h_dofCoeffs(j,d);
 
         // check values
-        const outputValueType expected_dofValue = (i == j);
+        const scalar_type expected_dofValue = (i == j);
         if (std::abs(dofValue - expected_dofValue) > tol) {
           errorFlag++;
           std::stringstream ss;
@@ -325,11 +326,13 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
 
     shards::CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >());
     const ordinal_type numFields = hexBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, numFields, dim);
-    hexBasis.getDofCoords(dofCoords);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numFields, dim);
+    hexBasis.getDofCoords(dofCoords_scalar);
 
-    // test for Kronecker property
-    DynRankView ConstructWithLabel(basisAtDofCoords, numFields, numFields, dim);
+    DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , dim);
+    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, numFields, numFields, dim);
     hexBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
@@ -338,7 +341,7 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
     // Face normals
     //   Note normals are indexed by face following Shards numbering, but
     //   directions are consistent with basis defintion and not Shards orientation
-    DynRankViewHost ConstructWithLabel(normals, numFields,dim); // normals at each point basis point
+    DynRankViewHostScalarValueType ConstructWithLabelScalar(normals, numFields,dim); // normals at each point basis point
     normals(0,0)  =  0.0; normals(0,1)  =  1.0; normals(0,2)  =  0.0;
     normals(1,0)  =  1.0; normals(1,1)  =  0.0; normals(1,2)  =  0.0;
     normals(2,0)  =  0.0; normals(2,1)  =  1.0; normals(2,2)  =  0.0;
@@ -353,7 +356,7 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
       for (int j=0;j<numFields;j++) {
 
         // initialize
-        outputValueType dofValue = 0;
+        OutValueType dofValue = 0;
 
         if(allTags(j,0) == dim-1) { //face
           auto faceId = allTags(j,1);
@@ -361,9 +364,9 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
             dofValue += h_basisAtDofCoords(i,j,k)*normals(faceId,k);
         }
         else { //elem
-           auto dofsPerDim = numFields/dim;
-           auto k_ind = j/dofsPerDim;
-           dofValue = h_basisAtDofCoords(i,j,k_ind);
+          auto dofsPerDim = numFields/dim;
+          auto k_ind = j/dofsPerDim;
+          dofValue = h_basisAtDofCoords(i,j,k_ind);
         }
 
         // check values
@@ -394,39 +397,39 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
   << "| TEST 4: Test correctness of basis function values and divs                  |\n"
   << "===============================================================================\n";
 
-     outStream -> precision(20);
+  outStream -> precision(20);
 
 
   // VALUE: Each row pair gives the 12x3 correct basis set values at an evaluation point: (P,F,D) layout
-  const ValueType basisValues[] = {
-    // basis function 0 (in from x==-1 plane, y and z are constant functions)
-    1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
-    1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
-    // basis function 1 (out from x==1 plane, y and z are constant functions
-    0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0,
-    0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0,
-    // basis function 2 (in from y==-1 plane, x and z are constant functions
-    0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-    0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-    // basis function 3 (out from y == 1 plane, x and z are constant function
-    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0,
-    // basis function 4 (in from z == -1 plane, x and y are constant function
-    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    // basis function 4 (out from z == 1 plane, x and y are constant function
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1
+  const scalar_type basisValues[] = {
+      // basis function 0 (in from x==-1 plane, y and z are constant functions)
+      1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+      1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+      // basis function 1 (out from x==1 plane, y and z are constant functions
+      0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0,
+      0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0,
+      // basis function 2 (in from y==-1 plane, x and z are constant functions
+      0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+      0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+      // basis function 3 (out from y == 1 plane, x and z are constant function
+      0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0,
+      0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0,
+      // basis function 4 (in from z == -1 plane, x and y are constant function
+      0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      // basis function 4 (out from z == 1 plane, x and y are constant function
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1
   };
 
   // DIV: each row gives the 6 correct values of the divergence of the 6 basis functions: (P,F) layout
-  const ValueType basisDivs[] = {   
-   -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
-    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
-    -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
-    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
-    -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
-    0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+  const scalar_type basisDivs[] = {   
+      -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+      -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
+      -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
+      0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
   };
 
 
@@ -435,9 +438,10 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
     const ordinal_type order = 1;
     HexBasisType hexBasis(order);
 
-   // Array of reference hex nodes - used for evaluation of basis
-    DynRankViewHost ConstructWithLabel(hexNodesHost, 8, 3);
-    
+    // Array of reference hex nodes - used for evaluation of basis
+    DynRankViewHostScalarValueType ConstructWithLabelScalar(hexNodesHost, 8, 3);
+    DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 8, 3);
+
     hexNodesHost(0,0) = -1.0; hexNodesHost(0,1) = -1.0; hexNodesHost(0,2) = -1.0;
     hexNodesHost(1,0) =  1.0; hexNodesHost(1,1) = -1.0; hexNodesHost(1,2) = -1.0;
     hexNodesHost(2,0) = -1.0; hexNodesHost(2,1) =  1.0; hexNodesHost(2,2) = -1.0;
@@ -447,63 +451,64 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
     hexNodesHost(6,0) = -1.0; hexNodesHost(6,1) =  1.0; hexNodesHost(6,2) =  1.0;
     hexNodesHost(7,0) =  1.0; hexNodesHost(7,1) =  1.0; hexNodesHost(7,2) =  1.0;
 
-    auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
-    Kokkos::deep_copy(hexNodes, hexNodesHost);
+    auto hexNodes_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
+    Kokkos::deep_copy(hexNodes_scalar, hexNodesHost);
+    RealSpaceTools<DeviceSpaceType>::clone(hexNodes, hexNodes_scalar);
 
-   // Array dimensions
+    // Array dimensions
     const ordinal_type numFields = hexBasis.getCardinality();
     const ordinal_type numPoints = hexNodes.dimension(0);
     const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
 
     *outStream << " -- Testing OPERATOR_VALUE \n";
     {
-     // Check VALUE of basis functions
-      DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+      // Check VALUE of basis functions
+      DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, spaceDim);
       hexBasis.getValues(vals, hexNodes, OPERATOR_VALUE);
-      auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+      auto vals_host = Kokkos::create_mirror_view(vals);
       Kokkos::deep_copy(vals_host, vals);
 
       for (ordinal_type i = 0; i < numFields; i++) {
         for (ordinal_type j = 0; j < numPoints; j++) {
-           for (ordinal_type k = 0; k < spaceDim; k++) {
- 
-              // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-              const ordinal_type l = k + i * spaceDim * numPoints + j * spaceDim;
-              if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
-                 errorFlag++;
-                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          for (ordinal_type k = 0; k < spaceDim; k++) {
 
-                 // Output the multi-index of the value where the error is:
-                 *outStream << " At multi-index { ";
-                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                 *outStream << "}  computed value: " << vals(i,j,k)
-                            << " but reference value: " << basisValues[l] << "\n";
-              }
-           }
-         }
+            // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
+            const ordinal_type l = k + i * spaceDim * numPoints + j * spaceDim;
+            if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
+              errorFlag++;
+              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+
+              // Output the multi-index of the value where the error is:
+              *outStream << " At multi-index { ";
+              *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+              *outStream << "}  computed value: " << vals(i,j,k)
+                                << " but reference value: " << basisValues[l] << "\n";
+            }
+          }
+        }
       }
     }
     *outStream << " -- Testing OPERATOR_DIV \n";
     {
-     // Check DIV of basis function:
-     DynRankView ConstructWithLabel(divs, numFields, numPoints);
-     hexBasis.getValues(divs, hexNodes, OPERATOR_DIV);
-     auto divs_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), divs);
-     Kokkos::deep_copy(divs_host, divs);
+      // Check DIV of basis function:
+      DynRankViewOutValueType ConstructWithLabelOutView(divs, numFields, numPoints);
+      hexBasis.getValues(divs, hexNodes, OPERATOR_DIV);
+      auto divs_host = Kokkos::create_mirror_view(divs);
+      Kokkos::deep_copy(divs_host, divs);
 
-     for (ordinal_type i = 0; i < numFields; ++i) {
+      for (ordinal_type i = 0; i < numFields; ++i) {
         for (ordinal_type j = 0; j < numPoints; ++j) {
-             const ordinal_type l =  i * numPoints + j;
-              if (std::abs(divs(i,j) - basisDivs[l]) > tol) {
-                 errorFlag++;
-                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          const ordinal_type l =  i * numPoints + j;
+          if (std::abs(divs_host(i,j) - basisDivs[l]) > tol) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
-                 // Output the multi-index of the div where the error is:
-                 *outStream << " At multi-index { ";
-                 *outStream << i << " ";*outStream << j << " ";
-                 *outStream << "}  computed div component: " << divs(i,j)
-                            << " but reference div component: " << basisDivs[l] << "\n";
-              }
+            // Output the multi-index of the div where the error is:
+            *outStream << " At multi-index { ";
+            *outStream << i << " ";*outStream << j << " ";
+            *outStream << "}  computed div component: " << divs(i,j)
+                                << " but reference div component: " << basisDivs[l] << "\n";
+          }
         }
       }
     }
@@ -521,8 +526,7 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
 
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-
   return errorFlag;
-  }
- }
+}
+}
 }

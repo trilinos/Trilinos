@@ -78,7 +78,7 @@ namespace Test {
     }
 
 
-template<typename ValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
 int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -116,18 +116,18 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+  typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-  const ValueType tol = tolerence();
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+  const scalar_type tol = tolerence();
   int errorFlag = 0;
 
-  // for virtual function, value and point types are declared in the class
-  typedef ValueType outputValueType;
-  typedef ValueType pointValueType;
-
-  typedef Basis_HCURL_QUAD_In_FEM<DeviceSpaceType,outputValueType,pointValueType> QuadBasisType;
+  typedef Basis_HCURL_QUAD_In_FEM<DeviceSpaceType,OutValueType,PointValueType> QuadBasisType;
   constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
   *outStream
@@ -140,12 +140,12 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
 
 #ifdef HAVE_INTREPID2_DEBUG
     ordinal_type nthrow = 0, ncatch = 0;
-    if(5 <= maxOrder) {
-      const ordinal_type order = 5;
+    constexpr  ordinal_type order = 5;
+    if(order <= maxOrder) {
       QuadBasisType quadBasis(order);
 
       // Define array containing array of nodes to evaluate
-      DynRankView ConstructWithLabel(quadNodes, 9, 2);
+      DynRankViewPointValueType ConstructWithLabelPointView(quadNodes, 9, 2);
 
       // Generic array for the output values; needs to be properly resized depending on the operator type
       const ordinal_type numFields = quadBasis.getCardinality();
@@ -153,7 +153,7 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
       const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
       {
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, spaceDim);
 
         // exception #1: GRAD cannot be applied to HCURL functions
         INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, quadNodes, OPERATOR_GRAD) );
@@ -174,40 +174,40 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
 
       // Exceptions 8-15 test exception handling with incorrectly dimensioned input/output arrays
       {
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, spaceDim);
         {
           // exception #8: input points array must be of rank-2
-          DynRankView ConstructWithLabel(badPoints, 4, 5, 3);
+          DynRankViewPointValueType ConstructWithLabelPointView(badPoints, 4, 5, 3);
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
         }
         {
           // exception #9 dimension 1 in the input point array must equal space dimension of the cell
-          DynRankView ConstructWithLabel(badPoints, 4, 3);
+          DynRankViewPointValueType ConstructWithLabelPointView(badPoints, 4, 3);
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
         }
         {
           // exception #10 output values must be of rank-3 for OPERATOR_VALUE in 2D
-          DynRankView ConstructWithLabel(badVals, 4, 3);
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, 4, 3);
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) );
         }
         {
           // exception #11 output values must be of rank-2 for OPERATOR_CURL
-          DynRankView ConstructWithLabel(badVals, 4, 3, 2);
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, 4, 3, 2);
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_CURL) );
         }
         {
           // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
-          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality() + 1, quadNodes.dimension(0), quadBasis.getBaseCellTopology().getDimension());
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality() + 1, quadNodes.dimension(0), quadBasis.getBaseCellTopology().getDimension());
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) ) ;
         }
         {
           // exception #13 incorrect 1st  dimension of output array (must equal number of points)
-          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0) + 1, quadBasis.getBaseCellTopology().getDimension() );
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.dimension(0) + 1, quadBasis.getBaseCellTopology().getDimension() );
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) ) ;
         }
         {
           // exception #14: incorrect 2nd dimension of output array for VALUE (must equal the space dimension)
-          DynRankView ConstructWithLabel(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), quadBasis.getBaseCellTopology().getDimension() - 1);
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, quadBasis.getCardinality(), quadNodes.dimension(0), quadBasis.getBaseCellTopology().getDimension() - 1);
           INTREPID2_TEST_ERROR_EXPECTED( quadBasis.getValues(badVals, quadNodes, OPERATOR_VALUE) ) ;
         }
       }
@@ -237,15 +237,17 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
     QuadBasisType quadBasis(order);
     const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
-    shards::CellTopology quad_4(shards::getCellTopologyData<shards::Quadrilateral<4> >());
     const ordinal_type numFields = quadBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, numFields, spaceDim);
-    quadBasis.getDofCoords(dofCoords);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numFields, spaceDim);
+    quadBasis.getDofCoords(dofCoords_scalar);
 
-    DynRankView ConstructWithLabel(dofCoeffs, numFields, spaceDim);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, numFields, spaceDim);
     quadBasis.getDofCoeffs(dofCoeffs);
 
-    DynRankView ConstructWithLabel(basisAtDofCoords, numFields, numFields, spaceDim);
+    DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , spaceDim);
+    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, numFields, numFields, spaceDim);
     quadBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_dofCoords = Kokkos::create_mirror_view(dofCoords);
@@ -261,16 +263,16 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
     for (int i=0;i<numFields;i++) {
       for (int j=0;j<numFields;j++) {
 
-        outputValueType dofValue = 0.0;
+        OutValueType dofValue = 0.0;
         for(ordinal_type d=0;d<spaceDim;++d)
           dofValue += h_basisAtDofCoords(i,j,d)*h_dofCoeffs(j,d);
 
         // check values
-        const outputValueType expected_dofValue = (i == j);
-        if (std::abs(dofValue - expected_dofValue) > tol) {
+        const scalar_type expected_dofValue = (i == j);
+        if (std::abs(extract_scalar_value(dofValue) - expected_dofValue) > tol) {
           errorFlag++;
           std::stringstream ss;
-          ss << "\nValue of basis function " << i << " at (" << h_dofCoords(i,0) << ", " << h_dofCoords(i,1) << ") is " << dofValue << " but should be " << expected_dofValue << "\n";
+          ss << "\nValue of basis function " << i << " at (" << h_dofCoords(j,0) << ", " << h_dofCoords(j,1) << ") is " << dofValue << " but should be " << expected_dofValue << "\n";
           *outStream << ss.str();
         }
 
@@ -296,13 +298,18 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
     QuadBasisType quadBasis(order);
     const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
 
-    shards::CellTopology quad_4(shards::getCellTopologyData<shards::Quadrilateral<4> >());
     const ordinal_type numFields = quadBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, numFields, spaceDim);
-    quadBasis.getDofCoords(dofCoords);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numFields, spaceDim);
+    quadBasis.getDofCoords(dofCoords_scalar);
 
-    DynRankView ConstructWithLabel(basisAtDofCoords, numFields, numFields, spaceDim);
+    DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , spaceDim);
+    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, numFields, numFields, spaceDim);
     quadBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
+    
+    DynRankViewOutValueType ConstructWithLabelOutView(basisCurlAtDofCoords, numFields, numFields);
+    quadBasis.getValues(basisCurlAtDofCoords, dofCoords, OPERATOR_CURL);
 
     auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
     Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
@@ -317,7 +324,7 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
       for (int j=0;j<numFields;j++) {
 
         // initialize
-        outputValueType dofValue = 0;
+        OutValueType dofValue = 0;
 
         // get index given that dofs are arranged by dimension, all x dofs, all y dofs
         auto dofsPerDim = numFields/spaceDim;
@@ -325,12 +332,12 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
         dofValue = h_basisAtDofCoords(i,j,k_ind);
 
         // check values
-        if ( i==j && std::abs( dofValue - 1.0 ) > tol ) {
+        if ( i==j && std::abs( extract_scalar_value(dofValue) - 1.0 ) > tol ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << " Basis function " << i << " does not have unit value at its node (" << dofValue <<")\n";
         }
-        if ( i!=j && std::abs( dofValue ) > tol ) {
+        if ( i!=j && std::abs( extract_scalar_value(dofValue) ) > tol ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << " Basis function " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";
@@ -418,15 +425,15 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
   outStream->precision(20);
 
   // VALUE: Each row pair gives the 4x2 correct basis set values at an evaluation point: (P,F,D) layout
-  const ValueType basisValues[] = {
-      1,0,1,0,1,0, /**/ 0.5,0,0.5,0,0.5,0, /**/ 0,0,0,0,0,0,
-      0,0,0,0,0,0, /**/ 0.5,0,0.5,0,0.5,0, /**/ 1,0,1,0,1,0,
-      0,1,0,0.5,0,0, /**/ 0,1,0,0.5,0,0, /**/   0,1,0,0.5,0,0,
-      0,0,0,0.5,0,1, /**/ 0,0,0,0.5,0,1, /**/   0,0,0,0.5,0,1,
+  const scalar_type basisValues[] = {
+      1,0,1,0,1,0,     0.5,0,0.5,0,0.5,0,   0,0,0,0,0,0,
+      0,0,0,0,0,0,     0.5,0,0.5,0,0.5,0,   1,0,1,0,1,0,
+      0,1,0,0.5,0,0,   0,1,0,0.5,0,0,       0,1,0,0.5,0,0,
+      0,0,0,0.5,0,1,   0,0,0,0.5,0,1,      0,0,0,0.5,0,1,
   };
 
   // CURL: correct values in (F,P) format
-  const ValueType basisCurls[] = {
+  const scalar_type basisCurls[] = {
       0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
       -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
       -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
@@ -438,8 +445,9 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
     QuadBasisType quadBasis(order);
 
     // Define array containing array of nodes to evaluate
-    DynRankViewHost ConstructWithLabel(quadNodesHost, 9, 2);
-
+    DynRankViewHostScalarValueType ConstructWithLabelScalar(quadNodesHost, 9, 2);
+    DynRankViewPointValueType ConstructWithLabelPointView(quadNodes, 9, 2);
+    
     quadNodesHost(0,0) = -1.0;  quadNodesHost(0,1) = -1.0;
     quadNodesHost(1,0) =  0.0;  quadNodesHost(1,1) = -1.0;
     quadNodesHost(2,0) =  1.0;  quadNodesHost(2,1) = -1.0;
@@ -450,9 +458,10 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
     quadNodesHost(7,0) =  0.0;  quadNodesHost(7,1) =  1.0;
     quadNodesHost(8,0) =  1.0;  quadNodesHost(8,1) =  1.0;
 
-    auto quadNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), quadNodesHost);
-    Kokkos::deep_copy(quadNodes, quadNodesHost);
-
+    auto quadNodes_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), quadNodesHost);
+    Kokkos::deep_copy(quadNodes_scalar, quadNodesHost);
+    RealSpaceTools<DeviceSpaceType>::clone(quadNodes, quadNodes_scalar);
+    
     // Generic array for the output values; needs to be properly resized depending on the operator type
     const ordinal_type numFields = quadBasis.getCardinality();
     const ordinal_type numPoints = quadNodes.dimension(0);
@@ -461,9 +470,9 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
     *outStream << " -- Testing OPERATOR_VALUE \n";
     {
       // Check VALUE of basis functions: resize vals to rank-3 container:
-      DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+      DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, spaceDim);
       quadBasis.getValues(vals, quadNodes, OPERATOR_VALUE);
-      auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+      auto vals_host = Kokkos::create_mirror_view(vals);
       Kokkos::deep_copy(vals_host, vals);
 
 
@@ -472,7 +481,7 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
           for (ordinal_type k = 0; k < spaceDim; ++k) {
 
             // compute offset for (P,F,D) data layout: indices are P->j, F->i, D->k
-            const ordinal_type l = k + i * spaceDim * numPoints + j * spaceDim;
+            const ordinal_type l = i * spaceDim * numPoints + j * spaceDim + k;
             if (std::abs(vals_host(i,j,k) - basisValues[l]) > tol) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -490,12 +499,16 @@ int HCURL_QUAD_In_FEM_Test01(const bool verbose) {
     *outStream << " -- Testing OPERATOR_CURL \n";
     {
       // Check CURL of basis function: resize vals to rank-2 container
-      DynRankView ConstructWithLabel(vals, numFields, numPoints);
+      DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints);
       quadBasis.getValues(vals, quadNodes, OPERATOR_CURL);
+      
+      auto vals_host = Kokkos::create_mirror_view(vals);
+      Kokkos::deep_copy(vals_host, vals);
+      
       for (ordinal_type i = 0; i < numFields; ++i) {
         for (ordinal_type j = 0; j < numPoints; ++j) {
           const ordinal_type l =  j + i * numPoints;
-          if (std::abs(vals(i,j) - basisCurls[l]) > tol) {
+          if (std::abs(vals_host(i,j) - basisCurls[l]) > tol) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 

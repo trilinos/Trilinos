@@ -132,7 +132,7 @@ int DeRHAM_TRI_FEM_Test01(const bool verbose) {
   typedef Basis_HVOL_TRI_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> TriHVOLBasisType;
 
   constexpr ordinal_type dim = 2;
-  constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
+  constexpr ordinal_type maxOrder = Intrepid2::Parameters::MaxOrder < 5 ? Intrepid2::Parameters::MaxOrder : 5;
 
   // In order to obtain nontrivial FE functions, we interpolate the following (vector) function on the space spanned by the fE basis considered.
   struct Fun {

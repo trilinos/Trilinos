@@ -41,21 +41,23 @@
 // @HEADER
 
 /** \file test_01.cpp
-    \brief  Unit tests for the Intrepid2::Basis_HGRAD_LINE_C1_FEM class.
+    \brief  Unit tests for the Intrepid2::Basis_HVOL_LINE_Cn_FEM class.
     \author Created by P. Bochev, D. Ridzal, K. Peterson.
 */
 
-#include "../../HVOL_LINE_Cn_FEM/test_01.hpp"
-
 #include "Kokkos_Core.hpp"
 
+#define ConstructWithLabelOutView(obj, ...) obj(#obj, __VA_ARGS__)
+#define ConstructWithLabelPointView(obj, ...) obj(#obj, __VA_ARGS__)
+
+#include "test_01.hpp"
 
 int main(int argc, char *argv[]) {
 
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
 
-  const int r_val = Intrepid2::Test::HVOL_LINE_Cn_FEM_Test01<double,Kokkos::Cuda>(verbose);
+  const int r_val = Intrepid2::Test::HVOL_LINE_Cn_FEM_Test01<double, double, Kokkos::Cuda>(verbose);
 
   Kokkos::finalize();
   return r_val;

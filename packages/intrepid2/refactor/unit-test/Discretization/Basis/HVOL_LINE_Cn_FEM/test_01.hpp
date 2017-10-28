@@ -54,17 +54,13 @@
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 
-//#include "Intrepid2_CubatureDirectLineGauss.hpp"
-//#include "Intrepid2_FunctionSpaceTools.hpp"
-
-//#include "Intrepid2_PointTools.hpp"
 #include "Intrepid2_HVOL_LINE_Cn_FEM.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
 namespace Intrepid2 {
-  
+
   namespace Test {
 
 #define INTREPID2_TEST_ERROR_EXPECTED( S )                              \
@@ -78,9 +74,8 @@ namespace Intrepid2 {
       *outStream << err.what() << '\n';                                 \
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
-    
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
     int HVOL_LINE_Cn_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -118,22 +113,17 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-      //typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+      typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+      typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+      typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+      typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
 
-      const ValueType tol = tolerence();
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+      const scalar_type tol = tolerence();
       int errorFlag = 0;
 
-      // for virtual function, value and point types are declared in the class
-      typedef ValueType outputValueType;
-      typedef ValueType pointValueType;
-      //typedef ValueType weightValueType;
-
-      typedef Basis_HVOL_LINE_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> LineBasisType;
-      //typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
-      //typedef FunctionSpaceTools<DeviceSpaceType> fst;
-
+      typedef Basis_HVOL_LINE_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> LineBasisType;
       constexpr ordinal_type maxOrder = Parameters::MaxOrder;
 
       *outStream
@@ -145,19 +135,16 @@ namespace Intrepid2 {
       try{
 #ifdef HAVE_INTREPID2_DEBUG
         ordinal_type nthrow = 0, ncatch = 0;
-        constexpr ordinal_type order = 5;
-          if(order <= maxOrder) {
-
+        constexpr  ordinal_type order = 5;
+        if (order <= maxOrder) {
           LineBasisType lineBasis(order);
 
           // Define array containing array of nodes to evaluate
-          DynRankView ConstructWithLabel(lineNodes, 10, 1);
+          DynRankViewPointValueType ConstructWithLabelPointView(lineNodes, 10, 1);
 
           // Generic array for the output values; needs to be properly resized depending on the operator type
           const auto numFields = lineBasis.getCardinality();
           const auto numPoints = lineNodes.dimension(0);
-          //const auto spaceDim  = lineBasis.getBaseCellTopology().getDimension();
-
 
           // Exceptions 1-5: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
           // getDofTag() to access invalid array elements thereby causing bounds check exception
@@ -175,27 +162,27 @@ namespace Intrepid2 {
 
           // Exceptions 6-16 test exception handling with incorrectly dimensioned input/output arrays
           {
-            DynRankView ConstructWithLabel(vals, numFields, numPoints);
+            DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints);
             {
               // exception #6: input points array must be of rank-2
-              DynRankView ConstructWithLabel(badPoints, 4, 5, 3);
+              DynRankViewPointValueType ConstructWithLabelPointView(badPoints, 4, 5, 3);
               INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
             }
             {
               // exception #7: dimension 1 in the input point array must equal space dimension of the cell
-              DynRankView ConstructWithLabel(badPoints, 4, 3);
+              DynRankViewPointValueType ConstructWithLabelPointView(badPoints, 4, 3);
               INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
             }
             {
               // exception #8: output values must be of rank-2 for OPERATOR_VALUE
-              DynRankView ConstructWithLabel(badVals, 4, 3, 1);
+              DynRankViewOutValueType ConstructWithLabelOutView(badVals, 4, 3, 1);
               INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE) );
             }
             lineBasis.getValues(vals, lineNodes, OPERATOR_VALUE);
           }
           {
             // exception #9: output values must be of rank-3 for OPERATOR_GRAD
-            DynRankView ConstructWithLabel(badVals, 4, 3);
+            DynRankViewOutValueType ConstructWithLabelOutView(badVals, 4, 3);
             INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_GRAD) );
 
             // exception #10: output values must be of rank-3 for OPERATOR_CURL
@@ -209,17 +196,17 @@ namespace Intrepid2 {
           }
           {
             // exception #13: incorrect 0th dimension of output array (must equal number of basis functions)
-            DynRankView ConstructWithLabel(badVals, lineBasis.getCardinality() + 1, lineNodes.dimension(0));
+            DynRankViewOutValueType ConstructWithLabelOutView(badVals, lineBasis.getCardinality() + 1, lineNodes.dimension(0));
             INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE) );
           }
           {
             // exception #14: incorrect 1st dimension of output array (must equal number of points)
-            DynRankView ConstructWithLabel(badVals, lineBasis.getCardinality(), lineNodes.dimension(0) + 1);
+            DynRankViewOutValueType ConstructWithLabelOutView(badVals, lineBasis.getCardinality(), lineNodes.dimension(0) + 1);
             INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_VALUE) );
           }
           {
             // exception #15: incorrect 2nd dimension of output array (must equal spatial dimension)
-            DynRankView ConstructWithLabel(badVals, lineBasis.getCardinality(), lineNodes.dimension(0), 2);
+            DynRankViewOutValueType ConstructWithLabelOutView(badVals, lineBasis.getCardinality(), lineNodes.dimension(0), 2);
             INTREPID2_TEST_ERROR_EXPECTED( lineBasis.getValues(badVals, lineNodes, OPERATOR_GRAD) );
           }
         }
@@ -248,28 +235,30 @@ namespace Intrepid2 {
         const EPointType pts[3] = { POINTTYPE_EQUISPACED, POINTTYPE_WARPBLEND, POINTTYPE_GAUSS };
         for (auto idx=0;idx<3;++idx) {
           *outStream << " -- Testing " << EPointTypeToString(pts[idx]) << " -- \n";
-          for (auto ip=0;ip<maxOrder;++ip) {
-
+          for (auto ip=0;ip<std::min(5, maxOrder);++ip) {
             LineBasisType lineBasis(ip, pts[idx]);
-
+            
             const auto numDofs   = lineBasis.getCardinality();
             const auto numPoints = lineBasis.getCardinality();
             const auto spaceDim  = lineBasis.getBaseCellTopology().getDimension();
-            
-            DynRankView ConstructWithLabel(dofCoords, numPoints, spaceDim);
-            lineBasis.getDofCoords(dofCoords);
 
-            DynRankView ConstructWithLabel(vals, numDofs, numPoints);
+            DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numPoints, spaceDim);
+            DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numDofs , spaceDim);
+
+            lineBasis.getDofCoords(dofCoords_scalar);
+            RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+
+            DynRankViewOutValueType ConstructWithLabelOutView(vals, numDofs, numPoints);
             lineBasis.getValues(vals, dofCoords, OPERATOR_VALUE);
 
             // host mirror for comparison
-            auto valsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+            auto valsHost = Kokkos::create_mirror_view(vals);
             Kokkos::deep_copy(valsHost, vals);
-            
-            for (auto i=0;i<numDofs;++i) 
+
+            for (auto i=0;i<numDofs;++i)
               for (int j=0;j<numPoints;++j) {
-                const ValueType exactVal = (i == j);
-                const auto val = valsHost(i,j);
+                const scalar_type exactVal = (i == j);
+                const auto val = extract_scalar_value(valsHost(i,j));
                 if (std::isnan(val) || std::abs(val-exactVal) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -280,6 +269,7 @@ namespace Intrepid2 {
           }
         }
       } catch (std::exception err) {
+        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
         *outStream << err.what() << "\n\n";
         errorFlag = -1000;
       };

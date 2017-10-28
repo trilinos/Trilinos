@@ -79,10 +79,8 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-
-template<typename ValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
 int HCURL_HEX_In_FEM_Test01(const bool verbose) {
-
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
@@ -114,20 +112,19 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+  typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-  const ValueType tol = tolerence();
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+  const scalar_type tol = tolerence();
   int errorFlag = 0;
 
-  // for virtual function, value and point types are declared in the class
-  typedef ValueType outputValueType;
-  typedef ValueType pointValueType;
-
-  typedef Basis_HCURL_HEX_In_FEM<DeviceSpaceType,outputValueType,pointValueType> HexBasisType;
-
-  constexpr ordinal_type maxOrder = Parameters::MaxOrder;
+  typedef Basis_HCURL_HEX_In_FEM<DeviceSpaceType,OutValueType,PointValueType> HexBasisType;
+  constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
   constexpr ordinal_type dim = 3;
 
   *outStream
@@ -146,7 +143,7 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     HexBasisType hexBasis(order);
 
     // Array of reference hex nodes - used for evaluation of basis
-    DynRankViewHost ConstructWithLabel(hexNodesHost, 8, 3);
+    DynRankViewHostScalarValueType ConstructWithLabelScalar(hexNodesHost, 8, 3);
 
     hexNodesHost(0,0) = -1.0; hexNodesHost(0,1) = -1.0; hexNodesHost(0,2) = -1.0;
     hexNodesHost(1,0) =  1.0; hexNodesHost(1,1) = -1.0; hexNodesHost(1,2) = -1.0;
@@ -157,8 +154,11 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     hexNodesHost(6,0) = -1.0; hexNodesHost(6,1) =  1.0; hexNodesHost(6,2) =  1.0;
     hexNodesHost(7,0) =  1.0; hexNodesHost(7,1) =  1.0; hexNodesHost(7,2) =  1.0;
 
-    auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
-    Kokkos::deep_copy(hexNodes, hexNodesHost);
+    auto hexNodes_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
+    Kokkos::deep_copy(hexNodes_scalar, hexNodesHost);
+
+    DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 8, 3);
+    RealSpaceTools<DeviceSpaceType>::clone(hexNodes, hexNodes_scalar);
 
     // Array dimensions
     const ordinal_type numFields = hexBasis.getCardinality();
@@ -166,7 +166,7 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     const ordinal_type spaceDim  = hexBasis.getBaseCellTopology().getDimension();
 
     {
-      DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+      DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, spaceDim);
 
       // exception #1: GRAD cannot be applied to HCURL functions
       INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_GRAD) );
@@ -188,60 +188,60 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
 
     {
       // Exceptions 8-15 test exception handling with incorrectly dimensioned input/output arrays
-      DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+      DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, spaceDim);
 
       {
         // Exception #8: input points array must be of rank-2
-        DynRankView ConstructWithLabel(badPoints,4,5,3);
+        DynRankViewPointValueType ConstructWithLabelPointView(badPoints,4,5,3);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE));
       }
 
       {
         // Exception #9: dimension 1 in the input point array must equal space dimension of the cell
-        DynRankView ConstructWithLabel(badPoints,4,2);
+        DynRankViewPointValueType ConstructWithLabelPointView(badPoints,4,2);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE));
       }
 
       {
         // Exception #10: output values must be of rank-3 for OPERATOR_VALUE
-        DynRankView ConstructWithLabel(badVals,4,3);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,4,3);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
       }
 
       {
         // Exception #11: output values must be of rank-3 for OPERATOR_CURL
-        DynRankView ConstructWithLabel(badVals,4,3);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,4,3);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_CURL));
       }
 
       {
         // Exception #12: incorrect 0th dimension of output array (must equal number of basis functions)
-        DynRankView ConstructWithLabel(badVals,numFields+1,numPoints,3);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,numFields+1,numPoints,3);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
       }
 
       {
         // Exception #13: incorrect 1st dimension of output array (must equal number of points)
-        DynRankView ConstructWithLabel(badVals,numFields,numPoints+1,3);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,numFields,numPoints+1,3);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
       }
 
       {
         // Exception #14: incorrect 2nd dimension of output array (must equal the space dimension)
-        DynRankView ConstructWithLabel(badVals,numFields,numPoints,4);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,numFields,numPoints,4);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE));
       }
 
       {
         // Exception #15: incorrect 2nd dimension of output array (must equal the space dimension)
-        DynRankView ConstructWithLabel(badVals,numFields,numPoints,4);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals,numFields,numPoints,4);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_CURL));
       }
     }
 
     {
       // Exception #16: D2 cannot be applied to HCURL functions
-      DynRankView ConstructWithLabel(badVals,numFields,numPoints,4);
+      DynRankViewOutValueType ConstructWithLabelOutView(badVals,numFields,numPoints,4);
       INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D2));
     }
 
@@ -270,13 +270,16 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     HexBasisType hexBasis(order);
 
     const ordinal_type numFields = hexBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, numFields, dim);
-    hexBasis.getDofCoords(dofCoords);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numFields, dim);
+    hexBasis.getDofCoords(dofCoords_scalar);
 
-    DynRankView ConstructWithLabel(dofCoeffs, numFields, dim);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, numFields, dim);
     hexBasis.getDofCoeffs(dofCoeffs);
 
-    DynRankView ConstructWithLabel(basisAtDofCoords, numFields, numFields, dim);
+    DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , dim);
+    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, numFields, numFields, dim);
     hexBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_dofCoords = Kokkos::create_mirror_view(dofCoords);
@@ -286,16 +289,17 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     Kokkos::deep_copy(h_dofCoeffs, dofCoeffs);
 
     auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
-    Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);          // test for Kronecker property
+    Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
+
     for (int i=0;i<numFields;i++) {
       for (int j=0;j<numFields;j++) {
 
-        outputValueType dofValue = 0.0;
+        OutValueType dofValue = 0.0;
         for(ordinal_type d=0;d<dim;++d)
           dofValue += h_basisAtDofCoords(i,j,d)*h_dofCoeffs(j,d);
 
         // check values
-        const outputValueType expected_dofValue = (i == j);
+        const scalar_type expected_dofValue = (i == j);
         if (std::abs(dofValue - expected_dofValue) > tol) {
           errorFlag++;
           std::stringstream ss;
@@ -324,10 +328,13 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
 
     shards::CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >());
     const ordinal_type numFields = hexBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, numFields, dim);
-    hexBasis.getDofCoords(dofCoords);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numFields, dim);
+    hexBasis.getDofCoords(dofCoords_scalar);
 
-    DynRankView ConstructWithLabel(basisAtDofCoords, numFields, numFields, dim);
+    DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , dim);
+    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, numFields, numFields, dim);
     hexBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
@@ -343,7 +350,7 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
       for (int j=0;j<numFields;j++) {
 
         // initialize
-        outputValueType dofValue = 0;
+        OutValueType dofValue = 0;
 
         // get index given that dofs are arranged by dimension, all x dofs, all y dofs, all z dofs
         auto dofsPerDim = numFields/dim;
@@ -379,7 +386,7 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
   << "===============================================================================\n";
 
   // VALUE: Each row pair gives the 12x3 correct basis set values at an evaluation point: (P,F,D) layout
-  const ValueType basisValues[] = {
+  const scalar_type basisValues[] = {
       1,0,0, 1,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0,
       0,0,0, 0,0,0, 1,0,0, 1,0,0, 0,0,0, 0,0,0, 0,0,0, 0,0,0,
       0,0,0, 0,0,0, 0,0,0, 0,0,0, 1,0,0, 1,0,0, 0,0,0, 0,0,0,
@@ -395,7 +402,7 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
   };
 
   // CURL
-  const ValueType basisCurls[] = {   
+  const scalar_type basisCurls[] = {   
       0,-0.5,0.5, 0,-0.5,0.5, 0,0,0.5, 0,0,0.5, 0,-0.5,0, 0,-0.5,0, 0,0,0, 0,0,0,
       0,0,-0.5, 0,0,-0.5, 0,-0.5,-0.5, 0,-0.5,-0.5, 0,0,0, 0,0,0, 0,-0.5,0, 0,-0.5,0,
       0,0.5,0, 0,0.5,0, 0,0,0, 0,0,0, 0,0.5,0.5, 0,0.5,0.5, 0,0,0.5, 0,0,0.5,
@@ -434,7 +441,8 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     HexBasisType hexBasis(order);
 
     // Array of reference hex nodes - used for evaluation of basis
-    DynRankViewHost ConstructWithLabel(hexNodesHost, 8, 3);
+    DynRankViewHostScalarValueType ConstructWithLabelScalar(hexNodesHost, 8, 3);
+    DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 8, 3);
 
     hexNodesHost(0,0) = -1.0; hexNodesHost(0,1) = -1.0; hexNodesHost(0,2) = -1.0;
     hexNodesHost(1,0) =  1.0; hexNodesHost(1,1) = -1.0; hexNodesHost(1,2) = -1.0;
@@ -445,8 +453,9 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     hexNodesHost(6,0) = -1.0; hexNodesHost(6,1) =  1.0; hexNodesHost(6,2) =  1.0;
     hexNodesHost(7,0) =  1.0; hexNodesHost(7,1) =  1.0; hexNodesHost(7,2) =  1.0;
 
-    auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
-    Kokkos::deep_copy(hexNodes, hexNodesHost);
+    auto hexNodes_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
+    Kokkos::deep_copy(hexNodes_scalar, hexNodesHost);
+    RealSpaceTools<DeviceSpaceType>::clone(hexNodes, hexNodes_scalar);
 
     // Array dimensions
     const ordinal_type numFields = hexBasis.getCardinality();
@@ -456,9 +465,9 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     *outStream << " -- Testing OPERATOR_VALUE \n";
     {
       // Check VALUE of basis functions
-      DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+      DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, spaceDim);
       hexBasis.getValues(vals, hexNodes, OPERATOR_VALUE);
-      auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+      auto vals_host = Kokkos::create_mirror_view(vals);
       Kokkos::deep_copy(vals_host, vals);
 
       for (ordinal_type i = 0; i < numFields; i++) {
@@ -484,16 +493,16 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
     *outStream << " -- Testing OPERATOR_CURL \n";
     {
       // Check CURL of basis function:
-      DynRankView ConstructWithLabel(curls, numFields, numPoints, spaceDim);
+      DynRankViewOutValueType ConstructWithLabelOutView(curls, numFields, numPoints, spaceDim);
       hexBasis.getValues(curls, hexNodes, OPERATOR_CURL);
-      auto curls_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), curls);
+      auto curls_host = Kokkos::create_mirror_view(curls);
       Kokkos::deep_copy(curls_host, curls);
 
       for (ordinal_type i = 0; i < numFields; ++i) {
         for (ordinal_type j = 0; j < numPoints; ++j) {
           for (ordinal_type k = 0; k < spaceDim; k++) {
             const ordinal_type l = k + i * spaceDim * numPoints + j * spaceDim;
-            if (std::abs(curls(i,j,k) - basisCurls[l]) > tol) {
+            if (std::abs(curls_host(i,j,k) - basisCurls[l]) > tol) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -521,7 +530,6 @@ int HCURL_HEX_In_FEM_Test01(const bool verbose) {
 
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-
   return errorFlag;
 }
 }

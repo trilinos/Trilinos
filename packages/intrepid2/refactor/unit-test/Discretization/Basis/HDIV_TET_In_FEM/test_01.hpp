@@ -80,7 +80,7 @@ namespace Test {
     }
 
 
-template<typename ValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
 int HDIV_TET_In_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -97,8 +97,8 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
-//  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-//  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  //  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+  //  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
   *outStream
   <<"\n"
@@ -115,22 +115,25 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+  typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
-  const ValueType tol = tolerence();
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+  const scalar_type tol = tolerence();
   int errorFlag = 0;
 
   // for virtual function, value and point types are declared in the class
-  typedef ValueType outputValueType;
-  typedef ValueType pointValueType;
+  typedef OutValueType outputValueType;
+  typedef PointValueType pointValueType;
 
   typedef Basis_HDIV_TET_In_FEM<DeviceSpaceType,outputValueType,pointValueType> TetBasisType;
 
+  constexpr ordinal_type maxOrder = Parameters::MaxOrder;
   constexpr ordinal_type dim = 3;
-  constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
-
 
   try {
 
@@ -144,13 +147,16 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
     TetBasisType tetBasis(order, POINTTYPE_EQUISPACED);
 
     const ordinal_type cardinality = tetBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, cardinality , dim);
-    tetBasis.getDofCoords(dofCoords);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality , dim);
+    tetBasis.getDofCoords(dofCoords_scalar);
 
-    DynRankView ConstructWithLabel(dofCoeffs, cardinality , dim);
+    DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
+    RealSpaceTools<DeviceSpaceType>::clone(dofCoords, dofCoords_scalar);
+
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, cardinality , dim);
     tetBasis.getDofCoeffs(dofCoeffs);
 
-    DynRankView ConstructWithLabel(basisAtDofCoords, cardinality , cardinality, dim);
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
     tetBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
@@ -197,17 +203,20 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
     const ordinal_type order = std::min(4, maxOrder);
     TetBasisType tetBasis(order, POINTTYPE_EQUISPACED);
     const ordinal_type cardinality = tetBasis.getCardinality();
-    DynRankView ConstructWithLabel(dofCoords, cardinality , dim);
-    tetBasis.getDofCoords(dofCoords);
+    DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality , dim);
+    tetBasis.getDofCoords(dofCoords_scalar);
 
-    DynRankView ConstructWithLabel(basisAtDofCoords, cardinality , cardinality, dim);
+    DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
+    RealSpaceTools<DeviceSpaceType>::clone(dofCoords, dofCoords_scalar);
+
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
     tetBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
 
     auto h_basisAtDofCoords = Kokkos::create_mirror_view(basisAtDofCoords);
     Kokkos::deep_copy(h_basisAtDofCoords, basisAtDofCoords);
 
     //Normals at each face
-    DynRankViewHost ConstructWithLabel(normals, cardinality, dim); // normals at each point basis point
+    DynRankViewHostScalarValueType ConstructWithLabelScalar(normals, cardinality, dim); // normals at each point basis point
     normals(0,0)  =  0.0; normals(0,1)  = -0.5; normals(0,2)  = 0.0;
     normals(1,0)  =  0.5; normals(1,1)  =  0.5; normals(1,2)  = 0.5;
     normals(2,0)  = -0.5; normals(2,1)  =  0.0; normals(2,2)  = 0.0;
@@ -265,16 +274,19 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
       shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
       const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
       const ordinal_type cardinality = tetBasis.getCardinality();
-      DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-      PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_EQUISPACED);
+      //Need to use Scalar type for lattice because PointTools dont's work with FAD types
+      DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+      PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
+      DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
+      RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
 
-      DynRankView ConstructWithLabel(basisAtLattice, cardinality , np_lattice, dim);
+      DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, cardinality , np_lattice, dim);
       tetBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
 
       auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
       Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
 
-      const double fiat_vals[] = {
+      const scalar_type fiat_vals[] = {
           0.000000000000000e+00, -6.000000000000000e+00, 0.000000000000000e+00,
           1.000000000000000e+00, -2.000000000000000e+00, 0.000000000000000e+00,
           -2.000000000000000e+00, 2.000000000000000e+00, 0.000000000000000e+00,
@@ -432,7 +444,7 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
       for (ordinal_type i=0;i<cardinality;i++) {
         for (ordinal_type j=0;j<np_lattice;j++) {
           for (ordinal_type k=0;k<dim; k++) {
-            if (std::fabs( h_basisAtLattice(i,j,k) - fiat_vals[cur] ) > tol ) {
+            if (std::abs( h_basisAtLattice(i,j,k) - fiat_vals[cur] ) > tol ) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -440,8 +452,8 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
               *outStream << " At multi-index { ";
               *outStream << i << " " << j << " " << k;
               *outStream << "}  computed value: " <<  h_basisAtLattice(i,j,k)
-                                  << " but correct value: " << fiat_vals[cur] << "\n";
-              *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - fiat_vals[cur] ) << "\n";
+                                          << " but correct value: " << fiat_vals[cur] << "\n";
+              *outStream << "Difference: " << std::abs(  h_basisAtLattice(i,j,k) - fiat_vals[cur] ) << "\n";
             }
             cur++;
           }
@@ -472,16 +484,18 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
       shards::CellTopology tet_4(shards::getCellTopologyData<shards::Tetrahedron<4> >());
       const ordinal_type np_lattice = PointTools::getLatticeSize(tet_4, order,0);
       const ordinal_type cardinality = tetBasis.getCardinality();
-      DynRankView ConstructWithLabel(lattice, np_lattice , dim);
-      PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_EQUISPACED);
+      DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
+      PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
+      DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
+      RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
 
-      DynRankView ConstructWithLabel(basisDivAtLattice, cardinality , np_lattice);
+      DynRankViewOutValueType ConstructWithLabelOutView(basisDivAtLattice, cardinality , np_lattice);
       tetBasis.getValues(basisDivAtLattice, lattice, OPERATOR_DIV);
 
       auto h_basisDivAtLattice = Kokkos::create_mirror_view(basisDivAtLattice);
       Kokkos::deep_copy(h_basisDivAtLattice, basisDivAtLattice);
 
-      const double fiat_divs[] = {
+      const scalar_type fiat_divs[] = {
           2.600000000000000e+01,
           1.000000000000000e+01,
           -6.000000000000000e+00,
@@ -638,7 +652,7 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
       ordinal_type cur=0;
       for (ordinal_type i=0;i<cardinality;i++) {
         for (ordinal_type j=0;j<np_lattice;j++) {
-          if (std::fabs( h_basisDivAtLattice(i,j) - fiat_divs[cur] ) > tol ) {
+          if (std::abs( h_basisDivAtLattice(i,j) - fiat_divs[cur] ) > tol ) {
             errorFlag++;
             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -646,8 +660,8 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
             *outStream << " At multi-index { ";
             *outStream << i << " " << j;
             *outStream << "}  computed value: " <<  h_basisDivAtLattice(i,j)
-                                  << " but correct value: " << fiat_divs[cur] << "\n";
-            *outStream << "Difference: " << std::fabs(  h_basisDivAtLattice(i,j) - fiat_divs[cur] ) << "\n";
+                                          << " but correct value: " << fiat_divs[cur] << "\n";
+            *outStream << "Difference: " << std::abs(  h_basisDivAtLattice(i,j) - fiat_divs[cur] ) << "\n";
           }
           cur++;
         }
@@ -672,4 +686,3 @@ int HDIV_TET_In_FEM_Test01(const bool verbose) {
 }
 }
 }
-

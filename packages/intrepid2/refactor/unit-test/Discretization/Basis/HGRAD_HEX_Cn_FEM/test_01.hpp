@@ -63,7 +63,6 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
-
 namespace Intrepid2 {
 
 namespace Test {
@@ -80,8 +79,7 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-
-template<typename ValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
 int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -104,7 +102,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   *outStream
   << "===============================================================================\n"
   << "|                                                                             |\n"
-  << "|                 Unit Test (Basis_HGRAD_HEX_C2_FEM)                          |\n"
+  << "|                 Unit Test (Basis_HGRAD_HEX_Cn_FEM)                          |\n"
   << "|                                                                             |\n"
   << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n"
   << "|     2) Basis values for VALUE, GRAD, and Dk operators                       |\n"
@@ -112,28 +110,29 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n"
   << "|                      Robert Kirby  (robert.c.kirby@ttu.edu),                |\n"
   << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n"
-  << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n"
-  << "|                      Kyungjoo Kim  (kyukim@sandia.gov).                     |\n"
+  << "|                      Kara Peterson (kjpeter@sandia.gov),                    |\n"
+  << "|                      Kyungjoo Kim  (kyukim@sandia.gov),                     |\n"
+  << "|                      Mauro Perego  (mperego@sandia.gov).                    |\n"
   << "|                                                                             |\n"
   << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n"
   << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n"
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
-#define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
+  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
+  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;      
+  typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;      
 
-  const ValueType tol = tolerence();
+#define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
+
+  const scalar_type tol = tolerence();
   int errorFlag = 0;
 
-  // for virtual function, value and point types are declared in the class
-  typedef ValueType outputValueType;
-  typedef ValueType pointValueType;
+  typedef Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> HexBasisType;
+  constexpr ordinal_type maxOrder = Parameters::MaxOrder;
 
-  typedef Basis_HGRAD_HEX_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> HexBasisType;
-
-  constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
   *outStream
   << "\n"
@@ -150,7 +149,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
       HexBasisType hexBasis(order);
 
       // Define array containing array of nodes to evaluate
-      DynRankView ConstructWithLabel(hexNodes, 27, 3);
+      DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 27, 3);
 
       // Generic array for the output values; needs to be properly resized depending on the operator type
       const ordinal_type numFields = hexBasis.getCardinality();
@@ -159,7 +158,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
 
       // exception 1 - 2: CURL and DIV is not supported.
       {
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, 3);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, 3);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_CURL) );
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, hexNodes, OPERATOR_DIV) );
       }
@@ -177,24 +176,24 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
       // Exceptions 8-18 test exception handling with incorrectly dimensioned input/output arrays
       // exception #8: input points array must be of rank-2
       {
-        DynRankView ConstructWithLabel(vals, numFields, numPoints);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints);
         {
           // exception #8: input points array must be of rank-2
-          DynRankView ConstructWithLabel(badPoints, 4, 5, 3);
+          DynRankViewPointValueType ConstructWithLabelPointView(badPoints, 4, 5, 3);
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
         }
         {
           // exception #9: dimension 1 in the input point array must equal space dimension of the cell
-          DynRankView ConstructWithLabel(badPoints, 4, 4);
+          DynRankViewPointValueType ConstructWithLabelPointView(badPoints, 4, 4);
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(vals, badPoints, OPERATOR_VALUE) );
         }
         {
           // exception #10: output values must be of rank-2 for OPERATOR_VALUE
-          DynRankView ConstructWithLabel(badVals, 4, 3, 1);
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, 4, 3, 1);
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE) );
         }
         {
-          DynRankView ConstructWithLabel(badVals, 4, 3);
+          DynRankViewOutValueType ConstructWithLabelOutView(badVals, 4, 3);
 
           // exception #11: output values must be of rank-3 for OPERATOR_GRAD
           INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_GRAD) );
@@ -208,21 +207,21 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
       }
       {
         // exception #14: incorrect 0th dimension of output array (must equal number of basis functions)
-        DynRankView ConstructWithLabel(badVals, hexBasis.getCardinality() + 1, hexNodes.dimension(0));
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality() + 1, hexNodes.dimension(0));
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE) );
       }
       {
         // exception #15: incorrect 1st dimension of output array (must equal number of points)
-        DynRankView ConstructWithLabel(badVals, hexBasis.getCardinality(), hexNodes.dimension(0) + 1);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.dimension(0) + 1);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_VALUE) );
       }
       {
         // exception #16: incorrect 2nd dimension of output array (must equal spatial dimension)
-        DynRankView ConstructWithLabel(badVals, hexBasis.getCardinality(), hexNodes.dimension(0), 2);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.dimension(0), 2);
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_GRAD) );
       }
       {
-        DynRankView ConstructWithLabel(badVals, hexBasis.getCardinality(), hexNodes.dimension(0), 40);
+        DynRankViewOutValueType ConstructWithLabelOutView(badVals, hexBasis.getCardinality(), hexNodes.dimension(0), 40);
 
         // exception #17: incorrect 2nd dimension of output array (must equal spatial dimension)
         INTREPID2_TEST_ERROR_EXPECTED( hexBasis.getValues(badVals, hexNodes, OPERATOR_D2) );
@@ -282,6 +281,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
             << myTag(3) << "}\n";
       }
     }
+
     // Now do the same but loop over basis functions
     for(ordinal_type bfOrd=0;bfOrd<numFields;++bfOrd) {
       const auto myTag  = hexBasis.getDofTag(bfOrd);
@@ -307,73 +307,77 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
     errorFlag = -1000;
   };
 
-      try {
+  try {
 
-        *outStream
-          << "\n"
-          << "===============================================================================\n"
-          << "| TEST 3: Testing Kronecker property of basis functions                                              |\n"
-          << "===============================================================================\n";
+    *outStream
+    << "\n"
+    << "===============================================================================\n"
+    << "| TEST 3: Testing Kronecker property of basis functions                                              |\n"
+    << "===============================================================================\n";
 
 
-        const ordinal_type order = std::min(3,maxOrder);
-        HexBasisType hexBasis(order, POINTTYPE_WARPBLEND);
-        constexpr ordinal_type dim=3;
-        const ordinal_type basisCardinality = hexBasis.getCardinality();
-        DynRankView ConstructWithLabel(lattice, basisCardinality , dim);
-        hexBasis.getDofCoords(lattice);
-        //PointTools::getLattice(lattice, tet_4, order, 0, POINTTYPE_WARPBLEND);
+    const ordinal_type order = std::min(3,maxOrder);
+    HexBasisType hexBasis(order, POINTTYPE_WARPBLEND);
+    constexpr ordinal_type dim=3;
+    const ordinal_type basisCardinality = hexBasis.getCardinality();
+    DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, basisCardinality , dim);
+    DynRankViewPointValueType ConstructWithLabelPointView(lattice, basisCardinality , dim);
 
-        DynRankView ConstructWithLabel(basisAtLattice, basisCardinality, basisCardinality);
-        hexBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
+    hexBasis.getDofCoords(lattice_scalar);
+    RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
 
-        auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
-        Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
+    auto lattice_host = Kokkos::create_mirror_view(lattice);
 
-        for(ordinal_type iface =0; iface<6; iface++) {
-          auto numFaceDofs = hexBasis.getDofCount(2,iface);
-          for(ordinal_type i=0; i<numFaceDofs; i++) {
-            auto idof = hexBasis.getDofOrdinal(2,iface,i);
-            for(ordinal_type j=0; j<numFaceDofs; j++) {
-              auto jdof = hexBasis.getDofOrdinal(2,iface,j);
-              std::cout << idof << " " <<jdof << std::endl;
-              if ( idof==jdof && std::abs( h_basisAtLattice(idof,jdof) - 1.0 ) > tol ) {
-                errorFlag++;
-                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                *outStream << " Basis function " << idof << " does not have unit value at its node (" << h_basisAtLattice(idof,jdof) <<")\n";
-              }
-              if ( i!=j && std::abs( h_basisAtLattice(idof,jdof) ) > tol ) {
-                errorFlag++;
-                *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-                *outStream << " Basis function " << idof << " does not vanish at node " << jdof << "\n";
-                *outStream << " Basis function value is " << h_basisAtLattice(idof,jdof) << "\n";
-              }
-            }
+    DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, basisCardinality, basisCardinality);
+    hexBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
+
+    auto h_basisAtLattice = Kokkos::create_mirror_view(basisAtLattice);
+    Kokkos::deep_copy(h_basisAtLattice, basisAtLattice);
+
+    for(ordinal_type iface =0; iface<6; iface++) {
+      auto numFaceDofs = hexBasis.getDofCount(2,iface);
+      for(ordinal_type i=0; i<numFaceDofs; i++) {
+        auto idof = hexBasis.getDofOrdinal(2,iface,i);
+        for(ordinal_type j=0; j<numFaceDofs; j++) {
+          auto jdof = hexBasis.getDofOrdinal(2,iface,j);
+          if ( idof==jdof && std::abs( h_basisAtLattice(idof,jdof) - 1.0 ) > tol ) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << " Basis function " << idof << " does not have unit value at its node (" << h_basisAtLattice(idof,jdof) <<")\n";
+          }
+          if ( i!=j && std::abs( h_basisAtLattice(idof,jdof) ) > tol ) {
+            errorFlag++;
+            *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+            *outStream << " Basis function " << idof << " does not vanish at node " << jdof << "\n";
+            *outStream << " Basis function value is " << h_basisAtLattice(idof,jdof) << "\n";
           }
         }
+      }
+    }
 
-        // test for Kronecker property
-        for (int i=0;i<basisCardinality;i++) {
-          for (int j=0;j<basisCardinality;j++) {
-            if ( i==j && std::abs( h_basisAtLattice(i,j) - 1.0 ) > tol ) {
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << " Basis function " << i << " does not have unit value at its node (" << h_basisAtLattice(i,j) <<")\n";
-            }
-            if ( i!=j && std::abs( h_basisAtLattice(i,j) ) > tol ) {
-              errorFlag++;
-              *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
-              *outStream << " Basis function " << i << " does not vanish at node " << j << "\n";
-              *outStream << " Basis function value is " << h_basisAtLattice(i,j) << "\n";
-            }
-          }
+
+    // test for Kronecker property
+    for (int i=0;i<basisCardinality;i++) {
+      for (int j=0;j<basisCardinality;j++) {
+        if ( i==j && std::abs( h_basisAtLattice(i,j) - 1.0 ) > tol ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not have unit value at its node (" << h_basisAtLattice(i,j) <<")\n";
         }
-      } catch (std::exception err) {
-        *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
-        *outStream << err.what() << '\n';
-        *outStream << "-------------------------------------------------------------------------------" << "\n\n";
-        errorFlag = -1000;
-      };
+        if ( i!=j && std::abs( h_basisAtLattice(i,j) ) > tol ) {
+          errorFlag++;
+          *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+          *outStream << " Basis function " << i << " does not vanish at node " << j << "\n";
+          *outStream << " Basis function value is " << h_basisAtLattice(i,j) << "\n";
+        }
+      }
+    }
+  } catch (std::exception err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
 
   *outStream
   << "\n"
@@ -384,7 +388,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   outStream -> precision(20);
 
   // VALUE: Each row gives the 27 correct basis set values at an evaluation point
-  const ValueType basisValues[] = {
+  const scalar_type basisValues[] = {
       1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 1.000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -418,7 +422,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   std::ifstream   dataFile;
 
   // GRAD and D1 values are stored in (F,P,D) format in a data file. Read file and do the test
-  std::vector<ValueType> basisGrads;           // Flat array for the gradient values.
+  std::vector<scalar_type> basisGrads;           // Flat array for the gradient values.
   {
     fileName = "../testdata/HEX_C2_GradVals.dat";
     dataFile.open(fileName.c_str());
@@ -438,7 +442,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   }
 
   //D2: flat array with the values of D2 applied to basis functions. Multi-index is (F,P,D2cardinality)
-  std::vector<ValueType> basisD2;
+  std::vector<scalar_type> basisD2;
   {
     fileName = "../testdata/HEX_C2_D2Vals.dat";
     dataFile.open(fileName.c_str());
@@ -458,7 +462,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   }
 
   //D3: flat array with the values of D3 applied to basis functions. Multi-index is (F,P,D3cardinality)
-  std::vector<ValueType> basisD3;
+  std::vector<scalar_type> basisD3;
   {
     fileName = "../testdata/HEX_C2_D3Vals.dat";
     dataFile.open(fileName.c_str());
@@ -479,7 +483,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
   }
 
   //D4: flat array with the values of D applied to basis functions. Multi-index is (F,P,D4cardinality)
-  std::vector<double> basisD4;
+  std::vector<scalar_type> basisD4;
   {
     fileName = "../testdata/HEX_C2_D4Vals.dat";
     dataFile.open(fileName.c_str());
@@ -504,7 +508,9 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
     if(order < maxOrder) {
       HexBasisType hexBasis(order);
 
-      DynRankViewHost ConstructWithLabel(hexNodesHost, 27, 3);
+      DynRankViewHostScalarValueType ConstructWithLabelScalar(hexNodesHost, 27, 3);
+      DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 27, 3);
+      
 
       // do it lexicographically as a lattice
       hexNodesHost(0, 0) = -1.0;   hexNodesHost(0, 1) = -1.0;  hexNodesHost(0, 2) = -1.0;
@@ -535,8 +541,10 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
       hexNodesHost(25, 0) = 0.0;    hexNodesHost(25, 1) =  1.0;  hexNodesHost(25, 2) = 1.0;
       hexNodesHost(26, 0) = 1.0;    hexNodesHost(26, 1) =  1.0;  hexNodesHost(26, 2) = 1.0;
 
-      auto hexNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
-      Kokkos::deep_copy(hexNodes, hexNodesHost);
+      auto hexNodes_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
+      Kokkos::deep_copy(hexNodes_scalar, hexNodesHost);
+      
+      RealSpaceTools<DeviceSpaceType>::clone(hexNodes, hexNodes_scalar);
 
       // Dimensions for the output arrays:
       const ordinal_type numFields = hexBasis.getCardinality();
@@ -549,9 +557,9 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
       *outStream << " -- Testing OPERATOR_VALUE \n";
       {
         // Check VALUE of basis functions: resize vals to rank-2 container:
-        DynRankView ConstructWithLabel(vals, numFields, numPoints);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints);
         hexBasis.getValues(vals, hexNodes, OPERATOR_VALUE);
-        auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        auto vals_host = Kokkos::create_mirror_view(vals);
         Kokkos::deep_copy(vals_host, vals);
         for (ordinal_type i = 0; i < numFields; ++i) {
           for (ordinal_type j = 0; j < numPoints; ++j) {
@@ -566,7 +574,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
               *outStream << " At multi-index { ";
               *outStream << i << " ";*outStream << j << " ";
               *outStream << "}  computed value: " << vals_host(i,j)
-                               << " but reference value: " << basisValues[l] << "\n";
+                                   << " but reference value: " << basisValues[l] << "\n";
             }
           }
         }
@@ -575,9 +583,9 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
       *outStream << " -- Testing OPERATOR_GRAD \n";
       {
         // Check GRAD of basis function: resize vals to rank-3 container
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, spaceDim);
         hexBasis.getValues(vals, hexNodes, OPERATOR_GRAD);
-        auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        auto vals_host = Kokkos::create_mirror_view(vals);
         Kokkos::deep_copy(vals_host, vals);
         for (ordinal_type i = 0; i < numFields; ++i) {
           for (ordinal_type j = 0; j < numPoints; ++j) {
@@ -593,7 +601,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
                 *outStream << "}  computed grad component: " << vals_host(i,j,k)
-                                 << " but reference grad component: " << basisGrads[l] << "\n";
+                                     << " but reference grad component: " << basisGrads[l] << "\n";
               }
             }
           }
@@ -603,9 +611,9 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
       *outStream << " -- Testing OPERATOR_D1 \n";
       {
         // Check GRAD of basis function: resize vals to rank-3 container
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, spaceDim);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, spaceDim);
         hexBasis.getValues(vals, hexNodes, OPERATOR_D1);
-        auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        auto vals_host = Kokkos::create_mirror_view(vals);
         Kokkos::deep_copy(vals_host, vals);
         for (ordinal_type i = 0; i < numFields; ++i) {
           for (ordinal_type j = 0; j < numPoints; ++j) {
@@ -621,7 +629,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
                 *outStream << "}  computed grad component: " << vals_host(i,j,k)
-                                 << " but reference grad component: " << basisGrads[l] << "\n";
+                                     << " but reference grad component: " << basisGrads[l] << "\n";
               }
             }
           }
@@ -631,9 +639,9 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
       *outStream << " -- Testing OPERATOR_D2 \n";
       {
         // Check GRAD of basis function: resize vals to rank-3 container
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, D2Cardin);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, D2Cardin);
         hexBasis.getValues(vals, hexNodes, OPERATOR_D2);
-        auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        auto vals_host = Kokkos::create_mirror_view(vals);
         Kokkos::deep_copy(vals_host, vals);
         for (ordinal_type i = 0; i < numFields; ++i) {
           for (ordinal_type j = 0; j < numPoints; ++j) {
@@ -649,7 +657,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
                 *outStream << "}  computed grad component: " << vals_host(i,j,k)
-                                 << " but reference grad component: " << basisD2[l] << "\n";
+                                     << " but reference grad component: " << basisD2[l] << "\n";
               }
             }
           }
@@ -659,9 +667,9 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
       *outStream << " -- Testing OPERATOR_D3 \n";
       {
         // Check GRAD of basis function: resize vals to rank-3 container
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, D3Cardin);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, D3Cardin);
         hexBasis.getValues(vals, hexNodes, OPERATOR_D3);
-        auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        auto vals_host = Kokkos::create_mirror_view(vals);
         Kokkos::deep_copy(vals_host, vals);
         for (ordinal_type i = 0; i < numFields; ++i) {
           for (ordinal_type j = 0; j < numPoints; ++j) {
@@ -677,7 +685,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
                 *outStream << "}  computed grad component: " << vals_host(i,j,k)
-                                 << " but reference grad component: " << basisD3[l] << "\n";
+                                     << " but reference grad component: " << basisD3[l] << "\n";
               }
             }
           }
@@ -687,9 +695,9 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
       *outStream << " -- Testing OPERATOR_D4 \n";
       {
         // Check GRAD of basis function: resize vals to rank-3 container
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, D4Cardin);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, D4Cardin);
         hexBasis.getValues(vals, hexNodes, OPERATOR_D4);
-        auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        auto vals_host = Kokkos::create_mirror_view(vals);
         Kokkos::deep_copy(vals_host, vals);
         for (ordinal_type i = 0; i < numFields; ++i) {
           for (ordinal_type j = 0; j < numPoints; ++j) {
@@ -705,7 +713,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
                 *outStream << "}  computed grad component: " << vals_host(i,j,k)
-                                 << " but reference grad component: " << basisD4[l] << "\n";
+                                     << " but reference grad component: " << basisD4[l] << "\n";
               }
             }
           }
@@ -723,9 +731,9 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
         const auto op = ops[oid];
         const ordinal_type DkCardin = Intrepid2::getDkCardinality(op, spaceDim);
 
-        DynRankView ConstructWithLabel(vals, numFields, numPoints, DkCardin);
+        DynRankViewOutValueType ConstructWithLabelOutView(vals, numFields, numPoints, DkCardin);
         hexBasis.getValues(vals, hexNodes, op);
-        auto vals_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), vals);
+        auto vals_host = Kokkos::create_mirror_view(vals);
         Kokkos::deep_copy(vals_host, vals);
         for (ordinal_type i = 0; i < numFields; ++i) {
           for (ordinal_type j = 0; j < numPoints; ++j) {
@@ -739,7 +747,7 @@ int HGRAD_HEX_Cn_FEM_Test01(const bool verbose) {
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
                 *outStream << "}  computed grad component: " << vals_host(i,j,k)
-                                 << " but reference grad component: 0.0\n";
+                                     << " but reference grad component: 0.0\n";
               }
             }
           }
