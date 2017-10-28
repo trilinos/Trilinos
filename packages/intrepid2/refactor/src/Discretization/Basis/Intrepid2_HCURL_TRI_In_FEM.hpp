@@ -83,14 +83,14 @@ namespace Impl {
 
 /**
   \brief See Intrepid2::Basis_HCURL_TRI_In_FEM
-*/
+ */
 class Basis_HCURL_TRI_In_FEM {
 public:
   typedef struct Triangle<3> cell_topology_type;
 
   /**
     \brief See Intrepid2::Basis_HCURL_TRI_In_FEM
-  */
+   */
   template<EOperator opType>
   struct Serial {
     template<typename outputValueViewType,
@@ -117,22 +117,26 @@ public:
 
   /**
     \brief See Intrepid2::Basis_HCURL_TRI_In_FEM
-  */
+   */
   template<typename outputValueViewType,
   typename inputPointViewType,
   typename vinvViewType,
+  typename workViewType,
   EOperator opType,
   ordinal_type numPtsEval>
   struct Functor {
     outputValueViewType _outputValues;
     const inputPointViewType  _inputPoints;
     const vinvViewType        _coeffs;
+    workViewType        _work;
 
     KOKKOS_INLINE_FUNCTION
     Functor(       outputValueViewType outputValues_,
         inputPointViewType  inputPoints_,
-        vinvViewType        coeffs_ )
-    : _outputValues(outputValues_), _inputPoints(inputPoints_), _coeffs(coeffs_) {}
+        vinvViewType        coeffs_,
+        workViewType        work_)
+    : _outputValues(outputValues_), _inputPoints(inputPoints_),
+      _coeffs(coeffs_), _work(work_) {}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const size_type iter) const {
@@ -142,26 +146,16 @@ public:
       const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
       const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
-      typedef typename outputValueViewType::value_type outputValueType;
-      typedef typename outputValueViewType::pointer_type outputPointerType;
-      constexpr ordinal_type spaceDim = 2;
-      constexpr ordinal_type bufSize = (opType == OPERATOR_CURL) ?
-                                       spaceDim * CardinalityHCurlTri(Parameters::MaxOrder)*numPtsEval :
-                                       CardinalityHCurlTri(Parameters::MaxOrder)*numPtsEval;
-
-      char buf[bufSize*sizeof(outputValueType)];
-
-      Kokkos::DynRankView<outputValueType,
-        Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
-
       switch (opType) {
       case OPERATOR_VALUE : {
-        auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL()  );
+        auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+        const auto work = Kokkos::subview( _work, Kokkos::ALL(), ptRange );
         Serial<opType>::getValues( output, input, work, _coeffs );
         break;
       }
       case OPERATOR_CURL: {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange);
+        const auto work = Kokkos::subview( _work, Kokkos::ALL(), ptRange, Kokkos::ALL() );
         Serial<opType>::getValues( output, input, work, _coeffs );
         break;
       }

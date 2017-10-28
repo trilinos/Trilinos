@@ -95,21 +95,25 @@ namespace Intrepid2 {
       template<typename outputValueViewType,
                typename inputPointViewType,
                typename vinvViewType,
+               typename workViewType,
                EOperator opType,
                ordinal_type numPtsEval>
       struct Functor {
               outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;
         const vinvViewType        _vinv;
+              workViewType        _work;
         const ordinal_type        _opDn;
 
         KOKKOS_INLINE_FUNCTION
         Functor(       outputValueViewType outputValues_,
                        inputPointViewType  inputPoints_,
                        vinvViewType        vinv_,
+                       workViewType        work_,
                  const ordinal_type        opDn_ = 0 )
-          : _outputValues(outputValues_), _inputPoints(inputPoints_),
-            _vinv(vinv_), _opDn(opDn_) {}
+          : _outputValues(outputValues_), _inputPoints(inputPoints_), 
+            _vinv(vinv_), _work(work_), _opDn(opDn_) {}
+        
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
           const auto ptBegin = Util<ordinal_type>::min(iter*numPtsEval,    _inputPoints.dimension(0));
@@ -117,16 +121,7 @@ namespace Intrepid2 {
 
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
-
-          typedef typename outputValueViewType::value_type outputValueType;
-          typedef typename outputValueViewType::pointer_type outputPointerType;
-
-          constexpr ordinal_type spaceDim = 3;
-          constexpr ordinal_type bufSize = (spaceDim+1)*(Parameters::MaxOrder+1)*numPtsEval;
-          char buf[bufSize*sizeof(outputValueType)];
-
-          Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
+          const auto work    = Kokkos::subview( _work, Kokkos::ALL(), ptRange );
 
           switch (opType) {
           case OPERATOR_VALUE : {

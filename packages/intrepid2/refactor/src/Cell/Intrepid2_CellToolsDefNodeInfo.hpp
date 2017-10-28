@@ -307,6 +307,7 @@ namespace Intrepid2 {
 
     // let's copy;
     const ordinal_type dim = cell.getDimension();
+
     for (ordinal_type i=0;i<dim;++i) 
       cellNode(i) = ref(nodeOrd, i);
   }

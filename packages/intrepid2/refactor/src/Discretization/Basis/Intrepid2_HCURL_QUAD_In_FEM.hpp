@@ -90,7 +90,7 @@ namespace Intrepid2 {
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvLine,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinvBubble,
-                  const EOperator operatorType );
+                  const EOperator operatorType);
       
       /**
        \brief See Intrepid2::Basis_HCURL_QUAD_In_FEM
@@ -98,6 +98,7 @@ namespace Intrepid2 {
       template<typename outputValueViewType,
                typename inputPointViewType,
                typename vinvViewType,
+               typename workViewType,
                EOperator opType,
                ordinal_type numPtsEval>
       struct Functor {
@@ -105,14 +106,16 @@ namespace Intrepid2 {
         const inputPointViewType  _inputPoints;
         const vinvViewType        _vinvLine;
         const vinvViewType        _vinvBubble;
+              workViewType        _work;
         
         KOKKOS_INLINE_FUNCTION
         Functor( outputValueViewType outputValues_,
                  inputPointViewType  inputPoints_,
                  vinvViewType        vinvLine_,
-                 vinvViewType        vinvBubble_)
+                 vinvViewType        vinvBubble_,
+                 workViewType        work_)
           : _outputValues(outputValues_), _inputPoints(inputPoints_), 
-            _vinvLine(vinvLine_), _vinvBubble(vinvBubble_) {} 
+            _vinvLine(vinvLine_), _vinvBubble(vinvBubble_), _work(work_) {} 
         
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
@@ -121,15 +124,8 @@ namespace Intrepid2 {
           
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
-          
-          typedef typename outputValueViewType::value_type outputValueType;
-          typedef typename outputValueViewType::pointer_type outputPointerType;
-          constexpr ordinal_type bufSize = 3*(Parameters::MaxOrder+1)*numPtsEval;
-          char buf[bufSize*sizeof(outputValueType)];
-          
-          Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
-          
+          const auto work   = Kokkos::subview( _work, Kokkos::ALL(), ptRange );
+
           switch (opType) {
           case OPERATOR_VALUE : {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );

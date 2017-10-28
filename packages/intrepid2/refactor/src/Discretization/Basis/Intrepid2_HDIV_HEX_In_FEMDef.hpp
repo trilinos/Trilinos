@@ -77,27 +77,18 @@ namespace Intrepid2 {
       const auto input_y = Kokkos::subview(input, Kokkos::ALL(), range_type(1,2));
       const auto input_z = Kokkos::subview(input, Kokkos::ALL(), range_type(2,3));
 
-      const int fad = (Kokkos::is_view_fad<workViewType>::value ? Kokkos::dimension_scalar(work) : 1);
+      const auto range_l0 = range_type(0,cardLine);
+      const auto range_b0 = range_type(cardLine, cardLine+cardBubble);
+      const auto range_b1 = range_type(cardLine+cardBubble,cardLine+2*cardBubble);
+      const auto range_l1 = range_type(cardLine+2*cardBubble,2*cardLine+2*cardBubble);
+      const auto range_pt = range_type(0,npts);
 
       switch (opType) {
       case OPERATOR_VALUE: {
-        typename workViewType::pointer_type ptr = work.data();
-
-        Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> workLine(ptr, cardLine, npts);
-        ptr += (cardLine*npts*fad);
-
-        Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> outputBubble_A(ptr, cardBubble, npts);
-        ptr += (cardBubble*npts*fad);
-
-        Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> outputBubble_B(ptr, cardBubble, npts);
-        ptr += (cardBubble*npts*fad);
-
-        Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> outputLine(ptr, cardLine, npts);
-        ptr += (cardLine*npts*fad);
+        auto const workLine = Kokkos::subview(work, range_l0, range_pt);
+        auto const outputBubble_A = Kokkos::subview(work, range_b0, range_pt);
+        auto const outputBubble_B = Kokkos::subview(work, range_b1, range_pt);
+        auto const outputLine = Kokkos::subview(work, range_l1, range_pt);
 
         // tensor product
         ordinal_type idx = 0;
@@ -177,26 +168,13 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_DIV: {
-        typename workViewType::pointer_type ptr = work.data();
-
-        Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> workLine(ptr, cardLine, npts);
-        ptr += (cardLine*npts*fad);
-
-        // Line grad
-        Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> outputLine(ptr, cardLine, npts, 1);
-        ptr += (cardLine*npts*fad);
-
+        auto const workLine = Kokkos::subview(work, range_l0, range_pt);
         // A line value
-        Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> outputBubble_A(ptr, cardBubble, npts);
-        ptr += (cardBubble*npts*fad);
-
+        auto const outputBubble_A = Kokkos::subview(work, range_b0, range_pt);
         // B line value
-        Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> outputBubble_B(ptr, cardBubble, npts);
-        ptr += (cardBubble*npts*fad);
+        auto const outputBubble_B = Kokkos::subview(work, range_b1, range_pt);
+        // Line grad
+        auto const outputLine = Kokkos::subview(work, range_l1, range_pt, Kokkos::ALL());
 
         // tensor product
         ordinal_type idx = 0;
@@ -294,17 +272,35 @@ namespace Intrepid2 {
       const auto loopSizeTmp2 = (inputPoints.dimension(0)%numPtsPerEval != 0);
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+
+      typedef typename inputPointViewType::value_type inputPointType;
+
+      const ordinal_type cardinality = outputValues.dimension(0);
+      //get basis order based on basis cardinality.
+      ordinal_type order = 0;
+      ordinal_type cardBubble;  // = std::cbrt(cardinality/3);
+      ordinal_type cardLine;  // = cardBubble+1;      
+      do {
+        cardBubble = Intrepid2::getPnCardinality<1>(order);
+        cardLine = Intrepid2::getPnCardinality<1>(++order);
+      } while((3*cardBubble*cardBubble*cardLine !=  cardinality) && (order != Parameters::MaxOrder));
+      const ordinal_type workSize = 2*cardLine+2*cardBubble;
+
+      auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
+      typedef typename Kokkos::DynRankView< inputPointType, typename inputPointViewType::memory_space> workViewType;
+      workViewType  work(Kokkos::view_alloc("Basis_HDIV_HEX_In_FEM::getValues::work", vcprop), workSize, inputPoints.dimension(0));
+
       switch (operatorType) {
       case OPERATOR_VALUE: {
-        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble) );
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble, work) );
         break;
       }
       case OPERATOR_DIV: {
-        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
             OPERATOR_DIV,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble) );
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble, work) );
         break;
       }
       default: {

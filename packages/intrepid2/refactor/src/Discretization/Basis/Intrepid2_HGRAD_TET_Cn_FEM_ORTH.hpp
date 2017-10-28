@@ -67,12 +67,15 @@ namespace Impl {
 /** \brief See Intrepid2::Basis_HGRAD_TET_Cn_FEM_ORTH
  */
 template<typename outputViewType,
-typename inputViewType, bool hasDeriv, ordinal_type n>
+typename inputViewType, 
+typename workViewType,
+bool hasDeriv, ordinal_type n>
 struct OrthPolynomialTet {
   KOKKOS_INLINE_FUNCTION
   static void
   generate(       outputViewType output,
             const inputViewType input,
+                  workViewType work,
             const ordinal_type p );
 };
 
@@ -80,12 +83,14 @@ struct OrthPolynomialTet {
  */
 template<typename outputViewType,
 typename inputViewType,
+typename workViewType,
 bool hasDeriv>
-struct OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0> {
+struct OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0> {
   KOKKOS_INLINE_FUNCTION
   static void
   generate(       outputViewType output,
             const inputViewType input,
+                  workViewType work,
             const ordinal_type p );
 };
 
@@ -93,12 +98,14 @@ struct OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0> {
  */
 template<typename outputViewType,
 typename inputViewType,
+typename workViewType,
 bool hasDeriv>
-struct OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,1> {
+struct OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,1> {
   KOKKOS_INLINE_FUNCTION
   static void
   generate(   outputViewType output,
       const inputViewType input,
+            workViewType work,
       const ordinal_type p );
 };
 
@@ -114,11 +121,13 @@ public:
   template<EOperator opType>
   struct Serial {
     template<typename outputViewType,
-    typename inputViewType>
+    typename inputViewType,
+    typename workViewType>
     KOKKOS_INLINE_FUNCTION
     static void
     getValues(       outputViewType output,
                const inputViewType  input,
+                     workViewType work,
                const ordinal_type   order);
   };
 
@@ -136,18 +145,21 @@ public:
   */
   template<typename outputValueViewType,
   typename inputPointViewType,
+  typename workViewType,
   EOperator opType,
   ordinal_type numPtsEval>
   struct Functor {
           outputValueViewType _outputValues;
     const inputPointViewType  _inputPoints;
+          workViewType        _work;
     const ordinal_type        _order;
 
     KOKKOS_INLINE_FUNCTION
     Functor(       outputValueViewType outputValues_,
                    inputPointViewType  inputPoints_,
+                   workViewType        work_,
              const ordinal_type        order_ )
-    : _outputValues(outputValues_), _inputPoints(inputPoints_), _order(order_){}
+    : _outputValues(outputValues_), _inputPoints(inputPoints_), _work(work_),_order(order_){}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const size_type iter) const {
@@ -160,11 +172,17 @@ public:
       switch (opType) {
       case OPERATOR_VALUE : {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
-        Serial<opType>::getValues( output, input, _order );
+        Serial<opType>::getValues( output, input, _work, _order );  //here work is not used
         break;
       }
       case OPERATOR_GRAD :
       case OPERATOR_D1 :
+      {
+        const auto work = Kokkos::subview( _work, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+        auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+        Serial<opType>::getValues( output, input, work, _order);
+        break;
+      }
       case OPERATOR_D2 :
       case OPERATOR_D3 :
       case OPERATOR_D4 :
@@ -176,7 +194,7 @@ public:
       case OPERATOR_D10 :
       {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
-        Serial<opType>::getValues( output, input, _order);
+        Serial<opType>::getValues( output, input, _work, _order); //here work is not used
         break;
       }
       default: {
@@ -209,6 +227,8 @@ class Basis_HGRAD_TET_Cn_FEM_ORTH
 
   typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
   typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
+  
+  using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
 
   virtual
   void

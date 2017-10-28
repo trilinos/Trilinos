@@ -49,6 +49,11 @@
 #ifndef __INTREPID2_HGRAD_TET_CN_FEM_ORTH_DEF_HPP__
 #define __INTREPID2_HGRAD_TET_CN_FEM_ORTH_DEF_HPP__
 
+#ifdef HAVE_INTREPID2_SACADO
+  #include "Kokkos_ViewFactory.hpp"
+  #include "Sacado.hpp"
+#endif
+
 namespace Intrepid2 {
   // -------------------------------------------------------------------------------------
 
@@ -56,11 +61,13 @@ namespace Intrepid2 {
 
     template<typename outputViewType,
              typename inputViewType,
+             typename workViewType,
              bool hasDeriv>
     KOKKOS_INLINE_FUNCTION
-    void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,0>::generate( 
+    void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,0>::generate( 
                                                                               outputViewType output,
                                                                               const inputViewType input,
+                                                                              workViewType  /*work*/,
                                                                               const ordinal_type order ) {
 
       constexpr ordinal_type spaceDim = 3;
@@ -93,8 +100,8 @@ namespace Intrepid2 {
       }
 
       if (order > 0) {
-        value_type f1[maxNumPts],f2[maxNumPts], f3[maxNumPts], f4[maxNumPts],f5[maxNumPts],
-          df2_1[maxNumPts], df2_2[maxNumPts], df5_2[maxNumPts];
+        value_type f1[maxNumPts]={},f2[maxNumPts]={}, f3[maxNumPts]={}, f4[maxNumPts]={},f5[maxNumPts]={},
+          df2_1[maxNumPts]={}, df2_2[maxNumPts]={}, df5_2[maxNumPts]={};
         value_type df1_0, df1_1, df1_2, df3_1, df3_2, df4_2;
 
         for (int i=0;i<npts;i++) {
@@ -266,46 +273,41 @@ namespace Intrepid2 {
 
     template<typename outputViewType,
              typename inputViewType,
+             typename workViewType,
              bool hasDeriv>
     KOKKOS_INLINE_FUNCTION
-    void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,1>::generate( 
-                                                                              outputViewType output,
-                                                                              const inputViewType input,
-                                                                              const ordinal_type order ) {
-      typedef typename outputViewType::value_type value_type;
-      typedef typename outputViewType::pointer_type pointer_type;
-      typedef typename Kokkos::DynRankView<value_type, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
-
+    void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,1>::generate( 
+                                                                                    outputViewType output,
+                                                                              const inputViewType  input,
+                                                                                    workViewType   work,
+                                                                              const ordinal_type   order ) {
       constexpr ordinal_type spaceDim = 3;
-      constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
       const ordinal_type
         npts = input.dimension(0),
         card = output.dimension(0);
 
-      // use stack buffer
-      value_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][spaceDim+1]; //spaceDim for derivatives, 1 for value
-      //outViewType out = Kokkos::createDynRankViewWithType<outViewType>(output, (pointer_type)(&outBuf[0][0][0]), card, npts, spaceDim+1);
-
-      typedef typename Kokkos::View<value_type***, Kokkos::Impl::ActiveExecutionMemorySpace> outHackViewType; // Issue trying to do this directly with DynRankView - no matching ctor
-      outHackViewType hack_view( (pointer_type)&outBuf[0][0][0], card, npts, spaceDim+1); // As a hack, wrapped with a View then wrapped the View with a DynRankView
-      outViewType out(hack_view);
-
-      OrthPolynomialTet<outViewType,inputViewType,hasDeriv,0>::generate(out, input, order);
+      workViewType dummyView;
+      OrthPolynomialTet<workViewType,inputViewType,workViewType,hasDeriv,0>::generate(work, input, dummyView, order);
       for (ordinal_type i=0;i<card;++i)
         for (ordinal_type j=0;j<npts;++j)
           for (ordinal_type k=0;k<spaceDim;++k)
-            output(i,j,k) = out(i,j,k+1);
+            output(i,j,k) = work(i,j,k+1);
     }
+
 
     // when n >= 2, use recursion
     template<typename outputViewType,
              typename inputViewType,
+             typename workViewType,
              bool hasDeriv,
              ordinal_type n>
     KOKKOS_INLINE_FUNCTION
-    void OrthPolynomialTet<outputViewType,inputViewType,hasDeriv,n>::generate(outputViewType output,
-                                                                              const inputViewType input,
-                                                                              const ordinal_type order ) {
+    void OrthPolynomialTet<outputViewType,inputViewType,workViewType,hasDeriv,n>::generate(
+                                                                                    outputViewType output,
+                                                                              const inputViewType  input,
+                                                                                    workViewType   work,
+                                                                              const ordinal_type   order ) {
+#ifdef HAVE_INTREPID2_SACADO
 
       constexpr ordinal_type spaceDim = 3;
       constexpr ordinal_type maxCard = Intrepid2::getPnCardinality<spaceDim, Parameters::MaxOrder>();
@@ -321,11 +323,14 @@ namespace Intrepid2 {
       fad_type inBuf[Parameters::MaxNumPtsPerBasisEval][spaceDim];
       fad_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][n*(n+1)/2];
 
-      typedef typename Kokkos::View<fad_type***, Kokkos::Impl::ActiveExecutionMemorySpace> outViewType;
-      typedef typename Kokkos::View<fad_type**, Kokkos::Impl::ActiveExecutionMemorySpace> inViewType;
+      typedef typename inputViewType::memory_space memory_space;
+      typedef typename inputViewType::memory_space memory_space;
+      typedef typename Kokkos::View<fad_type***, memory_space> outViewType;
+      typedef typename Kokkos::View<fad_type**, memory_space> inViewType;
+      auto vcprop = Kokkos::common_view_alloc_prop(input);
 
-      inViewType in((value_type*)(&inBuf[0][0]), npts, spaceDim);
-      outViewType out((value_type*)(&outBuf[0][0][0]), card, npts, n*(n+1)/2);
+      inViewType in(Kokkos::view_wrap((value_type*)&inBuf[0][0], vcprop), npts, spaceDim);
+      outViewType out(Kokkos::view_wrap((value_type*)&outBuf[0][0][0], vcprop), card, npts, n*(n+1)/2);
 
       for (ordinal_type i=0;i<npts;++i)
         for (ordinal_type j=0;j<spaceDim;++j) {
@@ -333,7 +338,16 @@ namespace Intrepid2 {
           in(i,j).diff(j,spaceDim);
         }
 
-      OrthPolynomialTet<outViewType,inViewType,hasDeriv,n-1>::generate(out, in, order);
+      typedef typename Kokkos::DynRankView<fad_type, memory_space> outViewType_;
+      outViewType_ workView;
+      if (n==2) {
+        //char outBuf[bufSize*sizeof(typename inViewType::value_type)];
+        fad_type outBuf[maxCard][Parameters::MaxNumPtsPerBasisEval][spaceDim+1];
+        auto vcprop = Kokkos::common_view_alloc_prop(in);
+        workView = outViewType_( Kokkos::view_wrap((value_type*)&outBuf[0][0][0], vcprop), card, npts, spaceDim+1);
+      }
+      OrthPolynomialTet<outViewType,inViewType,outViewType_,hasDeriv,n-1>::generate(out, in, workView, order);
+
       for (ordinal_type i=0;i<card;++i)
         for (ordinal_type j=0;j<npts;++j) {
           for (ordinal_type i_dx = 0; i_dx <= n; ++i_dx)
@@ -360,73 +374,90 @@ namespace Intrepid2 {
               }
             }
         }
+#else
+      INTREPID2_TEST_FOR_ABORT( true,
+              ">>> ERROR: (Intrepid2::Basis_HGRAD_TRI_Cn_FEM_ORTH::OrthPolynomialTri) Sacado is needed for computing second and higher-order derivatives");
+      #endif
     }
+
 
 
     template<EOperator opType>
     template<typename outputViewType,
-             typename inputViewType>
+             typename inputViewType,
+             typename workViewType>
     KOKKOS_INLINE_FUNCTION
     void
     Basis_HGRAD_TET_Cn_FEM_ORTH::Serial<opType>::
     getValues( outputViewType output,
                const inputViewType  input,
+                     workViewType   work,
                const ordinal_type   order) {
       switch (opType) {
       case OPERATOR_VALUE: {
-        OrthPolynomialTet<outputViewType,inputViewType,false,0>::generate( output, input, order );
+        OrthPolynomialTet<outputViewType,inputViewType,workViewType,false,0>::generate( output, input, work, order );
         break;
       }
       case OPERATOR_GRAD:
-      case OPERATOR_D1:
-        {
-          OrthPolynomialTet<outputViewType,inputViewType,true,1>::generate( output, input, order );
+      case OPERATOR_D1: {
+          OrthPolynomialTet<outputViewType,inputViewType,workViewType,true,1>::generate( output, input, work, order );
           break;
         }
-        /*
-          case OPERATOR_D2: {
-          OrthPolynomialTet<outputViewType,inputViewType,true,2>::generate( output, input, order );
-          break;
-          }
-          case OPERATOR_D3: {
-          OrthPolynomialTet<outputViewType,inputViewType,true,3>::generate( output, input, order );
-          break;
-          }
-          case OPERATOR_D4: {
-          OrthPolynomialTet<outputViewType,inputViewType,true,4>::generate( output, input, order );
-          break;
-          }
-          case OPERATOR_D5: {
-          OrthPolynomialTet<outputViewType,inputViewType,true,5>::generate( output, input, order );
-          break;
-          }
-          case OPERATOR_D6: {
-          OrthPolynomialTet<outputViewType,inputViewType,true,6>::generate( output, input, order );
-          break;
-          }
-          case OPERATOR_D7: {
-          OrthPolynomialTet<outputViewType,inputViewType,true,7>::generate( output, input, order );
-          break;
-          }
-          case OPERATOR_D8: {
-          OrthPolynomialTet<outputViewType,inputViewType,true,8>::generate( output, input, order );
-          break;
-          }
-          case OPERATOR_D9: {
-          OrthPolynomialTet<outputViewType,inputViewType,true,9>::generate( output, input, order );
-          break;
-          }
-          case OPERATOR_D10: {
-          OrthPolynomialTet<outputViewType,inputViewType,true,10>::generate( output, input, order );
-          break;
-          }
-        */
-      default: {
-        INTREPID2_TEST_FOR_ABORT( true,
-                                  ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM_ORTH::Serial::getValues) operator is not supported");
-      }
-      }
-    }
+#ifdef HAVE_INTREPID2_SACADO
+      case OPERATOR_D2: {
+        OrthPolynomialTet<outputViewType,inputViewType,workViewType,true,2>::generate( output, input, work, order );
+        break;
+        }
+//      case OPERATOR_D3: {
+//        OrthPolynomialTri<outputViewType,inputViewType,workViewType,true,3>::generate( output, input, work, order );
+//        break;
+//      }
+#else
+  case OPERATOR_D2:
+    INTREPID2_TEST_FOR_ABORT( true,
+            ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM_ORTH::Serial::getValues) Sacado is needed for computing second and higher-order derivatives");
+    break;
+#endif
+  /*
+  case OPERATOR_D3: {
+    OrthPolynomialTet<outputViewType,inputViewType,true,3>::generate( output, input, order );
+    break;
+  }
+  case OPERATOR_D4: {
+    OrthPolynomialTet<outputViewType,inputViewType,true,4>::generate( output, input, order );
+    break;
+  }
+  case OPERATOR_D5: {
+    OrthPolynomialTet<outputViewType,inputViewType,true,5>::generate( output, input, order );
+    break;
+  }
+  case OPERATOR_D6: {
+    OrthPolynomialTet<outputViewType,inputViewType,true,6>::generate( output, input, order );
+    break;
+  }
+  case OPERATOR_D7: {
+    OrthPolynomialTet<outputViewType,inputViewType,true,7>::generate( output, input, order );
+    break;
+  }
+  case OPERATOR_D8: {
+    OrthPolynomialTet<outputViewType,inputViewType,true,8>::generate( output, input, order );
+    break;
+  }
+  case OPERATOR_D9: {
+    OrthPolynomialTet<outputViewType,inputViewType,true,9>::generate( output, input, order );
+    break;
+  }
+  case OPERATOR_D10: {
+    OrthPolynomialTet<outputViewType,inputViewType,true,10>::generate( output, input, order );
+    break;
+  }
+  */
+  default: {
+    INTREPID2_TEST_FOR_ABORT( true,
+        ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM_ORTH::Serial::getValues) operator is not supported");
+  }
+  }
+}
 
     // -------------------------------------------------------------------------------------
 
@@ -449,24 +480,40 @@ namespace Intrepid2 {
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
+      typedef typename inputPointViewType::value_type inputPointType;
+      const ordinal_type cardinality = outputValues.dimension(0);
+      const ordinal_type spaceDim = 3;
+
+      auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
+      typedef typename Kokkos::DynRankView< inputPointType, typename inputPointViewType::memory_space> workViewType;
+
       switch (operatorType) {
       case OPERATOR_VALUE: {
-        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_VALUE,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
+        workViewType  dummyWorkView;
+        typedef Functor<outputValueViewType,inputPointViewType,workViewType,OPERATOR_VALUE,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, dummyWorkView, order) );
         break;
       }
       case OPERATOR_GRAD:
       case OPERATOR_D1: {
-        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D1,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
+        workViewType  work(Kokkos::view_alloc("Basis_HGRAD_TET_In_FEM_ORTH::getValues::work", vcprop), cardinality, inputPoints.dimension(0), spaceDim+1);
+        typedef Functor<outputValueViewType,inputPointViewType,workViewType,OPERATOR_D1,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, work, order) );
         break;
       }
-        break;
-      case OPERATOR_D2: {
-        typedef Functor<outputValueViewType,inputPointViewType,OPERATOR_D2,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, order) );
+#ifdef HAVE_INTREPID2_SACADO
+      case OPERATOR_D2:{
+        workViewType  dummyWorkView;
+        typedef Functor<outputValueViewType,inputPointViewType,workViewType,OPERATOR_D2,numPtsPerEval> FunctorType;
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints ,dummyWorkView, order) );
         break;
       }
+#else
+  case OPERATOR_D2:
+    INTREPID2_TEST_FOR_ABORT( true,
+            ">>> ERROR: (Intrepid2::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues) Sacado is needed for computing second and higher-order derivatives");
+    break;
+#endif
         /*
         // Commented out - Cuda takes FOREVER to compile 
         case OPERATOR_D3: {
@@ -510,13 +557,6 @@ namespace Intrepid2 {
         break;
         }
         */
-      case OPERATOR_DIV:
-      case OPERATOR_CURL: {
-        INTREPID2_TEST_FOR_EXCEPTION( operatorType == OPERATOR_DIV ||
-                                      operatorType == OPERATOR_CURL, std::invalid_argument,
-                                      ">>> ERROR (Basis_HGRAD_TET_Cn_FEM_ORTH): invalid operator type (div or curl).");
-        break;
-      }
       default: {
         INTREPID2_TEST_FOR_EXCEPTION( !Intrepid2::isValidOperator(operatorType), std::invalid_argument,
                                       ">>> ERROR (Basis_HGRAD_TET_Cn_FEM_ORTH): invalid operator type");
@@ -530,7 +570,9 @@ namespace Intrepid2 {
   template<typename SpT, typename OT, typename PT>
   Basis_HGRAD_TET_Cn_FEM_ORTH<SpT,OT,PT>::
   Basis_HGRAD_TET_Cn_FEM_ORTH( const ordinal_type order ) {
-    this->basisCardinality_  = Intrepid2::getPnCardinality<3>(order);
+
+    constexpr ordinal_type spaceDim = 3;
+    this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order);
     this->basisDegree_       = order;
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
     this->basisType_         = BASIS_FEM_HIERARCHICAL;
@@ -538,8 +580,6 @@ namespace Intrepid2 {
 
     // initialize tags
     {
-      constexpr ordinal_type spaceDim = 3;
-
       // Basis-dependent initializations
       constexpr ordinal_type tagSize  = 4;    // size of DoF tag, i.e., number of fields in the tag
       const ordinal_type posScDim = 0;        // position in the tag, counting from 0, of the subcell dim

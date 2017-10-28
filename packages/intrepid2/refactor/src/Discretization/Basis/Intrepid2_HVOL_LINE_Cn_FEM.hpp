@@ -136,15 +136,25 @@ namespace Intrepid2 {
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
-          typedef typename outputValueViewType::value_type outputValueType;
-          typedef typename outputValueViewType::pointer_type outputPointerType;
+          typedef typename inputPointViewType::value_type inputValueType;
+          typedef typename inputPointViewType::pointer_type inputPointerType;
 
-          constexpr ordinal_type bufSize = (Parameters::MaxOrder+1)*numPtsEval;
-          outputValueType buf[bufSize];
-          Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> 
-            work((outputPointerType)&buf[0], bufSize);
+          constexpr ordinal_type cardLine = Intrepid2::getPnCardinality<1,Parameters::MaxOrder>();
+          constexpr ordinal_type bufSize = cardLine*numPtsEval;
           
+          //FIXME: Bad hack to estimate the size of derivatives with DFad<double> (its size is 24).
+          //       We assume to have as many derivatives as the size of the basis.
+          //       The buffer should be provided by the use or allocated dynamically in the memory pool if we go with teams
+          constexpr ordinal_type typeSizeEst = (sizeof(inputValueType) == 24) ?
+                   (1 + cardLine)*sizeof(double) :
+                   sizeof(inputValueType);
+
+          char buf[bufSize*typeSizeEst];
+
+          auto vcprop = Kokkos::common_view_alloc_prop(input);
+          Kokkos::DynRankView< inputValueType, typename inputPointViewType::memory_space > 
+            work( Kokkos::view_wrap(reinterpret_cast<inputPointerType>(buf), vcprop), bufSize/numPtsEval, numPtsEval);
+
           switch (opType) {
           case OPERATOR_VALUE : {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );

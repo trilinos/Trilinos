@@ -124,18 +124,22 @@ namespace Intrepid2 {
       template<typename outputValueViewType,
                typename inputPointViewType,
                typename vinvViewType,
+               typename workViewType,
                EOperator opType,
                ordinal_type numPtsEval>
       struct Functor {
               outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;
         const vinvViewType        _vinv;
+              workViewType        _work;
 
         KOKKOS_INLINE_FUNCTION
         Functor(       outputValueViewType outputValues_,
                        inputPointViewType  inputPoints_,
-                       vinvViewType        vinv_)
-          : _outputValues(outputValues_), _inputPoints(inputPoints_), _vinv(vinv_) {}
+                       vinvViewType        vinv_,
+                       workViewType        work_)
+          : _outputValues(outputValues_), _inputPoints(inputPoints_),
+            _vinv(vinv_), _work(work_) {}
 
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
@@ -145,28 +149,20 @@ namespace Intrepid2 {
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
-          typedef typename outputValueViewType::value_type outputValueType;
-          typedef typename outputValueViewType::pointer_type outputPointerType;
-
-          constexpr ordinal_type spaceDim = 3;
-          constexpr ordinal_type bufSize =
-              Intrepid2::getDkCardinality<opType, spaceDim>()*Intrepid2::getPnCardinality<spaceDim,Parameters::MaxOrder>()*numPtsEval;
-          char buf[bufSize*sizeof(outputValueType)];
-
-          Kokkos::DynRankView<outputValueType,
-            Kokkos::Impl::ActiveExecutionMemorySpace> work((outputPointerType)&buf[0], bufSize);
-
           switch (opType) {
           case OPERATOR_VALUE : {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange );
+            const auto work = Kokkos::subview( _work, Kokkos::ALL(), ptRange );
             Serial<opType>::getValues( output, input, work, _vinv );
             break;
           }
           case OPERATOR_GRAD :
           case OPERATOR_D1 :
           case OPERATOR_D2 :
-          case OPERATOR_D3 :{
+          //case OPERATOR_D3 :
+          {
             auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
+            const auto work = Kokkos::subview( _work, Kokkos::ALL(), ptRange, Kokkos::ALL() );
             Serial<opType>::getValues( output, input, work, _vinv );
             break;
           }
@@ -257,7 +253,7 @@ namespace Intrepid2 {
         
 
     void
-    getVandermondeInverse( scalarType vinv ) const {
+    getVandermondeInverse( scalarViewType vinv ) const {
       // has to be same rank and dimensions
       Kokkos::deep_copy(vinv, this->vinv_);
     }

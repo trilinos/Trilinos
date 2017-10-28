@@ -619,7 +619,7 @@ namespace Intrepid2 {
       double a1, a2, a3, a4;
       const double apb = alpha + beta;
 
-      typename zViewType::value_type
+      typename polyiViewType::value_type
         poly[MaxPolylibPoint]={}, polyn1[MaxPolylibPoint]={}, polyn2[MaxPolylibPoint]={};
 
       if (polyi.data()) 
@@ -686,7 +686,7 @@ namespace Intrepid2 {
       for(ordinal_type i = 0; i < np; ++i)
         polyd(i) = 0.0;
     else {
-      Kokkos::View<typename zViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+      Kokkos::View<typename polydViewType::value_type*,Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
       JacobiPolynomial(np, z, polyd, null, n-1, alpha+one, beta+one);
       for(ordinal_type i = 0; i < np; ++i)
         polyd(i) *= 0.5*(alpha + beta + n + one);
@@ -827,7 +827,7 @@ namespace Intrepid2 {
           g=(d(l+1)-d(l))/(2.0*e(l));
           r=sqrt((g*g)+1.0);
           //g=d(m)-d(l)+e(l)/(g+sign(r,g));
-          g=d(m)-d(l)+e(l)/(g+((g)<0 ? -Util<value_type>::abs(r) : Util<value_type>::abs(r)));
+          g=d(m)-d(l)+e(l)/(g+((g)<0 ? value_type(-Util<value_type>::abs(r)) : Util<value_type>::abs(r)));
           s=c=1.0;
           p=0.0;
           for (i=m-1; i>=l; i--) {

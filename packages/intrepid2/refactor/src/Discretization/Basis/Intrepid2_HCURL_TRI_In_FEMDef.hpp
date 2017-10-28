@@ -88,11 +88,11 @@ namespace Intrepid2 {
 
       switch (opType) {
       case OPERATOR_VALUE: {
-        Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> phis(work.data(), cardPn, npts);
+        const auto phis = work;
+        workViewType dummyView;
 
         Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
-          Serial<opType>::getValues(phis, input, order);
+          Serial<opType>::getValues(phis, input, dummyView, order);
 
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j)
@@ -104,11 +104,11 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_CURL: {
-        Kokkos::DynRankView<typename workViewType::value_type,
-            typename workViewType::memory_space> phis(work.data(), cardPn, npts, spaceDim);
+        const auto phis = Kokkos::subview( work, Kokkos::ALL(), Kokkos::ALL(), Kokkos::pair<ordinal_type,ordinal_type>(0, spaceDim));
+        const auto workView = Kokkos::subview( work, Kokkos::ALL(), Kokkos::ALL(), Kokkos::pair<ordinal_type,ordinal_type>(spaceDim, 2*spaceDim+1));
 
         Impl::Basis_HGRAD_TRI_Cn_FEM_ORTH::
-          Serial<OPERATOR_GRAD>::getValues(phis, input, order);
+          Serial<OPERATOR_GRAD>::getValues(phis, input, workView, order);
 
         for (ordinal_type i=0;i<card;++i)
           for (ordinal_type j=0;j<npts;++j) {
@@ -147,17 +147,27 @@ namespace Intrepid2 {
       const auto loopSize = loopSizeTmp1 + loopSizeTmp2;
       Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
+      typedef typename inputPointViewType::value_type inputPointType;
+
+      const ordinal_type cardinality = outputValues.dimension(0);
+      const ordinal_type spaceDim = 2;
+
+      auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);
+      typedef typename Kokkos::DynRankView< inputPointType, typename inputPointViewType::memory_space> workViewType;
+
       switch (operatorType) {
       case OPERATOR_VALUE: {
-        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+        workViewType  work(Kokkos::view_alloc("Basis_HCURL_TRI_In_FEM::getValues::work", vcprop), cardinality, inputPoints.dimension(0));
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
           OPERATOR_VALUE,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs) );
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );
         break;
       }
       case OPERATOR_CURL: {
-        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType,
+        workViewType  work(Kokkos::view_alloc("Basis_HCURL_TRI_In_FEM::getValues::work", vcprop), cardinality, inputPoints.dimension(0), 2*spaceDim+1);
+        typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
           OPERATOR_CURL,numPtsPerEval> FunctorType;
-        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs) );
+        Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );
         break;
       }
       default: {

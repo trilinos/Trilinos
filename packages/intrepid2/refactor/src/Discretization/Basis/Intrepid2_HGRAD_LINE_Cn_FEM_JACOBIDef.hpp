@@ -78,9 +78,8 @@ namespace Intrepid2 {
 
       switch (opType) {
       case OPERATOR_VALUE: {
-        typedef typename outputViewType::value_type value_type;
-        const Kokkos::View<value_type*,
-            Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+        const Kokkos::View<typename inputViewType::value_type*,
+          typename inputViewType::memory_space,Kokkos::MemoryUnmanaged> null;
         for (ordinal_type p=0;p<card;++p) {
           auto poly = Kokkos::subview( output, p, Kokkos::ALL() );
           Polylib::Serial::JacobiPolynomial(np, pts, poly, null, p, alpha, beta);
@@ -117,9 +116,8 @@ namespace Intrepid2 {
                 output(p, i, j) = 0.0;
         }
         {
-          typedef typename outputViewType::value_type value_type;
-          const Kokkos::View<value_type*,
-            Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::MemoryUnmanaged> null;
+          const Kokkos::View<typename inputViewType::value_type*,
+            typename inputViewType::memory_space,Kokkos::MemoryUnmanaged> null;
 
           for (ordinal_type p=opDn;p<card;++p) {
             double scaleFactor = 1.0;

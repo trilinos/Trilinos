@@ -53,9 +53,9 @@
 #include "Intrepid2_Types.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_ViewFactory.hpp"
-
-#include "Sacado_Traits.hpp"
+#ifdef HAVE_INTREPID2_SACADO
+  #include "Sacado_Traits.hpp"
+#endif
 
 namespace Intrepid2 {
 
@@ -267,6 +267,20 @@ namespace Intrepid2 {
   static T abs(const T &a) {
     return (a > 0 ? a : T(-a));
   }
+
+  template<typename T>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static typename ScalarTraits<T>::scalar_type extract_scalar_value(const T& value) {
+#ifdef HAVE_INTREPID2_SACADO
+    return Sacado::Value<T>::eval(value);
+#else
+    return value;
+#endif
+  }
+
+
+
+
 
 } // end namespace Intrepid2
 

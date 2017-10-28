@@ -114,11 +114,13 @@ namespace Intrepid2 {
     // KK: do not chagne max num pts per basis eval bigger than 1. 
     //     polylib point and order match needs to be first examined; now if it is set bigger than 1
     //     it creates silent error.
+    //
+    // MP: I tried setting max num pts per basis eval to 2 and everything seems working fine. Leaving it to 1 for now.
     
     /// The maximum number of points to eval in serial mode.
-    static constexpr ordinal_type MaxNumPtsPerBasisEval= 1;      
+    static constexpr ordinal_type MaxNumPtsPerBasisEval= 1;
     /// The maximum reconstruction order.
-    static constexpr ordinal_type MaxOrder             = 6;  
+    static constexpr ordinal_type MaxOrder             = 8;
     /// The maximum number of integration points for direct cubature rules.
     static constexpr ordinal_type MaxIntegrationPoints = 1001;    
     /// The maximum degree of the polynomial that can be integrated exactly by a direct edge rule.

@@ -242,9 +242,8 @@ namespace Intrepid2 {
         for (ordinal_type j=0;j<jend;++j)
           for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
-              for (ordinal_type m=0;m<mend;++m) {
-                _output(i,j,k,l,m) = Sacado::Value<typename inputViewType::value_type>::eval(_input(i,j,k,l,m));
-              }
+              for (ordinal_type m=0;m<mend;++m)
+                _output(i,j,k,l,m) = extract_scalar_value(_input(i,j,k,l,m));
       }
     };
   }

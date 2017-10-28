@@ -337,9 +337,9 @@ warpFactor( Kokkos::DynRankView<pointValueType,pointProperties...> warp,
    Kokkos::deep_copy(warp, pointValueType(0.0));
 
    ordinal_type xout_dim0 = xout.dimension(0);
-   Kokkos::DynRankView<pointValueType> d("d", xout_dim0 );
+   Kokkos::DynRankView<pointValueType, Kokkos::DefaultHostExecutionSpace> d("d", xout_dim0 );
 
-   Kokkos::DynRankView<pointValueType> xeq_("xeq", order + 1 ,1);
+   Kokkos::DynRankView<pointValueType, Kokkos::DefaultHostExecutionSpace> xeq_("xeq", order + 1 ,1);
    PointTools::getEquispacedLatticeLine( xeq_ , order , 0 );
    const auto xeq = Kokkos::subview(xeq_, Kokkos::ALL(),0);
 

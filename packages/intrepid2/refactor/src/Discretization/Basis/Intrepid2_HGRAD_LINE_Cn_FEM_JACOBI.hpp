@@ -244,7 +244,9 @@ namespace Intrepid2 {
 
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::outputViewType outputViewType;
     typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::pointViewType  pointViewType;
-    
+   
+    using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
+ 
     virtual
     void
     getValues(       outputViewType outputValues,
