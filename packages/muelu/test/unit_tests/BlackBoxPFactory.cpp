@@ -1184,7 +1184,7 @@ namespace MueLuTests {
     out << "Geometric Data Generated" << std::endl;
 
     // From A on local rank, let us construct Aghost
-    Array<GO> ghostRowGIDs, nodeSteps(3);
+    Array<GO> ghostRowGIDs, ghostColGIDs, nodeSteps(3);
     nodeSteps[0] = 1;
     nodeSteps[1] = gNodesPerDim[0];
     nodeSteps[2] = gNodesPerDim[0]*gNodesPerDim[1];
@@ -1217,16 +1217,73 @@ namespace MueLuTests {
         }
       }
     }
+    std::cout << "p=" << comm->getRank() << " | "
+              << "startingGID for ghostedRowMap: " << startingGID << std::endl;
+
+    // Looking at the above loops it is easy to find startingGID for the ghostColGIDs
+    Array<GO> startingGlobalIndices(numDimensions), dimStride(numDimensions);
+    Array<GO> startingColIndices(numDimensions), finishingColIndices(numDimensions);
+    GO colMinGID = 0;
+    Array<LO> colRange(numDimensions);
+    dimStride[0] = 1;
+    for(int dim = 1; dim < numDimensions; ++dim) {
+      dimStride[dim] = dimStride[dim - 1]*gNodesPerDim[dim - 1];
+    }
+    {
+      GO tmp = startingGID;
+      for(int dim = numDimensions; dim > 0; --dim) {
+        startingGlobalIndices[dim - 1] = tmp / dimStride[dim - 1];
+        tmp = tmp % dimStride[dim - 1];
+
+        if(startingGlobalIndices[dim - 1] > 0) {
+          startingColIndices[dim - 1] = startingGlobalIndices[dim - 1] - 1;
+        }
+        if(startingGlobalIndices[dim - 1] + range[dim - 1] < gNodesPerDim[dim - 1]) {
+          finishingColIndices[dim - 1] = startingGlobalIndices[dim - 1] + range[dim - 1];
+        } else {
+          finishingColIndices[dim - 1] = startingGlobalIndices[dim - 1] + range[dim - 1] - 1;
+        }
+        colRange[dim - 1] = finishingColIndices[dim - 1] - startingColIndices[dim - 1] + 1;
+        colMinGID += startingColIndices[dim - 1]*dimStride[dim - 1];
+      }
+    }
+    ghostColGIDs.resize(colRange[0]*colRange[1]*colRange[2]*BlkSize);
+    for(LO k = 0; k < colRange[2]; ++k) {
+      for(LO j = 0; j < colRange[1]; ++j) {
+        for(LO i = 0; i < colRange[0]; ++i) {
+          for(LO l = 0; l < BlkSize; ++l) {
+            ghostColGIDs[(k*colRange[1]*colRange[0] + j*colRange[0] + i)*BlkSize + l] = colMinGID
+              + (k*gNodesPerDim[1]*gNodesPerDim[0] + j*gNodesPerDim[0] + i)*BlkSize + l;
+          }
+        }
+      }
+    }
+    std::cout << "p=" << comm->getRank() << " | "
+              << "startingColIndices: " << startingColIndices << std::endl;
+    std::cout << "p=" << comm->getRank() << " | "
+              << "finishingColIndices: " << finishingColIndices << std::endl;
+    std::cout << "p=" << comm->getRank() << " | "
+              << "colRange: " << colRange << std::endl;
+    std::cout << "p=" << comm->getRank() << " | "
+              << "colMinGID: " << colMinGID << std::endl;
+    std::cout << "p=" << comm->getRank() << " | "
+              << "ghostColGIDs: " << ghostColGIDs << std::endl;
+
     RCP<const Map> ghostedRowMap = Xpetra::MapFactory<LO,GO,NO>::Build(A->getRowMap()->lib(),
                                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                            ghostRowGIDs(),
+                                           A->getRowMap()->getIndexBase(),
+                                           A->getRowMap()->getComm());
+    RCP<const Map> ghostedColMap = Xpetra::MapFactory<LO,GO,NO>::Build(A->getRowMap()->lib(),
+                                           Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                           ghostColGIDs(),
                                            A->getRowMap()->getIndexBase(),
                                            A->getRowMap()->getComm());
     RCP<const Import> ghostImporter = Xpetra::ImportFactory<LO,GO,NO>::Build(A->getRowMap(),
                                                                              ghostedRowMap);
     RCP<const Matrix> Aghost        = Xpetra::MatrixFactory<SC,LO,GO,NO>::Build(A, *ghostImporter,
                                                                                 ghostedRowMap,
-                                                                                ghostedRowMap);
+                                                                                ghostedColMap);
 
     out << "Ghost Matrix Generated" << std::endl;
 
