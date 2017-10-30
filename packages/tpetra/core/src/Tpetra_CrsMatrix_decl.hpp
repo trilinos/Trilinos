@@ -69,6 +69,7 @@
 #include "KokkosSparse_sor_sequential_impl.hpp"
 
 namespace Tpetra {
+
   /// \class CrsMatrix
   /// \brief Sparse matrix that presents a row-oriented interface that
   ///   lets users read or modify entries.
@@ -2925,8 +2926,8 @@ namespace Tpetra {
     /// \param D [in] Inverse of diagonal entries of the matrix A.
     /// \param omega [in] SOR damping factor.  omega = 1 results in
     ///   Gauss-Seidel.
-    /// \param direction [in] Sweep direction: KokkosClassic::Forward or
-    ///   KokkosClassic::Backward.  ("Symmetric" requires interprocess
+    /// \param direction [in] Sweep direction: Tpetra::Forward or
+    ///   Tpetra::Backward.  ("Symmetric" requires interprocess
     ///   communication (before each sweep), which is not part of the
     ///   local kernel.)
     template <class DomainScalar, class RangeScalar>
@@ -2935,7 +2936,7 @@ namespace Tpetra {
                       MultiVector<RangeScalar, LocalOrdinal, GlobalOrdinal, Node, classic> &X,
                       const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic> &D,
                       const RangeScalar& dampingFactor,
-                      const KokkosClassic::ESweepDirection direction) const
+                      const ESweepDirection direction) const
     {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
@@ -2987,7 +2988,7 @@ namespace Tpetra {
       const LO* const indRaw = ind.ptr_on_device ();
       const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
-      const std::string dir ((direction == KokkosClassic::Forward) ? "F" : "B");
+      const std::string dir ((direction == Forward) ? "F" : "B");
       // NOTE (mfh 28 Aug 2017) This assumes UVM.  We can't get around
       // that on GPUs without using a GPU-based sparse triangular
       // solve to implement Gauss-Seidel.  This exists in cuSPARSE,
@@ -3028,8 +3029,8 @@ namespace Tpetra {
     /// \param rowIndices [in] Ordered list of indices on which to execute GS.
     /// \param omega [in] SOR damping factor.  omega = 1 results in
     ///   Gauss-Seidel.
-    /// \param direction [in] Sweep direction: KokkosClassic::Forward or
-    ///   KokkosClassic::Backward.  ("Symmetric" requires interprocess
+    /// \param direction [in] Sweep direction: Tpetra::Forward or
+    ///   Tpetra::Backward.  ("Symmetric" requires interprocess
     ///   communication (before each sweep), which is not part of the
     ///   local kernel.)
     template <class DomainScalar, class RangeScalar>
@@ -3039,7 +3040,7 @@ namespace Tpetra {
                                const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, classic>& D,
                                const Teuchos::ArrayView<LocalOrdinal>& rowIndices,
                                const RangeScalar& dampingFactor,
-                               const KokkosClassic::ESweepDirection direction) const
+                               const ESweepDirection direction) const
     {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
@@ -3096,7 +3097,7 @@ namespace Tpetra {
       const LO* const indRaw = ind.ptr_on_device ();
       const impl_scalar_type* const valRaw = val.ptr_on_device ();
 
-      const std::string dir = (direction == KokkosClassic::Forward) ? "F" : "B";
+      const std::string dir = (direction == Forward) ? "F" : "B";
       // NOTE (mfh 28 Aug 2017) This assumes UVM.  We can't get around
       // that on GPUs without using a GPU-based sparse triangular
       // solve to implement Gauss-Seidel, and also handling the

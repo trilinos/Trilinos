@@ -5276,16 +5276,16 @@ namespace Tpetra {
 
     // Translate from global to local sweep direction.
     // While doing this, validate the input.
-    KokkosClassic::ESweepDirection localDirection;
+    ESweepDirection localDirection;
     if (direction == Forward) {
-      localDirection = KokkosClassic::Forward;
+      localDirection = Forward;
     }
     else if (direction == Backward) {
-      localDirection = KokkosClassic::Backward;
+      localDirection = Backward;
     }
     else if (direction == Symmetric) {
       // We'll control local sweep direction manually.
-      localDirection = KokkosClassic::Forward;
+      localDirection = Forward;
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
@@ -5476,7 +5476,7 @@ namespace Tpetra {
         if (rowIndices.is_null ()) {
           this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   KokkosClassic::Forward);
+                                                   Forward);
           // mfh 18 Mar 2013: Aztec's implementation of "symmetric
           // Gauss-Seidel" does _not_ do an Import between the forward
           // and backward sweeps.  This makes sense, because Aztec
@@ -5489,13 +5489,13 @@ namespace Tpetra {
           }
           this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   KokkosClassic::Backward);
+                                                   Backward);
         }
         else {
           this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap,
                                                             D, rowIndices,
                                                             dampingFactor,
-                                                            KokkosClassic::Forward);
+                                                            Forward);
           if (doImportBetweenDirections) {
             // Communicate again before the Backward sweep.
             if (! importer.is_null ()) {
@@ -5505,7 +5505,7 @@ namespace Tpetra {
           this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap,
                                                             D, rowIndices,
                                                             dampingFactor,
-                                                            KokkosClassic::Backward);
+                                                            Backward);
         }
       }
     }
@@ -5561,16 +5561,16 @@ namespace Tpetra {
 
     // Translate from global to local sweep direction.
     // While doing this, validate the input.
-    KokkosClassic::ESweepDirection localDirection;
+    ESweepDirection localDirection;
     if (direction == Forward) {
-      localDirection = KokkosClassic::Forward;
+      localDirection = Forward;
     }
     else if (direction == Backward) {
-      localDirection = KokkosClassic::Backward;
+      localDirection = Backward;
     }
     else if (direction == Symmetric) {
       // We'll control local sweep direction manually.
-      localDirection = KokkosClassic::Forward;
+      localDirection = Forward;
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -5804,7 +5804,7 @@ namespace Tpetra {
         if (rowIndices.is_null ()) {
           this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   KokkosClassic::Forward);
+                                                   Forward);
           // mfh 18 Mar 2013: Aztec's implementation of "symmetric
           // Gauss-Seidel" does _not_ do an Import between the forward
           // and backward sweeps.  This makes symmetric Gauss-Seidel a
@@ -5812,17 +5812,17 @@ namespace Tpetra {
           // imitate Aztec's behavior here.
           this->template localGaussSeidel<ST, ST> (*B_in, *X_colMap, D,
                                                    dampingFactor,
-                                                   KokkosClassic::Backward);
+                                                   Backward);
         }
         else {
           this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap,
                                                             D, rowIndices,
                                                             dampingFactor,
-                                                            KokkosClassic::Forward);
+                                                            Forward);
           this->template reorderedLocalGaussSeidel<ST, ST> (*B_in, *X_colMap,
                                                             D, rowIndices,
                                                             dampingFactor,
-                                                            KokkosClassic::Backward);
+                                                            Backward);
 
         }
       }
