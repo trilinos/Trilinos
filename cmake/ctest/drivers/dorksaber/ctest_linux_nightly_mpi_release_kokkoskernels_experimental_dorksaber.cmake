@@ -62,7 +62,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.dorksaber.gcc.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME RELEASE_DEV_TpetraKernels_Experimental)
+SET(BUILD_DIR_NAME RELEASE_DEV_KokkosKernels_Experimental)
 SET(CTEST_PARALLEL_LEVEL 3)
 SET(CTEST_TEST_TYPE Nightly)
 SET(Trilinos_TRACK  Specialized)      # Set the CDash track
@@ -78,8 +78,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_ENABLE_MMM_Timings:BOOL=ON"
   "-DTpetra_INST_SERIAL:BOOL=ON"
   "-DTpetra_INST_OPENMP:BOOL=ON"
-  "-DTpetraKernels_ENABLE_Experimental:BOOL=ON"
-  "-DTpetraKernels_ENABLE_TESTS:BOOL=ON"
+  "-DKokkosKernels_ENABLE_Experimental:BOOL=ON"
   "-DMATLAB_ARCH:STRING=glnxa64"
   "-DCMAKE_CXX_FLAGS:STRING='-g -fno-var-tracking'"
   "-DCMAKE_C_FLAGS:STRING='-g'"
