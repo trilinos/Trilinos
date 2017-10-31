@@ -15,6 +15,7 @@ SET(example_fem_SOURCES
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/WorksetBuilder.hpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Mesh.hpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Mesh.cpp
+    ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/LinearObjectFactory.hpp
     evaluators/Constant.hpp
     evaluators/Constant_Def.hpp
     evaluators/Constant.cpp

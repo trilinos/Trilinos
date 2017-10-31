@@ -50,6 +50,7 @@
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Dimension.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 
 /** \brief Pushes local element residual contributions into the global
            residual vector/Jacobian matrix for a Newton-based solve
@@ -110,20 +111,23 @@ class ScatterResidual<PHX::MyTraits::Jacobian,Traits>
   typedef typename PHX::MyTraits::Jacobian::ScalarT ScalarT;
   Teuchos::RCP<PHX::FieldTag> scatter_tag;
   PHX::MDField<const ScalarT,CELL,BASIS> residual_contribution;
-  Kokkos::View<double*,PHX::Device> global_residual;
-  Kokkos::View<double**,PHX::Device> global_jacobian;
+  Kokkos::View<double*,
+               PHX::Device,
+               Kokkos::MemoryTraits<Kokkos::Atomic>> global_residual_atomic;
+  KokkosSparse::CrsMatrix<double,int,PHX::Device> global_jacobian;
   Kokkos::View<const int**,PHX::Device> gids;
   const int equation_index;
   const int num_equations;
+  int cell_global_offset_index;
   
 public:  
   ScatterResidual(const Teuchos::RCP<PHX::FieldTag>& scatter_tag,
                   const std::string& residual_name,
                   const Teuchos::RCP<PHX::DataLayout>& residual_layout,
-                  const int& in_euqation_index,
+                  const int& in_equation_index,
                   const int& in_num_equations,
                   const Kokkos::View<double*,PHX::Device>& global_residual,
-                  const Kokkos::View<double**,PHX::Device>& global_jacobian);
+                  const KokkosSparse::CrsMatrix<double,int,PHX::Device>& global_jacobian);
   
   void evaluateFields(typename Traits::EvalData d);
 

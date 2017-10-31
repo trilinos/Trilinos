@@ -49,13 +49,12 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Mesh.hpp"
-#include "Workset.hpp"
-#include "WorksetBuilder.hpp"
+#include "LinearObjectFactory.hpp"
 #include <limits>
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-TEUCHOS_UNIT_TEST(workset, builder)
+TEUCHOS_UNIT_TEST(mesh, coord_gids)
 {
   using namespace std;
   using namespace Teuchos;
@@ -68,50 +67,33 @@ TEUCHOS_UNIT_TEST(workset, builder)
   const double lz = 3.0;
   phx_example::Mesh mesh(nx,ny,nz,lx,ly,lz);
 
-  // 24 elements / size 3 = 8 worksets
-  {
-    std::vector<Workset> worksets(9); // will be resized internally
-    const int workset_size = 3;
-    WorksetBuilder builder;
-    builder.buildWorksets(workset_size,mesh,worksets);
-    TEST_EQUALITY(worksets.size(),static_cast<size_t>(8));
-    TEST_EQUALITY(worksets[0].num_cells_,static_cast<int>(3));
-    TEST_EQUALITY(worksets[0].first_cell_global_index_,static_cast<int>(0));
-    TEST_EQUALITY(worksets[1].num_cells_,static_cast<int>(3));
-    TEST_EQUALITY(worksets[1].first_cell_global_index_,static_cast<int>(3));
-    TEST_EQUALITY(worksets[2].num_cells_,static_cast<int>(3));
-    TEST_EQUALITY(worksets[2].first_cell_global_index_,static_cast<int>(6));
-    TEST_EQUALITY(worksets[3].num_cells_,static_cast<int>(3));
-    TEST_EQUALITY(worksets[3].first_cell_global_index_,static_cast<int>(9));
-    TEST_EQUALITY(worksets[4].num_cells_,static_cast<int>(3));
-    TEST_EQUALITY(worksets[4].first_cell_global_index_,static_cast<int>(12));
-    TEST_EQUALITY(worksets[5].num_cells_,static_cast<int>(3));
-    TEST_EQUALITY(worksets[5].first_cell_global_index_,static_cast<int>(15));
-    TEST_EQUALITY(worksets[6].num_cells_,static_cast<int>(3));
-    TEST_EQUALITY(worksets[6].first_cell_global_index_,static_cast<int>(18));
-    TEST_EQUALITY(worksets[7].num_cells_,static_cast<int>(3));
-    TEST_EQUALITY(worksets[7].first_cell_global_index_,static_cast<int>(21));
-  }
+  const int num_equations = 2;
+  phx_example::LinearObjectFactory lof(mesh.getNumNodes(),
+                                       num_equations,
+                                       mesh.getGlobalIndices());
 
-  // 24 elements / size 5 = 5 worksets
-  {
-    std::vector<Workset> worksets(1); // will be resized internally
-    const int workset_size = 5;
-    WorksetBuilder builder;
-    builder.buildWorksets(workset_size,mesh,worksets);
-    TEST_EQUALITY(worksets.size(),static_cast<size_t>(5));
-    TEST_EQUALITY(worksets[0].num_cells_,static_cast<int>(5));
-    TEST_EQUALITY(worksets[0].first_cell_global_index_,static_cast<int>(0));
-    TEST_EQUALITY(worksets[1].num_cells_,static_cast<int>(5));
-    TEST_EQUALITY(worksets[1].first_cell_global_index_,static_cast<int>(5));
-    TEST_EQUALITY(worksets[2].num_cells_,static_cast<int>(5));
-    TEST_EQUALITY(worksets[2].first_cell_global_index_,static_cast<int>(10));
-    TEST_EQUALITY(worksets[3].num_cells_,static_cast<int>(5));
-    TEST_EQUALITY(worksets[3].first_cell_global_index_,static_cast<int>(15));
-    TEST_EQUALITY(worksets[4].num_cells_,static_cast<int>(4));
-    TEST_EQUALITY(worksets[4].first_cell_global_index_,static_cast<int>(20));
-  }
+  const auto x = lof.createSolutionVector("x");
+  TEST_EQUALITY(x.size(), ((nx+1)*(ny+1)*(nz+1)*num_equations));
 
+  auto J = lof.createJacobianMatrix("J");
+
+  // Mirror calls deep_copy on underlying obejcts so host copy is up
+  // to date.
+  auto graph = Kokkos::create_mirror(J.graph);
+  
+  const int max_entries_per_row = 27*num_equations;
+  const int min_entries_per_row = 8*num_equations;
+  for (size_t row=0; row < graph.numRows(); ++row) {
+    TEST_ASSERT(graph.rowConst(row).length <= max_entries_per_row);
+    TEST_ASSERT(graph.rowConst(row).length >= min_entries_per_row);
+    std::cout << "row(" << row << ") = ";
+    for (int j=0; j < graph.rowConst(row).length; ++j) {
+      std::cout << graph.rowConst(row).colidx(j);
+      if (j < (graph.rowConst(row).length - 1))
+        std::cout << ",";
+    }
+    std::cout << std::endl;   
+  }
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
