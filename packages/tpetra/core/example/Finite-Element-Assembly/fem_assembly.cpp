@@ -53,8 +53,8 @@ int main (int argc, char *argv[]) {
   // - Type 1 Graph Construction
   //   - Loop over owned elements only.
   //   row = domain = range
-  auto domain_map = row_map;       // this right for type-1 assembly?
-  auto range_map  = row_map;       // this right for type-1 assembly?
+  auto domain_map = row_map;                                        // this right for type-1 assembly?
+  auto range_map  = row_map;                                        // this right for type-1 assembly?
   RCP<GraphType> crs_graph = rcp(new GraphType(row_map, 0));        // TODO: maxNumEntriesPerRow should be set properly (9 in this case b/c 2D finite element)
 
   // Graph Construction
