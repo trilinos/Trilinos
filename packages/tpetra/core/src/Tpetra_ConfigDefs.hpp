@@ -284,6 +284,11 @@ namespace Tpetra {
   };
 }
 
+// For backwards compatibility
+namespace KokkosClassic {
+  using ::Tpetra::ESweepDirection;
+}
+
 #if defined(HAVE_TPETRACORE_KOKKOSCORE) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(TPETRA_ENABLE_KOKKOS_DISTOBJECT)
 #define TPETRA_USE_KOKKOS_DISTOBJECT 1
 #else

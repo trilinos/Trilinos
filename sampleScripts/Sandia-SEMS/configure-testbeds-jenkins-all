@@ -33,6 +33,11 @@ then
   CXX11_FLAGS_STRING="--expt-extended-lambda -std=c++11"
 fi
 
+if [ ${PTHREAD} == "ON" ]
+then
+  EXTRA_ARGS="$EXTRA_ARGS -DPhalanx_KOKKOS_DEVICE_TYPE="THREAD""
+fi
+
 #--------------------------------------------------
 #--------------------------------------------------
 
@@ -53,8 +58,7 @@ cmake \
 -D Trilinos_ENABLE_OpenMP=${OPENMP} \
 -D Kokkos_ENABLE_Pthread=${PTHREAD} \
 -D TPL_ENABLE_CUDA=${CUDA} \
-  -D Kokkos_ENABLE_Cuda:BOOL=${CUDA} \
-  -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON \
+-D Kokkos_ENABLE_Cuda_UVM:BOOL=ON \
 -D Teuchos_ENABLE_COMPLEX=${COMPLEX} \
 \
 -D CMAKE_CXX_FLAGS="${JENKINS_ARCH_CXX_FLAG} -g" \
