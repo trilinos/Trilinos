@@ -17,8 +17,8 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_RELEASE_MueLu_TpetraKernels
-  ctest_linux_nightly_mpi_release_tpetrakernels_experimental_dorksaber.cmake
+  MPI_RELEASE_MueLu_KokkosKernels_Experimental
+  ctest_linux_nightly_mpi_release_kokkoskernels_experimental_dorksaber.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
   TIMEOUT_MINUTES 330
