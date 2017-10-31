@@ -1,68 +1,68 @@
-#include "Rocket_Simple.hpp"
-#include "ROL_RandomVector.hpp"
+#include "Rocket.hpp"
+#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
 
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include <iostream>
 
 int main( int argc, char* argv[] ) {
 
   using Teuchos::rcp;
 
-  int      N = 100;
-  double   T = 1.0;
-  double   g = 9.8;
-  double  mr = 5;
-  double  mf = 20;
-  double  mt = mf+mr;
-  double  ve = 10;
- 
+  auto parlist = rcp( new Teuchos::ParameterList() );
+  Teuchos::updateParametersFromXmlFile("Rocket.xml",parlist.ptr()); 
+
+  int     N  = parlist->get("Time Steps" ,      100   );  
+  double  T  = parlist->get("Final Time",       20.0  );    
+  double  g  = parlist->get("Gravity Constant", 9.8   );
+  double  mr = parlist->get("Rocket Mass",      20.0  );
+  double  mf = parlist->get("Fuel Mass",        100.0 );
+  double  mu = parlist->get("Mass Penalty",     0.1   );
+  double  ve = parlist->get("Exhaust Velocity", 1000.0);
+  double  mt = mf+mr;    // Total mass
+  double  dt = T/N;      // Time ste
 
   auto u_rcp = rcp( new std::vector<double>(N) );
   auto u = rcp( new ROL::StdVector<double>(u_rcp) );
+  auto l = u->dual().clone();
 
-  auto z_rcp = rcp( new std::vector<double>(N) );
+  auto z_rcp = rcp( new std::vector<double>(N,mf/T) );
   auto z = rcp( new ROL::StdVector<double>(z_rcp) );
-  
-  auto vu = u->clone();
-  auto vz = z->clone();
 
-  auto du = u->clone();
-  auto dz = z->clone();
+  auto x = Teuchos::rcp( new ROL::Vector_SimOpt<double>(u,z) );
 
-  auto c = u->clone();
+  auto w_rcp = rcp( new std::vector<double>(N,dt) );
+  (*w_rcp)[0] *= 0.5; (*w_rcp)[N-1] *= 0.5;
+  auto w = rcp( new ROL::StdVector<double>(w_rcp) );
 
-  ROL::RandomizeVector( *c,  .01,  1.0 );
-  ROL::RandomizeVector( *u,  .01,  1.0 );
-  ROL::RandomizeVector( *z,  0.01, 1.0 );
-  ROL::RandomizeVector( *vu, .01,  1.0 );
-  ROL::RandomizeVector( *vz, 0.01, 1.0 );
-  ROL::RandomizeVector( *du, .01,  1.0 );
-  ROL::RandomizeVector( *dz, .01,  1.0 );
-
-//  double tol = 1.e-7;
+  auto e_rcp = rcp( new std::vector<double>(N,dt) );
+  auto e = rcp( new ROL::StdVector<double>(e_rcp) );
 
   auto con = rcp( new Rocket::Constraint( N, T, mt, mf, ve, g ) );
 
+  double tol = 1.e-7;
+
+  // Compute solution for constant burn rate
   con->update_2(*z);
+  con->solve(*l, *u, *z, tol);
+  //  u->print(std::cout); 
+  double htarg = w->dot(*u);  // Final height 
 
-  con->checkSolve(*u,*z,*c,true,std::cout);
+  auto obj = rcp( new Rocket::Objective( N, T, mt, htarg, mu, w ) );
+  auto robj = rcp( new ROL::Reduced_Objective_SimOpt<double>( obj, con, u, z, l ) );
 
-  con->checkApplyJacobian_1(*u, *z, *du, *vu, true, std::cout); 
-
-  con->checkInverseJacobian_1(*vu,*du,*u,*z,true,std::cout);
-
-  con->checkAdjointConsistencyJacobian_1(*c, *u, *vu, *z, true, std::cout);
-
-  con->checkInverseAdjointJacobian_1(*u, *z, *du, *vu, true, std::cout); 
+// Full space problem
+//  ROL::OptimizationProblem<double> opt( obj, x, con, l );
+  ROL::OptimizationProblem<double> opt( robj, z ); 
+  ROL::OptimizationSolver<double> solver( opt, *parlist );
+  solver.solve( std::cout );
   
-  con->checkApplyJacobian_2(*u,*z,*vz,*vu,true, std::cout);
-
-  con->checkAdjointConsistencyJacobian_2(*c, *z, *vu, *dz, true, std::cout);
-  
-
-
-//  u->print(std::cout);
-
-
+  con->update_2(*z);
+  con->solve(*l, *u, *z, tol);
+  //  u->print(std::cout); 
+  std::cout << "target height = " << htarg << ", actual = " << w->dot(*u) << std::endl;
+  std::cout << "Initial fuel mass = " << mf << std::endl;
+  std::cout << "Remaining fuel mass = " << mf-e->dot(*z) << std::endl;
 
   return 0;
 }

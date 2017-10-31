@@ -1,0 +1,8 @@
+<ParameterList name="Inputs">
+  <Parameter name="Time Steps"        type="int"     value="100"   />
+  <Parameter name="Final Time"        type="double"  value="10.0"  />
+  <Parameter name="Gravity Constant"  type="double"  value="9.8"   />
+  <Parameter name="Rocket Mass"       type="double"  value="20.0"  />
+  <Parameter name="Fuel Mass"         type="double"  value="100.0" />
+  <Parameter name="Exhaust Velocity"  type="double"  value="1000.0" />
+</ParameterList>
