@@ -716,6 +716,23 @@ namespace Tpetra {
     /// collective) over all processes in the graph's communicator.
     void resumeFill (const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+  private:
+    /// \brief Implementation of the three-argument and one-argument
+    ///   versions of fillComplete() (see below).
+    ///
+    /// \pre <tt> ! domainMap.is_null() && ! rangeMap.is_null() </tt>
+    /// \pre <tt> domainMap->isOneToOne() || ! domainMap->isDistributed() </tt>
+    /// \pre <tt> rangeMap->isOneToOne() || ! rangeMap->isDistributed() </tt>
+    ///
+    /// This method exists to avoid redundant debug-mode checks shared
+    /// between the three-argument and one-argument versions of
+    /// fillComplete.
+    void
+    fillCompleteImpl (const Teuchos::RCP<const map_type>& domainMap,
+                      const Teuchos::RCP<const map_type>& rangeMap,
+                      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+  public:
     /// \brief Tell the graph that you are done changing its structure.
     ///
     /// This tells the graph to optimize its data structures for
@@ -729,20 +746,27 @@ namespace Tpetra {
     /// This method must be called collectively (that is, like any MPI
     /// collective) over all processes in the graph's communicator.
     ///
+    /// \pre <tt> ! this->getRowMap().is_null() </tt>
+    /// \pre <tt> ! domainMap.is_null() && ! rangeMap.is_null() </tt>
+    /// \pre <tt> domainMap->isOneToOne() || ! domainMap->isDistributed() </tt>
+    /// \pre <tt> rangeMap->isOneToOne() || ! rangeMap->isDistributed() </tt>
+    /// \pre <tt> this->isFillActive() && ! this->isFillComplete() </tt>
+    ///
+    /// \post <tt> ! this->isFillActive() && this->isFillComplete() </tt>
+    /// \post <tt> this->getDomainMap()->isOneToOne() </tt>
+    /// \post <tt> this->getRangeMap()->isOneToOne() </tt>
+    ///
     /// \warning The domain Map and row Map arguments to this method
-    ///   MUST be one to one!  If you have Maps that are not one to
-    ///   one, and you do not know how to make a Map that covers the
-    ///   same global indices but <i>is</i> one to one, then you may
-    ///   call Tpetra::createOneToOne() (see Map's header file) to
-    ///   make a one-to-one version of your Map.
+    ///   MUST be either one to one (not overlapping), or locally
+    ///   replicated (not distributed)!  If you have Maps that are not
+    ///   one to one, and you do not know how to make a Map that
+    ///   covers the same global indices but <i>is</i> one to one,
+    ///   then you may call Tpetra::createOneToOne() (see Map's header
+    ///   file) to make a one-to-one version of your Map.
     ///
-    /// \pre  <tt>   isFillActive() && ! isFillComplete() </tt>
-    /// \post <tt> ! isFillActive() &&   isFillComplete() </tt>
-    ///
-    /// \param domainMap [in] The graph's domain Map.  MUST be one to
-    ///   one!
-    /// \param rangeMap [in] The graph's range Map.  MUST be one to
-    ///   one!  May be, but need not be, the same as the domain Map.
+    /// \param domainMap [in] The graph's domain Map.
+    /// \param rangeMap [in] The graph's range Map.  May be, but need
+    ///   not be, the same as the domain Map.
     /// \param params [in/out] List of parameters controlling this
     ///   method's behavior.  See below for valid parameters.
     ///
@@ -772,13 +796,21 @@ namespace Tpetra {
     /// This method must be called collectively (that is, like any MPI
     /// collective) over all processes in the graph's communicator.
     ///
+    /// \pre <tt> ! this->getRowMap().is_null() </tt>
+    /// \pre <tt> this->getRowMap()->isOneToOne() || ! this->getRowMap()->isDistributed() </tt>
+    ///
+    /// \post <tt> ! this->isFillActive() && this->isFillComplete() </tt>
+    /// \post <tt> this->getRowMap()->isSameAs(*(this->getDomainMap())) </tt>
+    /// \post <tt> this->getRowMap()->isSameAs(*(this->getRangeMap())) </tt>
+    ///
     /// \warning It is only valid to call this overload of
-    ///   fillComplete if the row Map is one to one!  If the row Map
-    ///   is NOT one to one, you must call the above three-argument
-    ///   version of fillComplete, and supply one-to-one domain and
-    ///   range Maps.  If you have Maps that are not one to one, and
-    ///   you do not know how to make a Map that covers the same
-    ///   global indices but <i>is</i> one to one, then you may call
+    ///   fillComplete if the row Map is either one to one (not
+    ///   overlapping), or locally replicated (not distributed)!
+    ///   Otherwise, you must call the above three-argument version of
+    ///   fillComplete, and supply correct domain and range Maps.  If
+    ///   you have Maps that are not one to one, and you do not know
+    ///   how to make a Map that covers the same global indices but
+    ///   <i>is</i> one to one, then you may call
     ///   Tpetra::createOneToOne() (see Map's header file) to make a
     ///   one-to-one version of your Map.
     ///

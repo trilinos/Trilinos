@@ -3607,25 +3607,120 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
   fillComplete (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
+    using std::endl;
+    const char tfecfFuncName[] = "fillComplete(params): ";
+    ::Tpetra::Details::ProfilingRegion rfc
+        ("Tpetra::CrsGraph::fillComplete(params)");
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+
+    Teuchos::RCP<const map_type> rowMap = this->getRowMap ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (rowMap.is_null (), std::runtime_error, "The graph has a null row Map.  "
+       "This may mean that the graph's constructor was called incorrectly.");
+    if (debug) {
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = rowMap->getComm ();
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (comm.is_null (), std::runtime_error, "The graph has a nonnull row "
+         "Map, but the row Map's communicator (result of getComm()) is null.  "
+         "This may mean either that the row Map was constructed incorrectly, "
+         "or that a solver or user replaced the Map's communicator with a "
+         "subset communicator but is trying to call fillcomplete on the "
+         "original (whole) communicator.");
+    }
+
     // If the graph already has domain and range Maps, don't clobber
     // them.  If it doesn't, use the current row Map for both the
     // domain and range Maps.
-    //
-    // NOTE (mfh 28 Sep 2014): If the graph was constructed without a
-    // column Map, and column indices are inserted which are not in
-    // the row Map on any process, this will cause troubles.  However,
-    // that is not a common case for most applications that we
-    // encounter, and checking for it might require more
-    // communication.
     Teuchos::RCP<const map_type> domMap = this->getDomainMap ();
-    if (domMap.is_null ()) {
-      domMap = this->getRowMap ();
-    }
     Teuchos::RCP<const map_type> ranMap = this->getRangeMap ();
-    if (ranMap.is_null ()) {
-      ranMap = this->getRowMap ();
+
+    // If we had to use the row Map, then in debug mode, we will need
+    // to test whether the row Map is one to one.
+    bool usedRowMap = false; // to be revised
+    if (domMap.is_null ()) {
+      domMap = rowMap;
+      usedRowMap = true;
     }
-    this->fillComplete (domMap, ranMap, params);
+    if (ranMap.is_null ()) {
+      ranMap = rowMap;
+      usedRowMap = true;
+    }
+
+    if (debug) {
+      const char generalMessage[] = "In general, "
+        "you MUST give the domain and range Maps explicitly "
+        "to CrsGraph::fillComplete, "
+        "if the graph / matrix is not square, "
+        "if the row Map is overlapping and not locally replicated, "
+        "or if (domain Map != row Map != range Map).";
+      const char furthermore[] =
+        "Furthermore, the domain and range Maps MUST be one to one.";
+      const Teuchos::Comm<int>& comm = * (rowMap->getComm ());
+      const int myRank = comm.getRank ();
+      std::ostringstream os; // stream to collect error message(s)
+      bool success = true; // whether an error occurred
+
+      if (usedRowMap) {
+        // Check that the row Map is one to one.  This call is a
+        // collective (e.g., it may invoke MPI_Allreduce).
+        const bool rowMapIsOneToOne = rowMap->isOneToOne ();
+        // We allow a locally replicated row Map, even though it is
+        // technically overlapping.
+        const bool rowMapIsDist = rowMap->isDistributed ();
+
+        if (! rowMapIsOneToOne && rowMapIsDist) {
+          success = false;
+          os << "You used the graph's row Map as the domain and/or range "
+            "Map, but the row Map is overlapping (not one to one) and "
+            "distributed (not locally replicated).  "
+            "Both the domain and range Maps must be either one to one, "
+            "or locally replicated.  "
+            "You might see this error if you constructed a graph "
+            "with an overlapping row Map for use as the source of an "
+            "Export, in global finite-element assembly.  In that case, you "
+            "MUST call the version of fillComplete that takes the domain and "
+            "range Maps explicitly.  " << generalMessage << endl;
+        }
+      }
+      else { // graph has nonnull domain and range Maps, so use those
+        // Check that the domain and range Maps are both one to one.
+        // Each of these calls is a collective (e.g., it may invoke
+        // MPI_Allreduce).
+        const bool domMapIsOneToOne = domMap->isOneToOne ();
+        const bool ranMapIsOneToOne = ranMap->isOneToOne ();
+
+        if (! domMapIsOneToOne) {
+          success = false;
+          os << "The domain Map is overlapping (i.e., not one to one)." << endl;
+        }
+        if (! ranMapIsOneToOne) {
+          success = false;
+          os << "The range Map is overlapping (i.e., not one to one)." << endl;
+        }
+        if (! success) {
+          os << "The graph claims that it has nonnull domain and range Maps.  "
+            "Nevertheless, these Maps are not both one to one "
+            "(i.e., at least one of the Maps is overlapping).  This may "
+            "indicate user error when calling one of CrsGraph's constructors "
+            "that takes domain and range Maps.  ";
+          os << generalMessage << "  " << furthermore << endl;
+        }
+
+        if (! success) {
+          // Print the error message to std::cerr first, on Proc 0 so
+          // the user can see it (hopefully) before the exception gets
+          // thrown.
+          if (myRank == 0) {
+            std::cerr << os.str () << std::flush;
+          }
+          comm.barrier (); // try to give output some time to finish
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (true, std::invalid_argument, "User error calling fillComplete");
+        } // if not success
+      } // whether the user used the row Map for the domain or range Map
+    } // debug mode
+
+    this->fillCompleteImpl (domMap, ranMap, params);
   }
 
 
@@ -3636,7 +3731,83 @@ namespace Tpetra {
                 const Teuchos::RCP<const map_type>& rangeMap,
                 const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
-    const char tfecfFuncName[] = "fillComplete: ";
+    using std::endl;
+    const char tfecfFuncName[] = "fillComplete(domainMap,rangeMap,params): ";
+    ::Tpetra::Details::ProfilingRegion rfc
+        ("Tpetra::CrsGraph::fillComplete(domainMap,rangeMap,params)");
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+
+    if (debug) {
+      Teuchos::RCP<const map_type> rowMap = this->getRowMap ();
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (rowMap.is_null (), std::runtime_error, "The graph has a null row "
+         "Map.  This likely means that the graph's constructor was called "
+         "incorrectly.");
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = rowMap->getComm ();
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (comm.is_null (), std::runtime_error, "The graph has a nonnull row "
+         "Map, but the row Map's communicator (result of getComm()) is null.  "
+         "This likely means either that the row Map was constructed "
+         "incorrectly, or that a solver or user replaced the Map's "
+         "communicator with a subset communicator but is trying to call "
+         "fillComplete on the original (whole) communicator.");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (domainMap.is_null () || rangeMap.is_null (), std::invalid_argument,
+         "When calling the version of fillComplete that takes the domain and "
+         "range Maps explicitly, you must give it nonnull Maps.");
+
+      // Check that the domain and range Maps are both one to one.
+      // Each of these calls is a collective (allreduce semantics).
+      const bool domMapIsOneToOne = domainMap->isOneToOne ();
+      const bool ranMapIsOneToOne = rangeMap->isOneToOne ();
+
+      // Some Tpetra tests have locally replicated domain or range
+      // Maps.  We allow these, even though they are technically
+      // overlapping.
+      const bool domMapIsDist = domainMap->isDistributed ();
+      const bool ranMapIsDist = rangeMap->isDistributed ();
+
+      std::ostringstream os; // stream to collect error message(s)
+      bool success = true; // whether an error occurred
+
+      if (! domMapIsOneToOne && domMapIsDist) {
+        success = false;
+        os << "The domain Map is overlapping (i.e., not one to one) "
+          "yet distributed (i.e., not locally replicated)." << endl;
+      }
+      if (! ranMapIsOneToOne && ranMapIsDist) {
+        success = false;
+        os << "The range Map is overlapping (i.e., not one to one) "
+          "yet distributed (i.e., not locally replicated)." << endl;
+      }
+
+      if (! success) {
+        os << "Both the domain Map and the range Map must be either "
+          "one to one (i.e., not overlapping) or locally replicated." << endl;
+        // Print the error message to std::cerr first, on Proc 0 so
+        // the user can see it (hopefully) before the exception gets
+        // thrown.
+        if (comm->getRank () == 0) {
+          std::cerr << os.str () << std::flush;
+        }
+        comm->barrier (); // try to give output some time to finish
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (true, std::invalid_argument, "User error calling fillComplete");
+      } // if not success
+    } // debug mode
+
+    this->fillCompleteImpl (domainMap, rangeMap, params);
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, const bool classic>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node, classic>::
+  fillCompleteImpl (const Teuchos::RCP<const map_type>& domainMap,
+                    const Teuchos::RCP<const map_type>& rangeMap,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params)
+  {
+    const char tfecfFuncName[] = "fillCompleteImpl: ";
 
 #ifdef HAVE_TPETRA_DEBUG
     rowMap_->getComm ()->barrier ();
