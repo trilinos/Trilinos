@@ -269,6 +269,10 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
     if(tlid != LO_INVALID) {
       // This guy is in my target map, now to check if I'm receiving him from the owner (which I now know)
       bool is_ok = false;
+      
+      // This guy is not in the SourceMap at all.  Weird, but acceptable.
+      if(OwningPID == -1) continue;
+
       if (OwningPID == MyPID) {
 	// I own this guy
 	if((size_t) tlid < Importer.getNumSameIDs()) {
