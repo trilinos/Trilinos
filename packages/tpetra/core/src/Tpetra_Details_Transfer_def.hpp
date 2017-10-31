@@ -239,11 +239,15 @@ localDescribeToString (const Teuchos::EVerbosityLevel vl) const
     else { // vl = VERB_HIGH or VERB_EXTREME
       // Build RemoteGIDs
       RCP<const Map<LO,GO,NT> > tmap = getTargetMap();
+      RCP<const Map<LO,GO,NT> > smap = getSourceMap();
       Teuchos::Array<GO>  RemoteGIDs(getRemoteLIDs().size());
       Teuchos::Array<int> RemotePIDs(getRemoteLIDs().size());
       for(size_t i=0; i<(size_t)getRemoteLIDs().size(); i++)
 	RemoteGIDs[i] = tmap->getGlobalElement(getRemoteLIDs()[i]);
-      
+
+      Teuchos::Array<int> ExportGIDs(getExportLIDs().size());
+      for(size_t i=0; i<(size_t)getExportLIDs().size(); i++)
+	ExportGIDs[i] = smap->getGlobalElement(getExportLIDs()[i]);      
       
       // Build RemotePIDs (taken from Tpetra_Import_Util.hpp)
       const Tpetra::Distributor & D=getDistributor();
@@ -264,6 +268,7 @@ localDescribeToString (const Teuchos::EVerbosityLevel vl) const
           << "remoteGIDs: " << toString (RemoteGIDs ()) << endl
           << "remotePIDs: " << toString (RemotePIDs ()) << endl
           << "exportLIDs: " << toString (getExportLIDs ()) << endl
+          << "exportGIDs: " << toString (ExportGIDs ()) << endl
           << "exportPIDs: " << toString (getExportPIDs ()) << endl;
     }
 

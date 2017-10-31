@@ -428,8 +428,10 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
   // Do a reduction on the final bool status
   Teuchos::reduceAll<int,int> (*comm, Teuchos::REDUCE_MIN,(int)is_valid, Teuchos::outArg(global_is_valid));
 
-  if(global_is_valid!=1)
+  if(!global_is_valid) {
     std::cerr<<os.str()<<std::flush;
+    Importer.print(std::cout);
+  }
 
   return global_is_valid>0;
 }
