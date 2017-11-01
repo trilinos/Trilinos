@@ -4,7 +4,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MatrixMatrix_UnitTests.cpp
   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS "--matnames-file=\"matrixsystems.xml\" --v"
-  NUM_MPI_PROCS 4
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
