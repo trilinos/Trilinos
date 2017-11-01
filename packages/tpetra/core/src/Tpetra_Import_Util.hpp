@@ -221,6 +221,9 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
   RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > target = Importer.getTargetMap();
   RCP<const Teuchos::Comm<int> > comm = source->getComm();
 
+  // For now, do not check validity of a locally replicated source map (just return true)
+  if (!source->isDistributed()) return true;
+
   int global_is_valid=0;
   bool is_valid=true;
  
@@ -236,7 +239,6 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
   GlobalOrdinal maxTargetGID = target->getMaxAllGlobalIndex();
 
   std::ostringstream os;
-
 
   /***********************************************/
   /*              Check recv side                */
