@@ -39,7 +39,6 @@
 // ************************************************************************
 // @HEADER
 
-
 #ifndef TPETRA_IMPORT_DEF_HPP
 #define TPETRA_IMPORT_DEF_HPP
 
@@ -132,21 +131,6 @@ namespace Tpetra {
     if (! out_.is_null ()) {
       out_->popTab ();
     }
-
-#ifdef HAVE_TPETRA_DEBUG
-    { 
-      std::ostringstream os ; 
-      bool isvalid = Tpetra::Import_Util::checkImportValidity(*this);
-      if(!isvalid) {
-        os<<source->getComm ()->getRank ()<<"init Invalid importer "<<std::endl;
-      }
-      else {
-        os<<source->getComm ()->getRank ()<<"init valid importer "<<std::endl;
-      }
-      std::cerr<<os.str()<<std::flush;
-      TEUCHOS_TEST_FOR_EXCEPTION(!isvalid, std::runtime_error, "Malformed importer constructed");
-    }
-#endif
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -365,22 +349,6 @@ namespace Tpetra {
 
     ImportData_->distributor_.createFromSendsAndRecvs(ImportData_->exportPIDs_,remoteProcIDs);
 
-#ifdef HAVE_TPETRA_DEBUG
-    { 
-      std::ostringstream os ;
-      bool isvalid = Tpetra::Import_Util::checkImportValidity(*this);  
-      if(!isvalid) {
-        os<<source->getComm ()->getRank ()<<" createExpert Invalid importer "<<std::endl;
-      }
-      else
-        {
-          os<<source->getComm ()->getRank ()<<" createExpert valid importer "<<std::endl;
-        }
-      std::cerr<<os.str()<<std::flush;
-      TEUCHOS_TEST_FOR_EXCEPTION(!isvalid, std::runtime_error, "Malformed importer constructed");
-    }
-#endif
-
   }
 
 
@@ -442,22 +410,6 @@ namespace Tpetra {
     ImportData_->distributor_.swap (distributor);
     ImportData_->exportLIDs_.swap (exportLIDs);
     ImportData_->exportPIDs_.swap (exportPIDs);
-
-#ifdef HAVE_TPETRA_DEBUG
-    { 
-      std::ostringstream os ; 
-      bool isvalid = Tpetra::Import_Util::checkImportValidity(*this);
-      source->getComm()->barrier();
-      if(!isvalid) {
-        os<<"E3 Invalid importer "<<std::endl;
-      }
-      else {
-        os<<"E3 valid importer"<<std::endl;
-      }
-      std::cerr<<os.str()<<std::endl<<std::flush;  
-      TEUCHOS_TEST_FOR_EXCEPTION(!isvalid, std::runtime_error, "Malformed importer constructed");
-    }
-#endif
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
