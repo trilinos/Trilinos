@@ -235,8 +235,6 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
   GlobalOrdinal minTargetGID = target->getMinAllGlobalIndex();
   GlobalOrdinal maxTargetGID = target->getMaxAllGlobalIndex();
 
-  std::ostringstream os;
-
 
   /***********************************************/
   /*              Check recv side                */
@@ -308,7 +306,7 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 	}
       }
       if(!is_ok) {
-        os<<MyPID<<"  ERROR1: GID "<<i<<" should be remoted from PID "<<OwningPID<<" but isn't."<<std::endl;
+	printf("[%d] ERROR: GID %d should be remoted from PID %d, but isn't.\n",MyPID,(int)i,OwningPID);
 	is_valid=false;
       }
     }
@@ -355,7 +353,7 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 	    }
 	  }
 	  if(!is_ok) {
-	    os<<MyPID<<" ERROR2: GID "<<i<<" should be sent to PID "<<j<<" but isn't"<<std::endl;
+	    printf("[%d] ERROR: GID %d should be sent to PID %d, but isn't.\n",MyPID,(int)i,j);
 	    is_valid=false;
 	  }
 	}
@@ -373,7 +371,7 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
   for(size_t l=0;l<(size_t)exportLIDs.size();++l) {
     exportGIDs[l]=source->getGlobalElement(exportLIDs[l]);
     if(exportGIDs[l]<0) {
-      os<<MyPID<<"ERROR3: source->getGlobalElement(exportLIDs[l]) is invalid GID="<<exportGIDs[l]<<" LID= "<<exportLIDs[l]<<std::endl;
+      std::cerr<<MyPID<<" exportLIDs->gid is invalid "<<exportGIDs[l]<<std::endl;
       is_valid=false;
     }
   }
@@ -395,26 +393,26 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
       // ignore -2's. 
       if(cgid == -2) continue;
       if(cgid < 0) {
-        os<<MyPID<<" ERROR4: received exportGID is invalid "<<cgid<<std::endl;
+        std::cerr<<MyPID<<" received exportLIDs->gid is invalid "<<cgid<<std::endl;
         is_valid=false;
       }
       bool foundit=false;
       for(size_t k=0;k<(size_t)remoteGIDs.size();++k) {
         if(cgid == remoteGIDs[k] && yourexppid[p] == MyPID ) {
           if(p != remotePIDs[k]) {
-            os<<MyPID<<" ERROR5: receive export from wrong pid: got "<<p<<" expected: "<<remotePIDs[k]<<std::endl;
+            std::cerr<<MyPID<<" receive export from wrong pid "<<p<<" expected "<<remotePIDs[k]<<std::endl<<std::flush;
             is_valid = false;
           }
           remoteGIDcount[k]++;
           if(foundit) {
-            os<<MyPID<<" ERROR6: found multiple GIDs from correct pid: GID  "<<remoteGIDs[k]<<std::endl;
+            std::cerr<<MyPID<<" found multiple GIDs from correct pid "<<std::endl<<std::flush;
             is_valid = false;
           }
           foundit = true;
         }
       }
       if(!foundit &&  yourexppid[p] == MyPID ) {
-        os<<MyPID<<" ERROR7: receive gid  "<<cgid<<" that is not in my remote gid list, from pid  "<<p<<std::endl;
+        std::cerr<<MyPID<<" receive gid  "<<cgid<<" that is not in my remote gid list, from pid  "<<p<<std::endl<<std::flush;
         is_valid = false;
       }
 
@@ -424,18 +422,13 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
   for(size_t i = 0; i< (size_t) remoteGIDcount.size(); ++i) {
     int rc = remoteGIDcount[i];
     if(rc == 1) continue;
-    os<<MyPID<<" ERROR8: my remote at "<<i<<" gid "<<remoteGIDs[i]<<" has count "<<rc<<std::endl;
+    std::cerr<<MyPID<<" my remote at "<<i<<" gid "<<remoteGIDs[i]<<" has count "<<rc<<std::endl<<std::flush;
     is_valid = false;
   }
 
 
   // Do a reduction on the final bool status
   Teuchos::reduceAll<int,int> (*comm, Teuchos::REDUCE_MIN,(int)is_valid, Teuchos::outArg(global_is_valid));
-
-  if(!global_is_valid) {
-    std::cerr<<os.str()<<std::flush;
-    Importer.print(std::cout);
-  }
 
   return global_is_valid>0;
 }
