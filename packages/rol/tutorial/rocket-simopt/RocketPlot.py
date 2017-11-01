@@ -65,7 +65,7 @@ if __name__ == '__main__':
   ax1.tick_params(labelsize=14)
   ax1.legend(fontsize=16)
   ax1.set_xlim(time[0],time[-1])
-  plt.savefig("burn_rate.png")
+  fig1.savefig("burn_rate.png")
 
   ax2 = fig2.add_subplot(111)
   ax2.plot(time,hc/1000.0,label='constant',lw=2)
@@ -75,6 +75,6 @@ if __name__ == '__main__':
   ax2.tick_params(labelsize=14)
   ax2.legend(fontsize=16)
   ax2.set_xlim(time[0],time[-1])
-  plt.savefig("altitude.png")
+  fig2.savefig("altitude.png")
  
   plt.show()
