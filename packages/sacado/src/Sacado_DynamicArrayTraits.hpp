@@ -89,7 +89,7 @@ namespace Sacado {
 
     extern const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_host;
     extern const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_device;
-    __device__ const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_on_device;
+    extern __device__ const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_on_device;
 
     struct SetMemoryPoolPtr {
       Kokkos::MemoryPool<Kokkos::Cuda>* pool_device;
