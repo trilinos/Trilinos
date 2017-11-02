@@ -692,6 +692,7 @@ ENDMACRO()
 # Macro that reads in a single subpackage dependencies file and sets up
 # the dependency structure for it.
 #
+
 MACRO(TRIBITS_READ_SUBPACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR
   SUBPACKAGE_NAME  SUBPACKAGE_DIR)
 
