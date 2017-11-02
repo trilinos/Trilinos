@@ -249,7 +249,7 @@ c
             cval(i) = cmplx(rpart,ipart)
  70      continue
         else
-           print *,'''pattern'' data not consistant with type ''array'''
+           print *,'''pattern'' data not consistent with type ''array'''
            stop
         endif
         rewind(iunit)
@@ -270,11 +270,11 @@ c
  2000 print *,'Premature end-of-file.'
       print *,'No data lines found.'
       stop
- 3000 print *,'Size info inconsistant with representation.'
+ 3000 print *,'Size info inconsistent with representation.'
       print *,'Array matrices need exactly 2 size descriptors.'
       print *, count,' were found.'
       stop
- 3500 print *,'Size info inconsistant with representation.'
+ 3500 print *,'Size info inconsistent with representation.'
       print *,'Coordinate matrices need exactly 3 size descriptors.'
       print *, count,' were found.'
       stop
@@ -514,11 +514,11 @@ c
  2000 print *,'Premature end-of-file.'
       print *,'No data found.'
       stop
- 3000 print *,'Size info inconsistant with representation.'
+ 3000 print *,'Size info inconsistent with representation.'
       print *,'Array matrices need exactly 2 size descriptors.'
       print *, count,' were found.'
       stop
- 3500 print *,'Size info inconsistant with representation.'
+ 3500 print *,'Size info inconsistent with representation.'
       print *,'Coordinate matrices need exactly 3 size descriptors.'
       print *, count,' were found.'
       stop

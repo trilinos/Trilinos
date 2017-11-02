@@ -41,7 +41,7 @@
 
 
 /*! \file AnasaziSVQBOrthoManager.hpp
-  \brief Orthogonalization manager based on the SVQB technique described in 
+  \brief Orthogonalization manager based on the SVQB technique described in
   "A Block Orthogonalization Procedure With Constant Synchronization Requirements", A. Stathapoulos and K. Wu
 */
 
@@ -51,9 +51,9 @@
 /*!   \class Anasazi::SVQBOrthoManager
       \brief An implementation of the Anasazi::MatOrthoManager that performs orthogonalization
       using the SVQB iterative orthogonalization technique described by Stathapoulos and Wu. This orthogonalization routine,
-      while not returning the upper triangular factors of the popular Gram-Schmidt method, has a communication 
+      while not returning the upper triangular factors of the popular Gram-Schmidt method, has a communication
       cost (measured in number of communication calls) that is independent of the number of columns in the basis.
-      
+
       \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
@@ -80,7 +80,7 @@ namespace Anasazi {
   public:
 
     //! @name Constructor/Destructor
-    //@{ 
+    //@{
     //! Constructor specifying re-orthogonalization tolerance.
     SVQBOrthoManager( Teuchos::RCP<const OP> Op = Teuchos::null, bool debug = false );
 
@@ -92,11 +92,11 @@ namespace Anasazi {
 
 
     //! @name Methods implementing Anasazi::MatOrthoManager
-    //@{ 
+    //@{
 
 
     /*! \brief Given a list of mutually orthogonal and internally orthonormal bases \c Q, this method
-     * projects a multivector \c X onto the space orthogonal to the individual <tt>Q[i]</tt>, 
+     * projects a multivector \c X onto the space orthogonal to the individual <tt>Q[i]</tt>,
      * optionally returning the coefficients of \c X for the individual <tt>Q[i]</tt>. All of this is done with respect
      * to the inner product innerProd().
      *
@@ -108,11 +108,11 @@ namespace Anasazi {
        X_{out} = X_{in} - \sum_i Q[i] \langle Q[i], X_{in} \rangle
        \f]
 
-     @param MX [in/out] The image of \c X under the inner product operator \c Op. 
+     @param MX [in/out] The image of \c X under the inner product operator \c Op.
        If \f$ MX != 0\f$: On input, this is expected to be consistent with \c Op \cdot X. On output, this is updated consistent with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
 
-     @param C [out] The coefficients of \c X in the bases <tt>Q[i]</tt>. If <tt>C[i]</tt> is a non-null pointer 
+     @param C [out] The coefficients of \c X in the bases <tt>Q[i]</tt>. If <tt>C[i]</tt> is a non-null pointer
        and <tt>C[i]</tt> matches the dimensions of \c X and <tt>Q[i]</tt>, then the coefficients computed during the orthogonalization
        routine will be stored in the matrix <tt>C[i]</tt>, similar to calling
        \code
@@ -124,7 +124,7 @@ namespace Anasazi {
        <tt>C[i]</tt> is a null pointer, the caller will not have access to the
        computed coefficients.
 
-     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against, satisfying 
+     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against, satisfying
      \f[
         \langle Q[i], Q[j] \rangle = I \quad\textrm{if}\quad i=j
      \f]
@@ -133,8 +133,8 @@ namespace Anasazi {
         \langle Q[i], Q[j] \rangle = 0 \quad\textrm{if}\quad i \neq j\ .
      \f]
     */
-    void projectMat ( 
-          MV &X, 
+    void projectMat (
+          MV &X,
           Teuchos::Array<Teuchos::RCP<const MV> >  Q,
           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C
               = Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> >(Teuchos::null)),
@@ -147,12 +147,12 @@ namespace Anasazi {
      *
      * This method does not compute an upper triangular coefficient matrix \c B.
      *
-     * This routine returns an integer \c rank stating the rank of the computed basis. If \c X does not have full rank and the normalize() routine does 
-     * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of 
+     * This routine returns an integer \c rank stating the rank of the computed basis. If \c X does not have full rank and the normalize() routine does
+     * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of
      * output \c X and first \c rank rows of \c B will be valid.
-     *  
-     * The method attempts to find a basis with dimension equal to the number of columns in \c X. It does this by augmenting linearly dependent 
-     * vectors in \c X with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the 
+     *
+     * The method attempts to find a basis with dimension equal to the number of columns in \c X. It does this by augmenting linearly dependent
+     * vectors in \c X with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the
      * computed basis is less than the number of vectors in \c X.
      *
      @param X [in/out] The multivector to be modified.<br>
@@ -160,18 +160,18 @@ namespace Anasazi {
        \f[
           \langle X[i], X[j] \rangle = \delta_{ij}\ .
        \f]
-       Also, 
+       Also,
        \f[
           X_{in}(1:m,1:n) = X_{out}(1:m,1:rank) B(1:rank,1:n)
        \f]
        where \c m is the number of rows in \c X and \c n is the number of columns in \c X.
 
-     @param MX [in/out] The image of \c X under the inner product operator \c Op. 
+     @param MX [in/out] The image of \c X under the inner product operator \c Op.
        If \f$ MX != 0\f$: On input, this is expected to be consistent with \c Op \cdot X. On output, this is updated consistent with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
 
      @param B [out] The coefficients of the original \c X with respect to the computed basis. If \c B is a non-null pointer and \c B matches the dimensions of \c B, then the
-     coefficients computed during the orthogonalization routine will be stored in \c B, similar to calling 
+     coefficients computed during the orthogonalization routine will be stored in \c B, similar to calling
        \code
           innerProd( Xout, Xin, B );
        \endcode
@@ -181,8 +181,8 @@ namespace Anasazi {
 
      @return Rank of the basis computed by this method, less than or equal to the number of columns in \c X. This specifies how many columns in the returned \c X and rows in the returned \c B are valid.
     */
-    int normalizeMat ( 
-          MV &X, 
+    int normalizeMat (
+          MV &X,
           Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null,
           Teuchos::RCP<MV> MX                                         = Teuchos::null
         ) const;
@@ -190,13 +190,13 @@ namespace Anasazi {
 
     /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
      *
-     *  This routine returns an integer \c rank stating the rank of the computed basis. If the subspace \f$colspan(X) - \sum_i colspan(Q[i])\f$ does not 
-     *  have dimension as large as the number of columns of \c X and the orthogonalization manager doe not attempt to augment the subspace, then \c rank 
-     *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will 
+     *  This routine returns an integer \c rank stating the rank of the computed basis. If the subspace \f$colspan(X) - \sum_i colspan(Q[i])\f$ does not
+     *  have dimension as large as the number of columns of \c X and the orthogonalization manager doe not attempt to augment the subspace, then \c rank
+     *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will
      *  be valid.
      *
-     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependent 
-     * vectors with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the 
+     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependent
+     * vectors with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the
      * computed basis is less than the number of vectors in \c X.
      *
      @param X [in/out] The multivector to be modified.<br>
@@ -204,17 +204,17 @@ namespace Anasazi {
        \f[
             \langle X[i], X[j] \rangle = \delta_{ij} \quad \textrm{and} \quad \langle X, Q[i] \rangle = 0\ .
        \f]
-       Also, 
+       Also,
        \f[
           X_{in}(1:m,1:n) = X_{out}(1:m,1:rank) B(1:rank,1:n) + \sum_i Q[i] C[i]
        \f]
        where \c m is the number of rows in \c X and \c n is the number of columns in \c X.
 
-     @param MX [in/out] The image of \c X under the inner product operator \c Op. 
+     @param MX [in/out] The image of \c X under the inner product operator \c Op.
        If \f$ MX != 0\f$: On input, this is expected to be consistent with \c Op \cdot X. On output, this is updated consistent with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
 
-     @param C [out] The coefficients of \c X in the <tt>Q[i]</tt>. If <tt>C[i]</tt> is a non-null pointer 
+     @param C [out] The coefficients of \c X in the <tt>Q[i]</tt>. If <tt>C[i]</tt> is a non-null pointer
        and <tt>C[i]</tt> matches the dimensions of \c X and <tt>Q[i]</tt>, then the coefficients computed during the orthogonalization
        routine will be stored in the matrix <tt>C[i]</tt>, similar to calling
        \code
@@ -227,7 +227,7 @@ namespace Anasazi {
        computed coefficients.
 
      @param B [out] The coefficients of the original \c X with respect to the computed basis. If \c B is a non-null pointer and \c B matches the dimensions of \c B, then the
-     coefficients computed during the orthogonalization routine will be stored in \c B, similar to calling 
+     coefficients computed during the orthogonalization routine will be stored in \c B, similar to calling
        \code
           innerProd( Xout, Xin, B );
        \endcode
@@ -235,7 +235,7 @@ namespace Anasazi {
      access to the computed coefficients. This matrix is not necessarily triangular (as in a QR factorization); see the documentation of specific orthogonalization managers.<br>
      In general, \c B has no non-zero structure.
 
-     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against, satisfying 
+     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against, satisfying
      \f[
         \langle Q[i], Q[j] \rangle = I \quad\textrm{if}\quad i=j
      \f]
@@ -247,12 +247,12 @@ namespace Anasazi {
      @return Rank of the basis computed by this method, less than or equal to the number of columns in \c X. This specifies how many columns in the returned \c X and rows in the returned \c B are valid.
 
     */
-    int projectAndNormalizeMat ( 
-          MV &X, 
+    int projectAndNormalizeMat (
+          MV &X,
           Teuchos::Array<Teuchos::RCP<const MV> >  Q,
           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C
               = Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> >(Teuchos::null)),
-          Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null, 
+          Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null,
           Teuchos::RCP<MV>                                         MX = Teuchos::null,
           Teuchos::Array<Teuchos::RCP<const MV> >                  MQ = Teuchos::tuple(Teuchos::RCP<const MV>(Teuchos::null))
         ) const;
@@ -260,38 +260,38 @@ namespace Anasazi {
     //@}
 
     //! @name Error methods
-    //@{ 
+    //@{
 
     /*! \brief This method computes the error in orthonormality of a multivector, measured
      * as the Frobenius norm of the difference <tt>innerProd(X,Y) - I</tt>.
      *  The method has the option of exploiting a caller-provided \c MX.
      */
-    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     orthonormErrorMat(const MV &X, Teuchos::RCP<const MV> MX = Teuchos::null) const;
 
     /*! \brief This method computes the error in orthogonality of two multivectors, measured
      * as the Frobenius norm of <tt>innerProd(X,Y)</tt>.
      *  The method has the option of exploiting a caller-provided \c MX.
      */
-    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
     orthogErrorMat(
-          const MV &X, 
+          const MV &X,
           const MV &Y,
-          Teuchos::RCP<const MV> MX = Teuchos::null, 
+          Teuchos::RCP<const MV> MX = Teuchos::null,
           Teuchos::RCP<const MV> MY = Teuchos::null
         ) const;
 
     //@}
 
   private:
-    
+
     MagnitudeType eps_;
     bool debug_;
-  
+
     // ! Routine to find an orthogonal/orthonormal basis
-    int findBasis(MV &X, Teuchos::RCP<MV> MX, 
-                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
+    int findBasis(MV &X, Teuchos::RCP<MV> MX,
+                   Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
+                   Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
                    Teuchos::Array<Teuchos::RCP<const MV> > Q,
                    bool normalize_in ) const;
   };
@@ -300,9 +300,9 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor
   template<class ScalarType, class MV, class OP>
-  SVQBOrthoManager<ScalarType,MV,OP>::SVQBOrthoManager( Teuchos::RCP<const OP> Op, bool debug) 
+  SVQBOrthoManager<ScalarType,MV,OP>::SVQBOrthoManager( Teuchos::RCP<const OP> Op, bool debug)
     : MatOrthoManager<ScalarType,MV,OP>(Op), dbgstr("                    *** "), debug_(debug) {
-    
+
     Teuchos::LAPACK<int,MagnitudeType> lapack;
     eps_ = lapack.LAMCH('E');
     if (debug_) {
@@ -314,7 +314,7 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute the distance from orthonormality
   template<class ScalarType, class MV, class OP>
-  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
   SVQBOrthoManager<ScalarType,MV,OP>::orthonormErrorMat(const MV &X, Teuchos::RCP<const MV> MX) const {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
@@ -329,9 +329,9 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Compute the distance from orthogonality
   template<class ScalarType, class MV, class OP>
-  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType
   SVQBOrthoManager<ScalarType,MV,OP>::orthogErrorMat(
-          const MV &X, 
+          const MV &X,
           const MV &Y,
           Teuchos::RCP<const MV> MX,
           Teuchos::RCP<const MV> MY
@@ -348,7 +348,7 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   template<class ScalarType, class MV, class OP>
   void SVQBOrthoManager<ScalarType, MV, OP>::projectMat(
-          MV &X, 
+          MV &X,
           Teuchos::Array<Teuchos::RCP<const MV> >  Q,
           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
           Teuchos::RCP<MV> MX,
@@ -363,7 +363,7 @@ namespace Anasazi {
   // Find an Op-orthonormal basis for span(X), with rank numvectors(X)
   template<class ScalarType, class MV, class OP>
   int SVQBOrthoManager<ScalarType, MV, OP>::normalizeMat(
-          MV &X, 
+          MV &X,
           Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
           Teuchos::RCP<MV> MX) const {
     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C;
@@ -377,7 +377,7 @@ namespace Anasazi {
   // Find an Op-orthonormal basis for span(X) - span(W)
   template<class ScalarType, class MV, class OP>
   int SVQBOrthoManager<ScalarType, MV, OP>::projectAndNormalizeMat(
-          MV &X, 
+          MV &X,
           Teuchos::Array<Teuchos::RCP<const MV> >  Q,
           Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
           Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
@@ -391,9 +391,9 @@ namespace Anasazi {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Find an Op-orthonormal basis for span(X), with the option of extending the subspace so that 
+  // Find an Op-orthonormal basis for span(X), with the option of extending the subspace so that
   // the rank is numvectors(X)
-  // 
+  //
   // Tracking the coefficients (C[i] and B) for this code is complicated by the fact that the loop
   // structure looks like
   // do
@@ -405,10 +405,10 @@ namespace Anasazi {
   // However, the recurrence for the coefficients is not complicated:
   // B = I
   // C = 0
-  // do 
+  // do
   //    project yields newC
   //    C = C + newC*B
-  //    do 
+  //    do
   //       ortho yields newR
   //       B = newR*B
   //    end
@@ -418,8 +418,8 @@ namespace Anasazi {
   //
   template<class ScalarType, class MV, class OP>
   int SVQBOrthoManager<ScalarType, MV, OP>::findBasis(
-                MV &X, Teuchos::RCP<MV> MX, 
-                Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                MV &X, Teuchos::RCP<MV> MX,
+                Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C,
                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B,
                 Teuchos::Array<Teuchos::RCP<const MV> > Q,
                 bool normalize_in) const {
@@ -448,7 +448,7 @@ namespace Anasazi {
 
     if (normalize_in == true && qsize + xc > xr) {
       // not well-posed
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           "Anasazi::SVQBOrthoManager::findBasis(): Orthogonalization constraints not feasible" );
     }
 
@@ -459,13 +459,13 @@ namespace Anasazi {
     }
     else if (normalize_in == true && (xc == 0 || xr == 0)) {
       // normalize requires X not empty
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
                           "Anasazi::SVQBOrthoManager::findBasis(): X must be non-empty" );
     }
 
     // check that Q matches X
-    TEUCHOS_TEST_FOR_EXCEPTION( qsize != 0 && qr != xr , std::invalid_argument, 
-                        "Anasazi::SVQBOrthoManager::findBasis(): Size of X not consistant with size of Q" );
+    TEUCHOS_TEST_FOR_EXCEPTION( qsize != 0 && qr != xr , std::invalid_argument,
+                        "Anasazi::SVQBOrthoManager::findBasis(): Size of X not consistent with size of Q" );
 
     /* If we don't have enough C, expanding it creates null references
      * If we have too many, resizing just throws away the later ones
@@ -476,17 +476,17 @@ namespace Anasazi {
     // check the size of the C[i] against the Q[i] and consistency between Q[i]
     for (int i=0; i<nq; i++) {
       // check size of Q[i]
-      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument, 
-                          "Anasazi::SVQBOrthoManager::findBasis(): Size of Q not mutually consistant" );
-      TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument, 
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument,
+                          "Anasazi::SVQBOrthoManager::findBasis(): Size of Q not mutually consistent" );
+      TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument,
                           "Anasazi::SVQBOrthoManager::findBasis(): Q has less rows than columns" );
       // check size of C[i]
       if ( C[i] == Teuchos::null ) {
         C[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(qcs[i],xc) );
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc, std::invalid_argument, 
-                            "Anasazi::SVQBOrthoManager::findBasis(): Size of Q not consistant with C" );
+        TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc, std::invalid_argument,
+                            "Anasazi::SVQBOrthoManager::findBasis(): Size of Q not consistent with C" );
       }
       // clear C[i]
       C[i]->putScalar(ZERO);
@@ -503,8 +503,8 @@ namespace Anasazi {
       if ( B == Teuchos::null ) {
         B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
       }
-      TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument, 
-                          "Anasazi::SVQBOrthoManager::findBasis(): Size of B not consistant with X" );
+      TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
+                          "Anasazi::SVQBOrthoManager::findBasis(): Size of B not consistent with X" );
       // set B to I
       B->putScalar(ZERO);
       for (int i=0; i<xc; i++) {
@@ -513,7 +513,7 @@ namespace Anasazi {
     }
     /******************************************
      *  If _hasOp == false, DO NOT MODIFY MX  *
-     ****************************************** 
+     ******************************************
      * if Op==null, MX == X (via pointer)
      * Otherwise, either the user passed in MX or we will allocate and compute it
      *
@@ -548,7 +548,7 @@ namespace Anasazi {
       int lwork = lapack.ILAENV(1,"hetrd","VU",xc,-1,-1,-1);
       // lwork >= (nb+1)*n for complex
       // lwork >= (nb+2)*n for real
-      TEUCHOS_TEST_FOR_EXCEPTION( lwork < 0, OrthoError, 
+      TEUCHOS_TEST_FOR_EXCEPTION( lwork < 0, OrthoError,
                           "Anasazi::SVQBOrthoManager::findBasis(): Error code from ILAENV" );
 
       lwork = (lwork+2)*xc;
@@ -565,12 +565,12 @@ namespace Anasazi {
     // test sizes of X,MX
     int mxc = (this->_hasOp) ? MVT::GetNumberVecs( *MX ) : xc;
     ptrdiff_t mxr = (this->_hasOp) ? MVT::GetGlobalLength( *MX )  : xr;
-    TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument, 
-                        "Anasazi::SVQBOrthoManager::findBasis(): Size of X not consistant with MX" );
+    TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument,
+                        "Anasazi::SVQBOrthoManager::findBasis(): Size of X not consistent with MX" );
 
     // sentinel to continue the outer loop (perform another projection step)
-    bool doGramSchmidt = true;          
-    // variable for testing orthonorm/orthog 
+    bool doGramSchmidt = true;
+    // variable for testing orthonorm/orthog
     MagnitudeType tolerance = MONE/SCTM::squareroot(eps_);
 
     // outer loop
@@ -588,7 +588,7 @@ namespace Anasazi {
           MatOrthoManager<ScalarType,MV,OP>::normMat(X,normX_mag,MX);
           for (int i=0; i<xc; ++i) {
             normX[i] = normX_mag[i];
-            invnormX[i] = (normX_mag[i] == ZERO) ? ZERO : MONE/normX_mag[i]; 
+            invnormX[i] = (normX_mag[i] == ZERO) ? ZERO : MONE/normX_mag[i];
           }
         }
         // normalize the vectors
@@ -619,7 +619,7 @@ namespace Anasazi {
         for (int i=0; i<nq; i++) {
           MVT::MvTimesMatAddMv(-ONE,*Q[i],*newC[i],ONE,X);
         }
-        // un-scale the vectors 
+        // un-scale the vectors
         MVT::MvScale(X,normX);
         // Recompute the vectors in MX
         if (this->_hasOp) {
@@ -627,9 +627,9 @@ namespace Anasazi {
           this->_OpCounter += MVT::GetNumberVecs(X);
         }
 
-        //          
-        // Compute largest column norm of 
-        //            (  C[0]   )  
+        //
+        // Compute largest column norm of
+        //            (  C[0]   )
         //        C = (  ....   )
         //            ( C[nq-1] )
         MagnitudeType maxNorm = ZERO;
@@ -642,7 +642,7 @@ namespace Anasazi {
           }
           maxNorm = (sum > maxNorm) ? sum : maxNorm;
         }
-              
+
         // do we perform another GS?
         if (maxNorm < 0.36) {
           doGramSchmidt = false;
@@ -683,7 +683,7 @@ namespace Anasazi {
       if (normalize_in) {
 
         MagnitudeType condT = tolerance;
-        
+
         while (condT >= tolerance) {
 
           numSVQB++;
@@ -709,7 +709,7 @@ namespace Anasazi {
           lapack.HEEV('V', 'U', xc, XtMX.values(), XtMX.stride(), &lambda[0], &work[0], work.size(), &rwork[0], &info);
           std::stringstream os;
           os << "Anasazi::SVQBOrthoManager::findBasis(): Error code " << info << " from HEEV";
-          TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OrthoError, 
+          TEUCHOS_TEST_FOR_EXCEPTION( info != 0, OrthoError,
                               os.str() );
           if (debug_) {
             std::cout << dbgstr << "eigenvalues of XtMX: (";
@@ -824,8 +824,8 @@ namespace Anasazi {
           if (debug_) {
             std::cout << dbgstr << "condT: " << condT << ", tolerance = " << tolerance << std::endl;
           }
-      
-          // if multiple passes of SVQB are necessary, then pass through outer GS loop again    
+
+          // if multiple passes of SVQB are necessary, then pass through outer GS loop again
           if ((doGramSchmidt == false) && (condT > SCTM::squareroot(tolerance))) {
             doGramSchmidt = true;
           }
@@ -833,14 +833,14 @@ namespace Anasazi {
         } // end while (condT >= tolerance)
       }
       // end if(normalize_in)
-       
+
     } // end while (doGramSchmidt)
 
     if (debug_) {
-      std::cout << dbgstr << "(numGS,numSVQB,numRand)                : " 
-           << "(" << numGS 
-           << "," << numSVQB 
-           << "," << numRand 
+      std::cout << dbgstr << "(numGS,numSVQB,numRand)                : "
+           << "(" << numGS
+           << "," << numSVQB
+           << "," << numRand
            << ")" << std::endl;
     }
     return xc;

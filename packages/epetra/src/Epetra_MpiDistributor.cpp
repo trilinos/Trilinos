@@ -1505,7 +1505,7 @@ int Epetra_MpiDistributor::Sort_ints_(
       copy_other[i] = vals_other[i];
     }
 
-    // count the occurances of integers ("distribution count")
+    // count the occurrences of integers ("distribution count")
     int *p = pos+1;
     for (i = 0; i < nvals; i++) p[copy_sort[i]]++;
 

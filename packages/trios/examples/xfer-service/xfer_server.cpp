@@ -365,7 +365,7 @@ int xfer_server_main(nssi_rpc_transport transport, int num_threads, MPI_Comm ser
 
     MPI_Comm_rank(server_comm, &server_rank);
 
-    /* options that can be overriden by the command-line */
+    /* options that can be overridden by the command-line */
     std::string server_url(NSSI_URL_LEN, '\0');          /* NNTI-style url of the server */
     std::string logfile("");
 

@@ -123,8 +123,8 @@ struct TypeListAt< TypeList< Value , Tail > , ordinal >
 /** \class  TypeListIndex
  *  \brief  Member <b> enum { value = ... }; </b>
  *          is the location within <b> ListType </b>
- *          of occurance <b> I </b> of type <b> TestValue </b>.
- *          If this occurance does not exist then <b> value = -1 </b>.
+ *          of occurrence <b> I </b> of type <b> TestValue </b>.
+ *          If this occurrence does not exist then <b> value = -1 </b>.
  */
 template< class ListType , typename TestValue , unsigned ordinal = 0 >
 struct TypeListIndex {};
@@ -149,7 +149,7 @@ public:
 //----------------------------------------------------------------------
 /** \class  TypeListCount
  *  \brief  Member <b> enum { value = ... }; </b>
- *          is the number of occurances of <b> TestValue </b>
+ *          is the number of occurrences of <b> TestValue </b>
  *          within <b> ListType </b>.
  */
 template< class ListType , typename TestValue >
@@ -324,7 +324,7 @@ struct TypeListEraseAt< TypeList< Value , Tail > , ordinal >
 /** \class  TypeListClean
  *  \brief  Member <b> typedef ... type ; </b> is defined
  *          by truncating <b> ListType </b> at the first
- *          occurance of <b> TypeListEnd </b>.
+ *          occurrence of <b> TypeListEnd </b>.
  *          Used by <b> MakeTypeList </b> to generate a clean type list.
  */
 template< class ListType > struct TypeListClean {};

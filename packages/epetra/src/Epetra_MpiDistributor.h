@@ -160,7 +160,7 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   /// scattering data to these processes.
   ///
   /// Needless to say, knowing both of these at the same time is a pretty
-  /// rare occurance.  But if it happens, this routine will avoid a lot
+  /// rare occurrence.  But if it happens, this routine will avoid a lot
   /// of communication that CreateFromSends or CreateFromRecvs would have to do.
   ///
   /// \return zero if this worked.
@@ -192,7 +192,7 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
 			       const int * RemotePIDs,
 			       bool Deterministic);
 #endif
-			
+
 
   //@}
 
@@ -383,7 +383,7 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
     int send_array_size_;
 
     Epetra_MpiDistributor * comm_plan_reverse_;
-    
+
     int lastRoundBytesSend_;
     int lastRoundBytesRecv_;
 };

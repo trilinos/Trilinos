@@ -374,7 +374,7 @@ SubdomainGraph_dhPrintStatsLong (SubdomainGraph_dh s, FILE * fp)
   else
     {
     /*-----------------------------------------
-     * local n2o_row permutation 
+     * local n2o_row permutation
      *-----------------------------------------*/
       fprintf (fp, "\nlocal n2o_row permutation:\n");
       fprintf (fp, "--------------------------\n");
@@ -1283,7 +1283,7 @@ find_all_neighbors_unsym_private (SubdomainGraph_dh s, int m, void *A)
 
   /*
      at this point, idx = the number of my neighbors in the subdomain
-     graph; equivalently, idx is the number of meaningfull slots in
+     graph; equivalently, idx is the number of meaningful slots in
      the myNabors array.  -dah 1/31/06
    */
 
@@ -2053,7 +2053,7 @@ find_bdry_nodes_seq_private (SubdomainGraph_dh s, int m, void *A)
   for (i = 0; i < m; ++i)
     tmp[i] = 0;
 
-    /*------------------------------------------ 
+    /*------------------------------------------
      * mark all boundary nodes
      *------------------------------------------ */
   for (i = 0; i < blocks; ++i)

@@ -26,7 +26,7 @@
 # ************************************************************************
 #
 #  The only change that I made to change this from dscpack to klu 
-#  was to replace the single occurence of dscpack with klu
+#  was to replace the single occurrence of dscpack with klu
 #  I also added HAVE_AMESOS_KLU to Makefile.am in this directory.
 #
 ## NOTE: Those wishing to cusomize this script to run test exe's

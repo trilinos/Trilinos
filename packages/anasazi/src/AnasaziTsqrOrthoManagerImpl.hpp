@@ -62,8 +62,8 @@ namespace Anasazi {
   /// \brief TsqrOrthoManager(Impl) error
   /// \author Mark Hoemmen
   class TsqrOrthoError : public OrthoError {
-  public: 
-    TsqrOrthoError (const std::string& what_arg) : 
+  public:
+    TsqrOrthoError (const std::string& what_arg) :
       OrthoError (what_arg) {}
   };
 
@@ -87,15 +87,15 @@ namespace Anasazi {
   ///   latter is a logic or runtime bug, whereas a TsqrOrthoFault is
   ///   a property of the input and admits recovery.
   class TsqrOrthoFault : public OrthoError {
-  public: 
-    TsqrOrthoFault (const std::string& what_arg) : 
+  public:
+    TsqrOrthoFault (const std::string& what_arg) :
       OrthoError (what_arg) {}
   };
 
   /// \class TsqrOrthoManagerImpl
   /// \brief TSQR-based OrthoManager subclass implementation
   /// \author Mark Hoemmen
-  /// 
+  ///
   /// TsqrOrthoManagerImpl implements the interface defined by \c
   /// OrthoManager, as well as the interface defined by \c
   /// OutOfPlaceNormalizerMixin.  We use TsqrOrthoManagerImpl to
@@ -131,7 +131,7 @@ namespace Anasazi {
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
     typedef MV multivector_type;
-    /// \typedef mat_type 
+    /// \typedef mat_type
     /// Type of the projection and normalization coefficients
     typedef Teuchos::SerialDenseMatrix<int, Scalar> mat_type;
     typedef Teuchos::RCP<mat_type> mat_ptr;
@@ -199,9 +199,9 @@ namespace Anasazi {
     /// timers and replace them with new ones.  The old timers will
     /// not appear in the list of timers shown by \c
     /// Teuchos::TimeMonitor::summarize().
-    void setLabel (const std::string& label) { 
+    void setLabel (const std::string& label) {
       if (label != label_) {
-        label_ = label; 
+        label_ = label;
       }
     }
 
@@ -212,11 +212,11 @@ namespace Anasazi {
     ///
     /// Compute the Euclidean block inner product X^* Y, and store the
     /// result in Z.
-    /// 
+    ///
     /// \param X [in]
     /// \param Y [in]
     /// \param Z [out] On output, \f$X^* Y\f$
-    void 
+    void
     innerProd (const MV& X, const MV& Y, mat_type& Z) const
     {
       MVT::MvTransMv (SCT::one(), X, Y, Z);
@@ -246,14 +246,14 @@ namespace Anasazi {
     ///
     /// Project X against the span of the (Euclidean) orthogonal
     /// vectors Q, and store the resulting coefficients in C.
-    /// 
+    ///
     /// \param X [in/out] On input: the vectors to project.
     ///   On output: \f$X := X - Q C\f$ where \f$C := Q^* X\f$.
     /// \param C [out] The projection coefficients \f$C := Q^* X\f$
     /// \param Q [in] The orthogonal basis against which to project
-    void 
-    project (MV& X, 
-             Teuchos::Array<mat_ptr> C, 
+    void
+    project (MV& X,
+             Teuchos::Array<mat_ptr> C,
              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q);
 
     /// \brief Orthogonalize the columns of X in place.
@@ -289,7 +289,7 @@ namespace Anasazi {
     ///   scratch space.  Applications can exploit this interface to
     ///   avoid excessive copying of vectors when using TSQR for
     ///   orthogonalization.
-    int 
+    int
     normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B);
 
     /// \brief Project X against Q and normalize X.
@@ -300,12 +300,12 @@ namespace Anasazi {
     /// more efficiently and accurately.
     ///
     /// \param X [in/out] The vectors to project against Q and normalize
-    /// \param C [out] The projection coefficients 
+    /// \param C [out] The projection coefficients
     /// \param B [out] The normalization coefficients
     /// \param Q [in] The orthogonal basis against which to project
     ///
     /// \return Rank of X after projection
-    int 
+    int
     projectAndNormalize (MV &X,
                          Teuchos::Array<mat_ptr> C,
                          mat_ptr B,
@@ -327,7 +327,7 @@ namespace Anasazi {
     ///   Q and normalize.  Overwritten with invalid values on output.
     /// \param X_out [out] On output: the normalized input vectors
     ///   after projection against Q.
-    /// \param C [out] The projection coefficients 
+    /// \param C [out] The projection coefficients
     /// \param B [out] The normalization coefficients
     /// \param Q [in] The orthogonal basis against which to project
     ///
@@ -335,8 +335,8 @@ namespace Anasazi {
     ///
     /// \note We expose this interface to applications for the same
     ///   reason that we expose \c normalizeOutOfPlace().
-    int 
-    projectAndNormalizeOutOfPlace (MV& X_in, 
+    int
+    projectAndNormalizeOutOfPlace (MV& X_in,
                                    MV& X_out,
                                    Teuchos::Array<mat_ptr> C,
                                    mat_ptr B,
@@ -365,8 +365,8 @@ namespace Anasazi {
     }
 
     //! Return the Frobenius norm of the inner product of X1 with itself.
-    magnitude_type 
-    orthogError (const MV &X1, 
+    magnitude_type
+    orthogError (const MV &X1,
                  const MV &X2) const
     {
       const int ncols_X1 = MVT::GetNumberVecs (X1);
@@ -460,14 +460,14 @@ namespace Anasazi {
     /// \param X [in] Multivector to project against the Q[i]
     /// \param Q [in] Array of multivectors against which to project X
     void
-    checkProjectionDims (int& ncols_X, 
+    checkProjectionDims (int& ncols_X,
                          int& num_Q_blocks,
                          int& ncols_Q_total,
-                         const MV& X, 
+                         const MV& X,
                          Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const;
 
     /// \brief Allocate projection coefficients
-    /// 
+    ///
     /// \param C [out] Array of projection coefficient matrices
     /// \param Q [in] Array of MV against which to project
     /// \param X [in] MV to project against the entries of Q
@@ -477,7 +477,7 @@ namespace Anasazi {
     ///   do the right thing regardless, but the hint might improve
     ///   performance by avoiding unnecessary allocations or checks.
     void
-    allocateProjectionCoefficients (Teuchos::Array<mat_ptr>& C, 
+    allocateProjectionCoefficients (Teuchos::Array<mat_ptr>& C,
                                     Teuchos::ArrayView<Teuchos::RCP<const MV> > Q,
                                     const MV& X,
                                     const bool attemptToRecycle = true) const;
@@ -490,8 +490,8 @@ namespace Anasazi {
     /// which case X_out is written, and outOfPlace==true).
     ///
     /// \return Rank of X_in after projection
-    int 
-    projectAndNormalizeImpl (MV& X_in, 
+    int
+    projectAndNormalizeImpl (MV& X_in,
                              MV& X_out,
                              const bool outOfPlace,
                              Teuchos::Array<mat_ptr> C,
@@ -504,21 +504,21 @@ namespace Anasazi {
     /// against the Q[i] blocks.  Does not allocate C[i] coefficients,
     /// and does not reorthogonalize.
     void
-    rawProject (MV& X, 
+    rawProject (MV& X,
                 Teuchos::ArrayView<Teuchos::RCP<const MV> > Q,
                 Teuchos::ArrayView<mat_ptr> C) const;
 
     //! Overload of \c rawProject() for one Q block
     void
-    rawProject (MV& X, 
-                const Teuchos::RCP<const MV>& Q, 
+    rawProject (MV& X,
+                const Teuchos::RCP<const MV>& Q,
                 const mat_ptr& C) const;
 
     /// \brief One out-of-place normalization pass
     ///
     /// Compute one normalization pass of X into Q*B.  Overwrite X
     /// with invalid values.
-    /// 
+    ///
     /// \param X [in/out] On input: multivector whose columns are to
     ///   be orthogonalized ("normalized").  On output: overwritten
     ///   with invalid values.
@@ -546,7 +546,7 @@ namespace Anasazi {
     ///
     /// Special case of normalize() when X has only one column.  The
     /// operation is done in place in X.  We assume that B(0,0) makes
-    /// sense, since we're going to assign to it.  
+    /// sense, since we're going to assign to it.
     ///
     /// \param X [in/out] On input: multivector of one column.  On
     ///   output: if that column has nonzero 2-norm, the column scaled
@@ -576,7 +576,7 @@ namespace Anasazi {
     ///   vector(s).
     ///
     /// \param Q [out] If outOfPlace, overwritten with invalid values;
-    ///   else, the normalized vector(s).  
+    ///   else, the normalized vector(s).
     ///
     /// \param B [out] Normalization coefficients: X = Q*B.  If X on
     ///   input had full (numerical) rank, B is upper triangular.
@@ -616,29 +616,29 @@ namespace Anasazi {
       // ignore parameters that we don't recognize, at least for now.
       // However, we do fill in missing parameters with defaults.
 
-      randomizeNullSpace_ = 
-        theParams->get<bool> ("randomizeNullSpace", 
+      randomizeNullSpace_ =
+        theParams->get<bool> ("randomizeNullSpace",
                               defaultParams->get<bool> ("randomizeNullSpace"));
-      reorthogonalizeBlocks_ = 
-        theParams->get<bool> ("reorthogonalizeBlocks", 
+      reorthogonalizeBlocks_ =
+        theParams->get<bool> ("reorthogonalizeBlocks",
                               defaultParams->get<bool> ("reorthogonalizeBlocks"));
-      throwOnReorthogFault_ = 
-        theParams->get<bool> ("throwOnReorthogFault", 
+      throwOnReorthogFault_ =
+        theParams->get<bool> ("throwOnReorthogFault",
                               defaultParams->get<bool> ("throwOnReorthogFault"));
-      blockReorthogThreshold_ = 
+      blockReorthogThreshold_ =
         theParams->get<M> ("blockReorthogThreshold",
                            defaultParams->get<M> ("blockReorthogThreshold"));
-      relativeRankTolerance_ = 
-        theParams->get<M> ("relativeRankTolerance", 
+      relativeRankTolerance_ =
+        theParams->get<M> ("relativeRankTolerance",
                            defaultParams->get<M> ("relativeRankTolerance"));
-      forceNonnegativeDiagonal_ = 
-        theParams->get<bool> ("forceNonnegativeDiagonal", 
+      forceNonnegativeDiagonal_ =
+        theParams->get<bool> ("forceNonnegativeDiagonal",
                               defaultParams->get<bool> ("forceNonnegativeDiagonal"));
 
       // Get the sublist of TSQR implementation parameters.  Use the
       // default sublist if one isn't provided.
       if (! theParams->isSublist ("TSQR implementation")) {
-        theParams->set ("TSQR implementation", 
+        theParams->set ("TSQR implementation",
                         defaultParams->sublist ("TSQR implementation"));
       }
       tsqrParams = sublist (theParams, "TSQR implementation", true);
@@ -678,8 +678,8 @@ namespace Anasazi {
     reorthogonalizeBlocks_ (true),
     throwOnReorthogFault_ (false),
     blockReorthogThreshold_ (0),
-    relativeRankTolerance_ (0), 
-    forceNonnegativeDiagonal_ (false) 
+    relativeRankTolerance_ (0),
+    forceNonnegativeDiagonal_ (false)
   {
     setParameterList (Teuchos::null); // Set default parameters.
   }
@@ -699,7 +699,7 @@ namespace Anasazi {
 
   template<class Scalar, class MV>
   void
-  TsqrOrthoManagerImpl<Scalar, MV>::project (MV& X, 
+  TsqrOrthoManagerImpl<Scalar, MV>::project (MV& X,
                                              Teuchos::Array<mat_ptr> C,
                                              Teuchos::ArrayView<Teuchos::RCP<const MV> > Q)
   {
@@ -720,9 +720,9 @@ namespace Anasazi {
     if (reorthogonalizeBlocks_)
       MVT::MvNorm (X, columnNormsBefore);
 
-    // Project (first block orthogonalization step): 
+    // Project (first block orthogonalization step):
     // C := Q^* X, X := X - Q C.
-    rawProject (X, Q, C); 
+    rawProject (X, Q, C);
 
     // If we are doing block reorthogonalization, reorthogonalize X if
     // necessary.
@@ -730,7 +730,7 @@ namespace Anasazi {
       {
         std::vector<magnitude_type> columnNormsAfter (ncols_X, magnitude_type(0));
         MVT::MvNorm (X, columnNormsAfter);
-        
+
         // Relative block reorthogonalization threshold
         const magnitude_type relThres = blockReorthogThreshold();
         // Reorthogonalize X if any of its column norms decreased by a
@@ -764,7 +764,7 @@ namespace Anasazi {
 
 
   template<class Scalar, class MV>
-  int 
+  int
   TsqrOrthoManagerImpl<Scalar, MV>::normalize (MV& X, mat_ptr B)
   {
     using Teuchos::Range1D;
@@ -794,7 +794,7 @@ namespace Anasazi {
     // allocate Q_ until we have some X, so we need a multivector as
     // the "prototype.")
     //
-    // NOTE (mfh 11 Jan 2011) We only increase the number of columsn
+    // NOTE (mfh 11 Jan 2011) We only increase the number of columns
     // in Q_, never decrease.  This is OK for typical uses of TSQR,
     // but you might prefer different behavior in some cases.
     //
@@ -810,8 +810,8 @@ namespace Anasazi {
     // its own and throw an exception if X and Q_ are not compatible,
     // but it may not.  If you find that recycling the Q_ space causes
     // troubles, you may consider modifying the code below to
-    // reallocate Q_ for every X that comes in.  
-    if (Q_.is_null() || 
+    // reallocate Q_ for every X that comes in.
+    if (Q_.is_null() ||
         MVT::GetGlobalLength(*Q_) != MVT::GetGlobalLength(X) ||
         numCols > MVT::GetNumberVecs (*Q_)) {
       Q_ = MVT::Clone (X, numCols);
@@ -834,7 +834,7 @@ namespace Anasazi {
   template<class Scalar, class MV>
   void
   TsqrOrthoManagerImpl<Scalar, MV>::
-  allocateProjectionCoefficients (Teuchos::Array<mat_ptr>& C, 
+  allocateProjectionCoefficients (Teuchos::Array<mat_ptr>& C,
                                   Teuchos::ArrayView<Teuchos::RCP<const MV> > Q,
                                   const MV& X,
                                   const bool attemptToRecycle) const
@@ -844,14 +844,14 @@ namespace Anasazi {
     C.resize (num_Q_blocks);
     if (attemptToRecycle)
       {
-        for (int i = 0; i < num_Q_blocks; ++i) 
+        for (int i = 0; i < num_Q_blocks; ++i)
           {
             const int ncols_Qi = MVT::GetNumberVecs (*Q[i]);
             // Create a new C[i] if necessary, otherwise resize if
             // necessary, otherwise fill with zeros.
             if (C[i].is_null())
               C[i] = rcp (new mat_type (ncols_Qi, ncols_X));
-            else 
+            else
               {
                 mat_type& Ci = *C[i];
                 if (Ci.numRows() != ncols_Qi || Ci.numCols() != ncols_X)
@@ -863,7 +863,7 @@ namespace Anasazi {
       }
     else
       {
-        for (int i = 0; i < num_Q_blocks; ++i) 
+        for (int i = 0; i < num_Q_blocks; ++i)
           {
             const int ncols_Qi = MVT::GetNumberVecs (*Q[i]);
             C[i] = rcp (new mat_type (ncols_Qi, ncols_X));
@@ -872,7 +872,7 @@ namespace Anasazi {
   }
 
   template<class Scalar, class MV>
-  int 
+  int
   TsqrOrthoManagerImpl<Scalar, MV>::
   normalizeOutOfPlace (MV& X, MV& Q, mat_ptr B)
   {
@@ -900,9 +900,9 @@ namespace Anasazi {
   }
 
   template<class Scalar, class MV>
-  int 
+  int
   TsqrOrthoManagerImpl<Scalar, MV>::
-  projectAndNormalizeImpl (MV& X_in, 
+  projectAndNormalizeImpl (MV& X_in,
                            MV& X_out, // Only written if outOfPlace==false.
                            const bool outOfPlace,
                            Teuchos::Array<mat_ptr> C,
@@ -916,10 +916,10 @@ namespace Anasazi {
     if (outOfPlace) {
       // Make sure that X_out has at least as many columns as X_in.
       TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(X_out) < MVT::GetNumberVecs(X_in),
-                         std::invalid_argument, 
+                         std::invalid_argument,
                          "Belos::TsqrOrthoManagerImpl::"
                          "projectAndNormalizeOutOfPlace(...):"
-                         "X_out has " << MVT::GetNumberVecs(X_out) 
+                         "X_out has " << MVT::GetNumberVecs(X_out)
                          << " columns, but X_in has "
                          << MVT::GetNumberVecs(X_in) << " columns.");
     }
@@ -974,7 +974,7 @@ namespace Anasazi {
       TEUCHOS_TEST_FOR_EXCEPTION(B->numRows() < ncols_X || B->numCols() < ncols_X,
                          std::invalid_argument,
                          "normalizeOne: Input matrix B must be at "
-                         "least " << ncols_X << " x " << ncols_X 
+                         "least " << ncols_X << " x " << ncols_X
                          << ", but is instead " << B->numRows()
                          << " x " << B->numCols() << ".");
       // Create a view of the ncols_X by ncols_X upper left
@@ -986,8 +986,8 @@ namespace Anasazi {
     // Rank of X(_in) after first projection pass.  If outOfPlace,
     // this overwrites X_in with invalid values, and the results go in
     // X_out.  Otherwise, it's done in place in X_in.
-    const int firstPassRank = outOfPlace ? 
-      normalizeOutOfPlace (X_in, X_out, B_out) : 
+    const int firstPassRank = outOfPlace ?
+      normalizeOutOfPlace (X_in, X_out, B_out) :
       normalize (X_in, B_out);
     if (B.is_null()) {
       // The input matrix B is null, so assign B_out to it.  If B was
@@ -1038,11 +1038,11 @@ namespace Anasazi {
         RCP<MV> X_in_null = MVT::CloneViewNonConst (X_in, nullSpaceIndices);
         MVT::Assign (*X_out_null, *X_in_null);
         // Project the new random vectors against the Q blocks, and
-        // renormalize the result into X_out_null.  
+        // renormalize the result into X_out_null.
         rawProject (*X_in_null, Q, C_null);
         randomVectorsRank = normalizeOutOfPlace (*X_in_null, *X_out_null, B_null);
       } else {
-        // View of the null space columns of X.  
+        // View of the null space columns of X.
         // They live in X_in.
         RCP<MV> X_null = MVT::CloneViewNonConst (X_in, nullSpaceIndices);
         // Project the new random vectors against the Q blocks,
@@ -1054,8 +1054,8 @@ namespace Anasazi {
       // to be full rank after projection and normalization.  In that
       // case, we could try another set of random data and recurse as
       // necessary, but instead for now we just raise an exception.
-      TEUCHOS_TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols, 
-                         TsqrOrthoError, 
+      TEUCHOS_TEST_FOR_EXCEPTION(randomVectorsRank != numNullSpaceCols,
+                         TsqrOrthoError,
                          "Belos::TsqrOrthoManagerImpl::projectAndNormalize"
                          "OutOfPlace(): After projecting and normalizing the "
                          "random vectors (used to replace the null space "
@@ -1069,9 +1069,9 @@ namespace Anasazi {
     if (reorthogonalizeBlocks_) {
       // We are only interested in the column space basis of X
       // resp. X_out.
-      std::vector<magnitude_type> 
+      std::vector<magnitude_type>
         normsAfterFirstPass (firstPassRank, SCTM::zero());
-      std::vector<magnitude_type> 
+      std::vector<magnitude_type>
         normsAfterSecondPass (firstPassRank, SCTM::zero());
 
       // Compute post-first-pass (pre-normalization) norms.  We could
@@ -1103,10 +1103,10 @@ namespace Anasazi {
         // first project-and-normalize step was zero.  It _will_
         // activate reorthogonalization if the column's norm before
         // was not zero, but is zero now.
-        const magnitude_type curThreshold = 
+        const magnitude_type curThreshold =
           blockReorthogThreshold() * normsBeforeFirstPass[j];
         if (normsAfterFirstPass[j] < curThreshold) {
-          reorthogonalize = true; 
+          reorthogonalize = true;
           break;
         }
       }
@@ -1144,13 +1144,13 @@ namespace Anasazi {
         // coefficients until we have the new normalization
         // coefficients, which we need in order to do the update.
         rawProject (X_in, Q, C2);
-            
+
         // Coefficients for (re)normalization of X_in.
         RCP<mat_type> B2 (new mat_type (ncols_X, ncols_X));
 
         // Normalize X_in (into X_out, if working out of place).
-        const int secondPassRank = outOfPlace ? 
-          normalizeOutOfPlace (X_in, X_out, B2) : 
+        const int secondPassRank = outOfPlace ?
+          normalizeOutOfPlace (X_in, X_out, B2) :
           normalize (X_in, B2);
         rank = secondPassRank; // Current rank of X
 
@@ -1159,9 +1159,9 @@ namespace Anasazi {
         // its input and output arguments.
         mat_type B_copy (Copy, *B_out, B_out->numRows(), B_out->numCols());
         // B_out := B2 * B_out (where input B_out is in B_copy).
-        const int err = B_out->multiply (NO_TRANS, NO_TRANS, SCT::one(), 
+        const int err = B_out->multiply (NO_TRANS, NO_TRANS, SCT::one(),
                                          *B2, B_copy, SCT::zero());
-        TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::logic_error, 
+        TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::logic_error,
                            "Teuchos::SerialDenseMatrix::multiply "
                            "returned err = " << err << " != 0");
         // Update the block coefficients from the projection step.  We
@@ -1171,9 +1171,9 @@ namespace Anasazi {
           mat_type C_k_copy (Copy, *C[k], C[k]->numRows(), C[k]->numCols());
 
           // C[k] := C2[k]*B_copy + C[k].
-          const int err2 = C[k]->multiply (NO_TRANS, NO_TRANS, SCT::one(), 
+          const int err2 = C[k]->multiply (NO_TRANS, NO_TRANS, SCT::one(),
                                           *C2[k], B_copy, SCT::one());
-          TEUCHOS_TEST_FOR_EXCEPTION(err2 != 0, std::logic_error, 
+          TEUCHOS_TEST_FOR_EXCEPTION(err2 != 0, std::logic_error,
                              "Teuchos::SerialDenseMatrix::multiply "
                              "returned err = " << err << " != 0");
         }
@@ -1189,10 +1189,10 @@ namespace Anasazi {
         // orthogonalization fault, which requires expensive recovery.
         reorthogFault = false;
         for (int j = 0; j < rank; ++j) {
-          const magnitude_type relativeLowerBound = 
+          const magnitude_type relativeLowerBound =
             blockReorthogThreshold() * normsAfterFirstPass[j];
           if (normsAfterSecondPass[j] < relativeLowerBound) {
-            reorthogFault = true; 
+            reorthogFault = true;
             faultIndices.push_back (j);
           }
         }
@@ -1200,8 +1200,8 @@ namespace Anasazi {
 
       if (reorthogFault) {
         if (throwOnReorthogFault_) {
-          raiseReorthogFault (normsAfterFirstPass, 
-                              normsAfterSecondPass, 
+          raiseReorthogFault (normsAfterFirstPass,
+                              normsAfterSecondPass,
                               faultIndices);
         } else {
           // NOTE (mfh 19 Jan 2011) We could handle the fault here by
@@ -1209,7 +1209,7 @@ namespace Anasazi {
           // offending vectors of X.  However, we choose not to
           // implement this for now.  If it becomes a problem, let us
           // know and we will prioritize implementing this.
-          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, 
+          TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                              "TsqrOrthoManagerImpl has not yet implemented"
                              " recovery from an orthogonalization fault.");
         }
@@ -1229,13 +1229,13 @@ namespace Anasazi {
     using std::endl;
     typedef std::vector<int>::size_type size_type;
     std::ostringstream os;
-                  
+
     os << "Orthogonalization fault at the following column(s) of X:" << endl;
     os << "Column\tNorm decrease factor" << endl;
     for (size_type k = 0; k < faultIndices.size(); ++k)
       {
         const int index = faultIndices[k];
-        const magnitude_type decreaseFactor = 
+        const magnitude_type decreaseFactor =
           normsAfterSecondPass[index] / normsAfterFirstPass[index];
         os << index << "\t" << decreaseFactor << endl;
       }
@@ -1257,11 +1257,11 @@ namespace Anasazi {
       //
       params->set ("TSQR implementation", *(tsqrAdaptor_.getValidParameters()),
                    "TSQR implementation parameters.");
-      // 
+      //
       // Orthogonalization parameters
       //
       const bool defaultRandomizeNullSpace = true;
-      params->set ("randomizeNullSpace", defaultRandomizeNullSpace, 
+      params->set ("randomizeNullSpace", defaultRandomizeNullSpace,
                    "Whether to fill in null space vectors with random data.");
 
       const bool defaultReorthogonalizeBlocks = true;
@@ -1270,16 +1270,16 @@ namespace Anasazi {
 
       // This parameter corresponds to the "blk_tol_" parameter in
       // Belos' DGKSOrthoManager.  We choose the same default value.
-      const magnitude_type defaultBlockReorthogThreshold = 
+      const magnitude_type defaultBlockReorthogThreshold =
         magnitude_type(10) * SCTM::squareroot (SCTM::eps());
-      params->set ("blockReorthogThreshold", defaultBlockReorthogThreshold, 
+      params->set ("blockReorthogThreshold", defaultBlockReorthogThreshold,
                    "If reorthogonalizeBlocks==true, and if the norm of "
                    "any column within a block decreases by this much or "
                    "more after orthogonalization, we reorthogonalize.");
 
       // This parameter corresponds to the "sing_tol_" parameter in
       // Belos' DGKSOrthoManager.  We choose the same default value.
-      const magnitude_type defaultRelativeRankTolerance = 
+      const magnitude_type defaultRelativeRankTolerance =
         Teuchos::as<magnitude_type>(10) * SCTM::eps();
 
       // If the relative rank tolerance is zero, then we will always
@@ -1318,7 +1318,7 @@ namespace Anasazi {
     RCP<const ParameterList> defaultParams = getValidParameters();
     // Start with a clone of the default parameters.
     RCP<ParameterList> params = rcp (new ParameterList (*defaultParams));
-        
+
     // Disable reorthogonalization and randomization of the null
     // space basis.  Reorthogonalization tolerances don't matter,
     // since we aren't reorthogonalizing blocks in the fast
@@ -1327,7 +1327,7 @@ namespace Anasazi {
     // reorthogonalization, so we don't have to worry about the
     // "throwOnReorthogFault" setting.
     const bool randomizeNullSpace = false;
-    params->set ("randomizeNullSpace", randomizeNullSpace);      
+    params->set ("randomizeNullSpace", randomizeNullSpace);
     const bool reorthogonalizeBlocks = false;
     params->set ("reorthogonalizeBlocks", reorthogonalizeBlocks);
 
@@ -1337,8 +1337,8 @@ namespace Anasazi {
   template<class Scalar, class MV>
   int
   TsqrOrthoManagerImpl<Scalar, MV>::
-  rawNormalize (MV& X, 
-                MV& Q, 
+  rawNormalize (MV& X,
+                MV& Q,
                 Teuchos::SerialDenseMatrix<int, Scalar>& B)
   {
     int rank;
@@ -1359,7 +1359,7 @@ namespace Anasazi {
   template<class Scalar, class MV>
   int
   TsqrOrthoManagerImpl<Scalar, MV>::
-  normalizeOne (MV& X, 
+  normalizeOne (MV& X,
                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > B) const
   {
     // Make space for the normalization coefficient.  This will either
@@ -1371,7 +1371,7 @@ namespace Anasazi {
     } else {
       const int numRows = B->numRows();
       const int numCols = B->numCols();
-      TEUCHOS_TEST_FOR_EXCEPTION(numRows < 1 || numCols < 1, 
+      TEUCHOS_TEST_FOR_EXCEPTION(numRows < 1 || numCols < 1,
                          std::invalid_argument,
                          "normalizeOne: Input matrix B must be at "
                          "least 1 x 1, but is instead " << numRows
@@ -1432,7 +1432,7 @@ namespace Anasazi {
   template<class Scalar, class MV>
   void
   TsqrOrthoManagerImpl<Scalar, MV>::
-  rawProject (MV& X, 
+  rawProject (MV& X,
               Teuchos::ArrayView<Teuchos::RCP<const MV> > Q,
               Teuchos::ArrayView<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > > C) const
   {
@@ -1441,10 +1441,10 @@ namespace Anasazi {
     for (int i = 0; i < num_Q_blocks; ++i)
       {
         // TEUCHOS_TEST_FOR_EXCEPTION(C[i].is_null(), std::logic_error,
-        //                    "TsqrOrthoManagerImpl::rawProject(): C[" 
+        //                    "TsqrOrthoManagerImpl::rawProject(): C["
         //                    << i << "] is null");
         // TEUCHOS_TEST_FOR_EXCEPTION(Q[i].is_null(), std::logic_error,
-        //                    "TsqrOrthoManagerImpl::rawProject(): Q[" 
+        //                    "TsqrOrthoManagerImpl::rawProject(): Q["
         //                    << i << "] is null");
         mat_type& Ci = *C[i];
         const MV& Qi = *Q[i];
@@ -1457,8 +1457,8 @@ namespace Anasazi {
   template<class Scalar, class MV>
   void
   TsqrOrthoManagerImpl<Scalar, MV>::
-  rawProject (MV& X, 
-              const Teuchos::RCP<const MV>& Q, 
+  rawProject (MV& X,
+              const Teuchos::RCP<const MV>& Q,
               const Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> >& C) const
   {
     // Block Gram-Schmidt
@@ -1469,9 +1469,9 @@ namespace Anasazi {
   template<class Scalar, class MV>
   int
   TsqrOrthoManagerImpl<Scalar, MV>::
-  normalizeImpl (MV& X, 
-                 MV& Q, 
-                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > B, 
+  normalizeImpl (MV& X,
+                 MV& Q,
+                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int, Scalar> > B,
                  const bool outOfPlace)
   {
     using Teuchos::Range1D;
@@ -1492,8 +1492,8 @@ namespace Anasazi {
 
     // We allow Q to have more columns than X.  In that case, we only
     // touch the first numCols columns of Q.
-    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols, 
-                       std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(MVT::GetNumberVecs(Q) < numCols,
+                       std::invalid_argument,
                        "TsqrOrthoManagerImpl::normalizeImpl(X,Q,B): Q has "
                        << MVT::GetNumberVecs(Q) << " columns.  This is too "
                        "few, since X has " << numCols << " columns.");
@@ -1514,7 +1514,7 @@ namespace Anasazi {
       TEUCHOS_TEST_FOR_EXCEPTION(B->numRows() < numCols || B->numCols() < numCols,
                          std::invalid_argument,
                          "normalizeOne: Input matrix B must be at "
-                         "least " << numCols << " x " << numCols 
+                         "least " << numCols << " x " << numCols
                          << ", but is instead " << B->numRows()
                          << " x " << B->numCols() << ".");
       // Create a view of the numCols x numCols upper left submatrix
@@ -1557,7 +1557,7 @@ namespace Anasazi {
       std::vector<magnitude_type> norms (numCols);
       MVT::MvNorm (*Q_view, norms);
       cerr << "Column norms of Q_view after orthogonalization: ";
-      for (typename std::vector<magnitude_type>::const_iterator iter = norms.begin(); 
+      for (typename std::vector<magnitude_type>::const_iterator iter = norms.begin();
            iter != norms.end(); ++iter) {
         cerr << *iter;
         if (iter+1 != norms.end())
@@ -1578,7 +1578,7 @@ namespace Anasazi {
         typedef typename mat_type::scalarType mat_scalar_type;
         mat_scalar_type sumOfSquares = ScalarTraits<mat_scalar_type>::zero();
         for (typename mat_type::ordinalType i = 0; i <= j; ++i) {
-          const mat_scalar_type B_ij = 
+          const mat_scalar_type B_ij =
             ScalarTraits<mat_scalar_type>::magnitude (B_ref(i,j));
           sumOfSquares += B_ij*B_ij;
         }
@@ -1625,7 +1625,7 @@ namespace Anasazi {
       // vectors (also in Q_view).
       RCP<MV> Q_null = MVT::CloneViewNonConst (*Q_view, nullSpaceIndices);
       // Replace the null space basis with random data.
-      MVT::MvRandom (*Q_null); 
+      MVT::MvRandom (*Q_null);
 
       // Make sure that the "random" data isn't all zeros.  This is
       // statistically nearly impossible, but we test for debugging
@@ -1647,7 +1647,7 @@ namespace Anasazi {
             "We are being asked to randomize the null space, for a matrix "
             "with " << numCols << " columns and reported column rank "
              << rank << ".  The inclusive range of columns to fill with "
-            "random data is [" << nullSpaceIndices.lbound() << "," 
+            "random data is [" << nullSpaceIndices.lbound() << ","
              << nullSpaceIndices.ubound() << "].  After filling the null "
             "space vectors with random numbers, at least one of the vectors"
             " has norm zero.  Here are the norms of all the null space "
@@ -1693,7 +1693,7 @@ namespace Anasazi {
       mat_type B_null (nullSpaceNumCols, nullSpaceNumCols);
       // Write the normalized vectors to X_null (in X).
       const int nullSpaceBasisRank = rawNormalize (*Q_null, *X_null, B_null);
-          
+
       // It's possible, but unlikely, that X_null doesn't have full
       // rank (after the projection step).  We could recursively fill
       // in more random vectors until we finally get a full rank
@@ -1716,12 +1716,12 @@ namespace Anasazi {
            << "column rank " << rank << ".  After projecting and "
            << "normalizing the generated random vectors, they "
            << "only have rank " << nullSpaceBasisRank << ".  They"
-           << " should have full rank " << nullSpaceNumCols 
+           << " should have full rank " << nullSpaceNumCols
            << ".  (The inclusive range of columns to fill with "
-           << "random data is [" << nullSpaceIndices.lbound() 
+           << "random data is [" << nullSpaceIndices.lbound()
            << "," << nullSpaceIndices.ubound() << "].  The "
            << "column norms of the resulting Q factor are: [";
-        for (typename std::vector<magnitude_type>::size_type k = 0; 
+        for (typename std::vector<magnitude_type>::size_type k = 0;
              k < norms.size(); ++k) {
           os << norms[k];
           if (k != norms.size()-1) {
@@ -1733,7 +1733,7 @@ namespace Anasazi {
            << "report it to the Belos developers, especially if "
            << "you are able to reproduce the behavior.";
 
-        TEUCHOS_TEST_FOR_EXCEPTION(nullSpaceBasisRank < nullSpaceNumCols, 
+        TEUCHOS_TEST_FOR_EXCEPTION(nullSpaceBasisRank < nullSpaceNumCols,
                            TsqrOrthoError, os.str());
       }
       // If we're normalizing out of place, copy the X_null
@@ -1759,10 +1759,10 @@ namespace Anasazi {
   template<class Scalar, class MV>
   void
   TsqrOrthoManagerImpl<Scalar, MV>::
-  checkProjectionDims (int& ncols_X, 
+  checkProjectionDims (int& ncols_X,
                        int& num_Q_blocks,
                        int& ncols_Q_total,
-                       const MV& X, 
+                       const MV& X,
                        Teuchos::ArrayView<Teuchos::RCP<const MV> > Q) const
   {
     // First assign to temporary values, so the function won't

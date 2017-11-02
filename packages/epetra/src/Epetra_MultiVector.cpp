@@ -872,7 +872,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       else if(CombineMode==AbsMin) for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] = EPETRA_MIN( To[0][ImportLIDs[j]],std::abs(*ptr)); ptr++;}
       else if(CombineMode==Epetra_Max) for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] = EPETRA_MAX( To[0][ImportLIDs[j]],*ptr); ptr++;}
       else if(CombineMode==Epetra_Min) for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] = EPETRA_MIN( To[0][ImportLIDs[j]],*ptr); ptr++;}
-      else if(CombineMode==Average) for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] += *ptr++; To[0][ImportLIDs[j]] *= 0.5;} // Not a true avg if >2 occurance of an ID
+      else if(CombineMode==Average) for (int j=0; j<NumImportIDs; j++) {To[0][ImportLIDs[j]] += *ptr++; To[0][ImportLIDs[j]] *= 0.5;} // Not a true avg if >2 occurrence of an ID
       // Note:  The following form of averaging is not a true average if more that one value is combined.
       //        This might be an issue in the future, but we leave this way for now.
 /*
@@ -908,7 +908,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
         else if (CombineMode==AbsMin) {To[i][jj] = EPETRA_MIN( To[i][jj], std::abs(*ptr)); ptr++; } // max of absolutes
         else if (CombineMode==Epetra_Max)    {To[i][jj] = EPETRA_MAX( To[i][jj], *ptr); ptr++; } // simple max
         else if (CombineMode==Epetra_Min)    {To[i][jj] = EPETRA_MIN( To[i][jj], *ptr); ptr++; } // simple min
-        else if (CombineMode==Average){To[i][jj] += *ptr++; To[i][jj] *= 0.5;}} // Not a true avg if >2 occurance of an ID
+        else if (CombineMode==Average){To[i][jj] += *ptr++; To[i][jj] *= 0.5;}} // Not a true avg if >2 occurrence of an ID
 
       }
 /*
@@ -974,7 +974,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
         else if (CombineMode==AbsMin) {for (k=0; k<MaxElementSize; k++) { To[i][jj+k] = EPETRA_MIN( To[i][jj+k], std::abs(*ptr)); ptr++; }} // max of absolutes
         else if (CombineMode==Epetra_Max) {for (k=0; k<MaxElementSize; k++) { To[i][jj+k] = EPETRA_MAX( To[i][jj+k], *ptr); ptr++; }} // simple max
         else if (CombineMode==Epetra_Min) {for (k=0; k<MaxElementSize; k++) { To[i][jj+k] = EPETRA_MIN( To[i][jj+k], *ptr); ptr++; }} // simple min
-        else if (CombineMode==Average) {for (k=0; k<MaxElementSize; k++) { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}} // Not a true avg if >2 occurance of an ID
+        else if (CombineMode==Average) {for (k=0; k<MaxElementSize; k++) { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}} // Not a true avg if >2 occurrence of an ID
      }
    }
 /*
@@ -1047,7 +1047,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
         else if (CombineMode==AbsMax) {for (k=0; k<ElementSize; k++) { To[i][jj+k] = EPETRA_MAX( To[i][jj+k], std::abs(*ptr)); ptr++; }} // max of absolutes
         else if (CombineMode==Epetra_Max) {for (k=0; k<ElementSize; k++) { To[i][jj+k] = EPETRA_MAX( To[i][jj+k], *ptr); ptr++; }} // simple max
         else if (CombineMode==Epetra_Min) {for (k=0; k<ElementSize; k++) { To[i][jj+k] = EPETRA_MIN( To[i][jj+k], *ptr); ptr++; }} // simple min
-        else if (CombineMode==Average) {for (k=0; k<ElementSize; k++) { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}} // Not a true avg if >2 occurance of an ID
+        else if (CombineMode==Average) {for (k=0; k<ElementSize; k++) { To[i][jj+k] += *ptr++; To[i][jj+k] *= 0.5;}} // Not a true avg if >2 occurrence of an ID
      }
    }
 /*

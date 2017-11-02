@@ -234,7 +234,7 @@
 
  <Parameter 
   id="35" name="parallel_part_calculation_count" type="int" validatorId="33" value="1"
-  docString="The number of parts whose cut coordinates will be calculated concurently."
+  docString="The number of parts whose cut coordinates will be calculated concurrently."
   />
 
   <Validators>

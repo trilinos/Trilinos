@@ -31,7 +31,7 @@
 #include "KokkosKernels_Test_BlockCrs_Util.hpp"
 
 namespace KokkosKernels {
-  
+
   namespace Test {
 
     template <typename ExecSpace, typename ArrayLayout>
@@ -40,7 +40,7 @@ namespace KokkosKernels {
       typedef BlockCrsMatrix<ExecSpace,ArrayLayout> block_crs_matrix_type;
       typedef typename block_crs_matrix_type::crs_graph_type crs_graph_type;
       typedef BlockMultiVector<ExecSpace,ArrayLayout> block_multi_vector_type;
-      
+
     private:
       ConstUnmanagedViewType<typename crs_graph_type::row_ptr_type> _rowptr;
       ConstUnmanagedViewType<typename crs_graph_type::col_idx_type> _colidx;
@@ -54,32 +54,32 @@ namespace KokkosKernels {
     public:
       // A thread maps to a point row of the matrix.
       // loop = blksize*m
-      KOKKOS_INLINE_FUNCTION 
+      KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type idx) const {
         // index of blockrow and row in a block
         const ordinal_type i  = idx/_blocksize;
         const ordinal_type ii = idx%_blocksize;
-        
+
         // loop over multivectors
         const ordinal_type jend = _y.dimension_0();
         for (ordinal_type j=0;j<jend;++j) {
           scalar_type tmp = 0;
-          
-          // block row 
-          const ordinal_type 
+
+          // block row
+          const ordinal_type
             cbegin = _rowptr(i), cend = _rowptr(i+1);
 
           for (ordinal_type c=cbegin;c<cend;++c) {
             const ordinal_type col = _colidx(c);
-            for (ordinal_type jj=0;jj<_blocksize;++jj) 
+            for (ordinal_type jj=0;jj<_blocksize;++jj)
               tmp += _A(col,ii,jj)*_x(j, col, jj);
           }
           _y(j, i, ii) = tmp;
         }
       }
-      
+
       void run(const block_crs_matrix_type A,
-               const block_multi_vector_type x, 
+               const block_multi_vector_type x,
                const block_multi_vector_type y) {
         _rowptr = A.CrsGraph().rowptr;
         _colidx = A.CrsGraph().colidx;
@@ -112,36 +112,36 @@ namespace KokkosKernels {
       ordinal_type _blocksize;
 
     public:
-      
+
       // A thread maps to a row block of the matrix.
       // loop = m
-      KOKKOS_INLINE_FUNCTION 
+      KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type i) const {
-        // loop over multivector colums
+        // loop over multivector columns
         const ordinal_type jend = _y.dimension_0();
         for (ordinal_type j=0;j<jend;++j) {
           // set zero
-          for (ordinal_type ii=0;ii<_blocksize;++ii) 
+          for (ordinal_type ii=0;ii<_blocksize;++ii)
             _y(j, i, ii) = 0;
-          
-          // block row 
-          const ordinal_type 
+
+          // block row
+          const ordinal_type
             cbegin = _rowptr(i), cend = _rowptr(i+1);
-          
+
           for (ordinal_type c=cbegin;c<cend;++c) {
             const ordinal_type col = _colidx(c);
             for (ordinal_type ii=0;ii<_blocksize;++ii) {
               scalar_type tmp = 0;
-              for (ordinal_type jj=0;jj<_blocksize;++jj) 
+              for (ordinal_type jj=0;jj<_blocksize;++jj)
                 tmp += _A(col,ii,jj)*_x(j, col, jj);
               _y(j, i, ii) += tmp;
             }
           }
         }
       }
-      
+
       void run(const block_crs_matrix_type A,
-               const block_multi_vector_type x, 
+               const block_multi_vector_type x,
                const block_multi_vector_type y) {
         _rowptr = A.CrsGraph().rowptr;
         _colidx = A.CrsGraph().colidx;
@@ -171,42 +171,42 @@ namespace KokkosKernels {
     private:
       structured_block_mesh_type _mesh;
       ordinal_type _blocksize;
-      
+
       ConstUnmanagedViewType<typename crs_graph_type::row_ptr_type> _rowptr;
       ConstUnmanagedViewType<typename crs_graph_type::row_idx_type> _rowidx;
       ConstUnmanagedViewType<typename crs_graph_type::col_idx_type> _colidx;
-      
+
       ConstUnmanagedViewType<typename block_crs_matrix_type::value_array_type> _A;
       /**/ UnmanagedViewType<typename block_tridiag_matrices_type::value_array_type> _TA, _TB, _TC;
-      
+
     public:
-      ExtractBlockTridiagMatrices(const structured_block_mesh_type mesh) 
+      ExtractBlockTridiagMatrices(const structured_block_mesh_type mesh)
         : _mesh(mesh) {}
 
       template<typename TViewType,
                typename AViewType>
       KOKKOS_INLINE_FUNCTION
-      void 
+      void
       elementwise_copy(const TViewType &T,
                        const AViewType &A,
-                       const ordinal_type ij, 
+                       const ordinal_type ij,
                        const ordinal_type k,
                        const ordinal_type c,
                        const ordinal_type blocksize) const {
         for (ordinal_type ii=0;ii<blocksize;++ii)
-          for (ordinal_type jj=0;jj<blocksize;++jj) 
+          for (ordinal_type jj=0;jj<blocksize;++jj)
             tdiag_val(T, ij, k, ii, jj) = A(c, ii, jj);
       }
-      
+
       // A thread maps nonzero blocks
-      KOKKOS_INLINE_FUNCTION 
+      KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type c) const {
         const ordinal_type row = _rowidx[c], col = _colidx[c];
 
         ordinal_type ri, rj, rk, ci, cj, ck;
         _mesh.id2ijk(row, ri, rj, rk);
         _mesh.id2ijk(col, ci, cj, ck);
-  
+
         if (ri == ci && rj == cj) {
           const ordinal_type ij = _mesh.ij2id(ri, rj);
           // consider connectivity to k-direction
@@ -217,17 +217,17 @@ namespace KokkosKernels {
           }
         }
       }
-      
+
       void run(const block_crs_matrix_type A,
-               const block_tridiag_matrices_type T) { 
+               const block_tridiag_matrices_type T) {
         _rowptr = A.CrsGraph().rowptr;
         _rowidx = A.CrsGraph().rowidx;
         _colidx = A.CrsGraph().colidx;
 
         _A = A.Values();
 
-        _TA = T.A(); 
-        _TB = T.B(); 
+        _TA = T.A();
+        _TB = T.B();
         _TC = T.C();
 
         _blocksize = A.BlockSize();
@@ -238,18 +238,18 @@ namespace KokkosKernels {
                typename AViewType>
       bool elementwise_check(const TViewType &T,
                              const AViewType &A,
-                             const ordinal_type ij, 
+                             const ordinal_type ij,
                              const ordinal_type k,
                              const ordinal_type c,
                              const ordinal_type blocksize) const {
         const auto eps = 1e2*std::numeric_limits<scalar_type>::epsilon();
         for (ordinal_type ii=0;ii<blocksize;++ii)
-          for (ordinal_type jj=0;jj<blocksize;++jj) 
-            if ( std::abs(tdiag_val(T, ij, k, ii, jj) - A(c, ii, jj)) >= eps ) return false; 
+          for (ordinal_type jj=0;jj<blocksize;++jj)
+            if ( std::abs(tdiag_val(T, ij, k, ii, jj) - A(c, ii, jj)) >= eps ) return false;
         return true;
       }
-      
-      bool check() const {        
+
+      bool check() const {
         auto rowptr = Kokkos::create_mirror_view(_rowptr); Kokkos::deep_copy(rowptr, _rowptr);
         auto colidx = Kokkos::create_mirror_view(_colidx); Kokkos::deep_copy(colidx, _colidx);
         auto TA     = Kokkos::create_mirror_view(_TA);     Kokkos::deep_copy(TA, _TA);
@@ -257,11 +257,11 @@ namespace KokkosKernels {
         auto TC     = Kokkos::create_mirror_view(_TC);     Kokkos::deep_copy(TC, _TC);
         auto A      = Kokkos::create_mirror_view(_A);      Kokkos::deep_copy(A, _A);
 
-        const ordinal_type 
+        const ordinal_type
           ijend = adjustDimension<value_type>(_mesh.ni*_mesh.nj),
           kend = _mesh.nk;
 
-        assert(ijend == TA.dimension_0()); assert((kend - 0) == TA.dimension_1()); 
+        assert(ijend == TA.dimension_0()); assert((kend - 0) == TA.dimension_1());
         assert(ijend == TB.dimension_0()); assert((kend - 1) == TB.dimension_1());
         assert(ijend == TC.dimension_0()); assert((kend - 1) == TC.dimension_1());
 
@@ -271,7 +271,7 @@ namespace KokkosKernels {
 
           for (ordinal_type k=0;k<kend;++k) {
             const ordinal_type row = _mesh.ijk2id(i, j, k),
-              idx_begin = rowptr[row], 
+              idx_begin = rowptr[row],
               idx_end = rowptr[row+1];
 
             // check
@@ -283,11 +283,11 @@ namespace KokkosKernels {
               case -1: same[1] = elementwise_check(TB, A, ij, k,   idx, _blocksize); found[1] = true; break;
               }
             }
-            if      (k == 0)         assert(found[0] & same[0] && found[1] & same[1]); 
-            else if (k == (kend-1))  assert(found[0] & same[0] && found[2] & same[2]); 
-            else                     assert(found[0] & same[0] && found[1] & same[1] && found[2] & same[2]); 
+            if      (k == 0)         assert(found[0] & same[0] && found[1] & same[1]);
+            else if (k == (kend-1))  assert(found[0] & same[0] && found[2] & same[2]);
+            else                     assert(found[0] & same[0] && found[1] & same[1] && found[2] & same[2]);
           }
-        }            
+        }
         return true;
       }
     };
@@ -313,7 +313,7 @@ namespace KokkosKernels {
       FactorizeBlockTridiagMatrices() {}
 
       // A thread maps nonzero blocks
-      KOKKOS_INLINE_FUNCTION 
+      KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type ij) const {
         auto A = Kokkos::subview(_TA, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto B = Kokkos::subview(_TB, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -341,12 +341,12 @@ namespace KokkosKernels {
       }
 
       double FlopCount(const block_tridiag_matrices_type T) {
-        const int 
+        const int
           ntridiag = T.NumTridiagMatrices(),
           m = T.NumRows(),
           blocksize = T.BlockSize();
-        
-        return ntridiag*( (m-1)*(LU_FlopCount(blocksize, blocksize) + 
+
+        return ntridiag*( (m-1)*(LU_FlopCount(blocksize, blocksize) +
                                  Trsm_Lower_FlopCountLower(blocksize, blocksize) +
                                  Trsm_Upper_FlopCountUpper(blocksize, blocksize) +
                                  Gemm_FlopCount(blocksize, blocksize, blocksize)) +
@@ -354,13 +354,13 @@ namespace KokkosKernels {
       }
 
       // for batched blas check
-      void run(const block_tridiag_matrices_type T, const bool fake = false) { 
+      void run(const block_tridiag_matrices_type T, const bool fake = false) {
         _ntridiag = T.NumTridiagMatrices();
-        _m = T.NumRows(); 
+        _m = T.NumRows();
         _blocksize = T.BlockSize();
 
-        _TA = T.A(); 
-        _TB = T.B(); 
+        _TA = T.A();
+        _TB = T.B();
         _TC = T.C();
 
         // parallel over the instances of tridiagonal matrices
@@ -386,7 +386,7 @@ namespace KokkosKernels {
                                    const ordinal_type tr, const ordinal_type ir, BViewType B, CViewType C) {
         for (ordinal_type ii=0;ii<_blocksize;++ii)
           for (ordinal_type jj=0;jj<_blocksize;++jj)
-            for (ordinal_type kk=0;kk<_blocksize;++kk) 
+            for (ordinal_type kk=0;kk<_blocksize;++kk)
               tdiag_val(A, tl, il, ii, jj) -= ( tdiag_val(B, tr, ir, ii, kk)*
                                                 tdiag_val(C, tr, ir, kk, jj) );
       }
@@ -402,7 +402,7 @@ namespace KokkosKernels {
               tdiag_val(A, tl, il, ii, jj) -= l*tdiag_val(B, tr, ir, kk, jj);
             }
       }
-      
+
       template<typename AViewType, typename BViewType, typename UViewType>
       void a_subtract_mult_b_and_u(const ordinal_type tl, const ordinal_type il, AViewType A,
                                    const ordinal_type tr, const ordinal_type ir, BViewType B, UViewType U) {
@@ -424,29 +424,29 @@ namespace KokkosKernels {
         auto A = Kokkos::create_mirror_view(T.A());   Kokkos::deep_copy(A, T.A());
         auto B = Kokkos::create_mirror_view(T.B());   Kokkos::deep_copy(B, T.B());
         auto C = Kokkos::create_mirror_view(T.C());   Kokkos::deep_copy(C, T.C());
-        
+
         // diffs
-        Kokkos::View<value_type****,Kokkos::DefaultHostExecutionSpace> 
+        Kokkos::View<value_type****,Kokkos::DefaultHostExecutionSpace>
           AA("AA", _ntridiag, _m,   _blocksize, _blocksize),
           BB("BB", _ntridiag, _m-1, _blocksize, _blocksize),
           CC("CC", _ntridiag, _m-1, _blocksize, _blocksize);
-        
+
         Kokkos::deep_copy(AA, A);
         Kokkos::deep_copy(BB, B);
         Kokkos::deep_copy(CC, C);
 
         // Check | A - L U | / | A |
         for (ordinal_type t=0;t<_ntridiag;++t) {
-          a_subtract_mult_l_and_u(t, 0, AA, 
+          a_subtract_mult_l_and_u(t, 0, AA,
                                   t, 0, DD, DD);
           for (ordinal_type i=1;i<_m;++i) {
-            a_subtract_mult_l_and_u(t, i,   AA, 
+            a_subtract_mult_l_and_u(t, i,   AA,
                                     t, i,   DD, DD);
-            a_subtract_mult_b_and_c(t, i,   AA, 
+            a_subtract_mult_b_and_c(t, i,   AA,
                                     t, i-1, LL, UU);
-            a_subtract_mult_l_and_b(t, i-1, BB, 
+            a_subtract_mult_l_and_b(t, i-1, BB,
                                     t, i-1, DD, UU);
-            a_subtract_mult_b_and_u(t, i-1, CC, 
+            a_subtract_mult_b_and_u(t, i-1, CC,
                                     t, i-1, LL, DD);
           }
         }
@@ -458,7 +458,7 @@ namespace KokkosKernels {
               norm += std::abs(tdiag_val(A ,t, 0, ii, jj));
               diff += std::abs(tdiag_val(AA,t, 0, ii, jj));
             }
-          for (ordinal_type i=1;i<_m;++i) 
+          for (ordinal_type i=1;i<_m;++i)
             for (ordinal_type ii=0;ii<_blocksize;++ii)
               for (ordinal_type jj=0;jj<_blocksize;++jj) {
                 norm += std::abs(tdiag_val(A ,t, i,   ii, jj));
@@ -486,7 +486,7 @@ namespace KokkosKernels {
 
       typedef BlockTridiagMatrices<exec_space,value_type,array_layout> block_tridiag_matrices_type;
       typedef PartitionedBlockMultiVector<exec_space,value_type,array_layout> partitioned_block_multi_vector_type;
-      
+
     private:
       ordinal_type _ntridiag, _m, _blocksize, _nvectors;
 
@@ -497,7 +497,7 @@ namespace KokkosKernels {
     public:
       SolveBlockTridiagMatrices() {}
 
-      KOKKOS_INLINE_FUNCTION 
+      KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type ij) const {
         auto A = Kokkos::subview(_TA, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
         auto B = Kokkos::subview(_TB, ij, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
@@ -516,7 +516,7 @@ namespace KokkosKernels {
           {
             const bool is_same_x_and_b = (x.data() == b.data());
             {
-              auto x0 = Kokkos::subview(x, 0, Kokkos::ALL());          
+              auto x0 = Kokkos::subview(x, 0, Kokkos::ALL());
               auto b0 = Kokkos::subview(b, 0, Kokkos::ALL());
               if (!is_same_x_and_b)
                 for (ordinal_type ii=0;ii<_blocksize;++ii)
@@ -555,7 +555,7 @@ namespace KokkosKernels {
             for (ordinal_type k=kbegin;k>0;--k) {
               auto UT = Kokkos::subview(B, k-1, Kokkos::ALL(), Kokkos::ALL());
               auto UB = Kokkos::subview(A, k,   Kokkos::ALL(), Kokkos::ALL());
-            
+
               auto xt = Kokkos::subview(x, k-1, Kokkos::ALL());
               auto xb = Kokkos::subview(x, k,   Kokkos::ALL());
 
@@ -580,14 +580,14 @@ namespace KokkosKernels {
         assert(T.BlockSize() == x.BlockSize());
 
         _ntridiag = T.NumTridiagMatrices();
-        _m = T.NumRows(); 
+        _m = T.NumRows();
         _blocksize = T.BlockSize();
         _nvectors = x.NumVectors();
-        
-        _TA = T.A(); 
-        _TB = T.B(); 
+
+        _TA = T.A();
+        _TB = T.B();
         _TC = T.C();
-        
+
         _x = x.Values();
         _b = b.Values();
 
@@ -599,13 +599,13 @@ namespace KokkosKernels {
       void r_subtract_mult_a_and_x(const ordinal_type tr, const ordinal_type ir, RViewType R,
                                    const ordinal_type ta, const ordinal_type ia, AViewType A,
                                    const ordinal_type tx, const ordinal_type ix, XViewType X) {
-        for (ordinal_type kk=0;kk<_nvectors;++kk) 
+        for (ordinal_type kk=0;kk<_nvectors;++kk)
           for (ordinal_type ii=0;ii<_blocksize;++ii)
             for (ordinal_type jj=0;jj<_blocksize;++jj)
               tdiag_val(R, tr, kk, ir, ii) -= tdiag_val(A, ta, ia, ii, jj) * tdiag_val(X, tx, kk, ix, jj);
       }
 
-      bool check(const block_tridiag_matrices_type T, 
+      bool check(const block_tridiag_matrices_type T,
                  const partitioned_block_multi_vector_type b) {
         // input A
         auto AA = Kokkos::create_mirror_view(T.A());      Kokkos::deep_copy(AA, T.A());
@@ -614,45 +614,45 @@ namespace KokkosKernels {
 
         auto bb = Kokkos::create_mirror_view(b.Values()); Kokkos::deep_copy(bb, b.Values());
         auto xx = Kokkos::create_mirror_view(_x);         Kokkos::deep_copy(xx, _x);
-        
+
         // diffs
-        Kokkos::View<value_type****,Kokkos::DefaultHostExecutionSpace> 
-          rr("rr", bb.dimension_0(), bb.dimension_1(), bb.dimension_2(), bb.dimension_3()); 
-        
+        Kokkos::View<value_type****,Kokkos::DefaultHostExecutionSpace>
+          rr("rr", bb.dimension_0(), bb.dimension_1(), bb.dimension_2(), bb.dimension_3());
+
         Kokkos::deep_copy(rr, bb);
 
         // Check | Ax - b | / | b |
         for (ordinal_type t=0;t<_ntridiag;++t) {
-          r_subtract_mult_a_and_x(t, 0, rr, 
-                                  t, 0, AA, 
+          r_subtract_mult_a_and_x(t, 0, rr,
+                                  t, 0, AA,
                                   t, 0, xx);
-          r_subtract_mult_a_and_x(t, 0, rr, 
-                                  t, 0, BB, 
+          r_subtract_mult_a_and_x(t, 0, rr,
+                                  t, 0, BB,
                                   t, 1, xx);
-          
+
           for (ordinal_type i=1;i<(_m-1);++i) {
-            r_subtract_mult_a_and_x(t, i,   rr, 
-                                    t, i-1, CC, 
+            r_subtract_mult_a_and_x(t, i,   rr,
+                                    t, i-1, CC,
                                     t, i-1, xx);
-            r_subtract_mult_a_and_x(t, i,   rr, 
-                                    t, i,   AA, 
+            r_subtract_mult_a_and_x(t, i,   rr,
+                                    t, i,   AA,
                                     t, i,   xx);
-            r_subtract_mult_a_and_x(t, i,   rr, 
-                                    t, i,   BB, 
+            r_subtract_mult_a_and_x(t, i,   rr,
+                                    t, i,   BB,
                                     t, i+1, xx);
           }
-          r_subtract_mult_a_and_x(t, _m-1, rr, 
-                                  t, _m-2, CC, 
+          r_subtract_mult_a_and_x(t, _m-1, rr,
+                                  t, _m-2, CC,
                                   t, _m-2, xx);
-          r_subtract_mult_a_and_x(t, _m-1, rr, 
-                                  t, _m-1, AA, 
+          r_subtract_mult_a_and_x(t, _m-1, rr,
+                                  t, _m-1, AA,
                                   t, _m-1, xx);
         }
 
         double norm = 0, diff = 0;
-        for (ordinal_type t=0;t<_ntridiag;++t) 
-          for (ordinal_type jvec=0;jvec<_nvectors;++jvec) 
-            for (ordinal_type i=0;i<_m;++i) 
+        for (ordinal_type t=0;t<_ntridiag;++t)
+          for (ordinal_type jvec=0;jvec<_nvectors;++jvec)
+            for (ordinal_type i=0;i<_m;++i)
               for (ordinal_type ii=0;ii<_blocksize;++ii) {
                 norm += std::abs(tdiag_val(bb, t, jvec, i, ii));
                 diff += std::abs(tdiag_val(rr, t, jvec, i, ii));
@@ -667,8 +667,8 @@ namespace KokkosKernels {
 
     // unit tests
     template<typename DeviceSpace, typename ValueType = scalar_type>
-    void run(const ordinal_type ni, const ordinal_type nj, const ordinal_type nk, 
-             const ordinal_type blocksize, 
+    void run(const ordinal_type ni, const ordinal_type nj, const ordinal_type nk,
+             const ordinal_type blocksize,
              const ordinal_type nrhs,
              const bool test_cublas = false) {
       typedef typename DeviceSpace::array_layout DeviceArrayLayout;
@@ -688,12 +688,12 @@ namespace KokkosKernels {
       }
 
       // Graph construction
-      CrsGraph<HostSpace,DeviceArrayLayout> graph_host 
+      CrsGraph<HostSpace,DeviceArrayLayout> graph_host
         = create_graph_host_for_structured_block<DeviceArrayLayout>(mesh, StencilShape::cross);
 
       // Crs matrix and multi vector construction
       BlockCrsMatrix<HostSpace,DeviceArrayLayout> A_host(graph_host, blocksize);
-      fill_block_crs_matrix_host(A_host);      
+      fill_block_crs_matrix_host(A_host);
 
       // Device mirroring
       auto A_device = create_mirror<DeviceSpace>(A_host);
@@ -702,15 +702,15 @@ namespace KokkosKernels {
       // Test Matrix Vector product
       {
         const ordinal_type m = graph_host.NumRows();
-        
+
         BlockMultiVector<HostSpace,DeviceArrayLayout> x_host(nrhs, m, blocksize);
         fill_block_multi_vector_host(x_host);
-        
+
         auto x_device = create_mirror<DeviceSpace>(x_host);
         deep_copy(x_device, x_host);
-        
-        BlockMultiVector<DeviceSpace,DeviceArrayLayout> 
-          y1_device(nrhs, m, blocksize), 
+
+        BlockMultiVector<DeviceSpace,DeviceArrayLayout>
+          y1_device(nrhs, m, blocksize),
           y2_device(nrhs, m, blocksize);
 
         {
@@ -729,7 +729,7 @@ namespace KokkosKernels {
       // Test Block TriDiag Extraction
       BlockTridiagMatrices<DeviceSpace,ValueType,DeviceArrayLayout> T_device
         = create_block_tridiag_matrices
-        <DeviceSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj, 
+        <DeviceSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj,
                                                   mesh.nk,
                                                   blocksize);
       {
@@ -740,12 +740,12 @@ namespace KokkosKernels {
 
       BlockTridiagMatrices<DeviceSpace,ValueType,DeviceArrayLayout> T_org_device
         = create_block_tridiag_matrices
-        <DeviceSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj, 
+        <DeviceSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj,
                                                   mesh.nk,
                                                   blocksize);
-      
+
       deep_copy(T_org_device, T_device);
-      
+
       // Test Block TriDiag Factorization
       if (test_cublas) {
         //
@@ -764,9 +764,9 @@ namespace KokkosKernels {
       {
         PartitionedBlockMultiVector<HostSpace,ValueType,DeviceArrayLayout> b_host
           = create_partitioned_block_multi_vector
-          <HostSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj, 
+          <HostSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj,
                                                   nrhs,
-                                                  mesh.nk, 
+                                                  mesh.nk,
                                                   blocksize);
         fill_partitioned_block_multi_vector_host(b_host, mesh.ni*mesh.nj);
 
@@ -775,9 +775,9 @@ namespace KokkosKernels {
 
         PartitionedBlockMultiVector<DeviceSpace,ValueType,DeviceArrayLayout> x_device
           = create_partitioned_block_multi_vector
-          <DeviceSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj, 
+          <DeviceSpace,ValueType,DeviceArrayLayout>(mesh.ni*mesh.nj,
                                                     nrhs,
-                                                    mesh.nk, 
+                                                    mesh.nk,
                                                     blocksize);
         if (test_cublas) {
           //
@@ -787,7 +787,7 @@ namespace KokkosKernels {
                                     DeviceArrayLayout,
                                     Algo::Trsv::Blocked,
                                     Algo::Gemv::Blocked> solveblk;
-          
+
           solveblk.run(T_device, x_device, b_device);
           TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
         }
@@ -795,28 +795,28 @@ namespace KokkosKernels {
 
       if (!success)
         std::cout << "Unit Tests:: Failed:: "
-                  << " ni = " << ni << " nj = " << nj << " nk = " << nk 
-                  << " blocksize = " << blocksize << " nrhs = " << nrhs << " \n"; 
+                  << " ni = " << ni << " nj = " << nj << " nk = " << nk
+                  << " blocksize = " << blocksize << " nrhs = " << nrhs << " \n";
     }
-    
+
     // performance tests
     template<typename DeviceSpace, typename ValueType = scalar_type>
-    int run(const Input &input, const bool test_cublas = false) { 
+    int run(const Input &input, const bool test_cublas = false) {
       typedef typename DeviceSpace::array_layout DeviceArrayLayout;
       typedef Kokkos::DefaultHostExecutionSpace HostSpace;
 
-      const ordinal_type niter = 50;      
+      const ordinal_type niter = 50;
       int dontopt = 0;
       bool success = true;
-      
-      /// 
+
+      ///
       /// construct a discrete system of equations
       ///
-      const ordinal_type 
-        ni = input.ni, 
-        nj = input.nj, 
+      const ordinal_type
+        ni = input.ni,
+        nj = input.nj,
         nk = input.nk,
-        blocksize = input.bs, 
+        blocksize = input.bs,
         nrhs = input.nrhs;
 
       StructuredBlock mesh(ni, nj, nk);
@@ -837,8 +837,8 @@ namespace KokkosKernels {
         {
           Timer timer("Fill Block CRS Matrix_______________");
           timer.reset();
-          fill_block_crs_matrix_host(A_host);       
-          t_fill_block_crs_matrix = timer.seconds();       
+          fill_block_crs_matrix_host(A_host);
+          t_fill_block_crs_matrix = timer.seconds();
         }
         A_device = create_mirror<DeviceSpace>(A_host);
         deep_copy(A_device, A_host);
@@ -846,7 +846,7 @@ namespace KokkosKernels {
 
       // memory size
       const double memsize_A = A_device.Values().dimension_0()*blocksize*blocksize*8;
-      
+
       ///
       /// matrix vector multiplication test
       ///
@@ -864,7 +864,7 @@ namespace KokkosKernels {
         }
         auto x_device = create_mirror<DeviceSpace>(x_host);
         deep_copy(x_device, x_host);
-        
+
         BlockMultiVector<DeviceSpace,DeviceArrayLayout> y_device(nrhs, m, blocksize);
         {
           //BlockCrsMatrixVectorProductByRow<DeviceSpace> matvec;
@@ -903,9 +903,9 @@ namespace KokkosKernels {
       // keep original matrix for check
       BlockTridiagMatrices<DeviceSpace,ValueType,DeviceArrayLayout> T_org_device
         = create_block_tridiag_matrices<DeviceSpace,ValueType,DeviceArrayLayout>(ni*nj, nk, blocksize);
-      
+
       deep_copy(T_org_device, T_device);
-      
+
       ///
       /// block tridiag factorization test
       ///
@@ -919,7 +919,7 @@ namespace KokkosKernels {
                                       Algo::LU::Blocked,
                                       Algo::Trsm::Blocked,
                                       Algo::Gemm::Blocked> factorblk;
-        
+
         f_factorize = factorblk.FlopCount(T_device)*(sizeof(ValueType)/sizeof(double));
         {
           Timer timer("FactorizeBlockTridiagMatrices");
@@ -929,7 +929,7 @@ namespace KokkosKernels {
         }
         if (input.check) TEST_ASSERT(factorblk.check(T_org_device), success);
       }
-      
+
       ///
       /// block tridiag solve test
       ///
@@ -937,20 +937,20 @@ namespace KokkosKernels {
       {
         PartitionedBlockMultiVector<HostSpace,ValueType,DeviceArrayLayout> b_host
           = create_partitioned_block_multi_vector
-          <HostSpace,ValueType,DeviceArrayLayout>(ni*nj, 
+          <HostSpace,ValueType,DeviceArrayLayout>(ni*nj,
                                                   nrhs,
-                                                  nk, 
+                                                  nk,
                                                   blocksize);
         fill_partitioned_block_multi_vector_host(b_host, ni*nj);
 
         auto b_device = create_mirror<DeviceSpace>(b_host);
         deep_copy(b_device, b_host);
-        
+
         PartitionedBlockMultiVector<DeviceSpace,ValueType,DeviceArrayLayout> x_device
           = create_partitioned_block_multi_vector
-          <DeviceSpace,ValueType,DeviceArrayLayout>(ni*nj, 
+          <DeviceSpace,ValueType,DeviceArrayLayout>(ni*nj,
                                                     nrhs,
-                                                    nk, 
+                                                    nk,
                                                     blocksize);
         if (test_cublas) {
           //
@@ -966,20 +966,20 @@ namespace KokkosKernels {
             for (ordinal_type i=0;i<niter;++i) {
               solveblk.run(T_device, x_device, b_device);
               dontopt += i;
-            }          
+            }
             t_solve = timer.seconds();
           }
           if (input.check) TEST_ASSERT(solveblk.check(T_org_device, b_device), success);
         }
       }
-      
+
       const double t_matvec_per_iter = t_matvec/double(niter), t_solve_per_iter = t_solve/double(niter);
-      std::cout << " matvec     = " << t_matvec_per_iter << std::endl; 
-      std::cout << " extract    = " << t_extract        << " extract/matvec = " << (t_extract/t_matvec_per_iter) << std::endl; 
-      //std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << std::endl; 
-      std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << " flop = " << f_factorize << " flop/s = " << (f_factorize/t_factorize) << std::endl; 
-      std::cout << " solve      = " << t_solve_per_iter << "  solve/matvec  = " << (t_solve_per_iter/t_matvec_per_iter) << std::endl; 
-      std::cout << " memory used     = " << (memsize_A + memsize_T) << std::endl; 
+      std::cout << " matvec     = " << t_matvec_per_iter << std::endl;
+      std::cout << " extract    = " << t_extract        << " extract/matvec = " << (t_extract/t_matvec_per_iter) << std::endl;
+      //std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << std::endl;
+      std::cout << " factor     = " << t_factorize      << " factor/matvec  = " << (t_factorize/t_matvec_per_iter) << " flop = " << f_factorize << " flop/s = " << (f_factorize/t_factorize) << std::endl;
+      std::cout << " solve      = " << t_solve_per_iter << "  solve/matvec  = " << (t_solve_per_iter/t_matvec_per_iter) << std::endl;
+      std::cout << " memory used     = " << (memsize_A + memsize_T) << std::endl;
 
       return dontopt + success;
     }

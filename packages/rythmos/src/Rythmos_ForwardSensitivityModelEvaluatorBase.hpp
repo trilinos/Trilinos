@@ -53,7 +53,7 @@ namespace Rythmos {
  *
  * This base interface class provides the generalities of a linear forward
  * sensitivity model evaluator for a differential equation.
- *  
+ *
  * There are two derived classes which implement an implicit DAE and explicit
  * ODE formulation of the sensitivity equations.
  */
@@ -74,8 +74,8 @@ public:
    * This function only intializes the spaces etc. needed to define structure
    * of the problem.  <tt>*this</tt> model object is not fully initialized at
    * this point in that <tt>evalModel()</tt> will not work yet and will thrown
-   * exceptions if called.  The function <tt>initalizeState()</tt> must be
-   * called later in order to fully initalize the model.
+   * exceptions if called.  The function <tt>initializeState()</tt> must be
+   * called later in order to fully initialize the model.
    */
   virtual void initializeStructure(
     const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
@@ -94,14 +94,14 @@ public:
    * This function only intializes the spaces etc. needed to define structure
    * of the problem.  <tt>*this</tt> model object is not fully initialized at
    * this point in that <tt>evalModel()</tt> will not work yet and will thrown
-   * exceptions if called.  The function <tt>initalizeState()</tt> must be
-   * called later in order to fully initalize the model.
+   * exceptions if called.  The function <tt>initializeState()</tt> must be
+   * called later in order to fully initialize the model.
    */
   virtual void initializeStructureInitCondOnly(
     const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
     const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
     ) = 0;
-  
+
   /** \brief . */
   virtual RCP<const Thyra::ModelEvaluator<Scalar> >
   getStateModel() const =0;
@@ -109,14 +109,14 @@ public:
   /** \brief . */
   virtual RCP<Thyra::ModelEvaluator<Scalar> >
   getNonconstStateModel() const =0;
-  
+
   /** \brief . */
   virtual int get_p_index() const = 0;
-  
+
   /** \brief . */
   virtual RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> >
   get_s_bar_space() const = 0;
-  
+
   /** \brief . */
   virtual RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_sens_space() const = 0;
 
@@ -138,7 +138,7 @@ RCP<const Thyra::VectorBase<Scalar> > create_s_bar_given_S(
   const RCP<Thyra::MultiVectorBase<Scalar> > &S
   )
 {
-  return Thyra::multiVectorProductVector(fwdSensModel.get_s_bar_space(), S); 
+  return Thyra::multiVectorProductVector(fwdSensModel.get_s_bar_space(), S);
 }
 
 
@@ -151,7 +151,7 @@ RCP<const Thyra::VectorBase<Scalar> > create_s_bar_given_S(
   const RCP<const Thyra::MultiVectorBase<Scalar> > &S
   )
 {
-  return Thyra::multiVectorProductVector(fwdSensModel.get_s_bar_space(), S); 
+  return Thyra::multiVectorProductVector(fwdSensModel.get_s_bar_space(), S);
 }
 
 

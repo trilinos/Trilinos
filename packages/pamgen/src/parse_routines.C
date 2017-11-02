@@ -19,7 +19,7 @@
 namespace PAMGEN_NEVADA {
 
 
-  enum ParamType { 
+  enum ParamType {
     P_STARTING_BLOCK_NUMBER = 0,
     P_OFFSET,
     P_GMIN,
@@ -87,8 +87,8 @@ namespace PAMGEN_NEVADA {
     const std::string english[] = {"zero", "one", "two", "three", "four", "five", "six",
       "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
       "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
-      "thirty", "fourty", "fifty", "sixty", "seventy", "eighty", "ninety",
-      "hundred", "thousand", "million","billion","quatrillion"};
+      "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+      "hundred", "thousand", "million","billion","quadrillion"};
 
     // count of core numbers (size of above arrays)
     const int count = 33;

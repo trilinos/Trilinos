@@ -260,7 +260,7 @@ public:
    Teuchos::RCP<const Epetra_Map> getMap() const {
      TEUCHOS_TEST_FOR_EXCEPTION(useThyra_,std::logic_error,
                                 "Reponse field \"" << this->getName() << "\" has previously been initialized as a "
-                                "Thyra object, now trying to initalize as a Epetra! Error!");
+                                "Thyra object, now trying to initialize as a Epetra! Error!");
      // lazily construct the map only as needed
      if(map_==Teuchos::null) {
        if(this->vectorIsDistributed())
@@ -277,7 +277,7 @@ public:
    void setVector(const Teuchos::RCP<Epetra_MultiVector> & destVec) {
      TEUCHOS_TEST_FOR_EXCEPTION(useThyra_,std::logic_error,
                                 "Reponse field \"" << this->getName() << "\" has previously been initialized as a "
-                                "Thyra object, now trying to initalize as a Epetra! Error!");
+                                "Thyra object, now trying to initialize as a Epetra! Error!");
      eVector_ = destVec;
      useEpetra_ = true;
    }
@@ -289,7 +289,7 @@ public:
    Teuchos::RCP<const Thyra::VectorSpaceBase<double> > getVectorSpace() const {
      TEUCHOS_TEST_FOR_EXCEPTION(useEpetra_,std::logic_error,
                                 "Reponse field \"" << this->getName() << "\" has previously been initialized as an "
-                                "Epetra object, now trying to initalize as a Thyra object! Error!");
+                                "Epetra object, now trying to initialize as a Thyra object! Error!");
      // lazily build the space and return it
      if(vSpace_==Teuchos::null) {
        if(this->vectorIsDistributed())
@@ -306,7 +306,7 @@ public:
    void setVector(const Teuchos::RCP<Thyra::MultiVectorBase<double> > & destVec) {
      TEUCHOS_TEST_FOR_EXCEPTION(useEpetra_,std::logic_error,
                                 "Reponse field \"" << this->getName() << "\" has previously been initialized as an "
-                                "Epetra object, now trying to initalize as a Thyra object! Error!");
+                                "Epetra object, now trying to initialize as a Thyra object! Error!");
      tVector_ = destVec;
      useThyra_ = true;
    }

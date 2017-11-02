@@ -335,7 +335,7 @@ July 7 2005: version 2.14.00
  May 18 2007 version 2.21.00
   - renamed a couple of fei::VectorSpace methods:
       - getNumLocalIDs becomes getNumOwnedAndSharedIDs
-      - getLocalIDs becomes getOwnedAndSharedIDs 
+      - getLocalIDs becomes getOwnedAndSharedIDs
   - long overdue overhaul of the slave-constraint reduction code. This is
     actually pretty major, several classes removed and new classes added.
     Improves robustness, gives more verbose error messages in at least
@@ -448,7 +448,7 @@ July 7 2005: version 2.14.00
   - Fix insidious memory leak where fei::FillableMat (which uses a pool-
     allocator) wasn't returning its memory to the pool on destruction. This
     resulted in memory leaking during the program's execution, but the memory
-    still gets cleaned up at program exit. Thus tools like purify couldn't 
+    still gets cleaned up at program exit. Thus tools like purify couldn't
     spot it, but it was exhausting available memory for long runs.
   - Fix a link error on IBM due to fei_Aztec_Vector.cpp containing an explicit
     reference to dcopy_. IBM's fortran symbols don't have trailing underscores.
@@ -512,7 +512,7 @@ July 7 2005: version 2.14.00
     better mechanism for filling an array to return to the caller.
     There are still occurrences of the cumbersome three-argument pattern in
     various fei API's, but all of them will eventually be replaced.
-  - Removed remaining occurences of feiArray, using std::vector instead. This
+  - Removed remaining occurrences of feiArray, using std::vector instead. This
     effects the API in places where an array is a return value. Specifically
     in the snl_fei::Constraint class, methods like getMasterWeights(), etc.
   - Continued development of fei::FillableMat, fei::CSRMat and fei::CSVec.

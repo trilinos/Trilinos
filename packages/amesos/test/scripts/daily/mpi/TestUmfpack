@@ -26,7 +26,7 @@
 # ************************************************************************
 #
 #  The only change that I made to change this from dscpack to umfpack 
-#  was to replace the single occurence of dscpack with umfpack
+#  was to replace the single occurrence of dscpack with umfpack
 #  I also added HAVE_AMESOS_UMFPACK to Makefile.am in this directory.
 #
 ## NOTE: Those wishing to cusomize this script to run test exe's

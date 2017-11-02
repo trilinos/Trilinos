@@ -1,4 +1,4 @@
-/* 
+/*
  * @HEADER
  *
  * ***********************************************************************
@@ -290,7 +290,7 @@ float   **eweights 		/* edge weight list data */
     			found_flag = TRUE;
     		}
     		if (found_flag) {
-    		    printf("WARNING: Multiple occurences of edge (%d,%d) ignored\n",
+    		    printf("WARNING: Multiple occurrences of edge (%d,%d) ignored\n",
     			vertex, neighbor);
     		    skip_flag = TRUE;
     		    if (!ignore_me) {

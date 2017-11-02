@@ -381,7 +381,7 @@ int Ifpack_SerialTriDiMatrix::Multiply (char TransA, char TransB, double ScalarA
                                         const Ifpack_SerialTriDiMatrix& A_in,
                                         const Ifpack_SerialTriDiMatrix& B,
                                         double ScalarThis ) {
-  throw ReportError("Ifpack_SerialTriDiMatrix::Multiply not implimented ",-2);
+  throw ReportError("Ifpack_SerialTriDiMatrix::Multiply not implemented ",-2);
   // return(-1); // unreachable
 }
 

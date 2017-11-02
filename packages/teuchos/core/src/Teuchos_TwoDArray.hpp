@@ -76,7 +76,7 @@ public:
   //@{
 
   /**
-   * \brief Constructs a TwoDArray with the given number of rows and colums with each
+   * \brief Constructs a TwoDArray with the given number of rows and columns with each
    * entry being populated with the specified value.
    *
    * @param numCols The number of columns in the TwoDArray.

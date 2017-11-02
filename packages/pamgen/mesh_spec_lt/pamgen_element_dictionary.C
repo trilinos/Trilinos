@@ -6,7 +6,7 @@
 namespace PAMGEN_NEVADA {
 
 
-// if you add an element type, you must be consistant with the arrays defined
+// if you add an element type, you must be consistent with the arrays defined
 // below and you should make sure that element_dictionary.h is in sync.
 
 extern const int NUM_ELEMENT_TYPES = MAX_EL_TYPES;
@@ -47,13 +47,13 @@ extern const Element_Info element_info[MAX_EL_TYPES] = {
 };
 
 // Maximum nodes per face
-extern const int nodes_per_face[] = {0, 1, 1, 2, 3, 
+extern const int nodes_per_face[] = {0, 1, 1, 2, 3,
                                      3, 2, 3, 3, 4,
                                      8, 4, 8, 8, 3, 4,
                                      6, 7, 4, 8, 2,
                                      3, 2, 3, 2, 2,
                                      4, 4, 4, 1, 1};
-       
+
 extern const int faces_per_element[] = {0, 1, 1, 4, 4,
                                         4, 3, 3, 3, 6,
                                         6, 6, 6, 6, 4, 4,
@@ -70,7 +70,7 @@ extern const int edges_per_element[] = { 0, 0, 0, 4, 0,
 
 /* translations tables do not include the nonstandard element TET8 */
 
-/* node to side translation tables - 
+/* node to side translation tables -
  *   These tables are used to look up the side number based on the
  *   first and second node in the side/face list. The side node order
  *   is found in the original Exodus document, SAND87-2997. The element
@@ -82,7 +82,7 @@ extern const int edges_per_element[] = { 0, 0, 0, 4, 0,
  */
 
 extern const int shell_node_to_side_table[2][8]  = {
-//      1     2   3    4                                          node 1 
+//      1     2   3    4                                          node 1
       {2,4, 3,1, 4,2, 1,3},                                    // node 2
       {1,2, 1,2, 1,2, 1,2}                                     // side #
 };
@@ -123,33 +123,33 @@ extern const int quad_side_to_node_table[4][3] = {
 //     1        2        3        4                                       side
     {1,2,5}, {2,3,6}, {3,4,7}, {4,1,8}                                 // nodes
 };
- 
+
 extern const int shell_side_to_node_table[2][8] = {
 //          1                  2                                          side
     {1,2,3,4,5,6,7,8}, {1,4,3,2,8,7,6,5}                               // nodes
 };
- 
+
 extern const int tetra_side_to_node_table[4][7] = {
 //        1                2                 3                 4          side
     {1,2,4,5,9,8,13}, {2,3,4,6,10,9,14}, {1,4,3,8,10,7,15}, {1,3,2,7,6,5,12}       // nodes
-}; 
-    
+};
+
 extern const int wedge_side_to_node_table[5][8] = {
 //          1                     2                     3                 side
     {1,2,5,4,7,11,13,10}, {2,3,6,5,8,12,14,11}, {1,4,6,3,10,15,12,9},  // nodes
 //          4                  5                                          side
     {1,3,2,0,9,8,7,0}, {4,5,6,0,13,14,15,0}                            // nodes
 };
- 
+
 extern const int hex_side_to_node_table[6][8] = {
 //          1                     2                      3                side
     {1,2,6,5,9,14,17,13}, {2,3,7,6,10,15,18,14}, {3,4,8,7,11,16,19,15},// nodes
 //          4                     5                      6                side
-    {1,5,8,4,13,20,16,12},{1,4,3,2,12,11,10,9},  {5,6,7,8,17,18,19,20} // nodes  
+    {1,5,8,4,13,20,16,12},{1,4,3,2,12,11,10,9},  {5,6,7,8,17,18,19,20} // nodes
 };
 
 extern const int face_bit_mask[6] = {1, 2, 4, 8, 16, 32};
- 
+
 const char* Element_Type_Names[NUM_ELEMENT_TYPES] = {
                                                 "UNKNOWN_ELEMENT",
                                                 "CIRCLE",

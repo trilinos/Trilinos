@@ -74,7 +74,7 @@ Fri Aug 15 16:29:47 EDT 1997
 
   This function opens and reads the specified file, interpreting its
   contents as a sparse matrix stored in the Harwell/Boeing standard
-  format.  (See readHB_aux_double to read auxillary vectors.)
+  format.  (See readHB_aux_double to read auxiliary vectors.)
         -- Values are interpreted as double precision numbers. --
 
   The "mat" function uses _pre-allocated_ vectors to hold the index and
@@ -92,8 +92,8 @@ Fri Aug 15 16:29:47 EDT 1997
 
   DESCRIPTION:
 
-  This function opens and reads from the specified file auxillary vector(s).
-  The char argument Auxtype determines which type of auxillary vector(s)
+  This function opens and reads from the specified file auxiliary vector(s).
+  The char argument Auxtype determines which type of auxiliary vector(s)
   will be read (if present in the file).
 
                   AuxType = 'F'   right-hand-side
@@ -119,7 +119,7 @@ Fri Aug 15 16:29:47 EDT 1997
   DESCRIPTION:
 
   The writeHB_mat_double function opens the named file and writes the specified
-  matrix and optional auxillary vector(s) to that file in Harwell-Boeing
+  matrix and optional auxiliary vector(s) to that file in Harwell-Boeing
   format.  The format arguments (Ptrfmt,Indfmt,Valfmt, and Rhsfmt) are
   character strings specifying "Fortran-style" output formats -- as they
   would appear in a Harwell-Boeing file.  They are used to produce output
@@ -143,7 +143,7 @@ Fri Aug 15 16:29:47 EDT 1997
 
   This function opens and reads the specified file, interpreting its
   contents as a sparse matrix stored in the Harwell/Boeing standard
-  format.  (See readHB_aux_char to read auxillary vectors.)
+  format.  (See readHB_aux_char to read auxiliary vectors.)
               -- Values are interpreted as char strings.     --
   (Used to translate exact values from the file into a new storage format.)
 
@@ -162,8 +162,8 @@ Fri Aug 15 16:29:47 EDT 1997
 
   DESCRIPTION:
 
-  This function opens and reads from the specified file auxillary vector(s).
-  The char argument Auxtype determines which type of auxillary vector(s)
+  This function opens and reads from the specified file auxiliary vector(s).
+  The char argument Auxtype determines which type of auxiliary vector(s)
   will be read (if present in the file).
 
                   AuxType = 'F'   right-hand-side
@@ -190,7 +190,7 @@ Fri Aug 15 16:29:47 EDT 1997
   DESCRIPTION:
 
   The writeHB_mat_char function opens the named file and writes the specified
-  matrix and optional auxillary vector(s) to that file in Harwell-Boeing
+  matrix and optional auxiliary vector(s) to that file in Harwell-Boeing
   format.  The format arguments (Ptrfmt,Indfmt,Valfmt, and Rhsfmt) are
   character strings specifying "Fortran-style" output formats -- as they
   would appear in a Harwell-Boeing file.  Valfmt and Rhsfmt must accurately
@@ -574,7 +574,7 @@ int readHB_newmat_double(const char* filename, int* M, int* N, int* nonzeros,
 int readHB_aux_double(const char* filename, const char AuxType, double b[])
 {
 /****************************************************************************/
-/*  This function opens and reads the specified file, placing auxillary     */
+/*  This function opens and reads the specified file, placing auxiliary     */
 /*  vector(s) of the given type (if available) in b.                        */
 /*  Return value is the number of vectors successfully read.                */
 /*                                                                          */
@@ -617,12 +617,12 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
 
     if (Nrhs <= 0)
     {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary vector(s) when none are present.\n");
+      std::fprintf(stderr, "Warn: Attempt to read auxiliary vector(s) when none are present.\n");
       return 0;
     }
     if (Rhstype[0] != 'F' )
     {
-      std::fprintf(stderr,"Warn: Attempt to read auxillary vector(s) which are not stored in Full form.\n");
+      std::fprintf(stderr,"Warn: Attempt to read auxiliary vector(s) which are not stored in Full form.\n");
       std::fprintf(stderr,"       Rhs must be specified as full. \n");
       return 0;
     }
@@ -640,11 +640,11 @@ int readHB_aux_double(const char* filename, const char AuxType, double b[])
     if ( Rhstype[2] == 'X' ) nvecs++;
 
     if ( AuxType == 'G' && Rhstype[1] != 'G' ) {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary Guess vector(s) when none are present.\n");
+      std::fprintf(stderr, "Warn: Attempt to read auxiliary Guess vector(s) when none are present.\n");
       return 0;
     }
     if ( AuxType == 'X' && Rhstype[2] != 'X' ) {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary eXact solution vector(s) when none are present.\n");
+      std::fprintf(stderr, "Warn: Attempt to read auxiliary eXact solution vector(s) when none are present.\n");
       return 0;
     }
 
@@ -872,7 +872,7 @@ int writeHB_mat_double(const char* filename, int M, int N,
     std::fprintf(out_file,"%-16s%-16s%-20s", Ptrfmt, Indfmt, Valfmt);
     if ( Nrhs != 0 ) {
 /*     Print Rhsfmt on fourth line and                                    */
-/*           optional fifth header line for auxillary vector information: */
+/*           optional fifth header line for auxiliary vector information: */
        std::fprintf(out_file,"%-20s\n%-14s%d\n",Rhsfmt,Rhstype,Nrhs);
     } else std::fprintf(out_file,"\n");
 
@@ -1208,12 +1208,12 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
 
     if (Nrhs <= 0)
     {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary vector(s) when none are present.\n");
+      std::fprintf(stderr, "Warn: Attempt to read auxiliary vector(s) when none are present.\n");
       return 0;
     }
     if (Rhstype[0] != 'F' )
     {
-      std::fprintf(stderr,"Warn: Attempt to read auxillary vector(s) which are not stored in Full form.\n");
+      std::fprintf(stderr,"Warn: Attempt to read auxiliary vector(s) which are not stored in Full form.\n");
       std::fprintf(stderr,"       Rhs must be specified as full. \n");
       return 0;
     }
@@ -1231,11 +1231,11 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
     if ( Rhstype[2] == 'X' ) nvecs++;
 
     if ( AuxType == 'G' && Rhstype[1] != 'G' ) {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary Guess vector(s) when none are present.\n");
+      std::fprintf(stderr, "Warn: Attempt to read auxiliary Guess vector(s) when none are present.\n");
       return 0;
     }
     if ( AuxType == 'X' && Rhstype[2] != 'X' ) {
-      std::fprintf(stderr, "Warn: Attempt to read auxillary eXact solution vector(s) when none are present.\n");
+      std::fprintf(stderr, "Warn: Attempt to read auxiliary eXact solution vector(s) when none are present.\n");
       return 0;
     }
 
@@ -1267,7 +1267,7 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
     }
     linel= std::strchr(line,'\n')-line;
     if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
+       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxiliary vector data region of HB file.\n");
     col = 0;
 /*  Skip to initial offset */
 
@@ -1280,7 +1280,7 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
            }
            linel= std::strchr(line,'\n')-line;
        if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
+       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxiliary vector data region of HB file.\n");
            col = 0;
        }
     }
@@ -1301,7 +1301,7 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
            }
            linel= std::strchr(line,'\n')-line;
        if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
+       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxiliary vector data region of HB file.\n");
            if (Rhsflag == 'D')  {
               while( std::strchr(line,'D') ) *std::strchr(line,'D') = 'E';
            }
@@ -1335,7 +1335,7 @@ int readHB_aux_char(const char* filename, const char AuxType, char b[])
            }
            linel= std::strchr(line,'\n')-line;
        if ( std::sscanf(line,"%*s") < 0 )
-       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxillary vector data region of HB file.\n");
+       IOHBTerminate("Trilinos_Util_iohb.cpp: Null (or blank) line in auxiliary vector data region of HB file.\n");
            col = 0;
        }
     }
@@ -1475,7 +1475,7 @@ int writeHB_mat_char(const char* filename, int M, int N,
     std::fprintf(out_file,"%-16s%-16s%-20s", Ptrfmt, Indfmt, Valfmt);
     if ( Nrhs != 0 ) {
 /*     Print Rhsfmt on fourth line and                                    */
-/*           optional fifth header line for auxillary vector information: */
+/*           optional fifth header line for auxiliary vector information: */
        std::fprintf(out_file,"%-20s\n%-14s%d\n",Rhsfmt,Rhstype,Nrhs);
     } else std::fprintf(out_file,"\n");
 

@@ -72,7 +72,7 @@ The SWIG executable my be similarly specified with::
 
     -D SWIG_EXECUTABLE:FILEPATH=...
 
-If this option is not used, ``cmake`` will find the first occurence of
+If this option is not used, ``cmake`` will find the first occurrence of
 ``swig`` in your environment's path.
 
 Installation Path

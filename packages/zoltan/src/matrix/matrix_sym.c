@@ -1,4 +1,4 @@
-/* 
+/*
  * @HEADER
  *
  * ***********************************************************************
@@ -78,7 +78,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   }
 
   if (matrix->ywgtdim != zz->Obj_Weight_Dim)
-      FATAL_ERROR("Cannot form bipartite graph: vertex and edge weights are not consistant");
+      FATAL_ERROR("Cannot form bipartite graph: vertex and edge weights are not consistent");
 
   matrix->opts.symmetrize = 1;
 

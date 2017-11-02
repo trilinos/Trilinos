@@ -743,7 +743,7 @@ template<typename int_type>
     int_type global_row = (int_type) Aview.rowMap->GID64(i);
 
     //loop across the i-th row of A and for each corresponding row
-    //in B, loop across colums and accumulate product
+    //in B, loop across columns and accumulate product
     //A(i,k)*B(k,j) into our partial sum quantities C_row_i. In other words,
     //as we stride across B(k,:) we're calculating updates for row i of the
     //result matrix C.

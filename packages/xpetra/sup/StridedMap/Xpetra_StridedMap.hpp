@@ -378,7 +378,7 @@ namespace Xpetra {
 
       // find minimum GID over all procs
       GlobalOrdinal minGidOnCurProc = Teuchos::OrdinalTraits<GlobalOrdinal>::max();
-      for (Teuchos_Ordinal k = 0; k < elementList.size(); k++) // TODO fix occurence of Teuchos_Ordinal
+      for (Teuchos_Ordinal k = 0; k < elementList.size(); k++) // TODO fix occurrence of Teuchos_Ordinal
         if (elementList[k] < minGidOnCurProc)
           minGidOnCurProc = elementList[k];
 

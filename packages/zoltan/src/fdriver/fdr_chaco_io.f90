@@ -569,7 +569,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
                     endif
                 end do
                 if (found_flag) then
-                    print *,"WARNING: Multiple occurences of edge (",vertex, &
+                    print *,"WARNING: Multiple occurrences of edge (",vertex, &
                             ",",neighbor,") ignored"
                     skip_flag = .true.
                     if (.not.ignore_me) then

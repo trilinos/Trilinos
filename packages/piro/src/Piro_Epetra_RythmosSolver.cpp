@@ -149,7 +149,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
       createLinearSolveStrategy(linearSolverBuilder);
 
     //
-    *out << "\nC) Create and initalize the forward model ...\n";
+    *out << "\nC) Create and initialize the forward model ...\n";
     //
 
     // C.1) Create the underlying EpetraExt::ModelEvaluator
@@ -248,7 +248,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(
       createLinearSolveStrategy(linearSolverBuilder);
 
     //
-    *out << "\nC) Create and initalize the forward model ...\n";
+    *out << "\nC) Create and initialize the forward model ...\n";
     //
 
     // C.1) Create the underlying EpetraExt::ModelEvaluator

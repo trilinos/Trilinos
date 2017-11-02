@@ -322,7 +322,7 @@ private:
 
 /** \brief WorkspaceStore class that can be used to actually reinitialize memory.
  *
- * The client can create concrete instances of this type and initalize
+ * The client can create concrete instances of this type and initialize
  * the memory used.  The client should call <tt>initialize(num_bytes)</tt> to set the number
  * of bytes to allocate where <tt>num_bytes</tt> should be large enough to satisfy all but
  * the largests of memory request needs.
@@ -400,7 +400,7 @@ T& Workspace<T>::operator[](size_t i)
 {
 #ifdef TEUCHOS_DEBUG
 	TEUCHOS_TEST_FOR_EXCEPTION( !( i < this->size() ), std::invalid_argument, "Workspace<T>::operator[](i): Error!" );
-#endif	
+#endif
 	return reinterpret_cast<T*>(raw_workspace_.workspace_ptr())[i];
 }
 
