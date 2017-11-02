@@ -35,6 +35,8 @@ Trilinos is licensed on a per-package basis. Most packages are now under a BSD
 license, some are published under the (L)GPL. Details can be taken from the
 documentation of each package.
 
-### Pull requests
+### Contributing
 
-Pull requests MUST be submitted against the develop branch.  The branch you see on the main page is the master branch.  If you accidentally make your pull request against the master branch, you can switch it to be against the develop branch, by following these instructions: https://github.com/blog/2224-change-the-base-branch-of-a-pull-request
+We appreciate your willingness to contribute to the Trilinos project.  Please
+familiarize yourself with our [contributing
+guidelines](https://github.com/trilinos/Trilinos/blob/master/CONTRIBUTING.md).
