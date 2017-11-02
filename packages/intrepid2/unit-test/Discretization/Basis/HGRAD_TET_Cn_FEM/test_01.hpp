@@ -264,7 +264,7 @@ int HGRAD_TET_Cn_FEM_Test01(const bool verbose) {
     errorFlag = -1000;
   };
 
-#ifdef HAVE_INTREPID2_SACADO
+#if 0 //#ifdef HAVE_INTREPID2_SACADO
   try {
 
     *outStream

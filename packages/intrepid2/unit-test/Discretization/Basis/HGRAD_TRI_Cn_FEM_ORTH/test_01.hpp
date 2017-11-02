@@ -332,7 +332,7 @@ int HGRAD_TRI_Cn_FEM_ORTH_Test01(const bool verbose) {
   }
 
   // do second order derivatives
-#ifdef HAVE_INTREPID2_SACADO
+#if 0 //#ifdef HAVE_INTREPID2_SACADO
   try {
     *outStream << "\n"
         << "===============================================================================\n"

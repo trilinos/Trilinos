@@ -211,7 +211,7 @@ namespace Intrepid2 {
         errorFlag = -1000;
       };
 
-#ifdef HAVE_INTREPID2_SACADO
+#if 0 //#ifdef HAVE_INTREPID2_SACADO
       try {
 
         *outStream
