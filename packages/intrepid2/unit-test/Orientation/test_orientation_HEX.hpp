@@ -217,17 +217,17 @@ int OrientationHex(const bool verbose) {
 
   ValueType  vertices_orig[numTotalVertexes][dim] = {{-1,-1,-1},{1,-1,-1},{1,1,-1},{-1,1,-1},{-1,-1,1},{1,-1,1},{1,1,1},{-1,1,1}, {-1,-1,2},{1,-1,2},{1,1,2},{-1,1,2}};
   ordinal_type hexas_orig[numCells][numElemVertexes] = {{0,1,2,3,4,5,6,7},{4,5,6,7,8,9,10,11}};  //common face is {4,5,6,7}
-  faceType common_face = {4,5,6,7};
-  faceType faceLeft = {0, 3, 7, 4};
-  faceType faceRight = {1, 2, 6, 5};
-  faceType faceFront = {0, 4, 5, 1};
-  faceType faceBack = {2, 3, 7, 6};
+  faceType common_face = {{4,5,6,7}};
+  faceType faceLeft = {{0, 3, 7, 4}};
+  faceType faceRight = {{1, 2, 6, 5}};
+  faceType faceFront = {{0, 4, 5, 1}};
+  faceType faceBack = {{2, 3, 7, 6}};
   ordinal_type hexas_rotated[numCells][numElemVertexes];
   faceType faceLeftOriented, faceRightOriented, faceBackOriented, faceFrontOriented;
 
 
   std::set<edgeType> common_edges;
-  common_edges.insert(edgeType({4,5})); common_edges.insert(edgeType({5,6})); common_edges.insert(edgeType({6,7})); common_edges.insert(edgeType({4,7}));
+  common_edges.insert(edgeType({{4,5}})); common_edges.insert(edgeType({{5,6}})); common_edges.insert(edgeType({{6,7}})); common_edges.insert(edgeType({{4,7}}));
 
 
   *outStream

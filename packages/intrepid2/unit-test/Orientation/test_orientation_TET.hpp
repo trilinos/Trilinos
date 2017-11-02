@@ -216,9 +216,9 @@ int OrientationTet(const bool verbose) {
   ValueType  vertices_orig[numTotalVertexes][dim] = {{0,0,0},{1,0,0},{0,1,0},{0,0,1},{1,1,1}};
   ordinal_type tets_orig[numCells][numElemVertexes] = {{0,1,2,3},{1,2,3,4}};  //common face is {1,2,3}
   ordinal_type tets_rotated[numCells][numElemVertexes];
-  faceType common_face = {1,2,3};
+  faceType common_face = {{1,2,3}};
   std::set<edgeType> common_edges;
-  common_edges.insert(edgeType({1,2})); common_edges.insert(edgeType({1,3})); common_edges.insert(edgeType({2,3}));
+  common_edges.insert(edgeType({{1,2}})); common_edges.insert(edgeType({{1,3}})); common_edges.insert(edgeType({{2,3}}));
 
 
   *outStream

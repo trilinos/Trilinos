@@ -61,7 +61,6 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<WT,Kokkos::LayoutRight,Kokkos::HostSpace> weightViewHostType;
  
     this->cubatureData_.numPoints_ = cubatureDataStatic_[this->degree_].numPoints_;
-    const Kokkos::pair<ordinal_type,ordinal_type> pointRange(0, this->cubatureData_.numPoints_);
     {
       // src
       const pointViewHostType points_host(const_cast<PT*>( &(cubatureDataStatic_[this->degree_].points_[0][0]) ), 
