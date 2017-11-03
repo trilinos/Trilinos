@@ -78,6 +78,12 @@ public:
   /// also produce more detailed error messages, and more copious
   /// debug output.
   static bool debug ();
+
+  /// \brief Whether the given Tpetra object is in debug mode.
+  ///
+  /// \param name [in] Name of the Tpetra object.  Typically, the object would
+  ///        be a class name, e.g., "CrsGraph" or method, e.g.,
+  ///        "CrsGraph.insertLocalIndices".
   static bool debug (const char name[]);
 
   /// \brief Whether Tpetra is in verbose mode.
@@ -86,6 +92,12 @@ public:
   /// std::cerr on every MPI process.  This is a LOT of output!  You
   /// really don't want to do this when running on many MPI processes.
   static bool verbose ();
+
+  /// \brief Whether the given Tpetra object is in verbose mode.
+  ///
+  /// \param name [in] Name of the Tpetra object.  Typically, the object would
+  ///        be a class name, e.g., "CrsGraph" or method, e.g.,
+  ///        "CrsGraph.insertLocalIndices".
   static bool verbose (const char name[]);
 
   /// \brief Whether to assume that MPI is CUDA aware.

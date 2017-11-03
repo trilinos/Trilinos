@@ -1169,7 +1169,7 @@ namespace Tpetra {
     using std::endl;
     typedef Array<size_t>::size_type size_type;
 
-    bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     Teuchos::TimeMonitor timeMon (*timer_doPosts3_);
@@ -1577,7 +1577,7 @@ namespace Tpetra {
     typedef Array<size_t>::size_type size_type;
 
     Teuchos::OSTab tab (out_);
-    bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
 #ifdef TPETRA_DISTRIBUTOR_TIMERS
     Teuchos::TimeMonitor timeMon (*timer_doPosts4_);
@@ -1652,6 +1652,8 @@ namespace Tpetra {
         std::logic_error,
         "Tpetra::Distributor::doPosts(4 args, Teuchos::ArrayRCP): Process "
         << myProcID << ": requests_.size() = " << requests_.size () << " != 0.");
+    }
+    if (verbose) {
       std::ostringstream os;
       os << "Proc " << myProcID << ": doPosts(4 args, Teuchos::ArrayRCP, "
          << (indicesTo_.empty () ? "fast" : "slow") << ")" << endl;
@@ -2042,7 +2044,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using std::endl;
-    bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
     RCP<Teuchos::OSTab> tab0, tab1;
     if (verbose) {
@@ -2128,7 +2130,7 @@ namespace Tpetra {
     typedef ExpView exports_view_type;
     typedef ImpView imports_view_type;
 
-    bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 #ifdef KOKKOS_HAVE_CUDA
     static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
                    ! std::is_same<typename ImpView::memory_space, Kokkos::CudaUVMSpace>::value,
@@ -2583,7 +2585,7 @@ namespace Tpetra {
     typedef Array<size_t>::size_type size_type;
     typedef ExpView exports_view_type;
     typedef ImpView imports_view_type;
-    bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
 #ifdef KOKKOS_HAVE_CUDA
     static_assert (! std::is_same<typename ExpView::memory_space, Kokkos::CudaUVMSpace>::value &&
@@ -3016,7 +3018,7 @@ namespace Tpetra {
     using Teuchos::ArrayView;
     using std::endl;
     typedef typename ArrayView<const OrdinalType>::size_type size_type;
-    bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
     Teuchos::OSTab tab (out_);
     const int myRank = comm_->getRank ();
@@ -3125,7 +3127,7 @@ namespace Tpetra {
                    Teuchos::Array<int> &exportProcIDs)
   {
     using std::endl;
-    bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
 
     Teuchos::OSTab tab (out_);
     const int myRank = comm_->getRank();

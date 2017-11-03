@@ -214,8 +214,9 @@ namespace { // (anonymous)
         });
     }
     auto thisEnvironmentVariableMap = namedVariableMap_[environmentVariableName];
-    if (thisEnvironmentVariableMap.find(name) != thisEnvironmentVariableMap.end())
-      return thisEnvironmentVariableMap[name];
+    auto thisEnvironmentVariable = thisEnvironmentVariableMap.find(name);
+    if (thisEnvironmentVariable != thisEnvironmentVariableMap.end())
+      return thisEnvironmentVariable->second;
     return thisEnvironmentVariableMap["DEFAULT"];
   }
 

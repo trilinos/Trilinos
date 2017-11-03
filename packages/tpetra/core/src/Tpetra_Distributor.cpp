@@ -155,11 +155,11 @@ namespace Tpetra {
     makeTimers ();
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-    if (debug_) {
+    if (verbose || debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: debug_ "
-         "is true but out_ (pointer to the output stream) is NULL.  Please "
-         "report this bug to the Tpetra developers.");
+        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: "
+         "verbose and/or debug_ are true but out_ (pointer to the output "
+         "stream) is NULL.  Please report this bug to the Tpetra developers.");
     }
     if (verbose) {
       Teuchos::OSTab tab (out_);
@@ -291,12 +291,15 @@ namespace Tpetra {
     makeTimers ();
 #endif // TPETRA_DISTRIBUTOR_TIMERS
 
-    if (debug_) {
+    const bool verbose = Tpetra::Details::Behavior::verbose("Distributor");
+    if (verbose || debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION
-        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: debug_ "
-         "is true but out_ (pointer to the output stream) is NULL.  Please "
-         "report this bug to the Tpetra developers.");
+        (out_.is_null (), std::logic_error, "Tpetra::Distributor::init: "
+         "verbose and/or debug_ are true but out_ (pointer to the output "
+         "stream) is NULL.  Please report this bug to the Tpetra developers.");
       Teuchos::OSTab tab (out_);
+    }
+    if (verbose) {
       std::ostringstream os;
       os << comm_->getRank ()
          << ": Distributor copy ctor done" << std::endl;
