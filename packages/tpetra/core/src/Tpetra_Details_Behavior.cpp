@@ -14,7 +14,7 @@ namespace Tpetra {
 namespace Details {
 
 namespace BehaviorDetails {
-std::map<std::string, bool> namedVariableMap_;
+std::map<std::string, std::map<std::string, bool> > namedVariableMap_;
 }
 
 namespace { // (anonymous)
@@ -75,38 +75,45 @@ namespace { // (anonymous)
   }
 
   void
-  getEnvironmentVariableAsMap (const char environmentVariableName[],
-                               std::map<std::string, bool>& valsMap,
-                               const bool defaultValue)
+  setEnvironmentVariableMap (const char environmentVariableName[],
+                             std::map<std::string,std::map<std::string, bool> >& valsMap,
+                             const bool defaultValue)
   {
+    using std::map;
+    using std::getenv;
     using std::string;
+    using std::vector;
 
-    const char* varVal = std::getenv (environmentVariableName);
+    // Set the default value for this variable
+    valsMap[environmentVariableName] = map<string,bool>{{"DEFAULT", defaultValue}};
+
+    const char* varVal = getenv (environmentVariableName);
     if (varVal == NULL) {
-      // Apply default value to all
-      valsMap["DEFAULT"] = defaultValue;
+      // Environment variable is not set, use the default value for any named
+      // variants
       return;
     }
 
     // Variable is not empty.
     const string varStr(varVal);
-    std::vector<string> names;
+    vector<string> names;
     split(varStr, [&](const string& x){names.push_back(x);});
-    for (auto name: names) {
+    for (auto const& name: names) {
       auto state = environmentVariableState(name);
       if (state == EnvironmentVariableIsSet_ON) {
+        // Environment variable was set as ENVAR_NAME=[1,YES,TRUE,ON]
         // Global value takes precedence
-        valsMap["DEFAULT"] = true;
-        break;
+        valsMap[environmentVariableName]["DEFAULT"] = true;
       }
       else if (state == EnvironmentVariableIsSet_OFF) {
+        // Environment variable was set as ENVAR_NAME=[0,NO,FALSE,OFF]
         // Global value takes precedence
-        valsMap["DEFAULT"] = false;
-        break;
+        valsMap[environmentVariableName]["DEFAULT"] = false;
       }
       else {
-        // If specified in path, it must be true
-        valsMap[name] = true;
+        // Environment variable was set as ENVAR_NAME=...:name:...
+        // So we set the mapping true for this named variant
+        valsMap[environmentVariableName][name] = true;
       }
     }
     return;
@@ -182,9 +189,9 @@ namespace { // (anonymous)
     // tempted to try to cache it themselves.
     if (! initialized) {
       std::call_once (once_flag, [&] () {
-          namedVariableMap_["DEFAULT"] = defaultValue;
-          getEnvironmentVariableAsMap (environmentVariableName,
-                                       namedVariableMap_, defaultValue);
+          setEnvironmentVariableMap (environmentVariableName,
+                                     namedVariableMap_,
+                                     defaultValue);
           // http://preshing.com/20130922/acquire-and-release-fences/
           //
           // "A release fence prevents the memory reordering of any
@@ -206,9 +213,10 @@ namespace { // (anonymous)
           initialized = true;
         });
     }
-    if (namedVariableMap_.find(name) != namedVariableMap_.end())
-      return namedVariableMap_[name];
-    return namedVariableMap_["DEFAULT"];
+    auto thisEnvironmentVariableMap = namedVariableMap_[environmentVariableName];
+    if (thisEnvironmentVariableMap.find(name) != thisEnvironmentVariableMap.end())
+      return thisEnvironmentVariableMap[name];
+    return thisEnvironmentVariableMap["DEFAULT"];
   }
 
   constexpr bool debugDefault () {
@@ -280,24 +288,30 @@ bool Behavior::assumeMpiIsCudaAware ()
 
 bool Behavior::debug (const char name[])
 {
-  static std::once_flag debugFlag_;
-  static bool debugInitialized_ = false;
+  constexpr char envVarName[] = "TPETRA_DEBUG";
+  constexpr bool defaultValue = debugDefault();
+
+  static std::once_flag flag_;
+  static bool initialized_ = false;
   return idempotentlyGetNamedEnvironmentVariableAsBool (name,
-                                                        debugFlag_,
-                                                        debugInitialized_,
-                                                        "TPETRA_DEBUG",
-                                                        debugDefault ());
+                                                        flag_,
+                                                        initialized_,
+                                                        envVarName,
+                                                        defaultValue);
 }
 
 bool Behavior::verbose (const char name[])
 {
-  static std::once_flag verboseFlag_;
-  static bool verboseInitialized_ = false;
+  constexpr char envVarName[] = "TPETRA_VERBOSE";
+  constexpr bool defaultValue = verboseDefault();
+
+  static std::once_flag flag_;
+  static bool initialized_ = false;
   return idempotentlyGetNamedEnvironmentVariableAsBool (name,
-                                                        verboseFlag_,
-                                                        verboseInitialized_,
-                                                        "TPETRA_VERBOSE",
-                                                        verboseDefault ());
+                                                        flag_,
+                                                        initialized_,
+                                                        envVarName,
+                                                        defaultValue);
 }
 
 } // namespace Details
