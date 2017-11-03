@@ -72,16 +72,18 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
-    // Problem specifications
-    RealT g  = 9.8;  // Acceleration due to gravity
-    RealT m  = 0.01; // Mass of golf ball
-    RealT x0 = 1.0;  // Initial x-location of ball
-    RealT y0 = 2.0;  // Initial y-location of ball
-    RealT xn = 1.0;  // x-location of hole
-    RealT yn = -2.0; // y-location of hole
-    RealT mu = 0.07; // Coefficient of friction
-    RealT Rg = 4.0;  // Green radius
-    int n = 50;      // Number of time steps
+    // Physical parameters
+    RealT g  = 9.834;   // Acceleration due to gravity (m/s^2)
+    RealT m  = 0.04593; // Mass of golf ball (kg)
+    RealT mu = 0.07;    // Coefficient of friction: range (0.06,0.20)
+    // User input parameters
+    RealT x0 = parlist->sublist("Problem").get("Initial x-location",  1.0); // Initial x-location of ball
+    RealT y0 = parlist->sublist("Problem").get("Initial y-location",  2.0); // Initial y-location of ball
+    RealT xn = parlist->sublist("Problem").get("Hole x-location",     1.0); // x-location of hole
+    RealT yn = parlist->sublist("Problem").get("Hole y-location",    -2.0); // y-location of hole
+    RealT Rg = parlist->sublist("Problem").get("Green radius",        4.0); // Green radius (m)
+    RealT sf = parlist->sublist("Problem").get("Final speed",         0.1); // Final speed
+    int    n = parlist->sublist("Problem").get("Number of time steps", 50); // Number of time steps
 
     // Initialize iteration vectors.
     Teuchos::RCP<std::vector<RealT> > u_rcp    = Teuchos::rcp(new std::vector<RealT>(9*n+10));
@@ -154,56 +156,67 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp(new GreenConstraint<RealT>());
 
     // Final speed objective
+    RealT target = sf*sf;
     Teuchos::RCP<PuttingObjective<RealT> > obj
-      = Teuchos::rcp(new PuttingObjective<RealT>());
+      = Teuchos::rcp(new PuttingObjective<RealT>(target));
 
     // Initialize optimization problem
-    ROL::OptimizationProblem<RealT> problem(obj,x,xbnd,econ,emul);
-    //ROL::OptimizationProblem<RealT> problem(obj,x,xbnd,econ,emul,icon,imul,ibnd);
-
-/*
-    // Reduced objective function
-    econ->setSolveParameters(*parlist);
-    Teuchos::RCP<ROL::SimController<RealT> > stateStore
-      = Teuchos::rcp(new ROL::SimController<RealT>());
-    Teuchos::RCP<ROL::Objective<RealT> > robj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj,econ,stateStore,up,zp,emul,true,false));
-
-    // Initialize optimization problem
-    ROL::OptimizationProblem<RealT> problem(robj,zp);
-    //ROL::OptimizationProblem<RealT> problem(robj,zp,icon,imul,ibnd);
-*/
+    Teuchos::RCP<ROL::OptimizationProblem<RealT> > problem;
+    bool useReduced = parlist->sublist("Problem").get("Use reduced space",false);
+    if (!useReduced) {
+      bool useGreenCon = parlist->sublist("Problem").get("Use green constraint",false);
+      if (!useGreenCon) {
+        problem = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(obj,x,xbnd,econ,emul));
+      }
+      else {
+        problem = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(obj,x,xbnd,econ,emul,icon,imul,ibnd));
+      }
+    }
+    else {
+      econ->setSolveParameters(*parlist);
+      Teuchos::RCP<ROL::SimController<RealT> > stateStore
+        = Teuchos::rcp(new ROL::SimController<RealT>());
+      Teuchos::RCP<ROL::Objective<RealT> > robj
+        = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<RealT>(obj,econ,stateStore,up,zp,emul,true,false));
+      problem = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(robj,zp));
+    }
 
     // Check derivatives
-    problem.check(*outStream);
+    bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
+    if (checkDeriv) {
+      problem->check(*outStream);
+    }
 
     // Initialize optimization solver
-    ROL::OptimizationSolver<RealT> solver(problem,*parlist);
+    ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
 
     // Solve putting control problem
     solver.solve(*outStream);
 
     // Print optimal control (initial velocity vector)
-    *outStream << "Initial x-velocity: " << (*z_rcp)[0] << std::endl;
-    *outStream << "Initial y-velocity: " << (*z_rcp)[1] << std::endl;
+    *outStream << "Initial x-velocity: " << (*z_rcp)[0]     << std::endl;
+    *outStream << "Initial y-velocity: " << (*z_rcp)[1]     << std::endl;
+    *outStream << "Final time: "         << (*u_rcp)[9*n+9] << std::endl;
 
     // Print optimal trajectory
-    std::ofstream xFile, vFile, aFile;
-    xFile.open("position.txt");
-    vFile.open("velocity.txt");
-    aFile.open("accelleration.txt");
-    for (int i = 0; i < n+1; ++i) {
-      xFile << std::scientific << std::setprecision(8) << std::setw(12) << std::left;
-      xFile << (*u_rcp)[i]       << "  " << (*u_rcp)[n+1+i]   << "  " << (*u_rcp)[2*n+2+i] << std::endl;
-      vFile << std::scientific << std::setprecision(8) << std::setw(12) << std::left;
-      vFile << (*u_rcp)[3*n+3+i] << "  " << (*u_rcp)[4*n+4+i] << "  " << (*u_rcp)[5*n+5+i] << std::endl;
-      aFile << std::scientific << std::setprecision(8) << std::setw(12) << std::left;
-      aFile << (*u_rcp)[6*n+6+i] << "  " << (*u_rcp)[7*n+7+i] << "  " << (*u_rcp)[8*n+8+i] << std::endl;
+    bool printTrajectory = parlist->sublist("Problem").get("Print trajectory",true);
+    if (printTrajectory) {
+      std::ofstream xFile, vFile, aFile;
+      xFile.open("position.txt");
+      vFile.open("velocity.txt");
+      aFile.open("acceleration.txt");
+      for (int i = 0; i < n+1; ++i) {
+        xFile << std::scientific << std::setprecision(8) << std::setw(12) << std::left;
+        xFile << (*u_rcp)[i]       << "  " << (*u_rcp)[n+1+i]   << "  " << (*u_rcp)[2*n+2+i] << std::endl;
+        vFile << std::scientific << std::setprecision(8) << std::setw(12) << std::left;
+        vFile << (*u_rcp)[3*n+3+i] << "  " << (*u_rcp)[4*n+4+i] << "  " << (*u_rcp)[5*n+5+i] << std::endl;
+        aFile << std::scientific << std::setprecision(8) << std::setw(12) << std::left;
+        aFile << (*u_rcp)[6*n+6+i] << "  " << (*u_rcp)[7*n+7+i] << "  " << (*u_rcp)[8*n+8+i] << std::endl;
+      }
+      xFile.close();
+      vFile.close();
+      aFile.close();
     }
-    xFile.close();
-    vFile.close();
-    aFile.close();
-    *outStream << "Final time: " << (*u_rcp)[9*n+9] << std::endl;
 
 /*
     RealT tol(1e-8);

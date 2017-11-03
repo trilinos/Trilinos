@@ -1,4 +1,18 @@
 <ParameterList name="Inputs">
+  <ParameterList name="Problem">
+    <Parameter name="Initial x-location"   type="double"  value="1.0"   />
+    <Parameter name="Initial y-location"   type="double"  value="2.0"   />
+    <Parameter name="Hole x-location"      type="double"  value="1.0"   />
+    <Parameter name="Hole y-location"      type="double"  value="-2.0"  />
+    <Parameter name="Green radius"         type="double"  value="4.0"   />
+    <Parameter name="Final speed"          type="double"  value="0.1"   />
+    <Parameter name="Number of time steps" type="int"     value="50"    />
+    <Parameter name="Use green constraint" type="bool"    value="false" />
+    <Parameter name="Check derivatives"    type="bool"    value="false" />
+    <Parameter name="Use reduced space"    type="bool"    value="false" />
+    <Parameter name="Print trajectory"     type="bool"    value="true"  />
+  </ParameterList>
+
   <!-- ===========  SIMOPT SOLVER PARAMETER SUBLIST  =========== -->
   <ParameterList name="SimOpt">
     <ParameterList name="Solve">
