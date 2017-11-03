@@ -314,9 +314,11 @@ int main(int argc, char *argv[]) {
     vy = Teuchos::rcp(new ROL::SimulatedVector<RealT>(vyvec,bman));
     Teuchos::RCP<ROL::Vector<RealT> > rz, rs, rt;
     if (useCVaR) {
-      rz = Teuchos::rcp(new ROL::RiskVector<RealT>(zp, true));
-      rs = Teuchos::rcp(new ROL::RiskVector<RealT>(sp, true));
-      rt = Teuchos::rcp(new ROL::RiskVector<RealT>(tp, true));
+      Teuchos::RCP<Teuchos::ParameterList> cvarList = Teuchos::rcp(new Teuchos::ParameterList());
+      cvarList->sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
+      rz = Teuchos::rcp(new ROL::RiskVector<RealT>(cvarList, zp));
+      rs = Teuchos::rcp(new ROL::RiskVector<RealT>(cvarList, sp));
+      rt = Teuchos::rcp(new ROL::RiskVector<RealT>(cvarList, tp));
     }
     else {
       rz = zp;

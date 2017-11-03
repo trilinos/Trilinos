@@ -118,7 +118,7 @@ public:
 
   Real invertCDF(const Real input) const {
     //return std::sqrt(2.*variance_)*erfi(2.*input-1.) + mean_;
-    const Real zero(0), half(0.5), one(1), two(2), eight(8);
+    const Real zero(0), half(0.5), one(1), eight(8);
     const Real dev(std::sqrt(variance_)), eps(1.24419211485e-15);
     // Set lower and upper bounds to the mean plus/minus 8 standard
     //   -- deviations this ensures that 1-eps probability mass is
