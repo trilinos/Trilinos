@@ -5,7 +5,7 @@
 # NOTE: If the TBB (Intel's Threading Building Blocks) TPL is enabled,
 # it's probably not possible to build Tpetra with shadowing warnings.
 #TRIBITS_PACKAGE( Tpetra ENABLE_SHADOWING_WARNINGS CLEANED )
-TRIBITS_PACKAGE( Tpetra CLEANED )
+TRIBITS_PACKAGE_DECL( Tpetra CLEANED )
 
 TRIBITS_ADD_DEBUG_OPTION()
 

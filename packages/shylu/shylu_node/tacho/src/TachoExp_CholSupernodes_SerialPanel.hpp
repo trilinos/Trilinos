@@ -245,7 +245,7 @@ namespace Tacho {
           CholSupernodes<Algo::Workflow::SerialPanel>
             ::factorize(sched, member, info, sid);
 
-          for (ordinal_type offn=0;offn<n;offn+=np) {
+          for (ordinal_type offn=0; offn<static_cast<ordinal_type>(n); offn+=np) {
             CholSupernodes<Algo::Workflow::SerialPanel>
               ::update(sched, member, info, offn, np, sid, bufsize, (void*)buf);
           }

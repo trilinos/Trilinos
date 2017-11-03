@@ -3724,13 +3724,45 @@ namespace Tpetra {
     // The method doesn't do any work if the indices are already local.
     const std::pair<size_t, std::string> makeIndicesLocalResult =
       this->makeIndicesLocal ();
-    // TODO (mfh 20 Jul 2017) Instead of throwing here, pass along the
-    // error state to makeImportExport or computeGlobalConstants,
-    // which may do all-reduces and thus may have the opportunity to
-    // communicate that error state.
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (makeIndicesLocalResult.first != 0, std::runtime_error,
-       makeIndicesLocalResult.second);
+    const bool debug = ::Tpetra::Details::Behavior::debug ();
+    if (debug) { // In debug mode, print error output on all processes
+      using ::Tpetra::Details::gathervPrint;
+      using Teuchos::RCP;
+      using Teuchos::REDUCE_MIN;
+      using Teuchos::reduceAll;
+      using Teuchos::outArg;
+
+      RCP<const map_type> map = this->getMap ();
+      RCP<const Teuchos::Comm<int> > comm;
+      if (! map.is_null ()) {
+        comm = map->getComm ();
+      }
+      if (comm.is_null ()) {
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+          (makeIndicesLocalResult.first != 0, std::runtime_error,
+           makeIndicesLocalResult.second);
+      }
+      else {
+        const int lclSuccess = (makeIndicesLocalResult.first == 0);
+        int gblSuccess = 0; // output argument
+        reduceAll (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+        if (gblSuccess != 1) {
+          std::ostringstream os;
+          gathervPrint (os, makeIndicesLocalResult.second, *comm);
+          TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+            (true, std::runtime_error, os.str ());
+        }
+      }
+    }
+    else {
+      // TODO (mfh 20 Jul 2017) Instead of throwing here, pass along
+      // the error state to makeImportExport or
+      // computeGlobalConstants, which may do all-reduces and thus may
+      // have the opportunity to communicate that error state.
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (makeIndicesLocalResult.first != 0, std::runtime_error,
+         makeIndicesLocalResult.second);
+    }
 
     // If this process has no indices, then CrsGraph considers it
     // already trivially sorted and merged.  Thus, this method need
@@ -4897,10 +4929,21 @@ namespace Tpetra {
                                                                                         lclColMap,
                                                                                         k_numRowEnt);
         if (lclNumErrs != 0) {
-          errStrm << "When converting column indices from global to local, "
-            "we encountered " << lclNumErrs << " ind"
-            << (lclNumErrs != size_t (1) ? "ices" : "ex") << " that "
-            "do" << (lclNumErrs != static_cast<size_t> (1) ? "es" : "")
+          const int myRank = [this] () {
+            auto map = this->getMap ();
+            if (map.is_null ()) {
+              return 0;
+            }
+            else {
+              auto comm = map->getComm ();
+              return comm.is_null () ? 0 : comm->getRank ();
+            }
+          } ();
+          const bool pluralNumErrs = (lclNumErrs != static_cast<size_t> (1));
+          errStrm << "(Process " << myRank << ") When converting column "
+            "indices from global to local, we encountered " << lclNumErrs
+            << " ind" << (pluralNumErrs ? "ices" : "ex")
+            << " that do" << (pluralNumErrs ? "es" : "")
             << " not live in the column Map on this process." << endl;
         }
 
@@ -4949,44 +4992,97 @@ namespace Tpetra {
         // the global column indices not in the column Map on the
         // calling process.
         if (lclNumErrs != 0) {
+          const int myRank = [this] () {
+            auto map = this->getMap ();
+            if (map.is_null ()) {
+              return 0;
+            }
+            else {
+              auto comm = map->getComm ();
+              return comm.is_null () ? 0 : comm->getRank ();
+            }
+          } ();
+
           // If there are too many errors, don't bother printing them.
-          if (lclNumErrs > static_cast<size_t> (100)) {
-            errStrm << "When converting column indices from global to local, "
-              "we encountered " << lclNumErrs << " indices that do not live "
-              "in the column Map on this process.  That's too many to print."
-              << endl;
+          constexpr size_t tooManyErrsToPrint = 200; // arbitrary constant
+          if (lclNumErrs > tooManyErrsToPrint) {
+            errStrm << "(Process " << myRank << ") When converting column "
+              "indices from global to local, we encountered " << lclNumErrs
+              << " indices that do not live in the column Map on this "
+              "process.  That's too many to print." << endl;
           }
           else {
+            // Map from local row index, to any global column indices
+            // that do not live in the column Map on the calling process.
             std::map<LO, std::vector<GO> > badColInds;
+            // List of local rows lclRow for which h_numRowEnt[lclRow]
+            // > gblInds2D_[lclRow].size().
+            std::vector<LO> badLclRows;
 
             for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-              const GO* const curGblInds = gblInds2D_[lclRow].getRawPtr ();
-              // NOTE (mfh 26 Jun 2016) It's always legal to cast the
-              // number of entries in a row to LO, as long as the row
-              // doesn't have too many duplicate entries.
-              const LO numEnt = static_cast<LO> (h_numRowEnt(lclRow));
-              for (LO j = 0; j < numEnt; ++j) {
-                const GO gid = curGblInds[j];
-                const LO lid = colMap.getLocalElement (gid);
-                if (lid == Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
-                  badColInds[lid].push_back (gid);
+              const size_t numEnt = static_cast<size_t> (h_numRowEnt[lclRow]);
+
+              Teuchos::ArrayView<const GO> curGblInds = gblInds2D_[lclRow] ();
+              if (numEnt > static_cast<size_t> (curGblInds.size ())) {
+                badLclRows.push_back (lclRow);
+              }
+              else {
+                for (size_t j = 0; j < numEnt; ++j) {
+                  const GO gid = curGblInds[j];
+                  const LO lid = colMap.getLocalElement (gid);
+                  if (lid == Tpetra::Details::OrdinalTraits<LO>::invalid ()) {
+                    badColInds[lclRow].push_back (gid);
+                  }
                 }
               }
             }
 
-            errStrm << "When converting column indices from global to local, "
-              "we encountered " << lclNumErrs << " ind"
-               << (lclNumErrs != size_t (1) ? "ices" : "ex") << " that "
-              "do" << (lclNumErrs != static_cast<size_t> (1) ? "es" : "")
+            const bool pluralNumErrs = (lclNumErrs != static_cast<size_t> (1));
+            errStrm << "(Process " << myRank << ") When converting column "
+              "indices from global to local, we encountered " << lclNumErrs
+              << " ind" << (pluralNumErrs ? "ices" : "ex") << " that "
+              "do" << (pluralNumErrs ? "es" : "")
                << " not live in the column Map on this process." << endl
-               << "Global column indices not in the column Map:" << endl;
+               << "(Process " << myRank << ") Here are the bad global "
+              "indices, listed by local row: " << endl;
             for (auto && eachPair : badColInds) {
-              errStrm << "Local row " << eachPair.first << ": [";
+              const LO lclRow = eachPair.first;
+              const GO gblRow = rowMap_->getGlobalElement (lclRow);
+              errStrm << "(Process " << myRank << ")  Local row " << lclRow
+                      << " (global row " << gblRow << "): [";
               const size_t numBad = eachPair.second.size ();
               for (size_t k = 0; k < numBad; ++k) {
                 errStrm << eachPair.second[k];
                 if (k + size_t (1) < numBad) {
                   errStrm << ",";
+                }
+              }
+              errStrm << "]" << endl;
+            }
+
+            if (badLclRows.size () != 0) {
+              if (lclNumErrs == 0) {
+                // We really want lclNumErrs to be just the count of
+                // bad column indices, but lclNumErrs != 0 also
+                // doubles as a generic indication of error.
+                lclNumErrs = badLclRows.size ();
+              }
+
+              errStrm << "(Process " << myRank << ") When converting column "
+                "indices from global to local, we (also) encountered the "
+                "following local rows lclRow on this process for which "
+                "h_numRowEnt[lclRow] > gblInds2D_[lclRow].size().  This "
+                "likely indicates a bug in Tpetra." << endl
+                << "(Process " << myRank << ") [";
+              const size_t numBad = badLclRows.size ();
+              for (size_t k = 0; k < numBad; ++k) {
+                const LO lclRow = badLclRows[k];
+                errStrm << "{lclRow: " << lclRow
+                        << "h_numRowEnt[lclRow]: " << h_numRowEnt[lclRow]
+                        << "gblInds2D_[lclRow].size(): "
+                        << gblInds2D_[lclRow].size () << "}";
+                if (k + size_t (1) < numBad) {
+                  errStrm << ", ";
                 }
               }
               errStrm << "]" << endl;

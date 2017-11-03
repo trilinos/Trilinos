@@ -619,6 +619,7 @@ IF (Stokhos_ENABLE_Sacado)
         )
       SET(TPETRAEXT_ETI_CLASSES
         MatrixMatrix
+        TripleMatrixMultiply
         )
     IF(Stokhos_ENABLE_Ensemble_Scalar_Type)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/tpetra)

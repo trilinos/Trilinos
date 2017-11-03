@@ -44,22 +44,17 @@
 
 #include "TpetraClassic_config.h"
 
-//! Namespace for Kokkos classes and methods
-namespace KokkosClassic {
-  //! Sweep direction for Gauss-Seidel or Symmetric Over-Relaxation (SOR).
-  enum ESweepDirection {
-    Forward = 0,
-    Backward
-  };
-} // namespace KokkosClassic
-
 namespace Kokkos {
   namespace Compat {
     /// \struct NodeDevice
     /// \tparam Node Kokkos (Classic) Node type
     /// \brief Determine KokkosCore device type from KokkosClassic node type.
+    ///
+    /// \warning This struct is DEPRECATED and will be removed soon.
     template <typename Node>
-    struct NodeDevice {};
+    struct TPETRA_DEPRECATED NodeDevice {
+      typedef typename Node::device_type device_type;
+    };
   }
 }
 

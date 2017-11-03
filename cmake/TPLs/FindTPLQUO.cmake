@@ -54,39 +54,8 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.dorksaber.gcc.cmake")
+TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( QUO
+  REQUIRED_HEADERS quo.h
+  REQUIRED_LIBS_NAMES quo
+  )
 
-#
-# Set the options specific to this build case
-#
-
-SET(COMM_TYPE MPI)
-SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME RELEASE_DEV_TpetraKernels_Experimental)
-SET(CTEST_PARALLEL_LEVEL 3)
-SET(CTEST_TEST_TYPE Nightly)
-SET(Trilinos_TRACK  Specialized)      # Set the CDash track
-SET(CTEST_TEST_TIMEOUT 1800)
-
-SET(Trilinos_PACKAGES Amesos2 Ifpack2 Teuchos Tpetra MueLu Zoltan2)
-
-SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
-  "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
-  "-DAmesos2_ENABLE_KLU2:BOOL=ON"
-  "-DTpetra_INST_INT_LONG_LONG=OFF"
-  "-DTpetra_ENABLE_MMM_Timings:BOOL=ON"
-  "-DTpetra_INST_SERIAL:BOOL=ON"
-  "-DTpetra_INST_OPENMP:BOOL=ON"
-  "-DTpetraKernels_ENABLE_Experimental:BOOL=ON"
-  "-DTpetraKernels_ENABLE_TESTS:BOOL=ON"
-  "-DMATLAB_ARCH:STRING=glnxa64"
-  "-DCMAKE_CXX_FLAGS:STRING='-g -fno-var-tracking'"
-  "-DCMAKE_C_FLAGS:STRING='-g'"
-  "-DCMAKE_Fortran_FLAGS:STRING='-g'"
-)
-#
-# Set the rest of the system-specific options and run the dashboard build/test
-#
-
-TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()

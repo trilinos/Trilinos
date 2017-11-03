@@ -77,12 +77,37 @@ MACRO(TRIBITS_SUBPACKAGE SUBPACKAGE_NAME_IN)
     MESSAGE("\nSUBPACKAGE: ${SUBPACKAGE_NAME_IN}")
   ENDIF()
 
-  IF (NOT ${SUBPACKAGE_NAME_IN} STREQUAL ${SUBPACKAGE_NAME})
-    MESSAGE(FATAL_ERROR "Error, the package-defined subpackage name"
-      " '${SUBPACKAGE_NAME_IN}' is not the same as the subpackage name"
-      " '${SUBPACKAGE_NAME}' defined in the parent packages's"
-      " Dependencies.cmake file")
+  # check that this is not being called from a package
+  IF (NOT CURRENTLY_PROCESSING_SUBPACKAGE)
+  # we are in a package
+
+    MESSAGE(FATAL_ERROR "Cannot call TRIBITS_SUBPACKAGE() from a package."
+    " Use TRIBITS_PACKAGE() instead"
+    " ${CURRENT_PACKAGE_CMAKELIST_FILE}")
+
+  ELSE()
+  # We are in a subpackage
+
+    # check to see if postprocess is called before subpackage
+    IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
+      MESSAGE(FATAL_ERROR "TRIBITS_SUBPACKAGE_POSTPROCESS() called before TRIBITS_SUBPACKAGE()")
+    ENDIF()
+
+    # check to see if we have already called this macro
+    IF(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
+      MESSAGE(FATAL_ERROR "Already called TRIBITS_SUBPACKGE() for the"
+	"${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
+    ENDIF()
+
+    # make sure the name in the macro call matches the name in the packages cmake file
+    IF (NOT ${SUBPACKAGE_NAME_IN} STREQUAL ${SUBPACKAGE_NAME})
+      MESSAGE(FATAL_ERROR "Error, the package-defined subpackage name"
+	" '${SUBPACKAGE_NAME_IN}' is not the same as the subpackage name"
+	" '${SUBPACKAGE_NAME}' defined in the parent packages's"
+	" Dependencies.cmake file")
+    ENDIF()
   ENDIF()
+
 
   # To provide context for various macros
   SET(PACKAGE_NAME ${SUBPACKAGE_FULLNAME})
@@ -94,8 +119,9 @@ MACRO(TRIBITS_SUBPACKAGE SUBPACKAGE_NAME_IN)
   TRIBITS_SET_COMMON_VARS(${SUBPACKAGE_FULLNAME})
   TRIBITS_DEFINE_LINKAGE_VARS(${SUBPACKAGE_FULLNAME})
 
-    # Set flag to check that macros are called in the correct order
-  SET(${PACKAGE_NAME}_TRIBITS_PACKAGE_CALLED TRUE)
+  # Set flags that are used  to check that macros are called in the correct order
+  SET(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED TRUE)
+  SET(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED FALSE)
 
 ENDMACRO()
 
@@ -115,5 +141,36 @@ ENDMACRO()
 # this macro but limitations of the CMake language make it necessary to do so.
 #
 MACRO(TRIBITS_SUBPACKAGE_POSTPROCESS)
+
+  # check that this is not being called from a package
+  IF (NOT CURRENTLY_PROCESSING_SUBPACKAGE)
+
+  # This is being called from a package
+
+    MESSAGE(FATAL_ERROR "Cannot call TRIBITS_SUBPACKAGE_POSTPROCESS() from a package."
+    " Use TRIBITS_PACKAGE_POSTPROCESS() instead"
+    " ${CURRENT_PACKAGE_CMAKELIST_FILE}")
+
+  ELSE()
+  # This is being caleld from a subpackage
+
+    # check to make sure this has not already been called
+    IF (${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED)
+      MESSAGE(FATAL_ERROR "Already called TRIBITS_SUBPACKGE_POSTPROCESS() for the"
+        "${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
+    ENDIF()
+  
+    # make sure subpackage is called prior to subpackage postprocess
+    IF(NOT ${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_CALLED)
+      MESSAGE(FATAL_ERROR "TRIBITS_SUBPACKAGE() must be called before TRIBITS_SUBPACKAGE_POSTPROCESS()"
+        "for the ${PARENT_PACKAGE_NAME} subpackage ${TRIBITS_SUBPACKAGE}")
+    ENDIF()
+
+  ENDIF()
+
+  # Set flags that are used  to check that macros are called in the correct order
+  DUAL_SCOPE_SET(${SUBPACKAGE_FULLNAME}_TRIBITS_SUBPACKAGE_POSTPROCESS_CALLED TRUE)
+
   TRIBITS_PACKAGE_POSTPROCESS_COMMON()
+
 ENDMACRO()
