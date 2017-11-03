@@ -5,7 +5,7 @@
     <Parameter name="Hole x-location"      type="double"  value="1.0"   />
     <Parameter name="Hole y-location"      type="double"  value="-2.0"  />
     <Parameter name="Green radius"         type="double"  value="4.0"   />
-    <Parameter name="Final speed"          type="double"  value="0.1"   />
+    <Parameter name="Final speed"          type="double"  value="0.5"   />
     <Parameter name="Number of time steps" type="int"     value="50"    />
     <Parameter name="Use green constraint" type="bool"    value="false" />
     <Parameter name="Check derivatives"    type="bool"    value="false" />
