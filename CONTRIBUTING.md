@@ -14,7 +14,7 @@ When work is ready to commence on an issue, the workflow to use is the following
 
 * If you have not already done so, create a fork of Trilinos on GitHub under your username.
 * Clone your fork of Trilinos with `git clone git@github.com:<username>/Trilinos`.
-* After you clone your fork, `git remote add upstream git@github.com:trilinos/Trilinos` to add the original Trilinos repository as the `upstream` remote.
+* Each time you clone your fork, `git remote add upstream git@github.com:trilinos/Trilinos` to add the original Trilinos repository as the `upstream` remote.
 
 ### Update the Main Development Branches
 
