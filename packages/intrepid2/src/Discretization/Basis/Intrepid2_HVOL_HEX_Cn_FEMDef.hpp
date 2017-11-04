@@ -68,7 +68,7 @@ namespace Intrepid2 {
                const ordinal_type   operatorDn ) {
       ordinal_type opDn = operatorDn;
 
-      const ordinal_type card = vinv.dimension(0);
+      const ordinal_type cardLine = vinv.dimension(0);
       const ordinal_type npts = input.dimension(0);
 
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
@@ -76,17 +76,21 @@ namespace Intrepid2 {
       const auto input_y = Kokkos::subview(input, Kokkos::ALL(), range_type(1,2));
       const auto input_z = Kokkos::subview(input, Kokkos::ALL(), range_type(2,3));
 
-      const auto range0 = range_type(0,card);
-      const auto range1 = range_type(card,2*card);
-      const auto range2 = range_type(2*card,3*card);
-      const auto range3 = range_type(3*card,4*card);
+      const ordinal_type dim_s = get_dimension_scalar(work);
+      auto ptr0 = work.data();
+      auto ptr1 = work.data()+cardLine*npts*dim_s;
+      auto ptr2 = work.data()+2*cardLine*npts*dim_s;
+      auto ptr3 = work.data()+3*cardLine*npts*dim_s;      
+      
+      typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
+      auto vcprop = Kokkos::common_view_alloc_prop(work);
 
       switch (opType) {
       case OPERATOR_VALUE: {
-        const auto work_line = Kokkos::subview(work, range0, Kokkos::ALL());
-        const auto output_x = Kokkos::subview(work, range1, Kokkos::ALL());
-        const auto output_y = Kokkos::subview(work, range2, Kokkos::ALL());
-        const auto output_z = Kokkos::subview(work, range3, Kokkos::ALL());
+        viewType work_line(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
+        viewType output_x(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts);
+        viewType output_y(Kokkos::view_wrap(ptr2, vcprop), cardLine, npts);
+        viewType output_z(Kokkos::view_wrap(ptr3, vcprop), cardLine, npts);
         
         Impl::Basis_HVOL_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
           getValues(output_x, input_x, work_line, vinv);
@@ -99,9 +103,9 @@ namespace Intrepid2 {
 
         // tensor product
         ordinal_type idx = 0;
-        for (ordinal_type k=0;k<card;++k) // z
-          for (ordinal_type j=0;j<card;++j) // y
-            for (ordinal_type i=0;i<card;++i,++idx)  // x
+        for (ordinal_type k=0;k<cardLine;++k) // z
+          for (ordinal_type j=0;j<cardLine;++j) // y
+            for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
               for (ordinal_type l=0;l<npts;++l)
                 output(idx,l) = output_x(i,l)*output_y(j,l)*output_z(k,l);
         break;
@@ -134,44 +138,44 @@ namespace Intrepid2 {
             if (mult_x < 0) {
               // pass
             } else {              
-              auto  work_line = Kokkos::subview(work, range0, Kokkos::ALL());          
+              viewType work_line(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
               decltype(work_line)  output_x, output_y, output_z;
                   
               if (mult_x) {
-                output_x = Kokkos::subview(work, range1, Kokkos::ALL(), Kokkos::ALL());
+                output_x = viewType(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts, 1);
                 Impl::Basis_HVOL_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
                   getValues(output_x, input_x, work_line, vinv, mult_x);
               } else {
-                output_x = Kokkos::subview(work, range1, Kokkos::ALL());
+                output_x = viewType(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts);
                 Impl::Basis_HVOL_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
                   getValues(output_x, input_x, work_line, vinv);
               }
               
               if (mult_y) {
-                output_y = Kokkos::subview(work, range2, Kokkos::ALL(), Kokkos::ALL());
+                output_y = viewType(Kokkos::view_wrap(ptr2, vcprop), cardLine, npts, 1);
                 Impl::Basis_HVOL_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
                   getValues(output_y, input_y, work_line, vinv, mult_y);
               } else {
-                output_y = Kokkos::subview(work, range2, Kokkos::ALL());
+                output_y = viewType(Kokkos::view_wrap(ptr2, vcprop), cardLine, npts);
                 Impl::Basis_HVOL_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
                   getValues(output_y, input_y, work_line, vinv);
               }
 
               if (mult_z) {
-                output_z = Kokkos::subview(work, range3, Kokkos::ALL(), Kokkos::ALL());
+                output_z = viewType(Kokkos::view_wrap(ptr3, vcprop), cardLine, npts, 1);
                 Impl::Basis_HVOL_LINE_Cn_FEM::Serial<OPERATOR_Dn>::
                   getValues(output_z, input_z, work_line, vinv, mult_z);
               } else {
-                output_z = Kokkos::subview(work, range3, Kokkos::ALL());
+                output_z = viewType(Kokkos::view_wrap(ptr3, vcprop), cardLine, npts);
                 Impl::Basis_HVOL_LINE_Cn_FEM::Serial<OPERATOR_VALUE>::
                   getValues(output_z, input_z, work_line, vinv);
               }
 
               // tensor product (extra dimension of ouput x,y and z are ignored)              
               ordinal_type idx = 0;
-              for (ordinal_type k=0;k<card;++k) // z
-                for (ordinal_type j=0;j<card;++j) // y
-                  for (ordinal_type i=0;i<card;++i,++idx)  // x
+              for (ordinal_type k=0;k<cardLine;++k) // z
+                for (ordinal_type j=0;j<cardLine;++j) // y
+                  for (ordinal_type i=0;i<cardLine;++i,++idx)  // x
                     for (ordinal_type l=0;l<npts;++l)
                       output(idx,l,d) = output_x(i,l,0)*output_y(j,l,0)*output_z(k,l,0);
               ++d;
@@ -211,7 +215,7 @@ namespace Intrepid2 {
       typedef typename inputPointViewType::value_type inputPointType;
 
       const ordinal_type cardinality = outputValues.dimension(0);
-      const ordinal_type cardLine = std::sqrt(cardinality);
+      const ordinal_type cardLine = std::cbrt(cardinality);
       const ordinal_type workSize = 4*cardLine;
 
       auto vcprop = Kokkos::common_view_alloc_prop(inputPoints);

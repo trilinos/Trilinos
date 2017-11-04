@@ -61,9 +61,12 @@ namespace Intrepid2 {
     */
     class Basis_HGRAD_QUAD_Cn_FEM {
     public:
-      typedef struct Quadrilateral<4> cell_topology_type;      
+      typedef struct Quadrilateral<4> cell_topology_type;
+
       /**
         \brief See Intrepid2::Basis_HGRAD_QUAD_Cn_FEM
+               work is a rank 1 view having the same value_type of inputPoints
+               and having size equal to getWorkSizePerPoint()*inputPoints.dimension(0);
       */
       template<EOperator opType>
       struct Serial {
@@ -78,6 +81,10 @@ namespace Intrepid2 {
                          workViewType        work,
                    const vinvViewType        vinv,
                    const ordinal_type        operatorDn = 0 );
+
+        KOKKOS_INLINE_FUNCTION
+        static ordinal_type
+        getWorkSizePerPoint(ordinal_type order) {return 3*getPnCardinality<1>(order); }
       };
       
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -89,6 +96,7 @@ namespace Intrepid2 {
                   const Kokkos::DynRankView<inputPointValueType, inputPointProperties...>  inputPoints,
                   const Kokkos::DynRankView<vinvValueType,       vinvProperties...>        vinv,
                   const EOperator operatorType);
+
 
       /**
         \brief See Intrepid2::Basis_HGRAD_QUAD_Cn_FEM
@@ -122,7 +130,11 @@ namespace Intrepid2 {
 
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
-          const auto work    = Kokkos::subview( _work, Kokkos::ALL(), ptRange );
+
+          typename workViewType::pointer_type ptr = _work.data() + _work.dimension(0)*ptBegin*get_dimension_scalar(_work);
+
+          auto vcprop = Kokkos::common_view_alloc_prop(_work);
+          workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.dimension(0));
 
           switch (opType) {
           case OPERATOR_VALUE : {

@@ -86,9 +86,13 @@ getValues(       outputViewType output,
     }
   }
 
+  typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
+  auto vcprop = Kokkos::common_view_alloc_prop(work);
+  auto ptr = work.data();
+
   switch (opType) {
   case OPERATOR_VALUE: {
-    const auto phis = work;
+    const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts);
     workViewType dummyView;
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
@@ -104,8 +108,9 @@ getValues(       outputViewType output,
     break;
   }
   case OPERATOR_DIV: {
-    const auto phis = Kokkos::subview( work, Kokkos::ALL(), Kokkos::ALL(), Kokkos::pair<ordinal_type,ordinal_type>(0, spaceDim));
-    const auto workView = Kokkos::subview( work, Kokkos::ALL(), Kokkos::ALL(), Kokkos::pair<ordinal_type,ordinal_type>(spaceDim, 2*spaceDim+1));
+    const viewType phis(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim);
+    ptr += card*npts*spaceDim*get_dimension_scalar(work);
+    const viewType workView(Kokkos::view_wrap(ptr, vcprop), card, npts, spaceDim+1);
 
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
     Serial<OPERATOR_GRAD>::getValues(phis, input, workView, order);
@@ -164,7 +169,7 @@ getValues( /* */ Kokkos::DynRankView<outputValueValueType,outputValueProperties.
     break;
   }
   case OPERATOR_DIV: {
-    workViewType  work(Kokkos::view_alloc("Basis_HDIV_TET_In_FEM::getValues::work", vcprop), cardinality, inputPoints.dimension(0), 2*spaceDim+1);
+    workViewType  work(Kokkos::view_alloc("Basis_HDIV_TET_In_FEM::getValues::work", vcprop), cardinality*(2*spaceDim+1), inputPoints.dimension(0));
     typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
         OPERATOR_DIV,numPtsPerEval> FunctorType;
     Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, coeffs, work) );

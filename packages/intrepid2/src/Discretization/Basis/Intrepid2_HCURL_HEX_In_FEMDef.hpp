@@ -77,20 +77,23 @@ namespace Intrepid2 {
       const auto input_y = Kokkos::subview(input, Kokkos::ALL(), range_type(1,2));
       const auto input_z = Kokkos::subview(input, Kokkos::ALL(), range_type(2,3));
 
-      const auto range_l0 = range_type(0,cardLine);
-      const auto range_b = range_type(cardLine,cardLine+cardBubble);
-      const auto range_l1 = range_type(cardLine+cardBubble, 2*cardLine+cardBubble);
-      const auto range_l2 = range_type(2*cardLine+cardBubble,3*cardLine+cardBubble);
-      const auto range_l3 = range_type(3*cardLine+cardBubble,4*cardLine+cardBubble);
-      const auto range_l4 = range_type(4*cardLine+cardBubble,5*cardLine+cardBubble);
+      const ordinal_type dim_s = get_dimension_scalar(work);
+      auto ptr0 = work.data();
+      auto ptr1 = work.data() + cardLine*npts*dim_s;
+      auto ptr2 = work.data() + 2*cardLine*npts*dim_s;
+      auto ptr3 = work.data() + 3*cardLine*npts*dim_s;   
+      
+      typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
+      auto vcprop = Kokkos::common_view_alloc_prop(work);
 
       switch (opType) {
       case OPERATOR_VALUE: {
-        auto const workLine = Kokkos::subview(work, range_l0, Kokkos::ALL());
-        auto const outputLine_A = Kokkos::subview(work, range_l1, Kokkos::ALL());
-        auto const outputLine_B = Kokkos::subview(work, range_l2, Kokkos::ALL());
-        auto const outputBubble = Kokkos::subview(work, range_b, Kokkos::ALL());
 
+        viewType workLine(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
+        viewType outputLine_A(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts);
+        viewType outputLine_B(Kokkos::view_wrap(ptr2, vcprop), cardLine, npts);
+        viewType outputBubble(Kokkos::view_wrap(ptr3, vcprop), cardBubble, npts);
+        
         // tensor product
         ordinal_type idx = 0;
         {
@@ -168,12 +171,16 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_CURL: {
-        auto const workLine = Kokkos::subview(work, range_l0, Kokkos::ALL());
-        auto const outputBubble = Kokkos::subview(work, range_b, Kokkos::ALL());
-        auto const outputLine_A = Kokkos::subview(work, range_l1, Kokkos::ALL());
-        auto const outputLine_B = Kokkos::subview(work, range_l2, Kokkos::ALL());
-        auto const outputLine_DA = Kokkos::subview(work, range_l3, Kokkos::ALL(), Kokkos::ALL());
-        auto const outputLine_DB = Kokkos::subview(work, range_l4, Kokkos::ALL(), Kokkos::ALL());
+          
+         auto ptr4 = work.data() + 4*cardLine*npts*dim_s;
+         auto ptr5 = work.data() + 5*cardLine*npts*dim_s;
+         
+        viewType workLine(Kokkos::view_wrap(ptr0, vcprop), cardLine, npts);
+        viewType outputLine_A(Kokkos::view_wrap(ptr1, vcprop), cardLine, npts);
+        viewType outputLine_B(Kokkos::view_wrap(ptr2, vcprop), cardLine, npts);
+        viewType outputLine_DA(Kokkos::view_wrap(ptr3, vcprop), cardLine, npts, 1);
+        viewType outputLine_DB(Kokkos::view_wrap(ptr4, vcprop), cardLine, npts, 1);
+        viewType outputBubble(Kokkos::view_wrap(ptr5, vcprop), cardBubble, npts);
 
         // tensor product
         ordinal_type idx = 0;
@@ -320,16 +327,16 @@ namespace Intrepid2 {
 
       switch (operatorType) {
       case OPERATOR_VALUE: {
-        const ordinal_type workSize = 3*cardLine+cardBubble;
-        workViewType  work(Kokkos::view_alloc("Basis_HCURL_HEX_In_FEM::getValues::work", vcprop), workSize, inputPoints.dimension(0));
+        auto workSize = Serial<OPERATOR_VALUE>::getWorkSizePerPoint(order);
+        workViewType  work(Kokkos::view_alloc("Basis_CURL_HEX_In_FEM::getValues::work", vcprop), workSize, inputPoints.dimension(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
             OPERATOR_VALUE,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble, work) );
         break;
       }
       case OPERATOR_CURL: {
-        const ordinal_type workSize = 5*cardLine+cardBubble;
-        workViewType  work(Kokkos::view_alloc("Basis_HCURL_HEX_In_FEM::getValues::work", vcprop), workSize, inputPoints.dimension(0));
+        auto workSize = Serial<OPERATOR_CURL>::getWorkSizePerPoint(order);
+        workViewType  work(Kokkos::view_alloc("Basis_CURL_HEX_In_FEM::getValues::work", vcprop), workSize, inputPoints.dimension(0));
         typedef Functor<outputValueViewType,inputPointViewType,vinvViewType, workViewType,
             OPERATOR_CURL,numPtsPerEval> FunctorType;
         Kokkos::parallel_for( policy, FunctorType(outputValues, inputPoints, vinvLine, vinvBubble, work) );

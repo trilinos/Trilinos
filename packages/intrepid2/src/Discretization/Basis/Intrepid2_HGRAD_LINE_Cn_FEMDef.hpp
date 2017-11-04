@@ -75,9 +75,12 @@ namespace Intrepid2 {
       const ordinal_type order = card - 1;
       const double alpha = 0.0, beta = 0.0;
 
+      typedef typename Kokkos::DynRankView<typename workViewType::value_type, typename workViewType::memory_space> viewType;
+      auto vcprop = Kokkos::common_view_alloc_prop(work);
+      
       switch (opType) {
       case OPERATOR_VALUE: {
-        auto phis = work;
+        viewType phis(Kokkos::view_wrap(work.data(), vcprop), card, npts);     
 
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta);
@@ -105,7 +108,7 @@ namespace Intrepid2 {
       case OPERATOR_Dn: {
         // dkcard is always 1 for 1D element
         const ordinal_type dkcard = 1;
-        auto phis = work;        
+        viewType phis(Kokkos::view_wrap(work.data(), vcprop), card, npts, dkcard);     
         Impl::Basis_HGRAD_LINE_Cn_FEM_JACOBI::
           Serial<opType>::getValues(phis, input, order, alpha, beta, opDn);
 

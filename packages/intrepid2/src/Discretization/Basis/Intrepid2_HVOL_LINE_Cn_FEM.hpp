@@ -95,6 +95,10 @@ namespace Intrepid2 {
                          workViewType        work,
                    const vinvViewType        vinv,
                    const ordinal_type        operatorDn = 0 );
+
+        KOKKOS_INLINE_FUNCTION
+        static ordinal_type
+        getWorkSizePerPoint(ordinal_type order) {return getPnCardinality<1>(order);}
       };
 
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -113,20 +117,24 @@ namespace Intrepid2 {
       template<typename outputValueViewType,
                typename inputPointViewType,
                typename vinvViewType,
+               typename workViewType,
                EOperator opType,
                ordinal_type numPtsEval>
       struct Functor {
               outputValueViewType _outputValues;
         const inputPointViewType  _inputPoints;
         const vinvViewType        _vinv;
+              workViewType        _work;
         const ordinal_type        _opDn;
         
         KOKKOS_INLINE_FUNCTION
         Functor(       outputValueViewType outputValues_,
                        inputPointViewType  inputPoints_,
                        vinvViewType        vinv_,
+                       workViewType        work_,
                  const ordinal_type        opDn_ = 0 )
-          : _outputValues(outputValues_), _inputPoints(inputPoints_), _vinv(vinv_), _opDn(opDn_) {}
+          : _outputValues(outputValues_), _inputPoints(inputPoints_), 
+            _vinv(vinv_), _work(work_), _opDn(opDn_) {}
         
         KOKKOS_INLINE_FUNCTION
         void operator()(const size_type iter) const {
@@ -136,24 +144,10 @@ namespace Intrepid2 {
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
-          typedef typename inputPointViewType::value_type inputValueType;
-          typedef typename inputPointViewType::pointer_type inputPointerType;
+          typename workViewType::pointer_type ptr = _work.data() + _work.dimension(0)*ptBegin*get_dimension_scalar(_work);
 
-          constexpr ordinal_type cardLine = Intrepid2::getPnCardinality<1,Parameters::MaxOrder>();
-          constexpr ordinal_type bufSize = cardLine*numPtsEval;
-          
-          //FIXME: Bad hack to estimate the size of derivatives with DFad<double> (its size is 24).
-          //       We assume to have as many derivatives as the size of the basis.
-          //       The buffer should be provided by the use or allocated dynamically in the memory pool if we go with teams
-          constexpr ordinal_type typeSizeEst = (sizeof(inputValueType) == 24) ?
-                   (1 + cardLine)*sizeof(double) :
-                   sizeof(inputValueType);
-
-          char buf[bufSize*typeSizeEst];
-
-          auto vcprop = Kokkos::common_view_alloc_prop(input);
-          Kokkos::DynRankView< inputValueType, typename inputPointViewType::memory_space > 
-            work( Kokkos::view_wrap(reinterpret_cast<inputPointerType>(buf), vcprop), bufSize/numPtsEval, numPtsEval);
+          auto vcprop = Kokkos::common_view_alloc_prop(_work);
+          workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.dimension(0));
 
           switch (opType) {
           case OPERATOR_VALUE : {

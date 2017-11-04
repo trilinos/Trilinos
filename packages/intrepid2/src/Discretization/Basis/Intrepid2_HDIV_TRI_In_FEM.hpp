@@ -109,8 +109,23 @@ public:
     static void
     getValues(       outputValueViewType outputValues,
         const inputPointViewType  inputPoints,
-              workViewType        work,
+        workViewType        work,
         const vinvViewType        vinv );
+
+    KOKKOS_INLINE_FUNCTION
+    static ordinal_type
+    getWorkSizePerPoint(ordinal_type order) {
+      auto cardinality = CardinalityHDivTri(order);
+      switch (opType) {
+      case OPERATOR_GRAD:
+      case OPERATOR_DIV:
+      case OPERATOR_D1:
+        return 5*cardinality;
+        break;
+      default:
+        return getDkCardinality<opType,2>()*cardinality;
+      }
+    }
   };
 
   template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -154,16 +169,20 @@ public:
       const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
       const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
 
+      typename workViewType::pointer_type ptr = _work.data() + _work.dimension(0)*ptBegin*get_dimension_scalar(_work);
+
+      auto vcprop = Kokkos::common_view_alloc_prop(_work);
+      workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.dimension(0));
+
+
       switch (opType) {
       case OPERATOR_VALUE : {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange, Kokkos::ALL() );
-        const auto work = Kokkos::subview( _work, Kokkos::ALL(), ptRange );
         Serial<opType>::getValues( output, input, work, _coeffs );
         break;
       }
       case OPERATOR_DIV: {
         auto output = Kokkos::subview( _outputValues, Kokkos::ALL(), ptRange);
-        const auto work = Kokkos::subview( _work, Kokkos::ALL(), ptRange, Kokkos::ALL() );
         Serial<opType>::getValues( output, input, work, _coeffs );
         break;
       }

@@ -79,6 +79,24 @@ namespace Intrepid2 {
                          workViewType        work,
                    const vinvViewType        vinvLine,
                    const vinvViewType        vinvBubble );
+                   
+        KOKKOS_INLINE_FUNCTION
+        static ordinal_type
+        getWorkSizePerPoint(ordinal_type order) {
+          switch(opType) {
+          case OPERATOR_VALUE:
+            return 3*getPnCardinality<1>(order)+getPnCardinality<1>(order-1);
+            break;
+          case OPERATOR_CURL:
+            return 5*getPnCardinality<1>(order)+getPnCardinality<1>(order-1);
+            break;
+          default: {
+            INTREPID2_TEST_FOR_ABORT( true,
+              ">>> ERROR: (Intrepid2::Basis_HCURL_HEX_In_FEM::Serial::getWorkSizePerPoint) operator is not supported" );
+            return 0;
+            }
+          }
+        }
       };
 
       template<typename ExecSpaceType, ordinal_type numPtsPerEval,
@@ -124,7 +142,11 @@ namespace Intrepid2 {
           
           const auto ptRange = Kokkos::pair<ordinal_type,ordinal_type>(ptBegin, ptEnd);
           const auto input   = Kokkos::subview( _inputPoints, ptRange, Kokkos::ALL() );
-          const auto work   = Kokkos::subview( _work, Kokkos::ALL(), ptRange );
+
+          typename workViewType::pointer_type ptr = _work.data() + _work.dimension(0)*ptBegin*get_dimension_scalar(_work);
+
+          auto vcprop = Kokkos::common_view_alloc_prop(_work);
+          workViewType  work(Kokkos::view_wrap(ptr,vcprop), (ptEnd-ptBegin)*_work.dimension(0));
 
           switch (opType) {
           case OPERATOR_VALUE : {
