@@ -268,7 +268,7 @@ int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
 
         // check values
         const scalar_type expected_dofValue = (i == j);
-        if (std::abs(extract_scalar_value(dofValue) - expected_dofValue) > tol) {
+        if (std::abs(dofValue - expected_dofValue) > tol) {
           errorFlag++;
           std::stringstream ss;
           ss << "\nValue of basis function " << i << " at (" << h_dofCoords(j,0) << ", " << h_dofCoords(j,1) << ") is " << dofValue << " but should be " << expected_dofValue << "\n";
@@ -328,12 +328,12 @@ int HDIV_QUAD_In_FEM_Test01(const bool verbose) {
         dofValue = h_basisAtDofCoords(i,j,k_ind);
 
         // check values
-        if ( i==j && std::abs( extract_scalar_value(dofValue) - 1.0 ) > tol ) {
+        if ( i==j && std::abs( dofValue - 1.0 ) > tol ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << " Basis function " << i << " does not have unit value at its node (" << dofValue <<")\n";
         }
-        if ( i!=j && std::abs( extract_scalar_value(dofValue) ) > tol ) {
+        if ( i!=j && std::abs( dofValue ) > tol ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << " Basis function " << i << " does not vanish at node " << j << "(" << dofValue <<")\n";

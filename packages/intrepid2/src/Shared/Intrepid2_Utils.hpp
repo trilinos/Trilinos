@@ -53,9 +53,7 @@
 #include "Intrepid2_Types.hpp"
 
 #include "Kokkos_Core.hpp"
-#ifdef HAVE_INTREPID2_SACADO
-  #include "Sacado_Traits.hpp"
-#endif
+
 
 namespace Intrepid2 {
 
@@ -268,14 +266,48 @@ namespace Intrepid2 {
     return (a > 0 ? a : T(-a));
   }
 
+  /**
+      \brief functions returning the scalar value.
+             for pod types, they return the input object itself.
+             of other types it returns the member function val() of the type T.
+             For Sacado Fad types it returns the scalar value.
+     */
+
   template<typename T>
   KOKKOS_FORCEINLINE_FUNCTION
-  static typename ScalarTraits<T>::scalar_type extract_scalar_value(const T& value) {
-#ifdef HAVE_INTREPID2_SACADO
-    return Sacado::Value<T>::eval(value);
-#else
-    return value;
-#endif
+  constexpr typename
+  std::enable_if< !std::is_pod<T>::value, typename ScalarTraits<T>::scalar_type >::type
+  get_scalar_value(const T& obj) {return obj.val();}
+
+  template<typename T>
+  KOKKOS_FORCEINLINE_FUNCTION
+  constexpr typename
+  std::enable_if< std::is_pod<T>::value, typename ScalarTraits<T>::scalar_type >::type
+  get_scalar_value(const T& obj){return obj;}
+
+
+  /**
+     \brief specialization of functions for pod types, returning the scalar dimension (1 for pod types) of a view
+            these functions are specialized in Sacado and they return the scalar dimension
+            (i.e. the dimension of the type w.r.t. the type associated to the pointer type).
+    */
+
+  template<typename T, typename ...P>
+  KOKKOS_INLINE_FUNCTION
+  constexpr typename
+  std::enable_if< std::is_pod<T>::value, unsigned >::type
+  dimension_scalar(const Kokkos::DynRankView<T, P...> view) {return 1;}
+
+  template<typename T, typename ...P>
+  KOKKOS_INLINE_FUNCTION
+  constexpr typename
+  std::enable_if< std::is_pod<T>::value, unsigned >::type
+  dimension_scalar(const Kokkos::View<T, P...> view) {return 1;}
+
+  template<typename T>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static ordinal_type get_dimension_scalar(const T view) {
+    return dimension_scalar(view);
   }
 
 

@@ -330,12 +330,12 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
       auto idof = quadBasis.getDofOrdinal(2,0,i);
       for(ordinal_type j=0; j<numInternalDofs; j++) {
         auto jdof = quadBasis.getDofOrdinal(2,0,j);
-        if ( idof==jdof && std::abs( extract_scalar_value(h_basisAtLattice(idof,jdof)) - 1.0 ) > tol ) {
+        if ( idof==jdof && std::abs( h_basisAtLattice(idof,jdof) - 1.0 ) > tol ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << " Basis function " << idof << " does not have unit value at its node (" << h_basisAtLattice(idof,jdof) <<")\n";
         }
-        if ( i!=j && std::abs( extract_scalar_value(h_basisAtLattice(idof,jdof)) ) > tol ) {
+        if ( i!=j && std::abs( h_basisAtLattice(idof,jdof) ) > tol ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << " Basis function " << idof << " does not vanish at node " << jdof << "\n";
@@ -348,12 +348,12 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
     // test for Kronecker property
     for (int i=0;i<basisCardinality;i++) {
       for (int j=0;j<basisCardinality;j++) {
-        if ( i==j && std::abs( extract_scalar_value(h_basisAtLattice(i,j)) - 1.0 ) > tol ) {
+        if ( i==j && std::abs( h_basisAtLattice(i,j) - 1.0 ) > tol ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << " Basis function " << i << " does not have unit value at its node (" << h_basisAtLattice(i,j) <<")\n";
         }
-        if ( i!=j && std::abs( extract_scalar_value(h_basisAtLattice(i,j)) ) > tol ) {
+        if ( i!=j && std::abs( h_basisAtLattice(i,j) ) > tol ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
           *outStream << " Basis function " << i << " does not vanish at node " << j << "\n";
@@ -621,7 +621,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
 
             // Compute offset for (F,P) container
             ordinal_type l =  j + i * numPoints;
-            if (std::abs(extract_scalar_value(vals_host(i,j)) - basisValues[l]) > tol) {
+            if (std::abs(vals_host(i,j) - basisValues[l]) > tol) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -647,7 +647,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
 
               // basisGrads is (F,P,D), compute offset:
               ordinal_type const l = k + j * spaceDim + i * spaceDim * numPoints;
-              if (std::abs(extract_scalar_value(vals_host(i,j,k)) - basisGrads[l]) > tol) {
+              if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -674,7 +674,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
 
               // basisGrads is (F,P,D), compute offset:
               const ordinal_type l = k + j * spaceDim + i * spaceDim * numPoints;
-              if (std::abs(extract_scalar_value(vals_host(i,j,k)) - basisGrads[l]) > tol) {
+              if (std::abs(vals_host(i,j,k) - basisGrads[l]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -703,7 +703,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
 
             const auto curl_value_0 = basisGrads[curl_0];
             const auto curl_value_1 =-basisGrads[curl_1];
-            if (std::abs(extract_scalar_value(vals_host(i,j,0)) - curl_value_0) > tol) {
+            if (std::abs(vals_host(i,j,0) - curl_value_0) > tol) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
               // Output the multi-index of the value where the error is:
@@ -712,7 +712,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
               *outStream << "}  computed curl component: " << vals_host(i,j,0)
                                << " but reference curl component: " << curl_value_0 << "\n";
             }
-            if (std::abs(extract_scalar_value(vals_host(i,j,1)) - curl_value_1) > tol) {
+            if (std::abs(vals_host(i,j,1) - curl_value_1) > tol) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
               // Output the multi-index of the value where the error is:
@@ -734,7 +734,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
         for (ordinal_type i = 0; i < numFields; ++i) {
           for (ordinal_type j = 0; j < numPoints; ++j) {
             for (ordinal_type k = 0; k < 1; ++k) { //D2Cardin
-              const auto val = extract_scalar_value(vals_host(i,j,k)) ;
+              const auto val = get_scalar_value(vals_host(i,j,k)) ;
               // basisD2 is (F,P,Dk), compute offset:
               const ordinal_type l = k + j * D2Cardin + i * D2Cardin * numPoints;
               if (std::isnan(val) || std::abs(val - basisD2[l]) > tol) {
@@ -744,7 +744,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
                 // Output the multi-index of the value where the error is:
                 *outStream << " At multi-index { ";
                 *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
-                *outStream << "}  computed D2 component: " << val
+                *outStream << "}  computed D2 component: " << vals_host(i,j,k)
                     << " but reference D2 component: " << basisD2[l] << "\n";
               }
             }
@@ -765,7 +765,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
 
               // basisD3 is (F,P,Dk), compute offset:
               const ordinal_type l = k + j * D3Cardin + i * D3Cardin * numPoints;
-              if (std::abs(extract_scalar_value(vals_host(i,j,k)) - basisD3[l]) > tol) {
+              if (std::abs(vals_host(i,j,k) - basisD3[l]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -793,7 +793,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
 
               // basisD4 is (F,P,Dk), compute offset:
               ordinal_type l = k + j * D4Cardin + i * D4Cardin * numPoints;
-              if (std::abs(extract_scalar_value(vals_host(i,j,k)) - basisD4[l]) > tol) {
+              if (std::abs(vals_host(i,j,k) - basisD4[l]) > tol) {
                 errorFlag++;
                 *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -829,7 +829,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
             for (ordinal_type i1 = 0; i1 < numFields; ++i1)
               for (ordinal_type i2 = 0; i2 < numPoints; ++i2)
                 for (ordinal_type i3 = 0; i3 < DkCardin; ++i3) {
-                  if (std::abs(extract_scalar_value(vals_host(i1,i2,i3))) > tol) {
+                  if (std::abs(vals_host(i1,i2,i3)) > tol) {
                     errorFlag++;
                     *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 

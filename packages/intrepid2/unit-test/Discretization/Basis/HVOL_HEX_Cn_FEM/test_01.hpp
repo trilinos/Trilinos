@@ -340,7 +340,7 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
           for (int j=0;j<numPoints;++j) {
             const scalar_type exactVal = (i == j);
             const auto val = valsHost(i,j);
-            if (std::isnan(extract_scalar_value(val)) || std::abs(val-exactVal) > tol) {
+            if (std::isnan(get_scalar_value(val)) || std::abs(val-exactVal) > tol) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
               *outStream << " Basis function at i= " << i << ", j=" << j << ": "

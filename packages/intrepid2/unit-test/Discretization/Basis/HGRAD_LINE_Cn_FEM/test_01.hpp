@@ -269,12 +269,12 @@ namespace Test {
             for (auto i=0;i<numDofs;++i) 
               for (int j=0;j<numPoints;++j) {
                 const scalar_type  exactVal = (i == j);
-                const auto val = extract_scalar_value(valsHost(i,j));
+                const auto val = get_scalar_value(valsHost(i,j));
                 if (std::isnan(val) || std::abs(val-exactVal) > tol) {
                   errorFlag++;
                   *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
                   *outStream << " Basis function at i= " << i << ", j=" << j << ": "
-                             << val << " != " << exactVal << "\n\n";
+                             << valsHost(i,j) << " != " << exactVal << "\n\n";
                 }
               }
           }
