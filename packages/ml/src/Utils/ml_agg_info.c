@@ -660,9 +660,9 @@ void ML_Aggregate_CountLocal( int N_fine, int graph_decomposition[],
     j = graph_decomposition[i];
     if( j < 0 ) {
       fprintf( stderr,
-	       "*ML*ERR* Something went wrong in buildind up the \n"
-	       "*ML*ERR* the aggregates! graph_decomposition[%d] has\n"
-	       "*ML*ERR* been setted (value = %d)\n",
+	       "*ML*ERR* Something went wrong in building up the \n"
+	       "*ML*ERR* aggregates! graph_decomposition[%d] has\n"
+	       "*ML*ERR* been set (value = %d)\n",
 	       i, j );
       exit( EXIT_FAILURE );
     }
