@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
     long double Q2 = evalQuad(fullRule);
     fullRule.normalize();
     
-    long double diff = fabs(Q1-Q2);
+    long double diff = std::abs(Q1-Q2);
 
     *outStream << "Q1 = " << Q1 << "   Q2 = " << Q2 
 	       << "   |Q1-Q2| = " << diff << "\n";
@@ -279,21 +279,21 @@ int main(int argc, char *argv[]) {
 
     *outStream << "\n\nSize of adapted rule = " << size1 
 	       << "    Size of full rule = " << size2 << "\n";
-    if (diff > TOL*fabs(Q2)||size1!=size2) {
+    if (diff > TOL*std::abs(Q2)||size1!=size2) {
       errorFlag++;
       *outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
     }
     else {
       long double sum1 = 0.0, sum2 = 0.0;
       for (int i=0; i<size1; i++) {
-	//diff = fabs(fWeights(i)-aWeights(i));
+	//diff = std::abs(fWeights(i)-aWeights(i));
 	sum1 += fWeights(i);
 	sum2 += aWeights(i);
       }
       *outStream << "Check if weights are normalized:" 
 		 << "  Adapted Rule Sum = " << sum2
 		 << "  Full Rule Sum = " << sum1 << "\n";
-      if (fabs(sum1-1.0) > TOL || fabs(sum2-1.0) > TOL) {
+      if (std::abs(sum1-1.0) > TOL || std::abs(sum2-1.0) > TOL) {
 	errorFlag++;
 	*outStream << std::right << std::setw(104) << "^^^^---FAILURE!\n";
       }

@@ -481,6 +481,7 @@ namespace Kokkos {
 
 // Copied from Sacado_ViewFactory
 template <class View, class ... ViewPack>
+KOKKOS_INLINE_FUNCTION
 unsigned dimension_scalar(const View& v, const ViewPack&... views) {
   const unsigned dim0 = dimension_scalar(v);
   const unsigned dim1 = dimension_scalar(views...);
@@ -520,12 +521,14 @@ struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFad, ValueType >
   unsigned fad_dim;
   bool is_view_type;
 
+  KOKKOS_INLINE_FUNCTION
   CommonViewAllocProp()
   : fad_dim(0) , is_view_type(false) {}
 
   // Assume all views are View or DynRankView
   // TODO If assumption is insufficient, better deduction on is_view...
   template < class View >
+  KOKKOS_INLINE_FUNCTION
   CommonViewAllocProp( const View & view )
   : fad_dim ( dimension_scalar(view) )
   {
@@ -534,6 +537,7 @@ struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFad, ValueType >
 
   // TODO If assumption is insufficient, better deduction on is_view...
   template < class View, class ... Views >
+  KOKKOS_INLINE_FUNCTION
   CommonViewAllocProp( const View & view,  const Views & ... views ) 
   : fad_dim ( dimension_scalar(view, views... ) )
   {
@@ -550,12 +554,14 @@ struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFadContiguous, Val
   unsigned fad_dim;
   bool is_view_type;
 
+  KOKKOS_INLINE_FUNCTION
   CommonViewAllocProp()
   : fad_dim(0) , is_view_type(false) {}
 
   // Assume all views are View or DynRankView
   // TODO If assumption is insufficient, better deduction on is_view...
   template < class View >
+  KOKKOS_INLINE_FUNCTION
   CommonViewAllocProp( const View & view )
   : fad_dim ( dimension_scalar(view) )
   {
@@ -564,6 +570,7 @@ struct CommonViewAllocProp< Kokkos::Impl::ViewSpecializeSacadoFadContiguous, Val
 
   // TODO If assumption is insufficient, better deduction on is_view...
   template < class View, class ... Views >
+  KOKKOS_INLINE_FUNCTION
   CommonViewAllocProp( const View & view,  const Views & ... views ) 
   : fad_dim ( dimension_scalar(view, views... ) )
   {
