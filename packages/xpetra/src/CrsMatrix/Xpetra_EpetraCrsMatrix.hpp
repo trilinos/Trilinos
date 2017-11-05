@@ -443,7 +443,7 @@ public:
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
     mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), numEntriesPerRowToAlloc.getRawPtr(), toEpetra(DynamicProfile)));
 
-    // loop over all rows and colums of local matrix and fill matrix
+    // loop over all rows and columns of local matrix and fill matrix
     for (ordinal_type r = 0; r < lclNumRows; ++r) {
       // extract data from current row r
       auto rowview = lclMatrix.row (r);
@@ -1419,7 +1419,7 @@ public:
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
     mtx_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), numEntriesPerRowToAlloc.getRawPtr(), toEpetra(DynamicProfile)));
 
-    // loop over all rows and colums of local matrix and fill matrix
+    // loop over all rows and columns of local matrix and fill matrix
     for (ordinal_type r = 0; r < lclNumRows; ++r) {
       // extract data from current row r
       auto rowview = lclMatrix.row (r);
@@ -1608,7 +1608,7 @@ public:
     // Values
     values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
   }
-  
+
   // Epetra always has global constants
   bool haveGlobalConstants() const  { return true;}
 

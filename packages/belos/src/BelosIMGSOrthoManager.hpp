@@ -683,13 +683,13 @@ namespace Belos {
 
     // check size of B
     TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
-                        "Belos::IMGSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of B" );
+                        "Belos::IMGSOrthoManager::projectAndNormalize(): Size of X must be consistent with size of B" );
     // check size of X and MX
     TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument,
                         "Belos::IMGSOrthoManager::projectAndNormalize(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX
     TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, std::invalid_argument,
-                        "Belos::IMGSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of MX" );
+                        "Belos::IMGSOrthoManager::projectAndNormalize(): Size of X must be consistent with size of MX" );
     // check feasibility
     //TEUCHOS_TEST_FOR_EXCEPTION( numbas+xc > xr, std::invalid_argument,
     //                    "Belos::IMGSOrthoManager::projectAndNormalize(): Orthogonality constraints not feasible" );
@@ -854,13 +854,13 @@ namespace Belos {
                         "Belos::IMGSOrthoManager::project(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX and Q
     TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, std::invalid_argument,
-                        "Belos::IMGSOrthoManager::project(): Size of X not consistant with MX,Q" );
+                        "Belos::IMGSOrthoManager::project(): Size of X not consistent with MX,Q" );
 
     // tally up size of all Q and check/allocate C
     int baslen = 0;
     for (int i=0; i<nq; i++) {
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument,
-                          "Belos::IMGSOrthoManager::project(): Q lengths not mutually consistant" );
+                          "Belos::IMGSOrthoManager::project(): Q lengths not mutually consistent" );
       qcs[i] = MVT::GetNumberVecs( *Q[i] );
       TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument,
                           "Belos::IMGSOrthoManager::project(): Q has less rows than columns" );
@@ -872,7 +872,7 @@ namespace Belos {
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument,
-                           "Belos::IMGSOrthoManager::project(): Size of Q not consistant with size of C" );
+                           "Belos::IMGSOrthoManager::project(): Size of Q not consistent with size of C" );
       }
     }
 
@@ -943,9 +943,9 @@ namespace Belos {
     TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument,
                         "Belos::IMGSOrthoManager::findBasis(): X must be non-empty" );
     TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
-                        "Belos::IMGSOrthoManager::findBasis(): Size of X not consistant with size of B" );
+                        "Belos::IMGSOrthoManager::findBasis(): Size of X not consistent with size of B" );
     TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument,
-                        "Belos::IMGSOrthoManager::findBasis(): Size of X not consistant with size of MX" );
+                        "Belos::IMGSOrthoManager::findBasis(): Size of X not consistent with size of MX" );
     TEUCHOS_TEST_FOR_EXCEPTION( xc > xr, std::invalid_argument,
                         "Belos::IMGSOrthoManager::findBasis(): Size of X not feasible for normalization" );
     TEUCHOS_TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, std::invalid_argument,
@@ -978,11 +978,11 @@ namespace Belos {
         MXj = Xj;
       }
 
-      Teuchos::RCP<MV> oldMXj; 
+      Teuchos::RCP<MV> oldMXj;
       if (numX > 0) {
         oldMXj = MVT::CloneCopy( *MXj );
       }
- 
+
       // Make storage for these Gram-Schmidt iterations.
       Teuchos::SerialDenseVector<int,ScalarType> product(numX);
       Teuchos::SerialDenseVector<int,ScalarType> P2(1);

@@ -502,7 +502,7 @@ namespace Belos {
     static const MagnitudeType blk_tol_fast_;
     //! Singular block detection threshold (fast).
     static const MagnitudeType sing_tol_fast_;
-    
+
     //@}
 
   private:
@@ -728,13 +728,13 @@ namespace Belos {
 
     // check size of B
     TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
-                        "Belos::ICGSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of B" );
+                        "Belos::ICGSOrthoManager::projectAndNormalize(): Size of X must be consistent with size of B" );
     // check size of X and MX
     TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument,
                         "Belos::ICGSOrthoManager::projectAndNormalize(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX
     TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, std::invalid_argument,
-                        "Belos::ICGSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of MX" );
+                        "Belos::ICGSOrthoManager::projectAndNormalize(): Size of X must be consistent with size of MX" );
     // check feasibility
     //TEUCHOS_TEST_FOR_EXCEPTION( numbas+xc > xr, std::invalid_argument,
     //                    "Belos::ICGSOrthoManager::projectAndNormalize(): Orthogonality constraints not feasible" );
@@ -900,13 +900,13 @@ namespace Belos {
                         "Belos::ICGSOrthoManager::project(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX and Q
     TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, std::invalid_argument,
-                        "Belos::ICGSOrthoManager::project(): Size of X not consistant with MX,Q" );
+                        "Belos::ICGSOrthoManager::project(): Size of X not consistent with MX,Q" );
 
     // tally up size of all Q and check/allocate C
     int baslen = 0;
     for (int i=0; i<nq; i++) {
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument,
-                          "Belos::ICGSOrthoManager::project(): Q lengths not mutually consistant" );
+                          "Belos::ICGSOrthoManager::project(): Q lengths not mutually consistent" );
       qcs[i] = MVT::GetNumberVecs( *Q[i] );
       TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument,
                           "Belos::ICGSOrthoManager::project(): Q has less rows than columns" );
@@ -918,7 +918,7 @@ namespace Belos {
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument,
-                           "Belos::ICGSOrthoManager::project(): Size of Q not consistant with size of C" );
+                           "Belos::ICGSOrthoManager::project(): Size of Q not consistent with size of C" );
       }
     }
 
@@ -991,9 +991,9 @@ namespace Belos {
     TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument,
                         "Belos::ICGSOrthoManager::findBasis(): X must be non-empty" );
     TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
-                        "Belos::ICGSOrthoManager::findBasis(): Size of X not consistant with size of B" );
+                        "Belos::ICGSOrthoManager::findBasis(): Size of X not consistent with size of B" );
     TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument,
-                        "Belos::ICGSOrthoManager::findBasis(): Size of X not consistant with size of MX" );
+                        "Belos::ICGSOrthoManager::findBasis(): Size of X not consistent with size of MX" );
     TEUCHOS_TEST_FOR_EXCEPTION( as<ptrdiff_t> (xc) > xr, std::invalid_argument,
                         "Belos::ICGSOrthoManager::findBasis(): Size of X not feasible for normalization" );
     TEUCHOS_TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, std::invalid_argument,

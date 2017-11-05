@@ -1,4 +1,4 @@
-/* 
+/*
  * @HEADER
  *
  * ***********************************************************************
@@ -77,8 +77,8 @@ int  nvals)         /* length of these two arrays */
        return ZOLTAN_FATAL;
     if (nvals == 1)
        return ZOLTAN_OK;           /* fastest way to sort 1 item is to return */
-       
-    /* find largest value (sort sometimes used for non processor lists) */   
+
+    /* find largest value (sort sometimes used for non processor lists) */
     top = vals_sort[0];
     for (i = 1; i < nvals; i++) {
        if (vals_sort[i-1] > vals_sort[i]) already_sorted = 0;
@@ -98,7 +98,7 @@ int  nvals)         /* length of these two arrays */
 
        p = store+1;
        for (i = 0; i < nvals; i++)
-          p[copy_sort[i]]++;                /* count number of occurances */
+          p[copy_sort[i]]++;                /* count number of occurrences */
 
        for (i = 1; i < top+1; i++)
           p[i] += p[i-1];                   /* compute partial sums */
@@ -113,7 +113,7 @@ int  nvals)         /* length of these two arrays */
     }
     else
        err =  ZOLTAN_MEMERR;
-       
+
     Zoltan_Multifree (__FILE__, __LINE__, 3, &copy_sort, &copy_other, &store);
     return err;
 }

@@ -3749,7 +3749,7 @@ ML
   Internal changes, output changes and bugfixes
 
   - Fixed a bug in ML_Project_Coordinates so that it works where
-    dim != numPDEs. For using auxillary aggregation for problems like linear
+    dim != numPDEs. For using auxiliary aggregation for problems like linear
     elasticity.
 
   - Fixing a memory leak in ML_Init_Aux.

@@ -322,8 +322,8 @@ public:
    * This function only intializes the spaces etc. needed to define structure
    * of the problem.  <tt>*this</tt> model object is not fully initialized at
    * this point in that <tt>evalModel()</tt> will not work yet and will thrown
-   * exceptions if called.  The function <tt>initalizeState()</tt> must be
-   * called later in order to fully initalize the model.
+   * exceptions if called.  The function <tt>initializeState()</tt> must be
+   * called later in order to fully initialize the model.
    */
   void initializeStructure(
     const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,

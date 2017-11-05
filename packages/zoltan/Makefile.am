@@ -210,7 +210,7 @@ EXTRA_DIST = config/generate-makeoptions.pl \
 
 
 ## #######################################################################
-## Tools in the auxillary directory 
+## Tools in the auxiliary directory 
 ## #######################################################################
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 

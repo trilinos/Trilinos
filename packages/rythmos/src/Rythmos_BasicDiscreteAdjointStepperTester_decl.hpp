@@ -90,7 +90,7 @@ basicDiscreteAdjointStepperTester(const RCP<ParameterList> &paramList);
  *
  * The intial condition vectors x_init and x_dot_init are taken from the
  * orginal forward problem's intial condition as is t_0.  The time t_f is
- * taken from an initalized integrator.
+ * taken from an initialized integrator.
  *
  * The multi-vector B can be chosen by the user or can be computed
  * automatically internally.  If B is not choses by the user, it will be
@@ -136,7 +136,7 @@ basicDiscreteAdjointStepperTester(const RCP<ParameterList> &paramList);
  * deficient, then the adjoint initial value calcuation at t_f gets more
  * complicated and this testing class can not handle those cases.
  */
-template<class Scalar> 
+template<class Scalar>
 class BasicDiscreteAdjointStepperTester
   : virtual public Teuchos::VerboseObject<BasicDiscreteAdjointStepperTester<Scalar> >,
     virtual public Teuchos::ParameterListAcceptorDefaultBase
@@ -194,7 +194,7 @@ public:
   //@}
 
 #endif // TEMPLATE_FRIENDS_NOT_SUPPORTED
-  
+
 
 #ifndef TEMPLATE_FRIENDS_NOT_SUPPORTED
 private:

@@ -54,7 +54,7 @@
  |  build averaged normals                                              |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::BuildNormals()
-{ 
+{
   //-------------------------------------------------------------------
   // interface needs to be complete
   if (!IsComplete())
@@ -65,7 +65,7 @@ bool MOERTEL::Interface::BuildNormals()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  
+
   //-------------------------------------------------------------------
   // send all procs not member of this interface's intra-comm out of here
   if (!lComm()) return true;
@@ -84,7 +84,7 @@ bool MOERTEL::Interface::BuildNormals()
         return false;
       }
 	}
-    
+
   //-------------------------------------------------------------------
   // build nodal normals on both sides
   std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator ncurr;
@@ -110,9 +110,9 @@ bool MOERTEL::Interface::BuildNormals()
  |  build averaged normals and make projection of nodes                 |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::Project()
-{ 
+{
   bool ok = false;
-  
+
   //-------------------------------------------------------------------
   // interface needs to be complete
   if (!IsComplete())
@@ -123,7 +123,7 @@ bool MOERTEL::Interface::Project()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  
+
   //-------------------------------------------------------------------
   // send all procs not member of this interface's intra-comm out of here
   if (!lComm()) return true;
@@ -141,7 +141,7 @@ bool MOERTEL::Interface::Project()
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         return false;
       }
-    
+
   //-------------------------------------------------------------------
   // build nodal normals on both sides
   std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator ncurr;
@@ -190,7 +190,7 @@ bool MOERTEL::Interface::Project()
  | do projection of nodes on master and slave side                      |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::ProjectNodes_NormalField()
-{ 
+{
   if (!IsComplete())
   {
 	  std::stringstream oss;
@@ -203,8 +203,8 @@ bool MOERTEL::Interface::ProjectNodes_NormalField()
   if (!lComm()) return true;
 
   // project the slave nodes onto the master surface along the slave normal field
-  ProjectNodes_SlavetoMaster_NormalField();  
-  
+  ProjectNodes_SlavetoMaster_NormalField();
+
   // project the master nodes ontp the slave surface along slave's normal field
   ProjectNodes_MastertoSlave_NormalField();
 
@@ -215,7 +215,7 @@ bool MOERTEL::Interface::ProjectNodes_NormalField()
  | project the slave nodes onto master segments along slave normal field|
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
-{ 
+{
   if (!IsComplete())
   {
 	  std::stringstream oss;
@@ -225,7 +225,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
 	throw ReportError(oss);
   }
   if (!lComm()) return true;
-  
+
   int mside = MortarSide();
   int sside = OtherSide(mside);
 
@@ -236,18 +236,18 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
 	Teuchos::RCP<MOERTEL::Node> snode = scurr->second;
     if (NodePID(snode->Id()) != lComm()->MyPID())
       continue;
-    
+
     const double* sx = snode->X();
     double mindist = 1.0e+20;
 	Teuchos::RCP<MOERTEL::Node> closenode = Teuchos::null;
-    
+
     // find a node on the master side, that is closest to me
 	std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator mcurr;
     for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
     {
 	  Teuchos::RCP<MOERTEL::Node> mnode = mcurr->second;
       const double* mx = mnode->X();
-      
+
       // build distance | mnode->X() - snode->X() |
       double dist = 0.0;
       for (int i=0; i<3; ++i) dist += (mx[i]-sx[i])*(mx[i]-sx[i]);
@@ -263,7 +263,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     {
 	  std::stringstream oss;
       oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
-           << "***ERR*** Weired: for slave node " << snode->Id() << " no closest master node found\n"
+           << "***ERR*** Weird: for slave node " << snode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
     }
@@ -271,18 +271,18 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
 #if 0
     std::cout << "snode     " << *snode;
     std::cout << "closenode " << *closenode;
-#endif    
+#endif
 
     // get segments attached to closest node cnode
     int  nseg = closenode->Nseg();
-    MOERTEL::Segment** segs = closenode->Segments(); 
-    
+    MOERTEL::Segment** segs = closenode->Segments();
+
     // create a projection-iterator
     MOERTEL::Projector projector(IsOneDimensional(),OutLevel());
 
-    // finding a good geometric projection is somehow 
+    // finding a good geometric projection is somehow
     // critical. We work with some tolerance here and pick the 'best'
-    // out of all acceptable projections made    
+    // out of all acceptable projections made
     // loop these segments and project onto them along snode's normal vector
     double bestdist[2];
 	double gap, bestgap = 0.0;
@@ -294,12 +294,12 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
       // project the slave node onto that master segment
       double xi[2]; xi[0] = xi[1] = 0.0;
       projector.ProjectNodetoSegment_NodalNormal(*snode, *(segs[i]), xi, gap);
-      
+
       // check whether xi is better then previous projections
       if (IsOneDimensional()) // 2D case
       {
-        if (abs(xi[0]) < abs(bestdist[0])) 
-        { 
+        if (abs(xi[0]) < abs(bestdist[0]))
+        {
             bestdist[0] = xi[0];
             bestdist[1] = xi[1];
             bestseg = segs[i];
@@ -335,7 +335,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
         }
       }
     } // for (int i=0; i<nseg; ++i)
-    
+
     // check whether the bestseg and bestdist are inside the segment
     // (with some tolerance of 20%)
     bool ok = false;
@@ -345,15 +345,15 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     }
     else
     {
-      if (bestdist[0]<=1.+tol && bestdist[1]<=abs(1.-bestdist[0])+tol && 
-          bestdist[0]>=0.-tol && bestdist[1]>=0.-tol ) 
+      if (bestdist[0]<=1.+tol && bestdist[1]<=abs(1.-bestdist[0])+tol &&
+          bestdist[0]>=0.-tol && bestdist[1]>=0.-tol )
         ok = true;
     }
-    
+
     if (ok)  // the projection is good
     {
       // create a projected node and store it in snode
-      MOERTEL::ProjectedNode* pnode 
+      MOERTEL::ProjectedNode* pnode
         = new MOERTEL::ProjectedNode(*snode,bestdist,bestseg);
       snode->SetProjectedNode(pnode);
 	  snode->SetGap(bestgap);
@@ -366,7 +366,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     }
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   lComm()->Barrier();
-  
+
   // loop all slave nodes again and make the projections redundant
   std::vector<double> bcast(4*rnode_[sside].size());
   for (int proc=0; proc<lComm()->NumProc(); ++proc)
@@ -381,10 +381,10 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
 		Teuchos::RCP<MOERTEL::ProjectedNode> pnode = snode->GetProjectedNode();
         if (pnode==Teuchos::null) continue; // this node does not have a projection
         const double* xi = pnode->Xi();
-        bcast[blength] = (double)pnode->Id();            
+        bcast[blength] = (double)pnode->Id();
         ++blength;
         if (pnode->Segment())
-          bcast[blength] = (double)pnode->Segment()->Id(); 
+          bcast[blength] = (double)pnode->Segment()->Id();
         else
           bcast[blength] = -0.1; // indicating this node does not have projection but lagrange multipliers
         ++blength;
@@ -394,12 +394,12 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
         ++blength;
         bcast[blength] = pnode->Gap();
         ++blength;
-      } 
+      }
       if (blength > (int)(4*rnode_[sside].size()))
       {
 		std::stringstream oss;
         oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField:\n"
-             << "***ERR*** Overflow in communication buffer occured\n"
+             << "***ERR*** Overflow in communication buffer occurred\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
@@ -450,22 +450,22 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
   // of the interface so not all slave nodes have a projection.
   // For those slave nodes without a projection attached to a slave segment
   // which overlaps with the master side, Lagrange multipliers have to be
-  // introduced. This is done by checking all nodes without a projection 
+  // introduced. This is done by checking all nodes without a projection
   // whether they are attached to some slave segment on which another node
-  // HAS a projection. If this case is found, a pseudo ProjectedNode is 
+  // HAS a projection. If this case is found, a pseudo ProjectedNode is
   // introduced for that node.
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
 	Teuchos::RCP<MOERTEL::Node> snode = scurr->second;
-    
+
     // don't do anything on nodes that already have a projection
     if (snode->GetProjectedNode() != Teuchos::null)
       continue;
 
-    // get segments adjacent to this node  
+    // get segments adjacent to this node
     int nseg             = snode->Nseg();
     MOERTEL::Segment** segs = snode->Segments();
-    
+
     // loop segments and check for other nodes with projection
     bool foundit = false;
     for (int i=0; i<nseg; ++i)
@@ -481,11 +481,11 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
           }
       if (foundit) break;
     }
-    
+
     if (foundit)
     {
 #if 1
-      std::cout << "Node without projection:\n" << *snode;        
+      std::cout << "Node without projection:\n" << *snode;
       std::cout << "...get's lagrange multipliers\n\n";
 #endif
       MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*snode,NULL,NULL);
@@ -493,7 +493,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
 	  snode->SetGap(0.);
     }
   } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
-#endif  
+#endif
 
   return true;
 }
@@ -503,7 +503,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
  | project nodes master to slave along slave cont. normal field         |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
-{ 
+{
   if (!IsComplete())
   {
 	std::stringstream oss;
@@ -513,7 +513,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
 	throw ReportError(oss);
   }
   if (!lComm()) return true;
-  
+
   int mside = MortarSide();
   int sside = OtherSide(mside);
 
@@ -524,18 +524,18 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
 	Teuchos::RCP<MOERTEL::Node> mnode = mcurr->second;
     if (NodePID(mnode->Id()) != lComm()->MyPID())
       continue;
-    
+
     const double* mx = mnode->X();
     double mindist = 1.0e+20;
 	Teuchos::RCP<MOERTEL::Node> closenode = Teuchos::null;
-    
+
     // find a node on the slave side that is closest to me
 	std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator scurr;
     for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
     {
 	  Teuchos::RCP<MOERTEL::Node> snode = scurr->second;
       const double* sx = snode->X();
-      
+
       // build distance | snode->X() - mnode->X() |
       double dist = 0.0;
       for (int i=0; i<3; ++i) dist += (mx[i]-sx[i])*(mx[i]-sx[i]);
@@ -545,12 +545,12 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
         mindist = dist;
         closenode = snode;
       }
-    } 
+    }
     if (closenode == Teuchos::null)
     {
 	  std::stringstream oss;
       oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
-           << "***ERR*** Weired: for master node " << mnode->Id() << " no closest master node found\n"
+           << "***ERR*** Weird: for master node " << mnode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
     }
@@ -558,15 +558,15 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
 #if 0
     std::cout << "snode     " << *mnode;
     std::cout << "closenode " << *closenode;
-#endif    
-    
+#endif
+
     // get segments attached to closest node closenode
     int  nseg = closenode->Nseg();
-    MOERTEL::Segment** segs = closenode->Segments(); 
-    
+    MOERTEL::Segment** segs = closenode->Segments();
+
     // create a projection operator
     MOERTEL::Projector projector(IsOneDimensional(),OutLevel());
-    
+
     // loop these segments and find best projection
     double bestdist[2];
     const double tol = 0.2;
@@ -578,12 +578,12 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
       // project the master node on the slave segment along the segments interpolated normal field
       double xi[2]; xi[0] = xi[1] = 0.0;
       projector.ProjectNodetoSegment_SegmentNormal(*mnode,*(segs[i]),xi,gap);
-      
+
       // check whether xi is better then previous projections
       if (IsOneDimensional())
       {
-        if (abs(xi[0]) < abs(bestdist[0])) 
-	{ 
+        if (abs(xi[0]) < abs(bestdist[0]))
+	{
 	  bestdist[0] = xi[0];
 	  bestdist[1] = xi[1];
 	  bestseg = segs[i];
@@ -619,7 +619,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
         }
       }
     } // for (int i=0; i<nseg; ++i)
-    
+
     // check whether the bestseg/bestdist are inside that segment
     // (with some tolerance of 20%)
     bool ok = false;
@@ -630,10 +630,10 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
     else
     {
       if (bestdist[0]<=1.+tol && bestdist[1]<=abs(1.-bestdist[0])+tol &&
-          bestdist[0]>=0.-tol && bestdist[1]>=0.-tol) 
+          bestdist[0]>=0.-tol && bestdist[1]>=0.-tol)
             ok = true;
     }
-    
+
     if (ok) // the projection is good
     {
       // build the interpolated normal and overwrite the mnode normal with -n
@@ -705,7 +705,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
       {
 		std::stringstream oss;
         oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField:\n"
-             << "***ERR*** Overflow in communication buffer occured\n"
+             << "***ERR*** Overflow in communication buffer occurred\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
@@ -719,7 +719,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
       {
         int     nid = (int)bcast[i];  ++i;
         double  sid =      bcast[i];  ++i;
-        double* xi  =      &bcast[i]; ++i; ++i; 
+        double* xi  =      &bcast[i]; ++i; ++i;
         double* n   =      &bcast[i]; ++i; ++i; ++i;
 		double  gap =      bcast[i];  ++i;
 		Teuchos::RCP<MOERTEL::Node> mnode = GetNodeView(nid);
@@ -758,7 +758,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
  | do projection of nodes on master and slave side                      |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::ProjectNodes_Orthogonal()
-{ 
+{
   if (!IsComplete())
   {
 	std::stringstream oss;
@@ -773,8 +773,8 @@ bool MOERTEL::Interface::ProjectNodes_Orthogonal()
   ProjectNodes_MastertoSlave_Orthogonal();
 
   // project the slave nodes onto the master surface orthogonal to adjacent slave segment
-  ProjectNodes_SlavetoMaster_Orthogonal();  
-  
+  ProjectNodes_SlavetoMaster_Orthogonal();
+
   return true;
 }
 
@@ -782,7 +782,7 @@ bool MOERTEL::Interface::ProjectNodes_Orthogonal()
  | project nodes master to slave along slave orthogonal         |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
-{ 
+{
   if (!IsComplete())
   {
 	std::stringstream oss;
@@ -792,7 +792,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
 	throw ReportError(oss);
   }
   if (!lComm()) return true;
-  
+
   int mside = MortarSide();
   int sside = OtherSide(mside);
 
@@ -803,18 +803,18 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
 	Teuchos::RCP<MOERTEL::Node> mnode = mcurr->second;
     if (NodePID(mnode->Id()) != lComm()->MyPID())
       continue;
-      
+
     const double* mx = mnode->X();
     double mindist = 1.0e+20;
 	Teuchos::RCP<MOERTEL::Node> closenode = Teuchos::null;
-    
+
     // find a node on the slave side that is closest to me
 	std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator scurr;
     for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
     {
 	  Teuchos::RCP<MOERTEL::Node> snode = scurr->second;
       const double* sx = snode->X();
-      
+
       // build distance | snode->X() - mnode->X() |
       double dist = 0.0;
       for (int i=0; i<3; ++i) dist += (mx[i]-sx[i])*(mx[i]-sx[i]);
@@ -824,12 +824,12 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
         mindist = dist;
         closenode = snode;
       }
-    } 
+    }
     if (closenode == Teuchos::null)
     {
 	  std::stringstream oss;
       oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
-           << "***ERR*** Weired: for master node " << mnode->Id() << " no closest master node found\n"
+           << "***ERR*** Weird: for master node " << mnode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
     }
@@ -837,11 +837,11 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
 
     // get segments attached to closest node closenode
     int  nseg = closenode->Nseg();
-    MOERTEL::Segment** segs = closenode->Segments(); 
-    
+    MOERTEL::Segment** segs = closenode->Segments();
+
     // create a projection operator
     MOERTEL::Projector projector(IsOneDimensional(),OutLevel());
-    
+
     // loop these segments and find best projection
     double bestdist[2];
 	double bestgap = 0.0, gap;
@@ -852,11 +852,11 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
       // project the master node orthogonally on the slave segment
       double xi[2]; xi[0] = xi[1] = 0.0;
       projector.ProjectNodetoSegment_SegmentOrthogonal(*mnode,*(segs[i]),xi,gap);
-      
+
       // check whether xi is better than previous projection
       if (IsOneDimensional())
       {
-        if (abs(xi[0]) < abs(bestdist[0])) 
+        if (abs(xi[0]) < abs(bestdist[0]))
         {
             bestdist[0] = xi[0];
             bestdist[1] = xi[1];
@@ -872,14 +872,14 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
-      
+
     } // for (int i=0; i<nseg; ++i)
-      
+
     // check whether this best projection is good
     bool ok = false;
     if (IsOneDimensional())
     {
-      if (abs(bestdist[0]) < 1.01) 
+      if (abs(bestdist[0]) < 1.01)
         ok = true;
     }
     else
@@ -890,15 +890,15 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
     }
-    
+
     if (ok) // the projection is good
     {
       // create a projected node and store it in mnode
-      MOERTEL::ProjectedNode* pnode = 
+      MOERTEL::ProjectedNode* pnode =
         new MOERTEL::ProjectedNode(*mnode,bestdist,bestseg);
       mnode->SetProjectedNode(pnode);
 	  mnode->SetGap(bestgap);
-    } 
+    }
     else // this mnode does not have a valid projection
     {
       if (OutLevel()>6)
@@ -937,7 +937,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
       {
 		  std::stringstream oss;
         oss << "***ERR*** MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal:\n"
-             << "***ERR*** Overflow in communication buffer occured\n"
+             << "***ERR*** Overflow in communication buffer occurred\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
       }
@@ -951,7 +951,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
       {
         int     nid = (int)bcast[i];  ++i;
         int     sid = (int)bcast[i];  ++i;
-        double* xi  =      &bcast[i]; ++i; ++i; 
+        double* xi  =      &bcast[i]; ++i; ++i;
 		double  gap =      bcast[i];  ++i;
 		Teuchos::RCP<MOERTEL::Node> mnode = GetNodeView(nid);
 		Teuchos::RCP<MOERTEL::Segment> seg = GetSegmentView(sid);
@@ -996,7 +996,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 	throw ReportError(oss);
   }
   if (!lComm()) return true;
-  
+
   int mside = MortarSide();
   int sside = OtherSide(mside);
 
@@ -1008,22 +1008,22 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 
 #if 0
     std::cout << "now projecting\n " << *snode;
-#endif    
-    
+#endif
+
     if (NodePID(snode->Id()) != lComm()->MyPID())
       continue;
-    
+
     const double* sx = snode->X();
     double mindist = 1.0e+20;
 	Teuchos::RCP<MOERTEL::Node> closenode = Teuchos::null;
-    
+
     // find a node on the master side, that is closest to me
 	std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator mcurr;
     for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
     {
 	  Teuchos::RCP<MOERTEL::Node> mnode = mcurr->second;
       const double* mx = mnode->X();
-      
+
       // build distance | mnode->X() - snode->X() |
       double dist = 0.0;
       for (int i=0; i<3; ++i) dist += (mx[i]-sx[i])*(mx[i]-sx[i]);
@@ -1039,21 +1039,21 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     {
 	  std::stringstream oss;
       oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
-           << "***ERR*** Weired: for slave node " << snode->Id() << " no closest master node found\n"
+           << "***ERR*** Weird: for slave node " << snode->Id() << " no closest master node found\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 		throw ReportError(oss);
     }
 
     // get segments attached to closest node cnode
     int  nmseg = closenode->Nseg();
-    MOERTEL::Segment** msegs = closenode->Segments(); 
-    
+    MOERTEL::Segment** msegs = closenode->Segments();
+
     // create a projection-iterator
     MOERTEL::Projector projector(IsOneDimensional(),OutLevel());
 
     // loop segments and find all projections onto them
     int nsseg = snode->Nseg();
-    MOERTEL::Segment** ssegs = snode->Segments(); 
+    MOERTEL::Segment** ssegs = snode->Segments();
     for (int i=0; i<nmseg; ++i)
     {
       // loop all segments that are adjacent to the slave node
@@ -1063,7 +1063,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
         double xi[2]; xi[0] = xi[1] = 0.0;
 		double gap;
         projector.ProjectNodetoSegment_Orthogonal_to_Slave(*snode,*(msegs[i]),xi,gap,*(ssegs[j]));
-        
+
         // check whether this projection is good
         bool ok = false;
         if (IsOneDimensional())
@@ -1079,11 +1079,11 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 			throw ReportError(oss);
         }
-        
+
         if (ok) // the projection is good
         {
           // create a projected node and store it in snode
-          MOERTEL::ProjectedNode* pnode = 
+          MOERTEL::ProjectedNode* pnode =
             new MOERTEL::ProjectedNode(*snode,xi,msegs[i],ssegs[j]->Id());
           snode->SetProjectedNode(pnode);
 		  snode->SetGap(gap);
@@ -1091,11 +1091,11 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
           std::cout << " snode id: " << pnode->Id()
                << " projects on mseg: " << msegs[i]->Id()
                << " orth to sseg " << ssegs[j]->Id() << std::endl;
-#endif          
+#endif
         }
       } // for (int j=0; j<nsseg; ++j)
     } // for (int i=0; i<nmseg; ++i)
-  } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)  
+  } // for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
 
 
 
@@ -1113,7 +1113,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 		  Teuchos::RCP<MOERTEL::Node> snode = scurr->second;
           if (proc != NodePID(snode->Id())) continue; // cannot have a projection on a node i don't own
           int npnode=0;
-		  Teuchos::RCP<MOERTEL::ProjectedNode>* pnode = snode->GetProjectedNode(npnode);        
+		  Teuchos::RCP<MOERTEL::ProjectedNode>* pnode = snode->GetProjectedNode(npnode);
           if (!pnode) continue; // no projection on this one
           bcast[blength] = (double)snode->Id();
           ++blength;
@@ -1133,23 +1133,23 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
             bcast[blength] = pnode[j]->Gap();
             ++blength;
           }
-          if ((int)bcast.size() < blength+20) 
+          if ((int)bcast.size() < blength+20)
             bcast.resize(bcast.size()+40);
         } // for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
         if (blength>=(int)bcast.size())
         {
 		  std::stringstream oss;
           oss << "***ERR*** MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal:\n"
-               << "***ERR*** Overflow in communication buffer occured\n"
+               << "***ERR*** Overflow in communication buffer occurred\n"
                << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
 			throw ReportError(oss);
         }
       } // if (proc==lComm()->MyPID())
-      
+
       lComm()->Broadcast(&blength,1,proc);
       if (proc!=lComm()->MyPID()) bcast.resize(blength);
       lComm()->Broadcast(&bcast[0],blength,proc);
-      
+
       if (proc!=lComm()->MyPID())
       {
         int i;
@@ -1189,9 +1189,9 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
   // of the interface so not all slave nodes have a projection.
   // For those slave nodes without a projection attached to a slave segment
   // which overlaps with the master side, Lagrange multipliers have to be
-  // introduced. This is done by checking all nodes without a projection 
+  // introduced. This is done by checking all nodes without a projection
   // whether they are attached to some slave segment on which another node
-  // HAS a projection. If this case is found, a pseudo ProjectedNode is 
+  // HAS a projection. If this case is found, a pseudo ProjectedNode is
   // introduced for that node.
   for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
   {
@@ -1202,7 +1202,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     if (snode->GetProjectedNode() != Teuchos::null)
       continue;
 
-    // get segments adjacent to this node  
+    // get segments adjacent to this node
     int nseg             = snode->Nseg();
     MOERTEL::Segment** segs = snode->Segments();
     // loop segments and check for other nodes with projection
@@ -1223,7 +1223,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     if (foundit)
     {
 #if 0
-      std::cout << "Node without projection:\n" << *snode;        
+      std::cout << "Node without projection:\n" << *snode;
       std::cout << "...get's lagrange multipliers\n\n";
 #endif
       MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*snode,NULL,NULL);
@@ -1234,5 +1234,5 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
 #endif
 
 
-  return true; 
+  return true;
 }

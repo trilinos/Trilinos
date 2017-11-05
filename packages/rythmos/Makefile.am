@@ -79,7 +79,7 @@ config/generate-makeoptions.pl		bootstrap
 #       could get rid of these.
 #
 ## #######################################################################
-## Tools in the auxillary directory 
+## Tools in the auxiliary directory 
 ## #######################################################################
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 #

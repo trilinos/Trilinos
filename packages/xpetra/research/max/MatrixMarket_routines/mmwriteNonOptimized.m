@@ -2,16 +2,16 @@ function [ err ] = mmwriteNonOptimized(filename,A,comment,field,precision)
 %
 % Function: mmwrite(filename,A,comment,field,precision)
 %
-%    Writes the sparse or dense matrix A to a Matrix Market (MM) 
+%    Writes the sparse or dense matrix A to a Matrix Market (MM)
 %    formatted file.
 %
-% Required arguments: 
+% Required arguments:
 %
 %                 filename  -  destination file
 %
 %                 A         -  sparse or full matrix
 %
-% Optional arguments: 
+% Optional arguments:
 %
 %                 comment   -  matrix of comments to prepend to
 %                              the MM file.  To build a comment matrix,
@@ -31,19 +31,19 @@ function [ err ] = mmwriteNonOptimized(filename,A,comment,field,precision)
 %                              'pattern'
 %                              If ommitted, data will determine type.
 %
-%                 precision -  number of digits to display for real 
+%                 precision -  number of digits to display for real
 %                              or complex values
 %                              If ommitted, full working precision is used.
 %
 
-if ( nargin == 5) 
+if ( nargin == 5)
   precision = 16;
-elseif ( nargin == 4) 
+elseif ( nargin == 4)
   precision = 16;
-elseif ( nargin == 3) 
+elseif ( nargin == 3)
   mattype = 'real'; % placeholder, will check after FIND-ing A
   precision = 16;
-elseif ( nargin == 2) 
+elseif ( nargin == 2)
   comment = '';
   % Check whether there is an imaginary part:
   mattype = 'real'; % placeholder, will check after FIND-ing A
@@ -63,20 +63,20 @@ if ( issparse(A) )
 
   [I,J,V] = find(A);
   if ( sum(abs(imag(nonzeros(V)))) > 0 )
-    Vreal = 0; 
-  else 
-    Vreal = 1; 
+    Vreal = 0;
+  else
+    Vreal = 1;
   end
 
   if ( ~ strcmp(mattype,'pattern') & Vreal )
-    mattype = 'real'; 
+    mattype = 'real';
   elseif ( ~ strcmp(mattype,'pattern') )
     mattype = 'complex';
   end
 %
 % Determine symmetry:
 %
-  
+
     symm = 'general';
     issymm = 0;
     NZ = length(V);
@@ -110,7 +110,7 @@ if ( issparse(A) )
      for i=1:NZ
         fprintf(mmfile,'%d %d\n',I(i),J(i));
      end;
-  else  
+  else
      err = -1;
      disp('Unsupported mattype:')
      mattype
@@ -119,9 +119,9 @@ if ( issparse(A) )
 %%%%%%%%%%%%%       This part for dense matrices      %%%%%%%%%%%%%%%%
 else
   if ( sum(abs(imag(nonzeros(A)))) > 0 )
-    Areal = 0; 
-  else 
-    Areal = 1; 
+    Areal = 0;
+  else
+    Areal = 1;
   end
   if ( ~strcmp(mattype,'pattern') & Areal )
     mattype = 'real';
@@ -131,7 +131,7 @@ else
 %
 % Determine symmetry:
 %
-  
+
     issymm = 0;
     symm = 'general';
 
@@ -149,7 +149,7 @@ else
   realformat = sprintf('%% .%dg\n', precision);
   if ( ~ strcmp(symm,'general') )
      rowloop = 'j';
-  else 
+  else
      rowloop = '1';
   end
   if ( strcmp(mattype,'real') )
@@ -166,7 +166,7 @@ else
      end
   elseif ( strcmp(mattype,'pattern') )
      err = -2
-     disp('Pattern type inconsistant with dense matrix')
+     disp('Pattern type inconsistent with dense matrix')
   else
      err = -2
      disp('Unknown matrix type:')

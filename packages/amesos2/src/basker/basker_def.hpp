@@ -209,7 +209,7 @@ namespace Basker{
     A->col_ptr = col_ptr;
     A->row_idx = row_idx;
     A->val = val;
-    /*End initalize A*/
+    /*End initialize A*/
 
     /*Creating space for L and U*/
     L->nrow = nrow;

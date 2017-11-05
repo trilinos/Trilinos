@@ -26,7 +26,7 @@
 # ************************************************************************
 #
 #  The only change that I made to change this from dscpack to dscpack
-#  was to replace the single occurence of dscpack with dscpack
+#  was to replace the single occurrence of dscpack with dscpack
 #  I also added HAVE_AMESOS_DSCPACK to Makefile.am in this directory.
 #
 ## NOTE: Those wishing to cusomize this script to run test exe's

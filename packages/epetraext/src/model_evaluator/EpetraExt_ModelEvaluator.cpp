@@ -52,7 +52,7 @@ namespace EpetraExt {
 
 
 ModelEvaluator::InArgs::InArgs()
-  :modelEvalDescription_("WARNING!  THIS INARGS OBJECT IS UNINITALIZED!")
+  :modelEvalDescription_("WARNING!  THIS INARGS OBJECT IS UNINITIALIZED!")
 {
   std::fill_n(&supports_[0],NUM_E_IN_ARGS_MEMBERS,false);
   t_     = 0.0;
@@ -153,7 +153,7 @@ void ModelEvaluator::InArgs::assert_l(int l) const
 
 
 ModelEvaluator::OutArgs::OutArgs()
-  :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!"),
+  :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITIALIZED!"),
   isFailed_( false )
 {
   std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false);

@@ -71,7 +71,7 @@ public:
   // Destructor
   ~Epetra_NumPySerialDenseMatrix();
 
-  // Overridden Epetra_SerialDenseMatrix methods.  These are overriden
+  // Overridden Epetra_SerialDenseMatrix methods.  These are overridden
   // for one of two reasons: (1) to provide a more python-like
   // signature, or (2) to maintain synchronization between the
   // Epetra_SerialDenseMatrix and the numpy array.

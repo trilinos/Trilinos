@@ -9,7 +9,7 @@ import sys
 #
 #   where Filename is an ML output file containing performance numbers
 #         NumProcs is the number of processors used to generate the output
-#         Counter  indicates which one in the sequence of scaling this 
+#         Counter  indicates which one in the sequence of scaling this
 #         file corresponds to. That is, GrepTimings is normally used
 #         repeatedly on a series of files. For the first file, Counter is
 #         1, and the second file it is 2, etc.
@@ -48,11 +48,11 @@ class StreamEdit(list):
       where the above commands are interpreted as
          ['remove','xxx'] : remove all lines in the file which contain 'xxx'.
          ['grep'  ,'xxx'] : keep all lines in the file which contain 'xxx'.
-         ['sed'  , ['aaa','bbb',i]]: in each line replace the first i 
+         ['sed'  , ['aaa','bbb',i]]: in each line replace the first i
                                      instances of 'aaa' with 'bbb'.
 
        Note: 'aaa' corresponds to a regular expression which means
-       that ['sed',['(?P<day>.ain)','o\g<day>',2]] when applied to 
+       that ['sed',['(?P<day>.ain)','o\g<day>',2]] when applied to
        the string 'the rain in spain' would produce 'the orain in sopain'
 
    """
@@ -62,14 +62,14 @@ class StreamEdit(list):
             if (type(object[1]) is str):
                self.append(object)
             else:
-               print "add(['",object[0],"',xxx]): xxx must be a string" 
+               print "add(['",object[0],"',xxx]): xxx must be a string"
                print "            : xxx = ", object[1]
          elif (object[0] == 'sed'):
             t= object[1]
             if (type(t) is list) and (len(t) == 3) and (type(t[2]) is int) and \
                (type(t[0]) is str) and (type(t[1]) is str):
                      self.append(object)
-            else: 
+            else:
                print "add(['sed',xxx]): xxx must be a list of length 3 with"
                print "                : the first two elements as strings and"
                print "                : the last element as an integer"
@@ -109,7 +109,7 @@ class StreamEdit(list):
 def mysed(pattern,replacement,filein,fileout=sys.stdout):
    """
       Simple version of sed. Go through each line in the file
-      'filein'. Find the first occurance in each line of the 
+      'filein'. Find the first occurrence in each line of the
       regular expression given by 'pattern' and replace it with
       'replacement'. If 4th argument not given, put the output
       on stdout. Otherwise, open the file given by the 4th
@@ -129,7 +129,7 @@ def mysed(pattern,replacement,filein,fileout=sys.stdout):
 def mygrep(pattern,filein,fileout=sys.stdout):
    """
       Simple version of grep. Go through each line in the file
-      'filein'. Print each line which contains the regular expression 
+      'filein'. Print each line which contains the regular expression
       given by 'pattern'.  If 4th argument not given, put the output
       on stdout. Otherwise, open the file given by the 4th
       argument and put the output there.
@@ -149,7 +149,7 @@ def mygrep(pattern,filein,fileout=sys.stdout):
 def invgrep(pattern,filein,fileout=sys.stdout):
    """
       Simple version of grep -v. Go through each line in the file
-      'filein'. Print each line which DOES NOT contains the regular expression 
+      'filein'. Print each line which DOES NOT contains the regular expression
       given by 'pattern'.  If 4th argument not given, put the output
       on stdout. Otherwise, open the file given by the 4th
       argument and put the output there.
@@ -167,7 +167,7 @@ def invgrep(pattern,filein,fileout=sys.stdout):
 
 
 print 'Proc('+args[0]+') = '+args[1]+';'
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Amat_.*apply\+comm'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'min'])
@@ -175,7 +175,7 @@ q.add(['sed'   ,['Amat_' , 'AvMin'         ,1]])
 q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
 q.add(['sed'   ,['$'     , ';'             ,1]])
 q.execute(args[2])
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Amat_.*apply\+comm'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'max'])
@@ -184,7 +184,7 @@ q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
 q.add(['sed'   ,['$'     , ';'             ,1]])
 q.execute(args[2])
 #
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Rmat_.*apply\+comm'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'min'])
@@ -193,7 +193,7 @@ q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
 q.add(['sed'   ,['$'     , ';'             ,1]])
 q.execute(args[2])
 #
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Rmat_.*apply\+comm'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'max'])
@@ -202,7 +202,7 @@ q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
 q.add(['sed'   ,['$'     , ';'             ,1]])
 q.execute(args[2])
 #
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Pmat_.*apply\+comm'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'min'])
@@ -211,7 +211,7 @@ q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
 q.add(['sed'   ,['$'     , ';'             ,1]])
 q.execute(args[2])
 #
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Pmat_.*apply\+comm'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'max'])
@@ -220,7 +220,7 @@ q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
 q.add(['sed'   ,['$'     , ';'             ,1]])
 q.execute(args[2])
 #
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Amat_.*exch bdry time'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'min'])
@@ -229,7 +229,7 @@ q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
 q.add(['sed'   ,['$'     , ';'             ,1]])
 q.execute(args[2])
 #
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Amat_.*exch bdry time'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'max'])
@@ -238,7 +238,7 @@ q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
 q.add(['sed'   ,['$'     , ';'             ,1]])
 q.execute(args[2])
 #
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Rmat_.*exch bdry time'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'min'])
@@ -247,7 +247,7 @@ q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
 q.add(['sed'   ,['$'     , ';'             ,1]])
 q.execute(args[2])
 #
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Rmat_.*exch bdry time'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'max'])
@@ -256,7 +256,7 @@ q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
 q.add(['sed'   ,['$'     , ';'             ,1]])
 q.execute(args[2])
 #
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Pmat_.*exch bdry time'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'min'])
@@ -265,7 +265,7 @@ q.add(['sed'   ,[':.*='  , '('+args[0]+')=',1]])
 q.add(['sed'   ,['$'     , ';'             ,1]])
 q.execute(args[2])
 #
-q=StreamEdit(); 
+q=StreamEdit();
 q.add(['grep'  ,'Pmat_.*exch bdry time'])
 q.add(['remove','artition'])
 q.add(['grep'  ,'max'])

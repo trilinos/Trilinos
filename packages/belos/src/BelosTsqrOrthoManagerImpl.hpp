@@ -972,7 +972,7 @@ namespace Belos {
     // allocate Q_ until we have some X, so we need a multivector as
     // the "prototype.")
     //
-    // NOTE (mfh 11 Jan 2011) We only increase the number of columsn
+    // NOTE (mfh 11 Jan 2011) We only increase the number of columnsn
     // in Q_, never decrease.  This is OK for typical uses of TSQR,
     // but you might prefer different behavior in some cases.
     //

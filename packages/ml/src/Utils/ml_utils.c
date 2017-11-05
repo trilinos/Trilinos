@@ -1260,7 +1260,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
     /*
      * Compute maximum total message size in bytes that any processor will
      * recieve and the maximum number of neighbors that any proc must
-     * communicate with. Also initalize some logical arrays.
+     * communicate with. Also initialize some logical arrays.
      */
 
     max_messg_size = 0;

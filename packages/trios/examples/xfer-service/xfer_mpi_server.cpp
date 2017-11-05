@@ -348,7 +348,7 @@ int xfer_mpi_server_main(MPI_Comm server_comm)
 
     log_debug(debug_level, "%d: Starting server", server_rank);
 
-    /* options that can be overriden by the command-line */
+    /* options that can be overridden by the command-line */
     std::string logfile("");
 
     bool done=false;

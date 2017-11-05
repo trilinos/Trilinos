@@ -24,7 +24,7 @@ namespace KokkosBatched {
 
 #define FLOP_MUL 1.0
 #define FLOP_ADD 1.0
-    
+
     double LU_FlopCount(int mm, int nn) {
       double m = (double)mm;    double n = (double)nn;
       if (m > n)
@@ -54,7 +54,7 @@ namespace KokkosBatched {
     }
 
     template <typename aViewType, typename bViewType>
-    double compute_relative_diff(const aViewType a, 
+    double compute_relative_diff(const aViewType a,
                                  const bViewType b) {
       // Bring the vectors to the host. This is just a correctness checker.
       auto aa = Kokkos::create_mirror_view(a); Kokkos::deep_copy(aa, a);
@@ -65,7 +65,7 @@ namespace KokkosBatched {
         for (ordinal_type j=0;j<aa.dimension_1();++j)
           for (ordinal_type k=0;k<aa.dimension_2();++k)
             for (ordinal_type l=0;l<aa.dimension_3();++l) {
-              const double 
+              const double
                 val  = aa(i,j,k,l),
                 diff = aa(i,j,k,l) - bb(i,j,k,l);
               diff2 += diff*diff;
@@ -76,46 +76,46 @@ namespace KokkosBatched {
     }
 
     // Representation of a structured block mesh. The fastest index is k.
-    struct StencilShape { 
-      enum Enum { cross }; 
+    struct StencilShape {
+      enum Enum { cross };
     };
 
     struct StructuredBlock {
       const ordinal_type ni, nj, nk;
 
-      StructuredBlock (const ordinal_type ni, 
-                       const ordinal_type nj, 
+      StructuredBlock (const ordinal_type ni,
+                       const ordinal_type nj,
                        const ordinal_type nk)
         : ni(ni), nj(nj), nk(nk), _njnk(nj*nk) {}
 
-      KOKKOS_INLINE_FUNCTION 
+      KOKKOS_INLINE_FUNCTION
       size_type size () const { return ni*nj*nk; }
 
-      KOKKOS_INLINE_FUNCTION 
-      size_type ij2id (const ordinal_type i, 
-                       const ordinal_type j) const { 
+      KOKKOS_INLINE_FUNCTION
+      size_type ij2id (const ordinal_type i,
+                       const ordinal_type j) const {
         return i*nj + j;
       }
 
-      KOKKOS_INLINE_FUNCTION 
-      void id2ij (const size_type id, 
-                  ordinal_type& i, 
+      KOKKOS_INLINE_FUNCTION
+      void id2ij (const size_type id,
+                  ordinal_type& i,
                   ordinal_type& j) const {
         i = id / nj;
         j = id % nj;
       }
 
-      KOKKOS_INLINE_FUNCTION 
-      size_type ijk2id (const ordinal_type i, 
-                        const ordinal_type j, 
-                        const ordinal_type k) const { 
-        return (i*nj + j)*nk + k; 
+      KOKKOS_INLINE_FUNCTION
+      size_type ijk2id (const ordinal_type i,
+                        const ordinal_type j,
+                        const ordinal_type k) const {
+        return (i*nj + j)*nk + k;
       }
-      
-      KOKKOS_INLINE_FUNCTION 
-      void id2ijk (const size_type id, 
-                   ordinal_type& i, 
-                   ordinal_type& j, 
+
+      KOKKOS_INLINE_FUNCTION
+      void id2ijk (const size_type id,
+                   ordinal_type& i,
+                   ordinal_type& j,
                    ordinal_type& k) const {
         i = id / _njnk;
         k = id % _njnk;
@@ -125,11 +125,11 @@ namespace KokkosBatched {
     private:
       const ordinal_type _njnk;
     };
-    
+
     template <typename ExecSpace, typename ArrayLayout>
     struct CrsGraph {
       typedef ExecSpace exec_space;
-      typedef ArrayLayout array_layout;      
+      typedef ArrayLayout array_layout;
 
       typedef Kokkos::View<size_type*,   array_layout,exec_space> row_ptr_type;
       typedef Kokkos::View<ordinal_type*,array_layout,exec_space> row_idx_type;
@@ -138,30 +138,30 @@ namespace KokkosBatched {
       row_ptr_type rowptr;
       row_idx_type rowidx;
       col_idx_type colidx;
-      
-      CrsGraph () 
-        : rowptr("rowptr", 1), 
+
+      CrsGraph ()
+        : rowptr("rowptr", 1),
           rowidx("rowidx", 0),
           colidx("colidx", 0) {}
 
       KOKKOS_INLINE_FUNCTION
-      bool isEmpty() const { 
-        return (rowptr.dimension_0() <= 1 || colidx.dimension_0() == 0 || rowidx.dimension_0() == 0); 
+      bool isEmpty() const {
+        return (rowptr.dimension_0() <= 1 || colidx.dimension_0() == 0 || rowidx.dimension_0() == 0);
       }
-      
+
       KOKKOS_INLINE_FUNCTION
-      ordinal_type NumRows() const { 
-        return (isEmpty() ? 0 : static_cast<ordinal_type>(rowptr.dimension_0()) - 1); 
+      ordinal_type NumRows() const {
+        return (isEmpty() ? 0 : static_cast<ordinal_type>(rowptr.dimension_0()) - 1);
       }
-      
+
       KOKKOS_INLINE_FUNCTION
-      size_type NumNonZeros() const { 
-        return (isEmpty() ? 0 : static_cast<size_type>(colidx.dimension_0())); 
+      size_type NumNonZeros() const {
+        return (isEmpty() ? 0 : static_cast<size_type>(colidx.dimension_0()));
       }
     };
 
     template<typename DstSpace, typename SrcSpace, typename ArrayLayout>
-    inline 
+    inline
     CrsGraph<DstSpace,ArrayLayout>
     create_mirror(const CrsGraph<SrcSpace,ArrayLayout> src) {
       CrsGraph<DstSpace,ArrayLayout> dst;
@@ -174,25 +174,25 @@ namespace KokkosBatched {
     }
 
     template<typename DstSpace, typename SrcSpace, typename ArrayLayout>
-    inline 
+    inline
     void
     deep_copy(const CrsGraph<DstSpace,ArrayLayout> dst, const CrsGraph<SrcSpace,ArrayLayout> src) {
       Kokkos::deep_copy(dst.rowptr, src.rowptr);
       Kokkos::deep_copy(dst.rowidx, src.rowidx);
       Kokkos::deep_copy(dst.colidx, src.colidx);
     }
-    
+
     // Given a structured block and a stencil (at present, just a 3D 1-hop cross),
     // construct a corresponding CRS graph.
     template<typename ArrayLayout>
     CrsGraph<Kokkos::DefaultHostExecutionSpace,ArrayLayout>
-    create_graph_host_for_structured_block(const StructuredBlock mesh, 
+    create_graph_host_for_structured_block(const StructuredBlock mesh,
                                            const StencilShape::Enum shape) {
       CrsGraph<Kokkos::DefaultHostExecutionSpace,ArrayLayout> graph;
 
       Kokkos::resize(graph.rowptr, mesh.size()+1);
       graph.rowptr[0] = 0;
-      
+
       std::vector<ordinal_type> colidx, rowidx;
       switch (shape) {
       case StencilShape::cross:
@@ -200,7 +200,7 @@ namespace KokkosBatched {
           ordinal_type i, j, k, n = 0;
 
           mesh.id2ijk(c, i, j, k);
-          
+
           rowidx.push_back(c); colidx.push_back(c); ++n;
           if (i > 0)         { rowidx.push_back(c); colidx.push_back(mesh.ijk2id(i-1, j, k  )); ++n; }
           if (i+1 < mesh.ni) { rowidx.push_back(c); colidx.push_back(mesh.ijk2id(i+1, j, k  )); ++n; }
@@ -244,27 +244,27 @@ namespace KokkosBatched {
       value_array_type _values;
 
     public:
-      BlockCrsMatrix() 
-        : _graph(), 
+      BlockCrsMatrix()
+        : _graph(),
           _blocksize(),
-          _values() {} 
+          _values() {}
 
-      BlockCrsMatrix(const BlockCrsMatrix &b) 
-        : _graph(b._graph), 
+      BlockCrsMatrix(const BlockCrsMatrix &b)
+        : _graph(b._graph),
           _blocksize(b._blocksize),
-          _values(b._values) {} 
+          _values(b._values) {}
 
-      BlockCrsMatrix (const crs_graph_type graph, 
+      BlockCrsMatrix (const crs_graph_type graph,
                       const ordinal_type blocksize )
-        : _graph(graph), 
+        : _graph(graph),
           _blocksize(blocksize),
-          _values("BlockCrsMatrix::_values", 
+          _values("BlockCrsMatrix::_values",
                   _graph.NumNonZeros(), _blocksize, _blocksize) {}
 
-      BlockCrsMatrix (const crs_graph_type graph, 
+      BlockCrsMatrix (const crs_graph_type graph,
                       const ordinal_type blocksize,
                       const value_array_type values)
-        : _graph(graph), 
+        : _graph(graph),
           _blocksize(blocksize),
           _values(values) {}
 
@@ -274,7 +274,7 @@ namespace KokkosBatched {
     };
 
     template<typename DstSpace, typename SrcSpace, typename ArrayLayout>
-    inline 
+    inline
     BlockCrsMatrix<DstSpace,ArrayLayout>
     create_mirror(const BlockCrsMatrix<SrcSpace,ArrayLayout> src) {
       const auto graph = create_mirror<DstSpace>(src.CrsGraph());
@@ -284,14 +284,14 @@ namespace KokkosBatched {
     }
 
     template<typename DstSpace, typename SrcSpace, typename ArrayLayout>
-    inline 
+    inline
     void
-    deep_copy(const BlockCrsMatrix<DstSpace,ArrayLayout> dst, 
+    deep_copy(const BlockCrsMatrix<DstSpace,ArrayLayout> dst,
               const BlockCrsMatrix<SrcSpace,ArrayLayout> src) {
       deep_copy(dst.CrsGraph(), src.CrsGraph());
       Kokkos::deep_copy(dst.Values(), src.Values());
     }
-    
+
     template<typename ArrayLayout>
     void fill_block_crs_matrix_host(BlockCrsMatrix<Kokkos::DefaultHostExecutionSpace,ArrayLayout> A) {
       // extract graph and blocksizes
@@ -299,57 +299,57 @@ namespace KokkosBatched {
       const auto values = A.Values();
       const ordinal_type blocksize = A.BlockSize();
 
-      scalar_type 
-        tmp[blocksize*blocksize], 
-        diag_block[blocksize][blocksize], 
+      scalar_type
+        tmp[blocksize*blocksize],
+        diag_block[blocksize][blocksize],
         offdiag_block[blocksize][blocksize];
-      
+
       Random<scalar_type> random;
 
       // for diagonal block, make spd
       {
         const ordinal_type iend = blocksize*blocksize;
-        for (ordinal_type i=0;i<iend;++i) 
+        for (ordinal_type i=0;i<iend;++i)
           tmp[i] = 2*(random.value() - 0.5);
-        
-        for (ordinal_type i=0;i<blocksize;++i) 
+
+        for (ordinal_type i=0;i<blocksize;++i)
           for (ordinal_type j=i;j<blocksize;++j) {
             diag_block[i][j] = 0;
-            for (ordinal_type k=0;k<blocksize;++k) 
+            for (ordinal_type k=0;k<blocksize;++k)
               diag_block[i][j] += tmp[i*blocksize+k]*tmp[j*blocksize+k];
             if (i != j) diag_block[j][i]  = diag_block[i][j];    // symmetrize
             else        diag_block[i][j] *= 0.5*blocksize; // improve condition
           }
-      } 
-      
+      }
+
       {
         // for off diagonal; down-weight off-diag blocks to improve conditioning.
         for (ordinal_type i=0;i<blocksize;++i)
-          for (ordinal_type j=0;j<blocksize;++j) 
+          for (ordinal_type j=0;j<blocksize;++j)
             offdiag_block[i][j] = 0.1 * 2*(random.value() - 0.5);
       }
-      
+
       for (ordinal_type r=0;r<graph.NumRows();++r) {
         // random number generator (-1, 1)
         const ordinal_type cbegin = graph.rowptr(r), cend = graph.rowptr(r+1);
         for (ordinal_type c=cbegin;c<cend;++c) {
           auto block = Kokkos::subview(values, c, Kokkos::ALL(), Kokkos::ALL());
-          
+
           if (graph.colidx(c) == r) {
-            for (ordinal_type i=0;i<blocksize;++i) 
-              for (ordinal_type j=i;j<blocksize;++j) 
+            for (ordinal_type i=0;i<blocksize;++i)
+              for (ordinal_type j=i;j<blocksize;++j)
                 block(i,j) = diag_block[i][j];
           } else {
             // for off diagonal; down-weight off-diag blocks to improve conditioning.
             for (ordinal_type i=0;i<blocksize;++i)
-              for (ordinal_type j=0;j<blocksize;++j) 
+              for (ordinal_type j=0;j<blocksize;++j)
                 block(i,j) = offdiag_block[i][j];
           }
-          
+
         }
       }
     }
-    
+
     // nrhs should go after blocksize to match matrix dimensions consistently
     template <typename ExeSpace, typename ArrayLayout>
     class BlockMultiVector {
@@ -365,11 +365,11 @@ namespace KokkosBatched {
 
     public:
       BlockMultiVector(const ordinal_type nvecs,
-                       const ordinal_type nrows,                       
+                       const ordinal_type nrows,
                        const ordinal_type blocksize )
         : _values("BlockMultiVector::_values", nvecs, nrows, blocksize) {}
 
-      BlockMultiVector(const value_array_type values) 
+      BlockMultiVector(const value_array_type values)
         : _values(values) {}
 
       ordinal_type NumVectors() const { return _values.dimension_0(); }
@@ -378,38 +378,38 @@ namespace KokkosBatched {
 
       value_array_type Values() const { return _values; }
     };
-    
+
     template<typename DstSpace, typename SrcSpace, typename ArrayLayout>
-    inline 
+    inline
     BlockMultiVector<DstSpace,ArrayLayout>
     create_mirror(const BlockMultiVector<SrcSpace,ArrayLayout> src) {
       return BlockMultiVector<DstSpace,ArrayLayout>
         (Kokkos::create_mirror_view(typename DstSpace::memory_space(), src.Values()));
     }
-    
+
     template<typename DstSpace, typename SrcSpace, typename ArrayLayout>
-    inline 
+    inline
     void
-    deep_copy(const BlockMultiVector<DstSpace,ArrayLayout> dst, 
+    deep_copy(const BlockMultiVector<DstSpace,ArrayLayout> dst,
               const BlockMultiVector<SrcSpace,ArrayLayout> src) {
       Kokkos::deep_copy(dst.Values(), src.Values());
     }
-    
+
     template<typename ArrayLayout>
     void fill_block_multi_vector_host(BlockMultiVector<Kokkos::DefaultHostExecutionSpace,ArrayLayout> B) {
-      const ordinal_type 
-        jend = B.NumVectors(), 
-        iend = B.NumRows(), 
+      const ordinal_type
+        jend = B.NumVectors(),
+        iend = B.NumRows(),
         kend = B.BlockSize();
-      
+
       auto B_val = B.Values();
-      
-      for (ordinal_type j=0;j<jend;++j) 
-        for (ordinal_type i=0;i<iend;++i) 
-          for (ordinal_type k=0;k<kend;++k) 
+
+      for (ordinal_type j=0;j<jend;++j)
+        for (ordinal_type i=0;i<iend;++i)
+          for (ordinal_type k=0;k<kend;++k)
             B_val(j, i, k) = static_cast<double>((i+j+k)%7) - 3;
     }
-    
+
     template <typename ExecSpace, typename ValueType, typename ArrayLayout>
     class BlockTridiagMatrices {
     public:
@@ -418,21 +418,21 @@ namespace KokkosBatched {
       typedef ArrayLayout array_layout;
 
       typedef Kokkos::View<value_type****,array_layout,exec_space> value_array_type;
-      
+
     private:
       const ordinal_type _ntridiags, _nrows, _blocksize;
       // A B
       // C
       value_array_type _A, _B, _C;
-      
+
     public:
 
       BlockTridiagMatrices (const ordinal_type ntridiags,
                             const ordinal_type nrows,
                             const ordinal_type blocksize)
-        : _ntridiags(ntridiags), 
+        : _ntridiags(ntridiags),
           _nrows(nrows),
-          _blocksize(blocksize), 
+          _blocksize(blocksize),
           _A("BlockTridiagMatrix::_A", _ntridiags, _nrows,   _blocksize, _blocksize),
           _B("BlockTridiagMatrix::_B", _ntridiags, _nrows-1, _blocksize, _blocksize),
           _C("BlockTridiagMatrix::_C", _ntridiags, _nrows-1, _blocksize, _blocksize) {}
@@ -443,9 +443,9 @@ namespace KokkosBatched {
                             const value_array_type A,
                             const value_array_type B,
                             const value_array_type C)
-        : _ntridiags(ntridiags), 
+        : _ntridiags(ntridiags),
           _nrows(nrows),
-          _blocksize(blocksize), 
+          _blocksize(blocksize),
           _A(A),
           _B(B),
           _C(C) {}
@@ -453,15 +453,15 @@ namespace KokkosBatched {
       value_array_type A() const { return _A; }
       value_array_type B() const { return _B; }
       value_array_type C() const { return _C; }
-      
+
       ordinal_type BlockSize() const { return _blocksize; }
       ordinal_type NumRows() const { return _nrows; }
       ordinal_type NumTridiagMatrices() const { return _ntridiags; }
     };
 
     template<typename ExecSpace, typename ValueType, typename ArrayLayout>
-    BlockTridiagMatrices<ExecSpace,ValueType,ArrayLayout> 
-    create_block_tridiag_matrices(const ordinal_type ntridiags, 
+    BlockTridiagMatrices<ExecSpace,ValueType,ArrayLayout>
+    create_block_tridiag_matrices(const ordinal_type ntridiags,
                                   const ordinal_type nrows,
                                   const ordinal_type blocksize) {
       return BlockTridiagMatrices<ExecSpace,ValueType,ArrayLayout>
@@ -469,7 +469,7 @@ namespace KokkosBatched {
     }
 
     template<typename DstSpace, typename SrcSpace, typename ValueType, typename ArrayLayout>
-    inline 
+    inline
     BlockTridiagMatrices<DstSpace,ValueType,ArrayLayout>
     create_mirror(const BlockTridiagMatrices<SrcSpace,ValueType,ArrayLayout> src) {
       return BlockTridiagMatrices<DstSpace,ValueType,ArrayLayout>
@@ -480,11 +480,11 @@ namespace KokkosBatched {
          Kokkos::create_mirror_view(typename DstSpace::memory_space(), src.B()),
          Kokkos::create_mirror_view(typename DstSpace::memory_space(), src.C()));
     }
-    
+
     template<typename DstSpace, typename SrcSpace, typename ValueType, typename ArrayLayout>
-    inline 
+    inline
     void
-    deep_copy(const BlockTridiagMatrices<DstSpace,ValueType,ArrayLayout> dst, 
+    deep_copy(const BlockTridiagMatrices<DstSpace,ValueType,ArrayLayout> dst,
               const BlockTridiagMatrices<SrcSpace,ValueType,ArrayLayout> src) {
       Kokkos::deep_copy(dst.A(), src.A());
       Kokkos::deep_copy(dst.B(), src.B());
@@ -494,11 +494,11 @@ namespace KokkosBatched {
     template<typename ViewType>
     KOKKOS_INLINE_FUNCTION
     typename std::enable_if< std::is_same<typename ViewType::value_type,scalar_type>::value, scalar_type&>::type
-    tdiag_val(const ViewType &A, 
-              const ordinal_type &t, 
-              const ordinal_type &i, 
-              const ordinal_type &ii, 
-              const ordinal_type &jj) { 
+    tdiag_val(const ViewType &A,
+              const ordinal_type &t,
+              const ordinal_type &i,
+              const ordinal_type &ii,
+              const ordinal_type &jj) {
       return A(t, i, ii, jj);
     }
 
@@ -506,10 +506,10 @@ namespace KokkosBatched {
     KOKKOS_INLINE_FUNCTION
     typename std::enable_if< !std::is_same<typename ViewType::value_type,scalar_type>::value, scalar_type&>::type
     tdiag_val(const ViewType &A,
-              const ordinal_type &t, 
-              const ordinal_type &i, 
-              const ordinal_type &ii, 
-              const ordinal_type &jj) { 
+              const ordinal_type &t,
+              const ordinal_type &i,
+              const ordinal_type &ii,
+              const ordinal_type &jj) {
       typedef typename ViewType::value_type value_type;
       return A(t/value_type::vector_length, i, ii, jj)[t%value_type::vector_length];
     }
@@ -533,11 +533,11 @@ namespace KokkosBatched {
                                   const ordinal_type blocksize)
         : _values("BlockMultiVector::_values", nparts, nvectors, nrows, blocksize) {}
 
-      PartitionedBlockMultiVector(const value_array_type values) 
+      PartitionedBlockMultiVector(const value_array_type values)
         : _values(values) {}
-      
+
       ordinal_type NumPartitions() const { return _values.dimension_0(); }
-      ordinal_type NumVectors() const { return _values.dimension_1(); }      
+      ordinal_type NumVectors() const { return _values.dimension_1(); }
       ordinal_type NumRows() const { return _values.dimension_2(); }
       ordinal_type BlockSize() const { return _values.dimension_3(); }
 
@@ -545,52 +545,52 @@ namespace KokkosBatched {
     };
 
     template<typename ExecSpace, typename ValueType, typename ArrayLayout>
-    PartitionedBlockMultiVector<ExecSpace,ValueType,ArrayLayout> 
+    PartitionedBlockMultiVector<ExecSpace,ValueType,ArrayLayout>
     create_partitioned_block_multi_vector(const ordinal_type nparts,
                                           const ordinal_type nvectors,
                                           const ordinal_type nrows,
                                           const ordinal_type blocksize) {
       return PartitionedBlockMultiVector
-        <ExecSpace,ValueType,ArrayLayout>(adjustDimension<ValueType>(nparts), 
+        <ExecSpace,ValueType,ArrayLayout>(adjustDimension<ValueType>(nparts),
                                           nvectors,
-                                          nrows, 
+                                          nrows,
                                           blocksize);
     }
-    
+
     template<typename DstSpace, typename SrcSpace, typename ValueType, typename ArrayLayout>
-    inline 
+    inline
     PartitionedBlockMultiVector<DstSpace,ValueType,ArrayLayout>
     create_mirror(const PartitionedBlockMultiVector<SrcSpace,ValueType,ArrayLayout> src) {
       return PartitionedBlockMultiVector<DstSpace,ValueType,ArrayLayout>
         (Kokkos::create_mirror_view(typename DstSpace::memory_space(), src.Values()));
     }
-    
+
     template<typename DstSpace, typename SrcSpace, typename ValueType, typename ArrayLayout>
-    inline 
+    inline
     void
-    deep_copy(const PartitionedBlockMultiVector<DstSpace,ValueType,ArrayLayout> dst, 
+    deep_copy(const PartitionedBlockMultiVector<DstSpace,ValueType,ArrayLayout> dst,
               const PartitionedBlockMultiVector<SrcSpace,ValueType,ArrayLayout> src) {
       Kokkos::deep_copy(dst.Values(), src.Values());
     }
-    
+
     template<typename ValueType, typename ArrayLayout>
     void fill_partitioned_block_multi_vector_host
     (PartitionedBlockMultiVector<Kokkos::DefaultHostExecutionSpace,ValueType,ArrayLayout> B,
      const ordinal_type ninj) {
-      const ordinal_type 
+      const ordinal_type
         iend = ninj, // B.NumPartitions(),
         jend = B.NumVectors(),
-        kend = B.NumRows(), 
+        kend = B.NumRows(),
         lend = B.BlockSize();
-      
+
       auto B_val = B.Values();
-      for (ordinal_type i=0;i<iend;++i) 
-        for (ordinal_type j=0;j<jend;++j) 
-          for (ordinal_type k=0;k<kend;++k) 
+      for (ordinal_type i=0;i<iend;++i)
+        for (ordinal_type j=0;j<jend;++j)
+          for (ordinal_type k=0;k<kend;++k)
             for (ordinal_type l=0;l<lend;++l)
               tdiag_val(B_val, i,j,k,l) = static_cast<double>((i+j+k+l)%7) - 3;
     }
-    
+
 
     template <typename ExecSpace, typename ArrayLayout>
     class BlockCrsMatrixVectorProductByRow {
@@ -598,7 +598,7 @@ namespace KokkosBatched {
       typedef BlockCrsMatrix<ExecSpace,ArrayLayout> block_crs_matrix_type;
       typedef typename block_crs_matrix_type::crs_graph_type crs_graph_type;
       typedef BlockMultiVector<ExecSpace,ArrayLayout> block_multi_vector_type;
-      
+
     private:
       ConstUnmanagedViewType<typename crs_graph_type::row_ptr_type> _rowptr;
       ConstUnmanagedViewType<typename crs_graph_type::col_idx_type> _colidx;
@@ -612,32 +612,32 @@ namespace KokkosBatched {
     public:
       // A thread maps to a point row of the matrix.
       // loop = blksize*m
-      KOKKOS_INLINE_FUNCTION 
+      KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type idx) const {
         // index of blockrow and row in a block
         const ordinal_type i  = idx/_blocksize;
         const ordinal_type ii = idx%_blocksize;
-        
+
         // loop over multivectors
         const ordinal_type jend = _y.dimension_0();
         for (ordinal_type j=0;j<jend;++j) {
           scalar_type tmp = 0;
-          
-          // block row 
-          const ordinal_type 
+
+          // block row
+          const ordinal_type
             cbegin = _rowptr(i), cend = _rowptr(i+1);
 
           for (ordinal_type c=cbegin;c<cend;++c) {
             const ordinal_type col = _colidx(c);
-            for (ordinal_type jj=0;jj<_blocksize;++jj) 
+            for (ordinal_type jj=0;jj<_blocksize;++jj)
               tmp += _A(col,ii,jj)*_x(j, col, jj);
           }
           _y(j, i, ii) = tmp;
         }
       }
-      
+
       void run(const block_crs_matrix_type A,
-               const block_multi_vector_type x, 
+               const block_multi_vector_type x,
                const block_multi_vector_type y) {
         _rowptr = A.CrsGraph().rowptr;
         _colidx = A.CrsGraph().colidx;
@@ -670,36 +670,36 @@ namespace KokkosBatched {
       ordinal_type _blocksize;
 
     public:
-      
+
       // A thread maps to a row block of the matrix.
       // loop = m
-      KOKKOS_INLINE_FUNCTION 
+      KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type i) const {
-        // loop over multivector colums
+        // loop over multivector columns
         const ordinal_type jend = _y.dimension_0();
         for (ordinal_type j=0;j<jend;++j) {
           // set zero
-          for (ordinal_type ii=0;ii<_blocksize;++ii) 
+          for (ordinal_type ii=0;ii<_blocksize;++ii)
             _y(j, i, ii) = 0;
-          
-          // block row 
-          const ordinal_type 
+
+          // block row
+          const ordinal_type
             cbegin = _rowptr(i), cend = _rowptr(i+1);
-          
+
           for (ordinal_type c=cbegin;c<cend;++c) {
             const ordinal_type col = _colidx(c);
             for (ordinal_type ii=0;ii<_blocksize;++ii) {
               scalar_type tmp = 0;
-              for (ordinal_type jj=0;jj<_blocksize;++jj) 
+              for (ordinal_type jj=0;jj<_blocksize;++jj)
                 tmp += _A(col,ii,jj)*_x(j, col, jj);
               _y(j, i, ii) += tmp;
             }
           }
         }
       }
-      
+
       void run(const block_crs_matrix_type A,
-               const block_multi_vector_type x, 
+               const block_multi_vector_type x,
                const block_multi_vector_type y) {
         _rowptr = A.CrsGraph().rowptr;
         _colidx = A.CrsGraph().colidx;
@@ -729,42 +729,42 @@ namespace KokkosBatched {
     private:
       structured_block_mesh_type _mesh;
       ordinal_type _blocksize;
-      
+
       ConstUnmanagedViewType<typename crs_graph_type::row_ptr_type> _rowptr;
       ConstUnmanagedViewType<typename crs_graph_type::row_idx_type> _rowidx;
       ConstUnmanagedViewType<typename crs_graph_type::col_idx_type> _colidx;
-      
+
       ConstUnmanagedViewType<typename block_crs_matrix_type::value_array_type> _A;
       /**/ UnmanagedViewType<typename block_tridiag_matrices_type::value_array_type> _TA, _TB, _TC;
-      
+
     public:
-      ExtractBlockTridiagMatrices(const structured_block_mesh_type mesh) 
+      ExtractBlockTridiagMatrices(const structured_block_mesh_type mesh)
         : _mesh(mesh) {}
 
       template<typename TViewType,
                typename AViewType>
       KOKKOS_INLINE_FUNCTION
-      void 
+      void
       elementwise_copy(const TViewType &T,
                        const AViewType &A,
-                       const ordinal_type ij, 
+                       const ordinal_type ij,
                        const ordinal_type k,
                        const ordinal_type c,
                        const ordinal_type blocksize) const {
         for (ordinal_type ii=0;ii<blocksize;++ii)
-          for (ordinal_type jj=0;jj<blocksize;++jj) 
+          for (ordinal_type jj=0;jj<blocksize;++jj)
             tdiag_val(T, ij, k, ii, jj) = A(c, ii, jj);
       }
-      
+
       // A thread maps nonzero blocks
-      KOKKOS_INLINE_FUNCTION 
+      KOKKOS_INLINE_FUNCTION
       void operator()(const ordinal_type c) const {
         const ordinal_type row = _rowidx[c], col = _colidx[c];
 
         ordinal_type ri, rj, rk, ci, cj, ck;
         _mesh.id2ijk(row, ri, rj, rk);
         _mesh.id2ijk(col, ci, cj, ck);
-  
+
         if (ri == ci && rj == cj) {
           const ordinal_type ij = _mesh.ij2id(ri, rj);
           // consider connectivity to k-direction
@@ -775,17 +775,17 @@ namespace KokkosBatched {
           }
         }
       }
-      
+
       void run(const block_crs_matrix_type A,
-               const block_tridiag_matrices_type T) { 
+               const block_tridiag_matrices_type T) {
         _rowptr = A.CrsGraph().rowptr;
         _rowidx = A.CrsGraph().rowidx;
         _colidx = A.CrsGraph().colidx;
 
         _A = A.Values();
 
-        _TA = T.A(); 
-        _TB = T.B(); 
+        _TA = T.A();
+        _TB = T.B();
         _TC = T.C();
 
         _blocksize = A.BlockSize();
@@ -796,18 +796,18 @@ namespace KokkosBatched {
                typename AViewType>
       bool elementwise_check(const TViewType &T,
                              const AViewType &A,
-                             const ordinal_type ij, 
+                             const ordinal_type ij,
                              const ordinal_type k,
                              const ordinal_type c,
                              const ordinal_type blocksize) const {
         const auto eps = 1e2*std::numeric_limits<scalar_type>::epsilon();
         for (ordinal_type ii=0;ii<blocksize;++ii)
-          for (ordinal_type jj=0;jj<blocksize;++jj) 
-            if ( std::abs(tdiag_val(T, ij, k, ii, jj) - A(c, ii, jj)) >= eps ) return false; 
+          for (ordinal_type jj=0;jj<blocksize;++jj)
+            if ( std::abs(tdiag_val(T, ij, k, ii, jj) - A(c, ii, jj)) >= eps ) return false;
         return true;
       }
-      
-      bool check() const {        
+
+      bool check() const {
         auto rowptr = Kokkos::create_mirror_view(_rowptr); Kokkos::deep_copy(rowptr, _rowptr);
         auto colidx = Kokkos::create_mirror_view(_colidx); Kokkos::deep_copy(colidx, _colidx);
         auto TA     = Kokkos::create_mirror_view(_TA);     Kokkos::deep_copy(TA, _TA);
@@ -815,11 +815,11 @@ namespace KokkosBatched {
         auto TC     = Kokkos::create_mirror_view(_TC);     Kokkos::deep_copy(TC, _TC);
         auto A      = Kokkos::create_mirror_view(_A);      Kokkos::deep_copy(A, _A);
 
-        const ordinal_type 
+        const ordinal_type
           ijend = adjustDimension<value_type>(_mesh.ni*_mesh.nj),
           kend = _mesh.nk;
 
-        assert(ijend == TA.dimension_0()); assert((kend - 0) == TA.dimension_1()); 
+        assert(ijend == TA.dimension_0()); assert((kend - 0) == TA.dimension_1());
         assert(ijend == TB.dimension_0()); assert((kend - 1) == TB.dimension_1());
         assert(ijend == TC.dimension_0()); assert((kend - 1) == TC.dimension_1());
 
@@ -829,7 +829,7 @@ namespace KokkosBatched {
 
           for (ordinal_type k=0;k<kend;++k) {
             const ordinal_type row = _mesh.ijk2id(i, j, k),
-              idx_begin = rowptr[row], 
+              idx_begin = rowptr[row],
               idx_end = rowptr[row+1];
 
             // check
@@ -841,11 +841,11 @@ namespace KokkosBatched {
               case -1: same[1] = elementwise_check(TB, A, ij, k,   idx, _blocksize); found[1] = true; break;
               }
             }
-            if      (k == 0)         assert(found[0] & same[0] && found[1] & same[1]); 
-            else if (k == (kend-1))  assert(found[0] & same[0] && found[2] & same[2]); 
-            else                     assert(found[0] & same[0] && found[1] & same[1] && found[2] & same[2]); 
+            if      (k == 0)         assert(found[0] & same[0] && found[1] & same[1]);
+            else if (k == (kend-1))  assert(found[0] & same[0] && found[2] & same[2]);
+            else                     assert(found[0] & same[0] && found[1] & same[1] && found[2] & same[2]);
           }
-        }            
+        }
         return true;
       }
     };
@@ -863,7 +863,7 @@ namespace KokkosBatched {
       ordinal_type nrhs; // #vectors in multivector
       ordinal_type opf, ops;
       StencilShape::Enum stencil_shape;
-      
+
       Input (int argc, char** argv) {
         quiet = false;
         check = false;
@@ -889,7 +889,7 @@ namespace KokkosBatched {
           throw std::runtime_error("k dimension is <= 1; must be >= 2.");
         if ( ! quiet) print(std::cout);
       }
-      
+
       void print (std::ostream& os) const {
         os << "<I> ni " << ni << " nj " << nj << " nk " << nk
            << " bs " << bs

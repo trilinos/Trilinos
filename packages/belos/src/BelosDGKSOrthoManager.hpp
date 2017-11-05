@@ -545,14 +545,14 @@ namespace Belos {
 
   template<class ScalarType, class MV, class OP>
   const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
-  DGKSOrthoManager<ScalarType,MV,OP>::dep_tol_default_ 
+  DGKSOrthoManager<ScalarType,MV,OP>::dep_tol_default_
     = Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::one()
-      / Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::squareroot( 
+      / Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::squareroot(
       2*Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::one() );
 
   template<class ScalarType, class MV, class OP>
   const typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType
-  DGKSOrthoManager<ScalarType,MV,OP>::sing_tol_default_ 
+  DGKSOrthoManager<ScalarType,MV,OP>::sing_tol_default_
     = 10*Teuchos::ScalarTraits<typename DGKSOrthoManager<ScalarType,MV,OP>::MagnitudeType>::eps();
 
   template<class ScalarType, class MV, class OP>
@@ -726,13 +726,13 @@ namespace Belos {
 
     // check size of B
     TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
-                        "Belos::DGKSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of B" );
+                        "Belos::DGKSOrthoManager::projectAndNormalize(): Size of X must be consistent with size of B" );
     // check size of X and MX
     TEUCHOS_TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, std::invalid_argument,
                         "Belos::DGKSOrthoManager::projectAndNormalize(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX
     TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, std::invalid_argument,
-                        "Belos::DGKSOrthoManager::projectAndNormalize(): Size of X must be consistant with size of MX" );
+                        "Belos::DGKSOrthoManager::projectAndNormalize(): Size of X must be consistent with size of MX" );
     // check feasibility
     //TEUCHOS_TEST_FOR_EXCEPTION( numbas+xc > xr, std::invalid_argument,
     //                    "Belos::DGKSOrthoManager::projectAndNormalize(): Orthogonality constraints not feasible" );
@@ -806,7 +806,7 @@ namespace Belos {
           }
         }
       }
-    } // if (xc == 1) 
+    } // if (xc == 1)
 
     // this should not raise an std::exception; but our post-conditions oblige us to check
     TEUCHOS_TEST_FOR_EXCEPTION( rank > xc || rank < 0, std::logic_error,
@@ -831,7 +831,7 @@ namespace Belos {
 
     // call findBasis, with the instruction to try to generate a basis of rank numvecs(X)
     return findBasis(X, MX, B, true);
-    
+
   }
 
 
@@ -896,13 +896,13 @@ namespace Belos {
                         "Belos::DGKSOrthoManager::project(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX and Q
     TEUCHOS_TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, std::invalid_argument,
-                        "Belos::DGKSOrthoManager::project(): Size of X not consistant with MX,Q" );
+                        "Belos::DGKSOrthoManager::project(): Size of X not consistent with MX,Q" );
 
     // tally up size of all Q and check/allocate C
     int baslen = 0;
     for (int i=0; i<nq; i++) {
       TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength( *Q[i] ) != qr, std::invalid_argument,
-                          "Belos::DGKSOrthoManager::project(): Q lengths not mutually consistant" );
+                          "Belos::DGKSOrthoManager::project(): Q lengths not mutually consistent" );
       qcs[i] = MVT::GetNumberVecs( *Q[i] );
       TEUCHOS_TEST_FOR_EXCEPTION( qr < qcs[i], std::invalid_argument,
                           "Belos::DGKSOrthoManager::project(): Q has less rows than columns" );
@@ -914,7 +914,7 @@ namespace Belos {
       }
       else {
         TEUCHOS_TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , std::invalid_argument,
-                           "Belos::DGKSOrthoManager::project(): Size of Q not consistant with size of C" );
+                           "Belos::DGKSOrthoManager::project(): Size of Q not consistent with size of C" );
       }
     }
 
@@ -985,9 +985,9 @@ namespace Belos {
     TEUCHOS_TEST_FOR_EXCEPTION( xc == 0 || xr == 0, std::invalid_argument,
                         "Belos::DGKSOrthoManager::findBasis(): X must be non-empty" );
     TEUCHOS_TEST_FOR_EXCEPTION( B->numRows() != xc || B->numCols() != xc, std::invalid_argument,
-                        "Belos::DGKSOrthoManager::findBasis(): Size of X not consistant with size of B" );
+                        "Belos::DGKSOrthoManager::findBasis(): Size of X not consistent with size of B" );
     TEUCHOS_TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, std::invalid_argument,
-                        "Belos::DGKSOrthoManager::findBasis(): Size of X not consistant with size of MX" );
+                        "Belos::DGKSOrthoManager::findBasis(): Size of X not consistent with size of MX" );
     TEUCHOS_TEST_FOR_EXCEPTION( static_cast<ptrdiff_t>(xc) > xr, std::invalid_argument,
                         "Belos::DGKSOrthoManager::findBasis(): Size of X not feasible for normalization" );
     TEUCHOS_TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, std::invalid_argument,
@@ -1103,7 +1103,7 @@ namespace Belos {
           MatOrthoManager<ScalarType,MV,OP>::innerProd(*prevX,*Xj,MXj,P2);
           }
           product += P2;
- 
+
           {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
@@ -1781,11 +1781,11 @@ namespace Belos {
                  "Maximum number of orthogonalization passes (includes the "
                  "first).  Default is 2, since \"twice is enough\" for Krylov "
                  "methods.");
-    params->set ("blkTol", DGKSOrthoManager<ScalarType, MV, OP>::blk_tol_default_, 
+    params->set ("blkTol", DGKSOrthoManager<ScalarType, MV, OP>::blk_tol_default_,
                  "Block reorthogonalization threshold.");
     params->set ("depTol", DGKSOrthoManager<ScalarType, MV, OP>::dep_tol_default_,
                  "(Non-block) reorthogonalization threshold.");
-    params->set ("singTol", DGKSOrthoManager<ScalarType, MV, OP>::sing_tol_default_, 
+    params->set ("singTol", DGKSOrthoManager<ScalarType, MV, OP>::sing_tol_default_,
                  "Singular block detection threshold.");
 
     return params;
@@ -1799,13 +1799,13 @@ namespace Belos {
 
     RCP<ParameterList> params = getDGKSDefaultParameters<ScalarType, MV, OP>();
 
-    params->set ("maxNumOrthogPasses", 
+    params->set ("maxNumOrthogPasses",
                  DGKSOrthoManager<ScalarType, MV, OP>::max_blk_ortho_fast_);
-    params->set ("blkTol", 
+    params->set ("blkTol",
                  DGKSOrthoManager<ScalarType, MV, OP>::blk_tol_fast_);
-    params->set ("depTol", 
+    params->set ("depTol",
                  DGKSOrthoManager<ScalarType, MV, OP>::dep_tol_fast_);
-    params->set ("singTol", 
+    params->set ("singTol",
                  DGKSOrthoManager<ScalarType, MV, OP>::sing_tol_fast_);
 
     return params;

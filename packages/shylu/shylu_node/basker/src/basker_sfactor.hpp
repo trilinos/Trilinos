@@ -46,7 +46,7 @@ namespace BaskerNS
     #endif
 
     Basker<Int,Entry,Exe_Space> *basker;
-    
+
     kokkos_sfactor_init_workspace()
     {}
 
@@ -84,7 +84,7 @@ namespace BaskerNS
     #endif
 
     Basker<Int,Entry,Exe_Space> *basker;
-    
+
     kokkos_sfactor_init_factor()
     {}
 
@@ -119,18 +119,18 @@ namespace BaskerNS
 //SFactor functions fo basker
 namespace BaskerNS
 {
- 
+
 template <class Int, class Entry, class Exe_Space>
 BASKER_INLINE
 int Basker<Int, Entry, Exe_Space>::sfactor()
 {
   //check if already called
-  if(symb_flag == true) 
+  if(symb_flag == true)
   {return -1;}
 
   #ifdef BASKER_DEBUG_SFACTOR
   printf("Default Symbolic Called \n");
-  #endif     
+  #endif
 
   if(btf_tabs_offset != 0)
   {
@@ -153,7 +153,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     if(btf_nblks > 1)
     {
       btf_last_dense();
-    }	 
+    }
   }
 
   //Allocate Factorspace
@@ -213,14 +213,14 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //Algorithm outline
     //Perform Normal col_etree on Domain
     //Perform simulated factorization on seps
-    
+
     //Loop over all domain blocks
     //Note, that we could do this in parallel
     //(and should in future releases)
     //However parallel will require more memory
     //Need array of Strees
 
-    //Need to make this sparse 
+    //Need to make this sparse
     //Without extra memory
     //-----OLD
     //INT_1DARRAY gScol;
@@ -234,7 +234,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //printf("p/2: %d \n", num_threads/2);
     Int split_num = num_threads/2;
     if(split_num == 0)
-    { 
+    {
       split_num = 1;
     }
     INT_2DARRAY gScol;
@@ -253,7 +253,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       init_value(gScol[ii], A.ncol, (Int)0);
     }
 
- 
+
     //INT_2DARRAY gSrow;
     //BASKER_ASSERT(split_num > 0, "sfactor split_num");
     //MALLOC_INT_2DARRAY(gSrow, tree.nlvls);
@@ -297,16 +297,16 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       {
         Int U_col = S(l+1)(p);
         //Note: Need to think more about this flow
-        //Should be subtracted by how many times in the 
+        //Should be subtracted by how many times in the
         //future
 
         Int my_row_leader = S(0)(find_leader(p,l));
-        //Int my_new_row = 
+        //Int my_new_row =
         // blk - my_row_leader;
         Int U_row = blk-my_row_leader;
 
         #ifdef BASKER_DEBUG_SFACTOR
-        printf("Proc off-diag block: %ld p: %ld loc: %ld %ld \n", 
+        printf("Proc off-diag block: %ld p: %ld loc: %ld %ld \n",
             (long)l, (long)p, (long)U_col, (long)U_row);
         #endif
 
@@ -402,7 +402,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
 
           Int my_row_leader = S(0)(find_leader(ppp,l));
-          //Int my_new_row = 
+          //Int my_new_row =
           // S(lvl+1)(ppp) - my_row_leader;
           U_row =  S(lvl+1)(ppp) - my_row_leader;
 
@@ -458,10 +458,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   {
     //Algorithm outline
     //Perform QR on Domains
-    //Update sep 
+    //Update sep
     return -1;
   }//ed unsymmetric_symbolic
-  
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
@@ -476,7 +476,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     printf("In E_tree\n");
   #endif
     BASKER_MATRIX *MV = &M;
-  
+
     if((Options.symmetric == BASKER_TRUE))
     {
     #ifdef BASKER_DEBUG_SFACTOR
@@ -505,21 +505,21 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
          }
        */
     }
-  
+
     ST.init_parent(MV->ncol+1);
     //Int brow = MV->srow; //Not used
     //Int bcol = MV->scol; //Not used
     INT_1DARRAY ws;
     Int ws_size = 2*MV->nrow;
-  
+
     Int have_past = BASKER_MAX_IDX;
-  
+
     BASKER_ASSERT(ws_size > 0 , "Basker unsymmetric_sfactor assert: sfactor ws_size > 0 failed");
     MALLOC_INT_1DARRAY(ws, ws_size);
-  
+
     Int *past   = &(ws(0));
     Int *clique = &(ws(MV->ncol));
-  
+
     //Zero out the cliques from ATA
     if(ata_option == 1)
     {
@@ -527,7 +527,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       {clique[ii] = BASKER_MAX_IDX;}
       //{clique[ii] = A.max_idx;}
     }
-  
+
     // for each column
     for(Int k = 0; k < MV->ncol; ++k)
     {
@@ -536,12 +536,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       for(Int j = MV->col_ptr(k); j < MV->col_ptr(k+1); ++j)
       {
         Int t = MV->row_idx(j);
-  
+
         if(ata_option==1)
         {
           t = clique[MV->row_idx(j)];
         } //use clique instead
-  
+
         for(; (t!=BASKER_MAX_IDX) && (t < k); t = have_past)
         {
           have_past  = past[t];
@@ -558,9 +558,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         {
           clique[MV->row_idx(j)] = k;
         }
-      } 
+      }
     }//end over all columns
-  
+
     FREE(ws);
   }//end e_tree()
 
@@ -641,7 +641,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         //connect others in clique
         if(ata_option == 1)
         { clique[MV.row_idx(j)-brow] = k; }
-      } 
+      }
     }//end over all columns
 
     FREE(ws);
@@ -667,16 +667,16 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     MALLOC_INT_1DARRAY(ws, ws_size);
     init_value(ws, ws_size, (Int)0);
     Int *head, *next, *stack;
-    head  =  &(ws(0)); 
-    next  =  &(ws(n)); 
+    head  =  &(ws(0));
+    next  =  &(ws(n));
     stack =  &(next[n]);
     for(Int j=0; j < n; j++)
       {head[j] = BASKER_MAX_IDX;}
-  
+
     for(Int k = n; k > 0 ; k--)
     {
       Int j = k-1;
-      if(p[j] == BASKER_MAX_IDX) 
+      if(p[j] == BASKER_MAX_IDX)
       { continue; }
 
       next[j] = head[p[j]];
@@ -690,7 +690,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       k = post_dfs(j, k, head, next, post, stack);
     }
     FREE(ws);
-    
+
     //Come back and make smaller
     //ST.init_post(n);
     ST.init_post(A.ncol);
@@ -725,12 +725,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     MALLOC_INT_1DARRAY(ws, ws_size);
     init_value(ws, ws_size, (Int)0);
     Int *head, *next, *stack;
-    head  =  &(ws[0]); 
-    next  =  &(ws[n]); 
+    head  =  &(ws[0]);
+    next  =  &(ws[n]);
     stack =  &(next[n]);
     for(Int j=0; j < n; j++)
       {head[j] = BASKER_MAX_IDX;}
-  
+
     for(Int k = n; k > 0 ; k--)
     {
       Int j = k-1;
@@ -765,7 +765,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   Int Basker<Int, Entry, Exe_Space>::post_dfs
   (
    Int j, Int k,
-   Int *head, 
+   Int *head,
    Int *next,
    //Int *post,
    INT_1DARRAY post,
@@ -808,7 +808,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     matrix_transpose(MV, Mt);
     Int *post   = &(ST.post(0));
     Int *parent = &(ST.parent(0));
-   
+
     const Int ws_size = 4*MV.ncol+ (MV.ncol+MV.nrow+1);
     INT_1DARRAY ws;
     BASKER_ASSERT(ws_size > 0, "Basker col_count assert1: col_count ws_size > 0 failed");
@@ -825,11 +825,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     mfirst = &(ws(MV.ncol));
     pleaf  = &(ws(MV.ncol+MV.ncol));
     first  = &(ws(MV.ncol+MV.ncol+MV.ncol));
-    
+
 
     for(Int k = 0; k < ws_size; k++)
       {ws(k) = BASKER_MAX_IDX;}
-    
+
     for(Int k = 0; k < MV.ncol; k++)
     {
       //Leaving post out
@@ -843,14 +843,14 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       {
         delta[j] = 0;
       }
-      for( ; 
-          (j != BASKER_MAX_IDX) && 
-          (first[j] == BASKER_MAX_IDX); 
+      for( ;
+          (j != BASKER_MAX_IDX) &&
+          (first[j] == BASKER_MAX_IDX);
           j = parent[j])
       {
         first[j] = k; // update with parent
       }
-    }//initalize the delta counts for overlap
+    }//initialize the delta counts for overlap
 
     // Create a linked list of the cliques
     //Cliques are need for nonsymmtrix A'A case
@@ -888,7 +888,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     // reset past
     for(Int k = 0; k < MV.ncol; k++)
     {past[k] = k;}
-    
+
     for(Int k = 0; k < MV.ncol; k++)
     {
       Int j = post[k];
@@ -914,7 +914,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           Int i = Mt.row_idx(p);
 
           Int q = least_common(i, j, first, mfirst, pleaf, past, &jleaf);
-          if(jleaf >=1) 
+          if(jleaf >=1)
           {delta[j]++;}
           if(jleaf == 2)
           {delta[q]--;}
@@ -934,9 +934,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         delta[parent[k]] += delta[k];
       }
     }
-    
+
     // Clean up AT
-   
+
     //Comeback and make less later
     ST.init_col_counts(A.ncol);
 
@@ -945,18 +945,18 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     {
       ST.col_counts[i] = delta[i];
     }
-   
+
     // Clean up workspace
     FREE(ws);
     FREE(delta);
 
   }//end col_count()
- 
+
 
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::col_count
-  ( 
+  (
    BASKER_MATRIX_VIEW &MV,
 	 BASKER_SYMBOLIC_TREE &ST
   )
@@ -983,10 +983,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     mfirst = &(ws[MV.ncol]);
     pleaf  = &(ws[MV.ncol+MV.ncol]);
     first  = &(ws[MV.ncol+MV.ncol+MV.ncol]);
-    
+
     for(Int k = 0; k < ws_size; k++)
     {ws[k] = BASKER_MAX_IDX;}
-    
+
     for(Int k = 0; k < MV.ncol; k++)
     {
       //Leaving post out
@@ -1001,15 +1001,15 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         delta[j] = 0;
       }
 
-      for( ; 
-          (j != BASKER_MAX_IDX) && 
-          (first[j] == BASKER_MAX_IDX); 
+      for( ;
+          (j != BASKER_MAX_IDX) &&
+          (first[j] == BASKER_MAX_IDX);
           j = parent[j])
       {
         first[j] = k; // update with parent
       }
-    } //initalize the delta counts for overlap
-  
+    } //initialize the delta counts for overlap
+
     // Create a linked list of the cliques
     //Cliques are need for nonsymmtrix A'A case
     //Int *head = ws+4*A.ncol;
@@ -1017,7 +1017,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     Int *head, *next;
     head = &(ws[4*MV.ncol]);
     next = &(ws[5*MV.ncol+1]);
-    
+
     if(Options.symmetric == BASKER_FALSE)
     {
       printf("\n\n\n\n");
@@ -1043,7 +1043,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     // reset past
     for(Int k = 0; k < MV.ncol; k++)
     {past[k] = k;}
-    
+
     for(Int k = 0; k < MV.ncol; k++)
     {
       Int j = post[k];
@@ -1070,7 +1070,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           Int i = Mt.row_idx[p];
 
           Int q = least_common(i, j, first, mfirst, pleaf, past, &jleaf);
-          if(jleaf >=1) 
+          if(jleaf >=1)
           {delta[j]++;}
           if(jleaf == 2)
           {delta[q]--;}
@@ -1089,9 +1089,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         delta[parent[k]] += delta[k];
       }
     }
-    
+
     // Clean up AT
-   
+
     //Comeback and make less later
     ST.init_col_counts(A.ncol);
     //copy column counts.
@@ -1100,13 +1100,13 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       ST.col_counts[i] = delta[i];
     }
 
-    // Clean up workspace 
+    // Clean up workspace
     FREE(ws);
     FREE(delta);
 
   }//end col_count()
 
-  
+
   //Moved to basker_util
   //template <class Int, class Entry, class Exe_Space>
   //BASKER_INLINE
@@ -1164,7 +1164,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   //          {
   //            continue;
   //          }
-  //        
+  //
   //        AT.row_idx[ws[MV.row_idx(j)-brow]++] = k; //starting at zero
   //        //AT.row_idx[ws[MV.row_idx(j)-brow]++] = k+brow; //not o
   //      }
@@ -1175,15 +1175,15 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    template <class Int, class Entry, class Exe_Space>
   Int Basker<Int, Entry, Exe_Space>::least_common
   (
-   Int i, Int j, Int *first, 
-   Int *mfirst,Int *pleaf, 
+   Int i, Int j, Int *first,
+   Int *mfirst,Int *pleaf,
    Int *past, Int *jleaf
   )
   {
     Int q, sparent;
     *jleaf = 0;
     //j not a leaf
-    
+
     if((i <=j) || ((mfirst[i]!= BASKER_MAX_IDX)&& (first[j] <= mfirst[i])))
     {
       return BASKER_MAX_IDX;
@@ -1198,7 +1198,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     else
     { *jleaf = 2;}
 
-    if(*jleaf == 1) 
+    if(*jleaf == 1)
     { return i; }
 
     for(q = jprev; q != past[q]; q = past[q]);
@@ -1208,8 +1208,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       sparent = past[k];
       past[k] = q;
     }
-    return q;      
-  }//end least_common() 
+    return q;
+  }//end least_common()
 
 
   template <class Int, class Entry, class Exe_Space>
@@ -1218,7 +1218,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    BASKER_MATRIX &MV,
    BASKER_SYMBOLIC_TREE &ST,
    INT_1DARRAY gcol,
-   INT_1DARRAY grow, 
+   INT_1DARRAY grow,
    Int off_diag
   )
   {
@@ -1249,12 +1249,12 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     // MV.init_offset(MV.scol,0);
     //Int brow = MV.srow; //Not used
     Int bcol = MV.scol;
- 
+
     #ifdef BASKER_DEBUG_SFACTOR
     printf("\n\n");
     printf("BLK: %d %d \n", brow, bcol);
     printf("row: %d %d col: %d %d \n",
-	   MV.srow, MV.nrow+MV.srow, 
+	   MV.srow, MV.nrow+MV.srow,
 	   MV.scol, MV.ncol+MV.scol);
     printf("\n\n");
     #endif
@@ -1344,7 +1344,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
             t = ST.parent(t);
           }
         }
-      } 
+      }
 
       //Loop over rows
       for(Int j = MV.col_ptr(k); j< MV.col_ptr(k+1); ++j)
@@ -1427,8 +1427,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
     }//all columns
 
-   
-    //Copy into global 
+
+    //Copy into global
     //col
     for(Int i = MV.scol; i < MV.scol+MV.ncol; i++)
     {
@@ -1451,7 +1451,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         grow(i) = l_min;
       }
     }
-    
+
     //Copy column_counts
     ST.init_U_col_counts(MV.ncol);
     for(Int i = 0; i < MV.ncol; i++)
@@ -1498,7 +1498,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
    BASKER_MATRIX_VIEW &MV,
    BASKER_SYMBOLIC_TREE &ST,
    INT_1DARRAY gcol,
-   INT_1DARRAY grow, 
+   INT_1DARRAY grow,
    Int off_diag
   )
   {
@@ -1506,7 +1506,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     {
       return;
     }
-    
+
     //Algorithm
     //Goal Reuse as much of LU etree as possible
     //Order A(:,k) in post order (Assume already)
@@ -1525,7 +1525,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     MV.init_offset(MV.scol,0);
     Int brow = MV.srow;
     Int bcol = MV.scol;
- 
+
     //Start Algorithm
     INT_1DARRAY U_col_count;
     BASKER_ASSERT(MV.ncol > 0, "Basker U_blk_sfactor assert: ncol > 0 failed");
@@ -1606,7 +1606,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
         //Climb tree
         //Will want to modify this to ST.post[row_idx(j)];
-        Int t = MV.row_idx(j)-brow; 
+        Int t = MV.row_idx(j)-brow;
         // Processing element t
         while((t<=MV.nrow)&&(color[t]==0))
         {
@@ -1677,8 +1677,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
     }//all columns
 
-   
-    //Copy into global 
+
+    //Copy into global
     //col
     for(Int i = MV.scol; i < MV.scol+MV.ncol; i++)
     {
@@ -1701,7 +1701,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
         grow[i] = l_min;
       }
     }
-    
+
     //Copy column_counts
     //printf("MVncol: %d \n", MV.ncol);
     ST.init_U_col_counts(MV.ncol);
@@ -1754,8 +1754,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //Algorithm
     //You can either use the Row-count method or
     //Assume same as U_blk for symmtric case.
-    //Note, Very unsymmtric and HUND will most likely not 
-    //Need this called as we will use the QR on nxns 
+    //Note, Very unsymmtric and HUND will most likely not
+    //Need this called as we will use the QR on nxns
   }//end L_blk_sfactor()
 
 
@@ -1772,17 +1772,17 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //Algorithm
     //You can either use the Row-count method or
     //Assume same as U_blk for symmtric case.
-    //Note, Very unsymmtric and HUND will most likely not 
-    //Need this called as we will use the QR on nxns 
+    //Note, Very unsymmtric and HUND will most likely not
+    //Need this called as we will use the QR on nxns
   }//end L_blk_sfactor()
 
 
   template <class Int, class Entry, class Exe_Space>
   void Basker<Int, Entry, Exe_Space>::S_sfactor_reduce
   (
-   BASKER_MATRIX &MV, 
+   BASKER_MATRIX &MV,
    BASKER_SYMBOLIC_TREE &ST,
-   INT_1DARRAY gcol, 
+   INT_1DARRAY gcol,
    INT_1DARRAY grow
   )
   {
@@ -1794,9 +1794,9 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   template <class Int, class Entry, class Exe_Space>
   void Basker<Int, Entry, Exe_Space>::S_sfactor_reduce
   (
-   BASKER_MATRIX_VIEW &MV, 
+   BASKER_MATRIX_VIEW &MV,
    BASKER_SYMBOLIC_TREE &ST,
-   INT_1DARRAY gcol, 
+   INT_1DARRAY gcol,
    INT_1DARRAY grow
   )
   {
@@ -1808,7 +1808,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   (
    BASKER_MATRIX &MV,
    BASKER_SYMBOLIC_TREE &ST,
-   INT_1DARRAY gcol, 
+   INT_1DARRAY gcol,
    INT_1DARRAY grow
   )
   {
@@ -1819,13 +1819,13 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //"Parallel Symbolic Factorization for Sparse LU with.."
     //By Grigori, Demmel, and Li
     //Section 4.1
-    
+
     //Give a = nnz(L(:,1)) and b = nnz(U(1,:))
     //If a*b == (size-size)^2 .... adjust padding
 
     //Int brow = MV.srow; //Not used
     //Int bcol = MV.scol; //Not used
-    
+
     //Find nnz L(:,1)
     Int nnz_c = 0;
     for(Int i = MV.srow; i < (MV.srow+MV.nrow); i++)
@@ -1859,7 +1859,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     printf("S - nnz(U(1,:)): %d \n", nnz_r);
     #endif
     */
-    
+
     //Int nnz_S = (nnz_c*nnz_r)/(MV.ncol);
     //Int nnz_S = (nnz_c*nnz_r);
     //Assumming dense
@@ -1871,10 +1871,10 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
     ST.init_S_col_counts(1);
     ST.S_col_counts[0] = nnz_S;
-    
+
     //Build fake etree (dense) for next level
     ST.init_parent(MV.ncol); //make sure we have enough space
-    
+
     for(Int i = 0; i < MV.ncol-1; i++)
     {
       ST.parent[i] = i+1;
@@ -1888,15 +1888,15 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     {
       ST.parent[0] = BASKER_MAX_IDX;
     }
-    
+
   }//end S_blk_sfactor
-  
+
   template <class Int, class Entry, class Exe_Space>
   void Basker<Int, Entry, Exe_Space>::S_blk_sfactor
   (
    BASKER_MATRIX_VIEW &MV,
    BASKER_SYMBOLIC_TREE &ST,
-   INT_1DARRAY gcol, 
+   INT_1DARRAY gcol,
    INT_1DARRAY grow
   )
   {
@@ -1906,13 +1906,13 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     //"Parallel Symbolic Factorization for Sparse LU with.."
     //By Grigori, Demmel, and Li
     //Section 4.1
-    
+
     //Give a = nnz(L(:,1)) and b = nnz(U(1,:))
     //If a*b == (size-size)^2 .... adjust padding
 
     Int brow = MV.srow;
     Int bcol = MV.scol;
-    
+
     //Find nnz L(:,1)
     Int nnz_c = 0;
     for(Int i = MV.srow; i < (MV.srow+MV.nrow); i++)
@@ -1946,7 +1946,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     printf("S - nnz(U(1,:)): %d \n", nnz_r);
     #endif
     */
-    
+
     //Int nnz_S = (nnz_c*nnz_r)/(MV.ncol);
     //Int nnz_S = (nnz_c*nnz_r);
     //Assumming dense
@@ -1975,7 +1975,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   void Basker<Int,Entry,Exe_Space>::leaf_assign_nnz
   (
    BASKER_MATRIX &M,
-   BASKER_SYMBOLIC_TREE &ST, 
+   BASKER_SYMBOLIC_TREE &ST,
    Int option
   )
   {
@@ -2002,19 +2002,19 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
   }//end assign_leaf_nnz
 
-  
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::U_assign_nnz
   (
    BASKER_MATRIX &M,
-   BASKER_SYMBOLIC_TREE &ST, 
+   BASKER_SYMBOLIC_TREE &ST,
    Int option
   )
   {
     if(option == 0 )
     {
-      Int t_nnz = 0; 
+      Int t_nnz = 0;
 
       for(Int i = 0; i < M.ncol; i++)
       {
@@ -2036,19 +2036,19 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
 
   }//end assign_upper_nnz
 
-  
+
   template <class Int, class Entry, class Exe_Space>
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::L_assign_nnz
   (
    BASKER_MATRIX &M,
-   BASKER_SYMBOLIC_TREE &ST, 
+   BASKER_SYMBOLIC_TREE &ST,
    Int option
   )
   {
     if(option == 0)
     {
-      Int t_nnz = 0; 
+      Int t_nnz = 0;
 
       for(Int i = 0; i < M.nrow; i++)
       {
@@ -2103,8 +2103,8 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
   BASKER_INLINE
   void Basker<Int,Entry,Exe_Space>::btf_last_dense()
   {
-    
-    //Here we scan the lower part and malloc 
+
+    //Here we scan the lower part and malloc
     #ifdef BASKER_DEBUG_SFACTOR
     //printf("Test btf_last_dense \n");
     //printf("btf_tabs_offset: %d col: %d \n",
@@ -2119,7 +2119,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
     printf("btf_nblks %d btf_tabs_offset %d \n",
 	   btf_nblks, btf_tabs_offset);
     #endif
-    
+
     Int nblks_left = btf_nblks - btf_tabs_offset;
     if(nblks_left == 0)
     {
@@ -2146,7 +2146,7 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
           lblk_size,
           btf_tabs(i),
           lblk_size,
-          (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);    
+          (btf_blk_nnz(i)+lblk_size)*BASKER_BTF_NNZ_OVER);
 
       //For pruning
       LBTF(i-btf_tabs_offset).init_pend();
@@ -2164,11 +2164,11 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       //MALLOC workspace
 
     }//over all blks
-    
+
 
     //JDB: This needs to be fixed
     max_blk_size = BTF_C.nrow;
-    
+
     if(btf_tabs_offset == 0)
     {
       BASKER_ASSERT(num_threads > 0, "Basker btf_last_dense assert: num_threads > 0 failed");
@@ -2190,14 +2190,14 @@ int Basker<Int, Entry, Exe_Space>::sfactor()
       printf("Malloc Thread: %d iws: %d \n",
           i, (thread_array(i).iws_size*
             thread_array(i).iws_mult));
-      printf("Malloc Thread: %d ews: %d \n", 
+      printf("Malloc Thread: %d ews: %d \n",
           i, (thread_array(i).ews_size*
             thread_array(i).ews_mult));
       #endif
     }
 
   }//end btf_last_dense()
-  
+
 }//end namespace Bakser
 
 #endif//endif BASKER_SFACTOR_NEWFRM_HPP

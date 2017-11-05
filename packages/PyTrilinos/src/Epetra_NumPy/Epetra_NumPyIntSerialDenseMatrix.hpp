@@ -72,7 +72,7 @@ public:
   ~Epetra_NumPyIntSerialDenseMatrix();
 
   // Overridden Epetra_IntSerialDenseMatrix methods.  These are
-  // overriden for one of two reasons: (1) to provide a more
+  // overridden for one of two reasons: (1) to provide a more
   // python-like signature, or (2) to maintain synchronization between
   // the Epetra_SerialDenseMatrix and the numpy array.
   int        operator() (int rowIndex, int colIndex);

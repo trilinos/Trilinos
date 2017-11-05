@@ -126,12 +126,12 @@ namespace Xpetra {
     void putScalar(const int &value) {  }
 
     //! Set multi-vector values to random numbers.
-    void randomize(bool bUseXpetraImplementation = true) { XPETRA_MONITOR("EpetraIntVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::randomize(): Functionnality not available in Epetra"); }
+    void randomize(bool bUseXpetraImplementation = true) { XPETRA_MONITOR("EpetraIntVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::randomize(): Functionality not available in Epetra"); }
 
 
     //! Set seed for Random function.
     /** Note: this method does not exist in Tpetra interface. Added for MueLu. */
-    void setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionnality not available in Epetra"); }
+    void setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionality not available in Epetra"); }
 
 
     //@}
@@ -423,12 +423,12 @@ namespace Xpetra {
       void putScalar(const int &value) {  vec_->PutValue(value); }
 
       //! Set multi-vector values to random numbers.
-      void randomize(bool bUseXpetraImplementation = true) { XPETRA_MONITOR("EpetraIntVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::randomize(): Functionnality not available in Epetra"); }
+      void randomize(bool bUseXpetraImplementation = true) { XPETRA_MONITOR("EpetraIntVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::randomize(): Functionality not available in Epetra"); }
 
 
       //! Set seed for Random function.
       /** Note: this method does not exist in Tpetra interface. Added for MueLu. */
-      void setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionnality not available in Epetra"); }
+      void setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionality not available in Epetra"); }
 
 
       //@}
@@ -851,12 +851,12 @@ namespace Xpetra {
       void putScalar(const int &value) {  vec_->PutValue(value); }
 
       //! Set multi-vector values to random numbers.
-      void randomize(bool bUseXpetraImplementation = true) { XPETRA_MONITOR("EpetraIntVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::randomize(): Functionnality not available in Epetra"); }
+      void randomize(bool bUseXpetraImplementation = true) { XPETRA_MONITOR("EpetraIntVectorT::randomize"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::randomize(): Functionality not available in Epetra"); }
 
 
       //! Set seed for Random function.
       /** Note: this method does not exist in Tpetra interface. Added for MueLu. */
-      void setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionnality not available in Epetra"); }
+      void setSeed(unsigned int seed) { XPETRA_MONITOR("EpetraIntVectorT::setSeed"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraIntVectorT::setSeed(): Functionality not available in Epetra"); }
 
 
       //@}

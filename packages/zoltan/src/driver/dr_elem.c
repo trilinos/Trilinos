@@ -1,4 +1,4 @@
-/* 
+/*
  * @HEADER
  *
  * ***********************************************************************
@@ -965,7 +965,7 @@ int get_side_id(E_Type etype, const ZOLTAN_ID_TYPE *connect, const int nsnodes,
           side_nodes[(2 + num) % 4] == (int)connect[5] &&
           side_nodes[(3 + num) % 4] == (int)connect[4]) return 1;
 
-      /* if this is the duplicated node, then find the next occurence */
+      /* if this is the duplicated node, then find the next occurrence */
       if (dup && (int)connect[0] == side_nodes[location]) {
         num = in_list2((int)connect[0], (nsnodes-num), &(side_nodes[num+1]));
         if (side_nodes[(1 + num) % 4] == (int)connect[1] &&
@@ -980,7 +980,7 @@ int get_side_id(E_Type etype, const ZOLTAN_ID_TYPE *connect, const int nsnodes,
           side_nodes[(2 + num) % 4] == (int)connect[6] &&
           side_nodes[(3 + num) % 4] == (int)connect[5]) return 2;
 
-      /* if this is the duplicated node, then find the next occurence */
+      /* if this is the duplicated node, then find the next occurrence */
       if (dup && (int)connect[1] == side_nodes[location]) {
         num = in_list2((int)connect[1], (nsnodes-num), &(side_nodes[num+1]));
         if (side_nodes[(1 + num) % 4] == (int)connect[2] &&
@@ -995,7 +995,7 @@ int get_side_id(E_Type etype, const ZOLTAN_ID_TYPE *connect, const int nsnodes,
           side_nodes[(2 + num) % 4] == (int)connect[7] &&
           side_nodes[(3 + num) % 4] == (int)connect[6]) return 3;
 
-      /* if this is the duplicated node, then find the next occurence */
+      /* if this is the duplicated node, then find the next occurrence */
       if (dup && (int)connect[2] == side_nodes[location]) {
         num = in_list2((int)connect[2], (nsnodes-num), &(side_nodes[num+1]));
         if (side_nodes[(1 + num) % 4] == (int)connect[3] &&
@@ -1010,7 +1010,7 @@ int get_side_id(E_Type etype, const ZOLTAN_ID_TYPE *connect, const int nsnodes,
           side_nodes[(2 + num) % 4] == (int)connect[4] &&
           side_nodes[(3 + num) % 4] == (int)connect[7]) return 4;
 
-      /* if this is the duplicated node, then find the next occurence */
+      /* if this is the duplicated node, then find the next occurrence */
       if (dup && (int)connect[3] == side_nodes[location]) {
         num = in_list2((int)connect[3], (nsnodes-num), &(side_nodes[num+1]));
         if (side_nodes[(1 + num) % 4] == (int)connect[0] &&
@@ -1025,7 +1025,7 @@ int get_side_id(E_Type etype, const ZOLTAN_ID_TYPE *connect, const int nsnodes,
           side_nodes[(2 + num) % 4] == (int)connect[2] &&
           side_nodes[(3 + num) % 4] == (int)connect[1]) return 5;
 
-      /* if this is the duplicated node, then find the next occurence */
+      /* if this is the duplicated node, then find the next occurrence */
       if (dup && (int)connect[0] == side_nodes[location]) {
         num = in_list2((int)connect[0], (nsnodes-num), &(side_nodes[num+1]));
         if (side_nodes[(1 + num) % 4] == (int)connect[3] &&
@@ -1040,7 +1040,7 @@ int get_side_id(E_Type etype, const ZOLTAN_ID_TYPE *connect, const int nsnodes,
           side_nodes[(2 + num) % 4] == (int)connect[6] &&
           side_nodes[(3 + num) % 4] == (int)connect[7]) return 6;
 
-      /* if this is the duplicated node, then find the next occurence */
+      /* if this is the duplicated node, then find the next occurrence */
       if (dup && (int)connect[4] == side_nodes[location]) {
         num = in_list2((int)connect[4], (nsnodes-num), &(side_nodes[num+1]));
         if (side_nodes[(1 + num) % 4] == (int)connect[5] &&

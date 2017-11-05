@@ -264,7 +264,7 @@ std::string StrUtils::varSubstitute(const std::string& rawLine,
 {
   std::string line = rawLine;
 
-  // iterate because there might be more than one occurance on this line
+  // iterate because there might be more than one occurrence on this line
   while (find(line, varName) >= 0)
   {
     std::string b = before(line, varName);

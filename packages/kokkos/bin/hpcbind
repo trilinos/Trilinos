@@ -126,7 +126,7 @@ function show_help {
   echo "                        P-N.log, P-N.out and P-N.err where P is the prefix"
   echo "                        and N is the queue index or mpi rank (no spaces)"
   echo "  --output-mode=<Op>    How console output should be handled."
-  echo "                        Options are all, rank0, and none.  Default: rank0" 
+  echo "                        Options are all, rank0, and none.  Default: rank0"
   echo "  --lstopo              Show bindings in lstopo"
   echo "  -v|--verbose          Print bindings and relevant environment variables"
   echo "  -h|--help             Show this message"
@@ -326,7 +326,7 @@ if [[ ${HPCBIND_ENABLE_GPU_MAPPING} -eq 1 ]]; then
   for ((i=0; i < ${#HPCBIND_VISIBLE_GPUS[*]}; i++)); do
     if [[ ${HPCBIND_VISIBLE_GPUS[$i]} -ge ${NUM_GPUS} ||
       ${HPCBIND_VISIBLE_GPUS[$i]} -lt 0 ]]; then
-      echo "HPCBIND Invaild GPU ID ${HPCBIND_VISIBLE_GPUS[$i]} (setting to 0)" > >(tee -a ${HPCBIND_LOG})
+      echo "HPCBIND Invalid GPU ID ${HPCBIND_VISIBLE_GPUS[$i]} (setting to 0)" > >(tee -a ${HPCBIND_LOG})
       HPCBIND_VISIBLE_GPUS[$i]=0;
     fi
   done

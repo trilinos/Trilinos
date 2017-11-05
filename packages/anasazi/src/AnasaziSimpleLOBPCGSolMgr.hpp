@@ -276,7 +276,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // create an LOBPCG solver
   Teuchos::RCP<LOBPCG<ScalarType,MV,OP> > lobpcg_solver
     = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(problem_,sorter,printer,outputtest,ortho,plist) );
-  // add the auxillary vecs from the eigenproblem to the solver
+  // add the auxiliary vecs from the eigenproblem to the solver
   if (problem_->getAuxVecs() != Teuchos::null) {
     lobpcg_solver->setAuxVecs( Teuchos::tuple<Teuchos::RCP<const MV> >(problem_->getAuxVecs()) );
   }
