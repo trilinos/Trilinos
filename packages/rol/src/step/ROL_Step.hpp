@@ -294,6 +294,12 @@ public:
     return state_;
   }
 
+  /** \brief Get state for step object.
+  */
+  void reset(void) {
+    state_ = Teuchos::rcp(new StepState<Real>());
+  }
+
   // struct StepState (scalars, vectors) map?
 
   // getState
