@@ -155,6 +155,13 @@ private:
 
 public:
 
+  /** \brief Constructor.
+  
+       @param[in] opt       the OptimizationProblem to be solved
+       @param[in] parlist   algorithm and step input parameters
+
+      ---
+  */
   OptimizationSolver( OptimizationProblem<Real> &opt,
                       Teuchos::ParameterList &parlist ) {
     // Get optimization problem type: U, E, B, EB
@@ -168,15 +175,31 @@ public:
     parlist_ = Teuchos::rcpFromRef(parlist);
   }
 
+  /** \brief Returns iteration history as a vector of strings.
+
+      ---
+  */
   std::vector<std::string> getOutput(void) const {
     return output_;
   }
 
+  /** \brief Solve optimization problem with no iteration output.
+
+      ---
+  */
   int solve(void) {
     Teuchos::oblackholestream bhs;
     return solve(bhs);
   }
 
+  /** \brief Solve optimization problem.
+
+      @param[in] outStream       is the output stream to collect iteration history
+      @param[in] status          is a user-defined StatusTest
+      @param[in] combineStatus   if true, the user-defined StatusTest will be combined with the default StatusTest
+
+      ---
+  */
   int solve( std::ostream &outStream,
        const Teuchos::RCP<StatusTest<Real> > &status = Teuchos::null,
        const bool combineStatus = true ) {
@@ -217,14 +240,35 @@ public:
     return 0;
   }
 
+  /** \brief Return the AlgorithmState.
+
+      ---
+  */
   Teuchos::RCP<const AlgorithmState<Real> > getAlgorithmState(void) const {
     return state_;
   }
 
+  /** \brief Reset the AlgorithmState.
+
+      This function does not reset the Step or the StepState.
+
+      ---
+  */
   void resetAlgorithmState(void) {
     state_ = Teuchos::rcp( new AlgorithmState<Real> );
   }
 
+  /** \brief Reset both Algorithm and Step.
+
+      @param[in] resetAlgo   if true, then AlgorithmState will be reset
+
+      This function will reset the AlgorithmState and reinitialize the
+      Step.  This function does not permit changing the Step specified
+      upon construction.  To change the Step, reinitialize the
+      OptimizationSolver.
+
+      ---
+  */
   void reset(const bool resetAlgo = true) {
     if (resetAlgo) {
       resetAlgorithmState();
