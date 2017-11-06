@@ -80,16 +80,15 @@ private:
 
   EProblem problemType_;
 
-public:
+  // For resets
+  Teuchos::RCP<OptimizationProblem<Real> > opt_;
+  Teuchos::RCP<Teuchos::ParameterList> parlist_;
 
-  OptimizationSolver( OptimizationProblem<Real> &opt,
-                      Teuchos::ParameterList &parlist ) {
+  void initialize(OptimizationProblem<Real> &opt,
+                  Teuchos::ParameterList &parlist) {
     // Get step name from parameterlist
     std::string stepname = parlist.sublist("Step").get("Type","Last Type (Dummy)");
     EStep stepType = StringToEStep(stepname);
-
-    // Get optimization problem type: U, E, B, EB
-    problemType_ = opt.getProblemType();
 
     // Set default algorithm if provided step is incompatible with problem type
     if ( !isCompatibleStep(problemType_, stepType) ) {
@@ -115,7 +114,6 @@ public:
     step_    = stepFactory.getStep(stepname,parlist);
     status0_ = statusTestFactory.getStatusTest(stepname,parlist);
     status_  = Teuchos::rcp( new CombinedStatusTest<Real> );
-    state_   = Teuchos::rcp( new AlgorithmState<Real> );
 
     // Get optimization vector and a vector for the gradient
     x_ = opt.getSolutionVector();
@@ -153,6 +151,21 @@ public:
       bnd_   = opt.getBoundConstraint();
       con_   = opt.getConstraint();
     }
+  }
+
+public:
+
+  OptimizationSolver( OptimizationProblem<Real> &opt,
+                      Teuchos::ParameterList &parlist ) {
+    // Get optimization problem type: U, E, B, EB
+    problemType_ = opt.getProblemType();
+    // Initialize AlgorithmState
+    state_ = Teuchos::rcp( new AlgorithmState<Real> );
+    // Initialize Step
+    initialize(opt,parlist);
+    // Store pointers to opt and parlist in case of resets
+    opt_ = Teuchos::rcpFromRef(opt);
+    parlist_ = Teuchos::rcpFromRef(parlist);
   }
 
   std::vector<std::string> getOutput(void) const {
@@ -210,6 +223,13 @@ public:
 
   void resetAlgorithmState(void) {
     state_ = Teuchos::rcp( new AlgorithmState<Real> );
+  }
+
+  void reset(const bool resetAlgo = true) {
+    if (resetAlgo) {
+      resetAlgorithmState();
+    }
+    initialize(*opt,*parlist);
   }
 
 }; // class OptimizationSolver
