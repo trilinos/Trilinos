@@ -42,7 +42,7 @@ public:
    virtual Teuchos::RCP<panzer::ResponseBase> buildResponseObject(const std::string & responseName) const;
 
    virtual Teuchos::RCP<panzer::ResponseBase> buildResponseObject(const std::string & responseName,
-                                                          const std::vector<panzer::WorksetDescriptor> & wkstDesc) const 
+                                                          const std::vector<panzer::WorksetDescriptor>& /* wkstDesc */) const 
    { return buildResponseObject(responseName); }
    
    /** Build and register evaluators for a response on a particular physics

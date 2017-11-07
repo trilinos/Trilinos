@@ -48,7 +48,4 @@
 // Now include MueLu
 #include "MueLu.hpp"
 
-// Include our specializations
-#include "Stokhos_MueLu_QR_Interface.hpp"
-
 #endif // STOKHOS_MUELU_HPP 

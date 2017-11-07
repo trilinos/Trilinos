@@ -157,6 +157,10 @@ namespace MueLu {
       if (varName == "LineDetection_Layers")            return GetFactory("LineDetection_VertLineIds");
       if (varName == "CoarseNumZLayers")                return GetFactory("LineDetection_VertLineIds");
 
+      // Non-Galerkin
+      if (varName == "K")                               return GetFactory("A");
+      if (varName == "M")                               return GetFactory("A");
+
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")                     return GetFactory("Smoother");
       if (varName == "PostSmoother")                    return GetFactory("Smoother");

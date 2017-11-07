@@ -35,6 +35,7 @@ APPEND_SET(SOURCES
   PermutedTransferFactory.cpp
   PgPFactory.cpp
   RAPFactory.cpp
+  RAPShiftFactory.cpp
   SaPFactory.cpp
   Smoothers/SmootherFactory.cpp
   StructuredLineDetection.cpp

@@ -74,15 +74,10 @@
 #include "MueLu_Monitor.hpp"
 
 #ifdef HAVE_MUELU_INTREPID2
-  #include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
-  #include "MueLu_IntrepidPCoarsenFactory_def.hpp"
-  #include "Intrepid2_Basis.hpp"
-
-  #ifdef HAVE_MUELU_INTREPID2_REFACTOR
-    #include "Kokkos_DynRankView.hpp"
-  #else
-    #include "Intrepid2_FieldContainer.hpp"
-  #endif
+#include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
+#include "MueLu_IntrepidPCoarsenFactory_def.hpp"
+#include "Intrepid2_Basis.hpp"
+#include "Kokkos_DynRankView.hpp"
 #endif
 
 // #define IFPACK2_HAS_PROPER_REUSE
@@ -123,11 +118,17 @@ namespace MueLu {
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     this->Input(currentLevel, "A");
 
-    if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
-        type_ == "LINESMOOTHING_BANDED RELAXATION" ||
-        type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
-        type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
-        type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+    if (type_ == "LINESMOOTHING_TRIDI_RELAXATION"        ||
+        type_ == "LINESMOOTHING_TRIDI RELAXATION"        ||
+        type_ == "LINESMOOTHING_TRIDIRELAXATION"         ||
+        type_ == "LINESMOOTHING_TRIDIAGONAL_RELAXATION"  ||
+        type_ == "LINESMOOTHING_TRIDIAGONAL RELAXATION"  ||
+        type_ == "LINESMOOTHING_TRIDIAGONALRELAXATION"   ||
+        type_ == "LINESMOOTHING_BANDED_RELAXATION"       ||
+        type_ == "LINESMOOTHING_BANDED RELAXATION"       ||
+        type_ == "LINESMOOTHING_BANDEDRELAXATION"        ||
+        type_ == "LINESMOOTHING_BLOCK_RELAXATION"        ||
+        type_ == "LINESMOOTHING_BLOCK RELAXATION"        ||
         type_ == "LINESMOOTHING_BLOCKRELAXATION") {
       this->Input(currentLevel, "CoarseNumZLayers");            // necessary for fallback criterion
       this->Input(currentLevel, "LineDetection_VertLineIds");   // necessary to feed block smoother
@@ -148,11 +149,17 @@ namespace MueLu {
     if      (type_ == "SCHWARZ")
       SetupSchwarz(currentLevel);
 
-    else if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
-             type_ == "LINESMOOTHING_BANDED RELAXATION" ||
-             type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
-             type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
-             type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+    else if (type_ == "LINESMOOTHING_TRIDI_RELAXATION"       ||
+             type_ == "LINESMOOTHING_TRIDI RELAXATION"       ||
+             type_ == "LINESMOOTHING_TRIDIRELAXATION"        ||
+             type_ == "LINESMOOTHING_TRIDIAGONAL_RELAXATION" ||
+             type_ == "LINESMOOTHING_TRIDIAGONAL RELAXATION" ||
+             type_ == "LINESMOOTHING_TRIDIAGONALRELAXATION"  ||
+             type_ == "LINESMOOTHING_BANDED_RELAXATION"      ||
+             type_ == "LINESMOOTHING_BANDED RELAXATION"      ||
+             type_ == "LINESMOOTHING_BANDEDRELAXATION"       ||
+             type_ == "LINESMOOTHING_BLOCK_RELAXATION"       ||
+             type_ == "LINESMOOTHING_BLOCK RELAXATION"       ||
              type_ == "LINESMOOTHING_BLOCKRELAXATION")
       SetupLineSmoothing(currentLevel);
 
@@ -310,11 +317,7 @@ namespace MueLu {
     
     typedef typename Node::device_type::execution_space ES;
     
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
-    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCO; // "Field Container" for ordinals
-#else
-    typedef Intrepid2::FieldContainer<LocalOrdinal> FCO;
-#endif
+    typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCO; //
     
     LocalOrdinal  lo_invalid = Teuchos::OrdinalTraits<LO>::invalid();
     
@@ -328,11 +331,7 @@ namespace MueLu {
     // of stuff in the guts of Intrepid2 that doesn't play well with Stokhos as of yet.  Here, we only
     // care about the assignment of basis ordinals to topological entities, so this code is actually
     // independent of the Scalar type--hard-coding double here won't hurt us.
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR
     auto basis = MueLuIntrepid::BasisFactory<double,ES>(basisString, degree);
-#else
-    auto basis = MueLuIntrepid::BasisFactory<double>(basisString, degree);
-#endif
     
     string topologyTypeString = paramList.get<string>("smoother: neighborhood type");
     int dimension;
@@ -422,6 +421,13 @@ namespace MueLu {
           type_ == "LINESMOOTHING_BANDED RELAXATION" ||
           type_ == "LINESMOOTHING_BANDEDRELAXATION")
         type_ = "BANDEDRELAXATION";
+      else if (type_ == "LINESMOOTHING_TRIDI_RELAXATION"       ||
+               type_ == "LINESMOOTHING_TRIDI RELAXATION"       ||
+               type_ == "LINESMOOTHING_TRIDIRELAXATION"        ||
+               type_ == "LINESMOOTHING_TRIDIAGONAL_RELAXATION" ||
+               type_ == "LINESMOOTHING_TRIDIAGONAL RELAXATION" ||
+               type_ == "LINESMOOTHING_TRIDIAGONALRELAXATION")
+        type_ = "TRIDIAGONALRELAXATION";
       else
         type_ = "BLOCKRELAXATION";
     } else {
@@ -506,8 +512,14 @@ namespace MueLu {
 
     prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
     SetPrecParameters();
-    prec_->initialize();
-    prec_->compute();
+    {
+      SubFactoryMonitor(*this, "Preconditioner init", currentLevel);
+      prec_->initialize();
+    }
+    {
+      SubFactoryMonitor(*this, "Preconditioner compute", currentLevel);
+      prec_->compute();
+    }
 
     if (lambdaMax == negone) {
       typedef Tpetra::RowMatrix<SC, LO, GO, NO> MatrixType;

@@ -119,7 +119,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 //**********************************************************************
 template<typename EvalT, typename TRAITS>                   
 void DOF_PointValues<EvalT, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd,
+postRegistrationSetup(typename TRAITS::SetupData /* sd */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(dof_basis,fm);
@@ -145,8 +145,6 @@ template<typename EvalT, typename TRAITS>
 void DOF_PointValues<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  // evaluateDOF_withSens(dof_basis,dof_ip,dof_orientation,is_vector_basis,workset.num_cells,basisValues.basis);
-
   if(is_vector_basis) {
     int spaceDim  = basisValues->basis_vector.dimension(3);
     if(spaceDim==3) {
@@ -240,7 +238,7 @@ DOF_PointValues(const Teuchos::ParameterList & p)
 //**********************************************************************
 template<typename TRAITS>                   
 void DOF_PointValues<typename TRAITS::Jacobian, TRAITS>::
-postRegistrationSetup(typename TRAITS::SetupData sd,
+postRegistrationSetup(typename TRAITS::SetupData /* sd */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(dof_basis,fm);

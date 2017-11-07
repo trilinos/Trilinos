@@ -79,7 +79,8 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
     upper.resize(nStatistic,ROL_INF<Real>());
   }
   else if ( name == "Coherent Exponential Utility" ||
-            name == "KL Divergence" ) {
+            name == "KL Divergence"                ||
+            name == "bPOE" ) {
     nStatistic = 1;
     isBoundActivated = true;
     lower.resize(nStatistic,zero);
@@ -129,8 +130,8 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
       convert << i;
       std::string si = convert.str();
       Teuchos::ParameterList &ilist = list.sublist(si);
-      std::string name = ilist.get<std::string>("Name");
-      riskString.push_back(name);
+      std::string namei = ilist.get<std::string>("Name");
+      riskString.push_back(namei);
     }
     for (typename std::vector<Real>::size_type i = 0; i < riskString.size(); ++i) {
       if ( riskString[i] == "CVaR"                           ||
@@ -153,7 +154,8 @@ inline void RiskMeasureInfo(Teuchos::ParameterList &parlist, std::string &name,
         upper.push_back(ROL_INF<Real>());  upper.push_back(ROL_INF<Real>());
       }
       else if ( riskString[i] == "Coherent Exponential Utility" ||
-                riskString[i] == "KL Divergence" ) {
+                riskString[i] == "KL Divergence"                ||
+                riskString[i] == "bPOE" ) {
         nStatistic += 1;
         isBoundActivated = true;
         lower.push_back(zero);

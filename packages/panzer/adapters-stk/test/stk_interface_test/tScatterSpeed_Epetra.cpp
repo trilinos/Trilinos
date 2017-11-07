@@ -101,7 +101,7 @@ int main(int argc,char * argv[])
 //                          Standard Usage Functions
 //******************************************************************************
 
-void newAssembly(Teuchos::FancyOStream &out)
+void newAssembly(Teuchos::FancyOStream& /* out */)
 {
   RCP<panzer::DOFManager<int,int> > my_dofM;
   RCP<Map> rowmap;

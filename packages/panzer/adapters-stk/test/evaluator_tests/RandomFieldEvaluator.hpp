@@ -73,13 +73,13 @@ PHX_EVALUATOR_CTOR(RandomFieldEvaluator,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(RandomFieldEvaluator,sd,fm)
+PHX_POST_REGISTRATION_SETUP(RandomFieldEvaluator, /* sd */, fm)
 {
   this->utils.setFieldData(field,fm);
 }
 
 //**********************************************************************
-PHX_EVALUATE_FIELDS(RandomFieldEvaluator,workset)
+PHX_EVALUATE_FIELDS(RandomFieldEvaluator, /* workset */)
 {
    for(int i=0;i<static_cast<int>(field.size());i++)
       field[i] = double(std::rand())/double(RAND_MAX);

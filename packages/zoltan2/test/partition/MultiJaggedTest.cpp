@@ -727,7 +727,8 @@ int testFromDataFile(
         int migration_doMigration_type,
         bool test_boxes,
         bool rectilinear,
-        int  mj_premigration_option   
+        int  mj_premigration_option, 
+	int mj_premigration_coordinate_cutoff
 
 )
 {
@@ -781,6 +782,9 @@ int testFromDataFile(
     if(migration_imbalance_cut_off >= 0){
         params->set("mj_minimum_migration_imbalance",
                     double (migration_imbalance_cut_off));
+    }
+    if (mj_premigration_coordinate_cutoff > 0){
+        params->set("mj_premigration_coordinate_count", mj_premigration_coordinate_cutoff);
     }
 
     Zoltan2::PartitioningProblem<inputAdapter_t> *problem;
@@ -1124,8 +1128,8 @@ void getArgVals(
         int &migration_doMigration_type,
         bool &test_boxes,
         bool &rectilinear,
-        int  &mj_premigration_option   
-
+        int  &mj_premigration_option,
+	int &mj_coordinate_cutoff 
 )
 {
     bool isCset = false;
@@ -1187,6 +1191,14 @@ void getArgVals(
                 throw "Invalid argument at " + tmp;
             }
         }
+        else if(identifier == "PCC"){
+            if(value >=0 ){
+                mj_coordinate_cutoff = value;
+            } else {
+                throw "Invalid argument at " + tmp;
+            }
+        }
+
         else if(identifier == "PM"){
             if(value >=0 ){
 		mj_premigration_option = value;
@@ -1301,6 +1313,7 @@ int main(int argc, char *argv[])
     int migration_processor_assignment_type = -1;
     int migration_doMigration_type = -1;
     int  mj_premigration_option = 0;
+    int mj_premigration_coordinate_cutoff = 0;
 
     bool test_boxes = false;
     bool rectilinear = false;
@@ -1323,7 +1336,7 @@ int main(int argc, char *argv[])
                     migration_processor_assignment_type,
                     migration_doMigration_type,
                     test_boxes,
-                    rectilinear, mj_premigration_option);
+                    rectilinear, mj_premigration_option, mj_premigration_coordinate_cutoff);
         }
         catch(std::string s){
             if(tcomm->getRank() == 0){
@@ -1350,7 +1363,7 @@ int main(int argc, char *argv[])
                     migration_all_to_all_type,
                     migration_imbalance_cut_off,
                     migration_processor_assignment_type,
-                    migration_doMigration_type, test_boxes, rectilinear, mj_premigration_option);
+                    migration_doMigration_type, test_boxes, rectilinear, mj_premigration_option, mj_premigration_coordinate_cutoff);
             break;
 #ifdef hopper_separate_test
         case 1:

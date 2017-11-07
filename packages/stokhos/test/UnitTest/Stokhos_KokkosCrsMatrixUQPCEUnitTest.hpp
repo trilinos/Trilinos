@@ -759,6 +759,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
 
   // Build Cijk tensor
   cijk_type cijk = build_cijk<cijk_type>(stoch_dim, poly_ord);
+  cijk_type mean_cijk =
+    Stokhos::create_mean_based_product_tensor<execution_space, ordinal_type, scalar_type>();
   const ordinal_type stoch_length = cijk.dimension();
   const ordinal_type align = 8;
   const ordinal_type stoch_length_aligned = (stoch_length+align-1) & ~(align-1);
@@ -807,7 +809,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     Kokkos::make_view<matrix_values_type>(
-      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, ordinal_type(1)); //instead of stoch_length
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), mean_cijk, fem_graph_length, ordinal_type(1)); //instead of stoch_length
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;
@@ -907,6 +909,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
 
   // Build Cijk tensor
   cijk_type cijk = build_cijk<cijk_type>(stoch_dim, poly_ord);
+  cijk_type mean_cijk =
+    Stokhos::create_mean_based_product_tensor<execution_space, ordinal_type, scalar_type>();
   const ordinal_type stoch_length = cijk.dimension();
   const ordinal_type align = 8;
   const ordinal_type stoch_length_aligned = (stoch_length+align-1) & ~(align-1);
@@ -951,7 +955,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
       std::string("test crs graph"), fem_graph);
   matrix_values_type matrix_values =
     Kokkos::make_view<matrix_values_type>(
-      Kokkos::ViewAllocateWithoutInitializing("matrix"), cijk, fem_graph_length, ordinal_type(1));
+      Kokkos::ViewAllocateWithoutInitializing("matrix"), mean_cijk, fem_graph_length, ordinal_type(1));
   block_matrix_type matrix(
     "block_matrix", fem_length, matrix_values, matrix_graph);
   matrix.dev_config = dev_config;

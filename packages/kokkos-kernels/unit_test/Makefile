@@ -113,10 +113,32 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Common_ArithTraits.o
   OBJ_OPENMP += Test_OpenMP_Common_set_bit_count.o
 #  OBJ_OPENMP += Test_OpenMP_Common_float128.o
-  OBJ_OPENMP += Test_OpenMP_Batched_MatUtil.o
-  OBJ_OPENMP += Test_OpenMP_Batched_SerialGemm.o
-  OBJ_OPENMP += Test_OpenMP_Batched_SerialTrsm.o
-  OBJ_OPENMP += Test_OpenMP_Batched_SerialLU.o
+  # Real 
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialMatUtil_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialGemm_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialTrsm_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialLU_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialGemv_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialTrsv_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamMatUtil_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamGemm_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamTrsm_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamLU_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamGemv_Real.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamTrsv_Real.o
+  # Complex
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialMatUtil_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialGemm_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialTrsm_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialLU_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialGemv_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_SerialTrsv_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamMatUtil_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamGemm_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamTrsm_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamLU_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamGemv_Complex.o
+  OBJ_OPENMP += Test_OpenMP_Batched_TeamTrsv_Complex.o
   OBJ_OPENMP += Test_OpenMP_Batched_VectorArithmatic.o
   TARGETS += KokkosKernels_UnitTest_OpenMP
   TEST_TARGETS += test-openmp
@@ -173,6 +195,32 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Graph_graph_color.o
   OBJ_CUDA += Test_Cuda_Common_ArithTraits.o
   OBJ_CUDA += Test_Cuda_Common_set_bit_count.o
+  # Real
+  OBJ_CUDA += Test_Cuda_Batched_SerialMatUtil_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialGemm_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialTrsm_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialLU_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialGemv_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialTrsv_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamMatUtil_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamGemm_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamTrsm_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamLU_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamGemv_Real.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamTrsv_Real.o
+  # Complex
+  OBJ_CUDA += Test_Cuda_Batched_SerialMatUtil_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialGemm_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialTrsm_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialLU_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialGemv_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_SerialTrsv_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamMatUtil_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamGemm_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamTrsm_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamLU_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamGemv_Complex.o
+  OBJ_CUDA += Test_Cuda_Batched_TeamTrsv_Complex.o
   TARGETS += KokkosKernels_UnitTest_Cuda
   TEST_TARGETS += test-cuda
 endif
@@ -188,13 +236,15 @@ test-cuda: KokkosKernels_UnitTest_Cuda
 #=======================================================================
 
 vpath %.cpp ${KOKKOSKERNELS_SRC_PATH}/unit_test/serial
-ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_SERIAL), 1)
-  KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 1
-else
-  ifeq ($(KOKKOSKERNELS_INTERNAL_ETI_ONLY), 1)
-    KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 0
-  else
+ifeq ($(KOKKOS_INTERNAL_USE_SERIAL), 1)
+  ifeq ($(KOKKOSKERNELS_INTERNAL_INST_EXECSPACE_SERIAL), 1)
     KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 1
+  else
+    ifeq ($(KOKKOSKERNELS_INTERNAL_ETI_ONLY), 1)
+      KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 0
+    else
+      KOKKOSKERNELS_INTERNAL_TEST_SERIAL = 1
+    endif
   endif
 endif
 
@@ -228,10 +278,32 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Common_ArithTraits.o
   OBJ_SERIAL += Test_Serial_Common_set_bit_count.o
 #  OBJ_SERIAL += Test_Serial_Common_float128.o
-  OBJ_SERIAL += Test_Serial_Batched_MatUtil.o
-  OBJ_SERIAL += Test_Serial_Batched_SerialGemm.o
-  OBJ_SERIAL += Test_Serial_Batched_SerialTrsm.o
-  OBJ_SERIAL += Test_Serial_Batched_SerialLU.o
+  # Real
+  OBJ_SERIAL += Test_Serial_Batched_SerialMatUtil_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialGemm_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialTrsm_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialLU_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialGemv_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialTrsv_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamMatUtil_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamGemm_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamTrsm_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamLU_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamGemv_Real.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamTrsv_Real.o
+  # Complex
+  OBJ_SERIAL += Test_Serial_Batched_SerialMatUtil_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialGemm_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialTrsm_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialLU_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialGemv_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_SerialTrsv_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamMatUtil_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamGemm_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamTrsm_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamLU_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamGemv_Complex.o
+  OBJ_SERIAL += Test_Serial_Batched_TeamTrsv_Complex.o
   OBJ_SERIAL += Test_Serial_Batched_VectorArithmatic.o
   TARGETS += KokkosKernels_UnitTest_Serial
   TEST_TARGETS += test-serial

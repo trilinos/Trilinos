@@ -262,6 +262,28 @@ bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
   return iir;
 }
 
+template<class Scalar>
+void TimeStepControl<Scalar>::setNumTimeSteps(int numTimeSteps) {
+  if (numTimeSteps > 0) {
+    tscPL_->set<int>        ("Number of Time Steps", numTimeSteps);
+    const int initIndex = getInitIndex();
+    tscPL_->set<int>        ("Final Time Index", initIndex + numTimeSteps);
+    const double initTime = tscPL_->get<double>("Initial Time");
+    const double finalTime = tscPL_->get<double>("Final Time");
+    const double initTimeStep = (finalTime - initTime)/numTimeSteps;
+    tscPL_->set<double>     ("Initial Time Step", initTimeStep);
+    tscPL_->set<std::string>("Integrator Step Type", "Constant");
+
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    Teuchos::OSTab ostab(out,1,"setParameterList");
+    *out << "Warning - Found 'Number of Time Steps' = " << getNumTimeSteps()
+         << "  Set the following parameters: \n"
+         << "  'Final Time Index'     = " << getFinalIndex() << "\n"
+         << "  'Initial Time Step'    = " << getInitTimeStep() << "\n"
+         << "  'Integrator Step Type' = " << getStepType() << std::endl;
+  }
+}
+
 
 template<class Scalar>
 std::string TimeStepControl<Scalar>::description() const
@@ -291,6 +313,9 @@ void TimeStepControl<Scalar>::setParameterList(
   pList->validateParameters(*this->getValidParameters());
   pList->validateParametersAndSetDefaults(*this->getValidParameters());
   tscPL_ = pList;
+
+  // Override parameters
+  setNumTimeSteps(getNumTimeSteps());
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     (getInitTime() > getFinalTime() ), std::logic_error,
@@ -471,6 +496,13 @@ TimeStepControl<Scalar>::getValidParameters() const
     "Maximum number of Stepper failures");
   pl->set<int>   ("Maximum Number of Consecutive Stepper Failures", 5,
     "Maximum number of consecutive Stepper failures");
+  pl->set<int>   ("Number of Time Steps", -1,
+    "The number of constant time steps.  The actual step size gets computed\n"
+    "on the fly given the size of the time domain.  Overides and resets\n"
+    "  'Final Time Index'     = 'Initial Time Index' + 'Number of Time Steps'\n"
+    "  'Initial Time Step'    = "
+    "('Final Time' - 'Initial Time')/'Number of Time Steps'\n"
+    "  'Integrator Step Type' = 'Constant'\n");
 
   return pl;
 }

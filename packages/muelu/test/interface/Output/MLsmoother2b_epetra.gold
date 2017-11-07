@@ -1,8 +1,8 @@
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   relaxation: type = symmetric Gauss-Seidel   [unused]
   relaxation: sweeps = 2   [unused]
@@ -64,6 +64,7 @@ Level 1
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
@@ -72,8 +73,8 @@ Level 1
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   relaxation: type = symmetric Gauss-Seidel   [unused]
   relaxation: sweeps = 2   [unused]
@@ -135,6 +136,7 @@ Level 2
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
@@ -143,8 +145,8 @@ Level 2
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   relaxation: type = symmetric Gauss-Seidel   [unused]
   relaxation: sweeps = 2   [unused]
@@ -206,6 +208,7 @@ Level 3
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
@@ -214,8 +217,8 @@ Level 3
  
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   relaxation: type = symmetric Gauss-Seidel   [unused]
   relaxation: sweeps = 2   [unused]
@@ -277,16 +280,17 @@ Level 4
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 0   [default]
+ rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
  matrixmatrix: kernel params -> 
   [empty list]
  
- Setup Smoother (MueLu::AmesosSmoother{type = Klu})
+ Setup Smoother (MueLu::AmesosSmoother{type = <ignored>})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   [empty list]
  
@@ -318,6 +322,6 @@ Smoother (level 2) post : no smoother
 Smoother (level 3) pre  : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 Smoother (level 3) post : no smoother
 
-Smoother (level 4) pre  : MueLu::AmesosSmoother{type = Klu}
+Smoother (level 4) pre  : MueLu::AmesosSmoother{type = <ignored>}
 Smoother (level 4) post : no smoother
 

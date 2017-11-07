@@ -101,7 +101,6 @@ namespace {
   using std::ostream_iterator;
   using std::string;
 
-  using Teuchos::TypeTraits::is_same;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -2880,10 +2879,10 @@ namespace {
     typedef typename MV::local_ordinal_type local_ordinal_type;
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
-    TEST_EQUALITY_CONST( (is_same< scalar_type         , Scalar  >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , LO >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< global_ordinal_type , GO >::value) == true, true );
-    TEST_EQUALITY_CONST( (is_same< node_type           , Node    >::value) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same< scalar_type         , Scalar  >::value) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same< local_ordinal_type  , LO >::value) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same< global_ordinal_type , GO >::value) == true, true );
+    TEST_EQUALITY_CONST( (std::is_same< node_type           , Node    >::value) == true, true );
   }
 
 #ifdef HAVE_TEUCHOS_COMPLEX
@@ -2949,21 +2948,21 @@ namespace {
     Teuchos::OSTab tab0 (out);
 
     // Verify that the default Scalar type is double.  We can't put
-    // the is_same expression in the macro, since it has a comma
+    // the std::is_same expression in the macro, since it has a comma
     // (commas separate arguments in a macro).
     const bool defaultScalarIsDouble =
-      Teuchos::TypeTraits::is_same<scalar_type, double>::value;
+      std::is_same<scalar_type, double>::value;
     TEST_ASSERT( defaultScalarIsDouble );
 
     // Verify that the default LocalOrdinal type is the same as Map's
     // default LocalOrdinal type.  This assumes that all of Map's
     // template parameters have default values.
     //
-    // We can't put the is_same expression in the macro, since it has
+    // We can't put the std::is_same expression in the macro, since it has
     // a comma (commas separate arguments in a macro).
     typedef Tpetra::Map<>::local_ordinal_type map_local_ordinal_type;
     const bool defaultLocalOrdinalIsInt =
-      Teuchos::TypeTraits::is_same<local_ordinal_type, map_local_ordinal_type>::value;
+      std::is_same<local_ordinal_type, map_local_ordinal_type>::value;
     TEST_ASSERT( defaultLocalOrdinalIsInt );
 
     // Verify that the default GlobalOrdinal type has size no less

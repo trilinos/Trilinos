@@ -52,7 +52,9 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Tpetra_Util.hpp"
 #include "Teuchos_as.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include <stdexcept>
+#include <typeinfo>
 
 namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -101,8 +103,10 @@ namespace Tpetra {
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
       (! execution_space::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space has not been "
-       "initialized.  Please initialize it before creating a Map.")
+       "Tpetra::Map constructor: The Kokkos execution space "
+       << Teuchos::TypeNameTraits<execution_space>::name ()
+       << " has not been initialized.  "
+       "Please initialize it before creating a Map.")
 
 #ifdef HAVE_TPETRA_DEBUG
     // In debug mode only, check whether numGlobalElements and
@@ -260,8 +264,10 @@ namespace Tpetra {
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
       (! execution_space::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space has not been "
-       "initialized.  Please initialize it before creating a Map.")
+       "Tpetra::Map constructor: The Kokkos execution space "
+       << Teuchos::TypeNameTraits<execution_space>::name ()
+       << " has not been initialized.  "
+       "Please initialize it before creating a Map.")
 
 #ifdef HAVE_TPETRA_DEBUG
     // Global sum of numLocalElements over all processes.
@@ -445,8 +451,10 @@ namespace Tpetra {
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
       (! execution_space::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space has not been "
-       "initialized.  Please initialize it before creating a Map.")
+       "Tpetra::Map constructor: The Kokkos execution space "
+       << Teuchos::TypeNameTraits<execution_space>::name ()
+       << " has not been initialized.  "
+       "Please initialize it before creating a Map.")
 
     // The user has specified the distribution of indices over the
     // processes, via the input array of global indices on each
@@ -703,8 +711,10 @@ namespace Tpetra {
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
       (! execution_space::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space has not been "
-       "initialized.  Please initialize it before creating a Map.")
+       "Tpetra::Map constructor: The Kokkos execution space "
+       << Teuchos::TypeNameTraits<execution_space>::name ()
+       << " has not been initialized.  "
+       "Please initialize it before creating a Map.")
 
     // Not quite sure if I trust all code to behave correctly if the
     // pointer is nonnull but the array length is nonzero, so I'll
@@ -732,8 +742,10 @@ namespace Tpetra {
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
       (! execution_space::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space has not been "
-       "initialized.  Please initialize it before creating a Map.")
+       "Tpetra::Map constructor: The Kokkos execution space "
+       << Teuchos::TypeNameTraits<execution_space>::name ()
+       << " has not been initialized.  "
+       "Please initialize it before creating a Map.")
 
     const size_t numLclInds = static_cast<size_t> (entryList.size ());
 
@@ -782,8 +794,10 @@ namespace Tpetra {
     // Make sure that Kokkos has been initialized (Github Issue #513).
     TEUCHOS_TEST_FOR_EXCEPTION
       (! execution_space::is_initialized (), std::runtime_error,
-       "Tpetra::Map constructor: The Kokkos execution space has not been "
-       "initialized.  Please initialize it before creating a Map.")
+       "Tpetra::Map constructor: The Kokkos execution space "
+       << Teuchos::TypeNameTraits<execution_space>::name ()
+       << " has not been initialized.  "
+       "Please initialize it before creating a Map.")
 
     // The user has specified the distribution of indices over the
     // processes, via the input array of global indices on each
@@ -1278,6 +1292,51 @@ namespace Tpetra {
     }
   }
 
+  template <class LocalOrdinal,class GlobalOrdinal, class Node>
+  bool
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map) const
+  {
+    if (this == &map)
+      return true;
+
+    // We are going to check if lmap1 is fitted into lmap2
+    auto lmap1 = map.getLocalMap();
+    auto lmap2 = this->getLocalMap();
+
+    auto numLocalElements1 = lmap1.getNodeNumElements();
+    auto numLocalElements2 = lmap2.getNodeNumElements();
+
+    if (numLocalElements1 > numLocalElements2) {
+      // There are more indices in the first map on this process than in second map.
+      return false;
+    }
+
+    if (lmap1.isContiguous () && lmap2.isContiguous ()) {
+      // When both Maps are contiguous, just check the interval inclusion.
+      return ((lmap1.getMinGlobalIndex () == lmap2.getMinGlobalIndex ()) &&
+              (lmap1.getMaxGlobalIndex () <= lmap2.getMaxGlobalIndex ()));
+    }
+
+    if (lmap1.getMinGlobalIndex () < lmap2.getMinGlobalIndex () ||
+        lmap1.getMaxGlobalIndex () > lmap2.getMaxGlobalIndex ()) {
+      // The second map does not include the first map bounds, and thus some of
+      // the first map global indices are not in the second map.
+      return false;
+    }
+
+    typedef Kokkos::RangePolicy<LocalOrdinal, typename Node::execution_space> range_type;
+
+    // Check all elements.
+    LocalOrdinal numDiff = 0;
+    Kokkos::parallel_reduce("isLocallyFitted", range_type(0, numLocalElements1),
+      KOKKOS_LAMBDA(const LocalOrdinal i, LocalOrdinal& diff) {
+        diff += (lmap1.getGlobalElement(i) != lmap2.getGlobalElement(i));
+      }, numDiff);
+
+    return (numDiff == 0);
+  }
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   Map<LocalOrdinal,GlobalOrdinal,Node>::
@@ -1410,6 +1469,11 @@ namespace Tpetra {
       // "Commit" the local-to-global lookup table we filled in above.
       lgMap_ = lgMap;
       lgMapHost_ = lgMapHost;
+
+      // lgMapHost_ may be a UVM View, so insert a fence to ensure
+      // coherent host access.  We only need to do this once, because
+      // lgMapHost_ is immutable after initialization.
+      execution_space::fence ();
     }
 
     return lgMap_;
@@ -1918,79 +1982,6 @@ namespace Tpetra {
     return global;
   }
 
-  namespace Details {
-
-    template <class LocalOrdinal,class GlobalOrdinal, class Node>
-    bool
-    isLocallyFitted (const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map1,
-                     const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& map2)
-    {
-      using Teuchos::ArrayView;
-      typedef GlobalOrdinal GO; // a handy abbreviation
-      typedef typename ArrayView<const GO>::size_type size_type;
-
-      bool fitted = true;
-      if (&map1 == &map2) {
-        fitted = true;
-      }
-      else if (map1.isContiguous () && map2.isContiguous () &&
-               map1.getMinGlobalIndex () == map2.getMinGlobalIndex () &&
-               map1.getMaxGlobalIndex () <= map2.getMaxGlobalIndex ()) {
-        // Special case where both Maps are contiguous.
-        fitted = true;
-      }
-      else {
-        ArrayView<const GO> inds_map2 = map2.getNodeElementList ();
-        const size_type numInds_map1 =
-          static_cast<size_type> (map1.getNodeNumElements ());
-
-        if (map1.isContiguous ()) {
-          // Avoid calling getNodeElementList() on the always one-to-one
-          // Map, if it is contiguous (a common case).  When called on a
-          // contiguous Map, getNodeElementList() causes allocation of
-          // an array that sticks around, even though the array isn't
-          // needed.  (The Map is contiguous, so you can compute the
-          // entries; you don't need to store them.)
-          if (numInds_map1 > inds_map2.size ()) {
-            // There are fewer indices in map1 on this process than in
-            // map2.  This case might be impossible.
-            fitted = false;
-          }
-          else {
-            // Do all the map1 indices match the initial map2 indices?
-            const GO minInd_map1 = map1.getMinGlobalIndex ();
-            for (size_type k = 0; k < numInds_map1; ++k) {
-              const GO inds_map1_k = static_cast<GO> (k) + minInd_map1;
-              if (inds_map1_k != inds_map2[k]) {
-                fitted = false;
-                break;
-              }
-            }
-          }
-        }
-        else { // map1 is not contiguous.
-          // Get index lists from both Maps, and compare their indices.
-          ArrayView<const GO> inds_map1 = map1.getNodeElementList ();
-          if (numInds_map1 > inds_map2.size ()) {
-            // There are fewer indices in map1 on this process than in
-            // map2.  This case might be impossible.
-            fitted = false;
-          }
-          else {
-            // Do all the map1 indices match those in map2?
-            for (size_type k = 0; k < numInds_map1; ++k) {
-              if (inds_map1[k] != inds_map2[k]) {
-                fitted = false;
-                break;
-              }
-            }
-          }
-        }
-      }
-      return fitted;
-    }
-
-  } // namespace Details
 } // namespace Tpetra
 
 template <class LocalOrdinal, class GlobalOrdinal>
@@ -2310,10 +2301,6 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   template Teuchos::RCP<const Map<LO,GO,NODE> > \
   createOneToOne (const Teuchos::RCP<const Map<LO,GO,NODE> >& M, \
                   const Tpetra::Details::TieBreak<LO,GO>& tie_break); \
-  \
-  template bool \
-  Details::isLocallyFitted (const Tpetra::Map<LO, GO, NODE>& map1, \
-                            const Tpetra::Map<LO, GO, NODE>& map2);
 
 
 //! Explicit instantiation macro supporting the Map class, on the default node for specified ordinals.

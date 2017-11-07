@@ -104,8 +104,9 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     RCP<panzer::PhysicsBlock> pb = physicsBlocks[blkInd];
     const WorksetDescriptor wd = wkstDesc[blkInd];
 
-    Traits::SetupData setupData;
+    Traits::SD setupData;
     setupData.worksets_ = getWorksetContainer()->getWorksets(wd);
+    setupData.orientations_ = getWorksetContainer()->getOrientations();
     if(setupData.worksets_->size()==0)
       continue;
 
@@ -165,7 +166,7 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
 void panzer::FieldManagerBuilder::
 setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
                      const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks,
-                     const Teuchos::Ptr<const panzer::EquationSetFactory> & eqset_factory,
+                     const Teuchos::Ptr<const panzer::EquationSetFactory>& /* eqset_factory */,
                      const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& cm_factory,
                      const panzer::BCStrategyFactory& bc_factory,
                      const Teuchos::ParameterList& closure_models,
@@ -269,10 +270,11 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
         }
 
         // Set up the field manager
-        Traits::SetupData setupData;
+        Traits::SD setupData;
         Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
         worksets->push_back(wkst->second);
         setupData.worksets_ = worksets;
+        setupData.orientations_ = getWorksetContainer()->getOrientations();
 
         fm.postRegistrationSetup(setupData);
       }
@@ -320,11 +322,12 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
 	}
 
 	// Setup the fieldmanager
-	Traits::SetupData setupData;
+	Traits::SD setupData;
 	Teuchos::RCP<std::vector<panzer::Workset> > worksets = 
 	  Teuchos::rcp(new(std::vector<panzer::Workset>));
 	worksets->push_back(wkst->second);
 	setupData.worksets_ = worksets;
+        setupData.orientations_ = getWorksetContainer()->getOrientations();
 
 	// setup derivative information
 	setKokkosExtendedDataTypeDimensions(element_block_id,*globalIndexer,user_data,fm);

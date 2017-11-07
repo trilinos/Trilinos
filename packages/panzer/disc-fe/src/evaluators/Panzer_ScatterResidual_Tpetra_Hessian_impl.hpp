@@ -56,7 +56,7 @@ namespace panzer {
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 ScatterResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
-ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
+ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & /* indexer */,
                        const Teuchos::ParameterList& p) 
 {
   std::string scatterName = p.get<std::string>("Scatter Name");
@@ -71,22 +71,22 @@ ScatterResidual_Tpetra(const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,G
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void
 ScatterResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData d,
-                      PHX::FieldManager<TRAITS>& vm) 
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
+                      PHX::FieldManager<TRAITS>& /* vm */) 
 {
 }
 
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void
 ScatterResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
-preEvaluate(typename TRAITS::PreEvalData d) 
+preEvaluate(typename TRAITS::PreEvalData /* d */) 
 {
 }
   
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void
 ScatterResidual_Tpetra<panzer::Traits::Hessian,TRAITS,LO,GO,NodeT>::
-evaluateFields(typename TRAITS::EvalData workset) 
+evaluateFields(typename TRAITS::EvalData /* workset */) 
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
                              "ScatterResidual_Tpetra<Hessian> is not yet implemented"); // just in case

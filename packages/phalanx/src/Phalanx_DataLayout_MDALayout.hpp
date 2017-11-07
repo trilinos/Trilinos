@@ -137,7 +137,7 @@ namespace PHX {
     MDALayout(const std::string& prefix,
 	      size_type size1);
 
-    virtual ~MDALayout() {}
+    virtual ~MDALayout() noexcept {}
 
     virtual bool operator==(const DataLayout& right) const override;
 

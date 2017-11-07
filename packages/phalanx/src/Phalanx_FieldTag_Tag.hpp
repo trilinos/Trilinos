@@ -70,6 +70,9 @@ namespace PHX {
 
     typedef DataT value_type;
 
+    // Default constructor
+    Tag();
+
     Tag(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& dl);
 
     // Use SFINAE to remove this ctor if the data types are not the
@@ -89,7 +92,7 @@ namespace PHX {
                     "** ERROR ** PHX::Tag ctor: tag data types are not the same (excluding const)!");
     }
 
-    ~Tag();
+    ~Tag() noexcept;
 
     Teuchos::RCP<FieldTag> clone() const override;
 

@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
     std::vector<RealT> var;
 
     Teuchos::Array<RealT> alphaArray
-      = Teuchos::getArrayFromStringParameter<RealT>(parlist->sublist("Problem"),"BPOE Thresholds");
+      = Teuchos::getArrayFromStringParameter<RealT>(parlist->sublist("Problem"),"bPOE Thresholds");
     std::vector<RealT> alpha = alphaArray.toVector();
     std::sort(alpha.begin(),alpha.end());
     int N = alpha.size();
@@ -318,11 +318,12 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE MEAN PLUS CVAR **********************************/
     /*************************************************************************/
     RealT tol(1e-8);
-    parlist->sublist("SOL").set("Stochastic Optimization Type","BPOE");
-    parlist->sublist("SOL").sublist("BPOE").set("Moment Order",2.0);
+    parlist->sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    parlist->sublist("SOL").sublist("Risk Measure").set("Name","bPOE");
+    parlist->sublist("SOL").sublist("Risk Measure").sublist("bPOE").set("Moment Order",2.0);
     for (int i = 0; i < N; ++i) {
       // Solve.
-      parlist->sublist("SOL").sublist("BPOE").set("Threshold",alpha[i]);
+      parlist->sublist("SOL").sublist("Risk Measure").sublist("bPOE").set("Threshold",alpha[i]);
       opt = Teuchos::rcp(new ROL::OptimizationProblem<RealT>(objRed,zp,bnd));
       RealT stat(1);
       if ( i > 0 ) {
@@ -333,12 +334,12 @@ int main(int argc, char *argv[]) {
       setUpAndSolve<RealT>(*opt,*parlist,*outStream);
       // Output.
       ctrl.push_back(objCtrl->value(*up,*zp,tol));
-      var.push_back(opt->getSolutionStatistic(*parlist));
+      var.push_back(opt->getSolutionStatistic());
       std::stringstream nameCtrl;
-      nameCtrl << "control_BPOE_" << i+1 << ".txt";
+      nameCtrl << "control_bPOE_" << i+1 << ".txt";
       pdecon->outputTpetraVector(z_rcp,nameCtrl.str().c_str());
       std::stringstream nameObj;
-      nameObj << "obj_samples_BPOE_" << i+1 << ".txt";
+      nameObj << "obj_samples_bPOE_" << i+1 << ".txt";
       print<RealT>(*objRed,*zp,*sampler_dist,nsamp_dist,comm,nameObj.str());
     }
 

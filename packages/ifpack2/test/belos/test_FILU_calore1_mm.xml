@@ -1,0 +1,22 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="calore1.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <ParameterList name="Belos">
+    <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
+    <Parameter name="Num Blocks" type="int" value="50"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="FAST_ILU"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="level" type="int" value="1"/>
+    <Parameter name="damping factor" type="double" value="0.6"/>
+    <Parameter name="sweeps" type="int" value="5"/>
+    <Parameter name="triangular solve iterations" type="int" value="5"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="12"/>
+</ParameterList>

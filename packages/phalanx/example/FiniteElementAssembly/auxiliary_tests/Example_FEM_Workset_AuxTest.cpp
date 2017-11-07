@@ -66,7 +66,7 @@ TEUCHOS_UNIT_TEST(workset, builder)
   const double lx = 1.0;
   const double ly = 2.0;
   const double lz = 3.0;
-  phx_example::Mesh mesh(nx,ny,nz,lx,ly,lz,2);
+  phx_example::Mesh mesh(nx,ny,nz,lx,ly,lz);
 
   // 24 elements / size 3 = 8 worksets
   {

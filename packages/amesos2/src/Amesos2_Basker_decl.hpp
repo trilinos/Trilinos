@@ -100,6 +100,7 @@ public:
   typedef FunctionMap<Amesos2::Basker,slu_type>                function_map;
 
   typedef Matrix                                                matrix_type;
+  typedef MatrixAdapter<matrix_type>                    matrix_adapter_type;
 
 
   Basker( Teuchos::RCP<const Matrix> A,
@@ -110,11 +111,18 @@ public:
 
 private:
 
+ /**
+  * \brief can we optimize size_type and ordinal_type for straight pass through,
+  * also check that is_contiguous_ flag set to true
+  */
+  bool single_proc_optimization() const;
+
+
   /**
    * \brief Performs pre-ordering on the matrix to increase efficiency.
    *
    *   Come back to add support to Amesos for preordering
- */
+   */
   int preOrdering_impl();
 
 
@@ -195,7 +203,7 @@ private:
 
     /*Handle for Basker object*/
  
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
 #ifdef KOKKOS_HAVE_OPENMP
   /*
@@ -213,7 +221,7 @@ private:
    ::BaskerNS::BaskerTrilinosInterface<local_ordinal_type, slu_type, Exe_Space>
        *basker;
 #else
-  #pragma message("HAVE SHYLUBASKER AND NOT KOKKOS! ERROR")
+  #pragma message("HAVE SHYLU_NODEBASKER AND NOT KOKKOS! ERROR")
 #endif
 #else
    mutable ::Basker::Basker<local_ordinal_type,slu_type> basker;

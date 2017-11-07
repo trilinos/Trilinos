@@ -100,6 +100,9 @@ public:
 
   typedef FunctionMap<Amesos2::KLU2,slu_type>               function_map;
 
+  typedef Matrix                                                matrix_type;
+  typedef MatrixAdapter<matrix_type>                    matrix_adapter_type;
+
   /// \name Constructor/Destructor methods
   //@{
 
@@ -120,6 +123,12 @@ public:
   //@}
 
 private:
+
+ /**
+  * \brief can we optimize size_type and ordinal_type for straight pass through,
+  * also check that is_contiguous_ flag set to true
+  */
+  bool single_proc_optimization() const;
 
   /**
    * \brief Performs pre-ordering on the matrix to increase efficiency.

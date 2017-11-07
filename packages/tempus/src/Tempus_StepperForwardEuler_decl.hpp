@@ -11,9 +11,10 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
+#include "Tempus_StepperForwardEulerObserver.hpp"
+
 
 namespace Tempus {
-
 
 /** \brief Forward Euler time stepper.
  *
@@ -61,9 +62,11 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
     virtual void setSolver(
         Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual void setObserver(
+      Teuchos::RCP<StepperForwardEulerObserver<Scalar> > obs = Teuchos::null);
 
     /// Initialize during construction and after changing input parameters.
-    virtual void initialize(){}
+    virtual void initialize() { this->setObserver(); }
 
     /// Take the specified timestep, dt, and return true if successful.
     virtual void takeStep(
@@ -103,9 +106,12 @@ protected:
   /// Explicit ODE ModelEvaluator
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > appModel_;
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar>          inArgs_;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
+
+  Teuchos::RCP<StepperForwardEulerObserver<Scalar> > stepperFEObserver_;
 };
+
 } // namespace Tempus
 
 #endif // Tempus_StepperForwardEuler_decl_hpp

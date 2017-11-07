@@ -63,12 +63,19 @@
 // Include User Data Types
 //#include "Phalanx_Allocator_Contiguous.hpp"
 #include "Panzer_Workset.hpp"
-#include "Panzer_GlobalEvaluationDataContainer.hpp"
+//#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 // Debugging information
 //#include "Phalanx_TypeStrings.hpp"
 
+// forward declaration
+namespace Intrepid2 {
+class Orientation;
+}
+
 namespace panzer {
+
+  class GlobalEvaluationDataContainer;
   
   struct Traits {
 
@@ -114,18 +121,20 @@ namespace panzer {
     // ******************************************************************
 
     struct SD { 
-      Teuchos::RCP< std::vector<panzer::Workset> > worksets_;
+      Teuchos::RCP<const std::vector<panzer::Workset>> worksets_;
+      Teuchos::RCP<const std::vector<Intrepid2::Orientation>> orientations_;
     };
-    typedef SD SetupData;
+    using SetupData = const SD&;
 
-    typedef panzer::Workset& EvalData;
+    using EvalData = const panzer::Workset&;
 
-    typedef struct {
-      GlobalEvaluationDataContainer gedc;
-
+    struct PED {
+      PED();
+      Teuchos::RCP<GlobalEvaluationDataContainer> gedc;
       std::string first_sensitivities_name;
       std::string second_sensitivities_name;
-    } PreEvalData;
+    };
+    using PreEvalData = const PED&;
 
     typedef void* PostEvalData;
 

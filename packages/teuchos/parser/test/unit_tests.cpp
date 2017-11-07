@@ -143,7 +143,7 @@ void test_regex_reader(std::string const& regex,
     std::vector<std::string> const& expect_matches,
     std::vector<std::string> const& expect_non_matches) {
   regex::Reader reader(42);
-  any result_any;
+  Teuchos::any result_any;
   reader.read_string(result_any, regex, "test_regex_reader");
   FiniteAutomaton& result = any_ref_cast<FiniteAutomaton>(result_any);
   for (std::vector<std::string>::const_iterator it = expect_matches.begin();
@@ -223,7 +223,7 @@ TEUCHOS_UNIT_TEST( Parser, xml_language ) {
 
 void test_xml_reader(std::string const& str) {
   Reader reader(XML::ask_reader_tables());
-  any result;
+  Teuchos::any result;
   reader.read_string(result, str, "test_xml_reader");
 }
 
@@ -235,43 +235,249 @@ TEUCHOS_UNIT_TEST( Parser, xml_reader ) {
   test_xml_reader("<P name=\"foo&quot;&#72;bar\"/>");
 }
 
+static void test_reader(ReaderTablesPtr tables, std::string const& str, std::string const& name) {
+  Reader reader(tables);
+  Teuchos::any result;
+  reader.read_string(result, str, name);
+}
+
 TEUCHOS_UNIT_TEST( Parser, yaml_language ) {
-  LanguagePtr lang = yaml::ask_language();
+  LanguagePtr lang = YAML::ask_language();
   GrammarPtr grammar = make_grammar(*lang);
   make_lalr1_parser(grammar);
 }
 
-void test_yaml_reader(std::string const& str) {
-  Reader reader(yaml::ask_reader_tables());
-  any result;
-  reader.read_string(result, str, "test_yaml_reader");
+TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  test_reader(tables,
+      "%YAML 1.2\n"
+      "---\n"
+      "#top comment always wins\n"
+      "a: \n"
+      "  b:\n"
+      "   - one\n"
+      "   - \"Lt. Pete \\\"Maverick\\\" Mitchell\"\n"
+      "   -\n"
+      "     - \n"
+      "       - tres\n"
+      "       - [tre, es]\n"
+      "       - {tre: ees}\n"
+      "       - \n"
+      "         #why?\n"
+      "         because: we can.\n"
+      "     - treees\n"
+      "  c: 'single quoting is ''fun'''\n"
+      "  todo: [parse yaml, ???, profit]\n"
+      "  organisms: { plants: cocoa, animals: [birds, {next: fish}] }\n"
+      "e:\n"
+      "  that code: |\n"
+      "    switch (a[i] - b[i]) {\n"
+      "      case 1: return '\\'';\n"
+      "      case 2: return '\\\"';\n"
+      "    }\n"
+      "  g: .125\n"
+      "  i: -6.022e-23\n"
+      "  mesh path: ../meshes/cube.exo\n"
+      "  empty parameter list:\n"
+      "...\n"
+      , "1");
+  test_reader(tables,
+      "---\n"
+      "lvl1-1:\n"
+      "  lvl2-1: a\n"
+      "lvl1-2:\n"
+      "  lvl2-2: b\n"
+      "...\n",
+      "2");
+  test_reader(tables,"---\n"
+      "foo:bar\n"
+      "...\n",
+      "3");
+  test_reader(tables,"%YAML 1.2\n"
+      "---\n"
+      "foo:bar\n"
+      "...\n",
+      "4");
+  test_reader(tables,"---\n"
+      "foo:bar\n"
+      "far:boo\n"
+      "...\n",
+      "5");
+  test_reader(tables,"---\n"
+      "foo:\n"
+      "  bar:42\n"
+      "  baz:  100\n"
+      "...\n",
+      "6");
+  test_reader(tables,
+      "---\n"
+      "\"Don Knuth\":bar\n"
+      "...\n",
+      "7");
+  test_reader(tables,
+      "---\n"
+      "'never say never':true\n"
+      "...\n",
+      "8");
+  test_reader(tables,
+      "---\n"
+      "'never say ''never''':true\n"
+      "...\n",
+      "9");
+  test_reader(tables,
+      "---\n"
+      "1:\n"
+      " - a\n"
+      " - b\n"
+      "...\n",
+      "11");
+  test_reader(tables,
+      "---\n"
+      "a: {1: 1, 2: 4, 3: 9}\n"
+      "...\n",
+      "12");
+  test_reader(tables,
+      "---\n"
+      "a: [1, 2, 3]\n"
+      "...\n",
+      "13");
+  test_reader(tables,"---\n"
+      "a: {1: [0, 1], 2: [0, 1, 2]}\n"
+      "...\n",
+      "14");
+  test_reader(tables,
+      "---\n"
+      "assocs: [[bottom, 1], [top, 42]]\n"
+      "...\n",
+      "15");
+  test_reader(tables,
+      "---\n"
+      "assocs: [ [ bottom , 1 ] , [ top , 42 ] ]\n"
+      "...\n",
+      "16");
+  test_reader(tables,
+      "---\n"
+      "pressure: -1.9e-6\n"
+      "volume: !!double 0.7e+10\n"
+      "...\n",
+      "17");
+  test_reader(tables,
+      "---\n"
+      "ANONYMOUS:\n"
+      "  empty: {}\n"
+      "  block with empty lines: |\n"
+      "\n"
+      "    check one two\n"
+      "\n"
+      "      more indented\n"
+      "...\n",
+      "18");
+  test_reader(tables,
+      "---\r\n"
+      "ANONYMOUS:\r\n"
+      "  empty: { }\r\n"
+      "  block with empty lines: |\r\n"
+      "\r\n"
+      "    check one two\r\n"
+      "\r\n"
+      "      more indented\r\n"
+      "...\r\n",
+      "19");
+  test_reader(tables,
+      "---\n"
+      "Lord of the Rings:\n"
+      "  - Sauron\n"
+      "...\n",
+      "20");
+  test_reader(tables,
+      "---\n"
+      "#top comment\n"
+      "top entry: \n"
+      "  sub-entry: twelve\n"
+      "  # long comment\n"
+      "  # about sub-entry2\n"
+      "  sub-entry2: green\n"
+      "...\n",
+      "21");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "  Particle Periodic:\n"
+      "    X: \"-1.0, 1.0\"\n"
+      "  emotions: happy_sad, indifferent\n"
+      "...\n",
+      "Trilinos issue #1801");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "  Particle Periodic:\n"
+      "    X: \"-1.0, 1.0\"\n"
+      "  emotions: happy_sad, indifferent\n"
+      "...\n",
+      "Trilinos issue #1801");
+  test_reader(tables,
+      "My Awesome Problem:\n"
+      "\tMesh:\n"
+      "\t\tInline:\n"
+      "\t\t\tType: Quad\n"
+      "\t\t\tElements: [     10,     10 ]\n"
+      "...\n",
+      "Trilinos issue #1801 part 2");
+  test_reader(tables,
+      "# Hi\n"
+      "My Awesome Problem: #other\n",
+      "Trilinos issue #1807");
 }
 
-TEUCHOS_UNIT_TEST( Parser, yaml_reader ) {
-  test_yaml_reader("---\nfoo:bar\n...\n");
-  test_yaml_reader("%YAML 1.2\n---\nfoo:bar\n...\n");
-  test_yaml_reader("---\nfoo:bar\nfar:boo\n...\n");
-  test_yaml_reader("---\nfoo:\n  bar:42\n  baz:  100\n...\n");
-  test_yaml_reader("---\nfoo:\n  bar  :42\n  baz:  100\n...\n");
-  test_yaml_reader("---\n foo:bar\n...\n");
-  test_yaml_reader("---\n\"Don Knuth\":bar\n...\n");
-  test_yaml_reader("---\n\"Don \\\"Maverick\\\" Knuth\":bar\n...\n");
-  test_yaml_reader("---\n'never say never':true\n...\n");
-  test_yaml_reader("---\n'never say ''never''':true\n...\n");
-  test_yaml_reader("---\n - foo\n - bar\n...\n");
-  test_yaml_reader("---\n1:\n - a\n - b\n...\n");
-  test_yaml_reader("---\na: {1: 1, 2: 4, 3: 9}\n...\n");
-  test_yaml_reader("---\na: [1, 2, 3]\n...\n");
-  test_yaml_reader("---\na: {1: [0, 1], 2: [0, 1, 2]}\n...\n");
-  test_yaml_reader("---\nassocs: [[bottom, 1], [top, 42]]\n...\n");
-  test_yaml_reader("---\nassocs: [ [ bottom , 1 ] , [ top , 42 ] ]\n...\n");
-  test_yaml_reader("---\npressure: -1.9e-6\nvolume: 0.7e+10\n...\n");
-  test_yaml_reader("---\nANONYMOUS:\n  empty: {}\n  non-empty: 1.5\n...\n");
-  test_yaml_reader("---\nANONYMOUS:\n  empty: { }\n  non-empty: 1.5\n...\n");
-  test_yaml_reader("---\nLord of the Rings:\n  - Sauron\n...\n");
-  test_yaml_reader(
-      "---\n#top comment\ntop entry: \n  sub-entry: twelve\n"
-      "  # long comment\n  # about sub-entry2\n  sub-entry2: green\n...\n");
+TEUCHOS_UNIT_TEST( Parser, yaml_reader_Match1 ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  Teuchos::any result;
+  reader.read_string(result,
+      "%YAML 1.1\n"
+      "---\n"
+      "Muelu:\n"
+      "  'coarse: max size': 1000\n"
+      "  'multigrid algorithm': unsmoothed\n"
+      "  'smoother: type': RELAXATION\n"
+      "  'smoother: params':\n"
+      "    'relaxation: type': Jacobi\n"
+      "    'relaxation: sweeps': 5\n"
+      "    'relaxation: damping factor': 0.9\n"
+      "  'aggregation: type': uncoupled\n"
+      "  'aggregation: drop tol': 1e-7\n"
+      "  'aggregation: export visualization data': true\n"
+      "...\n",
+      "Match1.yaml (inline)");
+}
+
+TEUCHOS_UNIT_TEST( Parser, yaml_reader_Arrays ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  Teuchos::any result;
+  reader.read_string(result,
+      "%YAML 1.1\n"
+      "---\n"
+      "Muelu:\n"
+      "  'coarse: max size': 1000\n"
+      "  'multigrid algorithm': unsmoothed\n"
+      "  'smoother: type': RELAXATION\n"
+      "  'smoother: params':\n"
+      "    'relaxation: type': Jacobi\n"
+      "    'relaxation: sweeps': 5\n"
+      "    'relaxation: damping factor': 0.9\n"
+      "    intArray: !!seq [2, 3, 5, 7, 11]\n"
+      "    doubleArray: !!seq [2.718, 3.14159, 1.618, 1.23456789, 42.1337]\n"
+      "  'aggregation: type': uncoupled\n"
+      "  'aggregation: drop tol': 1e-7\n"
+      "  'aggregation: export visualization data': true\n"
+      "...\n",
+      "Match1.yaml (inline)");
+}
+
+TEUCHOS_UNIT_TEST( Parser, yaml_plasma ) {
+  ReaderTablesPtr tables = YAML::ask_reader_tables();
+  Reader reader(tables);
+  Teuchos::any result;
+  reader.read_file(result, "plasma_oscillation_rtc.xml.yaml");
 }
 
 TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {
@@ -282,7 +488,7 @@ TEUCHOS_UNIT_TEST( Parser, mathexpr_language ) {
 
 void test_mathexpr_reader(std::string const& str) {
   Reader reader(MathExpr::ask_reader_tables());
-  any result;
+  Teuchos::any result;
   reader.read_string(result, str, "test_mathexpr_reader");
 }
 

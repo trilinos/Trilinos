@@ -206,9 +206,41 @@ namespace { // (anonymous)
 
     using ::Tpetra::Details::computeOffsetsFromCounts;
 
-    out << "Test the case where counts and offsets live "
-      "in the same memory space" << endl;
+    if (std::is_same<OffsetType, CountType>::value) {
+      out << "Test the case where counts and offsets alias one another" << endl;
+      Teuchos::OSTab tab2 (out);
+      using Kokkos::subview;
+      typedef Kokkos::pair<size_t, size_t> range_type;
+      auto counts_in = subview (offsets, range_type (0, counts.dimension_0 ()));
+      Kokkos::deep_copy (counts_in, counts);
+
+      OffsetType computedTotal = 0;
+      TEST_NOTHROW( computedTotal = computeOffsetsFromCounts (offsets, counts_in) );
+      TEST_EQUALITY( expectedTotal, computedTotal );
+
+      auto offsets_h = Kokkos::create_mirror_view (offsets);
+      Kokkos::deep_copy (offsets_h, offsets);
+
+      TEST_EQUALITY( offsets_h(0), ZERO );
+      for (CountType k = 0; k < numCounts; ++k) {
+        // Test result against sequential computation
+        TEST_EQUALITY( offsets_h(k+1), offsets_h(k) + counts_h(k) );
+        // Test against closed-form formula for partial sums
+        TEST_EQUALITY( offsets_h(k+1), ((k + ONE)*(k + TWO)) / TWO );
+        // Another sanity check
+        TEST_EQUALITY( static_cast<CountType> (offsets_h(k+1) - offsets_h(k)), counts_h(k) );
+      }
+
+      if (! success) {
+        out << "Test FAILED; returning early" << endl;
+        return;
+      }
+    }
+
+    out << "Test the case where counts and offsets do not alias one another, "
+      "but live in the same memory space" << endl;
     {
+      Teuchos::OSTab tab2 (out);
       OffsetType computedTotal = 0;
       TEST_NOTHROW( computedTotal = computeOffsetsFromCounts (offsets, counts) );
       TEST_EQUALITY( expectedTotal, computedTotal );
@@ -315,36 +347,48 @@ namespace { // (anonymous)
                                                     "int",
                                                     countTypeName, debug);
       if (! success) {
+        out << "Test with " << "int, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       testComputeOffsetsTmpl<long, int, DeviceType> (success, out,
                                                      "long",
                                                      countTypeName, debug);
       if (! success) {
+        out << "Test with " << "long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       testComputeOffsetsTmpl<long long, int, DeviceType> (success, out,
                                                           "long long",
                                                           countTypeName, debug);
       if (! success) {
+        out << "Test with " << "long long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       testComputeOffsetsTmpl<unsigned int, int, DeviceType> (success, out,
                                                              "unsigned int",
                                                              countTypeName, debug);
       if (! success) {
+        out << "Test with " << "unsigned int, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       testComputeOffsetsTmpl<unsigned long, int, DeviceType> (success, out,
                                                               "unsigned long",
                                                               countTypeName, debug);
       if (! success) {
+        out << "Test with " << "unsigned long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       testComputeOffsetsTmpl<unsigned long long, int, DeviceType> (success, out,
                                                                    "unsigned long long",
                                                                    countTypeName, debug);
       if (! success) {
+        out << "Test with " << "unsigned long long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
     }
@@ -354,18 +398,24 @@ namespace { // (anonymous)
                                                                       "unsigned int",
                                                                       countTypeName, debug);
       if (! success) {
+        out << "Test with " << "unsigned int, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       testComputeOffsetsTmpl<unsigned long, unsigned int, DeviceType> (success, out,
                                                                        "unsigned long",
                                                                        countTypeName, debug);
       if (! success) {
+        out << "Test with " << "unsigned long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       testComputeOffsetsTmpl<unsigned long long, unsigned int, DeviceType> (success, out,
                                                                             "unsigned long long",
                                                                             countTypeName, debug);
       if (! success) {
+        out << "Test with " << "unsigned long long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
     }
@@ -375,18 +425,24 @@ namespace { // (anonymous)
                                                       "long",
                                                       countTypeName, debug);
       if (! success) {
+        out << "Test with " << "long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       testComputeOffsetsTmpl<long long, long, DeviceType> (success, out,
                                                            "long long",
                                                            countTypeName, debug);
       if (! success) {
+        out << "Test with " << "long long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       testComputeOffsetsTmpl<unsigned long, long, DeviceType> (success, out,
                                                                "unsigned long",
                                                                countTypeName, debug);
       if (! success) {
+        out << "Test with " << "unsigned long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       testComputeOffsetsTmpl<unsigned long long, long, DeviceType> (success, out,
@@ -399,6 +455,8 @@ namespace { // (anonymous)
                                                                         "unsigned long",
                                                                         countTypeName, debug);
       if (! success) {
+        out << "Test with " << "unsigned long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       // We can't test OffsetType = long long here, in case
@@ -407,6 +465,8 @@ namespace { // (anonymous)
                                                                              "unsigned long long",
                                                                              countTypeName, debug);
       if (! success) {
+        out << "Test with " << "unsigned long long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
     }
@@ -416,12 +476,16 @@ namespace { // (anonymous)
                                                                 "long long",
                                                                 countTypeName, debug);
       if (! success) {
+        out << "Test with " << "long long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
       testComputeOffsetsTmpl<unsigned long long, long long, DeviceType> (success, out,
                                                                          "unsigned long long",
                                                                          countTypeName, debug);
       if (! success) {
+        out << "Test with " << "unsigned long long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
         return;
       }
     }
@@ -430,6 +494,11 @@ namespace { // (anonymous)
       testComputeOffsetsTmpl<unsigned long long, unsigned long long, DeviceType> (success, out,
                                                                                   "unsigned long long",
                                                                                   countTypeName, debug);
+      if (! success) {
+        out << "Test with " << "unsigned long long, " << countTypeName << ", "
+            << deviceName<DeviceType> () << " failed; returning early" << endl;
+        return;
+      }
     }
   }
 

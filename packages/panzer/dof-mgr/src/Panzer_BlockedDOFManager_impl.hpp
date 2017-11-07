@@ -1037,16 +1037,17 @@ void BlockedDOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
       registerFields(true);
 
    // build the pattern for the ID layout on the mesh
-   std::vector<RCP<const FieldPattern> > patVector;
+   // NOTE: hard coded to CG-only for now since this class is deprecated
+   std::vector<std::pair<FieldType,RCP<const FieldPattern>>> patVector;
    std::map<std::pair<std::string,std::string>,Teuchos::RCP<const FieldPattern> >::iterator f2p_itr;
    for(f2p_itr=fieldStringToPattern_.begin();f2p_itr!=fieldStringToPattern_.end();f2p_itr++)
-      patVector.push_back(f2p_itr->second);
+     patVector.push_back(std::make_pair(FieldType::CG,f2p_itr->second));
 
    // if orientations are required, add the nodal field pattern to make it possible to compute them
    if(requireOrientations_) 
-     patVector.push_back(Teuchos::rcp(new NodalFieldPattern(patVector[0]->getCellTopology())));
+     patVector.push_back(std::make_pair(FieldType::CG,Teuchos::rcp(new NodalFieldPattern(patVector[0].second->getCellTopology()))));
 
-   RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);;
+   RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);
    aggFieldPattern->buildPattern(patVector);
 
    // setup connectivity mesh

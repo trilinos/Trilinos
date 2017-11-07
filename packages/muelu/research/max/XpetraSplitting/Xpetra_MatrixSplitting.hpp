@@ -181,15 +181,18 @@ public:
 
   //! Constructor specifying fixed number of entries for each row.
   MatrixSplitting(RCP<Matrix> matrix, RCP< Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > > nodes)
-{
+  {
     std::cout<<"This version of MatrixSplitting constructor is NOT currently supported \n";
-}
+  }
   //
   //
-  MatrixSplitting(const char* matrix_file_name, const char* elements_file_name, RCP<const Teuchos::Comm<int> > comm)
+  MatrixSplitting(const char* matrix_file_name,
+      Teuchos::RCP<Xpetra::RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionHandler,
+      RCP<const Teuchos::Comm<int> > comm
+      )
   {
     comm_ = comm;
-    regionHandler_ = rcp( new Xpetra::RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> (elements_file_name, comm_) );
+    regionHandler_ = regionHandler;
     Array<GlobalOrdinal> elementlist = regionHandler_->GetGlobalRowMap();
     num_total_elements_ = regionHandler_->GetNumGlobalElements();
     num_total_regions_ = regionHandler_->GetNumTotalRegions();
@@ -1469,8 +1472,13 @@ private:
 
   RCP<const Teuchos::Comm<int> > comm_;
 
+  //! Handling node-to-region mappings etc.
   RCP<RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionHandler_;
+
+  //! The original (non-splitted) matrix
   RCP<Matrix> compositeMatrixData_;
+
+  //! The matrix after splitting according to region layout
   Array<RCP<Matrix> > regionMatrixData_;
 
   GlobalOrdinal num_total_elements_ = 0;

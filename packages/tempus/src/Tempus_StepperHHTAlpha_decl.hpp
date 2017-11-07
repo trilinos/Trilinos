@@ -17,22 +17,25 @@ namespace Tempus {
 
 /** \brief HHT-Alpha time stepper.
  *
- * Here, we implement the HHT-Alpha scheme in predictor/corrector form; see equations (10) and
- * (13)-(19) in: G.M. Hulbert, J. Chung, "Explicit time integration algorithms for structural
- * dynamics with optimal numerical dissipation", Comput. Methods Appl. Mech. Engrg. 137 175-188 (1996).
+ * Here, we implement the HHT-Alpha scheme in predictor/corrector form;
+ * see equations (10) and (13)-(19) in: G.M. Hulbert, J. Chung,
+ * "Explicit time integration algorithms for structural dynamics with
+ * optimal numerical dissipation", Comput. Methods Appl. Mech. Engrg.
+ * 137 175-188 (1996).
  *
  * There are four parameters in the scheme: \f$\alpha_m\f$, \f$\alpha_f\f$,
  * \f$\beta\f$ and \f$\gamma\f$, all of which must be in the range \f$[0,1]\f$.
- * When \f$\alpha_m=\alpha_f = 0\f$, the scheme reduces to the Newmark Beta scheme (see Tempus::StepperNewmark for details).
- * Like the Newmark Beta scheme, the HHT-Alpha scheme can be either first or second order accurate,
+ * When \f$\alpha_m=\alpha_f = 0\f$, the scheme reduces to the Newmark Beta
+ * scheme (see Tempus::StepperNewmark for details).  Like the Newmark Beta
+ * scheme, the HHT-Alpha scheme can be either first or second order accurate,
  * and either explicit or implicit.
  *
- * Although the general form of the scheme has been implemented in Tempus, it has only been
- * verified for the case when \f$\alpha_m=\alpha_f = 0\f$ (corresponding to the Newmark Beta) scheme,
- * so other values for these parameters are not allowed at the present time.  Also, note that, like the Newmark Beta
- * stepper, the linear solve for the explicit version of this scheme has not been optimized (the mass matrix
- * is not lumped).
- *
+ * Although the general form of the scheme has been implemented in Tempus,
+ * it has only been verified for the case when \f$\alpha_m=\alpha_f = 0\f$
+ * (corresponding to the Newmark Beta) scheme, so other values for these
+ * parameters are not allowed at the present time.  Also, note that, like
+ * the Newmark Beta stepper, the linear solve for the explicit version of
+ * this scheme has not been optimized (the mass matrix is not lumped).
  */
 template<class Scalar>
 class StepperHHTAlpha : virtual public Tempus::StepperImplicit<Scalar>

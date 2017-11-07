@@ -5,7 +5,7 @@
 
 namespace Teuchos {
 
-int const chartab[128] = {
+int const chartab[TEUCHOS_CHARTAB_SIZE] = {
   -1,
   -1,
   -1,

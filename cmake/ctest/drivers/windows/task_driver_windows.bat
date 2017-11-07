@@ -8,7 +8,7 @@ set NINJA_DIR=%SEMS_DIR%\utility\ninja\1.7.2
 set CTEST_EXE=%SEMS_DIR%\utility\cmake\3.8.1\bin\ctest.exe
 set GIT_EXE=%SEMS_DIR%\utility\git\2.13.0\cmd\git.exe
 set PATH=%NINJA_DIR%;%PATH%
-set TRILINOS_REPOSITORY_LOCATION=git@github.com:trilinos/Trilinos.git
+set TRILINOS_REPOSITORY_LOCATION=https://gitlab-ex.sandia.gov/trilinos-project/Trilinos.git
 
 set BASEDIR=%~1
 cd %BASEDIR%

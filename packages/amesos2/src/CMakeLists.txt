@@ -249,7 +249,7 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
       Amesos2_Basker.cpp
       )
 
-   IF(NOT ${PACKAGE_NAME}_ENABLE_ShyLUBasker)
+   IF(NOT ${PACKAGE_NAME}_ENABLE_ShyLU_NodeBasker)
    	INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/basker)
    	APPEND_SET(HEADERS				
        basker/basker.hpp
@@ -275,6 +275,23 @@ IF (${PACKAGE_NAME}_ENABLE_UMFPACK)
 
   APPEND_SET(SOURCES
     Amesos2_Umfpack.cpp
+    )
+
+ENDIF()
+
+#ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
+IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
+
+  APPEND_SET(HEADERS
+    Amesos2_Tacho.hpp
+    Amesos2_Tacho_decl.hpp
+    Amesos2_Tacho_def.hpp
+    Amesos2_Tacho_FunctionMap.hpp
+    Amesos2_Tacho_TypeMap.hpp
+    )
+
+  APPEND_SET(SOURCES
+    Amesos2_Tacho.cpp
     )
 
 ENDIF()

@@ -27,6 +27,17 @@ SERIAL=${JENKINS_DO_SERIAL}
 
 COMPLEX=${JENKINS_DO_COMPLEX}
 
+CXX11_FLAGS_STRING="--std=c++11"
+if [ ${CUDA} == "ON" ]
+then
+  CXX11_FLAGS_STRING="--expt-extended-lambda -std=c++11"
+fi
+
+if [ ${PTHREAD} == "ON" ]
+then
+  EXTRA_ARGS="$EXTRA_ARGS -DPhalanx_KOKKOS_DEVICE_TYPE="THREAD""
+fi
+
 #--------------------------------------------------
 #--------------------------------------------------
 
@@ -47,7 +58,7 @@ cmake \
 -D Trilinos_ENABLE_OpenMP=${OPENMP} \
 -D Kokkos_ENABLE_Pthread=${PTHREAD} \
 -D TPL_ENABLE_CUDA=${CUDA} \
-  -D Kokkos_ENABLE_Cuda_UVM:BOOL=ON \
+-D Kokkos_ENABLE_Cuda_UVM:BOOL=ON \
 -D Teuchos_ENABLE_COMPLEX=${COMPLEX} \
 \
 -D CMAKE_CXX_FLAGS="${JENKINS_ARCH_CXX_FLAG} -g" \
@@ -74,7 +85,7 @@ cmake \
 -D DART_TESTING_TIMEOUT:STRING=200 \
 -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="" \
 -D Trilinos_ENABLE_CXX11=ON \
-  -D Trilinos_CXX11_FLAGS:STRING="--std=c++11" \
+  -D Trilinos_CXX11_FLAGS:STRING="${CXX11_FLAGS_STRING}" \
 \
 -D TPL_ENABLE_MPI=ON \
   -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="-bind-to;socket;-map-by;socket" \
@@ -110,6 +121,9 @@ cmake \
 -D Trilinos_ENABLE_Amesos2=ON \
   -D Amesos2_ENABLE_TESTS:BOOL=${TESTS} \
   -D Amesos2_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
+-D Trilinos_ENABLE_ShyLU_NodeTacho=ON \
+  -D ShyLU_NodeTacho_ENABLE_TESTS:BOOL=${TESTS} \
+  -D ShyLU_NodeTacho_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
 -D Trilinos_ENABLE_Anasazi=ON \
   -D Anasazi_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_AztecOO=ON \
@@ -133,6 +147,7 @@ cmake \
   -D Isorropia_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_Kokkos=ON \
   -D Kokkos_ENABLE_TESTS:BOOL=${TESTS} \
+  -D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON \
 -D Trilinos_ENABLE_KokkosKernels=ON \
   -D KokkosKernels_ENABLE_TESTS:BOOL=${TESTS} \
 -D Trilinos_ENABLE_ML=ON \

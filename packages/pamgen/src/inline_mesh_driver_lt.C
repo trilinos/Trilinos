@@ -61,13 +61,15 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   //make up list of global elements on processor
   std::set <long long> global_el_ids;
   long long local_ijk[3];
+  long long global_ijk[6];
   for(int i=0; i<3; i++) local_ijk[i] = 0;
+  for(int i=0; i<6; i++) global_ijk[i] = 0;
   {
     long long error_code;
     if(imd->inline_geometry_type == RADIAL_TRISECTION){
       error_code = imd->Decompose(global_el_ids);
     } else {
-      error_code = imd->Decompose(global_el_ids,local_ijk);
+      error_code = imd->Decompose(global_el_ids,local_ijk,global_ijk);
     }
     if(error_code){
       delete nemesis_db;
@@ -75,6 +77,8 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
       return NULL;
     }
     nemesis_db->Set_Local_Num_IJK(local_ijk[0],local_ijk[1],local_ijk[2]);
+    nemesis_db->Set_Global_IJK(global_ijk[0],global_ijk[1],global_ijk[2],
+                               global_ijk[3],global_ijk[4],global_ijk[5]);
   }
   // Set IJK
   nemesis_db->Set_Total_Num_IJK(nnx,nny,nnz);

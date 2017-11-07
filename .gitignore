@@ -145,3 +145,6 @@ rsync.*
 # Ignore files generated from INSTALL.rst
 /INSTALL.html
 /INSTALL.pdf
+
+# VIM YCM
+.ycm_extra_conf.py

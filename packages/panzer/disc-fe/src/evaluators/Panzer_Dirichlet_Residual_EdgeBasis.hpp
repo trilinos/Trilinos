@@ -69,18 +69,15 @@ PANZER_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
   PHX::MDField<ScalarT,Cell,BASIS> residual;
   PHX::MDField<const ScalarT,Cell,Point,Dim> dof;
   PHX::MDField<const ScalarT,Cell,Point,Dim> value;
-  PHX::MDField<const ScalarT,Cell,BASIS> dof_orientation; // will scale residual
-                                                    // by orientation to ensure
-                                                    // parallel consistency
 
   Teuchos::RCP<const panzer::PureBasis> basis; 
   Teuchos::RCP<const panzer::PointRule> pointRule; 
-  Kokkos::DynRankView<ScalarT,PHX::Device> edgeTan; // edge tangents
-  Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan; // reference edge tangents
 
   PointValues2<ScalarT> pointValues;
   PHX::MDField<const ScalarT, Cell, IP, Dim, Dim, void, void, void, void>
     constJac_;
+
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 
 PANZER_EVALUATOR_CLASS_END
 

@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
     *outStream << "\nSOLVE RISK NEUTRAL OPTIMAL CONTROL PROBLEM WITH TRUST REGION\n";
     // Build CVaR objective function
     Teuchos::ParameterList list;
-    list.sublist("SOL").set("Stochastic Optimization Type","Risk Neutral");
+    list.sublist("SOL").set("Stochastic Component Type","Risk Neutral");
     list.sublist("SOL").set("Store Sampled Value and Gradient",true);
     // Build stochastic problem
     ROL::OptimizationProblem<RealT> optProb(pObj,xp);

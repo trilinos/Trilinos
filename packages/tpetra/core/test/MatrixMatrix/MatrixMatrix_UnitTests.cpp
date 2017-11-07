@@ -45,6 +45,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 
 #include "TpetraExt_MatrixMatrix.hpp"
+#include "TpetraExt_TripleMatrixMultiply.hpp"
 #include "Tpetra_MatrixIO.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_Vector.hpp"
@@ -57,6 +58,9 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
+#include "TpetraExt_MatrixMatrix.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
+#include "Tpetra_Import_Util.hpp"
 #include <cmath>
 
 namespace {
@@ -70,6 +74,7 @@ namespace {
   using Tpetra::DefaultPlatform;
   using Tpetra::global_size_t;
   using Tpetra::Map;
+  using Tpetra::Import;
   using Tpetra::RowMatrixTransposer;
   using Tpetra::Vector;
   using Teuchos::Array;
@@ -135,8 +140,8 @@ getIdentityMatrix (Teuchos::FancyOStream& out,
 template<class SC, class LO, class GO,class NT>
 RCP<CrsMatrix<SC, LO, GO, NT> >
 getIdentityMatrixWithMap (Teuchos::FancyOStream& out,
-			  Teuchos::RCP<const Tpetra::Map<LO,GO,NT> >& identityRowMap,
-			  const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+                          Teuchos::RCP<const Tpetra::Map<LO,GO,NT> >& identityRowMap,
+                          const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
   using Teuchos::RCP;
   using std::endl;
@@ -177,6 +182,7 @@ typedef struct mult_test_results_struct{
   double epsilon;
   double cNorm;
   double compNorm;
+  bool   isImportValid;
 } mult_test_results;
 
 
@@ -230,7 +236,8 @@ null_add_test (const Matrix_t& A,
                const bool AT,
                const bool BT,
                const Matrix_t& C,
-               Teuchos::FancyOStream& out)
+               Teuchos::FancyOStream& out,
+               bool& success)
 {
   typedef typename Matrix_t::scalar_type scalar_type;
   typedef typename Matrix_t::local_ordinal_type local_ordinal_type;
@@ -241,6 +248,9 @@ null_add_test (const Matrix_t& A,
   typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, NT> export_type;
   const scalar_type one = STS::one ();
 
+  RCP<const Comm<int> > comm = A.getMap ()->getComm ();
+  const int myRank = comm->getRank ();
+
   out << "  Computing Frobenius norm of the expected result C" << endl;
   add_test_results toReturn;
   toReturn.correctNorm = C.getFrobeniusNorm ();
@@ -248,9 +258,27 @@ null_add_test (const Matrix_t& A,
   out << "  Calling 3-arg add" << endl;
   RCP<const map_type> domainMap = BT ? B.getRangeMap () : B.getDomainMap ();
   RCP<const map_type> rangeMap = BT ? B.getDomainMap () : B.getRangeMap ();
-  RCP<Matrix_t> C_computed =
-    Tpetra::MatrixMatrix::add (one, AT, A, one, BT, B,
-                               domainMap, rangeMap, Teuchos::null);
+  RCP<Matrix_t> C_computed;
+  // for each MPI process to catch any exception message
+  std::ostringstream errStrm;
+  int lclSuccess = 1;
+  int gblSuccess = 0; // output argument
+  try {
+    C_computed =
+      Tpetra::MatrixMatrix::add (one, AT, A, one, BT, B,
+                                 domainMap, rangeMap, Teuchos::null);
+  }
+  catch (std::exception& e) {
+    errStrm << "Proc " << myRank << ": add threw an exception: "
+      << e.what () << endl;
+    lclSuccess = 0;
+  }
+  reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+  TEST_EQUALITY_CONST( gblSuccess, 1 );
+  if (gblSuccess != 1) {
+    Tpetra::Details::gathervPrint (out, errStrm.str (), *comm);
+  }
+
   TEUCHOS_TEST_FOR_EXCEPTION(
     C_computed.is_null (), std::logic_error, "3-arg add returned null.");
 
@@ -330,6 +358,7 @@ mult_test_results multiply_test_manualfc(
   typedef typename Matrix_t::global_ordinal_type GO;
   typedef typename Matrix_t::node_type NT;
   typedef Map<LO,GO,NT> Map_t;
+  typedef Import<LO,GO,NT> Import_t;
   RCP<const Map_t> map = C->getRowMap();
 
   RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 1));
@@ -354,6 +383,11 @@ mult_test_results multiply_test_manualfc(
   results.compNorm = diffMatrix->getFrobeniusNorm ();
   results.epsilon  = results.compNorm/results.cNorm;
 
+  // Check importer validity
+  RCP<const Import_t> myImport = C->getGraph()->getImporter();
+  if(!myImport.is_null()) results.isImportValid=Tpetra::Import_Util::checkImportValidity(*myImport);
+  else results.isImportValid=true;
+
   return results;
 }
 
@@ -373,6 +407,7 @@ mult_test_results multiply_test_autofc(
   typedef typename Matrix_t::global_ordinal_type GO;
   typedef typename Matrix_t::node_type NT;
   typedef Map<LO,GO,NT> Map_t;
+  typedef Import<LO,GO,NT> Import_t;
   RCP<const Map_t> map = C->getRowMap();
 
   RCP<Matrix_t> computedC = rcp( new Matrix_t(map, 0));
@@ -397,9 +432,9 @@ mult_test_results multiply_test_autofc(
   C->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   std::cout<<"*** C->domainMap() ***"<<std::endl;
   C->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
-  
+
   if(C->getGraph()->getImporter().is_null()) std::cout<<"C->getImporter is null"<<std::endl;
-  else { 
+  else {
     std::cout<<"*** C->getImporter()->getTargetMap() ***"<<std::endl;
     C->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   }
@@ -407,8 +442,8 @@ mult_test_results multiply_test_autofc(
   std::cout<<"*** computedC->colMap() ***"<<std::endl;
   computedC->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
   std::cout<<"*** computedC->domainMap() ***"<<std::endl;
-  computedC->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME); 
- 
+  computedC->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+
   if(computedC->getGraph()->getImporter().is_null()) std::cout<<"computedC->getImporter is null"<<std::endl;
   else {
     std::cout<<"*** computedC->getImporter()->getTargetMap() ***"<<std::endl;
@@ -432,7 +467,100 @@ mult_test_results multiply_test_autofc(
     name+"_calculated.mtx", computedC);
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_real.mtx", C);
- 
+
+#endif
+  if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
+  }
+
+  // Check importer validity
+  RCP<const Import_t> myImport = C->getGraph()->getImporter();
+  if(!myImport.is_null()) results.isImportValid=Tpetra::Import_Util::checkImportValidity(*myImport);
+  else results.isImportValid=true;
+
+
+  return results;
+}
+
+
+template<class Matrix_t>
+mult_test_results multiply_RAP_test_autofc(
+  const std::string& name,
+  RCP<Matrix_t> R,
+  RCP<Matrix_t> A,
+  RCP<Matrix_t> P,
+  bool RT,
+  bool AT,
+  bool PT,
+  RCP<Matrix_t> Ac,
+  RCP<const Comm<int> > comm,
+  FancyOStream& out)
+{
+  typedef typename Matrix_t::scalar_type SC;
+  typedef typename Matrix_t::local_ordinal_type LO;
+  typedef typename Matrix_t::global_ordinal_type GO;
+  typedef typename Matrix_t::node_type NT;
+  typedef Map<LO,GO,NT> Map_t;
+
+  RCP<const Map_t> map = Ac->getRowMap();
+
+  RCP<Matrix_t> computedAc = rcp( new Matrix_t(map, 0));
+  SC one = Teuchos::ScalarTraits<SC>::one();
+
+  Tpetra::TripleMatrixMultiply::MultiplyRAP(*R, RT, *A, AT, *P, PT, *computedAc, true);
+
+  if(!Ac->getDomainMap()->isSameAs(*computedAc->getDomainMap())) throw std::runtime_error("Domain map mismatch");
+  if(!Ac->getRangeMap()->isSameAs(*computedAc->getRangeMap())) throw std::runtime_error("Range map mismatch");
+  if(!Ac->getRowMap()->isSameAs(*computedAc->getRowMap())) throw std::runtime_error("Row map mismatch");
+
+#if 0
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_calculated.mtx", computedAc);
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_real.mtx", Ac);
+#endif
+
+#if 0
+  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  std::cout<<"*** Ac->colMap() ***"<<std::endl;
+  Ac->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  std::cout<<"*** Ac->domainMap() ***"<<std::endl;
+  Ac->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+
+  if(Ac->getGraph()->getImporter().is_null()) std::cout<<"Ac->getImporter is null"<<std::endl;
+  else {
+    std::cout<<"*** Ac->getImporter()->getTargetMap() ***"<<std::endl;
+    Ac->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  }
+
+  std::cout<<"*** computedAc->colMap() ***"<<std::endl;
+  computedAc->getColMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  std::cout<<"*** computedAc->domainMap() ***"<<std::endl;
+  computedAc->getDomainMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+
+  if(computedAc->getGraph()->getImporter().is_null()) std::cout<<"computedAc->getImporter is null"<<std::endl;
+  else {
+    std::cout<<"*** computedAc->getImporter()->getTargetMap() ***"<<std::endl;
+    computedAc->getGraph()->getImporter()->getTargetMap()->describe(*fancy,Teuchos::VERB_EXTREME);
+  }
+#endif
+
+
+  RCP<Matrix_t> diffMatrix = Tpetra::createCrsMatrix<SC,LO,GO,NT>(Ac->getRowMap());
+  Tpetra::MatrixMatrix::Add(*Ac, false, -one, *computedAc, false, one, diffMatrix);
+  diffMatrix->fillComplete(Ac->getDomainMap(), Ac->getRangeMap());
+
+  mult_test_results results;
+  results.cNorm    = Ac->getFrobeniusNorm ();
+  results.compNorm = diffMatrix->getFrobeniusNorm ();
+  results.epsilon  = results.compNorm/results.cNorm;
+
+  if(results.epsilon > 1e-3) {
+#if 0
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_calculated.mtx", computedAc);
+  Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
+    name+"_real.mtx", Ac);
+
 #endif
   if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
   }
@@ -440,7 +568,6 @@ mult_test_results multiply_test_autofc(
 
   return results;
 }
-
 
 template<class Matrix_t>
 mult_test_results multiply_reuse_test(
@@ -458,6 +585,7 @@ mult_test_results multiply_reuse_test(
   typedef typename Matrix_t::global_ordinal_type GO;
   typedef typename Matrix_t::node_type NT;
   typedef Map<LO,GO,NT> Map_t;
+  typedef Import<LO,GO,NT> Import_t;
   typedef Vector<SC,LO,GO,NT> Vector_t;
 
   RCP<const Map_t> map = C->getRowMap();
@@ -518,6 +646,11 @@ mult_test_results multiply_reuse_test(
   results.compNorm = diffMatrix->getFrobeniusNorm ();
   results.epsilon  = results.compNorm/results.cNorm;
 
+  // Check importer validity
+  RCP<const Import_t> myImport = C->getGraph()->getImporter();
+  if(!myImport.is_null()) results.isImportValid=Tpetra::Import_Util::checkImportValidity(*myImport);
+  else results.isImportValid=true;
+
   return results;
 }
 
@@ -544,7 +677,7 @@ mult_test_results jacobi_test(
 
   // Jacobi version
   RCP<Matrix_t> C = rcp(new Matrix_t(B->getRowMap(),0));
-  Tpetra::MatrixMatrix::Jacobi(omega,Dinv,*A,*B,*C);
+  Tpetra::MatrixMatrix::Jacobi<SC, LO, GO, NT>(omega,Dinv,*A,*B,*C);
 
   // Multiply + Add version
   Dinv.putScalar(omega);
@@ -633,9 +766,10 @@ mult_test_results jacobi_reuse_test(
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT)  {
   RCP<const Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
-  
+
   // NOTE: The matrix reader doesn't read real matrices into a complex data type, so we just swap down to MT here
   typedef typename Teuchos::ScalarTraits<SC>::magnitudeType MT;
+  typedef Map<LO,GO,NT>                     map_type;
   typedef CrsMatrix<MT,LO,GO,NT> Matrix_t;
   const int myRank = comm->getRank ();
   //const int numProcs = comm->getSize();
@@ -657,6 +791,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems =
     Teuchos::getParametersFromXmlFile(matnamesFile);
 
+
   for (Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
        it != matrixSystems->end();
        ++it) {
@@ -666,23 +801,94 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       "Bad tag's name: " << it->first <<
       "Type name: " << it->second.getAny().typeName() <<
       endl << endl);
- 
+
     ParameterList currentSystem = matrixSystems->sublist (it->first);
     std::string name = currentSystem.name();
     std::string A_file = currentSystem.get<std::string> ("A");
+    std::string A_domainmap_file = currentSystem.get<std::string> ("A_domainmap", "");
+    std::string A_rangemap_file = currentSystem.get<std::string> ("A_rangemap", "");
+    std::string A_rowmap_file = currentSystem.get<std::string> ("A_rowmap", "");
+    std::string A_colmap_file = currentSystem.get<std::string> ("A_colmap", "");
+
     std::string B_file = currentSystem.get<std::string> ("B");
+    std::string B_domainmap_file = currentSystem.get<std::string> ("B_domainmap", "");
+    std::string B_rangemap_file = currentSystem.get<std::string> ("B_rangemap", "");
+    std::string B_rowmap_file = currentSystem.get<std::string> ("B_rowmap", "");
+    std::string B_colmap_file = currentSystem.get<std::string> ("B_colmap", "");
+
     std::string C_file = currentSystem.get<std::string> ("C");
+    std::string C_domainmap_file = currentSystem.get<std::string> ("C_domainmap", "");
+    std::string C_rangemap_file = currentSystem.get<std::string> ("C_rangemap", "");
+    std::string C_rowmap_file = currentSystem.get<std::string> ("C_rowmap", "");
+    std::string C_colmap_file = currentSystem.get<std::string> ("C_colmap", "");
+
+    std::string D_file = currentSystem.get<std::string> ("D", "");
+    std::string D_domainmap_file = currentSystem.get<std::string> ("D_domainmap", "");
+    std::string D_rangemap_file = currentSystem.get<std::string> ("D_rangemap", "");
+    std::string D_rowmap_file = currentSystem.get<std::string> ("D_rowmap", "");
+    std::string D_colmap_file = currentSystem.get<std::string> ("D_colmap", "");
+
     const bool AT = currentSystem.get<bool> ("TransA");
     const bool BT = currentSystem.get<bool> ("TransB");
+    const bool CT = currentSystem.get<bool> ("TransC", false);
+    const int numProcs = currentSystem.get<int> ("numProcs", 0);
+
+    // Don't run tests where the core count does not match the maps
+    if(numProcs > 0 && comm->getSize() != numProcs) continue;
+
+
     double epsilon = currentSystem.get<double> ("epsilon", defaultEpsilon);
     std::string op = currentSystem.get<std::string> ("op");
 
-    RCP<Matrix_t> A = Reader<Matrix_t>::readSparseFile (A_file, comm);
-    RCP<Matrix_t> B = Reader<Matrix_t>::readSparseFile (B_file, comm);
-    RCP<Matrix_t> C = Reader<Matrix_t>::readSparseFile (C_file, comm);
+    RCP<Matrix_t> A, B, C, D;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
-      "Unrecognized Matrix Operation: " << op);
+    if (A_file != ""){
+      if (A_domainmap_file == "" || A_rangemap_file == "" || A_rowmap_file == "" || A_colmap_file == "")
+        A = Reader<Matrix_t>::readSparseFile (A_file, comm);
+      else {
+        RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (A_domainmap_file, comm);
+        RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (A_rangemap_file, comm);
+        RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (A_rowmap_file, comm);
+        RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (A_colmap_file, comm);
+        A = Reader<Matrix_t>::readSparseFile (A_file, rowmap, colmap, domainmap, rangemap);
+      }
+    }
+    if (B_domainmap_file == "" || B_rangemap_file == "" || B_rowmap_file == "" || B_colmap_file == "")
+      B = Reader<Matrix_t>::readSparseFile (B_file, comm);
+    else {
+      RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (B_domainmap_file, comm);
+      RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (B_rangemap_file, comm);
+      RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (B_rowmap_file, comm);
+      RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (B_colmap_file, comm);
+      B = Reader<Matrix_t>::readSparseFile (B_file, rowmap, colmap, domainmap, rangemap);
+    }
+    if (C_domainmap_file == "" || C_rangemap_file == "" || C_rowmap_file == "" || C_colmap_file == "")
+      C = Reader<Matrix_t>::readSparseFile (C_file, comm);
+    else {
+      RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (C_domainmap_file, comm);
+      RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (C_rangemap_file, comm);
+      RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (C_rowmap_file, comm);
+      RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (C_colmap_file, comm);
+      C = Reader<Matrix_t>::readSparseFile (C_file, rowmap, colmap, domainmap, rangemap);
+    }
+    if (D_file != "") {
+      if (D_domainmap_file == "" || D_rangemap_file == "" || D_rowmap_file == "" || D_colmap_file == "")
+        D = Reader<Matrix_t>::readSparseFile (D_file, comm);
+      else {
+        RCP<const map_type> domainmap = Reader<Matrix_t>::readMapFile (D_domainmap_file, comm);
+        RCP<const map_type> rangemap  = Reader<Matrix_t>::readMapFile (D_rangemap_file, comm);
+        RCP<const map_type> rowmap    = Reader<Matrix_t>::readMapFile (D_rowmap_file, comm);
+        RCP<const map_type> colmap    = Reader<Matrix_t>::readMapFile (D_colmap_file, comm);
+        D = Reader<Matrix_t>::readSparseFile (D_file, rowmap, colmap, domainmap, rangemap);
+      }
+    }
+
+    if (A_file == "") {
+      A = C;
+    }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add" && op != "RAP", std::runtime_error,
+                               "Unrecognized Matrix Operation: " << op);
 
     if (op == "multiply") {
       if (verbose)
@@ -695,8 +901,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
         newOut << "\tEpsilon: "  << results.epsilon  << endl;
         newOut << "\tcNorm: "    << results.cNorm    << endl;
         newOut << "\tcompNorm: " << results.compNorm << endl;
+        newOut << "\tisImportValid: " <<results.isImportValid << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
+      TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("ManualFC: Import validity failed: ") + currentSystem.name());
 
       if (verbose)
         newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
@@ -708,8 +916,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
         newOut << "\tEpsilon: "  << results.epsilon  << endl;
         newOut << "\tcNorm: "    << results.cNorm    << endl;
         newOut << "\tcompNorm: " << results.compNorm << endl;
+        newOut << "\tisImportValid: " <<results.isImportValid << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon);
+      TEUCHOS_TEST_FOR_EXCEPTION(!results.isImportValid,std::logic_error,std::string("AutoFC: Import validity failed: ") + currentSystem.name());
 
       if (verbose)
         newOut << "Running multiply reuse test for " << currentSystem.name() << endl;
@@ -781,7 +991,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
       TEUCHOS_TEST_FOR_EXCEPTION(C.is_null (), std::logic_error,
                                  "Before null_add_test: C is null");
 
-      results = null_add_test<Matrix_t> (*A, *B, AT, BT, *C, newOut);
+      results = null_add_test<Matrix_t> (*A, *B, AT, BT, *C,
+                                         newOut, success);
 
       TEST_COMPARE(results.epsilon, <, epsilon);
       newOut << "Null Add Test Results: " << endl;
@@ -803,6 +1014,46 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
         newOut << "\tComputed norm: " << results.computedNorm << endl;
         newOut << "\tEpsilon: " << results.epsilon << endl;
       }
+    }
+    else if (op == "RAP") {
+      // if (verbose)
+      //   newOut << "Running RAP multiply test (manual FC) for " << currentSystem.name() << endl;
+
+      // mult_test_results results = multiply_RAP_test_manualfc(name, A, B, C, AT, BT, CT, D, comm, newOut);
+
+      // if (verbose) {
+      //   newOut << "Results:"     << endl;
+      //   newOut << "\tEpsilon: "  << results.epsilon  << endl;
+      //   newOut << "\tcNorm: "    << results.cNorm    << endl;
+      //   newOut << "\tcompNorm: " << results.compNorm << endl;
+      // }
+      // TEST_COMPARE(results.epsilon, <, epsilon);
+
+      if (verbose)
+        newOut << "Running multiply test (auto FC) for " << currentSystem.name() << endl;
+
+      mult_test_results results = multiply_RAP_test_autofc(name, A, B, C, AT, BT, CT, D, comm, newOut);
+
+      if (verbose) {
+        newOut << "Results:"     << endl;
+        newOut << "\tEpsilon: "  << results.epsilon  << endl;
+        newOut << "\tcNorm: "    << results.cNorm    << endl;
+        newOut << "\tcompNorm: " << results.compNorm << endl;
+      }
+      TEST_COMPARE(results.epsilon, <, epsilon);
+
+      // if (verbose)
+      //   newOut << "Running multiply reuse test for " << currentSystem.name() << endl;
+
+      // results = multiply_reuse_test(name, A, B, AT, BT, C, comm, newOut);
+
+      // if (verbose) {
+      //   newOut << "Results:"     << endl;
+      //   newOut << "\tEpsilon: "  << results.epsilon  << endl;
+      //   newOut << "\tcNorm: "    << results.cNorm    << endl;
+      //   newOut << "\tcompNorm: " << results.compNorm << endl;
+      // }
+      // TEST_COMPARE(results.epsilon, <, epsilon);
     }
   }
 
@@ -1140,6 +1391,238 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
   }
   TEST_EQUALITY_CONST( gblSuccess, 1 );
 }
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  using Teuchos::RCP;
+  //First, make two local, random, sorted Kokkos sparse matrices
+  size_t nrows = 1000;
+  size_t nnzPerRow = 20;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
+  typedef typename crs_matrix_type::local_matrix_type KCRS;
+  typedef typename crs_matrix_type::impl_scalar_type ISC;
+  typedef typename KCRS::values_type::non_const_type ValuesType;
+  typedef typename KCRS::row_map_type::non_const_type RowptrsType;
+  typedef typename KCRS::index_type::non_const_type ColindsType;
+  //The 3 views are for A, B and C
+  ValuesType valsCRS[3];
+  RowptrsType rowptrsCRS[3];
+  ColindsType colindsCRS[3];
+  //Populate A and B
+  {
+    ISC* vals[2] = {new ISC[nrows * nnzPerRow], new ISC[nrows * nnzPerRow]};
+    LO* rowptrs[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
+    LO* colinds[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
+    //want consistent test results
+    srand(12);
+    for(LO m = 0; m < 2; m++)
+    {
+      for(size_t row = 0; row < nrows; row++)
+      {
+        //rows are sorted, so come up with nnzPerRow vals and cols and then sort them
+        std::vector<ISC> rowVals(nnzPerRow);
+        std::vector<LO> rowInds(nnzPerRow);
+        for(size_t entry = 0; entry < nnzPerRow; entry++)
+        {
+          rowVals[entry] = ((double) rand()) / RAND_MAX;
+          //don't allow repeats in col inds
+          LO ind;
+          do
+          {
+            ind = rand() % nrows;
+          }
+          while(std::find(rowInds.begin(), rowInds.end(), ind) != rowInds.end());
+          rowInds[entry] = ind;
+        }
+        std::sort(rowInds.begin(), rowInds.end());
+        //now insert new coordinates in big arrays
+        for(size_t entry = 0; entry < nnzPerRow; entry++)
+        {
+          vals[m][nnzPerRow * row + entry] = rowVals[entry];
+          colinds[m][nnzPerRow * row + entry] = rowInds[entry];
+        }
+      }
+      //set rowptrs
+      for(size_t row = 0; row <= nrows; row++)
+      {
+        rowptrs[m][row] = row * nnzPerRow;
+      }
+      valsCRS[m] = ValuesType("Values", nrows * nnzPerRow);
+      rowptrsCRS[m] = RowptrsType("RowPtrs", nrows + 1);
+      colindsCRS[m] = ColindsType("ColInds", nrows * nnzPerRow);
+      for(size_t i = 0; i < nrows + 1; i++)
+      {
+        rowptrsCRS[m](i) = rowptrs[m][i];
+      }
+      for(size_t i = 0; i < nrows * nnzPerRow; i++)
+      {
+        valsCRS[m](i) = vals[m][i];
+        colindsCRS[m](i) = colinds[m][i];
+      }
+    }
+    for(int i = 0; i < 2; i++)
+    {
+      delete[] vals[i];
+      delete[] rowptrs[i];
+      delete[] colinds[i];
+    }
+  }
+  //now run the threaded addition on mats[0] and mats[1]
+  ISC zero(0);
+  ISC one(1);
+  Tpetra::MatrixMatrix::Details::AddKernels<SC, LO, GO, NT>::
+    addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  //now scan through C's rows and entries to check they are correct
+  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
+      "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
+  for(size_t i = 0; i < nrows; i++)
+  {
+    //also compute what C's row should be (as dense values)
+    std::vector<ISC> correctVals(nrows, zero);
+    std::vector<bool> correctEntries(nrows, false);
+    for(size_t j = 0; j < nnzPerRow; j++)
+    {
+      int col1 = colindsCRS[0](i * nnzPerRow + j);
+      int col2 = colindsCRS[1](i * nnzPerRow + j);
+      correctVals[col1] += valsCRS[0](i * nnzPerRow + j);
+      correctEntries[col1] = true;
+      correctVals[col2] += valsCRS[1](i * nnzPerRow + j);
+      correctEntries[col2] = true;
+    }
+    size_t actualNNZ = 0;
+    for(size_t j = 0; j < nrows; j++)
+    {
+      if(correctEntries[j])
+        actualNNZ++;
+    }
+    size_t Crowstart = rowptrsCRS[2](i);
+    size_t Crowlen = rowptrsCRS[2](i + 1) - Crowstart;
+    TEUCHOS_TEST_FOR_EXCEPTION(Crowlen != actualNNZ, std::logic_error,
+        std::string("Threaded addition of sorted Kokkos::CrsMatrix produced row ") + std::to_string(i) + " with the wrong number of entries.");
+    for(size_t j = 0; j < Crowlen; j++)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(valsCRS[2](Crowstart + j) != correctVals[colindsCRS[2](Crowstart + j)], std::logic_error,
+          "Threaded addition of sorted Kokkos::CrsMatrix produced an incorrect value.");
+    }
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = DefaultPlatform::getDefaultPlatform().getComm();
+  using Teuchos::RCP;
+  //First, make two local, random, unsorted Kokkos sparse matrices
+  size_t nrows = 1000;
+  size_t nnzPerRow = 20;
+  typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
+  typedef typename crs_matrix_type::local_matrix_type KCRS;
+  typedef typename crs_matrix_type::impl_scalar_type ISC;
+  typedef typename KCRS::values_type::non_const_type ValuesType;
+  typedef typename KCRS::row_map_type::non_const_type RowptrsType;
+  typedef typename KCRS::index_type::non_const_type ColindsType;
+  //The 3 views are for A, B and C
+  ValuesType valsCRS[3];
+  RowptrsType rowptrsCRS[3];
+  ColindsType colindsCRS[3];
+  //Populate A and B
+  {
+    ISC* vals[2] = {new ISC[nrows * nnzPerRow], new ISC[nrows * nnzPerRow]};
+    LO* rowptrs[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
+    LO* colinds[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
+    //want consistent test results
+    srand(12);
+    for(LO m = 0; m < 2; m++)
+    {
+      for(size_t row = 0; row < nrows; row++)
+      {
+        //rows are sorted, so come up with nnzPerRow vals and cols and then sort them
+        std::vector<ISC> rowVals(nnzPerRow);
+        std::vector<LO> rowInds(nnzPerRow);
+        for(size_t entry = 0; entry < nnzPerRow; entry++)
+        {
+          rowVals[entry] = ((double) rand()) / RAND_MAX;
+          //don't allow repeats in col inds
+          LO ind;
+          do
+          {
+            ind = rand() % nrows;
+          }
+          while(std::find(rowInds.begin(), rowInds.end(), ind) != rowInds.end());
+          rowInds[entry] = ind;
+        }
+        //now insert new coordinates in big arrays
+        for(size_t entry = 0; entry < nnzPerRow; entry++)
+        {
+          vals[m][nnzPerRow * row + entry] = rowVals[entry];
+          colinds[m][nnzPerRow * row + entry] = rowInds[entry];
+        }
+      }
+      //set rowptrs
+      for(size_t row = 0; row <= nrows; row++)
+      {
+        rowptrs[m][row] = row * nnzPerRow;
+      }
+      valsCRS[m] = ValuesType("Values", nrows * nnzPerRow);
+      rowptrsCRS[m] = RowptrsType("RowPtrs", nrows + 1);
+      colindsCRS[m] = ColindsType("ColInds", nrows * nnzPerRow);
+      for(size_t i = 0; i < nrows + 1; i++)
+      {
+        rowptrsCRS[m](i) = rowptrs[m][i];
+      }
+      for(size_t i = 0; i < nrows * nnzPerRow; i++)
+      {
+        valsCRS[m](i) = vals[m][i];
+        colindsCRS[m](i) = colinds[m][i];
+      }
+    }
+    for(int i = 0; i < 2; i++)
+    {
+      delete[] vals[i];
+      delete[] rowptrs[i];
+      delete[] colinds[i];
+    }
+  }
+  //now run the threaded addition on mats[0] and mats[1]
+  ISC zero(0);
+  ISC one(1);
+  Tpetra::MatrixMatrix::Details::AddKernels<SC, LO, GO, NT>::
+    addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  //now scan through C's rows and entries to check they are correct
+  TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
+      "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
+  for(size_t i = 0; i < nrows; i++)
+  {
+    //also compute what C's row should be (as dense values)
+    std::vector<ISC> correctVals(nrows, zero);
+    std::vector<bool> correctEntries(nrows, false);
+    for(size_t j = 0; j < nnzPerRow; j++)
+    {
+      int col1 = colindsCRS[0][i * nnzPerRow + j];
+      int col2 = colindsCRS[1][i * nnzPerRow + j];
+      correctVals[col1] += valsCRS[0](i * nnzPerRow + j);
+      correctEntries[col1] = true;
+      correctVals[col2] += valsCRS[1](i * nnzPerRow + j);
+      correctEntries[col2] = true;
+    }
+    size_t actualNNZ = 0;
+    for(size_t j = 0; j < nrows; j++)
+    {
+      if(correctEntries[j])
+        actualNNZ++;
+    }
+    size_t Crowstart = rowptrsCRS[2](i);
+    size_t Crowlen = rowptrsCRS[2](i + 1) - Crowstart;
+    TEUCHOS_TEST_FOR_EXCEPTION(Crowlen != actualNNZ, std::logic_error,
+        std::string("Threaded addition of unsorted Kokkos::CrsMatrix produced row ") + std::to_string(i) + " with the wrong number of entries (is " + std::to_string(Crowlen) + ", should be " + std::to_string(actualNNZ) + ")");
+    for(size_t j = 0; j < Crowlen; j++)
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(valsCRS[2](Crowstart + j) != correctVals[colindsCRS[2](Crowstart + j)], std::logic_error,
+          "Threaded addition of unsorted Kokkos::CrsMatrix produced an incorrect value.");
+    }
+  }
+}
+
 /*
  * This test was added at the request of Chris Siefert
  * Turns out it fails because the original algorithm in
@@ -1182,11 +1665,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
 }*/
 
 
-#define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )			\
+#define UNIT_TEST_GROUP_SC_LO_GO_NO( SC, LO, GO, NT )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, operations_test,SC, LO, GO, NT) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, range_row_test, SC, LO, GO, NT) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT)
-
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO, NT) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Tpetra_MatMat, threaded_add_unsorted, SC, LO, GO, NT)
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
@@ -1194,4 +1678,3 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, ATI_range_row_test, SC, LO, GO,
 
 
   } //namespace Tpetra
-

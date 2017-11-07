@@ -105,7 +105,7 @@ void MultiBlockMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::P
 }
 
 //! From ParameterListAcceptor
-void MultiBlockMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList)
+void MultiBlockMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& /* paramList */)
 {
 }
 
@@ -131,7 +131,7 @@ void MultiBlockMeshFactory::initializeWithDefaults()
    nYElems_ = 2;
 }
 
-void MultiBlockMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
+void MultiBlockMeshFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK_Interface& mesh) const
 {
    typedef shards::Quadrilateral<4> QuadTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
@@ -170,7 +170,7 @@ void MultiBlockMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_
    mesh.endModification();
 }
 
-void MultiBlockMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock,int yBlock,STK_Interface & mesh) const
+void MultiBlockMeshFactory::buildBlock(stk::ParallelMachine /* parallelMach */, int xBlock, int yBlock, STK_Interface& mesh) const
 {
    int myXElems_start = (machRank_==0 ? 0 : 2);
    int myXElems_end  = (machRank_==0 ? 1 : 3);
@@ -240,7 +240,7 @@ std::pair<int,int> MultiBlockMeshFactory::determineXElemSizeAndStart(int xBlock,
    return std::make_pair(start+nXElems_*xBlock,nume);
 }
 
-std::pair<int,int> MultiBlockMeshFactory::determineYElemSizeAndStart(int yBlock,unsigned int size,unsigned int rank) const
+std::pair<int,int> MultiBlockMeshFactory::determineYElemSizeAndStart(int yBlock, unsigned int /* size */, unsigned int /* rank */) const
 {
    int start = yBlock*nYElems_;
 

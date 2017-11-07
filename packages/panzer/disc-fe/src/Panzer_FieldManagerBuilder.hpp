@@ -74,7 +74,7 @@ namespace panzer {
 
   class EmptyEvaluatorFactory : public GenericEvaluatorFactory {
   public:
-    bool registerEvaluators(PHX::FieldManager<panzer::Traits> & fm, const WorksetDescriptor & wd, const PhysicsBlock & pb) const 
+    bool registerEvaluators(PHX::FieldManager<panzer::Traits> & /* fm */, const WorksetDescriptor & /* wd */, const PhysicsBlock & /* pb */) const 
     { return false; }
   };
 

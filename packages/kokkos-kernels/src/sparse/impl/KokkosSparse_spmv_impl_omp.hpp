@@ -51,7 +51,6 @@ void spmv_raw_openmp_no_transpose(typename YVector::const_value_type& s_a, AMatr
   typedef typename AMatrix::ordinal_type         ordinal_type;
   typedef typename AMatrix::non_const_size_type            size_type;
 
-  const ordinal_type rowCount                    = A.numRows();
   typename XVector::const_value_type* KOKKOS_RESTRICT x_ptr = x.data();
   typename YVector::non_const_value_type* KOKKOS_RESTRICT y_ptr = y.data();
 

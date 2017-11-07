@@ -69,7 +69,7 @@ kokkoskernels-install: kokkoskernels-build-lib
 	echo "# Kokkos Internal Settings" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
 	echo "KOKKOS_INTERNAL_USE_CUDA = ${KOKKOS_INTERNAL_USE_CUDA}" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
 	echo "KOKKOS_INTERNAL_USE_OPENMP = ${KOKKOS_INTERNAL_USE_OPENMP}" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
-	echo "KOKKOS_INTERNAL_USE_SERIAL = 1" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
+	echo "KOKKOS_INTERNAL_USE_SERIAL = ${KOKKOS_INTERNAL_USE_SERIAL}" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
 	echo "KOKKOS_INTERNAL_USE_PTHREADS = ${KOKKOS_INTERNAL_USE_PTHREADS}" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
 	echo "KOKKOS_INTERNAL_USE_ROCM = ${KOKKOS_INTERNAL_USE_ROCM}" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels
 	echo "# Fake target" >> $(KOKKOSKERNELS_INSTALL_PATH)/Makefile.kokkos-kernels

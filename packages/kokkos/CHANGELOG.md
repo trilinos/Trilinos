@@ -1,4 +1,53 @@
 # Change Log
+## [2.04.11](https://github.com/kokkos/kokkos/tree/2.04.11) (2017-10-28)
+[Full Changelog](https://github.com/kokkos/kokkos/compare/2.04.04...2.04.11)
+
+**Implemented enhancements:**
+
+- Add Subview pattern. [\#648](https://github.com/kokkos/kokkos/issues/648)
+- Add Kokkos "global" is\_initialized [\#1060](https://github.com/kokkos/kokkos/issues/1060)
+- Add create\_mirror\_view\_and\_copy [\#1161](https://github.com/kokkos/kokkos/issues/1161)
+- Add KokkosConcepts SpaceAccessibility function [\#1092](https://github.com/kokkos/kokkos/issues/1092)
+- Option to Disable Initialize Warnings [\#1142](https://github.com/kokkos/kokkos/issues/1142)
+- Mature task-DAG capability [\#320](https://github.com/kokkos/kokkos/issues/320)
+- Promote Work DAG from experimental [\#1126](https://github.com/kokkos/kokkos/issues/1126)
+- Implement new WorkGraph push/pop [\#1108](https://github.com/kokkos/kokkos/issues/1108)
+- Kokkos\_ENABLE\_Cuda\_Lambda should default ON [\#1101](https://github.com/kokkos/kokkos/issues/1101)
+- Add multidimensional parallel for example and improve unit test [\#1064](https://github.com/kokkos/kokkos/issues/1064)
+- Fix ROCm:  Performance tests not building [\#1038](https://github.com/kokkos/kokkos/issues/1038)
+- Make KOKKOS\_ALIGN\_SIZE a configure-time option [\#1004](https://github.com/kokkos/kokkos/issues/1004)
+- Make alignment consistent [\#809](https://github.com/kokkos/kokkos/issues/809)
+- Improve subview construction on Cuda backend [\#615](https://github.com/kokkos/kokkos/issues/615)
+
+**Fixed bugs:**
+
+- Kokkos::vector fixes for application [\#1134](https://github.com/kokkos/kokkos/issues/1134)
+- DynamicView non-power of two value\_type [\#1177](https://github.com/kokkos/kokkos/issues/1177)
+- Memory pool bug [\#1154](https://github.com/kokkos/kokkos/issues/1154)
+- Cuda launch bounds performance regression bug [\#1140](https://github.com/kokkos/kokkos/issues/1140)
+- Significant performance regression in LAMMPS after updating Kokkos [\#1139](https://github.com/kokkos/kokkos/issues/1139)
+- CUDA compile error [\#1128](https://github.com/kokkos/kokkos/issues/1128)
+- MDRangePolicy neg idx test failure in debug mode [\#1113](https://github.com/kokkos/kokkos/issues/1113)
+- subview construction on Cuda backend [\#615](https://github.com/kokkos/kokkos/issues/615)
+
+## [2.04.04](https://github.com/kokkos/kokkos/tree/2.04.04) (2017-09-11)
+[Full Changelog](https://github.com/kokkos/kokkos/compare/2.04.00...2.04.04)
+
+**Implemented enhancements:**
+
+- OpenMP partition: set number of threads on nested level [\#1082](https://github.com/kokkos/kokkos/issues/1082)
+- Add StaticCrsGraph row\(\) method [\#1071](https://github.com/kokkos/kokkos/issues/1071)
+- Enhance Kokkos complex operator overloading [\#1052](https://github.com/kokkos/kokkos/issues/1052)
+- Tell Trilinos packages about host+device lambda [\#1019](https://github.com/kokkos/kokkos/issues/1019)
+- Function markup for defaulted class members [\#952](https://github.com/kokkos/kokkos/issues/952)
+- Add deterministic random number generator [\#857](https://github.com/kokkos/kokkos/issues/857)
+
+**Fixed bugs:**
+
+- Fix reduction\_identity\<T\>::max for floating point numbers [\#1048](https://github.com/kokkos/kokkos/issues/1048)
+- Fix MD iteration policy ignores lower bound on GPUs [\#1041](https://github.com/kokkos/kokkos/issues/1041)
+- (Experimental) HBWSpace  Linking issues in KokkosKernels [\#1094](https://github.com/kokkos/kokkos/issues/1094)
+- (Experimental) ROCm:  algorithms/unit\_tests test\_sort failing with segfault [\#1070](https://github.com/kokkos/kokkos/issues/1070)
 
 ## [2.04.00](https://github.com/kokkos/kokkos/tree/2.04.00) (2017-08-16)
 [Full Changelog](https://github.com/kokkos/kokkos/compare/2.03.13...2.04.00)

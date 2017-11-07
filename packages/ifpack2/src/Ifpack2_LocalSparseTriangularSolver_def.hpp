@@ -47,7 +47,7 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
-#ifdef HAVE_IFPACK2_SHYLUHTS
+#ifdef HAVE_IFPACK2_SHYLU_NODEHTS
 # include "shylu_hts.hpp"
 #endif
 
@@ -77,14 +77,14 @@ public:
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> crs_matrix_type;
 
   void reset () {
-#ifdef HAVE_IFPACK2_SHYLUHTS
+#ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     Timpl_ = Teuchos::null;
     levelset_block_size_ = 1;
 #endif
   }
 
   void setParameters (const Teuchos::ParameterList& pl) {
-#ifdef HAVE_IFPACK2_SHYLUHTS
+#ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     const char* block_size_s = "trisolver: block size";
     if (pl.isParameter(block_size_s)) {
       TEUCHOS_TEST_FOR_EXCEPT_MSG( ! pl.isType<int>(block_size_s),
@@ -101,14 +101,14 @@ public:
   // calls (with the same Timpl_) will trigger the numeric phase. In the call to
   // initialize(), essentially nothing happens.
   void initialize (const crs_matrix_type& /* unused */) {
-#ifdef HAVE_IFPACK2_SHYLUHTS
+#ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     reset();
     transpose_ = conjugate_ = false;
 #endif
   }
 
   void compute (const crs_matrix_type& T_in, const Teuchos::RCP<Teuchos::FancyOStream>& out) {
-#ifdef HAVE_IFPACK2_SHYLUHTS
+#ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     using Teuchos::ArrayRCP;
 
     Teuchos::ArrayRCP<const size_t> rowptr;
@@ -146,7 +146,11 @@ public:
       typename HTST::PreprocessArgs args;
       args.T = T_hts.get();
       args.max_nrhs = 1;
+#ifdef _OPENMP
       args.nthreads = omp_get_max_threads();
+#else
+      args.nthreads = 1;
+#endif
       args.save_for_reprocess = true;
       typename HTST::Options opts;
       opts.levelset_block_size = levelset_block_size_;
@@ -165,7 +169,7 @@ public:
   // HTS may not be able to handle a matrix, so query whether compute()
   // succeeded.
   bool isComputed () {
-#ifdef HAVE_IFPACK2_SHYLUHTS
+#ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     return Teuchos::nonnull(Timpl_);
 #else
     return false;
@@ -176,18 +180,24 @@ public:
   void localApply (const MV& X, MV& Y,
                    const Teuchos::ETransp mode,
                    const scalar_type& alpha, const scalar_type& beta) const {
-#ifdef HAVE_IFPACK2_SHYLUHTS
+#ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     const auto& X_view = X.template getLocalView<Kokkos::HostSpace>();
     const auto& Y_view = Y.template getLocalView<Kokkos::HostSpace>();
     // Only does something if #rhs > current capacity.
     HTST::reset_max_nrhs(Timpl_.get(), X_view.dimension_1());
     // Switch alpha and beta because of HTS's opposite convention.
-    HTST::solve_omp(Timpl_.get(), X_view.data(), X_view.dimension_1(), Y_view.data(), beta, alpha);
+    HTST::solve_omp(Timpl_.get(),
+                    // For std/Kokkos::complex.
+                    reinterpret_cast<const scalar_type*>(X_view.data()),
+                    X_view.dimension_1(),
+                    // For std/Kokkos::complex.
+                    reinterpret_cast<scalar_type*>(Y_view.data()),
+                    beta, alpha);
 #endif
   }
 
 private:
-#ifdef HAVE_IFPACK2_SHYLUHTS
+#ifdef HAVE_IFPACK2_SHYLU_NODEHTS
   typedef ::Experimental::HTS<local_ordinal_type, size_t, scalar_type> HTST;
   typedef typename HTST::Impl TImpl;
   typedef typename HTST::CrsMatrix HtsCrsMatrix;
@@ -427,7 +437,7 @@ initialize ()
     // Construct new matrix
     local_matrix_type newLocalMatrix("Upermuted", numRows, numCols, numNnz, newval, newptr, newind);
 
-    A_crs_ = Teuchos::rcp(new crs_matrix_type(newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap(), newLocalMatrix));
+    A_crs_ = Teuchos::rcp(new crs_matrix_type(newLocalMatrix, newRowMap, newColMap, A_crs_->getDomainMap(), A_crs_->getRangeMap()));
 
     isInternallyChanged_ = true;
   }

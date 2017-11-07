@@ -53,7 +53,7 @@
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
 
 #include "Intrepid2_HGRAD_QUAD_C1_FEM.hpp"
@@ -126,7 +126,7 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    dofManager->addField("u",patternC1);
    dofManager->buildGlobalUnknowns();
 
-   panzer::EpetraLinearObjFactory<panzer::Traits,int> laFactory(tComm.getConst(),dofManager);
+   panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> laFactory(tComm.getConst(),dofManager);
    Teuchos::RCP<Epetra_Map> map = laFactory.getMap(0);
    Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap(0);
    Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph(0,0);

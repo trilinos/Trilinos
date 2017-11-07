@@ -61,7 +61,6 @@
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManager.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_EpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
@@ -188,8 +187,8 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
 
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    Teuchos::RCP<EpetraLinearObjFactory<panzer::Traits,int> > e_lof 
-       = Teuchos::rcp(new EpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
+    Teuchos::RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > e_lof 
+       = Teuchos::rcp(new BlockedEpetraLinearObjFactory<panzer::Traits,int>(tComm.getConst(),dofManager));
     Teuchos::RCP<LinearObjFactory<panzer::Traits> > lof = e_lof;
     Teuchos::RCP<LinearObjContainer> loc = e_lof->buildGhostedLinearObjContainer();
     e_lof->initializeGhostedContainer(LinearObjContainer::X,*loc);
@@ -211,7 +210,7 @@ namespace panzer {
       using ROVGED  = panzer::ReadOnlyVector_GlobalEvaluationData;
       for (int i(0); i < num_tangent; ++i)
       {
-        RCP<ROVGED> tangentContainer = e_lof->buildDomainContainer();
+        RCP<ROVGED> tangentContainer = e_lof->buildReadOnlyDomainContainer();
         auto tanContainerEpetra = rcp_dynamic_cast<EVROGED>(tangentContainer);
         RCP<VectorBase<double>> tanVecOwned =
           tanContainerEpetra->getOwnedVector()->clone_v();
@@ -445,18 +444,18 @@ namespace panzer {
       }
     }
 
-    panzer::Traits::SetupData sd;
+    panzer::Traits::SD sd;
     fm.postRegistrationSetup(sd);
 
-    panzer::Traits::PreEvalData ped;
-    ped.gedc.addDataObject("Solution Gather Container", loc);
+    panzer::Traits::PED ped;
+    ped.gedc->addDataObject("Solution Gather Container", loc);
     if (enable_tangents)
     {
       for (int i(0); i < num_tangent; ++i)
       {
         std::stringstream ss;
         ss << "Tangent Container " << i;
-        ped.gedc.addDataObject(ss.str(), tangentContainers[i]);
+        ped.gedc->addDataObject(ss.str(), tangentContainers[i]);
       }
     }
 
@@ -484,8 +483,8 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData1_q1);
-       fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData2_q1);
+       fm.getFieldData<panzer::Traits::Residual>(fieldData1_q1);
+       fm.getFieldData<panzer::Traits::Residual>(fieldData2_q1);
 
        TEST_EQUALITY(fieldData1_q1.dimension(0),Teuchos::as<unsigned int>(4/numProcs));
        TEST_EQUALITY(fieldData1_q1.dimension(1),4);
@@ -506,7 +505,7 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_qedge1);
+       fm.getFieldData<panzer::Traits::Residual>(fieldData_qedge1);
  
        TEST_EQUALITY(fieldData_qedge1.dimension(0),Teuchos::as<unsigned int>(4/numProcs));
        TEST_EQUALITY(fieldData_qedge1.dimension(1),4);
@@ -524,8 +523,8 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
    
-       fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fieldData1_q1);
-       fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fieldData2_q1);
+       fm.getFieldData<panzer::Traits::Jacobian>(fieldData1_q1);
+       fm.getFieldData<panzer::Traits::Jacobian>(fieldData2_q1);
    
        for(unsigned int cell=0;cell<fieldData1_q1.dimension_0();++cell) { 
         for(unsigned int pt=0;pt<fieldData1_q1.dimension_1();pt++) {
@@ -544,7 +543,7 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Jacobian::ScalarT,panzer::Cell,panzer::BASIS> 
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
    
-       fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(fieldData_qedge1);
+       fm.getFieldData<panzer::Traits::Jacobian>(fieldData_qedge1);
    
        for(unsigned int cell=0;cell<fieldData_qedge1.dimension_0();++cell) {
         for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();++pt) {
@@ -561,8 +560,8 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Tangent::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData2_q1(fieldName2_q1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData1_q1);
-       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData2_q1);
+       fm.getFieldData<panzer::Traits::Tangent>(fieldData1_q1);
+       fm.getFieldData<panzer::Traits::Tangent>(fieldData2_q1);
 
        for(unsigned int cell=0;cell<fieldData1_q1.dimension_0();++cell) {
         for(unsigned int pt=0;pt<fieldData1_q1.dimension_1();pt++) {
@@ -599,7 +598,7 @@ namespace panzer {
        PHX::MDField<panzer::Traits::Tangent::ScalarT,panzer::Cell,panzer::BASIS>
           fieldData_qedge1(fieldName_qedge1,basis_qedge1->functional);
 
-       fm.getFieldData<panzer::Traits::Tangent::ScalarT,panzer::Traits::Tangent>(fieldData_qedge1);
+       fm.getFieldData<panzer::Traits::Tangent>(fieldData_qedge1);
 
        for(unsigned int cell=0;cell<fieldData_qedge1.dimension_0();++cell) {
         for(unsigned int pt=0;pt<fieldData_qedge1.dimension_1();++pt) {

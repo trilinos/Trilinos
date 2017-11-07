@@ -4467,9 +4467,10 @@ int MLShove(ML_Operator *Mat, MLVec<int>& rowPtr, MLVec<int>& cols, MLVec<double
     // as Mat may be used within commfunc.
 
     ML_CommInfoOP *newPrecComm = NULL;
-if (commfunc != NULL)
-    ML_CommInfoOP_Generate( &newPrecComm, commfunc, (void *) &framework, 
+    if (commfunc != NULL) {
+        ML_CommInfoOP_Generate( &newPrecComm, commfunc, (void *) &framework, 
                               Mat->comm, invec_leng, nGhost);
+    }
     ML_Operator_Clean(Mat);
     ML_Operator_Init(Mat, temp_comm);
     ML_Operator_Set_ApplyFuncData(Mat, invec_leng, outvec_leng,

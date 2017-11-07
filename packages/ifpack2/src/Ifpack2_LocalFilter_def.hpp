@@ -79,7 +79,7 @@ bool
 LocalFilter<MatrixType>::
 mapPairIsFitted (const map_type& map1, const map_type& map2)
 {
-  return Tpetra::Details::isLocallyFitted (map1, map2);
+  return map1.isLocallyFitted (map2);
 }
 
 

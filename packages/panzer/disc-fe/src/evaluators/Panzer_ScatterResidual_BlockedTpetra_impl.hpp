@@ -54,6 +54,7 @@
 #include "Panzer_BlockedTpetraLinearObjContainer.hpp"
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_HashUtils.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_ProductVectorBase.hpp"
@@ -65,7 +66,7 @@
 
 template <typename EvalT,typename TRAITS,typename LO,typename GO,typename NodeT>
 panzer::ScatterResidual_BlockedTpetra<EvalT,TRAITS,LO,GO,NodeT>::
-ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
+ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & /* indexer */,
                               const Teuchos::ParameterList& p)
 { 
   std::string scatterName = p.get<std::string>("Scatter Name");
@@ -139,7 +140,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
 // **********************************************************************
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual,TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData d, 
+postRegistrationSetup(typename TRAITS::SetupData /* d */, 
 		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
@@ -161,7 +162,7 @@ void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Residual, TRAITS,LO,G
 preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract linear object container
-   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
+   blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
@@ -277,7 +278,7 @@ ScatterResidual_BlockedTpetra(const Teuchos::RCP<const BlockedDOFManager<LO,GO> 
 // **********************************************************************
 template <typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::ScatterResidual_BlockedTpetra<panzer::Traits::Jacobian,TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
 		      PHX::FieldManager<TRAITS>& fm)
 {
   fieldIds_.resize(scatterFields_.size());
@@ -302,10 +303,10 @@ preEvaluate(typename TRAITS::PreEvalData d)
    using Teuchos::rcp_dynamic_cast;
 
    // extract linear object container
-   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_));
+   blockedContainer_ = rcp_dynamic_cast<const ContainerType>(d.gedc->getDataObject(globalDataKey_));
 
    if(blockedContainer_==Teuchos::null) {
-     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true);
+     RCP<const LOCPair_GlobalEvaluationData> gdata = rcp_dynamic_cast<const LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true);
      blockedContainer_ = rcp_dynamic_cast<const ContainerType>(gdata->getGhostedLOC());
    }
 }

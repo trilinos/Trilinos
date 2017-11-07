@@ -9,7 +9,7 @@
 namespace Teuchos {
 
 #ifdef HAVE_TEUCHOSCORE_CXX11
-extern template class Table<int>;
+extern template struct Table<int>;
 #endif
 
 /* This is basically a weird mix between a DFA and

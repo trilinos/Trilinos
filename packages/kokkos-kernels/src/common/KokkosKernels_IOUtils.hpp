@@ -306,6 +306,7 @@ crsMat_t kk_generate_triangular_sparse_matrix(
     Kokkos::deep_copy (rowmap_view , hr);
     Kokkos::deep_copy (columns_view , hc);
     Kokkos::deep_copy (values_view , hv);
+    Kokkos::fence();
   }
 
   graph_t static_graph (columns_view, rowmap_view);

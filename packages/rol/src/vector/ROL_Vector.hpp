@@ -45,6 +45,8 @@
 #ifndef ROL_VECTOR_H
 #define ROL_VECTOR_H
 
+#define ROL_UNUSED(x) (void) x
+
 #include <ostream>
 
 #include "ROL_Elementwise_Function.hpp"
@@ -171,7 +173,10 @@ public:
 
              ---
   */
-  virtual Teuchos::RCP<Vector> basis( const int i ) const {return Teuchos::null;}
+  virtual Teuchos::RCP<Vector> basis( const int i ) const {
+    ROL_UNUSED(i);
+    return Teuchos::null;
+  }
 
 
   /** \brief Return dimension of the vector space.
@@ -217,16 +222,20 @@ public:
   }
 
   virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+    ROL_UNUSED(f);
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyUnary wass called, but not implemented" << std::endl); 
   }
 
   virtual void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector &x ) {
+    ROL_UNUSED(f);
+    ROL_UNUSED(x);
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyBinary wass called, but not implemented" << std::endl); 
   }
 
   virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
+    ROL_UNUSED(r);
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method reduce was called, but not implemented" << std::endl); 
   }

@@ -133,11 +133,14 @@ namespace MueLu {
     }
 
     //! Return the list of vertices adjacent to the vertex 'v'.
-    KOKKOS_INLINE_FUNCTION row_type getNeighborVertices(LO i) const {
-      auto rowPointers = graph_.row_map;
-      auto colIndices  = graph_.entries;
+    // Unfortunately, C++11 does not support the following:
+    //    auto getNeighborVertices(LO i) const -> decltype(rowView)
+    // auto return with decltype was only introduced in C++14
+    KOKKOS_INLINE_FUNCTION
+    Kokkos::GraphRowViewConst<local_graph_type> getNeighborVertices(LO i) const {
+      auto rowView = graph_.rowConst(i);
 
-      return Kokkos::subview(colIndices, Kokkos::make_pair<size_t,size_t>(rowPointers(i), rowPointers(i+1)));
+      return rowView;
     }
 
     //! Return true if vertex with local id 'v' is on current process.

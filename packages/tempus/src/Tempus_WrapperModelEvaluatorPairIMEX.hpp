@@ -6,16 +6,15 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_ModelEvaluatorIMEXPair_hpp
-#define Tempus_ModelEvaluatorIMEXPair_hpp
+#ifndef Tempus_ModelEvaluatorPairIMEX_hpp
+#define Tempus_ModelEvaluatorPairIMEX_hpp
 
-//#include "Tempus_ModelEvaluatorPairIMEX.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
 
 
 namespace Tempus {
 
-/** \brief ModelEvaluator pair for implicit and explicit (IMEX) evaulations.
+/** \brief ModelEvaluator pair for implicit and explicit (IMEX) evaluations.
  *
  *  This is an interface for a ModelEvaluator that takes a state, x,
  *  and determines the explicit and implicit residuals.
@@ -28,26 +27,22 @@ class WrapperModelEvaluatorPairIMEX
 {
 public:
 
-  /// \name Methods that apply to both explicit and implicit terms.
+  /// Initialize after setting member data.
+  virtual void initialize() = 0;
+
+  /// \name Vector Methods.
   //@{
-    /// Get the x-solution space
     virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
       get_x_space() const = 0;
 
-    /// Get the g space
+    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+      get_f_space() const = 0;
+
     virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
       get_g_space(int i) const = 0;
 
-    /// Get the p space
     virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
       get_p_space(int i) const = 0;
-
-    virtual void initialize2(
-      std::function<void (const Thyra::VectorBase<Scalar> &,
-                                Thyra::VectorBase<Scalar> &)> computeXDot,
-                          Scalar ts, Scalar tHats,
-                          Scalar alpha, Scalar beta,
-                          Scalar stepSize, Scalar stageNumber) = 0;
   //@}
 
   //@{ \name Accessors
@@ -68,9 +63,6 @@ public:
     Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
       get_W_factory() const = 0;
 
-    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-      get_f_space() const = 0;
-
     virtual Thyra::ModelEvaluatorBase::InArgs<Scalar>
       getNominalValues() const = 0;
 
@@ -84,17 +76,12 @@ public:
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> & out) const = 0;
   //@}
 
-  /// Evaluate the explicit model evaluator.
-  virtual void evalExplicitModel(
-    const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & X, Scalar time,
-    const Teuchos::RCP<Thyra::VectorBase<Scalar> > & F) const = 0;
-
-  /// Evaluate the implicit model evaluator.
-  virtual void evalImplicitModel(
-    const Thyra::ModelEvaluatorBase::InArgs<Scalar>  &inArgs,
-    const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs) const = 0;
+  /// Set parameters for application implicit ModelEvaluator solve.
+  virtual void setForSolve(Teuchos::RCP<TimeDerivative<Scalar> > timeDer,
+    Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs,
+    Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs) = 0;
 };
 
 } // namespace Tempus
 
-#endif // Tempus_ModelEvaluatorIMEXPair_hpp
+#endif // Tempus_ModelEvaluatorPairIMEX_hpp

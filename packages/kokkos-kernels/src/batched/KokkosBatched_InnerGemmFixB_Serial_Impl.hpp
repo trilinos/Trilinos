@@ -16,11 +16,12 @@ namespace KokkosBatched {
     /// ==================
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<5,5>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -58,11 +59,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<5,4>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -100,11 +102,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<5,3>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -141,11 +144,12 @@ namespace KokkosBatched {
       return 0;
     }
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<5,2>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -182,11 +186,12 @@ namespace KokkosBatched {
       return 0;
     }
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<5,1>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -224,11 +229,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<4,5>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -265,11 +271,12 @@ namespace KokkosBatched {
 
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<3,5>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -302,11 +309,12 @@ namespace KokkosBatched {
       return 0;
     }
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<2,5>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -337,11 +345,12 @@ namespace KokkosBatched {
       return 0;
     }
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<1,5>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -371,11 +380,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<5,5>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m, const int n, const int k,
@@ -401,11 +411,12 @@ namespace KokkosBatched {
     /// ==================
   
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<4,4>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -441,11 +452,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<4,3>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -481,11 +493,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<4,2>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -521,11 +534,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<4,1>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -561,11 +575,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<3,4>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -599,11 +614,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<2,4>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -635,11 +651,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<1,4>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -669,11 +686,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<4,4>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m, const int n, const int k,
@@ -697,11 +715,12 @@ namespace KokkosBatched {
     /// ==================
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<3,3>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -735,11 +754,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<3,2>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -773,11 +793,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<3,1>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -811,11 +832,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<2,3>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -846,11 +868,12 @@ namespace KokkosBatched {
       return 0;
     }
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<1,3>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -881,11 +904,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<3,3>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m, const int n, const int k,
@@ -907,11 +931,12 @@ namespace KokkosBatched {
     /// ==================
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<2,2>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -943,11 +968,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<2,1>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -979,11 +1005,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<1,2>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -1013,11 +1040,12 @@ namespace KokkosBatched {
     }
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<2,2>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m, const int n, const int k,
@@ -1037,11 +1065,12 @@ namespace KokkosBatched {
     /// ==================
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<1,1>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m,
@@ -1075,11 +1104,12 @@ namespace KokkosBatched {
     /// =========================
 
     template<>
-    template<typename ValueType>
+    template<typename ScalarType,
+             typename ValueType>
     KOKKOS_INLINE_FUNCTION
     int
     InnerGemmFixB<0,0>::
-    serial_invoke(const ValueType alpha,
+    serial_invoke(const ScalarType alpha,
                   const ValueType *__restrict__ A,
                   const ValueType *__restrict__ B,
                   const int m, const int n, const int k,

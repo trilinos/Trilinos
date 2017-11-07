@@ -123,7 +123,7 @@ if not parentDir in sys.path: sys.path.append(parentDir)
 del sys, op
 try:
     from .. import Abstract
-except (ValueError, SystemError):
+except (ValueError, SystemError, ImportError):
     import Abstract
 %}
 

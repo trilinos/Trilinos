@@ -64,7 +64,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_TpetraLinearObjFactory.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
@@ -1337,7 +1337,7 @@ namespace panzer {
       ap.dofManager = dofManager;
 
       Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-        = Teuchos::rcp(new panzer::EpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
+        = Teuchos::rcp(new panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int>(mpiComm,dofManager));
       ap.lof = linObjFactory;
     }
     else {
@@ -1369,7 +1369,7 @@ namespace panzer {
       Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linObjFactory = panzer::cloneWithNewDomain(*ap.lof,dofManager);
 
       ap.param_dofManager = dofManager;
-      ap.param_ged = linObjFactory->buildDomainContainer();
+      ap.param_ged = linObjFactory->buildReadOnlyDomainContainer();
       ap.param_lof = linObjFactory;
     }
 

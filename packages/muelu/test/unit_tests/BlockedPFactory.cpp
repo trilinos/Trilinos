@@ -194,10 +194,6 @@ namespace MueLuTests {
     // build hierarchy
     RCP<Level> levelOne = rcp(new Level());
     RCP<Level> levelTwo = rcp(new Level()); levelTwo->SetPreviousLevel(levelOne);
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-    levelOne->SetComm(comm);
-    levelTwo->SetComm(comm);
-#endif
     levelOne->Set("A", Teuchos::rcp_dynamic_cast<Matrix>(bOp)); // set blocked operator
 
     // define sub block factories for blocked operator "A"

@@ -163,8 +163,10 @@ public:
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
-    xlam_ = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(0);
-    xmu_  = Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(1);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    xlam_ = (*Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(comp,index))[0];
+    xmu_  = (*Teuchos::dyn_cast<const RiskVector<Real> >(x).getStatistic(comp,index))[1];
     if (firstReset_) {
       dualVector_ = (x0->dual()).clone();
       firstReset_ = false;
@@ -178,8 +180,10 @@ public:
     reset(x0,x);
     v0    = Teuchos::rcp_const_cast<Vector<Real> >(
             Teuchos::dyn_cast<const RiskVector<Real> >(v).getVector());
-    vlam_ = Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(0);
-    vmu_  = Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(1);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    vlam_ = (*Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(comp,index))[0];
+    vmu_  = (*Teuchos::dyn_cast<const RiskVector<Real> >(v).getStatistic(comp,index))[1];
   }
 
   // Value update and get functions
@@ -218,7 +222,9 @@ public:
     std::vector<Real> stat(2);
     stat[0] = thresh_ + gval[0] + gval[1];
     stat[1] = (Real)1 + gval[2];
-    gs.setStatistic(stat);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    gs.setStatistic(stat,comp,index);
 
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_);
     gs.setVector(*dualVector_);
@@ -251,7 +257,9 @@ public:
     std::vector<Real> stat(2);
     stat[0] = (vlam_ * hval[1] + vmu_ * hval[0] + hval[2])/xlam_;
     stat[1] = (vlam_ * hval[0] + vmu_ * hval[3] + hval[4])/xlam_;
-    hs.setStatistic(stat);
+    int index = RiskMeasure<Real>::getIndex();
+    int comp  = RiskMeasure<Real>::getComponent();
+    hs.setStatistic(stat,comp,index);
 
     sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector_);
     hs.setVector(*dualVector_);

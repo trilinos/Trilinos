@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # To use:
 # 1) Make sure you've compiled with the CreateOperator tests and that they run.
@@ -13,12 +13,12 @@ RESULTSDIR=`pwd`
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Sanity
-if [ "$RESULTSDIR" == $SCRIPTDIR ]; then
-    echo "$0: Please run this from the packages/muelu/test/interface/Output directory"
+if [ "$RESULTSDIR" == $SCRIPTDIR ] || [ "$RESULTSDIR" !=~ *"/Output" ]; then
+    echo "$0: Please run this from the $BUILDDIR/packages/muelu/test/interface/Output directory"
     exit -1;
 fi
 
-for file in *.out; do 
+for file in *.out; do
     GOLDFILE=${file%%.out}.gold
 
     # Diff test the filtered files
@@ -28,7 +28,15 @@ for file in *.out; do
     # Only rebase diffing files"
     if [ "$returncode" -eq 1 ]; then
 	echo "$file diffs, rebasing"
-	cp $file $SCRIPTDIR/$GOLDFILE
+	cp ${file}_filtered $SCRIPTDIR/$GOLDFILE
+    fi
+done
+
+echo ""
+for GOLDFILE in *.gold; do
+    OUTFILE=${GOLDFILE/.gold/.out}
+    if [ ! -f $OUTFILE ]; then
+        echo "The test corresponding to $GOLDFILE has not been run."
     fi
 done
 

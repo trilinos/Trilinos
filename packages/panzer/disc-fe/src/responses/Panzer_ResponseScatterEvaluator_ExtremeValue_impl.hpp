@@ -54,6 +54,7 @@
 
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Teuchos_ArrayRCP.hpp"
@@ -128,13 +129,13 @@ preEvaluate(typename Traits::PreEvalData d)
 {
   // extract linear object container
   responseObj_ = Teuchos::rcp_dynamic_cast<Response_ExtremeValue<EvalT> >(
-                                   d.gedc.getDataObject(ResponseBase::buildLookupName(responseName_)),true);
+                                   d.gedc->getDataObject(ResponseBase::buildLookupName(responseName_)),true);
 }
 
 
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_ExtremeValue<EvalT,Traits>::
-postRegistrationSetup(typename Traits::SetupData d,
+postRegistrationSetup(typename Traits::SetupData /* d */,
                       PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(cellExtremeValue_,fm);

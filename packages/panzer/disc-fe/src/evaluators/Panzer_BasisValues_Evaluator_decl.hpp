@@ -63,7 +63,7 @@ PANZER_EVALUATOR_CLASS(BasisValues_Evaluator)
   PointValues2<ScalarT> pointValues;
   PointValues2<const ScalarT> constPointValues;
 
-  PHX::MDField<const ScalarT,panzer::Cell,panzer::BASIS> orientation;
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 
   bool derivativesRequired_;
  

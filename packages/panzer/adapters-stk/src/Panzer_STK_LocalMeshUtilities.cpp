@@ -503,7 +503,7 @@ setupLocalMeshBlockInfo(const panzer_stk::STK_Interface & mesh,
 template<typename LO, typename GO>
 void
 setupLocalMeshSidesetInfo(const panzer_stk::STK_Interface & mesh,
-                          panzer::ConnManager<LO,GO> & conn,
+                          panzer::ConnManager<LO,GO>& /* conn */,
                           const panzer::LocalMeshInfo<LO,GO> & mesh_info,
                           const std::string & element_block_name,
                           const std::string & sideset_name,

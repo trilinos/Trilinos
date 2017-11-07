@@ -60,12 +60,20 @@ IF (ROL_ENABLE_ArrayFireCPU)
   ADD_SUBDIRECTORY(adapters/arrayfire)
 ENDIF()
 
+IF (ROL_ENABLE_Eigen)
+  ADD_SUBDIRECTORY(adapters/eigen)
+ENDIF()
+
 IF (ROL_ENABLE_TriKota)
   ADD_SUBDIRECTORY(adapters/trikota)
 ENDIF()
 
 IF (ROL_ENABLE_Boost AND ROL_ENABLE_MiniTensor)
   ADD_SUBDIRECTORY(adapters/minitensor)
+ENDIF()
+
+IF (ROL_ENABLE_Experimental)
+  ADD_SUBDIRECTORY(experimental)
 ENDIF()
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)

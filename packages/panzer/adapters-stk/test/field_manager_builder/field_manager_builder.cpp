@@ -61,7 +61,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_DOFManagerFactory.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_GlobalData.hpp"
 
 #include "user_app_EquationSetFactory.hpp"
@@ -159,7 +159,7 @@ namespace panzer {
 
     // and linear object factory
     Teuchos::RCP<const Teuchos::MpiComm<int> > tComm = Teuchos::rcp(new Teuchos::MpiComm<int>(MPI_COMM_WORLD));
-    panzer::EpetraLinearObjFactory<panzer::Traits,int> elof(tComm.getConst(),dofManager);
+    panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> elof(tComm.getConst(),dofManager);
 
     // setup field manager builder
     /////////////////////////////////////////////

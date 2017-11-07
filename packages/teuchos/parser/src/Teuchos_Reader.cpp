@@ -38,7 +38,7 @@ Reader::IndentStackEntry::IndentStackEntry(std::size_t l, std::size_t s, std::si
   line(l),start_length(s),end_length(e) {
 }
 
-void Reader::at_token() {
+void Reader::at_token(std::istream& stream) {
   bool done = false;
   /* this can loop arbitrarily as reductions are made,
      because they don't consume the token */
@@ -48,8 +48,7 @@ void Reader::at_token() {
       std::stringstream ss;
       ss << "error: Parser failure at line " << line;
       ss << " column " << column << " of " << stream_name << '\n';
-      ss << line_text << '\n';
-      print_indicator(ss, line_text, line_text.size());
+      error_print_line(stream, ss);
       std::set<std::string> expect_names;
       for (int expect_token = 0;
            expect_token < grammar->nterminals; ++expect_token) {
@@ -67,9 +66,13 @@ void Reader::at_token() {
       }
       ss << "}\n";
       ss << "Got: " << at(grammar->symbol_names, lexer_token) << '\n';
+      ss << "Lexer text: \"" << lexer_text << "\"\n";
       ss << "Parser was in state " << parser_state << '\n';
       throw ParserFail(ss.str());
     } else if (parser_action.kind == ACTION_SHIFT) {
+      if (sensing_indent) {
+        symbol_indentation_stack.push_back(indent_text.size());
+      }
       Teuchos::any shift_result;
       this->at_shift(shift_result, lexer_token, lexer_text);
       add_back(value_stack, shift_result);
@@ -86,8 +89,26 @@ void Reader::at_token() {
       }
       resize(value_stack, size(value_stack) - size(prod.rhs));
       Teuchos::any reduce_result;
-      this->at_reduce(reduce_result, parser_action.production, reduction_rhs);
+      try {
+        this->at_reduce(reduce_result, parser_action.production, reduction_rhs);
+      } catch (const ParserFail& e) {
+        std::stringstream ss;
+        ss << "error: Parser failure at line " << line;
+        ss << " column " << column << " of " << stream_name << '\n';
+        error_print_line(stream, ss);
+        ss << '\n' << e.what();
+        throw ParserFail(ss.str());
+      }
       add_back(value_stack, reduce_result);
+      if (sensing_indent) {
+        if (size(prod.rhs)) {
+          resize(symbol_indentation_stack,
+              (size(symbol_indentation_stack) + 1)
+              - size(prod.rhs));
+        } else {
+          symbol_indentation_stack.push_back(symbol_indentation_stack.back());
+        }
+      }
     } else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
           "SERIOUS BUG: Action::kind enum value not in range\n");
@@ -106,13 +127,19 @@ void Reader::indent_mismatch() {
   throw ParserFail(ss.str());
 }
 
-void Reader::at_token_indent() {
-  if (!sensing_indent || lexer_token != tables->indent_info.nodent_token) {
-    at_token();
+void Reader::at_token_indent(std::istream& stream) {
+  if (!sensing_indent || lexer_token != tables->indent_info.newline_token) {
+    at_token(stream);
     return;
   }
-  TEUCHOS_ASSERT(at(lexer_text, 0) == '\n');
-  std::string lexer_indent = lexer_text.substr(1, std::string::npos);
+  std::size_t last_newline_pos = lexer_text.find_last_of("\n");
+  if (last_newline_pos == std::string::npos) {
+    throw ParserFail("INDENT token did not contain a newline '\\n' !\n");
+  }
+  std::string lexer_indent = lexer_text.substr(last_newline_pos + 1, std::string::npos);
+  // the at_token call is allowed to do anything to lexer_text
+  at_token(stream);
+  lexer_text.clear();
   std::size_t minlen = std::min(lexer_indent.length(), indent_text.length());
   if (lexer_indent.length() > indent_text.length()) {
     if (0 != lexer_indent.compare(0, indent_text.length(), indent_text)) {
@@ -121,31 +148,23 @@ void Reader::at_token_indent() {
     indent_stack.push_back(IndentStackEntry(line, indent_text.length(), lexer_indent.length()));
     indent_text = lexer_indent;
     lexer_token = tables->indent_info.indent_token;
-    at_token();
+    at_token(stream);
   } else if (lexer_indent.length() < indent_text.length()) {
     if (0 != indent_text.compare(0, lexer_indent.length(), lexer_indent)) {
       indent_mismatch();
     }
-    bool first = true;
     while (!indent_stack.empty()) {
       const IndentStackEntry& top = indent_stack.back();
       if (top.end_length <= minlen) break;
       indent_stack.pop_back();
       lexer_token = tables->indent_info.dedent_token;
-      at_token();
-      if (first) {
-        lexer_text.clear();
-        first = false;
-      }
+      at_token(stream);
     }
-    if (first) lexer_text.clear();
     indent_text = lexer_indent;
   } else {
     if (0 != lexer_indent.compare(indent_text)) {
       indent_mismatch();
     }
-    lexer_token = tables->indent_info.eqdent_token;
-    at_token();
   }
 }
 
@@ -185,7 +204,7 @@ void Reader::at_lexer_end(std::istream& stream) {
     throw ParserFail(ss.str());
   }
   backtrack_to_last_accept(stream);
-  at_token_indent();
+  at_token_indent(stream);
   reset_lexer_state();
 }
 
@@ -208,6 +227,18 @@ void Reader::update_position(char c) {
   }
 }
 
+void Reader::error_print_line(std::istream& is, std::ostream& os) {
+  std::size_t oldpos = line_text.size();
+  char c;
+  while (is.get(c)) {
+    if (c == '\n' || c == '\r') break;
+    line_text.push_back(c);
+  }
+  if (line_text.empty()) return;
+  os << line_text << '\n';
+  if (oldpos > 0) print_indicator(os, line_text, oldpos - 1);
+}
+
 void Reader::read_stream(any& result, std::istream& stream, std::string const& stream_name_in) {
   using std::swap;
   line = 1;
@@ -226,20 +257,6 @@ void Reader::read_stream(any& result, std::istream& stream, std::string const& s
     sensing_indent = true;
     indent_text.clear();
     indent_stack.clear();
-    /* pretend the stream starts with a newline so we can
-       detect an INDENT on the first line. don't update the
-       line/column pointers though. */
-    char c = '\n';
-    lexer_text.push_back(c);
-    int lexer_symbol = get_symbol(c);
-    lexer_state = step(lexer, lexer_state, lexer_symbol);
-    TEUCHOS_ASSERT(lexer_state != -1);
-    lexer_token = accepts(lexer, lexer_state);
-    TEUCHOS_ASSERT(lexer_token == tables->indent_info.nodent_token);
-    last_lexer_accept = lexer_text.size();
-    last_lexer_accept_line = 1;
-    last_lexer_accept_column = 1;
-    last_lexer_accept_line_text = line_text;
   } else {
     sensing_indent = false;
   }
@@ -250,10 +267,7 @@ void Reader::read_stream(any& result, std::istream& stream, std::string const& s
       ss << "error: Unexpected character code " << int(c);
       ss << " at line " << line << " column " << column;
       ss << " of " << stream_name << '\n';
-      if (!line_text.empty()) {
-        ss << line_text << '\n';
-        print_indicator(ss, line_text, line_text.size());
-      }
+      error_print_line(stream, ss);
       throw ParserFail(ss.str());
     }
     line_text.push_back(c);
@@ -283,7 +297,7 @@ void Reader::read_stream(any& result, std::istream& stream, std::string const& s
   }
   at_lexer_end(stream);
   lexer_token = get_end_terminal(*grammar);
-  at_token();
+  at_token(stream);
   TEUCHOS_TEST_FOR_EXCEPTION(!did_accept, std::logic_error,
       "The EOF terminal was accepted but the root nonterminal was not reduced\n"
       "This indicates a bug in Teuchos::Reader\n");
@@ -324,6 +338,7 @@ void DebugReader::at_shift(any& result, int token, std::string& text) {
     }
   }
   os << "SHIFT (" << at(grammar->symbol_names, token) << ")[" << text_escaped << "]\n";
+  os << "symbol_indentation_stack.back() " << symbol_indentation_stack.back() << '\n';
 }
 
 void DebugReader::at_reduce(any& result, int prod_i, std::vector<any>& rhs) {
@@ -338,6 +353,7 @@ void DebugReader::at_reduce(any& result, int prod_i, std::vector<any>& rhs) {
   }
   const std::string& lhs_name = at(grammar->symbol_names, prod.lhs);
   os << " -> (" << lhs_name << ")[" << lhs_text << "]\n";
+  os << "symbol_indentation_stack.back() " << symbol_indentation_stack.back() << '\n';
 }
 
 }  // namespace Teuchos

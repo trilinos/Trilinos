@@ -941,8 +941,8 @@ public:
     Teuchos::RCP<const std::vector<Real> >     vp = getConstParameter(v);
     bool useFD22 = (isH22notImplemented_ && vf != Teuchos::null);
     bool useFD23 = (isH23notImplemented_ && vp != Teuchos::null);
-    bool useFD32 = (isH32notImplemented_ && ahwvf != Teuchos::null);
-    bool useFD33 = (isH33notImplemented_ && ahwvp != Teuchos::null);
+    bool useFD32 = (isH32notImplemented_ && vp != Teuchos::null);
+    bool useFD33 = (isH33notImplemented_ && vp != Teuchos::null);
     if (useFD22 || useFD23 || useFD32 || useFD33) {
       ROL::Constraint_SimOpt<Real>::applyAdjointHessian_22(ahwv,w,v,u,z,tol);
     }

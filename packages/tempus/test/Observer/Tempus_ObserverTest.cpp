@@ -25,6 +25,7 @@
 namespace Tempus_Test {
 
 using Teuchos::RCP;
+using Teuchos::rcp;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
@@ -52,10 +53,8 @@ TEUCHOS_UNIT_TEST(Observer, IntegratorObserverLogging)
   RCP<Tempus::IntegratorBasic<double> > integrator =
     Tempus::integratorBasic<double>(pl, model);
 
-  RCP<Tempus::SolutionHistory<double> > sh  = integrator->getSolutionHistory();
-  RCP<Tempus::TimeStepControl<double> > tsc = integrator->getTimeStepControl();
   RCP<Tempus::IntegratorObserverLogging<double> > loggingObs =
-    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>(sh,tsc));
+    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>);
   integrator->setObserver(loggingObs);
 
   // Integrate to timeMax
@@ -150,49 +149,44 @@ TEUCHOS_UNIT_TEST( Observer, IntegratorObserverComposite) {
   // Read params from .xml file
   RCP<ParameterList> pList =
     getParametersFromXmlFile("Tempus_Observer_SinCos.xml");
-  //
+
   // Setup the SinCosModel
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
   RCP<SinCosModel<double> > model =
     Teuchos::rcp(new SinCosModel<double> (scm_pl));
-
-  Tempus::Status status = Tempus::Status::PASSED;
 
   // Setup the Integrator and reset initial time step
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
   RCP<Tempus::IntegratorBasic<double> > integrator =
     Tempus::integratorBasic<double>(pl, model);
 
-  RCP<Tempus::SolutionHistory<double> > sh  = integrator->getSolutionHistory();
-  RCP<Tempus::TimeStepControl<double> > tsc = integrator->getTimeStepControl();
-
   RCP<Tempus::IntegratorObserverLogging<double> > loggingObs =
-    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>(sh,tsc));
+    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>);
 
   // creating another logging observer
   RCP<Tempus::IntegratorObserverLogging<double> > loggingObs2 =
-    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>(sh,tsc));
+    Teuchos::rcp(new Tempus::IntegratorObserverLogging<double>);
 
-  RCP<Tempus::IntegratorObserverComposite<double> > compObs = 
-      Teuchos::rcp(new Tempus::IntegratorObserverComposite<double>(sh, tsc));
+  RCP<Tempus::IntegratorObserverComposite<double> > compObs =
+      Teuchos::rcp(new Tempus::IntegratorObserverComposite<double>);
 
   compObs->addObserver(loggingObs);
   compObs->addObserver(loggingObs2);
 
-  compObs->observeStartIntegrator();
-  compObs->observeStartTimeStep();
-  compObs->observeBeforeTakeStep();
-  compObs->observeAfterTakeStep();
-  compObs->observeAcceptedTimeStep(status);
+  compObs->observeStartIntegrator(*integrator);
+  compObs->observeStartTimeStep(*integrator);
+  compObs->observeBeforeTakeStep(*integrator);
+  compObs->observeAfterTakeStep(*integrator);
+  compObs->observeAcceptedTimeStep(*integrator);
 
 
   for (int i=0 ; i<10; ++i) {
-      compObs->observeStartTimeStep();
-      compObs->observeBeforeTakeStep();
-      compObs->observeAfterTakeStep();
-      compObs->observeAcceptedTimeStep(status);
+      compObs->observeStartTimeStep(*integrator);
+      compObs->observeBeforeTakeStep(*integrator);
+      compObs->observeAfterTakeStep(*integrator);
+      compObs->observeAcceptedTimeStep(*integrator);
   }
-  compObs->observeEndIntegrator(status);
+  compObs->observeEndIntegrator(*integrator);
 
  const std::map<std::string,int>& counters = *(loggingObs->getCounters());
 

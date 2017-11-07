@@ -217,8 +217,6 @@ public:
     return(IsInitialized_);
   }
 
-  void computeBlockCrs();
-
   //! compute the preconditioner for the specified matrix, diagonal perturbation thresholds and relaxation parameters.
   void compute();
 
@@ -360,8 +358,9 @@ private:
 
   virtual void ApplyInverseSGS (const MV& X, MV& Y) const;
 
-  //! Initialize \c Container_ using <tt>Partitioner</tt>.
-  void ExtractSubmatrices();
+  //! Initialize structural information in \c Container_ using
+  //! <tt>Partitioner</tt>.
+  void ExtractSubmatricesStructure();
 
   //@}
   //! \name Internal data and parameters

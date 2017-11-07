@@ -77,6 +77,9 @@
 #include "ROL_Chi2Divergence.hpp"
 #include "ROL_KLDivergence.hpp"
 
+// Buffered Probability Implementation
+#include "ROL_BPOE.hpp"
+
 namespace ROL {
 
   enum ERiskMeasure {
@@ -103,6 +106,7 @@ namespace ROL {
     RISKMEASURE_TRUNCATEDMEANQUADRANGLE,
     RISKMEASURE_CHI2DIVERGENCE,
     RISKMEASURE_KLDIVERGENCE,
+    RISKMEASURE_BPOE,
     RISKMEASURE_LAST
   };
 
@@ -155,6 +159,8 @@ namespace ROL {
              retString = "Chi-Squared Divergence";                  break;
       case RISKMEASURE_KLDIVERGENCE:
              retString = "KL Divergence";                           break;
+      case RISKMEASURE_BPOE:
+             retString = "bPOE";                                    break;
       case RISKMEASURE_LAST:
              retString = "Last Type (Dummy)";                       break;
       default:
@@ -186,7 +192,8 @@ namespace ROL {
             (ed == RISKMEASURE_SMOOTHEDWORSTCASEQUADRANGLE) ||
             (ed == RISKMEASURE_TRUNCATEDMEANQUADRANGLE) ||
             (ed == RISKMEASURE_CHI2DIVERGENCE) ||
-            (ed == RISKMEASURE_KLDIVERGENCE) );
+            (ed == RISKMEASURE_KLDIVERGENCE) ||
+            (ed == RISKMEASURE_BPOE) );
   }
 
   inline ERiskMeasure & operator++(ERiskMeasure &type) {
@@ -270,6 +277,8 @@ namespace ROL {
              return Teuchos::rcp(new Chi2Divergence<Real>(parlist));
       case RISKMEASURE_KLDIVERGENCE:
              return Teuchos::rcp(new KLDivergence<Real>(parlist));
+      case RISKMEASURE_BPOE:
+             return Teuchos::rcp(new BPOE<Real>(parlist));
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
                                    "Invalid risk measure type " << risk << "!");

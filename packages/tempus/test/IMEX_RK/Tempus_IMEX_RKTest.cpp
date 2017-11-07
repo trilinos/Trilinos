@@ -41,25 +41,25 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
   stepperTypes.push_back("IMEX RK 1st order");
   stepperTypes.push_back("IMEX RK SSP2"     );
   stepperTypes.push_back("IMEX RK ARS 233"  );
-  //stepperTypes.push_back("General IMEX RK"  );
+  stepperTypes.push_back("General IMEX RK"  );
 
   std::vector<double> stepperOrders;
-  stepperOrders.push_back(1.21571);
-  stepperOrders.push_back(1.94113);
-  stepperOrders.push_back(3.14676);
-  //stepperOrders.push_back(1.0);
+  stepperOrders.push_back(1.07964);
+  stepperOrders.push_back(2.00408);
+  stepperOrders.push_back(2.70655);
+  stepperOrders.push_back(2.00211);
 
   std::vector<double> stepperErrors;
-  stepperErrors.push_back(0.136124);
-  stepperErrors.push_back(0.0269125);
-  stepperErrors.push_back(0.0309342);
-  //stepperErrors.push_back(1.38785e-05);
+  stepperErrors.push_back(0.0046423);
+  stepperErrors.push_back(0.0154534);
+  stepperErrors.push_back(0.000298908);
+  stepperErrors.push_back(0.0071546);
 
   std::vector<double> stepperInitDt;
   stepperInitDt.push_back(0.0125);
   stepperInitDt.push_back(0.05);
   stepperInitDt.push_back(0.05);
-  //stepperInitDt.push_back(0.025);
+  stepperInitDt.push_back(0.05);
 
   std::vector<std::string>::size_type m;
   for(m = 0; m != stepperTypes.size(); m++) {
@@ -72,7 +72,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
     std::vector<RCP<Thyra::VectorBase<double>>> solutions;
     std::vector<double> StepSize;
     std::vector<double> ErrorNorm;
-    const int nTimeStepSizes = 3;
+    const int nTimeStepSizes = 3;  // 6 for error plot
     double dt = stepperInitDt[m];
     double order = 0.0;
     for (int n=0; n<nTimeStepSizes; n++) {
@@ -97,7 +97,12 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
 
       // Set the Stepper
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-      pl->sublist("Default Stepper").set("Stepper Type", stepperType);
+      if (stepperType == "General IMEX RK"){
+          // use the appropriate stepper sublist
+          pl->sublist("Default Integrator").set("Stepper Name", "General IMEX RK");
+      }  else {
+          pl->sublist("Default Stepper").set("Stepper Type", stepperType);
+      }
 
       // Set the step size
       if (n == nTimeStepSizes-1) dt /= 10.0;
@@ -133,12 +138,13 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
         std::string fname = "Tempus_"+stepperName+"_VanDerPol-Ref.dat";
         if (n == 0) fname = "Tempus_"+stepperName+"_VanDerPol.dat";
         std::ofstream ftmp(fname);
-        RCP<SolutionHistory<double> > solutionHistory =
+        RCP<const SolutionHistory<double> > solutionHistory =
           integrator->getSolutionHistory();
         int nStates = solutionHistory->getNumStates();
         for (int i=0; i<nStates; i++) {
-          RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
-          RCP<Thyra::VectorBase<double> > x = solutionState->getX();
+          RCP<const SolutionState<double> > solutionState =
+            (*solutionHistory)[i];
+          RCP<const Thyra::VectorBase<double> > x = solutionState->getX();
           double ttime = solutionState->getTime();
           ftmp << ttime << "   " << get_ele(*x, 0) << "   " << get_ele(*x, 1)
                << std::endl;

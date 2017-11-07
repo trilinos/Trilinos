@@ -39,6 +39,7 @@
 
 INCLUDE(AppendSet)
 INCLUDE(AssertDefined)
+INCLUDE(MessageWrapper)
 INCLUDE(TribitsSortListAccordingToMasterList)
 
 
@@ -272,3 +273,50 @@ FUNCTION(TRIBITS_TRACE_FILE_PROCESSING  TYPE_IN  PROCESSING_TYPE_IN  FILE_PATH)
   ENDIF()
 
 ENDFUNCTION()
+
+#
+# Check to see if there are unparsed arguments after calling CMAKE_PARSE_ARGUMENTS
+#
+
+MACRO(TRIBITS_CHECK_FOR_UNPARSED_ARGUMENTS)
+
+  IF( NOT "${PARSE_UNPARSED_ARGUMENTS}" STREQUAL "")
+    MESSAGE(
+      ${${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS}
+      "Arguments are being passed in but not used. UNPARSED_ARGUMENTS ="
+      " ${PARSE_UNPARSED_ARGUMENTS}"
+      )
+  ENDIF()
+
+ENDMACRO()
+
+#
+# Check that a parase argument has at least one value
+#
+
+MACRO(TRIBITS_ASSERT_PARSE_ARG_ONE_OR_MORE_VALUES  PREFIX  ARGNAME)
+  SET(PREFIX_ARGNAME "${PREFIX}_${ARGNAME}")
+  LIST( LENGTH ${PREFIX_ARGNAME} ARG_NUM_VALS )
+  IF (ARG_NUM_VALS LESS 1)
+    MESSAGE_WRAPPER(FATAL_ERROR
+      "ERROR: ${ARGNAME} must have at least one value!" )
+    RETURN()
+    # NOTE: The return is needed in unit testing mode
+  ENDIF()
+ENDMACRO()
+#
+# Check that a parase argument has zero or one value
+#
+
+MACRO(TRIBITS_ASSERT_PARSE_ARG_ZERO_OR_ONE_VALUE  PREFIX  ARGNAME)
+  SET(PREFIX_ARGNAME "${PREFIX}_${ARGNAME}")
+  IF (NOT "${${PREFIX_ARGNAME}}" STREQUAL "")
+    LIST( LENGTH ${PREFIX_ARGNAME} ARG_NUM_VALS )
+    IF (ARG_NUM_VALS GREATER 1)
+      MESSAGE_WRAPPER(FATAL_ERROR
+        "ERROR: ${ARGNAME}='${${PREFIX_ARGNAME}}' can not have more than one value!" )
+      RETURN()
+      # NOTE: The return is needed in unit testing mode
+    ENDIF()
+  ENDIF()
+ENDMACRO()

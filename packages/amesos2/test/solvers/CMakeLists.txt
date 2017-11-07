@@ -61,23 +61,52 @@ ENDIF()
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_UMFPACK)
 IF (${PACKAGE_NAME}_ENABLE_UMFPACK)
 
+  IF (HAVE_UMFPACK_VERSION_5)
+    SET(umpack_test_name "Umfpack_Solver_Test")
+    SET(umfpack_test_xml_file "umfpack_test.xml")
+  ELSE()
+    MESSAGE(STATUS "Disabling Amesos2 Umfpack Complex Test because Umfpack version is not >= 5. This Umfpack does not support Real-Im as a single array which is currently used in the wrapper.")
+    SET(umpack_test_name "Umfpack_Solver_Test_No_Complex")
+    SET(umfpack_test_xml_file "umfpack_test_no_complex.xml")
+  ENDIF()
+
   TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyUmfpackFiles
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
-    SOURCE_FILES umfpack_test.xml
+    SOURCE_FILES ${umfpack_test_xml_file}
     EXEDEPS Solver_Test
     )
 
-
   TRIBITS_ADD_TEST(
     Solver_Test
-    NAME Umfpack_Solver_Test
-    ARGS "--xml-params=umfpack_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    NAME ${umpack_test_name}
+    ARGS "--xml-params=${umfpack_test_xml_file} --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
     STANDARD_PASS_OUTPUT
     COMM serial mpi
     )
 
 ENDIF()
 
+##### Tacho Tests #####
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
+IF (${PACKAGE_NAME}_ENABLE_ShyLU_NodeTacho)
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(SolverTestCopyTachoFiles
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    SOURCE_FILES tacho_test.xml
+    EXEDEPS Solver_Test
+    )
+
+  TRIBITS_ADD_TEST(
+    Solver_Test
+    NAME Tacho_Solver_Test
+    ARGS "--xml-params=tacho_test.xml --filedir=${CMAKE_CURRENT_BINARY_DIR}/../matrices/ --multiple-solves --refactor"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1 # Need to determine if we want more MPI when not running OpenMP with threads
+    COMM serial mpi
+    )
+
+ENDIF()
 
 ##### SuperLU_MT Tests #####
 

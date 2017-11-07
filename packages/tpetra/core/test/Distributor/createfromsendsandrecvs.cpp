@@ -341,7 +341,7 @@ TEUCHOS_UNIT_TEST( Distributor, createfromsendsandrecvs)
 
   if(newdist.howInitialized()!=Tpetra::Details::DISTRIBUTOR_INITIALIZED_BY_CREATE_FROM_SENDS_N_RECVS)
     {
-      myOut << "ProcID "<<my_proc <<"howInitialized() from distributor initalized with createFromSendsAndRecvs is incorrect" << endl;
+      myOut << "ProcID "<<my_proc <<"howInitialized() from distributor initialized with createFromSendsAndRecvs is incorrect" << endl;
       success = false;
     }
 

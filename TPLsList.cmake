@@ -76,6 +76,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   OVIS            "cmake/TPLs/"    ST
   gpcd            "cmake/TPLs/"    ST
   METIS           "cmake/TPLs/"    TS
+  MTMETIS         "cmake/TPLs/"    EX
   ParMETIS        "cmake/TPLs/"    PT
   PuLP            "cmake/TPLs/"    EX
   TopoManager     "cmake/TPLs/"    EX
@@ -156,6 +157,8 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   SimParasolid    "SCOREC/cmake/TPLs/"    EX
   SimAcis         "SCOREC/cmake/TPLs/"    EX
   SimField        "SCOREC/cmake/TPLs/"    EX
+  Valgrind        "cmake/TPLs/"    EX
+  QUO             "cmake/TPLs/"    EX
   )
 
 # NOTES:

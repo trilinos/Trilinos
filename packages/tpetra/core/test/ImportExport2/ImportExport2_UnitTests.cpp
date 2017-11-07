@@ -60,9 +60,11 @@
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
+#include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "TpetraExt_MatrixMatrix.hpp"
+#include "Tpetra_Details_gathervPrint.hpp"
 
 namespace {
 
@@ -231,13 +233,12 @@ namespace {
     typedef Tpetra::global_size_t GST;
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-    // get a comm and node
     const RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
-    if (numImages < 2) {
-      // This test is more meaningful when run with multiple
-      // processes.
+    const int numProcs = comm->getSize();
+    const int myRank = comm->getRank();
+    if (numProcs < 2) {
+      out << "This test is only nontrivial if run with multiple MPI "
+        "processes, but you have run it with only 1 process." << endl;
       return;
     }
 
@@ -247,17 +248,18 @@ namespace {
     if (doPrint) {
       out << "CrsGraphImportExport unit test" << endl;
     }
-    OSTab tab (rcpFromRef (out)); // Add one tab level
+    OSTab tab1 (out); // Add one tab level
 
     std::ostringstream err;
     int lclErr = 0;
 
-    //Create a Map that is evenly-distributed, and another that has all
-    //elements on proc 0.
+    out << "Create a Map that is evenly distributed, "
+      "and another that has all elements on Proc 0" << endl;
     try {
+      OSTab tab2 (out);
       const int tgt_num_local_elements = 3;
       const int src_num_local_elements =
-        (myImageID == 0 ? numImages*tgt_num_local_elements : 0);
+        (myRank == 0 ? numProcs*tgt_num_local_elements : 0);
 
       // create Maps
       if (doPrint) {
@@ -311,35 +313,30 @@ namespace {
         TEST_EQUALITY(rowview[0], row);
       }
     } catch (std::exception& e) {
-      err << "Proc " << myImageID << ": " << e.what ();
+      err << "Proc " << myRank << ": " << e.what () << endl;
       lclErr = 1;
     }
 
     int gblErr = 0;
     reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+    TEST_EQUALITY_CONST( gblErr, 0 );
     if (gblErr != 0) {
-      for (int r = 0; r < numImages; ++r) {
-        if (r == myImageID) {
-          cerr << err.str () << endl;
-        }
-        comm->barrier ();
-        comm->barrier ();
-        comm->barrier ();
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+      Tpetra::Details::gathervPrint (out, err.str (), *comm);
+      out << "Above test failed; aborting further tests" << endl;
+      return;
     }
 
-    // For the next test, we need an even number of processes.
-    // Skip this test otherwise.
+    out << "Test with even number of processes (skip test otherwise)" << endl;
     try {
-      if (numImages%2 == 0) {
+      OSTab tab2 (out);
+      if (numProcs % 2 == 0) {
         // Create Maps that are distributed differently but have the
         // same global number of elements. The source map will have 3
         // elements on even-numbered processes and 5 on odd-numbered
         // processes. The target map will have 4 elements on each
         // process.
         LO src_num_local = 5;
-        if (myImageID % 2 == 0) {
+        if (myRank % 2 == 0) {
           src_num_local = 3;
         }
         LO tgt_num_local = 4;
@@ -402,22 +399,17 @@ namespace {
         }
       }
     } catch (std::exception& e) {
-      err << "Proc " << myImageID << ": " << e.what ();
+      err << "Proc " << myRank << ": " << e.what () << endl;
       lclErr = 1;
     }
 
     gblErr = 0;
     reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+    TEST_EQUALITY_CONST( gblErr, 0 );
     if (gblErr != 0) {
-      for (int r = 0; r < numImages; ++r) {
-        if (r == myImageID) {
-          cerr << err.str () << endl;
-        }
-        comm->barrier ();
-        comm->barrier ();
-        comm->barrier ();
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+      Tpetra::Details::gathervPrint (out, err.str (), *comm);
+      out << "Above test failed; aborting further tests" << endl;
+      return;
     }
   }
 
@@ -426,6 +418,9 @@ namespace {
   {
     typedef Tpetra::global_size_t GST;
     typedef Map<LO, GO> map_type;
+
+    out << "(CrsMatrixImportExport,doImport) test" << endl;
+    OSTab tab1 (out); // Add one tab level
 
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
@@ -438,7 +433,8 @@ namespace {
     RCP<ParameterList> crsMatPlist = getCrsMatrixParameterList ();
 
     if (numImages < 2) {
-      // Testing Import/Export is more meaningful with at least two processes.
+      out << "This test is only meaningful if running with multiple MPI "
+        "processes, but you ran it with only 1 process." << endl;
       return;
     }
 
@@ -446,10 +442,11 @@ namespace {
     int lclErr = 0;
     int gblErr = 0;
 
-    // First test: Import a diagonal CrsMatrix from a source row Map
-    // that has all indices on Process 0, to a target row Map that is
-    // uniformly distributed over processes.
+    out << "First test: Import a diagonal CrsMatrix from a source row Map "
+      "that has all indices on Process 0, to a target row Map that is "
+      "uniformly distributed over processes." << endl;
     try {
+      OSTab tab2 (out);
       const GO indexBase = 0;
       const LO tgt_num_local_elements = 3;
       const LO src_num_local_elements = (myImageID == 0) ?
@@ -593,26 +590,23 @@ namespace {
           TEUCHOS_TEST_FLOATING_EQUALITY(tgtRowVals[k], tgt2RowVals[k], tol, out, success);
         } // for each entry in the current row
       } // for each row in the matrix
-    } catch (std::exception& e) { // end of the first test
-      err << "Proc " << myImageID << ": " << e.what ();
+    }
+    catch (std::exception& e) { // end of the first test
+      err << "Proc " << myImageID << ": " << e.what () << endl;
       lclErr = 1;
     }
 
     reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+    TEST_EQUALITY_CONST( gblErr, 0 );
     if (gblErr != 0) {
-      for (int r = 0; r < numImages; ++r) {
-        if (r == myImageID) {
-          cerr << err.str () << endl;
-        }
-        comm->barrier ();
-        comm->barrier ();
-        comm->barrier ();
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+      Tpetra::Details::gathervPrint (out, err.str (), *comm);
+      out << "Above test failed; aborting further tests" << endl;
+      return;
     }
 
-    // For the next test, we need an even number of processes:
+    out << "Test with even number of processes (skip test otherwise)" << endl;
     try {
+      OSTab tab2 (out);
       if (numImages%2 == 0) {
         // Create Maps that are distributed differently but have the
         // same global number of elements. The source-map will have 3
@@ -690,21 +684,16 @@ namespace {
         }
       }
     } catch (std::exception& e) {
-      err << "Proc " << myImageID << ": " << e.what ();
+      err << "Proc " << myImageID << ": " << e.what () << endl;
       lclErr = 1;
     }
 
     reduceAll<int, int> (*comm, REDUCE_MAX, lclErr, outArg (gblErr));
+    TEST_EQUALITY_CONST( gblErr, 0 );
     if (gblErr != 0) {
-      for (int r = 0; r < numImages; ++r) {
-        if (r == myImageID) {
-          cerr << err.str () << endl;
-        }
-        comm->barrier ();
-        comm->barrier ();
-        comm->barrier ();
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Test failed!");
+      Tpetra::Details::gathervPrint (out, err.str (), *comm);
+      out << "Above test failed; aborting further tests" << endl;
+      return;
     }
   }
 
@@ -1180,6 +1169,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
   out << "Test importAndFillCompleteCrsMatrix and "
     "exportAndFillCompleteCrsMatrix (\"fused Import/Export + "
     "fillComplete\")" << endl;
+  OSTab tab1 (out);
   RCP<const Comm<int> > Comm = getDefaultComm();
 
   RCP<CrsMatrixType> A, B, C;
@@ -1201,30 +1191,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
   try {
     build_test_matrix<CrsMatrixType> (Comm, A);
   } catch (std::exception& e) {
-    err << "Process " << MyPID << " threw an exception in build_test_matrix: "
-        << e.what ();
+    err << "Proc " << MyPID << " threw an exception in build_test_matrix: "
+        << e.what () << endl;
     lclErr = 1;
   }
 
   reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
   // The test fails if any (MPI) process had trouble.
-  TEST_ASSERT( gblErr == 0 );
+  TEST_EQUALITY_CONST( gblErr, 0 );
   if (gblErr != 0) {
-    for (int r = 0; r < Comm->getSize (); ++r) {
-      if (r == MyPID) {
-        cerr << err.str () << endl;
-      }
-      Comm->barrier ();
-      Comm->barrier ();
-      Comm->barrier ();
-    }
-    return; // no sense in continuing beyond this point
+    Tpetra::Details::gathervPrint (out, err.str (), *Comm);
+    out << "Above test failed; aborting further tests" << endl;
+    return;
   }
 
-  /////////////////////////////////////////////////////////
-  // Test #1: Tridiagonal Matrix; Migrate to Proc 0
-  /////////////////////////////////////////////////////////
+  out << "Test #1: Tridiagonal Matrix; Migrate to Proc 0" << endl;
   try {
+    OSTab tab2 (out);
     GST num_global = A->getRowMap()->getGlobalNumElements();
 
     // New map with all on Proc1
@@ -1257,29 +1240,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
 
     Comm->barrier ();
   } catch (std::exception& e) {
-    err << "Process " << MyPID << " threw an exception: " << e.what ();
+    err << "Process " << MyPID << " threw an exception: " << e.what () << endl;
     lclErr = 1;
   }
 
   reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
   // The test fails if any (MPI) process had trouble.
-  TEST_ASSERT( gblErr == 0 );
+  TEST_EQUALITY_CONST( gblErr, 0 );
   if (gblErr != 0) {
-    for (int r = 0; r < Comm->getSize (); ++r) {
-      if (r == MyPID) {
-        cerr << err.str () << endl;
-      }
-      Comm->barrier ();
-      Comm->barrier ();
-      Comm->barrier ();
-    }
-    return; // no sense in continuing beyond this point
+    Tpetra::Details::gathervPrint (out, err.str (), *Comm);
+    out << "Above test failed; aborting further tests" << endl;
+    return;
   }
 
-  /////////////////////////////////////////////////////////
-  // Test #2: Tridiagonal Matrix; Locally Reversed Map
-  /////////////////////////////////////////////////////////
+  out << "Test #2: Tridiagonal Matrix; Locally Reversed Map" << endl;
   try {
+    OSTab tab2 (out);
     size_t num_local = A->getRowMap()->getNodeNumElements();
 
     Teuchos::Array<GO> MyGIDs(num_local);
@@ -1318,30 +1294,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
 
   reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
   // The test fails if any (MPI) process had trouble.
-  TEST_ASSERT( gblErr == 0 );
+  TEST_EQUALITY_CONST( gblErr, 0 );
   if (gblErr != 0) {
-    for (int r = 0; r < Comm->getSize (); ++r) {
-      if (r == MyPID) {
-        cerr << err.str () << endl;
-      }
-      Comm->barrier ();
-      Comm->barrier ();
-      Comm->barrier ();
-    }
-    return; // no sense in continuing beyond this point
+    Tpetra::Details::gathervPrint (out, err.str (), *Comm);
+    out << "Above test failed; aborting further tests" << endl;
+    return;
   }
 
-  /////////////////////////////////////////////////////////
-  // Test #3: Tridiagonal Matrix; Globally Reversed Map
-  /////////////////////////////////////////////////////////
+  // mfh 28 Aug 2017: This test was skipped before; there was no code here.
+  // I just made it print out that message.
+  out << "Test #3: Tridiagonal Matrix; Globally Reversed Map (SKIPPED)" << endl;
 
-  // Skipped.
-
-
-  /////////////////////////////////////////////////////////
-  // Test #4: Tridiagonal Matrix; MMM style halo import
-  /////////////////////////////////////////////////////////
+  out << "Test #4: Tridiagonal Matrix; MMM style halo import" << endl;
   try {
+    OSTab tab2 (out);
     // Assume we always own the diagonal
     size_t num_local = A->getNodeNumCols()-A->getNodeNumRows();
     Teuchos::Array<GO> MyGIDs(num_local);
@@ -1386,29 +1352,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
       total_err--;
     }
   } catch (std::exception& e) {
-    err << "Process " << MyPID << " threw an exception: " << e.what ();
+    err << "Process " << MyPID << " threw an exception: " << e.what () << endl;
     lclErr = 1;
   }
 
   reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
   // The test fails if any (MPI) process had trouble.
-  TEST_ASSERT( gblErr == 0 );
+  TEST_EQUALITY_CONST( gblErr, 0 );
   if (gblErr != 0) {
-    for (int r = 0; r < Comm->getSize (); ++r) {
-      if (r == MyPID) {
-        cerr << err.str () << endl;
-      }
-      Comm->barrier ();
-      Comm->barrier ();
-      Comm->barrier ();
-    }
-    return; // no sense in continuing beyond this point
+    Tpetra::Details::gathervPrint (out, err.str (), *Comm);
+    out << "Above test failed; aborting further tests" << endl;
+    return;
   }
 
-  /////////////////////////////////////////////////////////
-  // Test 5: Tridiagonal Matrix; Migrate to Proc 0, Replace Maps
-  /////////////////////////////////////////////////////////
+  out << "Test 5: Tridiagonal Matrix; Migrate to Proc 0, Replace Maps" << endl;
   try {
+    OSTab tab2 (out);
     // New map with all on Proc 0 / 2
     build_test_map(A->getRowMap(),Map3);
 
@@ -1436,29 +1395,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
       total_err--;
     }
   } catch (std::exception& e) {
-    err << "Process " << MyPID << " threw an exception: " << e.what ();
+    err << "Process " << MyPID << " threw an exception: " << e.what () << endl;
     lclErr = 1;
   }
 
   reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
   // The test fails if any (MPI) process had trouble.
-  TEST_ASSERT( gblErr == 0 );
+  TEST_EQUALITY_CONST( gblErr, 0 );
   if (gblErr != 0) {
-    for (int r = 0; r < Comm->getSize (); ++r) {
-      if (r == MyPID) {
-        cerr << err.str () << endl;
-      }
-      Comm->barrier ();
-      Comm->barrier ();
-      Comm->barrier ();
-    }
-    return; // no sense in continuing beyond this point
+    Tpetra::Details::gathervPrint (out, err.str (), *Comm);
+    out << "Above test failed; aborting further tests" << endl;
+    return;
   }
 
-  /////////////////////////////////////////////////////////
-  // Test 6: Tridiagonal Matrix; Migrate to Proc 0, Replace Comm
-  /////////////////////////////////////////////////////////
+  out << "Test 6: Tridiagonal Matrix; Migrate to Proc 0, Replace Comm" << endl;
   try {
+    OSTab tab2 (out);
     // New map with all on Proc 0 / 2
     build_test_map(A->getRowMap(),Map3);
 
@@ -1492,29 +1444,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
       total_err--;
     }
   } catch (std::exception& e) {
-    err << "Process " << MyPID << " threw an exception: " << e.what ();
+    err << "Process " << MyPID << " threw an exception: " << e.what () << endl;
     lclErr = 1;
   }
 
   reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
   // The test fails if any (MPI) process had trouble.
-  TEST_ASSERT( gblErr == 0 );
+  TEST_EQUALITY_CONST( gblErr, 0 );
   if (gblErr != 0) {
-    for (int r = 0; r < Comm->getSize (); ++r) {
-      if (r == MyPID) {
-        cerr << err.str () << endl;
-      }
-      Comm->barrier ();
-      Comm->barrier ();
-      Comm->barrier ();
-    }
-    return; // no sense in continuing beyond this point
+    Tpetra::Details::gathervPrint (out, err.str (), *Comm);
+    out << "Above test failed; aborting further tests" << endl;
+    return;
   }
 
-  /////////////////////////////////////////////////////////
-  // Test 7: Tridiagonal Matrix; Migrate to Proc 0, Reverse Mode
-  /////////////////////////////////////////////////////////
+  out << "Test 7: Tridiagonal Matrix; Migrate to Proc 0, Reverse Mode" << endl;
   try {
+    OSTab tab2 (out);
     GST num_global = A->getRowMap()->getGlobalNumElements();
 
     // New map with all on Proc1
@@ -1551,29 +1496,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
       total_err--;
     }
   } catch (std::exception& e) {
-    err << "Process " << MyPID << " threw an exception: " << e.what ();
+    err << "Process " << MyPID << " threw an exception: " << e.what () << endl;
     lclErr = 1;
   }
 
   reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
   // The test fails if any (MPI) process had trouble.
-  TEST_ASSERT( gblErr == 0 );
+  TEST_EQUALITY_CONST( gblErr, 0 );
   if (gblErr != 0) {
-    for (int r = 0; r < Comm->getSize (); ++r) {
-      if (r == MyPID) {
-        cerr << err.str () << endl;
-      }
-      Comm->barrier ();
-      Comm->barrier ();
-      Comm->barrier ();
-    }
-    return; // no sense in continuing beyond this point
+    Tpetra::Details::gathervPrint (out, err.str (), *Comm);
+    out << "Above test failed; aborting further tests" << endl;
+    return;
   }
 
-  /////////////////////////////////////////////////////////
-  // Test #8: Diagonal matrix w/ overlapping entries
-  /////////////////////////////////////////////////////////
+  out << "Test #8: Diagonal matrix w/ overlapping entries" << endl;
   try {
+    OSTab tab2 (out);
     build_test_matrix_with_row_overlap<CrsMatrixType>(Comm,A);
 
     Teuchos::ArrayRCP<const size_t> rowptr;
@@ -1609,23 +1547,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( FusedImportExport, doImport, LO, GO, Scalar )
       total_err--;
     }
   } catch (std::exception& e) {
-    err << "Process " << MyPID << " threw an exception: " << e.what ();
+    err << "Process " << MyPID << " threw an exception: " << e.what () << endl;
     lclErr = 1;
   }
 
   reduceAll<int, int> (*Comm, REDUCE_MAX, lclErr, outArg (gblErr));
   // The test fails if any (MPI) process had trouble.
-  TEST_ASSERT( gblErr == 0 );
+  TEST_EQUALITY_CONST( gblErr, 0 );
   if (gblErr != 0) {
-    for (int r = 0; r < Comm->getSize (); ++r) {
-      if (r == MyPID) {
-        cerr << err.str () << endl;
-      }
-      Comm->barrier ();
-      Comm->barrier ();
-      Comm->barrier ();
-    }
-    return; // no sense in continuing beyond this point
+    Tpetra::Details::gathervPrint (out, err.str (), *Comm);
+    out << "Above test failed; aborting further tests" << endl;
+    return;
   }
 
   TEST_EQUALITY(total_err,0);
@@ -1914,6 +1846,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   typedef typename Tpetra::CrsMatrix<Scalar, LO, GO>::packet_type PacketType;
   typedef typename MapType::device_type device_type;
   typedef Tpetra::global_size_t GST;
+  typedef typename CrsMatrixType::impl_scalar_type IST;
 
   RCP<const Comm<int> > Comm = getDefaultComm();
   RCP<CrsMatrixType> A,B;
@@ -1921,7 +1854,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
   int test_err=0;
   int MyPID = Comm->getRank();
   RCP<const MapType> MapSource, MapTarget;
-  Kokkos::DualView<char*, device_type> exports;
+
+  // mfh 01 Aug 2017: Deal with fix for #1088, by not using
+  // Kokkos::CudaUVMSpace for communication buffers.
+#ifdef KOKKOS_HAVE_CUDA
+  typedef typename std::conditional<
+  std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
+    Kokkos::CudaSpace,
+    typename device_type::memory_space>::type buffer_memory_space;
+#else
+  typedef typename device_type::memory_space buffer_memory_space;
+#endif // KOKKOS_HAVE_CUDA
+  typedef typename device_type::execution_space buffer_execution_space;
+  typedef Kokkos::Device<buffer_execution_space, buffer_memory_space> buffer_device_type;
+
+  Kokkos::DualView<char*, buffer_device_type> exports;
   Teuchos::Array<char> imports;
   Teuchos::Array<size_t> numImportPackets, numExportPackets;
   size_t constantNumPackets=0;
@@ -1974,7 +1921,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     distor.doPostsAndWaits<PacketType>(exports_av,numExportPackets(),imports(),numImportPackets());
 
     // Run the count... which should get the same NNZ as the traditional import
-    using Tpetra::Import_Util::unpackAndCombineWithOwningPIDsCount;
+    using Tpetra::Details::unpackAndCombineWithOwningPIDsCount;
     size_t nnz2 =
       unpackAndCombineWithOwningPIDsCount<Scalar, LO, GO, Node> (*A, Importer->getRemoteLIDs (),
                                                                  imports (), numImportPackets (),
@@ -1994,25 +1941,26 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
     Teuchos::Array<Scalar>  vals (nnz2);
     Teuchos::Array<int>     TargetPids;
 
-    using Tpetra::Import_Util::unpackAndCombineIntoCrsArrays;
-    unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (*A,
-                                                         Importer->getRemoteLIDs (),
-                                                         imports (),
-                                                         numImportPackets (),
-                                                         constantNumPackets,
-                                                         distor,
-                                                         Tpetra::INSERT,
-                                                         Importer->getNumSameIDs (),
-                                                         Importer->getPermuteToLIDs (),
-                                                         Importer->getPermuteFromLIDs (),
-                                                         MapTarget->getNodeNumElements (),
-                                                         nnz2,
-                                                         MyPID,
-                                                         rowptr (),
-                                                         colind (),
-                                                         vals (),
-                                                         SourcePids (),
-                                                         TargetPids);
+    using Tpetra::Details::unpackAndCombineIntoCrsArrays;
+    unpackAndCombineIntoCrsArrays<Scalar, LO, GO, Node> (
+      *A,
+      Importer->getRemoteLIDs (),
+      imports (),
+      numImportPackets (),
+      constantNumPackets,
+      distor,
+      Tpetra::INSERT,
+      Importer->getNumSameIDs (),
+      Importer->getPermuteToLIDs (),
+      Importer->getPermuteFromLIDs (),
+      MapTarget->getNodeNumElements (),
+      nnz2,
+      MyPID,
+      rowptr (),
+      colind (),
+      Teuchos::av_reinterpret_cast<IST> (vals ()),
+      SourcePids (),
+      TargetPids);
     // Do the comparison
     Teuchos::ArrayRCP<const size_t>  Browptr;
     Teuchos::ArrayRCP<const LO>      Bcolind;
@@ -2462,6 +2410,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( RemoteOnlyImport, Basic, LO, GO )  {
 
     // Build remote-only import
     Import2 = Import1->createRemoteOnlyImport(Map0);
+
+    // Check validity
+    bool vv = Tpetra::Import_Util::checkImportValidity(*Import2);
+    if(!vv) lclErr=1;
 
     // Do remote-only import
     TestVector->doImport(*SourceVector,*Import2,Tpetra::INSERT);

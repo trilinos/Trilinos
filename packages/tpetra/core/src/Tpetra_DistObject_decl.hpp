@@ -54,8 +54,8 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_SrcDistObject.hpp"
-#include "Kokkos_NodeAPIConfigDefs.hpp" // enum KokkosClassic::ReadWriteOption
 #include "Kokkos_ArithTraits.hpp"
+#include <type_traits>
 
 // #ifndef HAVE_TPETRA_TRANSFER_TIMERS
 // #  define HAVE_TPETRA_TRANSFER_TIMERS 1
@@ -65,6 +65,16 @@
 #  undef HAVE_TPETRA_TRANSFER_TIMERS
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
+namespace KokkosClassic {
+  /// \brief Read/write options for non-const views.
+  ///
+  /// \warning This is NOT for users!  This only exists for backwards
+  ///   compatibility.
+  enum ReadWriteOption {
+    ReadWrite = 0, /*!< Indicates that the view may be safely read and written. */
+    WriteOnly = 1 /*!< Indicates that the contents of the view are undefined until set on the host. */
+  };
+} // namespace KokkosClassic
 
 namespace Tpetra {
 
@@ -502,33 +512,26 @@ namespace Tpetra {
     /// \param src [in] The source object, to redistribute into
     ///   the target object, which is <tt>*this</tt> object.
     ///
-    /// \param CM [in] The combine mode that describes how to combine
-    ///   values that map to the same global ID on the same process.
+    /// \param transfer [in] The Export or Import object representing
+    ///   the communication pattern.  (Details::Transfer is the common
+    ///   base class of these two objects.)
     ///
-    /// \param permuteToLIDs [in] See copyAndPermute().
-    ///
-    /// \param permuteFromLIDs [in] See copyAndPermute().
-    ///
-    /// \param remoteLIDs [in] List of entries (as local IDs) in the
-    ///   destination object to receive from other processes.
-    ///
-    /// \param exportLIDs [in] See packAndPrepare().
-    ///
-    /// \param distor [in/out] The Distributor object that knows how
-    ///   to redistribute data.
+    /// \param modeString [in] Human-readable string, for verbose
+    ///   debugging output and error output, explaining what function
+    ///   called this method.  Example: "doImport (forward)",
+    ///   "doExport (reverse)".
     ///
     /// \param revOp [in] Whether to do a forward or reverse mode
     ///   redistribution.
+    ///
+    /// \param CM [in] The combine mode that describes how to combine
+    ///   values that map to the same global ID on the same process.
     virtual void
     doTransfer (const SrcDistObject& src,
-                CombineMode CM,
-                size_t numSameIDs,
-                const Teuchos::ArrayView<const local_ordinal_type> &permuteToLIDs,
-                const Teuchos::ArrayView<const local_ordinal_type> &permuteFromLIDs,
-                const Teuchos::ArrayView<const local_ordinal_type> &remoteLIDs,
-                const Teuchos::ArrayView<const local_ordinal_type> &exportLIDs,
-                Distributor &distor,
-                ReverseOption revOp);
+                const Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                const char modeString[],
+                const ReverseOption revOp,
+                const CombineMode CM);
 
     /// \brief Reallocate numExportPacketsPerLID_ and/or
     ///   numImportPacketsPerLID_, if necessary.
@@ -558,6 +561,37 @@ namespace Tpetra {
                    const Teuchos::ArrayView<const local_ordinal_type> &exportLIDs,
                    Distributor &distor,
                    ReverseOption revOp);
+
+    /// \typedef buffer_memory_space
+    /// \brief Kokkos memory space for communication buffers.
+    ///
+    /// See #1088 for why this is not just <tt>device_type::memory_space</tt>.
+#ifdef KOKKOS_HAVE_CUDA
+    typedef typename std::conditional<
+      std::is_same<typename device_type::execution_space, Kokkos::Cuda>::value,
+      Kokkos::CudaSpace,
+      typename device_type::memory_space>::type buffer_memory_space;
+#else
+    typedef typename device_type::memory_space buffer_memory_space;
+#endif // KOKKOS_HAVE_CUDA
+
+  public:
+
+    /// \typedef buffer_device_type
+    /// \brief Kokkos::Device specialization for communication buffers.
+    ///
+    /// See #1088 for why this is not just <tt>device_type::device_type</tt>.
+    ///
+    /// This needs to be public so that I can declare functions like
+    /// packAndPrepareWithOwningPIDs.
+    ///
+    /// \warning This is an implementation detail.  DO NOT DEPEND ON
+    ///   IT.  It may disappear or change at any time.
+    typedef Kokkos::Device<
+      typename device_type::execution_space,
+      buffer_memory_space> buffer_device_type;
+
+  protected:
 
     virtual void
     doTransferNew (const SrcDistObject& src,
@@ -599,8 +633,8 @@ namespace Tpetra {
     /// The "old" interface consists of copyAndPermute,
     /// packAndPrepare, and unpackAndCombine.  The "new" interface
     /// consists of copyAndPermuteNew, packAndPrepareNew, and
-    /// unpackAndCombineNew.  The new interface is preferred because
-    /// it facilitates thread parallelization using Kokkos data
+    /// unpackAndCombineNew.  We prefer the new interface, because it
+    /// facilitates thread parallelization using Kokkos data
     /// structures.
     ///
     /// At some point, we will remove the old interface, and rename
@@ -672,8 +706,8 @@ namespace Tpetra {
     virtual void
     packAndPrepareNew (const SrcDistObject& source,
                        const Kokkos::DualView<const local_ordinal_type*, device_type>& exportLIDs,
-                       Kokkos::DualView<packet_type*, device_type>& exports,
-                       const Kokkos::DualView<size_t*, device_type>& numPacketsPerLID,
+                       Kokkos::DualView<packet_type*, buffer_device_type>& exports,
+                       const Kokkos::DualView<size_t*, buffer_device_type>& numPacketsPerLID,
                        size_t& constantNumPackets,
                        Distributor& distor)
     {}
@@ -737,8 +771,8 @@ namespace Tpetra {
     ///   imported entries with existing entries.
     virtual void
     unpackAndCombineNew (const Kokkos::DualView<const local_ordinal_type*, device_type>& importLIDs,
-                         const Kokkos::DualView<const packet_type*, device_type>& imports,
-                         const Kokkos::DualView<const size_t*, device_type>& numPacketsPerLID,
+                         const Kokkos::DualView<const packet_type*, buffer_device_type>& imports,
+                         const Kokkos::DualView<const size_t*, buffer_device_type>& numPacketsPerLID,
                          const size_t constantNumPackets,
                          Distributor& distor,
                          const CombineMode CM)
@@ -796,7 +830,7 @@ namespace Tpetra {
     /// Unfortunately, I had to declare these protected, because
     /// CrsMatrix uses them at one point.  Please, nobody else use
     /// them.
-    Kokkos::DualView<packet_type*, device_type> imports_;
+    Kokkos::DualView<packet_type*, buffer_device_type> imports_;
 
     /// \brief Reallocate imports_ if needed.
     ///
@@ -828,14 +862,14 @@ namespace Tpetra {
     ///
     /// Unfortunately, I had to declare this protected, because
     /// CrsMatrix uses it at one point.  Please, nobody else use it.
-    Kokkos::DualView<size_t*, device_type> numImportPacketsPerLID_;
+    Kokkos::DualView<size_t*, buffer_device_type> numImportPacketsPerLID_;
 
     /// \brief Buffer from which packed data are exported (sent to
     ///   other processes).
     ///
     /// Unfortunately, I had to declare this protected, because
     /// CrsMatrix uses it at one point.  Please, nobody else use it.
-    Kokkos::DualView<packet_type*, device_type> exports_;
+    Kokkos::DualView<packet_type*, buffer_device_type> exports_;
 
     /// \brief Number of packets to send for each send operation.
     ///
@@ -850,7 +884,7 @@ namespace Tpetra {
     ///
     /// Unfortunately, I had to declare this protected, because
     /// CrsMatrix uses them at one point.  Please, nobody else use it.
-    Kokkos::DualView<size_t*, device_type> numExportPacketsPerLID_;
+    Kokkos::DualView<size_t*, buffer_device_type> numExportPacketsPerLID_;
 
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
   private:

@@ -70,7 +70,7 @@ public:
     const Status solutionStatus,
     const bool   output,
     const bool   outputScreen,
-    const bool   isRestartable,
+    const bool   isSynced,
     const bool   isInterpolated,
     const Scalar accuracy,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
@@ -108,6 +108,18 @@ public:
     virtual Status getSolutionStatus() const
       {return metaData_->getSolutionStatus();};
 
+    /// Get IsSynced
+    virtual bool getOutput() const {return metaData_->getOutput();}
+
+    /// Set IsSynced
+    virtual void setOutput(bool output) {metaData_->setOutput(output);}
+
+    /// Get IsSynced
+    virtual bool getIsSynced() const {return metaData_->getIsSynced();}
+
+    /// Set IsSynced
+    virtual void setIsSynced(bool isSynced) {metaData_->setIsSynced(isSynced);}
+
     /// Return the Stepper status
     virtual Status getStepperStatus() const
       {return stepperState_->stepperStatus_;};
@@ -119,11 +131,23 @@ public:
     /// Get the current solution, x.
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() {return x_;}
 
+    /// Get the current solution, x.
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const
+      {return x_;}
+
     /// Get the current time derivative of the solution, xdot.
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDot() {return xdot_;}
 
+    /// Get the current time derivative of the solution, xdot.
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDot() const
+      {return xdot_;}
+
     /// Get the current time second derivative of the solution, xdotdot.
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXDotDot()
+      {return xdotdot_;}
+
+    /// Get the current time second derivative of the solution, xdotdot.
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXDotDot() const
       {return xdotdot_;}
 
     /// Get the StepperState

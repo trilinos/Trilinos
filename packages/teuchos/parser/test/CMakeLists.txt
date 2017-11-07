@@ -1,4 +1,6 @@
-
+TRIBITS_COPY_FILES_TO_BINARY_DIR(YAML_TEST_FILES
+  SOURCE_FILES "plasma_oscillation_rtc.xml.yaml"
+)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Parser_UnitTests  

@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     /************* INITIALIZE OPTIMIZATION PROBLEM ***************************/
     /*************************************************************************/
     Teuchos::ParameterList SOLlist;
-    SOLlist.sublist("SOL").set("Stochastic Optimization Type","Risk Averse");
+    SOLlist.sublist("SOL").set("Stochastic Component Type","Risk Averse");
     SOLlist.sublist("SOL").set("Store Sampled Value and Gradient",storage);
     SOLlist.sublist("SOL").sublist("Risk Measure").set("Name","KL Divergence");
     SOLlist.sublist("SOL").sublist("Risk Measure").sublist("KL Divergence").set("Threshold",1.e-2);
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
       }
       ofs.close();
     }
-    *outStream0 << "Scalar Parameter: " << optProb.getSolutionStatistic(SOLlist) << "\n\n";
+    *outStream0 << "Scalar Parameter: " << optProb.getSolutionStatistic() << "\n\n";
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";

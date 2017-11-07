@@ -627,7 +627,7 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     }
   }
 
-  *out << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel);
+  //*out << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel);
 
   //JF  may need a version of the following for multipoint, i.e. num_p>1, l+1, if we want sensitivities
   RCP<Thyra::MultiVectorBase<Scalar> > dgxdp_out;
@@ -657,8 +657,8 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     requestedSensitivities = false;
 
   RCP<const Thyra::VectorBase<Scalar> > finalSolution;
-  RCP<Tempus::SolutionState<Scalar> > solutionState;
-  RCP<Tempus::SolutionHistory<Scalar> > solutionHistory;
+  RCP<const Tempus::SolutionState<Scalar> > solutionState;
+  RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory;
   if (!requestedSensitivities)
   {
     //
@@ -821,7 +821,8 @@ void Piro::TempusSolver<Scalar>::
 #endif
 setStartTime(const Scalar start_time)
 {
-  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = fwdStateIntegrator->getTimeStepControl();
+  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = Teuchos::rcp_const_cast<Tempus::TimeStepControl<Scalar> >(tsc_const); 
   tsc->setInitTime(start_time); 
 } 
 
@@ -834,7 +835,7 @@ Scalar Piro::TempusSolver<Scalar>::
 #endif
 getStartTime() const
 {
-  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
   Scalar start_time = tsc->getInitTime(); 
   return start_time; 
 } 
@@ -848,7 +849,8 @@ void Piro::TempusSolver<Scalar>::
 #endif
 setFinalTime(const Scalar final_time)
 {
-  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = fwdStateIntegrator->getTimeStepControl();
+  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = Teuchos::rcp_const_cast<Tempus::TimeStepControl<Scalar> >(tsc_const); 
   t_final = final_time; 
   tsc->setFinalTime(final_time); 
 } 
@@ -862,7 +864,7 @@ Scalar Piro::TempusSolver<Scalar>::
 #endif
 getFinalTime() const
 {
-  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
   Scalar final_time = tsc->getFinalTime(); 
   return final_time; 
 } 
@@ -876,7 +878,8 @@ void Piro::TempusSolver<Scalar>::
 #endif
 setInitTimeStep(const Scalar init_time_step)
 {
-  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc_const = fwdStateIntegrator->getTimeStepControl();
+  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = Teuchos::rcp_const_cast<Tempus::TimeStepControl<Scalar> >(tsc_const); 
   tsc->setInitTimeStep(init_time_step); 
 } 
 
@@ -890,7 +893,7 @@ Scalar Piro::TempusSolver<Scalar>::
 #endif
 getInitTimeStep() const
 {
-  Teuchos::RCP<Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
+  Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > tsc = fwdStateIntegrator->getTimeStepControl();
   auto init_time_step = tsc->getInitTimeStep(); 
   return init_time_step; 
 } 
@@ -906,8 +909,8 @@ setObserver()
   Teuchos::RCP<Tempus::IntegratorObserverBasic<Scalar> > observer = Teuchos::null;
   if (Teuchos::nonnull(piroObserver_)) {
     //Get solutionHistory from integrator
-    const Teuchos::RCP<Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
-    const Teuchos::RCP<Tempus::TimeStepControl<Scalar> > timeStepControl = fwdStateIntegrator->getTimeStepControl();
+    const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > solutionHistory = fwdStateIntegrator->getSolutionHistory();
+    const Teuchos::RCP<const Tempus::TimeStepControl<Scalar> > timeStepControl = fwdStateIntegrator->getTimeStepControl();
     //Create Tempus::IntegratorObserverBasic object
     observer = Teuchos::rcp(new ObserverToTempusIntegrationObserverAdapter<Scalar>(solutionHistory,
                                 timeStepControl, piroObserver_, supports_x_dotdot_));
@@ -948,7 +951,9 @@ Teuchos::RCP<Tempus::SolutionHistory<Scalar> > Piro::TempusSolver<Scalar>::
 #endif
 getSolutionHistory() const
 {
-  return fwdStateIntegrator->getSolutionHistory();
+  Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > soln_history_const = fwdStateIntegrator->getSolutionHistory();
+  Teuchos::RCP<Tempus::SolutionHistory<Scalar> > soln_history = Teuchos::rcp_const_cast<Tempus::SolutionHistory<Scalar> >(soln_history_const); 
+  return soln_history;
 }
 
 #ifdef ALBANY_BUILD

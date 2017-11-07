@@ -93,7 +93,7 @@ class ScatterDirichletResidual_Epetra<panzer::Traits::Residual,TRAITS,LO,GO>
   
 public:
   ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
-                                  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer=Teuchos::null)
+                                  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & /* cIndexer=Teuchos::null */)
      : globalIndexer_(indexer) {}
   
   ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
@@ -163,7 +163,7 @@ class ScatterDirichletResidual_Epetra<panzer::Traits::Tangent,TRAITS,LO,GO>
   
 public:
   ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,
-                                  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & cIndexer=Teuchos::null)
+                                  const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & /* cIndexer=Teuchos::null */)
      : globalIndexer_(indexer) {}
   
   ScatterDirichletResidual_Epetra(const Teuchos::RCP<const UniqueGlobalIndexer<LO,GO> > & indexer,

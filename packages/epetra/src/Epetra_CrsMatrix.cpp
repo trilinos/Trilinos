@@ -2895,17 +2895,17 @@ void Epetra_CrsMatrix::Print(std::ostream& os) const {
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       /*      const Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
-        const Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
-        const int             oldp = os.precision(12); */
+              const Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
+              const int             oldp = os.precision(12); */
       if (MyPID==0) {
-  os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows64(); os << std::endl;
-  os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << std::endl;
-  os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << std::endl;
-  os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << std::endl;
-  os <<    "Global Maximum Num Entries   = "; os << GlobalMaxNumEntries(); os << std::endl;
-  if (LowerTriangular()) os <<    " ** Matrix is Lower Triangular **"; os << std::endl;
-  if (UpperTriangular()) os <<    " ** Matrix is Upper Triangular **"; os << std::endl;
-  if (NoDiagonal())      os <<    " ** Matrix has no diagonal     **"; os << std::endl; os << std::endl;
+        os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows64(); os << std::endl;
+        os <<    "Number of Global Cols        = "; os << NumGlobalCols64(); os << std::endl;
+        os <<    "Number of Global Diagonals   = "; os << NumGlobalDiagonals64(); os << std::endl;
+        os <<    "Number of Global Nonzeros    = "; os << NumGlobalNonzeros64(); os << std::endl;
+        os <<    "Global Maximum Num Entries   = "; os << GlobalMaxNumEntries(); os << std::endl;
+        if (LowerTriangular()) { os <<    " ** Matrix is Lower Triangular **"; os << std::endl; }
+        if (UpperTriangular()) { os <<    " ** Matrix is Upper Triangular **"; os << std::endl; }
+        if (NoDiagonal())      { os <<    " ** Matrix has no diagonal     **"; os << std::endl; os << std::endl; }
       }
 
       os <<  "\nNumber of My Rows        = "; os << NumMyRows(); os << std::endl;
@@ -2919,8 +2919,8 @@ void Epetra_CrsMatrix::Print(std::ostream& os) const {
       // Reset os flags
 
       /*      os.setf(olda,ios::adjustfield);
-        os.setf(oldf,ios::floatfield);
-        os.precision(oldp); */
+              os.setf(oldf,ios::floatfield);
+              os.precision(oldp); */
     }
     // Do a few global ops to give I/O a chance to complete
     Comm().Barrier();
@@ -3804,7 +3804,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
   return;
 }
 //=======================================================================================================
-void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, double ** Xp, int LDX, double ** Yp, int LDY, int NumVectors)  const{
+void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, double ** Xp, int LDX, double ** Yp, int LDY, int NumVectors) const {
 
   int i, j, j0, k;
   double diag = 0.0;
@@ -3836,210 +3836,210 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
       mkl_dcsrsm(&transa, &NumRows, &NumVectors, &alpha, matdescra, values, IndicesPlus1, IndexOffset, IndexOffset + 1, *Xp, &LDX, *Yp, &LDY);
 #elif defined(Epetra_ENABLE_CASK)
       cask_csr_dtrsm( iupper, itrans, udiag, nodiag, 0, xysame,  NumMyRows_,
-                      NumMyRows_, NumVectors, IndexOffset, Indices, values,
-                      *Xp, LDX, *Yp, LDY);
+          NumMyRows_, NumVectors, IndexOffset, Indices, values,
+          *Xp, LDX, *Yp, LDY);
 #else
       EPETRA_DCRSSM_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, values, Indices, IndexOffset,
-       *Xp, &LDX, *Yp, &LDY, &xysame, &NumVectors);
+          *Xp, &LDX, *Yp, &LDY, &xysame, &NumVectors);
 #endif
       return;
     }
 #endif // FORTRAN_DISABLED etc
     if(!Trans) {
       if(Upper) {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
-  for(i = NumMyRows_ - 1; i >= 0; i--) {
-    int Offset = IndexOffset[i];
-    int      NumEntries = IndexOffset[i+1]-Offset;
-    int *    RowIndices = Indices+Offset;
-    double * RowValues  = values+Offset;
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      double sum = 0.0;
-      for(j = j0; j < NumEntries; j++)
-        sum += RowValues[j] * Yp[k][RowIndices[j]];
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
+        for(i = NumMyRows_ - 1; i >= 0; i--) {
+          int Offset = IndexOffset[i];
+          int      NumEntries = IndexOffset[i+1]-Offset;
+          int *    RowIndices = Indices+Offset;
+          double * RowValues  = values+Offset;
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            double sum = 0.0;
+            for(j = j0; j < NumEntries; j++)
+              sum += RowValues[j] * Yp[k][RowIndices[j]];
 
-      if(UnitDiagonal)
-        Yp[k][i] = Xp[k][i] - sum;
-      else
-        Yp[k][i] = (Xp[k][i] - sum) * diag;
-    }
-  }
+            if(UnitDiagonal)
+              Yp[k][i] = Xp[k][i] - sum;
+            else
+              Yp[k][i] = (Xp[k][i] - sum) * diag;
+          }
+        }
       }
       else {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
-  for(i = 0; i < NumMyRows_; i++) {
-    int Offset = IndexOffset[i];
-    int      NumEntries = IndexOffset[i+1]-Offset - j0;
-    int *    RowIndices = Indices+Offset;
-    double * RowValues  = values+Offset;
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      double sum = 0.0;
-      for(j = 0; j < NumEntries; j++)
-        sum += RowValues[j] * Yp[k][RowIndices[j]];
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
+        for(i = 0; i < NumMyRows_; i++) {
+          int Offset = IndexOffset[i];
+          int      NumEntries = IndexOffset[i+1]-Offset - j0;
+          int *    RowIndices = Indices+Offset;
+          double * RowValues  = values+Offset;
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            double sum = 0.0;
+            for(j = 0; j < NumEntries; j++)
+              sum += RowValues[j] * Yp[k][RowIndices[j]];
 
-      if(UnitDiagonal)
-        Yp[k][i] = Xp[k][i] - sum;
-      else
-        Yp[k][i] = (Xp[k][i] - sum)*diag;
-    }
-  }
+            if(UnitDiagonal)
+              Yp[k][i] = Xp[k][i] - sum;
+            else
+              Yp[k][i] = (Xp[k][i] - sum)*diag;
+          }
+        }
       }
     }
     // ***********  Transpose case *******************************
 
     else {
       for(k = 0; k < NumVectors; k++)
-  if(Yp[k] != Xp[k])
-    for(i = 0; i < NumMyRows_; i++)
-      Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
+        if(Yp[k] != Xp[k])
+          for(i = 0; i < NumMyRows_; i++)
+            Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
 
       if(Upper) {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
 
-  for(i = 0; i < NumMyRows_; i++) {
-    int Offset = IndexOffset[i];
-    int      NumEntries = IndexOffset[i+1]-Offset;
-    int *    RowIndices = Indices+Offset;
-    double * RowValues  = values+Offset;
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      if(!UnitDiagonal)
-        Yp[k][i] = Yp[k][i]*diag;
-      double ytmp = Yp[k][i];
-      for(j = j0; j < NumEntries; j++)
-        Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
-    }
-  }
+        for(i = 0; i < NumMyRows_; i++) {
+          int Offset = IndexOffset[i];
+          int      NumEntries = IndexOffset[i+1]-Offset;
+          int *    RowIndices = Indices+Offset;
+          double * RowValues  = values+Offset;
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            if(!UnitDiagonal)
+              Yp[k][i] = Yp[k][i]*diag;
+            double ytmp = Yp[k][i];
+            for(j = j0; j < NumEntries; j++)
+              Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+          }
+        }
       }
       else {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
-  for(i = NumMyRows_ - 1; i >= 0; i--) {
-    int Offset = IndexOffset[i];
-    int      NumEntries = IndexOffset[i+1]-Offset - j0;
-    int *    RowIndices = Indices+Offset;
-    double * RowValues  = values+Offset;
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      if(!UnitDiagonal)
-        Yp[k][i] = Yp[k][i]*diag;
-      double ytmp = Yp[k][i];
-      for(j = 0; j < NumEntries; j++)
-        Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
-    }
-  }
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
+        for(i = NumMyRows_ - 1; i >= 0; i--) {
+          int Offset = IndexOffset[i];
+          int      NumEntries = IndexOffset[i+1]-Offset - j0;
+          int *    RowIndices = Indices+Offset;
+          double * RowValues  = values+Offset;
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            if(!UnitDiagonal)
+              Yp[k][i] = Yp[k][i]*diag;
+            double ytmp = Yp[k][i];
+            for(j = 0; j < NumEntries; j++)
+              Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+          }
+        }
       }
     }
   }
-    // ========================================================
+  // ========================================================
   else { // !StorageOptimized()
     // ========================================================
 
     if(!Trans) {
       if(Upper) {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
-  for(i = NumMyRows_ - 1; i >= 0; i--) {
-    int     NumEntries = NumMyEntries(i);
-    int*    RowIndices = Graph().Indices(i);
-    double* RowValues  = Values(i);
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      double sum = 0.0;
-      for(j = j0; j < NumEntries; j++)
-        sum += RowValues[j] * Yp[k][RowIndices[j]];
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
+        for(i = NumMyRows_ - 1; i >= 0; i--) {
+          int     NumEntries = NumMyEntries(i);
+          int*    RowIndices = Graph().Indices(i);
+          double* RowValues  = Values(i);
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            double sum = 0.0;
+            for(j = j0; j < NumEntries; j++)
+              sum += RowValues[j] * Yp[k][RowIndices[j]];
 
-      if(UnitDiagonal)
-        Yp[k][i] = Xp[k][i] - sum;
-      else
-        Yp[k][i] = (Xp[k][i] - sum) * diag;
-    }
-  }
+            if(UnitDiagonal)
+              Yp[k][i] = Xp[k][i] - sum;
+            else
+              Yp[k][i] = (Xp[k][i] - sum) * diag;
+          }
+        }
       }
       else {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
-  for(i = 0; i < NumMyRows_; i++) {
-    int     NumEntries = NumMyEntries(i) - j0;
-    int*    RowIndices = Graph().Indices(i);
-    double* RowValues  = Values(i);
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      double sum = 0.0;
-      for(j = 0; j < NumEntries; j++)
-        sum += RowValues[j] * Yp[k][RowIndices[j]];
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
+        for(i = 0; i < NumMyRows_; i++) {
+          int     NumEntries = NumMyEntries(i) - j0;
+          int*    RowIndices = Graph().Indices(i);
+          double* RowValues  = Values(i);
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            double sum = 0.0;
+            for(j = 0; j < NumEntries; j++)
+              sum += RowValues[j] * Yp[k][RowIndices[j]];
 
-      if(UnitDiagonal)
-        Yp[k][i] = Xp[k][i] - sum;
-      else
-        Yp[k][i] = (Xp[k][i] - sum)*diag;
-    }
-  }
+            if(UnitDiagonal)
+              Yp[k][i] = Xp[k][i] - sum;
+            else
+              Yp[k][i] = (Xp[k][i] - sum)*diag;
+          }
+        }
       }
     }
     // ***********  Transpose case *******************************
 
     else {
       for(k = 0; k < NumVectors; k++)
-  if(Yp[k] != Xp[k])
-    for(i = 0; i < NumMyRows_; i++)
-      Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
+        if(Yp[k] != Xp[k])
+          for(i = 0; i < NumMyRows_; i++)
+            Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
 
       if(Upper) {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
 
-  for(i = 0; i < NumMyRows_; i++) {
-    int     NumEntries = NumMyEntries(i);
-    int*    RowIndices = Graph().Indices(i);
-    double* RowValues  = Values(i);
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      if(!UnitDiagonal)
-        Yp[k][i] = Yp[k][i]*diag;
-      double ytmp = Yp[k][i];
-      for(j = j0; j < NumEntries; j++)
-        Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
-    }
-  }
+        for(i = 0; i < NumMyRows_; i++) {
+          int     NumEntries = NumMyEntries(i);
+          int*    RowIndices = Graph().Indices(i);
+          double* RowValues  = Values(i);
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            if(!UnitDiagonal)
+              Yp[k][i] = Yp[k][i]*diag;
+            double ytmp = Yp[k][i];
+            for(j = j0; j < NumEntries; j++)
+              Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+          }
+        }
       }
       else {
-  j0 = 1;
-  if(NoDiagonal())
-    j0--; // Include first term if no diagonal
-  for(i = NumMyRows_ - 1; i >= 0; i--) {
-    int     NumEntries = NumMyEntries(i) - j0;
-    int*    RowIndices = Graph().Indices(i);
-    double* RowValues  = Values(i);
-    if(!UnitDiagonal)
-      diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
-    for(k = 0; k < NumVectors; k++) {
-      if(!UnitDiagonal)
-        Yp[k][i] = Yp[k][i]*diag;
-      double ytmp = Yp[k][i];
-      for(j = 0; j < NumEntries; j++)
-        Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
-    }
-  }
+        j0 = 1;
+        if(NoDiagonal())
+          j0--; // Include first term if no diagonal
+        for(i = NumMyRows_ - 1; i >= 0; i--) {
+          int     NumEntries = NumMyEntries(i) - j0;
+          int*    RowIndices = Graph().Indices(i);
+          double* RowValues  = Values(i);
+          if(!UnitDiagonal)
+            diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
+          for(k = 0; k < NumVectors; k++) {
+            if(!UnitDiagonal)
+              Yp[k][i] = Yp[k][i]*diag;
+            double ytmp = Yp[k][i];
+            for(j = 0; j < NumEntries; j++)
+              Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+          }
+        }
       }
     }
   }
@@ -4487,45 +4487,45 @@ int Epetra_CrsMatrix::Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Ep
     if(Upper) {
       j0 = 1;
       if(NoDiagonal())
-  j0--; // Include first term if no diagonal
+        j0--; // Include first term if no diagonal
       for(i = NumMyRows_ - 1; i >= 0; i--) {
-  int     NumEntries = *NumEntriesPerRow--;
-  int*    RowIndices = *Indices--;
-  double* RowValues  = *Vals--;
-  if(!UnitDiagonal)
-    diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
-  for(k = 0; k < NumVectors; k++) {
-    double sum = 0.0;
-    for(j = j0; j < NumEntries; j++)
-      sum += RowValues[j] * Yp[k][RowIndices[j]];
+        int     NumEntries = *NumEntriesPerRow--;
+        int*    RowIndices = *Indices--;
+        double* RowValues  = *Vals--;
+        if(!UnitDiagonal)
+          diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
+        for(k = 0; k < NumVectors; k++) {
+          double sum = 0.0;
+          for(j = j0; j < NumEntries; j++)
+            sum += RowValues[j] * Yp[k][RowIndices[j]];
 
-    if(UnitDiagonal)
-      Yp[k][i] = Xp[k][i] - sum;
-    else
-      Yp[k][i] = (Xp[k][i] - sum) * diag;
-  }
+          if(UnitDiagonal)
+            Yp[k][i] = Xp[k][i] - sum;
+          else
+            Yp[k][i] = (Xp[k][i] - sum) * diag;
+        }
       }
     }
     else {
       j0 = 1;
       if(NoDiagonal())
-  j0--; // Include first term if no diagonal
+        j0--; // Include first term if no diagonal
       for(i = 0; i < NumMyRows_; i++) {
-  int     NumEntries = *NumEntriesPerRow++ - j0;
-  int*    RowIndices = *Indices++;
-  double* RowValues  = *Vals++;
-  if(!UnitDiagonal)
-    diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
-  for(k = 0; k < NumVectors; k++) {
-    double sum = 0.0;
-    for(j = 0; j < NumEntries; j++)
-      sum += RowValues[j] * Yp[k][RowIndices[j]];
+        int     NumEntries = *NumEntriesPerRow++ - j0;
+        int*    RowIndices = *Indices++;
+        double* RowValues  = *Vals++;
+        if(!UnitDiagonal)
+          diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
+        for(k = 0; k < NumVectors; k++) {
+          double sum = 0.0;
+          for(j = 0; j < NumEntries; j++)
+            sum += RowValues[j] * Yp[k][RowIndices[j]];
 
-    if(UnitDiagonal)
-      Yp[k][i] = Xp[k][i] - sum;
-    else
-      Yp[k][i] = (Xp[k][i] - sum)*diag;
-  }
+          if(UnitDiagonal)
+            Yp[k][i] = Xp[k][i] - sum;
+          else
+            Yp[k][i] = (Xp[k][i] - sum)*diag;
+        }
       }
     }
   }
@@ -4534,45 +4534,45 @@ int Epetra_CrsMatrix::Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Ep
   else {
     for(k = 0; k < NumVectors; k++)
       if(Yp[k] != Xp[k])
-  for(i = 0; i < NumMyRows_; i++)
-    Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
+        for(i = 0; i < NumMyRows_; i++)
+          Yp[k][i] = Xp[k][i]; // Initialize y for transpose multiply
 
     if(Upper) {
       j0 = 1;
       if(NoDiagonal())
-  j0--; // Include first term if no diagonal
+        j0--; // Include first term if no diagonal
 
       for(i = 0; i < NumMyRows_; i++) {
-  int     NumEntries = *NumEntriesPerRow++;
-  int*    RowIndices = *Indices++;
-  double* RowValues  = *Vals++;
-  if(!UnitDiagonal)
-    diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
-  for(k = 0; k < NumVectors; k++) {
-    if(!UnitDiagonal)
-      Yp[k][i] = Yp[k][i]*diag;
-       double ytmp = Yp[k][i];
-    for(j = j0; j < NumEntries; j++)
-      Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
-  }
+        int     NumEntries = *NumEntriesPerRow++;
+        int*    RowIndices = *Indices++;
+        double* RowValues  = *Vals++;
+        if(!UnitDiagonal)
+          diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
+        for(k = 0; k < NumVectors; k++) {
+          if(!UnitDiagonal)
+            Yp[k][i] = Yp[k][i]*diag;
+          double ytmp = Yp[k][i];
+          for(j = j0; j < NumEntries; j++)
+            Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+        }
       }
     }
     else {
       j0 = 1;
       if(NoDiagonal())
-  j0--; // Include first term if no diagonal
+        j0--; // Include first term if no diagonal
       for(i = NumMyRows_ - 1; i >= 0; i--) {
-  int     NumEntries = *NumEntriesPerRow-- - j0;
-  int*    RowIndices = *Indices--;
-  double* RowValues  = *Vals--;
-     if (!UnitDiagonal)
-       diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
-  for(k = 0; k < NumVectors; k++) {
-    if(!UnitDiagonal)
-      Yp[k][i] = Yp[k][i]*diag;
-       double ytmp = Yp[k][i];
-    for(j = 0; j < NumEntries; j++)
-      Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
+        int     NumEntries = *NumEntriesPerRow-- - j0;
+        int*    RowIndices = *Indices--;
+        double* RowValues  = *Vals--;
+        if (!UnitDiagonal)
+          diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
+        for(k = 0; k < NumVectors; k++) {
+          if(!UnitDiagonal)
+            Yp[k][i] = Yp[k][i]*diag;
+          double ytmp = Yp[k][i];
+          for(j = 0; j < NumEntries; j++)
+            Yp[k][RowIndices[j]] -= RowValues[j] * ytmp;
         }
       }
     }
@@ -4634,6 +4634,11 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & theDomainMap,c
       delete theImporter;
       D.Importer_ = new Epetra_Import(D.ColMap_, D.DomainMap_);
     }
+  } else {
+    if (D.Importer_ != 0) {
+      delete D.Importer_;
+      D.Importer_ = 0;
+    }
   }
 
   // Create export, if needed
@@ -4648,6 +4653,11 @@ int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map & theDomainMap,c
     else {
       delete theExporter;
       D.Exporter_ = new Epetra_Export(D.RowMap_,D.RangeMap_);
+    }
+  } else {
+    if (D.Exporter_ != 0) {
+      delete D.Exporter_;
+      D.Exporter_ = 0;
     }
   }
 

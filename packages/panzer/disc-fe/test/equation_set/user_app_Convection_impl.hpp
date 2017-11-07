@@ -81,7 +81,7 @@ PHX_EVALUATOR_CTOR(Convection,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Convection,worksets,fm)
+PHX_POST_REGISTRATION_SETUP(Convection, /* worksets */, fm)
 {
   this->utils.setFieldData(conv,fm);
   this->utils.setFieldData(a,fm);

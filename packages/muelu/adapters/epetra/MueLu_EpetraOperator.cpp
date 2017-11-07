@@ -101,7 +101,7 @@ const Epetra_Comm& EpetraOperator::Comm() const {
     RCP<const Xpetra::CrsMatrixWrap<SC, LO, GO, NO> > blockCrsWrap = Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC, LO, GO, NO> >(blockMat);
     if (blockCrsWrap == Teuchos::null)
       throw Exceptions::BadCast("MueLu::EpetraOperator::Comm(): Cast from block (0,0) to CrsMatrixWrap failed. Could be a block matrix. TODO implement recursive support for block matrices.");
-    RCP<const Xpetra::EpetraCrsMatrix> tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix >(blockCrsWrap->getCrsMatrix());
+    RCP<const Xpetra::EpetraCrsMatrixT<GO,NO>> tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GO,NO> >(blockCrsWrap->getCrsMatrix());
     if (tmp_ECrsMtx == Teuchos::null)
       throw Exceptions::BadCast("MueLu::EpetraOperator::Comm(): Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
     RCP<Epetra_CrsMatrix> epA = tmp_ECrsMtx->getEpetra_CrsMatrixNonConst();
@@ -111,7 +111,7 @@ const Epetra_Comm& EpetraOperator::Comm() const {
   RCP<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(A);
   if (crsOp == Teuchos::null)
     throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-  const RCP<const Xpetra::EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(crsOp->getCrsMatrix());
+  const RCP<const Xpetra::EpetraCrsMatrixT<GO,NO>> &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GO,NO>>(crsOp->getCrsMatrix());
   if (tmp_ECrsMtx == Teuchos::null)
     throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
   return tmp_ECrsMtx->getEpetra_CrsMatrixNonConst()->Comm();
@@ -127,7 +127,7 @@ const Epetra_Map& EpetraOperator::OperatorDomainMap() const {
   RCP<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> > crsOp = rcp_dynamic_cast<const Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >(A);
   if (crsOp == Teuchos::null)
     throw Exceptions::BadCast("Cast from Xpetra::Matrix to Xpetra::CrsMatrixWrap failed");
-  const RCP<const Xpetra::EpetraCrsMatrix> &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrix>(crsOp->getCrsMatrix());
+  const RCP<const Xpetra::EpetraCrsMatrixT<GO,NO>> &tmp_ECrsMtx = rcp_dynamic_cast<const Xpetra::EpetraCrsMatrixT<GO,NO>>(crsOp->getCrsMatrix());
   if (tmp_ECrsMtx == Teuchos::null)
     throw Exceptions::BadCast("Cast from Xpetra::CrsMatrix to Xpetra::EpetraCrsMatrix failed");
   return tmp_ECrsMtx->getEpetra_CrsMatrixNonConst()->DomainMap();

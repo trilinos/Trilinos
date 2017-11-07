@@ -118,7 +118,7 @@ public:
    virtual void initializeData(); 
   
    //! For this class this method does nothing.
-   virtual void ghostToGlobal(int mem) {} 
+   virtual void ghostToGlobal(int /* mem */) {} 
 
    //! Nothing to do (its read only)
    virtual bool requiresDirichletAdjustment() const { return false; }

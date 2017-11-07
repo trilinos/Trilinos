@@ -71,7 +71,7 @@ FieldSpy<EvalT,Traits>::FieldSpy(const std::string & name,
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void FieldSpy<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+void FieldSpy<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData /* sd */,
                                                        PHX::FieldManager<Traits>& fm)
 {
 

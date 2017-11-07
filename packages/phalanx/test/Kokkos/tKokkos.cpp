@@ -52,6 +52,7 @@
 #include "Kokkos_View_Fad.hpp"
 #include "Kokkos_DynRankView.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
+#include "KokkosSparse_CrsMatrix.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
 #include "Kokkos_TaskScheduler.hpp"
@@ -717,4 +718,115 @@ namespace phalanx_test {
     TEST_EQUALITY(a.extent(5),1);
   }
 
+  class FillJacobian {
+    KokkosSparse::CrsMatrix<double,int,PHX::Device> Jacobian;
+    
+  public:
+    typedef PHX::Device execution_space;
+    FillJacobian(KokkosSparse::CrsMatrix<double,int,PHX::Device> inJ)
+      : Jacobian(inJ)
+    {}
+    KOKKOS_INLINE_FUNCTION
+    void operator () (const int i) const
+    {
+      auto row = Jacobian.row(i);
+      auto length = row.length;
+      int indices[3];
+      double values[3];
+      // Fill the cols in reverse order to see if the sumInto puts
+      // thingsinto the right place
+      for (int j=length-1; j > -1; --j) {
+        indices[j] = row.colidx(j);
+        values[j] = (double) indices[j];
+      }
+      Jacobian.sumIntoValues(i,indices,length,values,false,true);
+    }
+  };
+
+  // Test CrsMatrix used in example
+  TEUCHOS_UNIT_TEST(kokkos, CrsMatrix)
+  {
+    std::string name = "CrsMatrix";
+    const int num_rows = 10;
+    const size_t nnz = 21;
+
+    using Kokkos::View;
+    View<size_t*,PHX::Device> row_offsets("row_offsets",num_rows+1);
+
+    auto host_row_offsets = Kokkos::create_mirror_view(row_offsets);
+    host_row_offsets(0) = 0;
+    host_row_offsets(1) = 3;
+    host_row_offsets(2) = 5;
+    host_row_offsets(3) = 7;
+    host_row_offsets(4) = 9;
+    host_row_offsets(5) = 11;
+    host_row_offsets(6) = 13;
+    host_row_offsets(7) = 15;
+    host_row_offsets(8) = 17;
+    host_row_offsets(9) = 19;
+    host_row_offsets(10) = 21;
+
+    Kokkos::deep_copy(row_offsets,host_row_offsets);
+
+    View<int*> col_ids("col_ids",nnz);
+    auto host_col_ids = Kokkos::create_mirror_view(col_ids);
+
+    host_col_ids(0) = 0;  host_col_ids(1) = 1; host_col_ids(2) = 9; // row 0
+    host_col_ids(3) = 1;  host_col_ids(4) = 2; // row 1
+    host_col_ids(5) = 2;  host_col_ids(6) = 3; // row 2
+    host_col_ids(7) = 3;  host_col_ids(8) = 4; // row 3
+    host_col_ids(9) = 4;  host_col_ids(10) = 5; // row 4
+    host_col_ids(11) = 5; host_col_ids(12) = 6; // row 5
+    host_col_ids(13) = 6; host_col_ids(14) = 7; // row 6
+    host_col_ids(15) = 7; host_col_ids(16) = 8; // row 7
+    host_col_ids(17) = 8; host_col_ids(18) = 9; // row 8
+    host_col_ids(19) = 1; host_col_ids(20) = 9; // row 9
+
+    Kokkos::deep_copy(col_ids, host_col_ids);
+
+    // CrsMatrix requires LayoutLeft!
+    Kokkos::StaticCrsGraph<int,Kokkos::LayoutLeft,PHX::Device> g(col_ids,row_offsets);
+    KokkosSparse::CrsMatrix<double,int,PHX::Device> J("Jacobian",g);
+
+    TEST_EQUALITY(J.numRows(),10);
+    TEST_EQUALITY(J.numCols(),10);
+    TEST_EQUALITY(J.nnz(),21);
+
+    Kokkos::deep_copy(J.values,0.0);
+    Kokkos::parallel_for(J.numRows(),FillJacobian(J));
+    auto host_J_values = Kokkos::create_mirror_view(J.values);
+    Kokkos::deep_copy(host_J_values,J.values);
+    Kokkos::fence();
+
+    TEST_EQUALITY(J.rowConst(0).length,3);
+    TEST_EQUALITY(J.rowConst(0).colidx(2),9);
+    
+    // Values should be equal to the column index
+    double tol = Teuchos::ScalarTraits<double>::eps()*100.0;
+    TEST_EQUALITY(J.rowConst(0).length,3);
+    TEST_EQUALITY(J.rowConst(0).colidx(0),0);
+    TEST_EQUALITY(J.rowConst(0).colidx(1),1);
+    TEST_EQUALITY(J.rowConst(0).colidx(2),9);
+    TEST_FLOATING_EQUALITY(J.rowConst(0).value(0),0.0,tol);
+    TEST_FLOATING_EQUALITY(J.rowConst(0).value(1),1.0,tol);
+    TEST_FLOATING_EQUALITY(J.rowConst(0).value(2),9.0,tol);
+
+    TEST_EQUALITY(J.rowConst(5).length,2);
+    TEST_EQUALITY(J.rowConst(5).colidx(0),5);
+    TEST_EQUALITY(J.rowConst(5).colidx(1),6);
+    TEST_FLOATING_EQUALITY(J.rowConst(5).value(0),5.0,tol);
+    TEST_FLOATING_EQUALITY(J.rowConst(5).value(1),6.0,tol);
+
+    TEST_EQUALITY(J.rowConst(8).length,2);
+    TEST_EQUALITY(J.rowConst(8).colidx(0),8);
+    TEST_EQUALITY(J.rowConst(8).colidx(1),9);
+    TEST_FLOATING_EQUALITY(J.rowConst(8).value(0),8.0,tol);
+    TEST_FLOATING_EQUALITY(J.rowConst(8).value(1),9.0,tol);
+
+    TEST_EQUALITY(J.rowConst(9).length,2);
+    TEST_EQUALITY(J.rowConst(9).colidx(0),1);
+    TEST_EQUALITY(J.rowConst(9).colidx(1),9);
+    TEST_FLOATING_EQUALITY(J.rowConst(9).value(0),1.0,tol);
+    TEST_FLOATING_EQUALITY(J.rowConst(9).value(1),9.0,tol);
+  }
 }

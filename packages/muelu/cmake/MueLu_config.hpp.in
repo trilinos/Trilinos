@@ -47,8 +47,6 @@
 
 #cmakedefine HAVE_MUELU_INTREPID2
 
-#cmakedefine HAVE_MUELU_INTREPID2_REFACTOR
-
 #cmakedefine HAVE_MUELU_ISORROPIA
 
 #cmakedefine HAVE_MUELU_KOKKOSCLASSIC
@@ -77,8 +75,6 @@
 /* Optional TPL */
 
 #cmakedefine HAVE_MUELU_BOOST
-
-#cmakedefine HAVE_MUELU_TIMER_SYNCHRONIZATION
 
 #cmakedefine HAVE_MUELU_MATLAB
 

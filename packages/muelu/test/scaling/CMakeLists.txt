@@ -32,7 +32,7 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml scaling-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml rap.xml smoother.xml
+    SOURCE_FILES scaling.xml scaling-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml sa_with_ilu.xml rap.xml smoother.xml tripleMatrixProduct.xml
    )
 
  TRIBITS_ADD_EXECUTABLE(
@@ -46,40 +46,34 @@ IF ((${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACK
    SOURCES TAFCPerformance
    COMM mpi
    )
- 
 
-  IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
+TRIBITS_ADD_EXECUTABLE(
+  ReadMatrix
+  SOURCES ReadMatrix.cpp
+  COMM serial mpi
+  )
 
-    TRIBITS_ADD_EXECUTABLE(
-      ReadMatrix
-      SOURCES ReadMatrix.cpp
-      COMM serial mpi
-      )
+TRIBITS_ADD_EXECUTABLE(
+  MatrixMatrixMultiply
+  SOURCES MatrixMatrixMultiply.cpp
+  COMM mpi
+  )
 
-    TRIBITS_ADD_EXECUTABLE(
-      MatrixMatrixMultiply
-      SOURCES MatrixMatrixMultiply.cpp
-      COMM mpi
-      )
+# not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
+  TRIBITS_ADD_EXECUTABLE(
+    Reuse
+    SOURCES Reuse.cpp
+    COMM serial mpi
+  )
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Reuse_cp
+    SOURCE_FILES reuse_emin_emin.xml reuse_sa_RP.xml
+  )
+ENDIF()
 
-    # not very elegant. The best would probably to make Reuse.cpp work for both Epetra and Tpetra
-    IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-      TRIBITS_ADD_EXECUTABLE(
-        Reuse
-        SOURCES Reuse.cpp
-        COMM serial mpi
-      )
-      TRIBITS_COPY_FILES_TO_BINARY_DIR(Reuse_cp
-        SOURCE_FILES reuse_emin_emin.xml reuse_sa_RP.xml
-      )
-    ENDIF()
-
-    TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
-      SOURCE_FILES A.mm simple.xml
-    )
-
-  ENDIF() # ENABLE_BROKEN_TESTS
-
+TRIBITS_COPY_FILES_TO_BINARY_DIR(ReadMatrix_cp
+  SOURCE_FILES A.mm simple.xml
+)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ImportPerformance_cp
     SOURCE_FILES import.xml
@@ -168,15 +162,13 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PAC
     COMM serial mpi
     )
 
-  IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
-    TRIBITS_ADD_TEST(
-      ReadMatrix
-      NAME "ReadMatrixEpetra"
-      ARGS "--linAlgebra=Epetra --xml=simple.xml"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      )
-  ENDIF()
+  TRIBITS_ADD_TEST(
+    ReadMatrix
+    NAME "ReadMatrixEpetra"
+    ARGS "--linAlgebra=Epetra --xml=simple.xml"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
 
 ENDIF()
 
@@ -187,6 +179,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
       Driver
       NAME "DriverTpetra"
       ARGS "--linAlgebra=Tpetra"
+      NUM_MPI_PROCS 4
+      COMM mpi # HAVE_MPI required
+      )
+
+    TRIBITS_ADD_TEST(
+      Driver
+      NAME "DriverTpetraTripleMatrixProduct"
+      ARGS "--linAlgebra=Tpetra --xml=tripleMatrixProduct.xml"
       NUM_MPI_PROCS 4
       COMM mpi # HAVE_MPI required
       )
@@ -234,15 +234,13 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKA
     COMM serial mpi
     )
 
-  IF(${PACKAGE_NAME}_ENABLE_BROKEN_TESTS)
-    TRIBITS_ADD_TEST(
-      ReadMatrix
-      NAME "ReadMatrixTpetra"
-      ARGS "--linAlgebra=Tpetra --xml=simple.xml"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      )
-  ENDIF()
+  TRIBITS_ADD_TEST(
+    ReadMatrix
+    NAME "ReadMatrixTpetra"
+    ARGS "--linAlgebra=Tpetra --xml=simple.xml"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
 
 ENDIF()
 

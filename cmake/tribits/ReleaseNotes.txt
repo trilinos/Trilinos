@@ -1,6 +1,33 @@
 ----------------------------------------
 Release Notes for TriBITS
 ----------------------------------------
+2017/09/25:
+
+(*) MINOR: Added cache and enve vars CTEST_SUBMIT_RETRY_COUNT and
+    CTEST_SUBMIT_RETRY_DELAY to allow the number of ctest_submit() submit
+    attemtps to retry and how how log to pause between retries.  Before, these
+    were hard-coded to 25 and 120 respectively, which means that something
+    like a MySQL insertion error could consume as much as 50 minutes befor
+    moving on!  The new defalts are set at 5 retries with a 3 sec delay (which
+    appear to be the CTest defaults).
+
+2017/09/30:
+
+(*) MINOR: Added TEST_<IDX> COPY_FILES_TO_TEST_DIR block for
+    TRIBITS_ADD_ADVANCED_TEST().  This was added in such a way so to avoid
+    clashing with existing usages of the script (since the new arguments
+    SOURCE_DIR and DEST_DIR are only parsed if COPY_FILES_TO_TEST_DIR is
+    listed in the TEST_<IDX> block.
+
+2017/09/05:
+
+(*) MINOR: Unparsed and otherwise ignored arguments are now flagged (see
+    developers guide documentation for
+    ${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS).  The default value is
+    'WARNING' which results in simply printing a warning but allow configure
+    to complete.  This allows one to see the warnings but for the project to
+    continue to work as before.  But this can be changed to 'SEND_ERROR' or
+    'FATAL_ERROR' that will fail the configure.
 
 2017/06/24:
 

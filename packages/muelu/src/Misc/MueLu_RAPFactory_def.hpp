@@ -52,6 +52,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 #include <Xpetra_MatrixMatrix.hpp>
+#include <Xpetra_TripleMatrixMultiply.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -75,6 +76,7 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("transpose: use implicit");
+    SET_VALID_ENTRY("rap: triple product");
     SET_VALID_ENTRY("rap: fix zero diagonals");
 #undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",                   null, "Generating factory of the matrix A used during the prolongator smoothing process");
@@ -125,89 +127,138 @@ namespace MueLu {
       RCP<Matrix> A = Get< RCP<Matrix> >(fineLevel,   "A");
       RCP<Matrix> P = Get< RCP<Matrix> >(coarseLevel, "P"), AP, Ac;
 
-      // Reuse pattern if available (multiple solve)
-      RCP<ParameterList> APparams;
-      if(pL.isSublist("matrixmatrix: kernel params"))
-        APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-      else
-        APparams= rcp(new ParameterList);
 
-      // By default, we don't need global constants for A*P
-      APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
-      APparams->set("compute global constants",APparams->get("compute global constants",false));
+      if (pL.get<bool>("rap: triple product") == false) {
+        // Reuse pattern if available (multiple solve)
+        RCP<ParameterList> APparams;
+        if(pL.isSublist("matrixmatrix: kernel params"))
+          APparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+        else
+          APparams= rcp(new ParameterList);
 
-      if (coarseLevel.IsAvailable("AP reuse data", this)) {
-        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
+        // By default, we don't need global constants for A*P
+        APparams->set("compute global constants: temporaries",APparams->get("compute global constants: temporaries",false));
+        APparams->set("compute global constants",APparams->get("compute global constants",false));
 
-        APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);
+        if (coarseLevel.IsAvailable("AP reuse data", this)) {
+          GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous AP data" << std::endl;
 
-        if (APparams->isParameter("graph"))
-          AP = APparams->get< RCP<Matrix> >("graph");
-      }
+          APparams = coarseLevel.Get< RCP<ParameterList> >("AP reuse data", this);
 
-      {
-        SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
+          if (APparams->isParameter("graph"))
+            AP = APparams->get< RCP<Matrix> >("graph");
+        }
 
-        AP = MatrixMatrix::Multiply(*A, !doTranspose, *P, !doTranspose, AP, GetOStream(Statistics2),
-                doFillComplete, doOptimizeStorage, std::string("MueLu::A*P-")+levelstr.str(), APparams);
-      }
+        {
+          SubFactoryMonitor subM(*this, "MxM: A x P", coarseLevel);
 
-      // Reuse coarse matrix memory if available (multiple solve)
-      RCP<ParameterList> RAPparams;
-      if(pL.isSublist("matrixmatrix: kernel params")) RAPparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
-      else RAPparams= rcp(new ParameterList);
+          AP = MatrixMatrix::Multiply(*A, !doTranspose, *P, !doTranspose, AP, GetOStream(Statistics2),
+                                      doFillComplete, doOptimizeStorage, std::string("MueLu::A*P-")+levelstr.str(), APparams);
+        }
 
-      if (coarseLevel.IsAvailable("RAP reuse data", this)) {
-        GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
+        // Reuse coarse matrix memory if available (multiple solve)
+        RCP<ParameterList> RAPparams;
+        if(pL.isSublist("matrixmatrix: kernel params")) RAPparams=rcp(new ParameterList(pL.sublist("matrixmatrix: kernel params")));
+        else RAPparams= rcp(new ParameterList);
 
-        RAPparams = coarseLevel.Get< RCP<ParameterList> >("RAP reuse data", this);
 
-        if (RAPparams->isParameter("graph"))
-          Ac = RAPparams->get< RCP<Matrix> >("graph");
 
-        // Some eigenvalue may have been cached with the matrix in the previous run.
-        // As the matrix values will be updated, we need to reset the eigenvalue.
-        Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
-      }
+        if (coarseLevel.IsAvailable("RAP reuse data", this)) {
+          GetOStream(static_cast<MsgType>(Runtime0 | Test)) << "Reusing previous RAP data" << std::endl;
 
-      // We *always* need global constants for the RAP, but not for the temps
-      RAPparams->set("compute global constants: temporaries",RAPparams->get("compute global constants: temporaries",false));
-      RAPparams->set("compute global constants",true);
+          RAPparams = coarseLevel.Get< RCP<ParameterList> >("RAP reuse data", this);
 
-      // Allow optimization of storage.
-      // This is necessary for new faster Epetra MM kernels.
-      // Seems to work with matrix modifications to repair diagonal entries.
+          if (RAPparams->isParameter("graph"))
+            Ac = RAPparams->get< RCP<Matrix> >("graph");
 
-      if (pL.get<bool>("transpose: use implicit") == true) {
-        SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
+          // Some eigenvalue may have been cached with the matrix in the previous run.
+          // As the matrix values will be updated, we need to reset the eigenvalue.
+          Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
+        }
 
-        Ac = MatrixMatrix::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
-               doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-implicit-")+levelstr.str(), RAPparams);
+        // We *always* need global constants for the RAP, but not for the temps
+        RAPparams->set("compute global constants: temporaries",RAPparams->get("compute global constants: temporaries",false));
+        RAPparams->set("compute global constants",true);
 
+        // Allow optimization of storage.
+        // This is necessary for new faster Epetra MM kernels.
+        // Seems to work with matrix modifications to repair diagonal entries.
+
+        if (pL.get<bool>("transpose: use implicit") == true) {
+          SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
+
+          Ac = MatrixMatrix::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
+                                      doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-implicit-")+levelstr.str(), RAPparams);
+
+        } else {
+          RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
+
+          SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
+
+          Ac = MatrixMatrix::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
+                                      doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-explicit-")+levelstr.str(), RAPparams);
+        }
+        CheckRepairMainDiagonal(Ac);
+
+        if (IsPrint(Statistics1)) {
+          RCP<ParameterList> params = rcp(new ParameterList());;
+          params->set("printLoadBalancingInfo", true);
+          params->set("printCommInfo",          true);
+          GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
+        }
+
+        Set(coarseLevel, "A",         Ac);
+
+        APparams->set("graph", AP);
+        Set(coarseLevel, "AP reuse data",  APparams);
+        RAPparams->set("graph", Ac);
+        Set(coarseLevel, "RAP reuse data", RAPparams);
       } else {
-        RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
+        RCP<ParameterList> RAPparams;
+        RAPparams= rcp(new ParameterList);
 
-        SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
+        // We *always* need global constants for the RAP, but not for the temps
+        RAPparams->set("compute global constants: temporaries",RAPparams->get("compute global constants: temporaries",false));
+        RAPparams->set("compute global constants",true);
 
-        Ac = MatrixMatrix::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2),
-                doFillComplete, doOptimizeStorage, std::string("MueLu::R*(AP)-explicit-")+levelstr.str(), RAPparams);
+        if (pL.get<bool>("transpose: use implicit") == true) {
+
+          Ac = MatrixFactory::Build(P->getDomainMap(), Teuchos::as<LO>(0));
+
+          SubFactoryMonitor m2(*this, "MxMxM: R x A x P (implicit)", coarseLevel);
+
+          Xpetra::TripleMatrixMultiply<SC,LO,GO,NO>::
+            MultiplyRAP(*P, doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
+                        doOptimizeStorage, std::string("MueLu::R*A*P-implicit-")+levelstr.str(),
+                        RAPparams);
+
+        } else {
+          RCP<Matrix> R = Get< RCP<Matrix> >(coarseLevel, "R");
+          Ac = MatrixFactory::Build(R->getRowMap(), Teuchos::as<LO>(0));
+
+          SubFactoryMonitor m2(*this, "MxMxM: R x A x P (explicit)", coarseLevel);
+
+          Xpetra::TripleMatrixMultiply<SC,LO,GO,NO>::
+            MultiplyRAP(*R, !doTranspose, *A, !doTranspose, *P, !doTranspose, *Ac, doFillComplete,
+                        doOptimizeStorage, std::string("MueLu::R*A*P-explicit-")+levelstr.str(),
+                        RAPparams);
+        }
+        CheckRepairMainDiagonal(Ac);
+
+        if (IsPrint(Statistics1)) {
+          RCP<ParameterList> params = rcp(new ParameterList());;
+          params->set("printLoadBalancingInfo", true);
+          params->set("printCommInfo",          true);
+          GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
+        }
+
+        Set(coarseLevel, "A",         Ac);
+
+        // RAPparams->set("graph", Ac);
+        // Set(coarseLevel, "RAP reuse data", RAPparams);
       }
 
-      CheckRepairMainDiagonal(Ac);
 
-      if (IsPrint(Statistics1)) {
-        RCP<ParameterList> params = rcp(new ParameterList());;
-        params->set("printLoadBalancingInfo", true);
-        params->set("printCommInfo",          true);
-        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
-      }
-
-      Set(coarseLevel, "A",         Ac);
-
-      APparams->set("graph", AP);
-      Set(coarseLevel, "AP reuse data",  APparams);
-      RAPparams->set("graph", Ac);
-      Set(coarseLevel, "RAP reuse data", RAPparams);
     }
 
     if (transferFacts_.begin() != transferFacts_.end()) {

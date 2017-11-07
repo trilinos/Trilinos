@@ -1,8 +1,8 @@
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   chebyshev: degree = 2
   chebyshev: ratio eigenvalue = 20
@@ -73,6 +73,7 @@ Level 1
    write end = -1   [default]
    
    transpose: use implicit = 0   [default]
+   rap: triple product = 0   [default]
    rap: fix zero diagonals = 0   [default]
    CheckMainDiagonal = 0   [default]
    RepairMainDiagonal = 0   [default]
@@ -82,10 +83,11 @@ Level 1
    Build (MueLu::RepartitionHeuristicFactory)
    repartition: start level = 1
    repartition: min rows per proc = 2000
+   repartition: target rows per proc = 0   [default]
    repartition: max imbalance = 1.327
    
    Build (MueLu::Zoltan2Interface)
-   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{ptr=0xaed358,node=0xaaf840,strong_count=2,weak_count=0}   [unused]
+   ParameterList = Teuchos::RCP<Teuchos::ParameterList const>{<ignored>}   [unused]
    
   repartition: print partition distribution = 0   [default]
   repartition: remap parts = 1
@@ -130,6 +132,6 @@ Smoother (level 1) both : MueLu::IfpackSmoother{type = Chebyshev}
 
 Smoother (level 2) both : MueLu::IfpackSmoother{type = Chebyshev}
 
-Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Klu}
+Smoother (level 3) pre  : MueLu::AmesosSmoother{type = <ignored>}
 Smoother (level 3) post : no smoother
 

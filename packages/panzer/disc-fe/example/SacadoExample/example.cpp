@@ -76,7 +76,7 @@ inline SecondFadType seed_second_deriv(int num_vars,int index,double xi,double v
   return x;
 }
 
-int main(int argc,char * argv[])
+int main(int /* argc */, char*[] /* argv[] */)
 {
   std::cout << "Outputting" << std::endl;
 

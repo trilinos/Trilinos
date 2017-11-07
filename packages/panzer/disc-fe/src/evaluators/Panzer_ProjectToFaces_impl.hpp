@@ -49,6 +49,10 @@
 #include "Intrepid2_Cubature.hpp"
 #include "Intrepid2_DefaultCubatureFactory.hpp"
 #include "Intrepid2_FunctionSpaceTools.hpp"
+#include "Intrepid2_Kernels.hpp"
+#include "Intrepid2_CellTools.hpp"
+#include "Intrepid2_OrientationTools.hpp"
+
 #include "Panzer_Workset_Utilities.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_CommonArrayFactories.hpp"
@@ -98,11 +102,6 @@ ProjectToFaces(
       this->addDependentField(vector_values[qp]);
     }
 
-    // setup the orientation field
-    std::string orientationFieldName = basis->name() + " Orientation";
-    dof_orientation = PHX::MDField<const ScalarT,Cell,NODE>(orientationFieldName,basis_layout);
-    this->addDependentField(dof_orientation);
-
     gatherFieldNormals = PHX::MDField<ScalarT,Cell,NODE,Dim>(dof_name+"_Normals",basis->functional_grad);
     this->addEvaluatedField(gatherFieldNormals);
 
@@ -121,6 +120,8 @@ void panzer::ProjectToFaces<EvalT, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
+  orientations = d.orientations_;
+
   // setup the field data object
   this->utils.setFieldData(result,fm);
   for(unsigned qp = 0; qp < vector_values.size(); ++qp)
@@ -128,7 +129,6 @@ postRegistrationSetup(typename Traits::SetupData d,
   this->utils.setFieldData(normals,fm);
 
   if(quad_degree > 0){
-    this->utils.setFieldData(dof_orientation,fm);
     this->utils.setFieldData(gatherFieldNormals,fm);
   }
 
@@ -186,19 +186,14 @@ evaluateFields(typename Traits::EvalData workset)
     PHX::MDField<double,Cell,panzer::NODE,Dim> vertex_coords = workset.cell_vertex_coordinates;
     int subcell_dim = 2;
 
-    // to compute normals at qps (copied from GatherNormals)
-    int numFaces = gatherFieldNormals.dimension(1);
-    Kokkos::DynRankView<ScalarT,PHX::Device> refFaceTanU = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"refFaceTanU",numFaces,num_dim);
-    Kokkos::DynRankView<ScalarT,PHX::Device> refFaceTanV = Kokkos::createDynRankView(gatherFieldNormals.get_static_view(),"refFaceTanV",numFaces,num_dim);
-    for(int i=0;i<numFaces;i++) {
-      Kokkos::DynRankView<double,PHX::Device> refTanU = Kokkos::DynRankView<double,PHX::Device>("refTanU",num_dim);
-      Kokkos::DynRankView<double,PHX::Device> refTanV = Kokkos::DynRankView<double,PHX::Device>("refTanV",num_dim);
-      Intrepid2::CellTools<PHX::exec_space>::getReferenceFaceTangents(refTanU, refTanV, i, parentCell);
-      for(int d=0;d<num_dim;d++) {
-        refFaceTanU(i,d) = refTanU(d);
-        refFaceTanV(i,d) = refTanV(d);
-      }
-    }
+    int cellDim = parentCell.getDimension();
+    int numFaces = Teuchos::as<int>(parentCell.getFaceCount());
+
+    // allocate space that is sized correctly for AD
+    auto refEdges = Kokkos::createDynRankView(result.get_static_view(),"ref_edges", 2, cellDim);
+    auto phyEdges = Kokkos::createDynRankView(result.get_static_view(),"phy_edges", 2, cellDim);
+
+    const WorksetDetails & details = workset;
 
     // Loop over the faces of the workset cells
     for (index_t cell = 0; cell < workset.num_cells; ++cell) {
@@ -211,9 +206,22 @@ evaluateFields(typename Traits::EvalData workset)
            physicalNodes(0,point,ict) = vertex_coords(cell,point,ict);
       }
 
+      int faceOrts[6] = {};
+      orientations->at(details.cell_local_ids[cell]).getFaceOrientation(faceOrts, numFaces);
+
       // loop over faces
       for (int p = 0; p < num_pts; ++p){
         result(cell,p) = ScalarT(0.0);
+
+        auto ortEdgeTan_U = Kokkos::subview(refEdges, 0, Kokkos::ALL());
+        auto ortEdgeTan_V = Kokkos::subview(refEdges, 1, Kokkos::ALL());
+
+        // Apply parent cell Jacobian to ref. edge tangent
+        Intrepid2::Orientation::getReferenceFaceTangents(ortEdgeTan_U,
+                                                         ortEdgeTan_V,
+                                                         p,
+                                                         parentCell,
+                                                         faceOrts[p]);
 
         // get quad weights/pts on reference 2d cell
         const shards::CellTopology & subcell = parentCell.getCellTopologyData(subcell_dim,p);     
@@ -228,7 +236,6 @@ evaluateFields(typename Traits::EvalData workset)
         Kokkos::DynRankView<double,PHX::Device> refQuadPts("refQuadPts",faceQuad->getNumPoints(),num_dim);
         Intrepid2::CellTools<PHX::exec_space>::mapToReferenceSubcell(refQuadPts, quadPts, subcell_dim, p, parentCell);
 
-
         // Calculate side jacobian
         Kokkos::DynRankView<double,PHX::Device> jacobianSide("jacobianSide", 1, faceQuad->getNumPoints(), num_dim, num_dim);
         Intrepid2::CellTools<PHX::exec_space>::setJacobian(jacobianSide, refQuadPts, physicalNodes, parentCell);
@@ -241,23 +248,18 @@ evaluateFields(typename Traits::EvalData workset)
         // loop over quadrature points
         for (int qp = 0; qp < faceQuad->getNumPoints(); ++qp) {
 
-          // get normal vector at quad points
-          std::vector<double> faceTanU(3);
-          std::vector<double> faceTanV(3);
-          for(int i = 0; i < 3; i++) {
-            faceTanU[i] = Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,0)*refFaceTanU(p,0))
-                        + Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,1)*refFaceTanU(p,1))
-                        + Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,2)*refFaceTanU(p,2));
-            faceTanV[i] = Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,0)*refFaceTanV(p,0))
-                        + Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,1)*refFaceTanV(p,1))
-                        + Sacado::ScalarValue<ScalarT>::eval(jacobianSide(0,qp,i,2)*refFaceTanV(p,2));
-          }
+          auto phyEdgeTan_U = Kokkos::subview(phyEdges, 0, Kokkos::ALL());
+          auto phyEdgeTan_V = Kokkos::subview(phyEdges, 1, Kokkos::ALL());
+          auto J = Kokkos::subview(jacobianSide, 0, qp, Kokkos::ALL(), Kokkos::ALL());
+  
+          Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_U, J, ortEdgeTan_U);            
+          Intrepid2::Kernels::Serial::matvec_product(phyEdgeTan_V, J, ortEdgeTan_V);            
 
           // normal = TanU x TanV
           std::vector<ScalarT> normal(3,0.0);
-          normal[0] = (faceTanU[1]*faceTanV[2] - faceTanU[2]*faceTanV[1])*dof_orientation(cell,p);
-          normal[1] = (faceTanU[2]*faceTanV[0] - faceTanU[0]*faceTanV[2])*dof_orientation(cell,p);
-          normal[2] = (faceTanU[0]*faceTanV[1] - faceTanU[1]*faceTanV[0])*dof_orientation(cell,p);
+          normal[0] = (phyEdgeTan_U(1)*phyEdgeTan_V(2) - phyEdgeTan_U(2)*phyEdgeTan_V(1));
+          normal[1] = (phyEdgeTan_U(2)*phyEdgeTan_V(0) - phyEdgeTan_U(0)*phyEdgeTan_V(2));
+          normal[2] = (phyEdgeTan_U(0)*phyEdgeTan_V(1) - phyEdgeTan_U(1)*phyEdgeTan_V(0));
 
           // compute the magnitude of the normal vector
           ScalarT nnorm(0.0);
@@ -270,13 +272,12 @@ evaluateFields(typename Traits::EvalData workset)
           // normalize n since jacobian information is factored into both weighted measure and normal
           for (int dim = 0; dim < num_dim; ++dim)
             result(cell,p) += weighted_measure(0,qp) * vector_values[qp](cell,p,dim) * normal[dim] / nnorm;
-
         }
       }
 
     }
 
-  }
+  } // end else (high order quad)
 
 }
 

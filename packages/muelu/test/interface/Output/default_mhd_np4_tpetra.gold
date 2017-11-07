@@ -1,8 +1,8 @@
 Level 0
  Setup Smoother (MueLu::Ifpack2Smoother{type = SCHWARZ})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   schwarz: overlap level = 1   [unused]
   schwarz: combine mode = Zero   [unused]
@@ -54,6 +54,7 @@ Level 1
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
+ rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
@@ -62,8 +63,8 @@ Level 1
  
  Setup Smoother (MueLu::Ifpack2Smoother{type = SCHWARZ})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  smoother -> 
   schwarz: overlap level = 1   [unused]
   schwarz: combine mode = Zero   [unused]
@@ -115,16 +116,17 @@ Level 2
  
  Computing Ac (MueLu::RAPFactory)
  transpose: use implicit = 1
+ rap: triple product = 0   [default]
  rap: fix zero diagonals = 0   [default]
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
  matrixmatrix: kernel params -> 
   [empty list]
  
- Setup Smoother (MueLu::Amesos2Smoother{type = Klu})
+ Setup Smoother (MueLu::Amesos2Smoother{type = <ignored>})
  keep smoother data = 0   [default]
- PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
- PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<double, int, int, Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> > >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PreSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
+ PostSmoother data = Teuchos::RCP<MueLu::SmootherPrototype<ignored> >{ptr=0,node=0,strong_count=0,weak_count=0}   [default]
  presmoother -> 
   [empty list]
  
@@ -146,6 +148,6 @@ Smoother (level 0) both : "Ifpack2::AdditiveSchwarz": {Initialized: true, Comput
 
 Smoother (level 1) both : "Ifpack2::AdditiveSchwarz": {Initialized: true, Computed: true, Iterations: 1, Overlap level: 1, Subdomain reordering: "none", Combine mode: "ZERO", Global matrix dimensions: [3335, 3335], Inner solver: {"Ifpack2::RILUK": {Initialized: true, Computed: true, Level-of-fill: 0, Global matrix dimensions: [834, 834], Global nnz: 2500, "Ifpack2::LocalSparseTriangularSolver": {Initialized: true, Computed: true, Matrix: not null, Global matrix dimensions: [834, 834]}, "Ifpack2::LocalSparseTriangularSolver": {Initialized: true, Computed: true, Matrix: not null, Global matrix dimensions: [834, 834]}}}}
 
-Smoother (level 2) pre  : KLU2 solver interface
+Smoother (level 2) pre  : <Direct> solver interface
 Smoother (level 2) post : no smoother
 

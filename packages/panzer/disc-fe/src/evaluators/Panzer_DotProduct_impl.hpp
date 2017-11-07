@@ -110,7 +110,7 @@ PHX_EVALUATOR_CTOR(DotProduct,p)
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(DotProduct,sd,fm)
+PHX_POST_REGISTRATION_SETUP(DotProduct, /* sd */, fm)
 {
   this->utils.setFieldData(vec_a_dot_vec_b,fm);
   this->utils.setFieldData(vec_a,fm);

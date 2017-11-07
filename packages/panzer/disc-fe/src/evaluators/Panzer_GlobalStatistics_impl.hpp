@@ -155,7 +155,7 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
 }
 
 //**********************************************************************
-PHX_PRE_EVALUATE_FIELDS(GlobalStatistics,data)
+PHX_PRE_EVALUATE_FIELDS(GlobalStatistics, /* data */)
 {
   total_volume = Teuchos::ScalarTraits<ScalarT>::zero();
 
@@ -170,14 +170,14 @@ PHX_PRE_EVALUATE_FIELDS(GlobalStatistics,data)
 }
 
 //**********************************************************************
-PHX_POST_EVALUATE_FIELDS(GlobalStatistics,data)
+PHX_POST_EVALUATE_FIELDS(GlobalStatistics, /* data */)
 {
   this->postprocess(*(global_data->os));
 }
 
 //**********************************************************************
 template<typename EvalT, typename TRAITS>
-void GlobalStatistics<EvalT, TRAITS>::postprocess(std::ostream& os)
+void GlobalStatistics<EvalT, TRAITS>::postprocess(std::ostream& /* os */)
 {
   // throw unless specialized for residual evaluations
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"SHOULD NEVER BE CALLED!");

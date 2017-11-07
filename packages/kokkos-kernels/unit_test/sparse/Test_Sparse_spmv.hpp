@@ -38,6 +38,7 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 
   typename size_type_view_t::HostMirror h_rowmap = Kokkos::create_mirror_view(input_mat.graph.row_map);
   Kokkos::deep_copy(h_rowmap,input_mat.graph.row_map);
+  Kokkos::fence();
 
 
 
@@ -46,10 +47,10 @@ void sequential_spmv(crsMat_t input_mat, x_vector_type x, y_vector_type y,
 
   KokkosKernels::Impl::safe_device_to_host_deep_copy (x.dimension_0(), x, h_x);
   KokkosKernels::Impl::safe_device_to_host_deep_copy (y.dimension_0(), y, h_y);
+  Kokkos::fence();
 
 
   lno_t nr = input_mat.numRows();
-  lno_t nc = input_mat.numCols();
 
   for (lno_t i = 0; i < nr; ++i){
     scalar_t result = 0;
@@ -105,6 +106,8 @@ void check_spmv_mv(crsMat_t input_mat, x_vector_type x, y_vector_type y, y_vecto
     auto x_i = Kokkos::subview (x, Kokkos::ALL (), i);
 
     auto y_i = Kokkos::subview (expected_y, Kokkos::ALL (), i);
+    Kokkos::fence();
+
     sequential_spmv(input_mat, x_i, y_i, alpha, beta);
 
     auto y_spmv = Kokkos::subview (y, Kokkos::ALL (), i);

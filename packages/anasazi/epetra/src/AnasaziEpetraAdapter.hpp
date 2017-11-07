@@ -51,14 +51,18 @@
 #include "AnasaziTypes.hpp"
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziOperator.hpp"
+#include "AnasaziOutputStreamTraits.hpp"
 
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_FancyOStream.hpp"
+
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
+#include "Epetra_Comm.h"
 
 #if defined(HAVE_ANASAZI_TPETRA) && defined(HAVE_ANASAZI_TSQR)
 #  include <Tpetra_ConfigDefs.hpp> // HAVE_TPETRA_EPETRA 
@@ -1416,6 +1420,32 @@ namespace Anasazi {
     
   };
 
+  template<>
+  struct OutputStreamTraits<Epetra_Operator> 
+  {
+    static Teuchos::RCP<Teuchos::FancyOStream>
+    getOutputStream (const Epetra_Operator& op, int rootRank = 0)
+    {
+      Teuchos::RCP<Teuchos::FancyOStream> fos = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+      const Epetra_Comm & comm = op.Comm();
+
+      // Select minimum MPI rank as the root rank for printing if provided rank is less than 0.
+      int myRank = comm.MyPID();
+      int numProcs = comm.NumProc();
+      if (rootRank < 0)
+      {
+        comm.MinAll( &myRank, &rootRank, 1 );
+      }
+
+      // This is irreversible, but that's only a problem if the input std::ostream
+      // is actually a Teuchos::FancyOStream on which this method has been
+      // called before, with a different root rank.
+      fos->setProcRankAndSize (myRank, numProcs);
+      fos->setOutputToRootOnly (rootRank);
+      return fos;
+    }
+  };
+    
 } // end of Anasazi namespace 
 
 #endif 

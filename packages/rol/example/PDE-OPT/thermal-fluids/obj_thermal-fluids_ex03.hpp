@@ -208,7 +208,7 @@ public:
         Intrepid::FunctionSpaceTools::integrate<Real>(*G[i],
                                                       *curlU_vec[i2],
                                                       *(feVel_->DNDdetJ(i1)),
-                                                      Intrepid::COMP_CPP, false);
+                                                      Intrepid::COMP_CPP, true);
       }
     }
     fieldHelper_->combineFieldCoeff(grad, G);
@@ -296,7 +296,7 @@ public:
         Intrepid::FunctionSpaceTools::integrate<Real>(*H[i],
                                                       *curlV_vec[i2],
                                                       *(feVel_->DNDdetJ(i1)),
-                                                      Intrepid::COMP_CPP, false);
+                                                      Intrepid::COMP_CPP, true);
       }
     }
 

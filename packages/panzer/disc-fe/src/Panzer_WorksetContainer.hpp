@@ -53,10 +53,6 @@
 #include "Panzer_WorksetDescriptor.hpp" // what the workset is defined over
 #include "Panzer_WorksetNeeds.hpp"      // whats in a workset basis/integration rules
 
-#ifndef __KK__
-#define __KK__
-#endif
-
 namespace panzer {
 
 // forward declaration
@@ -147,60 +143,10 @@ public:
      */
    void addBasis(const std::string & type,int order,const std::string & rep_field);
 
-   ////////////////////////////////////////////////////////////////////////////////////////////////
-
-#if 1
-   /** Instantiate a workset object with a specified factory and input physics block
-     * map.
-     *
-     * \param[in] factory Factory to be used for constructing worksets
-     * \param[in] physicsBlocks Vector of physics blocks
-     * \param[in] wkstSz Number of elements in a workset built by this container
-     */ 
-   PANZER_DEPRECATED
-   WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
-                    const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks,
-                    std::size_t wkstSz);
-
-   //! Access, and construction of side worksets
-   PANZER_DEPRECATED
-   Teuchos::RCP<std::map<unsigned,Workset> > getSideWorksets(const BC & bc);
-
-   //! The physics block vector
-   PANZER_DEPRECATED
-   void setPhysicsBlockVector(const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks);
-
-   //! Access to volume worksets
-   PANZER_DEPRECATED
-   Teuchos::RCP<std::vector<Workset> > getVolumeWorksets(const std::string & eBlock);
-
-   //! Iterator access to volume worksets
-   PANZER_DEPRECATED
-   inline std::vector<Workset>::iterator begin(const std::string & eBlock)
-   { 
-     WorksetDescriptor wd = blockDescriptor(eBlock); 
-     return getWorksets(wd)->begin(); }
-
-   //! Iterator access to volume worksets
-   PANZER_DEPRECATED
-   inline std::vector<Workset>::iterator end(const std::string & eBlock)
-   { WorksetDescriptor wd = blockDescriptor(eBlock); 
-     return getWorksets(wd)->end(); }
-
-   //! Iterator access to side worksets
-   PANZER_DEPRECATED
-   inline std::map<unsigned,Workset>::iterator begin(const BC & bc)
-   { WorksetDescriptor desc = bcDescriptor(bc);
-     return getSideWorksets(desc)->begin(); }
-
-   //! Iterator access to side worksets
-   PANZER_DEPRECATED
-   inline std::map<unsigned,Workset>::iterator end(const BC & bc)
-   { WorksetDescriptor desc = bcDescriptor(bc);
-     return getSideWorksets(desc)->end(); }
-#endif
-
-   ////////////////////////////////////////////////////////////////////////////////////////////////
+   /** Get the cell orientations used to build the basis values objects.
+     */
+   Teuchos::RCP<const std::vector<Intrepid2::Orientation> >  getOrientations() const
+   { return orientations_; }
 
 private:
    /** Set the orientations. Can only be called once, this also sets the internally stored
@@ -209,7 +155,6 @@ private:
      */
    void applyOrientations(const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & ugi);
 
-#if defined(__KK__)
    /** Using the stored global indexer, set the orientations for a volume workset on a
      * specified element block.
      */
@@ -222,7 +167,6 @@ private:
    void applyOrientations(const std::vector<Intrepid2::Orientation> & orientations, 
                           const WorksetDescriptor & desc,
                           std::map<unsigned,Workset> & worksets) const;
-#endif
 
    typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::vector<Workset> > > WorksetMap;
    typedef std::unordered_map<WorksetDescriptor,Teuchos::RCP<std::map<unsigned,Workset> > > SideMap;
@@ -259,6 +203,8 @@ private:
    std::size_t worksetSize_;
 
    Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> globalIndexer_;
+
+   Teuchos::RCP<std::vector<Intrepid2::Orientation> >  orientations_;
 };
 
 /** Build a map of volume worksets from a list of element blocks. Note that this

@@ -81,7 +81,7 @@ Basker<Matrix,Vector>::Basker(
   // TODO: use data_ here to init
    
   
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
 #ifdef KOKKOS_HAVE_OPENMP
   /*
@@ -118,13 +118,19 @@ Basker<Matrix,Vector>::Basker(
 template <class Matrix, class Vector>
 Basker<Matrix,Vector>::~Basker( )
 {  
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
 #ifdef HAVE_AMESOS2_KOKKOS
   delete basker;
 #endif
 #endif
  
   /* Basker will cleanup its own internal memory*/
+}
+
+template <class Matrix, class Vector>
+bool
+Basker<Matrix,Vector>::single_proc_optimization() const {
+  return (this->root_ && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_);
 }
 
 template<class Matrix, class Vector>
@@ -145,7 +151,7 @@ template <class Matrix, class Vector>
 int
 Basker<Matrix,Vector>::symbolicFactorization_impl()
 {
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
 
   if(this->root_)
     {     
@@ -168,9 +174,7 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
       //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
 
-#ifndef HAVE_TEUCHOS_COMPLEX
-      bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
-      if ( case_check ) {
+      if ( single_proc_optimization() ) {
 
         // this needs to be checked during loadA_impl...
         auto sp_rowptr = this->matrixA_->returnRowPtr();
@@ -179,8 +183,16 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
         auto sp_colind = this->matrixA_->returnColInd();
           TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
+#ifndef HAVE_TEUCHOS_COMPLEX
         auto sp_values = this->matrixA_->returnValues();
-          TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
+#else
+    // NDE: 09/25/2017
+    // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
+        using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
+        complex_type * sp_values = nullptr;
+        sp_values = reinterpret_cast< complex_type * > ( this->matrixA_->returnValues() );
+#endif
+        TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
         // In this case, colptr_, rowind_, nzvals_ are invalid
@@ -193,7 +205,6 @@ Basker<Matrix,Vector>::symbolicFactorization_impl()
                                 true);
       }
       else 
-#endif
       {   //follow original code path if conditions not met
         // In this case, loadA_impl updates colptr_, rowind_, nzvals_
         info = basker->Symbolic(this->globalNumRows_,
@@ -235,15 +246,13 @@ Basker<Matrix,Vector>::numericFactorization_impl()
   #endif
 
      
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
       // NDE: Special case 
       // Rather than going through the Amesos2 machinery to convert the matrixA_ CRS pointer data to CCS and store in Teuchos::Arrays,
       // in this special case we pass the CRS raw pointers directly to ShyLUBasker which copies+transposes+sorts the data for CCS format
       //   loadA_impl is essentially an empty function in this case, as the raw pointers are handled here and similarly in Symbolic
 
-#ifndef HAVE_TEUCHOS_COMPLEX
-      bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
-      if ( case_check ) {
+      if ( single_proc_optimization() ) {
 
         auto sp_rowptr = this->matrixA_->returnRowPtr();
           TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
@@ -251,8 +260,16 @@ Basker<Matrix,Vector>::numericFactorization_impl()
         auto sp_colind = this->matrixA_->returnColInd();
           TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
+#ifndef HAVE_TEUCHOS_COMPLEX
         auto sp_values = this->matrixA_->returnValues();
-          TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
+#else
+    // NDE: 09/25/2017
+    // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
+        using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
+        complex_type * sp_values = nullptr;
+        sp_values = reinterpret_cast< complex_type * > ( this->matrixA_->returnValues() );
+#endif
+        TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
             std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
 
         // In this case, colptr_, rowind_, nzvals_ are invalid
@@ -264,7 +281,6 @@ Basker<Matrix,Vector>::numericFactorization_impl()
             sp_values);
       }
       else 
-#endif
       {
       // In this case, loadA_impl updates colptr_, rowind_, nzvals_
         info = basker->Factor(this->globalNumRows_,
@@ -337,28 +353,25 @@ Basker<Matrix,Vector>::solve_impl(
   const global_size_type ld_rhs = this->root_ ? X->getGlobalLength() : 0;
   const size_t nrhs = X->getGlobalNumVectors();
 
-#ifndef HAVE_TEUCHOS_COMPLEX
-  bool case_check = ( (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && (nrhs == 1 ) && is_contiguous_ ) ;
-  if ( case_check ) {
+  if ( single_proc_optimization() && nrhs == 1 ) {
 
 #ifdef HAVE_AMESOS2_TIMERS
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-    auto sp_rowptr = this->matrixA_->returnRowPtr();
-    TEUCHOS_TEST_FOR_EXCEPTION(sp_rowptr == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_rowptr returned null ");
-    auto sp_colind = this->matrixA_->returnColInd();
-    TEUCHOS_TEST_FOR_EXCEPTION(sp_colind == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_colind returned null ");
-    auto sp_values = this->matrixA_->returnValues();
-    TEUCHOS_TEST_FOR_EXCEPTION(sp_values == nullptr,
-        std::runtime_error, "Amesos2 Runtime Error: sp_values returned null ");
-
+#ifndef HAVE_TEUCHOS_COMPLEX
     auto b_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B );
+    auto x_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X );
+#else
+    // NDE: 09/25/2017
+    // Cannot convert Kokkos::complex<T>* to std::complex<T>*; in this case, use reinterpret_cast
+    using complex_type = typename Util::getStdCplxType< magnitude_type, typename matrix_adapter_type::spmtx_vals_t >::type;
+    complex_type * b_vector = reinterpret_cast< complex_type * >( Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( B ) );
+    complex_type * x_vector = reinterpret_cast< complex_type * >( Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X ) );
+#endif
     TEUCHOS_TEST_FOR_EXCEPTION(b_vector == nullptr,
         std::runtime_error, "Amesos2 Runtime Error: b_vector returned null ");
-    auto x_vector = Util::vector_pointer_helper< MultiVecAdapter<Vector>, Vector >::get_pointer_to_vector( X );
+
     TEUCHOS_TEST_FOR_EXCEPTION(x_vector  == nullptr,
         std::runtime_error, "Amesos2 Runtime Error: x_vector returned null ");
 
@@ -368,7 +381,7 @@ Basker<Matrix,Vector>::solve_impl(
         Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
         ierr = basker->Solve(nrhs, b_vector, x_vector);
 #else
         ierr = basker.solveMultiple(nrhs, b_vector, x_vector);
@@ -387,7 +400,6 @@ Basker<Matrix,Vector>::solve_impl(
     }
   }
   else 
-#endif
   {
     const size_t val_store_size = as<size_t>(ld_rhs * nrhs);
 
@@ -416,7 +428,7 @@ Basker<Matrix,Vector>::solve_impl(
         Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
 #endif
 
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
         ierr = basker->Solve(nrhs, bvals_.getRawPtr(), 
             xvals_.getRawPtr());
 #else
@@ -484,7 +496,7 @@ Basker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterL
       is_contiguous_ = parameterList->get<bool>("IsContiguous");
     }
 
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
   if(parameterList->isParameter("num_threads"))
     {
       num_threads = parameterList->get<int>("num_threads");
@@ -551,7 +563,7 @@ Basker<Matrix,Vector>::getValidParameters_impl() const
   static Teuchos::RCP<const Teuchos::ParameterList> valid_params;
 
 
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
   if( is_null(valid_params) )
     {
       Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
@@ -612,18 +624,13 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
   #endif
 
 
-#ifdef SHYLUBASKER
+#ifdef SHYLU_NODEBASKER
   // NDE: Can clean up duplicated code with the #ifdef guards
-
-#ifndef HAVE_TEUCHOS_COMPLEX
-  bool case_check = ( (this->root_) && (this->matrixA_->getComm()->getRank() == 0) && (this->matrixA_->getComm()->getSize() == 1) && is_contiguous_ ) ;
-
-  if ( case_check ) {
+  if ( single_proc_optimization() ) {
   // NDE: Nothing is done in this special case - CRS raw pointers are passed to SHYLUBASKER and transpose of copies handled there
   // In this case, colptr_, rowind_, nzvals_ are invalid
   }
   else 
-#endif
   {
 
     // Only the root image needs storage allocated
@@ -694,7 +701,7 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
                         std::runtime_error,
                         "Amesos2_Basker loadA_impl: Did not get the expected number of non-zero vals");
   }
-#endif //SHYLUBASKER
+#endif //SHYLU_NODEBASKER
   return true;
 }
 

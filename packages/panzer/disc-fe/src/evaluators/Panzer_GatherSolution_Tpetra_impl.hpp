@@ -52,6 +52,7 @@
 #include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 #include "Panzer_TpetraVector_ReadOnly_GlobalEvaluationData.hpp"
 #include "Panzer_GatherSolution_Input.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -119,7 +120,7 @@ GatherSolution_Tpetra(
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
@@ -151,11 +152,11 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
 
    if(tpetraContainer_==Teuchos::null) {
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
       tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
    }
 }
@@ -166,8 +167,6 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Residual, TRAITS,LO,GO,NodeT>
 evaluateFields(typename TRAITS::EvalData workset)
 {
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
-
-   std::vector<LO> LIDs;
 
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
@@ -190,7 +189,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
       // loop over the fields to be gathered
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
@@ -268,7 +267,7 @@ GatherSolution_Tpetra(
 // **********************************************************************
 template<typename TRAITS,typename LO,typename GO,typename NodeT>
 void panzer::GatherSolution_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>::
-postRegistrationSetup(typename TRAITS::SetupData d,
+postRegistrationSetup(typename TRAITS::SetupData /* d */,
                       PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_.size());
@@ -300,11 +299,11 @@ preEvaluate(typename TRAITS::PreEvalData d)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // extract linear object container
-   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc.getDataObject(globalDataKey_));
+   tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(d.gedc->getDataObject(globalDataKey_));
 
    if(tpetraContainer_==Teuchos::null) {
       // extract linear object container
-      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.gedc->getDataObject(globalDataKey_),true)->getGhostedLOC();
       tpetraContainer_ = Teuchos::rcp_dynamic_cast<LOC>(loc);
    }
 }
@@ -315,8 +314,6 @@ void panzer::GatherSolution_Tpetra<panzer::Traits::Tangent, TRAITS,LO,GO,NodeT>:
 evaluateFields(typename TRAITS::EvalData workset)
 {
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
-
-   std::vector<LO> LIDs;
 
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
@@ -342,7 +339,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
        std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-       LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+       auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
        // loop over the fields to be gathered
        for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
@@ -370,7 +367,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
        std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-       LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+       auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
        // loop over the fields to be gathered
        for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
@@ -504,8 +501,8 @@ preEvaluate(typename TRAITS::PreEvalData d)
 
   // first try refactored ReadOnly container
   std::string post = useTimeDerivativeSolutionVector_ ? " - Xdot" : " - X";
-  if(d.gedc.containsDataObject(globalDataKey_+post)) {
-    ged = d.gedc.getDataObject(globalDataKey_+post);
+  if(d.gedc->containsDataObject(globalDataKey_+post)) {
+    ged = d.gedc->getDataObject(globalDataKey_+post);
 
     RCP<RO_GED> ro_ged = rcp_dynamic_cast<RO_GED>(ged,true);
 
@@ -516,7 +513,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
     return;
   }
 
-  ged = d.gedc.getDataObject(globalDataKey_);
+  ged = d.gedc->getDataObject(globalDataKey_);
 
   // try to extract linear object container
   {

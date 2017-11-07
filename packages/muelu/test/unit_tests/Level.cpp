@@ -245,9 +245,6 @@ namespace MueLuTests {
 
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(144);
     l.Set("A", A);
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-    l.SetComm(TestHelpers::Parameters::getDefaultComm());
-#endif
 
     RCP<CoalesceDropFactory>  graphFact = rcp(new CoalesceDropFactory());
     RCP<CoupledAggregationFactory> aggFact   = rcp(new CoupledAggregationFactory());
@@ -313,9 +310,6 @@ namespace MueLuTests {
 
     RCP<FactoryManager> facManager = rcp(new FactoryManager());
     l.SetFactoryManager(facManager);
-#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-    l.SetComm(TestHelpers::Parameters::getDefaultComm());
-#endif
 
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(144);
     l.Set("A", A);

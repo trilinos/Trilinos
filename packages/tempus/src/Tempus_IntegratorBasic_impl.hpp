@@ -121,16 +121,23 @@ setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
     typedef Thyra::ModelEvaluatorBase MEB;
     Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgsIC =
       stepper_->getModel()->getNominalValues();
-    RCP<Thyra::VectorBase<Scalar> > x = inArgsIC.get_x()->clone_v();
+
+    using Teuchos::rcp_const_cast;
+    //RCP<Thyra::VectorBase<Scalar> > x = inArgsIC.get_x()->clone_v();
+    RCP<Thyra::VectorBase<Scalar> > x =
+      rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x());
     RCP<Thyra::VectorBase<Scalar> > xdot;
     if (inArgsIC.supports(MEB::IN_ARG_x_dot)) {
-      xdot = inArgsIC.get_x_dot()->clone_v();
+      //xdot = inArgsIC.get_x_dot()->clone_v();
+      xdot = rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x_dot());
     } else {
       xdot = x->clone_v();
     }
     RCP<Thyra::VectorBase<Scalar> > xdotdot;
     if (inArgsIC.supports(MEB::IN_ARG_x_dot_dot)) {
-      xdotdot = inArgsIC.get_x_dot_dot()->clone_v();
+      //xdotdot = inArgsIC.get_x_dot_dot()->clone_v();
+      xdotdot =
+        rcp_const_cast<Thyra::VectorBase<Scalar> > (inArgsIC.get_x_dot_dot());
     }
     else {
       xdotdot = x->clone_v();
@@ -261,14 +268,11 @@ void IntegratorBasic<Scalar>::setObserver(
     // Create default IntegratorObserverBasic, otherwise keep current observer.
     if (integratorObserver_ == Teuchos::null) {
       integratorObserver_ =
-        Teuchos::rcp(new IntegratorObserverBasic<Scalar>(solutionHistory_,
-                                                         timeStepControl_));
+        Teuchos::rcp(new IntegratorObserverBasic<Scalar>);
     }
   } else {
     integratorObserver_ = obs;
   }
-  integratorObserver_->setSolutionHistory(solutionHistory_);
-  integratorObserver_->setTimeStepControl(timeStepControl_);
 }
 
 
@@ -369,7 +373,7 @@ bool IntegratorBasic<Scalar>::advanceTime()
   TEMPUS_FUNC_TIME_MONITOR("Tempus::IntegratorBasic::advanceTime()");
   {
     startIntegrator();
-    integratorObserver_->observeStartIntegrator();
+    integratorObserver_->observeStartIntegrator(*this);
 
     while (integratorStatus_ == WORKING and
         timeStepControl_->timeInRange (solutionHistory_->getCurrentTime()) and
@@ -380,28 +384,28 @@ bool IntegratorBasic<Scalar>::advanceTime()
       solutionHistory_->initWorkingState();
 
       startTimeStep();
-      integratorObserver_->observeStartTimeStep();
+      integratorObserver_->observeStartTimeStep(*this);
 
       timeStepControl_->getNextTimeStep(solutionHistory_, integratorStatus_);
-      integratorObserver_->observeNextTimeStep(integratorStatus_);
+      integratorObserver_->observeNextTimeStep(*this);
 
       if (integratorStatus_ == FAILED) break;
       solutionHistory_->getWorkingState()->getMetaData()->
         setSolutionStatus(WORKING);
 
-      integratorObserver_->observeBeforeTakeStep();
+      integratorObserver_->observeBeforeTakeStep(*this);
 
       stepper_->takeStep(solutionHistory_);
 
-      integratorObserver_->observeAfterTakeStep();
+      integratorObserver_->observeAfterTakeStep(*this);
 
       stepperTimer_->stop();
       acceptTimeStep();
-      integratorObserver_->observeAcceptedTimeStep(integratorStatus_);
+      integratorObserver_->observeAcceptedTimeStep(*this);
     }
 
     endIntegrator();
-    integratorObserver_->observeEndIntegrator(integratorStatus_);
+    integratorObserver_->observeEndIntegrator(*this);
   }
 
   return (integratorStatus_ == Status::PASSED);

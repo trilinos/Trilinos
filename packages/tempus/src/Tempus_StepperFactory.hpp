@@ -19,6 +19,8 @@
 #include "Tempus_StepperExplicitRK.hpp"
 #include "Tempus_StepperDIRK.hpp"
 #include "Tempus_StepperIMEX_RK.hpp"
+#include "Tempus_StepperIMEX_RK_Partition.hpp"
+#include "Tempus_StepperLeapfrog.hpp"
 
 
 namespace Tempus {
@@ -135,6 +137,15 @@ private:
       stepperType == "IMEX RK ARS 233"   ||
       stepperType == "General IMEX RK" )
       return rcp(new StepperIMEX_RK<Scalar>(model, stepperType, stepperPL));
+    else if (
+      stepperType == "Partitioned IMEX RK 1st order" ||
+      stepperType == "Partitioned IMEX RK SSP2"      ||
+      stepperType == "Partitioned IMEX RK ARS 233"   ||
+      stepperType == "General Partitioned IMEX RK" )
+      return rcp(new StepperIMEX_RK_Partition<Scalar>(
+                        model, stepperType, stepperPL));
+    else if (stepperType == "Leapfrog")
+      return rcp(new StepperLeapfrog<Scalar>(model, stepperPL));
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Unknown 'Stepper Type' = " << stepperType);

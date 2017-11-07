@@ -88,6 +88,9 @@
 /* Defined if you want to enable amesos2-umfpack */
 #cmakedefine HAVE_AMESOS2_UMFPACK
 
+/* Defined if you want to enable amesos2-tacho */
+#cmakedefine HAVE_AMESOS2_TACHO
+
 /* Define if you want to build amesos2-superlu */
 #cmakedefine HAVE_AMESOS2_SUPERLU
 

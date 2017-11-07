@@ -55,6 +55,7 @@
 #include "Panzer_ResponseBase.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_Workset_Utilities.hpp"
+#include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 namespace panzer {
 
@@ -87,14 +88,14 @@ preEvaluate(typename Traits::PreEvalData d)
 {
   // extract response object
   responseObj_ = Teuchos::rcp_dynamic_cast<Response_IPCoordinates<EvalT> >(
-                                   d.gedc.getDataObject(ResponseBase::buildLookupName(responseName_)),true);
+                                   d.gedc->getDataObject(ResponseBase::buildLookupName(responseName_)),true);
 }
 
 
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
 postRegistrationSetup(typename Traits::SetupData sd,
-                      PHX::FieldManager<Traits>& fm)
+                      PHX::FieldManager<Traits>& /* fm */)
 {
   ir_index_ = panzer::getIntegrationRuleIndex(ir_order_,(*sd.worksets_)[0], this->wda);
 }
@@ -124,7 +125,7 @@ evaluateFields(typename Traits::EvalData workset)
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
-postEvaluate(typename Traits::PostEvalData data)
+postEvaluate(typename Traits::PostEvalData /* data */)
 {
   std::vector<panzer::Traits::Residual::ScalarT> & coords = *responseObj_->getNonconstCoords();
   coords.clear();

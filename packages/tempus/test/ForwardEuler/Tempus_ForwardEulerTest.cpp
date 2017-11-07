@@ -136,13 +136,13 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
     // Plot sample solution and exact solution
     if (n == 0) {
       std::ofstream ftmp("Tempus_ForwardEuler_SinCos.dat");
-      RCP<SolutionHistory<double> > solutionHistory =
+      RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
-        RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
-        RCP<Thyra::VectorBase<double> > x_plot = solutionState->getX();
+        RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
         x_exact_plot = model->getExactSolution(time).get_x();
         ftmp << time << "   "
              << Thyra::get_ele(*(x_plot), 0) << "   "
@@ -189,7 +189,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
   std::vector<RCP<Thyra::VectorBase<double>>> solutions;
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
-  const int nTimeStepSizes = 7;
+  const int nTimeStepSizes = 7;  // 8 for Error plot
   double dt = 0.2;
   double order = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {
@@ -238,12 +238,12 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
       std::string fname = "Tempus_ForwardEuler_VanDerPol-Ref.dat";
       if (n == 0) fname = "Tempus_ForwardEuler_VanDerPol.dat";
       std::ofstream ftmp(fname);
-      RCP<SolutionHistory<double> > solutionHistory =
+      RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       int nStates = solutionHistory->getNumStates();
       for (int i=0; i<nStates; i++) {
-        RCP<SolutionState<double> > solutionState = (*solutionHistory)[i];
-        RCP<Thyra::VectorBase<double> > x = solutionState->getX();
+        RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
+        RCP<const Thyra::VectorBase<double> > x = solutionState->getX();
         double ttime = solutionState->getTime();
         ftmp << ttime << "   " << get_ele(*x, 0) << "   " << get_ele(*x, 1)
              << std::endl;
@@ -290,5 +290,44 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
   Teuchos::TimeMonitor::summarize();
 }
 
+// ************************************************************
+// ************************************************************
+TEUCHOS_UNIT_TEST(ForwardEuler, NumberTimeSteps)
+{
+
+  std::vector<double> StepSize;
+  std::vector<double> ErrorNorm;
+  //const int nTimeStepSizes = 7;
+  double dt = 0.2;
+  //double order = 0.0;
+
+    // Read params from .xml file
+    RCP<ParameterList> pList =
+      getParametersFromXmlFile("Tempus_ForwardEuler_NumberOfTimeSteps.xml");
+
+    // Setup the VanDerPolModel
+    RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
+    RCP<VanDerPolModel<double> > model =
+      Teuchos::rcp(new VanDerPolModel<double>(vdpm_pl));
+
+    // Setup the Integrator and reset initial time step
+    RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+
+    dt = pl->sublist("Demo Integrator").sublist("Time Step Control").get<double>("Initial Time Step");
+    const int numTimeSteps = pl->sublist("Demo Integrator").sublist("Time Step Control").get<int>("Number of Time Steps");
+    const std::string integratorStepperType = pl->sublist("Demo Integrator").sublist("Time Step Control").get<std::string>("Integrator Step Type");
+    std::cout << dt << std::endl;
+
+    RCP<Tempus::IntegratorBasic<double> > integrator =
+      Tempus::integratorBasic<double>(pl, model);
+
+    // Integrate to timeMax
+    bool integratorStatus = integrator->advanceTime();
+    TEST_ASSERT(integratorStatus)
+
+        //check that the number of time steps taken is whats is set in the parameter list
+        std::cout << "SIDAFA: index = " << integrator->getIndex() << std::endl;
+    TEST_EQUALITY(numTimeSteps, integrator->getIndex());
+}
 
 } // namespace Tempus_Test

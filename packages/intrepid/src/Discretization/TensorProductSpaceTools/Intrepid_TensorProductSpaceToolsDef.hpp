@@ -1391,7 +1391,6 @@ namespace Intrepid {
   {
     const int numBfx = basisVals[0]->dimension(0);
     const int numBfy = basisVals[1]->dimension(0);
-    const int numPtsx = basisVals[0]->dimension(1);
     const int numPtsy = basisVals[1]->dimension(1);
     const int numCells = vals.dimension(0);
     const int numFields = vals.dimension(1);
@@ -1521,10 +1520,6 @@ namespace Intrepid {
     const int numBfx = basisVals[0]->dimension(0);
     const int numBfy = basisVals[1]->dimension(0);
     const int numBfz = basisVals[2]->dimension(0);
-
-    const int numPtsx = basisVals[0]->dimension(1);
-    const int numPtsy = basisVals[1]->dimension(1);
-    const int numPtsz = basisVals[2]->dimension(1);
 
     const int numCells = vals.dimension(0);
     const int numFields = vals.dimension(1);
@@ -1668,7 +1663,6 @@ namespace Intrepid {
 	      {
 		for (int i=0;i<numBfx;i++)
 		  {
-		    const int I=j*numBfx+i;
 		    for (int m=0;m<numPtsx;m++)
 		      {
 			const int Itmp = j * numBfy + m;
@@ -1687,7 +1681,6 @@ namespace Intrepid {
 	      {
 		for (int i=0;i<numBfx;i++)
 		  {
-		    const int I=j*numBfx+i;
 		    for (int n=0;n<numPtsy;n++)
 		      {
 			const int Itmp = n * numBfy + i;
@@ -1837,10 +1830,7 @@ namespace Intrepid {
 		      {
 			const int I = numBfy * numBfx * k + numBfy * j + i;
 			for (int ell=0;ell<numPtsx;ell++)
-			  {
-			    const int Itmp = numBfy * numBfx * k + numBfy * j + ell;
-			    vals(cell,field,I) += wtsx(ell) * wtsy(j) * wtsz(k) * DPhix( i , ell );
-			  }
+		          vals(cell,field,I) += wtsx(ell) * wtsy(j) * wtsz(k) * DPhix( i , ell );
 		      }
 		  }
 	      }
@@ -1853,10 +1843,7 @@ namespace Intrepid {
 		      {
 			const int I = numBfy * numBfx * k + numBfy * j + i;
 			for (int m=0;m<numPtsy;m++)
-			  {
-			    const int Itmp = numBfy * numBfx * k + numBfy * m + i;
-			    vals(cell,field,I) += wtsx(i) * wtsy(m) * wtsz(k) * DPhiy( j , m );
-			  }
+		          vals(cell,field,I) += wtsx(i) * wtsy(m) * wtsz(k) * DPhiy( j , m );
 		      }
 		  }
 	      }
@@ -1869,10 +1856,7 @@ namespace Intrepid {
 		      {
 			const int I = numBfy * numBfx * k + numBfy * j + i;
 			for (int n=0;n<numPtsz;n++)
-			  {
-			    const int Itmp = numBfy * numBfx * n + numBfy * j + i;
-			    vals(cell,field,I) += wtsx(i) * wtsy(j) * wtsz(n) * DPhiz( k , n );
-			  }
+		          vals(cell,field,I) += wtsx(i) * wtsy(j) * wtsz(n) * DPhiz( k , n );
 		      }
 		  }
 	      }

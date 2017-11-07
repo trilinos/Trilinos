@@ -464,13 +464,12 @@ namespace MueLu {
 
        Used for coordinate vectors.
     */
-    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType Distance2(const Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& v, LocalOrdinal i0, LocalOrdinal i1) {
-      size_t numVectors = v.getNumVectors();
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType Distance2(const Teuchos::Array<Teuchos::ArrayRCP<const Scalar>> &v, LocalOrdinal i0, LocalOrdinal i1) {
+      const size_t numVectors = v.size();
 
       Scalar d = Teuchos::ScalarTraits<Scalar>::zero();
       for (size_t j = 0; j < numVectors; j++) {
-        Teuchos::ArrayRCP<const Scalar> vv = v.getData(j);
-        d += (vv[i0] - vv[i1])*(vv[i0] - vv[i1]);
+        d += (v[j][i0] - v[j][i1])*(v[j][i0] - v[j][i1]);
       }
       return Teuchos::ScalarTraits<Scalar>::magnitude(d);
     }

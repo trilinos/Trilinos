@@ -88,10 +88,6 @@ private:
 
   GatherTangents();
 
-  PHX::MDField<const ScalarT,Cell,NODE> dof_orientation; // will scale residual
-                                                         // by orientation to ensure
-                                                         // parallel consistency
-
   Teuchos::RCP<const PureBasis> basis;
   Teuchos::RCP<const PointRule> pointRule;
   Kokkos::DynRankView<ScalarT,PHX::Device> edgeTan; // edge tangents
@@ -100,6 +96,8 @@ private:
   PointValues2<ScalarT> pointValues;
   PHX::MDField<const ScalarT, Cell, IP, Dim, Dim, void, void, void, void>
     constJac_;
+
+  Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
 
 };
 

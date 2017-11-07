@@ -112,7 +112,7 @@ namespace MueLu {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>      node_type;
     typedef DeviceType                                               device_type;
 
-    typedef Kokkos::View<LocalOrdinal*, DeviceType>             aggregates_sizes_type;
+    typedef Kokkos::View<LocalOrdinal*, DeviceType>                  aggregates_sizes_type;
     typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space> local_graph_type;
 
   private:
@@ -148,14 +148,14 @@ namespace MueLu {
 
     ///< returns the number of aggregates of the current processor. Note: could/should be renamed to GetNumLocalAggregates?
     KOKKOS_INLINE_FUNCTION LO GetNumAggregates() const {
-      return nAggregates_;
+      return numAggregates_;
     }
 
     /*! @brief Set number of local aggregates on current processor.
 
         This has to be done by the aggregation routines.
     */
-    void SetNumAggregates(LO nAggregates) { nAggregates_ = nAggregates; }
+    void SetNumAggregates(LO nAggregates) { numAggregates_ = nAggregates; }
 
     //! @brief Record whether aggregates include DOFs from other processes.
     KOKKOS_INLINE_FUNCTION void AggregatesCrossProcessors(const bool& flag) {
@@ -194,13 +194,15 @@ namespace MueLu {
     const RCP<LOVector>& GetProcWinner() const   { return procWinner_;         }
 
     //! Returns true if node with given local node id is marked to be a root node
-    bool IsRoot(LO i) const                      { return isRoot_[i];          }
+    KOKKOS_INLINE_FUNCTION
+    bool IsRoot(LO i) const                      { return isRoot_(i);          }
 
     /*! @brief Set root node information.
 
     Used by aggregation methods only.
     */
-    void SetIsRoot(LO i, bool value = true)      { isRoot_[i] = value;         }
+    KOKKOS_INLINE_FUNCTION
+    void SetIsRoot(LO i, bool value = true)      { isRoot_(i) = value;         }
 
     const RCP<const Map> GetMap() const; ///< returns (overlapping) map of aggregate/node distribution
 
@@ -212,12 +214,8 @@ namespace MueLu {
       stored sizes are returned.
 
       @param[in] forceRecompute if true, force recomputation of the aggregate sizes.
-
-      @param[in] cacheSizes if true and either forceRecompute==true or sizes haven't yet been calculated, compute and store the sizes.
-      If forceRecompute==false and sizes have been calculated previously, then this parameter has no effect.
-      Sizes should only be cached when the aggregation phases are complete, i.e, aggregate sizes are no longer changing!
      */
-    typename aggregates_sizes_type::const_type ComputeAggregateSizes(bool forceRecompute = true, bool cacheSizes = false) const;
+    typename aggregates_sizes_type::const_type ComputeAggregateSizes(bool forceRecompute = false) const;
 
     local_graph_type GetGraph() const;
 
@@ -232,7 +230,7 @@ namespace MueLu {
     void print(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const;
 
   private:
-    LO   nAggregates_;              ///< Number of aggregates on this processor
+    LO   numAggregates_;              ///< Number of aggregates on this processor
 
     /*! vertex2AggId[k] gives a local id corresponding to the aggregate to which
      * local id k has been assigned. While k is the local id on my processor (MyPID),
@@ -246,7 +244,7 @@ namespace MueLu {
      */
     RCP<LOVector> procWinner_;
 
-    Teuchos::ArrayRCP<bool> isRoot_;//< IsRoot[i] indicates whether vertex i is a root node.
+    Kokkos::View<bool*, DeviceType> isRoot_;
 
     //! Set to false iff aggregates do not include any DOFs belong to other processes.
     bool aggregatesIncludeGhosts_;
@@ -254,6 +252,10 @@ namespace MueLu {
     //! Array of sizes of each local aggregate.
     mutable
     aggregates_sizes_type aggregateSizes_;
+
+    //! Aggregates represented as Kokkos graph type
+    mutable
+    local_graph_type graph_;
 
     //! Get global number of aggregates
     // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.

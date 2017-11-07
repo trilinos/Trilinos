@@ -693,11 +693,11 @@ void TpetraSystem<Scalar>::normalSetup(const mxArray* matlabA, bool haveCoords, 
   if(haveCoords)
   {
     RCP<Tpetra_MultiVector_double> coordArray = loadDataFromMatlab<RCP<Tpetra_MultiVector_double>>(matlabCoords);
-    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List, coordArray);
+    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(opA, *List, coordArray);
   }
   else
   {
-    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
+    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(opA, *List);
   }
   prec = rcp_implicit_cast<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
 
