@@ -88,14 +88,15 @@ public:
   /** \brief Constructor which sets the defaults.
    */
   Amesos2LinearOpWithSolveFactory(
-    const Amesos2::ESolverType                 solverType
+    const Amesos2::ESolverType solverType
 #ifdef HAVE_AMESOS2_KLU2
-                                                                      = Amesos2::KLU2
-#else                                                                 
-                                                                      = Amesos2::LAPACK
+    = Amesos2::KLU2,
+#else
+    = Amesos2::LAPACK,
 #endif
-    ,const Amesos2::ERefactorizationPolicy     refactorizationPolicy  = Amesos2::REPIVOT_ON_REFACTORIZATION
-    ,const bool                                throwOnPrecInput       = true
+    const Amesos2::ERefactorizationPolicy refactorizationPolicy
+      = Amesos2::REPIVOT_ON_REFACTORIZATION,
+    const bool throwOnPrecInput = true
     );
     
   //@}
@@ -111,9 +112,9 @@ public:
 
   /** \brief . */
   void initializeOp(
-    const Teuchos::RCP<const LinearOpSourceBase<Scalar> >    &fwdOpSrc
-    ,LinearOpWithSolveBase<Scalar>                                   *Op
-    ,const ESupportSolveUse                                          supportSolveUse
+    const Teuchos::RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+    LinearOpWithSolveBase<Scalar> *Op,
+    const ESupportSolveUse supportSolveUse
     ) const;
 
   /** \brief Returns <tt>false</tt> . */
@@ -123,29 +124,29 @@ public:
    * calls <tt>this->initializeOp(fwdOpSrc,Op)</tt> otherwise
    */
   void initializePreconditionedOp(
-    const Teuchos::RCP<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
-    ,const Teuchos::RCP<const PreconditionerBase<Scalar> >      &prec
-    ,LinearOpWithSolveBase<Scalar>                                      *Op
-    ,const ESupportSolveUse                                             supportSolveUse
+    const Teuchos::RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+    const Teuchos::RCP<const PreconditionerBase<Scalar> > &prec,
+    LinearOpWithSolveBase<Scalar> *Op,
+    const ESupportSolveUse supportSolveUse
     ) const;
 
   /** \brief Throws exception if <tt>this->throwOnPrecInput()==true</tt> and
    * calls <tt>this->initializeOp(fwdOpSrc,Op)</tt> otherwise
    */
   void initializePreconditionedOp(
-    const Teuchos::RCP<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
-    ,const Teuchos::RCP<const LinearOpSourceBase<Scalar> >      &approxFwdOpSrc
-    ,LinearOpWithSolveBase<Scalar>                                      *Op
-    ,const ESupportSolveUse                                             supportSolveUse
+    const Teuchos::RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+    const Teuchos::RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
+    LinearOpWithSolveBase<Scalar> *Op,
+    const ESupportSolveUse supportSolveUse
     ) const;
 
   /** \brief . */
   void uninitializeOp(
-    LinearOpWithSolveBase<Scalar>                               *Op
-    ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >    *fwdOpSrc
-    ,Teuchos::RCP<const PreconditionerBase<Scalar> >    *prec
-    ,Teuchos::RCP<const LinearOpSourceBase<Scalar> >    *approxFwdOpSrc
-    ,ESupportSolveUse                                           *supportSolveUse
+    LinearOpWithSolveBase<Scalar> *Op,
+    Teuchos::RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
+    Teuchos::RCP<const PreconditionerBase<Scalar> > *prec,
+    Teuchos::RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
+    ESupportSolveUse *supportSolveUse
     ) const;
 
   //@}
@@ -179,10 +180,10 @@ private:
   // /////////////////////////
   // Private data members
 
-  Amesos2::ESolverType                  solverType_;
-  Amesos2::ERefactorizationPolicy       refactorizationPolicy_;
-  bool                                  throwOnPrecInput_;
-  Teuchos::RCP<Teuchos::ParameterList>  paramList_;
+  Amesos2::ESolverType solverType_;
+  Amesos2::ERefactorizationPolicy refactorizationPolicy_;
+  bool throwOnPrecInput_;
+  Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
   // /////////////////////////
   // Private member functions

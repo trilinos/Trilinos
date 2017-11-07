@@ -52,10 +52,11 @@ namespace Thyra {
 
 // Constructors/initializers/accessors
 
+
 template<typename Scalar>
 Amesos2LinearOpWithSolve<Scalar>::Amesos2LinearOpWithSolve()
-{
-}
+{}
+
 
 template<typename Scalar>
 Amesos2LinearOpWithSolve<Scalar>::Amesos2LinearOpWithSolve(
@@ -68,6 +69,7 @@ Amesos2LinearOpWithSolve<Scalar>::Amesos2LinearOpWithSolve(
 {
   this->initialize(fwdOp,fwdOpSrc,amesos2Solver);
 }
+
 
 template<typename Scalar>
 void Amesos2LinearOpWithSolve<Scalar>::initialize(
@@ -84,6 +86,7 @@ void Amesos2LinearOpWithSolve<Scalar>::initialize(
     this->setObjectLabel( "lows("+fwdOpLabel+")" );
 }
 
+
 template<typename Scalar>
 Teuchos::RCP<const LinearOpSourceBase<Scalar> >
 Amesos2LinearOpWithSolve<Scalar>::extract_fwdOpSrc()
@@ -94,7 +97,9 @@ Amesos2LinearOpWithSolve<Scalar>::extract_fwdOpSrc()
   return _fwdOpSrc;
 }
 
+
 // Overridden from LinearOpBase
+
 
 template<typename Scalar>
 Teuchos::RCP< const VectorSpaceBase<Scalar> >
@@ -111,6 +116,7 @@ Amesos2LinearOpWithSolve<Scalar>::domain() const
   return  ( fwdOp_.get() ? fwdOp_->domain() : Teuchos::null );
 }
 
+
 template<typename Scalar>
 Teuchos::RCP<const LinearOpBase<Scalar> >
 Amesos2LinearOpWithSolve<Scalar>::clone() const
@@ -118,7 +124,9 @@ Amesos2LinearOpWithSolve<Scalar>::clone() const
   return Teuchos::null; // Not supported yet but could be
 }
 
+
 // Overridden from Teuchos::Describable
+
 
 template<typename Scalar>
 std::string Amesos2LinearOpWithSolve<Scalar>::description() const
@@ -246,5 +254,6 @@ Amesos2LinearOpWithSolve<Scalar>::solveImpl(
   solveStatus.solveStatus = SOLVE_STATUS_CONVERGED; 
   return solveStatus;
 }
+
 
 }	// end namespace Thyra

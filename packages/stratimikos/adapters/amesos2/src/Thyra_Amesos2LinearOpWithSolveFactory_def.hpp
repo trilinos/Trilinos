@@ -66,16 +66,20 @@ namespace Thyra {
 // Parameter names for Paramter List
 
 template<typename Scalar>
-const std::string Amesos2LinearOpWithSolveFactory<Scalar>::SolverType_name = "Solver Type";
+const std::string Amesos2LinearOpWithSolveFactory<Scalar>::SolverType_name
+  = "Solver Type";
   
 template<typename Scalar>
-const std::string Amesos2LinearOpWithSolveFactory<Scalar>::RefactorizationPolicy_name = "Refactorization Policy";
+const std::string Amesos2LinearOpWithSolveFactory<Scalar>::RefactorizationPolicy_name
+  = "Refactorization Policy";
 
 template<typename Scalar>
-const std::string Amesos2LinearOpWithSolveFactory<Scalar>::ThrowOnPreconditionerInput_name = "Throw on Preconditioner Input";
+const std::string Amesos2LinearOpWithSolveFactory<Scalar>::ThrowOnPreconditionerInput_name
+  = "Throw on Preconditioner Input";
 
 template<typename Scalar>
-const std::string Amesos2LinearOpWithSolveFactory<Scalar>::Amesos2_Settings_name = "Amesos2 Settings";
+const std::string Amesos2LinearOpWithSolveFactory<Scalar>::Amesos2_Settings_name
+  = "Amesos2 Settings";
 
 // Constructors/initializers/accessors
 
@@ -92,10 +96,10 @@ Amesos2LinearOpWithSolveFactory<Scalar>::~Amesos2LinearOpWithSolveFactory()
 
 template<typename Scalar>
 Amesos2LinearOpWithSolveFactory<Scalar>::Amesos2LinearOpWithSolveFactory(
-  const Amesos2::ESolverType                           solverType
-  ,const Amesos2::ERefactorizationPolicy               refactorizationPolicy
-  ,const bool                                          throwOnPrecInput
-    )
+  const Amesos2::ESolverType solverType,
+  const Amesos2::ERefactorizationPolicy refactorizationPolicy,
+  const bool throwOnPrecInput
+  )
   :solverType_(solverType)
   ,refactorizationPolicy_(refactorizationPolicy)
   ,throwOnPrecInput_(throwOnPrecInput)
@@ -126,9 +130,9 @@ Amesos2LinearOpWithSolveFactory<Scalar>::createOp() const
 
 template<typename Scalar>
 void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
-  const RCP<const LinearOpSourceBase<Scalar> >    &fwdOpSrc
-  ,LinearOpWithSolveBase<Scalar>                                   *Op
-  ,const ESupportSolveUse                                          supportSolveUse
+  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+  LinearOpWithSolveBase<Scalar> *Op,
+  const ESupportSolveUse supportSolveUse
   ) const
 {
   THYRA_FUNC_TIME_MONITOR("Stratimikos: Amesos2LOWSF");
@@ -154,8 +158,7 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
   // Determine if we must start over or not
   //
   bool startOver = ( amesos2Op->get_amesos2Solver()==Teuchos::null );
-  if(!startOver) 
-  {
+  if (!startOver) {
     auto oldTpetraFwdOp = ConverterT::getConstTpetraOperator(amesos2Op->get_fwdOp());
     startOver =
       (
@@ -166,7 +169,7 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
   //
   // Update the amesos2 solver
   //
-  if(startOver) {
+  if (startOver) {
     //
     // This LOWS object has not be initialized yet or is not compatible with the existing
     // 
@@ -241,7 +244,8 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
 
     // filter out the Stratimikos adapter parameters and hand
     // parameters down into the Solver
-    Teuchos::RCP<Teuchos::ParameterList> dup_list(new Teuchos::ParameterList(*paramList_));
+    const Teuchos::RCP<Teuchos::ParameterList> dup_list
+      = Teuchos::rcp(new Teuchos::ParameterList(*paramList_));
     dup_list->remove(SolverType_name);
     dup_list->remove(RefactorizationPolicy_name);
     dup_list->remove(ThrowOnPreconditionerInput_name);
@@ -285,43 +289,47 @@ bool Amesos2LinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(co
 
 template<typename Scalar>
 void Amesos2LinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
-  ,const RCP<const PreconditionerBase<Scalar> >      &prec
-  ,LinearOpWithSolveBase<Scalar>                                      *Op
-  ,const ESupportSolveUse                                             supportSolveUse
+  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+  const RCP<const PreconditionerBase<Scalar> > &prec,
+  LinearOpWithSolveBase<Scalar> *Op,
+  const ESupportSolveUse supportSolveUse
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    this->throwOnPrecInput_, std::logic_error
-    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support preconditioners "
-    "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
+    this->throwOnPrecInput_, std::logic_error,
+    "Error, the concrete implementation described as \'"<<this->description()
+    <<"\' does not support preconditioners"
+    " and has been configured to throw this exception when the"
+    " initializePreconditionedOp(...) function is called!"
     );
   this->initializeOp(fwdOpSrc,Op,supportSolveUse); // Ignore the preconditioner!
 }
 
 template<typename Scalar>
 void Amesos2LinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
-  const RCP<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
-  ,const RCP<const LinearOpSourceBase<Scalar> >      &approxFwdOpSrc
-  ,LinearOpWithSolveBase<Scalar>                                      *Op
-  ,const ESupportSolveUse                                             supportSolveUse
+  const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
+  const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
+  LinearOpWithSolveBase<Scalar> *Op,
+  const ESupportSolveUse supportSolveUse
   ) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    this->throwOnPrecInput_, std::logic_error
-    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support preconditioners "
-    "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
+    this->throwOnPrecInput_, std::logic_error,
+    "Error, the concrete implementation described as \'"<<this->description()
+    <<"\' does not support preconditioners"
+    " and has been configured to throw this exception when the"
+    " initializePreconditionedOp(...) function is called!"
     );
   this->initializeOp(fwdOpSrc,Op,supportSolveUse); // Ignore the preconditioner!
 }
 
 template<typename Scalar>
 void Amesos2LinearOpWithSolveFactory<Scalar>::uninitializeOp(
-  LinearOpWithSolveBase<Scalar>                               *Op
-  ,RCP<const LinearOpSourceBase<Scalar> >    *fwdOpSrc
-  ,RCP<const PreconditionerBase<Scalar> >    *prec
-  ,RCP<const LinearOpSourceBase<Scalar> >    *approxFwdOpSrc
-  ,ESupportSolveUse                                           *supportSolveUse
+  LinearOpWithSolveBase<Scalar> *Op,
+  RCP<const LinearOpSourceBase<Scalar> > *fwdOpSrc,
+  RCP<const PreconditionerBase<Scalar> > *prec,
+  RCP<const LinearOpSourceBase<Scalar> > *approxFwdOpSrc,
+  ESupportSolveUse *supportSolveUse
   ) const
 {
 #ifdef TEUCHOS_DEBUG
@@ -333,7 +341,7 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::uninitializeOp(
     _fwdOpSrc = amesos2Op->extract_fwdOpSrc(); // Will be null if uninitialized!
   if(fwdOpSrc) *fwdOpSrc = _fwdOpSrc; // It is fine if the client does not want this object back!
   if(prec) *prec = Teuchos::null; // We never keep a preconditioner!
-  if(approxFwdOpSrc) *approxFwdOpSrc = Teuchos::null; // We never keep an approximate fwd operator!
+  if(approxFwdOpSrc) *approxFwdOpSrc = Teuchos::null; // never keep approx fwd op!
 }
 
 // Overridden from ParameterListAcceptor
@@ -344,7 +352,9 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::setParameterList(
   )
 {
   TEUCHOS_TEST_FOR_EXCEPT(paramList.get()==NULL);
-  paramList->validateParameters(*this->getValidParameters(),0); // Only validate this level for now!
+  // Only validate this level for now here (expect Amesos2 to do its own
+  // validation?)
+  paramList->validateParameters(*this->getValidParameters(),0);
   paramList_ = paramList;
   solverType_ =
     Amesos2::solverTypeNameToEnumMap.get<Amesos2::ESolverType>(
@@ -415,10 +425,11 @@ RCP<const Teuchos::ParameterList>
 Amesos2LinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 {
   static RCP<Teuchos::ParameterList> validParamList;
-  if(validParamList.get()==NULL) {
+  if (validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("Amesos2"));
     validParamList->set(SolverType_name, Thyra::Amesos2::solverTypeNames[0]);
-    validParamList->set(RefactorizationPolicy_name,Amesos2::toString(Amesos2::REPIVOT_ON_REFACTORIZATION));
+    validParamList->set(RefactorizationPolicy_name,
+      Amesos2::toString(Amesos2::REPIVOT_ON_REFACTORIZATION));
     validParamList->set(ThrowOnPreconditionerInput_name,bool(true));
     Teuchos::setupVerboseObjectSublist(&*validParamList);
   }

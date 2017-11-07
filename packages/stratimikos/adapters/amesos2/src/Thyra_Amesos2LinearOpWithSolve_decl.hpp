@@ -94,13 +94,15 @@ public:
     const Scalar amesos2SolverScalar
     );
 
+  /** \brief Initialize after construction. */
   void initialize(
     const Teuchos::RCP<const LinearOpBase<Scalar> > &fwdOp,
     const Teuchos::RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
     const Teuchos::RCP< Solver > &amesos2Solver
     );
 
-  /** \brief Extract the <tt>LinearOpSourceBase<double></tt> object so that it can be modified.
+  /** \brief Extract the forward <tt>LinearOpSourceBase<double></tt> object so
+   * that it can be modified and remove it from this object.
    * 
    * <b>Postconditions:</b><ul>
    * <li><tt>return.get()</tt> is the same as <tt>this->get_fwdOpSrc().get()</tt> before call.
