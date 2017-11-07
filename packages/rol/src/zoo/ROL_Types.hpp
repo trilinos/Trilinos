@@ -105,6 +105,7 @@ std::string NumberToString( T Number )
     Teuchos::RCP<Vector<Real> > iterateVec;
     Teuchos::RCP<Vector<Real> > lagmultVec;
     Teuchos::RCP<Vector<Real> > minIterVec;
+
     AlgorithmState(void) : iter(0), minIter(0), nfval(0), ngrad(0), value(0), minValue(0), 
       gnorm(std::numeric_limits<Real>::max()),
       cnorm(std::numeric_limits<Real>::max()),
@@ -113,6 +114,31 @@ std::string NumberToString( T Number )
       aggregateModelError(std::numeric_limits<Real>::max()),
       flag(false),
       iterateVec(Teuchos::null), lagmultVec(Teuchos::null), minIterVec(Teuchos::null) {}
+
+    void reset(void) {
+      iter                  = 0;
+      minIter               = 0;
+      nfval                 = 0;
+      ncval                 = 0;
+      ngrad                 = 0;
+      value                 = ROL_INF<Real>();
+      minValue              = ROL_INF<Real>();
+      gnorm                 = ROL_INF<Real>();
+      cnorm                 = ROL_INF<Real>();
+      snorm                 = ROL_INF<Real>();
+      aggregateGradientNorm = ROL_INF<Real>();
+      aggregateModelError   = ROL_INF<Real>();
+      flag                  = false;
+      if (iterateVec != Teuchos::null) {
+        iterateVec->zero();
+      }
+      if (lagmultVec != Teuchos::null) {
+        lagmultVec->zero();
+      }
+      if (minIterVec != Teuchos::null) {
+        minIterVec->zero();
+      }
+    }
   };  
   
   /** \brief  State for step class.  Will be used for restarts.
@@ -125,13 +151,29 @@ std::string NumberToString( T Number )
     int nfval;
     int ngrad;
     Real searchSize; // line search parameter (alpha) or trust-region radius (delta)
+
     StepState(void) : gradientVec(Teuchos::null),
                       descentVec(Teuchos::null),
                       constraintVec(Teuchos::null),
                       nfval(0),
                       ngrad(0),
                       searchSize(0) {}
-  };  
+
+    void reset(const Real searchSize = 1.0) {
+      if (gradientVec != Teuchos::null) {
+        gradientVec->zero();
+      }
+      if (descentVec != Teuchos::null) {
+        descentVec->zero();
+      }
+      if (constraintVec != Teuchos::null) {
+        constraintVec->zero();
+      }
+      nfval = 0;
+      ngrad = 0;
+      searchSize = searchSize;
+    }
+  };
       
   /** \brief  Platform-dependent machine epsilon. 
    */

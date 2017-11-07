@@ -275,7 +275,7 @@ public:
       resetAlgorithmState();
     }
     // Reset StepState
-    step_->reset();
+    step_->reset(pen_);
     // Reset penalty objectives
     if( stepType_ == STEP_AUGMENTEDLAGRANGIAN ) {
       Teuchos::rcp_dynamic_cast<AugmentedLagrangian<Real> >(obj_)->reset(*l_,pen_);

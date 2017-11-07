@@ -296,8 +296,8 @@ public:
 
   /** \brief Get state for step object.
   */
-  void reset(void) {
-    state_ = Teuchos::rcp(new StepState<Real>());
+  void reset(const Real searchSize = 1.0) {
+    state_->reset(searchSize);
   }
 
   // struct StepState (scalars, vectors) map?
