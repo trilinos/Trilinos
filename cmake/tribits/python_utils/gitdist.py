@@ -49,8 +49,10 @@ helpTopics = [
   'dist-repo-status',
   'repo-versions',
   'aliases', 
+  'default-branch',
+  'move-to-base-dir',
   'usage-tips',
-  'script-dependencies'
+  'script-dependencies',
   ]
 
  
@@ -467,6 +469,108 @@ or
 """
 helpTopicsDict.update( { 'aliases' : usefulAliasesHelp } )
 
+defaultBranchHelp = r"""
+DEFAULT BRANCH SPECIFICATION:
+
+When using any git command that accepts a reference (a SHA1, or branch or tag
+name), it is possible to use _DEFAULT_BRANCH_ instead.  For instance,
+
+    gitdist checkout _DEFAULT_BRANCH_
+
+will check out the default development branch in each repository being managed
+by gitdist.  You can specify the default branch for each repository in your
+.gitdist[.default] file.  For instance, if your .gitdist file contains
+
+    . master
+    extraRepo1 develop
+    extraRepo2 app-devel
+
+then the command above would check out 'master' in the base repo, 'develop' in
+extraRepo1, and 'app-devel' in extraRepo2.  This makes it convenient when
+working with multiple repositories that have different names for their main
+development branches.  For instance, you can do a topic branch workflow like:
+
+    gitdist checkout _DEFAULT_BRANCH_
+    gitdist pull
+    gitdist checkout -b newFeatureBranch
+    <create some commits>
+    gitdist fetch
+    gitdist merge origin/_DEFAULT_BRANCH_
+    <create some commits>
+    gitdist checkout _DEFAULT_BRANCH_
+    gitdist pull
+    gitdist merge newFeatureBranch
+
+and not worry about this 'newFeatureBranch' being off of 'master' in the root
+repo, off of 'develop' in extraRepo1, and off of 'app-devel' in extraRepo2.
+
+If no branch name is specified for any given repository in the
+.gitdist[.default] file, then 'master' is assumed.
+"""
+helpTopicsDict.update( { 'default-branch' : defaultBranchHelp } )
+
+
+moveToBaseDirHelp = r"""
+MOVE TO BASE DIRECTORY:
+
+By default, when you run gitdist, it will look in your current working
+directory for a .gitdist[.default] file.  If it fails to find one, it will
+treat the current directory as the base git repository (as if there was a
+.gitdist file in it, having a single line with only "." in it) and then run as
+usual.  You have the ability to change this behavior by setting the
+GITDIST_MOVE_TO_BASE_DIR environment variable.
+
+To describe the behavior for the differ net options, consider the following set
+of nested git repositories and directories:
+
+    BaseRepo/
+      .git
+      .gitdist
+      ...
+      ExtraRepo/
+        .git
+        .gitdist
+        ...
+        path/
+          ...
+          to/
+            ...
+            some/
+              ...
+              directory/
+                ...
+
+
+The valid settings for GITDIST_MOVE_TO_BASE_DIR include:
+
+  "" (Empty)
+
+    This gives the default behavior where gitdist runs in the current working
+    directory.
+
+  IMMEDIATE_BASE
+
+    In this case, gitdist will start moving up the directory tree until it
+    finds a .gitdist[.default] file, and then run in the directory where it
+    finds it.  In the above example, if you are in
+    BaseRepo/ExtraRepo/path/to/some/directory/ when you run gitdist, it will
+    move up to ExtraRepo to execute the command you give it from there.
+
+  EXTREME_BASE:
+
+    In this case, gitdist will continue moving up the directory tree until it
+    finds the outer-most repository containing a .gitdist[.default] file, and
+    then run in that directory.  Given the directory tree above, if you were
+    in BaseRepo/ExtraRepo/path/to/some/directory, it will move up to BaseRepo
+    to execute the command you give it.
+
+With either of the settings above, when gitdist is finished running, it will
+leave you in the same directory you were in when you executed command in the
+first place.  Additionally, if no .gitdist[.default] file can be found, gitdist
+will execute the command you give it in your current working directory, as if
+GITDIST_MOVE_TO_BASE_DIR hadn't been set.
+"""
+helpTopicsDict.update( { 'move-to-base-dir' : moveToBaseDirHelp } )
 
 usageTipsHelp = r"""
 USAGE TIPS:
@@ -819,6 +923,22 @@ def addColorToErrorMsg(useColor, strIn):
   return strIn
 
 
+# Get the paths to all the repos gitdist will work on, along with any optional
+# default branches.
+def parseGitdistFile(gitdistfile):
+  reposFullList = []
+  defaultBranchDict = {}
+  with open(gitdistfile, 'r') as file:
+    for line in file:
+      entries = line.split()
+      reposFullList.append(entries[0])
+      if len(entries) > 1:
+        defaultBranchDict[entries[0]] = entries[1]
+      else:
+        defaultBranchDict[entries[0]] = "master"
+  return (reposFullList, defaultBranchDict)
+
+
 # Get the commandline options
 def getCommandlineOps():
 
@@ -1057,16 +1177,21 @@ def getCommandlineOps():
   elif moveToBaseDir == "IMMEDIATE_BASE":
     # Run gitdist in the immediate base dir where .gitdist[.default] exists
     currentPath = os.getcwd()
+    foundIt = False
     while 1:
       if ((os.path.isfile(os.path.join(currentPath, ".gitdist"))) or
         (os.path.isfile(os.path.join(currentPath, ".gitdist.default")))):
+        foundIt = True
         break
       currentPath, currentDir = os.path.split(currentPath)
-    os.chdir(currentPath)
+      if currentDir == "":
+        break
+    if foundIt:
+      os.chdir(currentPath)
   else:
     print(
       "Error, env var GITDIST_MOVE_TO_BASE_DIR='"+moveToBaseDir+"' is invalid!"
-      + "  Valid choices include empty '', IMMEDIATE_BASE, and EXTREME_BASE")
+      + "  Valid choices include empty '', IMMEDIATE_BASE, and EXTREME_BASE.")
     sys.exit(1)
 
   #
@@ -1075,6 +1200,9 @@ def getCommandlineOps():
 
   if options.repos:
     reposFullList = options.repos.split(",")
+    defaultBranchDict = {}
+    for repo in reposFullList:
+      defaultBranchDict[repo] = "master"
   else:
     if os.path.exists(".gitdist"):
       gitdistfile = ".gitdist"
@@ -1083,9 +1211,10 @@ def getCommandlineOps():
     else:
       gitdistfile = None
     if gitdistfile:
-      reposFullList = open(gitdistfile, 'r').read().split()
+      (reposFullList, defaultBranchDict) = parseGitdistFile(gitdistfile)
     else:
       reposFullList = ["."] # The default is the base repo
+      defaultBranchDict = {".": "master"}
 
   # Get list of not extra repos
 
@@ -1098,7 +1227,7 @@ def getCommandlineOps():
   # G) Return
   #
 
-  return (options, nativeCmnd, otherArgs, reposFullList,
+  return (options, nativeCmnd, otherArgs, reposFullList, defaultBranchDict,
     notReposFullList)
 
 
@@ -1205,13 +1334,28 @@ def replaceRepoVersionInCmndLineArgs(cmndLineArgsArray, repoDirName, \
   return cmndLineArgsArrayRepo
 
 
+# Replace _DEFAULT_BRANCH_ in the command line arguments with the appropriate
+# default branch name.
+def replaceDefaultBranchInCmndLineArgs(cmndLineArgsArray, repoDirName, \
+  defaultBranchDict \
+  ):
+  cmndLineArgsArrayDefaultBranch = []
+  for cmndLineArg in cmndLineArgsArray:
+    newCmndLineArg = re.sub("_DEFAULT_BRANCH_", \
+      defaultBranchDict[repoDirName], cmndLineArg)
+    cmndLineArgsArrayDefaultBranch.append(newCmndLineArg)
+  return cmndLineArgsArrayDefaultBranch
+
+
 # Generate the command line arguments
 def runRepoCmnd(options, cmndLineArgsArray, repoDirName, baseDir, \
-  repoVersionDict, repoVersionDict2 \
+  repoVersionDict, repoVersionDict2, defaultBranchDict \
   ):
-  cmndLineArgsArryRepo = replaceRepoVersionInCmndLineArgs(cmndLineArgsArray, \
+  cmndLineArgsArrayRepo = replaceRepoVersionInCmndLineArgs(cmndLineArgsArray, \
     repoDirName, repoVersionDict, repoVersionDict2)
-  egCmndArray = [ options.useGit ] + cmndLineArgsArryRepo
+  cmndLineArgsArrayDefaultBranch = replaceDefaultBranchInCmndLineArgs( \
+    cmndLineArgsArrayRepo, repoDirName, defaultBranchDict)
+  egCmndArray = [ options.useGit ] + cmndLineArgsArrayDefaultBranch
   runCmnd(options, egCmndArray)
 
 
@@ -1423,8 +1567,8 @@ baseRepoName = None
 
 if __name__ == '__main__':
 
-  (options, nativeCmnd, otherArgs, reposFullList, notReposList) = \
-    getCommandlineOps()
+  (options, nativeCmnd, otherArgs, reposFullList, defaultBranchDict, \
+    notReposList) = getCommandlineOps()
 
   if nativeCmnd == "dist-repo-status":
     distRepoStatus = True
@@ -1496,7 +1640,7 @@ if __name__ == '__main__':
           print("*** Tracking branch for git repo '" + repoName + "' = '" +
                 repoStats.trackingBranch + "'")
         runRepoCmnd(options, cmndLineArgsArray, repo, baseDir, \
-          repoVersionDict, repoVersionDict2)
+          repoVersionDict, repoVersionDict2, defaultBranchDict)
         if options.debug:
           print("*** Changing to directory " + baseDir)
 
