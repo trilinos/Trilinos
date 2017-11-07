@@ -55,7 +55,9 @@ public:
 #endif
   SLU::superlu_options_t SLU_options;
   SLU::mem_usage_t mem_usage;
+#ifdef HAVE_AMESOS_SUPERLU5_API
   SLU::GlobalLU_t lu;	     // Use for gssvx and gsisx in SuperLU 5.0
+#endif
   SLU::fact_t refactor_option ;         //  SamePattern or SamePattern_SameRowPerm
 
   SLUData() {
@@ -561,10 +563,12 @@ int Amesos_Superlu::Solve()
     int ierr;
     ierr = SerialX->ExtractView(&SerialXvalues, &SerialXlda);
     assert (ierr == 0);
+    AMESOS_CHK_ERR(ierr);
     assert (SerialXlda == NumGlobalRows_ ) ;
 
     ierr = SerialB->ExtractView(&SerialBvalues, &SerialBlda);
     assert (ierr == 0);
+    AMESOS_CHK_ERR(ierr);
     assert (SerialBlda == NumGlobalRows_ ) ;
 
     SLU::SuperMatrix& dataX = (data_->X) ;
