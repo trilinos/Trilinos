@@ -60,8 +60,6 @@
 #include "Teuchos_TypeTraits.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
-#include "Amesos2_Superludist.hpp"
-
 namespace Thyra {
 
 
