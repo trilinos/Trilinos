@@ -53,10 +53,6 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Details_reallocDualViewIfNeeded.hpp"
 #include "Tpetra_Details_Behavior.hpp"
-#ifdef KOKKOS_HAVE_CUDA
-// mfh 03 Aug 2017: See #1088 and #1571.
-#  include "Tpetra_Details_Environment.hpp"
-#endif // KOKKOS_HAVE_CUDA
 
 
 namespace Tpetra {
