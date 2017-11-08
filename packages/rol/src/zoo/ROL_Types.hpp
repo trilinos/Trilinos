@@ -76,14 +76,40 @@
 
 namespace ROL {
 
-template<class T>
-std::string NumberToString( T Number )
-{
-  std::ostringstream ss;
-  ss << Number;
-  return ss.str();
-}
+  template<class T>
+  std::string NumberToString( T Number )
+  {
+    std::ostringstream ss;
+    ss << Number;
+    return ss.str();
+  }
 
+  /** \brief  Platform-dependent machine epsilon.
+   */
+  template<class Real>
+  inline Real ROL_EPSILON(void) { return std::abs(Teuchos::ScalarTraits<Real>::eps()); }
+  //static const Real ROL_EPSILON<Real>() = std::abs(Teuchos::ScalarTraits<Real>::eps());
+
+  /** \brief  Tolerance for various equality tests.
+   */
+  template<class Real>
+  inline Real ROL_THRESHOLD(void) { return 10.0 * ROL_EPSILON<Real>(); }
+
+  /** \brief  Platform-dependent maximum double.
+   */
+  template<class Real>
+  inline Real ROL_OVERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmax()); }
+
+  template<class Real>
+  inline Real ROL_INF(void) { return 0.1*ROL_OVERFLOW<Real>(); }
+
+  template<class Real>
+  inline Real ROL_NINF(void) { return -ROL_INF<Real>(); }
+
+  /** \brief  Platform-dependent minimum double.
+   */
+  template<class Real>
+  inline Real ROL_UNDERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmin()); }
 
   /** \brief  State for algorithm class.  Will be used for restarts.
    */
@@ -94,7 +120,7 @@ std::string NumberToString( T Number )
     int  nfval;
     int  ncval;
     int  ngrad;
-    Real value;              
+    Real value;
     Real minValue;
     Real gnorm;
     Real cnorm;
@@ -139,10 +165,10 @@ std::string NumberToString( T Number )
         minIterVec->zero();
       }
     }
-  };  
-  
+  };
+
   /** \brief  State for step class.  Will be used for restarts.
-   */  
+   */
   template<class Real>
   struct StepState {
     Teuchos::RCP<Vector<Real> > gradientVec;
@@ -159,7 +185,7 @@ std::string NumberToString( T Number )
                       ngrad(0),
                       searchSize(0) {}
 
-    void reset(const Real searchSize = 1.0) {
+    void reset(const Real searchSizeInput = 1.0) {
       if (gradientVec != Teuchos::null) {
         gradientVec->zero();
       }
@@ -171,41 +197,9 @@ std::string NumberToString( T Number )
       }
       nfval = 0;
       ngrad = 0;
-      searchSize = searchSize;
+      searchSize = searchSizeInput;
     }
   };
-      
-  /** \brief  Platform-dependent machine epsilon. 
-   */
-  template<class Real>
-  inline Real ROL_EPSILON(void) { return std::abs(Teuchos::ScalarTraits<Real>::eps()); }
-  //static const Real ROL_EPSILON<Real>() = std::abs(Teuchos::ScalarTraits<Real>::eps());
-    
-  /** \brief  Tolerance for various equality tests.
-   */
-  template<class Real>
-  inline Real ROL_THRESHOLD(void) { return 10.0 * ROL_EPSILON<Real>(); }
-  //static const Real ROL_THRESHOLD = 10.0 * ROL_EPSILON<Real>()<Real>;
-
-  /** \brief  Platform-dependent maximum double.
-   */ 
-  template<class Real>
-  inline Real ROL_OVERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmax()); }
-  //static const double ROL_OVERFLOW  = std::abs(Teuchos::ScalarTraits<double>::rmax());
-
-  template<class Real>
-  inline Real ROL_INF(void) { return 0.1*ROL_OVERFLOW<Real>(); }
-  //static const double ROL_INF<Real>()  = 0.1*ROL_OVERFLOW;
-
-  template<class Real>
-  inline Real ROL_NINF(void) { return -ROL_INF<Real>(); }
-  //static const double ROL_NINF<Real>() = -ROL_INF<Real>();
-
-  /** \brief  Platform-dependent minimum double.
-   */ 
-  template<class Real>
-  inline Real ROL_UNDERFLOW(void) { return std::abs(Teuchos::ScalarTraits<Real>::rmin()); }
-  //static const double ROL_UNDERFLOW  = std::abs(Teuchos::ScalarTraits<double>::rmin());
 
   struct removeSpecialCharacters {
     bool operator()(char c) {

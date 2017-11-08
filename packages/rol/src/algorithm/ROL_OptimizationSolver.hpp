@@ -281,7 +281,7 @@ public:
       Teuchos::rcp_dynamic_cast<AugmentedLagrangian<Real> >(obj_)->reset(*l_,pen_);
     }
     else if( stepType_ == STEP_MOREAUYOSIDAPENALTY ) {
-      Teuchos::rcp_dynamic_cast<MoreauYosidaPenalty<Real> >(obj_)->updateMultipliers(pen_,*x_);
+      Teuchos::rcp_dynamic_cast<MoreauYosidaPenalty<Real> >(obj_)->reset(pen_);
     }
     else if( stepType_ == STEP_INTERIORPOINT ) {
       Teuchos::rcp_dynamic_cast<InteriorPoint::PenalizedObjective<Real> >(obj_)->updatePenalty(pen_);

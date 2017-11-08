@@ -78,7 +78,7 @@ private:
   void initializeSlackVariable(const Teuchos::RCP<Constraint<Real> >      &con,
                                const Teuchos::RCP<BoundConstraint<Real> > &cbnd,
                                const Teuchos::RCP<Vector<Real> >          &s,
-                               const Teuchos::RCP<Vector<Real> >          &x) {
+                               const Teuchos::RCP<Vector<Real> >          &x) const {
     // Set slack variable to s = proj(c(x))
     Real tol = std::sqrt(ROL_EPSILON<Real>());
     con->value(*s,*x,tol);
@@ -236,6 +236,20 @@ public:
 
   bool hasInequality(void) const {
     return hasInequality_;
+  }
+
+  void resetSlackVariables(void) {
+    if (hasInequality_) {
+      int size = static_cast<int>(cvec_.size());
+      int cnt = 1;
+      for (int i = 0; i < size; ++i) {
+        if (isInequality_[i]) {
+          // Reset slack variables
+          initializeSlackVariable(cvec_[i],sbnd_[cnt],svec_[cnt],svec_[0]);
+          cnt++;
+        }
+      }
+    }
   }
 
 }; // class ConstraintManager
