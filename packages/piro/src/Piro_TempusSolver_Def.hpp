@@ -235,7 +235,6 @@ void Piro::TempusSolver<Scalar>::initialize(
       }
       else {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
-        tempusPL->get("Lump Mass Matrix", false);  //JF line does not do anything
 #ifdef ALBANY_BUILD
         model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
 #else
@@ -256,7 +255,6 @@ void Piro::TempusSolver<Scalar>::initialize(
       }
       else {
         Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > origModel = model;
-        tempusPL->get("Lump Mass Matrix", false);  //JF line does not do anything
 #ifdef ALBANY_BUILD
         model = Teuchos::rcp(new Piro::InvertMassMatrixDecorator<Scalar, LocalOrdinal, GlobalOrdinal, Node>(
 #else
