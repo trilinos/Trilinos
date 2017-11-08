@@ -1,0 +1,6 @@
+#ifndef PANZER_MINI_EM_CONFIG_HPP
+#define PANZER_MINI_EM_CONFIG_HPP
+
+#include "PanzerCore_config.hpp"
+
+#endif
