@@ -6,7 +6,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     
   TRIBITS_ADD_EXECUTABLE(
     RCG_Epetra_Ex_File
-    SOURCES RCGEpetraExFile.cpp createEpetraProblem.cpp
+    SOURCES RCGEpetraExFile.cpp 
     COMM serial mpi
     )
 

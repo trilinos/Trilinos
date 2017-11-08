@@ -39,12 +39,14 @@
 // ************************************************************************
 //@HEADER
 
-#include "createEpetraProblem.hpp"
+#include "BelosEpetraUtils.h"
+#include "BelosEpetraAdapter.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
+#include "Epetra_Import.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -52,14 +54,18 @@
 #endif
 #include "Epetra_Map.h"
 
-int Belos::createEpetraProblem(
-			       std::string                      &filename
-			       ,RCP<Epetra_Map>         *rowMap
-			       ,RCP<Epetra_CrsMatrix>   *A
-			       ,RCP<Epetra_MultiVector> *B
-			       ,RCP<Epetra_MultiVector> *X
-			       ,int                             *MyPID_out
-			       )
+namespace Belos {
+
+namespace Util {
+
+int createEpetraProblem( std::string             &filename,
+			 RCP<Epetra_Map>         *rowMap,
+			 RCP<Epetra_CrsMatrix>   *A,
+			 RCP<Epetra_MultiVector> *B,
+			 RCP<Epetra_MultiVector> *X,
+			 int                     *MyPID_out,
+                         int                     &numRHS
+		       )
 {
   //
   int &MyPID = *MyPID_out;
@@ -114,7 +120,7 @@ int Belos::createEpetraProblem(
   //
   // Create a Epetra_Matrix
   //
-  *A = rcp(new Epetra_CrsMatrix(Epetra_DataAccess::Copy, *epetraMap, NumNz));
+  *A = rcp(new Epetra_CrsMatrix(BELOSEPETRACOPY, *epetraMap, NumNz));
   Teuchos::set_extra_data( epetraMap, "Operator::Map", Teuchos::ptr(A) );
   //
   // Add rows one-at-a-time
@@ -126,7 +132,7 @@ int Belos::createEpetraProblem(
     NumEntries = bindx[i+1] - bindx[i];
     int info = (*A)->InsertGlobalValues(update[i], NumEntries, row_vals, col_inds);
     assert( info == 0 );
-    info = (*A)->InsertGlobalValues(update[i], 1, val+i, update+i);
+    info =  (*A)->InsertGlobalValues(update[i], 1, val+i, update+i);
     assert( info == 0 );
   }
   //
@@ -140,14 +146,23 @@ int Belos::createEpetraProblem(
   //
   // Construct the right-hand side and solution multivectors.
   //
-  if(B) {
-    *B = rcp(new Epetra_MultiVector(Epetra_DataAccess::Copy, *epetraMap, b, NumMyElements, 1 ));
-    Teuchos::set_extra_data( epetraMap, "B::Map", Teuchos::ptr(B) );
+  if (B) {
+    if (b != NULL) {
+      *B = rcp(new Epetra_MultiVector(BELOSEPETRACOPY, *epetraMap, b, NumMyElements, 1 ));
+      Teuchos::set_extra_data( epetraMap, "B::Map", Teuchos::ptr(B) );
+      numRHS = 1;
+    }
+    else {
+      *B = rcp (new Epetra_MultiVector (*epetraMap, numRHS));
+      Teuchos::set_extra_data( epetraMap, "B::Map", Teuchos::ptr(B) );
+      (*B)->Random ();
+    }
   }
-  if(X) {
-    *X = rcp(new Epetra_MultiVector(*epetraMap, 1 ));
+  if (X) {
+    *X = rcp (new Epetra_MultiVector (*epetraMap, numRHS));
     Teuchos::set_extra_data( epetraMap, "X::Map", Teuchos::ptr(X) );
-  }
+    (*X)->PutScalar (0.0);
+  } 
   //
   // Create workspace
   //
@@ -167,3 +182,71 @@ int Belos::createEpetraProblem(
 
   return (0);
 }
+
+int rebalanceEpetraProblem( RCP<Epetra_Map>         &Map,
+                            RCP<Epetra_CrsMatrix>   &A,
+                            RCP<Epetra_MultiVector> &B,
+                            RCP<Epetra_MultiVector> &X,
+                            Epetra_Comm             &Comm
+                          )
+{
+  // Rebalance linear system across multiple processors.
+  if ( Comm.NumProc() > 1 ) {
+    RCP<Epetra_Map> newMap = rcp( new Epetra_Map( Map->NumGlobalElements(), Map->IndexBase(), Comm ) );
+    RCP<Epetra_Import> newImport = rcp( new Epetra_Import( *newMap, *Map ) );
+
+    // Create rebalanced versions of the linear system.
+    RCP<Epetra_CrsMatrix> newA = rcp( new Epetra_CrsMatrix( BELOSEPETRACOPY, *newMap, 0 ) );
+    newA->Import( *A, *newImport, Insert );
+    newA->FillComplete();
+    RCP<Epetra_MultiVector> newB = rcp( new Epetra_MultiVector( *newMap, B->NumVectors() ) );
+    newB->Import( *B, *newImport, Insert );
+    RCP<Epetra_MultiVector> newX = rcp( new Epetra_MultiVector( *newMap, X->NumVectors() ) );
+    newX->Import( *X, *newImport, Insert );
+
+    // Set the pointers to the new rebalance linear system.
+    A = newA;
+    B = newB;
+    X = newX;
+    Map = newMap;
+  }
+
+  return (0);
+}
+
+} // namespace Util
+
+namespace Test {
+
+    MPISession::MPISession (Teuchos::Ptr<int> argc, Teuchos::Ptr<char**> argv)
+    {
+#ifdef EPETRA_MPI
+      MPI_Init (argc.getRawPtr(), argv.getRawPtr());
+#endif // EPETRA_MPI
+    }
+
+    MPISession::~MPISession ()
+    {
+#ifdef EPETRA_MPI
+      MPI_Finalize ();
+#endif // EPETRA_MPI
+    }
+
+    Teuchos::RCP<const Epetra_Comm>
+    MPISession::getComm ()
+    {
+      using Teuchos::rcp;
+
+      if (comm_.is_null()) {
+#ifdef EPETRA_MPI
+        comm_ = rcp (new Epetra_MpiComm (MPI_COMM_WORLD));
+#else
+        comm_ = rcp (new Epetra_SerialComm);
+#endif // EPETRA_MPI
+      }
+      return comm_;
+    }
+
+} // namespace Test
+
+} // namespace Belos

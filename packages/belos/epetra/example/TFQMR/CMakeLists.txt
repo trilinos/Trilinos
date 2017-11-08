@@ -8,13 +8,13 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
   TRIBITS_ADD_EXECUTABLE(
     TFQMR_Epetra_File_Ex
-    SOURCES TFQMREpetraExFile.cpp createEpetraProblem.cpp
+    SOURCES TFQMREpetraExFile.cpp 
     COMM serial mpi
   )
 
   TRIBITS_ADD_EXECUTABLE(
     Pseudo_Block_TFQMR_Epetra_File_Ex
-    SOURCES PseudoBlockTFQMREpetraExFile.cpp createEpetraProblem.cpp
+    SOURCES PseudoBlockTFQMREpetraExFile.cpp 
     COMM serial mpi
   )
 

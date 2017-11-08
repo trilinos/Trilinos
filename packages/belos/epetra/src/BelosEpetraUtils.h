@@ -39,27 +39,79 @@
 // ************************************************************************
 //@HEADER
 
+#ifndef BELOS_EPETRA_UTILS_H
+#define BELOS_EPETRA_UTILS_H
+
+/*! \file BelosEpetraUtils.h
+    \brief Provides utilities for Epetra examples and tests.
+*/
+
+#include "Epetra_config.h"
+
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #endif
 
 class Epetra_Map;
+class Epetra_Comm;
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Ptr.hpp"
 using Teuchos::RCP;
 using Teuchos::rcp;
 
 namespace Belos {
 
-int createEpetraProblem(
-    std::string              &filename
-    ,RCP<Epetra_Map>         *rowMap
-    ,RCP<Epetra_CrsMatrix>   *A
-    ,RCP<Epetra_MultiVector> *B
-    ,RCP<Epetra_MultiVector> *X
-    ,int                     *MyPID
-    );
+  namespace Util {
+
+  int createEpetraProblem(
+      std::string              &filename
+      ,RCP<Epetra_Map>         *rowMap
+      ,RCP<Epetra_CrsMatrix>   *A
+      ,RCP<Epetra_MultiVector> *B
+      ,RCP<Epetra_MultiVector> *X
+      ,int                     *MyPID
+      ,int                     &numRHS
+      );
+
+  int createEpetraProblem(
+      std::string              &filename
+      ,RCP<Epetra_Map>         *rowMap
+      ,RCP<Epetra_CrsMatrix>   *A
+      ,RCP<Epetra_MultiVector> *B
+      ,RCP<Epetra_MultiVector> *X
+      ,int                     *MyPID
+      )
+  { 
+    int one = 1;
+    return createEpetraProblem( filename, rowMap, A, B, X, MyPID, one );
+  }
+
+  int rebalanceEpetraProblem(
+      RCP<Epetra_Map>         &rowMap
+      ,RCP<Epetra_CrsMatrix>   &A
+      ,RCP<Epetra_MultiVector> &B
+      ,RCP<Epetra_MultiVector> &X
+      ,Epetra_Comm             &Comm
+      );
+
+  } // namespace Util
+
+  namespace Test {
+    class MPISession {
+    public:
+      MPISession (Teuchos::Ptr<int> argc, Teuchos::Ptr<char**> argv);
+      ~MPISession ();
+      Teuchos::RCP<const Epetra_Comm> getComm ();
+
+    private:
+      // Lazily initialized Epetra communicator wrapper.
+      Teuchos::RCP<Epetra_Comm> comm_;
+    };
+  } // namespace Test
 
 } // namespace Belos
+
+#endif // BELOS_EPETRA_UTILS_H
