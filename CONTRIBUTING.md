@@ -46,7 +46,7 @@ Create a local branch off of `develop` on which to make your changes:
 
 ### Make Your Changes
 
-Do whatever work is necessary to address the issue you're tackling, breaking your work into logical, compilable commits.  Feel free to commit small chunks early and often in your local repository and then use `git rebase -i` to reorganize your commits before sharing.
+Do whatever work is necessary to address the issue you're tackling, breaking your work into logical, compilable commits.  Feel free to commit small chunks early and often in your local repository and then use `git rebase -i` to reorganize your commits before sharing.  Make sure the commit messages you will be sharing reference the appropriate GitHub issue numbers.
 
 ### Update Your Branch
 
