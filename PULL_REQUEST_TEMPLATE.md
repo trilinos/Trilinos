@@ -64,6 +64,7 @@ areas of the code.  Consider including configure, build, and test log files.
 Go over all the following points, and put an `x` in all the boxes that apply.
 If you are unsure about any of these, please ask&mdash;we are here to help.
 -->
+- [ ] My commit messages mention the appropriate GitHub issue numbers.
 - [ ] My code follows the code style of the affected package(s).
 - [ ] My change requires a change to the documentation.
 - [ ] I have updated the documentation accordingly.

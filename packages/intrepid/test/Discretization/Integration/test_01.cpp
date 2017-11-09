@@ -124,12 +124,12 @@ double computeRefVolume(shards::CellTopology & cellTopology, int cubDegree) {
       break;
 
     default:
-      TEUCHOS_TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key),
-                            (cellTopology.getBaseCellTopologyData()->key != shards::Triangle<>::key),
-                            (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key),
-                            (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key),
-                            (cellTopology.getBaseCellTopologyData()->key != shards::Hexahedron<>::key),
-                            (cellTopology.getBaseCellTopologyData()->key != shards::Wedge<>::key),
+      TEUCHOS_TEST_FOR_EXCEPTION( ( (cellTopology.getBaseCellTopologyData()->key != shards::Line<>::key) ||
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Triangle<>::key) ||
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Tetrahedron<>::key) ||
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Quadrilateral<>::key) ||
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Hexahedron<>::key) ||
+                            (cellTopology.getBaseCellTopologyData()->key != shards::Wedge<>::key) ||
                             (cellTopology.getBaseCellTopologyData()->key != shards::Pyramid<>::key) ),
                           std::invalid_argument,
                           ">>> ERROR (Unit Test -- Cubature -- Volume): Invalid cell type.");

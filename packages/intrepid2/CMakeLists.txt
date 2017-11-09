@@ -49,11 +49,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KokkosDynRankView
 #
 # C) Add the libraries, tests, and examples
 #
-IF (${PACKAGE_NAME}_ENABLE_KokkosDynRankView)
-  ADD_SUBDIRECTORY(refactor)
-ELSE()
-  ADD_SUBDIRECTORY(core)
-ENDIF()
+ADD_SUBDIRECTORY(src)
+
+TRIBITS_ADD_TEST_DIRECTORIES(unit-test)
+
+# performance tests 
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(perf-test)
+
+# we do not have examples yet
+#TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # Exclude files for source package.

@@ -612,7 +612,7 @@ Array<std::tuple<GlobalOrdinal, GlobalOrdinal> > RegionHandler<Scalar, LocalOrdi
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printView()
+void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printView() const
 {
   if( 0==comm_->getRank() )
   {
@@ -628,7 +628,7 @@ void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printView()
 
 //Print methods
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printNodesToRegion()
+void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printNodesToRegion() const
 {
   if( 0==comm_->getRank() )
   {
@@ -643,7 +643,7 @@ void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printNodesToRegio
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printInactive()
+void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::printInactive() const
 {
   if( maps_.composite_map_.empty() )
     std::cout<<"INACTIVE PROC ID: "<<comm_->getRank()<<std::endl;

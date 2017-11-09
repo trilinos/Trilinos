@@ -220,8 +220,6 @@ class Reader : public Teuchos::Reader {
         TEUCHOS_ASSERT(rhs.at(0).type() == typeid(PLPair));
         PLPair& pair = any_ref_cast<PLPair>(rhs.at(0));
         any& pair_rhs_any = pair.value.getAny(/* set isUsed = */ false);
-        ParameterList& pair_rhs_pl = any_ref_cast<ParameterList>(pair_rhs_any);
-        pair_rhs_pl.setName(pair.key);
         result_any = pair_rhs_any;
         break;
       }
@@ -651,6 +649,7 @@ class Reader : public Teuchos::Reader {
       ParameterList& value = any_ref_cast<ParameterList>(value_any);
       ParameterList& result_pl = result.value.setList();
       swap(result_pl, value);
+      result_pl.setName(result.key);
     } else {
       std::string msg = "unexpected YAML map value type ";
       msg += value_any.type().name();

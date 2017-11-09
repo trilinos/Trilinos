@@ -118,9 +118,9 @@ TEST( DenseMatrixView, memorypool ) {
 
   Kokkos::MemoryPool<HostSpaceType> pool(typename HostSpaceType::memory_space(),
                                          1024*sizeof(ValueType),
-                                         16*sizeof(ValueType),
+                                         1*sizeof(ValueType),
                                          1024*sizeof(ValueType),
-                                         512*sizeof(ValueType));
+                                         1024*sizeof(ValueType));
   allocateStorageByBlocks(H, pool);
 
   DenseMatrixViewHostType A1;

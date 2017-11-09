@@ -2011,7 +2011,7 @@ void mult_A_B(
     GlobalOrdinal global_row = Aview.rowMap->getGlobalElement(i);
 
     // Loop across the i-th row of A and for each corresponding row in B, loop
-    // across colums and accumulate product A(i,k)*B(k,j) into our partial sum
+    // across columns and accumulate product A(i,k)*B(k,j) into our partial sum
     // quantities C_row_i. In other words, as we stride across B(k,:) we're
     // calculating updates for row i of the result matrix C.
     C_row_i_length = OrdinalTraits<size_t>::zero();
