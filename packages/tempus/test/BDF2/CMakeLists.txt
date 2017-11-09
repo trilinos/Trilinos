@@ -10,12 +10,19 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
 
 TRIBITS_ADD_EXECUTABLE(
   BDF2
-  SOURCES Tempus_BDF2Test.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN} 
+  SOURCES Tempus_BDF2Test.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models
-  COMM serial mpi 
+  COMM serial mpi
+)
+
+TRIBITS_ADD_EXECUTABLE(
+  BDF2Sensitivity
+  SOURCES Tempus_BDF2SensitivityTest.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  COMM serial mpi
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_CopyFiles
-  DEST_FILES Tempus_BDF2_SinCos.xml Tempus_BDF2_CDR.xml Tempus_BDF2_VanDerPol.xml
+  DEST_FILES Tempus_BDF2_SinCos.xml Tempus_BDF2_CDR.xml Tempus_BDF2_VanDerPol.xml Tempus_BDF2_SteadyQuadratic.xml
   EXEDEPS BDF2
   )

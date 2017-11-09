@@ -9,6 +9,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
 
@@ -251,6 +252,5 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos)
 
   Teuchos::TimeMonitor::summarize();
 }
-
 
 } // namespace Tempus_Test

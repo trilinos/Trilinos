@@ -122,10 +122,14 @@ public:
 
     /// Return the Stepper status
     virtual Status getStepperStatus() const
-      {return stepperState_->stepperStatus_;};
+      {return stepperState_->stepperStatus_;}
 
     /// Return Meta Data
     virtual Teuchos::RCP<SolutionStateMetaData<Scalar> > getMetaData()
+      { return metaData_; }
+
+    /// Return Meta Data
+    virtual Teuchos::RCP<const SolutionStateMetaData<Scalar> > getMetaData() const
       { return metaData_; }
 
     /// Get the current solution, x.
@@ -152,6 +156,10 @@ public:
 
     /// Get the StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getStepperState()
+      { return stepperState_; }
+
+    /// Get the StepperState
+    virtual Teuchos::RCP<const Tempus::StepperState<Scalar> > getStepperState() const
       { return stepperState_; }
 
   //@}

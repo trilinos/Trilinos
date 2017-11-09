@@ -62,6 +62,8 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
   setSolver(Teuchos::RCP<Teuchos::ParameterList> solverPL = Teuchos::null);
   virtual void
   setSolver(Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar>> solver);
+  virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
+  { return solver_; }
 
   /// Initialize during construction and after changing input parameters.
   virtual void
