@@ -91,6 +91,8 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
     virtual void setSolver(
         Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
+      { return Teuchos::null; }
     virtual void setObserver(
       Teuchos::RCP<StepperLeapfrogObserver<Scalar> > obs = Teuchos::null);
 
