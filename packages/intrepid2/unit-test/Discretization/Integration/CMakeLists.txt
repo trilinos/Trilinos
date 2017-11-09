@@ -8,7 +8,7 @@ IF(Kokkos_ENABLE_OpenMP)
   ADD_SUBDIRECTORY(OpenMP)
 ENDIF()
 
-IF(Kokkos_ENABLE_Cuda_UVM)
+IF(Kokkos_ENABLE_Cuda AND Kokkos_ENABLE_Cuda_UVM)
   ADD_SUBDIRECTORY(Cuda)
 ENDIF()
 
