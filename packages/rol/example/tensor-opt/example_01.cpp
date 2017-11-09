@@ -1,3 +1,52 @@
+// @HEADER
+// ************************************************************************
+//
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+
+/*! \file  example_01.cpp
+    \brief Contributed by Christoph Lohmann.
+           Shows how to optimally limit tensor quantities; used in
+           optimization-based flux correction schemes.
+*/
+
 ////////////////////////////////////////////////////////////////////////////////////
 // minimize F(x) = \sum_i (1 - x_i)^2 = (1 - x0)^2 + (1 - x1)^2 + (1 - x2)^2      //
 // such that                                                                      //
@@ -18,23 +67,24 @@
 #include <iostream>
 #include <cassert>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#pragma GCC diagnostic ignored "-Wsuggest-override"
-#pragma GCC diagnostic ignored "-Wterminate"
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wundef"
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Wunused-parameter"
+//#pragma GCC diagnostic ignored "-Woverloaded-virtual"
+//#pragma GCC diagnostic ignored "-Wsuggest-override"
+//#pragma GCC diagnostic ignored "-Wterminate"
+//#pragma GCC diagnostic ignored "-Wshadow"
+//#pragma GCC diagnostic ignored "-Wundef"
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "ROL_Vector.hpp"
+#include "ROL_CArrayVector.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_StatusTest.hpp"
 
-#pragma GCC diagnostic pop
+//#pragma GCC diagnostic pop
 
 /// node i is the default one;
 /// node j means we have to use -F due to F_{ij} = - F_{ji}
@@ -479,6 +529,7 @@ private:
         + _A[0]*_F[1]*_F[2]*ex[1]*ex[2] + _A[3]*_F[0]*_F[2]*ex[0]*ex[2] + _A[5]*_F[0]*_F[1]*ex[0]*ex[1]
         + _F[0]*_F[1]*_lambda*ex[0]*ex[1] + _F[0]*_F[2]*_lambda*ex[0]*ex[2] + _F[1]*_F[2]*_lambda*ex[1]*ex[2]
         + _F[0]*_F[1]*_F[2]*ex[0]*ex[1]*ex[2];
+       //ec.scale(1e2);
     }
 
     void applyJacobian(ROL::Vector<DT2_> &       jv,
@@ -508,6 +559,7 @@ private:
       ejv[2] += (_F[2]*_lambda*_lambda - _A[1]*_A[1]*_F[2] + _A[0]*_A[3]*_F[2]
                  + _A[0]*_F[2]*_lambda + _A[3]*_F[2]*_lambda + _A[0]*_F[1]*_F[2]*ex[1] + _A[3]*_F[0]*_F[2]*ex[0]
                  + _F[0]*_F[2]*_lambda*ex[0] + _F[1]*_F[2]*_lambda*ex[1] + _F[0]*_F[1]*_F[2]*ex[0]*ex[1]) * ev[2];
+      //ejv.scale(1e2);
     }
 
     void applyAdjointJacobian(ROL::Vector<DT2_> &       ajv,
@@ -537,6 +589,7 @@ private:
       eajv[2] += (_F[2]*_lambda*_lambda - _A[1]*_A[1]*_F[2] + _A[0]*_A[3]*_F[2]
                   + _A[0]*_F[2]*_lambda + _A[3]*_F[2]*_lambda + _A[0]*_F[1]*_F[2]*ex[1] + _A[3]*_F[0]*_F[2]*ex[0]
                   + _F[0]*_F[2]*_lambda*ex[0] + _F[1]*_F[2]*_lambda*ex[1] + _F[0]*_F[1]*_F[2]*ex[0]*ex[1]) * ev[2];
+      //eajv.scale(1e2);
     }
 
     void applyAdjointJacobian(ROL::Vector<DT2_> &       ajv,
@@ -573,6 +626,7 @@ private:
       eahuv[2] += ((_A[3]*_F[0]*_F[2] + _F[0]*_F[2]*_lambda + _F[0]*_F[1]*_F[2]*ex[1]) * ev[0]
                    + (_A[0]*_F[1]*_F[2] + _F[1]*_F[2]*_lambda + _F[0]*_F[1]*_F[2]*ex[0]) * ev[1]
                    + DT2_(0) * ev[2]) * eu[2];
+      //eahuv.scale(1e2);
     }
   };
 
@@ -637,10 +691,6 @@ public:
     my_cast<MyConstraint<DT_, dim_> &>(* _icon[3]).set_A(_A_j_lo);
     my_cast<MyConstraint<DT_, dim_> &>(* _icon[3]).set_F(_F_n);
 
-    // TODO: Why do I first have to set the pointers of my Constraints before creating the optimization problem? 
-    //       (seems that the constructor executes the "value" member function which is not valid at that moment)
-    //       Is it still possible to change the paramters and reuse the OptimizationProblem object even if the
-    //       constructor is not "updated"?
     _problem = Teuchos::rcp(new ROL::OptimizationProblem<DT_>(_obj, _x, _bnd, _icon, _imul, _ibnd));
     _solver = Teuchos::rcp(new ROL::OptimizationSolver<DT_>(* _problem, * _parlist));
     _x->zero();
@@ -699,15 +749,9 @@ public:
   DT_ * solve(DT_ x[3], std::ostream & outStream = std::cout)
   {
     _x->wrap(x);
-    //_x->zero();
     for (auto& it : _imul) it->zero();
-    // TODO: How to reuse solver object? If I use use the same object 
-    //       and apply "solve" once again the solution is completely wrong
-    //ROL::OptimizationSolver<DT_> solver(* _problem, * _parlist);
-    //_solver->resetAlgorithmState();
     _solver->reset();
     _problem->reset();
-    //_solver = Teuchos::rcp(new ROL::OptimizationSolver<DT_>(* _problem, * _parlist));
     _solver->solve(outStream);
 
     return _x->data();
@@ -771,11 +815,25 @@ public:
 }; // end SemidefiniteProgramming
 
 
+
 // ================================================================================
 // ================================================================================
 
-int main(int /*argc*/, char * /*argv*/[])
-{
+int main(int argc, char *argv[]) {
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
+  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  Teuchos::RCP<std::ostream> outStream;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  if (iprint > 0)
+    outStream = Teuchos::rcp(&std::cout, false);
+  else
+    outStream = Teuchos::rcp(&bhs, false);
+
+  int errorFlag  = 0;
+
   using DataType = double;
   constexpr int dim = 3;
 
@@ -801,21 +859,30 @@ int main(int /*argc*/, char * /*argv*/[])
       sp.set_node<Node::i>(A_i, lambda_i_lo, lambda_i_up);
       sp.set_node<Node::j>(A_j, lambda_j_lo, lambda_j_up);
       sp.set_flux(F);
-      { // test exact solution
-        DataType x[] = {1.0, 0.5, 0.0};
-        sp.checkConstraints(x);
-        sp.solve(x);
-        std::cout << std::setprecision(16) << "x = [" << x[0] << ", " << x[1] << ", " << x[2] << "]" << std::endl;
+      // test exact solution
+      DataType x[] = {1.0, 0.5, 0.0};
+      sp.checkConstraints(x);
+      sp.solve(x);
+      std::cout << std::setprecision(16) << "x = [" << x[0] << ", " << x[1] << ", " << x[2] << "]" << std::endl;
+      // start from zero solution
+      DataType y[] = {0.0, 0.0, 0.0};
+      sp.solve(y);
+      std::cout << "y = [" << y[0] << ", " << y[1] << ", " << y[2] << "]" << std::endl;
+      // solve one more time
+      DataType z[] = {0.0, 0.0, 0.0};
+      sp.solve(z);
+      std::cout << "z = [" << z[0] << ", " << z[1] << ", " << z[2] << "]" << std::endl;
+      // perform checks
+      ROL::CArrayVector<DataType> xx(&x[0],dim), yy(&y[0],dim), zz(&z[0],dim);
+      xx.axpy(static_cast<DataType>(-1), yy);
+      if (xx.norm() > std::sqrt(ROL::ROL_EPSILON<DataType>())) {
+        *outStream << "\n\nxx.norm() = " << xx.norm() << "\n"; 
+        errorFlag = 1000;
       }
-      {
-        DataType x[] = {0.0, 0.0, 0.0};
-        sp.solve(x);
-        std::cout << "x = [" << x[0] << ", " << x[1] << ", " << x[2] << "]" << std::endl;
-      }
-      { // TODO: Why are the solutions different?
-        DataType x[] = {0.0, 0.0, 0.0};
-        sp.solve(x);
-        std::cout << "x = [" << x[0] << ", " << x[1] << ", " << x[2] << "]" << std::endl;
+      yy.axpy(static_cast<DataType>(-1), zz);
+      if (yy.norm() > ROL::ROL_EPSILON<DataType>()) {
+        *outStream << "\n\nyy.norm() = " << yy.norm() << "\n"; 
+        errorFlag = 1000;
       }
     }
   }
@@ -824,6 +891,11 @@ int main(int /*argc*/, char * /*argv*/[])
     std::cout << err.what() << std::endl;
     return 1;
   };
+
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
 
   return 0;
 }
