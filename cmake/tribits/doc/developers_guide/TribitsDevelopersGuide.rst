@@ -7811,6 +7811,7 @@ be documented in `TribitsBuildReference`_.
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
 
+* `${PROJECT_NAME}_C_Standard`_
 * `${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS`_
 * `${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_
 * `${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`_
@@ -7842,8 +7843,18 @@ a given TriBITS project are:
 * `MPI_EXEC_MAX_NUMPROCS`_
 * `PythonInterp_FIND_VERSION`_
 
-
 These options are described below.
+
+.. _${PROJECT_NAME}_C_Standard:
+
+**${PROJECT_NAME}_C_Standard**
+
+  The variable ``${PROJECT_NAME}_C_Standard`` is used define the C standard
+  pass to the compiler in ``--std=<cstd>`` for GCC builds of the project.
+  TriBITS sets the default as ``c99`` but the project can set a new default in
+  the project's base `<projectDir>/CMakeLists.txt`_ file with, for example::
+
+    SET(${PROJECT_NAME}_C_Standard_DEFAULT c11)
 
 .. _${PROJECT_NAME}_CHECK_FOR_UNPARSED_ARGUMENTS:
 
