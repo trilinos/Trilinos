@@ -222,6 +222,14 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Enable the C compiler and related code"
     ${${PROJECT_NAME}_ENABLE_C_DEFAULT} )
 
+  IF ("${${PROJECT_NAME}_C_Standard_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_C_Standard_DEFAULT c99)
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_C_Standard
+    ${${PROJECT_NAME}_C_Standard_DEFAULT}
+    CACHE STRING
+    "The standard <cstd> to use in --std=<cstd> for GCC compilers." )
+
   IF ("${${PROJECT_NAME}_ENABLE_CXX_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_ENABLE_CXX_DEFAULT ON)
   ENDIF()
