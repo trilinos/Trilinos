@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
     int nx      = 80;    // Set spatial discretization.
     int nt      = 80;    // Set temporal discretization.
     RealT T     = 1.0;   // Set end time.
-    RealT alpha = 0.05;  // Set penalty parameter.
-    RealT nu    = 1.e-2; // Set viscosity parameter.
+    RealT alpha = 5e-2;  // Set penalty parameter.
+    RealT nu    = 1e-2;  // Set viscosity parameter.
     Objective_BurgersControl<RealT> obj(alpha,nx,nt,T);
     // Initialize equality constraints
     Constraint_BurgersControl<RealT> con(nx, nt, T, nu);
@@ -162,6 +162,8 @@ int main(int argc, char *argv[]) {
     // Solve using a composite step method.
     algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Composite Step",*parlist,false));
     x.zero();
+    ROL::Elementwise::Fill<RealT> setFunc(0.25);
+    x.applyUnary(setFunc);
     std::clock_t timer_cs = std::clock();
     algo->run(x,g,l,c,obj,con,true,*outStream);
     *outStream << "Composite Step required " << (std::clock()-timer_cs)/(RealT)CLOCKS_PER_SEC
@@ -171,6 +173,9 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<ROL::Vector<RealT> > err = z.clone();
     err->set(*zTR); err->axpy(-1.,z);
     errorFlag += (err->norm() > 1.e-4) ? 1 : 0;
+    if (errorFlag) {
+      *outStream << "\n\nControl error = " << err->norm() << "\n";
+    }
 
 //    std::ofstream control;
 //    control.open("control.txt");

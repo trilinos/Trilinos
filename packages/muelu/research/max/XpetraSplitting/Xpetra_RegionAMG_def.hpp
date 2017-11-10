@@ -57,11 +57,17 @@
 namespace Xpetra{
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-RegionAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RegionAMG(const char* matrix_file_name, const char* elements_file_name, RCP<const Teuchos::Comm<int> > comm, Teuchos::ParameterList muelu, GlobalOrdinal num_levels, GlobalOrdinal coarsening_factor):num_levels_(num_levels),coarsening_factor_(coarsening_factor),comm_(comm), muelu_(muelu)
+RegionAMG<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RegionAMG(
+    Teuchos::RCP<tpetra_splitting> matrixSplitting,
+    Teuchos::RCP<Xpetra::RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node> > regionHandler,
+    RCP<const Teuchos::Comm<int> > comm, Teuchos::ParameterList muelu,
+    GlobalOrdinal num_levels, GlobalOrdinal coarsening_factor) :
+    num_levels_(num_levels), coarsening_factor_(coarsening_factor), comm_(comm), muelu_(
+        muelu)
 {
 
-  TEUCHOS_TEST_FOR_EXCEPT( !( matrixSplitting_.is_null() ) );
-  matrixSplitting_ = rcp( new tpetra_splitting(matrix_file_name, elements_file_name, comm) );
+  TEUCHOS_TEST_FOR_EXCEPT(matrixSplitting.is_null());
+  matrixSplitting_ = matrixSplitting;
 
   //The maps defined here below are used to interface with outer applications (e.g. Belos-type solvers)
   //and guarantee that DomainMap and RangeMap partition input multivectors and output multivectors in a proper way.

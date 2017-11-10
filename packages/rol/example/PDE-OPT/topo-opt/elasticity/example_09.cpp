@@ -177,9 +177,11 @@ int main(int argc, char *argv[]) {
       polList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Polar Angle");
       distVec[i*dim + 1] = ROL::DistributionFactory<RealT>(polList);
       // Azimuth angle distribution.
-      Teuchos::ParameterList aziList;
-      aziList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Azimuth Angle");
-      distVec[i*dim + 2] = ROL::DistributionFactory<RealT>(aziList);
+      if (probDim == 3) {
+        Teuchos::ParameterList aziList;
+        aziList.sublist("Distribution") = parlist->sublist("Problem").sublist(sli.str()).sublist("Azimuth Angle");
+        distVec[i*dim + 2] = ROL::DistributionFactory<RealT>(aziList);
+      }
     }
     Teuchos::RCP<ROL::BatchManager<RealT> > xbman
       = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));

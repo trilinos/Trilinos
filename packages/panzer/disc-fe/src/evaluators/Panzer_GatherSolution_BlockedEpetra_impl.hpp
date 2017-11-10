@@ -52,7 +52,6 @@
 // Panzer
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_GatherSolution_Input.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_UniqueGlobalIndexer.hpp"
@@ -276,7 +275,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         LO cellLocalId = localCellIds[cell];
-        Kokkos::View<const int*, PHX::Device> LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+        auto LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)
@@ -309,7 +308,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         LO cellLocalId = localCellIds[cell];
-        Kokkos::View<const int*, PHX::Device> LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+        auto LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)
@@ -527,7 +526,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         LO cellLocalId = localCellIds[cell];
-        Kokkos::View<const int*, PHX::Device> LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+        auto LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)
@@ -560,7 +559,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         LO cellLocalId = localCellIds[cell];
-        Kokkos::View<const int*, PHX::Device> LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+        auto LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)
@@ -821,7 +820,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         LO cellLocalId = localCellIds[cell];
-        Kokkos::View<const int*, PHX::Device> LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+        auto LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)
@@ -856,7 +855,7 @@ evaluateFields(
       for (int cell(0); cell < numCells; ++cell)
       {
         LO cellLocalId = localCellIds[cell];
-        Kokkos::View<const int*, PHX::Device> LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+        auto LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
         // Loop over the basis functions and fill the fields.
         for (int basis(0); basis < numBases; ++basis)

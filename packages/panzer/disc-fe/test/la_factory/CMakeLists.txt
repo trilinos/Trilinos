@@ -5,13 +5,6 @@ SET(UNIT_TEST_DRIVER
   ${PANZER_UNIT_TEST_MAIN})
 
 # TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#   tEpetraLinearObjFactory
-#   SOURCES tEpetraLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
-#   COMM mpi
-#   NUM_MPI_PROCS 2
-#   )
-# 
-# TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #   tTpetraLinearObjFactory
 #   SOURCES tTpetraLinearObjFactory.cpp UnitTest_UniqueGlobalIndexer.cpp ${UNIT_TEST_DRIVER}
 #   COMM mpi
@@ -51,8 +44,7 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LinearObjFactory_Tests
-  SOURCES tEpetraLinearObjFactory.cpp 
-          tTpetraLinearObjFactory.cpp 
+  SOURCES tTpetraLinearObjFactory.cpp 
           tBlockedLinearObjFactory.cpp 
           tBlockedTpetraLinearObjFactory.cpp 
           tTpetra_GlbEvalData.cpp 

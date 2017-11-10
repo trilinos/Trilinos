@@ -448,7 +448,7 @@ public:
   }
 
   void reset(void) {
-    state_  = Teuchos::rcp(new AlgorithmState<Real>);
+    state_->reset();
   }
 
 

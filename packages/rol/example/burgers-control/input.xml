@@ -111,7 +111,7 @@
       <Parameter name="Output Level" type="int" value="0" />
       <!-- ===========  OPTIMALITY SYSTEM SOLVER  =========== -->
       <ParameterList name="Optimality System Solver">
-        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-6"  />
+        <Parameter name="Nominal Relative Tolerance" type="double" value="1e-7"  />
         <Parameter name="Fix Tolerance"              type="bool"   value="true"  />
       </ParameterList>
       <!-- ===========  TANGENTIAL SUBPROBLEM SOLVER  =========== -->

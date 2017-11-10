@@ -168,8 +168,6 @@ evaluateFields(typename TRAITS::EvalData workset)
 {
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
-   Kokkos::View<const LO*, PHX::Device> LIDs;
-
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -191,7 +189,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+      auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
       // loop over the fields to be gathered
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
@@ -317,8 +315,6 @@ evaluateFields(typename TRAITS::EvalData workset)
 {
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
-   Kokkos::View<const LO*, PHX::Device> LIDs;
-
    // for convenience pull out some objects from workset
    std::string blockId = this->wda(workset).block_id;
    const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
@@ -343,7 +339,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
        std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-       LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+       auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
        // loop over the fields to be gathered
        for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
@@ -371,7 +367,7 @@ evaluateFields(typename TRAITS::EvalData workset)
      for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
        std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-       LIDs = globalIndexer_->getElementLIDs(cellLocalId);
+       auto LIDs = globalIndexer_->getElementLIDs(cellLocalId);
 
        // loop over the fields to be gathered
        for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {

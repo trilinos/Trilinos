@@ -54,7 +54,6 @@
 
 // Panzer
 #include "Panzer_BlockedVector_ReadOnly_GlobalEvaluationData.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_GlobalEvaluationData.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 #include "Panzer_PureBasis.hpp"
@@ -230,7 +229,7 @@ evaluateFields(
     for (int cell(0); cell < numCells; ++cell)
     {
       LO cellLocalId = localCellIds[cell];
-      Kokkos::View<const int*, PHX::Device> LIDs = subRowIndexer->getElementLIDs(cellLocalId);
+      auto LIDs = subRowIndexer->getElementLIDs(cellLocalId);
 
       // Loop over the basis functions and fill the fields.
       for (int basis(0); basis < numBases; ++basis)

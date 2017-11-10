@@ -54,7 +54,6 @@
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
 #include "Tpetra_SrcDistObject.hpp"
-#include "Kokkos_NodeAPIConfigDefs.hpp" // enum KokkosClassic::ReadWriteOption
 #include "Kokkos_ArithTraits.hpp"
 #include <type_traits>
 
@@ -66,6 +65,16 @@
 #  undef HAVE_TPETRA_TRANSFER_TIMERS
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
+namespace KokkosClassic {
+  /// \brief Read/write options for non-const views.
+  ///
+  /// \warning This is NOT for users!  This only exists for backwards
+  ///   compatibility.
+  enum ReadWriteOption {
+    ReadWrite = 0, /*!< Indicates that the view may be safely read and written. */
+    WriteOnly = 1 /*!< Indicates that the contents of the view are undefined until set on the host. */
+  };
+} // namespace KokkosClassic
 
 namespace Tpetra {
 

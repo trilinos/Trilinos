@@ -103,7 +103,6 @@ namespace {
 
   using std::string;
 
-  using Teuchos::TypeTraits::is_same;
   using Teuchos::as;
   using Teuchos::FancyOStream;
   using Teuchos::RCP;

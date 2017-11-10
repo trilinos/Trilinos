@@ -212,6 +212,13 @@ public:
     isConEvaluated_ = false;
   }
 
+  void reset(const Real mu) {
+    lam_->zero();
+    mu_ = mu;
+    nfval_ = 0; ngval_ = 0;
+    isConEvaluated_ = false;
+  }
+
   Real testComplementarity(const ROL::Vector<Real> &x) {
     Real val(0);
     if (con_->isActivated()) {

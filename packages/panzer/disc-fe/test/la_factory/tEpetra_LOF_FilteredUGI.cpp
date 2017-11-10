@@ -57,7 +57,7 @@
 #include "Panzer_Filtered_UniqueGlobalIndexer.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_PauseToAttach.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 
 #include "UnitTest_ConnManager.hpp"
 
@@ -167,7 +167,7 @@ TEUCHOS_UNIT_TEST(tEpetra_LOF_FilteredUGI,epetra_lof)
      std::vector<int> indices_f;
      filtered_ugi->getOwnedIndices(indices_f);
 
-     EpetraLinearObjFactory<panzer::Traits,int> lof(tComm,filtered_ugi);
+     BlockedEpetraLinearObjFactory<panzer::Traits,int> lof(tComm,filtered_ugi);
      TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraDomainSpace(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
      TEST_EQUALITY(rcp_dynamic_cast<const SpmdSpace>(lof.getThyraRangeSpace(),true)->localSubDim(),Teuchos::as<int>(indices_f.size())); 
 

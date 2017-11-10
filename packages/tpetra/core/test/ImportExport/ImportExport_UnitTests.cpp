@@ -55,6 +55,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include <iterator>
+#include <sstream>
 
 #include <Tpetra_Distributor.hpp>
 #include "Teuchos_FancyOStream.hpp"
@@ -65,6 +66,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
+#include "Tpetra_Import_Util.hpp"
 
 namespace {
   using Tpetra::TestingUtilities::getNode;
@@ -143,6 +145,9 @@ namespace {
     auto sum = same + permute + remote;
     auto expectedSum = target->getNodeNumElements();
     TEST_EQUALITY( sum, expectedSum );
+
+    bool isvalid=Tpetra::Import_Util::checkImportValidity(*importer);
+    TEST_EQUALITY(isvalid,true);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ImportExport, GetNeighborsForward, Scalar, LO, GO, Node )
@@ -482,6 +487,17 @@ namespace {
     }
     TEST_EQUALITY(all_is_well,true);
 
+    
+    bool isvalid=Tpetra::Import_Util::checkImportValidity(Importer);
+    if(!isvalid) {
+      std::ostringstream oss;
+      Importer.print(oss);
+
+      std::cout<<oss.str()<<std::endl;
+    }
+
+    TEST_EQUALITY(isvalid,true);
+    
   }
 
   //

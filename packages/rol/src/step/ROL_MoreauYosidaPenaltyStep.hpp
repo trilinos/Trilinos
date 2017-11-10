@@ -130,6 +130,7 @@ private:
   Real gLnorm_;
   Real tau_;
   bool print_;
+  bool updatePenalty_;
 
   Teuchos::ParameterList parlist_;
   int subproblemIter_;
@@ -203,7 +204,8 @@ public:
     Real ten(10), oem6(1.e-6), oem8(1.e-8);
     Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
     Step<Real>::getState()->searchSize = steplist.get("Initial Penalty Parameter",ten);
-    tau_   = steplist.get("Penalty Parameter Growth Factor",ten);
+    tau_ = steplist.get("Penalty Parameter Growth Factor",ten);
+    updatePenalty_ = steplist.get("Update Penalty",true);
     print_ = steplist.sublist("Subproblem").get("Print History",false);
     // Set parameters for step subproblem
     Real gtol = steplist.sublist("Subproblem").get("Optimality Tolerance",oem8);
@@ -320,7 +322,9 @@ public:
     // Update state
     updateState(x,l,obj,con,bnd,algo_state);
     // Update multipliers
-    state->searchSize *= tau_;
+    if (updatePenalty_) {
+      state->searchSize *= tau_;
+    }
     myPen.updateMultipliers(state->searchSize,x);
     algo_state.nfval += myPen.getNumberFunctionEvaluations() + ((algo_->getState())->nfval);
     algo_state.ngrad += myPen.getNumberGradientEvaluations() + ((algo_->getState())->ngrad);
@@ -347,7 +351,9 @@ public:
     // Update state
     updateState(x,obj,bnd,algo_state);
     // Update multipliers
-    state->searchSize *= tau_;
+    if (updatePenalty_) {
+      state->searchSize *= tau_;
+    }
     myPen.updateMultipliers(state->searchSize,x);
     algo_state.nfval += myPen.getNumberFunctionEvaluations() + ((algo_->getState())->nfval);
     algo_state.ngrad += myPen.getNumberGradientEvaluations() + ((algo_->getState())->ngrad);

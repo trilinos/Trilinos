@@ -378,7 +378,7 @@ private:
       deltaLh_ = std::abs( ghNorm - lhNorm + deltaLh_ * deltaLh_);
 #endif
               
-      if( std::sqrt(deltaLh_) > tol*kappa_*std::max(1.0,ghNorm) ){ // originally had deltaLh without sqrt 
+      if( std::sqrt(deltaLh_) > tol*kappa_*std::max(static_cast<Real>(1),ghNorm) ){ // originally had deltaLh without sqrt 
         unsigned newind = currSize_-dependent_;
         dependent_--;
         // get the last row of L
@@ -429,7 +429,7 @@ private:
         deltaLj_ = std::abs( gjNorm - ljNorm + deltaLj_ * deltaLj_);
 #endif
                 
-        if( std::sqrt(deltaLj_) > tol*kappa_*std::max(1.0,gjNorm) ){ // originally had deltaLj without sqrt
+        if( std::sqrt(deltaLj_) > tol*kappa_*std::max(static_cast<Real>(1),gjNorm) ){ // originally had deltaLj without sqrt
           unsigned newind = currSize_-1;
           dependent_--;
           // get the last row of L

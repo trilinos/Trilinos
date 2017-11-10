@@ -5,7 +5,7 @@ How to build the Tutorial
    executables in the packages/muelu/doc/Tutorial/src subfolder of the build
    folder of Trilinos.
 
-2) Switch to the packages/muelu/doc/Tutorial/src subfolder of your Trilinos
+2) Switch to the packages/muelu/doc/Tutorial/tex subfolder of your Trilinos
    build folder.
 
 3) Run the command

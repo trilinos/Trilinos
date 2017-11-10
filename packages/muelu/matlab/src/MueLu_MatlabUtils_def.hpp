@@ -673,11 +673,7 @@ RCP<FieldContainer_ordinal> loadDataFromMatlab<RCP<FieldContainer_ordinal>>(cons
   int nr = mxGetM(mxa);
   int nc = mxGetN(mxa);
 
-#ifdef HAVE_MUELU_INTREPID2_REFACTOR 
   RCP<FieldContainer_ordinal> fc = rcp(new FieldContainer_ordinal("FC from Matlab",nr,nc));
-#else
-  RCP<FieldContainer_ordinal> fc = rcp(new FieldContainer_ordinal(nr,nc));
-#endif
   for(int col = 0; col < nc; col++)
   {
     for(int row = 0; row < nr; row++)

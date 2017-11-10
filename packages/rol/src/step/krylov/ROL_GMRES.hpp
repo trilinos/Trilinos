@@ -167,7 +167,7 @@ public:
 
     for( iter=0; iter<maxit_; ++iter ) {
 
-//      std::cout << (*res_)[iter] << std::endl;
+      //std::cout << "iter = " << iter << "  rnorm = " << (*res_)[iter] << "  xnorm = " << x.norm() << "  bnorm = " << b.norm() << std::endl;
 
       if( useInexact_ ) {
         itol = rtol/(maxit_*(*res_)[iter]);
@@ -245,14 +245,13 @@ public:
         x.plus(*z_);
         break;
       }
-
-      if(iter == maxit_) {
-        flag = 1;
-      }
     } // loop over iter
 
+    if(iter == maxit_) {
+      flag = 1;
+      x.plus(*z_);
+    }
   }
-
 
 }; // class GMRES
 

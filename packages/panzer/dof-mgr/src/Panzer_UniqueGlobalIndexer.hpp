@@ -299,7 +299,7 @@ public:
    /** Access the local IDs for an element. The local ordering is according to
      * the <code>getOwnedAndGhostedIndices</code> method.
      */
-   const Kokkos::View<const LocalOrdinalT*,PHX::Device> getElementLIDs(LocalOrdinalT localElmtId) const
+  const Kokkos::View<const LocalOrdinalT*,Kokkos::LayoutRight,PHX::Device> getElementLIDs(LocalOrdinalT localElmtId) const
     { return Kokkos::subview(localIDs_k_, localElmtId, Kokkos::ALL() ); }
 
    /** Access the local IDs for an element. The local ordering is according to
@@ -339,7 +339,7 @@ public:
      typedef typename PHX::Device execution_space;
 
      Kokkos::View<const int*,PHX::Device> cellIds;
-     Kokkos::View<const LocalOrdinalT**,PHX::Device> global_lids;
+     Kokkos::View<const LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> global_lids;
      Kokkos::View<LocalOrdinalT**,PHX::Device> local_lids;
 
      KOKKOS_INLINE_FUNCTION
@@ -385,8 +385,8 @@ protected:
        max = localIDs[i].size() > max ? localIDs[i].size() : max;
 
      // allocate for the kokkos size
-     Kokkos::View<LocalOrdinalT**,PHX::Device> localIDs_k 
-         = Kokkos::View<LocalOrdinalT**,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
+     Kokkos::View<LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> localIDs_k 
+       = Kokkos::View<LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device>("ugi:localIDs_",localIDs.size(),max);
      for(std::size_t i=0;i<localIDs.size();i++) {
        for(std::size_t j=0;j<localIDs[i].size();j++)
          localIDs_k(i,j) = localIDs[i][j];
@@ -407,7 +407,7 @@ protected:
    }
 
 private:
-   Kokkos::View<const LocalOrdinalT**,PHX::Device> localIDs_k_;
+  Kokkos::View<const LocalOrdinalT**,Kokkos::LayoutRight,PHX::Device> localIDs_k_;
 };
 
 // prevents a warning because a destructor does not exist

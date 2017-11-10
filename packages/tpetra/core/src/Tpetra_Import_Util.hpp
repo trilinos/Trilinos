@@ -221,24 +221,37 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
   RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > target = Importer.getTargetMap();
   RCP<const Teuchos::Comm<int> > comm = source->getComm();
 
-  // FIXME: We're only checking the recv end here... add the send end
+  // For now, do not check validity of a locally replicated source map (just return true)
+  if (!source->isDistributed()) return true;
+
   int global_is_valid=0;
   bool is_valid=true;
  
   // We check validity by going through each ID in the source map one by one, broadcasting the sender's PID and then all
   // receivers check it.
   LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-  const int MyPID = comm->getRank();
+  const int MyPID    = comm->getRank();
+  const int NumProcs = comm->getSize();
 
   GlobalOrdinal minSourceGID = source->getMinAllGlobalIndex();
   GlobalOrdinal maxSourceGID = source->getMaxAllGlobalIndex();
+  GlobalOrdinal minTargetGID = target->getMinAllGlobalIndex();
+  GlobalOrdinal maxTargetGID = target->getMaxAllGlobalIndex();
+
+  std::ostringstream os;
+
+  /***********************************************/
+  /*              Check recv side                */
+  /***********************************************/
 
   Teuchos::ArrayView<const LocalOrdinal> permuteTarget = Importer.getPermuteToLIDs();
-  Teuchos::ArrayView<const LocalOrdinal> remoteLIDs = Importer.getRemoteLIDs();
-  Teuchos::Array<int> remotePIDs; getPids(Importer,remotePIDs,false);
+  Teuchos::ArrayView<const LocalOrdinal> remoteLIDs    = Importer.getRemoteLIDs();
+  Teuchos::ArrayView<const LocalOrdinal> exportLIDs    = Importer.getExportLIDs();
+  Teuchos::ArrayView<const LocalOrdinal> exportPIDs    = Importer.getExportPIDs();
+  Teuchos::Array<int> remotePIDs; getRemotePIDs(Importer,remotePIDs);
 
   // Generate remoteGIDs
-  Teuchos::Array<LocalOrdinal> remoteGIDs(remoteLIDs.size());
+  Teuchos::Array<GlobalOrdinal> remoteGIDs(remoteLIDs.size());
   for(size_t i=0; i<(size_t)remoteLIDs.size(); i++)
     remoteGIDs[i] = target->getGlobalElement(remoteLIDs[i]);
 
@@ -252,26 +265,29 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
     else TempPID = MyPID;
     Teuchos::reduceAll<int, int> (*comm, Teuchos::REDUCE_MAX,TempPID, Teuchos::outArg(OwningPID));
 
-
     // Check to see if I have this guy in the target.  If so, make sure I am receiving him from the owner
     LocalOrdinal tlid = target->getLocalElement(i);    
 
     if(tlid != LO_INVALID) {
       // This guy is in my target map, now to check if I'm receiving him from the owner (which I now know)
       bool is_ok = false;
+      
+      // This guy is not in the SourceMap at all.  Weird, but acceptable.
+      if(OwningPID == -1) continue;
+
       if (OwningPID == MyPID) {
 	// I own this guy
 	if((size_t) tlid < Importer.getNumSameIDs()) {
 	  // Check sames
 	  is_ok = true;
 	}
-	else if ((size_t)tlid < Importer.getNumSameIDs() + Importer.getNumPermuteIDs()) {
+	else {
 	  // Check permutes
 	  for (size_t j=0; j<(size_t)permuteTarget.size(); j++) {
 	    if(tlid == permuteTarget[j]) {
 	      is_ok=true; 
 	      break;
-	    }	      
+	    }
 	  }
 	}
       }
@@ -293,13 +309,135 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 	  }
 	}
       }
-      if(!is_ok) is_valid=false;
+      if(!is_ok) {
+        os<<MyPID<<"  ERROR1: GID "<<i<<" should be remoted from PID "<<OwningPID<<" but isn't."<<std::endl;
+	is_valid=false;
+      }
     }
 
   }//end for loop
 
+  /***********************************************/
+  /*              Check send side                */
+  /***********************************************/
+  Teuchos::Array<int> local_proc_mask(NumProcs,0), global_proc_mask(NumProcs,0);
+
+
+  for(GlobalOrdinal i=minTargetGID; i<maxTargetGID; i++) {
+
+    // If I have the target guy, set the proc mask
+    LocalOrdinal tlid = target->getLocalElement(i);    
+    LocalOrdinal slid = source->getLocalElement(i);    
+
+    if(tlid==LO_INVALID) local_proc_mask[MyPID] = 0;
+    else local_proc_mask[MyPID] = 1;
+
+    Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,NumProcs, &local_proc_mask[0],&global_proc_mask[0]);
+
+
+    if(slid !=LO_INVALID) {
+      // If I own this unknown on the src I should check to make sure I'm exporting it to each guy in the global_proc_mask who wants it
+      for(int j=0; j<NumProcs; j++) {
+	if(j==MyPID) continue; // skip self unknowns
+	if(global_proc_mask[j]==1) {
+	  bool is_ok = false;
+	  // This guy needs the unknown
+	  bool already_hit = false;
+	  for(size_t k=0; k<(size_t)exportPIDs.size(); k++) {
+	    if (exportPIDs[k] == j && source->getGlobalElement(exportLIDs[k]) == i) {
+	    // No double hits please
+	    if(already_hit) {
+	      is_ok=false; 
+	      break;
+	    }
+	    else {
+	      is_ok=true;
+	      already_hit=true;
+	    }
+	    }
+	  }
+	  if(!is_ok) {
+	    os<<MyPID<<" ERROR2: GID "<<i<<" should be sent to PID "<<j<<" but isn't"<<std::endl;
+	    is_valid=false;
+	  }
+	}
+      }
+    }
+  }
+  
+  // cbl check that for each of my remote GIDs I receive a corresponding export id. 
+
+  Teuchos::Array<int> proc_num_exports_recv(NumProcs,0);
+
+  Teuchos::Array<GlobalOrdinal> exportGIDs(exportLIDs.size(),-1);
+  Teuchos::Array<int> remoteGIDcount(remoteGIDs.size(),0);
+
+  for(size_t l=0;l<(size_t)exportLIDs.size();++l) {
+    exportGIDs[l]=source->getGlobalElement(exportLIDs[l]);
+    if(exportGIDs[l]<0) {
+      os<<MyPID<<"ERROR3: source->getGlobalElement(exportLIDs[l]) is invalid GID="<<exportGIDs[l]<<" LID= "<<exportLIDs[l]<<std::endl;
+      is_valid=false;
+    }
+  }
+  
+  int allexpsiz=0;
+  Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,exportGIDs.size(),  Teuchos::outArg(allexpsiz));
+  
+  for(int i=0;i<allexpsiz;++i) {
+    Teuchos::Array<GlobalOrdinal> myexpgid(NumProcs,-2), yourexpgid(NumProcs,-2);
+    Teuchos::Array<int> myexppid(NumProcs,-2), yourexppid(NumProcs,-2);
+    if(i<exportGIDs.size()) {
+      myexpgid[MyPID] = exportGIDs[i];
+      myexppid[MyPID] = exportPIDs[i];
+    }
+    Teuchos::reduceAll<int,GlobalOrdinal>(*comm,Teuchos::REDUCE_MAX,NumProcs, &myexpgid[0],&yourexpgid[0]);
+    Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,NumProcs, &myexppid[0],&yourexppid[0]);
+    for(int p=0;p<NumProcs;++p) { // check one to one and onto
+      GlobalOrdinal cgid = yourexpgid[p];
+      // ignore -2's. 
+      if(cgid == -2) continue;
+      if(cgid < 0) {
+        os<<MyPID<<" ERROR4: received exportGID is invalid "<<cgid<<std::endl;
+        is_valid=false;
+      }
+      bool foundit=false;
+      for(size_t k=0;k<(size_t)remoteGIDs.size();++k) {
+        if(cgid == remoteGIDs[k] && yourexppid[p] == MyPID ) {
+          if(p != remotePIDs[k]) {
+            os<<MyPID<<" ERROR5: receive export from wrong pid: got "<<p<<" expected: "<<remotePIDs[k]<<std::endl;
+            is_valid = false;
+          }
+          remoteGIDcount[k]++;
+          if(foundit) {
+            os<<MyPID<<" ERROR6: found multiple GIDs from correct pid: GID  "<<remoteGIDs[k]<<std::endl;
+            is_valid = false;
+          }
+          foundit = true;
+        }
+      }
+      if(!foundit &&  yourexppid[p] == MyPID ) {
+        os<<MyPID<<" ERROR7: receive gid  "<<cgid<<" that is not in my remote gid list, from pid  "<<p<<std::endl;
+        is_valid = false;
+      }
+
+    }
+  }
+  // now check that remoteGIDcount is only 1's.
+  for(size_t i = 0; i< (size_t) remoteGIDcount.size(); ++i) {
+    int rc = remoteGIDcount[i];
+    if(rc == 1) continue;
+    os<<MyPID<<" ERROR8: my remote at "<<i<<" gid "<<remoteGIDs[i]<<" has count "<<rc<<std::endl;
+    is_valid = false;
+  }
+
+
   // Do a reduction on the final bool status
   Teuchos::reduceAll<int,int> (*comm, Teuchos::REDUCE_MIN,(int)is_valid, Teuchos::outArg(global_is_valid));
+
+  if(!global_is_valid) {
+    std::cerr<<os.str()<<std::flush;
+    Importer.print(std::cout);
+  }
 
   return global_is_valid>0;
 }

@@ -43,7 +43,7 @@
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
-#include "Panzer_EpetraLinearObjFactory.hpp"
+#include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_ResponseLibrary.hpp"
@@ -76,7 +76,7 @@ namespace {
 class EpetraLOF_EOpFactory : public Teuchos::AbstractFactory<Epetra_Operator> {
    Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
 public:
-    EpetraLOF_EOpFactory(const panzer::EpetraLinearObjFactory<panzer::Traits,int> & lof)
+    EpetraLOF_EOpFactory(const panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> & lof)
        : W_graph_(lof.getGraph(0,0)) {}
     
     virtual Teuchos::RCP<Epetra_Operator> create() const
@@ -115,8 +115,8 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 
   // try to determine the runtime linear object factory
 
-  Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
-     Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjFactory<panzer::Traits,int> >(lof);
+  Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> > ep_lof =
+     Teuchos::rcp_dynamic_cast<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >(lof);
 
   // initialize maps, x_dot_init, x0, p_init, g_map, and linear operator factory
   if(ep_lof!=Teuchos::null)
@@ -129,7 +129,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
 panzer::ModelEvaluator_Epetra::
 ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
                       const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
-                      const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
+                      const Teuchos::RCP<panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> >& lof,
                       const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
                       const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
                       const Teuchos::RCP<panzer::GlobalData>& global_data,
@@ -157,7 +157,7 @@ ModelEvaluator_Epetra(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   initializeEpetraObjs(*lof);
 }
 
-void panzer::ModelEvaluator_Epetra::initializeEpetraObjs(panzer::EpetraLinearObjFactory<panzer::Traits,int> & lof)
+void panzer::ModelEvaluator_Epetra::initializeEpetraObjs(panzer::BlockedEpetraLinearObjFactory<panzer::Traits,int> & lof)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -924,14 +924,14 @@ panzer::buildEpetraME(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
    std::stringstream ss;
    ss << "panzer::buildEpetraME: Linear object factory is incorrect type. Should be one of: ";
 
-   RCP<EpetraLinearObjFactory<panzer::Traits,int> > ep_lof 
-       = rcp_dynamic_cast<EpetraLinearObjFactory<panzer::Traits,int> >(lof);
+   RCP<BlockedEpetraLinearObjFactory<panzer::Traits,int> > ep_lof 
+       = rcp_dynamic_cast<BlockedEpetraLinearObjFactory<panzer::Traits,int> >(lof);
 
    // if you can, build from an epetra linear object factory
    if(ep_lof!=Teuchos::null) 
      return rcp(new ModelEvaluator_Epetra(fmb,rLibrary,ep_lof,p_names,p_values,global_data,build_transient_support));
 
-   ss << "\"EpetraLinearObjFactory\", ";
+   ss << "\"BlockedEpetraLinearObjFactory\", ";
 
    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,ss.str());
 }

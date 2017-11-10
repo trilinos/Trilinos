@@ -146,9 +146,9 @@ public:
   Array<std::tuple<int, Array<GlobalOrdinal> > > GetInterfaceNodes()const{return interfaceNodes_;};
   //}
   //! @Printout methods
-  void printView();
-  void printNodesToRegion();
-  void printInactive();
+  void printView() const;
+  void printNodesToRegion() const;
+  void printInactive() const;
   //}
 
 private:
