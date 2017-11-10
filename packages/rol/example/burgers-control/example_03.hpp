@@ -370,7 +370,7 @@ private:
   void linear_solve(std::vector<Real> &u, 
               const std::vector<Real> &dl, const std::vector<Real> &d, const std::vector<Real> &du, 
               const std::vector<Real> &r, const bool transpose = false) {
-    bool useLAPACK = false;
+    bool useLAPACK = true;
     if ( useLAPACK ) { // DIRECT SOLVE: USE LAPACK
       u.assign(r.begin(),r.end());
       // Store matrix diagonal & off-diagonals.
@@ -393,6 +393,7 @@ private:
       u.resize(nx_,0.0);
       unsigned maxit = 100;
       Real rtol  = std::min(1.e-12,1.e-4*std::sqrt(dot(r,r)));
+      //Real rtol  = 1e-6;
       Real resid = 0.0;
       Real rnorm = 10.0*rtol;
       for (unsigned i = 0; i < maxit; i++) {
@@ -812,6 +813,7 @@ public:
       (Teuchos::dyn_cast<ROL::StdVector<Real> >(const_cast<ROL::Vector<Real> &>(z))).getVector();
     // COMPUTE RESIDUAL
     std::vector<Real> U(nx_,0.0);
+    std::vector<Real> G(nx_,0.0);
     std::vector<Real> Z(nx_+2,0.0);
     for (unsigned n = 0; n < nx_+2; n++) {
       Z[n] = (*zp)[n];
@@ -822,8 +824,10 @@ public:
       ss = ((t < nt_-1) ? dt_ : 0.5*dt_);
       for (unsigned n = 0; n < nx_; n++) {
         U[n] = (*up)[t*nx_+n]-evaluate_target((Real)(n+1)*dx_);
+        G[n] = evaluate_target((Real)(n+1)*dx_);
       }
-      val += 0.5*ss*dot(U,U); 
+      val += 0.5*ss*dot(U,U);
+      val -= 0.5*ss*dot(G,G); // subtract constant term
       for (unsigned n = 0; n < nx_+2; n++) {
         Z[n] = (*zp)[(t+1)*(nx_+2)+n];
       }

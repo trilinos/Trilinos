@@ -79,74 +79,94 @@ private:
   std::vector<std::string>  output_;
 
   EProblem problemType_;
+  EStep stepType_;
+  std::string stepname_;
+
+  Real pen_;
 
 public:
 
+  /** \brief Constructor.
+  
+       @param[in] opt       the OptimizationProblem to be solved
+       @param[in] parlist   algorithm and step input parameters
+
+      ---
+  */
   OptimizationSolver( OptimizationProblem<Real> &opt,
                       Teuchos::ParameterList &parlist ) {
-    // Get step name from parameterlist
-    std::string stepname = parlist.sublist("Step").get("Type","Last Type (Dummy)");
-    EStep stepType = StringToEStep(stepname);
-
     // Get optimization problem type: U, E, B, EB
     problemType_ = opt.getProblemType();
 
+    // Initialize AlgorithmState
+    state_ = Teuchos::rcp( new AlgorithmState<Real> );
+
+    // Get step name from parameterlist
+    stepname_ = parlist.sublist("Step").get("Type","Last Type (Dummy)");
+    stepType_ = StringToEStep(stepname_);
+
     // Set default algorithm if provided step is incompatible with problem type
-    if ( !isCompatibleStep(problemType_, stepType) ) {
+    if ( !isCompatibleStep(problemType_, stepType_) ) {
       switch ( problemType_ ) {
         case TYPE_U:
-          stepType = STEP_TRUSTREGION;          break;
+          stepType_ = STEP_TRUSTREGION;          break;
         case TYPE_B:
-          stepType = STEP_TRUSTREGION;          break;
+          stepType_ = STEP_TRUSTREGION;          break;
         case TYPE_E:
-          stepType = STEP_COMPOSITESTEP;        break;
+          stepType_ = STEP_COMPOSITESTEP;        break;
         case TYPE_EB:
-          stepType = STEP_AUGMENTEDLAGRANGIAN;  break;
+          stepType_ = STEP_AUGMENTEDLAGRANGIAN;  break;
         case TYPE_LAST:
         default:
           throw Exception::NotImplemented(">>> ROL::OptimizationSolver: Unknown problem type!");
       }
     }
-    stepname = EStepToString(stepType);
+    stepname_ = EStepToString(stepType_);
 
-    // Build algorithmic components
-    StepFactory<Real>        stepFactory;
-    StatusTestFactory<Real>  statusTestFactory;
-    step_    = stepFactory.getStep(stepname,parlist);
-    status0_ = statusTestFactory.getStatusTest(stepname,parlist);
+    // Build status test
+    StatusTestFactory<Real> statusTestFactory;
+    status0_ = statusTestFactory.getStatusTest(stepname_,parlist);
     status_  = Teuchos::rcp( new CombinedStatusTest<Real> );
-    state_   = Teuchos::rcp( new AlgorithmState<Real> );
 
     // Get optimization vector and a vector for the gradient
     x_ = opt.getSolutionVector();
     g_ = x_->dual().clone();
+
+    // Initialize Step
+    StepFactory<Real> stepFactory;
+    step_ = stepFactory.getStep(stepname_,parlist);
 
     // If there is an equality constraint, get the multiplier and create a constraint vector
     if( problemType_ == TYPE_E || problemType_ == TYPE_EB ) {
       l_ = opt.getMultiplierVector();
       c_ = l_->dual().clone();
     }
+
     // Create modified objectives if needed
-    if( stepType == STEP_AUGMENTEDLAGRANGIAN ) {
+    const Real ten(10);
+    if( stepType_ == STEP_AUGMENTEDLAGRANGIAN ) {
       Teuchos::RCP<Objective<Real> > raw_obj = opt.getObjective();
       con_ = opt.getConstraint();
       // TODO: Provide access to change initial penalty
       obj_ = Teuchos::rcp( new AugmentedLagrangian<Real>(raw_obj,con_,*l_,1.0,*x_,*c_,parlist) );
       bnd_ = opt.getBoundConstraint();
+      pen_ = parlist.sublist("Step").sublist("Augmented Lagrangian").get("Initial Penalty Parameter",ten);
     }
-    else if( stepType == STEP_MOREAUYOSIDAPENALTY ) {
+    else if( stepType_ == STEP_MOREAUYOSIDAPENALTY ) {
       Teuchos::RCP<Objective<Real> > raw_obj = opt.getObjective();
       bnd_ = opt.getBoundConstraint();
       con_ = opt.getConstraint();
       // TODO: Provide access to change initial penalty
       obj_ = Teuchos::rcp( new MoreauYosidaPenalty<Real>(raw_obj,bnd_,*x_,parlist) );
+      pen_ = parlist.sublist("Step").sublist("Moreau-Yosida Penalty").get("Initial Penalty Parameter",ten);
     }
-    else if( stepType == STEP_INTERIORPOINT ) {
+    else if( stepType_ == STEP_INTERIORPOINT ) {
       Teuchos::RCP<Objective<Real> > raw_obj = opt.getObjective();
       bnd_ = opt.getBoundConstraint();
       con_ = opt.getConstraint();
       // TODO: Provide access to change initial penalty
       obj_ = Teuchos::rcp( new InteriorPoint::PenalizedObjective<Real>(raw_obj,bnd_,*x_,parlist) );
+      pen_ = parlist.sublist("Step").sublist("Interior Point").get("Initial Barrier Parameter",ten);
     }
     else {
       obj_   = opt.getObjective();
@@ -155,15 +175,31 @@ public:
     }
   }
 
+  /** \brief Returns iteration history as a vector of strings.
+
+      ---
+  */
   std::vector<std::string> getOutput(void) const {
     return output_;
   }
 
+  /** \brief Solve optimization problem with no iteration output.
+
+      ---
+  */
   int solve(void) {
     Teuchos::oblackholestream bhs;
     return solve(bhs);
   }
 
+  /** \brief Solve optimization problem.
+
+      @param[in] outStream       is the output stream to collect iteration history
+      @param[in] status          is a user-defined StatusTest
+      @param[in] combineStatus   if true, the user-defined StatusTest will be combined with the default StatusTest
+
+      ---
+  */
   int solve( std::ostream &outStream,
        const Teuchos::RCP<StatusTest<Real> > &status = Teuchos::null,
        const bool combineStatus = true ) {
@@ -204,12 +240,52 @@ public:
     return 0;
   }
 
+  /** \brief Return the AlgorithmState.
+
+      ---
+  */
   Teuchos::RCP<const AlgorithmState<Real> > getAlgorithmState(void) const {
     return state_;
   }
 
+  /** \brief Reset the AlgorithmState.
+
+      This function does not reset the Step or the StepState.
+
+      ---
+  */
   void resetAlgorithmState(void) {
     state_ = Teuchos::rcp( new AlgorithmState<Real> );
+  }
+
+  /** \brief Reset both Algorithm and Step.
+
+      @param[in] resetAlgo   if true, then AlgorithmState will be reset
+
+      This function will reset the AlgorithmState and reinitialize the
+      Step.  This function does not permit changing the Step specified
+      upon construction.  To change the Step, reinitialize the
+      OptimizationSolver.
+
+      ---
+  */
+  void reset(const bool resetAlgo = true) {
+    // Reset AlgorithmState
+    if (resetAlgo) {
+      resetAlgorithmState();
+    }
+    // Reset StepState
+    step_->reset(pen_);
+    // Reset penalty objectives
+    if( stepType_ == STEP_AUGMENTEDLAGRANGIAN ) {
+      Teuchos::rcp_dynamic_cast<AugmentedLagrangian<Real> >(obj_)->reset(*l_,pen_);
+    }
+    else if( stepType_ == STEP_MOREAUYOSIDAPENALTY ) {
+      Teuchos::rcp_dynamic_cast<MoreauYosidaPenalty<Real> >(obj_)->reset(pen_);
+    }
+    else if( stepType_ == STEP_INTERIORPOINT ) {
+      Teuchos::rcp_dynamic_cast<InteriorPoint::PenalizedObjective<Real> >(obj_)->updatePenalty(pen_);
+    }
   }
 
 }; // class OptimizationSolver
