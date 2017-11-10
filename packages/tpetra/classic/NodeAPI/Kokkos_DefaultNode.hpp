@@ -98,9 +98,14 @@ namespace Details {
 
 } // namespace Details
 
-  /** \brief Class to specify %Kokkos default node type and instantiate the default node.
-      \ingroup kokkos_node_api
-    */
+  /// \brief Specify Tpetra's default Node type.
+  ///
+  /// Tpetra::Map uses this class to get Tpetra's default Node type.
+  /// <i>This is an implementation detail of Tpetra</i>.  If you want
+  /// to know the default Node type, just ask Tpetra::Map, like this:
+  /// \code
+  /// typedef Tpetra::Map<>::node_type default_node_type;
+  /// \endcode
   class DefaultNode {
   public:
 #if defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
