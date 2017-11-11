@@ -39,8 +39,7 @@
 // Eric C. Cyr (eccyr@sandia.gov)
 // ***********************************************************************
 // @HEADER
-#include "Intrepid2_config.h"
-#if defined( HAVE_INTREPID2_KOKKOS_DYNRANKVIEW )
+
 #include "Panzer_IntrepidFieldPattern.hpp"
 
 #include "Teuchos_Assert.hpp"
@@ -263,4 +262,3 @@ namespace panzer {
   }
   
 }
-#endif

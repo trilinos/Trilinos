@@ -99,11 +99,7 @@
 #include "Intrepid_Utils.hpp"
 
 // Intrepid2 Includes
-#ifdef HAVE_TRILINOSCOUPLINGS_INTREPID2_REFACTOR
 #include "Kokkos_DynRankView.hpp"
-#else
-#include "Intrepid2_FieldContainer.hpp"
-#endif
 
 // Tpetra includes
 #include <Tpetra_CrsMatrix.hpp>
@@ -364,11 +360,7 @@ void evaluateExactSolutionGrad(ArrayOut &       exactSolutionGradValues,
 // Copy field containers
 template<class FC1, class FC2>
 void CopyFieldContainer2D(const FC1 & c1, FC2 & c2) {
-#ifdef HAVE_TRILINOSCOUPLINGS_INTREPID2_REFACTOR
   Kokkos::resize(c2,c1.dimension(0),c1.dimension(1));
-#else
-  c2.resize(c1.dimension(0),c1.dimension(1));
-#endif
   for(size_t i=0; i<(size_t)c1.dimension(0); i++)
     for(size_t j=0; j<(size_t)c1.dimension(1); j++)
       c2(i,j) = c1(i,j);
@@ -913,11 +905,7 @@ int main(int argc, char *argv[]) {
   RCP<driver_map_type> P1_globalMap = rcp(new driver_map_type(INVALID_GO,&P1_ownedGIDs[0],P1_ownedNodes,0,Comm));
 
   // Genetrate Pn-to-P1 coarsening.
-#ifdef HAVE_TRILINOSCOUPLINGS_INTREPID2_REFACTOR
   Kokkos::DynRankView<local_ordinal_type,typename NO::device_type>  elemToNodeI2;
-#else
-  Intrepid2::FieldContainer<local_ordinal_type> elemToNodeI2;
-#endif
 
   CopyFieldContainer2D(elemToNode,elemToNodeI2);
   
