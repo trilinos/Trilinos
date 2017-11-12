@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //         Stratimikos: Thyra-based strategies for linear solvers
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -68,7 +68,7 @@ namespace Thyra {
 template<typename Scalar>
 const std::string Amesos2LinearOpWithSolveFactory<Scalar>::SolverType_name
   = "Solver Type";
-  
+
 template<typename Scalar>
 const std::string Amesos2LinearOpWithSolveFactory<Scalar>::RefactorizationPolicy_name
   = "Refactorization Policy";
@@ -142,7 +142,7 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
   TEUCHOS_TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
   RCP<const LinearOpBase<Scalar> > fwdOp = fwdOpSrc->getOp();
 
-  Teuchos::RCP<Teuchos::FancyOStream> 
+  Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   //
@@ -172,7 +172,7 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
   if (startOver) {
     //
     // This LOWS object has not be initialized yet or is not compatible with the existing
-    // 
+    //
     // so this is where we setup everything from the ground up.
 
     // Create the concrete solver
@@ -261,7 +261,7 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::initializeOp(
     // the matrix and refactor it.
     auto amesos2Solver = amesos2Op->get_amesos2Solver();
 
-    // set 
+    // set
     amesos2Solver->setA(tpetraCrsMat);
 
     // Do the initial factorization
@@ -337,7 +337,7 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::uninitializeOp(
 #endif
   Amesos2LinearOpWithSolve<Scalar>
     *amesos2Op = &Teuchos::dyn_cast<Amesos2LinearOpWithSolve<Scalar>>(*Op);
-  RCP<const LinearOpSourceBase<double> >
+  RCP<const LinearOpSourceBase<Scalar> >
     _fwdOpSrc = amesos2Op->extract_fwdOpSrc(); // Will be null if uninitialized!
   if(fwdOpSrc) *fwdOpSrc = _fwdOpSrc; // It is fine if the client does not want this object back!
   if(prec) *prec = Teuchos::null; // We never keep a preconditioner!
@@ -364,7 +364,7 @@ void Amesos2LinearOpWithSolveFactory<Scalar>::setParameterList(
         )
       ,paramList_->name()+"->"+SolverType_name
       );
-  refactorizationPolicy_ = 
+  refactorizationPolicy_ =
     Amesos2::refactorizationPolicyNameToEnumMap.get<Amesos2::ERefactorizationPolicy>(
       paramList_->get(
         RefactorizationPolicy_name
