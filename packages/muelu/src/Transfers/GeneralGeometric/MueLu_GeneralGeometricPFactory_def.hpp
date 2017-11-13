@@ -162,6 +162,25 @@ namespace MueLu {
     RCP<const Map> rowMap = A->getRowMap();
     RCP<GeometricData> myGeometry = rcp(new GeometricData{});
 
+    // Load the mesh layout type and the associated mesh data
+    myGeometry->meshLayout = pL.get<std::string>("meshLayout");
+    if(fineLevel.GetLevelID() == 0) {
+      if(myGeometry->meshLayout == "Local Lexicographic") {
+        Array<GO> meshData;
+        meshData = fineLevel.Get<Array<GO> >("meshData", NoFactory::get());
+        TEUCHOS_TEST_FOR_EXCEPTION(meshData.empty() == true, Exceptions::RuntimeError,
+                                   "The meshData array is empty, somehow the input for geometric"
+                                   " multigrid are not captured correctly.");
+        myGeometry->meshData.resize(rowMap->getComm()->getSize());
+        for(int i = 0; i < rowMap->getComm()->getSize(); ++i) {
+          myGeometry->meshData[i].resize(10);
+          for(int j = 0; j < 10; ++j) {
+            myGeometry->meshData[i][j] = tmp[10*i + j];
+          }
+        }
+      }
+    }
+
     TEUCHOS_TEST_FOR_EXCEPTION(fineCoords == Teuchos::null, Exceptions::RuntimeError,
                                "Coordinates cannot be accessed from fine level!");
     myGeometry->numDimensions = fineCoords->getNumVectors();
@@ -207,25 +226,6 @@ namespace MueLu {
                                Exceptions::RuntimeError,
                                "Coarsen must have at least as many components as the number of"
                                " spatial dimensions in the problem.");
-
-    // Load the mesh layout type and the associated mesh data
-    myGeometry->meshLayout = pL.get<std::string>("meshLayout");
-    if(fineLevel.GetLevelID() == 0) {
-      if(myGeometry->meshLayout == "Local Lexicographic") {
-        Array<GO> tmp;
-        tmp = fineLevel.Get<Array<GO> >("meshData", NoFactory::get());
-        TEUCHOS_TEST_FOR_EXCEPTION(tmp.empty() == true, Exceptions::RuntimeError,
-                                   "The meshData array is empty, somehow the input for geometric"
-                                   " multigrid are not captured correctly.");
-        myGeometry->meshData.resize(rowMap->getComm()->getSize());
-        for(int i = 0; i < rowMap->getComm()->getSize(); ++i) {
-          myGeometry->meshData[i].resize(10);
-          for(int j = 0; j < 10; ++j) {
-            myGeometry->meshData[i][j] = tmp[10*i + j];
-          }
-        }
-      }
-    }
 
     for(LO i = 0; i < 3; ++i) {
       if(i < myGeometry->numDimensions) {
