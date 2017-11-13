@@ -45,7 +45,9 @@
 
 #include "Kokkos_View.hpp"
 
-
+/* This function does a very rough approximation of 2D finite-difference
+   stencil. 
+*/
 void ReferenceQuad4(scalar_2d_array_type & elementMatrix) {
   size_t lr[4] = {1,0,3,2};
   size_t ud[4] = {3,2,1,0};
