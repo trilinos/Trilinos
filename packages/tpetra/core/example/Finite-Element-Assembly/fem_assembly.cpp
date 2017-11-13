@@ -142,7 +142,7 @@ int main (int argc, char *argv[]) {
   //   - use a 16 length kokkos view (need to figure out kokkos views)
   //   - get stiffness matrix
   // - insertGlobalValues once per row of the stiffness matrix.
-  //
+  // - Note:  call ReferenceQuad4 (in mesh database).  (does not do resizing so we need to do that ourselves)
 
 
   // Build RHS vectors
