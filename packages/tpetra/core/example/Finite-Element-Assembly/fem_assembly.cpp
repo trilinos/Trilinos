@@ -21,6 +21,9 @@ int main (int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, NULL);
   RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm();
 
+  // Initialize Kokkos
+  Kokkos::initialize();
+
   // Processor decomp (only works on perfect squares)
   int numProcs  = comm->getSize();
   int sqrtProcs = sqrt(numProcs); 
@@ -138,6 +141,8 @@ int main (int argc, char *argv[]) {
   // Build RHS vectors
 
 
+  // Finalize Kokkos
+  Kokkos::finalize();
 
   return 0;
 }
