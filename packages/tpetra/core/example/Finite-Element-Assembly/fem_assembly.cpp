@@ -136,6 +136,13 @@ int main (int argc, char *argv[]) {
 
   // Build matrices 
   // 
+  // - Need: dummy generate fem matrix call
+  // - Loop over all elements (by global id)
+  // - on each element call the generate stiffness functon...
+  //   - use a 16 length kokkos view (need to figure out kokkos views)
+  //   - get stiffness matrix
+  // - insertGlobalValues once per row of the stiffness matrix.
+  //
 
 
   // Build RHS vectors
