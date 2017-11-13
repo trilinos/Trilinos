@@ -10,7 +10,7 @@
 
 #include "typedefs.hpp"
 #include "MeshDatabase.hpp"
-
+#include "Element.hpp"
 
 int main (int argc, char *argv[]) {
   using Teuchos::RCP;
