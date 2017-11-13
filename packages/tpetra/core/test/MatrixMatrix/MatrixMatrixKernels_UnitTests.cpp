@@ -815,8 +815,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, G
     RCP<Matrix_t> B = Reader<Matrix_t>::readSparseFile (B_file, comm);
     RCP<Matrix_t> C = Reader<Matrix_t>::readSparseFile (C_file, comm);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
-      "Unrecognized Matrix Operation: " << op);
+    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add" && op != "RAP", std::runtime_error,
+                               "Unrecognized Matrix Operation: " << op);
 
     if (op == "multiply") {
       if (verbose)
