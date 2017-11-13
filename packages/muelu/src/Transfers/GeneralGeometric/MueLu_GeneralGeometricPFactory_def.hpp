@@ -175,7 +175,7 @@ namespace MueLu {
         for(int i = 0; i < rowMap->getComm()->getSize(); ++i) {
           myGeometry->meshData[i].resize(10);
           for(int j = 0; j < 10; ++j) {
-            myGeometry->meshData[i][j] = tmp[10*i + j];
+            myGeometry->meshData[i][j] = meshData[10*i + j];
           }
         }
       }
