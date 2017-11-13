@@ -56,7 +56,7 @@ fi
 
 module load sems-${BOOST_SUFFIX}/base
 module load sems-${HDF5_SUFFIX}/parallel
-module load sems-${NETCDF_SUFFIX}/parallel
+module load sems-${NETCDF_SUFFIX}/exo_parallel
 module load sems-${ZLIB_SUFFIX}/base
 
 module list

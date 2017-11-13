@@ -181,8 +181,6 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
       TEUCHOS_TEST_FOR_EXCEPTION(!P.isFillComplete(), Exceptions::RuntimeError, "P is not fill-completed");
 
-      bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
-
       if (Ac.getRowMap()->lib() == Xpetra::UseEpetra) {
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
       } else if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
@@ -198,6 +196,7 @@ namespace Xpetra {
 
         // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
         // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
+        bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
         Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
 # endif
 #else
@@ -209,7 +208,7 @@ namespace Xpetra {
 
   }; // end specialization on SC=double, GO=int and NO=EpetraNode
 
-  // specialization MatrixMatrix for SC=double, GO=long long and NO=EptraNode
+  // specialization TripleMatrixMultiply for SC=double, GO=long long and NO=EpetraNode
   template <>
   class TripleMatrixMultiply<double,int,long long,EpetraNode> {
     typedef double          Scalar;
@@ -238,15 +237,13 @@ namespace Xpetra {
       TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
       TEUCHOS_TEST_FOR_EXCEPTION(!P.isFillComplete(), Exceptions::RuntimeError, "P is not fill-completed");
 
-      bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
-
       if (Ac.getRowMap()->lib() == Xpetra::UseEpetra) {
         throw(Xpetra::Exceptions::RuntimeError("Xpetra::TripleMatrixMultiply::MultiplyRAP is only implemented for Tpetra"));
       } else if (Ac.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-# if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_INT))) || \
-      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_INT))))
-        throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra <double,int,int> ETI enabled."));
+# if ((defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_OPENMP) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))) || \
+      (!defined(EPETRA_HAVE_OMP) && (!defined(HAVE_TPETRA_INST_SERIAL) || !defined(HAVE_TPETRA_INST_INT_LONG_LONG))))
+        throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra <double,int,long long,EpetraNode> ETI enabled."));
 # else
         const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpR = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(R);
         const Tpetra::CrsMatrix<SC,LO,GO,NO> & tpA = Xpetra::Helpers<SC,LO,GO,NO>::Op2TpetraCrs(A);
@@ -255,6 +252,7 @@ namespace Xpetra {
 
         // 18Feb2013 JJH I'm reenabling the code that allows the matrix matrix multiply to do the fillComplete.
         // Previously, Tpetra's matrix matrix multiply did not support fillComplete.
+        bool haveMultiplyDoFillComplete = call_FillComplete_on_result && doOptimizeStorage;
         Tpetra::TripleMatrixMultiply::MultiplyRAP(tpR, transposeR, tpA, transposeA, tpP, transposeP, tpAc, haveMultiplyDoFillComplete, label, params);
 # endif
 #else

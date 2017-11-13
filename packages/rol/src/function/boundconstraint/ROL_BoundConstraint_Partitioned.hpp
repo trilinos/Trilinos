@@ -71,12 +71,15 @@ private:
   Teuchos::RCP<V> u_;
 
   uint dim_;
+
+  bool hasLvec_;
+  bool hasUvec_;
  
 public:
   ~BoundConstraint_Partitioned() {}
 
   BoundConstraint_Partitioned(const std::vector<Teuchos::RCP<BoundConstraint<Real> > > &bnd)
-    : bnd_(bnd), dim_(bnd.size()) {
+    : bnd_(bnd), dim_(bnd.size()), hasLvec_(true), hasUvec_(true) {
     BoundConstraint<Real>::deactivate();
     for( uint k=0; k<dim_; ++k ) {
       if( bnd_[k]->isActivated() ) {
@@ -87,13 +90,29 @@ public:
     std::vector<Teuchos::RCP<Vector<Real> > > lp(dim_);
     std::vector<Teuchos::RCP<Vector<Real> > > up(dim_);
     for( uint k=0; k<dim_; ++k ) {
-      lp[k] = bnd[k]->getLowerBound()->clone();
-      lp[k]->set(*bnd_[k]->getLowerBound());
-      up[k] = bnd[k]->getUpperBound()->clone();
-      up[k]->set(*bnd_[k]->getUpperBound());
+      try {
+        lp[k] = bnd[k]->getLowerBound()->clone();
+        lp[k]->set(*bnd_[k]->getLowerBound());
+      }
+      catch (std::exception &e) {
+        lp[k] = Teuchos::null;
+        hasLvec_ = false;
+      }
+      try {
+        up[k] = bnd[k]->getUpperBound()->clone();
+        up[k]->set(*bnd_[k]->getUpperBound());
+      }
+      catch (std::exception &e) {
+        up[k] = Teuchos::null;
+        hasUvec_ = false;
+      }
     }
-    l_ = Teuchos::rcp(new PV(lp) );
-    u_ = Teuchos::rcp(new PV(up) );
+    if (hasLvec_) {
+      l_ = Teuchos::rcp(new PV(lp) );
+    }
+    if (hasUvec_) {
+      u_ = Teuchos::rcp(new PV(up) );
+    }
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
@@ -166,11 +185,21 @@ public:
   }
  
   const Teuchos::RCP<const Vector<Real> > getLowerBound( void ) const {
-    return l_;
+    if (hasLvec_) {
+      return l_;
+    }
+    else {
+      return BoundConstraint<Real>::getLowerBound();
+    }
   }
        
   const Teuchos::RCP<const Vector<Real> > getUpperBound( void ) const {
-    return u_;
+    if (hasUvec_) {
+      return u_;
+    }
+    else {
+      return BoundConstraint<Real>::getUpperBound();
+    }
   }
 
   bool isFeasible( const Vector<Real> &v ) { 

@@ -51,6 +51,7 @@
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include "Tpetra_BlockCrsMatrix_Helpers.hpp"
 #include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_Import_Util.hpp"
 
 namespace {
   using Tpetra::TestingUtilities::getNode;
@@ -102,7 +103,7 @@ namespace {
 
     RCP<const Comm<int> > comm = getDefaultComm();
 
-    int rank = comm->getRank();
+    //    int rank = comm->getRank();
 
     const LO NumRows = 32;
     const GST gblNumRows = static_cast<GST> ( NumRows * comm->getSize ());
@@ -179,61 +180,31 @@ namespace {
 
     // Still need to get remote GID's, and export LID's.
 
-    Teuchos::ArrayView<const GO> avremoteGIDs = target->getNodeElementList ();
-    Teuchos::ArrayView<const GO> avexportGIDs  = source->getNodeElementList ();
-
-    Teuchos::Array<LO> exportLIDs(avexportGIDs.size(),0);
-    Teuchos::Array<LO> remoteLIDs(avremoteGIDs.size(),0);
-    Teuchos::Array<int> userExportPIDs(avexportGIDs.size(),0);
-    Teuchos::Array<int> userRemotePIDs(avremoteGIDs.size(),0);
-
-    source->getRemoteIndexList(avexportGIDs,userExportPIDs,exportLIDs);
-    target->getRemoteIndexList(avremoteGIDs,userRemotePIDs,remoteLIDs);
-
     Teuchos::Array<LO> saveremoteLIDs = G->getImporter()->getRemoteLIDs();
+    Teuchos::Array<LO> remoteLIDs = G->getImporter()->getRemoteLIDs();
+    
+    Teuchos::Array<GO> remoteGIDs(remoteLIDs.size());
+    Teuchos::Array<int> userRemotePIDs(remoteLIDs.size());
+    for(size_t i=0; i< (size_t)remoteLIDs.size(); i++) 
+      remoteGIDs[i] = target->getGlobalElement(G->getImporter()->getRemoteLIDs()[i]);
+    Tpetra::Import_Util::getRemotePIDs(*G->getImporter(),userRemotePIDs);
 
-    Teuchos::Array<GO> remoteGIDs(avremoteGIDs);
+    const Teuchos::ArrayView<const LO> exportLIDs      = G->getImporter()->getExportLIDs();
+    const Teuchos::ArrayView<const int> userExportPIDs = G->getImporter()->getExportPIDs();
+
 
     Tpetra::Import<LO,GO,NT> newimport(source,
-                                target,
-                                userRemotePIDs,
-                                remoteGIDs,
-                                exportLIDs,
-                                userExportPIDs ,
-                                false,
-                                Teuchos::null,
-                                Teuchos::null ); // plist == null
+				       target,
+				       userRemotePIDs,
+				       remoteGIDs,
+				       exportLIDs,
+				       userExportPIDs ,
+				       false,
+				       Teuchos::null,
+				       Teuchos::null ); // plist == null
 
     Teuchos::RCP<const map_type> newsource = newimport.getSourceMap ();
     Teuchos::RCP<const map_type> newtarget = newimport.getTargetMap ();
-
-    Teuchos::ArrayView<const GO> newremoteGIDs = newtarget->getNodeElementList ();
-    Teuchos::ArrayView<const GO> newexportGIDs = newsource->getNodeElementList ();
-
-    if(avremoteGIDs.size()!=newremoteGIDs.size())
-      {
-        success = false;
-        std::cerr<<"Rank "<<rank<<" oldrGID:: "<<avremoteGIDs<<std::endl;
-        std::cerr<<"Rank "<<rank<<" newrGID:: "<<newremoteGIDs<<std::endl;
-      }
-    else
-      for(size_type i=0;i<avremoteGIDs.size();++i)
-        if(avremoteGIDs[i]!=newremoteGIDs[i]) {
-          std::cerr<<"Rank "<<rank<<" @["<<i<<"] oldrgid "<<avremoteGIDs[i]<<" newrgid "<<newremoteGIDs[i]<<std::endl;
-          success = false;
-        }
-
-    if(avexportGIDs.size()!=newexportGIDs.size()) {
-      success = false;
-      std::cerr<<"Rank "<<rank<<" oldeGID:: "<<avexportGIDs<<std::endl;
-      std::cerr<<"Rank "<<rank<<" neweGID:: "<<newexportGIDs<<std::endl;
-    }
-    else
-      for(size_type i=0;i<avexportGIDs.size();++i)
-        if(avexportGIDs[i]!=newexportGIDs[i]) {
-          success = false;
-          std::cerr<<"Rank "<<rank<<" @["<<i<<"] oldEgid "<<avexportGIDs[i]<<" newEgid "<<newexportGIDs[i]<<std::endl;
-        }
 
 
     Teuchos::Array<LO> newexportLIDs = newimport.getExportLIDs();

@@ -119,10 +119,9 @@ public:
     const int ncon = static_cast<int>(cvec_.size());
     int cnt = 1;
     for (int i = 0; i < ncon; ++i) {
-      Teuchos::RCP<Vector<Real> > ci = cpv.get(i);
-      cvec_[i]->value(*ci, getOpt(x), tol);
+      cvec_[i]->value(*cpv.get(i), getOpt(x), tol);
       if (isInequality_[i]) {
-        ci->axpy(static_cast<Real>(-1),getSlack(x,cnt));
+        cpv.get(i)->axpy(static_cast<Real>(-1),getSlack(x,cnt));
         cnt++;
       }
     }
@@ -139,10 +138,9 @@ public:
     const int ncon = static_cast<int>(cvec_.size());
     int cnt = 1;
     for (int i = 0; i < ncon; ++i) {
-      Teuchos::RCP<Vector<Real> > jvi = jvpv.get(i);
-      cvec_[i]->applyJacobian(*jvi, getOpt(v), getOpt(x), tol);
+      cvec_[i]->applyJacobian(*jvpv.get(i), getOpt(v), getOpt(x), tol);
       if (isInequality_[i]) {
-        jvi->axpy(static_cast<Real>(-1),getSlack(v,cnt));
+        jvpv.get(i)->axpy(static_cast<Real>(-1),getSlack(v,cnt));
         cnt++;
       }
     }
@@ -164,12 +162,11 @@ public:
     int cnt = 1;
     getOpt(ajv).zero();
     for (int i = 0; i < ncon; ++i) {
-      Teuchos::RCP<const Vector<Real> > vi = vpv.get(i);
       scratch_->zero();
-      cvec_[i]->applyAdjointJacobian(*scratch_, *vi, getOpt(x), tol);
+      cvec_[i]->applyAdjointJacobian(*scratch_, *vpv.get(i), getOpt(x), tol);
       getOpt(ajv).plus(*scratch_);
       if (isInequality_[i]) {
-        getSlack(ajv,cnt).set(*vi);
+        getSlack(ajv,cnt).set(*vpv.get(i));
         getSlack(ajv,cnt).scale(static_cast<Real>(-1));
         cnt++;
       }

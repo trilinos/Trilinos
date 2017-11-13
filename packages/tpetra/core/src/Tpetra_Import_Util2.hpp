@@ -475,7 +475,7 @@ lowCommunicationMakeColMapAndReindex (const Teuchos::ArrayView<const size_t> &ro
 
   // Sort External column indices so that all columns coming from a
   // given remote processor are contiguous.  This is a sort with two
-  // auxillary arrays: RemoteColIndices and RemotePermuteIDs.
+  // auxilary arrays: RemoteColIndices and RemotePermuteIDs.
   Tpetra::sort3 (PIDList.begin (), PIDList.end (),
                  ColIndices.begin () + NumLocalColGIDs,
                  RemotePermuteIDs.begin ());

@@ -75,8 +75,8 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
       grad_field_at_qp(cell,qp,0) = 0.0;
       grad_field_at_qp(cell,qp,1) = 0.0;
       grad_field_at_qp(cell,qp,2) = 0.0;
-      for (int basis = 0; basis < static_cast<int>(field_at_basis.extent(2)); ++basis)
-        for (int dim = 0; dim < static_cast<int>(field_at_basis.extent(3)); ++dim)
+      for (int basis = 0; basis < static_cast<int>(field_at_basis.extent(1)); ++basis)
+        for (int dim = 0; dim < static_cast<int>(grad_field_at_qp.extent(2)); ++dim)
           grad_field_at_qp(cell,qp,dim) += field_at_basis(cell,basis) * grad_basis_view(cell,qp,basis,dim);
   });
 }

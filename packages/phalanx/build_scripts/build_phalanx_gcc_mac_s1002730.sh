@@ -1,8 +1,10 @@
 #!/bin/bash
 rm -rf CMakeCache.txt CMakeFiles
 cmake \
+-G Ninja \
 -D CMAKE_INSTALL_PREFIX="/home/rppawlo/JUNK" \
 -D Trilinos_ENABLE_DEBUG=ON \
+-D Trilinos_ENABLE_Fortran=OFF \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
 -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_KokkosCore:BOOL=ON \

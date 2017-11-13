@@ -832,8 +832,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, operations_test,SC,LO, GO, NT) 
     const bool BT = currentSystem.get<bool> ("TransB");
     const bool CT = currentSystem.get<bool> ("TransC", false);
     const int numProcs = currentSystem.get<int> ("numProcs", 0);
-    if(numProcs > 0 && comm->getSize() != numProcs)
-      throw std::runtime_error("Test requires exactly " + std::to_string(numProcs) +" MPI ranks.");
+
+    // Don't run tests where the core count does not match the maps
+    if(numProcs > 0 && comm->getSize() != numProcs) continue;
+
 
     double epsilon = currentSystem.get<double> ("epsilon", defaultEpsilon);
     std::string op = currentSystem.get<std::string> ("op");

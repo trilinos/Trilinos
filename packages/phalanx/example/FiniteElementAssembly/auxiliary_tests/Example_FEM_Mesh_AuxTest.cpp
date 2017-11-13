@@ -66,7 +66,7 @@ TEUCHOS_UNIT_TEST(mesh, coord_gids)
   const double lz = 3.0;
   const int nodes_per_element = 8;
   const int qp_per_element = 8;
-  phx_example::Mesh mesh(nx,ny,nz,lx,ly,lz,2);
+  phx_example::Mesh mesh(nx,ny,nz,lx,ly,lz);
   out << mesh << std::endl;
   
   // Check GIDS

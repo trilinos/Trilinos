@@ -80,7 +80,7 @@ void AdaptiveSparseGridInterface<Scalar,UserVector>::init(UserVector & output) {
 
   // Compute the initial error indicator
   initialDiff_ = error_indicator(output);
-  if (fabs(initialDiff_)<INTREPID_TOL) 
+  if (std::abs(initialDiff_)<INTREPID_TOL) 
     initialDiff_ = 1.0;
 }
 
