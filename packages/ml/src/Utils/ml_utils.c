@@ -1929,7 +1929,7 @@ void ML_serial_end(ML_Comm *comm)
 /* ******************************************************************** */
 #ifndef ICL
 #ifndef _WIN32
-#include <unistd.h>
+#include <sys/utsname.h>
 #endif
 #endif
 void ML_BreakForDebugger(ML_Comm *comm)
@@ -1938,7 +1938,7 @@ void ML_BreakForDebugger(ML_Comm *comm)
   int mypid = comm->ML_mypid;
   int nproc = comm->ML_nprocs;
   char buf[80];
-  char hostname[80];
+  struct utsname name_struct;
   char go = ' ';
   char *str;
   FILE * ML_capture_flag;
@@ -1962,8 +1962,8 @@ void ML_BreakForDebugger(ML_Comm *comm)
 #if defined(TFLOP) || defined(JANUS_STLPORT) || defined(COUGAR)
         sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
 #else
-        gethostname(hostname, sizeof(hostname));
-        sprintf(buf, "Host: %s   PID: %d (mpi task %d)", hostname, getpid(),mypid);
+        uname(&name_struct) ;
+        sprintf(buf, "Host: %s   PID: %d (mpi task %d)", name_struct.nodename, getpid(),mypid);
 #endif
         printf("%s\n",buf);
         fflush(stdout);
