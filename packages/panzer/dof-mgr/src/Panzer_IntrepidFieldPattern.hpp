@@ -40,8 +40,6 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Intrepid2_config.h"
-#if defined ( HAVE_INTREPID2_KOKKOS_DYNRANKVIEW )
 #ifndef __Panzer_IntrepidFieldPattern_hpp__
 #define __Panzer_IntrepidFieldPattern_hpp__
 
@@ -146,5 +144,4 @@ namespace panzer {
 
 }
 
-#endif 
 #endif
