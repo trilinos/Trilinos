@@ -136,8 +136,8 @@ int main (int argc, char *argv[]) {
   //
 
 
-  // Build matrices 
-  // 
+  // Build matrices
+  // -------------------------------------------------------
   // - Need: dummy generate fem matrix call
   // - Loop over all elements (by global id)
   // - on each element call the generate stiffness functon...
@@ -145,15 +145,21 @@ int main (int argc, char *argv[]) {
   //   - get stiffness matrix
   // - insertGlobalValues once per row of the stiffness matrix.
   // - Note:  call ReferenceQuad4 (in mesh database).  (does not do resizing so we need to do that ourselves)
+  scalar_2d_array_type element_matrix;
+  Kokkos::resize(element_matrix, 4, 4);     // 4x4 for quads -- or should this be 1x16?
 
-
+  //element_matrix(0);
+  
+  
+  
+  
   // Build RHS vectors
-
 
   // Finalize Kokkos
   Kokkos::finalize();
 
   return 0;
-}
+
+}  // END main()
 
 
