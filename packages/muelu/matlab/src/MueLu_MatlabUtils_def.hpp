@@ -795,11 +795,13 @@ template<>
 mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_double>& data)
 {
   typedef double Scalar;
+  // Compute global constants, if we need them
+  Teuchos::rcp_const_cast<Xpetra_CrsGraph>(data->getCrsGraph())->computeGlobalConstants();
+
   int nr = data->getGlobalNumRows();
   int nc = data->getGlobalNumCols();
   int nnz = data->getGlobalNumEntries();
 
-  if(nnz==-1) nnz=data->getNodeNumEntries(); // Workaround for global constants stuff.
 #ifdef VERBOSE_OUTPUT
   RCP<Teuchos::FancyOStream> fancyStream = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   mat->describe(*fancyStream, Teuchos::VERB_EXTREME);
@@ -912,6 +914,10 @@ template<>
 mxArray* saveDataToMatlab(RCP<Xpetra_Matrix_complex>& data)
 {
   typedef complex_t Scalar;
+
+  // Compute global constants, if we need them
+  Teuchos::rcp_const_cast<Xpetra_CrsGraph>(data->getCrsGraph())->computeGlobalConstants();
+
   int nr = data->getGlobalNumRows();
   int nc = data->getGlobalNumCols();
   int nnz = data->getGlobalNumEntries();
