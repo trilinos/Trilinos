@@ -52,6 +52,7 @@
 
 #include "Xpetra_Map.hpp"
 #include "Xpetra_MatrixMatrix.hpp"
+#include "Xpetra_TripleMatrixMultiply.hpp"
 
 #include "MueLu_RefMaxwell_decl.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
@@ -164,31 +165,39 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   Apply_BCsToMatrixRows(D0_Matrix_,BCrows_);
   Apply_BCsToMatrixCols(D0_Matrix_,BCcols_);
   D0_Matrix_->fillComplete(D0_Matrix_->getDomainMap(),D0_Matrix_->getRangeMap());
-  //D0_Matrix_->describe(out,Teuchos::VERB_EXTREME);
   if (dump_matrices_)
     Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_nuked.mat"), *D0_Matrix_);
 
-  // Form TMT_Matrix
-  Teuchos::RCP<Matrix> C1 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+  // Form TMT_Matrix_ = D0* SM D0
   TMT_Matrix_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
-  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C1,true,true);
-  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C1,false,*TMT_Matrix_,true,true);
+  if (parameterList_.get<bool>("rap: triple product", false) == false) {
+    Teuchos::RCP<Matrix> C1 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C1,true,true);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C1,false,*TMT_Matrix_,true,true);
+  } else {
+    Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+      MultiplyRAP(*D0_Matrix_, true, *SM_Matrix_, false, *D0_Matrix_, false, *TMT_Matrix_, true, true);
+  }
   TMT_Matrix_->resumeFill();
   Remove_Zeroed_Rows(TMT_Matrix_,1.0e-16);
   TMT_Matrix_->SetFixedBlockSize(1);
-  //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
   if (dump_matrices_)
     Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("TMT.mat"), *TMT_Matrix_);
 
-  // Form TMT_agg_Matrix
-  Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+  // Form TMT_agg_Matrix = D0* M1 D0
   TMT_Agg_Matrix_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
-  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C2,true,true);
-  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C2,false,*TMT_Agg_Matrix_,true,true);
+  if (parameterList_.get<bool>("rap: triple product", false) == false) {
+    Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C2,true,true);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C2,false,*TMT_Agg_Matrix_,true,true);
+  } else {
+    Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+      MultiplyRAP(*D0_Matrix_, true, *M1_Matrix_, false, *D0_Matrix_, false, *TMT_Agg_Matrix_, true, true);
+  }
+
   TMT_Agg_Matrix_->resumeFill();
   Remove_Zeroed_Rows(TMT_Agg_Matrix_,1.0e-16);
   TMT_Agg_Matrix_->SetFixedBlockSize(1);
-  //TMT_Matrix_->describe(out,Teuchos::VERB_EXTREME);
   if (dump_matrices_)
     Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("TMT_agg.mat"), *TMT_Agg_Matrix_);
 
@@ -205,10 +214,16 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   formCoarseMatrix();
 
   // build fine grid operator for (2,2)-block, D0* M1 D0
-  Teuchos::RCP<Matrix> C = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
-  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C,true,true);
   A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
-  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
+  if (parameterList_.get<bool>("rap: triple product", false) == false) {
+    Teuchos::RCP<Matrix> C = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C,true,true);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
+  } else {
+    Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+      MultiplyRAP(*D0_Matrix_, true, *M1_Matrix_, false, *D0_Matrix_, false, *A22_, true, true);
+  }
+
   A22_->resumeFill();
   Remove_Zeroed_Rows(A22_,1.0e-16);
   A22_->SetFixedBlockSize(1);
@@ -395,14 +410,17 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
 
   // coarse matrix for P11* (M1 + D1* M2 D1) P11
-  Teuchos::RCP<Matrix> C = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
   Teuchos::RCP<Matrix> Matrix1 = MatrixFactory::Build(P11_->getDomainMap(),0);
-
-  // construct (M1 + D1* M2 D1) P11
-  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*P11_,false,*C,true,true);
-
-  // construct P11* (M1 + D1* M2 D1) P11
-  Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*P11_,true,*C,false,*Matrix1,true,true);
+  if (parameterList_.get<bool>("rap: triple product", false) == false) {
+    Teuchos::RCP<Matrix> C = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+    // construct (M1 + D1* M2 D1) P11
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*P11_,false,*C,true,true);
+    // construct P11* (M1 + D1* M2 D1) P11
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*P11_,true,*C,false,*Matrix1,true,true);
+  } else {
+    Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+      MultiplyRAP(*P11_, true, *SM_Matrix_, false, *P11_, false, *Matrix1, true, true);
+  }
 
   if(disable_addon_==true) {
     // if add-on is not chosen
@@ -417,16 +435,25 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::formCoarseMatrix() {
     // coarse matrix for add-on, i.e P11* (M1 D0 M0inv D0* M1) P11
     Teuchos::RCP<Matrix> Zaux = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
     Teuchos::RCP<Matrix> Z = MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
-    Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap(),0);
+
     // construct M1 P11
     Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*P11_,false,*Zaux,true,true);
     // construct Z = D0* M1 P11
     Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*Zaux,false,*Z,true,true);
-    // construct M0inv Z
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M0inv_Matrix_,false,*Z,false,*C2,true,true);
+
     // construct Z* M0inv Z
     Teuchos::RCP<Matrix> Matrix2 = MatrixFactory::Build(Z->getDomainMap(),0);
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Z,true,*C2,false,*Matrix2,true,true);
+    if (parameterList_.get<bool>("rap: triple product", false) == false) {
+      Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(M0inv_Matrix_->getRowMap(),0);
+      // construct M0inv Z
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M0inv_Matrix_,false,*Z,false,*C2,true,true);
+      // construct Z* M0inv Z
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*Z,true,*C2,false,*Matrix2,true,true);
+    }
+    else {
+      Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+        MultiplyRAP(*Z, true, *M0inv_Matrix_, false, *Z, false, *Matrix2, true, true);
+    }
     // add matrices together
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*Matrix1,false,(Scalar)1.0,*Matrix2,false,(Scalar)1.0,AH_,*out);
