@@ -151,13 +151,24 @@ public:
   NormT reduce( R&& r ) const {
     norm_t<U> result1 = sim_->reduce(forward<R>(r));
     norm_t<Z> result2 = opt_->reduce(forward<R>(r));
-    return r(static_cast<NormT>(result1),
-             static_cast<NormT>(result2));
+    return r(static_cast<NormT>(result1), static_cast<NormT>(result2));
   }
 
   template<class F, class Vs...>
-  void applyFunction( const F& f, const Vs&... vs ) {
-  
+  void applyFunction( F&& f, const Vs&... vs ) {
+    sim_->applyFunction(forward<F>(f), make_tuple(vs.get_1()...));
+    opt_->applyFunction(forward<F>(f), make_tuple(vs.get_2()...));
+  }
+
+  template<class F, class R, class Vs...>
+  void applyFunctionAndReduce( F&& f, R&& r, const Vs&... vs ) {
+    norm_t<U> result1 = sum_->applyFunctionAndReduce(forward<F>(f),
+                                                     forward<R>(r),
+                                                     make_tuple(vs.get_1()...));
+    norm_t<Z> result2 = opt_->applyFunctionAndReduce(forward<F>(f),
+                                                     forward<R>(r),
+                                                     make_tuple(vs.get_2()...));
+    return r(static_cast<NormT>(result1), static_cast<NormT>(result2));
   }
 
 

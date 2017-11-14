@@ -175,10 +175,7 @@ public:
   Real& operator[]( size_t i ) { return (*vec_)[i]; }
   const Real& operator[]( size_t i ) const { return (*vec_)[i]; } 
 
-
 }; // class StdVector
-
-
 
 } // namespace details
 

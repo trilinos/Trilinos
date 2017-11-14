@@ -44,6 +44,7 @@
 
 #pragma once
 
+#include "XROL_Core.hpp"
 
 namespace XROL {
 

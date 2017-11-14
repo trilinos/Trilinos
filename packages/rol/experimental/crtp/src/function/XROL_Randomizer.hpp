@@ -1,3 +1,4 @@
+
 // @HEADER
 // ************************************************************************
 //
@@ -43,17 +44,40 @@
 
 #pragma once
 
-// C++ Includes
-#include <algorithm>
-#include <complex>
-#include <exception>
-#include <functional>
-#include <iostream>
-#include <iomanip>
-#include <limits>
-#include <map>
-#include <memory>
 #include <random>
-#include <tuple>
-#include <type_traits>
-#include <vector>
+
+namespace XROL {
+
+
+/* Create and use a vector randomizer:
+
+   Randomizer<Generator,Distribution> rnd(dist_args);
+
+   Will attempt to randomize any object which has an applyFunction method
+
+   rnd(X,Y,Z);
+
+*/
+
+template<class Generator, class Distribution>
+class Randomizer {
+public:
+
+  template<class Args...>
+  Randomizer( Args&&... args ) : gen(g), dist(std::forward<Args>(args)...) {
+  }
+
+  template<class Vs...>
+  void operator()( Vs&... vs ) const {
+    auto rnd = [&gen,&dist]( auto x ) { return 
+    std::make_tuple(vs.applyFunction(rnd)...);
+  }
+
+private:
+  Generator    gen;
+  Distribution dist;
+};
+
+
+} // namespace XROL
+

@@ -46,6 +46,10 @@
 
 #include <iostream>
 #include <memory>
+#include <utility>
+#include <vector>
 
-#include "XROL_CRTP.hpp"
-#include "XROL_VectorTraits.hpp"
+#include "Teuchos_oblackholestream.hpp"
+
+#include "XROL_CRTP.hpp" 
+#include "XROL_VectorTraits.hpp" // Includes complex, type_traits
