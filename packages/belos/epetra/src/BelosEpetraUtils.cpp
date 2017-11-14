@@ -58,6 +58,18 @@ namespace Belos {
 
 namespace Util {
 
+int createEpetraProblem( std::string              &filename,
+                         RCP<Epetra_Map>          *rowMap,
+                         RCP<Epetra_CrsMatrix>    *A,
+                         RCP<Epetra_MultiVector>  *B,
+                         RCP<Epetra_MultiVector>  *X,
+                         int                      *MyPID
+                       )
+{
+  int one = 1;
+  return Belos::Util::createEpetraProblem( filename, rowMap, A, B, X, MyPID, one );
+}
+
 int createEpetraProblem( std::string             &filename,
 			 RCP<Epetra_Map>         *rowMap,
 			 RCP<Epetra_CrsMatrix>   *A,

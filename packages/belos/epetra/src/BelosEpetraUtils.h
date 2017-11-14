@@ -83,11 +83,7 @@ namespace Belos {
       ,RCP<Epetra_MultiVector> *B
       ,RCP<Epetra_MultiVector> *X
       ,int                     *MyPID
-      )
-  { 
-    int one = 1;
-    return createEpetraProblem( filename, rowMap, A, B, X, MyPID, one );
-  }
+      );
 
   int rebalanceEpetraProblem(
       RCP<Epetra_Map>         &rowMap
