@@ -48,6 +48,9 @@
 #include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
 #include "Tpetra_Details_PackTraits.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#ifdef HAVE_TPETRA_DEBUG
+#  include <set>
+#endif // HAVE_TPETRA_DEBUG
 
 //
 // mfh 25 May 2016: Temporary fix for #393.
