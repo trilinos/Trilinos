@@ -54,10 +54,10 @@
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_FieldManager.hpp"
 
-#include "CommandLineParser.hpp"
 #include "Mesh.hpp"
 #include "WorksetBuilder.hpp"
 #include "LinearObjectFactory.hpp"
+#include "CommandLineParser.hpp"
 #include "Dimension.hpp"
 #include "MyTraits.hpp"
 #include "Constant.hpp"
@@ -149,10 +149,10 @@ int main(int argc, char *argv[])
       std::stringstream s;
       s << "equation_" << eq;
       RCP<GatherSolution<Residual,MyTraits>> r =
-        rcp(new GatherSolution<Residual,MyTraits>(s.str(),basis_layout,num_equations,eq,x));
+        rcp(new GatherSolution<Residual,MyTraits>(s.str(),basis_layout,num_equations,eq,x,mesh->getGlobalIndices()));
       fm.registerEvaluator<Residual>(r);
       RCP<GatherSolution<Jacobian,MyTraits>> j =
-        rcp(new GatherSolution<Jacobian,MyTraits>(s.str(),basis_layout,num_equations,eq,x));
+        rcp(new GatherSolution<Jacobian,MyTraits>(s.str(),basis_layout,num_equations,eq,x,mesh->getGlobalIndices()));
       fm.registerEvaluator<Jacobian>(j);
     }
 
@@ -240,20 +240,18 @@ int main(int argc, char *argv[])
     }
 
     // Scatter DOFs
-    Kokkos::View<double*,PHX::Device> f = lof.createSolutionVector("global_residual"); // residual
-    KokkosSparse::CrsMatrix<double,int,PHX::Device> J = lof.createJacobianMatrix("global_jacobian"); // Jacobian
     for (int eq=0; eq < num_equations; ++eq) {
       std::stringstream s;
       s << "residual_" << eq;
       
       RCP<PHX::FieldTag> scatter_tag_r = rcp(new Tag<MyTraits::Residual::ScalarT>(s.str(),scatter_layout));
       RCP<ScatterResidual<Residual,MyTraits>> r =
-        rcp(new ScatterResidual<Residual,MyTraits>(scatter_tag_r,s.str(),basis_layout,eq,num_equations,f));
+        rcp(new ScatterResidual<Residual,MyTraits>(scatter_tag_r,s.str(),basis_layout,eq,num_equations,mesh->getGlobalIndices()));
       fm.registerEvaluator<Residual>(r);
  
       RCP<PHX::FieldTag> scatter_tag_j = rcp(new Tag<MyTraits::Jacobian::ScalarT>(s.str(),scatter_layout));
       RCP<ScatterResidual<Jacobian,MyTraits>> j =
-        rcp(new ScatterResidual<Jacobian,MyTraits>(scatter_tag_j,s.str(),basis_layout,eq,num_equations,f,J));
+        rcp(new ScatterResidual<Jacobian,MyTraits>(scatter_tag_j,s.str(),basis_layout,eq,num_equations,mesh->getGlobalIndices()));
       fm.registerEvaluator<Jacobian>(j);
 
       // Require fields to be evalauted
@@ -261,8 +259,18 @@ int main(int argc, char *argv[])
       fm.requireField<Jacobian>(*scatter_tag_j);
     }
 
-    fm.postRegistrationSetup(nullptr);
+    const bool build_device_dag = true;
+    fm.postRegistrationSetup(nullptr,build_device_dag);
     fm.writeGraphvizFile("example_fem",".dot",true,true);
+
+    // Create targets to fill (resiudal and Jacobian)
+    Kokkos::View<double*,PHX::Device> f = lof.createSolutionVector("global_residual"); // residual
+    KokkosSparse::CrsMatrix<double,int,PHX::Device> J = lof.createJacobianMatrix("global_jacobian"); // Jacobian
+    for (auto& w : worksets) {
+      w.global_solution_ = x;
+      w.global_residual_atomic_ = f;
+      w.global_jacobian_ = J;
+    }
 
     Kokkos::deep_copy(x,1.0);
     Kokkos::deep_copy(f,0.0);
@@ -272,6 +280,17 @@ int main(int argc, char *argv[])
       TimeMonitor tm_r(*residual_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Residual>(workset);
+    }
+    PHX::exec_space::fence();
+
+    // Device DAG
+    Kokkos::deep_copy(f,0.0);
+    PHX::exec_space::fence();
+    residual_eval_time = TimeMonitor::getNewTimer("Residual Evaluation Time <<Device DAG>>");
+    {
+      TimeMonitor tm_r(*residual_eval_time);
+      for (const auto& workset : worksets)
+        fm.evaluateFieldsDeviceDag<Residual>(workset.num_cells_,workset);
     }
     PHX::exec_space::fence();
 
@@ -293,6 +312,18 @@ int main(int argc, char *argv[])
       TimeMonitor tm_r(*jacobian_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Jacobian>(workset);
+    }
+    PHX::exec_space::fence();
+
+    // Device DAG
+    Kokkos::deep_copy(f,0.0);
+    Kokkos::deep_copy(J.values,0.0);
+    PHX::exec_space::fence();
+    jacobian_eval_time = TimeMonitor::getNewTimer("Jacobian Evaluation Time <<Device DAG>>");
+    {
+      TimeMonitor tm_r(*jacobian_eval_time);
+      for (const auto& workset : worksets)
+        fm.evaluateFieldsDeviceDag<Jacobian>(workset.num_cells_,workset);
     }
     PHX::exec_space::fence();
 

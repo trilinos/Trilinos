@@ -1,3 +1,7 @@
+# Only enable this example if PHX_ENABLE_DEVICE_DAG is enabled
+
+IF(PHX_ENABLE_DEVICE_DAG)
+
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING 
                             ${CMAKE_CURRENT_SOURCE_DIR})
   
@@ -15,6 +19,8 @@ SET(example_fem_SOURCES
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/WorksetBuilder.hpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Mesh.hpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Mesh.cpp
+    ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Dimension.hpp
+    ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Dimension.cpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/LinearObjectFactory.hpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/CommandLineParser.hpp
     evaluators/Constant.hpp
@@ -44,8 +50,10 @@ SET(example_fem_SOURCES
     )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  example_finite_element_assembly_no_tags
-  SOURCES FiniteElementAssembly.cpp ${example_fem_SOURCES}
+  example_finite_element_assembly_device_dag
+  SOURCES FiniteElementAssembly_DeviceDag.cpp ${example_fem_SOURCES}
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
+
+ENDIF(PHX_ENABLE_DEVICE_DAG)

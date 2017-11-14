@@ -41,67 +41,49 @@
 // ************************************************************************
 // @HEADER
 
+#include "Phalanx_CreateDeviceEvaluator.hpp"
 
-#ifndef PHX_EVALUATION_CONTAINER_BASE_HPP
-#define PHX_EVALUATION_CONTAINER_BASE_HPP
-
-#include <cstddef>
-#include <string>
-#include <map>
-#include "Phalanx_DAG_Manager.hpp"
-
-namespace PHX {
-
-  template<typename Traits> class FieldManager;
-
-  template<typename Traits>
-  class EvaluationContainerBase {
-
-  public:
-
-    EvaluationContainerBase();
-
-    virtual ~EvaluationContainerBase();
-
-    virtual void requireField(const PHX::FieldTag& v);
-
-    virtual void aliasField(const PHX::FieldTag& aliasedField,
-                            const PHX::FieldTag& targetField) = 0;
-    
-    virtual void 
-    registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
-
-    virtual void postRegistrationSetup(typename Traits::SetupData d,
-				       PHX::FieldManager<Traits>& vm,
-                                       const bool& buildDeviceDAG) = 0;
-
-    virtual void evaluateFields(typename Traits::EvalData d) = 0;
-
-    virtual void preEvaluate(typename Traits::PreEvalData d) = 0;
-
-    virtual void postEvaluate(typename Traits::PostEvalData d) = 0;
-
-    virtual void writeGraphvizFile(const std::string filename,
-				   bool writeEvaluatedFields,
-				   bool writeDependentFields,
-				   bool debugRegisteredEvaluators) const;
-
-    virtual const std::string evaluationType() const = 0;
-
-    virtual void print(std::ostream& os) const = 0;
-    
-  protected:
-    
-    PHX::DagManager<Traits> dag_manager_;
-
-  };
-
-  template<typename Traits>
-  std::ostream& operator<<(std::ostream& os, 
-			   const PHX::EvaluationContainerBase<Traits>& sc);
-  
+//**********************************************************************
+template<typename EvalT, typename Traits>
+ZeroContributedField<EvalT,Traits>::
+ZeroContributedField(const std::string& field_name,
+                     const Teuchos::RCP<PHX::DataLayout>& layout) :
+  field(field_name,layout)
+{
+  // "Evalauted" is always called before "Contributed" for the same field
+  this->addEvaluatedField(field);
+  this->setName("ZeroContributedField: " + field.fieldTag().identifier());
 }
 
-#include "Phalanx_EvaluationContainer_Base_Def.hpp"
+//**********************************************************************
+template<typename EvalT, typename Traits>
+PHX::DeviceEvaluator<Traits>*
+ZeroContributedField<EvalT,Traits>::createDeviceEvaluator() const
+{
+  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>(field.get_view());
+}
 
-#endif 
+//**********************************************************************
+template<typename EvalT, typename Traits>
+KOKKOS_INLINE_FUNCTION
+void
+ZeroContributedField<EvalT,Traits>::MyDevEval::
+evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
+         typename Traits::EvalData )
+{
+  const int cell = team.league_rank();
+  const int num_basis = field_.extent(1);
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_basis), [=] (const int& basis) {
+    field_(cell,basis) = ScalarT(0.);
+  });
+}
+
+//**********************************************************************
+template<typename EvalT, typename Traits>
+void
+ZeroContributedField<EvalT,Traits>::evaluateFields(typename Traits::EvalData )
+{
+  field.deep_copy(ScalarT(0.0));
+}
+
+//**********************************************************************

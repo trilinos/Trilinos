@@ -41,67 +41,41 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef PHX_INTEGRATE_SOURCE_TERM_HPP
+#define PHX_INTEGRATE_SOURCE_TERM_HPP
 
-#ifndef PHX_EVALUATION_CONTAINER_BASE_HPP
-#define PHX_EVALUATION_CONTAINER_BASE_HPP
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
+#include "Phalanx_DeviceEvaluator.hpp"
+#include "Phalanx_MDField.hpp"
+#include "Dimension.hpp"
 
-#include <cstddef>
-#include <string>
-#include <map>
-#include "Phalanx_DAG_Manager.hpp"
+template<typename EvalT, typename Traits>
+class IntegrateSourceTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
+                            public PHX::EvaluatorDerived<EvalT, Traits>  {
 
-namespace PHX {
+  using ScalarT = typename EvalT::ScalarT;
+  PHX::MDField<const ScalarT,CELL,QP> source;
+  PHX::MDField<ScalarT,CELL,BASIS> residual;
 
-  template<typename Traits> class FieldManager;
-
-  template<typename Traits>
-  class EvaluationContainerBase {
-
-  public:
-
-    EvaluationContainerBase();
-
-    virtual ~EvaluationContainerBase();
-
-    virtual void requireField(const PHX::FieldTag& v);
-
-    virtual void aliasField(const PHX::FieldTag& aliasedField,
-                            const PHX::FieldTag& targetField) = 0;
-    
-    virtual void 
-    registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
-
-    virtual void postRegistrationSetup(typename Traits::SetupData d,
-				       PHX::FieldManager<Traits>& vm,
-                                       const bool& buildDeviceDAG) = 0;
-
-    virtual void evaluateFields(typename Traits::EvalData d) = 0;
-
-    virtual void preEvaluate(typename Traits::PreEvalData d) = 0;
-
-    virtual void postEvaluate(typename Traits::PostEvalData d) = 0;
-
-    virtual void writeGraphvizFile(const std::string filename,
-				   bool writeEvaluatedFields,
-				   bool writeDependentFields,
-				   bool debugRegisteredEvaluators) const;
-
-    virtual const std::string evaluationType() const = 0;
-
-    virtual void print(std::ostream& os) const = 0;
-    
-  protected:
-    
-    PHX::DagManager<Traits> dag_manager_;
-
+public:
+  struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
+    Kokkos::View<const ScalarT**,PHX::Device> source;
+    Kokkos::View<ScalarT**,PHX::Device> residual;
+    KOKKOS_FUNCTION MyDevEval(const Kokkos::View<const ScalarT**,PHX::Device>& in_source,
+                                     const Kokkos::View<ScalarT**,PHX::Device>& in_residual) :
+      source(in_source), residual(in_residual) {}
+    KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
+    KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
+                                  const typename Traits::EvalData data) override;
   };
-
-  template<typename Traits>
-  std::ostream& operator<<(std::ostream& os, 
-			   const PHX::EvaluationContainerBase<Traits>& sc);
   
-}
+  IntegrateSourceTerm(const std::string& source_name,
+                      const Teuchos::RCP<PHX::DataLayout>& source_layout,
+                      const std::string& residual_name,
+                      const Teuchos::RCP<PHX::DataLayout>& residual_layout);
+  PHX::DeviceEvaluator<Traits>* createDeviceEvaluator() const override;
+  void evaluateFields(typename Traits::EvalData workset) override;
+};
 
-#include "Phalanx_EvaluationContainer_Base_Def.hpp"
-
-#endif 
+#endif

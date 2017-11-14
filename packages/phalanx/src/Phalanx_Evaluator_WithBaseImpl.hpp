@@ -168,10 +168,16 @@ namespace PHX {
     virtual void preEvaluate(typename Traits::PreEvalData d) override;
 
     virtual void postEvaluate(typename Traits::PostEvalData d) override;
-
+    
     virtual const std::string& getName() const override;
 
     virtual void bindField(const PHX::FieldTag& ft, const PHX::any& f) override;
+
+    virtual PHX::DeviceEvaluator<Traits>* createDeviceEvaluator() const override;
+
+    virtual void rebuildDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const override;
+
+    virtual void deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const override;
 
   private:
 

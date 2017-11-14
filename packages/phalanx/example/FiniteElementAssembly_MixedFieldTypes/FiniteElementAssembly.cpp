@@ -57,6 +57,7 @@
 #include "Mesh.hpp"
 #include "WorksetBuilder.hpp"
 #include "LinearObjectFactory.hpp"
+#include "CommandLineParser.hpp"
 #include "MyTraits.hpp"
 #include "Constant.hpp"
 #include "GatherSolution.hpp"
@@ -98,14 +99,15 @@ int main(int argc, char *argv[])
     // *********************************************************
 
     // Create the mesh
-    const int nx = 4;
-    const int ny = 2;
-    const int nz = 2;
-    const double lx = 1.0;
-    const double ly = 1.0;
-    const double lz = 1.0;
-    const int num_equations = 2;
-    const int workset_size = 3;
+    phx_example::CommandLineParser p(argc,argv);
+    const int nx = p.nx();
+    const int ny = p.ny();
+    const int nz = p.nz();
+    const double lx = p.lx();
+    const double ly = p.ly();
+    const double lz = p.lz();
+    const int num_equations = p.numEquations();
+    const int workset_size = p.worksetSize();
     RCP<phx_example::Mesh> mesh = rcp(new phx_example::Mesh(nx, ny, nz, lx, ly, lz));
     std::vector<Workset> worksets;
     {
@@ -116,6 +118,17 @@ int main(int argc, char *argv[])
     phx_example::LinearObjectFactory lof(mesh->getNumNodes(),
                                          num_equations,
                                          mesh->getGlobalIndices());
+
+    // Print statistics
+    {
+      std::cout << "Number of Elements = " << mesh->getNumElements() << std::endl;
+      std::cout << "Number of Nodes = " << mesh->getNumNodes() << std::endl;
+      std::cout << "Number of equations = " << num_equations << std::endl;
+      std::cout << "Number of DOFs = " << lof.getNumDOFs() << std::endl;
+      std::cout << "Matrix Size = " << lof.getMatrixSize() << std::endl;
+      std::cout << "Workset Size = " << workset_size << std::endl;
+      std::cout << "Number of Worksets = " << worksets.size() << std::endl;
+    }
         
     // We will size the layouts later 
     RCP<PHX::DataLayout> qp_layout = rcp(new Layout("DL<CELL,QP>"));
