@@ -74,7 +74,7 @@
 
 
 // #ifdef HAVE_TPETRA_INST_INT_INT
-#ifdef HAVE_AMESOS2_EPETRAEXT
+#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
 #ifdef HAVE_MPI
 #include <mpi.h>
 #include <Epetra_MpiComm.h>
@@ -146,7 +146,7 @@ bool test_mat_with_solver(const string& mm_file,
                           ParameterList solve_params);
 
 #ifdef HAVE_TPETRA_INST_INT_INT
-#ifdef HAVE_AMESOS2_EPETRAEXT
+#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
 /*
  * Tests a matrix solve with the given solver on the matrix found in
  * the named file.  EPETRA_RUNS is a parameter list that describes the
@@ -390,7 +390,7 @@ test_mat_with_solver (const string& mm_file,
           *fos << "    Testing Epetra objects" << endl;
         }
 #ifdef HAVE_TPETRA_INST_INT_INT
-#ifdef HAVE_AMESOS2_EPETRAEXT
+#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
         const ParameterList epetra_runs = Teuchos::getValue<ParameterList> (test_params.entry (object_it));
         const bool epetraSuccess = test_epetra (mm_file, solver_name, epetra_runs, solve_params);
         success &= epetraSuccess;
@@ -472,7 +472,7 @@ struct solution_checker<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,No
   }
 };
 
-#ifdef HAVE_AMESOS2_EPETRAEXT
+#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
 template <>
 struct solution_checker<Epetra_MultiVector> {
   bool operator() (RCP<Epetra_MultiVector> true_solution, RCP<Epetra_MultiVector> given_solution)
@@ -700,7 +700,7 @@ do_solve_routine(const string& solver_name,
 
 
 #ifdef HAVE_TPETRA_INST_INT_INT
-#ifdef HAVE_AMESOS2_EPETRAEXT
+#if defined(HAVE_AMESOS2_EPETRA) && defined(HAVE_AMESOS2_EPETRAEXT)
 
 //////////////////////////
 //     Epetra Tests     //
