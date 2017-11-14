@@ -46,8 +46,6 @@
 #ifndef MUELU_REFMAXWELL_DECL_HPP
 #define MUELU_REFMAXWELL_DECL_HPP
 
-// TODO move this file to xpetra subfolder
-
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Utilities_fwd.hpp"

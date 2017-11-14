@@ -71,8 +71,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
    IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT)
 
      APPEND_SET(HEADERS
-       tpetra/MueLu_RefMaxwell_decl.hpp
-       tpetra/MueLu_RefMaxwell_def.hpp
        tpetra/MueLu_ShiftedLaplacian_decl.hpp
        tpetra/MueLu_ShiftedLaplacian_def.hpp
        tpetra/MueLu_ShiftedLaplacianOperator_decl.hpp
@@ -96,6 +94,8 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/xpetra)
 APPEND_SET(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_XpetraOperator_decl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_CreateXpetraPreconditioner.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_RefMaxwell_decl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_RefMaxwell_def.hpp
 )
 
 #
@@ -103,7 +103,7 @@ APPEND_SET(HEADERS
 #
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
-  
+
   APPEND_SET(SOURCES
     ${DIR}/Stratimikos_MueLuHelpers.cpp
     )
