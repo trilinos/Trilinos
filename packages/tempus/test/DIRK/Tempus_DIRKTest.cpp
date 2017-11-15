@@ -18,6 +18,7 @@
 #include "../TestModels/VanDerPolModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
+#include <fstream>
 #include <vector>
 
 namespace Tempus_Test {

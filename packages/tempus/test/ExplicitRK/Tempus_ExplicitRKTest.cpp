@@ -17,6 +17,7 @@
 #include "../TestModels/SinCosModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
+#include <fstream>
 #include <vector>
 
 namespace Tempus_Test {

@@ -44,6 +44,9 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_toString.hpp"
 
+#include <fstream>
+#include <iostream>
+
 extern "C" {
 #include "zoltan.h"
 }
@@ -93,7 +96,7 @@ struct TensorData {
 // Functions implementing hypergraph for 1-D i-wise decomposition
 // with flattened j.  For this hypergraph model
 //   * the n vertices are the i-indices (n = basis size)
-//   * the n_k hyperedges are the flattened j-k planes: 
+//   * the n_k hyperedges are the flattened j-k planes:
 //       hyperedge k contains vertex i if C_ijk \neq 0 for any j
 namespace HG_1D_Flat_J {
 
@@ -158,7 +161,7 @@ namespace HG_1D_Flat_J {
     int num_pins = 0;
     TensorData::Cijk_type::k_iterator k_begin = td->Cijk->k_begin();
     TensorData::Cijk_type::k_iterator k_end =   td->Cijk->k_end();
-    for (TensorData::Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; 
+    for (TensorData::Cijk_type::k_iterator k_it=k_begin; k_it!=k_end;
          ++k_it, ++kdx) {
       int k = index(k_it);
       edgeGID[kdx] = k;
@@ -166,7 +169,7 @@ namespace HG_1D_Flat_J {
       num_pins += td->Cijk->num_j(k_it);
        TensorData::Cijk_type::kj_iterator j_begin = td->Cijk->j_begin(k_it);
        TensorData::Cijk_type::kj_iterator j_end =   td->Cijk->j_end(k_it);
-       for (TensorData::Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; 
+       for (TensorData::Cijk_type::kj_iterator j_it = j_begin; j_it != j_end;
             ++j_it) {
          int j = index(j_it);
          vtxGID[jdx++] = j;

@@ -4,6 +4,7 @@
 /* ******************************************************************** */
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
+#include <fstream>
 #include <iostream>
 #include "ml_include.h"
 #include "Teuchos_ParameterList.hpp"
@@ -17,6 +18,7 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #endif
+
 
 namespace MLAPI {
 

@@ -25,9 +25,10 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#include <vector>
+#include <fstream>
 #include <sstream>
 #include <limits>
+#include <vector>
 
 namespace Tempus_Test {
 
