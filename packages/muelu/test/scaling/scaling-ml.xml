@@ -23,6 +23,7 @@
     <Parameter        name="smoother: type"                       type="string"   value="Chebyshev"/>
     <Parameter        name="smoother: sweeps"                     type="int"      value="2"/>
     <Parameter        name="smoother: Chebyshev alpha"            type="double"   value="7"/>
+    <Parameter        name="coarse: type"                         type="string"   value="Amesos-KLU"/>
 
   <!-- ===========  REPARTITIONING  =========== -->
     <Parameter        name="repartition: enable"                  type="int"      value="1"/>
