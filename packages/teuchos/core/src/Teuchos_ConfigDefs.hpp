@@ -78,7 +78,7 @@
 #endif
 
 #include <cstdio>
-#include <cstdarg>
+// #include <cstdarg>
 // #include <cerrno>
 #include <climits>
 #include <cstdlib>
