@@ -489,6 +489,10 @@ evaluateFieldsDeviceDag(const int& work_size,
   //! support on CUDA, so this has to be disabled at compilation to
   //! work without RDC.
 #ifdef PHX_ENABLE_DEVICE_DAG
+  // const unsigned vector_size = 1;
+  // const unsigned team_size = 256 / vector_size;
+  // Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(work_size,team_size,vector_size),
+  //                      PHX::RunDeviceDag<Traits>(device_evaluators_,d));
   Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(work_size,Kokkos::AUTO()),
                        PHX::RunDeviceDag<Traits>(device_evaluators_,d));
 #else

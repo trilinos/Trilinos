@@ -58,6 +58,7 @@
 #include "WorksetBuilder.hpp"
 #include "LinearObjectFactory.hpp"
 #include "CommandLineParser.hpp"
+#include "PrintValues.hpp"
 #include "Dimension.hpp"
 #include "MyTraits.hpp"
 #include "Constant.hpp"
@@ -92,8 +93,6 @@ int main(int argc, char *argv[])
 
     Kokkos::initialize(argc,argv);
     PHX::exec_space::print_configuration(std::cout);
-
-    bool print_debug = false;
 
     // *********************************************************
     // * Build the Finite Element data structures
@@ -263,7 +262,7 @@ int main(int argc, char *argv[])
     fm.postRegistrationSetup(nullptr,build_device_dag);
     fm.writeGraphvizFile("example_fem",".dot",true,true);
 
-    // Create targets to fill (resiudal and Jacobian)
+    // Create targets to fill (residual and Jacobian)
     Kokkos::View<double*,PHX::Device> f = lof.createSolutionVector("global_residual"); // residual
     KokkosSparse::CrsMatrix<double,int,PHX::Device> J = lof.createJacobianMatrix("global_jacobian"); // Jacobian
     for (auto& w : worksets) {
@@ -273,15 +272,22 @@ int main(int argc, char *argv[])
     }
 
     Kokkos::deep_copy(x,1.0);
+    
+
+    Kokkos::parallel_for(x.extent(0),KOKKOS_LAMBDA (const int& i) {x(i)=static_cast<double>(i);});
+
     Kokkos::deep_copy(f,0.0);
     PHX::exec_space::fence();
-    RCP<Time> residual_eval_time = TimeMonitor::getNewTimer("Residual Evaluation Time");
+    RCP<Time> residual_eval_time = TimeMonitor::getNewTimer("Residual Evaluation Time <<Host DAG>>");
     {
       TimeMonitor tm_r(*residual_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Residual>(workset);
+      PHX::exec_space::fence();
     }
-    PHX::exec_space::fence();
+
+    if (p.printResidual())
+      phx_example::printResidual(f,"FEA_DD: <Residual> Host DAG",p.printToFile(),"FEA_DD.Residual_Host_DAG.txt");
 
     // Device DAG
     Kokkos::deep_copy(f,0.0);
@@ -291,29 +297,26 @@ int main(int argc, char *argv[])
       TimeMonitor tm_r(*residual_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFieldsDeviceDag<Residual>(workset.num_cells_,workset);
-    }
-    PHX::exec_space::fence();
-
-    if (print_debug) {
-      auto host_f = Kokkos::create_mirror_view(f);
-      Kokkos::deep_copy(host_f,f);
       PHX::exec_space::fence();
-      
-      for (int i=0; i < static_cast<int>(host_f.extent(0)); ++i)
-        std::cout << "f(" << i << ") = " << host_f(i) << std::endl;
     }
+
+    if (p.printResidual())
+      phx_example::printResidual(f,"FEA_DD: <Residual> Device DAG",p.printToFile(),"FEA_DD.Residual_Device_DAG.txt");
     
     // Jacobian does both f and J
     Kokkos::deep_copy(f,0.0);
     Kokkos::deep_copy(J.values,0.0);
     PHX::exec_space::fence();
-    RCP<Time> jacobian_eval_time = TimeMonitor::getNewTimer("Jacobian Evaluation Time");
+    RCP<Time> jacobian_eval_time = TimeMonitor::getNewTimer("Jacobian Evaluation Time <<Host DAG>>");
     {
       TimeMonitor tm_r(*jacobian_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Jacobian>(workset);
+      PHX::exec_space::fence();
     }
-    PHX::exec_space::fence();
+
+    if (p.printJacobian())
+      phx_example::printResidualAndJacobian(f,J,"FEA_DD: <Jacobian> Host DAG",p.printToFile(),"FEA_DD.Jacobian_Host_DAG.txt");
 
     // Device DAG
     Kokkos::deep_copy(f,0.0);
@@ -324,30 +327,11 @@ int main(int argc, char *argv[])
       TimeMonitor tm_r(*jacobian_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFieldsDeviceDag<Jacobian>(workset.num_cells_,workset);
-    }
-    PHX::exec_space::fence();
-
-    // debugging
-    if (print_debug) {
-      auto host_f = Kokkos::create_mirror_view(f);
-      auto host_J_vals = Kokkos::create_mirror_view(J.values);
-      auto host_graph = Kokkos::create_mirror(J.graph); // deep_copies automagically
-      Kokkos::deep_copy(host_f,f);
-      Kokkos::deep_copy(host_J_vals,J.values);
       PHX::exec_space::fence();
-      
-      for (int i=0; i < static_cast<int>(host_f.extent(0)); ++i)
-        std::cout << "f(" << i << ") = " << host_f(i) << std::endl;
-
-      size_t val_index = 0;
-      for (size_t row=0; row < host_graph.numRows(); ++row) {
-        for (int j=0; j < host_graph.rowConst(row).length; ++j) {
-          std::cout << "J(" << row << "," << host_graph.rowConst(row).colidx(j) << ") = "
-                    << host_J_vals(val_index) << endl;
-          ++val_index;
-        }
-      }
     }
+
+    if (p.printJacobian())
+      phx_example::printResidualAndJacobian(f,J,"FEA_DD: <Jacobian> Device DAG",p.printToFile(),"FEA_DD.Jacobian_Device_DAG.txt");
 
     // Graph analysis
     if (true) {

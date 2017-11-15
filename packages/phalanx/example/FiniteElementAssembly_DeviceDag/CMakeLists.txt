@@ -23,6 +23,7 @@ SET(example_fem_SOURCES
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/Dimension.cpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/LinearObjectFactory.hpp
     ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/CommandLineParser.hpp
+    ${${PACKAGE_NAME}_SOURCE_DIR}/example/FiniteElementAssembly/PrintValues.hpp
     evaluators/Constant.hpp
     evaluators/Constant_Def.hpp
     evaluators/Constant.cpp
