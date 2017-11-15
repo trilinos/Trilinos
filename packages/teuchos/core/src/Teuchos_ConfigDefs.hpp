@@ -46,7 +46,7 @@
 
 /*! \file Teuchos_ConfigDefs.hpp
     \brief Teuchos header file which uses auto-configuration information
-	to include necessary C++ headers.
+        to include necessary C++ headers.
 */
 
 #include "TeuchosCore_config.h"
@@ -92,13 +92,13 @@
 #include <stdexcept>
 #include <cassert>
 #include <complex>
-#include <map>
-#include <vector>
-#include <deque>
+// #include <map>
+// #include <vector>
+// #include <deque>
 #include <algorithm>
-#include <numeric>
-#include <list>
-#include <set>
+// #include <numeric>
+// #include <list>
+// #include <set>
 #include <typeinfo>
 #include <limits>
 #include <memory>
