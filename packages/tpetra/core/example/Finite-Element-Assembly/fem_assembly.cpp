@@ -54,7 +54,7 @@ int main (int argc, char *argv[]) {
 
   // Build graphs multiple ways
   // --------------------------
-
+  
   // - Type 1 Graph Construction
   //   - Loop over owned elements only.
   //   row = domain = range
@@ -125,15 +125,18 @@ int main (int argc, char *argv[]) {
 
 
 
-
-
 //  crs_graph->fillComplete(domain_map, range_map);
   crs_graph->fillComplete();
   crs_graph->describe(*out, Teuchos::VERB_EXTREME);
 
 
+
   // - Type 2 Graph Construction
   //
+  std::cout << "------------------------------------------------" << std::endl;
+
+//  RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph.getConst()));  // wcm: NOPE
+  RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph));
 
 
   // Build matrices
@@ -141,16 +144,75 @@ int main (int argc, char *argv[]) {
   // - Need: dummy generate fem matrix call
   // - Loop over all elements (by global id)
   // - on each element call the generate stiffness functon...
-  //   - use a 16 length kokkos view (need to figure out kokkos views)
+  //   - use a 16 length kokkos view (need to figure out kokkos views
   //   - get stiffness matrix
   // - insertGlobalValues once per row of the stiffness matrix.
   // - Note:  call ReferenceQuad4 (in mesh database).  (does not do resizing so we need to do that ourselves)
+  size_t num_rows_quad4 = 4;
+  size_t num_cols_quad4 = 4;
   scalar_2d_array_type element_matrix;
-  Kokkos::resize(element_matrix, 4, 4);     // 4x4 for quads -- or should this be 1x16?
+  Kokkos::resize(element_matrix, num_rows_quad4, num_cols_quad4);     // 4x4 for quads   (TODO: is this right?  (rows, cols) ?)
 
-  //element_matrix(0);
-  
-  
+  Teuchos::Array<GlobalOrdinal> column_global_ids(4);   // just use 4 here for now.
+  Teuchos::Array<Scalar> column_scalar_values(4);
+
+  // Loop over elements
+  for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
+  {
+    // Fill the element_matrix
+    ReferenceQuad4(element_matrix);
+
+    std::cout << "--------------------------" << std::endl
+              << "element: " << element_gidx << std::endl;
+
+    // Fill column ids
+    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
+    {
+      GlobalOrdinal global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
+      column_global_ids[element_node_idx] = global_row_id;
+    }
+    
+    //std::cout << "    \t";
+    //for(size_t i=0; i<4; i++)
+    //{
+    //  std::cout << column_global_ids[i] << "\t";
+    //}
+    //std::cout << std::endl;
+
+    // Fill values
+    for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
+    { 
+      GlobalOrdinal global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
+
+      for(size_t col_idx=0; col_idx<4; col_idx++)
+      {
+        column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
+      }
+
+      // Print out some stuff
+      std::cout << "- insertGlobalValues(" << global_row_id;
+      std::cout << ",  [  ";
+      for(size_t i=0; i<4; i++)
+      {
+        std::cout << column_global_ids[i] << "  ";
+      }
+      std::cout << "]";
+      std::cout << ",  [  ";
+      for(size_t i=0; i<4; i++)
+      {
+        std::cout << column_scalar_values[i] << "  ";
+      }
+    std::cout << "])" << std::endl;
+    std::cout << std::endl;
+
+    // insert global values.
+    crs_matrix->insertGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+    }
+  }
+
+  //crs_matrix->fillComplete();
+  //crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
+   
   
   
   // Build RHS vectors

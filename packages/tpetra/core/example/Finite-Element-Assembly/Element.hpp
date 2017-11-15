@@ -38,17 +38,37 @@
 //
 // ************************************************************************
 // @HEADER
-
-
 #ifndef ELEMENT_HPP
 #define ELEMENT_HPP
 
+#include <iomanip>
 #include "Kokkos_View.hpp"
+
+
 
 //
 // This function does a very rough approximation of 2D finite-difference
-// stencil. 
+// stencil.  This is hardwired for QUAD4.
 //
+// Layout:
+//
+//    Node connectivity in the quad is 0 - 1 - 2 - 3 - 0 
+//    0 ------ 1 
+//    |        |
+//    |        |
+//    3 ------ 2 
+//
+//  - Each 'node' has a self edge and is assigned 2.
+//  - Neighbors on cardinal directions are assigned -1.
+//  - Diagonal neighbors aren't set (i.e., 0).
+//
+//        0   1   2   3
+//      +--------------
+//    0 | 2  -1      -1
+//    1 |-1   2  -1
+//    2 |    -1   2  -1
+//    3 |-1      -1   2
+// 
 void ReferenceQuad4(scalar_2d_array_type & elementMatrix) {
   size_t lr[4] = {1,0,3,2};
   size_t ud[4] = {3,2,1,0};
@@ -70,4 +90,22 @@ void ReferenceQuad4(scalar_2d_array_type & elementMatrix) {
 }
 
 
+
+//
+// This function prints out the quad4 array in a nice way.
+//  rows x cols?
+//
+void PrettyPrintQuad4(scalar_2d_array_type & elementMatrix)
+{
+  size_t nr = elementMatrix.dimension(0);
+  size_t nc = elementMatrix.dimension(1);
+  for(size_t row_idx=0; row_idx<nr; row_idx++)
+  { 
+    std::cout << "[ ";
+    for(size_t col_idx=0; col_idx<nc; col_idx++) {
+      std::cout << std::setw(2) << elementMatrix(row_idx, col_idx) << " ";
+    }
+    std::cout << "]" << std::endl;
+  }
+}
 #endif

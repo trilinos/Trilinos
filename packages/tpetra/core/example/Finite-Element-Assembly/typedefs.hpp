@@ -66,6 +66,7 @@ typedef Kokkos::View<Scalar*[4],ExecutionSpace> scalar_2d_array_type;
 
 typedef typename Tpetra::Map<LocalOrdinal, GlobalOrdinal, NT> MapType;
 typedef typename Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, NT> GraphType;
+typedef typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, NT> MatrixType;
 
 #endif
 
