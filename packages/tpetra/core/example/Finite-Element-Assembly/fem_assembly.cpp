@@ -190,7 +190,7 @@ int main (int argc, char *argv[]) {
       }
 
       // Print out some stuff
-      std::cout << "- insertGlobalValues(" << global_row_id;
+      std::cout << "- insertGlobalValues(" << std::setw(2) << global_row_id;
       std::cout << ",  [  ";
       for(size_t i=0; i<4; i++)
       {
@@ -203,15 +203,15 @@ int main (int argc, char *argv[]) {
         std::cout << column_scalar_values[i] << "  ";
       }
     std::cout << "])" << std::endl;
-    std::cout << std::endl;
 
     // insert global values.
-    crs_matrix->insertGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+    // crs_matrix->insertGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+    crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
     }
   }
 
-  //crs_matrix->fillComplete();
-  //crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
+  crs_matrix->fillComplete();
+  crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
    
   
   
