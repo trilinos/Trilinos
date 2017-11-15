@@ -210,57 +210,6 @@ class RegionManager
   //! Get total number of regions in the mesh
   GO getNumRegions() const { return numRegions_; }
 
-/*! \class RegionManager
- *
- *  \author mayr.mt \date 09/2017
- */
-template<class SC, class LO, class GO, class NO>
-class RegionManager
-{
-  public:
-
-  //! @name Construction/Destruction
-  //@{
-
-  //! Constructor (read node-to-region mapping from file)
-  RegionManager(const std::string& mappingFileName, ///< file name of file with nodes-to-region mapping information
-      Teuchos::RCP<const Teuchos::Comm<int> > comm ///< communicator
-      );
-
-  //! Destructor
-  virtual ~RegionManager(){};
-
-  //@}
-
-  //! @name Access routines
-  //@{
-
-  //! Get total number of nodes in the mesh
-  GO getNumNodes() const { return numNodes_; }
-
-  //! Get total number of regions in the mesh
-  GO getNumRegions() const { return numRegions_; }
-
-//  //! Get number of nodes in region \c regionID
-//  GO getNumNodesPerRegion(GO regionID) const { return numNodesPerRegion_[regionID]; }
-//
-//  //! Get row map of composite matrix
-//  Teuchos::Array<GO> getCompositeRowMap() const { return maps_->compositeMap_; }
-//
-//  //! Get row map of region \c regionID
-//  Teuchos::Array<GO> getRegionRowMap(GO regionID) const;
-//
-//  Teuchos::Array<Teuchos::Array<GO> > getRegionRowMaps() const { return maps_->regionMaps_; };
-//
-//  //used as a map for a RegionToAll node index
-//  Teuchos::Array<Teuchos::Array< std::tuple<GO,GO> > > getRegionToAll() const { return maps_->regionToAll_; }
-//
-//  // used as a map for a RegionToAll node index
-//  Teuchos::Array< std::tuple<GO,GO> > getRegionToAll(GO) const;
-//
-//  //! Access mapping of interface nodes to regions
-//  Teuchos::Array<std::tuple<int,Teuchos::Array<GO> > > getInterfaceNodesToRegions() const { return interfaceNodesToRegions_; }
-
   //@}
 
   protected:

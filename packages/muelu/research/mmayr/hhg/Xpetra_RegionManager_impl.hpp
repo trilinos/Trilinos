@@ -156,8 +156,8 @@ void Xpetra::RegionNodes<GO>::printAllNodes(Teuchos::FancyOStream& out) const
   {
     if (not (*it).is_null())
       out << (*it)->getNodeID() << "\t" << (*it)->getProc() << "\t" << (*it)->getRegions() << std::endl;
-    else
-      out << "Node " << it << " not defined, yet." << std::endl;
+//    else
+//      out << "Node " << it << " not defined, yet." << std::endl;
   }
 
   return;
@@ -284,8 +284,6 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::readMappingFromFile(
       numNodes_ = lineContent[0];
       numRegions_ = lineContent[1];
 
-//      std::cout << "Total number of nodes: " << numNodes << std::endl;
-
       // setup the nodes_ object with the appropriate number of nodes
       nodes_ = Teuchos::rcp(new Xpetra::RegionNodes<GO>(numNodes_));
 
@@ -294,8 +292,6 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::readMappingFromFile(
     default:
     {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(nodes_.is_null(), "'nodes_' has not been initialized, yet.");
-
-//      std::cout << "Line " << lineIndex << ": " << line << std::endl;
 
       while (is >> aux)
         lineContent.push_back(aux);
@@ -388,21 +384,6 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRegionRowMaps()
 
     regionMaps_[i] = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra, nodes_->getNumNodesPerRegion(i), myNodesGIDs(), 0, comm_);
   }
-  comm_->barrier();
-
-  return;
-}
-
-template<class SC, class LO, class GO, class NO>
-void Xpetra::RegionManager<SC,LO,GO,NO>::setupCompositeRowMap()
-{
-  Teuchos::RCP<const Teuchos::Array<GO> > myNodesGIDsRcp = nodes_->getNodeGIDsPerProc(comm_->getRank());
-  const Teuchos::Array<GO>& myNodesGIDs = *myNodesGIDsRcp;
-
-  compositeMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(Xpetra::UseTpetra, nodes_->getNumNodes(), myNodesGIDs(), 0, comm_);
-
-//  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-//  compositeMap_->describe(*out, Teuchos::VERB_EXTREME);
 
   comm_->barrier();
 
@@ -412,68 +393,6 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupCompositeRowMap()
     *out << std::endl << "regionMaps[" << i << "]_:" << std::endl;
     regionMaps_[i]->describe(*out, Teuchos::VERB_EXTREME);
   }
-  comm_->barrier();
-
-  return;
-}
-
-template<class SC, class LO, class GO, class NO>
-void Xpetra::RegionManager<SC,LO,GO,NO>::printRegionsPerProc(
-    Teuchos::FancyOStream& out) const
-{
-  comm_->barrier();
-  if (comm_->getRank() == 0)
-  {
-    out << std::endl << "*** RegionsPerProc:" << std::endl
-        <<              "    ---------------" << std::endl;
-
-    out << "Total number of procs: " << comm_->getSize() << std::endl
-        << "Total number of mesh regions: " << numRegions_ << std::endl
-        << "Number of rows in regionsPerProc_ structure: " << regionsPerProc_.size()
-        << std::endl;
-
-    out << std::endl << "Proc\tRegions" << std::endl;
-
-    for (GO i = 0; i < regionsPerProc_.size(); ++i)
-    {
-      out << i
-          << "\t" << regionsPerProc_[i]
-          << std::endl;
-    }
-  }
-  comm_->barrier();
-
-  comm_->barrier();
-  if (comm_->getRank() == 0)
-  {
-    out << std::endl << "*** RegionsPerProc:" << std::endl
-        <<              "    ---------------" << std::endl;
-
-    out << "Total number of procs: " << comm_->getSize() << std::endl
-        << "Total number of mesh regions: " << numRegions_ << std::endl
-        << "Number of rows in regionsPerProc2_ structure: " << regionsPerProc2_.size()
-        << std::endl;
-
-    out << std::endl << "Proc\tRegions" << std::endl;
-
-    for (GO i = 0; i < regionsPerProc2_.size(); ++i)
-    {
-      out << std::get<0>(regionsPerProc2_[i])
-          << "\t" << std::get<1>(regionsPerProc2_[i])
-          << std::endl;
-    }
-  }
-  comm_->barrier();
-
-  comm_->barrier();
-
-  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  for (GO i = 0; i < numRegions_; ++i)
-  {
-    *out << std::endl << "regionMaps[" << i << "]_:" << std::endl;
-    regionMaps_[i]->describe(*out, Teuchos::VERB_EXTREME);
-  }
-  comm_->barrier();
 
   return;
 }
