@@ -105,6 +105,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   out.setOutputToRootOnly(0);
   out.setShowProcRank(false);
 
+  RCP<Teuchos::TimeMonitor> tmCompute = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute")));
+
   if (dump_matrices_)
     Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("SM.mat"), *SM_Matrix_);
 
@@ -166,114 +168,119 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   if (dump_matrices_)
     Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("D0_nuked.mat"), *D0_Matrix_);
 
-  // Form TMT_Matrix_ = D0* SM D0
-  TMT_Matrix_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
-  if (parameterList_.get<bool>("rap: triple product", false) == false) {
-    Teuchos::RCP<Matrix> C1 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C1,true,true);
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C1,false,*TMT_Matrix_,true,true);
-  } else {
-    Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-      MultiplyRAP(*D0_Matrix_, true, *SM_Matrix_, false, *D0_Matrix_, false, *TMT_Matrix_, true, true);
-  }
-  TMT_Matrix_->resumeFill();
-  Remove_Zeroed_Rows(TMT_Matrix_,1.0e-16);
-  TMT_Matrix_->SetFixedBlockSize(1);
-  if (dump_matrices_)
-    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("TMT.mat"), *TMT_Matrix_);
-
-  // Form TMT_agg_Matrix = D0* M1 D0
-  TMT_Agg_Matrix_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
-  if (parameterList_.get<bool>("rap: triple product", false) == false) {
-    Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C2,true,true);
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C2,false,*TMT_Agg_Matrix_,true,true);
-  } else {
-    Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-      MultiplyRAP(*D0_Matrix_, true, *M1_Matrix_, false, *D0_Matrix_, false, *TMT_Agg_Matrix_, true, true);
-  }
-
-  TMT_Agg_Matrix_->resumeFill();
-  Remove_Zeroed_Rows(TMT_Agg_Matrix_,1.0e-16);
-  TMT_Agg_Matrix_->SetFixedBlockSize(1);
-  if (dump_matrices_)
-    Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("TMT_agg.mat"), *TMT_Agg_Matrix_);
-
   // build special prolongator for (1,1)-block
   if(P11_==Teuchos::null) {
-    out << "\n" \
+    out << "\n"                                                         \
       "--------------------------------------------------------------------------------\n" \
       "---           build special prolongator for (1,1)-block                      ---\n" \
       "--------------------------------------------------------------------------------\n";
+
+    // Form A_nodal = D0* M1 D0  (aka TMT_agg)
+    RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build A_nodal")));
+    A_nodal_Matrix_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
+    if (parameterList_.get<bool>("rap: triple product", false) == false) {
+      Teuchos::RCP<Matrix> C2 = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C2,true,true);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C2,false,*A_nodal_Matrix_,true,true);
+    } else {
+      Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+        MultiplyRAP(*D0_Matrix_, true, *M1_Matrix_, false, *D0_Matrix_, false, *A_nodal_Matrix_, true, true);
+    }
+    A_nodal_Matrix_->resumeFill();
+    Remove_Zeroed_Rows(A_nodal_Matrix_,1.0e-16);
+    A_nodal_Matrix_->SetFixedBlockSize(1);
+    tm = Teuchos::null;
+
+    if (dump_matrices_)
+      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("A_nodal.mat"), *A_nodal_Matrix_);
+
+    tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build special prolongator")));
     buildProlongator();
   }
 
-  // build coarse grid operator for (1,1)-block
-  formCoarseMatrix();
-
-  // build fine grid operator for (2,2)-block, D0* M1 D0
-  A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
-  if (parameterList_.get<bool>("rap: triple product", false) == false) {
-    Teuchos::RCP<Matrix> C = MatrixFactory::Build(M1_Matrix_->getRowMap(),0);
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C,true,true);
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
-  } else {
-    Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-      MultiplyRAP(*D0_Matrix_, true, *M1_Matrix_, false, *D0_Matrix_, false, *A22_, true, true);
-  }
-
-  A22_->resumeFill();
-  Remove_Zeroed_Rows(A22_,1.0e-16);
-  A22_->SetFixedBlockSize(1);
-
   // Use HierarchyManagers to build 11 & 22 Hierarchies
-  typedef MueLu::HierarchyManager<SC,LO,GO,NO>               HierarchyManager;
-  RCP<HierarchyManager> ManagerH, Manager22;
+  typedef MueLu::HierarchyManager<SC,LO,GO,NO> HierarchyManager;
   std::string syntaxStr = "parameterlist: syntax";
-  if (parameterList_.isParameter(syntaxStr) && parameterList_.get<std::string>(syntaxStr) == "ml") {
-    parameterList_.remove(syntaxStr);
-    ManagerH = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(precList11_));
-    Manager22 = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(precList22_));
-  } else {
-    ManagerH = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(precList11_,AH_->getDomainMap()->getComm()));
-    Manager22 = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(precList22_,A22_->getDomainMap()->getComm()));
+
+  {
+    out << "\n" \
+      "--------------------------------------------------------------------------------\n" \
+      "---                  build MG for coarse (1,1)-block                         ---\n" \
+      "--------------------------------------------------------------------------------\n";
+    // build coarse grid operator for (1,1)-block
+    RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build AH")));
+    formCoarseMatrix();
+    tm = Teuchos::null;
+
+    tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build coarse (1,1) hierarchy")));
+    RCP<HierarchyManager> ManagerH;
+    if (parameterList_.isParameter(syntaxStr) && parameterList_.get<std::string>(syntaxStr) == "ml") {
+      parameterList_.remove(syntaxStr);
+      ManagerH = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(precList11_, AH_->getDomainMap()->getComm()));
+    } else {
+      ManagerH = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(precList11_,AH_->getDomainMap()->getComm()));
+    }
+    HierarchyH_=ManagerH->CreateHierarchy();
+    HierarchyH_->setlib(Xpetra::UseTpetra);
+    HierarchyH_->GetLevel(0)->Set("A", AH_);
+    ManagerH->SetupHierarchy(*HierarchyH_);
   }
 
-  out << "\n" \
-    "--------------------------------------------------------------------------------\n" \
-    "---                  build MG for coarse (1,1)-block                         ---\n" \
-    "--------------------------------------------------------------------------------\n";
-  HierarchyH_=ManagerH->CreateHierarchy();
-  HierarchyH_->setlib(Xpetra::UseTpetra);
-  HierarchyH_->GetLevel(0)->Set("A", AH_);
-  ManagerH->SetupHierarchy(*HierarchyH_);
+  {
+    out << "\n" \
+      "--------------------------------------------------------------------------------\n" \
+      "---                  build MG for (2,2)-block                                ---\n" \
+      "--------------------------------------------------------------------------------\n";
+    // build fine grid operator for (2,2)-block, D0* SM D0  (aka TMT)
+    RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build A22")));
+    A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),0);
+    if (parameterList_.get<bool>("rap: triple product", false) == false) {
+      Teuchos::RCP<Matrix> C = MatrixFactory::Build(SM_Matrix_->getRowMap(),0);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*SM_Matrix_,false,*D0_Matrix_,false,*C,true,true);
+      Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
+    } else {
+      Xpetra::TripleMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+        MultiplyRAP(*D0_Matrix_, true, *SM_Matrix_, false, *D0_Matrix_, false, *A22_, true, true);
+    }
+    A22_->resumeFill();
+    Remove_Zeroed_Rows(A22_,1.0e-16);
+    A22_->SetFixedBlockSize(1);
+    tm = Teuchos::null;
 
-  out << "\n" \
-    "--------------------------------------------------------------------------------\n" \
-    "---                  build MG for (2,2)-block                                ---\n" \
-    "--------------------------------------------------------------------------------\n";
-  Hierarchy22_=Manager22->CreateHierarchy();
-  Hierarchy22_->setlib(Xpetra::UseTpetra);
-  Hierarchy22_->GetLevel(0)->Set("A", A22_);
-  Manager22->SetupHierarchy(*Hierarchy22_);
+    tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build (2,2) hierarchy")));
+    RCP<HierarchyManager> Manager22;
+    if (parameterList_.isParameter(syntaxStr) && parameterList_.get<std::string>(syntaxStr) == "ml") {
+      parameterList_.remove(syntaxStr);
+      Manager22 = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(precList22_, A22_->getDomainMap()->getComm()));
+    } else {
+      Manager22 = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(precList22_,A22_->getDomainMap()->getComm()));
+    }
+    Hierarchy22_=Manager22->CreateHierarchy();
+    Hierarchy22_->setlib(Xpetra::UseTpetra);
+    Hierarchy22_->GetLevel(0)->Set("A", A22_);
+    Manager22->SetupHierarchy(*Hierarchy22_);
+  }
 
-  // build ifpack2 preconditioners for pre and post smoothing
-  out << "\n" \
-    "--------------------------------------------------------------------------------\n" \
-    "---                  build smoother for (1,1)-block                          ---\n" \
-    "--------------------------------------------------------------------------------\n";
-  Level level;
-  RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-  level.SetFactoryManager(factoryHandler);
-  level.SetLevelID(0);
-  level.Set("A",SM_Matrix_);
-  level.setlib(SM_Matrix_->getDomainMap()->lib());
-  std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
-  RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
-  RCP<SmootherFactory> SmootherFact = rcp(new SmootherFactory(smootherPrototype));
-  level.Request("PreSmoother",SmootherFact.get());
-  SmootherFact->Build(level);
-  Smoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",SmootherFact.get());
+  {
+    // build ifpack2 preconditioners for pre and post smoothing
+    out << "\n" \
+      "--------------------------------------------------------------------------------\n" \
+      "---                  build smoother for fine (1,1)-block                     ---\n" \
+      "--------------------------------------------------------------------------------\n";
+    RCP<Teuchos::TimeMonitor> tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: Build smoother for fine (1,1) block")));
+    Level level;
+    RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
+    level.SetFactoryManager(factoryHandler);
+    level.SetLevelID(0);
+    level.Set("A",SM_Matrix_);
+    level.setlib(SM_Matrix_->getDomainMap()->lib());
+    std::string smootherType = parameterList_.get<std::string>("smoother: type", "CHEBYSHEV");
+    RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(smootherType, smootherList_));
+    RCP<SmootherFactory> SmootherFact = rcp(new SmootherFactory(smootherPrototype));
+    level.Request("PreSmoother",SmootherFact.get());
+    SmootherFact->Build(level);
+    Smoother_ = level.Get<RCP<SmootherBase> >("PreSmoother",SmootherFact.get());
+  }
 
   // Allocate temporary MultiVectors for solve
   P11res_ = MultiVectorFactory::Build(P11_->getDomainMap(),1);
@@ -304,7 +311,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
     coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
     fineLevel.SetLevelID(0);
     coarseLevel.SetLevelID(1);
-    fineLevel.Set("A",TMT_Agg_Matrix_);
+    fineLevel.Set("A",A_nodal_Matrix_);
 
     RCP<TentativePFactory> TentativePFact = rcp(new TentativePFactory());
     RCP<UncoupledAggregationFactory> Aggfact = rcp(new UncoupledAggregationFactory());

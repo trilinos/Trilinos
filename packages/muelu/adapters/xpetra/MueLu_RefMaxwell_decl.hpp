@@ -399,14 +399,14 @@ namespace MueLu {
                     const Teuchos::RCP<MultiVector> & Coords,
                     Teuchos::ParameterList& List);
 
-    //! Two hierarchies: one for the (1,1)-block, another for the (2,2)-block
+    //! Two hierarchies: one for the coarse (1,1)-block, another for the (2,2)-block
     Teuchos::RCP<Hierarchy> HierarchyH_, Hierarchy22_;
     Teuchos::RCP<SmootherBase> Smoother_;
     //! Top Level
     Teuchos::RCP<Level> TopLevel_;
     //! Various matrices
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
-    Teuchos::RCP<Matrix> TMT_Matrix_, TMT_Agg_Matrix_, P11_, AH_, A22_;
+    Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, AH_, A22_;
     //! Vectors for BCs
     std::vector<LocalOrdinal> BCrows_, BCcols_;
     //! Nullspace

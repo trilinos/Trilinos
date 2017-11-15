@@ -97,6 +97,22 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     if (!TYPE_EQUAL(SC, double)) { *out << "Skipping test for SC != double" << std::endl; return EXIT_SUCCESS; }
 
+    bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
+    std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
+    SC scaling                    = 1.0;               clp.setOption("scaling",               &scaling,           "scale mass term");
+
+    clp.recogniseAllOptions(true);
+    switch (clp.parse(argc, argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    }
+
+    comm->barrier();
+    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: S - Global Time")));
+    RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read Matrices")));
+
     // Read matrices in from files
     Xpetra::global_size_t nedges=540, nnodes=216;
     // maps for nodal and edge matrices
@@ -112,6 +128,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<Matrix> D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0.txt", edge_map, Teuchos::null, node_map, edge_map);
     // coordinates
     RCP<MultiVector> coords = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector("coords.txt", node_map);
+
+    comm->barrier();
+    tm = Teuchos::null;
+
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Matrices")));
 
     // build lumped mass matrix inverse (M0inv_Matrix)
     RCP<MultiVector> ones = MultiVectorFactory::Build(node_map,1);
@@ -139,8 +160,13 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     // build stiffness plus mass matrix (SM_Matrix)
     RCP<Matrix> SM_Matrix = MatrixFactory::Build(edge_map,100);
-    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,(SC)1.0,SM_Matrix,*out);
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,scaling,SM_Matrix,*out);
     SM_Matrix->fillComplete();
+
+    comm->barrier();
+    tm = Teuchos::null;
+
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Build Preconditioner")));
 
     // set parameters
     Teuchos::ParameterList params, params11, params22;
@@ -156,6 +182,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
       = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,M0inv_Matrix,
             M1_Matrix,Teuchos::null,coords,params) );
+
+    comm->barrier();
+    tm = Teuchos::null;
+
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 4 - Setup RHS etc")));
 
     // setup LHS, RHS
     RCP<MultiVector> vec = MultiVectorFactory::Build(edge_map,1);
@@ -194,6 +225,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     belosParams->set("Output Frequency",1);
     belosParams->set("Output Style",Belos::Brief);
     solver = factory->create("Block CG",belosParams);
+
+    comm->barrier();
+    tm = Teuchos::null;
+
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 5 - Solve")));
+
     // set problem and solve
     solver -> setProblem( problem );
     Belos::ReturnType status = solver -> solve();
@@ -203,6 +240,33 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
     else
       *out << "FAILURE! Belos did not converge fast enough." << std::endl;
+
+    comm->barrier();
+    tm = Teuchos::null;
+    globalTimeMonitor = Teuchos::null;
+
+    if (printTimings) {
+      RCP<Teuchos::ParameterList> reportParams = rcp(new Teuchos::ParameterList);
+      if (timingsFormat == "yaml") {
+        reportParams->set("Report format",             "YAML");            // "Table" or "YAML"
+        reportParams->set("YAML style",                "compact");         // "spacious" or "compact"
+      }
+      reportParams->set("How to merge timer sets",   "Union");
+      reportParams->set("alwaysWriteLocal",          false);
+      reportParams->set("writeGlobalStats",          true);
+      reportParams->set("writeZeroTimers",           false);
+      // FIXME: no "ignoreZeroTimers"
+
+      const std::string filter = "";
+
+      std::ios_base::fmtflags ff(out->flags());
+      if (timingsFormat == "table-fixed") *out << std::fixed;
+      else * out << std::scientific;
+      TimeMonitor::report(comm.ptr(), *out, filter, reportParams);
+       *out << std::setiosflags(ff);
+    }
+
+    TimeMonitor::clearCounters();
 #endif // #ifdef HAVE_MUELU_BELOS
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
