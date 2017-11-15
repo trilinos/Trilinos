@@ -40,6 +40,7 @@
 //@HEADER
 
 #include <BelosTypes.hpp>
+#include <vector>
 
 namespace Belos {
 

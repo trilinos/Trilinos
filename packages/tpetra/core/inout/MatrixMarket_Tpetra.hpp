@@ -73,6 +73,7 @@
 #include <iterator>
 #include <vector>
 #include <stdexcept>
+#include <numeric>
 
 namespace Tpetra {
   /// \namespace MatrixMarket
