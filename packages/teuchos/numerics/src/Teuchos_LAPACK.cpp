@@ -39,6 +39,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include <vector>
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_LAPACK.hpp"

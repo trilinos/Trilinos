@@ -45,6 +45,7 @@
 #include "Epetra_Operator.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS_types.hpp"
+#include <vector>
 
 class Epetra_Vector;
 
