@@ -2156,12 +2156,6 @@ int FEDataFilter::getNodalFieldSolution(int fieldID,
     //next loop iteration.
     if (!hasField) continue;
 
-    std::vector<GlobalID>& shNodeIDs = nodeCommMgr.getSharedNodeIDs();
-    int shIndex = fei::binarySearch(nodeID, &shNodeIDs[0], shNodeIDs.size());
-    if (shIndex > -1) {
-      if (!(problemStructure_->isInLocalElement(nodeNumber))) continue;
-    }
-
     int dof_id = problemStructure_->getFieldDofMap().get_dof_id(fieldID, 0);
 
     int offset = fieldSize*i;
