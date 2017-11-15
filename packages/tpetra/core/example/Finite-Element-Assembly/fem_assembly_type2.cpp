@@ -33,8 +33,6 @@ int main (int argc, char *argv[]) {
   int procx = sqrtProcs;
   int procy = sqrtProcs;
 
-  // Type 1 & 2 modes supported so far by mesh database
-
 
   // Generate the mesh
   int nex = 3;
@@ -47,10 +45,14 @@ int main (int argc, char *argv[]) {
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
   RCP<const MapType> row_map = rcp(new MapType(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
 
+  // TODO: type-2 assembly -- maybe rename row_map to owned_row_map 
+  // TODO: build overlap map (type 2 assembly)
+  //       - overlapping_map contains all OwnedNodeGlobalIDs followed by GhostNodeGlobalIDs.
+  //          -- copied into a single array and use as 2nd argument to map c'tor (simple concactenation)
+  //       - owned_map is exactly the same as type-1 row_map
+
   auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   row_map->describe(*out);
-
-  std::cout << "---------------------------------------" << std::endl;
 
   // Build graphs multiple ways
   // --------------------------
@@ -61,6 +63,10 @@ int main (int argc, char *argv[]) {
   auto domain_map = row_map;                                        // this right for type-1 assembly?
   auto range_map  = row_map;                                        // this right for type-1 assembly?
   RCP<GraphType> crs_graph = rcp(new GraphType(row_map, 0));        // TODO: maxNumEntriesPerRow should be set properly (9 in this case b/c 2D finite element)
+
+  // TODO: type-2 assembly create overlapping_graph and owned_graph.
+  //        overlapping_graph uses overlapping_map, owned_graph uses owned_map.
+  //        
 
   // Graph Construction
   // - Loop over every element in the mesh. Mesh->getNumOwnedElements()
@@ -109,6 +115,9 @@ int main (int argc, char *argv[]) {
     {
        // std::cout << std::setw(2) << owned_element_to_node_ids(id, element_node_idx) << " ";
        crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+
+       // TODO: Type-2 insertion -- we'll be inserting into both overlapping_graph and owned_graph.
+       //                           literally exact same call into two different graphs.
     }
     std::cout << std::endl;
     
@@ -129,6 +138,8 @@ int main (int argc, char *argv[]) {
   crs_graph->fillComplete();
   crs_graph->describe(*out, Teuchos::VERB_EXTREME);
 
+  // TODO: type-2 assembly - need to call fillComplete for both owned_graph and overlapping_graph.  Chance that fillComplete will fail (ask the siefert).
+
 
 
   // - Type 2 Graph Construction
@@ -137,6 +148,8 @@ int main (int argc, char *argv[]) {
 
 //  RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph.getConst()));  // wcm: NOPE
   RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph));
+
+  // TODO: type-2 assembly -- will need a crs_matrix_owned and crs_matrix_overlapping
 
 
   // Build matrices
@@ -207,12 +220,17 @@ int main (int argc, char *argv[]) {
     // insert global values.
     // crs_matrix->insertGlobalValues(global_row_id, column_global_ids, column_scalar_values);
     crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+
+    // TODO: type-2 assembly -- only suminto overlapping crs_matrix.
+
     }
   }
 
   crs_matrix->fillComplete();
   crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
    
+  // TODO: type-2 assembly will fillcomplete the overlapping matrix, build an exporter with source overlapping_map and target is non-overlapping map
+  //       then export from overalpping matrix to non-overlapping matrix, then call fillComplete on non-overlapping matrix. QED.  
   
   
   // Build RHS vectors
