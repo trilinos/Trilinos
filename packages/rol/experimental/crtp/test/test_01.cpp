@@ -43,16 +43,18 @@
 
 
 /*! \file  test_01.cpp
-    \brief Test std::vector interface.
+    \brief Test vector interface.
 */
 
 #include "XROL_Core.hpp"
 #include "XROL_Vector.hpp"
 #include "XROL_StdVector.hpp"
+#include "XROL_Randomizer.hpp"
 
 #include "ROL_Types.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include <limits>
 #include <iostream>
 
 
@@ -61,21 +63,23 @@ using ElementT = double;
 using V = XROL::StdVector<ElementT>;
 
 int main( int argc, char* argv[] ) {
+ 
+  using namespace std;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
+  // This little trick lets us print to cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  Teuchos::RCP<ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = Teuchos::rcp(&cout, false);
   else
     outStream = Teuchos::rcp(&bhs, false);
 
   int errorFlag  = 0;
 
-  RealT errtol = ROL::ROL_THRESHOLD<RealT>();
+//  RealT errtol = sqrt(numeric_limits<RealT>::epsilon());
 
   // *** Test body.
   try {
@@ -86,19 +90,14 @@ int main( int argc, char* argv[] ) {
     V y(dim);
     V z(dim);
 
-    RealT left = -1e0, right = 1e0;
+    XROL::Randomizer<default_random_engine,uniform_real_distribution<double>>  rnd(-1.0,1.0);
 
-    // set x,y,z
-    for (int i=0; i<dim; i++) {
-      (*x_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*y_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-      (*z_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
-    }
-
+    rnd(x,y,z);
+/*
     // Standard tests.
-    std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
-    ROL::StdVector<ElementT> checkvec(Teuchos::rcp(&consistency, false));
-    if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
+    vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
+    XROL::StdVector<ElementT> checkvec(Teuchos::rcp(&consistency, false));
+    if (checkvec.norm() > sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag++;
     }
 
@@ -108,7 +107,7 @@ int main( int argc, char* argv[] ) {
     zp = x.basis(0);
     RealT znorm = zp->norm();
     *outStream << "Norm of ROL::Vector z (first basis vector): " << znorm << "\n";
-    if ( std::abs(znorm-1.0) > errtol ) {
+    if ( abs(znorm-1.0) > errtol ) {
       *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     };
@@ -116,7 +115,7 @@ int main( int argc, char* argv[] ) {
     zp = x.basis(dim/2);
     znorm = zp->norm();
     *outStream << "\nNorm of ROL::Vector z ('middle' basis vector): " << znorm << "\n";
-    if ( std::abs(znorm-1.0) > errtol ) {
+    if ( abs(znorm-1.0) > errtol ) {
       *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     };
@@ -124,7 +123,7 @@ int main( int argc, char* argv[] ) {
     zp = x.basis(dim-1);
     znorm = zp->norm();
     *outStream << "\nNorm of ROL::Vector z (last basis vector): " << znorm << "\n";
-    if ( std::abs(znorm-1.0) > errtol ) {
+    if ( abs(znorm-1.0) > errtol ) {
       *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     };
@@ -135,17 +134,17 @@ int main( int argc, char* argv[] ) {
     if (checkvec.norm() > 0.0) {
       errorFlag++;
     }
-
+*/
   }
-  catch (std::logic_error err) {
+  catch (logic_error err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
 
   if (errorFlag != 0)
-    std::cout << "End Result: TEST FAILED\n";
+    cout << "End Result: TEST FAILED\n";
   else
-    std::cout << "End Result: TEST PASSED\n";
+    cout << "End Result: TEST PASSED\n";
 
   return 0;
 

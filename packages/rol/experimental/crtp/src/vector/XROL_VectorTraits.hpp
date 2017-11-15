@@ -47,19 +47,17 @@
 #include <type_traits>
 
 namespace XROL {
+namespace details {
 
 // Scalar Types
 template<class T> struct MagnitudeType { using type = T; };
-template<class T> struct MagnitudeType<complex<T>> { using type = T; };
+template<class T> struct MagnitudeType<std::complex<T>> { using type = T; };
 
-template<class T> using magnitude_t = typename MagnitudeType<T>::type;
 
 // Vector Types
 template<class V> struct IndexType { using type = int; };
-template<class V> using index_t = typename IndexType<V>::type;
 
-template<class V> struct ElementType { using type = double; }
-template<class V> using element_t = typename ElementType<V>::type;
+template<class V> struct ElementType { using type = double; };
 
 // Vectors templated on a single type are by default assumed to be 
 // templated on element type
@@ -69,19 +67,24 @@ struct ElementType<V<E>> { using type = E; };
 
 // Vectors templated on two types are assumed to have the 
 // index and element types in the first and second arguments, respectively
-template<class IndexT, class ElementT, template<class,class> V>
-struct IndexType { 
+template<class IndexT, class ElementT, template<class,class> class V>
+struct IndexType<V<IndexT,ElementT>> { 
   static_assert( std::is_integral<IndexT>::value, "Vectors templated on two parameters "
                  " must have the form Vector<IndexType,ElementType>");
   using type = IndexT; 
 };
 
-template<class IndexT, class ElementT, template<class,class> V>
-struct ElementType { using type = ElementT; };
-template<class V> struct NormType { using type = magnitude_t<element_t<V>>; };
-template<class V> using norm_t = typename NormType<V>::type;
+template<class IndexT, class ElementT, template<class,class> class V>
+struct ElementType<V<IndexT,ElementT>> { using type = ElementT; };
+
+template<class V> 
+struct NormType { 
+  using E    = typename ElementType<V>::type;
+  using type = typename MagnitudeType<E>::type; 
+};
+
+
 template<class V> struct DualType { using type = V; };
-template<class V> using dual_t = typename DualType<V>::type;
 
 
 
@@ -90,6 +93,13 @@ template<class V>
 struct ImplementsElementwise : std::false_type {};
 
 
+} // namespace details
+
+template<class T> using magnitude_t = typename details::MagnitudeType<T>::type;
+template<class V> using index_t     = typename details::IndexType<V>::type;
+template<class V> using element_t   = typename details::ElementType<V>::type;
+template<class V> using norm_t      = typename details::NormType<V>::type;
+template<class V> using dual_t      = typename details::DualType<V>::type;
 
 
 

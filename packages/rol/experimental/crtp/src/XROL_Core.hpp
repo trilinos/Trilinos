@@ -45,10 +45,13 @@
 #pragma once
 
 #include <iostream>
+#include <limits>
 #include <memory>
+#include <tuple>
 #include <utility>
 #include <vector>
 
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
 #include "XROL_CRTP.hpp" 

@@ -45,6 +45,8 @@
 #pragma once
 
 #include <random>
+#include "XROL_Core.hpp"
+#include "XROL_Elementwise.hpp"
 
 namespace XROL {
 
@@ -59,25 +61,38 @@ namespace XROL {
 
 */
 
+namespace details {
+
+template<class F, class Tuple>
+decltype(auto) evaluate( const F&, Tuple&& t );
+
+template<class F, class Tuple>
+decltype(auto) apply_unary( const F&, Tuple&& t );
+
 template<class Generator, class Distribution>
 class Randomizer {
 public:
 
-  template<class Args...>
-  Randomizer( Args&&... args ) : gen(g), dist(std::forward<Args>(args)...) {
+  template<class... Args>
+  Randomizer( Args&&... args ) : dist(forward<Args>(args)...) {
   }
 
-  template<class Vs...>
+  template<class... Vs>
   void operator()( Vs&... vs ) const {
-    auto rnd = [&gen,&dist]( auto x ) { return 
-    std::make_tuple(vs.applyFunction(rnd)...);
+//    auto rnd = [this]( auto x ) { return this->dist(this->gen); };
+//    auto apply_rnd = [rnd]( auto v ) { v.applyFunction(rnd); };
+//    apply_unary(apply_rnd,make_tuple(vs)...);
   }
 
 private:
-  Generator    gen;
-  Distribution dist;
+  Generator     gen;
+  Distribution  dist;
 };
 
+} // namespace details
+
+template<class G, class D>
+using Randomizer = details::Randomizer<G,D>;
 
 } // namespace XROL
 

@@ -61,40 +61,40 @@ public:
   using NormT    = norm_t<V>;
   using DualT    = dual_t<V>;
   
-  void plus( const Vector& x )                       { impl().plus(x.impl());        }
-  void set( const Vector& x )                        { impl().set(x.impl());         }
-  NormT dot( const Vector& x ) const                 { return impl().dot(x.impl());  }
-  NormT norm() const                                 { return impl().norm();         }
-  unique_ptr<Vector> clone() const                   { return impl().clone();        }
-  void axpy( const ElementT alpha, const Vector& x ) { impl().axpy(alpha,x.impl());  }
-  void fill( const ElementT alpha )                  { impl().fill(alpha);           }
-  void scale( const ElementT alpha )                 { impl().scale(alpha);          }
-  unique_ptr basis( IndexT i ) const                 { return impl().basis(i);       }
-  IndexT dimension() const                           { return impl().dimension();    }
-  void dual(DualT& x) const                          { return impl().dual(x.dual()); }
+  void plus( const Vector& x )                       { this->impl().plus(x.impl());        }
+  void set( const Vector& x )                        { this->impl().set(x.impl());         }
+  NormT dot( const Vector& x ) const                 { return this->impl().dot(x.impl());  }
+  NormT norm() const                                 { return this->impl().norm();         }
+  unique_ptr<Vector> clone() const                   { return this->impl().clone();        }
+  void axpy( const ElementT alpha, const Vector& x ) { this->impl().axpy(alpha,x.impl());  }
+  void fill( const ElementT alpha )                  { this->impl().fill(alpha);           }
+  void scale( const ElementT alpha )                 { this->impl().scale(alpha);          }
+  unique_ptr<Vector> basis( IndexT i ) const         { return this->impl().basis(i);       }
+  IndexT dimension() const                           { return this->impl().dimension();    }
+  void dual(DualT& x) const                          { return this->impl().dual(x.dual()); }
 
   void print( ostream& os, const string& delimiter=" " ) const { 
-    impl().print(os);            
+    this->impl().print(os);            
   } 
 
   // Elementwise functions
 
   // y = f(x1,x2,...)
-  template<class F, class Vs...>
+  template<class F, class... Vs>
   void applyFunction( F&& f, Vs&&... vs ) {
-    impl().applyFunction( forward<F>(f), forward<Vs>(vs)... );
+    this->impl().applyFunction( forward<F>(f), forward<Vs>(vs)... );
   }
   
   // result = r(result,y_i) for all i
   template<class R>
   NormT reduce( R&& r ) const {
-    impl().reduce(forward<R>(r));
+    this->impl().reduce(forward<R>(r));
   }
 
   // result = r(result, f(y_i,x1_i,x2_i,...) for all i
-  template<class F, class R, class Vs...>
+  template<class F, class R, class... Vs>
   NormT applyFunctionAndReduce( F&& f, R&& r, Vs&&... vs ) const {
-    return impl().applyFunctionAndReduce( forward<F>(f), forward<R>(r), forward<Vs>(vs)... );  
+    return this->impl().applyFunctionAndReduce( forward<F>(f), forward<R>(r), forward<Vs>(vs)... );  
   }
 
    
@@ -183,7 +183,7 @@ public:
 
     // Consistency of scalar multiplication and norm.
     v->set(*this);
-    Real vnorm = v->norm();
+    NormT vnorm = v->norm();
     if (vnorm == zero) {
       v->scale(a);
       vCheck.push_back(abs(v->norm() - zero));
@@ -205,7 +205,6 @@ public:
     // Restore format state of pStream used for the header info.
     pStream->copyfmt(headerFormatState);
     *pStream << setw(width) << left << "********** End verification of linear algebra. " << "\n\n";
-
     // Restore format state of the original pStream.
     pStream->copyfmt(oldFormatState);
 
@@ -216,7 +215,7 @@ public:
 
 } // namespace details
 
-template<class V> Vector = details::Vector<V>;
+template<class V> using Vector = details::Vector<V>;
 
 //template<class V> 
 //struct VectorFactory {

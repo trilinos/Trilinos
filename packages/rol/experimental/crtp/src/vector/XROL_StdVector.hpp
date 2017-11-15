@@ -54,8 +54,8 @@ namespace details {
 template<class F, class Tuple>
 decltype(auto) evaluate( const F& f, Tuple&& t );
 
-template<class V> Vector;
-template<class Element> StdVector;
+template<class V> class Vector;
+template<class Element> class StdVector;
 
 template<class Real>
 struct IndexType<StdVector<Real>> {
@@ -75,7 +75,7 @@ struct DualType<StdVector<Real>> {
 
 
 template<class ElementT>
-class StdVector : public Vector<StdVector<Real>> {
+class StdVector : public Vector<StdVector<ElementT>> {
 
   // Type aliasing for brevity and consistent labeling
   using IndexT   = index_t<StdVector>;
@@ -93,7 +93,7 @@ public:
 
   // Creates new vector filled with optional value
   StdVector( IndexT dim, ElementT value=0 ) : 
-    vec_(move(make_unique<vector<ElementT>>(dim,value))) {}a
+    vec_(move(make_unique<vector<ElementT>>(dim,value))) {}
 
   void plus( const StdVector& x ) {
     for(IndexT i=0; i<vec_->size(); ++i) (*vec_)[i] += x[i]; 
@@ -111,7 +111,7 @@ public:
 
   NormT norm() const {
     ElementT value{0};
-    for( auto e: *vec_ ) value_ += e*e;
+    for( auto e: *vec_ ) value += e*e;
     return sqrt( static_cast<NormT>(value) );
   }
 
@@ -132,7 +132,8 @@ public:
   }
  
   unique_ptr<Vector<StdVector>> basis( IndexT i ) const {
-    auto bp = make_unique<vector<ElementT>>( vec_->dim(), 0 );    (*b)[i] = 1;
+    auto bp = make_unique<vector<ElementT>>( vec_->dim(), 0 );    
+    (*bp)[i] = ElementT{1};
     auto b = make_unique<StdVector>( move(bp) );
     return move(b);
   }
@@ -153,14 +154,14 @@ public:
     return result;
   }
 
-  template<class F, class Vs...>
+  template<class F, class... Vs>
   void applyFunction( const F& f, const Vs&... vs ) {
     for( IndexT i=0; i<vec_->size(); ++i ) { 
       (*vec_)[i] = evaluate(f, make_tuple(vs[i]...));
     }
   }
   
-  template<class F, class R, class Vs...>
+  template<class F, class R, class... Vs>
   NormT applyFunctionAndReduce( const F& f, const R& r, const Vs&... vs ) {
     NormT result{r()};
     for( IndexT i=0; i<vec_->size(); ++i ) {
@@ -172,8 +173,8 @@ public:
 
   // Elemental access is well-defined for this type
   // For use in application code without vtable lookup
-  Real& operator[]( size_t i ) { return (*vec_)[i]; }
-  const Real& operator[]( size_t i ) const { return (*vec_)[i]; } 
+  ElementT& operator[]( size_t i ) { return (*vec_)[i]; }
+  const ElementT& operator[]( size_t i ) const { return (*vec_)[i]; } 
 
 }; // class StdVector
 

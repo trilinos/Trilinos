@@ -49,6 +49,10 @@
 namespace XROL {
 
 namespace details {
+using namespace std;
+
+template<class Tuple>
+using Indices = make_index_sequence<tuple_size<decay_t<Tuple>>::value>;
 
 template <class F, class Tuple, bool Done, size_t Total, size_t... N>
 struct call_impl {
@@ -70,6 +74,17 @@ template<class F, class Tuple>
 decltype(auto) evaluate( const F& f, Tuple && t ) {
   constexpr auto tsize = tuple_size<decay_t<Tuple>>::value;
   return call_impl<F,Tuple,0 == tsize,tsize>::call(f,forward<Tuple>(t));
+}
+
+
+template<class F, class Tuple, size_t... I>
+decltype(auto) unary_apply_impl(F&& f, Tuple&& t, index_sequence<I...>) {
+  return forward<F>(f)(get<I>(forward<Tuple>(t))...);
+}
+
+template<class F, class Tuple>
+decltype(auto) unary_apply(F&& f, Tuple&& t) {
+  return unary_apply_impl(forward<F>(f), forward<Tuple>(t), Indices<Tuple>{});
 }
 
 } // namespace details 
