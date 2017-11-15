@@ -207,5 +207,6 @@ namespace MueLu {
   //FIXME: move this:
   template class MutuallyExclusiveTime<FactoryBase>;
   template class MutuallyExclusiveTime<Level>;
+  template class MutuallyExclusiveTime<BaseClass>;
 
 } // namespace MueLu

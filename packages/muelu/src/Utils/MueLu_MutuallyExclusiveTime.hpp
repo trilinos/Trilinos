@@ -48,9 +48,12 @@
 
 #include <string>
 #include <stack>
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+
+// types for explicit instantiation
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
-#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include "MueLu_BaseClass.hpp"
 
 namespace MueLu {
 
@@ -164,6 +167,7 @@ namespace MueLu {
 
   extern template class MutuallyExclusiveTime<FactoryBase>;
   extern template class MutuallyExclusiveTime<Level>;
+  extern template class MutuallyExclusiveTime<BaseClass>;
 
 } // namespace MueLu
 
