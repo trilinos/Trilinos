@@ -103,7 +103,7 @@ public:
     for(IndexT i=0; i<vec_->size(); ++i) (*vec_)[i] = x[i]; 
   }
 
-  NormT dot( const StdVector* x ) const {
+  NormT dot( const StdVector& x ) const {
     ElementT value{0};
     for( IndexT i=0; i<vec_->size(); ++i) value += (*vec_)[i]*x[i];
     return static_cast<NormT>(value);
@@ -116,7 +116,7 @@ public:
   }
 
   unique_ptr<Vector<StdVector>> clone() const {
-    return move(make_unique<StdVector>(vec_->dim()));     
+    return move(make_unique<StdVector>(vec_->size()));     
   }
 
   void axpy( const ElementT alpha, const StdVector& x ) {
@@ -132,7 +132,7 @@ public:
   }
  
   unique_ptr<Vector<StdVector>> basis( IndexT i ) const {
-    auto bp = make_unique<vector<ElementT>>( vec_->dim(), 0 );    
+    auto bp = make_unique<vector<ElementT>>( vec_->size(), 0 );    
     (*bp)[i] = ElementT{1};
     auto b = make_unique<StdVector>( move(bp) );
     return move(b);

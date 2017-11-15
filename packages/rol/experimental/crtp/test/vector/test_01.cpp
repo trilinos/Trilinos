@@ -47,13 +47,13 @@
 */
 
 #include "XROL_Core.hpp"
-#include "XROL_Vector.hpp"
 #include "XROL_StdVector.hpp"
 #include "XROL_Randomizer.hpp"
 
 #include "ROL_Types.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include <algorithm>
 #include <limits>
 #include <iostream>
 
@@ -79,7 +79,7 @@ int main( int argc, char* argv[] ) {
 
   int errorFlag  = 0;
 
-//  RealT errtol = sqrt(numeric_limits<RealT>::epsilon());
+  RealT errtol = sqrt(numeric_limits<RealT>::epsilon());
 
   // *** Test body.
   try {
@@ -90,30 +90,34 @@ int main( int argc, char* argv[] ) {
     V y(dim);
     V z(dim);
 
-    XROL::Randomizer<default_random_engine,uniform_real_distribution<double>>  rnd(-1.0,1.0);
+    using Gen  = default_random_engine;
+    using Dist = uniform_real_distribution<RealT>;
 
+    XROL::Randomizer<Gen,Dist> rnd(-1.0,1.0);
 
-    x.fill(1.0);
-    y.fill(2.0);
-    z.fill(3.0);
-
+    // Randomize vectors
     rnd(x,y,z);
 
     x.print(cout);
     y.print(cout);
     z.print(cout);
 
-/*
+    auto norm = []( auto v ) {  
+      RealT result=0; 
+      for( auto e: v ) result += e*e;
+      return sqrt(result);
+    };
+
     // Standard tests.
     vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
-    XROL::StdVector<ElementT> checkvec(Teuchos::rcp(&consistency, false));
-    if (checkvec.norm() > sqrt(ROL::ROL_EPSILON<RealT>())) {
+
+    if (norm(consistency) > errtol ) {
       errorFlag++;
     }
 
     // Basis tests.
     // set x to first basis vector
-    Teuchos::RCP<XROL::Vector<V> > zp = x.clone();
+    auto zp = x.clone();
     zp = x.basis(0);
     RealT znorm = zp->norm();
     *outStream << "Norm of ROL::Vector z (first basis vector): " << znorm << "\n";
@@ -141,10 +145,10 @@ int main( int argc, char* argv[] ) {
     // Repeat the checkVector tests with a zero vector.
     x.scale(0.0);
     consistency = x.checkVector(x, x, true, *outStream);
-    if (checkvec.norm() > 0.0) {
+    if (norm(consistency) > 0.0) {
       errorFlag++;
     }
-*/
+
   }
   catch (logic_error err) {
     *outStream << err.what() << "\n";
