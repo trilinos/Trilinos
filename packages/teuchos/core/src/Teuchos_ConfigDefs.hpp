@@ -78,8 +78,8 @@
 #endif
 
 #include <cstdio>
-#include <cstdarg>
-#include <cerrno>
+// #include <cstdarg>
+// #include <cerrno>
 #include <climits>
 #include <cstdlib>
 #include <string>
