@@ -50,11 +50,6 @@ namespace XROL {
 
 namespace details {
 
-// Forward declarations
-template<class F, class Tuple>
-decltype(auto) evaluate( const F& f, Tuple&& t );
-
-template<class V> class Vector;
 template<class Element> class StdVector;
 
 template<class Real>
@@ -94,6 +89,11 @@ public:
   // Creates new vector filled with optional value
   StdVector( IndexT dim, ElementT value=0 ) : 
     vec_(move(make_unique<vector<ElementT>>(dim,value))) {}
+
+  // Copy construct makes a deep copy 
+  StdVector( const StdVector& v ) : 
+    vec_(make_unique<vector<ElementT>>( *(v.vec_) ) ) {
+  }
 
   void plus( const StdVector& x ) {
     for(IndexT i=0; i<vec_->size(); ++i) (*vec_)[i] += x[i]; 
@@ -145,6 +145,7 @@ public:
 
   void print( ostream &os, const string& delimiter=" " ) const {
     for( auto e: *vec_ ) os << e << delimiter;
+    os << endl;
   } 
 
   template<class R>

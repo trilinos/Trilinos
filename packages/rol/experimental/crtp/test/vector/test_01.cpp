@@ -84,7 +84,7 @@ int main( int argc, char* argv[] ) {
   // *** Test body.
   try {
 
-    int dim = 100;
+    int dim = 10;
 
     V x(dim);
     V y(dim);
@@ -92,7 +92,17 @@ int main( int argc, char* argv[] ) {
 
     XROL::Randomizer<default_random_engine,uniform_real_distribution<double>>  rnd(-1.0,1.0);
 
+
+    x.fill(1.0);
+    y.fill(2.0);
+    z.fill(3.0);
+
     rnd(x,y,z);
+
+    x.print(cout);
+    y.print(cout);
+    z.print(cout);
+
 /*
     // Standard tests.
     vector<RealT> consistency = x.checkVector(y, z, true, *outStream);

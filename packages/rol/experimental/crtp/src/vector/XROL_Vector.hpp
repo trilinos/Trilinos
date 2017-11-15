@@ -44,7 +44,12 @@
 
 #pragma once
 
-#include "XROL_Core.hpp"
+#include <iomanip>
+#include <ostream>
+#include <vector>
+
+#include "XROL_CRTP.hpp"
+#include "XROL_VectorTraits.hpp"
 
 namespace XROL {
 

@@ -46,7 +46,6 @@
 
 #include <random>
 #include "XROL_Core.hpp"
-#include "XROL_Elementwise.hpp"
 
 namespace XROL {
 
@@ -63,12 +62,6 @@ namespace XROL {
 
 namespace details {
 
-template<class F, class Tuple>
-decltype(auto) evaluate( const F&, Tuple&& t );
-
-template<class F, class Tuple>
-decltype(auto) apply_unary( const F&, Tuple&& t );
-
 template<class Generator, class Distribution>
 class Randomizer {
 public:
@@ -78,10 +71,14 @@ public:
   }
 
   template<class... Vs>
-  void operator()( Vs&... vs ) const {
-//    auto rnd = [this]( auto x ) { return this->dist(this->gen); };
-//    auto apply_rnd = [rnd]( auto v ) { v.applyFunction(rnd); };
-//    apply_unary(apply_rnd,make_tuple(vs)...);
+  void operator()( Vs&&... vs )  {
+    auto rnd = [this]() { return this->dist(this->gen); };
+    auto apply_rnd = [&rnd]( auto& v ) { v.applyFunction(rnd); };
+
+    using expand_type = int[];
+    expand_type _{ ( apply_rnd(forward<Vs>(vs)), 0 )... };
+    (void)_;
+
   }
 
 private:

@@ -46,13 +46,10 @@
 
 #include <iostream>
 #include <limits>
-#include <memory>
-#include <tuple>
-#include <utility>
-#include <vector>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
-#include "XROL_CRTP.hpp" 
-#include "XROL_VectorTraits.hpp" // Includes complex, type_traits
+                                         /* ---------  Included headers  ---------------*/
+#include "XROL_Vector.hpp"               // complex, memory, ostream, type_traits, vector
+#include "XROL_Elementwise.hpp"          // utility, tuple

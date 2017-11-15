@@ -46,6 +46,9 @@
 
 #include "XROL_Core.hpp"
 
+#include <utility>
+#include <tuple>
+
 namespace XROL {
 
 namespace details {
@@ -71,9 +74,9 @@ struct call_impl<F, Tuple, true, Total, N...> {
 };
 
 template<class F, class Tuple>
-decltype(auto) evaluate( const F& f, Tuple && t ) {
+decltype(auto) evaluate( F&& f, Tuple && t ) {
   constexpr auto tsize = tuple_size<decay_t<Tuple>>::value;
-  return call_impl<F,Tuple,0 == tsize,tsize>::call(f,forward<Tuple>(t));
+  return call_impl<F,Tuple,0 == tsize,tsize>::call(forward<F>(f),forward<Tuple>(t));
 }
 
 
