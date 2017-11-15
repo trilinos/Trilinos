@@ -58,6 +58,7 @@
 #include "WorksetBuilder.hpp"
 #include "LinearObjectFactory.hpp"
 #include "CommandLineParser.hpp"
+#include "PrintValues.hpp"
 #include "MyTraits.hpp"
 #include "Constant.hpp"
 #include "GatherSolution.hpp"
@@ -91,8 +92,6 @@ int main(int argc, char *argv[])
 
     Kokkos::initialize(argc,argv);
     PHX::exec_space::print_configuration(std::cout);
-
-    bool print_debug = false;
     
     // *********************************************************
     // * Build the Finite Element data structures
@@ -300,17 +299,11 @@ int main(int argc, char *argv[])
       TimeMonitor tm_r(*residual_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Residual>(workset);
-    }
-    PHX::exec_space::fence();
-
-    if (print_debug) {
-      auto host_f = Kokkos::create_mirror_view(f);
-      Kokkos::deep_copy(host_f,f);
       PHX::exec_space::fence();
-      
-      for (int i=0; i < static_cast<int>(host_f.extent(0)); ++i)
-        std::cout << "f(" << i << ") = " << host_f(i) << std::endl;
     }
+
+    if (p.printResidual())
+      phx_example::printResidual(f,"FEA_MFT: <Residual>",p.printToFile(),"FEA_MFT.Residual.txt");
     
     // Jacobian does both f and J
     Kokkos::deep_copy(f,0.0);
@@ -321,30 +314,11 @@ int main(int argc, char *argv[])
       TimeMonitor tm_r(*jacobian_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Jacobian>(workset);
-    }
-    PHX::exec_space::fence();
-
-    // debugging
-    if (print_debug) {
-      auto host_f = Kokkos::create_mirror_view(f);
-      auto host_J_vals = Kokkos::create_mirror_view(J.values);
-      auto host_graph = Kokkos::create_mirror(J.graph); // deep_copies automagically
-      Kokkos::deep_copy(host_f,f);
-      Kokkos::deep_copy(host_J_vals,J.values);
       PHX::exec_space::fence();
-      
-      for (int i=0; i < static_cast<int>(host_f.extent(0)); ++i)
-        std::cout << "f(" << i << ") = " << host_f(i) << std::endl;
-
-      size_t val_index = 0;
-      for (size_t row=0; row < host_graph.numRows(); ++row) {
-        for (int j=0; j < host_graph.rowConst(row).length; ++j) {
-          std::cout << "J(" << row << "," << host_graph.rowConst(row).colidx(j) << ") = "
-                    << host_J_vals(val_index) << endl;
-          ++val_index;
-        }
-      }
     }
+
+    if (p.printJacobian())
+      phx_example::printResidualAndJacobian(f,J,"FEA_MFT: <Jacobian>",p.printToFile(),"FEA_MFT.Jacobian.txt");
     
     // Graph analysis
     if (true) {
