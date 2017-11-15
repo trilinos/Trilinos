@@ -286,7 +286,8 @@ public:
 
   Real computeError( std::vector<Teuchos::RCP<Vector<Real> > > &vals, const Vector<Real> &x ) {
     if ( adaptive_ && !use_SA_ ) {
-      int zero(0), one(1), tol(1e-4);
+      int zero(0), one(1);
+      Real tol(1e-4);
       // Compute unbiased sample variance
       int cnt = 0;
       Real ng = zero;
