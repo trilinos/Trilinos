@@ -109,10 +109,6 @@
 # pragma do_not_instantiate std::fpos<mbstate_t>
 #endif
 
-namespace Teuchos { class DummyDummyClass; }
-// Above, is used for a dumb reason (see
-// Teuchs_StandardMemberCompositionMacros.hpp).
-
 const double Teuchos_MinDouble = 1.0E-100;
 const double Teuchos_MaxDouble = 1.0E+100;
 const double Teuchos_Overflow = 1.79E308; // Used to test if equilibration should be done.
