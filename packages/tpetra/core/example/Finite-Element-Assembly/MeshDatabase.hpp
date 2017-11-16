@@ -82,7 +82,7 @@ public:
   global_ordinal_view_type getGhostElementGlobalIDs() {return ghostElementGlobalIDs_;}
 
   global_ordinal_view_type getOwnedNodeGlobalIDs() {return ownedNodeGlobalIDs_;}
-  global_ordinal_view_type getGhostNodeGloballDs() {return ghostNodeGlobalIDs_;}
+  global_ordinal_view_type getGhostNodeGlobalIDs() {return ghostNodeGlobalIDs_;}
 
   global_ordinal_2d_array_type getOwnedElementToNode() {return ownedElementToNode_;}
   global_ordinal_2d_array_type getGhostElementToNode() {return ghostElementToNode_;}
