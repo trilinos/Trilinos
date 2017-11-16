@@ -814,8 +814,6 @@ int main(int argc, char *argv[]) {
 //          }
 //        }
 //      }
-
-
     }
     else if (strcmp(command,"PrintCompositeVectorX") == 0) {
       sleep(myRank);
