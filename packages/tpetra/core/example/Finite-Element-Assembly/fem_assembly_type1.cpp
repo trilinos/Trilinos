@@ -158,7 +158,7 @@ int main (int argc, char *argv[])
 
 #if 1
       // Print out the row's contribution...
-      if(0 == mpiSession.getNProc()) 
+      if(1 == mpiSession.getNProc()) 
       {
         std::cout << "- insertGlobalValues(" << std::setw(2) << global_row_id;
         std::cout << ",  [  ";
