@@ -114,12 +114,6 @@ const double Teuchos_MaxDouble = 1.0E+100;
 const double Teuchos_Overflow = 1.79E308; // Used to test if equilibration should be done.
 const double Teuchos_Underflow = 2.23E-308;
 
-// 2007/06/29: These are hacks for std::ostringstream that should be removed
-// now what we assume that a faily complete standard C++ library is available.
-
-#define TEUCHOS_OSTRINGSTREAM_GET_C_STR(OSS) (OSS).str().c_str()
-typedef std::ostringstream TeuchosOStringStream;
-
 #else /* __cplusplus */
 
 #include <stddef.h>
