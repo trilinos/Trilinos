@@ -50,6 +50,7 @@
 #include <ios>
 #include <sstream>
 #include <cctype>
+#include <fstream>
 
 #include "Teuchos_YamlParser_decl.hpp"
 #include "Teuchos_XMLParameterListCoreHelpers.hpp"

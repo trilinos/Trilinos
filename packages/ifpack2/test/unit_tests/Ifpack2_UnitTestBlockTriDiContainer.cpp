@@ -53,6 +53,7 @@
 #ifdef HAVE_TEUCHOS_COMPLEX
 # include <complex>
 #endif
+#include <memory>
 
 #include "Ifpack2_UnitTestBlockCrsUtil.hpp"
 #include "Ifpack2_UnitTestBlockTriDiContainerUtil.hpp"
@@ -255,7 +256,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
         ne = bcmm::test_StructuredBlockPart(20, 20, contiguous);
         TEUCHOS_TEST(ne == 0, "test_StructuredBlockPart");
         nerr += ne;
-      }    
+      }
       typename bcmm::StructuredBlock sb(2*in.isplit, 2*in.jsplit, 3, contiguous);
       typename bcmm::StructuredBlockPart sbp = bcmm::make_StructuredBlockPart(sb, in.isplit, in.jsplit,
                                                                               in.comm->getRank());

@@ -33,6 +33,8 @@
 #include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_BackwardEuler_ConvergenceTest.hpp"
 
+#include <fstream>
+
 namespace Rythmos {
 
 using Thyra::VectorBase;

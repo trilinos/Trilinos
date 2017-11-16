@@ -69,6 +69,7 @@
 #include "Tpetra_Details_getEntryOnHost.hpp"
 #include "Tpetra_Details_packCrsMatrix.hpp"
 #include "Tpetra_Details_unpackCrsMatrixAndCombine.hpp"
+#include <memory>
 #include <sstream>
 #include <typeinfo>
 #include <vector>
