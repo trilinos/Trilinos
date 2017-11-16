@@ -41,6 +41,7 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
@@ -54,7 +55,8 @@
 
 
 
-int main (int argc, char *argv[]) {
+int main (int argc, char *argv[]) 
+{
   using Teuchos::RCP;
 
   const GlobalOrdinal GO_INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
@@ -69,12 +71,17 @@ int main (int argc, char *argv[]) {
   // Processor decomp (only works on perfect squares)
   int numProcs  = comm->getSize();
   int sqrtProcs = sqrt(numProcs); 
-  if(sqrtProcs*sqrtProcs !=numProcs) return -1;
+
+  if(sqrtProcs*sqrtProcs != numProcs) 
+  {
+    if(0 == mpiSession.getRank())
+      std::cerr << "Error: Invalid number of processors provided, num processors must be a perfect square." << std::endl;
+    return -1;
+  }
   int procx = sqrtProcs;
   int procy = sqrtProcs;
 
-
-  // Generate the mesh
+  // Generate a simple 3x3 mesh
   int nex = 3;
   int ney = 3;
   MeshDatabase mesh(comm,nex,ney,procx,procy);
@@ -82,157 +89,145 @@ int main (int argc, char *argv[]) {
 
   // Build Tpetra Maps
   // -----------------
-  // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
+  // - Doxygen: https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
   RCP<const MapType> row_map = rcp(new MapType(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
 
-  // TODO: type-2 assembly -- maybe rename row_map to owned_row_map 
-  // TODO: build overlap map (type 2 assembly)
-  //       - overlapping_map contains all OwnedNodeGlobalIDs followed by GhostNodeGlobalIDs.
-  //          -- copied into a single array and use as 2nd argument to map c'tor (simple concactenation)
-  //       - owned_map is exactly the same as type-1 row_map
+  // TODO: [Type-2 Assembly]
+  //       - Rename row_map to owned_row_map
+  //       - owned_row_map is exactly the same as type-1 row map.
+  //       - overlap map
+  //         - contains all the OwnedNodeGlobalIDs followed by GhostNodeGlobalIDs
+  //           in a single array containing both concatenated and as 2nd arg to map c'tor.
 
   auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   row_map->describe(*out);
 
-  // Build graphs multiple ways
+  // Type-1: Graph Construction
   // --------------------------
-  
-  // - Type 1 Graph Construction
-  //   - Loop over owned elements only.
-  //   row = domain = range
-  auto domain_map = row_map;                                        // this right for type-1 assembly?
-  auto range_map  = row_map;                                        // this right for type-1 assembly?
-  RCP<GraphType> crs_graph = rcp(new GraphType(row_map, 0));        // TODO: maxNumEntriesPerRow should be set properly (9 in this case b/c 2D finite element)
+  // - Loop over every element in the mesh.
+  //   - Get list of nodes associated with each element.
+  //   - Insert the clique of nodes associated with each element into the graph. 
+  //   
+  auto domain_map = row_map;
+  auto range_map  = row_map;
 
-  // TODO: type-2 assembly create overlapping_graph and owned_graph.
-  //        overlapping_graph uses overlapping_map, owned_graph uses owned_map.
-  //        
+  RCP<GraphType> crs_graph = rcp(new GraphType(row_map, 0));
+  auto owned_element_to_node_ids = mesh.getOwnedElementToNode(); 
 
-  // Graph Construction
-  // - Loop over every element in the mesh. Mesh->getNumOwnedElements()
-  // - Get list of nodes associated with the element.   
-  //     getOwnedElementToNode => a kokkos multidimensional array (don't look @ doxygen, the PDF in the trilinos repo is a better place to look) 
-  //         - Note: local_ordinal_2d_array_type is typedef'ed from Kokkos::View<LocalOrdinal*[4],ExecutionSpace> 
-  //     2D array::rows are elements & columns are nodes associated with the element
-  //     (check ???)
-  // - Insert the clique into the graph
-  //    think crs_graph->insertGlobalIndices();
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode();        // <-- owned_element_to_node_ids is a Kokkos::View
-  //global_ordinal_view_type global_ids_in_row("global_ids_in_row", owned_element_to_node_ids.extent(1) );
-  
-  Teuchos::Array<GlobalOrdinal> global_ids_in_row(4);   // Teuchos Array of size 4 because this example uses quads.
+  // TODO: [Type-2 Assembly]
+  //       - Create overlapping_graph and owned_graph.
+  //         - overlapping_graph uses overlapping_map
+  //         - owned_Graph uses owned_map
 
-  std::cout << "  # owned elements: " << owned_element_to_node_ids.extent(0) << std::endl;   // Number of owned elements  (extent() == dimension())
-  std::cout << "  # nodes/element : " << owned_element_to_node_ids.extent(1) << std::endl;   // Number of nodes per element
+  // This is 4 because we're using quads for this example,
+  // so there will be 4 nodes associated with each element.
+  Teuchos::Array<GlobalOrdinal> global_ids_in_row(4);
 
-  // for each element:
+  // for each element in the mesh...
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
-    std::cout << "element: " << element_gidx << std::endl;
-
-    // Fill global_ids_in_row   
-    // - Copy the node ids for the current element into an array containing the global
-    //   ids for the row.  Since each element's contribution is a clique, we can use
-    //   this for the contribution of every row associated with this element.
+    // Populate global_ids_in_row:
+    // - Copy the global node ids for current element into an array.  
+    // - Since each element's contribution is a clique, we can re-use this for 
+    //   each row associated with this element's contribution.
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
       global_ids_in_row[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
-      std::cout << global_ids_in_row[element_node_idx] << " ";
     }
-    std::cout << std::endl;
 
     // Add the contributions from the current row into the graph.
-    // - The nodes in each element form a clique.
-    // Loop over the nodes for each element and insert the adjacencies into the graph.
-    // For example, if Element 0 contains nodes [0,1,4,5] then we insert the nodes:
+    // - For example, if Element 0 contains nodes [0,1,4,5] then we insert the nodes:
     //   - node 0 inserts [0, 1, 4, 5]
     //   - node 1 inserts [0, 1, 4, 5]
     //   - node 4 inserts [0, 1, 4, 5]
     //   - node 5 inserts [0, 1, 4, 5]
-    std::cout << "  ";
-    // for each node_id in element i
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
-       // std::cout << std::setw(2) << owned_element_to_node_ids(id, element_node_idx) << " ";
        crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
 
-       // TODO: Type-2 insertion -- we'll be inserting into both overlapping_graph and owned_graph.
-       //                           literally exact same call into two different graphs.
+       // TODO: [Type-2 Graph Insertion]
+       //       - Insert into only the overlapping_graph.
     }
-    std::cout << std::endl;
-    
-
-    // loop over global_ids_in_row
-    // for ...
-    //    insert global_ids_in_row[] into matrix of row global_ids_in_row[j] using insert global ids.
-    // 
-    //    crs_graph->insertGlobalIndices(global_row, idx());
-    //    signature:  insertGlobalIndices(const GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> & indices)
-    //    NOTE:  Need a kokkos view version of insertGlobalIndices() // doesn't exist //
-    //                
   }
 
-
-
-//  crs_graph->fillComplete(domain_map, range_map);
+  // Call fillComplete on the crs_graph to 'finalize' it.
   crs_graph->fillComplete();
+
+  // Let's see what we have
   crs_graph->describe(*out, Teuchos::VERB_EXTREME);
 
-  // TODO: type-2 assembly - need to call fillComplete for both owned_graph and overlapping_graph.  Chance that fillComplete will fail (ask the siefert).
+  // TODO: [Type-2 Assembly]
+  //       - Need to call fillComplete for only the overlapping_graph.
+  //       - Siefert thinks there's a chance this could fail... so we'll see
 
-
-
-  // - Type 2 Graph Construction
+  // Type-1: Matrix Fill
+  // -------------------
+  // In this example, we're using a simple stencil of values for the matrix fill:
   //
-  std::cout << "------------------------------------------------" << std::endl;
+  //    +-----+-----+-----+-----+
+  //    |  2  | -1  |     | -1  |
+  //    +-----+-----+-----+-----+
+  //    | -1  |  2  | -1  |     |
+  //    +-----+-----+-----+-----+
+  //    |     | -1  |  2  | -1  |
+  //    +-----+-----+-----+-----+
+  //    | -1  |     | -1  |  2  |
+  //    +-----+-----+-----+-----+
+  //
+  // For Type 1 matrix fill, we create the crs_matrix object and will fill it 
+  // in the same manner as we filled in the graph but in this case, nodes 
+  // associated with each element will receive contributions according to 
+  // the row in this stencil.
+  //
+  // In this example, the calls to sumIntoGlobalValues() on 1 core will look like:
+  //   Element 0
+  // - sumIntoGlobalValues( 0,  [  0  1  5  4  ],  [  2  -1  0  -1  ])
+  // - sumIntoGlobalValues( 1,  [  0  1  5  4  ],  [  -1  2  -1  0  ])
+  // - sumIntoGlobalValues( 5,  [  0  1  5  4  ],  [  0  -1  2  -1  ])
+  // - sumIntoGlobalValues( 4,  [  0  1  5  4  ],  [  -1  0  -1  2  ])
+  // Element 1
+  // - sumIntoGlobalValues( 1,  [  1  2  6  5  ],  [  2  -1  0  -1  ])
+  // - sumIntoGlobalValues( 2,  [  1  2  6  5  ],  [  -1  2  -1  0  ])
+  // - sumIntoGlobalValues( 6,  [  1  2  6  5  ],  [  0  -1  2  -1  ])
+  // - sumIntoGlobalValues( 5,  [  1  2  6  5  ],  [  -1  0  -1  2  ])
+  // Element 2
+  // - sumIntoGlobalValues( 2,  [  2  3  7  6  ],  [  2  -1  0  -1  ])
+  // - sumIntoGlobalValues( 3,  [  2  3  7  6  ],  [  -1  2  -1  0  ])
+  // - sumIntoGlobalValues( 7,  [  2  3  7  6  ],  [  0  -1  2  -1  ])
+  // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
 
-//  RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph.getConst()));  // wcm: NOPE
   RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph));
 
-  // TODO: type-2 assembly -- will need a crs_matrix_owned and crs_matrix_overlapping
+  // TODO: [Type-2 Assembly]
+  //       - Need to create a crs_matrix_owned and crs_matrix_overlapping
 
-
-  // Build matrices
-  // -------------------------------------------------------
-  // - Need: dummy generate fem matrix call
-  // - Loop over all elements (by global id)
-  // - on each element call the generate stiffness functon...
-  //   - use a 16 length kokkos view (need to figure out kokkos views
-  //   - get stiffness matrix
-  // - insertGlobalValues once per row of the stiffness matrix.
-  // - Note:  call ReferenceQuad4 (in mesh database).  (does not do resizing so we need to do that ourselves)
-  size_t num_rows_quad4 = 4;
-  size_t num_cols_quad4 = 4;
   scalar_2d_array_type element_matrix;
-  Kokkos::resize(element_matrix, num_rows_quad4, num_cols_quad4);     // 4x4 for quads   (TODO: is this right?  (rows, cols) ?)
+  Kokkos::resize(element_matrix, 4, 4);
 
-  Teuchos::Array<GlobalOrdinal> column_global_ids(4);   // just use 4 here for now.
-  Teuchos::Array<Scalar> column_scalar_values(4);
+  Teuchos::Array<GlobalOrdinal> column_global_ids(4);     // global column ids list
+  Teuchos::Array<Scalar> column_scalar_values(4);         // scalar values for each column
 
   // Loop over elements
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
-    // Fill the element_matrix
+#if 1
+    if(1 == mpiSession.getNProc()) 
+      std::cout << "Element " << element_gidx << std::endl;
+#endif
+
+    // Get the contributions for the current element
     ReferenceQuad4(element_matrix);
 
-    std::cout << "--------------------------" << std::endl
-              << "element: " << element_gidx << std::endl;
-
-    // Fill column ids
+    // Fill the global column ids array for this element
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
-      GlobalOrdinal global_col_id = owned_element_to_node_ids(element_gidx, element_node_idx);
-      column_global_ids[element_node_idx] = global_col_id;
+      column_global_ids[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
     }
     
-    //std::cout << "    \t";
-    //for(size_t i=0; i<4; i++)
-    //{
-    //  std::cout << column_global_ids[i] << "\t";
-    //}
-    //std::cout << std::endl;
-
-    // Fill values
+    // For each node (row) on the current element:
+    // - populate the values array
+    // - add the values to the crs_matrix.
+    // Note: hardcoded 4 here because we're using quads.
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
     { 
       GlobalOrdinal global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
@@ -242,44 +237,57 @@ int main (int argc, char *argv[]) {
         column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
       }
 
-      // Print out some stuff
-      std::cout << "- insertGlobalValues(" << std::setw(2) << global_row_id;
-      std::cout << ",  [  ";
-      for(size_t i=0; i<4; i++)
+      crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+
+      // TODO: [Type-2 Assembly]
+      //       - Only sumInto the overlapping crs_matrix
+
+#if 1
+      // Print out the row's contribution...
+      if(1 == mpiSession.getNProc()) 
       {
-        std::cout << column_global_ids[i] << "  ";
+        std::cout << "- sumIntoGlobalValues(" << std::setw(2) << global_row_id;
+        std::cout << ",  [  ";
+        for(size_t i=0; i<4; i++)
+        {
+          std::cout << column_global_ids[i] << "  ";
+        }
+        std::cout << "]";
+        std::cout << ",  [  ";
+        for(size_t i=0; i<4; i++)
+        {
+          std::cout << column_scalar_values[i] << "  ";
+        }
+        std::cout << "])" << std::endl;
       }
-      std::cout << "]";
-      std::cout << ",  [  ";
-      for(size_t i=0; i<4; i++)
-      {
-        std::cout << column_scalar_values[i] << "  ";
-      }
-    std::cout << "])" << std::endl;
-
-    // insert global values.
-    // crs_matrix->insertGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-    crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-
-    // TODO: type-2 assembly -- only suminto overlapping crs_matrix.
-
+#endif
     }
   }
 
+  // After the contributions are added, 'finalize' the matrix using fillComplete()
   crs_matrix->fillComplete();
   crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
-   
-  // TODO: type-2 assembly will fillcomplete the overlapping matrix, build an exporter with source overlapping_map and target is non-overlapping map
-  //       then export from overalpping matrix to non-overlapping matrix, then call fillComplete on non-overlapping matrix. QED.  
   
-  
-  // Build RHS vectors
-
   // Finalize Kokkos
   Kokkos::finalize();
 
   return 0;
-
 }  // END main()
 
 
+#if 0
+Update
+------
+  1) Call constructors for both overlapped and non-overlapped graphs [same as we discussed]
+
+  2) Loop over owned elements and insert rows into *only* the overlapped graph.
+
+  3) Call fillComplete *only* on the overlapped graph.
+
+  4) Build an exporter (source=overlapped map, target = nonoverlapped map)
+     [there is a placeholder for this at the end of matrix; bump that up here.
+
+  5) Export from the overlapped graph to the non-overlapped graph and fillComplete 
+     (this can be done with the transferAndFillComplete method).
+     
+#endif
