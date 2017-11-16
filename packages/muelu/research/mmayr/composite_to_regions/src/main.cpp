@@ -98,14 +98,13 @@ int main(int argc, char *argv[]) {
   // ******************************************************************
 
 
-  std::vector<int>  myRegions;      // regions that myRank owns
-  Epetra_CrsMatrix* AComp = NULL;   // composite form of matrix
-  Epetra_CrsMatrix* ACompSplit = NULL;   // composite form of matrix
-  Epetra_Map*       mapComp= NULL;  // composite map used to build AComp
+  std::vector<int> myRegions; // regions that myRank owns
+  Epetra_CrsMatrix* AComp = NULL; // composite form of matrix
+  Epetra_CrsMatrix* ACompSplit = NULL; // composite form of matrix
+  Epetra_Map* mapComp= NULL; // composite map used to build AComp
 
   // regionsPerGIDWithGhosts[i] lists all regions that share the ith composite GID
   // associated with myRank's composite matrix col Map.
-
   Epetra_MultiVector *regionsPerGIDWithGhosts = NULL;
 
   /* rowMapPerGrp[i] and colMapPerGrp[i] are based on the composite maps, i.e.
@@ -125,28 +124,26 @@ int main(int argc, char *argv[]) {
    *   never used for actual calculations.
    */
 
-  // rowMapPerGrp[i] gives the row map associated with myRank's ith region
+  std::vector < Epetra_Map* > rowMapPerGrp(maxRegPerProc); // row map associated with myRank's ith region in composite layout
+  std::vector < Epetra_Map* > colMapPerGrp(maxRegPerProc); // column map associated with myRank's ith region in composite layout
+  std::vector < Epetra_Map* > revisedRowMapPerGrp(maxRegPerProc); // revised row map associated with myRank's ith region for regional layout
+  std::vector < Epetra_Map* > revisedColMapPerGrp(maxRegPerProc); // revised column map associated with myRank's ith region for regional layout
 
-  std::vector < Epetra_Map* > rowMapPerGrp(maxRegPerProc);
-  std::vector < Epetra_Map* > colMapPerGrp(maxRegPerProc);
-  std::vector < Epetra_Map* > revisedRowMapPerGrp(maxRegPerProc);
-  std::vector < Epetra_Map* > revisedColMapPerGrp(maxRegPerProc);
+  std::vector< Epetra_Import* > rowImportPerGrp(maxRegPerProc); // row importers per group
+  std::vector< Epetra_Import* > colImportPerGrp(maxRegPerProc); // column importers per group
+  std::vector< Epetra_Export* > rowExportPerGrp(maxRegPerProc); // row exporters per group
 
-  std::vector< Epetra_Import* > rowImportPerGrp(maxRegPerProc);
-  std::vector< Epetra_Import* > colImportPerGrp(maxRegPerProc);
-  std::vector< Epetra_Export* > rowExportPerGrp(maxRegPerProc);
+  std::vector< Epetra_CrsMatrix * > quasiRegionGrpMats(maxRegPerProc); // region-wise matrices with quasiRegion maps (= composite GIDs)
+  std::vector< Epetra_CrsMatrix * > regionGrpMats(maxRegPerProc); // region-wise matrices in true region layout with unique GIDs for replicated interface DOFs
 
-  std::vector< Epetra_CrsMatrix * > quasiRegionGrpMats(maxRegPerProc);
-  std::vector< Epetra_CrsMatrix * > regionGrpMats(maxRegPerProc);
+  Epetra_Vector* compX = NULL; // initial guess for truly composite calculations
+  Epetra_Vector* compY = NULL; // result vector for truly composite calculations
+  Epetra_Vector* regYComp = NULL; // result vector in composite layout, but computed via regional operations
 
-  Epetra_Vector* compX = NULL;
-  Epetra_Vector* compY = NULL;
-  Epetra_Vector* regYComp = NULL;
-
-  std::vector<Epetra_Vector*> quasiRegX(maxRegPerProc);
-  std::vector<Epetra_Vector*> quasiRegY(maxRegPerProc);
-  std::vector<Epetra_Vector*> regX(maxRegPerProc);
-  std::vector<Epetra_Vector*> regY(maxRegPerProc);
+  std::vector<Epetra_Vector*> quasiRegX(maxRegPerProc); // initial guess associated with myRank's ith region in quasiRegional layout
+  std::vector<Epetra_Vector*> quasiRegY(maxRegPerProc); // result vector associated with myRank's ith region in quasiRegional layout
+  std::vector<Epetra_Vector*> regX(maxRegPerProc); // initial guess associated with myRank's ith region in regional layout
+  std::vector<Epetra_Vector*> regY(maxRegPerProc); // result vector associated with myRank's ith region in regional layout
 
   std::vector<int> intIDs; // LIDs of interface DOFs
 
