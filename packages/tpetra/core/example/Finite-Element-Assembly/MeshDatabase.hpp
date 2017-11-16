@@ -60,7 +60,8 @@ struct LLA {
 };
 
 
-class MeshDatabase {
+class MeshDatabase 
+{
 public:
   MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int global_elements_x, int global_elements_y, int procs_x, int procs_y);
 
@@ -91,9 +92,20 @@ public:
 
 private:
 
-  inline bool nodeIsOwned(GlobalOrdinal idx) {GlobalOrdinal i,j; ij_from_idx(globalNodes_[0],idx,i,j); return nodeIsOwned(i,j);}
-  inline bool nodeIsOwned(GlobalOrdinal i, GlobalOrdinal j) { return myNodeStart_[0] <= i &&  i < myNodeStop_[0] && myNodeStart_[1] <= j &&  j < myNodeStop_[0];}
-  inline GlobalOrdinal idx_from_ij(int num_x, GlobalOrdinal i, GlobalOrdinal j) const {return j*num_x+i;}
+  inline bool nodeIsOwned(GlobalOrdinal idx) {
+    GlobalOrdinal i,j; 
+    ij_from_idx(globalNodes_[0],idx,i,j); 
+    return nodeIsOwned(i,j);
+  }
+
+  inline bool nodeIsOwned(GlobalOrdinal i, GlobalOrdinal j) { 
+    return myNodeStart_[0] <= i &&  i < myNodeStop_[0] && myNodeStart_[1] <= j &&  j < myNodeStop_[0];
+  }
+
+  inline GlobalOrdinal idx_from_ij(int num_x, GlobalOrdinal i, GlobalOrdinal j) const {
+    return j*num_x+i;
+  }
+
   inline void ij_from_idx(int num_x, GlobalOrdinal idx, GlobalOrdinal &i, GlobalOrdinal&j) const { 
     i = idx%num_x;
     j = (GlobalOrdinal)((idx-i)/num_x);
