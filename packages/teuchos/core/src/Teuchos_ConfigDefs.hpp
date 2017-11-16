@@ -101,7 +101,7 @@
 // #include <set>
 #include <typeinfo>
 #include <limits>
-#include <memory>
+// #include <memory>
 #include <cstddef>
 
 /* Avoid duplicating instantiation provided by IBM XL C++ runtime library. */
