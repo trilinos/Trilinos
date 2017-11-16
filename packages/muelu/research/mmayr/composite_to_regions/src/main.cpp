@@ -616,6 +616,9 @@ int main(int argc, char *argv[]) {
       std::cout << myRank << ": diffNormTwo: " << diffNormTwo << "\tdiffNormInf: " << diffNormInf << std::endl;
 
     }
+    else if (strcmp(command,"MakeRegionTransferOperators") == 0) {
+
+    }
     else if (strcmp(command,"PrintCompositeVectorX") == 0) {
       sleep(myRank);
       compX->Print(std::cout);
