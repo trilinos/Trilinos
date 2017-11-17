@@ -57,7 +57,7 @@ ENDIF ()
 
 
 IF (Tpetra_INST_INT_INT)
-IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
   TRIBITS_ADD_EXECUTABLE(
     QuickSolveEpetra
     SOURCES quick_solve_epetra

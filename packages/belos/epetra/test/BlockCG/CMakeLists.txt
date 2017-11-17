@@ -14,7 +14,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     bl_cg_hb
-    SOURCES test_bl_cg_hb.cpp createEpetraProblem.cpp
+    SOURCES test_bl_cg_hb.cpp 
     COMM serial mpi
     ARGS
       "--verbose --filename=bcsstk14.hb"
@@ -24,7 +24,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     resolve_cg_hb
-    SOURCES test_resolve_cg_hb.cpp createEpetraProblem.cpp
+    SOURCES test_resolve_cg_hb.cpp 
     COMM serial mpi
     ARGS
       "--verbose --filename=bcsstk14.hb"
@@ -33,7 +33,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     bl_cg_set_res
-    SOURCES test_bl_cg_set_res.cpp createEpetraProblem.cpp
+    SOURCES test_bl_cg_set_res.cpp 
     COMM serial mpi
     ARGS
       "--verbose --filename=bcsstk14.hb"
@@ -52,7 +52,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_pcg_hb
-      SOURCES test_bl_pcg_hb.cpp createEpetraProblem.cpp
+      SOURCES test_bl_pcg_hb.cpp 
       COMM serial mpi
       ARGS
         "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --block-size=3 --max-iters=100"
@@ -64,7 +64,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       bl_pcg_set_res
-      SOURCES test_bl_pcg_set_res.cpp createEpetraProblem.cpp
+      SOURCES test_bl_pcg_set_res.cpp 
       COMM serial mpi
       ARGS
         "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --block-size=3 --max-iters=100"
@@ -74,7 +74,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       pseudo_pcg_hb
-      SOURCES test_pseudo_pcg_hb.cpp createEpetraProblem.cpp
+      SOURCES test_pseudo_pcg_hb.cpp 
       COMM serial mpi
       ARGS
         "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --max-iters=100"
@@ -84,7 +84,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       pseudo_stochastic_pcg_hb
-      SOURCES test_pseudo_stochastic_pcg_hb.cpp createEpetraProblem.cpp
+      SOURCES test_pseudo_stochastic_pcg_hb.cpp 
       COMM serial mpi
       ARGS
         "--verbose --filename=bcsstk14.hb --left-prec --tol=1e-8 --num-rhs=5 --max-iters=100"

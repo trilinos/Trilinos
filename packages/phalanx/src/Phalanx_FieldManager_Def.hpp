@@ -299,22 +299,22 @@ template<typename Traits>
 template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
-postRegistrationSetupForType(typename Traits::SetupData d)
+postRegistrationSetupForType(typename Traits::SetupData d, const bool& buildDeviceDAG)
 {
   m_eval_containers.template getAsObject<EvalT>()->
-    postRegistrationSetup(d, *this);
+    postRegistrationSetup(d, *this, buildDeviceDAG);
 }
 
 // **************************************************************
 template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::
-postRegistrationSetup(typename Traits::SetupData d)
+postRegistrationSetup(typename Traits::SetupData d, const bool& buildDeviceDAG)
 {
   typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::iterator it = m_eval_containers.begin();
   for (std::size_t i = 0; it != m_eval_containers.end(); ++it, ++i)
-    it->postRegistrationSetup(d, *this);
+    it->postRegistrationSetup(d, *this, buildDeviceDAG);
 }
 
 // **************************************************************
@@ -325,6 +325,16 @@ void PHX::FieldManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   m_eval_containers.template getAsBase<EvalT>()->evaluateFields(d);
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT>
+inline
+void PHX::FieldManager<Traits>::
+evaluateFieldsDeviceDag(const int& work_size, typename Traits::EvalData d)
+{
+  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsDeviceDag(work_size,d);
 }
 
 // **************************************************************

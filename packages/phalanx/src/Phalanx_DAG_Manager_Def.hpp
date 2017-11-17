@@ -73,10 +73,11 @@ DagManager(const std::string& evaluation_type_name) :
   evaluation_type_name_(evaluation_type_name),
   sorting_called_(false),
 #ifdef PHX_ALLOW_MULTIPLE_EVALUATORS_FOR_SAME_FIELD
-  allow_multiple_evaluators_for_same_field_(true)
+  allow_multiple_evaluators_for_same_field_(true),
 #else
-  allow_multiple_evaluators_for_same_field_(false)
+  allow_multiple_evaluators_for_same_field_(false),
 #endif
+  build_device_dag_(false)
 { }
 
 //=======================================================================
@@ -166,7 +167,7 @@ void PHX::DagManager<Traits>::
 sortAndOrderEvaluators()
 {
 #ifdef PHX_TEUCHOS_TIME_MONITOR
-  Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Phalanx::SortAndOrderEvaluatorsNew"));
+  Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Phalanx::SortAndOrderEvaluators"));
 #endif
   
   // *************************
@@ -257,7 +258,6 @@ sortAndOrderEvaluators()
         fields_.push_back(cfield);
     }
   }
-
 
   this->createEvalautorBindingFieldMap();
 
@@ -410,11 +410,19 @@ printEvaluator(const PHX::Evaluator<Traits>& e, std::ostream& os) const
 template<typename Traits>
 void PHX::DagManager<Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
-		      PHX::FieldManager<Traits>& vm)
+		      PHX::FieldManager<Traits>& vm,
+                      const bool& buildDeviceDAG)
 {
   // Call each evaluators' post registration setup
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
     nodes_[topoSortEvalIndex[n]].getNonConst()->postRegistrationSetup(d,vm);
+
+  build_device_dag_ = buildDeviceDAG;
+  if (build_device_dag_) {
+    device_evaluators_ = Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device>("device_evaluators_",topoSortEvalIndex.size());
+    for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n)
+      device_evaluators_(n).ptr = nodes_[topoSortEvalIndex[n]].getNonConst()->createDeviceEvaluator();
+  }
 }
 
 //=======================================================================
@@ -423,18 +431,73 @@ void PHX::DagManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
   for (std::size_t n = 0; n < topoSortEvalIndex.size(); ++n) {
-
+    
 #ifdef PHX_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor Time(*evalTimers[topoSortEvalIndex[n]]);
 #endif
-
+    
     using clock = std::chrono::steady_clock;
     std::chrono::time_point<clock> start = clock::now();
-
+      
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
-
+    
     nodes_[topoSortEvalIndex[n]].sumIntoExecutionTime(clock::now()-start);
   }
+}
+
+//=======================================================================
+// Functor for Device DAG support
+namespace PHX {
+
+  template<typename Traits>
+  struct RunDeviceDag {
+
+    Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device> evaluators_;
+
+    // The EvalData may be pass by reference. Remove the reference so
+    // that we copy by value to device.
+    const typename std::remove_reference<typename Traits::EvalData>::type data_;
+    
+    RunDeviceDag(const Kokkos::View<PHX::DeviceEvaluatorPtr<Traits>*,PHX::Device>& evaluators,
+                 typename Traits::EvalData data) :
+      evaluators_(evaluators),
+      data_(data) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
+    {
+      const int num_evaluators = static_cast<int>(evaluators_.extent(0));
+      for (int e=0; e < num_evaluators; ++e) {
+        evaluators_(e).ptr->prepareForRecompute(team,data_);
+        evaluators_(e).ptr->evaluate(team,data_);
+      }
+    }
+   
+  };
+  
+}
+
+//=======================================================================
+template<typename Traits>
+void PHX::DagManager<Traits>::
+evaluateFieldsDeviceDag(const int& work_size,
+                        typename Traits::EvalData d)
+{
+  TEUCHOS_ASSERT(build_device_dag_);
+  //! This function must be built with relocatable device code (RDC)
+  //! enable on CUDA. We also want to run phalanx without Device DAG
+  //! support on CUDA, so this has to be disabled at compilation to
+  //! work without RDC.
+#ifdef PHX_ENABLE_DEVICE_DAG
+  // const unsigned vector_size = 1;
+  // const unsigned team_size = 256 / vector_size;
+  // Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(work_size,team_size,vector_size),
+  //                      PHX::RunDeviceDag<Traits>(device_evaluators_,d));
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(work_size,Kokkos::AUTO()),
+                       PHX::RunDeviceDag<Traits>(device_evaluators_,d));
+#else
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: PHX::DagManger::evalauteFields with useDeviceDAG=true, but this is experimental and must be enabled at configure time with Phalanx_ENABLE_DEVICE_DAG=ON.");
+#endif
 }
 
 //=======================================================================

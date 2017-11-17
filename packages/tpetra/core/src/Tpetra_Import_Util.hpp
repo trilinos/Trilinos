@@ -252,8 +252,31 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 
   // Generate remoteGIDs
   Teuchos::Array<GlobalOrdinal> remoteGIDs(remoteLIDs.size());
-  for(size_t i=0; i<(size_t)remoteLIDs.size(); i++)
+  for(size_t i=0; i<(size_t)remoteLIDs.size(); i++) {
     remoteGIDs[i] = target->getGlobalElement(remoteLIDs[i]);
+    if(remoteGIDs[i]<0) {
+      os<<MyPID<<"ERROR3: source->getGlobalElement(remoteLIDs[l]) is invalid GID="<<remoteGIDs[i]<<" LID= "<<remoteLIDs[i]<<std::endl;
+      is_valid=false;
+    }
+}
+  // Generate exportGIDs
+  Teuchos::Array<GlobalOrdinal> exportGIDs(exportLIDs.size(),-1);
+  for(size_t i=0; i<(size_t)exportLIDs.size(); i++) {
+    exportGIDs[i] = source->getGlobalElement(exportLIDs[i]);
+    exportGIDs[i]=source->getGlobalElement(exportLIDs[i]);
+    if(exportGIDs[i]<0) {
+      os<<MyPID<<"ERROR3: source->getGlobalElement(exportLIDs[l]) is invalid GID="<<exportGIDs[i]<<" LID= "<<exportLIDs[i]<<std::endl;
+      is_valid=false;
+    }
+  }
+  
+ // Zeroth order test: Remote *** GID *** and Export **GID**'s should be disjoint.  
+  for( auto &&rgid : remoteGIDs) {
+    if(std::find(exportGIDs.begin(),exportGIDs.end(),rgid) != exportGIDs.end()) {
+        is_valid = false;
+        os<<MyPID<<"ERROR0: Overlap between remoteGIDs and exportGIDs "<<rgid<<std::endl;
+      }
+  }
 
   int TempPID , OwningPID;
   for(GlobalOrdinal i=minSourceGID; i<maxSourceGID; i++) {
@@ -369,17 +392,8 @@ checkImportValidity (const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>& Impo
 
   Teuchos::Array<int> proc_num_exports_recv(NumProcs,0);
 
-  Teuchos::Array<GlobalOrdinal> exportGIDs(exportLIDs.size(),-1);
   Teuchos::Array<int> remoteGIDcount(remoteGIDs.size(),0);
 
-  for(size_t l=0;l<(size_t)exportLIDs.size();++l) {
-    exportGIDs[l]=source->getGlobalElement(exportLIDs[l]);
-    if(exportGIDs[l]<0) {
-      os<<MyPID<<"ERROR3: source->getGlobalElement(exportLIDs[l]) is invalid GID="<<exportGIDs[l]<<" LID= "<<exportLIDs[l]<<std::endl;
-      is_valid=false;
-    }
-  }
-  
   int allexpsiz=0;
   Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,exportGIDs.size(),  Teuchos::outArg(allexpsiz));
   

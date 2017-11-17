@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -47,7 +47,7 @@
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-
+#include <list>
 
 namespace Thyra {
 
@@ -132,7 +132,7 @@ class DirectionalFiniteDiffCalculator
     public Teuchos::ParameterListAcceptor
 {
 public:
-  
+
   /** \name Public Types */
   //@{
 
@@ -311,4 +311,4 @@ directionalFiniteDiffCalculator(
 } // namespace Thyra
 
 
-#endif	// THYRA_DIRECTIONAL_FINITE_DIFF_CALCULATOR_DECL_HPP
+#endif  // THYRA_DIRECTIONAL_FINITE_DIFF_CALCULATOR_DECL_HPP

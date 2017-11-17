@@ -751,7 +751,7 @@ namespace phalanx_test {
     const size_t nnz = 21;
 
     using Kokkos::View;
-    View<size_t*,PHX::Device> row_offsets("row_offsets",num_rows+1);
+    View<typename Kokkos::StaticCrsGraph<int,Kokkos::LayoutLeft,PHX::Device>::size_type*,PHX::Device> row_offsets("row_offsets",num_rows+1);
 
     auto host_row_offsets = Kokkos::create_mirror_view(row_offsets);
     host_row_offsets(0) = 0;
@@ -768,7 +768,7 @@ namespace phalanx_test {
 
     Kokkos::deep_copy(row_offsets,host_row_offsets);
 
-    View<int*> col_ids("col_ids",nnz);
+    View<int*,PHX::Device> col_ids("col_ids",nnz);
     auto host_col_ids = Kokkos::create_mirror_view(col_ids);
 
     host_col_ids(0) = 0;  host_col_ids(1) = 1; host_col_ids(2) = 9; // row 0

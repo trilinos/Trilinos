@@ -57,6 +57,7 @@
 #include "Panzer_ElemFieldPattern.hpp"
 
 #include <vector>
+#include <set>
 #include <string>
 
 namespace panzer
