@@ -86,7 +86,7 @@ class SetScientific<Scalar, true> {
   SetScientific(std::ostream& out, int prec = -1):
     out_(out),
     originalFlags_(out.flags()),
-    originalPrecision_(out.precision());
+    originalPrecision_(out.precision())
   {
     // Print floating-point values in scientific notation.
     out << std::scientific;
