@@ -49,23 +49,20 @@
 namespace KokkosSparse {
 namespace Experimental {
 
-  //Symbolic: count entries in each row in C to produce rowmap
-  //kernel handle has information about whether it is sorted add or not.
-
   /*
     Unsorted symbolic algorithm notes:
-      -Only needs to sort and merge indices once, in symbolic (sorting is expensive)
-      -Can't afford to allocate dense Views for indices/values (assume number of columns is very large)
-      -Want numeric() to know exactly where each A/B entry belongs in Ccolinds/Cvalues
-      -To accomplish all of these, symbolic() computes arrays Apos and Bpos (both are type clno_nnz_view_t_,
-        and have same length as a_entries and b_entries respectively)
-        -Apos/Bpos are saved in the handle
-      -Apos and Bpos each contain the final index within C row where the A/B entry belongs
-      -See UnsortedNumericSumFunctor below for the usage of Apos/Bpos
+    -Only needs to sort and merge indices once, in symbolic (sorting is expensive)
+    -Can't afford to allocate dense Views for indices/values (assume number of columns is very large)
+    -Want numeric() to know exactly where each A/B entry belongs in Ccolinds/Cvalues
+    -To accomplish all of these, symbolic() computes arrays Apos and Bpos (both are type clno_nnz_view_t_,
+      and have same length as a_entries and b_entries respectively)
+      -Apos/Bpos are saved in the handle
+    -Apos and Bpos each contain the final index within C row where the A/B entry belongs
+    -See UnsortedNumericSumFunctor below for the usage of Apos/Bpos
   */
 
   //get C rowmap for sorted input
-  template<typename Ordinal, typename ARowPtrsT, typename BRowPtrsT, typename AColIndsT, typename BColIndsT, typename CRowPtrsT>
+  template<typename size_type, typename ordinal_type, typename ARowPtrsT, typename BRowPtrsT, typename AColIndsT, typename BColIndsT, typename CRowPtrsT>
   struct SortedCountEntries
   {
     SortedCountEntries(
@@ -77,22 +74,22 @@ namespace Experimental {
       Arowptrs(Arowptrs_), Acolinds(Acolinds_),
       Browptrs(Browptrs_), Bcolinds(Bcolinds_),
       Crowcounts(Crowcounts_) {}
-    KOKKOS_INLINE_FUNCTION void operator()(const Ordinal i) const
+    KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
     {
       //count the union of nonzeros in Arow and Brow
-      Ordinal numEntries = 0;
-      Ordinal ai = 0;
-      Ordinal bi = 0;
-      Ordinal Arowstart = Arowptrs(i);
-      Ordinal Arowlen = Arowptrs(i + 1) - Arowstart;
-      Ordinal Browstart = Browptrs(i);
-      Ordinal Browlen = Browptrs(i + 1) - Browstart;
+      size_type numEntries = 0;
+      size_type ai = 0;
+      size_type bi = 0;
+      size_type Arowstart = Arowptrs(i);
+      size_type Arowlen = Arowptrs(i + 1) - Arowstart;
+      size_type Browstart = Browptrs(i);
+      size_type Browlen = Browptrs(i + 1) - Browstart;
       while (ai < Arowlen && bi < Browlen)
       {
         //have an entry in C's row
         numEntries++;
-        auto Acol = Acolinds(Arowstart + ai);
-        auto Bcol = Bcolinds(Browstart + bi);
+        ordinal_type Acol = Acolinds(Arowstart + ai);
+        ordinal_type Bcol = Bcolinds(Browstart + bi);
         if(Acol <= Bcol)
           ai++;
         if(Acol >= Bcol)
@@ -112,7 +109,7 @@ namespace Experimental {
   };
 
   //get upper bound for C entries per row (assumes worst case, that entries in A and B on each row are disjoint)
-  template<typename Ordinal, typename ARowPtrsT, typename BRowPtrsT, typename CRowPtrsT>
+  template<typename size_type, typename ARowPtrsT, typename BRowPtrsT, typename CRowPtrsT>
   struct UnsortedEntriesUpperBound
   {
       UnsortedEntriesUpperBound(
@@ -123,7 +120,7 @@ namespace Experimental {
       Browptrs(Browptrs_),
       Crowcounts(Crowcounts_)
     {}
-    KOKKOS_INLINE_FUNCTION void operator()(const Ordinal i) const
+    KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
     {
       Crowcounts(i) = (Arowptrs(i + 1) - Arowptrs(i)) + (Browptrs(i + 1) - Browptrs(i));
     }
@@ -138,7 +135,8 @@ namespace Experimental {
   //  -compress sorted C entries and A,B perm arrays at the same time, which produces Crowcounts value
   //Inputs: A, B rowptrs/colinds, C uncompressed rowptrs (and allocated C entries)
   //Output: C uncompressed colinds
-  template<typename Ordinal, typename ArowptrsT, typename BrowptrsT, typename CrowptrsT,
+  template<typename size_type, typename ordinal_type,
+                             typename ArowptrsT, typename BrowptrsT, typename CrowptrsT,
                              typename AcolindsT, typename BcolindsT, typename CcolindsT>
   struct UnmergedSumFunctor
   {
@@ -149,26 +147,26 @@ namespace Experimental {
       Browptrs(Browptrs_), Bcolinds(Bcolinds_),
       Crowptrs(Crowptrs_), Ccolinds(Ccolinds_), ABperm(ABperm_)
     {}
-    KOKKOS_INLINE_FUNCTION void operator()(const Ordinal i) const
+    KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
     {
-      Ordinal inserted = 0;
-      Ordinal rowStart = Crowptrs(i);
-      Ordinal arowstart = Arowptrs(i);
-      Ordinal arowlen = Arowptrs(i + 1) - arowstart;
-      Ordinal browstart = Browptrs(i);
-      Ordinal browlen = Browptrs(i + 1) - browstart;
+      size_type inserted = 0;
+      size_type crowstart = Crowptrs(i);
+      size_type arowstart = Arowptrs(i);
+      size_type arowlen = Arowptrs(i + 1) - arowstart;
+      size_type browstart = Browptrs(i);
+      size_type browlen = Browptrs(i + 1) - browstart;
       //Insert all A entries, then all B entries
-      for(Ordinal j = 0; j < arowlen; j++)
+      for(size_type j = 0; j < arowlen; j++)
       {
-        Ccolinds(rowStart + inserted) = Acolinds(arowstart + j);
-        ABperm(rowStart + inserted) = j;
+        Ccolinds(crowstart + inserted) = Acolinds(arowstart + j);
+        ABperm(crowstart + inserted) = j;
         inserted++;
       }
-      for(Ordinal j = 0; j < browlen; j++)
+      for(size_type j = 0; j < browlen; j++)
       {
-        Ccolinds(rowStart + inserted) = Bcolinds(browstart + j);
+        Ccolinds(crowstart + inserted) = Bcolinds(browstart + j);
         //tell A and B permutation values apart by adding arowlen as a bias to B values
-        ABperm(rowStart + inserted) = j + arowlen;
+        ABperm(crowstart + inserted) = j + arowlen;
         inserted++;
       }
     }
@@ -193,8 +191,8 @@ namespace Experimental {
     //maskPos counts the low bit index of mask (0, 4, 8, ...)
     IndexType maskPos = 0;
     IndexType sortBits = 0;
-    IndexType minKey = keys[0];
-    IndexType maxKey = keys[0];
+    KeyType minKey = keys[0];
+    KeyType maxKey = keys[0];
     for(size_type i = 0; i < n; i++)
     {
       if(keys[i] < minKey)
@@ -281,7 +279,7 @@ namespace Experimental {
     }
   }
 
-  template<typename Ordinal, typename CrowptrsT, typename CcolindsT>
+  template<typename size_type, typename CrowptrsT, typename CcolindsT>
   struct SortEntriesFunctor
   {
     SortEntriesFunctor(const CrowptrsT Crowptrs_, CcolindsT Ccolinds_, CcolindsT ABperm_) :
@@ -291,14 +289,14 @@ namespace Experimental {
       ABperm(ABperm_),
       ABpermAux("AB perm aux", ABperm_.dimension_0())
     {}
-    KOKKOS_INLINE_FUNCTION void operator()(const Ordinal i) const
+    KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
     {
       //3: Sort each row's colinds (permuting values at same time), then count unique colinds (write that to Crowptr(i))
       //CrowptrTemp tells how many entries in each oversized row
-      Ordinal rowStart = Crowptrs(i);
-      Ordinal rowEnd = Crowptrs(i + 1);
-      Ordinal rowNum = rowEnd - rowStart;
-      radixSortKeysAndValues<Ordinal, typename CcolindsT::non_const_value_type, typename CcolindsT::non_const_value_type>
+      size_type rowStart = Crowptrs(i);
+      size_type rowEnd = Crowptrs(i + 1);
+      size_type rowNum = rowEnd - rowStart;
+      radixSortKeysAndValues<size_type, typename CcolindsT::non_const_value_type, typename CcolindsT::non_const_value_type>
         (Ccolinds.ptr_on_device() + rowStart, CcolindsAux.ptr_on_device() + rowStart,
          ABperm.ptr_on_device() + rowStart, ABpermAux.ptr_on_device() + rowStart, rowNum);
     }
@@ -309,7 +307,7 @@ namespace Experimental {
     CcolindsT ABpermAux;
   };
 
-  template<typename Ordinal, typename ArowptrsT, typename BrowptrsT, typename CrowptrsT, typename CcolindsT>
+  template<typename size_type, typename ordinal_type, typename ArowptrsT, typename BrowptrsT, typename CrowptrsT, typename CcolindsT>
   struct MergeEntriesFunctor
   {
     MergeEntriesFunctor(const ArowptrsT Arowptrs_, const BrowptrsT Browptrs_, const CrowptrsT Crowptrs_, CrowptrsT Crowcounts_,
@@ -323,28 +321,28 @@ namespace Experimental {
       Apos(Apos_),
       Bpos(Bpos_)
     {}
-    KOKKOS_INLINE_FUNCTION void operator()(const Ordinal i) const
+    KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
     {
-      Ordinal CrowStart = Crowptrs(i);
-      Ordinal CrowEnd = Crowptrs(i + 1);
-      Ordinal ArowStart = Arowptrs(i);
-      Ordinal ArowNum = Arowptrs(i + 1) - ArowStart;
-      Ordinal BrowStart = Browptrs(i);
-      Ordinal CFit = 0; //counting through merged C indices (within row)
-      for(Ordinal Cit = CrowStart; Cit < CrowEnd; Cit++)
+      size_type CrowStart = Crowptrs(i);
+      size_type CrowEnd = Crowptrs(i + 1);
+      size_type ArowStart = Arowptrs(i);
+      size_type ArowNum = Arowptrs(i + 1) - ArowStart;
+      size_type BrowStart = Browptrs(i);
+      ordinal_type CFit = 0; //counting through merged C indices (within row)
+      for(size_type Cit = CrowStart; Cit < CrowEnd; Cit++)
       {
-        auto permVal = ABperm(Cit);
+        size_type permVal = ABperm(Cit);
         if(permVal < ArowNum)
         {
           //Entry belongs to A
-          auto Aindex = permVal;
+          ordinal_type Aindex = permVal;
           //The Aindex'th entry in row i of A will be added into the CFit'th entry in C
           Apos(ArowStart + Aindex) = CFit;
         }
         else
         {
           //Entry belongs to B
-          auto Bindex = permVal - ArowNum;
+          ordinal_type Bindex = permVal - ArowNum;
           //The Bindex'th entry in row i of B will be added into the CFit'th entry in C
           Bpos(BrowStart + Bindex) = CFit;
         }
@@ -386,6 +384,8 @@ namespace Experimental {
     }
   };
 
+  //Symbolic: count entries in each row in C to produce rowmap
+  //kernel handle has information about whether it is sorted add or not.
   template <typename KernelHandle,
             typename alno_row_view_t_,
             typename alno_nnz_view_t_,
@@ -402,23 +402,40 @@ namespace Experimental {
         clno_row_view_t_ c_rowmap)    //c_rowmap must already be allocated (doesn't need to be initialized)
     {
       typedef typename KernelHandle::SPADDHandleType::execution_space execution_space;
+      typedef typename KernelHandle::size_type size_type;
+      typedef typename KernelHandle::nnz_lno_t ordinal_type;
+      //Check that A/B/C data types match KernelHandle types, and that C data types are nonconst (doesn't matter if A/B types are const)
+      static_assert(std::is_same<typename alno_row_view_t_::non_const_value_type, size_type>::value,
+          "add_symbolic: A size_type must match KernelHandle size_type (const doesn't matter)");
+      static_assert(std::is_same<typename blno_row_view_t_::non_const_value_type, size_type>::value,
+          "add_symbolic: B size_type must match KernelHandle size_type (const doesn't matter)");
+      static_assert(std::is_same<typename clno_row_view_t_::non_const_value_type, size_type>::value,
+          "add_symbolic: C size_type must match KernelHandle size_type)");
+      static_assert(std::is_same<typename clno_row_view_t_::non_const_value_type, typename clno_row_view_t_::value_type>::value,
+          "add_symbolic: C size_type must not be const");
+      static_assert(std::is_same<typename alno_nnz_view_t_::non_const_value_type, ordinal_type>::value,
+          "add_symbolic: A entry type must match KernelHandle entry type (aka nnz_lno_t, and const doesn't matter)");
+      static_assert(std::is_same<typename blno_nnz_view_t_::non_const_value_type, ordinal_type>::value,
+          "add_symbolic: B entry type must match KernelHandle entry type (aka nnz_lno_t, and const doesn't matter)");
+      static_assert(std::is_same<typename clno_nnz_view_t_::non_const_value_type, ordinal_type>::value,
+          "add_symbolic: C entry type must match KernelHandle entry type (aka nnz_lno_t)");
+      static_assert(std::is_same<typename clno_row_view_t_::non_const_value_type, typename clno_row_view_t_::value_type>::value,
+          "add_symbolic: C entry type must not be const");
       //symbolic just needs to compute c_rowmap
       //easy for sorted, but for unsorted is easiest to just compute the whole sum
       auto addHandle = handle->get_spadd_handle();
       auto nrows = a_rowmap.dimension_0() - 1;
-      //get the size_type compatible with A, B and C to be used as View indices in functors
-      typedef typename KernelHandle::nnz_lno_t ordinal_type;
       typedef Kokkos::RangePolicy<execution_space, ordinal_type> range_type;
       if(addHandle->is_input_sorted())
       {
         clno_row_view_t_ c_rowcounts("C row counts", nrows);
         //call entry count functor to get entry counts per row
-        SortedCountEntries<ordinal_type, alno_row_view_t_, blno_row_view_t_, alno_nnz_view_t_, blno_nnz_view_t_, clno_row_view_t_>
+        SortedCountEntries<size_type, ordinal_type, alno_row_view_t_, blno_row_view_t_, alno_nnz_view_t_, blno_nnz_view_t_, clno_row_view_t_>
           countEntries(a_rowmap, a_entries, b_rowmap, b_entries, c_rowcounts);
         Kokkos::parallel_for(range_type(0, nrows), countEntries);
         execution_space::fence();
         //get c_rowmap as cumulative sum
-        parallel_prefix_sum<ordinal_type, clno_row_view_t_> prefix(c_rowcounts, c_rowmap);
+        parallel_prefix_sum<size_type, clno_row_view_t_> prefix(c_rowcounts, c_rowmap);
         Kokkos::parallel_scan(range_type(0, nrows + 1), prefix);
         execution_space::fence();
       }
@@ -430,12 +447,12 @@ namespace Experimental {
         size_t c_nnz_upperbound = 0;
         {
           clno_row_view_t_ c_rowcounts_upperbound("C row counts upper bound", nrows);
-          UnsortedEntriesUpperBound<ordinal_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_>
+          UnsortedEntriesUpperBound<size_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_>
             countEntries(a_rowmap, b_rowmap, c_rowcounts_upperbound);
           Kokkos::parallel_for(range_type(0, nrows), countEntries);
           execution_space::fence();
           //get (temporary) c_rowmap as cumulative sum
-          parallel_prefix_sum<ordinal_type, clno_row_view_t_> prefix(c_rowcounts_upperbound, c_rowmap_upperbound);
+          parallel_prefix_sum<size_type, clno_row_view_t_> prefix(c_rowcounts_upperbound, c_rowmap_upperbound);
           Kokkos::parallel_scan(range_type(0, nrows + 1), prefix);
           //compute uncompressed entries of C (just indices, no scalars)
           execution_space::fence();
@@ -444,13 +461,13 @@ namespace Experimental {
         clno_nnz_view_t_ c_entries_uncompressed("C entries uncompressed", c_nnz_upperbound);
         clno_nnz_view_t_ ab_perm("A and B permuted entry indices", c_nnz_upperbound);
         //compute the unmerged sum
-        UnmergedSumFunctor<ordinal_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_,
+        UnmergedSumFunctor<size_type, ordinal_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_,
                            alno_nnz_view_t_, blno_nnz_view_t_, clno_nnz_view_t_> unmergedSum(
                            a_rowmap, a_entries, b_rowmap, b_entries, c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
         Kokkos::parallel_for(range_type(0, nrows), unmergedSum);
         execution_space::fence();
         //sort the unmerged sum
-        SortEntriesFunctor<ordinal_type, clno_row_view_t_, clno_nnz_view_t_>
+        SortEntriesFunctor<size_type, clno_row_view_t_, clno_nnz_view_t_>
           sortEntries(c_rowmap_upperbound, c_entries_uncompressed, ab_perm);
         Kokkos::parallel_for(range_type(0, nrows), sortEntries);
         execution_space::fence();
@@ -459,12 +476,12 @@ namespace Experimental {
         //merge the entries and compute Apos/Bpos, as well as Crowcounts
         {
           clno_row_view_t_ c_rowcounts("C row counts", nrows);
-          MergeEntriesFunctor<ordinal_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_, clno_nnz_view_t_>
+          MergeEntriesFunctor<size_type, ordinal_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_, clno_nnz_view_t_>
             mergeEntries(a_rowmap, b_rowmap, c_rowmap_upperbound, c_rowcounts, c_entries_uncompressed, ab_perm, a_pos, b_pos);
           Kokkos::parallel_for(range_type(0, nrows), mergeEntries);
           execution_space::fence();
           //compute actual c_rowmap
-          parallel_prefix_sum<ordinal_type, clno_row_view_t_> prefix(c_rowcounts, c_rowmap);
+          parallel_prefix_sum<size_type, clno_row_view_t_> prefix(c_rowcounts, c_rowmap);
           Kokkos::parallel_scan(range_type(0, nrows + 1), prefix);
           execution_space::fence();
         }
@@ -473,9 +490,10 @@ namespace Experimental {
       //provide the number of NNZ in C to user through handle
       addHandle->set_max_result_nnz(c_rowmap(nrows));
       addHandle->set_call_symbolic();
+      addHandle->set_call_numeric(false);
     }
 
-  template<typename Ordinal,
+  template<typename size_type, typename ordinal_type,
            typename ArowptrsT, typename BrowptrsT, typename CrowptrsT,
            typename AcolindsT, typename BcolindsT, typename CcolindsT,
            typename AvaluesT, typename BvaluesT, typename CvaluesT,
@@ -498,23 +516,23 @@ namespace Experimental {
       alpha(alpha_),
       beta(beta_)
     {}
-    KOKKOS_INLINE_FUNCTION void operator()(const Ordinal i) const
+    KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
     {
-      Ordinal CrowStart = Crowptrs(i);
-      Ordinal ArowStart = Arowptrs(i);
-      Ordinal ArowEnd = Arowptrs(i + 1);
-      Ordinal Arowlen = ArowEnd - ArowStart;
-      Ordinal BrowStart = Browptrs(i);
-      Ordinal BrowEnd = Browptrs(i + 1);
-      Ordinal Browlen = BrowEnd - BrowStart;
-      Ordinal ai = 0;
-      Ordinal bi = 0;
-      Ordinal ci = 0;
+      size_type CrowStart = Crowptrs(i);
+      size_type ArowStart = Arowptrs(i);
+      size_type ArowEnd = Arowptrs(i + 1);
+      size_type Arowlen = ArowEnd - ArowStart;
+      size_type BrowStart = Browptrs(i);
+      size_type BrowEnd = Browptrs(i + 1);
+      size_type Browlen = BrowEnd - BrowStart;
+      size_type ai = 0;
+      size_type bi = 0;
+      size_type ci = 0;
       //add in A entries, while setting C colinds
       while(ai < Arowlen && bi < Browlen)
       {
-        auto Acol = Acolinds(ArowStart + ai);
-        auto Bcol = Bcolinds(BrowStart + bi);
+        ordinal_type Acol = Acolinds(ArowStart + ai);
+        ordinal_type Bcol = Bcolinds(BrowStart + bi);
         if(Acol <= Bcol)
         {
           Ccolinds(CrowStart + ci) = Acol;
@@ -559,7 +577,7 @@ namespace Experimental {
     const BscalarT beta;
   };
 
-  template<typename Ordinal,
+  template<typename size_type,
            typename ArowptrsT, typename BrowptrsT, typename CrowptrsT,
            typename AcolindsT, typename BcolindsT, typename CcolindsT,
            typename AvaluesT, typename BvaluesT, typename CvaluesT,
@@ -585,21 +603,21 @@ namespace Experimental {
       Apos(Apos_),
       Bpos(Bpos_)
     {}
-    KOKKOS_INLINE_FUNCTION void operator()(const Ordinal i) const
+    KOKKOS_INLINE_FUNCTION void operator()(const size_type i) const
     {
-      Ordinal CrowStart = Crowptrs(i);
-      Ordinal ArowStart = Arowptrs(i);
-      Ordinal ArowEnd = Arowptrs(i + 1);
-      Ordinal BrowStart = Browptrs(i);
-      Ordinal BrowEnd = Browptrs(i + 1);
+      size_type CrowStart = Crowptrs(i);
+      size_type ArowStart = Arowptrs(i);
+      size_type ArowEnd = Arowptrs(i + 1);
+      size_type BrowStart = Browptrs(i);
+      size_type BrowEnd = Browptrs(i + 1);
       //add in A entries, while setting C colinds
-      for(Ordinal j = ArowStart; j < ArowEnd; j++)
+      for(size_type j = ArowStart; j < ArowEnd; j++)
       {
         Cvalues(CrowStart + Apos(j)) += alpha * Avalues(j);
         Ccolinds(CrowStart + Apos(j)) = Acolinds(j);
       }
       //add in B entries, while setting C colinds
-      for(Ordinal j = BrowStart; j < BrowEnd; j++)
+      for(size_type j = BrowStart; j < BrowEnd; j++)
       {
         Cvalues(CrowStart + Bpos(j)) += beta * Bvalues(j);
         Ccolinds(CrowStart + Bpos(j)) = Bcolinds(j);
@@ -646,14 +664,41 @@ namespace Experimental {
       clno_nnz_view_t_ c_entries,
       cscalar_nnz_view_t_ c_values)
   {
+    typedef typename KernelHandle::size_type size_type;
     typedef typename KernelHandle::nnz_lno_t ordinal_type;
+    typedef typename KernelHandle::nnz_scalar_t scalar_type;
     typedef typename KernelHandle::SPADDHandleType::execution_space execution_space;
-    typedef Kokkos::RangePolicy<execution_space, ordinal_type> range_type;
+    //Check that A/B/C data types match KernelHandle types, and that C data types are nonconst (doesn't matter if A/B types are const)
+    static_assert(std::is_same<typename alno_row_view_t_::non_const_value_type, size_type>::value,
+        "add_symbolic: A size_type must match KernelHandle size_type (const doesn't matter)");
+    static_assert(std::is_same<typename blno_row_view_t_::non_const_value_type, size_type>::value,
+        "add_symbolic: B size_type must match KernelHandle size_type (const doesn't matter)");
+    static_assert(std::is_same<typename clno_row_view_t_::non_const_value_type, size_type>::value,
+        "add_symbolic: C size_type must match KernelHandle size_type)");
+    static_assert(std::is_same<typename clno_row_view_t_::non_const_value_type, typename clno_row_view_t_::value_type>::value,
+        "add_symbolic: C size_type must not be const");
+    static_assert(std::is_same<typename alno_nnz_view_t_::non_const_value_type, ordinal_type>::value,
+        "add_symbolic: A entry type must match KernelHandle entry (aka nnz_lno_t, and const doesn't matter)");
+    static_assert(std::is_same<typename blno_nnz_view_t_::non_const_value_type, ordinal_type>::value,
+        "add_symbolic: B entry type must match KernelHandle entry (aka nnz_lno_t, and const doesn't matter)");
+    static_assert(std::is_same<typename clno_nnz_view_t_::non_const_value_type, ordinal_type>::value,
+        "add_symbolic: C entry type must match KernelHandle entry (aka nnz_lno_t)");
+    static_assert(std::is_same<typename clno_row_view_t_::non_const_value_type, typename clno_row_view_t_::value_type>::value,
+        "add_symbolic: C entry type must not be const");
+    static_assert(std::is_same<typename ascalar_nnz_view_t_::non_const_value_type, scalar_type>::value,
+        "add_symbolic: A value type must match KernelHandle value type (aka nnz_scalar_t, and const doesn't matter)");
+    static_assert(std::is_same<typename bscalar_nnz_view_t_::non_const_value_type, scalar_type>::value,
+        "add_symbolic: B value type must match KernelHandle value type (aka nnz_scalar_t, and const doesn't matter)");
+    static_assert(std::is_same<typename cscalar_nnz_view_t_::non_const_value_type, scalar_type>::value,
+        "add_symbolic: C value type must match KernelHandle value type (aka nnz_scalar_t)");
+    static_assert(std::is_same<typename cscalar_nnz_view_t_::non_const_value_type, typename cscalar_nnz_view_t_::value_type>::value,
+        "add_symbolic: C value type must not be const");
+    typedef Kokkos::RangePolicy<execution_space, size_type> range_type;
     auto addHandle = kernel_handle->get_spadd_handle();
     auto nrows = a_rowmap.dimension_0() - 1;
     if(addHandle->is_input_sorted())
     {
-      SortedNumericSumFunctor<ordinal_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_,
+      SortedNumericSumFunctor<size_type, ordinal_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_,
                                            alno_nnz_view_t_, blno_nnz_view_t_, clno_nnz_view_t_,
                                            ascalar_nnz_view_t_, bscalar_nnz_view_t_, cscalar_nnz_view_t_,
                                            ascalar_t_, bscalar_t_>
@@ -664,7 +709,7 @@ namespace Experimental {
     else
     {
       //use a_pos and b_pos (set in the handle by symbolic) to quickly compute C entries and values
-      UnsortedNumericSumFunctor<ordinal_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_,
+      UnsortedNumericSumFunctor<size_type, alno_row_view_t_, blno_row_view_t_, clno_row_view_t_,
                                            alno_nnz_view_t_, blno_nnz_view_t_, clno_nnz_view_t_,
                                            ascalar_nnz_view_t_, bscalar_nnz_view_t_, cscalar_nnz_view_t_,
                                            ascalar_t_, bscalar_t_>

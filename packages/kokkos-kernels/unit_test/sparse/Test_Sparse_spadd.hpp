@@ -30,7 +30,6 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type minNNZ, ordinal_type maxN
   typedef typename size_type_view_t::non_const_value_type size_type;  //rowptr type
   typedef typename lno_view_t::non_const_value_type lno_t;            //colind type
   static_assert(std::is_same<ordinal_type, lno_t>::value, "ordinal_type should be same as lno_t from crsMat_t");
-  typedef typename scalar_view_t::non_const_value_type scalar_t;      //value type
   //first, populate rowmap
   size_type_view_t rowmap("rowmap", nrows + 1);
   typename size_type_view_t::HostMirror h_rowmap = Kokkos::create_mirror_view(rowmap);
@@ -81,7 +80,6 @@ crsMat_t randomMatrix(ordinal_type nrows, ordinal_type minNNZ, ordinal_type maxN
 template <typename crsMat_t, typename ordinal_type>
 void checkSumRowCorrect(ordinal_type row, crsMat_t A, crsMat_t B, crsMat_t C)
 {
-  typedef typename crsMat_t::device_type::execution_space execution_space;
   typedef typename crsMat_t::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type size_type_view_t;
   typedef typename graph_t::entries_type lno_view_t;
@@ -136,8 +134,6 @@ template <typename scalar_t, typename lno_t, typename size_type, class Device>
 void test_spadd(lno_t numRows, size_type minNNZ, size_type maxNNZ, bool sortRows)
 {
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
-  typedef typename crsMat_t::device_type::execution_space execution_space;
-  typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
   typedef typename crsMat_t::row_map_type::non_const_type row_map_type;
   typedef typename crsMat_t::index_type::non_const_type entries_type;
