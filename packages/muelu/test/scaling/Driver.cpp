@@ -114,7 +114,7 @@ struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNo
     typedef Kokkos::Compat::KokkosSerialWrapperNode NO;
     Teuchos::RCP<const Epetra_CrsMatrix> Aep   = Xpetra::Helpers<SC, LO, GO, NO>::Op2EpetraCrs(A);
     Teuchos::RCP<Epetra_Operator> mlop  = Teuchos::rcp<Epetra_Operator>(new ML_Epetra::MultiLevelPreconditioner(*Aep,mueluList));
-    mlopX = Teuchos::rcp(new Xpetra::EpetraOperator<GO>(mlop));
+    mlopX = Teuchos::rcp(new Xpetra::EpetraOperator<GO,NO>(mlop));
   }
 };
 #endif
