@@ -120,6 +120,10 @@ public:
     Teuchos::RCP<SolutionState<Scalar> > getCurrentState() const
       { return currentState_; }
 
+    /// Set the current state, i.e., the last accepted state
+    void setCurrentState(const Teuchos::RCP<SolutionState<Scalar> >& state)
+      { currentState_ = state; }
+
     /// Return the working state
     Teuchos::RCP<SolutionState<Scalar> > getWorkingState() const
       { return workingState_; }

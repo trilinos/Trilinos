@@ -52,6 +52,8 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
     virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
+      { return solver_; }
     virtual void setObserver(
       Teuchos::RCP<StepperBackwardEulerObserver<Scalar> > obs = Teuchos::null);
 
