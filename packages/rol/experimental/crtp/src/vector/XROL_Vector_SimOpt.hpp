@@ -50,10 +50,6 @@ namespace XROL {
 
 namespace details {
 
-template<class F, class Tuple>
-decltype(auto) evaluate( const F& f, Tuple&& t );
-
-template<class V> Vector;
 template<class U, class Z> Vector_SimOpt;
 
 template<class U, class Z>
@@ -71,6 +67,7 @@ struct DualType<Vector_SimOpt<U,Z>> {
   using type = Vector_SimOpt<dual_t<U>,dual_t<Z>>;
 };
 
+
 template<class U, class Z>
 class Vector_SimOpt : public Vector<U,Z> {
   using IndexT   = index_t<Vector_SimOpt>;
@@ -82,11 +79,18 @@ private:
 
   unique_ptr<U> sim_;
   unique_ptr<Z> opt_;
+  
+  mutable unique_ptr<dual_t<U>> dual_sim_;
+  mutable unique_ptr<dual_t<Z>> dual_opt_;
+  mutable unique_ptr<dual_t<DualT>> dual_vec_;
 
 public:
 
   Vector_SimOpt( unique_ptr<U> sim, unique_ptr<Z> opt ) :
-    sim_(move(sim)), opt_(move(opt)) {}
+    sim_(move(sim)), opt_(move(opt)) {
+    dual_sim_ = sim_->dual().clone();
+    
+  }
 
   void plus( const Vector_SimOpt& x ) {
     sim_->plus(x.get_1());
