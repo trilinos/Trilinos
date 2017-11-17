@@ -145,7 +145,6 @@ namespace PHX {
     void postEvaluate(typename Traits::PostEvalData d);
     
     void setEvaluationTypeName(const std::string& evaluation_type_name);
-    
 
     /*! Returns the FieldTags for all fields involved in the
         evaluation. Will return an empty vector unless the user has
