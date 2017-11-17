@@ -150,6 +150,7 @@ public:
     this->destroy_gs_handle();
     this->destroy_graph_coloring_handle();
     this->destroy_spgemm_handle();
+    this->destroy_spadd_handle();
   }
 
   void set_verbose(bool verbose_){
