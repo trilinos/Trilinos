@@ -111,7 +111,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     comm->barrier();
     RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: S - Global Time")));
-    RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read Matrices")));
+    RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices")));
 
     // Read matrices in from files
     Xpetra::global_size_t nedges=540, nnodes=216;
@@ -129,34 +129,24 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // coordinates
     RCP<MultiVector> coords = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector("coords.txt", node_map);
 
-    comm->barrier();
-    tm = Teuchos::null;
-
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Matrices")));
-
     // build lumped mass matrix inverse (M0inv_Matrix)
-    RCP<MultiVector> ones = MultiVectorFactory::Build(node_map,1);
-    RCP<MultiVector> diag = MultiVectorFactory::Build(node_map,1);
-    RCP<MultiVector> invdiag = MultiVectorFactory::Build(node_map,1);
-    ones->putScalar((SC)1.0);
-    M0_Matrix->apply(*ones,*diag);
-    invdiag->reciprocal(*diag);
-    Teuchos::ArrayRCP<const SC> invdiags = invdiag->getData(0);
-    GO row, col;
-    SC entry;
-    RCP<Matrix> M0inv_Matrix = MatrixFactory::Build(node_map,1);
-    for(Xpetra::global_size_t i=0; i<nnodes; i++) {
-      row = static_cast<GO>(i);
-      col = static_cast<GO>(i);
-      if(node_map->isNodeGlobalElement(i)) {
-        LocalOrdinal lclidx = node_map->getLocalElement(i);
-        entry = invdiags[lclidx];
-        M0inv_Matrix -> insertGlobalValues(row,
-            Teuchos::ArrayView<GO>(&col,1),
-            Teuchos::ArrayView<SC>(&entry,1));
-      }
+    RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
+    RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 1, Xpetra::StaticProfile));
+    RCP<CrsMatrix> M0inv_CrsMatrix = M0inv_MatrixWrap->getCrsMatrix();
+    Teuchos::ArrayRCP<size_t> rowPtr;
+    Teuchos::ArrayRCP<LO> colInd;
+    Teuchos::ArrayRCP<SC> values;
+    Teuchos::ArrayRCP<const SC> diags = diag->getData(0);
+    size_t nodeNumElements = node_map->getNodeNumElements();
+    M0inv_CrsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
+    SC ONE = (SC)1.0;
+    for (size_t i = 0; i < nodeNumElements; i++) {
+      rowPtr[i] = i;  colInd[i] = i;  values[i] = ONE / diags[i];
     }
-    M0inv_Matrix->fillComplete();
+    rowPtr[nodeNumElements] = nodeNumElements;
+    M0inv_CrsMatrix->setAllValues(rowPtr, colInd, values);
+    M0inv_CrsMatrix->expertStaticFillComplete(node_map, node_map);
+    RCP<Matrix> M0inv_Matrix = Teuchos::rcp_dynamic_cast<Matrix>(M0inv_MatrixWrap);
 
     // build stiffness plus mass matrix (SM_Matrix)
     RCP<Matrix> SM_Matrix = MatrixFactory::Build(edge_map,100);
@@ -166,7 +156,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     comm->barrier();
     tm = Teuchos::null;
 
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Build Preconditioner")));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Preconditioner")));
 
     // set parameters
     Teuchos::ParameterList params, params11, params22;
@@ -186,7 +176,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     comm->barrier();
     tm = Teuchos::null;
 
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 4 - Setup RHS etc")));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Setup RHS etc")));
 
     // setup LHS, RHS
     RCP<MultiVector> vec = MultiVectorFactory::Build(edge_map,1);
@@ -229,7 +219,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     comm->barrier();
     tm = Teuchos::null;
 
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 5 - Solve")));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 4 - Solve")));
 
     // set problem and solve
     solver -> setProblem( problem );
