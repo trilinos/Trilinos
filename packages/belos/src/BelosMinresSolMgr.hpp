@@ -195,6 +195,10 @@ namespace Belos {
       return *problem_;
     }
 
+    const MinresIter<ScalarType,MV,OP>& getIteration() const {
+      return *minres_iter;
+    }
+
     //! Return the list of default parameters for this object.
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
       if (defaultParams_.is_null()) {
@@ -391,6 +395,8 @@ namespace Belos {
     /// components are null.
     static void
     validateProblem (const Teuchos::RCP<LinearProblem<ScalarType, MV, OP> >& problem);
+
+    Teuchos::RCP<MinresIter<ScalarType, MV, OP> > minres_iter;
   };
 
 
@@ -697,7 +703,7 @@ namespace Belos {
     // Create MINRES iteration object.  Pass along the solver
     // manager's parameters, which have already been validated.
     typedef MinresIter<ScalarType, MV, OP> iter_type;
-    RCP<iter_type> minres_iter =
+    minres_iter =
       rcp (new iter_type (problem_, printer_, outputTest_, *params_));
 
     // The index/indices of the right-hand sides for which MINRES did

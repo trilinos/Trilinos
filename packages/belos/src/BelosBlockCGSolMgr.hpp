@@ -234,6 +234,10 @@ namespace Belos {
       return *problem_;
     }
 
+    const CGIteration<ScalarType,MV,OP>& getIteration() const {
+      return *block_cg_iter;
+    }
+
     /*! \brief Get a parameter list containing the valid parameters for this object.
      */
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -408,6 +412,8 @@ namespace Belos {
 
     //! Whether or not the parameters have been set (via \c setParameters()).
     bool isSet_;
+
+    Teuchos::RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
   };
 
 
@@ -910,7 +916,6 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
   ////////////////////////////////////////////////////////////////////////////
   // Set up the BlockCG Iteration subclass.
 
-  RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
   if (blockSize_ == 1) {
     // Standard (nonblock) CG is faster for the special case of a
     // block size of 1.  A single reduction iteration can also be used

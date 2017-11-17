@@ -50,6 +50,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "BelosLinearProblem.hpp"
+#include "BelosIteration.hpp"
 #include "BelosStatusTestCombo.hpp"
 
 #include "Teuchos_ParameterList.hpp"
@@ -88,6 +89,8 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! Return a reference to the linear problem being solved by this solver manager.
   virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const = 0;
+
+  virtual const Iteration<ScalarType,MV,OP>& getIteration() const = 0;
 
   //! Return the valid parameters for this solver manager.
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
