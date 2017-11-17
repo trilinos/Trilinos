@@ -2,10 +2,12 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Kokkos_Core.hpp"
+
 #include <cstdlib> // std::atexit, setenv
 #include <mutex> // std::call_once, std::once_flag
 #include <stdexcept>
 #include <vector>
+#include <functional> // std::ref
 
 namespace KokkosCompat {
 namespace Details {
