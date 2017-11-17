@@ -61,13 +61,12 @@
 
 namespace Xpetra {
 
-  template<class EpetraGlobalOrdinal>
-  class EpetraOperator : public Operator<double, int, EpetraGlobalOrdinal>
+  template<class EpetraGlobalOrdinal, class Node>
+  class EpetraOperator : public Operator<double, int, EpetraGlobalOrdinal,Node>
   {
     typedef double                                                      Scalar;
     typedef int                                                         LocalOrdinal;
     typedef EpetraGlobalOrdinal                                         GlobalOrdinal;
-    typedef typename Operator<double, int, GlobalOrdinal>::node_type    Node;
 
   public:
     //@{
