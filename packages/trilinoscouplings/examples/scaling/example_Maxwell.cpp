@@ -376,6 +376,7 @@ int main(int argc, char *argv[]) {
   std::string xmlInFileName;
   bool verbose, debug;
   std::string solverName;
+  double scaling = 1.0;
 
   // Set default values of command-line arguments.
   nx = 10;
@@ -404,6 +405,7 @@ int main(int argc, char *argv[]) {
                   "Whether to print verbose status output.");
   cmdp.setOption ("debug", "release", &debug,
                   "Whether to print copious debugging output to stderr.");
+  cmdp.setOption ("scaling", &scaling, "scale mass matrix");
 
   if (MyPID == 0) {
     std::cout                                                           \
@@ -1814,7 +1816,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Get the full matrix operator Kc += Mc
-  int rv=EpetraExt::MatrixMatrix::Add(MassMatrixC,false,1.0,StiffMatrixC,1.0);
+  int rv=EpetraExt::MatrixMatrix::Add(MassMatrixC,false,scaling,StiffMatrixC,1.0);
   if(rv!=0) {printf("EpetraExt::MatrixMatrix:Add FAILED\n"); exit(1);}
 
 
