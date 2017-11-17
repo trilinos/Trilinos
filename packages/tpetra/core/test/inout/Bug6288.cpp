@@ -137,7 +137,7 @@ testImpl (Teuchos::FancyOStream& out,
     // minimum number of digits to represent the precision correctly.
     // The test really shouldn't depend as much on the printed digits;
     // it should depend on the values not changing.
-    Teuchos::MatrixMarket::details::SetScientific<scalar_type> sci (exp);
+    Teuchos::SetScientific<scalar_type> sci (exp);
 
     exp << "%%MatrixMarket matrix array real general" << endl
         << gblNumRows << " " << numCols << endl;
