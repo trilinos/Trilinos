@@ -50,4 +50,12 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
     SOURCE_FILES M0.txt M1.txt S.txt D0.txt coords.txt
     )
+
+    IF(HAVE_MUELU_COMPLEX)
+      TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp_complex
+        SOURCE_FILES M0_complex.txt M1_complex.txt S_complex.txt D0_complex.txt
+        )
+    ENDIF()
+
+
 ENDIF()

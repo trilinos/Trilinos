@@ -95,11 +95,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     out->setOutputToRootOnly(0);
 
-    if (!TYPE_EQUAL(SC, double)) { *out << "Skipping test for SC != double" << std::endl; return EXIT_SUCCESS; }
-
     bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
     std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
-    SC scaling                    = 1.0;               clp.setOption("scaling",               &scaling,           "scale mass term");
+    double scaling                = 1.0;               clp.setOption("scaling",               &scaling,           "scale mass term");
 
     clp.recogniseAllOptions(true);
     switch (clp.parse(argc, argv)) {
@@ -118,16 +116,28 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     // maps for nodal and edge matrices
     RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
     RCP<Map> node_map = MapFactory::Build(lib,nnodes,0,comm);
-    // edge stiffness matrix
-    RCP<Matrix> S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("S.txt", edge_map);
-    // edge mass matrix
-    RCP<Matrix> M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M1.txt", edge_map);
-    // nodal mass matrix
-    RCP<Matrix> M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M0.txt", node_map);
-    // gradient matrix
-    RCP<Matrix> D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0.txt", edge_map, Teuchos::null, node_map, edge_map);
+    RCP<Matrix> S_Matrix, M1_Matrix, M0_Matrix, D0_Matrix;
+    if (!TYPE_EQUAL(SC, std::complex<double>)) {
+      // edge stiffness matrix
+      S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("S.txt", edge_map);
+      // edge mass matrix
+      M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M1.txt", edge_map);
+      // nodal mass matrix
+      M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M0.txt", node_map);
+      // gradient matrix
+      D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0.txt", edge_map, Teuchos::null, node_map, edge_map);
+    } else {
+      // edge stiffness matrix
+      S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("S_complex.txt", edge_map);
+      // edge mass matrix
+      M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M1_complex.txt", edge_map);
+      // nodal mass matrix
+      M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M0_complex.txt", node_map);
+      // gradient matrix
+      D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0_complex.txt", edge_map, Teuchos::null, node_map, edge_map);
+    }
     // coordinates
-    RCP<MultiVector> coords = Xpetra::IO<SC, LO, GO, NO>::ReadMultiVector("coords.txt", node_map);
+    RCP<Xpetra::MultiVector<double, LO, GO, NO> > coords = Xpetra::IO<double, LO, GO, NO>::ReadMultiVector("coords.txt", node_map);
 
     // build lumped mass matrix inverse (M0inv_Matrix)
     RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
@@ -159,13 +169,22 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Preconditioner")));
 
     // set parameters
-    Teuchos::ParameterList params, params11, params22;
+    Teuchos::ParameterList params, params11, params22, smoother;
     params.set("refmaxwell: disable addon",false);
     params.set("refmaxwell: max coarse size",25);
     params.set("refmaxwell: max levels",4);
-    params.set("smoother: type","CHEBYSHEV");
-    //    params11.set("smoother: sweeps",3);
-    //    params22.set("smoother: sweeps",2);
+    if (!TYPE_EQUAL(SC, std::complex<double>))
+      params.set("smoother: type","CHEBYSHEV");
+    else {
+      params.set("smoother: type", "RELAXATION");
+      smoother.set("relaxation: type", "Symmetric Gauss-Seidel");
+      smoother.set("relaxation: sweeps", 2);
+      params.set("smoother: params", smoother);
+      params11.set("relaxation: type", "Symmetric Gauss-Seidel");
+      params11.set("relaxation: sweeps", 2);
+      params22.set("relaxation: type", "Symmetric Gauss-Seidel");
+      params22.set("relaxation: sweeps", 2);
+    }
     params.set("refmaxwell: 11 list",params11);
     params.set("refmaxwell: 22 list",params22);
     // construct preconditioner
