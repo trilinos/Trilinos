@@ -64,6 +64,10 @@
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_HierarchyManager.hpp"
 
+#ifdef HAVE_XPETRA_TPETRA
+#include "Tpetra_MultiVector.hpp"
+#endif
+
 
 namespace MueLu {
 
@@ -106,6 +110,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
   out.setOutputToRootOnly(0);
   out.setShowProcRank(false);
+  magnitudeType eps = Teuchos::ScalarTraits<magnitudeType>::eps();
+  SC zero = Teuchos::ScalarTraits<Scalar>::zero();
 
   RCP<Teuchos::TimeMonitor> tmCompute = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("MueLu RefMaxwell: compute")));
 
@@ -118,9 +124,9 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
 
   if (dump_matrices_) {
     std::ofstream outBCrows("BCrows.mat");
-    std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<int>(outBCrows, "\n"));
+    std::copy(BCrows_.begin(), BCrows_.end(), std::ostream_iterator<LO>(outBCrows, "\n"));
     std::ofstream outBCcols("BCcols.mat");
-    std::copy(BCcols_.begin(), BCcols_.end(), std::ostream_iterator<int>(outBCcols, "\n"));
+    std::copy(BCcols_.begin(), BCcols_.end(), std::ostream_iterator<LO>(outBCcols, "\n"));
   }
 
   // build nullspace if necessary
@@ -128,24 +134,34 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
     // no need to do anything - nullspace is built
   }
   else if(Nullspace_ == Teuchos::null && Coords_ != Teuchos::null) {
-    // typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-    Teuchos::Array<Scalar> norms(Coords_->getNumVectors());
+    typedef typename Teuchos::ScalarTraits<double>::magnitudeType Magnitude;
+    Teuchos::Array<Magnitude> norms(Coords_->getNumVectors());
     Coords_->norm2(norms);
     for (size_t i=0;i<Coords_->getNumVectors();i++) {
-      norms[i] = 1./norms[i];
+      norms[i] = ((Magnitude)1.0)/norms[i];
     }
     // Coords_->scale(norms);
     for(size_t j=0;j<Coords_->getNumVectors();j++) {
-      Teuchos::ArrayRCP<Scalar> datavec = Coords_->getDataNonConst(j);
+      Teuchos::ArrayRCP<double> datavec = Coords_->getDataNonConst(j);
       for(size_t i=0;i<static_cast<size_t>(datavec.size());i++)
         datavec[i] *= norms[j];
     }
 
     if (dump_matrices_)
-      Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("coords.mat"), *Coords_);
+      Xpetra::IO<double, LO, GlobalOrdinal, Node>::Write(std::string("coords.mat"), *Coords_);
 
     Nullspace_ = MultiVectorFactory::Build(SM_Matrix_->getRowMap(),Coords_->getNumVectors());
-    D0_Matrix_->apply(*Coords_,*Nullspace_);
+
+    RCP<MultiVector> CoordsSC;
+#ifdef HAVE_XPETRA_TPETRA
+    if (typeid(Scalar).name() == typeid(std::complex<double>).name()) {
+      RCP<Xpetra::TpetraMultiVector<double, LO, GO, NO> > tCoords = rcp_dynamic_cast<Xpetra::TpetraMultiVector<double, LO, GO, NO> >(Coords_);
+      CoordsSC = MultiVectorFactory::Build(tCoords->getMap(),Coords_->getNumVectors());
+      Tpetra::deep_copy(toTpetra(*CoordsSC), toTpetra(*Coords_));
+    } else
+#endif
+      CoordsSC = rcp_dynamic_cast<MultiVector>(Coords_);
+    D0_Matrix_->apply(*CoordsSC,*Nullspace_);
   }
   else {
     std::cerr << "MueLu::RefMaxwell::compute(): either the nullspace or the nodal coordinates must be provided." << std::endl;
@@ -156,7 +172,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   for(size_t j=0;j<dim;j++) {
     Teuchos::ArrayRCP<Scalar> datavec = Nullspace_->getDataNonConst(j);
     for(size_t i=0;i<BCrows_.size();i++)
-      datavec[BCrows_[i]]=0;
+      datavec[BCrows_[i]]=zero;
   }
   if (dump_matrices_)
     Xpetra::IO<SC, LO, GlobalOrdinal, Node>::Write(std::string("nullspace.mat"), *Nullspace_);
@@ -189,7 +205,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
         MultiplyRAP(*D0_Matrix_, true, *M1_Matrix_, false, *D0_Matrix_, false, *A_nodal_Matrix_, true, true);
     }
     A_nodal_Matrix_->resumeFill();
-    Remove_Zeroed_Rows(A_nodal_Matrix_,1.0e-16);
+    Remove_Zeroed_Rows(A_nodal_Matrix_,2.0*eps);
     A_nodal_Matrix_->SetFixedBlockSize(1);
     tm = Teuchos::null;
 
@@ -218,9 +234,9 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
     RCP<HierarchyManager> ManagerH;
     if (parameterList_.isParameter(syntaxStr) && parameterList_.get<std::string>(syntaxStr) == "ml") {
       parameterList_.remove(syntaxStr);
-      ManagerH = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(precList11_, AH_->getDomainMap()->getComm()));
+      ManagerH = rcp(new MueLu::MLParameterListInterpreter<SC,LO,GO,NO>(precList11_, AH_->getDomainMap()->getComm()));
     } else {
-      ManagerH = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(precList11_,AH_->getDomainMap()->getComm()));
+      ManagerH = rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(precList11_,AH_->getDomainMap()->getComm()));
     }
     HierarchyH_=ManagerH->CreateHierarchy();
     HierarchyH_->setlib(Xpetra::UseTpetra);
@@ -245,7 +261,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
         MultiplyRAP(*D0_Matrix_, true, *SM_Matrix_, false, *D0_Matrix_, false, *A22_, true, true);
     }
     A22_->resumeFill();
-    Remove_Zeroed_Rows(A22_,1.0e-16);
+    Remove_Zeroed_Rows(A22_,2.0*eps);
     A22_->SetFixedBlockSize(1);
     tm = Teuchos::null;
 
@@ -253,9 +269,9 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
     RCP<HierarchyManager> Manager22;
     if (parameterList_.isParameter(syntaxStr) && parameterList_.get<std::string>(syntaxStr) == "ml") {
       parameterList_.remove(syntaxStr);
-      Manager22 = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(precList22_, A22_->getDomainMap()->getComm()));
+      Manager22 = rcp(new MueLu::MLParameterListInterpreter<SC,LO,GO,NO>(precList22_, A22_->getDomainMap()->getComm()));
     } else {
-      Manager22 = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(precList22_,A22_->getDomainMap()->getComm()));
+      Manager22 = rcp(new MueLu::ParameterListInterpreter<SC,LO,GO,NO>(precList22_,A22_->getDomainMap()->getComm()));
     }
     Hierarchy22_=Manager22->CreateHierarchy();
     Hierarchy22_->setlib(Xpetra::UseTpetra);
@@ -374,10 +390,11 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
   size_t numLocalRows = SM_Matrix_->getNodeNumRows();
 
   // get nullspace vectors
+  ArrayRCP<ArrayRCP<const SC> > nullspaceRCP(dim);
   ArrayRCP<ArrayView<const SC> > nullspace(dim);
   for(size_t i=0; i<dim; i++) {
-    ArrayView<const SC> datavec = (Nullspace_->getData(i))();
-    nullspace[i]=datavec;
+    nullspaceRCP[i] = Nullspace_->getData(i);
+    nullspace[i] = nullspaceRCP[i]();
   }
 
   // build prolongator: algorithm 1 in the reference paper
@@ -734,7 +751,7 @@ initialize(const Teuchos::RCP<Matrix> & D0_Matrix,
            const Teuchos::RCP<Matrix> & M0inv_Matrix,
            const Teuchos::RCP<Matrix> & M1_Matrix,
            const Teuchos::RCP<MultiVector>  & Nullspace,
-           const Teuchos::RCP<MultiVector>  & Coords,
+           const Teuchos::RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >  & Coords,
            Teuchos::ParameterList& List)
 {
   // some pre-conditions
