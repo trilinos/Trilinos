@@ -380,6 +380,7 @@ NOX::Thyra::Group::getJacobian() const
 Teuchos::RCP< ::Thyra::PreconditionerBase<double> >
 NOX::Thyra::Group::getNonconstPreconditioner()
 {
+  NOX_ASSERT(nonnull(prec_));
   return prec_;
 }
 
@@ -387,6 +388,7 @@ NOX::Thyra::Group::getNonconstPreconditioner()
 Teuchos::RCP<const ::Thyra::PreconditionerBase<double> >
 NOX::Thyra::Group::getPreconditioner() const
 {
+  NOX_ASSERT(nonnull(prec_));
   return prec_;
 }
 

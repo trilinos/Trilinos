@@ -9,6 +9,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_ExplicitRK_CopyFiles
-  DEST_FILES Tempus_ExplicitRK_SinCos.xml Tempus_ExplicitRK_SteadyQuadratic.xml
+  DEST_FILES Tempus_ExplicitRK_SinCos.xml
   EXEDEPS ExplicitRK
   )
