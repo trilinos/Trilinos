@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
     Kokkos::deep_copy(f,0.0);
     PHX::exec_space::fence();
     RCP<Time> residual_eval_time = TimeMonitor::getNewTimer("Residual Evaluation Time <<Host DAG>>");
-    {
+    if (p.doResidual()) {
       TimeMonitor tm_r(*residual_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Residual>(workset);
@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
     Kokkos::deep_copy(f,0.0);
     PHX::exec_space::fence();
     residual_eval_time = TimeMonitor::getNewTimer("Residual Evaluation Time <<Device DAG>>");
-    {
+    if (p.doResidual()) {
       TimeMonitor tm_r(*residual_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFieldsDeviceDag<Residual>(workset.num_cells_,workset);
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
     Kokkos::deep_copy(J.values,0.0);
     PHX::exec_space::fence();
     RCP<Time> jacobian_eval_time = TimeMonitor::getNewTimer("Jacobian Evaluation Time <<Host DAG>>");
-    {
+    if (p.doJacobian()) {
       TimeMonitor tm_r(*jacobian_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFields<Jacobian>(workset);
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
     Kokkos::deep_copy(J.values,0.0);
     PHX::exec_space::fence();
     jacobian_eval_time = TimeMonitor::getNewTimer("Jacobian Evaluation Time <<Device DAG>>");
-    {
+    if (p.doJacobian()) {
       TimeMonitor tm_r(*jacobian_eval_time);
       for (const auto& workset : worksets)
         fm.evaluateFieldsDeviceDag<Jacobian>(workset.num_cells_,workset);
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
       phx_example::printResidualAndJacobian(f,J,"FEA_DD: <Jacobian> Device DAG",p.printToFile(),"FEA_DD.Jacobian_Device_DAG.txt");
 
     // Graph analysis
-    if (true) {
+    if (p.doGraphAnalysis()) {
       double scalability = 0.0;
       double parallelizability = 1.0;
       fm.analyzeGraph<MyTraits::Residual>(scalability,parallelizability);
