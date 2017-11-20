@@ -45,6 +45,7 @@
 
 #include <Kokkos_View.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
+#include <Tpetra_Export.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -67,6 +68,8 @@ typedef Kokkos::View<Scalar*[4],ExecutionSpace> scalar_2d_array_type;
 typedef typename Tpetra::Map<LocalOrdinal, GlobalOrdinal, NT> MapType;
 typedef typename Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, NT> GraphType;
 typedef typename Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, NT> MatrixType;
+
+typedef typename Tpetra::Export<LocalOrdinal, GlobalOrdinal, NT> ExportType;
 
 #endif
 

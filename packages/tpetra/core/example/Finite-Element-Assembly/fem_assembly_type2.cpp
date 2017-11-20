@@ -54,6 +54,9 @@
 #include "Element.hpp"
 
 
+#define DO_GRAPH_ASSEMBLY  1
+#define DO_MATRIX_ASSEMBLY 0
+
 
 int main (int argc, char *argv[]) 
 {
@@ -67,6 +70,8 @@ int main (int argc, char *argv[])
 
   // Initialize Kokkos
   Kokkos::initialize();
+
+  auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
 
   // Processor decomp (only works on perfect squares)
   int numProcs  = comm->getSize();
@@ -90,7 +95,10 @@ int main (int argc, char *argv[])
   // Build Tpetra Maps
   // -----------------
   // - Doxygen: https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
-  RCP<const MapType> row_map = rcp(new MapType(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
+  RCP<const MapType> owned_row_map       = rcp(new MapType(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
+  RCP<const MapType> overlapping_row_map = rcp(new MapType(GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs(), 0, comm));
+
+  // RCP<const MapType> row_map_overlapping = rcp(new MapType(GO_INVALID, mesh.getGhostNodeGlobalIDs(), 0, comm));        // wcmclen
 
   // TODO: [Type-2 Assembly]
   //       - Rename row_map to owned_row_map
@@ -99,20 +107,23 @@ int main (int argc, char *argv[])
   //         - contains all the OwnedNodeGlobalIDs followed by GhostNodeGlobalIDs
   //           in a single array containing both concatenated and as 2nd arg to map c'tor.
 
-  auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
-  row_map->describe(*out);
+  owned_row_map->describe(*out);
+  overlapping_row_map->describe(*out);
 
-  // Type-1: Graph Construction
+#if DO_GRAPH_ASSEMBLY 
+  // Type-2: Graph Construction
   // --------------------------
   // - Loop over every element in the mesh.
   //   - Get list of nodes associated with each element.
   //   - Insert the clique of nodes associated with each element into the graph. 
   //   
-  auto domain_map = row_map;
-  auto range_map  = row_map;
+  auto domain_map = owned_row_map;
+  auto range_map  = owned_row_map;
 
-  RCP<GraphType> crs_graph = rcp(new GraphType(row_map, 0));
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode(); 
+  auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
+
+  RCP<GraphType> crs_graph_owned = rcp(new GraphType(owned_row_map, 0));
+  RCP<GraphType> crs_graph_overlapping = rcp(new GraphType(overlapping_row_map, 0));
 
   // TODO: [Type-2 Assembly]
   //       - Create overlapping_graph and owned_graph.
@@ -143,18 +154,36 @@ int main (int argc, char *argv[])
     //   - node 5 inserts [0, 1, 4, 5]
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
-       crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+       crs_graph_overlapping->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
 
        // TODO: [Type-2 Graph Insertion]
        //       - Insert into only the overlapping_graph.
     }
   }
 
-  // Call fillComplete on the crs_graph to 'finalize' it.
-  crs_graph->fillComplete();
+  // Call fillComplete on the crs_graph_owned to 'finalize' it.
+  crs_graph_overlapping->fillComplete();
+
+  // Need to Export and fillComplete the crs_graph_owned structure...
+
+  // NOTE: Need to implement a graph transferAndFillComplete() method.
+
+  ExportType exporter(overlapping_row_map, owned_row_map); 
+
+  //crs_graph->transferAndFillComplete();
+  crs_graph_owned->doExport(*crs_graph_overlapping, exporter, Tpetra::INSERT);
+  crs_graph_owned->fillComplete();
 
   // Let's see what we have
-  crs_graph->describe(*out, Teuchos::VERB_EXTREME);
+  crs_graph_owned->describe(*out, Teuchos::VERB_EXTREME);
+
+  crs_graph_overlapping->describe(*out, Teuchos::VERB_EXTREME);
+
+#endif   // DO_GRAPH_ASSEMBLY
+
+
+
+#if DO_MATRIX_ASSEMBLY
 
   // TODO: [Type-2 Assembly]
   //       - Need to call fillComplete for only the overlapping_graph.
@@ -196,7 +225,7 @@ int main (int argc, char *argv[])
   // - sumIntoGlobalValues( 7,  [  2  3  7  6  ],  [  0  -1  2  -1  ])
   // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
 
-  RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph));
+  RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph_owned));
 
   // TODO: [Type-2 Assembly]
   //       - Need to create a crs_matrix_owned and crs_matrix_overlapping
@@ -267,6 +296,8 @@ int main (int argc, char *argv[])
   // After the contributions are added, 'finalize' the matrix using fillComplete()
   crs_matrix->fillComplete();
   crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
+
+#endif  // DO_MATRIX_ASSEMBLY
   
   // Finalize Kokkos
   Kokkos::finalize();
@@ -289,5 +320,5 @@ Update
 
   5) Export from the overlapped graph to the non-overlapped graph and fillComplete 
      (this can be done with the transferAndFillComplete method).
-     
+
 #endif
