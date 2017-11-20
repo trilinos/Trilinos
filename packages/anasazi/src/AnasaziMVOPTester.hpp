@@ -63,7 +63,7 @@
 #include "AnasaziOperatorTraits.hpp"
 #include "AnasaziOutputManager.hpp"
 
-#include "Teuchos_MatrixMarket_SetScientific.hpp"
+#include "Teuchos_SetScientific.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_as.hpp"
 
@@ -80,7 +80,7 @@ namespace Anasazi {
                 const Teuchos::RCP<const MV> &A ) {
 
     using std::endl;
-    using Teuchos::MatrixMarket::details::SetScientific;
+    using Teuchos::SetScientific;
 
     /* MVT Contract:
 
