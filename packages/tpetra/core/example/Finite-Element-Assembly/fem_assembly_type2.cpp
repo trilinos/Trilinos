@@ -55,7 +55,7 @@
 
 
 #define DO_GRAPH_ASSEMBLY  1
-#define DO_MATRIX_ASSEMBLY 0
+#define DO_MATRIX_ASSEMBLY 1
 
 
 int main (int argc, char *argv[]) 
@@ -152,12 +152,12 @@ int main (int argc, char *argv[])
     //   - node 1 inserts [0, 1, 4, 5]
     //   - node 4 inserts [0, 1, 4, 5]
     //   - node 5 inserts [0, 1, 4, 5]
+    //
+    // For Type-2 Graph Construction we only insert into crs_graph_overlapping
+    //
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
        crs_graph_overlapping->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
-
-       // TODO: [Type-2 Graph Insertion]
-       //       - Insert into only the overlapping_graph.
     }
   }
 
@@ -165,9 +165,7 @@ int main (int argc, char *argv[])
   crs_graph_overlapping->fillComplete();
 
   // Need to Export and fillComplete the crs_graph_owned structure...
-
   // NOTE: Need to implement a graph transferAndFillComplete() method.
-
   ExportType exporter(overlapping_row_map, owned_row_map); 
 
   //crs_graph->transferAndFillComplete();
@@ -176,7 +174,6 @@ int main (int argc, char *argv[])
 
   // Let's see what we have
   crs_graph_owned->describe(*out, Teuchos::VERB_EXTREME);
-
   crs_graph_overlapping->describe(*out, Teuchos::VERB_EXTREME);
 
 #endif   // DO_GRAPH_ASSEMBLY
@@ -225,7 +222,8 @@ int main (int argc, char *argv[])
   // - sumIntoGlobalValues( 7,  [  2  3  7  6  ],  [  0  -1  2  -1  ])
   // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
 
-  RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph_owned));
+  RCP<MatrixType> crs_matrix_owned       = rcp(new MatrixType(crs_graph_owned));
+  RCP<MatrixType> crs_matrix_overlapping = rcp(new MatrixType(crs_graph_overlapping));
 
   // TODO: [Type-2 Assembly]
   //       - Need to create a crs_matrix_owned and crs_matrix_overlapping
@@ -255,7 +253,7 @@ int main (int argc, char *argv[])
     
     // For each node (row) on the current element:
     // - populate the values array
-    // - add the values to the crs_matrix.
+    // - add the values to the crs_matrix_owned.
     // Note: hardcoded 4 here because we're using quads.
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
     { 
@@ -266,10 +264,10 @@ int main (int argc, char *argv[])
         column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
       }
 
-      crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+      crs_matrix_overlapping->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
 
       // TODO: [Type-2 Assembly]
-      //       - Only sumInto the overlapping crs_matrix
+      //       - Only sumInto the overlapping crs_matrix_owned
 
 #if 1
       // Print out the row's contribution...
@@ -293,9 +291,17 @@ int main (int argc, char *argv[])
     }
   }
 
+  // TODO: [Type-2 Assembly]
+  // - 
+
   // After the contributions are added, 'finalize' the matrix using fillComplete()
-  crs_matrix->fillComplete();
-  crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
+  crs_matrix_overlapping->fillComplete();
+
+  crs_matrix_owned->doExport(*crs_matrix_overlapping, exporter, Tpetra::ADD);
+  crs_matrix_owned->fillComplete();
+
+  crs_matrix_owned->describe(*out, Teuchos::VERB_EXTREME);
+  crs_matrix_overlapping->describe(*out, Teuchos::VERB_EXTREME);
 
 #endif  // DO_MATRIX_ASSEMBLY
   
@@ -304,6 +310,61 @@ int main (int argc, char *argv[])
 
   return 0;
 }  // END main()
+
+
+#if 0
+
+  // Call fillComplete on the crs_graph_owned to 'finalize' it.
+  crs_graph_overlapping->fillComplete();
+
+  // Need to Export and fillComplete the crs_graph_owned structure...
+  // NOTE: Need to implement a graph transferAndFillComplete() method.
+  ExportType exporter(overlapping_row_map, owned_row_map); 
+
+  //crs_graph->transferAndFillComplete();
+  crs_graph_owned->doExport(*crs_graph_overlapping, exporter, Tpetra::INSERT);
+  crs_graph_owned->fillComplete();
+
+  // Let's see what we have
+  crs_graph_owned->describe(*out, Teuchos::VERB_EXTREME);
+  crs_graph_overlapping->describe(*out, Teuchos::VERB_EXTREME);
+
+
+
+// From Lesson05
+  RCP<crs_matrix_type> B;
+  {
+    // We created exportTimer in main().  It's a global timer.
+    // Actually starting and stopping the timer is local, but
+    // computing timer statistics (e.g., in TimeMonitor::summarize(),
+    // called in main()) is global.  There are ways to restrict the
+    // latter to any given MPI communicator; the default is
+    // MPI_COMM_WORLD.
+    TimeMonitor monitor (*exportTimer); // Time the redistribution
+
+    // Make an export object with procZeroMap as the source Map, and
+    // globalMap as the target Map.  The Export type has the same
+    // template parameters as a Map.  Note that Export does not depend
+    // on the Scalar template parameter of the objects it
+    // redistributes.  You can reuse the same Export for different
+    // Tpetra object types, or for Tpetra objects of the same type but
+    // different Scalar template parameters (e.g., Scalar=float or
+    // Scalar=double).
+    typedef Tpetra::Export<> export_type;
+    export_type exporter (procZeroMap, globalMap);
+
+    // Make a new sparse matrix whose row map is the global Map.
+    B = rcp (new crs_matrix_type (globalMap, 0));
+
+    // Redistribute the data, NOT in place, from matrix A (which lives
+    // entirely on Proc 0) to matrix B (which is distributed evenly over
+    // the processes).
+    B->doExport (*A, exporter, Tpetra::INSERT);
+  }
+
+  // We time redistribution of B separately from fillComplete().
+  B->fillComplete ();
+#endif
 
 
 #if 0
