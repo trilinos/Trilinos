@@ -172,6 +172,12 @@ public:
       obj_   = opt.getObjective();
       bnd_   = opt.getBoundConstraint();
       con_   = opt.getConstraint();
+      if( stepType_ == STEP_TRUSTREGION ) {
+        pen_ = parlist.sublist("Step").sublist("Trust Region").get("Initial Radius",ten);
+      }
+      else if( stepType_ == STEP_BUNDLE ) {
+        pen_ = parlist.sublist("Step").sublist("Bundle").get("Initial Trust-Region Parameter",ten);
+      }
     }
   }
 
