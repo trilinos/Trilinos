@@ -39,8 +39,7 @@ PATTERN="(Xpetra|MueLu)"
 OUTFILE="test-summary-${timeStamp}"
 MAILCOMMAND="/usr/sbin/sendmail"
 RECIPIENTS=(
-"csiefer@sandia.gov"
-"jhu@sandia.gov"
+"muelu-regression@software.sandia.gov"
 )
 
 backupFile="cron_driver.log.$timeStamp"
