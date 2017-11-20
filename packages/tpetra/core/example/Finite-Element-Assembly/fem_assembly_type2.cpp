@@ -269,7 +269,7 @@ int main (int argc, char *argv[])
       // TODO: [Type-2 Assembly]
       //       - Only sumInto the overlapping crs_matrix_owned
 
-#if 1
+#if 0
       // Print out the row's contribution...
       if(1 == mpiSession.getNProc()) 
       {
