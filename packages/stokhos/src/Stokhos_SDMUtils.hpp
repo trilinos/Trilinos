@@ -49,11 +49,8 @@
 #include "Teuchos_LAPACK.hpp"
 #include <ostream>
 
-#define DGEQPF_F77  F77_BLAS_MANGLE(dgeqpf,DGEQPF)
 #define DGEQP3_F77  F77_BLAS_MANGLE(dgeqp3,DGEQP3)
 extern "C" {
-void DGEQPF_F77(const int*, const int*, double*, const int*, int*, double*,
-                double*, int*);
 void DGEQP3_F77(const int*, const int*, double*, const int*, int*,
                 double*, double*, const int*, int*);
 }
@@ -389,78 +386,6 @@ namespace Stokhos {
    * Q m-by-k and R k-by-n.
    *
    * The QR factorization is computed by the corresponding LAPACK function.
-   */
-  template <typename ordinal_type, typename scalar_type>
-  void
-  CPQR_Householder(
-    const Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& A,
-    Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& Q,
-    Teuchos::SerialDenseMatrix<ordinal_type,scalar_type>& R,
-    Teuchos::Array<ordinal_type>& piv)
-  {
-    Teuchos::LAPACK<ordinal_type,scalar_type> lapack;
-    ordinal_type m = A.numRows();
-    ordinal_type n = A.numCols();
-    ordinal_type k = std::min(m,n);
-
-    // Lapack routine overwrites A, so copy into temporary matrix
-    Teuchos::SerialDenseMatrix<ordinal_type,scalar_type> AA(
-      Teuchos::Copy, A, m, n);
-    if (Q.numRows() != m || Q.numCols() != k)
-      Q.shape(m,k);
-
-    // Teuchos LAPACK interface doesn't have dgeqpf, so call it directly
-
-    // Column pivoted QR
-    ordinal_type lda = AA.stride();
-    piv.resize(n);
-    Teuchos::Array<scalar_type> tau(k);
-    Teuchos::Array<scalar_type> work(3*n);
-    ordinal_type info;
-    DGEQPF_F77(&m, &n, AA.values(), &lda, &piv[0], &tau[0], &work[0], &info);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      info < 0, std::logic_error, "dgeqp3 returned info = " << info);
-
-    // Extract R
-    if (R.numRows() != k || R.numCols() != n)
-      R.shape(k,n);
-    R.putScalar(0.0);
-    for (ordinal_type i=0; i<k; i++)
-      for (ordinal_type j=i; j<n; j++)
-        R(i,j) = AA(i,j);
-
-    // Extract Q
-    ordinal_type lwork = -1;
-    lapack.ORGQR(m, k, k, AA.values(), lda, &tau[0], &work[0], lwork, &info);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      info < 0, std::logic_error, "orgqr returned info = " << info);
-    lwork = work[0];
-    work.resize(lwork);
-    lapack.ORGQR(m, k, k, AA.values(), lda, &tau[0], &work[0], lwork, &info);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      info < 0, std::logic_error, "orgqr returned info = " << info);
-    if (Q.numRows() != m || Q.numCols() != k)
-      Q.shape(m, k);
-    for (ordinal_type i=0; i<m; i++)
-      for (ordinal_type j=0; j<k; j++)
-        Q(i,j) = AA(i,j);
-
-    // Transform piv to zero-based indexing
-    for (ordinal_type i=0; i<n; i++)
-      piv[i] -= 1;
-  }
-
-  //! Compute column-pivoted QR using Householder reflections
-  /*!
-   * For A an m-by-n matrix with m >= n, computes A*P = Q*R with R
-   * n-by-n upper triangular and Q m-by-n with orthogonal columns (often
-   * called the economy size QR) and P an m-by-n permutation matrix.  For
-   * n >= m, computes A*P = Q*R with R m-by-n upper trapezoidal and Q
-   * m-by-m upper trapezoidal (R = [R_1 R_2] with R_1 upper triangular and
-   * R_2 rectangular).  For k = min(m,n), both cases are handled with
-   * Q m-by-k and R k-by-n.
-   *
-   * The QR factorization is computed by the corresponding LAPACK function.
    * This version uses the BLAS3-rich xGEQP3.
    */
   template <typename ordinal_type, typename scalar_type>
@@ -569,7 +494,7 @@ namespace Stokhos {
         "CPQR_Householder_threshold() requires unit weight vector!");
 
     // Compute full QR
-    CPQR_Householder(A, Q, R, piv);
+    CPQR_Householder3(A, Q, R, piv);
 
     // Find leading block of R such that cond(R) <= 1/tau
     ordinal_type rank = 0;
