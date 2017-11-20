@@ -765,7 +765,7 @@ public:
           setAlmostSureEquality(xsampler[i],i);
         }
         else if ( type == "Mean Value" ) {
-          setMeanValue(xsampler[i],i);
+          setMeanValueEquality(xsampler[i],i);
         }
         else {
           throw Exception::NotImplemented(">>> ROL::OptimizationProblem::SetStochasticEquality: Invalid stochastic constraint type!");
@@ -788,7 +788,7 @@ public:
                              const Teuchos::RCP<BatchManager<Real> > &cbman) {
     std::vector<Teuchos::ParameterList> cparlist(1,parlist);
     std::vector<Teuchos::RCP<SampleGenerator<Real> > > cxsampler(1,xsampler);
-    std::vector<Teuchos::RCP<SampleGenerator<Real> > > ccbman(1,cbman);
+    std::vector<Teuchos::RCP<BatchManager<Real> > > ccbman(1,cbman);
     setStochasticEquality(cparlist,cxsampler,ccbman);
   }
 
