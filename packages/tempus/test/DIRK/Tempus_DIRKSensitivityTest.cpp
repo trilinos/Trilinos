@@ -40,6 +40,7 @@ using Tempus::IntegratorBasic;
 using Tempus::SolutionHistory;
 using Tempus::SolutionState;
 
+
 // ************************************************************
 // ************************************************************
 void test_sincos_fsa(const bool use_combined_method,
@@ -47,44 +48,34 @@ void test_sincos_fsa(const bool use_combined_method,
                      Teuchos::FancyOStream &out, bool &success)
 {
   std::vector<std::string> RKMethods;
-  RKMethods.push_back("RK Forward Euler");
-  RKMethods.push_back("RK Explicit 4 Stage");
-  RKMethods.push_back("RK Explicit 3/8 Rule");
-  RKMethods.push_back("RK Explicit 4 Stage 3rd order by Runge");
-  RKMethods.push_back("RK Explicit 5 Stage 3rd order by Kinnmark and Gray");
-  RKMethods.push_back("RK Explicit 3 Stage 3rd order");
-  RKMethods.push_back("RK Explicit 3 Stage 3rd order TVD");
-  RKMethods.push_back("RK Explicit 3 Stage 3rd order by Heun");
-  RKMethods.push_back("RK Explicit 2 Stage 2nd order by Runge");
-  RKMethods.push_back("RK Explicit Trapezoidal");
-  RKMethods.push_back("General ERK");
+  RKMethods.push_back("SDIRK 1 Stage 1st order");
+  RKMethods.push_back("SDIRK 2 Stage 2nd order");
+  RKMethods.push_back("SDIRK 2 Stage 3rd order");
+  RKMethods.push_back("EDIRK 2 Stage 3rd order");
+  RKMethods.push_back("SDIRK 3 Stage 4th order");
+  RKMethods.push_back("SDIRK 5 Stage 4th order");
+  RKMethods.push_back("SDIRK 5 Stage 5th order");
+
   std::vector<double> RKMethodErrors;
   if (use_combined_method) {
-    RKMethodErrors.push_back(0.183799);
-    RKMethodErrors.push_back(6.88637e-06);
-    RKMethodErrors.push_back(6.88637e-06);
-    RKMethodErrors.push_back(0.000264154);
-    RKMethodErrors.push_back(5.22798e-05);
-    RKMethodErrors.push_back(0.000261896);
-    RKMethodErrors.push_back(0.000261896);
-    RKMethodErrors.push_back(0.000261896);
-    RKMethodErrors.push_back(0.00934377);
-    RKMethodErrors.push_back(0.00934377);
-    RKMethodErrors.push_back(6.88637e-06);
+    RKMethodErrors.push_back(0.0428449);
+    RKMethodErrors.push_back(0.000144507);
+    RKMethodErrors.push_back(8.65434e-06);
+    RKMethodErrors.push_back(1.3468e-06);
+    RKMethodErrors.push_back(5.44037e-07);
+    RKMethodErrors.push_back(2.77342e-09);
+    RKMethodErrors.push_back(1.21689e-10);
   }
   else {
-    RKMethodErrors.push_back(0.183799);
-    RKMethodErrors.push_back(2.1915e-05);
-    RKMethodErrors.push_back(2.23367e-05);
-    RKMethodErrors.push_back(0.000205051);
-    RKMethodErrors.push_back(2.85141e-05);
-    RKMethodErrors.push_back(0.000126478);
-    RKMethodErrors.push_back(9.64964e-05);
-    RKMethodErrors.push_back(0.000144616);
-    RKMethodErrors.push_back(0.00826159);
-    RKMethodErrors.push_back(0.00710492);
-    RKMethodErrors.push_back(2.1915e-05);
+    RKMethodErrors.push_back(0.0428449);
+    RKMethodErrors.push_back(0.000125232);
+    RKMethodErrors.push_back(4.79475e-06);
+    RKMethodErrors.push_back(9.63899e-07);
+    RKMethodErrors.push_back(2.9362e-07);
+    RKMethodErrors.push_back(9.20081e-08);
+    RKMethodErrors.push_back(9.16252e-08);
   }
+
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
   Teuchos::RCP<Teuchos::FancyOStream> my_out =
@@ -99,14 +90,14 @@ void test_sincos_fsa(const bool use_combined_method,
     std::replace(RKMethod_.begin(), RKMethod_.end(), '/', '.');
     std::vector<double> StepSize;
     std::vector<double> ErrorNorm;
-    const int nTimeStepSizes = 7;
-    double dt = 0.2;
+    const int nTimeStepSizes = 3; // 7 for error plots
+    double dt = 0.05;
     double order = 0.0;
     for (int n=0; n<nTimeStepSizes; n++) {
 
       // Read params from .xml file
       RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_ExplicitRK_SinCos.xml");
+        getParametersFromXmlFile("Tempus_DIRK_SinCos.xml");
 
       // Setup the SinCosModel
       RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
@@ -116,12 +107,14 @@ void test_sincos_fsa(const bool use_combined_method,
 
       // Set the Stepper
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-      if (RKMethods[m] == "General ERK") {
-        pl->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper 2");
-      } else {
-        pl->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
+      pl->sublist("Default Stepper").set("Stepper Type", RKMethods[m]);
+      if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
+        pl->sublist("Default Stepper").set("gamma", 0.2928932190);
+      } else if (RKMethods[m] == "SDIRK 2 Stage 3rd order") {
+        pl->sublist("Default Stepper").set("3rd Order A-stable", true);
+        pl->sublist("Default Stepper").set("2nd Order L-stable", false);
+        pl->sublist("Default Stepper").set("gamma", 0.7886751347);
       }
-
 
       dt /= 2;
 
@@ -133,22 +126,21 @@ void test_sincos_fsa(const bool use_combined_method,
         sens_pl.set("Sensitivity Method", "Staggered");
       sens_pl.set("Use DfDp as Tangent", use_dfdp_as_tangent);
       ParameterList& interp_pl =
-        pl->sublist("Demo Integrator").sublist("Solution History").sublist("Interpolator");
+        pl->sublist("Default Integrator").sublist("Solution History").sublist("Interpolator");
       interp_pl.set("Interpolator Type", "Lagrange");
-      interp_pl.set("Order", 3); // All RK methods here are at most 4th order
+      interp_pl.set("Order", 4); // All RK methods here are at most 5th order
 
       // Setup the Integrator and reset initial time step
-      pl->sublist("Demo Integrator")
-        .sublist("Time Step Control").set("Initial Time Step", dt);
+      pl->sublist("Default Integrator")
+         .sublist("Time Step Control").set("Initial Time Step", dt);
       RCP<Tempus::IntegratorForwardSensitivity<double> > integrator =
         Tempus::integratorForwardSensitivity<double>(pl, model);
       order = integrator->getStepper()->getOrder();
 
       // Initial Conditions
-      double t0 = pl->sublist("Demo Integrator")
-        .sublist("Time Step Control").get<double>("Initial Time");
-      // RCP<const Thyra::VectorBase<double> > x0 =
-      //   model->getExactSolution(t0).get_x()->clone_v();
+      // During the Integrator construction, the initial SolutionState
+      // is set by default to model->getNominalVales().get_x().  However,
+      // the application can set it also by integrator->setInitialState.
       RCP<Thyra::VectorBase<double> > x0 =
         model->getNominalValues().get_x()->clone_v();
       const int num_param = model->get_p_space(0)->dim();
@@ -156,8 +148,8 @@ void test_sincos_fsa(const bool use_combined_method,
         Thyra::createMembers(model->get_x_space(), num_param);
       for (int i=0; i<num_param; ++i)
         Thyra::assign(DxDp0->col(i).ptr(),
-                      *(model->getExactSensSolution(i, t0).get_x()));
-      integrator->setInitialState(t0, x0, Teuchos::null, Teuchos::null,
+                      *(model->getExactSensSolution(i, 0.0).get_x()));
+      integrator->setInitialState(0.0, x0, Teuchos::null, Teuchos::null,
                                   DxDp0, Teuchos::null, Teuchos::null);
 
       // Integrate to timeMax
@@ -166,9 +158,10 @@ void test_sincos_fsa(const bool use_combined_method,
 
       // Test if at 'Final Time'
       double time = integrator->getTime();
-      double timeFinal = pl->sublist("Demo Integrator")
+      double timeFinal = pl->sublist("Default Integrator")
         .sublist("Time Step Control").get<double>("Final Time");
-      TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+      double tol = 100.0 * std::numeric_limits<double>::epsilon();
+      TEST_FLOATING_EQUALITY(time, timeFinal, tol);
 
       // Time-integrated solution and the exact solution
       RCP<const Thyra::VectorBase<double> > x = integrator->getX();
@@ -241,6 +234,24 @@ void test_sincos_fsa(const bool use_combined_method,
               << std::endl;
     }
 
+    if (comm->getRank() == 0) {
+      std::ofstream ftmp("Tempus_"+RKMethod_+"_SinCos_Sens-Error.dat");
+      double error0 = 0.8*ErrorNorm[0];
+      for (int n=0; n<(int)StepSize.size(); n++) {
+        ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
+             << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
+      }
+      ftmp.close();
+    }
+
+    //if (RKMethods[m] == "SDIRK 5 Stage 4th order") {
+    //  StepSize.pop_back();  StepSize.pop_back();
+    //  ErrorNorm.pop_back(); ErrorNorm.pop_back();
+    //} else if (RKMethods[m] == "SDIRK 5 Stage 5th order") {
+    //  StepSize.pop_back();  StepSize.pop_back();  StepSize.pop_back();
+    //  ErrorNorm.pop_back(); ErrorNorm.pop_back(); ErrorNorm.pop_back();
+    //}
+
     // Check the order and intercept
     double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
     *my_out << "  Stepper = " << RKMethods[m] << std::endl;
@@ -248,39 +259,32 @@ void test_sincos_fsa(const bool use_combined_method,
     *my_out << "  Expected order: " << order << std::endl;
     *my_out << "  Observed order: " << slope << std::endl;
     *my_out << "  =========================" << std::endl;
-    TEST_FLOATING_EQUALITY( slope, order, 0.04 );
-    TEST_FLOATING_EQUALITY( ErrorNorm[0], RKMethodErrors[m], 1.0e-4 );
 
-    if (comm->getRank() == 0) {
-      std::ofstream ftmp("Tempus_"+RKMethod_+"_SinCos_Sens-Error.dat");
-      double error0 = 0.8*ErrorNorm[0];
-      for (int n=0; n<nTimeStepSizes; n++) {
-        ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-             << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
-      }
-      ftmp.close();
-    }
+    // Can only seem to get at most 4th order when using staggered method
+    double order_expected = use_combined_method ? order : std::min(order,4.0);
+    TEST_FLOATING_EQUALITY( slope, order_expected, 0.03 );
+    TEST_FLOATING_EQUALITY( ErrorNorm[0], RKMethodErrors[m], 5.0e-4 );
+
   }
-
   Teuchos::TimeMonitor::summarize();
 }
 
-TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_Combined_FSA)
+TEUCHOS_UNIT_TEST(DIRK, SinCos_Combined_FSA)
 {
   test_sincos_fsa(true, false, out, success);
 }
 
-TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_Combined_FSA_Tangent)
+TEUCHOS_UNIT_TEST(DIRK, SinCos_Combined_FSA_Tangent)
 {
   test_sincos_fsa(true, true, out, success);
 }
 
-TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_Staggered_FSA)
+TEUCHOS_UNIT_TEST(DIRK, SinCos_Staggered_FSA)
 {
   test_sincos_fsa(false, false, out, success);
 }
 
-TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_Staggered_FSA_Tangent)
+TEUCHOS_UNIT_TEST(DIRK, SinCos_Staggered_FSA_Tangent)
 {
   test_sincos_fsa(false, true, out, success);
 }
@@ -294,7 +298,7 @@ void test_pseudotransient_fsa(const bool use_dfdp_as_tangent,
 {
   // Read params from .xml file
   RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_ExplicitRK_SteadyQuadratic.xml");
+    getParametersFromXmlFile("Tempus_DIRK_SteadyQuadratic.xml");
 
   // Setup the SteadyQuadraticModel
   RCP<ParameterList> scm_pl = sublist(pList, "SteadyQuadraticModel", true);
@@ -306,6 +310,9 @@ void test_pseudotransient_fsa(const bool use_dfdp_as_tangent,
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
   ParameterList& sens_pl = pl->sublist("Sensitivities");
   sens_pl.set("Use DfDp as Tangent", use_dfdp_as_tangent);
+  sens_pl.set("Reuse State Linear Solver", true);
+  sens_pl.set("Force W Update", true); // Have to do this because for this
+  // model the solver seems to be overwriting the matrix
 
   // Setup the Integrator
   RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<double> > integrator =
@@ -317,7 +324,7 @@ void test_pseudotransient_fsa(const bool use_dfdp_as_tangent,
 
   // Test if at 'Final Time'
   double time = integrator->getTime();
-  double timeFinal = pl->sublist("Demo Integrator")
+  double timeFinal = pl->sublist("Default Integrator")
     .sublist("Time Step Control").get<double>("Final Time");
   TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 
@@ -333,44 +340,37 @@ void test_pseudotransient_fsa(const bool use_dfdp_as_tangent,
   TEST_FLOATING_EQUALITY( dxdb, dxdb_exact, 1.0e-6 );
 }
 
-TEUCHOS_UNIT_TEST(ExplicitRK, SteadyQuadratic_PseudoTransient_FSA)
+TEUCHOS_UNIT_TEST(DIRK, SteadyQuadratic_PseudoTransient_FSA)
 {
   test_pseudotransient_fsa(false, out, success);
 }
 
-TEUCHOS_UNIT_TEST(ExplicitRK, SteadyQuadratic_PseudoTransient_FSA_Tangent)
+TEUCHOS_UNIT_TEST(DIRK, SteadyQuadratic_PseudoTransient_FSA_Tangent)
 {
   test_pseudotransient_fsa(true, out, success);
 }
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
+TEUCHOS_UNIT_TEST(DIRK, SinCos_ASA)
 {
   std::vector<std::string> RKMethods;
-  RKMethods.push_back("RK Forward Euler");
-  RKMethods.push_back("RK Explicit 4 Stage");
-  RKMethods.push_back("RK Explicit 3/8 Rule");
-  RKMethods.push_back("RK Explicit 4 Stage 3rd order by Runge");
-  RKMethods.push_back("RK Explicit 5 Stage 3rd order by Kinnmark and Gray");
-  RKMethods.push_back("RK Explicit 3 Stage 3rd order");
-  RKMethods.push_back("RK Explicit 3 Stage 3rd order TVD");
-  RKMethods.push_back("RK Explicit 3 Stage 3rd order by Heun");
-  RKMethods.push_back("RK Explicit 2 Stage 2nd order by Runge");
-  RKMethods.push_back("RK Explicit Trapezoidal");
-  RKMethods.push_back("General ERK");
+  RKMethods.push_back("SDIRK 1 Stage 1st order");
+  RKMethods.push_back("SDIRK 2 Stage 2nd order");
+  RKMethods.push_back("SDIRK 2 Stage 3rd order");
+  RKMethods.push_back("EDIRK 2 Stage 3rd order");
+  RKMethods.push_back("SDIRK 3 Stage 4th order");
+  RKMethods.push_back("SDIRK 5 Stage 4th order");
+  RKMethods.push_back("SDIRK 5 Stage 5th order");
+
   std::vector<double> RKMethodErrors;
-  RKMethodErrors.push_back(0.154904);
-  RKMethodErrors.push_back(4.55982e-06);
-  RKMethodErrors.push_back(4.79132e-06);
-  RKMethodErrors.push_back(0.000113603);
-  RKMethodErrors.push_back(4.98796e-05);
-  RKMethodErrors.push_back(0.00014564);
-  RKMethodErrors.push_back(0.000121968);
-  RKMethodErrors.push_back(0.000109495);
-  RKMethodErrors.push_back(0.00559871);
-  RKMethodErrors.push_back(0.00710492);
-  RKMethodErrors.push_back(4.55982e-06);
+  RKMethodErrors.push_back(0.0383339);
+  RKMethodErrors.push_back(8.48235e-05);
+  RKMethodErrors.push_back(4.87848e-06);
+  RKMethodErrors.push_back(7.30827e-07);
+  RKMethodErrors.push_back(3.10132e-07);
+  RKMethodErrors.push_back(7.56838e-10);
+  RKMethodErrors.push_back(1.32374e-10);
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
@@ -386,14 +386,14 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
     std::replace(RKMethod_.begin(), RKMethod_.end(), '/', '.');
     std::vector<double> StepSize;
     std::vector<double> ErrorNorm;
-    const int nTimeStepSizes = 7;
-    double dt = 0.2;
+    const int nTimeStepSizes = 3; // 7 for error plots
+    double dt = 0.05;
     double order = 0.0;
     for (int n=0; n<nTimeStepSizes; n++) {
 
       // Read params from .xml file
       RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_ExplicitRK_SinCos.xml");
+        getParametersFromXmlFile("Tempus_DIRK_SinCos.xml");
 
       // Setup the SinCosModel
       RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
@@ -402,12 +402,14 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
 
       // Set the Stepper
       RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-      if (RKMethods[m] == "General ERK") {
-        pl->sublist("Demo Integrator").set("Stepper Name", "Demo Stepper 2");
-      } else {
-        pl->sublist("Demo Stepper").set("Stepper Type", RKMethods[m]);
+      pl->sublist("Default Stepper").set("Stepper Type", RKMethods[m]);
+      if (RKMethods[m] == "SDIRK 2 Stage 2nd order") {
+        pl->sublist("Default Stepper").set("gamma", 0.2928932190);
+      } else if (RKMethods[m] == "SDIRK 2 Stage 3rd order") {
+        pl->sublist("Default Stepper").set("3rd Order A-stable", true);
+        pl->sublist("Default Stepper").set("2nd Order L-stable", false);
+        pl->sublist("Default Stepper").set("gamma", 0.7886751347);
       }
-
 
       dt /= 2;
 
@@ -415,22 +417,21 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
       ParameterList& sens_pl = pl->sublist("Sensitivities");
       sens_pl.set("Mass Matrix Is Identity", true); // Necessary for explicit
       ParameterList& interp_pl =
-        pl->sublist("Demo Integrator").sublist("Solution History").sublist("Interpolator");
+        pl->sublist("Default Integrator").sublist("Solution History").sublist("Interpolator");
       interp_pl.set("Interpolator Type", "Lagrange");
-      interp_pl.set("Order", 3); // All RK methods here are at most 4th order
+      interp_pl.set("Order", 4); // All RK methods here are at most 5th order
 
       // Setup the Integrator and reset initial time step
-      pl->sublist("Demo Integrator")
-        .sublist("Time Step Control").set("Initial Time Step", dt);
+      pl->sublist("Default Integrator")
+         .sublist("Time Step Control").set("Initial Time Step", dt);
       RCP<Tempus::IntegratorAdjointSensitivity<double> > integrator =
         Tempus::integratorAdjointSensitivity<double>(pl, model);
       order = integrator->getStepper()->getOrder();
 
       // Initial Conditions
-      double t0 = pl->sublist("Demo Integrator")
-        .sublist("Time Step Control").get<double>("Initial Time");
-      // RCP<const Thyra::VectorBase<double> > x0 =
-      //   model->getExactSolution(t0).get_x()->clone_v();
+      // During the Integrator construction, the initial SolutionState
+      // is set by default to model->getNominalVales().get_x().  However,
+      // the application can set it also by integrator->setInitialState.
       RCP<Thyra::VectorBase<double> > x0 =
         model->getNominalValues().get_x()->clone_v();
       const int num_param = model->get_p_space(0)->dim();
@@ -438,8 +439,8 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
         Thyra::createMembers(model->get_x_space(), num_param);
       for (int i=0; i<num_param; ++i)
         Thyra::assign(DxDp0->col(i).ptr(),
-                      *(model->getExactSensSolution(i, t0).get_x()));
-      integrator->setInitialState(t0, x0, Teuchos::null, Teuchos::null,
+                      *(model->getExactSensSolution(i, 0.0).get_x()));
+      integrator->setInitialState(0.0, x0, Teuchos::null, Teuchos::null,
                                   DxDp0, Teuchos::null, Teuchos::null);
 
       // Integrate to timeMax
@@ -448,9 +449,10 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
 
       // Test if at 'Final Time'
       double time = integrator->getTime();
-      double timeFinal = pl->sublist("Demo Integrator")
+      double timeFinal = pl->sublist("Default Integrator")
         .sublist("Time Step Control").get<double>("Final Time");
-      TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
+      double tol = 100.0 * std::numeric_limits<double>::epsilon();
+      TEST_FLOATING_EQUALITY(time, timeFinal, tol);
 
       // Time-integrated solution and the exact solution along with
       // sensitivities (relying on response g(x) = x).  Note we must transpose
@@ -475,7 +477,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
         Thyra::assign(DxDp_exact->col(i).ptr(),
                       *(model->getExactSensSolution(i, time).get_x()));
 
-      // Plot sample solution, exact solution, and adjoint solution
+      // Plot sample solution and exact solution
       if (comm->getRank() == 0 && n == nTimeStepSizes-1) {
         typedef Thyra::DefaultProductVector<double> DPV;
         typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
@@ -531,6 +533,24 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
               << std::endl;
     }
 
+    if (comm->getRank() == 0) {
+      std::ofstream ftmp("Tempus_"+RKMethod_+"_SinCos_AdjSens-Error.dat");
+      double error0 = 0.8*ErrorNorm[0];
+      for (int n=0; n<(int)StepSize.size(); n++) {
+        ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
+             << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
+      }
+      ftmp.close();
+    }
+
+    //if (RKMethods[m] == "SDIRK 5 Stage 4th order") {
+    //  StepSize.pop_back();  StepSize.pop_back();
+    //  ErrorNorm.pop_back(); ErrorNorm.pop_back();
+    //} else if (RKMethods[m] == "SDIRK 5 Stage 5th order") {
+    //  StepSize.pop_back();  StepSize.pop_back();  StepSize.pop_back();
+    //  ErrorNorm.pop_back(); ErrorNorm.pop_back(); ErrorNorm.pop_back();
+    //}
+
     // Check the order and intercept
     double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
     *my_out << "  Stepper = " << RKMethods[m] << std::endl;
@@ -538,20 +558,10 @@ TEUCHOS_UNIT_TEST(ExplicitRK, SinCos_ASA)
     *my_out << "  Expected order: " << order << std::endl;
     *my_out << "  Observed order: " << slope << std::endl;
     *my_out << "  =========================" << std::endl;
-    TEST_FLOATING_EQUALITY( slope, order, 0.015 );
-    TEST_FLOATING_EQUALITY( ErrorNorm[0], RKMethodErrors[m], 1.0e-4 );
+    TEST_FLOATING_EQUALITY( slope, order, 0.03 );
+    TEST_FLOATING_EQUALITY( ErrorNorm[0], RKMethodErrors[m], 5.0e-4 );
 
-    if (comm->getRank() == 0) {
-      std::ofstream ftmp("Tempus_"+RKMethod_+"_SinCos_AdjSens-Error.dat");
-      double error0 = 0.8*ErrorNorm[0];
-      for (int n=0; n<nTimeStepSizes; n++) {
-        ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
-             << error0*(pow(StepSize[n]/StepSize[0],order)) << std::endl;
-      }
-      ftmp.close();
-    }
   }
-
   Teuchos::TimeMonitor::summarize();
 }
 

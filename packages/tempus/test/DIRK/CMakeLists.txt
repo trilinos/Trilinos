@@ -8,7 +8,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  DIRKSensitivity
+  SOURCES Tempus_DIRKSensitivityTest.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_DIRK_CopyFiles
-  DEST_FILES Tempus_DIRK_SinCos.xml Tempus_DIRK_VanDerPol.xml
+  DEST_FILES Tempus_DIRK_SinCos.xml Tempus_DIRK_VanDerPol.xml Tempus_DIRK_SteadyQuadratic.xml
   EXEDEPS DIRK
   )
