@@ -102,7 +102,7 @@ private:
   }
 
   inline bool nodeIsOwned(GlobalOrdinal i, GlobalOrdinal j) { 
-    return myNodeStart_[0] <= i &&  i < myNodeStop_[0] && myNodeStart_[1] <= j &&  j < myNodeStop_[0];
+    return myNodeStart_[0] <= i &&  i < myNodeStop_[0] && myNodeStart_[1] <= j &&  j < myNodeStop_[1];
   }
 
   inline GlobalOrdinal idx_from_ij(int num_x, GlobalOrdinal i, GlobalOrdinal j) const {
@@ -251,10 +251,15 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
   for(size_t k=0; k<ownedElementToNode_.dimension(0); k++) {
     for(size_t l=0; l<ownedElementToNode_.dimension(1); l++) {
       GlobalOrdinal nidx=ownedElementToNode_(k,l);
-      if(!nodeIsOwned(nidx)) 
+      if(!nodeIsOwned(nidx)) {
         my_ghost_nodes.insert(nidx);
+        std::cout << "E:" << ownedElementGlobalIDs_[k] << " not owned nidx = " << nidx << std::endl;
+      } else {
+        std::cout << "E:" << ownedElementGlobalIDs_[k] << "    owned nidx = " << nidx << std::endl;
+      }
     }
   }
+  
   Kokkos::resize(ghostNodeGlobalIDs_,my_ghost_nodes.size());
   for(auto k=my_ghost_nodes.begin(); k!=my_ghost_nodes.end(); k++) {
     size_t kk = distance(my_ghost_nodes.begin(),k);

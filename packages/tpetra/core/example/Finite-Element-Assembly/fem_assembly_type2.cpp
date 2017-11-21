@@ -45,6 +45,7 @@
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
+#include <MatrixMarket_Tpetra.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_FancyOStream.hpp>
@@ -302,6 +303,13 @@ int main (int argc, char *argv[])
 
   crs_matrix_owned->describe(*out, Teuchos::VERB_EXTREME);
   crs_matrix_overlapping->describe(*out, Teuchos::VERB_EXTREME);
+
+
+  std::ofstream ofs("type2.out", std::ofstream::out);
+
+  Tpetra::MatrixMarket::Writer<MatrixType>::writeSparse(ofs, crs_matrix_owned);
+
+  ofs.close();
 
 #endif  // DO_MATRIX_ASSEMBLY
   

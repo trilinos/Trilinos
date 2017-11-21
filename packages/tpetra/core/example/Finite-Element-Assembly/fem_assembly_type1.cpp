@@ -45,6 +45,7 @@
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Version.hpp>
+#include <MatrixMarket_Tpetra.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_FancyOStream.hpp>
@@ -243,7 +244,14 @@ int main (int argc, char *argv[])
   // After the contributions are added, 'finalize' the matrix using fillComplete()
   crs_matrix->fillComplete();
   crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
-  
+
+  std::ofstream ofs("type1.out", std::ofstream::out);
+
+  Tpetra::MatrixMarket::Writer<MatrixType>::writeSparse(ofs, crs_matrix);
+
+  ofs.close();
+
+
   // Finalize Kokkos
   Kokkos::finalize();
 
