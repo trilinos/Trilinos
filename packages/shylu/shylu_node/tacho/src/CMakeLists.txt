@@ -13,8 +13,9 @@ SET(TACHO_HAVE_BLAS ${TPL_ENABLE_BLAS})
 SET(TACHO_HAVE_METIS ${TPL_ENABLE_METIS})
 SET(TACHO_HAVE_METIS_MT ${TPL_ENABLE_MTMETIS})
 SET(TACHO_HAVE_SCOTCH ${TPL_ENABLE_Scotch})
-SET(TACHO_HAVE_CHOLMOD ${Trilinos_ENABLE_TrilinosSS})
-
+SET(TACHO_HAVE_TRILINOS_SS ${Trilinos_ENABLE_TrilinosSS})
+SET(TACHO_HAVE_SUITESPARSE ${TPL_ENABLE_Cholmod})
+                       
 SET(TACHO_HAVE_VTUNE ${TPL_ENABLE_VTune})
 
 #-----------------------------------------------------------------------------

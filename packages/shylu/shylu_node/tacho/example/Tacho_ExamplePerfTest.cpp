@@ -100,10 +100,11 @@ int main (int argc, char *argv[]) {
           b(i, rhs) = random.value();
     }
 
-    // 34 tiles share 1MB L2 separate cache
+    // KNL - 34 tiles share 1MB L2 separate cache
+    // Skylake - 33 MB shared L3
+    // V100 - do I need to flush ?
     constexpr size_t LLC_CAPACITY = 34*1024*1024;
     Tacho::Experimental::Flush<LLC_CAPACITY> flush;
-
 
     // -----------------------------------------------------------------
     if (test_tacho) {
@@ -263,7 +264,7 @@ int main (int argc, char *argv[]) {
         pardiso.showStat(std::cout, Pardiso::ReleaseAll) << std::endl;
       }
 #else
-      cout << "MKL is NOT configured in Trilinos" << endl;
+      std::cout << "MKL is NOT configured in Trilinos" << std::endl;
 #endif
     }
   }
