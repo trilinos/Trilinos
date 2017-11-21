@@ -93,6 +93,7 @@ namespace panzer {
     TEST_EQUALITY(static_cast<int>(basis.functional->size()), num_cells * 9);
     TEST_EQUALITY(static_cast<int>(basis.functional_grad->size()), num_cells * 9 * dim);
     TEST_EQUALITY(static_cast<int>(basis.functional_D2->size()), num_cells * 9 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.getBasis()->local_mat_layout->size()), num_cells * 9 * 9);
 
   }
 
@@ -139,6 +140,7 @@ namespace panzer {
     TEST_EQUALITY(static_cast<int>(basis.functional->size()), num_cells * 9);
     TEST_EQUALITY(static_cast<int>(basis.functional_grad->size()), num_cells * 9 * dim);
     TEST_EQUALITY(static_cast<int>(basis.functional_D2->size()), num_cells * 9 * dim * dim);
+    TEST_EQUALITY(static_cast<int>(basis.getBasis()->local_mat_layout->size()), num_cells * 9 * 9);
 
   }
 
