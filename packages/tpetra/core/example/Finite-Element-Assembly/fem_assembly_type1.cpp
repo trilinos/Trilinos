@@ -54,6 +54,8 @@
 #include "MeshDatabase.hpp"
 #include "Element.hpp"
 
+#define PRINT_VERBOSE 0
+
 
 
 int main (int argc, char *argv[]) 
@@ -62,6 +64,8 @@ int main (int argc, char *argv[])
   using Teuchos::TimeMonitor;
 
   const GlobalOrdinal GO_INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
+
+  auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
   
   // MPI boilerplate
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, NULL);
@@ -94,8 +98,9 @@ int main (int argc, char *argv[])
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
   RCP<const MapType> row_map = rcp(new MapType(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
 
-  auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
+  #if PRINT_VERBOSE
   row_map->describe(*out);
+  #endif
 
   // Type-1: Graph Construction
   // --------------------------
@@ -106,10 +111,11 @@ int main (int argc, char *argv[])
   auto domain_map = row_map;
   auto range_map  = row_map;
 
-  RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) Element Loop (Graph)")));
+  auto owned_element_to_node_ids = mesh.getOwnedElementToNode(); 
+
+  RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
   RCP<GraphType> crs_graph = rcp(new GraphType(row_map, 0));
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode(); 
   
   // This is 4 because we're using quads for this example,
   // so there will be 4 nodes associated with each element.
@@ -147,7 +153,9 @@ int main (int argc, char *argv[])
   }
 
   // Print out verbose information about the crs_graph.
+  #if PRINT_VERBOSE
   crs_graph->describe(*out, Teuchos::VERB_EXTREME);
+  #endif
 
 
   // Type-1: Matrix Fill
@@ -185,7 +193,7 @@ int main (int argc, char *argv[])
   // - sumIntoGlobalValues( 3,  [  2  3  7  6  ],  [  -1  2  -1  0  ])
   // - sumIntoGlobalValues( 7,  [  2  3  7  6  ],  [  0  -1  2  -1  ])
   // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
-  RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) Element Loop (Matrix)")));
+  RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) ElementLoop  (Matrix)")));
 
   RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph));
 
@@ -198,11 +206,6 @@ int main (int argc, char *argv[])
   // Loop over elements
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
-#if 0
-    if(1 == mpiSession.getNProc()) 
-      std::cout << "Element " << element_gidx << std::endl;
-#endif
-
     // Get the contributions for the current element
     ReferenceQuad4(element_matrix);
 
@@ -226,26 +229,6 @@ int main (int argc, char *argv[])
       }
 
       crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-
-#if 0
-      // Print out the row's contribution...
-      if(1 == mpiSession.getNProc()) 
-      {
-        std::cout << "- sumIntoGlobalValues(" << std::setw(2) << global_row_id;
-        std::cout << ",  [  ";
-        for(size_t i=0; i<4; i++)
-        {
-          std::cout << column_global_ids[i] << "  ";
-        }
-        std::cout << "]";
-        std::cout << ",  [  ";
-        for(size_t i=0; i<4; i++)
-        {
-          std::cout << column_scalar_values[i] << "  ";
-        }
-        std::cout << "])" << std::endl;
-      }
-#endif
     }
   }
   timerElementLoopMatrix = Teuchos::null;
@@ -257,18 +240,18 @@ int main (int argc, char *argv[])
     crs_matrix->fillComplete();
   }
 
-  // Print out verbose information about the crs_matrix
+  // Print out crs_matrix details.
+  #if PRINT_VERBOSE
   crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
+  #endif
 
-  std::ofstream ofs("type1.out", std::ofstream::out);
-
+  // Save crs_matrix as a MatrixMarket file.
+  std::ofstream ofs("Finite-Element-Matrix-Assembly_Type1.out", std::ofstream::out);
   Tpetra::MatrixMarket::Writer<MatrixType>::writeSparse(ofs, crs_matrix);
-
   ofs.close();
 
+  // Print out timing results.
   TimeMonitor::report(comm.ptr(), std::cout, "");
-
-
 
   // Finalize Kokkos
   Kokkos::finalize();
