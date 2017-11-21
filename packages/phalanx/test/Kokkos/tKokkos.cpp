@@ -44,6 +44,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
+#include "Phalanx_TypeStrings.hpp"
 #include <Phalanx_any.hpp>
 #include <unordered_map>
 #include <map>
@@ -828,5 +829,46 @@ namespace phalanx_test {
     TEST_EQUALITY(J.rowConst(9).colidx(1),9);
     TEST_FLOATING_EQUALITY(J.rowConst(9).value(0),1.0,tol);
     TEST_FLOATING_EQUALITY(J.rowConst(9).value(1),9.0,tol);
+  }
+
+  TEUCHOS_UNIT_TEST(kokkos, DeviceLayoutTypes)
+  {
+    // Get the layout in the view
+    using scalar_view = PHX::View<double**>;
+    using fad_view = PHX::View<Sacado::Fad::DFad<double>**>;
+    using scalar_view_layout = scalar_view::array_layout;
+    using fad_view_layout = fad_view::array_layout;
+
+    // Layout from PHX::DevLayout
+    using scalar_dev_layout = typename PHX::DevLayout<double**>::type;
+    using fad_dev_layout = typename PHX::DevLayout<Sacado::Fad::DFad<double>**>::type;
+
+
+    // Expected layout based on architecture.
+    using DefaultDevLayout = PHX::exec_space::array_layout;
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+
+#if defined(KOKKOS_HAVE_CUDA)
+    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;
+#else
+    using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,1>;
+#endif
+
+#else
+    using DefaultFadLayout = DefaultDevLayout;
+#endif
+
+    static_assert(std::is_same<scalar_view_layout,scalar_dev_layout>::value,"ERROR: Layout Inconsistency!");
+    static_assert(std::is_same<fad_view_layout,fad_dev_layout>::value,"ERROR: Layout Inconsistency!");
+    static_assert(std::is_same<scalar_view_layout,DefaultDevLayout>::value,"ERROR: Layout Inconsistency!");
+    static_assert(std::is_same<fad_view_layout,DefaultFadLayout>::value,"ERROR: Layout Inconsistency!");
+
+    std::cout << "\n\nscalar_view_layout = " << PHX::typeAsString<scalar_view_layout>() << std::endl;
+    std::cout << "scalar_dev_layout  = " << PHX::typeAsString<scalar_dev_layout>() << std::endl;
+    std::cout << "DefaultDevLayout   = " << PHX::typeAsString<DefaultDevLayout>() << "\n" << std::endl;
+
+    std::cout << "fad_view_layout    = " << PHX::typeAsString<fad_view_layout>() << std::endl;
+    std::cout << "fad_dev_layout     = " << PHX::typeAsString<fad_dev_layout>() << std::endl;
+    std::cout << "DefaultFadLayout   = " << PHX::typeAsString<DefaultFadLayout>() << "\n" << std::endl;
   }
 }

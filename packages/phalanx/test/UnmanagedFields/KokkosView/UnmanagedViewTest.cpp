@@ -107,11 +107,10 @@ TEUCHOS_UNIT_TEST(unmanaged_fields, basic)
       fm.requireField<MyTraits::Residual>(tag_c);
     }
     
-    using namespace Kokkos;
-    View<double**,PHX::Device> unmanaged_a("a",dl->extent(0),dl->extent(1));
-    View<double**,PHX::Device> unmanaged_b("b",dl->extent(0),dl->extent(1));
-    View<double**,PHX::Device> unmanaged_c("c",dl->extent(0),dl->extent(1));
-    View<double**,PHX::Device> unmanaged_d("d",dl->extent(0),dl->extent(1));
+    Kokkos::View<double**,PHX::Device> unmanaged_a("a",dl->extent(0),dl->extent(1));
+    Kokkos::View<double**,PHX::Device> unmanaged_b("b",dl->extent(0),dl->extent(1));
+    Kokkos::View<double**,PHX::Device> unmanaged_c("c",dl->extent(0),dl->extent(1));
+    Kokkos::View<double**,PHX::Device> unmanaged_d("d",dl->extent(0),dl->extent(1));
     Kokkos::deep_copy(unmanaged_a,0.0);
     Kokkos::deep_copy(unmanaged_b,5.0);
     Kokkos::deep_copy(unmanaged_c,0.0);

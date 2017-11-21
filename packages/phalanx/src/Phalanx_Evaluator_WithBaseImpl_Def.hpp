@@ -304,16 +304,16 @@ addDependentField(const PHX::Field<const DataT,Rank>& f)
 
 //**********************************************************************
 // needed for function below
-namespace PHX {
-  template<typename T> 
-  struct remove_all_pointers {
-    typedef T type;
-  };
-  template<typename T>
-  struct remove_all_pointers<T*> {
-    typedef typename remove_all_pointers<T>::type type;
-  };
-}
+// namespace PHX {
+//   template<typename T> 
+//   struct remove_all_pointers {
+//     typedef T type;
+//   };
+//   template<typename T>
+//   struct remove_all_pointers<T*> {
+//     typedef typename remove_all_pointers<T>::type type;
+//   };
+// }
 
 //**********************************************************************
 template<typename Traits>
