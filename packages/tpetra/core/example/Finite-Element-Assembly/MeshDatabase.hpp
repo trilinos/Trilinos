@@ -102,11 +102,25 @@ public:
     return nodeIsOwned(i,j);
   }
 
+  inline bool elementIsOwned(GlobalOrdinal idx) {
+    GlobalOrdinal i,j;
+    ij_from_idx(globalElements_[0], idx, i, j);
+    return elementIsOwned(i,j);
+  }
+
+
+private:
+
   inline bool nodeIsOwned(GlobalOrdinal i, GlobalOrdinal j) { 
     return myNodeStart_[0] <= i &&  i < myNodeStop_[0] && myNodeStart_[1] <= j &&  j < myNodeStop_[1];
   }
 
-private:
+  inline bool elementIsOwned(GlobalOrdinal i, GlobalOrdinal j) {
+    return myElementStart_[0] <= i && i < myElementStop_[0] && myElementStart_[1] <= j && myElementStop_[1];
+  }
+
+  // TODO: Add elementIsOwned()  (useful for Type-3 Assembly)
+
 
   inline GlobalOrdinal idx_from_ij(int num_x, GlobalOrdinal i, GlobalOrdinal j) const {
     return j*num_x+i;
