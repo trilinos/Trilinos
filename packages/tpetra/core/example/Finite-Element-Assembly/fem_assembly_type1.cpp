@@ -59,6 +59,7 @@
 int main (int argc, char *argv[]) 
 {
   using Teuchos::RCP;
+  using Teuchos::TimeMonitor;
 
   const GlobalOrdinal GO_INVALID = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
   
@@ -105,6 +106,8 @@ int main (int argc, char *argv[])
   auto domain_map = row_map;
   auto range_map  = row_map;
 
+  RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) Element Loop (Graph)")));
+
   RCP<GraphType> crs_graph = rcp(new GraphType(row_map, 0));
   auto owned_element_to_node_ids = mesh.getOwnedElementToNode(); 
   
@@ -135,11 +138,15 @@ int main (int argc, char *argv[])
        crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
     }
   }
+  timerElementLoopGraph = Teuchos::null;
 
   // Call fillComplete on the crs_graph to 'finalize' it.
-  crs_graph->fillComplete();
+  {
+    RCP<TimeMonitor> timerFillCompleteGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("2) FillComplete (Graph)")));
+    crs_graph->fillComplete();
+  }
 
-  // Let's see what we have
+  // Print out verbose information about the crs_graph.
   crs_graph->describe(*out, Teuchos::VERB_EXTREME);
 
 
@@ -178,6 +185,7 @@ int main (int argc, char *argv[])
   // - sumIntoGlobalValues( 3,  [  2  3  7  6  ],  [  -1  2  -1  0  ])
   // - sumIntoGlobalValues( 7,  [  2  3  7  6  ],  [  0  -1  2  -1  ])
   // - sumIntoGlobalValues( 6,  [  2  3  7  6  ],  [  -1  0  -1  2  ])
+  RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3) Element Loop (Matrix)")));
 
   RCP<MatrixType> crs_matrix = rcp(new MatrixType(crs_graph));
 
@@ -190,7 +198,7 @@ int main (int argc, char *argv[])
   // Loop over elements
   for(size_t element_gidx=0; element_gidx<mesh.getNumOwnedElements(); element_gidx++)
   {
-#if 1
+#if 0
     if(1 == mpiSession.getNProc()) 
       std::cout << "Element " << element_gidx << std::endl;
 #endif
@@ -219,7 +227,7 @@ int main (int argc, char *argv[])
 
       crs_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
 
-#if 1
+#if 0
       // Print out the row's contribution...
       if(1 == mpiSession.getNProc()) 
       {
@@ -240,9 +248,16 @@ int main (int argc, char *argv[])
 #endif
     }
   }
+  timerElementLoopMatrix = Teuchos::null;
+
 
   // After the contributions are added, 'finalize' the matrix using fillComplete()
-  crs_matrix->fillComplete();
+  {
+    RCP<TimeMonitor> timerFillCompleteMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("4) FillComplete (Matrix)")));
+    crs_matrix->fillComplete();
+  }
+
+  // Print out verbose information about the crs_matrix
   crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
 
   std::ofstream ofs("type1.out", std::ofstream::out);
@@ -250,6 +265,9 @@ int main (int argc, char *argv[])
   Tpetra::MatrixMarket::Writer<MatrixType>::writeSparse(ofs, crs_matrix);
 
   ofs.close();
+
+  TimeMonitor::report(comm.ptr(), std::cout, "");
+
 
 
   // Finalize Kokkos
