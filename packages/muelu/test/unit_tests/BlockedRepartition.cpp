@@ -909,7 +909,24 @@ namespace MueLuTests {
 
     // setup hierarchy
     H.SetVerbLevel(MueLu::Test);
+    H.EnableGraphDumping("dep_graph",0);
+
     H.Setup(M);
+
+
+    // Cleanup to maybe de-stress RCP's?  FIXME
+    M11=Teuchos::null;
+    M22=Teuchos::null;
+    P11Fact=Teuchos::null;
+    CDFact11=Teuchos::null;
+    Amalg11=Teuchos::null;
+    RebAcFact=Teuchos::null;
+    RebRFact=Teuchos::null;
+    PFact=Teuchos::null;
+    CoordXfer=Teuchos::null;
+
+
+
   }
 #endif
 
