@@ -76,7 +76,9 @@ public:
 
   size_t getNumGhostNodes() const {return ghostNodeGlobalIDs_.dimension(0);}
 
-  size_t getNumOwnedAndGhostNodes() const {return ownedAndGhostNodeGlobalIDs_.dimension(0); }
+  size_t getNumOwnedAndGhostNodes() const {return ownedAndGhostNodeGlobalIDs_.dimension(0);}
+
+  size_t getNumOwnedAndGhostElements() const {return ownedAndGhostElementGlobalIDs_.dimension(0);}
 
   // Data accessors
   global_ordinal_view_type getOwnedElementGlobalIDs() {return ownedElementGlobalIDs_;}
@@ -86,14 +88,13 @@ public:
   global_ordinal_view_type getGhostNodeGlobalIDs() {return ghostNodeGlobalIDs_;}
 
   global_ordinal_view_type getOwnedAndGhostNodeGlobalIDs() {return ownedAndGhostNodeGlobalIDs_;}
+  global_ordinal_view_type getOwnedAndGhostElementGlobalIDs() {return ownedAndGhostElementGlobalIDs_;}
 
   global_ordinal_2d_array_type getOwnedElementToNode() {return ownedElementToNode_;}
   global_ordinal_2d_array_type getGhostElementToNode() {return ghostElementToNode_;}
   
   // Debugging output
   void print(std::ostream & oss);
-
-private:
 
   inline bool nodeIsOwned(GlobalOrdinal idx) {
     GlobalOrdinal i,j; 
@@ -104,6 +105,8 @@ private:
   inline bool nodeIsOwned(GlobalOrdinal i, GlobalOrdinal j) { 
     return myNodeStart_[0] <= i &&  i < myNodeStop_[0] && myNodeStart_[1] <= j &&  j < myNodeStop_[1];
   }
+
+private:
 
   inline GlobalOrdinal idx_from_ij(int num_x, GlobalOrdinal i, GlobalOrdinal j) const {
     return j*num_x+i;
@@ -116,12 +119,17 @@ private:
 
   void initializeOwnedAndGhostNodeGlobalIDs(void);
 
+  void initializeOwnedAndGhostElementGlobalIDs(void);
+
 
   global_ordinal_view_type ownedElementGlobalIDs_;
   global_ordinal_view_type ghostElementGlobalIDs_;
+
   global_ordinal_view_type ownedNodeGlobalIDs_;
   global_ordinal_view_type ghostNodeGlobalIDs_;
+
   global_ordinal_view_type ownedAndGhostNodeGlobalIDs_;
+  global_ordinal_view_type ownedAndGhostElementGlobalIDs_;
 
   global_ordinal_2d_array_type ownedElementToNode_;
   global_ordinal_2d_array_type ghostElementToNode_;
@@ -253,9 +261,6 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
       GlobalOrdinal nidx=ownedElementToNode_(k,l);
       if(!nodeIsOwned(nidx)) {
         my_ghost_nodes.insert(nidx);
-        std::cout << "E:" << ownedElementGlobalIDs_[k] << " not owned nidx = " << nidx << std::endl;
-      } else {
-        std::cout << "E:" << ownedElementGlobalIDs_[k] << "    owned nidx = " << nidx << std::endl;
       }
     }
   }
@@ -266,25 +271,43 @@ MeshDatabase::MeshDatabase(Teuchos::RCP<const Teuchos::Comm<int> > comm, int glo
     ghostNodeGlobalIDs_(kk) = *k;
   }
 
-  this->initializeOwnedAndGhostNodeGlobalIDs();
+  initializeOwnedAndGhostNodeGlobalIDs();
+  initializeOwnedAndGhostElementGlobalIDs();
 }
 
 
 void MeshDatabase::initializeOwnedAndGhostNodeGlobalIDs(void)
 {
-  size_t total_size = this->getNumOwnedNodes() + this->getNumGhostNodes();
+  size_t total_size = getNumOwnedNodes() + getNumGhostNodes();
 
   Kokkos::resize(ownedAndGhostNodeGlobalIDs_, total_size);
 
   size_t insert_idx = 0;
-  for(size_t idx=0; idx < this->getNumOwnedNodes(); idx++)
+  for(size_t idx=0; idx < getNumOwnedNodes(); idx++)
   {
-    ownedAndGhostNodeGlobalIDs_(insert_idx++) = this->getOwnedNodeGlobalIDs()(idx);
+    ownedAndGhostNodeGlobalIDs_(insert_idx++) = getOwnedNodeGlobalIDs()(idx);
   }
-    for(size_t idx=0; idx < this->getNumGhostNodes(); idx++)
-    {
-      ownedAndGhostNodeGlobalIDs_(insert_idx++) = this->getGhostNodeGlobalIDs()(idx);
-    }
+  for(size_t idx=0; idx < getNumGhostNodes(); idx++)
+  {
+    ownedAndGhostNodeGlobalIDs_(insert_idx++) = getGhostNodeGlobalIDs()(idx);
+  }
+}
+
+
+void MeshDatabase::initializeOwnedAndGhostElementGlobalIDs(void)
+{
+  size_t total_size = getNumOwnedElements() + getNumGhostElements();
+  Kokkos::resize(ownedAndGhostElementGlobalIDs_, total_size);
+
+  size_t insert_idx = 0;
+  for(size_t idx=0; idx<getNumOwnedElements(); idx++)
+  {
+    ownedAndGhostElementGlobalIDs_(insert_idx++) = getOwnedElementGlobalIDs()(idx);
+  }
+  for(size_t idx=0; idx<getNumGhostElements(); idx++)
+  {
+    ownedAndGhostElementGlobalIDs_(insert_idx++) = getGhostElementGlobalIDs()(idx);
+  }
 }
 
 
@@ -337,6 +360,11 @@ void MeshDatabase::print(std::ostream & oss)
   oss << "\n"<<ss.str()<<" Owned And Ghost Nodes = ";
   for(size_t i=0; i<ownedAndGhostNodeGlobalIDs_.dimension(0); i++) {
     oss << ownedAndGhostNodeGlobalIDs_[i]<<" ";
+  }
+
+  oss << "\n"<<ss.str()<<" Owned And Ghost Elements = ";
+  for(size_t i=0; i<ownedAndGhostElementGlobalIDs_.dimension(0); i++) {
+    oss << ownedAndGhostElementGlobalIDs_[i]<<" ";
   }
 
   oss<<std::endl;

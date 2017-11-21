@@ -16,3 +16,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM  mpi
   STANDARD_PASS_OUTPUT
 )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  FiniteElementAssembly_type3
+  SOURCES fem_assembly_type3.cpp
+  ARGS 
+  COMM  mpi
+  STANDARD_PASS_OUTPUT
+)
