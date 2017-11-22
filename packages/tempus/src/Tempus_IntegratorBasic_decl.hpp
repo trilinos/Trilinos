@@ -100,9 +100,9 @@ public:
       Teuchos::RCP<SolutionState<Scalar> > state = Teuchos::null);
     /// Set the initial state from Thyra::VectorBase(s)
     virtual void setInitialState(Scalar t0,
-      Teuchos::RCP<Thyra::VectorBase<Scalar> > x0,
-      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
-      Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
+      Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null);
     /// Get the SolutionHistory
     virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override
       {return solutionHistory_;}
@@ -138,6 +138,9 @@ public:
     /// Get current state
     virtual Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
       {return solutionHistory_->getCurrentState();}
+
+    Teuchos::RCP<Teuchos::ParameterList> getIntegratorParameterList()
+      { return integratorPL_; }
   //@}
 
   /// Parse when screen output should be executed

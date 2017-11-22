@@ -45,6 +45,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_InvalidDependencyException.hpp"
+#include <set>
 /*! \file Dependency.hpp
     \brief DataStructure for expressing dependencies between elements
     in ParameterLists.

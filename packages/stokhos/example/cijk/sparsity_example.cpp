@@ -50,6 +50,9 @@
 
 #include "Ifpack_RCMReordering.h"
 
+#include <fstream>
+#include <iostream>
+
 // sparsity_example
 //
 //  usage:

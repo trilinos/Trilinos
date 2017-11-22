@@ -58,7 +58,6 @@
 
 #include <Teuchos_Time.hpp>
 #include "Teuchos_StandardCatchMacros.hpp"
-#include "createEpetraProblem.hpp"
 
 #ifdef EPETRA_MPI
 #include <Epetra_MpiComm.h>

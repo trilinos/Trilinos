@@ -73,7 +73,7 @@ namespace Tacho {
       typedef Kokkos::View<supernode_type*,exec_space> supernode_type_array;
 
       ///
-      /// Phase 1: symbolic
+      /// info for symbolic
       ///
       ConstUnmanagedViewType<supernode_type_array> supernodes;
 
@@ -86,12 +86,17 @@ namespace Tacho {
       ConstUnmanagedViewType<ordinal_pair_type_array> sid_block_colidx; 
 
       ///
-      /// Phase 2: max parameter
+      /// max parameter
       ///
       ordinal_type max_supernode_size, max_schur_size, serial_thres_size;
 
       ///
-      /// Phase 3: solve (rhs multivector)
+      /// frontal matrix subassembly mode
+      ///
+      ordinal_type front_update_mode; // 0 - lock, 1 - atomic
+
+      ///
+      /// info for solve (rhs multivector)
       UnmanagedViewType<value_type_matrix> x;
 
       KOKKOS_INLINE_FUNCTION
@@ -131,6 +136,9 @@ namespace Tacho {
         max_schur_size = 0; 
         max_supernode_size = 0;
         serial_thres_size = 0;
+
+        // by default, update mode is atomic: 0 - mutex lock, 1 - atomic
+        front_update_mode = 1;
 
         size_type nnz = 0;
         for (ordinal_type sid=0;sid<nsupernodes;++sid) { 

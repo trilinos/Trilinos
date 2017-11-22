@@ -283,6 +283,8 @@ public:
     /// Set solver.
     virtual void setSolver(
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
+      { return solver_; }
     virtual void setObserver(
       Teuchos::RCP<StepperIMEX_RKObserver<Scalar> > obs = Teuchos::null);
 

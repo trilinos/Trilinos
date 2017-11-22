@@ -602,7 +602,11 @@ namespace MueLu {
             RCP<const Import> importer;
             {
               SubFactoryMonitor m1(*this, "Import construction", currentLevel);
-              importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+              if (blkSize == 1 && A->getCrsGraph()->getImporter() != Teuchos::null) {
+                importer = A->getCrsGraph()->getImporter();
+              } else {
+                importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+              }
             } //subtimer
             ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, Coords->getNumVectors());
             {

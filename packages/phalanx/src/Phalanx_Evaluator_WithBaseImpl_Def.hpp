@@ -418,5 +418,36 @@ bindField(const PHX::FieldTag& ft, const PHX::any& f)
 }
 
 //**********************************************************************
+template<typename Traits>
+PHX::DeviceEvaluator<Traits>* PHX::EvaluatorWithBaseImpl<Traits>::
+createDeviceEvaluator() const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                             "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for createDeviceEvalautor() that is required when using Device DAG support.  Please implement the createDeviceEvaluator() method in this Evalautor.");
+  // Suppress cuda warning for unreachable code
+#ifndef __CUDA_ARCH__
+  return nullptr;
+#endif
+}
+
+//**********************************************************************
+template<typename Traits>
+void
+PHX::EvaluatorWithBaseImpl<Traits>::rebuildDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                             "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for rebuildDeviceEvalautor() that is required when using Device DAG support.  Please implement the rebuildDeviceEvaluator() method in this Evalautor.");
+}
+
+//**********************************************************************
+template<typename Traits>
+void
+PHX::EvaluatorWithBaseImpl<Traits>::deleteDeviceEvaluator(PHX::DeviceEvaluator<Traits>* e) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                             "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for deleteDeviceEvalautor() that is required when using Device DAG support.  Please implement the deleteDeviceEvaluator() method in this Evalautor.");
+}
+
+//**********************************************************************
 
 #endif

@@ -54,6 +54,7 @@
 #include "Teuchos_any.hpp"
 #include "Teuchos_CompileTimeAssert.hpp"
 #include "Teuchos_Ptr.hpp"
+#include <vector>
 
 /*! \class Teuchos::CommandLineProcessor
  * \brief Class that helps parse command line input arguments from <tt>(argc,argv[])</tt> and set options.

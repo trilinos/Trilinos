@@ -19,6 +19,7 @@
 #include "../TestModels/VanDerPol_IMEX_ImplicitModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
+#include <fstream>
 #include <vector>
 
 namespace Tempus_Test {

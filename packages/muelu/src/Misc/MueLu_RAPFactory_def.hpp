@@ -200,11 +200,11 @@ namespace MueLu {
         }
         CheckRepairMainDiagonal(Ac);
 
-        if (IsPrint(Statistics1)) {
+        if (IsPrint(Statistics2)) {
           RCP<ParameterList> params = rcp(new ParameterList());;
           params->set("printLoadBalancingInfo", true);
           params->set("printCommInfo",          true);
-          GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
+          GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
         }
 
         Set(coarseLevel, "A",         Ac);
@@ -245,11 +245,11 @@ namespace MueLu {
         }
         CheckRepairMainDiagonal(Ac);
 
-        if (IsPrint(Statistics1)) {
+        if (IsPrint(Statistics2)) {
           RCP<ParameterList> params = rcp(new ParameterList());;
           params->set("printLoadBalancingInfo", true);
           params->set("printCommInfo",          true);
-          GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
+          GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
         }
 
         Set(coarseLevel, "A",         Ac);
