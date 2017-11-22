@@ -2,10 +2,12 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Kokkos_Core.hpp"
+
 #include <cstdlib> // std::atexit, setenv
 #include <mutex> // std::call_once, std::once_flag
 #include <stdexcept>
 #include <vector>
+#include <functional> // std::ref
 
 namespace KokkosCompat {
 namespace Details {
@@ -13,11 +15,7 @@ namespace Details {
 bool
 isKokkosInitialized ()
 {
-  // Kokkos doesn't have a way to tell whether Kokkos as a whole has
-  // been initialized, i.e., if Kokkos::initialize(...) has been
-  // called.  However, Kokkos::initialize(...) always initializes
-  // the default execution space, so we can just check that.
-  return Kokkos::DefaultExecutionSpace::is_initialized ();
+  return Kokkos::is_initialized();
 }
 
 namespace { // (anonymous)

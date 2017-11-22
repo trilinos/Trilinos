@@ -45,7 +45,7 @@
 #include "Teuchos_StringInputSource.hpp"
 #include "Teuchos_FileInputSource.hpp"
 #include "Teuchos_Version.hpp"
-
+#include <fstream>
 
 using std::string;
 using Teuchos::XMLObject;

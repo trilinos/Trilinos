@@ -71,7 +71,6 @@ namespace Xpetra {
   //const RCP< const Map<int, GlobalOrdinal> > toXpetra(const RCP< const Epetra_Map > &);
   template<class GlobalOrdinal, class Node>
   const RCP< const Map<int, GlobalOrdinal, Node> > toXpetra(const Epetra_BlockMap &);
-  //
 
   // stub implementation for EpetraMapT
   template<class GlobalOrdinal, class Node>

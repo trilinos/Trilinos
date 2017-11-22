@@ -84,6 +84,8 @@ public:
     /// Set solver.
     virtual void setSolver(
         Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver) = 0;
+    /// Get solver
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const = 0;
 
     /// Initialize during construction and after changing input parameters.
     virtual void initialize() = 0;

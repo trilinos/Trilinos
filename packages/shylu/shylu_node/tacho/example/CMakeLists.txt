@@ -42,6 +42,14 @@ IF(Kokkos_ENABLE_OpenMP OR Kokkos_ENABLE_Serial)
     COMM serial mpi
   )
 
+  ##
+  ## test with pardiso
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExamplePerfTest
+    NOEXEPREFIX
+    SOURCES Tacho_ExamplePerfTest.cpp
+    COMM serial mpi
+  )
 
 ENDIF()
 

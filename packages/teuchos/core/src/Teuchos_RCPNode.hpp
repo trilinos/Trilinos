@@ -132,6 +132,7 @@ public:
       // Should never get here!
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_TEST_FOR_EXCEPT(true);
+      return "";
 #else
       return "";
 #endif

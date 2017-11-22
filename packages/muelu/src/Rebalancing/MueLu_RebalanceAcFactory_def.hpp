@@ -111,13 +111,13 @@ namespace MueLu {
         Set(coarseLevel, "A", rebalancedAc);
       }
 
-      if (!rebalancedAc.is_null() && IsPrint(Statistics1)) {
+      if (!rebalancedAc.is_null() && IsPrint(Statistics2)) {
         int oldRank = SetProcRankVerbose(rebalancedAc->getRowMap()->getComm()->getRank());
 
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
-        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
+        GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*rebalancedAc, "Ac (rebalanced)", params);
 
         SetProcRankVerbose(oldRank);
       }

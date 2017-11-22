@@ -69,6 +69,7 @@ namespace Xpetra {
     return rcp( new EpetraMapT<GlobalOrdinal, Node>(m) );
   }
 
+
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
 #ifdef HAVE_XPETRA_TPETRA
 #include "TpetraCore_config.h"

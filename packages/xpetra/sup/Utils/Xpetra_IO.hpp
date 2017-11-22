@@ -48,6 +48,7 @@
 #ifndef PACKAGES_XPETRA_SUP_UTILS_XPETRA_IO_HPP_
 #define PACKAGES_XPETRA_SUP_UTILS_XPETRA_IO_HPP_
 
+#include <fstream>
 #include "Xpetra_ConfigDefs.hpp"
 
 #ifdef HAVE_XPETRA_EPETRA

@@ -290,7 +290,11 @@ void Mesh::operator() (const ComputeGradBasisReal_Tag& , const team_t& team) con
 }
 
 //**********************************************************************
-const int Mesh::getNumNodes() const
+int Mesh::getNumElements() const
+{ return nel_; }
+
+//**********************************************************************
+int Mesh::getNumNodes() const
 { return (nex_+1)*(ney_+1)*(nez_+1); }
 
 //**********************************************************************

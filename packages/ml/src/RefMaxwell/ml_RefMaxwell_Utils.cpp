@@ -4,7 +4,7 @@
 #include "ml_epetra.h"
 #include "ml_epetra_utils.h"
 #include "ml_mat_formats.h"
-
+#include <fstream>
 
 // ================================================ ====== ==== ==== == =
 int ML_Epetra::CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[],

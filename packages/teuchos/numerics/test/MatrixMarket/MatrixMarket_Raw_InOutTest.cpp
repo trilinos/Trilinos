@@ -42,7 +42,6 @@
 #include <Teuchos_MatrixMarket_Raw_Checker.hpp>
 #include <Teuchos_MatrixMarket_Raw_Reader.hpp>
 #include <Teuchos_MatrixMarket_Raw_Writer.hpp>
-#include <Teuchos_MatrixMarket_SetScientific.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>

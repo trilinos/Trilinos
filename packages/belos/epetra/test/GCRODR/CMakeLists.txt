@@ -6,7 +6,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     gcrodr_hb
-    SOURCES test_gcrodr_hb.cpp createEpetraProblem.cpp
+    SOURCES test_gcrodr_hb.cpp 
     COMM serial mpi
     ARGS
       "--debug --verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75"
@@ -24,7 +24,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       prec_gcrodr_hb
-      SOURCES test_prec_gcrodr_hb.cpp createEpetraProblem.cpp
+      SOURCES test_prec_gcrodr_hb.cpp
       COMM serial mpi
       ARGS
         "--debug --verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75"

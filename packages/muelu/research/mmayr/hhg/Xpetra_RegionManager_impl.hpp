@@ -156,8 +156,8 @@ void Xpetra::RegionNodes<GO>::printAllNodes(Teuchos::FancyOStream& out) const
   {
     if (not (*it).is_null())
       out << (*it)->getNodeID() << "\t" << (*it)->getProc() << "\t" << (*it)->getRegions() << std::endl;
-    else
-      out << "Node " << it << " not defined, yet." << std::endl;
+//    else
+//      out << "Node " << it << " not defined, yet." << std::endl;
   }
 
   return;
@@ -240,6 +240,12 @@ Xpetra::RegionManager<SC,LO,GO,NO>::RegionManager(
 
   setupRowMaps();
 
+  setupMappingNodesPerRegion();
+  if (comm_->getRank() == 0)
+    nodes_->printRegionData(*out);
+
+  setupRowMaps();
+
   return;
 }
 
@@ -278,8 +284,6 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::readMappingFromFile(
       numNodes_ = lineContent[0];
       numRegions_ = lineContent[1];
 
-//      std::cout << "Total number of nodes: " << numNodes << std::endl;
-
       // setup the nodes_ object with the appropriate number of nodes
       nodes_ = Teuchos::rcp(new Xpetra::RegionNodes<GO>(numNodes_));
 
@@ -288,8 +292,6 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::readMappingFromFile(
     default:
     {
       TEUCHOS_TEST_FOR_EXCEPT_MSG(nodes_.is_null(), "'nodes_' has not been initialized, yet.");
-
-//      std::cout << "Line " << lineIndex << ": " << line << std::endl;
 
       while (is >> aux)
         lineContent.push_back(aux);

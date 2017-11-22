@@ -47,6 +47,7 @@
 #ifndef MUELU_BLOCKEDPFACTORY_DECL_HPP_
 #define MUELU_BLOCKEDPFACTORY_DECL_HPP_
 
+#include <set>
 #include <Xpetra_MapExtractorFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 

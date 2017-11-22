@@ -42,6 +42,7 @@
 #include "Teuchos_RCPNode.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_Exceptions.hpp"
+#include <vector>
 
 #ifdef TEUCHOS_DEBUG
 #include "Teuchos_StandardCatchMacros.hpp"

@@ -6,7 +6,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     rcg_hb
-    SOURCES test_rcg_hb.cpp createEpetraProblem.cpp
+    SOURCES test_rcg_hb.cpp 
     COMM serial mpi
     ARGS
       "--verbose --tol=1e-6 --filename=bcsstk14.hb --num-rhs=10 --max-subspace=100 --recycle=10 --max-iters=4000"
@@ -31,7 +31,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
 
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
     prec_rcg_hb
-    SOURCES test_prec_rcg_hb.cpp createEpetraProblem.cpp
+    SOURCES test_prec_rcg_hb.cpp 
     COMM serial mpi
     ARGS
       "--verbose --tol=1e-6 --filename=bcsstk14.hb --num-rhs=10 --max-subspace=100 --recycle=5 --max-iters=500 --left-prec"

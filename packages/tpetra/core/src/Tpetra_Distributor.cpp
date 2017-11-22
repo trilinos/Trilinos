@@ -42,6 +42,7 @@
 #include "Tpetra_Details_gathervPrint.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include <numeric>
 
 namespace Tpetra {
   namespace Details {

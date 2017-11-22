@@ -1,14 +1,14 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 // RTOp: Interfaces and Support Software for Vector Reduction Transformation
 //       Operations
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,8 +36,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -108,7 +108,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpCountNanInf, reduct, Scalar )
   using Teuchos::as;
   using Teuchos::dyn_cast;
   using RTOpPack::DefaultReductTarget;
-  typedef ScalarTraits<Scalar> ST;
+  //typedef ScalarTraits<Scalar> ST; // unused
 
   RTOpPack::ROpCountNanInf<Scalar> countNanInfOp;
 
@@ -116,7 +116,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpCountNanInf, reduct, Scalar )
   RCP<ReductTarget> reduct2 = countNanInfOp.reduct_obj_create();
 
   DefaultReductTarget<index_type> &scalarReduct1 =
-    dyn_cast<DefaultReductTarget<index_type> >(*reduct1); 
+    dyn_cast<DefaultReductTarget<index_type> >(*reduct1);
 
   scalarReduct1.set(1);
   countNanInfOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );

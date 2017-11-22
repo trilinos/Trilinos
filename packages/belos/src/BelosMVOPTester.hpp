@@ -60,7 +60,7 @@
 #include "BelosOutputManager.hpp"
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_MatrixMarket_SetScientific.hpp"
+#include "Teuchos_SetScientific.hpp"
 
 namespace Belos {
 
@@ -85,7 +85,7 @@ namespace Belos {
   TestMultiVecTraits (const Teuchos::RCP<OutputManager<ScalarType> > &om,
                       const Teuchos::RCP<const MV> &A)
   {
-    using Teuchos::MatrixMarket::details::SetScientific;
+    using Teuchos::SetScientific;
     using std::endl;
     typedef MultiVecTraits<ScalarType, MV>    MVT;
     typedef Teuchos::ScalarTraits<ScalarType> STS;
@@ -1450,7 +1450,7 @@ namespace Belos {
                       const Teuchos::RCP<const MV> &A,
                       const Teuchos::RCP<const OP> &M)
   {
-    using Teuchos::MatrixMarket::details::SetScientific;
+    using Teuchos::SetScientific;
     using std::endl;
     typedef MultiVecTraits<ScalarType, MV>    MVT;
     typedef Teuchos::ScalarTraits<ScalarType> STS;

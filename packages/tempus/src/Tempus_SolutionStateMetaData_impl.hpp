@@ -84,7 +84,7 @@ SolutionStateMetaData<Scalar>::SolutionStateMetaData(const SolutionStateMetaData
 
 
 template<class Scalar>
-Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clone()
+Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clone() const
 {
   Teuchos::RCP<SolutionStateMetaData<Scalar> > md =
     rcp(new SolutionStateMetaData<Scalar> (

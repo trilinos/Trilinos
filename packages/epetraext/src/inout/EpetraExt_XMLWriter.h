@@ -47,6 +47,7 @@
 #include "EpetraExt_ConfigDefs.h"
 #include "Teuchos_RCP.hpp"
 #include <fstream>
+#include <vector>
 
 class Epetra_Map;
 class Epetra_Comm;

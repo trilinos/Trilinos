@@ -156,9 +156,9 @@ setInitialState(Teuchos::RCP<SolutionState<Scalar> >  state)
 template<class Scalar>
 void IntegratorBasic<Scalar>::
 setInitialState(Scalar t0,
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > x0,
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdot0,
-  Teuchos::RCP<Thyra::VectorBase<Scalar> > xdotdot0)
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0,
+  Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -192,7 +192,7 @@ setInitialState(Scalar t0,
     Thyra::assign(xdotdot.ptr(), *(xdotdot0));
 
   RCP<SolutionState<Scalar> > newState = rcp(new SolutionState<Scalar>(
-    md, x0, xdot, xdotdot, stepper_->getDefaultStepperState()));
+    md, x0->clone_v(), xdot, xdotdot, stepper_->getDefaultStepperState()));
 
   solutionHistory_->addState(newState);
 }
@@ -696,6 +696,17 @@ Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
 {
   Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
     Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, model));
+  return(integrator);
+}
+
+/// Non-member constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+  Teuchos::RCP<Teuchos::ParameterList>                     pList,
+  const Teuchos::RCP<Stepper<Scalar> >&                    stepper)
+{
+  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
+    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, stepper));
   return(integrator);
 }
 

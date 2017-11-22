@@ -141,9 +141,11 @@ namespace MueLu {
       coarseLevel.Set("Importer", importer, NoFactory::get());
     }
 
-    RCP<ParameterList> params = rcp(new ParameterList());;
-    params->set("printLoadBalancingInfo", true);
-    params->set("printCommInfo",          true);
+    RCP<ParameterList> params = rcp(new ParameterList());
+    if (IsPrint(Statistics2)) {
+      params->set("printLoadBalancingInfo", true);
+      params->set("printCommInfo",          true);
+    }
 
     std::string transferType = pL.get<std::string>("type");
     if (transferType == "Interpolation") {
@@ -200,8 +202,8 @@ namespace MueLu {
 
           Set(coarseLevel, "P", rebalancedP);
 
-          if (IsPrint(Statistics1))
-            GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
+          if (IsPrint(Statistics2))
+            GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*rebalancedP, "P (rebalanced)", params);
         }
       }
 
@@ -310,8 +312,8 @@ namespace MueLu {
           //   rebalancedR->CreateView("stridedMaps", originalR);
           ///////////////////////// EXPERIMENTAL
 
-          if (IsPrint(Statistics1))
-            GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
+          if (IsPrint(Statistics2))
+            GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*rebalancedR, "R (rebalanced)", params);
         }
       }
     }

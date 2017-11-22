@@ -50,6 +50,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include <fstream>
 
 // Flatten the namespaces of certain classes
 using std::string;
@@ -83,9 +84,9 @@ int main(int argc, char* argv[])
   CommandLineProcessor clp(false);  //don't throw exceptions
   clp.recogniseAllOptions(true);
   clp.setOption("add-xsl-header",
-		"suppress-xsl-header",
-		&xsl_header_flag, 
-		"XSL header flag");
+                "suppress-xsl-header",
+                &xsl_header_flag,
+                "XSL header flag");
 
   //
   // Parse the command line and quit if not successful
