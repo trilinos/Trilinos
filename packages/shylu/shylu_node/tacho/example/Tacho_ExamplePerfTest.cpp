@@ -31,10 +31,14 @@ int main (int argc, char *argv[]) {
 
   int max_num_superblocks = 4;
   int mb = -1, nb = -1;
+  int small_problem_thres = 1024;
+  int front_update_mode = -1;
 
   bool test_tacho = true;
   bool test_pardiso = false;
   bool test_cholmod = false;
+
+  bool use_same_ordering = true;
 
   Tacho::Experimental::CommandLineParser opts("This is Tacho performance test comparing with Pardiso and Cholmod on OpenMP and Cuda spaces");
 
@@ -51,6 +55,7 @@ int main (int argc, char *argv[]) {
   opts.set_option<int>("max-num-superblocks", "Max number of superblocks", &max_num_superblocks);
   opts.set_option<int>("mb", "Internal block size", &mb);
   opts.set_option<int>("nb", "Internal panel size", &nb);
+  opts.set_option<int>("front-update-mode", "Front update mode", &front_update_mode);
 
   // testing flags
   opts.set_option<bool>("test-tacho", "Flag for testing Tacho", &test_tacho);
@@ -60,6 +65,8 @@ int main (int argc, char *argv[]) {
 #if defined( TACHO_HAVE_SUITESPARSE )
   opts.set_option<bool>("test-cholmod", "Flag for testing Cholmod", &test_cholmod);
 #endif
+
+  opts.set_option<bool>("use-same-ordering", "Same Metis ordering is used for all tests", &use_same_ordering);
 
   TACHO_ITT_PAUSE;
   
@@ -77,13 +84,12 @@ int main (int argc, char *argv[]) {
   {
     /// basic typedef
     typedef int ordinal_type;
-    typedef size_t size_type;
     typedef double value_type;
 
     /// crs matrix format and dense multi vector
     typedef Tacho::Experimental::CrsMatrixBase<value_type,Kokkos::DefaultHostExecutionSpace> CrsMatrixBaseType;
     typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,Kokkos::DefaultHostExecutionSpace> DenseMultiVectorType;
-    typedef Kokkos::View<ordinal_type*,Kokkos::DefaultHostExecutionSpace> OrdinalTypeArray;
+    //typedef Kokkos::View<ordinal_type*,Kokkos::DefaultHostExecutionSpace> OrdinalTypeArray;
 
     ///
     /// problem setting
@@ -106,7 +112,9 @@ int main (int argc, char *argv[]) {
       x("x", A.NumRows(), nrhs), // solution multivector
       t("t", A.NumRows(), nrhs); // temp workspace (store permuted rhs)
 
-    OrdinalTypeArray perm("perm", A.NumRows()), peri("peri", A.NumRows());
+    Tacho::Experimental::Graph graph(A.NumRows(), A.NumNonZeros(), A.RowPtr(), A.Cols());
+    Tacho::Experimental::GraphTools_Metis G(graph);
+    G.reorder(verbose);
 
     {
       Tacho::Experimental::Random<value_type> random;
@@ -133,13 +141,21 @@ int main (int argc, char *argv[]) {
       /// tacho
       ///
       Tacho::Solver<value_type,Kokkos::DefaultHostExecutionSpace> solver;
+
+      //solver.setMatrixType(sym, posdef);
       solver.setVerbose(verbose);
       solver.setMaxNumberOfSuperblocks(max_num_superblocks);
+      solver.setSmallProblemThresholdsize(small_problem_thres);
+      solver.setBlocksize(mb);
+      solver.setPanelsize(nb);
+      solver.setFrontUpdateMode(front_update_mode);
 
       /// inputs are used for graph reordering and analysis
       solver.analyze(A.NumRows(),
                      A.RowPtr(),
-                     A.Cols());
+                     A.Cols(),
+                     G.PermVector(),
+                     G.InvPermVector());
 
       /// symbolic structure can be reused
       TACHO_ITT_RESUME;
@@ -193,14 +209,14 @@ int main (int argc, char *argv[]) {
         pardiso.showErrorCode(std::cout) << std::endl;
       }
       pardiso.setParameter(2, 2); // metis ordering is used 
-      //pardiso.setParameter(5, 1); // user permutation is used for mkl permutation
-      //pardiso.setParameter(5, 2); // mkl permutation is written on perm
+      if (use_same_ordering)
+        pardiso.setParameter(5, 1); // user permutation is used for mkl permutation
 
       // somehow pardiso does not like symmetric full matrix (store only half)
       CrsMatrixBaseType Asym("Asym");
       Asym.createConfTo(A);
       {
-        size_type nnz = 0;
+        size_t nnz = 0;
         for (ordinal_type i=0;i<A.NumRows();++i) {
           Asym.RowPtrBegin(i) = nnz;
           for (ordinal_type idx=A.RowPtrBegin(i);idx<A.RowPtrEnd(i);++idx) {
@@ -223,7 +239,7 @@ int main (int argc, char *argv[]) {
                          (double*)Asym.Values().data(),
                          (int*)rowptr.data(),// (int*)Asym.RowPtr().data(),
                          (int*)Asym.Cols().data(),
-                         (int*)perm.data(),
+                         (int*)G.PermVector().data(),
                          nrhs,
                          (double*)b.data(),
                          (double*)x.data());
@@ -237,8 +253,12 @@ int main (int argc, char *argv[]) {
       }
 
       // compute inverse permutation
-      for (ordinal_type i=0;i<A.NumRows();++i) 
-        peri(perm(i)) = i;  
+      {
+        const auto peri = G.InvPermVector();
+        const auto perm = G.PermVector();
+        for (ordinal_type i=0;i<A.NumRows();++i) 
+          peri(perm(i)) = i;  
+      }
 
       TACHO_ITT_RESUME;
       r_val = pardiso.run(Pardiso::Factorize, 1);
@@ -307,7 +327,7 @@ int main (int argc, char *argv[]) {
       cholmod_common c;
       cholmod_start (&c);    /* start CHOLMOD */
       c.nmethods = 1;
-      c.method[0].ordering = CHOLMOD_METIS;
+      c.method[0].ordering = use_same_ordering ? CHOLMOD_GIVEN : CHOLMOD_METIS;
       c.postorder = 1;
 
       AA = cholmod_allocate_sparse(A.NumRows(), A.NumRows(), A.NumNonZeros(),
@@ -317,9 +337,9 @@ int main (int argc, char *argv[]) {
         for (int i=0;i<(A.NumRows()+1);++i) 
           pp[i] = A.RowPtrBegin(i);
         
-        int *ii = (int*)AA->i;
+        int *ii = (int*)AA->i, jend = A.NumNonZeros();
         double *aa = (double*)AA->x;
-        for (int j=0;j<A.NumNonZeros();++j) {
+        for (int j=0;j<jend;++j) {
           ii[j] = A.Col(j);
           aa[j] = A.Value(j);
         }
@@ -340,21 +360,11 @@ int main (int argc, char *argv[]) {
       c.memory_usage = 0;
 
       timer.reset();
-      LL = cholmod_analyze (AA, &c) ;    /* analyze */
+      if (use_same_ordering)
+        LL = cholmod_analyze_p (AA, G.PermVector().data(), NULL, 0, &c) ;    /* analyze */
+      else
+        LL = cholmod_analyze (AA, &c) ;    /* analyze */
       t_analyze = timer.seconds();
-
-      TACHO_ITT_RESUME;
-      timer.reset();
-      cholmod_factorize (AA, LL, &c) ;    /* factorize */
-      t_factor = timer.seconds();
-      TACHO_ITT_PAUSE;
-
-      timer.reset();
-      for (int iter=0;iter<niter_solve;++iter) {
-        xx = cholmod_solve (CHOLMOD_A, LL, bb, &c) ;    /* solve Ax=b */
-      }
-      t_solve_niter = timer.seconds();
-      t_solve = t_solve_niter / double(niter_solve);
 
       if (verbose) {
         printf("CHOLMOD: Analyze\n");
@@ -363,13 +373,22 @@ int main (int argc, char *argv[]) {
         printf("             total time spent:                                 %10.6f s\n", t_analyze);
         printf("\n");
         printf("  Linear system A\n");
-        printf("             number of equations:                              %10d\n", AA->nrow);
-        printf("             max number of nonzeros:                           %10d\n", AA->nzmax);
+        printf("             number of equations:                              %10zu\n", AA->nrow);
+        printf("             max number of nonzeros:                           %10zu\n", AA->nzmax);
         printf("\n");        
         printf("  Factors L\n");
         printf("             number of nonzeros:                               %10.0f\n", c.lnz);
         //printf("             current method:                                   %10d\n", c.current);
         printf("\n");                
+      }
+
+      TACHO_ITT_RESUME;
+      timer.reset();
+      cholmod_factorize (AA, LL, &c) ;    /* factorize */
+      t_factor = timer.seconds();
+      TACHO_ITT_PAUSE;
+
+      if (verbose) {
         printf("CHOLMOD: Factorize\n");
         printf("==================\n");
         printf("  Time\n");
@@ -392,7 +411,17 @@ int main (int argc, char *argv[]) {
         printf("  FLOPs\n");
         printf("             gflop   for numeric factorization:                %10.6f GFLOP\n", c.fl/1024/1024/1024);
         printf("             gflop/s for numeric factorization:                %10.6f GFLOP/s\n", c.fl/1024/1024/1024/t_factor);
-        printf("\n");                
+        printf("\n");               
+      }
+
+      timer.reset();
+      for (int iter=0;iter<niter_solve;++iter) {
+        xx = cholmod_solve (CHOLMOD_A, LL, bb, &c) ;    /* solve Ax=b */
+      }
+      t_solve_niter = timer.seconds();
+      t_solve = t_solve_niter / double(niter_solve);
+
+      if (verbose) {
         printf("CHOLMOD: Solve\n");
         printf("==============\n");
         printf("  Time (Multiple Solves) \n");
