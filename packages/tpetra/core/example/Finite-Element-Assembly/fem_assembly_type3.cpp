@@ -114,6 +114,7 @@ int main (int argc, char *argv[])
   auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
   auto ghost_element_to_node_ids = mesh.getGhostElementToNode();
 
+  RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
   RCP<GraphType> crs_graph = rcp(new GraphType(row_map, 0));
@@ -296,6 +297,7 @@ int main (int argc, char *argv[])
   crs_matrix->describe(*out, Teuchos::VERB_EXTREME);
   #endif
 
+  timerGlobal = Teuchos::null;
 
   // Save crs_matrix as a MatrixMarket file.
   std::ofstream ofs("Finite-Element-Matrix-Assembly_Type3.out", std::ofstream::out);

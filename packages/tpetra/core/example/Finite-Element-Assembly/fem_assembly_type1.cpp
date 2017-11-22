@@ -90,8 +90,12 @@ int main (int argc, char *argv[])
   // Generate a simple 3x3 mesh
   int nex = 3;
   int ney = 3;
+  
   MeshDatabase mesh(comm,nex,ney,procx,procy);
+  
+  #if PRINT_VERBOSE
   mesh.print(std::cout);
+  #endif
 
   // Build Tpetra Maps
   // -----------------
@@ -113,6 +117,7 @@ int main (int argc, char *argv[])
 
   auto owned_element_to_node_ids = mesh.getOwnedElementToNode(); 
 
+  RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
 
   RCP<GraphType> crs_graph = rcp(new GraphType(row_map, 0));
@@ -239,6 +244,8 @@ int main (int argc, char *argv[])
     RCP<TimeMonitor> timerFillCompleteMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("4) FillComplete (Matrix)")));
     crs_matrix->fillComplete();
   }
+
+  timerGlobal = Teuchos::null;
 
   // Print out crs_matrix details.
   #if PRINT_VERBOSE

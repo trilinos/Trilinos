@@ -124,6 +124,7 @@ int main (int argc, char *argv[])
 
   auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
 
+  RCP<TimeMonitor> timerGlobal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("X) Global")));
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (All Graph)")));
 
   RCP<GraphType> crs_graph_owned = rcp(new GraphType(owned_row_map, 0));
@@ -294,6 +295,8 @@ int main (int argc, char *argv[])
     RCP<TimeMonitor> timerFillCompleteOwnedMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("8) FillComplete (Owned Matrix)")));
     crs_matrix_owned->fillComplete();
   }
+
+  timerGlobal = Teuchos::null;
 
   // Print out crs_matrix_owned and crs_matrix_overlapping details.
   #if PRINT_VERBOSE
