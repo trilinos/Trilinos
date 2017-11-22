@@ -131,62 +131,6 @@ int main (int argc, char *argv[]) {
     Tacho::Experimental::Flush<LLC_CAPACITY> flush;
 
     // -----------------------------------------------------------------
-    if (test_tacho) {
-      flush.run();
-
-      Kokkos::Impl::Timer timer;
-      double t_solve = 0, t_solve_niter = 0;
-
-      ///
-      /// tacho
-      ///
-      Tacho::Solver<value_type,Kokkos::DefaultHostExecutionSpace> solver;
-
-      //solver.setMatrixType(sym, posdef);
-      solver.setVerbose(verbose);
-      solver.setMaxNumberOfSuperblocks(max_num_superblocks);
-      solver.setSmallProblemThresholdsize(small_problem_thres);
-      solver.setBlocksize(mb);
-      solver.setPanelsize(nb);
-      solver.setFrontUpdateMode(front_update_mode);
-
-      /// inputs are used for graph reordering and analysis
-      solver.analyze(A.NumRows(),
-                     A.RowPtr(),
-                     A.Cols(),
-                     G.PermVector(),
-                     G.InvPermVector());
-
-      /// symbolic structure can be reused
-      TACHO_ITT_RESUME;
-      solver.factorize(A.Values());
-      TACHO_ITT_PAUSE;
-
-      solver.setVerbose(0); // disable verbose out for the iteration
-      timer.reset();
-      for (int iter=0;iter<niter_solve;++iter) {
-        solver.solve(x, b, t);
-      }
-      t_solve_niter = timer.seconds();
-      t_solve = t_solve_niter / double(niter_solve);
-
-      solver.setVerbose(verbose);
-      solver.solve(x, b, t);
-
-      if (verbose) {
-        printf("  Time (Multiple Solves) \n");                                                                                     
-        printf("             total time spent for %3d numeric solve:           %10.6f s\n", niter_solve, t_solve_niter);
-        printf("             average time spent for a single numeric solve:    %10.6f s\n", t_solve);
-        printf("\n\n");
-      }
-      
-      const double res = solver.computeRelativeResidual(A.Values(), x, b);
-      std::cout << "TachoSolver: residual = " << res << "\n\n";
-      
-      solver.release();
-    }
-
-    // -----------------------------------------------------------------
     if (test_pardiso) {
 #if defined( TACHO_HAVE_MKL )
       flush.run();
@@ -459,6 +403,64 @@ int main (int argc, char *argv[]) {
       std::cout << "CHOLMOD is NOT configured in Trilinos" << std::endl;
 #endif
     }
+
+    // -----------------------------------------------------------------
+    if (test_tacho) {
+      flush.run();
+
+      Kokkos::Impl::Timer timer;
+      double t_solve = 0, t_solve_niter = 0;
+
+      ///
+      /// tacho
+      ///
+      Tacho::Solver<value_type,Kokkos::DefaultHostExecutionSpace> solver;
+
+      //solver.setMatrixType(sym, posdef);
+      solver.setVerbose(verbose);
+      solver.setMaxNumberOfSuperblocks(max_num_superblocks);
+      solver.setSmallProblemThresholdsize(small_problem_thres);
+      solver.setBlocksize(mb);
+      solver.setPanelsize(nb);
+      solver.setFrontUpdateMode(front_update_mode);
+
+      /// inputs are used for graph reordering and analysis
+      solver.analyze(A.NumRows(),
+                     A.RowPtr(),
+                     A.Cols(),
+                     G.PermVector(),
+                     G.InvPermVector());
+
+      /// symbolic structure can be reused
+      TACHO_ITT_RESUME;
+      solver.factorize(A.Values());
+      TACHO_ITT_PAUSE;
+
+      solver.setVerbose(0); // disable verbose out for the iteration
+      timer.reset();
+      for (int iter=0;iter<niter_solve;++iter) {
+        solver.solve(x, b, t);
+      }
+      t_solve_niter = timer.seconds();
+      t_solve = t_solve_niter / double(niter_solve);
+
+      solver.setVerbose(verbose);
+      solver.solve(x, b, t);
+
+      if (verbose) {
+        printf("  Time (Multiple Solves) \n");                                                                                     
+        printf("             total time spent for %3d numeric solve:           %10.6f s\n", niter_solve, t_solve_niter);
+        printf("             average time spent for a single numeric solve:    %10.6f s\n", t_solve);
+        printf("\n\n");
+      }
+      
+      const double res = solver.computeRelativeResidual(A.Values(), x, b);
+      std::cout << "TachoSolver: residual = " << res << "\n\n";
+      
+      solver.release();
+    }
+
+
   }
   Kokkos::finalize();
   return r_val;
