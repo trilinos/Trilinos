@@ -67,18 +67,18 @@ int main(int argc, char *argv[]) {
   typedef typename vector::size_type    uint;
 
 
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+  
+  
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -93,73 +93,73 @@ int main(int argc, char *argv[]) {
 
     // ----[ Full primal-dual vector ]----------------
 
-    RCP<vector> xo_rcp = rcp( new vector(xo_dim,0.0) ); // opt
-    RCP<vector> xs_rcp = rcp( new vector(ci_dim,0.0) ); // slack
-    RCP<vector> xe_rcp = rcp( new vector(ce_dim,0.0) ); // equality multipliers
-    RCP<vector> xi_rcp = rcp( new vector(ci_dim,0.0) ); // inequality multipliers
+    ROL::SharedPointer<vector> xo_ptr = ROL::makeShared<vector>(xo_dim,0.0); // opt
+    ROL::SharedPointer<vector> xs_ptr = ROL::makeShared<vector>(ci_dim,0.0); // slack
+    ROL::SharedPointer<vector> xe_ptr = ROL::makeShared<vector>(ce_dim,0.0); // equality multipliers
+    ROL::SharedPointer<vector> xi_ptr = ROL::makeShared<vector>(ci_dim,0.0); // inequality multipliers
 
-    RCP<V> xo = rcp( new SV(xo_rcp) ); 
-    RCP<V> xs = rcp( new SV(xs_rcp) );
-    RCP<V> xe = rcp( new SV(xe_rcp) );
-    RCP<V> xi = rcp( new SV(xi_rcp) );     
+    ROL::SharedPointer<V> xo = ROL::makeShared<SV>(xo_ptr); 
+    ROL::SharedPointer<V> xs = ROL::makeShared<SV>(xs_ptr);
+    ROL::SharedPointer<V> xe = ROL::makeShared<SV>(xe_ptr);
+    ROL::SharedPointer<V> xi = ROL::makeShared<SV>(xi_ptr);     
 
     ROL::RandomizeVector(*xo,left,right);
     ROL::RandomizeVector(*xs,left,right);
     ROL::RandomizeVector(*xe,left,right);
     ROL::RandomizeVector(*xi,left,right);
 
-    RCP<V> x = ROL::CreatePartitionedVector( xo, xs, xe, xi );
+    ROL::SharedPointer<V> x = ROL::CreatePartitionedVector( xo, xs, xe, xi );
     
 
     // ----[ Full primal-dual direction vector ]------
 
-    RCP<vector> vo_rcp = rcp( new vector(xo_dim,0.0) ); // opt
-    RCP<vector> vs_rcp = rcp( new vector(ci_dim,0.0) ); // slack
-    RCP<vector> ve_rcp = rcp( new vector(ce_dim,0.0) ); // equality multipliers
-    RCP<vector> vi_rcp = rcp( new vector(ci_dim,0.0) ); // inequality multipliers
+    ROL::SharedPointer<vector> vo_ptr = ROL::makeShared<vector>(xo_dim,0.0); // opt
+    ROL::SharedPointer<vector> vs_ptr = ROL::makeShared<vector>(ci_dim,0.0); // slack
+    ROL::SharedPointer<vector> ve_ptr = ROL::makeShared<vector>(ce_dim,0.0); // equality multipliers
+    ROL::SharedPointer<vector> vi_ptr = ROL::makeShared<vector>(ci_dim,0.0); // inequality multipliers
  
-    RCP<V> vo = rcp( new SV(vo_rcp) );
-    RCP<V> vs = rcp( new SV(vs_rcp) );
-    RCP<V> ve = rcp( new SV(ve_rcp) );
-    RCP<V> vi = rcp( new SV(vi_rcp) );     
+    ROL::SharedPointer<V> vo = ROL::makeShared<SV>(vo_ptr);
+    ROL::SharedPointer<V> vs = ROL::makeShared<SV>(vs_ptr);
+    ROL::SharedPointer<V> ve = ROL::makeShared<SV>(ve_ptr);
+    ROL::SharedPointer<V> vi = ROL::makeShared<SV>(vi_ptr);     
 
     ROL::RandomizeVector(*vo,left,right);
     ROL::RandomizeVector(*vs,left,right);
     ROL::RandomizeVector(*ve,left,right);
     ROL::RandomizeVector(*vi,left,right);
 
-    RCP<V> v = ROL::CreatePartitionedVector( vo, vs, ve, vi );
+    ROL::SharedPointer<V> v = ROL::CreatePartitionedVector( vo, vs, ve, vi );
 
 
     // ----[ Full primal-dual residual vector ]------
 
-    RCP<vector> ro_rcp = rcp( new vector(xo_dim,0.0) ); // opt
-    RCP<vector> rs_rcp = rcp( new vector(ci_dim,0.0) ); // slack
-    RCP<vector> re_rcp = rcp( new vector(ce_dim,0.0) ); // equality multipliers
-    RCP<vector> ri_rcp = rcp( new vector(ci_dim,0.0) ); // inequality multipliers
+    ROL::SharedPointer<vector> ro_ptr = ROL::makeShared<vector>(xo_dim,0.0); // opt
+    ROL::SharedPointer<vector> rs_ptr = ROL::makeShared<vector>(ci_dim,0.0); // slack
+    ROL::SharedPointer<vector> re_ptr = ROL::makeShared<vector>(ce_dim,0.0); // equality multipliers
+    ROL::SharedPointer<vector> ri_ptr = ROL::makeShared<vector>(ci_dim,0.0); // inequality multipliers
  
-    RCP<V> ro = rcp( new SV(vo_rcp) );
-    RCP<V> rs = rcp( new SV(vs_rcp) );
-    RCP<V> re = rcp( new SV(ve_rcp) );
-    RCP<V> ri = rcp( new SV(vi_rcp) );     
+    ROL::SharedPointer<V> ro = ROL::makeShared<SV>(vo_ptr);
+    ROL::SharedPointer<V> rs = ROL::makeShared<SV>(vs_ptr);
+    ROL::SharedPointer<V> re = ROL::makeShared<SV>(ve_ptr);
+    ROL::SharedPointer<V> ri = ROL::makeShared<SV>(vi_ptr);     
 
     ROL::RandomizeVector(*ro,left,right);
     ROL::RandomizeVector(*rs,left,right);
     ROL::RandomizeVector(*re,left,right);
     ROL::RandomizeVector(*ri,left,right);
 
-    RCP<V> r = ROL::CreatePartitionedVector( ro, rs, re, ri );
+    ROL::SharedPointer<V> r = ROL::CreatePartitionedVector( ro, rs, re, ri );
 
     // ----[ Primal-dual constraint ]-------
 
-    RCP<ROL::Objective<RealT> > obj_hs32 = 
-      rcp( new ROL::ZOO::Objective_HS32<RealT> );
+    ROL::SharedPointer<ROL::Objective<RealT> > obj_hs32 = 
+      ROL::makeShared<ROL::ZOO::Objective_HS32<RealT>>();
 
-    RCP<ROL::EqualityConstraint<RealT> > eqcon_hs32 = 
-      rcp( new ROL::ZOO::EqualityConstraint_HS32<RealT> );
+    ROL::SharedPointer<ROL::EqualityConstraint<RealT> > eqcon_hs32 = 
+      ROL::makeShared<ROL::ZOO::EqualityConstraint_HS32<RealT>>();
     
-    RCP<ROL::EqualityConstraint<RealT> > incon_hs32 = 
-      rcp( new ROL::ZOO::InequalityConstraint_HS32<RealT> );      
+    ROL::SharedPointer<ROL::EqualityConstraint<RealT> > incon_hs32 = 
+      ROL::makeShared<ROL::ZOO::InequalityConstraint_HS32<RealT>>();      
 
 
     *outStream << "Performing finite difference check on Primal-Dual KKT system" 

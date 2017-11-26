@@ -90,18 +90,18 @@ private:
   static const size_type OPTMULT = 0;  // Optimization and equality multiplier components
   static const size_type BNDMULT = 1;  // Bound multiplier components
 
-  Teuchos::RCP<Secant<Real> > secant_;
-  Teuchos::RCP<Krylov<Real> > krylov_;
-  Teuchos::RCP<V> scratch1_;           // scratch vector 
-  Teuchos::RCP<V> scratch_; 
+  ROL::SharedPointer<Secant<Real> > secant_;
+  ROL::SharedPointer<Krylov<Real> > krylov_;
+  ROL::SharedPointer<V> scratch1_;           // scratch vector 
+  ROL::SharedPointer<V> scratch_; 
 
-  Teuchos::RCP<OP11> A_;
-  Teuchos::RCP<OP12> B_;
-  Teuchos::RCP<OP21> C_;
-  Teuchos::RCP<OP22> D_;
+  ROL::SharedPointer<OP11> A_;
+  ROL::SharedPointer<OP12> B_;
+  ROL::SharedPointer<OP21> C_;
+  ROL::SharedPointer<OP22> D_;
 
-  Teuchos::RCP<SCHUR> schur_; // Allows partial decoupling of (x,lambda) and (zl,zu)
-  Teuchos::RCP<OP>    op_;    // Solve fully coupled system
+  ROL::SharedPointer<SCHUR> schur_; // Allows partial decoupling of (x,lambda) and (zl,zu)
+  ROL::SharedPointer<OP>    op_;    // Solve fully coupled system
 
   int iterKrylov_; ///< Number of Krylov iterations (used for inexact Newton)
   int flagKrylov_; ///< Termination flag for Krylov method (used for inexact Newton)
@@ -113,27 +113,27 @@ private:
   
 
   // Repartition (x,lambda,zl,zu) as (xlambda,z) = ((x,lambda),(zl,zu))
-  Teuchos::RCP<PV> repartition( V &x ) {
-    using Teuchos::RCP; using Teuchos::rcp;
-    PV &x_pv = Teuchos::dyn_cast<PV>(x);
-    RCP<V> xlambda = CreatePartitionedVector(x_pv.get(OPT),x_pv.get(EQUAL));  
-    RCP<V> z = CreatePartitionedVector(x_pv.get(LOWER),x_pv.get(UPPER));  
+  ROL::SharedPointer<PV> repartition( V &x ) {
+     
+    PV &x_pv = dynamic_cast<PV&>(x);
+    ROL::SharedPointer<V> xlambda = CreatePartitionedVector(x_pv.get(OPT),x_pv.get(EQUAL));  
+    ROL::SharedPointer<V> z = CreatePartitionedVector(x_pv.get(LOWER),x_pv.get(UPPER));  
  
-    RCP<V> temp[] = {xlambda,z};
+    ROL::SharedPointer<V> temp[] = {xlambda,z};
 
-    return rcp( new PV( std::vector<RCP<V> >(temp,temp+2) ) );
+    return ROL::makeShared<PV( std::vector<ROL::SharedPointer<V> >>(temp,temp+2) );
 
   }
 
   // Repartition (x,lambda,zl,zu) as (xlambda,z) = ((x,lambda),(zl,zu))
-  Teuchos::RCP<const PV> repartition( const V &x ) {
-    const PV &x_pv = Teuchos::dyn_cast<const PV>(x);
-    RCP<const V> xlambda = CreatePartitionedVector(x_pv.get(OPT),x_pv.get(EQUAL));  
-    RCP<const V> z = CreatePartitionedVector(x_pv.get(LOWER),x_pv.get(UPPER));  
+  ROL::SharedPointer<const PV> repartition( const V &x ) {
+    const PV &x_pv = dynamic_cast<const PV&>(x);
+    ROL::SharedPointer<const V> xlambda = CreatePartitionedVector(x_pv.get(OPT),x_pv.get(EQUAL));  
+    ROL::SharedPointer<const V> z = CreatePartitionedVector(x_pv.get(LOWER),x_pv.get(UPPER));  
 
-    RCP<const V> temp[] = {xlambda,z};
+    ROL::SharedPointer<const V> temp[] = {xlambda,z};
 
-    return rcp( new PV( std::vector<RCP<const V> >(temp,temp+2) ) );
+    return ROL::makeShared<PV( std::vector<ROL::SharedPointer<const V> >>(temp,temp+2) );
          
   }
 
@@ -145,11 +145,11 @@ public:
 
 
   PrimalDualSystemStep( Teuchos::ParameterList &parlist, 
-                        const Teuchos::RCP<Krylov<Real> > &krylov,
-                        const Teuchos::RCP<Secant<Real> > &secant,
-                        Teuchos::RCP<V> &scratch1 ) : Step<Real>(),
-    krylov_(krylov), secant_(secant), scratch1_(scratch1), schur_(Teuchos::null),
-    op_(Teuchos::null), useSchurComplement_(false) {
+                        const ROL::SharedPointer<Krylov<Real> > &krylov,
+                        const ROL::SharedPointer<Secant<Real> > &secant,
+                        ROL::SharedPointer<V> &scratch1 ) : Step<Real>(),
+    krylov_(krylov), secant_(secant), scratch1_(scratch1), schur_(ROL::nullPointer),
+    op_(ROL::nullPointer), useSchurComplement_(false) {
 
     PL &iplist = parlist.sublist("Step").sublist("Primal Dual Interior Point");
     PL &syslist = iplist.sublist("System Solver");
@@ -159,8 +159,8 @@ public:
   }
  
   PrimalDualSystemStep( Teuchos::ParameterList &parlist,
-                        Teuchos::RCP<V> &scratch1_ ) : Step<Real>() {
-    PrimalDualSystemStep(parlist,Teuchos::null,Teuchos::null,scratch1); 
+                        ROL::SharedPointer<V> &scratch1_ ) : Step<Real>() {
+    PrimalDualSystemStep(parlist,ROL::nullPointer,ROL::nullPointer,scratch1); 
   }
 
   void initialize( V &x, const V &g, V &res, const V &c,
@@ -168,26 +168,26 @@ public:
 
     Step<Real>::initialize(x,g,res,c,obj,con,bnd,algo_state);
  
-    using Teuchos::RCP; 
-    using Teuchos::rcp; 
-    using Teuchos::rcpFromRef;
+     
+     
+    ;
 
-    RCP<OBJ> pObj = rcpFromRef(obj);
-    RCP<CON> pCon = rcpFromRef(con);
-    RCP<BND> pBnd = rcpFromRef(bnd);
+    ROL::SharedPointer<OBJ> pObj = ROL::makeSharedFromRef(obj);
+    ROL::SharedPointer<CON> pCon = ROL::makeSharedFromRef(con);
+    ROL::SharedPointer<BND> pBnd = ROL::makeSharedFromRef(bnd);
  
-    RCP<PV> x_pv = repartition(x);
+    ROL::SharedPointer<PV> x_pv = repartition(x);
 
-    RCP<V> xlambda = x_pv->get(OPTMULT);
-    RCP<V> z = x_pv->get(BNDMULT);
+    ROL::SharedPointer<V> xlambda = x_pv->get(OPTMULT);
+    ROL::SharedPointer<V> z = x_pv->get(BNDMULT);
  
-    A_ = rcp( new OP11( pObj, pCon, *xlambda, scratch1_ ) );
-    B_ = rcp( new OP12( ) );
-    C_ = rcp( new OP21( *z ) );
-    D_ = rcp( new OP22( pBnd, *xlambda ) );
+    A_ = ROL::makeShared<OP11>( pObj, pCon, *xlambda, scratch1_ );
+    B_ = ROL::makeShared<OP12>( );
+    C_ = ROL::makeShared<OP21>( *z );
+    D_ = ROL::makeShared<OP22>( pBnd, *xlambda );
 
     if( useSchurComplement_ ) {
-      schur_ = rcp( new SCHUR(A_,B_,C_,D_,scratch1_) );
+      schur_ = ROL::makeShared<SCHUR>(A_,B_,C_,D_,scratch1_);
     } 
     else {
       op_ = BlockOperator2<Real>(A_,B_,C_,D_);
@@ -197,20 +197,20 @@ public:
   void compute( V &s, const V &x, const V &res, OBJ &obj, CON &con, 
                 BND &bnd, AS &algo_state ) {
 
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::SharedPointer<StepState<Real> > step_state = Step<Real>::getState();
 
 
     if( useSchurComplement_ ) {
       
-      RCP<const PV> x_pv = repartition(x);
-      RCP<const PV> res_pv = repartition(res);
-      RCP<PV> s_pv = repartition(s);
+      ROL::SharedPointer<const PV> x_pv = repartition(x);
+      ROL::SharedPointer<const PV> res_pv = repartition(res);
+      ROL::SharedPointer<PV> s_pv = repartition(s);
 
 
       // Decouple (x,lambda) from (zl,zu) so that s <- L
 
-      RCP<V> sxl   = s_pv->get(OPTMULT);
-      RCP<V> sz    = s_pv->get(BNDMULT);
+      ROL::SharedPointer<V> sxl   = s_pv->get(OPTMULT);
+      ROL::SharedPointer<V> sz    = s_pv->get(BNDMULT);
  
       
 
@@ -224,7 +224,7 @@ public:
   void update( V &x, V &res, const V &s, OBJ &obj, CON &con, 
                BND &bnd, AS &algo_state ) {
 
-    Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::SharedPointer<StepState<Real> > step_state = Step<Real>::getState();
 
     
   }

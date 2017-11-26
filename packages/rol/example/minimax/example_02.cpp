@@ -68,12 +68,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -85,16 +85,16 @@ int main(int argc, char *argv[]) {
     ROL::Minimax2<RealT> obj;
 
     // Initialize iteration vectors.
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    (*x_rcp)[0] = 1.0; (*x_rcp)[1] = -0.1;
-    ROL::StdVector<RealT> x(x_rcp);
-    Teuchos::RCP<std::vector<RealT> > z_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    (*z_rcp)[0] = 1.0; (*z_rcp)[1] = 1.0;
-    ROL::StdVector<RealT> z(x_rcp);
+    ROL::SharedPointer<std::vector<RealT> > x_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+    (*x_ptr)[0] = 1.0; (*x_ptr)[1] = -0.1;
+    ROL::StdVector<RealT> x(x_ptr);
+    ROL::SharedPointer<std::vector<RealT> > z_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+    (*z_ptr)[0] = 1.0; (*z_ptr)[1] = 1.0;
+    ROL::StdVector<RealT> z(x_ptr);
 
     // Algorithmic input parameters.
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     std::string stepname = "Bundle";
     ROL::Algorithm<RealT> algo(stepname,*parlist);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     algo.run(x, obj, true, *outStream);
 
     // Compute error 
-    Teuchos::RCP<ROL::Vector<RealT> > diff = x.clone();
+    ROL::SharedPointer<ROL::Vector<RealT> > diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,z);
     RealT error = diff->norm();

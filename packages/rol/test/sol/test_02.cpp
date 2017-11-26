@@ -3,7 +3,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_SharedPointer.hpp"
 #include "ROL_DistributionFactory.hpp"
 
 typedef double RealT;
@@ -14,21 +14,21 @@ int main(int argc, char* argv[]) {
     
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
   try {
-    Teuchos::RCP<ROL::Distribution<RealT> > dist;
+    ROL::SharedPointer<ROL::Distribution<RealT> > dist;
 
     // Get ROL parameterlist
     std::string filename = "input_02.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );   
   
     for (ROL::EDistribution ed = ROL::DISTRIBUTION_ARCSINE; ed != ROL::DISTRIBUTION_LAST; ed++) {

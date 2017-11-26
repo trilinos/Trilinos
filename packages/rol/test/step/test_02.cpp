@@ -63,12 +63,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   try {
 
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Loop Through Test Objectives
@@ -85,17 +85,17 @@ int main(int argc, char *argv[]) {
       *outStream << std::endl << std::endl << ROL::ETestObjectivesToString(objFunc) << std::endl << std::endl;
 
       // Set Up Optimization Problem
-      Teuchos::RCP<ROL::Vector<RealT> > x0, z;
-      Teuchos::RCP<ROL::Objective<RealT> > obj = Teuchos::null;
+      ROL::SharedPointer<ROL::Vector<RealT> > x0, z;
+      ROL::SharedPointer<ROL::Objective<RealT> > obj = ROL::nullPointer;
       ROL::getTestObjectives<RealT>(obj,x0,z,objFunc);
-      Teuchos::RCP<ROL::Vector<RealT> > x = x0->clone();
+      ROL::SharedPointer<ROL::Vector<RealT> > x = x0->clone();
 
       // Get Dimension of Problem
       int dim = x0->dimension();
       parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 5*dim);
 
       // Error Vector
-      Teuchos::RCP<ROL::Vector<RealT> > e = x0->clone();
+      ROL::SharedPointer<ROL::Vector<RealT> > e = x0->clone();
       e->zero();
 
       for ( ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; tr < ROL::TRUSTREGION_LAST; tr++ ) {

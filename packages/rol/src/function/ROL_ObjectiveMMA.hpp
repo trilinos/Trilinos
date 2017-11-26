@@ -61,24 +61,24 @@ namespace ROL {
 template<class Real>
 class ObjectiveMMA : public Objective<Real> {
 
-  template <typename T> using RCP = Teuchos::RCP<T>;
+  template <typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
 
   typedef Objective<Real>       OBJ;
   typedef BoundConstraint<Real> BND;
 
 private:
 
-  const RCP<OBJ> obj_;
-  const RCP<BND> bnd_;
+  const ROL::SharedPointer<OBJ> obj_;
+  const ROL::SharedPointer<BND> bnd_;
   
 
-  RCP<V> l_; // Lower bound
-  RCP<V> u_; // Upper bound
+  ROL::SharedPointer<V> l_; // Lower bound
+  ROL::SharedPointer<V> u_; // Upper bound
   
-  RCP<V> p_; // First MMA numerator
-  RCP<V> q_; // Second MMA numerator
+  ROL::SharedPointer<V> p_; // First MMA numerator
+  ROL::SharedPointer<V> q_; // Second MMA numerator
 
-  RCP<V> d_; // Scratch vector
+  ROL::SharedPointer<V> d_; // Scratch vector
 
   Real fval_; // Original objective value
 
@@ -86,8 +86,8 @@ private:
 
 public:
 
-  ObjectiveMMA( const Teuchos::RCP<Objective<Real> > &obj,
-                const Teuchos::RCP<BoundConstraint<Real> > &bnd,
+  ObjectiveMMA( const ROL::SharedPointer<Objective<Real> > &obj,
+                const ROL::SharedPointer<BoundConstraint<Real> > &bnd,
                 const Vector<Real> &x,
                 Real tol=std::sqrt(ROL_EPSILON<Real>()) ) : 
     obj_(obj), bnd_(bnd), tol_(tol) {

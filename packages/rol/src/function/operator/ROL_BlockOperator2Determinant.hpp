@@ -63,16 +63,16 @@ class BlockOperator2Determinant : public LinearOperator<Real> {
  
 private:
 
-  Teuchos::RCP<OP> A_, B_, C_, D_;
-  Teuchos::RCP<V> scratch_;  
+  ROL::SharedPointer<OP> A_, B_, C_, D_;
+  ROL::SharedPointer<V> scratch_;  
 
 public:
 
-  BlockOperator2Determinant( Teuchos::RCP<OP> &A, 
-                             Teuchos::RCP<OP> &B, 
-                             Teuchos::RCP<OP> &C, 
-                             Teuchos::RCP<OP> &D,
-                             Teuchos::RCP<V>  &scratch ) : 
+  BlockOperator2Determinant( ROL::SharedPointer<OP> &A, 
+                             ROL::SharedPointer<OP> &B, 
+                             ROL::SharedPointer<OP> &C, 
+                             ROL::SharedPointer<OP> &D,
+                             ROL::SharedPointer<V>  &scratch ) : 
     A_(A), B_(B), C_(C), D_(D), scratch_(scratch) {}
 
 

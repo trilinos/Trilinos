@@ -49,7 +49,7 @@
 #include "ROL_QuadraticPenalty_SimOpt.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_SharedPointer.hpp"
 #include <iostream>
 
 /** @ingroup func_group
@@ -97,18 +97,18 @@ template <class Real>
 class AugmentedLagrangian_SimOpt : public Objective_SimOpt<Real> {
 private:
   // Required for Augmented Lagrangian definition
-  const Teuchos::RCP<Objective_SimOpt<Real> > obj_;
-  Teuchos::RCP<QuadraticPenalty_SimOpt<Real> > pen_;
+  const ROL::SharedPointer<Objective_SimOpt<Real> > obj_;
+  ROL::SharedPointer<QuadraticPenalty_SimOpt<Real> > pen_;
   Real penaltyParameter_;
 
   // Auxiliary storage
-  Teuchos::RCP<Vector<Real> > dualSimVector_;
-  Teuchos::RCP<Vector<Real> > dualOptVector_;
+  ROL::SharedPointer<Vector<Real> > dualSimVector_;
+  ROL::SharedPointer<Vector<Real> > dualOptVector_;
 
   // Objective and constraint evaluations
   Real fval_;
-  Teuchos::RCP<Vector<Real> > gradient1_;
-  Teuchos::RCP<Vector<Real> > gradient2_;
+  ROL::SharedPointer<Vector<Real> > gradient1_;
+  ROL::SharedPointer<Vector<Real> > gradient2_;
 
   // Evaluation counters
   int nfval_;
@@ -123,8 +123,8 @@ private:
   bool isGradient2Computed_;
 
 public:
-  AugmentedLagrangian_SimOpt(const Teuchos::RCP<Objective_SimOpt<Real> > &obj,
-                             const Teuchos::RCP<Constraint_SimOpt<Real> > &con,
+  AugmentedLagrangian_SimOpt(const ROL::SharedPointer<Objective_SimOpt<Real> > &obj,
+                             const ROL::SharedPointer<Constraint_SimOpt<Real> > &con,
                              const Vector<Real> &multiplier,
                              const Real penaltyParameter,
                              const Vector<Real> &simVec,
@@ -144,7 +144,7 @@ public:
     scaleLagrangian_  = sublist.get("Use Scaled Augmented Lagrangian", false);
     int HessianApprox = sublist.get("Level of Hessian Approximation",  0);
 
-    pen_ = Teuchos::rcp(new QuadraticPenalty_SimOpt<Real>(con,multiplier,penaltyParameter,simVec,optVec,conVec,scaleLagrangian_,HessianApprox));
+    pen_ = ROL::makeShared<QuadraticPenalty_SimOpt<Real>>(con,multiplier,penaltyParameter,simVec,optVec,conVec,scaleLagrangian_,HessianApprox);
   }
 
   virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {

@@ -58,20 +58,20 @@ template <class Real>
 class BatchStdVector : public StdVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  const Teuchos::RCP<BatchManager<Real> > bman_;
+  const ROL::SharedPointer<BatchManager<Real> > bman_;
 
 protected:
-  const Teuchos::RCP<BatchManager<Real> > getBatchManager(void) const {
+  const ROL::SharedPointer<BatchManager<Real> > getBatchManager(void) const {
     return bman_;
   }
 
 public:
-  BatchStdVector(const Teuchos::RCP<std::vector<Real> > &vec,
-                 const Teuchos::RCP<BatchManager<Real> > &bman)
+  BatchStdVector(const ROL::SharedPointer<std::vector<Real> > &vec,
+                 const ROL::SharedPointer<BatchManager<Real> > &bman)
    : StdVector<Real>(vec), bman_(bman) {}
    
   virtual Real dot(const Vector<Real> &x) const {
-    const std::vector<Real> &xval = *(Teuchos::dyn_cast<const StdVector<Real> >(x).getVector());
+    const std::vector<Real> &xval = *(dynamic_cast<const StdVector<Real>&>(x).getVector());
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint numMySamples = yval.size();
     TEUCHOS_TEST_FOR_EXCEPTION( xval.size() != numMySamples, std::invalid_argument,
@@ -85,11 +85,11 @@ public:
     return sum_val;
   }
 
-  virtual Teuchos::RCP<Vector<Real> > clone(void) const {
+  virtual ROL::SharedPointer<Vector<Real> > clone(void) const {
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint numMySamples = yval.size();
-    return Teuchos::rcp(new BatchStdVector(
-           Teuchos::rcp(new std::vector<Real>(numMySamples)),bman_));
+    return ROL::makeShared<BatchStdVector>(
+           ROL::makeShared<std::vector<Real>>(numMySamples),bman_);
   }
 
   int dimension(void) const {

@@ -127,12 +127,12 @@ int main(int argc, char* argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -142,20 +142,20 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build vectors
     unsigned dim = 4;
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT>(dim,0.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > x = Teuchos::rcp(new ROL::StdVector<RealT>(x_rcp));
-    setRandomVector(*x_rcp);
-    Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT>(dim,0.0) );
-    Teuchos::RCP<ROL::Vector<RealT> > d = Teuchos::rcp(new ROL::StdVector<RealT>(d_rcp));
-    setRandomVector(*d_rcp);
+    ROL::SharedPointer<std::vector<RealT> > x_ptr = ROL::makeShared<std::vector<RealT>>(dim,0.0);
+    ROL::SharedPointer<ROL::Vector<RealT> > x = ROL::makeShared<ROL::StdVector<RealT>>(x_ptr);
+    setRandomVector(*x_ptr);
+    ROL::SharedPointer<std::vector<RealT> > d_ptr = ROL::makeShared<std::vector<RealT>>(dim,0.0);
+    ROL::SharedPointer<ROL::Vector<RealT> > d = ROL::makeShared<ROL::StdVector<RealT>>(d_ptr);
+    setRandomVector(*d_ptr);
     // Build objective function
-    std::vector<Teuchos::RCP<ROL::Objective<RealT> > > vec_obj(2,Teuchos::null);
-    vec_obj[0] = Teuchos::rcp(new ObjectiveFunctionTest07_1<RealT>);
-    vec_obj[1] = Teuchos::rcp(new ObjectiveFunctionTest07_2<RealT>);
-    Teuchos::RCP<ROL::StdObjective<RealT> > obj_scalarize
-      = Teuchos::rcp(new ObjectiveFunctionTest07_scalarize<RealT>);
-    Teuchos::RCP<ROL::Objective<RealT> > obj
-      = Teuchos::rcp(new ROL::CompositeObjective<RealT>(vec_obj,obj_scalarize));
+    std::vector<ROL::SharedPointer<ROL::Objective<RealT> > > vec_obj(2,ROL::nullPointer);
+    vec_obj[0] = ROL::makeShared<ObjectiveFunctionTest07_1<RealT>>();
+    vec_obj[1] = ROL::makeShared<ObjectiveFunctionTest07_2<RealT>>();
+    ROL::SharedPointer<ROL::StdObjective<RealT> > obj_scalarize
+      = ROL::makeShared<ObjectiveFunctionTest07_scalarize<RealT>>();
+    ROL::SharedPointer<ROL::Objective<RealT> > obj
+      = ROL::makeShared<ROL::CompositeObjective<RealT>>(vec_obj,obj_scalarize);
     // Test parametrized objective functions
     *outStream << "Check Derivatives of CompositeObjective\n";
     obj->checkGradient(*x,*d,true,*outStream);

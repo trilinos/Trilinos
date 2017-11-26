@@ -77,17 +77,17 @@ public:
 int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm
+  ROL::SharedPointer<const Teuchos::Comm<int> > comm
     = Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && Teuchos::rank<int>(*comm)==0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = &std::cout, false;
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = &bhs, false;
 
   int errorFlag  = 0;
 
@@ -95,8 +95,8 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp(new std::vector<RealT>(1));
-    Teuchos::RCP<ROL::Vector<RealT> > x = Teuchos::rcp(new ROL::StdVector<RealT>(x_rcp));
+    ROL::SharedPointer<std::vector<RealT> > x_ptr = ROL::makeShared<std::vector<RealT>>(1);
+    ROL::SharedPointer<ROL::Vector<RealT> > x = ROL::makeShared<ROL::StdVector<RealT>>(x_ptr);
     ROL::QuadratureInfo info;
     info.dim        = 2;
     info.maxLevel   = 7;
@@ -105,16 +105,16 @@ int main(int argc, char* argv[]) {
     info.normalized = true;
     info.adaptive   = true;
     info.print      = !Teuchos::rank<int>(*comm);
-    Teuchos::RCP<ROL::BatchManager<RealT> > bman
-      = Teuchos::rcp(new ROL::StdTeuchosBatchManager<RealT,int>(comm));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler
-      = Teuchos::rcp(new ROL::SparseGridGenerator<RealT>(bman,info));
+    ROL::SharedPointer<ROL::BatchManager<RealT> > bman
+      = ROL::makeShared<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
+    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makeShared<ROL::SparseGridGenerator<RealT>>(bman,info);
     /**********************************************************************************************/
     /************************* CONSTRUCT INTEGRAND FUNCTION ***************************************/
     /**********************************************************************************************/
     RealT coeff1(10), coeff2(10);
-    Teuchos::RCP<Integrand<RealT> > func
-      = Teuchos::rcp(new TestIntegrand<RealT>(coeff1,coeff2));
+    ROL::SharedPointer<Integrand<RealT> > func
+      = ROL::makeShared<TestIntegrand<RealT>>(coeff1,coeff2);
     /**********************************************************************************************/
     /************************* ADAPTIVE QUADRATURE ************************************************/
     /**********************************************************************************************/

@@ -70,19 +70,16 @@ int main(int argc, char *argv[]) {
 
   typedef typename vector::size_type       uint;
 
-
-  using Teuchos::RCP; using Teuchos::rcp;
-
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -93,25 +90,25 @@ int main(int argc, char *argv[]) {
     uint xdim = 4;
     uint cdim = 1;
 
-    RCP<vector> x_exact_rcp = rcp( new vector(xdim), 0.0 );
-    (*x_exact_rcp)[0] = 1.0;
-    (*x_exact_rcp)[1] = 1.0;
+    ROL::SharedPointer<vector> x_exact_ptr = ROL::makeShared<vector>(xdim);
+    (*x_exact_ptr)[0] = 1.0;
+    (*x_exact_ptr)[1] = 1.0;
 
-    RCP<V> x     = rcp( new SV( rcp( new vector(xdim, 0.0) ) ) );
-    RCP<V> d     = rcp( new SV( rcp( new vector(xdim, 0.0) ) ) );
-    RCP<V> xtest = rcp( new SV( rcp( new vector(xdim, 0.0) ) ) );
+    ROL::SharedPointer<V> x     = ROL::makeShared<SV>( ROL::makeShared<vector>(xdim, 0.0) );
+    ROL::SharedPointer<V> d     = ROL::makeShared<SV>( ROL::makeShared<vector>(xdim, 0.0) );
+    ROL::SharedPointer<V> xtest = ROL::makeShared<SV>( ROL::makeShared<vector>(xdim, 0.0) );
 
-    RCP<V> c1    = rcp( new SV( rcp( new vector(cdim, 1.0) ) ) );
-    RCP<V> c2    = rcp( new SV( rcp( new vector(cdim, 1.0) ) ) );
-    RCP<V> l1    = rcp( new SV( rcp( new vector(cdim, 1.0) ) ) );
-    RCP<V> l2    = rcp( new SV( rcp( new vector(cdim, 1.0) ) ) );
+    ROL::SharedPointer<V> c1    = ROL::makeShared<SV>( ROL::makeShared<vector>(cdim, 1.0) );
+    ROL::SharedPointer<V> c2    = ROL::makeShared<SV>( ROL::makeShared<vector>(cdim, 1.0) );
+    ROL::SharedPointer<V> l1    = ROL::makeShared<SV>( ROL::makeShared<vector>(cdim, 1.0) );
+    ROL::SharedPointer<V> l2    = ROL::makeShared<SV>( ROL::makeShared<vector>(cdim, 1.0) );
 
-    RCP<V> c    =  ROL::CreatePartitionedVector( c1, c2 );
-    RCP<V> l    =  ROL::CreatePartitionedVector( l1, l2 );
+    ROL::SharedPointer<V> c    =  ROL::CreatePartitionedVector( c1, c2 );
+    ROL::SharedPointer<V> l    =  ROL::CreatePartitionedVector( l1, l2 );
   
 
 
-    SV x_exact( x_exact_rcp );
+    SV x_exact( x_exact_ptr );
  
     // Initial guess from H&S 39
     x->applyUnary(ROL::Elementwise::Fill<RealT>(2.0));
@@ -119,12 +116,12 @@ int main(int argc, char *argv[]) {
     ROL::RandomizeVector(*d, -1.0, 1.0 ); 
     ROL::RandomizeVector(*xtest, -1.0, 1.0 ); 
     
-    RCP<OBJ> obj  = rcp( new ROL::ZOO::Objective_HS39<RealT>() );
-    RCP<EC>  con1 = rcp( new ROL::ZOO::Constraint_HS39a<RealT>() );
-    RCP<EC>  con2 = rcp( new ROL::ZOO::Constraint_HS39b<RealT>() );
-    std::vector<RCP<EC> > cvec(2); cvec[0] = con1; cvec[1] = con2;
+    ROL::SharedPointer<OBJ> obj  = ROL::makeShared<ROL::ZOO::Objective_HS39<RealT>>();
+    ROL::SharedPointer<EC>  con1 = ROL::makeShared<ROL::ZOO::Constraint_HS39a<RealT>>();
+    ROL::SharedPointer<EC>  con2 = ROL::makeShared<ROL::ZOO::Constraint_HS39b<RealT>>();
+    std::vector<ROL::SharedPointer<EC> > cvec(2); cvec[0] = con1; cvec[1] = con2;
    
-    RCP<EC>  con = Teuchos::rcp(new ROL::Constraint_Partitioned<RealT>(cvec));
+    ROL::SharedPointer<EC>  con = ROL::makeShared<ROL::Constraint_Partitioned<RealT>>(cvec);
 
     *outStream << "Checking objective" << std::endl;
     obj->checkGradient(*x,*d,true,*outStream); 

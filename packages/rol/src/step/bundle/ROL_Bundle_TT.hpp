@@ -49,7 +49,7 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Bundle.hpp"
 
-#include "Teuchos_RCP.hpp"
+#include "ROL_SharedPointer.hpp"
 
 #include <vector>
 #include <limits.h> 

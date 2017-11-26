@@ -53,7 +53,7 @@
 #include "ROL_GoldenSectionScalarMinimization.hpp"
 #include "ROL_ScalarFunction.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_SharedPointer.hpp"
 #include <iostream>
 
 namespace ROL { 
@@ -61,7 +61,7 @@ namespace ROL {
 template<class Real>
 class ScalarMinimizationTest {
 private:
-  Teuchos::RCP<ScalarMinimization<Real> > algo_;
+  ROL::SharedPointer<ScalarMinimization<Real> > algo_;
 
 public:
   virtual ~ScalarMinimizationTest(void) {}
@@ -69,13 +69,13 @@ public:
   ScalarMinimizationTest(Teuchos::ParameterList &parlist) {
     std::string type = parlist.sublist("Scalar Minimization").get("Type","Brent's");
     if ( type == "Brent's" ) {
-      algo_ = Teuchos::rcp(new BrentsScalarMinimization<Real>(parlist));
+      algo_ = ROL::makeShared<BrentsScalarMinimization<Real>>(parlist);
     }
     else if ( type == "Bisection" ) {
-      algo_ = Teuchos::rcp(new BisectionScalarMinimization<Real>(parlist));
+      algo_ = ROL::makeShared<BisectionScalarMinimization<Real>>(parlist);
     }
     else if ( type == "Golden Section" ) {
-      algo_ = Teuchos::rcp(new GoldenSectionScalarMinimization<Real>(parlist));
+      algo_ = ROL::makeShared<GoldenSectionScalarMinimization<Real>>(parlist);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,

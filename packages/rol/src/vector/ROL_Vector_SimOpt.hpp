@@ -56,22 +56,22 @@ namespace ROL {
 template<class Real> 
 class Vector_SimOpt : public Vector<Real> {
 private:
-  Teuchos::RCP<Vector<Real> > vec1_;
-  Teuchos::RCP<Vector<Real> > vec2_;
-  mutable Teuchos::RCP<Vector<Real> > dual_vec1_;
-  mutable Teuchos::RCP<Vector<Real> > dual_vec2_;
-  mutable Teuchos::RCP<Vector_SimOpt<Real> > dual_vec_;
+  ROL::SharedPointer<Vector<Real> > vec1_;
+  ROL::SharedPointer<Vector<Real> > vec2_;
+  mutable ROL::SharedPointer<Vector<Real> > dual_vec1_;
+  mutable ROL::SharedPointer<Vector<Real> > dual_vec2_;
+  mutable ROL::SharedPointer<Vector_SimOpt<Real> > dual_vec_;
 
 public:
-  Vector_SimOpt( const Teuchos::RCP<Vector<Real> > &vec1, const Teuchos::RCP<Vector<Real> > &vec2 ) 
+  Vector_SimOpt( const ROL::SharedPointer<Vector<Real> > &vec1, const ROL::SharedPointer<Vector<Real> > &vec2 ) 
     : vec1_(vec1), vec2_(vec2) {
     dual_vec1_ = (vec1_->dual()).clone();
     dual_vec2_ = (vec2_->dual()).clone();
   }
 
   void plus( const Vector<Real> &x ) {
-    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const Vector<Real> >(x));
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
     vec1_->plus(*(xs.get_1()));
     vec2_->plus(*(xs.get_2()));
   }   
@@ -82,15 +82,15 @@ public:
   }
 
   void axpy( const Real alpha, const Vector<Real> &x ) {
-    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const Vector<Real> >(x));
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
     vec1_->axpy(alpha,*(xs.get_1()));
     vec2_->axpy(alpha,*(xs.get_2()));
   }
 
   Real dot( const Vector<Real> &x ) const {
-    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const Vector<Real> >(x));
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
     return vec1_->dot(*(xs.get_1())) + vec2_->dot(*(xs.get_2()));
   }
 
@@ -100,29 +100,29 @@ public:
     return sqrt( norm1*norm1 + norm2*norm2 );
   } 
 
-  Teuchos::RCP<Vector<Real> > clone() const {
-    return Teuchos::rcp( new Vector_SimOpt(vec1_->clone(),vec2_->clone()) );  
+  ROL::SharedPointer<Vector<Real> > clone() const {
+    return ROL::makeShared<Vector_SimOpt>(vec1_->clone(),vec2_->clone());  
   }
 
   const Vector<Real> & dual(void) const {
     dual_vec1_->set(vec1_->dual());
     dual_vec2_->set(vec2_->dual());
-    dual_vec_ = Teuchos::rcp( new Vector_SimOpt<Real>(dual_vec1_,dual_vec2_) ); 
+    dual_vec_ = ROL::makeShared<Vector_SimOpt<Real>>(dual_vec1_,dual_vec2_); 
     return *dual_vec_;
   }
 
-  Teuchos::RCP<Vector<Real> > basis( const int i )  const {
+  ROL::SharedPointer<Vector<Real> > basis( const int i )  const {
     int n1 = (vec1_)->dimension();
     if ( i < n1 ) {
-      Teuchos::RCP<Vector<Real> > e1 = (vec1_)->basis(i);
-      Teuchos::RCP<Vector<Real> > e2 = (vec2_)->clone(); e2->zero();
-      Teuchos::RCP<Vector<Real> > e  = Teuchos::rcp(new Vector_SimOpt<Real>(e1,e2));
+      ROL::SharedPointer<Vector<Real> > e1 = (vec1_)->basis(i);
+      ROL::SharedPointer<Vector<Real> > e2 = (vec2_)->clone(); e2->zero();
+      ROL::SharedPointer<Vector<Real> > e  = ROL::makeShared<Vector_SimOpt<Real>>(e1,e2);
       return e;
     }
     else {
-      Teuchos::RCP<Vector<Real> > e1 = (vec1_)->clone(); e1->zero();
-      Teuchos::RCP<Vector<Real> > e2 = (vec2_)->basis(i-n1);
-      Teuchos::RCP<Vector<Real> > e  = Teuchos::rcp(new Vector_SimOpt<Real>(e1,e2));
+      ROL::SharedPointer<Vector<Real> > e1 = (vec1_)->clone(); e1->zero();
+      ROL::SharedPointer<Vector<Real> > e2 = (vec2_)->basis(i-n1);
+      ROL::SharedPointer<Vector<Real> > e  = ROL::makeShared<Vector_SimOpt<Real>>(e1,e2);
       return e;
     }
   }
@@ -135,7 +135,7 @@ public:
   }
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
-    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(x);
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
 
     vec1_->applyBinary(f,*xs.get_1());
     vec2_->applyBinary(f,*xs.get_2());
@@ -155,19 +155,19 @@ public:
     return (vec1_)->dimension() + (vec2_)->dimension();
   }
 
-  Teuchos::RCP<const Vector<Real> > get_1() const { 
+  ROL::SharedPointer<const Vector<Real> > get_1() const { 
     return vec1_; 
   }
 
-  Teuchos::RCP<const Vector<Real> > get_2() const { 
+  ROL::SharedPointer<const Vector<Real> > get_2() const { 
     return vec2_; 
   }
 
-  Teuchos::RCP<Vector<Real> > get_1() { 
+  ROL::SharedPointer<Vector<Real> > get_1() { 
     return vec1_; 
   }
 
-  Teuchos::RCP<Vector<Real> > get_2() { 
+  ROL::SharedPointer<Vector<Real> > get_2() { 
     return vec2_; 
   }
 

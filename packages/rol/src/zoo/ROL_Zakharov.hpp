@@ -95,12 +95,12 @@ namespace ZOO {
 template<class Real>
 class Objective_Zakharov : public Objective<Real> {
 private:
-    Teuchos::RCP<Vector<Real> > k_;  
+    ROL::SharedPointer<Vector<Real> > k_;  
 
 public:
   
   // Create using a ROL::Vector containing 1,2,3,...,n
-  Objective_Zakharov(const Teuchos::RCP<Vector<Real> > k) : k_(k) {}
+  Objective_Zakharov(const ROL::SharedPointer<Vector<Real> > k) : k_(k) {}
 
   Real value( const Vector<Real> &x, Real &tol ) {
 
@@ -164,28 +164,28 @@ public:
 
 
 template<class Real>
-void getZakharov( Teuchos::RCP<Objective<Real> > &obj,
-                  Teuchos::RCP<Vector<Real> >    &x0,
-                  Teuchos::RCP<Vector<Real> >    &x ) {
+void getZakharov( ROL::SharedPointer<Objective<Real> > &obj,
+                  ROL::SharedPointer<Vector<Real> >    &x0,
+                  ROL::SharedPointer<Vector<Real> >    &x ) {
 
   // Problem dimension
   int n = 10;
 
   // Get Initial Guess
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,3.0));
-  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
+  ROL::SharedPointer<std::vector<Real> > x0p = ROL::makeShared<std::vector<Real>>(n,3.0);
+  x0 = ROL::makeShared<StdVector<Real>>(x0p);
 
   // Get Solution
-  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
-  x = Teuchos::rcp(new StdVector<Real>(xp));
+  ROL::SharedPointer<std::vector<Real> > xp = ROL::makeShared<std::vector<Real>>(n,0.0);
+  x = ROL::makeShared<StdVector<Real>>(xp);
 
   // Instantiate Objective Function
-  Teuchos::RCP<std::vector<Real> > k_rcp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::SharedPointer<std::vector<Real> > k_ptr = ROL::makeShared<std::vector<Real>>(n,0.0);
   for ( int i = 0; i < n; i++ ) {
-    (*k_rcp)[i] = i+1.0;
+    (*k_ptr)[i] = i+1.0;
   }
-  Teuchos::RCP<Vector<Real> > k = Teuchos::rcp(new StdVector<Real>(k_rcp));
-  obj = Teuchos::rcp(new Objective_Zakharov<Real>(k));
+  ROL::SharedPointer<Vector<Real> > k = ROL::makeShared<StdVector<Real>>(k_ptr);
+  obj = ROL::makeShared<Objective_Zakharov<Real>>(k);
 }
 
 

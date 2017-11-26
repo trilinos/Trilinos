@@ -87,22 +87,22 @@ public:
 };
 
 template<class Real>
-void getSumOfSquares( Teuchos::RCP<Objective<Real> > &obj,
-                      Teuchos::RCP<Vector<Real> >    &x0,
-                      Teuchos::RCP<Vector<Real> >    &x ) {
+void getSumOfSquares( ROL::SharedPointer<Objective<Real> > &obj,
+                      ROL::SharedPointer<Vector<Real> >    &x0,
+                      ROL::SharedPointer<Vector<Real> >    &x ) {
   // Problem dimension
   int n = 100;
 
   // Get Initial Guess
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,1.0));
-  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
+  ROL::SharedPointer<std::vector<Real> > x0p = ROL::makeShared<std::vector<Real>>(n,1.0);
+  x0 = ROL::makeShared<StdVector<Real>>(x0p);
 
   // Get Solution
-  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
-  x = Teuchos::rcp(new StdVector<Real>(xp));
+  ROL::SharedPointer<std::vector<Real> > xp = ROL::makeShared<std::vector<Real>>(n,0.0);
+  x = ROL::makeShared<StdVector<Real>>(xp);
 
   // Instantiate Objective Function
-  obj = Teuchos::rcp(new Objective_SumOfSquares<Real>);
+  obj = ROL::makeShared<Objective_SumOfSquares<Real>>();
 }
 
 } // End ZOO Namespace

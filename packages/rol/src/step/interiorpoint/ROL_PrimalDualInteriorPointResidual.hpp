@@ -96,22 +96,22 @@ private:
   static const size_type LOWER = 2;
   static const size_type UPPER = 3;
 
-  const Teuchos::RCP<OBJ> obj_;
-  const Teuchos::RCP<CON> con_;
-  const Teuchos::RCP<BND> bnd_;
+  const ROL::SharedPointer<OBJ> obj_;
+  const ROL::SharedPointer<CON> con_;
+  const ROL::SharedPointer<BND> bnd_;
 
-  Teuchos::RCP<const V>   x_;            // Optimization vector
-  Teuchos::RCP<const V>   l_;            //  constraint multiplier
-  Teuchos::RCP<const V>   zl_;           // Lower bound multiplier
-  Teuchos::RCP<const V>   zu_;           // Upper bound multiplier
+  ROL::SharedPointer<const V>   x_;            // Optimization vector
+  ROL::SharedPointer<const V>   l_;            //  constraint multiplier
+  ROL::SharedPointer<const V>   zl_;           // Lower bound multiplier
+  ROL::SharedPointer<const V>   zu_;           // Upper bound multiplier
 
-  Teuchos::RCP<const V>   xl_;           // Lower bound
-  Teuchos::RCP<const V>   xu_;           // Upper bound 
+  ROL::SharedPointer<const V>   xl_;           // Lower bound
+  ROL::SharedPointer<const V>   xu_;           // Upper bound 
 
-  const Teuchos::RCP<const V> maskL_;   
-  const Teuchos::RCP<const V> maskU_;
+  const ROL::SharedPointer<const V> maskL_;   
+  const ROL::SharedPointer<const V> maskU_;
 
-  Teuchos::RCP<V> scratch_;              // Scratch vector the same dimension as x
+  ROL::SharedPointer<V> scratch_;              // Scratch vector the same dimension as x
 
   Real mu_;
 
@@ -155,15 +155,15 @@ private:
   InFill inFill_;
  
   // Extract the optimization and lagrange multiplier
-  Teuchos::RCP<V> getOptMult( V &vec ) {
-    PV &vec_pv = Teuchos::dyn_cast<PV>(vec);
+  ROL::SharedPointer<V> getOptMult( V &vec ) {
+    PV &vec_pv = dynamic_cast<PV&>(vec);
  
     return CreatePartitioned(vec_pv.get(OPT),vec_pv.get(EQUAL));
   }
 
   // Extract the optimization and lagrange multiplier
-  Teuchos::RCP<const V> getOptMult( const V &vec ) {
-    const PV &vec_pv = Teuchos::dyn_cast<const PV>(vec);
+  ROL::SharedPointer<const V> getOptMult( const V &vec ) {
+    const PV &vec_pv = dynamic_cast<const PV&>(vec);
  
     return CreatePartitioned(vec_pv.get(OPT),vec_pv.get(EQUAL));
   }
@@ -173,13 +173,13 @@ private:
 
 public:
 
-  PrimalDualInteriorPointResidual( const Teuchos::RCP<OBJ> &obj, 
-                                   const Teuchos::RCP<CON> &con, 
-                                   const Teuchos::RCP<BND> &bnd,
+  PrimalDualInteriorPointResidual( const ROL::SharedPointer<OBJ> &obj, 
+                                   const ROL::SharedPointer<CON> &con, 
+                                   const ROL::SharedPointer<BND> &bnd,
                                    const V &x,
-                                   const Teuchos::RCP<const V> &maskL,
-                                   const Teuchos::RCP<const V> &maskU,
-                                         Teuchos::RCP<V> &scratch,
+                                   const ROL::SharedPointer<const V> &maskL,
+                                   const ROL::SharedPointer<const V> &maskU,
+                                         ROL::SharedPointer<V> &scratch,
                                          Real mu, bool symmetrize ) :
     obj_(obj), con_(con), bnd_(bnd), xl_(bnd->getLowerBound()),
     xu_(bnd->getUpperBound()), maskL_(maskL), maskU_(maskU), scratch_(scratch),
@@ -187,7 +187,7 @@ public:
     ngrad_(0), ncval_(0) {
 
     // Get access to the four components
-    const PV &x_pv = Teuchos::dyn_cast<const PV>(x);
+    const PV &x_pv = dynamic_cast<const PV&>(x);
     
     x_  = x_pv.get(OPT);
     l_  = x_pv.get(EQUAL);
@@ -200,7 +200,7 @@ public:
   void update( const Vector<Real> &x, bool flag = true, int iter = -1  ) {
 
     // Get access to the four components
-    const PV &x_pv = Teuchos::dyn_cast<const PV>(x);
+    const PV &x_pv = dynamic_cast<const PV&>(x);
     
     x_  = x_pv.get(OPT);
     l_  = x_pv.get(EQUAL);
@@ -216,23 +216,23 @@ public:
   // Evaluate the gradient of the Lagrangian
   void value( V &c, const V &x, Real &tol ) {
 
-    using Teuchos::RCP;
+    
 
     Elementwise::Shift<Real> subtract_mu(-mu_);
     Elementwise::Fill<Real>  fill_minus_mu(-mu_);
 
-    const PV &x_pv = Teuchos::dyn_cast<const PV>(x);
-    PV &c_pv = Teuchos::dyn_cast<PV>(c);
+    const PV &x_pv = dynamic_cast<const PV&>(x);
+    PV &c_pv = dynamic_cast<PV&>(c);
   
     x_  = x_pv.get(OPT);
     l_  = x_pv.get(EQUAL);
     zl_ = x_pv.get(LOWER);
     zu_ = x_pv.get(UPPER);  
 
-    RCP<V> cx  = c_pv.get(OPT);
-    RCP<V> cl  = c_pv.get(EQUAL);
-    RCP<V> czl = c_pv.get(LOWER);
-    RCP<V> czu = c_pv.get(UPPER);  
+    ROL::SharedPointer<V> cx  = c_pv.get(OPT);
+    ROL::SharedPointer<V> cl  = c_pv.get(EQUAL);
+    ROL::SharedPointer<V> czl = c_pv.get(LOWER);
+    ROL::SharedPointer<V> czu = c_pv.get(UPPER);  
     
     /********************************************************************************/
     /* Optimization Components                                                      */
@@ -313,23 +313,23 @@ public:
   //
   void applyJacobian( V &jv, const V &v, const V &x, Real &tol ) {
 
-    using Teuchos::RCP;
+    
 
-    PV &jv_pv = Teuchos::dyn_cast<PV>(jv);
-    const PV &v_pv = Teuchos::dyn_cast<const PV>(v);
-    const PV &x_pv = Teuchos::dyn_cast<const PV>(x); 
+    PV &jv_pv = dynamic_cast<PV&>(jv);
+    const PV &v_pv = dynamic_cast<const PV&>(v);
+    const PV &x_pv = dynamic_cast<const PV&>(x); 
 
     // output vector components
-    RCP<V> jvx  = jv_pv.get(OPT);
-    RCP<V> jvl  = jv_pv.get(EQUAL);
-    RCP<V> jvzl = jv_pv.get(LOWER);
-    RCP<V> jvzu = jv_pv.get(UPPER);
+    ROL::SharedPointer<V> jvx  = jv_pv.get(OPT);
+    ROL::SharedPointer<V> jvl  = jv_pv.get(EQUAL);
+    ROL::SharedPointer<V> jvzl = jv_pv.get(LOWER);
+    ROL::SharedPointer<V> jvzu = jv_pv.get(UPPER);
 
     // input vector components
-    RCP<const V> vx  = v_pv.get(OPT);
-    RCP<const V> vl  = v_pv.get(EQUAL); 
-    RCP<const V> vzl = v_pv.get(LOWER);
-    RCP<const V> vzu = v_pv.get(UPPER);
+    ROL::SharedPointer<const V> vx  = v_pv.get(OPT);
+    ROL::SharedPointer<const V> vl  = v_pv.get(EQUAL); 
+    ROL::SharedPointer<const V> vzl = v_pv.get(LOWER);
+    ROL::SharedPointer<const V> vzu = v_pv.get(UPPER);
 
     x_  = x_pv.get(OPT);
     l_  = x_pv.get(EQUAL);

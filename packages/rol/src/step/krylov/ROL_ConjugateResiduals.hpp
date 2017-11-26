@@ -60,11 +60,11 @@ class ConjugateResiduals : public Krylov<Real> {
 
   bool isInitialized_;
   bool useInexact_;
-  Teuchos::RCP<Vector<Real> > r_;
-  Teuchos::RCP<Vector<Real> > v_;
-  Teuchos::RCP<Vector<Real> > p_;
-  Teuchos::RCP<Vector<Real> > Ap_;
-  Teuchos::RCP<Vector<Real> > MAp_;
+  ROL::SharedPointer<Vector<Real> > r_;
+  ROL::SharedPointer<Vector<Real> > v_;
+  ROL::SharedPointer<Vector<Real> > p_;
+  ROL::SharedPointer<Vector<Real> > Ap_;
+  ROL::SharedPointer<Vector<Real> > MAp_;
 
 public:
   ConjugateResiduals( Real absTol = 1.e-4, Real relTol = 1.e-2, int maxit = 100, bool useInexact = false ) 

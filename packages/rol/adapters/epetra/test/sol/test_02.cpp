@@ -58,22 +58,22 @@
 typedef double RealT;
 
 int main(int argc, char* argv[]) {
-  Teuchos::RCP<Epetra_Comm> comm;
+  ROL::SharedPointer<Epetra_Comm> comm;
 #ifdef HAVE_MPI
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+  comm = ROL::makeShared<Epetra_MpiComm>(MPI_COMM_WORLD);
 #else
-  comm = Teuchos::rcp(new Epetra_SerialComm());
+  comm = ROL::makeShared<Epetra_SerialComm>();
 #endif
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && comm->MyPID() == 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = &std::cout, false;
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = &bhs, false;
 
   int errorFlag  = 0;
 
@@ -87,8 +87,8 @@ int main(int argc, char* argv[]) {
     size_t dimension = 1;
 
     // Initialize distribution
-    Teuchos::RCP<ROL::Distribution<RealT> > dist;
-    std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > distVec(dimension);
+    ROL::SharedPointer<ROL::Distribution<RealT> > dist;
+    std::vector<ROL::SharedPointer<ROL::Distribution<RealT> > > distVec(dimension);
     Teuchos::ParameterList Dlist;
     Dlist.sublist("SOL").sublist("Distribution").set("Name","Beta");
     RealT alpha = 1., beta = 4.;
@@ -104,17 +104,17 @@ int main(int argc, char* argv[]) {
 
     // Get ROL parameterlist
     std::string filename = "input_02.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     Teuchos::ParameterList &list = parlist->sublist("SOL").sublist("Sample Generator").sublist("SROM");
     Teuchos::Array<int> moments = Teuchos::getArrayFromStringParameter<int>(list,"Moments");
     size_t numMoments = static_cast<size_t>(moments.size());
 
-    Teuchos::RCP<ROL::BatchManager<RealT> > bman =
-      Teuchos::rcp(new ROL::EpetraBatchManager<RealT>(comm));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler =
-      Teuchos::rcp(new ROL::SROMGenerator<RealT>(*parlist,bman,distVec));
+    ROL::SharedPointer<ROL::BatchManager<RealT> > bman =
+      ROL::makeShared<ROL::EpetraBatchManager<RealT>>(comm);
+    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler =
+      ROL::makeShared<ROL::SROMGenerator<RealT>>(*parlist,bman,distVec);
 
     RealT val = 0., error = 0., data = 0., sum = 0.;
     *outStream << std::endl;

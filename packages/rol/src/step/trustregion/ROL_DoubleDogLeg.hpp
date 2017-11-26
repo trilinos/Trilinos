@@ -58,11 +58,11 @@ template<class Real>
 class DoubleDogLeg : public TrustRegion<Real> {
 private:
 
-  Teuchos::RCP<CauchyPoint<Real> > cpt_;
+  ROL::SharedPointer<CauchyPoint<Real> > cpt_;
 
-  Teuchos::RCP<Vector<Real> > s_;
-  Teuchos::RCP<Vector<Real> > v_;
-  Teuchos::RCP<Vector<Real> > Hp_;
+  ROL::SharedPointer<Vector<Real> > s_;
+  ROL::SharedPointer<Vector<Real> > v_;
+  ROL::SharedPointer<Vector<Real> > Hp_;
 
   Real pRed_;
 
@@ -70,7 +70,7 @@ public:
 
   // Constructor
   DoubleDogLeg( Teuchos::ParameterList &parlist ) : TrustRegion<Real>(parlist), pRed_(0) {
-    cpt_ = Teuchos::rcp(new CauchyPoint<Real>(parlist));
+    cpt_ = ROL::makeShared<CauchyPoint<Real>>(parlist);
   }
 
   void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {

@@ -104,12 +104,12 @@ int main(int argc, char *argv[] ) {
 
   using RealT = double;
 
-  using Teuchos::RCP; using Teuchos::rcp; 
+    
   Teuchos::oblackholestream bhs;
 
-  RCP<std::ostream> os;
-  if(argc>1)   os = rcp(&std::cout,false);
-  else         os = rcp(&bhs,false);
+  ROL::SharedPointer<std::ostream> os;
+  if(argc>1)   os = ROL::makeSharedFromRef(std::cout);
+  else         os = ROL::makeSharedFromRef(bhs);
   
   using DFad = Sacado::Fad::DFad<RealT>;
 

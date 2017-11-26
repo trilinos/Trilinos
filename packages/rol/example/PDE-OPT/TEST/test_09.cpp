@@ -69,12 +69,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromref(bhs);
 
   int errorFlag  = 0;
 
@@ -83,15 +83,15 @@ int main(int argc, char *argv[]) {
 
     /*** Read in XML input ***/
     std::string filename = "input_09.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist
-      = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> parlist
+      = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize mesh / degree-of-freedom manager. ***/
     MeshManager_Interval<RealT> meshmgr(*parlist);
-    Teuchos::RCP<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
-    Teuchos::RCP<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
-    Teuchos::RCP<std::vector<std::vector<std::vector<int> > > > sideSetsPtr = meshmgr.getSideSets(); 
+    ROL::SharedPointer<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
+    ROL::SharedPointer<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
+    ROL::SharedPointer<std::vector<std::vector<std::vector<int> > > > sideSetsPtr = meshmgr.getSideSets(); 
 
     Intrepid::FieldContainer<RealT> &nodes = *nodesPtr;
     Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
@@ -113,18 +113,18 @@ int main(int argc, char *argv[]) {
     }
     meshfile.close();
 
-    Teuchos::RCP<Intrepid::Basis_HGRAD_LINE_Cn_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrL1 =
-      Teuchos::rcp(new Intrepid::Basis_HGRAD_LINE_Cn_FEM<RealT, Intrepid::FieldContainer<RealT> >(1, Intrepid::POINTTYPE_EQUISPACED));
+    ROL::SharedPointer<Intrepid::Basis_HGRAD_LINE_Cn_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrL1 =
+      ROL::makeShared<Intrepid::Basis_HGRAD_LINE_Cn_FEM<RealT, Intrepid::FieldContainer<RealT> >>(1, Intrepid::POINTTYPE_EQUISPACED);
 
-    Teuchos::RCP<Intrepid::Basis_HGRAD_LINE_Cn_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrL2 =
-      Teuchos::rcp(new Intrepid::Basis_HGRAD_LINE_Cn_FEM<RealT, Intrepid::FieldContainer<RealT> >(2, Intrepid::POINTTYPE_EQUISPACED));
+    ROL::SharedPointer<Intrepid::Basis_HGRAD_LINE_Cn_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrL2 =
+      ROL::makeShared<Intrepid::Basis_HGRAD_LINE_Cn_FEM<RealT, Intrepid::FieldContainer<RealT> >>(2, Intrepid::POINTTYPE_EQUISPACED);
 
-    std::vector<Teuchos::RCP<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > > > basisPtrs(3, Teuchos::null);
+    std::vector<ROL::SharedPointer<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > > > basisPtrs(3, ROL::nullPointer);
     basisPtrs[0] = basisPtrL2;
     basisPtrs[1] = basisPtrL1;
     basisPtrs[2] = basisPtrL2;
 
-    Teuchos::RCP<MeshManager<RealT> > meshmgrPtr = Teuchos::rcpFromRef(meshmgr);
+    ROL::SharedPointer<MeshManager<RealT> > meshmgrPtr = ROL::makeSharedFromRef(meshmgr);
 
     DofManager<RealT> dofmgr(meshmgrPtr, basisPtrs);
 

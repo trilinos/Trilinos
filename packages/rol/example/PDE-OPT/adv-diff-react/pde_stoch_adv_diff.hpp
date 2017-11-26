@@ -57,37 +57,37 @@
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
 
-#include "Teuchos_RCP.hpp"
+#include "ROL_SharedPointer.hpp"
 
 template <class Real>
 class PDE_stoch_adv_diff : public PDE<Real> {
 private:
   // Finite element basis information
-  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr_;
-  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
+  ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr_;
+  std::vector<ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
   // Cell cubature information
-  Teuchos::RCP<Intrepid::Cubature<Real> > cellCub_;
+  ROL::SharedPointer<Intrepid::Cubature<Real> > cellCub_;
   // Cell node information
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
-  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
+  ROL::SharedPointer<Intrepid::FieldContainer<Real> > volCellNodes_;
+  std::vector<std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
   std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
   // Finite element definition
-  Teuchos::RCP<FE<Real> > fe_vol_;
+  ROL::SharedPointer<FE<Real> > fe_vol_;
   // Local degrees of freedom on boundary, for each side of the reference cell (first index).
   std::vector<std::vector<int> > fidx_;
   // Coordinates of degrees freedom on boundary cells.
   // Indexing:  [sideset number][local side id](cell number, value at dof)
-  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellDofValues_;
+  std::vector<std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > > bdryCellDofValues_;
 
 public:
   PDE_stoch_adv_diff(Teuchos::ParameterList &parlist) {
     // Finite element fields.
     int basisOrder = parlist.sublist("PDE Poisson").get("Basis Order",1);
     if (basisOrder == 1) {
-      basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
+      basisPtr_ = ROL::makeShared<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
     }
     else if (basisOrder == 2) {
-      basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
+      basisPtr_ = ROL::makeShared<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
     }
     basisPtrs_.clear(); basisPtrs_.push_back(basisPtr_);
     // Quadrature rules.
@@ -97,29 +97,29 @@ public:
     cellCub_ = cubFactory.create(cellType, cubDegree);                       // create default cubature
   }
 
-  void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void residual(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & res,
+                const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int f = fe_vol_->gradN()->dimension(1);
     int p = fe_vol_->gradN()->dimension(2);
     int d = fe_vol_->gradN()->dimension(3);
     // INITIALIZE RESIDUAL
-    res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    res = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f);
     // COMPUTE PDE COEFFICIENTS
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > kappa
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > V
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > rhs
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > kappa
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > V
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > rhs
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
     computeCoefficients(kappa,V,rhs);
     // COMPUTE DIFFUSION TERM
     // Compute grad(U)
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradU_eval =
+      ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
     fe_vol_->evaluateGradient(gradU_eval, u_coeff);
     // Multiply kappa * grad(U)
     Intrepid::FieldContainer<Real> kappa_gradU(c, p, d);
@@ -150,8 +150,8 @@ public:
 
     // ADD CONTROL TERM TO RESIDUAL
     int size = z_param->size();
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > ctrl
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > ctrl
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
     for (int i = 0; i < size; ++i) {
       computeControlOperator(ctrl,(*z_param)[i],i);
       Intrepid::FunctionSpaceTools::integrate<Real>(*res,
@@ -174,24 +174,24 @@ public:
     }
   }
 
-  void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Jacobian_1(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & jac,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int f = fe_vol_->gradN()->dimension(1);
     int p = fe_vol_->gradN()->dimension(2);
     int d = fe_vol_->gradN()->dimension(3);
     // INITILAIZE JACOBIAN
-    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+    jac = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, f);
     // COMPUTE PDE COEFFICIENTS
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > kappa
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > V
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > rhs
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > kappa
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > V
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > rhs
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
     computeCoefficients(kappa,V,rhs);
     // COMPUTE DIFFUSION TERM
     // Multiply kappa * grad(N)
@@ -233,27 +233,27 @@ public:
     }
   }
 
-  void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Jacobian_2(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & jac,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_stoch_adv_diff::Jacobian_2): Jacobian is zero.");
   }
 
-  void Jacobian_3(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Jacobian_3(std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > & jac,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int f = fe_vol_->gradN()->dimension(1);
     int p = fe_vol_->gradN()->dimension(2);
     // ADD CONTROL TERM TO RESIDUAL
     int size = z_param->size();
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > ctrl
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > ctrl
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
     for (int i = 0; i < size; ++i) {
-      jac[i] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+      jac[i] = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f);
       computeControlOperator(ctrl,static_cast<Real>(1),i);
       Intrepid::FunctionSpaceTools::integrate<Real>(*(jac[i]),
                                                     *ctrl,
@@ -274,109 +274,109 @@ public:
     }
   }
 
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_11(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_stoch_adv_diff::Hessian_11): Hessian is zero.");
   }
 
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_12(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_stoch_adv_diff::Hessian_12): Hessian is zero.");
   }
 
-  void Hessian_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_13(std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_stoch_adv_diff::Hessian_13): Hessian is zero.");
   }
 
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_21(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_stoch_adv_diff::Hessian_21): Hessian is zero.");
   }
 
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_22(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_stoch_adv_diff::Hessian_22): Hessian is zero.");
   }
 
-  void Hessian_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_23(std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_stoch_adv_diff::Hessian_23): Hessian is zero.");
   }
 
-  void Hessian_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_31(std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_stoch_adv_diff::Hessian_31): Hessian is zero.");
   }
 
-  void Hessian_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_32(std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_stoch_adv_diff::Hessian_32): Hessian is zero.");
   }
 
-  void Hessian_33(std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_33(std::vector<std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_stoch_adv_diff::Hessian_33): Hessian is zero.");
   }
 
-  void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+  void RieszMap_1(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & riesz) {
     // GET DIMENSIONS
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
     // INITIALIZE RIESZ
-    riesz = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+    riesz = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, f);
     *riesz = *fe_vol_->stiffMat();
     Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_vol_->massMat()));
   }
 
-  void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+  void RieszMap_2(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & riesz) {
     // GET DIMENSIONS
     int c = fe_vol_->N()->dimension(0);
     int f = fe_vol_->N()->dimension(1);
     // INITIALIZE RIESZ
-    riesz = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+    riesz = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, f);
     *riesz = *fe_vol_->massMat();
   }
 
-  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
+  std::vector<ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
     return basisPtrs_;
   }
 
-  void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &volCellNodes,
-                    const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
+  void setCellNodes(const ROL::SharedPointer<Intrepid::FieldContainer<Real> > &volCellNodes,
+                    const std::vector<std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) {
     volCellNodes_ = volCellNodes;
     bdryCellNodes_ = bdryCellNodes;
     bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
-    fe_vol_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
+    fe_vol_ = ROL::makeShared<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
     // Set local boundary DOFs.
     fidx_ = fe_vol_->getBoundaryDofs();
     // Compute Dirichlet values at DOFs.
@@ -389,9 +389,9 @@ public:
       for (int j=0; j<numLocSides; ++j) {
         int c = bdryCellLocIds_[i][j].size();
         int f = basisPtr_->getCardinality();
-        bdryCellDofValues_[i][j] = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
-        Teuchos::RCP<Intrepid::FieldContainer<Real> > coords =
-          Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, d));
+        bdryCellDofValues_[i][j] = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f);
+        ROL::SharedPointer<Intrepid::FieldContainer<Real> > coords =
+          ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, d);
         if (c > 0) {
           fe_vol_->computeDofCoords(coords, bdryCellNodes_[i][j]);
         }
@@ -408,7 +408,7 @@ public:
     }
   }
 
-  const Teuchos::RCP<FE<Real> > getFE(void) const {
+  const ROL::SharedPointer<FE<Real> > getFE(void) const {
     return fe_vol_;
   }
 
@@ -478,9 +478,9 @@ private:
     return source;
   }
 
-  void computeCoefficients(Teuchos::RCP<Intrepid::FieldContainer<Real> > &kappa,
-                           Teuchos::RCP<Intrepid::FieldContainer<Real> > &V,
-                           Teuchos::RCP<Intrepid::FieldContainer<Real> > &rhs) const {
+  void computeCoefficients(ROL::SharedPointer<Intrepid::FieldContainer<Real> > &kappa,
+                           ROL::SharedPointer<Intrepid::FieldContainer<Real> > &V,
+                           ROL::SharedPointer<Intrepid::FieldContainer<Real> > &rhs) const {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);
     int p = fe_vol_->gradN()->dimension(2);
@@ -512,7 +512,7 @@ private:
                      - half*(x[1]-yl[i])*(x[1]-yl[i]) / (sy*sy));
   }
   
-  void computeControlOperator(Teuchos::RCP<Intrepid::FieldContainer<Real> > &ctrl,
+  void computeControlOperator(ROL::SharedPointer<Intrepid::FieldContainer<Real> > &ctrl,
                               const Real z, const int I) const {
     // GET DIMENSIONS
     int c = fe_vol_->gradN()->dimension(0);

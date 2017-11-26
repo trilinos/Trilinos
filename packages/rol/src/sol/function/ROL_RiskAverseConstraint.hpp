@@ -53,31 +53,31 @@ namespace ROL {
 template <class Real>
 class RiskAverseConstraint : public Constraint<Real> {
 private:
-  Teuchos::RCP<Objective<Real> > robj_;
-  Teuchos::RCP<Constraint<Real> > con_;
-  Teuchos::RCP<SampleGenerator<Real> > sampler_;
+  ROL::SharedPointer<Objective<Real> > robj_;
+  ROL::SharedPointer<Constraint<Real> > con_;
+  ROL::SharedPointer<SampleGenerator<Real> > sampler_;
 
 public:
-  RiskAverseConstraint(const Teuchos::RCP<Objective<Real> > &obj,
-                       const Teuchos::RCP<SampleGenerator<Real> > &sampler,
+  RiskAverseConstraint(const ROL::SharedPointer<Objective<Real> > &obj,
+                       const ROL::SharedPointer<SampleGenerator<Real> > &sampler,
                        Teuchos::ParameterList &parlist,
                        const int index     = 0)
     : sampler_(sampler) {
-    robj_ = Teuchos::rcp(new RiskAverseObjective<Real>(obj,parlist,sampler,1,index));
-    con_  = Teuchos::rcp(new ConstraintFromObjective<Real>(robj_));
+    robj_ = ROL::makeShared<RiskAverseObjective<Real>>(obj,parlist,sampler,1,index);
+    con_  = ROL::makeShared<ConstraintFromObjective<Real>>(robj_);
   }
 
-  RiskAverseConstraint(const Teuchos::RCP<Constraint<Real> > &con,
-                       const Teuchos::RCP<SampleGenerator<Real> > &sampler,
+  RiskAverseConstraint(const ROL::SharedPointer<Constraint<Real> > &con,
+                       const ROL::SharedPointer<SampleGenerator<Real> > &sampler,
                        Teuchos::ParameterList &parlist,
                        const int index     = 0)
     : sampler_(sampler) {
     try {
-      Teuchos::RCP<ConstraintFromObjective<Real> > cfo
-        = Teuchos::rcp_dynamic_cast<ConstraintFromObjective<Real> >(con);
-      robj_ = Teuchos::rcp(new RiskAverseObjective<Real>(cfo->getObjective(),
-                parlist,sampler,1,index));
-      con_  = Teuchos::rcp(new ConstraintFromObjective<Real>(robj_));
+      ROL::SharedPointer<ConstraintFromObjective<Real>> cfo
+        = ROL::dynamicPointerCast<ConstraintFromObjective<Real>>(con);
+      robj_ = ROL::makeShared<RiskAverseObjective<Real>>(cfo->getObjective(),
+                parlist,sampler,1,index);
+      con_  = ROL::makeShared<ConstraintFromObjective<Real>>(robj_);
     }
     catch (std::exception &e) {
       throw Exception::NotImplemented(">>> ROL::RiskAverseConstraint: Input constraint must be a ConstraintFromObjective!");

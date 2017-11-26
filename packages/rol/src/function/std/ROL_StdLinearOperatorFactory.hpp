@@ -63,7 +63,7 @@ namespace ROL {
 template<class Real> 
 class StdLinearOperatorFactory {
 
-  template <typename T> using RCP = Teuchos::RCP<T>;
+  template <typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
 
   typedef LinearOperator<Real>    OP;
   typedef StdLinearOperator<Real> StdOP;
@@ -187,14 +187,14 @@ public:
     return retString;    
   }
 
-  Teuchos::RCP<LinearOperator<Real> > getOperator( int size, const std::string &type="" ) const {
+  ROL::SharedPointer<LinearOperator<Real> > getOperator( int size, const std::string &type="" ) const {
     EMatrixType emt = StringToEMatrixType(type);
 
-    using Teuchos::rcp;
+    
 
     int n2 = size*size;
 
-    RCP<vector> Ap = rcp( new vector(n2) );
+    ROL::SharedPointer<vector> Ap = ROL::makeShared<vector>(n2);
 
     switch( emt ) {
       case MATRIX_SPD: {
@@ -294,7 +294,7 @@ public:
       }   
 
     }
-    return rcp( new StdOP(Ap) );
+    return ROL::makeShared<StdOP>(Ap);
   }
 
   

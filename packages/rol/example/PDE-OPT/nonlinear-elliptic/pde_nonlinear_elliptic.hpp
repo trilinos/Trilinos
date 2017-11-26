@@ -57,25 +57,25 @@
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
 
-#include "Teuchos_RCP.hpp"
+#include "ROL_SharedPointer.hpp"
 
 template <class Real>
 class PDE_Nonlinear_Elliptic : public PDE<Real> {
 private:
   // Finite element basis information
-  Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr_;
-  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
+  ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr_;
+  std::vector<ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
   // Cell cubature information
-  Teuchos::RCP<Intrepid::Cubature<Real> > cellCub_;
+  ROL::SharedPointer<Intrepid::Cubature<Real> > cellCub_;
   // Cell node information
-  Teuchos::RCP<Intrepid::FieldContainer<Real> > volCellNodes_;
-  std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
+  ROL::SharedPointer<Intrepid::FieldContainer<Real> > volCellNodes_;
+  std::vector<std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
   std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
   // Finite element definition
-  Teuchos::RCP<FE<Real> > fe_;
+  ROL::SharedPointer<FE<Real> > fe_;
 
-  void computeBetaGradU(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &BgradU,
-                        const Teuchos::RCP<const Intrepid::FieldContainer<Real> > &gradU) const {
+  void computeBetaGradU(const ROL::SharedPointer<Intrepid::FieldContainer<Real> > &BgradU,
+                        const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > &gradU) const {
     // GET DIMENSIONS
     int c = fe_->gradN()->dimension(0);
     int p = fe_->gradN()->dimension(2);
@@ -94,8 +94,8 @@ private:
     }
   }
 
-  void computeBetaJacobianGradU(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &BgradU,
-                                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > &gradU) const {
+  void computeBetaJacobianGradU(const ROL::SharedPointer<Intrepid::FieldContainer<Real> > &BgradU,
+                                const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > &gradU) const {
     // GET DIMENSIONS
     int c = fe_->gradN()->dimension(0);
     int p = fe_->gradN()->dimension(2);
@@ -117,9 +117,9 @@ private:
     }
   }
 
-  void computeBetaHessianGradUGradL(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &BgradUgradL,
-                                    const Teuchos::RCP<const Intrepid::FieldContainer<Real> > &gradU,
-                                    const Teuchos::RCP<const Intrepid::FieldContainer<Real> > &gradL) const {
+  void computeBetaHessianGradUGradL(const ROL::SharedPointer<Intrepid::FieldContainer<Real> > &BgradUgradL,
+                                    const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > &gradU,
+                                    const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > &gradL) const {
     // GET DIMENSIONS
     int c = fe_->gradN()->dimension(0);
     int p = fe_->gradN()->dimension(2);
@@ -142,7 +142,7 @@ private:
     }
   }
 
-  void computeDiffusivity(Teuchos::RCP<Intrepid::FieldContainer<Real> > &kappa) const {
+  void computeDiffusivity(ROL::SharedPointer<Intrepid::FieldContainer<Real> > &kappa) const {
     // GET DIMENSIONS
     int c = fe_->gradN()->dimension(0);
     int p = fe_->gradN()->dimension(2);
@@ -159,7 +159,7 @@ private:
     }
   }
 
-  void computeRHS(Teuchos::RCP<Intrepid::FieldContainer<Real> > &rhs) const {
+  void computeRHS(ROL::SharedPointer<Intrepid::FieldContainer<Real> > &rhs) const {
     // GET DIMENSIONS
     int c = fe_->gradN()->dimension(0);
     int p = fe_->gradN()->dimension(2);
@@ -181,10 +181,10 @@ public:
     // Finite element fields.
     int basisOrder = parlist.sublist("Problem").get("Basis Order",1);
     if (basisOrder == 1) {
-      basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >);
+      basisPtr_ = ROL::makeShared<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
     }
     else if (basisOrder == 2) {
-      basisPtr_ = Teuchos::rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >);
+      basisPtr_ = ROL::makeShared<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
     }
     basisPtrs_.clear(); basisPtrs_.push_back(basisPtr_);
     // Quadrature rules.
@@ -275,26 +275,26 @@ public:
     return static_cast<Real>(0);
   }
 
-  void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void residual(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & res,
+                const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     // GET DIMENSIONS
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
     int p = fe_->gradN()->dimension(2);
     int d = fe_->gradN()->dimension(3);
     // INITIALIZE RESIDUAL
-    res = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f));
+    res = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f);
     // COMPUTE STIFFNESS TERM
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradU_eval =
+      ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
     fe_->evaluateGradient(gradU_eval, u_coeff);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > kappa =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > kappa =
+      ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
     computeDiffusivity(kappa);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > KgradU =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > KgradU =
+      ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
     Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*KgradU,
                                                                *kappa,
                                                                *gradU_eval);
@@ -303,33 +303,33 @@ public:
                                                   *(fe_->gradNdetJ()),
                                                   Intrepid::COMP_CPP, false);
     // ADD MASS TERM
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > valU_eval =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > valU_eval =
+      ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
     fe_->evaluateValue(valU_eval, u_coeff);
     Intrepid::FunctionSpaceTools::integrate<Real>(*res,
                                                   *valU_eval,
                                                   *(fe_->NdetJ()),
                                                   Intrepid::COMP_CPP, true);
     // ADD NONLINEAR TERM
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > BgradU
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > BgradU
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
     computeBetaGradU(BgradU,gradU_eval);
     Intrepid::FunctionSpaceTools::integrate<Real>(*res,
                                                   *BgradU,
                                                   *(fe_->gradNdetJ()),
                                                   Intrepid::COMP_CPP, true);
     // ADD RHS
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > rhs =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > rhs =
+      ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
     computeRHS(rhs);
     Intrepid::FunctionSpaceTools::integrate<Real>(*res,
                                                   *rhs,
                                                   *(fe_->NdetJ()),
                                                   Intrepid::COMP_CPP, true);
     // ADD CONTROL TERM
-    if ( z_coeff != Teuchos::null ) {
-      Teuchos::RCP<Intrepid::FieldContainer<Real> > valZ_eval =
-        Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    if ( z_coeff != ROL::nullPointer ) {
+      ROL::SharedPointer<Intrepid::FieldContainer<Real> > valZ_eval =
+        ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
       fe_->evaluateValue(valZ_eval, z_coeff);
       Intrepid::RealSpaceTools<Real>::scale(*valZ_eval,static_cast<Real>(-1));
       Intrepid::FunctionSpaceTools::integrate<Real>(*res,
@@ -339,23 +339,23 @@ public:
     }
   }
 
-  void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Jacobian_1(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & jac,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     // GET DIMENSIONS
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
     int p = fe_->gradN()->dimension(2);
     int d = fe_->gradN()->dimension(3);
     // INITIALIZE JACOBIAN
-    jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+    jac = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, f);
     // COMPUTE STIFFNESS TERM
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > kappa =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > kappa =
+      ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
     computeDiffusivity(kappa);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > KgradN =
-      Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, p, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > KgradN =
+      ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, p, d);
     Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*KgradN,
                                                                 *kappa,
                                                                 *(fe_->gradN()));
@@ -369,14 +369,14 @@ public:
                                                   *(fe_->NdetJ()),
                                                   Intrepid::COMP_CPP, true);
     // ADD NONLINEAR TERM
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradU_eval
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
     fe_->evaluateGradient(gradU_eval, u_coeff);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > BgradU
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > BgradU
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d, d);
     computeBetaJacobianGradU(BgradU,gradU_eval);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > BgradUgradN
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, p, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > BgradUgradN
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, p, d);
     Intrepid::FunctionSpaceTools::tensorMultiplyDataField<Real>(*BgradUgradN,
                                                                 *BgradU,
                                                                 *(fe_->gradN()));
@@ -386,16 +386,16 @@ public:
                                                   Intrepid::COMP_CPP, true);
   }
 
-  void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
-    if ( z_coeff != Teuchos::null ) {
+  void Jacobian_2(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & jac,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
+    if ( z_coeff != ROL::nullPointer ) {
       // GET DIMENSIONS
       int c = fe_->N()->dimension(0);
       int f = fe_->N()->dimension(1);
       // INITIALIZE JACOBIAN
-      jac = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+      jac = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, f);
       // ADD CONTROL TERM
       Intrepid::FunctionSpaceTools::integrate<Real>(*jac,
                                                     *(fe_->N()),
@@ -405,30 +405,30 @@ public:
     }
   }
 
-  void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_11(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     // GET DIMENSIONS
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
     int p = fe_->gradN()->dimension(2);
     int d = fe_->gradN()->dimension(3);
     // INITIALIZE JACOBIAN
-    hess = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+    hess = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, f);
     // COMPUTE NONLINEAR TERM
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradU_eval
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradU_eval
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
     fe_->evaluateGradient(gradU_eval, u_coeff);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > gradL_eval
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradL_eval
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
     fe_->evaluateGradient(gradL_eval, l_coeff);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > BgradUgradL
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, p, d, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > BgradUgradL
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d, d);
     computeBetaHessianGradUGradL(BgradUgradL,gradU_eval,gradL_eval);
-    Teuchos::RCP<Intrepid::FieldContainer<Real> > BgradUgradLgradN
-      = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, p, d));
+    ROL::SharedPointer<Intrepid::FieldContainer<Real> > BgradUgradLgradN
+      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, p, d);
     Intrepid::FunctionSpaceTools::tensorMultiplyDataField<Real>(*BgradUgradLgradN,
                                                                 *BgradUgradL,
                                                                 *(fe_->gradN()));
@@ -438,64 +438,64 @@ public:
                                                   Intrepid::COMP_CPP, false);
   }
 
-  void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_12(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_Nonlinear_Elliptic:Hessian_12: Hessian is zero.");
   }
 
-  void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_21(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_Nonlinear_Elliptic:Hessian_21: Hessian is zero.");
   }
 
-  void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                  const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  void Hessian_22(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                  const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                  const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::Zero(">>> (PDE_Nonlinear_Elliptic:Hessian_22: Hessian is zero.");
   }
 
-  void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+  void RieszMap_1(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & riesz) {
     // GET DIMENSIONS
     int c = fe_->N()->dimension(0);
     int f = fe_->N()->dimension(1);
     // INITIALIZE RIESZ
-    riesz = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+    riesz = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, f);
     *riesz = *fe_->stiffMat();
     Intrepid::RealSpaceTools<Real>::add(*riesz,*(fe_->massMat()));
   }
 
-  void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & riesz) {
+  void RieszMap_2(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & riesz) {
     // GET DIMENSIONS
     int c = fe_->N()->dimension(0);
     int f = fe_->N()->dimension(1);
     // INITIALIZE RIESZ
-    riesz = Teuchos::rcp(new Intrepid::FieldContainer<Real>(c, f, f));
+    riesz = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, f, f);
     *riesz = *fe_->massMat();
   }
 
-  std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
+  std::vector<ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() {
     return basisPtrs_;
   }
 
-  void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &volCellNodes,
-                    const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
+  void setCellNodes(const ROL::SharedPointer<Intrepid::FieldContainer<Real> > &volCellNodes,
+                    const std::vector<std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) {
     volCellNodes_ = volCellNodes;
     bdryCellNodes_ = bdryCellNodes;
     bdryCellLocIds_ = bdryCellLocIds;
     // Finite element definition.
-    fe_ = Teuchos::rcp(new FE<Real>(volCellNodes_,basisPtr_,cellCub_));
+    fe_ = ROL::makeShared<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
   }
 
-  const Teuchos::RCP<FE<Real> > getFE(void) const {
+  const ROL::SharedPointer<FE<Real> > getFE(void) const {
     return fe_;
   }
 

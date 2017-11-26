@@ -83,34 +83,34 @@ class MeritFunction : public Objective<Real> {
 
 private:
 
-  Teuchos::RCP<OBJ>   obj_;       // Raw objective function
-  Teuchos::RCP<EQCON> eqcon_;     //  constraint
-  Teuchos::RCP<INCON> incon_;     // Inequality constraint
-  Teuchos::RCP<BND>   bnd_;       // Bound constraint
+  ROL::SharedPointer<OBJ>   obj_;       // Raw objective function
+  ROL::SharedPointer<EQCON> eqcon_;     //  constraint
+  ROL::SharedPointer<INCON> incon_;     // Inequality constraint
+  ROL::SharedPointer<BND>   bnd_;       // Bound constraint
 
   Real mu_;                       // Penalty parameter for log barrier on slack
   Real nu_;                       // Penalty parameter for constraint norms
 
-  Teuchos::RCP<OBJ>    obj_;
-  Teuchos::RCP<EQCON>  eqcon_;
-  Teuchos::RCP<INCON>  incon_;
+  ROL::SharedPointer<OBJ>    obj_;
+  ROL::SharedPointer<EQCON>  eqcon_;
+  ROL::SharedPointer<INCON>  incon_;
 
-  Teuchos::RCP<V> xopt_;
-  Teuchos::RCP<V> slack_;
+  ROL::SharedPointer<V> xopt_;
+  ROL::SharedPointer<V> slack_;
 
-  Teuchos::RCP<V> gopt_;          // Gradient of the objective function
+  ROL::SharedPointer<V> gopt_;          // Gradient of the objective function
 
-  Teuchos::RCP<V> sfun_;          // store elementwise function of slack variable
+  ROL::SharedPointer<V> sfun_;          // store elementwise function of slack variable
 
 
-  Teuchos::RCP<V> eqmult_;        //  constraint Lagrange multiplier 
-  Teuchos::RCP<V> inmult_;        // Inequality constraint Lagrange multiplier
+  ROL::SharedPointer<V> eqmult_;        //  constraint Lagrange multiplier 
+  ROL::SharedPointer<V> inmult_;        // Inequality constraint Lagrange multiplier
 
-  Teuchos::RCP<V> ce_;            //  constraint vector
-  Teuchos::RCP<V> ci_;            // Inequation constraint vector
+  ROL::SharedPointer<V> ce_;            //  constraint vector
+  ROL::SharedPointer<V> ci_;            // Inequation constraint vector
 
-  Teuchos::RCP<V> jced_;          //  Jacobian applied to d
-  Teuchos::RCP<V> jcid_;          // Inequality Jacobian applied to d 
+  ROL::SharedPointer<V> jced_;          //  Jacobian applied to d
+  ROL::SharedPointer<V> jcid_;          // Inequality Jacobian applied to d 
 
   Real cenorm_;
   Real cinorm_;
@@ -123,16 +123,16 @@ private:
 
 public:
 
-  MeritFunction( Teuchos::RCP<OBJ>   &obj, 
-                 Teuchos::RCP<EQCON> &eqcon,
-                 Teuchos::RCP<INCON> &incon,
+  MeritFunction( ROL::SharedPointer<OBJ>   &obj, 
+                 ROL::SharedPointer<EQCON> &eqcon,
+                 ROL::SharedPointer<INCON> &incon,
                  const V& x,
                  const V& eqmult,
                  const V& inmult,
                  PLIST &parlist ) :
                  obj_(obj), eqcon_(eqcon), incon_(incon) {
 
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+    const PV &xpv = dynamic_cast<const PV&>(x);
     xopt_  = xpv.get(OPT);
     slack_ = xpv.get(SLACK);     
     sfun_  = slack_->clone();
@@ -148,7 +148,7 @@ public:
 
   Real value( const V &x, Real &tol ) {
 
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+    const PV &xpv = dynamic_cast<const PV&>(x);
     xopt_  = xpv.get(OPT);
     slack_ = xpv.get(SLACK);
 
@@ -174,13 +174,13 @@ public:
 
   Real dirDeriv( const V &x, const V &d, Real tol ) {
    
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+    const PV &xpv = dynamic_cast<const PV&>(x);
     xopt_  = xpv.get(OPT);
     slack_ = xpv.get(SLACK);
 
-    const PV &dpv = Teuchos::dyn_cast<const PV>(d);
-    Teuchos::RCP<V> dopt   = dpv.get(OPT);
-    Teuchos::RCP<V> dslack = dpv.get(SLACK);
+    const PV &dpv = dynamic_cast<const PV&>(d);
+    ROL::SharedPointer<V> dopt   = dpv.get(OPT);
+    ROL::SharedPointer<V> dslack = dpv.get(SLACK);
 
     sfun_->set(*slack);
     sfun_->applyUnary(RECIP_);

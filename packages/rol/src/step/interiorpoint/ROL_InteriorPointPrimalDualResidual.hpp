@@ -85,18 +85,18 @@ private:
 
   typedef typename PV::size_type   size_type;
 
-  Teuchos::RCP<OBJ> obj_;    // Objective function
-  Teuchos::RCP<CON> eqcon_;  //  Constraint
-  Teuchos::RCP<CON> incon_;  // Inequality Constraint
+  ROL::SharedPointer<OBJ> obj_;    // Objective function
+  ROL::SharedPointer<CON> eqcon_;  //  Constraint
+  ROL::SharedPointer<CON> incon_;  // Inequality Constraint
 
-  Teuchos::RCP<V> qo_;       // Storage for optimization variables
-  Teuchos::RCP<V> qs_;       // Storage for slack variables
-  Teuchos::RCP<V> qe_;       // Storage for equality multiplier variables
-  Teuchos::RCP<V> qi_;       // Storage for inequality multiplier variables
+  ROL::SharedPointer<V> qo_;       // Storage for optimization variables
+  ROL::SharedPointer<V> qs_;       // Storage for slack variables
+  ROL::SharedPointer<V> qe_;       // Storage for equality multiplier variables
+  ROL::SharedPointer<V> qi_;       // Storage for inequality multiplier variables
 
   Real mu_;                  // Penalty parameter
 
-  Teuchos::RCP<LinearOperator<Real> > sym_;
+  ROL::SharedPointer<LinearOperator<Real> > sym_;
 
   const static size_type OPT   = 0;  // Optimization vector
   const static size_type SLACK = 1;  // Slack vector
@@ -107,43 +107,43 @@ private:
 
 public:
 
-  PrimalDualResidual( const Teuchos::RCP<OBJ> &obj, 
-                      const Teuchos::RCP<CON> &eqcon,
-                      const Teuchos::RCP<CON> &incon,
+  PrimalDualResidual( const ROL::SharedPointer<OBJ> &obj, 
+                      const ROL::SharedPointer<CON> &eqcon,
+                      const ROL::SharedPointer<CON> &incon,
                       const V& x ) : 
                       obj_(obj), eqcon_(eqcon), incon_(incon), mu_(1.0) {
 
     // Allocate storage vectors
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+    const PV &xpv = dynamic_cast<const PV&>(x);
 
     qo_ = xpv.get(OPT)->clone();
     qs_ = xpv.get(SLACK)->clone();
     qe_ = xpv.get(EQUAL)->clone();
     qi_ = xpv.get(INEQ)->clone();
 
-    sym_ = Teuchos::rcp( new PrimalDualSymmetrizer<Real>(*qs_) );
+    sym_ = ROL::makeShared<PrimalDualSymmetrizer<Real>>(*qs_);
 
   }
 
   void value( V &c, const V &x, Real &tol ) {
 
-    using Teuchos::RCP;
+    
 
     // Downcast to partitioned vectors
-    PV &cpv = Teuchos::dyn_cast<PV>(c);
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+    PV &cpv = dynamic_cast<PV&>(c);
+    const PV &xpv = dynamic_cast<const PV&>(x);
 
-    RCP<const V> xo = xpv.get(OPT);
-    RCP<const V> xs = xpv.get(SLACK);
-    RCP<const V> xe = xpv.get(EQUAL);
-    RCP<const V> xi = xpv.get(INEQ);
+    ROL::SharedPointer<const V> xo = xpv.get(OPT);
+    ROL::SharedPointer<const V> xs = xpv.get(SLACK);
+    ROL::SharedPointer<const V> xe = xpv.get(EQUAL);
+    ROL::SharedPointer<const V> xi = xpv.get(INEQ);
 
     c.zero();    
 
-    RCP<V> co = cpv.get(OPT);
-    RCP<V> cs = cpv.get(SLACK);
-    RCP<V> ce = cpv.get(EQUAL);
-    RCP<V> ci = cpv.get(INEQ);
+    ROL::SharedPointer<V> co = cpv.get(OPT);
+    ROL::SharedPointer<V> cs = cpv.get(SLACK);
+    ROL::SharedPointer<V> ce = cpv.get(EQUAL);
+    ROL::SharedPointer<V> ci = cpv.get(INEQ);
 
     // Optimization components
     obj_->gradient(*co,*xo,tol); 
@@ -181,29 +181,29 @@ public:
 
   void applyJacobian( V &jv, const V &v, const V &x, Real &tol ) {
 
-    using Teuchos::RCP;
+    
 
     jv.zero();
 
     // Downcast to partitioned vectors
-    PV &jvpv = Teuchos::dyn_cast<PV>(jv);
-    const PV &vpv = Teuchos::dyn_cast<const PV>(v);
-    const PV &xpv = Teuchos::dyn_cast<const PV>(x);
+    PV &jvpv = dynamic_cast<PV&>(jv);
+    const PV &vpv = dynamic_cast<const PV&>(v);
+    const PV &xpv = dynamic_cast<const PV&>(x);
 
-    RCP<V> jvo = jvpv.get(OPT);
-    RCP<V> jvs = jvpv.get(SLACK);
-    RCP<V> jve = jvpv.get(EQUAL);
-    RCP<V> jvi = jvpv.get(INEQ);
+    ROL::SharedPointer<V> jvo = jvpv.get(OPT);
+    ROL::SharedPointer<V> jvs = jvpv.get(SLACK);
+    ROL::SharedPointer<V> jve = jvpv.get(EQUAL);
+    ROL::SharedPointer<V> jvi = jvpv.get(INEQ);
 
-    RCP<const V> vo = vpv.get(OPT);
-    RCP<const V> vs = vpv.get(SLACK);
-    RCP<const V> ve = vpv.get(EQUAL);
-    RCP<const V> vi = vpv.get(INEQ);
+    ROL::SharedPointer<const V> vo = vpv.get(OPT);
+    ROL::SharedPointer<const V> vs = vpv.get(SLACK);
+    ROL::SharedPointer<const V> ve = vpv.get(EQUAL);
+    ROL::SharedPointer<const V> vi = vpv.get(INEQ);
 
-    RCP<const V> xo = xpv.get(OPT);
-    RCP<const V> xs = xpv.get(SLACK);
-    RCP<const V> xe = xpv.get(EQUAL);
-    RCP<const V> xi = xpv.get(INEQ);
+    ROL::SharedPointer<const V> xo = xpv.get(OPT);
+    ROL::SharedPointer<const V> xs = xpv.get(SLACK);
+    ROL::SharedPointer<const V> xe = xpv.get(EQUAL);
+    ROL::SharedPointer<const V> xi = xpv.get(INEQ);
 
     // Optimization components
     obj_->hessVec(*jvo,*vo,*xo,tol);
@@ -275,7 +275,7 @@ class PrimalDualSymmetrizer : public LinearOperator<Real> {
   typedef typename PV::size_type   size_type;
 
 private:
-  Teuchos::RCP<V> s_;
+  ROL::SharedPointer<V> s_;
 
   const static size_type OPT   = 0;  // Optimization vector
   const static size_type SLACK = 1;  // Slack vector
@@ -295,21 +295,21 @@ public:
 
   void apply( V &Hv, const V &v, Real &tol ) const {
 
-    using Teuchos::RCP;
-    using Teuchos::dyn_cast;
+    
+    
 
-    const PV &vpv = dyn_cast<const PV>(v);
-    PV &Hvpv = dyn_cast<PV>(Hv);
+    const PV &vpv = dynamic_cast<const PV&>(v);
+    PV &Hvpv = dynamic_cast<PV&>(Hv);
 
-    RCP<const V> vo = vpv.get(OPT);
-    RCP<const V> vs = vpv.get(SLACK);
-    RCP<const V> ve = vpv.get(EQUAL);
-    RCP<const V> vi = vpv.get(INEQ);
+    ROL::SharedPointer<const V> vo = vpv.get(OPT);
+    ROL::SharedPointer<const V> vs = vpv.get(SLACK);
+    ROL::SharedPointer<const V> ve = vpv.get(EQUAL);
+    ROL::SharedPointer<const V> vi = vpv.get(INEQ);
 
-    RCP<V> Hvo = Hvpv.get(OPT);
-    RCP<V> Hvs = Hvpv.get(SLACK);
-    RCP<V> Hve = Hvpv.get(EQUAL);
-    RCP<V> Hvi = Hvpv.get(INEQ);
+    ROL::SharedPointer<V> Hvo = Hvpv.get(OPT);
+    ROL::SharedPointer<V> Hvs = Hvpv.get(SLACK);
+    ROL::SharedPointer<V> Hve = Hvpv.get(EQUAL);
+    ROL::SharedPointer<V> Hvi = Hvpv.get(INEQ);
 
     Hvo->set(*vo);
 
@@ -327,21 +327,21 @@ public:
 
   void applyInverse( V &Hv, const V &v, Real &tol ) const {
 
-    using Teuchos::RCP;
-    using Teuchos::dyn_cast;
+    
+    
 
-    const PV &vpv = dyn_cast<const PV>(v);
-    PV &Hvpv = dyn_cast<PV>(Hv);
+    const PV &vpv = dynamic_cast<const PV&>(v);
+    PV &Hvpv = dynamic_cast<PV&>(Hv);
 
-    RCP<const V> vo = vpv.get(OPT);
-    RCP<const V> vs = vpv.get(SLACK);
-    RCP<const V> ve = vpv.get(EQUAL);
-    RCP<const V> vi = vpv.get(INEQ);
+    ROL::SharedPointer<const V> vo = vpv.get(OPT);
+    ROL::SharedPointer<const V> vs = vpv.get(SLACK);
+    ROL::SharedPointer<const V> ve = vpv.get(EQUAL);
+    ROL::SharedPointer<const V> vi = vpv.get(INEQ);
 
-    RCP<V> Hvo = Hvpv.get(OPT);
-    RCP<V> Hvs = Hvpv.get(SLACK);
-    RCP<V> Hve = Hvpv.get(EQUAL);
-    RCP<V> Hvi = Hvpv.get(INEQ);
+    ROL::SharedPointer<V> Hvo = Hvpv.get(OPT);
+    ROL::SharedPointer<V> Hvs = Hvpv.get(SLACK);
+    ROL::SharedPointer<V> Hve = Hvpv.get(EQUAL);
+    ROL::SharedPointer<V> Hvi = Hvpv.get(INEQ);
 
     Hvo->set(*vo);
 

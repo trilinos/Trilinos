@@ -132,12 +132,12 @@ private:
     }
   }
 
-  Teuchos::RCP<const std::vector<Real> > getConstVector(const ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
+  ROL::SharedPointer<const std::vector<Real> > getConstVector(const ROL::Vector<Real> &x) const {
+    return dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
   }
 
-  Teuchos::RCP<std::vector<Real> > getVector(ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<ROL::StdVector<Real> >(x).getVector();
+  ROL::SharedPointer<std::vector<Real> > getVector(ROL::Vector<Real> &x) const {
+    return dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
   }
   
   Real S(const Real x, const Real y) const {
@@ -375,12 +375,12 @@ private:
 
   class Jacobian : public ROL::LinearOperator<Real> {
   private:
-    const Teuchos::RCP<ROL::Constraint_SimOpt<Real> > con_;
-    const Teuchos::RCP<const ROL::Vector<Real> > u_, z_;
+    const ROL::SharedPointer<ROL::Constraint_SimOpt<Real> > con_;
+    const ROL::SharedPointer<const ROL::Vector<Real> > u_, z_;
   public:
-    Jacobian(const Teuchos::RCP<ROL::Constraint_SimOpt<Real> > &con,
-             const Teuchos::RCP<const ROL::Vector<Real> > &u,
-             const Teuchos::RCP<const ROL::Vector<Real> > &z) : con_(con), u_(u), z_(z) {}
+    Jacobian(const ROL::SharedPointer<ROL::Constraint_SimOpt<Real> > &con,
+             const ROL::SharedPointer<const ROL::Vector<Real> > &u,
+             const ROL::SharedPointer<const ROL::Vector<Real> > &z) : con_(con), u_(u), z_(z) {}
     void apply(ROL::Vector<Real> &Jv, const ROL::Vector<Real> &v, Real &tol) const {
       con_->applyJacobian_1(Jv,v,*u_,*z_,tol);
     }
@@ -388,12 +388,12 @@ private:
 
   class AdjointJacobian : public ROL::LinearOperator<Real> {
   private:
-    const Teuchos::RCP<ROL::Constraint_SimOpt<Real> > con_;
-    const Teuchos::RCP<const ROL::Vector<Real> > u_, z_;
+    const ROL::SharedPointer<ROL::Constraint_SimOpt<Real> > con_;
+    const ROL::SharedPointer<const ROL::Vector<Real> > u_, z_;
   public:
-    AdjointJacobian(const Teuchos::RCP<ROL::Constraint_SimOpt<Real> > &con,
-                    const Teuchos::RCP<const ROL::Vector<Real> > &u,
-                    const Teuchos::RCP<const ROL::Vector<Real> > &z) : con_(con), u_(u), z_(z) {}
+    AdjointJacobian(const ROL::SharedPointer<ROL::Constraint_SimOpt<Real> > &con,
+                    const ROL::SharedPointer<const ROL::Vector<Real> > &u,
+                    const ROL::SharedPointer<const ROL::Vector<Real> > &z) : con_(con), u_(u), z_(z) {}
     void apply(ROL::Vector<Real> &Jv, const ROL::Vector<Real> &v, Real &tol) const {
       con_->applyAdjointJacobian_1(Jv,v,*u_,*z_,tol);
     }
@@ -420,9 +420,9 @@ public:
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, 
                   const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> >       cp = getVector(c);
-    Teuchos::RCP<const std::vector<Real> > up = getConstVector(u);
-    Teuchos::RCP<const std::vector<Real> > zp = getConstVector(z);
+    ROL::SharedPointer<std::vector<Real> >       cp = getVector(c);
+    ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
+    ROL::SharedPointer<const std::vector<Real> > zp = getConstVector(z);
     const Real one(1);
     // Get number of time steps
     int n = getSize(*up);
@@ -469,9 +469,9 @@ public:
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                        const ROL::Vector<Real> &z, Real &tol) {
     //ROL::Constraint_SimOpt<Real>::applyJacobian_1(jv,v,u,z,tol);
-    Teuchos::RCP<std::vector<Real> >      jvp = getVector(jv);
-    Teuchos::RCP<const std::vector<Real> > vp = getConstVector(v);
-    Teuchos::RCP<const std::vector<Real> > up = getConstVector(u);
+    ROL::SharedPointer<std::vector<Real> >      jvp = getVector(jv);
+    ROL::SharedPointer<const std::vector<Real> > vp = getConstVector(v);
+    ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
     const Real half(0.5), one(1), two(2);
     // Get number of time steps
     int n = getSize(*up);
@@ -535,9 +535,9 @@ public:
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
     jv.zero();
-    Teuchos::RCP<std::vector<Real> >      jvp = getVector(jv);
-    Teuchos::RCP<const std::vector<Real> > vp = getConstVector(v);
-    Teuchos::RCP<const std::vector<Real> > up = getConstVector(u);
+    ROL::SharedPointer<std::vector<Real> >      jvp = getVector(jv);
+    ROL::SharedPointer<const std::vector<Real> > vp = getConstVector(v);
+    ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
     // Get number of time steps
     int n = getSize(*up);
     // Build jacobian
@@ -549,9 +549,9 @@ public:
   void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                               const ROL::Vector<Real> &z, Real &tol) {
     //ROL::Constraint_SimOpt<Real>::applyAdjointJacobian_1(ajv,v,u,z,tol);
-    Teuchos::RCP<std::vector<Real> >      jvp = getVector(ajv);
-    Teuchos::RCP<const std::vector<Real> > vp = getConstVector(v);
-    Teuchos::RCP<const std::vector<Real> > up = getConstVector(u);
+    ROL::SharedPointer<std::vector<Real> >      jvp = getVector(ajv);
+    ROL::SharedPointer<const std::vector<Real> > vp = getConstVector(v);
+    ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
     const Real half(0.5), one(1), two(2);
     // Get number of time steps
     int n = getSize(*up);
@@ -634,9 +634,9 @@ public:
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> >      jvp = getVector(jv);
-    Teuchos::RCP<const std::vector<Real> > vp = getConstVector(v);
-    Teuchos::RCP<const std::vector<Real> > up = getConstVector(u);
+    ROL::SharedPointer<std::vector<Real> >      jvp = getVector(jv);
+    ROL::SharedPointer<const std::vector<Real> > vp = getConstVector(v);
+    ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
     // Get number of time steps
     int n = getSize(*up);
     // Build adjoint jacobian
@@ -647,20 +647,20 @@ public:
   void applyInverseJacobian_1(ROL::Vector<Real> &ijv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
     int iter(0), flag(0);
-    Teuchos::RCP<const ROL::Vector<Real> > u_ptr = Teuchos::rcpFromRef(u);
-    Teuchos::RCP<const ROL::Vector<Real> > z_ptr = Teuchos::rcpFromRef(z);
-    Teuchos::RCP<ROL::Constraint_SimOpt<Real> > con = Teuchos::rcp(this,false);
-    Teuchos::RCP<ROL::LinearOperator<Real> > jac
-      = Teuchos::rcp(new Jacobian(con,u_ptr,z_ptr));
-    Teuchos::RCP<ROL::LinearOperator<Real> > precond
-      = Teuchos::rcp(new Precond());
+    ROL::SharedPointer<const ROL::Vector<Real> > u_ptr = ROL::makeSharedFromRef(u);
+    ROL::SharedPointer<const ROL::Vector<Real> > z_ptr = ROL::makeSharedFromRef(z);
+    ROL::SharedPointer<ROL::Constraint_SimOpt<Real> > con = ROL::makeSharedFromRef(*this);
+    ROL::SharedPointer<ROL::LinearOperator<Real> > jac
+      = ROL::makeShared<Jacobian>(con,u_ptr,z_ptr);
+    ROL::SharedPointer<ROL::LinearOperator<Real> > precond
+      = ROL::makeShared<Precond>();
 
     Teuchos::ParameterList parlist;
     parlist.sublist("General").sublist("Krylov").set("Type","GMRES");
     parlist.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-8);
     parlist.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);
     parlist.sublist("General").sublist("Krylov").set("Iteration Limit", 600);
-    Teuchos::RCP<ROL::Krylov<Real> > krylov = ROL::KrylovFactory<Real>(parlist);
+    ROL::SharedPointer<ROL::Krylov<Real> > krylov = ROL::KrylovFactory<Real>(parlist);
 
     krylov->run(ijv, *jac, v, *precond, iter, flag );
   }
@@ -668,20 +668,20 @@ public:
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &iajv, const ROL::Vector<Real> &v,
                                      const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     int iter(0), flag(0);
-    Teuchos::RCP<const ROL::Vector<Real> > u_ptr = Teuchos::rcpFromRef(u);
-    Teuchos::RCP<const ROL::Vector<Real> > z_ptr = Teuchos::rcpFromRef(z);
-    Teuchos::RCP<ROL::Constraint_SimOpt<Real> > con = Teuchos::rcp(this,false);
-    Teuchos::RCP<ROL::LinearOperator<Real> > jac
-      = Teuchos::rcp(new AdjointJacobian(con,u_ptr,z_ptr));
-    Teuchos::RCP<ROL::LinearOperator<Real> > precond
-      = Teuchos::rcp(new Precond());
+    ROL::SharedPointer<const ROL::Vector<Real> > u_ptr = ROL::makeSharedFromRef(u);
+    ROL::SharedPointer<const ROL::Vector<Real> > z_ptr = ROL::makeSharedFromRef(z);
+    ROL::SharedPointer<ROL::Constraint_SimOpt<Real> > con = ROL::makeSharedFromRef(*this);
+    ROL::SharedPointer<ROL::LinearOperator<Real> > jac
+      = ROL::makeShared<AdjointJacobian>(con,u_ptr,z_ptr);
+    ROL::SharedPointer<ROL::LinearOperator<Real> > precond
+      = ROL::makeShared<Precond>();
 
     Teuchos::ParameterList parlist;
     parlist.sublist("General").sublist("Krylov").set("Type","GMRES");
     parlist.sublist("General").sublist("Krylov").set("Absolute Tolerance", 1e-8);
     parlist.sublist("General").sublist("Krylov").set("Relative Tolerance", 1e-4);
     parlist.sublist("General").sublist("Krylov").set("Iteration Limit", 600);
-    Teuchos::RCP<ROL::Krylov<Real> > krylov = ROL::KrylovFactory<Real>(parlist);
+    ROL::SharedPointer<ROL::Krylov<Real> > krylov = ROL::KrylovFactory<Real>(parlist);
 
     krylov->run(iajv, *jac, v, *precond, iter, flag );
   }
@@ -740,12 +740,12 @@ private:
     }
   }
 
-  Teuchos::RCP<const std::vector<Real> > getConstVector(const ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
+  ROL::SharedPointer<const std::vector<Real> > getConstVector(const ROL::Vector<Real> &x) const {
+    return dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
   }
 
-  Teuchos::RCP<std::vector<Real> > getVector(ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<ROL::StdVector<Real> >(x).getVector();
+  ROL::SharedPointer<std::vector<Real> > getVector(ROL::Vector<Real> &x) const {
+    return dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
   }
 
 public:
@@ -753,7 +753,7 @@ public:
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     // Unwrap u
-    Teuchos::RCP<const std::vector<Real> > up = getConstVector(u);
+    ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
     // Get number of time steps
     int n = getSize(*up);
     // Compute final x-velocity
@@ -766,8 +766,8 @@ public:
   }
 
   void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> >       gp = getVector(g);
-    Teuchos::RCP<const std::vector<Real> > up = getConstVector(u);
+    ROL::SharedPointer<std::vector<Real> >       gp = getVector(g);
+    ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
     // Get number of time steps
     int n = getSize(*up);
     // Compute final x-velocity
@@ -787,9 +787,9 @@ public:
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> >      hvp = getVector(hv);
-    Teuchos::RCP<const std::vector<Real> > vp = getConstVector(v);
-    Teuchos::RCP<const std::vector<Real> > up = getConstVector(u);
+    ROL::SharedPointer<std::vector<Real> >      hvp = getVector(hv);
+    ROL::SharedPointer<const std::vector<Real> > vp = getConstVector(v);
+    ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
     // Get number of time steps
     int n = getSize(*vp);
     // Return derivative of final speed
@@ -852,12 +852,12 @@ private:
     }
   }
 
-  Teuchos::RCP<const std::vector<Real> > getConstVector(const ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<const ROL::StdVector<Real> >(x).getVector();
+  ROL::SharedPointer<const std::vector<Real> > getConstVector(const ROL::Vector<Real> &x) const {
+    return dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
   }
 
-  Teuchos::RCP<std::vector<Real> > getVector(ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<ROL::StdVector<Real> >(x).getVector();
+  ROL::SharedPointer<std::vector<Real> > getVector(ROL::Vector<Real> &x) const {
+    return dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
   }
 
 public:
@@ -866,8 +866,8 @@ public:
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, 
                   const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> >       cp = getVector(c);
-    Teuchos::RCP<const std::vector<Real> > up = getConstVector(u);
+    ROL::SharedPointer<std::vector<Real> >       cp = getVector(c);
+    ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
     // Get number of time steps
     int n = getSize(*up);
     // Parse state vector
@@ -884,9 +884,9 @@ public:
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                        const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> >      jvp = getVector(jv);
-    Teuchos::RCP<const std::vector<Real> > vp = getConstVector(v);
-    Teuchos::RCP<const std::vector<Real> > up = getConstVector(u);
+    ROL::SharedPointer<std::vector<Real> >      jvp = getVector(jv);
+    ROL::SharedPointer<const std::vector<Real> > vp = getConstVector(v);
+    ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
     // Get number of time steps
     int n = getSize(*up);
     // Parse state vector
@@ -914,9 +914,9 @@ public:
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                               const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> >      jvp = getVector(ajv);
-    Teuchos::RCP<const std::vector<Real> > vp = getConstVector(v);
-    Teuchos::RCP<const std::vector<Real> > up = getConstVector(u);
+    ROL::SharedPointer<std::vector<Real> >      jvp = getVector(ajv);
+    ROL::SharedPointer<const std::vector<Real> > vp = getConstVector(v);
+    ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
     // Get number of time steps
     int n = getSize(*up);
     // Parse state vector
@@ -939,9 +939,9 @@ public:
 
   void applyAdjointHessian_11(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    Teuchos::RCP<std::vector<Real> >    ahwvp = getVector(ahwv);
-    Teuchos::RCP<const std::vector<Real> > wp = getConstVector(w);
-    Teuchos::RCP<const std::vector<Real> > vp = getConstVector(v);
+    ROL::SharedPointer<std::vector<Real> >    ahwvp = getVector(ahwv);
+    ROL::SharedPointer<const std::vector<Real> > wp = getConstVector(w);
+    ROL::SharedPointer<const std::vector<Real> > vp = getConstVector(v);
     // Get number of time steps
     int n = getSize(*vp);
     // Parse direction vector

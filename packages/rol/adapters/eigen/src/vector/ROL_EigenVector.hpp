@@ -57,7 +57,7 @@ namespace ROL {
 template<class Real>
 class Eigen3Vector : public ElementwiseVector<Real> {
 
-  template <typename T> using RCP = Teuchos::RCP<T>;
+  template <typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
   
   using V = Vector<Real>;
 
@@ -69,21 +69,21 @@ class Eigen3Vector : public ElementwiseVector<Real> {
 
 private:
 
-  RCP<EV> vec_;
+  ROL::SharedPointer<EV> vec_;
 
   int dim_;
 
 public:
 
-  Eigen3Vector( const RCP<EV> &vec ) : vec_(vec), dim_(vec->size()) {
+  Eigen3Vector( const ROL::SharedPointer<EV> &vec ) : vec_(vec), dim_(vec->size()) {
   }
  
   Eigen3Vector( int dim, bool zeroOut=false ) : dim_(dim) {
     if( zeroOut ) {
-      vec_ = Teuchos::rcp( new EV(EV::Zero(dim_)) );
+      vec_ = ROL::makeShared<EV(EV::Zero>(dim_));
     }
     else {
-      vec_ = Teuchos::rcp( new EV(dim_) );
+      vec_ = ROL::makeShared<EV>(dim_);
     }
   }
 
@@ -93,7 +93,7 @@ public:
   }
 
   void applyBinary( const BF &f, const V &x ) {
-    auto ex = Teuchos::dyn_cast<const Eigen3Vector>(x);
+    auto ex = dynamic_cast<const Eigen3Vector&>(x);
     for( int i=0; i<dim_; ++i ) 
       (*vec_)(i) = f.apply((*vec_)(i),ex(i));
   }
@@ -109,21 +109,21 @@ public:
     return dim_;
   }
 
-  RCP<V> basis( const int i ) const {
-    auto data = Teuchos::rcp( new EV(dim_,true) );
+  ROL::SharedPointer<V> basis( const int i ) const {
+    auto data = ROL::makeShared<EV>(dim_,true);
     (*data)(i) = static_cast<Real>(1.0);
-    return Teuchos::rcp( new Eigen3Vector(data) );
+    return ROL::makeShared<Eigen3Vector>(data);
   }
 
-  RCP<V> clone() const {
-    return Teuchos::rcp( new Eigen3Vector(dim_) ); 
+  ROL::SharedPointer<V> clone() const {
+    return ROL::makeShared<Eigen3Vector>(dim_); 
   }
 
-  RCP<EV> getVector() {
+  ROL::SharedPointer<EV> getVector() {
     return vec_;
   }
 
-  RCP<const EV> getVector() const {
+  ROL::SharedPointer<const EV> getVector() const {
     return vec_;
   }
 

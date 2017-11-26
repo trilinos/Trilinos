@@ -59,9 +59,6 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
   typedef std::vector<RealT>    vector;
   typedef ROL::Vector<RealT>    V;
   typedef ROL::StdVector<RealT> SV;
@@ -72,12 +69,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
@@ -95,51 +92,51 @@ int main(int argc, char *argv[]) {
     RealT xmin = 0.5;
     RealT xmax = 2.5;
 
-    RCP<vector>  x_rcp  = rcp( new vector(dim,0.0) );
-    RCP<vector>  g_rcp  = rcp( new vector(dim,0.0) );
-    RCP<vector>  v_rcp  = rcp( new vector(dim,0.0) );
-    RCP<vector>  hv_rcp = rcp( new vector(dim,0.0) );
+    ROL::SharedPointer<vector>  x_ptr  = ROL::makeShared<vector>(dim,0.0);
+    ROL::SharedPointer<vector>  g_ptr  = ROL::makeShared<vector>(dim,0.0);
+    ROL::SharedPointer<vector>  v_ptr  = ROL::makeShared<vector>(dim,0.0);
+    ROL::SharedPointer<vector>  hv_ptr = ROL::makeShared<vector>(dim,0.0);
 
-    RCP<vector>  l_rcp = rcp( new vector(dim,1.0) );
-    RCP<vector>  u_rcp = rcp( new vector(dim,2.0) );
+    ROL::SharedPointer<vector>  l_ptr = ROL::makeShared<vector>(dim,1.0);
+    ROL::SharedPointer<vector>  u_ptr = ROL::makeShared<vector>(dim,2.0);
 
-    RCP<vector>  xlog0_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector>  xlog1_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector>  xlog2_rcp = rcp( new vector(dim,0.0) );
+    ROL::SharedPointer<vector>  xlog0_ptr = ROL::makeShared<vector>(dim,0.0);
+    ROL::SharedPointer<vector>  xlog1_ptr = ROL::makeShared<vector>(dim,0.0);
+    ROL::SharedPointer<vector>  xlog2_ptr = ROL::makeShared<vector>(dim,0.0);
 
-    RCP<vector>  xquad0_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector>  xquad1_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector>  xquad2_rcp = rcp( new vector(dim,0.0) );
+    ROL::SharedPointer<vector>  xquad0_ptr = ROL::makeShared<vector>(dim,0.0);
+    ROL::SharedPointer<vector>  xquad1_ptr = ROL::makeShared<vector>(dim,0.0);
+    ROL::SharedPointer<vector>  xquad2_ptr = ROL::makeShared<vector>(dim,0.0);
 
-    RCP<vector>  xdwell0_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector>  xdwell1_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector>  xdwell2_rcp = rcp( new vector(dim,0.0) );
+    ROL::SharedPointer<vector>  xdwell0_ptr = ROL::makeShared<vector>(dim,0.0);
+    ROL::SharedPointer<vector>  xdwell1_ptr = ROL::makeShared<vector>(dim,0.0);
+    ROL::SharedPointer<vector>  xdwell2_ptr = ROL::makeShared<vector>(dim,0.0);
 
 
 
-    SV x(x_rcp); 
-    SV g(g_rcp);
-    SV v(v_rcp);
-    SV hv(hv_rcp);
+    SV x(x_ptr); 
+    SV g(g_ptr);
+    SV v(v_ptr);
+    SV hv(hv_ptr);
 
-    RCP<SV> xlog0 = rcp( new SV(xlog0_rcp) );
-    RCP<SV> xlog1 = rcp( new SV(xlog1_rcp) );
-    RCP<SV> xlog2 = rcp( new SV(xlog2_rcp) );
+    ROL::SharedPointer<SV> xlog0 = ROL::makeShared<SV>(xlog0_ptr);
+    ROL::SharedPointer<SV> xlog1 = ROL::makeShared<SV>(xlog1_ptr);
+    ROL::SharedPointer<SV> xlog2 = ROL::makeShared<SV>(xlog2_ptr);
 
-    RCP<SV> xquad0 = rcp( new SV(xquad0_rcp) );
-    RCP<SV> xquad1 = rcp( new SV(xquad1_rcp) );
-    RCP<SV> xquad2 = rcp( new SV(xquad2_rcp) );
+    ROL::SharedPointer<SV> xquad0 = ROL::makeShared<SV>(xquad0_ptr);
+    ROL::SharedPointer<SV> xquad1 = ROL::makeShared<SV>(xquad1_ptr);
+    ROL::SharedPointer<SV> xquad2 = ROL::makeShared<SV>(xquad2_ptr);
 
-    RCP<SV> xdwell0 = rcp( new SV(xdwell0_rcp) );
-    RCP<SV> xdwell1 = rcp( new SV(xdwell1_rcp) );
-    RCP<SV> xdwell2 = rcp( new SV(xdwell2_rcp) );
+    ROL::SharedPointer<SV> xdwell0 = ROL::makeShared<SV>(xdwell0_ptr);
+    ROL::SharedPointer<SV> xdwell1 = ROL::makeShared<SV>(xdwell1_ptr);
+    ROL::SharedPointer<SV> xdwell2 = ROL::makeShared<SV>(xdwell2_ptr);
 
-    RCP<V> lo = rcp(new SV(l_rcp) );
-    RCP<V> up = rcp(new SV(u_rcp) );  
+    ROL::SharedPointer<V> lo = ROL::makeShared<SV>(l_ptr);
+    ROL::SharedPointer<V> up = ROL::makeShared<SV>(u_ptr);  
 
     for(uint i=0; i<dim; ++i) {
       RealT t = static_cast<RealT>(i)/static_cast<RealT>(dim-1);
-      (*x_rcp)[i] = xmin*(1-t) + xmax*t;
+      (*x_ptr)[i] = xmin*(1-t) + xmax*t;
     }    
 
     // Create bound constraint
@@ -161,33 +158,33 @@ int main(int argc, char *argv[]) {
 
 
     logObj.value(x,tol);
-    xlog0->set(*Teuchos::rcp_static_cast<SV>(logObj.getBarrierVector()));
+    xlog0->set(*ROL::staticPointerCast<SV>(logObj.getBarrierVector()));
 
     logObj.gradient(g,x,tol);
-    xlog1->set(*Teuchos::rcp_static_cast<SV>(logObj.getBarrierVector()));
+    xlog1->set(*ROL::staticPointerCast<SV>(logObj.getBarrierVector()));
 
     logObj.hessVec(hv,v,x,tol);
-    xlog2->set(*Teuchos::rcp_static_cast<SV>(logObj.getBarrierVector()));
+    xlog2->set(*ROL::staticPointerCast<SV>(logObj.getBarrierVector()));
 
 
     quadObj.value(x,tol);
-    xquad0->set(*Teuchos::rcp_static_cast<SV>(quadObj.getBarrierVector()));
+    xquad0->set(*ROL::staticPointerCast<SV>(quadObj.getBarrierVector()));
 
     quadObj.gradient(g,x,tol);
-    xquad1->set(*Teuchos::rcp_static_cast<SV>(quadObj.getBarrierVector()));
+    xquad1->set(*ROL::staticPointerCast<SV>(quadObj.getBarrierVector()));
 
     quadObj.hessVec(hv,v,x,tol);
-    xquad2->set(*Teuchos::rcp_static_cast<SV>(quadObj.getBarrierVector()));
+    xquad2->set(*ROL::staticPointerCast<SV>(quadObj.getBarrierVector()));
 
 
     dwellObj.value(x,tol);
-    xdwell0->set(*Teuchos::rcp_static_cast<SV>(dwellObj.getBarrierVector()));
+    xdwell0->set(*ROL::staticPointerCast<SV>(dwellObj.getBarrierVector()));
 
     dwellObj.gradient(g,x,tol);
-    xdwell1->set(*Teuchos::rcp_static_cast<SV>(dwellObj.getBarrierVector()));
+    xdwell1->set(*ROL::staticPointerCast<SV>(dwellObj.getBarrierVector()));
 
     dwellObj.hessVec(hv,v,x,tol);
-    xdwell2->set(*Teuchos::rcp_static_cast<SV>(dwellObj.getBarrierVector()));
+    xdwell2->set(*ROL::staticPointerCast<SV>(dwellObj.getBarrierVector()));
 
 
     *outStream   << std::setw(14) << "x" 
@@ -204,16 +201,16 @@ int main(int argc, char *argv[]) {
     *outStream   << std::string(140,'-') << std::endl;
 
     for(uint i=0; i<dim; ++i) {
-      *outStream << std::setw(14) << (*x_rcp)[i] 
-                 << std::setw(14) << (*xlog0_rcp)[i] 
-                 << std::setw(14) << (*xlog1_rcp)[i]
-                 << std::setw(14) << (*xlog2_rcp)[i] 
-                 << std::setw(14) << (*xquad0_rcp)[i] 
-                 << std::setw(14) << (*xquad1_rcp)[i] 
-                 << std::setw(14) << (*xquad2_rcp)[i] 
-                 << std::setw(14) << (*xdwell0_rcp)[i] 
-                 << std::setw(14) << (*xdwell1_rcp)[i] 
-                 << std::setw(14) << (*xdwell2_rcp)[i] 
+      *outStream << std::setw(14) << (*x_ptr)[i] 
+                 << std::setw(14) << (*xlog0_ptr)[i] 
+                 << std::setw(14) << (*xlog1_ptr)[i]
+                 << std::setw(14) << (*xlog2_ptr)[i] 
+                 << std::setw(14) << (*xquad0_ptr)[i] 
+                 << std::setw(14) << (*xquad1_ptr)[i] 
+                 << std::setw(14) << (*xquad2_ptr)[i] 
+                 << std::setw(14) << (*xdwell0_ptr)[i] 
+                 << std::setw(14) << (*xdwell1_ptr)[i] 
+                 << std::setw(14) << (*xdwell2_ptr)[i] 
                  << std::endl;
     }    
 

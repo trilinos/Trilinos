@@ -50,7 +50,7 @@
 
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_Basis.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_SharedPointer.hpp"
 
 namespace Exception {
 
@@ -71,116 +71,116 @@ class PDE {
 public:
   virtual ~PDE() {}
 
-  virtual void residual(Teuchos::RCP<Intrepid::FieldContainer<Real> > & res,
-                        const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                        const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                        const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) = 0;
+  virtual void residual(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & res,
+                        const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                        const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                        const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) = 0;
 
-  virtual void Jacobian_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Jacobian_1(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & jac,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Jacobian_1 not implemented.");
   }
 
-  virtual void Jacobian_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > & jac,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Jacobian_2(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & jac,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Jacobian_2 not implemented.");
   }
 
-  virtual void Jacobian_3(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & jac,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Jacobian_3(std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > & jac,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Jacobian_3 not implemented.");
   }
 
-  virtual void Hessian_11(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Hessian_11(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Hessian_11 not implemented.");
   }
 
-  virtual void Hessian_12(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Hessian_12(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Hessian_12 not implemented.");
   }
 
-  virtual void Hessian_13(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Hessian_13(std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > & hess,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Hessian_13 not implemented.");
   }
 
-  virtual void Hessian_21(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Hessian_21(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Hessian_21 not implemented.");
   }
 
-  virtual void Hessian_22(Teuchos::RCP<Intrepid::FieldContainer<Real> > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Hessian_22(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & hess,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Hessian_22 not implemented.");
   }
 
-  virtual void Hessian_23(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Hessian_23(std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > & hess,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Hessian_23 not implemented.");
   }
 
-  virtual void Hessian_31(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Hessian_31(std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > & hess,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Hessian_31 not implemented.");
   }
 
-  virtual void Hessian_32(std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Hessian_32(std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > & hess,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Hessian_32 not implemented.");
   }
 
-  virtual void Hessian_33(std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > & hess,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & l_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & u_coeff,
-                          const Teuchos::RCP<const Intrepid::FieldContainer<Real> > & z_coeff = Teuchos::null,
-                          const Teuchos::RCP<const std::vector<Real> > & z_param = Teuchos::null) {
+  virtual void Hessian_33(std::vector<std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > > & hess,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & l_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,
+                          const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPointer,
+                          const ROL::SharedPointer<const std::vector<Real> > & z_param = ROL::nullPointer) {
     throw Exception::NotImplemented(">>> Hessian_33 not implemented.");
   }
 
-  virtual void RieszMap_1(Teuchos::RCP<Intrepid::FieldContainer<Real> > &riesz) {
+  virtual void RieszMap_1(ROL::SharedPointer<Intrepid::FieldContainer<Real> > &riesz) {
     throw Exception::NotImplemented(">>> RieszMap_1 not implemented.");
   }
 
-  virtual void RieszMap_2(Teuchos::RCP<Intrepid::FieldContainer<Real> > &riesz) {
+  virtual void RieszMap_2(ROL::SharedPointer<Intrepid::FieldContainer<Real> > &riesz) {
     throw Exception::NotImplemented(">>> RieszMap_2 not implemented.");
   }
 
-  virtual std::vector<Teuchos::RCP<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() = 0;
+  virtual std::vector<ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > getFields() = 0;
 
-  virtual void setCellNodes(const Teuchos::RCP<Intrepid::FieldContainer<Real> > &cellNodes,
-                            const std::vector<std::vector<Teuchos::RCP<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
+  virtual void setCellNodes(const ROL::SharedPointer<Intrepid::FieldContainer<Real> > &cellNodes,
+                            const std::vector<std::vector<ROL::SharedPointer<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
                             const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) = 0;
 
   virtual void setFieldPattern(const std::vector<std::vector<int> > & fieldPattern) {

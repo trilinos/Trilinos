@@ -68,8 +68,8 @@ class Objective_LeastSquares : public Objective<Real> {
 public:
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ex
+      = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
     uint n    = ex->size();
     Real h   = 1.0/((Real)n+1.0);
@@ -91,10 +91,10 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > eg
-      = Teuchos::dyn_cast<StdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+    ROL::SharedPointer<std::vector<Real> > eg
+      = dynamic_cast<StdVector<Real>&>(g).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ex
+      = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
     uint n  = ex->size();
     Real h = 1.0/((Real)n+1.0);
@@ -125,12 +125,12 @@ public:
   }
 #if USE_HESSVEC
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > ehv
-      = Teuchos::dyn_cast<StdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > ev
-      = Teuchos::dyn_cast<const StdVector<Real> >(v).getVector();
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+    ROL::SharedPointer<std::vector<Real> > ehv
+      = dynamic_cast<StdVector<Real>&>(hv).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ev
+      = dynamic_cast<const StdVector<Real>&>(v).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ex
+      = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
     uint n  = ex->size();
     Real h = 1.0/((Real)n+1.0);
@@ -163,30 +163,30 @@ public:
 };
 
 template<class Real>
-void getLeastSquares( Teuchos::RCP<Objective<Real> > &obj,
-                      Teuchos::RCP<Vector<Real> >    &x0,
-                      Teuchos::RCP<Vector<Real> >    &x ) {
+void getLeastSquares( ROL::SharedPointer<Objective<Real> > &obj,
+                      ROL::SharedPointer<Vector<Real> >    &x0,
+                      ROL::SharedPointer<Vector<Real> >    &x ) {
   // Problem dimension
   int n = 32;
 
   // Get Initial Guess
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::SharedPointer<std::vector<Real> > x0p = ROL::makeShared<std::vector<Real>>(n,0.0);
   for ( int i = 0; i < n; i++ ) {
     (*x0p)[i] = 0.0;
   }
-  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
+  x0 = ROL::makeShared<StdVector<Real>>(x0p);
 
   // Get Solution
-  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::SharedPointer<std::vector<Real> > xp = ROL::makeShared<std::vector<Real>>(n,0.0);
   Real h = 1.0/((Real)n+1.0), pt = 0.0;
   for( int i = 0; i < n; i++ ) {
     pt = (Real)(i+1)*h;
     (*xp)[i] = pt*(1.0-pt);
   }
-  x = Teuchos::rcp(new StdVector<Real>(xp));
+  x = ROL::makeShared<StdVector<Real>>(xp);
 
   // Instantiate Objective Function
-  obj = Teuchos::rcp(new Objective_LeastSquares<Real>);
+  obj = ROL::makeShared<Objective_LeastSquares<Real>>();
 }
 
 } // End ZOO Namespace

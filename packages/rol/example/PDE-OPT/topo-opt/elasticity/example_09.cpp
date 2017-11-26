@@ -87,21 +87,21 @@ typedef double RealT;
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm
+  ROL::SharedPointer<const Teuchos::Comm<int> > comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  Teuchos::RCP<const Teuchos::Comm<int> > serial_comm
-    = Teuchos::rcp(new Teuchos::SerialComm<int>());
+  ROL::SharedPointer<const Teuchos::Comm<int> > serial_comm
+    = ROL::makeShared<Teuchos::SerialComm<int>>();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   }
   else {
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
 
     /*** Read in XML input ***/
     std::string filename = "input_ex09.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Retrieve parameters.
@@ -120,43 +120,43 @@ int main(int argc, char *argv[]) {
 
     /*** Initialize main data structure. ***/
     int probDim = parlist->sublist("Problem").get("Problem Dimension",2);
-    Teuchos::RCP<MeshManager<RealT> > meshMgr;
+    ROL::SharedPointer<MeshManager<RealT> > meshMgr;
     if (probDim == 2) {
-      meshMgr = Teuchos::rcp(new MeshManager_TopoOpt<RealT>(*parlist));
+      meshMgr = ROL::makeShared<MeshManager_TopoOpt<RealT>>(*parlist);
     } else if (probDim == 3) {
-      meshMgr = Teuchos::rcp(new MeshReader<RealT>(*parlist));
+      meshMgr = ROL::makeShared<MeshReader<RealT>>(*parlist);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> PDE-OPT/topo-opt/elasticity/example_09.cpp: Problem dim is not 2 or 3!");
     }
     // Initialize PDE describing elasticity equations.
-    Teuchos::RCP<PDE_Elasticity<RealT> > pde
-      = Teuchos::rcp(new PDE_Elasticity<RealT>(*parlist));
-    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > con
-      = Teuchos::rcp(new PDE_Constraint<RealT>(pde,meshMgr,serial_comm,*parlist,*outStream));
+    ROL::SharedPointer<PDE_Elasticity<RealT> > pde
+      = ROL::makeShared<PDE_Elasticity<RealT>>(*parlist);
+    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > con
+      = ROL::makeShared<PDE_Constraint<RealT>>(pde,meshMgr,serial_comm,*parlist,*outStream);
     // Initialize the filter PDE.
-    Teuchos::RCP<PDE_Filter<RealT> > pdeFilter
-      = Teuchos::rcp(new PDE_Filter<RealT>(*parlist));
-    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > conFilter
-      = Teuchos::rcp(new Linear_PDE_Constraint<RealT>(pdeFilter,meshMgr,serial_comm,*parlist,*outStream));
+    ROL::SharedPointer<PDE_Filter<RealT> > pdeFilter
+      = ROL::makeShared<PDE_Filter<RealT>>(*parlist);
+    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > conFilter
+      = ROL::makeShared<Linear_PDE_Constraint<RealT>>(pdeFilter,meshMgr,serial_comm,*parlist,*outStream);
     // Cast the constraint and get the assembler.
-    Teuchos::RCP<PDE_Constraint<RealT> > pdecon
-      = Teuchos::rcp_dynamic_cast<PDE_Constraint<RealT> >(con);
-    Teuchos::RCP<Assembler<RealT> > assembler = pdecon->getAssembler();
+    ROL::SharedPointer<PDE_Constraint<RealT> > pdecon
+      = ROL::dynamicPointerCast<PDE_Constraint<RealT> >(con);
+    ROL::SharedPointer<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
 
     // Create vectors.
-    Teuchos::RCP<Tpetra::MultiVector<> > u_rcp, p_rcp, z_rcp, r_rcp;
-    u_rcp = assembler->createStateVector();    u_rcp->putScalar(0.0);
-    p_rcp = assembler->createStateVector();    p_rcp->putScalar(0.0);
-    z_rcp = assembler->createControlVector();  z_rcp->putScalar(1.0);
-    r_rcp = assembler->createResidualVector(); r_rcp->putScalar(0.0);
-    Teuchos::RCP<ROL::Vector<RealT> > up, pp, zp, rp;
-    up = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(u_rcp,pde,assembler,*parlist));
-    pp = Teuchos::rcp(new PDE_PrimalSimVector<RealT>(p_rcp,pde,assembler,*parlist));
-    zp = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(z_rcp,pde,assembler,*parlist));
-    rp = Teuchos::rcp(new PDE_DualSimVector<RealT>(r_rcp,pde,assembler,*parlist));
+    ROL::SharedPointer<Tpetra::MultiVector<> > u_ptr, p_ptr, z_ptr, r_ptr;
+    u_ptr = assembler->createStateVector();    u_ptr->putScalar(0.0);
+    p_ptr = assembler->createStateVector();    p_ptr->putScalar(0.0);
+    z_ptr = assembler->createControlVector();  z_ptr->putScalar(1.0);
+    r_ptr = assembler->createResidualVector(); r_ptr->putScalar(0.0);
+    ROL::SharedPointer<ROL::Vector<RealT> > up, pp, zp, rp;
+    up = ROL::makeShared<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler,*parlist);
+    pp = ROL::makeShared<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler,*parlist);
+    zp = ROL::makeShared<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler,*parlist);
+    rp = ROL::makeShared<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler,*parlist);
 
     // Build sampler.
     int nsamp  = parlist->sublist("Problem").get("Number of samples", 4);
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
       = Teuchos::getArrayFromStringParameter<double>(parlist->sublist("Problem").sublist("Load"), "Magnitude");
     int nLoads = loadMag.size();
     int dim    = probDim;
-    std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > distVec(dim*nLoads);
+    std::vector<ROL::SharedPointer<ROL::Distribution<RealT> > > distVec(dim*nLoads);
     for (int i = 0; i < nLoads; ++i) {
       std::stringstream sli;
       sli << "Stochastic Load " << i;
@@ -183,21 +183,21 @@ int main(int argc, char *argv[]) {
         distVec[i*dim + 2] = ROL::DistributionFactory<RealT>(aziList);
       }
     }
-    Teuchos::RCP<ROL::BatchManager<RealT> > xbman
-      = Teuchos::rcp(new ROL::TpetraTeuchosBatchManager<RealT>(comm));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > xsampler
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<RealT>(nsamp,distVec,xbman));
-    Teuchos::RCP<ROL::BatchManager<RealT> > cbman
-      = Teuchos::rcp(new ROL::SingletonTeuchosBatchManager<RealT,int>(comm));
+    ROL::SharedPointer<ROL::BatchManager<RealT> > xbman
+      = ROL::makeShared<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
+    ROL::SharedPointer<ROL::SampleGenerator<RealT> > xsampler
+      = ROL::makeShared<ROL::MonteCarloGenerator<RealT>>(nsamp,distVec,xbman);
+    ROL::SharedPointer<ROL::BatchManager<RealT> > cbman
+      = ROL::makeShared<ROL::SingletonTeuchosBatchManager<RealT,int>>(comm);
 
     // Initialize "filtered" of "unfiltered" constraint.
-    Teuchos::RCP<ROL::Constraint_SimOpt<RealT> > pdeWithFilter;
+    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > pdeWithFilter;
     bool useFilter = parlist->sublist("Problem").get("Use Filter", true);
     if (useFilter) {
       bool useStorage = parlist->sublist("Problem").get("Use State Storage",true);
       pdeWithFilter
-        = Teuchos::rcp(new ROL::CompositeConstraint_SimOpt<RealT>(con, conFilter,
-                       *rp, *rp, *up, *zp, *zp, useStorage));
+        = ROL::makeShared<ROL::CompositeConstraint_SimOpt<RealT>>(con, conFilter,
+                       *rp, *rp, *up, *zp, *zp, useStorage);
     }
     else {
       pdeWithFilter = con;
@@ -205,10 +205,10 @@ int main(int argc, char *argv[]) {
     pdeWithFilter->setSolveParameters(*parlist);
 
     // Initialize volume objective.
-    Teuchos::RCP<QoI<RealT> > qoi_vol
-      = Teuchos::rcp(new QoI_VolumeObj_TopoOpt<RealT>(pde->getFE(),pde->getFieldHelper()));
-    Teuchos::RCP<ROL::Objective<RealT> > vobj
-      = Teuchos::rcp(new IntegralOptObjective<RealT>(qoi_vol,assembler));
+    ROL::SharedPointer<QoI<RealT> > qoi_vol
+      = ROL::makeShared<QoI_VolumeObj_TopoOpt<RealT>(pde->getFE(),pde->getFieldHelper>());
+    ROL::SharedPointer<ROL::Objective<RealT> > vobj
+      = ROL::makeShared<IntegralOptObjective<RealT>>(qoi_vol,assembler);
 
     // Initialize compliance inequality constraint.
     con->value(*rp, *up, *zp, tol);
@@ -216,22 +216,22 @@ int main(int argc, char *argv[]) {
     if (rnorm2 > 1e2*ROL::ROL_EPSILON<RealT>()) {
       objScaling /= rnorm2;
     }
-    std::vector<Teuchos::RCP<QoI<RealT> > > qoi_cmp(1,Teuchos::null);
+    std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_cmp(1,ROL::nullPointer);
     qoi_cmp[0]
-      = Teuchos::rcp(new QoI_TopoOpt<RealT>(pde->getFE(), pde->getLoad(),
+      = ROL::makeShared<QoI_TopoOpt<RealT>(pde->getFE>(),
                                             pde->getFieldHelper(), objScaling));
-    Teuchos::RCP<ROL::Objective_SimOpt<RealT> > cobj
-      = Teuchos::rcp(new PDE_Objective<RealT>(qoi_cmp,assembler));
+    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > cobj
+      = ROL::makeShared<PDE_Objective<RealT>>(qoi_cmp,assembler);
 
     // Initialize reduced compliance objective function.
     bool storage     = parlist->sublist("Problem").get("Use state storage",true);
     std::string type = parlist->sublist("SOL").get("Stochastic Component Type","Risk Neutral");
     storage = (type == "Risk Neutral") ? false : storage;
-    Teuchos::RCP<ROL::SimController<RealT> > stateStore
-      = Teuchos::rcp(new ROL::SimController<RealT>());
-    Teuchos::RCP<ROL::Reduced_Objective_SimOpt<RealT> > cobjRed
-      = Teuchos::rcp(new  ROL::Reduced_Objective_SimOpt<RealT>(cobj,
-                     pdeWithFilter,stateStore,up,zp,pp,storage));
+    ROL::SharedPointer<ROL::SimController<RealT> > stateStore
+      = ROL::makeShared<ROL::SimController<RealT>>();
+    ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > cobjRed
+      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(cobj,
+                     pdeWithFilter,stateStore,up,zp,pp,storage);
 
     // Create compliance constraint, multiplier and bounds
     RealT mycomp(0), comp(0);
@@ -240,24 +240,24 @@ int main(int argc, char *argv[]) {
       mycomp += xsampler->getMyWeight(i)*cobjRed->value(*zp,tol);
     }
     xsampler->sumAll(&mycomp,&comp,1);
-    Teuchos::RCP<ROL::Constraint<RealT> > icon
-      = Teuchos::rcp(new ROL::ConstraintFromObjective<RealT>(cobjRed));
-    Teuchos::RCP<std::vector<RealT> > imul_rcp, iup_rcp;
-    Teuchos::RCP<ROL::Vector<RealT> > imul, iup;
-    imul = Teuchos::rcp(new ROL::SingletonVector<RealT>(0));
-    iup  = Teuchos::rcp(new ROL::SingletonVector<RealT>(cmpFactor*comp));
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > ibnd
-      = Teuchos::rcp(new ROL::Bounds<RealT>(*iup,false));
+    ROL::SharedPointer<ROL::Constraint<RealT> > icon
+      = ROL::makeShared<ROL::ConstraintFromObjective<RealT>>(cobjRed);
+    ROL::SharedPointer<std::vector<RealT> > imul_ptr, iup_ptr;
+    ROL::SharedPointer<ROL::Vector<RealT> > imul, iup;
+    imul = ROL::makeShared<ROL::SingletonVector<RealT>>(0);
+    iup  = ROL::makeShared<ROL::SingletonVector<RealT>>(cmpFactor*comp);
+    ROL::SharedPointer<ROL::BoundConstraint<RealT> > ibnd
+      = ROL::makeShared<ROL::Bounds<RealT>>(*iup,false);
 
     // Initialize bound constraints.
-    Teuchos::RCP<Tpetra::MultiVector<> > lo_rcp, hi_rcp;
-    lo_rcp = assembler->createControlVector(); lo_rcp->putScalar(0.0);
-    hi_rcp = assembler->createControlVector(); hi_rcp->putScalar(1.0);
-    Teuchos::RCP<ROL::Vector<RealT> > lop, hip;
-    lop = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(lo_rcp,pde,assembler));
-    hip = Teuchos::rcp(new PDE_PrimalOptVector<RealT>(hi_rcp,pde,assembler));
-    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd
-      = Teuchos::rcp(new ROL::Bounds<RealT>(lop,hip));
+    ROL::SharedPointer<Tpetra::MultiVector<> > lo_ptr, hi_ptr;
+    lo_ptr = assembler->createControlVector(); lo_ptr->putScalar(0.0);
+    hi_ptr = assembler->createControlVector(); hi_ptr->putScalar(1.0);
+    ROL::SharedPointer<ROL::Vector<RealT> > lop, hip;
+    lop = ROL::makeShared<PDE_PrimalOptVector<RealT>>(lo_ptr,pde,assembler);
+    hip = ROL::makeShared<PDE_PrimalOptVector<RealT>>(hi_ptr,pde,assembler);
+    ROL::SharedPointer<ROL::BoundConstraint<RealT> > bnd
+      = ROL::makeShared<ROL::Bounds<RealT>>(lop,hip);
 
     // Build optimization problem.
     ROL::OptimizationProblem<RealT> optProb(vobj,zp,bnd,icon,imul,ibnd);
@@ -285,8 +285,8 @@ int main(int argc, char *argv[]) {
       pp->axpy(xsampler->getMyWeight(i),*up);
     }
     xsampler->sumAll(*pp,*up);
-    pdecon->outputTpetraVector(u_rcp,"mean_state.txt");
-    pdecon->outputTpetraVector(z_rcp,"density.txt");
+    pdecon->outputTpetraVector(u_ptr,"mean_state.txt");
+    pdecon->outputTpetraVector(z_ptr,"density.txt");
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();

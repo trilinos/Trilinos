@@ -65,12 +65,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
   try {
 
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",true);
 #if USE_HESSVEC
@@ -112,18 +112,18 @@ int main(int argc, char *argv[]) {
       *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
 
       // Get Objective Function
-      Teuchos::RCP<ROL::Vector<RealT> > x0, z;
-      Teuchos::RCP<ROL::Objective<RealT> > obj;
-      Teuchos::RCP<ROL::BoundConstraint<RealT> > con;
+      ROL::SharedPointer<ROL::Vector<RealT> > x0, z;
+      ROL::SharedPointer<ROL::Objective<RealT> > obj;
+      ROL::SharedPointer<ROL::BoundConstraint<RealT> > con;
       ROL::getTestObjectives<RealT>(obj,con,x0,z,prob);
-      Teuchos::RCP<ROL::Vector<RealT> > x = x0->clone();;
+      ROL::SharedPointer<ROL::Vector<RealT> > x = x0->clone();;
 
       // Get Dimension of Problem
       int dim = x0->dimension();
       parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
       // Error Vector
-      Teuchos::RCP<ROL::Vector<RealT> > e = x0->clone();;
+      ROL::SharedPointer<ROL::Vector<RealT> > e = x0->clone();;
       e->zero();
 
       //ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; 

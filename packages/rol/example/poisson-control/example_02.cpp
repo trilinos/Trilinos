@@ -22,17 +22,17 @@
 int main( int argc, char *argv[] ) {  
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm =
+  ROL::SharedPointer<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -45,14 +45,14 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     // Get finite element parameter list
     std::string filename = "example_02.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     if ( parlist->get("Display Option",0) && (comm->getRank() > 0) ) {
       parlist->set("Display Option",0);
     }
     // Get ROL parameter list
     filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> ROL_parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> ROL_parlist = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*ROL_parlist) );
   
     /***************************************************************************/
@@ -66,39 +66,39 @@ int main( int argc, char *argv[] ) {
     }
     std::vector<double> tmp(2); tmp[0] = -1.0; tmp[1] = 1.0;
     std::vector<std::vector<double> > bounds(dim,tmp);
-    Teuchos::RCP<ROL::BatchManager<double> > bman
-      = Teuchos::rcp(new ROL::StdTeuchosBatchManager<double,int>(comm));
-    Teuchos::RCP<ROL::SampleGenerator<double> > sampler
-      = Teuchos::rcp(new ROL::MonteCarloGenerator<double>(nSamp,bounds,bman,useSA));
+    ROL::SharedPointer<ROL::BatchManager<double> > bman
+      = ROL::makeShared<ROL::StdTeuchosBatchManager<double,int>>(comm);
+    ROL::SharedPointer<ROL::SampleGenerator<double> > sampler
+      = ROL::makeShared<ROL::MonteCarloGenerator<double>>(nSamp,bounds,bman,useSA);
   
     /***************************************************************************/
     /***************** INITIALIZE CONTROL VECTOR *******************************/
     /***************************************************************************/
     int nx = parlist->get("Number of Elements", 128);
-    Teuchos::RCP<std::vector<double> > z_rcp = Teuchos::rcp( new std::vector<double>(nx+1, 0.0) );
-    Teuchos::RCP<ROL::Vector<double> > z = Teuchos::rcp(new ROL::StdVector<double>(z_rcp));
-    Teuchos::RCP<std::vector<double> > u_rcp = Teuchos::rcp( new std::vector<double>(nx-1, 0.0) );
-    Teuchos::RCP<ROL::Vector<double> > u = Teuchos::rcp(new ROL::StdVector<double>(u_rcp));
+    ROL::SharedPointer<std::vector<double> > z_ptr = ROL::makeShared<std::vector<double>>(nx+1, 0.0);
+    ROL::SharedPointer<ROL::Vector<double> > z = ROL::makeShared<ROL::StdVector<double>>(z_ptr);
+    ROL::SharedPointer<std::vector<double> > u_ptr = ROL::makeShared<std::vector<double>>(nx-1, 0.0);
+    ROL::SharedPointer<ROL::Vector<double> > u = ROL::makeShared<ROL::StdVector<double>>(u_ptr);
     ROL::Vector_SimOpt<double> x(u,z);
-    Teuchos::RCP<std::vector<double> > p_rcp = Teuchos::rcp( new std::vector<double>(nx-1, 0.0) );
-    Teuchos::RCP<ROL::Vector<double> > p = Teuchos::rcp(new ROL::StdVector<double>(p_rcp));
-    Teuchos::RCP<std::vector<double> > U_rcp = Teuchos::rcp( new std::vector<double>(nx+1, 35.0) );
-    Teuchos::RCP<ROL::Vector<double> > U = Teuchos::rcp(new ROL::StdVector<double>(U_rcp));
-    Teuchos::RCP<std::vector<double> > L_rcp = Teuchos::rcp( new std::vector<double>(nx+1, -5.0) );
-    Teuchos::RCP<ROL::Vector<double> > L = Teuchos::rcp(new ROL::StdVector<double>(L_rcp));
+    ROL::SharedPointer<std::vector<double> > p_ptr = ROL::makeShared<std::vector<double>>(nx-1, 0.0);
+    ROL::SharedPointer<ROL::Vector<double> > p = ROL::makeShared<ROL::StdVector<double>>(p_ptr);
+    ROL::SharedPointer<std::vector<double> > U_ptr = ROL::makeShared<std::vector<double>>(nx+1, 35.0);
+    ROL::SharedPointer<ROL::Vector<double> > U = ROL::makeShared<ROL::StdVector<double>>(U_ptr);
+    ROL::SharedPointer<std::vector<double> > L_ptr = ROL::makeShared<std::vector<double>>(nx+1, -5.0);
+    ROL::SharedPointer<ROL::Vector<double> > L = ROL::makeShared<ROL::StdVector<double>>(L_ptr);
     ROL::Bounds<double> bnd(L,U);
   
     /***************************************************************************/
     /***************** INITIALIZE OBJECTIVE FUNCTION ***************************/
     /***************************************************************************/
     double alpha = parlist->get("Penalty Parameter", 1.e-4);
-    Teuchos::RCP<FEM<double> > fem = Teuchos::rcp(new FEM<double>(nx));
-    Teuchos::RCP<ROL::Objective_SimOpt<double> > pObj
-      = Teuchos::rcp(new DiffusionObjective<double>(fem, alpha));
-    Teuchos::RCP<ROL::Constraint_SimOpt<double> > pCon
-      = Teuchos::rcp(new DiffusionConstraint<double>(fem));
-    Teuchos::RCP<ROL::Objective<double> > robj
-      = Teuchos::rcp(new ROL::Reduced_Objective_SimOpt<double>(pObj,pCon,u,z,p));
+    ROL::SharedPointer<FEM<double> > fem = ROL::makeShared<FEM<double>>(nx);
+    ROL::SharedPointer<ROL::Objective_SimOpt<double> > pObj
+      = ROL::makeShared<DiffusionObjective<double>>(fem, alpha);
+    ROL::SharedPointer<ROL::Constraint_SimOpt<double> > pCon
+      = ROL::makeShared<DiffusionConstraint<double>>(fem);
+    ROL::SharedPointer<ROL::Objective<double> > robj
+      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<double>>(pObj,pCon,u,z,p);
     ROL::RiskNeutralObjective<double> obj(robj,sampler);
   
     /***************************************************************************/
@@ -106,20 +106,20 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     if (parlist->get("Run Derivative Check",false)) {
       // Direction to test finite differences
-      Teuchos::RCP<std::vector<double> > dz_rcp = Teuchos::rcp( new std::vector<double>(nx+1, 0.0) );
-      Teuchos::RCP<ROL::Vector<double> > dz = Teuchos::rcp(new ROL::StdVector<double>(dz_rcp));
-      Teuchos::RCP<std::vector<double> > du_rcp = Teuchos::rcp( new std::vector<double>(nx-1, 0.0) );
-      Teuchos::RCP<ROL::Vector<double> > du = Teuchos::rcp(new ROL::StdVector<double>(du_rcp));
+      ROL::SharedPointer<std::vector<double> > dz_ptr = ROL::makeShared<std::vector<double>>(nx+1, 0.0);
+      ROL::SharedPointer<ROL::Vector<double> > dz = ROL::makeShared<ROL::StdVector<double>>(dz_ptr);
+      ROL::SharedPointer<std::vector<double> > du_ptr = ROL::makeShared<std::vector<double>>(nx-1, 0.0);
+      ROL::SharedPointer<ROL::Vector<double> > du = ROL::makeShared<ROL::StdVector<double>>(du_ptr);
       ROL::Vector_SimOpt<double> d(du,dz);
       // Set to random vectors
       srand(12345);
       for (int i=0; i<nx+1; i++) {
-        (*dz_rcp)[i] = 2.0*(double)rand()/(double)RAND_MAX - 1.0;
-        (*z_rcp)[i] = 2.0*(double)rand()/(double)RAND_MAX - 1.0;
+        (*dz_ptr)[i] = 2.0*(double)rand()/(double)RAND_MAX - 1.0;
+        (*z_ptr)[i] = 2.0*(double)rand()/(double)RAND_MAX - 1.0;
       }
       for (int i=0; i<nx-1; i++) {
-        (*du_rcp)[i] = 2.0*(double)rand()/(double)RAND_MAX - 1.0;
-        (*u_rcp)[i] = 2.0*(double)rand()/(double)RAND_MAX - 1.0;
+        (*du_ptr)[i] = 2.0*(double)rand()/(double)RAND_MAX - 1.0;
+        (*u_ptr)[i] = 2.0*(double)rand()/(double)RAND_MAX - 1.0;
       }
       // Run derivative checks
       std::vector<double> param(dim,0.0);
@@ -151,7 +151,7 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     /***************** INITIALIZE ROL ALGORITHM ********************************/
     /***************************************************************************/
-    Teuchos::RCP<ROL::Algorithm<double> > algo; 
+    ROL::SharedPointer<ROL::Algorithm<double> > algo; 
     if ( useSA ) {
       ROL_parlist->sublist("General").set("Recompute Objective Function",false);
       ROL_parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",0.1/alpha);
@@ -159,10 +159,10 @@ int main( int argc, char *argv[] ) {
       ROL_parlist->sublist("Step").sublist("Line Search").sublist("Line-Search Method").set("Type","Iteration Scaling");
       ROL_parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type","Steepest Descent");
       ROL_parlist->sublist("Step").sublist("Line Search").sublist("Curvature Condition").set("Type","Null Curvature Condition");
-      algo = Teuchos::rcp(new ROL::Algorithm<double>("Line Search",*ROL_parlist,false));
+      algo = ROL::makeShared<ROL::Algorithm<double>>("Line Search",*ROL_parlist,false);
     } 
     else {
-      algo = Teuchos::rcp(new ROL::Algorithm<double>("Trust Region",*ROL_parlist,false));
+      algo = ROL::makeShared<ROL::Algorithm<double>>("Trust Region",*ROL_parlist,false);
     }
   
     /***************************************************************************/
@@ -178,7 +178,7 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     int my_number_samples = sampler->numMySamples(), number_samples = 0;
     Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM,1,&my_number_samples,&number_samples);
-    int my_number_solves  = Teuchos::rcp_dynamic_cast<DiffusionConstraint<double> >(pCon)->getNumSolves(), number_solves = 0;
+    int my_number_solves  = ROL::dynamicPointerCast<DiffusionConstraint<double> >(pCon)->getNumSolves(), number_solves = 0;
     Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM,1,&my_number_solves,&number_solves);
     if (comm->getRank() == 0) {
       std::cout << "Number of Samples    = " << number_samples << "\n";
@@ -198,7 +198,7 @@ int main( int argc, char *argv[] ) {
       fem->build_mesh(xmesh);
       for (int i = 0; i < fem->nz(); i++ ) {
         file << std::setprecision(std::numeric_limits<double>::digits10) << std::scientific << xmesh[i] << "  "  
-             << std::setprecision(std::numeric_limits<double>::digits10) << std::scientific << (*z_rcp)[i] 
+             << std::setprecision(std::numeric_limits<double>::digits10) << std::scientific << (*z_ptr)[i] 
              << "\n";
       }
       file.close();

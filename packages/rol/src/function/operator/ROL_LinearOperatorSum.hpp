@@ -61,30 +61,30 @@ class LinearOperatorSum : public LinearOperator<Real>  {
   typedef Vector<Real>         V;
   typedef LinearOperator<Real> OP;
  
-  typedef typename std::vector<Teuchos::RCP<OP> >::size_type size_type;
+  typedef typename std::vector<ROL::SharedPointer<OP> >::size_type size_type;
 
 private:
 
-  Teuchos::RCP<std::vector<Teuchos::RCP<OP> > > ops_;
-  Teuchos::RCP<V> scratch_;
+  ROL::SharedPointer<std::vector<ROL::SharedPointer<OP> > > ops_;
+  ROL::SharedPointer<V> scratch_;
 
 public:
 
-  LinearOperatorSum( Teuchos::RCP<OP> &A, 
-                     Teuchos::RCP<OP> &B, 
-                     Teuchos::RCP<V> & scratch ) :
+  LinearOperatorSum( ROL::SharedPointer<OP> &A, 
+                     ROL::SharedPointer<OP> &B, 
+                     ROL::SharedPointer<V> & scratch ) :
     scratch_(scratch) {
-    ops_ = Teuchos::rcp(new std::vector<OP> > );
+    ops_ = ROL::makeShared<std::vector<OP> >>();
     ops_->push_back(A);
     ops_->push_back(B);
   }
 
-  LinearOperatorSum( Teuchos::RCP<OP> &A, 
-                     Teuchos::RCP<OP> &B, 
-                     Teuchos::RCP<OP> &C, 
-                     Teuchos::RCP<V> & scratch ) :
+  LinearOperatorSum( ROL::SharedPointer<OP> &A, 
+                     ROL::SharedPointer<OP> &B, 
+                     ROL::SharedPointer<OP> &C, 
+                     ROL::SharedPointer<V> & scratch ) :
     scratch_(scratch) {
-    ops_ = Teuchos::rcp(new std::vector<OP> > );
+    ops_ = ROL::makeShared<std::vector<OP> >>();
     ops_->push_back(A);
     ops_->push_back(B);
     ops_->push_back(C);

@@ -81,7 +81,7 @@ class CArrayVector : public Vector<Real> {
        
         void plus( const Vector<Real> &x ) {
             // Need to make sure object has a getVector method
-            const CArrayVector &ex = Teuchos::dyn_cast<const CArrayVector>(x);            
+            const CArrayVector &ex = dynamic_cast<const CArrayVector&>(x);            
 
             Teuchos::ArrayRCP<Element> xp(ex.getVector());
             for(unsigned int i=0; i<dim_; ++i) {
@@ -90,7 +90,7 @@ class CArrayVector : public Vector<Real> {
         }
 
         Real dot( const Vector<Real> &x ) const {
-            const CArrayVector &ex = Teuchos::dyn_cast<const CArrayVector>(x);
+            const CArrayVector &ex = dynamic_cast<const CArrayVector&>(x);
             
             Teuchos::ArrayRCP<Element> xp(ex.getVector());
             Real val = 0;
@@ -116,13 +116,13 @@ class CArrayVector : public Vector<Real> {
             return dim_;
         }
 
-        Teuchos::RCP<Vector<Real> > clone() const {
-            return Teuchos::rcp( new CArrayVector( Teuchos::ArrayRCP<Element>(dim_) ) );   
+        ROL::SharedPointer<Vector<Real> > clone() const {
+            return ROL::makeShared<CArrayVector>( Teuchos::ArrayRCP<Element>(dim_) );   
         }
         
-        Teuchos::RCP<Vector<Real> > basis (const int i ) const {
-            Teuchos::RCP<CArrayVector> e = 
-                Teuchos::rcp( new CArrayVector(dim_) );
+        ROL::SharedPointer<Vector<Real> > basis (const int i ) const {
+            ROL::SharedPointer<CArrayVector> e = 
+                ROL::makeShared<CArrayVector>(dim_);
             (e->getVector())[i] = 1.0;
             return e; 
         }         

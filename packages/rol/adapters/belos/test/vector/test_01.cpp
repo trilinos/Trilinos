@@ -67,12 +67,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = &std::cout, false;
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = &bhs, false;
 
   int errorFlag  = 0;
 
@@ -82,43 +82,43 @@ int main(int argc, char *argv[]) {
     
       int dim = 10;
 
-      Teuchos::RCP<ROL::Step<RealT> > step;
+      ROL::SharedPointer<ROL::Step<RealT> > step;
  
 
-      Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp(new Teuchos::ParameterList());
+      ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
       std::string paramfile = "parameters.xml";
       Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
 
       // Iteration Vector 
-      Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+      ROL::SharedPointer<std::vector<RealT> > x_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
 
       // Vector of natural numbers
-      Teuchos::RCP<std::vector<RealT> > k_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+      ROL::SharedPointer<std::vector<RealT> > k_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
 
       for (int i=0; i<dim; i++) {
-          (*x_rcp)[i]   = 4;
-          (*k_rcp)[i]   = i+1.0;
+          (*x_ptr)[i]   = 4;
+          (*k_ptr)[i]   = i+1.0;
        }
 
-       Teuchos::RCP<ROL::Vector<RealT> > k = Teuchos::rcp(new ROL::StdVector<RealT> (k_rcp) );
-       ROL::StdVector<RealT> x(x_rcp);
+       ROL::SharedPointer<ROL::Vector<RealT> > k = ROL::makeShared<ROL::StdVector<RealT>>(k_ptr);
+       ROL::StdVector<RealT> x(x_ptr);
 
        ROL::ZOO::Objective_Zakharov<RealT> obj(k);
 
       // Make a Belos-Krylov solver if specified
       if(parlist->get("Use Belos",false)) { 
-          Teuchos::RCP<ROL::Krylov<RealT> > krylov = Teuchos::rcp(new ROL::BelosKrylov<RealT>(*parlist));   
-          step = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist,Teuchos::null,Teuchos::null,krylov));  
+          ROL::SharedPointer<ROL::Krylov<RealT> > krylov = ROL::makeShared<ROL::BelosKrylov<RealT>>(*parlist);   
+          step = ROL::makeShared<ROL::LineSearchStep<RealT>>(*parlist,ROL::nullPointer,ROL::nullPointer,krylov);  
       }
       else { // Otherwise use ROL's default
-          step = Teuchos::rcp(new ROL::LineSearchStep<RealT>(*parlist));
+          step = ROL::makeShared<ROL::LineSearchStep<RealT>>(*parlist);
       }
 
       // Define Status Test
       RealT gtol  = 1e-12;  // norm of gradient tolerance
       RealT stol  = 1e-14;  // norm of step tolerance
       int   maxit = 100;    // maximum number of iterations
-      Teuchos::RCP<ROL::StatusTest<RealT> > status = Teuchos::rcp(new ROL::StatusTest<RealT>(gtol, stol, maxit));    
+      ROL::SharedPointer<ROL::StatusTest<RealT> > status = ROL::makeShared<ROL::StatusTest<RealT>>(gtol, stol, maxit);    
 
       // Define Algorithm
       ROL::Algorithm<RealT> algo(step,status,false);
@@ -127,8 +127,8 @@ int main(int argc, char *argv[]) {
       algo.run(x, obj, true, *outStream);
 
       // Get True Solution
-      Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-      ROL::StdVector<RealT> xtrue(xtrue_rcp);
+      ROL::SharedPointer<std::vector<RealT> > xtrue_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+      ROL::StdVector<RealT> xtrue(xtrue_ptr);
         
       // Compute Error
       x.axpy(-1.0, xtrue);

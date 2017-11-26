@@ -89,12 +89,12 @@ private:
 /********** BEGIN PRIVATE MEMBER FUNCTION DECLARATION **********/
 /***************************************************************/
 
-  Teuchos::RCP<const vector> getVector( const V& x ) {
-    return Teuchos::dyn_cast<const SV>(x).getVector();
+  ROL::SharedPointer<const vector> getVector( const V& x ) {
+    return dynamic_cast<const SV&>(x).getVector();
   }
  
-  Teuchos::RCP<vector> getVector( V& x ) {
-    return Teuchos::dyn_cast<SV>(x).getVector();
+  ROL::SharedPointer<vector> getVector( V& x ) {
+    return dynamic_cast<SV&>(x).getVector();
   }
 
 
@@ -487,8 +487,8 @@ public:
 
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
 
-    using Teuchos::RCP;
-    RCP<const vector> zp = getVector(z);
+    
+    ROL::SharedPointer<const vector> zp = getVector(z);
 
     // SOLVE STATE EQUATION
     std::vector<std::vector<Real> > U;
@@ -528,9 +528,9 @@ public:
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {
 
-    using Teuchos::RCP;
-    RCP<const vector> zp = getVector(z);
-    RCP<vector> gp = getVector(g);
+    
+    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::SharedPointer<vector> gp = getVector(g);
 
     // SOLVE STATE EQUATION
     std::vector<std::vector<Real> > U;
@@ -545,10 +545,10 @@ public:
   }
 
   void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
-    using Teuchos::RCP;
-    RCP<const vector> zp = getVector(z);
-    RCP<const vector> vp = getVector(v);
-    RCP<vector> hvp = getVector(hv);
+    
+    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::SharedPointer<const vector> vp = getVector(v);
+    ROL::SharedPointer<vector> hvp = getVector(hv);
 
     // SOLVE STATE EQUATION
     std::vector<std::vector<Real> > U;
@@ -581,18 +581,18 @@ int main(int argc, char *argv[]) {
  
   typedef typename vector::size_type uint;
 
-  using Teuchos::RCP;  using Teuchos::rcp;
+    
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -607,30 +607,30 @@ int main(int argc, char *argv[]) {
     RealT eps   = 5.e-1; // Set conductivity 
     Objective_ParabolicControl<RealT> obj(alpha,eps,nx,nt,T);
     // Initialize iteration vectors.
-    RCP<vector> x_rcp = rcp( new vector(nt, 1.0) );
-    RCP<vector> y_rcp = rcp( new vector(nt, 0.0) );
+    ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>(nt, 1.0);
+    ROL::SharedPointer<vector> y_ptr = ROL::makeShared<vector>(nt, 0.0);
     for (uint i=0; i<nt; i++) {
-      (*x_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
-      (*y_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*x_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*y_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
-    SV x(x_rcp);
-    SV y(y_rcp);
+    SV x(x_ptr);
+    SV y(y_ptr);
     // Check deriatives.
     obj.checkGradient(x,y,true,*outStream);
     obj.checkHessVec(x,y,true,*outStream);
 
     // Initialize Constraints
-    RCP<vector> l_rcp = rcp( new vector( nt, 0.0 ) );
-    RCP<vector> u_rcp = rcp( new vector( nt, 1.0 ) );
+    ROL::SharedPointer<vector> l_ptr = ROL::makeShared<vector>( nt, 0.0 );
+    ROL::SharedPointer<vector> u_ptr = ROL::makeShared<vector>( nt, 1.0 );
 
-    RCP<V> lo = rcp( new SV( l_rcp ) );
-    RCP<V> up = rcp( new SV( u_rcp ) );
+    ROL::SharedPointer<V> lo = ROL::makeShared<SV>( l_ptr );
+    ROL::SharedPointer<V> up = ROL::makeShared<SV>( u_ptr );
 
     ROL::Bounds<RealT> icon(lo,up);
 
     // Primal dual active set.
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Krylov parameters.
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-8);
@@ -646,7 +646,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    RCP<ROL::Algorithm<RealT> > algo = rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
+    ROL::SharedPointer<ROL::Algorithm<RealT> > algo = ROL::makeShared<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
     // Run algorithm.
     x.zero();
     algo->run(x, obj, icon, true, *outStream);
@@ -654,7 +654,7 @@ int main(int argc, char *argv[]) {
     std::ofstream file;
     file.open("control_PDAS.txt");
     for ( uint i = 0; i < nt; i++ ) {
-      file << (*x_rcp)[i] << "\n";
+      file << (*x_ptr)[i] << "\n";
     }
     file.close();
 
@@ -662,7 +662,7 @@ int main(int argc, char *argv[]) {
     // re-load parameters
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Set algorithm.
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
+    algo = ROL::makeShared<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
     // Run Algorithm
     y.zero();
     algo->run(y, obj, icon, true, *outStream);
@@ -670,11 +670,11 @@ int main(int argc, char *argv[]) {
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
     for ( uint i = 0; i < nt; i++ ) {
-      file_tr << (*y_rcp)[i] << "\n";
+      file_tr << (*y_ptr)[i] << "\n";
     }
     file_tr.close();
    
-    RCP<V> diff = x.clone();
+    ROL::SharedPointer<V> diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);
     RealT error = diff->norm()/std::sqrt((RealT)nt-1.0);
@@ -683,7 +683,7 @@ int main(int argc, char *argv[]) {
 
     // Output state to file.
     std::vector<std::vector<RealT> > U(nt);
-    obj.solve_state(U,*y_rcp);
+    obj.solve_state(U,*y_ptr);
     std::ofstream file1;
     file1.open("state_tx.txt");
     for (uint t=0; t<nt; t++) {

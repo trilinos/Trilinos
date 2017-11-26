@@ -52,12 +52,12 @@ namespace ROL {
 template<class Real> 
 class EpetraBatchManager : public BatchManager<Real> {
 protected: 
-  Teuchos::RCP<Epetra_Comm> comm_;
+  ROL::SharedPointer<Epetra_Comm> comm_;
 
 public:
   virtual ~EpetraBatchManager() {}
 
-  EpetraBatchManager(Teuchos::RCP<Epetra_Comm> &comm) : comm_(comm) {}
+  EpetraBatchManager(ROL::SharedPointer<Epetra_Comm> &comm) : comm_(comm) {}
 
   int batchID(void) { return comm_->MyPID(); }
 

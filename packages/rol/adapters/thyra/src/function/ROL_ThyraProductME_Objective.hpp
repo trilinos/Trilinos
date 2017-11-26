@@ -62,13 +62,13 @@ template <class Real>
 class ThyraProductME_Objective : public Objective<Real> {
 public:
 
-  ThyraProductME_Objective(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null) :
+  ThyraProductME_Objective(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,ROL::SharedPointer<Teuchos::ParameterList> params_ = ROL::nullPointer) :
     thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_) {
     valueUpdated = gradientUpdated = false;
     value_ = 0;
-    x_ptr == Teuchos::null;
-    grad_ptr = Teuchos::null;
-    if(params != Teuchos::null)
+    x_ptr == ROL::nullPointer;
+    grad_ptr = ROL::nullPointer;
+    if(params != ROL::nullPointer)
       params->set<int>("Optimizer Iteration Number", -1);
   };
 
@@ -83,9 +83,9 @@ public:
     if(!x_hasChanged(rol_x))
        return value_;
 
-    const ThyraVector<Real>  & thyra_p = Teuchos::dyn_cast<const ThyraVector<Real> >(rol_x);
-    Teuchos::RCP< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
-    Teuchos::RCP<const Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
+    const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
+    ROL::SharedPointer< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
+    ROL::SharedPointer<const Thyra::ProductVectorBase<Real> > thyra_prodvec_p = ROL::dynamicPointerCast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
 
     Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
@@ -116,17 +116,17 @@ public:
     if( !x_hasChanged(rol_x) && gradientUpdated)
       return rol_g.set(*grad_ptr);
 
-    if(params != Teuchos::null) {
+    if(params != ROL::nullPointer) {
       params->set<bool>("Update Functional", !valueUpdated);
       params->set<bool>("Update Functional Gradient", !gradientUpdated);
     }
 
-    const ThyraVector<Real>  & thyra_p = Teuchos::dyn_cast<const ThyraVector<Real> >(rol_x);
-    Teuchos::RCP<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
-    ThyraVector<Real>  & thyra_dgdp = Teuchos::dyn_cast<ThyraVector<Real> >(rol_g);
+    const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
+    ROL::SharedPointer<const  Thyra::ProductVectorBase<Real> > thyra_prodvec_p = ROL::dynamicPointerCast<const Thyra::ProductVectorBase<Real>>(thyra_p.getVector());
+    ThyraVector<Real>  & thyra_dgdp = dynamic_cast<ThyraVector<Real>&>(rol_g);
 
-    //Teuchos::RCP<Thyra::MultiVectorBase<Real> > dgdp = thyra_dgdp.getVector();
-    Teuchos::RCP< Thyra::ProductMultiVectorBase<Real> > prodvec_dgdp_p = Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<Real>>(thyra_dgdp.getVector());
+    //ROL::SharedPointer<Thyra::MultiVectorBase<Real> > dgdp = thyra_dgdp.getVector();
+    ROL::SharedPointer< Thyra::ProductMultiVectorBase<Real> > prodvec_dgdp_p = ROL::dynamicPointerCast<Thyra::ProductMultiVectorBase<Real>>(thyra_dgdp.getVector());
 
     Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
 
@@ -151,7 +151,7 @@ public:
     }
     thyra_model.evalModel(inArgs, outArgs);
 
-    if (grad_ptr == Teuchos::null)
+    if (grad_ptr == ROL::nullPointer)
       grad_ptr = rol_g.clone();
     grad_ptr->set(rol_g);
     
@@ -159,12 +159,12 @@ public:
   };
 
   void update( const Vector<Real> & /*x*/, bool flag, int iter) {
-     if(params != Teuchos::null)
+     if(params != ROL::nullPointer)
        params->set<int>("Optimizer Iteration Number", iter);
   }
 
   bool x_hasChanged(const Vector<Real> &rol_x) {
-    if (x_ptr == Teuchos::null) {
+    if (x_ptr == ROL::nullPointer) {
       x_ptr = rol_x.clone();
       x_ptr->set(rol_x);
       gradientUpdated = false;
@@ -192,8 +192,8 @@ private:
   const int g_index;
   const std::vector<int> p_indices;
   Real value_;
-  Teuchos::RCP<Vector<Real> > x_ptr, grad_ptr;
-  Teuchos::RCP<Teuchos::ParameterList> params;
+  ROL::SharedPointer<Vector<Real> > x_ptr, grad_ptr;
+  ROL::SharedPointer<Teuchos::ParameterList> params;
 
 }; // class Objective
 

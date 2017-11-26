@@ -67,8 +67,8 @@ public:
   Objective_FreudensteinRoth() {}
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ex
+      = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
     Real f1 = -13.0 + (*ex)[0] + ((5.0-(*ex)[1])*(*ex)[1] - 2.0)*(*ex)[1];
     Real f2 = -29.0 + (*ex)[0] + (((*ex)[1]+1.0)*(*ex)[1] - 14.0)*(*ex)[1];
@@ -77,10 +77,10 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > eg
-      = Teuchos::dyn_cast<StdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+    ROL::SharedPointer<std::vector<Real> > eg
+      = dynamic_cast<StdVector<Real>&>(g).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ex
+      = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
     Real f1 = -13.0 + (*ex)[0] + ((5.0-(*ex)[1])*(*ex)[1] - 2.0)*(*ex)[1];
     Real f2 = -29.0 + (*ex)[0] + (((*ex)[1]+1.0)*(*ex)[1] - 14.0)*(*ex)[1];
@@ -95,12 +95,12 @@ public:
   }
 #if USE_HESSVEC
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > ehv
-      = Teuchos::dyn_cast<StdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > ev
-      = Teuchos::dyn_cast<const StdVector<Real> >(v).getVector();
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+    ROL::SharedPointer<std::vector<Real> > ehv
+      = dynamic_cast<StdVector<Real>&>(hv).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ev
+      = dynamic_cast<const StdVector<Real>&>(v).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ex
+      = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
     Real f1 = -13.0 + (*ex)[0] + ((5.0-(*ex)[1])*(*ex)[1] - 2.0)*(*ex)[1];
     Real f2 = -29.0 + (*ex)[0] + (((*ex)[1]+1.0)*(*ex)[1] - 14.0)*(*ex)[1];
@@ -122,12 +122,12 @@ public:
   }
 #endif
   void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > ehv
-      = Teuchos::dyn_cast<StdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > ev
-      = Teuchos::dyn_cast<const StdVector<Real> >(v).getVector();
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+    ROL::SharedPointer<std::vector<Real> > ehv
+      = dynamic_cast<StdVector<Real>&>(hv).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ev
+      = dynamic_cast<const StdVector<Real>&>(v).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ex
+      = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
     Real f1 = -13.0 + (*ex)[0] + ((5.0-(*ex)[1])*(*ex)[1] - 2.0)*(*ex)[1];
     Real f2 = -29.0 + (*ex)[0] + (((*ex)[1]+1.0)*(*ex)[1] - 14.0)*(*ex)[1];
@@ -150,24 +150,24 @@ public:
 };
 
 template<class Real>
-void getFreudensteinRoth( Teuchos::RCP<Objective<Real> > &obj,
-                          Teuchos::RCP<Vector<Real> >    &x0,
-                          Teuchos::RCP<Vector<Real> >    &x ) {
+void getFreudensteinRoth( ROL::SharedPointer<Objective<Real> > &obj,
+                          ROL::SharedPointer<Vector<Real> >    &x0,
+                          ROL::SharedPointer<Vector<Real> >    &x ) {
   // Problem dimension
   int n = 2;
 
   // Get Initial Guess
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::SharedPointer<std::vector<Real> > x0p = ROL::makeShared<std::vector<Real>>(n,0.0);
   (*x0p)[0] = 0.5; (*x0p)[1] = -2.0;
-  x0 = Teuchos::rcp(new StdVector<Real>(x0p));
+  x0 = ROL::makeShared<StdVector<Real>>(x0p);
 
   // Get Solution
-  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0.0));
+  ROL::SharedPointer<std::vector<Real> > xp = ROL::makeShared<std::vector<Real>>(n,0.0);
   (*xp)[0] = 5.0; (*xp)[1] = 4.0;
-  x = Teuchos::rcp(new StdVector<Real>(xp));
+  x = ROL::makeShared<StdVector<Real>>(xp);
 
   // Instantiate Objective Function
-  obj = Teuchos::rcp(new Objective_FreudensteinRoth<Real>);
+  obj = ROL::makeShared<Objective_FreudensteinRoth<Real>>();
 }
 
 

@@ -266,12 +266,12 @@ class UnaryComposition : public UnaryFunction<Real> {
 
 private:
   
-  Teuchos::RCP<UnaryFunction<Real> > f_;
-  Teuchos::RCP<UnaryFunction<Real> > g_; 
+  ROL::SharedPointer<UnaryFunction<Real> > f_;
+  ROL::SharedPointer<UnaryFunction<Real> > g_; 
   
 public:
-  UnaryComposition( Teuchos::RCP<UnaryFunction<Real> > &f,
-                    Teuchos::RCP<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
+  UnaryComposition( ROL::SharedPointer<UnaryFunction<Real> > &f,
+                    ROL::SharedPointer<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
   Real apply( const Real &x ) const {
     return g_->apply(f_->apply(x));
   }

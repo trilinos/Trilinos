@@ -57,8 +57,6 @@ namespace ROL {
 template<class Ordinal, class Real>
 class TeuchosVector : public ElementwiseVector<Real> {
 
-  template <typename T> using RCP = Teuchos::RCP<T>;
-
   typedef Teuchos::SerialDenseVector<Ordinal,Real>  SDV;
   typedef TeuchosVector<Ordinal,Real>               TV;
   typedef Vector<Real>                              V;
@@ -69,16 +67,16 @@ class TeuchosVector : public ElementwiseVector<Real> {
 
 private:
 
-  RCP<SDV> vec_;
+  ROL::SharedPointer<SDV> vec_;
   Ordinal dim_;
 
 public:
 
-  TeuchosVector( const RCP<SDV> &vec ) : vec_(vec), dim_(vec_->length()) { }
+  TeuchosVector( const ROL::SharedPointer<SDV> &vec ) : vec_(vec), dim_(vec_->length()) { }
 
   // Create a vector of given length with optional zeroing
   TeuchosVector( Ordinal length, bool zeroOut=true ) :
-    vec_(Teuchos::rcp( new SDV(length,zeroOut) ) ),
+    vec_(ROL::makeShared<SDV>(length,zeroOut) ),
     dim_(length) {
   }
   
@@ -86,8 +84,8 @@ public:
     return static_cast<int>(dim_);
   }
 
-  RCP<V> basis( const int i ) const {
-    RCP<TV> b = Teuchos::rcp( new TV(dim_,true) );
+  ROL::SharedPointer<V> basis( const int i ) const {
+    ROL::SharedPointer<TV> b = ROL::makeShared<TV>(dim_,true);
     (*b)[static_cast<Ordinal>(i)] = Real(1.0);
     return b;
   }
@@ -105,7 +103,7 @@ public:
 //                                std::invalid_argument,
 //                                "Error: Vectors must have the same dimension." );
 
-    const TV &ex = Teuchos::dyn_cast<const TV>(x);
+    const TV &ex = dynamic_cast<const TV&>(x);
     for( Ordinal i=0; i<dim_; ++i ) {
       (*vec_)(i) = f.apply((*vec_)(i),ex(i));
     }    
@@ -119,15 +117,15 @@ public:
     return result;
   }
 
-  RCP<V> clone() const {
-    return Teuchos::rcp( new TV( dim_ ) );
+  ROL::SharedPointer<V> clone() const {
+    return ROL::makeShared<TV>( dim_ );
   }
 
-  RCP<SDV> getVector() {
+  ROL::SharedPointer<SDV> getVector() {
     return vec_;
   }
   
-  RCP<const SDV> getVector() const { 
+  ROL::SharedPointer<const SDV> getVector() const { 
     return vec_;
   }
   

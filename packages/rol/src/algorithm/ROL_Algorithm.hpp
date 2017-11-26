@@ -71,9 +71,9 @@ class StatusTestFactory;
 template <class Real>
 class Algorithm {
 private:
-  Teuchos::RCP<Step<Real> >           step_;
-  Teuchos::RCP<StatusTest<Real> >     status_;
-  Teuchos::RCP<AlgorithmState<Real> > state_;
+  ROL::SharedPointer<Step<Real> >           step_;
+  ROL::SharedPointer<StatusTest<Real> >     status_;
+  ROL::SharedPointer<AlgorithmState<Real> > state_;
 
   bool printHeader_;
 
@@ -83,21 +83,21 @@ public:
 
   /** \brief Constructor, given a step and a status test.
   */
-  Algorithm( const Teuchos::RCP<Step<Real> > & step,
-             const Teuchos::RCP<StatusTest<Real> > & status,
+  Algorithm( const ROL::SharedPointer<Step<Real> > & step,
+             const ROL::SharedPointer<StatusTest<Real> > & status,
              bool printHeader = false ) {
     step_ = step;
     status_ = status;
-    state_ = Teuchos::rcp(new AlgorithmState<Real>);
+    state_ = ROL::makeShared<AlgorithmState<Real>>();
     printHeader_ = printHeader;
   }
 
   /** \brief Constructor, given a step, a status test, and a
              previously defined algorithm state.
   */
-  Algorithm( const Teuchos::RCP<Step<Real> > & step,
-             const Teuchos::RCP<StatusTest<Real> > & status,
-             const Teuchos::RCP<AlgorithmState<Real> > & state,
+  Algorithm( const ROL::SharedPointer<Step<Real> > & step,
+             const ROL::SharedPointer<StatusTest<Real> > & status,
+             const ROL::SharedPointer<AlgorithmState<Real> > & state,
              bool printHeader = false ) {
     step_ = step;
     status_ = status;
@@ -114,7 +114,7 @@ public:
              bool printHeader = false) {
 
 // Uncomment to test for parameter inconsistencies
-//    Teuchos::RCP<const Teuchos::ParameterList> validParlist = getValidROLParameters();
+//    ROL::SharedPointer<const Teuchos::ParameterList> validParlist = getValidROLParameters();
 //    parlist.validateParametersAndSetDefaults(*validParlist);
 
     EStep els = StringToEStep(stepname);
@@ -125,7 +125,7 @@ public:
     StatusTestFactory<Real> statusTestFactory;
     step_   = stepFactory.getStep(stepname,parlist);
     status_ = statusTestFactory.getStatusTest(stepname,parlist);
-    state_  = Teuchos::rcp(new AlgorithmState<Real>);
+    state_  = ROL::makeShared<AlgorithmState<Real>>();
     printHeader_ = printHeader;
   }
 
@@ -191,13 +191,13 @@ public:
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
-    if ( state_->iterateVec == Teuchos::null ) {
+    if ( state_->iterateVec == ROL::nullPointer ) {
       state_->iterateVec = x.clone();
     }
     state_->iterateVec->set(x);
 
     // Initialize Step Container
-    Teuchos::RCP<Vector<Real> > s = x.clone();
+    ROL::SharedPointer<Vector<Real> > s = x.clone();
 
     // Initialize Step
     step_->initialize(x, g, obj, bnd, *state_);
@@ -207,7 +207,7 @@ public:
     }
 
     // Initialize Minimum Value and Vector
-    if ( state_->minIterVec == Teuchos::null ) {
+    if ( state_->minIterVec == ROL::nullPointer ) {
       state_->minIterVec = x.clone();
     }
     state_->minIterVec->set(x);
@@ -277,19 +277,19 @@ public:
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
-    if ( state_->iterateVec == Teuchos::null ) {
+    if ( state_->iterateVec == ROL::nullPointer ) {
       state_->iterateVec = x.clone();
     }
     state_->iterateVec->set(x);
 
     // Initialize Current Lagrange Multiplier Container 
-    if ( state_->lagmultVec == Teuchos::null ) {
+    if ( state_->lagmultVec == ROL::nullPointer ) {
       state_->lagmultVec = l.clone();
     }
     state_->lagmultVec->set(l);
 
     // Initialize Step Container
-    Teuchos::RCP<Vector<Real> > s = x.clone();
+    ROL::SharedPointer<Vector<Real> > s = x.clone();
 
     // Initialize Step
     step_->initialize(x, g, l, c, obj, con, *state_);
@@ -299,7 +299,7 @@ public:
     }
 
     // Initialize Minimum Value and Vector
-    if ( state_->minIterVec == Teuchos::null ) {
+    if ( state_->minIterVec == ROL::nullPointer ) {
       state_->minIterVec = x.clone();
     }
     state_->minIterVec->set(x);
@@ -360,19 +360,19 @@ public:
     std::vector<std::string> output;
 
     // Initialize Current Iterate Container 
-    if ( state_->iterateVec == Teuchos::null ) {
+    if ( state_->iterateVec == ROL::nullPointer ) {
       state_->iterateVec = x.clone();
     }
     state_->iterateVec->set(x);
 
     // Initialize Current Lagrange Multiplier Container 
-    if ( state_->lagmultVec == Teuchos::null ) {
+    if ( state_->lagmultVec == ROL::nullPointer ) {
       state_->lagmultVec = l.clone();
     }
     state_->lagmultVec->set(l);
 
     // Initialize Step Container
-    Teuchos::RCP<Vector<Real> > s = x.clone();
+    ROL::SharedPointer<Vector<Real> > s = x.clone();
 
     // Initialize Step
     step_->initialize(x, g, l, c, obj, con, bnd, *state_);
@@ -382,7 +382,7 @@ public:
     }
 
     // Initialize Minimum Value and Vector
-    if ( state_->minIterVec == Teuchos::null ) {
+    if ( state_->minIterVec == ROL::nullPointer ) {
       state_->minIterVec = x.clone();
     }
     state_->minIterVec->set(x);
@@ -410,15 +410,15 @@ public:
                                         bool                       print = false,
                                         std::ostream              &outStream = std::cout ) {
     // Get components of optimization problem
-    Teuchos::RCP<Objective<Real> >          obj = opt.getObjective();
-    Teuchos::RCP<Vector<Real> >             x   = opt.getSolutionVector();
-    Teuchos::RCP<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    Teuchos::RCP<Constraint<Real> >         con = opt.getConstraint();
-    Teuchos::RCP<Vector<Real> >             l   = opt.getMultiplierVector();
+    ROL::SharedPointer<Objective<Real> >          obj = opt.getObjective();
+    ROL::SharedPointer<Vector<Real> >             x   = opt.getSolutionVector();
+    ROL::SharedPointer<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
+    ROL::SharedPointer<Constraint<Real> >         con = opt.getConstraint();
+    ROL::SharedPointer<Vector<Real> >             l   = opt.getMultiplierVector();
 
     // Call appropriate run function
-    if ( con == Teuchos::null ) {
-      if ( bnd == Teuchos::null ) {
+    if ( con == ROL::nullPointer ) {
+      if ( bnd == ROL::nullPointer ) {
         return run(*x,*obj,print,outStream);
       }
       else {
@@ -426,7 +426,7 @@ public:
       }
     }
     else {
-      if ( bnd == Teuchos::null ) {
+      if ( bnd == ROL::nullPointer ) {
         return run(*x,*l,*obj,*con,print,outStream);
       }
       else {
@@ -443,7 +443,7 @@ public:
     return step_->print(*state_,withHeader);
   }
 
-  Teuchos::RCP<const AlgorithmState<Real> > getState(void) const {
+  ROL::SharedPointer<const AlgorithmState<Real> > getState(void) const {
     return state_;
   }
 

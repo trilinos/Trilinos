@@ -78,9 +78,9 @@
 namespace ROL {
 
   template<class Real>
-  void getTestObjectives( Teuchos::RCP<Objective<Real> > &obj,
-                          Teuchos::RCP<Vector<Real> >    &x0,
-                          Teuchos::RCP<Vector<Real> >    &x, 
+  void getTestObjectives( ROL::SharedPointer<Objective<Real> > &obj,
+                          ROL::SharedPointer<Vector<Real> >    &x0,
+                          ROL::SharedPointer<Vector<Real> >    &x, 
                           const ETestObjectives test ) {
     switch (test) {
       case TESTOBJECTIVES_ROSENBROCK:          ZOO::getRosenbrock<Real,StdVector<Real>,StdVector<Real> > (obj,x0,x);       break;
@@ -99,10 +99,10 @@ namespace ROL {
 
 
   template<class Real>
-  void getTestObjectives( Teuchos::RCP<Objective<Real> >       &obj,
-                          Teuchos::RCP<BoundConstraint<Real> > &con, 
-                          Teuchos::RCP<Vector<Real> >          &x0,
-                          Teuchos::RCP<Vector<Real> >          &x, 
+  void getTestObjectives( ROL::SharedPointer<Objective<Real> >       &obj,
+                          ROL::SharedPointer<BoundConstraint<Real> > &con, 
+                          ROL::SharedPointer<Vector<Real> >          &x0,
+                          ROL::SharedPointer<Vector<Real> >          &x, 
                           const ETestOptProblem test ) {
     switch (test) {
       case TESTOPTPROBLEM_HS1:  ZOO::getHS1(obj,con,x0,x);  break;

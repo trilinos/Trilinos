@@ -60,17 +60,17 @@ typedef double RealT;
 int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  Teuchos::RCP<const Teuchos::Comm<int> > commptr =
+  ROL::SharedPointer<const Teuchos::Comm<int> > commptr =
     Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && commptr->getRank() == 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -84,8 +84,8 @@ int main(int argc, char* argv[]) {
     size_t dimension = 1;
 
     // Initialize distribution
-    Teuchos::RCP<ROL::Distribution<RealT> > dist;
-    std::vector<Teuchos::RCP<ROL::Distribution<RealT> > > distVec(dimension);
+    ROL::SharedPointer<ROL::Distribution<RealT> > dist;
+    std::vector<ROL::SharedPointer<ROL::Distribution<RealT> > > distVec(dimension);
     Teuchos::ParameterList Dlist;
     Dlist.sublist("SOL").sublist("Distribution").set("Name","Beta");
     RealT alpha = 1., beta = 4.;
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
 
     // Get ROL parameterlist
     std::string filename = "input_04.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     Teuchos::ParameterList &list = parlist->sublist("SOL").sublist("Sample Generator").sublist("SROM");
@@ -109,10 +109,10 @@ int main(int argc, char* argv[]) {
     size_t numMoments = static_cast<size_t>(moments.size());
 
     std::clock_t timer = std::clock();
-    Teuchos::RCP<ROL::BatchManager<RealT> > bman =
-      Teuchos::rcp(new ROL::TeuchosBatchManager<RealT,int>(commptr));
-    Teuchos::RCP<ROL::SampleGenerator<RealT> > sampler =
-      Teuchos::rcp(new ROL::SROMGenerator<RealT>(*parlist,bman,distVec));
+    ROL::SharedPointer<ROL::BatchManager<RealT> > bman =
+      ROL::makeShared<ROL::TeuchosBatchManager<RealT,int>>(commptr);
+    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler =
+      ROL::makeShared<ROL::SROMGenerator<RealT>>(*parlist,bman,distVec);
     *outStream << std::endl << "Sample Time: "
                << (std::clock()-timer)/(RealT)CLOCKS_PER_SEC << " seconds"
                << std::endl;

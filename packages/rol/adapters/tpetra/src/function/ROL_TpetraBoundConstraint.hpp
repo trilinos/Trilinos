@@ -329,10 +329,10 @@ namespace ROL {
 
          
         typedef Tpetra::MultiVector<Real,LO,GO,Node> MV;
-        typedef Teuchos::RCP<MV> MVP;
-        typedef Teuchos::RCP<const MV> CMVP;
+        typedef ROL::SharedPointer<MV> MVP;
+        typedef ROL::SharedPointer<const MV> CMVP;
         typedef TpetraMultiVector<Real,LO,GO,Node> TMV;
-        typedef Teuchos::RCP<TMV> TMVP; 
+        typedef ROL::SharedPointer<TMV> TMVP; 
         typedef typename MV::dual_view_type::t_dev ViewType;
 
         private:
@@ -345,7 +345,7 @@ namespace ROL {
             ViewType u_;           // Kokkos view of Upper bounds
             Real min_diff_;
             Real scale_;
-            Teuchos::RCP<const Teuchos::Comm<int> > comm_; 
+            ROL::SharedPointer<const Teuchos::Comm<int> > comm_; 
 
         public:
 
@@ -376,8 +376,8 @@ namespace ROL {
 
             bool isFeasible( const Vector<Real> &x ) {
 
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
+                ROL::SharedPointer<const MV > xp =
+                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
 
                 int lclFeasible = 1;
                  
@@ -396,8 +396,8 @@ namespace ROL {
 
             void project( Vector<Real> &x ) {
 
-                Teuchos::RCP<MV> xp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(x)).getVector());
+                ROL::SharedPointer<MV> xp =
+                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(x)).getVector());
 
                 ViewType x_lcl = xp->getDualView().d_view;
 
@@ -408,10 +408,10 @@ namespace ROL {
  
 
             void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
+                ROL::SharedPointer<const MV > xp =
+                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
+                ROL::SharedPointer<MV> vp =
+                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
@@ -424,10 +424,10 @@ namespace ROL {
             }
               
             void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
+                ROL::SharedPointer<const MV > xp =
+                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
+                ROL::SharedPointer<MV> vp =
+                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
@@ -440,10 +440,10 @@ namespace ROL {
             }
          
             void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
+                ROL::SharedPointer<const MV > xp =
+                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
+                ROL::SharedPointer<MV> vp =
+                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
@@ -456,12 +456,12 @@ namespace ROL {
             }
          
             void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<const MV > gp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(g))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
+                ROL::SharedPointer<const MV > xp =
+                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
+                ROL::SharedPointer<const MV > gp =
+                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(g))).getVector();
+                ROL::SharedPointer<MV> vp =
+                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
 
                Real epsn = std::min(scale_*eps,this->min_diff_);
 
@@ -475,12 +475,12 @@ namespace ROL {
             }
        
              void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<const MV > gp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(g))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
+                ROL::SharedPointer<const MV > xp =
+                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
+                ROL::SharedPointer<const MV > gp =
+                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(g))).getVector();
+                ROL::SharedPointer<MV> vp =
+                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
@@ -494,12 +494,12 @@ namespace ROL {
             }
 
             void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-                Teuchos::RCP<const MV > xp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(x))).getVector();
-                Teuchos::RCP<const MV > gp =
-                    (Teuchos::dyn_cast<TMV>(const_cast<Vector<Real> &>(g))).getVector();
-                Teuchos::RCP<MV> vp =
-                    Teuchos::rcp_const_cast<MV>((Teuchos::dyn_cast<TMV>(v)).getVector());
+                ROL::SharedPointer<const MV > xp =
+                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
+                ROL::SharedPointer<const MV > gp =
+                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(g))).getVector();
+                ROL::SharedPointer<MV> vp =
+                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 

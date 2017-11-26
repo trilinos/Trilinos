@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
 
   using Obj     = ROL::Objective<RealT>;
   using Con     = ROL::Constraint<RealT>;
@@ -76,12 +76,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
@@ -99,51 +99,51 @@ int main(int argc, char *argv[]) {
     int cdim = 3;
     
     // Optimization vector
-    RCP<V> x  = rcp( new StdV( rcp( new std::vector<RealT>(xdim) ) ) );
-    RCP<V> c  = rcp( new StdV( rcp( new std::vector<RealT>(cdim) ) ) );
-    RCP<V> e0 = c->basis(0);
-    RCP<V> e1 = c->basis(1);
-    RCP<V> e2 = c->basis(2);
+    ROL::SharedPointer<V> x  = ROL::makeShared<StdV>( ROL::makeShared<std::vector<RealT>>(xdim) );
+    ROL::SharedPointer<V> c  = ROL::makeShared<StdV>( ROL::makeShared<std::vector<RealT>>(cdim));
+    ROL::SharedPointer<V> e0 = c->basis(0);
+    ROL::SharedPointer<V> e1 = c->basis(1);
+    ROL::SharedPointer<V> e2 = c->basis(2);
  
     // Exact solution
-    RCP<V> sol   = x->clone();   
-    RCP<V> error = x->clone();
+    ROL::SharedPointer<V> sol   = x->clone();   
+    ROL::SharedPointer<V> error = x->clone();
 
-    RCP<Obj> obj = Teuchos::null; 
-    RCP<Con> con = Teuchos::null;
+    ROL::SharedPointer<Obj> obj = ROL::nullPointer; 
+    ROL::SharedPointer<Con> con = ROL::nullPointer;
     
     ROL::ZOO::getSimpleEqConstrained<RealT,StdV,StdV,StdV,StdV>( obj, con, *x, *sol );
 
     error->set(*sol);
 
     // Extract constraint components to make objectives
-    RCP<Obj> obj_0 = rcp( new ROL::ObjectiveFromConstraint<RealT>( con, *e0 ) );
-    RCP<Obj> obj_1 = rcp( new ROL::ObjectiveFromConstraint<RealT>( con, *e1 ) );
-    RCP<Obj> obj_2 = rcp( new ROL::ObjectiveFromConstraint<RealT>( con, *e2 ) );
+    ROL::SharedPointer<Obj> obj_0 = ROL::makeShared<ROL::ObjectiveFromConstraint<RealT>>( con, *e0 );
+    ROL::SharedPointer<Obj> obj_1 = ROL::makeShared<ROL::ObjectiveFromConstraint<RealT>>( con, *e1 );
+    ROL::SharedPointer<Obj> obj_2 = ROL::makeShared<ROL::ObjectiveFromConstraint<RealT>>( con, *e2 );
 
     // Create separate constraints from the objectives
-    RCP<Con> con_0 = rcp( new ROL::ConstraintFromObjective<RealT>( obj_0 ) );
-    RCP<Con> con_1 = rcp( new ROL::ConstraintFromObjective<RealT>( obj_1 ) );
-    RCP<Con> con_2 = rcp( new ROL::ConstraintFromObjective<RealT>( obj_2 ) );
+    ROL::SharedPointer<Con> con_0 = ROL::makeShared<ROL::ConstraintFromObjective<RealT>>( obj_0 );
+    ROL::SharedPointer<Con> con_1 = ROL::makeShared<ROL::ConstraintFromObjective<RealT>>( obj_1 );
+    ROL::SharedPointer<Con> con_2 = ROL::makeShared<ROL::ConstraintFromObjective<RealT>>( obj_2 );
     
-    std::vector<RCP<Con> > con_array;
+    std::vector<ROL::SharedPointer<Con>> con_array;
     con_array.push_back(con_0);
     con_array.push_back(con_1);
     con_array.push_back(con_2);
 
     // Lagrange multipliers
-    RCP<V> l0 = rcp( new ScalarV(0) );
-    RCP<V> l1 = rcp( new ScalarV(0) );
-    RCP<V> l2 = rcp( new ScalarV(0) );
+    ROL::SharedPointer<V> l0 = ROL::makeShared<ScalarV>(0);
+    ROL::SharedPointer<V> l1 = ROL::makeShared<ScalarV>(0);
+    ROL::SharedPointer<V> l2 = ROL::makeShared<ScalarV>(0);
   
-    std::vector<RCP<V> > l_array;
+    std::vector<ROL::SharedPointer<V>> l_array;
     l_array.push_back(l0);
     l_array.push_back(l1);
     l_array.push_back(l2);
    
     ROL::OptimizationProblem<RealT> opt( obj,             // Objective
                                          x,               // Optimization vector
-                                         Teuchos::null,   // No bound constraint
+                                         ROL::nullPointer,   // No bound constraint
                                          con_array,       // Array of scalar equality constraints
                                          l_array);        // Array of scalar lagrange multipliers
  

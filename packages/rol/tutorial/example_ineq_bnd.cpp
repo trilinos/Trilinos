@@ -131,16 +131,16 @@ public:
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
 
   typedef double RealT;
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = &std::cout, false;
   else
-    outStream = rcp(&bhs, false);
+    outStream = &bhs, false;
 
 
   int errorFlag   = 0;
@@ -151,31 +151,31 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Step").set("Type","Augmented Lagrangian");
     
 
-    RCP<std::vector<RealT> > l_rcp = rcp( new std::vector<RealT>(5,-100.0) );
-    RCP<std::vector<RealT> > u_rcp = rcp( new std::vector<RealT>(5, 100.0) );
+    ROL::SharedPointer<std::vector<RealT> > l_ptr = ROL::makeShared<std::vector<RealT>>(5,-100.0);
+    ROL::SharedPointer<std::vector<RealT> > u_ptr = ROL::makeShared<std::vector<RealT>>(5, 100.0);
 
-    RCP<ROL::Vector<RealT> > lower = rcp( new ROL::StdVector<RealT>( l_rcp ) );
-    RCP<ROL::Vector<RealT> > upper = rcp( new ROL::StdVector<RealT>( u_rcp ) ); 
+    ROL::SharedPointer<ROL::Vector<RealT> > lower = ROL::makeShared<ROL::StdVector<RealT>>( l_ptr );
+    ROL::SharedPointer<ROL::Vector<RealT> > upper = ROL::makeShared<ROL::StdVector<RealT>>( u_ptr ); 
 
-    RCP<std::vector<RealT> > x_rcp  = rcp( new std::vector<RealT>(5,1.0) );
-    RCP<std::vector<RealT> > li_rcp = rcp( new std::vector<RealT>(1,0.0) );
-    RCP<std::vector<RealT> > ll_rcp = rcp( new std::vector<RealT>(1,0.0) );
-    RCP<std::vector<RealT> > lu_rcp = rcp( new std::vector<RealT>(1,ROL::ROL_INF<RealT>()) );
+    ROL::SharedPointer<std::vector<RealT> > x_ptr  = ROL::makeShared<std::vector<RealT>>(5,1.0);
+    ROL::SharedPointer<std::vector<RealT> > li_ptr = ROL::makeShared<std::vector<RealT>>(1,0.0);
+    ROL::SharedPointer<std::vector<RealT> > ll_ptr = ROL::makeShared<std::vector<RealT>>(1,0.0);
+    ROL::SharedPointer<std::vector<RealT> > lu_ptr = ROL::makeShared<std::vector<RealT>(1,ROL::ROL_INF<RealT>>());
 
-    RCP<ROL::Vector<RealT> > x  = rcp( new ROL::StdVector<RealT>(x_rcp) );
-    RCP<ROL::Vector<RealT> > li = rcp( new ROL::StdVector<RealT>(li_rcp) );
-    RCP<ROL::Vector<RealT> > ll = rcp( new ROL::StdVector<RealT>(ll_rcp) );
-    RCP<ROL::Vector<RealT> > lu = rcp( new ROL::StdVector<RealT>(lu_rcp) );
+    ROL::SharedPointer<ROL::Vector<RealT> > x  = ROL::makeShared<ROL::StdVector<RealT>>(x_ptr);
+    ROL::SharedPointer<ROL::Vector<RealT> > li = ROL::makeShared<ROL::StdVector<RealT>>(li_ptr);
+    ROL::SharedPointer<ROL::Vector<RealT> > ll = ROL::makeShared<ROL::StdVector<RealT>>(ll_ptr);
+    ROL::SharedPointer<ROL::Vector<RealT> > lu = ROL::makeShared<ROL::StdVector<RealT>>(lu_ptr);
 
-    RCP<ROL::Objective<RealT> >             obj  = rcp( new ObjectiveQL<RealT>() );
-    RCP<ROL::BoundConstraint<RealT> >       bnd  = rcp( new ROL::Bounds<RealT>(lower,upper) );
-    RCP<ROL::Constraint<RealT> >            ineq = rcp( new InequalityQL<RealT>() );
-    RCP<ROL::BoundConstraint<RealT> >       ibnd = rcp( new ROL::Bounds<RealT>(ll,lu) );
+    ROL::SharedPointer<ROL::Objective<RealT> >             obj  = ROL::makeShared<ObjectiveQL<RealT>>();
+    ROL::SharedPointer<ROL::BoundConstraint<RealT> >       bnd  = ROL::makeShared<ROL::Bounds<RealT>>(lower,upper);
+    ROL::SharedPointer<ROL::Constraint<RealT> >            ineq = ROL::makeShared<InequalityQL<RealT>>();
+    ROL::SharedPointer<ROL::BoundConstraint<RealT> >       ibnd = ROL::makeShared<ROL::Bounds<RealT>>(ll,lu);
 
     ROL::OptimizationProblem<RealT> problem( obj, x, bnd, ineq, li, ibnd);    
 
     /* checkAdjointJacobianConsistency fails for the OptimizationProblem if we don't do this first... why? */
-    RCP<ROL::Vector<RealT> > u = x->clone(); 
+    ROL::SharedPointer<ROL::Vector<RealT> > u = x->clone(); 
     RandomizeVector(*u);
     ineq->checkAdjointConsistencyJacobian(*li,*x,*u,true,*outStream);
     /*******************************************************************************************************/
@@ -193,9 +193,9 @@ int main(int argc, char *argv[]) {
 
     *outStream << "x_opt = [";
     for(int i=0;i<4;++i) {
-      *outStream << (*x_rcp)[i] << ", " ;
+      *outStream << (*x_ptr)[i] << ", " ;
     } 
-    *outStream << (*x_rcp)[4] << "]" << std::endl;
+    *outStream << (*x_ptr)[4] << "]" << std::endl;
     
 
   }

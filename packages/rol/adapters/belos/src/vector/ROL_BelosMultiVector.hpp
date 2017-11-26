@@ -68,7 +68,7 @@ namespace { // (anonymous)
   template<class Scalar>
   class RolStubTsqrAdapter {
   public:
-    RolStubTsqrAdapter (const Teuchos::RCP<Teuchos::ParameterList>&)
+    RolStubTsqrAdapter (const ROL::SharedPointer<Teuchos::ParameterList>&)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(false, std::logic_error, "Not implemented");
     }
@@ -78,14 +78,14 @@ namespace { // (anonymous)
       TEUCHOS_TEST_FOR_EXCEPTION(false, std::logic_error, "Not implemented");
     }
 
-    Teuchos::RCP<const Teuchos::ParameterList>
+    ROL::SharedPointer<const Teuchos::ParameterList>
     getValidParameters () const
     {
-      return Teuchos::rcp (new Teuchos::ParameterList ());
+      return ROL::makesShared<Teuchos::ParameterList> ();
     }
 
     void
-    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>&)
+    setParameterList (const ROL::SharedPointer<Teuchos::ParameterList>&)
     {}
 
     void
@@ -116,7 +116,7 @@ namespace Belos {
     class MultiVecTraits<Scalar, ROL::MultiVector<Scalar> > {
 
         typedef ROL::MultiVector<Scalar>  MV;      // ROL::MultiVector object
-        typedef Teuchos::RCP<MV>          PMV;     // Pointer to ROL::MultiVector object
+        typedef ROL::SharedPointer<MV>          PMV;     // Pointer to ROL::MultiVector object
 
         typedef Teuchos::SerialDenseMatrix<int,Scalar> Matrix;
 

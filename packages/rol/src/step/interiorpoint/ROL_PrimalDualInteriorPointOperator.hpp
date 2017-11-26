@@ -64,22 +64,22 @@ class PrimalDualInteriorPointBlock11 : public LinearOperator<Real> {
   static const size_type LOWER = 0;
   static const size_type UPPER = 1;
  
-  Teuchos::RCP<const V>   x_;            // Optimization vector
-  Teuchos::RCP<const V>   l_;            //  constraint multiplier
+  ROL::SharedPointer<const V>   x_;            // Optimization vector
+  ROL::SharedPointer<const V>   l_;            //  constraint multiplier
 
-  Teuchos::RCP<V> scratch_;
+  ROL::SharedPointer<V> scratch_;
 
   Real delta_; // Initial correction
 
 
 public: 
 
-  PrimalDualInteriorPointBlock11( Teuchos::RCP<OBJ> &obj, Teuchos::RCP<CON> &con, 
-                           const V &x, Teuchos::RCP<V> & scratch, 
+  PrimalDualInteriorPointBlock11( ROL::SharedPointer<OBJ> &obj, ROL::SharedPointer<CON> &con, 
+                           const V &x, ROL::SharedPointer<V> & scratch, 
                            Real delta=0 ) : 
     obj_(obj), con_(con), scratch_(scratch), delta_(delta) { 
 
-    const PV &x_pv = Teuchos::dyn_cast<const PV>(x);
+    const PV &x_pv = dynamic_cast<const PV&>(x);
 
     x_  = x_pv.get(OPT);
     l_  = x_pv.get(EQUAL);
@@ -87,7 +87,7 @@ public:
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
 
-    const PV &x_pv = Teuchos::dyn_cast<const PV>(x);
+    const PV &x_pv = dynamic_cast<const PV&>(x);
     
     x_  = x_pv.get(OPT);
     l_  = x_pv.get(EQUAL);
@@ -98,18 +98,18 @@ public:
  
   void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
 
-    using Teuchos::RCP;
+    
 
-    PV &Hv_pv = Teuchos::dyn_cast<PV>(Hv);
-    const PV &v_pv = Teuchos::dyn_cast<const PV>(v);
+    PV &Hv_pv = dynamic_cast<PV&>(Hv);
+    const PV &v_pv = dynamic_cast<const PV&>(v);
 
     // output vector components
-    RCP<V> Hvx  = Hv_pv.get(OPT);
-    RCP<V> Hvl  = Hv_pv.get(EQUAL);
+    ROL::SharedPointer<V> Hvx  = Hv_pv.get(OPT);
+    ROL::SharedPointer<V> Hvl  = Hv_pv.get(EQUAL);
 
     // input vector components
-    RCP<const V> vx  = v_pv.get(OPT);
-    RCP<const V> vl  = v_pv.get(EQUAL); 
+    ROL::SharedPointer<const V> vx  = v_pv.get(OPT);
+    ROL::SharedPointer<const V> vl  = v_pv.get(EQUAL); 
 
     obj_->hessVec(*jvx,*vx,*x_,tol);
     con_->applyAdjointHessian(*scratch_,*l_,*vx,*x_,tol);
@@ -154,18 +154,18 @@ class PrimalDualInteriorPointBlock12 : public LinearOperator<Real> {
 public:
  
   void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const { 
-    using Teuchos::RCP;
+    
 
-    PV &Hv_pv = Teuchos::dyn_cast<PV>(Hv);
-    const PV &v_pv = Teuchos::dyn_cast<const PV>(v);
+    PV &Hv_pv = dynamic_cast<PV&>(Hv);
+    const PV &v_pv = dynamic_cast<const PV&>(v);
 
     // output vector components
-    RCP<V> Hvx  = Hv_pv.get(OPT);
-    RCP<V> Hvl  = Hv_pv.get(EQUAL);
+    ROL::SharedPointer<V> Hvx  = Hv_pv.get(OPT);
+    ROL::SharedPointer<V> Hvl  = Hv_pv.get(EQUAL);
 
     // input vector components
-    RCP<const V> vzl  = v_pv.get(LOWER);
-    RCP<const V> vzu  = v_pv.get(UPPER); 
+    ROL::SharedPointer<const V> vzl  = v_pv.get(LOWER);
+    ROL::SharedPointer<const V> vzu  = v_pv.get(UPPER); 
 
     Hvx->set(*vzu);
     Hvx->axpy(-1.0,*vzl);
@@ -194,36 +194,36 @@ class PrimalDualInteriorPointBlock21 : public LinearOperator<Real> {
   static const size_type LOWER = 0;
   static const size_type UPPER = 1;
  
-  Teuchos::RCP<const V> zl_;
+  ROL::SharedPointer<const V> zl_;
   Teuchos::RPC<const V> zu_;
 
 public:
  
   PrimalDualInteriorPointBlock21( const V &z ) {
-    const PV &z_pv = Teuchos::dyn_cast<const PV>(z);
+    const PV &z_pv = dynamic_cast<const PV&>(z);
     zl_ = z_pv.get(LOWER);
     zu_ = z_pv.get(UPPER);  
   }
 
   void update( const Vector<Real> &z, bool flag = true, int iter = -1 ) {
-    const PV &z_pv = Teuchos::dyn_cast<const PV>(z);
+    const PV &z_pv = dynamic_cast<const PV&>(z);
     zl_ = z_pv.get(LOWER);
     zu_ = z_pv.get(UPPER);  
   } 
 
   virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const { 
-    using Teuchos::RCP;
+    
 
-    PV &Hv_pv = Teuchos::dyn_cast<PV>(Hv);
-    const PV &v_pv = Teuchos::dyn_cast<const PV>(v);
+    PV &Hv_pv = dynamic_cast<PV&>(Hv);
+    const PV &v_pv = dynamic_cast<const PV&>(v);
 
     // output vector components
-    RCP<V> Hvzl  = Hv_pv.get(LOWER);
-    RCP<V> Hvzu  = Hv_pv.get(UPPER);
+    ROL::SharedPointer<V> Hvzl  = Hv_pv.get(LOWER);
+    ROL::SharedPointer<V> Hvzu  = Hv_pv.get(UPPER);
 
     // input vector components
-    RCP<const V> vx  = v_pv.get(OPT);
-    RCP<const V> vl  = v_pv.get(EQUAL); 
+    ROL::SharedPointer<const V> vx  = v_pv.get(OPT);
+    ROL::SharedPointer<const V> vl  = v_pv.get(EQUAL); 
 
     Hvzl->set(*vx);
     Hvzl->applyBinary(mult_,*zl_);
@@ -253,9 +253,9 @@ class PrimalDualInteriorPointBlock22 : public LinearOperator<Real> {
   static const size_type LOWER = 0;
   static const size_type UPPER = 1;
  
-  Teuchos::RCP<const V> x_;
-  Teuchos::RCP<const V> xl_;
-  Teuchos::RCP<const V> xu_;
+  ROL::SharedPointer<const V> x_;
+  ROL::SharedPointer<const V> xl_;
+  ROL::SharedPointer<const V> xu_;
 
   Elementwise::Multiply<Real> mult_;
   Elementwise::Multiply<Real> divinv_;
@@ -263,9 +263,9 @@ class PrimalDualInteriorPointBlock22 : public LinearOperator<Real> {
 
 public:
  
-  PrimalDualInteriorPointBlock22( const Teuchos::RCP<BND> &bnd, const Vector<Real> &x ) {
+  PrimalDualInteriorPointBlock22( const ROL::SharedPointer<BND> &bnd, const Vector<Real> &x ) {
 
-    const PV &x_pv = Teuchos::dyn_cast<const PV>(x);
+    const PV &x_pv = dynamic_cast<const PV&>(x);
     
     x_  = x_pv.get(OPT);
     xl_ = bnd.getLowerBound();
@@ -275,23 +275,23 @@ public:
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
 
-    const PV &x_pv = Teuchos::dyn_cast<const PV>(x);
+    const PV &x_pv = dynamic_cast<const PV&>(x);
     x_  = x_pv.get(OPT);
   }
  
   virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const { 
-    using Teuchos::RCP;
+    
 
-    PV &Hv_pv = Teuchos::dyn_cast<PV>(Hv);
-    const PV &v_pv = Teuchos::dyn_cast<const PV>(v);
+    PV &Hv_pv = dynamic_cast<PV&>(Hv);
+    const PV &v_pv = dynamic_cast<const PV&>(v);
 
     // output vector components
-    RCP<V> Hvzl  = Hv_pv.get(LOWER);
-    RCP<V> Hvzu  = Hv_pv.get(UPPER);
+    ROL::SharedPointer<V> Hvzl  = Hv_pv.get(LOWER);
+    ROL::SharedPointer<V> Hvzu  = Hv_pv.get(UPPER);
 
     // input vector components
-    RCP<const V> vzl = v_pv.get(LOWER);
-    RCP<const V> vzu = v_pv.get(UPPER); 
+    ROL::SharedPointer<const V> vzl = v_pv.get(LOWER);
+    ROL::SharedPointer<const V> vzu = v_pv.get(UPPER); 
 
     Hvzl->set(*x_);
     Hvzl->axpy(-1.0,*xl_);
@@ -305,18 +305,18 @@ public:
 
   virtual void applyInverse( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
 
-    using Teuchos::RCP;
+    
 
-    PV &Hv_pv = Teuchos::dyn_cast<PV>(Hv);
-    const PV &v_pv = Teuchos::dyn_cast<const PV>(v);
+    PV &Hv_pv = dynamic_cast<PV&>(Hv);
+    const PV &v_pv = dynamic_cast<const PV&>(v);
 
     // output vector components
-    RCP<V> Hvzl  = Hv_pv.get(LOWER);
-    RCP<V> Hvzu  = Hv_pv.get(UPPER);
+    ROL::SharedPointer<V> Hvzl  = Hv_pv.get(LOWER);
+    ROL::SharedPointer<V> Hvzu  = Hv_pv.get(UPPER);
 
     // input vector components
-    RCP<const V> vzl = v_pv.get(LOWER);
-    RCP<const V> vzu = v_pv.get(UPPER); 
+    ROL::SharedPointer<const V> vzl = v_pv.get(LOWER);
+    ROL::SharedPointer<const V> vzu = v_pv.get(UPPER); 
 
     Hvzl->set(*x_);
     Hvzl->axpy(-1.0,*xl_);

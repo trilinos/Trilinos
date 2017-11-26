@@ -58,18 +58,18 @@ int main(int argc, char *argv[]) {
   
   typedef typename vector::size_type uint;
 
-  using Teuchos::RCP;  using Teuchos::rcp;
+    
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -81,34 +81,34 @@ int main(int argc, char *argv[]) {
     RealT alpha = 1.e-3; // Set penalty parameter.
     Objective_BurgersControl<RealT> obj(alpha,nx);
     // Initialize iteration vectors.
-    RCP<vector> x_rcp = rcp( new vector(nx+2, 1.0) );
-    RCP<vector> y_rcp = rcp( new vector(nx+2, 0.0) );
+    ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>(nx+2, 1.0);
+    ROL::SharedPointer<vector> y_ptr = ROL::makeShared<vector>(nx+2, 0.0);
     for (uint i=0; i<nx+2; i++) {
-      (*x_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
-      (*y_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*x_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*y_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
 
-    SV x(x_rcp);
-    SV y(y_rcp);
+    SV x(x_ptr);
+    SV y(y_ptr);
 
     // Check deriatives.
     obj.checkGradient(x,x,y,true,*outStream);
     obj.checkHessVec(x,x,y,true,*outStream);
 
     // Initialize Constraints
-    RCP<vector> l_rcp = rcp(new vector(nx+2,0.0) );
-    RCP<vector> u_rcp = rcp(new vector(nx+2,1.0) );
-    RCP<V> lo = rcp( new SV(l_rcp) );
-    RCP<V> up = rcp( new SV(u_rcp) ); 
+    ROL::SharedPointer<vector> l_ptr = ROL::makeShared<vector>(nx+2,0.0);
+    ROL::SharedPointer<vector> u_ptr = ROL::makeShared<vector>(nx+2,1.0);
+    ROL::SharedPointer<V> lo = ROL::makeShared<SV>(l_ptr);
+    ROL::SharedPointer<V> up = ROL::makeShared<SV>(u_ptr); 
       
     ROL::Bounds<RealT> icon(lo,up);
 
     // ROL components.
-    RCP<ROL::Algorithm<RealT> > algo;
+    ROL::SharedPointer<ROL::Algorithm<RealT> > algo;
 
     // Primal dual active set.
     std::string filename = "input.xml";
-    RCP<Teuchos::ParameterList> parlist = rcp( new Teuchos::ParameterList() );
+    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Krylov parameters.
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-8);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Primal Dual Active Set",*parlist,false));
+    algo = ROL::makeShared<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
     // Run algorithm.
     x.zero();
     algo->run(x, obj, icon, true, *outStream);
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     std::ofstream file_pdas;
     file_pdas.open("control_PDAS.txt");
     for ( unsigned i = 0; i < (unsigned)nx+2; i++ ) {
-      file_pdas << (*x_rcp)[i] << "\n";
+      file_pdas << (*x_ptr)[i] << "\n";
     }
     file_pdas.close();
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-2);
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
     // Define algorithm.
-    algo = Teuchos::rcp(new ROL::Algorithm<RealT>("Trust Region",*parlist,false));
+    algo = ROL::makeShared<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
     // Run Algorithm
     y.zero();
     algo->run(y,obj,icon,true,*outStream);
@@ -149,13 +149,13 @@ int main(int argc, char *argv[]) {
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
     for ( unsigned i = 0; i < (unsigned)nx+2; i++ ) {
-      file_tr << (*y_rcp)[i] << "\n";
+      file_tr << (*y_ptr)[i] << "\n";
     }
     file_tr.close();
     // Output state to file.
     std::vector<RealT> u(nx,0.0);
     std::vector<RealT> param(4,0.0);
-    obj.solve_state(u,*x_rcp,param);
+    obj.solve_state(u,*x_ptr,param);
     std::ofstream file;
     file.open("state.txt");
     for (unsigned i=0; i<(unsigned)nx; i++) {
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
     }
     file.close();
     // Compute error 
-    Teuchos::RCP<ROL::Vector<RealT> > diff = x.clone();
+    ROL::SharedPointer<ROL::Vector<RealT> > diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);
     RealT error = diff->norm();

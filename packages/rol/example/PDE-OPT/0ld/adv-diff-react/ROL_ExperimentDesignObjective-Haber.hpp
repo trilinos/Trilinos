@@ -60,22 +60,22 @@ template <class Real>
 class ReducedHessian : public LinearOperator<Real> {
 private:
   const ExperimentDesignObjective<Real> edo_;
-  Teuchos::RCP<const Vector<Real> > w_;
+  ROL::SharedPointer<const Vector<Real> > w_;
 
 public:
 
-  ReducedHessian(const ExperimentDesignObjective<Real> & edo, Teuchos::RCP<const Vector<Real> > w) : edo_(edo), w_(w) {}
+  ReducedHessian(const ExperimentDesignObjective<Real> & edo, ROL::SharedPointer<const Vector<Real> > w) : edo_(edo), w_(w) {}
 
   void apply( Vector<Real> &hv, const Vector<Real> &v, Real &tol ) const {
     Real mytol(1e-8);
-    Teuchos::RCP<Vector<Real> > Bv = edo_.getConstraintVec()->clone();
-    Teuchos::RCP<Vector<Real> > AiBv = edo_.getStateVec()->clone();
-    Teuchos::RCP<Vector<Real> > QAiBv = edo_.getObservationVec()->clone();
-    Teuchos::RCP<Vector<Real> > WQAiBv = (edo_.getObservationVec()->dual()).clone();
-    Teuchos::RCP<Vector<Real> > QtWQAiBv = (edo_.getStateVec()->dual()).clone();
-    Teuchos::RCP<Vector<Real> > AitQtWQAiBv = (edo_.getConstraintVec()->dual()).clone();
+    ROL::SharedPointer<Vector<Real> > Bv = edo_.getConstraintVec()->clone();
+    ROL::SharedPointer<Vector<Real> > AiBv = edo_.getStateVec()->clone();
+    ROL::SharedPointer<Vector<Real> > QAiBv = edo_.getObservationVec()->clone();
+    ROL::SharedPointer<Vector<Real> > WQAiBv = (edo_.getObservationVec()->dual()).clone();
+    ROL::SharedPointer<Vector<Real> > QtWQAiBv = (edo_.getStateVec()->dual()).clone();
+    ROL::SharedPointer<Vector<Real> > AitQtWQAiBv = (edo_.getConstraintVec()->dual()).clone();
 
-    Teuchos::RCP<Vector<Real> > BtAitQtWQAiBv = (edo_.getControlVec()->dual()).clone();
+    ROL::SharedPointer<Vector<Real> > BtAitQtWQAiBv = (edo_.getControlVec()->dual()).clone();
 
     edo_.getConstraint()->applyJacobian_2(*Bv, v, *(edo_.getStateVec()), *(edo_.getControlVec()), mytol);
     edo_.getConstraint()->applyInverseJacobian_1(*AiBv, *Bv, *(edo_.getStateVec()), *(edo_.getControlVec()), mytol);
@@ -111,15 +111,15 @@ public:
 template <class Real>
 class ExperimentDesignObjective : public Objective<Real> {
 private:
-  Teuchos::RCP<Objective_SimOpt<Real> > obj_;            // objective function used for the conventional inverse problem 
-  Teuchos::RCP<Constraint_SimOpt<Real> > con_;   // constraint function used for the conventional inverse problems
-  Teuchos::RCP<Vector<Real> > state_;                    // state vector, used for cloning
-  Teuchos::RCP<Vector<Real> > adjoint_;                  // adjoint vector, used for cloning
-  Teuchos::RCP<Vector<Real> > control_;                  // control vector, used for cloning
-  Teuchos::RCP<Vector<Real> > constraint_;               // constraint vector, used for cloning
-  Teuchos::RCP<Vector<Real> > observation_;              // observation vector, used for cloning
-  std::vector<Teuchos::RCP<Vector<Real> > > training_;   // training-set vectors used in OED
-  Teuchos::RCP<Vector<Real> > rand01_;                   // a vector of 0 and 1 entries occurring with probability 1/2
+  ROL::SharedPointer<Objective_SimOpt<Real> > obj_;            // objective function used for the conventional inverse problem 
+  ROL::SharedPointer<Constraint_SimOpt<Real> > con_;   // constraint function used for the conventional inverse problems
+  ROL::SharedPointer<Vector<Real> > state_;                    // state vector, used for cloning
+  ROL::SharedPointer<Vector<Real> > adjoint_;                  // adjoint vector, used for cloning
+  ROL::SharedPointer<Vector<Real> > control_;                  // control vector, used for cloning
+  ROL::SharedPointer<Vector<Real> > constraint_;               // constraint vector, used for cloning
+  ROL::SharedPointer<Vector<Real> > observation_;              // observation vector, used for cloning
+  std::vector<ROL::SharedPointer<Vector<Real> > > training_;   // training-set vectors used in OED
+  ROL::SharedPointer<Vector<Real> > rand01_;                   // a vector of 0 and 1 entries occurring with probability 1/2
 
   Real cgabstol_;   // CG absolute tolerance to solve reduced-Hessian subproblems
   Real cgreltol_;   // CG relative tolerance to solve reduced-Hessian subproblems
@@ -129,16 +129,16 @@ private:
   Real beta_;       // sparsity regularization factor
 
 public:
-  ExperimentDesignObjective(const Teuchos::RCP<Objective_SimOpt<Real> > &obj,
-                            const Teuchos::RCP<Constraint_SimOpt<Real> > &con,
-                            const Teuchos::RCP<Vector<Real> > &state,
-                            const Teuchos::RCP<Vector<Real> > &adjoint,
-                            const Teuchos::RCP<Vector<Real> > &control,
-                            const Teuchos::RCP<Vector<Real> > &constraint,
-                            const Teuchos::RCP<Vector<Real> > &observation,
-                            const std::vector<Teuchos::RCP<Vector<Real> > > &training,
-                            const Teuchos::RCP<Vector<Real> > &rand01,
-                            const Teuchos::RCP<Teuchos::ParameterList> &parlist) :
+  ExperimentDesignObjective(const ROL::SharedPointer<Objective_SimOpt<Real> > &obj,
+                            const ROL::SharedPointer<Constraint_SimOpt<Real> > &con,
+                            const ROL::SharedPointer<Vector<Real> > &state,
+                            const ROL::SharedPointer<Vector<Real> > &adjoint,
+                            const ROL::SharedPointer<Vector<Real> > &control,
+                            const ROL::SharedPointer<Vector<Real> > &constraint,
+                            const ROL::SharedPointer<Vector<Real> > &observation,
+                            const std::vector<ROL::SharedPointer<Vector<Real> > > &training,
+                            const ROL::SharedPointer<Vector<Real> > &rand01,
+                            const ROL::SharedPointer<Teuchos::ParameterList> &parlist) :
     obj_(obj), con_(con), state_(state), adjoint_(adjoint),
     control_(control), constraint_(constraint), observation_(observation),
     training_(training), rand01_(rand01) {
@@ -151,13 +151,13 @@ public:
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<Vector<Real> > Mtrain = (control_->dual()).clone();
-    Teuchos::RCP<Vector<Real> > CinvMtrain = control_->clone();
-    Teuchos::RCP<Vector<Real> > Vx = observation_->dual().clone();
-    Teuchos::RCP<Vector<Real> > QtVx = state_->dual().clone();
-    Teuchos::RCP<Vector<Real> > AitQtVx = constraint_->dual().clone();
-    Teuchos::RCP<Vector<Real> > BtAitQtVx = control_->dual().clone();
-    Teuchos::RCP<Vector<Real> > CinvBtAitQtVx = control_->clone();
+    ROL::SharedPointer<Vector<Real> > Mtrain = (control_->dual()).clone();
+    ROL::SharedPointer<Vector<Real> > CinvMtrain = control_->clone();
+    ROL::SharedPointer<Vector<Real> > Vx = observation_->dual().clone();
+    ROL::SharedPointer<Vector<Real> > QtVx = state_->dual().clone();
+    ROL::SharedPointer<Vector<Real> > AitQtVx = constraint_->dual().clone();
+    ROL::SharedPointer<Vector<Real> > BtAitQtVx = control_->dual().clone();
+    ROL::SharedPointer<Vector<Real> > CinvBtAitQtVx = control_->clone();
 
     Real mytol(1e-8);
     // Initialize sum of bias, variance and sparse regularization.
@@ -207,13 +207,13 @@ public:
   }
 
   // Access functions.
-  Teuchos::RCP<Vector<Real> > getStateVec() const { return state_; }
-  Teuchos::RCP<Vector<Real> > getAdjointVec() const { return adjoint_; }
-  Teuchos::RCP<Vector<Real> > getControlVec() const { return control_; }
-  Teuchos::RCP<Vector<Real> > getObservationVec() const { return observation_; }
-  Teuchos::RCP<Vector<Real> > getConstraintVec() const { return constraint_; }
-  Teuchos::RCP<Objective_SimOpt<Real> > getObjective() const { return obj_; }
-  Teuchos::RCP<Constraint_SimOpt<Real> > getConstraint() const { return con_; }
+  ROL::SharedPointer<Vector<Real> > getStateVec() const { return state_; }
+  ROL::SharedPointer<Vector<Real> > getAdjointVec() const { return adjoint_; }
+  ROL::SharedPointer<Vector<Real> > getControlVec() const { return control_; }
+  ROL::SharedPointer<Vector<Real> > getObservationVec() const { return observation_; }
+  ROL::SharedPointer<Vector<Real> > getConstraintVec() const { return constraint_; }
+  ROL::SharedPointer<Objective_SimOpt<Real> > getObjective() const { return obj_; }
+  ROL::SharedPointer<Constraint_SimOpt<Real> > getConstraint() const { return con_; }
 
 private:
 
@@ -221,7 +221,7 @@ private:
     int iter(0);
     int flag(0);
     ConjugateGradients<Real> cg(cgabstol_, cgreltol_, cgmaxiter_, false);
-    ReducedHessian<Real> reducedHessian(*this, Teuchos::rcpFromRef(w));
+    ReducedHessian<Real> reducedHessian(*this, ROL::makeSharedFromRef(w));
     cg.run(ihv, reducedHessian, v, reducedHessian, iter, flag);
 std::cout << "iter = " << iter << std::endl;
 std::cout << "flag = " << flag << std::endl;

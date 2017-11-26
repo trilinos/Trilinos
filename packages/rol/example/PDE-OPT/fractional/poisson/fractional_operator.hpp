@@ -53,9 +53,9 @@ extern template class Assembler<double>;
 template <class Real>
 class FractionalOperator : public ROL::LinearOperator<Real> {
 private:
-  Teuchos::RCP<Tpetra::CrsMatrix<> > Klocal_, Mlocal_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> > Kcylinder_, Mcylinder_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> > KcylinderT_, McylinderT_;
+  ROL::SharedPointer<Tpetra::CrsMatrix<> > Klocal_, Mlocal_;
+  ROL::SharedPointer<Tpetra::CrsMatrix<> > Kcylinder_, Mcylinder_;
+  ROL::SharedPointer<Tpetra::CrsMatrix<> > KcylinderT_, McylinderT_;
 
   void transposeMats(void) {
     Tpetra::RowMatrixTransposer<> transposerK(Kcylinder_);
@@ -67,27 +67,27 @@ private:
   bool transpose_;
 
 public:
-  FractionalOperator(const Teuchos::RCP<PDE<Real> > &pde_local,
-                     const Teuchos::RCP<MeshManager<Real> > &mesh_local,
-                     const Teuchos::RCP<PDE<Real> > &pde_cylinder,
-                     const Teuchos::RCP<MeshManager<Real> > &mesh_cylinder,
-                     const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+  FractionalOperator(const ROL::SharedPointer<PDE<Real> > &pde_local,
+                     const ROL::SharedPointer<MeshManager<Real> > &mesh_local,
+                     const ROL::SharedPointer<PDE<Real> > &pde_cylinder,
+                     const ROL::SharedPointer<MeshManager<Real> > &mesh_cylinder,
+                     const ROL::SharedPointer<const Teuchos::Comm<int> > &comm,
                      Teuchos::ParameterList &parlist,
                      std::ostream &outStream = std::cout)
     : transpose_(false) {
-    Teuchos::RCP<Tpetra::MultiVector<> > uvec;
-    Teuchos::RCP<Tpetra::MultiVector<> > zvec;
+    ROL::SharedPointer<Tpetra::MultiVector<> > uvec;
+    ROL::SharedPointer<Tpetra::MultiVector<> > zvec;
     // Assemble local components
-    Teuchos::RCP<Assembler<Real> > assembler_local
-      = Teuchos::rcp(new Assembler<Real>(pde_local->getFields(),mesh_local,comm,parlist,outStream));
+    ROL::SharedPointer<Assembler<Real> > assembler_local
+      = ROL::makeShared<Assembler<Real>(pde_local->getFields>(),mesh_local,comm,parlist,outStream);
     assembler_local->setCellNodes(*pde_local);
     uvec = assembler_local->createStateVector();
     zvec = assembler_local->createControlVector();
     assembler_local->assemblePDEJacobian1(Klocal_,pde_local,uvec,zvec);
     assembler_local->assemblePDERieszMap1(Mlocal_,pde_local);
     // Assemble cylinder components
-    Teuchos::RCP<Assembler<Real> > assembler_cylinder
-      = Teuchos::rcp(new Assembler<Real>(pde_cylinder->getFields(),mesh_cylinder,comm,parlist,outStream));
+    ROL::SharedPointer<Assembler<Real> > assembler_cylinder
+      = ROL::makeShared<Assembler<Real>(pde_cylinder->getFields>(),mesh_cylinder,comm,parlist,outStream);
     assembler_cylinder->setCellNodes(*pde_cylinder);
     uvec = assembler_cylinder->createStateVector();
     zvec = assembler_cylinder->createControlVector();
@@ -97,10 +97,10 @@ public:
     transposeMats();
   }
 
-  FractionalOperator(const Teuchos::RCP<Tpetra::CrsMatrix<> > &Klocal,
-                     const Teuchos::RCP<Tpetra::CrsMatrix<> > &Mlocal,
-                     const Teuchos::RCP<Tpetra::CrsMatrix<> > &Kcylinder,
-                     const Teuchos::RCP<Tpetra::CrsMatrix<> > &Mcylinder)
+  FractionalOperator(const ROL::SharedPointer<Tpetra::CrsMatrix<> > &Klocal,
+                     const ROL::SharedPointer<Tpetra::CrsMatrix<> > &Mlocal,
+                     const ROL::SharedPointer<Tpetra::CrsMatrix<> > &Kcylinder,
+                     const ROL::SharedPointer<Tpetra::CrsMatrix<> > &Mcylinder)
     : Klocal_(Klocal), Mlocal_(Mlocal), Kcylinder_(Kcylinder), Mcylinder_(Mcylinder),
       transpose_(false) {
     // Transpose cylinder components
@@ -112,8 +112,8 @@ public:
   }
 
   void apply( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
-    Teuchos::RCP<Tpetra::MultiVector<> >       Hvf = getField(Hv);
-    Teuchos::RCP<const Tpetra::MultiVector<> >  vf = getConstField(v);
+    ROL::SharedPointer<Tpetra::MultiVector<> >       Hvf = getField(Hv);
+    ROL::SharedPointer<const Tpetra::MultiVector<> >  vf = getConstField(v);
 
     if ( !transpose_ ) {
       size_t numRowEntries(0);
@@ -147,67 +147,67 @@ public:
 
 private: // Vector accessor functions
 
-  Teuchos::RCP<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(x).getVector();
+  ROL::SharedPointer<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
+    return dynamic_cast<const ROL::TpetraMultiVector<Real>&>(x).getVector();
   }
 
-  Teuchos::RCP<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(x).getVector();
+  ROL::SharedPointer<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
+    return dynamic_cast<ROL::TpetraMultiVector<Real>&>(x).getVector();
   }
 };
 
 template <class Real>
 class FractionalPreconditioner : public ROL::LinearOperator<Real> {
 private:
-  Teuchos::RCP<Tpetra::CrsMatrix<> > Klocal_, Mlocal_;
-  Teuchos::RCP<Tpetra::CrsMatrix<> > Kcylinder_, Mcylinder_;
-  mutable Teuchos::RCP<Tpetra::CrsMatrix<> > M_;
-  mutable Teuchos::RCP<Solver<Real> > solver_;
+  ROL::SharedPointer<Tpetra::CrsMatrix<> > Klocal_, Mlocal_;
+  ROL::SharedPointer<Tpetra::CrsMatrix<> > Kcylinder_, Mcylinder_;
+  mutable ROL::SharedPointer<Tpetra::CrsMatrix<> > M_;
+  mutable ROL::SharedPointer<Solver<Real> > solver_;
 
   mutable Teuchos::ParameterList parlist_;
 
   bool transpose_;
 
 public:
-  FractionalPreconditioner(const Teuchos::RCP<PDE<Real> > &pde_local,
-                           const Teuchos::RCP<MeshManager<Real> > &mesh_local,
-                           const Teuchos::RCP<PDE<Real> > &pde_cylinder,
-                           const Teuchos::RCP<MeshManager<Real> > &mesh_cylinder,
-                           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+  FractionalPreconditioner(const ROL::SharedPointer<PDE<Real> > &pde_local,
+                           const ROL::SharedPointer<MeshManager<Real> > &mesh_local,
+                           const ROL::SharedPointer<PDE<Real> > &pde_cylinder,
+                           const ROL::SharedPointer<MeshManager<Real> > &mesh_cylinder,
+                           const ROL::SharedPointer<const Teuchos::Comm<int> > &comm,
                            Teuchos::ParameterList &parlist,
                            std::ostream &outStream = std::cout)
     : parlist_(parlist), transpose_(false) {
-    Teuchos::RCP<Tpetra::MultiVector<> > uvec;
-    Teuchos::RCP<Tpetra::MultiVector<> > zvec;
+    ROL::SharedPointer<Tpetra::MultiVector<> > uvec;
+    ROL::SharedPointer<Tpetra::MultiVector<> > zvec;
     // Assemble local components
-    Teuchos::RCP<Assembler<Real> > assembler_local
-      = Teuchos::rcp(new Assembler<Real>(pde_local->getFields(),mesh_local,comm,parlist,outStream));
+    ROL::SharedPointer<Assembler<Real> > assembler_local
+      = ROL::makeShared<Assembler<Real>(pde_local->getFields>(),mesh_local,comm,parlist,outStream);
     assembler_local->setCellNodes(*pde_local);
     uvec = assembler_local->createStateVector();
     zvec = assembler_local->createControlVector();
     assembler_local->assemblePDEJacobian1(Klocal_,pde_local,uvec,zvec);
     assembler_local->assemblePDERieszMap1(Mlocal_,pde_local);
     // Assemble cylinder components
-    Teuchos::RCP<Assembler<Real> > assembler_cylinder
-      = Teuchos::rcp(new Assembler<Real>(pde_cylinder->getFields(),mesh_cylinder,comm,parlist,outStream));
+    ROL::SharedPointer<Assembler<Real> > assembler_cylinder
+      = ROL::makeShared<Assembler<Real>(pde_cylinder->getFields>(),mesh_cylinder,comm,parlist,outStream);
     assembler_cylinder->setCellNodes(*pde_cylinder);
     uvec = assembler_cylinder->createStateVector();
     zvec = assembler_cylinder->createControlVector();
     assembler_cylinder->assemblePDEJacobian1(Kcylinder_,pde_cylinder,uvec,zvec);
     assembler_cylinder->assemblePDERieszMap1(Mcylinder_,pde_cylinder);
     // Create linear solver object
-    solver_ = Teuchos::rcp(new Solver<Real>(parlist));
+    solver_ = ROL::makeShared<Solver<Real>>(parlist);
   }
 
-  FractionalPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<> > &Klocal,
-                           const Teuchos::RCP<Tpetra::CrsMatrix<> > &Mlocal,
-                           const Teuchos::RCP<Tpetra::CrsMatrix<> > &Kcylinder,
-                           const Teuchos::RCP<Tpetra::CrsMatrix<> > &Mcylinder,
+  FractionalPreconditioner(const ROL::SharedPointer<Tpetra::CrsMatrix<> > &Klocal,
+                           const ROL::SharedPointer<Tpetra::CrsMatrix<> > &Mlocal,
+                           const ROL::SharedPointer<Tpetra::CrsMatrix<> > &Kcylinder,
+                           const ROL::SharedPointer<Tpetra::CrsMatrix<> > &Mcylinder,
                            Teuchos::ParameterList                   &parlist)
     : Klocal_(Klocal), Mlocal_(Mlocal), Kcylinder_(Kcylinder), Mcylinder_(Mcylinder),
       parlist_(parlist), transpose_(false) {
     // Create linear solver object
-    solver_ = Teuchos::rcp(new Solver<Real>(parlist));
+    solver_ = ROL::makeShared<Solver<Real>>(parlist);
   }
 
   void setTranspose(const bool trans = true) {
@@ -215,8 +215,8 @@ public:
   }
 
   void apply( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
-    Teuchos::RCP<Tpetra::MultiVector<> >       Hvf = getField(Hv);
-    Teuchos::RCP<const Tpetra::MultiVector<> >  vf = getConstField(v);
+    ROL::SharedPointer<Tpetra::MultiVector<> >       Hvf = getField(Hv);
+    ROL::SharedPointer<const Tpetra::MultiVector<> >  vf = getConstField(v);
 
     size_t numRowEntries(0);
     Real massVal(0), stiffVal(0);
@@ -252,8 +252,8 @@ public:
   }
 
   void applyInverse( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
-    Teuchos::RCP<Tpetra::MultiVector<> >       Hvf = getField(Hv);
-    Teuchos::RCP<const Tpetra::MultiVector<> >  vf = getConstField(v);
+    ROL::SharedPointer<Tpetra::MultiVector<> >       Hvf = getField(Hv);
+    ROL::SharedPointer<const Tpetra::MultiVector<> >  vf = getConstField(v);
 
     size_t numRowEntries(0);
     Real massVal(0), stiffVal(0);
@@ -283,7 +283,7 @@ public:
         }
       }
       M_ = Tpetra::MatrixMatrix::add(massVal, false, *Klocal_, stiffVal, false, *Mlocal_);
-      solver_ = Teuchos::rcp(new Solver<Real>(parlist_));
+      solver_ = ROL::makeShared<Solver<Real>>(parlist_);
       solver_->setA(M_);
       solver_->solve(Hvf->subViewNonConst(row()),vf->subView(row()),transpose_);
       //solver_->solve(Hvf->getVectorNonConst(r),vf->getVector(r),transpose_);
@@ -292,25 +292,25 @@ public:
 
 private: // Vector accessor functions
 
-  Teuchos::RCP<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(x).getVector();
+  ROL::SharedPointer<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
+    return dynamic_cast<const ROL::TpetraMultiVector<Real>&>(x).getVector();
   }
 
-  Teuchos::RCP<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(x).getVector();
+  ROL::SharedPointer<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
+    return dynamic_cast<ROL::TpetraMultiVector<Real>&>(x).getVector();
   }
 };
 
 template <class Real>
 class FractionalControlOperator : public ROL::LinearOperator<Real> {
 private:
-  const Teuchos::RCP<Tpetra::CrsMatrix<> > Blocal_;
+  const ROL::SharedPointer<Tpetra::CrsMatrix<> > Blocal_;
   const int numCylinder_;
 
   bool transpose_;
 
 public:
-  FractionalControlOperator(const Teuchos::RCP<Tpetra::CrsMatrix<> > &Blocal,
+  FractionalControlOperator(const ROL::SharedPointer<Tpetra::CrsMatrix<> > &Blocal,
                             const int numCylinder)
     : Blocal_(Blocal), numCylinder_(numCylinder), transpose_(false) {}
 
@@ -319,8 +319,8 @@ public:
   }
 
   void apply( ROL::Vector<Real> &Hv, const ROL::Vector<Real> &v, Real &tol ) const {
-    Teuchos::RCP<Tpetra::MultiVector<> >       Hvf = getField(Hv);
-    Teuchos::RCP<const Tpetra::MultiVector<> >  vf = getConstField(v);
+    ROL::SharedPointer<Tpetra::MultiVector<> >       Hvf = getField(Hv);
+    ROL::SharedPointer<const Tpetra::MultiVector<> >  vf = getConstField(v);
 
     Teuchos::Array<size_t> col(1,0);
     if ( !transpose_ ) {
@@ -336,12 +336,12 @@ public:
 
 private: // Vector accessor functions
 
-  Teuchos::RCP<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<const ROL::TpetraMultiVector<Real> >(x).getVector();
+  ROL::SharedPointer<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
+    return dynamic_cast<const ROL::TpetraMultiVector<Real>&>(x).getVector();
   }
 
-  Teuchos::RCP<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
-    return Teuchos::dyn_cast<ROL::TpetraMultiVector<Real> >(x).getVector();
+  ROL::SharedPointer<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
+    return dynamic_cast<ROL::TpetraMultiVector<Real>&>(x).getVector();
   }
 };
 

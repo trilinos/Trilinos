@@ -96,15 +96,15 @@ class Solver {
 private:
 
   // Linear solvers and preconditioners for Jacobian and adjoint Jacobian
-  Teuchos::RCP<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_;
-  Teuchos::RCP<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_;
-  Teuchos::RCP<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_trans_;
-  Teuchos::RCP<Ifpack2::Preconditioner<Real,LO,GO,NO> > ifpack2Preconditioner_;
-  Teuchos::RCP<Ifpack2::Preconditioner<Real,LO,GO,NO> > ifpack2Preconditioner_trans_;
-  Teuchos::RCP<Belos::BlockGmresSolMgr<Real,MV,OP> > solverBelos_;
-  Teuchos::RCP<Belos::BlockGmresSolMgr<Real,MV,OP> > solverBelos_trans_;
-  Teuchos::RCP<Belos::LinearProblem<Real,MV,OP> > problemBelos_;
-  Teuchos::RCP<Belos::LinearProblem<Real,MV,OP> > problemBelos_trans_;
+  ROL::SharedPointer<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver_;
+  ROL::SharedPointer<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_;
+  ROL::SharedPointer<MueLu::TpetraOperator<Real,LO,GO,NO> > mueLuPreconditioner_trans_;
+  ROL::SharedPointer<Ifpack2::Preconditioner<Real,LO,GO,NO> > ifpack2Preconditioner_;
+  ROL::SharedPointer<Ifpack2::Preconditioner<Real,LO,GO,NO> > ifpack2Preconditioner_trans_;
+  ROL::SharedPointer<Belos::BlockGmresSolMgr<Real,MV,OP> > solverBelos_;
+  ROL::SharedPointer<Belos::BlockGmresSolMgr<Real,MV,OP> > solverBelos_trans_;
+  ROL::SharedPointer<Belos::LinearProblem<Real,MV,OP> > problemBelos_;
+  ROL::SharedPointer<Belos::LinearProblem<Real,MV,OP> > problemBelos_trans_;
 
   // Linear solver options.
   bool useDirectSolver_;
@@ -112,11 +112,11 @@ private:
   std::string preconditioner_;
 
   // Matrix transpose.
-  Teuchos::RCP<Tpetra::CrsMatrix<> > A_trans_;
+  ROL::SharedPointer<Tpetra::CrsMatrix<> > A_trans_;
 
   // Parameter list.
   Teuchos::ParameterList parlist_;
-  Teuchos::RCP<Teuchos::ParameterList> parlistAmesos2_;
+  ROL::SharedPointer<Teuchos::ParameterList> parlistAmesos2_;
 
   // Construct solvers on first solve.
   bool firstSolve_;
@@ -128,14 +128,14 @@ public:
   Solver(Teuchos::ParameterList & parlist) : parlist_(parlist), firstSolve_(true) {
     useDirectSolver_ = parlist.get("Use Direct Solver", true);
     directSolver_ = parlist.sublist("Direct").get("Solver Type", "KLU2");
-    parlistAmesos2_ = Teuchos::rcp(new Teuchos::ParameterList("Amesos2"));
+    parlistAmesos2_ = ROL::makeShared<Teuchos::ParameterList>("Amesos2");
     preconditioner_ = parlist.get("Preconditioner", "Ifpack2");
   }
 
-  void setA(Teuchos::RCP<Tpetra::CrsMatrix<> > &A);
+  void setA(ROL::SharedPointer<Tpetra::CrsMatrix<> > &A);
 
-  void solve(const Teuchos::RCP<Tpetra::MultiVector<> > &x,
-             const Teuchos::RCP<const Tpetra::MultiVector<> > &b,
+  void solve(const ROL::SharedPointer<Tpetra::MultiVector<> > &x,
+             const ROL::SharedPointer<const Tpetra::MultiVector<> > &b,
              const bool transpose = false);
 
 };

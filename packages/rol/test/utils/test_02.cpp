@@ -60,7 +60,7 @@ int main(int argc, char *argv[] ) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
-  using Teuchos::RCP; using Teuchos::rcp;
+   
   using namespace ROL;
 
   typedef std::vector<RealT> vector;
@@ -69,12 +69,12 @@ int main(int argc, char *argv[] ) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
@@ -87,16 +87,16 @@ int main(int argc, char *argv[] ) {
 
     int dim = 10;
    
-    RCP<vector> x_rcp = rcp( new vector( dim, 0.0 ) );
-    RCP<vector> k_rcp = rcp( new vector( dim, 0.0 ) );
+    ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>( dim, 0.0 );
+    ROL::SharedPointer<vector> k_ptr = ROL::makeShared<vector>( dim, 0.0 );
 
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i]   = 2;
-      (*k_rcp)[i]   = i+1.0;
+      (*x_ptr)[i]   = 2;
+      (*k_ptr)[i]   = i+1.0;
     }
 
-    RCP<V> k = rcp(new SV(k_rcp) );
-    SV x(x_rcp);
+    ROL::SharedPointer<V> k = ROL::makeShared<SV>(k_ptr);
+    SV x(x_ptr);
 
     ZOO::Objective_Zakharov<RealT> obj(k);
 
@@ -106,11 +106,11 @@ int main(int argc, char *argv[] ) {
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Tolerance",1.e-10);
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Iteration Limit",1000);
 
-    RCP<ScalarMinimization<RealT> > sm = rcp( new BisectionScalarMinimization<RealT>(parlist) );
-    RCP<LineSearch<RealT> > ls = rcp( new ScalarMinimizationLineSearch<RealT>(parlist, sm) );
-    RCP<Step<RealT> > step = rcp( new LineSearchStep<RealT>( parlist, ls ) );
+    ROL::SharedPointer<ScalarMinimization<RealT> > sm = ROL::makeShared<BisectionScalarMinimization<RealT>>(parlist);
+    ROL::SharedPointer<LineSearch<RealT> > ls = ROL::makeShared<ScalarMinimizationLineSearch<RealT>>(parlist, sm);
+    ROL::SharedPointer<Step<RealT> > step = ROL::makeShared<LineSearchStep<RealT>>( parlist, ls );
    
-    RCP<StatusTest<RealT> > status = rcp( new StatusTest<RealT>(parlist) );
+    ROL::SharedPointer<StatusTest<RealT> > status = ROL::makeShared<StatusTest<RealT>>(parlist);
 
     Algorithm<RealT> algo( step, status, false );
  

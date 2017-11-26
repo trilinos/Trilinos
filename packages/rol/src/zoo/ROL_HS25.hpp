@@ -84,8 +84,8 @@ public:
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(x).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ex
+      = dynamic_cast<const PrimalScaledStdVector<Real>&>(x).getVector();
 
     Real val(0), f(0), u(0);
     Real x1 = (*ex)[0], x2 = (*ex)[1], x3 = (*ex)[2];
@@ -99,10 +99,10 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > eg
-      = Teuchos::dyn_cast<DualScaledStdVector<Real> >(g).getVector();
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(x).getVector();
+    ROL::SharedPointer<std::vector<Real> > eg
+      = dynamic_cast<DualScaledStdVector<Real>&>(g).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ex
+      = dynamic_cast<const PrimalScaledStdVector<Real>&>(x).getVector();
     g.zero();
 
     Real f(0), df1(0), df2(0), df3(0);
@@ -128,12 +128,12 @@ public:
   }
 #if USE_HESSVEC
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    Teuchos::RCP<std::vector<Real> > ehv
-      = Teuchos::dyn_cast<DualScaledStdVector<Real> >(hv).getVector();
-    Teuchos::RCP<const std::vector<Real> > ev
-      = Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(v).getVector();
-    Teuchos::RCP<const std::vector<Real> > ex
-      = Teuchos::dyn_cast<const PrimalScaledStdVector<Real> >(x).getVector();
+    ROL::SharedPointer<std::vector<Real> > ehv
+      = dynamic_cast<DualScaledStdVector<Real>&>(hv).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ev
+      = dynamic_cast<const PrimalScaledStdVector<Real>&>(v).getVector();
+    ROL::SharedPointer<const std::vector<Real> > ex
+      = dynamic_cast<const PrimalScaledStdVector<Real>&>(x).getVector();
     hv.zero();
 
     Real f(0);
@@ -186,48 +186,48 @@ public:
 };
 
 template<class Real>
-void getHS25( Teuchos::RCP<Objective<Real> >       &obj,
-              Teuchos::RCP<BoundConstraint<Real> > &con, 
-              Teuchos::RCP<Vector<Real> >          &x0,
-              Teuchos::RCP<Vector<Real> >          &x ) {
+void getHS25( ROL::SharedPointer<Objective<Real> >       &obj,
+              ROL::SharedPointer<BoundConstraint<Real> > &con, 
+              ROL::SharedPointer<Vector<Real> >          &x0,
+              ROL::SharedPointer<Vector<Real> >          &x ) {
   // Problem dimension 
   int n = 3;
 
   // Set up vector scaling
-  Teuchos::RCP<std::vector<Real> > scale = Teuchos::rcp(new std::vector<Real>(n,0));
+  ROL::SharedPointer<std::vector<Real> > scale = ROL::makeShared<std::vector<Real>>(n,0);
   (*scale)[0] = static_cast<Real>(1.e-4);
   (*scale)[1] = static_cast<Real>(1.e-2);
   (*scale)[2] = static_cast<Real>(1);
 
   // Get Initial Guess
-  Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0));
+  ROL::SharedPointer<std::vector<Real> > x0p = ROL::makeShared<std::vector<Real>>(n,0);
   (*x0p)[0] = static_cast<Real>(100);
   (*x0p)[1] = static_cast<Real>(12.5);
   (*x0p)[2] = static_cast<Real>(3);
-  x0 = Teuchos::rcp(new PrimalScaledStdVector<Real>(x0p,scale));
+  x0 = ROL::makeShared<PrimalScaledStdVector<Real>>(x0p,scale);
 
   // Get Solution
-  Teuchos::RCP<std::vector<Real> > xp = Teuchos::rcp(new std::vector<Real>(n,0));
+  ROL::SharedPointer<std::vector<Real> > xp = ROL::makeShared<std::vector<Real>>(n,0);
   (*xp)[0] = static_cast<Real>(50);
   (*xp)[1] = static_cast<Real>(25);
   (*xp)[2] = static_cast<Real>(1.5);
-  x = Teuchos::rcp(new PrimalScaledStdVector<Real>(xp,scale));
+  x = ROL::makeShared<PrimalScaledStdVector<Real>>(xp,scale);
 
   // Instantiate Objective Function
-  obj = Teuchos::rcp(new Objective_HS25<Real>);
+  obj = ROL::makeShared<Objective_HS25<Real>>();
 
   // Instantiate BoundConstraint
-  Teuchos::RCP<std::vector<Real> > lp = Teuchos::rcp(new std::vector<Real>(n,0));
+  ROL::SharedPointer<std::vector<Real> > lp = ROL::makeShared<std::vector<Real>>(n,0);
   (*lp)[0] = static_cast<Real>(0.1);
   (*lp)[1] = static_cast<Real>(0);
   (*lp)[2] = static_cast<Real>(0);
-  Teuchos::RCP<Vector<Real> > l = Teuchos::rcp(new StdVector<Real>(lp));
-  Teuchos::RCP<std::vector<Real> > up = Teuchos::rcp(new std::vector<Real>(n,0));
+  ROL::SharedPointer<Vector<Real> > l = ROL::makeShared<StdVector<Real>>(lp);
+  ROL::SharedPointer<std::vector<Real> > up = ROL::makeShared<std::vector<Real>>(n,0);
   (*up)[0] = static_cast<Real>(100);
   (*up)[1] = static_cast<Real>(25.6);
   (*up)[2] = static_cast<Real>(5);
-  Teuchos::RCP<Vector<Real> > u = Teuchos::rcp(new StdVector<Real>(up));
-  con = Teuchos::rcp(new Bounds<Real>(l,u));
+  ROL::SharedPointer<Vector<Real> > u = ROL::makeShared<StdVector<Real>>(up);
+  con = ROL::makeShared<Bounds<Real>>(l,u);
 }
 
 } // End ZOO Namespace

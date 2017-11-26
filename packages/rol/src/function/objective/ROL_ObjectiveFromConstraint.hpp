@@ -63,14 +63,14 @@ class ObjectiveFromConstraint : public Objective<Real> {
 
 private:
 
-  Teuchos::RCP<Constraint<Real> > con_;
-  Teuchos::RCP<Vector<Real> >     l_;      // Lagrange multiplier 
-  Teuchos::RCP<Vector<Real> >     c_;      // Constraint vector
+  ROL::SharedPointer<Constraint<Real> > con_;
+  ROL::SharedPointer<Vector<Real> >     l_;      // Lagrange multiplier 
+  ROL::SharedPointer<Vector<Real> >     c_;      // Constraint vector
 
 
 public:
 
-  ObjectiveFromConstraint( const Teuchos::RCP<Constraint<Real> > &con, 
+  ObjectiveFromConstraint( const ROL::SharedPointer<Constraint<Real> > &con, 
                            const Vector<Real> &l ) :
     con_(con), l_(l.clone()), c_(l.dual().clone()) {
     l_->set(l);
