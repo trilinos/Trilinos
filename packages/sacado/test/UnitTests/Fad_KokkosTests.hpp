@@ -814,7 +814,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Check dimension scalar works
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v1), 0, out, success);
-TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, DynRankAssignStatic, FadType, Layout, Device )
+{
+  typedef Kokkos::View<FadType**,Layout,Device> StaticViewType;
+  typedef Kokkos::DynRankView<FadType,Layout,Device> DynamicViewType;
+  typedef typename StaticViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create views
+  StaticViewType v1("view", num_rows, num_cols, fad_size+1);
+  DynamicViewType v2 = v1;
+
+  // Check dimensions are correct
+  TEUCHOS_TEST_EQUALITY(v2.dimension_0(), num_rows, out, success);
+  TEUCHOS_TEST_EQUALITY(v2.dimension_1(), num_cols, out, success);
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
@@ -1005,6 +1026,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, DynRankDimensionScalar, FadType, Layout, Device ) {}
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, DynRankAssignStatic, FadType, Layout, Device ) {}
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, DynRankMultiply, FadType, Layout, Device ) {}
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
@@ -1495,6 +1518,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Roger, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignDifferentStrides, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankDimensionScalar, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankAssignStatic, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankMultiply, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, SubdynrankviewCol, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, SubdynrankviewRow, F, L, D ) \
