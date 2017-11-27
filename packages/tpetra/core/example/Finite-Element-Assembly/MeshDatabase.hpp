@@ -38,8 +38,6 @@
 //
 // ************************************************************************
 // @HEADER
-
-
 #ifndef MESHDATABASE_HPP
 #define MESHDATABASE_HPP
 #include <iostream>
