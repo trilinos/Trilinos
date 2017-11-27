@@ -116,6 +116,9 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     ${DIR}/Thyra_MueLuPreconditionerFactory_decl.hpp
     ${DIR}/Thyra_MueLuPreconditionerFactory_def.hpp
     ${DIR}/Thyra_MueLuPreconditionerFactory.hpp
+    ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory_decl.hpp
+    ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory_def.hpp
+    ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory.hpp
     ${DIR}/Thyra_XpetraLinearOp_decl.hpp
     ${DIR}/Thyra_XpetraLinearOp_def.hpp
     ${DIR}/Thyra_XpetraLinearOp.hpp
@@ -180,6 +183,11 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     APPEND_SET(MUELUADAPTERS_ETI_CLASSES
       MueLu::RefMaxwell
       )
+    IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
+      APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
+        Thyra::MueLuRefMaxwellPreconditionerFactory
+      )
+    ENDIF()
   ENDIF()
   IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
