@@ -197,6 +197,7 @@ for ($i=0; $i<$numLines; $i++)
 my $theDate = $ARGV[0];
 my $cdashDate = $ARGV[1];
 my $cdashMachine = $ARGV[2];
+my $capMachine = ucfirst($cdashMachine);
 my $senderName = $ARGV[3];
 $theDate =~ s/_/ /g;
 
@@ -330,7 +331,7 @@ href="http://testing.sandia.gov/cdash/index.php?project=Trilinos&subproject=MueL
 <br>
 
 
-<h2>Geminga Test Summary</h2>
+<h2>$capMachine Test Summary</h2>
 <h2>$gitFailure</h2>
 EOF
 
