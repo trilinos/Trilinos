@@ -818,7 +818,79 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
-  Kokkos_View_Fad, DynRankAssignStatic, FadType, Layout, Device )
+  Kokkos_View_Fad, DynRankAssignStatic0, FadType, Layout, Device )
+{
+  typedef Kokkos::View<FadType,Layout,Device> StaticViewType;
+  typedef Kokkos::DynRankView<FadType,Layout,Device> DynamicViewType;
+  typedef typename StaticViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill views
+  StaticViewType v1("view", fad_size+1);
+  auto h_v1 = Kokkos::create_mirror_view(v1);
+  v1() = generate_fad<FadType>(num_rows, num_cols, fad_size, size_type(0), size_type(0));
+
+  // Assign static to dynamic
+  DynamicViewType v2 = v1;
+
+  // Copy back
+  auto h_v2 = Kokkos::create_mirror_view(v2);
+  Kokkos::deep_copy(h_v2, v2);
+
+  // Check dimensions are correct
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride_0(), v1.stride_0(), out, success);
+
+  // Check values
+  FadType f =
+    generate_fad<FadType>(num_rows, num_cols, fad_size, size_type(0), size_type(0));
+  success = success && checkFads(f, h_v2(), out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, DynRankAssignStatic1, FadType, Layout, Device )
+{
+  typedef Kokkos::View<FadType*,Layout,Device> StaticViewType;
+  typedef Kokkos::DynRankView<FadType,Layout,Device> DynamicViewType;
+  typedef typename StaticViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = global_num_cols;
+  const size_type fad_size = global_fad_size;
+
+  // Create and fill views
+  StaticViewType v1("view", num_rows, fad_size+1);
+  auto h_v1 = Kokkos::create_mirror_view(v1);
+  for (size_type i=0; i<num_rows; ++i)
+    v1(i) =
+      generate_fad<FadType>(num_rows, num_cols, fad_size, i, size_type(0));
+
+  // Assign static to dynamic
+  DynamicViewType v2 = v1;
+
+  // Copy back
+  auto h_v2 = Kokkos::create_mirror_view(v2);
+  Kokkos::deep_copy(h_v2, v2);
+
+  // Check dimensions are correct
+  TEUCHOS_TEST_EQUALITY(v2.dimension_0(), num_rows, out, success);
+  TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride_0(), v1.stride_0(), out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride_1(), v1.stride_1(), out, success);
+
+  // Check values
+  for (size_type i=0; i<num_rows; ++i) {
+    FadType f =
+      generate_fad<FadType>(num_rows, num_cols, fad_size, i, size_type(0));
+    success = success && checkFads(f, h_v2(i), out);
+  }
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, DynRankAssignStatic2, FadType, Layout, Device )
 {
   typedef Kokkos::View<FadType**,Layout,Device> StaticViewType;
   typedef Kokkos::DynRankView<FadType,Layout,Device> DynamicViewType;
@@ -828,14 +900,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   const size_type num_cols = global_num_cols;
   const size_type fad_size = global_fad_size;
 
-  // Create views
+  // Create and fill views
   StaticViewType v1("view", num_rows, num_cols, fad_size+1);
+  auto h_v1 = Kokkos::create_mirror_view(v1);
+  for (size_type i=0; i<num_rows; ++i)
+    for (size_type j=0; j<num_cols; ++j)
+      v1(i,j) = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+
+  // Assign static to dynamic
   DynamicViewType v2 = v1;
+
+  // Copy back
+  auto h_v2 = Kokkos::create_mirror_view(v2);
+  Kokkos::deep_copy(h_v2, v2);
 
   // Check dimensions are correct
   TEUCHOS_TEST_EQUALITY(v2.dimension_0(), num_rows, out, success);
   TEUCHOS_TEST_EQUALITY(v2.dimension_1(), num_cols, out, success);
   TEUCHOS_TEST_EQUALITY(Kokkos::dimension_scalar(v2), fad_size+1, out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride_0(), v1.stride_0(), out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride_1(), v1.stride_1(), out, success);
+  TEUCHOS_TEST_EQUALITY(v2.stride_2(), v1.stride_2(), out, success);
+
+  // Check values
+  for (size_type i=0; i<num_rows; ++i) {
+    for (size_type j=0; j<num_cols; ++j) {
+      FadType f = generate_fad<FadType>(num_rows, num_cols, fad_size, i, j);
+      success = success && checkFads(f, h_v2(i,j), out);
+    }
+  }
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
@@ -1027,7 +1120,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, DynRankDimensionScalar, FadType, Layout, Device ) {}
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
-  Kokkos_View_Fad, DynRankAssignStatic, FadType, Layout, Device ) {}
+  Kokkos_View_Fad, DynRankAssignStatic0, FadType, Layout, Device ) {}
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, DynRankAssignStatic1, FadType, Layout, Device ) {}
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
+  Kokkos_View_Fad, DynRankAssignStatic2, FadType, Layout, Device ) {}
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, DynRankMultiply, FadType, Layout, Device ) {}
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
@@ -1518,7 +1615,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, Roger, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, AssignDifferentStrides, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankDimensionScalar, F, L, D ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankAssignStatic, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankAssignStatic0, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankAssignStatic1, F, L, D ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankAssignStatic2, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, DynRankMultiply, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, SubdynrankviewCol, F, L, D ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Kokkos_View_Fad, SubdynrankviewRow, F, L, D ) \

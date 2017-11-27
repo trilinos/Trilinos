@@ -739,26 +739,19 @@ public:
       typedef typename DstType::offset_type dst_offset_type;
       typedef typename DstType::array_offset_type dst_array_offset_type;
       if (is_left) {
-        // Can't do this because can't assign dimension structs with different
-        // numbers of dimensions:
-        // dst.m_map.m_array_offset.m_dim = src.m_map.m_array_offset.m_dim;
         dst.m_map.m_array_offset =
           dst_array_offset_type(std::integral_constant<unsigned,0>(),
                                 src.m_map.m_array_offset.layout() );
       }
       else {
-        AssignDim<SrcTraits::rank,0>::eval(dst.m_map.m_array_offset,
-                                           src.m_map.m_array_offset);
+        dst.m_map.m_array_offset =
+          dst_array_offset_type(std::integral_constant<unsigned,0>(),
+                                permute_fad_layout(src.m_map.m_array_offset.layout(),
+                                                   SrcTraits::rank) );
       }
-      dst.m_map.m_array_offset.m_stride = src.m_map.m_array_offset.m_stride ;
-
-      // Can't do this because can't assign dimension structs with different
-      // numbers of dimensions:
-      // dst.m_map.m_offset.m_dim = src.m_map.m_offset.m_dim;
       dst.m_map.m_offset =
         dst_offset_type(std::integral_constant<unsigned,0>(),
                         src.m_map.m_offset.layout() );
-      dst.m_map.m_offset.m_stride = src.m_map.m_offset.m_stride ;
 
       dst.m_map.m_handle = src.m_map.m_handle ;
       dst.m_rank = src.Rank ;
