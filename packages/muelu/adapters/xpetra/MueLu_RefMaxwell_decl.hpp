@@ -206,6 +206,33 @@ namespace MueLu {
       initialize(D0_Matrix,Teuchos::null,M1_Matrix,Nullspace,Coords,List);
     }
 
+    /** Constructor with parameter list
+     *
+     * \param[in] SM_Matrix Jacobian
+     * \param[in] precList Parameter list
+     * \param[in] ComputePrec If true, compute the preconditioner immediately
+     */
+    RefMaxwell(const Teuchos::RCP<Matrix> & SM_Matrix,
+               Teuchos::ParameterList& List,
+               bool ComputePrec = true)
+    {
+
+      RCP<MultiVector> Nullspace = List.get<RCP<MultiVector> >("Nullspace", Teuchos::null);
+      RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > Coords = List.get<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >("Coordinates", Teuchos::null);
+      RCP<Matrix> D0_Matrix = List.get<RCP<Matrix> >("D0");
+      RCP<Matrix> M1_Matrix = List.get<RCP<Matrix> >("M1");
+      RCP<Matrix> M0inv_Matrix = List.get<RCP<Matrix> >("M0inv", Teuchos::null);
+
+      initialize(D0_Matrix,M0inv_Matrix,M1_Matrix,Nullspace,Coords,List);
+
+      if (SM_Matrix != Teuchos::null)
+        resetMatrix(SM_Matrix);
+
+      // compute preconditioner (optionally)
+      if(ComputePrec)
+        compute();
+    }
+
     //! Destructor.
     virtual ~RefMaxwell() {}
 
