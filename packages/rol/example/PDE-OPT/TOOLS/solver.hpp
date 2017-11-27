@@ -62,6 +62,8 @@
 #include "TpetraExt_MatrixMatrix.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
+#include "ROL_SharedPointer.hpp"
+
 // Forward declarations.
 
 namespace Amesos2 {

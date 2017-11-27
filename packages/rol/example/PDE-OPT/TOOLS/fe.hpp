@@ -49,6 +49,8 @@
 #ifndef PDEOPT_FE_HPP
 #define PDEOPT_FE_HPP
 
+#include "ROL_SharedPointer.hpp"
+
 #include "Teuchos_ParameterList.hpp"
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_Basis.hpp"
