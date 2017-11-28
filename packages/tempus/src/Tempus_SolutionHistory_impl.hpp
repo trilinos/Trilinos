@@ -77,8 +77,8 @@ void SolutionHistory<Scalar>::addState(
   const Teuchos::RCP<SolutionState<Scalar> >& state_)
 {
   // Check that we're not going to exceed our storage limit:
-  if (Teuchos::as<int>(history_->size()+1) > storageLimit) {
-    switch (storageType) {
+  if (Teuchos::as<int>(history_->size()+1) > storageLimit_) {
+    switch (storageType_) {
     case STORAGE_TYPE_INVALID: {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Error - Storage type is STORAGE_TYPE_INVALID.\n");
@@ -218,7 +218,7 @@ void SolutionHistory<Scalar>::initWorkingState()
     if (getWorkingState() != Teuchos::null) return;
 
     Teuchos::RCP<SolutionState<Scalar> > newState;
-    if (getNumStates() < storageLimit) {
+    if (getNumStates() < storageLimit_) {
       // Create newState which is duplicate of currentState_
       newState = getCurrentState()->clone();
     } else {
@@ -263,11 +263,11 @@ void SolutionHistory<Scalar>::promoteWorkingState()
 template<class Scalar>
 void SolutionHistory<Scalar>::setStorageLimit(int storage_limit)
 {
-  storageLimit = std::max(1,storage_limit);
+  storageLimit_ = std::max(1,storage_limit);
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (Teuchos::as<int>(history_->size()) > storageLimit), std::logic_error,
-    "Error - requested storage limit = " << storageLimit
+    (Teuchos::as<int>(history_->size()) > storageLimit_), std::logic_error,
+    "Error - requested storage limit = " << storageLimit_
     << " is smaller than the current number of states stored = "
     << history_->size() << "!\n");
 }
@@ -290,8 +290,8 @@ void SolutionHistory<Scalar>::describe(
       (Teuchos::as<int>(verbLevel)>=Teuchos::as<int>(Teuchos::VERB_LOW)    )  ){
     out << description() << "::describe" << std::endl;
     //out << "interpolator     = " << interpolator->description() << std::endl;
-    out << "storageLimit     = " << storageLimit << std::endl;
-    out << "storageType      = " << storageType << std::endl;
+    out << "storageLimit     = " << storageLimit_ << std::endl;
+    out << "storageType      = " << storageType_ << std::endl;
     out << "number of states = " << history_->size() << std::endl;
     out << "time range       = (" << history_->front()->getTime() << ", "
                                   << history_->back()->getTime() << ")"
@@ -318,15 +318,15 @@ void SolutionHistory<Scalar>::setParameterList(
   //interpolator  = Teuchos::null;
   //setInterpolator(interpolator);
 
-  storageType = StorageTypeValidator->getIntegralValue(
+  storageType_ = StorageTypeValidator->getIntegralValue(
     *shPL_, Storage_name, Storage_default);
 
   int storage_limit = shPL_->get(StorageLimit_name, StorageLimit_default);
 
-  switch (storageType) {
+  switch (storageType_) {
   case STORAGE_TYPE_INVALID:
   case STORAGE_TYPE_KEEP_NEWEST: {
-    storageType = STORAGE_TYPE_KEEP_NEWEST;
+    storageType_ = STORAGE_TYPE_KEEP_NEWEST;
     if (storage_limit != 1) {
       Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
       Teuchos::OSTab ostab(out,1,"SolutionHistory::setParameterList");

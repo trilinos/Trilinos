@@ -141,9 +141,9 @@ public:
     void setStorageLimit(int storage_limit);
 
     /// Get the maximum storage of this history
-    int getStorageLimit() const {return storageLimit;}
+    int getStorageLimit() const {return storageLimit_;}
 
-    StorageType getStorageType() {return storageType;}
+    StorageType getStorageType() {return storageType_;}
 
     /// Return the current minimum time of the SolutionStates
     Scalar minTime() const {return (history_->front())->getTime();}
@@ -182,8 +182,8 @@ protected:
   Teuchos::RCP<Teuchos::ParameterList>      shPL_;
   Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history_;
   //Teuchos::RCP<InterpolatorBase<Scalar> >   interpolator;
-  StorageType                               storageType;
-  int                                       storageLimit;
+  StorageType                               storageType_;
+  int                                       storageLimit_;
 
   Teuchos::RCP<SolutionState<Scalar> > currentState_; ///< The last accepted state
   Teuchos::RCP<SolutionState<Scalar> > workingState_; ///< The state being worked on
