@@ -153,7 +153,7 @@ namespace Xpetra {
         return rcp( new EpetraCrsGraphT<long long, Node>(map, NumVectors, pftype) );
 
       XPETRA_FACTORY_END;
-      return null;
+      TEUCHOS_UNREACHABLE_RETURN(null);
     }
 
   };

@@ -410,7 +410,9 @@ namespace MueLu {
 
       default:
         throw Exceptions::RuntimeError("Only Epetra and Tpetra matrices can be scaled.");
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
       }
     }
 
@@ -489,16 +491,16 @@ namespace MueLu {
       } catch(...) {
         throw Exceptions::RuntimeError("Only Tpetra::CrsMatrix types can be scaled (Err.1)");
       }
-  #else
+#else
       throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been compiled with support for LO=GO=int.");
-  #endif
-  #else
+#endif
+#else
       throw Exceptions::RuntimeError("Matrix scaling is not possible because Tpetra has not been enabled.");
-  #endif
+#endif
     }
 
     static void MyOldScaleMatrix_Epetra(Matrix& Op, const Teuchos::ArrayRCP<Scalar>& scalingVector, bool doFillComplete, bool doOptimizeStorage) {
-  #ifdef HAVE_MUELU_EPETRA
+#ifdef HAVE_MUELU_EPETRA
       try {
         //const Epetra_CrsMatrix& epOp = Utilities<double,int,int>::Op2NonConstEpetraCrs(Op);
         const Epetra_CrsMatrix& epOp = Op2NonConstEpetraCrs(Op);
@@ -517,9 +519,9 @@ namespace MueLu {
       } catch (...){
         throw Exceptions::RuntimeError("Only Epetra_CrsMatrix types can be scaled");
       }
-  #else
+#else
       throw Exceptions::RuntimeError("Matrix scaling is not possible because Epetra has not been enabled.");
-  #endif // HAVE_MUELU_EPETRA
+#endif // HAVE_MUELU_EPETRA
     }
 
     /*! @brief Transpose a Xpetra::Matrix
@@ -531,8 +533,8 @@ namespace MueLu {
       switch (Op.getRowMap()->lib()) {
       case Xpetra::UseTpetra:
       {
-  #ifdef HAVE_MUELU_TPETRA
-  #ifdef HAVE_MUELU_TPETRA_INST_INT_INT
+#ifdef HAVE_MUELU_TPETRA
+#ifdef HAVE_MUELU_TPETRA_INST_INT_INT
         try {
           const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& tpetraOp = Utilities::Op2TpetraCrs(Op);
 
@@ -550,17 +552,19 @@ namespace MueLu {
           std::cout << "threw exception '" << e.what() << "'" << std::endl;
           throw Exceptions::RuntimeError("Utilities::Transpose failed, perhaps because matrix is not a Crs matrix");
         }
-  #else
+#else
         throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled with LO=GO=int. Add TPETRA_INST_INT_INT:BOOL=ON to your configuration!");
-  #endif
-  #else
+#endif
+#else
         throw Exceptions::RuntimeError("Utilities::Transpose: Tpetra is not compiled!");
-  #endif
+#endif
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
       }
       case Xpetra::UseEpetra:
       {
-  #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
+#if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
         Teuchos::TimeMonitor tm(*Teuchos::TimeMonitor::getNewTimer("ZZ Entire Transpose"));
         // Epetra case
         Epetra_CrsMatrix& epetraOp = Utilities::Op2NonConstEpetraCrs(Op);
@@ -575,17 +579,23 @@ namespace MueLu {
         AAAA->fillComplete(Op.getRangeMap(), Op.getDomainMap());
 
         return AAAA;
-  #else
+#else
         throw Exceptions::RuntimeError("Epetra (Err. 2)");
-  #endif
+#endif
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
       }
       default:
         throw Exceptions::RuntimeError("Only Epetra and Tpetra matrices can be transposed.");
+#ifndef __NVCC__ //prevent nvcc warning
         break;
+#endif
       }
 
+#ifndef __NVCC__ //prevent nvcc warning
       return Teuchos::null;
+#endif
     }
 
     /*! @brief Extract coordinates from parameter list and return them in a Xpetra::MultiVector
@@ -597,17 +607,17 @@ namespace MueLu {
       if(paramList.isParameter ("Coordinates") == false)
         return coordinates;
 
-  #if defined(HAVE_MUELU_TPETRA)
-  #if ( defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)) || \
+#if defined(HAVE_MUELU_TPETRA)
+#if ( defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_TPETRA_INST_INT_INT)) || \
       (!defined(EPETRA_HAVE_OMP) && defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_TPETRA_INST_INT_INT))
 
       // define Tpetra::MultiVector type with Scalar=float only if
       // * ETI is turned off, since then the compiler will instantiate it automatically OR
       // * Tpetra is instantiated on Scalar=float
-  #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
+#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
       typedef Tpetra::MultiVector<float, LO,GO,NO> tfMV;
       RCP<tfMV> floatCoords = Teuchos::null;
-  #endif
+#endif
 
       // define Tpetra::MultiVector type with Scalar=double only if
       // * ETI is turned off, since then the compiler will instantiate it automatically OR
@@ -619,7 +629,7 @@ namespace MueLu {
         doubleCoords = paramList.get<RCP<tdMV> >("Coordinates");
         paramList.remove("Coordinates");
       }
-  #if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
+#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) || defined(HAVE_TPETRA_INST_FLOAT)
       else if (paramList.isType<RCP<tfMV> >("Coordinates")) {
         // check if coordinates are stored as a float vector
         floatCoords = paramList.get<RCP<tfMV> >("Coordinates");
@@ -627,16 +637,16 @@ namespace MueLu {
         doubleCoords = rcp(new tdMV(floatCoords->getMap(), floatCoords->getNumVectors()));
         deep_copy(*doubleCoords, *floatCoords);
       }
-  #endif
+#endif
       // We have the coordinates in a Tpetra double vector
       if(doubleCoords != Teuchos::null) {
         coordinates = Teuchos::rcp(new Xpetra::TpetraMultiVector<SC,LO,GO,NO>(doubleCoords));
         TEUCHOS_TEST_FOR_EXCEPT(doubleCoords->getNumVectors() != coordinates->getNumVectors());
       }
-  #endif // Tpetra instantiated on GO=int and EpetraNode
-  #endif // endif HAVE_TPETRA
+#endif // Tpetra instantiated on GO=int and EpetraNode
+#endif // endif HAVE_TPETRA
 
-  #if defined(HAVE_MUELU_EPETRA)
+#if defined(HAVE_MUELU_EPETRA)
       RCP<Epetra_MultiVector> doubleEpCoords;
       if (paramList.isType<RCP<Epetra_MultiVector> >("Coordinates")) {
         doubleEpCoords = paramList.get<RCP<Epetra_MultiVector> >("Coordinates");
@@ -645,7 +655,7 @@ namespace MueLu {
         coordinates = rcp_dynamic_cast<Xpetra::MultiVector<double,LO,GO,NO> >(epCoordinates);
         TEUCHOS_TEST_FOR_EXCEPT(doubleEpCoords->NumVectors() != Teuchos::as<int>(coordinates->getNumVectors()));
       }
-  #endif
+#endif
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(coordinates));
       return coordinates;
     }
