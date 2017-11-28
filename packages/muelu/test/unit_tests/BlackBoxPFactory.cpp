@@ -89,16 +89,20 @@ namespace MueLuTests {
                               LO BlkSize, Array<GO>& gIndices, Array<GO>& gCoarseNodesPerDir,
                               Array<GO>& ghostGIDs, Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs,
                               GO& gNumCoarseNodes, Array<LO>& myOffset,
-                              Array<LO>& lCoarseNodesPerDir, Array<LO>& endRate,LO& lNumCoarseNodes,
-                              Array<bool>& ghostInterface, ArrayRCP<Array<double> > coarseNodes)
-    const{
+                              Array<LO>& lCoarseNodesPerDir, Array<LO>& glCoarseNodesPerDir,
+                              Array<LO>& endRate, LO& lNumCoarseNodes, Array<bool>& ghostInterface,
+                              ArrayRCP<Array<double> > coarseNodes, Array<int>& boundaryFlags) const
+    {
       // Call the method to be tested.
+      RCP<typename MueLu::BlackBoxPFactory<SC,LO,GO,Node>::NodesIDs> ghostedCoarseNodes
+        = rcp(new typename MueLu::BlackBoxPFactory<SC,LO,GO,Node>::NodesIDs{});
       MueLu::BlackBoxPFactory<SC,LO,GO,Node> mybbmgPFactory;
       mybbmgPFactory.GetGeometricData(coordinates, coarseRate, gNodesPerDim, lNodesPerDim, BlkSize,
                                       gIndices, myOffset, ghostInterface, endRate,
-                                      gCoarseNodesPerDir, lCoarseNodesPerDir, ghostGIDs,
-                                      coarseNodesGIDs, colGIDs, gNumCoarseNodes, lNumCoarseNodes,
-                                      coarseNodes);
+                                      gCoarseNodesPerDir, lCoarseNodesPerDir, glCoarseNodesPerDir,
+                                      ghostGIDs, coarseNodesGIDs, colGIDs, gNumCoarseNodes,
+                                      lNumCoarseNodes, coarseNodes, boundaryFlags,
+                                      ghostedCoarseNodes);
     };
 
     void TestComputeLocalEntries(const RCP<const Matrix>& Aghost, const Array<LO> coarseRate,
@@ -107,20 +111,31 @@ namespace MueLuTests {
                                  const LO numDimensions, const Array<LO> lFineNodesPerDir,
                                  const Array<GO> gFineNodesPerDir, const Array<GO> gIndices,
                                  const Array<LO> lCoarseNodesPerDir,
-                                 const Array<bool> ghostInterface) const {
+                                 const Array<bool> ghostInterface,
+                                 const Array<int> elementFlags,
+                                 const std::string stencilType, const std::string blockStrategy,
+                                 const Array<LO> elementNodesPerDir, const LO numNodesInElement,
+                                 const Array<GO> colGIDs,
+                                 Teuchos::SerialDenseMatrix<LO,SC>& Pi,
+                                 Teuchos::SerialDenseMatrix<LO,SC>& Pf,
+                                 Teuchos::SerialDenseMatrix<LO,SC>& Pe,
+                                 Array<LO>& dofType, Array<LO>& lDofInd) const {
       MueLu::BlackBoxPFactory<SC,LO,GO,NO> mybbmgPFactory;
       mybbmgPFactory.ComputeLocalEntries(Aghost, coarseRate, endRate, BlkSize, elemInds,
                                          lCoarseElementsPerDir, numDimensions,
                                          lFineNodesPerDir, gFineNodesPerDir, gIndices,
-                                         lCoarseNodesPerDir, ghostInterface);
+                                         lCoarseNodesPerDir, ghostInterface, elementFlags,
+                                         stencilType, blockStrategy, elementNodesPerDir,
+                                         numNodesInElement, colGIDs, Pi, Pf, Pe, dofType, lDofInd);
     };
 
-    void TestReorderStencil(const LO BlkSize, const Array<bool> ghostInterface, const LO ie,
-                            const LO je, const LO ke, const ArrayView<const SC> rowValues,
-                            const Array<LO> elementNodesPerDir, Array<SC>& stencil) const {
+    void TestFormatStencil(const LO BlkSize, const Array<bool> ghostInterface, const LO ie,
+                           const LO je, const LO ke, const ArrayView<const SC> rowValues,
+                           const Array<LO> elementNodesPerDir, const int collapseFlags[3],
+                           const std::string stencilType, Array<SC>& stencil) const {
       MueLu::BlackBoxPFactory<SC,LO,GO,Node> mybbmgPFactory;
-      mybbmgPFactory.ReorderStencil(BlkSize, ghostInterface, ie, je, ke, rowValues,
-                                    elementNodesPerDir, stencil);
+      mybbmgPFactory.FormatStencil(BlkSize, ghostInterface, ie, je, ke, rowValues,
+                                   elementNodesPerDir, collapseFlags, stencilType, stencil);
     };
 
     void TestGetNodeInfo(const LO ie, const LO je, const LO ke, const Array<LO> elementNodesPerDir,
@@ -134,7 +149,7 @@ namespace MueLuTests {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib,
-                      const LocalOrdinal numDimensions,
+                      const LocalOrdinal numDimensions, const std::string stencilType,
                       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
                       RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >&Coordinates,
                       RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal> >& map,
@@ -271,21 +286,37 @@ namespace MueLuTests {
       problemList.set("ny",gNodesPerDim[1]);
       problemList.set("nz",gNodesPerDim[2]);
     }
-    // problemList.set("keepBCs", true);
+    problemList.set("keepBCs", true);
 
     // create Poisson problem and matrix
-    if(numDimensions == 1) {
-      Galeri::Xpetra::Laplace1DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList,
-                                                                                       map);
-      Op = Problem.BuildMatrix();
-    } else if(numDimensions == 2) {
-      Galeri::Xpetra::Laplace2DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList,
-                                                                                       map);
-      Op = Problem.BuildMatrix();
-    } else if(numDimensions == 3) {
-      Galeri::Xpetra::Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList,
-                                                                                       map);
-      Op = Problem.BuildMatrix();
+    if(stencilType == "reduced") {
+      if(numDimensions == 1) {
+        Galeri::Xpetra::
+          Laplace1DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList, map);
+        Op = Problem.BuildMatrix();
+      } else if(numDimensions == 2) {
+        Galeri::Xpetra::
+          Laplace2DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList, map);
+        Op = Problem.BuildMatrix();
+      } else if(numDimensions == 3) {
+        Galeri::Xpetra::
+          Laplace3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList, map);
+        Op = Problem.BuildMatrix();
+      }
+    } else if(stencilType == "full") {
+      if(numDimensions == 1) {
+        Galeri::Xpetra::
+          Laplace1DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList, map);
+        Op = Problem.BuildMatrix();
+      } else if(numDimensions == 2) {
+        Galeri::Xpetra::
+          Star2DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList, map);
+        Op = Problem.BuildMatrix();
+      } else if(numDimensions == 3) {
+        Galeri::Xpetra::
+          Brick3DProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector> Problem(problemList, map);
+        Op = Problem.BuildMatrix();
+      }
     }
 
   }
@@ -322,15 +353,16 @@ namespace MueLuTests {
     // used Xpetra lib (for maps and smoothers)
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
-    LO numDimensions = 2;
+    const LO numDimensions = 2;
+    const std::string stencilType = "reduced";
 
     RCP<Matrix> Op;
     RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
     RCP<Map> map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
-    GetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim,
-                                lNodesPerDim);
+    GetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, stencilType, Op, coordinates, map,
+                                gNodesPerDim, lNodesPerDim);
     std::cout << "Generating problem data: done" << std::endl;
 
     Array<LO> coarseRate(3);
@@ -344,8 +376,9 @@ namespace MueLuTests {
 
     BlackBoxPFactoryTester<SC,LO,GO,Node> factTester;
     Array<GO> gIndices(3), gCoarseNodesPerDir(3), ghostGIDs, coarseNodesGIDs, colGIDs;
-    Array<LO> myOffset(3), lCoarseNodesPerDir(3), endRate(3);
+    Array<LO> myOffset(3), lCoarseNodesPerDir(3), glCoarseNodesPerDir(3), endRate(3);
     Array<bool> ghostInterface(6);
+    Array<int> boundaryFlags(3);
     Array<ArrayView<const double> > fineNodes(numDimensions);
     ArrayRCP<Array<double> > coarseNodes(numDimensions);
     GO gNumCoarseNodes = 0;
@@ -358,7 +391,8 @@ namespace MueLuTests {
     factTester.TestGetGeometricData(coordinates, coarseRate, gNodesPerDim, lNodesPerDim, 1,
                                     gIndices, gCoarseNodesPerDir, ghostGIDs, coarseNodesGIDs,
                                     colGIDs, gNumCoarseNodes, myOffset, lCoarseNodesPerDir,
-                                    endRate, lNumCoarseNodes, ghostInterface, coarseNodes);
+                                    glCoarseNodesPerDir, endRate, lNumCoarseNodes, ghostInterface,
+                                    coarseNodes, boundaryFlags);
 
     Array<GO> ghostGIDs_check, coarseNodesGIDs_check, colGIDs_check;
     if(map->getComm()->getSize() == 1) {
@@ -471,6 +505,7 @@ namespace MueLuTests {
     elementNodesPerDir[1] = 3;
     elementNodesPerDir[2] = 3;
     LO BlkSize = 1;
+    const int collapseFlags[3] = {0, 0, 0};
 
     Array<bool> ghostInterface(6);
     for(int i = 0; i < 6; ++i) {
@@ -485,8 +520,8 @@ namespace MueLuTests {
                                  15.0, 18.0, 19.0, 20.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -506,8 +541,8 @@ namespace MueLuTests {
                                  14.0, 17.0, 18.0, 19.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -526,8 +561,8 @@ namespace MueLuTests {
                                      12.0, 15.0, 16.0, 17.0, 18.0, 21.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -546,8 +581,8 @@ namespace MueLuTests {
                                      11.0, 14.0, 15.0, 16.0, 17.0, 20.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -566,8 +601,8 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -586,8 +621,8 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -606,8 +641,8 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -626,8 +661,8 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -647,8 +682,8 @@ namespace MueLuTests {
                                   9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -668,8 +703,8 @@ namespace MueLuTests {
                                  15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -689,8 +724,8 @@ namespace MueLuTests {
                                  18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -710,8 +745,8 @@ namespace MueLuTests {
                                  18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -731,8 +766,8 @@ namespace MueLuTests {
                                   9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -752,8 +787,8 @@ namespace MueLuTests {
                                  11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -773,8 +808,8 @@ namespace MueLuTests {
                                  18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -794,8 +829,8 @@ namespace MueLuTests {
                                  18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -815,8 +850,8 @@ namespace MueLuTests {
                                  18.0, 19.0, 20.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -836,8 +871,8 @@ namespace MueLuTests {
                                  18.0, 19.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -857,8 +892,8 @@ namespace MueLuTests {
                                  21.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -878,8 +913,8 @@ namespace MueLuTests {
                                  23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -898,8 +933,8 @@ namespace MueLuTests {
                                   0.0,  3.0,  6.0,  9.0, 12.0, 15.0, 18.0, 21.0, 24.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -918,8 +953,8 @@ namespace MueLuTests {
                                   2.0,  5.0,  8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -938,8 +973,8 @@ namespace MueLuTests {
                                   0.0,  1.0,  2.0,  9.0, 10.0, 11.0, 18.0, 19.0, 20.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -958,8 +993,8 @@ namespace MueLuTests {
                                   6.0,  7.0,  8.0, 15.0, 16.0, 17.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -978,8 +1013,8 @@ namespace MueLuTests {
                                   0.0,  1.0,  2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -998,8 +1033,8 @@ namespace MueLuTests {
                                  18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -1018,8 +1053,8 @@ namespace MueLuTests {
                                      18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(27);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 27; ++i) {
@@ -1046,8 +1081,8 @@ namespace MueLuTests {
                                  47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(54);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 54; ++i) {
@@ -1069,8 +1104,8 @@ namespace MueLuTests {
                                   9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0};
       Array<SC> cornerSWB(v);
       Array<SC> stencil(54);
-      factTester.TestReorderStencil(BlkSize, ghostInterface, ie, je, ke,
-                                    cornerSWB(), elementNodesPerDir, stencil);
+      factTester.TestFormatStencil(BlkSize, ghostInterface, ie, je, ke, cornerSWB(),
+                                   elementNodesPerDir, collapseFlags, "reduced", stencil);
 
       bool checkResult = true;
       for(int i = 0; i < 54; ++i) {
@@ -1150,7 +1185,8 @@ namespace MueLuTests {
     // used Xpetra lib (for maps and smoothers)
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
-    LO numDimensions = 3;
+    const LO numDimensions = 3;
+    const std::string stencilType = "reduced";
 
     RCP<Matrix> A;
     RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
@@ -1158,7 +1194,8 @@ namespace MueLuTests {
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
     out << "Problem Data Generation" << std::endl;
-    GetProblemData(comm, lib, numDimensions, A, coordinates, map, gNodesPerDim, lNodesPerDim);
+    GetProblemData(comm, lib, numDimensions, stencilType, A, coordinates, map, gNodesPerDim,
+                   lNodesPerDim);
 
     out << "Problem Data Generated" << std::endl;
 
@@ -1167,9 +1204,10 @@ namespace MueLuTests {
 
     LO BlkSize = 1;
     Array<GO> gIndices(3), gCoarseNodesPerDir(3), ghostGIDs, coarseNodesGIDs, colGIDs;
-    Array<LO> myOffset(3), coarseRate(3), endRate(3), lCoarseNodesPerDir(3),
-      lCoarseElementsPerDir(3);
+    Array<LO> myOffset(3), coarseRate(3), endRate(3), lCoarseNodesPerDir(3);
+    Array<LO> glCoarseNodesPerDir(3), lCoarseElementsPerDir(3);
     Array<bool> ghostInterface(6);
+    Array<int> boundaryFlags(3);
     ArrayRCP<Array<double> > coarseNodes(numDimensions);
     for(int i = 0; i < numDimensions; ++i) {
       coarseRate[i] = 2;
@@ -1179,8 +1217,10 @@ namespace MueLuTests {
     factTester.TestGetGeometricData(coordinates, coarseRate, gNodesPerDim, lNodesPerDim, 1,
                                     gIndices, gCoarseNodesPerDir, ghostGIDs, coarseNodesGIDs,
                                     colGIDs, gNumCoarseNodes, myOffset, lCoarseNodesPerDir,
-                                    endRate, lNumCoarseNodes, ghostInterface, coarseNodes);
+                                    glCoarseNodesPerDir, endRate, lNumCoarseNodes, ghostInterface,
+                                    coarseNodes, boundaryFlags);
 
+    out << "boundaryFlags: " << boundaryFlags << std::endl;
     out << "Geometric Data Generated" << std::endl;
 
     // From A on local rank, let us construct Aghost
@@ -1287,20 +1327,98 @@ namespace MueLuTests {
 
     out << "Ghost Matrix Generated" << std::endl;
 
-    // Pick on which coarse element the algorithm is tested
-    Array<LO> elemInds(3);
-    elemInds[0] = 1;
-    elemInds[1] = 1;
-    elemInds[2] = 1;
-
-    out << "ghostInterface=[" <<  ghostInterface[0] << ", " << ghostInterface[1] << ", "
-        << ghostInterface[2] << ", " << ghostInterface[3] << ", "
-        << ghostInterface[4] << ", " << ghostInterface[5] << "]" << std::endl;
-
     if(comm->getRank() == 0) {
+      // Pick on which coarse element the algorithm is tested
+      Array<LO> elemInds(3), elementNodesPerDir(3);
+
+      out << "***************************************" << std::endl;
+      out << "    Test on ie = 1, je = 1, ke = 1     " << std::endl;
+      out << "***************************************" << std::endl;
+
+      elemInds[0] = 1;
+      elemInds[1] = 1;
+      elemInds[2] = 1;
+
+      Array<int> elementFlags(3);
+      for(int dim = 0; dim < 3; ++dim) {
+        if(elemInds[dim] == 0 && elemInds[dim] == lCoarseElementsPerDir[dim] - 1) {
+          elementFlags[dim] = boundaryFlags[dim];
+        } else if(elemInds[dim] == 0 && (boundaryFlags[dim] == 1 || boundaryFlags[dim] == 3)) {
+          elementFlags[dim] += 1;
+        } else if((elemInds[dim] == lCoarseElementsPerDir[dim] - 1)
+                  && (boundaryFlags[dim] == 2 || boundaryFlags[dim] == 3)) {
+          elementFlags[dim] += 2;
+        } else {
+          elementFlags[dim] = 0;
+        }
+
+        // Compute the number of nodes in the current element.
+        if(dim < numDimensions) {
+          if((elemInds[dim] == lCoarseElementsPerDir[dim])
+             && (gIndices[dim] + lNodesPerDim[dim] == gNodesPerDim[dim])) {
+            elementNodesPerDir[dim] = endRate[dim] + 1;
+          } else {
+            elementNodesPerDir[dim] = coarseRate[dim] + 1;
+          }
+        } else {
+          elementNodesPerDir[dim] = 1;
+        }
+      }
+      LO numNodesInElement = elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2];
+
+      out << "elementFlags: " << elementFlags << std::endl;
+
+      Teuchos::SerialDenseMatrix<LO,SC> Pi, Pf, Pe;
+      Array<LO> dofType(numNodesInElement*BlkSize), lDofInd(numNodesInElement*BlkSize);
       factTester.TestComputeLocalEntries(Aghost, coarseRate, endRate, BlkSize, elemInds,
                                          lCoarseElementsPerDir, numDimensions, range, gNodesPerDim,
-                                         gIndices, lCoarseNodesPerDir, ghostInterface);
+                                         gIndices, lCoarseNodesPerDir, ghostInterface,
+                                         elementFlags, "reduced", "coupled", elementNodesPerDir,
+                                         numNodesInElement, colGIDs, Pi, Pf, Pe, dofType, lDofInd);
+
+      out << "***************************************" << std::endl;
+      out << "    Test on ie = 0, je = 0, ke = 0     " << std::endl;
+      out << "***************************************" << std::endl;
+
+      elemInds[0] = 0;
+      elemInds[1] = 0;
+      elemInds[2] = 0;
+
+      elementFlags[0] = 0; elementFlags[1] = 0; elementFlags[2] = 0;
+      for(int dim = 0; dim < 3; ++dim) {
+        if(elemInds[dim] == 0 && elemInds[dim] == lCoarseElementsPerDir[dim] - 1) {
+          elementFlags[dim] = boundaryFlags[dim];
+        } else if(elemInds[dim] == 0 && (boundaryFlags[dim] == 1 || boundaryFlags[dim] == 3)) {
+          elementFlags[dim] += 1;
+        } else if((elemInds[dim] == lCoarseElementsPerDir[dim] - 1)
+                  && (boundaryFlags[dim] == 2 || boundaryFlags[dim] == 3)) {
+          elementFlags[dim] += 2;
+        } else {
+          elementFlags[dim] = 0;
+        }
+
+        // Compute the number of nodes in the current element.
+        if(dim < numDimensions) {
+          if((elemInds[dim] == lCoarseElementsPerDir[dim])
+             && (gIndices[dim] + lNodesPerDim[dim] == gNodesPerDim[dim])) {
+            elementNodesPerDir[dim] = endRate[dim] + 1;
+          } else {
+            elementNodesPerDir[dim] = coarseRate[dim] + 1;
+          }
+        } else {
+          elementNodesPerDir[dim] = 1;
+        }
+      }
+      numNodesInElement = elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2];
+
+      out << "elementFlags: " << elementFlags << std::endl;
+
+      dofType.resize(numNodesInElement*BlkSize); lDofInd.resize(numNodesInElement*BlkSize);
+      factTester.TestComputeLocalEntries(Aghost, coarseRate, endRate, BlkSize, elemInds,
+                                         lCoarseElementsPerDir, numDimensions, range, gNodesPerDim,
+                                         gIndices, lCoarseNodesPerDir, ghostInterface,
+                                         elementFlags, "reduced", "coupled", elementNodesPerDir,
+                                         numNodesInElement, colGIDs, Pi, Pf, Pe, dofType, lDofInd);
     }
 
     out << "Local P operator computed" << std::endl;
@@ -1325,14 +1443,16 @@ namespace MueLuTests {
     // used Xpetra lib (for maps and smoothers)
     Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
-    LO numDimensions = 2;
+    const LO numDimensions = 2;
+    const std::string stencilType = "reduced";
 
     RCP<Matrix> Op;
     RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
     RCP<Map> map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
-    GetProblemData(comm, lib, numDimensions, Op, coordinates, map, gNodesPerDim, lNodesPerDim);
+    GetProblemData(comm, lib, numDimensions, stencilType, Op, coordinates, map, gNodesPerDim,
+                   lNodesPerDim);
 
     Xpetra::IO<double,LO,GO,NO>::Write("/home/lberge/Desktop/fineMap.m", *map);
     Xpetra::IO<double,LO,GO,NO>::Write("/home/lberge/Desktop/fineCoords.m", *coordinates);
@@ -1355,6 +1475,7 @@ namespace MueLuTests {
     Teuchos::ParameterList BBParams;
     BBParams.set("Coarsen", "{2,2,2}");
     BBParams.set("axisPermutation", "{0,1,2}");
+    BBParams.set("stencil type", "reduced");
 
     // create the black box factory
     RCP<BlackBoxPFactory> bbmgPFact = rcp(new BlackBoxPFactory);
@@ -1370,13 +1491,125 @@ namespace MueLuTests {
   } //CoarseNodes
 
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(BlackBoxPFactory, BBPoisson, Scalar, LocalOrdinal,
+                                    GlobalOrdinal, Node)
+  {
+#   include "MueLu_UseShortNames.hpp"
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+
+    out << "version: " << MueLu::Version() << std::endl;
+
+    RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+    // used Xpetra lib (for maps and smoothers)
+    Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
+
+    const LO numDimensions = 3;
+    const std::string stencilType = "reduced";
+
+    RCP<Matrix> A;
+    RCP<Xpetra::MultiVector<double,LO,GO,NO> > coordinates;
+    RCP<Map> map;
+    Array<GO> gNodesPerDim(3);
+    Array<LO> lNodesPerDim(3);
+    GetProblemData(comm, lib, numDimensions, stencilType, A, coordinates, map, gNodesPerDim,
+                   lNodesPerDim);
+
+    // build nullspace
+    RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
+    nullSpace->putScalar( (Scalar) 1.0);
+    Teuchos::Array<magnitude_type> norms(1);
+    nullSpace->norm1(norms);
+    if (comm->getRank() == 0) {
+      out << "||NS|| = " << norms[0] << std::endl;
+    }
+
+    // fill hierarchy
+    RCP<Hierarchy> H = rcp( new Hierarchy() );
+    H->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+
+    // create the factory manager and the factories
+    FactoryManager M;
+
+    RCP<Factory>      Pfact  = rcp( new BlackBoxPFactory() );
+    RCP<Factory>      Rfact  = rcp( new TransPFactory() );
+    RCP<Factory>      Tfact  = rcp( new CoordinatesTransferFactory() );
+    RCP<RAPFactory>   Acfact = rcp( new RAPFactory() );
+    RCP<Factory>      NSfact = rcp( new NullspaceFactory() );
+
+    // Set paramters needed by the factories
+    Pfact->SetParameter("Coarsen", Teuchos::ParameterEntry(std::string("{2,2,2}")));
+    Pfact->SetParameter("axisPermutation", Teuchos::ParameterEntry(std::string("{0,1,2}")));
+    Pfact->SetParameter("stencil type", Teuchos::ParameterEntry(std::string("reduced")));
+    Pfact->SetParameter("block strategy", Teuchos::ParameterEntry(std::string("coupled")));
+
+    Tfact->SetParameter("Geometric", Teuchos::ParameterEntry(true));
+
+    // Set interfactory dependencies
+    NSfact->SetFactory("Nullspace", Pfact);
+
+    Acfact->AddTransferFactory(Tfact);
+
+    // Set default factories in the manager
+    M.SetFactory("P",           Pfact);
+    M.SetFactory("R",           Rfact);
+    M.SetFactory("A",           Acfact);
+    M.SetFactory("Nullspace",   NSfact);
+    M.SetFactory("gNodesPerDim", Tfact);
+    M.SetFactory("lNodesPerDim", Tfact);
+    M.SetFactory("Coordinates",  Tfact);
+    M.SetFactory("coarseCoordinates",  Pfact);
+    M.SetFactory("gCoarseNodesPerDim", Pfact);
+    M.SetFactory("lCoarseNodesPerDim", Pfact);
+
+    // setup smoothers
+    Teuchos::ParameterList smootherParamList;
+    smootherParamList.set("relaxation: type", "Symmetric Gauss-Seidel");
+    smootherParamList.set("relaxation: sweeps", (LocalOrdinal) 1);
+    smootherParamList.set("relaxation: damping factor", (Scalar) 1.0);
+    RCP<SmootherPrototype> smooProto = rcp( new TrilinosSmoother("RELAXATION", smootherParamList) );
+    RCP<SmootherFactory> SmooFact = rcp( new SmootherFactory(smooProto) );
+    Acfact->setVerbLevel(Teuchos::VERB_HIGH);
+
+    RCP<SmootherFactory> coarseSolveFact = rcp(new SmootherFactory(smooProto, Teuchos::null));
+
+    // Set smoothers and coarse solver in the manager
+    M.SetFactory("Smoother", SmooFact);
+    M.SetFactory("CoarseSolver", coarseSolveFact);
+
+    // Populate data on the finest level of the hierarchy
+    RCP<Level> Finest = H->GetLevel();
+    Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+    Finest->Set("A", A);                      // set fine level matrix
+    Finest->Set("Nullspace",nullSpace);       // set null space information for finest level
+    Finest->Set("Coordinates", coordinates);  // set fine level coordinates
+    Finest->Set("gNodesPerDim", gNodesPerDim);  // set BlackBoxPFactory specific info
+    Finest->Set("lNodesPerDim", lNodesPerDim);  // set BlackBoxPFactory specific info
+    Finest->SetFactoryManager(Teuchos::rcpFromRef(M));
+
+    // Setup the hierarchy
+    H->SetMaxCoarseSize(10);
+    H->Setup(M, 0, 2);
+
+    // Extract the prolongator operator
+    RCP<Level> lvl1 = H->GetLevel(1);
+    RCP<Xpetra::Matrix<SC,LO,GO,Node> > P = lvl1->Get<RCP<Matrix> >("P", MueLu::NoFactory::get());
+    RCP<CrsMatrix> PCrs = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+
+  } // BBPoisson
+
+
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,Constructor,       Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,BlackBoxGhosts,    Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,StencilReordering, Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,GetNodeInfo,       Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,Prolongator,       Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,CoarseNodes,       Scalar,LO,GO,Node)
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,CoarseNodes,       Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(BlackBoxPFactory,BBPoisson,         Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 

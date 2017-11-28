@@ -151,28 +151,56 @@ namespace MueLu {
 
   private:
 
+    struct NodesIDs {
+      // This small struct just carries basic data associated with coarse nodes that is needed
+      // to compute colMapP and to fillComplete P,
+
+      Array<GO>  GIDs, coarseGIDs;
+      Array<int> PIDs;
+      Array<LO>  LIDs;
+      std::vector<GO> colInds;
+    };
+
+    struct NodeID {
+      // This small struct is similar to the one above but only for one node.
+      // It is used to create a vector of NodeID that can easily be sorted
+
+      GO  GID;
+      int PID;
+      LO  LID, lexiInd;
+    };
+
     void GetGeometricData(RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coordinates,
                           const Array<LO> coarseRate, const Array<GO> gFineNodesPerDir,
                           const Array<LO> lFineNodesPerDir, const LO BlkSize, Array<GO>& gIndices,
                           Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
                           Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir,
-                          Array<GO>& ghostGIDs, Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs,
-                          GO& gNumCoarseNodes, LO& lNumCoarseNodes,
-                          ArrayRCP<Array<double> > coarseNodes) const;
+                          Array<LO>& glCoarseNodesPerDir, Array<GO>& ghostGIDs,
+                          Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes,
+                          LO& lNumCoarseNodes, ArrayRCP<Array<double> > coarseNodes,
+                          Array<int>& boundaryFlags, RCP<NodesIDs> ghostedCoarseNodes) const;
 
     void ComputeLocalEntries(const RCP<const Matrix>& Aghost, const Array<LO> coarseRate,
                              const Array<LO> endRate, const LO BlkSize, const Array<LO> elemInds,
                              const Array<LO> lCoarseElementsPerDir,
                              const LO numDimensions, const Array<LO> lFineNodesPerDir,
                              const Array<GO> gFineNodesPerDir, const Array<GO> gIndices,
-                             const Array<LO> lCoarseNodesPerDir,
-                             const Array<bool> ghostInterface) const;
+                             const Array<LO> lCoarseNodesPerDir, const Array<bool> ghostInterface,
+                             const Array<int> elementFlags, const std::string stencilType,
+                             const std::string blockStrategy, const Array<LO> elementNodesPerDir,
+                             const LO numNodesInElement, const Array<GO> colGIDs,
+                             Teuchos::SerialDenseMatrix<LO,SC>& Pi,
+                             Teuchos::SerialDenseMatrix<LO,SC>& Pf,
+                             Teuchos::SerialDenseMatrix<LO,SC>& Pe,
+                             Array<LO>& dofType, Array<LO>& lDofInd) const;
 
-    void CollapseStencil(const int type, const int orientation, Array<SC>& stencil) const ;
+    void CollapseStencil(const int type, const int orientation, const int collapseFlags[3],
+                         Array<SC>& stencil) const ;
 
-    void ReorderStencil(const LO BlkSize, const Array<bool> ghostInterface, const LO ie,
-                        const LO je, const LO ke, const ArrayView<const SC> rowValues,
-                        const Array<LO> elementNodesPerDir, Array<SC>& stencil) const;
+    void FormatStencil(const LO BlkSize, const Array<bool> ghostInterface, const LO ie,
+                       const LO je, const LO ke, const ArrayView<const SC> rowValues,
+                       const Array<LO> elementNodesPerDir, const int collapseFlags[3],
+                       const std::string stencilType, Array<SC>& stencil) const;
 
     void GetNodeInfo(const LO ie, const LO je, const LO ke, const Array<LO> elementNodesPerDir,
                      int* type, LO& ind, int* orientation) const;
