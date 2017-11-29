@@ -71,6 +71,7 @@ typedef Xpetra::BlockedVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> Blocked
 
 #ifdef XPETRA_MULTIVECTOR_SHORT
 typedef Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+typedef Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> MultiVectorReal;
 #endif
 
 #ifdef XPETRA_MATRIX_SHORT
