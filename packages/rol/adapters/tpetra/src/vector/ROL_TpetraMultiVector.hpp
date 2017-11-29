@@ -259,7 +259,7 @@ public:
     const size_t n = tpetra_vec_->getNumVectors();
     ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > e
       = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(map_,n);
-    if (!map_.is_null() && map_->isNodeGlobalElement(static_cast<GO>(i))) {
+    if ( (map_ != ROL::nullPointer) && map_->isNodeGlobalElement(static_cast<GO>(i))) {
       for (size_t j = 0; j < n; ++j) {
         e->replaceGlobalValue (i, j, Teuchos::ScalarTraits<Real>::one());
       }

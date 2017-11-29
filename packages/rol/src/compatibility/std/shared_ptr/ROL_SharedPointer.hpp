@@ -99,6 +99,19 @@ SharedPointer<T> dynamicPointerCast( const SharedPointer<U>& r ) noexcept {
 }
 
 template<class T>
+inline
+const T* getRawPointer( const SharedPointer<const T>& x ) {
+  return x.get();
+}
+
+template<class T>
+inline
+T* getRawPointer( const SharedPointer<T>& x ) {
+  return x.get();
+}
+
+
+template<class T>
 struct IsSharedPtr : public std::false_type {};
 
 template<class T>

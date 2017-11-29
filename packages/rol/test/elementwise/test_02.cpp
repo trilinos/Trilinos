@@ -98,9 +98,6 @@ public:
 
 
 int main(int argc, char *argv[]) {
-
-  
-  
   
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;

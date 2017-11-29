@@ -27,6 +27,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TIMERS
 MESSAGE("-- " "Configuring ROL with " ${PACKAGE_NAME}_ENABLE_TIMERS=${${PACKAGE_NAME}_ENABLE_TIMERS})
 
 
+# Compatibility flags - some adapter tests and examples should only build using specific implementations
+SET( HAVE_TEUCHOS_RCP ON )
+IF( ${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR )
+  SET( HAVE_TEUCHOS_RCP OFF )
+ENDIF()
+
+
+
 #
 # C) Add the libraries, tests, and examples
 #
