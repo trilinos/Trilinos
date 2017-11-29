@@ -102,7 +102,7 @@ public:
   */
   ROL::SharedPointer<Vector<Real> > clone() const{
     return ROL::makeShared<EpetraMultiVector>( 
-  	     ROL::makeShared<Epetra_MultiVector(epetra_vec_->Map(),epetra_vec_->NumVectors>(),false) );
+  	     ROL::makeShared<Epetra_MultiVector>(epetra_vec_->Map(),epetra_vec_->NumVectors(),false) );
   }
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
@@ -138,7 +138,8 @@ public:
   }
 
   ROL::SharedPointer<Vector<Real> > basis( const int i ) const {
-    ROL::SharedPointer<EpetraMultiVector> e = ROL::makeShared<EpetraMultiVector( Teuchos::ROL::makeShared<Epetra_MultiVector(epetra_vec_->Map(),epetra_vec_->NumVectors>>(),true));
+    ROL::SharedPointer<EpetraMultiVector> e = 
+    ROL::makeShared<EpetraMultiVector>( ROL::makeShared<Epetra_MultiVector>(epetra_vec_->Map(),epetra_vec_->NumVectors(),true));
     const Epetra_BlockMap & domainMap = e->getVector()->Map();
 
     Epetra_Map linearMap(domainMap.NumGlobalElements(), domainMap.NumMyElements(), 0, domainMap.Comm());

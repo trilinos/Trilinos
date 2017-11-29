@@ -119,12 +119,12 @@ protected:
 
   /* Set the lower bound to l */
   void setLower(Real l[]) {
-    lp_ = ROL::makeShared<vector<Real>(l, l+dimension_x>() );
+    lp_ = ROL::makeShared<vector<Real>>(l, l+dimension_x() );
   }
 
   /* Set the upper bound to u */
   void setUpper(Real u[]) {
-    up_ = ROL::makeShared<vector<Real>(u, u+dimension_x>() );
+    up_ = ROL::makeShared<vector<Real>>(u, u+dimension_x() );
   }
 
   /* \brief Call this function in your problem's constructor to turn 
@@ -194,7 +194,7 @@ protected:
   /* \brief Create vector */
   ROL::SharedPointer<V> createOptVector( const Real * const array ) {
     ROL::SharedPointer<vector<Real> > x = 
-      ROL::makeShared<vector<Real>(array,array+dimension_x>());
+      ROL::makeShared<vector<Real>>(array,array+dimension_x());
     return ROL::makeShared<SV>( x ); 
   }
 
@@ -223,8 +223,8 @@ public:
 
   NonlinearProgram(int n) {
      // Create lower and upper bounds of negative and positive infinity respectively
-     lp_ = ROL::makeShared<vector<Real>(n,ROL::ROL_NINF<Real>>());
-     up_ = ROL::makeShared<vector<Real>(n,ROL::ROL_INF<Real>>());
+     lp_ = ROL::makeShared<vector<Real>>(n,ROL::ROL_NINF<Real>());
+     up_ = ROL::makeShared<vector<Real>>(n,ROL::ROL_INF<Real>());
      ROL::SharedPointer<V> l = ROL::makeShared<SV>( lp_ );
      ROL::SharedPointer<V> u = ROL::makeShared<SV>( up_ );
      bnd_ = ROL::makeShared<BND>( l, u ); 
@@ -235,14 +235,14 @@ public:
   ROL::SharedPointer<OPT> getOptimizationProblem() {
     ROL::SharedPointer<V> x = getInitialGuess()->clone();
     x->set(*getInitialGuess());
-    return ROL::makeShared<OPT ( getObjective(>(),
+    return ROL::makeShared<OPT>( getObjective(),
                                    x,
                                    getBoundConstraint(),
                                    getEqualityConstraint(),
                                    getEqualityMultiplier(),
                                    getInequalityConstraint(),
                                    getInequalityMultiplier(),
-                                   getInequalityBoundConstraint() ) );
+                                   getInequalityBoundConstraint() );
   }
 
   /* \brief Return the initial guess for the optimization vector */
@@ -275,7 +275,7 @@ public:
       error = xv->clone();
     }
     else {
-      xv = &x, false;
+      xv = ROL::makeSharedFromRef(x);
       error = x.clone();
     }
  

@@ -80,7 +80,7 @@ public:
 template<class Real> 
 class Problem_022 : public ROL::NonlinearProgram<Real> {
  
-  template<typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
+  
 
   typedef ROL::NonlinearProgram<Real>     NP;
   typedef ROL::Vector<Real>               V;
@@ -102,7 +102,7 @@ public:
   }
 
   const ROL::SharedPointer<CON> getInequalityConstraint() {
-    return ROL::makeShared<ROL::Sacado_StdConstraint<Real,HS_022::InCon>>;
+    return ROL::makeShared<ROL::Sacado_StdConstraint<Real,HS_022::InCon>>();
   }
 
   const ROL::SharedPointer<const V> getInitialGuess() {

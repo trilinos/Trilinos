@@ -75,7 +75,7 @@ public:
 template<class Real> 
 class Problem_025 : public ROL::NonlinearProgram<Real> {
  
-  template<typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
+  
 
   typedef ROL::NonlinearProgram<Real>    NP;
   typedef ROL::Vector<Real>              V;

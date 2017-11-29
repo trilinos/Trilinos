@@ -76,7 +76,7 @@ public:
 template<class Real> 
 class Problem_040 : public ROL::NonlinearProgram<Real> {
 
-  template<typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
+  
 
   typedef ROL::NonlinearProgram<Real>   NP;
   typedef ROL::Vector<Real>             V;
@@ -97,7 +97,7 @@ public:
   }
 
   const ROL::SharedPointer<CON> getEqualityConstraint() {
-    return ROL::makeShared<ROL::Sacado_StdConstraint<Real,HS_040::EqCon>>;
+    return ROL::makeShared<ROL::Sacado_StdConstraint<Real,HS_040::EqCon>>();
   }
 
   const ROL::SharedPointer<const V> getInitialGuess() {
