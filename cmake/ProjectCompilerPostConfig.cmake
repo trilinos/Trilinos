@@ -11,7 +11,6 @@ IF(${Trilinos_ENABLE_Kokkos})
   #------------ COMPILER AND FEATURE CHECKS ------------------------------------
   include(${KOKKOS_SRC_PATH}/cmake/kokkos_functions.cmake)
   set_kokkos_cxx_compiler()
-  set_kokkos_compiler_standard()
   set_kokkos_cxx_standard()
   
   #------------ GET OPTIONS ----------------------------------------------------
@@ -29,7 +28,7 @@ IF(${Trilinos_ENABLE_Kokkos})
     OUTPUT_FILE ${Kokkos_GEN_DIR}/core_src_make.out
     RESULT_VARIABLE res
   )
-  include(${Kokkos_GEN_DIR}/gen_kokkos.cmake)
+  include(${Kokkos_GEN_DIR}/kokkos_generated_settings.cmake)
 
   set(CXXFLAGS ${CXXFLAGS} ${KOKKOS_CXXFLAGS})
   # TODO -- need to remove the -lkokkos.  Check on LDFlags
