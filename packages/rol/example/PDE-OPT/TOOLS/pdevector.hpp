@@ -94,7 +94,7 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
     mutable bool isDualInitialized_;
 
     void lumpRiesz(void) {
-      lumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),1);
+      lumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
       Tpetra::MultiVector<Real,LO,GO,Node> ones(ROL::TpetraMultiVector<Real>::getMap(),1);
       ones.putScalar(static_cast<Real>(1));
       RieszMap_->apply(ones, *lumpedRiesz_);
@@ -145,7 +145,7 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
           lumpRiesz();
         }
         else {
-          solver_ = ROL::makeShared<Solver<Real>(parlist.sublist>("Solver"));
+          solver_ = ROL::makeShared<Solver<Real>>(parlist.sublist("Solver"));
           solver_->setA(RieszMap_);
         }
       }
@@ -178,7 +178,7 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       size_t n = ey.getNumVectors();
       // Scale x with scale_vec_
       ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > wex
-        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(), n);
+        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
       applyRiesz(wex,ex);
       // Perform Euclidean dot between *this and scaled x for each vector
       Teuchos::Array<Real> val(n,0);
@@ -196,7 +196,7 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
         = *(ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();
       return ROL::makeShared<PDE_PrimalSimVector<Real,LO,GO,Node>>(
-             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),n),
+             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
              RieszMap_, solver_, lumpedRiesz_);
     }
 
@@ -205,7 +205,7 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
         // Create new memory for dual vector
         size_t n = ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector()->getNumVectors();
         dual_vec_ = ROL::makeShared<PDE_DualSimVector<Real,LO,GO,Node>>(
-                    ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),n),
+                    ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
                     RieszMap_, solver_, lumpedRiesz_);
         isDualInitialized_ = true;
       }
@@ -230,14 +230,14 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
     mutable bool isDualInitialized_;
 
     void lumpRiesz(void) {
-      lumpedRiesz_ = ROL::makeShared<Tpetra::Vector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>());
+      lumpedRiesz_ = ROL::makeShared<Tpetra::Vector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap());
       Tpetra::MultiVector<Real,LO,GO,Node> ones(ROL::TpetraMultiVector<Real>::getMap(),1);
       ones.putScalar(static_cast<Real>(1));
       RieszMap_->apply(ones, *lumpedRiesz_);
     }
 
     void invertLumpedRiesz(void) {
-      recipLumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),1);
+      recipLumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
       recipLumpedRiesz_->reciprocal(*lumpedRiesz_);
     }
 
@@ -287,7 +287,7 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
           invertLumpedRiesz();
         }
         else {
-          solver_ = ROL::makeShared<Solver<Real>(parlist.sublist>("Solver"));
+          solver_ = ROL::makeShared<Solver<Real>>(parlist.sublist("Solver"));
           solver_->setA(RieszMap_);
         }
       }
@@ -323,7 +323,7 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       size_t n = ey.getNumVectors();
       // Scale x with 1/scale_vec_
       ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > wex
-        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(), n);
+        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
       applyRiesz(wex,ex);
       // Perform Euclidean dot between *this and scaled x for each vector
       Teuchos::Array<Real> val(n,0);
@@ -341,7 +341,7 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
         = *(ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();  
       return ROL::makeShared<PDE_DualSimVector<Real,LO,GO,Node>>(
-             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),n),
+             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
              RieszMap_, solver_, lumpedRiesz_);
     }
 
@@ -350,7 +350,7 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
         // Create new memory for dual vector
         size_t n = ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector()->getNumVectors();
         primal_vec_ = ROL::makeShared<PDE_PrimalSimVector<Real,LO,GO,Node>>(
-                      ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),n),
+                      ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
                       RieszMap_, solver_, lumpedRiesz_);
         isDualInitialized_ = true;
       }
@@ -386,7 +386,7 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
     mutable bool isDualInitialized_;
 
     void lumpRiesz(void) {
-      lumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),1);
+      lumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
       Tpetra::MultiVector<Real,LO,GO,Node> ones(ROL::TpetraMultiVector<Real>::getMap(),1);
       ones.putScalar(static_cast<Real>(1));
       RieszMap_->apply(ones, *lumpedRiesz_);
@@ -437,7 +437,7 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
           lumpRiesz();
         }
         else {
-          solver_ = ROL::makeShared<Solver<Real>(parlist.sublist>("Solver"));
+          solver_ = ROL::makeShared<Solver<Real>>(parlist.sublist("Solver"));
           solver_->setA(RieszMap_);
         }
       }
@@ -470,7 +470,7 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       size_t n = ey.getNumVectors();
       // Scale x with scale_vec_
       ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > wex
-        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(), n);
+        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
       applyRiesz(wex,ex);
       // Perform Euclidean dot between *this and scaled x for each vector
       Teuchos::Array<Real> val(n,0);
@@ -488,7 +488,7 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
         = *(ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();
       return ROL::makeShared<PDE_PrimalOptVector<Real,LO,GO,Node>>(
-             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),n),
+             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
              RieszMap_, solver_, lumpedRiesz_);
     }
 
@@ -497,7 +497,7 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
         // Create new memory for dual vector
         size_t n = ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector()->getNumVectors();
         dual_vec_ = ROL::makeShared<PDE_DualOptVector<Real,LO,GO,Node>>(
-                    ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),n),
+                    ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
                     RieszMap_, solver_, lumpedRiesz_);
         isDualInitialized_ = true;
       }
@@ -522,14 +522,14 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
     mutable bool isDualInitialized_;
 
     void lumpRiesz(void) {
-      lumpedRiesz_ = ROL::makeShared<Tpetra::Vector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>());
+      lumpedRiesz_ = ROL::makeShared<Tpetra::Vector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap());
       Tpetra::MultiVector<Real,LO,GO,Node> ones(ROL::TpetraMultiVector<Real>::getMap(),1);
       ones.putScalar(static_cast<Real>(1));
       RieszMap_->apply(ones, *lumpedRiesz_);
     }
 
     void invertLumpedRiesz(void) {
-      recipLumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),1);
+      recipLumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
       recipLumpedRiesz_->reciprocal(*lumpedRiesz_);
     }
 
@@ -579,7 +579,7 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
           invertLumpedRiesz();
         }
         else {
-          solver_ = ROL::makeShared<Solver<Real>(parlist.sublist>("Solver"));
+          solver_ = ROL::makeShared<Solver<Real>>(parlist.sublist("Solver"));
           solver_->setA(RieszMap_);
         }
       }
@@ -615,7 +615,7 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       size_t n = ey.getNumVectors();
       // Scale x with 1/scale_vec_
       ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > wex
-        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(), n);
+        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
       applyRiesz(wex,ex);
       // Perform Euclidean dot between *this and scaled x for each vector
       Teuchos::Array<Real> val(n,0);
@@ -633,7 +633,7 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
         = *(ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();  
       return ROL::makeShared<PDE_DualOptVector<Real,LO,GO,Node>>(
-             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),n),
+             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
              RieszMap_, solver_, lumpedRiesz_);
     }
 
@@ -642,7 +642,7 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
         // Create new memory for dual vector
         size_t n = ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector()->getNumVectors();
         primal_vec_ = ROL::makeShared<PDE_PrimalOptVector<Real,LO,GO,Node>>(
-                      ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(ROL::TpetraMultiVector<Real>::getMap>(),n),
+                      ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
                       RieszMap_, solver_, lumpedRiesz_);
         isDualInitialized_ = true;
       }

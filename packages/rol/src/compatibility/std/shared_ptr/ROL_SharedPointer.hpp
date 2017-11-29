@@ -98,5 +98,11 @@ SharedPointer<T> dynamicPointerCast( const SharedPointer<U>& r ) noexcept {
   return std::dynamic_pointer_cast<T>(r);
 }
 
+template<class T>
+struct IsSharedPtr : public std::false_type {};
+
+template<class T>
+struct IsSharedPtr<std::shared_ptr<T>> : public std::true_type {};
+
 } // namespace ROL
 

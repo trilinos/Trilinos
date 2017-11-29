@@ -201,9 +201,9 @@ int main(int argc, char *argv[]) {
     }
     u_ptr->randomize();
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(1,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_Energy_Poisson_TopOpt<RealT>(pde->getFE(>(),
+    qoi_vec[0] = ROL::makeShared<QoI_Energy_Poisson_TopOpt<RealT>>(pde->getFE(),
                                                                    pde->getForce(),
-                                                                   objScaling));
+                                                                   objScaling);
     ROL::SharedPointer<StdObjective_Poisson_TopOpt<RealT> > std_obj
       = ROL::makeShared<StdObjective_Poisson_TopOpt<RealT>>();
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize volume constraint
     ROL::SharedPointer<QoI<RealT> > qoi_vol
-      = ROL::makeShared<QoI_Volume_Poisson_TopOpt<RealT>(pde->getFE>(),*parlist);
+      = ROL::makeShared<QoI_Volume_Poisson_TopOpt<RealT>>(pde->getFE(),*parlist);
     ROL::SharedPointer<IntegralOptConstraint<RealT> > vcon
       = ROL::makeShared<IntegralOptConstraint<RealT>>(qoi_vol,assembler);
     // Create volume constraint vector and set to zero

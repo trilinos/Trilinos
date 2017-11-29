@@ -209,16 +209,16 @@ int main(int argc, char *argv[]) {
     }
     u_ptr->randomize();
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(1,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_TopoOpt<RealT>(pde->getFE(>(),
+    qoi_vec[0] = ROL::makeShared<QoI_TopoOpt<RealT>>(pde->getFE(),
                                                      pde->getLoad(),
                                                      pde->getFieldHelper(),
-                                                     objScaling));
+                                                     objScaling);
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj
       = ROL::makeShared<PDE_Objective<RealT>>(qoi_vec,assembler);
 
     // Initialize volume constraint,
     ROL::SharedPointer<QoI<RealT> > qoi_vol
-      = ROL::makeShared<QoI_Volume_TopoOpt<RealT>(pde->getFE(),pde->getFieldHelper>(),*parlist);
+      = ROL::makeShared<QoI_Volume_TopoOpt<RealT>>(pde->getFE(),pde->getFieldHelper(),*parlist);
     ROL::SharedPointer<IntegralOptConstraint<RealT> > vcon
       = ROL::makeShared<IntegralOptConstraint<RealT>>(qoi_vol,assembler);
     // Create volume constraint vector and set to zero

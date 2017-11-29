@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_StateCost<RealT>(pde->getVolFE>(),*parlist);
+    qoi_vec[0] = ROL::makeShared<QoI_StateCost<RealT>>(pde->getVolFE(),*parlist);
     qoi_vec[1] = ROL::makeShared<QoI_ControlCost<RealT>>(
       pde->getVolFE(),pde->getBdryFE(0),pde->getBdryCellLocIds(0),*parlist);
     ROL::SharedPointer<StochasticStefanBoltzmannStdObjective<RealT> > std_obj

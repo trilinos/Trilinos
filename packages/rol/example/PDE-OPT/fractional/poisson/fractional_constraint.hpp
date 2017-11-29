@@ -91,7 +91,7 @@ private:
       assembler_cylinder_->assemblePDERieszMap1(Mcylinder_,pde_cylinder_);
       // Create fractional operator and vector
       A_   = ROL::makeShared<FractionalOperator<Real>>(Klocal_,Mlocal_,Kcylinder_,Mcylinder_);
-      B_   = ROL::makeShared<FractionalControlOperator<Real>(Blocal_,Mcylinder_->getGlobalNumCols>());
+      B_   = ROL::makeShared<FractionalControlOperator<Real>>(Blocal_,Mcylinder_->getGlobalNumCols());
       M_   = ROL::makeShared<FractionalPreconditioner<Real>>(Klocal_,Mlocal_,Kcylinder_,Mcylinder_,parlist_);
 
       isAssembled_ = true;
@@ -99,7 +99,7 @@ private:
     ROL::SharedPointer<const Tpetra::MultiVector<> > zf
       = dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z).getVector(); 
     assembler_local_->assemblePDEResidual(Flocal_,pde_local_,ulocal_,zf);
-    Vec_ = ROL::makeShared<FractionalVector<Real>(Flocal_,Klocal_->getRowMap(),Mcylinder_->getGlobalNumCols>(),fracPower_);
+    Vec_ = ROL::makeShared<FractionalVector<Real>>(Flocal_,Klocal_->getRowMap(),Mcylinder_->getGlobalNumCols(),fracPower_);
   }
 
 public:
@@ -112,19 +112,19 @@ public:
                        Teuchos::ParameterList                        & parlist,
                        std::ostream                                  & outStream = std::cout)
     : pde_local_(pde_local), pde_cylinder_(pde_cylinder), parlist_(parlist), isAssembled_(false) {
-    assembler_local_ = ROL::makeShared<Assembler<Real>(pde_local_->getFields(>(),
+    assembler_local_ = ROL::makeShared<Assembler<Real>>(pde_local_->getFields(),
                                                         mesh_local,
                                                         comm_local,
                                                         parlist,
-                                                        outStream));
+                                                        outStream);
     assembler_local_->setCellNodes(*pde_local_);
     ulocal_  = assembler_local_->createStateVector();
     zlocal_  = assembler_local_->createControlVector();
-    assembler_cylinder_ = ROL::makeShared<Assembler<Real>(pde_cylinder_->getFields(>(),
+    assembler_cylinder_ = ROL::makeShared<Assembler<Real>>(pde_cylinder_->getFields(),
                                                            mesh_cylinder,
                                                            comm_cylinder,
                                                            parlist,
-                                                           outStream));
+                                                           outStream);
     assembler_cylinder_->setCellNodes(*pde_cylinder_);
     ucylinder_ = assembler_cylinder_->createStateVector();
     zcylinder_ = assembler_cylinder_->createControlVector();

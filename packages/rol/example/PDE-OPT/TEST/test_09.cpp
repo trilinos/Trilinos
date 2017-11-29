@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   if (iprint > 0)
     outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromref(bhs);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 

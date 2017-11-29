@@ -148,16 +148,16 @@ int main(int argc, char *argv[]) {
     p_ptr->randomize();  //p_ptr->putScalar(static_cast<RealT>(1));
     du_ptr->randomize(); //du_ptr->putScalar(static_cast<RealT>(0));
     ROL::SharedPointer<ROL::Vector<RealT> > up
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>(u_ptr,pde,pdeCon->getAssembler>());
+      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(u_ptr,pde,pdeCon->getAssembler());
     ROL::SharedPointer<ROL::Vector<RealT> > pp
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>(p_ptr,pde,pdeCon->getAssembler>());
+      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(p_ptr,pde,pdeCon->getAssembler());
     ROL::SharedPointer<ROL::Vector<RealT> > dup
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>(du_ptr,pde,pdeCon->getAssembler>());
+      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(du_ptr,pde,pdeCon->getAssembler());
     // Create residual vectors
     ROL::SharedPointer<Tpetra::MultiVector<> > r_ptr = pdeCon->getAssembler()->createResidualVector();
     r_ptr->randomize(); //r_ptr->putScalar(static_cast<RealT>(1));
     ROL::SharedPointer<ROL::Vector<RealT> > rp
-      = ROL::makeShared<PDE_DualSimVector<RealT>(r_ptr,pde,pdeCon->getAssembler>());
+      = ROL::makeShared<PDE_DualSimVector<RealT>>(r_ptr,pde,pdeCon->getAssembler());
     // Create control vector and set to ones
     ROL::SharedPointer<std::vector<RealT> >  z_ptr = ROL::makeShared<std::vector<RealT>>(controlDim);
     ROL::SharedPointer<std::vector<RealT> > dz_ptr = ROL::makeShared<std::vector<RealT>>(controlDim);
@@ -169,30 +169,30 @@ int main(int argc, char *argv[]) {
       (*yz_ptr)[i] = random<RealT>(*comm);
     }
     ROL::SharedPointer<ROL::Vector<RealT> > zp
-      = ROL::makeShared<PDE_OptVector<RealT>(Teuchos::ROL::makeShared<ROL::StdVector<RealT>>>(z_ptr));
+      = ROL::makeShared<PDE_OptVector<RealT>>(ROL::makeShared<ROL::StdVector<RealT>>(z_ptr));
     ROL::SharedPointer<ROL::Vector<RealT> > dzp
-      = ROL::makeShared<PDE_OptVector<RealT>(Teuchos::ROL::makeShared<ROL::StdVector<RealT>>>(dz_ptr));
+      = ROL::makeShared<PDE_OptVector<RealT>>(ROL::makeShared<ROL::StdVector<RealT>>(dz_ptr));
     ROL::SharedPointer<ROL::Vector<RealT> > yzp
-      = ROL::makeShared<PDE_OptVector<RealT>(Teuchos::ROL::makeShared<ROL::StdVector<RealT>>>(yz_ptr));
+      = ROL::makeShared<PDE_OptVector<RealT>>(ROL::makeShared<ROL::StdVector<RealT>>(yz_ptr));
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     ROL::SharedPointer<Tpetra::MultiVector<> > dualu_ptr = pdeCon->getAssembler()->createStateVector();
     ROL::SharedPointer<ROL::Vector<RealT> > dualup
-      = ROL::makeShared<PDE_DualSimVector<RealT>(dualu_ptr,pde,pdeCon->getAssembler>());
+      = ROL::makeShared<PDE_DualSimVector<RealT>>(dualu_ptr,pde,pdeCon->getAssembler());
 
     /*************************************************************************/
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_State_Cost_stoch_adv_diff<RealT>(pde->getFE>());
+    qoi_vec[0] = ROL::makeShared<QoI_State_Cost_stoch_adv_diff<RealT>>(pde->getFE());
     qoi_vec[1] = ROL::makeShared<QoI_Control_Cost_stoch_adv_diff<RealT>>();
     RealT stateCost   = parlist->sublist("Problem").get("State Cost",1.e5);
     RealT controlCost = parlist->sublist("Problem").get("Control Cost",1.e0);
     std::vector<RealT> wts = {stateCost, controlCost};
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj
-      = ROL::makeShared<PDE_Objective<RealT>(qoi_vec,wts,pdeCon->getAssembler>());
+      = ROL::makeShared<PDE_Objective<RealT>>(qoi_vec,wts,pdeCon->getAssembler());
     bool storage = parlist->sublist("Problem").get("Use State and Adjoint Storage",true);
     ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
       = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp, storage, false);
@@ -203,9 +203,9 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<std::vector<RealT> > zlo_ptr = ROL::makeShared<std::vector<RealT>>(controlDim,0);
     ROL::SharedPointer<std::vector<RealT> > zhi_ptr = ROL::makeShared<std::vector<RealT>>(controlDim,1);
     ROL::SharedPointer<ROL::Vector<RealT> > zlop
-      = ROL::makeShared<PDE_OptVector<RealT>(Teuchos::ROL::makeShared<ROL::StdVector<RealT>>>(zlo_ptr));
+      = ROL::makeShared<PDE_OptVector<RealT>>(ROL::makeShared<ROL::StdVector<RealT>>(zlo_ptr));
     ROL::SharedPointer<ROL::Vector<RealT> > zhip
-      = ROL::makeShared<PDE_OptVector<RealT>(Teuchos::ROL::makeShared<ROL::StdVector<RealT>>>(zhi_ptr));
+      = ROL::makeShared<PDE_OptVector<RealT>>(ROL::makeShared<ROL::StdVector<RealT>>(zhi_ptr));
     ROL::SharedPointer<ROL::BoundConstraint<RealT> > bnd
       = ROL::makeShared<ROL::Bounds<RealT>>(zlop,zhip);
 

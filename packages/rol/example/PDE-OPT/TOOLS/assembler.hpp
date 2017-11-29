@@ -291,7 +291,7 @@ private:
     myGlobalIds.erase( std::unique(myGlobalIds.begin(),myGlobalIds.end()),myGlobalIds.end() );
 
     // Build maps.
-    myOverlapStateMap_ = ROL:makeShared<Tpetra::Map<>>(
+    myOverlapStateMap_ = ROL::makeShared<Tpetra::Map<>>(
                          Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
                          myGlobalIds, 0, comm_);
     //std::cout << std::endl << myOverlapMap_->getNodeElementList()<<std::endl;
@@ -2101,7 +2101,7 @@ public:
     ROL::SharedPointer<Intrepid::FieldContainer<Real> > cellJacInv
       = ROL::makeShared<Intrepid::FieldContainer<Real>>(c,p,d,d);
     ROL::SharedPointer<shards::CellTopology> cellTopo
-      = ROL::makeShared<shards::CellTopology(basisPtrs_[0]->getBaseCellTopology>());
+      = ROL::makeShared<shards::CellTopology>(basisPtrs_[0]->getBaseCellTopology());
     ROL::SharedPointer<Intrepid::FieldContainer<Real> > valReference
       = ROL::makeShared<Intrepid::FieldContainer<Real>>(f,p,d);
     basisPtrs_[0]->getValues(*valReference,*rx,Intrepid::OPERATOR_VALUE);

@@ -239,13 +239,13 @@ int main(int argc, char *argv[]) {
 
     // Initialize volume and compliance objective functions.
     ROL::SharedPointer<QoI<RealT> > qoi_vol
-      = ROL::makeShared<QoI_VolumeObj_TopoOpt<RealT>(pde->getFE(),pde->getFieldHelper>());
+      = ROL::makeShared<QoI_VolumeObj_TopoOpt<RealT>>(pde->getFE(),pde->getFieldHelper());
     ROL::SharedPointer<ROL::Objective<RealT> > obj_vol
       = ROL::makeShared<IntegralOptObjective<RealT>>(qoi_vol,assembler);
     ROL::SharedPointer<QoI<RealT> > qoi_com
-      = ROL::makeShared<QoI_TopoOpt<RealT>(pde->getFE>(), // Volumetric Load
+      = ROL::makeShared<QoI_TopoOpt<RealT>>(pde->getFE(), // Volumetric Load
                                             pde->getBdryFE(),pde->getBdryCellLocIds(),pde->getTraction(), // Traction
-                                            pde->getFieldHelper(),cmpScaling));
+                                            pde->getFieldHelper(),cmpScaling);
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj_com
       = ROL::makeShared<PDE_Objective<RealT>>(qoi_com,assembler);
 

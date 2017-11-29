@@ -134,10 +134,10 @@ int main(int argc, char *argv[]) {
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = &std::cout, false;
+    outStream = ROL::makeSharedFromRef(std::cout); 
   }
   else {
-    outStream = &bhs, false;
+    outStream = ROL::makeSharedFromRef(bhs);
   }
   int errorFlag  = 0;
 

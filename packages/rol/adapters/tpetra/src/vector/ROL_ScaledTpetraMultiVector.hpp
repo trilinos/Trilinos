@@ -115,7 +115,7 @@ class PrimalScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> 
         = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();
       return ROL::makeShared<PrimalScaledTpetraMultiVector<Real,LO,GO,Node>>(
-             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(TpetraMultiVector<Real>::getMap>(),n),
+             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(TpetraMultiVector<Real>::getMap(),n),
              scale_vec_);
     }
 
@@ -124,7 +124,7 @@ class PrimalScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> 
         // Create new memory for dual vector
         size_t n = TpetraMultiVector<Real,LO,GO,Node>::getVector()->getNumVectors();
         dual_vec_ = ROL::makeShared<DualScaledTpetraMultiVector<Real,LO,GO,Node>>(
-                    ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(TpetraMultiVector<Real>::getMap>(),n),
+                    ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(TpetraMultiVector<Real>::getMap(),n),
                     scale_vec_);
         isDualInitialized_ = true;
       }
@@ -186,7 +186,7 @@ class DualScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> {
         = *(TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();  
       return ROL::makeShared<DualScaledTpetraMultiVector<Real,LO,GO,Node>>(
-             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(TpetraMultiVector<Real>::getMap>(),n),
+             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(TpetraMultiVector<Real>::getMap(),n),
              scale_vec_);
     }
 
@@ -195,7 +195,7 @@ class DualScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> {
         // Create new memory for dual vector
         size_t n = TpetraMultiVector<Real,LO,GO,Node>::getVector()->getNumVectors();
         primal_vec_ = ROL::makeShared<PrimalScaledTpetraMultiVector<Real,LO,GO,Node>>(
-                      ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>(TpetraMultiVector<Real>::getMap>(),n),
+                      ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(TpetraMultiVector<Real>::getMap(),n),
                       scale_vec_);
         isDualInitialized_ = true;
       }

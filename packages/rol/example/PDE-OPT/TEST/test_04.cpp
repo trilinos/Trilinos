@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromref(std::cout);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
     outStream = ROL::makeSharedFromRef(bhs);
 

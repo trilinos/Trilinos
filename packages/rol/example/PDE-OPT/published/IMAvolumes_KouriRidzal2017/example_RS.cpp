@@ -218,13 +218,13 @@ int main(int argc, char *argv[]) {
                                                                  pde->getVelocityFE(),
                                                                  pde->getPressureFE(),
                                                                  pde->getThermalFE(),
-                                                                 pde->getFieldHelper()));
-    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_ThermalFluids<RealT>(pde->getVelocityFE(>(),
+                                                                 pde->getFieldHelper());
+    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_ThermalFluids<RealT>>(pde->getVelocityFE(),
                                                                      pde->getPressureFE(),
                                                                      pde->getThermalFE(),
                                                                      pde->getThermalBdryFE(),
                                                                      pde->getBdryCellLocIds(),
-                                                                     pde->getFieldHelper()));
+                                                                     pde->getFieldHelper());
     ROL::SharedPointer<StdObjective_ThermalFluids<RealT> > std_obj
       = ROL::makeShared<StdObjective_ThermalFluids<RealT>>(*parlist);
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj

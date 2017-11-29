@@ -105,7 +105,7 @@ public:
     cellNodes_(cellNodes), basis_(basis), cubature_(cubature), sideId_(-1) {
 
     // Get base cell topology from basis.
-    cellTopo_ = ROL::makeShared<shards::CellTopology(basis_->getBaseCellTopology>());
+    cellTopo_ = ROL::makeShared<shards::CellTopology>(basis_->getBaseCellTopology());
 
     // Compute dimensions of multidimensional array members.
     c_  = cellNodes_->dimension(0);

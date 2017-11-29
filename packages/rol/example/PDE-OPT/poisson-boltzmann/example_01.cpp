@@ -104,39 +104,39 @@ int main(int argc, char *argv[]) {
       = ROL::makeShared<PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
     // Initialize quadratic objective function
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_L2Tracking_Poisson_Boltzmann<RealT>(pde->getFE>());
-    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_Poisson_Boltzmann<RealT>(pde->getFE>());
+    qoi_vec[0] = ROL::makeShared<QoI_L2Tracking_Poisson_Boltzmann<RealT>>(pde->getFE());
+    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_Poisson_Boltzmann<RealT>>(pde->getFE());
     ROL::SharedPointer<StdObjective_Poisson_Boltzmann<RealT> > std_obj
       = ROL::makeShared<StdObjective_Poisson_Boltzmann<RealT>>(*parlist);
     ROL::SharedPointer<PDE_Objective<RealT> > obj
-      = ROL::makeShared<PDE_Objective<RealT>(qoi_vec,std_obj,con->getAssembler>());
+      = ROL::makeShared<PDE_Objective<RealT>>(qoi_vec,std_obj,con->getAssembler());
 
     // Create state vector and set to zeroes
     ROL::SharedPointer<Tpetra::MultiVector<> > u_ptr = con->getAssembler()->createStateVector();
     u_ptr->randomize();
     ROL::SharedPointer<ROL::Vector<RealT> > up
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>(u_ptr,pde,con->getAssembler>());
+      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(u_ptr,pde,con->getAssembler());
     // Create control vector and set to ones
     ROL::SharedPointer<Tpetra::MultiVector<> > z_ptr = con->getAssembler()->createControlVector();
     z_ptr->putScalar(1.0);
     ROL::SharedPointer<ROL::Vector<RealT> > zp
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>(z_ptr,pde,con->getAssembler>());
+      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(z_ptr,pde,con->getAssembler());
     // Create residual vector and set to zeros
     ROL::SharedPointer<Tpetra::MultiVector<> > r_ptr = con->getAssembler()->createResidualVector();
     r_ptr->putScalar(0.0);
     ROL::SharedPointer<ROL::Vector<RealT> > rp
-      = ROL::makeShared<PDE_DualSimVector<RealT>(r_ptr,pde,con->getAssembler>());
+      = ROL::makeShared<PDE_DualSimVector<RealT>>(r_ptr,pde,con->getAssembler());
     // Create state direction vector and set to random
     ROL::SharedPointer<Tpetra::MultiVector<> > du_ptr = con->getAssembler()->createStateVector();
     du_ptr->randomize();
     ROL::SharedPointer<ROL::Vector<RealT> > dup
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>(du_ptr,pde,con->getAssembler>());
+      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(du_ptr,pde,con->getAssembler());
     // Create control direction vector and set to random
     ROL::SharedPointer<Tpetra::MultiVector<> > dz_ptr = con->getAssembler()->createControlVector();
     //dz_ptr->randomize();
     dz_ptr->putScalar(0.0);
     ROL::SharedPointer<ROL::Vector<RealT> > dzp
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>(dz_ptr,pde,con->getAssembler>());
+      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,con->getAssembler());
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);

@@ -163,12 +163,12 @@ int main(int argc, char *argv[]) {
     // Initialize compliance objective function.
     bool storage = parlist->sublist("Problem").get("Use Storage",true);
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_Helmholtz_StateTracking<RealT>(pde->getFE(>(),
+    qoi_vec[0] = ROL::makeShared<QoI_Helmholtz_StateTracking<RealT>>(pde->getFE(),
                                                                      pde->getFieldHelper(),
-                                                                     *parlist));
-    qoi_vec[1] = ROL::makeShared<QoI_Helmholtz_ControlPenalty<RealT>(pde->getFE(>(),
+                                                                     *parlist);
+    qoi_vec[1] = ROL::makeShared<QoI_Helmholtz_ControlPenalty<RealT>>(pde->getFE(),
                                                                       pde->getFieldHelper(),
-                                                                      *parlist));
+                                                                      *parlist);
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj
       = ROL::makeShared<PDE_Objective<RealT>>(qoi_vec,assembler);
     ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > robj

@@ -105,7 +105,7 @@ private:
     initZvec_ = false;
     // Initialize parameter component of z.
     if (initZpar_ && zp != ROL::nullPointer) {
-      zpar_ = ROL::makeShared<std::vector<Real>(zp->size(),static_cast<Real>>(0));
+      zpar_ = ROL::makeShared<std::vector<Real>>(zp->size(),static_cast<Real>(0));
     }
     initZpar_ = false;
     // Assemble affine term.
@@ -241,10 +241,10 @@ public:
       initZvec_(true), initZpar_(true), isStochastic_(isStochastic),
       assembleRHS_(true), assembleJ1_(true), assembleJ2_(true), assembleJ3_(true), setSolver_(true) {
     // Construct assembler.
-    assembler_ = ROL::makeShared<Assembler<Real>(pde_->getFields>(),meshMgr,comm,parlist,outStream);
+    assembler_ = ROL::makeShared<Assembler<Real>>(pde_->getFields(),meshMgr,comm,parlist,outStream);
     assembler_->setCellNodes(*pde_);
     // Construct solver.
-    solver_ = ROL::makeShared<Solver<Real>(parlist.sublist>("Solver"));
+    solver_ = ROL::makeShared<Solver<Real>>(parlist.sublist("Solver"));
     // Initialize zero vectors.
     cvec_ = assembler_->createResidualVector();
     uvec_ = assembler_->createStateVector();

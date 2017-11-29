@@ -547,7 +547,7 @@ public:
       ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradU_eval =
         ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
       fe_vol_->evaluateGradient(gradU_eval, u_coeff);
-      ROL::SharedPointer<std::vector<Real> > one = ROL::makeShared<std::vector<Real>(z_param->size>(), 1); 
+      ROL::SharedPointer<std::vector<Real> > one = ROL::makeShared<std::vector<Real>>(z_param->size(), 1); 
       // COMPUTE CONSTANT PDE COEFFICIENTS
       ROL::SharedPointer<Intrepid::FieldContainer<Real> > V
         = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
@@ -761,7 +761,7 @@ public:
         = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
       ROL::SharedPointer<Intrepid::FieldContainer<Real> > rhs
         = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
-      ROL::SharedPointer<std::vector<Real> > one = ROL::makeShared<std::vector<Real>(z_param->size>(), 1); 
+      ROL::SharedPointer<std::vector<Real> > one = ROL::makeShared<std::vector<Real>>(z_param->size(), 1); 
       computeCoefficients(V,rhs,one);
       // MULTIPLY V . grad(N)
       Intrepid::FieldContainer<Real> V_gradN(c, f, p);
@@ -810,7 +810,7 @@ public:
         = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p, d);
       ROL::SharedPointer<Intrepid::FieldContainer<Real> > rhs
         = ROL::makeShared<Intrepid::FieldContainer<Real>>(c, p);
-      ROL::SharedPointer<std::vector<Real> > one = ROL::makeShared<std::vector<Real>(z_param->size>(), 1); 
+      ROL::SharedPointer<std::vector<Real> > one = ROL::makeShared<std::vector<Real>>(z_param->size(), 1); 
       computeCoefficients(V,rhs,one);
       // MULTIPLY V . grad(N)
       Intrepid::FieldContainer<Real> V_gradN(c, f, p);

@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     outStream = ROL::makeSharedFromRef(std::cout);
   }
   else {
-    outStream = ROL::makeSharedFromRef(bhs;
+    outStream = ROL::makeSharedFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -164,12 +164,12 @@ int main(int argc, char *argv[]) {
     // Initialize compliance objective function.
     bool storage = parlist->sublist("Problem").get("Use Storage",true);
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_Helmholtz_StateTracking<RealT>(pde->getFE(>(),
+    qoi_vec[0] = ROL::makeShared<QoI_Helmholtz_StateTracking<RealT>>(pde->getFE(),
                                                                      pde->getFieldHelper(),
-                                                                     *parlist));
-    qoi_vec[1] = ROL::makeShared<QoI_Helmholtz_ControlPenalty<RealT>(pde->getFE(>(),
+                                                                     *parlist);
+    qoi_vec[1] = ROL::makeShared<QoI_Helmholtz_ControlPenalty<RealT>>(pde->getFE(),
                                                                       pde->getFieldHelper(),
-                                                                      *parlist));
+                                                                      *parlist);
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj
       = ROL::makeShared<PDE_Objective<RealT>>(qoi_vec,assembler);
     ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > robj
@@ -309,9 +309,9 @@ int main(int argc, char *argv[]) {
     // Schur matrix.
     Teuchos::Time schurTimer("Schur Time", true);
     ROL::SharedPointer<Tpetra::CrsMatrix<> > AAT =
-      ROL::makeShared<Tpetra::CrsMatrix<>(A->getRowMap(), 2*A->getGlobalMaxNumRowEntries>());
+      ROL::makeShared<Tpetra::CrsMatrix<>>(A->getRowMap(), 2*A->getGlobalMaxNumRowEntries());
     ROL::SharedPointer<Tpetra::CrsMatrix<> > BBT =
-      ROL::makeShared<Tpetra::CrsMatrix<>(B->getRowMap(), 2*B->getGlobalMaxNumRowEntries>());
+      ROL::makeShared<Tpetra::CrsMatrix<>>(B->getRowMap(), 2*B->getGlobalMaxNumRowEntries());
     ROL::SharedPointer<Tpetra::CrsMatrix<> > C;
     Tpetra::MatrixMatrix::Multiply(*A, false, *A, true, *AAT);
     Tpetra::MatrixMatrix::Multiply(*B, false, *B, true, *BBT);

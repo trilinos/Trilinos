@@ -113,10 +113,10 @@ int main(int argc, char *argv[]) {
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = &std::cout, false;
+    outStream = ROL::makeSharedFromRef(std::cout);
   }
   else {
-    outStream = &bhs, false;
+    outStream = ROL::makeSharedFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -153,8 +153,8 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<Assembler<RealT> > assembler = pdecon->getAssembler();
     // Initialize quadratic objective function
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_L2Tracking_Poisson<RealT>(pde->getFE>());
-    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_Poisson<RealT>(pde->getFE>());
+    qoi_vec[0] = ROL::makeShared<QoI_L2Tracking_Poisson<RealT>>(pde->getFE());
+    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_Poisson<RealT>>(pde->getFE());
     RealT alpha = parlist->sublist("Problem").get("Control penalty parameter",1e-2);
     std::vector<RealT> wt(2); wt[0] = static_cast<RealT>(1); wt[1] = alpha;
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj

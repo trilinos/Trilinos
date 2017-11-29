@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
 
     /*** Initialize volume constraint. ***/
     ROL::SharedPointer<QoI<RealT> > qoi_vol
-      = ROL::makeShared<QoI_Volume_TopoOpt<RealT>(pde->getFE(),pde->getFieldHelper>(),*parlist);
+      = ROL::makeShared<QoI_Volume_TopoOpt<RealT>>(pde->getFE(),pde->getFieldHelper(),*parlist);
     ROL::SharedPointer<IntegralConstraint<RealT> > vcon
       = ROL::makeShared<IntegralConstraint<RealT>>(qoi_vol,assembler);
 
@@ -238,10 +238,10 @@ int main(int argc, char *argv[]) {
     bool useEnergy = parlist->sublist("Problem").get("Use Energy Objective",false);
     if (useEnergy) {
       RealT objScaling = parlist->sublist("Problem").get("Objective Scaling",1.0);
-      qoi_vec[0] = ROL::makeShared<QoI_Energy_TopoOpt<RealT>(pde->getFE(>(),
+      qoi_vec[0] = ROL::makeShared<QoI_Energy_TopoOpt<RealT>>(pde->getFE(),
                                                               pde->getMaterialTensor(),
                                                               pde->getFieldHelper(),
-                                                              objScaling));
+                                                              objScaling);
     }
     else {
       Teuchos::ParameterList list(*parlist);
@@ -258,10 +258,10 @@ int main(int argc, char *argv[]) {
         objScaling /= fnorm2;
       }
       u_ptr->randomize();
-      qoi_vec[0] = ROL::makeShared<QoI_TopoOpt<RealT>(pde->getFE(>(),
+      qoi_vec[0] = ROL::makeShared<QoI_TopoOpt<RealT>>(pde->getFE(),
                                                        pde->getLoad(),
                                                        pde->getFieldHelper(),
-                                                       objScaling));
+                                                       objScaling);
     }
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj
       = ROL::makeShared<PDE_Objective<RealT>>(qoi_vec,assembler);

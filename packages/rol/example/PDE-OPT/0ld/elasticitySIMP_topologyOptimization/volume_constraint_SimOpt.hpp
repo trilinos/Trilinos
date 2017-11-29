@@ -69,7 +69,7 @@ public:
   {
     ROL::SharedPointer<std::vector<Real> > cp = (dynamic_cast<ROL::StdVector<Real>&>(c)).getVector();
     ROL::SharedPointer<const Tpetra::MultiVector<> > zp = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
-    ROL::SharedPointer<Tpetra::MultiVector<> > unit = ROL::makeShared<Tpetra::MultiVector<>(zp->getMap>(), 1, true);
+    ROL::SharedPointer<Tpetra::MultiVector<> > unit = ROL::makeShared<Tpetra::MultiVector<>>(zp->getMap(), 1, true);
     unit->putScalar(1.0);
     Teuchos::Array<Real> sumZ(1, 0);
     zp->dot(*unit, sumZ);
@@ -89,7 +89,7 @@ public:
   {
     ROL::SharedPointer<std::vector<Real> > jvp = (dynamic_cast<ROL::StdVector<Real>&>(jv)).getVector();
     ROL::SharedPointer<const Tpetra::MultiVector<> > vp = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
-    ROL::SharedPointer<Tpetra::MultiVector<> > unit = ROL::makeShared<Tpetra::MultiVector<>(vp->getMap>(), 1, true);
+    ROL::SharedPointer<Tpetra::MultiVector<> > unit = ROL::makeShared<Tpetra::MultiVector<>>(vp->getMap(), 1, true);
     unit->putScalar(1.0);
     Teuchos::Array<Real> sumV(1, 0);
     vp->dot(*unit, sumV);

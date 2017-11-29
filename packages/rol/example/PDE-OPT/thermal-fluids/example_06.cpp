@@ -163,10 +163,10 @@ int main(int argc, char *argv[]) {
     = ROL::makeShared<Teuchos::SerialComm<int>>();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = &std::cout, false;
+    outStream = ROL::makeSharedFromRef(std::cout);
   }
   else {
-    outStream = &bhs, false;
+    outStream = ROL::makeSharedFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -226,12 +226,12 @@ int main(int argc, char *argv[]) {
                                                                  pde->getPressureFE(),
                                                                  pde->getThermalFE(),
                                                                  pde->getFieldHelper());
-    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_ThermalFluids<RealT>(pde->getVelocityFE(>(),
+    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_ThermalFluids<RealT>>(pde->getVelocityFE(),
                                                                      pde->getPressureFE(),
                                                                      pde->getThermalFE(),
                                                                      pde->getThermalBdryFE(),
                                                                      pde->getBdryCellLocIds(),
-                                                                     pde->getFieldHelper()));
+                                                                     pde->getFieldHelper());
     ROL::SharedPointer<StdObjective_ThermalFluids<RealT> > std_obj
       = ROL::makeShared<StdObjective_ThermalFluids<RealT>>(*parlist);
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj

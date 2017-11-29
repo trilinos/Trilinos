@@ -260,8 +260,8 @@ public:
     myGlobIds_.erase( std::unique(myGlobIds_.begin(), myGlobIds_.end()), myGlobIds_.end() );
 
     // Build maps.
-    myOverlapMap_ = ROL::makeShared<Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(>(),
-                                                   myGlobIds_, 0, comm));
+    myOverlapMap_ = ROL::makeShared<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+                                                   myGlobIds_, 0, comm);
     //std::cout << std::endl << myOverlapMap_->getNodeElementList();
     /** One can also use the non-member function:
           myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, comm);
@@ -502,7 +502,7 @@ public:
     matA_->fillComplete();
 
     // Mass matrix B.
-    matB_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), nz, true);
+    matB_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), nz, true);
     matB_overlap_ = ROL::makeShared<Tpetra::MultiVector<>>(myOverlapMap_, nz, true);
     for (int k=0; k<nz; ++k) {// assembly over number of control sources
       for (int i=0; i<numCells_; ++i) {// assembly on the overlap map
@@ -540,7 +540,7 @@ public:
 
     // Assemble vectors.
     // vecF_ requires assembly using vecF_overlap_ and redistribution
-    vecF_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), 1, true);
+    vecF_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     vecF_overlap_ = ROL::makeShared<Tpetra::MultiVector<>>(myOverlapMap_, 1, true);
     for (int i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
       for (int j=0; j<numLocalDofs; ++j) {
@@ -552,7 +552,7 @@ public:
     Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());              // redistribution:
     vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
     // vecUd_ does not require assembly
-    vecUd_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getDomainMap>(), 1, true);
+    vecUd_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getDomainMap(), 1, true);
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
         if (vecUd_->getMap()->isNodeGlobalElement(cellDofs(myCellIds_[i],j))) {
@@ -563,7 +563,7 @@ public:
       }
     }
     // vecWeights
-    vecWeights_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getDomainMap>(), 1, true);
+    vecWeights_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getDomainMap(), 1, true);
     vecWeights_->putScalar(1.0);
     /*vecWeights_->putScalar(0.0);
     Real mask1_x1 = 0.30, mask1_x2 = 0.90, mask1_y1 = 0.20, mask1_y2 = 0.80;
@@ -605,8 +605,8 @@ public:
     //       [ G  ]            [ F2 ]
     ROL::SharedPointer<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
     matA_dirichlet_ = matA_->clone(node);
-    matB_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), nz, true);
-    vecF_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), 1, true);
+    matB_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), nz, true);
+    vecF_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     Tpetra::deep_copy(*matB_dirichlet_, *matB_);
     Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
     ROL::SharedPointer<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
@@ -729,7 +729,7 @@ public:
                                                   Intrepid::COMP_CPP);
 
     // vecF_ requires assembly using vecF_overlap_ and redistribution
-    vecF_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), 1, true);
+    vecF_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     vecF_overlap_ = ROL::makeShared<Tpetra::MultiVector<>>(myOverlapMap_, 1, true);
     for (int i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
       for (int j=0; j<numLocalDofs; ++j) {

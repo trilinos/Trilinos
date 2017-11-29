@@ -115,7 +115,7 @@ public:
        cellNodes_(cellNodes), basis_(basis), cubature_(cubature), sideId_(-1) {
 
     // Get base cell topology from basis.
-    cellTopo_ = ROL::makeShared<shards::CellTopology(basis_->getBaseCellTopology>());
+    cellTopo_ = ROL::makeShared<shards::CellTopology>(basis_->getBaseCellTopology());
 
     // Compute dimensions of multidimensional array members.
     c_  = cellNodes_->dimension(0);
@@ -285,7 +285,7 @@ public:
        cellNodes_(cellNodes), basis_(basis), cubature_(cubature), sideId_(sideId) {
 
     // Get base cell topology from basis.
-    cellTopo_ = ROL::makeShared<shards::CellTopology(basis_->getBaseCellTopology>());
+    cellTopo_ = ROL::makeShared<shards::CellTopology>(basis_->getBaseCellTopology());
 
     // Compute dimensions of multidimensional array members.
     c_  = cellNodes_->dimension(0);
@@ -296,7 +296,7 @@ public:
     //std::cout << "FE: c = " << c_ << ", f = " << f_ << ", p = " << p_ << ", d = " << d_ << std::endl;
 
     // Get side subcell topology.
-    sideTopo_ = ROL::makeShared<shards::CellTopology(cellTopo_->getCellTopologyData>(sd_, sideId_));
+    sideTopo_ = ROL::makeShared<shards::CellTopology>(cellTopo_->getCellTopologyData(sd_, sideId_));
 
     // Allocate multidimensional arrays.
     cubPoints_            = ROL::makeShared<Intrepid::FieldContainer<Real>>(p_, d_);

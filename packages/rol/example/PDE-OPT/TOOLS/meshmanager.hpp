@@ -50,7 +50,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Intrepid_FieldContainer.hpp"
-
+#include "ROL_SharedPointer.hpp"
 
 /** \class  MeshManager
     \brief  This is the pure virtual parent class for mesh construction

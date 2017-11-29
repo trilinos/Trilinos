@@ -275,13 +275,13 @@ int main(int argc, char *argv[]) {
 
     // Initialize compliance objective function.
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_TopoOpt<RealT>(pde->getFE(>(),
+    qoi_vec[0] = ROL::makeShared<QoI_TopoOpt<RealT>(pde->getFE(),
                                                      pde->getLoad(),
                                                      pde->getFieldHelper(),
-                                                     objFactor));
-    qoi_vec[1] = ROL::makeShared<QoI_Volume_TopoOpt<RealT>(pde->getFE(>(),
+                                                     objFactor);
+    qoi_vec[1] = ROL::makeShared<QoI_Volume_TopoOpt<RealT>(pde->getFE(),
                                                             pde->getFieldHelper(),
-                                                            *parlist));
+                                                            *parlist);
     RealT lambda = parlist->sublist("Problem").get("Volume Cost Parameter",1.0);
     ROL::SharedPointer<StdObjective_TopoOpt<RealT> > std_obj
       = ROL::makeShared<StdObjective_TopoOpt<RealT>>(lambda);

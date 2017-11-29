@@ -78,21 +78,21 @@ public:
     ROL::SharedPointer<Tpetra::MultiVector<> > uvec;
     ROL::SharedPointer<Tpetra::MultiVector<> > zvec;
     // Assemble local components
-    assembler_local_ = ROL::makeShared<Assembler<Real>(pde_local_->getFields>(),mesh_local,comm,parlist,outStream);
+    assembler_local_ = ROL::makeShared<Assembler<Real>>(pde_local_->getFields(),mesh_local,comm,parlist,outStream);
     assembler_local_->setCellNodes(*pde_local_);
     uvec = assembler_local_->createStateVector();   uvec->putScalar(static_cast<Real>(0));
     zvec = assembler_local_->createControlVector(); zvec->putScalar(static_cast<Real>(0));
     assembler_local_->assemblePDEJacobian1(Klocal_,pde_local_,uvec,zvec);
     assembler_local_->assemblePDEResidual(Flocal_,pde_local_,uvec,zvec);
     // Assemble cylinder components
-    assembler_cylinder_ = ROL::makeShared<Assembler<Real>(pde_cylinder_->getFields>(),mesh_cylinder,comm,parlist,outStream);
+    assembler_cylinder_ = ROL::makeShared<Assembler<Real>>(pde_cylinder_->getFields(),mesh_cylinder,comm,parlist,outStream);
     assembler_cylinder_->setCellNodes(*pde_cylinder_);
     assembler_cylinder_->assemblePDERieszMap1(Mcylinder_,pde_cylinder_);
     // Build fractional vector
     Real s     = parlist.sublist("Problem").get("Fractional Power",0.5);
     Real alpha = static_cast<Real>(1) - static_cast<Real>(2)*s;
     Real ds    = std::pow(static_cast<Real>(2), alpha) * tgamma(static_cast<Real>(1)-s)/tgamma(s);
-    Fptr_ = ROL::makeShared<Tpetra::MultiVector<>(Klocal_->getRowMap(),Mcylinder_->getGlobalNumCols>());
+    Fptr_ = ROL::makeShared<Tpetra::MultiVector<>>(Klocal_->getRowMap(),Mcylinder_->getGlobalNumCols());
     Fptr_->getVectorNonConst(0)->scale(-ds,*Flocal_);
     F_ = ROL::makeShared<ROL::TpetraMultiVector<Real>>(Fptr_);
   }

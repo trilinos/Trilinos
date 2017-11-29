@@ -138,8 +138,8 @@ int main(int argc, char *argv[]) {
 
     // Build objective fuction
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_L2Tracking_Fractional_Poisson<RealT>(pde_local->getFE>());
-    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_Fractional_Poisson<RealT>(pde_local->getFE>());
+    qoi_vec[0] = ROL::makeShared<QoI_L2Tracking_Fractional_Poisson<RealT>>(pde_local->getFE());
+    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_Fractional_Poisson<RealT>>(pde_local->getFE());
     RealT stateCost   = parlist->sublist("Problem").get("State Cost",1e0);
     RealT controlCost = parlist->sublist("Problem").get("Control Cost",1e0);
     std::vector<RealT> wts = {stateCost, controlCost};
@@ -150,9 +150,9 @@ int main(int argc, char *argv[]) {
 
     // Build vectors
     ROL::SharedPointer<Tpetra::MultiVector<> > stateVec = assembler->createStateVector();
-    ROL::SharedPointer<Tpetra::MultiVector<> > u_ptr    = ROL::makeShared<Tpetra::MultiVector<>(stateVec->getMap>(),NI+1);
-    ROL::SharedPointer<Tpetra::MultiVector<> > p_ptr    = ROL::makeShared<Tpetra::MultiVector<>(stateVec->getMap>(),NI+1);
-    ROL::SharedPointer<Tpetra::MultiVector<> > du_ptr   = ROL::makeShared<Tpetra::MultiVector<>(stateVec->getMap>(),NI+1);
+    ROL::SharedPointer<Tpetra::MultiVector<> > u_ptr    = ROL::makeShared<Tpetra::MultiVector<>>(stateVec->getMap(),NI+1);
+    ROL::SharedPointer<Tpetra::MultiVector<> > p_ptr    = ROL::makeShared<Tpetra::MultiVector<>>(stateVec->getMap(),NI+1);
+    ROL::SharedPointer<Tpetra::MultiVector<> > du_ptr   = ROL::makeShared<Tpetra::MultiVector<>>(stateVec->getMap(),NI+1);
     u_ptr->randomize();  //u_ptr->putScalar(static_cast<RealT>(1));
     p_ptr->randomize();  //p_ptr->putScalar(static_cast<RealT>(1));
     du_ptr->randomize(); //du_ptr->putScalar(static_cast<RealT>(0));
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<ROL::Vector<RealT> > dup = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(du_ptr);
     // Create residual vectors
     ROL::SharedPointer<Tpetra::MultiVector<> > conVec = assembler->createResidualVector();
-    ROL::SharedPointer<Tpetra::MultiVector<> > r_ptr  = ROL::makeShared<Tpetra::MultiVector<>(conVec->getMap>(),NI+1);
+    ROL::SharedPointer<Tpetra::MultiVector<> > r_ptr  = ROL::makeShared<Tpetra::MultiVector<>>(conVec->getMap(),NI+1);
     r_ptr->randomize(); //r_ptr->putScalar(static_cast<RealT>(1));
     ROL::SharedPointer<ROL::Vector<RealT> > rp = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(r_ptr);
     // Create control vector and set to ones

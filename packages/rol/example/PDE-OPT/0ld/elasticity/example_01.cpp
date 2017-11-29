@@ -78,10 +78,10 @@ int main(int argc, char *argv[]) {
   ROL::SharedPointer<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = &std::cout, false;
+    outStream = ROL::makeSharedFromRef(std::cout);
   }
   else {
-    outStream = &bhs, false;
+    outStream = ROL::makeSharedFromRef(bhs);
   }
 
   int errorFlag  = 0;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<ElasticityData<RealT> > data = ROL::makeShared<ElasticityData<RealT>>(comm, parlist, outStream);
     ROL::SharedPointer<Tpetra::MultiVector<RealT> > rhs = data->getVecF();
     data->getSolver()->setB(rhs);
-    ROL::SharedPointer<Tpetra::MultiVector<RealT> > sol = ROL::makeShared<Tpetra::MultiVector<RealT>(rhs->getMap>(), 1, true);
+    ROL::SharedPointer<Tpetra::MultiVector<RealT> > sol = ROL::makeShared<Tpetra::MultiVector<RealT>>(rhs->getMap(), 1, true);
     //sol->putScalar(0.0);
     data->getSolver()->setX(sol);
     data->getSolver()->solve();

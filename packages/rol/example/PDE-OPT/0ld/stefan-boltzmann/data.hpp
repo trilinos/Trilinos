@@ -248,8 +248,8 @@ public:
     myGlobIds_.erase( std::unique(myGlobIds_.begin(), myGlobIds_.end()), myGlobIds_.end() );
 
     // Build maps.
-    myOverlapMap_ = ROL::makeShared<Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(>(),
-                                                   myGlobIds_, 0, comm));
+    myOverlapMap_ = ROL::makeShared<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+                                                   myGlobIds_, 0, comm);
     //std::cout << std::endl << myOverlapMap_->getNodeElementList();
     /** One can also use the non-member function:
           myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, comm);
@@ -440,7 +440,7 @@ public:
 
     // Assemble vectors.
     // vecF_ requires assembly using vecF_overlap_ and redistribution
-    vecF_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), 1, true);
+    vecF_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     vecF_overlap_ = ROL::makeShared<Tpetra::MultiVector<>>(myOverlapMap_, 1, true);
     for (int i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
       for (int j=0; j<numLocalDofs; ++j) {
@@ -452,7 +452,7 @@ public:
     Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());              // redistribution:
     vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
     // vecUd_ does not require assembly
-    vecUd_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getDomainMap>(), 1, true);
+    vecUd_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getDomainMap(), 1, true);
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
         if (vecUd_->getMap()->isNodeGlobalElement(cellDofs(myCellIds_[i],j))) {
@@ -476,7 +476,7 @@ public:
     ROL::SharedPointer<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
     matA_dirichlet_ = matA_->clone(node);
     matM_dirichlet_ = matM_->clone(node);
-    vecF_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), 1, true);
+    vecF_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
     ROL::SharedPointer<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
     std::vector<std::vector<Intrepid::FieldContainer<int> > > &dss = *dirichletSideSets;
@@ -678,7 +678,7 @@ public:
                                                   Intrepid::COMP_CPP);
 
     // vecF_ requires assembly using vecF_overlap_ and redistribution
-    vecF_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), 1, true);
+    vecF_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     vecF_overlap_ = ROL::makeShared<Tpetra::MultiVector<>>(myOverlapMap_, 1, true);
     for (int i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
       for (int j=0; j<numLocalDofs; ++j) {
@@ -774,7 +774,7 @@ public:
   Real computeStateError(const ROL::SharedPointer<const Tpetra::MultiVector<> > &soln) const {
 
     ROL::SharedPointer<Tpetra::MultiVector<> > soln_overlap =
-      ROL::makeShared<Tpetra::MultiVector<>(vecF_overlap_->getMap>(), 1, true);
+      ROL::makeShared<Tpetra::MultiVector<>>(vecF_overlap_->getMap(), 1, true);
     Tpetra::Import<> importer(vecUd_->getMap(), soln_overlap->getMap());              // redistribution:
     soln_overlap->doImport(*soln, importer, Tpetra::REPLACE);                         // from the unique map to the overlap map
 

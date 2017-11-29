@@ -239,8 +239,8 @@ public:
     myGlobIds_.erase( std::unique(myGlobIds_.begin(), myGlobIds_.end()), myGlobIds_.end() );
 
     // Build maps.
-    myOverlapMap_ = ROL::makeShared<Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(>(),
-                                                   myGlobIds_, 0, comm));
+    myOverlapMap_ = ROL::makeShared<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+                                                   myGlobIds_, 0, comm);
     //std::cout << std::endl << myOverlapMap_->getNodeElementList();
     /** One can also use the non-member function:
           myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, comm);
@@ -249,8 +249,8 @@ public:
     myUniqueMap_ = Tpetra::createOneToOne<int,int>(myOverlapMap_);
     //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
 
-    myBColumnMap_ = ROL::makeShared<Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(>(),
-                                 myCellIds_, 0, comm));
+    myBColumnMap_ = ROL::makeShared<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+                                 myCellIds_, 0, comm);
 
     /****************************************************/
     /****************************************************/
@@ -453,16 +453,16 @@ public:
 
   void apply(ROL::SharedPointer<Tpetra::MultiVector<> > & Fx, const ROL::SharedPointer<const Tpetra::MultiVector<> > & x) {
     if (enableFilter_) {
-      ROL::SharedPointer<Tpetra::MultiVector<> > Bx = ROL::makeShared<Tpetra::MultiVector<>(matB_->getRangeMap>(), 1);
-      ROL::SharedPointer<Tpetra::MultiVector<> > AiBx = ROL::makeShared<Tpetra::MultiVector<>(matA_->getDomainMap>(), 1);
-      ROL::SharedPointer<Tpetra::MultiVector<> > Fx_unscaled = ROL::makeShared<Tpetra::MultiVector<>(matB_trans_->getRangeMap>(), 1);
+      ROL::SharedPointer<Tpetra::MultiVector<> > Bx = ROL::makeShared<Tpetra::MultiVector<>>(matB_->getRangeMap(), 1);
+      ROL::SharedPointer<Tpetra::MultiVector<> > AiBx = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getDomainMap(), 1);
+      ROL::SharedPointer<Tpetra::MultiVector<> > Fx_unscaled = ROL::makeShared<Tpetra::MultiVector<>>(matB_trans_->getRangeMap(), 1);
       matB_->apply(*x, *Bx);
       solverA_->setX(AiBx);
       solverA_->setB(Bx);
       solverA_->solve();
       //outputTpetraVector(AiBx, "density_nodal.txt");
       matB_trans_->apply(*AiBx, *Fx_unscaled);
-      ROL::SharedPointer<Tpetra::MultiVector<> > vecInvCellVolumes = ROL::makeShared<Tpetra::MultiVector<>(matB_->getDomainMap>(), 1);
+      ROL::SharedPointer<Tpetra::MultiVector<> > vecInvCellVolumes = ROL::makeShared<Tpetra::MultiVector<>>(matB_->getDomainMap(), 1);
       vecInvCellVolumes->reciprocal(*vecCellVolumes_);
       Fx->elementWiseMultiply(1.0, *(vecInvCellVolumes->getVector(0)), *Fx_unscaled, 0.0);
     }
@@ -501,7 +501,7 @@ public:
       myCellVolumes_.push_back(temp);
     }
 
-    vecCellVolumes_ = ROL::makeShared<Tpetra::MultiVector<>(matB_->getDomainMap>(), 1, true);
+    vecCellVolumes_ = ROL::makeShared<Tpetra::MultiVector<>>(matB_->getDomainMap(), 1, true);
     for (int i=0; i<numCells_; ++i){
         vecCellVolumes_->replaceGlobalValue(myCellIds_[i], 0, myCellVolumes_[i]);
     }

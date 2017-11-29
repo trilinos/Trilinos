@@ -86,7 +86,7 @@ public:
       ROL::SharedPointer<const Tpetra::MultiVector<> > zp
         = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
       ROL::SharedPointer<Tpetra::MultiVector<> > Fzp
-        = ROL::makeShared<Tpetra::MultiVector<>(zp->getMap>(), 1);
+        = ROL::makeShared<Tpetra::MultiVector<>>(zp->getMap(), 1);
       filter_->apply(Fzp, zp);
       data_->updateMaterialDensity(Fzp);
     }
@@ -155,7 +155,7 @@ public:
       ROL::SharedPointer<const Tpetra::MultiVector<> > up
         = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
       ROL::SharedPointer<Tpetra::MultiVector<> > tmp
-        = ROL::makeShared<Tpetra::MultiVector<>(gp->getMap>(), 1);
+        = ROL::makeShared<Tpetra::MultiVector<>>(gp->getMap(), 1);
       data_->ApplyAdjointJacobian2ToVec (tmp, up, up);
       filter_->apply(gp, tmp);
     }
@@ -196,7 +196,7 @@ public:
       ROL::SharedPointer<const Tpetra::MultiVector<> > up
         = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
       ROL::SharedPointer<Tpetra::MultiVector<> > Fvp
-        = ROL::makeShared<Tpetra::MultiVector<>(vp->getMap>(), 1);
+        = ROL::makeShared<Tpetra::MultiVector<>>(vp->getMap(), 1);
       filter_->apply(Fvp, vp);
       data_->ApplyJacobian2ToVec (hvp, up, Fvp);
       Real two(2);
@@ -220,7 +220,7 @@ public:
       ROL::SharedPointer<const Tpetra::MultiVector<> > up
         = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
       ROL::SharedPointer<Tpetra::MultiVector<> > tmp
-        = ROL::makeShared<Tpetra::MultiVector<>(hvp->getMap>(), 1);
+        = ROL::makeShared<Tpetra::MultiVector<>>(hvp->getMap(), 1);
       data_->ApplyAdjointJacobian2ToVec (tmp, up, vp);
       filter_->apply(hvp, tmp);
       Real two(2);
@@ -244,10 +244,10 @@ public:
       ROL::SharedPointer<const Tpetra::MultiVector<> > up
         = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
       ROL::SharedPointer<Tpetra::MultiVector<> > Fvp
-        = ROL::makeShared<Tpetra::MultiVector<>(vp->getMap>(), 1);
+        = ROL::makeShared<Tpetra::MultiVector<>>(vp->getMap(), 1);
       filter_->apply(Fvp, vp);
       ROL::SharedPointer<Tpetra::MultiVector<> > tmp
-        = ROL::makeShared<Tpetra::MultiVector<>(hvp->getMap>(), 1);
+        = ROL::makeShared<Tpetra::MultiVector<>>(hvp->getMap(), 1);
       data_->ApplyAdjointHessian22ToVec (tmp, up, Fvp, up);
       filter_->apply(hvp, tmp);
     }

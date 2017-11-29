@@ -148,7 +148,7 @@ public:
 
     } // end parse header
 
-    cellTopo_ = ROL::makeShared<shards::CellTopology( shards::getCellTopologyData<shards::Hexahedron<8> >>() );
+    cellTopo_ = ROL::makeShared<shards::CellTopology>( shards::getCellTopologyData<shards::Hexahedron<8>>() );
 
     // Set up internal storage.
     numNodesPerCell_ = cellTopo_->getVertexCount();

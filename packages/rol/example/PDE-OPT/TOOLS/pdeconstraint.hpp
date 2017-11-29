@@ -697,9 +697,9 @@ public:
       isH31zero_(false),  isH31notImplemented_(false),
       isH32zero_(false),  isH32notImplemented_(false),
       isH33zero_(false),  isH33notImplemented_(false) {
-    assembler_ = ROL::makeShared<Assembler<Real>(pde_->getFields>(),meshMgr,comm,parlist,outStream);
+    assembler_ = ROL::makeShared<Assembler<Real>>(pde_->getFields(),meshMgr,comm,parlist,outStream);
     assembler_->setCellNodes(*pde_);
-    solver_ = ROL::makeShared<Solver<Real>(parlist.sublist>("Solver"));
+    solver_ = ROL::makeShared<Solver<Real>>(parlist.sublist("Solver"));
   }
 
   PDE_Constraint(const ROL::SharedPointer<PDE<Real> >       &pde,

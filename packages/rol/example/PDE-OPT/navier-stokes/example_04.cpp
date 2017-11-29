@@ -251,11 +251,11 @@ int main(int argc, char *argv[]) {
                                                                 pde->getVelocityFE(),
                                                                 pde->getPressureFE(),
                                                                 pde->getFieldHelper());
-    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_NavierStokes<RealT>(pde->getVelocityFE(>(),
+    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_NavierStokes<RealT>>(pde->getVelocityFE(),
                                                                     pde->getPressureFE(),
                                                                     pde->getVelocityBdryFE(),
                                                                     pde->getBdryCellLocIds(),
-                                                                    pde->getFieldHelper()));
+                                                                    pde->getFieldHelper());
     ROL::SharedPointer<StdObjective_NavierStokes<RealT> > std_obj
       = ROL::makeShared<StdObjective_NavierStokes<RealT>>(*parlist);
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj

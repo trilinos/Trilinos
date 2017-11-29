@@ -102,10 +102,10 @@ int main(int argc, char *argv[]) {
     = ROL::makeShared<Teuchos::SerialComm<int>>();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = &std::cout, false;
+    outStream = ROL::makeSharedFromRef(std::cout);
   }
   else {
-    outStream = &bhs, false;
+    outStream = ROL::makeSharedFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<ROL::Vector<RealT> > rzp
       = ROL::makeShared<PDE_PrimalOptVector<RealT>>(rz_ptr,pde,assembler,*parlist);
     ROL::SharedPointer<Doping<RealT> > dope
-      = ROL::makeShared<Doping<RealT>(pde->getFE>(),
+      = ROL::makeShared<Doping<RealT>>(pde->getFE(), pde->getCellNodes(),
                                        assembler->getDofManager()->getCellDofs(),
                                        assembler->getCellIds(),*parlist);
     // Initialize "filtered" of "unfiltered" constraint.
@@ -229,16 +229,16 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(3,ROL::nullPointer);
     // Current flow over drain
-    qoi_vec[0] = ROL::makeShared<QoI_State_Cost_1_Poisson_Boltzmann<RealT>(pde->getFE(>(),
-                                    pde->getBdryFE(),pde->getBdryCellLocIds(),*parlist));
+    qoi_vec[0] = ROL::makeShared<QoI_State_Cost_1_Poisson_Boltzmann<RealT>>(pde->getFE(),
+                                    pde->getBdryFE(),pde->getBdryCellLocIds(),*parlist);
     ROL::SharedPointer<IntegralObjective<RealT> > stateObj
       = ROL::makeShared<IntegralObjective<RealT>>(qoi_vec[0],assembler);
     // Deviation from reference doping
-    qoi_vec[1] = ROL::makeShared<QoI_Control_Cost_1_Poisson_Boltzmann<RealT>(pde->getFE>(),dope);
+    qoi_vec[1] = ROL::makeShared<QoI_Control_Cost_1_Poisson_Boltzmann<RealT>>(pde->getFE(),dope);
     ROL::SharedPointer<IntegralObjective<RealT> > ctrlObj1
       = ROL::makeShared<IntegralObjective<RealT>>(qoi_vec[1],assembler);
     // H1-Seminorm of doping
-    qoi_vec[2] = ROL::makeShared<QoI_Control_Cost_2_Poisson_Boltzmann<RealT>(pde->getFE>());
+    qoi_vec[2] = ROL::makeShared<QoI_Control_Cost_2_Poisson_Boltzmann<RealT>>(pde->getFE());
     ROL::SharedPointer<IntegralObjective<RealT> > ctrlObj2
       = ROL::makeShared<IntegralObjective<RealT>>(qoi_vec[2],assembler);
     // Build standard vector objective function
@@ -260,16 +260,16 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
       = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(
                        obj,pdeWithDoping,stateStore,up,zp,pp,storage);
-
+ 
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
     /*************************************************************************/
     ROL::SharedPointer<Tpetra::MultiVector<> > lo_ptr = assembler->createControlVector();
     ROL::SharedPointer<Tpetra::MultiVector<> > hi_ptr = assembler->createControlVector();
     ROL::SharedPointer<DopingBounds<RealT> > dopeBnd
-      = ROL::makeShared<DopingBounds<RealT>(pde->getFE>(),
+      = ROL::makeShared<DopingBounds<RealT>>(pde->getFE(),pde->getCellNodes(),
                                              assembler->getDofManager()->getCellDofs(),
-                                             assembler->getCellIds(),*parlist));
+                                             assembler->getCellIds(),*parlist);
     dopeBnd->build(lo_ptr,hi_ptr);
     ROL::SharedPointer<ROL::Vector<RealT> > lop, hip;
     lop = ROL::makeShared<PDE_PrimalOptVector<RealT>>(lo_ptr,pde,assembler);

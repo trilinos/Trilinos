@@ -42,7 +42,7 @@ public:
                   std::ostream &outStream = std::cout)
     : pde_(pde), assembleRHS_(true), assembleJ1_(true) {
     // Construct assembler.
-    assembler_ = ROL::makeShared<Assembler<Real>(pde_->getFields>(),meshMgr,comm,parlist,outStream);
+    assembler_ = ROL::makeShared<Assembler<Real>>(pde_->getFields(),meshMgr,comm,parlist,outStream);
     assembler_->setCellNodes(*pde_);
     // Initialize zero vectors.
     cvec_ = assembler_->createResidualVector();

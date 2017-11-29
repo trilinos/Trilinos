@@ -130,8 +130,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     // Initialize quadratic objective function
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_State_Cost_Allen_Cahn<RealT>(pde->getFE>());
-    qoi_vec[1] = ROL::makeShared<QoI_Control_Cost_Allen_Cahn<RealT>(pde->getFE(), pde->getBdryFE(), pde->getBdryCellLocIds>());
+    qoi_vec[0] = ROL::makeShared<QoI_State_Cost_Allen_Cahn<RealT>>(pde->getFE());
+    qoi_vec[1] = ROL::makeShared<QoI_Control_Cost_Allen_Cahn<RealT>>(pde->getFE(), pde->getBdryFE(), pde->getBdryCellLocIds());
     std::vector<RealT> weights(2);
     weights[0] = static_cast<RealT>(1);
     weights[1] = parlist->sublist("Problem").get("Control Penalty Parameter", 1e-4);

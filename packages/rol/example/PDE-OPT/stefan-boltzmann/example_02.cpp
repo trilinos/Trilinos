@@ -171,11 +171,11 @@ int main(int argc, char *argv[]) {
       (*yz_ptr)[i] = random<RealT>(*comm);
     }
     ROL::SharedPointer<ROL::Vector<RealT> > zp
-      = ROL::makeShared<PDE_OptVector<RealT>(Teuchos::ROL::makeShared<ROL::StdVector<RealT>>>(z_ptr));
+      = ROL::makeShared<PDE_OptVector<RealT>>(ROL::makeShared<ROL::StdVector<RealT>>(z_ptr));
     ROL::SharedPointer<ROL::Vector<RealT> > dzp
-      = ROL::makeShared<PDE_OptVector<RealT>(Teuchos::ROL::makeShared<ROL::StdVector<RealT>>>(dz_ptr));
+      = ROL::makeShared<PDE_OptVector<RealT>>(ROL::makeShared<ROL::StdVector<RealT>>(dz_ptr));
     ROL::SharedPointer<ROL::Vector<RealT> > yzp
-      = ROL::makeShared<PDE_OptVector<RealT>(Teuchos::ROL::makeShared<ROL::StdVector<RealT>>>(yz_ptr));
+      = ROL::makeShared<PDE_OptVector<RealT>>(ROL::makeShared<ROL::StdVector<RealT>>(yz_ptr));
     //ROL::SharedPointer<Tpetra::MultiVector<> >  z_ptr = assembler->createControlVector();
     //ROL::SharedPointer<Tpetra::MultiVector<> > dz_ptr = assembler->createControlVector();
     //ROL::SharedPointer<Tpetra::MultiVector<> > yz_ptr = assembler->createControlVector();
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_StateCost<RealT>(pde->getVolFE>(),*parlist);
+    qoi_vec[0] = ROL::makeShared<QoI_StateCost<RealT>>(pde->getVolFE(),*parlist);
     //qoi_vec[1] = ROL::makeShared<QoI_ControlCost<RealT>>(
     //  pde->getVolFE(),pde->getBdryFE(0),pde->getBdryCellLocIds(0),*parlist);
     qoi_vec[1] = ROL::makeShared<QoI_AdvectionCost<RealT>>();
@@ -218,9 +218,9 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<std::vector<RealT> > zlo_ptr = ROL::makeShared<std::vector<RealT>>(controlDim,lower);
     ROL::SharedPointer<std::vector<RealT> > zhi_ptr = ROL::makeShared<std::vector<RealT>>(controlDim,upper);
     ROL::SharedPointer<ROL::Vector<RealT> > zlop
-      = ROL::makeShared<PDE_OptVector<RealT>(Teuchos::ROL::makeShared<ROL::StdVector<RealT>>>(zlo_ptr));
+      = ROL::makeShared<PDE_OptVector<RealT>>(ROL::makeShared<ROL::StdVector<RealT>>(zlo_ptr));
     ROL::SharedPointer<ROL::Vector<RealT> > zhip
-      = ROL::makeShared<PDE_OptVector<RealT>(Teuchos::ROL::makeShared<ROL::StdVector<RealT>>>(zhi_ptr));
+      = ROL::makeShared<PDE_OptVector<RealT>>(ROL::makeShared<ROL::StdVector<RealT>>(zhi_ptr));
     //ROL::SharedPointer<Tpetra::MultiVector<> >  zlo_ptr = assembler->createControlVector();
     //ROL::SharedPointer<Tpetra::MultiVector<> >  zhi_ptr = assembler->createControlVector();
     //zlo_ptr->putScalar(static_cast<RealT>(280));

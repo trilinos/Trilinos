@@ -51,7 +51,7 @@
 
 
 #include "../TOOLS/template_tools.hpp"
-
+#include "ROL_SharedPointer.hpp"
 
 // Example of ScalarFunction 
 // f(x,y) = <x,x> + 2*<y,y> - 2 y[0]*(x[0]+x[1]) + 3*x[0]*(y[1]-y[0])

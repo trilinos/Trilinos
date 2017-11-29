@@ -81,8 +81,8 @@ public:
 
   virtual void SetSIMPParallelStructure() { 
     PDE_FEM<Real>::SetParallelStructure();
-    this->myCellMap_ = ROL::makeShared<Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(>(),
-                              this->myCellIds_, 0, this->commPtr_));
+    this->myCellMap_ = ROL::makeShared<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+                              this->myCellIds_, 0, this->commPtr_);
   }
 
   ROL::SharedPointer<const Tpetra::Map<> > getDomainMapA() const {

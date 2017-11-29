@@ -79,7 +79,7 @@ public:
     ROL::SharedPointer<Tpetra::MultiVector<> > zvec;
     // Assemble local components
     ROL::SharedPointer<Assembler<Real> > assembler_local
-      = ROL::makeShared<Assembler<Real>(pde_local->getFields>(),mesh_local,comm,parlist,outStream);
+      = ROL::makeShared<Assembler<Real>>(pde_local->getFields(),mesh_local,comm,parlist,outStream);
     assembler_local->setCellNodes(*pde_local);
     uvec = assembler_local->createStateVector();
     zvec = assembler_local->createControlVector();
@@ -87,7 +87,7 @@ public:
     assembler_local->assemblePDERieszMap1(Mlocal_,pde_local);
     // Assemble cylinder components
     ROL::SharedPointer<Assembler<Real> > assembler_cylinder
-      = ROL::makeShared<Assembler<Real>(pde_cylinder->getFields>(),mesh_cylinder,comm,parlist,outStream);
+      = ROL::makeShared<Assembler<Real>>(pde_cylinder->getFields(),mesh_cylinder,comm,parlist,outStream);
     assembler_cylinder->setCellNodes(*pde_cylinder);
     uvec = assembler_cylinder->createStateVector();
     zvec = assembler_cylinder->createControlVector();
@@ -181,7 +181,7 @@ public:
     ROL::SharedPointer<Tpetra::MultiVector<> > zvec;
     // Assemble local components
     ROL::SharedPointer<Assembler<Real> > assembler_local
-      = ROL::makeShared<Assembler<Real>(pde_local->getFields>(),mesh_local,comm,parlist,outStream);
+      = ROL::makeShared<Assembler<Real>>(pde_local->getFields(),mesh_local,comm,parlist,outStream);
     assembler_local->setCellNodes(*pde_local);
     uvec = assembler_local->createStateVector();
     zvec = assembler_local->createControlVector();
@@ -189,7 +189,7 @@ public:
     assembler_local->assemblePDERieszMap1(Mlocal_,pde_local);
     // Assemble cylinder components
     ROL::SharedPointer<Assembler<Real> > assembler_cylinder
-      = ROL::makeShared<Assembler<Real>(pde_cylinder->getFields>(),mesh_cylinder,comm,parlist,outStream);
+      = ROL::makeShared<Assembler<Real>>(pde_cylinder->getFields(),mesh_cylinder,comm,parlist,outStream);
     assembler_cylinder->setCellNodes(*pde_cylinder);
     uvec = assembler_cylinder->createStateVector();
     zvec = assembler_cylinder->createControlVector();

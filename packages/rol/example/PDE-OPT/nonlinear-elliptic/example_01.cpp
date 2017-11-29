@@ -83,10 +83,10 @@ int main(int argc, char *argv[]) {
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = &std::cout, false;
+    outStream = ROL::makeSharedFromRef(std::cout);
   }
   else {
-    outStream = &bhs, false;
+    outStream = ROL::makeSharedFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -159,8 +159,8 @@ int main(int argc, char *argv[]) {
 
     // Initialize quadratic objective function
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_StateTracking_Nonlinear_Elliptic<RealT>(pde->getFE>());
-    qoi_vec[1] = ROL::makeShared<QoI_ControlPenalty_Nonlinear_Elliptic<RealT>(pde->getFE>());
+    qoi_vec[0] = ROL::makeShared<QoI_StateTracking_Nonlinear_Elliptic<RealT>>(pde->getFE());
+    qoi_vec[1] = ROL::makeShared<QoI_ControlPenalty_Nonlinear_Elliptic<RealT>>(pde->getFE());
     std::vector<RealT> weights = {static_cast<RealT>(1), controlPenalty};
     ROL::SharedPointer<PDE_Objective<RealT> > obj
       = ROL::makeShared<PDE_Objective<RealT>>(qoi_vec,weights,assembler);

@@ -100,7 +100,7 @@ public:
       = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(zr)).getVector();
 
 //    ROL::SharedPointer<Tpetra::MultiVector<> > unit
-//      = ROL::makeShared<Tpetra::MultiVector<>(zp->getMap>(), 1, true);
+//      = ROL::makeShared<Tpetra::MultiVector<>>(zp->getMap(), 1, true);
 //    unit->putScalar(1.0);
 //    Teuchos::Array<Real> sumZ(1, 0);
 //    zp->dot(*unit, sumZ);
@@ -124,7 +124,7 @@ public:
       = (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(vr)).getVector();
 
 //    ROL::SharedPointer<Tpetra::MultiVector<> > unit
-//      = ROL::makeShared<Tpetra::MultiVector<>(vp->getMap>(), 1, true);
+//      = ROL::makeShared<Tpetra::MultiVector<>>(vp->getMap(), 1, true);
 //    unit->putScalar(1.0);
 //    Teuchos::Array<Real> sumV(1, 0);
 //    vp->dot(*unit, sumV);

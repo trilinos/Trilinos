@@ -61,7 +61,7 @@ namespace ROL {
 
 template<class T> using SharedPointer = Teuchos::RCP<T>;
 
-Teuchos::ENull nullPointer = Teuchos::null;
+static const Teuchos::ENull nullPointer = Teuchos::null;
 
 }
 
@@ -104,6 +104,11 @@ SharedPointer<T> dynamicPointerCast( const SharedPointer<U>& r ) noexcept {
   return Teuchos::rcp_dynamic_cast<T>(r);
 }
 
-} // namespace ROL
+template<class T>
+struct IsSharedPtr : public std::false_type {};
 
+template<class T>
+struct IsSharedPtr<std::shared_ptr<T>> : public std::true_type {};
+
+} // namespace ROL
 

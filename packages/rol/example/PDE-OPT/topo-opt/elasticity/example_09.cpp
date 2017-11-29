@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize volume objective.
     ROL::SharedPointer<QoI<RealT> > qoi_vol
-      = ROL::makeShared<QoI_VolumeObj_TopoOpt<RealT>(pde->getFE(),pde->getFieldHelper>());
+      = ROL::makeShared<QoI_VolumeObj_TopoOpt<RealT>>(pde->getFE(),pde->getFieldHelper());
     ROL::SharedPointer<ROL::Objective<RealT> > vobj
       = ROL::makeShared<IntegralOptObjective<RealT>>(qoi_vol,assembler);
 
@@ -218,8 +218,8 @@ int main(int argc, char *argv[]) {
     }
     std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_cmp(1,ROL::nullPointer);
     qoi_cmp[0]
-      = ROL::makeShared<QoI_TopoOpt<RealT>(pde->getFE>(),
-                                            pde->getFieldHelper(), objScaling));
+      = ROL::makeShared<QoI_TopoOpt<RealT>>(pde->getFE(),
+                                            pde->getFieldHelper(), objScaling);
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > cobj
       = ROL::makeShared<PDE_Objective<RealT>>(qoi_cmp,assembler);
 

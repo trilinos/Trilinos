@@ -276,8 +276,7 @@ public:
     myGlobIds_.erase( std::unique(myGlobIds_.begin(), myGlobIds_.end()), myGlobIds_.end() );
 
     // Build maps.
-    myOverlapMap_ = ROL::makeShared<Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(>(),
-                                                   myGlobIds_, 0, commPtr_));
+    myOverlapMap_ = ROL::makeShared<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),                                            myGlobIds_, 0, commPtr_);
     //std::cout << std::endl << myOverlapMap_->getNodeElementList()<<std::endl;
     /** One can also use the non-member function:
         myOverlapMap_ = Tpetra::createNonContigMap<int,int>(myGlobIds_, commPtr_);
@@ -285,8 +284,8 @@ public:
     **/
     myUniqueMap_ = Tpetra::createOneToOne<int,int>(myOverlapMap_);
     //std::cout << std::endl << myUniqueMap_->getNodeElementList() << std::endl;
-    myCellMap_ = ROL::makeShared<Tpetra::Map<>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(>(),
-                              this->myCellIds_, 0, this->commPtr_));
+    myCellMap_ = ROL::makeShared<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+                              this->myCellIds_, 0, this->commPtr_);
   }
   
   virtual void SetUpLocalIntrepidArrays(void) {
@@ -441,8 +440,8 @@ public:
   virtual void AssembleRHSVector(void) {
     // Assemble vectors.
     // vecF_ requires assembly using vecF_overlap_ and redistribution
-    vecF_           = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), 1, true);
-    vecF_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), 1, true);
+    vecF_           = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
+    vecF_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     vecF_overlap_   = ROL::makeShared<Tpetra::MultiVector<>>(myOverlapMap_, 1, true);
     // assembly on the overlap map
     for (int i=0; i<numCells_; ++i) {
@@ -469,7 +468,7 @@ public:
   
   virtual void AssembleDataVector(void) {
     // vecUd_ does not require assembly
-    vecUd_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getDomainMap>(), 1, true);
+    vecUd_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getDomainMap(), 1, true);
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs_; ++j) {
         if (vecUd_->getMap()->isNodeGlobalElement(cellDofs_(myCellIds_[i],j))) {
@@ -671,7 +670,7 @@ public:
     //ROL::SharedPointer<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
     //matA_dirichlet_ = matA_->clone(node);
     //matM_dirichlet_ = matM_->clone(node);
-    //vecF_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), 1, true);
+    //vecF_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     //Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
  
     matA_dirichlet_->resumeFill();
@@ -807,7 +806,7 @@ public:
 
   virtual void VectorRemoveDBC(void) {
     // Apply Dirichlet conditions.
-    //vecF_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>(matA_->getRangeMap>(), 1, true);
+    //vecF_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     //Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
  
     int gDof(0);

@@ -706,7 +706,7 @@ private:
         zfield_->putScalar(static_cast<Real>(0));
       }
       if ( zp != ROL::nullPointer ) {
-       zparam_ = ROL::makeShared<std::vector<Real>(zp->size(),static_cast<Real>>(0));
+       zparam_ = ROL::makeShared<std::vector<Real>>(zp->size(),static_cast<Real>(0));
       }
       shift_ = assembler_->assembleQoIValue(qoi_,ufield_,zfield_,zparam_);
       assembler_->assembleQoIGradient1(vecG1_,qoi_,ufield_,zfield_,zparam_);
