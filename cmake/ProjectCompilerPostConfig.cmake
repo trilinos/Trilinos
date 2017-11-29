@@ -12,6 +12,7 @@ IF(${Trilinos_ENABLE_Kokkos})
   include(${KOKKOS_SRC_PATH}/cmake/kokkos_functions.cmake)
   set_kokkos_cxx_compiler()
   set_kokkos_compiler_standard()
+  set_kokkos_cxx_standard()
   
   #------------ GET OPTIONS ----------------------------------------------------
   set(KOKKOS_CMAKE_VERBOSE True)
