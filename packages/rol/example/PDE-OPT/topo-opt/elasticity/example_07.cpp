@@ -202,12 +202,12 @@ int main(int argc, char *argv[]) {
                                       volres1_ptr, volmult1_ptr, volres2_ptr,
                                       volmult2_ptr;
     scalevec_ptr = ROL::makeShared<std::vector<RealT>>(1,vecScaling);
-    volres_ptr   = ROL::makeShared<std::vector<RealT>(1,static_cast<RealT>(rand())/static_cast<RealT>>(RAND_MAX));
-    volmult_ptr  = ROL::makeShared<std::vector<RealT>(1,static_cast<RealT>(rand())/static_cast<RealT>>(RAND_MAX));
-    volres1_ptr  = ROL::makeShared<std::vector<RealT>(1,static_cast<RealT>(rand())/static_cast<RealT>>(RAND_MAX));
-    volmult1_ptr = ROL::makeShared<std::vector<RealT>(1,static_cast<RealT>(rand())/static_cast<RealT>>(RAND_MAX));
-    volres2_ptr  = ROL::makeShared<std::vector<RealT>(1,static_cast<RealT>(rand())/static_cast<RealT>>(RAND_MAX));
-    volmult2_ptr = ROL::makeShared<std::vector<RealT>(1,static_cast<RealT>(rand())/static_cast<RealT>>(RAND_MAX));
+    volres_ptr   = ROL::makeShared<std::vector<RealT>>(1,static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX));
+    volmult_ptr  = ROL::makeShared<std::vector<RealT>>(1,static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX));
+    volres1_ptr  = ROL::makeShared<std::vector<RealT>>(1,static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX));
+    volmult1_ptr = ROL::makeShared<std::vector<RealT>>(1,static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX));
+    volres2_ptr  = ROL::makeShared<std::vector<RealT>>(1,static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX));
+    volmult2_ptr = ROL::makeShared<std::vector<RealT>>(1,static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX));
     ROL::SharedPointer<ROL::Vector<RealT> > volres, volmult, volres1, volmult1,
                                       volres2, volmult2;
     volres   = ROL::makeShared<ROL::PrimalScaledStdVector<RealT>>(volres_ptr, scalevec_ptr);

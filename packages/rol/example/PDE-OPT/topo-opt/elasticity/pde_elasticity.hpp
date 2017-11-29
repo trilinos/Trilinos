@@ -146,14 +146,14 @@ public:
     shards::CellTopology bdryCellType = cellType.getCellTopologyData(probDim-1, 0);
     bdryCub_ = cubFactory.create(bdryCellType, bdryCubDegree);
 
-    matTensor_ = ROL::makeShared<MaterialTensor<Real>(parlist.sublist>("Problem"));
+    matTensor_ = ROL::makeShared<MaterialTensor<Real>>(parlist.sublist("Problem"));
     if (parlist.sublist("Problem").isSublist("Load")) {
-      load_    = ROL::makeShared<Load<Real>(parlist.sublist>("Problem"));
+      load_    = ROL::makeShared<Load<Real>>(parlist.sublist("Problem"));
     }
     if (parlist.sublist("Problem").isSublist("Traction")) {
-      traction_= ROL::makeShared<Traction<Real>(parlist.sublist>("Problem"));
+      traction_= ROL::makeShared<Traction<Real>>(parlist.sublist("Problem"));
     }
-    dirichlet_ = ROL::makeShared<Dirichlet<Real>(parlist.sublist>("Problem"));
+    dirichlet_ = ROL::makeShared<Dirichlet<Real>>(parlist.sublist("Problem"));
 
     numDofs_ = 0;
     numFields_ = basisPtrs_.size();
