@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     z1_ptr->randomize();
 
     std::vector<RealT> consistency = x1.checkVector(y1, z1, true, outStream);
-    ROL::StdVector<RealT> checkvec(&consistency, false);
+    ROL::StdVector<RealT> checkvec(ROL::makeSharedFromRef(consistency));
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }

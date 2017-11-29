@@ -24,9 +24,9 @@ int main(int argc, char *argv[]) {
   ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = &std::cout, false;
+    ROL::makeSharedFromRef(std::cout);
   else
-    outStream = &bhs, false;
+    ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     auto consistency = x.checkVector(y, z, true, *outStream);
-    ROL::StdVector<RealT> checkvec(&consistency, false);
+    ROL::StdVector<RealT> checkvec(ROL::makeSharedFromRef(consistency));
     if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag++;
     }

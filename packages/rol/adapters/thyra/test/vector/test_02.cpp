@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
     Thyra::randomize(-1.0,1.0,z1_ptr.ptr());
 
     std::vector<RealT> consistency = x1.checkVector(y1, z1, true, outStream);
-    ROL::StdVector<RealT> checkvec(&consistency, false);
+    ROL::StdVector<RealT> checkvec(ROL::makeSharedFromRef(consistency));
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }

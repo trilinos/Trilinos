@@ -85,7 +85,7 @@ namespace ROL {
            
             /// \brief Create a Belos solver 
             BelosKrylov(Teuchos::ParameterList &parlist) : 
-                problem_(ROL::makeShared<Belos::LinearProblem<ST,MV,OP>)>() {
+                problem_(ROL::makeShared<Belos::LinearProblem<ST,MV,OP>>()) {
 
                 ROL::SharedPointer<Teuchos::ParameterList> solverParams = ROL::makeShared<Teuchos::ParameterList>();
 

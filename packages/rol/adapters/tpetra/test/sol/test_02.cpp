@@ -66,9 +66,9 @@ int main(int argc, char* argv[]) {
   ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && Teuchos::rank<int>(*comm)==0)
-    outStream = &std::cout, false;
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    outStream = &bhs, false;
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -116,8 +116,8 @@ int main(int argc, char* argv[]) {
     ROL::StdVector<RealT> u(u_ptr);
     ROL::SharedPointer<std::vector<RealT> > p_ptr  = ROL::makeShared<std::vector<RealT>>(nx,0.0);
     ROL::StdVector<RealT> p(p_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > up = &u,false;
-    ROL::SharedPointer<ROL::Vector<RealT> > pp = &p,false;
+    ROL::SharedPointer<ROL::Vector<RealT> > up = ROL::makeSharedFromRef(u);
+    ROL::SharedPointer<ROL::Vector<RealT> > pp = ROL::makeSharedFromRef(p);
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/

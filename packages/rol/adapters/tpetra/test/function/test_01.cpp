@@ -125,9 +125,9 @@ int main(int argc, char *argv[]) {
     Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
 
     if (iprint > 0)
-        outStream = &std::cout, false;
+        ROL::makeSharedFromRef(std::cout);
     else
-        outStream = &bhs, false;
+        ROL::makeSharedFromRef(bhs);
 
     int errorFlag  = 0;
 

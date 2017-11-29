@@ -347,6 +347,14 @@ namespace ROL {
             Real scale_;
             ROL::SharedPointer<const Teuchos::Comm<int> > comm_; 
 
+        ROL::SharedPointer<const MV> getVector( const ROL::Vector<Real>& x ) {
+          return dynamic_cast<const TMV&>(x).getVector();
+        }
+
+        ROL::SharedPointer<MV> getVector( ROL::Vector<Real>& x ) {
+          return dynamic_cast<TMV&>(x).getVector();
+        }
+
         public:
 
             TpetraBoundConstraint(MVP lp, MVP up, Real scale = 1.0) :  
@@ -375,9 +383,7 @@ namespace ROL {
      
 
             bool isFeasible( const Vector<Real> &x ) {
-
-                ROL::SharedPointer<const MV > xp =
-                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
+                auto xp = getVector(x);
 
                 int lclFeasible = 1;
                  
@@ -396,9 +402,8 @@ namespace ROL {
 
             void project( Vector<Real> &x ) {
 
-                ROL::SharedPointer<MV> xp =
-                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(x)).getVector());
-
+                auto xp = getVector(x);
+                
                 ViewType x_lcl = xp->getDualView().d_view;
 
                 KokkosStructs::Project<Real,ViewType> proj(x_lcl,l_,u_);
@@ -408,10 +413,8 @@ namespace ROL {
  
 
             void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-                ROL::SharedPointer<const MV > xp =
-                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
-                ROL::SharedPointer<MV> vp =
-                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
+                auto xp = getVector(x);
+                auto vp = getVector(v);
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
@@ -424,10 +427,8 @@ namespace ROL {
             }
               
             void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-                ROL::SharedPointer<const MV > xp =
-                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
-                ROL::SharedPointer<MV> vp =
-                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
+                auto xp = getVector(x);
+                auto vp = getVector(v);
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
@@ -440,10 +441,8 @@ namespace ROL {
             }
          
             void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-                ROL::SharedPointer<const MV > xp =
-                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
-                ROL::SharedPointer<MV> vp =
-                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
+                auto xp = getVector(x);
+                auto vp = getVector(v);
 
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
@@ -456,13 +455,9 @@ namespace ROL {
             }
          
             void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-                ROL::SharedPointer<const MV > xp =
-                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
-                ROL::SharedPointer<const MV > gp =
-                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(g))).getVector();
-                ROL::SharedPointer<MV> vp =
-                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
-
+                auto xp = getVector(x);
+                auto gp = getVector(g);
+                auto vp = getVector(v);
                Real epsn = std::min(scale_*eps,this->min_diff_);
 
                 ViewType x_lcl = xp->getDualView().d_view;
@@ -475,13 +470,9 @@ namespace ROL {
             }
        
              void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-                ROL::SharedPointer<const MV > xp =
-                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
-                ROL::SharedPointer<const MV > gp =
-                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(g))).getVector();
-                ROL::SharedPointer<MV> vp =
-                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
-
+                auto xp = getVector(x);
+                auto gp = getVector(g);
+                auto vp = getVector(v);
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
                 ViewType x_lcl = xp->getDualView().d_view;
@@ -494,13 +485,9 @@ namespace ROL {
             }
 
             void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-                ROL::SharedPointer<const MV > xp =
-                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(x))).getVector();
-                ROL::SharedPointer<const MV > gp =
-                    (dynamic_cast<TMV>(const_cast<Vector<Real> &&>(g))).getVector();
-                ROL::SharedPointer<MV> vp =
-                    ROL::constPointerCast<MV>((dynamic_cast<TMV&>(v)).getVector());
-
+                auto xp = getVector(x);
+                auto gp = getVector(g);
+                auto vp = getVector(v);
                 Real epsn = std::min(scale_*eps,this->min_diff_);
 
                 ViewType x_lcl = xp->getDualView().d_view;

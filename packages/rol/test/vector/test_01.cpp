@@ -77,6 +77,13 @@ int main(int argc, char *argv[]) {
 
   try {
 
+    if(IsSharedPtr<ROL::SharedPointer<RealT>>::value) {
+      *outStream << "Using std::shared_ptr" << std::endl;
+    }
+    else {
+      *outStream << "Using Teuchos::RCP" << std::endl;
+    }
+
     int dim = 100;
     ROL::SharedPointer<std::vector<ElementT> > x_ptr = ROL::makeShared<std::vector<ElementT>>(dim, 0.0);
     ROL::SharedPointer<std::vector<ElementT> > y_ptr = ROL::makeShared<std::vector<ElementT>>(dim, 0.0);
