@@ -249,19 +249,19 @@ void StepperBDF2<Scalar>::takeStep(
     //get time, dt and dtOld  
     const Scalar time = workingState->getTime();
     const Scalar dt   = workingState->getTimeStep();
-    //IKT, FIXME: when we have a time-history of dt stores for variable dt,
-    //change the following to return dtOld = t_{n-1}-t_{n-2}.
-    const Scalar dtOld   = workingState->getTimeStep();
+    const Scalar dtOld  = currentState->getTimeStep();
 
+    //Notes for IKT: the following is logic for returning getCurrentState(): 
+    //if      (getNumStates() > 1) currentState_ = (*history_)[getNumStates()-2];
+    //else if (getNumStates() == 1) currentState_ = (*history_)[0];
     if (numStates > 2) {
+      //IKT, FIXME: the following should be changed once CO adds
+      //methods to obtain past SolutionStates, e.g., getNM1State().
       //get previous 2 states
       xOld = (*solutionHistory)[numStates-2]->getX(); 
       xOldOld = (*solutionHistory)[numStates-3]->getX();
       order_ = 2.0;  
     }
-    //IKT: the following is logic for returning getCurrentState(): 
-    //if      (getNumStates() > 1) currentState_ = (*history_)[getNumStates()-2];
-    //else if (getNumStates() == 1) currentState_ = (*history_)[0];
 
     const Scalar alpha = (1.0/(dt + dtOld))*(1.0/dt)*(2.0*dt + dtOld); 
     const Scalar beta = 1.0; 
