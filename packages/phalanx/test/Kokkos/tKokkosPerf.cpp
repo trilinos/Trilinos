@@ -46,6 +46,7 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Phalanx_KokkosDeviceTypes.hpp"
 #include <Phalanx_any.hpp>
+#include "Phalanx_TypeStrings.hpp"
 #include <unordered_map>
 #include <map>
 
@@ -125,7 +126,8 @@ namespace phalanx_test {
   {
     const int num_cells = 5000;
     const int num_ip = 8;
-    const int deriv_dim = num_ip * 2 + 1;  //
+    // const int deriv_dim = num_ip * 2 + 1;
+    const int deriv_dim = 128;
 
     using FadType = Sacado::Fad::DFad<double>;
     using DefaultLayout = typename PHX::Device::array_layout;
@@ -135,15 +137,22 @@ namespace phalanx_test {
 #if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
 
 #if defined(KOKKOS_HAVE_CUDA)
+    std::cout << "\n\nKOKKOS_HAVE_CUDA = true" << std::endl;
     const static int FadStride = 32;
 #else
+    std::cout << "KOKKOS_HAVE_CUDA = false" << std::endl;
     const static int FadStride = 1;
 #endif
 
+    std::cout << "SACADO_VIEW_CUDA_HIERARCHICAL_DFAD = true" << std::endl;
     using DevLayout = Kokkos::LayoutContiguous<DefaultLayout,FadStride>; // use Sacado continguous (best for cuda)
 #else
+    std::cout << "SACADO_VIEW_CUDA_HIERARCHICAL_DFAD = false" << std::endl;
     using DevLayout = DefaultLayout;
 #endif
+
+    std::cout << "DefaultLayout   = " << PHX::typeAsString<DefaultLayout>() << "\n" << std::endl;
+    std::cout << "DevLayout   = " << PHX::typeAsString<DevLayout>() << "\n" << std::endl;
 
     Kokkos::View<FadType**,DevLayout,PHX::Device> rho;
     Kokkos::View<FadType**,DevLayout,PHX::Device> P;
@@ -179,7 +188,7 @@ namespace phalanx_test {
     Kokkos::deep_copy(k, host_k);
     PHX::Device::fence();
 
-    const int num_samples = 1;
+    const int num_samples = 10;
 
     Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::getNewTimer("Jacobian Flat");
     PHX::Device::fence();

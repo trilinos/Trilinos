@@ -88,7 +88,7 @@ evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
   auto cell_measure = workset.det_jac_;
   
   // Make residual atomic so that AMT mode can sum diffusion and source terms at same time
-  Kokkos::View<ScalarT**,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual_atomic = residual;
+  Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual_atomic = residual;
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis.extent(2)), [=] (const int& basis) {
       for (int qp = 0; qp < static_cast<int>(grad_basis.extent(1)); ++qp)

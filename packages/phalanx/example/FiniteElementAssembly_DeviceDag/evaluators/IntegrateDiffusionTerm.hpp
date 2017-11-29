@@ -60,10 +60,10 @@ class IntegrateDiffusionTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
 
 public:
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
-    Kokkos::View<const ScalarT***,PHX::Device> flux;
-    Kokkos::View<ScalarT**,PHX::Device> residual;
-    KOKKOS_FUNCTION MyDevEval(const Kokkos::View<const ScalarT***,PHX::Device>& in_flux,
-                                     const Kokkos::View<ScalarT**,PHX::Device>& in_residual) :
+    PHX::View<const ScalarT***> flux;
+    PHX::View<ScalarT**> residual;
+    KOKKOS_FUNCTION MyDevEval(const PHX::View<const ScalarT***>& in_flux,
+			      const PHX::View<ScalarT**>& in_residual) :
       flux(in_flux), residual(in_residual) {}
     KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
     KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,

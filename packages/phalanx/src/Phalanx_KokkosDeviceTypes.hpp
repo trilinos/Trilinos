@@ -97,7 +97,7 @@ namespace PHX {
 
   template <typename DataType>
   struct DevLayout {
-    using ScalarType = typename PHX::remove_all_pointers<DataType>::type;
+    using ScalarType = typename std::remove_const<typename PHX::remove_all_pointers<DataType>::type>::type;
     using type = typename std::conditional<Sacado::IsADType<ScalarType>::value,DefaultFadLayout,DefaultDevLayout>::type;
   };
 

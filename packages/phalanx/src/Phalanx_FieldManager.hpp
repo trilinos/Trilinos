@@ -121,7 +121,7 @@ namespace PHX {
 
     template<typename EvalT, typename DataT>
     void getFieldData(const PHX::FieldTag& ft,
-                      Kokkos::View<DataT,PHX::Device>& f);
+                      PHX::View<DataT>& f);
 
     /*! \brief Allows the user to manage the memory allocation of a
         particular field and dynamically set/swap the memory at any
@@ -185,7 +185,7 @@ namespace PHX {
     */
     template<typename EvalT, typename DataT>
     void setUnmanagedField(const FieldTag& ft,
-                           Kokkos::View<DataT,PHX::Device>& f);
+                           PHX::View<DataT>& f);
 
     /*! \brief Makes two fields point to (alias) the same memory for all evaluation types. 
 

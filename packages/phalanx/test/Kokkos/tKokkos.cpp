@@ -51,8 +51,8 @@
 
 #include "Sacado.hpp"
 #include "Kokkos_View_Fad.hpp"
-#include "Kokkos_DynRankView.hpp"
 #include "Kokkos_DynRankView_Fad.hpp"
+#include "Kokkos_DynRankView.hpp"
 #include "KokkosSparse_CrsMatrix.hpp"
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
@@ -833,16 +833,16 @@ namespace phalanx_test {
 
   TEUCHOS_UNIT_TEST(kokkos, DeviceLayoutTypes)
   {
+    using RealType = double;
+    using FadType = Sacado::Fad::DFad<double>;
+
     // Get the layout in the view
-    using scalar_view = PHX::View<double**>;
-    using fad_view = PHX::View<Sacado::Fad::DFad<double>**>;
-    using scalar_view_layout = scalar_view::array_layout;
-    using fad_view_layout = fad_view::array_layout;
+    using scalar_view_layout = PHX::View<RealType**>::array_layout;
+    using fad_view_layout = PHX::View<FadType**>::array_layout;
 
     // Layout from PHX::DevLayout
-    using scalar_dev_layout = typename PHX::DevLayout<double**>::type;
-    using fad_dev_layout = typename PHX::DevLayout<Sacado::Fad::DFad<double>**>::type;
-
+    using scalar_dev_layout = typename PHX::DevLayout<RealType**>::type;
+    using fad_dev_layout = typename PHX::DevLayout<FadType**>::type;
 
     // Expected layout based on architecture.
     using DefaultDevLayout = PHX::exec_space::array_layout;
@@ -870,5 +870,14 @@ namespace phalanx_test {
     std::cout << "fad_view_layout    = " << PHX::typeAsString<fad_view_layout>() << std::endl;
     std::cout << "fad_dev_layout     = " << PHX::typeAsString<fad_dev_layout>() << std::endl;
     std::cout << "DefaultFadLayout   = " << PHX::typeAsString<DefaultFadLayout>() << "\n" << std::endl;
+
+    // Tests for assignments from static View to DynRankView
+    Kokkos::View<FadType**,typename PHX::DevLayout<FadType>::type,PHX::Device> static_a("static_a",100,8,64);
+    Kokkos::Experimental::DynRankView<FadType,typename PHX::DevLayout<FadType>::type,PHX::Device> dyn_a;
+    dyn_a = static_a;
+
+    Kokkos::View<FadType**,Kokkos::LayoutLeft,PHX::Device> static_a_ll("static_a",100,8,64);
+    Kokkos::Experimental::DynRankView<FadType,Kokkos::LayoutLeft,PHX::Device> dyn_a_ll;
+    dyn_a_ll = static_a_ll;
   }
 }

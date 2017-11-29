@@ -53,8 +53,8 @@ class IntegrateSourceTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
                             public PHX::EvaluatorDerived<EvalT, Traits>  {
 
   using ScalarT = typename EvalT::ScalarT;
-  Kokkos::View<const ScalarT**,PHX::Device> source;
-  Kokkos::View<ScalarT**,PHX::Device> residual;
+  PHX::View<const ScalarT**> source;
+  PHX::View<ScalarT**> residual;
   Kokkos::View<const double**,PHX::Device> basis_view;
   Kokkos::View<const double*,PHX::Device> weights;
   Kokkos::View<const double**,PHX::Device> cell_measure;
