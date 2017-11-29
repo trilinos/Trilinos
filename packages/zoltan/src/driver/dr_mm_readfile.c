@@ -97,7 +97,7 @@ int prev_edge;
 const char *yo = "MM_readfile";
 MM_typecode matcode;
 int M, N, nz, gnz;
-int j, k, tmp;
+int j, k, tmp, max_index;
 MPI_Status status;
 int read_in_chunks = 0;
 char line[128];
@@ -158,6 +158,11 @@ int error = 0;  /* flag to indicate status */
         M=N=gnz=0;
       }
     }
+
+	if(mm_is_symmetric(matcode)){
+	  gnz *= 2; 
+	}
+
     MPI_Bcast(&gnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&M, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -329,11 +334,24 @@ int error = 0;  /* flag to indicate status */
         return error;
       }
 
+      if(mm_is_symmetric(matcode)){
+        max_index = gnz/2;
+      }else{
+        max_index = gnz;
+      }
+
       for (k=0; k<gnz; k++){
         ZOLTAN_FILE_gets(line, 128, f);
         if (mm_is_pattern(matcode)) {
           sscanf(line, "%d %d", &(myIJV[k].i), &(myIJV[k].j));
           myIJV[k].v = 1.;
+          if(mm_is_symmetric(matcode)){
+            myIJV[k + (gnz/2)].i = myIJV[k].j;
+            myIJV[k + (gnz/2)].j = myIJV[k].i;
+            myIJV[k + (gnz/2)].v = 1.;
+            --(myIJV[k + (gnz/2)].j);
+            --(myIJV[k + (gnz/2)].i);
+          }
         }
         else {
           sscanf(line, "%d %d %f", &(myIJV[k].i), &(myIJV[k].j),
