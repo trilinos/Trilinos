@@ -94,7 +94,9 @@ namespace Belos {
     typedef typename STS::magnitudeType MagnitudeType;
 
   public:
-    MyStatusTest(MagnitudeType tol) : Base(tol), prevNorm_(-STS::one()), curNorm_(-STS::one()) { }
+    MyStatusTest(MagnitudeType tol) : Base(tol),
+                                      prevNorm_(-Teuchos::ScalarTraits<MagnitudeType>::one()),
+                                      curNorm_(-Teuchos::ScalarTraits<MagnitudeType>::one()) { }
 
     StatusType checkStatus(Iteration<SC,MV,OP>* iSolver) {
       // Get residual
@@ -102,7 +104,7 @@ namespace Belos {
       Teuchos::RCP<const MV> res = iSolver->getNativeResiduals(&norms);
       MagnitudeType resNorm = norms[0];
 
-      if (curNorm_ == -STS::one()) {
+      if (curNorm_ == -Teuchos::ScalarTraits<MagnitudeType>::one()) {
         prevNorm_ = curNorm_ = resNorm;
       } else {
         prevNorm_ = curNorm_;
@@ -327,11 +329,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
         }
 
         const int    maxIts = 1000;
-        const double tol    = 1e-12;
+        typedef typename STS::magnitudeType MagnitudeType;
+        const MagnitudeType tol    = 1e-12;
 
         H->IsPreconditioner(isPrec);
         if (isPrec == false) {
-          MueLu::ReturnType ret = H->Iterate(*B, *X, std::pair<LO,SC>(maxIts, tol));
+          MueLu::ReturnType ret = H->Iterate(*B, *X, std::pair<LO,MagnitudeType>(maxIts, tol));
 
           double rate = H->GetRate();
 
@@ -455,4 +458,3 @@ int main(int argc, char *argv[]) {
 
   return status;
 }
-

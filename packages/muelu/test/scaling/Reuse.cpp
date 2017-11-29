@@ -318,7 +318,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib& lib, int a
         }
       } //end j
       for (; j <= last_matrix; j++)
-        setup_times[i-first_matrix][j-first_matrix] = STS::nan();
+        setup_times[i-first_matrix][j-first_matrix] = Teuchos::ScalarTraits<double>::nan();
     } // end i
 
     globalTimeMonitor = Teuchos::null;
