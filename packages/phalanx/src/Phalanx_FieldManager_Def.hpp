@@ -332,9 +332,12 @@ template<typename Traits>
 template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
-evaluateFieldsDeviceDag(const int& work_size, typename Traits::EvalData d)
+evaluateFieldsDeviceDag(const int& work_size,
+			const int& team_size,
+			const int& vector_size,
+			typename Traits::EvalData d)
 {
-  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsDeviceDag(work_size,d);
+  m_eval_containers.template getAsObject<EvalT>()->evaluateFieldsDeviceDag(work_size,team_size,vector_size,d);
 }
 
 // **************************************************************

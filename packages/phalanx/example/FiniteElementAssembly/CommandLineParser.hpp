@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include "Teuchos_Assert.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace phx_example {
 
@@ -47,6 +48,12 @@ namespace phx_example {
       vector_size_(1), // default for Kokkos
       do_graph_analysis_(true)
     {
+      // Set better defaults for team/vector size based on arcitecture
+#if defined(KOKKOS_HAVE_CUDA)
+      vector_size_ = 32;
+      team_size_ = 256 / vector_size_;
+#endif
+
       for (int i=1; i < argc; ++i) {
         // TEUCHOS_TEST_FOR_EXCEPTION(i+1 == argc,std::runtime_error,
         //                            "ERROR: the final value for the input parameter is missing!");

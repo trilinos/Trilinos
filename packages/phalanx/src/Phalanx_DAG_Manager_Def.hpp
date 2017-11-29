@@ -481,29 +481,23 @@ namespace PHX {
 template<typename Traits>
 void PHX::DagManager<Traits>::
 evaluateFieldsDeviceDag(const int& work_size,
+			const int& team_size,
+			const int& vector_size,
                         typename Traits::EvalData d)
 {
   TEUCHOS_ASSERT(build_device_dag_);
   //! The parallel_for kernel launch below will not compile on CUDA
   //! unless relocatable device code (RDC) is enabled for the nvcc
   //! compiler. We also want to build and run phalanx without Device
-  //! DAG support on CUDA (RDC off), so this ifdef will hide the RDC
-  //! required code.
+  //! DAG support on CUDA (i.e. RDC off), so this ifdef will hide the
+  //! RDC required code.
 #if defined(PHX_ENABLE_DEVICE_DAG)
-
-#if defined(KOKKOS_HAVE_CUDA)
-  const unsigned vector_size = 32;
-  const unsigned team_size = 256 / vector_size;
   Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(work_size,team_size,vector_size),
                        PHX::RunDeviceDag<Traits>(device_evaluators_,d));
 #else
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(work_size,Kokkos::AUTO()),
-                       PHX::RunDeviceDag<Traits>(device_evaluators_,d));
-#endif // KOKKOS_HAVE_CUDA
-
-#else
-  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,"ERROR: PHX::DagManger::evalauteFields with useDeviceDAG=true, but this is experimental and must be enabled at configure time with Phalanx_ENABLE_DEVICE_DAG=ON.");
-#endif // PHX_ENABLE_DEVICE_DAG
+  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+    "ERROR: PHX::DagManger::evalauteFieldsDeviceDAG() is experimental and must be enabled at configure time with Phalanx_ENABLE_DEVICE_DAG=ON.");
+#endif
 }
 
 //=======================================================================

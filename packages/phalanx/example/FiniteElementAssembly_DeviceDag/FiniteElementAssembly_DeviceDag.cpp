@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
     if (p.doResidual()) {
       TimeMonitor tm_r(*residual_eval_time);
       for (const auto& workset : worksets)
-        fm.evaluateFieldsDeviceDag<Residual>(workset.num_cells_,workset);
+        fm.evaluateFieldsDeviceDag<Residual>(workset.num_cells_,p.teamSize(),p.vectorSize(),workset);
       PHX::exec_space::fence();
     }
 
@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
     if (p.doJacobian()) {
       TimeMonitor tm_r(*jacobian_eval_time);
       for (const auto& workset : worksets)
-        fm.evaluateFieldsDeviceDag<Jacobian>(workset.num_cells_,workset);
+        fm.evaluateFieldsDeviceDag<Jacobian>(workset.num_cells_,p.teamSize(),p.vectorSize(),workset);
       PHX::exec_space::fence();
     }
 
