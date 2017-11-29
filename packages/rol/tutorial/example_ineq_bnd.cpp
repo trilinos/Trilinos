@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<std::vector<RealT> > x_ptr  = ROL::makeShared<std::vector<RealT>>(5,1.0);
     ROL::SharedPointer<std::vector<RealT> > li_ptr = ROL::makeShared<std::vector<RealT>>(1,0.0);
     ROL::SharedPointer<std::vector<RealT> > ll_ptr = ROL::makeShared<std::vector<RealT>>(1,0.0);
-    ROL::SharedPointer<std::vector<RealT> > lu_ptr = ROL::makeShared<std::vector<RealT>(1,ROL::ROL_INF<RealT>>());
+    ROL::SharedPointer<std::vector<RealT> > lu_ptr = ROL::makeShared<std::vector<RealT>>(1,ROL::ROL_INF<RealT>());
 
     ROL::SharedPointer<ROL::Vector<RealT> > x  = ROL::makeShared<ROL::StdVector<RealT>>(x_ptr);
     ROL::SharedPointer<ROL::Vector<RealT> > li = ROL::makeShared<ROL::StdVector<RealT>>(li_ptr);

@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 
   // *** Example body.
   try {
-    RealT tol(1e-8), one(1);
+    RealT tol(1e-8);
 
     /*** Read in XML input ***/
     std::string filename = "input_ex10.xml";
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<ROL::Objective<RealT> > obj_vol
       = ROL::makeShared<IntegralOptObjective<RealT>>(qoi_vol,assembler);
     ROL::SharedPointer<QoI<RealT> > qoi_com
-      = ROL::makeShared<QoI_TopoOpt<RealT>>(pde->getFE(), // Volumetric Load
+      = ROL::makeShared<QoI_TopoOpt<RealT>>(pde->getFE(), pde->getLoad(),// Volumetric Load
                                             pde->getBdryFE(),pde->getBdryCellLocIds(),pde->getTraction(), // Traction
                                             pde->getFieldHelper(),cmpScaling);
     ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj_com

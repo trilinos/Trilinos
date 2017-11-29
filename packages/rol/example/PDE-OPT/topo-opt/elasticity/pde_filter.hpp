@@ -97,7 +97,7 @@ public:
     // Finite element fields.
     int basisOrder    = parlist.sublist("Problem").get("Basis Order",1);
     int cubDegree     = parlist.sublist("Problem").get("Cubature Degree",4);
-    int bdryCubDegree = parlist.sublist("Problem").get("Boundary Cubature Degree",2);
+//    int bdryCubDegree = parlist.sublist("Problem").get("Boundary Cubature Degree",2);
     int probDim       = parlist.sublist("Problem").get("Problem Dimension",2);
     if (probDim > 3 || probDim < 2) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,

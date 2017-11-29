@@ -131,7 +131,7 @@ public:
   virtual Real evaluate(const int                dir,
                         const int                sideset,
                         const std::vector<Real> &param) const {
-    const int numSideSets = sidesets_.size();
+//    const int numSideSets = sidesets_.size();
     const int paramSize   = param.size();
     Real val(0);
     Real loadMagNoise(0), loadAngNoise0(0);

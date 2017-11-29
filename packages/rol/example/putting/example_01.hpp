@@ -362,7 +362,7 @@ private:
             const Real v1, const Real v2, const Real v3,
             const Real a1, const Real a2, const Real a3,
             const bool trans = false) const {
-    Real two(2);
+    // Real two(2);
     Real n1(0), n2(0), n3(0);
     N(n1,n2,n3,x1,x2,x3,a1,a2,a3);
     Real nmag  = std::sqrt(n1*n1+n2*n2+n3*n3);
@@ -423,7 +423,7 @@ public:
     ROL::SharedPointer<std::vector<Real> >       cp = getVector(c);
     ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
     ROL::SharedPointer<const std::vector<Real> > zp = getConstVector(z);
-    const Real one(1);
+//    const Real one(1);
     // Get number of time steps
     int n = getSize(*up);
     // Parse state vector
@@ -472,7 +472,7 @@ public:
     ROL::SharedPointer<std::vector<Real> >      jvp = getVector(jv);
     ROL::SharedPointer<const std::vector<Real> > vp = getConstVector(v);
     ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
-    const Real half(0.5), one(1), two(2);
+    const Real half(0.5); // one(1), two(2);
     // Get number of time steps
     int n = getSize(*up);
     // Parse state vector
@@ -552,7 +552,7 @@ public:
     ROL::SharedPointer<std::vector<Real> >      jvp = getVector(ajv);
     ROL::SharedPointer<const std::vector<Real> > vp = getConstVector(v);
     ROL::SharedPointer<const std::vector<Real> > up = getConstVector(u);
-    const Real half(0.5), one(1), two(2);
+    const Real half(0.5), one(1); // two(2);
     // Get number of time steps
     int n = getSize(*up);
     // Parse state vector

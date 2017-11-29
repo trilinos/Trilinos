@@ -95,7 +95,7 @@ public:
               const ROL::SharedPointer<Traction<Real> >                       &traction,
               const ROL::SharedPointer<FieldHelper<Real> >                    &fieldHelper,
               const Real scale = 1.0)
-    : feBdry_(feBdry), traction_(traction), bdryCellLocIds_(bdryCellLocIds),
+    : feBdry_(feBdry), bdryCellLocIds_(bdryCellLocIds), traction_(traction), 
       fieldHelper_(fieldHelper), scale_(scale) {}
 
   QoI_TopoOpt(const ROL::SharedPointer<FE<Real> >                             &fe,
@@ -105,8 +105,8 @@ public:
               const ROL::SharedPointer<Traction<Real> >                       &traction,
               const ROL::SharedPointer<FieldHelper<Real> >                    &fieldHelper,
               const Real scale = 1.0)
-    : fe_(fe), load_(load), feBdry_(feBdry), traction_(traction), bdryCellLocIds_(bdryCellLocIds),
-      fieldHelper_(fieldHelper), scale_(scale) {}
+    : fe_(fe), load_(load), feBdry_(feBdry), bdryCellLocIds_(bdryCellLocIds),
+      traction_(traction), fieldHelper_(fieldHelper), scale_(scale) {}
 
   Real value(ROL::SharedPointer<Intrepid::FieldContainer<Real> > & val,
              const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & u_coeff,

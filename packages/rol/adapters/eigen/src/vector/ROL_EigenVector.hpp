@@ -57,8 +57,6 @@ namespace ROL {
 template<class Real>
 class Eigen3Vector : public ElementwiseVector<Real> {
 
-  template <typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
-  
   using V = Vector<Real>;
 
   using EV = Eigen::Matrix<Real,Eigen::Dynamic,1>;
@@ -80,7 +78,7 @@ public:
  
   Eigen3Vector( int dim, bool zeroOut=false ) : dim_(dim) {
     if( zeroOut ) {
-      vec_ = ROL::makeShared<EV(EV::Zero>(dim_));
+      vec_ = ROL::makeShared<EV>(dim_);
     }
     else {
       vec_ = ROL::makeShared<EV>(dim_);
