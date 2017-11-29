@@ -91,7 +91,7 @@ evaluateFields(typename Traits::EvalData workset)
                                         equation_index,
                                         num_equations),
                               workset);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),e);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
 }
 
 // **********************************************************************
@@ -153,7 +153,7 @@ evaluateFields(typename Traits::EvalData workset)
                                         equation_index,
                                         num_equations),
                               workset);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),e);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
 }
 
 // **********************************************************************

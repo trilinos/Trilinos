@@ -269,9 +269,11 @@ int main(int argc, char *argv[])
       w.global_solution_ = x;
       w.global_residual_atomic_ = f;
       w.global_jacobian_ = J;
+      w.team_size_ = p.teamSize();
+      w.vector_size_ = p.vectorSize();
     }
 
-    //Kokkos::deep_copy(x,1.0);
+    // Kokkos::deep_copy(x,1.0);
     Kokkos::parallel_for(x.extent(0),KOKKOS_LAMBDA (const int& i) {x(i)=static_cast<double>(i);});
     Kokkos::deep_copy(f,0.0);
     RCP<Time> residual_eval_time = TimeMonitor::getNewTimer("Residual Evaluation Time <<Host DAG>>");

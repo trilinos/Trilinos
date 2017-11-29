@@ -72,7 +72,7 @@ template<typename EvalT, typename Traits>
 void IntegrateSourceTerm<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   auto e = PHX::make_dev_eval(MyDevEval(source.get_static_view(),residual.get_static_view()),workset);
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),e);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
 }
 
 //**********************************************************************

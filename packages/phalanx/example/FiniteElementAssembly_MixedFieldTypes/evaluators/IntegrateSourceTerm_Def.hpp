@@ -66,7 +66,7 @@ void IntegrateSourceTerm<EvalT,Traits>::evaluateFields(typename Traits::EvalData
   basis_view = workset.basis_;
   weights = workset.weights_;
   cell_measure = workset.det_jac_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 //**********************************************************************

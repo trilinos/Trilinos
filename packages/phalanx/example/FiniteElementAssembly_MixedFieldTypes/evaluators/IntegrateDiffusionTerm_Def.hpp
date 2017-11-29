@@ -64,7 +64,7 @@ void IntegrateDiffusionTerm<EvalT,Traits>::evaluateFields(typename Traits::EvalD
   grad_basis = workset.grad_basis_real_;
   weights = workset.weights_;
   cell_measure = workset.det_jac_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 //**********************************************************************
