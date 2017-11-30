@@ -340,21 +340,21 @@ void ConstructData(bool is3D, const Tensor<double>& tensor, const std::string& m
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
-  typedef typename MultiVectorReal::scalar_type Real;
+  typedef typename RealValuedMultiVector::scalar_type Real;
 
 
   if (is3D) {
     // 3D
     map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,MultiVectorReal>("3D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
 
   } else {
     // 2D
     map         = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,MultiVectorReal>("2D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
   }
 
-  A = BuildMatrix<SC,LO,GO,Map,CrsMatrixWrap,MultiVectorReal>(is3D, tensor, galeriList, map, coordinates);
+  A = BuildMatrix<SC,LO,GO,Map,CrsMatrixWrap,RealValuedMultiVector>(is3D, tensor, galeriList, map, coordinates);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -432,7 +432,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
   if (xmlFileName != "")
     Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
 
-  typedef typename MultiVectorReal::scalar_type Real;
+  typedef typename RealValuedMultiVector::scalar_type Real;
   Tensor<Real> tensor;
   if (paramList.isParameter("sigma")) {
     std::string sigmaString = paramList.get<std::string>("sigma");
@@ -471,7 +471,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
 
     RCP<Matrix>           A;
     RCP<const Map>        map;
-    RCP<MultiVectorReal>  coordinates;
+    RCP<RealValuedMultiVector>  coordinates;
     RCP<MultiVector>      nullspace;
 
     tensor.setT(0);

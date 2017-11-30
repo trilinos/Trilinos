@@ -92,7 +92,7 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
-  typedef typename MultiVectorReal::scalar_type Real;
+  typedef typename RealValuedMultiVector::scalar_type Real;
 
 
   // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
@@ -110,16 +110,16 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
   // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
   if (matrixType == "Laplace1D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,MultiVectorReal>("1D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
   } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
              matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,MultiVectorReal>("2D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
 
   } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,MultiVectorReal>("3D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
   }
 
   // Expand map to do multiple DOF per node for block problems
@@ -204,7 +204,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   std::string matrixType = galeriParameters.GetMatrixType();
   RCP<Matrix>           A, B;
   RCP<const Map>        map;
-  RCP<MultiVectorReal>  coordinates;
+  RCP<RealValuedMultiVector>  coordinates;
   RCP<MultiVector>      nullspace;
   ConstructData(matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
 

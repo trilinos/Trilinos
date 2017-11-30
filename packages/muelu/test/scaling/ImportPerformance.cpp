@@ -484,8 +484,8 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
 
   RCP<Matrix>      A;
   RCP<const Map>   map;
-  RCP<MultiVectorReal> coordinates;
-  typedef typename MultiVectorReal::scalar_type Real;
+  RCP<RealValuedMultiVector> coordinates;
+  typedef typename RealValuedMultiVector::scalar_type Real;
   RCP<MultiVector> nullspace;
   galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
 
@@ -505,16 +505,16 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
     // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
     if (matrixType == "Laplace1D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,MultiVectorReal>("1D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
     } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
                matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,MultiVectorReal>("2D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
 
     } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,MultiVectorReal>("3D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
     }
 
     // Expand map to do multiple DOF per node for block problems
