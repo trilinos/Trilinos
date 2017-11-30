@@ -66,9 +66,9 @@ int main(int argc, char* argv[]) {
   ROL::SharedPointer<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && Teuchos::rank<int>(*comm)==0)
-    ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makeSharedFromRef(std::cout);
   else
-    ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag  = 0;
 

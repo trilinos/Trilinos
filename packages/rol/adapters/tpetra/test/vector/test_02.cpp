@@ -99,9 +99,9 @@ int main(int argc, char *argv[]) {
   oblackholestream bhs; // no output
  
   if( iprint>0 ) 
-    ROL::makeSharedFromRef(std::cout);
+   outStream = ROL::makeSharedFromRef(std::cout);
   else
-    ROL::makeSharedFromRef(bhs);
+   outStream = ROL::makeSharedFromRef(bhs);
 
   int errorFlag = 0;
 
