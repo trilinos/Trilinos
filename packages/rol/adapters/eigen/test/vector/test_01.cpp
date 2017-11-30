@@ -21,12 +21,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    ROL::makeSharedFromRef(std::cout);
+    ROL::makePtrFromRef(std::cout);
   else
-    ROL::makeSharedFromRef(bhs);
+    ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -38,9 +38,9 @@ int main(int argc, char *argv[]) {
 
     int dim = 10;
 
-    auto x_ptr = ROL::makeShared<EigenVector>(dim);   
-    auto y_ptr = ROL::makeShared<EigenVector>(dim);   
-    auto z_ptr = ROL::makeShared<EigenVector>(dim);   
+    auto x_ptr = ROL::makePtr<EigenVector>(dim);   
+    auto y_ptr = ROL::makePtr<EigenVector>(dim);   
+    auto z_ptr = ROL::makePtr<EigenVector>(dim);   
 
     E3V x(x_ptr);
     E3V y(y_ptr);
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     auto consistency = x.checkVector(y, z, true, *outStream);
-    ROL::StdVector<RealT> checkvec(ROL::makeSharedFromRef(consistency));
+    ROL::StdVector<RealT> checkvec(ROL::makePtrFromRef(consistency));
     if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag++;
     }

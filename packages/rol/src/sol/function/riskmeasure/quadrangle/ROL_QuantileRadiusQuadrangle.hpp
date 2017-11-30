@@ -56,12 +56,12 @@ namespace ROL {
 template<class Real>
 class QuantileRadiusQuadrangle : public RiskMeasure<Real> {
 private:
-  ROL::SharedPointer<PlusFunction<Real> > plusFunction_;
+  ROL::Ptr<PlusFunction<Real> > plusFunction_;
 
   Real prob_;
   Real coeff_;
 
-  ROL::SharedPointer<Vector<Real> > dualVector_;
+  ROL::Ptr<Vector<Real> > dualVector_;
   std::vector<Real> xvar_;
   std::vector<Real> vvar_;
 
@@ -96,19 +96,19 @@ public:
     prob_  = list.get<Real>("Confidence Level");
     coeff_ = list.get<Real>("Coefficient");
     // Build (approximate) plus function
-    plusFunction_ = ROL::makeShared<PlusFunction<Real>>(list);
+    plusFunction_ = ROL::makePtr<PlusFunction<Real>>(list);
     checkInputs();
     initialize();
   }
 
   QuantileRadiusQuadrangle(const Real prob, const Real coeff,
-                           const ROL::SharedPointer<PlusFunction<Real> > &pf)
+                           const ROL::Ptr<PlusFunction<Real> > &pf)
     : RiskMeasure<Real>(), plusFunction_(pf), prob_(prob), coeff_(coeff), firstReset_(true) {
     checkInputs();
     initialize();
   }
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
@@ -121,10 +121,10 @@ public:
     dualVector_->zero();
   }
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x,
-             ROL::SharedPointer<Vector<Real> > &v0, const Vector<Real> &v) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x,
+             ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
-    v0 = ROL::constPointerCast<Vector<Real> >(dynamic_cast<const RiskVector<Real>&>(v).getVector());
+    v0 = ROL::constPtrCast<Vector<Real> >(dynamic_cast<const RiskVector<Real>&>(v).getVector());
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
     vvar_ = (*dynamic_cast<const RiskVector<Real>&>(v).getStatistic(comp,index));

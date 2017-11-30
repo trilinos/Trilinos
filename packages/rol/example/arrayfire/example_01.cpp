@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFRomRef(bhs);
+    outStream = ROL::makePtrFRomRef(bhs);
 
   int errorFlag  = 0;
 
@@ -109,11 +109,11 @@ int main(int argc, char *argv[]) {
     afinfo = af::infoString(true);
     *outStream << std::endl << afinfo << std::endl;
 
-    /***** Define ROL::SharedPointer to AF array with initial guess. *****/
+    /***** Define ROL::Ptr to AF array with initial guess. *****/
     ElementT zero(0);
     ElementT op2(1.2);
     ElementT one(1);
-    ROL::SharedPointer<af::array> x_ptr = ROL::makeShared<af::array>(dim,afType);
+    ROL::Ptr<af::array> x_ptr = ROL::makePtr<af::array>(dim,afType);
     *x_ptr = af::constant(zero,x_ptr->dims(),afType);
     // Set Initial Guess
     for (dim_t i=0; i<dim/2; i++) {

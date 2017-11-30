@@ -443,27 +443,27 @@ class Constraint_TopOpt : public ROL::Constraint_SimOpt<Real> {
   typedef typename vector::size_type uint;
  
 private:
-  ROL::SharedPointer<FEM<Real> > FEM_;
+  ROL::Ptr<FEM<Real> > FEM_;
 
-  ROL::SharedPointer<const vector> getVector( const V& x ) {
+  ROL::Ptr<const vector> getVector( const V& x ) {
     
     return dynamic_cast<const SV&>(x).getVector();
   }
   
-  ROL::SharedPointer<vector> getVector( V& x ) {
+  ROL::Ptr<vector> getVector( V& x ) {
     
     return dynamic_cast<SV&>(x).getVector();
   }
 
 public:
 
-  Constraint_TopOpt(ROL::SharedPointer<FEM<Real> > & FEM) : FEM_(FEM) {}
+  Constraint_TopOpt(ROL::Ptr<FEM<Real> > & FEM) : FEM_(FEM) {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
 
     
 
-    ROL::SharedPointer<vector> cp = getVector(c);
+    ROL::Ptr<vector> cp = getVector(c);
     applyJacobian_1(c, u, u, z, tol);
     vector f;
     FEM_->build_force(f);
@@ -476,8 +476,8 @@ public:
 
     
 
-    ROL::SharedPointer<vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Assemble Jacobian
     Teuchos::SerialDenseMatrix<int, Real> K;
@@ -488,8 +488,8 @@ public:
     // Solve
     Teuchos::SerialDenseVector<int, Real> U(K.numCols());
     Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix( ROL::makeSharedFromRef(K) );
-    solver.setVectors( ROL::makeSharedFromRef(U), ROL::makeSharedFromRef(F) );
+    solver.setMatrix( ROL::makePtrFromRef(K) );
+    solver.setVectors( ROL::makePtrFromRef(U), ROL::makePtrFromRef(F) );
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
@@ -509,9 +509,9 @@ public:
 
     
 
-    ROL::SharedPointer<vector> jvp = getVector(jv);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> jvp = getVector(jv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Apply Jacobian
     vector V;
@@ -524,10 +524,10 @@ public:
                        const ROL::Vector<Real> &z, Real &tol) {
 
     
-    ROL::SharedPointer<vector> jvp = getVector(jv);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z); 
+    ROL::Ptr<vector> jvp = getVector(jv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z); 
 
     // Apply Jacobian
     vector U;
@@ -540,10 +540,10 @@ public:
                               const ROL::Vector<Real> &z, Real &tol) {
 
     
-    ROL::SharedPointer<vector> ijvp = getVector(ijv);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> ijvp = getVector(ijv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Assemble Jacobian
     Teuchos::SerialDenseMatrix<int, Real> K;
@@ -555,8 +555,8 @@ public:
       F(i) = (*vp)[i];
     }
     Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix(ROL::makeSharedFromRef(K));
-    solver.setVectors(ROL::makeSharedFromRef(U),ROL::makeSharedFromRef(F));
+    solver.setMatrix(ROL::makePtrFromRef(K));
+    solver.setVectors(ROL::makePtrFromRef(U),ROL::makePtrFromRef(F));
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
@@ -572,10 +572,10 @@ public:
                               const ROL::Vector<Real> &z, Real &tol) {
     
  
-    ROL::SharedPointer<vector> ajvp = getVector(ajv);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> ajvp = getVector(ajv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // apply jacobian
     vector V;
@@ -588,10 +588,10 @@ public:
                               const ROL::Vector<Real> &z, Real &tol) {
 
     
-    ROL::SharedPointer<vector> ajvp = getVector(ajv);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> ajvp = getVector(ajv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Apply Jacobian
     vector U;
@@ -607,10 +607,10 @@ public:
                                      const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
      
       
-     ROL::SharedPointer<vector> iajvp = getVector(iajv);
-     ROL::SharedPointer<const vector> vp = getVector(v);
-     ROL::SharedPointer<const vector> up = getVector(u);
-     ROL::SharedPointer<const vector> zp = getVector(z);
+     ROL::Ptr<vector> iajvp = getVector(iajv);
+     ROL::Ptr<const vector> vp = getVector(v);
+     ROL::Ptr<const vector> up = getVector(u);
+     ROL::Ptr<const vector> zp = getVector(z);
 
     // Assemble Jacobian
     Teuchos::SerialDenseMatrix<int, Real> K;
@@ -622,8 +622,8 @@ public:
       F(i) = (*vp)[i];
     }
     Teuchos::SerialDenseSolver<int, Real> solver;
-    solver.setMatrix(ROL::makeSharedFromRef(K));
-    solver.setVectors(ROL::makeSharedFromRef(U), ROL::makeSharedFromRef(F));
+    solver.setMatrix(ROL::makePtrFromRef(K));
+    solver.setVectors(ROL::makePtrFromRef(U), ROL::makePtrFromRef(F));
     solver.factorWithEquilibration(true);
     solver.factor();
     solver.solve();
@@ -652,11 +652,11 @@ public:
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
 
     
-    ROL::SharedPointer<vector> ahwvp = getVector(ahwv);
-    ROL::SharedPointer<const vector> wp = getVector(w);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> ahwvp = getVector(ahwv);
+    ROL::Ptr<const vector> wp = getVector(w);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Apply Jacobian
     vector U;
@@ -682,7 +682,7 @@ class Objective_TopOpt : public ROL::Objective_SimOpt<Real> {
   typedef typename vector::size_type uint;  
 
 private:
-  ROL::SharedPointer<FEM<Real> > FEM_;
+  ROL::Ptr<FEM<Real> > FEM_;
   Real frac_; 
   Real reg_; 
   Real pen_;
@@ -690,27 +690,27 @@ private:
 
   bool useLC_; // Use linear form of compliance.  Otherwise use quadratic form.
 
-  ROL::SharedPointer<const vector> getVector( const V& x ) {
+  ROL::Ptr<const vector> getVector( const V& x ) {
     
     return dynamic_cast<const SV&>(x).getVector();
   }
 
-  ROL::SharedPointer<vector> getVector( V& x ) {
+  ROL::Ptr<vector> getVector( V& x ) {
     
     return dynamic_cast<SV&>(x).getVector();
   }
 
 public:
 
-  Objective_TopOpt(ROL::SharedPointer<FEM<Real> > FEM, 
+  Objective_TopOpt(ROL::Ptr<FEM<Real> > FEM, 
     Real frac = 0.5, Real reg = 1.0, Real pen = 1.0, Real rmin = -1.0 )
     : FEM_(FEM), frac_(frac), reg_(reg), pen_(pen), rmin_(rmin), useLC_(true) {}
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
 
     
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
  
     // Apply Jacobian
     vector KU(up->size(),0.0);
@@ -771,10 +771,10 @@ public:
     
 
     // Unwrap g
-    ROL::SharedPointer<vector> gp = getVector(g);
+    ROL::Ptr<vector> gp = getVector(g);
     // Unwrap x
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Apply Jacobian
     vector KU(up->size(),0.0);
@@ -802,11 +802,11 @@ public:
     
 
     // Unwrap g
-    ROL::SharedPointer<vector> gp = getVector(g);
+    ROL::Ptr<vector> gp = getVector(g);
 
     // Unwrap x
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Apply Jacobian
     g.zero();
@@ -869,14 +869,14 @@ public:
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
 
     
-    ROL::SharedPointer<vector> hvp = getVector(hv);
+    ROL::Ptr<vector> hvp = getVector(hv);
 
     // Unwrap v
-    ROL::SharedPointer<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> vp = getVector(v);
 
     // Unwrap x
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Apply Jacobian
     hv.zero();
@@ -898,14 +898,14 @@ public:
     
 
     // Unwrap hv
-    ROL::SharedPointer<vector> hvp = getVector(hv);
+    ROL::Ptr<vector> hvp = getVector(hv);
 
     // Unwrap v
-    ROL::SharedPointer<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> vp = getVector(v);
 
     // Unwrap x
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Apply Jacobian
     hv.zero();
@@ -927,14 +927,14 @@ public:
     
 
     // Unwrap g
-    ROL::SharedPointer<vector> hvp = getVector(hv);
+    ROL::Ptr<vector> hvp = getVector(hv);
 
     // Unwrap v
-    ROL::SharedPointer<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> vp = getVector(v);
 
     // Unwrap x
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
  
     // Apply Jacobian
     hv.zero();
@@ -957,14 +957,14 @@ public:
 
     
 
-    ROL::SharedPointer<vector> hvp = getVector(hv);
+    ROL::Ptr<vector> hvp = getVector(hv);
 
     // Unwrap v
-    ROL::SharedPointer<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> vp = getVector(v);
 
     // Unwrap x
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
     
     // Apply Jacobian
     hv.zero();
@@ -1037,12 +1037,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -1053,7 +1053,7 @@ int main(int argc, char *argv[]) {
     uint nx  = 12; // Number of x-elements (60 for prob = 0, 32 for prob = 1).
     uint ny  = 8; // Number of y-elements (20 for prob = 0, 20 for prob = 1).
     int P    = 1;  // SIMP penalization power.
-    ROL::SharedPointer<FEM<RealT> > pFEM = ROL::makeShared<FEM<RealT>>(nx,ny,P,prob);
+    ROL::Ptr<FEM<RealT> > pFEM = ROL::makePtr<FEM<RealT>>(nx,ny,P,prob);
     // Objective function description.
     int   nreg = 11;       // # of Moreau-Yoshida parameter updates (e.g., 21).
     int   npen = 2;        // # of penalty parameter updates (e.g., 10).
@@ -1071,52 +1071,52 @@ int main(int argc, char *argv[]) {
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
-    // Initialize ROL::SharedPointers.
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> >         pobj;   // Full objective.
-    ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > robj;   // Reduced objective.
-    ROL::SharedPointer<ROL::Algorithm<RealT> >                algo;   // Optimization algorithm.
-    ROL::SharedPointer<ROL::Step<RealT> >                     step;   // Globalized step.
-    ROL::SharedPointer<ROL::StatusTest<RealT> >               status; // Status test.
+    // Initialize ROL::Ptrs.
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> >         pobj;   // Full objective.
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > robj;   // Reduced objective.
+    ROL::Ptr<ROL::Algorithm<RealT> >                algo;   // Optimization algorithm.
+    ROL::Ptr<ROL::Step<RealT> >                     step;   // Globalized step.
+    ROL::Ptr<ROL::StatusTest<RealT> >               status; // Status test.
     // Initialize equality constraint.
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > pcon = 
-      ROL::makeShared<Constraint_TopOpt<RealT>>(pFEM);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pcon = 
+      ROL::makePtr<Constraint_TopOpt<RealT>>(pFEM);
     // Initialize bound constraints.
     std::vector<RealT> lo(pFEM->numZ(),1.e-3);
     std::vector<RealT> hi(pFEM->numZ(),1.0);
     ROL::StdBoundConstraint<RealT> bound(lo,hi);
     // Initialize control vector.
-    ROL::SharedPointer<std::vector<RealT> > z_ptr  = ROL::makeShared<std::vector<RealT>> (pFEM->numZ(), frac);
+    ROL::Ptr<std::vector<RealT> > z_ptr  = ROL::makePtr<std::vector<RealT>> (pFEM->numZ(), frac);
     ROL::StdVector<RealT> z(z_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > zp  = ROL::makeSharedFromRef(z);
+    ROL::Ptr<ROL::Vector<RealT> > zp  = ROL::makePtrFromRef(z);
     // Initialize state vector.
-    ROL::SharedPointer<std::vector<RealT> > u_ptr  = ROL::makeShared<std::vector<RealT>>(pFEM->numU(), 0.0);
+    ROL::Ptr<std::vector<RealT> > u_ptr  = ROL::makePtr<std::vector<RealT>>(pFEM->numU(), 0.0);
     ROL::StdVector<RealT> u(u_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > up  = ROL::makeSharedFromRef(u);
+    ROL::Ptr<ROL::Vector<RealT> > up  = ROL::makePtrFromRef(u);
     // Initialize adjoint vector.
-    ROL::SharedPointer<std::vector<RealT> > p_ptr  = ROL::makeShared<std::vector<RealT>>(pFEM->numU(), 0.0);
+    ROL::Ptr<std::vector<RealT> > p_ptr  = ROL::makePtr<std::vector<RealT>>(pFEM->numU(), 0.0);
     ROL::StdVector<RealT> p(p_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > pp  = ROL::makeSharedFromRef(p);
+    ROL::Ptr<ROL::Vector<RealT> > pp  = ROL::makePtrFromRef(p);
     // Derivative check.
     if (derivCheck) {
       // Initialize control vectors.
-      ROL::SharedPointer<std::vector<RealT> > yz_ptr = ROL::makeShared<std::vector<RealT>>(pFEM->numZ(), 0.0);
+      ROL::Ptr<std::vector<RealT> > yz_ptr = ROL::makePtr<std::vector<RealT>>(pFEM->numZ(), 0.0);
       for (uint i=0; i<pFEM->numZ(); i++) {
         (*yz_ptr)[i] = frac * (RealT)rand()/(RealT)RAND_MAX;
       }
       ROL::StdVector<RealT> yz(yz_ptr);
-      ROL::SharedPointer<ROL::Vector<RealT> > yzp = ROL::makeSharedFromRef(yz);
+      ROL::Ptr<ROL::Vector<RealT> > yzp = ROL::makePtrFromRef(yz);
       // Initialize state vectors.
-      ROL::SharedPointer<std::vector<RealT> > yu_ptr = ROL::makeShared<std::vector<RealT>>(pFEM->numU(), 0.0);
+      ROL::Ptr<std::vector<RealT> > yu_ptr = ROL::makePtr<std::vector<RealT>>(pFEM->numU(), 0.0);
       for (uint i=0; i<pFEM->numU(); i++) {
       (*u_ptr)[i]  = (RealT)rand()/(RealT)RAND_MAX;
         (*yu_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       }
       ROL::StdVector<RealT> yu(yu_ptr);
-      ROL::SharedPointer<ROL::Vector<RealT> > yup = ROL::makeSharedFromRef(yu);
+      ROL::Ptr<ROL::Vector<RealT> > yup = ROL::makePtrFromRef(yu);
       // Initialize Jacobian vector.
-      ROL::SharedPointer<std::vector<RealT> > jv_ptr  = ROL::makeShared<std::vector<RealT>>(pFEM->numU(), 0.0);
+      ROL::Ptr<std::vector<RealT> > jv_ptr  = ROL::makePtr<std::vector<RealT>>(pFEM->numU(), 0.0);
       ROL::StdVector<RealT> jv(jv_ptr);
-      ROL::SharedPointer<ROL::Vector<RealT> > jvp = ROL::makeSharedFromRef(jv);
+      ROL::Ptr<ROL::Vector<RealT> > jvp = ROL::makePtrFromRef(jv);
       // Initialize SimOpt Vectors 
       ROL::Vector_SimOpt<RealT> x(up,zp);
       ROL::Vector_SimOpt<RealT> y(yup,yzp);
@@ -1125,11 +1125,11 @@ int main(int argc, char *argv[]) {
       //pcon->checkApplyAdjointJacobian(x,yu,jv,x,true);
       pcon->checkApplyAdjointHessian(x,yu,y,x,true,*outStream);
       // Test full objective function.
-      pobj = ROL::makeShared<Objective_TopOpt<RealT>>(pFEM,frac,reg,pen,rmin);
+      pobj = ROL::makePtr<Objective_TopOpt<RealT>>(pFEM,frac,reg,pen,rmin);
       pobj->checkGradient(x,y,true,*outStream);
       pobj->checkHessVec(x,y,true,*outStream);
       // Test reduced objective function.
-      robj = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(pobj,pcon,up,zp,pp);
+      robj = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(pobj,pcon,up,zp,pp);
       robj->checkGradient(z,yz,true,*outStream);
       robj->checkHessVec(z,yz,true,*outStream);
     }
@@ -1139,31 +1139,31 @@ int main(int argc, char *argv[]) {
       for ( int i=0; i<nreg; i++ ) {
         *outStream << "\nMoreau-Yoshida regularization parameter: " << reg << "\n";
         // Initialize full objective function.
-        pobj = ROL::makeShared<Objective_TopOpt<RealT>>(pFEM,frac,reg,pen,rmin);
+        pobj = ROL::makePtr<Objective_TopOpt<RealT>>(pFEM,frac,reg,pen,rmin);
         // Initialize reduced objective function.
-        robj = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(pobj,pcon,up,zp,pp);
+        robj = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(pobj,pcon,up,zp,pp);
         if ( !useTR ) {
           // Run line-search secant step.
           parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Quasi-Newton Method");
           parlist->sublist("General").sublist("Secant").set("Type", "Limited-Memory SR1");
           if ( maxit > 0 ) {
-            step   = ROL::makeShared<ROL::LineSearchStep<RealT>>(*parlist);
-            status = ROL::makeShared<ROL::StatusTest<RealT>>(gtol,stol,maxit);
-            algo   = ROL::makeShared<ROL::Algorithm<RealT>>(step,status,false);
+            step   = ROL::makePtr<ROL::LineSearchStep<RealT>>(*parlist);
+            status = ROL::makePtr<ROL::StatusTest<RealT>>(gtol,stol,maxit);
+            algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
             algo->run(z,*robj,bound,true,*outStream);
           }
           // Run line-search Newton-Krylov step.
           parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", "Newton-Krylov");
-          step   = ROL::makeShared<ROL::LineSearchStep<RealT>>(*parlist);
-          status = ROL::makeShared<ROL::StatusTest<RealT>>(gtol,stol,maxit);
-          algo   = ROL::makeShared<ROL::Algorithm<RealT>>(step,status,false);
+          step   = ROL::makePtr<ROL::LineSearchStep<RealT>>(*parlist);
+          status = ROL::makePtr<ROL::StatusTest<RealT>>(gtol,stol,maxit);
+          algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
           algo->run(z,*robj,bound,true,*outStream);
         }
         else {
           // Run trust-region step.
-          step   = ROL::makeShared<ROL::TrustRegionStep<RealT>>(*parlist);
-          status = ROL::makeShared<ROL::StatusTest<RealT>>(gtol,stol,maxit);
-          algo   = ROL::makeShared<ROL::Algorithm<RealT>>(step,status,false);
+          step   = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
+          status = ROL::makePtr<ROL::StatusTest<RealT>>(gtol,stol,maxit);
+          algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
           algo->run(z,*robj,bound,true,*outStream);
         }
         // Compute volume.

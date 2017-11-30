@@ -22,12 +22,12 @@ private:
   int N;
   double T, dt, mt;
   double htarg, alpha;
-  const ROL::SharedPointer<const V>  w; // Trapezoidal weights
+  const ROL::Ptr<const V>  w; // Trapezoidal weights
 
 public:
   
   Objective(  int N_, double T_, double mt_, double htarg_, double alpha_, 
-              const ROL::SharedPointer<const V>& w_ ) :
+              const ROL::Ptr<const V>& w_ ) :
     N(N_), T(T_), dt(T/N), mt(mt_), htarg(htarg_), alpha(alpha_), w(w_) {
   }
 

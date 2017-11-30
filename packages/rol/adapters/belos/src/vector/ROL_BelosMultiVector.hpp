@@ -78,10 +78,10 @@ namespace { // (anonymous)
       TEUCHOS_TEST_FOR_EXCEPTION(false, std::logic_error, "Not implemented");
     }
 
-    ROL::SharedPointer<const Teuchos::ParameterList>
+    Teuchos::RCP<const Teuchos::ParameterList>
     getValidParameters () const
     {
-      return ROL::makesShared<Teuchos::ParameterList> ();
+      return Teuchos::rcp(new Teuchos::ParameterList>());
     }
 
     void
@@ -116,7 +116,7 @@ namespace Belos {
     class MultiVecTraits<Scalar, ROL::MultiVector<Scalar> > {
 
         typedef ROL::MultiVector<Scalar>  MV;      // ROL::MultiVector object
-        typedef ROL::SharedPointer<MV>          PMV;     // Pointer to ROL::MultiVector object
+        typedef Teuchos::RCP<MV>          PMV;     // Pointer to ROL::MultiVector object
 
         typedef Teuchos::SerialDenseMatrix<int,Scalar> Matrix;
 

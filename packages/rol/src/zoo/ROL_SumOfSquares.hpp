@@ -87,22 +87,22 @@ public:
 };
 
 template<class Real>
-void getSumOfSquares( ROL::SharedPointer<Objective<Real> > &obj,
-                      ROL::SharedPointer<Vector<Real> >    &x0,
-                      ROL::SharedPointer<Vector<Real> >    &x ) {
+void getSumOfSquares( ROL::Ptr<Objective<Real> > &obj,
+                      ROL::Ptr<Vector<Real> >    &x0,
+                      ROL::Ptr<Vector<Real> >    &x ) {
   // Problem dimension
   int n = 100;
 
   // Get Initial Guess
-  ROL::SharedPointer<std::vector<Real> > x0p = ROL::makeShared<std::vector<Real>>(n,1.0);
-  x0 = ROL::makeShared<StdVector<Real>>(x0p);
+  ROL::Ptr<std::vector<Real> > x0p = ROL::makePtr<std::vector<Real>>(n,1.0);
+  x0 = ROL::makePtr<StdVector<Real>>(x0p);
 
   // Get Solution
-  ROL::SharedPointer<std::vector<Real> > xp = ROL::makeShared<std::vector<Real>>(n,0.0);
-  x = ROL::makeShared<StdVector<Real>>(xp);
+  ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
+  x = ROL::makePtr<StdVector<Real>>(xp);
 
   // Instantiate Objective Function
-  obj = ROL::makeShared<Objective_SumOfSquares<Real>>();
+  obj = ROL::makePtr<Objective_SumOfSquares<Real>>();
 }
 
 } // End ZOO Namespace

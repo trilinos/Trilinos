@@ -52,15 +52,15 @@ namespace ROL {
 template<class Real> 
 class StdEpetraBatchManager : public EpetraBatchManager<Real> {
 public:
-  StdEpetraBatchManager(ROL::SharedPointer<Epetra_Comm> &comm)
+  StdEpetraBatchManager(ROL::Ptr<Epetra_Comm> &comm)
     : EpetraBatchManager<Real>(comm) {}
 
   using EpetraBatchManager<Real>::sumAll;
 
   void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    ROL::SharedPointer<std::vector<Real> > input_ptr
+    ROL::Ptr<std::vector<Real> > input_ptr
       = dynamic_cast<StdVector<Real>&>(input).getVector();
-    ROL::SharedPointer<std::vector<Real> > output_ptr
+    ROL::Ptr<std::vector<Real> > output_ptr
       = dynamic_cast<StdVector<Real>&>(output).getVector();
     int dim_i = static_cast<int>(input_ptr->size());
     int dim_o = static_cast<int>(output_ptr->size());

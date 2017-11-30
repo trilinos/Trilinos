@@ -44,7 +44,7 @@
 #ifndef ROL_HMCROBJECTIVE_HPP
 #define ROL_HMCROBJECTIVE_HPP
 
-#include "ROL_SharedPointer.hpp"
+#include "ROL_Ptr.hpp"
 #include "ROL_RiskVector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_SampleGenerator.hpp"
@@ -54,32 +54,32 @@ namespace ROL {
 template<class Real>
 class HMCRObjective : public Objective<Real> {
 private:
-  ROL::SharedPointer<Objective<Real> > ParametrizedObjective_;
+  ROL::Ptr<Objective<Real> > ParametrizedObjective_;
 
   Real order_;
   Real prob_;
 
-  ROL::SharedPointer<SampleGenerator<Real> > ValueSampler_;
-  ROL::SharedPointer<SampleGenerator<Real> > GradientSampler_;
-  ROL::SharedPointer<SampleGenerator<Real> > HessianSampler_;
+  ROL::Ptr<SampleGenerator<Real> > ValueSampler_;
+  ROL::Ptr<SampleGenerator<Real> > GradientSampler_;
+  ROL::Ptr<SampleGenerator<Real> > HessianSampler_;
 
-  ROL::SharedPointer<Vector<Real> > pointGrad_;
-  ROL::SharedPointer<Vector<Real> > pointHess_;
+  ROL::Ptr<Vector<Real> > pointGrad_;
+  ROL::Ptr<Vector<Real> > pointHess_;
 
-  ROL::SharedPointer<Vector<Real> > gradient0_;
-  ROL::SharedPointer<Vector<Real> > sumGrad0_;
-  ROL::SharedPointer<Vector<Real> > gradient1_;
-  ROL::SharedPointer<Vector<Real> > sumGrad1_;
-  ROL::SharedPointer<Vector<Real> > gradient2_;
-  ROL::SharedPointer<Vector<Real> > sumGrad2_;
-  ROL::SharedPointer<Vector<Real> > hessvec_;
-  ROL::SharedPointer<Vector<Real> > sumHess_;
+  ROL::Ptr<Vector<Real> > gradient0_;
+  ROL::Ptr<Vector<Real> > sumGrad0_;
+  ROL::Ptr<Vector<Real> > gradient1_;
+  ROL::Ptr<Vector<Real> > sumGrad1_;
+  ROL::Ptr<Vector<Real> > gradient2_;
+  ROL::Ptr<Vector<Real> > sumGrad2_;
+  ROL::Ptr<Vector<Real> > hessvec_;
+  ROL::Ptr<Vector<Real> > sumHess_;
  
   bool initialized_;
   bool storage_;
 
   std::map<std::vector<Real>,Real> value_storage_;
-  std::map<std::vector<Real>,ROL::SharedPointer<Vector<Real> > > gradient_storage_;
+  std::map<std::vector<Real>,ROL::Ptr<Vector<Real> > > gradient_storage_;
 
   void initialize(const Vector<Real> &x) {
     pointGrad_ = x.dual().clone();
@@ -95,9 +95,9 @@ private:
     initialized_ = true;
   }
 
-  void unwrap_const_CVaR_vector(ROL::SharedPointer<Vector<Real> > &xvec, Real &xvar,
+  void unwrap_const_CVaR_vector(ROL::Ptr<Vector<Real> > &xvec, Real &xvar,
                           const Vector<Real> &x) {
-    xvec = ROL::constPointerCast<Vector<Real> >(dynamic_cast<const RiskVector<Real>&>(x).getVector());
+    xvec = ROL::constPtrCast<Vector<Real> >(dynamic_cast<const RiskVector<Real>&>(x).getVector());
     xvar = (*dynamic_cast<const RiskVector<Real>&>(x).getStatistic(0))[0];
     if ( !initialized_ ) {
       initialize(*xvec);
@@ -127,8 +127,8 @@ private:
       ParametrizedObjective_->setParameter(param);
       ParametrizedObjective_->gradient(g,x,tol);
       if ( storage_ ) {
-        ROL::SharedPointer<Vector<Real> > tmp = g.clone();
-        gradient_storage_.insert(std::pair<std::vector<Real>,ROL::SharedPointer<Vector<Real> > >(param,tmp));
+        ROL::Ptr<Vector<Real> > tmp = g.clone();
+        gradient_storage_.insert(std::pair<std::vector<Real>,ROL::Ptr<Vector<Real> > >(param,tmp));
         gradient_storage_[param]->set(g);
       }
     }
@@ -144,11 +144,11 @@ private:
 public:
   virtual ~HMCRObjective() {}
 
-  HMCRObjective( ROL::SharedPointer<Objective<Real> > &pObj,
+  HMCRObjective( ROL::Ptr<Objective<Real> > &pObj,
                  Real order, Real prob,
-                 ROL::SharedPointer<SampleGenerator<Real> > &vsampler, 
-                 ROL::SharedPointer<SampleGenerator<Real> > &gsampler,
-                 ROL::SharedPointer<SampleGenerator<Real> > &hsampler,
+                 ROL::Ptr<SampleGenerator<Real> > &vsampler, 
+                 ROL::Ptr<SampleGenerator<Real> > &gsampler,
+                 ROL::Ptr<SampleGenerator<Real> > &hsampler,
                  bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
@@ -159,10 +159,10 @@ public:
     gradient_storage_.clear();
   }
 
-  HMCRObjective( ROL::SharedPointer<Objective<Real> > &pObj,
+  HMCRObjective( ROL::Ptr<Objective<Real> > &pObj,
                  Real order, Real prob,
-                 ROL::SharedPointer<SampleGenerator<Real> > &vsampler, 
-                 ROL::SharedPointer<SampleGenerator<Real> > &gsampler,
+                 ROL::Ptr<SampleGenerator<Real> > &vsampler, 
+                 ROL::Ptr<SampleGenerator<Real> > &gsampler,
                  bool storage = true )
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
@@ -173,9 +173,9 @@ public:
     gradient_storage_.clear();
   }
 
-  HMCRObjective( ROL::SharedPointer<Objective<Real> > &pObj,
+  HMCRObjective( ROL::Ptr<Objective<Real> > &pObj,
                  Real order, Real prob,
-                 ROL::SharedPointer<SampleGenerator<Real> > &sampler,
+                 ROL::Ptr<SampleGenerator<Real> > &sampler,
                  bool storage = true )
     : ParametrizedObjective_(pObj), order_(order), prob_(prob),
       ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
@@ -187,7 +187,7 @@ public:
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    ROL::SharedPointer<Vector<Real> > xvec; Real xvar = 0.0;
+    ROL::Ptr<Vector<Real> > xvec; Real xvar = 0.0;
     unwrap_const_CVaR_vector(xvec,xvar,x);
     ParametrizedObjective_->update(*xvec,flag,iter);
     ValueSampler_->update(*xvec);
@@ -204,7 +204,7 @@ public:
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<Vector<Real> > xvec; Real xvar = 0.0;
+    ROL::Ptr<Vector<Real> > xvec; Real xvar = 0.0;
     unwrap_const_CVaR_vector(xvec,xvar,x);
     // Initialize storage
     std::vector<Real> point;
@@ -233,7 +233,7 @@ public:
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<Vector<Real> > xvec; Real xvar = 0.0;
+    ROL::Ptr<Vector<Real> > xvec; Real xvar = 0.0;
     unwrap_const_CVaR_vector(xvec,xvar,x);
     RiskVector<Real> &gc = dynamic_cast<RiskVector<Real>&>(g);
     // Initialize storage
@@ -281,9 +281,9 @@ public:
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v,
                         const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<Vector<Real> > xvec; Real xvar = 0.0;
+    ROL::Ptr<Vector<Real> > xvec; Real xvar = 0.0;
     unwrap_const_CVaR_vector(xvec,xvar,x);
-    ROL::SharedPointer<Vector<Real> > vvec; Real vvar = 0.0;
+    ROL::Ptr<Vector<Real> > vvec; Real vvar = 0.0;
     unwrap_const_CVaR_vector(vvec,vvar,v);
     RiskVector<Real> &hvc = dynamic_cast<RiskVector<Real>&>(hv);
     // Initialize storage

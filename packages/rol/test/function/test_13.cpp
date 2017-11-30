@@ -69,14 +69,14 @@
 // If D_{ii}>0 for all i, then the minimizer is the solution to 
 // the linear system x_i=b_i/d_i
 template<class Real> 
-ROL::SharedPointer<ROL::Objective<Real>> 
+ROL::Ptr<ROL::Objective<Real>> 
 createDiagonalQuadraticObjective( const ROL::Vector<Real> &a, 
                                   const ROL::Vector<Real> &b ) {
   
-  auto op = ROL::makeShared<ROL::DiagonalOperator<Real>>(a);
+  auto op = ROL::makePtr<ROL::DiagonalOperator<Real>>(a);
   auto vec = b.clone();
   vec->set(b);
-  auto obj = ROL::makeShared<ROL::QuadraticObjective<Real>>(op,vec);
+  auto obj = ROL::makePtr<ROL::QuadraticObjective<Real>>(op,vec);
   return obj;
 }
 
@@ -94,12 +94,12 @@ int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a
   // (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -116,8 +116,8 @@ int main(int argc, char *argv[]) {
     /*-----  Optimization Vector -----*/
 
     // Initial guess
-    auto x0_ptr = ROL::makeShared<std::vector<RealT>>(4);  
-    auto x0 = ROL::makeShared<SV>(x0_ptr);
+    auto x0_ptr = ROL::makePtr<std::vector<RealT>>(4);  
+    auto x0 = ROL::makePtr<SV>(x0_ptr);
     ROL::RandomizeVector(*x0);
 
     auto x = x0->clone(); x->set(*x0);
@@ -125,12 +125,12 @@ int main(int argc, char *argv[]) {
     /*----- Objective Function -----*/
 
     // Diagonal quadratic objective scaling vector
-    auto d_ptr = ROL::makeShared<std::vector<RealT>>(4);  
-    auto d = ROL::makeShared<SV>(d_ptr);
+    auto d_ptr = ROL::makePtr<std::vector<RealT>>(4);  
+    auto d = ROL::makePtr<SV>(d_ptr);
 
     // Quadratic objective offset vector
-    auto b_ptr = ROL::makeShared<std::vector<RealT>>(4);  
-    auto b = ROL::makeShared<SV>(b_ptr);
+    auto b_ptr = ROL::makePtr<std::vector<RealT>>(4);  
+    auto b = ROL::makePtr<SV>(b_ptr);
 
     // Set values for objective
     (*b_ptr)[0] = 1.0;  (*b_ptr)[1] = 1.0;  
@@ -147,12 +147,12 @@ int main(int argc, char *argv[]) {
     /*----- Bound Constraint -----*/
 
     // Lower bound vector
-    auto xl_ptr = ROL::makeShared<std::vector<RealT>>(4);  
-    auto xl = ROL::makeShared<SV>(xl_ptr);
+    auto xl_ptr = ROL::makePtr<std::vector<RealT>>(4);  
+    auto xl = ROL::makePtr<SV>(xl_ptr);
 
     // Upper bound vector
-    auto xu_ptr = ROL::makeShared<std::vector<RealT>>(4);  
-    auto xu = ROL::makeShared<SV>(xu_ptr);
+    auto xu_ptr = ROL::makePtr<std::vector<RealT>>(4);  
+    auto xu = ROL::makePtr<SV>(xu_ptr);
     
     // Set bounds
     (*xl_ptr)[0] = 0.0;   (*xl_ptr)[1] = 0.0;  
@@ -162,11 +162,11 @@ int main(int argc, char *argv[]) {
     (*xu_ptr)[2] = 1.0;   (*xu_ptr)[3] = INF;
 
 //    ROL::BoundConstraint<RealT> bnd(xl,xu);
-    auto bnd = ROL::makeShared<ROL::Bounds<RealT>>(xl,xu);
+    auto bnd = ROL::makePtr<ROL::Bounds<RealT>>(xl,xu);
 
     /*---- Constraint and Lagrange Multiplier -----*/
 
-    auto con = ROL::makeShared<ROL::BinaryConstraint<RealT>>( bnd, gamma );
+    auto con = ROL::makePtr<ROL::BinaryConstraint<RealT>>( bnd, gamma );
 
     // Lagrange multiplier
     auto l = x->dual().clone();
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     // Constrained minimizer set X = { [ 0, 0, 1, 0.125 ], [ 1, 0, 1, 0.125 ] }
    
     // Create Optimization problems
-    ROL::OptimizationProblem<RealT> problem_E( obj, x, ROL::nullPointer, con, l ); 
+    ROL::OptimizationProblem<RealT> problem_E( obj, x, ROL::nullPtr, con, l ); 
     ROL::OptimizationProblem<RealT> problem_EB( obj, x, bnd, con, l ); 
    
     // Perform linear algebra and finite difference checks

@@ -74,18 +74,18 @@ typedef double RealT;
 
 class MyInterfaceOED : public ROL::ExperimentDesignInterface<RealT> {
 public:
-  MyInterfaceOED(const ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > &obj,
-                 const ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > &con,
-                 const ROL::SharedPointer<ROL::Vector<RealT> > &state,
-                 const ROL::SharedPointer<ROL::Vector<RealT> > &stateDual,
-                 const ROL::SharedPointer<ROL::Vector<RealT> > &control,
-                 const ROL::SharedPointer<ROL::Vector<RealT> > &controlDual,
-                 const ROL::SharedPointer<ROL::Vector<RealT> > &constraint,
-                 const ROL::SharedPointer<ROL::Vector<RealT> > &constraintDual,
-                 const ROL::SharedPointer<ROL::Vector<RealT> > &observation,
-                 const ROL::SharedPointer<ROL::Vector<RealT> > &observationDual,
-                 const std::vector<ROL::SharedPointer<ROL::Vector<RealT> > > &randvecs,
-                 const std::vector<ROL::SharedPointer<ROL::Vector<RealT> > > &training) :
+  MyInterfaceOED(const ROL::Ptr<ROL::Objective_SimOpt<RealT> > &obj,
+                 const ROL::Ptr<ROL::Constraint_SimOpt<RealT> > &con,
+                 const ROL::Ptr<ROL::Vector<RealT> > &state,
+                 const ROL::Ptr<ROL::Vector<RealT> > &stateDual,
+                 const ROL::Ptr<ROL::Vector<RealT> > &control,
+                 const ROL::Ptr<ROL::Vector<RealT> > &controlDual,
+                 const ROL::Ptr<ROL::Vector<RealT> > &constraint,
+                 const ROL::Ptr<ROL::Vector<RealT> > &constraintDual,
+                 const ROL::Ptr<ROL::Vector<RealT> > &observation,
+                 const ROL::Ptr<ROL::Vector<RealT> > &observationDual,
+                 const std::vector<ROL::Ptr<ROL::Vector<RealT> > > &randvecs,
+                 const std::vector<ROL::Ptr<ROL::Vector<RealT> > > &training) :
     ExperimentDesignInterface<RealT>(obj, con, state, stateDual, control, controlDual, constraint, constraintDual, observation, observationDual, randvecs, training) {}
 
   // Override interface functions; in this case, they are the same.
@@ -126,18 +126,18 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
   }
 
   int errorFlag  = 0;
@@ -154,26 +154,26 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filenameOED, parlistOED.ptr() );
 
     /*** Initialize main data structure. ***/
-    ROL::SharedPointer<PoissonData<RealT> > data = ROL::makeShared<PoissonData<RealT>>(comm, parlist, outStream);
+    ROL::Ptr<PoissonData<RealT> > data = ROL::makePtr<PoissonData<RealT>>(comm, parlist, outStream);
 
     // Get random weights parameter.
     RealT fnzw = parlist->sublist("Problem").get("Fraction of nonzero weights", 0.5);
     fnzw = 1.0 - 2.0*fnzw;
 
     /*** Build vectors and dress them up as ROL vectors. ***/
-    ROL::SharedPointer<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
-    ROL::SharedPointer<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
-    ROL::SharedPointer<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
-    ROL::SharedPointer<Tpetra::MultiVector<> > u_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_u, 1, true);
-    ROL::SharedPointer<Tpetra::MultiVector<> > p_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_u, 1, true);
-    ROL::SharedPointer<Tpetra::MultiVector<> > w_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_u, 1, true);
-    ROL::SharedPointer<Tpetra::MultiVector<> > wup_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_u, 1, true);
-    ROL::SharedPointer<Tpetra::MultiVector<> > wlo_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_u, 1, true);
-    ROL::SharedPointer<Tpetra::MultiVector<> > z_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_z, 1, true);
-    ROL::SharedPointer<Tpetra::MultiVector<> > c_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_c, 1, true);
-    ROL::SharedPointer<Tpetra::MultiVector<> > du_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_u, 1, true);
-    ROL::SharedPointer<Tpetra::MultiVector<> > dw_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_u, 1, true);
-    ROL::SharedPointer<Tpetra::MultiVector<> > dz_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_z, 1, true);
+    ROL::Ptr<const Tpetra::Map<> > vecmap_u = data->getMatA()->getDomainMap();
+    ROL::Ptr<const Tpetra::Map<> > vecmap_z = data->getMatB()->getDomainMap();
+    ROL::Ptr<const Tpetra::Map<> > vecmap_c = data->getMatA()->getRangeMap();
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > p_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > w_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > wup_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > wlo_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > z_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > c_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_c, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > du_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > dw_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_u, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > dz_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
     // Set all values to 1 in u, z and c.
     u_ptr->putScalar(1.0);
     p_ptr->putScalar(1.0);
@@ -187,28 +187,28 @@ int main(int argc, char *argv[]) {
     dw_ptr->randomize();
     dz_ptr->randomize();
     // Create ROL::TpetraMultiVectors.
-    ROL::SharedPointer<ROL::Vector<RealT> > up = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(u_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > pp = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(p_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > wp = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(w_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > wlop = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(wlo_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > wupp = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(wup_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > zp = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(z_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > cp = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(c_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > dup = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(du_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > dwp = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(dw_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > dzp = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(dz_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > up = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(u_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > pp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(p_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > wp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(w_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > wlop = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(wlo_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > wupp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(wup_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > zp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(z_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > cp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(c_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > dup = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(du_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > dwp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(dw_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > dzp = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(dz_ptr);
     // Create ROL SimOpt vectors.
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     /*** Build objective function, constraint and reduced objective function. ***/
     wp->applyUnary(IsGreaterThan<RealT>(fnzw, 1.0, 0.0));
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj =
-      ROL::makeShared<Objective_PDEOPT_Poisson<RealT>>(data, w_ptr, parlist);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > con =
-      ROL::makeShared<EqualityConstraint_PDEOPT_Poisson<RealT>>(data, parlist);
-    ROL::SharedPointer<ROL::Objective<RealT> > objReduced =
-      ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj =
+      ROL::makePtr<Objective_PDEOPT_Poisson<RealT>>(data, w_ptr, parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con =
+      ROL::makePtr<EqualityConstraint_PDEOPT_Poisson<RealT>>(data, parlist);
+    ROL::Ptr<ROL::Objective<RealT> > objReduced =
+      ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp);
 
     /*** Check functional interface. ***/
     obj->checkGradient(x,d,true,*outStream);
@@ -251,24 +251,24 @@ int main(int argc, char *argv[]) {
     /***
          Solve OED problem to obtain sparse sensor locations.
     ***/
-    std::vector<ROL::SharedPointer<Tpetra::MultiVector<> > > randvecs_ptr;
-    std::vector<ROL::SharedPointer<ROL::Vector<RealT> > > randvecs;
-    std::vector<ROL::SharedPointer<ROL::Vector<RealT> > > training_models;
+    std::vector<ROL::Ptr<Tpetra::MultiVector<> > > randvecs_ptr;
+    std::vector<ROL::Ptr<ROL::Vector<RealT> > > randvecs;
+    std::vector<ROL::Ptr<ROL::Vector<RealT> > > training_models;
     // Get number of random vectors for trace estimation.
     int numRandVecs = parlistOED->sublist("Problem").get("OED Number of random vectors", 1);
     for (int i=0; i<numRandVecs; ++i) {
-      randvecs_ptr.push_back( ROL::makeShared<Tpetra::MultiVector<>>(vecmap_z, 1, true));
-      //ROL::SharedPointer<Tpetra::MultiVector<> > rand01_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_z, 1, true);
-      randvecs.push_back( ROL::makeShared<ROL::TpetraMultiVector<RealT>>(randvecs_ptr[i]));
-      //ROL::SharedPointer<ROL::Vector<RealT> > rand01p = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(rand01_ptr);
+      randvecs_ptr.push_back( ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true));
+      //ROL::Ptr<Tpetra::MultiVector<> > rand01_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
+      randvecs.push_back( ROL::makePtr<ROL::TpetraMultiVector<RealT>>(randvecs_ptr[i]));
+      //ROL::Ptr<ROL::Vector<RealT> > rand01p = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(rand01_ptr);
       randvecs_ptr[i]->randomize();
       randvecs[i]->applyUnary(IsGreaterThan<RealT>(0.0, 1.0, -1.0));
       std::string fname = "rand" + std::to_string(i) + ".txt";
       data->outputTpetraVector(randvecs_ptr[i], fname);
     }
 
-    ROL::SharedPointer<MyInterfaceOED> oed =
-      ROL::makeShared<MyInterfaceOED>(obj, con, up, up, zp, zp, cp, cp, up, up, randvecs, training_models);
+    ROL::Ptr<MyInterfaceOED> oed =
+      ROL::makePtr<MyInterfaceOED>(obj, con, up, up, zp, zp, cp, cp, up, up, randvecs, training_models);
     ROL::ExperimentDesignObjective<RealT> objOED(oed, parlistOED);
     ROL::Bounds<RealT> bconOED(wlop, wupp);
     w_ptr->putScalar(1e-2);

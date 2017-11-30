@@ -75,12 +75,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
 
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -88,26 +88,26 @@ int main(int argc, char *argv[]) {
     // Dimension of the optimization vector
     int dim = 10; 
 
-    ROL::SharedPointer<ParameterList> parlist = ROL::makeShared<ParameterList>();
+    ROL::Ptr<ParameterList> parlist = ROL::makePtr<ParameterList>();
     std::string paramfile = "parameters.xml";
     updateParametersFromXmlFile(paramfile,parlist.ptr());
 
     // Define algorithm.
     ROL::Algorithm<RealT> algo("Trust-Region",*parlist);    
 
-    ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>(dim,1.0);
-    ROL::SharedPointer<vector> k_ptr = ROL::makeShared<vector>(dim);
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim,1.0);
+    ROL::Ptr<vector> k_ptr = ROL::makePtr<vector>(dim);
 
     for(int i=0;i<dim;++i) {  
       (*k_ptr)[i] = 1.0 + i;
     }
 
-    ROL::SharedPointer<V> xs = ROL::makeShared<SV>(x_ptr);
-    ROL::SharedPointer<V> ks = ROL::makeShared<SV>(k_ptr);
+    ROL::Ptr<V> xs = ROL::makePtr<SV>(x_ptr);
+    ROL::Ptr<V> ks = ROL::makePtr<SV>(k_ptr);
 
     // Create ProfiledVector objects
     ROL::ProfiledVector<int,RealT> xpf(xs);
-    ROL::SharedPointer<V> kpf = ROL::makeShared<ROL::ProfiledVector<int,RealT>>(ks);
+    ROL::Ptr<V> kpf = ROL::makePtr<ROL::ProfiledVector<int,RealT>>(ks);
 
     ROL::ZOO::Objective_Zakharov<RealT> obj(kpf);    
 

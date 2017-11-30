@@ -61,20 +61,20 @@ template<class Real>
 class OptimizationSolver {
 private:
 
-  ROL::SharedPointer<Algorithm<Real> >          algo_;
-  ROL::SharedPointer<Step<Real> >               step_;
-  ROL::SharedPointer<StatusTest<Real> >         status0_;
-  ROL::SharedPointer<CombinedStatusTest<Real> > status_;
-  ROL::SharedPointer<AlgorithmState<Real> >     state_;
+  ROL::Ptr<Algorithm<Real> >          algo_;
+  ROL::Ptr<Step<Real> >               step_;
+  ROL::Ptr<StatusTest<Real> >         status0_;
+  ROL::Ptr<CombinedStatusTest<Real> > status_;
+  ROL::Ptr<AlgorithmState<Real> >     state_;
 
-  ROL::SharedPointer<Vector<Real> > x_;
-  ROL::SharedPointer<Vector<Real> > g_;
-  ROL::SharedPointer<Vector<Real> > l_;
-  ROL::SharedPointer<Vector<Real> > c_;
+  ROL::Ptr<Vector<Real> > x_;
+  ROL::Ptr<Vector<Real> > g_;
+  ROL::Ptr<Vector<Real> > l_;
+  ROL::Ptr<Vector<Real> > c_;
 
-  ROL::SharedPointer<Objective<Real> >       obj_;
-  ROL::SharedPointer<BoundConstraint<Real> > bnd_;
-  ROL::SharedPointer<Constraint<Real> >      con_;
+  ROL::Ptr<Objective<Real> >       obj_;
+  ROL::Ptr<BoundConstraint<Real> > bnd_;
+  ROL::Ptr<Constraint<Real> >      con_;
 
   std::vector<std::string>  output_;
 
@@ -99,7 +99,7 @@ public:
     problemType_ = opt.getProblemType();
 
     // Initialize AlgorithmState
-    state_ = ROL::makeShared<AlgorithmState<Real>>();
+    state_ = ROL::makePtr<AlgorithmState<Real>>();
 
     // Get step name from parameterlist
     stepname_ = parlist.sublist("Step").get("Type","Last Type (Dummy)");
@@ -126,7 +126,7 @@ public:
     // Build status test
     StatusTestFactory<Real> statusTestFactory;
     status0_ = statusTestFactory.getStatusTest(stepname_,parlist);
-    status_  = ROL::makeShared<CombinedStatusTest<Real>>();
+    status_  = ROL::makePtr<CombinedStatusTest<Real>>();
 
     // Get optimization vector and a vector for the gradient
     x_ = opt.getSolutionVector();
@@ -145,27 +145,27 @@ public:
     // Create modified objectives if needed
     const Real ten(10);
     if( stepType_ == STEP_AUGMENTEDLAGRANGIAN ) {
-      ROL::SharedPointer<Objective<Real> > raw_obj = opt.getObjective();
+      ROL::Ptr<Objective<Real> > raw_obj = opt.getObjective();
       con_ = opt.getConstraint();
       // TODO: Provide access to change initial penalty
-      obj_ = ROL::makeShared<AugmentedLagrangian<Real>>(raw_obj,con_,*l_,1.0,*x_,*c_,parlist);
+      obj_ = ROL::makePtr<AugmentedLagrangian<Real>>(raw_obj,con_,*l_,1.0,*x_,*c_,parlist);
       bnd_ = opt.getBoundConstraint();
       pen_ = parlist.sublist("Step").sublist("Augmented Lagrangian").get("Initial Penalty Parameter",ten);
     }
     else if( stepType_ == STEP_MOREAUYOSIDAPENALTY ) {
-      ROL::SharedPointer<Objective<Real> > raw_obj = opt.getObjective();
+      ROL::Ptr<Objective<Real> > raw_obj = opt.getObjective();
       bnd_ = opt.getBoundConstraint();
       con_ = opt.getConstraint();
       // TODO: Provide access to change initial penalty
-      obj_ = ROL::makeShared<MoreauYosidaPenalty<Real>>(raw_obj,bnd_,*x_,parlist);
+      obj_ = ROL::makePtr<MoreauYosidaPenalty<Real>>(raw_obj,bnd_,*x_,parlist);
       pen_ = parlist.sublist("Step").sublist("Moreau-Yosida Penalty").get("Initial Penalty Parameter",ten);
     }
     else if( stepType_ == STEP_INTERIORPOINT ) {
-      ROL::SharedPointer<Objective<Real> > raw_obj = opt.getObjective();
+      ROL::Ptr<Objective<Real> > raw_obj = opt.getObjective();
       bnd_ = opt.getBoundConstraint();
       con_ = opt.getConstraint();
       // TODO: Provide access to change initial penalty
-      obj_ = ROL::makeShared<InteriorPoint::PenalizedObjective<Real>>(raw_obj,bnd_,*x_,parlist);
+      obj_ = ROL::makePtr<InteriorPoint::PenalizedObjective<Real>>(raw_obj,bnd_,*x_,parlist);
       pen_ = parlist.sublist("Step").sublist("Interior Point").get("Initial Barrier Parameter",ten);
     }
     else {
@@ -207,18 +207,18 @@ public:
       ---
   */
   int solve( std::ostream &outStream,
-       const ROL::SharedPointer<StatusTest<Real> > &status = ROL::nullPointer,
+       const ROL::Ptr<StatusTest<Real> > &status = ROL::nullPtr,
        const bool combineStatus = true ) {
     // Build algorithm
     status_->reset();       // Clear previous status test
     status_->add(status0_); // Default StatusTest
-    if (status != ROL::nullPointer) {
+    if (status != ROL::nullPtr) {
       if (!combineStatus) { // Use only user-defined StatusTest
         status_->reset();
       }
       status_->add(status); // Add user-defined StatusTest
     }
-    algo_ = ROL::makeShared<Algorithm<Real>>( step_, status_, state_ );
+    algo_ = ROL::makePtr<Algorithm<Real>>( step_, status_, state_ );
 
     switch(problemType_) {
       case TYPE_U:
@@ -250,7 +250,7 @@ public:
 
       ---
   */
-  ROL::SharedPointer<const AlgorithmState<Real> > getAlgorithmState(void) const {
+  ROL::Ptr<const AlgorithmState<Real> > getAlgorithmState(void) const {
     return state_;
   }
 
@@ -261,7 +261,7 @@ public:
       ---
   */
   void resetAlgorithmState(void) {
-    state_ = ROL::makeShared<AlgorithmState<Real>>();
+    state_ = ROL::makePtr<AlgorithmState<Real>>();
   }
 
   /** \brief Reset both Algorithm and Step.
@@ -284,13 +284,13 @@ public:
     step_->reset(pen_);
     // Reset penalty objectives
     if( stepType_ == STEP_AUGMENTEDLAGRANGIAN ) {
-      ROL::dynamicPointerCast<AugmentedLagrangian<Real> >(obj_)->reset(*l_,pen_);
+      ROL::dynamicPtrCast<AugmentedLagrangian<Real> >(obj_)->reset(*l_,pen_);
     }
     else if( stepType_ == STEP_MOREAUYOSIDAPENALTY ) {
-      ROL::dynamicPointerCast<MoreauYosidaPenalty<Real> >(obj_)->reset(pen_);
+      ROL::dynamicPtrCast<MoreauYosidaPenalty<Real> >(obj_)->reset(pen_);
     }
     else if( stepType_ == STEP_INTERIORPOINT ) {
-      ROL::dynamicPointerCast<InteriorPoint::PenalizedObjective<Real> >(obj_)->updatePenalty(pen_);
+      ROL::dynamicPtrCast<InteriorPoint::PenalizedObjective<Real> >(obj_)->updatePenalty(pen_);
     }
   }
 

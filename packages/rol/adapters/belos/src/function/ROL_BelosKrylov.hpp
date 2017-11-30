@@ -78,14 +78,14 @@ namespace ROL {
         private:
 
             Belos::SolverFactory<ST,MV,OP> factory_;
-            ROL::SharedPointer<Belos::SolverManager<ST,MV,OP> > solver_;
-            ROL::SharedPointer<Belos::LinearProblem<ST,MV,OP> > problem_;  
+            Teuchos::RCP<Belos::SolverManager<ST,MV,OP> > solver_;
+            Teuchos::RCP<Belos::LinearProblem<ST,MV,OP> > problem_;  
 
         public:
            
             /// \brief Create a Belos solver 
             BelosKrylov(Teuchos::ParameterList &parlist) : 
-                problem_(ROL::makeShared<Belos::LinearProblem<ST,MV,OP>>()) {
+                problem_(ROL::makePtr<Belos::LinearProblem<ST,MV,OP>>()) {
 
                 Teuchos::RCP<Teuchos::ParameterList> solverParams = Teuchos::rcp( new Teuchos::ParameterList() );
 
@@ -115,18 +115,18 @@ namespace ROL {
 
 
                 // Get pointers to ROL::Vectors
-                ROL::SharedPointer<V>        xp = ROL::makeSharedFromRef(x);
+                Teuchos::RCP<V>        xp = Teuchos::rcpFromRef(x);
 
                 // Wasteful, but have not yet implemented const case for MV
-                ROL::SharedPointer<V>        bp = b.clone();
+                Teuchos::RCP<V>        bp = b.clone();
                 bp->set(b);
 
                 // Make ROL::MultiVectors from the pointers to ROL::Vectors
-                ROL::SharedPointer<MV> xmvp = ROL::makeShared<MultiVectorDefault<Real>>(xp);
-                ROL::SharedPointer<MV> bmvp = ROL::makeShared<MultiVectorDefault<Real>>(bp);
+                Teuchos::RCP<MV> xmvp = Teuchos::rcp( new MultiVectorDefault<Real>(xp) );
+                Teuchos::RCP<MV> bmvp = Teuchos::rcp( new MultiVectorDefault<Real>(bp) );
 
-                ROL::SharedPointer<OP> Ap = ROL::makeSharedFromRef(A);
-                ROL::SharedPointer<OP> Mp = ROL::makeSharedFromRef(M);
+                Teuchos::RCP<OP> Ap = Teuchos::rcpFromRef(A);
+                Teuchos::RCP<OP> Mp = Teuchos::rcpFromRef(M);
 
                 // Wrap x and b in ROL::MultiVector objects 
                 MVD xmv(xp);

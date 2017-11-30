@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -86,8 +86,8 @@ int main(int argc, char *argv[]) {
 
     /*** Initialize mesh / degree-of-freedom manager. ***/
     MeshReader<RealT> meshmgr(*parlist);
-    ROL::SharedPointer<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
-    ROL::SharedPointer<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
+    ROL::Ptr<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
+    ROL::Ptr<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
 
     Intrepid::FieldContainer<RealT> &nodes = *nodesPtr;
     Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
@@ -96,13 +96,13 @@ int main(int argc, char *argv[]) {
     *outStream << "Number of edges = " << meshmgr.getNumEdges() << std::endl;
     *outStream << "Number of edges = " << meshmgr.getNumFaces() << std::endl;
 
-    ROL::SharedPointer<MeshManager<RealT> > meshmgrPtr = ROL::makeSharedFromRef(meshmgr);
+    ROL::Ptr<MeshManager<RealT> > meshmgrPtr = ROL::makePtrFromRef(meshmgr);
 
     // Basis.
-    ROL::SharedPointer<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > >    basis =
-      ROL::makeShared<Intrepid::Basis_HGRAD_HEX_C2_FEM<RealT, Intrepid::FieldContainer<RealT> >>();
+    ROL::Ptr<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > >    basis =
+      ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C2_FEM<RealT, Intrepid::FieldContainer<RealT> >>();
     // Cubature.
-    ROL::SharedPointer<Intrepid::Cubature<RealT, Intrepid::FieldContainer<RealT> > > cubature;
+    ROL::Ptr<Intrepid::Cubature<RealT, Intrepid::FieldContainer<RealT> > > cubature;
     shards::CellTopology cellType = basis->getBaseCellTopology();                        // get the cell type from any basis
     Intrepid::DefaultCubatureFactory<RealT> cubFactory;                                  // create cubature factory
     int cubDegree = 6;                                                                   // set cubature degree, e.g., 2
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
       }
     }
     // FE object.
-    FE<RealT> fe(ROL::makeSharedFromRef(cellNodes), basis, cubature);
+    FE<RealT> fe(ROL::makePtrFromRef(cellNodes), basis, cubature);
 
     // Check integration.
     Intrepid::FieldContainer<RealT> feVals1(meshmgr.getNumCells(), cubature->getNumPoints());
@@ -130,9 +130,9 @@ int main(int argc, char *argv[]) {
     // values
     feCoeffs1.initialize(static_cast<RealT>(1));
     feCoeffs2.initialize(static_cast<RealT>(2));
-    fe.evaluateValue(ROL::makeSharedFromRef(feVals1), ROL::makeSharedFromRef(feCoeffs1));
-    fe.evaluateValue(ROL::makeSharedFromRef(feVals2), ROL::makeSharedFromRef(feCoeffs2));
-    fe.computeIntegral(ROL::makeSharedFromRef(feIntegral), ROL::makeSharedFromRef(feVals1), ROL::makeSharedFromRef(feVals2));
+    fe.evaluateValue(ROL::makePtrFromRef(feVals1), ROL::makePtrFromRef(feCoeffs1));
+    fe.evaluateValue(ROL::makePtrFromRef(feVals2), ROL::makePtrFromRef(feCoeffs2));
+    fe.computeIntegral(ROL::makePtrFromRef(feIntegral), ROL::makePtrFromRef(feVals1), ROL::makePtrFromRef(feVals2));
     RealT valval(0);
     for (int i=0; i<meshmgr.getNumCells(); ++i) {
       valval += feIntegral(i);
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
     }
     // gradients
     Intrepid::FieldContainer<RealT> dofCoords(meshmgr.getNumCells(), basis->getCardinality(), cubature->getDimension());
-    fe.computeDofCoords(ROL::makeSharedFromRef(dofCoords), ROL::makeSharedFromRef(cellNodes));
+    fe.computeDofCoords(ROL::makePtrFromRef(dofCoords), ROL::makePtrFromRef(cellNodes));
     for (int i=0; i<meshmgr.getNumCells(); ++i) {
       for (int j=0; j<basis->getCardinality(); ++j) {
         RealT x = dofCoords(i,j,0);
@@ -152,9 +152,9 @@ int main(int argc, char *argv[]) {
         feCoeffs2(i,j) = static_cast<RealT>(2)*x + static_cast<RealT>(3)*y + static_cast<RealT>(4)*z;
       }
     }
-    fe.evaluateGradient(ROL::makeSharedFromRef(feGrads1), ROL::makeSharedFromRef(feCoeffs1));
-    fe.evaluateGradient(ROL::makeSharedFromRef(feGrads2), ROL::makeSharedFromRef(feCoeffs2));
-    fe.computeIntegral(ROL::makeSharedFromRef(feIntegral), ROL::makeSharedFromRef(feGrads1), ROL::makeSharedFromRef(feGrads2));
+    fe.evaluateGradient(ROL::makePtrFromRef(feGrads1), ROL::makePtrFromRef(feCoeffs1));
+    fe.evaluateGradient(ROL::makePtrFromRef(feGrads2), ROL::makePtrFromRef(feCoeffs2));
+    fe.computeIntegral(ROL::makePtrFromRef(feIntegral), ROL::makePtrFromRef(feGrads1), ROL::makePtrFromRef(feGrads2));
     RealT gradgrad(0);
     for (int i=0; i<meshmgr.getNumCells(); ++i) {
       gradgrad += feIntegral(i);

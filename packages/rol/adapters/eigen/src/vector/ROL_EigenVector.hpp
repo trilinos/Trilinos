@@ -67,21 +67,21 @@ class Eigen3Vector : public ElementwiseVector<Real> {
 
 private:
 
-  ROL::SharedPointer<EV> vec_;
+  ROL::Ptr<EV> vec_;
 
   int dim_;
 
 public:
 
-  Eigen3Vector( const ROL::SharedPointer<EV> &vec ) : vec_(vec), dim_(vec->size()) {
+  Eigen3Vector( const ROL::Ptr<EV> &vec ) : vec_(vec), dim_(vec->size()) {
   }
  
   Eigen3Vector( int dim, bool zeroOut=false ) : dim_(dim) {
     if( zeroOut ) {
-      vec_ = ROL::makeShared<EV>(dim_);
+      vec_ = ROL::makePtr<EV>(dim_);
     }
     else {
-      vec_ = ROL::makeShared<EV>(dim_);
+      vec_ = ROL::makePtr<EV>(dim_);
     }
   }
 
@@ -107,21 +107,21 @@ public:
     return dim_;
   }
 
-  ROL::SharedPointer<V> basis( const int i ) const {
-    auto data = ROL::makeShared<EV>(dim_,true);
+  ROL::Ptr<V> basis( const int i ) const {
+    auto data = ROL::makePtr<EV>(dim_,true);
     (*data)(i) = static_cast<Real>(1.0);
-    return ROL::makeShared<Eigen3Vector>(data);
+    return ROL::makePtr<Eigen3Vector>(data);
   }
 
-  ROL::SharedPointer<V> clone() const {
-    return ROL::makeShared<Eigen3Vector>(dim_); 
+  ROL::Ptr<V> clone() const {
+    return ROL::makePtr<Eigen3Vector>(dim_); 
   }
 
-  ROL::SharedPointer<EV> getVector() {
+  ROL::Ptr<EV> getVector() {
     return vec_;
   }
 
-  ROL::SharedPointer<const EV> getVector() const {
+  ROL::Ptr<const EV> getVector() const {
     return vec_;
   }
 

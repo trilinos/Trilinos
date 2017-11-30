@@ -3,9 +3,9 @@ SET(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(${PACKAGE_NAME}_ENABLE_STD_SHARED_PTR)
   INCLUDE_DIRECTORIES(${DIR}/std/shared_ptr)
-  APPEND_GLOB(HEADERS ${DIR}/std/shared_ptr/ROL_SharedPointer.hpp)
+  APPEND_GLOB(HEADERS ${DIR}/std/shared_ptr/ROL_Ptr.hpp)
 ELSE()
   INCLUDE_DIRECTORIES(${DIR}/teuchos/rcp)
-  APPEND_GLOB(HEADERS ${DIR}/teuchos/rcp/ROL_SharedPointer.hpp)
+  APPEND_GLOB(HEADERS ${DIR}/teuchos/rcp/ROL_Ptr.hpp)
 ENDIF()
   

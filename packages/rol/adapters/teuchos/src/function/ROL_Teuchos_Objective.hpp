@@ -59,7 +59,7 @@ namespace ROL {
 template <class Ordinal,  class Real>
 class TeuchosObjective : public Objective<Real> {
 
-  template <typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
+  template <typename T> using ROL::Ptr = ROL::Ptr<T>;
 
   typedef Teuchos::SerialDenseVector<Ordinal,Real> SDV;
   typedef TeuchosVector<Ordinal,Real>              TV;
@@ -70,7 +70,7 @@ public:
 
   using Objective<Real>::update;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
     update(*xp,flag,true);
   }
 
@@ -78,7 +78,7 @@ public:
 
   using Objective<Real>::value;
   Real value( const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
     return value(*xp,tol);
   }
 
@@ -89,8 +89,8 @@ public:
 
   using Objective<Real>::gradient;
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<SDV> gp = dynamic_cast<TV&>(g).getVector();
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<SDV> gp = dynamic_cast<TV&>(g).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
 
     try {
       gradient(*gp,*xp,tol);
@@ -107,8 +107,8 @@ public:
 
   using Objective<Real>::dirDeriv;
   Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) {
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
-    ROL::SharedPointer<const SDV> dp = dynamic_cast<const TV&>(d).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<const SDV> dp = dynamic_cast<const TV&>(d).getVector();
    try {
       return dirDeriv(*xp,*dp,tol);
     }
@@ -124,9 +124,9 @@ public:
 
   using Objective<Real>::hessVec;
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<SDV> hvp = dynamic_cast<TV&>(hv).getVector();
-    ROL::SharedPointer<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<SDV> hvp = dynamic_cast<TV&>(hv).getVector();
+    ROL::Ptr<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
     try {
       hessVec(*hvp,*vp,*xp,tol);
     }
@@ -142,9 +142,9 @@ public:
 
   using Objective<Real>::invHessVec;
   void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<SDV> hvp = dynamic_cast<TV&>(hv).getVector();
-    ROL::SharedPointer<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<SDV> hvp = dynamic_cast<TV&>(hv).getVector();
+    ROL::Ptr<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
     invHessVec(*hvp,*vp,*xp,tol);
   }
 
@@ -154,9 +154,9 @@ public:
 
   using Objective<Real>::precond;
   void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<SDV> Pvp = dynamic_cast<TV&>(Pv).getVector();
-    ROL::SharedPointer<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<SDV> Pvp = dynamic_cast<TV&>(Pv).getVector();
+    ROL::Ptr<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
 
     precond(*Pvp,*vp,*xp,tol);
   }

@@ -63,15 +63,15 @@ typedef Tpetra::Map<>::node_type Node;
 typedef Tpetra::Map<LO, GO, Node> Map;
 typedef Tpetra::MultiVector<RealT, LO, GO, Node> MV;
 typedef Tpetra::Vector<RealT, LO, GO, Node> V;
-typedef ROL::SharedPointer<MV> MVP;
-typedef ROL::SharedPointer<V> VP;
+typedef ROL::Ptr<MV> MVP;
+typedef ROL::Ptr<V> VP;
 typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm = platform.getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = platform.getComm();
 
   int iprint = argc - 1;
   Teuchos::oblackholestream bhs; // outputs nothing
@@ -86,12 +86,12 @@ int main(int argc, char *argv[]) {
 
     int dim = 10; 
   
-    ROL::SharedPointer<Map> map = ROL::makeShared<Map>(dim,0,comm);
+    ROL::Ptr<Map> map = ROL::makePtr<Map>(dim,0,comm);
 
     // Create Tpetra::MultiVectors (single vectors) 
-    MVP x_ptr = ROL::makeShared<MV>(map,1,true); 
-    MVP y_ptr = ROL::makeShared<MV>(map,1,true); 
-    VP W_ptr = ROL::makeShared<V>(map,true);
+    MVP x_ptr = ROL::makePtr<MV>(map,1,true); 
+    MVP y_ptr = ROL::makePtr<MV>(map,1,true); 
+    VP W_ptr = ROL::makePtr<V>(map,true);
 
     // Random elements
     //x_ptr->randomize();
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
     }
 
     // clone z from x, deep copy x into z, norm of z
-    ROL::SharedPointer<ROL::Vector<RealT> > z = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > z = x.clone();
     z->set(x);
     RealT znorm = z->norm();
     outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
       outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     }
-    ROL::SharedPointer<ROL::Vector<RealT> > w = y.clone();
+    ROL::Ptr<ROL::Vector<RealT> > w = y.clone();
     w = y.clone();
     w->set(y);
     RealT wnorm = w->norm();
@@ -165,9 +165,9 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     // Create Tpetra::MultiVectors (single vectors) 
-    MVP x1_ptr = ROL::makeShared<MV>(map,1,true); 
-    MVP y1_ptr = ROL::makeShared<MV>(map,1,true); 
-    MVP z1_ptr = ROL::makeShared<MV>(map,1,true); 
+    MVP x1_ptr = ROL::makePtr<MV>(map,1,true); 
+    MVP y1_ptr = ROL::makePtr<MV>(map,1,true); 
+    MVP z1_ptr = ROL::makePtr<MV>(map,1,true); 
     ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> x1(x1_ptr,W_ptr);
     ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> y1(y1_ptr,W_ptr);
     ROL::PrimalScaledTpetraMultiVector<RealT,LO,GO,Node> z1(z1_ptr,W_ptr);
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     z1_ptr->randomize();
 
     std::vector<RealT> consistency = x1.checkVector(y1, z1, true, outStream);
-    ROL::StdVector<RealT> checkvec(ROL::makeSharedFromRef(consistency));
+    ROL::StdVector<RealT> checkvec(ROL::makePtrFromRef(consistency));
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }

@@ -75,11 +75,11 @@ template<class Real>
 class PoissonData {
 
 private:
-  ROL::SharedPointer<MeshManager<Real> > meshMgr_;
-  ROL::SharedPointer<DofManager<Real> >  dofMgr_;
-  std::vector<ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
+  ROL::Ptr<MeshManager<Real> > meshMgr_;
+  ROL::Ptr<DofManager<Real> >  dofMgr_;
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > basisPtrs_;
 
-  ROL::SharedPointer<const Teuchos::Comm<int> > commPtr_;
+  ROL::Ptr<const Teuchos::Comm<int> > commPtr_;
   int myRank_;
   int numProcs_;
 
@@ -90,25 +90,25 @@ private:
   Real advH_;
   Real advV_;
 
-  ROL::SharedPointer<const Tpetra::Map<> >    myOverlapMap_;
-  ROL::SharedPointer<const Tpetra::Map<> >    myUniqueMap_;
-  ROL::SharedPointer<Tpetra::CrsGraph<> >     matGraph_;
-  ROL::SharedPointer<Tpetra::CrsMatrix<> >    matA_;
-  ROL::SharedPointer<Tpetra::CrsMatrix<> >    matA_dirichlet_;
-  ROL::SharedPointer<Tpetra::CrsMatrix<> >    matA_dirichlet_trans_;
-  ROL::SharedPointer<Tpetra::CrsMatrix<> >    matM_;
-  ROL::SharedPointer<Tpetra::CrsMatrix<> >    matM_dirichlet_;
-  ROL::SharedPointer<Tpetra::CrsMatrix<> >    matM_dirichlet_trans_;
-  ROL::SharedPointer<Tpetra::MultiVector<> >  vecUd_;
-  ROL::SharedPointer<Tpetra::MultiVector<> >  vecF_;
-  ROL::SharedPointer<Tpetra::MultiVector<> >  vecF_overlap_;
-  ROL::SharedPointer<Tpetra::MultiVector<> >  vecF_dirichlet_;
-  ROL::SharedPointer<Tpetra::MultiVector<> >  vecWeights_;
+  ROL::Ptr<const Tpetra::Map<> >    myOverlapMap_;
+  ROL::Ptr<const Tpetra::Map<> >    myUniqueMap_;
+  ROL::Ptr<Tpetra::CrsGraph<> >     matGraph_;
+  ROL::Ptr<Tpetra::CrsMatrix<> >    matA_;
+  ROL::Ptr<Tpetra::CrsMatrix<> >    matA_dirichlet_;
+  ROL::Ptr<Tpetra::CrsMatrix<> >    matA_dirichlet_trans_;
+  ROL::Ptr<Tpetra::CrsMatrix<> >    matM_;
+  ROL::Ptr<Tpetra::CrsMatrix<> >    matM_dirichlet_;
+  ROL::Ptr<Tpetra::CrsMatrix<> >    matM_dirichlet_trans_;
+  ROL::Ptr<Tpetra::MultiVector<> >  vecUd_;
+  ROL::Ptr<Tpetra::MultiVector<> >  vecF_;
+  ROL::Ptr<Tpetra::MultiVector<> >  vecF_overlap_;
+  ROL::Ptr<Tpetra::MultiVector<> >  vecF_dirichlet_;
+  ROL::Ptr<Tpetra::MultiVector<> >  vecWeights_;
 
   Teuchos::Array<int> myCellIds_;
 
-  ROL::SharedPointer<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_;
-  ROL::SharedPointer<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_trans_;
+  ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_;
+  ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solverA_trans_;
 
   shards::CellTopology cellType_;
   int spaceDim_;
@@ -119,39 +119,39 @@ private:
   int totalNumDofs_;
   int numCells_;
 
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cubPoints_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cubWeights_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cellNodes_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cellJac_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cellJacInv_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cellJacDet_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cellWeightedMeasure_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > valReference_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradReference_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > valPhysical_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradPhysical_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > kappaGradPhysical_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > advGradPhysical_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > valPhysicalWeighted_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradPhysicalWeighted_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradgradMats_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > valvalMats_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > advgradvalMats_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > pdeMats_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cubPointsPhysical_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > kappa_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > adv_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > dataF_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > datavalVecF_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > dofPoints_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > dofPointsPhysical_;
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > dataUd_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cubPoints_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cubWeights_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cellNodes_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cellJac_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cellJacInv_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cellJacDet_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cellWeightedMeasure_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > valReference_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradReference_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > valPhysical_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradPhysical_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > kappaGradPhysical_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > advGradPhysical_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > valPhysicalWeighted_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradPhysicalWeighted_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradgradMats_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > valvalMats_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > advgradvalMats_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > pdeMats_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cubPointsPhysical_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > kappa_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > adv_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > dataF_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > datavalVecF_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > dofPoints_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > dofPointsPhysical_;
+  ROL::Ptr<Intrepid::FieldContainer<Real> > dataUd_;
 
 public:
 
-  PoissonData(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm,
+  PoissonData(const ROL::Ptr<const Teuchos::Comm<int> > &comm,
               const Teuchos::RCP<Teuchos::ParameterList> &parlist,
-              const ROL::SharedPointer<std::ostream> &outStream) {
+              const ROL::Ptr<std::ostream> &outStream) {
 
     /************************************/
     /*** Retrieve communication data. ***/
@@ -180,23 +180,23 @@ public:
     /****************************************************************************/
 
     // Mesh manager.
-    meshMgr_ = ROL::makeShared<MeshManager_Rectangle<Real>>(*parlist);
+    meshMgr_ = ROL::makePtr<MeshManager_Rectangle<Real>>(*parlist);
     printMeshData(*outStream);
     // Finite element fields.
-    ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr;
+    ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basisPtr;
     if (basisOrder_ == 1) {
-      basisPtr = ROL::makeShared<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
+      basisPtr = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real> >>();
     }
     else if (basisOrder_ == 2) {
-      basisPtr = ROL::makeShared<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
+      basisPtr = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real> >>();
     }
-    basisPtrs_.resize(1, ROL::nullPointer);
+    basisPtrs_.resize(1, ROL::nullPtr);
     basisPtrs_[0] = basisPtr;
     // DOF coordinate interface.
-    ROL::SharedPointer<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
-      ROL::dynamicPointerCast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basisPtrs_[0]);
+    ROL::Ptr<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
+      ROL::dynamicPtrCast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basisPtrs_[0]);
     // Degree-of-freedom manager.
-    dofMgr_ = ROL::makeShared<DofManager<Real>>(meshMgr_, basisPtrs_);
+    dofMgr_ = ROL::makePtr<DofManager<Real>>(meshMgr_, basisPtrs_);
     // Retrieve total number of cells in the mesh.
     totalNumCells_ = meshMgr_->getNumCells();
     // Retrieve total number of degrees of freedom in the mesh.
@@ -255,7 +255,7 @@ public:
     myGlobIds_.erase( std::unique(myGlobIds_.begin(), myGlobIds_.end()), myGlobIds_.end() );
 
     // Build maps.
-    myOverlapMap_ = ROL::makeShared<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+    myOverlapMap_ = ROL::makePtr<Tpetra::Map<>>(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
                                                    myGlobIds_, 0, comm);
     //std::cout << std::endl << myOverlapMap_->getNodeElementList();
     /** One can also use the non-member function:
@@ -281,39 +281,39 @@ public:
     // Cubature data.
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                                          // create cubature factory
     int cubDegree = 4;                                                                          // set cubature degree, e.g., 2
-    ROL::SharedPointer<Intrepid::Cubature<Real> > cellCub = cubFactory.create(cellType_, cubDegree);  // create default cubature
+    ROL::Ptr<Intrepid::Cubature<Real> > cellCub = cubFactory.create(cellType_, cubDegree);  // create default cubature
     numCubPoints_ = cellCub->getNumPoints();                                                    // retrieve number of cubature points
 
     int lfs = dofMgr_->getLocalFieldSize(0);
 
     // Discretization data. 
-    cubPoints_            = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCubPoints_, spaceDim_);
-    cubWeights_           = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCubPoints_);
-    cubPointsPhysical_    = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_, spaceDim_);
-    dofPoints_            = ROL::makeShared<Intrepid::FieldContainer<Real>>(lfs, spaceDim_);
-    dofPointsPhysical_    = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs, spaceDim_);
-    cellNodes_            = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, numNodesPerCell_, spaceDim_);
-    cellJac_              = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_, spaceDim_, spaceDim_);
-    cellJacInv_           = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_, spaceDim_, spaceDim_);
-    cellJacDet_           = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_);
-    cellWeightedMeasure_  = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_);
-    valReference_         = ROL::makeShared<Intrepid::FieldContainer<Real>>(lfs, numCubPoints_);  
-    gradReference_        = ROL::makeShared<Intrepid::FieldContainer<Real>>(lfs, numCubPoints_, spaceDim_);  
-    valPhysical_          = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_);
-    gradPhysical_         = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_, spaceDim_);
-    kappaGradPhysical_    = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_, spaceDim_);
-    advGradPhysical_      = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_);
-    valPhysicalWeighted_  = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_);
-    gradPhysicalWeighted_ = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_, spaceDim_);
-    gradgradMats_         = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs, lfs);
-    valvalMats_           = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs, lfs);
-    advgradvalMats_       = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs, lfs);
-    pdeMats_              = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs, lfs);
-    kappa_                = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_);
-    adv_                  = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_, spaceDim_);
-    dataF_                = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_);
-    datavalVecF_          = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs);
-    dataUd_               = ROL::makeShared<Intrepid::FieldContainer<Real>>(numCells_, lfs);
+    cubPoints_            = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCubPoints_, spaceDim_);
+    cubWeights_           = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCubPoints_);
+    cubPointsPhysical_    = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_, spaceDim_);
+    dofPoints_            = ROL::makePtr<Intrepid::FieldContainer<Real>>(lfs, spaceDim_);
+    dofPointsPhysical_    = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs, spaceDim_);
+    cellNodes_            = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, numNodesPerCell_, spaceDim_);
+    cellJac_              = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_, spaceDim_, spaceDim_);
+    cellJacInv_           = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_, spaceDim_, spaceDim_);
+    cellJacDet_           = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_);
+    cellWeightedMeasure_  = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_);
+    valReference_         = ROL::makePtr<Intrepid::FieldContainer<Real>>(lfs, numCubPoints_);  
+    gradReference_        = ROL::makePtr<Intrepid::FieldContainer<Real>>(lfs, numCubPoints_, spaceDim_);  
+    valPhysical_          = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_);
+    gradPhysical_         = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_, spaceDim_);
+    kappaGradPhysical_    = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_, spaceDim_);
+    advGradPhysical_      = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_);
+    valPhysicalWeighted_  = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_);
+    gradPhysicalWeighted_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs, numCubPoints_, spaceDim_);
+    gradgradMats_         = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs, lfs);
+    valvalMats_           = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs, lfs);
+    advgradvalMats_       = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs, lfs);
+    pdeMats_              = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs, lfs);
+    kappa_                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_);
+    adv_                  = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_, spaceDim_);
+    dataF_                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, numCubPoints_);
+    datavalVecF_          = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs);
+    dataUd_               = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCells_, lfs);
 
     // Geometric definition of the cells in the mesh, based on the cell-to-node map and the domain partition.
     Intrepid::FieldContainer<Real> &nodes = *meshMgr_->getNodes();
@@ -430,7 +430,7 @@ public:
     /****************************************/
 
     // Assemble graph.
-    matGraph_ = ROL::makeShared<Tpetra::CrsGraph<>>(myUniqueMap_, 0);
+    matGraph_ = ROL::makePtr<Tpetra::CrsGraph<>>(myUniqueMap_, 0);
     Teuchos::ArrayRCP<const int> cellDofsArrayRCP = cellDofs.getData();
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
@@ -441,7 +441,7 @@ public:
 
     // Assemble matrices.
     // PDE matrix A.
-    matA_ = ROL::makeShared<Tpetra::CrsMatrix<>>(matGraph_);
+    matA_ = ROL::makePtr<Tpetra::CrsMatrix<>>(matGraph_);
     int numLocalMatEntries = numLocalDofs*numLocalDofs;
     Teuchos::ArrayRCP<const Real> pdeArrayRCP = pdeMats_->getData();
     for (int i=0; i<numCells_; ++i) {
@@ -454,7 +454,7 @@ public:
     matA_->fillComplete();
 
     // Mass matrix M.
-    matM_ = ROL::makeShared<Tpetra::CrsMatrix<>>(matGraph_);
+    matM_ = ROL::makePtr<Tpetra::CrsMatrix<>>(matGraph_);
     Teuchos::ArrayRCP<const Real> valvalArrayRCP = valvalMats_->getData();
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
@@ -467,8 +467,8 @@ public:
 
     // Assemble vectors.
     // vecF_ requires assembly using vecF_overlap_ and redistribution
-    vecF_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
-    vecF_overlap_ = ROL::makeShared<Tpetra::MultiVector<>>(myOverlapMap_, 1, true);
+    vecF_ = ROL::makePtr<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
+    vecF_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapMap_, 1, true);
     for (int i=0; i<numCells_; ++i) {                                                 // assembly on the overlap map
       for (int j=0; j<numLocalDofs; ++j) {
         vecF_overlap_->sumIntoGlobalValue(cellDofs(myCellIds_[i],j),
@@ -479,7 +479,7 @@ public:
     Tpetra::Export<> exporter(vecF_overlap_->getMap(), vecF_->getMap());              // redistribution:
     vecF_->doExport(*vecF_overlap_, exporter, Tpetra::ADD);                           // from the overlap map to the unique map
     // vecUd_ does not require assembly
-    vecUd_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getDomainMap(), 1, true);
+    vecUd_ = ROL::makePtr<Tpetra::MultiVector<>>(matA_->getDomainMap(), 1, true);
     for (int i=0; i<numCells_; ++i) {
       for (int j=0; j<numLocalDofs; ++j) {
         if (vecUd_->getMap()->isNodeGlobalElement(cellDofs(myCellIds_[i],j))) {
@@ -490,7 +490,7 @@ public:
       }
     }
     // vecWeights
-    vecWeights_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getDomainMap(), 1, true);
+    vecWeights_ = ROL::makePtr<Tpetra::MultiVector<>>(matA_->getDomainMap(), 1, true);
     vecWeights_->putScalar(1.0);
     /*vecWeights_->putScalar(0.0);
     Real mask1_x1 = 0.30, mask1_x2 = 0.90, mask1_y1 = 0.20, mask1_y2 = 0.80;
@@ -530,12 +530,12 @@ public:
     // Vector F with Dirichlet conditions G:
     //  FD = [ F1 ]  where F = [ F1 ]
     //       [ G  ]            [ F2 ]
-    ROL::SharedPointer<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
+    ROL::Ptr<Tpetra::Details::DefaultTypes::node_type> node = matA_->getNode();
     matA_dirichlet_ = matA_->clone(node);
     matM_dirichlet_ = matM_->clone(node);
-    vecF_dirichlet_ = ROL::makeShared<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
+    vecF_dirichlet_ = ROL::makePtr<Tpetra::MultiVector<>>(matA_->getRangeMap(), 1, true);
     Tpetra::deep_copy(*vecF_dirichlet_, *vecF_);
-    ROL::SharedPointer<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
+    ROL::Ptr<std::vector<std::vector<Intrepid::FieldContainer<int> > > > dirichletSideSets = meshMgr_->getSideSets();
     std::vector<std::vector<Intrepid::FieldContainer<int> > > &dss = *dirichletSideSets;
     Teuchos::Array<int> mySortedCellIds_(myCellIds_);
     std::sort(mySortedCellIds_.begin(), mySortedCellIds_.end());
@@ -640,7 +640,7 @@ public:
   }
 
 
-  ROL::SharedPointer<Tpetra::CrsMatrix<> > getMatA(const bool &transpose = false) const {
+  ROL::Ptr<Tpetra::CrsMatrix<> > getMatA(const bool &transpose = false) const {
     if (transpose) {
       return matA_dirichlet_trans_;
     }
@@ -650,7 +650,7 @@ public:
   }
 
 
-  ROL::SharedPointer<Tpetra::CrsMatrix<> > getMatB(const bool &transpose = false) const {
+  ROL::Ptr<Tpetra::CrsMatrix<> > getMatB(const bool &transpose = false) const {
     if (transpose) {
       return matM_dirichlet_trans_;
     }
@@ -660,27 +660,27 @@ public:
   }
 
 
-  ROL::SharedPointer<Tpetra::CrsMatrix<> > getMatM() const {
+  ROL::Ptr<Tpetra::CrsMatrix<> > getMatM() const {
     return matM_;
   }
 
 
-  ROL::SharedPointer<Tpetra::CrsMatrix<> > getMatR() const {
+  ROL::Ptr<Tpetra::CrsMatrix<> > getMatR() const {
     return matM_;
   }
 
 
-  ROL::SharedPointer<Tpetra::MultiVector<> > getVecUd() const {
+  ROL::Ptr<Tpetra::MultiVector<> > getVecUd() const {
     return vecUd_;
   }
 
 
-  void setVecUd(ROL::SharedPointer<Tpetra::MultiVector<> > & datavec) {
+  void setVecUd(ROL::Ptr<Tpetra::MultiVector<> > & datavec) {
     Tpetra::deep_copy(*vecUd_, *datavec);;
   }
 
 
-  ROL::SharedPointer<Tpetra::MultiVector<> > getVecWeights() const {
+  ROL::Ptr<Tpetra::MultiVector<> > getVecWeights() const {
     return vecWeights_;
   }
 
@@ -690,12 +690,12 @@ public:
   }
 
 
-  ROL::SharedPointer<Tpetra::MultiVector<> > getVecF() const {
+  ROL::Ptr<Tpetra::MultiVector<> > getVecF() const {
     return vecF_dirichlet_;
   }
 
 
-  ROL::SharedPointer<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > getSolver(const bool &transpose = false) const {
+  ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > getSolver(const bool &transpose = false) const {
     if (transpose) {
       return solverA_trans_;
     }
@@ -751,16 +751,16 @@ public:
   }
 
 
-  Real computeStateError(const ROL::SharedPointer<const Tpetra::MultiVector<> > &soln) const {
+  Real computeStateError(const ROL::Ptr<const Tpetra::MultiVector<> > &soln) const {
 
-    ROL::SharedPointer<Tpetra::MultiVector<> > soln_overlap =
-      ROL::makeShared<Tpetra::MultiVector<>>(vecF_overlap_->getMap(), 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > soln_overlap =
+      ROL::makePtr<Tpetra::MultiVector<>>(vecF_overlap_->getMap(), 1, true);
     Tpetra::Import<> importer(vecUd_->getMap(), soln_overlap->getMap());              // redistribution:
     soln_overlap->doImport(*soln, importer, Tpetra::REPLACE);                         // from the unique map to the overlap map
 
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                                       // create cubature factory
     int cubDeg = 6;                                                                          // set cubature degree, e.g., 6
-    ROL::SharedPointer<Intrepid::Cubature<Real> > cellCub = cubFactory.create(cellType_, cubDeg);  // create cubature for error computation
+    ROL::Ptr<Intrepid::Cubature<Real> > cellCub = cubFactory.create(cellType_, cubDeg);  // create cubature for error computation
     int numCubPts = cellCub->getNumPoints();                                                 // retrieve number of cubature points
     int lfs = dofMgr_->getLocalFieldSize(0);
     Intrepid::FieldContainer<Real> cubPts(numCubPts, spaceDim_);
@@ -824,7 +824,7 @@ public:
     for (int i=0; i<numCells_; ++i) {
       localErrorSum += normSquaredError(i);
     }
-    ROL::SharedPointer<const Teuchos::Comm<int> > comm = soln_overlap->getMap()->getComm();
+    ROL::Ptr<const Teuchos::Comm<int> > comm = soln_overlap->getMap()->getComm();
     Teuchos::reduceAll<int, Real>(*comm, Teuchos::REDUCE_SUM, 1, &localErrorSum, &globalErrorSum);
 
     return globalErrorSum;
@@ -832,8 +832,8 @@ public:
 
 
   void printMeshData(std::ostream &outStream) const {
-    ROL::SharedPointer<Intrepid::FieldContainer<Real> > nodesPtr = meshMgr_->getNodes();
-    ROL::SharedPointer<Intrepid::FieldContainer<int> >  cellToNodeMapPtr = meshMgr_->getCellToNodeMap();
+    ROL::Ptr<Intrepid::FieldContainer<Real> > nodesPtr = meshMgr_->getNodes();
+    ROL::Ptr<Intrepid::FieldContainer<int> >  cellToNodeMapPtr = meshMgr_->getCellToNodeMap();
     Intrepid::FieldContainer<Real>  &nodes = *nodesPtr;
     Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
     outStream << "Number of nodes = " << meshMgr_->getNumNodes() << std::endl;
@@ -897,7 +897,7 @@ public:
   }
 
 
-  void outputTpetraVector(const ROL::SharedPointer<const Tpetra::MultiVector<> > &vec,
+  void outputTpetraVector(const ROL::Ptr<const Tpetra::MultiVector<> > &vec,
                           const std::string &filename) const {
     Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > vecWriter;
     vecWriter.writeDenseFile(filename, vec);

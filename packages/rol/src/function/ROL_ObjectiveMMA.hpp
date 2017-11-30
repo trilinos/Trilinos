@@ -61,24 +61,24 @@ namespace ROL {
 template<class Real>
 class ObjectiveMMA : public Objective<Real> {
 
-  template <typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
+  template <typename T> using ROL::Ptr = ROL::Ptr<T>;
 
   typedef Objective<Real>       OBJ;
   typedef BoundConstraint<Real> BND;
 
 private:
 
-  const ROL::SharedPointer<OBJ> obj_;
-  const ROL::SharedPointer<BND> bnd_;
+  const ROL::Ptr<OBJ> obj_;
+  const ROL::Ptr<BND> bnd_;
   
 
-  ROL::SharedPointer<V> l_; // Lower bound
-  ROL::SharedPointer<V> u_; // Upper bound
+  ROL::Ptr<V> l_; // Lower bound
+  ROL::Ptr<V> u_; // Upper bound
   
-  ROL::SharedPointer<V> p_; // First MMA numerator
-  ROL::SharedPointer<V> q_; // Second MMA numerator
+  ROL::Ptr<V> p_; // First MMA numerator
+  ROL::Ptr<V> q_; // Second MMA numerator
 
-  ROL::SharedPointer<V> d_; // Scratch vector
+  ROL::Ptr<V> d_; // Scratch vector
 
   Real fval_; // Original objective value
 
@@ -86,8 +86,8 @@ private:
 
 public:
 
-  ObjectiveMMA( const ROL::SharedPointer<Objective<Real> > &obj,
-                const ROL::SharedPointer<BoundConstraint<Real> > &bnd,
+  ObjectiveMMA( const ROL::Ptr<Objective<Real> > &obj,
+                const ROL::Ptr<BoundConstraint<Real> > &bnd,
                 const Vector<Real> &x,
                 Real tol=std::sqrt(ROL_EPSILON<Real>()) ) : 
     obj_(obj), bnd_(bnd), tol_(tol) {

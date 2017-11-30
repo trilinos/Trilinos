@@ -51,7 +51,7 @@
 
 
 #include "../TOOLS/template_tools.hpp"
-#include "ROL_SharedPointer.hpp"
+#include "ROL_Ptr.hpp"
 
 // Example of ScalarFunction 
 // f(x,y) = <x,x> + 2*<y,y> - 2 y[0]*(x[0]+x[1]) + 3*x[0]*(y[1]-y[0])
@@ -107,9 +107,9 @@ int main(int argc, char *argv[] ) {
     
   Teuchos::oblackholestream bhs;
 
-  ROL::SharedPointer<std::ostream> os;
-  if(argc>1)   os = ROL::makeSharedFromRef(std::cout);
-  else         os = ROL::makeSharedFromRef(bhs);
+  ROL::Ptr<std::ostream> os;
+  if(argc>1)   os = ROL::makePtrFromRef(std::cout);
+  else         os = ROL::makePtrFromRef(bhs);
   
   using DFad = Sacado::Fad::DFad<RealT>;
 

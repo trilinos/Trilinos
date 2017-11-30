@@ -64,18 +64,18 @@ class PrimalDualInteriorPointBlock11 : public LinearOperator<Real> {
   static const size_type LOWER = 0;
   static const size_type UPPER = 1;
  
-  ROL::SharedPointer<const V>   x_;            // Optimization vector
-  ROL::SharedPointer<const V>   l_;            //  constraint multiplier
+  ROL::Ptr<const V>   x_;            // Optimization vector
+  ROL::Ptr<const V>   l_;            //  constraint multiplier
 
-  ROL::SharedPointer<V> scratch_;
+  ROL::Ptr<V> scratch_;
 
   Real delta_; // Initial correction
 
 
 public: 
 
-  PrimalDualInteriorPointBlock11( ROL::SharedPointer<OBJ> &obj, ROL::SharedPointer<CON> &con, 
-                           const V &x, ROL::SharedPointer<V> & scratch, 
+  PrimalDualInteriorPointBlock11( ROL::Ptr<OBJ> &obj, ROL::Ptr<CON> &con, 
+                           const V &x, ROL::Ptr<V> & scratch, 
                            Real delta=0 ) : 
     obj_(obj), con_(con), scratch_(scratch), delta_(delta) { 
 
@@ -104,12 +104,12 @@ public:
     const PV &v_pv = dynamic_cast<const PV&>(v);
 
     // output vector components
-    ROL::SharedPointer<V> Hvx  = Hv_pv.get(OPT);
-    ROL::SharedPointer<V> Hvl  = Hv_pv.get(EQUAL);
+    ROL::Ptr<V> Hvx  = Hv_pv.get(OPT);
+    ROL::Ptr<V> Hvl  = Hv_pv.get(EQUAL);
 
     // input vector components
-    ROL::SharedPointer<const V> vx  = v_pv.get(OPT);
-    ROL::SharedPointer<const V> vl  = v_pv.get(EQUAL); 
+    ROL::Ptr<const V> vx  = v_pv.get(OPT);
+    ROL::Ptr<const V> vl  = v_pv.get(EQUAL); 
 
     obj_->hessVec(*jvx,*vx,*x_,tol);
     con_->applyAdjointHessian(*scratch_,*l_,*vx,*x_,tol);
@@ -160,12 +160,12 @@ public:
     const PV &v_pv = dynamic_cast<const PV&>(v);
 
     // output vector components
-    ROL::SharedPointer<V> Hvx  = Hv_pv.get(OPT);
-    ROL::SharedPointer<V> Hvl  = Hv_pv.get(EQUAL);
+    ROL::Ptr<V> Hvx  = Hv_pv.get(OPT);
+    ROL::Ptr<V> Hvl  = Hv_pv.get(EQUAL);
 
     // input vector components
-    ROL::SharedPointer<const V> vzl  = v_pv.get(LOWER);
-    ROL::SharedPointer<const V> vzu  = v_pv.get(UPPER); 
+    ROL::Ptr<const V> vzl  = v_pv.get(LOWER);
+    ROL::Ptr<const V> vzu  = v_pv.get(UPPER); 
 
     Hvx->set(*vzu);
     Hvx->axpy(-1.0,*vzl);
@@ -194,7 +194,7 @@ class PrimalDualInteriorPointBlock21 : public LinearOperator<Real> {
   static const size_type LOWER = 0;
   static const size_type UPPER = 1;
  
-  ROL::SharedPointer<const V> zl_;
+  ROL::Ptr<const V> zl_;
   Teuchos::RPC<const V> zu_;
 
 public:
@@ -218,12 +218,12 @@ public:
     const PV &v_pv = dynamic_cast<const PV&>(v);
 
     // output vector components
-    ROL::SharedPointer<V> Hvzl  = Hv_pv.get(LOWER);
-    ROL::SharedPointer<V> Hvzu  = Hv_pv.get(UPPER);
+    ROL::Ptr<V> Hvzl  = Hv_pv.get(LOWER);
+    ROL::Ptr<V> Hvzu  = Hv_pv.get(UPPER);
 
     // input vector components
-    ROL::SharedPointer<const V> vx  = v_pv.get(OPT);
-    ROL::SharedPointer<const V> vl  = v_pv.get(EQUAL); 
+    ROL::Ptr<const V> vx  = v_pv.get(OPT);
+    ROL::Ptr<const V> vl  = v_pv.get(EQUAL); 
 
     Hvzl->set(*vx);
     Hvzl->applyBinary(mult_,*zl_);
@@ -253,9 +253,9 @@ class PrimalDualInteriorPointBlock22 : public LinearOperator<Real> {
   static const size_type LOWER = 0;
   static const size_type UPPER = 1;
  
-  ROL::SharedPointer<const V> x_;
-  ROL::SharedPointer<const V> xl_;
-  ROL::SharedPointer<const V> xu_;
+  ROL::Ptr<const V> x_;
+  ROL::Ptr<const V> xl_;
+  ROL::Ptr<const V> xu_;
 
   Elementwise::Multiply<Real> mult_;
   Elementwise::Multiply<Real> divinv_;
@@ -263,7 +263,7 @@ class PrimalDualInteriorPointBlock22 : public LinearOperator<Real> {
 
 public:
  
-  PrimalDualInteriorPointBlock22( const ROL::SharedPointer<BND> &bnd, const Vector<Real> &x ) {
+  PrimalDualInteriorPointBlock22( const ROL::Ptr<BND> &bnd, const Vector<Real> &x ) {
 
     const PV &x_pv = dynamic_cast<const PV&>(x);
     
@@ -286,12 +286,12 @@ public:
     const PV &v_pv = dynamic_cast<const PV&>(v);
 
     // output vector components
-    ROL::SharedPointer<V> Hvzl  = Hv_pv.get(LOWER);
-    ROL::SharedPointer<V> Hvzu  = Hv_pv.get(UPPER);
+    ROL::Ptr<V> Hvzl  = Hv_pv.get(LOWER);
+    ROL::Ptr<V> Hvzu  = Hv_pv.get(UPPER);
 
     // input vector components
-    ROL::SharedPointer<const V> vzl = v_pv.get(LOWER);
-    ROL::SharedPointer<const V> vzu = v_pv.get(UPPER); 
+    ROL::Ptr<const V> vzl = v_pv.get(LOWER);
+    ROL::Ptr<const V> vzu = v_pv.get(UPPER); 
 
     Hvzl->set(*x_);
     Hvzl->axpy(-1.0,*xl_);
@@ -311,12 +311,12 @@ public:
     const PV &v_pv = dynamic_cast<const PV&>(v);
 
     // output vector components
-    ROL::SharedPointer<V> Hvzl  = Hv_pv.get(LOWER);
-    ROL::SharedPointer<V> Hvzu  = Hv_pv.get(UPPER);
+    ROL::Ptr<V> Hvzl  = Hv_pv.get(LOWER);
+    ROL::Ptr<V> Hvzu  = Hv_pv.get(UPPER);
 
     // input vector components
-    ROL::SharedPointer<const V> vzl = v_pv.get(LOWER);
-    ROL::SharedPointer<const V> vzu = v_pv.get(UPPER); 
+    ROL::Ptr<const V> vzl = v_pv.get(LOWER);
+    ROL::Ptr<const V> vzu = v_pv.get(UPPER); 
 
     Hvzl->set(*x_);
     Hvzl->axpy(-1.0,*xl_);

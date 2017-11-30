@@ -84,19 +84,19 @@ typedef double RealT;
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -115,51 +115,51 @@ int main(int argc, char *argv[]) {
 
     /*** Initialize main data structure. ***/
     int probDim = parlist->sublist("Problem").get("Problem Dimension",2);
-    ROL::SharedPointer<MeshManager<RealT> > meshMgr;
+    ROL::Ptr<MeshManager<RealT> > meshMgr;
     if (probDim == 2) {
-      meshMgr = ROL::makeShared<MeshManager_TopoOpt<RealT>>(*parlist);
+      meshMgr = ROL::makePtr<MeshManager_TopoOpt<RealT>>(*parlist);
     } else if (probDim == 3) {
-      meshMgr = ROL::makeShared<MeshReader<RealT>>(*parlist);
+      meshMgr = ROL::makePtr<MeshReader<RealT>>(*parlist);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> PDE-OPT/topo-opt/elasticity/example_08.cpp: Problem dim is not 2 or 3!");
     }
     // Initialize PDE describing elasticity equations.
-    ROL::SharedPointer<PDE_Elasticity<RealT> > pde
-      = ROL::makeShared<PDE_Elasticity<RealT>>(*parlist);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > con
-      = ROL::makeShared<PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
+    ROL::Ptr<PDE_Elasticity<RealT> > pde
+      = ROL::makePtr<PDE_Elasticity<RealT>>(*parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
+      = ROL::makePtr<PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
     // Initialize the filter PDE.
-    ROL::SharedPointer<PDE_Filter<RealT> > pdeFilter
-      = ROL::makeShared<PDE_Filter<RealT>>(*parlist);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > conFilter
-      = ROL::makeShared<Linear_PDE_Constraint<RealT>>(pdeFilter,meshMgr,comm,*parlist,*outStream);
+    ROL::Ptr<PDE_Filter<RealT> > pdeFilter
+      = ROL::makePtr<PDE_Filter<RealT>>(*parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > conFilter
+      = ROL::makePtr<Linear_PDE_Constraint<RealT>>(pdeFilter,meshMgr,comm,*parlist,*outStream);
     // Cast the constraint and get the assembler.
-    ROL::SharedPointer<PDE_Constraint<RealT> > pdecon
-      = ROL::dynamicPointerCast<PDE_Constraint<RealT> >(con);
-    ROL::SharedPointer<Assembler<RealT> > assembler = pdecon->getAssembler();
+    ROL::Ptr<PDE_Constraint<RealT> > pdecon
+      = ROL::dynamicPtrCast<PDE_Constraint<RealT> >(con);
+    ROL::Ptr<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
 
     // Create state vector.
-    ROL::SharedPointer<Tpetra::MultiVector<> > u_ptr, p_ptr, z_ptr, r_ptr;
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr, p_ptr, z_ptr, r_ptr;
     u_ptr = assembler->createStateVector();    u_ptr->putScalar(0.0);
     p_ptr = assembler->createStateVector();    p_ptr->putScalar(0.0);
     z_ptr = assembler->createControlVector();  z_ptr->putScalar(1.0);
     r_ptr = assembler->createResidualVector(); r_ptr->putScalar(0.0);
-    ROL::SharedPointer<ROL::Vector<RealT> > up, pp, zp, rp;
-    up = ROL::makeShared<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler,*parlist);
-    pp = ROL::makeShared<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler,*parlist);
-    zp = ROL::makeShared<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler,*parlist);
-    rp = ROL::makeShared<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler,*parlist);
+    ROL::Ptr<ROL::Vector<RealT> > up, pp, zp, rp;
+    up = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler,*parlist);
+    pp = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler,*parlist);
+    zp = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler,*parlist);
+    rp = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler,*parlist);
 
     // Initialize "filtered" of "unfiltered" constraint.
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > pdeWithFilter;
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pdeWithFilter;
     bool useFilter = parlist->sublist("Problem").get("Use Filter", true);
     if (useFilter) {
       bool useStorage = parlist->sublist("Problem").get("Use State Storage",true);
       pdeWithFilter
-        = ROL::makeShared<ROL::CompositeConstraint_SimOpt<RealT>>(con, conFilter,
+        = ROL::makePtr<ROL::CompositeConstraint_SimOpt<RealT>>(con, conFilter,
                        *rp, *rp, *up, *zp, *zp, useStorage);
     }
     else {
@@ -168,10 +168,10 @@ int main(int argc, char *argv[]) {
     pdeWithFilter->setSolveParameters(*parlist);
 
     // Initialize volume objective.
-    ROL::SharedPointer<QoI<RealT> > qoi_vol
-      = ROL::makeShared<QoI_VolumeObj_TopoOpt<RealT>>(pde->getFE(),pde->getFieldHelper());
-    ROL::SharedPointer<ROL::Objective<RealT> > vobj
-      = ROL::makeShared<IntegralOptObjective<RealT>>(qoi_vol,assembler);
+    ROL::Ptr<QoI<RealT> > qoi_vol
+      = ROL::makePtr<QoI_VolumeObj_TopoOpt<RealT>>(pde->getFE(),pde->getFieldHelper());
+    ROL::Ptr<ROL::Objective<RealT> > vobj
+      = ROL::makePtr<IntegralOptObjective<RealT>>(qoi_vol,assembler);
 
     // Initialize compliance inequality constraint.
     con->value(*rp, *up, *zp, tol);
@@ -179,41 +179,41 @@ int main(int argc, char *argv[]) {
     if (rnorm2 > 1e2*ROL::ROL_EPSILON<RealT>()) {
       objScaling /= rnorm2;
     }
-    std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_cmp(1,ROL::nullPointer);
+    std::vector<ROL::Ptr<QoI<RealT> > > qoi_cmp(1,ROL::nullPtr);
     qoi_cmp[0]
-      = ROL::makeShared<QoI_TopoOpt<RealT>>(pde->getFE(), pde->getLoad(),
+      = ROL::makePtr<QoI_TopoOpt<RealT>>(pde->getFE(), pde->getLoad(),
                                             pde->getFieldHelper(), objScaling);
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > cobj
-      = ROL::makeShared<PDE_Objective<RealT>>(qoi_cmp,assembler);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > cobj
+      = ROL::makePtr<PDE_Objective<RealT>>(qoi_cmp,assembler);
 
     // Initialize reduced compliance objective function.
     bool storage = parlist->sublist("Problem").get("Use state storage",true);
-    ROL::SharedPointer<ROL::SimController<RealT> > stateStore
-      = ROL::makeShared<ROL::SimController<RealT>>();
-    ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > cobjRed
-      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(cobj,
+    ROL::Ptr<ROL::SimController<RealT> > stateStore
+      = ROL::makePtr<ROL::SimController<RealT>>();
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > cobjRed
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(cobj,
                      pdeWithFilter,stateStore,up,zp,pp,storage);
 
     // Create compliance constraint, multiplier and bounds
     RealT comp = cobjRed->value(*zp,tol);
-    ROL::SharedPointer<ROL::Constraint<RealT> > icon
-      = ROL::makeShared<ROL::ConstraintFromObjective<RealT>>(cobjRed);
-    ROL::SharedPointer<std::vector<RealT> > imul_ptr, iup_ptr;
-    ROL::SharedPointer<ROL::Vector<RealT> > imul, iup;
-    imul = ROL::makeShared<ROL::SingletonVector<RealT>>(0);
-    iup  = ROL::makeShared<ROL::SingletonVector<RealT>>(cmpFactor*comp);
-    ROL::SharedPointer<ROL::BoundConstraint<RealT> > ibnd
-      = ROL::makeShared<ROL::Bounds<RealT>>(*iup,false);
+    ROL::Ptr<ROL::Constraint<RealT> > icon
+      = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>(cobjRed);
+    ROL::Ptr<std::vector<RealT> > imul_ptr, iup_ptr;
+    ROL::Ptr<ROL::Vector<RealT> > imul, iup;
+    imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
+    iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(cmpFactor*comp);
+    ROL::Ptr<ROL::BoundConstraint<RealT> > ibnd
+      = ROL::makePtr<ROL::Bounds<RealT>>(*iup,false);
 
     // Initialize bound constraints.
-    ROL::SharedPointer<Tpetra::MultiVector<> > lo_ptr, hi_ptr;
+    ROL::Ptr<Tpetra::MultiVector<> > lo_ptr, hi_ptr;
     lo_ptr = assembler->createControlVector(); lo_ptr->putScalar(0.0);
     hi_ptr = assembler->createControlVector(); hi_ptr->putScalar(1.0);
-    ROL::SharedPointer<ROL::Vector<RealT> > lop, hip;
-    lop = ROL::makeShared<PDE_PrimalOptVector<RealT>>(lo_ptr,pde,assembler);
-    hip = ROL::makeShared<PDE_PrimalOptVector<RealT>>(hi_ptr,pde,assembler);
-    ROL::SharedPointer<ROL::BoundConstraint<RealT> > bnd
-      = ROL::makeShared<ROL::Bounds<RealT>>(lop,hip);
+    ROL::Ptr<ROL::Vector<RealT> > lop, hip;
+    lop = ROL::makePtr<PDE_PrimalOptVector<RealT>>(lo_ptr,pde,assembler);
+    hip = ROL::makePtr<PDE_PrimalOptVector<RealT>>(hi_ptr,pde,assembler);
+    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
+      = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
 
     // Build optimization problem.
     ROL::OptimizationProblem<RealT> optProb(vobj,zp,bnd,icon,imul,ibnd);

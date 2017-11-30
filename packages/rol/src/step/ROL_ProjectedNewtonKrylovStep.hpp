@@ -67,14 +67,14 @@ template <class Real>
 class ProjectedNewtonKrylovStep : public Step<Real> {
 private:
 
-  ROL::SharedPointer<Secant<Real> >     secant_; ///< Secant object (used for quasi-Newton)
-  ROL::SharedPointer<Krylov<Real> >     krylov_; ///< Krylov solver object (used for inexact Newton)
+  ROL::Ptr<Secant<Real> >     secant_; ///< Secant object (used for quasi-Newton)
+  ROL::Ptr<Krylov<Real> >     krylov_; ///< Krylov solver object (used for inexact Newton)
 
   EKrylov ekv_;
   ESecant esec_;
 
-  ROL::SharedPointer<Vector<Real> > gp_;
-  ROL::SharedPointer<Vector<Real> > d_;
+  ROL::Ptr<Vector<Real> > gp_;
+  ROL::Ptr<Vector<Real> > d_;
  
   int iterKrylov_; ///< Number of Krylov iterations (used for inexact Newton)
   int flagKrylov_; ///< Termination flag for Krylov method (used for inexact Newton)
@@ -89,17 +89,17 @@ private:
 
   class HessianPNK : public LinearOperator<Real> {
   private:
-    const ROL::SharedPointer<Objective<Real> > obj_;
-    const ROL::SharedPointer<BoundConstraint<Real> > bnd_;
-    const ROL::SharedPointer<Vector<Real> > x_;
-    const ROL::SharedPointer<Vector<Real> > g_;
-    ROL::SharedPointer<Vector<Real> > v_;
+    const ROL::Ptr<Objective<Real> > obj_;
+    const ROL::Ptr<BoundConstraint<Real> > bnd_;
+    const ROL::Ptr<Vector<Real> > x_;
+    const ROL::Ptr<Vector<Real> > g_;
+    ROL::Ptr<Vector<Real> > v_;
     Real eps_;
   public:
-    HessianPNK(const ROL::SharedPointer<Objective<Real> > &obj,
-               const ROL::SharedPointer<BoundConstraint<Real> > &bnd,
-               const ROL::SharedPointer<Vector<Real> > &x,
-               const ROL::SharedPointer<Vector<Real> > &g,
+    HessianPNK(const ROL::Ptr<Objective<Real> > &obj,
+               const ROL::Ptr<BoundConstraint<Real> > &bnd,
+               const ROL::Ptr<Vector<Real> > &x,
+               const ROL::Ptr<Vector<Real> > &g,
                Real eps = 0 )
       : obj_(obj), bnd_(bnd), x_(x), g_(g), eps_(eps) {
       v_ = x_->clone();
@@ -117,27 +117,27 @@ private:
 
   class PrecondPNK : public LinearOperator<Real> {
   private:
-    const ROL::SharedPointer<Objective<Real> > obj_;
-    const ROL::SharedPointer<Secant<Real> > secant_;
-    const ROL::SharedPointer<BoundConstraint<Real> > bnd_;
-    const ROL::SharedPointer<Vector<Real> > x_;
-    const ROL::SharedPointer<Vector<Real> > g_;
-    ROL::SharedPointer<Vector<Real> > v_;
+    const ROL::Ptr<Objective<Real> > obj_;
+    const ROL::Ptr<Secant<Real> > secant_;
+    const ROL::Ptr<BoundConstraint<Real> > bnd_;
+    const ROL::Ptr<Vector<Real> > x_;
+    const ROL::Ptr<Vector<Real> > g_;
+    ROL::Ptr<Vector<Real> > v_;
     Real eps_;
     const bool useSecant_;
   public:
-    PrecondPNK(const ROL::SharedPointer<Objective<Real> > &obj,
-               const ROL::SharedPointer<BoundConstraint<Real> > &bnd,
-               const ROL::SharedPointer<Vector<Real> > &x,
-               const ROL::SharedPointer<Vector<Real> > &g,
+    PrecondPNK(const ROL::Ptr<Objective<Real> > &obj,
+               const ROL::Ptr<BoundConstraint<Real> > &bnd,
+               const ROL::Ptr<Vector<Real> > &x,
+               const ROL::Ptr<Vector<Real> > &g,
                Real eps = 0 )
       : obj_(obj), bnd_(bnd), x_(x), g_(g), eps_(eps), useSecant_(false) {
       v_ = x_->clone();
     }
-    PrecondPNK(const ROL::SharedPointer<Secant<Real> > &secant,
-               const ROL::SharedPointer<BoundConstraint<Real> > &bnd,
-               const ROL::SharedPointer<Vector<Real> > &x,
-               const ROL::SharedPointer<Vector<Real> > &g,
+    PrecondPNK(const ROL::Ptr<Secant<Real> > &secant,
+               const ROL::Ptr<BoundConstraint<Real> > &bnd,
+               const ROL::Ptr<Vector<Real> > &x,
+               const ROL::Ptr<Vector<Real> > &g,
                Real eps = 0 )
       : secant_(secant), bnd_(bnd), x_(x), g_(g), eps_(eps), useSecant_(true) {
       v_ = x_->clone();
@@ -175,8 +175,8 @@ public:
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
   ProjectedNewtonKrylovStep( Teuchos::ParameterList &parlist, const bool computeObj = true )
-    : Step<Real>(), secant_(ROL::nullPointer), krylov_(ROL::nullPointer),
-      gp_(ROL::nullPointer), d_(ROL::nullPointer),
+    : Step<Real>(), secant_(ROL::nullPtr), krylov_(ROL::nullPtr),
+      gp_(ROL::nullPtr), d_(ROL::nullPtr),
       iterKrylov_(0), flagKrylov_(0), verbosity_(0),
       computeObj_(computeObj), useSecantPrecond_(false) {
     // Parse ParameterList
@@ -207,12 +207,12 @@ public:
       @param[in]     secant     is a user-defined secant object
   */
   ProjectedNewtonKrylovStep(Teuchos::ParameterList &parlist,
-             const ROL::SharedPointer<Krylov<Real> > &krylov,
-             const ROL::SharedPointer<Secant<Real> > &secant,
+             const ROL::Ptr<Krylov<Real> > &krylov,
+             const ROL::Ptr<Secant<Real> > &secant,
              const bool computeObj = true)
     : Step<Real>(), secant_(secant), krylov_(krylov),
       ekv_(KRYLOV_USERDEFINED), esec_(SECANT_USERDEFINED),
-      gp_(ROL::nullPointer), d_(ROL::nullPointer),
+      gp_(ROL::nullPtr), d_(ROL::nullPtr),
       iterKrylov_(0), flagKrylov_(0), verbosity_(0),
       computeObj_(computeObj), useSecantPrecond_(false) {
     // Parse ParameterList
@@ -222,7 +222,7 @@ public:
     verbosity_ = Glist.get("Print Verbosity",0);
     // Initialize secant object
     if ( useSecantPrecond_ ) {
-      if (secant_ == ROL::nullPointer ) {
+      if (secant_ == ROL::nullPtr ) {
         secantName_ = Glist.sublist("Secant").get("Type","Limited-Memory BFGS");
         esec_ = StringToESecant(secantName_);
         secant_ = SecantFactory<Real>(parlist);
@@ -233,7 +233,7 @@ public:
       }
     }
     // Initialize Krylov object
-    if ( krylov_ == ROL::nullPointer ) {
+    if ( krylov_ == ROL::nullPtr ) {
       krylovName_ = Glist.sublist("Krylov").get("Type","Conjugate Gradients");
       ekv_ = StringToEKrylov(krylovName_);
       krylov_ = KrylovFactory<Real>(parlist);
@@ -252,21 +252,21 @@ public:
                 Objective<Real> &obj, BoundConstraint<Real> &bnd,
                 AlgorithmState<Real> &algo_state ) {
     Real one(1);
-    ROL::SharedPointer<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     // Build Hessian and Preconditioner object
-    ROL::SharedPointer<Objective<Real> > obj_ptr = ROL::makeSharedFromRef(obj);
-    ROL::SharedPointer<BoundConstraint<Real> > bnd_ptr = ROL::makeSharedFromRef(bnd);
-    ROL::SharedPointer<LinearOperator<Real> > hessian
-      = ROL::makeShared<HessianPNK>(obj_ptr,bnd_ptr,algo_state.iterateVec,
+    ROL::Ptr<Objective<Real> > obj_ptr = ROL::makePtrFromRef(obj);
+    ROL::Ptr<BoundConstraint<Real> > bnd_ptr = ROL::makePtrFromRef(bnd);
+    ROL::Ptr<LinearOperator<Real> > hessian
+      = ROL::makePtr<HessianPNK>(obj_ptr,bnd_ptr,algo_state.iterateVec,
                                     step_state->gradientVec,algo_state.gnorm);
-    ROL::SharedPointer<LinearOperator<Real> > precond;
+    ROL::Ptr<LinearOperator<Real> > precond;
     if (useSecantPrecond_) {
-      precond = ROL::makeShared<PrecondPNK>(secant_,bnd_ptr,
+      precond = ROL::makePtr<PrecondPNK>(secant_,bnd_ptr,
         algo_state.iterateVec,step_state->gradientVec,algo_state.gnorm);
     }
     else {
-      precond = ROL::makeShared<PrecondPNK>(obj_ptr,bnd_ptr,
+      precond = ROL::makePtr<PrecondPNK>(obj_ptr,bnd_ptr,
         algo_state.iterateVec,step_state->gradientVec,algo_state.gnorm);
     }
 
@@ -285,7 +285,7 @@ public:
                Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON<Real>()), one(1);
-    ROL::SharedPointer<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     // Update iterate and store previous step
     algo_state.iter++;

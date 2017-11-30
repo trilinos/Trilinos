@@ -90,18 +90,18 @@ private:
   static const size_type OPTMULT = 0;  // Optimization and equality multiplier components
   static const size_type BNDMULT = 1;  // Bound multiplier components
 
-  ROL::SharedPointer<Secant<Real> > secant_;
-  ROL::SharedPointer<Krylov<Real> > krylov_;
-  ROL::SharedPointer<V> scratch1_;           // scratch vector 
-  ROL::SharedPointer<V> scratch_; 
+  ROL::Ptr<Secant<Real> > secant_;
+  ROL::Ptr<Krylov<Real> > krylov_;
+  ROL::Ptr<V> scratch1_;           // scratch vector 
+  ROL::Ptr<V> scratch_; 
 
-  ROL::SharedPointer<OP11> A_;
-  ROL::SharedPointer<OP12> B_;
-  ROL::SharedPointer<OP21> C_;
-  ROL::SharedPointer<OP22> D_;
+  ROL::Ptr<OP11> A_;
+  ROL::Ptr<OP12> B_;
+  ROL::Ptr<OP21> C_;
+  ROL::Ptr<OP22> D_;
 
-  ROL::SharedPointer<SCHUR> schur_; // Allows partial decoupling of (x,lambda) and (zl,zu)
-  ROL::SharedPointer<OP>    op_;    // Solve fully coupled system
+  ROL::Ptr<SCHUR> schur_; // Allows partial decoupling of (x,lambda) and (zl,zu)
+  ROL::Ptr<OP>    op_;    // Solve fully coupled system
 
   int iterKrylov_; ///< Number of Krylov iterations (used for inexact Newton)
   int flagKrylov_; ///< Termination flag for Krylov method (used for inexact Newton)
@@ -113,27 +113,27 @@ private:
   
 
   // Repartition (x,lambda,zl,zu) as (xlambda,z) = ((x,lambda),(zl,zu))
-  ROL::SharedPointer<PV> repartition( V &x ) {
+  ROL::Ptr<PV> repartition( V &x ) {
      
     PV &x_pv = dynamic_cast<PV&>(x);
-    ROL::SharedPointer<V> xlambda = CreatePartitionedVector(x_pv.get(OPT),x_pv.get(EQUAL));  
-    ROL::SharedPointer<V> z = CreatePartitionedVector(x_pv.get(LOWER),x_pv.get(UPPER));  
+    ROL::Ptr<V> xlambda = CreatePartitionedVector(x_pv.get(OPT),x_pv.get(EQUAL));  
+    ROL::Ptr<V> z = CreatePartitionedVector(x_pv.get(LOWER),x_pv.get(UPPER));  
  
-    ROL::SharedPointer<V> temp[] = {xlambda,z};
+    ROL::Ptr<V> temp[] = {xlambda,z};
 
-    return ROL::makeShared<PV( std::vector<ROL::SharedPointer<V> >>(temp,temp+2) );
+    return ROL::makePtr<PV( std::vector<ROL::Ptr<V> >>(temp,temp+2) );
 
   }
 
   // Repartition (x,lambda,zl,zu) as (xlambda,z) = ((x,lambda),(zl,zu))
-  ROL::SharedPointer<const PV> repartition( const V &x ) {
+  ROL::Ptr<const PV> repartition( const V &x ) {
     const PV &x_pv = dynamic_cast<const PV&>(x);
-    ROL::SharedPointer<const V> xlambda = CreatePartitionedVector(x_pv.get(OPT),x_pv.get(EQUAL));  
-    ROL::SharedPointer<const V> z = CreatePartitionedVector(x_pv.get(LOWER),x_pv.get(UPPER));  
+    ROL::Ptr<const V> xlambda = CreatePartitionedVector(x_pv.get(OPT),x_pv.get(EQUAL));  
+    ROL::Ptr<const V> z = CreatePartitionedVector(x_pv.get(LOWER),x_pv.get(UPPER));  
 
-    ROL::SharedPointer<const V> temp[] = {xlambda,z};
+    ROL::Ptr<const V> temp[] = {xlambda,z};
 
-    return ROL::makeShared<PV( std::vector<ROL::SharedPointer<const V> >>(temp,temp+2) );
+    return ROL::makePtr<PV( std::vector<ROL::Ptr<const V> >>(temp,temp+2) );
          
   }
 
@@ -145,11 +145,11 @@ public:
 
 
   PrimalDualSystemStep( Teuchos::ParameterList &parlist, 
-                        const ROL::SharedPointer<Krylov<Real> > &krylov,
-                        const ROL::SharedPointer<Secant<Real> > &secant,
-                        ROL::SharedPointer<V> &scratch1 ) : Step<Real>(),
-    krylov_(krylov), secant_(secant), scratch1_(scratch1), schur_(ROL::nullPointer),
-    op_(ROL::nullPointer), useSchurComplement_(false) {
+                        const ROL::Ptr<Krylov<Real> > &krylov,
+                        const ROL::Ptr<Secant<Real> > &secant,
+                        ROL::Ptr<V> &scratch1 ) : Step<Real>(),
+    krylov_(krylov), secant_(secant), scratch1_(scratch1), schur_(ROL::nullPtr),
+    op_(ROL::nullPtr), useSchurComplement_(false) {
 
     PL &iplist = parlist.sublist("Step").sublist("Primal Dual Interior Point");
     PL &syslist = iplist.sublist("System Solver");
@@ -159,8 +159,8 @@ public:
   }
  
   PrimalDualSystemStep( Teuchos::ParameterList &parlist,
-                        ROL::SharedPointer<V> &scratch1_ ) : Step<Real>() {
-    PrimalDualSystemStep(parlist,ROL::nullPointer,ROL::nullPointer,scratch1); 
+                        ROL::Ptr<V> &scratch1_ ) : Step<Real>() {
+    PrimalDualSystemStep(parlist,ROL::nullPtr,ROL::nullPtr,scratch1); 
   }
 
   void initialize( V &x, const V &g, V &res, const V &c,
@@ -172,22 +172,22 @@ public:
      
     ;
 
-    ROL::SharedPointer<OBJ> pObj = ROL::makeSharedFromRef(obj);
-    ROL::SharedPointer<CON> pCon = ROL::makeSharedFromRef(con);
-    ROL::SharedPointer<BND> pBnd = ROL::makeSharedFromRef(bnd);
+    ROL::Ptr<OBJ> pObj = ROL::makePtrFromRef(obj);
+    ROL::Ptr<CON> pCon = ROL::makePtrFromRef(con);
+    ROL::Ptr<BND> pBnd = ROL::makePtrFromRef(bnd);
  
-    ROL::SharedPointer<PV> x_pv = repartition(x);
+    ROL::Ptr<PV> x_pv = repartition(x);
 
-    ROL::SharedPointer<V> xlambda = x_pv->get(OPTMULT);
-    ROL::SharedPointer<V> z = x_pv->get(BNDMULT);
+    ROL::Ptr<V> xlambda = x_pv->get(OPTMULT);
+    ROL::Ptr<V> z = x_pv->get(BNDMULT);
  
-    A_ = ROL::makeShared<OP11>( pObj, pCon, *xlambda, scratch1_ );
-    B_ = ROL::makeShared<OP12>( );
-    C_ = ROL::makeShared<OP21>( *z );
-    D_ = ROL::makeShared<OP22>( pBnd, *xlambda );
+    A_ = ROL::makePtr<OP11>( pObj, pCon, *xlambda, scratch1_ );
+    B_ = ROL::makePtr<OP12>( );
+    C_ = ROL::makePtr<OP21>( *z );
+    D_ = ROL::makePtr<OP22>( pBnd, *xlambda );
 
     if( useSchurComplement_ ) {
-      schur_ = ROL::makeShared<SCHUR>(A_,B_,C_,D_,scratch1_);
+      schur_ = ROL::makePtr<SCHUR>(A_,B_,C_,D_,scratch1_);
     } 
     else {
       op_ = BlockOperator2<Real>(A_,B_,C_,D_);
@@ -197,20 +197,20 @@ public:
   void compute( V &s, const V &x, const V &res, OBJ &obj, CON &con, 
                 BND &bnd, AS &algo_state ) {
 
-    ROL::SharedPointer<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
 
     if( useSchurComplement_ ) {
       
-      ROL::SharedPointer<const PV> x_pv = repartition(x);
-      ROL::SharedPointer<const PV> res_pv = repartition(res);
-      ROL::SharedPointer<PV> s_pv = repartition(s);
+      ROL::Ptr<const PV> x_pv = repartition(x);
+      ROL::Ptr<const PV> res_pv = repartition(res);
+      ROL::Ptr<PV> s_pv = repartition(s);
 
 
       // Decouple (x,lambda) from (zl,zu) so that s <- L
 
-      ROL::SharedPointer<V> sxl   = s_pv->get(OPTMULT);
-      ROL::SharedPointer<V> sz    = s_pv->get(BNDMULT);
+      ROL::Ptr<V> sxl   = s_pv->get(OPTMULT);
+      ROL::Ptr<V> sz    = s_pv->get(BNDMULT);
  
       
 
@@ -224,7 +224,7 @@ public:
   void update( V &x, V &res, const V &s, OBJ &obj, CON &con, 
                BND &bnd, AS &algo_state ) {
 
-    ROL::SharedPointer<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
 
     
   }

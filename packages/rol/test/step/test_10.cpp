@@ -63,12 +63,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -76,11 +76,11 @@ int main(int argc, char *argv[]) {
 
   try {
     // Get Objective Function
-    ROL::SharedPointer<ROL::Vector<RealT> > x0, z;
-    ROL::SharedPointer<ROL::Objective<RealT> > obj;
-    ROL::SharedPointer<ROL::BoundConstraint<RealT> > con;
+    ROL::Ptr<ROL::Vector<RealT> > x0, z;
+    ROL::Ptr<ROL::Objective<RealT> > obj;
+    ROL::Ptr<ROL::BoundConstraint<RealT> > con;
     ROL::getTestObjectives<RealT>(obj,con,x0,z,ROL::TESTOPTPROBLEM_HS38);
-    ROL::SharedPointer<ROL::Vector<RealT> > x = x0->clone();;
+    ROL::Ptr<ROL::Vector<RealT> > x = x0->clone();;
     x->set(*x0);
     // Parse input
     std::string filename = "input.xml";

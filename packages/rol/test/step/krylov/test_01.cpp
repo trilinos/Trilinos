@@ -94,10 +94,10 @@ public:
       
  
     SV &Hvs = dynamic_cast<SV&>(Hv);
-    ROL::SharedPointer<vector> Hvp = Hvs.getVector();
+    ROL::Ptr<vector> Hvp = Hvs.getVector();
  
     const SV &vs = dynamic_cast<const SV&>(v);
-    ROL::SharedPointer<const vector> vp = vs.getVector();
+    ROL::Ptr<const vector> vp = vs.getVector();
 
     uint n = vp->size();
 
@@ -117,10 +117,10 @@ public:
       
  
     SV &Hvs = dynamic_cast<SV&>(Hv);
-    ROL::SharedPointer<vector> Hvp = Hvs.getVector();
+    ROL::Ptr<vector> Hvp = Hvs.getVector();
  
     const SV &vs = dynamic_cast<const SV&>(v);
-    ROL::SharedPointer<const vector> vp = vs.getVector();
+    ROL::Ptr<const vector> vp = vs.getVector();
 
     uint n = vp->size();
 
@@ -164,12 +164,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -187,10 +187,10 @@ int main(int argc, char *argv[]) {
 
     uint dim = 10;
 
-    ROL::SharedPointer<vector> xp = ROL::makeShared<vector>(dim,0.0);
-    ROL::SharedPointer<vector> yp = ROL::makeShared<vector>(dim,0.0);
-    ROL::SharedPointer<vector> zp = ROL::makeShared<vector>(dim,0.0);
-    ROL::SharedPointer<vector> bp = ROL::makeShared<vector>(dim,0.0);
+    ROL::Ptr<vector> xp = ROL::makePtr<vector>(dim,0.0);
+    ROL::Ptr<vector> yp = ROL::makePtr<vector>(dim,0.0);
+    ROL::Ptr<vector> zp = ROL::makePtr<vector>(dim,0.0);
+    ROL::Ptr<vector> bp = ROL::makePtr<vector>(dim,0.0);
 
     SV x(xp); // Exact solution
     SV y(yp); // Solution using direct solve
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
 
     T.applyInverse(y,b,tol);
 
-    ROL::SharedPointer<ROL::Krylov<RealT> > krylov = ROL::KrylovFactory<RealT>( parlist );
+    ROL::Ptr<ROL::Krylov<RealT> > krylov = ROL::KrylovFactory<RealT>( parlist );
 
     int iter;
     int flag;

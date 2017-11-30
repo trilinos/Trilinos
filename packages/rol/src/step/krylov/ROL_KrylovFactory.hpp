@@ -47,7 +47,7 @@
 #include "ROL_Types.hpp"
 
 #include "Teuchos_ParameterList.hpp"
-#include "ROL_SharedPointer.hpp"
+#include "ROL_Ptr.hpp"
 
 #include "ROL_Krylov.hpp"
 #include "ROL_GMRES.hpp"
@@ -60,7 +60,7 @@ namespace ROL {
   class GMRES;
 
   template<class Real>
-  inline ROL::SharedPointer<Krylov<Real> > KrylovFactory( Teuchos::ParameterList &parlist ) {
+  inline ROL::Ptr<Krylov<Real> > KrylovFactory( Teuchos::ParameterList &parlist ) {
     Real em4(1e-4), em2(1e-2);
     EKrylov ekv = StringToEKrylov(
                    parlist.sublist("General").sublist("Krylov").get("Type","Conjugate Gradients"));
@@ -70,12 +70,12 @@ namespace ROL {
     bool inexact = parlist.sublist("General").get("Inexact Hessian-Times-A-Vector",false);
     switch(ekv) {
       case KRYLOV_CR: 
-        return ROL::makeShared<ConjugateResiduals<Real>>(absTol,relTol,maxit,inexact);
+        return ROL::makePtr<ConjugateResiduals<Real>>(absTol,relTol,maxit,inexact);
       case KRYLOV_CG: 
-        return ROL::makeShared<ConjugateGradients<Real>>(absTol,relTol,maxit,inexact);
+        return ROL::makePtr<ConjugateGradients<Real>>(absTol,relTol,maxit,inexact);
       case KRYLOV_GMRES:
-        return ROL::makeShared<GMRES<Real>>(parlist);
-      default:        return ROL::nullPointer;
+        return ROL::makePtr<GMRES<Real>>(parlist);
+      default:        return ROL::nullPtr;
     }
   }
 }

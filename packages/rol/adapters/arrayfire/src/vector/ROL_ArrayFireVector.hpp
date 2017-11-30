@@ -60,11 +60,11 @@ class ArrayFireVector : public ROL::Vector<Real> {
 
 private:
     
-    const ROL::SharedPointer<af::array> afVector;
+    const ROL::Ptr<af::array> afVector;
 
 public:
     
-    ArrayFireVector(const ROL::SharedPointer<af::array> &initVector) : afVector(initVector) {}
+    ArrayFireVector(const ROL::Ptr<af::array> &initVector) : afVector(initVector) {}
 
     void set (const ROL::Vector<Real> &newValue)  {
         const ArrayFireVector<Real, Element> &newVector = dynamic_cast<const ArrayFireVector<Real, Element>&>(newValue);
@@ -121,21 +121,21 @@ public:
         return static_cast<Real>(af::norm(*afVector));
     }
 
-    ROL::SharedPointer<ROL::Vector<Real> > clone () const   {
-        return(ROL::makeShared<ArrayFireVector<Real, Element>(Teuchos::ROL::makeShared<af::array(afVector->dims(0), afVector->type>>())));
+    ROL::Ptr<ROL::Vector<Real> > clone () const   {
+        return(ROL::makePtr<ArrayFireVector<Real, Element>(Teuchos::ROL::makePtr<af::array(afVector->dims(0), afVector->type>>())));
     }
 
-    ROL::SharedPointer<const af::array> getVector () const {
+    ROL::Ptr<const af::array> getVector () const {
         return afVector;
     }
 
-    ROL::SharedPointer< af::array> getVector()  {
+    ROL::Ptr< af::array> getVector()  {
         return afVector;
     }
 
 /*  to be implemented later
-    ROL::SharedPointer<ROL::Vector<Real> > basis (const int index) const   {
-		ROL::SharedPointer<af::array> basisArrary = af::constant(0, afVector.dims(0), afVector.type());
+    ROL::Ptr<ROL::Vector<Real> > basis (const int index) const   {
+		ROL::Ptr<af::array> basisArrary = af::constant(0, afVector.dims(0), afVector.type());
         basisArrary(index) = 1;
         
         ArrayFireVector<Real, Element> *basisVector = new ArrayFireVector<Real, Element>(basisArrary);

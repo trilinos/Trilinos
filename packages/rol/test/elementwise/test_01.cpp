@@ -101,12 +101,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -120,13 +120,13 @@ int main(int argc, char *argv[]) {
     int dim = k*k;
     RealT threshValue = 4.0;
 
-    ROL::SharedPointer<vec> w_ptr        = ROL::makeShared<vec>(dim, 0.0);
-    ROL::SharedPointer<vec> w2_ptr       = ROL::makeShared<vec>(dim, 0.0);
-    ROL::SharedPointer<vec> x_ptr        = ROL::makeShared<vec>(dim, 0.0);
-    ROL::SharedPointer<vec> x_recip_ptr  = ROL::makeShared<vec>(dim, 0.0);
-    ROL::SharedPointer<vec> y_ptr        = ROL::makeShared<vec>(dim, 0.0);
-    ROL::SharedPointer<vec> z_ptr        = ROL::makeShared<vec>(dim, 0.0);
-    ROL::SharedPointer<vec> z_thresh_ptr = ROL::makeShared<vec>(dim, 0.0);
+    ROL::Ptr<vec> w_ptr        = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> w2_ptr       = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> x_ptr        = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> x_recip_ptr  = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> y_ptr        = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> z_ptr        = ROL::makePtr<vec>(dim, 0.0);
+    ROL::Ptr<vec> z_thresh_ptr = ROL::makePtr<vec>(dim, 0.0);
 
     V w(w_ptr);
     V w2(w2_ptr);

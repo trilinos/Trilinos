@@ -71,7 +71,7 @@ private:
   Real xvar_, vvar_;
 
   std::vector<Real> hvec_;
-  ROL::SharedPointer<Vector<Real> > dualVec1_, dualVec2_;
+  ROL::Ptr<Vector<Real> > dualVec1_, dualVec2_;
 
   bool firstReset_;
 
@@ -87,17 +87,17 @@ public:
     hvec_.resize(5);
   }
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
     xvar_ = (*dynamic_cast<const RiskVector<Real>&>(x).getStatistic(comp,index))[0];
   }
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x,
-                     ROL::SharedPointer<Vector<Real> > &v0, const Vector<Real> &v) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x,
+                     ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
-    v0 = ROL::constPointerCast<Vector<Real> >(
+    v0 = ROL::constPtrCast<Vector<Real> >(
          dynamic_cast<const RiskVector<Real>&>(v).getVector());
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
@@ -150,7 +150,7 @@ public:
 
     Real gvar(0);
     if ( gvals[0] > zero) {
-      ROL::SharedPointer<Vector<Real> > gvec
+      ROL::Ptr<Vector<Real> > gvec
         = dynamic_cast<RiskVector<Real>&>(g).getVector();
       sampler.sumAll(*(RiskMeasure<Real>::g_),*gvec);
       Real norm = std::pow(gvals[0],(order_-one)/order_);
@@ -192,7 +192,7 @@ public:
 
     Real hvar(0);
     if ( gvals[0] > zero ) {
-      ROL::SharedPointer<Vector<Real> > hvec
+      ROL::Ptr<Vector<Real> > hvec
         = dynamic_cast<RiskVector<Real>&>(hv).getVector();
       Real norm0 = ((order_==one) ? one
                      : ((order_==two) ? std::sqrt(gvals[0])

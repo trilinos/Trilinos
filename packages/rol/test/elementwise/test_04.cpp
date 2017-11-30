@@ -71,12 +71,12 @@ int main( int argc, char *argv[] ) {
 
   uint N = 30;
 
-  ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>(N,0.0);
-  ROL::SharedPointer<vector> y_ptr = ROL::makeShared<vector>(N,0.0);
-  ROL::SharedPointer<vector> z_ptr = ROL::makeShared<vector>(N,0.0);
+  ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(N,0.0);
+  ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(N,0.0);
+  ROL::Ptr<vector> z_ptr = ROL::makePtr<vector>(N,0.0);
 
-  ROL::SharedPointer<vector> u_ptr = ROL::makeShared<vector>(N,1.0);
-  ROL::SharedPointer<vector> l_ptr = ROL::makeShared<vector>(N,0.0);
+  ROL::Ptr<vector> u_ptr = ROL::makePtr<vector>(N,1.0);
+  ROL::Ptr<vector> l_ptr = ROL::makePtr<vector>(N,0.0);
 
   SV x(x_ptr);
   SV y(y_ptr);
@@ -85,8 +85,8 @@ int main( int argc, char *argv[] ) {
   SV u(u_ptr);
   SV l(l_ptr);
 
-  ROL::SharedPointer<V> x_minus_l = x.clone();
-  ROL::SharedPointer<V> u_minus_x = x.clone();
+  ROL::Ptr<V> x_minus_l = x.clone();
+  ROL::Ptr<V> u_minus_x = x.clone();
 
   
 
@@ -100,12 +100,12 @@ int main( int argc, char *argv[] ) {
   ROL::Elementwise::BarrierFunctionFactory<RealT> logFactory( logList );
   ROL::Elementwise::BarrierFunctionFactory<RealT> quadFactory( quadList );
 
-  ROL::SharedPointer<ROL::Elementwise::BarrierFunction<RealT> > logFunction = logFactory.getBarrierFunction();
-  ROL::SharedPointer<ROL::Elementwise::BarrierFunction<RealT> > quadFunction = quadFactory.getBarrierFunction();
+  ROL::Ptr<ROL::Elementwise::BarrierFunction<RealT> > logFunction = logFactory.getBarrierFunction();
+  ROL::Ptr<ROL::Elementwise::BarrierFunction<RealT> > quadFunction = quadFactory.getBarrierFunction();
 */
   
-  ROL::SharedPointer<ROL::Elementwise::BinaryFunction<RealT> > lesser = ROL::makeShared<ROL::Elementwise::Lesser<RealT>>();
-  ROL::SharedPointer<ROL::Elementwise::BinaryFunction<RealT> > greater = ROL::makeShared<ROL::Elementwise::Greater<RealT>>();
+  ROL::Ptr<ROL::Elementwise::BinaryFunction<RealT> > lesser = ROL::makePtr<ROL::Elementwise::Lesser<RealT>>();
+  ROL::Ptr<ROL::Elementwise::BinaryFunction<RealT> > greater = ROL::makePtr<ROL::Elementwise::Greater<RealT>>();
    
 
   for( uint i=0; i<N; ++i ) {
@@ -137,8 +137,8 @@ int main( int argc, char *argv[] ) {
   y.applyBinary(*lesser,u);
   y.applyBinary(*greater,l);
   
-  ROL::SharedPointer<vector> xml = ROL::staticPointerCast<SV>(x_minus_l)->getVector();
-  ROL::SharedPointer<vector> umx = ROL::staticPointerCast<SV>(u_minus_x)->getVector();
+  ROL::Ptr<vector> xml = ROL::staticPtrCast<SV>(x_minus_l)->getVector();
+  ROL::Ptr<vector> umx = ROL::staticPtrCast<SV>(u_minus_x)->getVector();
 
   for(uint i=0; i<N; ++i ) {
     std::cout << std::setw(16) << (*xml)[i] 

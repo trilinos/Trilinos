@@ -78,12 +78,12 @@ namespace ROL {
 template<class Real>
 class CVaR : public RiskMeasure<Real> {
 private:
-  ROL::SharedPointer<PlusFunction<Real> > plusFunction_;
+  ROL::Ptr<PlusFunction<Real> > plusFunction_;
 
   Real prob_;
   Real coeff_;
 
-  ROL::SharedPointer<Vector<Real> > dualVector_;
+  ROL::Ptr<Vector<Real> > dualVector_;
   Real xvar_;
   Real vvar_;
 
@@ -95,7 +95,7 @@ private:
       ">>> ERROR (ROL::CVaR): Confidence level must be between 0 and 1!");
     TEUCHOS_TEST_FOR_EXCEPTION((coeff_ < zero) || (coeff_ > one), std::invalid_argument,
       ">>> ERROR (ROL::CVaR): Convex combination parameter must be positive!");
-    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPointer, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(plusFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::CVaR): PlusFunction pointer is null!");
   }
 
@@ -110,7 +110,7 @@ public:
       @param[in]     pf      is the plus function or an approximation
   */
   CVaR( const Real prob, const Real coeff,
-        const ROL::SharedPointer<PlusFunction<Real> > &pf )
+        const ROL::Ptr<PlusFunction<Real> > &pf )
     : RiskMeasure<Real>(), plusFunction_(pf), prob_(prob), coeff_(coeff),
       xvar_(0), vvar_(0), firstReset_(true) {
     checkInputs();
@@ -134,12 +134,12 @@ public:
     prob_  = list.get<Real>("Confidence Level");
     coeff_ = list.get<Real>("Convex Combination Parameter");
     // Build (approximate) plus function
-    plusFunction_ = ROL::makeShared<PlusFunction<Real>>(list);
+    plusFunction_ = ROL::makePtr<PlusFunction<Real>>(list);
     // Check Inputs
     checkInputs();
   }
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
@@ -151,11 +151,11 @@ public:
     dualVector_->zero();
   }
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x,
-             ROL::SharedPointer<Vector<Real> > &v0, const Vector<Real> &v) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x,
+             ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
     const RiskVector<Real> &vr = dynamic_cast<const RiskVector<Real>&>(v);
-    v0    = ROL::constPointerCast<Vector<Real> >(vr.getVector());
+    v0    = ROL::constPtrCast<Vector<Real> >(vr.getVector());
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
     vvar_ = (*vr.getStatistic(comp,index))[0];

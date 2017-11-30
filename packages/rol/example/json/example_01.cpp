@@ -77,12 +77,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -102,21 +102,21 @@ int main(int argc, char *argv[]) {
     std::string stepname = "Trust Region"; // can we obtain this from parlist?  or jsonFile?
 
     ROL::StepFactory<RealT> stepFactory;
-    ROL::SharedPointer<ROL::Step<RealT> > step = stepFactory.getStep(stepname, parlist);
+    ROL::Ptr<ROL::Step<RealT> > step = stepFactory.getStep(stepname, parlist);
 
     // Define Status Test
     RealT gtol  = parlist.get("Gradient Tolerance",1e-12); 
     RealT stol  = parlist.get("Step Tolerance",1e-14);  
     int   maxit = parlist.get("Maximum Number of Iterations",100); 
-    ROL::SharedPointer<ROL::StatusTest<RealT> > status = ROL::makeShared<ROL::StatusTest<RealT>>(gtol, stol, maxit);           
+    ROL::Ptr<ROL::StatusTest<RealT> > status = ROL::makePtr<ROL::StatusTest<RealT>>(gtol, stol, maxit);           
 
     ROL::Algorithm<RealT> algo(step,status,false);
 
-    ROL::SharedPointer<std::vector<RealT> > x_ptr = ROL::makeShared<std::vector<RealT>>(dim, 1.0);
-    ROL::SharedPointer<std::vector<RealT> > k_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 1.0);
+    ROL::Ptr<std::vector<RealT> > k_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
 
     ROL::StdVector<RealT> x(x_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > k = ROL::makeShared<ROL::StdVector<RealT>>(k_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > k = ROL::makePtr<ROL::StdVector<RealT>>(k_ptr);
 
     for(int i=0;i<dim;++i) {
         (*k_ptr)[i] = i+1.0;
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     algo.run(x, obj, true, *outStream);
 
     // Get True Solution
-    ROL::SharedPointer<std::vector<RealT> > xtrue_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > xtrue_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::StdVector<RealT> xtrue(xtrue_ptr);
 
     // Compute Error

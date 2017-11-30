@@ -90,50 +90,50 @@ namespace HS {
 template<class Real> 
 class ProblemFactory {
 public:
-  ROL::SharedPointer<ROL::NonlinearProgram<Real> > getProblem(int n) {
-    ROL::SharedPointer<ROL::NonlinearProgram<Real> > np;
+  ROL::Ptr<ROL::NonlinearProgram<Real> > getProblem(int n) {
+    ROL::Ptr<ROL::NonlinearProgram<Real> > np;
     switch(n) {
-      case   1: np = ROL::makeShared<Problem_001<Real>>(); break;
-      case   2: np = ROL::makeShared<Problem_002<Real>>(); break;
-      case   3: np = ROL::makeShared<Problem_003<Real>>(); break;
-      case   4: np = ROL::makeShared<Problem_004<Real>>(); break;
-      case   5: np = ROL::makeShared<Problem_005<Real>>(); break;
-      case   6: np = ROL::makeShared<Problem_006<Real>>(); break;
-      case   7: np = ROL::makeShared<Problem_007<Real>>(); break;
-      case   8: np = ROL::makeShared<Problem_008<Real>>(); break;
-      case   9: np = ROL::makeShared<Problem_009<Real>>(); break;
-      case  10: np = ROL::makeShared<Problem_010<Real>>(); break;
-      case  11: np = ROL::makeShared<Problem_011<Real>>(); break;
-      case  12: np = ROL::makeShared<Problem_012<Real>>(); break;
-      case  13: np = ROL::makeShared<Problem_013<Real>>(); break;
-      case  14: np = ROL::makeShared<Problem_014<Real>>(); break;
-      case  15: np = ROL::makeShared<Problem_015<Real>>(); break;
-      case  16: np = ROL::makeShared<Problem_016<Real>>(); break;
-      case  17: np = ROL::makeShared<Problem_017<Real>>(); break;
-      case  18: np = ROL::makeShared<Problem_018<Real>>(); break;
-      case  19: np = ROL::makeShared<Problem_019<Real>>(); break;
-      case  20: np = ROL::makeShared<Problem_020<Real>>(); break;
-      case  21: np = ROL::makeShared<Problem_021<Real>>(); break;
-      case  22: np = ROL::makeShared<Problem_022<Real>>(); break;
-      case  23: np = ROL::makeShared<Problem_023<Real>>(); break;
-      case  24: np = ROL::makeShared<Problem_024<Real>>(); break;
-      case  25: np = ROL::makeShared<Problem_025<Real>>(); break;
-      case  26: np = ROL::makeShared<Problem_026<Real>>(); break;
-      case  27: np = ROL::makeShared<Problem_027<Real>>(); break;
-      case  28: np = ROL::makeShared<Problem_028<Real>>(); break;
-      case  29: np = ROL::makeShared<Problem_029<Real>>(); break;
-      case  30: np = ROL::makeShared<Problem_030<Real>>(); break;
-      case  31: np = ROL::makeShared<Problem_031<Real>>(); break;
-      case  32: np = ROL::makeShared<Problem_032<Real>>(); break;
-      case  33: np = ROL::makeShared<Problem_033<Real>>(); break;
-      case  34: np = ROL::makeShared<Problem_034<Real>>(); break;
-      case  35: np = ROL::makeShared<Problem_035<Real>>(); break;
-      case  36: np = ROL::makeShared<Problem_036<Real>>(); break;
-      case  37: np = ROL::makeShared<Problem_037<Real>>(); break;
-      case  38: np = ROL::makeShared<Problem_038<Real>>(); break;
-      case  39: np = ROL::makeShared<Problem_039<Real>>(); break;
-      case  40: np = ROL::makeShared<Problem_040<Real>>(); break;
-      case  41: np = ROL::makeShared<Problem_041<Real>>(); break;
+      case   1: np = ROL::makePtr<Problem_001<Real>>(); break;
+      case   2: np = ROL::makePtr<Problem_002<Real>>(); break;
+      case   3: np = ROL::makePtr<Problem_003<Real>>(); break;
+      case   4: np = ROL::makePtr<Problem_004<Real>>(); break;
+      case   5: np = ROL::makePtr<Problem_005<Real>>(); break;
+      case   6: np = ROL::makePtr<Problem_006<Real>>(); break;
+      case   7: np = ROL::makePtr<Problem_007<Real>>(); break;
+      case   8: np = ROL::makePtr<Problem_008<Real>>(); break;
+      case   9: np = ROL::makePtr<Problem_009<Real>>(); break;
+      case  10: np = ROL::makePtr<Problem_010<Real>>(); break;
+      case  11: np = ROL::makePtr<Problem_011<Real>>(); break;
+      case  12: np = ROL::makePtr<Problem_012<Real>>(); break;
+      case  13: np = ROL::makePtr<Problem_013<Real>>(); break;
+      case  14: np = ROL::makePtr<Problem_014<Real>>(); break;
+      case  15: np = ROL::makePtr<Problem_015<Real>>(); break;
+      case  16: np = ROL::makePtr<Problem_016<Real>>(); break;
+      case  17: np = ROL::makePtr<Problem_017<Real>>(); break;
+      case  18: np = ROL::makePtr<Problem_018<Real>>(); break;
+      case  19: np = ROL::makePtr<Problem_019<Real>>(); break;
+      case  20: np = ROL::makePtr<Problem_020<Real>>(); break;
+      case  21: np = ROL::makePtr<Problem_021<Real>>(); break;
+      case  22: np = ROL::makePtr<Problem_022<Real>>(); break;
+      case  23: np = ROL::makePtr<Problem_023<Real>>(); break;
+      case  24: np = ROL::makePtr<Problem_024<Real>>(); break;
+      case  25: np = ROL::makePtr<Problem_025<Real>>(); break;
+      case  26: np = ROL::makePtr<Problem_026<Real>>(); break;
+      case  27: np = ROL::makePtr<Problem_027<Real>>(); break;
+      case  28: np = ROL::makePtr<Problem_028<Real>>(); break;
+      case  29: np = ROL::makePtr<Problem_029<Real>>(); break;
+      case  30: np = ROL::makePtr<Problem_030<Real>>(); break;
+      case  31: np = ROL::makePtr<Problem_031<Real>>(); break;
+      case  32: np = ROL::makePtr<Problem_032<Real>>(); break;
+      case  33: np = ROL::makePtr<Problem_033<Real>>(); break;
+      case  34: np = ROL::makePtr<Problem_034<Real>>(); break;
+      case  35: np = ROL::makePtr<Problem_035<Real>>(); break;
+      case  36: np = ROL::makePtr<Problem_036<Real>>(); break;
+      case  37: np = ROL::makePtr<Problem_037<Real>>(); break;
+      case  38: np = ROL::makePtr<Problem_038<Real>>(); break;
+      case  39: np = ROL::makePtr<Problem_039<Real>>(); break;
+      case  40: np = ROL::makePtr<Problem_040<Real>>(); break;
+      case  41: np = ROL::makePtr<Problem_041<Real>>(); break;
 
 
       default:

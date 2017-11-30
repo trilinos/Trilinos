@@ -68,10 +68,10 @@ class Algorithm;
 template <class Real>
 class Step {
 private:
-  ROL::SharedPointer<StepState<Real> > state_;
+  ROL::Ptr<StepState<Real> > state_;
 
 protected:
-  ROL::SharedPointer<StepState<Real> > getState(void) {
+  ROL::Ptr<StepState<Real> > getState(void) {
     return state_;
   }
 
@@ -80,7 +80,7 @@ public:
   virtual ~Step() {}
 
   Step(void) { 
-    state_ = ROL::makeShared<StepState<Real>>();
+    state_ = ROL::makePtr<StepState<Real>>();
   }
 
 
@@ -113,7 +113,7 @@ public:
     obj.gradient(*(state_->gradientVec),x,tol);
     algo_state.ngrad++;
     if ( con.isActivated() ) {
-      ROL::SharedPointer<Vector<Real> > xnew = x.clone();
+      ROL::Ptr<Vector<Real> > xnew = x.clone();
       xnew->set(x);
       xnew->axpy(-one,(Step<Real>::state_->gradientVec)->dual());
       con.project(*xnew);
@@ -197,22 +197,22 @@ public:
 
     
 
-    ROL::SharedPointer<Objective<Real> >          obj = opt.getObjective();
-    ROL::SharedPointer<Vector<Real> >             x   = opt.getSolutionVector();
-    ROL::SharedPointer<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    ROL::SharedPointer<Constraint<Real> >         con = opt.getConstraint();
-    ROL::SharedPointer<Vector<Real> >             l   = opt.getMultiplierVector();
+    ROL::Ptr<Objective<Real> >          obj = opt.getObjective();
+    ROL::Ptr<Vector<Real> >             x   = opt.getSolutionVector();
+    ROL::Ptr<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
+    ROL::Ptr<Constraint<Real> >         con = opt.getConstraint();
+    ROL::Ptr<Vector<Real> >             l   = opt.getMultiplierVector();
 
-    if( con == ROL::nullPointer ) { // has no equality constraint
-      if( bnd == ROL::nullPointer ) { // has no bound constraint or inactive
-        bnd = ROL::makeShared<BoundConstraint<Real>>();
+    if( con == ROL::nullPtr ) { // has no equality constraint
+      if( bnd == ROL::nullPtr ) { // has no bound constraint or inactive
+        bnd = ROL::makePtr<BoundConstraint<Real>>();
         bnd->deactivate();
       }
       initialize(*x, x->dual(), *obj, *bnd, algo_state);
     }
     else { // has equality constraint 
 
-      if( bnd == ROL::nullPointer ) {
+      if( bnd == ROL::nullPtr ) {
         initialize(*x,x->dual(),*l,l->dual(),*obj,*con,algo_state );
       }
       initialize(*x,x->dual(),*l,l->dual(),*obj,*con,*bnd,algo_state);
@@ -222,21 +222,21 @@ public:
   void compute( Vector<Real> &s, OptimizationProblem<Real> &opt, AlgorithmState<Real> &algo_state ) {
     
 
-    ROL::SharedPointer<Objective<Real> >          obj = opt.getObjective();
-    ROL::SharedPointer<Vector<Real> >             x   = opt.getSolutionVector();
-    ROL::SharedPointer<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    ROL::SharedPointer<Constraint<Real> >         con = opt.getConstraint();
-    ROL::SharedPointer<Vector<Real> >             l   = opt.getMultiplierVector();
+    ROL::Ptr<Objective<Real> >          obj = opt.getObjective();
+    ROL::Ptr<Vector<Real> >             x   = opt.getSolutionVector();
+    ROL::Ptr<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
+    ROL::Ptr<Constraint<Real> >         con = opt.getConstraint();
+    ROL::Ptr<Vector<Real> >             l   = opt.getMultiplierVector();
 
-    if( con == ROL::nullPointer ) { // has no equality constraint
-      if( bnd == ROL::nullPointer ) { // has no bound constraint
-        bnd = ROL::makeShared<BoundConstraint<Real>>();
+    if( con == ROL::nullPtr ) { // has no equality constraint
+      if( bnd == ROL::nullPtr ) { // has no bound constraint
+        bnd = ROL::makePtr<BoundConstraint<Real>>();
         bnd->deactivate();
       }
       compute(s,*x, *obj, *bnd, algo_state);
     }
     else { // has equality constraint 
-      if( bnd == ROL::nullPointer ) {
+      if( bnd == ROL::nullPtr ) {
         compute(s,*x,*l,*obj,*con,algo_state);
       }
       compute(s,*x,*l,*obj,*con,*bnd,algo_state);
@@ -247,21 +247,21 @@ public:
   void update( OptimizationProblem<Real> &opt, const Vector<Real> &s, AlgorithmState<Real> &algo_state ) {
     
 
-    ROL::SharedPointer<Objective<Real> >          obj = opt.getObjective();
-    ROL::SharedPointer<Vector<Real> >             x   = opt.getSolutionVector();
-    ROL::SharedPointer<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
-    ROL::SharedPointer<Constraint<Real> >         con = opt.getConstraint();
-    ROL::SharedPointer<Vector<Real> >             l   = opt.getMultiplierVector();
+    ROL::Ptr<Objective<Real> >          obj = opt.getObjective();
+    ROL::Ptr<Vector<Real> >             x   = opt.getSolutionVector();
+    ROL::Ptr<BoundConstraint<Real> >    bnd = opt.getBoundConstraint();
+    ROL::Ptr<Constraint<Real> >         con = opt.getConstraint();
+    ROL::Ptr<Vector<Real> >             l   = opt.getMultiplierVector();
 
-    if( con == ROL::nullPointer ) { // has no equality constraint
-      if( bnd == ROL::nullPointer ) { // has no bound constraint
-        bnd = ROL::makeShared<BoundConstraint<Real>>();
+    if( con == ROL::nullPtr ) { // has no equality constraint
+      if( bnd == ROL::nullPtr ) { // has no bound constraint
+        bnd = ROL::makePtr<BoundConstraint<Real>>();
         bnd->deactivate();
       }
       update(*x, s, *obj, *bnd, algo_state);
     }
     else { // has equality constraint
-      if( bnd == ROL::nullPointer ) {
+      if( bnd == ROL::nullPtr ) {
         update(*x,*l,s,*obj,*con,algo_state);
       }
       update(*x,*l,s,*obj,*con,*bnd,algo_state);
@@ -290,7 +290,7 @@ public:
 
   /** \brief Get state for step object.
   */
-  const ROL::SharedPointer<const StepState<Real> > getStepState(void) const {
+  const ROL::Ptr<const StepState<Real> > getStepState(void) const {
     return state_;
   }
 

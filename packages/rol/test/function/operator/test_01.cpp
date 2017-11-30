@@ -79,12 +79,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
@@ -96,25 +96,25 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    ROL::SharedPointer<vector> a_ptr  = ROL::makeShared<vector>(
+    ROL::Ptr<vector> a_ptr  = ROL::makePtr<vector>(
       std::initializer_list<RealT>{4.0,2.0,1.0,3.0});
-    ROL::SharedPointer<vector> ai_ptr = ROL::makeShared<vector>(
+    ROL::Ptr<vector> ai_ptr = ROL::makePtr<vector>(
       std::initializer_list<RealT>{3.0/10.0, -2.0/10.0, -1.0/10.0, 4.0/10.0});
 
-    ROL::SharedPointer<vector> x1_ptr  = ROL::makeShared<vector>(
+    ROL::Ptr<vector> x1_ptr  = ROL::makePtr<vector>(
       std::initializer_list<RealT>{1.0,-1.0});
-    ROL::SharedPointer<vector> b1_ptr = ROL::makeShared<vector>(2);
+    ROL::Ptr<vector> b1_ptr = ROL::makePtr<vector>(2);
 
-    ROL::SharedPointer<vector> x2_ptr = ROL::makeShared<vector>(2);
-    ROL::SharedPointer<vector> b2_ptr  = ROL::makeShared<vector>(
+    ROL::Ptr<vector> x2_ptr = ROL::makePtr<vector>(2);
+    ROL::Ptr<vector> b2_ptr  = ROL::makePtr<vector>(
       std::initializer_list<RealT>{3.0,-1.0});
     
-    ROL::SharedPointer<vector> y3_ptr = ROL::makeShared<vector>(
+    ROL::Ptr<vector> y3_ptr = ROL::makePtr<vector>(
       std::initializer_list<RealT>{-2.0,1.0});
-    ROL::SharedPointer<vector> c3_ptr = ROL::makeShared<vector>(2);
+    ROL::Ptr<vector> c3_ptr = ROL::makePtr<vector>(2);
 
-    ROL::SharedPointer<vector> y4_ptr = ROL::makeShared<vector>(2);
-    ROL::SharedPointer<vector> c4_ptr = ROL::makeShared<vector>(
+    ROL::Ptr<vector> y4_ptr = ROL::makePtr<vector>(2);
+    ROL::Ptr<vector> c4_ptr = ROL::makePtr<vector>(
       std::initializer_list<RealT>{-6.0,1.0});
 
     StdLinearOperator A(a_ptr);

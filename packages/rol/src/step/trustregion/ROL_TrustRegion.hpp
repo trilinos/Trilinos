@@ -60,7 +60,7 @@ template<class Real>
 class TrustRegion {
 private:
 
-  ROL::SharedPointer<Vector<Real> > prim_, dual_;
+  ROL::Ptr<Vector<Real> > prim_, dual_;
 
   ETrustRegionModel TRmodel_;
 

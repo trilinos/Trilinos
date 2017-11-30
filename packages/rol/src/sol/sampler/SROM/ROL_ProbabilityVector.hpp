@@ -63,8 +63,8 @@ template <class Real>
 class ProbabilityVector : public BatchStdVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 public:
-  ProbabilityVector(const ROL::SharedPointer<std::vector<Real> > &vec,
-                    const ROL::SharedPointer<BatchManager<Real> > &bman)
+  ProbabilityVector(const ROL::Ptr<std::vector<Real> > &vec,
+                    const ROL::Ptr<BatchManager<Real> > &bman)
    : BatchStdVector<Real>(vec,bman) {}
 
   const Real getProbability(const int i) const {
@@ -93,14 +93,14 @@ template<class Real>
 class PrimalProbabilityVector : public ProbabilityVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  ROL::SharedPointer<std::vector<Real> > scale_;
-  mutable ROL::SharedPointer<DualProbabilityVector<Real> > dual_vec_;
+  ROL::Ptr<std::vector<Real> > scale_;
+  mutable ROL::Ptr<DualProbabilityVector<Real> > dual_vec_;
   mutable bool isDualInitialized_;
 
 public:
-  PrimalProbabilityVector(const ROL::SharedPointer<std::vector<Real> > &vec,
-                          const ROL::SharedPointer<BatchManager<Real> > &bman,
-                          const ROL::SharedPointer<std::vector<Real> > &scale)
+  PrimalProbabilityVector(const ROL::Ptr<std::vector<Real> > &vec,
+                          const ROL::Ptr<BatchManager<Real> > &bman,
+                          const ROL::Ptr<std::vector<Real> > &scale)
     : ProbabilityVector<Real>(vec,bman), scale_(scale),
       isDualInitialized_(false) {}
 
@@ -119,18 +119,18 @@ public:
     return sum_val;
   }
 
-  ROL::SharedPointer<Vector<Real> > clone(void) const {
+  ROL::Ptr<Vector<Real> > clone(void) const {
     uint numMySamples = static_cast<uint>(StdVector<Real>::getVector()->size());
-    return ROL::makeShared<PrimalProbabilityVector>(
-           ROL::makeShared<std::vector<Real>>(numMySamples),
+    return ROL::makePtr<PrimalProbabilityVector>(
+           ROL::makePtr<std::vector<Real>>(numMySamples),
            BatchStdVector<Real>::getBatchManager(),scale_);
   }
 
   const Vector<Real> & dual(void) const {
     uint numMySamples = static_cast<uint>(StdVector<Real>::getVector()->size());
     if ( !isDualInitialized_ ) {
-      dual_vec_ = ROL::makeShared<DualProbabilityVector<Real>>(
-                  ROL::makeShared<std::vector<Real>>(numMySamples),
+      dual_vec_ = ROL::makePtr<DualProbabilityVector<Real>>(
+                  ROL::makePtr<std::vector<Real>>(numMySamples),
                   BatchStdVector<Real>::getBatchManager(),scale_);
       isDualInitialized_ = true;
     }
@@ -146,14 +146,14 @@ template<class Real>
 class DualProbabilityVector : public ProbabilityVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  ROL::SharedPointer<std::vector<Real> > scale_;
-  mutable ROL::SharedPointer<PrimalProbabilityVector<Real> > primal_vec_;
+  ROL::Ptr<std::vector<Real> > scale_;
+  mutable ROL::Ptr<PrimalProbabilityVector<Real> > primal_vec_;
   mutable bool isDualInitialized_;
 
 public:
-  DualProbabilityVector(const ROL::SharedPointer<std::vector<Real> > &vec,
-                        const ROL::SharedPointer<BatchManager<Real> > &bman,
-                        const ROL::SharedPointer<std::vector<Real> > &scale)
+  DualProbabilityVector(const ROL::Ptr<std::vector<Real> > &vec,
+                        const ROL::Ptr<BatchManager<Real> > &bman,
+                        const ROL::Ptr<std::vector<Real> > &scale)
     : ProbabilityVector<Real>(vec,bman), scale_(scale),
       isDualInitialized_(false) {}
 
@@ -172,18 +172,18 @@ public:
     return sum_val;
   }
 
-  ROL::SharedPointer<Vector<Real> > clone(void) const {
+  ROL::Ptr<Vector<Real> > clone(void) const {
     uint numMySamples = static_cast<uint>(StdVector<Real>::getVector()->size());
-    return ROL::makeShared<DualProbabilityVector>(
-           ROL::makeShared<std::vector<Real>>(numMySamples),
+    return ROL::makePtr<DualProbabilityVector>(
+           ROL::makePtr<std::vector<Real>>(numMySamples),
            BatchStdVector<Real>::getBatchManager(),scale_);
   }
 
   const Vector<Real> & dual(void) const {
     uint numMySamples = static_cast<uint>(StdVector<Real>::getVector()->size());
     if ( !isDualInitialized_ ) {
-      primal_vec_ = ROL::makeShared<PrimalProbabilityVector<Real>>(
-                    ROL::makeShared<std::vector<Real>>(numMySamples),
+      primal_vec_ = ROL::makePtr<PrimalProbabilityVector<Real>>(
+                    ROL::makePtr<std::vector<Real>>(numMySamples),
                     BatchStdVector<Real>::getBatchManager(),scale_);
       isDualInitialized_ = true;
     }

@@ -93,7 +93,7 @@ public:
     this->update(u,z);
     Real v     = this->value(u,z,ftol);
     Real deriv = 0.0;
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
     g.zero();
     for (int i = 0; i < g.dimension(); i++) {
       h = u.dot(*u.basis(i))*tol;
@@ -113,7 +113,7 @@ public:
     this->update(u,z);
     Real v     = this->value(u,z,ftol);
     Real deriv = 0.0;
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
     g.zero();
     for (int i = 0; i < g.dimension(); i++) {
       h = z.dot(*z.basis(i))*tol;
@@ -131,8 +131,8 @@ public:
       dynamic_cast<ROL::Vector<Real>&>(g));
     const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
       dynamic_cast<const ROL::Vector<Real>&>(x));
-    ROL::SharedPointer<Vector<Real> > g1 = gs.get_1()->clone();
-    ROL::SharedPointer<Vector<Real> > g2 = gs.get_2()->clone();
+    ROL::Ptr<Vector<Real> > g1 = gs.get_1()->clone();
+    ROL::Ptr<Vector<Real> > g2 = gs.get_2()->clone();
     this->gradient_1(*g1,*(xs.get_1()),*(xs.get_2()),tol);
     this->gradient_2(*g2,*(xs.get_1()),*(xs.get_2()),tol);
     gs.set_1(*g1);
@@ -151,14 +151,14 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u+hv,z)
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
     unew->set(u);
     unew->axpy(h,v);
     this->update(*unew,z);
     hv.zero();
     this->gradient_1(hv,*unew,z,gtol);
     // Evaluate gradient of first component at (u,z)
-    ROL::SharedPointer<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_1(*g,u,z,gtol);
     // Compute Newton quotient
@@ -175,14 +175,14 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u,z+hv)
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
     znew->set(z);
     znew->axpy(h,v);
     this->update(u,*znew);
     hv.zero();
     this->gradient_1(hv,u,*znew,gtol);
     // Evaluate gradient of first component at (u,z)
-    ROL::SharedPointer<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_1(*g,u,z,gtol);
     // Compute Newton quotient
@@ -199,14 +199,14 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u+hv,z)
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
     unew->set(u);
     unew->axpy(h,v);
     this->update(*unew,z);
     hv.zero();
     this->gradient_2(hv,*unew,z,gtol);
     // Evaluate gradient of first component at (u,z)
-    ROL::SharedPointer<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_2(*g,u,z,gtol);
     // Compute Newton quotient
@@ -223,14 +223,14 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate gradient of first component at (u,z+hv)
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
     znew->set(z);
     znew->axpy(h,v);
     this->update(u,*znew);
     hv.zero();
     this->gradient_2(hv,u,*znew,gtol);
     // Evaluate gradient of first component at (u,z)
-    ROL::SharedPointer<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_2(*g,u,z,gtol);
     // Compute Newton quotient
@@ -245,13 +245,13 @@ public:
       dynamic_cast<const ROL::Vector<Real>&>(v));
     const ROL::Vector_SimOpt<Real> &xs = dynamic_cast<const ROL::Vector_SimOpt<Real>&>(
       dynamic_cast<const ROL::Vector<Real>&>(x));
-    ROL::SharedPointer<Vector<Real> > h11 = (hvs.get_1())->clone();
+    ROL::Ptr<Vector<Real> > h11 = (hvs.get_1())->clone();
     this->hessVec_11(*h11,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
-    ROL::SharedPointer<Vector<Real> > h12 = (hvs.get_1())->clone();
+    ROL::Ptr<Vector<Real> > h12 = (hvs.get_1())->clone();
     this->hessVec_12(*h12,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
-    ROL::SharedPointer<Vector<Real> > h21 = (hvs.get_2())->clone();
+    ROL::Ptr<Vector<Real> > h21 = (hvs.get_2())->clone();
     this->hessVec_21(*h21,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
-    ROL::SharedPointer<Vector<Real> > h22 = (hvs.get_2())->clone();
+    ROL::Ptr<Vector<Real> > h22 = (hvs.get_2())->clone();
     this->hessVec_22(*h22,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
     h11->plus(*h12);
     hvs.set_1(*h11);
@@ -315,12 +315,12 @@ public:
     Real val = this->value(u,z,tol);
   
     // Compute gradient at x.
-    ROL::SharedPointer<Vector<Real> > gtmp = g.clone();
+    ROL::Ptr<Vector<Real> > gtmp = g.clone();
     this->gradient_1(*gtmp, u, z, tol);
     Real dtg = d.dot(gtmp->dual());
   
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
   
     for (int i=0; i<numSteps; i++) {
   
@@ -435,12 +435,12 @@ public:
     Real val = this->value(u,z,tol);
   
     // Compute gradient at x.
-    ROL::SharedPointer<Vector<Real> > gtmp = g.clone();
+    ROL::Ptr<Vector<Real> > gtmp = g.clone();
     this->gradient_2(*gtmp, u, z, tol);
     Real dtg = d.dot(gtmp->dual());
   
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
   
     for (int i=0; i<numSteps; i++) {
   
@@ -568,19 +568,19 @@ public:
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
-    ROL::SharedPointer<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_1(*g, u, z, tol);
   
     // Compute (Hessian at x) times (vector v).
-    ROL::SharedPointer<Vector<Real> > Hv = hv.clone();
+    ROL::Ptr<Vector<Real> > Hv = hv.clone();
     this->hessVec_11(*Hv, v, u, z, tol);
     Real normHv = Hv->norm();
   
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > gdif = hv.clone();
-    ROL::SharedPointer<Vector<Real> > gnew = hv.clone();
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > gdif = hv.clone();
+    ROL::Ptr<Vector<Real> > gnew = hv.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
   
     for (int i=0; i<numSteps; i++) {
   
@@ -712,19 +712,19 @@ public:
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
-    ROL::SharedPointer<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_1(*g, u, z, tol);
   
     // Compute (Hessian at x) times (vector v).
-    ROL::SharedPointer<Vector<Real> > Hv = hv.clone();
+    ROL::Ptr<Vector<Real> > Hv = hv.clone();
     this->hessVec_12(*Hv, v, u, z, tol);
     Real normHv = Hv->norm();
   
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > gdif = hv.clone();
-    ROL::SharedPointer<Vector<Real> > gnew = hv.clone();
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > gdif = hv.clone();
+    ROL::Ptr<Vector<Real> > gnew = hv.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
   
     for (int i=0; i<numSteps; i++) {
   
@@ -859,19 +859,19 @@ public:
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
-    ROL::SharedPointer<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_2(*g, u, z, tol);
   
     // Compute (Hessian at x) times (vector v).
-    ROL::SharedPointer<Vector<Real> > Hv = hv.clone();
+    ROL::Ptr<Vector<Real> > Hv = hv.clone();
     this->hessVec_21(*Hv, v, u, z, tol);
     Real normHv = Hv->norm();
   
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > gdif = hv.clone();
-    ROL::SharedPointer<Vector<Real> > gnew = hv.clone();
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > gdif = hv.clone();
+    ROL::Ptr<Vector<Real> > gnew = hv.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
   
     for (int i=0; i<numSteps; i++) {
   
@@ -1006,19 +1006,19 @@ public:
     oldFormatState.copyfmt(outStream);
   
     // Compute gradient at x.
-    ROL::SharedPointer<Vector<Real> > g = hv.clone();
+    ROL::Ptr<Vector<Real> > g = hv.clone();
     this->update(u,z);
     this->gradient_2(*g, u, z, tol);
   
     // Compute (Hessian at x) times (vector v).
-    ROL::SharedPointer<Vector<Real> > Hv = hv.clone();
+    ROL::Ptr<Vector<Real> > Hv = hv.clone();
     this->hessVec_22(*Hv, v, u, z, tol);
     Real normHv = Hv->norm();
   
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > gdif = hv.clone();
-    ROL::SharedPointer<Vector<Real> > gnew = hv.clone();
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > gdif = hv.clone();
+    ROL::Ptr<Vector<Real> > gnew = hv.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
   
     for (int i=0; i<numSteps; i++) {
   

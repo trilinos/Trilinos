@@ -57,22 +57,22 @@ template<class Real>
 class EqualityConstraint_PDEOPT_Poisson : public ROL::Constraint_SimOpt<Real> {
 private:
 
-  ROL::SharedPointer<PoissonData<Real> > data_;
+  ROL::Ptr<PoissonData<Real> > data_;
 
 public:
 
-  EqualityConstraint_PDEOPT_Poisson(const ROL::SharedPointer<PoissonData<Real> > &data,
+  EqualityConstraint_PDEOPT_Poisson(const ROL::Ptr<PoissonData<Real> > &data,
                                     const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
     data_ = data;
   }
 
   using ROL::Constraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<Tpetra::MultiVector<> > cp =
+    ROL::Ptr<Tpetra::MultiVector<> > cp =
       (dynamic_cast<ROL::TpetraMultiVector<Real>&>(c)).getVector();
-    ROL::SharedPointer<const Tpetra::MultiVector<> > up =
+    ROL::Ptr<const Tpetra::MultiVector<> > up =
       (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(u)).getVector();
-    ROL::SharedPointer<const Tpetra::MultiVector<> > zp =
+    ROL::Ptr<const Tpetra::MultiVector<> > zp =
       (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(z)).getVector();
 
     Real one(1);
@@ -90,9 +90,9 @@ public:
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<Tpetra::MultiVector<> > jvp =
+    ROL::Ptr<Tpetra::MultiVector<> > jvp =
       (dynamic_cast<ROL::TpetraMultiVector<Real>&>(jv)).getVector();
-    ROL::SharedPointer<const Tpetra::MultiVector<> > vp =
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
       (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
 
     // A*v
@@ -102,9 +102,9 @@ public:
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<Tpetra::MultiVector<> > jvp =
+    ROL::Ptr<Tpetra::MultiVector<> > jvp =
       (dynamic_cast<ROL::TpetraMultiVector<Real>&>(jv)).getVector();
-    ROL::SharedPointer<const Tpetra::MultiVector<> > vp =
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
       (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
 
     // B*v
@@ -114,9 +114,9 @@ public:
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<Tpetra::MultiVector<> > ajvp =
+    ROL::Ptr<Tpetra::MultiVector<> > ajvp =
       (dynamic_cast<ROL::TpetraMultiVector<Real>&>(ajv)).getVector();
-    ROL::SharedPointer<const Tpetra::MultiVector<> > vp =
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
       (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
 
     // A'*v
@@ -127,9 +127,9 @@ public:
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<Tpetra::MultiVector<> > ajvp =
+    ROL::Ptr<Tpetra::MultiVector<> > ajvp =
       (dynamic_cast<ROL::TpetraMultiVector<Real>&>(ajv)).getVector();
-    ROL::SharedPointer<const Tpetra::MultiVector<> > vp =
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
       (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
 
     // B'*v
@@ -164,9 +164,9 @@ public:
 
   void applyInverseJacobian_1(ROL::Vector<Real> &ijv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<Tpetra::MultiVector<> > ijvp =
+    ROL::Ptr<Tpetra::MultiVector<> > ijvp =
       (dynamic_cast<ROL::TpetraMultiVector<Real>&>(ijv)).getVector();
-    ROL::SharedPointer<const Tpetra::MultiVector<> > vp =
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
       (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
 
     data_->getSolver()->setX(ijvp);
@@ -175,7 +175,7 @@ public:
 
     /*    
     // Construct solver using Amesos2 factory.
-    ROL::SharedPointer<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver;
+    ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver;
     try{
       solver = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", data_->getMatA(), ijvp, vp);
     } catch (std::invalid_argument e) {
@@ -190,9 +190,9 @@ public:
 
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &iajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                                      const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<Tpetra::MultiVector<> > iajvp =
+    ROL::Ptr<Tpetra::MultiVector<> > iajvp =
       (dynamic_cast<ROL::TpetraMultiVector<Real>&>(iajv)).getVector();
-    ROL::SharedPointer<const Tpetra::MultiVector<> > vp =
+    ROL::Ptr<const Tpetra::MultiVector<> > vp =
       (dynamic_cast<const ROL::TpetraMultiVector<Real>&>(v)).getVector();
     
     bool transpose = true;    
@@ -203,7 +203,7 @@ public:
     /*
     bool transpose = true;
     // Construct solver using Amesos2 factory.
-    ROL::SharedPointer<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver;
+    ROL::Ptr<Amesos2::Solver< Tpetra::CrsMatrix<>, Tpetra::MultiVector<> > > solver;
     try{
       solver = Amesos2::create< Tpetra::CrsMatrix<>,Tpetra::MultiVector<> >("KLU2", data_->getMatA(transpose), iajvp, vp);
     } catch (std::invalid_argument e) {

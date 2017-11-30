@@ -49,7 +49,7 @@
 #include <utility>
 
 
-/* \file  ROL_SharedPointer.hpp
+/* \file  ROL_Ptr.hpp
  * \brief Wraps the C++11 std::shared_ptr
  *        ROL will be build with this implementation if CMake is
  *        configured with ROL_ENABLE_STD_SHARED_PTR:BOOL=ON
@@ -58,55 +58,55 @@
 
 namespace ROL {
 
-template<class T> using SharedPointer = std::shared_ptr<T>;
+template<class T> using Ptr = std::shared_ptr<T>;
 
-std::nullptr_t nullPointer = nullptr;
+std::nullptr_t nullPtr = nullptr;
 
 template<class T, class... Args>
 inline
-SharedPointer<T> makeShared( Args&&... args ) {
+Ptr<T> makePtr( Args&&... args ) {
   return std::make_shared<T>(args...);
 }
 
 template<class T>
 inline
-SharedPointer<T> makeSharedFromRef( T& obj ) {
+Ptr<T> makePtrFromRef( T& obj ) {
   return std::shared_ptr<T>(&obj,[](void*){});
 }
 
 template<class T>
 inline
-SharedPointer<const T> makeSharedFromRef( const T& obj ) {
+Ptr<const T> makePtrFromRef( const T& obj ) {
   return std::shared_ptr<const T>(&obj,[](const void*){});
 }
 
 template< class T, class U > 
 inline
-SharedPointer<T> staticPointerCast( const SharedPointer<U>& r ) noexcept {
+Ptr<T> staticPtrCast( const Ptr<U>& r ) noexcept {
   return std::static_pointer_cast<T>(r);
 }
 
 template< class T, class U > 
 inline
-SharedPointer<T> constPointerCast( const SharedPointer<U>& r ) noexcept {
+Ptr<T> constPtrCast( const Ptr<U>& r ) noexcept {
   return std::const_pointer_cast<T>(r);
 }
 
 template< class T, class U > 
 inline
-SharedPointer<T> dynamicPointerCast( const SharedPointer<U>& r ) noexcept {
+Ptr<T> dynamicPtrCast( const Ptr<U>& r ) noexcept {
   return std::dynamic_pointer_cast<T>(r);
 }
 
 template<class T>
 inline
-const T* getRawPointer( const SharedPointer<const T>& x ) {
+const T* getRawPtr( const Ptr<const T>& x ) {
   return x.get();
 }
 
 template<class T>
 inline
-T* getRawPointer( const SharedPointer<T>& x ) {
+T* getRawPtr( const Ptr<T>& x ) {
   return x.get();
 }
 

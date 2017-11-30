@@ -62,10 +62,10 @@ class StdVector<Real, std::complex<Real> > : public Vector<Real> {
 
 private:
 
-  ROL::SharedPointer<vector> std_vec_;
+  ROL::Ptr<vector> std_vec_;
 
 public:
-  StdVector( const ROL::SharedPointer<vector> &std_vec) : std_vec_(std_vec) {}
+  StdVector( const ROL::Ptr<vector> &std_vec) : std_vec_(std_vec) {}
 
   void set( const V &x ) {
     const SV &ex = dynamic_cast<const SV&>(x);
@@ -119,21 +119,21 @@ public:
     return std::sqrt(val);
   }
 
-  virtual ROL::SharedPointer<Vector<Real> > clone() const {
-    return ROL::makeShared<StdVector>( ROL::makeShared<vector>(std_vec_->size()));
+  virtual ROL::Ptr<Vector<Real> > clone() const {
+    return ROL::makePtr<StdVector>( ROL::makePtr<vector>(std_vec_->size()));
   }
 
-  ROL::SharedPointer<const vector> getVector() const {
+  ROL::Ptr<const vector> getVector() const {
     return std_vec_;
   }
 
-  ROL::SharedPointer<vector> getVector() {
+  ROL::Ptr<vector> getVector() {
     return std_vec_;
   }
 
-  ROL::SharedPointer<Vector<Real> > basis( const int i ) const {
+  ROL::Ptr<Vector<Real> > basis( const int i ) const {
 
-    ROL::SharedPointer<StdVector> e = ROL::makeShared<StdVector>( ROL::makeShared<vector>(std_vec_->size(), 0.0));
+    ROL::Ptr<StdVector> e = ROL::makePtr<StdVector>( ROL::makePtr<vector>(std_vec_->size(), 0.0));
     (*e->getVector())[i] = 1.0;
     return e;
   }

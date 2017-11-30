@@ -63,13 +63,13 @@ class DualScaledThyraVector;
 template <class Real>
 class PrimalScaledThyraVector : public ThyraVector<Real> {
   private:
-    const ROL::SharedPointer<const Thyra::VectorBase<Real> >  scaling_vec_;
+    const ROL::Ptr<const Thyra::VectorBase<Real> >  scaling_vec_;
 
-    mutable ROL::SharedPointer<DualScaledThyraVector<Real> > dual_vec_;
+    mutable ROL::Ptr<DualScaledThyraVector<Real> > dual_vec_;
     mutable bool isDualInitialized_;
 
-    void applyScaling(const ROL::SharedPointer<Thyra::VectorBase<Real> > &out,
-                      const ROL::SharedPointer<const Thyra::VectorBase<Real> > & in) const 
+    void applyScaling(const ROL::Ptr<Thyra::VectorBase<Real> > &out,
+                      const ROL::Ptr<const Thyra::VectorBase<Real> > & in) const 
     {
       Real one(1);
       ::Thyra::assign(out.ptr(),0.0);
@@ -79,34 +79,34 @@ class PrimalScaledThyraVector : public ThyraVector<Real> {
   public:
     virtual ~PrimalScaledThyraVector() {}
 
-    PrimalScaledThyraVector(const ROL::SharedPointer<Thyra::VectorBase<Real> > & thyra_vec,
-                            const ROL::SharedPointer<const Thyra::VectorBase<Real> > & scale_vec)
+    PrimalScaledThyraVector(const ROL::Ptr<Thyra::VectorBase<Real> > & thyra_vec,
+                            const ROL::Ptr<const Thyra::VectorBase<Real> > & scale_vec)
       : ThyraVector<Real>(thyra_vec),
         scaling_vec_(scale_vec), isDualInitialized_(false) {}
 
     Real dot( const Vector<Real> &x ) const {
-      ROL::SharedPointer<const Thyra::VectorBase<Real> > ex 
+      ROL::Ptr<const Thyra::VectorBase<Real> > ex 
           = dynamic_cast<const ThyraVector<Real>&>(x).getVector();
 
       // compute a scaled version of the "this" vector
-      ROL::SharedPointer<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
-      ROL::SharedPointer<Thyra::VectorBase<Real> > scaled_vec = vec->clone_v();
+      ROL::Ptr<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
+      ROL::Ptr<Thyra::VectorBase<Real> > scaled_vec = vec->clone_v();
       applyScaling(scaled_vec,vec);
 
       // compute this vector but scaled
       return ::Thyra::dot<Real>(*scaled_vec, *ex);
     }
 
-    ROL::SharedPointer<Vector<Real> > clone() const {
-      ROL::SharedPointer<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
-      return ROL::makeShared<PrimalScaledThyraVector<Real>>(vec->clone_v(),scaling_vec_);
+    ROL::Ptr<Vector<Real> > clone() const {
+      ROL::Ptr<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
+      return ROL::makePtr<PrimalScaledThyraVector<Real>>(vec->clone_v(),scaling_vec_);
     }
 
     const Vector<Real> & dual() const {
       if ( !isDualInitialized_ ) {
         // Create new memory for dual vector
-        ROL::SharedPointer<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
-        dual_vec_ = ROL::makeShared<DualScaledThyraVector<Real>>(vec->clone_v(),scaling_vec_);
+        ROL::Ptr<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
+        dual_vec_ = ROL::makePtr<DualScaledThyraVector<Real>>(vec->clone_v(),scaling_vec_);
         isDualInitialized_ = true;
       }
       // Scale this with scaling_vec_ and place in dual vector
@@ -119,12 +119,12 @@ class PrimalScaledThyraVector : public ThyraVector<Real> {
 template <class Real>
 class DualScaledThyraVector : public ThyraVector<Real> {
   private:
-    const ROL::SharedPointer<const Thyra::VectorBase<Real> > scaling_vec_;
-    mutable ROL::SharedPointer<PrimalScaledThyraVector<Real> > primal_vec_;
+    const ROL::Ptr<const Thyra::VectorBase<Real> > scaling_vec_;
+    mutable ROL::Ptr<PrimalScaledThyraVector<Real> > primal_vec_;
     mutable bool isDualInitialized_;
 
-    void applyScaling(const ROL::SharedPointer<Thyra::VectorBase<Real> > &out,
-                      const ROL::SharedPointer<const Thyra::VectorBase<Real> > & in) const 
+    void applyScaling(const ROL::Ptr<Thyra::VectorBase<Real> > &out,
+                      const ROL::Ptr<const Thyra::VectorBase<Real> > & in) const 
     {
       Real one(1);
       ::Thyra::assign(out.ptr(),0.0);
@@ -134,34 +134,34 @@ class DualScaledThyraVector : public ThyraVector<Real> {
   public:
     virtual ~DualScaledThyraVector() {}
 
-    DualScaledThyraVector(const ROL::SharedPointer<Thyra::VectorBase<Real> > & thyra_vec,
-                          const ROL::SharedPointer<const Thyra::VectorBase<Real> > & scale_vec)
+    DualScaledThyraVector(const ROL::Ptr<Thyra::VectorBase<Real> > & thyra_vec,
+                          const ROL::Ptr<const Thyra::VectorBase<Real> > & scale_vec)
       : ThyraVector<Real>(thyra_vec),
         scaling_vec_(scale_vec), isDualInitialized_(false) {}
 
     Real dot( const Vector<Real> &x ) const {
-      ROL::SharedPointer<const Thyra::VectorBase<Real> > ex 
+      ROL::Ptr<const Thyra::VectorBase<Real> > ex 
           = dynamic_cast<const ThyraVector<Real>&>(x).getVector();
 
       // compute a scaled version of the "this" vector
-      ROL::SharedPointer<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
-      ROL::SharedPointer<Thyra::VectorBase<Real> > scaled_vec = vec->clone_v();
+      ROL::Ptr<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
+      ROL::Ptr<Thyra::VectorBase<Real> > scaled_vec = vec->clone_v();
       applyScaling(scaled_vec,vec);
 
       // compute this vector but scaled
       return ::Thyra::dot<Real>(*scaled_vec, *ex);
     }
 
-    ROL::SharedPointer<Vector<Real> > clone() const {
-      ROL::SharedPointer<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
-      return ROL::makeShared<DualScaledThyraVector<Real>>(vec->clone_v(),scaling_vec_);
+    ROL::Ptr<Vector<Real> > clone() const {
+      ROL::Ptr<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
+      return ROL::makePtr<DualScaledThyraVector<Real>>(vec->clone_v(),scaling_vec_);
     }
 
     const Vector<Real> & dual() const {
       if ( !isDualInitialized_ ) {
         // Create new memory for dual vector
-        ROL::SharedPointer<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
-        primal_vec_ = ROL::makeShared<PrimalScaledThyraVector<Real>>(vec->clone_v(),scaling_vec_);
+        ROL::Ptr<const Thyra::VectorBase<Real> > vec = ThyraVector<Real>::getVector();
+        primal_vec_ = ROL::makePtr<PrimalScaledThyraVector<Real>>(vec->clone_v(),scaling_vec_);
         isDualInitialized_ = true;
       }
       // Scale this with scaling_vec_ and place in dual vector

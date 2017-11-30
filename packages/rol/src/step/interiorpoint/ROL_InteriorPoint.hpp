@@ -58,11 +58,11 @@ class PenalizedObjective : public ROL::Objective<Real> {
 private:
   typedef typename PartitionedVector<Real>::size_type  size_type;
 
-  ROL::SharedPointer<Objective<Real> >       obj_;
-  ROL::SharedPointer<Objective<Real> >       barrier_;
-  ROL::SharedPointer<Vector<Real> >          x_;
-  ROL::SharedPointer<Vector<Real> >          g_;
-  ROL::SharedPointer<Vector<Real> >          scratch_;
+  ROL::Ptr<Objective<Real> >       obj_;
+  ROL::Ptr<Objective<Real> >       barrier_;
+  ROL::Ptr<Vector<Real> >          x_;
+  ROL::Ptr<Vector<Real> >          g_;
+  ROL::Ptr<Vector<Real> >          scratch_;
 
   Real mu_;
   Real fval_;
@@ -72,14 +72,14 @@ private:
 
 public:
 
-  PenalizedObjective( const ROL::SharedPointer<Objective<Real> >       &obj,
-                      const ROL::SharedPointer<BoundConstraint<Real> > &bnd,
+  PenalizedObjective( const ROL::Ptr<Objective<Real> >       &obj,
+                      const ROL::Ptr<BoundConstraint<Real> > &bnd,
                       const Vector<Real>                         &x,
                       Teuchos::ParameterList                     &parlist)
-    : obj_(obj), x_(ROL::nullPointer), g_(ROL::nullPointer), scratch_(ROL::nullPointer),
+    : obj_(obj), x_(ROL::nullPtr), g_(ROL::nullPtr), scratch_(ROL::nullPtr),
       fval_(0), gnorm_(0), nfval_(0), ngval_(0) {
     Teuchos::ParameterList& IPlist = parlist.sublist("Step").sublist("Interior Point");
-    barrier_ = ROL::makeShared<ObjectiveFromBoundConstraint<Real>>(*bnd,IPlist);
+    barrier_ = ROL::makePtr<ObjectiveFromBoundConstraint<Real>>(*bnd,IPlist);
     x_       = x.clone();
     g_       = x.dual().clone();
     scratch_ = x.dual().clone();

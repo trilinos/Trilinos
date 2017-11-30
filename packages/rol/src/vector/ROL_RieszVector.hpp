@@ -82,24 +82,24 @@ class RieszPrimalVector : public ElementwiseVector<Real> {
 
 private:
 
-  const   ROL::SharedPointer<V>          v_;
-  mutable ROL::SharedPointer<DualVector> dual_;
-  const   ROL::SharedPointer<OP>         op_;
+  const   ROL::Ptr<V>          v_;
+  mutable ROL::Ptr<DualVector> dual_;
+  const   ROL::Ptr<OP>         op_;
   mutable Real            tol_;
 
   mutable bool isDualInitialized_;
 
   void initialize_dual( void ) const {
 
-    dual_ = ROL::makeShared<DualVector>(v_->clone(),op_,tol_);   
+    dual_ = ROL::makePtr<DualVector>(v_->clone(),op_,tol_);   
     op_->apply(*(dual_->getVector()),*v_,tol_);
     isDualInitialized_ = true;
   }
 
 public:
 
-  RieszPrimalVector( const ROL::SharedPointer<V>  &v, 
-                     const ROL::SharedPointer<OP> &op,
+  RieszPrimalVector( const ROL::Ptr<V>  &v, 
+                     const ROL::Ptr<OP> &op,
                      Real tol=std::sqrt(ROL_EPSILON<Real>()) ) : 
     v_(v), op_(op), tol_(tol), isDualInitialized_(false) {  
   }   
@@ -115,8 +115,8 @@ public:
     return dual_->getVector()->dot(*(ex.getVector()));    
   }
 
-  virtual ROL::SharedPointer<V> clone() const {
-    return ROL::makeShared<RieszPrimalVector>( v_->clone(), op_, tol_ );   
+  virtual ROL::Ptr<V> clone() const {
+    return ROL::makePtr<RieszPrimalVector>( v_->clone(), op_, tol_ );   
   }
 
   virtual const V & dual() const {
@@ -140,11 +140,11 @@ public:
   }
 
 
-  ROL::SharedPointer<V> getVector( void ) { 
+  ROL::Ptr<V> getVector( void ) { 
     return v_;
   }
 
-  ROL::SharedPointer<const V> getVector( void ) const {
+  ROL::Ptr<const V> getVector( void ) const {
     return v_;
   }
   
@@ -161,24 +161,24 @@ class RieszDualVector : public ElementwiseVector<Real> {
 
 private:
 
-  const   ROL::SharedPointer<V>            v_;
-  mutable ROL::SharedPointer<PrimalVector>  primal_;
-  const   ROL::SharedPointer<OP>            op_;
+  const   ROL::Ptr<V>            v_;
+  mutable ROL::Ptr<PrimalVector>  primal_;
+  const   ROL::Ptr<OP>            op_;
   mutable Real               tol_;
 
   mutable bool isPrimalInitialized_;
 
   void initialize_primal( void ) const {
 
-    primal_ = ROL::makeShared<PrimalVector>(v_->clone(),op_,tol_);   
+    primal_ = ROL::makePtr<PrimalVector>(v_->clone(),op_,tol_);   
     op_->applyInverse(*(primal_->getVector()),*v_,tol_);
     isPrimalInitialized_ = true;
   }
 
 public:
 
-  RieszDualVector( const ROL::SharedPointer<V>  &v, 
-                   const ROL::SharedPointer<OP> &op,
+  RieszDualVector( const ROL::Ptr<V>  &v, 
+                   const ROL::Ptr<OP> &op,
                    Real tol=std::sqrt(ROL_EPSILON<Real>()) ) : 
     v_(v), op_(op), tol_(tol), isPrimalInitialized_(false) {  
   }   
@@ -194,8 +194,8 @@ public:
     return primal_->getVector()->dot(*(ex.getVector()));    
   }
 
-  virtual ROL::SharedPointer<V> clone() const {
-    return ROL::makeShared<RieszDualVector>( v_->clone(), op_, tol_ );   
+  virtual ROL::Ptr<V> clone() const {
+    return ROL::makePtr<RieszDualVector>( v_->clone(), op_, tol_ );   
   }
 
   virtual const V & dual() const {
@@ -219,11 +219,11 @@ public:
   }
 
 
-  ROL::SharedPointer<V> getVector( void ) { 
+  ROL::Ptr<V> getVector( void ) { 
     return v_;
   }
 
-  ROL::SharedPointer<const V> getVector( void ) const {
+  ROL::Ptr<const V> getVector( void ) const {
     return v_;
   }
   

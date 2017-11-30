@@ -72,12 +72,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -87,23 +87,23 @@ int main(int argc, char *argv[]) {
 
     int dim = 10; // Set problem dimension. 
 
-    ROL::SharedPointer<ParameterList> parlist = ROL::makeShared<ParameterList>();
+    ROL::Ptr<ParameterList> parlist = ROL::makePtr<ParameterList>();
     std::string paramfile = "parameters.xml";
     updateParametersFromXmlFile(paramfile,parlist.ptr());
 
-    ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>(dim, 1.0);
-    ROL::SharedPointer<vector> k_ptr = ROL::makeShared<vector>(dim, 0.0);
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 1.0);
+    ROL::Ptr<vector> k_ptr = ROL::makePtr<vector>(dim, 0.0);
 
-    ROL::SharedPointer<V> x = ROL::makeShared<SV>(x_ptr);  // Optimization vector
-    ROL::SharedPointer<V> k = ROL::makeShared<SV>(k_ptr);  // Vector appearing in Zakharov objective
+    ROL::Ptr<V> x = ROL::makePtr<SV>(x_ptr);  // Optimization vector
+    ROL::Ptr<V> k = ROL::makePtr<SV>(k_ptr);  // Vector appearing in Zakharov objective
 
-    ROL::SharedPointer<V> s = x->clone();            // Step vector
+    ROL::Ptr<V> s = x->clone();            // Step vector
 
     for( int i=0; i<dim; ++i ) {
       (*k_ptr)[i] = i+1.0;
     }
     
-    ROL::SharedPointer<ROL::Objective<RealT> > obj = ROL::makeShared<ROL::ZOO::Objective_Zakharov<RealT>>(k);
+    ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<ROL::ZOO::Objective_Zakharov<RealT>>(k);
     
     ROL::OptimizationProblem<RealT> opt(obj,x);
     ROL::AlgorithmState<RealT> state;

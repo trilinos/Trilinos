@@ -72,7 +72,7 @@ public:
 
 template<class Real> 
 void printVector( const ROL::Vector<Real> &x, std::ostream &outStream ) {
-  ROL::SharedPointer<const std::vector<Real> > xp = 
+  ROL::Ptr<const std::vector<Real> > xp = 
     dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
 
   for( size_t i=0; i<xp->size(); ++i ) {
@@ -101,12 +101,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs;
   if( iprint > 0 ) 
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
    
@@ -130,12 +130,12 @@ int main(int argc, char *argv[]) {
     int dim = 4;
     int numTestVectors = 19;
  
-    ROL::SharedPointer<vector> x_ptr  = ROL::makeShared<vector>(dim, 0.0); 
-    ROL::SharedPointer<vector> d_ptr  = ROL::makeShared<vector>(dim, 0.0);
-    ROL::SharedPointer<vector> v_ptr  = ROL::makeShared<vector>(dim, 0.0);
-    ROL::SharedPointer<vector> l_ptr  = ROL::makeShared<vector>(dim, 0.0);
-    ROL::SharedPointer<vector> u_ptr  = ROL::makeShared<vector>(dim, 0.0);
-    ROL::SharedPointer<vector> e0_ptr = ROL::makeShared<vector>(dim, 0.0); // First canonical vector
+    ROL::Ptr<vector> x_ptr  = ROL::makePtr<vector>(dim, 0.0); 
+    ROL::Ptr<vector> d_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> v_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> l_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> u_ptr  = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> e0_ptr = ROL::makePtr<vector>(dim, 0.0); // First canonical vector
 
     (*e0_ptr)[0] = 1.0;
 
@@ -151,13 +151,13 @@ int main(int argc, char *argv[]) {
 
     RealT xmax = 4.99; 
 
-    ROL::SharedPointer<V> x  = ROL::makeShared<SV>( x_ptr );
-    ROL::SharedPointer<V> d  = ROL::makeShared<SV>( d_ptr );
-    ROL::SharedPointer<V> v  = ROL::makeShared<SV>( v_ptr );
-    ROL::SharedPointer<V> l  = ROL::makeShared<SV>( l_ptr );
-    ROL::SharedPointer<V> u  = ROL::makeShared<SV>( u_ptr );
+    ROL::Ptr<V> x  = ROL::makePtr<SV>( x_ptr );
+    ROL::Ptr<V> d  = ROL::makePtr<SV>( d_ptr );
+    ROL::Ptr<V> v  = ROL::makePtr<SV>( v_ptr );
+    ROL::Ptr<V> l  = ROL::makePtr<SV>( l_ptr );
+    ROL::Ptr<V> u  = ROL::makePtr<SV>( u_ptr );
 
-    ROL::SharedPointer<const V> maskL, maskU;
+    ROL::Ptr<const V> maskL, maskU;
 
     ROL::RandomizeVector(*d,left,right);
     ROL::RandomizeVector(*v,left,right);
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     std::vector<RealT>   values(numTestVectors);        // Computed objective value for each 
     std::vector<RealT>   exact_values(numTestVectors);  
 
-    std::vector<ROL::SharedPointer<V> > x_test;
+    std::vector<ROL::Ptr<V> > x_test;
 
     for(int i=0; i<numTestVectors; ++i) {
       x_test.push_back(x->clone());
@@ -174,16 +174,16 @@ int main(int argc, char *argv[]) {
       x_test[i]->applyUnary(ROL::Elementwise::Fill<RealT>(fillValue));
     }
 
-    ROL::SharedPointer<OBJ> obj = ROL::makeShared<NullObjective<RealT>>();
-    ROL::SharedPointer<BND> bnd = ROL::makeShared<ROL::Bounds<RealT>>(l,u);
+    ROL::Ptr<OBJ> obj = ROL::makePtr<NullObjective<RealT>>();
+    ROL::Ptr<BND> bnd = ROL::makePtr<ROL::Bounds<RealT>>(l,u);
 
     ROL::InteriorPointPenalty<RealT> ipobj(obj,bnd,parlist);
 
     maskL = ipobj.getLowerMask();
     maskU = ipobj.getUpperMask();
 
-    ROL::SharedPointer<const std::vector<RealT> > maskL_ptr = dynamic_cast<const SV&>(*maskL).getVector();
-    ROL::SharedPointer<const std::vector<RealT> > maskU_ptr = dynamic_cast<const SV&>(*maskU).getVector();
+    ROL::Ptr<const std::vector<RealT> > maskL_ptr = dynamic_cast<const SV&>(*maskL).getVector();
+    ROL::Ptr<const std::vector<RealT> > maskU_ptr = dynamic_cast<const SV&>(*maskU).getVector();
 
     *outStream << "\nLower bound vector" << std::endl;
     printVector(*l,*outStream);

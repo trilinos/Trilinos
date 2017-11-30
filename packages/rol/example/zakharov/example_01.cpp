@@ -74,12 +74,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 
     int dim = 10; // Set problem dimension. 
 
-    ROL::SharedPointer<ParameterList> parlist = ROL::makeShared<ParameterList>();
+    ROL::Ptr<ParameterList> parlist = ROL::makePtr<ParameterList>();
     std::string paramfile = "parameters.xml";
     updateParametersFromXmlFile(paramfile,parlist.ptr());
 
@@ -97,17 +97,17 @@ int main(int argc, char *argv[]) {
     ROL::Algorithm<RealT> algo("Trust-Region",*parlist);
 
     // Iteration vector.
-    ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>(dim, 0.0);
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 0.0);
 
     // Vector of natural numbers.
-    ROL::SharedPointer<vector> k_ptr = ROL::makeShared<vector>(dim, 0.0);
+    ROL::Ptr<vector> k_ptr = ROL::makePtr<vector>(dim, 0.0);
 
     // For gradient and Hessian checks. 
-    ROL::SharedPointer<vector> xtest_ptr = ROL::makeShared<vector>(dim, 0.0);
-    ROL::SharedPointer<vector> d_ptr     = ROL::makeShared<vector>(dim, 0.0);
-    ROL::SharedPointer<vector> v_ptr     = ROL::makeShared<vector>(dim, 0.0);
-    ROL::SharedPointer<vector> hv_ptr    = ROL::makeShared<vector>(dim, 0.0);
-    ROL::SharedPointer<vector> ihhv_ptr  = ROL::makeShared<vector>(dim, 0.0);
+    ROL::Ptr<vector> xtest_ptr = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> d_ptr     = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> v_ptr     = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> hv_ptr    = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> ihhv_ptr  = ROL::makePtr<vector>(dim, 0.0);
   
 
     RealT left = -1e0, right = 1e0; 
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
       (*k_ptr)[i]   = i+1.0;
     }
 
-    ROL::SharedPointer<V> k = ROL::makeShared<SV>(k_ptr);
+    ROL::Ptr<V> k = ROL::makePtr<SV>(k_ptr);
     SV x(x_ptr);
 
     // Check gradient and Hessian.
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
     algo.run(x, obj, true, *outStream);
 
     // Get True Solution
-    ROL::SharedPointer<vector> xtrue_ptr = ROL::makeShared<vector>(dim, 0.0);
+    ROL::Ptr<vector> xtrue_ptr = ROL::makePtr<vector>(dim, 0.0);
     SV xtrue(xtrue_ptr);
 
         

@@ -68,9 +68,9 @@ namespace ROL {
 template <class Real>
 class AugmentedLagrangianStep : public Step<Real> {
 private:
-  ROL::SharedPointer<Algorithm<Real> > algo_;
-  ROL::SharedPointer<Vector<Real> > x_; 
-  ROL::SharedPointer<BoundConstraint<Real> > bnd_;
+  ROL::Ptr<Algorithm<Real> > algo_;
+  ROL::Ptr<Vector<Real> > x_; 
+  ROL::Ptr<BoundConstraint<Real> > bnd_;
 
   Teuchos::ParameterList parlist_;
   // Lagrange multiplier update
@@ -131,8 +131,8 @@ public:
   ~AugmentedLagrangianStep() {}
 
   AugmentedLagrangianStep(Teuchos::ParameterList &parlist)
-    : Step<Real>(), algo_(ROL::nullPointer),
-      x_(ROL::nullPointer), parlist_(parlist), subproblemIter_(0) {
+    : Step<Real>(), algo_(ROL::nullPtr),
+      x_(ROL::nullPtr), parlist_(parlist), subproblemIter_(0) {
     Real one(1), p1(0.1), p9(0.9), ten(1.e1), oe8(1.e8), oem8(1.e-8);
     Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
     Step<Real>::getState()->searchSize = sublist.get("Initial Penalty Parameter",ten);
@@ -166,7 +166,7 @@ public:
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
                    Objective<Real> &obj, Constraint<Real> &con,
                    AlgorithmState<Real> &algo_state ) {
-    bnd_ = ROL::makeShared<BoundConstraint<Real>>();
+    bnd_ = ROL::makePtr<BoundConstraint<Real>>();
     bnd_->deactivate();
     initialize(x,g,l,c,obj,con,*bnd_,algo_state);
   }
@@ -179,7 +179,7 @@ public:
     AugmentedLagrangian<Real> &augLag
       = dynamic_cast<AugmentedLagrangian<Real>&>(obj);
     // Initialize step state
-    ROL::SharedPointer<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
     state->constraintVec = c.clone();
@@ -232,7 +232,7 @@ public:
       = dynamic_cast<AugmentedLagrangian<Real>&>(obj);
     parlist_.sublist("Status Test").set("Gradient Tolerance",optTolerance_);
     parlist_.sublist("Status Test").set("Step Tolerance",1.e-6*optTolerance_);
-    algo_ = ROL::makeShared<Algorithm<Real>>(subStep_,parlist_,false);
+    algo_ = ROL::makePtr<Algorithm<Real>>(subStep_,parlist_,false);
     x_->set(x);
     if ( bnd.isActivated() ) {
       algo_->run(*x_,augLag,bnd,print_);
@@ -261,7 +261,7 @@ public:
     Real one(1), oem2(1.e-2);
     AugmentedLagrangian<Real> &augLag
       = dynamic_cast<AugmentedLagrangian<Real>&>(obj);
-    ROL::SharedPointer<StepState<Real> > state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > state = Step<Real>::getState();
     // Update the step and store in state
     x.plus(s);
     algo_state.iterateVec->set(x);

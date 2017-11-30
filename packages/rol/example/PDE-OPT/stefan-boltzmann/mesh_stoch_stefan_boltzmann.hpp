@@ -49,7 +49,7 @@ private:
 
   int nx_;
   int ny_;
-  ROL::SharedPointer<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > >  meshSideSets_;
 
 public: 
 
@@ -64,7 +64,7 @@ public:
   void computeSideSets(void) {
 
     int numSideSets = 7;
-    meshSideSets_ = ROL::makeShared<std::vector<std::vector<std::vector<int> > >>(numSideSets);
+    meshSideSets_ = ROL::makePtr<std::vector<std::vector<std::vector<int> > >>(numSideSets);
 
     // Dirichlet Control
     (*meshSideSets_)[0].resize(4);
@@ -124,7 +124,7 @@ public:
 
   } // computeSideSets
 
-  ROL::SharedPointer<std::vector<std::vector<std::vector<int> > > > getSideSets(
+  ROL::Ptr<std::vector<std::vector<std::vector<int> > > > getSideSets(
               const bool verbose = false,
               std::ostream & outStream = std::cout) const { 
     if (verbose) {

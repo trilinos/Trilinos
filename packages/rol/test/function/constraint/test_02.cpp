@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
@@ -86,12 +86,12 @@ int main(int argc, char *argv[]) {
     int xdim = 5;
     
     // Optimization vector
-    ROL::SharedPointer<V> a  = ROL::makeShared<ROL::StdVector<RealT>>( ROL::makeShared<std::vector<RealT>>(xdim) );
-    ROL::SharedPointer<V> c  = ROL::makeShared<ROL::SingletonVector<RealT>>( 0.0 );
+    ROL::Ptr<V> a  = ROL::makePtr<ROL::StdVector<RealT>>( ROL::makePtr<std::vector<RealT>>(xdim) );
+    ROL::Ptr<V> c  = ROL::makePtr<ROL::SingletonVector<RealT>>( 0.0 );
 
-    ROL::SharedPointer<V> x = a->clone();
-    ROL::SharedPointer<V> d = x->clone();
-    ROL::SharedPointer<V> v = c->clone();
+    ROL::Ptr<V> x = a->clone();
+    ROL::Ptr<V> d = x->clone();
+    ROL::Ptr<V> v = c->clone();
 
     RealT b = 0.5;
  

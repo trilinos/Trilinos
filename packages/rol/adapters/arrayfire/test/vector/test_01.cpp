@@ -63,12 +63,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -87,10 +87,10 @@ int main(int argc, char *argv[]) {
     afinfo = af::infoString(true);
     *outStream << std::endl << afinfo << std::endl;
 
-    /***** Define ROL::SharedPointers to random arrays. *****/
-    ROL::SharedPointer<af::array> A_ptr = ROL::makeShared<af::array>(5,1,afType);
-    ROL::SharedPointer<af::array> B_ptr = ROL::makeShared<af::array>(5,1,afType);
-    ROL::SharedPointer<af::array> C_ptr = ROL::makeShared<af::array>(5,1,afType);
+    /***** Define ROL::Ptrs to random arrays. *****/
+    ROL::Ptr<af::array> A_ptr = ROL::makePtr<af::array>(5,1,afType);
+    ROL::Ptr<af::array> B_ptr = ROL::makePtr<af::array>(5,1,afType);
+    ROL::Ptr<af::array> C_ptr = ROL::makePtr<af::array>(5,1,afType);
     *A_ptr = af::randu(A_ptr->dims(),afType);
     *B_ptr = af::randu(B_ptr->dims(),afType);
     *C_ptr = af::randu(C_ptr->dims(),afType);
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
     //af_print(*B_ptr);
     //af_print(*C_ptr);
 
-    /***** Wrap ArrayFire ROL::SharedPointers as ROL::ArrayFireVectors. *****/
+    /***** Wrap ArrayFire ROL::Ptrs as ROL::ArrayFireVectors. *****/
     ROL::ArrayFireVector<RealT, ElementT> A(A_ptr);
     ROL::ArrayFireVector<RealT, ElementT> B(B_ptr);
     ROL::ArrayFireVector<RealT, ElementT> C(C_ptr);
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     /***** Run checkVector tests. *****/
     // with random vector
     std::vector<RealT> consistency = A.checkVector(B, C, true, *outStream);
-    ROL::StdVector<RealT, ElementT> checkvec(ROL::makeSharedFromRef(consistency));
+    ROL::StdVector<RealT, ElementT> checkvec(ROL::makePtrFromRef(consistency));
     if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag++;
     }

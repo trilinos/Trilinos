@@ -71,8 +71,8 @@ void print_vector( const ROL::Vector<Real> &x ) {
     
   for(size_type k=0; k<n; ++k) {
     std::cout << "[subvector " << k << "]" << std::endl;
-    ROL::SharedPointer<const V> vec = eb.get(k);
-    ROL::SharedPointer<const std::vector<Real> > vp = 
+    ROL::Ptr<const V> vec = eb.get(k);
+    ROL::Ptr<const std::vector<Real> > vp = 
       dynamic_cast<const SV&>(*vec).getVector();  
    for(size_type i=0;i<vp->size();++i) {
       std::cout << (*vp)[i] << std::endl;
@@ -90,18 +90,18 @@ int main(int argc, char *argv[]) {
   typedef ROL::SimulatedVector<RealT>   PV;
 
   GlobalMPISession mpiSession(&argc, &argv);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  ROL::SharedPointer<ROL::TpetraTeuchosBatchManager<RealT> > bman = ROL::makeShared<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
+  ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  ROL::Ptr<ROL::TpetraTeuchosBatchManager<RealT> > bman = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
 
   int iprint = argc - 1;
 
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   oblackholestream bhs; // no output
  
   if( iprint>0 ) 
-   outStream = ROL::makeSharedFromRef(std::cout);
+   outStream = ROL::makePtrFromRef(std::cout);
   else
-   outStream = ROL::makeSharedFromRef(bhs);
+   outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -113,8 +113,8 @@ int main(int argc, char *argv[]) {
     int nSamp = 100;
     std::vector<RealT> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
     std::vector<std::vector<RealT> > bounds(stoch_dim,tmp);
-    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler
-      = ROL::makeShared<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman);
 
     int batchID = bman->batchID();
     int nvecloc = sampler->numMySamples();
@@ -127,19 +127,19 @@ int main(int argc, char *argv[]) {
      
     RealT left = -1e0, right = 1e0;
 
-    std::vector<ROL::SharedPointer<V> > x_ptr;
-    std::vector<ROL::SharedPointer<V> > y_ptr;
-    std::vector<ROL::SharedPointer<V> > z_ptr;
+    std::vector<ROL::Ptr<V> > x_ptr;
+    std::vector<ROL::Ptr<V> > y_ptr;
+    std::vector<ROL::Ptr<V> > z_ptr;
 
     for( int k=0; k<nvecloc; ++k ) {
        
-      ROL::SharedPointer<std::vector<RealT> > xk_ptr = ROL::makeShared<std::vector<RealT>>(dim);
-      ROL::SharedPointer<std::vector<RealT> > yk_ptr = ROL::makeShared<std::vector<RealT>>(dim);
-      ROL::SharedPointer<std::vector<RealT> > zk_ptr = ROL::makeShared<std::vector<RealT>>(dim);
+      ROL::Ptr<std::vector<RealT> > xk_ptr = ROL::makePtr<std::vector<RealT>>(dim);
+      ROL::Ptr<std::vector<RealT> > yk_ptr = ROL::makePtr<std::vector<RealT>>(dim);
+      ROL::Ptr<std::vector<RealT> > zk_ptr = ROL::makePtr<std::vector<RealT>>(dim);
 
-      ROL::SharedPointer<V> xk = ROL::makeShared<SV>( xk_ptr );
-      ROL::SharedPointer<V> yk = ROL::makeShared<SV>( yk_ptr );
-      ROL::SharedPointer<V> zk = ROL::makeShared<SV>( zk_ptr );
+      ROL::Ptr<V> xk = ROL::makePtr<SV>( xk_ptr );
+      ROL::Ptr<V> yk = ROL::makePtr<SV>( yk_ptr );
+      ROL::Ptr<V> zk = ROL::makePtr<SV>( zk_ptr );
 
       for( int i=0; i<dim; ++i ) {
         (*xk_ptr)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
-    ROL::StdVector<RealT> checkvec(ROL::makeSharedFromRef(consistency));
+    ROL::StdVector<RealT> checkvec(ROL::makePtrFromRef(consistency));
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }
@@ -179,10 +179,10 @@ int main(int argc, char *argv[]) {
     x_ptr.resize(0);
     y_ptr.resize(0);
     for( int k=0; k<nvecloc; ++k ) {
-      ROL::SharedPointer<std::vector<RealT> > xk_ptr = ROL::makeShared<std::vector<RealT>>(dim);
-      ROL::SharedPointer<std::vector<RealT> > yk_ptr = ROL::makeShared<std::vector<RealT>>(dim);
-      ROL::SharedPointer<V> xk = ROL::makeShared<SV>( xk_ptr );
-      ROL::SharedPointer<V> yk = ROL::makeShared<SV>( yk_ptr );
+      ROL::Ptr<std::vector<RealT> > xk_ptr = ROL::makePtr<std::vector<RealT>>(dim);
+      ROL::Ptr<std::vector<RealT> > yk_ptr = ROL::makePtr<std::vector<RealT>>(dim);
+      ROL::Ptr<V> xk = ROL::makePtr<SV>( xk_ptr );
+      ROL::Ptr<V> yk = ROL::makePtr<SV>( yk_ptr );
       for( int i=0; i<dim; ++i ) {
         (*xk_ptr)[i] = 1.0;
         (*yk_ptr)[i] = 2.0;

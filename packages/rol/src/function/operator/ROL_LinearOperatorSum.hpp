@@ -61,30 +61,30 @@ class LinearOperatorSum : public LinearOperator<Real>  {
   typedef Vector<Real>         V;
   typedef LinearOperator<Real> OP;
  
-  typedef typename std::vector<ROL::SharedPointer<OP> >::size_type size_type;
+  typedef typename std::vector<ROL::Ptr<OP> >::size_type size_type;
 
 private:
 
-  ROL::SharedPointer<std::vector<ROL::SharedPointer<OP> > > ops_;
-  ROL::SharedPointer<V> scratch_;
+  ROL::Ptr<std::vector<ROL::Ptr<OP> > > ops_;
+  ROL::Ptr<V> scratch_;
 
 public:
 
-  LinearOperatorSum( ROL::SharedPointer<OP> &A, 
-                     ROL::SharedPointer<OP> &B, 
-                     ROL::SharedPointer<V> & scratch ) :
+  LinearOperatorSum( ROL::Ptr<OP> &A, 
+                     ROL::Ptr<OP> &B, 
+                     ROL::Ptr<V> & scratch ) :
     scratch_(scratch) {
-    ops_ = ROL::makeShared<std::vector<OP> >>();
+    ops_ = ROL::makePtr<std::vector<OP> >>();
     ops_->push_back(A);
     ops_->push_back(B);
   }
 
-  LinearOperatorSum( ROL::SharedPointer<OP> &A, 
-                     ROL::SharedPointer<OP> &B, 
-                     ROL::SharedPointer<OP> &C, 
-                     ROL::SharedPointer<V> & scratch ) :
+  LinearOperatorSum( ROL::Ptr<OP> &A, 
+                     ROL::Ptr<OP> &B, 
+                     ROL::Ptr<OP> &C, 
+                     ROL::Ptr<V> & scratch ) :
     scratch_(scratch) {
-    ops_ = ROL::makeShared<std::vector<OP> >>();
+    ops_ = ROL::makePtr<std::vector<OP> >>();
     ops_->push_back(A);
     ops_->push_back(B);
     ops_->push_back(C);

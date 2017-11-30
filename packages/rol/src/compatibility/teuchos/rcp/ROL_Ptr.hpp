@@ -46,7 +46,7 @@
 #include <memory>
 #include <type_traits>
 
-/* \file ROL_SharedPointer.hpp
+/* \file ROL_Ptr.hpp
  * \brief Provides unified interface Teuchos::RCP for legacy support.
  *        ROL will be build with this implementation by default  
  *        unless ROL_ENABLE_STD_SHARED_PTR:BOOL=ON
@@ -59,16 +59,16 @@
 
 namespace ROL {
 
-template<class T> using SharedPointer = Teuchos::RCP<T>;
+template<class T> using Ptr = Teuchos::RCP<T>;
 
-static const Teuchos::ENull nullPointer = Teuchos::null;
+static const Teuchos::ENull nullPtr = Teuchos::null;
 
 }
 
 namespace std {
 
 template<class T>
-struct is_pointer<ROL::SharedPointer<T>> : public std::true_type { };
+struct is_pointer<ROL::Ptr<T>> : public std::true_type { };
 
 }
 
@@ -76,43 +76,43 @@ namespace ROL {
 
 template<class T, class... Args>
 inline 
-SharedPointer<T> makeShared( Args&&... args ) {
+Ptr<T> makePtr( Args&&... args ) {
   return Teuchos::rcp( new T(std::forward<Args>(args)...) );
 }
 
 template<class T>
 inline
-SharedPointer<T> makeSharedFromRef( T& obj ) {
+Ptr<T> makePtrFromRef( T& obj ) {
   return Teuchos::rcpFromRef(obj);
 }
 
 template< class T, class U > 
 inline
-SharedPointer<T> staticPointerCast( const SharedPointer<U>& r ) noexcept {
+Ptr<T> staticPtrCast( const Ptr<U>& r ) noexcept {
   return Teuchos::rcp_static_cast<T>(r);
 }
 
 template< class T, class U > 
 inline
-SharedPointer<T> constPointerCast( const SharedPointer<U>& r ) noexcept {
+Ptr<T> constPtrCast( const Ptr<U>& r ) noexcept {
   return Teuchos::rcp_const_cast<T>(r);
 }
 
 template< class T, class U > 
 inline
-SharedPointer<T> dynamicPointerCast( const SharedPointer<U>& r ) noexcept {
+Ptr<T> dynamicPtrCast( const Ptr<U>& r ) noexcept {
   return Teuchos::rcp_dynamic_cast<T>(r);
 }
 
 template<class T>
 inline
-const T* getRawPointer( const SharedPointer<const T>& x ) {
+const T* getRawPtr( const Ptr<const T>& x ) {
   return x.ptr();
 }
 
 template<class T>
 inline
-T* getRawPointer( const SharedPointer<T>& x ) {
+T* getRawPtr( const Ptr<T>& x ) {
   return x.ptr();
 }
 

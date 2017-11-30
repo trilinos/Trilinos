@@ -74,19 +74,19 @@ typedef double RealT;
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -100,62 +100,62 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    ROL::SharedPointer<MeshManager<RealT> > meshMgr
-      = ROL::makeShared<MeshManager_Rectangle<RealT>>(*parlist);
+    ROL::Ptr<MeshManager<RealT> > meshMgr
+      = ROL::makePtr<MeshManager_Rectangle<RealT>>(*parlist);
     // Initialize PDE describing elasticity equations.
-    ROL::SharedPointer<PDE_Helmholtz<RealT> > pde
-      = ROL::makeShared<PDE_Helmholtz<RealT>>(*parlist);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > con
-      = ROL::makeShared<Linear_PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
+    ROL::Ptr<PDE_Helmholtz<RealT> > pde
+      = ROL::makePtr<PDE_Helmholtz<RealT>>(*parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
+      = ROL::makePtr<Linear_PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
     // Cast the constraint and get the assembler.
-    ROL::SharedPointer<Linear_PDE_Constraint<RealT> > pdecon
-      = ROL::dynamicPointerCast<Linear_PDE_Constraint<RealT> >(con);
-    ROL::SharedPointer<Assembler<RealT> > assembler = pdecon->getAssembler();
+    ROL::Ptr<Linear_PDE_Constraint<RealT> > pdecon
+      = ROL::dynamicPtrCast<Linear_PDE_Constraint<RealT> >(con);
+    ROL::Ptr<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
 
     // Create state vector.
-    ROL::SharedPointer<Tpetra::MultiVector<> > u_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr = assembler->createStateVector();
     u_ptr->randomize();
-    ROL::SharedPointer<ROL::Vector<RealT> > up
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler,*parlist);
-    ROL::SharedPointer<Tpetra::MultiVector<> > p_ptr = assembler->createStateVector();
+    ROL::Ptr<ROL::Vector<RealT> > up
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler,*parlist);
+    ROL::Ptr<Tpetra::MultiVector<> > p_ptr = assembler->createStateVector();
     p_ptr->randomize();
-    ROL::SharedPointer<ROL::Vector<RealT> > pp
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler,*parlist);
+    ROL::Ptr<ROL::Vector<RealT> > pp
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler,*parlist);
     // Create control vector.
-    ROL::SharedPointer<Tpetra::MultiVector<> > z_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> > z_ptr = assembler->createControlVector();
     z_ptr->randomize();
-    ROL::SharedPointer<ROL::Vector<RealT> > zp
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler,*parlist);
+    ROL::Ptr<ROL::Vector<RealT> > zp
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler,*parlist);
     // Create residual vector.
-    ROL::SharedPointer<Tpetra::MultiVector<> > r_ptr = assembler->createResidualVector();
+    ROL::Ptr<Tpetra::MultiVector<> > r_ptr = assembler->createResidualVector();
     r_ptr->putScalar(0.0);
-    ROL::SharedPointer<ROL::Vector<RealT> > rp
-      = ROL::makeShared<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler,*parlist);
+    ROL::Ptr<ROL::Vector<RealT> > rp
+      = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler,*parlist);
     // Create state direction vector.
-    ROL::SharedPointer<Tpetra::MultiVector<> > du_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<> > du_ptr = assembler->createStateVector();
     du_ptr->randomize();
     //du_ptr->putScalar(0);
-    ROL::SharedPointer<ROL::Vector<RealT> > dup
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler,*parlist);
+    ROL::Ptr<ROL::Vector<RealT> > dup
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler,*parlist);
     // Create control direction vector.
-    ROL::SharedPointer<Tpetra::MultiVector<> > dz_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> > dz_ptr = assembler->createControlVector();
     dz_ptr->randomize();
     //dz_ptr->putScalar(0);
-    ROL::SharedPointer<ROL::Vector<RealT> > dzp
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,assembler,*parlist);
+    ROL::Ptr<ROL::Vector<RealT> > dzp
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,assembler,*parlist);
     // Create control test vector.
-    ROL::SharedPointer<Tpetra::MultiVector<> > rz_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> > rz_ptr = assembler->createControlVector();
     rz_ptr->randomize();
-    ROL::SharedPointer<ROL::Vector<RealT> > rzp
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(rz_ptr,pde,assembler,*parlist);
+    ROL::Ptr<ROL::Vector<RealT> > rzp
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(rz_ptr,pde,assembler,*parlist);
 
-    ROL::SharedPointer<Tpetra::MultiVector<> > dualu_ptr = assembler->createStateVector();
-    ROL::SharedPointer<ROL::Vector<RealT> > dualup
-      = ROL::makeShared<PDE_DualSimVector<RealT>>(dualu_ptr,pde,assembler,*parlist);
-    ROL::SharedPointer<Tpetra::MultiVector<> > dualz_ptr = assembler->createControlVector();
-    ROL::SharedPointer<ROL::Vector<RealT> > dualzp
-      = ROL::makeShared<PDE_DualOptVector<RealT>>(dualz_ptr,pde,assembler,*parlist);
+    ROL::Ptr<Tpetra::MultiVector<> > dualu_ptr = assembler->createStateVector();
+    ROL::Ptr<ROL::Vector<RealT> > dualup
+      = ROL::makePtr<PDE_DualSimVector<RealT>>(dualu_ptr,pde,assembler,*parlist);
+    ROL::Ptr<Tpetra::MultiVector<> > dualz_ptr = assembler->createControlVector();
+    ROL::Ptr<ROL::Vector<RealT> > dualzp
+      = ROL::makePtr<PDE_DualOptVector<RealT>>(dualz_ptr,pde,assembler,*parlist);
 
     // Create ROL SimOpt vectors.
     ROL::Vector_SimOpt<RealT> x(up,zp);
@@ -163,17 +163,17 @@ int main(int argc, char *argv[]) {
 
     // Initialize compliance objective function.
     bool storage = parlist->sublist("Problem").get("Use Storage",true);
-    std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_Helmholtz_StateTracking<RealT>>(pde->getFE(),
+    std::vector<ROL::Ptr<QoI<RealT> > > qoi_vec(2,ROL::nullPtr);
+    qoi_vec[0] = ROL::makePtr<QoI_Helmholtz_StateTracking<RealT>>(pde->getFE(),
                                                                      pde->getFieldHelper(),
                                                                      *parlist);
-    qoi_vec[1] = ROL::makeShared<QoI_Helmholtz_ControlPenalty<RealT>>(pde->getFE(),
+    qoi_vec[1] = ROL::makePtr<QoI_Helmholtz_ControlPenalty<RealT>>(pde->getFE(),
                                                                       pde->getFieldHelper(),
                                                                       *parlist);
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj
-      = ROL::makeShared<PDE_Objective<RealT>>(qoi_vec,assembler);
-    ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > robj
-      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp, storage, false);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj
+      = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,assembler);
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > robj
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp, storage, false);
 
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
@@ -181,9 +181,9 @@ int main(int argc, char *argv[]) {
       *outStream << "\n\nCheck Opt Vector\n";
       zp->checkVector(*dzp,*rzp,true,*outStream);
 
-      std::vector<ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > > obj_vec(2,ROL::nullPointer);
-      obj_vec[0] = ROL::makeShared<IntegralObjective<RealT>>(qoi_vec[0],assembler);
-      obj_vec[1] = ROL::makeShared<IntegralObjective<RealT>>(qoi_vec[1],assembler);
+      std::vector<ROL::Ptr<ROL::Objective_SimOpt<RealT> > > obj_vec(2,ROL::nullPtr);
+      obj_vec[0] = ROL::makePtr<IntegralObjective<RealT>>(qoi_vec[0],assembler);
+      obj_vec[1] = ROL::makePtr<IntegralObjective<RealT>>(qoi_vec[1],assembler);
 
       *outStream << "\n\nCheck Gradient of State Objective Function\n";
       obj_vec[0]->checkGradient(x,d,true,*outStream);
@@ -266,22 +266,22 @@ int main(int argc, char *argv[]) {
     }
 
     // Build KKT system.
-    ROL::SharedPointer<Tpetra::CrsMatrix<> > A;
-    ROL::SharedPointer<Tpetra::CrsMatrix<> > B;
-    ROL::SharedPointer<Tpetra::CrsMatrix<> > M;
-    ROL::SharedPointer<Tpetra::CrsMatrix<> > R;
-    ROL::SharedPointer<Tpetra::MultiVector<> > simres;
+    ROL::Ptr<Tpetra::CrsMatrix<> > A;
+    ROL::Ptr<Tpetra::CrsMatrix<> > B;
+    ROL::Ptr<Tpetra::CrsMatrix<> > M;
+    ROL::Ptr<Tpetra::CrsMatrix<> > R;
+    ROL::Ptr<Tpetra::MultiVector<> > simres;
     assembler->assemblePDEJacobian1(A, pde, u_ptr);
     assembler->assemblePDEJacobian2(B, pde, u_ptr);
     assembler->assemblePDERieszMap1(M, pde);
     assembler->assemblePDERieszMap2(R, pde);
     assembler->assemblePDEResidual(simres, pde, u_ptr, z_ptr);
     SysBuilder<RealT> kktbuilder;
-    ROL::SharedPointer<Tpetra::CrsMatrix<> >    KKT;
-    ROL::SharedPointer<Tpetra::MultiVector<> > BKKT;
-    ROL::SharedPointer<Tpetra::MultiVector<> > XKKT;
+    ROL::Ptr<Tpetra::CrsMatrix<> >    KKT;
+    ROL::Ptr<Tpetra::MultiVector<> > BKKT;
+    ROL::Ptr<Tpetra::MultiVector<> > XKKT;
     Teuchos::Time kktTimer("KKT Time", true);
-    kktbuilder.buildMatrix(KKT, A, B, M, ROL::nullPointer, ROL::nullPointer, R);
+    kktbuilder.buildMatrix(KKT, A, B, M, ROL::nullPtr, ROL::nullPtr, R);
     kktTimer.stop();
     *outStream << "KKT matrix assembly time = " << kktTimer.totalElapsedTime() << " seconds.\n";
     kktTimer.reset(); kktTimer.start();
@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
     kktTimer.stop();
     *outStream << "KKT XVEC assembly time = " << kktTimer.totalElapsedTime() << " seconds.\n";
     //Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<> > matWriter;
-    //if (KKT != ROL::nullPointer) {
+    //if (KKT != ROL::nullPtr) {
     //  matWriter.writeSparseFile("kkt.txt", KKT);
     //}
     Solver<RealT> kktsolver(parlist->sublist("Solver"));
@@ -308,11 +308,11 @@ int main(int argc, char *argv[]) {
 
     // Schur matrix.
     Teuchos::Time schurTimer("Schur Time", true);
-    ROL::SharedPointer<Tpetra::CrsMatrix<> > AAT =
-      ROL::makeShared<Tpetra::CrsMatrix<>>(A->getRowMap(), 2*A->getGlobalMaxNumRowEntries());
-    ROL::SharedPointer<Tpetra::CrsMatrix<> > BBT =
-      ROL::makeShared<Tpetra::CrsMatrix<>>(B->getRowMap(), 2*B->getGlobalMaxNumRowEntries());
-    ROL::SharedPointer<Tpetra::CrsMatrix<> > C;
+    ROL::Ptr<Tpetra::CrsMatrix<> > AAT =
+      ROL::makePtr<Tpetra::CrsMatrix<>>(A->getRowMap(), 2*A->getGlobalMaxNumRowEntries());
+    ROL::Ptr<Tpetra::CrsMatrix<> > BBT =
+      ROL::makePtr<Tpetra::CrsMatrix<>>(B->getRowMap(), 2*B->getGlobalMaxNumRowEntries());
+    ROL::Ptr<Tpetra::CrsMatrix<> > C;
     Tpetra::MatrixMatrix::Multiply(*A, false, *A, true, *AAT);
     Tpetra::MatrixMatrix::Multiply(*B, false, *B, true, *BBT);
     C = Tpetra::MatrixMatrix::add(1.0, false, *AAT, 1.0, false, *BBT);

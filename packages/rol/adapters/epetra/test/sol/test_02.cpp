@@ -58,22 +58,22 @@
 typedef double RealT;
 
 int main(int argc, char* argv[]) {
-  ROL::SharedPointer<Epetra_Comm> comm;
+  ROL::Ptr<Epetra_Comm> comm;
 #ifdef HAVE_MPI
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  comm = ROL::makeShared<Epetra_MpiComm>(MPI_COMM_WORLD);
+  comm = ROL::makePtr<Epetra_MpiComm>(MPI_COMM_WORLD);
 #else
-  comm = ROL::makeShared<Epetra_SerialComm>();
+  comm = ROL::makePtr<Epetra_SerialComm>();
 #endif
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && comm->MyPID() == 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -87,8 +87,8 @@ int main(int argc, char* argv[]) {
     size_t dimension = 1;
 
     // Initialize distribution
-    ROL::SharedPointer<ROL::Distribution<RealT> > dist;
-    std::vector<ROL::SharedPointer<ROL::Distribution<RealT> > > distVec(dimension);
+    ROL::Ptr<ROL::Distribution<RealT> > dist;
+    std::vector<ROL::Ptr<ROL::Distribution<RealT> > > distVec(dimension);
     Teuchos::ParameterList Dlist;
     Dlist.sublist("SOL").sublist("Distribution").set("Name","Beta");
     RealT alpha = 1., beta = 4.;
@@ -111,10 +111,10 @@ int main(int argc, char* argv[]) {
     Teuchos::Array<int> moments = Teuchos::getArrayFromStringParameter<int>(list,"Moments");
     size_t numMoments = static_cast<size_t>(moments.size());
 
-    ROL::SharedPointer<ROL::BatchManager<RealT> > bman =
-      ROL::makeShared<ROL::EpetraBatchManager<RealT>>(comm);
-    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler =
-      ROL::makeShared<ROL::SROMGenerator<RealT>>(*parlist,bman,distVec);
+    ROL::Ptr<ROL::BatchManager<RealT> > bman =
+      ROL::makePtr<ROL::EpetraBatchManager<RealT>>(comm);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler =
+      ROL::makePtr<ROL::SROMGenerator<RealT>>(*parlist,bman,distVec);
 
     RealT val = 0., error = 0., data = 0., sum = 0.;
     *outStream << std::endl;

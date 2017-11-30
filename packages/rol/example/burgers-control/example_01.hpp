@@ -348,7 +348,7 @@ public:
   }
 
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     // SOLVE STATE EQUATION
     std::vector<Real> param(4,0.0);
@@ -380,9 +380,9 @@ public:
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
-    ROL::SharedPointer<std::vector<Real> > gp =
+    ROL::Ptr<std::vector<Real> > gp =
       dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
     // SOLVE STATE EQUATION
     std::vector<Real> param(4,0.0);
@@ -417,11 +417,11 @@ public:
   }
 
   void hessVec( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp =
+    ROL::Ptr<const std::vector<Real> > vp =
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<std::vector<Real> > hvp =
+    ROL::Ptr<std::vector<Real> > hvp =
       dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
     // SOLVE STATE EQUATION
     std::vector<Real> param(4,0.0);
@@ -475,7 +475,7 @@ public:
     x_up_.resize(dim_,1.0);
   }
   bool isFeasible( const ROL::Vector<Real> &x ) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     bool val = true;
     int  cnt = 1;
@@ -487,16 +487,16 @@ public:
     return val;
   }
   void project( ROL::Vector<Real> &x ) {
-    ROL::SharedPointer<std::vector<Real> > ex =
+    ROL::Ptr<std::vector<Real> > ex =
       dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
     for ( int i = 0; i < this->dim_; i++ ) {
       (*ex)[i] = std::max(this->x_lo_[i],std::min(this->x_up_[i],(*ex)[i]));
     }
   }
   void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<std::vector<Real> > ev =
+    ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(eps,this->min_diff_);
     for ( int i = 0; i < this->dim_; i++ ) {
@@ -506,9 +506,9 @@ public:
     }
   }
   void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<std::vector<Real> > ev =
+    ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(eps,this->min_diff_);
     for ( int i = 0; i < this->dim_; i++ ) {
@@ -518,11 +518,11 @@ public:
     }
   }
   void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<ROL::StdVector<Real> >(x).getVector();
-    ROL::SharedPointer<const std::vector<Real> > eg =
+    ROL::Ptr<const std::vector<Real> > eg =
       dynamic_cast<const ROL::StdVector<Real>&>(g).getVector();
-    ROL::SharedPointer<std::vector<Real> > ev =
+    ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(eps,this->min_diff_);
     for ( int i = 0; i < this->dim_; i++ ) {
@@ -532,11 +532,11 @@ public:
     }
   }
   void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<const std::vector<Real> > eg =
+    ROL::Ptr<const std::vector<Real> > eg =
       dynamic_cast<const ROL::StdVector<Real>&>(g).getVector();
-    ROL::SharedPointer<std::vector<Real> > ev =
+    ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(eps,this->min_diff_);
     for ( int i = 0; i < this->dim_; i++ ) {
@@ -546,15 +546,15 @@ public:
     }
   }
   void setVectorToUpperBound( ROL::Vector<Real> &u ) {
-    ROL::SharedPointer<std::vector<Real> > us = ROL::makeShared<std::vector<Real>>(this->dim_,0.0);
+    ROL::Ptr<std::vector<Real> > us = ROL::makePtr<std::vector<Real>>(this->dim_,0.0);
     us->assign(this->x_up_.begin(),this->x_up_.end()); 
-    ROL::SharedPointer<ROL::Vector<Real> > up = ROL::makeShared<ROL::StdVector<Real>>(us);
+    ROL::Ptr<ROL::Vector<Real> > up = ROL::makePtr<ROL::StdVector<Real>>(us);
     u.set(*up);
   }
   void setVectorToLowerBound( ROL::Vector<Real> &l ) {
-    ROL::SharedPointer<std::vector<Real> > ls = ROL::makeShared<std::vector<Real>>(this->dim_,0.0);
+    ROL::Ptr<std::vector<Real> > ls = ROL::makePtr<std::vector<Real>>(this->dim_,0.0);
     ls->assign(this->x_lo_.begin(),this->x_lo_.end()); 
-    ROL::SharedPointer<ROL::Vector<Real> > lp = ROL::makeShared<ROL::StdVector<Real>>(ls);
+    ROL::Ptr<ROL::Vector<Real> > lp = ROL::makePtr<ROL::StdVector<Real>>(ls);
     l.set(*lp);
   }
 };

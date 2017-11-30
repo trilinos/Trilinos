@@ -534,15 +534,15 @@ public:
 template<class Real>
 class L2VectorPrimal : public ROL::Vector<Real> {
 private:
-  ROL::SharedPointer<std::vector<Real> > vec_;
-  ROL::SharedPointer<BurgersFEM<Real> > fem_;
+  ROL::Ptr<std::vector<Real> > vec_;
+  ROL::Ptr<BurgersFEM<Real> > fem_;
 
-  mutable ROL::SharedPointer<L2VectorDual<Real> > dual_vec_;
+  mutable ROL::Ptr<L2VectorDual<Real> > dual_vec_;
 
 public:
-  L2VectorPrimal(const ROL::SharedPointer<std::vector<Real> > & vec,
-                 const ROL::SharedPointer<BurgersFEM<Real> > &fem)
-    : vec_(vec), fem_(fem), dual_vec_(ROL::nullPointer) {}
+  L2VectorPrimal(const ROL::Ptr<std::vector<Real> > & vec,
+                 const ROL::Ptr<BurgersFEM<Real> > &fem)
+    : vec_(vec), fem_(fem), dual_vec_(ROL::nullPtr) {}
 
   void set( const ROL::Vector<Real> &x ) {
     const L2VectorPrimal &ex = dynamic_cast<const L2VectorPrimal&>(x);
@@ -578,21 +578,21 @@ public:
     return val;
   }
 
-  ROL::SharedPointer<ROL::Vector<Real> > clone() const {
-    return ROL::makeShared<L2VectorPrimal>( ROL::makeShared<std::vector<Real>>(vec_->size(),0.0),fem_);
+  ROL::Ptr<ROL::Vector<Real> > clone() const {
+    return ROL::makePtr<L2VectorPrimal>( ROL::makePtr<std::vector<Real>>(vec_->size(),0.0),fem_);
   }
 
-  ROL::SharedPointer<const std::vector<Real> > getVector() const {
+  ROL::Ptr<const std::vector<Real> > getVector() const {
     return vec_;
   }
 
-  ROL::SharedPointer<std::vector<Real> > getVector() {
+  ROL::Ptr<std::vector<Real> > getVector() {
     return vec_;
   }
 
-  ROL::SharedPointer<ROL::Vector<Real> > basis( const int i ) const {
-    ROL::SharedPointer<L2VectorPrimal> e
-      = ROL::makeShared<L2VectorPrimal>( ROL::makeShared<std::vector<Real>>(vec_->size(),0.0),fem_);
+  ROL::Ptr<ROL::Vector<Real> > basis( const int i ) const {
+    ROL::Ptr<L2VectorPrimal> e
+      = ROL::makePtr<L2VectorPrimal>( ROL::makePtr<std::vector<Real>>(vec_->size(),0.0),fem_);
     (*e->getVector())[i] = 1.0;
     return e;
   }
@@ -602,10 +602,10 @@ public:
   }
 
   const ROL::Vector<Real>& dual() const {
-    dual_vec_ = ROL::makeShared<L2VectorDual<Real>>(
-      ROL::makeShared<std::vector<Real>>(*vec_),fem_);
+    dual_vec_ = ROL::makePtr<L2VectorDual<Real>>(
+      ROL::makePtr<std::vector<Real>>(*vec_),fem_);
 
-    fem_->apply_mass(*(ROL::constPointerCast<std::vector<Real> >(dual_vec_->getVector())),*vec_);
+    fem_->apply_mass(*(ROL::constPtrCast<std::vector<Real> >(dual_vec_->getVector())),*vec_);
     return *dual_vec_;
   }
 
@@ -614,15 +614,15 @@ public:
 template<class Real>
 class L2VectorDual : public ROL::Vector<Real> {
 private:
-  ROL::SharedPointer<std::vector<Real> > vec_;
-  ROL::SharedPointer<BurgersFEM<Real> > fem_;
+  ROL::Ptr<std::vector<Real> > vec_;
+  ROL::Ptr<BurgersFEM<Real> > fem_;
 
-  mutable ROL::SharedPointer<L2VectorPrimal<Real> > dual_vec_;
+  mutable ROL::Ptr<L2VectorPrimal<Real> > dual_vec_;
 
 public:
-  L2VectorDual(const ROL::SharedPointer<std::vector<Real> > & vec,
-               const ROL::SharedPointer<BurgersFEM<Real> > &fem)
-    : vec_(vec), fem_(fem), dual_vec_(ROL::nullPointer) {}
+  L2VectorDual(const ROL::Ptr<std::vector<Real> > & vec,
+               const ROL::Ptr<BurgersFEM<Real> > &fem)
+    : vec_(vec), fem_(fem), dual_vec_(ROL::nullPtr) {}
 
   void set( const ROL::Vector<Real> &x ) {
     const L2VectorDual &ex = dynamic_cast<const L2VectorDual&>(x);
@@ -665,21 +665,21 @@ public:
     return val;
   }
 
-  ROL::SharedPointer<ROL::Vector<Real> > clone() const {
-    return ROL::makeShared<L2VectorDual>( ROL::makeShared<std::vector<Real>>(vec_->size(),0.0),fem_);
+  ROL::Ptr<ROL::Vector<Real> > clone() const {
+    return ROL::makePtr<L2VectorDual>( ROL::makePtr<std::vector<Real>>(vec_->size(),0.0),fem_);
   }
 
-  ROL::SharedPointer<const std::vector<Real> > getVector() const {
+  ROL::Ptr<const std::vector<Real> > getVector() const {
     return vec_;
   }
 
-  ROL::SharedPointer<std::vector<Real> > getVector() {
+  ROL::Ptr<std::vector<Real> > getVector() {
     return vec_;
   }
 
-  ROL::SharedPointer<ROL::Vector<Real> > basis( const int i ) const {
-    ROL::SharedPointer<L2VectorDual> e
-      = ROL::makeShared<L2VectorDual>( ROL::makeShared<std::vector<Real>>(vec_->size(),0.0),fem_);
+  ROL::Ptr<ROL::Vector<Real> > basis( const int i ) const {
+    ROL::Ptr<L2VectorDual> e
+      = ROL::makePtr<L2VectorDual>( ROL::makePtr<std::vector<Real>>(vec_->size(),0.0),fem_);
     (*e->getVector())[i] = 1.0;
     return e;
   }
@@ -689,10 +689,10 @@ public:
   }
 
   const ROL::Vector<Real>& dual() const {
-    dual_vec_ = ROL::makeShared<L2VectorPrimal<Real>>(
-      ROL::makeShared<std::vector<Real>>(*vec_),fem_);
+    dual_vec_ = ROL::makePtr<L2VectorPrimal<Real>>(
+      ROL::makePtr<std::vector<Real>>(*vec_),fem_);
 
-    fem_->apply_inverse_mass(*(ROL::constPointerCast<std::vector<Real> >(dual_vec_->getVector())),*vec_);
+    fem_->apply_inverse_mass(*(ROL::constPtrCast<std::vector<Real> >(dual_vec_->getVector())),*vec_);
     return *dual_vec_;
   }
 
@@ -701,15 +701,15 @@ public:
 template<class Real>
 class H1VectorPrimal : public ROL::Vector<Real> {
 private:
-  ROL::SharedPointer<std::vector<Real> > vec_;
-  ROL::SharedPointer<BurgersFEM<Real> > fem_;
+  ROL::Ptr<std::vector<Real> > vec_;
+  ROL::Ptr<BurgersFEM<Real> > fem_;
 
-  mutable ROL::SharedPointer<H1VectorDual<Real> > dual_vec_;
+  mutable ROL::Ptr<H1VectorDual<Real> > dual_vec_;
 
 public:
-  H1VectorPrimal(const ROL::SharedPointer<std::vector<Real> > & vec,
-                 const ROL::SharedPointer<BurgersFEM<Real> > &fem)
-    : vec_(vec), fem_(fem), dual_vec_(ROL::nullPointer) {}
+  H1VectorPrimal(const ROL::Ptr<std::vector<Real> > & vec,
+                 const ROL::Ptr<BurgersFEM<Real> > &fem)
+    : vec_(vec), fem_(fem), dual_vec_(ROL::nullPtr) {}
 
   void set( const ROL::Vector<Real> &x ) {
     const H1VectorPrimal &ex = dynamic_cast<const H1VectorPrimal&>(x);
@@ -745,21 +745,21 @@ public:
     return val;
   }
 
-  ROL::SharedPointer<ROL::Vector<Real> > clone() const {
-    return ROL::makeShared<H1VectorPrimal>( ROL::makeShared<std::vector<Real>>(vec_->size(),0.0),fem_);
+  ROL::Ptr<ROL::Vector<Real> > clone() const {
+    return ROL::makePtr<H1VectorPrimal>( ROL::makePtr<std::vector<Real>>(vec_->size(),0.0),fem_);
   }
 
-  ROL::SharedPointer<const std::vector<Real> > getVector() const {
+  ROL::Ptr<const std::vector<Real> > getVector() const {
     return vec_;
   }
 
-  ROL::SharedPointer<std::vector<Real> > getVector() {
+  ROL::Ptr<std::vector<Real> > getVector() {
     return vec_;
   }
 
-  ROL::SharedPointer<ROL::Vector<Real> > basis( const int i ) const {
-    ROL::SharedPointer<H1VectorPrimal> e
-      = ROL::makeShared<H1VectorPrimal>( ROL::makeShared<std::vector<Real>>(vec_->size(),0.0),fem_);
+  ROL::Ptr<ROL::Vector<Real> > basis( const int i ) const {
+    ROL::Ptr<H1VectorPrimal> e
+      = ROL::makePtr<H1VectorPrimal>( ROL::makePtr<std::vector<Real>>(vec_->size(),0.0),fem_);
     (*e->getVector())[i] = 1.0;
     return e;
   }
@@ -769,10 +769,10 @@ public:
   }
 
   const ROL::Vector<Real>& dual() const {
-    dual_vec_ = ROL::makeShared<H1VectorDual<Real>>(
-      ROL::makeShared<std::vector<Real>>(*vec_),fem_);
+    dual_vec_ = ROL::makePtr<H1VectorDual<Real>>(
+      ROL::makePtr<std::vector<Real>>(*vec_),fem_);
 
-    fem_->apply_H1(*(ROL::constPointerCast<std::vector<Real> >(dual_vec_->getVector())),*vec_);
+    fem_->apply_H1(*(ROL::constPtrCast<std::vector<Real> >(dual_vec_->getVector())),*vec_);
     return *dual_vec_;
   }
 
@@ -781,15 +781,15 @@ public:
 template<class Real>
 class H1VectorDual : public ROL::Vector<Real> {
 private:
-  ROL::SharedPointer<std::vector<Real> > vec_;
-  ROL::SharedPointer<BurgersFEM<Real> > fem_;
+  ROL::Ptr<std::vector<Real> > vec_;
+  ROL::Ptr<BurgersFEM<Real> > fem_;
 
-  mutable ROL::SharedPointer<H1VectorPrimal<Real> > dual_vec_;
+  mutable ROL::Ptr<H1VectorPrimal<Real> > dual_vec_;
 
 public:
-  H1VectorDual(const ROL::SharedPointer<std::vector<Real> > & vec,
-               const ROL::SharedPointer<BurgersFEM<Real> > &fem)
-    : vec_(vec), fem_(fem), dual_vec_(ROL::nullPointer) {}
+  H1VectorDual(const ROL::Ptr<std::vector<Real> > & vec,
+               const ROL::Ptr<BurgersFEM<Real> > &fem)
+    : vec_(vec), fem_(fem), dual_vec_(ROL::nullPtr) {}
 
   void set( const ROL::Vector<Real> &x ) {
     const H1VectorDual &ex = dynamic_cast<const H1VectorDual&>(x);
@@ -832,21 +832,21 @@ public:
     return val;
   }
 
-  ROL::SharedPointer<ROL::Vector<Real> > clone() const {
-    return ROL::makeShared<H1VectorDual>( ROL::makeShared<std::vector<Real>>(vec_->size(),0.0),fem_);
+  ROL::Ptr<ROL::Vector<Real> > clone() const {
+    return ROL::makePtr<H1VectorDual>( ROL::makePtr<std::vector<Real>>(vec_->size(),0.0),fem_);
   }
 
-  ROL::SharedPointer<const std::vector<Real> > getVector() const {
+  ROL::Ptr<const std::vector<Real> > getVector() const {
     return vec_;
   }
 
-  ROL::SharedPointer<std::vector<Real> > getVector() {
+  ROL::Ptr<std::vector<Real> > getVector() {
     return vec_;
   }
 
-  ROL::SharedPointer<ROL::Vector<Real> > basis( const int i ) const {
-    ROL::SharedPointer<H1VectorDual> e
-      = ROL::makeShared<H1VectorDual>( ROL::makeShared<std::vector<Real>>(vec_->size(),0.0),fem_);
+  ROL::Ptr<ROL::Vector<Real> > basis( const int i ) const {
+    ROL::Ptr<H1VectorDual> e
+      = ROL::makePtr<H1VectorDual>( ROL::makePtr<std::vector<Real>>(vec_->size(),0.0),fem_);
     (*e->getVector())[i] = 1.0;
     return e;
   }
@@ -856,10 +856,10 @@ public:
   }
 
   const ROL::Vector<Real>& dual() const {
-    dual_vec_ = ROL::makeShared<H1VectorPrimal<Real>>(
-      ROL::makeShared<std::vector<Real>>(*vec_),fem_);
+    dual_vec_ = ROL::makePtr<H1VectorPrimal<Real>>(
+      ROL::makePtr<std::vector<Real>>(*vec_),fem_);
 
-    fem_->apply_inverse_H1(*(ROL::constPointerCast<std::vector<Real> >(dual_vec_->getVector())),*vec_);
+    fem_->apply_inverse_H1(*(ROL::constPtrCast<std::vector<Real> >(dual_vec_->getVector())),*vec_);
     return *dual_vec_;
   }
 };
@@ -880,20 +880,20 @@ private:
 
   typedef typename std::vector<Real>::size_type uint;
 
-  ROL::SharedPointer<BurgersFEM<Real> > fem_;
+  ROL::Ptr<BurgersFEM<Real> > fem_;
   bool useHessian_;
 
 public:
-  Constraint_BurgersControl(ROL::SharedPointer<BurgersFEM<Real> > &fem, bool useHessian = true)
+  Constraint_BurgersControl(ROL::Ptr<BurgersFEM<Real> > &fem, bool useHessian = true)
    : fem_(fem), useHessian_(useHessian) {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, 
                   const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > cp =
+    ROL::Ptr<std::vector<Real> > cp =
       dynamic_cast<PrimalConstraintVector&>(c).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const PrimalStateVector& >(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const PrimalControlVector&>(z).getVector();
 
     const std::vector<Real> param
@@ -905,13 +905,13 @@ public:
 
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                        const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > jvp =
+    ROL::Ptr<std::vector<Real> > jvp =
       dynamic_cast<PrimalConstraintVector&>(jv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp =
+    ROL::Ptr<const std::vector<Real> > vp =
       dynamic_cast<const PrimalStateVector&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const PrimalStateVector&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const PrimalControlVector&>(z).getVector();
 
     const std::vector<Real> param
@@ -923,13 +923,13 @@ public:
 
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                        const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > jvp =
+    ROL::Ptr<std::vector<Real> > jvp =
       dynamic_cast<PrimalConstraintVector&>(jv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp =
+    ROL::Ptr<const std::vector<Real> > vp =
       dynamic_cast<const PrimalControlVector&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const PrimalStateVector&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const PrimalControlVector&>(z).getVector();
 
     const std::vector<Real> param
@@ -941,13 +941,13 @@ public:
 
   void applyInverseJacobian_1(ROL::Vector<Real> &ijv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > ijvp =
+    ROL::Ptr<std::vector<Real> > ijvp =
       dynamic_cast<PrimalStateVector&>(ijv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp =
+    ROL::Ptr<const std::vector<Real> > vp =
       dynamic_cast<const PrimalConstraintVector&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const PrimalStateVector&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const PrimalControlVector&>(z).getVector();
 
     const std::vector<Real> param
@@ -959,13 +959,13 @@ public:
 
   void applyAdjointJacobian_1(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, 
                               const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > jvp =
+    ROL::Ptr<std::vector<Real> > jvp =
       dynamic_cast<DualStateVector&>(ajv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp =
+    ROL::Ptr<const std::vector<Real> > vp =
       dynamic_cast<const DualConstraintVector&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const PrimalStateVector&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const PrimalControlVector&>(z).getVector();
 
     const std::vector<Real> param
@@ -977,13 +977,13 @@ public:
 
   void applyAdjointJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
                               const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > jvp =
+    ROL::Ptr<std::vector<Real> > jvp =
       dynamic_cast<DualControlVector&>(jv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp =
+    ROL::Ptr<const std::vector<Real> > vp =
       dynamic_cast<const DualConstraintVector&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const PrimalStateVector&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const PrimalControlVector&>(z).getVector();
 
     const std::vector<Real> param
@@ -995,13 +995,13 @@ public:
 
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &iajv, const ROL::Vector<Real> &v,
                                      const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > iajvp =
+    ROL::Ptr<std::vector<Real> > iajvp =
       dynamic_cast<DualConstraintVector&>(iajv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp =
+    ROL::Ptr<const std::vector<Real> > vp =
       dynamic_cast<const DualStateVector&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const PrimalStateVector&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const PrimalControlVector&>(z).getVector();
 
     const std::vector<Real> param
@@ -1014,15 +1014,15 @@ public:
   void applyAdjointHessian_11(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     if ( useHessian_ ) {
-      ROL::SharedPointer<std::vector<Real> > ahwvp =
+      ROL::Ptr<std::vector<Real> > ahwvp =
         dynamic_cast<DualStateVector&>(ahwv).getVector();
-      ROL::SharedPointer<const std::vector<Real> > wp =
+      ROL::Ptr<const std::vector<Real> > wp =
         dynamic_cast<const DualConstraintVector&>(w).getVector();
-      ROL::SharedPointer<const std::vector<Real> > vp =
+      ROL::Ptr<const std::vector<Real> > vp =
         dynamic_cast<const PrimalStateVector&>(v).getVector();
-      ROL::SharedPointer<const std::vector<Real> > up =
+      ROL::Ptr<const std::vector<Real> > up =
         dynamic_cast<const PrimalStateVector&>(u).getVector();
-      ROL::SharedPointer<const std::vector<Real> > zp =
+      ROL::Ptr<const std::vector<Real> > zp =
         dynamic_cast<const PrimalControlVector&>(z).getVector();
 
       const std::vector<Real> param
@@ -1039,15 +1039,15 @@ public:
   void applyAdjointHessian_12(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     if ( useHessian_ ) {
-      ROL::SharedPointer<std::vector<Real> > ahwvp =
+      ROL::Ptr<std::vector<Real> > ahwvp =
         dynamic_cast<DualControlVector&>(ahwv).getVector();
-      ROL::SharedPointer<const std::vector<Real> > wp =
+      ROL::Ptr<const std::vector<Real> > wp =
         dynamic_cast<const DualConstraintVector&>(w).getVector();
-      ROL::SharedPointer<const std::vector<Real> > vp =
+      ROL::Ptr<const std::vector<Real> > vp =
         dynamic_cast<const PrimalStateVector&>(v).getVector();
-      ROL::SharedPointer<const std::vector<Real> > up =
+      ROL::Ptr<const std::vector<Real> > up =
         dynamic_cast<const PrimalStateVector&>(u).getVector();
-      ROL::SharedPointer<const std::vector<Real> > zp =
+      ROL::Ptr<const std::vector<Real> > zp =
         dynamic_cast<const PrimalControlVector&>(z).getVector();
 
       const std::vector<Real> param
@@ -1063,15 +1063,15 @@ public:
   void applyAdjointHessian_21(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     if ( useHessian_ ) {
-      ROL::SharedPointer<std::vector<Real> > ahwvp =
+      ROL::Ptr<std::vector<Real> > ahwvp =
         dynamic_cast<DualStateVector&>(ahwv).getVector();
-      ROL::SharedPointer<const std::vector<Real> > wp =
+      ROL::Ptr<const std::vector<Real> > wp =
         dynamic_cast<const DualConstraintVector&>(w).getVector();
-      ROL::SharedPointer<const std::vector<Real> > vp =
+      ROL::Ptr<const std::vector<Real> > vp =
         dynamic_cast<const PrimalControlVector&>(v).getVector();
-      ROL::SharedPointer<const std::vector<Real> > up =
+      ROL::Ptr<const std::vector<Real> > up =
         dynamic_cast<const PrimalStateVector&>(u).getVector();
-      ROL::SharedPointer<const std::vector<Real> > zp =
+      ROL::Ptr<const std::vector<Real> > zp =
         dynamic_cast<const PrimalControlVector&>(z).getVector();
 
       const std::vector<Real> param
@@ -1087,15 +1087,15 @@ public:
   void applyAdjointHessian_22(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     if ( useHessian_ ) {
-      ROL::SharedPointer<std::vector<Real> > ahwvp =
+      ROL::Ptr<std::vector<Real> > ahwvp =
         dynamic_cast<DualControlVector&>(ahwv).getVector();
-      ROL::SharedPointer<const std::vector<Real> > wp =
+      ROL::Ptr<const std::vector<Real> > wp =
         dynamic_cast<const DualConstraintVector&>(w).getVector();
-      ROL::SharedPointer<const std::vector<Real> > vp =
+      ROL::Ptr<const std::vector<Real> > vp =
         dynamic_cast<const PrimalControlVector&>(v).getVector();
-      ROL::SharedPointer<const std::vector<Real> > up =
+      ROL::Ptr<const std::vector<Real> > up =
         dynamic_cast<const PrimalStateVector&>(u).getVector();
-      ROL::SharedPointer<const std::vector<Real> > zp =
+      ROL::Ptr<const std::vector<Real> > zp =
         dynamic_cast<const PrimalControlVector&>(z).getVector();
 
       const std::vector<Real> param
@@ -1122,13 +1122,13 @@ private:
 
   typedef typename std::vector<Real>::size_type uint;
 
-  ROL::SharedPointer<BurgersFEM<Real> > fem_;
+  ROL::Ptr<BurgersFEM<Real> > fem_;
 
   Real x_;
   std::vector<int> indices_; 
 
 public:
-  Objective_BurgersControl(const ROL::SharedPointer<BurgersFEM<Real> > &fem, 
+  Objective_BurgersControl(const ROL::Ptr<BurgersFEM<Real> > &fem, 
                            Real x = 0.0) : fem_(fem), x_(x) {
     for (int i = 1; i < fem_->num_dof()+1; i++) {
       if ( (Real)i*(fem_->mesh_spacing()) >= x_ ) {
@@ -1140,7 +1140,7 @@ public:
   using ROL::Objective_SimOpt<Real>::value;
 
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const PrimalStateVector&>(u).getVector();
 
 //    const std::vector<Real> param
@@ -1160,9 +1160,9 @@ public:
   }
 
   void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    ROL::SharedPointer<std::vector<Real> > gp =
+    ROL::Ptr<std::vector<Real> > gp =
       dynamic_cast<DualStateVector&>(g).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const PrimalStateVector&>(u).getVector();
 
 //    const std::vector<Real> param
@@ -1190,9 +1190,9 @@ public:
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-//    ROL::SharedPointer<std::vector<Real> > hvp =
-//      ROL::constPointerCast<std::vector<Real> >((dynamic_cast<DualStateVector&>(hv)).getVector());
-//    ROL::SharedPointer<const std::vector<Real> > vp =
+//    ROL::Ptr<std::vector<Real> > hvp =
+//      ROL::constPtrCast<std::vector<Real> >((dynamic_cast<DualStateVector&>(hv)).getVector());
+//    ROL::Ptr<const std::vector<Real> > vp =
 //      (dynamic_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &&>(v))).getVector();
 //
 //    const std::vector<Real> param
@@ -1230,11 +1230,11 @@ private:
   std::vector<Real> x_up_;
   Real min_diff_;
   Real scale_;
-  ROL::SharedPointer<BurgersFEM<Real> > fem_;
-  ROL::SharedPointer<ROL::Vector<Real> > l_;
-  ROL::SharedPointer<ROL::Vector<Real> > u_;
+  ROL::Ptr<BurgersFEM<Real> > fem_;
+  ROL::Ptr<ROL::Vector<Real> > l_;
+  ROL::Ptr<ROL::Vector<Real> > u_;
 
-  void cast_vector(ROL::SharedPointer<std::vector<Real> > &xvec,
+  void cast_vector(ROL::Ptr<std::vector<Real> > &xvec,
                    ROL::Vector<Real> &x) const {
     try {
       xvec = dynamic_cast<L2VectorPrimal<Real>&>(x).getVector();
@@ -1244,7 +1244,7 @@ private:
     }
   }
 
-  void cast_const_vector(ROL::SharedPointer<const std::vector<Real> > &xvec,
+  void cast_const_vector(ROL::Ptr<const std::vector<Real> > &xvec,
                    const ROL::Vector<Real> &x) const {
     try {
       xvec = dynamic_cast<const L2VectorPrimal<Real>&>(x).getVector();
@@ -1270,7 +1270,7 @@ private:
 
 public:
   L2BoundConstraint(std::vector<Real> &l, std::vector<Real> &u,
-              const ROL::SharedPointer<BurgersFEM<Real> > &fem, Real scale = 1.0)
+              const ROL::Ptr<BurgersFEM<Real> > &fem, Real scale = 1.0)
     : x_lo_(l), x_up_(u), scale_(scale), fem_(fem) {
     dim_ = x_lo_.size();
     for ( int i = 0; i < dim_; i++ ) {
@@ -1282,14 +1282,14 @@ public:
       }
     }
     min_diff_ *= 0.5;
-    l_ = ROL::makeShared<L2VectorPrimal<Real>>(
-         ROL::makeShared<std::vector<Real>>(l), fem);
-    u_ = ROL::makeShared<L2VectorPrimal<Real>>(
-         ROL::makeShared<std::vector<Real>>(u), fem);
+    l_ = ROL::makePtr<L2VectorPrimal<Real>>(
+         ROL::makePtr<std::vector<Real>>(l), fem);
+    u_ = ROL::makePtr<L2VectorPrimal<Real>>(
+         ROL::makePtr<std::vector<Real>>(u), fem);
   }
 
   bool isFeasible( const ROL::Vector<Real> &x ) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     bool val = true;
     int  cnt = 1;
     for ( int i = 0; i < dim_; i++ ) {
@@ -1301,13 +1301,13 @@ public:
   }
 
   void project( ROL::Vector<Real> &x ) {
-    ROL::SharedPointer<std::vector<Real> > ex; cast_vector(ex,x);
+    ROL::Ptr<std::vector<Real> > ex; cast_vector(ex,x);
     projection(*ex);
   }
 
   void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] <= x_lo_[i]+epsn) ) {
@@ -1317,8 +1317,8 @@ public:
   }
 
   void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] >= x_up_[i]-epsn) ) {
@@ -1328,8 +1328,8 @@ public:
   }
 
   void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] <= x_lo_[i]+epsn) ||
@@ -1340,9 +1340,9 @@ public:
   }
 
   void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<const std::vector<Real> > eg; cast_const_vector(eg,g);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] <= x_lo_[i]+epsn && (*eg)[i] > 0.0) ) {
@@ -1352,9 +1352,9 @@ public:
   }
 
   void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<const std::vector<Real> > eg; cast_const_vector(eg,g);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] >= x_up_[i]-epsn && (*eg)[i] < 0.0) ) {
@@ -1364,9 +1364,9 @@ public:
   }
 
   void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<const std::vector<Real> > eg; cast_const_vector(eg,g);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] <= x_lo_[i]+epsn && (*eg)[i] > 0.0) ||
@@ -1376,11 +1376,11 @@ public:
     }
   }
 
-  const ROL::SharedPointer<const ROL::Vector<Real> > getLowerBound(void) const {
+  const ROL::Ptr<const ROL::Vector<Real> > getLowerBound(void) const {
     return l_;
   }
 
-  const ROL::SharedPointer<const ROL::Vector<Real> > getUpperBound(void) const {
+  const ROL::Ptr<const ROL::Vector<Real> > getUpperBound(void) const {
     return u_;
   }
 };
@@ -1393,23 +1393,23 @@ private:
   std::vector<Real> x_up_;
   Real min_diff_;
   Real scale_;
-  ROL::SharedPointer<BurgersFEM<Real> > fem_;
-  ROL::SharedPointer<ROL::Vector<Real> > l_;
-  ROL::SharedPointer<ROL::Vector<Real> > u_;
+  ROL::Ptr<BurgersFEM<Real> > fem_;
+  ROL::Ptr<ROL::Vector<Real> > l_;
+  ROL::Ptr<ROL::Vector<Real> > u_;
 
-  void cast_vector(ROL::SharedPointer<std::vector<Real> > &xvec,
+  void cast_vector(ROL::Ptr<std::vector<Real> > &xvec,
                    ROL::Vector<Real> &x) const {
     try {
-      xvec = ROL::constPointerCast<std::vector<Real> >(
+      xvec = ROL::constPtrCast<std::vector<Real> >(
                (dynamic_cast<H1VectorPrimal<Real>&>(x)).getVector());
     }
     catch (std::exception &e) {
-      xvec = ROL::constPointerCast<std::vector<Real> >(
+      xvec = ROL::constPtrCast<std::vector<Real> >(
                (dynamic_cast<H1VectorDual<Real>&>(x)).getVector());
     }
   }
 
-  void cast_const_vector(ROL::SharedPointer<const std::vector<Real> > &xvec,
+  void cast_const_vector(ROL::Ptr<const std::vector<Real> > &xvec,
                    const ROL::Vector<Real> &x) const {
     try {
       xvec = (dynamic_cast<H1VectorPrimal<Real>&>(
@@ -1437,7 +1437,7 @@ private:
 
 public:
   H1BoundConstraint(std::vector<Real> &l, std::vector<Real> &u,
-              const ROL::SharedPointer<BurgersFEM<Real> > &fem, Real scale = 1.0)
+              const ROL::Ptr<BurgersFEM<Real> > &fem, Real scale = 1.0)
     : x_lo_(l), x_up_(u), scale_(scale), fem_(fem) {
     dim_ = x_lo_.size();
     for ( int i = 0; i < dim_; i++ ) {
@@ -1449,14 +1449,14 @@ public:
       }
     }
     min_diff_ *= 0.5;
-    l_ = ROL::makeShared<H1VectorPrimal<Real>>(
-         ROL::makeShared<std::vector<Real>>(l), fem);
-    u_ = ROL::makeShared<H1VectorPrimal<Real>>(
-         ROL::makeShared<std::vector<Real>>(u), fem);
+    l_ = ROL::makePtr<H1VectorPrimal<Real>>(
+         ROL::makePtr<std::vector<Real>>(l), fem);
+    u_ = ROL::makePtr<H1VectorPrimal<Real>>(
+         ROL::makePtr<std::vector<Real>>(u), fem);
   }
 
   bool isFeasible( const ROL::Vector<Real> &x ) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
     bool val = true;
     int  cnt = 1;
     for ( int i = 0; i < dim_; i++ ) {
@@ -1468,13 +1468,13 @@ public:
   }
 
   void project( ROL::Vector<Real> &x ) {
-    ROL::SharedPointer<std::vector<Real> > ex; cast_vector(ex,x);
+    ROL::Ptr<std::vector<Real> > ex; cast_vector(ex,x);
     projection(*ex);
   }
 
   void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] <= x_lo_[i]+epsn) ) {
@@ -1484,8 +1484,8 @@ public:
   }
 
   void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] >= x_up_[i]-epsn) ) {
@@ -1495,8 +1495,8 @@ public:
   }
 
   void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] <= x_lo_[i]+epsn) ||
@@ -1507,9 +1507,9 @@ public:
   }
 
   void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<const std::vector<Real> > eg; cast_const_vector(eg,g);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] <= x_lo_[i]+epsn && (*eg)[i] > 0.0) ) {
@@ -1519,9 +1519,9 @@ public:
   }
 
   void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<const std::vector<Real> > eg; cast_const_vector(eg,g);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] >= x_up_[i]-epsn && (*eg)[i] < 0.0) ) {
@@ -1531,9 +1531,9 @@ public:
   }
 
   void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex; cast_const_vector(ex,x);
-    ROL::SharedPointer<const std::vector<Real> > eg; cast_const_vector(eg,g);
-    ROL::SharedPointer<std::vector<Real> > ev; cast_vector(ev,v);
+    ROL::Ptr<const std::vector<Real> > ex; cast_const_vector(ex,x);
+    ROL::Ptr<const std::vector<Real> > eg; cast_const_vector(eg,g);
+    ROL::Ptr<std::vector<Real> > ev; cast_vector(ev,v);
     Real epsn = std::min(scale_*eps,min_diff_);
     for ( int i = 0; i < dim_; i++ ) {
       if ( ((*ex)[i] <= x_lo_[i]+epsn && (*eg)[i] > 0.0) ||
@@ -1543,11 +1543,11 @@ public:
     }
   }
 
-  const ROL::SharedPointer<const ROL::Vector<Real> > getLowerBound(void) const {
+  const ROL::Ptr<const ROL::Vector<Real> > getLowerBound(void) const {
     return l_;
   }
 
-  const ROL::SharedPointer<const ROL::Vector<Real> > getUpperBound(void) const {
+  const ROL::Ptr<const ROL::Vector<Real> > getUpperBound(void) const {
     return u_;
   }
 };
@@ -1555,26 +1555,26 @@ public:
 template<class Real, class Ordinal>
 class L2VectorBatchManager : public ROL::TeuchosBatchManager<Real,Ordinal> {
 private:
-  void cast_vector(ROL::SharedPointer<std::vector<Real> > &xvec,
+  void cast_vector(ROL::Ptr<std::vector<Real> > &xvec,
                    ROL::Vector<Real> &x) const {
     try {
-      xvec = ROL::constPointerCast<std::vector<Real> >(
+      xvec = ROL::constPtrCast<std::vector<Real> >(
                (dynamic_cast<L2VectorPrimal<Real>&>(x)).getVector());
     }
     catch (std::exception &e) {
-      xvec = ROL::constPointerCast<std::vector<Real> >(
+      xvec = ROL::constPtrCast<std::vector<Real> >(
                (dynamic_cast<L2VectorDual<Real>&>(x)).getVector());
     }
   }
 
 public:
-  L2VectorBatchManager(const ROL::SharedPointer<const Teuchos::Comm<Ordinal> > &comm)
+  L2VectorBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal> > &comm)
     : ROL::TeuchosBatchManager<Real,Ordinal>(comm) {}
   void sumAll(ROL::Vector<Real> &input, ROL::Vector<Real> &output) {
-    ROL::SharedPointer<std::vector<Real> > input_ptr;
+    ROL::Ptr<std::vector<Real> > input_ptr;
     cast_vector(input_ptr,input);
     int dim_i = input_ptr->size();
-    ROL::SharedPointer<std::vector<Real> > output_ptr;
+    ROL::Ptr<std::vector<Real> > output_ptr;
     cast_vector(output_ptr,output);
     int dim_o = output_ptr->size();
     if ( dim_i != dim_o ) {
@@ -1590,26 +1590,26 @@ public:
 template<class Real, class Ordinal>
 class H1VectorBatchManager : public ROL::TeuchosBatchManager<Real,Ordinal> {
 private:
-  void cast_vector(ROL::SharedPointer<std::vector<Real> > &xvec,
+  void cast_vector(ROL::Ptr<std::vector<Real> > &xvec,
                    ROL::Vector<Real> &x) const {
     try {
-      xvec = ROL::constPointerCast<std::vector<Real> >(
+      xvec = ROL::constPtrCast<std::vector<Real> >(
                (dynamic_cast<H1VectorPrimal<Real>&>(x)).getVector());
     }
     catch (std::exception &e) {
-      xvec = ROL::constPointerCast<std::vector<Real> >(
+      xvec = ROL::constPtrCast<std::vector<Real> >(
                (dynamic_cast<H1VectorDual<Real>&>(x)).getVector());
     }
   }
 
 public:
-  H1VectorBatchManager(const ROL::SharedPointer<const Teuchos::Comm<Ordinal> > &comm)
+  H1VectorBatchManager(const ROL::Ptr<const Teuchos::Comm<Ordinal> > &comm)
     : ROL::TeuchosBatchManager<Real,Ordinal>(comm) {}
   void sumAll(ROL::Vector<Real> &input, ROL::Vector<Real> &output) {
-    ROL::SharedPointer<std::vector<Real> > input_ptr;
+    ROL::Ptr<std::vector<Real> > input_ptr;
     cast_vector(input_ptr,input);
     int dim_i = input_ptr->size();
-    ROL::SharedPointer<std::vector<Real> > output_ptr;
+    ROL::Ptr<std::vector<Real> > output_ptr;
     cast_vector(output_ptr,output);
     int dim_o = output_ptr->size();
     if ( dim_i != dim_o ) {
@@ -1623,7 +1623,7 @@ public:
 };
 
 template<class Real>
-Real random(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm) {
+Real random(const ROL::Ptr<const Teuchos::Comm<int> > &comm) {
   Real val = 0.0;
   if ( Teuchos::rank<int>(*comm)==0 ) {
     val = (Real)rand()/(Real)RAND_MAX;

@@ -61,7 +61,7 @@ template <class Real>
 template <class ScalarT>
 ScalarT Example_Objective<Real>::value(const Vector<ScalarT>& x, Real &tol) {
 
-    ROL::SharedPointer<const std::vector<ScalarT> > xp =
+    ROL::Ptr<const std::vector<ScalarT> > xp =
         (dynamic_cast<const StdVector<ScalarT>&>(x)).getVector();
 
     ScalarT x1 = (*xp)[0];
@@ -100,8 +100,8 @@ void Example_Constraint<Real>::value(Vector<ScalarT> &c, const Vector<ScalarT> &
       
     
 
-    ROL::SharedPointer<vector> cp =  dynamic_cast<SV&>(c).getVector();
-    ROL::SharedPointer<const vector> xp = dynamic_cast<const SV&>(x).getVector();
+    ROL::Ptr<vector> cp =  dynamic_cast<SV&>(c).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     ScalarT x1 = (*xp)[0];
     ScalarT x2 = (*xp)[1];

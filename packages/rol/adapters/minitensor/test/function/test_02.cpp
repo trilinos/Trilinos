@@ -271,7 +271,7 @@ TEST(MiniTensor_ROL, NLLS01)
   ROL::MiniTensorVector<Real, NUM_VAR>
   sol(solval);
 
-  ROL::SharedPointer<ROL::EqualityConstraint<Real>>
+  ROL::Ptr<ROL::EqualityConstraint<Real>>
   pconstr = &constr, false;
 
   // Define algorithm.

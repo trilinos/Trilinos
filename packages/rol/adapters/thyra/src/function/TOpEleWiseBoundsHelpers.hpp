@@ -197,7 +197,7 @@ namespace Thyra {
                        const Teuchos::Ptr< ::Thyra::VectorBase<Scalar> > &x) {
       using Teuchos::tuple;
       using Teuchos::ptrInArg;
-      using ROL::nullPointer;
+      using ROL::nullPtr;
       RTOpPack::TOpEleWiseBound<Scalar> ele_wise_bound_op;
       ::Thyra::applyOp<Scalar> (ele_wise_bound_op,
                                 tuple (ptrInArg (x_lo), ptrInArg (x_up)), tuple (x),
@@ -218,7 +218,7 @@ namespace Thyra {
                        const Scalar& eps) {
       using Teuchos::tuple;
       using Teuchos::ptrInArg;
-      using ROL::nullPointer;
+      using ROL::nullPtr;
       RTOpPack::TOpEleWisePruneLower_3_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_lo), ptrInArg (g)), tuple (v),
@@ -238,7 +238,7 @@ namespace Thyra {
                        const Scalar& eps) {
       using Teuchos::tuple;
       using Teuchos::ptrInArg;
-      using ROL::nullPointer;
+      using ROL::nullPtr;
       RTOpPack::TOpEleWisePruneLower_2_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_lo)), tuple (v),
@@ -259,7 +259,7 @@ namespace Thyra {
                        const Scalar& eps) {
       using Teuchos::tuple;
       using Teuchos::ptrInArg;
-      using ROL::nullPointer;
+      using ROL::nullPtr;
       RTOpPack::TOpEleWisePruneUpper_3_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_up), ptrInArg (g)), tuple (v),
@@ -280,7 +280,7 @@ namespace Thyra {
                        const Scalar& eps) {
       using Teuchos::tuple;
       using Teuchos::ptrInArg;
-      using ROL::nullPointer;
+      using ROL::nullPtr;
       RTOpPack::TOpEleWisePruneUpper_2_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_up)), tuple (v),

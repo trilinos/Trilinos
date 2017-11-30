@@ -73,7 +73,7 @@ class Discretization {
   typedef Intrepid::DefaultCubatureFactory<Real>       CubatureFactory;
   typedef Intrepid::Basis_HGRAD_LINE_C1_FEM<Real,FC>   LineBasis;
 
-  template <typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
+  template <typename T> using ROL::Ptr = ROL::Ptr<T>;
 
   private:
 
@@ -87,21 +87,21 @@ class Discretization {
 
     shards::CellTopology cellType_; // Cell Topology
     
-    ROL::SharedPointer<FC> cubPts_;                // Reference cell cubature points
-    ROL::SharedPointer<FC> cubWts_;                // Reference cell cubature weights
-    ROL::SharedPointer<FC> cellNodes_;             // Physical cell vertices
-    ROL::SharedPointer<FC> jacobian_;              // Jacobians of physical cells
-    ROL::SharedPointer<FC> jacInv_;                // Inverses of Jacobians
-    ROL::SharedPointer<FC> jacDet_;                // Determinants of Jacobians
-    ROL::SharedPointer<FC> wtdMeasure_;            // Weighted measure
-    ROL::SharedPointer<FC> valsCubPts_;            // Values at cubature points on reference cell
-    ROL::SharedPointer<FC> gradCubPts_;            // Gradient at cubature points on reference cell
-    ROL::SharedPointer<FC> tranValsCubPts_;        // Transformed values at cubature points 
-    ROL::SharedPointer<FC> tranGradCubPts_;        // Transformed gradient at cubature points
-    ROL::SharedPointer<FC> wtdTranValsCubPts_;     // Weighted transformed values at cubature points   
-    ROL::SharedPointer<FC> wtdTranGradCubPts_;     // Weighted transformed gradient at cubature points 
-    ROL::SharedPointer<FC> physCubPts_;            // Locations of cubature points in physical cells
-    ROL::SharedPointer<FC> massMatrices_;          // Mass matrices for each cells
+    ROL::Ptr<FC> cubPts_;                // Reference cell cubature points
+    ROL::Ptr<FC> cubWts_;                // Reference cell cubature weights
+    ROL::Ptr<FC> cellNodes_;             // Physical cell vertices
+    ROL::Ptr<FC> jacobian_;              // Jacobians of physical cells
+    ROL::Ptr<FC> jacInv_;                // Inverses of Jacobians
+    ROL::Ptr<FC> jacDet_;                // Determinants of Jacobians
+    ROL::Ptr<FC> wtdMeasure_;            // Weighted measure
+    ROL::Ptr<FC> valsCubPts_;            // Values at cubature points on reference cell
+    ROL::Ptr<FC> gradCubPts_;            // Gradient at cubature points on reference cell
+    ROL::Ptr<FC> tranValsCubPts_;        // Transformed values at cubature points 
+    ROL::Ptr<FC> tranGradCubPts_;        // Transformed gradient at cubature points
+    ROL::Ptr<FC> wtdTranValsCubPts_;     // Weighted transformed values at cubature points   
+    ROL::Ptr<FC> wtdTranGradCubPts_;     // Weighted transformed gradient at cubature points 
+    ROL::Ptr<FC> physCubPts_;            // Locations of cubature points in physical cells
+    ROL::Ptr<FC> massMatrices_;          // Mass matrices for each cells
 
   public:    
 
@@ -121,7 +121,7 @@ class Discretization {
       CubatureFactory cubFactory; 
  
       // Get the reference cell cubature       
-      ROL::SharedPointer<Cubature> cellCub = cubFactory.create(cellType_,cubDegree_);
+      ROL::Ptr<Cubature> cellCub = cubFactory.create(cellType_,cubDegree_);
 
       // Get number of cubature points
       numCubPts_ = cellCub->getNumPoints();
@@ -131,21 +131,21 @@ class Discretization {
       numFields_ = lineBasis.getCardinality();
 
       // Instantiate field containers
-      cubPts_            = ROL::makeShared<FC>(numCubPts_,spaceDim_);
-      cubWts_            = ROL::makeShared<FC>(numCubPts_);        
-      cellNodes_         = ROL::makeShared<FC>(numCells_,numNodes_,spaceDim_);
-      jacobian_          = ROL::makeShared<FC>(numCells_,numCubPts_,spaceDim_,spaceDim_);
-      jacInv_            = ROL::makeShared<FC>(numCells_,numCubPts_,spaceDim_,spaceDim_);
-      jacDet_            = ROL::makeShared<FC>(numCells_,numCubPts_);
-      wtdMeasure_        = ROL::makeShared<FC>(numCells_,numCubPts_);
-      valsCubPts_        = ROL::makeShared<FC>(numFields_,numCubPts_);
-      gradCubPts_        = ROL::makeShared<FC>(numFields_,numCubPts_,spaceDim_);
-      tranValsCubPts_    = ROL::makeShared<FC>(numCells_, numFields_, numCubPts_);
-      tranGradCubPts_    = ROL::makeShared<FC>(numCells_, numFields_, numCubPts_, spaceDim_);
-      wtdTranValsCubPts_ = ROL::makeShared<FC>(numCells_, numFields_, numCubPts_);
-      wtdTranGradCubPts_ = ROL::makeShared<FC>(numCells_, numFields_, numCubPts_, spaceDim_);
-      physCubPts_        = ROL::makeShared<FC>(numCells_, numCubPts_, spaceDim_);
-      massMatrices_      = ROL::makeShared<FC>(numCells_, numFields_, numFields_);
+      cubPts_            = ROL::makePtr<FC>(numCubPts_,spaceDim_);
+      cubWts_            = ROL::makePtr<FC>(numCubPts_);        
+      cellNodes_         = ROL::makePtr<FC>(numCells_,numNodes_,spaceDim_);
+      jacobian_          = ROL::makePtr<FC>(numCells_,numCubPts_,spaceDim_,spaceDim_);
+      jacInv_            = ROL::makePtr<FC>(numCells_,numCubPts_,spaceDim_,spaceDim_);
+      jacDet_            = ROL::makePtr<FC>(numCells_,numCubPts_);
+      wtdMeasure_        = ROL::makePtr<FC>(numCells_,numCubPts_);
+      valsCubPts_        = ROL::makePtr<FC>(numFields_,numCubPts_);
+      gradCubPts_        = ROL::makePtr<FC>(numFields_,numCubPts_,spaceDim_);
+      tranValsCubPts_    = ROL::makePtr<FC>(numCells_, numFields_, numCubPts_);
+      tranGradCubPts_    = ROL::makePtr<FC>(numCells_, numFields_, numCubPts_, spaceDim_);
+      wtdTranValsCubPts_ = ROL::makePtr<FC>(numCells_, numFields_, numCubPts_);
+      wtdTranGradCubPts_ = ROL::makePtr<FC>(numCells_, numFields_, numCubPts_, spaceDim_);
+      physCubPts_        = ROL::makePtr<FC>(numCells_, numCubPts_, spaceDim_);
+      massMatrices_      = ROL::makePtr<FC>(numCells_, numFields_, numFields_);
 
       Real cellLength = domainLength_/numCells_;
 
@@ -201,27 +201,27 @@ class Discretization {
       return numCubPts_;
     }
     
-    ROL::SharedPointer<FC> getPhysCubPts() {
+    ROL::Ptr<FC> getPhysCubPts() {
       return physCubPts_;
     }
 
-    ROL::SharedPointer<FC> getTransformedVals() {
+    ROL::Ptr<FC> getTransformedVals() {
       return tranValsCubPts_;  
     } 
      
-    ROL::SharedPointer<FC> getTransformedGrad() {
+    ROL::Ptr<FC> getTransformedGrad() {
       return tranGradCubPts_;
     }
 
-    ROL::SharedPointer<FC> getWeightedTransformedVals() {
+    ROL::Ptr<FC> getWeightedTransformedVals() {
       return wtdTranValsCubPts_;  
     } 
      
-    ROL::SharedPointer<FC> getWeightedTransformedGrad() {
+    ROL::Ptr<FC> getWeightedTransformedGrad() {
       return wtdTranGradCubPts_;
     }
 
-    ROL::SharedPointer<FC> getMassMatrices() {
+    ROL::Ptr<FC> getMassMatrices() {
       return massMatrices_;
     }
 

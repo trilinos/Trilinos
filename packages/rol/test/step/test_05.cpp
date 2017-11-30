@@ -63,12 +63,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -133,18 +133,18 @@ int main(int argc, char *argv[]) {
         *outStream << std::endl << std::endl << ROL:: ETestOptProblemToString(prob)  << std::endl << std::endl;
   
         // Get Objective Function
-        ROL::SharedPointer<ROL::Vector<RealT> > x0, z;
-        ROL::SharedPointer<ROL::Objective<RealT> > obj;
-        ROL::SharedPointer<ROL::BoundConstraint<RealT> > con;
+        ROL::Ptr<ROL::Vector<RealT> > x0, z;
+        ROL::Ptr<ROL::Objective<RealT> > obj;
+        ROL::Ptr<ROL::BoundConstraint<RealT> > con;
         ROL::getTestObjectives<RealT>(obj,con,x0,z,prob);
-        ROL::SharedPointer<ROL::Vector<RealT> > x = x0->clone();
+        ROL::Ptr<ROL::Vector<RealT> > x = x0->clone();
   
         // Get Dimension of Problem
         int dim = x0->dimension(); 
         parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
   
         // Error Vector
-        ROL::SharedPointer<ROL::Vector<RealT> > e = x0->clone();
+        ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
         e->zero();
         
         // Define Algorithm
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
         *outStream << std::endl << "Norm of Error: " << e->norm() << std::endl;
   
         // Update error flag
-        ROL::SharedPointer<const ROL::AlgorithmState<RealT> > state = algo.getState();
+        ROL::Ptr<const ROL::AlgorithmState<RealT> > state = algo.getState();
         errorFlag += ((e->norm() < std::max(1.e-6*z->norm(),1.e-8) || (state->gnorm < 1.e-6)) ? 0 : 1);
       }
     }

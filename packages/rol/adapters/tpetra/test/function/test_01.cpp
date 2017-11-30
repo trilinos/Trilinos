@@ -71,11 +71,11 @@ typedef Tpetra::MultiVector<RealT, LO, GO, Node> MV;
 typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 
 typedef std::vector<RealT> SV;
-typedef ROL::SharedPointer<MV>            MVP;
-typedef ROL::SharedPointer<SV>            SVP;
+typedef ROL::Ptr<MV>            MVP;
+typedef ROL::Ptr<SV>            SVP;
 
 
-int test(ROL::SharedPointer<const Teuchos::Comm<int> > comm, int dim) {
+int test(ROL::Ptr<const Teuchos::Comm<int> > comm, int dim) {
 
     // Get number of processes
     const int numProc = comm->getSize(); 
@@ -83,20 +83,20 @@ int test(ROL::SharedPointer<const Teuchos::Comm<int> > comm, int dim) {
     // Total size over all processes
     const int numGblIndices = numProc*dim;
 
-    ROL::SharedPointer<Map> map = ROL::makeShared<Map>(numGblIndices,0,comm); 
+    ROL::Ptr<Map> map = ROL::makePtr<Map>(numGblIndices,0,comm); 
 
     int errorFlag = 0;
 
     // Upper bound is +0.75
-    MVP u = ROL::makeShared<MV>(map,1,true);
+    MVP u = ROL::makePtr<MV>(map,1,true);
     u->putScalar(0.9);
 
     // Lower bound is -0.75
-    MVP l = ROL::makeShared<MV>(map,1,true);
+    MVP l = ROL::makePtr<MV>(map,1,true);
     l->putScalar(-0.9);
  
     // Optimization variable
-    MVP x = ROL::makeShared<MV>(map,1,true);
+    MVP x = ROL::makePtr<MV>(map,1,true);
     x->randomize();
 
     ROL::TpetraBoundConstraint<RealT,LO,GO,Node> tcon(l,u);
@@ -120,14 +120,14 @@ int main(int argc, char *argv[]) {
 
 
     int iprint     = argc - 1;
-    ROL::SharedPointer<std::ostream> outStream;
+    ROL::Ptr<std::ostream> outStream;
     Teuchos::oblackholestream bhs; // outputs nothing
     Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
 
     if (iprint > 0)
-        ROL::makeSharedFromRef(std::cout);
+        ROL::makePtrFromRef(std::cout);
     else
-        ROL::makeSharedFromRef(bhs);
+        ROL::makePtrFromRef(bhs);
 
     int errorFlag  = 0;
 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
         
         Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
 
-        ROL::SharedPointer<const Teuchos::Comm<int> > comm = platform.getComm();
+        ROL::Ptr<const Teuchos::Comm<int> > comm = platform.getComm();
 
 
         // Maximum dimension of test for a given process
@@ -146,9 +146,9 @@ int main(int argc, char *argv[]) {
         }
 
         typedef std::vector<int> ivec;  
-        ROL::SharedPointer<ivec> a_ptr = ROL::makeShared<ivec>(2,1);
-        ROL::SharedPointer<ivec> b_ptr = ROL::makeShared<ivec>(3,2);
-        Teuchos::ArrayRCP<ROL::SharedPointer<ivec>> v(2); 
+        ROL::Ptr<ivec> a_ptr = ROL::makePtr<ivec>(2,1);
+        ROL::Ptr<ivec> b_ptr = ROL::makePtr<ivec>(3,2);
+        Teuchos::ArrayRCP<ROL::Ptr<ivec>> v(2); 
         v[0] = a_ptr;
         v[1] = b_ptr;   
         (*b_ptr)[2] = 3;

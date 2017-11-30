@@ -44,7 +44,7 @@
 #ifndef ROL_RISKNEUTRALCONSTRAINT_HPP
 #define ROL_RISKNEUTRALCONSTRAINT_HPP
 
-#include "ROL_SharedPointer.hpp"
+#include "ROL_Ptr.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Constraint.hpp"
 #include "ROL_SampleGenerator.hpp"
@@ -54,12 +54,12 @@ namespace ROL {
 template<class Real>
 class RiskNeutralConstraint : public Constraint<Real> {
 private:
-  const ROL::SharedPointer<Constraint<Real> >      con_;
-  const ROL::SharedPointer<SampleGenerator<Real> > xsampler_;
-  const ROL::SharedPointer<BatchManager<Real> >    cbman_;
+  const ROL::Ptr<Constraint<Real> >      con_;
+  const ROL::Ptr<SampleGenerator<Real> > xsampler_;
+  const ROL::Ptr<BatchManager<Real> >    cbman_;
 
-  ROL::SharedPointer<Vector<Real> > conVec_;
-  ROL::SharedPointer<Vector<Real> > optVec_;
+  ROL::Ptr<Vector<Real> > conVec_;
+  ROL::Ptr<Vector<Real> > optVec_;
 
   bool initialized_;
 
@@ -72,9 +72,9 @@ private:
   }
 
 public:
-  RiskNeutralConstraint( const ROL::SharedPointer<Constraint<Real> >      &con,
-                         const ROL::SharedPointer<SampleGenerator<Real> > &xsampler,
-                         const ROL::SharedPointer<BatchManager<Real> >    &cbman)
+  RiskNeutralConstraint( const ROL::Ptr<Constraint<Real> >      &con,
+                         const ROL::Ptr<SampleGenerator<Real> > &xsampler,
+                         const ROL::Ptr<BatchManager<Real> >    &cbman)
     : con_(con), xsampler_(xsampler), cbman_(cbman), initialized_(false) {}
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {

@@ -71,14 +71,14 @@ class PrimalScaledStdVector : public StdVector<Real> {
 
 private:
 
-  ROL::SharedPointer<std::vector<Element> >               scaling_vec_;
-  mutable ROL::SharedPointer<DualScaledStdVector<Real> >  dual_vec_;
+  ROL::Ptr<std::vector<Element> >               scaling_vec_;
+  mutable ROL::Ptr<DualScaledStdVector<Real> >  dual_vec_;
   mutable bool isDualInitialized_;
 
 public:
 
-  PrimalScaledStdVector(const ROL::SharedPointer<std::vector<Element> > & std_vec,
-                        const ROL::SharedPointer<std::vector<Element> > & scaling_vec) :
+  PrimalScaledStdVector(const ROL::Ptr<std::vector<Element> > & std_vec,
+                        const ROL::Ptr<std::vector<Element> > & scaling_vec) :
     StdVector<Real>(std_vec), scaling_vec_(scaling_vec),
     isDualInitialized_(false) {}
 
@@ -94,17 +94,17 @@ public:
     return val;
   }
 
-  ROL::SharedPointer<Vector<Real> > clone() const {
+  ROL::Ptr<Vector<Real> > clone() const {
     uint dimension = (StdVector<Real>::getVector())->size();
-    return ROL::makeShared<PrimalScaledStdVector>(
-           ROL::makeShared<std::vector<Element>>(dimension), scaling_vec_ );
+    return ROL::makePtr<PrimalScaledStdVector>(
+           ROL::makePtr<std::vector<Element>>(dimension), scaling_vec_ );
   }
 
   const ROL::Vector<Real> & dual() const {
     uint n = StdVector<Real>::getVector()->size();
     if ( !isDualInitialized_ ) {
-      dual_vec_ = ROL::makeShared<DualScaledStdVector<Real>>(
-                  ROL::makeShared<std::vector<Element>>(n),
+      dual_vec_ = ROL::makePtr<DualScaledStdVector<Real>>(
+                  ROL::makePtr<std::vector<Element>>(n),
                   scaling_vec_);
       isDualInitialized_ = true;
     }
@@ -126,14 +126,14 @@ class DualScaledStdVector : public StdVector<Real> {
 
 private:
 
-  ROL::SharedPointer<std::vector<Element> >                 scaling_vec_;
-  mutable ROL::SharedPointer<PrimalScaledStdVector<Real> >  primal_vec_;
+  ROL::Ptr<std::vector<Element> >                 scaling_vec_;
+  mutable ROL::Ptr<PrimalScaledStdVector<Real> >  primal_vec_;
   mutable bool isDualInitialized_;
 
 public:
 
-  DualScaledStdVector(const ROL::SharedPointer<std::vector<Element> > & std_vec,
-                      const ROL::SharedPointer<std::vector<Element> > & scaling_vec) :
+  DualScaledStdVector(const ROL::Ptr<std::vector<Element> > & std_vec,
+                      const ROL::Ptr<std::vector<Element> > & scaling_vec) :
     StdVector<Real>(std_vec), scaling_vec_(scaling_vec),
     isDualInitialized_(false) {}
 
@@ -149,17 +149,17 @@ public:
     return val;
   }
 
-  ROL::SharedPointer<Vector<Real> > clone() const {
+  ROL::Ptr<Vector<Real> > clone() const {
     uint dimension = (StdVector<Real>::getVector())->size();
-    return ROL::makeShared<DualScaledStdVector>(
-           ROL::makeShared<std::vector<Element>>(dimension), scaling_vec_ );
+    return ROL::makePtr<DualScaledStdVector>(
+           ROL::makePtr<std::vector<Element>>(dimension), scaling_vec_ );
   }
 
   const ROL::Vector<Real> & dual() const {
     uint n = StdVector<Real>::getVector()->size();
     if ( !isDualInitialized_ ) {
-      primal_vec_ = ROL::makeShared<PrimalScaledStdVector<Real>>(
-                    ROL::makeShared<std::vector<Element>>(n),
+      primal_vec_ = ROL::makePtr<PrimalScaledStdVector<Real>>(
+                    ROL::makePtr<std::vector<Element>>(n),
                     scaling_vec_);
       isDualInitialized_ = true;
     }

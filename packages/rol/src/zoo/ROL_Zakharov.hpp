@@ -95,12 +95,12 @@ namespace ZOO {
 template<class Real>
 class Objective_Zakharov : public Objective<Real> {
 private:
-    ROL::SharedPointer<Vector<Real> > k_;  
+    ROL::Ptr<Vector<Real> > k_;  
 
 public:
   
   // Create using a ROL::Vector containing 1,2,3,...,n
-  Objective_Zakharov(const ROL::SharedPointer<Vector<Real> > k) : k_(k) {}
+  Objective_Zakharov(const ROL::Ptr<Vector<Real> > k) : k_(k) {}
 
   Real value( const Vector<Real> &x, Real &tol ) {
 
@@ -164,28 +164,28 @@ public:
 
 
 template<class Real>
-void getZakharov( ROL::SharedPointer<Objective<Real> > &obj,
-                  ROL::SharedPointer<Vector<Real> >    &x0,
-                  ROL::SharedPointer<Vector<Real> >    &x ) {
+void getZakharov( ROL::Ptr<Objective<Real> > &obj,
+                  ROL::Ptr<Vector<Real> >    &x0,
+                  ROL::Ptr<Vector<Real> >    &x ) {
 
   // Problem dimension
   int n = 10;
 
   // Get Initial Guess
-  ROL::SharedPointer<std::vector<Real> > x0p = ROL::makeShared<std::vector<Real>>(n,3.0);
-  x0 = ROL::makeShared<StdVector<Real>>(x0p);
+  ROL::Ptr<std::vector<Real> > x0p = ROL::makePtr<std::vector<Real>>(n,3.0);
+  x0 = ROL::makePtr<StdVector<Real>>(x0p);
 
   // Get Solution
-  ROL::SharedPointer<std::vector<Real> > xp = ROL::makeShared<std::vector<Real>>(n,0.0);
-  x = ROL::makeShared<StdVector<Real>>(xp);
+  ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
+  x = ROL::makePtr<StdVector<Real>>(xp);
 
   // Instantiate Objective Function
-  ROL::SharedPointer<std::vector<Real> > k_ptr = ROL::makeShared<std::vector<Real>>(n,0.0);
+  ROL::Ptr<std::vector<Real> > k_ptr = ROL::makePtr<std::vector<Real>>(n,0.0);
   for ( int i = 0; i < n; i++ ) {
     (*k_ptr)[i] = i+1.0;
   }
-  ROL::SharedPointer<Vector<Real> > k = ROL::makeShared<StdVector<Real>>(k_ptr);
-  obj = ROL::makeShared<Objective_Zakharov<Real>>(k);
+  ROL::Ptr<Vector<Real> > k = ROL::makePtr<StdVector<Real>>(k_ptr);
+  obj = ROL::makePtr<Objective_Zakharov<Real>>(k);
 }
 
 

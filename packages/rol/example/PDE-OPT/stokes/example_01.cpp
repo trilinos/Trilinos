@@ -69,19 +69,19 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -94,39 +94,39 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    ROL::SharedPointer<MeshManager<RealT> > meshMgr
-      = ROL::makeShared<MeshManager_Stokes<RealT>>(*parlist);
+    ROL::Ptr<MeshManager<RealT> > meshMgr
+      = ROL::makePtr<MeshManager_Stokes<RealT>>(*parlist);
     // Initialize PDE describing Navier-Stokes equations.
-    ROL::SharedPointer<PDE_Stokes<RealT> > pde
-      = ROL::makeShared<PDE_Stokes<RealT>>(*parlist);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > con
-      = ROL::makeShared<Linear_PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
+    ROL::Ptr<PDE_Stokes<RealT> > pde
+      = ROL::makePtr<PDE_Stokes<RealT>>(*parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
+      = ROL::makePtr<Linear_PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
     // Cast the constraint and get the assembler.
-    ROL::SharedPointer<Linear_PDE_Constraint<RealT> > pdecon
-      = ROL::dynamicPointerCast<Linear_PDE_Constraint<RealT> >(con);
-    ROL::SharedPointer<Assembler<RealT> > assembler = pdecon->getAssembler();
+    ROL::Ptr<Linear_PDE_Constraint<RealT> > pdecon
+      = ROL::dynamicPtrCast<Linear_PDE_Constraint<RealT> >(con);
+    ROL::Ptr<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
     pdecon->outputTpetraData();
 
     // Create state vector and set to zeroes
-    ROL::SharedPointer<Tpetra::MultiVector<> > u_ptr, r_ptr, z_ptr;
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr, r_ptr, z_ptr;
     u_ptr  = assembler->createStateVector();     u_ptr->randomize();
     r_ptr  = assembler->createResidualVector();  r_ptr->randomize();
     z_ptr  = assembler->createControlVector();   z_ptr->putScalar(0);
-    ROL::SharedPointer<ROL::Vector<RealT> > up, rp, zp;
-    up  = ROL::makeShared<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
-    rp  = ROL::makeShared<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler);
-    zp  = ROL::makeShared<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > up, rp, zp;
+    up  = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
+    rp  = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler);
+    zp  = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler);
 
     // Run derivative checks
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
     if ( checkDeriv ) {
-      ROL::SharedPointer<Tpetra::MultiVector<> > p_ptr, du_ptr;
+      ROL::Ptr<Tpetra::MultiVector<> > p_ptr, du_ptr;
       p_ptr  = assembler->createStateVector();     p_ptr->randomize();
       du_ptr = assembler->createStateVector();     du_ptr->randomize();
-      ROL::SharedPointer<ROL::Vector<RealT> > pp, dup;
-      pp  = ROL::makeShared<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler);
-      dup = ROL::makeShared<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler);
+      ROL::Ptr<ROL::Vector<RealT> > pp, dup;
+      pp  = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler);
+      dup = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler);
 
       *outStream << std::endl << "Check Jacobian_1 of Constraint" << std::endl;
       con->checkApplyJacobian_1(*up,*zp,*dup,*rp,true,*outStream);

@@ -65,13 +65,13 @@ class BinaryConstraint : public Constraint<Real> {
 
 private:
 
-  const ROL::SharedPointer<const V> lo_;    // Lower Bound Vector
-  const ROL::SharedPointer<const V> up_;    // Upper Bound Vector
+  const ROL::Ptr<const V> lo_;    // Lower Bound Vector
+  const ROL::Ptr<const V> up_;    // Upper Bound Vector
 
-  ROL::SharedPointer<V> d_;     // Scratch Vector
+  ROL::Ptr<V> d_;     // Scratch Vector
 
-//  ROL::SharedPointer<V> dl_;    // Scratch Vectors
-//  ROL::SharedPointer<V> du_;    // Scratch Vectors
+//  ROL::Ptr<V> dl_;    // Scratch Vectors
+//  ROL::Ptr<V> du_;    // Scratch Vectors
 
   Real   gamma_; // Penality parameter 
 
@@ -125,14 +125,14 @@ private:
 
 public:
 
-  BinaryConstraint( const ROL::SharedPointer<const V> &lo, const ROL::SharedPointer<const V> &up, Real gamma ) :
+  BinaryConstraint( const ROL::Ptr<const V> &lo, const ROL::Ptr<const V> &up, Real gamma ) :
       lo_( lo ), up_( up ), d_( lo_->clone() ), gamma_( gamma ) {} 
 
   BinaryConstraint( const BoundConstraint<Real> &bnd, Real gamma ) :
       BinaryConstraint( bnd.getLowerBound(), bnd.getUpperBound(), gamma ) {}
    
 
-  BinaryConstraint( const ROL::SharedPointer<const BoundConstraint<Real>> &bnd, Real gamma ) :
+  BinaryConstraint( const ROL::Ptr<const BoundConstraint<Real>> &bnd, Real gamma ) :
       BinaryConstraint( bnd->getLowerBound(), bnd->getUpperBound(), gamma ) {}
      
 

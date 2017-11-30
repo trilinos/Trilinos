@@ -68,7 +68,7 @@ template<class Real>
 void printVector( const ROL::Vector<Real> &x, std::ostream &outStream ) {
 
   try {
-    ROL::SharedPointer<const std::vector<Real> > xp = 
+    ROL::Ptr<const std::vector<Real> > xp = 
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
 
     outStream << "Standard Vector" << std::endl;
@@ -106,7 +106,7 @@ void value( ROL::Vector<Real> &c, const ROL::Vector<Real> &sol, const Real &mu )
 
   
   
-  using ROL::dynamicPointerCast;
+  using ROL::dynamicPtrCast;
 
   const size_type OPT   = 0;
   const size_type EQUAL = 1;
@@ -114,16 +114,16 @@ void value( ROL::Vector<Real> &c, const ROL::Vector<Real> &sol, const Real &mu )
   const size_type UPPER = 3;
 
   const PV &sol_pv = dynamic_cast<const PV&>(sol);
-  const vector &x  = *(ROL::dynamicPointerCast<const SV>(sol_pv.get(OPT))->getVector());
-  const vector &l  = *(ROL::dynamicPointerCast<const SV>(sol_pv.get(EQUAL))->getVector());
-  const vector &zl = *(ROL::dynamicPointerCast<const SV>(sol_pv.get(LOWER))->getVector());
-  const vector &zu = *(ROL::dynamicPointerCast<const SV>(sol_pv.get(UPPER))->getVector());
+  const vector &x  = *(ROL::dynamicPtrCast<const SV>(sol_pv.get(OPT))->getVector());
+  const vector &l  = *(ROL::dynamicPtrCast<const SV>(sol_pv.get(EQUAL))->getVector());
+  const vector &zl = *(ROL::dynamicPtrCast<const SV>(sol_pv.get(LOWER))->getVector());
+  const vector &zu = *(ROL::dynamicPtrCast<const SV>(sol_pv.get(UPPER))->getVector());
 
   PV &c_pv = dynamic_cast<PV&>(c);
-  vector &cx  = *(ROL::dynamicPointerCast<SV>(c_pv.get(OPT))->getVector());
-  vector &cl  = *(ROL::dynamicPointerCast<SV>(c_pv.get(EQUAL))->getVector());
-  vector &czl = *(ROL::dynamicPointerCast<SV>(c_pv.get(LOWER))->getVector());
-  vector &czu = *(ROL::dynamicPointerCast<SV>(c_pv.get(UPPER))->getVector());
+  vector &cx  = *(ROL::dynamicPtrCast<SV>(c_pv.get(OPT))->getVector());
+  vector &cl  = *(ROL::dynamicPtrCast<SV>(c_pv.get(EQUAL))->getVector());
+  vector &czl = *(ROL::dynamicPtrCast<SV>(c_pv.get(LOWER))->getVector());
+  vector &czu = *(ROL::dynamicPtrCast<SV>(c_pv.get(UPPER))->getVector());
  
   cx[0] = -x[1]*x[2] +   l[0] - zl[0] + zu[0];
   cx[1] = -x[0]*x[1] + 2*l[0] - zl[1] + zu[1];
@@ -157,7 +157,7 @@ void applyJacobian( ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL
 
   
   
-  using ROL::dynamicPointerCast;
+  using ROL::dynamicPtrCast;
 
   const size_type OPT   = 0;
   const size_type EQUAL = 1;
@@ -165,22 +165,22 @@ void applyJacobian( ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL
   const size_type UPPER = 3;
 
   const PV &sol_pv = dynamic_cast<const PV&>(sol);
-  const vector &x  = *(ROL::dynamicPointerCast<const SV>(sol_pv.get(OPT))->getVector());
-//const vector &l  = *(ROL::dynamicPointerCast<const SV>(sol_pv.get(EQUAL))->getVector());
-  const vector &zl = *(ROL::dynamicPointerCast<const SV>(sol_pv.get(LOWER))->getVector());
-  const vector &zu = *(ROL::dynamicPointerCast<const SV>(sol_pv.get(UPPER))->getVector());
+  const vector &x  = *(ROL::dynamicPtrCast<const SV>(sol_pv.get(OPT))->getVector());
+//const vector &l  = *(ROL::dynamicPtrCast<const SV>(sol_pv.get(EQUAL))->getVector());
+  const vector &zl = *(ROL::dynamicPtrCast<const SV>(sol_pv.get(LOWER))->getVector());
+  const vector &zu = *(ROL::dynamicPtrCast<const SV>(sol_pv.get(UPPER))->getVector());
 
   const PV &v_pv = dynamic_cast<const PV&>(v);
-  const vector &vx  = *(ROL::dynamicPointerCast<const SV>(v_pv.get(OPT))->getVector());
-  const vector &vl  = *(ROL::dynamicPointerCast<const SV>(v_pv.get(EQUAL))->getVector());
-  const vector &vzl = *(ROL::dynamicPointerCast<const SV>(v_pv.get(LOWER))->getVector());
-  const vector &vzu = *(ROL::dynamicPointerCast<const SV>(v_pv.get(UPPER))->getVector());
+  const vector &vx  = *(ROL::dynamicPtrCast<const SV>(v_pv.get(OPT))->getVector());
+  const vector &vl  = *(ROL::dynamicPtrCast<const SV>(v_pv.get(EQUAL))->getVector());
+  const vector &vzl = *(ROL::dynamicPtrCast<const SV>(v_pv.get(LOWER))->getVector());
+  const vector &vzu = *(ROL::dynamicPtrCast<const SV>(v_pv.get(UPPER))->getVector());
 
   PV &jv_pv = dynamic_cast<PV&>(jv);
-  vector &jvx  = *(ROL::dynamicPointerCast<SV>(jv_pv.get(OPT))->getVector());
-  vector &jvl  = *(ROL::dynamicPointerCast<SV>(jv_pv.get(EQUAL))->getVector());
-  vector &jvzl = *(ROL::dynamicPointerCast<SV>(jv_pv.get(LOWER))->getVector());
-  vector &jvzu = *(ROL::dynamicPointerCast<SV>(jv_pv.get(UPPER))->getVector());
+  vector &jvx  = *(ROL::dynamicPtrCast<SV>(jv_pv.get(OPT))->getVector());
+  vector &jvl  = *(ROL::dynamicPtrCast<SV>(jv_pv.get(EQUAL))->getVector());
+  vector &jvzl = *(ROL::dynamicPtrCast<SV>(jv_pv.get(LOWER))->getVector());
+  vector &jvzu = *(ROL::dynamicPtrCast<SV>(jv_pv.get(UPPER))->getVector());
  
   jvx[0] = -x[1]*vx[2] - x[2]*vx[1] +   vl[0] - vzl[0] + vzu[0];
   jvx[1] = -x[0]*vx[2] - x[2]*vx[0] + 2*vl[0] - vzl[1] + vzu[1];
@@ -226,12 +226,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs;
   if( iprint > 0 ) 
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
    
@@ -256,44 +256,44 @@ int main(int argc, char *argv[]) {
     // 1) Has an equality constraint 
     // 2) Has a bound constraint where all variables have finite upper and lower bounds
 
-    ROL::SharedPointer<NLP> nlp = ROL::makeShared<HS::Problem_041<RealT>>(); 
-    ROL::SharedPointer<OPT> opt = nlp->getOptimizationProblem();
+    ROL::Ptr<NLP> nlp = ROL::makePtr<HS::Problem_041<RealT>>(); 
+    ROL::Ptr<OPT> opt = nlp->getOptimizationProblem();
  
-    ROL::SharedPointer<V>   x   = opt->getSolutionVector();
-    ROL::SharedPointer<V>   l   = opt->getMultiplierVector();
-    ROL::SharedPointer<V>   zl  = x->clone();
-    ROL::SharedPointer<V>   zu  = x->clone();
+    ROL::Ptr<V>   x   = opt->getSolutionVector();
+    ROL::Ptr<V>   l   = opt->getMultiplierVector();
+    ROL::Ptr<V>   zl  = x->clone();
+    ROL::Ptr<V>   zu  = x->clone();
 
-    ROL::SharedPointer<V>   scratch = x->clone();
+    ROL::Ptr<V>   scratch = x->clone();
 
-    ROL::SharedPointer<PV>  x_pv = ROL::dynamicPointerCast<PV>(x);
+    ROL::Ptr<PV>  x_pv = ROL::dynamicPtrCast<PV>(x);
 
-    ROL::SharedPointer<V>   sol = CreatePartitionedVector(x,l,zl,zu);
+    ROL::Ptr<V>   sol = CreatePartitionedVector(x,l,zl,zu);
 
-    ROL::SharedPointer<V>   c = sol->clone();
-    ROL::SharedPointer<V>   v = sol->clone();
-    ROL::SharedPointer<V>  jv = sol->clone();
+    ROL::Ptr<V>   c = sol->clone();
+    ROL::Ptr<V>   v = sol->clone();
+    ROL::Ptr<V>  jv = sol->clone();
 
-    ROL::SharedPointer<V>   c_exact = c->clone();
-    ROL::SharedPointer<V>  jv_exact = jv->clone();
+    ROL::Ptr<V>   c_exact = c->clone();
+    ROL::Ptr<V>  jv_exact = jv->clone();
 
     ROL::RandomizeVector(*l, -1.0, 1.0);
     ROL::RandomizeVector(*v,  0.0, 1.0);
 
 
-    ROL::SharedPointer<OBJ> obj = opt->getObjective();
-    ROL::SharedPointer<CON> con = opt->getConstraint();
-    ROL::SharedPointer<BND> bnd = opt->getBoundConstraint();
+    ROL::Ptr<OBJ> obj = opt->getObjective();
+    ROL::Ptr<CON> con = opt->getConstraint();
+    ROL::Ptr<BND> bnd = opt->getBoundConstraint();
 
     PENALTY penalty(obj,bnd,parlist);
  
-    ROL::SharedPointer<const V> maskL = penalty.getLowerMask();
-    ROL::SharedPointer<const V> maskU = penalty.getUpperMask();
+    ROL::Ptr<const V> maskL = penalty.getLowerMask();
+    ROL::Ptr<const V> maskU = penalty.getUpperMask();
 
     zl->set(*maskL);
     zu->set(*maskU);
 
-    ROL::SharedPointer<CON> res = ROL::makeShared<RESIDUAL>(obj,con,bnd,*sol,maskL,maskU,scratch,mu,false);
+    ROL::Ptr<CON> res = ROL::makePtr<RESIDUAL>(obj,con,bnd,*sol,maskL,maskU,scratch,mu,false);
 
 
     *outStream << "\n[x|lambda|zl|zu]" << std::endl;

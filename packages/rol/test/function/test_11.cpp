@@ -68,12 +68,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
@@ -81,12 +81,12 @@ int main(int argc, char *argv[]) {
 
   RealT zero(0);
 
-  ROL::SharedPointer<V>   x0;
-  ROL::SharedPointer<V>   x;
-  ROL::SharedPointer<V>   g;
-  ROL::SharedPointer<OBJ> obj;
-  ROL::SharedPointer<CON> con;
-  ROL::SharedPointer<OBJ> model;  
+  ROL::Ptr<V>   x0;
+  ROL::Ptr<V>   x;
+  ROL::Ptr<V>   g;
+  ROL::Ptr<OBJ> obj;
+  ROL::Ptr<CON> con;
+  ROL::Ptr<OBJ> model;  
 
   ROL::ZOO::getHS2(obj,con,x0,x);
 
@@ -95,11 +95,11 @@ int main(int argc, char *argv[]) {
   // Need to evaluate the gradient to construct the model
   obj->gradient(*g,*x,zero);
 
-  model = ROL::makeShared<ROL::ColemanLiModel<RealT>>(*obj,*con,*x,*g);
+  model = ROL::makePtr<ROL::ColemanLiModel<RealT>>(*obj,*con,*x,*g);
 
-  ROL::SharedPointer<V> s = x->clone();
-  ROL::SharedPointer<V> v = x->clone();
-  ROL::SharedPointer<V> u = x->clone();
+  ROL::Ptr<V> s = x->clone();
+  ROL::Ptr<V> v = x->clone();
+  ROL::Ptr<V> u = x->clone();
 
   ROL::RandomizeVector(*s,-1.0,1.0);
   ROL::RandomizeVector(*u,-1.0,1.0);

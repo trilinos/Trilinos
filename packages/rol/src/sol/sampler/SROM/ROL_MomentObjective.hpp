@@ -57,7 +57,7 @@ template <class Real>
 class MomentObjective : public Objective<Real> {
 private:
   std::vector<std::vector<std::pair<int, Real> > > moments_;
-  ROL::SharedPointer<BatchManager<Real> > bman_;
+  ROL::Ptr<BatchManager<Real> > bman_;
   int dimension_;
   int numMoments_;
   const bool optProb_;
@@ -140,7 +140,7 @@ private:
 
 public:
   MomentObjective(const std::vector<std::vector<std::pair<int, Real> > > &moments,
-                  const ROL::SharedPointer<BatchManager<Real> > &bman,
+                  const ROL::Ptr<BatchManager<Real> > &bman,
                   const bool optProb = true, const bool optAtom = true)
     : Objective<Real>(), moments_(moments), bman_(bman),
       optProb_(optProb), optAtom_(optAtom) {
@@ -148,9 +148,9 @@ public:
     numMoments_ = moments_[0].size();
   }
 
-  MomentObjective(const std::vector<ROL::SharedPointer<Distribution<Real> > > &dist,
+  MomentObjective(const std::vector<ROL::Ptr<Distribution<Real> > > &dist,
                   const std::vector<int>                             &order,
-                  const ROL::SharedPointer<BatchManager<Real> > &bman,
+                  const ROL::Ptr<BatchManager<Real> > &bman,
                   const bool optProb = true, const bool optAtom = true)
     : Objective<Real>(), bman_(bman), optProb_(optProb), optAtom_(optAtom) {
     numMoments_ = order.size();

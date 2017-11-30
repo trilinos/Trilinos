@@ -68,12 +68,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -85,9 +85,9 @@ int main(int argc, char *argv[]) {
     ROL::Minimax3<RealT> obj;
 
     // Initialize iteration vectors.
-    ROL::SharedPointer<std::vector<RealT> > x_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::StdVector<RealT> x(x_ptr);
-    ROL::SharedPointer<std::vector<RealT> > z_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > z_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     (*z_ptr)[0] = 0.0; (*z_ptr)[1] = 1.0; (*z_ptr)[2] = 2.0; (*z_ptr)[3] = -1.0;
     ROL::StdVector<RealT> z(x_ptr);
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     algo.run(x, obj, true, *outStream);
 
     // Compute error 
-    ROL::SharedPointer<ROL::Vector<RealT> > diff = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,z);
     RealT error = diff->norm();

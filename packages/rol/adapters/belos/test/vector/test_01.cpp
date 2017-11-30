@@ -67,12 +67,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     
       int dim = 10;
 
-      ROL::SharedPointer<ROL::Step<RealT> > step;
+      ROL::Ptr<ROL::Step<RealT> > step;
  
 
       Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
@@ -90,35 +90,35 @@ int main(int argc, char *argv[]) {
       Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
 
       // Iteration Vector 
-      ROL::SharedPointer<std::vector<RealT> > x_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+      ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
 
       // Vector of natural numbers
-      ROL::SharedPointer<std::vector<RealT> > k_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+      ROL::Ptr<std::vector<RealT> > k_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
 
       for (int i=0; i<dim; i++) {
           (*x_ptr)[i]   = 4;
           (*k_ptr)[i]   = i+1.0;
        }
 
-       ROL::SharedPointer<ROL::Vector<RealT> > k = ROL::makeShared<ROL::StdVector<RealT>>(k_ptr);
+       ROL::Ptr<ROL::Vector<RealT> > k = ROL::makePtr<ROL::StdVector<RealT>>(k_ptr);
        ROL::StdVector<RealT> x(x_ptr);
 
        ROL::ZOO::Objective_Zakharov<RealT> obj(k);
 
       // Make a Belos-Krylov solver if specified
       if(parlist->get("Use Belos",false)) { 
-          ROL::SharedPointer<ROL::Krylov<RealT> > krylov = ROL::makeShared<ROL::BelosKrylov<RealT>>(*parlist);   
-          step = ROL::makeShared<ROL::LineSearchStep<RealT>>(*parlist,ROL::nullPointer,ROL::nullPointer,krylov);  
+          ROL::Ptr<ROL::Krylov<RealT> > krylov = ROL::makePtr<ROL::BelosKrylov<RealT>>(*parlist);   
+          step = ROL::makePtr<ROL::LineSearchStep<RealT>>(*parlist,ROL::nullPtr,ROL::nullPtr,krylov);  
       }
       else { // Otherwise use ROL's default
-          step = ROL::makeShared<ROL::LineSearchStep<RealT>>(*parlist);
+          step = ROL::makePtr<ROL::LineSearchStep<RealT>>(*parlist);
       }
 
       // Define Status Test
       RealT gtol  = 1e-12;  // norm of gradient tolerance
       RealT stol  = 1e-14;  // norm of step tolerance
       int   maxit = 100;    // maximum number of iterations
-      ROL::SharedPointer<ROL::StatusTest<RealT> > status = ROL::makeShared<ROL::StatusTest<RealT>>(gtol, stol, maxit);    
+      ROL::Ptr<ROL::StatusTest<RealT> > status = ROL::makePtr<ROL::StatusTest<RealT>>(gtol, stol, maxit);    
 
       // Define Algorithm
       ROL::Algorithm<RealT> algo(step,status,false);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
       algo.run(x, obj, true, *outStream);
 
       // Get True Solution
-      ROL::SharedPointer<std::vector<RealT> > xtrue_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+      ROL::Ptr<std::vector<RealT> > xtrue_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
       ROL::StdVector<RealT> xtrue(xtrue_ptr);
         
       // Compute Error

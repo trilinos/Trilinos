@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
   typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm = platform.getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = platform.getComm();
 
   int iprint = argc - 1;
   Teuchos::oblackholestream bhs; // outputs nothing
@@ -117,17 +117,17 @@ int main(int argc, char *argv[]) {
     int dim = k*k;
     RealT threshValue = 4.0;
 
-    ROL::SharedPointer<Map> map = ROL::makeShared<Map>(dim,0,comm);
+    ROL::Ptr<Map> map = ROL::makePtr<Map>(dim,0,comm);
 
-    // Make ROL::SharedPointers to Tpetra::MultiVectors with single columns, dim elements, 
+    // Make ROL::Ptrs to Tpetra::MultiVectors with single columns, dim elements, 
     // set all elements initially to zero
-    ROL::SharedPointer<MV> w_ptr        = ROL::makeShared<MV>(map,1,true);
-    ROL::SharedPointer<MV> w2_ptr       = ROL::makeShared<MV>(map,1,true);
-    ROL::SharedPointer<MV> x_ptr        = ROL::makeShared<MV>(map,1,true);
-    ROL::SharedPointer<MV> x_recip_ptr  = ROL::makeShared<MV>(map,1,true);
-    ROL::SharedPointer<MV> y_ptr        = ROL::makeShared<MV>(map,1,true);
-    ROL::SharedPointer<MV> z_ptr        = ROL::makeShared<MV>(map,1,true);
-    ROL::SharedPointer<MV> z_thresh_ptr = ROL::makeShared<MV>(map,1,true);
+    ROL::Ptr<MV> w_ptr        = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> w2_ptr       = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> x_ptr        = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> x_recip_ptr  = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> y_ptr        = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> z_ptr        = ROL::makePtr<MV>(map,1,true);
+    ROL::Ptr<MV> z_thresh_ptr = ROL::makePtr<MV>(map,1,true);
  
     V w(w_ptr);
     V w2(w2_ptr);

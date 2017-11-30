@@ -71,9 +71,9 @@ class StdTridiagonalOperator : public StdLinearOperator<Real> {
   
 private:
 
-  const ROL::SharedPointer<const vector<Real> > a_; // Diagonal
-  const ROL::SharedPointer<const vector<Real> > b_; // Superdiagonal
-  const ROL::SharedPointer<const vector<Real> > c_; // Subdiagonal
+  const ROL::Ptr<const vector<Real> > a_; // Diagonal
+  const ROL::Ptr<const vector<Real> > b_; // Superdiagonal
+  const ROL::Ptr<const vector<Real> > c_; // Subdiagonal
 
   mutable vector<Real> dl_;
   mutable vector<Real> d_;
@@ -98,9 +98,9 @@ private:
 
 public:
 
-  StdTridiagonalOperator( const ROL::SharedPointer<const vector<Real> > &a,
-                          const ROL::SharedPointer<const vector<Real> > &b,
-                          const ROL::SharedPointer<const vector<Real> > &c ) : 
+  StdTridiagonalOperator( const ROL::Ptr<const vector<Real> > &a,
+                          const ROL::Ptr<const vector<Real> > &b,
+                          const ROL::Ptr<const vector<Real> > &c ) : 
     StdLinearOperator<Real>(), a_(a), b_(b), c_(c) { 
 
     N_ = a_->size();
@@ -112,8 +112,8 @@ public:
     ipiv_.resize(N_);   
   }
 
-  StdTridiagonalOperator( const ROL::SharedPointer<const vector<Real> > &a,
-                          const ROL::SharedPointer<const vector<Real> > &b ) {
+  StdTridiagonalOperator( const ROL::Ptr<const vector<Real> > &a,
+                          const ROL::Ptr<const vector<Real> > &b ) {
     StrdTridiagonalOperator(a,b,b);
   }
    

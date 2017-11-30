@@ -83,34 +83,34 @@ class MeritFunction : public Objective<Real> {
 
 private:
 
-  ROL::SharedPointer<OBJ>   obj_;       // Raw objective function
-  ROL::SharedPointer<EQCON> eqcon_;     //  constraint
-  ROL::SharedPointer<INCON> incon_;     // Inequality constraint
-  ROL::SharedPointer<BND>   bnd_;       // Bound constraint
+  ROL::Ptr<OBJ>   obj_;       // Raw objective function
+  ROL::Ptr<EQCON> eqcon_;     //  constraint
+  ROL::Ptr<INCON> incon_;     // Inequality constraint
+  ROL::Ptr<BND>   bnd_;       // Bound constraint
 
   Real mu_;                       // Penalty parameter for log barrier on slack
   Real nu_;                       // Penalty parameter for constraint norms
 
-  ROL::SharedPointer<OBJ>    obj_;
-  ROL::SharedPointer<EQCON>  eqcon_;
-  ROL::SharedPointer<INCON>  incon_;
+  ROL::Ptr<OBJ>    obj_;
+  ROL::Ptr<EQCON>  eqcon_;
+  ROL::Ptr<INCON>  incon_;
 
-  ROL::SharedPointer<V> xopt_;
-  ROL::SharedPointer<V> slack_;
+  ROL::Ptr<V> xopt_;
+  ROL::Ptr<V> slack_;
 
-  ROL::SharedPointer<V> gopt_;          // Gradient of the objective function
+  ROL::Ptr<V> gopt_;          // Gradient of the objective function
 
-  ROL::SharedPointer<V> sfun_;          // store elementwise function of slack variable
+  ROL::Ptr<V> sfun_;          // store elementwise function of slack variable
 
 
-  ROL::SharedPointer<V> eqmult_;        //  constraint Lagrange multiplier 
-  ROL::SharedPointer<V> inmult_;        // Inequality constraint Lagrange multiplier
+  ROL::Ptr<V> eqmult_;        //  constraint Lagrange multiplier 
+  ROL::Ptr<V> inmult_;        // Inequality constraint Lagrange multiplier
 
-  ROL::SharedPointer<V> ce_;            //  constraint vector
-  ROL::SharedPointer<V> ci_;            // Inequation constraint vector
+  ROL::Ptr<V> ce_;            //  constraint vector
+  ROL::Ptr<V> ci_;            // Inequation constraint vector
 
-  ROL::SharedPointer<V> jced_;          //  Jacobian applied to d
-  ROL::SharedPointer<V> jcid_;          // Inequality Jacobian applied to d 
+  ROL::Ptr<V> jced_;          //  Jacobian applied to d
+  ROL::Ptr<V> jcid_;          // Inequality Jacobian applied to d 
 
   Real cenorm_;
   Real cinorm_;
@@ -123,9 +123,9 @@ private:
 
 public:
 
-  MeritFunction( ROL::SharedPointer<OBJ>   &obj, 
-                 ROL::SharedPointer<EQCON> &eqcon,
-                 ROL::SharedPointer<INCON> &incon,
+  MeritFunction( ROL::Ptr<OBJ>   &obj, 
+                 ROL::Ptr<EQCON> &eqcon,
+                 ROL::Ptr<INCON> &incon,
                  const V& x,
                  const V& eqmult,
                  const V& inmult,
@@ -179,8 +179,8 @@ public:
     slack_ = xpv.get(SLACK);
 
     const PV &dpv = dynamic_cast<const PV&>(d);
-    ROL::SharedPointer<V> dopt   = dpv.get(OPT);
-    ROL::SharedPointer<V> dslack = dpv.get(SLACK);
+    ROL::Ptr<V> dopt   = dpv.get(OPT);
+    ROL::Ptr<V> dslack = dpv.get(SLACK);
 
     sfun_->set(*slack);
     sfun_->applyUnary(RECIP_);

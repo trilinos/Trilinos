@@ -77,17 +77,17 @@ public:
 int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && Teuchos::rank<int>(*comm)==0)
-    ROL::makeSharedFromRef(std::cout);
+    ROL::makePtrFromRef(std::cout);
   else
-    ROL::makeSharedFromRef(bhs);
+    ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -95,8 +95,8 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/
-    ROL::SharedPointer<std::vector<RealT> > x_ptr = ROL::makeShared<std::vector<RealT>>(1);
-    ROL::SharedPointer<ROL::Vector<RealT> > x = ROL::makeShared<ROL::StdVector<RealT>>(x_ptr);
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(1);
+    ROL::Ptr<ROL::Vector<RealT> > x = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
     ROL::QuadratureInfo info;
     info.dim        = 2;
     info.maxLevel   = 7;
@@ -105,16 +105,16 @@ int main(int argc, char* argv[]) {
     info.normalized = true;
     info.adaptive   = true;
     info.print      = !Teuchos::rank<int>(*comm);
-    ROL::SharedPointer<ROL::BatchManager<RealT> > bman
-      = ROL::makeShared<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
-    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler
-      = ROL::makeShared<ROL::SparseGridGenerator<RealT>>(bman,info);
+    ROL::Ptr<ROL::BatchManager<RealT> > bman
+      = ROL::makePtr<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makePtr<ROL::SparseGridGenerator<RealT>>(bman,info);
     /**********************************************************************************************/
     /************************* CONSTRUCT INTEGRAND FUNCTION ***************************************/
     /**********************************************************************************************/
     RealT coeff1(10), coeff2(10);
-    ROL::SharedPointer<Integrand<RealT> > func
-      = ROL::makeShared<TestIntegrand<RealT>>(coeff1,coeff2);
+    ROL::Ptr<Integrand<RealT> > func
+      = ROL::makePtr<TestIntegrand<RealT>>(coeff1,coeff2);
     /**********************************************************************************************/
     /************************* ADAPTIVE QUADRATURE ************************************************/
     /**********************************************************************************************/

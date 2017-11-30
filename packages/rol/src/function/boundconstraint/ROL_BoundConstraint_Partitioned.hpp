@@ -65,10 +65,10 @@ class BoundConstraint_Partitioned : public BoundConstraint<Real> {
   typedef typename std::vector<Real>::size_type uint;
 
 private:
-  std::vector<ROL::SharedPointer<BoundConstraint<Real> > > bnd_;
+  std::vector<ROL::Ptr<BoundConstraint<Real> > > bnd_;
 
-  ROL::SharedPointer<V> l_;
-  ROL::SharedPointer<V> u_;
+  ROL::Ptr<V> l_;
+  ROL::Ptr<V> u_;
 
   uint dim_;
 
@@ -78,7 +78,7 @@ private:
 public:
   ~BoundConstraint_Partitioned() {}
 
-  BoundConstraint_Partitioned(const std::vector<ROL::SharedPointer<BoundConstraint<Real> > > &bnd)
+  BoundConstraint_Partitioned(const std::vector<ROL::Ptr<BoundConstraint<Real> > > &bnd)
     : bnd_(bnd), dim_(bnd.size()), hasLvec_(true), hasUvec_(true) {
     BoundConstraint<Real>::deactivate();
     for( uint k=0; k<dim_; ++k ) {
@@ -87,15 +87,15 @@ public:
         break;
       }
     }
-    std::vector<ROL::SharedPointer<Vector<Real> > > lp(dim_);
-    std::vector<ROL::SharedPointer<Vector<Real> > > up(dim_);
+    std::vector<ROL::Ptr<Vector<Real> > > lp(dim_);
+    std::vector<ROL::Ptr<Vector<Real> > > up(dim_);
     for( uint k=0; k<dim_; ++k ) {
       try {
         lp[k] = bnd[k]->getLowerBound()->clone();
         lp[k]->set(*bnd_[k]->getLowerBound());
       }
       catch (std::exception &e) {
-        lp[k] = ROL::nullPointer;
+        lp[k] = ROL::nullPtr;
         hasLvec_ = false;
       }
       try {
@@ -103,15 +103,15 @@ public:
         up[k]->set(*bnd_[k]->getUpperBound());
       }
       catch (std::exception &e) {
-        up[k] = ROL::nullPointer;
+        up[k] = ROL::nullPtr;
         hasUvec_ = false;
       }
     }
     if (hasLvec_) {
-      l_ = ROL::makeShared<PV>(lp);
+      l_ = ROL::makePtr<PV>(lp);
     }
     if (hasUvec_) {
-      u_ = ROL::makeShared<PV>(up);
+      u_ = ROL::makePtr<PV>(up);
     }
   }
 
@@ -184,7 +184,7 @@ public:
     }
   }
  
-  const ROL::SharedPointer<const Vector<Real> > getLowerBound( void ) const {
+  const ROL::Ptr<const Vector<Real> > getLowerBound( void ) const {
     if (hasLvec_) {
       return l_;
     }
@@ -193,7 +193,7 @@ public:
     }
   }
        
-  const ROL::SharedPointer<const Vector<Real> > getUpperBound( void ) const {
+  const ROL::Ptr<const Vector<Real> > getUpperBound( void ) const {
     if (hasUvec_) {
       return u_;
     }
@@ -217,15 +217,15 @@ public:
 
 
 template<class Real>
-ROL::SharedPointer<BoundConstraint<Real> > 
-CreateBoundConstraint_Partitioned( const ROL::SharedPointer<BoundConstraint<Real> > &bnd1,
-                                   const ROL::SharedPointer<BoundConstraint<Real> > &bnd2 ) {
+ROL::Ptr<BoundConstraint<Real> > 
+CreateBoundConstraint_Partitioned( const ROL::Ptr<BoundConstraint<Real> > &bnd1,
+                                   const ROL::Ptr<BoundConstraint<Real> > &bnd2 ) {
 
      
   typedef BoundConstraint<Real>             BND;
   typedef BoundConstraint_Partitioned<Real> BNDP;
-  ROL::SharedPointer<BND> temp[] = {bnd1, bnd2};
-  return ROL::makeShared<BNDP>( std::vector<ROL::SharedPointer<BND>>(temp,temp+2) );
+  ROL::Ptr<BND> temp[] = {bnd1, bnd2};
+  return ROL::makePtr<BNDP>( std::vector<ROL::Ptr<BND>>(temp,temp+2) );
 }
 
 

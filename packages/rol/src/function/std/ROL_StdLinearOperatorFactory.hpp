@@ -63,7 +63,7 @@ namespace ROL {
 template<class Real> 
 class StdLinearOperatorFactory {
 
-  template <typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
+  template <typename T> using ROL::Ptr = ROL::Ptr<T>;
 
   typedef LinearOperator<Real>    OP;
   typedef StdLinearOperator<Real> StdOP;
@@ -187,14 +187,14 @@ public:
     return retString;    
   }
 
-  ROL::SharedPointer<LinearOperator<Real> > getOperator( int size, const std::string &type="" ) const {
+  ROL::Ptr<LinearOperator<Real> > getOperator( int size, const std::string &type="" ) const {
     EMatrixType emt = StringToEMatrixType(type);
 
     
 
     int n2 = size*size;
 
-    ROL::SharedPointer<vector> Ap = ROL::makeShared<vector>(n2);
+    ROL::Ptr<vector> Ap = ROL::makePtr<vector>(n2);
 
     switch( emt ) {
       case MATRIX_SPD: {
@@ -294,7 +294,7 @@ public:
       }   
 
     }
-    return ROL::makeShared<StdOP>(Ap);
+    return ROL::makePtr<StdOP>(Ap);
   }
 
   

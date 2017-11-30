@@ -399,11 +399,11 @@ private:
     }
   }
 
-  ROL::SharedPointer<const vector> getVector( const V& x ) {
+  ROL::Ptr<const vector> getVector( const V& x ) {
     return dynamic_cast<const SV&>(x).getVector();
   }
 
-  ROL::SharedPointer<vector> getVector( V& x ) {
+  ROL::Ptr<vector> getVector( V& x ) {
     return dynamic_cast<SV&>(x).getVector();  
   }
 
@@ -442,9 +442,9 @@ public:
 
     
 
-    ROL::SharedPointer<vector> cp = getVector(c);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> cp = getVector(c);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     std::vector<Real> C(nx_,0.0);
     std::vector<Real> uold(u0_);
@@ -473,8 +473,8 @@ public:
 
     
 
-    ROL::SharedPointer<vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Initialize State Storage
     std::vector<Real> uold(u0_);
@@ -501,10 +501,10 @@ public:
 
     
     
-    ROL::SharedPointer<vector> jvp = getVector(jv);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> jvp = getVector(jv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
  
     std::vector<Real> J(u0_.size(),0.0);
     std::vector<Real> M(u0_.size(),0.0);
@@ -533,10 +533,10 @@ public:
 
     
  
-    ROL::SharedPointer<vector> jvp = getVector(jv);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> jvp = getVector(jv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Initialize State Storage
     std::vector<Real> M(u0_);
@@ -574,10 +574,10 @@ public:
                               const ROL::Vector<Real> &z, Real &tol) {
     
 
-    ROL::SharedPointer<vector> jvp = getVector(jv);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> jvp = getVector(jv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     std::vector<Real> J(u0_.size(),0.0);
     std::vector<Real> M(u0_.size(),0.0);
@@ -605,10 +605,10 @@ public:
                                      const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     
     
-    ROL::SharedPointer<vector> jvp = getVector(jv);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> jvp = getVector(jv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Initialize State Storage
     std::vector<Real> M(u0_);
@@ -647,10 +647,10 @@ public:
 
     
 
-    ROL::SharedPointer<vector> jvp = getVector(jv);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> jvp = getVector(jv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     std::vector<Real> J(nx_,0.0);
     std::vector<Real> vnew(nx_+2,0.0);
@@ -670,10 +670,10 @@ public:
                               const ROL::Vector<Real> &z, Real &tol) {
     
 
-    ROL::SharedPointer<vector> jvp = getVector(jv);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> jvp = getVector(jv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     std::vector<Real> J(nx_+2,0.0);
     std::vector<Real> vnew(nx_,0.0);
@@ -693,11 +693,11 @@ public:
                               const ROL::Vector<Real> &z, Real &tol) {
     
 
-    ROL::SharedPointer<vector> hwvp = getVector(hwv);
-    ROL::SharedPointer<const vector> wp = getVector(w);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> hwvp = getVector(hwv);
+    ROL::Ptr<const vector> wp = getVector(w);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Initialize State Storage
     std::vector<Real> unew(u0_);
@@ -804,11 +804,11 @@ private:
     return val;
   }
 
-  ROL::SharedPointer<const vector> getVector( const V& x ) {
+  ROL::Ptr<const vector> getVector( const V& x ) {
     return dynamic_cast<const SV&>(x).getVector();
   }
 
-  ROL::SharedPointer<vector> getVector( V& x ) {
+  ROL::Ptr<vector> getVector( V& x ) {
     return dynamic_cast<SV&>(x).getVector();  
   }
 /*************************************************************/
@@ -827,8 +827,8 @@ public:
   
     
     
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Compute Norm of State
     std::vector<Real> uT(nx_,0.0);
@@ -852,9 +852,9 @@ public:
     
 
     g.zero();
-    ROL::SharedPointer<vector> gp = getVector(g);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> gp = getVector(g);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
     
     std::vector<Real> uT(nx_,0.0);
     for (uint n = 0; n < nx_; n++) {
@@ -873,9 +873,9 @@ public:
 
     g.zero();
 
-    ROL::SharedPointer<vector> gp = getVector(g);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
+    ROL::Ptr<vector> gp = getVector(g);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
 
     // Compute gradient
     std::vector<Real> Z(nx_+2,0.0);
@@ -896,10 +896,10 @@ public:
 
     
     
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<vector> hvp = getVector(hv); 
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<vector> hvp = getVector(hv); 
 
    // Compute HessVec
     std::vector<Real> vT(nx_,0.0);
@@ -928,10 +928,10 @@ public:
     
     
 
-    ROL::SharedPointer<vector> hvp = getVector(hv);
-    ROL::SharedPointer<const vector> up = getVector(u);
-    ROL::SharedPointer<const vector> zp = getVector(z);
-    ROL::SharedPointer<const vector> vp = getVector(v);
+    ROL::Ptr<vector> hvp = getVector(hv);
+    ROL::Ptr<const vector> up = getVector(u);
+    ROL::Ptr<const vector> zp = getVector(z);
+    ROL::Ptr<const vector> vp = getVector(v);
 
     // Compute HessVec
     std::vector<Real> V(nx_+2,0.0);
@@ -967,12 +967,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -989,13 +989,13 @@ int main(int argc, char *argv[]) {
     Constraint_ParabolicControl<RealT> con(eps,nx,nt,T);
 
     // Initialize iteration vectors.
-    ROL::SharedPointer<vector> xz_ptr = ROL::makeShared<vector>(nt*(nx+2), 1.0);
-    ROL::SharedPointer<vector> xu_ptr = ROL::makeShared<vector>(nx*nt, 1.0);
-    ROL::SharedPointer<vector> gz_ptr = ROL::makeShared<vector>(nt*(nx+2), 1.0);
+    ROL::Ptr<vector> xz_ptr = ROL::makePtr<vector>(nt*(nx+2), 1.0);
+    ROL::Ptr<vector> xu_ptr = ROL::makePtr<vector>(nx*nt, 1.0);
+    ROL::Ptr<vector> gz_ptr = ROL::makePtr<vector>(nt*(nx+2), 1.0);
 
-    ROL::SharedPointer<vector> gu_ptr = ROL::makeShared<vector>(nx*nt, 1.0);
-    ROL::SharedPointer<vector> yz_ptr = ROL::makeShared<vector>(nt*(nx+2), 1.0);
-    ROL::SharedPointer<vector> yu_ptr = ROL::makeShared<vector>(nx*nt, 1.0);
+    ROL::Ptr<vector> gu_ptr = ROL::makePtr<vector>(nx*nt, 1.0);
+    ROL::Ptr<vector> yz_ptr = ROL::makePtr<vector>(nt*(nx+2), 1.0);
+    ROL::Ptr<vector> yu_ptr = ROL::makePtr<vector>(nx*nt, 1.0);
 
     for (uint i=0; i<nt; i++) {
       (*xz_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
@@ -1012,28 +1012,28 @@ int main(int argc, char *argv[]) {
     SV yz(yz_ptr);
     SV yu(yu_ptr);
 
-    ROL::SharedPointer<V> xzp = ROL::makeSharedFromRef(xz);
-    ROL::SharedPointer<V> xup = ROL::makeSharedFromRef(xu);
-    ROL::SharedPointer<V> gzp = ROL::makeSharedFromRef(gz);
-    ROL::SharedPointer<V> gup = ROL::makeSharedFromRef(gu);
-    ROL::SharedPointer<V> yzp = ROL::makeSharedFromRef(yz);
-    ROL::SharedPointer<V> yup = ROL::makeSharedFromRef(yu);
+    ROL::Ptr<V> xzp = ROL::makePtrFromRef(xz);
+    ROL::Ptr<V> xup = ROL::makePtrFromRef(xu);
+    ROL::Ptr<V> gzp = ROL::makePtrFromRef(gz);
+    ROL::Ptr<V> gup = ROL::makePtrFromRef(gu);
+    ROL::Ptr<V> yzp = ROL::makePtrFromRef(yz);
+    ROL::Ptr<V> yup = ROL::makePtrFromRef(yu);
 
     ROL::Vector_SimOpt<RealT> x(xup,xzp);
     ROL::Vector_SimOpt<RealT> g(gup,gzp);
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
 
-    ROL::SharedPointer<vector> c_ptr  = ROL::makeShared<std::vector<RealT>>(nt*nx, 0.0);
-    ROL::SharedPointer<vector> l_ptr  = ROL::makeShared<std::vector<RealT>>(nt*nx, 0.0);
+    ROL::Ptr<vector> c_ptr  = ROL::makePtr<std::vector<RealT>>(nt*nx, 0.0);
+    ROL::Ptr<vector> l_ptr  = ROL::makePtr<std::vector<RealT>>(nt*nx, 0.0);
  
     SV c(c_ptr);
     SV l(l_ptr);
 
-    ROL::SharedPointer<V> cp = ROL::makeSharedFromRef(c);
+    ROL::Ptr<V> cp = ROL::makePtrFromRef(c);
 
     // Initialize reduced objective function
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > pobj  = ROL::makeSharedFromRef(obj);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > pcon = ROL::makeSharedFromRef(con);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > pobj  = ROL::makePtrFromRef(obj);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pcon = ROL::makePtrFromRef(con);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,xup,xzp,cp);
 
     // Check derivatives.
@@ -1064,7 +1064,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
     // Define algorithm.
-    ROL::SharedPointer<ROL::Algorithm<RealT> > algo = ROL::makeShared<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+    ROL::Ptr<ROL::Algorithm<RealT> > algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
 
     // Run algorithm.
     xz.zero();
@@ -1076,7 +1076,7 @@ int main(int argc, char *argv[]) {
     // Composite step.
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-10);
     // Set algorithm.
-    algo = ROL::makeShared<ROL::Algorithm<RealT>>("Composite Step",*parlist,false);
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Composite Step",*parlist,false);
     x.zero();
     std::clock_t timer_cs = std::clock();
     algo->run(x, g, l, c, obj, con, true, *outStream);

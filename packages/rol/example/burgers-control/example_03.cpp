@@ -56,12 +56,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -78,9 +78,9 @@ int main(int argc, char *argv[]) {
     // Initialize equality constraints
     Constraint_BurgersControl<RealT> con(nx, nt, T, nu);
     // Initialize iteration vectors.
-    ROL::SharedPointer<std::vector<RealT> > z_ptr  = ROL::makeShared<std::vector<RealT>>((nx+2)*(nt+1), 1.0);
-    ROL::SharedPointer<std::vector<RealT> > gz_ptr = ROL::makeShared<std::vector<RealT>>((nx+2)*(nt+1), 1.0);
-    ROL::SharedPointer<std::vector<RealT> > yz_ptr = ROL::makeShared<std::vector<RealT>>((nx+2)*(nt+1), 1.0);
+    ROL::Ptr<std::vector<RealT> > z_ptr  = ROL::makePtr<std::vector<RealT>>((nx+2)*(nt+1), 1.0);
+    ROL::Ptr<std::vector<RealT> > gz_ptr = ROL::makePtr<std::vector<RealT>>((nx+2)*(nt+1), 1.0);
+    ROL::Ptr<std::vector<RealT> > yz_ptr = ROL::makePtr<std::vector<RealT>>((nx+2)*(nt+1), 1.0);
     for (int i=0; i<(nx+2)*(nt+1); i++) {
       (*z_ptr)[i]  = (RealT)rand()/(RealT)RAND_MAX;
       (*yz_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
@@ -88,13 +88,13 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> z(z_ptr);
     ROL::StdVector<RealT> gz(gz_ptr);
     ROL::StdVector<RealT> yz(yz_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > zp  = ROL::makeSharedFromRef(z);
-    ROL::SharedPointer<ROL::Vector<RealT> > gzp = ROL::makeSharedFromRef(gz);
-    ROL::SharedPointer<ROL::Vector<RealT> > yzp = ROL::makeSharedFromRef(yz);
+    ROL::Ptr<ROL::Vector<RealT> > zp  = ROL::makePtrFromRef(z);
+    ROL::Ptr<ROL::Vector<RealT> > gzp = ROL::makePtrFromRef(gz);
+    ROL::Ptr<ROL::Vector<RealT> > yzp = ROL::makePtrFromRef(yz);
 
-    ROL::SharedPointer<std::vector<RealT> > u_ptr  = ROL::makeShared<std::vector<RealT>>(nx*nt, 1.0);
-    ROL::SharedPointer<std::vector<RealT> > gu_ptr = ROL::makeShared<std::vector<RealT>>(nx*nt, 1.0);
-    ROL::SharedPointer<std::vector<RealT> > yu_ptr = ROL::makeShared<std::vector<RealT>>(nx*nt, 1.0);
+    ROL::Ptr<std::vector<RealT> > u_ptr  = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
+    ROL::Ptr<std::vector<RealT> > gu_ptr = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
+    ROL::Ptr<std::vector<RealT> > yu_ptr = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
     for (int i=0; i<nx*nt; i++) {
       (*u_ptr)[i]  = (RealT)rand()/(RealT)RAND_MAX;
       (*yu_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
@@ -102,12 +102,12 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> u(u_ptr);
     ROL::StdVector<RealT> gu(gu_ptr);
     ROL::StdVector<RealT> yu(yu_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > up  = ROL::makeSharedFromRef(u);
-    ROL::SharedPointer<ROL::Vector<RealT> > gup = ROL::makeSharedFromRef(gu);
-    ROL::SharedPointer<ROL::Vector<RealT> > yup = ROL::makeSharedFromRef(yu);
+    ROL::Ptr<ROL::Vector<RealT> > up  = ROL::makePtrFromRef(u);
+    ROL::Ptr<ROL::Vector<RealT> > gup = ROL::makePtrFromRef(gu);
+    ROL::Ptr<ROL::Vector<RealT> > yup = ROL::makePtrFromRef(yu);
 
-    ROL::SharedPointer<std::vector<RealT> > c_ptr = ROL::makeShared<std::vector<RealT>>(nx*nt, 1.0);
-    ROL::SharedPointer<std::vector<RealT> > l_ptr = ROL::makeShared<std::vector<RealT>>(nx*nt, 1.0);
+    ROL::Ptr<std::vector<RealT> > c_ptr = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
+    ROL::Ptr<std::vector<RealT> > l_ptr = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
     ROL::StdVector<RealT> c(c_ptr);
     ROL::StdVector<RealT> l(l_ptr);
 
@@ -129,11 +129,11 @@ int main(int argc, char *argv[]) {
     con.checkInverseAdjointJacobian_1(yu,c,u,z,true,*outStream);
 
     // Initialize reduced objective function.
-    ROL::SharedPointer<std::vector<RealT> > p_ptr  = ROL::makeShared<std::vector<RealT>>(nx*nt, 1.0);
+    ROL::Ptr<std::vector<RealT> > p_ptr  = ROL::makePtr<std::vector<RealT>>(nx*nt, 1.0);
     ROL::StdVector<RealT> p(p_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > pp              = ROL::makeSharedFromRef(p);
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > pobj  = ROL::makeSharedFromRef(obj);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > pcon = ROL::makeSharedFromRef(con);
+    ROL::Ptr<ROL::Vector<RealT> > pp              = ROL::makePtrFromRef(p);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > pobj  = ROL::makePtrFromRef(obj);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pcon = ROL::makePtrFromRef(con);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,zp,pp);
     // Check derivatives.
     robj.checkGradient(z,z,yz,true,*outStream);
@@ -147,20 +147,20 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Build Algorithm pointer.
-    ROL::SharedPointer<ROL::Algorithm<RealT> > algo;
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;
 
     // Solve using trust regions.
-    algo = ROL::makeShared<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
     z.zero();
     std::clock_t timer_tr = std::clock();
     algo->run(z,robj,true,*outStream);
     *outStream << "Trust-Region Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
-    ROL::SharedPointer<ROL::Vector<RealT> > zTR = z.clone();
+    ROL::Ptr<ROL::Vector<RealT> > zTR = z.clone();
     zTR->set(z);
 
     // Solve using a composite step method.
-    algo = ROL::makeShared<ROL::Algorithm<RealT>>("Composite Step",*parlist,false);
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Composite Step",*parlist,false);
     x.zero();
     ROL::Elementwise::Fill<RealT> setFunc(0.25);
     x.applyUnary(setFunc);
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
                << " seconds.\n";
 
     // Compute error between solutions
-    ROL::SharedPointer<ROL::Vector<RealT> > err = z.clone();
+    ROL::Ptr<ROL::Vector<RealT> > err = z.clone();
     err->set(*zTR); err->axpy(-1.,z);
     errorFlag += (err->norm() > 1.e-4) ? 1 : 0;
     if (errorFlag) {

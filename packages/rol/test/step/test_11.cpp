@@ -67,24 +67,24 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
   try { 
 
-    ROL::SharedPointer<V>    x     = ROL::ZOO::getInitialGuess_HS24<RealT>();
-    ROL::SharedPointer<V>    xs    = ROL::ZOO::getSolution_HS24<RealT>();
-    ROL::SharedPointer<V>    inmul = ROL::ZOO::getInequalityMultiplier_HS24<RealT>();    
+    ROL::Ptr<V>    x     = ROL::ZOO::getInitialGuess_HS24<RealT>();
+    ROL::Ptr<V>    xs    = ROL::ZOO::getSolution_HS24<RealT>();
+    ROL::Ptr<V>    inmul = ROL::ZOO::getInequalityMultiplier_HS24<RealT>();    
 
-    ROL::SharedPointer<BC>   bnd   = ROL::ZOO::getBoundConstraint_HS24<RealT>();
-    ROL::SharedPointer<OBJ>  obj   = ROL::ZOO::getObjective_HS24<RealT>();
-    ROL::SharedPointer<INEQ> incon = ROL::ZOO::getInequalityConstraint_HS24<RealT>();
+    ROL::Ptr<BC>   bnd   = ROL::ZOO::getBoundConstraint_HS24<RealT>();
+    ROL::Ptr<OBJ>  obj   = ROL::ZOO::getObjective_HS24<RealT>();
+    ROL::Ptr<INEQ> incon = ROL::ZOO::getInequalityConstraint_HS24<RealT>();
    
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
 
@@ -113,15 +113,15 @@ int main(int argc, char *argv[]) {
     // Define Optimization Problem 
     ROL::OptimizationProblem<RealT> problem( obj, x, bnd, incon, inmul, parlist );
 
-    ROL::SharedPointer<V> d = x->clone();
+    ROL::Ptr<V> d = x->clone();
     RandomizeVector(*d);
 
 //    problem.checkObjectiveGradient(*d); 
 //    problem.checkObjectiveHessVec(*d); 
 
     // Define algorithm.
-    ROL::SharedPointer<ROL::Algorithm<RealT> > algo;    
-    algo = ROL::makeShared<ROL::Algorithm<RealT>>(stepname,*parlist);
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;    
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>(stepname,*parlist);
 
     algo->run(problem,true,*outStream);   
 

@@ -85,18 +85,18 @@ private:
 
   typedef typename PV::size_type   size_type;
 
-  ROL::SharedPointer<OBJ> obj_;    // Objective function
-  ROL::SharedPointer<CON> eqcon_;  //  Constraint
-  ROL::SharedPointer<CON> incon_;  // Inequality Constraint
+  ROL::Ptr<OBJ> obj_;    // Objective function
+  ROL::Ptr<CON> eqcon_;  //  Constraint
+  ROL::Ptr<CON> incon_;  // Inequality Constraint
 
-  ROL::SharedPointer<V> qo_;       // Storage for optimization variables
-  ROL::SharedPointer<V> qs_;       // Storage for slack variables
-  ROL::SharedPointer<V> qe_;       // Storage for equality multiplier variables
-  ROL::SharedPointer<V> qi_;       // Storage for inequality multiplier variables
+  ROL::Ptr<V> qo_;       // Storage for optimization variables
+  ROL::Ptr<V> qs_;       // Storage for slack variables
+  ROL::Ptr<V> qe_;       // Storage for equality multiplier variables
+  ROL::Ptr<V> qi_;       // Storage for inequality multiplier variables
 
   Real mu_;                  // Penalty parameter
 
-  ROL::SharedPointer<LinearOperator<Real> > sym_;
+  ROL::Ptr<LinearOperator<Real> > sym_;
 
   const static size_type OPT   = 0;  // Optimization vector
   const static size_type SLACK = 1;  // Slack vector
@@ -107,9 +107,9 @@ private:
 
 public:
 
-  PrimalDualResidual( const ROL::SharedPointer<OBJ> &obj, 
-                      const ROL::SharedPointer<CON> &eqcon,
-                      const ROL::SharedPointer<CON> &incon,
+  PrimalDualResidual( const ROL::Ptr<OBJ> &obj, 
+                      const ROL::Ptr<CON> &eqcon,
+                      const ROL::Ptr<CON> &incon,
                       const V& x ) : 
                       obj_(obj), eqcon_(eqcon), incon_(incon), mu_(1.0) {
 
@@ -121,7 +121,7 @@ public:
     qe_ = xpv.get(EQUAL)->clone();
     qi_ = xpv.get(INEQ)->clone();
 
-    sym_ = ROL::makeShared<PrimalDualSymmetrizer<Real>>(*qs_);
+    sym_ = ROL::makePtr<PrimalDualSymmetrizer<Real>>(*qs_);
 
   }
 
@@ -133,17 +133,17 @@ public:
     PV &cpv = dynamic_cast<PV&>(c);
     const PV &xpv = dynamic_cast<const PV&>(x);
 
-    ROL::SharedPointer<const V> xo = xpv.get(OPT);
-    ROL::SharedPointer<const V> xs = xpv.get(SLACK);
-    ROL::SharedPointer<const V> xe = xpv.get(EQUAL);
-    ROL::SharedPointer<const V> xi = xpv.get(INEQ);
+    ROL::Ptr<const V> xo = xpv.get(OPT);
+    ROL::Ptr<const V> xs = xpv.get(SLACK);
+    ROL::Ptr<const V> xe = xpv.get(EQUAL);
+    ROL::Ptr<const V> xi = xpv.get(INEQ);
 
     c.zero();    
 
-    ROL::SharedPointer<V> co = cpv.get(OPT);
-    ROL::SharedPointer<V> cs = cpv.get(SLACK);
-    ROL::SharedPointer<V> ce = cpv.get(EQUAL);
-    ROL::SharedPointer<V> ci = cpv.get(INEQ);
+    ROL::Ptr<V> co = cpv.get(OPT);
+    ROL::Ptr<V> cs = cpv.get(SLACK);
+    ROL::Ptr<V> ce = cpv.get(EQUAL);
+    ROL::Ptr<V> ci = cpv.get(INEQ);
 
     // Optimization components
     obj_->gradient(*co,*xo,tol); 
@@ -190,20 +190,20 @@ public:
     const PV &vpv = dynamic_cast<const PV&>(v);
     const PV &xpv = dynamic_cast<const PV&>(x);
 
-    ROL::SharedPointer<V> jvo = jvpv.get(OPT);
-    ROL::SharedPointer<V> jvs = jvpv.get(SLACK);
-    ROL::SharedPointer<V> jve = jvpv.get(EQUAL);
-    ROL::SharedPointer<V> jvi = jvpv.get(INEQ);
+    ROL::Ptr<V> jvo = jvpv.get(OPT);
+    ROL::Ptr<V> jvs = jvpv.get(SLACK);
+    ROL::Ptr<V> jve = jvpv.get(EQUAL);
+    ROL::Ptr<V> jvi = jvpv.get(INEQ);
 
-    ROL::SharedPointer<const V> vo = vpv.get(OPT);
-    ROL::SharedPointer<const V> vs = vpv.get(SLACK);
-    ROL::SharedPointer<const V> ve = vpv.get(EQUAL);
-    ROL::SharedPointer<const V> vi = vpv.get(INEQ);
+    ROL::Ptr<const V> vo = vpv.get(OPT);
+    ROL::Ptr<const V> vs = vpv.get(SLACK);
+    ROL::Ptr<const V> ve = vpv.get(EQUAL);
+    ROL::Ptr<const V> vi = vpv.get(INEQ);
 
-    ROL::SharedPointer<const V> xo = xpv.get(OPT);
-    ROL::SharedPointer<const V> xs = xpv.get(SLACK);
-    ROL::SharedPointer<const V> xe = xpv.get(EQUAL);
-    ROL::SharedPointer<const V> xi = xpv.get(INEQ);
+    ROL::Ptr<const V> xo = xpv.get(OPT);
+    ROL::Ptr<const V> xs = xpv.get(SLACK);
+    ROL::Ptr<const V> xe = xpv.get(EQUAL);
+    ROL::Ptr<const V> xi = xpv.get(INEQ);
 
     // Optimization components
     obj_->hessVec(*jvo,*vo,*xo,tol);
@@ -275,7 +275,7 @@ class PrimalDualSymmetrizer : public LinearOperator<Real> {
   typedef typename PV::size_type   size_type;
 
 private:
-  ROL::SharedPointer<V> s_;
+  ROL::Ptr<V> s_;
 
   const static size_type OPT   = 0;  // Optimization vector
   const static size_type SLACK = 1;  // Slack vector
@@ -301,15 +301,15 @@ public:
     const PV &vpv = dynamic_cast<const PV&>(v);
     PV &Hvpv = dynamic_cast<PV&>(Hv);
 
-    ROL::SharedPointer<const V> vo = vpv.get(OPT);
-    ROL::SharedPointer<const V> vs = vpv.get(SLACK);
-    ROL::SharedPointer<const V> ve = vpv.get(EQUAL);
-    ROL::SharedPointer<const V> vi = vpv.get(INEQ);
+    ROL::Ptr<const V> vo = vpv.get(OPT);
+    ROL::Ptr<const V> vs = vpv.get(SLACK);
+    ROL::Ptr<const V> ve = vpv.get(EQUAL);
+    ROL::Ptr<const V> vi = vpv.get(INEQ);
 
-    ROL::SharedPointer<V> Hvo = Hvpv.get(OPT);
-    ROL::SharedPointer<V> Hvs = Hvpv.get(SLACK);
-    ROL::SharedPointer<V> Hve = Hvpv.get(EQUAL);
-    ROL::SharedPointer<V> Hvi = Hvpv.get(INEQ);
+    ROL::Ptr<V> Hvo = Hvpv.get(OPT);
+    ROL::Ptr<V> Hvs = Hvpv.get(SLACK);
+    ROL::Ptr<V> Hve = Hvpv.get(EQUAL);
+    ROL::Ptr<V> Hvi = Hvpv.get(INEQ);
 
     Hvo->set(*vo);
 
@@ -333,15 +333,15 @@ public:
     const PV &vpv = dynamic_cast<const PV&>(v);
     PV &Hvpv = dynamic_cast<PV&>(Hv);
 
-    ROL::SharedPointer<const V> vo = vpv.get(OPT);
-    ROL::SharedPointer<const V> vs = vpv.get(SLACK);
-    ROL::SharedPointer<const V> ve = vpv.get(EQUAL);
-    ROL::SharedPointer<const V> vi = vpv.get(INEQ);
+    ROL::Ptr<const V> vo = vpv.get(OPT);
+    ROL::Ptr<const V> vs = vpv.get(SLACK);
+    ROL::Ptr<const V> ve = vpv.get(EQUAL);
+    ROL::Ptr<const V> vi = vpv.get(INEQ);
 
-    ROL::SharedPointer<V> Hvo = Hvpv.get(OPT);
-    ROL::SharedPointer<V> Hvs = Hvpv.get(SLACK);
-    ROL::SharedPointer<V> Hve = Hvpv.get(EQUAL);
-    ROL::SharedPointer<V> Hvi = Hvpv.get(INEQ);
+    ROL::Ptr<V> Hvo = Hvpv.get(OPT);
+    ROL::Ptr<V> Hvs = Hvpv.get(SLACK);
+    ROL::Ptr<V> Hve = Hvpv.get(EQUAL);
+    ROL::Ptr<V> Hvi = Hvpv.get(INEQ);
 
     Hvo->set(*vo);
 

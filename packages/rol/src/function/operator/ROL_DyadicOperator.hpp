@@ -62,13 +62,13 @@ class DyadicOperator : public ROL::LinearOperator<Real> {
 
 private:
 
-  const ROL::SharedPointer<const V> x_;
-  const ROL::SharedPointer<const V> y_;
+  const ROL::Ptr<const V> x_;
+  const ROL::Ptr<const V> y_;
 
 public:
   
-  DyadicOperator( const ROL::SharedPointer<const V> &x,
-                  const ROL::SharedPointer<const V> &y ) : x_(x), y_(y) {}
+  DyadicOperator( const ROL::Ptr<const V> &x,
+                  const ROL::Ptr<const V> &y ) : x_(x), y_(y) {}
 
   void apply( V &Hv, const V &v, Real &tol ) const {
     Hv.set(*x_);

@@ -92,15 +92,15 @@ public:
   int dimension_x()  { return 3; }
   int dimension_ce() { return 1; }
 
-  const ROL::SharedPointer<OBJ> getObjective() { 
-    return ROL::makeShared<ROL::Sacado_StdObjective<Real,HS_027::Obj>>();
+  const ROL::Ptr<OBJ> getObjective() { 
+    return ROL::makePtr<ROL::Sacado_StdObjective<Real,HS_027::Obj>>();
   }
 
-  const ROL::SharedPointer<CON> getEqualityConstraint() {
-    return ROL::makeShared<ROL::Sacado_StdConstraint<Real,HS_027::EqCon>>();
+  const ROL::Ptr<CON> getEqualityConstraint() {
+    return ROL::makePtr<ROL::Sacado_StdConstraint<Real,HS_027::EqCon>>();
   }
 
-  const ROL::SharedPointer<const V> getInitialGuess() {
+  const ROL::Ptr<const V> getInitialGuess() {
     Real x[] = {2.0,2.0,2.0};
     return NP::createOptVector(x);
   };
@@ -115,7 +115,7 @@ public:
     return Real(0.04);
   }
 
-  ROL::SharedPointer<const V> getSolutionSet() {
+  ROL::Ptr<const V> getSolutionSet() {
     Real x[] = {-1.0,1.0,0.0};
     return ROL::CreatePartitionedVector(NP::createOptVector(x));
   }

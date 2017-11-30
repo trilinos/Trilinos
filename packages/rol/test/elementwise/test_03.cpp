@@ -71,12 +71,12 @@ int main(int argc, char *argv[]) {
   GlobalMPISession mpiSession(&argc, &argv);
  
   int iprint = argc - 1;
-  ROL::SharedPointer<std::ostream>  outStream;
+  ROL::Ptr<std::ostream>  outStream;
   oblackholestream   bhs;
   if( iprint > 0 )
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -87,19 +87,19 @@ int main(int argc, char *argv[]) {
     int dim = 5;
 
     // Upper bound vector
-    ROL::SharedPointer<vec> u_ptr = ROL::makeShared<vec>(dim,0.0);
+    ROL::Ptr<vec> u_ptr = ROL::makePtr<vec>(dim,0.0);
 
     // Lower bound vector
-    ROL::SharedPointer<vec> l_ptr = ROL::makeShared<vec>(dim,0.0);
+    ROL::Ptr<vec> l_ptr = ROL::makePtr<vec>(dim,0.0);
 
     // Gradient vectors
-    ROL::SharedPointer<vec> g1_ptr = ROL::makeShared<vec>(dim,1.0);
-    ROL::SharedPointer<vec> g2_ptr = ROL::makeShared<vec>(dim,-1.0);
+    ROL::Ptr<vec> g1_ptr = ROL::makePtr<vec>(dim,1.0);
+    ROL::Ptr<vec> g2_ptr = ROL::makePtr<vec>(dim,-1.0);
 
     // Test vectors
-    ROL::SharedPointer<vec> y_ptr  = ROL::makeShared<vec>(dim,0.0);
-    ROL::SharedPointer<vec> v_ptr  = ROL::makeShared<vec>(dim,0.0);
-    ROL::SharedPointer<vec> vs_ptr = ROL::makeShared<vec>(dim,0.0);
+    ROL::Ptr<vec> y_ptr  = ROL::makePtr<vec>(dim,0.0);
+    ROL::Ptr<vec> v_ptr  = ROL::makePtr<vec>(dim,0.0);
+    ROL::Ptr<vec> vs_ptr = ROL::makePtr<vec>(dim,0.0);
 
     (*y_ptr)[0] =  2.0;
     (*y_ptr)[1] = -4.0;
@@ -112,13 +112,13 @@ int main(int argc, char *argv[]) {
       (*l_ptr)[i] = -(i+1.0);
     }
  
-    ROL::SharedPointer<V> lp =  ROL::makeShared<SV>(l_ptr);
-    ROL::SharedPointer<V> up  = ROL::makeShared<SV>(u_ptr);
-    ROL::SharedPointer<V> yp  = ROL::makeShared<SV>(y_ptr);
-    ROL::SharedPointer<V> vp  = ROL::makeShared<SV>(v_ptr);
-    ROL::SharedPointer<V> vsp = ROL::makeShared<SV>(vs_ptr);
-    ROL::SharedPointer<V> g1p = ROL::makeShared<SV>(g1_ptr);
-    ROL::SharedPointer<V> g2p = ROL::makeShared<SV>(g2_ptr);
+    ROL::Ptr<V> lp =  ROL::makePtr<SV>(l_ptr);
+    ROL::Ptr<V> up  = ROL::makePtr<SV>(u_ptr);
+    ROL::Ptr<V> yp  = ROL::makePtr<SV>(y_ptr);
+    ROL::Ptr<V> vp  = ROL::makePtr<SV>(v_ptr);
+    ROL::Ptr<V> vsp = ROL::makePtr<SV>(vs_ptr);
+    ROL::Ptr<V> g1p = ROL::makePtr<SV>(g1_ptr);
+    ROL::Ptr<V> g2p = ROL::makePtr<SV>(g2_ptr);
 
 
     ROL::Bounds<RealT>     bc(lp,up);

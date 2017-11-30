@@ -69,12 +69,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -120,9 +120,9 @@ int main(int argc, char *argv[]) {
     Objective_DiodeCircuit<RealT> obj(alpha,ns,nz);
     
     // Initialize iteration vectors.
-    ROL::SharedPointer<std::vector<RealT> > z_ptr    = ROL::makeShared<std::vector<RealT>>(nz, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > yz_ptr   = ROL::makeShared<std::vector<RealT>>(nz, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > soln_ptr = ROL::makeShared<std::vector<RealT>>(nz, 0.0);
+    ROL::Ptr<std::vector<RealT> > z_ptr    = ROL::makePtr<std::vector<RealT>>(nz, 0.0);
+    ROL::Ptr<std::vector<RealT> > yz_ptr   = ROL::makePtr<std::vector<RealT>>(nz, 0.0);
+    ROL::Ptr<std::vector<RealT> > soln_ptr = ROL::makePtr<std::vector<RealT>>(nz, 0.0);
     (*z_ptr)[0]     = init_Is;
     (*z_ptr)[1]     = init_Rs;
     (*yz_ptr)[0]    = init_Is;
@@ -132,11 +132,11 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> z(z_ptr);
     ROL::StdVector<RealT> yz(yz_ptr);
     ROL::StdVector<RealT> soln(soln_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > zp  = ROL::makeSharedFromRef(z);
-    ROL::SharedPointer<ROL::Vector<RealT> > yzp = ROL::makeSharedFromRef(yz);
+    ROL::Ptr<ROL::Vector<RealT> > zp  = ROL::makePtrFromRef(z);
+    ROL::Ptr<ROL::Vector<RealT> > yzp = ROL::makePtrFromRef(yz);
 
-    ROL::SharedPointer<std::vector<RealT> > u_ptr  = ROL::makeShared<std::vector<RealT>>(ns, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > yu_ptr = ROL::makeShared<std::vector<RealT>>(ns, 0.0);
+    ROL::Ptr<std::vector<RealT> > u_ptr  = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
+    ROL::Ptr<std::vector<RealT> > yu_ptr = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
     std::ifstream input_file("measurements.dat");
     RealT temp, temp_scale;
     for (int i=0; i<ns; i++) {
@@ -149,12 +149,12 @@ int main(int argc, char *argv[]) {
     input_file.close();
     ROL::StdVector<RealT> u(u_ptr);
     ROL::StdVector<RealT> yu(yu_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > up  = ROL::makeSharedFromRef(u);
-    ROL::SharedPointer<ROL::Vector<RealT> > yup = ROL::makeSharedFromRef(yu);
+    ROL::Ptr<ROL::Vector<RealT> > up  = ROL::makePtrFromRef(u);
+    ROL::Ptr<ROL::Vector<RealT> > yup = ROL::makePtrFromRef(yu);
 
-    ROL::SharedPointer<std::vector<RealT> > jv_ptr  = ROL::makeShared<std::vector<RealT>>(ns, 1.0);
+    ROL::Ptr<std::vector<RealT> > jv_ptr  = ROL::makePtr<std::vector<RealT>>(ns, 1.0);
     ROL::StdVector<RealT> jv(jv_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > jvp = ROL::makeSharedFromRef(jv);
+    ROL::Ptr<ROL::Vector<RealT> > jvp = ROL::makePtrFromRef(jv);
 
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
@@ -175,11 +175,11 @@ int main(int argc, char *argv[]) {
     con.checkInverseAdjointJacobian_1(yu,jv,u,z,true,*outStream);
 
     // Initialize reduced objective function.
-    ROL::SharedPointer<std::vector<RealT> > p_ptr  = ROL::makeShared<std::vector<RealT>>(ns, 0.0);
+    ROL::Ptr<std::vector<RealT> > p_ptr  = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
     ROL::StdVector<RealT> p(p_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > pp  = ROL::makeSharedFromRef(p);
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > pobj  = ROL::makeSharedFromRef(obj);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > pcon = ROL::makeSharedFromRef(con);
+    ROL::Ptr<ROL::Vector<RealT> > pp  = ROL::makePtrFromRef(p);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > pobj  = ROL::makePtrFromRef(obj);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pcon = ROL::makePtrFromRef(con);
     ROL::Reduced_Objective_SimOpt<RealT> robj(pobj,pcon,up,zp,pp);
     // Check derivatives.
     *outStream << "Derivatives of reduced objective" << std::endl;
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     
     // Bound constraints
     RealT tol = 1.e-12;
-    ROL::SharedPointer<std::vector<RealT> > g0_ptr = ROL::makeShared<std::vector<RealT>>(nz, 0.0);;
+    ROL::Ptr<std::vector<RealT> > g0_ptr = ROL::makePtr<std::vector<RealT>>(nz, 0.0);;
     ROL::StdVector<RealT> g0p(g0_ptr);
     robj.gradient(g0p,z,tol);
     *outStream << std::scientific <<  "Initial gradient = " << (*g0_ptr)[0] << " " << (*g0_ptr)[1] << "\n";
@@ -218,16 +218,16 @@ int main(int argc, char *argv[]) {
     }
     else{
       // SQP.
-      //ROL::SharedPointer<std::vector<RealT> > gz_ptr = ROL::makeShared<std::vector<RealT>>(nz, 0.0);
+      //ROL::Ptr<std::vector<RealT> > gz_ptr = ROL::makePtr<std::vector<RealT>>(nz, 0.0);
       //ROL::StdVector<RealT> gz(gz_ptr);
-      //ROL::SharedPointer<ROL::Vector<RealT> > gzp = &gz,false;
-      ROL::SharedPointer<std::vector<RealT> > gu_ptr = ROL::makeShared<std::vector<RealT>>(ns, 0.0);
+      //ROL::Ptr<ROL::Vector<RealT> > gzp = &gz,false;
+      ROL::Ptr<std::vector<RealT> > gu_ptr = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
       ROL::StdVector<RealT> gu(gu_ptr);
-      ROL::SharedPointer<ROL::Vector<RealT> > gup = ROL::makeSharedFromRef(gu);
+      ROL::Ptr<ROL::Vector<RealT> > gup = ROL::makePtrFromRef(gu);
       //ROL::Vector_SimOpt<RealT> g(gup,gzp);
       ROL::Vector_SimOpt<RealT> g(gup,zp);
-      ROL::SharedPointer<std::vector<RealT> > c_ptr = ROL::makeShared<std::vector<RealT>>(ns, 0.0);
-      ROL::SharedPointer<std::vector<RealT> > l_ptr = ROL::makeShared<std::vector<RealT>>(ns, 0.0);
+      ROL::Ptr<std::vector<RealT> > c_ptr = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
+      ROL::Ptr<std::vector<RealT> > l_ptr = ROL::makePtr<std::vector<RealT>>(ns, 0.0);
       ROL::StdVector<RealT> c(c_ptr);
       ROL::StdVector<RealT> l(l_ptr);
       

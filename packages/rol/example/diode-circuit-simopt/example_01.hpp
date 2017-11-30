@@ -49,7 +49,7 @@ private:
   /// Thermal voltage (constant)
   Real Vth_; 
   /// Vector of source voltages in DC analysis (input) 
-  ROL::SharedPointer<std::vector<Real> > Vsrc_; 
+  ROL::Ptr<std::vector<Real> > Vsrc_; 
   /// Number of source voltages
   int ns_;
   
@@ -167,9 +167,9 @@ private:
     
     //! Solve circuit given optimization parameters Is and Rs
     void solve_circuit(ROL::Vector<Real> &I, const ROL::Vector<Real> &S){
-      ROL::SharedPointer<std::vector<Real> > Ip =
+      ROL::Ptr<std::vector<Real> > Ip =
         dynamic_cast<ROL::StdVector<Real>&>(I).getVector();
-      ROL::SharedPointer<const std::vector<Real> > Sp =
+      ROL::Ptr<const std::vector<Real> > Sp =
         dynamic_cast<const ROL::StdVector<Real>&>(S).getVector();
 
       int n = Ip->size();
@@ -189,18 +189,18 @@ public:
   Constraint_DiodeCircuit(Real Vth, Real Vsrc_min, Real Vsrc_max, Real Vsrc_step){
     Vth_ = Vth;
     ns_ = (Vsrc_max-Vsrc_min)/Vsrc_step + 1;
-    Vsrc_ = ROL::makeShared<std::vector<Real>>(ns_,0.0);
+    Vsrc_ = ROL::makePtr<std::vector<Real>>(ns_,0.0);
     for(int i=0;i<ns_;i++){
       (*Vsrc_)[i] = Vsrc_min+i*Vsrc_step;
     }
   }
   
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol){
-    ROL::SharedPointer<std::vector<Real> > cp = 
+    ROL::Ptr<std::vector<Real> > cp = 
       dynamic_cast<ROL::StdVector<Real>&>(c).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up = 
+    ROL::Ptr<const std::vector<Real> > up = 
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp = 
+    ROL::Ptr<const std::vector<Real> > zp = 
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     for (int i=0;i<ns_;i++){
       (*cp)[i] = diode((*up)[i],(*Vsrc_)[i],(*zp)[0],(*zp)[1]);
@@ -214,13 +214,13 @@ public:
   
   void applyJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
 		       const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > jvp = 
+    ROL::Ptr<std::vector<Real> > jvp = 
       dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp = 
+    ROL::Ptr<const std::vector<Real> > vp = 
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up = 
+    ROL::Ptr<const std::vector<Real> > up = 
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp = 
+    ROL::Ptr<const std::vector<Real> > zp = 
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     for (int i=0;i<ns_;i++){
       (*jvp)[i] = diodeI((*up)[i],(*Vsrc_)[i],(*zp)[0],(*zp)[1])*(*vp)[i];
@@ -229,13 +229,13 @@ public:
   
   void applyInverseJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,
 			      const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > jvp = 
+    ROL::Ptr<std::vector<Real> > jvp = 
       dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp = 
+    ROL::Ptr<const std::vector<Real> > vp = 
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up = 
+    ROL::Ptr<const std::vector<Real> > up = 
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp = 
+    ROL::Ptr<const std::vector<Real> > zp = 
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     for (int i=0;i<ns_;i++){
       (*jvp)[i] = (*vp)[i]/diodeI((*up)[i],(*Vsrc_)[i],(*zp)[0],(*zp)[1]);
@@ -243,13 +243,13 @@ public:
   }
   
   void applyAdjointJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > jvp = 
+    ROL::Ptr<std::vector<Real> > jvp = 
       dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp = 
+    ROL::Ptr<const std::vector<Real> > vp = 
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up = 
+    ROL::Ptr<const std::vector<Real> > up = 
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp = 
+    ROL::Ptr<const std::vector<Real> > zp = 
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     for (int i=0;i<ns_;i++){
       (*jvp)[i] = diodeI((*up)[i],(*Vsrc_)[i],(*zp)[0],(*zp)[1])*(*vp)[i];
@@ -257,13 +257,13 @@ public:
   } 
   
   void applyInverseAdjointJacobian_1(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > jvp = 
+    ROL::Ptr<std::vector<Real> > jvp = 
       dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp = 
+    ROL::Ptr<const std::vector<Real> > vp = 
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up = 
+    ROL::Ptr<const std::vector<Real> > up = 
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp = 
+    ROL::Ptr<const std::vector<Real> > zp = 
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     for (int i=0;i<ns_;i++){
       (*jvp)[i] = (*vp)[i]/diodeI((*up)[i],(*Vsrc_)[i],(*zp)[0],(*zp)[1]);
@@ -271,13 +271,13 @@ public:
   }
   
   void applyJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > jvp = 
+    ROL::Ptr<std::vector<Real> > jvp = 
       dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp = 
+    ROL::Ptr<const std::vector<Real> > vp = 
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up = 
+    ROL::Ptr<const std::vector<Real> > up = 
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp = 
+    ROL::Ptr<const std::vector<Real> > zp = 
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     jv.zero();
     for (int i=0;i<ns_;i++){
@@ -286,13 +286,13 @@ public:
   }
     
   void applyAdjointJacobian_2(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u,const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > jvp = 
+    ROL::Ptr<std::vector<Real> > jvp = 
       dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp = 
+    ROL::Ptr<const std::vector<Real> > vp = 
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up = 
+    ROL::Ptr<const std::vector<Real> > up = 
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp = 
+    ROL::Ptr<const std::vector<Real> > zp = 
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     jv.zero();
     for (int i=0;i<ns_;i++){
@@ -302,15 +302,15 @@ public:
   }
   
   void applyAdjointHessian_11(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > ahwvp =
+    ROL::Ptr<std::vector<Real> > ahwvp =
       dynamic_cast<ROL::StdVector<Real>&>(ahwv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > wp =
+    ROL::Ptr<const std::vector<Real> > wp =
       dynamic_cast<const ROL::StdVector<Real>&>(w).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp =
+    ROL::Ptr<const std::vector<Real> > vp =
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     ahwv.zero();
     for (int i=0;i<ns_;i++){
@@ -319,15 +319,15 @@ public:
   }
   
   void applyAdjointHessian_12(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > ahwvp =
+    ROL::Ptr<std::vector<Real> > ahwvp =
       dynamic_cast<ROL::StdVector<Real>&>(ahwv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > wp =
+    ROL::Ptr<const std::vector<Real> > wp =
       dynamic_cast<const ROL::StdVector<Real>&>(w).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp =
+    ROL::Ptr<const std::vector<Real> > vp =
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     ahwv.zero();
     for (int i=0;i<ns_;i++){
@@ -337,15 +337,15 @@ public:
   }
   
   void applyAdjointHessian_21(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > ahwvp =
+    ROL::Ptr<std::vector<Real> > ahwvp =
       dynamic_cast<ROL::StdVector<Real>&>(ahwv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > wp =
+    ROL::Ptr<const std::vector<Real> > wp =
       dynamic_cast<const ROL::StdVector<Real>&>(w).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp =
+    ROL::Ptr<const std::vector<Real> > vp =
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     ahwv.zero();
     for (int i=0;i<ns_;i++){
@@ -355,15 +355,15 @@ public:
   }
   
   void applyAdjointHessian_22(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    ROL::SharedPointer<std::vector<Real> > ahwvp =
+    ROL::Ptr<std::vector<Real> > ahwvp =
       dynamic_cast<ROL::StdVector<Real>&>(ahwv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > wp =
+    ROL::Ptr<const std::vector<Real> > wp =
       dynamic_cast<const ROL::StdVector<Real>&>(w).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp =
+    ROL::Ptr<const std::vector<Real> > vp =
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     ahwv.zero();
     Real temp1=0.0;
@@ -387,7 +387,7 @@ class Objective_DiodeCircuit : public ROL::Objective_SimOpt<Real> {
 private:
   Real alpha_; // Penalty Parameter
   int ns_,nz_;
-  ROL::SharedPointer<std::vector<Real> > Imeas_;
+  ROL::Ptr<std::vector<Real> > Imeas_;
 
 
 public: 
@@ -396,7 +396,7 @@ public:
     ns_ = ns;
     nz_ = nz;
     alpha_ = alpha;
-    Imeas_ = ROL::makeShared<std::vector<Real>>(ns_,0.0);
+    Imeas_ = ROL::makePtr<std::vector<Real>>(ns_,0.0);
     Real temp;
     std::ifstream measurements("measurements.dat");
     //std::cout << "Reading measurements" << std::endl;
@@ -412,9 +412,9 @@ public:
   }
     
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     Real val = 0.0;
     for (int i=0;i<ns_;i++){
@@ -425,12 +425,12 @@ public:
 
   void gradient_1( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     // Unwrap g
-    ROL::SharedPointer<std::vector<Real> > gup = 
+    ROL::Ptr<std::vector<Real> > gup = 
       dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
     // Unwrap x
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     // COMPUTE GRADIENT WRT U
     for (int i=0; i<ns_; i++) {
@@ -441,12 +441,12 @@ public:
 
   void gradient_2( ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     // Unwrap g
-    ROL::SharedPointer<std::vector<Real> > gzp = 
+    ROL::Ptr<std::vector<Real> > gzp = 
       dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
     // Unwrap x
-    ROL::SharedPointer<const std::vector<Real> > up =
+    ROL::Ptr<const std::vector<Real> > up =
       dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > zp =
+    ROL::Ptr<const std::vector<Real> > zp =
       dynamic_cast<const ROL::StdVector<Real>&>(z).getVector();
     // COMPUTE GRADIENT WRT Z
     for (int i=0; i<nz_; i++) {
@@ -456,10 +456,10 @@ public:
 
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, 
                    const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
-    ROL::SharedPointer<std::vector<Real> > hvup = 
+    ROL::Ptr<std::vector<Real> > hvup = 
       dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
     // Unwrap v
-    ROL::SharedPointer<const std::vector<Real> > vup =
+    ROL::Ptr<const std::vector<Real> > vup =
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     // COMPUTE GRADIENT WRT U
     for(int i=0; i<ns_; i++){
@@ -507,21 +507,21 @@ public:
     min_diff_ = 0.5*std::min(x_up_[0]-x_lo_[0],x_up_[1]-x_lo_[1]);
   }
   void project( ROL::Vector<Real> &x ) {
-    ROL::SharedPointer<std::vector<Real> > ex =
-      ROL::constPointerCast<std::vector<Real> >((dynamic_cast<ROL::StdVector<Real>&>(x)).getVector());
+    ROL::Ptr<std::vector<Real> > ex =
+      ROL::constPtrCast<std::vector<Real> >((dynamic_cast<ROL::StdVector<Real>&>(x)).getVector());
     (*ex)[0] = std::max(x_lo_[0],std::min(x_up_[0],(*ex)[0]));
     (*ex)[1] = std::max(x_lo_[1],std::min(x_up_[1],(*ex)[1]));
   }
   bool isFeasible( const ROL::Vector<Real> &x ) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     return ((*ex)[0] >= this->x_lo_[0] && (*ex)[1] >= this->x_lo_[1] &&
 	    (*ex)[0] <= this->x_up_[0] && (*ex)[1] <= this->x_up_[1]);
   }
   void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<std::vector<Real> > ev =
+    ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(this->scale_*eps,this->min_diff_);
     //epsn *= this->scale_;
@@ -532,9 +532,9 @@ public:
     }
   }
   void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<std::vector<Real> > ev =
+    ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(this->scale_*eps,this->min_diff_);
     //epsn *= this->scale_;
@@ -545,9 +545,9 @@ public:
     }
   }
   void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<std::vector<Real> > ev =
+    ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(this->scale_*eps,this->min_diff_);
     //epsn *= this->scale_;
@@ -559,11 +559,11 @@ public:
     }
   }
   void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<const std::vector<Real> > eg =
+    ROL::Ptr<const std::vector<Real> > eg =
       dynamic_cast<const ROL::StdVector<Real>&>(g).getVector();
-    ROL::SharedPointer<std::vector<Real> > ev =
+    ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(this->scale_*eps,this->min_diff_);
     //epsn *= this->scale_;
@@ -574,11 +574,11 @@ public:
     }
   }
   void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<const std::vector<Real> > eg =
+    ROL::Ptr<const std::vector<Real> > eg =
       dynamic_cast<const ROL::StdVector<Real>&>(g).getVector();
-    ROL::SharedPointer<std::vector<Real> > ev =
+    ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(this->scale_*eps,this->min_diff_);
     //epsn *= this->scale_;
@@ -589,11 +589,11 @@ public:
     }
   }
   void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
-    ROL::SharedPointer<const std::vector<Real> > ex =
+    ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<const std::vector<Real> > eg =
+    ROL::Ptr<const std::vector<Real> > eg =
       dynamic_cast<const ROL::StdVector<Real>&>(g).getVector();
-    ROL::SharedPointer<std::vector<Real> > ev =
+    ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
     Real epsn = std::min(this->scale_*eps,this->min_diff_);
     //epsn *= this->scale_;
@@ -606,16 +606,16 @@ public:
   }
 
   void setVectorToUpperBound( ROL::Vector<Real> &u ) {
-    ROL::SharedPointer<std::vector<Real> > us = ROL::makeShared<std::vector<Real>>(2,0.0);
+    ROL::Ptr<std::vector<Real> > us = ROL::makePtr<std::vector<Real>>(2,0.0);
     us->assign(this->x_up_.begin(),this->x_up_.end());
-    ROL::SharedPointer<ROL::Vector<Real> > up = ROL::makeShared<ROL::StdVector<Real>>(us);
+    ROL::Ptr<ROL::Vector<Real> > up = ROL::makePtr<ROL::StdVector<Real>>(us);
     u.set(*up);
   }
 
   void setVectorToLowerBound( ROL::Vector<Real> &l ) {
-    ROL::SharedPointer<std::vector<Real> > ls = ROL::makeShared<std::vector<Real>>(2,0.0);
+    ROL::Ptr<std::vector<Real> > ls = ROL::makePtr<std::vector<Real>>(2,0.0);
     ls->assign(this->x_lo_.begin(),this->x_lo_.end());
-    ROL::SharedPointer<ROL::Vector<Real> > lp = ROL::makeShared<ROL::StdVector<Real>>(ls);
+    ROL::Ptr<ROL::Vector<Real> > lp = ROL::makePtr<ROL::StdVector<Real>>(ls);
     l.set(*lp);
   }
 };
@@ -630,9 +630,9 @@ public:
 //     /// Thermal voltage (constant)
 //     Real Vth_; 
 //     /// Vector of measured currents in DC analysis (data)
-//     ROL::SharedPointer<std::vector<Real> > Imeas_;
+//     ROL::Ptr<std::vector<Real> > Imeas_;
 //     /// Vector of source voltages in DC analysis (input) 
-//     ROL::SharedPointer<std::vector<Real> > Vsrc_; 
+//     ROL::Ptr<std::vector<Real> > Vsrc_; 
 //     /// If true, use Lambert-W function to solve circuit, else use Newton's method.
 //     bool lambertw_; 
 //     /// Percentage of noise to add to measurements; if 0.0 - no noise.
@@ -657,8 +657,8 @@ public:
 //       use_adjoint_ = use_adjoint;
 //       use_hessvec_ = use_hessvec;
 //       int n = (Vsrc_max-Vsrc_min)/Vsrc_step + 1;
-//       Vsrc_ = ROL::makeShared<std::vector<Real>>(n,0.0);
-//       Imeas_ = ROL::makeShared<std::vector<Real>>(n,0.0);
+//       Vsrc_ = ROL::makePtr<std::vector<Real>>(n,0.0);
+//       Imeas_ = ROL::makePtr<std::vector<Real>>(n,0.0);
 //       std::ofstream output ("measurements.dat");
 //       Real left = 0.0; Real right = 1.0;
 //       if(lambertw_){
@@ -713,8 +713,8 @@ public:
 //       for(int k=0;std::getline(input_file,line);++k){dim=k;} // count number of lines
 //       input_file.clear(); // reset to beginning of file
 //       input_file.seekg(0,std::ios::beg); 
-//       Vsrc_ = ROL::makeShared<std::vector<Real>>(dim,0.0);
-//       Imeas_ = ROL::makeShared<std::vector<Real>>(dim,0.0);
+//       Vsrc_ = ROL::makePtr<std::vector<Real>>(dim,0.0);
+//       Imeas_ = ROL::makePtr<std::vector<Real>>(dim,0.0);
 //       Real Vsrc, Imeas;
 //       std::cout << "Using input file to generate data." << "\n";
 //       for(int i=0;i<dim;i++){
@@ -961,9 +961,9 @@ public:
 
 //     //! Solve circuit given optimization parameters Is and Rs
 //     void solve_circuit(Vector<Real> &I, const Vector<Real> &S){
-//       ROL::SharedPointer<std::vector<Real> > Ip =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(I)).getVector());
-//       ROL::SharedPointer<const std::vector<Real> > Sp =
+//       ROL::Ptr<std::vector<Real> > Ip =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(I)).getVector());
+//       ROL::Ptr<const std::vector<Real> > Sp =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(S))).getVector();
 
 //       int n = Ip->size();
@@ -994,12 +994,12 @@ public:
 //       ---
 //      */
 //     Real value(const Vector<Real> &S, Real &tol){
-//       ROL::SharedPointer<const std::vector<Real> > Sp =
+//       ROL::Ptr<const std::vector<Real> > Sp =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(S))).getVector();
 //       int n = Imeas_->size();
-//       StdVector<Real> I( ROL::makeShared<std::vector<Real>>(n,0.0) );
-//       ROL::SharedPointer<std::vector<Real> > Ip =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(I)).getVector());
+//       StdVector<Real> I( ROL::makePtr<std::vector<Real>>(n,0.0) );
+//       ROL::Ptr<std::vector<Real> > Ip =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(I)).getVector());
 
 //       // Solve state equation
 //       this->solve_circuit(I,S);
@@ -1020,12 +1020,12 @@ public:
 //      */
 //     void solve_adjoint(Vector<Real> &lambda, const Vector<Real> &I, const Vector<Real> &S){
       
-//       ROL::SharedPointer<std::vector<Real> > lambdap =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(lambda)).getVector());
+//       ROL::Ptr<std::vector<Real> > lambdap =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(lambda)).getVector());
       
-//       ROL::SharedPointer<const std::vector<Real> > Ip =
+//       ROL::Ptr<const std::vector<Real> > Ip =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(I))).getVector();
-//       ROL::SharedPointer<const std::vector<Real> > Sp =
+//       ROL::Ptr<const std::vector<Real> > Sp =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(S))).getVector();
       
 //       int n = Ip->size();
@@ -1043,11 +1043,11 @@ public:
 //     */
 //     void solve_sensitivity_Is(Vector<Real> &sens, const Vector<Real> &I, const Vector<Real> &S){
       
-//       ROL::SharedPointer<std::vector<Real> > sensp =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sens)).getVector());
-//       ROL::SharedPointer<const std::vector<Real> > Ip =
+//       ROL::Ptr<std::vector<Real> > sensp =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sens)).getVector());
+//       ROL::Ptr<const std::vector<Real> > Ip =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(I))).getVector();
-//       ROL::SharedPointer<const std::vector<Real> > Sp =
+//       ROL::Ptr<const std::vector<Real> > Sp =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(S))).getVector();
       
 //       int n = Ip->size();
@@ -1065,11 +1065,11 @@ public:
 //     */
 //     void solve_sensitivity_Rs(Vector<Real> &sens, const Vector<Real> &I, const Vector<Real> &S){
       
-//       ROL::SharedPointer<std::vector<Real> > sensp =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sens)).getVector());
-//       ROL::SharedPointer<const std::vector<Real> > Ip =
+//       ROL::Ptr<std::vector<Real> > sensp =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sens)).getVector());
+//       ROL::Ptr<const std::vector<Real> > Ip =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(I))).getVector();
-//       ROL::SharedPointer<const std::vector<Real> > Sp =
+//       ROL::Ptr<const std::vector<Real> > Sp =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(S))).getVector();
       
 //       int n = Ip->size();
@@ -1081,25 +1081,25 @@ public:
 //     //! Compute the gradient of the reduced objective function either using adjoint or using sensitivities
 //     void gradient(Vector<Real> &g, const Vector<Real> &S, Real &tol){
       
-//       ROL::SharedPointer<std::vector<Real> > gp =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(g)).getVector());
-//       ROL::SharedPointer<const std::vector<Real> > Sp =
+//       ROL::Ptr<std::vector<Real> > gp =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(g)).getVector());
+//       ROL::Ptr<const std::vector<Real> > Sp =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(S))).getVector();
 
 //       int n = Imeas_->size();
       
-//       StdVector<Real> I( ROL::makeShared<std::vector<Real>>(n,0.0) );
-//       ROL::SharedPointer<std::vector<Real> > Ip =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(I)).getVector());
+//       StdVector<Real> I( ROL::makePtr<std::vector<Real>>(n,0.0) );
+//       ROL::Ptr<std::vector<Real> > Ip =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(I)).getVector());
       
 //       // Solve state equation      
 //       this->solve_circuit(I,S);
       
 //       if(use_adjoint_){      
 // 	// Compute the gradient of the reduced objective function using adjoint computation
-// 	StdVector<Real> lambda( ROL::makeShared<std::vector<Real>>(n,0.0) );
-// 	ROL::SharedPointer<std::vector<Real> > lambdap =
-// 	  ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(lambda)).getVector());
+// 	StdVector<Real> lambda( ROL::makePtr<std::vector<Real>>(n,0.0) );
+// 	ROL::Ptr<std::vector<Real> > lambdap =
+// 	  ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(lambda)).getVector());
 	
 // 	// Solve adjoint equation
 // 	this->solve_adjoint(lambda,I,S);
@@ -1113,14 +1113,14 @@ public:
 //       }
 //       else{
 // 	// Compute the gradient of the reduced objective function using sensitivities
-// 	StdVector<Real> sensIs( ROL::makeShared<std::vector<Real>>(n,0.0) );
-// 	StdVector<Real> sensRs( ROL::makeShared<std::vector<Real>>(n,0.0) );
+// 	StdVector<Real> sensIs( ROL::makePtr<std::vector<Real>>(n,0.0) );
+// 	StdVector<Real> sensRs( ROL::makePtr<std::vector<Real>>(n,0.0) );
 // 	// Solve sensitivity equations
 // 	this->solve_sensitivity_Is(sensIs,I,S);
 // 	this->solve_sensitivity_Rs(sensRs,I,S);
 	
-// 	ROL::SharedPointer<std::vector<Real> > sensIsp = ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sensIs)).getVector());
-// 	ROL::SharedPointer<std::vector<Real> > sensRsp = ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sensRs)).getVector());
+// 	ROL::Ptr<std::vector<Real> > sensIsp = ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sensIs)).getVector());
+// 	ROL::Ptr<std::vector<Real> > sensRsp = ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sensRs)).getVector());
 	
 // 	// Write sensitivities into file
 // 	std::ofstream output ("Sensitivities.dat");
@@ -1152,9 +1152,9 @@ public:
 //       if(use_hessvec_==0){
 // 	// Use finite-difference approximation
 //       	// Modification of parent class function that takes into accout different scale of components
-//       	ROL::SharedPointer<const std::vector<Real> > vp =
+//       	ROL::Ptr<const std::vector<Real> > vp =
 //       	  (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(v))).getVector();
-//       	ROL::SharedPointer<const std::vector<Real> > Sp =
+//       	ROL::Ptr<const std::vector<Real> > Sp =
 //       	  (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(S))).getVector();
 //       	Real gtol = std::sqrt(ROL_EPSILON<Real>()));
 	
@@ -1170,11 +1170,11 @@ public:
 //       	Real h2 = Rs_scale*h;
 	
 // 	// Compute Gradient at S                                                                               
-//       	ROL::SharedPointer<Vector<Real> > g = S.clone();
+//       	ROL::Ptr<Vector<Real> > g = S.clone();
 //       	this->gradient(*g,S,gtol);
 
 //       	// Compute New Step S + h*v                                                                            
-// 	ROL::SharedPointer<std::vector<Real> > Snewp = ROL::makeShared<std::vector<Real>>(2, 0.0);
+// 	ROL::Ptr<std::vector<Real> > Snewp = ROL::makePtr<std::vector<Real>>(2, 0.0);
 //       	ROL::StdVector<Real> Snew(Snewp);
 //       	(*Snewp)[0] = (*Sp)[0] + h1*(*vp)[0];
 //       	(*Snewp)[1] = (*Sp)[1] + h2*(*vp)[1];
@@ -1188,42 +1188,42 @@ public:
 //       	hv.scale(1.0/std::sqrt(h1*h1+h2*h2));
 //       }
 //       else if(use_hessvec_==1){
-// 	ROL::SharedPointer<std::vector<Real> > hvp =
-// 	  ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(hv)).getVector());
-// 	ROL::SharedPointer<const std::vector<Real> > vp =
+// 	ROL::Ptr<std::vector<Real> > hvp =
+// 	  ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(hv)).getVector());
+// 	ROL::Ptr<const std::vector<Real> > vp =
 // 	  (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(v))).getVector();
-// 	ROL::SharedPointer<const std::vector<Real> > Sp =
+// 	ROL::Ptr<const std::vector<Real> > Sp =
 // 	  (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(S))).getVector();
 	
 // 	int n = Imeas_->size();
 	
-// 	StdVector<Real> I( ROL::makeShared<std::vector<Real>>(n,0.0) );
-// 	ROL::SharedPointer<std::vector<Real> > Ip =
-// 	  ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(I)).getVector());
+// 	StdVector<Real> I( ROL::makePtr<std::vector<Real>>(n,0.0) );
+// 	ROL::Ptr<std::vector<Real> > Ip =
+// 	  ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(I)).getVector());
 	
 // 	// Solve state equation      
 // 	this->solve_circuit(I,S);
 	
 	
-// 	StdVector<Real> lambda( ROL::makeShared<std::vector<Real>>(n,0.0) );
-// 	ROL::SharedPointer<std::vector<Real> > lambdap =
-// 	  ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(lambda)).getVector());
+// 	StdVector<Real> lambda( ROL::makePtr<std::vector<Real>>(n,0.0) );
+// 	ROL::Ptr<std::vector<Real> > lambdap =
+// 	  ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(lambda)).getVector());
 	
 // 	// Solve adjoint equation
 // 	this->solve_adjoint(lambda,I,S);
 	
-// 	StdVector<Real> w( ROL::makeShared<std::vector<Real>>(n,0.0) );
-// 	ROL::SharedPointer<std::vector<Real> > wp =
-// 	  ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(w)).getVector());
+// 	StdVector<Real> w( ROL::makePtr<std::vector<Real>>(n,0.0) );
+// 	ROL::Ptr<std::vector<Real> > wp =
+// 	  ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(w)).getVector());
 	
 // 	// Solve state sensitivity equation
 // 	for(int i=0;i<n;i++){
 // 	  (*wp)[i] = ( (*vp)[0] * diodeIs( (*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1] ) + (*vp)[1] * diodeRs( (*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1] ) ) / diodeI((*Ip)[i],(*Vsrc_)[i],(*Sp)[0],(*Sp)[1]);
 // 	}
 	
-// 	StdVector<Real> p( ROL::makeShared<std::vector<Real>>(n,0.0) );
-// 	ROL::SharedPointer<std::vector<Real> > pp =
-// 	  ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(p)).getVector());
+// 	StdVector<Real> p( ROL::makePtr<std::vector<Real>>(n,0.0) );
+// 	ROL::Ptr<std::vector<Real> > pp =
+// 	  ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(p)).getVector());
 	
 // 	// Solve for p
 // 	for(int j=0;j<n;j++){
@@ -1239,30 +1239,30 @@ public:
 //       }
 //       else if(use_hessvec_==2){
 // 	//Gauss-Newton approximation
-// 	ROL::SharedPointer<std::vector<Real> > hvp =
-//           ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(hv)).getVector());
-// 	ROL::SharedPointer<const std::vector<Real> > vp =
+// 	ROL::Ptr<std::vector<Real> > hvp =
+//           ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(hv)).getVector());
+// 	ROL::Ptr<const std::vector<Real> > vp =
 //           (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(v))).getVector();
-// 	ROL::SharedPointer<const std::vector<Real> > Sp =
+// 	ROL::Ptr<const std::vector<Real> > Sp =
 //           (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(S))).getVector();
 	
 //         int n = Imeas_->size();
 
-//         StdVector<Real> I( ROL::makeShared<std::vector<Real>>(n,0.0) );
-// 	ROL::SharedPointer<std::vector<Real> > Ip =
-//           ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(I)).getVector());
+//         StdVector<Real> I( ROL::makePtr<std::vector<Real>>(n,0.0) );
+// 	ROL::Ptr<std::vector<Real> > Ip =
+//           ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(I)).getVector());
 
 //         // Solve state equation                                                                                
 //         this->solve_circuit(I,S);
 
 // 	// Compute sensitivities
-// 	StdVector<Real> sensIs( ROL::makeShared<std::vector<Real>>(n,0.0) );
-//         StdVector<Real> sensRs( ROL::makeShared<std::vector<Real>>(n,0.0) );
+// 	StdVector<Real> sensIs( ROL::makePtr<std::vector<Real>>(n,0.0) );
+//         StdVector<Real> sensRs( ROL::makePtr<std::vector<Real>>(n,0.0) );
 //         // Solve sensitivity equations                                                                          
 //         this->solve_sensitivity_Is(sensIs,I,S);
 //         this->solve_sensitivity_Rs(sensRs,I,S);
-// 	ROL::SharedPointer<std::vector<Real> > sensIsp = ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sensIs)).getVector());
-// 	ROL::SharedPointer<std::vector<Real> > sensRsp = ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sensRs)).getVector());
+// 	ROL::Ptr<std::vector<Real> > sensIsp = ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sensIs)).getVector());
+// 	ROL::Ptr<std::vector<Real> > sensRsp = ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(sensRs)).getVector());
 	
 // 	// Compute approximate Hessian
 // 	Real H11 = 0.0; Real H12 = 0.0; Real H22 = 0.0;
@@ -1293,7 +1293,7 @@ public:
 //       ---
 //      */
 //     void generate_plot(Real Is_lo, Real Is_up, Real Is_step, Real Rs_lo, Real Rs_up, Real Rs_step){
-//       ROL::SharedPointer<std::vector<Real> > S_ptr = ROL::makeShared<std::vector<Real>>(2,0.0);
+//       ROL::Ptr<std::vector<Real> > S_ptr = ROL::makePtr<std::vector<Real>>(2,0.0);
 //       ROL::StdVector<Real> S(S_ptr);
 //       std::ofstream output ("Objective.dat");
 
@@ -1350,22 +1350,22 @@ public:
 //       min_diff_ = 0.5*std::min(x_up_[0]-x_lo_[0],x_up_[1]-x_lo_[1]);
 //     }
 //     void project( Vector<Real> &x ) {
-//       ROL::SharedPointer<std::vector<Real> > ex =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(x)).getVector());
+//       ROL::Ptr<std::vector<Real> > ex =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(x)).getVector());
 //       (*ex)[0] = std::max(x_lo_[0],std::min(x_up_[0],(*ex)[0]));
 //       (*ex)[1] = std::max(x_lo_[1],std::min(x_up_[1],(*ex)[1]));
 //     }
 //     bool isFeasible( const Vector<Real> &x ) {
-//       ROL::SharedPointer<const std::vector<Real> > ex =
+//       ROL::Ptr<const std::vector<Real> > ex =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(x))).getVector();
 //       return ((*ex)[0] >= this->x_lo_[0] && (*ex)[1] >= this->x_lo_[1] &&
 //               (*ex)[0] <= this->x_up_[0] && (*ex)[1] <= this->x_up_[1]);
 //     }
 //     void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-//       ROL::SharedPointer<const std::vector<Real> > ex =
+//       ROL::Ptr<const std::vector<Real> > ex =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(x))).getVector();
-//       ROL::SharedPointer<std::vector<Real> > ev =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
+//       ROL::Ptr<std::vector<Real> > ev =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
 //       Real epsn = std::min(this->scale_*eps,this->min_diff_);
 //       //epsn *= this->scale_;
 //       for ( int i = 0; i < 2; i++ ) {
@@ -1375,10 +1375,10 @@ public:
 //       }
 //     }
 //     void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-//       ROL::SharedPointer<const std::vector<Real> > ex =
+//       ROL::Ptr<const std::vector<Real> > ex =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(x))).getVector();
-//       ROL::SharedPointer<std::vector<Real> > ev =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
+//       ROL::Ptr<std::vector<Real> > ev =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
 //       Real epsn = std::min(this->scale_*eps,this->min_diff_);
 //       //epsn *= this->scale_;
 //       for ( int i = 0; i < 2; i++ ) {
@@ -1388,10 +1388,10 @@ public:
 //       }
 //     }
 //     void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-//       ROL::SharedPointer<const std::vector<Real> > ex =
+//       ROL::Ptr<const std::vector<Real> > ex =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(x))).getVector();
-//       ROL::SharedPointer<std::vector<Real> > ev =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
+//       ROL::Ptr<std::vector<Real> > ev =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
 //       Real epsn = std::min(this->scale_*eps,this->min_diff_);
 //       //epsn *= this->scale_;
 //       for ( int i = 0; i < 2; i++ ) {
@@ -1402,12 +1402,12 @@ public:
 //       }
 //     }
 //     void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-//       ROL::SharedPointer<const std::vector<Real> > ex =
+//       ROL::Ptr<const std::vector<Real> > ex =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(x))).getVector();
-//       ROL::SharedPointer<const std::vector<Real> > eg =
+//       ROL::Ptr<const std::vector<Real> > eg =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(g))).getVector();
-//       ROL::SharedPointer<std::vector<Real> > ev =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
+//       ROL::Ptr<std::vector<Real> > ev =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
 //       Real epsn = std::min(this->scale_*eps,this->min_diff_);
 //       //epsn *= this->scale_;
 //       for ( int i = 0; i < 2; i++ ) {
@@ -1417,12 +1417,12 @@ public:
 //       }
 //     }
 //     void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-//       ROL::SharedPointer<const std::vector<Real> > ex =
+//       ROL::Ptr<const std::vector<Real> > ex =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(x))).getVector();
-//       ROL::SharedPointer<const std::vector<Real> > eg =
+//       ROL::Ptr<const std::vector<Real> > eg =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(g))).getVector();
-//       ROL::SharedPointer<std::vector<Real> > ev =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
+//       ROL::Ptr<std::vector<Real> > ev =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
 //       Real epsn = std::min(this->scale_*eps,this->min_diff_);
 //       //epsn *= this->scale_;
 //       for ( int i = 0; i < 2; i++ ) {
@@ -1432,12 +1432,12 @@ public:
 //       }
 //     }
 //     void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-//       ROL::SharedPointer<const std::vector<Real> > ex =
+//       ROL::Ptr<const std::vector<Real> > ex =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(x))).getVector();
-//       ROL::SharedPointer<const std::vector<Real> > eg =
+//       ROL::Ptr<const std::vector<Real> > eg =
 //         (dynamic_cast<StdVector<Real> >(const_cast<Vector<Real> &&>(g))).getVector();
-//       ROL::SharedPointer<std::vector<Real> > ev =
-//         ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
+//       ROL::Ptr<std::vector<Real> > ev =
+//         ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(v)).getVector());
 //       Real epsn = std::min(this->scale_*eps,this->min_diff_);
 //       //epsn *= this->scale_;
 //       for ( int i = 0; i < 2; i++ ) {
@@ -1449,16 +1449,16 @@ public:
 //     }
 
 //     void setVectorToUpperBound( ROL::Vector<Real> &u ) {
-//       ROL::SharedPointer<std::vector<Real> > us = ROL::makeShared<std::vector<Real>>(2,0.0);
+//       ROL::Ptr<std::vector<Real> > us = ROL::makePtr<std::vector<Real>>(2,0.0);
 //       us->assign(this->x_up_.begin(),this->x_up_.end());
-//       ROL::SharedPointer<ROL::Vector<Real> > up = ROL::makeShared<ROL::StdVector<Real>>(us);
+//       ROL::Ptr<ROL::Vector<Real> > up = ROL::makePtr<ROL::StdVector<Real>>(us);
 //       u.set(*up);
 //     }
 
 //     void setVectorToLowerBound( ROL::Vector<Real> &l ) {
-//       ROL::SharedPointer<std::vector<Real> > ls = ROL::makeShared<std::vector<Real>>(2,0.0);
+//       ROL::Ptr<std::vector<Real> > ls = ROL::makePtr<std::vector<Real>>(2,0.0);
 //       ls->assign(this->x_lo_.begin(),this->x_lo_.end());
-//       ROL::SharedPointer<ROL::Vector<Real> > lp = ROL::makeShared<ROL::StdVector<Real>>(ls);
+//       ROL::Ptr<ROL::Vector<Real> > lp = ROL::makePtr<ROL::StdVector<Real>>(ls);
 //       l.set(*lp);
 //     }
 //   };
@@ -1466,12 +1466,12 @@ public:
 
 
 //   // template<class Real>
-//   // void getDiodeCircuit( ROL::SharedPointer<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
+//   // void getDiodeCircuit( ROL::Ptr<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
 //   //   // Cast Initial Guess and Solution Vectors                                     
-//   //   ROL::SharedPointer<std::vector<Real> > x0p =
-//   //     ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(x0)).getVector());
-//   //   ROL::SharedPointer<std::vector<Real> > xp =
-//   //     ROL::constPointerCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(x)).getVector());
+//   //   ROL::Ptr<std::vector<Real> > x0p =
+//   //     ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(x0)).getVector());
+//   //   ROL::Ptr<std::vector<Real> > xp =
+//   //     ROL::constPtrCast<std::vector<Real> >((dynamic_cast<StdVector<Real>&>(x)).getVector());
 
 //   //   int n = xp->size();
 
@@ -1481,7 +1481,7 @@ public:
 //   //   xp->resize(n);
 
 //   //   // Instantiate Objective Function                                                                              
-//   //   obj = ROL::makeShared<Objective_DiodeCircuit<Real>>(0.02585,0.0,1.0,1.e-2);
+//   //   obj = ROL::makePtr<Objective_DiodeCircuit<Real>>(0.02585,0.0,1.0,1.e-2);
 //   //   //ROL::Objective_DiodeCircuit<Real> obj(0.02585,0.0,1.0,1.e-2);
 
 //   //   // Get Initial Guess

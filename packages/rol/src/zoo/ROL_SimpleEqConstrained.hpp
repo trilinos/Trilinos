@@ -75,13 +75,13 @@ namespace ZOO {
   private:
 
     template<class VectorType>
-    ROL::SharedPointer<const vector> getVector( const V& x ) {
+    ROL::Ptr<const vector> getVector( const V& x ) {
       
       return dynamic_cast<const VectorType&>(x).getVector();
     }
 
     template<class VectorType>
-    ROL::SharedPointer<vector> getVector( V& x ) {
+    ROL::Ptr<vector> getVector( V& x ) {
       
       return dynamic_cast<VectorType&>(x).getVector();
     }
@@ -92,7 +92,7 @@ namespace ZOO {
     Real value( const Vector<Real> &x, Real &tol ) {
  
      
-     ROL::SharedPointer<const vector> xp = getVector<XPrim>(x); 
+     ROL::Ptr<const vector> xp = getVector<XPrim>(x); 
 
       uint n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective value): "
@@ -112,8 +112,8 @@ namespace ZOO {
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
 
       
-      ROL::SharedPointer<const vector> xp = getVector<XPrim>(x);
-      ROL::SharedPointer<vector> gp = getVector<XDual>(g); 
+      ROL::Ptr<const vector> xp = getVector<XPrim>(x);
+      ROL::Ptr<vector> gp = getVector<XDual>(g); 
 
       uint n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective gradient): "
@@ -141,9 +141,9 @@ namespace ZOO {
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
       
-      ROL::SharedPointer<const vector> xp = getVector<XPrim>(x);
-      ROL::SharedPointer<const vector> vp = getVector<XPrim>(v);
-      ROL::SharedPointer<vector> hvp = getVector<XDual>(hv);
+      ROL::Ptr<const vector> xp = getVector<XPrim>(x);
+      ROL::Ptr<const vector> vp = getVector<XPrim>(v);
+      ROL::Ptr<vector> hvp = getVector<XDual>(hv);
 
       uint n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, objective hessVec): "
@@ -220,13 +220,13 @@ namespace ZOO {
 
   private:
     template<class VectorType>
-    ROL::SharedPointer<const vector> getVector( const V& x ) {
+    ROL::Ptr<const vector> getVector( const V& x ) {
       
       return dynamic_cast<const VectorType&>(x).getVector();
     }
 
     template<class VectorType> 
-    ROL::SharedPointer<vector> getVector( V& x ) {
+    ROL::Ptr<vector> getVector( V& x ) {
       
       return dynamic_cast<VectorType&>(x).getVector(); 
     }
@@ -237,8 +237,8 @@ namespace ZOO {
     void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
 
       
-      ROL::SharedPointer<const vector> xp = getVector<XPrim>(x);
-      ROL::SharedPointer<vector> cp = getVector<CPrim>(c);
+      ROL::Ptr<const vector> xp = getVector<XPrim>(x);
+      ROL::Ptr<vector> cp = getVector<CPrim>(c);
 
       uint n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint value): "
@@ -262,9 +262,9 @@ namespace ZOO {
     void applyJacobian( Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
       
-      ROL::SharedPointer<const vector> xp = getVector<XPrim>(x);
-      ROL::SharedPointer<const vector> vp = getVector<XPrim>(v);
-      ROL::SharedPointer<vector> jvp = getVector<CPrim>(jv);
+      ROL::Ptr<const vector> xp = getVector<XPrim>(x);
+      ROL::Ptr<const vector> vp = getVector<XPrim>(v);
+      ROL::Ptr<vector> jvp = getVector<CPrim>(jv);
 
       uint n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyJacobian): "
@@ -298,9 +298,9 @@ namespace ZOO {
     void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
       
-      ROL::SharedPointer<const vector> xp = getVector<XPrim>(x);
-      ROL::SharedPointer<const vector> vp = getVector<CDual>(v);
-      ROL::SharedPointer<vector> ajvp = getVector<XDual>(ajv);
+      ROL::Ptr<const vector> xp = getVector<XPrim>(x);
+      ROL::Ptr<const vector> vp = getVector<CDual>(v);
+      ROL::Ptr<vector> ajvp = getVector<XDual>(ajv);
 
       uint n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointJacobian): "
@@ -334,10 +334,10 @@ namespace ZOO {
 
     void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
       
-      ROL::SharedPointer<const vector> xp = getVector<XPrim>(x);
-      ROL::SharedPointer<const vector> up = getVector<CDual>(u);
-      ROL::SharedPointer<const vector> vp = getVector<XPrim>(v);
-      ROL::SharedPointer<vector> ahuvp = getVector<XDual>(ahuv);
+      ROL::Ptr<const vector> xp = getVector<XPrim>(x);
+      ROL::Ptr<const vector> up = getVector<CDual>(u);
+      ROL::Ptr<const vector> vp = getVector<XPrim>(v);
+      ROL::Ptr<vector> ahuvp = getVector<XDual>(ahuv);
 
       uint n = xp->size();
       TEUCHOS_TEST_FOR_EXCEPTION( (n != 5), std::invalid_argument, ">>> ERROR (ROL_SimpleEqConstrained, constraint applyAdjointHessian): "
@@ -376,15 +376,15 @@ namespace ZOO {
     } //applyAdjointHessian
 
     /*std::vector<Real> solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2, const Vector<Real> &b1, const Vector<Real> &b2, const Vector<Real> &x, Real &tol) {
-      ROL::SharedPointer<std::vector<Real> > v1p =
-        ROL::constPointerCast<std::vector<Real> >((dynamic_cast<XPrim&>(v1)).getVector());    
-      ROL::SharedPointer<std::vector<Real> > v2p =
-        ROL::constPointerCast<std::vector<Real> >((dynamic_cast<CDual&>(v2)).getVector());
-      ROL::SharedPointer<const std::vector<Real> > b1p =
+      ROL::Ptr<std::vector<Real> > v1p =
+        ROL::constPtrCast<std::vector<Real> >((dynamic_cast<XPrim&>(v1)).getVector());    
+      ROL::Ptr<std::vector<Real> > v2p =
+        ROL::constPtrCast<std::vector<Real> >((dynamic_cast<CDual&>(v2)).getVector());
+      ROL::Ptr<const std::vector<Real> > b1p =
         (dynamic_cast<XDual>(const_cast<Vector<Real> &&>(b1))).getVector();
-      ROL::SharedPointer<const std::vector<Real> > b2p =
+      ROL::Ptr<const std::vector<Real> > b2p =
         (dynamic_cast<CPrim>(const_cast<Vector<Real> &&>(b2))).getVector();
-      ROL::SharedPointer<const std::vector<Real> > xp =
+      ROL::Ptr<const std::vector<Real> > xp =
         (dynamic_cast<XPrim>(const_cast<Vector<Real> &&>(x))).getVector();
 
       Real x1 = (*xp)[0];
@@ -437,8 +437,8 @@ namespace ZOO {
 
 
   template<class Real, class XPrim, class XDual, class CPrim, class CDual>
-  void getSimpleEqConstrained( ROL::SharedPointer<Objective<Real> > &obj,
-                               ROL::SharedPointer<Constraint<Real> > &constr,
+  void getSimpleEqConstrained( ROL::Ptr<Objective<Real> > &obj,
+                               ROL::Ptr<Constraint<Real> > &constr,
                                Vector<Real> &x0,
                                Vector<Real> &sol ) {
 
@@ -450,8 +450,8 @@ namespace ZOO {
      
 
     // Cast initial guess and solution vectors.
-    ROL::SharedPointer<vector> x0p  = dynamic_cast<XPrim&>(x0).getVector(); 
-    ROL::SharedPointer<vector> solp = dynamic_cast<XPrim&>(sol).getVector();
+    ROL::Ptr<vector> x0p  = dynamic_cast<XPrim&>(x0).getVector(); 
+    ROL::Ptr<vector> solp = dynamic_cast<XPrim&>(sol).getVector();
 
     uint n = 5;
 
@@ -459,12 +459,12 @@ namespace ZOO {
     x0p->resize(n);
     solp->resize(n);
     // Instantiate objective function.
-    obj = ROL::makeShared<Objective_SimpleEqConstrained<Real, XPrim, XDual>>();
+    obj = ROL::makePtr<Objective_SimpleEqConstrained<Real, XPrim, XDual>>();
     // Instantiate constraints.
-    constr = ROL::makeShared<EqualityConstraint_SimpleEqConstrained<Real, XPrim, XDual, CPrim, CDual>>();
+    constr = ROL::makePtr<EqualityConstraint_SimpleEqConstrained<Real, XPrim, XDual, CPrim, CDual>>();
     // later we will bundle equality constraints into constraints ...
-    //std::vector<ROL::SharedPointer<Constraint<Real> > > eqc( 1, ROL::makeShared<EqualityConstraint_SimpleEqConstrained<Real> )>();
-    //constr = ROL::makeShared<Constraints<Real>>(eqc);
+    //std::vector<ROL::Ptr<Constraint<Real> > > eqc( 1, ROL::makePtr<EqualityConstraint_SimpleEqConstrained<Real> )>();
+    //constr = ROL::makePtr<Constraints<Real>>(eqc);
 
     // Get initial guess.
     (*x0p)[0] = -1.8;

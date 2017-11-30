@@ -67,24 +67,24 @@ int main( int argc, char* argv[] ) {
   double  mt = mf+mr;    // Total mass
   double  dt = T/N;      // Time ste
 
-  auto u_ptr = ROL::makeShared<vector>(N);
-  auto u = ROL::makeShared<ROL::StdVector<double>>(u_ptr);
+  auto u_ptr = ROL::makePtr<vector>(N);
+  auto u = ROL::makePtr<ROL::StdVector<double>>(u_ptr);
   auto l = u->dual().clone();
 
-  auto z_ptr = ROL::makeShared<vector>(N,mf/T);
-  auto z = ROL::makeShared<ROL::StdVector<double>>(z_ptr);
+  auto z_ptr = ROL::makePtr<vector>(N,mf/T);
+  auto z = ROL::makePtr<ROL::StdVector<double>>(z_ptr);
 
 
   // Trapezpoidal weights
-  auto w_ptr = ROL::makeShared<vector>(N,dt);
+  auto w_ptr = ROL::makePtr<vector>(N,dt);
   (*w_ptr)[0] *= 0.5; (*w_ptr)[N-1] *= 0.5;
-  auto w = ROL::makeShared<ROL::StdVector<double>>(w_ptr);
+  auto w = ROL::makePtr<ROL::StdVector<double>>(w_ptr);
 
   // Piecewise constant weights
-  auto e_ptr = ROL::makeShared<vector>(N,dt);
-  auto e = ROL::makeShared<ROL::StdVector<double>>(e_ptr);
+  auto e_ptr = ROL::makePtr<vector>(N,dt);
+  auto e = ROL::makePtr<ROL::StdVector<double>>(e_ptr);
 
-  auto con = ROL::makeShared<Rocket::Constraint>( N, T, mt, mf, ve, g );
+  auto con = ROL::makePtr<Rocket::Constraint>( N, T, mt, mf, ve, g );
 
   double tol = 1.e-7; // Needed for solve
 
@@ -92,18 +92,18 @@ int main( int argc, char* argv[] ) {
   con->update_2(*z);
   con->solve(*l, *u, *z, tol);
 
-  auto ucb_ptr = ROL::makeShared<vector>(N);
-  auto ucb = ROL::makeShared<ROL::StdVector<double>>(ucb_ptr);
+  auto ucb_ptr = ROL::makePtr<vector>(N);
+  auto ucb = ROL::makePtr<ROL::StdVector<double>>(ucb_ptr);
   ucb->set(*u);
 
   //  u->print(std::cout); 
   double htarg = w->dot(*u);  // Final height 
 
-  auto obj  = ROL::makeShared<Rocket::Objective>( N, T, mt, htarg, mu, w );
-  auto robj = ROL::makeShared<ROL::Reduced_Objective_SimOpt<double>>( obj, con, u, z, l );
+  auto obj  = ROL::makePtr<Rocket::Objective>( N, T, mt, htarg, mu, w );
+  auto robj = ROL::makePtr<ROL::Reduced_Objective_SimOpt<double>>( obj, con, u, z, l );
 
   // Full space problem
-  //  auto x = ROL::makeShared<ROL::Vector_SimOpt<double>>(u,z);
+  //  auto x = ROL::makePtr<ROL::Vector_SimOpt<double>>(u,z);
   //  ROL::OptimizationProblem<double> opt( obj, x, con, l );
   ROL::OptimizationProblem<double> opt( robj, z ); 
   ROL::OptimizationSolver<double> solver( opt, *parlist );

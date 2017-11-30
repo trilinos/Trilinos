@@ -93,15 +93,15 @@ public:
   int dimension_x()  { return 2; }
   int dimension_ci() { return 1; }
 
-  const ROL::SharedPointer<OBJ> getObjective() { 
-    return ROL::makeShared<ROL::Sacado_StdObjective<Real,HS_011::Obj>>();
+  const ROL::Ptr<OBJ> getObjective() { 
+    return ROL::makePtr<ROL::Sacado_StdObjective<Real,HS_011::Obj>>();
   }
 
-  const ROL::SharedPointer<CON> getInequalityConstraint() {
-    return ROL::makeShared<ROL::Sacado_StdConstraint<Real,HS_011::InCon>>();
+  const ROL::Ptr<CON> getInequalityConstraint() {
+    return ROL::makePtr<ROL::Sacado_StdConstraint<Real,HS_011::InCon>>();
   }
 
-  const ROL::SharedPointer<const V> getInitialGuess() {
+  const ROL::Ptr<const V> getInitialGuess() {
     Real x[] = {4.9,0.1};
     return NP::createOptVector(x);
   };
@@ -116,7 +116,7 @@ public:
     return Real(-8.498464223);
   }
 
-  ROL::SharedPointer<const V> getSolutionSet() {
+  ROL::Ptr<const V> getSolutionSet() {
     Real a = 7.5*std::sqrt(6) + std::sqrt(338.5);
     Real x[] = {(a-1/a)/std::sqrt(6),
                 (a*a-2+1/(a*a))/6.0};

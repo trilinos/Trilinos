@@ -51,7 +51,7 @@
 
 #include "ROL_Elementwise_Function.hpp"
 
-#include "ROL_SharedPointer.hpp"
+#include "ROL_Ptr.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
 /** @ingroup la_group
@@ -134,7 +134,7 @@ public:
 
              ---             
   */
-  virtual ROL::SharedPointer<Vector> clone() const = 0;
+  virtual ROL::Ptr<Vector> clone() const = 0;
 
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mathtt{*this}\f$.
@@ -149,7 +149,7 @@ public:
              ---
   */
   virtual void axpy( const Real alpha, const Vector &x ) {
-    ROL::SharedPointer<Vector> ax = x.clone();
+    ROL::Ptr<Vector> ax = x.clone();
     ax->set(x);
     ax->scale(alpha);
     this->plus(*ax);
@@ -177,9 +177,9 @@ public:
 
              ---
   */
-  virtual ROL::SharedPointer<Vector> basis( const int i ) const {
+  virtual ROL::Ptr<Vector> basis( const int i ) const {
     ROL_UNUSED(i);
-    return ROL::nullPointer;
+    return ROL::nullPtr;
   }
 
 
@@ -289,21 +289,21 @@ public:
 
     Teuchos::oblackholestream bhs; // outputs nothing
 
-    ROL::SharedPointer<std::ostream> pStream;
+    ROL::Ptr<std::ostream> pStream;
     if (printToStream) {
-      pStream = ROL::makeSharedFromRef(outStream);
+      pStream = ROL::makePtrFromRef(outStream);
     } else {
-      pStream = ROL::makeSharedFromRef(bhs);
+      pStream = ROL::makePtrFromRef(bhs);
     }
 
     // Save the format state of the original pStream.
     Teuchos::oblackholestream oldFormatState, headerFormatState;
     oldFormatState.copyfmt(*pStream);
 
-    ROL::SharedPointer<Vector> v    = this->clone();
-    ROL::SharedPointer<Vector> vtmp = this->clone();
-    ROL::SharedPointer<Vector> xtmp = x.clone();
-    ROL::SharedPointer<Vector> ytmp = y.clone();
+    ROL::Ptr<Vector> v    = this->clone();
+    ROL::Ptr<Vector> vtmp = this->clone();
+    ROL::Ptr<Vector> xtmp = x.clone();
+    ROL::Ptr<Vector> ytmp = y.clone();
 
     //*pStream << "\n************ Begin verification of linear algebra.\n\n";
     *pStream << "\n" << std::setw(width) << std::left << std::setfill('*') << "********** Begin verification of linear algebra. " << "\n\n";
@@ -373,8 +373,8 @@ public:
 
     // Reflexivity.
     v->set(*this);
-    xtmp = ROL::constPointerCast<Vector>(ROL::makeSharedFromRef(this->dual()));
-    ytmp = ROL::constPointerCast<Vector>(ROL::makeSharedFromRef(xtmp->dual()));
+    xtmp = ROL::constPtrCast<Vector>(ROL::makePtrFromRef(this->dual()));
+    ytmp = ROL::constPtrCast<Vector>(ROL::makePtrFromRef(xtmp->dual()));
     v->axpy(-one, *ytmp); vCheck.push_back(v->norm());
     *pStream << std::setw(width) << std::left << "Reflexivity. Consistency error: " << " " << vCheck.back() << "\n\n";
 

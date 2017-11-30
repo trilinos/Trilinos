@@ -67,8 +67,8 @@ namespace ROL {
     int dim = x.dimension();
     Teuchos::SerialDenseMatrix<int, Real> H(dim, dim);
 
-    ROL::SharedPointer<Vector<Real> > e = x.clone();
-    ROL::SharedPointer<Vector<Real> > h = x.clone();
+    ROL::Ptr<Vector<Real> > e = x.clone();
+    ROL::Ptr<Vector<Real> > h = x.clone();
 
     for (int i=0; i<dim; i++) {
       e = x.basis(i);
@@ -90,8 +90,8 @@ namespace ROL {
     int dim = x.dimension();
     Teuchos::SerialDenseMatrix<int, Real> M(dim, dim);
 
-    ROL::SharedPointer<Vector<Real> > ei = x.clone();
-    ROL::SharedPointer<Vector<Real> > ej = x.clone();
+    ROL::Ptr<Vector<Real> > ei = x.clone();
+    ROL::Ptr<Vector<Real> > ej = x.clone();
 
     for (int i=0; i<dim; i++) {
       ei = x.basis(i);
@@ -219,12 +219,12 @@ namespace ROL {
   template<class Real>
   class ProjectedObjective : public Objective<Real> {
   private:
-    ROL::SharedPointer<Objective<Real> >       obj_;
-    ROL::SharedPointer<BoundConstraint<Real> > con_;
-    ROL::SharedPointer<Secant<Real> >          secant_;
+    ROL::Ptr<Objective<Real> >       obj_;
+    ROL::Ptr<BoundConstraint<Real> > con_;
+    ROL::Ptr<Secant<Real> >          secant_;
 
-    ROL::SharedPointer<ROL::Vector<Real> > primalV_;
-    ROL::SharedPointer<ROL::Vector<Real> > dualV_;
+    ROL::Ptr<ROL::Vector<Real> > primalV_;
+    ROL::Ptr<ROL::Vector<Real> > dualV_;
     bool isInitialized_;
 
     bool useSecantPrecond_;
@@ -233,14 +233,14 @@ namespace ROL {
 
   public:
     ProjectedObjective( Objective<Real> &obj, BoundConstraint<Real> &con,
-                        ROL::SharedPointer<Secant<Real> > &secant,
+                        ROL::Ptr<Secant<Real> > &secant,
                         bool useSecantPrecond = false,
                         bool useSecantHessVec = false,
                         Real eps = 0.0 )
       : isInitialized_(false), useSecantPrecond_(useSecantPrecond),
         useSecantHessVec_(useSecantHessVec), eps_(eps) {
-      obj_    = ROL::makeSharedFromRef(obj);
-      con_    = ROL::makeSharedFromRef(con);
+      obj_    = ROL::makePtrFromRef(obj);
+      con_    = ROL::makePtrFromRef(con);
       secant_ = secant;
     }
 

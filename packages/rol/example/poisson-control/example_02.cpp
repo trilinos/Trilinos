@@ -22,17 +22,17 @@
 int main( int argc, char *argv[] ) {  
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm =
+  ROL::Ptr<const Teuchos::Comm<int> > comm =
     Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -66,39 +66,39 @@ int main( int argc, char *argv[] ) {
     }
     std::vector<double> tmp(2); tmp[0] = -1.0; tmp[1] = 1.0;
     std::vector<std::vector<double> > bounds(dim,tmp);
-    ROL::SharedPointer<ROL::BatchManager<double> > bman
-      = ROL::makeShared<ROL::StdTeuchosBatchManager<double,int>>(comm);
-    ROL::SharedPointer<ROL::SampleGenerator<double> > sampler
-      = ROL::makeShared<ROL::MonteCarloGenerator<double>>(nSamp,bounds,bman,useSA);
+    ROL::Ptr<ROL::BatchManager<double> > bman
+      = ROL::makePtr<ROL::StdTeuchosBatchManager<double,int>>(comm);
+    ROL::Ptr<ROL::SampleGenerator<double> > sampler
+      = ROL::makePtr<ROL::MonteCarloGenerator<double>>(nSamp,bounds,bman,useSA);
   
     /***************************************************************************/
     /***************** INITIALIZE CONTROL VECTOR *******************************/
     /***************************************************************************/
     int nx = parlist->get("Number of Elements", 128);
-    ROL::SharedPointer<std::vector<double> > z_ptr = ROL::makeShared<std::vector<double>>(nx+1, 0.0);
-    ROL::SharedPointer<ROL::Vector<double> > z = ROL::makeShared<ROL::StdVector<double>>(z_ptr);
-    ROL::SharedPointer<std::vector<double> > u_ptr = ROL::makeShared<std::vector<double>>(nx-1, 0.0);
-    ROL::SharedPointer<ROL::Vector<double> > u = ROL::makeShared<ROL::StdVector<double>>(u_ptr);
+    ROL::Ptr<std::vector<double> > z_ptr = ROL::makePtr<std::vector<double>>(nx+1, 0.0);
+    ROL::Ptr<ROL::Vector<double> > z = ROL::makePtr<ROL::StdVector<double>>(z_ptr);
+    ROL::Ptr<std::vector<double> > u_ptr = ROL::makePtr<std::vector<double>>(nx-1, 0.0);
+    ROL::Ptr<ROL::Vector<double> > u = ROL::makePtr<ROL::StdVector<double>>(u_ptr);
     ROL::Vector_SimOpt<double> x(u,z);
-    ROL::SharedPointer<std::vector<double> > p_ptr = ROL::makeShared<std::vector<double>>(nx-1, 0.0);
-    ROL::SharedPointer<ROL::Vector<double> > p = ROL::makeShared<ROL::StdVector<double>>(p_ptr);
-    ROL::SharedPointer<std::vector<double> > U_ptr = ROL::makeShared<std::vector<double>>(nx+1, 35.0);
-    ROL::SharedPointer<ROL::Vector<double> > U = ROL::makeShared<ROL::StdVector<double>>(U_ptr);
-    ROL::SharedPointer<std::vector<double> > L_ptr = ROL::makeShared<std::vector<double>>(nx+1, -5.0);
-    ROL::SharedPointer<ROL::Vector<double> > L = ROL::makeShared<ROL::StdVector<double>>(L_ptr);
+    ROL::Ptr<std::vector<double> > p_ptr = ROL::makePtr<std::vector<double>>(nx-1, 0.0);
+    ROL::Ptr<ROL::Vector<double> > p = ROL::makePtr<ROL::StdVector<double>>(p_ptr);
+    ROL::Ptr<std::vector<double> > U_ptr = ROL::makePtr<std::vector<double>>(nx+1, 35.0);
+    ROL::Ptr<ROL::Vector<double> > U = ROL::makePtr<ROL::StdVector<double>>(U_ptr);
+    ROL::Ptr<std::vector<double> > L_ptr = ROL::makePtr<std::vector<double>>(nx+1, -5.0);
+    ROL::Ptr<ROL::Vector<double> > L = ROL::makePtr<ROL::StdVector<double>>(L_ptr);
     ROL::Bounds<double> bnd(L,U);
   
     /***************************************************************************/
     /***************** INITIALIZE OBJECTIVE FUNCTION ***************************/
     /***************************************************************************/
     double alpha = parlist->get("Penalty Parameter", 1.e-4);
-    ROL::SharedPointer<FEM<double> > fem = ROL::makeShared<FEM<double>>(nx);
-    ROL::SharedPointer<ROL::Objective_SimOpt<double> > pObj
-      = ROL::makeShared<DiffusionObjective<double>>(fem, alpha);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<double> > pCon
-      = ROL::makeShared<DiffusionConstraint<double>>(fem);
-    ROL::SharedPointer<ROL::Objective<double> > robj
-      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<double>>(pObj,pCon,u,z,p);
+    ROL::Ptr<FEM<double> > fem = ROL::makePtr<FEM<double>>(nx);
+    ROL::Ptr<ROL::Objective_SimOpt<double> > pObj
+      = ROL::makePtr<DiffusionObjective<double>>(fem, alpha);
+    ROL::Ptr<ROL::Constraint_SimOpt<double> > pCon
+      = ROL::makePtr<DiffusionConstraint<double>>(fem);
+    ROL::Ptr<ROL::Objective<double> > robj
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<double>>(pObj,pCon,u,z,p);
     ROL::RiskNeutralObjective<double> obj(robj,sampler);
   
     /***************************************************************************/
@@ -106,10 +106,10 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     if (parlist->get("Run Derivative Check",false)) {
       // Direction to test finite differences
-      ROL::SharedPointer<std::vector<double> > dz_ptr = ROL::makeShared<std::vector<double>>(nx+1, 0.0);
-      ROL::SharedPointer<ROL::Vector<double> > dz = ROL::makeShared<ROL::StdVector<double>>(dz_ptr);
-      ROL::SharedPointer<std::vector<double> > du_ptr = ROL::makeShared<std::vector<double>>(nx-1, 0.0);
-      ROL::SharedPointer<ROL::Vector<double> > du = ROL::makeShared<ROL::StdVector<double>>(du_ptr);
+      ROL::Ptr<std::vector<double> > dz_ptr = ROL::makePtr<std::vector<double>>(nx+1, 0.0);
+      ROL::Ptr<ROL::Vector<double> > dz = ROL::makePtr<ROL::StdVector<double>>(dz_ptr);
+      ROL::Ptr<std::vector<double> > du_ptr = ROL::makePtr<std::vector<double>>(nx-1, 0.0);
+      ROL::Ptr<ROL::Vector<double> > du = ROL::makePtr<ROL::StdVector<double>>(du_ptr);
       ROL::Vector_SimOpt<double> d(du,dz);
       // Set to random vectors
       srand(12345);
@@ -151,7 +151,7 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     /***************** INITIALIZE ROL ALGORITHM ********************************/
     /***************************************************************************/
-    ROL::SharedPointer<ROL::Algorithm<double> > algo; 
+    ROL::Ptr<ROL::Algorithm<double> > algo; 
     if ( useSA ) {
       ROL_parlist->sublist("General").set("Recompute Objective Function",false);
       ROL_parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",0.1/alpha);
@@ -159,10 +159,10 @@ int main( int argc, char *argv[] ) {
       ROL_parlist->sublist("Step").sublist("Line Search").sublist("Line-Search Method").set("Type","Iteration Scaling");
       ROL_parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type","Steepest Descent");
       ROL_parlist->sublist("Step").sublist("Line Search").sublist("Curvature Condition").set("Type","Null Curvature Condition");
-      algo = ROL::makeShared<ROL::Algorithm<double>>("Line Search",*ROL_parlist,false);
+      algo = ROL::makePtr<ROL::Algorithm<double>>("Line Search",*ROL_parlist,false);
     } 
     else {
-      algo = ROL::makeShared<ROL::Algorithm<double>>("Trust Region",*ROL_parlist,false);
+      algo = ROL::makePtr<ROL::Algorithm<double>>("Trust Region",*ROL_parlist,false);
     }
   
     /***************************************************************************/
@@ -178,7 +178,7 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     int my_number_samples = sampler->numMySamples(), number_samples = 0;
     Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM,1,&my_number_samples,&number_samples);
-    int my_number_solves  = ROL::dynamicPointerCast<DiffusionConstraint<double> >(pCon)->getNumSolves(), number_solves = 0;
+    int my_number_solves  = ROL::dynamicPtrCast<DiffusionConstraint<double> >(pCon)->getNumSolves(), number_solves = 0;
     Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM,1,&my_number_solves,&number_solves);
     if (comm->getRank() == 0) {
       std::cout << "Number of Samples    = " << number_samples << "\n";

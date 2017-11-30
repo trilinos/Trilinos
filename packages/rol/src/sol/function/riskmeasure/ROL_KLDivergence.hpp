@@ -85,10 +85,10 @@ private:
   Real gval_;
   Real gvval_;
   Real hval_;
-  ROL::SharedPointer<Vector<Real> > scaledGradient_;
-  ROL::SharedPointer<Vector<Real> > scaledHessVec_;
-  ROL::SharedPointer<Vector<Real> > dualVector1_;
-  ROL::SharedPointer<Vector<Real> > dualVector2_;
+  ROL::Ptr<Vector<Real> > scaledGradient_;
+  ROL::Ptr<Vector<Real> > scaledHessVec_;
+  ROL::Ptr<Vector<Real> > dualVector1_;
+  ROL::Ptr<Vector<Real> > dualVector2_;
 
   Real xstat_;
   Real vstat_;
@@ -127,7 +127,7 @@ public:
     checkInputs();
   }
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
     Real zero(0);
     RiskMeasure<Real>::reset(x0,x);
     int index = RiskMeasure<Real>::getIndex();
@@ -145,10 +145,10 @@ public:
     dualVector1_->zero(); dualVector2_->zero();
   }
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x,
-             ROL::SharedPointer<Vector<Real> > &v0, const Vector<Real> &v) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x,
+             ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
-    v0 = ROL::constPointerCast<Vector<Real> >(dynamic_cast<const RiskVector<Real>&>(v).getVector());
+    v0 = ROL::constPtrCast<Vector<Real> >(dynamic_cast<const RiskVector<Real>&>(v).getVector());
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
     vstat_ = (*dynamic_cast<const RiskVector<Real>&>(v).getStatistic(comp,index))[0];

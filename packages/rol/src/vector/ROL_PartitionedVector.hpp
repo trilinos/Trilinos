@@ -58,13 +58,13 @@ template<class Real>
 class PartitionedVector : public Vector<Real> {
 
   typedef Vector<Real>                  V;
-  typedef ROL::SharedPointer<V>         Vp;
+  typedef ROL::Ptr<V>         Vp;
   typedef PartitionedVector<Real>       PV;
 
 private:
   const std::vector<Vp>               vecs_;
   mutable std::vector<Vp>             dual_vecs_;
-  mutable ROL::SharedPointer<PV>      dual_pvec_;
+  mutable ROL::Ptr<PV>      dual_pvec_;
 public:
 
   typedef typename std::vector<PV>::size_type    size_type;
@@ -151,7 +151,7 @@ public:
     for( size_type i=0; i<vecs_.size(); ++i ) {
       clonevec.push_back(vecs_[i]->clone());
     }
-    return ROL::makeShared<PV>(clonevec);
+    return ROL::makePtr<PV>(clonevec);
   }
 
   const V& dual(void) const {
@@ -160,7 +160,7 @@ public:
     for( size_type i=0; i<vecs_.size(); ++i ) {
       dual_vecs_[i]->set(vecs_[i]->dual());
     }
-    dual_pvec_ = ROL::makeShared<PV>( dual_vecs_ );
+    dual_pvec_ = ROL::makePtr<PV>( dual_vecs_ );
     return *dual_pvec_;
   }
 
@@ -248,11 +248,11 @@ public:
 
   // Methods that do not exist in the base class
 
-  ROL::SharedPointer<const Vector<Real> > get(size_type i) const {
+  ROL::Ptr<const Vector<Real> > get(size_type i) const {
     return vecs_[i];
   }
 
-  ROL::SharedPointer<Vector<Real> > get(size_type i) {
+  ROL::Ptr<Vector<Real> > get(size_type i) {
     return vecs_[i];
   }
 
@@ -272,104 +272,104 @@ public:
 
 // Helper methods
 template<class Real>
-ROL::SharedPointer<Vector<Real>> 
-CreatePartitionedVector( const ROL::SharedPointer<Vector<Real>> &a ) {  
+ROL::Ptr<Vector<Real>> 
+CreatePartitionedVector( const ROL::Ptr<Vector<Real>> &a ) {  
   
-  using Vp = ROL::SharedPointer<Vector<Real>>;    
+  using Vp = ROL::Ptr<Vector<Real>>;    
   using PV = PartitionedVector<Real>;
 
   Vp temp[] = {a};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+1) );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+1) );
 }
 
 template<class Real>
-ROL::SharedPointer<const Vector<Real> > 
-CreatePartitionedVector( const ROL::SharedPointer<const Vector<Real>> &a ) {
+ROL::Ptr<const Vector<Real> > 
+CreatePartitionedVector( const ROL::Ptr<const Vector<Real>> &a ) {
   
-  using Vp = ROL::SharedPointer<const Vector<Real>>;
+  using Vp = ROL::Ptr<const Vector<Real>>;
   using PV = const PartitionedVector<Real>;
 
   Vp temp[] = {a};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+1) );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+1) );
 }
 
 template<class Real>
-ROL::SharedPointer<Vector<Real>> 
-CreatePartitionedVector( const ROL::SharedPointer<Vector<Real>> &a,
-                         const ROL::SharedPointer<Vector<Real>> &b ) {
-  using Vp = ROL::SharedPointer<Vector<Real>>;
+ROL::Ptr<Vector<Real>> 
+CreatePartitionedVector( const ROL::Ptr<Vector<Real>> &a,
+                         const ROL::Ptr<Vector<Real>> &b ) {
+  using Vp = ROL::Ptr<Vector<Real>>;
   using PV = PartitionedVector<Real>;
 
   Vp temp[] = {a,b};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+2) );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+2) );
 }
 
 template<class Real>
-ROL::SharedPointer<const Vector<Real> > 
-CreatePartitionedVector( const ROL::SharedPointer<const Vector<Real>> &a,
-                         const ROL::SharedPointer<const Vector<Real>> &b ) {
-  using Vp = ROL::SharedPointer<const Vector<Real>>;
+ROL::Ptr<const Vector<Real> > 
+CreatePartitionedVector( const ROL::Ptr<const Vector<Real>> &a,
+                         const ROL::Ptr<const Vector<Real>> &b ) {
+  using Vp = ROL::Ptr<const Vector<Real>>;
   using PV = const PartitionedVector<Real>;
 
   Vp temp[] = {a,b};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+2) );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+2) );
 }
 
 
 template<class Real>
-ROL::SharedPointer<Vector<Real>> 
-CreatePartitionedVector( const ROL::SharedPointer<Vector<Real>> &a,
-                         const ROL::SharedPointer<Vector<Real>> &b,
-                         const ROL::SharedPointer<Vector<Real>> &c ) {
+ROL::Ptr<Vector<Real>> 
+CreatePartitionedVector( const ROL::Ptr<Vector<Real>> &a,
+                         const ROL::Ptr<Vector<Real>> &b,
+                         const ROL::Ptr<Vector<Real>> &c ) {
   
-  using Vp = ROL::SharedPointer<Vector<Real>>;
+  using Vp = ROL::Ptr<Vector<Real>>;
   using PV = PartitionedVector<Real>;
 
   Vp temp[] = {a,b,c};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+3) );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+3) );
 }
 
 template<class Real>
-ROL::SharedPointer<const Vector<Real> > 
-CreatePartitionedVector( const ROL::SharedPointer<const Vector<Real>> &a,
-                         const ROL::SharedPointer<const Vector<Real>> &b,
-                         const ROL::SharedPointer<const Vector<Real>> &c ) {
+ROL::Ptr<const Vector<Real> > 
+CreatePartitionedVector( const ROL::Ptr<const Vector<Real>> &a,
+                         const ROL::Ptr<const Vector<Real>> &b,
+                         const ROL::Ptr<const Vector<Real>> &c ) {
   
-  using Vp = ROL::SharedPointer<const Vector<Real>>;
+  using Vp = ROL::Ptr<const Vector<Real>>;
   using PV = const PartitionedVector<Real>;
 
   Vp temp[] = {a,b,c};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+3) );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+3) );
 }
 
 template<class Real>
-ROL::SharedPointer<Vector<Real> > 
-CreatePartitionedVector( const ROL::SharedPointer<Vector<Real>> &a,
-                         const ROL::SharedPointer<Vector<Real>> &b,
-                         const ROL::SharedPointer<Vector<Real>> &c,
-                         const ROL::SharedPointer<Vector<Real>> &d ) {
+ROL::Ptr<Vector<Real> > 
+CreatePartitionedVector( const ROL::Ptr<Vector<Real>> &a,
+                         const ROL::Ptr<Vector<Real>> &b,
+                         const ROL::Ptr<Vector<Real>> &c,
+                         const ROL::Ptr<Vector<Real>> &d ) {
   
   
-  typedef ROL::SharedPointer<Vector<Real> >  Vp;
+  typedef ROL::Ptr<Vector<Real> >  Vp;
   typedef PartitionedVector<Real> PV;
 
   Vp temp[] = {a,b,c,d};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+4) );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+4) );
 }
 
 template<class Real>
-ROL::SharedPointer<const Vector<Real> > 
-CreatePartitionedVector( const ROL::SharedPointer<const Vector<Real>> &a,
-                         const ROL::SharedPointer<const Vector<Real>> &b,
-                         const ROL::SharedPointer<const Vector<Real>> &c,
-                         const ROL::SharedPointer<const Vector<Real>> &d ) {
+ROL::Ptr<const Vector<Real> > 
+CreatePartitionedVector( const ROL::Ptr<const Vector<Real>> &a,
+                         const ROL::Ptr<const Vector<Real>> &b,
+                         const ROL::Ptr<const Vector<Real>> &c,
+                         const ROL::Ptr<const Vector<Real>> &d ) {
   
  
-  using Vp = ROL::SharedPointer<const Vector<Real>>;
+  using Vp = ROL::Ptr<const Vector<Real>>;
   using PV = const PartitionedVector<Real>;
 
   Vp temp[] = {a,b,c,d};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+4) );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+4) );
 }
 
 } // namespace ROL

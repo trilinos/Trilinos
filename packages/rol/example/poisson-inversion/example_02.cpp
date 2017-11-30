@@ -85,12 +85,12 @@ private:
   bool useCorrection_;
   Teuchos::SerialDenseMatrix<int, Real> H_;
 
-  ROL::SharedPointer<const vector> getVector( const V& x ) {
+  ROL::Ptr<const vector> getVector( const V& x ) {
      
     return dynamic_cast<const SV&>(x).getVector();
   }
 
-  ROL::SharedPointer<vector> getVector( V& x ) {
+  ROL::Ptr<vector> getVector( V& x ) {
     
     return dynamic_cast<SV&>(x).getVector();
   }
@@ -281,8 +281,8 @@ public:
     if ( flag && useCorrection_ ) {
       Real tol = std::sqrt(ROL::ROL_EPSILON<Real>());
       H_.shape(nz_,nz_); 
-      ROL::SharedPointer<V> e = z.clone();
-      ROL::SharedPointer<V> h = z.clone();
+      ROL::Ptr<V> e = z.clone();
+      ROL::Ptr<V> h = z.clone();
       for ( uint i = 0; i < nz_; i++ ) {
         e = z.basis(i);
         hessVec_true(*h,*e,z,tol);
@@ -318,7 +318,7 @@ public:
   Real value( const ROL::Vector<Real> &z, Real &tol ) {
 
     
-    ROL::SharedPointer<const vector> zp = getVector(z); 
+    ROL::Ptr<const vector> zp = getVector(z); 
 
     // SOLVE STATE EQUATION
     vector u(nu_,0.0);
@@ -359,8 +359,8 @@ public:
  
     
 
-    ROL::SharedPointer<const vector> zp = getVector(z);
-    ROL::SharedPointer<vector> gp = getVector(g);
+    ROL::Ptr<const vector> zp = getVector(z);
+    ROL::Ptr<vector> gp = getVector(g);
 
     // SOLVE STATE EQUATION
     vector u(nu_,0.0);
@@ -399,9 +399,9 @@ public:
 
     
 
-    ROL::SharedPointer<const vector> vp = getVector(v);
-    ROL::SharedPointer<const vector> zp = getVector(z);
-    ROL::SharedPointer<vector> hvp = getVector(hv);
+    ROL::Ptr<const vector> vp = getVector(v);
+    ROL::Ptr<const vector> zp = getVector(z);
+    ROL::Ptr<vector> hvp = getVector(hv);
 
     // SOLVE STATE EQUATION
     vector u(nu_,0.0);
@@ -436,12 +436,12 @@ public:
   void hessVec_inertia( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &z, Real &tol ) {
 
      
-    using ROL::constPointerCast;
+    using ROL::constPtrCast;
 
-    ROL::SharedPointer<vector> hvp = getVector(hv);
+    ROL::Ptr<vector> hvp = getVector(hv);
 
     
-    ROL::SharedPointer<vector> vp  = ROL::constPointerCast<vector>(getVector(v));
+    ROL::Ptr<vector> vp  = ROL::constPtrCast<vector>(getVector(v));
 
     Teuchos::SerialDenseVector<int, Real> hv_teuchos(Teuchos::View, &((*hvp)[0]), static_cast<int>(nz_));
     Teuchos::SerialDenseVector<int, Real>  v_teuchos(Teuchos::View, &(( *vp)[0]), static_cast<int>(nz_));
@@ -468,12 +468,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -486,8 +486,8 @@ int main(int argc, char *argv[]) {
     Objective_PoissonInversion<RealT> obj(dim, alpha);
 
     // Iteration vector.
-    ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>(dim, 0.0);
-    ROL::SharedPointer<vector> y_ptr = ROL::makeShared<vector>(dim, 0.0);
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 0.0);
+    ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(dim, 0.0);
 
     // Set initial guess.
     for (uint i=0; i<dim; i++) {
@@ -501,11 +501,11 @@ int main(int argc, char *argv[]) {
     obj.checkGradient(x,y,true);
     obj.checkHessVec(x,y,true);
 
-    ROL::SharedPointer<vector> l_ptr = ROL::makeShared<vector>(dim,1.0);
-    ROL::SharedPointer<vector> u_ptr = ROL::makeShared<vector>(dim,10.0);
+    ROL::Ptr<vector> l_ptr = ROL::makePtr<vector>(dim,1.0);
+    ROL::Ptr<vector> u_ptr = ROL::makePtr<vector>(dim,10.0);
 
-    ROL::SharedPointer<V> lo = ROL::makeShared<SV>(l_ptr);
-    ROL::SharedPointer<V> up = ROL::makeShared<SV>(u_ptr);
+    ROL::Ptr<V> lo = ROL::makePtr<SV>(l_ptr);
+    ROL::Ptr<V> up = ROL::makePtr<SV>(u_ptr);
 
     ROL::Bounds<RealT> icon(lo,up);
 
@@ -569,7 +569,7 @@ int main(int argc, char *argv[]) {
     }
     file_u.close();
    
-    ROL::SharedPointer<V> diff = x.clone();
+    ROL::Ptr<V> diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);
     RealT error = diff->norm()/std::sqrt((RealT)dim-1.0);

@@ -58,16 +58,16 @@ template <class Real>
 class BatchStdVector : public StdVector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  const ROL::SharedPointer<BatchManager<Real> > bman_;
+  const ROL::Ptr<BatchManager<Real> > bman_;
 
 protected:
-  const ROL::SharedPointer<BatchManager<Real> > getBatchManager(void) const {
+  const ROL::Ptr<BatchManager<Real> > getBatchManager(void) const {
     return bman_;
   }
 
 public:
-  BatchStdVector(const ROL::SharedPointer<std::vector<Real> > &vec,
-                 const ROL::SharedPointer<BatchManager<Real> > &bman)
+  BatchStdVector(const ROL::Ptr<std::vector<Real> > &vec,
+                 const ROL::Ptr<BatchManager<Real> > &bman)
    : StdVector<Real>(vec), bman_(bman) {}
    
   virtual Real dot(const Vector<Real> &x) const {
@@ -85,11 +85,11 @@ public:
     return sum_val;
   }
 
-  virtual ROL::SharedPointer<Vector<Real> > clone(void) const {
+  virtual ROL::Ptr<Vector<Real> > clone(void) const {
     const std::vector<Real> &yval = *(StdVector<Real>::getVector());
     uint numMySamples = yval.size();
-    return ROL::makeShared<BatchStdVector>(
-           ROL::makeShared<std::vector<Real>>(numMySamples),bman_);
+    return ROL::makePtr<BatchStdVector>(
+           ROL::makePtr<std::vector<Real>>(numMySamples),bman_);
   }
 
   int dimension(void) const {

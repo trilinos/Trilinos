@@ -58,12 +58,12 @@ class TpetraTeuchosBatchManager : public TeuchosBatchManager<Real,GO> {
   typedef TpetraMultiVector<Real,LO,GO,Node> OptVector;
 
 public:
-  TpetraTeuchosBatchManager(const ROL::SharedPointer<const Teuchos::Comm<GO> > &comm)
+  TpetraTeuchosBatchManager(const ROL::Ptr<const Teuchos::Comm<GO> > &comm)
     : TeuchosBatchManager<Real,GO>(comm) {}
 
   void sumAll(Vector<Real> &input, Vector<Real> &output) {
-    ROL::SharedPointer<Tpetra_Vector> ivec = dynamic_cast<OptVector&>(input).getVector();
-    ROL::SharedPointer<Tpetra_Vector> ovec = dynamic_cast<OptVector&>(output).getVector();
+    ROL::Ptr<Tpetra_Vector> ivec = dynamic_cast<OptVector&>(input).getVector();
+    ROL::Ptr<Tpetra_Vector> ovec = dynamic_cast<OptVector&>(output).getVector();
 
     size_t ilength = ivec->getLocalLength(), olength = ovec->getLocalLength();
     TEUCHOS_TEST_FOR_EXCEPTION(ilength != olength, std::invalid_argument,

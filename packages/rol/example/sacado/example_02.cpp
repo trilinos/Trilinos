@@ -80,12 +80,12 @@ int main(int argc, char **argv)
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -97,15 +97,15 @@ int main(int argc, char **argv)
     int dim = 5;
     int nc = 3;
 
-    ROL::SharedPointer< Sacado_Objective<RealT,Example_Objective> > obj = 
-        ROL::makeShared<Sacado_Objective<RealT,Example_Objective>>();
+    ROL::Ptr< Sacado_Objective<RealT,Example_Objective> > obj = 
+        ROL::makePtr<Sacado_Objective<RealT,Example_Objective>>();
 
-    ROL::SharedPointer< Sacado_Constraint<RealT,Example_Constraint > > constr =
-        ROL::makeShared<Sacado_Constraint<RealT,Example_Constraint >>(nc);
+    ROL::Ptr< Sacado_Constraint<RealT,Example_Constraint > > constr =
+        ROL::makePtr<Sacado_Constraint<RealT,Example_Constraint >>(nc);
 
-    ROL::SharedPointer<std::vector<RealT> > x_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
 
-    ROL::SharedPointer<std::vector<RealT> > sol_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > sol_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
     ROL::StdVector<RealT> x(x_ptr);      // Iteration vector.
     ROL::StdVector<RealT> sol(sol_ptr);  // Reference solution vector.
 
@@ -124,12 +124,12 @@ int main(int argc, char **argv)
     (*sol_ptr)[4] = -7.636430781841294e-01;
 
     RealT left = -1e0, right = 1e0;
-    ROL::SharedPointer<std::vector<RealT> > xtest_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > g_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > d_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > v_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > vc_ptr = ROL::makeShared<std::vector<RealT>>(nc, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > vl_ptr = ROL::makeShared<std::vector<RealT>>(nc, 0.0);
+    ROL::Ptr<std::vector<RealT> > xtest_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > d_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > v_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > vc_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
+    ROL::Ptr<std::vector<RealT> > vl_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
     ROL::StdVector<RealT> xtest(xtest_ptr);
     ROL::StdVector<RealT> g(g_ptr);
     ROL::StdVector<RealT> d(d_ptr);
@@ -156,8 +156,8 @@ int main(int argc, char **argv)
     constr->checkApplyAdjointJacobian(xtest, vl, vc, xtest, true, *outStream);  *outStream << "\n";
     constr->checkApplyAdjointHessian(xtest, vl, d, xtest, true, *outStream);    *outStream << "\n";
 
-    ROL::SharedPointer<std::vector<RealT> > v1_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > v2_ptr = ROL::makeShared<std::vector<RealT>>(nc, 0.0);
+    ROL::Ptr<std::vector<RealT> > v1_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > v2_ptr = ROL::makePtr<std::vector<RealT>>(nc, 0.0);
     ROL::StdVector<RealT> v1(v1_ptr);
     ROL::StdVector<RealT> v2(v2_ptr);
     RealT augtol = 1e-8;

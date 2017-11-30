@@ -64,12 +64,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -81,8 +81,8 @@ int main(int argc, char *argv[]) {
     RealT alpha = 1.e-3; // Set penalty parameter.
     Objective_BurgersControl<RealT> obj(alpha,nx);
     // Initialize iteration vectors.
-    ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>(nx+2, 1.0);
-    ROL::SharedPointer<vector> y_ptr = ROL::makeShared<vector>(nx+2, 0.0);
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(nx+2, 1.0);
+    ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(nx+2, 0.0);
     for (uint i=0; i<nx+2; i++) {
       (*x_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*y_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
@@ -96,15 +96,15 @@ int main(int argc, char *argv[]) {
     obj.checkHessVec(x,x,y,true,*outStream);
 
     // Initialize Constraints
-    ROL::SharedPointer<vector> l_ptr = ROL::makeShared<vector>(nx+2,0.0);
-    ROL::SharedPointer<vector> u_ptr = ROL::makeShared<vector>(nx+2,1.0);
-    ROL::SharedPointer<V> lo = ROL::makeShared<SV>(l_ptr);
-    ROL::SharedPointer<V> up = ROL::makeShared<SV>(u_ptr); 
+    ROL::Ptr<vector> l_ptr = ROL::makePtr<vector>(nx+2,0.0);
+    ROL::Ptr<vector> u_ptr = ROL::makePtr<vector>(nx+2,1.0);
+    ROL::Ptr<V> lo = ROL::makePtr<SV>(l_ptr);
+    ROL::Ptr<V> up = ROL::makePtr<SV>(u_ptr); 
       
     ROL::Bounds<RealT> icon(lo,up);
 
     // ROL components.
-    ROL::SharedPointer<ROL::Algorithm<RealT> > algo;
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;
 
     // Primal dual active set.
     std::string filename = "input.xml";
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    algo = ROL::makeShared<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
     // Run algorithm.
     x.zero();
     algo->run(x, obj, icon, true, *outStream);
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-2);
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
     // Define algorithm.
-    algo = ROL::makeShared<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
     // Run Algorithm
     y.zero();
     algo->run(y,obj,icon,true,*outStream);
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
     }
     file.close();
     // Compute error 
-    ROL::SharedPointer<ROL::Vector<RealT> > diff = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);
     RealT error = diff->norm();

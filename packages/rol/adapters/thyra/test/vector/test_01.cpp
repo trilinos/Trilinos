@@ -63,12 +63,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -80,12 +80,12 @@ int main(int argc, char *argv[]) {
 
     int dim = 100; 
 
-    ROL::SharedPointer<Thyra::VectorSpaceBase<RealT> > euclidean = Thyra::defaultSpmdVectorSpace<RealT>(dim);   
+    ROL::Ptr<Thyra::VectorSpaceBase<RealT> > euclidean = Thyra::defaultSpmdVectorSpace<RealT>(dim);   
 
-    // Create ROL::SharedPointers to Thyra::Vectors
-    ROL::SharedPointer<Thyra::VectorBase<RealT> > x_ptr = Thyra::createMember<RealT>(euclidean);
-    ROL::SharedPointer<Thyra::VectorBase<RealT> > y_ptr = Thyra::createMember<RealT>(euclidean);
-    ROL::SharedPointer<Thyra::VectorBase<RealT> > z_ptr = Thyra::createMember<RealT>(euclidean);
+    // Create ROL::Ptrs to Thyra::Vectors
+    ROL::Ptr<Thyra::VectorBase<RealT> > x_ptr = Thyra::createMember<RealT>(euclidean);
+    ROL::Ptr<Thyra::VectorBase<RealT> > y_ptr = Thyra::createMember<RealT>(euclidean);
+    ROL::Ptr<Thyra::VectorBase<RealT> > z_ptr = Thyra::createMember<RealT>(euclidean);
 
     // Create ROL::ThyraVectors
   
@@ -102,14 +102,14 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
-    ROL::StdVector<RealT, ElementT> checkvec(ROL::makeSharedFromRef(consistency));
+    ROL::StdVector<RealT, ElementT> checkvec(ROL::makePtrFromRef(consistency));
     if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag++;
     }      
 
     // Basis tests.
     // set x to first basis vector
-    ROL::SharedPointer<ROL::Vector<RealT> > zp = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > zp = x.clone();
     zp = x.basis(0);
     RealT znorm = zp->norm();
     *outStream << "Norm of ROL::Vector z (first basis vector): " << znorm << "\n";

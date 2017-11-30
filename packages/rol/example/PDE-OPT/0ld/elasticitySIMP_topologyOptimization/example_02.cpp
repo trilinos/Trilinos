@@ -78,8 +78,8 @@
 
 typedef double RealT;
 
-ROL::SharedPointer<Tpetra::MultiVector<> > createTpetraVector(const ROL::SharedPointer<const Tpetra::Map<> > &map) {
-  return ROL::makeShared<Tpetra::MultiVector<>>(map, 1, true);
+ROL::Ptr<Tpetra::MultiVector<> > createTpetraVector(const ROL::Ptr<const Tpetra::Map<> > &map) {
+  return ROL::makePtr<Tpetra::MultiVector<>>(map, 1, true);
 }
 
 int main(int argc, char *argv[]) {
@@ -87,18 +87,18 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  ROL::Ptr<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
   }
 
   int errorFlag  = 0;
@@ -115,24 +115,24 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( stoch_filename, stoch_parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    ROL::SharedPointer<const Teuchos::Comm<int> > serial_comm = ROL::makeShared<Teuchos::SerialComm<int>>();
-    ROL::SharedPointer<ElasticitySIMPOperators<RealT> > data
-      = ROL::makeShared<ElasticitySIMPOperators<RealT>>(serial_comm, parlist, outStream);
+    ROL::Ptr<const Teuchos::Comm<int> > serial_comm = ROL::makePtr<Teuchos::SerialComm<int>>();
+    ROL::Ptr<ElasticitySIMPOperators<RealT> > data
+      = ROL::makePtr<ElasticitySIMPOperators<RealT>>(serial_comm, parlist, outStream);
     /*** Initialize density filter. ***/
-    ROL::SharedPointer<DensityFilter<RealT> > filter
-      = ROL::makeShared<DensityFilter<RealT>>(serial_comm, parlist, outStream);
+    ROL::Ptr<DensityFilter<RealT> > filter
+      = ROL::makePtr<DensityFilter<RealT>>(serial_comm, parlist, outStream);
     /*** Build vectors and dress them up as ROL vectors. ***/
-    ROL::SharedPointer<const Tpetra::Map<> > vecmap_u = data->getDomainMapA();
-    ROL::SharedPointer<const Tpetra::Map<> > vecmap_z = data->getCellMap();
-    ROL::SharedPointer<Tpetra::MultiVector<> > u_ptr      = createTpetraVector(vecmap_u);
-    ROL::SharedPointer<Tpetra::MultiVector<> > z_ptr      = createTpetraVector(vecmap_z);
-    ROL::SharedPointer<Tpetra::MultiVector<> > du_ptr     = createTpetraVector(vecmap_u);
-    ROL::SharedPointer<Tpetra::MultiVector<> > dw_ptr     = createTpetraVector(vecmap_u);
-    ROL::SharedPointer<Tpetra::MultiVector<> > dz_ptr     = createTpetraVector(vecmap_z);
-    ROL::SharedPointer<Tpetra::MultiVector<> > dz2_ptr    = createTpetraVector(vecmap_z);
-    ROL::SharedPointer<std::vector<RealT> >    vc_ptr     = ROL::makeShared<std::vector<RealT>>(1, 0);
-    ROL::SharedPointer<std::vector<RealT> >    vc_lam_ptr = ROL::makeShared<std::vector<RealT>>(1, 0);
-    ROL::SharedPointer<std::vector<RealT> >    vscale_ptr = ROL::makeShared<std::vector<RealT>>(1, 0);
+    ROL::Ptr<const Tpetra::Map<> > vecmap_u = data->getDomainMapA();
+    ROL::Ptr<const Tpetra::Map<> > vecmap_z = data->getCellMap();
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr      = createTpetraVector(vecmap_u);
+    ROL::Ptr<Tpetra::MultiVector<> > z_ptr      = createTpetraVector(vecmap_z);
+    ROL::Ptr<Tpetra::MultiVector<> > du_ptr     = createTpetraVector(vecmap_u);
+    ROL::Ptr<Tpetra::MultiVector<> > dw_ptr     = createTpetraVector(vecmap_u);
+    ROL::Ptr<Tpetra::MultiVector<> > dz_ptr     = createTpetraVector(vecmap_z);
+    ROL::Ptr<Tpetra::MultiVector<> > dz2_ptr    = createTpetraVector(vecmap_z);
+    ROL::Ptr<std::vector<RealT> >    vc_ptr     = ROL::makePtr<std::vector<RealT>>(1, 0);
+    ROL::Ptr<std::vector<RealT> >    vc_lam_ptr = ROL::makePtr<std::vector<RealT>>(1, 0);
+    ROL::Ptr<std::vector<RealT> >    vscale_ptr = ROL::makePtr<std::vector<RealT>>(1, 0);
     // Set all values to 1 in u, z.
     RealT one(1), two(2);
     u_ptr->putScalar(one);
@@ -146,12 +146,12 @@ int main(int argc, char *argv[]) {
     // Set Scaling vector for density
     bool  useZscale = parlist->sublist("Problem").get<bool>("Use Scaled Density Vectors");
     RealT densityScaling = parlist->sublist("Problem").get<RealT>("Density Scaling");
-    ROL::SharedPointer<Tpetra::MultiVector<> > scaleVec = createTpetraVector(vecmap_z);
+    ROL::Ptr<Tpetra::MultiVector<> > scaleVec = createTpetraVector(vecmap_z);
     scaleVec->putScalar(densityScaling);
     if ( !useZscale ) {
       scaleVec->putScalar(one);
     }
-    ROL::SharedPointer<const Tpetra::Vector<> > zscale_ptr = scaleVec->getVector(0);
+    ROL::Ptr<const Tpetra::Vector<> > zscale_ptr = scaleVec->getVector(0);
 
     // Randomize d vectors.
     du_ptr->randomize(); //du_ptr->scale(0);
@@ -159,22 +159,22 @@ int main(int argc, char *argv[]) {
     dz_ptr->randomize(); //dz_ptr->scale(0);
     dz2_ptr->randomize();
     // Create ROL::TpetraMultiVectors.
-    ROL::SharedPointer<ROL::Vector<RealT> > up
-      = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(u_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > dup
-      = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(du_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > dwp
-      = ROL::makeShared<ROL::TpetraMultiVector<RealT>>(dw_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > zp 
-      = ROL::makeShared<ROL::PrimalScaledTpetraMultiVector<RealT>>(z_ptr,zscale_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > dzp
-      = ROL::makeShared<ROL::PrimalScaledTpetraMultiVector<RealT>>(dz_ptr,zscale_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > dz2p
-      = ROL::makeShared<ROL::PrimalScaledTpetraMultiVector<RealT>>(dz2_ptr,zscale_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > vcp
-      = ROL::makeShared<ROL::PrimalScaledStdVector<RealT>>(vc_ptr,vscale_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > vc_lamp
-      = ROL::makeShared<ROL::DualScaledStdVector<RealT>>(vc_lam_ptr,vscale_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > up
+      = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(u_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > dup
+      = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(du_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > dwp
+      = ROL::makePtr<ROL::TpetraMultiVector<RealT>>(dw_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > zp 
+      = ROL::makePtr<ROL::PrimalScaledTpetraMultiVector<RealT>>(z_ptr,zscale_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > dzp
+      = ROL::makePtr<ROL::PrimalScaledTpetraMultiVector<RealT>>(dz_ptr,zscale_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > dz2p
+      = ROL::makePtr<ROL::PrimalScaledTpetraMultiVector<RealT>>(dz2_ptr,zscale_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > vcp
+      = ROL::makePtr<ROL::PrimalScaledStdVector<RealT>>(vc_ptr,vscale_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > vc_lamp
+      = ROL::makePtr<ROL::DualScaledStdVector<RealT>>(vc_lam_ptr,vscale_ptr);
     // Create ROL SimOpt vectors.
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
@@ -205,24 +205,24 @@ int main(int argc, char *argv[]) {
     RealT scale = (useExpValScale ? gsum : gmin);
 
     /*** Build objective function, constraint and reduced objective function. ***/
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj
-       = ROL::makeShared<ParametrizedObjective_PDEOPT_ElasticitySIMP<RealT>>(data, filter, parlist,scale);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > con
-       = ROL::makeShared<ParametrizedEqualityConstraint_PDEOPT_ElasticitySIMP<RealT>>(data, filter, parlist);
-    ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
-       = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, dwp);
-    ROL::SharedPointer<ROL::Constraint<RealT> > volcon
-       = ROL::makeShared<EqualityConstraint_PDEOPT_ElasticitySIMP_Volume<RealT>>(data, parlist);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj
+       = ROL::makePtr<ParametrizedObjective_PDEOPT_ElasticitySIMP<RealT>>(data, filter, parlist,scale);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
+       = ROL::makePtr<ParametrizedEqualityConstraint_PDEOPT_ElasticitySIMP<RealT>>(data, filter, parlist);
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
+       = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, dwp);
+    ROL::Ptr<ROL::Constraint<RealT> > volcon
+       = ROL::makePtr<EqualityConstraint_PDEOPT_ElasticitySIMP_Volume<RealT>>(data, parlist);
 
     /*** Build bound constraint ***/
-    ROL::SharedPointer<Tpetra::MultiVector<> > lo_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_z, 1, true);
-    ROL::SharedPointer<Tpetra::MultiVector<> > hi_ptr = ROL::makeShared<Tpetra::MultiVector<>>(vecmap_z, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > lo_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<> > hi_ptr = ROL::makePtr<Tpetra::MultiVector<>>(vecmap_z, 1, true);
     lo_ptr->putScalar(0.0); hi_ptr->putScalar(1.0);
-    ROL::SharedPointer<ROL::Vector<RealT> > lop
-      = ROL::makeShared<ROL::PrimalScaledTpetraMultiVector<RealT>>(lo_ptr, zscale_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > hip
-      = ROL::makeShared<ROL::PrimalScaledTpetraMultiVector<RealT>>(hi_ptr, zscale_ptr);
-    ROL::SharedPointer<ROL::BoundConstraint<RealT> > bnd = ROL::makeShared<ROL::Bounds<RealT>>(lop,hip);
+    ROL::Ptr<ROL::Vector<RealT> > lop
+      = ROL::makePtr<ROL::PrimalScaledTpetraMultiVector<RealT>>(lo_ptr, zscale_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > hip
+      = ROL::makePtr<ROL::PrimalScaledTpetraMultiVector<RealT>>(hi_ptr, zscale_ptr);
+    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
 
     /*** Build Stochastic Functionality. ***/
     ROL::OptimizationProblem<RealT> opt(objReduced,zp,bnd);

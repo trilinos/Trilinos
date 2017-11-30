@@ -116,7 +116,7 @@ TEST(MiniTensor_ROL, VectorAdaptor)
 
   // Basis tests.
   // set x to first basis vector
-  ROL::SharedPointer<ROL::Vector<T>>
+  ROL::Ptr<ROL::Vector<T>>
   w = x.clone();
 
   w = x.basis(0);

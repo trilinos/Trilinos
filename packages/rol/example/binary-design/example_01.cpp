@@ -67,7 +67,7 @@ public:
     : nvars_(nvars), alpha_(alpha) {}
 
   RealT value(const ROL::Vector<Real> &x, Real &tol) {
-    ROL::SharedPointer<const std::vector<Real> > ex
+    ROL::Ptr<const std::vector<Real> > ex
         = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
 
     Real val(0);
@@ -78,9 +78,9 @@ public:
   }
 
   void gradient(ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real &tol) {
-    ROL::SharedPointer<const std::vector<Real> > ex
+    ROL::Ptr<const std::vector<Real> > ex
         = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<std::vector<Real> > eg
+    ROL::Ptr<std::vector<Real> > eg
         = dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
 
     const Real one(1), two(2);
@@ -90,11 +90,11 @@ public:
   }
 
   void hessVec(ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real &tol) {
-    ROL::SharedPointer<const std::vector<Real> > ex
+    ROL::Ptr<const std::vector<Real> > ex
         = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<const std::vector<Real> > ev
+    ROL::Ptr<const std::vector<Real> > ev
         = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<std::vector<Real> > ehv
+    ROL::Ptr<std::vector<Real> > ehv
         = dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
 
     const Real two(2);
@@ -116,9 +116,9 @@ public:
     : nvars_(nvars), vol_(vol) {}
 
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &x, Real &tol) {
-    ROL::SharedPointer<const std::vector<Real> > ex
+    ROL::Ptr<const std::vector<Real> > ex
         = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<std::vector<Real> > ec
+    ROL::Ptr<std::vector<Real> > ec
         = dynamic_cast<ROL::StdVector<Real>&>(c).getVector();
 
     const Real one(1);
@@ -132,11 +132,11 @@ public:
   }
 
   void applyJacobian(ROL::Vector<Real> &jv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real &tol) {
-    ROL::SharedPointer<const std::vector<Real> > ex
+    ROL::Ptr<const std::vector<Real> > ex
         = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<const std::vector<Real> > ev
+    ROL::Ptr<const std::vector<Real> > ev
         = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<std::vector<Real> > ejv
+    ROL::Ptr<std::vector<Real> > ejv
         = dynamic_cast<ROL::StdVector<Real>&>(jv).getVector();
 
     const Real zero(0), one(1), two(2);
@@ -150,11 +150,11 @@ public:
   }
 
   void applyAdjointJacobian(ROL::Vector<Real> &ajv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real &tol) {
-    ROL::SharedPointer<const std::vector<Real> > ex
+    ROL::Ptr<const std::vector<Real> > ex
         = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<const std::vector<Real> > ev
+    ROL::Ptr<const std::vector<Real> > ev
         = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<std::vector<Real> > eajv
+    ROL::Ptr<std::vector<Real> > eajv
         = dynamic_cast<ROL::StdVector<Real>&>(ajv).getVector();
 
     const Real one(1), two(2);
@@ -164,13 +164,13 @@ public:
   }
 
   void applyAdjointHessian(ROL::Vector<Real> &ahuv, const ROL::Vector<Real> &u, const ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real &tol) {
-    ROL::SharedPointer<const std::vector<Real> > ex
+    ROL::Ptr<const std::vector<Real> > ex
         = dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-    ROL::SharedPointer<const std::vector<Real> > eu
+    ROL::Ptr<const std::vector<Real> > eu
         = dynamic_cast<const ROL::StdVector<Real>&>(u).getVector();
-    ROL::SharedPointer<const std::vector<Real> > ev
+    ROL::Ptr<const std::vector<Real> > ev
         = dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
-    ROL::SharedPointer<std::vector<Real> > eahuv
+    ROL::Ptr<std::vector<Real> > eahuv
         = dynamic_cast<ROL::StdVector<Real>&>(ahuv).getVector();
 
     const Real two(2);
@@ -186,12 +186,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -203,13 +203,13 @@ int main(int argc, char *argv[]) {
     int   dim   = 10; // Set problem dimension. 
     RealT vol   = 2;  // Set desired volume. 
     RealT alpha = 1;  // Set quadratic penalty. 
-    ROL::SharedPointer<std::vector<RealT> > x_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > g_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > d_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > v_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > jv_ptr = ROL::makeShared<std::vector<RealT>>(dim+1, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > ajv_ptr = ROL::makeShared<std::vector<RealT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<RealT> > c_ptr = ROL::makeShared<std::vector<RealT>>(dim+1, 0.0);
+    ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > d_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > v_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > jv_ptr = ROL::makePtr<std::vector<RealT>>(dim+1, 0.0);
+    ROL::Ptr<std::vector<RealT> > ajv_ptr = ROL::makePtr<std::vector<RealT>>(dim, 0.0);
+    ROL::Ptr<std::vector<RealT> > c_ptr = ROL::makePtr<std::vector<RealT>>(dim+1, 0.0);
     for (int i=0; i<dim; i++) {
       (*x_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*g_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
@@ -221,15 +221,15 @@ int main(int argc, char *argv[]) {
       (*jv_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
       (*c_ptr)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
-    ROL::SharedPointer<ROL::Vector<RealT> > x = ROL::makeShared<ROL::StdVector<RealT>>(x_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > g = ROL::makeShared<ROL::StdVector<RealT>>(g_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > d = ROL::makeShared<ROL::StdVector<RealT>>(d_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > v = ROL::makeShared<ROL::StdVector<RealT>>(v_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > jv = ROL::makeShared<ROL::StdVector<RealT>>(jv_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > ajv = ROL::makeShared<ROL::StdVector<RealT>>(ajv_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > c = ROL::makeShared<ROL::StdVector<RealT>>(c_ptr);
-    ROL::SharedPointer<ROL::Objective<RealT> > obj = ROL::makeShared<BinaryDesignObjective<RealT>>(dim, alpha);
-    ROL::SharedPointer<ROL::Constraint<RealT> > con = ROL::makeShared<BinaryDesignConstraint<RealT>>(dim, vol);
+    ROL::Ptr<ROL::Vector<RealT> > x = ROL::makePtr<ROL::StdVector<RealT>>(x_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > g = ROL::makePtr<ROL::StdVector<RealT>>(g_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > d = ROL::makePtr<ROL::StdVector<RealT>>(d_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > v = ROL::makePtr<ROL::StdVector<RealT>>(v_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > jv = ROL::makePtr<ROL::StdVector<RealT>>(jv_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > ajv = ROL::makePtr<ROL::StdVector<RealT>>(ajv_ptr);
+    ROL::Ptr<ROL::Vector<RealT> > c = ROL::makePtr<ROL::StdVector<RealT>>(c_ptr);
+    ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<BinaryDesignObjective<RealT>>(dim, alpha);
+    ROL::Ptr<ROL::Constraint<RealT> > con = ROL::makePtr<BinaryDesignConstraint<RealT>>(dim, vol);
 
    // Define algorithm
     Teuchos::RCP<Teuchos::ParameterList> parlist

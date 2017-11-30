@@ -116,13 +116,13 @@ class CArrayVector : public Vector<Real> {
             return dim_;
         }
 
-        ROL::SharedPointer<Vector<Real> > clone() const {
-            return ROL::makeShared<CArrayVector>( Teuchos::ArrayRCP<Element>(dim_) );   
+        ROL::Ptr<Vector<Real> > clone() const {
+            return ROL::makePtr<CArrayVector>( Teuchos::ArrayRCP<Element>(dim_) );   
         }
         
-        ROL::SharedPointer<Vector<Real> > basis (const int i ) const {
-            ROL::SharedPointer<CArrayVector> e = 
-                ROL::makeShared<CArrayVector>(dim_);
+        ROL::Ptr<Vector<Real> > basis (const int i ) const {
+            ROL::Ptr<CArrayVector> e = 
+                ROL::makePtr<CArrayVector>(dim_);
             (e->getVector())[i] = 1.0;
             return e; 
         }         

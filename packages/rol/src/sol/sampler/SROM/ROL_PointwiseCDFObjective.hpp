@@ -48,7 +48,7 @@
 #include "ROL_BatchManager.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Distribution.hpp"
-#include "ROL_SharedPointer.hpp"
+#include "ROL_Ptr.hpp"
 #include <math.h>
 
 namespace ROL {
@@ -56,8 +56,8 @@ namespace ROL {
 template <class Real>
 class PointwiseCDFObjective : public Objective<Real> {
 private:
-  std::vector<ROL::SharedPointer<Distribution<Real> > > dist_;
-  ROL::SharedPointer<BatchManager<Real> > bman_;
+  std::vector<ROL::Ptr<Distribution<Real> > > dist_;
+  ROL::Ptr<BatchManager<Real> > bman_;
   const Real scale_;
   const Real sqrt2_;
   const Real sqrtpi_;
@@ -105,8 +105,8 @@ private:
   }
 
 public:
-  PointwiseCDFObjective(const std::vector<ROL::SharedPointer<Distribution<Real> > > &dist,
-                              ROL::SharedPointer<BatchManager<Real> >               &bman,
+  PointwiseCDFObjective(const std::vector<ROL::Ptr<Distribution<Real> > > &dist,
+                              ROL::Ptr<BatchManager<Real> >               &bman,
                         const Real scale = 1.e-2)
     : Objective<Real>(), dist_(dist), bman_(bman), scale_(scale),
       sqrt2_(std::sqrt(2.)), sqrtpi_(std::sqrt(Teuchos::ScalarTraits<Real>::pi())) {}

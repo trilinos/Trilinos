@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
@@ -87,27 +87,27 @@ int main(int argc, char *argv[]) {
    
     int dim = 3;    
 
-    ROL::SharedPointer<vector> m_ptr = ROL::makeShared<vector>(
+    ROL::Ptr<vector> m_ptr = ROL::makePtr<vector>(
       std::initializer_list<RealT>{ 3.0,  1.0, 0.0, -2.0, 6.0, 2.0, 0.0, -1.0, 3.0 } );
-    ROL::SharedPointer<vector> a_ptr = ROL::makeShared<vector>(
+    ROL::Ptr<vector> a_ptr = ROL::makePtr<vector>(
       std::initializer_list<RealT>{ 3.0,  6.0, 3.0} );
-    ROL::SharedPointer<vector> b_ptr = ROL::makeShared<vector>(
+    ROL::Ptr<vector> b_ptr = ROL::makePtr<vector>(
       std::initializer_list<RealT>{ -2.0, -1.0 } );
-    ROL::SharedPointer<vector> c_ptr = ROL::makeShared<vector>(
+    ROL::Ptr<vector> c_ptr = ROL::makePtr<vector>(
       std::initializer_list<RealT>{  1.0,  2.0 } );
 
     MAT M(m_ptr);
     TRI T(a_ptr,b_ptr,c_ptr);   
 
-    SV xm( ROL::makeShared<vector>( std::initializer_list<RealT>{1.0, 2.0, -1.0} ) );
-    SV ym( ROL::makeShared<vector>( dim ) );
-    SV zm( ROL::makeShared<vector>( dim ) );
+    SV xm( ROL::makePtr<vector>( std::initializer_list<RealT>{1.0, 2.0, -1.0} ) );
+    SV ym( ROL::makePtr<vector>( dim ) );
+    SV zm( ROL::makePtr<vector>( dim ) );
     
-    SV xt( ROL::makeShared<vector>( dim ) );
-    SV yt( ROL::makeShared<vector>( dim ) );
-    SV zt( ROL::makeShared<vector>( dim ) );
+    SV xt( ROL::makePtr<vector>( dim ) );
+    SV yt( ROL::makePtr<vector>( dim ) );
+    SV zt( ROL::makePtr<vector>( dim ) );
   
-    SV error( ROL::makeShared<vector>(dim) );
+    SV error( ROL::makePtr<vector>(dim) );
     RealT nerr = 0;
  
     xt.set(xm);

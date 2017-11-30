@@ -70,16 +70,16 @@ namespace ROL {
 template <class Real>
 class Thyra_BoundConstraint: public BoundConstraint<Real> {
 private:
- ROL::SharedPointer<Thyra::VectorBase<Real> > thyra_x_lo_, thyra_x_up_;
+ ROL::Ptr<Thyra::VectorBase<Real> > thyra_x_lo_, thyra_x_up_;
   Real min_diff_;
 
 public:
 
   virtual ~Thyra_BoundConstraint() {}
 
-  Thyra_BoundConstraint(ROL::SharedPointer<Thyra::VectorBase<Real> > p_min, ROL::SharedPointer<Thyra::VectorBase<Real> > p_max, Real min_diff) : BoundConstraint<Real>(), thyra_x_lo_(p_min), thyra_x_up_(p_max), min_diff_(min_diff) {
+  Thyra_BoundConstraint(ROL::Ptr<Thyra::VectorBase<Real> > p_min, ROL::Ptr<Thyra::VectorBase<Real> > p_max, Real min_diff) : BoundConstraint<Real>(), thyra_x_lo_(p_min), thyra_x_up_(p_max), min_diff_(min_diff) {
   // Safety check, in case the user passes empty pointers
-  if (thyra_x_lo_!=ROL::nullPointer && thyra_x_up_!=ROL::nullPointer)
+  if (thyra_x_lo_!=ROL::nullPtr && thyra_x_up_!=ROL::nullPtr)
     this->activate();
 };
 

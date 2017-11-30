@@ -124,12 +124,12 @@ class Zakharov_Sacado_Objective : public Objective<Real> {
     FunctionZakharov<GradType>    zfuncGrad_; 
     FunctionZakharov<HessVecType> zfuncHessVec_; 
 
-    ROL::SharedPointer<const vector> getVector( const V& x ) {
+    ROL::Ptr<const vector> getVector( const V& x ) {
       
       return dynamic_cast<const SV&>(x).getVector();
     }
 
-    ROL::SharedPointer<vector> getVector( V& x ) {
+    ROL::Ptr<vector> getVector( V& x ) {
       
       return dynamic_cast<SV&>(x).getVector();
     }
@@ -141,15 +141,15 @@ class Zakharov_Sacado_Objective : public Objective<Real> {
     /* Evaluate the objective function at x */
     Real value( const Vector<Real> &x, Real &tol ) {
       
-      ROL::SharedPointer<const vector> xp = getVector(x);      
+      ROL::Ptr<const vector> xp = getVector(x);      
       return zfunc_.eval(*xp);
     }
 
     /* Evaluate the gradient at x */
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
       
-      ROL::SharedPointer<const vector> xp = getVector(x);
-      ROL::SharedPointer<vector> gp = getVector(g);
+      ROL::Ptr<const vector> xp = getVector(x);
+      ROL::Ptr<vector> gp = getVector(g);
 
       uint n = xp->size();
 
@@ -172,9 +172,9 @@ class Zakharov_Sacado_Objective : public Objective<Real> {
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
       
-      ROL::SharedPointer<vector> hvp = getVector(hv);
-      ROL::SharedPointer<const vector> vp = getVector(v);
-      ROL::SharedPointer<const vector> xp = getVector(x);
+      ROL::Ptr<vector> hvp = getVector(hv);
+      ROL::Ptr<const vector> vp = getVector(v);
+      ROL::Ptr<const vector> xp = getVector(x);
 
       uint n = xp->size();
 

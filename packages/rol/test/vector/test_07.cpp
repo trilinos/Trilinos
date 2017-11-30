@@ -76,11 +76,11 @@ int main(int argc, char *argv[]) {
 
   int iprint = argc - 1;
   Teuchos::oblackholestream bhs; // outputs nothing
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   if  (iprint > 0) 
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else  
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -92,19 +92,19 @@ int main(int argc, char *argv[]) {
     int dim = 10; 
 
     // Create Tpetra::MultiVectors (single vectors) 
-    ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>(dim);
-    ROL::SharedPointer<vector> y_ptr = ROL::makeShared<vector>(dim);
-    ROL::SharedPointer<vector> w_ptr = ROL::makeShared<vector>(dim,2.0);
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim);
+    ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(dim);
+    ROL::Ptr<vector> w_ptr = ROL::makePtr<vector>(dim,2.0);
 
-    ROL::SharedPointer<V> xs = ROL::makeShared<SV>( x_ptr );
-    ROL::SharedPointer<V> ys = ROL::makeShared<SV>( y_ptr );
+    ROL::Ptr<V> xs = ROL::makePtr<SV>( x_ptr );
+    ROL::Ptr<V> ys = ROL::makePtr<SV>( y_ptr );
     
     SV ws( w_ptr );
 
     ROL::RandomizeVector(*xs);
     ROL::RandomizeVector(*ys);
 
-    ROL::SharedPointer<LinearOperator> W = ROL::makeShared<DiagonalOperator>(ws);
+    ROL::Ptr<LinearOperator> W = ROL::makePtr<DiagonalOperator>(ws);
  
     PrimalVector x(xs,W);
     DualVector   y(ys,W);    
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
     }
 
     // clone z from x, deep copy x into z, norm of z
-    ROL::SharedPointer<ROL::Vector<RealT> > z = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > z = x.clone();
     z->set(x);
     RealT znorm = z->norm();
     *outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
       *outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     }
-    ROL::SharedPointer<ROL::Vector<RealT> > w = y.clone();
+    ROL::Ptr<ROL::Vector<RealT> > w = y.clone();
     w = y.clone();
     w->set(y);
     RealT wnorm = w->norm();
@@ -162,13 +162,13 @@ int main(int argc, char *argv[]) {
     }
 
     // Standard tests.
-    ROL::SharedPointer<vector> x1_ptr = ROL::makeShared<vector>(dim);
-    ROL::SharedPointer<vector> y1_ptr = ROL::makeShared<vector>(dim);
-    ROL::SharedPointer<vector> z1_ptr = ROL::makeShared<vector>(dim);
+    ROL::Ptr<vector> x1_ptr = ROL::makePtr<vector>(dim);
+    ROL::Ptr<vector> y1_ptr = ROL::makePtr<vector>(dim);
+    ROL::Ptr<vector> z1_ptr = ROL::makePtr<vector>(dim);
 
-    ROL::SharedPointer<V> x1s = ROL::makeShared<SV>( x1_ptr );
-    ROL::SharedPointer<V> y1s = ROL::makeShared<SV>( y1_ptr );
-    ROL::SharedPointer<V> z1s = ROL::makeShared<SV>( z1_ptr );
+    ROL::Ptr<V> x1s = ROL::makePtr<SV>( x1_ptr );
+    ROL::Ptr<V> y1s = ROL::makePtr<SV>( y1_ptr );
+    ROL::Ptr<V> z1s = ROL::makePtr<SV>( z1_ptr );
 
     ROL::RandomizeVector(*x1s);
     ROL::RandomizeVector(*y1s);
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
     PrimalVector z1(z1s,W);
 
     std::vector<RealT> consistency = x1.checkVector(y1, z1, true, *outStream);
-    ROL::StdVector<RealT> checkvec( ROL::makeSharedFromRef(consistency) );
+    ROL::StdVector<RealT> checkvec( ROL::makePtrFromRef(consistency) );
     if (checkvec.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }

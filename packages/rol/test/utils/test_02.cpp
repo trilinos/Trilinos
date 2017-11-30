@@ -69,12 +69,12 @@ int main(int argc, char *argv[] ) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
@@ -87,15 +87,15 @@ int main(int argc, char *argv[] ) {
 
     int dim = 10;
    
-    ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>( dim, 0.0 );
-    ROL::SharedPointer<vector> k_ptr = ROL::makeShared<vector>( dim, 0.0 );
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>( dim, 0.0 );
+    ROL::Ptr<vector> k_ptr = ROL::makePtr<vector>( dim, 0.0 );
 
     for (int i=0; i<dim; i++) {
       (*x_ptr)[i]   = 2;
       (*k_ptr)[i]   = i+1.0;
     }
 
-    ROL::SharedPointer<V> k = ROL::makeShared<SV>(k_ptr);
+    ROL::Ptr<V> k = ROL::makePtr<SV>(k_ptr);
     SV x(x_ptr);
 
     ZOO::Objective_Zakharov<RealT> obj(k);
@@ -106,11 +106,11 @@ int main(int argc, char *argv[] ) {
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Tolerance",1.e-10);
     parlist.sublist("Scalar Minimization").sublist("Bisection").set("Iteration Limit",1000);
 
-    ROL::SharedPointer<ScalarMinimization<RealT> > sm = ROL::makeShared<BisectionScalarMinimization<RealT>>(parlist);
-    ROL::SharedPointer<LineSearch<RealT> > ls = ROL::makeShared<ScalarMinimizationLineSearch<RealT>>(parlist, sm);
-    ROL::SharedPointer<Step<RealT> > step = ROL::makeShared<LineSearchStep<RealT>>( parlist, ls );
+    ROL::Ptr<ScalarMinimization<RealT> > sm = ROL::makePtr<BisectionScalarMinimization<RealT>>(parlist);
+    ROL::Ptr<LineSearch<RealT> > ls = ROL::makePtr<ScalarMinimizationLineSearch<RealT>>(parlist, sm);
+    ROL::Ptr<Step<RealT> > step = ROL::makePtr<LineSearchStep<RealT>>( parlist, ls );
    
-    ROL::SharedPointer<StatusTest<RealT> > status = ROL::makeShared<StatusTest<RealT>>(parlist);
+    ROL::Ptr<StatusTest<RealT> > status = ROL::makePtr<StatusTest<RealT>>(parlist);
 
     Algorithm<RealT> algo( step, status, false );
  

@@ -139,13 +139,13 @@ template <class Real>
 class LineSearchStep : public Step<Real> {
 private:
 
-  ROL::SharedPointer<Step<Real> >        desc_;       ///< Unglobalized step object
-  ROL::SharedPointer<Secant<Real> >      secant_;     ///< Secant object (used for quasi-Newton)
-  ROL::SharedPointer<Krylov<Real> >      krylov_;     ///< Krylov solver object (used for inexact Newton)
-  ROL::SharedPointer<NonlinearCG<Real> > nlcg_;       ///< Nonlinear CG object (used for nonlinear CG)
-  ROL::SharedPointer<LineSearch<Real> >  lineSearch_; ///< Line-search object
+  ROL::Ptr<Step<Real> >        desc_;       ///< Unglobalized step object
+  ROL::Ptr<Secant<Real> >      secant_;     ///< Secant object (used for quasi-Newton)
+  ROL::Ptr<Krylov<Real> >      krylov_;     ///< Krylov solver object (used for inexact Newton)
+  ROL::Ptr<NonlinearCG<Real> > nlcg_;       ///< Nonlinear CG object (used for nonlinear CG)
+  ROL::Ptr<LineSearch<Real> >  lineSearch_; ///< Line-search object
 
-  ROL::SharedPointer<Vector<Real> > d_;
+  ROL::Ptr<Vector<Real> > d_;
 
   ELineSearch         els_;   ///< enum determines type of line search
   ECurvatureCondition econd_; ///< enum determines type of curvature condition
@@ -204,11 +204,11 @@ public:
       @param[in]     nlcg       is a user-defined Nonlinear CG object
   */
   LineSearchStep( Teuchos::ParameterList &parlist,
-                  const ROL::SharedPointer<LineSearch<Real> > &lineSearch = ROL::nullPointer,
-                  const ROL::SharedPointer<Secant<Real> > &secant = ROL::nullPointer,
-                  const ROL::SharedPointer<Krylov<Real> > &krylov = ROL::nullPointer,
-                  const ROL::SharedPointer<NonlinearCG<Real> > &nlcg = ROL::nullPointer )
-    : Step<Real>(), desc_(ROL::nullPointer), secant_(secant),
+                  const ROL::Ptr<LineSearch<Real> > &lineSearch = ROL::nullPtr,
+                  const ROL::Ptr<Secant<Real> > &secant = ROL::nullPtr,
+                  const ROL::Ptr<Krylov<Real> > &krylov = ROL::nullPtr,
+                  const ROL::Ptr<NonlinearCG<Real> > &nlcg = ROL::nullPtr )
+    : Step<Real>(), desc_(ROL::nullPtr), secant_(secant),
       krylov_(krylov), nlcg_(nlcg), lineSearch_(lineSearch),
       els_(LINESEARCH_USERDEFINED), econd_(CURVATURECONDITION_WOLFE),
       verbosity_(0), computeObj_(true), fval_(0), parlist_(parlist) {
@@ -220,7 +220,7 @@ public:
     verbosity_ = Glist.get("Print Verbosity",0);
     computeObj_ = Glist.get("Recompute Objective Function",false);
     // Initialize Line Search
-    if (lineSearch_ == ROL::nullPointer) {
+    if (lineSearch_ == ROL::nullPtr) {
       lineSearchName_ = Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation"); 
       els_ = StringToELineSearch(lineSearchName_);
       lineSearch_ = LineSearchFactory<Real>(parlist);
@@ -244,23 +244,23 @@ public:
     if (bnd.isActivated()) {
       switch(edesc) {
         case DESCENT_STEEPEST: {
-          desc_ = ROL::makeShared<GradientStep<Real>>(parlist_,computeObj_);
+          desc_ = ROL::makePtr<GradientStep<Real>>(parlist_,computeObj_);
           break;
         }
         case DESCENT_NONLINEARCG: {
-          desc_ = ROL::makeShared<NonlinearCGStep<Real>>(parlist_,nlcg_,computeObj_);
+          desc_ = ROL::makePtr<NonlinearCGStep<Real>>(parlist_,nlcg_,computeObj_);
           break;
         }
         case DESCENT_SECANT: {
-          desc_ = ROL::makeShared<ProjectedSecantStep<Real>>(parlist_,secant_,computeObj_);
+          desc_ = ROL::makePtr<ProjectedSecantStep<Real>>(parlist_,secant_,computeObj_);
           break;
         }
         case DESCENT_NEWTON: {
-          desc_ = ROL::makeShared<ProjectedNewtonStep<Real>>(parlist_,computeObj_);
+          desc_ = ROL::makePtr<ProjectedNewtonStep<Real>>(parlist_,computeObj_);
           break;
         }
         case DESCENT_NEWTONKRYLOV: {
-          desc_ = ROL::makeShared<ProjectedNewtonKrylovStep<Real>>(parlist_,krylov_,secant_,computeObj_);
+          desc_ = ROL::makePtr<ProjectedNewtonKrylovStep<Real>>(parlist_,krylov_,secant_,computeObj_);
           break;
         }
         default:
@@ -271,23 +271,23 @@ public:
     else {
       switch(edesc) {
         case DESCENT_STEEPEST: {
-          desc_ = ROL::makeShared<GradientStep<Real>>(parlist_,computeObj_);
+          desc_ = ROL::makePtr<GradientStep<Real>>(parlist_,computeObj_);
           break;
         }
         case DESCENT_NONLINEARCG: {
-          desc_ = ROL::makeShared<NonlinearCGStep<Real>>(parlist_,nlcg_,computeObj_);
+          desc_ = ROL::makePtr<NonlinearCGStep<Real>>(parlist_,nlcg_,computeObj_);
           break;
         }
         case DESCENT_SECANT: {
-          desc_ = ROL::makeShared<SecantStep<Real>>(parlist_,secant_,computeObj_);
+          desc_ = ROL::makePtr<SecantStep<Real>>(parlist_,secant_,computeObj_);
           break;
         }
         case DESCENT_NEWTON: {
-          desc_ = ROL::makeShared<NewtonStep<Real>>(parlist_,computeObj_);
+          desc_ = ROL::makePtr<NewtonStep<Real>>(parlist_,computeObj_);
           break;
         }
         case DESCENT_NEWTONKRYLOV: {
-          desc_ = ROL::makeShared<NewtonKrylovStep<Real>>(parlist_,krylov_,secant_,computeObj_);
+          desc_ = ROL::makePtr<NewtonKrylovStep<Real>>(parlist_,krylov_,secant_,computeObj_);
           break;
         }
         default:
@@ -299,7 +299,7 @@ public:
 
     // Initialize line search
     lineSearch_->initialize(x,s,g,obj,bnd);
-    //const ROL::SharedPointer<const StepState<Real> > desc_state = desc_->getStepState();
+    //const ROL::Ptr<const StepState<Real> > desc_state = desc_->getStepState();
     //lineSearch_->initialize(x,s,*(desc_state->gradientVec),obj,bnd);
   }
 
@@ -325,7 +325,7 @@ public:
 
     // Ensure that s is a descent direction
     // ---> If not, then default to steepest descent
-    const ROL::SharedPointer<const StepState<Real> > desc_state = desc_->getStepState();
+    const ROL::Ptr<const StepState<Real> > desc_state = desc_->getStepState();
     Real gs = GradDotStep(*(desc_state->gradientVec),s,x,bnd,algo_state.gnorm);
     if (gs >= zero) {
       s.set((desc_state->gradientVec)->dual());
@@ -334,7 +334,7 @@ public:
     }
 
     // Perform line search
-    ROL::SharedPointer<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     fval_ = algo_state.value;
     step_state->nfval = 0; step_state->ngrad = 0;
     lineSearch_->setData(algo_state.gnorm,*(desc_state->gradientVec));
@@ -368,7 +368,7 @@ public:
   void update( Vector<Real> &x, const Vector<Real> &s,
                Objective<Real> &obj, BoundConstraint<Real> &bnd,
                AlgorithmState<Real> &algo_state ) {
-    ROL::SharedPointer<StepState<Real> > step_state = Step<Real>::getState();
+    ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     algo_state.nfval += step_state->nfval;
     algo_state.ngrad += step_state->ngrad;
     desc_->update(x,s,obj,bnd,algo_state);
@@ -413,7 +413,7 @@ public:
       @param[in]     printHeader   if ste to true will print the header at each iteration
   */
   std::string print( AlgorithmState<Real> & algo_state, bool print_header = false ) const  {
-    const ROL::SharedPointer<const StepState<Real> > step_state = Step<Real>::getStepState();
+    const ROL::Ptr<const StepState<Real> > step_state = Step<Real>::getStepState();
     std::string desc = desc_->print(algo_state,false);
     desc.erase(std::remove(desc.end()-3,desc.end(),'\n'), desc.end());
     std::string name = desc_->printName();

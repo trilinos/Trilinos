@@ -76,12 +76,12 @@ namespace ZOO {
     uint  dim_;
     Real fact_;
 
-    ROL::SharedPointer<const vector> getVector( const V& x ) {
+    ROL::Ptr<const vector> getVector( const V& x ) {
       
       return dynamic_cast<const SV&>(x).getVector();  
     }
 
-    ROL::SharedPointer<vector> getVector( V& x ) {
+    ROL::Ptr<vector> getVector( V& x ) {
       
       return dynamic_cast<SV&>(x).getVector();
     }
@@ -96,7 +96,7 @@ namespace ZOO {
 
     Real value( const Vector<Real> &x, Real &tol ) {
       
-      ROL::SharedPointer<const vector> ex = getVector(x); 
+      ROL::Ptr<const vector> ex = getVector(x); 
       Real prod = 1.0;
       for ( uint i = 0; i < dim_; i++ ) {
         prod *= (*ex)[i];
@@ -106,8 +106,8 @@ namespace ZOO {
 
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
       
-      ROL::SharedPointer<const vector> ex = getVector(x);
-      ROL::SharedPointer<vector> eg = getVector(g);
+      ROL::Ptr<const vector> ex = getVector(x);
+      ROL::Ptr<vector> eg = getVector(g);
 
       Real prod = 1.0;
       for ( uint j = 0; j < dim_; j++ ) {
@@ -124,9 +124,9 @@ namespace ZOO {
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 
       
-      ROL::SharedPointer<const vector> ex = getVector(x);
-      ROL::SharedPointer<const vector> ev = getVector(v);
-      ROL::SharedPointer<vector> ehv = getVector(hv);
+      ROL::Ptr<const vector> ex = getVector(x);
+      ROL::Ptr<const vector> ev = getVector(v);
+      ROL::Ptr<vector> ehv = getVector(hv);
 
       hv.zero();
       Real prod = 1.0;
@@ -148,40 +148,40 @@ namespace ZOO {
   };
 
 template<class Real>
-void getHS45( ROL::SharedPointer<Objective<Real> >       &obj,
-              ROL::SharedPointer<BoundConstraint<Real> > &con, 
-              ROL::SharedPointer<Vector<Real> >          &x0,
-              ROL::SharedPointer<Vector<Real> >          &x ) {
+void getHS45( ROL::Ptr<Objective<Real> >       &obj,
+              ROL::Ptr<BoundConstraint<Real> > &con, 
+              ROL::Ptr<Vector<Real> >          &x0,
+              ROL::Ptr<Vector<Real> >          &x ) {
   // Problem dimension
   int n = 10;
 
   // Get Initial Guess
-  ROL::SharedPointer<std::vector<Real> > x0p = ROL::makeShared<std::vector<Real>>(n,0.0);
+  ROL::Ptr<std::vector<Real> > x0p = ROL::makePtr<std::vector<Real>>(n,0.0);
   for ( int i = 0; i < n; i++ ) {
     (*x0p)[i] = 2.0;
   }
-  x0 = ROL::makeShared<StdVector<Real>>(x0p);
+  x0 = ROL::makePtr<StdVector<Real>>(x0p);
 
   // Get Solution
-  ROL::SharedPointer<std::vector<Real> > xp = ROL::makeShared<std::vector<Real>>(n,0.0);
+  ROL::Ptr<std::vector<Real> > xp = ROL::makePtr<std::vector<Real>>(n,0.0);
   for ( int i = 0; i < n; i++ ) {
     (*xp)[i] = (Real)(i+1);
   }
-  x = ROL::makeShared<StdVector<Real>>(xp);
+  x = ROL::makePtr<StdVector<Real>>(xp);
 
   // Instantiate Objective Function
-  obj = ROL::makeShared<Objective_HS45<Real>>(n);
+  obj = ROL::makePtr<Objective_HS45<Real>>(n);
 
   // Instantiate BoundConstraint
-  ROL::SharedPointer<std::vector<Real> > lp = ROL::makeShared<std::vector<Real>>(n,0.0);
-  ROL::SharedPointer<std::vector<Real> > up = ROL::makeShared<std::vector<Real>>(n,0.0);
+  ROL::Ptr<std::vector<Real> > lp = ROL::makePtr<std::vector<Real>>(n,0.0);
+  ROL::Ptr<std::vector<Real> > up = ROL::makePtr<std::vector<Real>>(n,0.0);
   for ( int i = 0; i < n; i++ ) { 
     (*lp)[i] = 0.0;
     (*up)[i] = static_cast<Real>(i+1);
   }
-  ROL::SharedPointer<Vector<Real> > l = ROL::makeShared<StdVector<Real>>(lp);
-  ROL::SharedPointer<Vector<Real> > u = ROL::makeShared<StdVector<Real>>(up);
-  con = ROL::makeShared<Bounds<Real>>(l,u);
+  ROL::Ptr<Vector<Real> > l = ROL::makePtr<StdVector<Real>>(lp);
+  ROL::Ptr<Vector<Real> > u = ROL::makePtr<StdVector<Real>>(up);
+  con = ROL::makePtr<Bounds<Real>>(l,u);
   con->project(*x0);
 }
 

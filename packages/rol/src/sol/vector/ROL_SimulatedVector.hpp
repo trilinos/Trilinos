@@ -68,15 +68,15 @@ template<class Real>
 class SimulatedVector : public Vector<Real> {
 
   typedef Vector<Real>                             V;
-  typedef ROL::SharedPointer<V>                    Vp;
-  typedef ROL::SharedPointer<BatchManager<Real> >  VBMp; 
+  typedef ROL::Ptr<V>                    Vp;
+  typedef ROL::Ptr<BatchManager<Real> >  VBMp; 
   typedef SimulatedVector<Real>                    PV;
 
 private:
   const std::vector<Vp>                            vecs_;
-  ROL::SharedPointer<BatchManager<Real> >          bman_;
+  ROL::Ptr<BatchManager<Real> >          bman_;
   mutable std::vector<Vp>                          dual_vecs_;
-  mutable ROL::SharedPointer<PV>                   dual_pvec_;
+  mutable ROL::Ptr<PV>                   dual_pvec_;
 public:
 
   typedef typename std::vector<PV>::size_type    size_type;
@@ -163,7 +163,7 @@ public:
     for( size_type i=0; i<vecs_.size(); ++i ) {
       clonevec.push_back(vecs_[i]->clone());
     }
-    return ROL::makeShared<PV>(clonevec, bman_);
+    return ROL::makePtr<PV>(clonevec, bman_);
   }
 
   virtual const V& dual(void) const {
@@ -172,7 +172,7 @@ public:
     for( size_type i=0; i<vecs_.size(); ++i ) {
       dual_vecs_[i]->set(vecs_[i]->dual());
     }
-    dual_pvec_ = ROL::makeShared<PV>( dual_vecs_, bman_ );
+    dual_pvec_ = ROL::makePtr<PV>( dual_vecs_, bman_ );
     return *dual_pvec_;
   }
 
@@ -252,11 +252,11 @@ public:
 
   // In distributed batching mode, these are understood to take local indices.
 
-  ROL::SharedPointer<const Vector<Real> > get(size_type i) const {
+  ROL::Ptr<const Vector<Real> > get(size_type i) const {
     return vecs_[i];
   }
 
-  ROL::SharedPointer<Vector<Real> > get(size_type i) {
+  ROL::Ptr<Vector<Real> > get(size_type i) {
     return vecs_[i];
   }
 
@@ -276,31 +276,31 @@ public:
 
 // Helper methods
 template<class Real>
-ROL::SharedPointer<Vector<Real> > 
-CreateSimulatedVector( const ROL::SharedPointer<Vector<Real>> &a, 
-                       const ROL::SharedPointer<BatchManager<Real>> &bman ) {
+ROL::Ptr<Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<Vector<Real>> &a, 
+                       const ROL::Ptr<BatchManager<Real>> &bman ) {
   
-  typedef ROL::SharedPointer<Vector<Real> >       Vp;
+  typedef ROL::Ptr<Vector<Real> >       Vp;
   typedef SimulatedVector<Real>  PV;
 
   Vp temp[] = {a};
-  return ROL::makeShared<PV>(std::vector<Vp>(temp, temp+1), bman );
+  return ROL::makePtr<PV>(std::vector<Vp>(temp, temp+1), bman );
 }
 
 template<class Real>
 class PrimalSimulatedVector : public SimulatedVector<Real> {
 private:
-  const std::vector<ROL::SharedPointer<Vector<Real>>>    vecs_;
-  const ROL::SharedPointer<BatchManager<Real>>           bman_;
-  const ROL::SharedPointer<SampleGenerator<Real>>        sampler_;
-  mutable std::vector<ROL::SharedPointer<Vector<Real>>>  dual_vecs_;
-  mutable ROL::SharedPointer<DualSimulatedVector<Real>>  dual_pvec_;
+  const std::vector<ROL::Ptr<Vector<Real>>>    vecs_;
+  const ROL::Ptr<BatchManager<Real>>           bman_;
+  const ROL::Ptr<SampleGenerator<Real>>        sampler_;
+  mutable std::vector<ROL::Ptr<Vector<Real>>>  dual_vecs_;
+  mutable ROL::Ptr<DualSimulatedVector<Real>>  dual_pvec_;
   mutable bool isDualInitialized_;
 public:
 
-  PrimalSimulatedVector(const std::vector<ROL::SharedPointer<Vector<Real>>> &vecs,
-                        const ROL::SharedPointer<BatchManager<Real>>         &bman,
-                        const ROL::SharedPointer<SampleGenerator<Real>>      &sampler)
+  PrimalSimulatedVector(const std::vector<ROL::Ptr<Vector<Real>>> &vecs,
+                        const ROL::Ptr<BatchManager<Real>>         &bman,
+                        const ROL::Ptr<SampleGenerator<Real>>      &sampler)
     : SimulatedVector<Real>(vecs,bman), vecs_(vecs), bman_(bman), sampler_(sampler),
       isDualInitialized_(false) {
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
@@ -332,17 +332,17 @@ public:
     return result;
   }
 
-  ROL::SharedPointer<Vector<Real> > clone(void) const {
-    std::vector<ROL::SharedPointer<Vector<Real> > > clonevec;
+  ROL::Ptr<Vector<Real> > clone(void) const {
+    std::vector<ROL::Ptr<Vector<Real> > > clonevec;
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
       clonevec.push_back(vecs_[i]->clone());
     }
-    return ROL::makeShared<PrimalSimulatedVector<Real>>(clonevec, bman_, sampler_);
+    return ROL::makePtr<PrimalSimulatedVector<Real>>(clonevec, bman_, sampler_);
   }
 
   const Vector<Real>& dual(void) const {
     if (!isDualInitialized_) {
-      dual_pvec_ = ROL::makeShared<DualSimulatedVector<Real>>(dual_vecs_, bman_, sampler_);
+      dual_pvec_ = ROL::makePtr<DualSimulatedVector<Real>>(dual_vecs_, bman_, sampler_);
       isDualInitialized_ = true;
     }
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
@@ -357,17 +357,17 @@ public:
 template<class Real>
 class DualSimulatedVector : public SimulatedVector<Real> {
 private:
-  const std::vector<ROL::SharedPointer<Vector<Real> > >    vecs_;
-  const ROL::SharedPointer<BatchManager<Real> >            bman_;
-  const ROL::SharedPointer<SampleGenerator<Real> >         sampler_;
-  mutable std::vector<ROL::SharedPointer<Vector<Real> > >  primal_vecs_;
-  mutable ROL::SharedPointer<PrimalSimulatedVector<Real> > primal_pvec_;
+  const std::vector<ROL::Ptr<Vector<Real> > >    vecs_;
+  const ROL::Ptr<BatchManager<Real> >            bman_;
+  const ROL::Ptr<SampleGenerator<Real> >         sampler_;
+  mutable std::vector<ROL::Ptr<Vector<Real> > >  primal_vecs_;
+  mutable ROL::Ptr<PrimalSimulatedVector<Real> > primal_pvec_;
   mutable bool isPrimalInitialized_;
 public:
 
-  DualSimulatedVector(const std::vector<ROL::SharedPointer<Vector<Real> > > &vecs,
-                      const ROL::SharedPointer<BatchManager<Real> >         &bman,
-                      const ROL::SharedPointer<SampleGenerator<Real> >      &sampler)
+  DualSimulatedVector(const std::vector<ROL::Ptr<Vector<Real> > > &vecs,
+                      const ROL::Ptr<BatchManager<Real> >         &bman,
+                      const ROL::Ptr<SampleGenerator<Real> >      &sampler)
     : SimulatedVector<Real>(vecs,bman), vecs_(vecs), bman_(bman), sampler_(sampler),
       isPrimalInitialized_(false) {
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
@@ -399,17 +399,17 @@ public:
     return result;
   }
 
-  ROL::SharedPointer<Vector<Real> > clone(void) const {
-    std::vector<ROL::SharedPointer<Vector<Real> > > clonevec;
+  ROL::Ptr<Vector<Real> > clone(void) const {
+    std::vector<ROL::Ptr<Vector<Real> > > clonevec;
     for( int i=0; i<sampler_->numMySamples(); ++i ) {
       clonevec.push_back(vecs_[i]->clone());
     }
-    return ROL::makeShared<DualSimulatedVector<Real>>(clonevec, bman_, sampler_);
+    return ROL::makePtr<DualSimulatedVector<Real>>(clonevec, bman_, sampler_);
   }
 
   const Vector<Real>& dual(void) const {
     if (!isPrimalInitialized_) {
-      primal_pvec_ = ROL::makeShared<PrimalSimulatedVector<Real>>(primal_vecs_, bman_, sampler_);
+      primal_pvec_ = ROL::makePtr<PrimalSimulatedVector<Real>>(primal_vecs_, bman_, sampler_);
       isPrimalInitialized_ = true;
     }
     const Real one(1);
@@ -423,104 +423,104 @@ public:
 };
 
 template<class Real>
-ROL::SharedPointer<const Vector<Real> > 
-CreateSimulatedVector( const ROL::SharedPointer<const Vector<Real> > &a, 
-                       const ROL::SharedPointer<BatchManager<Real> > &bman ) {
+ROL::Ptr<const Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<const Vector<Real> > &a, 
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
   
-  typedef ROL::SharedPointer<const Vector<Real> >      Vp;
+  typedef ROL::Ptr<const Vector<Real> >      Vp;
   typedef const SimulatedVector<Real> PV;
 
   Vp temp[] = {a};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+1), bman );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+1), bman );
 }
 
 template<class Real>
-ROL::SharedPointer<Vector<Real> > 
-CreateSimulatedVector( const ROL::SharedPointer<Vector<Real> > &a,
-                       const ROL::SharedPointer<Vector<Real> > &b,
-                       const ROL::SharedPointer<BatchManager<Real> > &bman ) {
+ROL::Ptr<Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<Vector<Real> > &a,
+                       const ROL::Ptr<Vector<Real> > &b,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
   
-  typedef ROL::SharedPointer<Vector<Real> >      Vp;
+  typedef ROL::Ptr<Vector<Real> >      Vp;
   typedef SimulatedVector<Real> PV;
 
   Vp temp[] = {a,b};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+2), bman );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+2), bman );
 }
 
 template<class Real>
-ROL::SharedPointer<const Vector<Real> > 
-CreateSimulatedVector( const ROL::SharedPointer<const Vector<Real> > &a,
-                       const ROL::SharedPointer<const Vector<Real> > &b,
-                       const ROL::SharedPointer<BatchManager<Real> > &bman ) {
+ROL::Ptr<const Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<const Vector<Real> > &a,
+                       const ROL::Ptr<const Vector<Real> > &b,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
   
   
-  typedef ROL::SharedPointer<const Vector<Real> >      Vp;
+  typedef ROL::Ptr<const Vector<Real> >      Vp;
   typedef const SimulatedVector<Real> PV;
 
   Vp temp[] = {a,b};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+2), bman );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+2), bman );
 }
 
 template<class Real>
-ROL::SharedPointer<Vector<Real> > 
-CreateSimulatedVector( const ROL::SharedPointer<Vector<Real> > &a,
-                       const ROL::SharedPointer<Vector<Real> > &b,
-                       const ROL::SharedPointer<Vector<Real> > &c,
-                       const ROL::SharedPointer<BatchManager<Real> > &bman ) {
+ROL::Ptr<Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<Vector<Real> > &a,
+                       const ROL::Ptr<Vector<Real> > &b,
+                       const ROL::Ptr<Vector<Real> > &c,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
   
   
-  typedef ROL::SharedPointer<Vector<Real> >      Vp;
+  typedef ROL::Ptr<Vector<Real> >      Vp;
   typedef SimulatedVector<Real> PV;
 
   Vp temp[] = {a,b,c};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+3), bman );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+3), bman );
 }
 
 template<class Real>
-ROL::SharedPointer<const Vector<Real> > 
-CreateSimulatedVector( const ROL::SharedPointer<const Vector<Real> > &a,
-                       const ROL::SharedPointer<const Vector<Real> > &b,
-                       const ROL::SharedPointer<const Vector<Real> > &c,
-                       const ROL::SharedPointer<BatchManager<Real> > &bman ) {
+ROL::Ptr<const Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<const Vector<Real> > &a,
+                       const ROL::Ptr<const Vector<Real> > &b,
+                       const ROL::Ptr<const Vector<Real> > &c,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
   
   
-  typedef ROL::SharedPointer<const Vector<Real> >      Vp;
+  typedef ROL::Ptr<const Vector<Real> >      Vp;
   typedef const SimulatedVector<Real> PV;
 
   Vp temp[] = {a,b,c};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+3), bman );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+3), bman );
 }
 
 template<class Real>
-ROL::SharedPointer<Vector<Real> > 
-CreateSimulatedVector( const ROL::SharedPointer<Vector<Real> > &a,
-                       const ROL::SharedPointer<Vector<Real> > &b,
-                       const ROL::SharedPointer<Vector<Real> > &c,
-                       const ROL::SharedPointer<Vector<Real> > &d,
-                       const ROL::SharedPointer<BatchManager<Real> > &bman ) {
+ROL::Ptr<Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<Vector<Real> > &a,
+                       const ROL::Ptr<Vector<Real> > &b,
+                       const ROL::Ptr<Vector<Real> > &c,
+                       const ROL::Ptr<Vector<Real> > &d,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
   
   
-  typedef ROL::SharedPointer<Vector<Real> >      Vp;
+  typedef ROL::Ptr<Vector<Real> >      Vp;
   typedef SimulatedVector<Real> PV;
 
   Vp temp[] = {a,b,c,d};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+4), bman );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+4), bman );
 }
 
 template<class Real>
-ROL::SharedPointer<const Vector<Real> > 
-CreateSimulatedVector( const ROL::SharedPointer<const Vector<Real> > &a,
-                       const ROL::SharedPointer<const Vector<Real> > &b,
-                       const ROL::SharedPointer<const Vector<Real> > &c,
-                       const ROL::SharedPointer<const Vector<Real> > &d,
-                       const ROL::SharedPointer<BatchManager<Real> > &bman ) {
+ROL::Ptr<const Vector<Real> > 
+CreateSimulatedVector( const ROL::Ptr<const Vector<Real> > &a,
+                       const ROL::Ptr<const Vector<Real> > &b,
+                       const ROL::Ptr<const Vector<Real> > &c,
+                       const ROL::Ptr<const Vector<Real> > &d,
+                       const ROL::Ptr<BatchManager<Real> > &bman ) {
   
   
-  typedef ROL::SharedPointer<const Vector<Real> >      Vp;
+  typedef ROL::Ptr<const Vector<Real> >      Vp;
   typedef const SimulatedVector<Real> PV;
 
   Vp temp[] = {a,b,c,d};
-  return ROL::makeShared<PV>( std::vector<Vp>(temp, temp+4), bman );
+  return ROL::makePtr<PV>( std::vector<Vp>(temp, temp+4), bman );
 }
 
 } // namespace ROL

@@ -52,15 +52,15 @@ namespace ROL {
 template <class Real>
 class SimulatedObjective : public Objective<Real> {
 private:
-  const ROL::SharedPointer<SampleGenerator<Real> > sampler_;
-  const ROL::SharedPointer<Objective_SimOpt<Real> > pobj_;
+  const ROL::Ptr<SampleGenerator<Real> > sampler_;
+  const ROL::Ptr<Objective_SimOpt<Real> > pobj_;
 
 public:
 
   virtual ~SimulatedObjective() {}
 
-  SimulatedObjective(const ROL::SharedPointer<SampleGenerator<Real> > & sampler,
-                     const ROL::SharedPointer<Objective_SimOpt<Real> > & pobj)
+  SimulatedObjective(const ROL::Ptr<SampleGenerator<Real> > & sampler,
+                     const ROL::Ptr<Objective_SimOpt<Real> > & pobj)
     : sampler_(sampler), pobj_(pobj) {}
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
@@ -68,8 +68,8 @@ public:
   Real value(const Vector<Real> &x,
              Real &tol) {
     const Vector_SimOpt<Real> &uz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-    ROL::SharedPointer<const Vector<Real> > uptr = uz.get_1();
-    ROL::SharedPointer<const Vector<Real> > zptr = uz.get_2();
+    ROL::Ptr<const Vector<Real> > uptr = uz.get_1();
+    ROL::Ptr<const Vector<Real> > zptr = uz.get_2();
     const SimulatedVector<Real> &pu = dynamic_cast<const SimulatedVector<Real>&>(*uptr);
 
     std::vector<Real> param;
@@ -95,24 +95,24 @@ public:
     g.zero();
     // split x
     const Vector_SimOpt<Real> &xuz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-    ROL::SharedPointer<const Vector<Real> > xuptr = xuz.get_1();
-    ROL::SharedPointer<const Vector<Real> > xzptr = xuz.get_2();
+    ROL::Ptr<const Vector<Real> > xuptr = xuz.get_1();
+    ROL::Ptr<const Vector<Real> > xzptr = xuz.get_2();
     const SimulatedVector<Real> &pxu = dynamic_cast<const SimulatedVector<Real>&>(*xuptr);
     // split g
     Vector_SimOpt<Real> &guz = dynamic_cast<Vector_SimOpt<Real>&>(g);
-    ROL::SharedPointer<Vector<Real> > guptr = guz.get_1();
-    ROL::SharedPointer<Vector<Real> > gzptr = guz.get_2();
+    ROL::Ptr<Vector<Real> > guptr = guz.get_1();
+    ROL::Ptr<Vector<Real> > gzptr = guz.get_2();
     SimulatedVector<Real> &pgu = dynamic_cast<SimulatedVector<Real>&>(*guptr);
 
     std::vector<Real> param;
     Real weight(0);
-    ROL::SharedPointer<Vector<Real> > tmp1 = gzptr->clone();
-    ROL::SharedPointer<Vector<Real> > tmp2 = gzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp1 = gzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp2 = gzptr->clone();
     for (typename std::vector<SimulatedVector<Real> >::size_type i=0; i<pgu.numVectors(); ++i) {
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pobj_->setParameter(param);
-      Vector_SimOpt<Real> xi(ROL::constPointerCast<Vector<Real> >(pxu.get(i)), ROL::constPointerCast<Vector<Real> >(xzptr));
+      Vector_SimOpt<Real> xi(ROL::constPtrCast<Vector<Real> >(pxu.get(i)), ROL::constPtrCast<Vector<Real> >(xzptr));
       Vector_SimOpt<Real> gi(pgu.get(i), tmp1);
       pobj_->update(xi);
       pobj_->gradient(gi, xi, tol);
@@ -131,30 +131,30 @@ public:
     hv.zero();
     // split x
     const Vector_SimOpt<Real> &xuz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-    ROL::SharedPointer<const Vector<Real> > xuptr = xuz.get_1();
-    ROL::SharedPointer<const Vector<Real> > xzptr = xuz.get_2();
+    ROL::Ptr<const Vector<Real> > xuptr = xuz.get_1();
+    ROL::Ptr<const Vector<Real> > xzptr = xuz.get_2();
     const SimulatedVector<Real> &pxu = dynamic_cast<const SimulatedVector<Real>&>(*xuptr);
     // split v
     const Vector_SimOpt<Real> &vuz = dynamic_cast<const Vector_SimOpt<Real>&>(v);
-    ROL::SharedPointer<const Vector<Real> > vuptr = vuz.get_1();
-    ROL::SharedPointer<const Vector<Real> > vzptr = vuz.get_2();
+    ROL::Ptr<const Vector<Real> > vuptr = vuz.get_1();
+    ROL::Ptr<const Vector<Real> > vzptr = vuz.get_2();
     const SimulatedVector<Real> &pvu = dynamic_cast<const SimulatedVector<Real>&>(*vuptr);
     // split hv
     Vector_SimOpt<Real> &hvuz = dynamic_cast<Vector_SimOpt<Real>&>(hv);
-    ROL::SharedPointer<Vector<Real> > hvuptr = hvuz.get_1();
-    ROL::SharedPointer<Vector<Real> > hvzptr = hvuz.get_2();
+    ROL::Ptr<Vector<Real> > hvuptr = hvuz.get_1();
+    ROL::Ptr<Vector<Real> > hvzptr = hvuz.get_2();
     SimulatedVector<Real> &phvu = dynamic_cast<SimulatedVector<Real>&>(*hvuptr);
 
     std::vector<Real> param;
     Real weight(0);
-    ROL::SharedPointer<Vector<Real> > tmp1 = hvzptr->clone();
-    ROL::SharedPointer<Vector<Real> > tmp2 = hvzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp1 = hvzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp2 = hvzptr->clone();
     for (typename std::vector<SimulatedVector<Real> >::size_type i=0; i<phvu.numVectors(); ++i) {
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pobj_->setParameter(param);
-      Vector_SimOpt<Real> xi(ROL::constPointerCast<Vector<Real> >(pxu.get(i)), ROL::constPointerCast<Vector<Real> >(xzptr));
-      Vector_SimOpt<Real> vi(ROL::constPointerCast<Vector<Real> >(pvu.get(i)), ROL::constPointerCast<Vector<Real> >(vzptr));
+      Vector_SimOpt<Real> xi(ROL::constPtrCast<Vector<Real> >(pxu.get(i)), ROL::constPtrCast<Vector<Real> >(xzptr));
+      Vector_SimOpt<Real> vi(ROL::constPtrCast<Vector<Real> >(pvu.get(i)), ROL::constPtrCast<Vector<Real> >(vzptr));
       Vector_SimOpt<Real> hvi(phvu.get(i), tmp1);
       pobj_->update(xi);
       pobj_->hessVec(hvi, vi, xi, tol);

@@ -46,7 +46,7 @@
 typedef double RealT;
 
 template<class Real>
-Real random(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm) {
+Real random(const ROL::Ptr<const Teuchos::Comm<int> > &comm) {
   Real val = 0.0;
   if ( Teuchos::rank<int>(*comm)==0 ) {
     val = (Real)rand()/(Real)RAND_MAX;
@@ -58,17 +58,17 @@ Real random(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm) {
 int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && Teuchos::rank<int>(*comm)==0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -90,29 +90,29 @@ int main(int argc, char* argv[]) {
     // Build control vectors
     int nx = 256;
     // Construct storage for optimal solution
-    ROL::SharedPointer<std::vector<RealT> > z_ptr  = ROL::makeShared<std::vector<RealT>>(nx+2,0);
-    ROL::SharedPointer<ROL::Vector<RealT> > zp  = ROL::makeShared<ROL::StdVector<RealT>>(z_ptr);
-    ROL::SharedPointer<std::vector<RealT> > x1_ptr = ROL::makeShared<std::vector<RealT>>(nx+2,0);
-    ROL::SharedPointer<ROL::Vector<RealT> > x1p = ROL::makeShared<ROL::StdVector<RealT>>(x1_ptr);
-    ROL::SharedPointer<std::vector<RealT> > x2_ptr = ROL::makeShared<std::vector<RealT>>(nx+2,0);
-    ROL::SharedPointer<ROL::Vector<RealT> > x2p = ROL::makeShared<ROL::StdVector<RealT>>(x2_ptr);
-    ROL::SharedPointer<std::vector<RealT> > x3_ptr = ROL::makeShared<std::vector<RealT>>(nx+2,0);
-    ROL::SharedPointer<ROL::Vector<RealT> > x3p = ROL::makeShared<ROL::StdVector<RealT>>(x3_ptr);
-    std::vector<ROL::SharedPointer<ROL::Vector<RealT> > > xvec = {x1p, x2p, x3p};
+    ROL::Ptr<std::vector<RealT> > z_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0);
+    ROL::Ptr<ROL::Vector<RealT> > zp  = ROL::makePtr<ROL::StdVector<RealT>>(z_ptr);
+    ROL::Ptr<std::vector<RealT> > x1_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0);
+    ROL::Ptr<ROL::Vector<RealT> > x1p = ROL::makePtr<ROL::StdVector<RealT>>(x1_ptr);
+    ROL::Ptr<std::vector<RealT> > x2_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0);
+    ROL::Ptr<ROL::Vector<RealT> > x2p = ROL::makePtr<ROL::StdVector<RealT>>(x2_ptr);
+    ROL::Ptr<std::vector<RealT> > x3_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0);
+    ROL::Ptr<ROL::Vector<RealT> > x3p = ROL::makePtr<ROL::StdVector<RealT>>(x3_ptr);
+    std::vector<ROL::Ptr<ROL::Vector<RealT> > > xvec = {x1p, x2p, x3p};
     // Create vectors for derivative check
-    ROL::SharedPointer<std::vector<RealT> > xr_ptr = ROL::makeShared<std::vector<RealT>>(nx+2,0);
+    ROL::Ptr<std::vector<RealT> > xr_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0);
     ROL::StdVector<RealT> xr(xr_ptr);
-    ROL::SharedPointer<std::vector<RealT> > d_ptr  = ROL::makeShared<std::vector<RealT>>(nx+2,0);
+    ROL::Ptr<std::vector<RealT> > d_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0);
     ROL::StdVector<RealT> d(d_ptr);
     for ( int i = 0; i < nx+2; i++ ) {
       (*xr_ptr)[i] = random<RealT>(comm);
       (*d_ptr)[i]  = random<RealT>(comm);
     }
     // Build state and adjoint vectors
-    ROL::SharedPointer<std::vector<RealT> > u_ptr = ROL::makeShared<std::vector<RealT>>(nx,1);
-    ROL::SharedPointer<ROL::Vector<RealT> > up = ROL::makeShared<ROL::StdVector<RealT>>(u_ptr);
-    ROL::SharedPointer<std::vector<RealT> > p_ptr = ROL::makeShared<std::vector<RealT>>(nx,0);
-    ROL::SharedPointer<ROL::Vector<RealT> > pp = ROL::makeShared<ROL::StdVector<RealT>>(p_ptr);
+    ROL::Ptr<std::vector<RealT> > u_ptr = ROL::makePtr<std::vector<RealT>>(nx,1);
+    ROL::Ptr<ROL::Vector<RealT> > up = ROL::makePtr<ROL::StdVector<RealT>>(u_ptr);
+    ROL::Ptr<std::vector<RealT> > p_ptr = ROL::makePtr<std::vector<RealT>>(nx,0);
+    ROL::Ptr<ROL::Vector<RealT> > pp = ROL::makePtr<ROL::StdVector<RealT>>(p_ptr);
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/
@@ -120,22 +120,22 @@ int main(int argc, char* argv[]) {
     int dim = 4, nSamp = 100;
     std::vector<RealT> tmp = {-1, 1};
     std::vector<std::vector<RealT> > bounds(dim,tmp);
-    ROL::SharedPointer<ROL::BatchManager<RealT> > bman
-      = ROL::makeShared<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
-    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler
-      = ROL::makeShared<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman,false,false,100);
+    ROL::Ptr<ROL::BatchManager<RealT> > bman
+      = ROL::makePtr<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman,false,false,100);
     /**********************************************************************************************/
     /************************* CONSTRUCT OBJECTIVE FUNCTION ***************************************/
     /**********************************************************************************************/
     // Build risk-averse objective function
     RealT alpha = 1.e-3;
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > pobjSimOpt
-      = ROL::makeShared<Objective_BurgersControl<RealT>>(alpha,nx);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > pconSimOpt
-      = ROL::makeShared<Constraint_BurgersControl<RealT>>(nx);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > pobjSimOpt
+      = ROL::makePtr<Objective_BurgersControl<RealT>>(alpha,nx);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pconSimOpt
+      = ROL::makePtr<Constraint_BurgersControl<RealT>>(nx);
     pconSimOpt->setSolveParameters(*parlist);
-    ROL::SharedPointer<ROL::Objective<RealT> > pObj
-      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(pobjSimOpt,pconSimOpt,up,zp,pp);
+    ROL::Ptr<ROL::Objective<RealT> > pObj
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(pobjSimOpt,pconSimOpt,up,zp,pp);
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
     xvec[0]->set(xr);
@@ -150,8 +150,8 @@ int main(int argc, char* argv[]) {
     const bool storage = true;
     RealT eps(1.e-2);
     std::vector<RealT> stat(3,0);
-    ROL::SharedPointer<ROL::Algorithm<RealT> > algo;
-    ROL::SharedPointer<ROL::OptimizationProblem<RealT> > optProb;
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;
+    ROL::Ptr<ROL::OptimizationProblem<RealT> > optProb;
     for (int i = 0; i < 3; ++i) {
       *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
       // Build CVaR risk measure
@@ -168,14 +168,14 @@ int main(int argc, char* argv[]) {
       // Build stochastic problem
       if ( i==0 ) { xvec[i]->zero();          }
       else        { xvec[i]->set(*xvec[i-1]); }
-      optProb = ROL::makeShared<ROL::OptimizationProblem<RealT>>(pObj,xvec[i]);
+      optProb = ROL::makePtr<ROL::OptimizationProblem<RealT>>(pObj,xvec[i]);
       RealT init_stat(1);
       if ( i > 0 ) { init_stat = stat[i-1]; }
       list.sublist("SOL").set("Initial Statistic",init_stat);
       optProb->setStochasticObjective(list,sampler);
       optProb->check(*outStream);
       // Run ROL algorithm
-      algo = ROL::makeShared<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+      algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
       clock_t start = clock();
       algo->run(*optProb,true,*outStream);
       *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
@@ -199,21 +199,21 @@ int main(int argc, char* argv[]) {
     list.sublist("SOL").sublist("Risk Measure").sublist(rm).sublist("Distribution").sublist("Dirac").set("Location",0.);
     // Build stochastic problem
     zp->set(*xvec[2]);
-    optProb = ROL::makeShared<ROL::OptimizationProblem<RealT>>(pObj,zp);
+    optProb = ROL::makePtr<ROL::OptimizationProblem<RealT>>(pObj,zp);
     list.sublist("SOL").set("Initial Statistic",stat[2]);
     optProb->setStochasticObjective(list,sampler);
     optProb->check(*outStream);
     // Run ROL algorithm
     parlist->sublist("Status Test").set("Iteration Limit",1000);
     parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-7);
-    algo = ROL::makeShared<ROL::Algorithm<RealT>>("Bundle",*parlist,false);
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Bundle",*parlist,false);
     clock_t start = clock();
     algo->run(*optProb,true,*outStream);
     *outStream << "Optimization time: " << (RealT)(clock()-start)/(RealT)CLOCKS_PER_SEC << " seconds.\n";
     /**********************************************************************************************/
     /************************* COMPUTE ERROR ******************************************************/
     /**********************************************************************************************/
-    ROL::SharedPointer<ROL::Vector<RealT> > cErr = zp->clone();
+    ROL::Ptr<ROL::Vector<RealT> > cErr = zp->clone();
     RealT zstat = optProb->getSolutionStatistic();
     *outStream << "\nSUMMARY:\n";
     *outStream << "  ---------------------------------------------\n";

@@ -46,7 +46,7 @@
 typedef double RealT;
 
 template<class Real>
-Real random(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm) {
+Real random(const ROL::Ptr<const Teuchos::Comm<int> > &comm) {
   Real val = 0.0;
   if ( Teuchos::rank<int>(*comm)==0 ) {
     val = (Real)rand()/(Real)RAND_MAX;
@@ -58,17 +58,17 @@ Real random(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm) {
 int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && Teuchos::rank<int>(*comm)==0)
-    ROL::makeSharedFromRef(std::cout);
+    ROL::makePtrFromRef(std::cout);
   else
-    ROL::makeSharedFromRef(bhs);
+    ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -89,22 +89,22 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build control vectors
     int nx = 256;
-    ROL::SharedPointer<std::vector<RealT> > x_ptr  = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
+    ROL::Ptr<std::vector<RealT> > x_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
     ROL::StdVector<RealT> x(x_ptr);
-    ROL::SharedPointer<std::vector<RealT> > d_ptr  = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
+    ROL::Ptr<std::vector<RealT> > d_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
     ROL::StdVector<RealT> d(d_ptr);
     for ( int i = 0; i < nx+2; i++ ) {
       (*x_ptr)[i] = random<RealT>(comm);
       (*d_ptr)[i] = random<RealT>(comm);
     }
-    ROL::SharedPointer<ROL::Vector<RealT> > xp = &x,false;
+    ROL::Ptr<ROL::Vector<RealT> > xp = &x,false;
     // Build state and adjoint vectors
-    ROL::SharedPointer<std::vector<RealT> > u_ptr  = ROL::makeShared<std::vector<RealT>>(nx,1.0);
+    ROL::Ptr<std::vector<RealT> > u_ptr  = ROL::makePtr<std::vector<RealT>>(nx,1.0);
     ROL::StdVector<RealT> u(u_ptr);
-    ROL::SharedPointer<std::vector<RealT> > p_ptr  = ROL::makeShared<std::vector<RealT>>(nx,0.0);
+    ROL::Ptr<std::vector<RealT> > p_ptr  = ROL::makePtr<std::vector<RealT>>(nx,0.0);
     ROL::StdVector<RealT> p(p_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > up = &u,false;
-    ROL::SharedPointer<ROL::Vector<RealT> > pp = &p,false;
+    ROL::Ptr<ROL::Vector<RealT> > up = &u,false;
+    ROL::Ptr<ROL::Vector<RealT> > pp = &p,false;
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/
@@ -113,10 +113,10 @@ int main(int argc, char* argv[]) {
 //    int nSamp = 100;
 //    std::vector<RealT> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
 //    std::vector<std::vector<RealT> > bounds(dim,tmp);
-//    ROL::SharedPointer<ROL::BatchManager<RealT> > bman
-//      = ROL::makeShared<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
-//    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler
-//      = ROL::makeShared<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman,false,false,100);
+//    ROL::Ptr<ROL::BatchManager<RealT> > bman
+//      = ROL::makePtr<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
+//    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+//      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman,false,false,100);
     ROL::QuadratureInfo info;
     info.dim = 4;
     info.maxLevel = 7;
@@ -124,10 +124,10 @@ int main(int argc, char* argv[]) {
     info.growth1D.clear(); info.growth1D.resize(info.dim,ROL::GROWTH_DEFAULT);
     info.normalized = true;
     info.adaptive = false;
-    ROL::SharedPointer<ROL::BatchManager<RealT> > bman
-      = ROL::makeShared<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
-    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler
-      = ROL::makeShared<ROL::SparseGridGenerator<RealT>>(bman,info);
+    ROL::Ptr<ROL::BatchManager<RealT> > bman
+      = ROL::makePtr<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makePtr<ROL::SparseGridGenerator<RealT>>(bman,info);
     // Print samples
     int width = 21;
     std::stringstream name;
@@ -155,13 +155,13 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build risk-averse objective function
     RealT alpha = 1.e-3;
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > pobjSimOpt
-      = ROL::makeShared<Objective_BurgersControl<RealT>>(alpha,nx);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > pconSimOpt
-      = ROL::makeShared<Constraint_BurgersControl<RealT>>(nx);
-    ROL::SharedPointer<ROL::Objective<RealT> > pObj
-      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(pobjSimOpt,pconSimOpt,up,xp,pp);
-    ROL::SharedPointer<ROL::Objective<RealT> > obj;
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > pobjSimOpt
+      = ROL::makePtr<Objective_BurgersControl<RealT>>(alpha,nx);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pconSimOpt
+      = ROL::makePtr<Constraint_BurgersControl<RealT>>(nx);
+    ROL::Ptr<ROL::Objective<RealT> > pObj
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(pobjSimOpt,pconSimOpt,up,xp,pp);
+    ROL::Ptr<ROL::Objective<RealT> > obj;
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
     pObj->setParameter(sampler->getMyPoint(0));

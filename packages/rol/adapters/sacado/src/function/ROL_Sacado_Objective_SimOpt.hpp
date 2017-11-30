@@ -125,17 +125,17 @@ void Sacado_Objective_SimOpt<Real,Obj>::gradient_1AD(Vector<ScalarT> &g, const V
            
     
 
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
 
     // Get a pointer to the gradient vector
-    ROL::SharedPointer<vector> gp = dynamic_cast<SV&>(g).getVector();
+    ROL::Ptr<vector> gp = dynamic_cast<SV&>(g).getVector();
 
     int m = zp->size();
     int n = up->size();
 
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
     
     u_fad_ptr->reserve(n);
     z_fad_ptr->reserve(m);
@@ -174,17 +174,17 @@ void Sacado_Objective_SimOpt<Real,Obj>::gradient_2AD(Vector<ScalarT> &g, const V
            
      
 
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
 
     // Get a pointer to the gradient vector
-    ROL::SharedPointer<vector> gp = dynamic_cast<SV&>(g).getVector();
+    ROL::Ptr<vector> gp = dynamic_cast<SV&>(g).getVector();
 
     int m = zp->size();
     int n = up->size();
 
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
     
     u_fad_ptr->reserve(n);
     z_fad_ptr->reserve(m);
@@ -225,17 +225,17 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_11AD(Vector<ScalarT> &hv, const 
            
      
 
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
-    ROL::SharedPointer<vector> hvp = dynamic_cast<SV&>(hv).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<vector> hvp = dynamic_cast<SV&>(hv).getVector();
 
     int n = up->size(); // vp and hvp have this size also
     int m = zp->size();
 
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> g_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> g_fad_ptr = ROL::makePtr<Fadvector>();
     
     u_fad_ptr->reserve(n);
     z_fad_ptr->reserve(m);
@@ -278,17 +278,17 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_12AD(Vector<ScalarT> &hv, const 
            
       
 
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
-    ROL::SharedPointer<vector> hvp = dynamic_cast<SV&>(hv).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<vector> hvp = dynamic_cast<SV&>(hv).getVector();
 
     int n = up->size(); 
     int m = zp->size();
 
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> g_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> g_fad_ptr = ROL::makePtr<Fadvector>();
     
     u_fad_ptr->reserve(n);
     z_fad_ptr->reserve(m);
@@ -336,17 +336,17 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_21AD(Vector<ScalarT> &hv, const 
            
      
 
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
-    ROL::SharedPointer<vector> hvp = dynamic_cast<SV&>(hv).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<vector> hvp = dynamic_cast<SV&>(hv).getVector();
 
     int n = up->size(); 
     int m = zp->size();
 
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> g_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> g_fad_ptr = ROL::makePtr<Fadvector>();
     
     u_fad_ptr->reserve(n);
     z_fad_ptr->reserve(m);
@@ -397,18 +397,18 @@ void Sacado_Objective_SimOpt<Real,Obj>::hessVec_22AD(Vector<ScalarT> &hv, const 
            
     
 
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
-    ROL::SharedPointer<vector> hvp = dynamic_cast<SV&>(hv).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<vector> hvp = dynamic_cast<SV&>(hv).getVector();
   
     int n = up->size();
     int m = zp->size(); // vp and hvp have this size also
 
     
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> g_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> g_fad_ptr = ROL::makePtr<Fadvector>();
     
     u_fad_ptr->reserve(n);
     z_fad_ptr->reserve(m);

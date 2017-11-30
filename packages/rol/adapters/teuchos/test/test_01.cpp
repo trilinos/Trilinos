@@ -72,12 +72,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    ROL::makeSharedFromRef(std::cout);
+    ROL::makePtrFromRef(std::cout);
   else
-    ROL::makeSharedFromRef(bhs);
+    ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -100,14 +100,14 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
-    StdVector<RealT> checkvec(ROL::makeSharedFromRef(consistency));
+    StdVector<RealT> checkvec(ROL::makePtrFromRef(consistency));
     if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag++;
     }
 
     // Basis tests.
     // set x to first basis vector
-    ROL::SharedPointer<V> zp = x.basis(0);
+    ROL::Ptr<V> zp = x.basis(0);
     RealT znorm = zp->norm();
     *outStream << "Norm of ROL::Vector z (first basis vector): " << znorm << "\n";
     if ( std::abs(znorm-1.0) > errtol ) {

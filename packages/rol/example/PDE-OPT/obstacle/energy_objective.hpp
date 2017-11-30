@@ -11,15 +11,15 @@ extern template class Assembler<double>;
 template<class Real>
 class EnergyObjective : public ROL::Objective<Real> {
 private:
-  const ROL::SharedPointer<PDE<Real> > pde_;
-  ROL::SharedPointer<Assembler<Real> > assembler_;
+  const ROL::Ptr<PDE<Real> > pde_;
+  ROL::Ptr<Assembler<Real> > assembler_;
   bool assembleRHS_, assembleJ1_;
 
-  ROL::SharedPointer<Tpetra::MultiVector<> > cvec_;
-  ROL::SharedPointer<Tpetra::MultiVector<> > uvec_;
+  ROL::Ptr<Tpetra::MultiVector<> > cvec_;
+  ROL::Ptr<Tpetra::MultiVector<> > uvec_;
 
-  ROL::SharedPointer<Tpetra::MultiVector<> > res_;
-  ROL::SharedPointer<Tpetra::CrsMatrix<> >   jac_;
+  ROL::Ptr<Tpetra::MultiVector<> > res_;
+  ROL::Ptr<Tpetra::CrsMatrix<> >   jac_;
 
   void assemble(void) {
     // Assemble affine term.
@@ -35,14 +35,14 @@ private:
   }
 
 public:
-  EnergyObjective(const ROL::SharedPointer<PDE<Real> > &pde,
-                  const ROL::SharedPointer<MeshManager<Real> > &meshMgr,
-                  const ROL::SharedPointer<const Teuchos::Comm<int> > &comm,
+  EnergyObjective(const ROL::Ptr<PDE<Real> > &pde,
+                  const ROL::Ptr<MeshManager<Real> > &meshMgr,
+                  const ROL::Ptr<const Teuchos::Comm<int> > &comm,
                   Teuchos::ParameterList &parlist,
                   std::ostream &outStream = std::cout)
     : pde_(pde), assembleRHS_(true), assembleJ1_(true) {
     // Construct assembler.
-    assembler_ = ROL::makeShared<Assembler<Real>>(pde_->getFields(),meshMgr,comm,parlist,outStream);
+    assembler_ = ROL::makePtr<Assembler<Real>>(pde_->getFields(),meshMgr,comm,parlist,outStream);
     assembler_->setCellNodes(*pde_);
     // Initialize zero vectors.
     cvec_ = assembler_->createResidualVector();
@@ -51,12 +51,12 @@ public:
     assemble();
   }
 
-  const ROL::SharedPointer<Assembler<Real> > getAssembler(void) const {
+  const ROL::Ptr<Assembler<Real> > getAssembler(void) const {
     return assembler_;
   }
 
   Real value(const ROL::Vector<Real> &u, Real &tol) {
-    ROL::SharedPointer<const Tpetra::MultiVector<> > uf = getConstField(u);
+    ROL::Ptr<const Tpetra::MultiVector<> > uf = getConstField(u);
     const Real half(0.5), one(1);
     jac_->apply(*uf,*cvec_);
     cvec_->update(one,*res_,half);
@@ -66,8 +66,8 @@ public:
   }
 
   void gradient(ROL::Vector<Real> &g, const ROL::Vector<Real> &u, Real &tol) {
-    ROL::SharedPointer<Tpetra::MultiVector<> >       gf = getField(g);
-    ROL::SharedPointer<const Tpetra::MultiVector<> > uf = getConstField(u);
+    ROL::Ptr<Tpetra::MultiVector<> >       gf = getField(g);
+    ROL::Ptr<const Tpetra::MultiVector<> > uf = getConstField(u);
     const Real one(1);
     gf->scale(one,*res_);
     jac_->apply(*uf,*cvec_);
@@ -75,9 +75,9 @@ public:
   }
 
   void hessVec(ROL::Vector<Real> &hv, const ROL::Vector<Real> &v, const ROL::Vector<Real> &u, Real &tol) {
-    ROL::SharedPointer<Tpetra::MultiVector<> >      hvf = getField(hv);
-    ROL::SharedPointer<const Tpetra::MultiVector<> > vf = getConstField(v);
-    ROL::SharedPointer<const Tpetra::MultiVector<> > uf = getConstField(u);
+    ROL::Ptr<Tpetra::MultiVector<> >      hvf = getField(hv);
+    ROL::Ptr<const Tpetra::MultiVector<> > vf = getConstField(v);
+    ROL::Ptr<const Tpetra::MultiVector<> > uf = getConstField(u);
     jac_->apply(*vf,*hvf);
   }
 
@@ -87,16 +87,16 @@ public:
 
 private: // Vector accessor functions
 
-  ROL::SharedPointer<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
-    ROL::SharedPointer<const Tpetra::MultiVector<> > xp;
+  ROL::Ptr<const Tpetra::MultiVector<> > getConstField(const ROL::Vector<Real> &x) const {
+    ROL::Ptr<const Tpetra::MultiVector<> > xp;
     try {
       xp = dynamic_cast<const ROL::TpetraMultiVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      ROL::SharedPointer<const ROL::TpetraMultiVector<Real> > xvec
+      ROL::Ptr<const ROL::TpetraMultiVector<Real> > xvec
         = dynamic_cast<const PDE_OptVector<Real>&>(x).getField();
-      if (xvec == ROL::nullPointer) {
-        xp = ROL::nullPointer;
+      if (xvec == ROL::nullPtr) {
+        xp = ROL::nullPtr;
       }
       else {
         xp = xvec->getVector();
@@ -105,16 +105,16 @@ private: // Vector accessor functions
     return xp;
   }
 
-  ROL::SharedPointer<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
-    ROL::SharedPointer<Tpetra::MultiVector<> > xp;
+  ROL::Ptr<Tpetra::MultiVector<> > getField(ROL::Vector<Real> &x) const {
+    ROL::Ptr<Tpetra::MultiVector<> > xp;
     try {
       xp = dynamic_cast<ROL::TpetraMultiVector<Real>&>(x).getVector();
     }
     catch (std::exception &e) {
-      ROL::SharedPointer<ROL::TpetraMultiVector<Real> > xvec
+      ROL::Ptr<ROL::TpetraMultiVector<Real> > xvec
         = dynamic_cast<PDE_OptVector<Real>&>(x).getField();
-      if ( xvec == ROL::nullPointer ) {
-        xp = ROL::nullPointer;
+      if ( xvec == ROL::nullPtr ) {
+        xp = ROL::nullPtr;
       }
       else {
         xp = xvec->getVector();

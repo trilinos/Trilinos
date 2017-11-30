@@ -57,13 +57,13 @@ namespace ROL {
 template<class Real>
 class TruncatedCG : public TrustRegion<Real> {
 private:
-  ROL::SharedPointer<Vector<Real> > primalVector_;
+  ROL::Ptr<Vector<Real> > primalVector_;
 
-  ROL::SharedPointer<Vector<Real> > s_;
-  ROL::SharedPointer<Vector<Real> > g_;
-  ROL::SharedPointer<Vector<Real> > v_;
-  ROL::SharedPointer<Vector<Real> > p_;
-  ROL::SharedPointer<Vector<Real> > Hp_;
+  ROL::Ptr<Vector<Real> > s_;
+  ROL::Ptr<Vector<Real> > g_;
+  ROL::Ptr<Vector<Real> > v_;
+  ROL::Ptr<Vector<Real> > p_;
+  ROL::Ptr<Vector<Real> > Hp_;
 
   int maxit_;
   Real tol1_;
@@ -198,9 +198,9 @@ public:
 
     // Compute Cauchy Point
     Real scnorm = 0.0;
-    ROL::SharedPointer<Vector<Real> > sc = x.clone();
+    ROL::Ptr<Vector<Real> > sc = x.clone();
     cauchypoint(*sc,scnorm,del,iflag,iter,x,grad,gnorm,pObj);
-    ROL::SharedPointer<Vector<Real> > xc = x.clone();
+    ROL::Ptr<Vector<Real> > xc = x.clone();
     xc->set(x);
     xc->plus(*sc);
 
@@ -208,30 +208,30 @@ public:
     s.set(*sc); 
     snorm = s.norm();
     Real snorm2  = snorm*snorm;
-    ROL::SharedPointer<Vector<Real> > s1 = x.clone();
+    ROL::Ptr<Vector<Real> > s1 = x.clone();
     s1->zero();
     Real s1norm2 = 0.0;
 
     // Gradient Vector
-    ROL::SharedPointer<Vector<Real> > g = x.clone(); 
+    ROL::Ptr<Vector<Real> > g = x.clone(); 
     g->set(grad);
-    ROL::SharedPointer<Vector<Real> > Hs = x.clone();
+    ROL::Ptr<Vector<Real> > Hs = x.clone();
     pObj.reducedHessVec(*Hs,s,*xc,x,tol);
     g->plus(*Hs);
     Real normg = g->norm();
 
     // Preconditioned Gradient Vector
-    ROL::SharedPointer<Vector<Real> > v  = x.clone();
+    ROL::Ptr<Vector<Real> > v  = x.clone();
     pObj.reducedPrecond(*v,*g,*xc,x,tol);
 
     // Basis Vector
-    ROL::SharedPointer<Vector<Real> > p = x.clone(); 
+    ROL::Ptr<Vector<Real> > p = x.clone(); 
     p->set(*v); 
     p->scale(-1.0);
     Real pnorm2 = v->dot(*g);
 
     // Hessian Times Basis Vector
-    ROL::SharedPointer<Vector<Real> > Hp = x.clone();
+    ROL::Ptr<Vector<Real> > Hp = x.clone();
 
     iter        = 0; 
     iflag       = 0; 

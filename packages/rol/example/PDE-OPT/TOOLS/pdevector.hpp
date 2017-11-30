@@ -57,12 +57,12 @@ extern template class Assembler<double>;
 #ifdef ROL_TIMERS
 namespace ROL {
   namespace PDEOPT {
-    ROL::SharedPointer<Teuchos::Time> PDEVectorSimRieszConstruct    = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Sim Riesz Construction Time");
-    ROL::SharedPointer<Teuchos::Time> PDEVectorSimRieszApply        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Sim Riesz Application Time");
-    ROL::SharedPointer<Teuchos::Time> PDEVectorSimRieszSolve        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Sim Riesz Solver Solution Time");
-    ROL::SharedPointer<Teuchos::Time> PDEVectorOptRieszConstruct    = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Opt Riesz Construction Time");
-    ROL::SharedPointer<Teuchos::Time> PDEVectorOptRieszApply        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Opt Riesz Application Time");
-    ROL::SharedPointer<Teuchos::Time> PDEVectorOptRieszSolve        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Opt Riesz Solver Solution Time");
+    ROL::Ptr<Teuchos::Time> PDEVectorSimRieszConstruct    = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Sim Riesz Construction Time");
+    ROL::Ptr<Teuchos::Time> PDEVectorSimRieszApply        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Sim Riesz Application Time");
+    ROL::Ptr<Teuchos::Time> PDEVectorSimRieszSolve        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Sim Riesz Solver Solution Time");
+    ROL::Ptr<Teuchos::Time> PDEVectorOptRieszConstruct    = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Opt Riesz Construction Time");
+    ROL::Ptr<Teuchos::Time> PDEVectorOptRieszApply        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Opt Riesz Application Time");
+    ROL::Ptr<Teuchos::Time> PDEVectorOptRieszSolve        = Teuchos::TimeMonitor::getNewCounter("ROL::PDEOPT: PDE Vector Opt Riesz Solver Solution Time");
   }
 }
 #endif
@@ -83,25 +83,25 @@ class PDE_DualSimVector;
 template <class Real, class LO, class GO, class Node>
 class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
   private:
-    ROL::SharedPointer<Tpetra::CrsMatrix<> > RieszMap_;
-    ROL::SharedPointer<Tpetra::MultiVector<> > lumpedRiesz_;
-    ROL::SharedPointer<Solver<Real> > solver_;
+    ROL::Ptr<Tpetra::CrsMatrix<> > RieszMap_;
+    ROL::Ptr<Tpetra::MultiVector<> > lumpedRiesz_;
+    ROL::Ptr<Solver<Real> > solver_;
 
     bool useRiesz_;
     bool useLumpedRiesz_;
 
-    mutable ROL::SharedPointer<PDE_DualSimVector<Real> > dual_vec_;
+    mutable ROL::Ptr<PDE_DualSimVector<Real> > dual_vec_;
     mutable bool isDualInitialized_;
 
     void lumpRiesz(void) {
-      lumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
+      lumpedRiesz_ = ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
       Tpetra::MultiVector<Real,LO,GO,Node> ones(ROL::TpetraMultiVector<Real>::getMap(),1);
       ones.putScalar(static_cast<Real>(1));
       RieszMap_->apply(ones, *lumpedRiesz_);
     }
 
-    void applyRiesz(const ROL::SharedPointer<Tpetra::MultiVector<> > &out,
-                    const ROL::SharedPointer<const Tpetra::MultiVector<> > &in) const {
+    void applyRiesz(const ROL::Ptr<Tpetra::MultiVector<> > &out,
+                    const ROL::Ptr<const Tpetra::MultiVector<> > &in) const {
       #ifdef ROL_TIMERS
         Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEVectorSimRieszApply);
       #endif
@@ -121,15 +121,15 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
   public:
     virtual ~PDE_PrimalSimVector() {}
 
-    PDE_PrimalSimVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                        const ROL::SharedPointer<PDE<Real> > &pde,
-                        const ROL::SharedPointer<Assembler<Real> > &assembler)
-      : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), solver_(ROL::nullPointer),
+    PDE_PrimalSimVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                        const ROL::Ptr<PDE<Real> > &pde,
+                        const ROL::Ptr<Assembler<Real> > &assembler)
+      : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), solver_(ROL::nullPtr),
         useRiesz_(false), useLumpedRiesz_(false), isDualInitialized_(false) {}
 
-    PDE_PrimalSimVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                        const ROL::SharedPointer<PDE<Real> > &pde,
-                        const ROL::SharedPointer<Assembler<Real> > &assembler,
+    PDE_PrimalSimVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                        const ROL::Ptr<PDE<Real> > &pde,
+                        const ROL::Ptr<Assembler<Real> > &assembler,
                         Teuchos::ParameterList &parlist)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec),
         isDualInitialized_(false) {
@@ -139,27 +139,27 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       useRiesz_       = parlist.sublist("Vector").sublist("Sim").get("Use Riesz Map", false);
       useLumpedRiesz_ = parlist.sublist("Vector").sublist("Sim").get("Lump Riesz Map", false);
       assembler->assemblePDERieszMap1(RieszMap_, pde);
-      useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPointer);
+      useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPtr);
       if (useRiesz_) {
         if (useLumpedRiesz_) {
           lumpRiesz();
         }
         else {
-          solver_ = ROL::makeShared<Solver<Real>>(parlist.sublist("Solver"));
+          solver_ = ROL::makePtr<Solver<Real>>(parlist.sublist("Solver"));
           solver_->setA(RieszMap_);
         }
       }
     }
 
-    PDE_PrimalSimVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                        const ROL::SharedPointer<Tpetra::CrsMatrix<> > &RieszMap,
-                        const ROL::SharedPointer<Solver<Real> > &solver,
-                        const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &lumpedRiesz)
+    PDE_PrimalSimVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                        const ROL::Ptr<Tpetra::CrsMatrix<> > &RieszMap,
+                        const ROL::Ptr<Solver<Real> > &solver,
+                        const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &lumpedRiesz)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), RieszMap_(RieszMap),
         lumpedRiesz_(lumpedRiesz), solver_(solver), isDualInitialized_(false) {
-      if (RieszMap_ != ROL::nullPointer) {
-        useLumpedRiesz_ = (lumpedRiesz_ != ROL::nullPointer);
-        useRiesz_ = (solver_ != ROL::nullPointer) || useLumpedRiesz_;
+      if (RieszMap_ != ROL::nullPtr) {
+        useLumpedRiesz_ = (lumpedRiesz_ != ROL::nullPtr);
+        useRiesz_ = (solver_ != ROL::nullPtr) || useLumpedRiesz_;
       }
       else {
         useLumpedRiesz_ = false;
@@ -171,14 +171,14 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       TEUCHOS_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
-      const ROL::SharedPointer<const Tpetra::MultiVector<Real,LO,GO,Node> > ex
+      const ROL::Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > ex
         = dynamic_cast<const ROL::TpetraMultiVector<Real,LO,GO,Node>&>(x).getVector();
       const Tpetra::MultiVector<Real,LO,GO,Node> &ey
         = *(ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();
       // Scale x with scale_vec_
-      ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > wex
-        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
+      ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > wex
+        = ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
       applyRiesz(wex,ex);
       // Perform Euclidean dot between *this and scaled x for each vector
       Teuchos::Array<Real> val(n,0);
@@ -191,12 +191,12 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       return xy;
     }
 
-    ROL::SharedPointer<ROL::Vector<Real> > clone() const {
+    ROL::Ptr<ROL::Vector<Real> > clone() const {
       const Tpetra::MultiVector<Real,LO,GO,Node> &ey
         = *(ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();
-      return ROL::makeShared<PDE_PrimalSimVector<Real,LO,GO,Node>>(
-             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
+      return ROL::makePtr<PDE_PrimalSimVector<Real,LO,GO,Node>>(
+             ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
              RieszMap_, solver_, lumpedRiesz_);
     }
 
@@ -204,8 +204,8 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       if ( !isDualInitialized_ ) {
         // Create new memory for dual vector
         size_t n = ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector()->getNumVectors();
-        dual_vec_ = ROL::makeShared<PDE_DualSimVector<Real,LO,GO,Node>>(
-                    ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
+        dual_vec_ = ROL::makePtr<PDE_DualSimVector<Real,LO,GO,Node>>(
+                    ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
                     RieszMap_, solver_, lumpedRiesz_);
         isDualInitialized_ = true;
       }
@@ -218,31 +218,31 @@ class PDE_PrimalSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
 template <class Real, class LO, class GO, class Node>
 class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
   private:
-    ROL::SharedPointer<Tpetra::CrsMatrix<Real> > RieszMap_;
-    ROL::SharedPointer<Tpetra::MultiVector<> > lumpedRiesz_;
-    ROL::SharedPointer<Tpetra::MultiVector<> > recipLumpedRiesz_;
-    ROL::SharedPointer<Solver<Real> > solver_;
+    ROL::Ptr<Tpetra::CrsMatrix<Real> > RieszMap_;
+    ROL::Ptr<Tpetra::MultiVector<> > lumpedRiesz_;
+    ROL::Ptr<Tpetra::MultiVector<> > recipLumpedRiesz_;
+    ROL::Ptr<Solver<Real> > solver_;
 
     bool useRiesz_;
     bool useLumpedRiesz_;
 
-    mutable ROL::SharedPointer<PDE_PrimalSimVector<Real> > primal_vec_;
+    mutable ROL::Ptr<PDE_PrimalSimVector<Real> > primal_vec_;
     mutable bool isDualInitialized_;
 
     void lumpRiesz(void) {
-      lumpedRiesz_ = ROL::makeShared<Tpetra::Vector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap());
+      lumpedRiesz_ = ROL::makePtr<Tpetra::Vector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap());
       Tpetra::MultiVector<Real,LO,GO,Node> ones(ROL::TpetraMultiVector<Real>::getMap(),1);
       ones.putScalar(static_cast<Real>(1));
       RieszMap_->apply(ones, *lumpedRiesz_);
     }
 
     void invertLumpedRiesz(void) {
-      recipLumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
+      recipLumpedRiesz_ = ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
       recipLumpedRiesz_->reciprocal(*lumpedRiesz_);
     }
 
-    void applyRiesz(const ROL::SharedPointer<Tpetra::MultiVector<> > &out,
-                    const ROL::SharedPointer<const Tpetra::MultiVector<> > &in) const {
+    void applyRiesz(const ROL::Ptr<Tpetra::MultiVector<> > &out,
+                    const ROL::Ptr<const Tpetra::MultiVector<> > &in) const {
       #ifdef ROL_TIMERS
         Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEVectorSimRieszSolve);
       #endif
@@ -262,15 +262,15 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
   public:
     virtual ~PDE_DualSimVector() {}
 
-    PDE_DualSimVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                      const ROL::SharedPointer<PDE<Real> > &pde,
-                      const ROL::SharedPointer<Assembler<Real> > &assembler)
-      : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), solver_(ROL::nullPointer),
+    PDE_DualSimVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                      const ROL::Ptr<PDE<Real> > &pde,
+                      const ROL::Ptr<Assembler<Real> > &assembler)
+      : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), solver_(ROL::nullPtr),
         useRiesz_(false), useLumpedRiesz_(false), isDualInitialized_(false) {}
 
-    PDE_DualSimVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                      const ROL::SharedPointer<PDE<Real> > &pde,
-                      const ROL::SharedPointer<Assembler<Real> > &assembler,
+    PDE_DualSimVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                      const ROL::Ptr<PDE<Real> > &pde,
+                      const ROL::Ptr<Assembler<Real> > &assembler,
                       Teuchos::ParameterList &parlist)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec),
         isDualInitialized_(false) {
@@ -280,28 +280,28 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       useRiesz_       = parlist.sublist("Vector").sublist("Sim").get("Use Riesz Map", false);
       useLumpedRiesz_ = parlist.sublist("Vector").sublist("Sim").get("Lump Riesz Map", false);
       assembler->assemblePDERieszMap1(RieszMap_, pde);
-      useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPointer);
+      useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPtr);
       if (useRiesz_) {
         if (useLumpedRiesz_) {
           lumpRiesz();
           invertLumpedRiesz();
         }
         else {
-          solver_ = ROL::makeShared<Solver<Real>>(parlist.sublist("Solver"));
+          solver_ = ROL::makePtr<Solver<Real>>(parlist.sublist("Solver"));
           solver_->setA(RieszMap_);
         }
       }
     }
 
-    PDE_DualSimVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                      const ROL::SharedPointer<Tpetra::CrsMatrix<> > &RieszMap,
-                      const ROL::SharedPointer<Solver<Real> > &solver,
-                      const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &lumpedRiesz)
+    PDE_DualSimVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                      const ROL::Ptr<Tpetra::CrsMatrix<> > &RieszMap,
+                      const ROL::Ptr<Solver<Real> > &solver,
+                      const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &lumpedRiesz)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), RieszMap_(RieszMap),
         lumpedRiesz_(lumpedRiesz), solver_(solver), isDualInitialized_(false) {
-      if (RieszMap_ != ROL::nullPointer) {
-        useLumpedRiesz_ = (lumpedRiesz_ != ROL::nullPointer);
-        useRiesz_ = (solver_ != ROL::nullPointer) || useLumpedRiesz_;
+      if (RieszMap_ != ROL::nullPtr) {
+        useLumpedRiesz_ = (lumpedRiesz_ != ROL::nullPtr);
+        useRiesz_ = (solver_ != ROL::nullPtr) || useLumpedRiesz_;
         if (useLumpedRiesz_) {
           invertLumpedRiesz();
         }
@@ -316,14 +316,14 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       TEUCHOS_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
-      const ROL::SharedPointer<const Tpetra::MultiVector<Real,LO,GO,Node> > &ex
+      const ROL::Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > &ex
         = dynamic_cast<const ROL::TpetraMultiVector<Real,LO,GO,Node>&>(x).getVector();
       const Tpetra::MultiVector<Real,LO,GO,Node> &ey
         = *(ROL::TpetraMultiVector<Real>::getVector());
       size_t n = ey.getNumVectors();
       // Scale x with 1/scale_vec_
-      ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > wex
-        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
+      ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > wex
+        = ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
       applyRiesz(wex,ex);
       // Perform Euclidean dot between *this and scaled x for each vector
       Teuchos::Array<Real> val(n,0);
@@ -336,12 +336,12 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       return xy;
     }
 
-    ROL::SharedPointer<ROL::Vector<Real> > clone() const {
+    ROL::Ptr<ROL::Vector<Real> > clone() const {
       const Tpetra::MultiVector<Real,LO,GO,Node> &ey
         = *(ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();  
-      return ROL::makeShared<PDE_DualSimVector<Real,LO,GO,Node>>(
-             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
+      return ROL::makePtr<PDE_DualSimVector<Real,LO,GO,Node>>(
+             ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
              RieszMap_, solver_, lumpedRiesz_);
     }
 
@@ -349,8 +349,8 @@ class PDE_DualSimVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       if ( !isDualInitialized_ ) {
         // Create new memory for dual vector
         size_t n = ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector()->getNumVectors();
-        primal_vec_ = ROL::makeShared<PDE_PrimalSimVector<Real,LO,GO,Node>>(
-                      ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
+        primal_vec_ = ROL::makePtr<PDE_PrimalSimVector<Real,LO,GO,Node>>(
+                      ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
                       RieszMap_, solver_, lumpedRiesz_);
         isDualInitialized_ = true;
       }
@@ -375,25 +375,25 @@ class PDE_DualOptVector;
 template <class Real, class LO, class GO, class Node>
 class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
   private:
-    ROL::SharedPointer<Tpetra::CrsMatrix<> > RieszMap_;
-    ROL::SharedPointer<Tpetra::MultiVector<> > lumpedRiesz_;
-    ROL::SharedPointer<Solver<Real> > solver_;
+    ROL::Ptr<Tpetra::CrsMatrix<> > RieszMap_;
+    ROL::Ptr<Tpetra::MultiVector<> > lumpedRiesz_;
+    ROL::Ptr<Solver<Real> > solver_;
 
     bool useRiesz_;
     bool useLumpedRiesz_;
 
-    mutable ROL::SharedPointer<PDE_DualOptVector<Real> > dual_vec_;
+    mutable ROL::Ptr<PDE_DualOptVector<Real> > dual_vec_;
     mutable bool isDualInitialized_;
 
     void lumpRiesz(void) {
-      lumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
+      lumpedRiesz_ = ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
       Tpetra::MultiVector<Real,LO,GO,Node> ones(ROL::TpetraMultiVector<Real>::getMap(),1);
       ones.putScalar(static_cast<Real>(1));
       RieszMap_->apply(ones, *lumpedRiesz_);
     }
 
-    void applyRiesz(const ROL::SharedPointer<Tpetra::MultiVector<> > &out,
-                    const ROL::SharedPointer<const Tpetra::MultiVector<> > &in) const {
+    void applyRiesz(const ROL::Ptr<Tpetra::MultiVector<> > &out,
+                    const ROL::Ptr<const Tpetra::MultiVector<> > &in) const {
       #ifdef ROL_TIMERS
         Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEVectorOptRieszApply);
       #endif
@@ -413,15 +413,15 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
   public:
     virtual ~PDE_PrimalOptVector() {}
 
-    PDE_PrimalOptVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                        const ROL::SharedPointer<PDE<Real> > &pde,
-                        const ROL::SharedPointer<Assembler<Real> > &assembler)
-      : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), solver_(ROL::nullPointer),
+    PDE_PrimalOptVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                        const ROL::Ptr<PDE<Real> > &pde,
+                        const ROL::Ptr<Assembler<Real> > &assembler)
+      : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), solver_(ROL::nullPtr),
         useRiesz_(false), useLumpedRiesz_(false), isDualInitialized_(false) {}
 
-    PDE_PrimalOptVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                        const ROL::SharedPointer<PDE<Real> > &pde,
-                        const ROL::SharedPointer<Assembler<Real> > &assembler,
+    PDE_PrimalOptVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                        const ROL::Ptr<PDE<Real> > &pde,
+                        const ROL::Ptr<Assembler<Real> > &assembler,
                         Teuchos::ParameterList &parlist)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec),
         isDualInitialized_(false) {
@@ -431,27 +431,27 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       useRiesz_       = parlist.sublist("Vector").sublist("Opt").get("Use Riesz Map", false);
       useLumpedRiesz_ = parlist.sublist("Vector").sublist("Opt").get("Lump Riesz Map", false);
       assembler->assemblePDERieszMap2(RieszMap_, pde);
-      useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPointer);
+      useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPtr);
       if (useRiesz_) {
         if (useLumpedRiesz_) {
           lumpRiesz();
         }
         else {
-          solver_ = ROL::makeShared<Solver<Real>>(parlist.sublist("Solver"));
+          solver_ = ROL::makePtr<Solver<Real>>(parlist.sublist("Solver"));
           solver_->setA(RieszMap_);
         }
       }
     }
 
-    PDE_PrimalOptVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                        const ROL::SharedPointer<Tpetra::CrsMatrix<> > &RieszMap,
-                        const ROL::SharedPointer<Solver<Real> > &solver,
-                        const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &lumpedRiesz)
+    PDE_PrimalOptVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                        const ROL::Ptr<Tpetra::CrsMatrix<> > &RieszMap,
+                        const ROL::Ptr<Solver<Real> > &solver,
+                        const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &lumpedRiesz)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), RieszMap_(RieszMap),
         lumpedRiesz_(lumpedRiesz), solver_(solver), isDualInitialized_(false) {
-      if (RieszMap_ != ROL::nullPointer) {
-        useLumpedRiesz_ = (lumpedRiesz_ != ROL::nullPointer);
-        useRiesz_ = (solver_ != ROL::nullPointer) || useLumpedRiesz_;
+      if (RieszMap_ != ROL::nullPtr) {
+        useLumpedRiesz_ = (lumpedRiesz_ != ROL::nullPtr);
+        useRiesz_ = (solver_ != ROL::nullPtr) || useLumpedRiesz_;
       }
       else {
         useLumpedRiesz_ = false;
@@ -463,14 +463,14 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       TEUCHOS_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
-      const ROL::SharedPointer<const Tpetra::MultiVector<Real,LO,GO,Node> > ex
+      const ROL::Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > ex
         = dynamic_cast<const ROL::TpetraMultiVector<Real,LO,GO,Node>&>(x).getVector();
       const Tpetra::MultiVector<Real,LO,GO,Node> &ey
         = *(ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();
       // Scale x with scale_vec_
-      ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > wex
-        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
+      ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > wex
+        = ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
       applyRiesz(wex,ex);
       // Perform Euclidean dot between *this and scaled x for each vector
       Teuchos::Array<Real> val(n,0);
@@ -483,12 +483,12 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       return xy;
     }
 
-    ROL::SharedPointer<ROL::Vector<Real> > clone() const {
+    ROL::Ptr<ROL::Vector<Real> > clone() const {
       const Tpetra::MultiVector<Real,LO,GO,Node> &ey
         = *(ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();
-      return ROL::makeShared<PDE_PrimalOptVector<Real,LO,GO,Node>>(
-             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
+      return ROL::makePtr<PDE_PrimalOptVector<Real,LO,GO,Node>>(
+             ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
              RieszMap_, solver_, lumpedRiesz_);
     }
 
@@ -496,8 +496,8 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       if ( !isDualInitialized_ ) {
         // Create new memory for dual vector
         size_t n = ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector()->getNumVectors();
-        dual_vec_ = ROL::makeShared<PDE_DualOptVector<Real,LO,GO,Node>>(
-                    ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
+        dual_vec_ = ROL::makePtr<PDE_DualOptVector<Real,LO,GO,Node>>(
+                    ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
                     RieszMap_, solver_, lumpedRiesz_);
         isDualInitialized_ = true;
       }
@@ -510,31 +510,31 @@ class PDE_PrimalOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
 template <class Real, class LO, class GO, class Node>
 class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
   private:
-    ROL::SharedPointer<Tpetra::CrsMatrix<Real> > RieszMap_;
-    ROL::SharedPointer<Tpetra::MultiVector<> > lumpedRiesz_;
-    ROL::SharedPointer<Tpetra::MultiVector<> > recipLumpedRiesz_;
-    ROL::SharedPointer<Solver<Real> > solver_;
+    ROL::Ptr<Tpetra::CrsMatrix<Real> > RieszMap_;
+    ROL::Ptr<Tpetra::MultiVector<> > lumpedRiesz_;
+    ROL::Ptr<Tpetra::MultiVector<> > recipLumpedRiesz_;
+    ROL::Ptr<Solver<Real> > solver_;
 
     bool useRiesz_;
     bool useLumpedRiesz_;
 
-    mutable ROL::SharedPointer<PDE_PrimalOptVector<Real> > primal_vec_;
+    mutable ROL::Ptr<PDE_PrimalOptVector<Real> > primal_vec_;
     mutable bool isDualInitialized_;
 
     void lumpRiesz(void) {
-      lumpedRiesz_ = ROL::makeShared<Tpetra::Vector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap());
+      lumpedRiesz_ = ROL::makePtr<Tpetra::Vector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap());
       Tpetra::MultiVector<Real,LO,GO,Node> ones(ROL::TpetraMultiVector<Real>::getMap(),1);
       ones.putScalar(static_cast<Real>(1));
       RieszMap_->apply(ones, *lumpedRiesz_);
     }
 
     void invertLumpedRiesz(void) {
-      recipLumpedRiesz_ = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
+      recipLumpedRiesz_ = ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),1);
       recipLumpedRiesz_->reciprocal(*lumpedRiesz_);
     }
 
-    void applyRiesz(const ROL::SharedPointer<Tpetra::MultiVector<> > &out,
-                    const ROL::SharedPointer<const Tpetra::MultiVector<> > &in) const {
+    void applyRiesz(const ROL::Ptr<Tpetra::MultiVector<> > &out,
+                    const ROL::Ptr<const Tpetra::MultiVector<> > &in) const {
       #ifdef ROL_TIMERS
         Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::PDEVectorOptRieszSolve);
       #endif
@@ -554,15 +554,15 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
   public:
     virtual ~PDE_DualOptVector() {}
 
-    PDE_DualOptVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                      const ROL::SharedPointer<PDE<Real> > &pde,
-                      const ROL::SharedPointer<Assembler<Real> > &assembler)
-      : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), solver_(ROL::nullPointer),
+    PDE_DualOptVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                      const ROL::Ptr<PDE<Real> > &pde,
+                      const ROL::Ptr<Assembler<Real> > &assembler)
+      : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), solver_(ROL::nullPtr),
         useRiesz_(false), useLumpedRiesz_(false), isDualInitialized_(false) {}
 
-    PDE_DualOptVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                      const ROL::SharedPointer<PDE<Real> > &pde,
-                      const ROL::SharedPointer<Assembler<Real> > &assembler,
+    PDE_DualOptVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                      const ROL::Ptr<PDE<Real> > &pde,
+                      const ROL::Ptr<Assembler<Real> > &assembler,
                       Teuchos::ParameterList &parlist)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec),
         isDualInitialized_(false) {
@@ -572,28 +572,28 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       useRiesz_       = parlist.sublist("Vector").sublist("Opt").get("Use Riesz Map", false);
       useLumpedRiesz_ = parlist.sublist("Vector").sublist("Opt").get("Lump Riesz Map", false);
       assembler->assemblePDERieszMap2(RieszMap_, pde);
-      useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPointer);
+      useRiesz_ = useRiesz_ && (RieszMap_ != ROL::nullPtr);
       if (useRiesz_) {
         if (useLumpedRiesz_) {
           lumpRiesz();
           invertLumpedRiesz();
         }
         else {
-          solver_ = ROL::makeShared<Solver<Real>>(parlist.sublist("Solver"));
+          solver_ = ROL::makePtr<Solver<Real>>(parlist.sublist("Solver"));
           solver_->setA(RieszMap_);
         }
       }
     }
 
-    PDE_DualOptVector(const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
-                      const ROL::SharedPointer<Tpetra::CrsMatrix<> > &RieszMap,
-                      const ROL::SharedPointer<Solver<Real> > &solver,
-                      const ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > &lumpedRiesz)
+    PDE_DualOptVector(const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &tpetra_vec,
+                      const ROL::Ptr<Tpetra::CrsMatrix<> > &RieszMap,
+                      const ROL::Ptr<Solver<Real> > &solver,
+                      const ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > &lumpedRiesz)
       : ROL::TpetraMultiVector<Real,LO,GO,Node>(tpetra_vec), RieszMap_(RieszMap),
         lumpedRiesz_(lumpedRiesz), solver_(solver), isDualInitialized_(false) {
-      if (RieszMap_ != ROL::nullPointer) {
-        useLumpedRiesz_ = (lumpedRiesz_ != ROL::nullPointer);
-        useRiesz_ = (solver_ != ROL::nullPointer) || useLumpedRiesz_;
+      if (RieszMap_ != ROL::nullPtr) {
+        useLumpedRiesz_ = (lumpedRiesz_ != ROL::nullPtr);
+        useRiesz_ = (solver_ != ROL::nullPtr) || useLumpedRiesz_;
         if (useLumpedRiesz_) {
           invertLumpedRiesz();
         }
@@ -608,14 +608,14 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       TEUCHOS_TEST_FOR_EXCEPTION( (ROL::TpetraMultiVector<Real,LO,GO,Node>::dimension() != x.dimension()),
                                   std::invalid_argument,
                                   "Error: Vectors must have the same dimension." );
-      const ROL::SharedPointer<const Tpetra::MultiVector<Real,LO,GO,Node> > &ex
+      const ROL::Ptr<const Tpetra::MultiVector<Real,LO,GO,Node> > &ex
         = dynamic_cast<const ROL::TpetraMultiVector<Real,LO,GO,Node>&>(x).getVector();
       const Tpetra::MultiVector<Real,LO,GO,Node> &ey
         = *(ROL::TpetraMultiVector<Real>::getVector());
       size_t n = ey.getNumVectors();
       // Scale x with 1/scale_vec_
-      ROL::SharedPointer<Tpetra::MultiVector<Real,LO,GO,Node> > wex
-        = ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
+      ROL::Ptr<Tpetra::MultiVector<Real,LO,GO,Node> > wex
+        = ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(), n);
       applyRiesz(wex,ex);
       // Perform Euclidean dot between *this and scaled x for each vector
       Teuchos::Array<Real> val(n,0);
@@ -628,12 +628,12 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       return xy;
     }
 
-    ROL::SharedPointer<ROL::Vector<Real> > clone() const {
+    ROL::Ptr<ROL::Vector<Real> > clone() const {
       const Tpetra::MultiVector<Real,LO,GO,Node> &ey
         = *(ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector());
       size_t n = ey.getNumVectors();  
-      return ROL::makeShared<PDE_DualOptVector<Real,LO,GO,Node>>(
-             ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
+      return ROL::makePtr<PDE_DualOptVector<Real,LO,GO,Node>>(
+             ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
              RieszMap_, solver_, lumpedRiesz_);
     }
 
@@ -641,8 +641,8 @@ class PDE_DualOptVector : public ROL::TpetraMultiVector<Real,LO,GO,Node> {
       if ( !isDualInitialized_ ) {
         // Create new memory for dual vector
         size_t n = ROL::TpetraMultiVector<Real,LO,GO,Node>::getVector()->getNumVectors();
-        primal_vec_ = ROL::makeShared<PDE_PrimalOptVector<Real,LO,GO,Node>>(
-                      ROL::makeShared<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
+        primal_vec_ = ROL::makePtr<PDE_PrimalOptVector<Real,LO,GO,Node>>(
+                      ROL::makePtr<Tpetra::MultiVector<Real,LO,GO,Node>>(ROL::TpetraMultiVector<Real>::getMap(),n),
                       RieszMap_, solver_, lumpedRiesz_);
         isDualInitialized_ = true;
       }
@@ -658,67 +658,67 @@ template <class Real,
           class Node=Tpetra::Map<>::node_type >
 class PDE_OptVector : public ROL::Vector<Real> {
 private:
-  ROL::SharedPointer<ROL::TpetraMultiVector<Real,LO,GO,Node> > vec1_;
-  ROL::SharedPointer<ROL::StdVector<Real> >                    vec2_;
-  mutable ROL::SharedPointer<ROL::TpetraMultiVector<Real,LO,GO,Node> > dual_vec1_;
-  mutable ROL::SharedPointer<ROL::StdVector<Real> >                    dual_vec2_;
-  mutable ROL::SharedPointer<PDE_OptVector<Real,LO,GO,Node> >          dual_vec_;
+  ROL::Ptr<ROL::TpetraMultiVector<Real,LO,GO,Node> > vec1_;
+  ROL::Ptr<ROL::StdVector<Real> >                    vec2_;
+  mutable ROL::Ptr<ROL::TpetraMultiVector<Real,LO,GO,Node> > dual_vec1_;
+  mutable ROL::Ptr<ROL::StdVector<Real> >                    dual_vec2_;
+  mutable ROL::Ptr<PDE_OptVector<Real,LO,GO,Node> >          dual_vec_;
   mutable bool isDualInitialized_;
 
 public:
-  PDE_OptVector(const ROL::SharedPointer<ROL::TpetraMultiVector<Real,LO,GO,Node> > &vec1,
-                const ROL::SharedPointer<ROL::StdVector<Real> >                    &vec2 ) 
+  PDE_OptVector(const ROL::Ptr<ROL::TpetraMultiVector<Real,LO,GO,Node> > &vec1,
+                const ROL::Ptr<ROL::StdVector<Real> >                    &vec2 ) 
     : vec1_(vec1), vec2_(vec2), isDualInitialized_(false) {
 
-    dual_vec1_ = ROL::dynamicPointerCast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->dual().clone());
-    dual_vec2_ = ROL::dynamicPointerCast<ROL::StdVector<Real> >(vec2_->dual().clone());
+    dual_vec1_ = ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->dual().clone());
+    dual_vec2_ = ROL::dynamicPtrCast<ROL::StdVector<Real> >(vec2_->dual().clone());
   }
 
-  PDE_OptVector(const ROL::SharedPointer<ROL::TpetraMultiVector<Real,LO,GO,Node> > &vec)
-    : vec1_(vec), vec2_(ROL::nullPointer), dual_vec2_(ROL::nullPointer), isDualInitialized_(false) {
-    dual_vec1_ = ROL::dynamicPointerCast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->dual().clone());
+  PDE_OptVector(const ROL::Ptr<ROL::TpetraMultiVector<Real,LO,GO,Node> > &vec)
+    : vec1_(vec), vec2_(ROL::nullPtr), dual_vec2_(ROL::nullPtr), isDualInitialized_(false) {
+    dual_vec1_ = ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->dual().clone());
   }
 
-  PDE_OptVector(const ROL::SharedPointer<ROL::StdVector<Real> > &vec)
-    : vec1_(ROL::nullPointer), vec2_(vec), dual_vec1_(ROL::nullPointer), isDualInitialized_(false) {
-    dual_vec2_ = ROL::dynamicPointerCast<ROL::StdVector<Real> >(vec2_->dual().clone());
+  PDE_OptVector(const ROL::Ptr<ROL::StdVector<Real> > &vec)
+    : vec1_(ROL::nullPtr), vec2_(vec), dual_vec1_(ROL::nullPtr), isDualInitialized_(false) {
+    dual_vec2_ = ROL::dynamicPtrCast<ROL::StdVector<Real> >(vec2_->dual().clone());
   }
 
   void set( const ROL::Vector<Real> &x ) {
     const PDE_OptVector<Real> &xs = dynamic_cast<const PDE_OptVector<Real>&>(x);
-    if ( vec1_ != ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr ) {
       vec1_->set(*(xs.getField()));
     }
-    if ( vec2_ != ROL::nullPointer ) {
+    if ( vec2_ != ROL::nullPtr ) {
       vec2_->set(*(xs.getParameter()));
     }
   }
 
   void plus( const ROL::Vector<Real> &x ) {
     const PDE_OptVector<Real> &xs = dynamic_cast<const PDE_OptVector<Real>&>(x);
-    if ( vec1_ != ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr ) {
       vec1_->plus(*(xs.getField()));
     }
-    if ( vec2_ != ROL::nullPointer ) {
+    if ( vec2_ != ROL::nullPtr ) {
       vec2_->plus(*(xs.getParameter()));
     }
   }
 
   void scale( const Real alpha ) {
-    if ( vec1_ != ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr ) {
       vec1_->scale(alpha);
     }
-    if ( vec2_ != ROL::nullPointer ) {
+    if ( vec2_ != ROL::nullPtr ) {
       vec2_->scale(alpha);
     }
   }
 
   void axpy( const Real alpha, const ROL::Vector<Real> &x ) {
     const PDE_OptVector<Real> &xs = dynamic_cast<const PDE_OptVector<Real>&>(x);
-    if ( vec1_ != ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr ) {
       vec1_->axpy(alpha,*(xs.getField()));
     }
-    if ( vec2_ != ROL::nullPointer ) {
+    if ( vec2_ != ROL::nullPtr ) {
       vec2_->axpy(alpha,*(xs.getParameter()));
     }
   }
@@ -726,10 +726,10 @@ public:
   Real dot( const ROL::Vector<Real> &x ) const {
     const PDE_OptVector<Real> &xs = dynamic_cast<const PDE_OptVector<Real>&>(x);
     Real val(0);
-    if ( vec1_ != ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr ) {
       val += vec1_->dot(*(xs.getField()));
     }
-    if ( vec2_ != ROL::nullPointer ) {
+    if ( vec2_ != ROL::nullPtr ) {
       val += vec2_->dot(*(xs.getParameter()));
     }
     return val;
@@ -737,58 +737,58 @@ public:
 
   Real norm() const {
     Real val(0);
-    if ( vec1_ != ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr ) {
       Real norm1 = vec1_->norm();
       val += norm1*norm1;
     }
-    if ( vec2_ != ROL::nullPointer ) {
+    if ( vec2_ != ROL::nullPtr ) {
       Real norm2 = vec2_->norm();
       val += norm2*norm2;
     }
     return std::sqrt(val);
   } 
 
-  ROL::SharedPointer<ROL::Vector<Real> > clone(void) const {
-    if ( vec2_ == ROL::nullPointer ) {
-      return ROL::makeShared<PDE_OptVector<Real,LO,GO,Node>>(
-             ROL::dynamicPointerCast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->clone()));
+  ROL::Ptr<ROL::Vector<Real> > clone(void) const {
+    if ( vec2_ == ROL::nullPtr ) {
+      return ROL::makePtr<PDE_OptVector<Real,LO,GO,Node>>(
+             ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->clone()));
     }
-    if ( vec1_ == ROL::nullPointer ) {
-      return ROL::makeShared<PDE_OptVector<Real,LO,GO,Node>>(
-             ROL::dynamicPointerCast<ROL::StdVector<Real> >(vec2_->clone()));
+    if ( vec1_ == ROL::nullPtr ) {
+      return ROL::makePtr<PDE_OptVector<Real,LO,GO,Node>>(
+             ROL::dynamicPtrCast<ROL::StdVector<Real> >(vec2_->clone()));
     }
-    return ROL::makeShared<PDE_OptVector<Real,LO,GO,Node>>(
-           ROL::dynamicPointerCast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->clone()),
-           ROL::dynamicPointerCast<ROL::StdVector<Real> >(vec2_->clone()));
+    return ROL::makePtr<PDE_OptVector<Real,LO,GO,Node>>(
+           ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real,LO,GO,Node> >(vec1_->clone()),
+           ROL::dynamicPtrCast<ROL::StdVector<Real> >(vec2_->clone()));
   }
 
   const ROL::Vector<Real> & dual(void) const {
     if ( !isDualInitialized_ ) {
-      if ( vec1_ == ROL::nullPointer ) {
-        dual_vec_ = ROL::makeShared<PDE_OptVector<Real>>(dual_vec2_);
+      if ( vec1_ == ROL::nullPtr ) {
+        dual_vec_ = ROL::makePtr<PDE_OptVector<Real>>(dual_vec2_);
       }
-      else if ( vec2_ == ROL::nullPointer ) {
-        dual_vec_ = ROL::makeShared<PDE_OptVector<Real>>(dual_vec1_);
+      else if ( vec2_ == ROL::nullPtr ) {
+        dual_vec_ = ROL::makePtr<PDE_OptVector<Real>>(dual_vec1_);
       }
       else {
-        dual_vec_ = ROL::makeShared<PDE_OptVector<Real>>(dual_vec1_,dual_vec2_);
+        dual_vec_ = ROL::makePtr<PDE_OptVector<Real>>(dual_vec1_,dual_vec2_);
       }
       isDualInitialized_ = true;
     }
-    if ( vec1_ != ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr ) {
       dual_vec1_->set(vec1_->dual());
     }
-    if ( vec2_ != ROL::nullPointer ) {
+    if ( vec2_ != ROL::nullPtr ) {
       dual_vec2_->set(vec2_->dual());
     }
     return *dual_vec_;
   }
 
-  ROL::SharedPointer<ROL::Vector<Real> > basis( const int i )  const {
-    ROL::SharedPointer<ROL::Vector<Real> > e;
-    if ( vec1_ != ROL::nullPointer && vec2_ != ROL::nullPointer ) {
+  ROL::Ptr<ROL::Vector<Real> > basis( const int i )  const {
+    ROL::Ptr<ROL::Vector<Real> > e;
+    if ( vec1_ != ROL::nullPtr && vec2_ != ROL::nullPtr ) {
       int n1 = vec1_->dimension();
-      ROL::SharedPointer<ROL::Vector<Real> > e1, e2;
+      ROL::Ptr<ROL::Vector<Real> > e1, e2;
       if ( i < n1 ) {
         e1 = vec1_->basis(i);
         e2 = vec2_->clone(); e2->zero();
@@ -797,62 +797,62 @@ public:
         e1 = vec1_->clone(); e1->zero();
         e2 = vec2_->basis(i-n1);
       }
-      e = ROL::makeShared<PDE_OptVector>(
-        ROL::dynamicPointerCast<ROL::TpetraMultiVector<Real> >(e1),
-        ROL::dynamicPointerCast<ROL::StdVector<Real> >(e2));
+      e = ROL::makePtr<PDE_OptVector>(
+        ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real> >(e1),
+        ROL::dynamicPtrCast<ROL::StdVector<Real> >(e2));
     }
-    if ( vec1_ != ROL::nullPointer && vec2_ == ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr && vec2_ == ROL::nullPtr ) {
       int n1 = vec1_->dimension();
-      ROL::SharedPointer<ROL::Vector<Real> > e1;
+      ROL::Ptr<ROL::Vector<Real> > e1;
       if ( i < n1 ) {
         e1 = vec1_->basis(i);
       }
       else {
         e1->zero();
       }
-      e = ROL::makeShared<PDE_OptVector>(
-        ROL::dynamicPointerCast<ROL::TpetraMultiVector<Real> >(e1));
+      e = ROL::makePtr<PDE_OptVector>(
+        ROL::dynamicPtrCast<ROL::TpetraMultiVector<Real> >(e1));
     }
-    if ( vec1_ == ROL::nullPointer && vec2_ != ROL::nullPointer ) {
+    if ( vec1_ == ROL::nullPtr && vec2_ != ROL::nullPtr ) {
       int n2 = vec2_->dimension();
-      ROL::SharedPointer<ROL::Vector<Real> > e2;
+      ROL::Ptr<ROL::Vector<Real> > e2;
       if ( i < n2 ) {
         e2 = vec2_->basis(i);
       }
       else {
         e2->zero();
       }
-      e = ROL::makeShared<PDE_OptVector>(
-        ROL::dynamicPointerCast<ROL::StdVector<Real> >(e2));
+      e = ROL::makePtr<PDE_OptVector>(
+        ROL::dynamicPtrCast<ROL::StdVector<Real> >(e2));
     }
     return e;
   }
 
   void applyUnary( const ROL::Elementwise::UnaryFunction<Real> &f ) {
-    if ( vec1_ != ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr ) {
       vec1_->applyUnary(f);
     }
-    if ( vec2_ != ROL::nullPointer ) {
+    if ( vec2_ != ROL::nullPtr ) {
       vec2_->applyUnary(f);
     }
   }
 
   void applyBinary( const ROL::Elementwise::BinaryFunction<Real> &f, const ROL::Vector<Real> &x ) {
     const PDE_OptVector<Real> &xs = dynamic_cast<const PDE_OptVector<Real>&>(x);
-    if ( vec1_ != ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr ) {
       vec1_->applyBinary(f,*xs.getField());
     }
-    if ( vec2_ != ROL::nullPointer ) {
+    if ( vec2_ != ROL::nullPtr ) {
       vec2_->applyBinary(f,*xs.getParameter());
     }
   }
 
   Real reduce( const ROL::Elementwise::ReductionOp<Real> &r ) const {
     Real result = r.initialValue();
-    if ( vec1_ != ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr ) {
       r.reduce(vec1_->reduce(r),result);
     }
-    if ( vec2_ != ROL::nullPointer ) {
+    if ( vec2_ != ROL::nullPtr ) {
       r.reduce(vec2_->reduce(r),result);
     }
     return result;
@@ -860,28 +860,28 @@ public:
 
   int dimension() const {
     int dim(0);
-    if ( vec1_ != ROL::nullPointer ) {
+    if ( vec1_ != ROL::nullPtr ) {
       dim += vec1_->dimension();
     }
-    if ( vec2_ != ROL::nullPointer ) {
+    if ( vec2_ != ROL::nullPtr ) {
       dim += vec2_->dimension();
     }
     return dim;
   }
 
-  ROL::SharedPointer<const ROL::TpetraMultiVector<Real> > getField(void) const { 
+  ROL::Ptr<const ROL::TpetraMultiVector<Real> > getField(void) const { 
     return vec1_;
   }
 
-  ROL::SharedPointer<const ROL::StdVector<Real> > getParameter(void) const { 
+  ROL::Ptr<const ROL::StdVector<Real> > getParameter(void) const { 
     return vec2_; 
   }
 
-  ROL::SharedPointer<ROL::TpetraMultiVector<Real> > getField(void) { 
+  ROL::Ptr<ROL::TpetraMultiVector<Real> > getField(void) { 
     return vec1_;
   }
 
-  ROL::SharedPointer<ROL::StdVector<Real> > getParameter(void) { 
+  ROL::Ptr<ROL::StdVector<Real> > getParameter(void) { 
     return vec2_; 
   }
 

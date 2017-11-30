@@ -62,12 +62,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -78,9 +78,9 @@ int main(int argc, char *argv[]) {
   try {
 
     int dim = 100;
-    ROL::SharedPointer<std::vector<ElementT> > x_ptr = ROL::makeShared<std::vector<ElementT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<ElementT> > y_ptr = ROL::makeShared<std::vector<ElementT>>(dim, 0.0);
-    ROL::SharedPointer<std::vector<ElementT> > z_ptr = ROL::makeShared<std::vector<ElementT>>(dim, 0.0);
+    ROL::Ptr<std::vector<ElementT> > x_ptr = ROL::makePtr<std::vector<ElementT>>(dim, 0.0);
+    ROL::Ptr<std::vector<ElementT> > y_ptr = ROL::makePtr<std::vector<ElementT>>(dim, 0.0);
+    ROL::Ptr<std::vector<ElementT> > z_ptr = ROL::makePtr<std::vector<ElementT>>(dim, 0.0);
     ROL::StdVector<RealT, ElementT> x(x_ptr);
     ROL::StdVector<RealT, ElementT> y(y_ptr);
     ROL::StdVector<RealT, ElementT> z(z_ptr);
@@ -96,14 +96,14 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
-    ROL::StdVector<RealT, ElementT> checkvec( ROL::makeSharedFromRef(consistency) );
+    ROL::StdVector<RealT, ElementT> checkvec( ROL::makePtrFromRef(consistency) );
     if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag++;
     }
 
     // Basis tests.
     // set x to first basis vector
-    ROL::SharedPointer<ROL::Vector<RealT> > zp = x.clone();
+    ROL::Ptr<ROL::Vector<RealT> > zp = x.clone();
     zp = x.basis(0);
     RealT znorm = zp->norm();
     *outStream << "Norm of ROL::Vector z (first basis vector): " << znorm << "\n";

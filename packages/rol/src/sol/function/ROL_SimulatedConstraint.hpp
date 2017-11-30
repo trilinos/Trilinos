@@ -53,16 +53,16 @@ namespace ROL {
 template <class Real>
 class SimulatedConstraint : public Constraint<Real> {
 private:
-  const ROL::SharedPointer<SampleGenerator<Real> > sampler_;
-  const ROL::SharedPointer<Constraint_SimOpt<Real> > pcon_;
+  const ROL::Ptr<SampleGenerator<Real> > sampler_;
+  const ROL::Ptr<Constraint_SimOpt<Real> > pcon_;
   const bool useWeights_;
 
 public:
 
   virtual ~SimulatedConstraint() {}
 
-  SimulatedConstraint(const ROL::SharedPointer<SampleGenerator<Real> > & sampler,
-                              const ROL::SharedPointer<Constraint_SimOpt<Real> > & pcon,
+  SimulatedConstraint(const ROL::Ptr<SampleGenerator<Real> > & sampler,
+                              const ROL::Ptr<Constraint_SimOpt<Real> > & pcon,
                               const bool useWeights = true)
     : sampler_(sampler), pcon_(pcon), useWeights_(useWeights) {}
 
@@ -74,8 +74,8 @@ public:
     c.zero();
     SimulatedVector<Real> &pc = dynamic_cast<SimulatedVector<Real>&>(c);
     const Vector_SimOpt<Real> &uz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-    ROL::SharedPointer<const Vector<Real> > uptr = uz.get_1();
-    ROL::SharedPointer<const Vector<Real> > zptr = uz.get_2();
+    ROL::Ptr<const Vector<Real> > uptr = uz.get_1();
+    ROL::Ptr<const Vector<Real> > zptr = uz.get_2();
     try {
       const RiskVector<Real> &rz = dynamic_cast<const RiskVector<Real>&>(*zptr);
       zptr = rz.getVector();
@@ -107,8 +107,8 @@ public:
     SimulatedVector<Real> &pjv = dynamic_cast<SimulatedVector<Real>&>(jv);
     // split x
     const Vector_SimOpt<Real> &xuz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-    ROL::SharedPointer<const Vector<Real> > xuptr = xuz.get_1();
-    ROL::SharedPointer<const Vector<Real> > xzptr = xuz.get_2();
+    ROL::Ptr<const Vector<Real> > xuptr = xuz.get_1();
+    ROL::Ptr<const Vector<Real> > xzptr = xuz.get_2();
     try {
       const RiskVector<Real> &rxz = dynamic_cast<const RiskVector<Real>&>(*xzptr);
       xzptr = rxz.getVector();
@@ -117,8 +117,8 @@ public:
     const SimulatedVector<Real> &pxu = dynamic_cast<const SimulatedVector<Real>&>(*xuptr);
     // split v
     const Vector_SimOpt<Real> &vuz = dynamic_cast<const Vector_SimOpt<Real>&>(v);
-    ROL::SharedPointer<const Vector<Real> > vuptr = vuz.get_1();
-    ROL::SharedPointer<const Vector<Real> > vzptr = vuz.get_2();
+    ROL::Ptr<const Vector<Real> > vuptr = vuz.get_1();
+    ROL::Ptr<const Vector<Real> > vzptr = vuz.get_2();
     try {
       const RiskVector<Real> &rvz = dynamic_cast<const RiskVector<Real>&>(*vzptr);
       vzptr = rvz.getVector();
@@ -132,8 +132,8 @@ public:
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pcon_->setParameter(param);
-      Vector_SimOpt<Real> xi(ROL::constPointerCast<Vector<Real> >(pxu.get(i)), ROL::constPointerCast<Vector<Real> >(xzptr));
-      Vector_SimOpt<Real> vi(ROL::constPointerCast<Vector<Real> >(pvu.get(i)), ROL::constPointerCast<Vector<Real> >(vzptr));
+      Vector_SimOpt<Real> xi(ROL::constPtrCast<Vector<Real> >(pxu.get(i)), ROL::constPtrCast<Vector<Real> >(xzptr));
+      Vector_SimOpt<Real> vi(ROL::constPtrCast<Vector<Real> >(pvu.get(i)), ROL::constPtrCast<Vector<Real> >(vzptr));
       pcon_->update(xi);
       pcon_->applyJacobian(*(pjv.get(i)), vi, xi, tol);
       weight = (useWeights_) ? weight : one;
@@ -149,8 +149,8 @@ public:
     ajv.zero();
     // split ajv
     Vector_SimOpt<Real> &ajvuz = dynamic_cast<Vector_SimOpt<Real>&>(ajv);
-    ROL::SharedPointer<Vector<Real> > ajvuptr = ajvuz.get_1();
-    ROL::SharedPointer<Vector<Real> > ajvzptr = ajvuz.get_2();
+    ROL::Ptr<Vector<Real> > ajvuptr = ajvuz.get_1();
+    ROL::Ptr<Vector<Real> > ajvzptr = ajvuz.get_2();
     try {
       RiskVector<Real> &rajvz = dynamic_cast<RiskVector<Real>&>(*ajvzptr);
       ajvzptr = rajvz.getVector();
@@ -159,8 +159,8 @@ public:
     SimulatedVector<Real> &pajvu = dynamic_cast<SimulatedVector<Real>&>(*ajvuptr);
     // split x
     const Vector_SimOpt<Real> &xuz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-    ROL::SharedPointer<const Vector<Real> > xuptr = xuz.get_1();
-    ROL::SharedPointer<const Vector<Real> > xzptr = xuz.get_2();
+    ROL::Ptr<const Vector<Real> > xuptr = xuz.get_1();
+    ROL::Ptr<const Vector<Real> > xzptr = xuz.get_2();
     try {
       const RiskVector<Real> &rxz = dynamic_cast<const RiskVector<Real>&>(*xzptr);
       xzptr = rxz.getVector();
@@ -172,13 +172,13 @@ public:
 
     std::vector<Real> param;
     Real weight(0), one(1);
-    ROL::SharedPointer<Vector<Real> > tmp1 = ajvzptr->clone();
-    ROL::SharedPointer<Vector<Real> > tmp2 = ajvzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp1 = ajvzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp2 = ajvzptr->clone();
     for (typename std::vector<SimulatedVector<Real> >::size_type i=0; i<pv.numVectors(); ++i) {
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pcon_->setParameter(param);
-      Vector_SimOpt<Real> xi(ROL::constPointerCast<Vector<Real> >(pxu.get(i)), ROL::constPointerCast<Vector<Real> >(xzptr));
+      Vector_SimOpt<Real> xi(ROL::constPtrCast<Vector<Real> >(pxu.get(i)), ROL::constPtrCast<Vector<Real> >(xzptr));
       Vector_SimOpt<Real> ajvi(pajvu.get(i), tmp1);
       pcon_->update(xi);
       pcon_->applyAdjointJacobian(ajvi, *(pv.get(i)), xi, tol);
@@ -199,8 +199,8 @@ public:
     ahuv.zero();
     // split ahuv
     Vector_SimOpt<Real> &ahuvuz = dynamic_cast<Vector_SimOpt<Real>&>(ahuv);
-    ROL::SharedPointer<Vector<Real> > ahuvuptr = ahuvuz.get_1();
-    ROL::SharedPointer<Vector<Real> > ahuvzptr = ahuvuz.get_2();
+    ROL::Ptr<Vector<Real> > ahuvuptr = ahuvuz.get_1();
+    ROL::Ptr<Vector<Real> > ahuvzptr = ahuvuz.get_2();
     try {
       RiskVector<Real> &rahuvz = dynamic_cast<RiskVector<Real>&>(*ahuvzptr);
       ahuvzptr = rahuvz.getVector();
@@ -211,8 +211,8 @@ public:
     const SimulatedVector<Real> &pu = dynamic_cast<const SimulatedVector<Real>&>(u);
     // split v
     const Vector_SimOpt<Real> &vuz = dynamic_cast<const Vector_SimOpt<Real>&>(v);
-    ROL::SharedPointer<const Vector<Real> > vuptr = vuz.get_1();
-    ROL::SharedPointer<const Vector<Real> > vzptr = vuz.get_2();
+    ROL::Ptr<const Vector<Real> > vuptr = vuz.get_1();
+    ROL::Ptr<const Vector<Real> > vzptr = vuz.get_2();
     try {
       const RiskVector<Real> &rvz = dynamic_cast<const RiskVector<Real>&>(*vzptr);
       vzptr = rvz.getVector();
@@ -221,8 +221,8 @@ public:
     const SimulatedVector<Real> &pvu = dynamic_cast<const SimulatedVector<Real>&>(*vuptr);
     // split x
     const Vector_SimOpt<Real> &xuz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-    ROL::SharedPointer<const Vector<Real> > xuptr = xuz.get_1();
-    ROL::SharedPointer<const Vector<Real> > xzptr = xuz.get_2();
+    ROL::Ptr<const Vector<Real> > xuptr = xuz.get_1();
+    ROL::Ptr<const Vector<Real> > xzptr = xuz.get_2();
     try {
       const RiskVector<Real> &rxz = dynamic_cast<const RiskVector<Real>&>(*xzptr);
       xzptr = rxz.getVector();
@@ -232,14 +232,14 @@ public:
 
     std::vector<Real> param;
     Real weight(0), one(1);
-    ROL::SharedPointer<Vector<Real> > tmp1 = ahuvzptr->clone();
-    ROL::SharedPointer<Vector<Real> > tmp2 = ahuvzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp1 = ahuvzptr->clone();
+    ROL::Ptr<Vector<Real> > tmp2 = ahuvzptr->clone();
     for (typename std::vector<SimulatedVector<Real> >::size_type i=0; i<pxu.numVectors(); ++i) {
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pcon_->setParameter(param);
-      Vector_SimOpt<Real> xi(ROL::constPointerCast<Vector<Real> >(pxu.get(i)), ROL::constPointerCast<Vector<Real> >(xzptr));
-      Vector_SimOpt<Real> vi(ROL::constPointerCast<Vector<Real> >(pvu.get(i)), ROL::constPointerCast<Vector<Real> >(vzptr));
+      Vector_SimOpt<Real> xi(ROL::constPtrCast<Vector<Real> >(pxu.get(i)), ROL::constPtrCast<Vector<Real> >(xzptr));
+      Vector_SimOpt<Real> vi(ROL::constPtrCast<Vector<Real> >(pvu.get(i)), ROL::constPtrCast<Vector<Real> >(vzptr));
       Vector_SimOpt<Real> ahuvi(pahuvu.get(i), tmp1);
       pcon_->update(xi);
       pcon_->applyAdjointHessian(ahuvi, *(pu.get(i)), vi, xi, tol);
@@ -261,8 +261,8 @@ public:
     SimulatedVector<Real> &ppv = dynamic_cast<SimulatedVector<Real>&>(Pv);
     // split x
     const Vector_SimOpt<Real> &xuz = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-    ROL::SharedPointer<const Vector<Real> > xuptr = xuz.get_1();
-    ROL::SharedPointer<const Vector<Real> > xzptr = xuz.get_2();
+    ROL::Ptr<const Vector<Real> > xuptr = xuz.get_1();
+    ROL::Ptr<const Vector<Real> > xzptr = xuz.get_2();
     try {
       const RiskVector<Real> &rxz = dynamic_cast<const RiskVector<Real>&>(*xzptr);
       xzptr = rxz.getVector();
@@ -271,8 +271,8 @@ public:
     const SimulatedVector<Real> &pxu = dynamic_cast<const SimulatedVector<Real>&>(*xuptr);
     // split g
     const Vector_SimOpt<Real> &guz = dynamic_cast<const Vector_SimOpt<Real>&>(g);
-    ROL::SharedPointer<const Vector<Real> > guptr = guz.get_1();
-    ROL::SharedPointer<const Vector<Real> > gzptr = guz.get_2();
+    ROL::Ptr<const Vector<Real> > guptr = guz.get_1();
+    ROL::Ptr<const Vector<Real> > gzptr = guz.get_2();
     try {
       const RiskVector<Real> &rgz = dynamic_cast<const RiskVector<Real>&>(*gzptr);
       gzptr = rgz.getVector();
@@ -288,8 +288,8 @@ public:
       param = sampler_->getMyPoint(static_cast<int>(i));
       weight = sampler_->getMyWeight(static_cast<int>(i));
       pcon_->setParameter(param);
-      Vector_SimOpt<Real> xi(ROL::constPointerCast<Vector<Real> >(pxu.get(i)), ROL::constPointerCast<Vector<Real> >(xzptr));
-      Vector_SimOpt<Real> gi(ROL::constPointerCast<Vector<Real> >(pgu.get(i)), ROL::constPointerCast<Vector<Real> >(gzptr));
+      Vector_SimOpt<Real> xi(ROL::constPtrCast<Vector<Real> >(pxu.get(i)), ROL::constPtrCast<Vector<Real> >(xzptr));
+      Vector_SimOpt<Real> gi(ROL::constPtrCast<Vector<Real> >(pgu.get(i)), ROL::constPtrCast<Vector<Real> >(gzptr));
       pcon_->update(xi);
       pcon_->applyPreconditioner(*(ppv.get(i)), *(pv.get(i)), xi, gi, tol);
       weight = (useWeights_) ? weight : one;

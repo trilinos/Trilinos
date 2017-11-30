@@ -120,20 +120,20 @@ class OptStdVector : public Vector<Real> {
   typedef typename vector::size_type uint;
 
 private:
-ROL::SharedPointer<std::vector<Element> >  std_vec_;
-mutable ROL::SharedPointer<OptDualStdVector<Real> >  dual_vec_;
+ROL::Ptr<std::vector<Element> >  std_vec_;
+mutable ROL::Ptr<OptDualStdVector<Real> >  dual_vec_;
 
-ROL::SharedPointer<FiniteDifference<Real> > fd_;
+ROL::Ptr<FiniteDifference<Real> > fd_;
 
 
 public:
 
-OptStdVector(const ROL::SharedPointer<std::vector<Element> > & std_vec, ROL::SharedPointer<FiniteDifference<Real> >fd) : 
-    std_vec_(std_vec), dual_vec_(ROL::nullPointer), fd_(fd) {}
+OptStdVector(const ROL::Ptr<std::vector<Element> > & std_vec, ROL::Ptr<FiniteDifference<Real> >fd) : 
+    std_vec_(std_vec), dual_vec_(ROL::nullPtr), fd_(fd) {}
 
 void plus( const Vector<Real> &x ) {
   const OptStdVector &ex = dynamic_cast<const OptStdVector&>(x);
-  ROL::SharedPointer<const vector> xvalptr = ex.getVector();
+  ROL::Ptr<const vector> xvalptr = ex.getVector();
   uint dimension  = std_vec_->size();
   for (uint i=0; i<dimension; i++) {
     (*std_vec_)[i] += (*xvalptr)[i];
@@ -152,9 +152,9 @@ void scale( const Real alpha ) {
 Real dot( const Vector<Real> &x ) const {
   Real val = 0;
   const OptStdVector<Real, Element> & ex = dynamic_cast<const OptStdVector&>(x);
-  ROL::SharedPointer<const vector> xvalptr = ex.getVector();
+  ROL::Ptr<const vector> xvalptr = ex.getVector();
    
-  ROL::SharedPointer<vector> kxvalptr = ROL::makeShared<vector>(std_vec_->size(), 0.0);
+  ROL::Ptr<vector> kxvalptr = ROL::makePtr<vector>(std_vec_->size(), 0.0);
 
   fd_->apply(xvalptr,kxvalptr);
 
@@ -171,21 +171,21 @@ Real norm() const {
   return val;
 }
 
-ROL::SharedPointer<Vector<Real> > clone() const {
-  return ROL::makeShared<OptStdVector>( ROL::makeShared<vector>(std_vec_->size()), fd_ );
+ROL::Ptr<Vector<Real> > clone() const {
+  return ROL::makePtr<OptStdVector>( ROL::makePtr<vector>(std_vec_->size()), fd_ );
 }
 
-ROL::SharedPointer<const vector> getVector() const {
+ROL::Ptr<const vector> getVector() const {
   return std_vec_;
 }
 
-ROL::SharedPointer<vector> getVector()  {
+ROL::Ptr<vector> getVector()  {
   return std_vec_;
 }
 
-ROL::SharedPointer<Vector<Real> > basis( const int i ) const {
-  ROL::SharedPointer<vector> e_ptr = ROL::makeShared<vector>(std_vec_->size(),0.0);
-  ROL::SharedPointer<OptStdVector> e = ROL::makeShared<OptStdVector>( e_ptr, fd_ );
+ROL::Ptr<Vector<Real> > basis( const int i ) const {
+  ROL::Ptr<vector> e_ptr = ROL::makePtr<vector>(std_vec_->size(),0.0);
+  ROL::Ptr<OptStdVector> e = ROL::makePtr<OptStdVector>( e_ptr, fd_ );
   (*e_ptr)[i]= 1.0;
   return e;
 }
@@ -195,8 +195,8 @@ int dimension() const {return static_cast<int>(std_vec_->size());}
 
 //! Modify the dual of vector u to be \f$\tilde u = -\ddot u\f$
 const Vector<Real> & dual() const {
-  ROL::SharedPointer<vector> dual_vecp = ROL::makeShared<vector>(*std_vec_);
-  dual_vec_ = ROL::makeShared<OptDualStdVector<Real>>( dual_vecp, fd_ );
+  ROL::Ptr<vector> dual_vecp = ROL::makePtr<vector>(*std_vec_);
+  dual_vec_ = ROL::makePtr<OptDualStdVector<Real>>( dual_vecp, fd_ );
   fd_->apply(dual_vecp); 
   return *dual_vec_;
 }
@@ -212,18 +212,18 @@ class OptDualStdVector : public Vector<Real> {
   typedef typename vector::size_type uint;
 
 private:
-ROL::SharedPointer<std::vector<Element> >  std_vec_;
-mutable ROL::SharedPointer<OptStdVector<Real> >  dual_vec_;
-ROL::SharedPointer<FiniteDifference<Real> > fd_;
+ROL::Ptr<std::vector<Element> >  std_vec_;
+mutable ROL::Ptr<OptStdVector<Real> >  dual_vec_;
+ROL::Ptr<FiniteDifference<Real> > fd_;
 
 public:
 
-OptDualStdVector(const ROL::SharedPointer<std::vector<Element> > & std_vec, ROL::SharedPointer<FiniteDifference<Real> >fd) : 
-    std_vec_(std_vec), dual_vec_(ROL::nullPointer), fd_(fd) {}
+OptDualStdVector(const ROL::Ptr<std::vector<Element> > & std_vec, ROL::Ptr<FiniteDifference<Real> >fd) : 
+    std_vec_(std_vec), dual_vec_(ROL::nullPtr), fd_(fd) {}
 
 void plus( const Vector<Real> &x ) {
   const OptDualStdVector &ex = dynamic_cast<const OptDualStdVector&>(x);
-  ROL::SharedPointer<const vector> xvalptr = ex.getVector();
+  ROL::Ptr<const vector> xvalptr = ex.getVector();
   uint dimension  = std_vec_->size();
   for (uint i=0; i<dimension; i++) {
     (*std_vec_)[i] += (*xvalptr)[i];
@@ -240,8 +240,8 @@ void scale( const Real alpha ) {
 Real dot( const Vector<Real> &x ) const {
   Real val = 0;
   const OptDualStdVector<Real, Element> & ex = dynamic_cast<const OptDualStdVector<Real, Element>&>(x);
-  ROL::SharedPointer<const vector> kxvalptr = ex.getVector();
-  ROL::SharedPointer<vector> xvalptr = ROL::makeShared<vector>(std_vec_->size(), 0.0);
+  ROL::Ptr<const vector> kxvalptr = ex.getVector();
+  ROL::Ptr<vector> xvalptr = ROL::makePtr<vector>(std_vec_->size(), 0.0);
   fd_->solve(kxvalptr,xvalptr);
   
   uint dimension  = std_vec_->size();
@@ -257,21 +257,21 @@ Real norm() const {
   return val;
 }
 
-ROL::SharedPointer<Vector<Real> > clone() const {
-  return ROL::makeShared<OptDualStdVector>( makeShared<std::vector<Element>>(std_vec_->size()), fd_ );
+ROL::Ptr<Vector<Real> > clone() const {
+  return ROL::makePtr<OptDualStdVector>( ROL::makePtr<std::vector<Element>>(std_vec_->size()), fd_ );
 }
 
-ROL::SharedPointer<const std::vector<Element> > getVector() const {
+ROL::Ptr<const std::vector<Element> > getVector() const {
   return std_vec_;
 }
 
-ROL::SharedPointer<std::vector<Element> > getVector()  {
+ROL::Ptr<std::vector<Element> > getVector()  {
   return std_vec_;
 }
 
-ROL::SharedPointer<Vector<Real> > basis( const int i ) const {
-  ROL::SharedPointer<vector> e_ptr = ROL::makeShared<vector>(std_vec_->size(), 0.0 );
-  ROL::SharedPointer<OptDualStdVector> e = ROL::makeShared<OptDualStdVector>( e_ptr,fd_ );
+ROL::Ptr<Vector<Real> > basis( const int i ) const {
+  ROL::Ptr<vector> e_ptr = ROL::makePtr<vector>(std_vec_->size(), 0.0 );
+  ROL::Ptr<OptDualStdVector> e = ROL::makePtr<OptDualStdVector>( e_ptr,fd_ );
   (*e_ptr)[i] = 1.0;
   return e;
 }
@@ -279,8 +279,8 @@ ROL::SharedPointer<Vector<Real> > basis( const int i ) const {
 int dimension() const {return static_cast<int>(std_vec_->size());}
 
 const Vector<Real> & dual() const {
-    ROL::SharedPointer<vector> dual_vecp = ROL::makeShared<vector>(*std_vec_); 
-    dual_vec_ = ROL::makeShared<OptStdVector<Real>>( dual_vecp, fd_ );
+    ROL::Ptr<vector> dual_vecp = ROL::makePtr<vector>(*std_vec_); 
+    dual_vec_ = ROL::makePtr<OptStdVector<Real>>( dual_vecp, fd_ );
     
     fd_->solve(dual_vecp);
     return *dual_vec_;
@@ -299,16 +299,16 @@ class ConStdVector : public Vector<Real> {
   typedef typename vector::size_type uint;
 
 private:
-ROL::SharedPointer<std::vector<Element> >  std_vec_;
-mutable ROL::SharedPointer<ConDualStdVector<Real> >  dual_vec_;
+ROL::Ptr<std::vector<Element> >  std_vec_;
+mutable ROL::Ptr<ConDualStdVector<Real> >  dual_vec_;
 
 public:
 
-ConStdVector(const ROL::SharedPointer<std::vector<Element> > & std_vec) : std_vec_(std_vec), dual_vec_(ROL::nullPointer) {}
+ConStdVector(const ROL::Ptr<std::vector<Element> > & std_vec) : std_vec_(std_vec), dual_vec_(ROL::nullPtr) {}
 
 void plus( const Vector<Real> &x ) {
   const ConStdVector &ex = dynamic_cast<const ConStdVector&>(x);
-  ROL::SharedPointer<const vector> xvalptr = ex.getVector();
+  ROL::Ptr<const vector> xvalptr = ex.getVector();
   uint dimension  = std_vec_->size();
   for (uint i=0; i<dimension; i++) {
     (*std_vec_)[i] += (*xvalptr)[i];
@@ -325,7 +325,7 @@ void scale( const Real alpha ) {
 Real dot( const Vector<Real> &x ) const {
   Real val = 0;
   const ConStdVector<Real, Element> & ex = dynamic_cast<const ConStdVector<Real, Element>&>(x);
-  ROL::SharedPointer<const vector> xvalptr = ex.getVector();
+  ROL::Ptr<const vector> xvalptr = ex.getVector();
 
   uint dimension  = std_vec_->size();
   for (uint i=0; i<dimension; i++) {
@@ -340,21 +340,21 @@ Real norm() const {
   return val;
 }
 
-ROL::SharedPointer<Vector<Real> > clone() const {
-  return ROL::makeShared<ConStdVector>( ROL::makeShared<vector>(std_vec_->size()));
+ROL::Ptr<Vector<Real> > clone() const {
+  return ROL::makePtr<ConStdVector>( ROL::makePtr<vector>(std_vec_->size()));
 }
 
-ROL::SharedPointer<const std::vector<Element> > getVector() const {
+ROL::Ptr<const std::vector<Element> > getVector() const {
   return std_vec_;
 }
 
-ROL::SharedPointer<std::vector<Element> > getVector() {
+ROL::Ptr<std::vector<Element> > getVector() {
   return std_vec_;
 }
 
-ROL::SharedPointer<Vector<Real> > basis( const int i ) const {
-  ROL::SharedPointer<vector> e_ptr = ROL::makeShared<vector>(std_vec_->size(),0.0);
-  ROL::SharedPointer<ConStdVector> e = ROL::makeShared<ConStdVector>( e_ptr);
+ROL::Ptr<Vector<Real> > basis( const int i ) const {
+  ROL::Ptr<vector> e_ptr = ROL::makePtr<vector>(std_vec_->size(),0.0);
+  ROL::Ptr<ConStdVector> e = ROL::makePtr<ConStdVector>( e_ptr);
   (*e_ptr)[i] = 1.0;
   return e;
 }
@@ -362,7 +362,7 @@ ROL::SharedPointer<Vector<Real> > basis( const int i ) const {
 int dimension() const {return static_cast<int>(std_vec_->size());}
 
 const Vector<Real> & dual() const {
-  dual_vec_ = ROL::makeShared<ConDualStdVector<Real>>( ROL::makeShared<std::vector<Element>>(*std_vec_) );
+  dual_vec_ = ROL::makePtr<ConDualStdVector<Real>>( ROL::makePtr<std::vector<Element>>(*std_vec_) );
   return *dual_vec_;
 }
 
@@ -378,16 +378,16 @@ class ConDualStdVector : public Vector<Real> {
 
 private:
 
-ROL::SharedPointer<std::vector<Element> >        std_vec_;
-mutable ROL::SharedPointer<ConStdVector<Real> >  dual_vec_;
+ROL::Ptr<std::vector<Element> >        std_vec_;
+mutable ROL::Ptr<ConStdVector<Real> >  dual_vec_;
 
 public:
 
-ConDualStdVector(const ROL::SharedPointer<std::vector<Element> > & std_vec) : std_vec_(std_vec), dual_vec_(ROL::nullPointer) {}
+ConDualStdVector(const ROL::Ptr<std::vector<Element> > & std_vec) : std_vec_(std_vec), dual_vec_(ROL::nullPtr) {}
 
 void plus( const Vector<Real> &x ) {
   const ConDualStdVector &ex = dynamic_cast<const ConDualStdVector&>(x);
-  ROL::SharedPointer<const vector> xvalptr = ex.getVector();
+  ROL::Ptr<const vector> xvalptr = ex.getVector();
   uint dimension  = std_vec_->size();
   for (uint i=0; i<dimension; i++) {
     (*std_vec_)[i] += (*xvalptr)[i];
@@ -404,7 +404,7 @@ void scale( const Real alpha ) {
 Real dot( const Vector<Real> &x ) const {
   Real val = 0;
   const ConDualStdVector<Real, Element> & ex = dynamic_cast<const ConDualStdVector<Real, Element>&>(x);
-  ROL::SharedPointer<const vector> xvalptr = ex.getVector();
+  ROL::Ptr<const vector> xvalptr = ex.getVector();
   uint dimension  = std_vec_->size();
   for (uint i=0; i<dimension; i++) {
     val += (*std_vec_)[i]*(*xvalptr)[i];
@@ -418,21 +418,21 @@ Real norm() const {
   return val;
 }
 
-ROL::SharedPointer<Vector<Real> > clone() const {
-  return ROL::makeShared<ConDualStdVector>( ROL::makeShared<std::vector<Element>>(std_vec_->size()));
+ROL::Ptr<Vector<Real> > clone() const {
+  return ROL::makePtr<ConDualStdVector>( ROL::makePtr<std::vector<Element>>(std_vec_->size()));
 }
 
-ROL::SharedPointer<const std::vector<Element> > getVector() const {
+ROL::Ptr<const std::vector<Element> > getVector() const {
   return std_vec_;
 }
 
-ROL::SharedPointer<std::vector<Element> > getVector() {
+ROL::Ptr<std::vector<Element> > getVector() {
   return std_vec_;
 }
 
-ROL::SharedPointer<Vector<Real> > basis( const int i ) const {
-  ROL::SharedPointer<vector> e_ptr = ROL::makeShared<vector>(std_vec_->size(),0.0);
-  ROL::SharedPointer<ConDualStdVector> e = ROL::makeShared<ConDualStdVector>( e_ptr );
+ROL::Ptr<Vector<Real> > basis( const int i ) const {
+  ROL::Ptr<vector> e_ptr = ROL::makePtr<vector>(std_vec_->size(),0.0);
+  ROL::Ptr<ConDualStdVector> e = ROL::makePtr<ConDualStdVector>( e_ptr );
   (*e_ptr)[i] = 1.0;
   return e;
 }
@@ -440,7 +440,7 @@ ROL::SharedPointer<Vector<Real> > basis( const int i ) const {
 int dimension() const {return static_cast<int>(std_vec_->size());}
 
 const Vector<Real> &  dual() const {
-  dual_vec_ = ROL::makeShared<ConStdVector<Real>>( ROL::makeShared<std::vector<Element>>(*std_vec_) );
+  dual_vec_ = ROL::makePtr<ConStdVector<Real>>( ROL::makePtr<std::vector<Element>>(*std_vec_) );
   return *dual_vec_;
 }
 
@@ -469,9 +469,9 @@ class Objective_GrossPitaevskii : public Objective<Real> {
         Real dx_;     
         
         /*! \var ptr Vp_ Pointer to potential vector  */ 
-        ROL::SharedPointer<const std::vector<Real> > Vp_;    
+        ROL::Ptr<const std::vector<Real> > Vp_;    
 
-        ROL::SharedPointer<FiniteDifference<Real> > fd_;
+        ROL::Ptr<FiniteDifference<Real> > fd_;
 
         //! Apply finite difference operator 
         /*! Compute \f$K\psi\f$, where \f$K\f$ is the finite difference approximation 
@@ -481,10 +481,10 @@ class Objective_GrossPitaevskii : public Objective<Real> {
               
 
             // Pointer to direction vector 
-            ROL::SharedPointer<const vector> vp = dynamic_cast<const XPrim&>(v).getVector();
+            ROL::Ptr<const vector> vp = dynamic_cast<const XPrim&>(v).getVector();
 
             // Pointer to action of Hessian on direction vector 
-            ROL::SharedPointer<vector> kvp = dynamic_cast<XDual&>(kv).getVector();
+            ROL::Ptr<vector> kvp = dynamic_cast<XDual&>(kv).getVector();
 
             Real dx2 = dx_*dx_;
 
@@ -500,7 +500,7 @@ class Objective_GrossPitaevskii : public Objective<Real> {
 
     public: 
 
-        Objective_GrossPitaevskii(const Real &g, const Vector<Real> &V, ROL::SharedPointer<FiniteDifference<Real> > fd) : g_(g),  
+        Objective_GrossPitaevskii(const Real &g, const Vector<Real> &V, ROL::Ptr<FiniteDifference<Real> > fd) : g_(g),  
             Vp_((dynamic_cast<const StdVector<Real>&>(V)).getVector()), fd_(fd)  {
 
             nx_ = Vp_->size(); 
@@ -517,10 +517,10 @@ class Objective_GrossPitaevskii : public Objective<Real> {
             
 
         // Pointer to opt vector 
-        ROL::SharedPointer<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
+        ROL::Ptr<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
 
         // Pointer to K applied to opt vector 
-        ROL::SharedPointer<vector> kpsip = ROL::makeShared<vector>(nx_, 0.0);
+        ROL::Ptr<vector> kpsip = ROL::makePtr<vector>(nx_, 0.0);
         XDual kpsi(kpsip,fd_);
 
         Real J = 0;
@@ -544,13 +544,13 @@ class Objective_GrossPitaevskii : public Objective<Real> {
             
 
         // Pointer to opt vector 
-        ROL::SharedPointer<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
+        ROL::Ptr<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
 
         // Pointer to gradient vector 
-        ROL::SharedPointer<vector> gp = dynamic_cast<XDual&>(g).getVector();
+        ROL::Ptr<vector> gp = dynamic_cast<XDual&>(g).getVector();
 
         // Pointer to K applied to opt vector 
-        ROL::SharedPointer<vector> kpsip = ROL::makeShared<vector>(nx_, 0.0);
+        ROL::Ptr<vector> kpsip = ROL::makePtr<vector>(nx_, 0.0);
         XDual kpsi(kpsip,fd_);
 
         applyK(psi,kpsi);
@@ -570,13 +570,13 @@ class Objective_GrossPitaevskii : public Objective<Real> {
           
 
         // Pointer to opt vector 
-        ROL::SharedPointer<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
+        ROL::Ptr<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
 
         // Pointer to direction vector 
-        ROL::SharedPointer<const vector> vp = dynamic_cast<const XPrim&>(v).getVector();
+        ROL::Ptr<const vector> vp = dynamic_cast<const XPrim&>(v).getVector();
 
         // Pointer to action of Hessian on direction vector 
-        ROL::SharedPointer<vector> hvp = dynamic_cast<XDual&>(hv).getVector();
+        ROL::Ptr<vector> hvp = dynamic_cast<XDual&>(hv).getVector();
 
         applyK(v,hv);
  
@@ -600,11 +600,11 @@ class Normalization_Constraint : public Constraint<Real> {
     private:     
     uint nx_;
     Real dx_;
-    ROL::SharedPointer<FiniteDifference<Real> > fd_;
+    ROL::Ptr<FiniteDifference<Real> > fd_;
     bool exactsolve_; 
 
     public:
-    Normalization_Constraint(int n, Real dx, ROL::SharedPointer<FiniteDifference<Real> > fd, bool exactsolve) : 
+    Normalization_Constraint(int n, Real dx, ROL::Ptr<FiniteDifference<Real> > fd, bool exactsolve) : 
         nx_(n), dx_(dx), fd_(fd), exactsolve_(exactsolve) {}          
 
     //! Evaluate \f$c[\psi]\f$
@@ -617,10 +617,10 @@ class Normalization_Constraint : public Constraint<Real> {
           
 
         // Pointer to constraint vector (only one element)
-        ROL::SharedPointer<vector> cp = dynamic_cast<CPrim&>(c).getVector();
+        ROL::Ptr<vector> cp = dynamic_cast<CPrim&>(c).getVector();
 
         // Pointer to opt vector 
-        ROL::SharedPointer<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
+        ROL::Ptr<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
 
         (*cp)[0] = -1.0;
         for(uint i=0;i<nx_;++i) {
@@ -636,13 +636,13 @@ class Normalization_Constraint : public Constraint<Real> {
           
 
         // Pointer to action of Jacobian of constraint on direction vector (yields scalar)
-        ROL::SharedPointer<vector> jvp = dynamic_cast<CPrim&>(jv).getVector();
+        ROL::Ptr<vector> jvp = dynamic_cast<CPrim&>(jv).getVector();
 
         // Pointer to direction vector     
-        ROL::SharedPointer<const vector> vp = dynamic_cast<const XPrim&>(v).getVector();
+        ROL::Ptr<const vector> vp = dynamic_cast<const XPrim&>(v).getVector();
 
         // Pointer to opt vector 
-        ROL::SharedPointer<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
+        ROL::Ptr<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
      
         (*jvp)[0] = 0;
         for(uint i=0;i<nx_;++i) {
@@ -658,13 +658,13 @@ class Normalization_Constraint : public Constraint<Real> {
           
 
         // Pointer to action of adjoint of Jacobian of constraint on direction vector (yields vector)
-        ROL::SharedPointer<vector> ajvp = dynamic_cast<XDual&>(ajv).getVector();
+        ROL::Ptr<vector> ajvp = dynamic_cast<XDual&>(ajv).getVector();
 
         // Pointer to direction vector     
-        ROL::SharedPointer<const vector> vp = dynamic_cast<const CDual&>(v).getVector();
+        ROL::Ptr<const vector> vp = dynamic_cast<const CDual&>(v).getVector();
  
         // Pointer to opt vector 
-        ROL::SharedPointer<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
+        ROL::Ptr<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
 
         for(uint i=0;i<nx_;++i) {
             (*ajvp)[i] = 2.0*dx_*(*psip)[i]*(*vp)[0];
@@ -682,16 +682,16 @@ class Normalization_Constraint : public Constraint<Real> {
           
 
         // The pointer to action of constraint Hessian in u,v inner product
-        ROL::SharedPointer<vector> ahuvp = dynamic_cast<XDual&>(ahuv).getVector();
+        ROL::Ptr<vector> ahuvp = dynamic_cast<XDual&>(ahuv).getVector();
 
         // Pointer to direction vector u     
-        ROL::SharedPointer<const vector> up = dynamic_cast<const CDual&>(u).getVector();
+        ROL::Ptr<const vector> up = dynamic_cast<const CDual&>(u).getVector();
 
         // Pointer to direction vector v     
-        ROL::SharedPointer<const vector> vp = dynamic_cast<const XPrim&>(v).getVector();
+        ROL::Ptr<const vector> vp = dynamic_cast<const XPrim&>(v).getVector();
 
         // Pointer to opt vector 
-        ROL::SharedPointer<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
+        ROL::Ptr<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
   
         for(uint i=0;i<nx_;++i) {
             (*ahuvp)[i] = 2.0*dx_*(*vp)[i]*(*up)[0];        
@@ -709,14 +709,14 @@ class Normalization_Constraint : public Constraint<Real> {
             
 
         if(exactsolve_) {
-	    ROL::SharedPointer<vector> v1p = dynamic_cast<XPrim&>(v1).getVector();    
-	    ROL::SharedPointer<vector> v2p = dynamic_cast<CDual&>(v2).getVector();
-	    ROL::SharedPointer<const vector> b1p = dynamic_cast<const XDual&>(b1).getVector();
-	    ROL::SharedPointer<const vector> b2p = dynamic_cast<const CPrim&>(b2).getVector();
-	    ROL::SharedPointer<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
+	    ROL::Ptr<vector> v1p = dynamic_cast<XPrim&>(v1).getVector();    
+	    ROL::Ptr<vector> v2p = dynamic_cast<CDual&>(v2).getVector();
+	    ROL::Ptr<const vector> b1p = dynamic_cast<const XDual&>(b1).getVector();
+	    ROL::Ptr<const vector> b2p = dynamic_cast<const CPrim&>(b2).getVector();
+	    ROL::Ptr<const vector> psip = dynamic_cast<const XPrim&>(psi).getVector();
 	
-	    ROL::SharedPointer<vector> jacp = ROL::makeShared<vector>(nx_, 0.0);
-	    ROL::SharedPointer<vector> b1dp = ROL::makeShared<vector>(nx_, 0.0);
+	    ROL::Ptr<vector> jacp = ROL::makePtr<vector>(nx_, 0.0);
+	    ROL::Ptr<vector> b1dp = ROL::makePtr<vector>(nx_, 0.0);
 
 	    for(uint i=0;i<nx_;++i) {
 		(*jacp)[i] = (*psip)[i];

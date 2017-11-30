@@ -108,10 +108,10 @@ class ObjectiveFromBoundConstraint : public Objective<Real> {
   }
 
 private:
-  const ROL::SharedPointer<const V> lo_;
-  const ROL::SharedPointer<const V> up_;
-  ROL::SharedPointer<V> a_;     // scratch vector
-  ROL::SharedPointer<V> b_;     // scratch vector
+  const ROL::Ptr<const V> lo_;
+  const ROL::Ptr<const V> up_;
+  ROL::Ptr<V> a_;     // scratch vector
+  ROL::Ptr<V> b_;     // scratch vector
   EBarrierType    btype_;
   bool isLowerActivated_;
   bool isUpperActivated_;
@@ -149,7 +149,7 @@ public:
   Real value( const Vector<Real> &x, Real &tol ) {
     const Real zero(0), one(1), two(2);
 
-    ROL::SharedPointer<UnaryFunction> func;
+    ROL::Ptr<UnaryFunction> func;
 
     a_->zero(); b_->zero();
     switch(btype_) {
@@ -396,7 +396,7 @@ public:
   }
 
   // For testing purposes
-  ROL::SharedPointer<Vector<Real> > getBarrierVector(void) {
+  ROL::Ptr<Vector<Real> > getBarrierVector(void) {
     return b_;
   }
 

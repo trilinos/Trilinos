@@ -61,12 +61,12 @@ template <class Real>
 class EpetraMultiVector : public Vector<Real> {
 private:
 
-  ROL::SharedPointer<Epetra_MultiVector>  epetra_vec_;
+  ROL::Ptr<Epetra_MultiVector>  epetra_vec_;
 
 public:
   virtual ~EpetraMultiVector() {}
 
-  EpetraMultiVector(const ROL::SharedPointer<Epetra_MultiVector> & epetra_vec) : epetra_vec_(epetra_vec) {}
+  EpetraMultiVector(const ROL::Ptr<Epetra_MultiVector> & epetra_vec) : epetra_vec_(epetra_vec) {}
 
   /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
   */
@@ -100,9 +100,9 @@ public:
 
   /** \brief Clone to make a new (uninitialized) vector.
   */
-  ROL::SharedPointer<Vector<Real> > clone() const{
-    return ROL::makeShared<EpetraMultiVector>( 
-  	     ROL::makeShared<Epetra_MultiVector>(epetra_vec_->Map(),epetra_vec_->NumVectors(),false) );
+  ROL::Ptr<Vector<Real> > clone() const{
+    return ROL::makePtr<EpetraMultiVector>( 
+  	     ROL::makePtr<Epetra_MultiVector>(epetra_vec_->Map(),epetra_vec_->NumVectors(),false) );
   }
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
@@ -129,17 +129,17 @@ public:
     epetra_vec_->Scale(1.0,*ex.getVector());
   }
 
-  ROL::SharedPointer<const Epetra_MultiVector> getVector() const {
+  ROL::Ptr<const Epetra_MultiVector> getVector() const {
     return this->epetra_vec_;
   }
 
-  ROL::SharedPointer<Epetra_MultiVector> getVector() {
+  ROL::Ptr<Epetra_MultiVector> getVector() {
     return this->epetra_vec_;
   }
 
-  ROL::SharedPointer<Vector<Real> > basis( const int i ) const {
-    ROL::SharedPointer<EpetraMultiVector> e = 
-    ROL::makeShared<EpetraMultiVector>( ROL::makeShared<Epetra_MultiVector>(epetra_vec_->Map(),epetra_vec_->NumVectors(),true));
+  ROL::Ptr<Vector<Real> > basis( const int i ) const {
+    ROL::Ptr<EpetraMultiVector> e = 
+    ROL::makePtr<EpetraMultiVector>( ROL::makePtr<Epetra_MultiVector>(epetra_vec_->Map(),epetra_vec_->NumVectors(),true));
     const Epetra_BlockMap & domainMap = e->getVector()->Map();
 
     Epetra_Map linearMap(domainMap.NumGlobalElements(), domainMap.NumMyElements(), 0, domainMap.Comm());

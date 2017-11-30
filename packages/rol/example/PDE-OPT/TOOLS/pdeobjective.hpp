@@ -58,57 +58,57 @@ extern template class Assembler<double>;
 template <class Real>
 class PDE_Objective : public ROL::Objective_SimOpt<Real> {
 private:
-  std::vector<ROL::SharedPointer<QoI<Real> > > qoi_vec_;
-  const ROL::SharedPointer<ROL::StdObjective<Real> > std_obj_;
-  const ROL::SharedPointer<Assembler<Real> > assembler_;
+  std::vector<ROL::Ptr<QoI<Real> > > qoi_vec_;
+  const ROL::Ptr<ROL::StdObjective<Real> > std_obj_;
+  const ROL::Ptr<Assembler<Real> > assembler_;
 
-  std::vector<ROL::SharedPointer<ROL::Objective_SimOpt<Real> > > obj_vec_;
-  ROL::SharedPointer<ROL::Objective_SimOpt<Real> > obj_;
+  std::vector<ROL::Ptr<ROL::Objective_SimOpt<Real> > > obj_vec_;
+  ROL::Ptr<ROL::Objective_SimOpt<Real> > obj_;
 
 public:
-  PDE_Objective(const std::vector<ROL::SharedPointer<QoI<Real> > > &qoi_vec,
-                const ROL::SharedPointer<ROL::StdObjective<Real> > &std_obj,
-                const ROL::SharedPointer<Assembler<Real> > &assembler)
+  PDE_Objective(const std::vector<ROL::Ptr<QoI<Real> > > &qoi_vec,
+                const ROL::Ptr<ROL::StdObjective<Real> > &std_obj,
+                const ROL::Ptr<Assembler<Real> > &assembler)
     : qoi_vec_(qoi_vec), std_obj_(std_obj), assembler_(assembler) {
     int size = qoi_vec_.size();
-    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPointer);
+    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPtr);
     for (int i = 0; i < size; ++i) {
-      obj_vec_[i] = ROL::makeShared<IntegralObjective<Real>>(qoi_vec[i],assembler);
+      obj_vec_[i] = ROL::makePtr<IntegralObjective<Real>>(qoi_vec[i],assembler);
     }
-    obj_ = ROL::makeShared<ROL::CompositeObjective_SimOpt<Real>>(obj_vec_,std_obj_);
+    obj_ = ROL::makePtr<ROL::CompositeObjective_SimOpt<Real>>(obj_vec_,std_obj_);
   }
 
-  PDE_Objective(const std::vector<ROL::SharedPointer<QoI<Real> > > &qoi_vec,
-                const ROL::SharedPointer<Assembler<Real> > &assembler)
-    : qoi_vec_(qoi_vec), std_obj_(ROL::nullPointer), assembler_(assembler) {
+  PDE_Objective(const std::vector<ROL::Ptr<QoI<Real> > > &qoi_vec,
+                const ROL::Ptr<Assembler<Real> > &assembler)
+    : qoi_vec_(qoi_vec), std_obj_(ROL::nullPtr), assembler_(assembler) {
     int size = qoi_vec_.size();
-    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPointer);
+    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPtr);
     for (int i = 0; i < size; ++i) {
-      obj_vec_[i] = ROL::makeShared<IntegralObjective<Real>>(qoi_vec[i],assembler);
+      obj_vec_[i] = ROL::makePtr<IntegralObjective<Real>>(qoi_vec[i],assembler);
     }
-    obj_ = ROL::makeShared<ROL::LinearCombinationObjective_SimOpt<Real>>(obj_vec_);
+    obj_ = ROL::makePtr<ROL::LinearCombinationObjective_SimOpt<Real>>(obj_vec_);
   }
 
-  PDE_Objective(const std::vector<ROL::SharedPointer<QoI<Real> > > &qoi_vec,
+  PDE_Objective(const std::vector<ROL::Ptr<QoI<Real> > > &qoi_vec,
                 const std::vector<Real> &weights,
-                const ROL::SharedPointer<Assembler<Real> > &assembler)
-    : qoi_vec_(qoi_vec), std_obj_(ROL::nullPointer), assembler_(assembler) {
+                const ROL::Ptr<Assembler<Real> > &assembler)
+    : qoi_vec_(qoi_vec), std_obj_(ROL::nullPtr), assembler_(assembler) {
     int size = qoi_vec_.size();
-    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPointer);
+    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPtr);
     for (int i = 0; i < size; ++i) {
-      obj_vec_[i] = ROL::makeShared<IntegralObjective<Real>>(qoi_vec[i],assembler);
+      obj_vec_[i] = ROL::makePtr<IntegralObjective<Real>>(qoi_vec[i],assembler);
     }
-    obj_ = ROL::makeShared<ROL::LinearCombinationObjective_SimOpt<Real>>(weights,obj_vec_);
+    obj_ = ROL::makePtr<ROL::LinearCombinationObjective_SimOpt<Real>>(weights,obj_vec_);
   }
 
-  PDE_Objective(const ROL::SharedPointer<QoI<Real> > &qoi,
-                const ROL::SharedPointer<Assembler<Real> > &assembler)
-    : std_obj_(ROL::nullPointer), assembler_(assembler) {
+  PDE_Objective(const ROL::Ptr<QoI<Real> > &qoi,
+                const ROL::Ptr<Assembler<Real> > &assembler)
+    : std_obj_(ROL::nullPtr), assembler_(assembler) {
     int size = 1;
-    qoi_vec_.clear(); qoi_vec_.resize(size,ROL::nullPointer);
-    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPointer);
+    qoi_vec_.clear(); qoi_vec_.resize(size,ROL::nullPtr);
+    obj_vec_.clear(); obj_vec_.resize(size,ROL::nullPtr);
     qoi_vec_[0] = qoi;
-    obj_vec_[0] = ROL::makeShared<IntegralObjective<Real>>(qoi_vec_[0],assembler);
+    obj_vec_[0] = ROL::makePtr<IntegralObjective<Real>>(qoi_vec_[0],assembler);
     obj_ = obj_vec_[0];
   }
 

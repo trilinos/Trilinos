@@ -78,12 +78,12 @@ int main(int argc, char **argv) {
 
     // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
     int iprint     = argc - 1;
-    ROL::SharedPointer<std::ostream> outStream;
+    ROL::Ptr<std::ostream> outStream;
     Teuchos::oblackholestream bhs; // outputs nothing
     if (iprint > 0)
-        outStream = ROL::makeSharedFromRef(std::cout);
+        outStream = ROL::makePtrFromRef(std::cout);
     else
-        outStream = ROL::makeSharedFromRef(bhs);
+        outStream = ROL::makePtrFromRef(bhs);
 
     int errorFlag = 0;
 
@@ -100,14 +100,14 @@ int main(int argc, char **argv) {
     RealT dx = 1.0/(nx+1);
 
     // Pointer to linspace type vector \f$x_i = \frac{i+1}{n_x+1}\f$ where \f$i=0,\hdots,n_x\f$
-    ROL::SharedPointer<std::vector<RealT> > xi_ptr = ROL::makeShared<std::vector<RealT>>(nx, 0.0);
+    ROL::Ptr<std::vector<RealT> > xi_ptr = ROL::makePtr<std::vector<RealT>>(nx, 0.0);
     
     for(int i=0; i<nx; ++i) {
         (*xi_ptr)[i] = RealT(i+1)/(nx+1);
     }
     
     // Pointer to potential vector (quadratic centered at x=0.5)
-    ROL::SharedPointer<std::vector<RealT> > V_ptr = ROL::makeShared<std::vector<RealT>>(nx, 0.0);
+    ROL::Ptr<std::vector<RealT> > V_ptr = ROL::makePtr<std::vector<RealT>>(nx, 0.0);
     for(int i=0; i<nx; ++i) {
        (*V_ptr)[i] = 100.0*pow((*xi_ptr)[i]-0.5,2);
     }
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
     StdVector<RealT> V(V_ptr);
         
     // Iteration Vector (pointer to optimzation vector)
-    ROL::SharedPointer<std::vector<RealT> > psi_ptr = ROL::makeShared<std::vector<RealT>>(nx, 0.0);
+    ROL::Ptr<std::vector<RealT> > psi_ptr = ROL::makePtr<std::vector<RealT>>(nx, 0.0);
 
        
     // Set Initial Guess (normalized)
@@ -128,15 +128,15 @@ int main(int argc, char **argv) {
     StdVector<RealT> psi(psi_ptr);
 
     // Constraint value (scalar)  
-    ROL::SharedPointer<std::vector<RealT> > c_ptr = ROL::makeShared<std::vector<RealT>>(1, 0.0);
+    ROL::Ptr<std::vector<RealT> > c_ptr = ROL::makePtr<std::vector<RealT>>(1, 0.0);
     StdVector<RealT> c(c_ptr);
 
     // Lagrange multiplier value (scalar)   
-    ROL::SharedPointer<std::vector<RealT> > lam_ptr = ROL::makeShared<std::vector<RealT>>(1, 0.0);
+    ROL::Ptr<std::vector<RealT> > lam_ptr = ROL::makePtr<std::vector<RealT>>(1, 0.0);
     StdVector<RealT> lam(lam_ptr);
 
     // Gradient   
-    ROL::SharedPointer<std::vector<RealT> > g_ptr = ROL::makeShared<std::vector<RealT>>(nx, 0.0);
+    ROL::Ptr<std::vector<RealT> > g_ptr = ROL::makePtr<std::vector<RealT>>(nx, 0.0);
     StdVector<RealT> g(g_ptr);
 
     // Instantiate objective function  

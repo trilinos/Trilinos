@@ -104,19 +104,19 @@ public:
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -130,51 +130,51 @@ int main(int argc, char *argv[]) {
 
     /*** Initialize main data structure. ***/
     int probDim = parlist->sublist("Problem").get("Problem Dimension",2);
-    ROL::SharedPointer<MeshManager<RealT> > meshMgr;
+    ROL::Ptr<MeshManager<RealT> > meshMgr;
     if (probDim == 1) {
-      meshMgr = ROL::makeShared<MeshManager_Interval<RealT>>(*parlist);
+      meshMgr = ROL::makePtr<MeshManager_Interval<RealT>>(*parlist);
     } else if (probDim == 2) {
-      meshMgr = ROL::makeShared<MeshManager_Rectangle<RealT>>(*parlist);
+      meshMgr = ROL::makePtr<MeshManager_Rectangle<RealT>>(*parlist);
     } else if (probDim == 3) {
-      meshMgr = ROL::makeShared<MeshReader<RealT>>(*parlist);
+      meshMgr = ROL::makePtr<MeshReader<RealT>>(*parlist);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
         ">>> PDE-OPT/poisson/example_01.cpp: Problem dim is not 1, 2 or 3!");
     }
     // Initialize PDE describe Poisson's equation
-    ROL::SharedPointer<PDE_Poisson<RealT> > pde
-      = ROL::makeShared<PDE_Poisson<RealT>>(*parlist);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > con
-      = ROL::makeShared<Linear_PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
+    ROL::Ptr<PDE_Poisson<RealT> > pde
+      = ROL::makePtr<PDE_Poisson<RealT>>(*parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
+      = ROL::makePtr<Linear_PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
     // Cast the constraint and get the assembler.
-    ROL::SharedPointer<Linear_PDE_Constraint<RealT> > pdecon
-      = ROL::dynamicPointerCast<Linear_PDE_Constraint<RealT> >(con);
-    ROL::SharedPointer<Assembler<RealT> > assembler = pdecon->getAssembler();
+    ROL::Ptr<Linear_PDE_Constraint<RealT> > pdecon
+      = ROL::dynamicPtrCast<Linear_PDE_Constraint<RealT> >(con);
+    ROL::Ptr<Assembler<RealT> > assembler = pdecon->getAssembler();
     // Initialize quadratic objective function
-    std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_L2Tracking_Poisson<RealT>>(pde->getFE());
-    qoi_vec[1] = ROL::makeShared<QoI_L2Penalty_Poisson<RealT>>(pde->getFE());
+    std::vector<ROL::Ptr<QoI<RealT> > > qoi_vec(2,ROL::nullPtr);
+    qoi_vec[0] = ROL::makePtr<QoI_L2Tracking_Poisson<RealT>>(pde->getFE());
+    qoi_vec[1] = ROL::makePtr<QoI_L2Penalty_Poisson<RealT>>(pde->getFE());
     RealT alpha = parlist->sublist("Problem").get("Control penalty parameter",1e-2);
     std::vector<RealT> wt(2); wt[0] = static_cast<RealT>(1); wt[1] = alpha;
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj
-      = ROL::makeShared<PDE_Objective<RealT>>(qoi_vec,wt,assembler);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj
+      = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,wt,assembler);
 
     // Create state vector and set to zeroes
-    ROL::SharedPointer<Tpetra::MultiVector<> > u_ptr, z_ptr, p_ptr, r_ptr;
-    ROL::SharedPointer<ROL::Vector<RealT> > up, zp, pp, rp;
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr, z_ptr, p_ptr, r_ptr;
+    ROL::Ptr<ROL::Vector<RealT> > up, zp, pp, rp;
     u_ptr  = assembler->createStateVector();   u_ptr->putScalar(0.0);
     z_ptr  = assembler->createControlVector(); z_ptr->putScalar(0.0);
     p_ptr  = assembler->createStateVector();   p_ptr->putScalar(0.0);
     r_ptr  = assembler->createStateVector();   r_ptr->putScalar(0.0);
-    up  = ROL::makeShared<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
-    zp  = ROL::makeShared<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler);
-    pp  = ROL::makeShared<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler);
-    rp  = ROL::makeShared<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler);
+    up  = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
+    zp  = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler);
+    pp  = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler);
+    rp  = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler);
 
     // Initialize reduced objective function
-    ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > robj
-      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp);
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > robj
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp);
 
     // Build optimization problem and check derivatives
     ROL::OptimizationProblem<RealT> optProb(robj,zp);
@@ -192,12 +192,12 @@ int main(int argc, char *argv[]) {
     // Compute solution error
     RealT tol(1.e-8);
     con->solve(*rp,*up,*zp,tol);
-    ROL::SharedPointer<Solution<RealT> > usol
-      = ROL::makeShared<stateSolution<RealT>>();
+    ROL::Ptr<Solution<RealT> > usol
+      = ROL::makePtr<stateSolution<RealT>>();
     RealT uerr = assembler->computeStateError(u_ptr,usol);
     *outStream << "State Error: " << uerr << std::endl;
-    ROL::SharedPointer<Solution<RealT> > zsol
-      = ROL::makeShared<controlSolution<RealT>>(alpha);
+    ROL::Ptr<Solution<RealT> > zsol
+      = ROL::makePtr<controlSolution<RealT>>(alpha);
     RealT zerr = assembler->computeControlError(z_ptr,zsol);
     *outStream << "Control Error: " << zerr << std::endl;
 

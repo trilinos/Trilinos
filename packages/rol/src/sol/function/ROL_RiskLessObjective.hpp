@@ -52,49 +52,49 @@ namespace ROL {
 template<class Real>
 class RiskLessObjective : public Objective<Real> {
 private:
-  const ROL::SharedPointer<Objective<Real> > obj_;
+  const ROL::Ptr<Objective<Real> > obj_;
 
 public:
-  RiskLessObjective(const ROL::SharedPointer<Objective<Real> > &obj) : obj_(obj) {}
+  RiskLessObjective(const ROL::Ptr<Objective<Real> > &obj) : obj_(obj) {}
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    ROL::SharedPointer<const Vector<Real> > x0
+    ROL::Ptr<const Vector<Real> > x0
       = dynamic_cast<const RiskVector<Real>&>(x).getVector();
     obj_->update(*x0,flag,iter);
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<const Vector<Real> > x0
+    ROL::Ptr<const Vector<Real> > x0
       = dynamic_cast<const RiskVector<Real>&>(x).getVector();
     return obj_->value(*x0,tol);
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<Vector<Real> > g0
+    ROL::Ptr<Vector<Real> > g0
       = dynamic_cast<RiskVector<Real>&>(g).getVector();
-    ROL::SharedPointer<const Vector<Real> > x0
+    ROL::Ptr<const Vector<Real> > x0
       = dynamic_cast<const RiskVector<Real>&>(x).getVector();
     obj_->gradient(*g0,*x0,tol);
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v,
                 const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<Vector<Real> > hv0
+    ROL::Ptr<Vector<Real> > hv0
       = dynamic_cast<RiskVector<Real>&>(hv).getVector();
-    ROL::SharedPointer<const Vector<Real> > v0
+    ROL::Ptr<const Vector<Real> > v0
       = dynamic_cast<const RiskVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const Vector<Real> > x0
+    ROL::Ptr<const Vector<Real> > x0
       = dynamic_cast<const RiskVector<Real>&>(x).getVector();
     obj_->hessVec(*hv0,*v0,*x0,tol);
   }
 
   void precond( Vector<Real> &Pv, const Vector<Real> &v,
                 const Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<Vector<Real> > Pv0
+    ROL::Ptr<Vector<Real> > Pv0
       = dynamic_cast<RiskVector<Real>&>(Pv).getVector();
-    ROL::SharedPointer<const Vector<Real> > v0
+    ROL::Ptr<const Vector<Real> > v0
       = dynamic_cast<const RiskVector<Real>&>(v).getVector();
-    ROL::SharedPointer<const Vector<Real> > x0
+    ROL::Ptr<const Vector<Real> > x0
       = dynamic_cast<const RiskVector<Real>&>(x).getVector();
     obj_->precond(*Pv0,*v0,*x0,tol);
   }

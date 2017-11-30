@@ -100,8 +100,8 @@ template <class Real>
 class Constraint_SimOpt : public Constraint<Real> {
 private:
   // Additional vector storage for solve
-  ROL::SharedPointer<Vector<Real> > unew_;
-  ROL::SharedPointer<Vector<Real> > jv_;
+  ROL::Ptr<Vector<Real> > unew_;
+  ROL::Ptr<Vector<Real> > jv_;
 
   // Default parameters for solve (backtracking Newton)
   const Real DEFAULT_atol_;
@@ -131,7 +131,7 @@ private:
 public:
   Constraint_SimOpt()
     : Constraint<Real>(),
-      unew_(ROL::nullPointer), jv_(ROL::nullPointer),
+      unew_(ROL::nullPtr), jv_(ROL::nullPtr),
       DEFAULT_atol_(1.e-4*std::sqrt(ROL_EPSILON<Real>())),
       DEFAULT_rtol_(1.e0),
       DEFAULT_stol_(std::sqrt(ROL_EPSILON<Real>())),
@@ -266,31 +266,31 @@ public:
       }
     }
     if (solverType_==1 || (solverType_==3 && cnorm > ctol)) {
-      ROL::SharedPointer<Constraint_SimOpt<Real> > con = ROL::makeSharedFromRef(*this);
-      ROL::SharedPointer<Objective<Real> > obj = ROL::makeShared<NonlinearLeastSquaresObjective_SimOpt<Real>>(con,u,z,c,true);
+      ROL::Ptr<Constraint_SimOpt<Real> > con = ROL::makePtrFromRef(*this);
+      ROL::Ptr<Objective<Real> > obj = ROL::makePtr<NonlinearLeastSquaresObjective_SimOpt<Real>>(con,u,z,c,true);
       Teuchos::ParameterList parlist;
       parlist.sublist("Status Test").set("Gradient Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
       parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       parlist.sublist("General").sublist("Krylov").set("Iteration Limit",100);
-      ROL::SharedPointer<Algorithm<Real> > algo = ROL::makeShared<Algorithm<Real>>("Trust Region",parlist,false);
+      ROL::Ptr<Algorithm<Real> > algo = ROL::makePtr<Algorithm<Real>>("Trust Region",parlist,false);
       algo->run(u,*obj,print_);
       value(c,u,z,tol);
     }
     if (solverType_==2 || (solverType_==4 && cnorm > ctol)) {
-      ROL::SharedPointer<Constraint_SimOpt<Real> > con = ROL::makeSharedFromRef(*this);
-      ROL::SharedPointer<const Vector<Real> > zVec = ROL::makeSharedFromRef(z);
-      ROL::SharedPointer<Constraint<Real> > conU
-        = ROL::makeShared<Constraint_State<Real>>(con,zVec);
-      ROL::SharedPointer<Objective<Real> > objU
-        = ROL::makeShared<Objective_FSsolver<Real>>();
+      ROL::Ptr<Constraint_SimOpt<Real> > con = ROL::makePtrFromRef(*this);
+      ROL::Ptr<const Vector<Real> > zVec = ROL::makePtrFromRef(z);
+      ROL::Ptr<Constraint<Real> > conU
+        = ROL::makePtr<Constraint_State<Real>>(con,zVec);
+      ROL::Ptr<Objective<Real> > objU
+        = ROL::makePtr<Objective_FSsolver<Real>>();
       Teuchos::ParameterList parlist;
       parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
-      ROL::SharedPointer<Algorithm<Real> > algo = ROL::makeShared<Algorithm<Real>>("Composite Step",parlist,false);
-      ROL::SharedPointer<Vector<Real> > l = c.dual().clone();
+      ROL::Ptr<Algorithm<Real> > algo = ROL::makePtr<Algorithm<Real>>("Composite Step",parlist,false);
+      ROL::Ptr<Vector<Real> > l = c.dual().clone();
       algo->run(u,*l,*objU,*conU,print_);
       value(c,u,z,tol);
     }
@@ -360,14 +360,14 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Update state vector to u + hv
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
     unew->set(u);
     unew->axpy(h,v);
     // Compute new constraint value
     update(*unew,z);
     value(jv,*unew,z,ctol);
     // Compute current constraint value
-    ROL::SharedPointer<Vector<Real> > cold = jv.clone();
+    ROL::Ptr<Vector<Real> > cold = jv.clone();
     update(u,z);
     value(*cold,u,z,ctol);
     // Compute Newton quotient
@@ -403,14 +403,14 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Update state vector to u + hv
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
     znew->set(z);
     znew->axpy(h,v);
     // Compute new constraint value
     update(u,*znew);
     value(jv,u,*znew,ctol);
     // Compute current constraint value
-    ROL::SharedPointer<Vector<Real> > cold = jv.clone();
+    ROL::Ptr<Vector<Real> > cold = jv.clone();
     update(u,z);
     value(*cold,u,z,ctol);
     // Compute Newton quotient
@@ -494,11 +494,11 @@ public:
     if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
-    ROL::SharedPointer<Vector<Real> > cold = dualv.clone();
-    ROL::SharedPointer<Vector<Real> > cnew = dualv.clone();
+    ROL::Ptr<Vector<Real> > cold = dualv.clone();
+    ROL::Ptr<Vector<Real> > cnew = dualv.clone();
     update(u,z);
     value(*cold,u,z,ctol);
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
     ajv.zero();
     for (int i = 0; i < u.dimension(); i++) {
       unew->set(u);
@@ -565,11 +565,11 @@ public:
     if (v.norm() > std::sqrt(ROL_EPSILON<Real>())) {
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
-    ROL::SharedPointer<Vector<Real> > cold = dualv.clone();
-    ROL::SharedPointer<Vector<Real> > cnew = dualv.clone();
+    ROL::Ptr<Vector<Real> > cold = dualv.clone();
+    ROL::Ptr<Vector<Real> > cnew = dualv.clone();
     update(u,z);
     value(*cold,u,z,ctol);
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
     ajv.zero();
     for (int i = 0; i < z.dimension(); i++) {
       znew->set(z);
@@ -637,13 +637,13 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new state
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
     unew->set(u);
     unew->axpy(h,v);
     update(*unew,z);
     applyAdjointJacobian_1(ahwv,w,*unew,z,jtol);
     // Evaluate Jacobian at old state
-    ROL::SharedPointer<Vector<Real> > jv = ahwv.clone();
+    ROL::Ptr<Vector<Real> > jv = ahwv.clone();
     update(u,z);
     applyAdjointJacobian_1(*jv,w,u,z,jtol);
     // Compute Newton quotient
@@ -682,13 +682,13 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new state
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
     unew->set(u);
     unew->axpy(h,v);
     update(*unew,z);
     applyAdjointJacobian_2(ahwv,w,*unew,z,jtol);
     // Evaluate Jacobian at old state
-    ROL::SharedPointer<Vector<Real> > jv = ahwv.clone();
+    ROL::Ptr<Vector<Real> > jv = ahwv.clone();
     update(u,z);
     applyAdjointJacobian_2(*jv,w,u,z,jtol);
     // Compute Newton quotient
@@ -727,13 +727,13 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new control
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
     znew->set(z);
     znew->axpy(h,v);
     update(u,*znew);
     applyAdjointJacobian_1(ahwv,w,u,*znew,jtol);
     // Evaluate Jacobian at old control
-    ROL::SharedPointer<Vector<Real> > jv = ahwv.clone();
+    ROL::Ptr<Vector<Real> > jv = ahwv.clone();
     update(u,z);
     applyAdjointJacobian_1(*jv,w,u,z,jtol);
     // Compute Newton quotient
@@ -771,13 +771,13 @@ public:
       h = std::max(1.0,u.norm()/v.norm())*tol;
     }
     // Evaluate Jacobian at new control
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
     znew->set(z);
     znew->axpy(h,v);
     update(u,*znew);
     applyAdjointJacobian_2(ahwv,w,u,*znew,jtol);
     // Evaluate Jacobian at old control
-    ROL::SharedPointer<Vector<Real> > jv = ahwv.clone();
+    ROL::Ptr<Vector<Real> > jv = ahwv.clone();
     update(u,z);
     applyAdjointJacobian_2(*jv,w,u,z,jtol);
     // Compute Newton quotient
@@ -857,7 +857,7 @@ public:
                                    const Vector<Real> &g,
                                    Real &tol) {
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(x);
-    ROL::SharedPointer<ROL::Vector<Real> > ijv = (xs.get_1())->clone();
+    ROL::Ptr<ROL::Vector<Real> > ijv = (xs.get_1())->clone();
 
     try {
       applyInverseJacobian_1(*ijv, v, *(xs.get_1()), *(xs.get_2()), tol);
@@ -868,7 +868,7 @@ public:
     }
 
     const Vector_SimOpt<Real> &gs = dynamic_cast<const Vector_SimOpt<Real>&>(g);
-    ROL::SharedPointer<ROL::Vector<Real> > ijv_dual = (gs.get_1())->clone();
+    ROL::Ptr<ROL::Vector<Real> > ijv_dual = (gs.get_1())->clone();
     ijv_dual->set(ijv->dual());
 
     try {
@@ -910,7 +910,7 @@ public:
     const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(
       dynamic_cast<const Vector<Real>&>(v));
     applyJacobian_1(jv,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
-    ROL::SharedPointer<Vector<Real> > jv2 = jv.clone();
+    ROL::Ptr<Vector<Real> > jv2 = jv.clone();
     applyJacobian_2(*jv2,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
     jv.plus(*jv2);
   }
@@ -924,10 +924,10 @@ public:
       dynamic_cast<Vector<Real>&>(ajv));
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
       dynamic_cast<const Vector<Real>&>(x));
-    ROL::SharedPointer<Vector<Real> > ajv1 = (ajvs.get_1())->clone();
+    ROL::Ptr<Vector<Real> > ajv1 = (ajvs.get_1())->clone();
     applyAdjointJacobian_1(*ajv1,v,*(xs.get_1()),*(xs.get_2()),tol);
     ajvs.set_1(*ajv1);
-    ROL::SharedPointer<Vector<Real> > ajv2 = (ajvs.get_2())->clone();
+    ROL::Ptr<Vector<Real> > ajv2 = (ajvs.get_2())->clone();
     applyAdjointJacobian_2(*ajv2,v,*(xs.get_1()),*(xs.get_2()),tol);
     ajvs.set_2(*ajv2);
   }
@@ -945,15 +945,15 @@ public:
     const Vector_SimOpt<Real> &vs = dynamic_cast<const Vector_SimOpt<Real>&>(
       dynamic_cast<const Vector<Real>&>(v));
     // Block-row 1
-    ROL::SharedPointer<Vector<Real> > C11 = (ahwvs.get_1())->clone();
-    ROL::SharedPointer<Vector<Real> > C21 = (ahwvs.get_1())->clone();
+    ROL::Ptr<Vector<Real> > C11 = (ahwvs.get_1())->clone();
+    ROL::Ptr<Vector<Real> > C21 = (ahwvs.get_1())->clone();
     applyAdjointHessian_11(*C11,w,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
     applyAdjointHessian_21(*C21,w,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
     C11->plus(*C21);
     ahwvs.set_1(*C11); 
     // Block-row 2
-    ROL::SharedPointer<Vector<Real> > C12 = (ahwvs.get_2())->clone();
-    ROL::SharedPointer<Vector<Real> > C22 = (ahwvs.get_2())->clone();
+    ROL::Ptr<Vector<Real> > C12 = (ahwvs.get_2())->clone();
+    ROL::Ptr<Vector<Real> > C22 = (ahwvs.get_2())->clone();
     applyAdjointHessian_12(*C12,w,*(vs.get_1()),*(xs.get_1()),*(xs.get_2()),tol);
     applyAdjointHessian_22(*C22,w,*(vs.get_2()),*(xs.get_1()),*(xs.get_2()),tol);
     C22->plus(*C12);
@@ -969,11 +969,11 @@ public:
                           std::ostream & outStream = std::cout) {
     // Solve constraint for u. 
     Real tol = ROL_EPSILON<Real>();
-    ROL::SharedPointer<ROL::Vector<Real> > r = c.clone();
-    ROL::SharedPointer<ROL::Vector<Real> > s = u.clone();
+    ROL::Ptr<ROL::Vector<Real> > r = c.clone();
+    ROL::Ptr<ROL::Vector<Real> > s = u.clone();
     solve(*r,*s,z,tol);
     // Evaluate constraint residual at (u,z).
-    ROL::SharedPointer<ROL::Vector<Real> > cs = c.clone();
+    ROL::Ptr<ROL::Vector<Real> > cs = c.clone();
     update(*s,z);
     value(*cs,*s,z,tol);
     // Output norm of residual.
@@ -1037,11 +1037,11 @@ public:
                                                  const bool printToStream = true,
                                                  std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON<Real>();
-    ROL::SharedPointer<Vector<Real> > Jv = dualw.clone();
+    ROL::Ptr<Vector<Real> > Jv = dualw.clone();
     update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
     Real wJv = w.dot(Jv->dual());
-    ROL::SharedPointer<Vector<Real> > Jw = dualv.clone();
+    ROL::Ptr<Vector<Real> > Jw = dualv.clone();
     update(u,z);
     applyAdjointJacobian_1(*Jw,w,u,z,tol);
     Real vJw = v.dot(Jw->dual());
@@ -1104,11 +1104,11 @@ public:
                                                  const bool printToStream = true,
                                                  std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON<Real>();
-    ROL::SharedPointer<Vector<Real> > Jv = dualw.clone();
+    ROL::Ptr<Vector<Real> > Jv = dualw.clone();
     update(u,z);
     applyJacobian_2(*Jv,v,u,z,tol);
     Real wJv = w.dot(Jv->dual());
-    ROL::SharedPointer<Vector<Real> > Jw = dualv.clone();
+    ROL::Ptr<Vector<Real> > Jw = dualv.clone();
     update(u,z);
     applyAdjointJacobian_2(*Jw,w,u,z,tol);
     Real vJw = v.dot(Jw->dual());
@@ -1132,13 +1132,13 @@ public:
                                       const bool printToStream = true,
                                       std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON<Real>();
-    ROL::SharedPointer<Vector<Real> > Jv = jv.clone();
+    ROL::Ptr<Vector<Real> > Jv = jv.clone();
     update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
-    ROL::SharedPointer<Vector<Real> > iJJv = u.clone();
+    ROL::Ptr<Vector<Real> > iJJv = u.clone();
     update(u,z);
     applyInverseJacobian_1(*iJJv,*Jv,u,z,tol);
-    ROL::SharedPointer<Vector<Real> > diff = v.clone();
+    ROL::Ptr<Vector<Real> > diff = v.clone();
     diff->set(v);
     diff->axpy(-1.0,*iJJv);
     Real dnorm = diff->norm();
@@ -1162,13 +1162,13 @@ public:
                                              const bool printToStream = true,
                                              std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON<Real>();
-    ROL::SharedPointer<Vector<Real> > Jv = jv.clone();
+    ROL::Ptr<Vector<Real> > Jv = jv.clone();
     update(u,z);
     applyAdjointJacobian_1(*Jv,v,u,z,tol);
-    ROL::SharedPointer<Vector<Real> > iJJv = v.clone();
+    ROL::Ptr<Vector<Real> > iJJv = v.clone();
     update(u,z);
     applyInverseAdjointJacobian_1(*iJJv,*Jv,u,z,tol);
-    ROL::SharedPointer<Vector<Real> > diff = v.clone();
+    ROL::Ptr<Vector<Real> > diff = v.clone();
     diff->set(v);
     diff->axpy(-1.0,*iJJv);
     Real dnorm = diff->norm();
@@ -1235,19 +1235,19 @@ public:
     oldFormatState.copyfmt(outStream);
  
     // Compute constraint value at x.
-    ROL::SharedPointer<Vector<Real> > c = jv.clone();
+    ROL::Ptr<Vector<Real> > c = jv.clone();
     this->update(u,z);
     this->value(*c, u, z, tol);
  
     // Compute (Jacobian at x) times (vector v).
-    ROL::SharedPointer<Vector<Real> > Jv = jv.clone();
+    ROL::Ptr<Vector<Real> > Jv = jv.clone();
     this->applyJacobian_1(*Jv, v, u, z, tol);
     Real normJv = Jv->norm();
  
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > cdif = jv.clone();
-    ROL::SharedPointer<Vector<Real> > cnew = jv.clone();
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > cdif = jv.clone();
+    ROL::Ptr<Vector<Real> > cnew = jv.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
  
     for (int i=0; i<numSteps; i++) {
  
@@ -1360,19 +1360,19 @@ public:
     oldFormatState.copyfmt(outStream);
  
     // Compute constraint value at x.
-    ROL::SharedPointer<Vector<Real> > c = jv.clone();
+    ROL::Ptr<Vector<Real> > c = jv.clone();
     this->update(u,z);
     this->value(*c, u, z, tol);
  
     // Compute (Jacobian at x) times (vector v).
-    ROL::SharedPointer<Vector<Real> > Jv = jv.clone();
+    ROL::Ptr<Vector<Real> > Jv = jv.clone();
     this->applyJacobian_2(*Jv, v, u, z, tol);
     Real normJv = Jv->norm();
  
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > cdif = jv.clone();
-    ROL::SharedPointer<Vector<Real> > cnew = jv.clone();
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > cdif = jv.clone();
+    ROL::Ptr<Vector<Real> > cnew = jv.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
  
     for (int i=0; i<numSteps; i++) {
  
@@ -1478,11 +1478,11 @@ public:
     std::vector<std::vector<Real> > ahpvCheck(numSteps, tmp);
   
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > AJdif = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AJp = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AHpv = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AJnew = hv.clone();
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > AJdif = hv.clone();
+    ROL::Ptr<Vector<Real> > AJp = hv.clone();
+    ROL::Ptr<Vector<Real> > AHpv = hv.clone();
+    ROL::Ptr<Vector<Real> > AJnew = hv.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
   
     // Save the format state of the original outStream.
     Teuchos::oblackholestream oldFormatState;
@@ -1604,11 +1604,11 @@ public:
     std::vector<std::vector<Real> > ahpvCheck(numSteps, tmp);
   
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > AJdif = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AJp = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AHpv = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AJnew = hv.clone();
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > AJdif = hv.clone();
+    ROL::Ptr<Vector<Real> > AJp = hv.clone();
+    ROL::Ptr<Vector<Real> > AHpv = hv.clone();
+    ROL::Ptr<Vector<Real> > AJnew = hv.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
   
     // Save the format state of the original outStream.
     Teuchos::oblackholestream oldFormatState;
@@ -1728,11 +1728,11 @@ public:
     std::vector<std::vector<Real> > ahpvCheck(numSteps, tmp);
   
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > AJdif = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AJp = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AHpv = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AJnew = hv.clone();
-    ROL::SharedPointer<Vector<Real> > unew = u.clone();
+    ROL::Ptr<Vector<Real> > AJdif = hv.clone();
+    ROL::Ptr<Vector<Real> > AJp = hv.clone();
+    ROL::Ptr<Vector<Real> > AHpv = hv.clone();
+    ROL::Ptr<Vector<Real> > AJnew = hv.clone();
+    ROL::Ptr<Vector<Real> > unew = u.clone();
   
     // Save the format state of the original outStream.
     Teuchos::oblackholestream oldFormatState;
@@ -1848,11 +1848,11 @@ public:
     std::vector<std::vector<Real> > ahpvCheck(numSteps, tmp);
   
     // Temporary vectors.
-    ROL::SharedPointer<Vector<Real> > AJdif = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AJp = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AHpv = hv.clone();
-    ROL::SharedPointer<Vector<Real> > AJnew = hv.clone();
-    ROL::SharedPointer<Vector<Real> > znew = z.clone();
+    ROL::Ptr<Vector<Real> > AJdif = hv.clone();
+    ROL::Ptr<Vector<Real> > AJp = hv.clone();
+    ROL::Ptr<Vector<Real> > AHpv = hv.clone();
+    ROL::Ptr<Vector<Real> > AJnew = hv.clone();
+    ROL::Ptr<Vector<Real> > znew = z.clone();
   
     // Save the format state of the original outStream.
     Teuchos::oblackholestream oldFormatState;

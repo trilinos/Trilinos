@@ -59,7 +59,7 @@ namespace ROL {
 template <class Ordinal, class Real>
 class TeuchosConstraint : public Constraint<Real> {
 
-  template <typename T> using ROL::SharedPointer = ROL::SharedPointer<T>;
+  template <typename T> using ROL::Ptr = ROL::Ptr<T>;
 
   typedef Teuchos::SerialDenseVector<Ordinal,Real> SDV;
   typedef TeuchosVector<Ordinal,Real>              TV;
@@ -71,7 +71,7 @@ public:
 
   using Constraint<Real>::update;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
     update(*xp,flag,true);
   }
 
@@ -80,8 +80,8 @@ public:
 
   using Constraint<Real>::value;
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    ROL::SharedPointer<SDV> cp = dynamic_cast<TV&>(c).getVector();
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<SDV> cp = dynamic_cast<TV&>(c).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
 
     value(*cp,*xp,tol);
   }
@@ -93,9 +93,9 @@ public:
   void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, 
                              const Vector<Real> &x, Real &tol) {
 
-    ROL::SharedPointer<SDV> jvp = dynamic_cast<TV&>(jv).getVector();
-    ROL::SharedPointer<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<SDV> jvp = dynamic_cast<TV&>(jv).getVector();
+    ROL::Ptr<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
     try {
       applyJacobian(*jvp,*vp,*xp,tol);      
     } 
@@ -115,9 +115,9 @@ public:
   void applyAdjointJacobian(Vector<Real> &ajv,     const Vector<Real> &v,
                                     const Vector<Real> &x, Real &tol) {
 
-    ROL::SharedPointer<SDV> ajvp = dynamic_cast<TV&>(ajv).getVector();
-    ROL::SharedPointer<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<SDV> ajvp = dynamic_cast<TV&>(ajv).getVector();
+    ROL::Ptr<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
 
     try {
        applyJacobian(*ajvp,*vp,*xp,tol);      
@@ -138,10 +138,10 @@ public:
   void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v,
                            const Vector<Real> &x, Real &tol) {
 
-    ROL::SharedPointer<SDV> ahuvp = dynamic_cast<TV&>(ahuv).getVector();
-    ROL::SharedPointer<const SDV> up = dynamic_cast<const TV&>(u).getVector();
-    ROL::SharedPointer<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<SDV> ahuvp = dynamic_cast<TV&>(ahuv).getVector();
+    ROL::Ptr<const SDV> up = dynamic_cast<const TV&>(u).getVector();
+    ROL::Ptr<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
 
     try {
       applyAdjointHessian( *ahuvp, *up, *vp, *xp, tol );
@@ -165,11 +165,11 @@ public:
                                          const Vector<Real> &b1, const Vector<Real> &b2,
                                          const Vector<Real> &x, Real &tol) {
 
-    ROL::SharedPointer<SDV> v1p = dynamic_cast<TV&>(v1).getVector();
-    ROL::SharedPointer<SDV> v2p = dynamic_cast<TV&>(v2).getVector();
-    ROL::SharedPointer<const SDV> b1p = dynamic_cast<const TV&>(b1).getVector();
-    ROL::SharedPointer<const SDV> b2p = dynamic_cast<const TV&>(b2).getVector();
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<SDV> v1p = dynamic_cast<TV&>(v1).getVector();
+    ROL::Ptr<SDV> v2p = dynamic_cast<TV&>(v2).getVector();
+    ROL::Ptr<const SDV> b1p = dynamic_cast<const TV&>(b1).getVector();
+    ROL::Ptr<const SDV> b2p = dynamic_cast<const TV&>(b2).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
 
     try {
       solveAugmentedSystem( *v1p, *v2p, *b1p, *b2p, tol );
@@ -191,9 +191,9 @@ public:
   void applyPreconditioner(Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x,
                            const Vector<Real> &g, Real &tol) {
 
-    ROL::SharedPointer<SDV> Pvp = dynamic_cast<TV&>(Pv).getVector();
-    ROL::SharedPointer<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
-    ROL::SharedPointer<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    ROL::Ptr<SDV> Pvp = dynamic_cast<TV&>(Pv).getVector();
+    ROL::Ptr<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
+    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
 
     try {
       applyPreconditioner( *Pvp, *vp, *xp, *gp, tol );

@@ -76,15 +76,15 @@ class CLTestObjective : public ROL::Objective<Real> {
 public:
 
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<const std::vector<Real> > xp = 
+    ROL::Ptr<const std::vector<Real> > xp = 
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
       return 0.5*((*xp)[0]*(*xp)[0] + 2*(*xp)[1]*(*xp)[1]);
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real &tol ) {
-    ROL::SharedPointer<std::vector<Real> > gp = 
+    ROL::Ptr<std::vector<Real> > gp = 
       dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
-    ROL::SharedPointer<const std::vector<Real> > xp = 
+    ROL::Ptr<const std::vector<Real> > xp = 
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     (*gp)[0] =   (*xp)[0];
     (*gp)[1] = 2*(*xp)[1];
@@ -94,9 +94,9 @@ public:
                 const ROL::Vector<Real> &v, 
                 const ROL::Vector<Real> &x,
                 Real &tol ) {
-    ROL::SharedPointer<std::vector<Real> > hvp = 
+    ROL::Ptr<std::vector<Real> > hvp = 
       dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp = 
+    ROL::Ptr<const std::vector<Real> > vp = 
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
     (*hvp)[0] =   (*vp)[0];
     (*hvp)[1] = 2*(*vp)[1];
@@ -107,26 +107,26 @@ public:
 template<class Real>
 class CLExactModel : public ROL::Objective<Real> {
 
-ROL::SharedPointer<std::vector<Real> > x_;
-const ROL::SharedPointer<const std::vector<Real> > l_;
-const ROL::SharedPointer<const std::vector<Real> > u_;
-ROL::SharedPointer<std::vector<Real> > g_;
-ROL::SharedPointer<std::vector<Real> > di_;
-ROL::SharedPointer<std::vector<Real> > j_;
-ROL::SharedPointer<ROL::Objective<Real> > obj_;
+ROL::Ptr<std::vector<Real> > x_;
+const ROL::Ptr<const std::vector<Real> > l_;
+const ROL::Ptr<const std::vector<Real> > u_;
+ROL::Ptr<std::vector<Real> > g_;
+ROL::Ptr<std::vector<Real> > di_;
+ROL::Ptr<std::vector<Real> > j_;
+ROL::Ptr<ROL::Objective<Real> > obj_;
 
 public:
 
-  CLExactModel( ROL::SharedPointer<std::vector<Real> > &xp,
-                const ROL::SharedPointer<const std::vector<Real> > &lp,
-                const ROL::SharedPointer<const std::vector<Real> > &up ) : 
+  CLExactModel( ROL::Ptr<std::vector<Real> > &xp,
+                const ROL::Ptr<const std::vector<Real> > &lp,
+                const ROL::Ptr<const std::vector<Real> > &up ) : 
                 x_(xp), l_(lp), u_(up) { 
-    g_  = ROL::makeShared<std::vector<double>(x_->size>());
-    di_ = ROL::makeShared<std::vector<double>(x_->size>());
-    j_  = ROL::makeShared<std::vector<double>(x_->size>());
+    g_  = ROL::makePtr<std::vector<double>(x_->size>());
+    di_ = ROL::makePtr<std::vector<double>(x_->size>());
+    j_  = ROL::makePtr<std::vector<double>(x_->size>());
  
 
-    obj_ = ROL::makeShared<CLTestObjective<Real>>();
+    obj_ = ROL::makePtr<CLTestObjective<Real>>();
 
     ROL::StdVector<Real> g(g_);
     ROL::StdVector<Real> x(x_);
@@ -169,7 +169,7 @@ public:
   } 
 
   void update( const ROL::Vector<Real> &x, bool flag = true, int iter=-1 ) {
-    ROL::SharedPointer<const std::vector<Real> > xc = 
+    ROL::Ptr<const std::vector<Real> > xc = 
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     (*x_)[0]  = (*xc)[0];
     (*x_)[1]  = (*xc)[1];
@@ -211,10 +211,10 @@ public:
   }
 
   Real value( const ROL::Vector<Real> &s, Real &tol ) {
-    ROL::SharedPointer<const std::vector<Real> > sp = 
+    ROL::Ptr<const std::vector<Real> > sp = 
       dynamic_cast<const ROL::StdVector<Real>&>(s).getVector();
 
-    ROL::SharedPointer<ROL::Vector<Real> > y = s.clone();
+    ROL::Ptr<ROL::Vector<Real> > y = s.clone();
     hessVec(*y,s,s,tol);  
     Real result = 0.5*y->dot(s);
     result += (*di_)[0]*(*g_)[0]*(*sp)[0];
@@ -223,7 +223,7 @@ public:
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &s, Real &tol ) {
-    ROL::SharedPointer<std::vector<Real> > gp = 
+    ROL::Ptr<std::vector<Real> > gp = 
       dynamic_cast<ROL::StdVector<Real>&>(g).getVector();
     hessVec(g,s,s,tol);
      
@@ -236,9 +236,9 @@ public:
                 const ROL::Vector<Real> &s,
                 Real &tol ) {
 
-    ROL::SharedPointer<std::vector<Real> > hvp = 
+    ROL::Ptr<std::vector<Real> > hvp = 
       dynamic_cast<ROL::StdVector<Real>&>(hv).getVector();
-    ROL::SharedPointer<const std::vector<Real> > vp = 
+    ROL::Ptr<const std::vector<Real> > vp = 
       dynamic_cast<const ROL::StdVector<Real>&>(v).getVector();
 
     obj_->hessVec(hv,v,s,tol);

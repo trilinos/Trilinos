@@ -69,12 +69,12 @@ int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -89,10 +89,10 @@ int main(int argc, char *argv[]) {
 
     /*** Initialize mesh / degree-of-freedom manager. ***/
     MeshManager_Brick<RealT> meshmgr(*parlist);
-    ROL::SharedPointer<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
-    ROL::SharedPointer<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
-    ROL::SharedPointer<Intrepid::FieldContainer<int> >   cellToEdgeMapPtr = meshmgr.getCellToEdgeMap();
-    ROL::SharedPointer<std::vector<std::vector<std::vector<int> > > > sideSetsPtr = meshmgr.getSideSets(); 
+    ROL::Ptr<Intrepid::FieldContainer<RealT> > nodesPtr = meshmgr.getNodes();
+    ROL::Ptr<Intrepid::FieldContainer<int> >   cellToNodeMapPtr = meshmgr.getCellToNodeMap();
+    ROL::Ptr<Intrepid::FieldContainer<int> >   cellToEdgeMapPtr = meshmgr.getCellToEdgeMap();
+    ROL::Ptr<std::vector<std::vector<std::vector<int> > > > sideSetsPtr = meshmgr.getSideSets(); 
 
     Intrepid::FieldContainer<RealT> &nodes = *nodesPtr;
     Intrepid::FieldContainer<int>   &cellToNodeMap = *cellToNodeMapPtr;
@@ -151,13 +151,13 @@ int main(int argc, char *argv[]) {
     }
     meshfile.close();
 
-    ROL::SharedPointer<Intrepid::Basis_HCURL_HEX_I1_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrNedelec1 =
-      ROL::makeShared<Intrepid::Basis_HCURL_HEX_I1_FEM<RealT, Intrepid::FieldContainer<RealT> >>();
+    ROL::Ptr<Intrepid::Basis_HCURL_HEX_I1_FEM<RealT, Intrepid::FieldContainer<RealT> > > basisPtrNedelec1 =
+      ROL::makePtr<Intrepid::Basis_HCURL_HEX_I1_FEM<RealT, Intrepid::FieldContainer<RealT> >>();
 
-    std::vector<ROL::SharedPointer<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > > > basisPtrs(1, ROL::nullPointer);
+    std::vector<ROL::Ptr<Intrepid::Basis<RealT, Intrepid::FieldContainer<RealT> > > > basisPtrs(1, ROL::nullPtr);
     basisPtrs[0] = basisPtrNedelec1;
 
-    ROL::SharedPointer<MeshManager<RealT> > meshmgrPtr = ROL::makeSharedFromRef(meshmgr);
+    ROL::Ptr<MeshManager<RealT> > meshmgrPtr = ROL::makePtrFromRef(meshmgr);
 
     DofManager<RealT> dofmgr(meshmgrPtr, basisPtrs);
 

@@ -47,7 +47,7 @@
 #include "ROL_Types.hpp"
 
 #include "Teuchos_ParameterList.hpp"
-#include "ROL_SharedPointer.hpp"
+#include "ROL_Ptr.hpp"
 
 #include "ROL_StatusTest.hpp"
 #include "ROL_BundleStatusTest.hpp"
@@ -59,19 +59,19 @@ namespace ROL {
     public:
     ~StatusTestFactory(void){}
 
-    ROL::SharedPointer<StatusTest<Real> > getStatusTest(const std::string step,
+    ROL::Ptr<StatusTest<Real> > getStatusTest(const std::string step,
                                                   Teuchos::ParameterList &parlist) {
       EStep els = StringToEStep(step);
       switch(els) {
-        case STEP_BUNDLE:              return ROL::makeShared<BundleStatusTest<Real>>(parlist);
-        case STEP_AUGMENTEDLAGRANGIAN: return ROL::makeShared<ConstraintStatusTest<Real>>(parlist);
-        case STEP_COMPOSITESTEP:       return ROL::makeShared<ConstraintStatusTest<Real>>(parlist);
-        case STEP_MOREAUYOSIDAPENALTY: return ROL::makeShared<ConstraintStatusTest<Real>>(parlist);
-        case STEP_INTERIORPOINT:       return ROL::makeShared<ConstraintStatusTest<Real>>(parlist);
-        case STEP_LINESEARCH:          return ROL::makeShared<StatusTest<Real>>(parlist);
-        case STEP_PRIMALDUALACTIVESET: return ROL::makeShared<StatusTest<Real>>(parlist);
-        case STEP_TRUSTREGION:         return ROL::makeShared<StatusTest<Real>>(parlist);
-        default:                       return ROL::nullPointer;
+        case STEP_BUNDLE:              return ROL::makePtr<BundleStatusTest<Real>>(parlist);
+        case STEP_AUGMENTEDLAGRANGIAN: return ROL::makePtr<ConstraintStatusTest<Real>>(parlist);
+        case STEP_COMPOSITESTEP:       return ROL::makePtr<ConstraintStatusTest<Real>>(parlist);
+        case STEP_MOREAUYOSIDAPENALTY: return ROL::makePtr<ConstraintStatusTest<Real>>(parlist);
+        case STEP_INTERIORPOINT:       return ROL::makePtr<ConstraintStatusTest<Real>>(parlist);
+        case STEP_LINESEARCH:          return ROL::makePtr<StatusTest<Real>>(parlist);
+        case STEP_PRIMALDUALACTIVESET: return ROL::makePtr<StatusTest<Real>>(parlist);
+        case STEP_TRUSTREGION:         return ROL::makePtr<StatusTest<Real>>(parlist);
+        default:                       return ROL::nullPtr;
       } 
     }
   };

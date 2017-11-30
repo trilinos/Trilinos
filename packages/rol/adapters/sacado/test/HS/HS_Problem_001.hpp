@@ -80,11 +80,11 @@ public:
 
   int dimension_x() { return 2; }
 
-  const ROL::SharedPointer<OBJ> getObjective() { 
-    return ROL::makeShared<ROL::Sacado_StdObjective<Real,HS_001::Obj>>();
+  const ROL::Ptr<OBJ> getObjective() { 
+    return ROL::makePtr<ROL::Sacado_StdObjective<Real,HS_001::Obj>>();
   }
 
-  const ROL::SharedPointer<const V> getInitialGuess() {
+  const ROL::Ptr<const V> getInitialGuess() {
     Real x[] = {-2.0,1.0};
     return NP::createOptVector(x);
   };
@@ -99,7 +99,7 @@ public:
     return Real(0);
   }
 
-  ROL::SharedPointer<const V> getSolutionSet() {
+  ROL::Ptr<const V> getSolutionSet() {
     const Real x[] = {1.0,1.0};
     return ROL::CreatePartitionedVector(NP::createOptVector(x));
   }

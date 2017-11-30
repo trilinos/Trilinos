@@ -101,12 +101,12 @@ public:
     return std::abs(value_);
   }
   
-  ROL::SharedPointer<V> clone() const {
-    return ROL::makeShared<SingletonVector>(0);
+  ROL::Ptr<V> clone() const {
+    return ROL::makePtr<SingletonVector>(0);
   }
   
-  ROL::SharedPointer<V> basis() const {
-    return ROL::makeShared<SingletonVector>(1);
+  ROL::Ptr<V> basis() const {
+    return ROL::makePtr<SingletonVector>(1);
   }
 
   int dimension() const { return 1; };

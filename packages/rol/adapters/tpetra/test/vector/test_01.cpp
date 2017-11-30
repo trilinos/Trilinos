@@ -69,12 +69,12 @@ int main(int argc, char *argv[]) {
 
     
      
-    typedef ROL::SharedPointer<MV> MVP;
+    typedef ROL::Ptr<MV> MVP;
 
     Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
     typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
     Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    ROL::SharedPointer<const Teuchos::Comm<int> > comm = platform.getComm();
+    ROL::Ptr<const Teuchos::Comm<int> > comm = platform.getComm();
  
 
     int iprint = argc - 1;
@@ -90,11 +90,11 @@ int main(int argc, char *argv[]) {
 
         int dim = 10; 
       
-        ROL::SharedPointer<Map> map = ROL::makeShared<Map>(dim,0,comm);
+        ROL::Ptr<Map> map = ROL::makePtr<Map>(dim,0,comm);
 
         // Create Tpetra::MultiVectors (single vectors) 
-        MVP x_ptr = ROL::makeShared<MV>(map,1,true); 
-        MVP y_ptr = ROL::makeShared<MV>(map,1,true); 
+        MVP x_ptr = ROL::makePtr<MV>(map,1,true); 
+        MVP y_ptr = ROL::makePtr<MV>(map,1,true); 
 
         // Random elements
         x_ptr->randomize(); 
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
         }
 
         // clone z from x, deep copy x into z, norm of z
-        ROL::SharedPointer<ROL::Vector<RealT> > z = x.clone();
+        ROL::Ptr<ROL::Vector<RealT> > z = x.clone();
         z->set(x);
         RealT znorm = z->norm();
         outStream << "\nNorm of ROL::Vector z (clone of x): " << znorm << "\n";
@@ -181,14 +181,14 @@ int main(int argc, char *argv[]) {
         x_ptr->putScalar(4.0);
 
         // For constructing Zakharov objective
-        MVP k_ptr     = ROL::makeShared<MV>(map,1,true);
+        MVP k_ptr     = ROL::makePtr<MV>(map,1,true);
 
         // For gradient and Hessian checks
-        MVP xtest_ptr = ROL::makeShared<MV>(map,1,true);
-        MVP d_ptr     = ROL::makeShared<MV>(map,1,true);
-        MVP v_ptr     = ROL::makeShared<MV>(map,1,true);
-        MVP hv_ptr    = ROL::makeShared<MV>(map,1,true);
-        MVP ihhv_ptr  = ROL::makeShared<MV>(map,1,true);
+        MVP xtest_ptr = ROL::makePtr<MV>(map,1,true);
+        MVP d_ptr     = ROL::makePtr<MV>(map,1,true);
+        MVP v_ptr     = ROL::makePtr<MV>(map,1,true);
+        MVP hv_ptr    = ROL::makePtr<MV>(map,1,true);
+        MVP ihhv_ptr  = ROL::makePtr<MV>(map,1,true);
  
         int numElem = map->getNodeNumElements();
          
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
         d_ptr->randomize();
         v_ptr->randomize();
 
-        ROL::SharedPointer<ROL::Vector<RealT> > k = ROL::makeShared<ROL::TpetraMultiVector<RealT,LO,GO,Node>>(k_ptr);
+        ROL::Ptr<ROL::Vector<RealT> > k = ROL::makePtr<ROL::TpetraMultiVector<RealT,LO,GO,Node>>(k_ptr);
 
         // Check gradient and Hessian
         ROL::TpetraMultiVector<RealT,LO,GO,Node> xtest(xtest_ptr);

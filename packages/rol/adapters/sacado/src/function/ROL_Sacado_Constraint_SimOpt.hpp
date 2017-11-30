@@ -158,17 +158,17 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyJacobian_1AD(Vector<ScalarT> &j
            
      
 
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
-    ROL::SharedPointer<vector> jvp = dynamic_cast<SV&>(jv).getVector(); 
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<vector> jvp = dynamic_cast<SV&>(jv).getVector(); 
 
     int n = up->size();
     int m = zp->size();
     
-    ROL::SharedPointer<Fadvector> c_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> c_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
 
     c_fad_ptr->reserve(n);
     u_fad_ptr->reserve(n);
@@ -213,17 +213,17 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyJacobian_2AD(Vector<ScalarT> &j
            
     
 
-    ROL::SharedPointer<vector> jvp = dynamic_cast<SV&>(jv).getVector();
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<vector> jvp = dynamic_cast<SV&>(jv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
 
     int n = up->size();
     int m = zp->size(); 
     
-    ROL::SharedPointer<Fadvector> c_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> c_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
 
     c_fad_ptr->reserve(n);
     u_fad_ptr->reserve(n);
@@ -270,17 +270,17 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointJacobian_1AD(Vector<Scal
            
       
 
-    ROL::SharedPointer<vector> ajvp = dynamic_cast<SV&>(ajv).getVector();
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<vector> ajvp = dynamic_cast<SV&>(ajv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
     
     int n = up->size();
     int m = zp->size();
     
-    ROL::SharedPointer<Fadvector> c_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> c_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
 
     c_fad_ptr->reserve(n);
     u_fad_ptr->reserve(n);
@@ -331,17 +331,17 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointJacobian_2AD(Vector<Scal
            
       
 
-    ROL::SharedPointer<vector> ajvp = dynamic_cast<SV&>(ajv).getVector();
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();   
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();   
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();   
+    ROL::Ptr<vector> ajvp = dynamic_cast<SV&>(ajv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();   
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();   
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();   
 
     int n = up->size();
     int m = zp->size();
     
-    ROL::SharedPointer<Fadvector> c_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> c_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
 
     c_fad_ptr->reserve(n);
     u_fad_ptr->reserve(n);
@@ -391,19 +391,19 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointHessian_11AD(Vector<Scal
            
      
 
-    ROL::SharedPointer<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
-    ROL::SharedPointer<const vector> wp = dynamic_cast<const SV&>(w).getVector();
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> wp = dynamic_cast<const SV&>(w).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
 
     int n = up->size();
     int m = zp->size();
 
-    ROL::SharedPointer<Fadvector> v_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> jv_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> v_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> jv_fad_ptr = ROL::makePtr<Fadvector>();
 
     v_fad_ptr->reserve(n);
     u_fad_ptr->reserve(n);
@@ -456,19 +456,19 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointHessian_12AD(Vector<Scal
            
       
 
-    ROL::SharedPointer<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
-    ROL::SharedPointer<const vector> wp = dynamic_cast<const SV&>(w).getVector();
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> wp = dynamic_cast<const SV&>(w).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
 
     int n = up->size();
     int m = zp->size();
 
-    ROL::SharedPointer<Fadvector> v_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> jv_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> v_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> jv_fad_ptr = ROL::makePtr<Fadvector>();
 
     v_fad_ptr->reserve(n);
     u_fad_ptr->reserve(n);
@@ -519,19 +519,19 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointHessian_21AD(Vector<Scal
            
      
 
-    ROL::SharedPointer<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
-    ROL::SharedPointer<const vector> wp = dynamic_cast<const SV&>(w).getVector();
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> wp = dynamic_cast<const SV&>(w).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
 
     int n = up->size();
     int m = zp->size();
 
-    ROL::SharedPointer<Fadvector> v_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> jv_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> v_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> jv_fad_ptr = ROL::makePtr<Fadvector>();
 
     v_fad_ptr->reserve(m);
     u_fad_ptr->reserve(n);
@@ -582,19 +582,19 @@ void Sacado_Constraint_SimOpt<Real,Constr>::applyAdjointHessian_22AD(Vector<Scal
            
      
 
-    ROL::SharedPointer<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
-    ROL::SharedPointer<const vector> wp = dynamic_cast<const SV&>(w).getVector();
-    ROL::SharedPointer<const vector> up = dynamic_cast<const SV&>(u).getVector();
-    ROL::SharedPointer<const vector> zp = dynamic_cast<const SV&>(z).getVector();
+    ROL::Ptr<vector> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> wp = dynamic_cast<const SV&>(w).getVector();
+    ROL::Ptr<const vector> up = dynamic_cast<const SV&>(u).getVector();
+    ROL::Ptr<const vector> zp = dynamic_cast<const SV&>(z).getVector();
  
     int n = up->size();
     int m = zp->size();
 
-    ROL::SharedPointer<Fadvector> v_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> u_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> z_fad_ptr = ROL::makeShared<Fadvector>();
-    ROL::SharedPointer<Fadvector> jv_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> v_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> u_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> z_fad_ptr = ROL::makePtr<Fadvector>();
+    ROL::Ptr<Fadvector> jv_fad_ptr = ROL::makePtr<Fadvector>();
 
     v_fad_ptr->reserve(m);
     u_fad_ptr->reserve(n);

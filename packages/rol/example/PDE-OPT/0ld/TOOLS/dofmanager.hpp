@@ -59,15 +59,15 @@ template <class Real>
 class DofManager {
 
 private:
-  ROL::SharedPointer<MeshManager<Real> > meshManager_;
-  std::vector<ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > intrepidBasis_;
+  ROL::Ptr<MeshManager<Real> > meshManager_;
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > intrepidBasis_;
 
   int numCells_;         // number of mesh cells
   int numNodes_;         // number of mesh nodes
   int numEdges_;         // number of mesh edges
 
-  ROL::SharedPointer<Intrepid::FieldContainer<int> > meshCellToNodeMap_;
-  ROL::SharedPointer<Intrepid::FieldContainer<int> > meshCellToEdgeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<int> > meshCellToNodeMap_;
+  ROL::Ptr<Intrepid::FieldContainer<int> > meshCellToEdgeMap_;
 
   // Local dof information.
   int numBases_;                                  // number of bases (fields)
@@ -90,19 +90,19 @@ private:
   int numFaceDofs_;  // number of global face dofs
   int numDofs_;      // total number of global dofs
 
-  ROL::SharedPointer<Intrepid::FieldContainer<int> > nodeDofs_;  // global node dofs, of size [numNodes_ x numLocalNodeDofs_]
-  ROL::SharedPointer<Intrepid::FieldContainer<int> > edgeDofs_;  // global edge dofs, of size [numEdges_ x numLocalEdgeDofs_]
-  ROL::SharedPointer<Intrepid::FieldContainer<int> > faceDofs_;  // global face dofs, of size [numFaces_ x numLocalFaceDofs_]
-  ROL::SharedPointer<Intrepid::FieldContainer<int> > cellDofs_;  // global cell dofs, of size [numCells_ x numLocalDofs_];
+  ROL::Ptr<Intrepid::FieldContainer<int> > nodeDofs_;  // global node dofs, of size [numNodes_ x numLocalNodeDofs_]
+  ROL::Ptr<Intrepid::FieldContainer<int> > edgeDofs_;  // global edge dofs, of size [numEdges_ x numLocalEdgeDofs_]
+  ROL::Ptr<Intrepid::FieldContainer<int> > faceDofs_;  // global face dofs, of size [numFaces_ x numLocalFaceDofs_]
+  ROL::Ptr<Intrepid::FieldContainer<int> > cellDofs_;  // global cell dofs, of size [numCells_ x numLocalDofs_];
                                                            // ordered by subcell (node, then edge, then face) and basis index
 
-  std::vector<ROL::SharedPointer<Intrepid::FieldContainer<int> > > fieldDofs_;  // global cell dofs, indexed by field/basis, of size [numCells_ x basis cardinality];
+  std::vector<ROL::Ptr<Intrepid::FieldContainer<int> > > fieldDofs_;  // global cell dofs, indexed by field/basis, of size [numCells_ x basis cardinality];
                                                                           // ordered by subcell (node, then edge, then face)
 
 public:
 
-  DofManager(ROL::SharedPointer<MeshManager<Real> >                                                    &meshManager,
-             std::vector<ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > &intrepidBasis) {
+  DofManager(ROL::Ptr<MeshManager<Real> >                                                    &meshManager,
+             std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > > &intrepidBasis) {
 
     meshManager_ = meshManager;
     intrepidBasis_ = intrepidBasis;
@@ -155,32 +155,32 @@ public:
   }
 
 
-  ROL::SharedPointer<Intrepid::FieldContainer<int> > getNodeDofs() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getNodeDofs() const {
     return nodeDofs_;
   }
 
 
-  ROL::SharedPointer<Intrepid::FieldContainer<int> > getEdgeDofs() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getEdgeDofs() const {
     return edgeDofs_;
   }
 
 
-  ROL::SharedPointer<Intrepid::FieldContainer<int> > getFaceDofs() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getFaceDofs() const {
     return faceDofs_;
   }
 
 
-  ROL::SharedPointer<Intrepid::FieldContainer<int> > getCellDofs() const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getCellDofs() const {
     return cellDofs_;
   }
 
 
-  std::vector<ROL::SharedPointer<Intrepid::FieldContainer<int> > > getFieldDofs() const {
+  std::vector<ROL::Ptr<Intrepid::FieldContainer<int> > > getFieldDofs() const {
     return fieldDofs_;
   }
 
 
-  ROL::SharedPointer<Intrepid::FieldContainer<int> > getFieldDofs(const int & fieldNumber) const {
+  ROL::Ptr<Intrepid::FieldContainer<int> > getFieldDofs(const int & fieldNumber) const {
     return fieldDofs_[fieldNumber];
   }
 
@@ -234,9 +234,9 @@ private:
 
   void computeDofArrays() {
 
-    nodeDofs_ = ROL::makeShared<Intrepid::FieldContainer<int>>(numNodes_, numLocalNodeDofs_);
-    edgeDofs_ = ROL::makeShared<Intrepid::FieldContainer<int>>(numEdges_, numLocalEdgeDofs_);
-    faceDofs_ = ROL::makeShared<Intrepid::FieldContainer<int>>(numCells_, numLocalFaceDofs_);
+    nodeDofs_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numNodes_, numLocalNodeDofs_);
+    edgeDofs_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numEdges_, numLocalEdgeDofs_);
+    faceDofs_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, numLocalFaceDofs_);
 
     Intrepid::FieldContainer<int> &nodeDofs = *nodeDofs_;
     Intrepid::FieldContainer<int> &edgeDofs = *edgeDofs_;
@@ -301,7 +301,7 @@ private:
 
   void computeCellDofs() {
 
-    cellDofs_ = ROL::makeShared<Intrepid::FieldContainer<int>>(numCells_, numLocalDofs_);
+    cellDofs_ = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, numLocalDofs_);
 
     // Grab object references, for easier indexing.
     Intrepid::FieldContainer<int> &cdofs = *cellDofs_;
@@ -376,7 +376,7 @@ private:
 
     for (int fieldNum=0; fieldNum<numBases_; ++fieldNum) { 
       int basisCard = intrepidBasis_[fieldNum]->getCardinality();
-      fieldDofs_[fieldNum] = ROL::makeShared<Intrepid::FieldContainer<int>>(numCells_, basisCard);
+      fieldDofs_[fieldNum] = ROL::makePtr<Intrepid::FieldContainer<int>>(numCells_, basisCard);
       Intrepid::FieldContainer<int> &fdofs = *(fieldDofs_[fieldNum]);
       for (int i=0; i<numCells_; ++i) {
         for (int j=0; j<basisCard; ++j) {

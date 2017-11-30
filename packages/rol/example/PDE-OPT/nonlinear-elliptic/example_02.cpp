@@ -77,21 +77,21 @@ typedef double RealT;
 int main(int argc, char *argv[]) {
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  ROL::SharedPointer<const Teuchos::Comm<int> > serial_comm
-    = ROL::makeShared<Teuchos::SerialComm<int>>();
+  ROL::Ptr<const Teuchos::Comm<int> > serial_comm
+    = ROL::makePtr<Teuchos::SerialComm<int>>();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -106,72 +106,72 @@ int main(int argc, char *argv[]) {
     RealT controlPenalty = parlist->sublist("Problem").get("Control penalty parameter",static_cast<RealT>(1.e-4));
 
     /*** Initialize main data structure. ***/
-    ROL::SharedPointer<MeshManager<RealT> > meshMgr
-      = ROL::makeShared<MeshManager_Rectangle<RealT>>(*parlist);
+    ROL::Ptr<MeshManager<RealT> > meshMgr
+      = ROL::makePtr<MeshManager_Rectangle<RealT>>(*parlist);
     // Initialize PDE describe Poisson's equation
-    ROL::SharedPointer<PDE_Nonlinear_Elliptic<RealT> > pde
-      = ROL::makeShared<PDE_Nonlinear_Elliptic<RealT>>(*parlist);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > con
-      = ROL::makeShared<PDE_Constraint<RealT>>(pde,meshMgr,serial_comm,*parlist,*outStream);
-    ROL::SharedPointer<PDE_Constraint<RealT> > pdecon
-      = ROL::dynamicPointerCast<PDE_Constraint<RealT> >(con);
-    ROL::SharedPointer<Assembler<RealT> > assembler = pdecon->getAssembler();
+    ROL::Ptr<PDE_Nonlinear_Elliptic<RealT> > pde
+      = ROL::makePtr<PDE_Nonlinear_Elliptic<RealT>>(*parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
+      = ROL::makePtr<PDE_Constraint<RealT>>(pde,meshMgr,serial_comm,*parlist,*outStream);
+    ROL::Ptr<PDE_Constraint<RealT> > pdecon
+      = ROL::dynamicPtrCast<PDE_Constraint<RealT> >(con);
+    ROL::Ptr<Assembler<RealT> > assembler = pdecon->getAssembler();
     con->setSolveParameters(*parlist);
 
     // Create state vector and set to zeroes
-    ROL::SharedPointer<Tpetra::MultiVector<> > u_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<> > u_ptr = assembler->createStateVector();
     u_ptr->randomize();
-    ROL::SharedPointer<ROL::Vector<RealT> > up
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > up
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
     // Create state vector and set to zeroes
-    ROL::SharedPointer<Tpetra::MultiVector<> > p_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<> > p_ptr = assembler->createStateVector();
     p_ptr->randomize();
-    ROL::SharedPointer<ROL::Vector<RealT> > pp
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > pp
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler);
     // Create control vector and set to ones
-    ROL::SharedPointer<Tpetra::MultiVector<> > z_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> > z_ptr = assembler->createControlVector();
     z_ptr->randomize();
-    ROL::SharedPointer<ROL::Vector<RealT> > zp
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > zp
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler);
     // Create residual vector and set to zeros
-    ROL::SharedPointer<Tpetra::MultiVector<> > r_ptr = assembler->createResidualVector();
+    ROL::Ptr<Tpetra::MultiVector<> > r_ptr = assembler->createResidualVector();
     r_ptr->putScalar(0.0);
-    ROL::SharedPointer<ROL::Vector<RealT> > rp
-      = ROL::makeShared<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > rp
+      = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler);
     // Create state direction vector and set to random
-    ROL::SharedPointer<Tpetra::MultiVector<> > du_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<> > du_ptr = assembler->createStateVector();
     du_ptr->randomize();
-    ROL::SharedPointer<ROL::Vector<RealT> > dup
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > dup
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler);
     // Create control direction vector and set to random
-    ROL::SharedPointer<Tpetra::MultiVector<> > dz_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> > dz_ptr = assembler->createControlVector();
     dz_ptr->randomize();
-    ROL::SharedPointer<ROL::Vector<RealT> > dzp
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > dzp
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,assembler);
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
 
     // Initialize bound constraints.
-    ROL::SharedPointer<Tpetra::MultiVector<> > lo_ptr = assembler->createControlVector();
-    ROL::SharedPointer<Tpetra::MultiVector<> > hi_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> > lo_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> > hi_ptr = assembler->createControlVector();
     lo_ptr->putScalar(0.0); hi_ptr->putScalar(1.0);
-    ROL::SharedPointer<ROL::Vector<RealT> > lop
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(lo_ptr,pde,assembler);
-    ROL::SharedPointer<ROL::Vector<RealT> > hip
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(hi_ptr,pde,assembler);
-    ROL::SharedPointer<ROL::BoundConstraint<RealT> > bnd
-      = ROL::makeShared<ROL::Bounds<RealT>>(lop,hip);
+    ROL::Ptr<ROL::Vector<RealT> > lop
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(lo_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > hip
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(hi_ptr,pde,assembler);
+    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
+      = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
 
     // Initialize quadratic objective function
-    std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_StateTracking_Nonlinear_Elliptic<RealT>>(pde->getFE());
-    qoi_vec[1] = ROL::makeShared<QoI_ControlPenalty_Nonlinear_Elliptic<RealT>>(pde->getFE());
+    std::vector<ROL::Ptr<QoI<RealT> > > qoi_vec(2,ROL::nullPtr);
+    qoi_vec[0] = ROL::makePtr<QoI_StateTracking_Nonlinear_Elliptic<RealT>>(pde->getFE());
+    qoi_vec[1] = ROL::makePtr<QoI_ControlPenalty_Nonlinear_Elliptic<RealT>>(pde->getFE());
     std::vector<RealT> weights = {static_cast<RealT>(1), controlPenalty};
-    ROL::SharedPointer<PDE_Objective<RealT> > obj
-      = ROL::makeShared<PDE_Objective<RealT>>(qoi_vec,weights,assembler);
-    ROL::SharedPointer<ROL::Objective<RealT> > robj
-      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(obj,con,up,zp,pp,true,false);
+    ROL::Ptr<PDE_Objective<RealT> > obj
+      = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,weights,assembler);
+    ROL::Ptr<ROL::Objective<RealT> > robj
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj,con,up,zp,pp,true,false);
 
     /*************************************************************************/
     /***************** BUILD SAMPLER *****************************************/
@@ -180,10 +180,10 @@ int main(int argc, char *argv[]) {
     int nsamp = parlist->sublist("Problem").get("Number of samples",100);
     std::vector<RealT> tmp = {static_cast<RealT>(-1),static_cast<RealT>(1)};
     std::vector<std::vector<RealT> > bounds(stochDim,tmp);
-    ROL::SharedPointer<ROL::BatchManager<RealT> > bman
-      = ROL::makeShared<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
-    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler
-      = ROL::makeShared<ROL::MonteCarloGenerator<RealT>>(nsamp,bounds,bman);
+    ROL::Ptr<ROL::BatchManager<RealT> > bman
+      = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp,bounds,bman);
 
     /*************************************************************************/
     /***************** BUILD STOCHASTIC PROBLEM ******************************/

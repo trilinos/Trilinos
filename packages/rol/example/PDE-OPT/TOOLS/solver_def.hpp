@@ -70,7 +70,7 @@
 
 
 template<class Real>
-void Solver<Real>::setA(ROL::SharedPointer<Tpetra::CrsMatrix<> > &A) {
+void Solver<Real>::setA(ROL::Ptr<Tpetra::CrsMatrix<> > &A) {
     if (useDirectSolver_) { // using Amesos2 direct solver
       if (firstSolve_) { // construct solver object
         try {
@@ -103,21 +103,21 @@ void Solver<Real>::setA(ROL::SharedPointer<Tpetra::CrsMatrix<> > &A) {
       else if (preconditioner_ == "MueLu") {
         Teuchos::ParameterList & parlistMuelu = parlist_.sublist("MueLu");
         // Create preconditioners.
-        mueLuPreconditioner_trans_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(ROL::SharedPointer<OP>(A_trans_), parlistMuelu);
-        mueLuPreconditioner_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(ROL::SharedPointer<OP>(A), parlistMuelu);
+        mueLuPreconditioner_trans_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(ROL::Ptr<OP>(A_trans_), parlistMuelu);
+        mueLuPreconditioner_ = MueLu::CreateTpetraPreconditioner<Real,LO,GO,NO>(ROL::Ptr<OP>(A), parlistMuelu);
       }
 
       // Create Belos solver object and linear problem.
       if (firstSolve_) {
-        Teuchos::RCP<Teuchos::ParameterList> parlistBelos = ROL::makeSharedFromRef(parlist_.sublist("Belos"));
+        Teuchos::RCP<Teuchos::ParameterList> parlistBelos = ROL::makePtrFromRef(parlist_.sublist("Belos"));
         // Transpose solver.
-        problemBelos_trans_ = ROL::makeShared<Belos::LinearProblem<Real,MV,OP>>();
+        problemBelos_trans_ = ROL::makePtr<Belos::LinearProblem<Real,MV,OP>>();
         problemBelos_trans_->setOperator(A_trans_);
-        solverBelos_trans_ = ROL::makeShared<Belos::BlockGmresSolMgr<Real,MV,OP>>(problemBelos_trans_, parlistBelos);
+        solverBelos_trans_ = ROL::makePtr<Belos::BlockGmresSolMgr<Real,MV,OP>>(problemBelos_trans_, parlistBelos);
         // Forward solver.
-        problemBelos_ = ROL::makeShared<Belos::LinearProblem<Real,MV,OP>>();
+        problemBelos_ = ROL::makePtr<Belos::LinearProblem<Real,MV,OP>>();
         problemBelos_->setOperator(A);
-        solverBelos_ = ROL::makeShared<Belos::BlockGmresSolMgr<Real,MV,OP>>(problemBelos_, parlistBelos);
+        solverBelos_ = ROL::makePtr<Belos::BlockGmresSolMgr<Real,MV,OP>>(problemBelos_, parlistBelos);
         firstSolve_ = false;
       }
       else {
@@ -128,8 +128,8 @@ void Solver<Real>::setA(ROL::SharedPointer<Tpetra::CrsMatrix<> > &A) {
 
 
 template<class Real>
-void Solver<Real>::solve(const ROL::SharedPointer<Tpetra::MultiVector<> > &x,
-                         const ROL::SharedPointer<const Tpetra::MultiVector<> > &b,
+void Solver<Real>::solve(const ROL::Ptr<Tpetra::MultiVector<> > &x,
+                         const ROL::Ptr<const Tpetra::MultiVector<> > &b,
                          const bool transpose) {
 
     if (useDirectSolver_) { // using Amesos2 direct solver

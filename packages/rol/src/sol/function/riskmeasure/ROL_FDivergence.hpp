@@ -90,7 +90,7 @@ private:
 
   Real thresh_;
 
-  ROL::SharedPointer<Vector<Real> > dualVector_;
+  ROL::Ptr<Vector<Real> > dualVector_;
 
   Real xlam_;
   Real xmu_;
@@ -161,7 +161,7 @@ public:
   */
   virtual Real Fdual(Real x, int deriv = 0) = 0;
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
     RiskMeasure<Real>::reset(x0,x);
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();
@@ -175,10 +175,10 @@ public:
     valLam_ = 0; valLam2_ = 0; valMu_ = 0; valMu2_ = 0;
   }
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x, 
-             ROL::SharedPointer<Vector<Real> > &v0, const Vector<Real> &v) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x, 
+             ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
-    v0    = ROL::constPointerCast<Vector<Real> >(
+    v0    = ROL::constPtrCast<Vector<Real> >(
             dynamic_cast<const RiskVector<Real>&>(v).getVector());
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();

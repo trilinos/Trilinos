@@ -48,7 +48,7 @@
 #include "ROL_BoundConstraint.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_SharedPointer.hpp"
+#include "ROL_Ptr.hpp"
 #include <iostream>
 
 /** @ingroup func_group
@@ -64,22 +64,22 @@ namespace ROL {
 template <class Real>
 class MoreauYosidaPenalty : public Objective<Real> {
 private:
-  const ROL::SharedPointer<Objective<Real> > obj_;
-  const ROL::SharedPointer<BoundConstraint<Real> > con_;
+  const ROL::Ptr<Objective<Real> > obj_;
+  const ROL::Ptr<BoundConstraint<Real> > con_;
 
-  ROL::SharedPointer<Vector<Real> > g_;
-  ROL::SharedPointer<Vector<Real> > l_;
-  ROL::SharedPointer<Vector<Real> > u_;
-  ROL::SharedPointer<Vector<Real> > l1_;
-  ROL::SharedPointer<Vector<Real> > u1_;
-  ROL::SharedPointer<Vector<Real> > dl1_;
-  ROL::SharedPointer<Vector<Real> > du1_;
-  ROL::SharedPointer<Vector<Real> > xlam_;
-  ROL::SharedPointer<Vector<Real> > v_;
-  ROL::SharedPointer<Vector<Real> > dv_;
-  ROL::SharedPointer<Vector<Real> > dv2_;
-  ROL::SharedPointer<Vector<Real> > lam_;
-  ROL::SharedPointer<Vector<Real> > tmp_;
+  ROL::Ptr<Vector<Real> > g_;
+  ROL::Ptr<Vector<Real> > l_;
+  ROL::Ptr<Vector<Real> > u_;
+  ROL::Ptr<Vector<Real> > l1_;
+  ROL::Ptr<Vector<Real> > u1_;
+  ROL::Ptr<Vector<Real> > dl1_;
+  ROL::Ptr<Vector<Real> > du1_;
+  ROL::Ptr<Vector<Real> > xlam_;
+  ROL::Ptr<Vector<Real> > v_;
+  ROL::Ptr<Vector<Real> > dv_;
+  ROL::Ptr<Vector<Real> > dv2_;
+  ROL::Ptr<Vector<Real> > lam_;
+  ROL::Ptr<Vector<Real> > tmp_;
 
   Real mu_;
   Real fval_;
@@ -130,7 +130,7 @@ private:
   }
 
   void initialize(const ROL::Vector<Real> &x,
-                  const ROL::SharedPointer<ROL::BoundConstraint<Real> > &con) {
+                  const ROL::Ptr<ROL::BoundConstraint<Real> > &con) {
     g_    = x.dual().clone();
     l_    = x.clone();
     l1_   = x.clone();
@@ -157,8 +157,8 @@ private:
 public:
   ~MoreauYosidaPenalty() {}
 
-  MoreauYosidaPenalty(const ROL::SharedPointer<Objective<Real> > &obj,
-                      const ROL::SharedPointer<BoundConstraint<Real> > &con, 
+  MoreauYosidaPenalty(const ROL::Ptr<Objective<Real> > &obj,
+                      const ROL::Ptr<BoundConstraint<Real> > &con, 
                       const ROL::Vector<Real> &x,
                       const Real mu = 1e1)
     : obj_(obj), con_(con), mu_(mu),
@@ -167,8 +167,8 @@ public:
     initialize(x,con);
   }
 
-  MoreauYosidaPenalty(const ROL::SharedPointer<Objective<Real> > &obj,
-                      const ROL::SharedPointer<BoundConstraint<Real> > &con, 
+  MoreauYosidaPenalty(const ROL::Ptr<Objective<Real> > &obj,
+                      const ROL::Ptr<BoundConstraint<Real> > &con, 
                       const ROL::Vector<Real> &x,
                       Teuchos::ParameterList &parlist)
     : obj_(obj), con_(con),
@@ -180,8 +180,8 @@ public:
     mu_               = list.get("Initial Penalty Parameter",1e1);
   }
 
-  MoreauYosidaPenalty(const ROL::SharedPointer<Objective<Real> > &obj,
-                      const ROL::SharedPointer<BoundConstraint<Real> > &con, 
+  MoreauYosidaPenalty(const ROL::Ptr<Objective<Real> > &obj,
+                      const ROL::Ptr<BoundConstraint<Real> > &con, 
                       const ROL::Vector<Real> &x,
                       const ROL::Vector<Real> &lam,
                       Teuchos::ParameterList &parlist)
@@ -246,7 +246,7 @@ public:
     return fval_;
   }
 
-  ROL::SharedPointer<Vector<Real> > getGradient(void) const {
+  ROL::Ptr<Vector<Real> > getGradient(void) const {
     return g_;
   }
 

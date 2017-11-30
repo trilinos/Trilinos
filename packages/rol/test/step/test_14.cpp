@@ -61,12 +61,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -78,11 +78,11 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     // Setup optimization problem
-    ROL::SharedPointer<ROL::Vector<RealT> > x0, z;
-    ROL::SharedPointer<ROL::Objective<RealT> > obj;
-    ROL::SharedPointer<ROL::BoundConstraint<RealT> > bnd;
+    ROL::Ptr<ROL::Vector<RealT> > x0, z;
+    ROL::Ptr<ROL::Objective<RealT> > obj;
+    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd;
     ROL::getTestObjectives<RealT>(obj,bnd,x0,z,ROL::TESTOPTPROBLEM_HS1);
-    ROL::SharedPointer<ROL::Vector<RealT> > x = x0->clone(); x->set(*x0);
+    ROL::Ptr<ROL::Vector<RealT> > x = x0->clone(); x->set(*x0);
     ROL::OptimizationProblem<RealT> optProblem(obj,x,bnd);
 
     // Get Dimension of Problem
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     optProblem.check(*outStream);
 
     // Error Vector
-    ROL::SharedPointer<ROL::Vector<RealT> > e = x0->clone();
+    ROL::Ptr<ROL::Vector<RealT> > e = x0->clone();
     e->zero();
 
     // Setup optimization solver

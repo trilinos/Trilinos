@@ -55,7 +55,7 @@ namespace ROL {
 template<class Real>
 class PathBasedTargetLevel : public LineSearch<Real> {
 private:
-  ROL::SharedPointer<Vector<Real> > xnew_; 
+  ROL::Ptr<Vector<Real> > xnew_; 
 
   Real min_value_;
   Real rec_value_;

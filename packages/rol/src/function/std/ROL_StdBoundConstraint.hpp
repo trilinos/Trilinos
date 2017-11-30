@@ -63,8 +63,8 @@ namespace ROL {
     Real min_diff_;
     Real scale_;
 
-    ROL::SharedPointer<Vector<Real> > l_;
-    ROL::SharedPointer<Vector<Real> > u_;
+    ROL::Ptr<Vector<Real> > l_;
+    ROL::Ptr<Vector<Real> > u_;
 
   public:
     StdBoundConstraint(std::vector<Real> &x, bool isLower = false, Real scale = 1.0)
@@ -83,8 +83,8 @@ namespace ROL {
       }
       min_diff_ = ROL_INF<Real>();
 
-      l_ = ROL::makeShared<StdVector<Real>>(ROL::makeSharedFromRef(x_lo_));
-      u_ = ROL::makeShared<StdVector<Real>>(ROL::makeSharedFromRef(x_up_));
+      l_ = ROL::makePtr<StdVector<Real>>(ROL::makePtrFromRef(x_lo_));
+      u_ = ROL::makePtr<StdVector<Real>>(ROL::makePtrFromRef(x_up_));
     }
 
     StdBoundConstraint(std::vector<Real> &l, std::vector<Real> &u, Real scale = 1.0)
@@ -101,14 +101,14 @@ namespace ROL {
       }
       min_diff_ *= 0.5;
 
-      l_ = ROL::makeShared<StdVector<Real>>(ROL::makeSharedFromRef(x_lo_));
-      u_ = ROL::makeShared<StdVector<Real>>(ROL::makeSharedFromRef(x_up_));
+      l_ = ROL::makePtr<StdVector<Real>>(ROL::makePtrFromRef(x_lo_));
+      u_ = ROL::makePtr<StdVector<Real>>(ROL::makePtrFromRef(x_up_));
     }
 
     bool isFeasible( const Vector<Real> &x ) {
       bool lflag = true, uflag = true;
       if ( BoundConstraint<Real>::isActivated() ) {
-        ROL::SharedPointer<const std::vector<Real> > ex =
+        ROL::Ptr<const std::vector<Real> > ex =
           dynamic_cast<const StdVector<Real>&>(x).getVector();
         if ( BoundConstraint<Real>::isLowerActivated() ) {
           for ( int i = 0; i < dim_; ++i ) {
@@ -132,7 +132,7 @@ namespace ROL {
 
     void project( Vector<Real> &x ) {
       if ( BoundConstraint<Real>::isActivated() ) {
-        ROL::SharedPointer<std::vector<Real> > ex =
+        ROL::Ptr<std::vector<Real> > ex =
           dynamic_cast<StdVector<Real>&>(x).getVector();
         if ( BoundConstraint<Real>::isLowerActivated() ) {
           for ( int i = 0; i < dim_; ++i ) {
@@ -149,7 +149,7 @@ namespace ROL {
 
     void projectInterior( Vector<Real> &x ) {
       if ( BoundConstraint<Real>::isActivated() ) {
-        ROL::SharedPointer<std::vector<Real> > ex =
+        ROL::Ptr<std::vector<Real> > ex =
             dynamic_cast<StdVector<Real>&>(x).getVector();
         const Real eps(1e-1), tol(100.0*ROL_EPSILON<Real>()), one(1);
         if ( BoundConstraint<Real>::isLowerActivated() ) {
@@ -175,9 +175,9 @@ namespace ROL {
 
     void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
       if ( BoundConstraint<Real>::isLowerActivated() ) {
-        ROL::SharedPointer<const std::vector<Real> > ex =
+        ROL::Ptr<const std::vector<Real> > ex =
           dynamic_cast<const StdVector<Real>&>(x).getVector();
-        ROL::SharedPointer<std::vector<Real> > ev =
+        ROL::Ptr<std::vector<Real> > ev =
           dynamic_cast<StdVector<Real>&>(v).getVector();
         Real epsn = std::min(scale_*eps,min_diff_);
         for ( int i = 0; i < dim_; ++i ) {
@@ -190,9 +190,9 @@ namespace ROL {
 
     void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
       if ( BoundConstraint<Real>::isUpperActivated() ) {
-        ROL::SharedPointer<const std::vector<Real> > ex =
+        ROL::Ptr<const std::vector<Real> > ex =
           dynamic_cast<const StdVector<Real>&>(x).getVector();
-        ROL::SharedPointer<std::vector<Real> > ev =
+        ROL::Ptr<std::vector<Real> > ev =
           dynamic_cast<StdVector<Real>&>(v).getVector();
         Real epsn = std::min(scale_*eps,min_diff_);
         for ( int i = 0; i < dim_; ++i ) {
@@ -205,11 +205,11 @@ namespace ROL {
 
     void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
       if ( BoundConstraint<Real>::isLowerActivated() ) {
-        ROL::SharedPointer<const std::vector<Real> > ex =
+        ROL::Ptr<const std::vector<Real> > ex =
           dynamic_cast<const StdVector<Real>&>(x).getVector();
-        ROL::SharedPointer<const std::vector<Real> > eg =
+        ROL::Ptr<const std::vector<Real> > eg =
           dynamic_cast<const StdVector<Real>&>(g).getVector();
-        ROL::SharedPointer<std::vector<Real> > ev =
+        ROL::Ptr<std::vector<Real> > ev =
           dynamic_cast<StdVector<Real>&>(v).getVector();
         Real epsn = std::min(scale_*eps,this->min_diff_);
         for ( int i = 0; i < dim_; ++i ) {
@@ -222,11 +222,11 @@ namespace ROL {
 
     void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
       if ( BoundConstraint<Real>::isUpperActivated() ) {
-        ROL::SharedPointer<const std::vector<Real> > ex = 
+        ROL::Ptr<const std::vector<Real> > ex = 
           dynamic_cast<const StdVector<Real>&>(x).getVector();
-        ROL::SharedPointer<const std::vector<Real> > eg =
+        ROL::Ptr<const std::vector<Real> > eg =
           dynamic_cast<const StdVector<Real>&>(g).getVector();
-        ROL::SharedPointer<std::vector<Real> > ev =
+        ROL::Ptr<std::vector<Real> > ev =
           dynamic_cast<StdVector<Real>&>(v).getVector();
         Real epsn = std::min(scale_*eps,min_diff_);
         for ( int i = 0; i < dim_; ++i ) {
@@ -237,11 +237,11 @@ namespace ROL {
       }
     }
  
-    const ROL::SharedPointer<const Vector<Real> > getLowerBound( void ) const {
+    const ROL::Ptr<const Vector<Real> > getLowerBound( void ) const {
       return l_;
     }
 
-    const ROL::SharedPointer<const Vector<Real> > getUpperBound( void ) const {
+    const ROL::Ptr<const Vector<Real> > getUpperBound( void ) const {
       return u_;
     }
   };

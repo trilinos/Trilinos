@@ -68,14 +68,14 @@ class CoherentExpUtility : public RiskMeasure<Real> {
 private:
   bool firstReset_;
 
-  ROL::SharedPointer<Vector<Real> > scaledGradient1_;
-  ROL::SharedPointer<Vector<Real> > scaledGradient2_;
+  ROL::Ptr<Vector<Real> > scaledGradient1_;
+  ROL::Ptr<Vector<Real> > scaledGradient2_;
   Real dval1_;
   Real dval2_;
   Real dval3_;
 
-  ROL::SharedPointer<Vector<Real> > dualVector1_;
-  ROL::SharedPointer<Vector<Real> > dualVector2_;
+  ROL::Ptr<Vector<Real> > dualVector1_;
+  ROL::Ptr<Vector<Real> > dualVector2_;
 
   Real xstat_;
   Real vstat_;
@@ -84,7 +84,7 @@ public:
   CoherentExpUtility(void) : RiskMeasure<Real>(), firstReset_(true),
     dval1_(0), dval2_(0), dval3_(0), xstat_(0), vstat_(0) {}
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
     Real zero(0);
     RiskMeasure<Real>::reset(x0,x);
     int index = RiskMeasure<Real>::getIndex();
@@ -102,10 +102,10 @@ public:
     dval1_ = zero; dval2_ = zero; dval3_ = zero;
   }
 
-  void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x,
-             ROL::SharedPointer<Vector<Real> > &v0, const Vector<Real> &v) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x,
+             ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
-    v0 = ROL::constPointerCast<Vector<Real> >(
+    v0 = ROL::constPtrCast<Vector<Real> >(
            dynamic_cast<const RiskVector<Real>&>(v).getVector());
     int index = RiskMeasure<Real>::getIndex();
     int comp  = RiskMeasure<Real>::getComponent();

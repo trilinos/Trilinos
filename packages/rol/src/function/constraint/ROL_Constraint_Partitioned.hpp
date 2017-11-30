@@ -55,9 +55,9 @@ namespace ROL {
 template<class Real>
 class Constraint_Partitioned : public Constraint<Real> {
 private:
-  std::vector<ROL::SharedPointer<Constraint<Real> > > cvec_;
+  std::vector<ROL::Ptr<Constraint<Real> > > cvec_;
   std::vector<bool> isInequality_;      // Label whether cvec_[i] is inequality
-  ROL::SharedPointer<Vector<Real> > scratch_; // Scratch vector for intermediate computation
+  ROL::Ptr<Vector<Real> > scratch_; // Scratch vector for intermediate computation
   int  ncval_;                          // Number of constraint evaluations
   bool initialized_;                    // Is scratch vector initialized?
 
@@ -89,17 +89,17 @@ private:
   
 
 public:
-  Constraint_Partitioned(const std::vector<ROL::SharedPointer<Constraint<Real> > > &cvec,
+  Constraint_Partitioned(const std::vector<ROL::Ptr<Constraint<Real> > > &cvec,
                          bool isInequality = false)
    : cvec_(cvec),
-     scratch_(ROL::nullPointer), ncval_(0), initialized_(false) {
+     scratch_(ROL::nullPtr), ncval_(0), initialized_(false) {
     isInequality_.clear(); isInequality_.resize(cvec.size(),isInequality);
   }
 
-  Constraint_Partitioned(const std::vector<ROL::SharedPointer<Constraint<Real> > > &cvec,
+  Constraint_Partitioned(const std::vector<ROL::Ptr<Constraint<Real> > > &cvec,
                          const std::vector<bool>                             &isInequality)
    : cvec_(cvec), isInequality_(isInequality),
-     scratch_(ROL::nullPointer), ncval_(0), initialized_(false) {}
+     scratch_(ROL::nullPtr), ncval_(0), initialized_(false) {}
 
   int getNumberConstraintEvaluations(void) const {
     return ncval_;
@@ -190,7 +190,7 @@ public:
     int cnt = 1;
     getOpt(ahuv).zero();
     for (int i = 0; i < ncon; ++i) {
-      ROL::SharedPointer<const Vector<Real> > ui = upv.get(i);
+      ROL::Ptr<const Vector<Real> > ui = upv.get(i);
       scratch_->zero();
       cvec_[i]->applyAdjointHessian(*scratch_, *ui, getOpt(v), getOpt(x), tol);
       getOpt(ahuv).plus(*scratch_);

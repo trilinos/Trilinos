@@ -76,12 +76,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   // Save the format state of the original std::cout.
   Teuchos::oblackholestream oldFormatState;
@@ -99,51 +99,51 @@ int main(int argc, char *argv[]) {
     int cdim = 3;
     
     // Optimization vector
-    ROL::SharedPointer<V> x  = ROL::makeShared<StdV>( ROL::makeShared<std::vector<RealT>>(xdim) );
-    ROL::SharedPointer<V> c  = ROL::makeShared<StdV>( ROL::makeShared<std::vector<RealT>>(cdim));
-    ROL::SharedPointer<V> e0 = c->basis(0);
-    ROL::SharedPointer<V> e1 = c->basis(1);
-    ROL::SharedPointer<V> e2 = c->basis(2);
+    ROL::Ptr<V> x  = ROL::makePtr<StdV>( ROL::makePtr<std::vector<RealT>>(xdim) );
+    ROL::Ptr<V> c  = ROL::makePtr<StdV>( ROL::makePtr<std::vector<RealT>>(cdim));
+    ROL::Ptr<V> e0 = c->basis(0);
+    ROL::Ptr<V> e1 = c->basis(1);
+    ROL::Ptr<V> e2 = c->basis(2);
  
     // Exact solution
-    ROL::SharedPointer<V> sol   = x->clone();   
-    ROL::SharedPointer<V> error = x->clone();
+    ROL::Ptr<V> sol   = x->clone();   
+    ROL::Ptr<V> error = x->clone();
 
-    ROL::SharedPointer<Obj> obj = ROL::nullPointer; 
-    ROL::SharedPointer<Con> con = ROL::nullPointer;
+    ROL::Ptr<Obj> obj = ROL::nullPtr; 
+    ROL::Ptr<Con> con = ROL::nullPtr;
     
     ROL::ZOO::getSimpleEqConstrained<RealT,StdV,StdV,StdV,StdV>( obj, con, *x, *sol );
 
     error->set(*sol);
 
     // Extract constraint components to make objectives
-    ROL::SharedPointer<Obj> obj_0 = ROL::makeShared<ROL::ObjectiveFromConstraint<RealT>>( con, *e0 );
-    ROL::SharedPointer<Obj> obj_1 = ROL::makeShared<ROL::ObjectiveFromConstraint<RealT>>( con, *e1 );
-    ROL::SharedPointer<Obj> obj_2 = ROL::makeShared<ROL::ObjectiveFromConstraint<RealT>>( con, *e2 );
+    ROL::Ptr<Obj> obj_0 = ROL::makePtr<ROL::ObjectiveFromConstraint<RealT>>( con, *e0 );
+    ROL::Ptr<Obj> obj_1 = ROL::makePtr<ROL::ObjectiveFromConstraint<RealT>>( con, *e1 );
+    ROL::Ptr<Obj> obj_2 = ROL::makePtr<ROL::ObjectiveFromConstraint<RealT>>( con, *e2 );
 
     // Create separate constraints from the objectives
-    ROL::SharedPointer<Con> con_0 = ROL::makeShared<ROL::ConstraintFromObjective<RealT>>( obj_0 );
-    ROL::SharedPointer<Con> con_1 = ROL::makeShared<ROL::ConstraintFromObjective<RealT>>( obj_1 );
-    ROL::SharedPointer<Con> con_2 = ROL::makeShared<ROL::ConstraintFromObjective<RealT>>( obj_2 );
+    ROL::Ptr<Con> con_0 = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>( obj_0 );
+    ROL::Ptr<Con> con_1 = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>( obj_1 );
+    ROL::Ptr<Con> con_2 = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>( obj_2 );
     
-    std::vector<ROL::SharedPointer<Con>> con_array;
+    std::vector<ROL::Ptr<Con>> con_array;
     con_array.push_back(con_0);
     con_array.push_back(con_1);
     con_array.push_back(con_2);
 
     // Lagrange multipliers
-    ROL::SharedPointer<V> l0 = ROL::makeShared<ScalarV>(0);
-    ROL::SharedPointer<V> l1 = ROL::makeShared<ScalarV>(0);
-    ROL::SharedPointer<V> l2 = ROL::makeShared<ScalarV>(0);
+    ROL::Ptr<V> l0 = ROL::makePtr<ScalarV>(0);
+    ROL::Ptr<V> l1 = ROL::makePtr<ScalarV>(0);
+    ROL::Ptr<V> l2 = ROL::makePtr<ScalarV>(0);
   
-    std::vector<ROL::SharedPointer<V>> l_array;
+    std::vector<ROL::Ptr<V>> l_array;
     l_array.push_back(l0);
     l_array.push_back(l1);
     l_array.push_back(l2);
    
     ROL::OptimizationProblem<RealT> opt( obj,             // Objective
                                          x,               // Optimization vector
-                                         ROL::nullPointer,   // No bound constraint
+                                         ROL::nullPtr,   // No bound constraint
                                          con_array,       // Array of scalar equality constraints
                                          l_array);        // Array of scalar lagrange multipliers
  

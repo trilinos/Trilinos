@@ -77,8 +77,8 @@ void RandomizeVector( Vector<Real> &x, const Real &lower=0.0, const Real &upper=
 
 template<class Real>
 void RandomizeFeasibleVector( Vector<Real> &x, BoundConstraint<Real> &bnd ) {
-  ROL::SharedPointer<Vector<Real> > u = bnd.getUpperBound();
-  ROL::SharedPointer<Vector<Real> > l = bnd.getLowerBound();
+  ROL::Ptr<Vector<Real> > u = bnd.getUpperBound();
+  ROL::Ptr<Vector<Real> > l = bnd.getLowerBound();
 
   Elementwise::UniformlyRandomMultiply<Real> urm;
   

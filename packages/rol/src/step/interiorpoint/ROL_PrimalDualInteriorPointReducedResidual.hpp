@@ -131,37 +131,37 @@ private:
   static const size_type LOWER = 2;
   static const size_type UPPER = 3;
 
-  ROL::SharedPointer<const V>   x_;            // Optimization vector
-  ROL::SharedPointer<const V>   l_;            //  constraint multiplier
-  ROL::SharedPointer<const V>   zl_;           // Lower bound multiplier
-  ROL::SharedPointer<const V>   zu_;           // Upper bound multiplier
+  ROL::Ptr<const V>   x_;            // Optimization vector
+  ROL::Ptr<const V>   l_;            //  constraint multiplier
+  ROL::Ptr<const V>   zl_;           // Lower bound multiplier
+  ROL::Ptr<const V>   zu_;           // Upper bound multiplier
 
-  ROL::SharedPointer<const V>   xl_;           // Lower bound
-  ROL::SharedPointer<const V>   xu_;           // Upper bound 
+  ROL::Ptr<const V>   xl_;           // Lower bound
+  ROL::Ptr<const V>   xu_;           // Upper bound 
 
-  const ROL::SharedPointer<const V> maskL_;   
-  const ROL::SharedPointer<const V> maskU_;
+  const ROL::Ptr<const V> maskL_;   
+  const ROL::Ptr<const V> maskU_;
 
   Teuchos::RPC<V> scratch_;
 
-  const ROL::SharedPointer<PENALTY> penalty_;
-  const ROL::SharedPointer<OBJ>     obj_;
-  const ROL::SharedPointer<CON>     con_;
+  const ROL::Ptr<PENALTY> penalty_;
+  const ROL::Ptr<OBJ>     obj_;
+  const ROL::Ptr<CON>     con_;
 
 
 public:
 
-  PrimalDualInteriorPointResidual( const ROL::SharedPointer<PENALTY> &penalty, 
-                                   const ROL::SharedPointer<CON> &con,
+  PrimalDualInteriorPointResidual( const ROL::Ptr<PENALTY> &penalty, 
+                                   const ROL::Ptr<CON> &con,
                                    const V &x,
-                                         ROL::SharedPointer<V> &scratch ) :
+                                         ROL::Ptr<V> &scratch ) :
     penalty_(penalty), con_(con), scratch_(scratch) {
 
     obj_   = penalty_->getObjective();
     maskL_ = penalty_->getLowerMask();
     maskU_ = penalty_->getUpperMask();
 
-    ROL::SharedPointer<BND> bnd = penalty_->getBoundConstraint();
+    ROL::Ptr<BND> bnd = penalty_->getBoundConstraint();
     xl_ = bnd->getLowerBound();
     xu_ = bnd->getUpperBound();
 
@@ -204,8 +204,8 @@ public:
     zl_ = x_pv.get(LOWER);
     zu_ = x_pv.get(UPPER); 
 
-    ROL::SharedPointer<V> cx  = c_pv.get(OPT);
-    ROL::SharedPointer<V> cl  = c_pv.get(EQUAL);
+    ROL::Ptr<V> cx  = c_pv.get(OPT);
+    ROL::Ptr<V> cl  = c_pv.get(EQUAL);
    
     // TODO: Add check as to whether we really need to recompute these
     penalty_->gradient(*cx,*x_,tol);
@@ -227,12 +227,12 @@ public:
     const PV &x_pv = dynamic_cast<const PV&>(x); 
 
     // output vector components
-    ROL::SharedPointer<V> jvx  = jv_pv.get(OPT);
-    ROL::SharedPointer<V> jvl  = jv_pv.get(EQUAL);
+    ROL::Ptr<V> jvx  = jv_pv.get(OPT);
+    ROL::Ptr<V> jvl  = jv_pv.get(EQUAL);
 
     // input vector components
-    ROL::SharedPointer<const V> vx  = v_pv.get(OPT);
-    ROL::SharedPointer<const V> vl  = v_pv.get(EQUAL); 
+    ROL::Ptr<const V> vx  = v_pv.get(OPT);
+    ROL::Ptr<const V> vl  = v_pv.get(EQUAL); 
 
     x_  = x_pv.get(OPT);
     l_  = x_pv.get(EQUAL);

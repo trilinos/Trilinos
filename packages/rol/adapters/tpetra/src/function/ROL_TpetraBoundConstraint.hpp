@@ -329,10 +329,10 @@ namespace ROL {
 
          
         typedef Tpetra::MultiVector<Real,LO,GO,Node> MV;
-        typedef ROL::SharedPointer<MV> MVP;
-        typedef ROL::SharedPointer<const MV> CMVP;
+        typedef ROL::Ptr<MV> MVP;
+        typedef ROL::Ptr<const MV> CMVP;
         typedef TpetraMultiVector<Real,LO,GO,Node> TMV;
-        typedef ROL::SharedPointer<TMV> TMVP; 
+        typedef ROL::Ptr<TMV> TMVP; 
         typedef typename MV::dual_view_type::t_dev ViewType;
 
         private:
@@ -345,13 +345,13 @@ namespace ROL {
             ViewType u_;           // Kokkos view of Upper bounds
             Real min_diff_;
             Real scale_;
-            ROL::SharedPointer<const Teuchos::Comm<int> > comm_; 
+            ROL::Ptr<const Teuchos::Comm<int> > comm_; 
 
-        ROL::SharedPointer<const MV> getVector( const ROL::Vector<Real>& x ) {
+        ROL::Ptr<const MV> getVector( const ROL::Vector<Real>& x ) {
           return dynamic_cast<const TMV&>(x).getVector();
         }
 
-        ROL::SharedPointer<MV> getVector( ROL::Vector<Real>& x ) {
+        ROL::Ptr<MV> getVector( ROL::Vector<Real>& x ) {
           return dynamic_cast<TMV&>(x).getVector();
         }
 

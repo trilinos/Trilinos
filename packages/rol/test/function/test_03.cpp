@@ -74,8 +74,8 @@ void print_vector( const ROL::Vector<Real> &x ) {
     
   for(size_type k=0; k<n; ++k) {
     std::cout << "[subvector " << k << "]" << std::endl;
-    ROL::SharedPointer<const V> vec = eb.get(k);
-    ROL::SharedPointer<const std::vector<Real> > vp = 
+    ROL::Ptr<const V> vec = eb.get(k);
+    ROL::Ptr<const std::vector<Real> > vp = 
       dynamic_cast<SV>(const_cast<V&&>(*vec)).getVector();  
    for(size_type i=0;i<vp->size();++i) {
       std::cout << (*vp)[i] << std::endl;
@@ -106,13 +106,13 @@ int main(int argc, char *argv[]) {
 
   int iprint = argc - 1;
 
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   oblackholestream bhs; // no output
  
   if( iprint>0 ) 
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
@@ -122,35 +122,35 @@ int main(int argc, char *argv[]) {
 
     uint dim   = 3;  // Number of elements in each subvector (could be different)
  
-    ROL::SharedPointer<vector> x1_ptr = ROL::makeShared<vector>(dim,1.0);
-    ROL::SharedPointer<vector> x2_ptr = ROL::makeShared<vector>(dim,2.0);
+    ROL::Ptr<vector> x1_ptr = ROL::makePtr<vector>(dim,1.0);
+    ROL::Ptr<vector> x2_ptr = ROL::makePtr<vector>(dim,2.0);
  
-    ROL::SharedPointer<vector> y1_ptr = ROL::makeShared<vector>(dim,0.0);
-    ROL::SharedPointer<vector> y2_ptr = ROL::makeShared<vector>(dim,0.0);
+    ROL::Ptr<vector> y1_ptr = ROL::makePtr<vector>(dim,0.0);
+    ROL::Ptr<vector> y2_ptr = ROL::makePtr<vector>(dim,0.0);
 
-    ROL::SharedPointer<vector> z1_ptr = ROL::makeShared<vector>(dim,0.0);
-    ROL::SharedPointer<vector> z2_ptr = ROL::makeShared<vector>(dim,0.0);
+    ROL::Ptr<vector> z1_ptr = ROL::makePtr<vector>(dim,0.0);
+    ROL::Ptr<vector> z2_ptr = ROL::makePtr<vector>(dim,0.0);
 
-    ROL::SharedPointer<V> x1 = ROL::makeShared<SV>( x1_ptr);
-    ROL::SharedPointer<V> x2 = ROL::makeShared<SV>( x2_ptr);
+    ROL::Ptr<V> x1 = ROL::makePtr<SV>( x1_ptr);
+    ROL::Ptr<V> x2 = ROL::makePtr<SV>( x2_ptr);
 
-    ROL::SharedPointer<V> y1 = ROL::makeShared<SV>( y1_ptr);
-    ROL::SharedPointer<V> y2 = ROL::makeShared<SV>( y2_ptr);
+    ROL::Ptr<V> y1 = ROL::makePtr<SV>( y1_ptr);
+    ROL::Ptr<V> y2 = ROL::makePtr<SV>( y2_ptr);
 
-    ROL::SharedPointer<V> z1 = ROL::makeShared<SV>( z1_ptr);
-    ROL::SharedPointer<V> z2 = ROL::makeShared<SV>( z2_ptr); 
+    ROL::Ptr<V> z1 = ROL::makePtr<SV>( z1_ptr);
+    ROL::Ptr<V> z2 = ROL::makePtr<SV>( z2_ptr); 
 
-    ROL::SharedPointer<V> x = ROL::CreatePartitionedVector( x1, x2 );
-    ROL::SharedPointer<V> y = ROL::CreatePartitionedVector( y1, y2 );
-    ROL::SharedPointer<V> z = ROL::CreatePartitionedVector( z1, z2 );
+    ROL::Ptr<V> x = ROL::CreatePartitionedVector( x1, x2 );
+    ROL::Ptr<V> y = ROL::CreatePartitionedVector( y1, y2 );
+    ROL::Ptr<V> z = ROL::CreatePartitionedVector( z1, z2 );
 
     // Operator diagonals
-    ROL::SharedPointer<vector> d1_ptr = ROL::makeShared<vector>(dim,0.0);
-    ROL::SharedPointer<vector> d2_ptr = ROL::makeShared<vector>(dim,0.0);
+    ROL::Ptr<vector> d1_ptr = ROL::makePtr<vector>(dim,0.0);
+    ROL::Ptr<vector> d2_ptr = ROL::makePtr<vector>(dim,0.0);
 
     // Dyadic components
-    ROL::SharedPointer<vector> u_ptr = ROL::makeShared<vector>(dim,0.0);
-    ROL::SharedPointer<vector> v_ptr = ROL::makeShared<vector>(dim,1.0);
+    ROL::Ptr<vector> u_ptr = ROL::makePtr<vector>(dim,0.0);
+    ROL::Ptr<vector> v_ptr = ROL::makePtr<vector>(dim,1.0);
 
     (*d1_ptr)[0] = 6.0;   (*d2_ptr)[0] = 3.0;
     (*d1_ptr)[1] = 5.0;   (*d2_ptr)[1] = 2.0;
@@ -162,15 +162,15 @@ int main(int argc, char *argv[]) {
 
     (*u_ptr)[1] = 1.0;    
 
-    ROL::SharedPointer<V> d1 = ROL::makeShared<SV>(d1_ptr);
-    ROL::SharedPointer<V> d2 = ROL::makeShared<SV>(d2_ptr);
-    ROL::SharedPointer<V> u  = ROL::makeShared<SV>(u_ptr);
-    ROL::SharedPointer<V> v  = ROL::makeShared<SV>(v_ptr);
+    ROL::Ptr<V> d1 = ROL::makePtr<SV>(d1_ptr);
+    ROL::Ptr<V> d2 = ROL::makePtr<SV>(d2_ptr);
+    ROL::Ptr<V> u  = ROL::makePtr<SV>(u_ptr);
+    ROL::Ptr<V> v  = ROL::makePtr<SV>(v_ptr);
     
-    ROL::SharedPointer<LinOp> D1 = ROL::makeShared<DiagOp>(*d1);
-    ROL::SharedPointer<LinOp> NO = ROL::makeShared<NullOp>();
-    ROL::SharedPointer<LinOp> UV = ROL::makeShared<DyadOp>(u,v);
-    ROL::SharedPointer<LinOp> D2 = ROL::makeShared<DiagOp>(*d2);
+    ROL::Ptr<LinOp> D1 = ROL::makePtr<DiagOp>(*d1);
+    ROL::Ptr<LinOp> NO = ROL::makePtr<NullOp>();
+    ROL::Ptr<LinOp> UV = ROL::makePtr<DyadOp>(u,v);
+    ROL::Ptr<LinOp> D2 = ROL::makePtr<DiagOp>(*d2);
 
    
     RealT tol = 0.0;

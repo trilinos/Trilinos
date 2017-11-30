@@ -113,12 +113,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -129,11 +129,11 @@ int main(int argc, char *argv[]) {
     RealT alpha = 1.e-4;
     ROL::ZOO::Objective_PoissonControl<RealT> obj(alpha);
 
-    ROL::SharedPointer<vector> l_ptr = ROL::makeShared<vector>(dim);
-    ROL::SharedPointer<vector> u_ptr = ROL::makeShared<vector>(dim);
+    ROL::Ptr<vector> l_ptr = ROL::makePtr<vector>(dim);
+    ROL::Ptr<vector> u_ptr = ROL::makePtr<vector>(dim);
 
-    ROL::SharedPointer<V> lo = ROL::makeShared<SV>(l_ptr);
-    ROL::SharedPointer<V> up = ROL::makeShared<SV>(u_ptr);
+    ROL::Ptr<V> lo = ROL::makePtr<SV>(l_ptr);
+    ROL::Ptr<V> up = ROL::makePtr<SV>(u_ptr);
 
     for ( uint i = 0; i < dim; i++ ) {
       if ( i < dim/3.0  ||  i > 2*dim/3.0 ) {
@@ -169,10 +169,10 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Iteration Limit",100);
 
     // Define algorithm.
-    ROL::SharedPointer<ROL::Algorithm<RealT> > algo = ROL::makeShared<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
+    ROL::Ptr<ROL::Algorithm<RealT> > algo = ROL::makePtr<ROL::Algorithm<RealT>>("Primal Dual Active Set",*parlist,false);
 
     // Iteration vector.
-    ROL::SharedPointer<vector> x_ptr = ROL::makeShared<vector>(dim, 0.0);
+    ROL::Ptr<vector> x_ptr = ROL::makePtr<vector>(dim, 0.0);
     SV x(x_ptr);
 
     // Run algorithm.
@@ -190,9 +190,9 @@ int main(int argc, char *argv[]) {
     // re-load parameters
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // Set algorithm.
-    algo = ROL::makeShared<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>("Trust Region",*parlist,false);
     // Iteration vector.
-    ROL::SharedPointer<vector> y_ptr = ROL::makeShared<vector>(dim, 0.0);
+    ROL::Ptr<vector> y_ptr = ROL::makePtr<vector>(dim, 0.0);
     SV y(y_ptr);
 
     // Run Algorithm
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
     }
     file_tr.close();
    
-    ROL::SharedPointer<V> error = x.clone();
+    ROL::Ptr<V> error = x.clone();
     error->set(x);
     error->axpy(-1.0,y);
     *outStream << "\nError between PDAS solution and TR solution is " << error->norm() << "\n";

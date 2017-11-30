@@ -92,21 +92,21 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  ROL::SharedPointer<const Teuchos::Comm<int> > serial_comm
-    = ROL::makeShared<Teuchos::SerialComm<int>>();
+  ROL::Ptr<const Teuchos::Comm<int> > serial_comm
+    = ROL::makePtr<Teuchos::SerialComm<int>>();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   }
   else {
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
   }
   int errorFlag  = 0;
 
@@ -126,56 +126,56 @@ int main(int argc, char *argv[]) {
     /***************** BUILD GOVERNING PDE ***********************************/
     /*************************************************************************/
     /*** Initialize main data structure. ***/
-    ROL::SharedPointer<MeshManager<RealT> > meshMgr
-      = ROL::makeShared<MeshManager_BackwardFacingStepChannel<RealT>>(*parlist);
-    //  = ROL::makeShared<StochasticStefanBoltzmannMeshManager<RealT>>(*parlist);
+    ROL::Ptr<MeshManager<RealT> > meshMgr
+      = ROL::makePtr<MeshManager_BackwardFacingStepChannel<RealT>>(*parlist);
+    //  = ROL::makePtr<StochasticStefanBoltzmannMeshManager<RealT>>(*parlist);
     // Initialize Stefan-Boltzmann PDE.
-    ROL::SharedPointer<StochasticStefanBoltzmannPDE<RealT> > pde
-      = ROL::makeShared<StochasticStefanBoltzmannPDE<RealT>>(*parlist);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > con
-      = ROL::makeShared<PDE_Constraint<RealT>>(pde,meshMgr,serial_comm,*parlist,*outStream);
+    ROL::Ptr<StochasticStefanBoltzmannPDE<RealT> > pde
+      = ROL::makePtr<StochasticStefanBoltzmannPDE<RealT>>(*parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
+      = ROL::makePtr<PDE_Constraint<RealT>>(pde,meshMgr,serial_comm,*parlist,*outStream);
     con->setSolveParameters(*parlist);
     // Cast the constraint and get the assembler.
-    ROL::SharedPointer<PDE_Constraint<RealT> > pdeCon
-      = ROL::dynamicPointerCast<PDE_Constraint<RealT> >(con);
-    ROL::SharedPointer<Assembler<RealT> > assembler = pdeCon->getAssembler();
+    ROL::Ptr<PDE_Constraint<RealT> > pdeCon
+      = ROL::dynamicPtrCast<PDE_Constraint<RealT> >(con);
+    ROL::Ptr<Assembler<RealT> > assembler = pdeCon->getAssembler();
 
     /*************************************************************************/
     /***************** BUILD VECTORS *****************************************/
     /*************************************************************************/
-    ROL::SharedPointer<Tpetra::MultiVector<> >  u_ptr = assembler->createStateVector();
-    ROL::SharedPointer<Tpetra::MultiVector<> >  p_ptr = assembler->createStateVector();
-    ROL::SharedPointer<Tpetra::MultiVector<> > du_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<> >  u_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<> >  p_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<> > du_ptr = assembler->createStateVector();
     u_ptr->randomize();  //u_ptr->putScalar(static_cast<RealT>(1));
     p_ptr->randomize();  //p_ptr->putScalar(static_cast<RealT>(1));
     du_ptr->randomize(); //du_ptr->putScalar(static_cast<RealT>(0));
-    ROL::SharedPointer<ROL::Vector<RealT> > up
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
-    ROL::SharedPointer<ROL::Vector<RealT> > pp
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler);
-    ROL::SharedPointer<ROL::Vector<RealT> > dup
-      = ROL::makeShared<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > up
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > pp
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > dup
+      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler);
     // Create residual vectors
-    ROL::SharedPointer<Tpetra::MultiVector<> > r_ptr = assembler->createResidualVector();
+    ROL::Ptr<Tpetra::MultiVector<> > r_ptr = assembler->createResidualVector();
     r_ptr->randomize(); //r_ptr->putScalar(static_cast<RealT>(1));
-    ROL::SharedPointer<ROL::Vector<RealT> > rp
-      = ROL::makeShared<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > rp
+      = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler);
     // Create control vector and set to ones
-    ROL::SharedPointer<Tpetra::MultiVector<> >  z_ptr = assembler->createControlVector();
-    ROL::SharedPointer<Tpetra::MultiVector<> > dz_ptr = assembler->createControlVector();
-    ROL::SharedPointer<Tpetra::MultiVector<> > yz_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> >  z_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> > dz_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> > yz_ptr = assembler->createControlVector();
     z_ptr->randomize();  z_ptr->putScalar(static_cast<RealT>(280));
     dz_ptr->randomize(); //dz_ptr->putScalar(static_cast<RealT>(0));
     yz_ptr->randomize(); //yz_ptr->putScalar(static_cast<RealT>(0));
-    ROL::SharedPointer<ROL::TpetraMultiVector<RealT> > zpde
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler);
-    ROL::SharedPointer<ROL::TpetraMultiVector<RealT> > dzpde
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,assembler);
-    ROL::SharedPointer<ROL::TpetraMultiVector<RealT> > yzpde
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(yz_ptr,pde,assembler);
-    ROL::SharedPointer<ROL::Vector<RealT> > zp  = ROL::makeShared<PDE_OptVector<RealT>>(zpde);
-    ROL::SharedPointer<ROL::Vector<RealT> > dzp = ROL::makeShared<PDE_OptVector<RealT>>(dzpde);
-    ROL::SharedPointer<ROL::Vector<RealT> > yzp = ROL::makeShared<PDE_OptVector<RealT>>(yzpde);
+    ROL::Ptr<ROL::TpetraMultiVector<RealT> > zpde
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler);
+    ROL::Ptr<ROL::TpetraMultiVector<RealT> > dzpde
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,assembler);
+    ROL::Ptr<ROL::TpetraMultiVector<RealT> > yzpde
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(yz_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > zp  = ROL::makePtr<PDE_OptVector<RealT>>(zpde);
+    ROL::Ptr<ROL::Vector<RealT> > dzp = ROL::makePtr<PDE_OptVector<RealT>>(dzpde);
+    ROL::Ptr<ROL::Vector<RealT> > yzp = ROL::makePtr<PDE_OptVector<RealT>>(yzpde);
     // Create ROL SimOpt vectors
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> d(dup,dzp);
@@ -183,32 +183,32 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD COST FUNCTIONAL *********************************/
     /*************************************************************************/
-    std::vector<ROL::SharedPointer<QoI<RealT> > > qoi_vec(2,ROL::nullPointer);
-    qoi_vec[0] = ROL::makeShared<QoI_StateCost<RealT>>(pde->getVolFE(),*parlist);
-    qoi_vec[1] = ROL::makeShared<QoI_ControlCost<RealT>>(
+    std::vector<ROL::Ptr<QoI<RealT> > > qoi_vec(2,ROL::nullPtr);
+    qoi_vec[0] = ROL::makePtr<QoI_StateCost<RealT>>(pde->getVolFE(),*parlist);
+    qoi_vec[1] = ROL::makePtr<QoI_ControlCost<RealT>>(
       pde->getVolFE(),pde->getBdryFE(0),pde->getBdryCellLocIds(0),*parlist);
-    ROL::SharedPointer<StochasticStefanBoltzmannStdObjective<RealT> > std_obj
-      = ROL::makeShared<StochasticStefanBoltzmannStdObjective<RealT>>(*parlist);
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > obj
-      = ROL::makeShared<PDE_Objective<RealT>>(qoi_vec,std_obj,assembler);
-    ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
-      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp, true, false);
+    ROL::Ptr<StochasticStefanBoltzmannStdObjective<RealT> > std_obj
+      = ROL::makePtr<StochasticStefanBoltzmannStdObjective<RealT>>(*parlist);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj
+      = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,std_obj,assembler);
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > objReduced
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp, true, false);
 
     /*************************************************************************/
     /***************** BUILD BOUND CONSTRAINT ********************************/
     /*************************************************************************/
-    ROL::SharedPointer<Tpetra::MultiVector<> >  zlo_ptr = assembler->createControlVector();
-    ROL::SharedPointer<Tpetra::MultiVector<> >  zhi_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> >  zlo_ptr = assembler->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<> >  zhi_ptr = assembler->createControlVector();
     zlo_ptr->putScalar(static_cast<RealT>(280));
     zhi_ptr->putScalar(static_cast<RealT>(370));
-    ROL::SharedPointer<ROL::TpetraMultiVector<RealT> > zlopde
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(zlo_ptr,pde,assembler);
-    ROL::SharedPointer<ROL::TpetraMultiVector<RealT> > zhipde
-      = ROL::makeShared<PDE_PrimalOptVector<RealT>>(zhi_ptr,pde,assembler);
-    ROL::SharedPointer<ROL::Vector<RealT> > zlop = ROL::makeShared<PDE_OptVector<RealT>>(zlopde);
-    ROL::SharedPointer<ROL::Vector<RealT> > zhip = ROL::makeShared<PDE_OptVector<RealT>>(zhipde);
-    ROL::SharedPointer<ROL::BoundConstraint<RealT> > bnd
-      = ROL::makeShared<ROL::Bounds<RealT>>(zlop,zhip);
+    ROL::Ptr<ROL::TpetraMultiVector<RealT> > zlopde
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(zlo_ptr,pde,assembler);
+    ROL::Ptr<ROL::TpetraMultiVector<RealT> > zhipde
+      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(zhi_ptr,pde,assembler);
+    ROL::Ptr<ROL::Vector<RealT> > zlop = ROL::makePtr<PDE_OptVector<RealT>>(zlopde);
+    ROL::Ptr<ROL::Vector<RealT> > zhip = ROL::makePtr<PDE_OptVector<RealT>>(zhipde);
+    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
+      = ROL::makePtr<ROL::Bounds<RealT>>(zlop,zhip);
 
     /*************************************************************************/
     /***************** BUILD SAMPLER *****************************************/
@@ -216,10 +216,10 @@ int main(int argc, char *argv[]) {
     int nsamp = parlist->sublist("Problem").get("Number of Samples",100);
     std::vector<RealT> tmp = {-one,one};
     std::vector<std::vector<RealT> > bounds(stochDim,tmp);
-    ROL::SharedPointer<ROL::BatchManager<RealT> > bman
-      = ROL::makeShared<PDE_OptVector_BatchManager<RealT>>(comm);
-    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler
-      = ROL::makeShared<ROL::MonteCarloGenerator<RealT>>(nsamp,bounds,bman);
+    ROL::Ptr<ROL::BatchManager<RealT> > bman
+      = ROL::makePtr<PDE_OptVector_BatchManager<RealT>>(comm);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp,bounds,bman);
 
     /*************************************************************************/
     /***************** BUILD STOCHASTIC PROBLEM ******************************/
@@ -271,8 +271,8 @@ int main(int argc, char *argv[]) {
     // Output expected state and samples to file
     up->zero(); pp->zero(); dup->zero();
     RealT tol(1.e-8);
-    ROL::SharedPointer<ROL::BatchManager<RealT> > bman_Eu
-      = ROL::makeShared<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
+    ROL::Ptr<ROL::BatchManager<RealT> > bman_Eu
+      = ROL::makePtr<ROL::TpetraTeuchosBatchManager<RealT>>(comm);
     std::vector<RealT> sample(stochDim);
     std::stringstream name_samp;
     name_samp << "samples_" << bman->batchID() << ".txt";
@@ -295,16 +295,16 @@ int main(int argc, char *argv[]) {
     // Build objective function distribution
     RealT val1(0), val2(0);
     int nsamp_dist = parlist->sublist("Problem").get("Number of Output Samples",100);
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > stateCost
-      = ROL::makeShared<IntegralObjective<RealT>>(qoi_vec[0],assembler);
-    ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > redStateCost
-      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(stateCost, con, up, zp, pp, true, false);
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > ctrlCost
-      = ROL::makeShared<IntegralObjective<RealT>>(qoi_vec[1],assembler);
-    ROL::SharedPointer<ROL::Reduced_Objective_SimOpt<RealT> > redCtrlCost
-      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(ctrlCost, con, up, zp, pp, true, false);
-    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler_dist
-      = ROL::makeShared<ROL::MonteCarloGenerator<RealT>>(nsamp_dist,bounds,bman);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > stateCost
+      = ROL::makePtr<IntegralObjective<RealT>>(qoi_vec[0],assembler);
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > redStateCost
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(stateCost, con, up, zp, pp, true, false);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > ctrlCost
+      = ROL::makePtr<IntegralObjective<RealT>>(qoi_vec[1],assembler);
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > redCtrlCost
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(ctrlCost, con, up, zp, pp, true, false);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler_dist
+      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nsamp_dist,bounds,bman);
     std::stringstream name;
     name << "obj_samples_" << bman->batchID() << ".txt";
     std::ofstream file;

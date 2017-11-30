@@ -97,9 +97,9 @@ class RiskMeasure {
 protected:
   Real val_;
   Real gv_;
-  ROL::SharedPointer<Vector<Real> > g_;
-  ROL::SharedPointer<Vector<Real> > hv_;
-  ROL::SharedPointer<Vector<Real> > dualVector_;
+  ROL::Ptr<Vector<Real> > g_;
+  ROL::Ptr<Vector<Real> > hv_;
+  ROL::Ptr<Vector<Real> > dualVector_;
   bool firstReset_;
 
   int comp_;
@@ -133,8 +133,8 @@ public:
              On input, \f$x\f$ carries \f$x_0\f$ and any statistics (scalars)
              associated with the risk measure. 
   */
-  virtual void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x) {
-    x0 = ROL::constPointerCast<Vector<Real> >(
+  virtual void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
+    x0 = ROL::constPtrCast<Vector<Real> >(
          dynamic_cast<const RiskVector<Real>&>(x).getVector());
     // Create memory for class members
     if ( firstReset_ ) {
@@ -162,11 +162,11 @@ public:
              \f$v_0\f$ and any statistics (scalars) associated with the risk
              measure.
   */
-  virtual void reset(ROL::SharedPointer<Vector<Real> > &x0, const Vector<Real> &x,
-                     ROL::SharedPointer<Vector<Real> > &v0, const Vector<Real> &v) {
+  virtual void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x,
+                     ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
     // Get vector component of v.  This is important for CVaR.
-    v0 = ROL::constPointerCast<Vector<Real> >(
+    v0 = ROL::constPtrCast<Vector<Real> >(
          dynamic_cast<const RiskVector<Real>&>(v).getVector());
   }
 

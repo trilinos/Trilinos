@@ -194,11 +194,11 @@ private:
     lp.GTTRS(trans,nx_,nhrs,&dl[0],&d[0],&du[0],&du2[0],&ipiv[0],&u[0],ldb,&info);
   }
 
-  ROL::SharedPointer<std::vector<Real>> getVector( ROL::Vector<Real>& x ) {
+  ROL::Ptr<std::vector<Real>> getVector( ROL::Vector<Real>& x ) {
     return dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
   }
 
-  ROL::SharedPointer<const std::vector<Real>> getVector( const ROL::Vector<Real>& x ) {
+  ROL::Ptr<const std::vector<Real>> getVector( const ROL::Vector<Real>& x ) {
     return dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
   }
 
@@ -434,11 +434,11 @@ private:
     }
   } 
 
-  ROL::SharedPointer<std::vector<Real>> getVector( ROL::Vector<Real>& x ) {
+  ROL::Ptr<std::vector<Real>> getVector( ROL::Vector<Real>& x ) {
     return dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
   }
 
-  ROL::SharedPointer<const std::vector<Real>> getVector( const ROL::Vector<Real>& x ) {
+  ROL::Ptr<const std::vector<Real>> getVector( const ROL::Vector<Real>& x ) {
     return dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
   }
 

@@ -49,7 +49,7 @@
 #ifndef PDEOPT_FE_HPP
 #define PDEOPT_FE_HPP
 
-#include "ROL_SharedPointer.hpp"
+#include "ROL_Ptr.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 #include "Intrepid_FieldContainer.hpp"
@@ -63,9 +63,9 @@ class FE {
 
 private:
 
-  const ROL::SharedPointer<Intrepid::FieldContainer<Real> > cellNodes_;                            // coordinates of the cell nodes
-  ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basis_;              // Intrepid basis
-  const ROL::SharedPointer<Intrepid::Cubature<Real, Intrepid::FieldContainer<Real> > > cubature_;  // Intrepid cubature (quadrature, integration) rule
+  const ROL::Ptr<Intrepid::FieldContainer<Real> > cellNodes_;                            // coordinates of the cell nodes
+  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > > basis_;              // Intrepid basis
+  const ROL::Ptr<Intrepid::Cubature<Real, Intrepid::FieldContainer<Real> > > cubature_;  // Intrepid cubature (quadrature, integration) rule
   const int sideId_;                                                                         // local side id for boundary integration
 
   int c_;    // number of cells in the FE object
@@ -74,48 +74,48 @@ private:
   int d_;    // space dimension of the (parent) cells
   int sd_;   // space dimension of the side cells
 
-  ROL::SharedPointer<shards::CellTopology> cellTopo_;   // base (parent) cell topology
-  ROL::SharedPointer<shards::CellTopology> sideTopo_;   // side (subcell) topology; assumed uniform
+  ROL::Ptr<shards::CellTopology> cellTopo_;   // base (parent) cell topology
+  ROL::Ptr<shards::CellTopology> sideTopo_;   // side (subcell) topology; assumed uniform
 
   std::vector<std::vector<int> > sideDofs_;       // local dofs on cell sides; 1st index: side number; 2nd index: dof number
 
   // Containers for local finite element data.
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cubPoints_;             // points of the cubature rule on the reference cell
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cubWeights_;            // weights of the cubature rule on the reference cell
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cubPointsSubcell_;      // cubature points on the side reference cell
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cubWeightsSubcell_;     // cubature weights on the side reference cell
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cellJac_;               // cell Jacobian matrices
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cellJacInv_;            // inverses of cell Jacobians
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cellJacDet_;            // determinants of cell Jacobians
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cellWeightedMeasure_;   // cell measure (Jacobian determinant) multiplied by the cubature weights
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > valReference_;          // value of FE basis in reference space
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradReference_;         // gradient of FE basis in reference space
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > valPhysical_;           // value of FE basis in physical space
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradPhysical_;          // gradient of FE basis in physical space
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradPhysicalX_;         // x-component of gradient of FE basis in physical space
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradPhysicalY_;         // y-component of gradient of FE basis in physical space
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradPhysicalZ_;         // z-component of gradient of FE basis in physical space
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradPhysicalXWeighted_; // x-component of gradient of FE basis in physical space weighted
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradPhysicalYWeighted_; // y-component of gradient of FE basis in physical space weighted
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradPhysicalZWeighted_; // z-component of gradient of FE basis in physical space weighted
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > divPhysical_;           // divergence of FE basis in physical space
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > valPhysicalWeighted_;   // value of FE basis in physical space multiplied by weighted cell measure
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradPhysicalWeighted_;  // gradient of FE basis in physical space multiplied by weighted cell measure
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > divPhysicalWeighted_;   // divergence of FE basis in physical space multiplied by weighted cell measure
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > gradgradMats_;          // cell stiffness matrices
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > valvalMats_;            // cell mass matrices
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > cubPointsPhysical_;     // cubature points on the physical cells
-  ROL::SharedPointer<Intrepid::FieldContainer<Real> > dofPoints_;             // degree of freedom points on the reference cell
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cubPoints_;             // points of the cubature rule on the reference cell
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cubWeights_;            // weights of the cubature rule on the reference cell
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cubPointsSubcell_;      // cubature points on the side reference cell
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cubWeightsSubcell_;     // cubature weights on the side reference cell
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cellJac_;               // cell Jacobian matrices
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cellJacInv_;            // inverses of cell Jacobians
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cellJacDet_;            // determinants of cell Jacobians
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cellWeightedMeasure_;   // cell measure (Jacobian determinant) multiplied by the cubature weights
+  ROL::Ptr<Intrepid::FieldContainer<Real> > valReference_;          // value of FE basis in reference space
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradReference_;         // gradient of FE basis in reference space
+  ROL::Ptr<Intrepid::FieldContainer<Real> > valPhysical_;           // value of FE basis in physical space
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradPhysical_;          // gradient of FE basis in physical space
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradPhysicalX_;         // x-component of gradient of FE basis in physical space
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradPhysicalY_;         // y-component of gradient of FE basis in physical space
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradPhysicalZ_;         // z-component of gradient of FE basis in physical space
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradPhysicalXWeighted_; // x-component of gradient of FE basis in physical space weighted
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradPhysicalYWeighted_; // y-component of gradient of FE basis in physical space weighted
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradPhysicalZWeighted_; // z-component of gradient of FE basis in physical space weighted
+  ROL::Ptr<Intrepid::FieldContainer<Real> > divPhysical_;           // divergence of FE basis in physical space
+  ROL::Ptr<Intrepid::FieldContainer<Real> > valPhysicalWeighted_;   // value of FE basis in physical space multiplied by weighted cell measure
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradPhysicalWeighted_;  // gradient of FE basis in physical space multiplied by weighted cell measure
+  ROL::Ptr<Intrepid::FieldContainer<Real> > divPhysicalWeighted_;   // divergence of FE basis in physical space multiplied by weighted cell measure
+  ROL::Ptr<Intrepid::FieldContainer<Real> > gradgradMats_;          // cell stiffness matrices
+  ROL::Ptr<Intrepid::FieldContainer<Real> > valvalMats_;            // cell mass matrices
+  ROL::Ptr<Intrepid::FieldContainer<Real> > cubPointsPhysical_;     // cubature points on the physical cells
+  ROL::Ptr<Intrepid::FieldContainer<Real> > dofPoints_;             // degree of freedom points on the reference cell
 
 public:
 
-  FE(const ROL::SharedPointer<Intrepid::FieldContainer<Real> >                            & cellNodes,
-     const ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > >    & basis,
-     const ROL::SharedPointer<Intrepid::Cubature<Real, Intrepid::FieldContainer<Real> > > & cubature) :
+  FE(const ROL::Ptr<Intrepid::FieldContainer<Real> >                            & cellNodes,
+     const ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > >    & basis,
+     const ROL::Ptr<Intrepid::Cubature<Real, Intrepid::FieldContainer<Real> > > & cubature) :
        cellNodes_(cellNodes), basis_(basis), cubature_(cubature), sideId_(-1) {
 
     // Get base cell topology from basis.
-    cellTopo_ = ROL::makeShared<shards::CellTopology>(basis_->getBaseCellTopology());
+    cellTopo_ = ROL::makePtr<shards::CellTopology>(basis_->getBaseCellTopology());
 
     // Compute dimensions of multidimensional array members.
     c_  = cellNodes_->dimension(0);
@@ -125,45 +125,45 @@ public:
     sd_ = d_ - 1;
 
     // Get side subcell topology.
-    sideTopo_ = ROL::nullPointer;
+    sideTopo_ = ROL::nullPtr;
 
     // Allocate multidimensional arrays.
-    cubPoints_               = ROL::makeShared<Intrepid::FieldContainer<Real>>(p_, d_);
-    cubWeights_              = ROL::makeShared<Intrepid::FieldContainer<Real>>(p_);
-    cellJac_                 = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, p_, d_, d_);
-    cellJacInv_              = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, p_, d_, d_);
-    cellJacDet_              = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, p_);
-    cellWeightedMeasure_     = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, p_);
-    valReference_            = ROL::makeShared<Intrepid::FieldContainer<Real>>(f_, p_);
-    gradReference_           = ROL::makeShared<Intrepid::FieldContainer<Real>>(f_, p_, d_);
-    valPhysical_             = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    gradPhysical_            = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_, d_);
-    gradPhysicalX_           = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    gradPhysicalY_           = ROL::nullPointer;
-    gradPhysicalZ_           = ROL::nullPointer;
+    cubPoints_               = ROL::makePtr<Intrepid::FieldContainer<Real>>(p_, d_);
+    cubWeights_              = ROL::makePtr<Intrepid::FieldContainer<Real>>(p_);
+    cellJac_                 = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, p_, d_, d_);
+    cellJacInv_              = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, p_, d_, d_);
+    cellJacDet_              = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, p_);
+    cellWeightedMeasure_     = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, p_);
+    valReference_            = ROL::makePtr<Intrepid::FieldContainer<Real>>(f_, p_);
+    gradReference_           = ROL::makePtr<Intrepid::FieldContainer<Real>>(f_, p_, d_);
+    valPhysical_             = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    gradPhysical_            = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_, d_);
+    gradPhysicalX_           = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    gradPhysicalY_           = ROL::nullPtr;
+    gradPhysicalZ_           = ROL::nullPtr;
     if (d_ > 1) {
-      gradPhysicalY_         = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+      gradPhysicalY_         = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
     }
     if (d_ > 2) {
-      gradPhysicalZ_         = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+      gradPhysicalZ_         = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
     }
-    gradPhysicalXWeighted_   = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    gradPhysicalYWeighted_   = ROL::nullPointer;
-    gradPhysicalZWeighted_   = ROL::nullPointer;
+    gradPhysicalXWeighted_   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    gradPhysicalYWeighted_   = ROL::nullPtr;
+    gradPhysicalZWeighted_   = ROL::nullPtr;
     if (d_ > 1) {
-      gradPhysicalYWeighted_ = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+      gradPhysicalYWeighted_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
     }
     if (d_ > 2) {
-      gradPhysicalZWeighted_ = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+      gradPhysicalZWeighted_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
     }
-    divPhysical_             = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    valPhysicalWeighted_     = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    gradPhysicalWeighted_    = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_, d_);
-    divPhysicalWeighted_     = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    gradgradMats_            = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, f_);
-    valvalMats_              = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, f_);
-    cubPointsPhysical_       = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, p_, d_);
-    dofPoints_               = ROL::makeShared<Intrepid::FieldContainer<Real>>(f_, d_);
+    divPhysical_             = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    valPhysicalWeighted_     = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    gradPhysicalWeighted_    = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_, d_);
+    divPhysicalWeighted_     = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    gradgradMats_            = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, f_);
+    valvalMats_              = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, f_);
+    cubPointsPhysical_       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, p_, d_);
+    dofPoints_               = ROL::makePtr<Intrepid::FieldContainer<Real>>(f_, d_);
 
     /*** START: Fill multidimensional arrays. ***/
 
@@ -268,8 +268,8 @@ public:
     }
 
     // Get coordinates of DOFs in reference cell.
-    ROL::SharedPointer<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
-      ROL::dynamicPointerCast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basis_);
+    ROL::Ptr<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
+      ROL::dynamicPtrCast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basis_);
     //if (d_ > 1) {
       coord_iface->getDofCoords(*dofPoints_);
     //}
@@ -278,14 +278,14 @@ public:
 
   }
 
-  FE(const ROL::SharedPointer<Intrepid::FieldContainer<Real> >                            & cellNodes,
-     const ROL::SharedPointer<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > >    & basis,
-     const ROL::SharedPointer<Intrepid::Cubature<Real, Intrepid::FieldContainer<Real> > > & cubature,
+  FE(const ROL::Ptr<Intrepid::FieldContainer<Real> >                            & cellNodes,
+     const ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real> > >    & basis,
+     const ROL::Ptr<Intrepid::Cubature<Real, Intrepid::FieldContainer<Real> > > & cubature,
      const int                                                                      & sideId) :
        cellNodes_(cellNodes), basis_(basis), cubature_(cubature), sideId_(sideId) {
 
     // Get base cell topology from basis.
-    cellTopo_ = ROL::makeShared<shards::CellTopology>(basis_->getBaseCellTopology());
+    cellTopo_ = ROL::makePtr<shards::CellTopology>(basis_->getBaseCellTopology());
 
     // Compute dimensions of multidimensional array members.
     c_  = cellNodes_->dimension(0);
@@ -296,47 +296,47 @@ public:
     //std::cout << "FE: c = " << c_ << ", f = " << f_ << ", p = " << p_ << ", d = " << d_ << std::endl;
 
     // Get side subcell topology.
-    sideTopo_ = ROL::makeShared<shards::CellTopology>(cellTopo_->getCellTopologyData(sd_, sideId_));
+    sideTopo_ = ROL::makePtr<shards::CellTopology>(cellTopo_->getCellTopologyData(sd_, sideId_));
 
     // Allocate multidimensional arrays.
-    cubPoints_            = ROL::makeShared<Intrepid::FieldContainer<Real>>(p_, d_);
-    cubWeights_           = ROL::makeShared<Intrepid::FieldContainer<Real>>(p_);
-    cubPointsSubcell_     = ROL::makeShared<Intrepid::FieldContainer<Real>>(p_, sd_);
-    cubWeightsSubcell_    = ROL::makeShared<Intrepid::FieldContainer<Real>>(p_);
-    cellJac_              = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, p_, d_, d_);
-    cellJacInv_           = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, p_, d_, d_);
-    cellJacDet_           = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, p_);
-    cellWeightedMeasure_  = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, p_);
-    valReference_         = ROL::makeShared<Intrepid::FieldContainer<Real>>(f_, p_);
-    gradReference_        = ROL::makeShared<Intrepid::FieldContainer<Real>>(f_, p_, d_);
-    valPhysical_          = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    gradPhysical_         = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_, d_);
-    gradPhysicalX_        = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    gradPhysicalY_        = ROL::nullPointer;
-    gradPhysicalZ_        = ROL::nullPointer;
+    cubPoints_            = ROL::makePtr<Intrepid::FieldContainer<Real>>(p_, d_);
+    cubWeights_           = ROL::makePtr<Intrepid::FieldContainer<Real>>(p_);
+    cubPointsSubcell_     = ROL::makePtr<Intrepid::FieldContainer<Real>>(p_, sd_);
+    cubWeightsSubcell_    = ROL::makePtr<Intrepid::FieldContainer<Real>>(p_);
+    cellJac_              = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, p_, d_, d_);
+    cellJacInv_           = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, p_, d_, d_);
+    cellJacDet_           = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, p_);
+    cellWeightedMeasure_  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, p_);
+    valReference_         = ROL::makePtr<Intrepid::FieldContainer<Real>>(f_, p_);
+    gradReference_        = ROL::makePtr<Intrepid::FieldContainer<Real>>(f_, p_, d_);
+    valPhysical_          = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    gradPhysical_         = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_, d_);
+    gradPhysicalX_        = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    gradPhysicalY_        = ROL::nullPtr;
+    gradPhysicalZ_        = ROL::nullPtr;
     if (d_ > 1) {
-      gradPhysicalY_      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+      gradPhysicalY_      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
     }
     if (d_ > 2) {
-      gradPhysicalZ_      = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+      gradPhysicalZ_      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
     }
-    divPhysical_          = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    valPhysicalWeighted_  = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    gradPhysicalWeighted_ = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_, d_);
-    gradPhysicalXWeighted_   = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    gradPhysicalYWeighted_   = ROL::nullPointer;
-    gradPhysicalZWeighted_   = ROL::nullPointer;
+    divPhysical_          = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    valPhysicalWeighted_  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    gradPhysicalWeighted_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_, d_);
+    gradPhysicalXWeighted_   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    gradPhysicalYWeighted_   = ROL::nullPtr;
+    gradPhysicalZWeighted_   = ROL::nullPtr;
     if (d_ > 1) {
-      gradPhysicalYWeighted_ = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+      gradPhysicalYWeighted_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
     }
     if (d_ > 2) {
-      gradPhysicalZWeighted_ = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+      gradPhysicalZWeighted_ = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
     }
-    divPhysicalWeighted_  = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, p_);
-    gradgradMats_         = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, f_);
-    valvalMats_           = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, f_, f_);
-    cubPointsPhysical_    = ROL::makeShared<Intrepid::FieldContainer<Real>>(c_, p_, d_);
-    dofPoints_            = ROL::makeShared<Intrepid::FieldContainer<Real>>(f_, d_);
+    divPhysicalWeighted_  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, p_);
+    gradgradMats_         = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, f_);
+    valvalMats_           = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, f_, f_);
+    cubPointsPhysical_    = ROL::makePtr<Intrepid::FieldContainer<Real>>(c_, p_, d_);
+    dofPoints_            = ROL::makePtr<Intrepid::FieldContainer<Real>>(f_, d_);
 
     /*** START: Fill multidimensional arrays. ***/
 
@@ -449,8 +449,8 @@ public:
     }
 
     // Get coordinates of DOFs in reference cell.
-    ROL::SharedPointer<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
-      ROL::dynamicPointerCast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basis_);
+    ROL::Ptr<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface =
+      ROL::dynamicPtrCast<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > >(basis_);
     if (d_ > 1) {
       coord_iface->getDofCoords(*dofPoints_);
     }
@@ -461,70 +461,70 @@ public:
 
   /** \brief  Returns cell Jacobian matrices at cubature points.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > J() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > J() const {
     return cellJac_;
   }
 
   /** \brief  Returns inverses of cell Jacobians at cubature points.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > invJ() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > invJ() const {
     return cellJacInv_;
   }
 
   /** \brief  Returns determinants of cell Jacobians at cubature points.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > detJ() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > detJ() const {
     return cellJacDet_;
   }
 
   /** \brief  Returns values of FE basis at cubature points in reference space.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > Nref() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > Nref() const {
     return valReference_;
   }
 
   /** \brief  Returns gradients of FE basis at cubature points in reference space.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > gradNref() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > gradNref() const {
     return gradReference_;
   }
 
   /** \brief  Returns value of FE basis at cubature points in physical space.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > N() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > N() const {
     return valPhysical_;
   }
 
   /** \brief  Returns value of FE basis at cubature points in physical space,
               multiplied by weighted cell measures.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > NdetJ() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > NdetJ() const {
     return valPhysicalWeighted_;
   }
 
   /** \brief  Returns gradient of FE basis at cubature points in physical space.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > gradN() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > gradN() const {
     return gradPhysical_;
   }
 
   /** \brief  Returns gradient of FE basis at cubature points in physical space,
               multiplied by weighted cell measures.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > gradNdetJ() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > gradNdetJ() const {
     return gradPhysicalWeighted_;
   }
 
   /** \brief  Returns divergence of FE basis at cubature points in physical space.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > divN() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > divN() const {
     return divPhysical_;
   }
 
   /** \brief  Returns divergence of FE basis at cubature points in physical space,
               multiplied by weighted cell measures.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > divNdetJ() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > divNdetJ() const {
     return divPhysicalWeighted_;
   }
 
@@ -533,7 +533,7 @@ public:
 
       \param  coord    [in]   - coordinate index (x=0, y=1, z=2)
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > DND(const int & coord) const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > DND(const int & coord) const {
     if (coord == 0) {
       return gradPhysicalX_;
     }
@@ -555,7 +555,7 @@ public:
 
       \param  coord    [in]   - coordinate index (x=0, y=1, z=2)
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > DNDdetJ(const int & coord) const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > DNDdetJ(const int & coord) const {
     if (coord == 0) {
       return gradPhysicalXWeighted_;
     }
@@ -573,35 +573,35 @@ public:
 
   /** \brief  Returns stiffness matrices on cells.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > stiffMat() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > stiffMat() const {
     return gradgradMats_;
   }
 
   /** \brief  Returns mass matrices on cells.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > massMat() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > massMat() const {
     return valvalMats_;
   }
 
   /** \brief Returns cubature points on cells in physical space.
   */
-  ROL::SharedPointer<const Intrepid::FieldContainer<Real> > cubPts() const {
+  ROL::Ptr<const Intrepid::FieldContainer<Real> > cubPts() const {
     return cubPointsPhysical_;
   }
 
   /** \brief Builds FE value interpolant and evaluates it at cubature
              points in physical space.
   */
-  void evaluateValue(const ROL::SharedPointer<Intrepid::FieldContainer<Real> > & fVals,
-                     const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & inCoeffs) const {
+  void evaluateValue(const ROL::Ptr<Intrepid::FieldContainer<Real> > & fVals,
+                     const ROL::Ptr<const Intrepid::FieldContainer<Real> > & inCoeffs) const {
     Intrepid::FunctionSpaceTools::evaluate<Real>(*fVals, *inCoeffs, *valPhysical_);
   }
 
   /** \brief Builds FE gradient interpolant and evaluates it at cubature
              points in physical space.
   */
-  void evaluateGradient(const ROL::SharedPointer<Intrepid::FieldContainer<Real> > & fGrads,
-                        const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & inCoeffs) const {
+  void evaluateGradient(const ROL::Ptr<Intrepid::FieldContainer<Real> > & fGrads,
+                        const ROL::Ptr<const Intrepid::FieldContainer<Real> > & inCoeffs) const {
     Intrepid::FunctionSpaceTools::evaluate<Real>(*fGrads, *inCoeffs, *gradPhysical_);
   }
 
@@ -609,9 +609,9 @@ public:
              FE fields f1 and f2, indexed by (C,P), for values, or (C,P,D),
              for gradients.
   */
-  void computeIntegral(const ROL::SharedPointer<Intrepid::FieldContainer<Real> > & integral,
-                       const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & f1,
-                       const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & f2,
+  void computeIntegral(const ROL::Ptr<Intrepid::FieldContainer<Real> > & integral,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real> > & f1,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real> > & f2,
                        const bool sumInto = false) const {
     Intrepid::FieldContainer<Real> f2Weighted(*f2);
     Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(f2Weighted,              // multiply with weighted measure
@@ -739,8 +739,8 @@ public:
 
   /** \brief Computes coordinates of degrees of freedom on cells.
   */
-  void computeDofCoords(const ROL::SharedPointer<Intrepid::FieldContainer<Real> > & dofCoords,
-                        const ROL::SharedPointer<const Intrepid::FieldContainer<Real> > & cellNodes) const {
+  void computeDofCoords(const ROL::Ptr<Intrepid::FieldContainer<Real> > & dofCoords,
+                        const ROL::Ptr<const Intrepid::FieldContainer<Real> > & cellNodes) const {
     // Map reference DOF locations to physical space.
     Intrepid::CellTools<Real>::mapToPhysicalFrame(*dofCoords,
                                                   *dofPoints_,

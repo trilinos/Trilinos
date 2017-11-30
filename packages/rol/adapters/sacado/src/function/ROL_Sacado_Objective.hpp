@@ -104,15 +104,15 @@ void Sacado_Objective<Real,Obj>::gradientAD(Vector<ScalarT> &g, const Vector<Sca
     
 
     // Get a pointer to the optimization vector
-    ROL::SharedPointer<const vector> xp = dynamic_cast<const SV&>(x).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     // Get a pointer to the gradient vector
-    ROL::SharedPointer<vector> gp = dynamic_cast<SV&>(g).getVector();
+    ROL::Ptr<vector> gp = dynamic_cast<SV&>(g).getVector();
 
     int n = xp->size();
 
     // Create a vector of independent variables
-    ROL::SharedPointer<Fadvector> x_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> x_fad_ptr = ROL::makePtr<Fadvector>();
     x_fad_ptr->reserve(n);
 
     // Initialize constructor for each element
@@ -148,22 +148,22 @@ void Sacado_Objective<Real,Obj>::hessVecAD( Vector<ScalarT> &hv, const Vector<Sc
     
 
     // Get a pointer to the optimization vector
-    ROL::SharedPointer<const vector> xp = dynamic_cast<const SV&>(x).getVector();
+    ROL::Ptr<const vector> xp = dynamic_cast<const SV&>(x).getVector();
 
     // Get a pointer to the direction vector
-    ROL::SharedPointer<const vector> vp = dynamic_cast<const SV&>(v).getVector();
+    ROL::Ptr<const vector> vp = dynamic_cast<const SV&>(v).getVector();
 
-    ROL::SharedPointer<vector> hvp = dynamic_cast<SV&>(hv).getVector();
+    ROL::Ptr<vector> hvp = dynamic_cast<SV&>(hv).getVector();
 
 
     int n = xp->size();
 
     // Create a vector of independent variables
-    ROL::SharedPointer<Fadvector> x_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> x_fad_ptr = ROL::makePtr<Fadvector>();
     x_fad_ptr->reserve(n);
 
     // Allocate for gradient
-    ROL::SharedPointer<Fadvector> g_fad_ptr = ROL::makeShared<Fadvector>();
+    ROL::Ptr<Fadvector> g_fad_ptr = ROL::makePtr<Fadvector>();
     g_fad_ptr->resize(n);
 
     for(int i=0; i<n; ++i) {

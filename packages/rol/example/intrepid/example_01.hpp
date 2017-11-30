@@ -61,7 +61,7 @@ using namespace ROL;
 template<class Real>
 class TrackingObjective : public Objective_SimOpt<Real> {
 
-  template <typename T> using ROL::SharedPointer  = ROL::SharedPointer<T>;
+  template <typename T> using ROL::Ptr  = ROL::Ptr<T>;
   template <typename T> using FC   = Intrepid::FieldContainer<T>;            
 
   typedef Vector<Real>                  V;
@@ -69,7 +69,7 @@ class TrackingObjective : public Objective_SimOpt<Real> {
   typedef std::vector<Real>             vec;
 
   private:
-    ROL::SharedPointer<Discretization<Real>> disc_;
+    ROL::Ptr<Discretization<Real>> disc_;
 
     int numCells_;              // Number of cells (elements)
     int numCubPts_;             // Number of cubature points per cells
@@ -79,17 +79,17 @@ class TrackingObjective : public Objective_SimOpt<Real> {
 
     Real gamma_;
 
-    ROL::SharedPointer<FC<Real>> massMatrices_;     
+    ROL::Ptr<FC<Real>> massMatrices_;     
 
-    ROL::SharedPointer<V> target_;
+    ROL::Ptr<V> target_;
 
 
     void applyMass(V &Mv, const V &v) {
 
       
 
-      ROL::SharedPointer<vec> Mvp = dynamic_cast<SV&>(Mv).getVector(); 
-      ROL::SharedPointer<const vec> vp = dynamic_cast<const SV&>(v).getVector();
+      ROL::Ptr<vec> Mvp = dynamic_cast<SV&>(Mv).getVector(); 
+      ROL::Ptr<const vec> vp = dynamic_cast<const SV&>(v).getVector();
 
       for(int cell=0;cell<numCells_;++cell) {
         for(int rfield=0;rfield<numFields_;++rfield) {
@@ -104,8 +104,8 @@ class TrackingObjective : public Objective_SimOpt<Real> {
 
   public:    
 
-    TrackingObjective(ROL::SharedPointer<Discretization<Real>> disc, 
-                      const ROL::SharedPointer<V> &target, 
+    TrackingObjective(ROL::Ptr<Discretization<Real>> disc, 
+                      const ROL::Ptr<V> &target, 
                       const Real &gamma) : 
       disc_(disc), 
       numCells_(disc_->getNumCells()),
@@ -119,15 +119,15 @@ class TrackingObjective : public Objective_SimOpt<Real> {
 
     Real value(const V &u, const V &z, Real &tol) {
 
-      ROL::SharedPointer<V> err = u.clone();
+      ROL::Ptr<V> err = u.clone();
       err->set(u);
       err->axpy(-1.0,*target_);
-      ROL::SharedPointer<V> Merr = u.clone();
+      ROL::Ptr<V> Merr = u.clone();
       applyMass(*Merr,*err);
       
-      ROL::SharedPointer<V> y = z.clone();
+      ROL::Ptr<V> y = z.clone();
       y->set(z);
-      ROL::SharedPointer<V> My = z.clone();   
+      ROL::Ptr<V> My = z.clone();   
       applyMass(*My,*y); 
 
       Real J = 0.5*(Merr->dot(*err)+gamma_*My->dot(*y));
@@ -137,7 +137,7 @@ class TrackingObjective : public Objective_SimOpt<Real> {
 
     void gradient_1( V &g, const V &u, const V &z, Real &tol ) {
 
-      ROL::SharedPointer<V> err = u.clone();
+      ROL::Ptr<V> err = u.clone();
       err->set(u);
       err->axpy(-1.0,*target_);
       applyMass(g,*err);
@@ -147,7 +147,7 @@ class TrackingObjective : public Objective_SimOpt<Real> {
 
     void gradient_2( V &g, const V &u, const V &z, Real &tol ) {
 
-      ROL::SharedPointer<V> y = z.clone();
+      ROL::Ptr<V> y = z.clone();
       y->set(z);
       applyMass(g,*y); 
       g.scale(gamma_);
@@ -156,7 +156,7 @@ class TrackingObjective : public Objective_SimOpt<Real> {
 
     void hessVec_11( V &hv, const V &v, const V &u, const V &z, Real &tol) {
 
-      ROL::SharedPointer<V> y = v.clone();
+      ROL::Ptr<V> y = v.clone();
       y->set(v);
       applyMass(hv,*y);
          
@@ -176,7 +176,7 @@ class TrackingObjective : public Objective_SimOpt<Real> {
 
     void hessVec_22( V &hv, const V &v, const V &u, const V &z, Real &tol) {
 
-      ROL::SharedPointer<V> y = v.clone();
+      ROL::Ptr<V> y = v.clone();
       y->set(v);
       applyMass(hv,*y);
       hv.scale(gamma_);
@@ -192,7 +192,7 @@ class TrackingObjective : public Objective_SimOpt<Real> {
 template<class Real> 
 class BVPConstraint : public Constraint_SimOpt<Real> {
 
-  template <typename T> using ROL::SharedPointer  = ROL::SharedPointer<T>;
+  template <typename T> using ROL::Ptr  = ROL::Ptr<T>;
   template <typename T> using FC   = Intrepid::FieldContainer<T>;            
 
   typedef Teuchos::SerialDenseMatrix<int,Real> Matrix;
@@ -205,7 +205,7 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
   typedef std::vector<Real>             vec;
 
   private:
-    ROL::SharedPointer<Discretization<Real>> disc_;
+    ROL::Ptr<Discretization<Real>> disc_;
 
     int numCells_;              // Number of cells (elements)
     int numCubPts_;             // Number of cubature points per cells
@@ -213,15 +213,15 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
     int spaceDim_;              // Number of spatial dimensions (currently 1)
     int nDoF_;                  // Total number of degrees of freedom
 
-    ROL::SharedPointer<FC<Real>> x_cub_;       // Physical cubature points
-    ROL::SharedPointer<FC<Real>> tranVals_;    // Transformed values of basis functions
-    ROL::SharedPointer<FC<Real>> tranGrad_;    // Transformed gradients of basis functions
-    ROL::SharedPointer<FC<Real>> wtdTranVals_; // Weighted transformed values of basis functions
-    ROL::SharedPointer<FC<Real>> wtdTranGrad_; // Weighted transformed gradients of basis functions
+    ROL::Ptr<FC<Real>> x_cub_;       // Physical cubature points
+    ROL::Ptr<FC<Real>> tranVals_;    // Transformed values of basis functions
+    ROL::Ptr<FC<Real>> tranGrad_;    // Transformed gradients of basis functions
+    ROL::Ptr<FC<Real>> wtdTranVals_; // Weighted transformed values of basis functions
+    ROL::Ptr<FC<Real>> wtdTranGrad_; // Weighted transformed gradients of basis functions
 
-    ROL::SharedPointer<Matrix> Ju_;            // Constraint Jacobian w.r.t. u
-    ROL::SharedPointer<Matrix> Jz_;            // Constraint Jacobian w.r.t. z
-    ROL::SharedPointer<Matrix> JuFactors_;     // LU factors of the Sim Jacobian 
+    ROL::Ptr<Matrix> Ju_;            // Constraint Jacobian w.r.t. u
+    ROL::Ptr<Matrix> Jz_;            // Constraint Jacobian w.r.t. z
+    ROL::Ptr<Matrix> JuFactors_;     // LU factors of the Sim Jacobian 
 
     vec dif_param_;             // Parameters passed to coefficient functions. Currently unused
     vec adv_param_;
@@ -230,10 +230,10 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
     enum var { sim, opt };      // Index for simulation and optimization variable
 
     // Write ROL vector into a one-column Teuchos::SerialDenseMatrix
-    void vec2mat(ROL::SharedPointer<Matrix> &m, const V &v) {
+    void vec2mat(ROL::Ptr<Matrix> &m, const V &v) {
 
       
-      ROL::SharedPointer<const vec> vp = dynamic_cast<const SV&>(v).getVector();
+      ROL::Ptr<const vec> vp = dynamic_cast<const SV&>(v).getVector();
 
       for(int i=0;i<nDoF_;++i) {
         (*m)(i,0) = (*vp)[i];  
@@ -241,12 +241,12 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
     }
 
     // Write a one-column Teuchos::SerialDenseMatrix into a ROL vector 
-    void mat2vec(V &v, const ROL::SharedPointer<Matrix> &m) {
+    void mat2vec(V &v, const ROL::Ptr<Matrix> &m) {
 
        
-       using ROL::constPointerCast;
+       using ROL::constPtrCast;
 
-       ROL::SharedPointer<vec> vp = (dynamic_cast<SV&>(v)).getVector(); 
+       ROL::Ptr<vec> vp = (dynamic_cast<SV&>(v)).getVector(); 
        
        for(int i=0;i<nDoF_;++i) {
          (*vp)[i] = (*m)(i,0);   
@@ -258,7 +258,7 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
     void gather(FC<ScalarT> &fc, const V& v) {
 
       
-      ROL::SharedPointer<const vec> vp = dynamic_cast<const SV&>(v).getVector();
+      ROL::Ptr<const vec> vp = dynamic_cast<const SV&>(v).getVector();
 
       for(int cell=0;cell<numCells_;++cell) {
         for(int field=0;field<numFields_;++field) {
@@ -274,7 +274,7 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
 
        
 
-       ROL::SharedPointer<Coefficient<Real,ScalarT>> coeff = ROL::makeShared<ExampleCoefficient<Real,ScalarT>>();
+       ROL::Ptr<Coefficient<Real,ScalarT>> coeff = ROL::makePtr<ExampleCoefficient<Real,ScalarT>>();
 
        // Evaluate on the cubature points 
        FC<ScalarT> u_vals_cub(numCells_,numCubPts_);
@@ -310,10 +310,10 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
 
     void applyJac(V &jv, const V &v, var comp, bool transpose = false) {
 
-       ROL::SharedPointer<Matrix> J = (comp==sim) ? Ju_ : Jz_;
+       ROL::Ptr<Matrix> J = (comp==sim) ? Ju_ : Jz_;
 
-       ROL::SharedPointer<Matrix> vmat = ROL::makeShared<Matrix>(nDoF_,1,true);
-       ROL::SharedPointer<Matrix> jvmat = ROL::makeShared<Matrix>(nDoF_,1,true);
+       ROL::Ptr<Matrix> vmat = ROL::makePtr<Matrix>(nDoF_,1,true);
+       ROL::Ptr<Matrix> jvmat = ROL::makePtr<Matrix>(nDoF_,1,true);
 
        vec2mat(vmat, v);
 
@@ -334,14 +334,14 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
       typedef Sacado::Fad::SFad<Real,1> SFad;
       typedef Sacado::Fad::DFad<SFad>   DSFad;
 
-      ROL::SharedPointer<vec> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
+      ROL::Ptr<vec> ahwvp = dynamic_cast<SV&>(ahwv).getVector();
 
       std::fill(ahwvp->begin(),ahwvp->end(),0.0);
 
-      ROL::SharedPointer<const vec> vp = (dynamic_cast<const SV&>(v)).getVector();
-      ROL::SharedPointer<const vec> wp = (dynamic_cast<const SV&>(w)).getVector();
-      ROL::SharedPointer<const vec> up = (dynamic_cast<const SV&>(u)).getVector();
-      ROL::SharedPointer<const vec> zp = (dynamic_cast<const SV&>(z)).getVector();
+      ROL::Ptr<const vec> vp = (dynamic_cast<const SV&>(v)).getVector();
+      ROL::Ptr<const vec> wp = (dynamic_cast<const SV&>(w)).getVector();
+      ROL::Ptr<const vec> up = (dynamic_cast<const SV&>(u)).getVector();
+      ROL::Ptr<const vec> zp = (dynamic_cast<const SV&>(z)).getVector();
 
       FC<DSFad> u_fc(numCells_,numFields_);
       FC<DSFad> z_fc(numCells_,numFields_);
@@ -413,7 +413,7 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
   public:
 
     // Constructor
-    BVPConstraint(const ROL::SharedPointer<Discretization<Real>> disc) : 
+    BVPConstraint(const ROL::Ptr<Discretization<Real>> disc) : 
       disc_(disc),
       numCells_(disc->getNumCells()),
       numCubPts_(disc->getNumCubPts()),
@@ -425,9 +425,9 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
       tranGrad_(disc_->getTransformedGrad()),
       wtdTranVals_(disc_->getWeightedTransformedVals()),
       wtdTranGrad_(disc_->getWeightedTransformedGrad()),
-      Ju_(ROL::makeShared<Matrix>(nDoF_,nDoF_,true)),
-      Jz_(ROL::makeShared<Matrix>(nDoF_,nDoF_,true)),
-      JuFactors_(ROL::makeShared<Matrix>(nDoF_,nDoF_,true)) {
+      Ju_(ROL::makePtr<Matrix>(nDoF_,nDoF_,true)),
+      Jz_(ROL::makePtr<Matrix>(nDoF_,nDoF_,true)),
+      JuFactors_(ROL::makePtr<Matrix>(nDoF_,nDoF_,true)) {
      
     }
 
@@ -439,8 +439,8 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
         
         typedef DFad<Real> FadType;
 
-        ROL::SharedPointer<const vec> up = dynamic_cast<const SV&>(u).getVector();
-        ROL::SharedPointer<const vec> zp = dynamic_cast<const SV&>(z).getVector();
+        ROL::Ptr<const vec> up = dynamic_cast<const SV&>(u).getVector();
+        ROL::Ptr<const vec> zp = dynamic_cast<const SV&>(z).getVector();
 
         FC<FadType> u_fc1(numCells_,numFields_); 
         FC<FadType> z_fc1(numCells_,numFields_);
@@ -486,8 +486,8 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
     void value(V &c, const V &u, const V &z, Real &tol=0) {
 
       
-      // Downcast and extract ROL::SharedPointers to std::vectors
-      ROL::SharedPointer<vec> cp = dynamic_cast<SV&>(c).getVector(); 
+      // Downcast and extract ROL::Ptrs to std::vectors
+      ROL::Ptr<vec> cp = dynamic_cast<SV&>(c).getVector(); 
 
       std::fill(cp->begin(),cp->end(),0.0); 
 
@@ -542,8 +542,8 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
       solver.factorWithEquilibration(true);
       solver.factor();
 
-      ROL::SharedPointer<Matrix> rhs = ROL::makeShared<Matrix>(nDoF_,1);
-      ROL::SharedPointer<Matrix> sol = ROL::makeShared<Matrix>(nDoF_,1);
+      ROL::Ptr<Matrix> rhs = ROL::makePtr<Matrix>(nDoF_,1);
+      ROL::Ptr<Matrix> sol = ROL::makePtr<Matrix>(nDoF_,1);
        
       vec2mat(rhs,v);             // Write the ROL vector into the rhs 
       solver.setVectors(sol,rhs); 
@@ -563,8 +563,8 @@ class BVPConstraint : public Constraint_SimOpt<Real> {
       solver.factorWithEquilibration(true);
       solver.factor();
 
-      ROL::SharedPointer<Matrix> rhs = ROL::makeShared<Matrix>(nDoF_,1);
-      ROL::SharedPointer<Matrix> sol = ROL::makeShared<Matrix>(nDoF_,1);
+      ROL::Ptr<Matrix> rhs = ROL::makePtr<Matrix>(nDoF_,1);
+      ROL::Ptr<Matrix> sol = ROL::makePtr<Matrix>(nDoF_,1);
        
       vec2mat(rhs,v);                     // Write the ROL vector into the rhs 
       solver.setVectors(sol,rhs); 

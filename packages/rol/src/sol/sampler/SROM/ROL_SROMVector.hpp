@@ -61,18 +61,18 @@ template <class Real>
 class SROMVector : public Vector<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  const ROL::SharedPointer<ProbabilityVector<Real> > pvec_;
-  const ROL::SharedPointer<AtomVector<Real> > avec_;
+  const ROL::Ptr<ProbabilityVector<Real> > pvec_;
+  const ROL::Ptr<AtomVector<Real> > avec_;
 
-  mutable ROL::SharedPointer<Vector<Real> > dual_pvec_;
-  mutable ROL::SharedPointer<Vector<Real> > dual_avec_;
-  mutable ROL::SharedPointer<SROMVector<Real> > dual_vec_;
+  mutable ROL::Ptr<Vector<Real> > dual_pvec_;
+  mutable ROL::Ptr<Vector<Real> > dual_avec_;
+  mutable ROL::Ptr<SROMVector<Real> > dual_vec_;
   mutable bool isDualInitialized_;
 
 public:
 
-  SROMVector(const ROL::SharedPointer<ProbabilityVector<Real> >  &pvec,
-             const ROL::SharedPointer<AtomVector<Real> >         &avec)
+  SROMVector(const ROL::Ptr<ProbabilityVector<Real> >  &pvec,
+             const ROL::Ptr<AtomVector<Real> >         &avec)
     : pvec_(pvec), avec_(avec), isDualInitialized_(false) {
     dual_pvec_ = (pvec_->dual()).clone();
     dual_avec_ = (avec_->dual()).clone();
@@ -114,17 +114,17 @@ public:
     return val;
   }
 
-  ROL::SharedPointer<Vector<Real> > clone(void) const {
-    return ROL::makeShared<SROMVector>(
-           ROL::staticPointerCast<ProbabilityVector<Real> >(pvec_->clone()),
-           ROL::staticPointerCast<AtomVector<Real> >(avec_->clone()) );
+  ROL::Ptr<Vector<Real> > clone(void) const {
+    return ROL::makePtr<SROMVector>(
+           ROL::staticPtrCast<ProbabilityVector<Real> >(pvec_->clone()),
+           ROL::staticPtrCast<AtomVector<Real> >(avec_->clone()) );
   }
 
   const Vector<Real> & dual(void) const {
     if ( !isDualInitialized_ ) {
-      dual_vec_ = ROL::makeShared<SROMVector>(
-                  ROL::staticPointerCast<ProbabilityVector<Real> >(dual_pvec_),
-                  ROL::staticPointerCast<AtomVector<Real> >(dual_avec_) );
+      dual_vec_ = ROL::makePtr<SROMVector>(
+                  ROL::staticPtrCast<ProbabilityVector<Real> >(dual_pvec_),
+                  ROL::staticPtrCast<AtomVector<Real> >(dual_avec_) );
       isDualInitialized_ = true;
     }
     dual_pvec_->set(pvec_->dual());
@@ -156,19 +156,19 @@ public:
     return result;
   }
 
-  const ROL::SharedPointer<const AtomVector<Real> > getAtomVector(void) const {
+  const ROL::Ptr<const AtomVector<Real> > getAtomVector(void) const {
     return avec_;
   }
   
-  const ROL::SharedPointer<const ProbabilityVector<Real> > getProbabilityVector(void) const {
+  const ROL::Ptr<const ProbabilityVector<Real> > getProbabilityVector(void) const {
     return pvec_;
   }
 
-  ROL::SharedPointer<AtomVector<Real> > getAtomVector(void) {
+  ROL::Ptr<AtomVector<Real> > getAtomVector(void) {
     return avec_;
   }
   
-  ROL::SharedPointer<ProbabilityVector<Real> > getProbabilityVector(void) {
+  ROL::Ptr<ProbabilityVector<Real> > getProbabilityVector(void) {
     return pvec_;
   }
 

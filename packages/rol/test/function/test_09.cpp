@@ -74,12 +74,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -90,21 +90,21 @@ int main(int argc, char *argv[]) {
     uint xdim = 4;
     uint cdim = 1;
 
-    ROL::SharedPointer<vector> x_exact_ptr = ROL::makeShared<vector>(xdim);
+    ROL::Ptr<vector> x_exact_ptr = ROL::makePtr<vector>(xdim);
     (*x_exact_ptr)[0] = 1.0;
     (*x_exact_ptr)[1] = 1.0;
 
-    ROL::SharedPointer<V> x     = ROL::makeShared<SV>( ROL::makeShared<vector>(xdim, 0.0) );
-    ROL::SharedPointer<V> d     = ROL::makeShared<SV>( ROL::makeShared<vector>(xdim, 0.0) );
-    ROL::SharedPointer<V> xtest = ROL::makeShared<SV>( ROL::makeShared<vector>(xdim, 0.0) );
+    ROL::Ptr<V> x     = ROL::makePtr<SV>( ROL::makePtr<vector>(xdim, 0.0) );
+    ROL::Ptr<V> d     = ROL::makePtr<SV>( ROL::makePtr<vector>(xdim, 0.0) );
+    ROL::Ptr<V> xtest = ROL::makePtr<SV>( ROL::makePtr<vector>(xdim, 0.0) );
 
-    ROL::SharedPointer<V> c1    = ROL::makeShared<SV>( ROL::makeShared<vector>(cdim, 1.0) );
-    ROL::SharedPointer<V> c2    = ROL::makeShared<SV>( ROL::makeShared<vector>(cdim, 1.0) );
-    ROL::SharedPointer<V> l1    = ROL::makeShared<SV>( ROL::makeShared<vector>(cdim, 1.0) );
-    ROL::SharedPointer<V> l2    = ROL::makeShared<SV>( ROL::makeShared<vector>(cdim, 1.0) );
+    ROL::Ptr<V> c1    = ROL::makePtr<SV>( ROL::makePtr<vector>(cdim, 1.0) );
+    ROL::Ptr<V> c2    = ROL::makePtr<SV>( ROL::makePtr<vector>(cdim, 1.0) );
+    ROL::Ptr<V> l1    = ROL::makePtr<SV>( ROL::makePtr<vector>(cdim, 1.0) );
+    ROL::Ptr<V> l2    = ROL::makePtr<SV>( ROL::makePtr<vector>(cdim, 1.0) );
 
-    ROL::SharedPointer<V> c    =  ROL::CreatePartitionedVector( c1, c2 );
-    ROL::SharedPointer<V> l    =  ROL::CreatePartitionedVector( l1, l2 );
+    ROL::Ptr<V> c    =  ROL::CreatePartitionedVector( c1, c2 );
+    ROL::Ptr<V> l    =  ROL::CreatePartitionedVector( l1, l2 );
   
 
 
@@ -116,12 +116,12 @@ int main(int argc, char *argv[]) {
     ROL::RandomizeVector(*d, -1.0, 1.0 ); 
     ROL::RandomizeVector(*xtest, -1.0, 1.0 ); 
     
-    ROL::SharedPointer<OBJ> obj  = ROL::makeShared<ROL::ZOO::Objective_HS39<RealT>>();
-    ROL::SharedPointer<EC>  con1 = ROL::makeShared<ROL::ZOO::Constraint_HS39a<RealT>>();
-    ROL::SharedPointer<EC>  con2 = ROL::makeShared<ROL::ZOO::Constraint_HS39b<RealT>>();
-    std::vector<ROL::SharedPointer<EC> > cvec(2); cvec[0] = con1; cvec[1] = con2;
+    ROL::Ptr<OBJ> obj  = ROL::makePtr<ROL::ZOO::Objective_HS39<RealT>>();
+    ROL::Ptr<EC>  con1 = ROL::makePtr<ROL::ZOO::Constraint_HS39a<RealT>>();
+    ROL::Ptr<EC>  con2 = ROL::makePtr<ROL::ZOO::Constraint_HS39b<RealT>>();
+    std::vector<ROL::Ptr<EC> > cvec(2); cvec[0] = con1; cvec[1] = con2;
    
-    ROL::SharedPointer<EC>  con = ROL::makeShared<ROL::Constraint_Partitioned<RealT>>(cvec);
+    ROL::Ptr<EC>  con = ROL::makePtr<ROL::Constraint_Partitioned<RealT>>(cvec);
 
     *outStream << "Checking objective" << std::endl;
     obj->checkGradient(*x,*d,true,*outStream); 

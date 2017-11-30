@@ -46,7 +46,7 @@
 typedef double RealT;
 
 template<class Real>
-Real random(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm) {
+Real random(const ROL::Ptr<const Teuchos::Comm<int> > &comm) {
   Real val = 0.0;
   if ( Teuchos::rank<int>(*comm)==0 ) {
     val = (Real)rand()/(Real)RAND_MAX;
@@ -58,17 +58,17 @@ Real random(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm) {
 int main(int argc, char* argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  ROL::SharedPointer<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
-  ROL::SharedPointer<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0 && Teuchos::rank<int>(*comm)==0)
-    outStream = ROL::makeSharedFromRef(std::cout);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = ROL::makeSharedFromRef(bhs);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -85,30 +85,30 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build control vectors
     int nx = 256;
-    ROL::SharedPointer<std::vector<RealT> > x1_ptr  = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
+    ROL::Ptr<std::vector<RealT> > x1_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
     ROL::StdVector<RealT> x1(x1_ptr);
-    ROL::SharedPointer<std::vector<RealT> > x2_ptr  = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
+    ROL::Ptr<std::vector<RealT> > x2_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
     ROL::StdVector<RealT> x2(x2_ptr);
-    ROL::SharedPointer<std::vector<RealT> > x3_ptr  = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
+    ROL::Ptr<std::vector<RealT> > x3_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
     ROL::StdVector<RealT> x3(x3_ptr);
-    ROL::SharedPointer<std::vector<RealT> > z_ptr  = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
+    ROL::Ptr<std::vector<RealT> > z_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
     ROL::StdVector<RealT> z(z_ptr);
-    ROL::SharedPointer<std::vector<RealT> > xr_ptr = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
+    ROL::Ptr<std::vector<RealT> > xr_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
     ROL::StdVector<RealT> xr(xr_ptr);
-    ROL::SharedPointer<std::vector<RealT> > d_ptr  = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
+    ROL::Ptr<std::vector<RealT> > d_ptr  = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
     ROL::StdVector<RealT> d(d_ptr);
     for ( int i = 0; i < nx+2; i++ ) {
       (*xr_ptr)[i] = random<RealT>(comm);
       (*d_ptr)[i]  = random<RealT>(comm);
     }
     // Build state and adjoint vectors
-    ROL::SharedPointer<std::vector<RealT> > u_ptr  = ROL::makeShared<std::vector<RealT>>(nx,1.0);
+    ROL::Ptr<std::vector<RealT> > u_ptr  = ROL::makePtr<std::vector<RealT>>(nx,1.0);
     ROL::StdVector<RealT> u(u_ptr);
-    ROL::SharedPointer<std::vector<RealT> > p_ptr  = ROL::makeShared<std::vector<RealT>>(nx,0.0);
+    ROL::Ptr<std::vector<RealT> > p_ptr  = ROL::makePtr<std::vector<RealT>>(nx,0.0);
     ROL::StdVector<RealT> p(p_ptr);
-    ROL::SharedPointer<ROL::Vector<RealT> > up = ROL::makeSharedFromRef(u);
-    ROL::SharedPointer<ROL::Vector<RealT> > zp = ROL::makeSharedFromRef(z);
-    ROL::SharedPointer<ROL::Vector<RealT> > pp = ROL::makeSharedFromRef(p);
+    ROL::Ptr<ROL::Vector<RealT> > up = ROL::makePtrFromRef(u);
+    ROL::Ptr<ROL::Vector<RealT> > zp = ROL::makePtrFromRef(z);
+    ROL::Ptr<ROL::Vector<RealT> > pp = ROL::makePtrFromRef(p);
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/
@@ -117,10 +117,10 @@ int main(int argc, char* argv[]) {
     int nSamp = parlist->sublist("Problem Description").get("Number of Samples", 20);
     std::vector<RealT> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
     std::vector<std::vector<RealT> > bounds(dim,tmp);
-    ROL::SharedPointer<ROL::BatchManager<RealT> > bman
-      = ROL::makeShared<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
-    ROL::SharedPointer<ROL::SampleGenerator<RealT> > sampler
-      = ROL::makeShared<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman,false,false,100);
+    ROL::Ptr<ROL::BatchManager<RealT> > bman
+      = ROL::makePtr<ROL::StdTeuchosBatchManager<RealT,int>>(comm);
+    ROL::Ptr<ROL::SampleGenerator<RealT> > sampler
+      = ROL::makePtr<ROL::MonteCarloGenerator<RealT>>(nSamp,bounds,bman,false,false,100);
     int nprocs = Teuchos::size<int>(*comm);
     std::stringstream name;
     name << "samples_np" << nprocs;
@@ -130,13 +130,13 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     // Build risk-averse objective function
     RealT alpha = 1.e-3;
-    ROL::SharedPointer<ROL::Objective_SimOpt<RealT> > pobjSimOpt
-      = ROL::makeShared<Objective_BurgersControl<RealT>>(alpha,nx);
-    ROL::SharedPointer<ROL::Constraint_SimOpt<RealT> > pconSimOpt
-      = ROL::makeShared<Constraint_BurgersControl<RealT>>(nx);
-    ROL::SharedPointer<ROL::Objective<RealT> > pObj
-      = ROL::makeShared<ROL::Reduced_Objective_SimOpt<RealT>>(pobjSimOpt,pconSimOpt,up,zp,pp);
-    ROL::SharedPointer<ROL::Objective<RealT> > obj = ROL::makeShared<ROL::RiskNeutralObjective<RealT>>(pObj, sampler, true);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT> > pobjSimOpt
+      = ROL::makePtr<Objective_BurgersControl<RealT>>(alpha,nx);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pconSimOpt
+      = ROL::makePtr<Constraint_BurgersControl<RealT>>(nx);
+    ROL::Ptr<ROL::Objective<RealT> > pObj
+      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(pobjSimOpt,pconSimOpt,up,zp,pp);
+    ROL::Ptr<ROL::Objective<RealT> > obj = ROL::makePtr<ROL::RiskNeutralObjective<RealT>>(pObj, sampler, true);
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
     x1.set(xr);
@@ -158,24 +158,24 @@ int main(int argc, char* argv[]) {
     ROL::SimulatedObjective<RealT> simobj(sampler, pobjSimOpt);
     // Simulated vectors.
     int nvecloc = sampler->numMySamples();
-    std::vector<ROL::SharedPointer<std::vector<RealT> > >  xuk_ptr(nvecloc),  vuk_ptr(nvecloc),  yuk_ptr(nvecloc);
-    std::vector<ROL::SharedPointer<std::vector<RealT> > > dxuk_ptr(nvecloc), dvuk_ptr(nvecloc), dyuk_ptr(nvecloc);
-    std::vector<ROL::SharedPointer<ROL::Vector<RealT> > >  xu_ptr(nvecloc),   vu_ptr(nvecloc),   yu_ptr(nvecloc);
-    std::vector<ROL::SharedPointer<ROL::Vector<RealT> > > dxu_ptr(nvecloc),  dvu_ptr(nvecloc),  dyu_ptr(nvecloc);
+    std::vector<ROL::Ptr<std::vector<RealT> > >  xuk_ptr(nvecloc),  vuk_ptr(nvecloc),  yuk_ptr(nvecloc);
+    std::vector<ROL::Ptr<std::vector<RealT> > > dxuk_ptr(nvecloc), dvuk_ptr(nvecloc), dyuk_ptr(nvecloc);
+    std::vector<ROL::Ptr<ROL::Vector<RealT> > >  xu_ptr(nvecloc),   vu_ptr(nvecloc),   yu_ptr(nvecloc);
+    std::vector<ROL::Ptr<ROL::Vector<RealT> > > dxu_ptr(nvecloc),  dvu_ptr(nvecloc),  dyu_ptr(nvecloc);
     RealT right = 1, left = 0;
     for( int k=0; k<nvecloc; ++k ) {
-      xuk_ptr[k] = ROL::makeShared<std::vector<RealT>>(nx,1.0);
-      vuk_ptr[k] = ROL::makeShared<std::vector<RealT>>(nx,1.0);
-      yuk_ptr[k] = ROL::makeShared<std::vector<RealT>>(nx,1.0);
-      dxuk_ptr[k] = ROL::makeShared<std::vector<RealT>>(nx,1.0);
-      dvuk_ptr[k] = ROL::makeShared<std::vector<RealT>>(nx,1.0);
-      dyuk_ptr[k] = ROL::makeShared<std::vector<RealT>>(nx,1.0);
-      xu_ptr[k] = ROL::makeShared<ROL::StdVector<RealT>>( xuk_ptr[k] );
-      vu_ptr[k] = ROL::makeShared<ROL::StdVector<RealT>>( vuk_ptr[k] );
-      yu_ptr[k] = ROL::makeShared<ROL::StdVector<RealT>>( yuk_ptr[k] );
-      dxu_ptr[k] = ROL::makeShared<ROL::StdVector<RealT>>( dxuk_ptr[k] );
-      dvu_ptr[k] = ROL::makeShared<ROL::StdVector<RealT>>( dvuk_ptr[k] );
-      dyu_ptr[k] = ROL::makeShared<ROL::StdVector<RealT>>( dyuk_ptr[k] );
+      xuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      vuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      yuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      dxuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      dvuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      dyuk_ptr[k] = ROL::makePtr<std::vector<RealT>>(nx,1.0);
+      xu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( xuk_ptr[k] );
+      vu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( vuk_ptr[k] );
+      yu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( yuk_ptr[k] );
+      dxu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( dxuk_ptr[k] );
+      dvu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( dvuk_ptr[k] );
+      dyu_ptr[k] = ROL::makePtr<ROL::StdVector<RealT>>( dyuk_ptr[k] );
       for( int i=0; i<nx; ++i ) {
         (*xuk_ptr[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
         (*vuk_ptr[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
@@ -185,31 +185,31 @@ int main(int argc, char* argv[]) {
         (*dyuk_ptr[k])[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       }
     }
-    ROL::SharedPointer<ROL::PrimalSimulatedVector<RealT> > xu, vu, yu;
-    ROL::SharedPointer<ROL::DualSimulatedVector<RealT> > dxu, dvu, dyu;
-    xu = ROL::makeShared<ROL::PrimalSimulatedVector<RealT>>(xu_ptr, bman, sampler);
-    vu = ROL::makeShared<ROL::PrimalSimulatedVector<RealT>>(vu_ptr, bman, sampler);
-    yu = ROL::makeShared<ROL::PrimalSimulatedVector<RealT>>(yu_ptr, bman, sampler);
-    dxu = ROL::makeShared<ROL::DualSimulatedVector<RealT>>(dxu_ptr, bman, sampler);
-    dvu = ROL::makeShared<ROL::DualSimulatedVector<RealT>>(dvu_ptr, bman, sampler);
-    dyu = ROL::makeShared<ROL::DualSimulatedVector<RealT>>(dyu_ptr, bman, sampler);
+    ROL::Ptr<ROL::PrimalSimulatedVector<RealT> > xu, vu, yu;
+    ROL::Ptr<ROL::DualSimulatedVector<RealT> > dxu, dvu, dyu;
+    xu = ROL::makePtr<ROL::PrimalSimulatedVector<RealT>>(xu_ptr, bman, sampler);
+    vu = ROL::makePtr<ROL::PrimalSimulatedVector<RealT>>(vu_ptr, bman, sampler);
+    yu = ROL::makePtr<ROL::PrimalSimulatedVector<RealT>>(yu_ptr, bman, sampler);
+    dxu = ROL::makePtr<ROL::DualSimulatedVector<RealT>>(dxu_ptr, bman, sampler);
+    dvu = ROL::makePtr<ROL::DualSimulatedVector<RealT>>(dvu_ptr, bman, sampler);
+    dyu = ROL::makePtr<ROL::DualSimulatedVector<RealT>>(dyu_ptr, bman, sampler);
     // SimOpt vectors.
-    ROL::SharedPointer<std::vector<RealT> > xz_ptr, vz_ptr, yz_ptr;
-    ROL::SharedPointer<std::vector<RealT> > dxz_ptr, dvz_ptr, dyz_ptr;
-    xz_ptr = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
-    vz_ptr = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
-    yz_ptr = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
-    dxz_ptr = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
-    dvz_ptr = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
-    dyz_ptr = ROL::makeShared<std::vector<RealT>>(nx+2,0.0);
-    ROL::SharedPointer<ROL::StdVector<RealT> > xz, vz, yz;
-    ROL::SharedPointer<ROL::StdVector<RealT> > dxz, dvz, dyz;
-    xz = ROL::makeShared<ROL::StdVector<RealT>>(xz_ptr);
-    vz = ROL::makeShared<ROL::StdVector<RealT>>(vz_ptr);
-    yz = ROL::makeShared<ROL::StdVector<RealT>>(yz_ptr);
-    dxz = ROL::makeShared<ROL::StdVector<RealT>>(dxz_ptr);
-    dvz = ROL::makeShared<ROL::StdVector<RealT>>(dvz_ptr);
-    dyz = ROL::makeShared<ROL::StdVector<RealT>>(dyz_ptr);
+    ROL::Ptr<std::vector<RealT> > xz_ptr, vz_ptr, yz_ptr;
+    ROL::Ptr<std::vector<RealT> > dxz_ptr, dvz_ptr, dyz_ptr;
+    xz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    vz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    yz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    dxz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    dvz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    dyz_ptr = ROL::makePtr<std::vector<RealT>>(nx+2,0.0);
+    ROL::Ptr<ROL::StdVector<RealT> > xz, vz, yz;
+    ROL::Ptr<ROL::StdVector<RealT> > dxz, dvz, dyz;
+    xz = ROL::makePtr<ROL::StdVector<RealT>>(xz_ptr);
+    vz = ROL::makePtr<ROL::StdVector<RealT>>(vz_ptr);
+    yz = ROL::makePtr<ROL::StdVector<RealT>>(yz_ptr);
+    dxz = ROL::makePtr<ROL::StdVector<RealT>>(dxz_ptr);
+    dvz = ROL::makePtr<ROL::StdVector<RealT>>(dvz_ptr);
+    dyz = ROL::makePtr<ROL::StdVector<RealT>>(dyz_ptr);
     for ( int i = 0; i < nx+2; i++ ) {
       (*xz_ptr)[i] = random<RealT>(comm);
       (*vz_ptr)[i] = random<RealT>(comm);

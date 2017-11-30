@@ -83,12 +83,12 @@ int main(int argc, char *argv[]) {
     Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
     int iprint     = argc - 1;
-    ROL::SharedPointer<std::ostream> outStream;
+    ROL::Ptr<std::ostream> outStream;
     Teuchos::oblackholestream bhs; // outputs nothing
     if (iprint > 0)
-        outStream = ROL::makeSharedFromRef(std::cout);
+        outStream = ROL::makePtrFromRef(std::cout);
     else
-        outStream = ROL::makeSharedFromRef(bhs);
+        outStream = ROL::makePtrFromRef(bhs);
 
     int errorFlag = 0;
 
@@ -101,10 +101,10 @@ int main(int argc, char *argv[]) {
 	M(1,1) = 3.0;
 
 
-	ROL::SharedPointer<std::vector<RealT> > w_ptr = ROL::makeShared<std::vector<RealT>>(2);
-	ROL::SharedPointer<std::vector<RealT> > x_ptr = ROL::makeShared<std::vector<RealT>>(2);
-	ROL::SharedPointer<std::vector<RealT> > y_ptr = ROL::makeShared<std::vector<RealT>>(2);
-	ROL::SharedPointer<std::vector<RealT> > z_ptr = ROL::makeShared<std::vector<RealT>>(2);
+	ROL::Ptr<std::vector<RealT> > w_ptr = ROL::makePtr<std::vector<RealT>>(2);
+	ROL::Ptr<std::vector<RealT> > x_ptr = ROL::makePtr<std::vector<RealT>>(2);
+	ROL::Ptr<std::vector<RealT> > y_ptr = ROL::makePtr<std::vector<RealT>>(2);
+	ROL::Ptr<std::vector<RealT> > z_ptr = ROL::makePtr<std::vector<RealT>>(2);
 
 	(*w_ptr)[0] = 0.0;
 	(*w_ptr)[1] = 1.0;
@@ -118,13 +118,13 @@ int main(int argc, char *argv[]) {
 	(*z_ptr)[0] = -1.0;
 	(*z_ptr)[1] =  1.0;
        
-	ROL::SharedPointer<Vector<RealT> > w = ROL::makeShared<StdVector<RealT>>(w_ptr); 
-	ROL::SharedPointer<Vector<RealT> > x = ROL::makeShared<StdVector<RealT>>(x_ptr); 
-	ROL::SharedPointer<Vector<RealT> > y = ROL::makeShared<StdVector<RealT>>(y_ptr); 
-	ROL::SharedPointer<Vector<RealT> > z = ROL::makeShared<StdVector<RealT>>(z_ptr); 
+	ROL::Ptr<Vector<RealT> > w = ROL::makePtr<StdVector<RealT>>(w_ptr); 
+	ROL::Ptr<Vector<RealT> > x = ROL::makePtr<StdVector<RealT>>(x_ptr); 
+	ROL::Ptr<Vector<RealT> > y = ROL::makePtr<StdVector<RealT>>(y_ptr); 
+	ROL::Ptr<Vector<RealT> > z = ROL::makePtr<StdVector<RealT>>(z_ptr); 
 
-	ArrayRCP<ROL::SharedPointer<Vector<RealT> > > A_ptr(2);
-	ArrayRCP<ROL::SharedPointer<Vector<RealT> > > B_ptr(2);
+	ArrayRCP<ROL::Ptr<Vector<RealT> > > A_ptr(2);
+	ArrayRCP<ROL::Ptr<Vector<RealT> > > B_ptr(2);
 
 	A_ptr[0] = x;     
 	A_ptr[1] = y;     
@@ -132,8 +132,8 @@ int main(int argc, char *argv[]) {
 	B_ptr[0] = w;     
 	B_ptr[1] = z;     
 
-	ROL::SharedPointer<MultiVector<RealT> > A = ROL::makeShared<MultiVectorDefault<RealT>>(A_ptr);
-        ROL::SharedPointer<MultiVector<RealT> > B = ROL::makeShared<MultiVectorDefault<RealT>>(B_ptr);
+	ROL::Ptr<MultiVector<RealT> > A = ROL::makePtr<MultiVectorDefault<RealT>>(A_ptr);
+        ROL::Ptr<MultiVector<RealT> > B = ROL::makePtr<MultiVectorDefault<RealT>>(B_ptr);
        
 	// Test norm
 	if(static_cast<int>(norm_sum(*A)) != 6) {
@@ -142,14 +142,14 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Test clone
-	ROL::SharedPointer<MultiVector<RealT> > C = A->clone();    
+	ROL::Ptr<MultiVector<RealT> > C = A->clone();    
 	if(norm_sum(*C) != 0) {
             *outStream << "Clone test failed!\n";
 	    ++errorFlag;
 	}
 
 	// Test deep copy
-        ROL::SharedPointer<MultiVector<RealT> > D = A->deepCopy();
+        ROL::Ptr<MultiVector<RealT> > D = A->deepCopy();
 	if(static_cast<int>(norm_sum(*D)) != 6) {
             *outStream << "Deep copy test failed!\n";
 	    ++errorFlag;
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 	std::vector<int> index(1);
 	index[0] = 0;
 
-        ROL::SharedPointer<MultiVector<RealT> > S = A->shallowCopy(index);
+        ROL::Ptr<MultiVector<RealT> > S = A->shallowCopy(index);
 	if(static_cast<int>(norm_sum(*S)) != 1) {
             *outStream << "Shallow copy test failed!\n";
 	    ++errorFlag;
