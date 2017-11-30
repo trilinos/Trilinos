@@ -18,8 +18,8 @@
       <Parameter name="Screen Output Index Interval" type="int"    value="100"/>
       <Parameter name="Stepper Name"       type="string" value="Default Stepper"/>
       <ParameterList name="Solution History">
-        <Parameter name="Storage Type"  type="string" value="Unlimited"/>
-        <Parameter name="Storage Limit" type="int"    value="20"/>
+        <Parameter name="Storage Type"  type="string" value="Static"/>
+        <Parameter name="Storage Limit" type="int"    value="3"/>
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
