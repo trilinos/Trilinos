@@ -45,8 +45,8 @@
 
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
-#  include "Amesos2_KLU2_def.hpp"
-#  include "Amesos2_ExplicitInstantiationHelpers.hpp"
+#include "Amesos2_KLU2_def.hpp"
+#include "Amesos2_ExplicitInstantiationHelpers.hpp"
 
 namespace Amesos2 {
 
