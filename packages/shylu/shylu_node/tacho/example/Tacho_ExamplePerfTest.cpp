@@ -113,7 +113,13 @@ int main (int argc, char *argv[]) {
       t("t", A.NumRows(), nrhs); // temp workspace (store permuted rhs)
 
     Tacho::Experimental::Graph graph(A.NumRows(), A.NumNonZeros(), A.RowPtr(), A.Cols());
+#if   defined(TACHO_HAVE_METIS)
     Tacho::Experimental::GraphTools_Metis G(graph);
+#elif defined(TACHO_HAVE_SCOTCH)
+    Tacho::Experimental::GraphTools_Scotch G(graph);
+#else
+    Tacho::Experimental::GraphTools_CAMD G(graph);
+#endif
     G.reorder(verbose);
 
     {

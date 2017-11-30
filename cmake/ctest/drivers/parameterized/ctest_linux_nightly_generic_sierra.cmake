@@ -132,7 +132,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DCMAKE_C_FLAGS:STRING=$ENV{JENKINS_C_FLAGS}"
   "-DCMAKE_Fortran_FLAGS=$ENV{JENKINS_Fortran_FLAGS}"
 
-  "-DTrilinos_C_Standard=c11"
+  "-DTrilinos_C_Standard=gnu11"
 
 )
 

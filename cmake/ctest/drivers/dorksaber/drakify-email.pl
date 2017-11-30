@@ -439,19 +439,40 @@ EOE
 }
 
 print "<h3>Nightly Tests</h3>\n";
-printTableHeader;
-printEntries(\@entriesNightly);
-printTableFooter;
+if (@entriesNightly > 0)
+{
+  printTableHeader;
+  printEntries(\@entriesNightly);
+  printTableFooter;
+}
+else
+{
+  print "no results reported\n";
+}
 
 print "<h3>Specialized Tests</h3>\n";
-printTableHeader;
-printEntries(\@entriesSpecialized);
-printTableFooter;
+if (@entriesSpecialized > 0)
+{
+  printTableHeader;
+  printEntries(\@entriesSpecialized);
+  printTableFooter;
+}
+else
+{
+  print "no results reported\n";
+}
 
 print "<h3>Experimental Tests</h3>\n";
-printTableHeader;
-printEntries(\@entriesExperimental);
-printTableFooter;
+if (@entriesExperimental > 0)
+{
+  printTableHeader;
+  printEntries(\@entriesExperimental);
+  printTableFooter;
+}
+else
+{
+  print "no results reported\n";
+}
 
 print <<EOF;
 <br>
