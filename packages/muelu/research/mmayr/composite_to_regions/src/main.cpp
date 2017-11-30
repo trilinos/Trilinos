@@ -753,13 +753,28 @@ int main(int argc, char *argv[]) {
         coarseColMapPerGrp[j] = new Epetra_Map(-1, regColGIDs.size(), regColGIDs.data(), 0, Comm);
       }
 
-      sleep(myRank);
-      for (int j = 0; j < maxRegPerProc; j++) {
-        printf("%d: coarseColMapPerGrp %d\n", myRank, j);
-        coarseColMapPerGrp[j]->Print(std::cout);
-      }
+//      sleep(myRank);
+//      for (int j = 0; j < maxRegPerProc; j++) {
+//        printf("%d: coarseColMapPerGrp %d\n", myRank, j);
+//        coarseColMapPerGrp[j]->Print(std::cout);
+//      }
 
       // Build the actual prolongator
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regionGrpProlong[j] = new Epetra_CrsMatrix(Copy, *revisedRowMapPerGrp[j], *coarseColMapPerGrp[j], 1, false);
+        for (int c = 0; c < regionGrpProlong[j]->NumMyCols(); ++c) {
+          for (int r = 0; r < regionGrpProlong[j]->NumMyRows(); ++r) {
+            if (regionGrpProlong[j]->ColMap().GID(c) == (*regGIDVec[j])[r]) {
+              double vals[1];
+              int inds[1];
+              vals[0] = 1.0/3.0;
+              inds[0] = c;
+              regionGrpProlong[j]->InsertMyValues(r, 1, &*vals, &*inds);
+            }
+          }
+        }
+        regionGrpProlong[j]->Print(std::cout);
+      }
     }
     else if (strcmp(command,"PrintCompositeVectorX") == 0) {
       sleep(myRank);
