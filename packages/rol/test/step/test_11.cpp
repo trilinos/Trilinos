@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<OBJ>  obj   = ROL::ZOO::getObjective_HS24<RealT>();
     ROL::SharedPointer<INEQ> incon = ROL::ZOO::getInequalityConstraint_HS24<RealT>();
    
-    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
 
     std::string stepname = "Interior Point";
 

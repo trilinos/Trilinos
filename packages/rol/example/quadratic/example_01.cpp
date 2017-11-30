@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<ROL::Objective<RealT> > obj = ROL::makeShared<ROL::QuadraticObjective<RealT>>(op,g);
 
    // Define algorithm
-    ROL::SharedPointer<Teuchos::ParameterList> parlist
-      = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist
+      = Teuchos::rcp( new Teuchos::ParameterList() );
     std::string paramfile = "input.xml";
     Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
     ROL::Algorithm<RealT> algo("Trust-Region",*parlist);

@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<ROL::Objective<RealT> >             obj_hs29 = ROL::makeShared<Objective_HS29<RealT>>();
     ROL::SharedPointer<ROL::InequalityConstraint<RealT> >  incon_hs29 = ROL::makeShared<InequalityConstraint_HS29<RealT>>();
 
-    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     std::string stepname = "Interior Point"; 
 
     RealT mu = 0.1;            // Initial penalty parameter

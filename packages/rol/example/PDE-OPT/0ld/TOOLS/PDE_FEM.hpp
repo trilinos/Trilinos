@@ -95,7 +95,7 @@ protected:
   ROL::SharedPointer<Intrepid::DofCoordsInterface<Intrepid::FieldContainer<Real> > > coord_iface_;
   Intrepid::FieldContainer<int> cellDofs_;
 
-  ROL::SharedPointer<Teuchos::ParameterList> parlist_;
+  Teuchos::RCP<Teuchos::ParameterList> parlist_;
   ROL::SharedPointer<const Teuchos::Comm<int> > commPtr_;
   ROL::SharedPointer<std::ostream> outStream_;
     
@@ -188,7 +188,7 @@ public:
   virtual ~PDE_FEM() {}
   
   virtual void Initialize(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm,
-                          const ROL::SharedPointer<Teuchos::ParameterList> &parlist,
+                          const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                           const ROL::SharedPointer<std::ostream> &outStream) {
     commPtr_   = comm;
     parlist_   = parlist;
@@ -634,7 +634,7 @@ public:
 //
 //
 //
-  virtual void process_loading_information(const ROL::SharedPointer<Teuchos::ParameterList> &parlist) {}
+  virtual void process_loading_information(const Teuchos::RCP<Teuchos::ParameterList> &parlist) {}
 //
 //note that the point load is only allowed to applied on the boundary, not inside the body! 2D only
   virtual void check_and_Apply_PointLoad_By_Coords(int globalCellNum, int pointload_bc) {

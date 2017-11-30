@@ -54,7 +54,7 @@ int main( int argc, char* argv[] ) {
    
   using vector = std::vector<double>;
 
-  auto parlist = ROL::makeShared<Teuchos::ParameterList>();
+  auto parlist = Teuchos::rcp( new Teuchos::ParameterList() );
   Teuchos::updateParametersFromXmlFile("Rocket.xml",parlist.ptr()); 
 
   int     N  = parlist->get("Time Steps" ,      100   );  

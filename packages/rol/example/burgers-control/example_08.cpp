@@ -249,8 +249,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     // READ IN XML INPUT
     std::string filename = "input.xml";
-    ROL::SharedPointer<Teuchos::ParameterList> parlist
-      = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist
+      = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // RUN OPTIMIZATION
     ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);

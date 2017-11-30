@@ -45,14 +45,14 @@ int main( int argc, char *argv[] ) {
     /***************************************************************************/
     // Get finite element parameter list
     std::string filename = "example_02.xml";
-    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     if ( parlist->get("Display Option",0) && (comm->getRank() > 0) ) {
       parlist->set("Display Option",0);
     }
     // Get ROL parameter list
     filename = "input.xml";
-    ROL::SharedPointer<Teuchos::ParameterList> ROL_parlist = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> ROL_parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*ROL_parlist) );
   
     /***************************************************************************/

@@ -118,7 +118,7 @@ private:
 
   // Parameter list.
   Teuchos::ParameterList parlist_;
-  ROL::SharedPointer<Teuchos::ParameterList> parlistAmesos2_;
+  Teuchos::RCP<Teuchos::ParameterList> parlistAmesos2_;
 
   // Construct solvers on first solve.
   bool firstSolve_;

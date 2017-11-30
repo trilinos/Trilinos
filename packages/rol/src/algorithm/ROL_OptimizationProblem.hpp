@@ -99,8 +99,8 @@ private:
   std::vector<ROL::SharedPointer<SampleGenerator<Real> > > ixsampler_;
   std::vector<ROL::SharedPointer<BatchManager<Real> > >    icbman_;
 
-  ROL::SharedPointer<Teuchos::ParameterList>               parlistObj_;
-  std::vector<ROL::SharedPointer<Teuchos::ParameterList> > parlistCon_;
+  Teuchos::RCP<Teuchos::ParameterList>               parlistObj_;
+  std::vector<Teuchos::RCP<Teuchos::ParameterList> > parlistCon_;
 
   ROL::SharedPointer<Objective<Real> >       obj_;
   ROL::SharedPointer<Vector<Real> >          sol_;
@@ -944,7 +944,7 @@ public:
       @param[in]    index  is the inequality constraint index
   */
   Real getSolutionStatistic(int comp = 0, int index = 0) {
-    ROL::SharedPointer<Teuchos::ParameterList> parlist;
+    Teuchos::RCP<Teuchos::ParameterList> parlist;
     if (comp == 0) {
       parlist = parlistObj_;
     }

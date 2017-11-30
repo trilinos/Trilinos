@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   try {
     
     std::string filename = "input.xml";
-    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     RealT V_th      = parlist->get("Thermal Voltage", 0.02585);

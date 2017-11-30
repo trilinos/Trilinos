@@ -232,8 +232,8 @@ int main(int argc, char *argv[]) {
     ROL::SharedPointer<ROL::Constraint<RealT> > con = ROL::makeShared<BinaryDesignConstraint<RealT>>(dim, vol);
 
    // Define algorithm
-    ROL::SharedPointer<Teuchos::ParameterList> parlist
-      = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist
+      = Teuchos::rcp( new Teuchos::ParameterList() );
     std::string paramfile = "input.xml";
     Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
     ROL::Algorithm<RealT> algo("Composite Step",*parlist);

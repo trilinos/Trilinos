@@ -109,7 +109,7 @@ void Solver<Real>::setA(ROL::SharedPointer<Tpetra::CrsMatrix<> > &A) {
 
       // Create Belos solver object and linear problem.
       if (firstSolve_) {
-        ROL::SharedPointer<Teuchos::ParameterList> parlistBelos = ROL::makeSharedFromRef(parlist_.sublist("Belos"));
+        Teuchos::RCP<Teuchos::ParameterList> parlistBelos = ROL::makeSharedFromRef(parlist_.sublist("Belos"));
         // Transpose solver.
         problemBelos_trans_ = ROL::makeShared<Belos::LinearProblem<Real,MV,OP>>();
         problemBelos_trans_->setOperator(A_trans_);

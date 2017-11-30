@@ -58,7 +58,7 @@ private:
 public:
 
   ElasticitySIMPOperators(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm,
-                          const ROL::SharedPointer<Teuchos::ParameterList> &parlist,
+                          const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                           const ROL::SharedPointer<std::ostream> &outStream) {
     ElasticitySIMPOperators_Initialize(comm, parlist, outStream);
     this->SetSIMPParallelStructure();
@@ -79,7 +79,7 @@ public:
   }
 
   void ElasticitySIMPOperators_Initialize(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm,
-                                          const ROL::SharedPointer<Teuchos::ParameterList> &parlist,
+                                          const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                                           const ROL::SharedPointer<std::ostream> &outStream) {
     ElasticitySIMP<Real>::ElasticitySIMP_Initialize(comm, parlist, outStream);
     volFrac_           = parlist->sublist("ElasticityTopoOpt").get<Real>("Volume Fraction");

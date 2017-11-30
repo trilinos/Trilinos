@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     robj.checkHessVec(z,z,yz,true,*outStream);
     // Get input parameter list.
     std::string filename = "input.xml";
-    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-10);
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-10);

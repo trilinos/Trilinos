@@ -138,7 +138,7 @@ public:
   virtual ~Elasticity() {}
 
   virtual void Initialize(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm,
-                          const ROL::SharedPointer<Teuchos::ParameterList> &parlist,
+                          const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                           const ROL::SharedPointer<std::ostream> &outStream) {
     /****************************************************************************/
     /*** Initialize the base PDE_FEM class. *************************************/
@@ -188,7 +188,7 @@ public:
   }
 
   // for rectangular domain
-  virtual void process_loading_information(const ROL::SharedPointer<Teuchos::ParameterList> &parlist) { 
+  virtual void process_loading_information(const Teuchos::RCP<Teuchos::ParameterList> &parlist) { 
     Teuchos::ParameterList &Elist = parlist->sublist("Elasticity");
     bodyforce_Magnitude_ = Elist.get<Real>("Bodyforce Magnitude");
     bodyforce_Angle_     = Elist.get<Real>("Bodyforce Angle");

@@ -186,8 +186,8 @@ int main(int argc, char *argv[]) {
     ROL::Vector_SimOpt<RealT> y(yup,yzp);
     // READ IN XML INPUT
     std::string filename = "input.xml";
-    ROL::SharedPointer<Teuchos::ParameterList> parlist
-      = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist
+      = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/

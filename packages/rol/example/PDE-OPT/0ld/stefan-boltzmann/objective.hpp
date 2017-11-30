@@ -62,7 +62,7 @@ private:
 public:
 
   Objective_PDEOPT_StefanBoltzmann(const ROL::SharedPointer<StefanBoltzmannData<Real> > &data,
-                                   const ROL::SharedPointer<Teuchos::ParameterList> &parlist) {
+                                   const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
     data_ = data;
     alpha_ = parlist->sublist("Problem").get("Penalty parameter", 1e-2);
   }

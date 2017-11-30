@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
       ROL::SharedPointer<ROL::Step<RealT> > step;
  
 
-      ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
+      Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
       std::string paramfile = "parameters.xml";
       Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
 

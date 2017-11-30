@@ -59,7 +59,7 @@ private:
 public:
 
   EqualityConstraint_PDEOPT_ElasticitySIMP_Volume_SimOpt(const ROL::SharedPointer<ElasticitySIMPOperators<Real> > &data,
-                                                         const ROL::SharedPointer<Teuchos::ParameterList> &parlist) {
+                                                         const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
 	
 	  volFrac_     = parlist->sublist("ElasticityTopoOpt").get("volfrac", 0.5);
   }

@@ -89,7 +89,7 @@ int main(int argc, char **argv)
         int dim = 10; // Set problem dimension. 
 
         // Load optimizer parameters form XML file
-        ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
+        Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
         std::string paramfile = "parameters.xml";
         Teuchos::updateParametersFromXmlFile(paramfile,parlist.ptr());
 

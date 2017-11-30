@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
 
     /*** Read in XML input ***/
     std::string filename = "input_ex05.xml";
-    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History",myRank==0);
 
@@ -287,7 +287,7 @@ int main(int argc, char *argv[]) {
     vy = ROL::makeShared<ROL::SimulatedVector<RealT>>(vyvec,bman);
     ROL::SharedPointer<ROL::Vector<RealT> > rz, rs, rt;
     if (useCVaR) {
-      ROL::SharedPointer<Teuchos::ParameterList> cvarlist = ROL::makeShared<Teuchos::ParameterList>();
+      Teuchos::RCP<Teuchos::ParameterList> cvarlist = Teuchos::rcp( new Teuchos::ParameterList() );
       cvarlist->sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
       rz = ROL::makeShared<ROL::RiskVector<RealT>>(cvarlist, zp);
       rs = ROL::makeShared<ROL::RiskVector<RealT>>(cvarlist, sp);

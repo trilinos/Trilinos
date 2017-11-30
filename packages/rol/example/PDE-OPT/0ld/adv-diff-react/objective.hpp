@@ -64,7 +64,7 @@ public:
 
   Objective_PDEOPT_Poisson(const ROL::SharedPointer<PoissonData<Real> > &data,
                            const ROL::SharedPointer<Tpetra::MultiVector<> > &vecWeights,
-                           const ROL::SharedPointer<Teuchos::ParameterList> &parlist) {
+                           const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
     data_ = data;
     vecWeights_ = vecWeights;
     alpha_ = parlist->sublist("Problem").get("Penalty parameter", 1e-2);

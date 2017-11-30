@@ -68,7 +68,7 @@ namespace { // (anonymous)
   template<class Scalar>
   class RolStubTsqrAdapter {
   public:
-    RolStubTsqrAdapter (const ROL::SharedPointer<Teuchos::ParameterList>&)
+    RolStubTsqrAdapter (const Teuchos::RCP<Teuchos::ParameterList>&)
     {
       TEUCHOS_TEST_FOR_EXCEPTION(false, std::logic_error, "Not implemented");
     }
@@ -85,7 +85,7 @@ namespace { // (anonymous)
     }
 
     void
-    setParameterList (const ROL::SharedPointer<Teuchos::ParameterList>&)
+    setParameterList (const Teuchos::RCP<Teuchos::ParameterList>&)
     {}
 
     void

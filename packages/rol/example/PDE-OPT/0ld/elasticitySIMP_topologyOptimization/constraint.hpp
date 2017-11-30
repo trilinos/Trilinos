@@ -62,7 +62,7 @@ public:
 
   EqualityConstraint_PDEOPT_ElasticitySIMP(const ROL::SharedPointer<ElasticitySIMPOperators<Real> > &data,
                                            const ROL::SharedPointer<DensityFilter<Real> > &filter,
-                                           const ROL::SharedPointer<Teuchos::ParameterList> &parlist)
+                                           const Teuchos::RCP<Teuchos::ParameterList> &parlist)
     : data_(data), filter_(filter) {}
 
   using ROL::Constraint_SimOpt<Real>::value;

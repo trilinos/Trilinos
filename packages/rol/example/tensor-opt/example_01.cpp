@@ -634,7 +634,7 @@ private:
 
 private:
   const std::string                                    _parfile;
-  const ROL::SharedPointer<Teuchos::ParameterList>           _parlist;
+  const Teuchos::RCP<Teuchos::ParameterList>           _parlist;
 
   const ROL::SharedPointer<VectorWrapper<DT_, dim_>>         _lower,  _upper;
   const ROL::SharedPointer<VectorWrapper<DT_, dim_>>         _x;
@@ -662,7 +662,7 @@ public:
   /// Constructor
   SemidefiniteProgramming() :
     _parfile("example_01.xml"),
-    _parlist(   ROL::makeShared<Teuchos::ParameterList>()),
+    _parlist(   Teuchos::rcp( new Teuchos::ParameterList() )),
     _lower(     ROL::makeShared<VectorWrapper<DT_, dim_>>(DT_(0))),
     _upper(     ROL::makeShared<VectorWrapper<DT_, dim_>>(DT_(1))),
     _x(         ROL::makeShared<VectorWrapper<DT_, dim_>>()),

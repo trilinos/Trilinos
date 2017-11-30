@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
     RealT zvar = 0.0*random<RealT>(comm);
     RealT gvar = random<RealT>(comm);
     RealT yvar = random<RealT>(comm);
-    ROL::SharedPointer<Teuchos::ParameterList> hmcrlist = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> hmcrlist = Teuchos::rcp( new Teuchos::ParameterList() );
     hmcrlist->sublist("SOL").sublist("Risk Measure").set("Name","HMCR");
     ROL::RiskVector<RealT> z(hmcrlist,zp,zvar), g(hmcrlist,gzp,gvar), y(hmcrlist,yzp,yvar);
     // INITIALIZE STATE VECTORS
@@ -231,8 +231,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     // READ IN XML INPUT
     std::string filename = "input.xml";
-    ROL::SharedPointer<Teuchos::ParameterList> parlist
-      = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist
+      = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     // DEFINE ALGORITHM
     ROL::Algorithm<RealT> algo("Trust Region",*parlist,false);

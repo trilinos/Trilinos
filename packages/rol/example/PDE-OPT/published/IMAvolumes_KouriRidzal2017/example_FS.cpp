@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
   /*** Read in XML input ***/
   std::string filename = "input_FS.xml";
-  ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
+  Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
   Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
   /*** Initialize communicator. ***/
@@ -314,7 +314,7 @@ int main(int argc, char *argv[]) {
     vy = ROL::makeShared<ROL::SimulatedVector<RealT>>(vyvec,bman);
     ROL::SharedPointer<ROL::Vector<RealT> > rz, rs, rt;
     if (useCVaR) {
-      ROL::SharedPointer<Teuchos::ParameterList> cvarList = ROL::makeShared<Teuchos::ParameterList>();
+      Teuchos::RCP<Teuchos::ParameterList> cvarList = Teuchos::rcp( new Teuchos::ParameterList() );
       cvarList->sublist("SOL").sublist("Risk Measure").set("Name","CVaR");
       rz = ROL::makeShared<ROL::RiskVector<RealT>>(cvarList, zp);
       rs = ROL::makeShared<ROL::RiskVector<RealT>>(cvarList, sp);

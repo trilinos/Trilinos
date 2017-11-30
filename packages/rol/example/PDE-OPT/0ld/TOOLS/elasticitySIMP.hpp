@@ -68,7 +68,7 @@ public:
   ~ElasticitySIMP() {}
 
   virtual void ElasticitySIMP_Initialize(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm,
-                                         const ROL::SharedPointer<Teuchos::ParameterList> &parlist,
+                                         const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                                          const ROL::SharedPointer<std::ostream> &outStream) {
     this->Initialize(comm, parlist, outStream);
     // new material parameters

@@ -67,7 +67,7 @@ public:
 
   ParametrizedObjective_PDEOPT_ElasticitySIMP(const ROL::SharedPointer<ElasticitySIMPOperators<Real> > &data,
                                               const ROL::SharedPointer<DensityFilter<Real> > &filter,
-                                              const ROL::SharedPointer<Teuchos::ParameterList> &parlist,
+                                              const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                                               const Real scale)
     : data_(data), filter_(filter), scale_(scale) {
     useFU_ = parlist->sublist("ElasticitySIMP").get("Use Force Dot Displacement Objective",true);
@@ -76,7 +76,7 @@ public:
 
   ParametrizedObjective_PDEOPT_ElasticitySIMP(const ROL::SharedPointer<ElasticitySIMPOperators<Real> > &data,
                                               const ROL::SharedPointer<DensityFilter<Real> > &filter,
-                                              const ROL::SharedPointer<Teuchos::ParameterList> &parlist)
+                                              const Teuchos::RCP<Teuchos::ParameterList> &parlist)
     : data_(data), filter_(filter) {
     // Compute compliance scaling
     Teuchos::Array<Real> dotF(1, 0);

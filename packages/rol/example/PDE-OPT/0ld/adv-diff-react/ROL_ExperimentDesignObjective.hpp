@@ -207,7 +207,7 @@ public:
     Constructor.
   */
   ExperimentDesignObjective(const ROL::SharedPointer<ExperimentDesignInterface<Real> > &edi,
-                            const ROL::SharedPointer<Teuchos::ParameterList> &parlist) : edi_(edi) {
+                            const Teuchos::RCP<Teuchos::ParameterList> &parlist) : edi_(edi) {
     // get problem parameters
     cgabstol_  = parlist->sublist("Problem").get("OED CG Absolute Tolerance", 1e10);
     cgreltol_  = parlist->sublist("Problem").get("OED CG Relative Tolerance", 1e-10);

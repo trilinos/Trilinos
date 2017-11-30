@@ -79,7 +79,7 @@ private:
 
 public:
   EqualityConstraint_PDEOPT_ElasticitySIMP_Volume(const ROL::SharedPointer<ElasticitySIMPOperators<Real> > &data,
-                                                  const ROL::SharedPointer<Teuchos::ParameterList> &parlist) {
+                                                  const Teuchos::RCP<Teuchos::ParameterList> &parlist) {
     volFrac_ = parlist->sublist("ElasticityTopoOpt").get<Real>("Volume Fraction");
     cellMeasures_= data->getCellAreas();
     Teuchos::Array<Real> sumM(1, 0);

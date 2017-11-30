@@ -63,7 +63,7 @@ private:
 public:
 
   EqualityConstraint_PDEOPT_Poisson(const ROL::SharedPointer<PoissonData<Real> > &data,
-                                    const ROL::SharedPointer<Teuchos::ParameterList> &parlist)
+                                    const Teuchos::RCP<Teuchos::ParameterList> &parlist)
     : data_(data) {}
 
   using ROL::Constraint_SimOpt<Real>::value;

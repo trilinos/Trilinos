@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
 
     /*** Read in XML input ***/
     std::string filename = "input_RS.xml";
-    ROL::SharedPointer<Teuchos::ParameterList> parlist = ROL::makeShared<Teuchos::ParameterList>();
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
     bool printSimOpt = parlist->sublist("SimOpt").sublist("Solve").get("Output Iteration History",false);
     parlist->sublist("SimOpt").sublist("Solve").set("Output Iteration History",printSimOpt&&(myRank==0));

@@ -65,7 +65,7 @@ private:
   ROL::SharedPointer<StatusTest<Real> >       status_;
   ROL::SharedPointer<Step<Real> >             step_;  
   ROL::SharedPointer<Algorithm<Real> >        algo_;
-  ROL::SharedPointer<Teuchos::ParameterList>  parlist_;
+  Teuchos::RCP<Teuchos::ParameterList>  parlist_;
   ROL::SharedPointer<BoundConstraint<Real> >  bnd_;
 
   // Storage

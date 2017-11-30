@@ -144,7 +144,7 @@ private:
 public:
 
   StefanBoltzmannData(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm,
-                      const ROL::SharedPointer<Teuchos::ParameterList> &parlist,
+                      const Teuchos::RCP<Teuchos::ParameterList> &parlist,
                       const ROL::SharedPointer<std::ostream> &outStream) {
     sdim_ = parlist->sublist("Problem").get("Stochastic Dimension",6);
     std::vector<Real> par(sdim_,1.0);

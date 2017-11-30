@@ -64,7 +64,7 @@ private:
 public:
 
   Objective_PDEOPT_Poisson(const ROL::SharedPointer<PoissonData<Real> > &data,
-                           const ROL::SharedPointer<Teuchos::ParameterList> &parlist)
+                           const Teuchos::RCP<Teuchos::ParameterList> &parlist)
       : data_(data) {
     cost_control_ = parlist->sublist("Problem").get("Control Cost", 1e0);
     cost_state_   = parlist->sublist("Problem").get("State Cost", 1e5);

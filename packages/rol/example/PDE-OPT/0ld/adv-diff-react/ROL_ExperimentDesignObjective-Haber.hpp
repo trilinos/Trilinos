@@ -138,7 +138,7 @@ public:
                             const ROL::SharedPointer<Vector<Real> > &observation,
                             const std::vector<ROL::SharedPointer<Vector<Real> > > &training,
                             const ROL::SharedPointer<Vector<Real> > &rand01,
-                            const ROL::SharedPointer<Teuchos::ParameterList> &parlist) :
+                            const Teuchos::RCP<Teuchos::ParameterList> &parlist) :
     obj_(obj), con_(con), state_(state), adjoint_(adjoint),
     control_(control), constraint_(constraint), observation_(observation),
     training_(training), rand01_(rand01) {

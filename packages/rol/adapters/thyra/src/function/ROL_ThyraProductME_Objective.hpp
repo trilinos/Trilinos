@@ -62,7 +62,7 @@ template <class Real>
 class ThyraProductME_Objective : public Objective<Real> {
 public:
 
-  ThyraProductME_Objective(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,ROL::SharedPointer<Teuchos::ParameterList> params_ = ROL::nullPointer) :
+  ThyraProductME_Objective(Thyra::ModelEvaluatorDefaultBase<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,Teuchos::RCP<Teuchos::ParameterList> params_ = ROL::nullPointer) :
     thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_) {
     valueUpdated = gradientUpdated = false;
     value_ = 0;
@@ -193,7 +193,7 @@ private:
   const std::vector<int> p_indices;
   Real value_;
   ROL::SharedPointer<Vector<Real> > x_ptr, grad_ptr;
-  ROL::SharedPointer<Teuchos::ParameterList> params;
+  Teuchos::RCP<Teuchos::ParameterList> params;
 
 }; // class Objective
 

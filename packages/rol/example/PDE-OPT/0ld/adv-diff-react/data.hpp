@@ -150,7 +150,7 @@ private:
 public:
 
   PoissonData(const ROL::SharedPointer<const Teuchos::Comm<int> > &comm,
-              const ROL::SharedPointer<Teuchos::ParameterList> &parlist,
+              const Teuchos::RCP<Teuchos::ParameterList> &parlist,
               const ROL::SharedPointer<std::ostream> &outStream) {
 
     /************************************/

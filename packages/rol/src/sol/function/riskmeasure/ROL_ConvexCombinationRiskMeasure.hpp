@@ -70,7 +70,7 @@ private:
   typedef typename std::vector<Real>::size_type uint;
 
   std::vector<Real> lambda_;
-  std::vector<ROL::SharedPointer<Teuchos::ParameterList> > parlist_;
+  std::vector<Teuchos::RCP<Teuchos::ParameterList> > parlist_;
   std::vector<ROL::SharedPointer<RiskMeasure<Real> > > risk_;
   uint size_;
 
@@ -121,7 +121,7 @@ public:
       std::string si = convert.str();
       Teuchos::ParameterList &ilist = list.sublist(si);
       std::string name = ilist.get<std::string>("Name");
-      parlist_[i] = ROL::makeShared<Teuchos::ParameterList>();
+      parlist_[i] = Teuchos::rcp( new Teuchos::ParameterList() );
       parlist_[i]->sublist("SOL").sublist("Risk Measure").set("Name",name);
       parlist_[i]->sublist("SOL").sublist("Risk Measure").sublist(name) = ilist;
       risk_[i] = RiskMeasureFactory<Real>(*parlist_[i]);
