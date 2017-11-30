@@ -175,14 +175,14 @@ evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
     // loop over nodes
     for (int col_node=0; col_node < num_nodes; ++col_node) {
       // loop over equations
-      for (int col_eq=0; col_eq < num_equations; ++col_eq) {
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,num_equations),[&] (const int& col_eq) {
         const int global_col_index = gids(cell_global_offset_index+cell,col_node) * num_equations + col_eq;
         const int derivative_index = col_node * num_equations + col_eq;
         // std::cout << "derivative = " << residual_contribution(cell,node).fastAccessDx(derivative_index) << std::endl;
         workset.global_jacobian_.sumIntoValues(global_row_index,&global_col_index,1,
 					       &(residual_contribution(cell,node).fastAccessDx(derivative_index)),
 					       false,true);
-      }
+      });
     } 
   });
 }
