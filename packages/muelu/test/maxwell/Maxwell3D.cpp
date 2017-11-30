@@ -74,6 +74,17 @@
 //#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
 
+// Stratimikos
+#ifdef HAVE_MUELU_STRATIMIKOS
+// Thyra includes
+#include <Thyra_LinearOpWithSolveBase.hpp>
+#include <Thyra_VectorBase.hpp>
+#include <Thyra_SolveSupportTypes.hpp>
+// Stratimikos includes
+#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_MueLuHelpers.hpp>
+#endif
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -98,6 +109,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
     std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
     double scaling                = 1.0;               clp.setOption("scaling",               &scaling,           "scale mass term");
+    std::string solverName = "Belos";                  clp.setOption("solverName",            &solverName, "Name of iterative linear solver "
+                                                                     "to use for solving the linear system. "
+                                                                     "(\"Belos\" or \"Stratimikos\")");
 
     clp.recogniseAllOptions(true);
     switch (clp.parse(argc, argv)) {
@@ -141,7 +155,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
 
     // build lumped mass matrix inverse (M0inv_Matrix)
     RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
-    RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 1, Xpetra::StaticProfile));
+    RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 0, Xpetra::StaticProfile));
     RCP<CrsMatrix> M0inv_CrsMatrix = M0inv_MatrixWrap->getCrsMatrix();
     Teuchos::ArrayRCP<size_t> rowPtr;
     Teuchos::ArrayRCP<LO> colInd;
@@ -159,14 +173,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     RCP<Matrix> M0inv_Matrix = Teuchos::rcp_dynamic_cast<Matrix>(M0inv_MatrixWrap);
 
     // build stiffness plus mass matrix (SM_Matrix)
-    RCP<Matrix> SM_Matrix = MatrixFactory::Build(edge_map,100);
+    RCP<Matrix> SM_Matrix;
     Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,scaling,SM_Matrix,*out);
     SM_Matrix->fillComplete();
-
-    comm->barrier();
-    tm = Teuchos::null;
-
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Preconditioner")));
 
     // set parameters
     Teuchos::ParameterList params, params11, params22, smoother;
@@ -187,15 +196,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     }
     params.set("refmaxwell: 11 list",params11);
     params.set("refmaxwell: 22 list",params22);
-    // construct preconditioner
-    RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
-      = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,M0inv_Matrix,
-            M1_Matrix,Teuchos::null,coords,params) );
-
-    comm->barrier();
-    tm = Teuchos::null;
-
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Setup RHS etc")));
 
     // setup LHS, RHS
     RCP<MultiVector> vec = MultiVectorFactory::Build(edge_map,1);
@@ -204,52 +204,116 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
     SM_Matrix->apply(*vec,*B);
     RCP<MultiVector> X = MultiVectorFactory::Build(edge_map,1);
     X -> putScalar((SC)0.0);
-    // Belos linear problem
-#ifdef HAVE_MUELU_BELOS
-    typedef MultiVector          MV;
-    typedef Belos::OperatorT<MV> OP;
-    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(SM_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
-
-    RCP<Belos::LinearProblem<SC, MV, OP> > problem = rcp( new Belos::LinearProblem<SC, MV, OP>() );
-    problem -> setOperator( belosOp );
-    Teuchos::RCP<OP> belosPrecOp = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(preconditioner)); // Turns a Xpetra::Matrix object into a Belos operator
-    problem -> setRightPrec( belosPrecOp );
-
-    problem -> setProblem( X, B );
-
-    bool set = problem->setProblem();
-    if (set == false) {
-      *out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-      return EXIT_FAILURE;
-    }
-
-    // Belos solver
-    RCP< Belos::SolverManager<SC, MV, OP> > solver;
-    RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
-    RCP<Teuchos::ParameterList> belosParams
-      = rcp( new Teuchos::ParameterList() );
-    belosParams->set("Maximum Iterations", 100);
-    belosParams->set("Convergence Tolerance",1e-4);
-    belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-    belosParams->set("Output Frequency",1);
-    belosParams->set("Output Style",Belos::Brief);
-    solver = factory->create("Block CG",belosParams);
 
     comm->barrier();
     tm = Teuchos::null;
 
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 4 - Solve")));
+    if (solverName == "Belos") {
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc")));
 
-    // set problem and solve
-    solver -> setProblem( problem );
-    Belos::ReturnType status = solver -> solve();
-    int iters = solver -> getNumIters();
-    success = (iters<50 && status == Belos::Converged);
-    if (success)
-      *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
-    else
-      *out << "FAILURE! Belos did not converge fast enough." << std::endl;
+      // construct preconditioner
+      RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
+        = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,M0inv_Matrix,
+                                                  M1_Matrix,Teuchos::null,coords,params) );
 
+      // Belos linear problem
+#ifdef HAVE_MUELU_BELOS
+      typedef MultiVector          MV;
+      typedef Belos::OperatorT<MV> OP;
+      Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(SM_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
+
+      RCP<Belos::LinearProblem<SC, MV, OP> > problem = rcp( new Belos::LinearProblem<SC, MV, OP>() );
+      problem -> setOperator( belosOp );
+      Teuchos::RCP<OP> belosPrecOp = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(preconditioner)); // Turns a Xpetra::Matrix object into a Belos operator
+      problem -> setRightPrec( belosPrecOp );
+
+      problem -> setProblem( X, B );
+
+      bool set = problem->setProblem();
+      if (set == false) {
+        *out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+        return EXIT_FAILURE;
+      }
+
+      // Belos solver
+      RCP< Belos::SolverManager<SC, MV, OP> > solver;
+      RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
+      RCP<Teuchos::ParameterList> belosParams
+        = rcp( new Teuchos::ParameterList() );
+      belosParams->set("Maximum Iterations", 100);
+      belosParams->set("Convergence Tolerance",1e-4);
+      belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+      belosParams->set("Output Frequency",1);
+      belosParams->set("Output Style",Belos::Brief);
+      solver = factory->create("Block CG",belosParams);
+
+      comm->barrier();
+      tm = Teuchos::null;
+
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve")));
+
+      // set problem and solve
+      solver -> setProblem( problem );
+      Belos::ReturnType status = solver -> solve();
+      int iters = solver -> getNumIters();
+      success = (iters<50 && status == Belos::Converged);
+      if (success)
+        *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
+      else
+        *out << "FAILURE! Belos did not converge fast enough." << std::endl;
+
+    }
+#ifdef HAVE_MUELU_STRATIMIKOS
+    if (solverName == "Stratimikos") {
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Stratimikos solver")));
+
+      // Build the rest of the Stratimikos list
+      Teuchos::ParameterList SList;
+      SList.set("Linear Solver Type","Belos");
+      SList.sublist("Linear Solver Types").sublist("Belos").set("Solver Type", "Pseudo Block CG");
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Output Frequency",1);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Maximum Iterations",100);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Convergence Tolerance",1e-4);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Output Style",1);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Verbosity",33);
+      SList.sublist("Linear Solver Types").sublist("Belos").sublist("VerboseObject").set("Verbosity Level", "medium");
+      SList.set("Preconditioner Type","MueLuRefMaxwell");
+      params.set("parameterlist: syntax","muelu");
+      SList.sublist("Preconditioner Types").set("MueLuRefMaxwell",params);
+      // Add matrices to parameterlist
+      SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("D0",D0_Matrix);
+      SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M0inv",M0inv_Matrix);
+      SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M1",M1_Matrix);
+      SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("Coordinates",coords);
+
+      // Build Thyra linear algebra objects
+      RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(SM_Matrix)->getCrsMatrix());
+      RCP<      Thyra::VectorBase<Scalar> >thyraX = Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(X->getVectorNonConst(0)));
+      // TODO: Why do we loose a reference when running this with Epetra?
+      RCP<const Thyra::VectorBase<Scalar> >thyraB = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraVector(B->getVector(0));
+
+      // Build Stratimikos solver
+      Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
+      Stratimikos::enableMueLuRefMaxwell<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+      linearSolverBuilder.setParameterList(rcp(&SList,false));              // Setup solver parameters using a Stratimikos parameter list.
+
+      // Build a new "solver factory" according to the previously specified parameter list.
+      RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
+
+      // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
+      Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
+
+      comm->barrier();
+      tm = Teuchos::null;
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve")));
+
+      // Solve Ax = b.
+      Thyra::SolveStatus<Scalar> status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
+      std::cout << status << std::endl;
+
+      success = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
+    }
+#endif
     comm->barrier();
     tm = Teuchos::null;
     globalTimeMonitor = Teuchos::null;
