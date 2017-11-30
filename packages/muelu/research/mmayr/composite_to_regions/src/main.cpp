@@ -172,7 +172,10 @@ int main(int argc, char *argv[]) {
   std::vector< Epetra_CrsMatrix * > regionGrpMats(maxRegPerProc); // region-wise matrices in true region layout with unique GIDs for replicated interface DOFs
 
   std::vector< Epetra_Map* > coarseRowMapPerGrp(maxRegPerProc); // region-wise row map in true region layout with unique GIDs for replicated interface DOFs
+<<<<<<< HEAD
   std::vector< Epetra_Map* > coarseColMapPerGrp(maxRegPerProc); // region-wise columns map in true region layout with unique GIDs for replicated interface DOFs
+=======
+>>>>>>> MueLu/HHG: first step towards prolongators for test problem
   std::vector< Epetra_CrsMatrix * > regionGrpProlong(maxRegPerProc); // region-wise prolongator in true region layout with unique GIDs for replicated interface DOFs
 
   Epetra_Vector* compX = NULL; // initial guess for truly composite calculations
