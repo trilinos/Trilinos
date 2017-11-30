@@ -1,4 +1,4 @@
-// Copyright(C) 2015 National Technology & Engineering Solutions of
+// Copyright(C) 2015-2017 National Technology & Engineering Solutions of
 // Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -79,14 +79,17 @@ int main(int argc, char *argv[])
 
   if (input_files.empty()) {
     if (!quiet) {
-      const char *comment = aprepro.getsym("_C_")->value.svar;
-      if (comment != nullptr) {
-        std::cout << comment << " Algebraic Preprocessor -- Aprepro, version " << aprepro.version()
-                  << "\n";
-      }
+      auto comment = aprepro.getsym("_C_")->value.svar;
+      std::cout << comment << " Algebraic Preprocessor -- Aprepro, version " << aprepro.version()
+                << "\n";
     }
     aprepro.ap_options.interactive = true;
-    aprepro.parse_stream(std::cin, "standard input");
+    try {
+      aprepro.parse_stream(std::cin, "standard input");
+    }
+    catch (std::exception &e) {
+      std::cerr << "Aprepro terminated due to exception: " << e.what() << '\n';
+    }
   }
   else {
     std::fstream infile(input_files[0].c_str());
@@ -98,29 +101,34 @@ int main(int argc, char *argv[])
     // Read and parse a file.  The entire file will be parsed and
     // then the output can be obtained in an std::ostringstream via
     // Aprepro::parsing_results()
-    bool result = aprepro.parse_stream(infile, input_files[0]);
+    try {
+      bool result = aprepro.parse_stream(infile, input_files[0]);
 
-    if (result) {
-      if (input_files.size() > 1) {
-        std::ofstream ofile(input_files[1].c_str());
-        if (!quiet) {
-          const char *comment = aprepro.getsym("_C_")->value.svar;
-          ofile << comment << " Algebraic Preprocessor (Aprepro) version " << aprepro.version()
-                << "\n";
+      if (result) {
+        if (input_files.size() > 1) {
+          std::ofstream ofile(input_files[1].c_str());
+          if (!quiet) {
+            auto comment = aprepro.getsym("_C_")->value.svar;
+            ofile << comment << " Algebraic Preprocessor (Aprepro) version " << aprepro.version()
+                  << "\n";
+          }
+          ofile << aprepro.parsing_results().str();
         }
-        ofile << aprepro.parsing_results().str();
-      }
-      else {
-        if (!quiet) {
-          const char *comment = aprepro.getsym("_C_")->value.svar;
-          std::cout << comment << " Algebraic Preprocessor (Aprepro) version " << aprepro.version()
-                    << "\n";
+        else {
+          if (!quiet) {
+            auto comment = aprepro.getsym("_C_")->value.svar;
+            std::cout << comment << " Algebraic Preprocessor (Aprepro) version "
+                      << aprepro.version() << "\n";
+          }
+          std::cout << aprepro.parsing_results().str();
         }
-        std::cout << aprepro.parsing_results().str();
       }
     }
+    catch (std::exception &e) {
+      std::cerr << "Aprepro terminated due to exception: " << e.what() << '\n';
+    }
   }
-  if (aprepro.ap_options.debugging) {
+  if (aprepro.ap_options.debugging || aprepro.ap_options.dumpvars) {
     aprepro.dumpsym("variable", false);
   }
 }

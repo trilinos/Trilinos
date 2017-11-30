@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,20 +33,20 @@
  *
  */
 /*****************************************************************************
-*
-* exgssc - ex_get_side_set_node_count
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     side_set_id             side set id
-*
-* exit conditions -
-*       int     *side_set_node_cnt_list returned array of number of nodes for
-*                                       side or face
-* revision history -
-*
-*****************************************************************************/
+ *
+ * exgssc - ex_get_side_set_node_count
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     side_set_id             side set id
+ *
+ * exit conditions -
+ *       int     *side_set_node_cnt_list returned array of number of nodes for
+ *                                       side or face
+ * revision history -
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, ex_block, etc
 #include "exodusII_int.h" // for elem_blk_parm, EX_FATAL, etc
@@ -78,7 +78,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
   int  err_stat = EX_NOERR;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* first check if any side sets are specified */
   /* inquire how many side sets have been stored */
@@ -86,13 +86,13 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
   if (num_side_sets < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of side sets in file id %d",
              exoid);
-    ex_err("ex_get_side_set_node_count", errmsg, EX_LASTERR);
+    ex_err(__func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (num_side_sets == 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no side sets defined in file id %d", exoid);
-    ex_err("ex_get_side_set_node_count", errmsg, EX_WARN);
+    ex_err(__func__, errmsg, EX_WARN);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -106,14 +106,14 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
     if (status == EX_NULLENTITY) {
       snprintf(errmsg, MAX_ERR_LENGTH, "Warning: side set %" PRId64 " is NULL in file id %d",
                side_set_id, exoid);
-      ex_err("ex_get_side_set_node_count", errmsg, EX_NULLENTITY);
+      ex_err(__func__, errmsg, EX_NULLENTITY);
       EX_FUNC_LEAVE(EX_WARN);
     }
 
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to locate side set %" PRId64 " in VAR_SS_IDS array in file id %d",
              side_set_id, exoid);
-    ex_err("ex_get_side_set_node_count", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -121,7 +121,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
   if (num_elem_blks < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of element blocks in file id %d",
              exoid);
-    ex_err("ex_get_side_set_node_count", errmsg, EX_LASTERR);
+    ex_err(__func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -130,7 +130,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
   ndim = ex_inquire_int(exoid, EX_INQ_DIM);
   if (ndim < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get dimensionality in file id %d", exoid);
-    ex_err("ex_get_side_set_node_count", errmsg, EX_LASTERR);
+    ex_err(__func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -158,26 +158,28 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of elements in side set %" PRId64 " in file id %d",
              side_set_id, exoid);
-    ex_err("ex_get_side_set_node_count", errmsg, EX_LASTERR);
+    ex_err(__func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   /* Allocate space for the side set element list */
   {
     if (!(side_set_elem_list = malloc(tot_num_ss_elem * int_size))) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for side set element "
-                                       "list for file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to allocate space for side set element "
+               "list for file id %d",
                exoid);
-      ex_err("ex_get_side_set_node_count", errmsg, EX_MEMFAIL);
+      ex_err(__func__, errmsg, EX_MEMFAIL);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
     /* Allocate space for the side set side list */
     if (!(side_set_side_list = malloc(tot_num_ss_elem * int_size))) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for side set side list "
-                                       "for file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to allocate space for side set side list "
+               "for file id %d",
                exoid);
-      ex_err("ex_get_side_set_node_count", errmsg, EX_MEMFAIL);
+      ex_err(__func__, errmsg, EX_MEMFAIL);
       err_stat = EX_FATAL;
       goto cleanup;
     }
@@ -185,17 +187,18 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
     if (ex_get_set(exoid, EX_SIDE_SET, side_set_id, side_set_elem_list, side_set_side_list) == -1) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get side set %" PRId64 " in file id %d",
                side_set_id, exoid);
-      ex_err("ex_get_side_set_node_count", errmsg, EX_LASTERR);
+      ex_err(__func__, errmsg, EX_LASTERR);
       err_stat = EX_FATAL;
       goto cleanup;
     }
 
     /* Allocate space for the ss element index array */
     if (!(ss_elem_ndx = malloc(tot_num_ss_elem * int_size))) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for side set elem sort "
-                                       "array for file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to allocate space for side set elem sort "
+               "array for file id %d",
                exoid);
-      ex_err("ex_get_side_set_node_count", errmsg, EX_MEMFAIL);
+      ex_err(__func__, errmsg, EX_MEMFAIL);
       err_stat = EX_FATAL;
       goto cleanup;
     }
@@ -220,16 +223,17 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
 
   /* Allocate space for the element block ids */
   {
-    int int_size = sizeof(int);
+    int_size = sizeof(int);
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
       int_size = sizeof(int64_t);
     }
 
     if (!(elem_blk_ids = malloc(num_elem_blks * int_size))) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for element block ids "
-                                       "for file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to allocate space for element block ids "
+               "for file id %d",
                exoid);
-      ex_err("ex_get_side_set_node_count", errmsg, EX_MEMFAIL);
+      ex_err(__func__, errmsg, EX_MEMFAIL);
       err_stat = EX_FATAL;
       goto cleanup;
     }
@@ -237,7 +241,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
     if (ex_get_ids(exoid, EX_ELEM_BLOCK, elem_blk_ids) == -1) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get element block ids in file id %d",
                exoid);
-      ex_err("ex_get_side_set_node_count", errmsg, EX_MSG);
+      ex_err(__func__, errmsg, EX_MSG);
       err_stat = EX_FATAL;
       goto cleanup;
     }
@@ -245,10 +249,11 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
 
   /* Allocate space for the element block params */
   if (!(elem_blk_parms = malloc(num_elem_blks * sizeof(struct elem_blk_parm)))) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for element block params "
-                                     "for file id %d",
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to allocate space for element block params "
+             "for file id %d",
              exoid);
-    ex_err("ex_get_side_set_node_count", errmsg, EX_MEMFAIL);
+    ex_err(__func__, errmsg, EX_MEMFAIL);
     err_stat = EX_FATAL;
     goto cleanup;
   }
@@ -310,7 +315,7 @@ int ex_get_side_set_node_count(int exoid, ex_entity_id side_set_id, int *side_se
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: Invalid element number %" PRId64 " found in side set %" PRId64 " in file %d",
                elem, side_set_id, exoid);
-      ex_err("ex_get_side_set_node_count", errmsg, EX_BADPARAM);
+      ex_err(__func__, errmsg, EX_BADPARAM);
       err_stat = EX_FATAL;
       goto cleanup;
     }

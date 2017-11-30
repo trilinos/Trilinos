@@ -15,63 +15,8 @@ jurisdictions which recognize such a disclaimer. In such jurisdictions,
 this software is released into the Public Domain.
 
 In jurisdictions which do not recognize Public Domain property (e.g. Germany as
-of
-2010), this software is Copyright(C) 1999-2010 National Technology & Engineering
+of 2010), this software is Copyright(C) 2017 National Technology & Engineering
 Solutions
-2010), this software is of Sandia, LLC (NTESS).  Under the terms of Contract
-DE-NA0003525 with
-2010), this software is NTESS, the U.S. Government retains certain rights in
-this software.
-2010), this software is
-2010), this software is Redistribution and use in source and binary forms, with
-or without
-2010), this software is modification, are permitted provided that the following
-conditions are
-2010), this software is met:
-2010), this software is
-2010), this software is     * Redistributions of source code must retain the
-above copyright
-2010), this software is       notice, this list of conditions and the following
-disclaimer.
-2010), this software is
-2010), this software is     * Redistributions in binary form must reproduce the
-above
-2010), this software is       copyright notice, this list of conditions and the
-following
-2010), this software is       disclaimer in the documentation and/or other
-materials provided
-2010), this software is       with the distribution.
-2010), this software is
-2010), this software is     * Neither the name of NTESS nor the
-names of its
-2010), this software is       contributors may be used to endorse or promote
-products derived
-2010), this software is       from this software without specific prior written
-permission.
-2010), this software is
-2010), this software is THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
-CONTRIBUTORS
-2010), this software is "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
-INCLUDING, BUT NOT
-2010), this software is LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS FOR
-2010), this software is A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
-THE COPYRIGHT
-2010), this software is OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-INDIRECT, INCIDENTAL,
-2010), this software is SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-BUT NOT
-2010), this software is LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE,
-2010), this software is DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY
-2010), this software is THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT
-2010), this software is (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-OUT OF THE USE
-2010), this software is OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGE.
-released under the terms of the MIT License (see below).
 
 In jurisdictions which recognize Public Domain property, the user of this
 software may choose to accept it either as 1) Public Domain, 2) under the
@@ -250,15 +195,15 @@ namespace Json {
   typedef int          LargestInt;
   typedef unsigned int LargestUInt;
 #undef JSON_HAS_INT64
-#else                 // if defined(JSON_NO_INT64)
+#else // if defined(JSON_NO_INT64)
 // For Microsoft Visual use specific types as long long is not supported
 #if defined(_MSC_VER) // Microsoft Visual Studio
   typedef __int64          Int64;
   typedef unsigned __int64 UInt64;
-#else                 // if defined(_MSC_VER) // Other platforms, use long long
+#else  // if defined(_MSC_VER) // Other platforms, use long long
   typedef long long int          Int64;
   typedef unsigned long long int UInt64;
-#endif                // if defined(_MSC_VER)
+#endif // if defined(_MSC_VER)
   typedef Int64            LargestInt;
   typedef UInt64           LargestUInt;
 #define JSON_HAS_INT64

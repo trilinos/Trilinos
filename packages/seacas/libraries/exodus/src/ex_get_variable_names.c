@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -100,23 +100,23 @@ int ex_get_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char
   const char *vvarname;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   switch (obj_type) {
-  case EX_NODAL: vvarname      = VAR_NAME_NOD_VAR; break;
+  case EX_NODAL: vvarname = VAR_NAME_NOD_VAR; break;
   case EX_EDGE_BLOCK: vvarname = VAR_NAME_EDG_VAR; break;
   case EX_FACE_BLOCK: vvarname = VAR_NAME_FAC_VAR; break;
   case EX_ELEM_BLOCK: vvarname = VAR_NAME_ELE_VAR; break;
-  case EX_NODE_SET: vvarname   = VAR_NAME_NSET_VAR; break;
-  case EX_EDGE_SET: vvarname   = VAR_NAME_ESET_VAR; break;
-  case EX_FACE_SET: vvarname   = VAR_NAME_FSET_VAR; break;
-  case EX_SIDE_SET: vvarname   = VAR_NAME_SSET_VAR; break;
-  case EX_ELEM_SET: vvarname   = VAR_NAME_ELSET_VAR; break;
-  case EX_GLOBAL: vvarname     = VAR_NAME_GLO_VAR; break;
+  case EX_NODE_SET: vvarname = VAR_NAME_NSET_VAR; break;
+  case EX_EDGE_SET: vvarname = VAR_NAME_ESET_VAR; break;
+  case EX_FACE_SET: vvarname = VAR_NAME_FSET_VAR; break;
+  case EX_SIDE_SET: vvarname = VAR_NAME_SSET_VAR; break;
+  case EX_ELEM_SET: vvarname = VAR_NAME_ELSET_VAR; break;
+  case EX_GLOBAL: vvarname = VAR_NAME_GLO_VAR; break;
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: invalid variable type %d requested from file id %d",
              obj_type, exoid);
-    ex_err("ex_get_variable_names", errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -124,13 +124,12 @@ int ex_get_variable_names(int exoid, ex_entity_type obj_type, int num_vars, char
   if ((status = nc_inq_varid(exoid, vvarname, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no %s variables names stored in file id %d",
              ex_name_of_object(obj_type), exoid);
-    ex_err("ex_get_variable_names", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
   /* read the variable names */
-  status =
-      ex_get_names_internal(exoid, varid, num_vars, var_names, obj_type, "ex_get_variable_names");
+  status = ex_get_names_internal(exoid, varid, num_vars, var_names, obj_type, __func__);
   if (status != NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }

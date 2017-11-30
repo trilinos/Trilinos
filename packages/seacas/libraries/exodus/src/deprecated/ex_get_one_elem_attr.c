@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,21 +33,21 @@
  *
  */
 /*****************************************************************************
-*
-* exgeat - ex_get_one_elem_attr
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     elem_blk_id             element block id
-*
-* exit conditions -
-*       float*  attrib                  array of attributes
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exgeat - ex_get_one_elem_attr
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     elem_blk_id             element block id
+ *
+ * exit conditions -
+ *       float*  attrib                  array of attributes
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h" // for ex_get_one_attr, etc
 

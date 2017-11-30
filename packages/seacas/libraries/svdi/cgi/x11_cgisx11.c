@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 National Technology & Engineering Solutions
+ * Copyright (C) 2009-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -34,7 +34,7 @@
  */
 /* cgisx11.c - linker specifiable driver routine for driver
  *   X.11 (x11)
- * Sandia National Laboratories, Div 2634
+ * Sandia-2017 National Laboratories, Div 2634
  * Sun Nov 19 12:02:52 MST 1989 - last date modified
  */
 

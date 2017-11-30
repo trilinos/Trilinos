@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,20 +33,20 @@
  *
  */
 /*****************************************************************************
-*
-* exgvtt - ex_get_var_tab
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid              exodus file id
-*       int     num_blk            number of blocks
-*       int     num_var            number of variables
-*
-* exit conditions -
-*       int*    var_tab            element variable truth table array
-*
-*
-*****************************************************************************/
+ *
+ * exgvtt - ex_get_var_tab
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid              exodus file id
+ *       int     num_blk            number of blocks
+ *       int     num_var            number of variables
+ *
+ * exit conditions -
+ *       int*    var_tab            element variable truth table array
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h" // for ex_get_truth_table, etc
 

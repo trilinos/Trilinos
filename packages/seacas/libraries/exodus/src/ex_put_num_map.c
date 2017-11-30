@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,21 +33,21 @@
  *
  */
 /*****************************************************************************
-*
-* expem - ex_put_num_map
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     map_type                type of map (node,edge,face,elem)
-*       int     map_id                  id to associate with new map
-*       int     *map_data               map set value array
-*
-* exit conditions -
-*
-* revision history -
-*
-*****************************************************************************/
+ *
+ * expem - ex_put_num_map
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     map_type                type of map (node,edge,face,elem)
+ *       int     map_id                  id to associate with new map
+ *       int     *map_data               map set value array
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
@@ -83,7 +83,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   int         status;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   switch (map_type) {
   case EX_NODE_MAP:
@@ -109,7 +109,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   default:
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: Bad map type (%d) specified for file id %d", map_type,
              exoid);
-    ex_err("ex_put_num_map", errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -122,7 +122,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   if ((status = nc_inq_dimid(exoid, dnummaps, &dimid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: no %ss specified in file id %d",
              ex_name_of_object(map_type), exoid);
-    ex_err("ex_put_num_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -131,7 +131,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   if (status != -EX_LOOKUPFAIL) { /* found the map id */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s %" PRId64 " already defined in file id %d",
              ex_name_of_object(map_type), map_id, exoid);
-    ex_err("ex_put_num_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -139,7 +139,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   if ((status = nc_inq_dimlen(exoid, dimid, &num_entries)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of %ss in file id %d",
              ex_name_of_object(map_type), exoid);
-    ex_err("ex_put_num_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
   num_maps = num_entries;
@@ -153,7 +153,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   if (cur_num_maps >= num_maps) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: exceeded number of %ss (%d) specified in file id %d",
              ex_name_of_object(map_type), num_maps, exoid);
-    ex_err("ex_put_num_map", errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -167,7 +167,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   if ((status = nc_inq_varid(exoid, vmapids, &varid)) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate %s ids in file id %d",
              ex_name_of_object(map_type), exoid);
-    ex_err("ex_put_num_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -178,7 +178,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   if ((status = nc_put_var1_int(exoid, varid, start, &ldum)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s id %" PRId64 " in file id %d",
              ex_name_of_object(map_type), map_id, exoid);
-    ex_err("ex_put_num_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -190,7 +190,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   default:
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Internal ERROR: unrecognized map type in switch: %d in file id %d", map_type, exoid);
-    ex_err("ex_put_num_map", errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -203,13 +203,13 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: couldn't determine number of %s entries in file id %d",
                ex_name_of_object(map_type), exoid);
-      ex_err("ex_put_num_map", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
     if ((status = nc_redef(exoid)) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
-      ex_err("ex_put_num_map", errmsg, status);
+      ex_err(__func__, errmsg, status);
       EX_FUNC_LEAVE(EX_FATAL);
     }
 
@@ -222,14 +222,14 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
     dims[0] = dimid;
     if ((status = nc_def_var(exoid, vmap, map_int_type, 1, dims, &varid)) == -1) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define map %s in file id %d", vmap, exoid);
-      ex_err("ex_put_num_map", errmsg, status);
+      ex_err(__func__, errmsg, status);
     }
     ex_compress_variable(exoid, varid, 1);
 
     if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d",
                exoid);
-      ex_err("ex_put_num_map", errmsg, status);
+      ex_err(__func__, errmsg, status);
       varid = -1; /* force early exit */
     }
 
@@ -249,7 +249,7 @@ int ex_put_num_map(int exoid, ex_entity_type map_type, ex_entity_id map_id, cons
   if (status != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store %s in file id %d",
              ex_name_of_object(map_type), exoid);
-    ex_err("ex_put_num_map", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
