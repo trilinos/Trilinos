@@ -445,7 +445,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #endif        
         }
         else {
-          H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A, mueluList, coordinates);
+          H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
         }
       }
 

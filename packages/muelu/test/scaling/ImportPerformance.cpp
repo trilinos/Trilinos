@@ -643,7 +643,7 @@ int main_(Teuchos::CommandLineProcessor &clp,  Xpetra::UnderlyingLib &lib, int a
         aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO> >(tH);
 #endif
       } else {
-        H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A, mueluList, coordinates);
+        H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
       }
       comm->barrier();
       tm = Teuchos::null;

@@ -485,7 +485,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib,  int a
     RCP<Vector> B = VectorFactory::Build(map);
     A->apply(*X, *B);
 
-    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner<SC,LO,GO,NO>(A, paramList, coordinates);
+    RCP<Hierarchy> H = MueLu::CreateXpetraPreconditioner(A, paramList, coordinates);
 
     for (size_t t = 1; t < numSteps; t++) {
       out << thinSeparator << " Step " << t << " " << thinSeparator << std::endl;
