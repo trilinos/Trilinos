@@ -51,7 +51,7 @@ namespace stk {
     //  More general search for an arbitrary range type
     //
    template <typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RangeObjType>
-      inline void kdtree_search(std::vector< std::pair<DomainObjType, DomainIdentifier> > const & local_domain,
+      inline void coarse_search_kdtree(std::vector< std::pair<DomainObjType, DomainIdentifier> > const & local_domain,
                                 std::vector< std::pair<RangeObjType,  RangeIdentifier > > const & local_range,
                                 MPI_Comm comm,
                                 std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,
@@ -156,7 +156,7 @@ namespace stk {
     //  Most optimal search specific to actual box arguments
     //
     template <typename DomainIdentifier, typename RangeIdentifier, typename DomainObjType, typename RBoxNumType>
-    inline void kdtree_search(std::vector< std::pair<DomainObjType, DomainIdentifier> > const & local_domain,
+    inline void coarse_search_kdtree(std::vector< std::pair<DomainObjType, DomainIdentifier> > const & local_domain,
                               std::vector< std::pair<stk::search::Box<RBoxNumType>,  RangeIdentifier > > const & local_range,
                                MPI_Comm comm,
                                std::vector<std::pair<DomainIdentifier, RangeIdentifier> >& searchResults,

@@ -3,6 +3,8 @@
 #ifndef STK_SIMD_AVX512_BOOLSF_H
 #define STK_SIMD_AVX512_BOOLSF_H
 
+// IWYU pragma: private, include <stk_simd/Simd.hpp>
+
 #include <immintrin.h>
 
 namespace stk {

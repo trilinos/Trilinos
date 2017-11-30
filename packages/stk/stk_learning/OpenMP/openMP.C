@@ -90,8 +90,6 @@ TEST(OpenMp, MatrixVectorMultiplyUsingThreads)
 {
     int numThreads = 8;
     omp_set_num_threads(numThreads);
-//    size_t numRows = 200000;
-//    size_t numCols = 20000;
     size_t numRows = 2000;
     size_t numCols = 2000;
     std::vector<std::vector<double> > matrix(numRows);

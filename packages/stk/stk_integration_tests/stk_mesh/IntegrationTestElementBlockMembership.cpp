@@ -7,8 +7,6 @@
 /*--------------------------------------------------------------------*/
 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <Ioss_IOFactory.h>             // for IOFactory
-#include <Ioss_Region.h>                // for Region
 #include <init/Ionit_Initializer.h>     // for Initializer
 #include <stddef.h>                     // for size_t, nullptr
 #include <string>                       // for string

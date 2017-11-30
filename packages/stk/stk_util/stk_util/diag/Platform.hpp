@@ -50,7 +50,6 @@ namespace Env {
  */
 void startup_preparallel_platform();
 
-
 /**
  * @ingroup EnvRuntimeInformationDetail
  * @brief Function <b>hostname</b> returns the hostname of the host running the
@@ -60,7 +59,6 @@ void startup_preparallel_platform();
  *				the operating system.
  */
 std::string hostname();
-
 
 /**
  * @ingroup EnvRuntimeInformationDetail
@@ -72,7 +70,6 @@ std::string hostname();
  */
 std::string domainname();
 
-
 /**
  * @ingroup EnvRuntimeInformationDetail
  * @brief Function <b>username</b> returns the username of the user running the
@@ -82,7 +79,6 @@ std::string domainname();
  *				the operating system.
  */
 std::string username();
-
 
 /**
  * @ingroup EnvRuntimeInformationDetail
@@ -95,7 +91,6 @@ std::string username();
  */
 std::string hardware();
 
-
 /**
  * @ingroup EnvRuntimeInformationDetail
  * @brief Function <b>osname</b> returns the operating system nameof the host running the
@@ -106,7 +101,6 @@ std::string hardware();
  *				obtained from the operating system.
  */
 std::string osname();
-
 
 /**
  * @ingroup EnvRuntimeInformationDetail
@@ -119,7 +113,6 @@ std::string osname();
  */
 std::string osversion();
 
-
 /**
  * @ingroup EnvRuntimeInformationDetail
  * @brief Function <b>pid</b> returns the process id of the process running the
@@ -130,7 +123,6 @@ std::string osversion();
  */
 int pid();
 
-
 /**
  * @ingroup EnvRuntimeInformationDetail
  * @brief Function <b>pgrp</b> returns the process group id of the process running
@@ -140,7 +132,6 @@ int pid();
  *				the operating system.
  */
 int pgrp();
-
 
 /**
  * @brief Member function <b>get_heap_info</b> returns the amount of heap
@@ -153,7 +144,6 @@ int pgrp();
  * of memory.
  */
 void get_heap_info(size_t &heap_size, size_t &largest_free);
-
 
 /**
  * @ingroup EnvRuntimeInformationDetail
@@ -183,7 +173,6 @@ inline size_t get_heap_usage() {
  */
 void get_memory_info(size_t &memory_usage, size_t &faults);
 
-
 /**
  * @ingroup EnvRuntimeInformationDetail EnvOutput
  * @brief Function <b>path_exists</b> returns true if the path exists.
@@ -194,7 +183,6 @@ void get_memory_info(size_t &memory_usage, size_t &faults);
  * @return			a <b>bool</b> value of true if the path exists.
  */
 bool path_exists(const std::string &path);
-
 
 /**
  * @ingroup EnvRuntimeInformation EnvOutputDetail
@@ -212,7 +200,6 @@ bool path_exists(const std::string &path);
  */
 bool path_access(const std::string &path, int mode);
 
-
 /**
  * @ingroup EnvRuntimeInformationDetail EnvOutputDetail
  * @brief Function <b>path_read_access</b> returns true if the process has read
@@ -225,57 +212,6 @@ bool path_access(const std::string &path, int mode);
  *				permission to access the path with read access.
  */
 bool path_read_access(const std::string &path);
-
-/**
- * @ingroup EnvRuntimeInformationDetail EnvOutputDetail
- * @brief Function <b>read_lock</b> returns true if the process was able to place
- * a shared lock on the specified file descriptor.
- *
- * @param fd			an <b>int</b> value of the file description to
- *				attempt to lock.
- *
- * @return			a <b>bool</b> value of true of the lock succeeded.
- */
-bool read_lock(int fd);
-
-
-/**
- * @ingroup EnvRuntimeInformationDetail EnvOutputDetail
- * @brief Function <b>write_lock</b> returns true if the process was able to place
- * an exclusive lock on the specified file descriptor.
- *
- * @param fd			an <b>int</b> value of the file description to
- *				attempt to lock.
- *
- * @return			a <b>bool</b> value of true of the lock succeeded.
- */
-bool write_lock(int fd);
-
-/**
- * @ingroup EnvRuntimeInformationDetail EnvOutputDetail
- * @brief Function <b>append_lock</b> returns true if the process was able to place
- * an exclusive lock on the end of the specified file descriptor.  Existing records may
- * still be accessed.
- *
- * @param fd			an <b>int</b> value of the file description to
- *				attempt to lock.
- *
- * @return			a <b>bool</b> value of true of the lock succeeded.
- */
-bool append_lock(int fd);
-
-/**
- * @ingroup EnvRuntimeInformationDetail EnvOutputDetail
- * @brief Function <b>release_lock</b> returns true if the process was able to
- * release a lock previously palced on the specified file descriptor.
- *
- * @param fd			an <b>int</b> value of the file description to have
- *				the lock released.
- *
- * @return			a <b>bool</b> value of true of the lock release
- *				succeeded.
- */
-bool release_lock(int fd);
 
 ///
 /// @}

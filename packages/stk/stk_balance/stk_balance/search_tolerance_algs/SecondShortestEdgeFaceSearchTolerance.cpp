@@ -11,6 +11,7 @@
 #include "stk_mesh/base/BulkData.hpp"
 #include "stk_mesh/base/MetaData.hpp"
 #include <cmath>
+#include <iterator>
 
 namespace stk {
 namespace balance {
@@ -26,13 +27,15 @@ double distanceBetweenNodes(double * firstNodeCoords, double * secondNodeCoords,
 
 double SecondShortestEdgeFaceSearchTolerance::compute(const stk::mesh::BulkData & mesh,
                                                       const stk::mesh::FieldBase & coordField,
-                                                      const stk::mesh::EntityVector & faceNodes) const
+                                                      const stk::mesh::Entity * faceNodes,
+                                                      const unsigned numFaceNodes) const
 {
-    std::vector<double> edgeLengthVector(faceNodes.size());
+    std::vector<double> edgeLengthVector(numFaceNodes);
     const int dimension = mesh.mesh_meta_data().spatial_dimension();
-    double * oldNodePosition = static_cast<double*>(stk::mesh::field_data(coordField, faceNodes.back()));
+    stk::mesh::Entity lastNode = faceNodes[numFaceNodes-1];
+    double * oldNodePosition = static_cast<double*>(stk::mesh::field_data(coordField, lastNode));
 
-    for (size_t inode = 0; inode < faceNodes.size(); ++inode) {
+    for (size_t inode = 0; inode < numFaceNodes; ++inode) {
       double * nodePosition(static_cast<double*>(stk::mesh::field_data(coordField, faceNodes[inode])));
       edgeLengthVector[inode] = distanceBetweenNodes(nodePosition, oldNodePosition, dimension);
       oldNodePosition = nodePosition;

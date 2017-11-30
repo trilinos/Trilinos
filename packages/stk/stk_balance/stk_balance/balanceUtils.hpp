@@ -92,7 +92,10 @@ public:
     // Graph (parmetis) based options only
     virtual bool includeSearchResultsInGraph() const;
 
-    virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const;
+    virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
+                                             const stk::mesh::FieldBase & coordField,
+                                             const stk::mesh::Entity * faceNodes,
+                                             const unsigned numFaceNodes) const;
     virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance);
 
     virtual double getToleranceForParticleSearch() const;
@@ -163,7 +166,10 @@ public:
     virtual bool includeSearchResultsInGraph() const ;
     virtual double getToleranceForParticleSearch() const ;
 
-    virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh, const stk::mesh::FieldBase & coordField, const stk::mesh::EntityVector & faceNodes) const;
+    virtual double getToleranceForFaceSearch(const stk::mesh::BulkData & mesh,
+                                             const stk::mesh::FieldBase & coordField,
+                                             const stk::mesh::Entity * faceNodes,
+                                             const unsigned numFaceNodes) const;
     virtual void setToleranceFunctionForFaceSearch(std::shared_ptr<stk::balance::FaceSearchTolerance> faceSearchTolerance);
 
     virtual bool getEdgesForParticlesUsingSearch() const ;
@@ -173,6 +179,9 @@ public:
     virtual void setDecompMethod(const std::string& input_method);
     virtual void setToleranceForFaceSearch(double tol);
     virtual void setToleranceForParticleSearch(double tol) ;
+    virtual void setEdgeWeightForSearch(double w) ;
+    virtual void setVertexWeightMultiplierForVertexInSearch(double w) ;
+
     virtual bool shouldFixMechanisms() const;
 
 protected:

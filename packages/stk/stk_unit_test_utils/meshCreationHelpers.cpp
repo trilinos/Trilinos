@@ -1,12 +1,20 @@
 #ifndef meshcreationhelpers_hpp
 #define meshcreationhelpers_hpp
 
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include <stk_unit_test_utils/meshCreationHelpers.hpp>
-#include <stk_io/DatabasePurpose.hpp>   // for DatabasePurpose::READ_MESH, etc
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_mesh/base/Field.hpp>      // for Field
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_topology/topology.hpp>    // for topology, etc
+#include <stddef.h>                    // for size_t
+#include <stk_io/DatabasePurpose.hpp>  // for DatabasePurpose::READ_MESH, etc
+#include <stk_io/StkMeshIoBroker.hpp>  // for StkMeshIoBroker
+#include <stk_mesh/base/Field.hpp>     // for Field
+#include <stk_mesh/base/MetaData.hpp>  // for MetaData, put_field
+#include <stk_topology/topology.hpp>   // for topology, etc
+#include <string>                      // for string
+#include "mpi.h"                       // for MPI_Comm, ompi_communicator_t
+#include "stk_mesh/base/BulkData.hpp"  // for BulkData
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk
 {

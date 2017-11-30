@@ -43,10 +43,10 @@ namespace diag {
 
 OptionMaskParser::Mask
 OptionMaskParser::parse(
-  const char *          mask) const
+  const char *          option_mask) const
 {
-  if (mask) {
-    const std::string mask_string(mask);
+  if ( option_mask ) {
+    const std::string mask_string( option_mask );
 
     m_status = true;
 
@@ -128,7 +128,7 @@ OptionMaskParser::parseArg(
 
   if (mask_entry != m_optionMaskNameMap.end()) m_optionMask |= (*mask_entry).second.m_mask;
   else {
-    Mask  mask_hex = 0;
+    Mask mask_hex = 0;
     std::istringstream mask_hex_stream(name.c_str());
     if (mask_hex_stream >> std::resetiosflags(std::ios::basefield) >> mask_hex)
       m_optionMask |= mask_hex;

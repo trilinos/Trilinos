@@ -49,7 +49,14 @@ namespace {
     const std::string displacementFieldName = "displacement";
     const std::string velocityFieldName = "velocity";
 
+    std::string globalVarNameFile1 = "eigenValue";
+    std::string globalVarNameFile2 = "kineticEnergy";
+    const double globalVarValue1 = 13.0;
+    const double globalVarValue2 = 14.0;
+    std::string nameOnOutputFile("deformations");
+
     MPI_Comm communicator = MPI_COMM_WORLD;
+    {
     stk::io::StkMeshIoBroker stkIo(communicator);
     setupMeshAndFieldsForTest(stkIo, displacementFieldName, velocityFieldName);
     stk::mesh::MetaData &meta_data = stkIo.meta_data();
@@ -64,33 +71,28 @@ namespace {
     size_t file1Handle = stkIo.create_output_mesh(resultsFilename1,
 						  stk::io::WRITE_RESULTS);
     stkIo.add_field(file1Handle, *displacementField);
-    std::string globalVarNameFile1 = "eigenValue";
     stkIo.add_global(file1Handle, globalVarNameFile1, Ioss::Field::REAL);
 
     //+ For file two, set up results and global variables
     size_t file2Handle = stkIo.create_output_mesh(resultsFilename2,
 						  stk::io::WRITE_RESULTS);
-    std::string nameOnOutputFile("deformations");
     stkIo.add_field(file2Handle, *displacementField, nameOnOutputFile);
     stk::mesh::FieldBase *velocityField = meta_data.get_field(stk::topology::NODE_RANK, velocityFieldName);
     stkIo.add_field(file2Handle, *velocityField);
-    std::string globalVarNameFile2 = "kineticEnergy";
     stkIo.add_global(file2Handle, globalVarNameFile2, Ioss::Field::REAL);
 
     //+ Write output
     double time = 0.0;
     stkIo.begin_output_step(file1Handle, time);
     stkIo.write_defined_output_fields(file1Handle);
-    const double globalVarValue1 = 13.0;
     stkIo.write_global(file1Handle, globalVarNameFile1, globalVarValue1);
     stkIo.end_output_step(file1Handle);
 
     stkIo.begin_output_step(file2Handle, time);
     stkIo.write_defined_output_fields(file2Handle);
-    const double globalVarValue2 = 14.0;
     stkIo.write_global(file2Handle, globalVarNameFile2, globalVarValue2);
     stkIo.end_output_step(file2Handle);
-
+    }
     //-END
     // ============================================================
     //+ Validation

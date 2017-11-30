@@ -34,18 +34,19 @@
 #ifndef stk_io_IossBridge_hpp
 #define stk_io_IossBridge_hpp
 
-#include <Ioss_DBUsage.h>               // for DatabaseUsage
-#include <Ioss_Field.h>                 // for Field, Field::RoleType, etc
-#include <stddef.h>                     // for size_t, NULL
-#include <stk_mesh/base/Types.hpp>      // for EntityRank
-#include <stk_topology/topology.hpp>    // for topology
-#include <string>                       // for string, basic_string
-#include <utility>                      // for pair
-#include <vector>                       // for vector
-#include "Ioss_EntityType.h"
-#include "stk_mesh/base/FieldState.hpp" // for FieldState
-#include "stk_mesh/base/Part.hpp" // for FieldState
-
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <Ioss_DBUsage.h>                // for DatabaseUsage
+#include <Ioss_Field.h>                  // for Field, Field::RoleType, etc
+#include <stddef.h>                      // for size_t
+#include <stk_mesh/base/Types.hpp>       // for EntityId, EntityRank
+#include <stk_topology/topology.hpp>     // for topology
+#include <string>                        // for string, operator<, etc
+#include <utility>                       // for pair
+#include <vector>                        // for vector
+#include "Ioss_EntityType.h"             // for EntityType
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState
+#include "stk_mesh/base/Part.hpp"        // for Part
 namespace Ioss { class ElementTopology; }
 namespace Ioss { class EntityBlock; }
 namespace Ioss { class GroupingEntity; }
@@ -54,9 +55,12 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class FieldRestriction; } }
 namespace stk { namespace mesh { class MetaData; } }
-namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { struct Entity; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
+
+namespace stk { namespace mesh { class Part; } }
 
 namespace Ioss {
 class SideSet;
@@ -68,10 +72,7 @@ class Field;
 void STKIORequire(bool cond);
 
 namespace stk {
-  namespace mesh {
-  }
-
-/**
+  /**
  * The stk::io namespace contains functions related to the
  * transfer of data between the Ioss classes and the stk::mesh
  * classes.  These functions do not provide a total turnkey mesh
@@ -178,8 +179,8 @@ void default_part_processing(const std::vector<T*> &entities, stk::mesh::MetaDat
 void define_output_db( Ioss::Region & io_region,
                        const mesh::BulkData& bulk_data,
                        const std::vector<std::vector<int>> &attributeOrdering,
-                       const Ioss::Region *input_region = NULL,
-                       const stk::mesh::Selector *subset_selector = NULL,
+                       const Ioss::Region *input_region = nullptr,
+                       const stk::mesh::Selector *subset_selector = nullptr,
                        bool sort_stk_parts = false,
                        bool use_nodeset_for_part_node_fields = true);
 
@@ -192,7 +193,7 @@ void define_output_db( Ioss::Region & io_region,
  */
 void write_output_db( Ioss::Region & io_region ,
                       const mesh::BulkData& bulk,
-                      const stk::mesh::Selector *subset_selector = NULL);
+                      const stk::mesh::Selector *subset_selector = nullptr);
 
 //----------------------------------------------------------------------
 

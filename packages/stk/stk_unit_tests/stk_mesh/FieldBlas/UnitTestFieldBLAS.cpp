@@ -52,7 +52,7 @@
 #include <string>
 #include <complex>
 #include <vector>
-
+#include <limits>
 #include <sstream>
 
 template<class A>

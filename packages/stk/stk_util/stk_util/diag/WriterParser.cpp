@@ -109,10 +109,6 @@ WriterParser::parseArg(
       m_optionMask |= LOG_TRACE_SUB_CALLS;
   }
 
-  else if (name == "coverage") {
-    Trace::enableCoverage();
-  }
-
   else {
     OptionMaskNameMap::const_iterator mask_entry = m_optionMaskNameMap.find(name.c_str());
 

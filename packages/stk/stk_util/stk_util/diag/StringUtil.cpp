@@ -50,8 +50,8 @@ namespace sierra {
 
 int
 case_strcmp(
-  const char *		c1,
-  const char *		c2)
+  const char *c1,
+  const char *c2)
 {
   for ( ; ; c1++, c2++) {
     if ( std::tolower(*c1) != std::tolower(*c2) )
@@ -61,31 +61,10 @@ case_strcmp(
   }
 }
 
-
-int
-case_strncmp(
-  const char *		c1,
-  const char *		c2,
-  size_t		n)
-{
-
-  if (n == 0)
-    return 0;
-
-  do {
-    if (*c1 != *c2++)
-      return std::tolower(*c1) - std::tolower(*(c2 - 1));
-    if (*c1++ == 0)
-      break;
-  } while (--n != 0);
-  return 0;
-}
-
-
 const char *
 case_strstr(
-  const char *		s,
-  const char *		find)
+  const char *s,
+  const char *find)
 {
   if (!*find)
     return s;
@@ -110,7 +89,7 @@ case_strstr(
 
 std::string
 title(
-  const std::string &	s)
+  const std::string &s)
 {
   std::string t(s);
 
@@ -144,8 +123,8 @@ template std::string to_string<unsigned long>(const unsigned long &);
 
 std::string
 to_string(
-  const double &	r,
-  int			precision)
+  const double &r,
+  int precision)
 {
   std::ostringstream os;
   os << std::setprecision(precision) << r;
@@ -155,7 +134,7 @@ to_string(
 
 std::ostream &
 object_phrase::print(
-  std::ostream &	os) const
+  std::ostream &os) const
 {
   if (m_n == 0)
     os << m_plural << " no " << m_noun << "s";
@@ -167,23 +146,13 @@ object_phrase::print(
   return os;
 }
 
-
-object_phrase::operator std::string() const
-{
-  std::ostringstream strout;
-  strout << *this;
-
-  return strout.str();
-}
-
-
 namespace {
 
 std::string::const_iterator
 find_next_char(
-  std::string::const_iterator	p,
-  std::string::const_iterator	end,
-  char				c)
+  std::string::const_iterator p,
+  std::string::const_iterator end,
+  char c)
 {
   while (p != end && *p != c)
     p++;
@@ -192,9 +161,9 @@ find_next_char(
 
 std::string::const_iterator
 find_next_not_char(
-  std::string::const_iterator	p,
-  std::string::const_iterator	end,
-  char				c)
+  std::string::const_iterator p,
+  std::string::const_iterator end,
+  char c)
 {
   while (p != end && *p == c)
     p++;
@@ -217,10 +186,10 @@ inline std::string::const_iterator find_next_nonspace(std::string::const_iterato
 
 std::string
 word_wrap(
-  const std::string &	s,
-  unsigned int		line_length,
-  const std::string &	prefix,
-  const std::string &	prefix_first_line)
+  const std::string &s,
+  unsigned int line_length,
+  const std::string &prefix,
+  const std::string &prefix_first_line)
 {
   std::string t;
   const std::string *u = &prefix_first_line;
@@ -238,12 +207,12 @@ word_wrap(
       p1 = find_next_nonspace(p1, s.end());
       p1 = find_next_space(p1, s.end());
       if (p3 < p1) {
-	p2 = p3;
-	break;
+        p2 = p3;
+        break;
       }
       unsigned int diff = p1 - p0;
       if (diff > (line_length - u->size()))
-	break;
+        break;
       p2 = p1;
     } while (p2 != s.end());
 

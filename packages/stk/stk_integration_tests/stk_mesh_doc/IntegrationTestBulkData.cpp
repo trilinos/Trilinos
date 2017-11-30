@@ -263,7 +263,7 @@ TEST(IntegrationTest, DISABLED_ShellPartChangeCylinder)
         stkMeshBulkData.change_entity_parts(entities[i], add_parts);
     }
 #ifndef NDEBUG
-    //stkMeshBulkData.modification_end(); //will throw/hang in DEBUG but we'd like it not to
+    stkMeshBulkData.modification_end(); //will throw/hang in DEBUG but we'd like it not to
 #else
     if (stkMeshBulkData.parallel_rank() == 1 || stkMeshBulkData.parallel_rank() == 3) {
         EXPECT_NO_THROW(stkMeshBulkData.modification_end());
@@ -275,7 +275,7 @@ TEST(IntegrationTest, DISABLED_ShellPartChangeCylinder)
 }
 
 // now using graph to create faces during mesh read, split coincident test cases fail
-TEST(IntegrationTest, DISABLED_ShellPartChange2Hexes2Shells)
+TEST(IntegrationTest, ShellPartChange2Hexes2Shells)
 {
     //demonstrates failing when reading a mesh with shells and changing parts, see ticket 13216
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -313,18 +313,8 @@ TEST(IntegrationTest, DISABLED_ShellPartChange2Hexes2Shells)
     for (size_t i = 0; i < entities.size(); ++i) {
         stkMeshBulkData.change_entity_parts(entities[i], add_parts);
     }
-#ifndef NDEBUG
-    //stkMeshBulkData.modification_end(); //will throw/hang in DEBUG but we'd like it not to
-#else
-    if (stkMeshBulkData.parallel_rank() != 2) {
-        EXPECT_NO_THROW(stkMeshBulkData.modification_end());
-    }
-    else {
-        EXPECT_THROW(stkMeshBulkData.modification_end(), std::logic_error); //we'd like this not to throw in release either
-    }
-#endif
+    EXPECT_NO_THROW(stkMeshBulkData.modification_end());
 }
-
 
 }
 // empty namespace

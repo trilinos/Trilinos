@@ -34,6 +34,8 @@
 #ifndef STKTOPOLOGY_TOPOLOGY_TCC
 #define STKTOPOLOGY_TOPOLOGY_TCC
 
+// IWYU pragma: private, include "stk_topology/topology.hpp"
+
 #define STKTOPOLOGY_ORDINAL_NODES_MEMBER(name)                                     \
   namespace stk { namespace topology_detail {                                      \
   template <typename OrdinalOutputIterator>                                        \
