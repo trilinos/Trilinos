@@ -168,7 +168,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
 #  else
-#    if   defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+#    if defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
         if (inst == Xpetra::DOUBLE_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp,  lib, argc, argv);
 #    endif
@@ -180,11 +180,11 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::DOUBLE_INT_LONGLONGINT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp,  lib, argc, argv);
 #    endif
-#    if defined(HAVE_MUELU_INST_COMPLEX_INT_INT) || defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+#    if defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
         if (inst == Xpetra::COMPLEX_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<std::complex<double>,int,int,Node>(clp,  lib, argc, argv);
 #    endif
-#    if defined(HAVE_MUELU_INST_FLOAT_INT_INT) || defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_INT_INT)
+#    if defined(HAVE_TPETRA_INST_SERIAL) && defined(HAVE_MUELU_INST_FLOAT_INT_INT)
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
 #    endif
@@ -205,7 +205,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp,  lib, argc, argv);
 #  else
-#    if   defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+#    if defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
         if (inst == Xpetra::DOUBLE_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib,  argc, argv);
 #    endif
@@ -217,11 +217,11 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::DOUBLE_INT_LONGLONGINT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp,  lib, argc, argv);
 #    endif
-#    if defined(HAVE_MUELU_INST_COMPLEX_INT_INT) || defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+#    if defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
         if (inst == Xpetra::COMPLEX_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<std::complex<double>,int,int,Node>(clp,  lib, argc, argv);
 #    endif
-#    if defined(HAVE_MUELU_INST_FLOAT_INT_INT) || defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_INT_INT)
+#    if defined(HAVE_TPETRA_INST_OPENMP) && defined(HAVE_MUELU_INST_FLOAT_INT_INT)
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
 #    endif
@@ -240,7 +240,7 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
 #  ifndef HAVE_MUELU_EXPLICIT_INSTANTIATION
         return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long,Node>(clp, lib, argc, argv);
 #  else
-#    if   defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
+#    if defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_DOUBLE_INT_INT)
         if (inst == Xpetra::DOUBLE_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,int,Node> (clp, lib, argc, argv);
 #    endif
@@ -252,11 +252,11 @@ bool Automatic_Test_ETI(int argc, char *argv[]) {
         if (inst == Xpetra::DOUBLE_INT_LONGLONGINT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<double,int,long long,Node>(clp, lib, argc, argv);
 #    endif
-#    if defined(HAVE_MUELU_INST_COMPLEX_INT_INT) || defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE) && defined(HAVE_TPETRA_INST_INT_INT)
+#    if defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_COMPLEX_INT_INT)
         if (inst == Xpetra::COMPLEX_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<std::complex<double>,int,int,Node>(clp,  lib, argc, argv);
 #    endif
-#    if defined(HAVE_MUELU_INST_FLOAT_INT_INT) || defined(HAVE_TPETRA_INST_FLOAT) && defined(HAVE_TPETRA_INST_INT_INT)
+#    if defined(HAVE_TPETRA_INST_CUDA) && defined(HAVE_MUELU_INST_FLOAT_INT_INT)
         if (inst == Xpetra::FLOAT_INT_INT)
           return MUELU_AUTOMATIC_TEST_ETI_NAME<float,int,int,Node>(clp,  lib, argc, argv);
 #    endif
