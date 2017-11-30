@@ -220,13 +220,15 @@ namespace Amesos2 {
     template < class T0, class T1 >
     struct getStdCplxType
     {
-      using type = T0;
+      using common_type = typename std::common_type<T0,T1>::type;
+      using type = common_type;
     };
 
     template < class T0, class T1 >
     struct getStdCplxType< T0, T1* >
     {
-      using type = T1;
+      using common_type = typename std::common_type<T0,T1>::type;
+      using type = common_type;
     };
 
 #if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_AMESOS2_KOKKOS)
@@ -234,6 +236,13 @@ namespace Amesos2 {
     struct getStdCplxType< T0, Kokkos::complex<T0>* >
     {
       using type = std::complex<T0>;
+    };
+
+    template < class T0 , class T1 >
+    struct getStdCplxType< T0, Kokkos::complex<T1>* >
+    {
+      using common_type = typename std::common_type<T0,T1>::type;
+      using type = std::complex<common_type>;
     };
 #endif
 
