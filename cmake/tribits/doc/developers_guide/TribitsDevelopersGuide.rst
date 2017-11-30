@@ -783,9 +783,9 @@ For example, the ``VERA/CMakeLists.txt`` file lists as its first line::
 
 **<projectDir>/CTestConfig.cmake**: [Optional] Specifies the CDash site and
 project to submit results to when doing an automated build driven by the CTest
-driver function `TRIBITS_CTEST_DRIVER()`_ (see `TriBITS CTest Driver`_).  This
-file is also required to use the TriBITS-generated ``dashboard`` target (see
-`Dashboard Submissions`_).  An example of this file is
+driver function `TRIBITS_CTEST_DRIVER()`_ (see `TriBITS CTest/CDash Driver`_).
+This file is also required to use the TriBITS-generated ``dashboard`` target
+(see `Dashboard Submissions`_).  An example of this file is
 `TribitsExampleProject`_/``CTestConfig.cmake``:
 
 .. include:: ../../examples/TribitsExampleProject/CTestConfig.cmake
@@ -2080,7 +2080,7 @@ so when the parent package is explicitly enabled or disabled, it is identical
 to explicitly enabling or disabling all of its subpackages (see
 `Enable/disable of parent package is enable/disable for subpackages`_).  Also,
 subpackages are tested along with their peer subpackages with the parent
-package as part of `TriBITS CTest Driver`_.  This effectively means that if a
+package as part of `TriBITS CTest/CDash Driver`_.  This effectively means that if a
 build failure is detected in any subpackage, then that will effectively
 disable the parent package and all of its other subpackages in downstream
 testing.  This is a type of "all for one and all for one" when it comes to the
@@ -4068,7 +4068,7 @@ define a number of different standard `Nested Layers of TriBITS Project
 Testing`_ which include different types of CI testing as well as nightly and
 other tests.  One of the most important types of CI testing, pre-push testing,
 is then described in more detail in the subsection `Pre-push Testing using
-checkin-test.py`_.  The subsection `TriBITS CTest Driver`_ describes the usage
+checkin-test.py`_.  The subsection `TriBITS CTest/CDash Driver`_ describes the usage
 of the advanced `TRIBITS_CTEST_DRIVER()`_ function to do incremental project
 testing of a projects using advanced ``ctest -S`` scripts.  The final
 subsection `TriBITS CDash Customizations`_ describes how projects can use a
@@ -4116,8 +4116,8 @@ in trough the `${PROJECT_NAME}_EXTRAREPOS_FILE`_ cache variable) using the
 ``REPO_CLASSIFICATION`` field in the macro call
 `TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()`_.  These classifications map to
 the standard CTest dashboard types ``Continuous``, ``Nightly``, and
-``Experimental`` (see `CTest documentation`_ and `TriBITS CTest Driver`_ for
-details).
+``Experimental`` (see `CTest documentation`_ and `TriBITS CTest/CDash Driver`_
+for details).
 
 .. _Repository Test Continuous:
 
@@ -4389,7 +4389,7 @@ describe and assume a certain class of software development processes (namely
 agile processes) where testing and *continuous integration* (CI) are critical
 components.  However, detailed descriptions of these processes are deferred to
 the later sections `Pre-push Testing using checkin-test.py`_ and `TriBITS
-CTest Driver`_.
+CTest/CDash Driver`_.
 
 The standard TriBITS-defined project testing processes are:
 
@@ -4462,11 +4462,11 @@ After changes are pushed to the master branch(es) in the global repository(s),
 immediately fires off a CI build using CTest to test the changes and the
 results are posted to a CDash server (in the "Continuous" section on the
 project's dashboard page).  This process is driven by CTest driver code that
-calls `TRIBITS_CTEST_DRIVER()`_ as described in the section `TriBITS CTest
-Driver`_.  Various types of specific CI builds can be constructed and run (see
-`CTest/CDash CI Server`_) but these post-push CI builds typically select
-repositories, SE packages and code, and individual tests using the following
-test-related classifications:
+calls `TRIBITS_CTEST_DRIVER()`_ as described in the section `TriBITS
+CTest/CDash Driver`_.  Various types of specific CI builds can be constructed
+and run (see `CTest/CDash CI Server`_) but these post-push CI builds typically
+select repositories, SE packages and code, and individual tests using the
+following test-related classifications:
 
 =========================  ==================  ====================================
    Classification Type        Classification           (See Reference)
@@ -4490,7 +4490,7 @@ pre-push CI builds correctly before pushing.
 In addition to pre-push and post-push CI testing, a typical TriBITS project
 will set up multiple *Nightly Testing* builds (or once-a-day builds, they
 don't need to only run at night).  These builds are also driven by CTest
-driver scripts described in the section `TriBITS CTest Driver`_ and post
+driver scripts described in the section `TriBITS CTest/CDash Driver`_ and post
 results to the project's CDash server (in the "Nightly" section on the
 project's dashboard page).  Nightly builds don't run in a continuous loop but
 instead are run once a day (e.g. driven by a cron job) and there tends to be
@@ -4669,7 +4669,7 @@ Note that the ``checkin-test.py`` script can also be used to implement
 "poor-man's" post-push testing processes as described in `Post-Push CI and
 Nightly Testing using checkin-test.py`_.  However, most software projects will
 want to go with the more elaborate and more feature-full CTest/CDash system
-described in `TriBITS CTest Driver`_.
+described in `TriBITS CTest/CDash Driver`_.
 
 .. ToDo: Describe the standard workflow for using the checkin-test.py script.
 
@@ -4687,8 +4687,8 @@ described in `TriBITS CTest Driver`_.
 .. ToDo: Describe the role that checkin-test.py plays in multi-repo ACI
 
 
-TriBITS CTest Driver
---------------------
+TriBITS CTest/CDash Driver
+--------------------------
 
 The TriBITS system uses a sophisticated and highly customized CTest -S driver
 script to test TriBITS projects and submit results to a CDash server.  The
@@ -5519,8 +5519,8 @@ as follows:
    ``ADD_DEFINITIONS()`` in `Miscellaneous Notes (TRIBITS_ADD_LIBRARY())`_).
    We don't want the package's header files to change or libraries to have to
    be rebuilt if tests/examples get enabled or disabled.  Otherwise, the
-   `TriBITS CTest Driver`_ process will result in unnecessary rebuilds of
-   software over and over again.
+   `TriBITS CTest/CDash Driver`_ process will result in unnecessary rebuilds
+   of software over and over again.
 
 3) **Use the features of the upstream package in the source files of the
    downstream package sources and/or tests/examples:** Usage of the features
@@ -5857,7 +5857,7 @@ extra repos
       )
 
   NOTE: If one will not be using the `checkin-test.py`_ script, or
-  `clone_extra_repos.py`_ script, or the `TriBITS CTest Driver`_ system, then
+  `clone_extra_repos.py`_ script, or the `TriBITS CTest/CDash Driver`_ system, then
   one can leave the **REPO_VCTYPE** and **REPO_URL** fields empty (see
   `TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()`_ for details).  (TriBITS Core
   does not have any dependencies on any specific VC tool.  These fields are
@@ -5913,7 +5913,7 @@ How to submit testing results to a CDash site
 ---------------------------------------------
 
 The following steps describe how to submit results to a CDash site using the
-`TriBITS CTest Driver`_ support.
+`TriBITS CTest/CDash Driver`_ support.
 
 1) Create a CDash project ``<ProjectName>`` on the targeted CDash site.
 
@@ -7107,18 +7107,18 @@ Post-Push CI and Nightly Testing using checkin-test.py
 ------------------------------------------------------
 
 While the post-push CI and Nightly testing processes using ``ctest -S``
-scripts using `TRIBITS_CTEST_DRIVER()`_ (see `TriBITS CTest Driver`_) which
-posts results to a CDash server (see `TriBITS CDash Customizations`_) is a
-very attractive testing system with many advantages, setting up a CDash server
-can be a bit difficult and a CDash server can require non-trivial storage and
-CPU resources (due to the MySQL DB of test results) and requires some amount
-of extra maintenance.  As an intermediate approach, one can consider just
-using the project's `checkin-test.py`_ script to implement basic post-push CI
-and/or Nightly testing servers using simple cron jobs and some other helper
-scripts.  The ``checkin-test.py`` script will robustly pull new commits,
-configure the project, build, run tests, and send out emails with results and
-pass/fail.  A bunch of builds can be run at once using multiple builds
-specified in the ``--default-builds``, ``--st-extra-builds``, and
+scripts using `TRIBITS_CTEST_DRIVER()`_ (see `TriBITS CTest/CDash Driver`_)
+which posts results to a CDash server (see `TriBITS CDash Customizations`_) is
+a very attractive testing system with many advantages, setting up a CDash
+server can be a bit difficult and a CDash server can require non-trivial
+storage and CPU resources (due to the MySQL DB of test results) and requires
+some amount of extra maintenance.  As an intermediate approach, one can
+consider just using the project's `checkin-test.py`_ script to implement basic
+post-push CI and/or Nightly testing servers using simple cron jobs and some
+other helper scripts.  The ``checkin-test.py`` script will robustly pull new
+commits, configure the project, build, run tests, and send out emails with
+results and pass/fail.  A bunch of builds can be run at once using multiple
+builds specified in the ``--default-builds``, ``--st-extra-builds``, and
 ``--extra-build`` arguments, or different invocations of the
 ``checkin-test.py`` script can be run in parallel for better machine
 utilization.
@@ -7168,8 +7168,8 @@ builds of a TriBITS project makes sense because CTest can run different builds
 in parallel, can time-out builds that are taking too long, and will report
 results to a dashboard and submit notification emails when things fail.
 However, this is the most confusing and immature part of the TriBITS system.
-The `TriBITS CTest Driver`_ system using the `TRIBITS_CTEST_DRIVER()`_ can be
-used without this TriBITS Dashboard Driver (TDD) system.
+The `TriBITS CTest/CDash Driver`_ system using the `TRIBITS_CTEST_DRIVER()`_
+can be used without this TriBITS Dashboard Driver (TDD) system.
 
 However, this TriBITS subsystem is not well tested with automated tests, is
 difficult to extend and test manually, and has other problems.  Therefore, it
@@ -8790,9 +8790,21 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 
 .. _Dashboard Submissions: TribitsBuildReference.html#dashboard-submissions
 
+.. _<Project>_VERBOSE_CONFIGURE: TribitsBuildReference.html#project-verbose-configure
+
+.. _<Project>_ENABLE_DEVELOPMENT_MODE: TribitsBuildReference.html#project-enable-development-mode
+
+.. _<Project>_CONFIGURE_OPTIONS_FILE: TribitsBuildReference.html#project-configure-options-file
+
 .. _<Project>_EXTRAREPOS_FILE: TribitsBuildReference.html#project-extrarepos-file
 
 .. _${PROJECT_NAME}_EXTRAREPOS_FILE: `<Project>_EXTRAREPOS_FILE`_
+
+.. _<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE: TribitsBuildReference.html#project-enable-known-external-repos-type
+
+.. _<Project>_PRE_REPOSITORIES: TribitsBuildReference.html#project-pre-repositories
+
+.. _<Project>_EXTRA_REPOSITORIES: TribitsBuildReference.html#project-extra-repositories
 
 .. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE: TribitsBuildReference.html#generating-a-project-repo-version-file
 
@@ -8815,6 +8827,12 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 .. _make dashboard: TribitsBuildReference.html#dashboard-submissions
 
 .. _Setting the install prefix at configure time: TribitsBuildReference.html#setting-the-install-prefix-at-configure-time
+
+.. _TRIBITS_2ND_CTEST_DROP_SITE: TribitsBuildReference.html#tribits-2nd-ctest-drop-site
+
+.. _TRIBITS_2ND_CTEST_DROP_LOCATION: TribitsBuildReference.html#tribits-2nd-ctest-drop-location
+
+.. _Enabling extra repositories through a file: TribitsBuildReference.html#enabling-extra-repositories-through-a-file
 
 .. Common references to the TribitsOverview document
 
