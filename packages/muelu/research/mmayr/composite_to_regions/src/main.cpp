@@ -136,6 +136,9 @@ int main(int argc, char *argv[]) {
   std::vector< Epetra_CrsMatrix * > quasiRegionGrpMats(maxRegPerProc); // region-wise matrices with quasiRegion maps (= composite GIDs)
   std::vector< Epetra_CrsMatrix * > regionGrpMats(maxRegPerProc); // region-wise matrices in true region layout with unique GIDs for replicated interface DOFs
 
+  std::vector< Epetra_Map* > coarseRowMapPerGrp(maxRegPerProc); // region-wise row map in true region layout with unique GIDs for replicated interface DOFs
+  std::vector< Epetra_CrsMatrix * > regionGrpProlong(maxRegPerProc); // region-wise prolongator in true region layout with unique GIDs for replicated interface DOFs
+
   Epetra_Vector* compX = NULL; // initial guess for truly composite calculations
   Epetra_Vector* compY = NULL; // result vector for truly composite calculations
   Epetra_Vector* regYComp = NULL; // result vector in composite layout, but computed via regional operations
@@ -617,7 +620,146 @@ int main(int argc, char *argv[]) {
 
     }
     else if (strcmp(command,"MakeRegionTransferOperators") == 0) {
+      /* Populate a fine grid vector with 1 at coarse nodes and 0 at fine nodes.
+       * Then, transform to regional layout and find GIDs with entry 1
+       */
+      int numNodes = mapComp->NumGlobalPoints() / 3 + 1;
+      double vals[numNodes];
+      int ind[numNodes];
+      for (int i = 0; i < numNodes; ++i)
+      {
+        vals[i] = 1.0;
+        ind[i] = 3*i;
+      }
+      Epetra_Vector* coarseGridToggle = new Epetra_Vector(*mapComp, true);
+      coarseGridToggle->ReplaceGlobalValues(numNodes, vals, ind);
 
+      // Transform to quasiRegional and then to regional layout
+      // quasiRegional layout
+      std::vector<Epetra_Vector*> quasiRegCoarseGridToggle(maxRegPerProc);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        // create empty vectors
+        quasiRegCoarseGridToggle[j] = new Epetra_Vector(*(rowMapPerGrp[j]), true);
+
+        // extract data from composite vector
+        int err = quasiRegCoarseGridToggle[j]->Import(*coarseGridToggle, *(rowImportPerGrp[j]), Insert);
+        TEUCHOS_ASSERT(err == 0);
+      }
+
+      // regional layout
+      std::vector<Epetra_Vector*> regCoarseGridToggle(maxRegPerProc);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        // create input vector (copy from quasiRegCoarseGridToggle and swap the map)
+        regCoarseGridToggle[j] = new Epetra_Vector(*(quasiRegCoarseGridToggle[j]));
+        int err = regCoarseGridToggle[j]->ReplaceMap(*(revisedRowMapPerGrp[j]));
+        TEUCHOS_ASSERT(err == 0);
+      }
+
+      // Print regCoarseGridToggle
+//      sleep(myRank);
+//      for (int j = 0; j < maxRegPerProc; j++) {
+//        printf("%d: regCoarseGridToggle %d\n", myRank, j);
+//        regCoarseGridToggle[j]->Print(std::cout);
+//      }
+
+      // create coarse grid row maps in region layout
+      std::vector<Epetra_Map*> coarseRowMapPerGrp(maxRegPerProc);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        std::vector<int> coarseRowGIDsReg;
+        for (int i = 0; i < regCoarseGridToggle[j]->Map().NumMyElements(); ++i) {
+          if ((*regCoarseGridToggle[j])[i] == 1.0)
+            coarseRowGIDsReg.push_back(regCoarseGridToggle[j]->Map().GID(i));
+        }
+
+        coarseRowMapPerGrp[j] = new Epetra_Map(-1, coarseRowGIDsReg.size(), coarseRowGIDsReg.data(), 0, Comm);
+//        printf("%d: coarseRowMapPerGrp %d\n", myRank, j);
+//        coarseRowMapPerGrp[j]->Print(std::cout);
+      }
+
+      // create coarse grid column map
+      Epetra_Vector* compGIDVec = new Epetra_Vector(*mapComp, true);
+      for (int i = 0; i < mapComp->NumMyElements(); ++i)
+      {
+        int myGID = mapComp->GID(i);
+        if (myGID % 3 == 0) // that is the coarse point
+          (*compGIDVec)[i] = myGID;
+        else if (myGID % 3 == 1) // this node is right of a coarse point
+          (*compGIDVec)[i] = myGID - 1;
+        else if (myGID % 3 == 2) // this node is left of a coarse point
+          (*compGIDVec)[i] = myGID + 1;
+        else
+          TEUCHOS_ASSERT(false)
+      }
+//      compGIDVec->Print(std::cout);
+
+      // quasiRegional layout
+      std::vector<Epetra_Vector*> quasiRegGIDVec(maxRegPerProc);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        quasiRegGIDVec[j] = new Epetra_Vector(*(colMapPerGrp[j]), true);
+        int err = quasiRegGIDVec[j]->Import(*compGIDVec, *(colImportPerGrp[j]), Insert);
+        TEUCHOS_ASSERT(err == 0);
+      }
+
+      // regional layout
+      std::vector<Epetra_Vector*> regGIDVec(maxRegPerProc);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        // create input vector (copy from regGIDVec and swap the map)
+        regGIDVec[j] = new Epetra_Vector(*(quasiRegGIDVec[j]));
+        int err = regGIDVec[j]->ReplaceMap(*(revisedColMapPerGrp[j]));
+        TEUCHOS_ASSERT(err == 0);
+
+        // deal with duplicated nodes and replace with new GID when necessary
+        for (int i = 0; i < regGIDVec[j]->MyLength(); ++i) {
+          if (regGIDVec[j]->Map().GID(i) >= mapComp->NumGlobalElements()) {
+            // replace 'aggregate ID' with duplicated 'aggregate ID'
+            (*regGIDVec[j])[i] = (revisedRowMapPerGrp[j])->GID(i);
+
+            // look for other nodes with the same fine grid aggregate ID that needs to be replaced with the duplicated one
+            for (int k = 0; k < regGIDVec[j]->MyLength(); ++k) {
+              if ((*regGIDVec[j])[k] == (rowMapPerGrp[j])->GID(i))
+                (*regGIDVec[j])[k] = (revisedRowMapPerGrp[j])->GID(i);
+            }
+          }
+        }
+      }
+
+//      // Print regGIDVec
+//      sleep(myRank);
+//      for (int j = 0; j < maxRegPerProc; j++) {
+//        printf("%d: regGIDVec %d\n", myRank, j);
+//        regGIDVec[j]->Print(std::cout);
+//      }
+
+      sleep(myRank);
+      std::vector<Epetra_Map*> coarseColMapPerGrp(maxRegPerProc);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        std::vector<int> regColGIDs;
+        for (int i = 0; i < revisedRowMapPerGrp[j]->NumMyElements(); ++i) {
+          const int currGID = revisedRowMapPerGrp[j]->GID(i);
+
+          // loop over existing regColGIDs and see if current GID is already in that list
+          bool found = false;
+          for (int k = 0; k < regColGIDs.size(); ++k) {
+            if ((*regGIDVec[j])[regGIDVec[j]->Map().LID(currGID)] == regColGIDs[k]) {
+              found = true;
+              break;
+            }
+          }
+
+          if (not found)
+            regColGIDs.push_back((*regGIDVec[j])[regGIDVec[j]->Map().LID(currGID)]);
+        }
+
+        coarseColMapPerGrp[j] = new Epetra_Map(-1, regColGIDs.size(), regColGIDs.data(), 0, Comm);
+      }
+
+      sleep(myRank);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        printf("%d: coarseColMapPerGrp %d\n", myRank, j);
+        coarseColMapPerGrp[j]->Print(std::cout);
+      }
+
+      // Build the actual prolongator
     }
     else if (strcmp(command,"PrintCompositeVectorX") == 0) {
       sleep(myRank);
