@@ -64,7 +64,7 @@ void IntegrateDiffusionTerm<EvalT,Traits>::evaluateFields(typename Traits::EvalD
   grad_basis = workset.grad_basis_real_;
   weights = workset.weights_;
   cell_measure = workset.det_jac_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 //**********************************************************************
@@ -76,7 +76,7 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
   const int cell = team.league_rank();
   
   // Make residual atomic so that AMT mode can sum diffusion and source terms at same time
-  Kokkos::View<ScalarT**,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual_atomic = residual.get_static_view();
+  Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual_atomic = residual.get_static_view();
 
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis.extent(2)), KOKKOS_LAMBDA (const int& basis) {
       for (int qp = 0; qp < static_cast<int>(grad_basis.extent(1)); ++qp)

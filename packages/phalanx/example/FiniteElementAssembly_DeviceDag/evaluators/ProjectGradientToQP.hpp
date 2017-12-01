@@ -61,10 +61,10 @@ class ProjectGradientToQP : public PHX::EvaluatorWithBaseImpl<Traits>,
 
 public:
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
-    Kokkos::View<const ScalarT**,PHX::Device> field_at_basis;
-    Kokkos::View<ScalarT***,PHX::Device> grad_field_at_qp;
-    KOKKOS_FUNCTION MyDevEval(const Kokkos::View<const ScalarT**,PHX::Device>& in_field_at_basis,
-                                     const Kokkos::View<ScalarT***,PHX::Device>& in_grad_field_at_qp) :
+    PHX::View<const ScalarT**> field_at_basis;
+    PHX::View<ScalarT***> grad_field_at_qp;
+    KOKKOS_FUNCTION MyDevEval(const PHX::View<const ScalarT**>& in_field_at_basis,
+			      const PHX::View<ScalarT***>& in_grad_field_at_qp) :
       field_at_basis(in_field_at_basis), grad_field_at_qp(in_grad_field_at_qp) {}
     KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
     KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
