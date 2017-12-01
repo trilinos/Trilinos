@@ -23,6 +23,7 @@
 #include "EpetraExt_MultiVectorIn.h"
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_BlockMapIn.h"
+#include "EpetraExt_MatrixMatrix.h"
 
 #include "Teuchos_Assert.hpp"
 
@@ -137,6 +138,7 @@ int main(int argc, char *argv[]) {
   std::vector< Epetra_CrsMatrix * > regionGrpMats(maxRegPerProc); // region-wise matrices in true region layout with unique GIDs for replicated interface DOFs
 
   std::vector< Epetra_Map* > coarseRowMapPerGrp(maxRegPerProc); // region-wise row map in true region layout with unique GIDs for replicated interface DOFs
+  std::vector< Epetra_Map* > coarseColMapPerGrp(maxRegPerProc); // region-wise columns map in true region layout with unique GIDs for replicated interface DOFs
   std::vector< Epetra_CrsMatrix * > regionGrpProlong(maxRegPerProc); // region-wise prolongator in true region layout with unique GIDs for replicated interface DOFs
 
   Epetra_Vector* compX = NULL; // initial guess for truly composite calculations
@@ -729,8 +731,6 @@ int main(int argc, char *argv[]) {
 //        regGIDVec[j]->Print(std::cout);
 //      }
 
-      sleep(myRank);
-      std::vector<Epetra_Map*> coarseColMapPerGrp(maxRegPerProc);
       for (int j = 0; j < maxRegPerProc; j++) {
         std::vector<int> regColGIDs;
         for (int i = 0; i < revisedRowMapPerGrp[j]->NumMyElements(); ++i) {
@@ -772,11 +772,44 @@ int main(int argc, char *argv[]) {
             }
           }
         }
+        regionGrpProlong[j]->FillComplete();
 //        regionGrpProlong[j]->Print(std::cout);
       }
     }
     else if (strcmp(command,"RunTwoLevelMethod") == 0) {
+      // intial guess for solution
+      compX = new Epetra_Vector(*mapComp, true);
 
+      // forcing vector
+      Epetra_Vector* compB = new Epetra_Vector(*mapComp, true);
+      compB->ReplaceGlobalValue(compB->GlobalLength() - 1, 0, 1.0);
+
+      // residual vector
+      Epetra_Vector* compRes = new Epetra_Vector(*mapComp, true);
+      AComp->Multiply(false, *compX, *compRes);
+      compRes->Update(1.0, *compB, -1.0);
+
+      // -----------------------------------------------------------------------
+      // Compute coarse grid operators (RAP) in region layout
+      // -----------------------------------------------------------------------
+      // Compute P'*A*P
+      std::vector<Epetra_CrsMatrix*> regCoarseMatPerGrp(maxRegPerProc); // store coarse RAP
+      std::vector<Epetra_CrsMatrix*> regCoarseTmpMatPerGrp(maxRegPerProc); // store intermediate result P'*A
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regCoarseTmpMatPerGrp[j] = new Epetra_CrsMatrix(Copy, regionGrpProlong[j]->RowMap(), regionGrpMats[j]->ColMap(), 3, false);
+
+        int err = EpetraExt::MatrixMatrix::Multiply(*regionGrpProlong[j], true, *regionGrpMats[j], false, *regCoarseTmpMatPerGrp[j], false);
+        TEUCHOS_ASSERT(err == 0);
+        regCoarseTmpMatPerGrp[j]->FillComplete();
+
+        regCoarseMatPerGrp[j] = new Epetra_CrsMatrix(Copy, regCoarseTmpMatPerGrp[j]->RowMap(), regionGrpProlong[j]->ColMap(), 3, false);
+
+        err = EpetraExt::MatrixMatrix::Multiply(*regCoarseTmpMatPerGrp[j], false, *regionGrpProlong[j], false, *regCoarseMatPerGrp[j], false);
+        TEUCHOS_ASSERT(err == 0);
+        regCoarseMatPerGrp[j]->FillComplete();
+
+        regCoarseMatPerGrp[j]->Print(std::cout);
+      }
     }
     else if (strcmp(command,"PrintCompositeVectorX") == 0) {
       sleep(myRank);
