@@ -30,7 +30,14 @@ IF(${Trilinos_ENABLE_Kokkos})
   )
   include(${Kokkos_GEN_DIR}/kokkos_generated_settings.cmake)
 
-  set(CXXFLAGS ${CXXFLAGS} ${KOKKOS_CXXFLAGS})
+  # Convert CMakeList into string for CXX_FLAGS
+  set(CMAKE_CXX_FLAGSl "")
+  foreach(opt ${KOKKOS_CXX_FLAGS})
+    set(CMAKE_CXX_FLAGSl "${CMAKE_CXX_FLAGSl} ${opt}")
+  endforeach()
+
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGSl}")
+
   # TODO -- need to remove the -lkokkos.  Check on LDFlags
   #set(KOKKOS_LINK_DEPENDS libkokkos.a CACHE STRING "")
   #set(KOKKOS_LIBS -lkokkos -ldl -lpthread CACHE STRING "")
