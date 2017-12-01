@@ -98,7 +98,7 @@ public:
 
   ~InteriorPointStep() {}
 
-  InteriorPointStep(Teuchos::ParameterList &parlist) :
+  InteriorPointStep(ROL::ParameterList &parlist) :
     Step<Real>(), 
     status_(ROL::nullPtr), 
     step_(ROL::nullPtr),
@@ -112,7 +112,7 @@ public:
     stepType_(STEP_COMPOSITESTEP),
     stepname_("Composite Step") {
 
-    using Teuchos::ParameterList;
+    using ROL::ParameterList;
     
     verbosity_ = parlist.sublist("General").get("Print Verbosity",0);
 

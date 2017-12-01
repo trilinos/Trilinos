@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
     nlls.checkHessSym(xtest, d, v, true, *outStream);                           *outStream << "\n";
     
     // Define algorithm.
-    Teuchos::ParameterList parlist;
+    ROL::ParameterList parlist;
     std::string stepname = "Trust Region";
     parlist.sublist("Step").sublist(stepname).set("Subproblem Solver","Truncated CG");
     parlist.sublist("Status Test").set("Gradient Tolerance",1.e-10);

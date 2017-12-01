@@ -117,7 +117,7 @@ public:
   UserInputGenerator(Teuchos::ParameterList &parlist,
                const ROL::Ptr<BatchManager<Real> > &bman)
     : SampleGenerator<Real>(bman) {
-    Teuchos::ParameterList &list
+    ROL::ParameterList &list
       = parlist.sublist("SOL").sublist("Sample Generator").sublist("User Input");
     if ( list.isParameter("Points File")  &&
          list.isParameter("Weights File") &&

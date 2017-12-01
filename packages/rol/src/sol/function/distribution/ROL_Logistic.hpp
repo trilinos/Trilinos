@@ -45,7 +45,7 @@
 #define ROL_LOGISTIC_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -59,7 +59,7 @@ public:
   Logistic(const Real mean = 0., const Real var = 1.)
     : mean_(mean), var_((var>0.) ? var : 1.) {}
 
-  Logistic(Teuchos::ParameterList &parlist) {
+  Logistic(ROL::ParameterList &parlist) {
     mean_ = parlist.sublist("SOL").sublist("Distribution").sublist("Logistic").get("Mean",0.);
     var_  = parlist.sublist("SOL").sublist("Distribution").sublist("Logistic").get("Scale",1.);
     var_  = (var_ > 0.) ? var_ : 1.;

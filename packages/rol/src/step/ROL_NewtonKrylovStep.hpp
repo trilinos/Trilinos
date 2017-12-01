@@ -121,7 +121,7 @@ public:
   /** \brief Constructor.
 
       Standard constructor to build a NewtonKrylovStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
+      specifications are passed in through a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
@@ -130,7 +130,7 @@ public:
       gp_(ROL::nullPtr), iterKrylov_(0), flagKrylov_(0),
       verbosity_(0), computeObj_(computeObj), useSecantPrecond_(false) {
     // Parse ParameterList
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    ROL::ParameterList& Glist = parlist.sublist("General");
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     verbosity_ = Glist.get("Print Verbosity",0);
     // Initialize Krylov object
@@ -149,7 +149,7 @@ public:
 
       Constructor to build a NewtonKrylovStep object with user-defined 
       secant and Krylov objects.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
+      a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
       @param[in]     krylov     is a user-defined Krylov object
@@ -164,7 +164,7 @@ public:
       gp_(ROL::nullPtr), iterKrylov_(0), flagKrylov_(0),
       verbosity_(0), computeObj_(computeObj), useSecantPrecond_(false) {
     // Parse ParameterList
-    Teuchos::ParameterList& Glist = parlist.sublist("General");
+    ROL::ParameterList& Glist = parlist.sublist("General");
     useSecantPrecond_ = Glist.sublist("Secant").get("Use as Preconditioner", false);
     verbosity_ = Glist.get("Print Verbosity",0);
     // Initialize secant object

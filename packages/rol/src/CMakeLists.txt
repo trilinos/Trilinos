@@ -53,6 +53,16 @@ ELSE()
   APPEND_GLOB(HEADERS ${DIR}/teuchos/rcp/ROL_Ptr.hpp)
 ENDIF()
 
+# Set an implementation of parameterlist
+IF(${PACKAGE_NAME}_ENABLE_BOOST_PROPERTY_TREE)
+  INCLUDE_DIRECTORIES(${DIR}/boost/property_tree)
+  APPEND_GLOB(HEADERS ${DIR}/boost/property_tree/ROL_ParameterList.hpp)
+ELSE()
+  INCLUDE_DIRECTORIES(${DIR}/teuchos/parameterlist)
+  APPEND_GLOB(HEADERS ${DIR}/teuchos/parameterlist/ROL_ParameterList.hpp)
+ENDIF()
+
+
 #
 # function headers
 #
@@ -93,7 +103,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/fletcher
                    )
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
-                    ${DIR}/linesearch/*.hpp 
+                    ${DIR}/linesearch/*.hpp
                     ${DIR}/trustregion/*.hpp
                     ${DIR}/secant/*.hpp
                     ${DIR}/krylov/*.hpp
@@ -145,7 +155,7 @@ INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/sampler
                     ${DIR}/sampler/SROM
                    )
-APPEND_GLOB(HEADERS ${DIR}/function/*.hpp 
+APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                     ${DIR}/function/distribution/*.hpp
                     ${DIR}/function/riskmeasure/*.hpp
                     ${DIR}/function/expectationquad/*.hpp
@@ -207,7 +217,7 @@ ENDIF()
 
 #
 # C) Define the targets for package's library(s)
-# 
+#
 
   TRIBITS_ADD_LIBRARY(
     rol

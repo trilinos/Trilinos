@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
 
   try { 
  
-    auto parlist = Teuchos::getParametersFromXmlFile("binary_constraint.xml");
+    auto parlist = ROL::getParametersFromXmlFile("binary_constraint.xml");
 
     // Penalty parameter
     RealT gamma = 1.0;

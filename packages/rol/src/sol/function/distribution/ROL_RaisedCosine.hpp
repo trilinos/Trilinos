@@ -45,7 +45,7 @@
 #define ROL_RAISEDCOSINE_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -63,7 +63,7 @@ public:
   RaisedCosine(const Real mean = 0.5, const Real var = 0.5)
     : mean_(mean), var_(((var>0.) ? var : 0.5)) {}
 
-  RaisedCosine(Teuchos::ParameterList &parlist) {
+  RaisedCosine(ROL::ParameterList &parlist) {
     mean_ = parlist.sublist("SOL").sublist("Distribution").sublist("Raised Cosine").get("Mean",0.5);
     var_  = parlist.sublist("SOL").sublist("Distribution").sublist("Raised Cosine").get("Scale",0.5);
     var_  = (var_ > 0.) ? var_ : 0.5;

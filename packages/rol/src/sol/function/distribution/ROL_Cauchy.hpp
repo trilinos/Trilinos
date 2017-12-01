@@ -45,7 +45,7 @@
 #define ROL_CAUCHY_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -59,7 +59,7 @@ public:
   Cauchy(const Real loc = 0., const Real scale = 1.)
     : loc_(loc), scale_((scale>0.) ? scale : 1.) {}
 
-  Cauchy(Teuchos::ParameterList &parlist) {
+  Cauchy(ROL::ParameterList &parlist) {
     loc_   = parlist.sublist("SOL").sublist("Distribution").sublist("Cauchy").get("Location",0.);
     scale_ = parlist.sublist("SOL").sublist("Distribution").sublist("Cauchy").get("Scale",1.);
     scale_ = (scale_>0.) ? scale_ : 1.;

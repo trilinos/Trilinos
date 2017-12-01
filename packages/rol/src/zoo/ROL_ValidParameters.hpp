@@ -46,7 +46,7 @@
 #define ROL_VALID_PARAMETERS_H
 
 #include "ROL_Types.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -54,7 +54,7 @@ namespace ROL {
 
 inline ROL::Ptr<const Teuchos::ParameterList> getValidROLParameters() {
   
-  typedef Teuchos::ParameterList PL;
+  typedef ROL::ParameterList PL;
 
   ROL::Ptr<PL> rol = ROL::makePtr<PL>("ROL");
 
@@ -289,7 +289,7 @@ inline ROL::Ptr<const Teuchos::ParameterList> getValidROLParameters() {
 
 inline ROL::Ptr<const Teuchos::ParameterList> getValidSOLParameters() {
   
-  typedef Teuchos::ParameterList PL;
+  typedef ROL::ParameterList PL;
 
   ROL::Ptr<PL> sol = ROL::makePtr<PL>("SOL");
 

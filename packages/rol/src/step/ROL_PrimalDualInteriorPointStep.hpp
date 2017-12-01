@@ -270,7 +270,7 @@ public:
                                const ROL::Ptr<LinearOperator<Real> > &precond = ROL::nullPtr ) : 
     Step<Real>(), krylov_(krylov), precond_(precond), iterKrylov_(0), flagKrylov_(0) {
 
-    typedef Teuchos::ParameterList PL;
+    typedef ROL::ParameterList PL;
 
     PL &iplist = parlist.sublist("Step").sublist("Primal Dual Interior Point");
 

@@ -61,7 +61,7 @@ template<class Real>
 class SROMGenerator : public SampleGenerator<Real> {
 private:
   // Parameterlist for optimization
-  Teuchos::ParameterList parlist_;
+  ROL::ParameterList parlist_;
   // Vector of distributions (size = dimension of space)
   std::vector<Ptr<Distribution<Real>>> dist_;
 
@@ -277,16 +277,16 @@ private:
     Real scale = list.get("CDF Smoothing Parameter",1.e-2);
     obj_vec.push_back(makePtr<CDFObjective<Real>>(dist,bman,scale,optProb,optAtom));
     // Build moment matching objective function
-    Teuchos::Array<int> tmp_order
-      = Teuchos::getArrayFromStringParameter<int>(list,"Moments");
+    std::vector<int> tmp_order
+      = ROL::getArrayFromStringParameter<int>(list,"Moments");
     std::vector<int> order(tmp_order.size(),0);
-    for ( int i = 0; i < tmp_order.size(); i++) {
+    for (unsigned int i = 0; i < tmp_order.size(); i++) {
       order[i] = static_cast<int>(tmp_order[i]);
     }
     obj_vec.push_back(makePtr<MomentObjective<Real>>(dist,order,bman,optProb,optAtom));
     // Build linear combination objective function
-    Teuchos::Array<Real> tmp_coeff
-      = Teuchos::getArrayFromStringParameter<Real>(list,"Coefficients");
+    std::vector<Real> tmp_coeff
+      = ROL::getArrayFromStringParameter<Real>(list,"Coefficients");
     std::vector<Real> coeff(2,0.);
     coeff[0] = tmp_coeff[0]; coeff[1] = tmp_coeff[1];
     return makePtr<LinearCombinationObjective<Real>>(coeff,obj_vec);

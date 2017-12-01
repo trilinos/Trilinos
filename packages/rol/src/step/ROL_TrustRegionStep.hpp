@@ -183,18 +183,18 @@ private:
   void parseParameterList(Teuchos::ParameterList &parlist) {
     ROL::Ptr<StepState<Real> > step_state = Step<Real>::getState();
     // Trust-Region Parameters
-    Teuchos::ParameterList &slist = parlist.sublist("Step");
-    Teuchos::ParameterList &list  = slist.sublist("Trust Region");
+    ROL::ParameterList &slist = parlist.sublist("Step");
+    ROL::ParameterList &list  = slist.sublist("Trust Region");
     step_state->searchSize = list.get("Initial Radius", static_cast<Real>(-1));
     delMax_                = list.get("Maximum Radius", static_cast<Real>(1.e8));
     // Inexactness Information
-    Teuchos::ParameterList &glist = parlist.sublist("General");
+    ROL::ParameterList &glist = parlist.sublist("General");
     useInexact_.clear();
     useInexact_.push_back(glist.get("Inexact Objective Function",     false));
     useInexact_.push_back(glist.get("Inexact Gradient",               false));
     useInexact_.push_back(glist.get("Inexact Hessian-Times-A-Vector", false));
     // Trust-Region Inexactness Parameters
-    Teuchos::ParameterList &ilist = list.sublist("Inexact").sublist("Gradient");
+    ROL::ParameterList &ilist = list.sublist("Inexact").sublist("Gradient");
     scale0_ = ilist.get("Tolerance Scaling",  static_cast<Real>(0.1));
     scale1_ = ilist.get("Relative Tolerance", static_cast<Real>(2)); 
     // Initialize Trust Region Subproblem Solver Object
@@ -305,11 +305,11 @@ public:
   /** \brief Constructor.
 
       Standard constructor to build a TrustRegionStep object.  Algorithmic 
-      specifications are passed in through a Teuchos::ParameterList.
+      specifications are passed in through a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
   */
-  TrustRegionStep( Teuchos::ParameterList & parlist )
+  TrustRegionStep( ROL::ParameterList & parlist )
     : Step<Real>(),
       xnew_(ROL::nullPtr), xold_(ROL::nullPtr), gp_(ROL::nullPtr),
       trustRegion_(ROL::nullPtr), model_(ROL::nullPtr),
@@ -326,7 +326,7 @@ public:
     // Parse input parameterlist
     parseParameterList(parlist);
     // Create secant object
-    Teuchos::ParameterList &glist = parlist.sublist("General");
+    ROL::ParameterList &glist = parlist.sublist("General");
     esec_             = StringToESecant(glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
     useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
     useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
@@ -337,7 +337,7 @@ public:
 
       Constructor to build a TrustRegionStep object with a user-defined 
       secant object.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
+      a ROL::ParameterList.
 
       @param[in]     secant     is a user-defined secant object
       @param[in]     parlist    is a parameter list containing algorithmic specifications
@@ -359,7 +359,7 @@ public:
     // Parse input parameterlist
     parseParameterList(parlist);
     // Create secant object
-    Teuchos::ParameterList &glist = parlist.sublist("General");
+    ROL::ParameterList &glist = parlist.sublist("General");
     useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
     useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
     if ( secant_ == ROL::nullPtr ) {

@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
     if ( std::abs(pdnorm - pnorm/sqrt2) > std::sqrt(errtol) ) {
       errorFlag++;
     }
-    
+
     // Create SROM vectors
     ROL::SROMVector<RealT> xp(pp,ap);
     RealT xpnorm = xp.norm();

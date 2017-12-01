@@ -153,7 +153,7 @@ public:
     flagAC_ = 0;
     iterCG_ = 0;
 
-    Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Composite Step");
+    ROL::ParameterList& steplist = parlist.sublist("Step").sublist("Composite Step");
 
     //maxiterOSS_  = steplist.sublist("Optimality System Solver").get("Iteration Limit", 50);
     tolOSS_      = steplist.sublist("Optimality System Solver").get("Nominal Relative Tolerance", 1e-8);

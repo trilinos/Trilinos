@@ -45,7 +45,7 @@
 #define ROL_GAUSSIAN_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -89,7 +89,7 @@ public:
     d_[0] =  3.543889200; d_[1] =  1.637067800;
   }
 
-  Gaussian(Teuchos::ParameterList &parlist) {
+  Gaussian(ROL::ParameterList &parlist) {
     mean_     = parlist.sublist("SOL").sublist("Distribution").sublist("Gaussian").get("Mean",0.);
     variance_ = parlist.sublist("SOL").sublist("Distribution").sublist("Gaussian").get("Variance",1.);
     variance_ = (variance_ > 0.) ? variance_ : 1.;

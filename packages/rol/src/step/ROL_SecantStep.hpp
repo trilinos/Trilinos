@@ -78,7 +78,7 @@ public:
 
       Constructor to build a SecantStep object with a user-defined 
       secant object.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
+      a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
       @param[in]     secant     is a user-defined secant object

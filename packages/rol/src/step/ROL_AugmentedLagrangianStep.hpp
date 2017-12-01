@@ -49,7 +49,7 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup step_group
     \class ROL::AugmentedLagrangianStep
@@ -147,7 +147,7 @@ private:
   ROL::Ptr<Vector<Real> > x_; 
   ROL::Ptr<BoundConstraint<Real> > bnd_;
 
-  Teuchos::ParameterList parlist_;
+  ROL::ParameterList parlist_;
   // Lagrange multiplier update
   bool useDefaultInitPen_;
   bool scaleLagrangian_;

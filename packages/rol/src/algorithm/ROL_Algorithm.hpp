@@ -110,7 +110,7 @@ public:
              test is determined based on the step string.
   */
   Algorithm( const std::string &stepname,
-             Teuchos::ParameterList &parlist,
+             ROL::ParameterList &parlist,
              bool printHeader = false) {
 
 // Uncomment to test for parameter inconsistencies

@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -62,7 +62,7 @@
 
 typedef double RealT;
 
-template<class Real> 
+template<class Real>
 class ParametrizedObjectiveEx7 : public ROL::Objective<Real> {
 public:
   Real value( const ROL::Vector<Real> &x, Real &tol ) {
@@ -72,7 +72,7 @@ public:
     std::vector<Real> p = ROL::Objective<Real>::getParameter();
     unsigned size = static_cast<unsigned>(ex->size());
     for ( unsigned i = 0; i < size; i++ ) {
-      quad += (*ex)[i]*(*ex)[i]; 
+      quad += (*ex)[i]*(*ex)[i];
       lin  += (*ex)[i]*p[i+1];
     }
     return std::exp(p[0])*quad + lin + p[size+1];
@@ -101,8 +101,8 @@ public:
     unsigned size = static_cast<unsigned>(ev->size());
     const Real two(2);
     for ( unsigned i = 0; i < size; i++ ) {
-      (*ehv)[i] = two*std::exp(p[0])*(*ev)[i]; 
-    } 
+      (*ehv)[i] = two*std::exp(p[0])*(*ev)[i];
+    }
   }
 };
 
@@ -156,6 +156,7 @@ int main(int argc, char* argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int> > commptr =
     Teuchos::DefaultComm<int>::getComm();
+  ROL::SharedPointer<const Teuchos::Comm<int>> commptr = ROL::makeSharedFromRef(*teuchos_commptr);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;

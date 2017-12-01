@@ -45,7 +45,7 @@
 #define ROL_KUMARASWAMY_HPP
 
 #include "ROL_Distribution.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include <math.h>
 
@@ -72,7 +72,7 @@ public:
     bGAMMAb_ = exp2_*tgamma(exp2_);
   }
 
-  Kumaraswamy(Teuchos::ParameterList &parlist) {
+  Kumaraswamy(ROL::ParameterList &parlist) {
     a_ = parlist.sublist("SOL").sublist("Distribution").sublist("Kumaraswamy").get("Lower Bound",0.);
     b_ = parlist.sublist("SOL").sublist("Distribution").sublist("Kumaraswamy").get("Upper Bound",1.);
     Real tmp = a_;

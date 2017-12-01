@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Vector<RealT> > x = x0->clone(); x->set(*x0);
 
     // Get Dimension of Problem
-    int dim = x0->dimension(); 
+    int dim = x0->dimension();
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
     // Check Derivatives
@@ -143,4 +143,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-

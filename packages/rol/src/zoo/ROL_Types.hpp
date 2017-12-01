@@ -1069,7 +1069,7 @@ using enable_if_t = typename std::enable_if<B,T>::type;
   \endcode
 
   \subsection step_qs_sec Step 3: Choose optimization algorithm.
-  ---  with @b Teuchos::ParameterList settings in the variable @b parlist.
+  ---  with @b ROL::ParameterList settings in the variable @b parlist.
 
   \code
       ROL::Algorithm<RealT> algo("Line Search",parlist);

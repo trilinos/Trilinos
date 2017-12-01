@@ -41,7 +41,7 @@
 // ************************************************************************
 // @HEADER
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -62,6 +62,7 @@ int main(int argc, char* argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   ROL::Ptr<const Teuchos::Comm<int> > commptr =
     Teuchos::DefaultComm<int>::getComm();
+  ROL::SharedPointer<const Teuchos::Comm<int>> commptr = ROL::makeSharedFromRef(*teuchos_commptr);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -104,8 +105,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
-    Teuchos::ParameterList &list = parlist->sublist("SOL").sublist("Sample Generator").sublist("SROM");
-    Teuchos::Array<int> moments = Teuchos::getArrayFromStringParameter<int>(list,"Moments");
+    ROL::ParameterList &list = parlist->sublist("SOL").sublist("Sample Generator").sublist("SROM");
+    std::vector<int> moments = ROL::getArrayFromStringParameter<int>(list,"Moments");
     size_t numMoments = static_cast<size_t>(moments.size());
 
     std::clock_t timer = std::clock();
@@ -146,7 +147,7 @@ int main(int argc, char* argv[]) {
 //    std::ofstream file;
 //    std::stringstream name;
 //    name << "samples." << commptr->getRank() << ".txt";
-//    file.open(name.str().c_str()); 
+//    file.open(name.str().c_str());
 //    for (size_t k = 0; k < (size_t)sampler->numMySamples(); k++) {
 //      for (size_t d = 0; d < dimension; d++) {
 //        file << std::setprecision(std::numeric_limits<RealT>::digits10)

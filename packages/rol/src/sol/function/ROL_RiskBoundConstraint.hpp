@@ -71,7 +71,7 @@ private:
   mutable bool isLOinitialized_, isHIinitialized_; 
   mutable ROL::Ptr<RiskVector<Real> > lo_, hi_;
 
-  void setBoundInfo(Teuchos::ParameterList &parlist,
+  void setBoundInfo(ROL::ParameterList &parlist,
                     int &nStat,
                     std::vector<Real> &lower,
                     std::vector<Real> &upper,

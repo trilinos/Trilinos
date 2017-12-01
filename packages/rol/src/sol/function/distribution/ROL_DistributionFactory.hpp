@@ -44,7 +44,7 @@
 #ifndef ROL_DISTRIBUTIONFACTORY_HPP
 #define ROL_DISTRIBUTIONFACTORY_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 #include "ROL_Dirac.hpp"
 #include "ROL_Gaussian.hpp"
@@ -166,7 +166,7 @@ namespace ROL {
   template<class Real>
   inline ROL::Ptr<Distribution<Real> > DistributionFactory(Teuchos::ParameterList &parlist) {
     std::string dist;
-    Teuchos::ParameterList sollist;
+    ROL::ParameterList sollist;
     if ( parlist.isSublist("SOL") ) {
       dist.assign(parlist.sublist("SOL").sublist("Distribution").get("Name","Dirac"));
       sollist = parlist;

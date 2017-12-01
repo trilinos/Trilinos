@@ -77,7 +77,7 @@ public:
 
       Constructor to build a NonlinearCGStep object with a user-defined 
       nonlinear CG object.  Algorithmic specifications are passed in through 
-      a Teuchos::ParameterList.
+      a ROL::ParameterList.
 
       @param[in]     parlist    is a parameter list containing algorithmic specifications
       @param[in]     nlcg       is a user-defined NonlinearCG object

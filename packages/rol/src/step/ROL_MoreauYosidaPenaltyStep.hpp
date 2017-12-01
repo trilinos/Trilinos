@@ -50,7 +50,7 @@
 #include "ROL_CompositeStep.hpp"
 #include "ROL_FletcherStep.hpp"
 #include "ROL_Algorithm.hpp"
-#include "Teuchos_ParameterList.hpp"
+#include "ROL_ParameterList.hpp"
 
 /** @ingroup step_group
     \class ROL::MoreauYosidaPenaltyStep
@@ -131,7 +131,7 @@ private:
   bool print_;
   bool updatePenalty_;
 
-  Teuchos::ParameterList parlist_;
+  ROL::ParameterList parlist_;
   int subproblemIter_;
   bool hasEquality_;
 
@@ -204,7 +204,7 @@ public:
       hasEquality_(false) {
     // Parse parameters
     Real ten(10), oem6(1.e-6), oem8(1.e-8);
-    Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
+    ROL::ParameterList& steplist = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
     Step<Real>::getState()->searchSize = steplist.get("Initial Penalty Parameter",ten);
     tau_ = steplist.get("Penalty Parameter Growth Factor",ten);
     updatePenalty_ = steplist.get("Update Penalty",true);

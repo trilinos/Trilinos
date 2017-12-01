@@ -70,6 +70,8 @@ namespace details {
 
 using namespace std;
 
+  // Try to get type of an object
+  // FIXME: sometimes failing for std::string
   template <typename T> struct value_type
   { static std::string name() { std::string t = typeid(T).name();
       if (t == "i")
@@ -78,8 +80,9 @@ using namespace std;
         return "double";
       else if (t == "b")
         return "bool";
-      return "unknown"; }};
-  template <> struct value_type<string>
+      return t; }};
+
+  template <> struct value_type<std::string>
   { static std::string name() { return "string"; }};
   template <int N> struct value_type<const char [N]>
   { static std::string name() { return "string"; }};
@@ -88,10 +91,12 @@ using namespace std;
 
 class ParameterList {
 private:
+
+  // Keep the original ptree, but sublists, an iterator is sufficient
   pt::ptree tree_;
   pt::ptree::iterator root_;
 
-  // For references which must stay alive
+  // For references (sublists) which must stay alive
   std::vector<std::shared_ptr<ParameterList>> refs_;
 
 public:
@@ -115,6 +120,24 @@ public:
   }
 
   virtual ~ParameterList() {
+  }
+
+  ParameterList& operator=(ParameterList& p)
+  {
+    // Copy tree over to this root
+    root_->second = p.root_->second;
+
+    // Copy name from "Name" Parameter in p
+    std::string name = "Unknown";
+    for (auto &q : p.root_->second)
+      if (q.first == "Parameter" and
+          q.second.get<std::string>("<xmlattr>.name") == "Name")
+      {
+        name = q.second.get<std::string>("<xmlattr>.value");
+        break;
+      }
+    root_->second.put("<xmlattr>.name", name);
+    return *this;
   }
 
   using ConstIterator = pt::ptree::const_iterator;
@@ -215,7 +238,7 @@ public:
     return default_value;
   }
 
-  void print(pt::ptree& r, std::string indent="")
+  static void print(pt::ptree& r, std::string indent="")
   {
     for (auto q : r)
     {
@@ -308,10 +331,7 @@ public:
     {
       boost::trim(q);
       if(q.size() > 0)
-      {
         result.push_back(boost::lexical_cast<T>(q));
-        std::cout << result.back() << " ";
-      }
     }
 
     return result;

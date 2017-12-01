@@ -302,7 +302,7 @@ public:
 
   /** \brief Set solve parameters.
 
-             @param[in]       parlist   Teuchos::ParameterList containing solve parameters
+             @param[in]       parlist   ROL::ParameterList containing solve parameters
 
              For the default implementation, parlist has two sublist ("SimOpt"
              and "Solve") and the "Solve" sublist has six input parameters.
@@ -320,8 +320,8 @@ public:
 
              ---
   */
-  virtual void setSolveParameters(Teuchos::ParameterList &parlist) {
-    Teuchos::ParameterList & list = parlist.sublist("SimOpt").sublist("Solve");
+  virtual void setSolveParameters(ROL::ParameterList &parlist) {
+    ROL::ParameterList & list = parlist.sublist("SimOpt").sublist("Solve");
     atol_       = list.get("Absolute Residual Tolerance",   DEFAULT_atol_);
     rtol_       = list.get("Relative Residual Tolerance",   DEFAULT_rtol_);
     maxit_      = list.get("Iteration Limit",               DEFAULT_maxit_);

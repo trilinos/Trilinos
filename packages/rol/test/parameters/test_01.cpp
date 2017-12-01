@@ -54,14 +54,13 @@ int main(int argc, char *argv[]) {
   std::string infile  = "parameters.xml";
   std::string outfile = "tiered_parameters.xml";
 
-  updateParametersFromXmlFile(infile,Ptr<ParameterList>(&*inlist));
-  
-  ParameterList outlist;
- 
+  ROL::updateParametersFromXmlFile(infile, *inlist);
+
+  ROL::ParameterList outlist;
+
   ROL::tierParameterList(outlist,*inlist);
 
-  writeParameterListToXmlFile(outlist,outfile);
-  
+  ROL::writeParameterListToXmlFile(outlist,outfile);
+
 
 }
-

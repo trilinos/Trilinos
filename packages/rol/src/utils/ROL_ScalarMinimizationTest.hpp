@@ -66,7 +66,7 @@ private:
 public:
   virtual ~ScalarMinimizationTest(void) {}
 
-  ScalarMinimizationTest(Teuchos::ParameterList &parlist) {
+  ScalarMinimizationTest(ROL::ParameterList &parlist) {
     std::string type = parlist.sublist("Scalar Minimization").get("Type","Brent's");
     if ( type == "Brent's" ) {
       algo_ = ROL::makePtr<BrentsScalarMinimization<Real>>(parlist);
