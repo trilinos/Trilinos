@@ -663,7 +663,6 @@ int main(int argc, char *argv[]) {
 //      }
 
       // create coarse grid row maps in region layout
-      std::vector<Epetra_Map*> coarseRowMapPerGrp(maxRegPerProc);
       for (int j = 0; j < maxRegPerProc; j++) {
         std::vector<int> coarseRowGIDsReg;
         for (int i = 0; i < regCoarseGridToggle[j]->Map().NumMyElements(); ++i) {
@@ -773,8 +772,11 @@ int main(int argc, char *argv[]) {
             }
           }
         }
-        regionGrpProlong[j]->Print(std::cout);
+//        regionGrpProlong[j]->Print(std::cout);
       }
+    }
+    else if (strcmp(command,"RunTwoLevelMethod") == 0) {
+
     }
     else if (strcmp(command,"PrintCompositeVectorX") == 0) {
       sleep(myRank);

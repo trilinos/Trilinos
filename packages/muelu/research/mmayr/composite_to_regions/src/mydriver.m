@@ -89,7 +89,7 @@
 %
 !rm -f myData_* 
 
-file='caseFour'; % mkRegionFile(file);
+file='caseThree'; % mkRegionFile(file);
 
 %
 %  read in some of header type information 
@@ -227,6 +227,7 @@ send('MakeRegionMatrices',nProcs);
 % send('PrintRegionMatrixRangeMap',nProcs);
 % send('PrintRegionMatrixDomainMap',nProcs);
 send('MakeRegionTransferOperators',nProcs);
+send('RunTwoLevelMethod',nProcs);
 % send('ComputeMatVecs',nProcs);
 % send('PrintCompositeVectorX',nProcs);
 % send('PrintCompositeVectorY',nProcs);
