@@ -63,12 +63,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  ROL::Ptr<std::ostream> outStream;
+  Teuchos::RCP<std::ostream> outStream;
   oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = ROL::makePtrFromRef(std::cout);
+    outStream = Teuchos::rcpFromRef(std::cout);
   else
-    outStream = ROL::makePtrFromRef(bhs);
+    outStream = Teuchos::rcpFromRef(bhs);
 
   int errorFlag  = 0;
 
@@ -80,12 +80,12 @@ int main(int argc, char *argv[]) {
 
     int dim = 100; 
 
-    ROL::Ptr<Thyra::VectorSpaceBase<RealT> > euclidean = Thyra::defaultSpmdVectorSpace<RealT>(dim);   
+    Teuchos::RCP<Thyra::VectorSpaceBase<RealT> > euclidean = Thyra::defaultSpmdVectorSpace<RealT>(dim);   
 
-    // Create ROL::Ptrs to Thyra::Vectors
-    ROL::Ptr<Thyra::VectorBase<RealT> > x_ptr = Thyra::createMember<RealT>(euclidean);
-    ROL::Ptr<Thyra::VectorBase<RealT> > y_ptr = Thyra::createMember<RealT>(euclidean);
-    ROL::Ptr<Thyra::VectorBase<RealT> > z_ptr = Thyra::createMember<RealT>(euclidean);
+    // Create Teuchos::RCPs to Thyra::Vectors
+    Teuchos::RCP<Thyra::VectorBase<RealT> > x_ptr = Thyra::createMember<RealT>(euclidean);
+    Teuchos::RCP<Thyra::VectorBase<RealT> > y_ptr = Thyra::createMember<RealT>(euclidean);
+    Teuchos::RCP<Thyra::VectorBase<RealT> > z_ptr = Thyra::createMember<RealT>(euclidean);
 
     // Create ROL::ThyraVectors
   
@@ -102,14 +102,14 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
-    ROL::StdVector<RealT, ElementT> checkvec(ROL::makePtrFromRef(consistency));
+    ROL::StdVector<RealT, ElementT> checkvec(Teuchos::rcpFromRef(consistency));
     if (checkvec.norm() > std::sqrt(ROL::ROL_EPSILON<RealT>())) {
       errorFlag++;
     }      
 
     // Basis tests.
     // set x to first basis vector
-    ROL::Ptr<ROL::Vector<RealT> > zp = x.clone();
+    Teuchos::RCP<ROL::Vector<RealT> > zp = x.clone();
     zp = x.basis(0);
     RealT znorm = zp->norm();
     *outStream << "Norm of ROL::Vector z (first basis vector): " << znorm << "\n";

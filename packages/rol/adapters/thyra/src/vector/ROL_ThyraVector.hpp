@@ -62,10 +62,10 @@ template <class Real>
 class ThyraVector : public Vector<Real> {
 private:
 
-  ROL::Ptr<Thyra::VectorBase<Real> >  thyra_vec_;
+  Teuchos::RCP<Thyra::VectorBase<Real> >  thyra_vec_;
 
   class GetEleAccelerator {
-    ROL::Ptr<const Thyra::VectorBase<Real> > vec_;
+    Teuchos::RCP<const Thyra::VectorBase<Real> > vec_;
 
     std::vector<Teuchos::ArrayRCP<const Real> > flatVec_;
 
@@ -82,7 +82,7 @@ private:
       // is an spmd vector?
       Ptr<const Thyra::SpmdVectorBase<Real> > spmd_vec = ptr_dynamic_cast<const Thyra::SpmdVectorBase<Real> >(ptrFromRef(vec));
 
-      if(spmd_vec!=ROL::nullPtr) {
+      if(spmd_vec!=Teuchos::null) {
         std::vector<Teuchos::ArrayRCP<const Real> > flatVec(1);
         Teuchos::ArrayRCP<const Real> ptrArray;
         spmd_vec->getLocalData(ptrFromRef(ptrArray));
@@ -97,7 +97,7 @@ private:
 
       std::vector<Teuchos::ArrayRCP<const Real> > flatVec;
       for(int i=0;i<prod_vec->productSpace()->numBlocks();i++) {
-        ROL::Ptr<const Thyra::VectorBase<Real> > block = prod_vec->getVectorBlock(i);
+        Teuchos::RCP<const Thyra::VectorBase<Real> > block = prod_vec->getVectorBlock(i);
 
         std::vector<Teuchos::ArrayRCP<const Real> > subVec = buildFlatStructure(*block);
         flatVec.insert(flatVec.end(),subVec.begin(),subVec.end());
@@ -107,7 +107,7 @@ private:
     }
 
   public: 
-    GetEleAccelerator(const ROL::Ptr<const Thyra::VectorBase<Real> > & vec)
+    GetEleAccelerator(const Teuchos::RCP<const Thyra::VectorBase<Real> > & vec)
       : vec_(vec) 
     { 
       flatVec_ = buildFlatStructure(*vec);
@@ -142,7 +142,7 @@ private:
   };
 
   class SetGetEleAccelerator {
-    ROL::Ptr<Thyra::VectorBase<Real> > vec_;
+    Teuchos::RCP<Thyra::VectorBase<Real> > vec_;
 
     SetGetEleAccelerator(); // hide default constructor
 
@@ -159,7 +159,7 @@ private:
       // is an spmd vector?
       Ptr<Thyra::SpmdVectorBase<Real> > spmd_vec = ptr_dynamic_cast<Thyra::SpmdVectorBase<Real> >(ptrFromRef(vec));
 
-      if(spmd_vec!=ROL::nullPtr) {
+      if(spmd_vec!=Teuchos::null) {
         std::vector<Teuchos::ArrayRCP<Real> > flatVec(1);
         Teuchos::ArrayRCP<Real> ptrArray;
         spmd_vec->getNonconstLocalData(Teuchos::ptrFromRef(ptrArray));
@@ -173,7 +173,7 @@ private:
 
       std::vector<Teuchos::ArrayRCP<Real> > flatVec;
       for(int i=0;i<prod_vec->productSpace()->numBlocks();i++) {
-        ROL::Ptr<Thyra::VectorBase<Real> > block = prod_vec->getNonconstVectorBlock(i);
+        Teuchos::RCP<Thyra::VectorBase<Real> > block = prod_vec->getNonconstVectorBlock(i);
 
         std::vector<Teuchos::ArrayRCP<Real> > subVec = buildFlatStructure(*block);
         flatVec.insert(flatVec.end(),subVec.begin(),subVec.end());
@@ -182,7 +182,7 @@ private:
       return flatVec;
     }
   public: 
-    SetGetEleAccelerator(const ROL::Ptr<Thyra::VectorBase<Real> > & vec)
+    SetGetEleAccelerator(const Teuchos::RCP<Thyra::VectorBase<Real> > & vec)
       : vec_(vec) 
     { 
       flatVec_ = buildFlatStructure(*vec);
@@ -242,7 +242,7 @@ private:
 public:
   ~ThyraVector() {}
 
-  ThyraVector(const ROL::Ptr<Thyra::VectorBase<Real> > & thyra_vec) : thyra_vec_(thyra_vec) {}
+  ThyraVector(const Teuchos::RCP<Thyra::VectorBase<Real> > & thyra_vec) : thyra_vec_(thyra_vec) {}
 
   /** \brief Compute \f$y \leftarrow x + y\f$ where \f$y = \mbox{*this}\f$.
   */
@@ -273,9 +273,9 @@ public:
 
   /** \brief Clone to make a new (uninitialized) vector.
   */
-  ROL::Ptr<Vector<Real> > clone() const{
-    ROL::Ptr<Thyra::VectorBase<Real> > tv = thyra_vec_->clone_v();
-    return ROL::makePtr<ThyraVector>(tv); 
+  Teuchos::RCP<Vector<Real> > clone() const{
+    Teuchos::RCP<Thyra::VectorBase<Real> > tv = thyra_vec_->clone_v();
+    return Teuchos::rcp( new ThyraVector(tv) ); 
   }
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mbox{*this}\f$.
@@ -299,23 +299,23 @@ public:
 
   /**  \brief const get of the Thyra vector.
     */
-  ROL::Ptr<const Thyra::VectorBase<Real> > getVector() const {
+  Teuchos::RCP<const Thyra::VectorBase<Real> > getVector() const {
     return thyra_vec_;
   }
 
   /**  \brief nonconst get of the Thyra vector.
     */
-  ROL::Ptr<Thyra::VectorBase<Real> > getVector()  {
+  Teuchos::RCP<Thyra::VectorBase<Real> > getVector()  {
     return thyra_vec_;
   }
 
   /** \brief Return i-th basis vector.
     */
-  ROL::Ptr<Vector<Real> > basis( const int i ) const {
-    ROL::Ptr<Thyra::VectorBase<Real> > basisThyraVec = thyra_vec_->clone_v(); 
+  Teuchos::RCP<Vector<Real> > basis( const int i ) const {
+    Teuchos::RCP<Thyra::VectorBase<Real> > basisThyraVec = thyra_vec_->clone_v(); 
     ::Thyra::put_scalar(0.0, basisThyraVec.ptr());
     ::Thyra::set_ele(i,1.0, basisThyraVec.ptr());
-    return ROL::makePtr<ThyraVector>(basisThyraVec);
+    return Teuchos::rcp( new ThyraVector(basisThyraVec) );
   }
 
   /** \brief Return dimension of the vector space.
@@ -349,7 +349,7 @@ public:
 
   void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector<Real> &x ) {
     const ThyraVector &ex = dynamic_cast<const ThyraVector&>(x);
-    ROL::Ptr< const Thyra::VectorBase<Real> > xp = ex.getVector();
+    Teuchos::RCP< const Thyra::VectorBase<Real> > xp = ex.getVector();
 
     SetGetEleAccelerator thisAccel(thyra_vec_);
     GetEleAccelerator xpAccel(xp);

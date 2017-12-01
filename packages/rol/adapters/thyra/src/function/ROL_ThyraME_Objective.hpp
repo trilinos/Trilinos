@@ -69,7 +69,7 @@ public:
   */
   Real value( const Vector<Real> &rol_x, Real &tol ) {
     const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
-    ROL::Ptr< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
+    Teuchos::RCP< Thyra::VectorBase<Real> > g = Thyra::createMember<Real>(thyra_model.get_g_space(g_index));
 
     Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();
@@ -93,7 +93,7 @@ public:
     const ThyraVector<Real>  & thyra_p = dynamic_cast<const ThyraVector<Real>&>(rol_x);
     ThyraVector<Real>  & thyra_dgdp = dynamic_cast<ThyraVector<Real>&>(rol_g);
 
-    ROL::Ptr<Thyra::MultiVectorBase<Real> > dgdp = thyra_dgdp.getVector();
+    Teuchos::RCP<Thyra::MultiVectorBase<Real> > dgdp = thyra_dgdp.getVector();
 
     Thyra::ModelEvaluatorBase::InArgs<Real> inArgs = thyra_model.createInArgs();
     Thyra::ModelEvaluatorBase::OutArgs<Real> outArgs = thyra_model.createOutArgs();

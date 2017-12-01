@@ -197,11 +197,11 @@ namespace Thyra {
                        const Teuchos::Ptr< ::Thyra::VectorBase<Scalar> > &x) {
       using Teuchos::tuple;
       using Teuchos::ptrInArg;
-      using ROL::nullPtr;
+      using Teuchos::null;
       RTOpPack::TOpEleWiseBound<Scalar> ele_wise_bound_op;
       ::Thyra::applyOp<Scalar> (ele_wise_bound_op,
                                 tuple (ptrInArg (x_lo), ptrInArg (x_up)), tuple (x),
-                                nullPtr);
+                                Teuchos::null);
     }
 
   /** \brief Element-wise prune lower:
@@ -218,11 +218,11 @@ namespace Thyra {
                        const Scalar& eps) {
       using Teuchos::tuple;
       using Teuchos::ptrInArg;
-      using ROL::nullPtr;
+      using Teuchos::null;
       RTOpPack::TOpEleWisePruneLower_3_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_lo), ptrInArg (g)), tuple (v),
-                                nullPtr);
+                                Teuchos::null);
     }
 
   /** \brief Element-wise prune lower:
@@ -238,11 +238,11 @@ namespace Thyra {
                        const Scalar& eps) {
       using Teuchos::tuple;
       using Teuchos::ptrInArg;
-      using ROL::nullPtr;
+      using Teuchos::null;
       RTOpPack::TOpEleWisePruneLower_2_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_lo)), tuple (v),
-                                nullPtr);
+                                Teuchos::null);
     }
 
   /** \brief Element-wise prune lower:
@@ -259,11 +259,11 @@ namespace Thyra {
                        const Scalar& eps) {
       using Teuchos::tuple;
       using Teuchos::ptrInArg;
-      using ROL::nullPtr;
+      using Teuchos::null;
       RTOpPack::TOpEleWisePruneUpper_3_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_up), ptrInArg (g)), tuple (v),
-                                nullPtr);
+                                Teuchos::null);
     }
 
   /** \brief Element-wise prune lower:
@@ -280,11 +280,11 @@ namespace Thyra {
                        const Scalar& eps) {
       using Teuchos::tuple;
       using Teuchos::ptrInArg;
-      using ROL::nullPtr;
+      using Teuchos::null;
       RTOpPack::TOpEleWisePruneUpper_2_1<Scalar> ele_wise_prune_op(eps);
       ::Thyra::applyOp<Scalar> (ele_wise_prune_op,
                                 tuple (ptrInArg (x), ptrInArg (x_up)), tuple (v),
-                                nullPtr);
+                                Teuchos::null);
     }
 
 }
