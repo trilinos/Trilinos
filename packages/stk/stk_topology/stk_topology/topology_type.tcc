@@ -33,6 +33,8 @@
 #ifndef STKTOPOLOGY_TOPOLOGY_TYPE_TCC
 #define STKTOPOLOGY_TOPOLOGY_TYPE_TCC
 
+// IWYU pragma: private, include "stk_topology/topology.hpp"
+
 #include <stk_topology/topology.hpp>
 
 #include <stk_topology/topology_detail/fill_container.hpp>

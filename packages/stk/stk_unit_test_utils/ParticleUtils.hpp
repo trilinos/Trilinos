@@ -1,14 +1,18 @@
 #ifndef STK_PARTICLE_UTILS_H
 #define STK_PARTICLE_UTILS_H
 
-#include <stddef.h>                     // for size_t, nullptr
-#include <memory>
-#include <map>
-#include <vector>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/Types.hpp>
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <map>                       // for map
+#include <memory>                    // for unique_ptr, allocator
+#include <stk_mesh/base/Entity.hpp>  // for Entity
+#include <stk_mesh/base/Types.hpp>   // for EntityId
+#include <vector>                    // for vector
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Part; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
-namespace stk { namespace mesh { class BulkData; }}
 
 namespace stk
 {

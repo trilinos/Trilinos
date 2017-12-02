@@ -77,15 +77,6 @@ public:
   {}
 
   /**
-   * @brief Member function <b>getFunctionSpec</b> returns the function's name.
-   *
-   * @return      a <b>char</b> const pointer to the function's name.
-   */
-  inline const char *getFunctionSpec() const {
-    return m_functionSpec;
-  }
-
-  /**
    * @brief Member function <b>getFunctionName</b> returns the function's name.
    *
    * @return      a <b>char</b> const pointer to the function's name.
@@ -201,33 +192,6 @@ public:
   static TracebackStack snapshot();
 
   /**
-   * @brief Member function <b>enableTracebackDisplay</b> enables the display of the
-   * traceback.
-   */
-  inline static void enableTracebackDisplay() {
-    --s_tracebackDisplay;
-  }
-
-  /**
-   * @brief Member function <b>disableTracebackDisplay</b> disables the display of the
-   * traceback.
-   */
-  inline static void disableTracebackDisplay() {
-    ++s_tracebackDisplay;
-  }
-
-  /**
-   * @brief Member function <b>displayEnabled</b> returns true if display of the
-   * tracback stack has been enabled.
-   *
-   * @return      a <b>bool</b> value of true if trackback display has
-   *        been enabled.
-   */
-  inline static bool displayTraceback() {
-    return s_tracebackDisplay == 0;
-  }
-
-  /**
    * @brief Member function <b>preserveStack</b> increments the traceback stack
    * preservation counter.
    */
@@ -241,18 +205,6 @@ public:
    */
   inline static void releaseStack() {
     --s_tracebackPreserve;
-  }
-
-  /**
-   * @brief Member function <b>enableCoverage</b> enables the collection of function
-   * call coverage data.  This is a very expensive operation, but allows function
-   * execution coverage data to be collected for testing.
-   *
-   * @param coverage_enabled	a <b>bool</b> value to set the coverage enabled
-   *				flag.
-   */
-  inline static void enableCoverage(bool coverage_enabled = true) {
-    s_coverageEnabled = coverage_enabled;
   }
 
   /**

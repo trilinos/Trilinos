@@ -76,7 +76,7 @@ evaluateFields(typename Traits::EvalData workset)
 {
   gids = workset.gids_;
   cell_global_offset_index = workset.first_cell_global_index_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 // **********************************************************************
@@ -123,7 +123,7 @@ evaluateFields(typename Traits::EvalData workset)
 { 
   gids = workset.gids_;
   cell_global_offset_index = workset.first_cell_global_index_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 // **********************************************************************
@@ -133,7 +133,7 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int cell = team.league_rank();
   const int num_nodes = residual_contribution.extent(1);
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_nodes), [=] (const int& node) {
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_nodes), [&] (const int& node) {
 
     // Residual
     const int global_row_index = gids(cell_global_offset_index+cell,node) * num_equations + equation_index;
@@ -141,15 +141,47 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 
     // loop over nodes
     for (int col_node=0; col_node < num_nodes; ++col_node) {
+
+      // Bug in gcc 5 and 6 for nested lambdas breaks clean implementation
+      // of scatter. This is a very ugly hack to support those compilers.
+#if (__GNUC__ == 5) || (__GNUC__ == 6)
+      struct Gcc5_6_Hack {
+	KOKKOS_INLINE_FUNCTION
+	static void hack(const int cell,
+			 const int node,
+			 const int num_nodes,
+			 const int global_row_index,
+			 const int col_node,
+			 const int cell_global_offset_index,
+			 const int num_equations,
+			 const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team,
+			 const Kokkos::View<const int**,PHX::Device>& gids,
+			 const PHX::MDField<const ScalarT,CELL,BASIS>& residual_contribution,
+			 KokkosSparse::CrsMatrix<double,int,PHX::Device>& global_jacobian) {
+	  // loop over equations
+	  Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,num_equations),[&] (const int& col_eq) {
+	    const int global_col_index = gids(cell_global_offset_index+cell,col_node) * num_equations + col_eq;
+	    const int derivative_index = col_node * num_equations + col_eq;
+	    global_jacobian.sumIntoValues(global_row_index,&global_col_index,1,
+					  &(residual_contribution(cell,node).fastAccessDx(derivative_index)),
+					  false,true);
+	  });
+	}
+      };
+      Gcc5_6_Hack::hack(cell,node,num_nodes,global_row_index,col_node,cell_global_offset_index,num_equations,
+			team,gids,residual_contribution,
+			const_cast<KokkosSparse::CrsMatrix<double,int,PHX::Device>&>(global_jacobian));
+#else
       // loop over equations
-      for (int col_eq=0; col_eq < num_equations; ++col_eq) {
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,num_equations),[&] (const int& col_eq) {
         const int global_col_index = gids(cell_global_offset_index+cell,col_node) * num_equations + col_eq;
         const int derivative_index = col_node * num_equations + col_eq;
-        // std::cout << "derivative = " << residual_contribution(cell,node).fastAccessDx(derivative_index) << std::endl;
         global_jacobian.sumIntoValues(global_row_index,&global_col_index,1,
                                       &(residual_contribution(cell,node).fastAccessDx(derivative_index)),
                                       false,true);
-      }
+      });
+#endif
+
     } 
   });
 }

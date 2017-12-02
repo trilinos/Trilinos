@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -277,7 +277,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* first check if any side sets are specified */
   /* inquire how many side sets have been stored */
@@ -286,13 +286,13 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
   if (num_side_sets < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of side sets in file id %d",
              exoid);
-    ex_err("ex_cvt_nodes_to_sides", errmsg, EX_LASTERR);
+    ex_err(__func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if (num_side_sets == 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: no side sets defined in file id %d", exoid);
-    ex_err("ex_cvt_nodes_to_sides", errmsg, EX_WARN);
+    ex_err(__func__, errmsg, EX_WARN);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
@@ -300,7 +300,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
   if (num_elem_blks < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of element blocks in file id %d",
              exoid);
-    ex_err("ex_cvt_nodes_to_sides", errmsg, EX_LASTERR);
+    ex_err(__func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -308,7 +308,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
   if (tot_num_elem < 0) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get total number of elements in file id %d",
              exoid);
-    ex_err("ex_cvt_nodes_to_sides", errmsg, EX_LASTERR);
+    ex_err(__func__, errmsg, EX_LASTERR);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -335,10 +335,11 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
 
   /* Allocate space for the ss element index array */
   if (!(ss_elem_ndx = malloc(tot_num_ss_elem * int_size))) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for side set elem sort "
-                                     "array for file id %d",
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to allocate space for side set elem sort "
+             "array for file id %d",
              exoid);
-    ex_err("ex_cvt_nodes_to_sides", errmsg, EX_MEMFAIL);
+    ex_err(__func__, errmsg, EX_MEMFAIL);
     err_stat = EX_FATAL;
     goto cleanup;
   }
@@ -369,24 +370,25 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
   if (!(elem_blk_ids = malloc(num_elem_blks * ids_size))) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to allocate space for element block ids for file id %d", exoid);
-    ex_err("ex_cvt_nodes_to_sides", errmsg, EX_MEMFAIL);
+    ex_err(__func__, errmsg, EX_MEMFAIL);
     err_stat = EX_FATAL;
     goto cleanup;
   }
 
   if (ex_get_ids(exoid, EX_ELEM_BLOCK, elem_blk_ids)) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get element block ids in file id %d", exoid);
-    ex_err("ex_cvt_nodes_to_sides", errmsg, EX_MSG);
+    ex_err(__func__, errmsg, EX_MSG);
     err_stat = EX_FATAL;
     goto cleanup;
   }
 
   /* Allocate space for the element block params */
   if (!(elem_blk_parms = malloc(num_elem_blks * sizeof(struct elem_blk_parm)))) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for element block params "
-                                     "for file id %d",
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to allocate space for element block params "
+             "for file id %d",
              exoid);
-    ex_err("ex_cvt_nodes_to_sides", errmsg, EX_MEMFAIL);
+    ex_err(__func__, errmsg, EX_MEMFAIL);
     err_stat = EX_FATAL;
     goto cleanup;
   }
@@ -411,20 +413,22 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
 
   /* Allocate space for the ss element to element block parameter index array */
   if (!(ss_parm_ndx = malloc(tot_num_ss_elem * int_size))) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for side set elem parms "
-                                     "index for file id %d",
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to allocate space for side set elem parms "
+             "index for file id %d",
              exoid);
-    ex_err("ex_cvt_nodes_to_sides", errmsg, EX_MEMFAIL);
+    ex_err(__func__, errmsg, EX_MEMFAIL);
     err_stat = EX_FATAL;
     goto cleanup;
   }
 
   /* Allocate space for the ss element to node list index array */
   if (!(ss_elem_node_ndx = malloc((tot_num_ss_elem + 1) * int_size))) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for side set elem to node "
-                                     "index for file id %d",
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to allocate space for side set elem to node "
+             "index for file id %d",
              exoid);
-    ex_err("ex_cvt_nodes_to_sides", errmsg, EX_MEMFAIL);
+    ex_err(__func__, errmsg, EX_MEMFAIL);
     err_stat = EX_FATAL;
     goto cleanup;
   }
@@ -435,10 +439,11 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
 
   /* Allocate space for same element type flag array*/
   if (!(same_elem_type = malloc(num_side_sets * sizeof(int)))) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for element type flag "
-                                     "array for file id %d",
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to allocate space for element type flag "
+             "array for file id %d",
              exoid);
-    ex_err("ex_cvt_nodes_to_sides", errmsg, EX_MEMFAIL);
+    ex_err(__func__, errmsg, EX_MEMFAIL);
     err_stat = EX_FATAL;
     goto cleanup;
   }
@@ -456,7 +461,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
 
       if (j >= num_elem_blks) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: internal logic error for file id %d", exoid);
-        ex_err("ex_cvt_nodes_to_sides", errmsg, EX_INTERNAL);
+        ex_err(__func__, errmsg, EX_INTERNAL);
         err_stat = EX_FATAL;
         goto cleanup;
       }
@@ -493,7 +498,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
       }
       if (j >= num_elem_blks) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: internal logic error for file id %d", exoid);
-        ex_err("ex_cvt_nodes_to_sides", errmsg, EX_INTERNAL);
+        ex_err(__func__, errmsg, EX_INTERNAL);
         err_stat = EX_FATAL;
         goto cleanup;
       }
@@ -534,7 +539,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
 
       if (j >= num_elem_blks) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: internal logic error for file id %d", exoid);
-        ex_err("ex_cvt_nodes_to_sides", errmsg, EX_INTERNAL);
+        ex_err(__func__, errmsg, EX_INTERNAL);
         err_stat = EX_FATAL;
         goto cleanup;
       }
@@ -571,7 +576,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
       }
       if (j >= num_elem_blks) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: internal logic error for file id %d", exoid);
-        ex_err("ex_cvt_nodes_to_sides", errmsg, EX_INTERNAL);
+        ex_err(__func__, errmsg, EX_INTERNAL);
         err_stat = EX_FATAL;
         goto cleanup;
       }
@@ -634,10 +639,11 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
       /* Allocate space for the connectivity array for new element block */
       if (!(connect = malloc(elem_blk_parms[p_ndx].num_elem_in_blk *
                              elem_blk_parms[p_ndx].num_nodes_per_elem * int_size))) {
-        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for connectivity "
-                                         "array for file id %d",
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to allocate space for connectivity "
+                 "array for file id %d",
                  exoid);
-        ex_err("ex_cvt_nodes_to_sides", errmsg, EX_MEMFAIL);
+        ex_err(__func__, errmsg, EX_MEMFAIL);
         err_stat = EX_FATAL;
         goto cleanup;
       }
@@ -648,7 +654,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get connectivity array for elem blk %" PRId64 " for file id %d",
                  elem_blk_parms[p_ndx].elem_blk_id, exoid);
-        ex_err("ex_cvt_nodes_to_sides", errmsg, EX_LASTERR);
+        ex_err(__func__, errmsg, EX_LASTERR);
         err_stat = EX_FATAL;
         goto cleanup;
       }
@@ -665,7 +671,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
                "ERROR: logic error. Connect pointer is null for elem blk %" PRId64
                " for file id %d",
                elem_blk_parms[p_ndx].elem_blk_id, exoid);
-      ex_err("ex_cvt_nodes_to_sides", errmsg, EX_LASTERR);
+      ex_err(__func__, errmsg, EX_LASTERR);
       err_stat = EX_FATAL;
       goto cleanup;
     }
@@ -702,20 +708,23 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
         }
         case EX_EL_TRISHELL: {
           /* use table to find which node to compare to next */
-          if (ss_node1 == get_node(connect, num_nodes_per_elem * (elem_num_pos) +
-                                                (trishell_table[0][2 * n] - 1),
-                                   int_size)) {
+          if (ss_node1 ==
+              get_node(connect,
+                       num_nodes_per_elem * (elem_num_pos) + (trishell_table[0][2 * n] - 1),
+                       int_size)) {
             /* Assume only front or back, no edges... */
             put_side(side_sets_side_list, idx, trishell_table[1][2 * n], int_size);
           }
-          else if (ss_node1 == get_node(connect, num_nodes_per_elem * (elem_num_pos) +
-                                                     (trishell_table[0][2 * n + 1] - 1),
+          else if (ss_node1 == get_node(connect,
+                                        num_nodes_per_elem * (elem_num_pos) +
+                                            (trishell_table[0][2 * n + 1] - 1),
                                         int_size)) {
             /* Assume only front or back, no edges... */
             put_side(side_sets_side_list, idx, trishell_table[1][2 * n + 1], int_size);
           }
-          else if (ss_node1 == get_node(connect, num_nodes_per_elem * (elem_num_pos) +
-                                                     (trishell_table[0][2 * n + 2] - 1),
+          else if (ss_node1 == get_node(connect,
+                                        num_nodes_per_elem * (elem_num_pos) +
+                                            (trishell_table[0][2 * n + 2] - 1),
                                         int_size)) {
             /* Assume only front or back, no edges... */
             put_side(side_sets_side_list, idx, trishell_table[1][2 * n + 2], int_size);
@@ -725,7 +734,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
                      "ERROR: failed to find TRIANGULAR SHELL element %" PRId64 ", node %" PRId64
                      " in connectivity array %" PRId64 " for file id %d",
                      elem_num + 1, ss_node1, elem_blk_parms[p_ndx].elem_blk_id, exoid);
-            ex_err("ex_cvt_nodes_to_sides", errmsg, EX_BADPARAM);
+            ex_err(__func__, errmsg, EX_BADPARAM);
             err_stat = EX_FATAL;
             goto cleanup;
           }
@@ -754,9 +763,10 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
               put_side(side_sets_side_list, idx, shell_edge_table[1][2 * n], int_size);
             }
           }
-          else if (ss_node1 == get_node(connect, num_nodes_per_elem * (elem_num_pos) +
-                                                     (shell_table[0][2 * n + 1] - 1),
-                                        int_size)) {
+          else if (ss_node1 ==
+                   get_node(connect,
+                            num_nodes_per_elem * (elem_num_pos) + (shell_table[0][2 * n + 1] - 1),
+                            int_size)) {
             if (num_node_per_side >= 4) {
               /* 4- or 8-node side (front or back face) */
               put_side(side_sets_side_list, idx, shell_table[1][2 * n + 1], int_size);
@@ -766,9 +776,10 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
               put_side(side_sets_side_list, idx, shell_edge_table[1][2 * n + 1], int_size);
             }
           }
-          else if (ss_node1 == get_node(connect, num_nodes_per_elem * (elem_num_pos) +
-                                                     (shell_table[0][2 * n + 2] - 1),
-                                        int_size)) {
+          else if (ss_node1 ==
+                   get_node(connect,
+                            num_nodes_per_elem * (elem_num_pos) + (shell_table[0][2 * n + 2] - 1),
+                            int_size)) {
             if (num_node_per_side >= 4) {
               /* 4- or 8-node side (front or back face) */
               put_side(side_sets_side_list, idx, shell_table[1][2 * n + 2], int_size);
@@ -783,7 +794,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
                      "ERROR: failed to find SHELL element %" PRId64 ", node %" PRId64
                      " in connectivity array %" PRId64 " for file id %d",
                      elem_num + 1, ss_node1, elem_blk_parms[p_ndx].elem_blk_id, exoid);
-            ex_err("ex_cvt_nodes_to_sides", errmsg, EX_BADPARAM);
+            ex_err(__func__, errmsg, EX_BADPARAM);
             err_stat = EX_FATAL;
             goto cleanup;
           }
@@ -797,14 +808,16 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
                                    int_size)) {
             put_side(side_sets_side_list, idx, hex_table[1][3 * n], int_size);
           }
-          else if (ss_node1 == get_node(connect, num_nodes_per_elem * (elem_num_pos) +
-                                                     (hex_table[0][3 * n + 1] - 1),
-                                        int_size)) {
+          else if (ss_node1 ==
+                   get_node(connect,
+                            num_nodes_per_elem * (elem_num_pos) + (hex_table[0][3 * n + 1] - 1),
+                            int_size)) {
             put_side(side_sets_side_list, idx, hex_table[1][3 * n + 1], int_size);
           }
-          else if (ss_node1 == get_node(connect, num_nodes_per_elem * (elem_num_pos) +
-                                                     (hex_table[0][3 * n + 2] - 1),
-                                        int_size)) {
+          else if (ss_node1 ==
+                   get_node(connect,
+                            num_nodes_per_elem * (elem_num_pos) + (hex_table[0][3 * n + 2] - 1),
+                            int_size)) {
             put_side(side_sets_side_list, idx, hex_table[1][3 * n + 2], int_size);
           }
           else {
@@ -812,7 +825,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
                      "ERROR: failed to find HEX element %" PRId64 ", node %" PRId64
                      " in connectivity array %" PRId64 " for file id %d",
                      elem_num + 1, ss_node1, elem_blk_parms[p_ndx].elem_blk_id, exoid);
-            ex_err("ex_cvt_nodes_to_sides", errmsg, EX_BADPARAM);
+            ex_err(__func__, errmsg, EX_BADPARAM);
             err_stat = EX_FATAL;
             goto cleanup;
           }
@@ -826,14 +839,16 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
                        int_size)) {
             put_side(side_sets_side_list, idx, tetra_table[1][3 * n], int_size);
           }
-          else if (ss_node1 == get_node(connect, num_nodes_per_elem * (elem_num_pos) +
-                                                     (tetra_table[0][3 * n + 1] - 1),
-                                        int_size)) {
+          else if (ss_node1 ==
+                   get_node(connect,
+                            num_nodes_per_elem * (elem_num_pos) + (tetra_table[0][3 * n + 1] - 1),
+                            int_size)) {
             put_side(side_sets_side_list, idx, tetra_table[1][3 * n + 1], int_size);
           }
-          else if (ss_node1 == get_node(connect, num_nodes_per_elem * (elem_num_pos) +
-                                                     (tetra_table[0][3 * n + 2] - 1),
-                                        int_size)) {
+          else if (ss_node1 ==
+                   get_node(connect,
+                            num_nodes_per_elem * (elem_num_pos) + (tetra_table[0][3 * n + 2] - 1),
+                            int_size)) {
             put_side(side_sets_side_list, idx, tetra_table[1][3 * n + 2], int_size);
           }
           else {
@@ -841,7 +856,7 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
                      "ERROR: failed to find TETRA element %" PRId64 ", node %" PRId64
                      " in connectivity array %" PRId64 " for file id %d",
                      elem_num + 1, ss_node1, elem_blk_parms[p_ndx].elem_blk_id, exoid);
-            ex_err("ex_cvt_nodes_to_sides", errmsg, EX_BADPARAM);
+            ex_err(__func__, errmsg, EX_BADPARAM);
             err_stat = EX_FATAL;
             goto cleanup;
           }
@@ -850,27 +865,29 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
         case EX_EL_PYRAMID: {
           /* NOTE: PYRAMID elements in side set node lists are currently not
            * supported */
-          snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unsupported PYRAMID element found in side "
-                                           "set node list in file id %d",
+          snprintf(errmsg, MAX_ERR_LENGTH,
+                   "ERROR: unsupported PYRAMID element found in side "
+                   "set node list in file id %d",
                    exoid);
-          ex_err("ex_cvt_nodes_to_sides", errmsg, EX_BADPARAM);
+          ex_err(__func__, errmsg, EX_BADPARAM);
           err_stat = EX_FATAL;
           goto cleanup;
         }
         case EX_EL_WEDGE: {
           /* NOTE: WEDGE elements in side set node lists are currently not
            * supported */
-          snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unsupported WEDGE element found in side set "
-                                           "node list in file id %d",
+          snprintf(errmsg, MAX_ERR_LENGTH,
+                   "ERROR: unsupported WEDGE element found in side set "
+                   "node list in file id %d",
                    exoid);
-          ex_err("ex_cvt_nodes_to_sides", errmsg, EX_BADPARAM);
+          ex_err(__func__, errmsg, EX_BADPARAM);
           err_stat = EX_FATAL;
           goto cleanup;
         }
         default: {
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: %s is an unsupported element type",
                    elem_blk_parms[p_ndx].elem_type);
-          ex_err("ex_cvt_nodes_to_sides", errmsg, EX_BADPARAM);
+          ex_err(__func__, errmsg, EX_BADPARAM);
           err_stat = EX_FATAL;
           goto cleanup;
         }
@@ -880,10 +897,11 @@ int ex_cvt_nodes_to_sides(int exoid, void_int *num_elem_per_set, void_int *num_n
     }
     if (n >= num_nodes_per_elem) /* did we find the node? */
     {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find element %" PRId64 ", node %" PRId64
-                                       " in element block %" PRId64 " for file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to find element %" PRId64 ", node %" PRId64
+               " in element block %" PRId64 " for file id %d",
                elem_num + 1, ss_node0, elem_blk_parms[p_ndx].elem_blk_id, exoid);
-      ex_err("ex_cvt_nodes_to_sides", errmsg, EX_BADPARAM);
+      ex_err(__func__, errmsg, EX_BADPARAM);
       err_stat = EX_FATAL;
       goto cleanup;
     }

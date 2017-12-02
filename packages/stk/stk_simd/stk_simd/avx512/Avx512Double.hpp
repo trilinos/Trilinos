@@ -1,5 +1,7 @@
 // Copyright 2013 Sandia Corporation, Albuquerque, NM.
 
+// IWYU pragma: private, include <stk_simd/Simd.hpp>
+
 namespace stk {
 namespace simd {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,21 +33,21 @@
  *
  */
 /*****************************************************************************
-*
-* exgssd - ex_get_side_set_dist_fact
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     side_set_id             side set id
-*
-* exit conditions -
-*       float*  side_set_dist_fact      array of dist factors for side set
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exgssd - ex_get_side_set_dist_fact
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     side_set_id             side set id
+ *
+ * exit conditions -
+ *       float*  side_set_dist_fact      array of dist factors for side set
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h" // for ex_get_set_dist_fact, etc
 

@@ -1,4 +1,4 @@
-C Copyright(C) 2009 National Technology & Engineering Solutions of
+C Copyright(C) 2009-2017 National Technology & Engineering Solutions of
 C Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -52,7 +52,7 @@ c
 c DESCRIPTION:          Changes ASCII text strings to upper case.
 c
 c AUTHOR:               John H. Glick
-c                       Sandia National Laboratories
+c                       Sandia-2017 National Laboratories
 c                       Division 1511
 c
 c DATE:                 December 20, 1988

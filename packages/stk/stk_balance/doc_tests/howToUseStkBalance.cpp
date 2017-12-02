@@ -201,6 +201,7 @@ TEST_F(StkBalanceHowTo, UseRebalanceWithParmetis)
 //BEGINParmeticSearchSettings
 class ParmetisWithSearchSettings : public ParmetisSettings
 {
+    using ParmetisSettings::getToleranceForFaceSearch;
     virtual bool includeSearchResultsInGraph() const { return true; }
     virtual double getToleranceForFaceSearch() const { return 0.0001; }
     virtual double getVertexWeightMultiplierForVertexInSearch() const { return 6.0; }

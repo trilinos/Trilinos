@@ -370,5 +370,16 @@ set_param(
   delete [] s;
 }
 
+void set_mpi_communicator(MPI_Comm communicator)
+{
+  stk::EnvData &env_data = stk::EnvData::instance();
+  if (communicator != MPI_COMM_NULL) {
+    env_data.m_parallelComm = communicator;
+
+    MPI_Comm_size(env_data.m_parallelComm, &env_data.m_parallelSize);
+    MPI_Comm_rank(env_data.m_parallelComm, &env_data.m_parallelRank);
+  }
+}
+
 } // namespace Env
 } // namespace sierra

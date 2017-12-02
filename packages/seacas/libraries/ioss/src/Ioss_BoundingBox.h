@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -36,20 +36,20 @@
 namespace Ioss {
   struct AxisAlignedBoundingBox
   {
-    AxisAlignedBoundingBox() : xmin(0), ymin(0), zmin(0), xmax(0), ymax(0), zmax(0) {}
+    AxisAlignedBoundingBox() = default;
 
     AxisAlignedBoundingBox(double xm, double ym, double zm, double xM, double yM, double zM)
         : xmin(xm), ymin(ym), zmin(zm), xmax(xM), ymax(yM), zmax(zM)
     {
     }
 
-    double xmin;
-    double ymin;
-    double zmin;
+    double xmin{};
+    double ymin{};
+    double zmin{};
 
-    double xmax;
-    double ymax;
-    double zmax;
+    double xmax{};
+    double ymax{};
+    double zmax{};
   };
 } // namespace Ioss
 

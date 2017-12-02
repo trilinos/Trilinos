@@ -55,17 +55,6 @@ void PNGProcessor::fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& 
                 elemIds.push_back(id);
 }
 
-//void PNGProcessor::get_coordinates_of_inactive_pixels(std::vector<std::pair<unsigned,
-//                                                      unsigned>>& coordinates) const
-//{
-//    coordinates.clear();
-//    for (unsigned rowIndex = 0; rowIndex < m_imageHeight; rowIndex++)
-//        for (unsigned colIndex = 0; colIndex < m_imageWidth; colIndex++)
-//            if (!m_pixelVector[rowIndex][colIndex])
-//                coordinates.emplace_back(colIndex+1, m_imageHeight-rowIndex);
-//}
-
-//private
 void PNGProcessor::process_bytes_into_image_vector()
 {
     m_imageVector.resize(m_imageHeight);
@@ -145,110 +134,6 @@ void BorderedPNGProcessor::shrink_image_byte(unsigned row, unsigned col, unsigne
     m_imageVector[row][col] =
             m_imageVector[verticalOffset][horizontalOffset];
 }
-/*
- * Colored PNG processor
- */
-//ColoredPNGProcessor::ColoredPNGProcessor(std::string fileName)
-//:PNGProcessor(fileName)
-//{
-//    convert_to_grey_bits();
-//}
-//ColoredPNGProcessor::~ColoredPNGProcessor() { }
-//
-//void ColoredPNGProcessor::commit_image_vector_to_pixel_vector()
-//{
-//    find_median_grey_bit_value();
-//    for (unsigned row = 0; row < m_imageHeight; row++)
-//        for (unsigned col = 0; col < m_imageWidth; col++)
-//            update_image_value_according_to_relation_with_median_value(row, col);
-//    PNGProcessor::commit_image_vector_to_pixel_vector();
-//}
-//void ColoredPNGProcessor::commit_image_vector_to_pixel_vector_with_exclusion()
-//{
-//    find_median_grey_bit_value();
-//    find_upper_and_lower_bounds();
-//    for (unsigned row = 0; row < m_imageHeight; row++)
-//        for (unsigned col = 0; col < m_imageWidth; col++)
-//            update_image_value_according_to_proximity_with_median_value(row, col);
-//    PNGProcessor::commit_image_vector_to_pixel_vector();
-//}
-//
-//void ColoredPNGProcessor::commit_image_vector_to_pixel_vector_with_greyscale()
-//{
-//    for (unsigned row = 0; row < m_imageHeight; row++)
-//        for (unsigned col = 0; col < m_imageWidth; col++)
-//            update_image_value_according_to_grayscale(row, col);
-//    PNGProcessor::commit_image_vector_to_pixel_vector();
-//}
-//
-////io and checking
-//void ColoredPNGProcessor::print_grey_bits()
-//{
-//    for (unsigned row = 0; row < m_imageHeight; row++)
-//    {
-//        for (unsigned col = 0; col < m_imageWidth;
-//                col++)
-//            printf("%4x ", m_greyBits[row*m_imageWidth + col]);
-//        printf("\n");
-//    }
-//}
-////private
-//void ColoredPNGProcessor::convert_to_grey_bits()
-//{
-//    for (unsigned row = 0; row < m_imageHeight; row++)
-//        for (unsigned col = 0; col < m_imageWidth; col++)
-//            process_unsigned_int_to_grey_bit(row, col);
-//}
-//
-//
-//
-//void ColoredPNGProcessor::process_unsigned_int_to_grey_bit(unsigned row, unsigned col)
-//{
-//    unsigned mask = 0xff;
-//    unsigned imageVal = m_imageVector[row][col];
-//    unsigned char greyBit = (((imageVal>>24)&mask)*54 + ((imageVal>>16)&mask)*183 +((imageVal>>8)&mask)*19)/256;
-//    m_imageVector[row][col] = greyBit;
-//    m_greyBits.push_back(greyBit);
-//}
-//
-//void ColoredPNGProcessor::find_median_grey_bit_value()
-//{
-//    std::sort(m_greyBits.begin(), m_greyBits.end());
-//    unsigned middleIndex = m_greyBits.size()/2;
-//    m_medianValue = m_greyBits[middleIndex];
-//}
-//void ColoredPNGProcessor::update_image_value_according_to_relation_with_median_value(unsigned row,
-//                                                                                     unsigned col)
-//{
-//    if (m_imageVector[row][col] <= m_medianValue)
-//        m_imageVector[row][col] = 0xff;
-//    else
-//        m_imageVector[row][col] = 0xffffffff;
-//}
-//void ColoredPNGProcessor::update_image_value_according_to_proximity_with_median_value(unsigned row,
-//                                                                                      unsigned col)
-//{
-//    if (m_imageVector[row][col] >= m_lowerBound && m_imageVector[row][col] <= m_upperBound)
-//        m_imageVector[row][col] = 0xff;
-//    else
-//        m_imageVector[row][col] = 0xffffffff;
-//}
-//void ColoredPNGProcessor::update_image_value_according_to_grayscale(unsigned row, unsigned col)
-//{
-//    if (m_greyBits[row*m_imageWidth + col] < greyDivisor)
-//        m_imageVector[row][col] = 0xff;
-//    else
-//        m_imageVector[row][col] = 0xffffffff;
-//}
-//void ColoredPNGProcessor::find_upper_and_lower_bounds()
-//{
-//    m_lowerBound = m_medianValue-4;
-//    m_upperBound = m_medianValue+4;
-//    if (m_lowerBound > m_medianValue)
-//        m_lowerBound=0x00;
-//    if (m_upperBound < m_medianValue)
-//        m_lowerBound = 0xff;
-//}
 
 SimpleColoredPng::SimpleColoredPng(std::string fileName)
 : PNGProcessor(fileName), mOtherPixelCount(0)

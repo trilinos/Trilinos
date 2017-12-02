@@ -72,9 +72,6 @@ void reset_doomed_count();
 /**
  * @brief Function <b>set_max_messages</b> sets the maximum number of doomed before no more doomed
  * will be displayed.
- *
- * @param max_messages	an <b>int</b> variable ...
- *
  */
 void set_max_doomed_count(unsigned int max_messages);
 
@@ -114,16 +111,6 @@ void report_doomed(const char *message, const MessageCode &message_code = Messag
  */
 void report_symmetric_doomed(const char *message, const MessageCode &message_code = MessageCode::s_defaultMessageCode);
 
-/**
- * @brief Member function <b>report_deferred_doomed</b> ...
- *
- * @param message		a <b>std::string</b> const ...
- *
- * @param aggregate		a <b>std::string</b> const ...
- *
- * @param message_code		a <b>MessageCode</b> const ...
- *
- */
 void report_deferred_doomed(const char *message, const char *aggregate, const MessageCode &message_code);
 
 /**

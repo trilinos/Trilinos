@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -77,7 +77,7 @@ namespace Ioss {
   private:
     static Tri6 instance_;
 
-    Tri6(const Tri6 &); // Do not implement
+    Tri6(const Tri6 &) = delete;
   };
 } // namespace Ioss
 #endif

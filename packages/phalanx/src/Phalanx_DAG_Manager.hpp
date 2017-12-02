@@ -113,7 +113,10 @@ namespace PHX {
     void evaluateFields(typename Traits::EvalData d);
 
     //! Evaluate the required fields using data parallel evaluation on topological sort of tasks. Uses Device DAG support, calling a single parallel_for for the entire DAG. This could be faster than the call to evaluateFields, but all nodes in the DAG are restricted to the same work_size. This is intended for CUDA builds where kernel launch overhead can be significant.
-    void evaluateFieldsDeviceDag(const int& work_size, typename Traits::EvalData d);
+    void evaluateFieldsDeviceDag(const int& work_size,
+				 const int& team_size,
+				 const int& vector_size,
+				 typename Traits::EvalData d);
     
 #ifdef PHX_ENABLE_KOKKOS_AMT
     /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -445,7 +445,7 @@ int symmlq_(integer *n, doublereal *b, doublereal *r1, doublereal *r2, doublerea
   /*                  b is an eigenvector when M = I. */
   /*                  More complicated if there is a preconditioner; */
   /*                  not clear yet how to describe it. */
-  /*   14 Dec 1992:  Modified by Robert Leland, Sandia National Laboratories
+  /*   14 Dec 1992:  Modified by Robert Leland, Sandia-2017 National Laboratories
    */
   /* 		   to integrate with a C application code. The matrix */
   /*                  data is now passed by reference through symmlq to */

@@ -130,18 +130,18 @@ void build_mesh(stk::mesh::MetaData & meta,
 
   const stk::mesh::BucketVector & entityBuckets = mesh.get_buckets(stk::topology::NODE_RANK, meta.locally_owned_part());
   for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-      stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-      for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-          stk::mesh::Entity entity = entityBucket[entityIndex];
-          double * coordsSource = stk::mesh::field_data(coordsFieldNode, entity);
+    stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
+    for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
+      stk::mesh::Entity entity = entityBucket[entityIndex];
+      double * coordsSource = stk::mesh::field_data(coordsFieldNode, entity);
 
-          // Assume compact entity numbering from 1 so that index into provided coordinates
-          // array are a fixed offset from the ID.
-          int nodeOffset = mesh.identifier(entity) - 1;
-          for (size_t i = 0; i < meta.spatial_dimension(); ++i) {
-              coordsSource[i] = coordinates[nodeOffset][i];
-          }
+      // Assume compact entity numbering from 1 so that index into provided coordinates
+      // array are a fixed offset from the ID.
+      int nodeOffset = mesh.identifier(entity) - 1;
+      for (size_t i = 0; i < meta.spatial_dimension(); ++i) {
+          coordsSource[i] = coordinates[nodeOffset][i];
       }
+    }
   }
   std::vector<const stk::mesh::FieldBase *> fields_to_communicate;
   fields_to_communicate.push_back(&coordsFieldNode);
@@ -191,25 +191,25 @@ void fill_mesh_values_for_rank(stk::mesh::BulkData & mesh,
                                VectorField & vF,
                                const stk::mesh::Selector & sel)
 {
-    const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
-    const unsigned spatial_dimension = meta.spatial_dimension();
-    ScalarField & scalarField = sF;
-    VectorField & vectorField = vF;
+  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const unsigned spatial_dimension = meta.spatial_dimension();
+  ScalarField & scalarField = sF;
+  VectorField & vectorField = vF;
 
-    const stk::mesh::BucketVector & entityBuckets = mesh.get_buckets(rank,sel);
-    for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
-        stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
-        for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
-            stk::mesh::Entity entity = entityBucket[entityIndex];
-            double * scalar = stk::mesh::field_data(scalarField, entity);
-            double * vector = stk::mesh::field_data(vectorField, entity);
+  const stk::mesh::BucketVector & entityBuckets = mesh.get_buckets(rank,sel);
+  for (size_t bucketIndex = 0; bucketIndex < entityBuckets.size(); ++bucketIndex) {
+    stk::mesh::Bucket & entityBucket = * entityBuckets[bucketIndex];
+    for (size_t entityIndex = 0; entityIndex < entityBucket.size(); ++entityIndex) {
+      stk::mesh::Entity entity = entityBucket[entityIndex];
+      double * scalar = stk::mesh::field_data(scalarField, entity);
+      double * vector = stk::mesh::field_data(vectorField, entity);
 
-            *scalar = static_cast<double>(mesh.identifier(entity));
-            for (unsigned i = 0; i < spatial_dimension; ++i) {
-                vector[i] = static_cast<double>((mesh.identifier(entity)-1)*spatial_dimension+i);
-            }
-        }
+      *scalar = static_cast<double>(mesh.identifier(entity));
+      for (unsigned i = 0; i < spatial_dimension; ++i) {
+        vector[i] = static_cast<double>((mesh.identifier(entity)-1)*spatial_dimension+i);
+      }
     }
+  }
 }
 
 void fill_mesh_values(stk::mesh::BulkData & mesh)

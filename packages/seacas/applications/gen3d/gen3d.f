@@ -1,4 +1,4 @@
-C Copyright(C) 2011 National Technology & Engineering Solutions
+C Copyright(C) 2011-2017 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C 
@@ -55,7 +55,7 @@ C   --   o A listing of the input database information and any errors
 C   --     found on the standard output device.
 C   --   o The 3D GENESIS database on unit 10.
 
-C   --Developed at Sandia National Laboratories.
+C   --Developed at Sandia-2017 National Laboratories.
 C   --
 C   --Current author and code sponsor: Gregory D. Sjaardema
 C   --

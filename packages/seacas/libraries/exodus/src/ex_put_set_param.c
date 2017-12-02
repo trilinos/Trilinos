@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,24 +33,24 @@
  *
  */
 /*****************************************************************************
-*
-* expsetp - ex_put_set_param
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     set_type                the type of set
-*       int     set_id                  set id
-*       int     num_entries_in_set       number of entries in the set
-*       int     num_dist_fact_in_set    number of distribution factors in the
-*                                       set
-*
-* exit conditions -
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * expsetp - ex_put_set_param
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     set_type                the type of set
+ *       int     set_id                  set id
+ *       int     num_entries_in_set       number of entries in the set
+ *       int     num_dist_fact_in_set    number of distribution factors in the
+ *                                       set
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h" // for ex_set, ex_put_sets, etc
 #include <stddef.h>   // for NULL

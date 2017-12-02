@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -62,7 +62,7 @@ namespace Ioss {
     // An example would be 'element_block_count' for a region.
     Property get_implicit_property(const std::string &my_name) const override;
 
-    void get_block_adjacencies(std::vector<std::string> &block_adjacency) const;
+    void                   get_block_adjacencies(std::vector<std::string> &block_adjacency) const;
     AxisAlignedBoundingBox get_bounding_box() const;
 
   protected:

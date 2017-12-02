@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -45,7 +45,8 @@
 /*!
 \ingroup ResultsData
 
- * \deprecated Use ex_get_partial_var() instead.
+ * \deprecated Use ex_get_partial_var()(exoid, time_step, var_type, var_index, obj_id, start_index,
+                            num_entities, var_vals) instead.
  *
  * reads the values of a single variable for a partial block at one time
  * step from the database; assume the first time step and variable index
