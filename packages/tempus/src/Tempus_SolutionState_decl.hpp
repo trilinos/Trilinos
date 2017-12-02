@@ -120,9 +120,13 @@ public:
     /// Set IsSynced
     virtual void setIsSynced(bool isSynced) {metaData_->setIsSynced(isSynced);}
 
-    /// Return the Stepper status
+    /// Get the Stepper status
     virtual Status getStepperStatus() const
       {return stepperState_->stepperStatus_;}
+
+    /// Set the Stepper status
+    virtual void setStepperStatus(Status status)
+      {stepperState_->stepperStatus_ = status;}
 
     /// Return Meta Data
     virtual Teuchos::RCP<SolutionStateMetaData<Scalar> > getMetaData()

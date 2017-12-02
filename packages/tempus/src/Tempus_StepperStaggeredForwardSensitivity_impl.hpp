@@ -330,10 +330,12 @@ void StepperStaggeredForwardSensitivity<Scalar>::
 setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  if (pList == Teuchos::null)
-    stepperPL_ = this->getDefaultParameters();
-  else
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  } else {
     stepperPL_ = pList;
+  }
   // Can not validate because of optional Parameters (e.g., Solver Name).
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 }

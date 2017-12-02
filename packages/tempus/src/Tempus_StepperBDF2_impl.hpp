@@ -213,7 +213,7 @@ void StepperBDF2<Scalar>::initialize()
   this->setSolver();
   this->setStartUpStepper();
   this->setObserver();
-  order_ = 2.0; 
+  order_ = 2.0;
 }
 
 
@@ -225,28 +225,28 @@ void StepperBDF2<Scalar>::takeStep(
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::StepperBDF2::takeStep()");
   {
-    int numStates = solutionHistory->getNumStates(); 
+    int numStates = solutionHistory->getNumStates();
 
     RCP<Thyra::VectorBase<Scalar> > xOld;
     RCP<Thyra::VectorBase<Scalar> > xOldOld;
 
-    //If we are on first time step, call startup stepper 
-    //There is test of exception in computeStartUp that start up stepper 
+    //If we are on first time step, call startup stepper
+    //There is test of exception in computeStartUp that start up stepper
     //did not fail, so no need to check for failure here.
     if (numStates < 3) {
       computeStartUp(solutionHistory);
-      numStates = solutionHistory->getNumStates();  
+      numStates = solutionHistory->getNumStates();
     }
 
     stepperBDF2Observer_->observeBeginTakeStep(solutionHistory, *this);
-    
+
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
 
     RCP<Thyra::VectorBase<Scalar> > x    = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > xDot = workingState->getXDot();
-   
-    //get time, dt and dtOld  
+
+    //get time, dt and dtOld
     const Scalar time = workingState->getTime();
     const Scalar dt   = workingState->getTimeStep();
     //IKT, FIXME: when we have a time-history of dt stores for variable dt,
@@ -255,16 +255,16 @@ void StepperBDF2<Scalar>::takeStep(
 
     if (numStates > 2) {
       //get previous 2 states
-      xOld = (*solutionHistory)[numStates-2]->getX(); 
+      xOld = (*solutionHistory)[numStates-2]->getX();
       xOldOld = (*solutionHistory)[numStates-3]->getX();
-      order_ = 2.0;  
+      order_ = 2.0;
     }
-    //IKT: the following is logic for returning getCurrentState(): 
+    //IKT: the following is logic for returning getCurrentState():
     //if      (getNumStates() > 1) currentState_ = (*history_)[getNumStates()-2];
     //else if (getNumStates() == 1) currentState_ = (*history_)[0];
 
-    const Scalar alpha = (1.0/(dt + dtOld))*(1.0/dt)*(2.0*dt + dtOld); 
-    const Scalar beta = 1.0; 
+    const Scalar alpha = (1.0/(dt + dtOld))*(1.0/dt)*(2.0*dt + dtOld);
+    const Scalar beta = 1.0;
 
     // Setup TimeDerivative
     Teuchos::RCP<TimeDerivative<Scalar> > timeDer =
@@ -311,7 +311,7 @@ void StepperBDF2<Scalar>::computeStartUp(
   //Take one step using startUpStepper_
   startUpStepper_->takeStep(solutionHistory);
 
-  order_ = startUpStepper_->getOrder(); 
+  order_ = startUpStepper_->getOrder();
 
   Status & stepperStatus =
     solutionHistory->getWorkingState()->getStepperState()->stepperStatus_;
@@ -321,11 +321,11 @@ void StepperBDF2<Scalar>::computeStartUp(
   if (stepperStatus == Status::FAILED) {
     TEUCHOS_TEST_FOR_EXCEPTION(true,
       std::logic_error,
-       "Error: Start Up Stepper Failed'!\n"); 
+       "Error: Start Up Stepper Failed'!\n");
   }
   else {
-    solutionHistory->promoteWorkingState(); 
-    solutionHistory->initWorkingState();  
+    solutionHistory->promoteWorkingState();
+    solutionHistory->initWorkingState();
   }
 }
 
@@ -370,8 +370,12 @@ template <class Scalar>
 void StepperBDF2<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  if (pList == Teuchos::null) stepperPL_ = this->getDefaultParameters();
-  else stepperPL_ = pList;
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  } else {
+    stepperPL_ = pList;
+  }
   // Can not validate because of optional Parameters (e.g., Solver Name).
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
