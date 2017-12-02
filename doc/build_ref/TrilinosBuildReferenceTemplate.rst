@@ -78,7 +78,7 @@ Enabling/disabling thread safety
 By default, many Trilinos classes are not thread-safe.  However, some of these
 classes can be made thread safe by configuring with::
 
-  -D <Project>_ENABLE_THREAD_SAFE:BOOL=ON
+  -D Trilinos_ENABLE_THREAD_SAFE:BOOL=ON
   
 This will set the default value ``Teuchos_ENABLE_THREAD_SAFE=ON`` which makes
 the Teuchos Memory Management classes (Teuchos::RCP, Teuchos::Ptr,
@@ -92,16 +92,19 @@ Enabling/disabling time monitors
 
 I order to enable instrumentation of select code to generate timing statistics, set::
 
- -D <Project>_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON
+ -D Trilinos_ENABLE_TEUCHOS_TIME_MONITOR:BOOL=ON
 
 This will enable Teuchos time monitors by default in all Trilinos packages
 that support them.  To print the timers at the end of the program, call
 ``Teuchos::TimeMonitor::summarize()``.
 
-In order do co-development of TriBTS and Trilinos (see http://http://trac.trilinos.org/wiki/TriBITSTrilinosDev), set::
+Select different TriBITS implementation
+----------------------------------------
 
-   -D <Project>_TRIBITS_DIR:STRING=TriBITS \
-   -D <Project>_TRIBITS_PACKAGE_USE_TRIBITS_DIR=TRUE
+In order do co-development of TriBTS and Trilinos (see
+http://http://trac.trilinos.org/wiki/TriBITSTrilinosDev), set, for example::
+
+   -D Trilinos_TRIBITS_DIR:STRING=TriBITS/tribits
 
 (NOTE: You have to use the data-type ``STRING`` with ``Trilinos_TRIBITS_DIR``
 or CMake will automatically assume it is relative to the build dir!)
