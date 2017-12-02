@@ -8,6 +8,7 @@
     <Parameter name="IC x0"   type="double" value="0.0"/>
     <Parameter name="IC x1"   type="double" value="1.0"/>
     <Parameter name="IC t0"   type="double" value="0.0"/>
+    <Parameter name="Number of Time Step Sizes" type="int" value = "7"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
@@ -19,7 +20,8 @@
       <Parameter name="Stepper Name"       type="string" value="Default Stepper"/>
       <ParameterList name="Solution History">
         <Parameter name="Storage Type"  type="string" value="Static"/>
-        <Parameter name="Storage Limit" type="int"    value="3"/>
+        <!--IKT the following can be as low as 3; setting it to 11 to write sull Tempus_BDF2_SinCos.dat file-->
+        <Parameter name="Storage Limit" type="int"    value="11"/>
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
