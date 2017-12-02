@@ -107,8 +107,8 @@ In order do co-development of TriBTS and Trilinos (see http://http://trac.trilin
 or CMake will automatically assume it is relative to the build dir!)
 
 
-Example: Configuring with Kokkos and advanced back-ends
---------------------------------------------------------
+Configuring with Kokkos and advanced back-ends
+----------------------------------------------
 
 Kokkos (https://github.com/kokkos/kokkos) is a C++ implementation of a
 cross-platform shared-memory parallel programming model. Many Trilinos packages,
@@ -118,54 +118,54 @@ its own separate build system.
 
 If Trilinos has the ability to set a Kokkos setting, that will
 be used, otherwise one has to use the Kokkos setting.  Below we list which
-options to use::
+options to use:
 
-  +----------------------------+----------------------------------------------------+
-  | Functionality              | Option                                             |
-  +============================+====================================================+
-  | Specify architecture       | KOKKOS_HOST_ARCH                                   |
-  +----------------------------+----------------------------------------------------+
-  | Build with separate libs   | KOKKOS_SEPARATE_LIBS                               |
-  +----------------------------+----------------------------------------------------+
-  | Debug builds               | KOKKOS_DEBUG                                       |
-  +----------------------------+----------------------------------------------------+
-  | Device options             |                                                    |
-  +----------------------------+----------------------------------------------------+
-  | Enable Cuda                | TPL_ENABLE_CUDA                                    |
-  +----------------------------+----------------------------------------------------+
-  | Enable OpenMP              | Trilinos_ENABLE_OpenMP                             |
-  +----------------------------+----------------------------------------------------+
-  | Enable Pthread             | TPL_ENABLE_PThread                                 |
-  +----------------------------+----------------------------------------------------+
-  | Specify Serial             | TPL_ENABLE_MPI (not)                               |
-  +----------------------------+----------------------------------------------------+
-  | Advanced options           |                                                    |
-  +----------------------------+----------------------------------------------------+
-  | Enable compiler warnings   | KOKKOS_ENABLE_COMPILER_WARNINGS                    |
-  +----------------------------+----------------------------------------------------+
-  | Aggressive Vectorization   | KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION             |
-  +----------------------------+----------------------------------------------------+
-  | Profiling                  | KOKKOS_ENABLE_PROFILING                            |
-  +----------------------------+----------------------------------------------------+
-  | Enable profile load print  | KOKKOS_ENABLE_PROFILE_LOAD_PRINT                   |
-  +----------------------------+----------------------------------------------------+
-  | Enable dualview modify chk | KOKKOS_ENABLE_DUALVIEW_MODIFY_CHECK                |
-  +----------------------------+----------------------------------------------------+
-  | TPLs                       |                                                    |
-  +----------------------------+----------------------------------------------------+
-  | Use hwloc library          | TPL_ENABLE_HWLOC                                   |
-  +----------------------------+----------------------------------------------------+
-  | Use memkind library        | KOKKOS_ENABLE_MEMKIND                              |
-  +----------------------------+----------------------------------------------------+
-  | Use librt                  | KOKKOS_ENABLE_LIBRT                                |
-  +----------------------------+----------------------------------------------------+
-  | CUDA Options               |                                                    |
-  +----------------------------+----------------------------------------------------+
-  | Enable CUDA LDG            | KOKKOS_ENABLE_CUDA_LDG_INTRINSIC (global mem load) |
-  +----------------------------+----------------------------------------------------+
-  | Enable CUDA UVM            | KOKKOS_ENABLE_CUDA_UVM (unified virtual mem)       |
-  +----------------------------+----------------------------------------------------+
-  | Enable CUDA RDC            | KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE         |
-  +----------------------------+----------------------------------------------------+
-  | Enable CUDA LAMBDA         | KOKKOS_ENABLE_CUDA_LAMBDA                          |
-  +----------------------------+----------------------------------------------------+
++----------------------------+----------------------------------------------------+
+| Functionality              | Option                                             |
++============================+====================================================+
+| Specify architecture       | KOKKOS_HOST_ARCH                                   |
++----------------------------+----------------------------------------------------+
+| Build with separate libs   | KOKKOS_SEPARATE_LIBS                               |
++----------------------------+----------------------------------------------------+
+| Debug builds               | KOKKOS_DEBUG                                       |
++----------------------------+----------------------------------------------------+
+| Device options             |                                                    |
++----------------------------+----------------------------------------------------+
+| Enable Cuda                | TPL_ENABLE_CUDA                                    |
++----------------------------+----------------------------------------------------+
+| Enable OpenMP              | Trilinos_ENABLE_OpenMP                             |
++----------------------------+----------------------------------------------------+
+| Enable Pthread             | TPL_ENABLE_PThread                                 |
++----------------------------+----------------------------------------------------+
+| Specify Serial             | TPL_ENABLE_MPI (not)                               |
++----------------------------+----------------------------------------------------+
+| Advanced options           |                                                    |
++----------------------------+----------------------------------------------------+
+| Enable compiler warnings   | KOKKOS_ENABLE_COMPILER_WARNINGS                    |
++----------------------------+----------------------------------------------------+
+| Aggressive Vectorization   | KOKKOS_ENABLE_AGGRESSIVE_VECTORIZATION             |
++----------------------------+----------------------------------------------------+
+| Profiling                  | KOKKOS_ENABLE_PROFILING                            |
++----------------------------+----------------------------------------------------+
+| Enable profile load print  | KOKKOS_ENABLE_PROFILE_LOAD_PRINT                   |
++----------------------------+----------------------------------------------------+
+| Enable dualview modify chk | KOKKOS_ENABLE_DUALVIEW_MODIFY_CHECK                |
++----------------------------+----------------------------------------------------+
+| TPLs                       |                                                    |
++----------------------------+----------------------------------------------------+
+| Use hwloc library          | TPL_ENABLE_HWLOC                                   |
++----------------------------+----------------------------------------------------+
+| Use memkind library        | KOKKOS_ENABLE_MEMKIND                              |
++----------------------------+----------------------------------------------------+
+| Use librt                  | KOKKOS_ENABLE_LIBRT                                |
++----------------------------+----------------------------------------------------+
+| CUDA Options               |                                                    |
++----------------------------+----------------------------------------------------+
+| Enable CUDA LDG            | KOKKOS_ENABLE_CUDA_LDG_INTRINSIC (global mem load) |
++----------------------------+----------------------------------------------------+
+| Enable CUDA UVM            | KOKKOS_ENABLE_CUDA_UVM (unified virtual mem)       |
++----------------------------+----------------------------------------------------+
+| Enable CUDA RDC            | KOKKOS_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE         |
++----------------------------+----------------------------------------------------+
+| Enable CUDA LAMBDA         | KOKKOS_ENABLE_CUDA_LAMBDA                          |
++----------------------------+----------------------------------------------------+
