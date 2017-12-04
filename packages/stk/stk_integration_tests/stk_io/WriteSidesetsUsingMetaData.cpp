@@ -9,6 +9,7 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/FillMesh.hpp>
+#include <Ioss_Region.h>
 #include <Ioss_SideSet.h>
 #include <Ioss_SideBlock.h>
 #include <stk_mesh/base/SideSetEntry.hpp>
@@ -118,6 +119,8 @@ void verify_element_side_pairs(stk::mesh::BulkData& bulkData, const ExodusSideSe
           EXPECT_TRUE(found_matching_sset_entry);
         }
     }
+
+    bulkData.clear_sidesets();
 }
 
 void fill_mesh(stk::mesh::BulkData& bulkData, const std::string& filename)
@@ -144,6 +147,7 @@ void write_mesh(const std::string& filename, stk::mesh::BulkData &bulkData)
     std::string output_file_name = get_output_file_name(filename);
     stk::io::create_bulkdata_sidesets(bulkData);
     stk::io::write_mesh(output_file_name, bulkData);
+    stk::io::clear_bulkdata_sidesets(bulkData);
 }
 
 void fill_sideset_data_structure_and_test(const std::string& filename, const ExodusSideSet &goldSideset)

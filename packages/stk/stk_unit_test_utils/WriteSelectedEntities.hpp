@@ -33,14 +33,10 @@
 #ifndef WRITESELECTEDENTITIES_HPP_
 #define WRITESELECTEDENTITIES_HPP_
 
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
-#include <stk_mesh/base/Selector.hpp>  // for Selector
-#include <stk_mesh/base/Types.hpp>     // for FieldVector
-#include <string>                      // for string
-namespace stk { namespace mesh { class BulkData; } }
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Selector.hpp>
+#include <string>
 
 namespace stk {
 namespace debug {

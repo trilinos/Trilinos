@@ -6,29 +6,25 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_ConstantFaceSearchTolerance_hpp
-#define SIERRA_ConstantFaceSearchTolerance_hpp
+#ifndef SecondShortestEdgeFaceSearchTolerance_hpp
+#define SecondShortestEdgeFaceSearchTolerance_hpp
 
-#include "stk_balance/search_tolerance/FaceSearchTolerance.hpp"
+#include "stk_balance/FaceSearchTolerance.hpp"
 
 namespace stk {
 namespace balance {
 
-class ConstantFaceSearchTolerance : public FaceSearchTolerance
+class SecondShortestEdgeFaceSearchTolerance : public FaceSearchTolerance
 {
 public:
-    ConstantFaceSearchTolerance(double tolerance)
-      : FaceSearchTolerance(),
-        m_tolerance(tolerance)
-    { }
-    virtual ~ConstantFaceSearchTolerance() {}
+    SecondShortestEdgeFaceSearchTolerance()
+      : FaceSearchTolerance() {}
+    virtual ~SecondShortestEdgeFaceSearchTolerance() {}
 
     virtual double compute(const stk::mesh::BulkData & mesh,
                            const stk::mesh::FieldBase & coordField,
-                           const stk::mesh::Entity * faceNodes,
-                           const unsigned numFaceNodes) const override;
-private:
-    double m_tolerance;
+                           const stk::mesh::EntityVector & faceNodes) const;
+
 };
 
 }

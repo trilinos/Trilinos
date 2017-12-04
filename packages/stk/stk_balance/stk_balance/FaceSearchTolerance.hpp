@@ -6,18 +6,26 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include "ConstantFaceSearchTolerance.hpp"
+#ifndef FaceSearchTolerance_hpp
+#define FaceSearchTolerance_hpp
+
+#include "stk_mesh/base/Types.hpp"
 
 namespace stk {
 namespace balance {
 
-double ConstantFaceSearchTolerance::compute(const stk::mesh::BulkData & mesh,
-                                            const stk::mesh::FieldBase & coordField,
-                                            const stk::mesh::Entity * faceNodes,
-                                            const unsigned numFaceNodes) const
+class FaceSearchTolerance
 {
-    return m_tolerance;
-}
+public:
+    FaceSearchTolerance() {}
+    virtual ~FaceSearchTolerance() {}
+
+    virtual double compute(const stk::mesh::BulkData & mesh,
+                           const stk::mesh::FieldBase & coordField,
+                           const stk::mesh::EntityVector & faceNodes) const = 0;
+};
 
 }
 }
+
+#endif

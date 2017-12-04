@@ -1107,7 +1107,7 @@ TEST(LoadBalance, doSearch)
         }
 
         stk::balance::internal::StkSearchResults searchResults;
-        do_kdtree_search(faceBoxes, faceBoxes, communicator, searchResults);
+        kdtree_search(faceBoxes, faceBoxes, communicator, searchResults);
 
         stk::balance::internal::StkSearchResults::iterator iter = std::unique(searchResults.begin(), searchResults.end());
         searchResults.resize(iter - searchResults.begin());

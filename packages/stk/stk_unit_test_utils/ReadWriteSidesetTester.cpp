@@ -1,22 +1,5 @@
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
+#include <gtest/gtest.h>
 #include "stk_unit_test_utils/ReadWriteSidesetTester.hpp"
-#include <ext/alloc_traits.h>
-#include <gtest/gtest.h>                   // for AssertHelper, EXPECT_EQ, etc
-#include <unistd.h>                        // for unlink
-#include <ostream>                         // for operator<<
-#include <string>                          // for string, operator<<
-#include <vector>                          // for vector
-#include "gtest/gtest-message.h"           // for Message
-#include "stk_io/DatabasePurpose.hpp"
-#include "stk_io/StkMeshIoBroker.hpp"      // for StkMeshIoBroker
-#include "stk_mesh/base/BulkData.hpp"      // for BulkData
-#include "stk_mesh/base/MetaData.hpp"      // for MetaData
-#include "stk_mesh/base/SideSetEntry.hpp"  // for SideSet, SideSetEntry
-#include "stk_mesh/base/Types.hpp"         // for EntityId, operator<<
-#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk{ namespace unit_test_util{ namespace sideset{
 

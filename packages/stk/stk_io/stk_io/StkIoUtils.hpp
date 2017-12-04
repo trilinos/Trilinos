@@ -33,23 +33,12 @@
 #ifndef STKIOUTILS_HPP_
 #define STKIOUTILS_HPP_
 
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
-#include <stddef.h>                                       // for size_t
-#include <map>                                            // for map, etc
-#include <string>                                         // for string, etc
-#include <vector>                                         // for vector
-#include "stk_mesh/base/Types.hpp"                        // for EntityRank, etc
+#include "stk_mesh/base/GetEntities.hpp"
+#include "stk_mesh/base/Selector.hpp"
+#include "stk_mesh/base/Types.hpp"
 #include "stk_mesh/baseImpl/elementGraph/GraphTypes.hpp"
-namespace stk { namespace io { class StkMeshIoBroker; } }
-namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { class MetaData; } }
-namespace stk { namespace mesh { class Part; } }
-namespace stk { namespace mesh { class Selector; } }
-namespace stk { namespace mesh { struct Entity; } }
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
 
+namespace stk { namespace io { class StkMeshIoBroker; } }
 namespace stk { namespace io { class MetaData; } }
 namespace stk { namespace io { class BulkData; } }
 
@@ -69,13 +58,13 @@ typedef std::map<std::string, std::vector<std::string>> IossBlockMembership;
 
 IossBlockMembership get_block_memberships(stk::io::StkMeshIoBroker& stkIo);
 
-const stk::mesh::Part* getElementBlockSelectorForElement(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
-
 void fill_block_parts_given_names(const std::vector<std::string>& side_block_names,
                                               stk::mesh::MetaData& meta,
                                               std::vector<const stk::mesh::Part*>& blocks);
 
 void create_bulkdata_sidesets(stk::mesh::BulkData& bulkData);
+
+void clear_bulkdata_sidesets(stk::mesh::BulkData& bulkData);
 
 bool isSidesetSupported(const stk::mesh::BulkData &bulk, const stk::mesh::EntityVector &sides, const stk::mesh::impl::ParallelPartInfo &parallelPartInfo);
 

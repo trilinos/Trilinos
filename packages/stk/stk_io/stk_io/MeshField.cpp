@@ -246,7 +246,7 @@ double MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       for (size_t i=0; i < entity_list.size(); ++i) {
 	if (bulk.is_valid(entity_list[i])) {
 	  double *fld_data = static_cast<double*>(stk::mesh::field_data(*m_field, entity_list[i]));
-	  if (fld_data != nullptr) {
+	  if (fld_data !=NULL) {
 	    for(size_t j=0; j<field_component_count; ++j) {
 	      fld_data[j] = values[i*field_component_count+j];
 	    }

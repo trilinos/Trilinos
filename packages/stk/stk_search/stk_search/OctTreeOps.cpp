@@ -31,25 +31,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef STK_UTIL_DIAG_PrintTimer_hpp
-#define STK_UTIL_DIAG_PrintTimer_hpp
+#include <iostream>
+#include <map>
+#include <set>
+#include <list>
+#include <sstream>
+#include <algorithm>
+#include <stdexcept>
 
-#include <iosfwd>                       // for ostream
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include "stk_util/diag/TimerMetricTraits.hpp"  // for MetricsMask
-namespace stk { namespace diag { class Timer; } }
-
+#include <stk_search/SearchTypes.hpp>
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_search/OctTreeOps.hpp>
 
 namespace stk {
-namespace diag {
+namespace search {
 
-std::ostream &printXML(std::ostream& os, MetricsMask metrics_mask, bool checkpoint);
-
-std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint);
-
-std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint, ParallelMachine parallel_machine);
-
-} // namespace diag
+} // namespace search
 } // namespace stk
-
-#endif // STK_UTIL_DIAG_PrintTimer_hpp

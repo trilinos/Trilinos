@@ -92,6 +92,7 @@ TEST(StkIo, write_stk_mesh_to_file)
             {
                 if(part->primary_entity_rank() == stk::topology::NODE_RANK)
                 {
+                    //
                 }
                 else if(part->primary_entity_rank() == stk::topology::ELEMENT_RANK)
                 {
@@ -112,10 +113,10 @@ TEST(StkIo, write_stk_mesh_to_file)
                 {
                     //
                 }
-                //else if(part->primary_entity_rank() == stk::topology::EDGE_RANK)
-                //{
-                //    //
-                //}
+                else if(part->primary_entity_rank() == stk::topology::EDGE_RANK)
+                {
+                    //
+                }
             }
         }
 

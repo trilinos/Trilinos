@@ -31,25 +31,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef STK_UTIL_DIAG_PrintTimer_hpp
-#define STK_UTIL_DIAG_PrintTimer_hpp
+#ifndef stk_search_SearchTypes_hpp
+#define stk_search_SearchTypes_hpp
 
-#include <iosfwd>                       // for ostream
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include "stk_util/diag/TimerMetricTraits.hpp"  // for MetricsMask
-namespace stk { namespace diag { class Timer; } }
-
-
-namespace stk {
-namespace diag {
-
-std::ostream &printXML(std::ostream& os, MetricsMask metrics_mask, bool checkpoint);
-
-std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint);
-
-std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint, ParallelMachine parallel_machine);
-
-} // namespace diag
-} // namespace stk
-
-#endif // STK_UTIL_DIAG_PrintTimer_hpp
+#include <stdint.h>
+typedef uint64_t search_ident_type;
+typedef float    search_bbox_type;
+#endif

@@ -43,16 +43,19 @@ namespace stk {
 namespace diag {
 
 
+
 typedef unsigned long OptionMask;
 
 /**
  * @brief Class <b>OptionDescription</b> is an interface class for describing a
  * command line option or option value.
+ *
  */
 struct OptionDescription
 {
   /**
    * Destroys a <b>OptionDescription</b> instance.
+   *
    */
   virtual ~OptionDescription()
   {}
@@ -61,9 +64,11 @@ struct OptionDescription
    * @brief Member function <b>describe</b> prints a description of the option to
    * the stream.
    *
-   * @param os      a <b>std::ostream</b> reference to print to description to.
+   * @param os      a <b>std::ostream</b> reference to print to
+   *        description to.
    *
-   * @return      a <b>std::ostream</b> reference to the output stream.
+   * @return      a <b>std::ostream</b> reference to the output
+   *        stream.
    */
   virtual std::ostream &describe(std::ostream &os) const = 0;
 };
@@ -79,6 +84,7 @@ struct Option : public OptionDescription
 {
   /**
    * Creates a new <b>Option</b> instance.
+   *
    */
   Option()
     : m_name(""),
@@ -121,7 +127,9 @@ struct Option : public OptionDescription
   /**
    * Creates a new <b>Option</b> instance.
    *
-   * @param option    an <b>Option</b> const reference to the Option to copy.
+   * @param option    an <b>Option</b> const reference to the Option to
+   *        copy.
+   *
    */
   Option(const Option &option)
     : m_name(option.m_name),
@@ -130,6 +138,7 @@ struct Option : public OptionDescription
       m_value(option.m_value),
       m_subOptionDescription(option.m_subOptionDescription)
   {}
+
 
   /**
    * @brief Member function <b>operator=</b> assigns an option from another option.
@@ -150,6 +159,7 @@ struct Option : public OptionDescription
 
   /**
    * Destroys a <b>Option</b> instance.
+   *
    */
   virtual ~Option()
   {}
@@ -186,10 +196,15 @@ struct Option : public OptionDescription
 };
 
 
+/**
+ * @brief Class <b>OptionMaskName</b> ...
+ *
+ */
 struct OptionMaskName
 {
   /**
    * Creates a new <b>OptionMaskName</b> instance.
+   *
    */
   OptionMaskName()
     : m_name(""),
@@ -199,6 +214,10 @@ struct OptionMaskName
 
   /**
    * Creates a new <b>OptionMaskName</b> instance.
+   *
+   * @param name    a <b>std::string</b> variable ...
+   * @param mask    an <b>OptionMask</b> variable ...
+   * @param description    a <b>std::string</b> variable ...
    */
   OptionMaskName(const std::string &name, const OptionMask &mask, const std::string &description = "No description available")
     : m_name(name),
@@ -208,14 +227,27 @@ struct OptionMaskName
 
   /**
    * Destroys a <b>OptionMaskName</b> instance.
+   *
    */
   virtual ~OptionMaskName()
   {}
 
+  /**
+   * @brief Member function <b><</b> ...
+   *
+   * @param o      an <b>OptionMaskName</b> variable ...
+   * @return      a <b>bool</b> ...
+   */
   bool operator<(const OptionMaskName &o) const {
     return m_name < o.m_name;
   }
 
+  /**
+   * @brief Member function <b>describe</b> ...
+   *
+   * @param os      a <b>std::ostream</b> variable ...
+   * @return      a <b>std::ostream</b> ...
+   */
   virtual std::ostream &describe(std::ostream &os) const;
 
   std::string    m_name;
@@ -224,9 +256,20 @@ struct OptionMaskName
 };
 
 
+/**
+ * @brief Class <b>OptionMaskNameMap</b> ...
+ *
+ */
 class OptionMaskNameMap: public std::map<std::string, OptionMaskName>
 {
 public:
+  /**
+   * @brief Member function <b>mask</b> ...
+   *
+   * @param name    a <b>std::string</b> variable ...
+   * @param l_mask    an <b>OptionMask</b> variable ...
+   * @param description  a <b>std::string</b> variable ...
+   */
   void mask(const std::string &name, const OptionMask l_mask, const std::string &description) {
     iterator it = find(name);
     if (it == end())
@@ -246,6 +289,7 @@ public:
  * After populating a Parser object, parse() will parse the input string.  The
  * getMask() and virtual getOutputStream() functions will return the print parsed
  * print mask and the selected output stream.
+ *
  */
 class OptionMaskParser : public OptionDescription
 {
@@ -255,6 +299,7 @@ public:
 public:
   /**
    * Creates a new <b>OptionMaskParser</b> instance.
+   *
    */
   OptionMaskParser()
     : m_optionMaskNameMap(),
@@ -318,11 +363,18 @@ public:
    *
    * @param description    a <b>std::string</b> const reference which describes
    *        the mask.
+   *
    */
   void mask(const std::string &name, const Mask l_mask, const std::string &description) {
     m_optionMaskNameMap.mask(name, l_mask, description);
   }
 
+  /**
+   * Member function <b>describe</b> ...
+   *
+   * @param os    a <b>std::ostream</b> variable ...
+   * @return a <b>std::ostream</b> ...
+   */
   std::ostream &describe(std::ostream &os) const;
 
 protected:

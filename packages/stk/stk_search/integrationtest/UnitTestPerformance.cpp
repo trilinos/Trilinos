@@ -35,6 +35,8 @@
 #include <vector>
 #include <fstream>
 
+#include <ContactRangeSearch.h>
+
 #include <unit_tests/UnitTestUtils.hpp>
 #include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
 
@@ -55,7 +57,7 @@ void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domain
 TEST(Performance, ofAxisAlignedBoundingBoxesUsingOctTree)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
-  stk::search::SearchMethod searchMethod = stk::search::KDTREE;
+  stk::search::SearchMethod searchMethod = stk::search::OCTREE;
   testPerformanceOfAxisAlignedBoundingBoxes(searchMethod, comm);
 }
 
@@ -149,6 +151,11 @@ TEST(Performance, stkSearchUsingBoostUsingStkAABoxes)
     runStkSearchTestUsingStkAABoxes(stk::search::BOOST_RTREE);
 }
 
+TEST(Performance, stkSearchUsingOcttreeUsingStkAABoxes)
+{
+    runStkSearchTestUsingStkAABoxes(stk::search::OCTREE);
+}
+
 TEST(Performance, stkSearchUsingKdtreeUsingStkAABoxes)
 {
     runStkSearchTestUsingStkAABoxes(stk::search::KDTREE);
@@ -157,6 +164,11 @@ TEST(Performance, stkSearchUsingKdtreeUsingStkAABoxes)
 TEST(Performance, stkSearchUsingBoostUsingFloatAABoxes)
 {
     runStkSearchTestUsingFloatAABoxes(stk::search::BOOST_RTREE);
+}
+
+TEST(Performance, stkSearchUsingOcttreeUsingFloatAABoxes)
+{
+    runStkSearchTestUsingFloatAABoxes(stk::search::OCTREE);
 }
 
 TEST(Performance, stkSearchUsingKdtreeUsingFloatAABoxes)
@@ -242,5 +254,39 @@ void testStkSearchUsingFloatAABoxes(MPI_Comm comm, std::vector<FloatBox> &domain
         std::cerr << "Number of interactions: " << boxIdPairResults.size() << std::endl;
     }
 }
+
+//TEST(Performance, getGoldResults)
+//{
+//    MPI_Comm comm = MPI_COMM_WORLD;
+//    int procId = stk::parallel_machine_rank(comm);
+//
+//    std::vector<FloatBox> domainBoxes( fillDomainBoxes(comm) );
+//
+//    SearchResults boxIdPairResults;
+//
+//    StkBoxVector stkBoxes(domainBoxes.size());
+//    fillStkBoxesUsingFloatBoxes(domainBoxes, procId, stkBoxes);
+//
+//    double startTime = stk::wall_time();
+//    for (size_t i=0;i<stkBoxes.size();++i)
+//    {
+//        for (size_t j=0;j<stkBoxes.size();++j)
+//        {
+//            if ( stk::search::intersects(stkBoxes[i].first, stkBoxes[j].first) )
+//            {
+//                boxIdPairResults.push_back(std::make_pair(stkBoxes[i].second, stkBoxes[j].second));
+//            }
+//        }
+//    }
+//
+//    std::sort(boxIdPairResults.begin(), boxIdPairResults.end());
+//    SearchResults::iterator iter_end = std::unique(boxIdPairResults.begin(), boxIdPairResults.end());
+//    boxIdPairResults.erase(iter_end, boxIdPairResults.end());
+//
+//    double elapsedTime = stk::wall_time() - startTime;
+//    printPeformanceStats(elapsedTime, comm);
+//
+//    std::cerr << "Number of boxes: " << boxIdPairResults.size() << std::endl;
+//}
 
 }

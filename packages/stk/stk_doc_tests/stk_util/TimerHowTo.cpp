@@ -41,9 +41,9 @@ namespace
 {
 
 #if defined(NDEBUG)
-  const double tolerance = 10e-2;
+  const double tolerance = 5e-2;
 #else
-  const double tolerance = 25e-2;
+  const double tolerance = 10e-2;
 #endif
 
 void doWork()

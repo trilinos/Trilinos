@@ -307,6 +307,8 @@ TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
     Entity new_node = bulk.declare_node(i+1);
     bulk.declare_relation(new_cell, new_node, i);
   }
+  // Entity new_node = fixture.get_new_entity ( stk::topology::NODE_RANK , 1 );
+  // bulk.declare_relation(new_cell, new_node, 0);
   bulk.change_entity_parts ( new_cell , create_parts , empty_parts );
   bulk.modification_end();
   ASSERT_TRUE ( bulk.bucket(new_cell).member ( fixture.m_test_part ) );

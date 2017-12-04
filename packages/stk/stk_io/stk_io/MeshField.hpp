@@ -34,23 +34,25 @@
 #ifndef STK_IO_MeshField_h
 #define STK_IO_MeshField_h
 
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
-#include <stddef.h>                 // for size_t
-#include <string>                   // for string
-#include <vector>                   // for vector
-#include "stk_mesh/base/Types.hpp"  // for EntityRank
+#include <stddef.h>                     // for size_t
+#include <string>                       // for string, basic_string
+#include <vector>                       // for vector
+#include "stk_mesh/base/Types.hpp"      // for EntityRank
 namespace Ioss { class GroupingEntity; }
-namespace Ioss { class Region; }
 namespace stk { namespace io { class DBStepTimeInterval; } }
+namespace stk { namespace io { class InputFile; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class Part; } }
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
-namespace stk { namespace io { class InputFile; } }
+
+namespace Ioss {
+  class Region;
+}
 
 namespace stk {
+  namespace mesh {
+  }
+  
   namespace io {
     
     class MeshFieldPart {

@@ -1,14 +1,11 @@
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
 #include "ParallelGtestOutput.hpp"
-#include <gtest/gtest.h>            // for TestInfo, UnitTest, etc
-#include <stdarg.h>                 // for va_end, va_list, va_start
-#include <stdio.h>                  // for printf, vprintf, fflush, NULL, etc
-#include <string>                   // for string
-#include "gtest/gtest-test-part.h"  // for TestPartResult
-#include "mpi.h"                    // for MPI_Comm, ompi_communicator_t, etc
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
+#include <gtest/gtest.h>                // for TestInfo, etc
+#include "mpi.h"                        // for MPI_Comm_rank, MPI_Finalize, etc
+#include <stdarg.h>                     // for va_end, va_list, va_start
+#include <stdio.h>                      // for printf, vprintf, fflush, etc
+#include "gtest/gtest-test-part.h"      // for TestPartResult
+#include <stk_util/stk_config.h>
+
 
 
 namespace stk

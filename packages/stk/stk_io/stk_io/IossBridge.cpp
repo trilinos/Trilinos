@@ -31,67 +31,58 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
 #include <stk_io/IossBridge.hpp>
-#include <Ioss_IOFactory.h>                          // for IOFactory
-#include <Ioss_NullEntity.h>                         // for NullEntity
-#include <assert.h>                                  // for assert
-#include <ext/alloc_traits.h>
-#include <math.h>                                    // for log10
-#include <Shards_Array.hpp>                          // for ArrayDimension
-#include <algorithm>                                 // for sort
-#include <complex>                                   // for complex
-#include <cstdint>                                   // for int64_t
-#include <iomanip>                                   // for operator<<, etc
-#include <iostream>                                  // for operator<<, etc
-#include <stdexcept>                                 // for runtime_error
-#include <stk_mesh/base/BulkData.hpp>                // for BulkData
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>       // for Cartesian, etc
+#include <stk_util/diag/StringUtil.hpp>
+#include <Ioss_NullEntity.h>            // for NullEntity
+#include <assert.h>                     // for assert
+#include <stdint.h>                     // for int64_t
+#include <Shards_Array.hpp>             // for ArrayDimension
+#include <algorithm>                    // for sort
+#include <complex>                      // for complex
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <iomanip>
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, Matrix, etc
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>                   // for Field
-#include <stk_mesh/base/FindRestriction.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#include <stk_mesh/base/Types.hpp>                   // for PartVector, etc
-#include <stk_util/diag/StringUtil.hpp>              // for make_lower, etc
-#include <stk_util/util/SortAndUnique.hpp>           // for sort_and_unique
-#include <stk_util/util/tokenize.hpp>                // for tokenize
-#include "Ioss_CodeTypes.h"                          // for NameList
-#include "Ioss_CommSet.h"                            // for CommSet
-#include "Ioss_DBUsage.h"
-#include "Ioss_DatabaseIO.h"                         // for DatabaseIO
-#include "Ioss_ElementBlock.h"                       // for ElementBlock
-#include "Ioss_ElementTopology.h"                    // for ElementTopology
-#include "Ioss_EntityBlock.h"                        // for EntityBlock
-#include "Ioss_EntityType.h"
-#include "Ioss_Field.h"                              // for Field, etc
-#include "Ioss_GroupingEntity.h"                     // for GroupingEntity
-#include "Ioss_NodeBlock.h"                          // for NodeBlock
-#include "Ioss_NodeSet.h"                            // for NodeSet
-#include "Ioss_Property.h"                           // for Property
-#include "Ioss_Region.h"                             // for Region, etc
-#include "Ioss_SideBlock.h"                          // for SideBlock
-#include "Ioss_SideSet.h"                            // for SideSet, etc
-#include "Ioss_State.h"
-#include "Ioss_VariableType.h"                       // for VariableType
+#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities, etc
+#include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
+#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank, etc
+#include <stk_util/util/SortAndUnique.hpp>
+#include <stk_util/util/tokenize.hpp>   // for tokenize
+#include "Ioss_CommSet.h"               // for CommSet
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Ioss_ElementBlock.h"          // for ElementBlock
+#include "Ioss_ElementTopology.h"       // for ElementTopology
+#include "Ioss_EntityBlock.h"           // for EntityBlock
+#include "Ioss_EntityType.h"            // for EntityType::ELEMENTBLOCK, etc
+#include <Ioss_IOFactory.h>
+#include "Ioss_Field.h"                 // for Field, Field::RoleType, etc
+#include "Ioss_GroupingEntity.h"        // for GroupingEntity
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_NodeSet.h"               // for NodeSet
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_Region.h"                // for Region, SideSetContainer, etc
+#include "Ioss_SideBlock.h"             // for SideBlock
+#include "Ioss_SideSet.h"               // for SideSet, SideBlockContainer
+#include "Ioss_State.h"                 // for State::STATE_DEFINE_MODEL, etc
+#include "Ioss_Utils.h"                 // for Utils
+#include "Ioss_VariableType.h"          // for NameList, VariableType
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, etc
+#include "stk_mesh/base/FieldRestriction.hpp"  // for FieldRestriction
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Relation.hpp"
+#include "stk_mesh/base/Selector.hpp"   // for Selector, operator&, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_topology/topology.hpp"    // for topology::num_nodes
+#include "stk_util/util/PairIter.hpp"   // for PairIter
+
 #include "SidesetTranslator.hpp"
 #include "StkIoUtils.hpp"
-#include "mpi.h"                                     // for MPI_COMM_SELF
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/Entity.hpp"                  // for Entity
-#include "stk_mesh/base/FieldBase.hpp"               // for FieldBase, etc
-#include "stk_mesh/base/FieldRestriction.hpp"
-#include "stk_mesh/base/Part.hpp"                    // for Part, etc
-#include "stk_mesh/base/Selector.hpp"                // for Selector, etc
-#include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_topology/topology.hpp"
-#include "stk_util/environment/ReportHandler.hpp"    // for ThrowRequireMsg, etc
-namespace stk { namespace mesh { class Bucket; } }
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
-
 
 namespace stk {
   namespace io {
@@ -131,7 +122,7 @@ namespace {
     case Ioss::SIDESET:
       {
         const Ioss::SideSet *sset = dynamic_cast<const Ioss::SideSet*>(entity);
-        assert(sset != nullptr);
+        assert(sset != NULL);
         int my_rank = sset->max_parametric_dimension();
         if (my_rank == 2)
           return stk::topology::FACE_RANK;
@@ -146,7 +137,7 @@ namespace {
     case Ioss::SIDEBLOCK:
       {
         const Ioss::SideBlock *sblk = dynamic_cast<const Ioss::SideBlock*>(entity);
-        assert(sblk != nullptr);
+        assert(sblk != NULL);
         int rank = sblk->topology()->parametric_dimension();
         if (rank == 2)
           return stk::topology::FACE_RANK;
@@ -173,7 +164,7 @@ namespace {
     std::string name = io_field.get_name();
     stk::mesh::FieldBase *field_ptr = meta.get_field(type, name);
     // If the field has already been declared, don't redeclare it.
-    if (field_ptr != nullptr && stk::io::is_field_on_part(field_ptr, type, part)) {
+    if (field_ptr != NULL && stk::io::is_field_on_part(field_ptr, type, part)) {
       return field_ptr;
     }
 
@@ -242,7 +233,7 @@ namespace {
       field_ptr = &field;
     }
 
-    if (field_ptr != nullptr) {
+    if (field_ptr != NULL) {
       stk::io::set_field_role(*field_ptr, io_field.get_role());
     }
     return field_ptr;
@@ -254,7 +245,7 @@ namespace {
                                                  const Ioss::Field &io_field,
                                                  bool use_cartesian_for_scalar)
   {
-    const stk::mesh::FieldBase *field_ptr = nullptr;
+    const stk::mesh::FieldBase *field_ptr = NULL;
     if (io_field.get_type() == Ioss::Field::INTEGER) {
       field_ptr = declare_ioss_field_internal<int>(meta, type, part, io_field, use_cartesian_for_scalar);
     } else if (io_field.get_type() == Ioss::Field::INT64) {
@@ -301,7 +292,7 @@ namespace {
     for (size_t i=0; i < entity_count; ++i) {
       if (mesh.is_valid(entities[i])) {
         T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
-        if (fld_data !=nullptr) {
+        if (fld_data !=NULL) {
           for(size_t j=0; j<field_component_count; ++j) {
             fld_data[j] = io_field_data[i*field_component_count+j];
           }
@@ -342,7 +333,7 @@ namespace {
         const stk::mesh::Bucket &bucket = mesh.bucket(entities[i]);
         if (selector(bucket)) {
           T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
-          if (fld_data !=nullptr) {
+          if (fld_data !=NULL) {
             for(size_t j=0; j<field_component_count; ++j) {
               fld_data[j] = io_field_data[i*field_component_count+j];
             }
@@ -367,7 +358,7 @@ namespace {
     for (size_t i=0; i < entity_count; ++i) {
       if (mesh.is_valid(entities[i]) && mesh.entity_rank(entities[i]) == field->entity_rank()) {
         T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
-        if (fld_data != nullptr) {
+        if (fld_data != NULL) {
           for(size_t j=0; j<field_component_count; ++j) {
             io_field_data[i*field_component_count+j] = fld_data[j];
           }
@@ -408,7 +399,7 @@ namespace {
 
   void check_if_io_part_attribute_already_defined(const stk::mesh::Part& part)
   {
-      if (part.attribute<Ioss::GroupingEntity>() != nullptr) {
+      if (part.attribute<Ioss::GroupingEntity>() != NULL) {
         std::string msg = "stk::io::put_io_part_attribute( ";
         msg += part.name();
         msg += " ) FAILED:";
@@ -557,11 +548,11 @@ namespace stk {
     {
       const Ioss::Field::RoleType *role = stk::io::get_field_role(*field);
 
-      if (role == nullptr) {
+      if (role == NULL) {
         return false;
       }
 
-      if (role != nullptr && *role != filter_role)
+      if (role != NULL && *role != filter_role)
         return false;
 
       return is_field_on_part(field, part_type, part);
@@ -670,7 +661,7 @@ namespace stk {
     void remove_io_part_attribute(mesh::Part & part)
     {
       const Ioss::GroupingEntity *entity = part.attribute<Ioss::GroupingEntity>();
-      if (entity != nullptr) {
+      if (entity != NULL) {
         mesh::MetaData & meta = mesh::MetaData::get(part);
         bool success = meta.remove_attribute(part, entity);
         if (!success) {
@@ -723,7 +714,7 @@ namespace stk {
     std::string map_stk_topology_to_ioss(stk::topology topo)
     {
       Ioss::ElementTopology *ioss_topo = Ioss::ElementTopology::factory(topo.name(), true);
-      return ioss_topo != nullptr ? ioss_topo->name() : "invalid";
+      return ioss_topo != NULL ? ioss_topo->name() : "invalid";
     }
 
     void internal_part_processing(Ioss::GroupingEntity *entity, stk::mesh::MetaData &meta)
@@ -742,7 +733,7 @@ namespace stk {
     {
       if (include_entity(entity)) {
         mesh::EntityRank type = get_entity_rank(entity, meta);
-        stk::mesh::Part * part = nullptr;
+        stk::mesh::Part * part = NULL;
         part = &meta.declare_part(entity->name(), type);
         if (entity->property_exists("id")) {
             meta.set_part_id(*part, entity->get_property("id").get_int());
@@ -757,7 +748,7 @@ namespace stk {
         // also do a catch...
 
         if (entity->type() == Ioss::ELEMENTBLOCK) {
-          assert(topology != nullptr);
+          assert(topology != NULL);
           if (topology->spatial_dimension() < static_cast<int>(meta.spatial_dimension())) {
             // NOTE: The comparison is '<' and not '!=' since a 2D mesh
             // can contain a "3d" element -- a Beam is both a 2D and
@@ -1113,7 +1104,7 @@ namespace stk {
       /// \todo REFACTOR Need some additional compatibility checks between
       /// Ioss field and stk::mesh::Field; better error messages...
 
-      if (field != nullptr && io_entity->field_exists(io_fld_name)) {
+      if (field != NULL && io_entity->field_exists(io_fld_name)) {
         const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
         if (field->type_is<double>()) {
           internal_field_data_from_ioss<double>(mesh, io_field, field, entities, io_entity);
@@ -1141,7 +1132,7 @@ namespace stk {
       /// \todo REFACTOR Need some additional compatibility checks between
       /// Ioss field and stk::mesh::Field; better error messages...
 
-      if (field != nullptr && io_entity->field_exists(io_fld_name)) {
+      if (field != NULL && io_entity->field_exists(io_fld_name)) {
         const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
         if (field->type_is<double>()) {
           internal_subsetted_field_data_from_ioss<double>(mesh, io_field, field, entities, io_entity, stk_part);
@@ -1188,7 +1179,7 @@ namespace stk {
       /// \todo REFACTOR Need some additional compatibility checks between
       /// Ioss field and stk::mesh::Field; better error messages...
 
-      if (field != nullptr && io_entity->field_exists(io_fld_name)) {
+      if (field != NULL && io_entity->field_exists(io_fld_name)) {
         const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
         if (io_field.get_role() == filter_role) {
           if (field->type_is<double>()) {
@@ -1253,7 +1244,7 @@ namespace stk {
           // "name" is typically "surface".
           element_topo = Ioss::ElementTopology::factory(tokens[1], true);
 
-          if (element_topo != nullptr) {
+          if (element_topo != NULL) {
             element_topo_name = element_topo->name();
             stk_element_topology = map_ioss_topology_to_stk(element_topo, bulk.mesh_meta_data().spatial_dimension());
           }
@@ -1276,7 +1267,7 @@ namespace stk {
         }
 
         const mesh::FieldBase *df = get_distribution_factor_field(part);
-        if (df != nullptr) {
+        if (df != NULL) {
           int nodes_per_side = side_topology.num_nodes();
           std::string storage_type = "Real[";
           storage_type += sierra::to_string(nodes_per_side);
@@ -1608,7 +1599,7 @@ namespace stk {
        define_node_block(meta_data.universal_part(), bulk_data, io_region, subset_selector);
 
        // All parts of the meta data:
-       const mesh::PartVector *parts = nullptr;
+       const mesh::PartVector *parts = NULL;
        mesh::PartVector all_parts_sorted;
 
        const mesh::PartVector & all_parts = meta_data.get_parts();
@@ -1621,7 +1612,7 @@ namespace stk {
          parts = &all_parts;
        }
 
-       const bool order_blocks_by_creation_order = (input_region == nullptr) && !sort_stk_parts_by_name;
+       const bool order_blocks_by_creation_order = (input_region == NULL) && !sort_stk_parts_by_name;
 
        for (mesh::PartVector::const_iterator i = parts->begin(); i != parts->end(); ++i) {
          mesh::Part * const part = *i;
@@ -1646,7 +1637,7 @@ namespace stk {
 
        define_communication_maps(bulk_data, io_region, subset_selector);
 
-       if (input_region != nullptr)
+       if (input_region != NULL)
          io_region.synchronize_id_and_name(input_region, true);
 
        // for streaming refinement, each "pseudo-processor" doesn't know about others, so we pick a sort order
@@ -1723,7 +1714,7 @@ namespace stk {
         }
 
         const mesh::FieldBase *df = get_distribution_factor_field(*part);
-        if (df != nullptr) {
+        if (df != NULL) {
           field_data_to_ioss(bulk_data, df, sides, &io, "distribution_factors", Ioss::Field::MESH);
         }
 
@@ -1734,7 +1725,7 @@ namespace stk {
         while (I != fields.end()) {
           const mesh::FieldBase *f = *I ; ++I ;
           const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
-          if (role != nullptr && *role == Ioss::Field::ATTRIBUTE) {
+          if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
             stk::io::field_data_to_ioss(bulk_data, f, sides, &io, f->name(), Ioss::Field::ATTRIBUTE);
           }
         }
@@ -1783,7 +1774,7 @@ namespace stk {
 
         const stk::mesh::MetaData & meta_data = mesh::MetaData::get(bulk);
         const mesh::FieldBase *coord_field = meta_data.coordinate_field();
-        assert(coord_field != nullptr);
+        assert(coord_field != NULL);
         field_data_to_ioss(bulk, coord_field, nodes, &nb, "mesh_model_coordinates", Ioss::Field::MESH);
 
         const std::vector<mesh::FieldBase *> &fields = meta_data.get_fields();
@@ -1806,7 +1797,7 @@ namespace stk {
         const std::string& name = block->name();
         mesh::Part* part = getPart( meta_data, name);
 
-        assert(part != nullptr);
+        assert(part != NULL);
         std::vector<mesh::Entity> elements;
         stk::mesh::EntityRank type = part_primary_entity_rank(*part);
         size_t num_elems = get_entities(*part, type, bulk, elements, false, subset_selector);
@@ -1851,7 +1842,7 @@ namespace stk {
         while (I != fields.end()) {
           const mesh::FieldBase *f = *I ; ++I ;
           const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
-          if (role != nullptr && *role == Ioss::Field::ATTRIBUTE) {
+          if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
             const mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, elem_rank, *part);
             if (res.num_scalars_per_entity() > 0) {
               stk::io::field_data_to_ioss(bulk, f, elements, block, f->name(), Ioss::Field::ATTRIBUTE);
@@ -1872,12 +1863,12 @@ namespace stk {
         // means that it is a nodeset containing the nodes of an element block.
         // See if there is a property base_stk_part_name and if so, get the part with
         // that name.
-        if (part == nullptr) {
+        if (part == NULL) {
           if (ns->property_exists(base_stk_part_name)) {
             std::string base_name = ns->get_property(base_stk_part_name).get_string();
             part = getPart( meta_data, base_name);
           }
-          if (part == nullptr) {
+          if (part == NULL) {
             std::ostringstream msg ;
             msg << " FAILED in Ioss::NodeSet::output_node_set:"
                 << " Could not find stk part corresponding to nodeset named '"
@@ -1905,7 +1896,7 @@ namespace stk {
         }
 
         stk::mesh::Field<double> *df_field = meta_data.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors_" + name);
-        if (df_field != nullptr) {
+        if (df_field != NULL) {
           const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*df_field, stk::topology::NODE_RANK, *part);
           if (res.num_scalars_per_entity() > 0) {
             stk::io::field_data_to_ioss(bulk, df_field, nodes, ns, "distribution_factors", Ioss::Field::MESH);
@@ -1917,7 +1908,7 @@ namespace stk {
         while (I != fields.end()) {
           const mesh::FieldBase *f = *I ; ++I ;
           const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
-          if (role != nullptr && *role == Ioss::Field::ATTRIBUTE) {
+          if (role != NULL && *role == Ioss::Field::ATTRIBUTE) {
             const mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, stk::topology::NODE_RANK, *part);
             if (res.num_scalars_per_entity() > 0) {
               stk::io::field_data_to_ioss(bulk, f, nodes, ns, f->name(), Ioss::Field::ATTRIBUTE);
@@ -1941,7 +1932,7 @@ namespace stk {
 
           const std::string cs_name("node_symm_comm_spec");
           Ioss::CommSet * io_cs = io_region.get_commset(cs_name);
-          STKIORequire(io_cs != nullptr);
+          STKIORequire(io_cs != NULL);
 
           // Allocate data space to store <id, processor> pair
           assert(io_cs->field_exists("entity_processor"));
@@ -2053,7 +2044,7 @@ namespace stk {
     //----------------------------------------------------------------------
     bool is_part_io_part(const stk::mesh::Part &part)
     {
-      return nullptr != part.attribute<Ioss::GroupingEntity>();
+      return NULL != part.attribute<Ioss::GroupingEntity>();
     }
 
     // TODO: NOTE: The use of "FieldBase" here basically eliminates the use of the attribute
@@ -2113,7 +2104,7 @@ namespace stk {
         for(size_t i=0; i < elem_blocks.size(); i++) {
           if (stk::io::include_entity(elem_blocks[i])) {
             stk::mesh::Part* const part = meta.get_part(elem_blocks[i]->name());
-            assert(part != nullptr);
+            assert(part != NULL);
             stk::io::define_io_fields(elem_blocks[i], Ioss::Field::TRANSIENT,
                                       *part, part_primary_entity_rank(*part));
           }
@@ -2126,7 +2117,7 @@ namespace stk {
         for(size_t i=0; i < nodesets.size(); i++) {
           if (stk::io::include_entity(nodesets[i])) {
             stk::mesh::Part* const part = meta.get_part(nodesets[i]->name());
-            assert(part != nullptr);
+            assert(part != NULL);
             stk::io::define_io_fields(nodesets[i], Ioss::Field::TRANSIENT,
                                       *part, part_primary_entity_rank(*part));
           }
@@ -2147,7 +2138,7 @@ namespace stk {
             for(size_t i=0; i < blocks.size(); i++) {
               if (stk::io::include_entity(blocks[i])) {
                 stk::mesh::Part* const part = meta.get_part(blocks[i]->name());
-                assert(part != nullptr);
+                assert(part != NULL);
                 stk::io::define_io_fields(blocks[i], Ioss::Field::TRANSIENT,
                                           *part, part_primary_entity_rank(*part));
               }

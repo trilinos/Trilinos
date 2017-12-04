@@ -33,8 +33,6 @@
 #ifndef CONFIG_STK_SIMD_H
 #define CONFIG_STK_SIMD_H
 
-// IWYU pragma: private, include <stk_simd/Simd.hpp>
-
 #if !defined(__CUDA_ARCH__)
 //#if 0 // to turn off simd
 

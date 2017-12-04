@@ -31,72 +31,69 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <Ionit_Initializer.h>                       // for Initializer
-#include <assert.h>                                  // for assert
-#include <ext/alloc_traits.h>
-#include <stdlib.h>                                  // for exit, etc
-#include <string.h>                                  // for memcpy
-#include <cstdint>                                   // for int64_t
-#include <iostream>                                  // for operator<<, etc
-#include <iterator>
-#include <limits>                                    // for numeric_limits
-#include <map>
-#include <stdexcept>                                 // for runtime_error
-#include <stk_io/InputFile.hpp>                      // for InputFile
-#include <stk_io/IossBridge.hpp>                     // for FieldAndName, etc
-#include <stk_mesh/base/BulkData.hpp>                // for BulkData, etc
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>                   // for Field
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
+#include <assert.h>                     // for assert
+#include <Ionit_Initializer.h>     // for Initializer
+#include <stdint.h>                     // for int64_t
+#include <stdlib.h>                     // for exit, EXIT_FAILURE
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <iterator>                     // for back_insert_iterator, etc
+#include <limits>
+#include <stdexcept>                    // for runtime_error
+#include <stk_io/InputFile.hpp>         // for InputFile
+#include <stk_io/IossBridge.hpp>        // for FieldAndName, STKIORequire, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element_edge, etc
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/Comm.hpp> 
+#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/environment/ReportHandler.hpp>    // for ThrowErrorMsgIf, etc
-#include <utility>                                   // for pair, make_pair
-#include "Ioss_CodeTypes.h"                          // for NameList
-#include "Ioss_DBUsage.h"
-#include "Ioss_DatabaseIO.h"                         // for DatabaseIO
-#include "Ioss_ElementBlock.h"                       // for ElementBlock
-#include "Ioss_ElementTopology.h"                    // for ElementTopology
-#include "Ioss_EntityType.h"
-#include "Ioss_Field.h"
-#include "Ioss_GroupingEntity.h"                     // for GroupingEntity
-#include "Ioss_IOFactory.h"                          // for IOFactory
-#include "Ioss_NodeBlock.h"                          // for NodeBlock
-#include "Ioss_NodeSet.h"                            // for NodeSet
-#include "Ioss_ParallelUtils.h"                      // for ParallelUtils
-#include "Ioss_Property.h"                           // for Property
-#include "Ioss_PropertyManager.h"                    // for PropertyManager
-#include "Ioss_Region.h"                             // for Region, etc
-#include "Ioss_SideBlock.h"                          // for SideBlock
-#include "Ioss_SideSet.h"                            // for SideSet
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
+#include <utility>                      // for make_pair, pair
+#include "Ioss_CommSet.h"
+#include "Ioss_DBUsage.h"               // for DatabaseUsage, etc
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Ioss_ElementBlock.h"          // for ElementBlock
+#include "Ioss_ElementTopology.h"       // for ElementTopology
+#include "Ioss_EntityType.h"            // for EntityType::SIDEBLOCK, etc
+#include "Ioss_Field.h"                 // for Field, Field::BasicType, etc
+#include "Ioss_GroupingEntity.h"        // for GroupingEntity
+#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_NodeSet.h"               // for NodeSet
+#include "Ioss_ParallelUtils.h"         // for ParallelUtils
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_PropertyManager.h"       // for PropertyManager
+#include "Ioss_Region.h"                // for Region, NodeSetContainer, etc
+#include "Ioss_SideBlock.h"             // for SideBlock
+#include "Ioss_SideSet.h"               // for SideSet, SideBlockContainer
 #include "Ioss_State.h"
-#include "Ioss_VariableType.h"                       // for VariableType
+#include "Ioss_VariableType.h"          // for NameList, VariableType
+
 #include "ProcessSetsOrBlocks.hpp"
 #include "SidesetTranslator.hpp"
 #include "StkIoUtils.hpp"
-#include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
-#include "boost/any.hpp"                             // for any_cast, any
-#include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
-#include "stk_io/MeshField.hpp"                      // for MeshField, etc
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/Entity.hpp"                  // for Entity
-#include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
+
+#include "Teuchos_RCP.hpp"              // for RCP::operator->, etc
+#include "boost/any.hpp"                // for any_cast, any
+#include "boost/cstdint.hpp"            // for int64_t
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose, etc
+#include "stk_io/MeshField.hpp"         // for MeshField, etc
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Selector.hpp"   // for Selector, operator&
+#include "stk_mesh/base/TopologyDimensions.hpp"  // for ElementNode
+#include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_topology/topology.hpp"    // for topology::num_nodes
+#include "stk_util/util/ParameterList.hpp"  // for Type, Type::DOUBLE, etc
 #include "stk_mesh/base/FieldParallel.hpp"
-#include "stk_mesh/base/FieldState.hpp"              // for FieldState
-#include "stk_mesh/base/Part.hpp"                    // for Part
-#include "stk_mesh/base/Selector.hpp"                // for Selector, etc
-#include "stk_mesh/base/Types.hpp"                   // for FieldVector, etc
-#include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_util/parallel/Parallel.hpp"            // for ParallelMachine, etc
-#include "stk_util/util/ParameterList.hpp"           // for Type, etc
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
-
-
+#include "stk_util/parallel/CommSparse.hpp"
 
 
 namespace stk {
@@ -448,7 +445,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
 
       // Would be nice to do:
       //    std::vector<stk::mesh::Entity> sides ;
-      //    get_entities(*sb_part, bulk, sides, nullptr);
+      //    get_entities(*sb_part, bulk, sides, NULL);
       // But, we need the entities in the exact same order and count  as they appear on the
       // mesh file.  The get_entities can give them in different order and will ignore duplicated
       // "sides" that occur in some exodus files.
@@ -464,7 +461,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
           sides.push_back(stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk, elemSidePairs[is*2], elemSidePairs[is*2+1]-1, side_rank));
 
       const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*sb_part);
-      if (df_field != nullptr) {
+      if (df_field != NULL) {
         stk::io::field_data_from_ioss(bulk, df_field, sides, block, "distribution_factors");
       }
 
@@ -574,7 +571,7 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
     if (stk::io::include_entity(entity)) {
       const std::string &name = entity->name();
       stk::mesh::Part* const part = meta.get_part(name);
-      STKIORequire(part != nullptr);
+      STKIORequire(part != NULL);
 
       stk::topology topo = part->topology();
       if (topo == stk::topology::INVALID_TOPOLOGY) {
@@ -662,7 +659,7 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
     if (stk::io::include_entity(entity)) {
       const std::string & name = entity->name();
       stk::mesh::Part* const part = meta.get_part(name);
-      STKIORequire(part != nullptr);
+      STKIORequire(part != NULL);
       stk::mesh::PartVector add_parts( 1 , part );
 
       std::vector<INT> node_ids ;
@@ -681,7 +678,7 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk)
       stk::mesh::Field<double> *df_field_per_nodeset =
                 meta.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, distributionFactorsPerNodesetFieldName);
 
-      if (df_field_per_nodeset != nullptr) {
+      if (df_field_per_nodeset != NULL) {
         stk::io::field_data_from_ioss(bulk, df_field_per_nodeset, nodes, entity, "distribution_factors");
       }
 
@@ -771,7 +768,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
   for (size_t i=0;i<namedFields.size();i++)
   {
     const stk::mesh::FieldBase *f = namedFields[i].field();
-    const std::string& field_name = namedFields[i].db_name();
+    std::string field_name = namedFields[i].db_name();
     // There is ugliness here to deal with the output of fields on the nodes of a part,
     // either on the nodeblock or on a nodeset part created from the part nodes.
     if ((namedFields[i].m_forceNodeblockOutput && io_entity->type() == Ioss::NODEBLOCK) ||
@@ -790,13 +787,13 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                     stk::mesh::EntityRank part_type,
                     Ioss::GroupingEntity *io_entity,
                     const std::vector<stk::io::FieldAndName> &namedFields,
-                    const stk::mesh::Selector *subset_selector=nullptr)
+                    const stk::mesh::Selector *subset_selector=NULL)
 {
   put_field_data(bulk, part, part_type, io_entity, namedFields, Ioss::Field::Field::TRANSIENT, subset_selector);
 }
 
     StkMeshIoBroker::StkMeshIoBroker()
-      : m_communicator(MPI_COMM_NULL), m_connectivity_map(nullptr), m_active_mesh_index(0), m_sideset_face_creation_behavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
+      : m_communicator(MPI_COMM_NULL), m_connectivity_map(NULL), m_active_mesh_index(0), m_sideset_face_creation_behavior(STK_IO_SIDE_CREATION_USING_GRAPH_TEST)
     {
       Ioss::Init::Initializer::initialize_ioss();
     }
@@ -814,7 +811,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
     {
       m_property_manager.add(property);
       //In case there are already input/output files, put the property on them too.
-      if (get_input_io_region().get() != nullptr)
+      if (get_input_io_region().get() != NULL)
       {
           get_input_io_region()->property_add(property);
       }
@@ -832,7 +829,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
     stk::mesh::FieldBase const& StkMeshIoBroker::get_coordinate_field()
     {
       stk::mesh::FieldBase const* coord_field = meta_data().coordinate_field();
-      STKIORequire( coord_field != nullptr);
+      STKIORequire( coord_field != NULL);
       return * coord_field;
     }
 
@@ -1023,7 +1020,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         }
 
         Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
-        ThrowErrorMsgIf (region==nullptr,
+        ThrowErrorMsgIf (region==NULL,
                          "INTERNAL ERROR: Mesh Input Region pointer is NULL in create_input_mesh.");
 
         // See if meta data is null, if so, create a new one...
@@ -1078,7 +1075,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 
         std::string out_filename = filename;
         stk::util::filename_substitution(out_filename);
-        Ioss::Region *input_region = nullptr;
+        Ioss::Region *input_region = NULL;
         if (is_index_valid(m_input_files, m_active_mesh_index)) {
           input_region = get_input_io_region().get();
         }
@@ -1105,6 +1102,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         validate_output_file_index(output_file_index);
         stk::io::create_bulkdata_sidesets(bulk_data());
         m_output_files[output_file_index]->write_output_mesh(*m_bulk_data, attributeFieldOrderingByPartOrdinal);
+        stk::io::clear_bulkdata_sidesets(bulk_data());
       }
 
       void StkMeshIoBroker::flush_output() const
@@ -1124,19 +1122,12 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         return current_output_step;
       }
 
-      int StkMeshIoBroker::write_defined_output_fields_for_selected_subset(size_t output_file_index,
-                                                                   std::vector<stk::mesh::Part*>& selectOutputElementParts)
-      {
-        validate_output_file_index(output_file_index);
-        int current_output_step = m_output_files[output_file_index]->write_defined_output_fields_for_selected_subset(*m_bulk_data, selectOutputElementParts);
-        return current_output_step;
-      }
-
       int StkMeshIoBroker::process_output_request(size_t output_file_index, double time)
       {
         validate_output_file_index(output_file_index);
         stk::io::create_bulkdata_sidesets(bulk_data());
         int current_output_step = m_output_files[output_file_index]->process_output_request(time, *m_bulk_data, attributeFieldOrderingByPartOrdinal);
+        stk::io::clear_bulkdata_sidesets(bulk_data());
         return current_output_step;
       }
 
@@ -1151,6 +1142,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
       {
         validate_output_file_index(output_file_index);
         m_output_files[output_file_index]->end_output_step();
+        stk::io::clear_bulkdata_sidesets(bulk_data());
       }
 
       void StkMeshIoBroker::populate_mesh(bool delay_field_data_allocation)
@@ -1218,7 +1210,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         bulk_data().allocate_field_data();
 
         Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
-        ThrowErrorMsgIf (region==nullptr,
+        ThrowErrorMsgIf (region==NULL,
                          "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_field_data.");
 
         bool ints64bit = db_api_int_size(region) == 8;
@@ -1250,7 +1242,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                          "There is no Input mesh region associated with this Mesh Data.");
 
         Ioss::Region *region = m_input_files[m_active_mesh_index]->get_input_io_region().get();
-        ThrowErrorMsgIf (region==nullptr,
+        ThrowErrorMsgIf (region==NULL,
                          "INTERNAL ERROR: Mesh Input Region pointer is NULL in populate_mesh.");
 
         // Check if bulk_data is null; if so, create a new one...
@@ -1594,7 +1586,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 
       int StkMeshIoBroker::check_integer_size_requirements()
       {
-	// 1. If the INTEGER_SIZE_DB or _API property exists, then use its value no matter what...
+	// 1. If the INGEGER_SIZE_DB or _API property exists, then use its value no matter what...
 	if (m_property_manager.exists("INTEGER_SIZE_DB")) {
 	  return m_property_manager.get("INTEGER_SIZE_DB").get_int();
 	}
@@ -1605,11 +1597,11 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 	
 	// 2. If input_region exists, then if it is using 64-bit integers, the output should
 	//    use those also.
-	Ioss::Region *input_region = nullptr;
+	Ioss::Region *input_region = NULL;
         if (is_index_valid(m_input_files, m_active_mesh_index)) {
           input_region = get_input_io_region().get();
         }
-	if (input_region != nullptr) {
+	if (input_region != NULL) {
 	  // Get the integer size setting for the database associated with the region.
 	  int int_size = db_api_int_size(input_region);
 	  if (int_size == 8) {
@@ -1692,26 +1684,6 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
           attributeFieldOrderingByPartOrdinal = ordering;
       }
 
-      void StkMeshIoBroker::fill_coordinate_frames(std::vector<int>& ids, std::vector<double>& coords, std::vector<char>& tags)
-      {
-          Ioss::Region *ioregion = get_input_io_region().get();
-          const Ioss::CoordinateFrameContainer& coordFrames = ioregion->get_coordinate_frames();
-
-          size_t nFrames = coordFrames.size();
-
-          ids.resize(nFrames);
-          const int coordSize = 9;
-          coords.resize(coordSize*nFrames);
-          tags.resize(nFrames);
-
-          for (size_t i=0;i<nFrames;i++)
-          {
-              tags[i] = coordFrames[i].tag();
-              ids[i] = coordFrames[i].id();
-              memcpy(&coords[coordSize*i],coordFrames[i].coordinates(),sizeof(double)*coordSize);
-          }
-      }
-
       impl::Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
                            Ioss::PropertyManager properties, stk::ParallelMachine comm)
         : m_current_step(0), m_processor(0)
@@ -1774,7 +1746,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 
             Ioss::DatabaseIO *db = Ioss::IOFactory::create(db_io_type, filename,
                                                            db_usage, comm, properties);
-            if (db == nullptr || !db->ok()) {
+            if (db == NULL || !db->ok()) {
               std::cerr << "ERROR: Could not open history/heartbeat database '" << filename << "'\n";
               return;
             }
@@ -1828,15 +1800,6 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
           if (m_processor == 0) {
 	    m_region->get_database()->flush_database();
 	  }
-        }
-
-        impl::OutputFile::~OutputFile()
-        {
-          if(m_region->get_state() == Ioss::STATE_TRANSIENT)
-          {
-            m_region->end_mode(Ioss::STATE_TRANSIENT);
-          }
-          stk::io::delete_selector_property(*m_region);
         }
 
         void impl::OutputFile::write_output_mesh(const stk::mesh::BulkData& bulk_data,
@@ -2003,7 +1966,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                                                           communicator,
                                                           property_manager);
 
-          if (dbo == nullptr || !dbo->ok()) {
+          if (dbo == NULL || !dbo->ok()) {
             std::cerr << "ERROR: Could not open output database '" << filename << "' of type 'exodus'\n";
             std::exit(EXIT_FAILURE);
           }
@@ -2029,10 +1992,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
             m_region->end_mode(Ioss::STATE_DEFINE_TRANSIENT);
           }
 
-          if(m_region->get_state() != Ioss::STATE_TRANSIENT)
-          {
-            m_region->begin_mode(Ioss::STATE_TRANSIENT);
-          }
+          m_region->begin_mode(Ioss::STATE_TRANSIENT);
           m_current_output_step = m_region->add_state(time);
           m_region->begin_state(m_current_output_step);
         }
@@ -2068,7 +2028,9 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
                                    region->get_node_blocks()[0], m_named_fields);
 
           const stk::mesh::PartVector &all_parts = meta_data.get_parts();
-          for(auto part : all_parts) {
+          for(stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip) {
+            stk::mesh::Part * const part = *ip;
+
             // Check whether this part should be output to database.
             if(stk::io::is_part_io_part(*part)) {
               stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
@@ -2097,14 +2059,14 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
               // (should probably do edges and faces also...)
               // Get Ioss::GroupingEntity corresponding to the nodes on this part...
               if(rank != stk::topology::NODE_RANK) {
-                Ioss::GroupingEntity *node_entity = nullptr;
+                Ioss::GroupingEntity *node_entity = NULL;
                 if (m_use_nodeset_for_part_nodes_fields) {
                   std::string nodes_name = part->name() + "_nodes";
                   node_entity = region->get_entity(nodes_name);
                 } else {
                   node_entity = region->get_entity("nodeblock_1");
                 }
-                if(node_entity != nullptr) {
+                if(node_entity != NULL) {
                   stk::io::ioss_add_fields(*part, stk::topology::NODE_RANK, node_entity, m_named_fields);
                 }
               }
@@ -2132,7 +2094,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         int impl::OutputFile::write_defined_output_fields(const stk::mesh::BulkData& bulk_data)
         {
           Ioss::Region *region = m_region.get();
-          ThrowErrorMsgIf (region==nullptr, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
+          ThrowErrorMsgIf (region==NULL, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
 
           const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
           // Special processing for nodeblock (all nodes in model)...
@@ -2141,31 +2103,34 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
 
           // Now handle all non-nodeblock parts...
           const stk::mesh::PartVector &all_parts = meta_data.get_parts();
-          for( auto part : all_parts ) {
+          for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+            stk::mesh::Part * const part = *ip;
+
             // Check whether this part should be output to database.
-            if ( stk::io::is_part_io_part(*part) ) {
+            if (stk::io::is_part_io_part(*part)) {
               stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-              if( rank == stk::topology::INVALID_RANK ) continue;
               // Get Ioss::GroupingEntity corresponding to this part...
-              auto entity = region->get_entity(part->name());
+              Ioss::GroupingEntity *entity = region->get_entity(part->name());
 
               // If the sideset has only a single sideblock and it
               // shares the same name as the parent sideset, then the
               // entity that we want to output on at this point is the
               // sideblock and not the sideset.  If there are multiple
-              // sideblocks in the sideset, then they will be output separately...
-              if ( entity != nullptr && entity->type() == Ioss::SIDESET ) {
-                auto sset = dynamic_cast<Ioss::SideSet*>(entity);
+              // sideblocks in the sideset, then they will be output
+              // separately...
+              if (entity != NULL && entity->type() == Ioss::SIDESET) {
+                Ioss::SideSet *sset = dynamic_cast<Ioss::SideSet*>(entity);
                 size_t block_count = sset->block_count();
-                if ( block_count == 1 ) {
-                  auto ssblock = sset->get_side_block(part->name());
-                  if ( ssblock ) {
-                    entity = ssblock; // NOTE: 'entity' is reset at this point.
+                if (block_count == 1) {
+                  Ioss::GroupingEntity *ssblock = sset->get_side_block(part->name());
+                  if (ssblock) {
+                    // NOTE: 'entity' is reset at this point.
+                    entity = ssblock;
                   }
                 }
               }
 
-              if ( entity != nullptr && entity->type() != Ioss::SIDESET ) {
+              if (entity != NULL && entity->type() != Ioss::SIDESET) {
                 put_field_data(bulk_data, *part, rank, entity, m_named_fields, m_subset_selector.get());
               }
 
@@ -2175,33 +2140,11 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
               if (rank != stk::topology::NODE_RANK && m_use_nodeset_for_part_nodes_fields) {
                 std::string nodes_name = part->name() + "_nodes";
                 Ioss::GroupingEntity *node_entity = region->get_entity(nodes_name);
-                if ( node_entity != nullptr ) {
-                  put_field_data(bulk_data, *part, stk::topology::NODE_RANK, node_entity, m_named_fields, m_subset_selector.get());
+                if (node_entity != NULL) {
+                  put_field_data(bulk_data, *part, stk::topology::NODE_RANK, node_entity, m_named_fields,
+                                 m_subset_selector.get());
                 }
               }
-            }
-          }
-          return m_current_output_step;
-        }
-
-        int impl::OutputFile::write_defined_output_fields_for_selected_subset(const stk::mesh::BulkData& bulk_data,
-                                                                      std::vector<stk::mesh::Part*>& selectOutputElementParts)
-        {
-          Ioss::Region *region = m_region.get();
-          ThrowErrorMsgIf (region==nullptr, "INTERNAL ERROR: Mesh Output Region pointer is NULL in write_defined_output_fields.");
-
-          const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
-          // Special processing for nodeblock (all nodes in model)...
-          put_field_data(bulk_data, meta_data.universal_part(), stk::topology::NODE_RANK,
-                         region->get_node_blocks()[0], m_named_fields, m_subset_selector.get());
-
-          for( auto part : selectOutputElementParts )
-          {
-            stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-            auto entity = region->get_entity(part->name());
-
-            if ( entity != nullptr && entity->type() != Ioss::SIDESET ) {
-              put_field_data(bulk_data, *part, rank, entity, m_named_fields, m_subset_selector.get());
             }
           }
           return m_current_output_step;
@@ -2210,6 +2153,7 @@ void put_field_data(const stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         void impl::OutputFile::end_output_step()
         {
           m_region->end_state(m_current_output_step);
+          m_region->end_mode(Ioss::STATE_TRANSIENT);
         }
 
         void impl::OutputFile::set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector)

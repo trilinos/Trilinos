@@ -43,9 +43,6 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_util/diag/StringUtil.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
-#include <string>
-#include <vector>
-#include <set>
 
 unsigned count_sides_in_mesh(const stk::mesh::BulkData& mesh)
 {

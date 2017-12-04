@@ -116,6 +116,8 @@ class GearsFixture{
     return * m_gears[i];
   }
 
+  void update_displacement_field();
+
   void communicate_model_fields();
 
  private:

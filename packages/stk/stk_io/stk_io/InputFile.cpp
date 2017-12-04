@@ -31,46 +31,41 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
 #include <stk_io/InputFile.hpp>
-#include <math.h>                                  // for fmod
-#include <stddef.h>                                // for size_t
-#include <algorithm>                               // for sort, swap
-#include <limits>                                  // for numeric_limits
-#include <ostream>                                 // for operator<<, etc
-#include <stdexcept>                               // for runtime_error
-#include <stk_io/DbStepTimeInterval.hpp>
-#include <stk_io/IossBridge.hpp>                   // for get_field_role, etc
-#include <stk_io/MeshField.hpp>                    // for MeshField, etc
-#include <stk_mesh/base/FieldBase.hpp>             // for FieldBase, etc
-#include <stk_mesh/base/FindRestriction.hpp>       // for find_restriction
-#include <stk_mesh/base/MetaData.hpp>              // for MetaData
+#include <math.h>                       // for fmod
+#include <stddef.h>                     // for NULL, size_t
+#include <algorithm>                    // for sort, swap
+#include <limits>                       // for numeric_limits
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_io/DbStepTimeInterval.hpp>  // for DBStepTimeInterval
+#include <stk_io/IossBridge.hpp>        // for get_field_role, etc
+#include <stk_io/MeshField.hpp>         // for MeshField, etc
+#include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
+#include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf
-#include <utility>                                 // for pair
-#include "Ioss_DBUsage.h"                          // for DatabaseUsage, etc
-#include "Ioss_DatabaseIO.h"                       // for DatabaseIO
-#include "Ioss_EntityType.h"                       // for EntityType, etc
-#include "Ioss_Field.h"                            // for Field, etc
-#include "Ioss_GroupingEntity.h"                   // for GroupingEntity
-#include "Ioss_IOFactory.h"                        // for IOFactory
-#include "Ioss_MeshType.h"                         // for MeshType, etc
-#include "Ioss_NodeBlock.h"                        // for NodeBlock
-#include "Ioss_Property.h"                         // for Property
-#include "Ioss_Region.h"                           // for Region, etc
-#include "StkIoUtils.hpp"
-#include "Teuchos_Ptr.hpp"                         // for Ptr::get
-#include "Teuchos_PtrDecl.hpp"                     // for Ptr
-#include "Teuchos_RCP.hpp"                         // for RCP::operator->, etc
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf, etc
+#include <utility>                      // for pair
+#include "Ioss_DBUsage.h"               // for DatabaseUsage, etc
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Ioss_EntityType.h"            // for EntityType::SIDESET
+#include "Ioss_Field.h"                 // for Field, etc
+#include "Ioss_GroupingEntity.h"        // for GroupingEntity
+#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_Region.h"                // for Region, NodeBlockContainer
+#include "Teuchos_Ptr.hpp"              // for Ptr::get
+#include "Teuchos_PtrDecl.hpp"          // for Ptr
+#include "Teuchos_RCP.hpp"              // for is_null, RCP::operator->, etc
 #include "stk_io/DatabasePurpose.hpp"
-#include "stk_mesh/base/FieldState.hpp"            // for FieldState
-#include "stk_mesh/base/Part.hpp"                  // for Part
-#include "stk_mesh/base/Types.hpp"                 // for FieldVector, etc
-#include "stk_topology/topology.hpp"               // for topology, etc
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
+#include "stk_topology/topology.hpp"    // for topology, etc
 
+#include "SidesetTranslator.hpp"
+#include "StkIoUtils.hpp"
 
 
 namespace {
@@ -87,7 +82,7 @@ namespace stk {
 			 const std::string &mesh_type,
 			 DatabasePurpose purpose,
 			 Ioss::PropertyManager &properties)
-      : m_db_purpose(purpose), m_region(nullptr),
+      : m_db_purpose(purpose), m_region(NULL),
 	m_startupTime(0.0),
 	m_periodLength(0.0),
 	m_scaleTime(1.0),
@@ -269,7 +264,7 @@ namespace stk {
 	stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
 	if (f->entity_rank() == rank) {
 	  Ioss::GroupingEntity *io_entity = region->get_entity(part->name());
-	  ThrowErrorMsgIf( io_entity == nullptr,
+	  ThrowErrorMsgIf( io_entity == NULL,
 			   "ERROR: For field '" << mf.field()->name()
 			   << "' Could not find database entity corresponding to the part named '"
 			   << part->name() << "'.");
@@ -278,13 +273,13 @@ namespace stk {
 
 	// If rank is != NODE_RANK, then see if field is defined on the nodes of this part
 	if (rank != stk::topology::NODE_RANK && f->entity_rank() == stk::topology::NODE_RANK) {
-	  Ioss::GroupingEntity *node_entity = nullptr;
+	  Ioss::GroupingEntity *node_entity = NULL;
 	  std::string nodes_name = part->name() + "_nodes";
 	  node_entity = region->get_entity(nodes_name);
-	  if (node_entity == nullptr) {
+	  if (node_entity == NULL) {
 	    node_entity = region->get_entity("nodeblock_1");
 	  }
-	  if (node_entity != nullptr) {
+	  if (node_entity != NULL) {
 	    build_field_part_associations(mf, *part, stk::topology::NODE_RANK, node_entity);
 	  }
 	}
@@ -333,7 +328,7 @@ namespace stk {
         stk::mesh::FieldBase *f = mesh_field.field();
         // Only add TRANSIENT Fields -- check role; if not present assume transient...
         const Ioss::Field::RoleType *role = stk::io::get_field_role(*f);
-        if (role == nullptr || *role == Ioss::Field::TRANSIENT) {
+        if (role == NULL || *role == Ioss::Field::TRANSIENT) {
             if (stk::io::is_field_on_part(f, rank, part)) {
                 const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*f, rank, part);
                 std::pair<std::string, Ioss::Field::BasicType> field_type;
@@ -394,7 +389,7 @@ namespace stk {
                     bool field_is_missing = false;
                     if (f->entity_rank() == rank) {
                         Ioss::GroupingEntity *io_entity = region->get_entity(part->name());
-                        ThrowErrorMsgIf( io_entity == nullptr,
+                        ThrowErrorMsgIf( io_entity == NULL,
                                 "ERROR: For field '" << (*I).field()->name()
                                 << "' Could not find database entity corresponding to the part named '"
                                 << part->name() << "'.");
@@ -403,13 +398,13 @@ namespace stk {
 
                     // If rank is != NODE_RANK, then see if field is defined on the nodes of this part
                     if (rank != stk::topology::NODE_RANK && f->entity_rank() == stk::topology::NODE_RANK) {
-                        Ioss::GroupingEntity *node_entity = nullptr;
+                        Ioss::GroupingEntity *node_entity = NULL;
                         std::string nodes_name = part->name() + "_nodes";
                         node_entity = region->get_entity(nodes_name);
-                        if (node_entity == nullptr) {
+                        if (node_entity == NULL) {
                             node_entity = region->get_entity("nodeblock_1");
                         }
-                        if (node_entity != nullptr) {
+                        if (node_entity != NULL) {
                             field_is_missing = build_field_part_associations(*I, *part, stk::topology::NODE_RANK, node_entity,
                                                                              missing_fields_collector_ptr);
                         }
@@ -456,7 +451,7 @@ namespace stk {
                 stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
                 // Get Ioss::GroupingEntity corresponding to this part...
                 Ioss::GroupingEntity *entity = region->get_entity(part->name());
-                if (entity != nullptr && !m_fields.empty() && entity->type() != Ioss::SIDESET) {
+                if (entity != NULL && !m_fields.empty() && entity->type() != Ioss::SIDESET) {
                     std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
                     while (I != m_fields.end()) {
                         if ((*I).m_subsetParts.empty()) {
@@ -468,13 +463,13 @@ namespace stk {
 
                             // If rank is != NODE_RANK, then see if field is defined on the nodes of this part
                             if (rank != stk::topology::NODE_RANK && f->entity_rank() == stk::topology::NODE_RANK) {
-                                Ioss::GroupingEntity *node_entity = nullptr;
+                                Ioss::GroupingEntity *node_entity = NULL;
                                 std::string nodes_name = part->name() + "_nodes";
                                 node_entity = region->get_entity(nodes_name);
-                                if (node_entity == nullptr) {
+                                if (node_entity == NULL) {
                                     node_entity = region->get_entity("nodeblock_1");
                                 }
-                                if (node_entity != nullptr) {
+                                if (node_entity != NULL) {
                                     field_is_missing = build_field_part_associations(*I, *part, stk::topology::NODE_RANK, node_entity,
                                                                                      missing_fields_collector_ptr);
                                 }
@@ -490,7 +485,7 @@ namespace stk {
             }
         }
 
-        if (num_missing_fields > 0 && missingFields==nullptr) {
+        if (num_missing_fields > 0 && missingFields==NULL) {
             std::ostringstream msg;
             msg << "ERROR: Input field processing could not find " << num_missing_fields << " fields.\n";
             throw std::runtime_error( msg.str() );
@@ -540,7 +535,7 @@ namespace stk {
       // Sort fields to ensure they are iterated in the same order on all processors.
       std::sort(m_fields.begin(), m_fields.end(), meshFieldSort);
 
-      bool ignore_missing_fields = (missingFields != nullptr);
+      bool ignore_missing_fields = (missingFields != NULL);
 
       if (!m_fieldsInitialized) {
 	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
@@ -624,7 +619,7 @@ namespace stk {
         // Sort fields to ensure they are iterated in the same order on all processors.
         std::sort(m_fields.begin(), m_fields.end(), meshFieldSort);
 
-        bool ignore_missing_fields = (missingFields != nullptr);
+        bool ignore_missing_fields = (missingFields != NULL);
 
         if (!m_fieldsInitialized) {
             std::vector<stk::io::MeshField>::iterator I = m_fields.begin();

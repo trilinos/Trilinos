@@ -1,13 +1,13 @@
 
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
+#include <stk_util/parallel/Parallel.hpp>    // for parallel_machine_size, etc
+#include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/CommSparse.hpp>  // for comm_recv_sizes
+#include <stk_util/parallel/MPI.hpp>
+
+#include <iomanip>
+
+#include <stk_search/CommonSearchUtilsInstrumented.hpp>
 #include <stk_search/PrototypeSearchUtilsInstrumented.hpp>
-#include <stk_util/parallel/CommSparse.hpp>    // for CommSparse
-#include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
-
-
 
 
 namespace stk {

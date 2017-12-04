@@ -31,33 +31,29 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>
-#include <stk_util/diag/String.hpp>
-#include <stk_util/diag/StringUtil.hpp>
-#include <string>
-#include <cstdlib>
+#ifndef STK_SEARCH_COARSE_SEARCH_GEOMETRY_TOOLKIT_HPP
+#define STK_SEARCH_COARSE_SEARCH_GEOMETRY_TOOLKIT_HPP
 
-TEST(StkString, case_insensitivity)
+#include <stk_search/BoundingBox.hpp>
+#include <stk_search/IdentProc.hpp>
+
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/environment/ReportHandler.hpp>
+
+namespace stk { namespace search {
+
+template <typename DomainBox, typename DomainIdent, typename RangeBox, typename RangeIdent>
+void coarse_search_geometry_toolkit( std::vector< std::pair<DomainBox,DomainIdent> > const& local_domain,
+                                std::vector< std::pair<RangeBox,RangeIdent> > const& local_range,
+                                stk::ParallelMachine comm,
+                                std::vector<std::pair<DomainIdent, RangeIdent> >& output
+                              )
 {
-  sierra::String ABC("ABC");
-  sierra::String abc("abc");
-  bool strings_match_by_case_insensitivity = ABC == abc;
-  EXPECT_TRUE(strings_match_by_case_insensitivity);
+
 }
 
-TEST(StkString, case_sensitive_comparison_with_sierra_string)
-{
-  sierra::String ABC("ABC");
-  sierra::String abc("abc");
-  bool strings_do_not_match = sierra::case_strcmp(ABC, abc);
-  EXPECT_FALSE(strings_do_not_match);
-}
 
-TEST(StkString, case_sensitive_comparison_with_std_string)
-{
-  std::string ABC("ABC");
-  std::string abc("abc");
-  bool strings_do_not_match = sierra::case_strcmp(ABC, abc);
-  EXPECT_FALSE(strings_do_not_match);
-}
+} }
 
+#endif

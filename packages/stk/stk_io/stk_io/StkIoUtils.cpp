@@ -1,41 +1,20 @@
-
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
 #include "StkIoUtils.hpp"
-#include <algorithm>
-#include <utility>
-#include "Ioss_Field.h"
+
 #include "Ioss_Region.h"
-#include "Ioss_SideBlock.h"
 #include "Ioss_SideSet.h"
-#include "StkMeshIoBroker.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_RCPDecl.hpp"                                   // for RCP
-#include "stk_io/IossBridge.hpp"
-#include "stk_mesh/base/Bucket.hpp"
-#include "stk_mesh/base/BulkData.hpp"
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/Entity.hpp"
-#include "stk_mesh/base/ExodusTranslator.hpp"
-#include "stk_mesh/base/FieldBase.hpp"
+#include "Ioss_SideBlock.h"
+
 #include "stk_mesh/base/GetEntities.hpp"
-#include "stk_mesh/base/MetaData.hpp"
-#include "stk_mesh/base/Part.hpp"
 #include "stk_mesh/base/Selector.hpp"
-#include "stk_mesh/base/SideSetEntry.hpp"
 #include "stk_mesh/base/Types.hpp"
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_mesh/base/ExodusTranslator.hpp"
+
 #include "stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp"
-#include "stk_mesh/baseImpl/elementGraph/ElemElemGraphImpl.hpp"
-#include "stk_mesh/baseImpl/elementGraph/GraphEdgeData.hpp"
-#include "stk_topology/topology.hpp"
-#include "stk_util/environment/ReportHandler.hpp"
+
 #include "stk_util/parallel/ParallelReduceBool.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
-
-
-
+#include "StkMeshIoBroker.hpp"
 
 namespace stk {
 namespace io {
@@ -112,17 +91,15 @@ stk::mesh::EntityVector get_sides(stk::mesh::BulkData &bulkData, const stk::mesh
     return sides;
 }
 
-void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkData, stk::mesh::Selector elementSelector)
+void fill_sideset(const stk::mesh::EntityVector& sides, stk::mesh::BulkData& bulkData, stk::mesh::Selector elementSelector, int sideset_id)
 {
-    stk::mesh::SideSet *sideSet = nullptr;
-    int sideset_id = sidesetPart.id();
+    stk::mesh::SideSet *sideSet;
     bool sidesetExists = bulkData.does_sideset_exist(sideset_id);
     if(sidesetExists)
         sideSet = &bulkData.get_sideset(sideset_id);
     else
         sideSet = &bulkData.create_sideset(sideset_id);
 
-    stk::mesh::EntityVector sides = get_sides(bulkData, sidesetPart);
     for(stk::mesh::Entity side : sides)
     {
         unsigned numElements = bulkData.num_elements(side);
@@ -140,19 +117,22 @@ void fill_sideset(const stk::mesh::Part& sidesetPart, stk::mesh::BulkData& bulkD
 
 void create_bulkdata_sidesets(stk::mesh::BulkData& bulkData)
 {
-    if(bulkData.was_mesh_modified_since_sideset_creation())
+    std::vector<const stk::mesh::Part *> surfacesInMap = bulkData.mesh_meta_data().get_surfaces_in_surface_to_block_map();
+    for(size_t i=0;i<surfacesInMap.size();++i)
     {
-        bulkData.clear_sidesets();
+        std::vector<const stk::mesh::Part *> touching_parts = bulkData.mesh_meta_data().get_blocks_touching_surface(surfacesInMap[i]);
 
-        std::vector<const stk::mesh::Part *> surfacesInMap = bulkData.mesh_meta_data().get_surfaces_in_surface_to_block_map();
-        for(size_t i=0;i<surfacesInMap.size();++i)
-        {
-            std::vector<const stk::mesh::Part *> touching_parts = bulkData.mesh_meta_data().get_blocks_touching_surface(surfacesInMap[i]);
-
-            stk::mesh::Selector elementSelector = stk::mesh::selectUnion(touching_parts);
-            fill_sideset(*surfacesInMap[i], bulkData, elementSelector);
-        }
+        stk::mesh::Selector elementSelector = stk::mesh::selectUnion(touching_parts);
+        stk::mesh::EntityVector sides = get_sides(bulkData, *surfacesInMap[i]);
+        fill_sideset(sides, bulkData, elementSelector, surfacesInMap[i]->id());
     }
+}
+
+void clear_bulkdata_sidesets(stk::mesh::BulkData& bulkData)
+{
+    std::vector<const stk::mesh::Part *> surfacesInMap = bulkData.mesh_meta_data().get_surfaces_in_surface_to_block_map();
+    for(size_t i=0;i<surfacesInMap.size();++i)
+        bulkData.clear_sideset(surfacesInMap[i]->id());
 }
 
 const stk::mesh::Part* getElementBlockSelectorForElement(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
