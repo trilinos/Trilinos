@@ -60,10 +60,10 @@ class IntegrateSourceTerm : public PHX::EvaluatorWithBaseImpl<Traits>,
 
 public:
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
-    Kokkos::View<const ScalarT**,PHX::Device> source;
-    Kokkos::View<ScalarT**,PHX::Device> residual;
-    KOKKOS_FUNCTION MyDevEval(const Kokkos::View<const ScalarT**,PHX::Device>& in_source,
-                                     const Kokkos::View<ScalarT**,PHX::Device>& in_residual) :
+    PHX::View<const ScalarT**> source;
+    PHX::View<ScalarT**> residual;
+    KOKKOS_FUNCTION MyDevEval(const PHX::View<const ScalarT**>& in_source,
+			      const PHX::View<ScalarT**>& in_residual) :
       source(in_source), residual(in_residual) {}
     KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
     KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,

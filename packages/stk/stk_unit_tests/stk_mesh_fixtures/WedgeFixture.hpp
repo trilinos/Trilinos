@@ -175,12 +175,12 @@ class WedgeFixture
     m_elem_parts.insert(m_elem_parts.end(), itr, itr + num);
   }
 
-  template <typename Iterator>
-  void add_node_parts(Iterator itr, size_t num)
-  {
-    ThrowRequire(!m_meta.is_commit());
-    m_node_parts.insert(m_node_parts.end(), itr, itr + num);
-  }
+  //template <typename Iterator>
+  //void add_node_parts(Iterator itr, size_t num)
+  //{
+  //  ThrowRequire(!m_meta.is_commit());
+  //  m_node_parts.insert(m_node_parts.end(), itr, itr + num);
+  //}
 
  private:
 

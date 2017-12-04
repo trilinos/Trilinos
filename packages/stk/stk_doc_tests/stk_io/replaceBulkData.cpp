@@ -141,6 +141,7 @@ namespace {
         stkIo.end_output_step(fh);
       }
       //-END      
+      delete bd;
     }
     // ============================================================
     //+ VERIFICATION
@@ -166,5 +167,6 @@ namespace {
     // Cleanup
     unlink(mesh_name.c_str());
     unlink(results_name.c_str());
+
   }
 }

@@ -641,128 +641,26 @@ template <> struct AssignFadDim7<0u> {
   }
 };
 
-
-template <unsigned , unsigned> struct AssignDim {};
-
-template <unsigned FadStaticDim> struct AssignDim<0u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = 1;
-    dst.m_dim.N1 = 1;
-    dst.m_dim.N2 = 1;
-    dst.m_dim.N3 = 1;
-    dst.m_dim.N4 = 1;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 0 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<1u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = 1;
-    dst.m_dim.N2 = 1;
-    dst.m_dim.N3 = 1;
-    dst.m_dim.N4 = 1;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 1 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<2u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = 1;
-    dst.m_dim.N3 = 1;
-    dst.m_dim.N4 = 1;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 2 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<3u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = src.m_dim.N2;
-    dst.m_dim.N3 = 1;
-    dst.m_dim.N4 = 1;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 3 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<4u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = src.m_dim.N2;
-    dst.m_dim.N3 = src.m_dim.N3;
-    dst.m_dim.N4 = 1;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 4 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<5u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = src.m_dim.N2;
-    dst.m_dim.N3 = src.m_dim.N3;
-    dst.m_dim.N4 = src.m_dim.N4;
-    dst.m_dim.N5 = 1;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 5 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<6u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = src.m_dim.N2;
-    dst.m_dim.N3 = src.m_dim.N3;
-    dst.m_dim.N4 = src.m_dim.N4;
-    dst.m_dim.N5 = src.m_dim.N5;
-    dst.m_dim.N6 = 1;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 6 );
-  }
-};
-
-template <unsigned FadStaticDim> struct AssignDim<7u,FadStaticDim> {
-  template <typename Src, typename Dst>
-  KOKKOS_INLINE_FUNCTION
-  static void eval(Dst& dst, const Src& src) {
-    dst.m_dim.N0 = src.m_dim.N0;
-    dst.m_dim.N1 = src.m_dim.N1;
-    dst.m_dim.N2 = src.m_dim.N2;
-    dst.m_dim.N3 = src.m_dim.N3;
-    dst.m_dim.N4 = src.m_dim.N4;
-    dst.m_dim.N5 = src.m_dim.N5;
-    dst.m_dim.N6 = src.m_dim.N6;
-    AssignFadDim7<FadStaticDim>::eval( dst , src , 7 );
-  }
-};
+// Copy a layout, moving the Fad dimension to the last
+template <typename Layout>
+KOKKOS_INLINE_FUNCTION
+static Layout
+permute_fad_layout(const Layout& src, const unsigned rank) {
+  Layout dst = src;
+  dst.dimension[rank] = 1;
+  dst.dimension[7]    = src.dimension[rank];
+  return dst;
+}
+KOKKOS_INLINE_FUNCTION
+static LayoutStride
+permute_fad_layout(const LayoutStride& src, const unsigned rank) {
+  LayoutStride dst = src;
+  dst.dimension[rank] = 1;
+  dst.stride[rank]    = 1;
+  dst.dimension[7]    = src.dimension[rank];
+  dst.stride[7]       = src.stride[rank];
+  return dst;
+}
 
 /**\brief  Assign compatible Sacado FAD view mappings.
  *
@@ -846,14 +744,14 @@ public:
                     , typename SrcTraits::const_value_type >::value ,
         "View assignment must have same value type or const = non-const" );
 
-      typedef ViewMapping< SrcTraits, void> SrcType;
-      enum { FadStaticDim = SrcType::FadStaticDimension };
-
-      AssignDim<SrcTraits::rank,FadStaticDim>::eval(dst.m_map.m_offset, src.m_map.m_offset);
+      typedef typename DstType::offset_type dst_offset_type;
+      dst.m_map.m_offset =
+        dst_offset_type(std::integral_constant<unsigned,0>(),
+                        permute_fad_layout(src.m_map.m_offset.layout(),
+                                           SrcTraits::rank));
 
       dst.m_map.m_handle  = src.m_map.m_handle ;
       dst.m_rank    = src.Rank ;
-      dst.m_map.m_offset.m_stride = src.m_map.m_offset.m_stride ;
 
       ViewMapping::template assign_fad_size< typename DstTraits::specialize >( dst.m_map , src.m_map );
     }

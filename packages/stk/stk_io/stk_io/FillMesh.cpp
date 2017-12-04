@@ -1,7 +1,11 @@
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
 #include "stk_io/FillMesh.hpp"
-#include "stk_io/StkMeshIoBroker.hpp"
-#include "stk_mesh/base/BulkData.hpp"
-#include "stk_mesh/base/MetaData.hpp"
+#include "Ioss_Property.h"             // for Property
+#include "stk_io/DatabasePurpose.hpp"  // for DatabasePurpose::READ_MESH
+#include "stk_io/StkMeshIoBroker.hpp"  // for StkMeshIoBroker
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 namespace stk
 {

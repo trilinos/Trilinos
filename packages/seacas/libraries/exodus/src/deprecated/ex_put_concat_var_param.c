@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,23 +33,23 @@
  *
  */
 /*****************************************************************************
-*
-* expvp - ex_put_concat_var_param
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid   exodus file id
-*       int     num_g   global variable count
-*       int     num_n   nodal variable count
-*       int     num_e   element variable count
-*       int     num_elem_blk            number of element blocks (unused)
-*       int*    elem_var_tab            element variable truth table array
-*
-* exit conditions -
-*
-* revision history -
-*
-*****************************************************************************/
+ *
+ * expvp - ex_put_concat_var_param
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid   exodus file id
+ *       int     num_g   global variable count
+ *       int     num_n   nodal variable count
+ *       int     num_e   element variable count
+ *       int     num_elem_blk            number of element blocks (unused)
+ *       int*    elem_var_tab            element variable truth table array
+ *
+ * exit conditions -
+ *
+ * revision history -
+ *
+ *****************************************************************************/
 
 #include "exodusII.h" // for ex_put_all_var_param
 

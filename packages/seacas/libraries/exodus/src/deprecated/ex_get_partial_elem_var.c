@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -62,7 +62,8 @@
 /*!
 \ingroup ResultsData
 
- * \deprecated use ex_get_partial_var()
+ * \deprecated use ex_get_partial_var()(exoid, time_step, EX_ELEM_BLOCK, elem_var_index,
+elem_blk_id, start_elem_num, num_elem, elem_var_vals)
  */
 
 /*

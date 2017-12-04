@@ -3,6 +3,8 @@
 #ifndef STK_SIMD_SSE_BOOLS_H
 #define STK_SIMD_SSE_BOOLS_H
 
+// IWYU pragma: private, include <stk_simd/Simd.hpp>
+
 #include <emmintrin.h>
 
 namespace stk {

@@ -31,17 +31,19 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <gtest/gtest.h>                // for AssertHelper, ASSERT_EQ, etc
-#include <stddef.h>                     // for size_t
-#include <ostream>                      // for basic_ostream::operator<<
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <gtest/gtest.h>                             // for AssertHelper, etc
+#include <stddef.h>                                  // for size_t
+#include <stk_mesh/base/BulkData.hpp>                // for BulkData
+#include <stk_mesh/base/MetaData.hpp>                // for MetaData
+#include <stk_util/parallel/Parallel.hpp>            // for ParallelMachine
+#include <vector>                                    // for vector, etc
+#include "mpi.h"                                     // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/Types.hpp"      // for EntityVector, EntityRank, etc
-#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_mesh/base/Types.hpp"                   // for EntityVector, etc
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
 
 
 

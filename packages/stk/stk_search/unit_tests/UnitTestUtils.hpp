@@ -41,7 +41,6 @@
 #include <stk_search/IdentProc.hpp>
 
 #include <stk_search/CoarseSearch.hpp>
-#include <stk_search/OctTreeOps.hpp>
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/CommSparse.hpp>

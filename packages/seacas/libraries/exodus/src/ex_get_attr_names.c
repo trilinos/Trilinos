@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,22 +33,22 @@
  *
  */
 /*****************************************************************************
-*
-* exgeat - ex_get_attr_names
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     obj_type                object type (edge/face/elem block)
-*       int     obj_id                  object id (edge/face/elem block id)
-*
-* exit conditions -
-*       char*   names[]                 ptr array of attribute names
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exgeat - ex_get_attr_names
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     obj_type                object type (edge/face/elem block)
+ *       int     obj_id                  object id (edge/face/elem block id)
+ *
+ * exit conditions -
+ *       char*   names[]                 ptr array of attribute names
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, ex_name_of_object, etc
 #include "exodusII_int.h" // for EX_FATAL, EX_WARN, etc
@@ -71,7 +71,7 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
   const char *vattrbname;
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* Determine index of obj_id in vobjids array */
   if (obj_type != EX_NODAL) {
@@ -84,13 +84,13 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "Warning: no attributes found for NULL %s %" PRId64 " in file id %d",
                    ex_name_of_object(obj_type), obj_id, exoid);
-          ex_err("ex_get_attr_names", errmsg, EX_NULLENTITY);
+          ex_err(__func__, errmsg, EX_NULLENTITY);
           EX_FUNC_LEAVE(EX_WARN); /* no attributes for this object */
         }
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "Warning: failed to locate %s id %" PRId64 " in id array in file id %d",
                  ex_name_of_object(obj_type), obj_id, exoid);
-        ex_err("ex_get_attr_names", errmsg, status);
+        ex_err(__func__, errmsg, status);
         EX_FUNC_LEAVE(EX_WARN);
       }
     }
@@ -137,7 +137,7 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Internal ERROR: unrecognized object type in switch: %d in file id %d", obj_type,
              exoid);
-    ex_err("ex_get_attr_names", errmsg, EX_BADPARAM);
+    ex_err(__func__, errmsg, EX_BADPARAM);
     EX_FUNC_LEAVE(EX_FATAL); /* number of attributes not defined */
   }
   /* inquire id's of previously defined dimensions  */
@@ -146,7 +146,7 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
     snprintf(errmsg, MAX_ERR_LENGTH,
              "Warning: no attributes found for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
-    ex_err("ex_get_attr_names", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_WARN); /* no attributes for this object */
   }
 
@@ -154,7 +154,7 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to get number of attributes for %s %" PRId64 " in file id %d",
              ex_name_of_object(obj_type), obj_id, exoid);
-    ex_err("ex_get_attr_names", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -167,7 +167,7 @@ int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id, c
 
   if (status == NC_NOERR) {
     /* read the names */
-    status = ex_get_names_internal(exoid, varid, num_attr, names, obj_type, "ex_get_attr_names");
+    status = ex_get_names_internal(exoid, varid, num_attr, names, obj_type, __func__);
     if (status != NC_NOERR) {
       EX_FUNC_LEAVE(EX_FATAL);
     }

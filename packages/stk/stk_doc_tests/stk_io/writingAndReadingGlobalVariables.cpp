@@ -38,6 +38,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <string>                       // for string, basic_string
 #include <vector>                       // for vector
+#include <limits>                       // for std::numeric_limits
 #include "Ioss_Field.h"                 // for Field, etc
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_util/parallel/Parallel.hpp"
@@ -87,8 +88,9 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
                          globalNamesOnFile[0].c_str());
         double timeStepSizeReadFromFile = 0.0;
 	stkIo.get_global(globalNamesOnFile[0], timeStepSizeReadFromFile);
-        const double tolerance = 1e-16;
-        EXPECT_NEAR(timeStepSize, timeStepSizeReadFromFile, tolerance);
+
+        const double epsilon = std::numeric_limits<double>::epsilon();
+        EXPECT_NEAR(timeStepSize, timeStepSizeReadFromFile, epsilon);
 
 	//+ If try to get a global that does not exist, will throw
 	//+ an exception by default...

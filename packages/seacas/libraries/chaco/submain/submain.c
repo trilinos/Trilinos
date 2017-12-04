@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -215,7 +215,7 @@ int submain(struct vtx_data **graph,         /* data structure for graph */
 
   if (outfile != NULL && PRINT_HEADERS) {
     fprintf(outfile, "\n                    Chaco 2.0\n");
-    fprintf(outfile, "          Sandia National Laboratories\n\n");
+    fprintf(outfile, "          Sandia-2017 National Laboratories\n\n");
   }
 
   if (CHECK_INPUT) { /* Check the input for inconsistencies. */

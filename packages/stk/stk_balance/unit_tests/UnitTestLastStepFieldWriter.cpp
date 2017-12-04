@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <unistd.h>                     // for unlink
+#include <limits>                       // for std::numeric_limits<double>::epsilon
 
 #include "../stk_balance/internal/LastStepFieldWriter.hpp"
 
@@ -71,7 +72,7 @@ void read_mesh_and_verify_field_data_added_correctly(const std::string &outputFi
     stk::mesh::BulkData bulkData(meta, MPI_COMM_WORLD);
 
     stk::balance::internal::LastStepFieldWriter ioHelper(bulkData, outputFilename);
-    EXPECT_NEAR(timeForStep1, ioHelper.get_max_time(), 1.0e-14);
+    EXPECT_NEAR(timeForStep1, ioHelper.get_max_time(), std::numeric_limits<double>::epsilon());
     verify_field_data_is_same_for_all_nodes(bulkData, fieldName, initialVal);
 }
 

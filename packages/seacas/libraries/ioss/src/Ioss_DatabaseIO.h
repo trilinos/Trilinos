@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2010 National Technology & Engineering Solutions
+// Copyright(C) 1999-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -297,8 +297,8 @@ namespace Ioss {
      *  \returns The informative strings.
      */
     const std::vector<std::string> &get_information_records() const { return informationRecords; }
-    void add_information_records(const std::vector<std::string> &info);
-    void add_information_record(const std::string &info);
+    void                            add_information_records(const std::vector<std::string> &info);
+    void                            add_information_record(const std::string &info);
 
     // QA Records:
 
@@ -371,11 +371,12 @@ namespace Ioss {
      *
      *  \returns The length, or 0 for unlimited.
      */
-    virtual int maximum_symbol_length() const { return 0; } // Default is unlimited...
-    virtual void
-    set_maximum_symbol_length(int /* requested_symbol_size */){}; // Default does nothing...
+    virtual int  maximum_symbol_length() const { return 0; } // Default is unlimited...
+    virtual void set_maximum_symbol_length(int /* requested_symbol_size */) {
+    } // Default does nothing...
 
-    char get_field_separator() const;
+    char get_field_separator() const { return fieldSeparator; }
+
     void set_field_separator(char separator);
     void set_lower_case_variable_names(bool true_false) const
     {
@@ -408,7 +409,8 @@ namespace Ioss {
     AxisAlignedBoundingBox get_bounding_box(const Ioss::ElementBlock *eb) const;
     AxisAlignedBoundingBox get_bounding_box(const Ioss::StructuredBlock *sb) const;
 
-    int          int_byte_size_api() const; //! Returns 4 or 8
+    virtual int  int_byte_size_db() const = 0; //! Returns 4 or 8
+    int          int_byte_size_api() const;    //! Returns 4 or 8
     virtual void set_int_byte_size_api(Ioss::DataSize size) const;
 
     /*!
@@ -464,8 +466,8 @@ namespace Ioss {
 
     void set_time_scale_factor(double factor) { timeScaleFactor = factor; }
 
-    const Ioss::ParallelUtils &util() const { return util_; }
-
+    const Ioss::ParallelUtils &  util() const { return util_; }
+    const Ioss::PropertyManager &get_property_manager() const { return properties; }
     /** \brief Get the processor that this mesh database is on.
      *
      *  \returns The processor that this mesh database is on.
@@ -595,7 +597,7 @@ namespace Ioss {
     }
 
     virtual int64_t node_global_to_local__(int64_t global, bool must_exist) const = 0;
-    virtual int64_t element_global_to_local__(int64_t global) const = 0;
+    virtual int64_t element_global_to_local__(int64_t global) const               = 0;
 
     virtual void release_memory__() {}
     virtual void openDatabase__() const {}
@@ -698,6 +700,7 @@ namespace Ioss {
   private:
 #endif
     Region *region_;
+    char    fieldSeparator{'_'};
     bool    isInput;
     bool    isParallelConsistent; // True if application will make field data get/put calls parallel
                                   // consistently.

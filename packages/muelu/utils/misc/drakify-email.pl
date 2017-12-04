@@ -197,6 +197,7 @@ for ($i=0; $i<$numLines; $i++)
 my $theDate = $ARGV[0];
 my $cdashDate = $ARGV[1];
 my $cdashMachine = $ARGV[2];
+my $capMachine = ucfirst($cdashMachine);
 my $senderName = $ARGV[3];
 $theDate =~ s/_/ /g;
 
@@ -330,7 +331,7 @@ href="http://testing.sandia.gov/cdash/index.php?project=Trilinos&subproject=MueL
 <br>
 
 
-<h2>Geminga Test Summary</h2>
+<h2>$capMachine Test Summary</h2>
 <h2>$gitFailure</h2>
 EOF
 
@@ -438,19 +439,40 @@ EOE
 }
 
 print "<h3>Nightly Tests</h3>\n";
-printTableHeader;
-printEntries(\@entriesNightly);
-printTableFooter;
+if (@entriesNightly > 0)
+{
+  printTableHeader;
+  printEntries(\@entriesNightly);
+  printTableFooter;
+}
+else
+{
+  print "no results reported\n";
+}
 
 print "<h3>Specialized Tests</h3>\n";
-printTableHeader;
-printEntries(\@entriesSpecialized);
-printTableFooter;
+if (@entriesSpecialized > 0)
+{
+  printTableHeader;
+  printEntries(\@entriesSpecialized);
+  printTableFooter;
+}
+else
+{
+  print "no results reported\n";
+}
 
 print "<h3>Experimental Tests</h3>\n";
-printTableHeader;
-printEntries(\@entriesExperimental);
-printTableFooter;
+if (@entriesExperimental > 0)
+{
+  printTableHeader;
+  printEntries(\@entriesExperimental);
+  printTableFooter;
+}
+else
+{
+  print "no results reported\n";
+}
 
 print <<EOF;
 <br>

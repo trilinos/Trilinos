@@ -143,11 +143,8 @@ namespace MueLu {
 
     RCP<const Map> rowMap = A->getRowMap();
 
-    // NOTE: Teuchos::MPIComm::duplicate() calls MPI_Bcast inside, so this is
-    // a synchronization point. However, as we do MueLu_sumAll afterwards anyway, it
-    // does not matter.
     RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
-    RCP<const Teuchos::Comm<int> > comm     = origComm->duplicate();
+    RCP<const Teuchos::Comm<int> > comm     = origComm;
 
     // Test 2: check whether A is actually distributed, i.e. more than one processor owns part of A
     // TODO: this global communication can be avoided if we store the information with the matrix (it is known when matrix is created)

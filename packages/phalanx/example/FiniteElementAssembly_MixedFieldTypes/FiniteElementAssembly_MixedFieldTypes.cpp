@@ -291,10 +291,17 @@ int main(int argc, char *argv[])
     fm.postRegistrationSetup(nullptr);
     fm.writeGraphvizFile("example_fem",".dot",true,true);
 
-    Kokkos::deep_copy(x,1.0);
+    // Set the team and vector size on the workset for Host DAG
+    for (auto& w : worksets) {
+      w.team_size_ = p.teamSize();
+      w.vector_size_ = p.vectorSize();
+    }
+
+    // Kokkos::deep_copy(x,1.0);
+    Kokkos::parallel_for(x.extent(0),KOKKOS_LAMBDA (const int& i) {x(i)=static_cast<double>(i);});
     Kokkos::deep_copy(f,0.0);
-    PHX::exec_space::fence();
     RCP<Time> residual_eval_time = TimeMonitor::getNewTimer("Residual Evaluation Time");
+    PHX::exec_space::fence();
     if (p.doResidual()) {
       TimeMonitor tm_r(*residual_eval_time);
       for (const auto& workset : worksets)
@@ -308,8 +315,8 @@ int main(int argc, char *argv[])
     // Jacobian does both f and J
     Kokkos::deep_copy(f,0.0);
     Kokkos::deep_copy(J.values,0.0);
-    PHX::exec_space::fence();
     RCP<Time> jacobian_eval_time = TimeMonitor::getNewTimer("Jacobian Evaluation Time");
+    PHX::exec_space::fence();
     if (p.doJacobian()) {
       TimeMonitor tm_r(*jacobian_eval_time);
       for (const auto& workset : worksets)

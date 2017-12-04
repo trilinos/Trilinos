@@ -132,7 +132,8 @@ public:
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
+    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
+      override;
     Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override;
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override;
 

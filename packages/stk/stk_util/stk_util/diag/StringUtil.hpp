@@ -71,17 +71,11 @@ namespace sierra {
  */
 int case_strcmp(const char *c1, const char *c2);
 
-int case_strncmp(const char *c1, const char *c2, size_t n);
-
 /**
  * @brief Function <b>case_strcmp</b> compares two null terminated strings case
  * insenstively.  It returns zero if they are case insensitively equal, a negative value
  * if <b>s1</b> is case insensitively less than <b>s2</b>, or a positive value if
  * <b>s1</b> is case insensitively greater than <b>s2</b>
- *
- * @param s1		a <b>std::string</b> reference to the first string.
- *
- * @param s2		a <b>std::string</b> reference to the second string.
  *
  * @return		an <b>int</b> value of zero if they are equal, negative if
  *			<b>s1</b> is less than <b>s2</b>, or positive if <b>s1</b> is
@@ -118,7 +112,6 @@ inline const char *case_strstr(const std::string &s1, const std::string &s2) {
 inline const char *case_strstr(const String &s1, const String &s2) {
   return case_strstr(s1.c_str(), s2.c_str());
 }
-
 
 /*
  * @brief Member function <b>undef_if_empty</b> returns the string value
@@ -202,7 +195,7 @@ inline T make_upper(const T &name) {
 
 /**
  * @brief Function <b>make_lower</b> converts string <b>name</b> to lower case.  The
- * convertion happens in place.
+ * conversion happens in place.
  *
  * @param name		a <b>T</b> reference to convert to an lower.
  *
@@ -223,7 +216,7 @@ inline T make_lower(const T &name) {
 
 /**
  * @brief Function <b>make_identifier</b> converts string <b>name</b> to an identifier case.  The
- * convertion happens in place.
+ * conversion happens in place.
  *
  * @param name		a <b>T</b> reference to convert to an identifier.
  *
@@ -237,7 +230,7 @@ inline T &make_identifier(T &name) {
 
 /**
  * @brief Function <b>make_lower_identifier</b> converts string <b>name</b> to a lower
- * case identifier case.  The convertion happens in place.
+ * case identifier case.  The conversion happens in place.
  *
  * @param name		a <b>T</b> reference to convert to a lower case identifier.
  *
@@ -252,7 +245,7 @@ inline T &make_lower_identifier(T &name) {
 
 /**
  * @brief Function <b>make_identifier</b> converts string <b>name</b> to an identifier
- * case.  The convertion happens in place.
+ * case.  The conversion happens in place.
  *
  * @param name		a <b>char</b> pointer to convert to an identifier.
  *
@@ -266,7 +259,7 @@ inline char *make_identifier(char *name) {
 
 /**
  * @brief Function <b>make_lower_identifier</b> converts string <b>name</b> to a lower
- * case identifier case.  The convertion happens in place.
+ * case identifier case.  The conversion happens in place.
  *
  * @param name		a <b>char</b> pointer to convert to a lower case identifier.
  *
@@ -281,7 +274,7 @@ inline char *make_lower_identifier(char *name) {
 
 /**
  * @brief Function <b>trim</b> trims preceeding and trailing spaces from <b>name</b>.  The
- * convertion happens in place.
+ * conversion happens in place.
  *
  * @param name		a <b>T</b> reference to trim.
  *
@@ -398,7 +391,6 @@ to_string( const T &		t)
  * @return		a <b>std::string</b> value of the demangled name.
  */
 #ifdef SIERRA_USE_PLATFORM_DEMANGLER
-// Implement this is Slib_EnvPlatform.C
 std::string demangle(const char *symbol);
 #else
 const char *demangle(const char *symbol);
@@ -483,14 +475,6 @@ public:
    */
   std::ostream &print(std::ostream &os) const;
 
-  /**
-   * @brief Member function <b>operator std::string</b> returns a string of the object
-   * phrase.
-   *
-   * @return		a <b>std::string</b> value of the object string.
-   */
-  operator std::string () const;
-
 private:
   int			m_n;			///< Object count
   const char *		m_noun;			///< Object name
@@ -528,7 +512,6 @@ std::istream &getline(std::istream &is, sierra::String &s, char eol = '\n');
 
 /**
  * @brief Class <b>less_nocase</b> implements a case insensitive compare functor.
- *
  */
 template <class T>
 struct less_nocase : public std::binary_function<T, T, bool>
@@ -893,6 +876,5 @@ std::string join(const ITERATOR& start, const ITERATOR& finish, const SEPARATOR&
 
 } // namespace util
 } // namespace stk
-
 
 #endif // STK_UTIL_DIAG_StringUtil_h

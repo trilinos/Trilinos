@@ -1,15 +1,31 @@
 #ifndef __TACHOEXP_GRAPH_TOOLS_CAMD_HPP__
 #define __TACHOEXP_GRAPH_TOOLS_CAMD_HPP__
 
+
+
 /// \file TachoExp_GraphTools_CAMD.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "TachoExp_Util.hpp"
 #include "TachoExp_Graph.hpp"
 
+#if defined (TACHO_HAVE_SUITESPARSE)
+// TPL SuiteSparse
+#include "camd.h"
+#define TACHO_SUITESPARSE(run) run
+#define TRILINOS_CAMD_CONTROL CAMD_CONTROL 
+#define TRILINOS_CAMD_INFO CAMD_INFO
+#define TRILINOS_CAMD_STATUS CAMD_STATUS
+#define TRILINOS_CAMD_OK CAMD_OK
+ 
+#elif defined (TACHO_HAVE_TRILINOS_SS)
+// Trilinos SuiteSparse
 #include "trilinos_camd.h"
-#define TACHO_CHOLMOD(run) trilinos_ ## run
+#define TACHO_SUITESPARSE(run) trilinos_ ## run
 typedef UF_long SuiteSparse_long;
+#endif
+
+#if defined (TACHO_HAVE_TRILINOS_SS) || defined(TACHO_HAVE_SUITESPARSE)
 
 namespace Tacho {
 
@@ -29,7 +45,7 @@ namespace Tacho {
                        double Info[],
                        const int C[],
                        int BucketSet[] ) {
-        TACHO_CHOLMOD(camd_2)( n, Pe, Iw, Len, iwlen, pfree, 
+        TACHO_SUITESPARSE(camd_2)( n, Pe, Iw, Len, iwlen, pfree, 
                                Nv, Next, Last, Head, Elen, Degree, W, Control, Info, C, BucketSet );
       }
     };
@@ -46,7 +62,7 @@ namespace Tacho {
                        double Info[],
                        const SuiteSparse_long C[],
                        SuiteSparse_long BucketSet[] ) {
-        TACHO_CHOLMOD(camd_l2)( n, Pe, Iw, Len, iwlen, pfree, 
+        TACHO_SUITESPARSE(camd_l2)( n, Pe, Iw, Len, iwlen, pfree, 
                                 Nv, Next, Last, Head, Elen, Degree, W, Control, Info, C, BucketSet );          
       }
     };
@@ -106,8 +122,8 @@ namespace Tacho {
         Kokkos::Impl::Timer timer;
         double t_camd = 0;
 
-        TACHO_CHOLMOD(camd_defaults)(_control);
-        TACHO_CHOLMOD(camd_control)(_control);
+        TACHO_SUITESPARSE(camd_defaults)(_control);
+        TACHO_SUITESPARSE(camd_control)(_control);
 
         ordinal_type *rptr = reinterpret_cast<ordinal_type*>(_rptr.data());
         ordinal_type *cidx = reinterpret_cast<ordinal_type*>(_cidx.data());
@@ -219,4 +235,5 @@ namespace Tacho {
   }
 }
 
+#endif
 #endif

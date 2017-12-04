@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,15 +33,15 @@
  *
  */
 /*****************************************************************************
-*
-* expclb - ex_put_concat_all_blocks: write elem, edge, & face block parameters
-*
-* entry conditions -
-*   input parameters:
-*       int                    exoid          exodus file id
-*       const ex_block_params* bparam         block parameters structure
-*
-*****************************************************************************/
+ *
+ * expclb - ex_put_concat_all_blocks: write elem, edge, & face block parameters
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int                    exoid          exodus file id
+ *       const ex_block_params* bparam         block parameters structure
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for EX_FATAL, etc
@@ -90,10 +90,16 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
   int ids_int64 = ex_int64_status(exoid) & EX_IDS_INT64_API;
 
   static const char *dim_num_maps[] = {
-      DIM_NUM_NM, DIM_NUM_EDM, DIM_NUM_FAM, DIM_NUM_EM,
+      DIM_NUM_NM,
+      DIM_NUM_EDM,
+      DIM_NUM_FAM,
+      DIM_NUM_EM,
   };
   static const char *dim_size_maps[] = {
-      DIM_NUM_NODES, DIM_NUM_EDGE, DIM_NUM_FACE, DIM_NUM_ELEM,
+      DIM_NUM_NODES,
+      DIM_NUM_EDGE,
+      DIM_NUM_FACE,
+      DIM_NUM_ELEM,
   };
   static const ex_entity_type map_enums[] = {EX_NODE_MAP, EX_EDGE_MAP, EX_FACE_MAP, EX_ELEM_MAP};
 
@@ -116,12 +122,12 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
     elem_id_int = param->elem_blk_id;
   }
 
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* inquire previously defined dimensions  */
   if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &strdim)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get string length in file id %d", exoid);
-    ex_err("ex_put_concat_all_blocks", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -130,13 +136,13 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
       if ((status = nc_inq_dimid(exoid, dim_num_maps[i], &dimid)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find node map size of file id %d",
                  exoid);
-        ex_err("ex_put_concat_all_blocks", errmsg, status);
+        ex_err(__func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
       if ((status = nc_inq_dimlen(exoid, dimid, num_maps + i)) != NC_NOERR) {
         snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to retrieve node map size of file id %d",
                  exoid);
-        ex_err("ex_put_concat_all_blocks", errmsg, status);
+        ex_err(__func__, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
     }
@@ -154,7 +160,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
     if ((status = nc_inq_dimlen(exoid, dimid, &LNUMNAME)) != NC_NOERR) {                           \
       snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
                "ERROR: failed to get number of " TNAME " blocks in file id %d", exoid);            \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       EX_FUNC_LEAVE(EX_FATAL);                                                                     \
     }                                                                                              \
                                                                                                    \
@@ -163,7 +169,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
       snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
                "ERROR: failed to allocate space for " TNAME " block status array in file id %d",   \
                exoid);                                                                             \
-      ex_err("ex_put_concat_all_blocks", errmsg, EX_MEMFAIL);                                      \
+      ex_err(__func__, errmsg, EX_MEMFAIL);                                                        \
       EX_FUNC_LEAVE(EX_FATAL);                                                                     \
     }                                                                                              \
                                                                                                    \
@@ -178,7 +184,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
     if ((status = nc_inq_varid(exoid, VSTATNAME, &varid)) != NC_NOERR) {                           \
       snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
                "ERROR: failed to locate " TNAME " block status in file id %d", exoid);             \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       free(GSTAT);                                                                                 \
       EX_FUNC_LEAVE(EX_FATAL);                                                                     \
     }                                                                                              \
@@ -188,7 +194,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
     if (status != NC_NOERR) {                                                                      \
       snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
                "ERROR: failed to store " TNAME " block status array to file id %d", exoid);        \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       free(GSTAT);                                                                                 \
       EX_FUNC_LEAVE(EX_FATAL);                                                                     \
     }                                                                                              \
@@ -200,7 +206,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
     if ((status = nc_inq_varid(exoid, VIDNAME, &varid)) != NC_NOERR) {                             \
       snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
                "ERROR: failed to locate " TNAME " block ids array in file id %d", exoid);          \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       EX_FUNC_LEAVE(EX_FATAL);                                                                     \
     }                                                                                              \
                                                                                                    \
@@ -215,7 +221,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
     if (status != NC_NOERR) {                                                                      \
       snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
                "ERROR: failed to store " TNAME " block id array in file id %d", exoid);            \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       EX_FUNC_LEAVE(EX_FATAL);                                                                     \
     }                                                                                              \
   }
@@ -236,7 +242,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
   /* put netcdf file into define mode  */
   if ((status = nc_redef(exoid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to place file id %d into define mode", exoid);
-    ex_err("ex_put_concat_all_blocks", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -244,10 +250,11 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
 #define EX_PREPARE_ATTRIB_ARRAY(TNAME, CURBLK, DNAME, DVAL, ID, VANAME, VADIM0, VADIM1, VANNAME)   \
   if (DVAL[iblk] > 0) {                                                                            \
     if ((status = nc_def_dim(exoid, DNAME(CURBLK + 1), DVAL[iblk], &VADIM1)) != NC_NOERR) {        \
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of attributes in " TNAME    \
-                                       " block %" PRId64 " in file id %d",                         \
+      snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
+               "ERROR: failed to define number of attributes in " TNAME " block %" PRId64          \
+               " in file id %d",                                                                   \
                ID, exoid);                                                                         \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       goto error_ret; /* exit define mode and return */                                            \
     }                                                                                              \
                                                                                                    \
@@ -256,10 +263,11 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                                                                                                    \
     if ((status = nc_def_var(exoid, VANAME(CURBLK + 1), nc_flt_code(exoid), 2, dims, &temp)) !=    \
         NC_NOERR) {                                                                                \
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR:  failed to define attributes for " TNAME            \
-                                       " block %" PRId64 " in file id %d",                         \
+      snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
+               "ERROR:  failed to define attributes for " TNAME " block %" PRId64                  \
+               " in file id %d",                                                                   \
                ID, exoid);                                                                         \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       goto error_ret; /* exit define mode and return */                                            \
     }                                                                                              \
     ex_compress_variable(exoid, temp, 2);                                                          \
@@ -271,7 +279,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
     if ((status = nc_def_var(exoid, VANNAME(CURBLK + 1), NC_CHAR, 2, dims, &temp)) != NC_NOERR) {  \
       snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
                "ERROR: failed to define " TNAME " attribute name array in file id %d", exoid);     \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       goto error_ret; /* exit define mode and return */                                            \
     }                                                                                              \
     nc_def_var_fill(exoid, temp, 0, &fill);                                                        \
@@ -280,10 +288,11 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
 #define EX_PREPARE_ATTRIB_ARRAY(TNAME, CURBLK, DNAME, DVAL, ID, VANAME, VADIM0, VADIM1, VANNAME)   \
   if (DVAL[iblk] > 0) {                                                                            \
     if ((status = nc_def_dim(exoid, DNAME(CURBLK + 1), DVAL[iblk], &VADIM1)) != NC_NOERR) {        \
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of attributes in " TNAME    \
-                                       " block %" PRId64 " in file id %d",                         \
+      snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
+               "ERROR: failed to define number of attributes in " TNAME " block %" PRId64          \
+               " in file id %d",                                                                   \
                ID, exoid);                                                                         \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       goto error_ret; /* exit define mode and return */                                            \
     }                                                                                              \
                                                                                                    \
@@ -292,10 +301,11 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                                                                                                    \
     if ((status = nc_def_var(exoid, VANAME(CURBLK + 1), nc_flt_code(exoid), 2, dims, &temp)) !=    \
         NC_NOERR) {                                                                                \
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR:  failed to define attributes for " TNAME            \
-                                       " block %" PRId64 " in file id %d",                         \
+      snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
+               "ERROR:  failed to define attributes for " TNAME " block %" PRId64                  \
+               " in file id %d",                                                                   \
                ID, exoid);                                                                         \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       goto error_ret; /* exit define mode and return */                                            \
     }                                                                                              \
     ex_compress_variable(exoid, temp, 2);                                                          \
@@ -307,7 +317,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
     if ((status = nc_def_var(exoid, VANNAME(CURBLK + 1), NC_CHAR, 2, dims, &temp)) != NC_NOERR) {  \
       snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
                "ERROR: failed to define " TNAME " attribute name array in file id %d", exoid);     \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       goto error_ret; /* exit define mode and return */                                            \
     }                                                                                              \
   }
@@ -324,10 +334,11 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                                                                                                    \
     if ((status = nc_def_var(exoid, VNAME(BLK + 1), conn_int_type, 2, dims, &connid)) !=           \
         NC_NOERR) {                                                                                \
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to create " TNAME                            \
-                                       " connectivity array for block %" PRId64 " in file id %d",  \
+      snprintf(errmsg, MAX_ERR_LENGTH,                                                             \
+               "ERROR: failed to create " TNAME " connectivity array for block %" PRId64           \
+               " in file id %d",                                                                   \
                BLKID, exoid);                                                                      \
-      ex_err("ex_put_concat_all_blocks", errmsg, status);                                          \
+      ex_err(__func__, errmsg, status);                                                            \
       goto error_ret; /* exit define mode and return */                                            \
     }                                                                                              \
     ex_compress_variable(exoid, connid, 1);                                                        \
@@ -348,7 +359,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: exceeded number of edge blocks (%ld) defined in file id %d",
                (long)num_edge_blk, exoid);
-      ex_err("ex_put_concat_all_blocks", errmsg, EX_BADPARAM);
+      ex_err(__func__, errmsg, EX_BADPARAM);
       goto error_ret;
     }
 
@@ -372,7 +383,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                  "ERROR: failed to define number of edges/block for block %" PRId64 " file id %d",
                  eb_id, exoid);
       }
-      ex_err("ex_put_concat_all_blocks", errmsg, status);
+      ex_err(__func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
 
@@ -381,7 +392,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to define number of nodes/edge for block %" PRId64 " in file id %d",
                eb_id, exoid);
-      ex_err("ex_put_concat_all_blocks", errmsg, status);
+      ex_err(__func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
 
@@ -396,7 +407,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                                   (void *)param->edge_type[iblk])) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store edge type name %s in file id %d",
                param->edge_type[iblk], exoid);
-      ex_err("ex_put_concat_all_blocks", errmsg, status);
+      ex_err(__func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
   }
@@ -416,7 +427,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: exceeded number of face blocks (%ld) defined in file id %d",
                (long)num_face_blk, exoid);
-      ex_err("ex_put_concat_all_blocks", errmsg, EX_BADPARAM);
+      ex_err(__func__, errmsg, EX_BADPARAM);
       goto error_ret;
     }
 
@@ -440,7 +451,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                  "ERROR: failed to define number of faces/block for block %" PRId64 " file id %d",
                  fb_id, exoid);
       }
-      ex_err("ex_put_concat_all_blocks", errmsg, status);
+      ex_err(__func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
 
@@ -449,7 +460,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
       snprintf(errmsg, MAX_ERR_LENGTH,
                "ERROR: failed to define number of nodes/face for block %" PRId64 " in file id %d",
                fb_id, exoid);
-      ex_err("ex_put_concat_all_blocks", errmsg, status);
+      ex_err(__func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
 
@@ -464,7 +475,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                                   (void *)param->face_type[iblk])) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store face type name %s in file id %d",
                param->face_type[iblk], exoid);
-      ex_err("ex_put_concat_all_blocks", errmsg, status);
+      ex_err(__func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
   }
@@ -481,10 +492,11 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
 
     cur_num_elem_blk = ex_get_file_item(exoid, ex_get_counter_list(EX_ELEM_BLOCK));
     if (cur_num_elem_blk >= (int)num_elem_blk) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: exceeded number of element blocks (%ld) defined "
-                                       "in file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: exceeded number of element blocks (%ld) defined "
+               "in file id %d",
                (long)num_elem_blk, exoid);
-      ex_err("ex_put_concat_all_blocks", errmsg, EX_BADPARAM);
+      ex_err(__func__, errmsg, EX_BADPARAM);
       goto error_ret;
     }
 
@@ -504,11 +516,12 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                  "ERROR: element block %" PRId64 " already defined in file id %d", eb_id, exoid);
       }
       else {
-        snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to define number of elements/block for "
-                                         "block %" PRId64 " file id %d",
+        snprintf(errmsg, MAX_ERR_LENGTH,
+                 "ERROR: failed to define number of elements/block for "
+                 "block %" PRId64 " file id %d",
                  eb_id, exoid);
       }
-      ex_err("ex_put_concat_all_blocks", errmsg, status);
+      ex_err(__func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
 
@@ -521,7 +534,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                "ERROR: failed to define number of nodes/element for block %" PRId64
                " in file id %d",
                eb_id, exoid);
-      ex_err("ex_put_concat_all_blocks", errmsg, status);
+      ex_err(__func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
 
@@ -532,7 +545,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                  "ERROR: failed to define number of edges/element for block %" PRId64
                  " in file id %d",
                  eb_id, exoid);
-        ex_err("ex_put_concat_all_blocks", errmsg, status);
+        ex_err(__func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
     }
@@ -544,7 +557,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                  "ERROR: failed to define number of faces/element for block %" PRId64
                  " in file id %d",
                  eb_id, exoid);
-        ex_err("ex_put_concat_all_blocks", errmsg, status);
+        ex_err(__func__, errmsg, status);
         goto error_ret; /* exit define mode and return */
       }
     }
@@ -559,7 +572,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
                                   (void *)param->elem_type[iblk])) != NC_NOERR) {
       snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to store element type name %s in file id %d",
                param->elem_type[iblk], exoid);
-      ex_err("ex_put_concat_all_blocks", errmsg, status);
+      ex_err(__func__, errmsg, status);
       goto error_ret; /* exit define mode and return */
     }
 
@@ -575,7 +588,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: could not find map size dimension %s in file id %d",
                  dim_size_maps[map_type], exoid);
-        ex_err("ex_put_concat_all_blocks", errmsg, status);
+        ex_err(__func__, errmsg, status);
       }
       for (i = 1; i <= num_maps[map_type]; ++i) {
         const char *mapname = ex_name_of_map(map_enums[map_type], i);
@@ -594,7 +607,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
               snprintf(errmsg, MAX_ERR_LENGTH,
                        "ERROR: failed to create number map array %s in file id %d", mapname, exoid);
             }
-            ex_err("ex_put_concat_all_blocks", errmsg, status);
+            ex_err(__func__, errmsg, status);
             goto error_ret; /* exit define mode and return */
           }
           ex_compress_variable(exoid, temp, 1);
@@ -607,7 +620,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
   if ((status = nc_enddef(exoid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: failed to complete element block definition in file id %d", exoid);
-    ex_err("ex_put_concat_all_blocks", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -617,7 +630,7 @@ int ex_put_concat_all_blocks(int exoid, const ex_block_params *param)
 error_ret:
   if ((status = nc_enddef(exoid)) != NC_NOERR) { /* exit define mode */
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to complete definition for file id %d", exoid);
-    ex_err("ex_put_concat_all_blocks", errmsg, status);
+    ex_err(__func__, errmsg, status);
   }
   EX_FUNC_LEAVE(EX_FATAL);
 }

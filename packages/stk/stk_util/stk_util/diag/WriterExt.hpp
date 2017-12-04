@@ -41,11 +41,10 @@
 #include <list>                         // for list
 #include <map>                          // for map, multimap
 #include <memory>                       //
-#include <set>                          // for multiset, set
+#include <set>                          // for set
 #include <stk_util/diag/String.hpp>     // for String, Identifier
 #include <stk_util/diag/StringUtil.hpp>  // for demangle
 #include <stk_util/util/Array.hpp>      // for Array, ArrayContainer
-#include <stk_util/util/VecMap.hpp>     // for vecmap
 #include <stk_util/util/VecSet.hpp>     // for vecset
 #include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
 #include <string>                       // for string
@@ -395,65 +394,6 @@ dump(
   return dout;
 }
 
-/**
- * @brief Template function <b>dump</b> prints the object contained within a
- * std::multiset object to the diagnostic writer.
- *
- * @param dout    a <b>Writer</b> reference to the diagnostic writer to
- *      write the std::multiset to.
- *
- * @param t    a <b>std::multiset</b> of objects.
- *
- * @return    a <b>Writer</b> reference to this object
- */
-template <class Key, class L>
-Writer &
-dump(
-  Writer &      dout,
-  const std::multiset<Key, L> &  t)
-{
-  if (dout.shouldPrint()) {
-    dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-    for (typename std::multiset<Key, L>::const_iterator it = t.begin(); it != t.end(); ++it)
-      dout << (*it) << dendl;
-
-    dout << pop;
-  }
-
-  return dout;
-}
-
-/**
- * @brief Template function <b>dump</b> prints the object contained within a
- * std::multiset object to the diagnostic writer.
- *
- * @param dout    a <b>Writer</b> reference to the diagnostic writer to
- *      write the std::multiset to.
- *
- * @param t    a <b>std::multiset</b> of objects.
- *
- * @return    a <b>Writer</b> reference to this object
- */
-template <class Key, class L>
-Writer &
-dump(
-  Writer &      dout,
-  const std::multiset<Key *, L> &  t)
-{
-  if (dout.shouldPrint()) {
-    dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-    for (typename std::multiset<Key *, L>::const_iterator it = t.begin(); it != t.end(); ++it)
-      dout << c_ptr_<Key>((*it)) << dendl;
-
-    dout << pop;
-  }
-
-  return dout;
-}
-
-
 template <size_t n>
 Writer &operator<<(Writer &dout, const std::bitset<n> &t) {
   if (dout.shouldPrint())
@@ -542,23 +482,6 @@ template <class Key, class L>
 Writer &operator<<(Writer &dout, const std::set<Key, L> &t) {
   return dump(dout, t);
 }
-
-/**
- * @brief Template function <b>operator<<</b> writes the std::multiset object to the
- * diagnostic writer.
- *
- * @param dout    a <b>Writer</b> reference to the diagnostic writer to
- *      write the std::multiset to.
- *
- * @param t    a <b>std::multiset</b> const reference to the std::multiset.
- *
- * @return    a <b>Writer</b> reference to this object
- */
-template <class Key, class L>
-Writer &operator<<(Writer &dout, const std::multiset<Key, L> &t) {
-  return dump(dout, t);
-}
-
 
 /**
  * @brief Function <b>operator<<</b> writes a sierra String object to the diagnostic
@@ -720,93 +643,6 @@ operator<<(Writer &dout, const sierra::FArrayContainer<ElementType, Dimension> &
 }
 
 /**
- * @brief Template function <b>dump</b> writes the vecmap object to the
- * diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the vecmap to.
- *
- * @param t		a <b>vecmap</b> const reference to the vecmap.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class Key, class T, class U>
-Writer &
-dump(
-  Writer &			dout,
-  const sierra::vecmap<Key, T, U> &	t)
-{
-  if (dout.shouldPrint()) {
-    dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-    for (typename sierra::vecmap<Key, T, U>::const_iterator it = t.begin(); it != t.end(); ++it)
-      dout << "[" << (*it).first << "] " << (*it).second << dendl;
-
-    dout << pop;
-  }
-
-  return dout;
-}
-
-/**
- * @brief Template function <b>dump</b> writes a vecmap of pointers object to the
- * diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the vecmap of pointers to.
- *
- * @param t		a <b>vecmap</b> const reference to the vecmap of pointers.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class Key, class T, class U>
-Writer &
-dump(
-  Writer &			dout,
-  const sierra::vecmap<Key, T *, U> &	t)
-{
-  if (dout.shouldPrint()) {
-    dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-    for (typename sierra::vecmap<Key, T *, U>::const_iterator it = t.begin(); it != t.end(); ++it)
-      dout << "[" << (*it).first << "] " << *(*it).second << dendl;
-
-    dout << pop;
-  }
-
-  return dout;
-}
-
-/**
- * @brief Template function <b>dump</b> writes a vecmap of pointers object to the
- * dignostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the vecmap of pointers to.
- *
- * @param t		a <b>vecmap</b> const reference to the vecmap of pointers.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class Key, class T, class U>
-Writer &
-dump(
-  Writer &				dout,
-  const sierra::vecmap<Key *, T *, U> &	t)
-{
-  if (dout.shouldPrint()) {
-    dout << typeid(t) << ", size " << t.size() << push << dendl;
-
-    for (typename sierra::vecmap<Key *, T *, U>::const_iterator it = t.begin(); it != t.end(); ++it)
-      dout << "[" << (*it).first << "] " << *(*it).second << dendl;
-
-    dout << pop;
-  }
-
-  return dout;
-}
-
-/**
  * @brief Template function <b>dump</b> writes a vecset object to the diagnostic
  * writer.
  *
@@ -883,22 +719,6 @@ Writer &operator<<(Writer &dout, const sierra::vecset<T, U> &t) {
 }
 
 /**
- * @brief Template function <b>operator<<</b> writes the vecmap object to the
- * diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the vecmap to.
- *
- * @param t		a <b>vecmap</b> const reference to the vecmap.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class Key, class T, class U>
-Writer &operator<<(Writer &dout, const sierra::vecmap<Key, T, U> &t) {
-  return dump(dout, t);
-}
-
-/**
  * @brief Member function <b>operator<<</b> writes a vecset of pointers object to
  * the diagnostic writer.
  *
@@ -913,39 +733,6 @@ template <class T, class U>
 Writer &operator<<(Writer &dout, const sierra::vecset<T *, U> &t) {
   return dump(dout, t);
 }
-
-/**
- * @brief Template function <b>operator<<</b> writea a vecmap of pointers with key
- * pointers object to the diagnostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the vecmap of pointers to.
- *
- * @param t		a <b>vecmap</b> const reference to the vecmap of pointers.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class Key, class T, class U>
-Writer &operator<<(Writer &dout, const sierra::vecmap<Key *, T *, U> &t) {
-  return dump(dout, t);
-}
-
-/**
- * @brief Template function <b>operator<<</b> writes a vecmap of pointers object to
- * the dignostic writer.
- *
- * @param dout		a <b>Writer</b> reference to the diagnostic writer to
- *			write the vecmap of pointers to.
- *
- * @param t		a <b>vecmap</b> const reference to the vecmap of pointers.
- *
- * @return		a <b>Writer</b> reference to this object
- */
-template <class Key, class T, class U>
-Writer &operator<<(Writer &dout, const sierra::vecmap<Key, T *, U> &t) {
-  return dump(dout, t);
-}
-
 
 ///
 /// @}

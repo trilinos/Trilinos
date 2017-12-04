@@ -33,8 +33,6 @@ void verify_element_side_pairs(stk::mesh::BulkData& bulkData, const ExodusSideSe
             EXPECT_EQ(goldSet[j].first, bulkData.identifier(sset[j].element));
         }
     }
-
-    bulkData.clear_sidesets();
 }
 
 struct TestData

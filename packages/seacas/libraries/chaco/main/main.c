@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -104,7 +104,7 @@ int main(void)
 
   if (PRINT_HEADERS) {
     printf("\n                    Chaco 2.0\n");
-    printf("          Sandia National Laboratories\n\n");
+    printf("          Sandia-2017 National Laboratories\n\n");
   }
 
   Using_Main  = TRUE;

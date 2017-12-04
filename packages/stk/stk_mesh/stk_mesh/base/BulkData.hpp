@@ -798,6 +798,7 @@ public:
   SideSet& create_sideset(int sideset_id)
   {
       ThrowRequire(m_sideSetData.find(sideset_id) == m_sideSetData.end());
+      m_sideSetSyncCount = synchronized_count();
       auto retValue = m_sideSetData.insert(std::make_pair(sideset_id, stk::mesh::SideSet()));
       auto iter =  retValue.first;
       return iter->second;
@@ -829,6 +830,10 @@ public:
       return ids;
   }
 
+  bool was_mesh_modified_since_sideset_creation()
+  {
+      return m_sideSetSyncCount != synchronized_count();
+  }
 
   void clear_sideset(int sideset_id)
   {
@@ -1535,6 +1540,7 @@ private: // data
   stk::mesh::ElemElemGraph* m_elemElemGraph = nullptr;
   stk::mesh::ElemElemGraphUpdater* m_elemElemGraphUpdater = nullptr;
   std::map<int,SideSet> m_sideSetData;
+  size_t m_sideSetSyncCount = 0;
   bool m_hasSideSetData = false;
 protected:
   stk::mesh::impl::SoloSideIdGenerator m_soloSideIdGenerator;

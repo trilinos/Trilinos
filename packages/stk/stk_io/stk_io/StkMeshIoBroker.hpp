@@ -33,30 +33,37 @@
 
 #ifndef STK_IO_STKMESHIOBROKER_HPP
 #define STK_IO_STKMESHIOBROKER_HPP
-#include <Ioss_Field.h>                 // for Field, Field::BasicType
-#include <Ioss_PropertyManager.h>       // for PropertyManager
-#include <stddef.h>                     // for size_t, NULL
-#include <Teuchos_RCP.hpp>              // for RCP::RCP<T>, RCP::operator*, etc
-#include <algorithm>                    // for swap
-#include <stk_io/DatabasePurpose.hpp>   // for DatabasePurpose
-#include <stk_io/IossBridge.hpp>        // for FieldAndName, STKIORequire, etc
-#include <stk_io/MeshField.hpp>         // for MeshField, etc
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/Selector.hpp>   // for Selector
-#include <stk_util/util/ParameterList.hpp>  // for Type
-#include <string>                       // for string, basic_string
-#include <vector>                       // for vector
-#include "Teuchos_RCPDecl.hpp"          // for RCP
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert
+// #######################  Start Clang Header Tool Managed Headers ########################
+// clang-format off
+#include <Ioss_Field.h>                            // for Field, etc
+#include <Ioss_PropertyManager.h>                  // for PropertyManager
+#include <stddef.h>                                // for size_t
+#include <Teuchos_RCP.hpp>                         // for RCP::RCP<T>, etc
+#include <algorithm>                               // for swap
+#include <stk_io/DatabasePurpose.hpp>              // for DatabasePurpose
+#include <stk_io/IossBridge.hpp>
+#include <stk_io/MeshField.hpp>                    // for MeshField, etc
+#include <stk_mesh/base/BulkData.hpp>              // for BulkData
+#include <stk_mesh/base/Selector.hpp>              // for Selector
+#include <stk_util/parallel/Parallel.hpp>          // for ParallelMachine
+#include <stk_util/util/ParameterList.hpp>         // for Type
+#include <string>                                  // for string
+#include <vector>                                  // for vector
+#include "Teuchos_RCPDecl.hpp"                     // for RCP
+#include "mpi.h"                                   // for MPI_Comm, etc
+#include "stk_mesh/base/Types.hpp"                 // for FieldVector
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 namespace Ioss { class Property; }
 namespace Ioss { class Region; }
 namespace boost { class any; }
 namespace stk { namespace io { class InputFile; } }
-namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
+// clang-format on
+// #######################   End Clang Header Tool Managed Headers  ########################
+namespace stk { namespace mesh { class BulkData; } }
 
 
 
@@ -100,7 +107,7 @@ namespace impl
         : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(false),
           m_mesh_defined(false), m_fields_defined(false), m_non_any_global_variables_defined(false),
           m_appending_to_mesh(false),
-	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(NULL)
+	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(nullptr)
       {
 	setup_output_file(filename, communicator, property_manager, type);
       }
@@ -110,7 +117,7 @@ namespace impl
         : m_current_output_step(-1), m_use_nodeset_for_part_nodes_fields(false),
           m_mesh_defined(false), m_fields_defined(false), m_non_any_global_variables_defined(false),
           m_appending_to_mesh(false),
-	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(NULL)
+	  m_db_purpose(db_type), m_input_region(input_region), m_subset_selector(nullptr)
       {
 	m_region = ioss_output_region;
 	m_mesh_defined = true;
@@ -118,10 +125,7 @@ namespace impl
       Teuchos::RCP<Ioss::Region> get_output_io_region() {
 	return m_region;
       }
-      ~OutputFile()
-      {
-	stk::io::delete_selector_property(*m_region);
-      }
+      ~OutputFile();
 
       void write_output_mesh(const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
       void flush_output() const;
@@ -144,6 +148,9 @@ namespace impl
       void end_output_step();
 
       int write_defined_output_fields(const stk::mesh::BulkData& bulk_data);
+      int write_defined_output_fields_for_selected_subset(const stk::mesh::BulkData& bulk_data,
+                                                  std::vector<stk::mesh::Part*>& selectOutputElementParts);
+
       int process_output_request(double time, const stk::mesh::BulkData& bulk_data, const std::vector<std::vector<int>> &attributeOrdering);
 
       void set_subset_selector(Teuchos::RCP<stk::mesh::Selector> my_selector);
@@ -219,7 +226,7 @@ namespace impl
       // \param[in] comm MPI Communicator to be used for all
       // parallel communication needed to generate the mesh.
       StkMeshIoBroker(stk::ParallelMachine comm,
-		      const stk::mesh::ConnectivityMap *connectivity_map = NULL);
+		      const stk::mesh::ConnectivityMap *connectivity_map = nullptr);
       StkMeshIoBroker();
 
       virtual ~StkMeshIoBroker();
@@ -448,9 +455,9 @@ namespace impl
       // is NULL, then an exception will be thrown if any fields are
       // not found.
       double read_defined_input_fields(int step,
-				       std::vector<stk::io::MeshField> *missing=NULL);
+				       std::vector<stk::io::MeshField> *missing=nullptr);
       double read_defined_input_fields_at_step(int step,
-                                       std::vector<stk::io::MeshField> *missing=NULL);
+                                       std::vector<stk::io::MeshField> *missing=nullptr);
       // For all transient input fields defined, read the data at the
       // specified database time 'time' and populate the stk data
       // structures with those values.  
@@ -469,7 +476,7 @@ namespace impl
       // 'missing' is NULL, then an exception will be thrown if any
       // fields are not found.
       double read_defined_input_fields(double time,
-				       std::vector<stk::io::MeshField> *missing=NULL);
+				       std::vector<stk::io::MeshField> *missing=nullptr);
 
       bool read_input_field(stk::io::MeshField &mf);
       
@@ -571,6 +578,8 @@ namespace impl
       // the step added by "begin_output_step".  End step with a call
       // to "end_output_step"
       int write_defined_output_fields(size_t output_file_index);
+      int write_defined_output_fields_for_selected_subset(size_t output_file_index,
+                                                  std::vector<stk::mesh::Part*>& selectOutputElementParts);
 
       // Force all output databases to "flush" their data to disk (if possible)
       // Typically called by the application during a planned or unplanned
@@ -669,6 +678,7 @@ namespace impl
       stk::mesh::FieldVector get_ordered_attribute_fields(const stk::mesh::Part *blockPart) const;
       const std::vector<std::vector<int>> & get_attribute_field_ordering_stored_by_part_ordinal() const;
       void set_attribute_field_ordering_stored_by_part_ordinal(const std::vector<std::vector<int>> &ordering);
+      void fill_coordinate_frames(std::vector<int>& ids, std::vector<double>& coords, std::vector<char>& tags);
 
       //-END
     protected:

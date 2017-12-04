@@ -8,7 +8,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_io/FillMesh.hpp>
 #include <stk_io/StkIoUtils.hpp>
-#include <Ioss_Region.h>
 #include <Ioss_SideSet.h>
 #include <Ioss_SideBlock.h>
 #include <stk_mesh/base/SideSetEntry.hpp>

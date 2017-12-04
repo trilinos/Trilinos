@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2010 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -107,7 +107,8 @@ namespace Iocgns {
     // block is proportional to the number of cells.
     size_t work() const { return m_ordinal[0] * m_ordinal[1] * m_ordinal[2]; }
 
-    std::pair<StructuredZoneData *, StructuredZoneData *> split(int zone_id, double ratio = 0.5);
+    std::pair<StructuredZoneData *, StructuredZoneData *> split(int zone_id, double ratio = 0.5,
+                                                                int rank = 0);
     void resolve_zgc_split_donor(std::vector<Iocgns::StructuredZoneData *> &zones);
     void update_zgc_processor(std::vector<Iocgns::StructuredZoneData *> &zones);
   };

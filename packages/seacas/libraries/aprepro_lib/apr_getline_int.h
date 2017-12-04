@@ -1,4 +1,4 @@
-// Copyright (c) 2014 National Technology & Engineering Solutions
+// Copyright (c) 2014-2017 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -57,9 +57,9 @@ void  gl_histadd(char *);            /* adds entries to hist */
 void  gl_strwidth(gl_strwidth_proc); /* to bind gl_strlen */
 void  gl_tab_completion(gl_tab_completion_proc);
 char *gl_local_filename_completion_proc(const char *, int);
-void gl_set_home_dir(const char *homedir);
-void gl_histsavefile(const char *path);
-void gl_histloadfile(const char *path);
+void  gl_set_home_dir(const char *homedir);
+void  gl_histsavefile(const char *path);
+void  gl_histloadfile(const char *path);
 char *gl_win_getpass(const char *prompt, char *pass, int dsize);
 
 #ifndef _getline_c_

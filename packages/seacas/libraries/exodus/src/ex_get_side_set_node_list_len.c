@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,21 +33,21 @@
  *
  */
 /*****************************************************************************
-*
-* exgsnl - ex_get_side_set_node_list_len
-*
-* entry conditions -
-*   input parameters:
-*       int     exoid                   exodus file id
-*       int     side_set_id             side set id
-*
-* exit conditions -
-*       int     *side_set_node_list_len length of node list
-*
-* revision history -
-*
-*
-*****************************************************************************/
+ *
+ * exgsnl - ex_get_side_set_node_list_len
+ *
+ * entry conditions -
+ *   input parameters:
+ *       int     exoid                   exodus file id
+ *       int     side_set_id             side set id
+ *
+ * exit conditions -
+ *       int     *side_set_node_list_len length of node list
+ *
+ * revision history -
+ *
+ *
+ *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for elem_blk_parm, EX_FATAL, etc
@@ -91,7 +91,7 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
     *(int64_t *)side_set_node_list_len = 0; /* default value */
@@ -174,8 +174,9 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
       int_size = sizeof(int64_t);
     }
     if (!(side_set_elem_list = malloc(tot_num_ss_elem * int_size))) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for side set element "
-                                       "list for file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to allocate space for side set element "
+               "list for file id %d",
                exoid);
       ex_err(__func__, errmsg, EX_MEMFAIL);
       EX_FUNC_LEAVE(EX_FATAL);
@@ -183,8 +184,9 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
 
     /* Allocate space for the side set side list */
     if (!(side_set_side_list = malloc(tot_num_ss_elem * int_size))) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for side set side list "
-                                       "for file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to allocate space for side set side list "
+               "for file id %d",
                exoid);
       ex_err(__func__, errmsg, EX_MEMFAIL);
       err_stat = EX_FATAL;
@@ -209,8 +211,9 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
     }
 
     if (ss_elem_ndx_64 == NULL && ss_elem_ndx == NULL) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for side set elem sort "
-                                       "array for file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to allocate space for side set elem sort "
+               "array for file id %d",
                exoid);
       ex_err(__func__, errmsg, EX_MEMFAIL);
       err_stat = EX_FATAL;
@@ -240,8 +243,9 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
     }
 
     if (!(elem_blk_ids = malloc(num_elem_blks * int_size))) {
-      snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for element block ids "
-                                       "for file id %d",
+      snprintf(errmsg, MAX_ERR_LENGTH,
+               "ERROR: failed to allocate space for element block ids "
+               "for file id %d",
                exoid);
       ex_err(__func__, errmsg, EX_MEMFAIL);
       err_stat = EX_FATAL;
@@ -258,8 +262,9 @@ int ex_get_side_set_node_list_len(int exoid, ex_entity_id side_set_id,
 
   /* Allocate space for the element block params */
   if (!(elem_blk_parms = malloc(num_elem_blks * sizeof(struct elem_blk_parm)))) {
-    snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to allocate space for element block params "
-                                     "for file id %d",
+    snprintf(errmsg, MAX_ERR_LENGTH,
+             "ERROR: failed to allocate space for element block params "
+             "for file id %d",
              exoid);
     ex_err(__func__, errmsg, EX_MEMFAIL);
     err_stat = EX_FATAL;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 National Technology & Engineering Solutions
+ * Copyright (c) 2005-2017 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -81,34 +81,33 @@ int ex_get_coord_names(int exoid, char **coord_names)
   char   errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid);
+  ex_check_valid_file_id(exoid, __func__);
 
   /* inquire previously defined dimensions and variables  */
 
   if ((status = nc_inq_dimid(exoid, DIM_NUM_DIM, &ndimdim)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to locate number of dimensions in file id %d",
              exoid);
-    ex_err("ex_get_coord_names", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_dimlen(exoid, ndimdim, &num_dim)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get number of dimensions in file id %d",
              exoid);
-    ex_err("ex_get_coord_names", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
   if ((status = nc_inq_varid(exoid, VAR_NAME_COOR, &varid)) != NC_NOERR) {
     snprintf(errmsg, MAX_ERR_LENGTH, "Warning: failed to locate coordinate names in file id %d",
              exoid);
-    ex_err("ex_get_coord_names", errmsg, status);
+    ex_err(__func__, errmsg, status);
     EX_FUNC_LEAVE(EX_WARN);
   }
 
   /* read the coordinate names */
-  status = ex_get_names_internal(exoid, varid, num_dim, coord_names, EX_COORDINATE,
-                                 "ex_get_coord_names");
+  status = ex_get_names_internal(exoid, varid, num_dim, coord_names, EX_COORDINATE, __func__);
   if (status != NC_NOERR) {
     EX_FUNC_LEAVE(EX_FATAL);
   }

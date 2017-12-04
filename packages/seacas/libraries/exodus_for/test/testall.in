@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Copyright (c) 2005 National Technology & Engineering Solutions
+# Copyright (c) 2005-2017 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 # 
@@ -66,13 +66,6 @@ echo "begin testcp_ss" >> test.output
 ${PREFIX} ${BINDIR}/f_testcp${SUFFIX} >> test.output
 echo "end testcp_ss" >> test.output
 ${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcp_ss.dmp | tee testcp_ss.res
-
-# testcpln - single-to-single, large to normal copy test
-echo "testcpln ..."
-echo "begin testcpln" >> test.output
-${PREFIX} ${BINDIR}/f_testcpln${SUFFIX} >> test.output
-echo "end testcpln" >> test.output
-${NCDUMP} -d5,5 testcp.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testcpln.dmp | tee testcpln.res
 
 # testcpnl - single-to-single, normal to large copy test
 echo "testcpnl ..."
