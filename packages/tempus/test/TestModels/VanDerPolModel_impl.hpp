@@ -436,6 +436,8 @@ getValidParameters() const
         "IC x1", 0.0, "Initial Condition for x1", &*pl);
     Teuchos::setDoubleParameter(
         "IC t0", 0.0, "Initial time t0", &*pl);
+    Teuchos::setIntParameter(
+        "Number of Time Step Sizes", 1, "Number time step sizes for convergence study", &*pl);  
     validPL = pl;
   }
   return validPL;
