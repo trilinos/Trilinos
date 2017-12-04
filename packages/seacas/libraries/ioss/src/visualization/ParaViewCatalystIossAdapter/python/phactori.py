@@ -1,4 +1,4 @@
-# Copyright(C) 1999-2017 National Technology & Engineering Solutions
+# Copyright(C) 1999-2010 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 # 
@@ -44,8 +44,9 @@ except: from paraview.simple import *
 from paraview import coprocessing
 
 global gParaViewCatalystVersionFlag
-gParaViewCatalystVersionFlag = 40300
+#gParaViewCatalystVersionFlag = 40300
 #gParaViewCatalystVersionFlag = 40100
+gParaViewCatalystVersionFlag = 50400
 
 global gPointsString
 if gParaViewCatalystVersionFlag <= 40100:
@@ -1124,12 +1125,16 @@ def PhactoriDbg(inPriority = 450, inOneProcessFlag = False, inOneProcessId = 0):
   if inOneProcessFlag:
     if inOneProcessId != SmartGetLocalProcessId():
       return False
-  else:
-    global gMdp3RestrictToProcessListFlag
-    if gMdp3RestrictToProcessListFlag:
-      global gMdp3ProcessIdList
-      if SmartGetLocalProcessId() not in gMdp3ProcessIdList:
-        return False
+  #for parallel compatibility, we do everything on all processes _except_
+  #do the output--so if we test for debugging then do something that requires
+  #mpi communication, we go ahead and do it even if this process will have
+  #no oputput
+  #else:
+  #  global gMdp3RestrictToProcessListFlag
+  #  if gMdp3RestrictToProcessListFlag:
+  #    global gMdp3ProcessIdList
+  #    if SmartGetLocalProcessId() not in gMdp3ProcessIdList:
+  #      return False
 
   return True
 
@@ -1141,6 +1146,15 @@ def PrintOnProcessZero(strToPrint):
 def myDebugPrint3(inMsg, inPriority = 450, inOneProcessFlag = False, inOneProcessId = 0):
   if PhactoriDbg(inPriority, inOneProcessFlag, inOneProcessId) == False:
     return
+
+  global gMdp3RestrictToProcessListFlag
+  if gMdp3RestrictToProcessListFlag:
+    if SmartGetLocalProcessId() not in gMdp3ProcessIdList:
+      #if we are only outputting some processes and this isn't one of those
+      #we don't do any output--but we still deal with exception
+      if inPriority >= 10000:
+        raise Exception(inMsg)
+      return
 
   global gMaxDebugPrintOutputLines
   global gDebugPrintOutputLineCount
@@ -1165,7 +1179,7 @@ def myDebugPrint3(inMsg, inPriority = 450, inOneProcessFlag = False, inOneProces
 
   gDebugPrintOutputLineCount += 1
 
-  if inPriority >= 1000:
+  if inPriority >= 10000:
     raise Exception(inMsg)
 
 def myDebugPrint3AndException(inMsg, inOneProcessFlag = False,
@@ -2587,8 +2601,6 @@ def SetForCorrectColorBy(inImagesetInfo, inPhactoriOperation,
         inPvDataRepresentation, inPhactoriRepresentation,
         inInitializeColorLegendFlag):
 
-  if inPvDataRepresentation.Opacity != inPhactoriRepresentation.mOpacitySetting:
-      inPvDataRepresentation.Opacity = inPhactoriRepresentation.mOpacitySetting
   if PhactoriDbg():
     if inPhactoriOperation != None:
         opStr = inPhactoriOperation.mName
@@ -2601,6 +2613,8 @@ def SetForCorrectColorBy(inImagesetInfo, inPhactoriOperation,
       "inInitializeColorLegendFlag: " + str(inInitializeColorLegendFlag) + "\n")
   #color by variable
   if inPhactoriRepresentation != None:
+    if inPvDataRepresentation.Opacity != inPhactoriRepresentation.mOpacitySetting:
+        inPvDataRepresentation.Opacity = inPhactoriRepresentation.mOpacitySetting
     SetForCorrectColorByVariable(inImagesetInfo, inPhactoriOperation,
         inPvDataRepresentation, inPhactoriRepresentation,
         inInitializeColorLegendFlag)
@@ -4715,8 +4729,9 @@ class PhactoriRepresentationBlock:
     self.mName = ""
     self.mColorVariableInfo = PhactoriVariableInfo()
     self.mColorLegendFlag = True
-    self.mColorLegendPositionAndSize = ['bottom', 1.0]
+    #self.mColorLegendPositionAndSize = ['bottom', 1.0]
     #self.mColorLegendPositionAndSize = ['right', 1.0]
+    self.mColorLegendPositionAndSize = ['bottom right', 1.0]
     self.mTimeAnnotationSettings = PhactoriAnnotationViewSettings(
         'time', 'time')
     self.mDataCubeAxesFlag = False
@@ -7409,7 +7424,9 @@ class PhactoriPlot1Base:
     pvDataRep = self.mPvDataRepresentation2
 
     #image size
-    pvRenderView.ViewSize = self.mImageSettings.mImageSize
+    #pvRenderView.ViewSize = self.mImageSettings.mImageSize
+    pvRenderView.ViewSize = [int(self.mImageSettings.mImageSize[0]),
+                             int(self.mImageSettings.mImageSize[1])]
 
     #background color, text color, etc.
     theColorSettings = self.mColorSettings
@@ -7969,7 +7986,9 @@ class PhactoriImagesetBlock:
     pvDataRep = self.mPvDataRepresentation2
 
     #image size
-    pvRenderView.ViewSize = self.mImageSettings.mImageSize
+    #pvRenderView.ViewSize = self.mImageSettings.mImageSize
+    pvRenderView.ViewSize = [int(self.mImageSettings.mImageSize[0]),
+                             int(self.mImageSettings.mImageSize[1])]
 
     #background color, text color, etc.
 
@@ -10727,56 +10746,100 @@ def ShowDataColorLegendXX(inPvView,
   xPosForBottomTop = 0.5 - 0.5 * colorLegendAdjustedLongSize
   yPosForLeftRight = 0.5 - 0.5 * colorLegendAdjustedShortSize
 
-  if inColorLegendPositionAndSize[0] == 'top':
-    legendOrientation = 'Horizontal'
-    legendSize = horizontalLegendSize
-    legendPosition=[xPosForBottomTop, 0.85]
-  elif inColorLegendPositionAndSize[0] == 'bottom':
-    legendOrientation = 'Horizontal'
-    legendSize = horizontalLegendSize
-    legendPosition=[xPosForBottomTop, 0.05]
-    legendPosition=[xPosForBottomTop, 0.01]
-  elif inColorLegendPositionAndSize[0] == 'left':
-    legendOrientation = 'Vertical'
-    legendSize = verticalLegendSize
-    legendPosition=[0.065, yPosForLeftRight]
-  elif inColorLegendPositionAndSize[0] == 'right':
-    legendOrientation = 'Vertical'
-    legendSize = verticalLegendSize
-    legendPosition=[0.9, yPosForLeftRight]
-  elif inColorLegendPositionAndSize[0] == 'top left':
-    legendOrientation = 'Horizontal'
-    legendSize = horizontalLegendSize
-    legendPosition=[0.065, 0.85]
-  elif inColorLegendPositionAndSize[0] == 'top right':
-    legendOrientation = 'Horizontal'
-    legendSize = horizontalLegendSize
-    legendPosition=[0.7, 0.85]
-  elif inColorLegendPositionAndSize[0] == 'bottom left':
-    legendOrientation = 'Horizontal'
-    legendSize = horizontalLegendSize
-    #legendPosition=[0.065, 0.85]
-    legendPosition=[0.065, 0.01]
-  elif inColorLegendPositionAndSize[0] == 'bottom right':
-    legendOrientation = 'Horizontal'
-    legendSize = horizontalLegendSize
-    #legendPosition=[0.7, 0.05]
-    legendPosition=[0.7, 0.01]
-  elif inColorLegendPositionAndSize[0] == 'parameters':
-    legendOrientation = inColorLegendPositionAndSize[1]
-    legendSize = horizontalLegendSize
-    legendPosition = inColorLegendPositionAndSize[2]
-  else:
-    legendOrientation = 'Horizontal'
-    legendSize = horizontalLegendSize
-    #legendPosition=[xPosForBottomTop, 0.05]
-    legendPosition=[xPosForBottomTop, 0.01]
+  if gParaViewCatalystVersionFlag < 50400:
+    if inColorLegendPositionAndSize[0] == 'top':
+      legendOrientation = 'Horizontal'
+      legendSize = horizontalLegendSize
+      legendPosition=[xPosForBottomTop, 0.85]
+    elif inColorLegendPositionAndSize[0] == 'bottom':
+      legendOrientation = 'Horizontal'
+      legendSize = horizontalLegendSize
+      legendPosition=[xPosForBottomTop, 0.02]
+    elif inColorLegendPositionAndSize[0] == 'left':
+      legendOrientation = 'Vertical'
+      legendSize = verticalLegendSize
+      legendPosition=[0.065, yPosForLeftRight]
+    elif inColorLegendPositionAndSize[0] == 'right':
+      legendOrientation = 'Vertical'
+      legendSize = verticalLegendSize
+      legendPosition=[0.9, yPosForLeftRight]
+    elif inColorLegendPositionAndSize[0] == 'top left':
+      legendOrientation = 'Horizontal'
+      legendSize = horizontalLegendSize
+      legendPosition=[0.065, 0.85]
+    elif inColorLegendPositionAndSize[0] == 'top right':
+      legendOrientation = 'Horizontal'
+      legendSize = horizontalLegendSize
+      legendPosition=[0.7, 0.85]
+    elif inColorLegendPositionAndSize[0] == 'bottom left':
+      legendOrientation = 'Horizontal'
+      legendSize = horizontalLegendSize
+      #legendPosition=[0.065, 0.85]
+      legendPosition=[0.065, 0.01]
+    elif inColorLegendPositionAndSize[0] == 'bottom right':
+      legendOrientation = 'Horizontal'
+      legendSize = horizontalLegendSize
+      #legendPosition=[0.7, 0.05]
+      legendPosition=[0.7, 0.01]
+    elif inColorLegendPositionAndSize[0] == 'parameters':
+      legendOrientation = inColorLegendPositionAndSize[1]
+      legendSize = horizontalLegendSize
+      legendPosition = inColorLegendPositionAndSize[2]
+    else:
+      legendOrientation = 'Horizontal'
+      legendSize = horizontalLegendSize
+      #legendPosition=[xPosForBottomTop, 0.05]
+      legendPosition=[xPosForBottomTop, 0.01]
 
-  if PhactoriDbg():
-    myDebugPrint3("legend info:\n  legendSizeMultiplier: " + str(legendSizeMultiplier) + "\n" \
-      "  legendSize: " + str(legendSize) + "\n" \
-      "  legendPos: " + str(legendPosition) + "\n"\
-      "  legendFontSize: " + str(legendFontSize) + "\n")
+    if PhactoriDbg():
+      myDebugPrint3("legend info:\n  legendSizeMultiplier: " + str(legendSizeMultiplier) + "\n" \
+        "  legendSize: " + str(legendSize) + "\n" \
+        "  legendPos: " + str(legendPosition) + "\n"\
+        "  legendOrientation: " + str(legendOrientation) + "\n"\
+        "  legendFontSize: " + str(legendFontSize) + "\n")
+
+  else:
+    defaultLegendLength = 0.33
+    defaultMidPos = 0.5 - 0.5*defaultLegendLength
+    #legendFontSize = 16
+    #legendSize = 1.0
+    #validPositions = ['UpperLeftCorner', 'UpperRightCorner', 
+    #    'LowerLeftCorner', 'LowerRightCorner',
+    #    'UpperCenter', 'LowerCenter']
+    legendPosition=[0.0, 0.0]
+    if inColorLegendPositionAndSize[0] == 'top':
+      legendOrientation = 'Horizontal'
+      legendWindowLocation = 'UpperCenter'
+    elif inColorLegendPositionAndSize[0] == 'bottom':
+      legendOrientation = 'Horizontal'
+      legendWindowLocation = 'LowerCenter'
+    elif inColorLegendPositionAndSize[0] == 'left':
+      legendOrientation = 'Vertical'
+      legendPosition=[0.02, defaultMidPos]
+      legendWindowLocation = 'AnyLocation'
+    elif inColorLegendPositionAndSize[0] == 'right':
+      legendOrientation = 'Vertical'
+      legendPosition=[0.89, defaultMidPos]
+      legendWindowLocation = 'AnyLocation'
+    elif inColorLegendPositionAndSize[0] == 'top left':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'UpperLeftCorner'
+    elif inColorLegendPositionAndSize[0] == 'top right':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'UpperRightCorner'
+    elif inColorLegendPositionAndSize[0] == 'bottom left':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'LowerLeftCorner'
+    elif inColorLegendPositionAndSize[0] == 'bottom right':
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'LowerRightCorner'
+    elif inColorLegendPositionAndSize[0] == 'parameters':
+      legendOrientation = inColorLegendPositionAndSize[1]
+      legendPosition = inColorLegendPositionAndSize[2]
+      legendWindowLocation = 'AnyLocation'
+    else:
+      legendOrientation = 'Vertical'
+      legendWindowLocation = 'LowerRightCorner'
 
     #newScalarBarWidgetRepresentation = CreateScalarBar( Title=inPvDataRep.ColorArrayName, Position2=[0.13, 0.5], TitleOpacity=1.0, TitleShadow=0, AutomaticLabelFormat=1, TitleFontSize=12, TitleColor=[1.0, 1.0, 1.0], AspectRatio=20.0, NumberOfLabels=5, ComponentTitle='', Resizable=1, TitleFontFamily='Arial', Visibility=myVisibility, LabelFontSize=12, LabelFontFamily='Arial', TitleItalic=0, Selectable=0, LabelItalic=0, Enabled=0, LabelColor=[1.0, 1.0, 1.0], Position=[0.9, 0.31396255850234012], LabelBold=0, UseNonCompositedRenderer=1, LabelOpacity=1.0, TitleBold=0, LabelFormat='%-#6.3g', Orientation='Vertical', LabelShadow=0, LookupTable=inPvDataRep.LookupTable, Repositionable=1 )
   if gParaViewCatalystVersionFlag <= 40100:
@@ -10810,7 +10873,7 @@ def ShowDataColorLegendXX(inPvView,
       LabelFormat='%-#6.3g',
       LabelShadow=0,
       Repositionable=1)
-  if gParaViewCatalystVersionFlag > 40100:
+  elif gParaViewCatalystVersionFlag < 50400:
     newScalarBarWidgetRepresentation = CreateScalarBar(Title=localColorArrayName,
       Orientation=legendOrientation,
       Position=legendPosition,
@@ -10842,6 +10905,31 @@ def ShowDataColorLegendXX(inPvView,
       #LabelShadow=0,
       #Repositionable=1
       )
+  else:
+    newScalarBarWidgetRepresentation = CreateScalarBar(
+        Title=localColorArrayName, ComponentTitle='')
+    newScalarBarWidgetRepresentation.Orientation = legendOrientation
+    newScalarBarWidgetRepresentation.WindowLocation = legendWindowLocation
+    if legendWindowLocation == 'AnyLocation':
+      newScalarBarWidgetRepresentation.Position = legendPosition
+    if PhactoriDbg():
+      nbwr = newScalarBarWidgetRepresentation
+      myDebugPrint3("newScalarBarWidgetRepresentation:\n" +\
+        str(nbwr) + "\n" +\
+        "  Title: " + str(nbwr.Title) + "\n" +\
+        "  ComponentTitle: " + str(nbwr.ComponentTitle) + "\n" +\
+        "  WindowLocation: " + str(nbwr.WindowLocation) + "\n" +\
+        #"  LockPosition: " + str(nbwr.LockPosition) + "\n" +\
+        #"  Repositionable: " + str(nbwr.Repositionable) + "\n" +\
+        #"  AutoOrient: " + str(nbwr.AutoOrient) + "\n" +\
+        "  Position: " + str(nbwr.Position) + "\n" +\
+        "  ScalarBarLength: " + str(nbwr.ScalarBarLength) + "\n" +\
+        "  ScalarBarThickness: " + str(nbwr.ScalarBarThickness) + "\n" +\
+        "  Orientation: " + str(nbwr.Orientation) + "\n" +\
+        "  LabelFontSize: " + str(nbwr.LabelFontSize) + "\n" +\
+        "  TitleFontSize: " + str(nbwr.TitleFontSize) + "\n" +\
+        "  LabelFontFamily: " + str(nbwr.LabelFontFamily) + "\n" +\
+        "  TitleFontFamily: " + str(nbwr.TitleFontSize) + "\n")
 
   inPvView.OrientationAxesLabelColor = inColorSettings.mTextColor
   inPvView.Representations.append(newScalarBarWidgetRepresentation)
@@ -13255,10 +13343,10 @@ def UpdatePlotViewLook(inPlotInfo):
 
   dr = inPlotInfo.m_PhactoriRenderViewInfo.DataRepresentation1
 
-  dr.CustomBoundsActive = [1,1,0]
-  dr.CustomBounds = [xmin, xmax, ymin, ymax, 0.0, 0.0]
-  dr.CustomRangeActive = [1,1,0]
-  dr.CustomRange = [xmin, xmax, dataymin, dataymax, 0.0, 0.0]
+  #dr.CustomBoundsActive = [1,1,0]
+  #dr.CustomBounds = [xmin, xmax, ymin, ymax, 0.0, 0.0]
+  #dr.CustomRangeActive = [1,1,0]
+  #dr.CustomRange = [xmin, xmax, dataymin, dataymax, 0.0, 0.0]
   #dr.CubeAxesVisibility = 1
   SetAxesGridVisibility(rv, 1)
 

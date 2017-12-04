@@ -31,6 +31,7 @@ TRIBITS_ADD_TEST(
 	Utst_superelement
 	NAME Utst_superelement
 	NUM_MPI_PROCS 1
+	COMM serial
 	ARGS ${CMAKE_CURRENT_SOURCE_DIR}/cbr2.ncf
 )
 ENDIF()

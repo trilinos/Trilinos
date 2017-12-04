@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017 National Technology & Engineering Solutions
+// Copyright (c) 2014 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,6 +37,7 @@
 #include <cerrno>
 #include <cfenv>
 #include <cmath>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
@@ -64,8 +65,7 @@
 #endif
 
 namespace {
-  std::random_device rd;
-  std::mt19937_64    rng(rd());
+  std::mt19937_64 rng;
 
   void reset_error()
   {
@@ -102,79 +102,89 @@ namespace SEAMS {
 #define LOG1P(x) std::log(1.0 + (x))
 #endif
 
-  // DO_INT:  Calculate integer nearest to zero from value
+  /* DO_INT:  Calculate integer nearest to zero from value */
   double do_int(double x)
   {
+    double temp;
     reset_error();
-    double temp = (x < 0 ? -std::floor(-(x)) : std::floor(x));
+    temp = (x < 0 ? -std::floor(-(x)) : std::floor(x));
     SEAMS::math_error("int");
     return (temp);
   }
 
-  // DO_NINT:  Calculate integer nearest value
+  /* DO_NINT:  Calculate integer nearest value */
   double do_nint(double x)
   {
+    double temp;
     reset_error();
-    double temp = (x < 0 ? -std::floor(0.5 - x) : std::floor(x + 0.5));
+    temp = (x < 0 ? -std::floor(0.5 - x) : std::floor(x + 0.5));
     SEAMS::math_error("nint");
     return (temp);
   }
 
-  // DO_DIST: Calculate distance between point 1 at (x1,y1) and
-  //          point 2 at (x2,y2).
-
+  /* DO_DIST: Calculate distance between point 1 at (x1,y1) and
+   *          point 2 at (x2,y2).
+   */
   double do_dist(double x1, double y1, double x2, double y2)
   {
+    double temp;
     reset_error();
-    double temp = HYPOT((x1 - x2), (y1 - y2));
+    temp = HYPOT((x1 - x2), (y1 - y2));
     SEAMS::math_error("hypot");
     return (temp);
   }
 
-  // DO_ANGLE: Calculate angle (radians) between vector 1 at (0,0; x1,y1) and
-  //           vector 2 at (0,0; x2,y2).
-
+  /* DO_ANGLE: Calculate angle (radians) between vector 1 at (0,0; x1,y1) and
+   *          vector 2 at (0,0; x2,y2).
+   */
   double do_angle(double x1, double y1, double x2, double y2)
   {
-    double temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
+    double temp;
+    temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
     reset_error();
     temp = acos(temp);
     SEAMS::math_error("angle");
     return (temp);
   }
 
-  // DO_ANGLE: Calculate angle (degrees) between vector 1 at (0,0; x1,y1) and
-  //           vector 2 at (0,0; x2,y2).
-
+  /* DO_ANGLE: Calculate angle (degrees) between vector 1 at (0,0; x1,y1) and
+   *          vector 2 at (0,0; x2,y2).
+   */
   double do_angled(double x1, double y1, double x2, double y2)
   {
-    double temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
+    double temp;
+    temp = ((x1 * x2) + (y1 * y2)) / (HYPOT(x1, y1) * HYPOT(x2, y2));
     reset_error();
     temp = r2d(acos(temp));
     SEAMS::math_error("angled");
     return (temp);
   }
 
-  // DO_HYPOT: calcluate sqrt(p^2 + q^2)
-  // Algorithm from "More Programming Pearls," Jon Bentley
-  // Accuracy: 6.5 digits after 2 iterations,
-  //           20  digits after 3 iterations,
-  //           62  digits after 4 iterations.
+  /* DO_HYPOT: calcluate sqrt(p^2 + q^2)     */
+  /* Algorithm from "More Programming Pearls," Jon Bentley */
+  /* Accuracy: 6.5 digits after 2 iterations,
+   *           20  digits after 3 iterations,
+   *           62  digits after 4 iterations.
+   */
+
   double do_hypot(double x, double y)
   {
+    double r;
+    int    i;
+
     x = fabs(x);
     y = fabs(y);
     if (x < y) {
-      double r = y;
-      y        = x;
-      x        = r;
+      r = y;
+      y = x;
+      x = r;
     }
     if (x == 0.0) {
       return (y);
     }
 
-    for (int i = 0; i < 3; i++) {
-      double r = y / x;
+    for (i = 0; i < 3; i++) {
+      r = y / x;
       r *= r;
       r /= (4.0 + r);
       x += (2.0 * r * x);
@@ -185,16 +195,18 @@ namespace SEAMS {
 
   double do_max(double x, double y)
   {
+    double temp;
     reset_error();
-    double temp = max(x, y);
+    temp = max(x, y);
     SEAMS::math_error("max");
     return (temp);
   }
 
   double do_min(double x, double y)
   {
+    double temp;
     reset_error();
-    double temp = min(x, y);
+    temp = min(x, y);
     SEAMS::math_error("min");
     return (temp);
   }
@@ -205,124 +217,138 @@ namespace SEAMS {
 
   double do_sind(double x)
   {
+    double temp;
     reset_error();
-    double temp = sin(d2r(x));
+    temp = sin(d2r(x));
     SEAMS::math_error("sind");
     return (temp);
   }
 
   double do_sin(double x)
   {
+    double temp;
     reset_error();
-    double temp = sin(x);
+    temp = sin(x);
     SEAMS::math_error("sin");
     return (temp);
   }
 
   double do_cosd(double x)
   {
+    double temp;
     reset_error();
-    double temp = cos(d2r(x));
+    temp = cos(d2r(x));
     SEAMS::math_error("cosd");
     return (temp);
   }
 
   double do_cos(double x)
   {
+    double temp;
     reset_error();
-    double temp = cos(x);
+    temp = cos(x);
     SEAMS::math_error("cos");
     return (temp);
   }
 
   double do_tand(double x)
   {
+    double temp;
     reset_error();
-    double temp = tan(d2r(x));
+    temp = tan(d2r(x));
     SEAMS::math_error("tand");
     return (temp);
   }
 
   double do_tan(double x)
   {
+    double temp;
     reset_error();
-    double temp = tan(x);
+    temp = tan(x);
     SEAMS::math_error("tan");
     return (temp);
   }
 
   double do_atan2d(double x, double y)
   {
+    double temp;
     reset_error();
-    double temp = r2d(atan2(x, y));
+    temp = r2d(atan2(x, y));
     SEAMS::math_error("atan2d");
     return (temp);
   }
 
   double do_atan2(double x, double y)
   {
+    double temp;
     reset_error();
-    double temp = atan2(x, y);
+    temp = atan2(x, y);
     SEAMS::math_error("atan2");
     return (temp);
   }
 
   double do_atand(double x)
   {
+    double temp;
     reset_error();
-    double temp = r2d(atan(x));
+    temp = r2d(atan(x));
     SEAMS::math_error("atand");
     return (temp);
   }
 
   double do_atan(double x)
   {
+    double temp;
     reset_error();
-    double temp = atan(x);
+    temp = atan(x);
     SEAMS::math_error("atan");
     return (temp);
   }
 
   double do_asind(double x)
   {
+    double temp;
     reset_error();
-    double temp = r2d(asin(x));
+    temp = r2d(asin(x));
     SEAMS::math_error("asind");
     return (temp);
   }
 
   double do_asin(double x)
   {
+    double temp;
     reset_error();
-    double temp = asin(x);
+    temp = asin(x);
     SEAMS::math_error("asin");
     return (temp);
   }
 
   double do_acosd(double x)
   {
+    double temp;
     reset_error();
-    double temp = r2d(acos(x));
+    temp = r2d(acos(x));
     SEAMS::math_error("acosd");
     return (temp);
   }
 
   double do_acos(double x)
   {
+    double temp;
     reset_error();
-    double temp = acos(x);
+    temp = acos(x);
     SEAMS::math_error("acos");
     return (temp);
   }
 
-  // do_srand(x) Seed the random generator with the specified integer value
+  /* do_srand(x) Seed the random generator with the specified integer value */
   double do_srand(double seed)
   {
     rng.seed(static_cast<size_t>(seed));
     return (0);
   }
 
-  // do_rand(x) returns a random double in the range 0<= do_rand <= x
+  /* do_rand(x) returns a random double in the range 0<= do_rand <= x */
   double do_rand(double xl, double xh)
   {
     std::uniform_real_distribution<double> dist(xl, xh);
@@ -349,97 +375,109 @@ namespace SEAMS {
 
   double do_sign(double x, double y)
   {
+    double temp;
     reset_error();
-    double temp = (y) >= 0 ? fabs(x) : -fabs(x);
+    temp = (y) >= 0 ? fabs(x) : -fabs(x);
     SEAMS::math_error("sign");
     return (temp);
   }
 
   double do_dim(double x, double y)
   {
+    double temp;
     reset_error();
-    double temp = x - (min(x, y));
+    temp = x - (min(x, y));
     SEAMS::math_error("dim");
     return (temp);
   }
 
   double do_fabs(double x)
   {
+    double temp;
     reset_error();
-    double temp = fabs(x);
+    temp = fabs(x);
     SEAMS::math_error("fabs");
     return (temp);
   }
 
   double do_ceil(double x)
   {
+    double temp;
     reset_error();
-    double temp = ceil(x);
+    temp = ceil(x);
     SEAMS::math_error("ceil");
     return (temp);
   }
 
   double do_cosh(double x)
   {
+    double temp;
     reset_error();
-    double temp = cosh(x);
+    temp = cosh(x);
     SEAMS::math_error("cosh");
     return (temp);
   }
 
   double do_exp(double x)
   {
+    double temp;
     reset_error();
-    double temp = exp(x);
+    temp = exp(x);
     SEAMS::math_error("exp");
     return (temp);
   }
 
   double do_floor(double x)
   {
+    double temp;
     reset_error();
-    double temp = floor(x);
+    temp = floor(x);
     SEAMS::math_error("floor");
     return (temp);
   }
 
   double do_fmod(double x, double y)
   {
+    double temp;
     reset_error();
-    double temp = fmod(x, y);
+    temp = fmod(x, y);
     SEAMS::math_error("fmod");
     return (temp);
   }
 
   double do_log(double x)
   {
+    double temp;
     reset_error();
-    double temp = std::log(x);
+    temp = std::log(x);
     SEAMS::math_error("log");
     return (temp);
   }
 
   double do_log10(double x)
   {
+    double temp;
     reset_error();
-    double temp = std::log10(x);
+    temp = std::log10(x);
     SEAMS::math_error("log10");
     return (temp);
   }
 
   double do_sinh(double x)
   {
+    double temp;
     reset_error();
-    double temp = sinh(x);
+    temp = sinh(x);
     SEAMS::math_error("sinh");
     return (temp);
   }
 
   double do_sqrt(double x)
   {
+    double temp;
     feclearexcept(FE_ALL_EXCEPT);
     reset_error();
-    double temp = std::sqrt(x);
+    temp = std::sqrt(x);
     if (fetestexcept(FE_INVALID | FE_OVERFLOW | FE_DIVBYZERO) != 0) {
       SEAMS::math_error("sqrt");
     }
@@ -448,8 +486,9 @@ namespace SEAMS {
 
   double do_tanh(double x)
   {
+    double temp;
     reset_error();
-    double temp = tanh(x);
+    temp = tanh(x);
     SEAMS::math_error("tanh");
     return (temp);
   }
@@ -462,12 +501,15 @@ namespace SEAMS {
                   -1.231739516, 0.120858003e-2, -0.536382e-5};
   double do_lgamma(double val)
   {
-    constexpr double STP = 2.50662827465;
-    double           x   = val - 1.0;
-    double           tmp = x + 5.5;
-    tmp                  = (x + 0.5) * std::log(tmp) - tmp;
-    double ser           = 1.0;
-    for (int j = 0; j < 6; j++) {
+#define STP 2.50662827465
+    double x, tmp, ser;
+    int    j;
+
+    x   = val - 1.0;
+    tmp = x + 5.5;
+    tmp = (x + 0.5) * std::log(tmp) - tmp;
+    ser = 1.0;
+    for (j = 0; j < 6; j++) {
       x += 1.0;
       ser += (cof[j] / x);
     }
@@ -509,31 +551,34 @@ namespace SEAMS {
 
   double do_acosh(double x)
   {
+    double t;
     if (x > 1.0e20) {
       return (LOG1P(x) + std::log(2.0));
     }
-    double t = std::sqrt(x - 1.0);
+    t = std::sqrt(x - 1.0);
     return (LOG1P(t * (t + std::sqrt(x + 1))));
   }
 
   double do_asinh(double x)
   {
+    double s, t;
     if (1.0 + x * x == 1.0) {
       return (x);
     }
     if (std::sqrt(1.0 + x * x) == 1.0) {
       return (do_sign(1.0, x) * (LOG1P(x) + std::log(2.0)));
     }
-    double t = fabs(x);
-    double s = 1.0 / t;
+    t = fabs(x);
+    s = 1.0 / t;
     return (do_sign(1.0, x) * LOG1P(t + t / (s + std::sqrt(1 + s * s))));
   }
 
   double do_atanh(double x)
   {
-    double z = do_sign(0.5, x);
-    x        = do_sign(x, 1.0);
-    x        = x / (1.0 - x);
+    double z;
+    z = do_sign(0.5, x);
+    x = do_sign(x, 1.0);
+    x = x / (1.0 - x);
     return (z * LOG1P(x + x));
   }
 
@@ -541,7 +586,10 @@ namespace SEAMS {
 
   double do_cols(const array *arr) { return arr->cols; }
 
-  // --------------------------STRING FUNCTIONS------------------------
+  /*
+    --------------------------STRING FUNCTIONS------------------------
+   */
+
   const char *do_get_date()
   {
     char *       tmp;
@@ -551,7 +599,7 @@ namespace SEAMS {
     time_t     timer   = time(nullptr);
     struct tm *timeptr = localtime(&timer);
 
-    // First  the date in the form CCYY/MM/DD
+    /* First  the date in the form CCYY/MM/DD */
     strftime(tmpstr, bufsize, "%Y/%m/%d", timeptr);
     new_string(tmpstr, &tmp);
     return (tmp);
@@ -566,7 +614,7 @@ namespace SEAMS {
     time_t     timer   = time(nullptr);
     struct tm *timeptr = localtime(&timer);
 
-    // First  the date in the form CCYY/MM/DD
+    /* First  the date in the form CCYY/MM/DD */
     strftime(tmpstr, bufsize, "%Y%m%d", timeptr);
     new_string(tmpstr, &tmp);
     return (tmp);
@@ -581,7 +629,7 @@ namespace SEAMS {
     time_t     timer   = time(nullptr);
     struct tm *timeptr = localtime(&timer);
 
-    // Now the time in the form HH:MM:SS where 0 <= HH < 24
+    /* Now the time in the form HH:MM:SS where 0 <= HH < 24 */
     strftime(tmpstr, bufsize, "%H:%M:%S", timeptr);
     new_string(tmpstr, &tmp);
     return (tmp);
@@ -622,7 +670,7 @@ namespace SEAMS {
 
     SEAMS::symrec *format;
     format = aprepro->getsym("_FORMAT");
-    (void)sprintf(tmpstr, format->value.svar.c_str(), x);
+    (void)sprintf(tmpstr, format->value.svar, x);
     new_string(tmpstr, &tmp);
     return (tmp);
   }
@@ -684,36 +732,24 @@ namespace SEAMS {
 
   double do_word_count(char *string, char *delm)
   {
-    std::string temp   = string;
-    auto        tokens = tokenize(temp, delm);
+    std::string              temp   = string;
+    std::vector<std::string> tokens = tokenize(temp, delm);
     return static_cast<double>(tokens.size());
-  }
-
-  double do_find_word(char *word, char *string, char *delm)
-  {
-    std::string sword{word};
-    std::string temp{string};
-    auto        tokens = tokenize(temp, delm);
-    for (size_t i = 0; i < tokens.size(); i++) {
-      if (tokens[i] == sword) {
-        return i + 1;
-      }
-    }
-    return 0;
   }
 
   const char *do_get_word(double n, char *string, char *delm)
   {
-    size_t      in     = static_cast<size_t>(n);
-    std::string temp   = string;
-    auto        tokens = tokenize(temp, delm);
+    size_t                   in     = static_cast<size_t>(n);
+    std::string              temp   = string;
+    std::vector<std::string> tokens = tokenize(temp, delm);
 
     if (tokens.size() >= in) {
       char *word = nullptr;
-      new_string(tokens[in - 1], &word);
+      new_string(tokens[in - 1].c_str(), &word);
       return word;
     }
-    return "";
+
+    return nullptr;
   }
 
   const char *do_file_to_string(char *filename)
@@ -728,29 +764,32 @@ namespace SEAMS {
         lines << line << '\n';
       }
 
-      new_string(lines.str(), &ret_string);
+      new_string(lines.str().c_str(), &ret_string);
     }
     return ret_string;
   }
 
   const char *do_getenv(char *env)
   {
+    char *tmp;
+    char *ret_string;
     if (env == nullptr) {
       return "";
     }
-    char *tmp = getenv(env);
+    tmp = getenv(env);
     if (tmp != nullptr) {
-      char *ret_string;
       new_string(tmp, &ret_string);
       return (ret_string);
     }
+
     return "";
   }
 
   double do_strtod(char *string)
   {
+    double x;
     reset_error();
-    double x = atof(string);
+    x = atof(string);
     SEAMS::math_error("strtod");
     return x;
   }
@@ -773,27 +812,10 @@ namespace SEAMS {
     return (nullptr);
   }
 
-  const char *do_dumpsym1(char *pre)
-  {
-    aprepro->dumpsym(SEAMS::Parser::token::VAR, pre, false);
-    return (nullptr);
-  }
-
-  const char *do_dumpfunc1(char *pre)
-  {
-    aprepro->dumpsym(SEAMS::Parser::token::FNCT, pre, true);
-    return (nullptr);
-  }
-
-  const char *do_dumpvar1(char *pre)
-  {
-    aprepro->dumpsym(SEAMS::Parser::token::VAR, pre, true);
-    return (nullptr);
-  }
-
   double do_option(char *option, double value)
   {
-    double current = -1;
+    double current;
+    current = -1;
 
     if (std::strcmp(option, "warning") == 0) {
       current                         = static_cast<double>(aprepro->ap_options.warning_msg);
@@ -830,12 +852,13 @@ namespace SEAMS {
 
   const char *do_intout(double intval)
   {
-    // convert 'intval' to a string using an integer format
-    // This can be used if you need to set the default output
-    // format to force the decimal point.  In that case, integers
-    // also have a decimal point which is usually not wanted.
-    // Using 'intout(val)', val will be converted to a string
-    // using an integer format
+    /* convert 'intval' to a string using an integer format
+     * This can be used if you need to set the default output
+     * format to force the decimal point.  In that case, integers
+     * also have a decimal point which is usually not wanted.
+     * Using 'intout(val)', val will be converted to a string
+     * using an integer format
+     */
 
     char *      tmp;
     static char tmpstr[128];
@@ -918,13 +941,17 @@ namespace SEAMS {
 
   const char *do_extract(char *string, char *begin, char *end)
   {
-    // From 'string' return a substring delimited by 'begin' and 'end'.
-    // 'begin' is included in the string, but 'end' is not. If
-    // 'begin' does not appear in the string, return nullptr; If 'end'
-    // does not appear, then return the remainder of the string. If
-    // 'begin' == "", then start at beginning; if 'end' == "", then
-    // return remainder of the string.
+    /* From 'string' return a substring delimited by 'begin' and 'end'.
+     *  'begin' is included in the string, but 'end' is not. If
+     *  'begin' does not appear in the string, return nullptr; If 'end'
+     *  does not appear, then return the remainder of the string. If
+     *  'begin' == "", then start at beginning; if 'end' == "", then
+     *  return remainder of the string.
+     */
+
     char *start = string;
+    char *tmp;
+    int   len = 0;
 
     if (std::strlen(begin) > 0) {
       start = std::strstr(string, begin);
@@ -933,7 +960,7 @@ namespace SEAMS {
       }
     }
 
-    int len = std::strlen(start);
+    len = std::strlen(start);
     if (std::strlen(end) > 0) {
       char *finish = std::strstr(start, end);
       if (finish != nullptr) {
@@ -944,7 +971,6 @@ namespace SEAMS {
     auto tmpstr = new char[len + 1];
     std::strncpy(tmpstr, start, len);
     tmpstr[len] = '\0';
-    char *tmp;
     new_string(tmpstr, &tmp);
     delete[] tmpstr;
     return tmp;
@@ -959,10 +985,10 @@ namespace SEAMS {
 
   const char *do_error(char *error_string)
   {
-    // Print error message (to stderr) and exit
+    /* Print error message (to stderr) and exit */
     yyerror(*aprepro, error_string);
     throw std::runtime_error(std::string(error_string));
-    // NOTREACHED
+    /* NOTREACHED */
     return (nullptr);
   }
 
@@ -989,7 +1015,7 @@ namespace SEAMS {
         }
       }
       char *ret_string;
-      new_string(lines.str(), &ret_string);
+      new_string(lines.str().c_str(), &ret_string);
       return ret_string;
     }
 
@@ -1051,14 +1077,14 @@ namespace SEAMS {
       while (std::getline(*file, line)) {
         rows++;
         if (rows > rows_to_skip) {
-          auto tokens = tokenize(line, delim);
-          cols        = tokens.size() > cols ? tokens.size() : cols;
+          std::vector<std::string> tokens = tokenize(line, delim);
+          cols                            = tokens.size() > cols ? tokens.size() : cols;
         }
       }
 
       auto array_data = new array(rows - rows_to_skip, cols);
 
-      // Read file again storing entries in array_data->data
+      /* Read file again storing entries in array_data->data */
       file->clear();
       file->seekg(0);
 
@@ -1066,7 +1092,7 @@ namespace SEAMS {
       rows    = 0;
       while (std::getline(*file, line)) {
         if (++rows > rows_to_skip) {
-          auto tokens = tokenize(line, delim);
+          std::vector<std::string> tokens = tokenize(line, delim);
           for (size_t i = 0; i < static_cast<size_t>(array_data->cols); i++) {
             if (i < tokens.size()) {
               array_data->data[idx++] = atof(tokens[i].c_str());
@@ -1097,14 +1123,14 @@ namespace SEAMS {
       while (std::getline(*file, line)) {
         if (line[0] != comment[0]) {
           rows++;
-          auto tokens = tokenize(line, delim);
-          cols        = tokens.size() > cols ? tokens.size() : cols;
+          std::vector<std::string> tokens = tokenize(line, delim);
+          cols                            = tokens.size() > cols ? tokens.size() : cols;
         }
       }
 
       auto array_data = new array(rows, cols);
 
-      // Read file again storing entries in array_data->data
+      /* Read file again storing entries in array_data->data */
       file->clear();
       file->seekg(0);
 
@@ -1113,7 +1139,7 @@ namespace SEAMS {
       while (std::getline(*file, line)) {
         if (line[0] != comment[0]) {
           rows++;
-          auto tokens = tokenize(line, delim);
+          std::vector<std::string> tokens = tokenize(line, delim);
           for (size_t i = 0; i < static_cast<size_t>(array_data->cols); i++) {
             if (i < tokens.size()) {
               array_data->data[idx++] = atof(tokens[i].c_str());

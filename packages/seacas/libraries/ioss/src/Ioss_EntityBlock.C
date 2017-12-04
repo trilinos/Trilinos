@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -54,8 +54,8 @@
  *
  */
 Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database, const std::string &my_name,
-                               const std::string &entity_type, size_t entity_cnt)
-    : Ioss::GroupingEntity(io_database, my_name, entity_cnt), idOffset(0)
+                               const std::string &entity_type, size_t entity_count)
+    : Ioss::GroupingEntity(io_database, my_name, entity_count), idOffset(0)
 
 {
   // The 'true' means it is ok for the factory to return
@@ -77,11 +77,11 @@ Ioss::EntityBlock::EntityBlock(Ioss::DatabaseIO *io_database, const std::string 
   properties.add(Ioss::Property(this, "topology_node_count", Ioss::Property::INTEGER));
   properties.add(Ioss::Property(this, "topology_type", Ioss::Property::STRING));
   fields.add(Ioss::Field("connectivity", field_int_type(), topology_->name(), Ioss::Field::MESH,
-                         entity_cnt));
+                         entity_count));
 
   // Returns connectivity in local id space
   fields.add(Ioss::Field("connectivity_raw", field_int_type(), topology()->name(),
-                         Ioss::Field::MESH, entity_cnt));
+                         Ioss::Field::MESH, entity_count));
 }
 
 /** \brief Calculate and get an implicit property.

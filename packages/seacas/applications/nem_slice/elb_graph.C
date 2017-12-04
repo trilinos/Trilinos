@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -153,7 +153,8 @@ namespace {
     size_t total   = vv_size + mesh->num_nodes * v_size + sur_elem_total_size * sizeof(INT);
     std::cerr << "\ttotal size of reverse connectivity array: " << sur_elem_total_size
               << " entries (" << total << " bytes).\n";
-    vec_free(last_element);
+    last_element.resize(0);
+    last_element.shrink_to_fit();
 
     // Attempt to reserve an array with this size...
     double time1 = get_time();

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -177,7 +177,7 @@ namespace {
     }
     return nstep;
   }
-} // namespace
+}
 
 void Iocgns::Utils::cgns_error(int cgnsid, const char *file, const char *function, int lineno,
                                int processor)
@@ -209,7 +209,7 @@ CG_ZoneType_t Iocgns::Utils::check_zone_type(int cgnsFilePtr)
 
   CG_ZoneType_t common_zone_type = CG_ZoneTypeNull;
 
-  for (int zone = 1; zone <= num_zones; zone++) {
+  for (cgsize_t zone = 1; zone <= num_zones; zone++) {
     CG_ZoneType_t zone_type;
     CGCHECKNP(cg_zone_type(cgnsFilePtr, base, zone, &zone_type));
 
@@ -276,6 +276,7 @@ void Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &reg
   CGERR(cg_descriptor_write("Information", "IOSS: CGNS Writer version -1"));
 
   // Output the sidesets as Family_t nodes
+
   const auto &sidesets = region.get_sidesets();
   for (const auto &ss : sidesets) {
     int fam = 0;
@@ -293,7 +294,7 @@ void Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &reg
     }
 
     CGERR(cg_fambc_write(file_ptr, base, fam, "FamBC", bocotype, &bc_index));
-    CGERR(cg_goto(file_ptr, base, "Family_t", fam, nullptr));
+    CGERR(cg_goto(file_ptr, base, "Family_t", fam, NULL));
     CGERR(cg_descriptor_write("FamBC_TypeId", std::to_string(bocotype).c_str()));
     CGERR(cg_descriptor_write("FamBC_TypeName", BCTypeName[bocotype]));
     CGERR(cg_descriptor_write("FamBC_UserId", std::to_string(id).c_str()));
@@ -327,40 +328,14 @@ void Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &reg
     CGERR(cg_grid_write(file_ptr, base, zone, "GridCoordinates", &grid_idx));
 
     // Transfer boundary condition nodes...
-
-    // The bc.m_ownerRange argument needs to be the union of the size on all processors
-    // Instead of requiring that of the caller, do the union in this routine.
-    // TODO: Calculate it outside of the loop...
-    std::vector<cgsize_t> bc_range(sb->m_boundaryConditions.size() * 6);
-    size_t idx = 0;
     for (const auto &bc : sb->m_boundaryConditions) {
-      for (size_t i=0; i < 3; i++) {
-	bc_range[idx++] = -bc.m_rangeBeg[i];
-      }
-      for (size_t i=0; i < 3; i++) {
-	bc_range[idx++] = bc.m_rangeEnd[i];
-      }
-    }
-
-    region.get_database()->util().global_array_minmax(bc_range, Ioss::ParallelUtils::DO_MAX);
-
-    idx = 0;
-    for (idx = 0; idx < bc_range.size(); idx += 6) {
-      bc_range[idx+0] = -bc_range[idx+0];
-      bc_range[idx+1] = -bc_range[idx+1];
-      bc_range[idx+2] = -bc_range[idx+2];
-    }
-
-    idx = 0;
-    for (const auto &bc : sb->m_boundaryConditions) {
-      int bc_idx = 0;
+      cgsize_t bc_idx = 0;
       CGERR(cg_boco_write(file_ptr, base, zone, bc.m_bcName.c_str(), CG_FamilySpecified,
-                          CG_PointRange, 2, &bc_range[idx], &bc_idx));
+                          CG_PointRange, 2, &bc.m_ownerRange[0], &bc_idx));
       CGERR(cg_goto(file_ptr, base, sb->name().c_str(), 0, "ZoneBC_t", 1, bc.m_bcName.c_str(), 0,
                     "end"));
       CGERR(cg_famname_write(bc.m_bcName.c_str()));
       CGERR(cg_boco_gridlocation_write(file_ptr, base, zone, bc_idx, CG_Vertex));
-      idx += 6;
     }
 
     // Transfer Zone Grid Connectivity...
@@ -372,7 +347,7 @@ void Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &reg
       // In parallel decomposition, can have multiple copies of a zgc; only output the first
       // instance
       if (defined.insert(zgc.m_connectionName).second) {
-        int zgc_idx = 0;
+        cgsize_t zgc_idx = 0;
         CGERR(cg_1to1_write(file_ptr, base, zone, zgc.m_connectionName.c_str(),
                             zgc.m_donorName.c_str(), &zgc.m_ownerRange[0], &zgc.m_donorRange[0],
                             &zgc.m_transform[0], &zgc_idx));
@@ -385,25 +360,25 @@ std::string Iocgns::Utils::map_cgns_to_topology_type(CG_ElementType_t type)
 {
   std::string topology = "unknown";
   switch (type) {
-  case CG_NODE: topology = Ioss::Node::name; break;
-  case CG_BAR_2: topology = Ioss::Bar2::name; break;
-  case CG_BAR_3: topology = Ioss::Bar3::name; break;
-  case CG_TRI_3: topology = Ioss::Tri3::name; break;
-  case CG_TRI_6: topology = Ioss::Tri6::name; break;
-  case CG_QUAD_4: topology = Ioss::Quad4::name; break;
-  case CG_QUAD_8: topology = Ioss::Quad8::name; break;
-  case CG_QUAD_9: topology = Ioss::Quad9::name; break;
-  case CG_TETRA_4: topology = Ioss::Tet4::name; break;
+  case CG_NODE: topology     = Ioss::Node::name; break;
+  case CG_BAR_2: topology    = Ioss::Bar2::name; break;
+  case CG_BAR_3: topology    = Ioss::Bar3::name; break;
+  case CG_TRI_3: topology    = Ioss::Tri3::name; break;
+  case CG_TRI_6: topology    = Ioss::Tri6::name; break;
+  case CG_QUAD_4: topology   = Ioss::Quad4::name; break;
+  case CG_QUAD_8: topology   = Ioss::Quad8::name; break;
+  case CG_QUAD_9: topology   = Ioss::Quad9::name; break;
+  case CG_TETRA_4: topology  = Ioss::Tet4::name; break;
   case CG_TETRA_10: topology = Ioss::Tet10::name; break;
-  case CG_PYRA_5: topology = Ioss::Pyramid5::name; break;
-  case CG_PYRA_13: topology = Ioss::Pyramid13::name; break;
-  case CG_PYRA_14: topology = Ioss::Pyramid14::name; break;
-  case CG_PENTA_6: topology = Ioss::Wedge6::name; break;
+  case CG_PYRA_5: topology   = Ioss::Pyramid5::name; break;
+  case CG_PYRA_13: topology  = Ioss::Pyramid13::name; break;
+  case CG_PYRA_14: topology  = Ioss::Pyramid14::name; break;
+  case CG_PENTA_6: topology  = Ioss::Wedge6::name; break;
   case CG_PENTA_15: topology = Ioss::Wedge15::name; break;
   case CG_PENTA_18: topology = Ioss::Wedge18::name; break;
-  case CG_HEXA_8: topology = Ioss::Hex8::name; break;
-  case CG_HEXA_20: topology = Ioss::Hex20::name; break;
-  case CG_HEXA_27: topology = Ioss::Hex27::name; break;
+  case CG_HEXA_8: topology   = Ioss::Hex8::name; break;
+  case CG_HEXA_20: topology  = Ioss::Hex20::name; break;
+  case CG_HEXA_27: topology  = Ioss::Hex27::name; break;
   default:
     std::cerr << "WARNING: Found topology of type " << cg_ElementTypeName(type)
               << " which is not currently supported.\n";
@@ -496,8 +471,8 @@ void Iocgns::Utils::write_flow_solution_metadata(int file_ptr, Ioss::Region *reg
   // Create a lambda to avoid code duplication for similar treatment
   // of structured blocks and element blocks.
   auto sol_lambda = [=](Ioss::GroupingEntity *block) {
-    int base = block->get_property("base").get_int();
-    int zone = block->get_property("zone").get_int();
+    cgsize_t base = block->get_property("base").get_int();
+    cgsize_t zone = block->get_property("zone").get_int();
     if (has_nodal_fields) {
       CGERR(cg_sol_write(file_ptr, base, zone, v_name.c_str(), CG_Vertex, vertex_solution_index));
       CGERR(
@@ -582,22 +557,20 @@ int Iocgns::Utils::find_solution_index(int cgnsFilePtr, int base, int zone, int 
 
 void Iocgns::Utils::add_sidesets(int cgnsFilePtr, Ioss::DatabaseIO *db)
 {
-  int base         = 1;
-  int num_families = 0;
+  cgsize_t base         = 1;
+  cgsize_t num_families = 0;
   CGCHECKNP(cg_nfamilies(cgnsFilePtr, base, &num_families));
 
-  for (int family = 1; family <= num_families; family++) {
+  for (cgsize_t family = 1; family <= num_families; family++) {
     char        name[33];
     CG_BCType_t bocotype;
-    int         num_bc  = 0;
-    int         num_geo = 0;
+    cgsize_t    num_bc  = 0;
+    cgsize_t    num_geo = 0;
     CGCHECKNP(cg_family_read(cgnsFilePtr, base, family, name, &num_bc, &num_geo));
 
 #if IOSS_DEBUG_OUTPUT
-    if (db->parallel_rank() == 0) {
-      std::cerr << "Family " << family << " named " << name << " has " << num_bc << " BC, and "
-                << num_geo << " geometry references\n";
-    }
+    std::cerr << "Family " << family << " named " << name << " has " << num_bc << " BC, and "
+              << num_geo << " geometry references\n";
 #endif
     if (num_bc > 0) {
       // Create a sideset...
@@ -607,7 +580,6 @@ void Iocgns::Utils::add_sidesets(int cgnsFilePtr, Ioss::DatabaseIO *db)
 
       auto *ss = new Ioss::SideSet(db, ss_name);
       ss->property_add(Ioss::Property("id", family));
-      ss->property_add(Ioss::Property("guid", db->util().generate_guid(family)));
       ss->property_add(Ioss::Property("bc_type", bocotype));
       db->get_region()->add(ss);
     }
@@ -799,7 +771,7 @@ void Iocgns::Utils::resolve_shared_nodes(Ioss::Region &region, int my_processor)
         }
       }
     }
-#if 0 && IOSS_DEBUG_OUTPUT
+#if IOSS_DEBUG_OUTPUT
     std::cerr << "P" << my_processor << ", Block " << owner_block->name()
               << " Shared Nodes: " << owner_block->m_sharedNode.size() << "\n";
 #endif
@@ -809,9 +781,9 @@ void Iocgns::Utils::resolve_shared_nodes(Ioss::Region &region, int my_processor)
 void Iocgns::Utils::add_structured_boundary_conditions(int                    cgnsFilePtr,
                                                        Ioss::StructuredBlock *block)
 {
-  int base = block->get_property("base").get_int();
-  int zone = block->get_property("zone").get_int();
-  int num_bcs;
+  cgsize_t base = block->get_property("base").get_int();
+  cgsize_t zone = block->get_property("zone").get_int();
+  int      num_bcs;
   CGCHECKNP(cg_nbocos(cgnsFilePtr, base, zone, &num_bcs));
 
   cgsize_t range[6];
@@ -852,17 +824,16 @@ void Iocgns::Utils::add_structured_boundary_conditions(int                    cg
                << block->name() << "'.\n";
         IOSS_ERROR(errmsg);
       }
-      sset->property_add(Ioss::Property("id", ibc + 1)); // Not sure this is unique id...8
-      sset->property_add(Ioss::Property("guid", db->util().generate_guid(ibc+1)));
+      sset->property_add(Ioss::Property("id", ibc + 1)); // Not sure this is unique id...
       db->get_region()->add(sset);
     }
 
     if (sset != nullptr) {
-      Ioss::IJK_t range_beg{{(int)std::min(range[0], range[3]), (int)std::min(range[1], range[4]),
-                             (int)std::min(range[2], range[5])}};
+      Ioss::IJK_t range_beg{{std::min(range[0], range[3]), std::min(range[1], range[4]),
+                             std::min(range[2], range[5])}};
 
-      Ioss::IJK_t range_end{{(int)std::max(range[0], range[3]), (int)std::max(range[1], range[4]),
-                             (int)std::max(range[2], range[5])}};
+      Ioss::IJK_t range_end{{std::max(range[0], range[3]), std::max(range[1], range[4]),
+                             std::max(range[2], range[5])}};
 
       // Determine overlap of surface with block (in parallel, a block may
       // be split among multiple processors and the block face this is applied
@@ -872,15 +843,14 @@ void Iocgns::Utils::add_structured_boundary_conditions(int                    cg
 
       bc_subset_range(block, bc);
       block->m_boundaryConditions.push_back(bc);
-      auto sb = new Ioss::SideBlock(block->get_database(), name, Ioss::Quad4::name, Ioss::Hex8::name,
+      auto sb = new Ioss::SideBlock(block->get_database(), name, "Quad4", "Hex8",
                                     block->m_boundaryConditions.back().get_face_count());
       sb->set_parent_block(block);
       sset->add(sb);
       sb->property_add(Ioss::Property("base", base));
       sb->property_add(Ioss::Property("zone", zone));
       sb->property_add(Ioss::Property("section", ibc + 1));
-      sb->property_add(Ioss::Property("id", sset->get_property("id").get_int()));
-      sb->property_add(Ioss::Property("guid", block->get_database()->util().generate_guid(sset->get_property("id").get_int())));
+      sb->property_add(Ioss::Property("id", (int)block->m_boundaryConditions.size() - 1));
 
       // Set a property on the sideset specifying the boundary condition type (bocotype)
       // In CGNS, the bocotype is an enum; we store it as the integer value of the enum.
@@ -939,7 +909,7 @@ void Iocgns::Utils::finalize_database(int cgnsFilePtr, const std::vector<double>
   // Create a lambda to avoid code duplication for similar treatment
   // of structured blocks and element blocks.
   auto ziter = [=](Ioss::GroupingEntity *block) {
-    int              zone = block->get_property("zone").get_int();
+    cgsize_t         zone = block->get_property("zone").get_int();
     std::vector<int> indices(timesteps.size());
     bool             has_cell_center_fields = block->field_count(Ioss::Field::TRANSIENT) > 0;
     if (has_cell_center_fields || has_nodal_fields) {
@@ -996,8 +966,8 @@ void Iocgns::Utils::add_transient_variables(int cgnsFilePtr, const std::vector<d
   // Assuming that the fields on all steps are the same, but can vary
   // from zone to zone.
   auto sol_iter = [=](Ioss::GroupingEntity *block) {
-    int b = block->get_property("base").get_int();
-    int z = block->get_property("zone").get_int();
+    cgsize_t b = block->get_property("base").get_int();
+    cgsize_t z = block->get_property("zone").get_int();
 
     int sol_count = 0;
     CGCHECK(cg_nsols(cgnsFilePtr, b, z, &sol_count));
@@ -1023,7 +993,7 @@ void Iocgns::Utils::add_transient_variables(int cgnsFilePtr, const std::vector<d
       // Convert raw field names into composite fields (a_x, a_y, a_z ==> 3D vector 'a')
       std::vector<Ioss::Field> fields;
       if (grid_loc == CG_CellCenter) {
-        size_t entity_count = block->entity_count();
+        size_t entity_count = block->get_property("entity_count").get_int();
         Ioss::Utils::get_fields(entity_count, field_names, field_count, Ioss::Field::TRANSIENT, '_',
                                 nullptr, fields);
         size_t index = 1;
@@ -1040,7 +1010,7 @@ void Iocgns::Utils::add_transient_variables(int cgnsFilePtr, const std::vector<d
                 ? &(dynamic_cast<Ioss::StructuredBlock *>(block)->get_node_block())
                 : region->get_node_blocks()[0];
         Ioss::NodeBlock *nb           = const_cast<Ioss::NodeBlock *>(cnb);
-        size_t           entity_count = nb->entity_count();
+        size_t           entity_count = nb->get_property("entity_count").get_int();
         Ioss::Utils::get_fields(entity_count, field_names, field_count, Ioss::Field::TRANSIENT, '_',
                                 nullptr, fields);
         size_t index = 1;

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -149,7 +149,6 @@ namespace Ioex {
     void compute_block_membership__(Ioss::SideBlock *         efblock,
                                     std::vector<std::string> &block_membership) const override;
 
-    int  int_byte_size_db() const override;
     void set_int_byte_size_api(Ioss::DataSize size) const override;
 
   protected:

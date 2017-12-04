@@ -51,7 +51,7 @@ namespace SEAMS {
 
     stack() : seq_() { seq_.reserve(200); }
 
-    stack(unsigned int n) : seq_(n) {}
+    explicit stack(unsigned int n) : seq_(n) {}
 
     inline T &operator[](unsigned int i) { return seq_[seq_.size() - 1 - i]; }
 
@@ -68,8 +68,9 @@ namespace SEAMS {
 
     inline void pop(unsigned int n = 1)
     {
-      for (; n; --n)
+      for (; n != 0u; --n) {
         seq_.pop_back();
+      }
     }
 
     void clear() { seq_.clear(); }
@@ -100,7 +101,7 @@ namespace SEAMS {
     unsigned int range_;
   };
 
-} // SEAMS
+} // namespace SEAMS
 #line 156 "stack.hh" // stack.hh:132
 
 #endif // !YY_SEAMS_STACK_HH_INCLUDED

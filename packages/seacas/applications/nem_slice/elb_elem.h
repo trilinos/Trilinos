@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -128,11 +128,5 @@ int get_ss_mirror(const E_Type etype,             /* The element type */
  * entries) that an element can have
  */
 #define MAX_ELEM_SIDES 6
-
-int is_hex(E_Type etype);
-int is_tet(E_Type etype);
-int is_wedge(E_Type etype);
-int is_pyramid(E_Type etype);
-int is_3d_element(E_Type etype);
 
 #endif /* _ELB_ELM_CONST_H */

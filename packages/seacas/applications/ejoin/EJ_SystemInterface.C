@@ -184,7 +184,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2010-2017 National Technology & Engineering Solutions\n"
+              << "Copyright(C) 2010 National Technology & Engineering Solutions\n"
               << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
               << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"
@@ -248,16 +248,12 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("output");
-    if (temp != nullptr) {
-      outputName_ = temp;
-    }
+    outputName_      = temp;
   }
 
   {
     const char *temp = options_.retrieve("offset");
-    if (temp != nullptr) {
-      parse_offset(temp, &offset_);
-    }
+    parse_offset(temp, &offset_);
   }
 
   {
@@ -292,9 +288,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("omit_blocks");
-    if (temp != nullptr) {
-      parse_omissions(temp, &blockOmissions_, "block", true);
-    }
+    parse_omissions(temp, &blockOmissions_, "block", true);
   }
 
   {
@@ -329,37 +323,27 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("gvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &globalVarNames_);
-    }
+    parse_variable_names(temp, &globalVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("nvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &nodeVarNames_);
-    }
+    parse_variable_names(temp, &nodeVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("evar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &elemVarNames_);
-    }
+    parse_variable_names(temp, &elemVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("nsetvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &nsetVarNames_);
-    }
+    parse_variable_names(temp, &nsetVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("ssetvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &ssetVarNames_);
-    }
+    parse_variable_names(temp, &ssetVarNames_);
   }
 
   if (options_.retrieve("disable_field_recognition") != nullptr) {
@@ -417,8 +401,8 @@ bool SystemInterface::convert_nodes_to_nodesets(int part_number) const
     return true;
   }
   else {
-    return std::find(nodesetConvertParts_.cbegin(), nodesetConvertParts_.cend(), part_number) !=
-           nodesetConvertParts_.cend();
+    return std::find(nodesetConvertParts_.begin(), nodesetConvertParts_.end(), part_number) !=
+           nodesetConvertParts_.end();
   }
 }
 

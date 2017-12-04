@@ -557,7 +557,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2008-2017 National Technology & Engineering Solutions\n"
+              << "Copyright(C) 2008 National Technology & Engineering Solutions\n"
               << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
               << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"
@@ -604,16 +604,14 @@ bool SystemInterface::parse_options(int argc, char **argv)
       }
       else {
         // Check for additional unknown arguments...
-	std::ostringstream out;
-        out << "\nexodiff: ERROR: Too many file arguments specified."
-	    << "\n         Probably caused by options following filenames which is no longer "
-	  "allowed."
-	    << "\n         Unknown options are: ";
+        std::cerr << trmclr::red << "\nexodiff: ERROR: Too many file arguments specified."
+                  << "\n         Probably caused by options following filenames which is no longer "
+                     "allowed."
+                  << "\n         Unknown options are: ";
         while (option_index < argc) {
-          out << "'" << argv[option_index++] << "' ";
+          std::cerr << "'" << argv[option_index++] << "' ";
         }
-        out << "\n\n";
-	ERR_OUT(out);
+        std::cerr << "\n\n" << trmclr::normal;
         return false;
       }
     }

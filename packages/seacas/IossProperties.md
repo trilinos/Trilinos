@@ -15,7 +15,6 @@ RESTART_DECOMPOSITION_METHOD | {method} | Decompose a DB with type `RESTART_IN` 
 DECOMPOSITION_METHOD | {method} | Decompose all input DB using `method`
 PARALLEL_CONSISTENCY | [on]/off | On if the client will call Ioss functions consistently on all processors. If off, then the auto-decomp and auto-join cannot be used.
 RETAIN_FREE_NODES | [on]/off | In auto-decomp, will nodes not connected to any elements be retained. 
-LOAD_BALANCE_THRESHOLD | {real} [1.4] | CGNS-Structured only -- Load imbalance permitted Load on Proc / Avg Load
 
 ### Valid values for Decomposition Method
 
@@ -90,4 +89,3 @@ ENABLE_FILE_GROUPS | on/[off]   | experimental
  DECOMP_SHOW_PROGRESS | on/[off] | show memory and elapsed time during autodecomp.
  DECOMP_SHOW_HWM      | on/[off] | show high-water memory during autodecomp
  IOSS_TIME_FILE_OPEN_CLOSE | on/[off] | show elapsed time during parallel-io file open/close/create
- CHECK_PARALLEL_CONSISTENCY | ignored | check Ioss::GroupingEntity parallel consistency

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -44,11 +44,7 @@
 #include <pamgen/Iopg_DatabaseIO.h>
 #endif
 
-#if !defined(NO_DATAWAREHOUSE_SUPPORT)
-#include <data_warehouse/Iodw_DatabaseIO.h>
-#endif
-
-#if defined(SEACAS_HAVE_CGNS)
+#if !defined(NO_CGNS_SUPPORT)
 #include <cgns/Iocgns_IOFactory.h>
 #endif
 
@@ -87,10 +83,7 @@ namespace Ioss {
 #if !defined(NO_PAMGEN_SUPPORT)
       Iopg::IOFactory::factory(); // Pamgen
 #endif
-#if !defined(NO_DATAWAREHOUSE_SUPPORT)
-      Iodw::IOFactory::factory(); // DataWarehouse
-#endif
-#if defined(SEACAS_HAVE_CGNS)
+#if !defined(NO_CGNS_SUPPORT)
       Iocgns::IOFactory::factory();
 #endif
 

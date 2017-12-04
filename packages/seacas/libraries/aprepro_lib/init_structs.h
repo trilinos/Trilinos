@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2014 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -87,14 +87,6 @@ struct init_dddddd
   const char *description;
 };
 
-struct init_ccc
-{
-  const char *fname;
-  double (*fnct)(char *, char *, char *);
-  const char *syntax;
-  const char *description;
-};
-
 struct init_cc
 {
   const char *fname;
@@ -155,14 +147,6 @@ struct str_dcc_init
 {
   const char *fname;
   const char *(*fnct)(double, char *, char *);
-  const char *syntax;
-  const char *description;
-};
-
-struct str_cc_init
-{
-  const char *fname;
-  const char *(*fnct)(char *, char *);
   const char *syntax;
   const char *description;
 };

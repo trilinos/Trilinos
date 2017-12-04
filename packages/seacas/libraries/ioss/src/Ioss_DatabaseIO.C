@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -79,12 +79,12 @@ namespace {
       return true;
     }
 
+    const std::string &ge_name    = ge->name();
     const std::string &field_name = field.get_name();
-    unsigned int       hash_code  = ge->hash() + Ioss::Utils::hash(field_name);
+    unsigned int       hash_code  = Ioss::Utils::hash(ge_name) + Ioss::Utils::hash(field_name);
     unsigned int       max_hash   = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MAX);
     unsigned int       min_hash   = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MIN);
     if (max_hash != min_hash) {
-      const std::string &ge_name    = ge->name();
       std::string errmsg = "Parallel inconsistency detected for ";
       errmsg += in_out == 0 ? "writing" : "reading";
       errmsg += " field '";
@@ -203,11 +203,6 @@ namespace Ioss {
       }
     }
 
-    if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
-      std::string tmp = properties.get("FIELD_SUFFIX_SEPARATOR").get_string();
-      fieldSeparator = tmp[0];
-    }
-
     if (properties.exists("INTEGER_SIZE_API")) {
       int isize = properties.get("INTEGER_SIZE_API").get_int();
       if (isize == 8) {
@@ -276,6 +271,16 @@ namespace Ioss {
     dbIntSizeAPI = size; // mutable
   }
 
+  char DatabaseIO::get_field_separator() const
+  {
+    char suffix = '_'; // Default
+    if (properties.exists("FIELD_SUFFIX_SEPARATOR")) {
+      std::string tmp = properties.get("FIELD_SUFFIX_SEPARATOR").get_string();
+      suffix          = tmp[0];
+    }
+    return suffix;
+  }
+
   /** \brief Set the character used to separate a field suffix from the field basename
    *         when recognizing vector, tensor fields.
    *
@@ -290,7 +295,6 @@ namespace Ioss {
     tmp[0] = separator;
     tmp[1] = 0;
     properties.add(Property("FIELD_SUFFIX_SEPARATOR", tmp));
-    fieldSeparator = separator;
   }
 
   IfDatabaseExistsBehavior DatabaseIO::open_create_behavior() const
@@ -313,12 +317,12 @@ namespace Ioss {
 
       const int mode = 0777; // Users umask will be applied to this.
 
-      auto iter = path.cbegin();
-      while (iter != path.cend() && !error_found) {
-        iter                  = std::find(iter, path.cend(), '/');
-        std::string path_root = std::string(path.cbegin(), iter);
+      auto iter = path.begin();
+      while (iter != path.end() && !error_found) {
+        iter                  = std::find(iter, path.end(), '/');
+        std::string path_root = std::string(path.begin(), iter);
 
-        if (iter != path.cend()) {
+        if (iter != path.end()) {
           ++iter; // Skip past the '/'
         }
 
@@ -469,15 +473,13 @@ namespace Ioss {
       if (set != nullptr) {
         SideBlockContainer side_blocks = set->get_side_blocks();
         for (auto &sbold : side_blocks) {
-          size_t side_count = sbold->entity_count();
+          size_t side_count = sbold->get_property("entity_count").get_int();
           auto   sbnew      = new SideBlock(this, sbold->name(), sbold->topology()->name(),
                                      sbold->parent_element_topology()->name(), side_count);
-          int64_t id         = sbold->get_property("id").get_int();
+          int64_t id = sbold->get_property("id").get_int();
           sbnew->property_add(Property("set_offset", entity_count));
           sbnew->property_add(Property("set_df_offset", df_count));
           sbnew->property_add(Property("id", id));
-          sbnew->property_add(Property("id", id));
-	  sbnew->property_add(Property("guid", util().generate_guid(id)));
 
           new_set->add(sbnew);
 
@@ -512,7 +514,7 @@ namespace Ioss {
     bool                  first          = true;
     ElementBlockContainer element_blocks = get_region()->get_element_blocks();
     for (auto block : element_blocks) {
-      size_t element_count = block->entity_count();
+      size_t element_count = block->get_property("entity_count").get_int();
 
       // Check face types.
       if (element_count > 0) {
@@ -571,7 +573,7 @@ namespace Ioss {
 
   void DatabaseIO::set_block_omissions(const std::vector<std::string> &omissions)
   {
-    blockOmissions.assign(omissions.cbegin(), omissions.cend());
+    blockOmissions.assign(omissions.begin(), omissions.end());
     std::sort(blockOmissions.begin(), blockOmissions.end());
   }
 
@@ -624,7 +626,7 @@ namespace Ioss {
           side_topo.insert(std::make_pair(ftopo, ftopo));
         }
         else {
-          const ElementBlock *block = *element_blocks.cbegin();
+          const ElementBlock *block = *element_blocks.begin();
           side_topo.insert(std::make_pair(block->topology(), ftopo));
         }
       }
@@ -632,7 +634,7 @@ namespace Ioss {
       assert(sideTopology.empty());
       // Copy into the sideTopology container...
       DatabaseIO *new_this = const_cast<DatabaseIO *>(this);
-      std::copy(side_topo.cbegin(), side_topo.cend(), std::back_inserter(new_this->sideTopology));
+      std::copy(side_topo.begin(), side_topo.end(), std::back_inserter(new_this->sideTopology));
     }
     assert(!sideTopology.empty());
   }
@@ -644,7 +646,7 @@ namespace Ioss {
       std::vector<double> coordinates;
       Ioss::NodeBlock *   nb = get_region()->get_node_blocks()[0];
       nb->get_field_data("mesh_model_coordinates", coordinates);
-      ssize_t nnode = nb->entity_count();
+      ssize_t nnode = nb->get_property("entity_count").get_int();
       ssize_t ndim  = nb->get_property("component_degree").get_int();
 
       Ioss::ElementBlockContainer element_blocks = get_region()->get_element_blocks();
@@ -698,18 +700,18 @@ namespace Ioss {
 
     std::vector<double> coordinates;
     sb->get_field_data("mesh_model_coordinates_x", coordinates);
-    auto x = std::minmax_element(coordinates.cbegin(), coordinates.cend());
+    auto x = std::minmax_element(coordinates.begin(), coordinates.end());
     xx     = std::make_pair(*(x.first), *(x.second));
 
     if (ndim > 1) {
       sb->get_field_data("mesh_model_coordinates_y", coordinates);
-      auto y = std::minmax_element(coordinates.cbegin(), coordinates.cend());
+      auto y = std::minmax_element(coordinates.begin(), coordinates.end());
       yy     = std::make_pair(*(y.first), *(y.second));
     }
 
     if (ndim > 2) {
       sb->get_field_data("mesh_model_coordinates_z", coordinates);
-      auto z = std::minmax_element(coordinates.cbegin(), coordinates.cend());
+      auto z = std::minmax_element(coordinates.begin(), coordinates.end());
       zz     = std::make_pair(*(z.first), *(z.second));
     }
 
@@ -754,7 +756,7 @@ namespace {
         }
         // Now append each processors size onto the stream...
         if (util.parallel_size() > 4) {
-          auto min_max = std::minmax_element(all_sizes.cbegin(), all_sizes.cend());
+          auto min_max = std::minmax_element(all_sizes.begin(), all_sizes.end());
           strm << " m:" << std::setw(8) << *min_max.first << " M:" << std::setw(8)
                << *min_max.second << " A:" << std::setw(8) << total / all_sizes.size();
         }
@@ -771,7 +773,7 @@ namespace {
       }
     }
     else {
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
       if (!single_proc_only) {
         MPI_Barrier(util.communicator());
       }

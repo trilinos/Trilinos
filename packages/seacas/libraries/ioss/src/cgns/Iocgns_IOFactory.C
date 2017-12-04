@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -33,7 +33,7 @@
 #include <cgns/Iocgns_DatabaseIO.h> // for DatabaseIO -- serial
 #include <cgns/Iocgns_IOFactory.h>
 #include <cstddef> // for nullptr
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
 #include <cgns/Iocgns_ParallelDatabaseIO.h> // for DatabaseIO -- parallel
 #endif
 #include "Ioss_DBUsage.h"   // for DatabaseUsage
@@ -53,7 +53,7 @@ namespace Iocgns {
 
   IOFactory::IOFactory() : Ioss::IOFactory("cgns")
   {
-#if defined(SEACAS_HAVE_MPI)
+#if defined(HAVE_MPI)
     Ioss::IOFactory::alias("cgns", "dof_cgns");
     Ioss::IOFactory::alias("cgns", "par_cgns");
 #endif
@@ -66,7 +66,7 @@ namespace Iocgns {
 // The "cgns" and "parallel_cgns" databases can both be accessed
 // from this factory.  The "parallel_cgns" is returned if being run
 // on more than 1 processor.
-#if defined(SEACAS_HAVE_MPI)
+#if defined(HAVE_MPI)
     int proc_count = 1;
     if (communicator != MPI_COMM_NULL) {
       MPI_Comm_size(communicator, &proc_count);

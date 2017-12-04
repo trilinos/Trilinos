@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -89,6 +89,10 @@
 namespace {
   const size_t max_line_length = MAX_LINE_LENGTH;
 
+  const std::string SCALAR() { return std::string("scalar"); }
+  const std::string VECTOR3D() { return std::string("vector_3d"); }
+  const std::string SYM_TENSOR() { return std::string("sym_tensor_33"); }
+
   const char *complex_suffix[] = {".re", ".im"};
 
   void check_variable_consistency(const ex_var_params &exo_params, int my_processor,
@@ -166,9 +170,6 @@ namespace Ioex {
       if (type == "netcdf4" || type == "netcdf-4" || type == "hdf5") {
         exodusMode |= EX_NETCDF4;
       }
-      else if (type == "netcdf5" || type == "netcdf-5" || type == "cdf5") {
-        exodusMode |= EX_64BIT_DATA;
-      }
     }
 
     if (properties.exists("ENABLE_FILE_GROUPS")) {
@@ -232,18 +233,6 @@ namespace Ioex {
       }
     }
     dbIntSizeAPI = size; // mutable
-  }
-
-  // Returns byte size of integers stored on the database...
-  int DatabaseIO::int_byte_size_db() const
-  {
-    int status = ex_int64_status(get_file_pointer());
-    if (status & EX_MAPS_INT64_DB || status & EX_IDS_INT64_DB || status & EX_BULK_INT64_DB) {
-      return 8;
-    }
-    else {
-      return 4;
-    }
   }
 
   // common
@@ -470,7 +459,7 @@ namespace Ioex {
   // common
   int DatabaseIO::get_current_state() const
   {
-    int step = get_region()->get_current_state();
+    int step = get_region()->get_property("current_state").get_int();
 
     if (step <= 0) {
       std::ostringstream errmsg;
@@ -493,7 +482,6 @@ namespace Ioex {
     std::string block_name = "nodeblock_1";
     auto        block      = new Ioss::NodeBlock(this, block_name, nodeCount, spatialDimension);
     block->property_add(Ioss::Property("id", 1));
-    block->property_add(Ioss::Property("guid", util().generate_guid(1)));
     // Check for results variables.
 
     int num_attr = 0;
@@ -1025,7 +1013,7 @@ namespace Ioex {
         }
 
         std::vector<Ioss::Field> fields;
-        int64_t                  count = entity->entity_count();
+        int64_t                  count = entity->get_property("entity_count").get_int();
         Ioss::Utils::get_fields(count, names, nvar, Ioss::Field::TRANSIENT, get_field_separator(),
                                 local_truth, fields);
 
@@ -1445,7 +1433,7 @@ namespace Ioex {
     assert(block != nullptr);
     if (attribute_count > 0) {
       std::string block_name       = block->name();
-      size_t      my_element_count = block->entity_count();
+      size_t      my_element_count = block->get_property("entity_count").get_int();
 
       // Get the attribute names. May not exist or may be blank...
       char ** names = Ioss::Utils::get_name_array(attribute_count, maximumNameLength);
@@ -1475,7 +1463,7 @@ namespace Ioex {
         // Use attribute names if they exist.
         {
           Ioss::SerializeIO serializeIO__(this);
-          if (block->entity_count() != 0) {
+          if (block->get_property("entity_count").get_int() != 0) {
             int ierr = ex_get_attr_names(get_file_pointer(), entity_type, id, &names[0]);
             if (ierr < 0) {
               Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
@@ -1486,7 +1474,7 @@ namespace Ioex {
         // Sync names across processors...
         if (isParallel) {
           std::vector<char> cname(attribute_count * (maximumNameLength + 1));
-          if (block->entity_count() != 0) {
+          if (block->get_property("entity_count").get_int() != 0) {
             for (int i = 0; i < attribute_count; i++) {
               std::memcpy(&cname[i * (maximumNameLength + 1)], names[i], maximumNameLength + 1);
             }
@@ -1545,7 +1533,7 @@ namespace Ioex {
           }
           else {
             att_name = "thickness";
-            block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, IOSS_SCALAR(),
+            block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
                                          Ioss::Field::ATTRIBUTE, my_element_count, 1));
             unknown_attributes = attribute_count - 1;
           }
@@ -1567,17 +1555,17 @@ namespace Ioex {
           else {
             // First attribute is concentrated mass...
             size_t offset = 1;
-            block->field_add(Ioss::Field("mass", Ioss::Field::REAL, IOSS_SCALAR(),
+            block->field_add(Ioss::Field("mass", Ioss::Field::REAL, SCALAR(),
                                          Ioss::Field::ATTRIBUTE, my_element_count, offset));
             offset += 1;
 
             // Next six attributes are moment of inertia -- symmetric tensor
-            block->field_add(Ioss::Field("inertia", Ioss::Field::REAL, IOSS_SYM_TENSOR(),
+            block->field_add(Ioss::Field("inertia", Ioss::Field::REAL, SYM_TENSOR(),
                                          Ioss::Field::ATTRIBUTE, my_element_count, offset));
             offset += 6;
 
             // Next three attributes are offset from node to CG
-            block->field_add(Ioss::Field("offset", Ioss::Field::REAL, IOSS_VECTOR_3D(),
+            block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
                                          Ioss::Field::ATTRIBUTE, my_element_count, offset));
           }
         }
@@ -1585,14 +1573,14 @@ namespace Ioex {
         else if (type_match(type, "circle") || type_match(type, "sphere")) {
           att_name      = "radius";
           size_t offset = 1;
-          block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, IOSS_SCALAR(),
+          block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
                                        Ioss::Field::ATTRIBUTE, my_element_count, offset++));
           if (attribute_count > 1) {
             // Default second attribute (from sphgen3d) is "volume"
             // which is the volume of the cube which would surround a
             // sphere of the given radius.
             att_name = "volume";
-            block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, IOSS_SCALAR(),
+            block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
                                          Ioss::Field::ATTRIBUTE, my_element_count, offset++));
           }
           unknown_attributes = attribute_count - 2;
@@ -1605,29 +1593,29 @@ namespace Ioex {
           // same and put "beam-type" attributes on bars...
           int index = 1;
           att_name  = "area";
-          block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, IOSS_SCALAR(),
+          block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
                                        Ioss::Field::ATTRIBUTE, my_element_count, index++));
 
           if (spatialDimension == 2 && attribute_count >= 3) {
-            block->field_add(Ioss::Field("i", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::ATTRIBUTE,
+            block->field_add(Ioss::Field("i", Ioss::Field::REAL, SCALAR(), Ioss::Field::ATTRIBUTE,
                                          my_element_count, index++));
-            block->field_add(Ioss::Field("j", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::ATTRIBUTE,
+            block->field_add(Ioss::Field("j", Ioss::Field::REAL, SCALAR(), Ioss::Field::ATTRIBUTE,
                                          my_element_count, index++));
           }
           else if (spatialDimension == 3 && attribute_count >= 7) {
-            block->field_add(Ioss::Field("i1", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::ATTRIBUTE,
+            block->field_add(Ioss::Field("i1", Ioss::Field::REAL, SCALAR(), Ioss::Field::ATTRIBUTE,
                                          my_element_count, index++));
-            block->field_add(Ioss::Field("i2", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::ATTRIBUTE,
+            block->field_add(Ioss::Field("i2", Ioss::Field::REAL, SCALAR(), Ioss::Field::ATTRIBUTE,
                                          my_element_count, index++));
-            block->field_add(Ioss::Field("j", Ioss::Field::REAL, IOSS_SCALAR(), Ioss::Field::ATTRIBUTE,
+            block->field_add(Ioss::Field("j", Ioss::Field::REAL, SCALAR(), Ioss::Field::ATTRIBUTE,
                                          my_element_count, index++));
-            block->field_add(Ioss::Field("reference_axis", Ioss::Field::REAL, IOSS_VECTOR_3D(),
+            block->field_add(Ioss::Field("reference_axis", Ioss::Field::REAL, VECTOR3D(),
                                          Ioss::Field::ATTRIBUTE, my_element_count, index));
             index += 3;
             if (attribute_count >= 10) {
               // Next three attributes would (hopefully) be offset vector...
               // This is typically from a NASGEN model.
-              block->field_add(Ioss::Field("offset", Ioss::Field::REAL, IOSS_VECTOR_3D(),
+              block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
                                            Ioss::Field::ATTRIBUTE, my_element_count, index));
               index += 3;
             }
@@ -1930,7 +1918,7 @@ namespace {
   void check_variable_consistency(const ex_var_params &exo_params, int my_processor,
                                   const std::string &filename, const Ioss::ParallelUtils &util)
   {
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
     const int        num_types = 10;
     std::vector<int> var_counts(num_types);
     var_counts[0] = exo_params.num_glob;

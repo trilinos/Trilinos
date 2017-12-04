@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -93,13 +93,6 @@ namespace Ioss {
      */
     void attribute_reduction(int length, char buffer[]) const;
 
-    /*!
-     * Generate a "globally unique id" which is unique over all entities
-     * of a specific type over all processors.
-     * Used by some applications for uniquely identifying an entity.
-     */
-    int64_t generate_guid(size_t id) const;
-
     /*! Return min, max, average memory used by any process */
     void memory_stats(int64_t &min, int64_t &max, int64_t &avg) const;
 
@@ -131,14 +124,26 @@ namespace Ioss {
     MPI_Comm communicator_;
   };
 
-#ifdef SEACAS_HAVE_MPI
+  inline int power_2(int count)
+  {
+    // Return the power of two which is equal to or greater than 'count'
+    // count = 15 -> returns 16
+    // count = 16 -> returns 16
+    // count = 17 -> returns 32
+
+    // Use brute force...
+    int pow2 = 1;
+    while (pow2 < count) {
+      pow2 *= 2;
+    }
+    return pow2;
+  }
+
+#ifdef HAVE_MPI
   inline MPI_Datatype mpi_type(double /*dummy*/) { return MPI_DOUBLE; }
-  inline MPI_Datatype mpi_type(float /*dummy*/) { return MPI_FLOAT; }
   inline MPI_Datatype mpi_type(int /*dummy*/) { return MPI_INT; }
-  inline MPI_Datatype mpi_type(long int /*dummy*/) { return MPI_LONG_LONG_INT; }
-  inline MPI_Datatype mpi_type(long long int /*dummy*/) { return MPI_LONG_LONG_INT; }
+  inline MPI_Datatype mpi_type(int64_t /*dummy*/) { return MPI_LONG_LONG_INT; }
   inline MPI_Datatype mpi_type(unsigned int /*dummy*/) { return MPI_UNSIGNED; }
-  inline MPI_Datatype mpi_type(unsigned long int /*dummy*/) { return MPI_UNSIGNED_LONG; }
 
   template <typename T>
   int MY_Alltoallv64(const std::vector<T> &sendbuf, const std::vector<int64_t> &sendcounts,
@@ -159,15 +164,14 @@ namespace Ioss {
         std::ostringstream errmsg;
         errmsg << "ERROR: The number of items that must be communicated via MPI calls from\n"
                << "       processor " << my_processor << " to processor " << i << " is "
-               << sendcounts[i]
-               << "\n       which exceeds the storage capacity of the integers "
-                  "used by MPI functions.\n";
+               << sendcounts[i] << "\n       which exceeds the storage capacity of the integers "
+                                   "used by MPI functions.\n";
         std::cerr << errmsg.str();
         exit(EXIT_FAILURE);
       }
     }
 
-    size_t pow_2 = Ioss::Utils::power_2(processor_count);
+    size_t pow_2 = power_2(processor_count);
 
     for (size_t i = 1; i < pow_2; i++) {
       MPI_Status status{};

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -119,6 +119,7 @@ namespace Ioex {
   void update_last_time_attribute(int exodusFilePtr, double value)
   {
     char        errmsg[MAX_ERR_LENGTH];
+    const char *routine = "Ioex::Utils::update_last_time_attribute()";
 
     double tmp    = 0.0;
     int    rootid = static_cast<unsigned>(exodusFilePtr) & EX_FILE_ID_MASK;
@@ -130,7 +131,7 @@ namespace Ioex {
         ex_opts(EX_VERBOSE);
         sprintf(errmsg, "Error: failed to define 'last_written_time' attribute to file id %d",
                 exodusFilePtr);
-        ex_err(__func__, errmsg, status);
+        ex_err(routine, errmsg, status);
       }
     }
   }
@@ -156,10 +157,11 @@ namespace Ioex {
       }
       else {
         char        errmsg[MAX_ERR_LENGTH];
+        const char *routine = "Ioex::Utils::read_last_time_attribute()";
         ex_opts(EX_VERBOSE);
         sprintf(errmsg, "Error: failed to read last_written_time attribute from file id %d",
                 exodusFilePtr);
-        ex_err(__func__, errmsg, status);
+        ex_err(routine, errmsg, status);
         found = false;
       }
     }
@@ -203,10 +205,11 @@ namespace Ioex {
       }
       else {
         char        errmsg[MAX_ERR_LENGTH];
+        const char *routine = "Internals::check_processor_info()";
         ex_opts(EX_VERBOSE);
         sprintf(errmsg, "Error: failed to read processor info attribute from file id %d",
                 exodusFilePtr);
-        ex_err(__func__, errmsg, status);
+        ex_err(routine, errmsg, status);
         return (EX_FATAL) != 0;
       }
     }
@@ -375,7 +378,6 @@ namespace Ioex {
     idset->insert(std::make_pair(static_cast<int>(type), id));
     Ioss::GroupingEntity *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
     new_entity->property_add(Ioss::Property(id_prop, id));
-    new_entity->property_update("guid", entity->get_database()->util().generate_guid(id));
     return id;
   }
 
@@ -596,7 +598,7 @@ namespace Ioex {
 
       if (Ioss::Utils::block_is_omitted(block)) {
         ssize_t min_id = block->get_offset() + 1;
-        ssize_t max_id = min_id + block->entity_count() - 1;
+        ssize_t max_id = min_id + block->get_property("entity_count").get_int() - 1;
         for (size_t i = 0; i < elements.size(); i++) {
           if (min_id <= elements[i] && elements[i] <= max_id) {
             omitted     = true;

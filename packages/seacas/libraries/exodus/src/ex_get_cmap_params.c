@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright (c) 2005 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -70,6 +70,8 @@
 int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_node_cnts,
                        void_int *elem_cmap_ids, void_int *elem_cmap_elem_cnts, int processor)
 {
+  const char *func_name = "ex_get_cmap_params";
+
   size_t  cnt, num_n_comm_maps, num_e_comm_maps, start[1], count[1];
   int64_t cmap_info_idx[2], cmap_data_idx[2];
   int     nmstat;
@@ -79,7 +81,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   /*-----------------------------Execution begins-----------------------------*/
 
   EX_FUNC_ENTER();
-  ex_check_valid_file_id(exoid, __func__);
+  ex_check_valid_file_id(exoid);
 
   /*****************************************************************************/
   /*****************************************************************************/
@@ -91,7 +93,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   if (ex_get_idx(exoid, VAR_N_COMM_INFO_IDX, cmap_info_idx, processor) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find index variable, \"%s\", in file ID %d",
              VAR_N_COMM_INFO_IDX, exoid);
-    ex_err(__func__, errmsg, EX_LASTERR);
+    ex_err(func_name, errmsg, EX_LASTERR);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -104,7 +106,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_N_CMAPS,
                  exoid);
-        ex_err(__func__, errmsg, status);
+        ex_err(func_name, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
 
@@ -122,7 +124,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get variable ID for \"%s\" in file ID %d", VAR_N_COMM_IDS,
                  exoid);
-        ex_err(__func__, errmsg, status);
+        ex_err(func_name, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
 
@@ -139,7 +141,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
         if (status != NC_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
                    VAR_N_COMM_IDS, exoid);
-          ex_err(__func__, errmsg, status);
+          ex_err(func_name, errmsg, status);
           EX_FUNC_LEAVE(EX_FATAL);
         }
 
@@ -147,7 +149,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to find variable ID for \"%s\" from file ID %d", VAR_N_COMM_STAT,
                    exoid);
-          ex_err(__func__, errmsg, status);
+          ex_err(func_name, errmsg, status);
           EX_FUNC_LEAVE(EX_FATAL);
         }
 
@@ -167,7 +169,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
               snprintf(errmsg, MAX_ERR_LENGTH,
                        "ERROR: failed to find nodal comm map with ID %" PRId64 " in file ID %d",
                        cmap_id, exoid);
-              ex_err(__func__, errmsg, EX_LASTERR);
+              ex_err(func_name, errmsg, EX_LASTERR);
               EX_FUNC_LEAVE(EX_FATAL);
             }
 
@@ -177,7 +179,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
               snprintf(errmsg, MAX_ERR_LENGTH,
                        "ERROR: failed to get status for \"%s\" from file ID %d", VAR_N_COMM_STAT,
                        exoid);
-              ex_err(__func__, errmsg, status);
+              ex_err(func_name, errmsg, status);
               EX_FUNC_LEAVE(EX_FATAL);
             }
 
@@ -185,11 +187,10 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
 
               /* get the cmap information variables index */
               if (ex_get_idx(exoid, VAR_N_COMM_DATA_IDX, cmap_data_idx, map_idx) == -1) {
-                snprintf(errmsg, MAX_ERR_LENGTH,
-                         "ERROR: failed to find index variable, \"%s\", "
-                         "in file ID %d",
+                snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find index variable, \"%s\", "
+                                                 "in file ID %d",
                          VAR_N_COMM_DATA_IDX, exoid);
-                ex_err(__func__, errmsg, status);
+                ex_err(func_name, errmsg, status);
 
                 EX_FUNC_LEAVE(EX_FATAL);
               }
@@ -200,22 +201,20 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
                  * node count
                  */
                 if ((status = nc_inq_dimid(exoid, DIM_NCNT_CMAP, &dimid)) != NC_NOERR) {
-                  snprintf(errmsg, MAX_ERR_LENGTH,
-                           "ERROR: failed to find dimension ID for "
-                           "\"%s\" in file ID %d",
+                  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for "
+                                                   "\"%s\" in file ID %d",
                            DIM_NCNT_CMAP, exoid);
-                  ex_err(__func__, errmsg, status);
+                  ex_err(func_name, errmsg, status);
                   EX_FUNC_LEAVE(EX_FATAL);
                 }
 
                 /* Find the value of the number of nodes in this nodal comm map
                  */
                 if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
-                  snprintf(errmsg, MAX_ERR_LENGTH,
-                           "ERROR: failed to find length of dimension "
-                           "\"%s\" in file ID %d",
+                  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find length of dimension "
+                                                   "\"%s\" in file ID %d",
                            DIM_NCNT_CMAP, exoid);
-                  ex_err(__func__, errmsg, status);
+                  ex_err(func_name, errmsg, status);
                   EX_FUNC_LEAVE(EX_FATAL);
                 }
 
@@ -251,7 +250,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
   if (ex_get_idx(exoid, VAR_E_COMM_INFO_IDX, cmap_info_idx, processor) == -1) {
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find index variable, \"%s\", in file ID %d",
              VAR_E_COMM_INFO_IDX, exoid);
-    ex_err(__func__, errmsg, status);
+    ex_err(func_name, errmsg, status);
 
     EX_FUNC_LEAVE(EX_FATAL);
   }
@@ -264,7 +263,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to find length of dimension \"%s\" in file ID %d", DIM_NUM_E_CMAPS,
                  exoid);
-        ex_err(__func__, errmsg, status);
+        ex_err(func_name, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
 
@@ -282,7 +281,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
         snprintf(errmsg, MAX_ERR_LENGTH,
                  "ERROR: failed to get variable ID for \"%s\" in file ID %d", VAR_E_COMM_IDS,
                  exoid);
-        ex_err(__func__, errmsg, status);
+        ex_err(func_name, errmsg, status);
         EX_FUNC_LEAVE(EX_FATAL);
       }
 
@@ -298,7 +297,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
         if (status != NC_NOERR) {
           snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to get variable \"%s\" from file ID %d",
                    VAR_E_COMM_IDS, exoid);
-          ex_err(__func__, errmsg, status);
+          ex_err(func_name, errmsg, status);
           EX_FUNC_LEAVE(EX_FATAL);
         }
 
@@ -306,7 +305,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
           snprintf(errmsg, MAX_ERR_LENGTH,
                    "ERROR: failed to find variable ID for \"%s\" from file ID %d", VAR_E_COMM_STAT,
                    exoid);
-          ex_err(__func__, errmsg, status);
+          ex_err(func_name, errmsg, status);
           EX_FUNC_LEAVE(EX_FATAL);
         }
 
@@ -328,7 +327,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
               snprintf(errmsg, MAX_ERR_LENGTH,
                        "ERROR: failed to find elemental comm map with ID %" PRId64 " in file ID %d",
                        cmap_id, exoid);
-              ex_err(__func__, errmsg, EX_LASTERR);
+              ex_err(func_name, errmsg, EX_LASTERR);
               EX_FUNC_LEAVE(EX_FATAL);
             }
 
@@ -338,7 +337,7 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
               snprintf(errmsg, MAX_ERR_LENGTH,
                        "ERROR: failed to get status for \"%s\" from file ID %d", VAR_E_COMM_STAT,
                        exoid);
-              ex_err(__func__, errmsg, status);
+              ex_err(func_name, errmsg, status);
               EX_FUNC_LEAVE(EX_FATAL);
             }
 
@@ -346,11 +345,10 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
 
               /* get the cmap information variables index */
               if (ex_get_idx(exoid, VAR_E_COMM_DATA_IDX, cmap_data_idx, map_idx) == -1) {
-                snprintf(errmsg, MAX_ERR_LENGTH,
-                         "ERROR: failed to find index variable, \"%s\", "
-                         "in file ID %d",
+                snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find index variable, \"%s\", "
+                                                 "in file ID %d",
                          VAR_E_COMM_DATA_IDX, exoid);
-                ex_err(__func__, errmsg, status);
+                ex_err(func_name, errmsg, status);
 
                 EX_FUNC_LEAVE(EX_FATAL);
               }
@@ -361,11 +359,10 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
                  * element count
                  */
                 if ((status = nc_inq_dimid(exoid, DIM_ECNT_CMAP, &dimid)) != NC_NOERR) {
-                  snprintf(errmsg, MAX_ERR_LENGTH,
-                           "ERROR: failed to find dimension ID for "
-                           "\"%s\" in file ID %d",
+                  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for "
+                                                   "\"%s\" in file ID %d",
                            DIM_ECNT_CMAP, exoid);
-                  ex_err(__func__, errmsg, status);
+                  ex_err(func_name, errmsg, status);
                   EX_FUNC_LEAVE(EX_FATAL);
                 }
 
@@ -374,11 +371,10 @@ int ex_get_cmap_params(int exoid, void_int *node_cmap_ids, void_int *node_cmap_n
                  * comm map
                  */
                 if ((status = nc_inq_dimlen(exoid, dimid, count)) != NC_NOERR) {
-                  snprintf(errmsg, MAX_ERR_LENGTH,
-                           "ERROR: failed to find length of dimension "
-                           "\"%s\" in file ID %d",
+                  snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find length of dimension "
+                                                   "\"%s\" in file ID %d",
                            DIM_ECNT_CMAP, exoid);
-                  ex_err(__func__, errmsg, status);
+                  ex_err(func_name, errmsg, status);
                   EX_FUNC_LEAVE(EX_FATAL);
                 }
                 cmap_data_idx[1] = count[0];

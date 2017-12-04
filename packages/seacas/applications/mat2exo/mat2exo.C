@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2012-2017 National Technology & Engineering Solutions
+ * Copyright(C) 2012 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -85,7 +85,7 @@ mat_t *mat_file = nullptr; /* file for binary .mat input */
 
 /**********************************************************************/
 static const char *qainfo[] = {
-    "mat2exo", "2017/09/25", "4.02",
+    "mat2exo", "2017/07/18", "4.01",
 };
 
 /**********************************************************************/
@@ -224,9 +224,9 @@ int main(int argc, char *argv[])
       matGetInt(name, num_sideset_sides[i], 1, side_list);
       ex_put_set(exo_file, EX_SIDE_SET, ids[i], TOPTR(elem_list), TOPTR(side_list));
 
+      sprintf(name, "ssfac%02d", i + 1);
+      matGetDbl(name, nssdfac[i], 1, dist_fact);
       if (nssdfac[i] > 0) {
-	sprintf(name, "ssfac%02d", i + 1);
-	matGetDbl(name, nssdfac[i], 1, dist_fact);
         ex_put_set_dist_fact(exo_file, EX_SIDE_SET, ids[i], TOPTR(dist_fact));
       }
     }
@@ -255,9 +255,9 @@ int main(int argc, char *argv[])
       matGetInt(name, num_nodeset_nodes[i], 1, node_list);
       ex_put_set(exo_file, EX_NODE_SET, ids[i], TOPTR(node_list), nullptr);
 
+      sprintf(name, "nsfac%02d", i + 1);
+      matGetDbl(name, ndfac[i], 1, dist_fact);
       if (ndfac[i] > 0) {
-	sprintf(name, "nsfac%02d", i + 1);
-	matGetDbl(name, ndfac[i], 1, dist_fact);
         ex_put_set_dist_fact(exo_file, EX_NODE_SET, ids[i], TOPTR(dist_fact));
       }
     }

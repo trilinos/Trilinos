@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -95,7 +95,7 @@ Ioss::Property Ioss::SideBlock::get_implicit_property(const std::string &my_name
   if (my_name == "distribution_factor_count") {
     if (field_exists("distribution_factors")) {
       int64_t nnodes = topology()->number_nodes();
-      int64_t nside  = entity_count();
+      int64_t nside  = get_property("entity_count").get_int();
       return Ioss::Property(my_name, nnodes * nside);
     }
     return Ioss::Property(my_name, 0);

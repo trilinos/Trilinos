@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -70,11 +70,17 @@
 #include "side_set.h"
 #include "smart_assert.h"
 #include "stringx.h"
-#include "util.h"
+#include "terminal_color.h"
 
 #include "add_to_log.h"
 
 SystemInterface interface;
+
+#if 0
+#define DIFF_OUT(buf) std::cout << trmclr::green << buf << '\n' << trmclr::normal
+#else
+#define DIFF_OUT(buf) std::cout << buf << '\n'
+#endif
 
 struct TimeInterp
 {
@@ -511,7 +517,7 @@ namespace {
       if (!is_same) {
         file1.Close_File();
         file2.Close_File();
-        DIFF_OUT("\nexodiff: Files are different\n");
+        std::cout << "\nexodiff: Files are different\n";
         return interface.exit_status_switch;
       }
     }
@@ -739,7 +745,7 @@ namespace {
               buf,
               "  --------- Explicit Time step File 1: %d, %13.7e ~ File 2: %d, %13.7e ---------",
               ts1, file1.Time(ts1), ts2, t2.time);
-          DIFF_OUT(buf, trmclr::green);
+          DIFF_OUT(buf);
         }
       }
 
@@ -905,13 +911,11 @@ namespace {
             int final2 = file2.Num_Times();
             if (interface.final_time_tol.Diff(file1.Time(time_step1), file2.Time(final2))) {
               diff_flag = true;
-	      std::ostringstream diff;
-              diff << "\tFinal database times differ by "
-		   << FileDiff(file1.Time(time_step1), file2.Time(final2),
-			       interface.final_time_tol.type)
-		   << " which is not within specified " << interface.final_time_tol.typestr()
-		   << " tolerance of " << interface.final_time_tol.value << " (FAILED)";
-	      DIFF_OUT(diff);
+              DIFF_OUT("\tFinal database times differ by "
+                       << FileDiff(file1.Time(time_step1), file2.Time(final2),
+                                   interface.final_time_tol.type)
+                       << " which is not within specified " << interface.final_time_tol.typestr()
+                       << " tolerance of " << interface.final_time_tol.value << " (FAILED)");
             }
           }
         }
@@ -949,18 +953,16 @@ namespace {
       ex_close(out_file_id);
     }
     else if (diff_flag) {
-      DIFF_OUT("\nexodiff: Files are different\n");
+      std::cout << "\nexodiff: Files are different\n";
     }
     else if (file1.Num_Times() != file2.Num_Times()) {
       if ((file1.Num_Times() - interface.time_step_offset == file2.Num_Times()) ||
           (interface.time_step_stop > 0) ||
           (interface.explicit_steps.first != 0 && interface.explicit_steps.second != 0) ||
           (interface.interpolating)) {
-	std::ostringstream diff;
-        diff << "\nexodiff: Files are the same\n"
-	     << "         The number of timesteps are different but "
-	     << "the timesteps that were compared are the same.\n";
-	DIFF_OUT(diff);
+        std::cout << "\nexodiff: Files are the same\n";
+        std::cout << "         The number of timesteps are different but "
+                  << "the timesteps that were compared are the same.\n";
       }
       else {
         DIFF_OUT("\nexodiff: Files are different (# time steps differ)");
@@ -968,7 +970,7 @@ namespace {
       }
     }
     else {
-      DIFF_OUT("\nexodiff: Files are the same\n", trmclr::green);
+      std::cout << "\nexodiff: Files are the same\n";
     }
 
     if (!interface.ignore_maps) {
@@ -1045,9 +1047,7 @@ double FileDiff(double v1, double v2, TOLERANCE_TYPE_enum type)
 
 void Die_TS(double ts)
 {
-  std::ostringstream diff;
-  diff << "exodiff: Files are different (time step " << ts << ")";
-  DIFF_OUT(diff);
+  DIFF_OUT("exodiff: Files are different (time step " << ts << ")");
   if (interface.exit_status_switch) {
     exit(2);
   }
@@ -1451,12 +1451,12 @@ bool diff_nodals(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Time
     if (interface.doL1Norm && norm.diff(1) > 0.0) {
       sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-      DIFF_OUT(buf, trmclr::green);
+      DIFF_OUT(buf);
     }
     if (interface.doL2Norm && norm.diff(2) > 0.0) {
       sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-      DIFF_OUT(buf, trmclr::green);
+      DIFF_OUT(buf);
     }
 
     if (max_diff.diff > interface.node_var[n_idx].value) {
@@ -1661,12 +1661,12 @@ bool diff_element(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
     if (interface.doL1Norm && norm.diff(1) > 0.0) {
       sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-      DIFF_OUT(buf, trmclr::green);
+      DIFF_OUT(buf);
     }
     if (interface.doL2Norm && norm.diff(2) > 0.0) {
       sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-      DIFF_OUT(buf, trmclr::green);
+      DIFF_OUT(buf);
     }
 
     if (!interface.summary_flag && max_diff.diff > interface.elmt_var[e_idx].value) {
@@ -1837,12 +1837,12 @@ bool diff_nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
     if (interface.doL1Norm && norm.diff(1) > 0.0) {
       sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-      DIFF_OUT(buf, trmclr::green);
+      DIFF_OUT(buf);
     }
     if (interface.doL2Norm && norm.diff(2) > 0.0) {
       sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
               name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-      DIFF_OUT(buf, trmclr::green);
+      DIFF_OUT(buf);
     }
 
     if (!interface.summary_flag && max_diff.diff > interface.ns_var[e_idx].value) {
@@ -2013,12 +2013,12 @@ bool diff_sideset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, Tim
       if (interface.doL1Norm && norm.diff(1) > 0.0) {
         sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
                 name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-        DIFF_OUT(buf, trmclr::green);
+        DIFF_OUT(buf);
       }
       if (interface.doL2Norm && norm.diff(2) > 0.0) {
         sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
                 name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-        DIFF_OUT(buf, trmclr::green);
+        DIFF_OUT(buf);
       }
 
       if (!interface.quiet_flag) {
@@ -2292,12 +2292,12 @@ bool diff_element_attributes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, INT
       if (interface.doL1Norm && norm.diff(1) > 0.0) {
         sprintf(buf, "   %-*s L1 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
                 name.c_str(), norm.diff(1), norm.left(1), norm.right(1), norm.relative(1));
-        DIFF_OUT(buf, trmclr::green);
+        DIFF_OUT(buf);
       }
       if (interface.doL2Norm && norm.diff(2) > 0.0) {
         sprintf(buf, "   %-*s L2 norm of diff=%14.7e (%11.5e ~ %11.5e) rel=%14.7e", name_length,
                 name.c_str(), norm.diff(2), norm.left(2), norm.right(2), norm.relative(2));
-        DIFF_OUT(buf, trmclr::green);
+        DIFF_OUT(buf);
       }
 
       if (!interface.summary_flag && max_diff.diff > interface.elmt_att[tol_idx].value) {
@@ -2350,7 +2350,7 @@ void output_summary(ExoII_Read<INT> &file1, MinMaxData &mm_time, std::vector<Min
     std::cout << "\nTIME STEPS relative 1.e-6 floor 0.0     # min: ";
     sprintf(buf, "%15.8g @ t%d max: %15.8g @ t%d\n", mm_time.min_val, mm_time.min_step,
             mm_time.max_val, mm_time.max_step);
-    DIFF_OUT(buf, trmclr::green);
+    DIFF_OUT(buf);
   }
   else {
     std::cout << "\n# No TIME STEPS\n";

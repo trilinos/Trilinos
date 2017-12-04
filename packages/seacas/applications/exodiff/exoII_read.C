@@ -1,4 +1,4 @@
-// Copyright(C) 2008-2017 National Technology & Engineering Solutions
+// Copyright(C) 2008 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -1368,18 +1368,16 @@ namespace {
         SMART_ASSERT(varnames[vg] != nullptr);
         if (std::strlen(varnames[vg]) == 0 ||
             static_cast<int>(std::strlen(varnames[vg])) > name_size) {
-	  std::ostringstream out;
-          out << "exodiff: ERROR: " << type
+          std::cerr << trmclr::red << "exodiff: ERROR: " << type
                     << " variable names appear corrupt\n"
                     << "                A length is 0 or greater than "
                     << "name_size(" << name_size << ")\n"
                     << "                Here are the names that I received from"
                     << " a call to ex_get_var_names(...):\n";
           for (int k = 1; k <= num_vars; ++k) {
-            out << "\t\t" << k << ") \"" << varnames[k - 1] << "\"\n";
+            std::cerr << "\t\t" << k << ") \"" << varnames[k - 1] << "\"\n";
           }
-          out << "                 Aborting...\n";
-	  DIFF_OUT(out);
+          std::cerr << "                 Aborting...\n" << trmclr::normal;
           exit(1);
         }
 

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -43,7 +43,18 @@
 #include <vector>       // for vector
 
 namespace Ioss {
-  using FieldMapType   = std::map<std::string, Field>;
+  // This performs a case-insensitive string comparison which will make
+  // the FieldMapType do case-insensitive comparisons between field names.
+  class StringCmp : public std::binary_function<std::string, std::string, bool>
+  {
+  public:
+    StringCmp() = default;
+    bool operator()(const std::string &s1, const std::string &s2) const
+    {
+      return Utils::case_strcmp(s1, s2) < 0;
+    }
+  };
+  using FieldMapType   = std::map<std::string, Field, StringCmp>;
   using FieldValuePair = FieldMapType::value_type;
 
   /** \brief A collection of Ioss::Field objects.
@@ -66,7 +77,7 @@ namespace Ioss {
     // Checks if a field with 'field_name' exists in the database.
     bool exists(const std::string &field_name) const;
 
-    Field        get(const std::string &field_name) const;
+    Field get(const std::string &field_name) const;
     const Field &getref(const std::string &field_name) const;
 
     // Returns the names of all fields

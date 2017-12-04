@@ -1,4 +1,4 @@
-C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
+C    Copyright(C) 2008 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -940,8 +940,8 @@ C     didn't, need to rewrite frefld to return mixed case.
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 240
 
-        CALL CKMAP (NUMNP, DBMAPND, IA(KICHECK), 'Node   ')
-        CALL CKMAP (NUMEL, DBMAPEL, IA(KICHECK), 'Element')
+        CALL CKMAP (NUMEL, MAPEL, IA(KICHECK), 'Element')
+        CALL CKMAP (NUMNP, MAPND, IA(KICHECK), 'Node')
         CALL CKELB (NELBLK, NUMEL, NUMNP, EBTYPE, 
      &    IDELB, NUMELB, NUMLNK, NUMATR, LINK, ATRIB, ATNAME, 
      &       IA(KICHECK), MAPND)

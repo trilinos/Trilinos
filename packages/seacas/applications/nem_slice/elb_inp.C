@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -171,14 +171,6 @@ int cmd_line_arg_parse(int argc, char *argv[],                  /* Args as passe
        * elemental decompositions
        */
       prob->face_adj = 1;
-      break;
-
-    case 'C':
-      /*
-       * detect vertical columns of elements and ensure that
-       * elements of a columns are all in one partition
-       */
-      prob->fix_columns = 1;
       break;
 
     case 'p':
@@ -1244,11 +1236,6 @@ int read_cmd_file(std::string &ascii_inp_file, std::string &exoII_inp_file,
               problem->face_adj = 1;
             }
           }
-          /* Check if element columns are to be detected and fixed so
-           * that all elements of a column are in the same partition */
-          else if (strstr(cptr, "fix_columns")) {
-            problem->fix_columns = 1;
-          }
           /* Check to see if looking for global mechanisms */
           else if (strstr(cptr, "global_mech")) {
             if (problem->global_mech < 0) {
@@ -1446,17 +1433,6 @@ int check_inp_specs(std::string &exoII_inp_file, std::string &nemI_out_file,
     Gen_Error(1, "WARNING: adjacency with elemental decomposition");
     Gen_Error(1, "WARNING: face definition turned off");
     prob->face_adj = 0;
-  }
-
-  /*
-   * Detecting columns and fixing their partitioning only makes sense
-   * with an elemental decomposition
-   */
-  if (prob->type != ELEMENTAL && prob->fix_columns) {
-    Gen_Error(1, "WARNING: can only use fix columns options");
-    Gen_Error(1, "WARNING: with elemental decomposition");
-    Gen_Error(1, "WARNING: fix columns option turned off");
-    prob->fix_columns = 0;
   }
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
@@ -1779,8 +1755,6 @@ namespace {
     printf(" -f\t\tuse face definition of adjacency\n");
     printf(" -p\t\tuse partial definition of adjacency: \n");
     printf("   \t\trequire only 3 matching quad face nodes\n");
-    printf(" -C\tavoid splitting vertical element columns\n");
-    printf("   \t\tacross partitions\n");
     printf(" -h\t\tusage information\n");
     printf(" -a ascii file\tget info from ascii input file name\n");
   }
