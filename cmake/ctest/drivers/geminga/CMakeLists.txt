@@ -99,15 +99,6 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     TIMEOUT_MINUTES 330
     )
 
-  # Refactor (kokkos) tests
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_OpenMP
-    ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_openmp_geminga.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 420
-    )
-
   # Misc tests
   if(RUN_HEAVY_MEMORY_TESTS)
 
