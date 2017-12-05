@@ -36,9 +36,3 @@ TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Trilinos_TRACE_ADD_TEST ON)
 
 # Disable long-failing Piro test until it can be fixed (#826)
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Piro_EpetraSolver_MPI_4_DISABLE ON)
-
-# Disable these SEACAS tests until they can be fixed (#2039)
-TRIL_SET_BOOL_CACHE_VAR_FOR_CI(SEACASExodus_exodus_unit_tests_DISABLE ON)
-TRIL_SET_BOOL_CACHE_VAR_FOR_CI(SEACASExodus_exodus_unit_tests_nc5_env_DISABLE ON)
-TRIL_SET_BOOL_CACHE_VAR_FOR_CI(SEACASAprepro_aprepro_unit_test_DISABLE ON)
-TRIL_SET_BOOL_CACHE_VAR_FOR_CI(SEACASAprepro_aprepro_test_exodus_DISABLE ON)
