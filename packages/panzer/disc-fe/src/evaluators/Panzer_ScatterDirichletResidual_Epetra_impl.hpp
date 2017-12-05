@@ -589,7 +589,8 @@ template<typename TRAITS,typename LO,typename GO>
 void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  Kokkos::View<const int*, Kokkos::LayoutRight, PHX::Device> cLIDs, rLIDs;
+   Kokkos::View<const int*, Kokkos::LayoutRight, PHX::Device> cLIDs, rLIDs;
+   int gidCount(0);
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
  
    // for convenience pull out some objects from workset
@@ -609,9 +610,13 @@ evaluateFields(typename TRAITS::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
+      rLIDs = globalIndexer_->getElementLIDs(cellLocalId);
+      gidCount = globalIndexer_->getElementBlockGIDCount(blockId);
       if(useColumnIndexer)
-        cLIDs = colGlobalIndexer_->getElementLIDs(cellLocalId); 
+      {
+        cLIDs = colGlobalIndexer_->getElementLIDs(cellLocalId);
+        gidCount = colGlobalIndexer_->getElementBlockGIDCount(blockId);
+      }
       else
         cLIDs = rLIDs;
 
@@ -670,7 +675,8 @@ evaluateFields(typename TRAITS::EvalData workset)
             std::vector<double> jacRow(scatterField.size(),0.0);
     
             if(!preserveDiagonal_) {
-              int err = Jac->ReplaceMyValues(row, cLIDs.size(), scatterField.dx(), &cLIDs[0]);
+              int err = Jac->ReplaceMyValues(row, gidCount, scatterField.dx(),
+                &cLIDs[0]);
               TEUCHOS_ASSERT(err==0); 
             }
          }
