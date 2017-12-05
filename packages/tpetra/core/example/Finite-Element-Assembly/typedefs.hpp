@@ -50,13 +50,12 @@
 #include <Tpetra_CrsGraph.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
+typedef double Scalar;
+
 // Get LocalOrdinal & GlobalOrdinal from Map defaults.
 typedef Tpetra::Map<>::local_ordinal_type LocalOrdinal;
 typedef Tpetra::Map<>::global_ordinal_type GlobalOrdinal;
-
-typedef double Scalar;
-
-typedef Tpetra::Details::DefaultTypes::node_type NT;
+typedef Tpetra::Map<>::node_type NT;
 
 typedef Kokkos::DefaultExecutionSpace ExecutionSpace;
 
