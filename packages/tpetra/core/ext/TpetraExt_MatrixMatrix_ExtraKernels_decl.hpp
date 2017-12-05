@@ -49,60 +49,6 @@ namespace Tpetra {
 
 namespace MatrixMatrix {
 
-
-#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
-  template <typename KernelHandle,
-  typename alno_row_view_t_,
-  typename alno_nnz_view_t_,
-  typename blno_row_view_t_,
-  typename blno_nnz_view_t_,
-  typename clno_row_view_t_>
-  void jacobi_mm_symbolic(
-      KernelHandle *handle,
-      typename KernelHandle::nnz_lno_t m,
-      typename KernelHandle::nnz_lno_t n,
-      typename KernelHandle::nnz_lno_t k,
-      alno_row_view_t_ row_mapA,
-      alno_nnz_view_t_ entriesA,
-      bool transposeA,
-      blno_row_view_t_ row_mapB,
-      blno_nnz_view_t_ entriesB,
-      bool transposeB,
-      clno_row_view_t_ row_mapC);
-
-
-
- template <typename KernelHandle,
-    typename alno_row_view_t_,
-    typename alno_nnz_view_t_,
-    typename ascalar_nnz_view_t_,
-    typename ascalar_t_;
-    typename ddiag_nnz_view_t_,
-    typename blno_row_view_t_,
-    typename blno_nnz_view_t_,
-    typename bscalar_nnz_view_t_,
-    typename clno_row_view_t_,
-    typename clno_nnz_view_t_,
-    typename cscalar_nnz_view_t_>
-  void jacobi_mm_numeric(
-      KernelHandle *handle,
-      typename KernelHandle::nnz_lno_t m,
-      typename KernelHandle::nnz_lno_t n,
-      typename KernelHandle::nnz_lno_t k,
-      alno_row_view_t_ row_mapA,
-      alno_nnz_view_t_ entriesA,
-      ascalar_nnz_view_t_ valuesA,
-      ddiag_nnz_view_t_ diaginvD,
-      ascalar_t_ omegaA,
-      bool transposeA,
-      blno_row_view_t_ row_mapB,
-      blno_nnz_view_t_ entriesB,
-      bscalar_nnz_view_t_ valuesB,
-      bool transposeB,
-      clno_row_view_t_ row_mapC,
-      clno_nnz_view_t_ &entriesC,
-      cscalar_nnz_view_t_ &valuesC);
-#endif                         
 }//MatrixMatrix
 }//Tpetra
 
