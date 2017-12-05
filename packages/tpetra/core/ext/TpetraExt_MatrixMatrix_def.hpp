@@ -3258,7 +3258,6 @@ void jacobi_A_B_newmatrix(
   using Teuchos::TimeMonitor;
   RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi M5 Cmap"))));
 #endif
-  size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
 
@@ -3324,11 +3323,6 @@ void jacobi_A_B_newmatrix(
     for (size_t i = 0; i < Bview.importMatrix->getColMap()->getNodeNumElements(); i++)
       Icol2Ccol[i] = Ccolmap->getLocalElement(Igid[i]);
   }
-
-  // Sizes
-  size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
-
 
   // Replace the column map
   //
@@ -3413,7 +3407,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::jacobi_A_B_newmatri
   typedef GlobalOrdinal     GO;
   typedef Node              NO;
 
-  typedef Import<LO,GO,NO>  import_type;
   typedef Map<LO,GO,NO>     map_type;
   size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
