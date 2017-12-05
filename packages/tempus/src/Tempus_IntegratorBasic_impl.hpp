@@ -235,18 +235,9 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
 
   if (tsc == Teuchos::null) {
     // Construct from Integrator ParameterList
-    RCP<ParameterList> tscPL =
-      Teuchos::sublist(integratorPL_,"Time Step Control",true);
-    timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL));
-
-    if (timeStepControl_->getMinOrder() == 0)
-      timeStepControl_->setMinOrder(stepper_->getOrderMin());
-    if (timeStepControl_->getMaxOrder() == 0)
-      timeStepControl_->setMaxOrder(stepper_->getOrderMax());
-    if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
-    if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
+      RCP<ParameterList> tscPL =
+          Teuchos::sublist(integratorPL_,"Time Step Control",true);
+      timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL));
 
   } else {
     // Make integratorPL_ consistent with new TimeStepControl.
@@ -257,6 +248,16 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
     timeStepControl_ = Teuchos::null;
     timeStepControl_ = tsc;
   }
+
+  if (timeStepControl_->getMinOrder() == 0)
+      timeStepControl_->setMinOrder(stepper_->getOrderMin());
+  if (timeStepControl_->getMaxOrder() == 0)
+      timeStepControl_->setMaxOrder(stepper_->getOrderMax());
+  if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
+      timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
+  if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
+      timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
+
 }
 
 
