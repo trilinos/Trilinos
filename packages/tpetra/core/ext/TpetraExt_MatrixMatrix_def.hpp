@@ -60,6 +60,8 @@
 #include <type_traits>
 #include "Teuchos_FancyOStream.hpp"
 
+#include "TpetraExt_MatrixMatrix_ExtraKernels_def.hpp"
+
 #ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
 #include "KokkosSparse_spgemm.hpp"
 #endif
@@ -3242,8 +3244,8 @@ void jacobi_A_B_newmatrix(
   using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
-
-  typedef Scalar            SC;
+  //CMSCMS
+  //  typedef Scalar            SC;
   typedef LocalOrdinal      LO;
   typedef GlobalOrdinal     GO;
   typedef Node              NO;
@@ -3323,13 +3325,98 @@ void jacobi_A_B_newmatrix(
       Icol2Ccol[i] = Ccolmap->getLocalElement(Igid[i]);
   }
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix SerialCore"))));
-#endif
-
   // Sizes
   size_t m = Aview.origMatrix->getNodeNumRows();
   size_t n = Ccolmap->getNodeNumElements();
+
+
+  // Replace the column map
+  //
+  // mfh 27 Sep 2016: We do this because C was originally created
+  // without a column Map.  Now we have its column Map.
+  C.replaceColMap(Ccolmap);
+
+  // mfh 27 Sep 2016: Construct tables that map from local column
+  // indices of A, to local row indices of either B_local (the locally
+  // owned part of B), or B_remote (the "imported" remote part of B).
+  //
+  // For column index Aik in row i of A, if the corresponding row of B
+  // exists in the local part of B ("orig") (which I'll call B_local),
+  // then targetMapToOrigRow[Aik] is the local index of that row of B.
+  // Otherwise, targetMapToOrigRow[Aik] is "invalid" (a flag value).
+  //
+  // For column index Aik in row i of A, if the corresponding row of B
+  // exists in the remote part of B ("Import") (which I'll call
+  // B_remote), then targetMapToImportRow[Aik] is the local index of
+  // that row of B.  Otherwise, targetMapToOrigRow[Aik] is "invalid"
+  // (a flag value).
+
+  // Run through all the hash table lookups once and for all
+  Array<LO> targetMapToOrigRow  (Aview.colMap->getNodeNumElements(), LO_INVALID);
+  Array<LO> targetMapToImportRow(Aview.colMap->getNodeNumElements(), LO_INVALID);
+
+  for (LO i = Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
+    LO B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+    if (B_LID != LO_INVALID) {
+      targetMapToOrigRow[i] = B_LID;
+    } else {
+      LO I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
+      targetMapToImportRow[i] = I_LID;
+    }
+  }
+
+
+
+  // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
+  // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
+  KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::jacobi_A_B_newmatrix_kernel_wrapper(omega,Dinv,Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
+
+}
+
+
+/*********************************************************************************************************/
+// Jacobi AB NewMatrix Kernel wrappers (Default non-threaded versio)
+// Kernel method for computing the local portion of C = (I-omega D^{-1} A)*B
+
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node>
+void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+                                                           const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Dinv,
+                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                                           const Teuchos::Array<LocalOrdinal> & targetMapToOrigRow,
+                                                           const Teuchos::Array<LocalOrdinal> & targetMapToImportRow,
+                                                           const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
+                                                           const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
+                                                           CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                                           Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                           const std::string& label,
+                                                           const Teuchos::RCP<Teuchos::ParameterList>& params) {
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Nemwmatrix SerialCore"))));
+
+#endif
+
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  typedef Scalar            SC;
+  typedef LocalOrdinal      LO;
+  typedef GlobalOrdinal     GO;
+  typedef Node              NO;
+
+  typedef Import<LO,GO,NO>  import_type;
+  typedef Map<LO,GO,NO>     map_type;
+  size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
   // Get Data Pointers
   ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP;
@@ -3339,6 +3426,11 @@ void jacobi_A_B_newmatrix(
   ArrayRCP<const SC>     Avals_RCP, Bvals_RCP, Ivals_RCP;
   ArrayRCP<SC>           Cvals_RCP;
   ArrayRCP<const SC>     Dvals_RCP;
+
+  // Sizes
+  RCP<const map_type> Ccolmap = C.getColMap();
+  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t n = Ccolmap->getNodeNumElements();
 
   // mfh 27 Sep 2016: "getAllValues" just gets the three CSR arrays
   // out of the CrsMatrix.  This code computes A * (B_local +
@@ -3394,34 +3486,6 @@ void jacobi_A_B_newmatrix(
   Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
   Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
 
-  // mfh 27 Sep 2016: Construct tables that map from local column
-  // indices of A, to local row indices of either B_local (the locally
-  // owned part of B), or B_remote (the "imported" remote part of B).
-  //
-  // For column index Aik in row i of A, if the corresponding row of B
-  // exists in the local part of B ("orig") (which I'll call B_local),
-  // then targetMapToOrigRow[Aik] is the local index of that row of B.
-  // Otherwise, targetMapToOrigRow[Aik] is "invalid" (a flag value).
-  //
-  // For column index Aik in row i of A, if the corresponding row of B
-  // exists in the remote part of B ("Import") (which I'll call
-  // B_remote), then targetMapToImportRow[Aik] is the local index of
-  // that row of B.  Otherwise, targetMapToOrigRow[Aik] is "invalid"
-  // (a flag value).
-
-  // Run through all the hash table lookups once and for all
-  Array<LO> targetMapToOrigRow  (Aview.colMap->getNodeNumElements(), LO_INVALID);
-  Array<LO> targetMapToImportRow(Aview.colMap->getNodeNumElements(), LO_INVALID);
-
-  for (LO i = Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
-    LO B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-    if (B_LID != LO_INVALID) {
-      targetMapToOrigRow[i] = B_LID;
-    } else {
-      LO I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-      targetMapToImportRow[i] = I_LID;
-    }
-  }
 
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
