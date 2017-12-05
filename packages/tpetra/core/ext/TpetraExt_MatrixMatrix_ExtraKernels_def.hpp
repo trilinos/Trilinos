@@ -68,7 +68,6 @@ size_t C_estimate_nnz_per_row(CrsMatrixType & A, CrsMatrixType &B){
 
 #if defined (HAVE_TPETRA_INST_OPENMP)
 /*********************************************************************************************************/
-// AB NewMatrix Kernel wrappers (Default non-threaded version)
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal>
@@ -163,9 +162,9 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   // Run chunks of the matrix independently 
   Kokkos::parallel_for(range_type(0, thread_max),[=](const int tid) {
       // Thread coordiation stuff
-      int my_thread_start = (int) tid * thread_chunk;
-      int my_thread_stop  = tid == thread_max-1 ? m : (int)(tid+1)*thread_chunk;
-      int my_thread_m     = my_thread_stop - my_thread_start;
+      size_t my_thread_start = (size_t) tid * thread_chunk;
+      size_t my_thread_stop  = tid == thread_max-1 ? m : (size_t)(tid+1)*thread_chunk;
+      size_t my_thread_m     = my_thread_stop - my_thread_start;
 
       // Size estimate 
       size_t CSR_alloc = (size_t) (my_thread_m*Cest_nnz_per_row*0.75 + 100);
@@ -257,38 +256,45 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       Crowptr(my_thread_m) = CSR_ip;
     });
 
-
-
-  // Sum up the total space actually required for the final matrix
+  // Generate the starting nnz number per thread
   size_t c_nnz_size=0;
   lno_view_t row_mapC("non_const_lnow_row", m + 1);
-  /*
+  lno_view_t thread_start_nnz("thread_nnz",thread_max);
   Kokkos::parallel_scan(range_type(0,thread_max), [=] (const size_t i, size_t& update, const bool final) {
-      int tid = i / thread_chunk;
-      (*tl_rowptr[i])[i];
+      size_t mynnz = (*tl_rowptr[i])[tl_rowptr[i]->dimension(0)];
+      if(final) thread_start_nnz(i) = update;
+      update+=mynnz;
+    });
 
-      if(final) row_mapC(i) = update;
-
-
-
-      update+=local_max;
-    },C_actual_nnz);
-    
-  */
   // Allocate output
-
   lno_nnz_view_t  entriesC(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
   scalar_view_t   valuesC(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
 
   // Copy out
-  /*  Kokkos::parallel_for(range_type (0, m),[=](const size_t i) {
-      int tid = i / thread_chunk;
+  Kokkos::parallel_for(range_type (0, m),[=](const size_t i) {
+      size_t tid = i / thread_chunk;
+      size_t ii = i- tid * thread_chunk;
+      size_t thread_start = thread_start_nnz(tid);
 
-      valuesC(i) = 
+      // Rowptr
+      if(ii==0) row_mapC(i) = thread_start;
+      else if (i==m-1) {
+        row_mapC(i) = thread_start + (*tl_rowptr[tid])[ii-1];
+        row_mapC(m) = thread_start + (*tl_rowptr[tid])[ii];
+      }
+      else row_mapC(i) = thread_start + (*tl_rowptr[tid])[ii-1];
+        
+
+      
+      // Colind / Values
+      for(int j = (*tl_rowptr[tid])[ii]; j<(*tl_rowptr[tid])[ii+1]; j++) {
+        entriesC(thread_start + j) = (*tl_colind[tid])(j);
+        valuesC(thread_start + j)  = (*tl_values[tid])(j);        
+      }
 
 
     });
-  */
+
   // FINISH ME                    
 
 
