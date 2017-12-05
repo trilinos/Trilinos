@@ -96,26 +96,26 @@ private:
   Vector<Real> & getNewVector(Vector<Real> & x) const
   { 
     PartitionedVector<Real> & xpv = dynamic_cast<PartitionedVector<Real>&>(x);
-    return *xpv.get(0);
+    return *xpv.get(1);
   }
 
   const Vector<Real> & getNewVector(const Vector<Real> & x) const
   { 
     const PartitionedVector<Real> & xpv = dynamic_cast<const PartitionedVector<Real>&>(x);
-    return *xpv.get(0);
+    return *xpv.get(1);
   }
  
   // Get the start point of the time intervals vector
   Vector<Real> & getOldVector(Vector<Real> & x) const
   { 
     PartitionedVector<Real> & xpv = dynamic_cast<PartitionedVector<Real>&>(x);
-    return *xpv.get(1);
+    return *xpv.get(0);
   }
 
   const Vector<Real> & getOldVector(const Vector<Real> & x) const
   { 
     const PartitionedVector<Real> & xpv = dynamic_cast<const PartitionedVector<Real>&>(x);
-    return *xpv.get(1);
+    return *xpv.get(0);
   }
 
 public:
@@ -201,7 +201,69 @@ public:
                      const Vector<Real> &z_new,
                      Real &tol) = 0;
 
+  virtual void applyJacobian_1_old(Vector<Real> &jv,
+                                   const Vector<Real> &v_old,
+                                   const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                   const Vector<Real> &z_old, const Vector<Real> &z_new,
+                                   Real &tol) = 0;
+
+  virtual void applyJacobian_1_new(Vector<Real> &jv,
+                                   const Vector<Real> &v_new,
+                                   const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                   const Vector<Real> &z_old, const Vector<Real> &z_new,
+                                   Real &tol) = 0;
+
+  virtual void applyInverseJacobian_1_new(Vector<Real> &ijv,
+                                          const Vector<Real> &v_new,
+                                          const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                          const Vector<Real> &z_old, const Vector<Real> &z_new,
+                                          Real &tol) = 0;
+
+
+  virtual void applyJacobian_2_old(Vector<Real> &jv,
+                                   const Vector<Real> &v_old,
+                                   const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                   const Vector<Real> &z_old, const Vector<Real> &z_new,
+                                   Real &tol) = 0;
+
+  virtual void applyJacobian_2_new(Vector<Real> &jv,
+                                   const Vector<Real> &v_new,
+                                   const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                   const Vector<Real> &z_old, const Vector<Real> &z_new,
+                                   Real &tol) = 0;
+
+  virtual void applyAdjointJacobian_1_old(Vector<Real> &ajv_old,
+                                      const Vector<Real> &dualv,
+                                      const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                      const Vector<Real> &z_old, const Vector<Real> &z_new,
+                                      Real &tol) = 0;
+
+  virtual void applyAdjointJacobian_1_new(Vector<Real> &ajv_new,
+                                      const Vector<Real> &dualv,
+                                      const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                      const Vector<Real> &z_old, const Vector<Real> &z_new,
+                                      Real &tol) = 0;
+
+  virtual void applyInverseAdjointJacobian_1_new(Vector<Real> &iajv,
+                                                 const Vector<Real> &v_new,
+                                                 const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                                 const Vector<Real> &z_old, const Vector<Real> &z_new,
+                                                 Real &tol) = 0;
+
+  virtual void applyAdjointJacobian_2_old(Vector<Real> &ajv_old,
+                                      const Vector<Real> &dualv,
+                                      const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                      const Vector<Real> &z_old, const Vector<Real> &z_new,
+                                      Real &tol) = 0;
+
+  virtual void applyAdjointJacobian_2_new(Vector<Real> &ajv_new,
+                                      const Vector<Real> &dualv,
+                                      const Vector<Real> &u_old, const Vector<Real> &u_new,
+                                      const Vector<Real> &z_old, const Vector<Real> &z_new,
+                                      Real &tol) = 0;
+
   // Functions from SimOpt that are overriden
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
 
   virtual void update( const Vector<Real> & u,
                        const Vector<Real> & z, 
@@ -238,7 +300,6 @@ public:
           tol);  
   }
 
-#if 0
   virtual void applyJacobian_1(Vector<Real> &jv,
                                const Vector<Real> &v,
                                const Vector<Real> &u,
@@ -254,16 +315,17 @@ public:
     // evaluate derivative against "old" time variable
     applyJacobian_1_old(jv,v_old,
                            u_old,u_new,
-                           z_old,z_new);
+                           z_old,z_new,
+                           tol);
 
     ROL::Ptr<Vector<Real> > jv_new = jv.clone();
 
     // evaluate derivative against "new" time variable
-    applyJacobian_1_new(jv,v_new,
+    applyJacobian_1_new(*jv_new,v_new,
                            u_old,u_new,
-                           z_old,z_new);
+                           z_old,z_new,
+                           tol);
 
-    // Compute Newton quotient
     jv.axpy(1.0,*jv_new);
   }
 
@@ -282,19 +344,20 @@ public:
     // evaluate derivative against "old" time variable
     applyJacobian_2_old(jv,v_old,
                            u_old,u_new,
-                           z_old,z_new);
+                           z_old,z_new,
+                           tol);
 
     ROL::Ptr<Vector<Real> > jv_new = jv.clone();
 
     // evaluate derivative against "new" time variable
-    applyJacobian_2_new(jv,v_new,
+    applyJacobian_2_new(*jv_new,v_new,
                            u_old,u_new,
-                           z_old,z_new);
+                           z_old,z_new,
+                           tol);
 
     // Compute Newton quotient
     jv.axpy(1.0,*jv_new);
   }
-#endif
 
   virtual void applyInverseJacobian_1(Vector<Real> &ijv,
                                       const Vector<Real> &v,
@@ -305,7 +368,6 @@ public:
       "The method applyInverseJacobian_1 is used but not implemented!\n");
   }
 
-#if 0
   virtual void applyAdjointJacobian_1(Vector<Real> &ajv,
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
@@ -319,8 +381,8 @@ public:
     const Vector<Real> & z_old = getOldVector(z);
     const Vector<Real> & z_new = getNewVector(z);
     
-    applyAdjointJacobian_1_old(ajv_old,dualv,u_old,u_new,z_old,z_new);
-    applyAdjointJacobian_1_new(ajv_new,dualv,u_old,u_new,z_old,z_new);
+    applyAdjointJacobian_1_old(ajv_old,dualv,u_old,u_new,z_old,z_new,tol);
+    applyAdjointJacobian_1_new(ajv_new,dualv,u_old,u_new,z_old,z_new,tol);
   }
 
   virtual void applyAdjointJacobian_2(Vector<Real> &ajv,
@@ -336,10 +398,9 @@ public:
     const Vector<Real> & z_old = getOldVector(z);
     const Vector<Real> & z_new = getNewVector(z);
     
-    applyAdjointJacobian_2_old(ajv_old,dualv,u_old,u_new,z_old,z_new);
-    applyAdjointJacobian_2_new(ajv_new,dualv,u_old,u_new,z_old,z_new);
+    applyAdjointJacobian_2_old(ajv_old,dualv,u_old,u_new,z_old,z_new,tol);
+    applyAdjointJacobian_2_new(ajv_new,dualv,u_old,u_new,z_old,z_new,tol);
   }
-#endif
 
   virtual void applyInverseAdjointJacobian_1(Vector<Real> &iajv,
                                              const Vector<Real> &v,
