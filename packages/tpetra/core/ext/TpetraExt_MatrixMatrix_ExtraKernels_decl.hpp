@@ -76,8 +76,8 @@ namespace MatrixMatrix {
     typename alno_row_view_t_,
     typename alno_nnz_view_t_,
     typename ascalar_nnz_view_t_,
-    typename adiag_nnz_view_t_,
     typename ascalar_t_;
+    typename ddiag_nnz_view_t_,
     typename blno_row_view_t_,
     typename blno_nnz_view_t_,
     typename bscalar_nnz_view_t_,
@@ -92,7 +92,7 @@ namespace MatrixMatrix {
       alno_row_view_t_ row_mapA,
       alno_nnz_view_t_ entriesA,
       ascalar_nnz_view_t_ valuesA,
-      adiag_nnz_view_t_ diagA,
+      ddiag_nnz_view_t_ diaginvD,
       ascalar_t_ omegaA,
       bool transposeA,
       blno_row_view_t_ row_mapB,
@@ -103,13 +103,9 @@ namespace MatrixMatrix {
       clno_nnz_view_t_ &entriesC,
       cscalar_nnz_view_t_ &valuesC);
 #endif                         
-  
+}//MatrixMatrix
+}//Tpetra
 
-
-}//end namespace MM
-
-
-} // end of Tpetra namespace
 
 
 #endif

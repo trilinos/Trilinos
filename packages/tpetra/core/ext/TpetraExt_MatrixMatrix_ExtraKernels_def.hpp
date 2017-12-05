@@ -76,8 +76,8 @@ template <typename KernelHandle,
           typename alno_row_view_t_,
           typename alno_nnz_view_t_,
           typename ascalar_nnz_view_t_,
-          typename adiag_nnz_view_,
           typename ascalar_t_,
+          typename ddiag_nnz_view_,
           typename blno_row_view_t_,
           typename blno_nnz_view_t_,
           typename bscalar_nnz_view_t_,
@@ -91,8 +91,8 @@ void jacobi_mm_numeric(KernelHandle *handle,
                        alno_row_view_t_ row_mapA,
                        alno_nnz_view_t_ entriesA,
                        ascalar_nnz_view_t_ valuesA,
-                       adiag_nnz_view_t_ diagA,
                        ascalar_t_ omegaA,
+                       ddiag_nnz_view_t_ diaginvD,
                        bool transposeA,
                        blno_row_view_t_ row_mapB,
                        blno_nnz_view_t_ entriesB,
@@ -101,6 +101,52 @@ void jacobi_mm_numeric(KernelHandle *handle,
                        clno_row_view_t_ row_mapC,
                        clno_nnz_view_t_ &entriesC,
                        cscalar_nnz_view_t_ &valuesC) {
+
+
+  using namespace KokkosSparse::Impl;
+  
+  typedef typename KernelHandle::SPGEMMHandleType spgemmHandleType;
+  spgemmHandleType *sh = handle->get_spgemm_handle();
+  if (!sh->is_symbolic_called()){
+    spgemm_symbolic<KernelHandle,
+      alno_row_view_t_, alno_nnz_view_t_,
+      blno_row_view_t_, blno_nnz_view_t_,
+      clno_row_view_t_>(handle, m, n, k,                        
+                        row_mapA, entriesA, transposeA,
+                        row_mapB, entriesB, transposeB,
+                        row_mapC
+                        );
+    typename clno_row_view_t_::value_type c_nnz_size = handle->get_spgemm_handle()->get_c_nnz();
+    if (c_nnz_size){
+      entriesC = clno_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
+      valuesC = cscalar_nnz_view_t_ (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
+    }
+  }
+  
+
+  switch (sh->get_algorithm_type()){
+  case SPGEMM_DEFAULT:
+  case SPGEMM_KK_MEMSPEED:
+  case SPGEMM_KK_SPEED:
+  case SPGEMM_KK_MEMORY:
+  case SPGEMM_KK_MEMORY2:
+  case SPGEMM_KK_COLOR:
+  case SPGEMM_KK_MULTICOLOR:
+  case SPGEMM_KK_MULTICOLOR2:
+  case SPGEMM_KK_MULTIMEM:
+  case SPGEMM_KK_OUTERMULTIMEM:
+    {
+      KokkosJacobi
+      <KernelHandle,
+      alno_row_view_t_, alno_nnz_view_t_, ascalar_nnz_view_t_,
+         ascalar_t_, ddiag_nnz_view_t_,
+        blno_row_view_t_, blno_nnz_view_t_,  bscalar_nnz_view_t_>
+        kjacobi (handle,m,n,k,row_mapA, entriesA, valuesA, omegaA, diaginvD, transposeA, row_mapB, entriesB, valuesB, transposeB);
+      kspgemm.KokkosJacobi_numeric(row_mapC, entriesC, valuesC);
+    }
+  default:
+    throw std::runtime_error("Invalid spgemm algorithm type for Jacobi");
+  }
 
 }
  
