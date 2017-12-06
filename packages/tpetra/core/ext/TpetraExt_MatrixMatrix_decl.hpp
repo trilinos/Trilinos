@@ -502,7 +502,13 @@ void setMaxNumEntriesPerRow(
 							 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
                                                          const std::string& label = std::string(),
 							 const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+  };
 
+  template<class Scalar,
+	   class LocalOrdinal,
+	   class GlobalOrdinal,
+	   class Node>
+  struct KernelWrappers2 {
     static inline void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
                                                            const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Dinv,
                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,

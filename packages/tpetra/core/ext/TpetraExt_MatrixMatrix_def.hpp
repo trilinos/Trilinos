@@ -2539,19 +2539,6 @@ struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOp
                                                   Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
                                                   const std::string& label = std::string(),
                                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-
-  static inline void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
-                                                           const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> & Dinv,
-                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
-                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
-                                                           const Teuchos::Array<LocalOrdinal> & Acol2Brow,
-                                                           const Teuchos::Array<LocalOrdinal> & Acol2Irow,
-                                                           const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
-                                                           const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
-                                                           CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
-                                                           Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
-                                                           const std::string& label = std::string(),
-                                                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
   };
 
 
@@ -3375,7 +3362,7 @@ void jacobi_A_B_newmatrix(
 
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
-  KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::jacobi_A_B_newmatrix_kernel_wrapper(omega,Dinv,Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
+  KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node>::jacobi_A_B_newmatrix_kernel_wrapper(omega,Dinv,Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
 
 }
 
@@ -3388,7 +3375,7 @@ template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal,
          class Node>
-void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node>::jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
                                                            const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Dinv,
                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
