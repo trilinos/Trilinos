@@ -47,7 +47,7 @@ namespace Tpetra {
 
 namespace MatrixMatrix{
 
-namespace MMDetails{
+namespace ExtraKernels{
 
 
 template<class CrsMatrixType>
@@ -102,14 +102,20 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   //  typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
+
+  // Unmanaged versions of the above
+  typedef Kokkos::View<typename lno_view_t::data_type, typename lno_view_t::array_layout, typename lno_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > u_lno_view_t;
+  typedef Kokkos::View<typename lno_nnz_view_t::data_type, typename lno_nnz_view_t::array_layout, typename lno_nnz_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > u_lno_nnz_view_t;
+  typedef Kokkos::View<typename scalar_view_t::data_type, typename scalar_view_t::array_layout, typename scalar_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > u_scalar_view_t;
+
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;
   typedef GlobalOrdinal     GO;
   typedef Node              NO;
   typedef Map<LO,GO,NO>                     map_type;
-
 
   // NOTE (mfh 15 Sep 2017) This is specifically only for
   // execution_space = Kokkos::OpenMP, so we neither need nor want
@@ -117,55 +123,53 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   typedef NO::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
 
+  //  int MyPID = C.getRowMap()->getComm()->getRank();//DEBUG
 
   // All of the invalid guys
-  const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
   const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
-
   
   // Grab the  Kokkos::SparseCrsMatrices & inner cstuff
   const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
   const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
-  const KCRS * Ik = Bview.importMatrix.is_null() ? 0 : Bview.importMatrix->getLocalMatrix();    
 
-  const lno_view_t Arowptr = Ak.graph.row_map, Browptr = Bk.graph.row_map;
-  const lno_nnz_view_t Acolind = Ak.graph.entries, Bcolind = Bk.graph.endtirs;
-  const scalar_view_t Avals = Ak.values, Bvals = Bk.vals;
+  c_lno_view_t Arowptr = Ak.graph.row_map, Browptr = Bk.graph.row_map;
+  const lno_nnz_view_t Acolind = Ak.graph.entries, Bcolind = Bk.graph.entries;
+  const scalar_view_t Avals = Ak.values, Bvals = Bk.values;
 
-  const lno_view_t * Irowptr=0;
-  const lno_nnz_view_t * Icolind=0;
-  const scalar_view_t * Ivals=0;
+  c_lno_view_t  Irowptr;
+  lno_nnz_view_t  Icolind;
+  scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = &Ik->graph.row_map;
-    Icolind = &Ik->graph.entries;
-    Ivals   = &Ik->values;
+    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
+    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
+    Ivals   = Bview.importMatrix->getLocalMatrix().values;
   }
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m = Aview.origMatrix->getNodeNumRows();
   size_t n = Ccolmap->getNodeNumElements();
-  size_t Cest_nnz_per_row = C_estimate_nnz_per_row(Aview.origMatrix(),Bview.origMatrix());
+  size_t Cest_nnz_per_row = C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
 
   // Get my node / thread info (right from openmp)
-  int thread_max = omp_get_num_threads();
+  size_t thread_max = omp_get_num_threads();
 
-  if(thread_max > 128) printf("WARNING: You probably don't want to run this kernel with %d threads\n",thread_max);
+  if(thread_max > 128) printf("WARNING: You probably don't want to run this kernel with %d threads\n",(int)thread_max);
 
   // Thread-local memory
-  std::vector<lno_view_t *> tl_rowptr(thread_max);
-  std::vector<lno_nnz_view_t *> tl_colind(thread_max);
-  std::vector<scalar_view_t *> tl_values(thread_max);
+  Kokkos::View<u_lno_view_t> tl_rowptr("top_rowptr",thread_max);
+  Kokkos::View<u_lno_nnz_view_t> tl_colind("top_colind",thread_max);
+  Kokkos::View<u_scalar_view_t> tl_values("top_values",thread_max);
 
   double thread_chunk = (double)(m) / thread_max;
 
   // Run chunks of the matrix independently 
-  Kokkos::parallel_for(range_type(0, thread_max),[=](const int tid) {
+  Kokkos::parallel_for(range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid) {
       // Thread coordiation stuff
-      size_t my_thread_start = (size_t) tid * thread_chunk;
-      size_t my_thread_stop  = tid == thread_max-1 ? m : (size_t)(tid+1)*thread_chunk;
+      size_t my_thread_start =  tid * thread_chunk;
+      size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
       size_t my_thread_m     = my_thread_stop - my_thread_start;
 
       // Size estimate 
@@ -173,16 +177,15 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
 
       // Allocations
       std::vector<size_t> c_status(n,INVALID);
-      tl_rowptr[tid] = new lno_view_t("rowptr", my_thread_m+1);
-      tl_colind[tid] = new lno_nnz_view_t("colind",CSR_alloc);
-      tl_values[tid] = new scalar_view_t("values",CSR_alloc);      
-      lno_view_t &Crowptr     = &*tl_rowptr[tid];
-      lno_nnz_view_t &Ccolind = &*tl_colind[tid];
-      scalar_view_t &Cvals    = &*tl_values[tid];
+      
+      u_lno_view_t Crowptr((typename u_lno_view_t::data_type)malloc(u_lno_view_t::shmem_size(my_thread_m+1)),my_thread_m+1);
+      u_lno_nnz_view_t Ccolind((typename u_lno_nnz_view_t::data_type)malloc(u_lno_nnz_view_t::shmem_size(CSR_alloc)),CSR_alloc);
+      u_scalar_view_t Cvals((typename u_scalar_view_t::data_type)malloc(u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);
 
       // For each row of A/C
       size_t CSR_ip = 0, OLD_ip = 0;
       for (size_t i = my_thread_start; i < my_thread_stop; i++) {
+        //        printf("CMS: row %d CSR_alloc = %d\n",(int)i,(int)CSR_alloc);fflush(stdout);
         // mfh 27 Sep 2016: m is the number of rows in the input matrix A
         // on the calling process.
         Crowptr(i-my_thread_start) = CSR_ip;
@@ -228,9 +231,9 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
             
             // Remote matrix
             size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
-            for (size_t j = *Irowptr(Ik); j < *Irowptr(Ik+1); ++j) {
+            for (size_t j = Irowptr(Ik); j < Irowptr(Ik+1); ++j) {
               LO Ikj = Icolind(j);
-              LO Cij = Icol2Ccol(Ikj);
+              LO Cij = Icol2Ccol[Ikj];
               
               if (c_status[Cij] == INVALID || c_status[Cij] < OLD_ip){
                 // New entry
@@ -249,24 +252,30 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
         // Resize for next pass if needed
         if (CSR_ip + n > CSR_alloc) {
           CSR_alloc *= 2;
-          Kokkos::resize(*tl_rowptr[tid],CSR_alloc);
-          Kokkos::resize(*tl_values[tid],CSR_alloc);
+          Ccolind = u_lno_nnz_view_t((typename u_lno_nnz_view_t::data_type)realloc(Ccolind.data(),u_lno_nnz_view_t::shmem_size(CSR_alloc)),CSR_alloc);
+          Cvals = u_scalar_view_t((typename u_scalar_view_t::data_type)realloc(Cvals.data(),u_scalar_view_t::shmem_size(CSR_alloc)),CSR_alloc);
         }
         OLD_ip = CSR_ip;
       }
-      
+
+      tl_rowptr(tid) = Crowptr;
+      tl_colind(tid) = Ccolind;
+      tl_values(tid) = Cvals;      
       Crowptr(my_thread_m) = CSR_ip;
     });
+
 
   // Generate the starting nnz number per thread
   size_t c_nnz_size=0;
   lno_view_t row_mapC("non_const_lnow_row", m + 1);
-  lno_view_t thread_start_nnz("thread_nnz",thread_max);
-  Kokkos::parallel_scan(range_type(0,thread_max), [=] (const size_t i, size_t& update, const bool final) {
-      size_t mynnz = (*tl_rowptr[i])[tl_rowptr[i]->dimension(0)];
+  lno_view_t thread_start_nnz("thread_nnz",thread_max+1);
+  Kokkos::parallel_scan(range_type(0,thread_max).set_chunk_size(1), [=] (const size_t i, size_t& update, const bool final) {
+      size_t mynnz = tl_rowptr(i)(tl_rowptr(i).dimension(0)-1);
       if(final) thread_start_nnz(i) = update;
       update+=mynnz;
+      if(final && i+1==thread_max) thread_start_nnz(i+1)=update;
     });
+  c_nnz_size = thread_start_nnz(thread_max);
 
   // Allocate output
   lno_nnz_view_t  entriesC(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
@@ -279,53 +288,57 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       size_t thread_start = thread_start_nnz(tid);
 
       // Rowptr
-      if(ii==0) row_mapC(i) = thread_start;
-      else if (i==m-1) {
-        row_mapC(i) = thread_start + (*tl_rowptr[tid])[ii-1];
-        row_mapC(m) = thread_start + (*tl_rowptr[tid])[ii];
+      row_mapC(i) = thread_start + tl_rowptr(tid)(ii);
+      if (i==m-1) {
+        row_mapC(m) = thread_start + tl_rowptr(tid)(ii+1);
       }
-      else row_mapC(i) = thread_start + (*tl_rowptr[tid])[ii-1];
-        
 
-      
+      else row_mapC(i) = thread_start + tl_rowptr(tid)(ii);
+              
       // Colind / Values
-      for(int j = (*tl_rowptr[tid])[ii]; j<(*tl_rowptr[tid])[ii+1]; j++) {
-        entriesC(thread_start + j) = (*tl_colind[tid])(j);
-        valuesC(thread_start + j)  = (*tl_values[tid])(j);        
+      for(size_t j = tl_rowptr(tid)(ii); j<tl_rowptr(tid)(ii+1); j++) {
+        entriesC(thread_start + j) = tl_colind(tid)(j);
+        valuesC(thread_start + j)  = tl_values(tid)(j);        
       }
-
-
     });
 
-  // FINISH ME                    
 
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix LTGSort"))));
+  //DEBUG
+#if 0
+  for(size_t i=0; i<thread_max; i++) {
+    printf("[%d] CMS: thread[0]::rowptr = ",MyPID);
+    for(size_t j=0; j<tl_rowptr(i).dimension(0); j++)
+      printf("%d ",(int)tl_rowptr(i)(j));
+    printf("\n");
+    printf("[%d] CMS: final::rowptr     = ",MyPID);
+    for(size_t j=0; j<row_mapC.dimension(0); j++)
+      printf("%d ",(int)row_mapC(j));
+    printf("\n");
+  }
 #endif
 
-  // Sort & set values
-  Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
-  C.setAllValues(row_mapC,entriesC,valuesC);
+
+  //Free the unamanged views
+  for(size_t i=0; i<thread_max; i++) {
+    if(tl_rowptr(i).data()) free(tl_rowptr(i).data());
+    if(tl_colind(i).data()) free(tl_colind(i).data());
+    if(tl_values(i).data()) free(tl_values(i).data());
+  }   
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix LTGESFC"))));
-#endif
-
-  // Final Fillcomplete
-  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
-  labelList->set("Timer Label",label);
-  RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > dummyExport;
-  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
-
+    MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPSort"))));
+#endif    
+    // Sort & set values
+    Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
+    C.setAllValues(row_mapC,entriesC,valuesC);
 
 }
 
 #endif // OpenMP
 
 
-}//MMDetails
-}//MatrixMatirx
+}//ExtraKernels
+}//MatrixMatrix
 }//Tpetra
                         
 

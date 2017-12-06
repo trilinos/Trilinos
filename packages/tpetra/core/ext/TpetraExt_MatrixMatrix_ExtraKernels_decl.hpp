@@ -48,7 +48,7 @@ namespace Tpetra {
 
 namespace MatrixMatrix {
 
-  namespace MMDetails {
+  namespace ExtraKernels {
 
     template<class CrsMatrixType>
     size_t C_estimate_nnz_per_row(CrsMatrixType & A, CrsMatrixType &B);
@@ -66,7 +66,7 @@ namespace MatrixMatrix {
                                                                    const std::string& label,
                                                                    const Teuchos::RCP<Teuchos::ParameterList>& params);
 #endif
-  }// MMDetails  
+  }// ExtraKernels
 }//MatrixMatrix
 }//Tpetra
 
