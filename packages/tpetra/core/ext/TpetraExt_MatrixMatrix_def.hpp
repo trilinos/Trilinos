@@ -2314,7 +2314,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore"))));
 #endif
 
-  printf("CMS: Firing off Serial kernel\n");
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -2580,8 +2579,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  //  std::string myalg("SPGEMM_KK_MEMORY");
-  std::string myalg("LTG");
+  std::string myalg("SPGEMM_KK_MEMORY");
+  //std::string myalg("LTG");
   if(!params.is_null()) {
     if(params->isParameter("openmp: algorithm"))
       myalg = params->get("openmp: algorithm",myalg);
@@ -2595,7 +2594,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   }
   else {
     // Use the Kokkos-Kernels OpenMP Kernel
-    printf("CMS: Firing off OpenMP kernel\n");
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPWrapper"))));
 #endif    
