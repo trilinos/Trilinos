@@ -2316,6 +2316,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore"))));
 #endif
 
+  printf("CMS: Firing off Serial kernel\n");
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -2557,11 +2558,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
                                                                                                const std::string& label,
                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
-  using Teuchos::TimeMonitor;
-  Teuchos::RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPWrapper")))));
-#endif
   //  printf("[%d] OpenMP kernel called\n",Aview.origMatrix->getRowMap()->getComm()->getRank());
 
   // Node-specific code<
@@ -2580,13 +2576,28 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  std::string myalg("SPGEMM_KK_MEMORY");
+  //  std::string myalg("SPGEMM_KK_MEMORY");
+  std::string myalg("LTG");
   if(!params.is_null()) {
     if(params->isParameter("openmp: algorithm"))
       myalg = params->get("openmp: algorithm",myalg);
     if(params->isParameter("openmp: team work size"))
       team_work_size = params->get("openmp: team work size",team_work_size);
   }
+
+  // Use the LTG kernel if requested
+  if(myalg == "LTG") {
+    mult_A_B_newmatrix_LowThreadGustavsonKernel(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
+    return;
+  }
+
+  printf("CMS: Firing off OpenMP kernel\n");
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<TimeMonitor> MM = rcp(new TimeMonitor(*(TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPWrapper")))));
+#endif
+
 
   // KokkosKernelsHandle
   typedef KokkosKernels::Experimental::KokkosKernelsHandle<lno_view_t,lno_nnz_view_t, scalar_view_t, typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
@@ -3368,7 +3379,7 @@ void jacobi_A_B_newmatrix(
 
 
 /*********************************************************************************************************/
-// Jacobi AB NewMatrix Kernel wrappers (Default non-threaded versio)
+// Jacobi AB NewMatrix Kernel wrappers (Default non-threaded version)
 // Kernel method for computing the local portion of C = (I-omega D^{-1} A)*B
 
 template<class Scalar,
