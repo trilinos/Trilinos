@@ -320,7 +320,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
            encoded_dir_edge[i] = -(1 + temp_bindx[0]);
          }
 	     if (temp_val[0] != -1.0 && temp_val[0] != 1.0)
-           printf("Warning uknown value T(%d,%d) = %e\n", i,temp_bindx[0],temp_val[0]);
+           printf("Warning unknown value T(%d,%d) = %e\n", i,temp_bindx[0],temp_val[0]);
        }
        else encoded_dir_edge[i] = 0;
      }
