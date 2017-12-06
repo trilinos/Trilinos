@@ -58,7 +58,7 @@ namespace MueLu {
   RCP<const ParameterList> MultiVectorTransferFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set< std::string >           ("Vector name",      "undefined", "Name of the vector that will be transfered on the coarse grid (level key)"); // TODO: how to set a validator without default value?
+    validParamList->set< std::string >           ("Vector name",      "undefined", "Name of the vector that will be transferred on the coarse grid (level key)"); // TODO: how to set a validator without default value?
     validParamList->set< RCP<const FactoryBase> >("Vector factory", Teuchos::null, "Factory of the vector");
     validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Factory of the transfer operator (restriction)");
 

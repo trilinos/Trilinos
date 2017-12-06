@@ -175,11 +175,12 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     } else { // VARIABLE_STEP_SIZE
 
       // \todo The following controls should be generalized to plugable options.
-      if (stepperState->stepperStatus_ == Status::FAILED) dt /=2;
-      if (errorAbs > getMaxAbsError()) dt /= 2;
-      if (errorRel > getMaxRelError()) dt /= 2;
-      if (order < getMinOrder()) dt *= 2;
-      if (order > getMaxOrder()) dt /= 2;
+      Scalar dt_adjustment_factor = 0.5; 
+      if (stepperState->stepperStatus_ == Status::FAILED) dt *= dt_adjustment_factor;
+      if (errorAbs > getMaxAbsError()) dt *= dt_adjustment_factor;
+      if (errorRel > getMaxRelError()) dt *= dt_adjustment_factor;
+      if (order < getMinOrder()) dt /= dt_adjustment_factor;
+      if (order > getMaxOrder()) dt *= dt_adjustment_factor;
 
       if (dt < getMinTimeStep()) dt = getMinTimeStep();
       if (dt > getMaxTimeStep()) dt = getMaxTimeStep();

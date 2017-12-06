@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <cstring>
 #include "Teuchos_Assert.hpp"
+#include "Kokkos_Core.hpp"
 
 namespace phx_example {
 
@@ -23,6 +24,8 @@ namespace phx_example {
     bool print_residual_;
     bool print_jacobian_;
     bool print_to_file_;
+    int team_size_;
+    int vector_size_;
     bool do_graph_analysis_;
 
   public:
@@ -41,8 +44,16 @@ namespace phx_example {
       print_residual_(false),
       print_jacobian_(false),
       print_to_file_(false),
+      team_size_(-1), // value for Kokkos::AUTO
+      vector_size_(1), // default for Kokkos
       do_graph_analysis_(true)
     {
+      // Set better defaults for team/vector size based on arcitecture
+#if defined(KOKKOS_HAVE_CUDA)
+      vector_size_ = 32;
+      team_size_ = 256 / vector_size_;
+#endif
+
       for (int i=1; i < argc; ++i) {
         // TEUCHOS_TEST_FOR_EXCEPTION(i+1 == argc,std::runtime_error,
         //                            "ERROR: the final value for the input parameter is missing!");
@@ -76,6 +87,10 @@ namespace phx_example {
 	}
         else if (std::strncmp(argv[i],"-f",2)==0)
           print_to_file_ = true;
+        else if (std::strncmp(argv[i],"-ts",3)==0)
+          team_size_ = std::atoi(argv[++i]);
+        else if (std::strncmp(argv[i],"-vs",3)==0)
+          vector_size_ = std::atoi(argv[++i]);
         else if (std::strncmp(argv[i],"-nga",4)==0)
           do_graph_analysis_ = false;
         else if (std::strncmp(argv[i],"-h",2)==0) {
@@ -98,6 +113,8 @@ namespace phx_example {
 		    << "             that were evaluated during Jacobian computation)" << std::endl;
 	  std::cout << "-pa          Print all evalaution type values" << std::endl;
 	  std::cout << "-f           Print values to file instead of the screen" << std::endl;
+	  std::cout << "-ts          Set the team size for Kokkos kernel launch" << std::endl;
+	  std::cout << "-vs          Set the vector size for Kokkos kernel launch" << std::endl;
 	  std::cout << "-nga         Disable the graph analysis" << std::endl;
 	  std::cout << "============================================" << std::endl;
 	  exit(0);
@@ -121,6 +138,8 @@ namespace phx_example {
     const bool& printResidual() const {return print_residual_;}
     const bool& printJacobian() const {return print_jacobian_;}
     const bool& printToFile() const {return print_to_file_;}
+    const int& teamSize() const {return team_size_;}
+    const int& vectorSize() const {return vector_size_;}
     const bool& doGraphAnalysis() const {return do_graph_analysis_;}
   };
 }

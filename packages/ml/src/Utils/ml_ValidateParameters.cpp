@@ -372,7 +372,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setDoubleParameter("repartition: max min ratio",1.3,"Specifies desired maximum imbalance ratio",PL,dblParam);
   setIntParameter("repartition: min per proc",512,"Specifies minimum # rows / processor",PL,intParam);
   setIntParameter("repartition: put on single proc",5000,"Specifies max global problem to be put on one processor",PL,intParam);
-  setDoubleParameter("repartition: node max min ratio",1.3,"Specifies desired maximum imbalance for nodal heirarchy (Maxwell)",PL,dblParam);
+  setDoubleParameter("repartition: node max min ratio",1.3,"Specifies desired maximum imbalance for nodal hierarchy (Maxwell)",PL,dblParam);
   setIntParameter("repartition: node min per proc",170,"Specifies minimum number of nodes per proc (Maxwell)",PL,intParam);
   setIntParameter("repartition: Zoltan dimensions",0,"Dimension of problem",PL,intParam);
   setIntParameter("repartition: start level",1,"Suppress repartitioning until this level",PL,intParam);
@@ -405,7 +405,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Aggregation Strategies (Section 6.4.10) */
   PL->set("aggregation: aux: enable",false);
-  setDoubleParameter("aggregation: aux: threshold",0.0,"Dropping threshold for auxillary matrix",PL,dblParam);
+  setDoubleParameter("aggregation: aux: threshold",0.0,"Dropping threshold for auxiliary matrix",PL,dblParam);
 
   /* Unlisted Options */
   PL->set("ML debug mode",false);

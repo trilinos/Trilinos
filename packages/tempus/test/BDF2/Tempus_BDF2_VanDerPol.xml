@@ -6,6 +6,7 @@
     <Parameter name="IC x0"   type="double" value="2.0"/>
     <Parameter name="IC x1"   type="double" value="0.0"/>
     <Parameter name="IC t0"   type="double" value="0.0"/>
+    <Parameter name="Number of Time Step Sizes" type="int" value = "3"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Demo Integrator"/>
@@ -25,7 +26,7 @@
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="500000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
-        <Parameter name="Initial Time Step"      type="double" value="0.1"/>
+        <Parameter name="Initial Time Step"      type="double" value="0.00625"/>
         <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
         <Parameter name="Minimum Order"          type="int"    value="1"/>
         <Parameter name="Initial Order"          type="int"    value="1"/>

@@ -68,7 +68,7 @@ namespace MueLu {
     validParamList->set<RCP<const FactoryBase> >("Coordinates",                  Teuchos::null, "Factory for coordinates generation");
     validParamList->set<RCP<const FactoryBase> >("Aggregates",                   Teuchos::null, "Factory for coordinates generation");
     validParamList->set<RCP<const FactoryBase> >("CoarseMap",                    Teuchos::null, "Generating factory of the coarse map");
-    validParamList->set<bool>                   ("Geometric",                    false, "Flag specifying that the coordinates are transfered for GeneralGeometricPFactory");
+    validParamList->set<bool>                   ("Geometric",                    false, "Flag specifying that the coordinates are transferred for GeneralGeometricPFactory");
     validParamList->set<RCP<const FactoryBase> >("coarseCoordinates",            Teuchos::null, "Factory for coarse coordinates generation");
     validParamList->set<RCP<const FactoryBase> >("gCoarseNodesPerDim",            Teuchos::null, "Factory providing the global number of nodes per spatial dimensions of the mesh");
     validParamList->set<RCP<const FactoryBase> >("lCoarseNodesPerDim",            Teuchos::null, "Factory providing the local number of nodes per spatial dimensions of the mesh");

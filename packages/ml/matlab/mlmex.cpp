@@ -996,7 +996,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
       delete [] colptr;
     }
 
-    /* Lock so we can keep the memory for the heirarchy */
+    /* Lock so we can keep the memory for the hierarchy */
     mexLock();
     break;
   case MODE_SETUP_MAXWELL:
@@ -1025,7 +1025,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     if(nlhs>1) plhs[1]=mxCreateDoubleScalar(Dhat->operator_complexity);
 
 
-    /* Lock so we can keep the memory for the heirarchy */
+    /* Lock so we can keep the memory for the hierarchy */
     mexLock();
     break;
   case MODE_SOLVE:

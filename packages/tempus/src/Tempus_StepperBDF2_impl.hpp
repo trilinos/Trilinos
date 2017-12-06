@@ -237,7 +237,17 @@ void StepperBDF2<Scalar>::takeStep(
       computeStartUp(solutionHistory);
       numStates = solutionHistory->getNumStates();  
     }
+    if (numStates < 3) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,
+        std::logic_error,
+         "Error in Tempus::StepperBDF2::takeStep(): numStates after startup \n" 
+         << "stepper must be at least 3, whereas numStates = " << numStates <<"!\n"
+         << "If running with Storage Type = Static, make sure Storage Limit > 2.\n"); 
+    }
 
+    //IKT, FIXME: add error checking regarding states being consecutive and whether
+    //interpolated states are OK to use.
+    
     stepperBDF2Observer_->observeBeginTakeStep(solutionHistory, *this);
     
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
@@ -254,14 +264,13 @@ void StepperBDF2<Scalar>::takeStep(
     //Notes for IKT: the following is logic for returning getCurrentState(): 
     //if      (getNumStates() > 1) currentState_ = (*history_)[getNumStates()-2];
     //else if (getNumStates() == 1) currentState_ = (*history_)[0];
-    if (numStates > 2) {
-      //IKT, FIXME: the following should be changed once CO adds
-      //methods to obtain past SolutionStates, e.g., getNM1State().
-      //get previous 2 states
-      xOld = (*solutionHistory)[numStates-2]->getX(); 
-      xOldOld = (*solutionHistory)[numStates-3]->getX();
-      order_ = 2.0;  
-    }
+
+    //IKT, FIXME: the following should be changed once CO adds
+    //methods to obtain past SolutionStates, e.g., getNM1State().
+    //get previous 2 states
+    xOld = (*solutionHistory)[numStates-2]->getX(); 
+    xOldOld = (*solutionHistory)[numStates-3]->getX();
+    order_ = 2.0;  
 
     const Scalar alpha = (1.0/(dt + dtOld))*(1.0/dt)*(2.0*dt + dtOld); 
     const Scalar beta = 1.0; 

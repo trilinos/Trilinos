@@ -39,42 +39,19 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef TPETRA_MATRIXMATRIX_EXTRAKERNELS_DECL_HPP
+#define TPETRA_MATRIXMATRIX_EXTRAKERNELS_DECL_HPP
 
-#ifndef TYPEDEFS_HPP
-#define TYPEDEFS_HPP
+#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
+#include "KokkosSparse_spgemm.hpp"
+#endif
+namespace Tpetra {
 
-#include <Kokkos_View.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_Export.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_CrsGraph.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+namespace MatrixMatrix {
 
-typedef double Scalar;
-
-// Get LocalOrdinal & GlobalOrdinal from Map defaults.
-typedef Tpetra::Map<>::local_ordinal_type LocalOrdinal;
-typedef Tpetra::Map<>::global_ordinal_type GlobalOrdinal;
-typedef Tpetra::Map<>::node_type NT;
-
-typedef Kokkos::DefaultExecutionSpace ExecutionSpace;
-
-typedef Kokkos::View<GlobalOrdinal*,ExecutionSpace> global_ordinal_view_type;
-
-typedef typename Tpetra::Map<> MapType;
-typedef typename Tpetra::CrsGraph<> GraphType;
-typedef typename Tpetra::CrsMatrix<Scalar> MatrixType;
-typedef typename Tpetra::Export<> ExportType;
+}//MatrixMatrix
+}//Tpetra
 
 
-typedef Kokkos::DefaultExecutionSpace ExecutionSpace;
-typedef Kokkos::View<GlobalOrdinal*,ExecutionSpace> global_ordinal_view_type;
-
-// NOTE: Arrays are hardwired for QUAD4
-typedef Kokkos::View<LocalOrdinal*[4],ExecutionSpace> local_ordinal_2d_array_type;
-typedef Kokkos::View<GlobalOrdinal*[4],ExecutionSpace> global_ordinal_2d_array_type;
-typedef Kokkos::View<Scalar*[4],ExecutionSpace> scalar_2d_array_type;
 
 #endif
-
-
