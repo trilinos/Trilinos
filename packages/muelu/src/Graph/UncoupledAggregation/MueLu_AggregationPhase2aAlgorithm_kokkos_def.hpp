@@ -63,8 +63,17 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationPhase2aAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  void AggregationPhase2aAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+  BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph,
+                  Aggregates_kokkos& aggregates, Kokkos::View<unsigned*, typename MueLu::
+                  LWGraph_kokkos<LO,GO,Node>::local_graph_type::device_type::
+                  memory_space>& aggStatView, LO& numNonAggregatedNodes,
+                  Kokkos::View<LO*, typename MueLu::LWGraph_kokkos<LO, GO, Node>::
+                  local_graph_type::device_type::memory_space>& colorsDevice, LO& numColors) const {
     Monitor m(*this, "BuildAggregates");
+
+    typedef typename MueLu::LWGraph_kokkos<LO, GO, Node>::local_graph_type graph_t;
+    typedef typename graph_t::device_type::memory_space memory_space;
 
     int minNodesPerAggregate = params.get<int>("aggregation: min agg size");
     int maxNodesPerAggregate = params.get<int>("aggregation: max agg size");
@@ -72,69 +81,82 @@ namespace MueLu {
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
-    ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+    auto vertex2AggId = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
+    auto procWinner   = aggregates.GetProcWinner()  ->template getLocalView<memory_space>();
 
-    LO numLocalAggregates = aggregates.GetNumAggregates();
-
-    LO numLocalNodes      = procWinner.size();
+    LO numLocalNodes      = numRows;
     LO numLocalAggregated = numLocalNodes - numNonAggregatedNodes;
 
     const double aggFactor = 0.5;
     double       factor    = as<double>(numLocalAggregated)/(numLocalNodes+1);
     factor = pow(factor, aggFactor);
 
-    int              aggIndex = -1;
-    size_t           aggSize  =  0;
-    std::vector<int> aggList(graph.getNodeMaxNumRowEntries());
+    Kokkos::View<LO, memory_space> numLocalAggregates("numLocalAggregates");
+    typename Kokkos::View<LO, memory_space>::HostMirror h_numLocalAggregates =
+      Kokkos::create_mirror_view(numLocalAggregates);
+    h_numLocalAggregates() = aggregates.GetNumAggregates();
+    Kokkos::deep_copy(numLocalAggregates, h_numLocalAggregates);
 
-    for (LO rootCandidate = 0; rootCandidate < numRows; rootCandidate++) {
-      if (aggStat[rootCandidate] != READY)
-        continue;
+    // Now we create new aggregates using root nodes in all colors other than the first color,
+    // as the first color was already exhausted in Phase 1.
+    for(int color = 1; color < numColors + 1; ++color) {
 
-      aggSize = 0;
+      LO tmpNumNonAggregatedNodes = 0;
+      Kokkos::parallel_reduce("Aggregation Phase 2a: loop over each individual color", numRows,
+                              KOKKOS_LAMBDA (const LO rootCandidate, LO& lNumNonAggregatedNodes) {
+                                if(aggStatView(rootCandidate) == READY &&
+                                   colorsDevice(rootCandidate) == color) {
 
-      auto neighOfINode = graph.getNeighborVertices(rootCandidate);
+                                  LO aggSize = 0;
+                                  auto neighbors = graph.getNeighborVertices(rootCandidate);
 
-      LO numNeighbors = 0;
-      for (int j = 0; j < as<int>(neighOfINode.length); j++) {
-        LO neigh = neighOfINode(j);
+                                  // Loop over neighbors to count how many nodes could join
+                                  // the new aggregate
+                                  LO numNeighbors = 0;
+                                  for(int j = 0; j < neighbors.length; ++j) {
+                                    LO neigh = neighbors(j);
+                                    if(neigh != rootCandidate) {
+                                      if(graph.isLocalNeighborVertex(neigh) &&
+                                         aggStatView(neigh) == READY &&
+                                         aggSize < maxNodesPerAggregate) {
+                                        // aggList(aggSize) = neigh;
+                                        ++aggSize;
+                                      }
+                                      ++numNeighbors;
+                                    }
+                                  }
 
-        if (neigh != rootCandidate) {
-          if (graph.isLocalNeighborVertex(neigh) && aggStat[neigh] == READY) {
-            // If aggregate size does not exceed max size, add node to the tentative aggregate
-            // NOTE: We do not exit the loop over all neighbours since we have still
-            //       to count all aggregated neighbour nodes for the aggregation criteria
-            // NOTE: We check here for the maximum aggregation size. If we would do it below
-            //       with all the other check too big aggregates would not be accepted at all.
-            if (aggSize < as<size_t>(maxNodesPerAggregate))
-              aggList[aggSize++] = neigh;
-          }
+                                  // If a sufficient number of nodes can join the new aggregate
+                                  // then we actually create the aggregate.
+                                  if(aggSize > minNodesPerAggregate &&
+                                     aggSize > factor*numNeighbors) {
 
-          numNeighbors++;
-        }
-      }
+                                    // aggregates.SetIsRoot(rootCandidate);
+                                    LO aggIndex = Kokkos::
+                                      atomic_fetch_add(&numLocalAggregates(), 1);
 
-      // NOTE: ML uses a hardcoded value 3 instead of MinNodesPerAggregate
-      if (aggSize > as<size_t>(minNodesPerAggregate) &&
-          aggSize > factor*numNeighbors) {
-        // Accept new aggregate
-        // rootCandidate becomes the root of the newly formed aggregate
-        aggregates.SetIsRoot(rootCandidate);
-        aggIndex = numLocalAggregates++;
-
-        for (size_t k = 0; k < aggSize; k++) {
-          aggStat     [aggList[k]] = AGGREGATED;
-          vertex2AggId[aggList[k]] = aggIndex;
-          procWinner  [aggList[k]] = myRank;
-        }
-
-        numNonAggregatedNodes -= aggSize;
-      }
+                                    for(int j = 0; j < neighbors.length; ++j) {
+                                      LO neigh = neighbors(j);
+                                      if(neigh != rootCandidate) {
+                                        if(graph.isLocalNeighborVertex(neigh) &&
+                                           aggStatView(neigh) == READY &&
+                                           aggSize < maxNodesPerAggregate) {
+                                          aggStatView(neigh)   = AGGREGATED;
+                                          vertex2AggId(neigh, 0) = aggIndex;
+                                          procWinner(neigh, 0)   = myRank;
+                                        }
+                                      }
+                                    }
+                                    lNumNonAggregatedNodes -= aggSize;
+                                  }
+                                }
+                              }, tmpNumNonAggregatedNodes);
+      numNonAggregatedNodes += tmpNumNonAggregatedNodes;
     }
 
     // update aggregate object
-    aggregates.SetNumAggregates(numLocalAggregates);
+    Kokkos::deep_copy(h_numLocalAggregates, numLocalAggregates);
+    aggregates.SetNumAggregates(h_numLocalAggregates());
   }
 
 } // end namespace

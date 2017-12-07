@@ -64,17 +64,27 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void IsolatedNodeAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph,
+                  Aggregates_kokkos& aggregates, Kokkos::View<unsigned*, typename MueLu::
+                  LWGraph_kokkos<LO,GO,Node>::local_graph_type::device_type::
+                  memory_space>& aggStatView, LO& numNonAggregatedNodes, Kokkos::View<LO*,
+                  typename MueLu::LWGraph_kokkos<LO, GO, Node>::local_graph_type::device_type::
+                  memory_space>& colorsDevice, LO& numColors) const {
     Monitor m(*this, "BuildAggregates");
 
     const LO  numRows = graph.GetNodeNumVertices();
 
     // Remove all isolated nodes
-    for (LO i = 0; i < numRows; i++)
-      if (aggStat[i] != AGGREGATED && aggStat[i] != IGNORED && graph.getNeighborVertices(i).length == 1) {
-        aggStat[i] = IGNORED;
-        numNonAggregatedNodes--;
-      }
+    LO tmpNumNonAggregatedNodes = 0;
+    Kokkos::parallel_reduce("Aggregation remove all isolated nodes", numRows,
+                            KOKKOS_LAMBDA (const LO i, LO & lNumNonAggregatedNodes) {
+                              if (aggStatView(i) != AGGREGATED && aggStatView(i) != IGNORED
+                                  && graph.getNeighborVertices(i).length == 1) {
+                                aggStatView(i) = IGNORED;
+                                lNumNonAggregatedNodes--;
+                              }
+                            }, tmpNumNonAggregatedNodes);
+    numNonAggregatedNodes += tmpNumNonAggregatedNodes;
   }
 
 } // end namespace

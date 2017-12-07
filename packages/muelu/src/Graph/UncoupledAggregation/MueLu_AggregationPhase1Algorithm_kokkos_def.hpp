@@ -64,13 +64,18 @@
 #include "MueLu_Monitor.hpp"
 
 #include "KokkosGraph_graph_color.hpp"
+#include <Kokkos_ScatterView.hpp>
 
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
-  BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates, std::vector<unsigned>& aggStat,
-                  LO& numNonAggregatedNodes) const {
+  BuildAggregates(const ParameterList& params, const LWGraph_kokkos& graph,
+                  Aggregates_kokkos& aggregates, Kokkos::View<unsigned*, typename MueLu::
+                  LWGraph_kokkos<LO,GO,Node>::local_graph_type::device_type::
+                  memory_space>& aggStatView, LO& numNonAggregatedNodes,
+                  Kokkos::View<LO*, typename MueLu::LWGraph_kokkos<LO, GO, Node>::
+                  local_graph_type::device_type::memory_space>& colorsDevice, LO& numColors) const {
     Monitor m(*this, "BuildAggregates");
 
     std::string orderingStr     = params.get<std::string>("aggregation: ordering");
@@ -79,7 +84,7 @@ namespace MueLu {
     int maxNodesPerAggregate    = params.get<int>        ("aggregation: max agg size");
 
     Algorithm algorithm         = Algorithm::Serial;
-    std::string algoParamName = "aggregation: phase 1 algorithm";
+    std::string algoParamName   = "aggregation: phase 1 algorithm";
     if(params.isParameter(algoParamName))
     {
       algorithm = algorithmFromName(params.get<std::string>("aggregation: phase 1 algorithm"));
@@ -93,12 +98,27 @@ namespace MueLu {
     //can only enforce max aggregate size
     if(algorithm == Algorithm::Distance2)
     {
-      BuildAggregatesDistance2(graph, aggregates, aggStat, numNonAggregatedNodes, maxNodesPerAggregate);
+      BuildAggregatesDistance2(graph, aggregates, aggStatView, numNonAggregatedNodes,
+                               maxNodesPerAggregate, colorsDevice, numColors);
     }
     else
     {
-      BuildAggregatesSerial(graph, aggregates, aggStat, numNonAggregatedNodes,
-          minNodesPerAggregate, maxNodesPerAggregate, maxNeighAlreadySelected, orderingStr);
+      const LO numRows = graph.GetNodeNumVertices();
+      std::vector<unsigned> aggStat(numRows);
+      typedef typename MueLu::LWGraph_kokkos<LO, GO, Node>::local_graph_type graph_t;
+      typedef typename graph_t::device_type::memory_space memory_space;
+      typename Kokkos::View<unsigned*, memory_space>::HostMirror h_aggStatView =
+        Kokkos::create_mirror_view (aggStatView);
+      Kokkos::deep_copy(h_aggStatView, aggStatView);
+      // Note: LBV 20/03/2018
+      // This last part could be done by passing a raw pointer from h_aggStatView to aggStat.
+      // However I am hoping that we will depart with the serial case all together soon, so this
+      // piece of code should not impact us much.
+      for(LO i = 0; i < numRows; ++i) {aggStat[i] = h_aggStatView(i);}
+      BuildAggregatesSerial(graph, aggregates, aggStat, numNonAggregatedNodes, minNodesPerAggregate,
+                            maxNodesPerAggregate, maxNeighAlreadySelected, orderingStr);
+      for(LO i = 0; i < numRows; ++i) {h_aggStatView(i) = aggStat[i];}
+      Kokkos::deep_copy(aggStatView, h_aggStatView);
     }
   }
 
@@ -266,132 +286,104 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationPhase1Algorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
   BuildAggregatesDistance2(const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
-      std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes, LO maxAggSize) const
+                           Kokkos::View<unsigned*, typename MueLu::LWGraph_kokkos<LO, GO, Node>::
+                           local_graph_type::device_type::memory_space>& aggStatView,
+                           LO& numNonAggregatedNodes, LO maxAggSize,
+                           Kokkos::View<LO*, typename MueLu::LWGraph_kokkos<LO, GO, Node>::
+                           local_graph_type::device_type::memory_space>& colorsDevice,
+                           LO& numColors) const
   {
+    typedef typename MueLu::LWGraph_kokkos<LO, GO, Node>::local_graph_type graph_t;
+    typedef typename graph_t::device_type::memory_space memory_space;
+    typedef typename graph_t::device_type::execution_space execution_space;
+
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
-    ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+    auto vertex2AggIdView = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
+    auto procWinnerView = aggregates.GetProcWinner()    ->template getLocalView<memory_space>();
 
+    LO numNonAggregatedNodesSerial = numNonAggregatedNodes;
+    LO numLocalAggregatesSerial = aggregates.GetNumAggregates();
     LO numLocalAggregates = aggregates.GetNumAggregates();
 
-    //get the sparse local graph in CRS
-    std::vector<LocalOrdinal> rowptrs;
-    rowptrs.reserve(numRows + 1);
-    std::vector<LocalOrdinal> colinds;
-    colinds.reserve(graph.GetNodeNumEdges());
+    typename LWGraph_kokkos::local_graph_type::entries_type::non_const_type::
+      HostMirror h_colors = Kokkos::create_mirror_view(colorsDevice);
+    Kokkos::deep_copy(h_colors, colorsDevice);
 
-    rowptrs.push_back(0);
-    for(LocalOrdinal row = 0; row < numRows; row++)
+    // Kokkos::View<unsigned*, memory_space> aggStatView("aggStat", numRows);
+    // auto h_aggStatView = Kokkos::create_mirror_view (aggStatView);
+    // for(LO i = 0; i< numRows; ++i) {h_aggStatView(i) = aggStat[i];}
+    // Kokkos::deep_copy (aggStatView, h_aggStatView);
+
+    Kokkos::View<LO, memory_space> aggCount("aggCount");
+    LO tmpNumLocalAggregates = 0;
+    Kokkos::parallel_reduce("Aggregation Phase 1: initial reduction over color == 1", numRows,
+                            KOKKOS_LAMBDA (const LO i, LO& lnumLocalAggregates) {
+                              if(colorsDevice(i) == 1 && aggStatView(i) == READY) {
+                                const LO idx = Kokkos::atomic_fetch_add (&aggCount(), 1);
+                                vertex2AggIdView(i, 0) = idx;
+                                aggStatView(i) = AGGREGATED;
+                                ++lnumLocalAggregates;
+                                procWinnerView(i, 0) = myRank;
+                              }
+                            }, tmpNumLocalAggregates);
+    numLocalAggregates += tmpNumLocalAggregates;
+
+    // Compute the initial size of the aggregates.
+    // Note lbv 12-21-17: I am pretty sure that the aggregates will always be of size 1
+    //                    at this point so we could simplify the code below a lot if this
+    //                    assumption is correct...
+    Kokkos::View<LO*, memory_space> aggSizesView("aggSizes", numLocalAggregates);
     {
-      auto entries = graph.getNeighborVertices(row);
-      for(LocalOrdinal i = 0; i < entries.length; i++)
-      {
-        colinds.push_back(entries.colidx(i));
-      }
-      rowptrs.push_back(colinds.size());
+      // Here there is a possibility that two vertices assigned to two different threads contribute
+      // to the same aggregate if somethings happened before phase 1?
+      auto aggSizesScatterView = Kokkos::Experimental::create_scatter_view(aggSizesView);
+      Kokkos::parallel_for("Aggregation Phase 1: compute initial aggregates size", numRows,
+                           KOKKOS_LAMBDA (const LO i) {
+                             auto aggSizesScatterViewAccess = aggSizesScatterView.access();
+                             if(vertex2AggIdView(i, 0) >= 0)
+                               aggSizesScatterViewAccess(vertex2AggIdView(i, 0)) += 1;
+                           });
+      Kokkos::Experimental::contribute(aggSizesView, aggSizesScatterView);
     }
 
-    //the local CRS graph to Kokkos device views, then compute graph squared
-    typedef typename Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type graph_t;
-    typedef typename graph_t::device_type device_t;
-    typedef typename device_t::memory_space memory_space;
-    typedef typename device_t::execution_space execution_space;
-    typedef typename graph_t::row_map_type::non_const_type rowptrs_view;
-    typedef Kokkos::View<size_t*, Kokkos::HostSpace> host_rowptrs_view;
-    typedef typename graph_t::entries_type::non_const_type colinds_view;
-    typedef Kokkos::View<LocalOrdinal*, Kokkos::HostSpace> host_colinds_view;
-    //note: just using colinds_view in place of scalar_view_t type (it won't be used at all by symbolic SPGEMM)
-    typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-      typename rowptrs_view::const_value_type, typename colinds_view::const_value_type, typename colinds_view::const_value_type, 
-      execution_space, memory_space, memory_space> KernelHandle;
+    Kokkos::parallel_reduce("Aggregation Phase 1: main parallel_reduce over aggSizes", numRows,
+                            KOKKOS_LAMBDA (const size_t i, LO & lNumNonAggregatedNodes) {
+                              if(colorsDevice(i) != 1
+                                 && (aggStatView(i) == READY || aggStatView(i) == NOTSEL)) {
+                                // Get neighbors of vertex i and look for local, aggregated,
+                                // color 1 neighbor (valid root).
+                                auto neighbors = graph.getNeighborVertices(i);
+                                for(LO j = 0; j < neighbors.length; ++j) {
+                                  auto nei = neighbors.colidx(j);
+                                  if(graph.isLocalNeighborVertex(nei) && colorsDevice(nei) == 1
+                                     && aggStatView(nei) == AGGREGATED) {
 
-    KernelHandle kh;
-    //leave gc algorithm choice as the default
-    kh.create_graph_coloring_handle();
+                                    // This atomic guarentees that any other node trying to
+                                    // join aggregate agg has the correct size.
+                                    LO agg = vertex2AggIdView(nei, 0);
+                                    const LO aggSize = Kokkos::atomic_fetch_add (&aggSizesView(agg),
+                                                                                 1);
+                                    if(aggSize < maxAggSize) {
+                                      //assign vertex i to aggregate with root j
+                                      vertex2AggIdView(i, 0) = agg;
+                                      procWinnerView(i, 0)   = myRank;
+                                      aggStatView(i)         = AGGREGATED;
+                                      break;
+                                    } else {
+                                      // Decrement back the value of aggSizesView(agg)
+                                      Kokkos::atomic_decrement(&aggSizesView(agg));
+                                    }
+                                  }
+                                }
+                              }
+                              if(aggStatView(i) != AGGREGATED) {
+                                lNumNonAggregatedNodes++;
+                                if(aggStatView(i) == NOTSEL) { aggStatView(i) = READY; }
+                              }
+                            }, numNonAggregatedNodes);
 
-    //Create device views for graph rowptrs/colinds
-    rowptrs_view aRowptrs("A device rowptrs", numRows + 1);
-    colinds_view aColinds("A device colinds", colinds.size());
-    // Populate A in temporary host views, then copy to device
-    {
-      host_rowptrs_view aHostRowptrs("A host rowptrs", numRows + 1);
-      for(LO i = 0; i < numRows + 1; i++)
-      {
-        aHostRowptrs(i) = rowptrs[i];
-      }
-      Kokkos::deep_copy(aRowptrs, aHostRowptrs);
-      host_colinds_view aHostColinds("A host colinds", colinds.size());
-      for(size_t i = 0; i < colinds.size(); i++)
-      {
-        aHostColinds(i) = colinds[i];
-      }
-      Kokkos::deep_copy(aColinds, aHostColinds);
-    }
-    //run d2 graph coloring
-    //graph is symmetric so row map/entries and col map/entries are the same
-    KokkosGraph::Experimental::d2_graph_color(&kh, numRows, numRows, aRowptrs, aColinds, aRowptrs, aColinds);
-
-    // extract the colors
-    auto coloringHandle = kh.get_graph_coloring_handle();
-    auto colorsDevice = coloringHandle->get_vertex_colors();
-
-    auto colors = Kokkos::create_mirror_view(colorsDevice);
-    Kokkos::deep_copy(colors, colorsDevice);
-
-    //clean up coloring handle
-    kh.destroy_graph_coloring_handle();
-
-    //have color 1 (first color) be the aggregate roots (add those to mapping first)
-    LocalOrdinal aggCount = 0;
-    for(LocalOrdinal i = 0; i < numRows; i++)
-    {
-      if(colors(i) == 1 && aggStat[i] == READY)
-      {
-        vertex2AggId[i] = aggCount++;
-        aggStat[i] = AGGREGATED;
-        numLocalAggregates++;
-        procWinner[i] = myRank;
-      }
-    }
-    numNonAggregatedNodes = 0;
-    std::vector<LocalOrdinal> aggSizes(numLocalAggregates, 0);
-    for(int i = 0; i < numRows; i++)
-    {
-      if(vertex2AggId[i] >= 0)
-        aggSizes[vertex2AggId[i]]++;
-    }
-    //now assign every READY vertex to a directly connected root
-    for(LocalOrdinal i = 0; i < numRows; i++)
-    {
-      if(colors(i) != 1 && (aggStat[i] == READY || aggStat[i] == NOTSEL))
-      {
-        //get neighbors of vertex i and
-        //look for local, aggregated, color 1 neighbor (valid root)
-        auto neighbors = graph.getNeighborVertices(i);
-        for(LocalOrdinal j = 0; j < neighbors.length; j++)
-        {
-          auto nei = neighbors.colidx(j);
-          LocalOrdinal agg = vertex2AggId[nei];
-          if(graph.isLocalNeighborVertex(nei) && colors(nei) == 1 && aggStat[nei] == AGGREGATED && aggSizes[agg] < maxAggSize)
-          {
-            //assign vertex i to aggregate with root j
-            vertex2AggId[i] = agg;
-            aggSizes[agg]++;
-            aggStat[i] = AGGREGATED;
-            procWinner[i] = myRank;
-            break;
-          }
-        }
-      }
-      if(aggStat[i] != AGGREGATED)
-      {
-        numNonAggregatedNodes++;
-        if(aggStat[i] == NOTSEL)
-          aggStat[i] = READY;
-      }
-    }
     // update aggregate object
     aggregates.SetNumAggregates(numLocalAggregates);
   }

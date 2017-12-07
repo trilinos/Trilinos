@@ -145,7 +145,8 @@ namespace MueLu {
     bDefinitionPhase_ = false;  // definition phase is finished, now all aggregation algorithm information is fixed
 
     if (pL.get<int>("aggregation: max agg size") == -1)
-      pL.set("aggregation: max agg size", INT_MAX);
+      pL.set("aggregation: max agg size", Teuchos::OrdinalTraits<int>::max());
+      // pL.set("aggregation: max agg size",INT_MAX);
 
     // define aggregation algorithms
     RCP<const FactoryBase> graphFact = GetFactory("Graph");
@@ -173,6 +174,15 @@ namespace MueLu {
 
     RCP<const LWGraph_kokkos> graph = Get< RCP<LWGraph_kokkos> >(currentLevel, "Graph");
 
+    typedef typename MueLu::LWGraph_kokkos<LO, GO, Node>::local_graph_type graph_t;
+    typedef typename graph_t::device_type::memory_space memory_space;
+    typedef typename graph_t::device_type::execution_space execution_space;
+    typedef typename graph_t::row_map_type::non_const_type rowptrs_view;
+    typedef Kokkos::View<size_t*, Kokkos::HostSpace> host_rowptrs_view;
+    typedef typename graph_t::entries_type::non_const_type colinds_view;
+    typedef Kokkos::View<LocalOrdinal*, Kokkos::HostSpace> host_colinds_view;
+    typedef Kokkos::View<unsigned*, memory_space> aggstat_view;
+
     // Build
     RCP<Aggregates_kokkos> aggregates = rcp(new Aggregates_kokkos(*graph));
     aggregates->setObjectLabel("UC");
@@ -181,6 +191,9 @@ namespace MueLu {
 
     // construct aggStat information
     std::vector<unsigned> aggStat(numRows, READY);
+    aggstat_view aggStatView("aggStat", numRows);
+    Kokkos::parallel_for("Uncoupled Aggregation: initialize aggStatView", numRows,
+                         KOKKOS_LAMBDA(const LO i) { aggStatView(i) = READY; });
 
     // TODO
     //ArrayRCP<const bool> dirichletBoundaryMap = graph->GetBoundaryNodeMap();
@@ -204,7 +217,6 @@ namespace MueLu {
       }
     }
 
-
     const RCP<const Teuchos::Comm<int> > comm = graph->GetComm();
     GO numGlobalRows = 0;
     if (IsPrint(Statistics1))
@@ -212,12 +224,77 @@ namespace MueLu {
 
     LO numNonAggregatedNodes = numRows;
     GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
+
+    Kokkos::View<LO*, memory_space> colorsDevice("graph colors", numRows);
+    LO numColors = 0;
+
+    if (pL.get<std::string>("aggregation: phase 1 algorithm") == "Distance2") {
+      GetOStream(Runtime1)  << "Computing distance 2 graph coloring" << std::endl;
+
+      // The local CRS graph to Kokkos device views, then compute graph squared
+      // Note: just using colinds_view in place of scalar_view_t type (it won't
+      // be used at all by symbolic SPGEMM)
+      typedef KokkosKernels::Experimental::
+        KokkosKernelsHandle<typename rowptrs_view::const_value_type,
+                            typename colinds_view::const_value_type,
+                            typename colinds_view::const_value_type,
+                            execution_space,
+                            memory_space, memory_space> KernelHandle;
+
+      KernelHandle kh;
+      //leave gc algorithm choice as the default
+      kh.create_graph_coloring_handle();
+
+      //Create device views for graph rowptrs/colinds
+      rowptrs_view aRowptrs("A device rowptrs", numRows + 1);
+      colinds_view aColinds("A device colinds", graph->GetNodeNumEdges());
+      //Get the sparse local graph in CRS
+      {
+        host_rowptrs_view aHostRowptrs("A host rowptrs", numRows + 1);
+        host_colinds_view aHostColinds("A host colinds", graph->GetNodeNumEdges());
+        aHostRowptrs(0) = 0;
+        Kokkos::parallel_scan("Uncoupled Aggregation: Extract rowPtrs from graph", numRows,
+                              KOKKOS_LAMBDA(const LO row, LO& update, const bool final_pass) {
+                                if (final_pass) { aHostRowptrs(row) = update; }
+                                update += graph->getNeighborVertices(row).length;
+                                if (final_pass && row == numRows - 1) {
+                                  aHostRowptrs(row + 1) = update;
+                                }
+                              });
+        // Note LBV 03/20/2018: the loop below could benefit from a Kokkos::TeamPolicy and
+        // a second level of parallelization around the inner loop, much like what happens
+        // in the MatrixMatrix multiplication.
+        Kokkos::parallel_for("Uncoupled Aggregation: extract colInds from graph", numRows,
+                             KOKKOS_LAMBDA(const LO row) {
+                               auto entries = graph->getNeighborVertices(row);
+                               for(LO i = 0; i < entries.length; ++i) {
+                                 aHostColinds(aHostRowptrs(row) + i) = entries.colidx(i);
+                               }
+                             });
+        Kokkos::deep_copy(aRowptrs, aHostRowptrs);
+        Kokkos::deep_copy(aColinds, aHostColinds);
+      }
+      //run d2 graph coloring
+      //graph is symmetric so row map/entries and col map/entries are the same
+      KokkosGraph::Experimental::d2_graph_color(&kh, numRows, numRows,
+                                                aRowptrs, aColinds, aRowptrs, aColinds);
+
+      // extract the colors
+      auto coloringHandle = kh.get_graph_coloring_handle();
+      colorsDevice = coloringHandle->get_vertex_colors();
+      numColors = as<LO>(coloringHandle->get_num_colors());
+
+      //clean up coloring handle
+      kh.destroy_graph_coloring_handle();
+    }
+
     for (size_t a = 0; a < algos_.size(); a++) {
       std::string phase = algos_[a]->description();
       SubFactoryMonitor sfm(*this, "Algo \"" + phase + "\"", currentLevel);
 
       int oldRank = algos_[a]->SetProcRankVerbose(this->GetProcRankVerbose());
-      algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStat, numNonAggregatedNodes);
+      algos_[a]->BuildAggregates(pL, *graph, *aggregates, aggStatView, numNonAggregatedNodes,
+                                 colorsDevice, numColors);
       algos_[a]->SetProcRankVerbose(oldRank);
 
       if (IsPrint(Statistics1)) {
@@ -237,7 +314,7 @@ namespace MueLu {
         GetOStream(Statistics1) << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
                                    << std::setprecision(2) << numGlobalAggregated << "/" << numGlobalRows << " [" << aggPercent << "%] (total)\n"
                                    << "  remaining  : " << numGlobalRows - numGlobalAggregated << "\n"
-                                   << "  aggregates : " << numGlobalAggs-numGlobalAggsPrev << " (phase), " << numGlobalAggs << " (total)" << std::endl;
+                                   << "  aggregates : " << numGlobalAggs - numGlobalAggsPrev << " (phase), " << numGlobalAggs << " (total)" << std::endl;
         numGlobalAggregatedPrev = numGlobalAggregated;
         numGlobalAggsPrev       = numGlobalAggs;
       }

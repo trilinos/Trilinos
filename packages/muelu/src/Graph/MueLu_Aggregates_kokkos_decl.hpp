@@ -258,7 +258,8 @@ namespace MueLu {
     local_graph_type graph_;
 
     //! Get global number of aggregates
-    // This method is private because it is used only for printing and because with the current implementation, communication occurs each time this method is called.
+    // This method is private because it is used only for printing and because with the current
+    // implementation, communication occurs each time this method is called.
     GO GetNumGlobalAggregates() const;
   };
 

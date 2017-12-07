@@ -86,8 +86,13 @@ namespace MueLu {
     //@{
 
     //! BuildAggregates routine.
-    virtual void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph, Aggregates_kokkos& aggregates,
-                                 std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const = 0;
+    virtual void BuildAggregates(const Teuchos::ParameterList& params, const LWGraph_kokkos& graph,
+                                 Aggregates_kokkos& aggregates,Kokkos::View<unsigned*,
+                                 typename MueLu::LWGraph_kokkos<LO,GO,Node>::local_graph_type::
+                                 device_type::memory_space>& aggStatView, LO& numNonAggregatedNodes,
+                                 Kokkos::View<LO*, typename MueLu::LWGraph_kokkos<LO,GO,Node>::
+                                 local_graph_type::device_type::memory_space>& colorsDevice,
+                                 LO& numColors) const = 0;
     //@}
   };
 

@@ -68,44 +68,52 @@ namespace MueLu {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const & params, LWGraph_kokkos const & graph, Aggregates_kokkos & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  void OnePtAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+  BuildAggregates(Teuchos::ParameterList const & params, LWGraph_kokkos const & graph,
+                  Aggregates_kokkos & aggregates, Kokkos::View<unsigned*, typename MueLu::
+                  LWGraph_kokkos<LO,GO,Node>::local_graph_type::device_type::
+                  memory_space>& aggStatView, LO & numNonAggregatedNodes, Kokkos::View<LO*,
+                  typename MueLu::LWGraph_kokkos<LO, GO, Node>::local_graph_type::device_type::
+                  memory_space>& colorsDevice, LO& numColors) const {
     Monitor m(*this, "BuildAggregates");
 
-    const LocalOrdinal nRows = graph.GetNodeNumVertices();
-    const int myRank = graph.GetComm()->getRank();
+    const LO  numRows = graph.GetNodeNumVertices();
+    const int myRank  = graph.GetComm()->getRank();
+
+    typedef typename MueLu::LWGraph_kokkos<LO, GO, Node>::local_graph_type graph_t;
+    typedef typename graph_t::device_type::memory_space memory_space;
 
     // vertex ids for output
-    Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    Teuchos::ArrayRCP<LocalOrdinal> procWinner   = aggregates.GetProcWinner()->getDataNonConst(0);
+    auto vertex2AggIdView = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
+    auto procWinnerView = aggregates.GetProcWinner()    ->template getLocalView<memory_space>();
 
-    // some internal variables
-    LocalOrdinal nLocalAggregates = aggregates.GetNumAggregates();    // number of local aggregates on current proc
-    LocalOrdinal iNode1  = 0;        // current node
+    LO numLocalAggregates = aggregates.GetNumAggregates();
 
-    // main loop over all local rows of graph(A)
-    while (iNode1 < nRows) {
+    // Note LBV 03/20/2018
+    // This does not look very good to me as the level of contention due to the atomic operation
+    // can potentially be high. As long as there are not too many one point aggregates this should
+    // be fine.
+    LO numAggregatedNodes = 0;
+    Kokkos::View<LO, memory_space> countOnePtAggs("countOnePtAggs");
+    Kokkos::parallel_for("Aggregation: perform one point aggregation", numRows,
+                         KOKKOS_LAMBDA(const LO i) {
+                           if(aggStatView(i) == ONEPT) {
+                             // update the count atomically across threads for correctness
+                             const LO idx = Kokkos::atomic_fetch_add (&countOnePtAggs(), 1);
+                             aggStatView(i) = IGNORED;
+                             vertex2AggIdView(i, 0) = idx + numLocalAggregates;
+                             procWinnerView(i, 0)   = myRank;
+                             // aggregates.SetIsRoot(i);
+                           }
+                         });
 
-      if (aggStat[iNode1] == ONEPT) {
-
-        aggregates.SetIsRoot(iNode1);    // mark iNode1 as root node for new aggregate 'ag'
-        std::vector<int> aggList;
-        aggList.push_back(iNode1);
-        int aggIndex = nLocalAggregates++;
-
-        // finalize aggregate
-        for (size_t k = 0; k < aggList.size(); k++) {
-          aggStat[aggList[k]] = IGNORED;
-          vertex2AggId[aggList[k]] = aggIndex;
-          procWinner[aggList[k]] = myRank;
-        }
-        numNonAggregatedNodes -= aggList.size();
-      }
-
-      iNode1++;
-    } // end while
+    // Extract the number of aggregated nodes, which is also the number of new aggregates.
+    Kokkos::deep_copy(numAggregatedNodes, countOnePtAggs);
+    numLocalAggregates += numAggregatedNodes;
+    numNonAggregatedNodes -= numAggregatedNodes;
 
     // update aggregate object
-    aggregates.SetNumAggregates(nLocalAggregates);
+    aggregates.SetNumAggregates(numLocalAggregates);
   }
 
 } // end namespace

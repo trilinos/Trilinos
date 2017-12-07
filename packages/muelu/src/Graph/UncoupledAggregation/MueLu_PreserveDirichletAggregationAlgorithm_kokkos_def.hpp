@@ -63,7 +63,13 @@
 namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void PreserveDirichletAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Teuchos::ParameterList const & params, LWGraph_kokkos const & graph, Aggregates_kokkos & aggregates, std::vector<unsigned>& aggStat, LO& numNonAggregatedNodes) const {
+  void PreserveDirichletAggregationAlgorithm_kokkos<LocalOrdinal, GlobalOrdinal, Node>::
+  BuildAggregates(Teuchos::ParameterList const & params, LWGraph_kokkos const & graph,
+                  Aggregates_kokkos & aggregates, Kokkos::View<unsigned*, typename MueLu::
+                  LWGraph_kokkos<LO,GO,Node>::local_graph_type::device_type::
+                  memory_space>& aggStatView, LO& numNonAggregatedNodes, Kokkos::View<LO*,
+                  typename MueLu::LWGraph_kokkos<LO, GO, Node>::local_graph_type::device_type::
+                  memory_space>& colorsDevice, LO& numColors) const {
     Monitor m(*this, "BuildAggregates");
 
     bool preserve = params.get<bool>("aggregation: preserve Dirichlet points");
@@ -71,23 +77,50 @@ namespace MueLu {
     const LO  numRows = graph.GetNodeNumVertices();
     const int myRank  = graph.GetComm()->getRank();
 
-    ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
-    ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+    typedef typename MueLu::LWGraph_kokkos<LO, GO, Node>::local_graph_type graph_t;
+    typedef typename graph_t::device_type::memory_space memory_space;
 
     LO numLocalAggregates = aggregates.GetNumAggregates();
 
-    for (LO i = 0; i < numRows; i++)
-      if (aggStat[i] == BOUNDARY) {
-        aggStat[i] = IGNORED;
-        numNonAggregatedNodes--;
+    auto vertex2AggIdView = aggregates.GetVertex2AggId()->template getLocalView<memory_space>();
+    auto procWinnerView = aggregates.GetProcWinner()    ->template getLocalView<memory_space>();
 
-        if (preserve) {
-          aggregates.SetIsRoot(i);
+    LO numAggregatedNodes = 0;
+    if(preserve) {
+      // Note LBV 03/20/2018
+      // This does not look very good to me as the level of contention due to the atomic operation
+      // can potentially be high. It should not be to bad as long as the ratio
+      // (BC nodes)/(total nodes) is not too large...
+      Kokkos::View<LO, memory_space> countBC("countBC");
+      Kokkos::parallel_for("Aggregation preserve boundary nodes (preserve)", numRows,
+                           KOKKOS_LAMBDA(const LO i) {
+                             if(aggStatView(i) == BOUNDARY) {
+                               // update the count atomically across threads for correctness
+                               const LO idx = Kokkos::atomic_fetch_add (&countBC(), 1);
+                               aggStatView(i) = IGNORED;
+                               vertex2AggIdView(i, 0) = idx + numLocalAggregates;
+                               procWinnerView(i, 0)   = myRank;
+                             // aggregates.SetIsRoot(i);
+                             }
+                           });
 
-          vertex2AggId[i] = numLocalAggregates++;
-          procWinner  [i] = myRank;
-        }
-      }
+      // Extract the number of aggregated nodes, which is also the number of new aggregates.
+      Kokkos::deep_copy(numAggregatedNodes, countBC);
+      numLocalAggregates += numAggregatedNodes;
+    } else {
+      // This could be handled in a single loop as it is done in serial but I like the idea
+      // of removing the if statement from GPU kernels and the reduction below could be running
+      // faster than the above code that includes atomics...
+      Kokkos::parallel_reduce("Aggregation preserve boundary nodes (no-preserve)", numRows,
+                              KOKKOS_LAMBDA(const LO i, LO & aggregatedNodesAccumulator) {
+                                if(aggStatView(i) == BOUNDARY) {
+                                  aggStatView(i) = IGNORED;
+                                  aggregatedNodesAccumulator++;
+                                }
+                              }, numAggregatedNodes);
+    }
+    // update the number of non aggregated nodes.
+    numNonAggregatedNodes -= numAggregatedNodes;
 
     // update aggregate object
     aggregates.SetNumAggregates(numLocalAggregates);
