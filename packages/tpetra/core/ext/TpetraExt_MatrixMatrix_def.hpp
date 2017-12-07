@@ -2561,9 +2561,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     Teuchos::RCP<TimeMonitor> MM;
 #endif
     
-  //  printf("[%d] OpenMP kernel called\n",Aview.origMatrix->getRowMap()->getComm()->getRank());
-
-  // Node-specific code<
+  // Node-specific code
   typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
   std::string nodename("OpenMP");
 
@@ -2580,7 +2578,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
   std::string myalg("SPGEMM_KK_MEMORY");
-  //std::string myalg("LTG");
   if(!params.is_null()) {
     if(params->isParameter("openmp: algorithm"))
       myalg = params->get("openmp: algorithm",myalg);
