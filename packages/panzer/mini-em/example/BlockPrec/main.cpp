@@ -43,7 +43,7 @@
 #include "MiniEM_AddFieldsToMesh.hpp"
 #include "MiniEM_OperatorRequestCallback.hpp"
 #include "MiniEM_FullMaxwellPreconditionerFactory.hpp"
-#include "MiniEM_RefMaxwellPreconditionerFactory.hpp"
+//#include "MiniEM_RefMaxwellPreconditionerFactory.hpp"
 #include "MiniEM_DiscreteGradient.hpp"
 
 #include <string>
@@ -302,8 +302,8 @@ int main(int argc,char * argv[])
       RCP<Teko::Cloneable> clone = rcp(new Teko::AutoClone<mini_em::FullMaxwellPreconditionerFactory>());
       Teko::PreconditionerFactory::addPreconditionerFactory("Full Maxwell Preconditioner",clone);
       // add refMaxwell solver to teko
-      clone = rcp(new Teko::AutoClone<mini_em::RefMaxwellPreconditionerFactory>());
-      Teko::PreconditionerFactory::addPreconditionerFactory("RefMaxwell Preconditioner",clone);
+      //clone = rcp(new Teko::AutoClone<mini_em::RefMaxwellPreconditionerFactory>());
+      //Teko::PreconditionerFactory::addPreconditionerFactory("RefMaxwell Preconditioner",clone);
   
       // add callbacks to request handler. these are for requesting auxiliary operators and for providing
       // coordinate information to MueLu
