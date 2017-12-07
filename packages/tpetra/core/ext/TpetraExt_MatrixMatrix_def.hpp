@@ -64,6 +64,7 @@
 
 #ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
 #include "KokkosSparse_spgemm.hpp"
+#include "KokkosSparse_spadd.hpp"
 #endif
 
 
@@ -511,6 +512,7 @@ namespace ColMapFunctors
   };
 }
 
+#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
 //Build the minimal (sorted) column map for the given set of global columns
 //Then convert gids and store them in lids (gids is not modified)
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -554,6 +556,7 @@ makeColMapAndConvertGids(GlobalOrdinal ncols,
   //finally, construct Tpetra map
   return rcp(new map_type(Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), colmap, 0, comm));
 }
+#endif
 
 template <class Scalar,
           class LocalOrdinal,
@@ -585,7 +588,13 @@ add (const Scalar& alpha,
   typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
   typedef Import<LO,GO,NO>                  import_type;
   typedef Export<LO,GO,NO>                  export_type;
+#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
   typedef Details::AddKernels<SC,LO,GO,NO>           AddKern;
+  typedef typename AddKern::values_array values_array;
+  typedef typename AddKern::row_ptrs_array row_ptrs_array;
+  typedef typename AddKern::col_inds_array col_inds_array;
+  typedef typename crs_matrix_type::impl_scalar_type ISC;
+#endif
   const char* prefix_mmm = "TpetraExt::MatrixMatrix::add: ";
   constexpr bool debug = false;
 
@@ -663,16 +672,6 @@ add (const Scalar& alpha,
   }
   assert(!(CDomainMap.is_null()));
   assert(!(CRangeMap.is_null()));
-  typedef typename AddKern::values_array values_array;
-  typedef typename AddKern::row_ptrs_array row_ptrs_array;
-  typedef typename AddKern::col_inds_array col_inds_array;
-  bool AGraphSorted = Aprime->getCrsGraph()->isSorted();
-  bool BGraphSorted = Bprime->getCrsGraph()->isSorted();
-  values_array vals;
-  row_ptrs_array rowptrs;
-  col_inds_array colinds;
-  auto acolmap = Aprime->getColMap()->getMyGlobalIndices();
-  auto bcolmap = Bprime->getColMap()->getMyGlobalIndices();
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("rowmap check/import"))));
 #endif
@@ -682,17 +681,17 @@ add (const Scalar& alpha,
     auto import = rcp(new import_type(Aprime->getRowMap(), Bprime->getRowMap()));
     Aprime = importAndFillCompleteCrsMatrix<crs_matrix_type>(Aprime, *import, Bprime->getDomainMap(), Bprime->getRangeMap());
   }
-  bool matchingColMaps = Aprime->getColMap()->isSameAs(*(Bprime->getColMap()));
-  bool sorted = AGraphSorted && BGraphSorted;
   RCP<crs_matrix_type> C;
   RCP<const map_type> CrowMap;
   RCP<const map_type> CcolMap;
   RCP<const import_type> Cimport = Teuchos::null;
   RCP<export_type> Cexport = Teuchos::null;
-  //The unsorted KCRS addition kernel uses std::sort(), which can't run on CUDA
+#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
+  bool matchingColMaps = Aprime->getColMap()->isSameAs(*(Bprime->getColMap()));
   if(!matchingColMaps && !(CDomainMap->isContiguous()))
   {
-    //can't do with current set of kernels, so fall back to original (slow) version
+#endif
+    //can't do with current set of kernels, so fall back to original slow (serial, host-only) version
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("fallback to CrsMatrix::add"))));
 #endif
@@ -703,8 +702,27 @@ add (const Scalar& alpha,
       std::cerr << os.str ();
     }
     return Teuchos::rcp_static_cast<crs_matrix_type>(Bprime->add(alpha, *Aprime, beta, CDomainMap, CRangeMap, params));
+#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
   }
-  else if(!matchingColMaps)
+  //get the individual CRS arrays for A and B
+  auto Alocal = Aprime->getLocalMatrix();
+  auto Arowptrs = Alocal.graph.row_map;
+  auto Acolinds = Alocal.graph.entries;
+  auto Avals = Alocal.values;
+  auto Blocal = Bprime->getLocalMatrix();
+  auto Browptrs = Blocal.graph.row_map;
+  auto Bcolinds = Blocal.graph.entries;
+  auto Bvals = Blocal.values;
+  auto acolmap = Aprime->getColMap()->getMyGlobalIndices();
+  auto bcolmap = Bprime->getColMap()->getMyGlobalIndices();
+  auto numRows = Arowptrs.dimension_0() - 1;
+  row_ptrs_array Crowptrs("C rowptrs", numRows + 1);
+  //Cvals and Ccolinds can't be allocated until after symbolic add
+  values_array Cvals;
+  col_inds_array Ccolinds;
+  bool AGraphSorted = Aprime->getCrsGraph()->isSorted();
+  bool BGraphSorted = Bprime->getCrsGraph()->isSorted();
+  if(!matchingColMaps)
   {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mismatched col map full kernel"))));
@@ -712,70 +730,141 @@ add (const Scalar& alpha,
     //use kernel that converts col indices in both A and B to common domain map before adding
     auto Acolmap = Aprime->getColMap()->getMyGlobalIndices();
     auto Bcolmap = Bprime->getColMap()->getMyGlobalIndices();
-    typename AddKern::global_col_inds_array globalColinds("", 0);
     if (debug) {
       std::ostringstream os;
       os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-         << "Call AddKern::convertToGlobalAndAdd(...)" << std::endl;
+         << "Call AddKern::convertToGlobal(...)" << std::endl;
       std::cerr << os.str ();
     }
-    AddKern::convertToGlobalAndAdd(
-      Aprime->getLocalMatrix(), alpha, Bprime->getLocalMatrix(), beta, Acolmap, Bcolmap,
-      CRangeMap->getMinGlobalIndex(), Aprime->getGlobalNumCols(), vals, rowptrs, globalColinds);
-    colinds = col_inds_array("C colinds", globalColinds.dimension_0());
+
+    typename AddKern::global_col_inds_array AcolindsConverted("A colinds (converted)", Acolinds.dimension_0());
+    typename AddKern::global_col_inds_array BcolindsConverted("B colinds (converted)", Bcolinds.dimension_0());
+
+    AddKern::convertToGlobal(Acolinds, Bcolinds, Acolmap, Bcolmap, AcolindsConverted, BcolindsConverted);
+
     if (debug) {
       std::ostringstream os;
       os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-         << "Finished AddKern::convertToGlobalAndAdd(...)" << std::endl;
+         << "Finished AddKern::convertToGlobal(...)" << std::endl;
       std::cerr << os.str ();
     }
+
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () <<
+        ": Call KokkosSparse::Experimental::matrixmatrix_add_symbolic(...)" << std::endl;
+      std::cerr << os.str ();
+    }
+
+    typename AddKern::kernel_handle_global handle;
+    //prep handle for SPADD with unsorted input
+    handle.create_spadd_handle(false);
+    auto addHandle = handle.get_spadd_handle();
+    KokkosSparse::Experimental::matrixmatrix_add_symbolic<
+      typename AddKern::kernel_handle_global,
+      typename row_ptrs_array::const_type,
+      typename AddKern::global_col_inds_array::const_type,
+      typename row_ptrs_array::const_type,
+      typename AddKern::global_col_inds_array::const_type,
+      row_ptrs_array,
+      typename AddKern::global_col_inds_array>
+    (&handle, Arowptrs, AcolindsConverted, Browptrs, BcolindsConverted, Crowptrs);
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () <<
+        ": Finish KokkosSparse::Experimental::matrixmatrix_add_symbolic(...)" << std::endl;
+      std::cerr << os.str ();
+    }
+    //fence is for CUDA UVM (about to access a single entry of device view Crowptrs)
+    Cvals = values_array("C values", addHandle->get_max_result_nnz());
+    typename AddKern::global_col_inds_array CglobalColinds("C colinds (GIDs)", addHandle->get_max_result_nnz());
+
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () <<
+        ": Call KokkosSparse::Experimental::matrixmatrix_add_numeric(...)" << std::endl;
+      std::cerr << os.str ();
+    }
+
+    KokkosSparse::Experimental::matrixmatrix_add_numeric<
+      typename AddKern::kernel_handle_global,
+      typename row_ptrs_array::const_type,
+      typename AddKern::global_col_inds_array::const_type,
+      ISC, typename values_array::const_type,
+      typename row_ptrs_array::const_type,
+      typename AddKern::global_col_inds_array::const_type,
+      ISC, typename values_array::const_type,
+      row_ptrs_array, typename AddKern::global_col_inds_array, values_array>
+      (&handle, Arowptrs, AcolindsConverted, Avals, alpha,
+       Browptrs, BcolindsConverted, Bvals, beta,
+       Crowptrs, CglobalColinds, Cvals);
+    handle.destroy_spadd_handle();
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () <<
+        ": Finish KokkosSparse::Experimental::matrixmatrix_add_numeric(...)" << std::endl;
+      std::cerr << os.str ();
+    }
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("building optimized column map"))));
 #endif
     CrowMap = Bprime->getRowMap();
-    //OLD: CcolMap = AddKern::makeColMapAndConvertGids(Aprime->getGlobalNumCols(), globalColinds, colinds, comm);
+    //allocate Ccolinds to same length as CglobalColinds
+    Ccolinds = col_inds_array("C colinds", CglobalColinds.dimension_0());
     //Get C's column map as the union of Aprime and Bprime col maps
-    CcolMap = AddKern::makeColMapAndConvertGids(Aprime->getGlobalNumCols(), globalColinds, colinds, comm);
+    CcolMap = AddKern::makeColMapAndConvertGids(Aprime->getGlobalNumCols(), CglobalColinds, Ccolinds, comm);
   }
   else
   {
-    //Aprime, Bprime and C all have the same column maps
-    auto localA = Aprime->getLocalMatrix();
-    auto localB = Bprime->getLocalMatrix();
-    auto Avals = localA.values;
-    auto Bvals = localB.values;
-    auto Arowptrs = localA.graph.row_map;
-    auto Browptrs = localB.graph.row_map;
-    auto Acolinds = localA.graph.entries;
-    auto Bcolinds = localB.graph.entries;
-    if(sorted)
-    {
-      //use sorted kernel
+    //Aprime, Bprime and C all have the same column maps, so no colind conversion needed
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("sorted entries full kernel"))));
+    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mm add unsorted entries full kernel"))));
 #endif
-      if (debug) {
-        std::ostringstream os;
-        os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-           << "Call AddKern::addSorted(...)" << std::endl;
-        std::cerr << os.str ();
-      }
-      AddKern::addSorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, vals, rowptrs, colinds);
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () <<
+        ": Call KokkosSparse::Experimental::matrixmatrix_add_symbolic(...)" << std::endl;
+      std::cerr << os.str ();
     }
-    else
-    {
-      //use unsorted kernel
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-      MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("mm add unsorted entries full kernel"))));
-#endif
-      if (debug) {
-        std::ostringstream os;
-        os << "Proc " << A.getMap ()->getComm ()->getRank () << ": "
-           << "Call AddKern::addUnsorted(...)" << std::endl;
-        std::cerr << os.str ();
-      }
-      AddKern::addUnsorted(Avals, Arowptrs, Acolinds, alpha, Bvals, Browptrs, Bcolinds, beta, Aprime->getGlobalNumCols(), vals, rowptrs, colinds);
+    typename AddKern::kernel_handle_local handle;
+    handle.create_spadd_handle(AGraphSorted && BGraphSorted);
+    auto addHandle = handle.get_spadd_handle();
+    KokkosSparse::Experimental::matrixmatrix_add_symbolic<
+      typename AddKern::kernel_handle_local,
+      typename row_ptrs_array::const_type,
+      typename col_inds_array::const_type,
+      typename row_ptrs_array::const_type,
+      typename col_inds_array::const_type,
+      row_ptrs_array, col_inds_array>
+      (&handle, Arowptrs, Acolinds, Browptrs, Bcolinds, Crowptrs);
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () <<
+        ": Finish KokkosSparse::Experimental::matrixmatrix_add_symbolic(...)" << std::endl;
+      std::cerr << os.str ();
     }
+    Cvals = values_array("C values", addHandle->get_max_result_nnz());
+    Ccolinds = col_inds_array("C colinds", addHandle->get_max_result_nnz());
+    if (debug) {
+      std::ostringstream os;
+      os << "Proc " << A.getMap ()->getComm ()->getRank () <<
+        ": Call KokkosSparse::Experimental::matrixmatrix_add_numeric(...)" << std::endl;
+      std::cerr << os.str ();
+    }
+    KokkosSparse::Experimental::matrixmatrix_add_numeric<
+      typename AddKern::kernel_handle_local,
+      typename row_ptrs_array::const_type,
+      typename col_inds_array::const_type,
+      ISC, typename values_array::const_type,
+      typename row_ptrs_array::const_type,
+      typename col_inds_array::const_type,
+      ISC, typename values_array::const_type,
+      row_ptrs_array, col_inds_array, values_array>
+      (&handle, Arowptrs, Acolinds, Avals, alpha,
+       Browptrs, Bcolinds, Bvals, beta,
+       Crowptrs, Ccolinds, Cvals);
+    handle.destroy_spadd_handle();
     CrowMap = Bprime->getRowMap();
     CcolMap = Bprime->getColMap();
     //note: Cexport created below (if it's needed)
@@ -783,7 +872,7 @@ add (const Scalar& alpha,
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Tpetra::Crs constructor"))));
 #endif
-      C = rcp(new crs_matrix_type(CrowMap, CcolMap, rowptrs, colinds, vals, params));
+      C = rcp(new crs_matrix_type(CrowMap, CcolMap, Crowptrs, Ccolinds, Cvals, params));
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Tpetra::Crs expertStaticFillComplete"))));
 #endif
@@ -816,6 +905,7 @@ add (const Scalar& alpha,
   }
   C->expertStaticFillComplete(CDomainMap, CRangeMap, Cimport, Cexport, params);
   return C;
+#endif  //HAVE_KOKKOSKERNELS_EXPERIMENTAL
 }
 
 template <class Scalar,
@@ -1138,187 +1228,15 @@ void Add(
   }
 }
 
-namespace AddSortedFunctors
-{
-
-template<typename Ordinal, typename RowPtrs, typename ColInds>
-struct EntryCountingFunctor
-{
-  EntryCountingFunctor(const typename RowPtrs::const_type Arowptrs_, const ColInds Acolinds_, const typename RowPtrs::const_type Browptrs_, const ColInds Bcolinds_, RowPtrs Crowcounts_) :
-    Arowptrs(Arowptrs_), Acolinds(Acolinds_),
-    Browptrs(Browptrs_), Bcolinds(Bcolinds_),
-    Crowcounts(Crowcounts_) {}
-  KOKKOS_INLINE_FUNCTION void operator()(const size_t i) const
-  {
-    //count the union of nonzeros in Arow and Brow
-    Ordinal numEntries = 0;
-    Ordinal ai = 0;
-    Ordinal bi = 0;
-    auto Arowstart = Arowptrs(i);
-    auto Arowlen = Arowptrs(i + 1) - Arowstart;
-    auto Browstart = Browptrs(i);
-    auto Browlen = Browptrs(i + 1) - Browstart;
-
-    // Ordinal and the type of Arowlen (and Browlen) might not have
-    // the same sign.  In order to avoid build warnings about signed /
-    // unsigned comparisons at the while loop below, we cast to the
-    // "common type" of the two values before comparing them.
-    typedef typename std::common_type<decltype (Arowlen), Ordinal>::type
-      common_type;
-    while (static_cast<common_type> (ai) < static_cast<common_type> (Arowlen) &&
-           static_cast<common_type> (bi) < static_cast<common_type> (Browlen))
-    {
-      //have an entry in C's row
-      numEntries++;
-      auto Acol = Acolinds(Arowstart + ai);
-      auto Bcol = Bcolinds(Browstart + bi);
-      if(Acol <= Bcol)
-        ai++;
-      if(Acol >= Bcol)
-        bi++;
-    }
-    numEntries += Arowlen - ai;
-    numEntries += Browlen - bi;
-    Crowcounts(i) = numEntries;
-  }
-  const typename RowPtrs::const_type Arowptrs;
-  const ColInds Acolinds;
-  const typename RowPtrs::const_type Browptrs;
-  const ColInds Bcolinds;
-  RowPtrs Crowcounts;
-};
-
-template<typename Scalar, typename Ordinal, typename Values, typename RowPtrs, typename ColInds>
-struct SumFunctor
-{
-  SumFunctor(const Values Avals_, const typename RowPtrs::const_type Arowptrs_, const ColInds Acolinds_, const Scalar scalarA_,
-           const Values Bvals_, const typename RowPtrs::const_type Browptrs_, const ColInds Bcolinds_, const Scalar scalarB_,
-           Values Cvals_, const RowPtrs Crowptrs_, ColInds Ccolinds_) :
-    Avals(Avals_), Arowptrs(Arowptrs_), Acolinds(Acolinds_), scalarA(scalarA_),
-    Bvals(Bvals_), Browptrs(Browptrs_), Bcolinds(Bcolinds_), scalarB(scalarB_),
-    Cvals(Cvals_), Crowptrs(Crowptrs_), Ccolinds(Ccolinds_) {}
-  KOKKOS_INLINE_FUNCTION void operator()(const size_t i) const
-  {
-    //get views of row i in A and B
-    auto Arowstart = Arowptrs(i);
-    auto Arowlen = Arowptrs(i + 1) - Arowstart;
-    auto Browstart = Browptrs(i);
-    auto Browlen = Browptrs(i + 1) - Browstart;
-    Ordinal CrowStart = Crowptrs(i);
-    Ordinal ai = 0;
-    Ordinal bi = 0;
-    Ordinal numInserted = 0;
-
-    // Ordinal and the type of Arowlen (and Browlen) might not have
-    // the same sign.  In order to avoid build warnings about signed /
-    // unsigned comparisons at the while loop below, we cast to the
-    // "common type" of the two values before comparing them.
-    typedef typename std::common_type<decltype (Arowlen), Ordinal>::type
-      common_type;
-    while (static_cast<common_type> (ai) < static_cast<common_type> (Arowlen) &&
-           static_cast<common_type> (bi) < static_cast<common_type> (Browlen))
-    {
-      Ordinal Acol = Acolinds(Arowstart + ai);
-      Ordinal Bcol = Bcolinds(Browstart + bi);
-      //next col in C is minimum of two next cols in A and B
-      Ordinal Ccol = Acol < Bcol ? Acol : Bcol;
-      Scalar val = 0;
-      if(Acol == Ccol)
-      {
-        val += scalarA * Avals(Arowstart + ai);
-        ai++;
-      }
-      if(Bcol == Ccol)
-      {
-        val += scalarB * Bvals(Browstart + bi);
-        bi++;
-      }
-      Cvals(CrowStart + numInserted) = val;
-      Ccolinds(CrowStart + numInserted) = Ccol;
-      numInserted++;
-    }
-    for(; static_cast<common_type> (ai) < static_cast<common_type> (Arowlen); ai++)
-    {
-      Cvals(CrowStart + numInserted) = scalarA * Avals(Arowstart + ai);
-      Ccolinds(CrowStart + numInserted) = Acolinds(Arowstart + ai);
-      numInserted++;
-    }
-    for(; static_cast<common_type> (bi) < static_cast<common_type> (Browlen); bi++)
-    {
-      Cvals(CrowStart + numInserted) = scalarB * Bvals(Browstart + bi);
-      Ccolinds(CrowStart + numInserted) = Bcolinds(Browstart + bi);
-      numInserted++;
-    }
-  }
-  const Values Avals;
-  const typename RowPtrs::const_type Arowptrs;
-  const ColInds Acolinds;
-  const Scalar scalarA;
-  const Values Bvals;
-  const typename RowPtrs::const_type Browptrs;
-  const ColInds Bcolinds;
-  const Scalar scalarB;
-  Values Cvals;
-  const RowPtrs Crowptrs;
-  ColInds Ccolinds;
-};
-}
-
-template<typename SC, typename LO, typename GO, typename NO>
-void Details::AddKernels<SC, LO, GO, NO>::
-addSorted(
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Avals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Acolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
-  typename Details::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
-  typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
-  typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
-{
-  using namespace AddSortedFunctors;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::TimeMonitor;
-  TEUCHOS_TEST_FOR_EXCEPTION(Arowptrs.dimension_0() != Browptrs.dimension_0(), std::runtime_error, "Can't add matrices with different numbers of rows.");
-  auto nrows = Arowptrs.dimension_0() - 1;
-  Crowptrs = row_ptrs_array("C row ptrs", nrows + 1);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted kernel: " + std::string("entry counting and rowptr prefix sum"))));
-#endif
-  {
-    row_ptrs_array Crowcounts("C row counts", nrows);
-    EntryCountingFunctor<LO, row_ptrs_array, col_inds_array> entCount(Arowptrs, Acolinds, Browptrs, Bcolinds, Crowcounts);
-    Kokkos::parallel_for(range_type(0, nrows), entCount);
-    //Count C nonzeros in each row in parallel
-    Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(Crowptrs, Crowcounts);
-  }
-  execution_space::fence();
-  auto nnz = Crowptrs(nrows);
-  Cvals = values_array("C values", nnz);
-  Ccolinds = col_inds_array("C colinds", nnz);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() sorted kernel: " + std::string("get sum values/indices"))));
-#endif
-  SumFunctor<impl_scalar_type, LO, values_array, row_ptrs_array, col_inds_array>
-    sumFunct(Avals, Arowptrs, Acolinds, scalarA, Bvals, Browptrs, Bcolinds, scalarB, Cvals, Crowptrs, Ccolinds);
-  Kokkos::parallel_for(range_type(0, nrows), sumFunct);
-}
-
-template<typename GO,
-         typename LocalIndicesType,
+#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
+template<typename LocalIndicesType,
          typename GlobalIndicesType,
          typename ColMapType>
 struct ConvertColIndsFunctor
 {
-  ConvertColIndsFunctor (const GO minGlobal_,
-                         const LocalIndicesType& colindsOrig_,
+  ConvertColIndsFunctor (const LocalIndicesType& colindsOrig_,
                          const GlobalIndicesType& colindsConverted_,
                          const ColMapType& colmap_) :
-    minGlobal (minGlobal_),
     colindsOrig (colindsOrig_),
     colindsConverted (colindsConverted_),
     colmap (colmap_)
@@ -1328,7 +1246,6 @@ struct ConvertColIndsFunctor
   {
     colindsConverted[i] = colmap[colindsOrig[i]];
   }
-  GO minGlobal;
   LocalIndicesType colindsOrig;
   GlobalIndicesType colindsConverted;
   ColMapType colmap;
@@ -1336,424 +1253,43 @@ struct ConvertColIndsFunctor
 
 template<typename SC, typename LO, typename GO, typename NO>
 void Details::AddKernels<SC, LO, GO, NO>::
-convertToGlobalAndAdd(
-  const typename Details::AddKernels<SC, LO, GO, NO>::KCRS& A,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
-  const typename Details::AddKernels<SC, LO, GO, NO>::KCRS& B,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
-  const typename Details::AddKernels<SC, LO, GO, NO>::local_map_type& AcolMap,
-  const typename Details::AddKernels<SC, LO, GO, NO>::local_map_type& BcolMap,
-  GO minGlobalCol,
-  GO numGlobalCols,
-  typename Details::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
-  typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
-  typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
+convertToGlobal(
+  const Details::AddKernels<SC, LO, GO, NO>::col_inds_array Acolinds,
+  const Details::AddKernels<SC, LO, GO, NO>::col_inds_array Bcolinds,
+  const Details::AddKernels<SC, LO, GO, NO>::local_map_type AcolMap,
+  const Details::AddKernels<SC, LO, GO, NO>::local_map_type BcolMap,
+  Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array AcolindsConverted,
+  Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array BcolindsConverted)
 {
-  using namespace AddSortedFunctors;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
   using Teuchos::TimeMonitor;
   constexpr bool debug = false;
-
-  const values_array& Avals = A.values;
-  const values_array& Bvals = B.values;
-  const col_inds_array& Ainds = A.graph.entries;
-  const col_inds_array& Binds = B.graph.entries;
-  auto Arowptrs = A.graph.row_map;
-  auto Browptrs = B.graph.row_map;
-  global_col_inds_array AindsConverted("A colinds (converted)", Ainds.dimension_0());
-  global_col_inds_array BindsConverted("B colinds (converted)", Binds.dimension_0());
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: " + std::string("column map conversion"))));
 #endif
-  ConvertColIndsFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertA(minGlobalCol, Ainds, AindsConverted, AcolMap);
+  ConvertColIndsFunctor<col_inds_array, global_col_inds_array, local_map_type> convertA(Acolinds, AcolindsConverted, AcolMap);
   if (debug) {
     std::ostringstream os;
-    os << "convertToGlobalAndAdd: parallel_for 1" << std::endl;
+    os << "convertToGlobalAndAdd: converting A entries" << std::endl;
     std::cerr << os.str ();
   }
-  Kokkos::parallel_for(range_type(0, Ainds.dimension_0()), convertA);
-  ConvertColIndsFunctor<GO, col_inds_array, global_col_inds_array, local_map_type> convertB(minGlobalCol, Binds, BindsConverted, BcolMap);
+  Kokkos::parallel_for(range_type(0, Acolinds.dimension_0()), convertA);
+  ConvertColIndsFunctor<col_inds_array, global_col_inds_array, local_map_type> convertB(Bcolinds, BcolindsConverted, BcolMap);
   if (debug) {
     std::ostringstream os;
-    os << "convertToGlobalAndAdd: parallel_for 2" << std::endl;
+    os << "convertToGlobalAndAdd: converting B entries" << std::endl;
     std::cerr << os.str ();
   }
-  Kokkos::parallel_for(range_type(0, Binds.dimension_0()), convertB);
+  Kokkos::parallel_for(range_type(0, Bcolinds.dimension_0()), convertB);
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() diff col map kernel: " + std::string("unsorted addition"))));
 #endif
-  if (debug) {
-    std::ostringstream os;
-    os << "convertToGlobalAndAdd: Call addUnsortedGlobalCols" << std::endl;
-    std::cerr << os.str ();
-  }
-  addUnsortedGlobalCols(
-     Avals, Arowptrs, AindsConverted, scalarA,
-     Bvals, Browptrs, BindsConverted, scalarB,
-     numGlobalCols, Cvals, Crowptrs, Ccolinds);
   if (debug) {
     std::ostringstream os;
     os << "convertToGlobalAndAdd: Done" << std::endl;
     std::cerr << os.str ();
   }
 }
-
-namespace AddUnsortedFunctors
-{
-//Non-ideal for peak memory usage but works and is completely parallel over rows (except for allocations and a few minor intermediate steps)
-//4 Functors:
-//  <Allocate CrowptrTemp>
-//1: compute C entries per row upper bound (A entries + B entries)
-//  <Make CrowptrTemp into prefix sum array>
-//  <Allocate oversized Cvals and Ccolind>
-//2: just copy scaled a,b values into oversized C values/colind (filling it completely)
-//  Note: these values aren't condensed or sorted yet (so, may be duplicate colinds, but that's expected)
-//  <Allocate Crowptr>
-//3: Sort each row's colinds (permuting values at same time), then count unique colinds (write that to Crowptr(i))
-//  <Make Crowptr into prefix sum array>
-//  <Allocate correctly sized Cvals and Ccolind>
-//4: Condense values from oversized Cvals/Ccolind to correctly sized
-//  <done: have everything needed to build final C>
-
-template<typename Ordinal, typename Values, typename RowPtrs, typename ColInds>
-struct EntryUpperBoundFunctor
-{
-  EntryUpperBoundFunctor(const Values Avals_, const typename RowPtrs::const_type Arowptrs_, const ColInds Acolinds_, const Values Bvals_, const typename RowPtrs::const_type Browptrs_, const ColInds Bcolinds_, RowPtrs CrowcountsTemp_) :
-  Avals(Avals_), Arowptrs(Arowptrs_), Acolinds(Acolinds_),
-  Bvals(Bvals_), Browptrs(Browptrs_), Bcolinds(Bcolinds_),
-  CrowcountsTemp(CrowcountsTemp_) {}
-  KOKKOS_INLINE_FUNCTION void operator()(const size_t i) const
-  {
-    CrowcountsTemp(i) = (Arowptrs(i + 1) - Arowptrs(i)) + (Browptrs(i + 1) - Browptrs(i));
-  }
-  const Values Avals;
-  const typename RowPtrs::const_type Arowptrs;
-  const ColInds Acolinds;
-  const Values Bvals;
-  const typename RowPtrs::const_type Browptrs;
-  const ColInds Bcolinds;
-  RowPtrs CrowcountsTemp;
-};
-
-template<typename Scalar, typename Ordinal, typename Values, typename RowPtrs, typename ColInds>
-struct UnmergedSumFunctor
-{
-  UnmergedSumFunctor(const Values Avals_, const typename RowPtrs::const_type Arowptrs_, const ColInds Acolinds_, const Scalar scalarA_,
-           const Values Bvals_, const typename RowPtrs::const_type Browptrs_, const ColInds Bcolinds_, const Scalar scalarB_,
-           Values CvalsOver_, const RowPtrs CrowptrsTemp_, ColInds CcolindsOver_) :
-    Avals(Avals_), Arowptrs(Arowptrs_), Acolinds(Acolinds_), scalarA(scalarA_),
-    Bvals(Bvals_), Browptrs(Browptrs_), Bcolinds(Bcolinds_), scalarB(scalarB_),
-    CvalsOver(CvalsOver_), CrowptrsTemp(CrowptrsTemp_), CcolindsOver(CcolindsOver_)
-  {}
-  KOKKOS_INLINE_FUNCTION void operator()(const size_t i) const
-  {
-    Ordinal inserted = 0;
-    auto rowStart = CrowptrsTemp(i);
-    auto arowstart = Arowptrs(i);
-    auto arowlen = Arowptrs(i + 1) - arowstart;
-    auto browstart = Browptrs(i);
-    auto browlen = Browptrs(i + 1) - browstart;
-
-    // Ordinal and the type of arowlen (and browlen) might not have
-    // the same sign.  In order to avoid build warnings about signed /
-    // unsigned comparisons at the for loops below, we cast to the
-    // "common type" of the two values before comparing them.
-    typedef typename std::common_type<decltype (arowlen), Ordinal>::type
-      common_type;
-    for(Ordinal j = 0; static_cast<common_type> (j) < static_cast<common_type> (arowlen); j++)
-    {
-      CvalsOver(rowStart + inserted) = scalarA * Avals(arowstart + j);
-      CcolindsOver(rowStart + inserted) = Acolinds(arowstart + j);
-      inserted++;
-    }
-    for(Ordinal j = 0; static_cast<common_type> (j) < static_cast<common_type> (browlen); j++)
-    {
-      CvalsOver(rowStart + inserted) = scalarB * Bvals(browstart + j);
-      CcolindsOver(rowStart + inserted) = Bcolinds(browstart + j);
-      inserted++;
-    }
-  }
-  const Values Avals;
-  const typename RowPtrs::const_type Arowptrs;
-  const ColInds Acolinds;
-  const Scalar scalarA;
-  const Values Bvals;
-  const typename RowPtrs::const_type Browptrs;
-  const ColInds Bcolinds;
-  const Scalar scalarB;
-  Values CvalsOver;
-  const RowPtrs CrowptrsTemp;
-  ColInds CcolindsOver;
-};
-
-template<typename Ordinal, typename Scalar, typename Values, typename RowPtrs, typename ColInds>
-struct SortAndMergeFunctor
-{
-  SortAndMergeFunctor(const RowPtrs CrowptrTemp_, RowPtrs Crowcounts_, ColInds CcolindOver_, Values CvalsOver_, ColInds CcolindAux_, Values CvalsAux_, Ordinal ncols_) :
-    CrowptrTemp(CrowptrTemp_),
-    Crowcounts(Crowcounts_),
-    CcolindOver(CcolindOver_),
-    CvalsOver(CvalsOver_),
-    CcolindAux(CcolindAux_),
-    CvalsAux(CvalsAux_),
-    ncols(ncols_)
-  {}
-  KOKKOS_INLINE_FUNCTION void operator()(const size_t i) const
-  {
-    //3: Sort each row's colinds (permuting values at same time), then count unique colinds (write that to Crowptr(i))
-    //CrowptrTemp tells how many entries in each oversized row
-    Ordinal rowStart = CrowptrTemp(i);
-    Ordinal rowEnd = CrowptrTemp(i + 1);
-    Ordinal rowNum = rowEnd - rowStart;
-    Tpetra::Details::radixSortKeysAndValues(CcolindOver.ptr_on_device() + rowStart, CcolindAux.ptr_on_device() + rowStart, CvalsOver.ptr_on_device() + rowStart, CvalsAux.ptr_on_device() + rowStart, (size_t) rowNum, (size_t) ncols);
-    //now that they are sorted, can sweep through and gather together values in same column
-    Ordinal finalPos = 0;
-    Ordinal overPos = 0;
-    while(overPos < rowNum)
-    {
-      //check if the two entries at overPos are the same col
-      if(CcolindOver(rowStart + overPos) == CcolindOver(rowStart + overPos + 1) && (overPos + 1 < rowNum))
-      {
-        //they are the same col, so combine the two entries at finalPos
-        //Then increment overPos an extra time since just processed two entries
-        CcolindOver(rowStart + finalPos) = CcolindOver(rowStart + overPos);
-        CvalsOver(rowStart + finalPos) = CvalsOver(rowStart + overPos) + CvalsOver(rowStart + overPos + 1);
-        overPos++;
-      }
-      else
-      {
-        //they are not the same col, so just copy the one entry at overPos to finalPos
-        CcolindOver(rowStart + finalPos) = CcolindOver(rowStart + overPos);
-        CvalsOver(rowStart + finalPos) = CvalsOver(rowStart + overPos);
-      }
-      overPos++;
-      finalPos++;
-    }
-    Crowcounts(i) = finalPos;
-  }
-  const RowPtrs CrowptrTemp;
-  RowPtrs Crowcounts;
-  ColInds CcolindOver;
-  Values CvalsOver;
-  //Two scratch arrays, used for sorting (with same size as CcolindOver and CvalsOver)
-  ColInds CcolindAux;
-  Values CvalsAux;
-  Ordinal ncols;
-};
-
-template<typename Ordinal, typename Values, typename RowPtrs, typename ColInds>
-struct CondenseArraysFunctor
-{
-  CondenseArraysFunctor(const RowPtrs& Crowptr_, const RowPtrs& CrowptrTemp_, const ColInds& CcolindOver_, ColInds& Ccolind_, const Values& CvalsOver_, Values& Cvals_) :
-    Crowptr(Crowptr_),
-    CrowptrTemp(CrowptrTemp_),
-    CcolindOver(CcolindOver_),
-    Ccolind(Ccolind_),
-    CvalsOver(CvalsOver_),
-    Cvals(Cvals_)
-  {}
-  //4: Copy values from oversized Cvals/Ccolind to correctly sized
-  KOKKOS_INLINE_FUNCTION void operator()(const size_t i) const
-  {
-    Ordinal rowNum = Crowptr(i + 1) - Crowptr(i);
-    for(Ordinal j = 0; j < rowNum; j++)
-    {
-      Ccolind(Crowptr(i) + j) = CcolindOver(CrowptrTemp(i) + j);
-      Cvals(Crowptr(i) + j) = CvalsOver(CrowptrTemp(i) + j);
-    }
-  }
-  RowPtrs Crowptr;
-  RowPtrs CrowptrTemp;
-  ColInds CcolindOver;
-  ColInds Ccolind;
-  Values CvalsOver;
-  Values Cvals;
-};
-}
-
-template<typename SC, typename LO, typename GO, typename NO>
-void Details::AddKernels<SC, LO, GO, NO>::
-addUnsorted(
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Avals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Acolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
-  GO numGlobalCols,
-  typename Details::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
-  typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
-  typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
-{
-  using namespace AddUnsortedFunctors;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::TimeMonitor;
-  typedef col_inds_array col_ind_type;
-//  <Allocate CrowptrTemp>
-//1: compute C entries per row upper bound (A entries + B entries)
-//  <Make CrowptrTemp into prefix sum array>
-//  <Allocate oversized Cvals and Ccolind>
-//2: just copy scaled a,b values into oversized C values/colind (filling it completely)
-//  Note: these values aren't condensed or sorted yet (so, may be duplicate colinds, but that's expected)
-//  <Allocate Crowptr>
-//3: Sort each row's colinds (permuting values at same time), then count unique colinds (write that to Crowptr(i))
-//  <Make Crowptr into prefix sum array>
-//  <Allocate correctly sized Cvals and Ccolind>
-//4: Condense values from oversized Cvals/Ccolind to correctly sized
-//  <done: have everything needed to build final C>
-  TEUCHOS_TEST_FOR_EXCEPTION(Arowptrs.dimension_0() != Browptrs.dimension_0(), std::runtime_error, "Can't add matrices with different numbers of rows.");
-  LO nrows = Arowptrs.dimension_0() - 1;
-  row_ptrs_array CrowptrTemp("C row pointers (upper bound)", nrows + 1);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("nnz upper bound"))));
 #endif
-  {
-    row_ptrs_array rowCounts("Row counts", nrows);
-    AddUnsortedFunctors::EntryUpperBoundFunctor<LO, values_array, row_ptrs_array, col_ind_type> funct1(Avals, Arowptrs, Acolinds, Bvals, Browptrs, Bcolinds, rowCounts);
-    //Count C nonzeros in each row in parallel
-    Kokkos::parallel_for(range_type(0, nrows), funct1);
-    //Make C rowptr cumulative (and also fill in last row with total nnz)
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("nnz upper bound"))));
-#endif
-    Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(CrowptrTemp, rowCounts);
-  }
-  auto nnz = CrowptrTemp(nrows);
-  col_ind_type CcolindOver("C indices", nnz + 1);
-  values_array CvalsOver("C values", nnz + 1);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("computing unsorted unmerged sum"))));
-#endif
-  UnmergedSumFunctor<impl_scalar_type, LO, values_array, row_ptrs_array, col_ind_type>
-    unmergedSum(Avals, Arowptrs, Acolinds, scalarA, Bvals, Browptrs, Bcolinds, scalarB, CvalsOver, CrowptrTemp, CcolindOver);
-  Kokkos::parallel_for(range_type(0, nrows), unmergedSum);
-  {
-    col_ind_type CcolindAux("C indices sorting buffer", nnz);
-    values_array CvalsAux("C values sorting buffer", nnz);
-    row_ptrs_array Crowcounts("C row counts", nrows);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("sorting and merging sum"))));
-#endif
-    SortAndMergeFunctor<LO, impl_scalar_type, values_array, row_ptrs_array, col_ind_type>
-      sortAndMerge(CrowptrTemp, Crowcounts, CcolindOver, CvalsOver, CcolindAux, CvalsAux, numGlobalCols);
-    Kokkos::parallel_for(range_type(0, nrows), sortAndMerge);
-    //convert Crowcounts into prefix sum Crowptrs
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("getting rowptr prefix sum"))));
-#endif
-    Crowptrs = row_ptrs_array("C row pointers", nrows + 1);
-    Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(Crowptrs, Crowcounts);
-  }
-  execution_space::fence();
-  nnz = Crowptrs(nrows);
-  //Turn Crowptrs into a prefix sum
-  Cvals = values_array("C values", nnz);
-  Ccolinds = col_ind_type("C col indices", nnz);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("copying sum into condensed arrays"))));
-#endif
-  CondenseArraysFunctor<LO, values_array, row_ptrs_array, col_ind_type>
-    condense(Crowptrs, CrowptrTemp, CcolindOver, Ccolinds, CvalsOver, Cvals);
-  Kokkos::parallel_for(range_type(0, nrows), condense);
-}
-
-template<typename SC, typename LO, typename GO, typename NO>
-void Details::AddKernels<SC, LO, GO, NO>::
-addUnsortedGlobalCols(
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Avals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Acolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Bcolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
-  GO numGlobalCols,
-  typename Details::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
-  typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
-  typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
-{
-  using namespace AddUnsortedFunctors;
-  typedef global_col_inds_array col_ind_type;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::TimeMonitor;
-  typedef typename NO::device_type::execution_space execution_space;
-  // typedef SC scalar_type; // unused
-  typedef LO ordinal_type;
-  typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-//  <Allocate CrowptrTemp>
-//1: compute C entries per row upper bound (A entries + B entries)
-//  <Make CrowptrTemp into prefix sum array>
-//  <Allocate oversized Cvals and Ccolind>
-//2: just copy scaled a,b values into oversized C values/colind (filling it completely)
-//  Note: these values aren't condensed or sorted yet (so, may be duplicate colinds, but that's expected)
-//  <Allocate Crowptr>
-//3: Sort each row's colinds (permuting values at same time), then count unique colinds (write that to Crowptr(i))
-//  <Make Crowptr into prefix sum array>
-//  <Allocate correctly sized Cvals and Ccolind>
-//4: Condense values from oversized Cvals/Ccolind to correctly sized
-//  <done: have everything needed to build final C>
-  TEUCHOS_TEST_FOR_EXCEPTION(Arowptrs.dimension_0() != Browptrs.dimension_0(), std::runtime_error, "Can't add matrices with different numbers of rows.");
-  ordinal_type nrows = Arowptrs.dimension_0() - 1;
-  row_ptrs_array CrowptrTemp("C row pointers (upper bound)", nrows + 1);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  auto MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("nnz upper bound"))));
-#endif
-  {
-    row_ptrs_array rowCounts("Row counts", nrows);
-    AddUnsortedFunctors::EntryUpperBoundFunctor<ordinal_type, values_array, row_ptrs_array, col_ind_type>
-      funct1(Avals, Arowptrs, Acolinds, Bvals, Browptrs, Bcolinds, rowCounts);
-    //Count C nonzeros in each row in parallel
-    Kokkos::parallel_for(range_type(0, nrows), funct1);
-    //Make C rowptr cumulative (and also fill in last row with total nnz)
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("nnz upper bound"))));
-#endif
-    Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(CrowptrTemp, rowCounts);
-  }
-  auto nnz = CrowptrTemp(nrows);
-  col_ind_type CcolindOver("C indices", nnz + 1);
-  values_array CvalsOver("C values", nnz + 1);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("computing unsorted unmerged sum"))));
-#endif
-  UnmergedSumFunctor<impl_scalar_type, ordinal_type, values_array, row_ptrs_array, col_ind_type>
-    unmergedSum(Avals, Arowptrs, Acolinds, scalarA, Bvals, Browptrs, Bcolinds, scalarB, CvalsOver, CrowptrTemp, CcolindOver);
-  Kokkos::parallel_for(range_type(0, nrows), unmergedSum);
-  {
-    col_ind_type CcolindAux("C indices sorting buffer", nnz);
-    values_array CvalsAux("C values sorting buffer", nnz);
-    row_ptrs_array Crowcounts("C row counts", nrows);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("sorting and merging sum"))));
-#endif
-    SortAndMergeFunctor<ordinal_type, impl_scalar_type, values_array, row_ptrs_array, col_ind_type>
-      sortAndMerge(CrowptrTemp, Crowcounts, CcolindOver, CvalsOver, CcolindAux, CvalsAux, numGlobalCols);
-    Kokkos::parallel_for(range_type(0, nrows), sortAndMerge);
-    //convert Crowcounts into prefix sum Crowptrs
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("getting rowptr prefix sum"))));
-#endif
-    Crowptrs = row_ptrs_array("C row pointers", nrows + 1);
-    Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(Crowptrs, Crowcounts);
-  }
-  execution_space::fence();
-  nnz = Crowptrs(nrows);
-  //Turn Crowptrs into a prefix sum
-  Cvals = values_array("", nnz);
-  Ccolinds = col_ind_type("", nnz);
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("copying sum into condensed arrays"))));
-#endif
-  CondenseArraysFunctor<ordinal_type, values_array, row_ptrs_array, col_ind_type>
-    condense(Crowptrs, CrowptrTemp, CcolindOver, Ccolinds, CvalsOver, Cvals);
-  Kokkos::parallel_for(range_type(0, nrows), condense);
-}
 
 } //End namespace MatrixMatrix
 

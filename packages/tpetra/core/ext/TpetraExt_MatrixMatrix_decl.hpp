@@ -134,10 +134,12 @@ namespace Details
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 struct AddKernels
 {
+#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
   typedef typename Node::device_type device_type;
   typedef typename device_type::execution_space execution_space;
+  typedef typename device_type::memory_space memory_space;
   typedef typename crs_matrix_type::impl_scalar_type impl_scalar_type;
   typedef typename crs_matrix_type::local_matrix_type KCRS;
   typedef typename KCRS::values_type::non_const_type values_array;
@@ -147,114 +149,19 @@ struct AddKernels
   typedef typename Kokkos::View<const GlobalOrdinal*, device_type> local_map_type;
   typedef typename Kokkos::View<GlobalOrdinal*, device_type> global_col_inds_array;
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<row_ptrs_array, col_inds_array, values_array, execution_space, memory_space, memory_space> kernel_handle_local;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<row_ptrs_array, global_col_inds_array, values_array, execution_space, memory_space, memory_space> kernel_handle_global;
 
-  /// \brief Given two matrices in CRS format, return their sum
-  /// \pre A and B must both have column indices sorted within each row
-  /// \param Avals Values array for A
-  /// \param Arowptrs Row pointers array for A
-  /// \param Acolinds Column indices array for A
-  /// \param scalarA Scaling factor for A
-  /// \param Bvals Values array for B
-  /// \param Browptrs Row pointers array for B
-  /// \param Bcolinds Column indices array for B
-  /// \param scalarB Scaling factor for B
-  /// \param[Out] Cvals Values array for C (allocated inside function)
-  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
-  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
-  static void addSorted(
-    const values_array& Avals,
-    const row_ptrs_array_const& Arowptrs,
-    const col_inds_array& Acolinds, 
-    const impl_scalar_type scalarA,
-    const values_array& Bvals,
-    const row_ptrs_array_const& Browptrs,
-    const col_inds_array& Bcolinds, 
-    const impl_scalar_type scalarB,
-    values_array& Cvals,
-    row_ptrs_array& Crowptrs,
-    col_inds_array& Ccolinds);
-
-  /// \brief Given two matrices in CRS format, return their sum
-  /// \pre A and B don't need to be sorted, and column indices are given as global indices
-  /// \param A A (local) matrix
-  /// \param scalarA Scaling factor for A
-  /// \param B B (local) matrix
-  /// \param scalarB Scaling factor for B
-  /// \param minGlobalCol The minimum global index owned by this processor in the column map
-  /// \param globalNumCols The global size of the column map
-  /// \param[Out] Cvals Values array for C (allocated inside function)
-  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
-  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
-  static void convertToGlobalAndAdd(
-    const KCRS& A,
-    const impl_scalar_type scalarA,
-    const KCRS& B,
-    const impl_scalar_type scalarB,
-    const local_map_type& AcolMap,
-    const local_map_type& BcolMap,
-    GlobalOrdinal minGlobalCol,
-    GlobalOrdinal globalNumCols,
-    values_array& Cvals,
-    row_ptrs_array& Crowptrs,
-    global_col_inds_array& Ccolinds);
-
-  /// \brief Given two matrices in CRS format, return their sum
-  /// \pre A and B don't need to be sorted
-  /// \param Avals Values array for A
-  /// \param Arowptrs Row pointers array for A
-  /// \param Acolinds Column indices array for A
-  /// \param scalarA Scaling factor for A
-  /// \param Bvals Values array for B
-  /// \param Browptrs Row pointers array for B
-  /// \param Bcolinds Column indices array for B
-  /// \param scalarB Scaling factor for B
-  /// \param globalNumCols The global size of the column map
-  /// \param[Out] Cvals Values array for C (allocated inside function)
-  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
-  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
-  static void addUnsorted(
-    const values_array& Avals,
-    const row_ptrs_array_const& Arowptrs,
-    const col_inds_array& Acolinds, 
-    const impl_scalar_type scalarA,
-    const values_array& Bvals,
-    const row_ptrs_array_const& Browptrs,
-    const col_inds_array& Bcolinds, 
-    const impl_scalar_type scalarB,
-    GlobalOrdinal numGlobalCols,
-    values_array& Cvals,
-    row_ptrs_array& Crowptrs,
-    col_inds_array& Ccolinds);
-
-  /// \brief Given two matrices in CRS format, return their sum
-  /// \pre A and B don't need to be sorted
-  /// \param Avals Values array for A
-  /// \param Arowptrs Row pointers array for A
-  /// \param Acolinds Column indices array for A
-  /// \param scalarA Scaling factor for A
-  /// \param Bvals Values array for B
-  /// \param Browptrs Row pointers array for B
-  /// \param Bcolinds Column indices array for B
-  /// \param scalarB Scaling factor for B
-  /// \param globalNumCols The global size of the column map
-  /// \param[Out] Cvals Values array for C (allocated inside function)
-  /// \param[Out] Crowptrs Row pointers array for C (allocated inside function)
-  /// \param[Out] Ccolinds Column indices array for C (allocated inside function)
-  static void addUnsortedGlobalCols(
-    const values_array& Avals,
-    const row_ptrs_array_const& Arowptrs,
-    const global_col_inds_array& Acolinds, 
-    const impl_scalar_type scalarA,
-    const values_array& Bvals,
-    const row_ptrs_array_const& Browptrs,
-    const global_col_inds_array& Bcolinds, 
-    const impl_scalar_type scalarB,
-    GlobalOrdinal numGlobalCols,
-    values_array& Cvals,
-    row_ptrs_array& Crowptrs,
-    global_col_inds_array& Ccolinds);
+  static void convertToGlobal(
+    const col_inds_array Acolinds,
+    const col_inds_array Bcolinds,
+    const local_map_type AcolMap,
+    const local_map_type BcolMap,
+    global_col_inds_array AcolindsConverted,
+    global_col_inds_array BcolindsConverted);
 
   static Teuchos::RCP<map_type> makeColMapAndConvertGids(GlobalOrdinal ncols, const global_col_inds_array& gids, col_inds_array& lids, const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
+#endif
 };
 }
 

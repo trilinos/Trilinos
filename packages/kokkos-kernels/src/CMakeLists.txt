@@ -130,6 +130,6 @@ INSTALL(FILES ${HEADERS_GENERATED} DESTINATION ${TRILINOS_INCDIR}/generated_spec
 # Make a trivial change here if you add a file either to this
 # directory, or to the impl/ subdirectory.  Keep making changes
 # whenever you add or remove a .cpp or .hpp file, and everything will
-# be OK.  Here is another such change, and here is yet another.
+# be OK.  Here is another such change.
 #
 
