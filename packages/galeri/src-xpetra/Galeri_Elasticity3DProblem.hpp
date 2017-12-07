@@ -129,7 +129,7 @@ namespace Galeri {
     Teuchos::RCP<Matrix> Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMatrix() {
       using Teuchos::SerialDenseMatrix;
 
-      typedef Teuchos::ScalarTraits<Scalar> TST;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
 
       BuildMesh();
 
@@ -200,7 +200,7 @@ namespace Galeri {
 
         // Check if element is a translation of the previous element
         SC xMove = elementNodes(0,0) - prevElementNodes(0,0), yMove = elementNodes(0,1) - prevElementNodes(0,1), zMove = elementNodes(0,2) - prevElementNodes(0,2);
-        typename TST::magnitudeType eps = 1e-15;         // coordinate comparison criteria
+        typename STS::magnitudeType eps = 1e-15;         // coordinate comparison criteria
         bool recompute = false;
         {
           size_t j = 0;
@@ -336,7 +336,7 @@ namespace Galeri {
       // as we cannot construct a single DOF map in Problem, we repeat the coords
       this->Coords_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, nDim_);
 
-      typedef Teuchos::ScalarTraits<Scalar> TST;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
 
       Teuchos::ArrayRCP<SC> x = this->Coords_->getDataNonConst(0);
       Teuchos::ArrayRCP<SC> y = this->Coords_->getDataNonConst(1);
@@ -347,9 +347,9 @@ namespace Galeri {
       // NOTE: coordinates vector local ordering is consistent with that of the
       // matrix map, as it is constructed by going through GIDs and translating
       // those.
-      const typename TST::magnitudeType hx = TST::magnitude(stretch[0]),
-                                        hy = TST::magnitude(stretch[1]),
-                                        hz = TST::magnitude(stretch[2]);
+      const typename STS::magnitudeType hx = STS::magnitude(stretch[0]),
+                                        hy = STS::magnitude(stretch[1]),
+                                        hz = STS::magnitude(stretch[2]);
       for (GO p = 0; p < GIDs.size(); p += 3) { // FIXME: we assume that DOF for the same node are label consequently
         GlobalOrdinal ind = GIDs[p] / 3;
         size_t i = ind % nx_, k = ind / (nx_*ny_), j = (ind - k*nx_*ny_) / nx_;
@@ -365,7 +365,7 @@ namespace Galeri {
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     RCP<MultiVector> Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildNullspace() {
 
-      typedef Teuchos::ScalarTraits<Scalar> TST;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
 
       const int numVectors = 6;
       this->Nullspace_ = MultiVectorTraits<Map,MultiVector>::Build(this->Map_, numVectors);
@@ -380,7 +380,7 @@ namespace Galeri {
       Teuchos::ArrayRCP<SC> y = this->Coords_->getDataNonConst(1);
       Teuchos::ArrayRCP<SC> z = this->Coords_->getDataNonConst(2);
 
-      SC one = TST::one();
+      SC one = STS::one();
 
       // NOTE: nullspace local ordering is consistent with that of the matrix
       // map, as it inherits ordering from coordinates, which is consistent.
@@ -402,27 +402,27 @@ namespace Galeri {
       Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(3), R1 = this->Nullspace_->getDataNonConst(4), R2 = this->Nullspace_->getDataNonConst(5);
       for (size_t i = 0; i < numDofs; i += nDim_) {
         // Rotate in Y-Z Plane (around Z axis): [ -y; x]
-        R0[i+0] = -(y[i]-cy);
-        R0[i+1] =  (x[i]-cx);
+        R0[i+0] = -(y[i] - cy);
+        R0[i+1] =  (x[i] - cx);
 
         // Rotate in Y-Z Plane (around Z axis): [ -z; y]
-        R1[i+1] = -(z[i]-cz);
-        R1[i+2] =  (y[i]-cy);
+        R1[i+1] = -(z[i] - cz);
+        R1[i+2] =  (y[i] - cy);
 
         // Rotate in Y-Z Plane (around Z axis): [ z; -x]
-        R2[i+0] =  (z[i]-cz);
-        R2[i+2] = -(x[i]-cx);
+        R2[i+0] =  (z[i] - cz);
+        R2[i+2] = -(x[i] - cx);
       }
 
       // Equalize norms of all vectors to that of the first one
       // We do not normalize them as a vector of ones seems nice
-      Teuchos::Array<typename TST::magnitudeType> norms2(numVectors);
+      Teuchos::Array<typename STS::magnitudeType> norms2(numVectors);
+      this->Nullspace_->norm2(norms2);
       for (int i = 1; i < numVectors; i++)
         norms2[i] = norms2[0] / norms2[i];
-      norms2[0] = TST::magnitude(TST::one());
-      this->Nullspace_->norm2(norms2);
-      Teuchos::Array<Scalar> norms2scalar(numVectors);
-      for (int i = 1; i < numVectors; i++)
+      norms2[0] = STS::magnitude(STS::one());
+      Teuchos::Array<SC> norms2scalar(numVectors);
+      for (int i = 0; i < numVectors; i++)
         norms2scalar[i] = norms2[i];
       this->Nullspace_->scale(norms2scalar);
 
@@ -431,10 +431,10 @@ namespace Galeri {
 
     template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix, typename MultiVector>
     void Elasticity3DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>::BuildMesh() {
-      typedef Teuchos::ScalarTraits<Scalar> TST;
-      const typename TST::magnitudeType hx = TST::magnitude(stretch[0]),
-                                        hy = TST::magnitude(stretch[1]),
-                                        hz = TST::magnitude(stretch[2]);
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+      const typename STS::magnitudeType hx = STS::magnitude(stretch[0]),
+                                        hy = STS::magnitude(stretch[1]),
+                                        hz = STS::magnitude(stretch[2]);
 
       GO myPID = this->Map_->getComm()->getRank();
       GO const & negOne=-1;
