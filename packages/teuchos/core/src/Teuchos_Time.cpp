@@ -78,6 +78,10 @@ inline void seconds_initialize() {
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+#include "Kokkos_Core.hpp"
+#endif
+
 
 namespace Teuchos {
 
@@ -117,6 +121,10 @@ void Time::start(bool reset_in)
     }
 #endif
     startTime_ = wallTime();
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+    ::Kokkos::Profiling::pushRegion (name_);
+#endif
+
   }
 }
 
@@ -136,6 +144,9 @@ double Time::stop()
         VALGRIND_MONITOR_COMMAND(cmd.data());
         numCallsMassifSnapshots_++;
       }
+#endif
+#ifdef HAVE_TEUCHOSCORE_KOKKOSCORE
+      ::Kokkos::Profiling::popRegion ();
 #endif
 
     }
