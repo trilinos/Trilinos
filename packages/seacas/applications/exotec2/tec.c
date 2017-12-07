@@ -1,5 +1,5 @@
 /*
-* Copyright(C) 2008-2017 National Technology & Engineering Solutions of
+* Copyright(C) 2008 National Technology & Engineering Solutions of
 * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 * NTESS, the U.S. Government retains certain rights in this software.
 *
@@ -49,6 +49,7 @@
 */
 void tec(int exoid, const char *filename)
 {
+
   int     i, j, k, idum;
   int     ndim, nnode, nelem, nblk, nnset, neset, nvar, ntime, itime;
   char    title[MAX_LINE_LENGTH + 1];
@@ -109,13 +110,13 @@ void tec(int exoid, const char *filename)
   icon          = (int **)malloc(nblk * sizeof(int *));
   for (i         = 0; i < nblk; i++)
     elem_type[i] = (char *)malloc((name_size + 1) * sizeof(char));
-  ex_get_ids(exoid, EX_ELEM_BLOCK, elem_id);
+  ex_get_elem_blk_ids(exoid, elem_id);
   for (i = 0; i < nblk; i++) {
-    ex_get_block(exoid, EX_ELEM_BLOCK, elem_id[i], elem_type[i], &elem_per_blk[i],
-                 &node_per_elem[i], NULL, NULL, &attr_per_blk[i]);
+    ex_get_elem_block(exoid, elem_id[i], elem_type[i], &elem_per_blk[i], &node_per_elem[i],
+                      &attr_per_blk[i]);
 
     icon[i] = (int *)malloc(elem_per_blk[i] * node_per_elem[i] * sizeof(int));
-    ex_get_conn(exoid, EX_ELEM_BLOCK, elem_id[i], icon[i], NULL, NULL);
+    ex_get_elem_conn(exoid, elem_id[i], icon[i]);
   }
 
   /*
@@ -131,7 +132,7 @@ void tec(int exoid, const char *filename)
    *  Read number of nodal variables and save space
    */
   nvar = 0;
-  ex_get_variable_param(exoid, EX_NODAL, &nvar);
+  ex_get_var_param(exoid, "n", &nvar);
   if (nvar > 0) {
     varnames = (char **)malloc(nvar * sizeof(char *));
     q        = (double **)malloc(nvar * sizeof(double *));
@@ -139,7 +140,7 @@ void tec(int exoid, const char *filename)
       varnames[i] = (char *)malloc((name_size + 1) * sizeof(char));
       q[i]        = (double *)malloc(nnode * sizeof(double));
     }
-    ex_get_variable_names(exoid, EX_NODAL, nvar, varnames);
+    ex_get_var_names(exoid, "n", nvar, varnames);
   }
 
   /* /////////////////////////////////////////////////////////////////////
@@ -237,7 +238,7 @@ void tec(int exoid, const char *filename)
     if (itime == 0) {
       for (j = 0; j < ntime; j++) {
         for (i = 0; i < nvar; i++)
-          ex_get_var(exoid, j + 1, EX_NODAL, i + 1, 1, nnode, q[i]);
+          ex_get_nodal_var(exoid, j + 1, i + 1, nnode, q[i]);
 
         i = 0;
         teczone(1, nnode, j + 1, elem_type[i], node_per_elem[i], nelem, ic, ndim, x, nvar, q,
@@ -254,7 +255,7 @@ void tec(int exoid, const char *filename)
       ||  Write out each zone individually
     */
     for (i = 0; i < nvar; i++)
-      ex_get_var(exoid, itime, EX_NODAL, i + 1, 1, nnode, q[i]);
+      ex_get_nodal_var(exoid, itime, i + 1, nnode, q[i]);
 
     for (i = 0; i < nblk; i++)
       teczone(nblk, nnode, elem_id[i], elem_type[i], node_per_elem[i], elem_per_blk[i], icon[i],

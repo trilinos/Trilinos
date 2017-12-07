@@ -152,7 +152,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
     if (stk::io::include_entity(entity)) {
       const std::string &name = entity->name();
       stk::mesh::Part* const part = meta.get_part(name);
-      STKIORequire(part != nullptr);
+      STKIORequire(part != NULL);
 
       stk::topology topo = part->topology();
       ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
@@ -196,7 +196,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
     if (stk::io::include_entity(entity)) {
       const std::string & name = entity->name();
       stk::mesh::Part* const part = meta.get_part(name);
-      STKIORequire(part != nullptr);
+      STKIORequire(part != NULL);
       stk::mesh::PartVector add_parts( 1 , part );
 
       std::vector<INT> node_ids ;

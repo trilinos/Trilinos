@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -85,6 +85,7 @@ namespace {
 
   const size_t      max_string_length = MAX_STR_LENGTH;
   const size_t      max_line_length   = MAX_LINE_LENGTH;
+  const std::string SCALAR() { return std::string("scalar"); }
 
   void separate_surface_element_sides(Ioss::IntVector &element, Ioss::IntVector &sides,
                                       Ioss::Region *region, Iopg::TopologyMap &topo_map,
@@ -429,13 +430,13 @@ namespace Iopg {
 
     // Possibly, the following 4 fields should be nodesets and element
     // sets instead of fields on the region...
-    region->field_add(Ioss::Field("internal_nodes", Ioss::Field::INTEGER, IOSS_SCALAR(),
+    region->field_add(Ioss::Field("internal_nodes", Ioss::Field::INTEGER, SCALAR(),
                                   Ioss::Field::COMMUNICATION, num_internal_nodes));
-    region->field_add(Ioss::Field("border_nodes", Ioss::Field::INTEGER, IOSS_SCALAR(),
+    region->field_add(Ioss::Field("border_nodes", Ioss::Field::INTEGER, SCALAR(),
                                   Ioss::Field::COMMUNICATION, num_border_nodes));
-    region->field_add(Ioss::Field("internal_elements", Ioss::Field::INTEGER, IOSS_SCALAR(),
+    region->field_add(Ioss::Field("internal_elements", Ioss::Field::INTEGER, SCALAR(),
                                   Ioss::Field::COMMUNICATION, num_internal_elems));
-    region->field_add(Ioss::Field("border_elements", Ioss::Field::INTEGER, IOSS_SCALAR(),
+    region->field_add(Ioss::Field("border_elements", Ioss::Field::INTEGER, SCALAR(),
                                   Ioss::Field::COMMUNICATION, num_border_elems));
 
     assert(nodeCount == num_internal_nodes + num_border_nodes);
@@ -450,7 +451,6 @@ namespace Iopg {
     std::string      block_name = "nodeblock_1";
     Ioss::NodeBlock *block = new Ioss::NodeBlock(this, block_name, nodeCount, spatialDimension);
     block->property_add(Ioss::Property("id", 1));
-    block->property_add(Ioss::Property("guid", util().generate_guid(1)));
 
     get_region()->add(block);
   }
@@ -561,7 +561,6 @@ namespace Iopg {
       block = new Ioss::ElementBlock(this, block_name, type, local_element_count[iblk]);
 
       block->property_add(Ioss::Property("id", id));
-      block->property_add(Ioss::Property("guid", util().generate_guid(id)));
 
       // Maintain block order on output database...
       block->property_add(Ioss::Property("original_block_order", used_blocks++));
@@ -620,7 +619,6 @@ namespace Iopg {
         std::string    nodeset_name = Ioss::Utils::encode_entity_name("nodelist", id);
         Ioss::NodeSet *nodeset      = new Ioss::NodeSet(this, nodeset_name, number_nodes);
         nodeset->property_add(Ioss::Property("id", id));
-	nodeset->property_add(Ioss::Property("guid", util().generate_guid(id)));
         get_region()->add(nodeset);
 
         get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodelist", id));
@@ -680,12 +678,10 @@ namespace Iopg {
       // Create a single node commset and a single element commset
       Ioss::CommSet *commset = new Ioss::CommSet(this, "commset_node", "node", my_node_count);
       commset->property_add(Ioss::Property("id", 1));
-      commset->property_add(Ioss::Property("guid", util().generate_guid(1)));
       get_region()->add(commset);
 
       commset = new Ioss::CommSet(this, "commset_side", "side", elem_count);
       commset->property_add(Ioss::Property("id", 1));
-      commset->property_add(Ioss::Property("guid", util().generate_guid(1)));
       get_region()->add(commset);
     }
   }
@@ -737,7 +733,6 @@ namespace Iopg {
         Ioss::SideSet *side_set = new Ioss::SideSet(this, side_set_name);
         get_region()->add(side_set);
         side_set->property_add(Ioss::Property("id", id));
-	side_set->property_add(Ioss::Property("guid", util().generate_guid(id)));
 
         get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("surface", id));
         get_region()->add_alias(side_set_name, Ioss::Utils::encode_entity_name("sideset", id));
@@ -921,7 +916,6 @@ namespace Iopg {
             // sideset might have the same id.
             assert(side_block != nullptr);
             side_block->property_add(Ioss::Property("id", id));
-	    side_block->property_add(Ioss::Property("guid", util().generate_guid(id)));
 
             // If splitting by element block, need to set the
             // element block member on this side block.
@@ -1120,7 +1114,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
 
     int                   ierr             = 0;
     int                   id               = eb->get_property("id").get_int();
-    int                   my_element_count = eb->entity_count();
+    int                   my_element_count = eb->get_property("entity_count").get_int();
     Ioss::Field::RoleType role             = field.get_role();
 
     if (role == Ioss::Field::MESH) {
@@ -1174,7 +1168,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Fiel
     size_t num_to_get = field.verify(data_size);
 
     if (num_to_get > 0) {
-      int entity_count = cs->entity_count();
+      int entity_count = cs->get_property("entity_count").get_int();
 
       // Return the <entity (node or side), processor> pair
       if (field.get_name() == "entity_processor" || field.get_name() == "entity_processor_raw") {
@@ -1276,7 +1270,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
   if (num_to_get > 0) {
 
     int    id           = fb->get_property("id").get_int();
-    size_t entity_count = fb->entity_count();
+    size_t entity_count = fb->get_property("entity_count").get_int();
     if (num_to_get != entity_count) {
       std::ostringstream errmsg;
       errmsg << "Partial field input not yet implemented for side blocks";
@@ -1653,7 +1647,7 @@ void DatabaseIO::compute_block_adjacencies() const
     int                 blk_position     = eb->get_property("original_block_order").get_int();
     int                 id               = eb->get_property("id").get_int();
     int                 element_nodes    = eb->get_property("topology_node_count").get_int();
-    int                 my_element_count = eb->entity_count();
+    int                 my_element_count = eb->get_property("entity_count").get_int();
     if (my_element_count > 0) {
       std::vector<int> conn(my_element_count * element_nodes);
       im_ex_get_elem_conn(get_file_pointer(), id, &conn[0]);
@@ -1670,7 +1664,7 @@ void DatabaseIO::compute_block_adjacencies() const
     }
   }
 
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
   if (isParallel) {
     // Get contributions from other processors...
     // Get the communication map...
@@ -1831,7 +1825,7 @@ void DatabaseIO::compute_block_adjacencies() const
     }
   }
 
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
   if (isParallel) {
     // Sync across all processors...
     size_t word_size = sizeof(int) * 8;
@@ -1970,7 +1964,7 @@ int DatabaseIO::get_side_connectivity(const Ioss::SideBlock *fb, int id, int, in
       assert(block->topology() != nullptr);
 
       if (conn_block != block) {
-        int nelem = block->entity_count();
+        int nelem = block->get_property("entity_count").get_int();
         nelnode   = block->topology()->number_nodes();
         // Used to map element number into position in connectivity array.
         // E.g., element 97 is the (97-offset)th element in this block and

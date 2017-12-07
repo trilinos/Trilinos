@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -295,7 +295,7 @@ namespace Iogn {
     size_t num_to_get = field.verify(data_size);
 
     int64_t               id            = eb->get_property("id").get_int();
-    int64_t               element_count = eb->entity_count();
+    int64_t               element_count = eb->get_property("entity_count").get_int();
     Ioss::Field::RoleType role          = field.get_role();
 
     if (role == Ioss::Field::MESH) {
@@ -364,7 +364,7 @@ namespace Iogn {
     size_t num_to_get = field.verify(data_size);
 
     int64_t id           = ef_blk->get_property("id").get_int();
-    size_t  entity_count = ef_blk->entity_count();
+    size_t  entity_count = ef_blk->get_property("entity_count").get_int();
     if (num_to_get != entity_count) {
       std::ostringstream errmsg;
       errmsg << "Partial field input not implemented for side blocks";
@@ -540,7 +540,7 @@ namespace Iogn {
   {
     size_t num_to_get = field.verify(data_size);
 
-    size_t entity_count = cs->entity_count();
+    size_t entity_count = cs->get_property("entity_count").get_int();
 
     // Return the <entity (node or face), processor> pair
     if (field.get_name() == "entity_processor" || field.get_name() == "entity_processor_raw") {
@@ -733,7 +733,6 @@ namespace Iogn {
     std::string block_name = "nodeblock_1";
     auto block = new Ioss::NodeBlock(this, block_name, m_generatedMesh->node_count_proc(), 3);
     block->property_add(Ioss::Property("id", 1));
-    block->property_add(Ioss::Property("guid", util().generate_guid(1)));
     get_region()->add(block);
     add_transient_fields(block);
   }
@@ -766,7 +765,6 @@ namespace Iogn {
       auto        block         = new Ioss::ElementBlock(this, name, type, element_count);
 
       block->property_add(Ioss::Property("id", i + 1));
-      block->property_add(Ioss::Property("guid", util().generate_guid(i + 1)));
 
       // Maintain block order on output database...
       block->property_add(Ioss::Property("original_block_order", i));
@@ -805,7 +803,6 @@ namespace Iogn {
       std::string name    = Ioss::Utils::encode_entity_name("nodelist", ins + 1);
       auto        nodeset = new Ioss::NodeSet(this, name, number_nodes);
       nodeset->property_add(Ioss::Property("id", ins + 1));
-      nodeset->property_add(Ioss::Property("guid", util().generate_guid(ins + 1)));
       get_region()->add(nodeset);
       add_transient_fields(nodeset);
     }
@@ -819,7 +816,6 @@ namespace Iogn {
       m_sideset_names.push_back(name);
       auto sideset = new Ioss::SideSet(this, name);
       sideset->property_add(Ioss::Property("id", ifs + 1));
-      sideset->property_add(Ioss::Property("guid", util().generate_guid(ifs + 1)));
       get_region()->add(sideset);
 
       std::vector<std::string> touching_blocks = m_generatedMesh->sideset_touching_blocks(ifs + 1);
@@ -833,7 +829,6 @@ namespace Iogn {
             new Ioss::SideBlock(this, ef_block_name, side_topo_name, elem_topo_name, number_faces);
         sideset->add(ef_block);
         ef_block->property_add(Ioss::Property("id", ifs + 1));
-	ef_block->property_add(Ioss::Property("guid", util().generate_guid(ifs + 1)));
 
         std::string storage = "Real[";
         storage += std::to_string(4);
@@ -857,7 +852,6 @@ namespace Iogn {
                                               number_faces);
           sideset->add(ef_block);
           ef_block->property_add(Ioss::Property("id", ifs + 1));
-	  ef_block->property_add(Ioss::Property("guid", util().generate_guid(ifs + 1)));
 
           std::string storage = "Real[";
           storage += std::to_string(4);
@@ -882,7 +876,6 @@ namespace Iogn {
       // Create a single node commset
       Ioss::CommSet *commset = new Ioss::CommSet(this, "commset_node", "node", my_node_count);
       commset->property_add(Ioss::Property("id", 1));
-      commset->property_add(Ioss::Property("guid", util().generate_guid(1)));
       get_region()->add(commset);
     }
   }
@@ -895,7 +888,7 @@ namespace Iogn {
   void DatabaseIO::add_transient_fields(Ioss::GroupingEntity *entity)
   {
     Ioss::EntityType type         = entity->type();
-    size_t           entity_count = entity->entity_count();
+    size_t           entity_count = entity->get_property("entity_count").get_int();
     size_t           var_count    = m_generatedMesh->get_variable_count(type);
     for (size_t i = 0; i < var_count; i++) {
       std::string var_name = entity->type_string() + "_" + std::to_string(i + 1);

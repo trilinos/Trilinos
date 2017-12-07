@@ -39,7 +39,6 @@
 
 #include "mpi.h"                        // for MPI_Datatype, etc
 #include <stddef.h>                     // for size_t
-#include <Kokkos_Core.hpp>
 #include <algorithm>                    // for min, max
 #include <complex>                      // for complex
 #include <iterator>                     // for iterator_traits, etc
@@ -60,7 +59,7 @@ void
     void *		invec,
     void *		inoutvec,
     int *		len,
-    MPI_Datatype *	)
+    MPI_Datatype *	datatype)
   {
     std::complex<T> *complex_in = static_cast<std::complex<T> *>(invec);
     std::complex<T> *complex_inout = static_cast<std::complex<T> *>(inoutvec);
@@ -93,13 +92,15 @@ MPI_Datatype double_complex_type();
 /**
  *MPI datatypes for MPI::Loc using 64-bits for index.
  */
+
+
+
 MPI_Datatype int_int64_type();
 MPI_Datatype short_int64_type();
 MPI_Datatype long_int64_type();
 MPI_Datatype unsigned_long_int64_type();
 MPI_Datatype float_int64_type();
 MPI_Datatype double_int64_type();
-MPI_Datatype double_int32_type();
 
 /**
  * @brief Function <code>double_complex_sum_op</code> returns a sum operation for the C++
@@ -130,28 +131,44 @@ MPI_Op real_complex_sum_op()
   return s_mpi_real_complex_sum;
 }
 
-MPI_Datatype double_double_int_type();
+/**
+ * @brief Member function <b>double_double_int_type</b> ...
+ *
+ * @return			a <b>MPI_Datatype</b> ...
+ */
+MPI_Datatype long_long_int_int_type();
+
 
 /**
- * @brief Template class <code>loc</code> implements the data structure for the MINLOC and MAXLOC data types.
+ * @brief Member function <b>double_double_int_type</b> ...
+ *
+ * @return			a <b>MPI_Datatype</b> ...
+ */
+MPI_Datatype double_double_int_type();
+
+
+/**
+ * @brief Template class <code>loc</code> implements the data structure for the MINLOC and
+ * MAXLOC data types.
+ *
  */
 template <typename T, typename IdType=int64_t>
 struct Loc
 {
-  KOKKOS_INLINE_FUNCTION Loc() = default;
-  KOKKOS_INLINE_FUNCTION Loc(const Loc &) = default;
-  KOKKOS_INLINE_FUNCTION Loc(Loc &&) = default;
-  KOKKOS_INLINE_FUNCTION Loc & operator=(const Loc &) = default;
-  KOKKOS_INLINE_FUNCTION Loc & operator=(Loc &&) = default;
+  Loc() = default;
+  Loc(const Loc &) = default;
+  Loc(Loc &&) = default;
+  Loc & operator=(const Loc &) = default;
+  Loc & operator=(Loc &&) = default;
   // Required to use with Kokkos::atomic_compare_exchange()
-  KOKKOS_INLINE_FUNCTION Loc(const volatile Loc & loc) : m_value(loc.m_value), m_loc(loc.m_loc) {}
-  KOKKOS_INLINE_FUNCTION Loc & operator=(const volatile Loc &rhs)
+  Loc(const volatile Loc & loc) : m_value(loc.m_value), m_loc(loc.m_loc) {}
+  Loc & operator=(const volatile Loc &rhs)
   {
     m_value = rhs.m_value;
     m_loc = rhs.m_loc;
     return *this;
   }
-  KOKKOS_INLINE_FUNCTION void operator=(const volatile Loc &rhs) volatile
+  void operator=(const volatile Loc &rhs) volatile
   {
     m_value = rhs.m_value;
     m_loc = rhs.m_loc;
@@ -162,7 +179,7 @@ struct Loc
 };
 
 template <typename T, typename IdType>
-KOKKOS_INLINE_FUNCTION bool operator==(const Loc<T, IdType> & lhs, const Loc<T, IdType> & rhs)
+inline bool operator==(const Loc<T, IdType> & lhs, const Loc<T, IdType> & rhs)
 {
   return (lhs.m_value == rhs.m_value) && (lhs.m_loc == rhs.m_loc);
 }
@@ -174,7 +191,7 @@ inline std::ostream & operator<<(std::ostream & os, const Loc<T, IdType> & loc)
 }
 
 template <typename T>
-KOKKOS_INLINE_FUNCTION Loc<T> create_Loc(const T &value, int64_t loc){
+Loc<T> create_Loc(const T &value, int64_t loc){
     Loc<T> mpi_loc;
     mpi_loc.m_value = value;
     mpi_loc.m_loc = loc;
@@ -437,16 +454,6 @@ struct Datatype<Loc<double, int64_t> >
     return double_int64_type();
   }
 };
-
-#if defined(__APPLE__)
-template <>
-struct Datatype<Loc<double, long int> >
-{
-  static MPI_Datatype type() {
-    return double_double_int_type();
-  }
-};
-#endif
 
 template <>
 struct Datatype<Loc<int, int64_t> >
@@ -1031,7 +1038,7 @@ AllReduceCollected(MPI_Comm mpi_comm, MPI_Op op, U collector)
 
   for(unsigned i = 0; i < num_proc; ++i) {
     if(global_array_len[i] != size) {
-      throw std::runtime_error("MPI.hpp::AllReduceCollected, not all processors have the same length array");
+      throw std::runtime_error("Slib_MPI.h::AllReduceCollected, not all processors have the same length array");
     }
   }
 #endif

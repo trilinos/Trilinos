@@ -238,7 +238,7 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
 		    int row_lengths[])
 {
 
-  std::cout << "Fuction ML_Epetra_getrow() is no longer supported." << std::endl;
+  std::cout << "Function ML_Epetra_getrow() is no longer supported." << std::endl;
   std::cout << "You should use one of the following instead:" << std::endl;
   std::cout << "- ML_Epetra_RowMatrix_getrow();" << std::endl;
   std::cout << "- ML_Epetra_CrsMatrix_getrow();" << std::endl;

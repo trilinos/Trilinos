@@ -111,6 +111,11 @@ public:
         return m_closure_count[entity.local_offset()];
     }
 
+    void reset_closure_count(stk::mesh::Entity entity)
+    {
+        m_closure_count[entity.local_offset()] = 0;
+    }
+
     uint16_t my_orphaned_node_marking()
     {
         return orphaned_node_marking;
@@ -187,6 +192,11 @@ public:
     }
 
     inline bool my_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int in_owner_rank)
+    {
+        return this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, in_owner_rank);
+    }
+
+    bool my_internal_set_parallel_owner_rank_but_not_comm_lists(stk::mesh::Entity entity, int in_owner_rank)
     {
         return this->internal_set_parallel_owner_rank_but_not_comm_lists(entity, in_owner_rank);
     }

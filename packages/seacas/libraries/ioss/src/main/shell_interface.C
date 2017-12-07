@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2010 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -82,11 +82,6 @@ void IOShell::Interface::enroll_options()
   options_.enroll("netcdf4", Ioss::GetLongOption::NoValue, "Output database will be a netcdf4 "
                                                            "hdf5-based file instead of the "
                                                            "classical netcdf file format",
-                  nullptr);
-
-  options_.enroll("netcdf5", Ioss::GetLongOption::NoValue,
-                  "Output database will be a netcdf5 (CDF5) "
-                  "file instead of the classical netcdf file format",
                   nullptr);
 
   options_.enroll("shuffle", Ioss::GetLongOption::NoValue,
@@ -178,11 +173,6 @@ void IOShell::Interface::enroll_options()
   options_.enroll("append_after_step", Ioss::GetLongOption::MandatoryValue,
                   "add steps on input database after specified step on output database", nullptr);
 
-  options_.enroll(
-      "delay", Ioss::GetLongOption::MandatoryValue,
-      "Sleep for <$val> seconds between timestep output to simulate application calculation time",
-      nullptr);
-
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
                   "Character used to separate a field suffix from the field basename\n"
                   "\t\t when recognizing vector, tensor fields. Enter '0' for no separator",
@@ -271,12 +261,6 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("netcdf4") != nullptr) {
     netcdf4 = true;
-    netcdf5 = false;
-  }
-
-  if (options_.retrieve("netcdf5") != nullptr) {
-    netcdf5 = true;
-    netcdf4 = false;
   }
 
   if (options_.retrieve("shuffle") != nullptr) {
@@ -480,13 +464,6 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   }
 
   {
-    const char *temp = options_.retrieve("delay");
-    if (temp != nullptr) {
-      timestep_delay = std::strtod(temp, nullptr);
-    }
-  }
-
-  {
     const char *temp = options_.retrieve("append_after_step");
     if (temp != nullptr) {
       append_step = std::strtol(temp, nullptr, 10);
@@ -495,23 +472,28 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 1999-2017 National Technology & Engineering Solutions\n"
-              << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
-              << "NTESS, the U.S. Government retains certain rights in this software.\n\n"
+              << "Copyright(C) 2013 NTESS.  Under the terms of Contract\n"
+              << "DE-AC04-94AL85000 with NTESS, the U.S. Government retains\n"
+              << "certain rights in this software\n"
+              << "\n"
               << "Redistribution and use in source and binary forms, with or without\n"
               << "modification, are permitted provided that the following conditions are\n"
-              << "met:\n\n "
+              << "met:\n"
+              << "\n"
               << "    * Redistributions of source code must retain the above copyright\n"
-              << "      notice, this list of conditions and the following disclaimer.\n\n"
+              << "      notice, this list of conditions and the following disclaimer.\n"
+              << "\n"
               << "    * Redistributions in binary form must reproduce the above\n"
               << "      copyright notice, this list of conditions and the following\n"
               << "      disclaimer in the documentation and/or other materials provided\n"
-              << "      with the distribution.\n\n"
+              << "      with the distribution.\n"
+              << "\n"
               << "    * Neither the name of NTESS nor the names of its\n"
               << "      contributors may be used to endorse or promote products derived\n"
-              << "      from this software without specific prior written permission.\n\n"
+              << "      from this software without specific prior written permission.\n"
+              << "\n"
               << "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n"
-              << "\" AS IS \" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+              << "'AS IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
               << "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\n"
               << "A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT\n"
               << "OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,\n"

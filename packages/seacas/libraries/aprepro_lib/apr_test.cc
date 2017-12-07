@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017 National Technology & Engineering Solutions
+// Copyright (c) 2014 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
   SEAMS::Aprepro aprepro;
 
   // EXAMPLE: Add a function to aprepro...
-  SEAMS::symrec *ptr   = aprepro.putsym("succ", SEAMS::Aprepro::SYMBOL_TYPE::FUNCTION, false);
+  SEAMS::symrec *ptr   = aprepro.putsym("succ", SEAMS::Aprepro::FUNCTION, false);
   ptr->value.fnctptr_d = succ;
   ptr->info            = "Return the successor to d";
   ptr->syntax          = "succ(d)";

@@ -33,31 +33,19 @@
 #ifndef READWRITESIDESETTESTER_HPP_
 #define READWRITESIDESETTESTER_HPP_
 
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
-#include <stddef.h>                                  // for size_t
-#include <stk_io/InputFile.hpp>                      // for InputFile
-#include <stk_io/StkMeshIoBroker.hpp>                // for StkMeshIoBroker, etc
-#include <stk_mesh/base/BulkData.hpp>                // for BulkData
-#include <stk_mesh/base/SideSetEntry.hpp>            // for SideSet, etc
-#include <stk_util/parallel/Parallel.hpp>            // for ParallelMachine
-#include <string>                                    // for string
-#include <vector>                                    // for vector
-#include "Ioss_Property.h"                           // for Property
-#include "Ioss_Region.h"                             // for Region
-#include "Ioss_SideBlock.h"                          // for SideBlock
-#include "Ioss_SideSet.h"                            // for SideSet
-#include "Teuchos_RCP.hpp"                           // for RCP::operator->, etc
-#include "Teuchos_RCPDecl.hpp"                       // for RCP
-#include "mpi.h"
-#include "stk_io/IossBridge.hpp"                     // for include_entity
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/Entity.hpp"                  // for Entity
-#include "stk_topology/topology.hpp"                 // for topology, etc
-namespace stk { namespace mesh { class MetaData; } }
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
+#include <vector>
 
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/SideSetEntry.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_io/InputFile.hpp>   // for InputFile for m_input_files
+#include <stk_util/parallel/Parallel.hpp> // for stk::parallel_machine_size
+#include "Ioss_Region.h"                // for Region, NodeSetContainer, etc
+#include "Ioss_SideBlock.h"             // for SideBlock
+#include "Ioss_SideSet.h"               // for SideSet, SideBlockContainer
+#include "stk_util/util/SortAndUnique.hpp"
+#include "stk_unit_test_utils/ioUtils.hpp"
 
 namespace stk{ namespace unit_test_util{ namespace sideset{
 

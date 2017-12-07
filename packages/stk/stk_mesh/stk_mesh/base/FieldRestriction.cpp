@@ -42,21 +42,21 @@ namespace mesh {
 
 void FieldRestriction::print(
   std::ostream & os,
-  const Selector & s,
+  const Selector & selector,
   FieldArrayRank field_rank
   ) const
 {
-  os << "FieldRestriction[ selector: \"" << s << "\", dimension: " << m_dimension << ", scalars per entity: " << m_num_scalars_per_entity << " ]" ;
+  os << "FieldRestriction[ selector: \"" << selector << "\", dimension: " << m_dimension << ", scalars per entity: " << m_num_scalars_per_entity << " ]" ;
 }
 
 std::string print_restriction(
   const FieldRestriction & restr,
-  const Selector& s,
+  const Selector& selector,
   FieldArrayRank field_rank
                               )
 {
   std::ostringstream oss;
-  restr.print(oss, s, field_rank);
+  restr.print(oss, selector, field_rank);
   return oss.str();
 }
 

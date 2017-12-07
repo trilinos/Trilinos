@@ -25,7 +25,6 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Exotxt      applications/exotxt     PT  OPTIONAL
   Exo_format  applications/exo_format PT  OPTIONAL
   Ex1ex2v2    applications/ex1ex2v2   PT  OPTIONAL
-  Exotec2     applications/exotec2    EX  OPTIONAL
   Fastq       applications/fastq      ST  OPTIONAL
   Gjoin       applications/gjoin      PT  OPTIONAL
   Gen3D       applications/gen3d      PT  OPTIONAL
@@ -39,6 +38,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   Nemslice    applications/nem_slice  PT  OPTIONAL
   Nemspread   applications/nem_spread PT  OPTIONAL
   Numbers     applications/numbers    PT  OPTIONAL
+#  Slice	      applications/slice      ST  OPTIONAL
   Txtexo      applications/txtexo     PT  OPTIONAL
   Ex2ex1v2    applications/ex2ex1v2   PT  OPTIONAL
 )

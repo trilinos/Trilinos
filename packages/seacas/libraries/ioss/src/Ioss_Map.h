@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -88,7 +88,7 @@ namespace Ioss {
     MapContainer &             map() { return m_map; }
     const ReverseMapContainer &reverse() const { return m_reverse; }
     bool                       defined() const { return m_defined; }
-    void                       set_defined(bool yes_no) { m_defined = yes_no; }
+    void set_defined(bool yes_no) { m_defined = yes_no; }
 
   private:
     int64_t global_to_local__(int64_t global, bool must_exist = true) const;

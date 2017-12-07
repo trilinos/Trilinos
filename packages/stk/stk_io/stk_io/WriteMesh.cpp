@@ -1,17 +1,7 @@
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
 #include "stk_io/WriteMesh.hpp"
-#include <stddef.h>                    // for size_t
-#include "Ioss_Field.h"                // for Field, Field::RoleType, etc
-#include "stk_io/DatabasePurpose.hpp"  // for DatabasePurpose, etc
-#include "stk_io/IossBridge.hpp"       // for get_field_role
-#include "stk_io/StkMeshIoBroker.hpp"  // for StkMeshIoBroker
-#include "stk_mesh/base/BulkData.hpp"  // for BulkData
-#include "stk_mesh/base/MetaData.hpp"  // for MetaData
-#include "stk_mesh/base/Types.hpp"     // for FieldVector
-namespace stk { namespace mesh { class FieldBase; } }
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
+#include "stk_io/StkMeshIoBroker.hpp"
+#include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/MetaData.hpp"
 
 namespace stk
 {

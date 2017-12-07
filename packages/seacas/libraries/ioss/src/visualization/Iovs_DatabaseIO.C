@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -630,7 +630,7 @@ namespace Iovs {
 
       // Get the element block id and element count
 
-      int64_t               element_count = eb->entity_count();
+      int64_t               element_count = eb->get_property("entity_count").get_int();
       Ioss::Field::RoleType role          = field.get_role();
 
       if (role == Ioss::Field::MESH) {
@@ -750,7 +750,7 @@ namespace Iovs {
       // std::cerr << "DatabaseIO::write_meta_data node blocks\n";
       Ioss::NodeBlockContainer node_blocks = region->get_node_blocks();
       assert(node_blocks.size() == 1);
-      nodeCount = node_blocks[0]->entity_count();
+      nodeCount = node_blocks[0]->get_property("entity_count").get_int();
       // std::cerr << "DatabaseIO::write_meta_data nodeCount:" << nodeCount << "\n";
     }
 
@@ -788,9 +788,9 @@ namespace Iovs {
       // "\n";
       for (I = element_blocks.begin(); I != element_blocks.end(); ++I) {
         elementBlockCount++;
-        elementCount += (*I)->entity_count();
+        elementCount += (*I)->get_property("entity_count").get_int();
         // std::cerr << "DatabaseIO::write_meta_data element num in block " << elementBlockCount <<
-        // ": " << (*I)->entity_count() << "\n";
+        // ": " << (*I)->get_property("entity_count").get_int() << "\n";
       }
       // std::cerr << "DatabaseIO::write_meta_data elementCount:" << elementCount << "\n";
     }

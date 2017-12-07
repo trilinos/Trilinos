@@ -8,6 +8,7 @@
 
 #include <stk_math/StkMath.hpp>
 
+// IWYU pragma: begin_exports
 #if defined ( STK_SIMD_AVX512 )
 #include "avx512/Avx512.hpp"
 #define STK_HAVE_SIMD
@@ -24,6 +25,7 @@
 
 #include "AlignedAllocator.hpp"
 #include "Traits.hpp" // has to be included after Double, Bool, Float, Boolf are defined
+// IWYU pragma: end_exports
 
 #include <Kokkos_Macros.hpp>
 #include <sys/time.h>

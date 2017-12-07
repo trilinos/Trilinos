@@ -116,7 +116,7 @@ void fill_element_and_side_ids(Ioss::GroupingEntity & io,
             stk::mesh::Entity element = sset[i].element;
             stk::mesh::EntityId elemId = bulk_data.identifier(element);
             int zero_based_side_ord = sset[i].side;
-            stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_side_pair(bulk_data, element, zero_based_side_ord);
+            stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk_data, elemId, zero_based_side_ord, bulk_data.mesh_meta_data().side_rank());
             if(bulk_data.is_valid(side))
             {
                 if(selector(bulk_data.bucket(side)))
@@ -162,7 +162,7 @@ void fill_element_and_side_ids(Ioss::GroupingEntity & io,
             {
                 const stk::mesh::Entity elem = side_elements[j];
                 const stk::mesh::Bucket &elemBucket = bulk_data.bucket(elem);
-                const bool isSelectingEverything = subset_selector == nullptr;
+                const bool isSelectingEverything = subset_selector == NULL;
                 const bool isElementBeingOutput = (isSelectingEverything || (*subset_selector)(elemBucket))
                                                   && elemBucket.member(meta_data.locally_owned_part());
                 if(isElementBeingOutput)

@@ -66,7 +66,6 @@ alias install-targets
     stk_learning_game_of_life_utest
     stk_learning_mesh_builder_utest
     stk_learning_imbalance_utest
-    stk_learning_code_katas
 #    stk_learning_sphere_utest
 ;
 
@@ -265,18 +264,6 @@ exe stk_learning_kokkos_utest
     /sierra/stk_util//stk_util_util
     /sierra/stk_topology//stk_topology
     stk_learning_ngp
-  :
-    <tag>@sierra-exec-tag
-  ;
-
-exe    stk_learning_code_katas
-  :
-    [ glob $(stk_learning-root)/CodeKatas/*.C ]
-    /sierra/stk_unit_test_utils//stk_unit_main
-    /tpl/scalapack//scalapack
-    /tpl/gtest//gtest
-    /mpi//mpi
-    /sierra/stk_unit_test_utils//stk_unit_test_utils
   :
     <tag>@sierra-exec-tag
   ;

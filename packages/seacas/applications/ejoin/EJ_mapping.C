@@ -1,4 +1,4 @@
-// Copyright(C) 2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -63,7 +63,7 @@ void eliminate_omitted_nodes(RegionVector &part_mesh, std::vector<INT> &global_n
   for (size_t p = 0; p < part_count; p++) {
     bool has_omissions        = part_mesh[p]->get_property("block_omission_count").get_int() > 0;
     Ioss::NodeBlock *nb       = part_mesh[p]->get_node_blocks()[0];
-    size_t           loc_size = nb->entity_count();
+    size_t           loc_size = nb->get_property("entity_count").get_int();
     if (has_omissions) {
       // If there are any omitted element blocks for this part, don't
       // map the nodes that are only connected to omitted element
@@ -117,7 +117,7 @@ void build_reverse_node_map(Ioss::Region & /*global*/, RegionVector &part_mesh,
   size_t tot_size = 0;
   for (size_t p = 0; p < part_count; p++) {
     Ioss::NodeBlock *nb       = part_mesh[p]->get_node_blocks()[0];
-    size_t           loc_size = nb->entity_count();
+    size_t           loc_size = nb->get_property("entity_count").get_int();
     tot_size += loc_size;
     global_nodes[p].resize(loc_size);
   }
@@ -242,7 +242,7 @@ void build_local_element_map(RegionVector &part_mesh, std::vector<INT> &local_el
 
     while (i != ebs.end()) {
       Ioss::ElementBlock *eb       = *i++;
-      size_t              num_elem = eb->entity_count();
+      size_t              num_elem = eb->get_property("entity_count").get_int();
       if (entity_is_omitted(eb)) {
         // Fill local_element_map with -1 for the omitted elements.
         for (size_t j = 0; j < num_elem; j++) {
@@ -284,7 +284,7 @@ void generate_element_ids(RegionVector &part_mesh, const std::vector<INT> &local
 
     while (i != ebs.end()) {
       Ioss::ElementBlock *eb       = *i++;
-      INT                 num_elem = eb->entity_count();
+      INT                 num_elem = eb->get_property("entity_count").get_int();
       if (!entity_is_omitted(eb)) {
         std::vector<INT> part_ids;
         eb->get_field_data("ids", part_ids);

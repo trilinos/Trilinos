@@ -13,8 +13,6 @@
 #include "internal/LastStepFieldWriter.hpp"
 #include "stk_balance/internal/TransientFieldTransferById.hpp"
 #include "stk_balance/internal/DetectAndFixMechanisms.hpp"
-#include <stk_balance/internal/balanceDefaults.hpp>
-#include <stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp>
 #include "fixSplitCoincidentElements.hpp"
 
 namespace stk
@@ -118,17 +116,9 @@ void run_stk_balance_with_settings(const std::string& outputFilename, const std:
     initial_decomp_and_balance(bulk, graphOptions, exodusFilename, outputFilename);
 }
 
-void run_stk_rebalance(const std::string& outputDirectory, const std::string& exodusFilename, stk::balance::AppTypeDefaults appType, MPI_Comm comm)
+void run_stk_rebalance(const std::string& outputDirectory, const std::string& exodusFilename, MPI_Comm comm)
 {
     stk::balance::GraphCreationSettings graphOptions;
-
-    if(appType == stk::balance::SM_DEFAULTS)
-    {
-        graphOptions.setEdgeWeightForSearch(3.0);
-        graphOptions.setVertexWeightMultiplierForVertexInSearch(10.0);
-        graphOptions.setToleranceFunctionForFaceSearch(std::make_shared<stk::balance::SecondShortestEdgeFaceSearchTolerance>());
-    }
-
     std::string outputFilename = outputDirectory + "/" + exodusFilename;
     run_stk_balance_with_settings(outputFilename, exodusFilename, comm, graphOptions);
 }

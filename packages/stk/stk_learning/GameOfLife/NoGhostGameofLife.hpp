@@ -154,6 +154,7 @@ private:
     void finish_construction();
 
     void get_elements();
+    void confirm_no_ghosting_ghosting();
     void create_element_connectivity_maps();
         void create_local_element_to_local_element_map();
             void create_map_for_this_element(stk::mesh::Entity elem);

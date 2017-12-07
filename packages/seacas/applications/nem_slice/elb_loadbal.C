@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2017 National Technology & Engineering Solutions of
+ * Copyright (C) 2009 National Technology & Engineering Solutions of
  * Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -58,7 +58,6 @@
 #include "elb_groups.h" // for get_group_info
 #include "elb_loadbal.h"
 #include "elb_util.h" // for find_inter, etc
-#include "fix_column_partitions.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338327
@@ -70,6 +69,35 @@
 #include "zoltan_types.h" // for ZOLTAN_ID_PTR*, ZOLTAN_OK, etc
 #include <mpi.h>          // for MPI_Finalize, etc
 #endif
+
+int is_hex(E_Type etype)
+{
+  return static_cast<int>(etype == HEX8 || etype == HEX27 || etype == HEX20 || etype == HEXSHELL);
+}
+
+int is_tet(E_Type etype)
+{
+  return static_cast<int>(etype == TET4 || etype == TET10 || etype == TET8 || etype == TET14 ||
+                          etype == TET15);
+}
+
+int is_wedge(E_Type etype)
+{
+  return static_cast<int>(etype == WEDGE6 || etype == WEDGE15 || etype == WEDGE16 ||
+                          etype == WEDGE20 || etype == WEDGE21);
+}
+
+int is_pyramid(E_Type etype)
+{
+  return static_cast<int>(etype == PYRAMID5 || etype == PYRAMID13 || etype == PYRAMID14 ||
+                          etype == PYRAMID18 || etype == PYRAMID19);
+}
+
+int is_3d_element(E_Type etype)
+{
+  return static_cast<int>((is_hex(etype) != 0) || (is_tet(etype) != 0) || (is_wedge(etype) != 0) ||
+                          (is_pyramid(etype) != 0));
+}
 
 int ilog2i(size_t n)
 {
@@ -920,18 +948,6 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       printf("============================================================\n");
       printf("\n");
     }
-
-    // If requested, try to discover vertical columnar structures in
-    // the mesh and tweak the partitioning so that elements of a
-    // column are not on multiple processors
-    if (problem->fix_columns) {
-      Gen_Error(1, "INFO: Attempting to discover columns and fix their partitioning");
-      int  nmoved = fix_column_partitions(lb, mesh, graph);
-      char mesg[256];
-      sprintf(mesg, "INFO: Reassigned partitions of %d elements", nmoved);
-      Gen_Error(1, mesg);
-    }
-
   } // problem->type == ELEMENTAL
 
   /* since Chaco didn't free the graph, need to do it here */

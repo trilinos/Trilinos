@@ -33,8 +33,6 @@
 #ifndef STKTOPOLOGY_APPLY_FUNCTOR_TCC
 #define STKTOPOLOGY_APPLY_FUNCTOR_TCC
 
-// IWYU pragma: private, include "stk_topology/topology.hpp"
-
 namespace stk {
 
 // struct my_functor {

@@ -1,32 +1,23 @@
-
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
 #include "ProcessSetsOrBlocks.hpp"
-#include <cstdint>                                 // for int64_t
-#include <map>                                     // for allocator, etc
-#include <stk_mesh/base/BulkData.hpp>              // for BulkData
-#include <stk_mesh/base/MetaData.hpp>              // for MetaData, etc
-#include <utility>                                 // for pair
-#include "IossBridge.hpp"                          // for include_entity, etc
-#include "Ioss_ElementTopology.h"                  // for ElementTopology
-#include "Ioss_Field.h"                            // for Field, etc
-#include "Ioss_NodeBlock.h"                        // for NodeBlock
-#include "Ioss_SideBlock.h"                        // for SideBlock
-#include "Ioss_SideSet.h"                          // for SideSet, etc
+#include <iosfwd>
+#include <map>
+#include "Ioss_Field.h"
+#include "Ioss_SideSet.h"
+#include "IossBridge.hpp"
+#include "SidesetTranslator.hpp"
 #include "StkIoUtils.hpp"
-#include "StkMeshIoBroker.hpp"                     // for StkMeshIoBroker, etc
-#include "stk_mesh/base/Bucket.hpp"                // for Bucket
-#include "stk_mesh/base/CoordinateSystems.hpp"     // for Cartesian
-#include "stk_mesh/base/Field.hpp"                 // for Field
-#include "stk_mesh/base/TopologyDimensions.hpp"    // for ElementNode
-#include "stk_mesh/base/Types.hpp"                 // for OrdinalVector, etc
-#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
-#include "stk_topology/topology.hpp"               // for topology, etc
+
+#include "StkMeshIoBroker.hpp"
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
+#include "stk_topology/topology.hpp"
+#include "stk_mesh/base/CoordinateSystems.hpp"
+#include "stk_mesh/base/Field.hpp"
+#include "stk_util/parallel/CommSparse.hpp"
 #include "stk_util/environment/ReportHandler.hpp"
-#include "stk_util/parallel/CommSparse.hpp"        // for CommSparse, etc
-#include "stk_util/parallel/ParallelComm.hpp"      // for CommBuffer
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
+#include "stk_mesh/base/TopologyDimensions.hpp"
+#include "stk_mesh/base/Field.hpp"
+#include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 
 namespace stk { namespace io {
 
@@ -75,7 +66,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
     if (stk::io::include_entity(entity)) {
       stk::mesh::Part* const part = meta.get_part(entity->name());
 
-      STKIORequire(part !=  nullptr);
+      STKIORequire(part != NULL);
       STKIORequire(entity->field_exists("distribution_factors"));
 
       std::string nodesetName = part->name();
@@ -97,9 +88,9 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
   const Ioss::SideBlockContainer& blocks = sset->get_side_blocks();
   stk::io::default_part_processing(blocks, meta);
   stk::mesh::Part* const ss_part = meta.get_part(sset->name());
-  STKIORequire(ss_part !=  nullptr);
+  STKIORequire(ss_part != NULL);
 
-  stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = nullptr;
+  stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = NULL;
   bool surface_df_defined = false; // Has the surface df field been defined yet?
 
   size_t block_count = sset->block_count();
@@ -107,7 +98,7 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
     Ioss::SideBlock *sb = sset->get_block(i);
     if (stk::io::include_entity(sb)) {
       stk::mesh::Part * const sb_part = meta.get_part(sb->name());
-      STKIORequire(sb_part != nullptr);
+      STKIORequire(sb_part != NULL);
       meta.declare_part_subset(*ss_part, *sb_part);
 
       if (sb->field_exists("distribution_factors")) {

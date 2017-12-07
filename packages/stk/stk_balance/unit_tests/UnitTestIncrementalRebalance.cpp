@@ -41,8 +41,6 @@ public:
         m_incrementalRebalance(incrementalRebalance) { }
     virtual ~FieldVertexWeightSettingsWithSearchForParticles() = default;
 
-    using stk::balance::GraphCreationSettings::getToleranceForFaceSearch;
-
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
     virtual bool areVertexWeightsProvidedInAVector() const { return false; }
     virtual bool areVertexWeightsProvidedViaFields() const { return true; }

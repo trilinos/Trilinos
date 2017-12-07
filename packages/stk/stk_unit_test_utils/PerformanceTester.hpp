@@ -67,6 +67,8 @@ public:
         generate_output();
     }
 
+    double get_duration() const { return duration; }
+
 protected:
     PerformanceTester(MPI_Comm comm) :
             duration(0.0),

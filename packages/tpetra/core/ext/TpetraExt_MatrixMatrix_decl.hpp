@@ -420,17 +420,6 @@ void mult_A_B_newmatrix(
 
 
 
-template<class Scalar,
-         class LocalOrdinal,
-         class GlobalOrdinal,
-         class Node>
-void mult_A_B_newmatrix_kernel_wrapper(
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
-  const std::string& label = std::string(),
-  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-
 
 template<class Scalar,
          class LocalOrdinal,
@@ -459,6 +448,7 @@ void jacobi_A_B_newmatrix(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
   const std::string & label = std::string(),
   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
 
 template<class Scalar,
          class LocalOrdinal,
@@ -502,7 +492,7 @@ void setMaxNumEntriesPerRow(
 	   class GlobalOrdinal,
 	   class Node>
   struct KernelWrappers {
-    static inline void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,					   
+    static inline void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
 							 CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
 							 const Teuchos::Array<LocalOrdinal> & Acol2Brow,
 							 const Teuchos::Array<LocalOrdinal> & Acol2Irow,
@@ -510,9 +500,27 @@ void setMaxNumEntriesPerRow(
 							 const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
 							 CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
 							 Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
-							 const std::string& label = std::string(),
+                                                         const std::string& label = std::string(),
 							 const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
-    
+  };
+
+  template<class Scalar,
+	   class LocalOrdinal,
+	   class GlobalOrdinal,
+	   class Node>
+  struct KernelWrappers2 {
+    static inline void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+                                                           const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Dinv,
+                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                                           const Teuchos::Array<LocalOrdinal> & Acol2Brow,
+                                                           const Teuchos::Array<LocalOrdinal> & Acol2Irow,
+                                                           const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
+                                                           const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
+                                                           CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                                           Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                           const std::string& label = std::string(),
+                                                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
   };
 
 }//end namespace MMdetails

@@ -1,4 +1,4 @@
-C    Copyright(C) 2008-2017 National Technology & Engineering Solutions of
+C    Copyright(C) 2008 National Technology & Engineering Solutions of
 C    Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C    
@@ -102,6 +102,18 @@ C   --Check number of elements in element side sets
      &      // ' in all element side sets does not match total')
       END IF
 
+C   --Check number of nodes in element side sets
+
+      NESS = 0
+      DO 120 IESS = 1, NUMESS
+         NESS = MAX (NESS, IXNESS(IESS) + NNESS(IESS) - 1)
+  120 CONTINUE
+
+      IF (NESS .NE. LESSNL .AND. LESSNL .GT. 0) THEN
+         CALL PRTERR ('CMDSPEC', 'Maximum node index'
+     &      // ' in all element side sets does not match total')
+      END IF
+
 C   --Check all elements in element side sets are within element range
 
       CALL CHKRNG (LTEESS, LESSEL, NUMEL, NZERO, NERR)
@@ -153,30 +165,19 @@ c ... Check that the distribution factor count matches the number of nodes
 C     in the sideset...
       do iess = 1, numess
         call exgsp(ndb, idess(iess), nsess, ndfss, ierr)
-        if (nness(iess) .ne. ndfss .and. ndfss .gt. 0) then
-           write (stra, 10001) idess(iess), ndfss, nness(iess)
-10002      FORMAT('SIDESET ERROR: In sideset ', I10,
-     *          ' the number of distribution factors (', I10,
-     *          ') does not match the sideset node count (', I10, ')')
-           call sqzstr(stra, lstra)
-           CALL PRTERR ('CMDSPEC', STRA(:lstra))
-        end if
-        if (ndfss .gt. 0) then
-           call exgssc(ndb, idess(iess), nscr, ierr)
-           numnod = 0
-           do i = 1, neess(iess)
-              numnod = numnod + nscr(i)
-           end do
-           if (ndfss .ne. numnod) then
-              write (stra, 10001) idess(iess), ndfss, numnod
-10001         FORMAT('SIDESET ERROR: In sideset ', I10,
-     *             ' the number of distribution factors (', I10,
-     *             ') does not match the computed sideset node count (',
-     *             I10, ')')
-              call sqzstr(stra, lstra)
-              CALL PRTERR ('CMDSPEC', STRA(:lstra))
-           endif
-        end if
+        call exgssc(ndb, idess(iess), nscr, ierr)
+        numnod = 0
+        do i = 1, neess(iess)
+          numnod = numnod + nscr(i)
+        end do
+        if (ndfss .ne. numnod) then
+          write (stra, 10001) idess(iess), ndfss, numnod
+10001     FORMAT('SIDESET ERROR: In sideset ', I10,
+     *      ' the number of distribution factors (', I10,
+     *      ') does not match the sideset node count (', I10, ')')
+            call sqzstr(stra, lstra)
+            CALL PRTERR ('CMDSPEC', STRA(:lstra))
+        endif
       end do
       
 c ... Check for discontinuous sideset distribution factors on a sideset.

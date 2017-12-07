@@ -85,13 +85,13 @@ void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSet
     stk::mesh::Selector airSelector = !searchSelector;
     stk::mesh::SkinMeshUtil skinMesh(elemElemGraph, searchSelector, &airSelector);
     std::vector<stk::mesh::SideSetEntry> skinnedSideSet = skinMesh.extract_skinned_sideset();
-    stk::mesh::EntityVector sideNodes;
     for (stk::mesh::SideSetEntry sidesetEntry : skinnedSideSet)
     {
         stk::mesh::Entity sidesetElement = sidesetEntry.element;
         stk::mesh::ConnectivityOrdinal sidesetSide = sidesetEntry.side;
+        stk::mesh::EntityVector sideNodes;
         stk::mesh::get_subcell_nodes(stkMeshBulkData, sidesetElement, stkMeshBulkData.mesh_meta_data().side_rank(), sidesetSide, sideNodes);
-        const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord, sideNodes.data(), sideNodes.size());
+        const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord, sideNodes);
         addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps, stkMeshBulkData.identifier(sidesetElement), faceBoxes);
     }
 }

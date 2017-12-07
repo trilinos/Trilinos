@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,8 +32,6 @@
 
 #include <Ionit_Initializer.h>
 #include <Ioss_CodeTypes.h>
-#include <Ioss_Hex8.h>
-#include <Ioss_Wedge6.h>
 #include <Ioss_Utils.h>
 #include <cmath>
 #include <cstddef>
@@ -87,7 +85,7 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
 
@@ -171,7 +169,7 @@ int main(int argc, char *argv[])
   create_sph(in_file, in_type, out_file, out_type, globals);
 
   OUTPUT << "\n" << codename << " execution successful.\n";
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
   return EXIT_SUCCESS;
@@ -266,11 +264,11 @@ namespace {
       Ioss::ElementBlock *eb = *I;
       ++I;
       std::string type = eb->get_property("topology_type").get_string();
-      if (type == Ioss::Hex8::name) {
-        sph_node_count += eb->entity_count();
+      if (type == "hex8") {
+        sph_node_count += eb->get_property("entity_count").get_int();
 
         // Add the element block...
-        int                 num_elem = eb->entity_count();
+        int                 num_elem = eb->get_property("entity_count").get_int();
         std::string         name     = eb->name();
         Ioss::ElementBlock *ebn =
             new Ioss::ElementBlock(output_region.get_database(), name, "sphere", num_elem);
@@ -320,7 +318,7 @@ namespace {
     I             = ebs.begin();
     size_t offset = 0;
     while (I != ebs.end()) {
-      if ((*I)->get_property("topology_type").get_string() == Ioss::Hex8::name) {
+      if ((*I)->get_property("topology_type").get_string() == "hex8") {
 
         std::vector<double> volume;
         std::vector<double> radius;
@@ -342,7 +340,7 @@ namespace {
         }
 
         // Connectivity for the sphere element blocks is just their local element location
-        size_t           num_elem = output_eb->entity_count();
+        size_t           num_elem = output_eb->get_property("entity_count").get_int();
         std::vector<int> connectivity(num_elem);
         for (size_t i = 0; i < num_elem; i++) {
           connectivity[i] = offset + 1 + i;
@@ -354,7 +352,7 @@ namespace {
 
         output_ns->put_field_data("ids", connectivity);
 
-        offset += output_eb->entity_count();
+        offset += output_eb->get_property("entity_count").get_int();
       }
       ++I;
     }
@@ -505,7 +503,7 @@ namespace {
                   double scale_factor)
   {
     const double     one12th = 1.0 / 12.0;
-    size_t           nelem   = block->entity_count();
+    size_t           nelem   = block->get_property("entity_count").get_int();
     std::vector<int> connectivity;
     block->get_field_data("connectivity_raw", connectivity);
 

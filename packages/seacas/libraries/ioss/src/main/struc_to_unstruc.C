@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -113,7 +113,7 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
   OUTPUT << "\n\tElapsed time = " << end - begin << " seconds.\n";
 
   OUTPUT << "\n" << codename << " execution successful.\n";
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
   return EXIT_SUCCESS;
@@ -237,7 +237,7 @@ namespace {
   void transfer_nodal(const Ioss::Region &region, Ioss::Region &output_region)
   {
     auto   nb         = output_region.get_node_blocks()[0];
-    size_t node_count = region.get_node_blocks()[0]->entity_count();
+    size_t node_count = region.get_node_blocks()[0]->get_property("entity_count").get_int();
     {
       std::vector<int> ids(node_count); // To hold the global node id map.
       auto &           blocks = region.get_structured_blocks();
@@ -432,7 +432,7 @@ namespace {
     const auto &nbs = region.get_node_blocks();
     assert(nbs.size() == 1);
     size_t degree    = nbs[0]->get_property("component_degree").get_int();
-    size_t num_nodes = nbs[0]->entity_count();
+    size_t num_nodes = nbs[0]->get_property("entity_count").get_int();
     auto nb = new Ioss::NodeBlock(output_region.get_database(), nbs[0]->name(), num_nodes, degree);
     output_region.add(nb);
 
@@ -492,7 +492,7 @@ namespace {
         const std::string &fbname   = fb->name();
         std::string        fbtype   = fb->get_property("topology_type").get_string();
         std::string        partype  = fb->get_property("parent_topology_type").get_string();
-        size_t             num_side = fb->entity_count();
+        size_t             num_side = fb->get_property("entity_count").get_int();
         total_sides += num_side;
 
         auto block =
@@ -521,7 +521,7 @@ namespace {
                           Ioss::Field::RoleType role)
   {
     auto   nb         = output_region.get_node_blocks()[0];
-    size_t node_count = region.get_node_blocks()[0]->entity_count();
+    size_t node_count = region.get_node_blocks()[0]->get_property("entity_count").get_int();
     auto & blocks     = region.get_structured_blocks();
     for (auto &block : blocks) {
       Ioss::NameList fields;
@@ -552,7 +552,7 @@ namespace {
   {
     {
       auto   nb         = output_region.get_node_blocks()[0];
-      size_t node_count = region.get_node_blocks()[0]->entity_count();
+      size_t node_count = region.get_node_blocks()[0]->get_property("entity_count").get_int();
       std::vector<double> node_data(node_count);
       std::vector<double> data;
 

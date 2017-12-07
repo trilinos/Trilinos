@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 2010-2017 National Technology & Engineering Solutions
+ * Copyright(C) 2010 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -39,17 +39,12 @@
 #include "EP_SystemInterface.h"
 #include "smart_assert.h"
 #include <climits>
-#include <cstddef>
 #include <cstdlib>
+
+#include <cstddef>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
-#include <stdexcept>
-
-#if !defined(_WIN32)
-#include <unistd.h>
-#endif
 
 #include <exodusII.h>
 
@@ -66,6 +61,10 @@ std::string              Excn::ExodusFile::outputFilename_;
 bool                     Excn::ExodusFile::keepOpen_          = false;
 int                      Excn::ExodusFile::maximumNameLength_ = 32;
 
+namespace {
+  int get_free_descriptor_count();
+} // namespace
+
 Excn::ExodusFile::ExodusFile(int processor) : myProcessor_(processor)
 {
   SMART_ASSERT(processor < processorCount_)(processor)(processorCount_);
@@ -80,9 +79,8 @@ Excn::ExodusFile::ExodusFile(int processor) : myProcessor_(processor)
     fileids_[processor] =
         ex_open(filenames_[processor].c_str(), mode, &cpu_word_size, &io_word_size_var, &version);
     if (fileids_[processor] < 0) {
-      std::ostringstream errmsg;
-      errmsg << "Cannot open file '" << filenames_[processor] << "' - exiting" << '\n';
-      throw std::runtime_error(errmsg.str());
+      std::cerr << "Cannot open file '" << filenames_[processor] << "' - exiting" << '\n';
+      exit(1);
     }
     ex_set_max_name_length(fileids_[processor], maximumNameLength_);
 
@@ -129,23 +127,7 @@ void Excn::ExodusFile::close_all()
   }
 }
 
-void Excn::ExodusFile::unlink_temporary_files()
-{
-  for (int p = 0; p < partCount_; p++) {
-    if (fileids_[p] >= 0) {
-      ex_close(fileids_[p]);
-      unlink(filenames_[p].c_str());
-      fileids_[p] = -1;
-    }
-  }
-  if (outputId_ >= 0) {
-    ex_close(outputId_);
-    outputId_ = -1;
-  }
-}
-
-bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int part_count,
-                                  int cycle, bool joining_subcycle)
+bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int part_count)
 {
   processorCount_ = si.processor_count(); // Total number processors
   partCount_      = part_count;           // Total parts we are processing
@@ -165,18 +147,14 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
   int max_files = get_free_descriptor_count();
   if (partCount_ <= max_files) {
     keepOpen_ = true;
-    if (cycle == 0) {
-      if ((si.debug() & 1) != 0) {
-        std::cout << "Files kept open... (Max open = " << max_files << ")\n\n";
-      }
+    if ((si.debug() & 1) != 0) {
+      std::cout << "Files kept open... (Max open = " << max_files << ")\n\n";
     }
   }
   else {
     keepOpen_ = false;
-    if (cycle == 0) {
-      std::cout << "Single file mode... (Max open = " << max_files << ")\n"
-                << "Consider using the -subcycle option for faster execution...\n\n";
-    }
+    std::cout << "Single file mode... (Max open = " << max_files << ")\n"
+              << "Consider using the -subcycle option for faster execution...\n\n";
   }
 
   fileids_.resize(processorCount_);
@@ -203,13 +181,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
     }
 
     int proc = p + startPart_;
-    if (joining_subcycle) {
-      name = si.output_filename();
-      disks.rename_file_for_mp("", "", name, proc, processorCount_);
-    }
-    else {
-      disks.rename_file_for_mp(root_dir, sub_dir, name, proc, processorCount_);
-    }
+    disks.rename_file_for_mp(root_dir, sub_dir, name, proc, processorCount_);
     filenames_[p] = name;
 
     if (p == 0) {
@@ -262,7 +234,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
     }
 
     if (((si.debug() & 64) != 0) || p == 0 || p == partCount_ - 1) {
-      std::cout << "[" << cycle << "] Input(" << p << "): '" << name.c_str() << "'" << '\n';
+      std::cout << "Input(" << p << "): '" << name.c_str() << "'" << '\n';
       if (((si.debug() & 64) == 0) && p == 0) {
         std::cout << "..." << '\n';
       }
@@ -270,9 +242,7 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
   }
 
   if ((mode64bit_ & EX_ALL_INT64_DB) != 0) {
-    if (cycle == 0) {
-      std::cout << "Input files contain 8-byte integers.\n";
-    }
+    std::cout << "Input files contain 8-byte integers.\n";
     si.set_int64();
   }
 
@@ -294,8 +264,6 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   if ((curdir.length() != 0u) && !Excn::is_path_absolute(outputFilename_)) {
     outputFilename_ = curdir + "/" + outputFilename_;
   }
-
-  si.set_output_filename(outputFilename_);
 
   if (si.subcycle() > 1) {
     Excn::ParallelDisks::Create_IO_Filename(outputFilename_, cycle, si.subcycle());
@@ -324,14 +292,14 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   }
 
   if (si.append()) {
-    std::cout << "[" << cycle << "] Output:   '" << outputFilename_ << "' (appending)" << '\n';
+    std::cout << "Output:   '" << outputFilename_ << "' (appending)" << '\n';
     float version = 0.0;
     mode |= EX_WRITE;
     outputId_ = ex_open(outputFilename_.c_str(), mode, &cpuWordSize_, &ioWordSize_, &version);
   }
   else {
     mode |= EX_CLOBBER;
-    std::cout << "[" << cycle << "] Output:   '" << outputFilename_ << "'" << '\n';
+    std::cout << "Output:   '" << outputFilename_ << "'" << '\n';
     outputId_ = ex_create(outputFilename_.c_str(), mode, &cpuWordSize_, &ioWordSize_);
   }
   if (outputId_ < 0) {
@@ -353,42 +321,48 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   ex_set_option(outputId_, EX_OPT_MAX_NAME_LENGTH, maximumNameLength_);
 
   int int_size = si.int64() ? 8 : 4;
-  if (cycle == 0) {
-    std::cout << "IO Word sizes: " << ioWordSize_ << " bytes floating point and " << int_size
-              << " bytes integer.\n";
-  }
+  std::cout << "IO Word sizes: " << ioWordSize_ << " bytes floating point and " << int_size
+            << " bytes integer.\n";
   return true;
 }
 
-int Excn::ExodusFile::get_free_descriptor_count()
-{
+#if defined(__PUMAGON__)
+#include <stdio.h>
+#elif !defined(_WIN32)
+#include <unistd.h>
+#endif
+
+namespace {
+  int get_free_descriptor_count()
+  {
 // Returns maximum number of files that one process can have open
 // at one time. (POSIX)
 #if defined(__PUMAGON__)
-  int fdmax = FOPEN_MAX;
+    int fdmax = FOPEN_MAX;
 #elif defined(_WIN32)
-  int fdmax = _getmaxstdio();
+    int fdmax = _getmaxstdio();
 #else
-  int fdmax = sysconf(_SC_OPEN_MAX);
-  if (fdmax == -1) {
-    // POSIX indication that there is no limit on open files...
-    fdmax = INT_MAX;
-  }
+    int fdmax = sysconf(_SC_OPEN_MAX);
+    if (fdmax == -1) {
+      // POSIX indication that there is no limit on open files...
+      fdmax = INT_MAX;
+    }
 #endif
-  // File descriptors are assigned in order (0,1,2,3,...) on a per-process
-  // basis.
+    // File descriptors are assigned in order (0,1,2,3,...) on a per-process
+    // basis.
 
-  // Assume that we have stdin, stdout, stderr, and output exodus
-  // file (4 total).
+    // Assume that we have stdin, stdout, stderr, and output exodus
+    // file (4 total).
 
-  return fdmax - 4;
+    return fdmax - 4;
 
-  // Could iterate from 0..fdmax and check for the first
-  // EBADF (bad file descriptor) error return from fcntl, but that takes
-  // too long and may cause other problems.  There is a isastream(filedes)
-  // call on Solaris that can be used for system-dependent code.
-  //
-  // Another possibility is to do an open and see which descriptor is
-  // returned -- take that as 1 more than the current count of open files.
-  //
-}
+    // Could iterate from 0..fdmax and check for the first
+    // EBADF (bad file descriptor) error return from fcntl, but that takes
+    // too long and may cause other problems.  There is a isastream(filedes)
+    // call on Solaris that can be used for system-dependent code.
+    //
+    // Another possibility is to do an open and see which descriptor is
+    // returned -- take that as 1 more than the current count of open files.
+    //
+  }
+} // namespace

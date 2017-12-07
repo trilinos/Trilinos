@@ -33,16 +33,9 @@
 #ifndef FACETESTINGUTILS_HPP_
 #define FACETESTINGUTILS_HPP_
 
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
-#include <set>                       // for set
-#include <string>                    // for string
-#include "stk_mesh/base/Entity.hpp"  // for Entity
-#include "stk_mesh/base/Types.hpp"   // for EntityId, EntityVector
-namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { class Part; } }
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
+#include <stk_mesh/base/BulkData.hpp>
+#include <string>
+#include <vector>
 
 unsigned count_sides_in_mesh(const stk::mesh::BulkData& mesh);
 

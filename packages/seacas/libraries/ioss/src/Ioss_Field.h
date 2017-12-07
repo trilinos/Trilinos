@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -143,7 +143,7 @@ namespace Ioss {
     RoleType get_role() const { return role_; }
 
     size_t get_index() const { return index_; }
-    void   set_index(size_t index) const { index_ = index; }
+    void set_index(size_t index) const { index_ = index; }
 
     void reset_count(size_t new_count);  // new number of items in field
     void reset_type(BasicType new_type); // new type of items in field.

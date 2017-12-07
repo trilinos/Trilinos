@@ -1,14 +1,6 @@
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
 #include "ParticleUtils.hpp"
-#include <memory>                      // for unique_ptr
-#include <stk_mesh/base/BulkData.hpp>  // for BulkData
-#include <utility>                     // for move, pair
-#include "stk_mesh/base/Entity.hpp"    // for Entity
-#include "stk_mesh/base/Types.hpp"     // for EntityId, PartVector
-namespace stk { namespace mesh { class Part; } }
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
+#include <stk_mesh/base/GetEntities.hpp>  // for get_entities
+#include <stk_mesh/base/BulkData.hpp>
 
 namespace stk
 {

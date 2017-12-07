@@ -31,6 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+
 #ifndef STK_UTIL_UTIL_null_streambuf_hpp
 #define STK_UTIL_UTIL_null_streambuf_hpp
 
@@ -58,6 +59,9 @@ protected:
   //: Sync is a no-op
   virtual int sync();
 
+  //: Setbuf is a no-op
+  virtual std::streambuf * setbuf( char * s , std::streamsize n );
+
 private:
 
   null_streambuf( const null_streambuf & ); // Not allowed
@@ -66,5 +70,6 @@ private:
   char buf[64]; // Throw away buffer
 };
 
-#endif // STK_UTIL_UTIL_null_streambuf_hpp
+/*--------------------------------------------------------------------*/
 
+#endif // STK_UTIL_UTIL_null_streambuf_hpp

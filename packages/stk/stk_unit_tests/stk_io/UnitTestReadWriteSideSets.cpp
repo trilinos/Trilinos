@@ -1,8 +1,5 @@
 #include <gtest/gtest.h>
-#include <stk_unit_test_utils/ioUtils.hpp>
 #include "stk_mesh/base/GetEntities.hpp"
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include "stk_unit_test_utils/ReadWriteSidesetTester.hpp"
 
 TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)
@@ -24,9 +21,11 @@ TEST(StkIo, read_write_and_compare_exo_files_with_sidesets)
     }
 }
 
-TEST(StkIo, read_write_and_compare_exo_files_with_sidesets_because_PMR_for_coincident_not_implemented_yet)
+TEST(StkIo, DISABLED_read_write_and_compare_exo_files_with_sidesets_because_PMR_for_coincident_not_implemented_yet)
 {
-    std::vector<std::string> filesToTest = { "ALefRA.e" };
+    std::vector<std::string> filesToTest = {
+                                            "ALefRA.e"
+    };
 
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     if ( stk::parallel_machine_size(comm) == 2)

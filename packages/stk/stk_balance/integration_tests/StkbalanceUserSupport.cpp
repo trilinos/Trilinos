@@ -19,10 +19,9 @@
 #include "stk_mesh/base/SkinMeshUtil.hpp"
 
 #include <stk_balance/balance.hpp>
-#include <stk_unit_test_utils/MeshFixture.hpp>
 #include "../stk_balance/internal/LastStepFieldWriter.hpp"
 
-#include "stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp"
+#include "stk_balance/search_tolerance/SecondShortestEdgeFaceSearchTolerance.hpp"
 
 namespace
 {
@@ -339,7 +338,7 @@ void set_contact_weights(stk::mesh::Field<double>& contactCriteria, double weigh
         std::vector<double> maxCoord(3, std::numeric_limits<double>::lowest());
         getMaxMinForNodes(bulk, sideNodes, minCoord, maxCoord, *coordField);
 
-        const double searchTol = balanceSettings.getToleranceForFaceSearch(bulk, *coordField, sideNodes.data(), sideNodes.size());
+        const double searchTol = balanceSettings.getToleranceForFaceSearch(bulk, *coordField, sideNodes);
         adjust_bounding_box(minCoord, maxCoord, searchTol);
 
         stk::balance::internal::StkBox box(minCoord[0], minCoord[1], minCoord[2],
@@ -517,23 +516,7 @@ TEST(Stkbalance, changeOptions)
     delete balanceOptions;
 }
 
-class ToleranceTester : public stk::unit_test_util::MeshFixture {};
 
-TEST_F(ToleranceTester, smDefaults)
-{
-    stk::balance::run_stk_rebalance(".", "gapped_plates.g", stk::balance::SM_DEFAULTS, MPI_COMM_WORLD);
-
-    setup_mesh("gapped_plates.g", stk::mesh::BulkData::NO_AUTO_AURA);
-    for(unsigned i=1; i<101; i++)
-    {
-        stk::mesh::EntityId lowerId = i;
-        stk::mesh::EntityId upperId = i+700;
-        stk::mesh::Entity lower = get_bulk().get_entity(stk::topology::ELEM_RANK, lowerId);
-        stk::mesh::Entity upper = get_bulk().get_entity(stk::topology::ELEM_RANK, upperId);
-        if(get_bulk().is_valid(lower))
-            EXPECT_TRUE(get_bulk().is_valid(upper)) << "Elements not on same proc: " << lowerId << ", " << upperId;
-    }
-}
 
 
 }

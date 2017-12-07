@@ -106,7 +106,7 @@ struct Options
          std::string searchString = stk::unit_test_util::get_option(optionString, "boost");
          if ( searchString == "octree")
          {
-             ThrowRequireMsg(false, "search method octree deprecated");
+             mSearchMethod = OCTREE;
          }
          else if ( searchString == "gtk" )
          {
@@ -168,7 +168,11 @@ void printOptions(const Options& options)
         std::cerr << "Sphere file: " << options.mSphereFile << std::endl;
         std::cerr << "Volume file: " << options.mVolumeFile << std::endl;
         std::cerr << "Search Method: ";
-        if (options.mSearchMethod == KDTREE )
+        if ( options.mSearchMethod == OCTREE )
+        {
+            std::cerr << "OCTREE" << std::endl;
+        }
+        else if (options.mSearchMethod == KDTREE )
         {
             std::cerr << "KDTREE" << std::endl;
         }

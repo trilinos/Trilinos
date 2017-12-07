@@ -1,4 +1,4 @@
-// Copyright(C) 2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -68,7 +68,7 @@
 #include "EJ_match_xyz.h"
 #include "EJ_vector3d.h"
 
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -166,7 +166,7 @@ unsigned int debug_level = 0;
 
 int main(int argc, char *argv[])
 {
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
 
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
     time_t end_time = time(nullptr);
     add_to_log(argv[0], static_cast<int>(end_time - begin_time));
 
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
     MPI_Finalize();
 #endif
 
@@ -570,7 +570,7 @@ namespace {
           std::cerr << name << ", ";
         }
         std::string type     = eb->get_property("topology_type").get_string();
-        size_t      num_elem = eb->entity_count();
+        size_t      num_elem = eb->get_property("entity_count").get_int();
         total_elements += num_elem;
 
         if (num_elem > 0) {
@@ -622,7 +622,7 @@ namespace {
           }
           std::string fbtype   = fb->get_property("topology_type").get_string();
           std::string partype  = fb->get_property("parent_topology_type").get_string();
-          size_t      num_side = fb->entity_count();
+          size_t      num_side = fb->get_property("entity_count").get_int();
           total_sides += num_side;
 
           auto block =
@@ -680,10 +680,6 @@ namespace {
           }
         }
         ons->put_field_data("ids", nodelist);
-
-	// Output distribution factors -- set all to 1.0
-	std::vector<double> factors(nodelist.size(), 1.0);
-	ons->put_field_data("distribution_factors", factors);
       }
     }
   }
@@ -708,7 +704,7 @@ namespace {
         SMART_ASSERT(nb != nullptr);
 
         SMART_ASSERT(part_mesh[p]->get_property("node_count").get_int() ==
-                     nb->entity_count());
+                     nb->get_property("entity_count").get_int());
 
         Ioss::NameList fields;
         nb->field_describe(Ioss::Field::TRANSIENT, &fields);
@@ -740,7 +736,7 @@ namespace {
         if (debug) {
           std::cerr << name << ", ";
         }
-        size_t count    = ns->entity_count();
+        size_t count    = ns->get_property("entity_count").get_int();
         auto   node_set = new Ioss::NodeSet(output_region.get_database(), name, count);
         output_region.add(node_set);
         set_id(ns, node_set);
@@ -818,7 +814,7 @@ namespace {
       SMART_ASSERT(nb != nullptr);
       std::vector<double> coordinates;
       nb->get_field_data("mesh_model_coordinates", coordinates);
-      size_t node_count = nb->entity_count();
+      size_t node_count = nb->get_property("entity_count").get_int();
       size_t offset     = part_mesh[p]->get_property("node_offset").get_int();
       for (size_t i = 0; i < node_count; i++) {
         ssize_t glob_pos = local_node_map[i + offset];
@@ -849,7 +845,7 @@ namespace {
     size_t element_offset = 0;
     for (auto eb : ebs) {
       eb->put_field_data("ids", &ids[element_offset], ids.size() * sizeof(int));
-      element_offset += eb->entity_count();
+      element_offset += eb->get_property("entity_count").get_int();
     }
 
     SMART_ASSERT(element_offset == element_count);
@@ -871,8 +867,8 @@ namespace {
           std::vector<INT> connectivity;
           ieb->get_field_data("connectivity", connectivity);
 
-          SMART_ASSERT(ieb->entity_count() ==
-                       oeb->entity_count());
+          SMART_ASSERT(ieb->get_property("entity_count").get_int() ==
+                       oeb->get_property("entity_count").get_int());
           for (size_t i = 0; i < connectivity.size(); i++) {
 
             // connectivity is in part-global node ids.
@@ -918,8 +914,8 @@ namespace {
             ons  = output_region.get_nodeset(name);
           }
           SMART_ASSERT(ons != nullptr)(name);
-          SMART_ASSERT(in->entity_count() ==
-                       ons->entity_count());
+          SMART_ASSERT(in->get_property("entity_count").get_int() ==
+                       ons->get_property("entity_count").get_int());
 
           // This needs to make sure that the nodelist comes back as local id (1..numnodes)
           for (size_t i = 0; i < nodelist.size(); i++) {
@@ -969,8 +965,8 @@ namespace {
             SMART_ASSERT((eb->name() == (*II)->name()) ||
                          (part_mesh[p]->name() + "_" + eb->name() == (*II)->name()))
             (eb->name())((*II)->name());
-            SMART_ASSERT(eb->entity_count() ==
-                         (*II)->entity_count());
+            SMART_ASSERT(eb->get_property("entity_count").get_int() ==
+                         (*II)->get_property("entity_count").get_int());
             std::vector<INT> elem_side_list;
             eb->get_field_data("element_side_raw", elem_side_list);
 
@@ -1017,7 +1013,7 @@ namespace {
 
     Ioss::NodeBlock *onb = output_region.get_node_blocks()[0];
     SMART_ASSERT(onb != nullptr);
-    size_t node_count = onb->entity_count();
+    size_t node_count = onb->get_property("entity_count").get_int();
 
     Ioss::NameList fields;
     onb->field_describe(Ioss::Field::TRANSIENT, &fields);
@@ -1033,7 +1029,7 @@ namespace {
             SMART_ASSERT((int)comp_count == nb->get_field(field).raw_storage()->component_count());
             std::vector<double> loc_data;
             nb->get_field_data(field, loc_data);
-            size_t nc = nb->entity_count();
+            size_t nc = nb->get_property("entity_count").get_int();
             SMART_ASSERT(loc_data.size() == nc * comp_count);
             for (size_t i = 0; i < nc; i++) {
               ssize_t glob_pos = local_node_map[offset + i];
@@ -1066,7 +1062,7 @@ namespace {
         SMART_ASSERT(nb != nullptr);
 
         SMART_ASSERT(part_mesh[p]->get_property("node_count").get_int() ==
-                     nb->entity_count());
+                     nb->get_property("entity_count").get_int());
 
         // NOTE: The node order in the output nodeset 'ons' was
         // defined as the same node order in the input nodeblock 'nb',
@@ -1315,7 +1311,7 @@ namespace {
     }
     Ioss::NodeBlock *onb = output_region.get_node_blocks()[0];
     SMART_ASSERT(onb != nullptr);
-    size_t node_count = onb->entity_count();
+    size_t node_count = onb->get_property("entity_count").get_int();
     size_t part_count = part_mesh.size();
     for (size_t p = 0; p < part_count; p++) {
       if (!interface.convert_nodes_to_nodesets(p + 1)) {

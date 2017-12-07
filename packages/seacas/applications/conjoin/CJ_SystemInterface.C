@@ -139,101 +139,75 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   {
     const char *temp = options_.retrieve("debug");
-    if (temp != nullptr) {
-      debugLevel_ = strtol(temp, nullptr, 10);
+    debugLevel_      = strtol(temp, nullptr, 10);
+  }
+
+  {
+    const char *temp  = options_.retrieve("alive_value");
+    int         value = strtol(temp, nullptr, 10);
+    if (value == 1 || value == 0) {
+      aliveValue_ = value;
+    }
+    else {
+      std::cerr << "\nInvalid value specified for node and element status."
+                << "\nValid values are '1' or '0'.  Found '" << value << "'\n";
+      exit(EXIT_FAILURE);
     }
   }
 
   {
-    const char *temp = options_.retrieve("alive_value");
-    if (temp != nullptr) {
-      int value = strtol(temp, nullptr, 10);
-      if (value == 1 || value == 0) {
-        aliveValue_ = value;
-      }
-      else {
-        std::cerr << "\nInvalid value specified for node and element status."
-                  << "\nValid values are '1' or '0'.  Found '" << value << "'\n";
-        exit(EXIT_FAILURE);
-      }
-    }
+    const char *temp           = options_.retrieve("interpart_minimum_time_delta");
+    interpartMinimumTimeDelta_ = strtod(temp, nullptr);
   }
 
   {
-    const char *temp = options_.retrieve("interpart_minimum_time_delta");
-    if (temp != nullptr) {
-      interpartMinimumTimeDelta_ = strtod(temp, nullptr);
-    }
+    const char *temp       = options_.retrieve("element_status_variable");
+    elementStatusVariable_ = temp;
   }
 
   {
-    const char *temp = options_.retrieve("element_status_variable");
-    if (temp != nullptr) {
-      elementStatusVariable_ = temp;
-    }
+    const char *temp     = options_.retrieve("nodal_status_variable");
+    nodalStatusVariable_ = temp;
   }
 
   {
-    const char *temp = options_.retrieve("nodal_status_variable");
-    if (temp != nullptr) {
-      nodalStatusVariable_ = temp;
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("combine_status_variables");
-    if (temp != nullptr) {
-      meshCombineStatusVariable_ = temp;
-    }
+    const char *temp           = options_.retrieve("combine_status_variables");
+    meshCombineStatusVariable_ = temp;
   }
 
   {
     const char *temp = options_.retrieve("width");
-    if (temp != nullptr) {
-      screenWidth_ = strtol(temp, nullptr, 10);
-    }
+    screenWidth_     = strtol(temp, nullptr, 10);
   }
 
   {
     const char *temp = options_.retrieve("output");
-    if (temp != nullptr) {
-      outputName_ = temp;
-    }
+    outputName_      = temp;
   }
 
   {
     const char *temp = options_.retrieve("gvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &globalVarNames_);
-    }
+    parse_variable_names(temp, &globalVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("nvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &nodeVarNames_);
-    }
+    parse_variable_names(temp, &nodeVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("evar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &elemVarNames_);
-    }
+    parse_variable_names(temp, &elemVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("nsetvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &nsetVarNames_);
-    }
+    parse_variable_names(temp, &nsetVarNames_);
   }
 
   {
     const char *temp = options_.retrieve("ssetvar");
-    if (temp != nullptr) {
-      parse_variable_names(temp, &ssetVarNames_);
-    }
+    parse_variable_names(temp, &ssetVarNames_);
   }
 
   if (options_.retrieve("64-bit") != nullptr) {
@@ -256,7 +230,7 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     std::cerr << "\n"
-              << "Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions\n"
+              << "Copyright(C) 2009-2010 National Technology & Engineering Solutions\n"
               << "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
               << "NTESS, the U.S. Government retains certain rights in this software.\n"
               << "\n"

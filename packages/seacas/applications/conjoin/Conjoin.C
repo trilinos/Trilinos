@@ -1,4 +1,4 @@
-// Copyright(C) 2009-2010-2017 National Technology & Engineering Solutions
+// Copyright(C) 2009-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -69,13 +69,6 @@
 #endif
 
 namespace {
-  template <typename T> void clear(std::vector<T> &vec)
-  {
-    vec.clear();
-    vec.shrink_to_fit();
-    SMART_ASSERT(vec.capacity() == 0);
-  }
-
   template <typename T> bool approx_equal(T v1, T v2)
   {
 #if 0
@@ -166,7 +159,7 @@ namespace {
 
   std::string time_stamp(const std::string &format);
   std::string format_time(double seconds);
-  int         get_width(size_t max_value);
+  int get_width(size_t max_value);
 
   ex_entity_type exodus_object_type(Excn::ObjectType &conjoin_type)
   {
@@ -212,14 +205,14 @@ template <typename T, typename INT>
 int conjoin(Excn::SystemInterface &interface, T /* dummy */, INT /* dummy int */);
 
 namespace {
-  void                         compress_white_space(char *str);
-  void                         add_info_record(char *info_record, int size);
+  void compress_white_space(char *str);
+  void add_info_record(char *info_record, int size);
   template <typename INT> void put_mesh_summary(const Excn::Mesh<INT> &mesh);
 
   template <typename T>
   void get_put_qa(int id, int id_out, const std::vector<TimeStepMap<T>> &global_times,
                   Excn::SystemInterface &interface);
-  int  get_put_coordinate_names(int in, int out, int dimensionality);
+  int get_put_coordinate_names(int in, int out, int dimensionality);
 
   template <typename T, typename INT>
   int get_put_coordinates(Excn::Mesh<INT> &global, size_t part_count,
@@ -284,9 +277,9 @@ namespace {
   template <typename INT> void put_nodesets(std::vector<Excn::NodeSet<INT>> &glob_sets);
 
   template <typename INT>
-  void                         get_sideset_metadata(std::vector<Excn::Mesh<INT>> &                local_mesh,
-                                                    std::vector<std::vector<Excn::SideSet<INT>>> &sets,
-                                                    std::vector<Excn::SideSet<INT>> &             glob_ssets);
+  void get_sideset_metadata(std::vector<Excn::Mesh<INT>> &                local_mesh,
+                            std::vector<std::vector<Excn::SideSet<INT>>> &sets,
+                            std::vector<Excn::SideSet<INT>> &             glob_ssets);
   template <typename INT> void get_put_sidesets(std::vector<Excn::SideSet<INT>> &glob_ssets);
 
   template <typename T, typename INT>
@@ -331,27 +324,11 @@ namespace {
     }
   }
 
-  // SEE: http://lemire.me/blog/2017/04/10/removing-duplicates-from-lists-quickly
-  template <typename T> size_t unique(std::vector<T> &out)
+  template <typename T> void uniqify(std::vector<T> &map)
   {
-    if (out.empty())
-      return 0;
-    size_t pos  = 1;
-    T      oldv = out[0];
-    for (size_t i = 1; i < out.size(); ++i) {
-      T newv   = out[i];
-      out[pos] = newv;
-      pos += (newv != oldv);
-      oldv = newv;
-    }
-    return pos;
-  }
-
-  template <typename T> void uniqify(std::vector<T> &vec)
-  {
-    std::sort(vec.begin(), vec.end());
-    vec.resize(unique(vec));
-    vec.shrink_to_fit();
+    std::sort(map.begin(), map.end());
+    map.erase(std::unique(map.begin(), map.end()), map.end());
+    map.shrink_to_fit();
   }
 } // namespace
 
@@ -1587,9 +1564,8 @@ namespace {
           }
         }
         if (repeat_found > 0) {
-          std::cerr << repeat_found
-                    << " duplicate element ids were found. Their ids have been "
-                       "renumbered to remove duplicates.\n";
+          std::cerr << repeat_found << " duplicate element ids were found. Their ids have been "
+                                       "renumbered to remove duplicates.\n";
         }
       }
     }
@@ -2132,8 +2108,11 @@ namespace {
       ex_put_set(exoid, EX_NODE_SET, glob_set.id, &glob_set.nodeSetNodes[0], nullptr);
       //    ex_put_node_set_dist_fact(exoid, glob_sets[ns].id, &glob_sets[ns].distFactors[0]);
       // Done with the memory; clear out the vector containing the bulk data nodes and distFactors.
-      clear(glob_set.nodeSetNodes);
-      clear(glob_set.distFactors);
+      std::vector<INT>().swap(glob_set.nodeSetNodes);
+      Excn::DistVector().swap(glob_set.distFactors);
+
+      SMART_ASSERT(glob_set.nodeSetNodes.empty());
+      SMART_ASSERT(glob_set.distFactors.empty());
 
       if (debug_level & 32) {
         glob_set.dump();
@@ -2265,9 +2244,9 @@ namespace {
       for (size_t ss = 0; ss < set_ids.size(); ss++) {
         // This is maximum possible size; will probably be reduced by duplicate elimination...
         typedef std::vector<std::pair<INT, INT>> ElemSideMap;
-        ElemSideMap                              elem_side(glob_ssets[ss].sideCount);
-        int                                      ss_id  = glob_ssets[ss].id;
-        size_t                                   offset = 0;
+        ElemSideMap elem_side(glob_ssets[ss].sideCount);
+        int         ss_id  = glob_ssets[ss].id;
+        size_t      offset = 0;
 
         size_t lss = glob_ssets[ss].position_;
         for (size_t p = 0; p < part_count; p++) {
@@ -2295,7 +2274,8 @@ namespace {
 
         // Populate the global sideset elements and sides...
         for (size_t i = 0; i < elem_side.size(); i++) {
-	  std::tie(glob_ssets[ss].elems[i], glob_ssets[ss].sides[i]) = elem_side[i];
+          glob_ssets[ss].elems[i] = elem_side[i].first;
+          glob_ssets[ss].sides[i] = elem_side[i].second;
         }
 
         if (need_sideset_map) {
@@ -2338,9 +2318,12 @@ namespace {
       // (Could move up into sideset loop above)
       for (size_t p = 0; p < part_count; p++) {
         for (auto &elem : sets[p]) {
-          clear(elem.elems);
-          clear(elem.sides);
-          clear(elem.distFactors);
+          std::vector<INT>().swap(elem.elems);
+          std::vector<INT>().swap(elem.sides);
+          Excn::DistVector().swap(elem.distFactors);
+          SMART_ASSERT(elem.elems.empty());
+          SMART_ASSERT(elem.sides.empty());
+          SMART_ASSERT(elem.distFactors.empty());
         }
       }
     }
@@ -2359,9 +2342,12 @@ namespace {
     }
 
     for (auto &glob_sset : glob_ssets) {
-      clear(glob_sset.elems);
-      clear(glob_sset.sides);
-      clear(glob_sset.distFactors);
+      std::vector<INT>().swap(glob_sset.elems);
+      std::vector<INT>().swap(glob_sset.sides);
+      Excn::DistVector().swap(glob_sset.distFactors);
+      SMART_ASSERT(glob_sset.elems.empty());
+      SMART_ASSERT(glob_sset.sides.empty());
+      SMART_ASSERT(glob_sset.distFactors.empty());
     }
   }
 

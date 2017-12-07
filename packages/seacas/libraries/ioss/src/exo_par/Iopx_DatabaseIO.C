@@ -5,7 +5,7 @@
 //    strange cases
 //
 //
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -104,7 +104,16 @@ namespace {
   const size_t max_line_length = MAX_LINE_LENGTH;
 
   const std::string SEP() { return std::string("@"); } // Separator for attribute offset storage
+  const std::string SCALAR() { return std::string("scalar"); }
+
   const char *complex_suffix[] = {".re", ".im"};
+
+  template <typename T> void clear(std::vector<T> &vec)
+  {
+    vec.resize(0);
+    vec.shrink_to_fit();
+    assert(vec.capacity() == 0);
+  }
 
   int get_parallel_io_mode(const Ioss::PropertyManager &properties)
   {
@@ -283,9 +292,9 @@ namespace Iopx {
     edgeMap.release_memory();
     faceMap.release_memory();
     elemMap.release_memory();
-    Ioss::Utils::clear(nodeOwningProcessor);
-    Ioss::Utils::clear(nodeGlobalImplicitMap);
-    Ioss::Utils::clear(elemGlobalImplicitMap);
+    clear(nodeOwningProcessor);
+    clear(nodeGlobalImplicitMap);
+    clear(elemGlobalImplicitMap);
     nodesetOwnedNodes.clear();
     try {
       decomp.reset();
@@ -655,7 +664,7 @@ namespace Iopx {
     read_region();
     get_elemblocks();
 
-    get_step_times__();
+    get_step_times();
 
     get_nodeblocks();
     get_edgeblocks();
@@ -1054,8 +1063,6 @@ namespace Iopx {
               new Ioss::ElementBlock(this, block_name, type, decomp->el_blocks[iblk].ioss_count());
           io_block = eblock;
           io_block->property_add(Ioss::Property("id", id));
-          io_block->property_add(Ioss::Property("guid", util().generate_guid(id)));
-	  
           if (db_has_name) {
             std::string *db_name = &block_name;
             if (get_use_generic_canonical_name()) {
@@ -1069,7 +1076,6 @@ namespace Iopx {
           Ioss::FaceBlock *fblock = new Ioss::FaceBlock(this, block_name, type, block.num_entry);
           io_block = fblock;
           io_block->property_add(Ioss::Property("id", id));
-          io_block->property_add(Ioss::Property("guid", util().generate_guid(id)));
           if (db_has_name) {
             std::string *db_name = &block_name;
             if (get_use_generic_canonical_name()) {
@@ -1082,7 +1088,6 @@ namespace Iopx {
           Ioss::EdgeBlock *eblock = new Ioss::EdgeBlock(this, block_name, type, block.num_entry);
           io_block = eblock;
           io_block->property_add(Ioss::Property("id", id));
-          io_block->property_add(Ioss::Property("guid", util().generate_guid(id)));
           if (db_has_name) {
             std::string *db_name = &block_name;
             if (get_use_generic_canonical_name()) {
@@ -1122,7 +1127,18 @@ namespace Iopx {
         io_block->property_add(Ioss::Property("original_block_order", iblk));
 
         if (save_type != "null" && save_type != "") {
-	  io_block->property_update("original_topology_type", save_type);
+          if (io_block->property_exists("original_topology_type")) {
+            if (io_block->get_property("original_topology_type").get_string() != save_type) {
+              io_block->property_erase("original_topology_type");
+              io_block->property_add(Ioss::Property("original_topology_type", save_type));
+            }
+          }
+          else {
+            if (io_block->get_property("topology_type").get_string() != save_type) {
+              // Maintain original X type on output database if possible.
+              io_block->property_add(Ioss::Property("original_topology_type", save_type));
+            }
+          }
         }
 
         io_block->property_add(Ioss::Property(
@@ -1132,13 +1148,13 @@ namespace Iopx {
         // This only affects the generation of surfaces...
         if (!blockOmissions.empty()) {
           std::vector<std::string>::const_iterator I =
-              std::find(blockOmissions.cbegin(), blockOmissions.cend(), block_name);
+              std::find(blockOmissions.begin(), blockOmissions.end(), block_name);
           if (I != blockOmissions.end()) {
             io_block->property_add(Ioss::Property(std::string("omitted"), 1));
           }
           else {
             // Try again with the alias...
-            I = std::find(blockOmissions.cbegin(), blockOmissions.cend(), alias);
+            I = std::find(blockOmissions.begin(), blockOmissions.end(), alias);
             if (I != blockOmissions.end()) {
               io_block->property_add(Ioss::Property(std::string("omitted"), 1));
             }
@@ -1192,7 +1208,7 @@ namespace Iopx {
       int     blk_position     = eb->get_property("original_block_order").get_int();
       int64_t id               = eb->get_property("id").get_int();
       int     element_nodes    = eb->get_property("topology_node_count").get_int();
-      int64_t my_element_count = eb->entity_count();
+      int64_t my_element_count = eb->get_property("entity_count").get_int();
       if (Ioex::exodus_byte_size_api(get_file_pointer()) == 8) {
         std::vector<int64_t> conn(my_element_count * element_nodes);
         decomp->get_block_connectivity(get_file_pointer(), TOPTR(conn), id, blk_position,
@@ -1450,7 +1466,7 @@ namespace Iopx {
 
       int64_t id               = block->get_property("id").get_int();
       int     element_nodes    = block->get_property("topology_node_count").get_int();
-      int64_t my_element_count = block->entity_count();
+      int64_t my_element_count = block->get_property("entity_count").get_int();
       int     order            = block->get_property("original_block_order").get_int();
       if (Ioex::exodus_byte_size_api(get_file_pointer()) == 8) {
         std::vector<int64_t> conn(my_element_count * element_nodes);
@@ -1525,7 +1541,6 @@ namespace Iopx {
           int64_t id = Ioex::extract_id(fs_name);
           if (id > 0) {
             side_set->property_add(Ioss::Property("id", id));
-	    side_set->property_add(Ioss::Property("guid", util().generate_guid(id)));
           }
         }
       }
@@ -1569,7 +1584,6 @@ namespace Iopx {
             }
             side_set = new Ioss::SideSet(this, side_set_name);
             side_set->property_add(Ioss::Property("id", id));
-	    side_set->property_add(Ioss::Property("guid", util().generate_guid(id)));
             if (db_has_name) {
               std::string *db_name = &side_set_name;
               if (get_use_generic_canonical_name()) {
@@ -1598,9 +1612,9 @@ namespace Iopx {
           // Easier below here if the element and sides are a known 64-bit size...
           // Kluge here to do that...
           if (int_byte_size_api() == 4) {
-            Ioss::Field side_field("sides", Ioss::Field::INTEGER, IOSS_SCALAR(), Ioss::Field::MESH,
+            Ioss::Field side_field("sides", Ioss::Field::INTEGER, SCALAR(), Ioss::Field::MESH,
                                    number_sides);
-            Ioss::Field elem_field("ids_raw", Ioss::Field::INTEGER, IOSS_SCALAR(), Ioss::Field::MESH,
+            Ioss::Field elem_field("ids_raw", Ioss::Field::INTEGER, SCALAR(), Ioss::Field::MESH,
                                    number_sides);
 
             Ioss::IntVector e32(number_sides);
@@ -1610,9 +1624,9 @@ namespace Iopx {
             std::copy(e32.begin(), e32.end(), element.begin());
           }
           else {
-            Ioss::Field side_field("sides", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
+            Ioss::Field side_field("sides", Ioss::Field::INT64, SCALAR(), Ioss::Field::MESH,
                                    number_sides);
-            Ioss::Field elem_field("ids_raw", Ioss::Field::INT64, IOSS_SCALAR(), Ioss::Field::MESH,
+            Ioss::Field elem_field("ids_raw", Ioss::Field::INT64, SCALAR(), Ioss::Field::MESH,
                                    number_sides);
             decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, side_field, TOPTR(sides));
             decomp->get_set_mesh_var(get_file_pointer(), EX_SIDE_SET, id, elem_field,
@@ -1804,7 +1818,6 @@ namespace Iopx {
                                                    elem_topo->name(), my_side_count);
             assert(side_block != nullptr);
             side_block->property_add(Ioss::Property("id", id));
-	    side_block->property_add(Ioss::Property("guid", util().generate_guid(id)));
             side_set->add(side_block);
 
             // Note that all sideblocks within a specific
@@ -1917,7 +1930,6 @@ void DatabaseIO::get_sets(ex_entity_type type, int64_t count, const std::string 
 
     T *Xset = new T(this, Xset_name, decomp->node_sets[ins].ioss_count());
     Xset->property_add(Ioss::Property("id", id));
-    Xset->property_add(Ioss::Property("guid", util().generate_guid(id)));
     if (db_has_name) {
       std::string *db_name = &Xset_name;
       if (get_use_generic_canonical_name()) {
@@ -1972,7 +1984,6 @@ void DatabaseIO::get_commsets()
     Ioss::CommSet *commset =
         new Ioss::CommSet(this, "commset_node", "node", decomp->get_commset_node_size());
     commset->property_add(Ioss::Property("id", 1));
-    commset->property_add(Ioss::Property("guid", util().generate_guid(1)));
     get_region()->add(commset);
   }
 }
@@ -2104,7 +2115,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
   size_t num_to_get = field.verify(data_size);
 
   int64_t               id               = Ioex::get_id(eb, EX_ELEM_BLOCK, &ids_);
-  size_t                my_element_count = eb->entity_count();
+  size_t                my_element_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role             = field.get_role();
 
   if (role == Ioss::Field::MESH) {
@@ -2237,7 +2248,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::FaceBlock *eb, const Ioss::Fi
   size_t num_to_get = field.verify(data_size);
 
   int64_t               id            = Ioex::get_id(eb, EX_FACE_BLOCK, &ids_);
-  size_t                my_face_count = eb->entity_count();
+  size_t                my_face_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role          = field.get_role();
 
   if (role == Ioss::Field::MESH) {
@@ -2311,7 +2322,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::EdgeBlock *eb, const Ioss::Fi
   size_t num_to_get = field.verify(data_size);
 
   int64_t               id            = Ioex::get_id(eb, EX_EDGE_BLOCK, &ids_);
-  int64_t               my_edge_count = eb->entity_count();
+  int64_t               my_edge_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role          = field.get_role();
 
   if (role == Ioss::Field::MESH) {
@@ -2519,7 +2530,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
   int     ierr       = 0;
 
   int64_t id           = Ioex::get_id(fb, EX_SIDE_SET, &ids_);
-  int64_t entity_count = fb->entity_count();
+  int64_t entity_count = fb->get_property("entity_count").get_int();
   if (num_to_get != entity_count) {
     std::ostringstream errmsg;
     errmsg << "ERROR: Partial field input not yet implemented for side blocks";
@@ -2814,7 +2825,7 @@ int64_t DatabaseIO::write_attribute_field(ex_entity_type type, const Ioss::Field
                                           const Ioss::GroupingEntity *ge, void *data) const
 {
   std::string att_name   = ge->name() + SEP() + field.get_name();
-  ssize_t     num_entity = ge->entity_count();
+  ssize_t     num_entity = ge->get_property("entity_count").get_int();
   ssize_t     offset     = field.get_index();
 
   int64_t id = Ioex::get_id(ge, type, &ids_);
@@ -2882,7 +2893,7 @@ int64_t DatabaseIO::write_attribute_field(ex_entity_type type, const Ioss::Field
 int64_t DatabaseIO::read_attribute_field(ex_entity_type type, const Ioss::Field &field,
                                          const Ioss::GroupingEntity *ge, void *data) const
 {
-  int64_t num_entity = ge->entity_count();
+  int64_t num_entity = ge->get_property("entity_count").get_int();
 
   int     attribute_count = ge->get_property("attribute_count").get_int();
   int64_t id              = Ioex::get_id(ge, type, &ids_);
@@ -2942,7 +2953,7 @@ int64_t DatabaseIO::read_transient_field(ex_entity_type               type,
   const Ioss::VariableType *var_type = field.raw_storage();
 
   // Read into a double variable since that is all ExodusII can store...
-  size_t              num_entity = ge->entity_count();
+  size_t              num_entity = ge->get_property("entity_count").get_int();
   std::vector<double> temp(num_entity);
 
   size_t step = get_current_state();
@@ -3165,7 +3176,7 @@ int64_t DatabaseIO::get_side_connectivity(const Ioss::SideBlock *fb, int64_t id,
       // ensure we have correct connectivity
       block = get_region()->get_element_block(elem_id);
       if (conn_block != block) {
-        ssize_t nelem = block->entity_count();
+        ssize_t nelem = block->get_property("entity_count").get_int();
         nelnode       = block->topology()->number_nodes();
         // Used to map element number into position in connectivity array.
         // E.g., element 97 is the (97-offset)th element in this block and
@@ -3249,7 +3260,7 @@ int64_t DatabaseIO::get_side_distributions(const Ioss::SideBlock *fb, int64_t id
   // 'number_sides' then the sideset is stored in a single sideblock
   // and all distribution factors on the database are transferred
   // 1-to-1 into 'dist_fact' array.
-  int64_t entity_count = fb->entity_count();
+  int64_t entity_count = fb->get_property("entity_count").get_int();
   if (fb->owner()->block_count() == 1 && number_sides == entity_count) {
     assert(number_sides == 0 || number_distribution_factors % number_sides == 0);
     assert(number_sides == 0 || number_distribution_factors / number_sides == nfnodes);
@@ -3574,7 +3585,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::ElementBlock *eb, const Ioss:
 
   // Get the element block id and element count
   int64_t               id               = Ioex::get_id(eb, EX_ELEM_BLOCK, &ids_);
-  int64_t               my_element_count = eb->entity_count();
+  int64_t               my_element_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role             = field.get_role();
 
   size_t proc_offset = 0;
@@ -3757,7 +3768,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::FaceBlock *eb, const Ioss::Fi
 
   // Get the face block id and face count
   int64_t               id            = Ioex::get_id(eb, EX_FACE_BLOCK, &ids_);
-  int64_t               my_face_count = eb->entity_count();
+  int64_t               my_face_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role          = field.get_role();
 
   if (role == Ioss::Field::MESH) {
@@ -3825,7 +3836,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::EdgeBlock *eb, const Ioss::Fi
 
   // Get the edge block id and edge count
   int64_t               id            = Ioex::get_id(eb, EX_EDGE_BLOCK, &ids_);
-  int64_t               my_edge_count = eb->entity_count();
+  int64_t               my_edge_count = eb->get_property("entity_count").get_int();
   Ioss::Field::RoleType role          = field.get_role();
 
   if (role == Ioss::Field::MESH) {
@@ -4305,7 +4316,7 @@ int64_t DatabaseIO::put_Xset_field_internal(ex_entity_type type, const Ioss::Ent
                                             const Ioss::Field &field, void *data,
                                             size_t data_size) const
 {
-  size_t entity_count = ns->entity_count();
+  size_t entity_count = ns->get_property("entity_count").get_int();
   size_t num_to_get   = field.verify(data_size);
 
   int64_t               id   = Ioex::get_id(ns, type, &ids_);
@@ -4457,7 +4468,7 @@ int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
   size_t  num_to_get = field.verify(data_size);
   int64_t id         = Ioex::get_id(fb, EX_SIDE_SET, &ids_);
 
-  size_t entity_count = fb->entity_count();
+  size_t entity_count = fb->get_property("entity_count").get_int();
   size_t offset       = fb->get_property("set_offset").get_int();
 
   Ioss::Field::RoleType role = field.get_role();
@@ -4668,7 +4679,7 @@ void DatabaseIO::write_meta_data()
 
   Ioss::NodeBlockContainer node_blocks = region->get_node_blocks();
   assert(node_blocks.size() == 1);
-  nodeCount        = node_blocks[0]->entity_count();
+  nodeCount        = node_blocks[0]->get_property("entity_count").get_int();
   spatialDimension = node_blocks[0]->get_property("component_degree").get_int();
 
   char the_title[max_line_length + 1];
@@ -4698,7 +4709,7 @@ void DatabaseIO::write_meta_data()
 
     edgeCount = 0;
     for (auto &edge_block : edge_blocks) {
-      edgeCount += edge_block->entity_count();
+      edgeCount += edge_block->get_property("entity_count").get_int();
       // Set ids of all entities that do not have "id" property...
       Ioex::get_id(edge_block, EX_EDGE_BLOCK, &ids_);
       Ioex::EdgeBlock T(*(edge_block));
@@ -4718,7 +4729,7 @@ void DatabaseIO::write_meta_data()
 
     faceCount = 0;
     for (auto &face_block : face_blocks) {
-      faceCount += face_block->entity_count();
+      faceCount += face_block->get_property("entity_count").get_int();
       // Set ids of all entities that do not have "id" property...
       Ioex::get_id(face_block, EX_FACE_BLOCK, &ids_);
       Ioex::FaceBlock T(*(face_block));
@@ -4738,7 +4749,7 @@ void DatabaseIO::write_meta_data()
 
     elementCount = 0;
     for (auto &element_block : element_blocks) {
-      elementCount += element_block->entity_count();
+      elementCount += element_block->get_property("entity_count").get_int();
       // Set ids of all entities that do not have "id" property...
       Ioex::get_id(element_block, EX_ELEM_BLOCK, &ids_);
       Ioex::ElemBlock T(*(element_block));
@@ -4833,10 +4844,12 @@ void DatabaseIO::write_meta_data()
         // If combining sideblocks into sidesets on output, then
         // the id of the sideblock must be the same as the sideset
         // id.
-        new_block->property_update("id", id);
-	new_block->property_update("guid", util().generate_guid(id));
+        if (new_block->property_exists("id")) {
+          new_block->property_erase("id");
+        }
+        new_block->property_add(Ioss::Property("id", id));
 
-        entity_count += block->entity_count();
+        entity_count += block->get_property("entity_count").get_int();
         df_count += block->get_property("distribution_factor_count").get_int();
       }
       Ioss::SideSet *new_entity = const_cast<Ioss::SideSet *>(set);

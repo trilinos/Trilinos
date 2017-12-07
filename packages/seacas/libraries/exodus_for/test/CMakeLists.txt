@@ -33,6 +33,7 @@ IF ( NETCDF_NCDUMP_BINARY )
     testwtm
     testcp
     testcpnl
+    testcpln
     testwt_nsid
     testrd_nsid
     test_nem

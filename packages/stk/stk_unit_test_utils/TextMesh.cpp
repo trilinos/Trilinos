@@ -1,33 +1,15 @@
-// #######################  Start Clang Header Tool Managed Headers ########################
-// clang-format off
 #include "TextMesh.hpp"
-#include <ctype.h>                                   // for toupper
-#include <stddef.h>                                  // for size_t
-#include <algorithm>                                 // for remove, etc
-#include <iterator>                                  // for insert_iterator
-#include <map>
-#include <set>                                       // for set
-#include <sstream>                                   // for operator<<, etc
-#include <stk_io/IossBridge.hpp>                     // for is_part_io_part, etc
-#include <stk_mesh/base/BulkData.hpp>                // for BulkData
-#include <stk_mesh/base/FEMHelpers.hpp>              // for declare_element
-#include <stk_mesh/base/Field.hpp>                   // for Field
-#include <stk_mesh/base/GetEntities.hpp>             // for get_entities
-#include <stk_mesh/base/MetaData.hpp>                // for MetaData, etc
-#include <string>                                    // for basic_string, etc
-#include <utility>                                   // for pair
-#include <vector>                                    // for vector
-#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
-#include "stk_mesh/base/CoordinateSystems.hpp"       // for Cartesian
-#include "stk_mesh/base/Entity.hpp"                  // for Entity
-#include "stk_mesh/base/FieldBase.hpp"               // for field_data
-#include "stk_mesh/base/Types.hpp"                   // for EntityId, etc
-#include "stk_topology/topology.hpp"                 // for topology, etc
-#include "stk_topology/topology.hpp"
-#include "stk_util/environment/ReportHandler.hpp"    // for ThrowRequireMsg
-namespace stk { namespace mesh { class Part; } }
-// clang-format on
-// #######################   End Clang Header Tool Managed Headers  ########################
+#include "mpi.h"
+#include <string>
+#include <sstream>
+#include <vector>
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
+#include <stk_io/IossBridge.hpp>
+#include "stk_util/environment/ReportHandler.hpp"
 
 namespace stk
 {
@@ -288,7 +270,7 @@ void declare_parts_and_coordinates(MeshData &meshData, stk::mesh::MetaData &meta
 void fill_coordinates(const std::vector<double> coordinates, stk::mesh::BulkData &bulk, unsigned spatialDimension)
 {
     stk::mesh::EntityVector nodes;
-    stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
+    bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
     CoordinatesField & coordsField = static_cast<CoordinatesField&>(*bulk.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates"));
     for(size_t nodeIndex=0; nodeIndex < nodes.size(); nodeIndex++)
     {

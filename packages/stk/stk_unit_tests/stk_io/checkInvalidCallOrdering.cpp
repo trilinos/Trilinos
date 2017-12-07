@@ -76,7 +76,7 @@ TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
       stkIo.end_output_step(results_output_index);
 
       // Try to write a global field after the step has been ended.
-//      EXPECT_ANY_THROW(stkIo.write_global(results_output_index, "NotTooLate", 1.0));
+      EXPECT_ANY_THROW(stkIo.write_global(results_output_index, "NotTooLate", 1.0));
 
       // Try to add a field after output has already been done...
       EXPECT_ANY_THROW(stkIo.add_field(results_output_index, *field0a));
@@ -99,7 +99,7 @@ TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
 
       // Try to call begin_output_step() without calling end_output_step().
       stkIo.begin_output_step(results_output_index, 1.0);
-//      EXPECT_ANY_THROW(stkIo.begin_output_step(results_output_index, 1.0));
+      EXPECT_ANY_THROW(stkIo.begin_output_step(results_output_index, 1.0));
       stkIo.end_output_step(results_output_index);
     }
 

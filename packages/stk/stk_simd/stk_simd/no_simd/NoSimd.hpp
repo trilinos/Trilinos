@@ -3,8 +3,6 @@
 #ifndef STK_NO_SIMD_H
 #define STK_NO_SIMD_H
 
-// IWYU pragma: private, include <stk_simd/Simd.hpp>
-
 #include <stdio.h>
 #include <Kokkos_Macros.hpp>
 

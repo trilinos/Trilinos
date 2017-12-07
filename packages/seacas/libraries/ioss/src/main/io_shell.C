@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -81,7 +81,7 @@ namespace {
 int main(int argc, char *argv[])
 {
   int rank = 0;
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
   }
   if (mem_stats) {
     int64_t MiB = 1024 * 1024;
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
     int64_t             min, max, avg;
     Ioss::ParallelUtils parallel(MPI_COMM_WORLD);
     parallel.memory_stats(min, max, avg);
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
   Kokkos::finalize();
 #endif
 
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
@@ -292,13 +292,12 @@ namespace {
       Ioss::MeshCopyOptions options{};
       options.memory_statistics = interface.memory_statistics;
       options.debug             = interface.debug;
-      options.verbose           = false;
+      options.verbose           = true;
       options.ints_64_bit       = interface.ints_64_bit;
       options.delete_timesteps  = interface.delete_timesteps;
       options.minimum_time      = interface.minimum_time;
       options.maximum_time      = interface.maximum_time;
       options.data_storage_type = interface.data_storage_type;
-      options.delay             = interface.timestep_delay;
 
       // Actually do the work...
       Ioss::Utils::copy_database(region, output_region, options);
@@ -353,10 +352,6 @@ namespace {
 
     if (interface.netcdf4) {
       properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
-    }
-
-    if (interface.netcdf5) {
-      properties.add(Ioss::Property("FILE_TYPE", "netcdf5"));
     }
 
     if (interface.inputFile.size() > 1) {

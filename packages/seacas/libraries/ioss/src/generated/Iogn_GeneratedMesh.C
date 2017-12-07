@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,8 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_EntityType.h> // for EntityType, etc
-#include <Ioss_Hex8.h>
-#include <Ioss_Shell4.h>
 #include <algorithm>
 #include <cassert> // for assert
 #include <cmath>   // for atan2, cos, sin
@@ -610,9 +608,9 @@ namespace Iogn {
     }
 
     if (block_number == 1) {
-      return std::make_pair(std::string(Ioss::Hex8::name), 8);
+      return std::make_pair(std::string("hex8"), 8);
     }
-    return std::make_pair(std::string(Ioss::Shell4::name), 4);
+    return std::make_pair(std::string("shell4"), 4);
   }
 
   void GeneratedMesh::node_map(Ioss::Int64Vector &map) const

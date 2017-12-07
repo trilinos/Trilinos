@@ -1,11 +1,23 @@
 #include <test_utils/OptionsForTesting.hpp>
 #include <test_utils/MeshFixtureMxNRebalance.hpp>
+#include <Ioss_IOFactory.h>
 #include <Ioss_DatabaseIO.h>
+#include <Ioss_Region.h>
 #include <Ioss_CommSet.h>
 #include <Ioss_SideSet.h>
 #include <Ioss_NodeBlock.h>
 #include <Ioss_SideBlock.h>
 #include <Ioss_Field.h>
+#include <stk_io/IossBridge.hpp>
+
+#include <Ioss_IOFactory.h>
+#include <Ioss_DatabaseIO.h>
+#include <Ioss_Region.h>
+#include <Ioss_CommSet.h>
+#include <Ioss_SideSet.h>
+#include <Ioss_Field.h>
+#include <Ioss_NodeBlock.h>
+
 #include <stk_io/IossBridge.hpp>
 #include <stk_util/environment/perf_util.hpp>
 #include <stk_balance/internal/MxNutils.hpp>

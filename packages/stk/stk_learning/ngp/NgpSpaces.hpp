@@ -43,7 +43,7 @@ namespace ngp {
 
 #ifdef KOKKOS_HAVE_CUDA
   typedef Kokkos::Cuda     ExecSpace ;
-#elif defined(KOKKOS_HAVE_OPENMP)
+#elif KOKKOS_HAVE_OPENMP
   typedef Kokkos::OpenMP   ExecSpace ;
 #else
   typedef Kokkos::Serial   ExecSpace ;
@@ -51,7 +51,7 @@ namespace ngp {
 
 #ifdef KOKKOS_HAVE_CUDA
   typedef Kokkos::Serial   HostExecSpace ;
-#elif defined(KOKKOS_HAVE_OPENMP)
+#elif KOKKOS_HAVE_OPENMP
   typedef Kokkos::OpenMP   HostExecSpace ;
 #else
   typedef Kokkos::Serial   HostExecSpace ;
@@ -59,7 +59,7 @@ namespace ngp {
 
 #ifdef KOKKOS_HAVE_CUDA
    typedef Kokkos::CudaSpace    MemSpace;
-#elif defined(KOKKOS_HAVE_OPENMP)
+#elif KOKKOS_HAVE_OPENMP
    typedef Kokkos::OpenMP       MemSpace;
 #else
    typedef Kokkos::HostSpace    MemSpace;
@@ -67,7 +67,7 @@ namespace ngp {
 
 #ifdef KOKKOS_HAVE_CUDA
 typedef Kokkos::CudaUVMSpace UVMMemSpace;
-#elif defined(KOKKOS_HAVE_OPENMP)
+#elif KOKKOS_HAVE_OPENMP
 typedef Kokkos::OpenMP       UVMMemSpace;
 #else
 typedef Kokkos::HostSpace    UVMMemSpace;

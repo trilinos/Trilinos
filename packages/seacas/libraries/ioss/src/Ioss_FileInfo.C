@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -37,7 +37,7 @@
 #include <sys/select.h>
 #include <sys/unistd.h>
 
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
 #include <numeric>
 #endif
 
@@ -92,7 +92,7 @@ namespace Ioss {
 
   int FileInfo::parallel_exists(MPI_Comm communicator, std::string &where) const
   {
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
     int my_rank = 0;
     int my_size = 1;
     if (communicator != MPI_COMM_NULL) {
@@ -103,7 +103,7 @@ namespace Ioss {
 #endif
       return exists_ ? 1 : 0;
 
-#ifdef SEACAS_HAVE_MPI
+#ifdef HAVE_MPI
     // Now handle the parallel case
     std::vector<int> result(my_size);
     int              my_val = exists_ ? 1 : 0;

@@ -101,6 +101,20 @@ struct ScratchData
     {
     }
 
+//    KOKKOS_INLINE_FUNCTION void operator()(const member_type &teamMember) const
+//    {
+//        unsigned i = teamMember.league_rank();
+//        Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, 8), [=] (int j)
+//        {
+//            const unsigned dim = elementCentroids.extent(1);
+//            double temp = elementCentroids(i, j);
+//            for(unsigned k=0;k<dim;++k) // loop over x y z coordinates
+//                temp += elementNodes(i, j, k); // sum the coordinates
+//            elementCentroids(i, j) = temp * 0.125;
+//        });
+//    }
+
+
     DeviceArray3DType elementNodes;
     DeviceArray2DType elementCentroids;
 

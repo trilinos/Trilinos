@@ -34,7 +34,7 @@
 #ifndef stk_io_util_Gmesh_STKmesh_Fixture_hpp
 #define stk_io_util_Gmesh_STKmesh_Fixture_hpp
 
-#include <stddef.h>                     // for
+#include <stddef.h>                     // for NULL
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
@@ -69,7 +69,7 @@ class Gmesh_STKmesh_Fixture
   Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
                          , const std::string& gmesh_spec
                          , bool use_64bit_int_IO_api=false
-                         , stk::mesh::ConnectivityMap * connectivity_map = nullptr
+                         , stk::mesh::ConnectivityMap * connectivity_map = NULL
                        );
 
   /**
@@ -102,8 +102,11 @@ class Gmesh_STKmesh_Fixture
   /**
    * Get a reference to the bulk data for the stk-mesh.
    */
-  const stk::mesh::BulkData & getBulkData() const { return m_mesh_data.bulk_data(); }
-        stk::mesh::BulkData & getBulkData()       { return m_mesh_data.bulk_data(); }
+  const stk::mesh::BulkData & getBulkData() const
+  { return m_mesh_data.bulk_data(); }
+
+  stk::mesh::BulkData & getBulkData()
+  { return m_mesh_data.bulk_data(); }
 
  private:
   /**

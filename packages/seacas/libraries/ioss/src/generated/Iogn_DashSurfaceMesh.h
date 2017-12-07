@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -33,8 +33,6 @@
 #ifndef IOSS_Iogn_DashSurfaceMesh_h
 #define IOSS_Iogn_DashSurfaceMesh_h
 
-#include <Ioss_Hex8.h>
-#include <Ioss_Shell4.h>
 #include <cstddef>                        // for size_t
 #include <cstdint>                        // for int64_t
 #include <exception>                      // for exception
@@ -59,8 +57,8 @@ namespace Iogn {
   inline std::string getTopologyName(Topology topology)
   {
     switch (topology) {
-    case Shell4: return std::string(Ioss::Shell4::name);
-    case Hex8: return std::string(Ioss::Hex8::name);
+    case Shell4: return std::string("shell4");
+    case Hex8: return std::string("hex8");
     }
     throw std::exception();
   }

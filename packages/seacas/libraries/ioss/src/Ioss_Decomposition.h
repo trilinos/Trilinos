@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2010 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -356,8 +356,8 @@ namespace Ioss {
     std::vector<INT> m_nodeDist;
 
     // Note that nodeGTL is a sorted vector.
-    std::vector<INT>   nodeGTL; // Convert from global index to local index (1-based)
+    std::vector<INT> nodeGTL;   // Convert from global index to local index (1-based)
     std::map<INT, INT> elemGTL; // Convert from global index to local index (1-based)
   };
-} // namespace Ioss
+}
 #endif

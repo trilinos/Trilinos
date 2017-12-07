@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -64,30 +64,6 @@ namespace Ioss {
 #define IOSS_ERROR(errmsg) throw std::runtime_error(errmsg.str())
 #define IOSS_WARNING std::cerr
 
-namespace {
-  // SEE: http://lemire.me/blog/2017/04/10/removing-duplicates-from-lists-quickly
-  template <typename T> size_t unique(std::vector<T> &out, bool skip_first)
-  {
-    if (out.empty())
-      return 0;
-    size_t i    = 1;
-    size_t pos  = 1;
-    T      oldv = out[0];
-    if (skip_first) {
-      i    = 2;
-      pos  = 2;
-      oldv = out[1];
-    }
-    for (; i < out.size(); ++i) {
-      T newv   = out[i];
-      out[pos] = newv;
-      pos += (newv != oldv);
-      oldv = newv;
-    }
-    return pos;
-  }
-} // namespace
-
 namespace Ioss {
 
   /* \brief Utility methods.
@@ -116,7 +92,7 @@ namespace Ioss {
         it++;
       }
       std::sort(it, vec.end());
-      vec.resize(unique(vec, skip_first));
+      vec.erase(std::unique(it, vec.end()), vec.end());
       vec.shrink_to_fit();
     }
 
@@ -133,8 +109,8 @@ namespace Ioss {
 
     template <typename T> static T find_index_location(T node, const std::vector<T> &index)
     {
-    // 0-based node numbering
-    // index[p] = first node (0-based) on processor p
+// 0-based node numbering
+// index[p] = first node (0-based) on processor p
 
 #if 1
       // Assume data coherence.  I.e., a new search will be close to the
@@ -164,32 +140,8 @@ namespace Ioss {
 #endif
     }
 
-    template <typename T> static void clear(std::vector<T> &vec)
-    {
-      vec.clear();
-      vec.shrink_to_fit();
-      assert(vec.capacity() == 0);
-    }
-
-    inline static int power_2(int count)
-    {
-      // Return the power of two which is equal to or greater than 'count'
-      // count = 15 -> returns 16
-      // count = 16 -> returns 16
-      // count = 17 -> returns 32
-
-      // Use brute force...
-      int pow2 = 1;
-      while (pow2 < count) {
-        pow2 *= 2;
-      }
-      return pow2;
-    }
-
-    static int log_power_2(uint64_t value);
-
     static char **get_name_array(size_t count, int size);
-    static void   delete_name_array(char **names, int count);
+    static void delete_name_array(char **names, int count);
 
     // Fill time_string and date_string with current time and date
     // formatted as "HH:MM:SS" for time and "yy/mm/dd" or "yyyy/mm/dd"
@@ -198,7 +150,7 @@ namespace Ioss {
 
     static std::string decode_filename(const std::string &filename, int processor,
                                        int num_processors);
-    static int         decode_entity_name(const std::string &entity_name);
+    static int decode_entity_name(const std::string &entity_name);
     static std::string encode_entity_name(const std::string &entity_type, int64_t id);
 
     // Convert 'name' to lowercase and convert spaces to '_'
@@ -223,8 +175,8 @@ namespace Ioss {
     // does some other transformations to remove some exodusII ambiguity.
     static std::string fixup_type(const std::string &base, int nodes_per_element, int spatial);
 
-    static std::string uppercase(std::string name);
-    static std::string lowercase(std::string name);
+    static std::string uppercase(const std::string &name);
+    static std::string lowercase(const std::string &name);
 
     static int case_strcmp(const std::string &s1, const std::string &s2);
 

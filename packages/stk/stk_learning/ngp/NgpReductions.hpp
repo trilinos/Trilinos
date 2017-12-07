@@ -1,23 +1,23 @@
 // Copyright (c) 2013, Sandia Corporation.
  // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
  // the U.S. Government retains certain rights in this software.
- //
+ // 
  // Redistribution and use in source and binary forms, with or without
  // modification, are permitted provided that the following conditions are
  // met:
- //
+ // 
  //     * Redistributions of source code must retain the above copyright
  //       notice, this list of conditions and the following disclaimer.
- //
+ // 
  //     * Redistributions in binary form must reproduce the above
  //       copyright notice, this list of conditions and the following
  //       disclaimer in the documentation and/or other materials provided
  //       with the distribution.
- //
+ // 
  //     * Neither the name of Sandia Corporation nor the names of its
  //       contributors may be used to endorse or promote products derived
  //       from this software without specific prior written permission.
- //
+ // 
  // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -39,7 +39,7 @@
 
 namespace ngp {
 
-template <typename Mesh, typename Field, typename ReductionOp>
+template <typename Mesh, typename Field>
 struct FieldAccessFunctor
 {
     STK_FUNCTION
@@ -48,7 +48,7 @@ struct FieldAccessFunctor
     STK_FUNCTION
     void operator()(int i, typename Field::value_type& update) const
     {
-        ReductionOp()(update,field.get(typename Mesh::MeshIndex{bucket, static_cast<unsigned>(i)}, 0));
+        update = field.get(typename Mesh::MeshIndex{bucket, static_cast<unsigned>(i)}, 0);
     }
 private:
     const typename Mesh::BucketType *bucket;
@@ -59,45 +59,6 @@ template <typename Mesh, typename Field, typename ReductionOp>
 struct ReductionTeamFunctor
 {
     typedef typename Field::value_type FieldData;
-
-    struct JoinOp {
-    public:
-        typedef JoinOp reducer;
-        typedef typename std::remove_cv<FieldData>::type value_type;
-        typedef Kokkos::View<value_type, typename Mesh::MeshExecSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged> > result_view_type;
-
-    private:
-        value_type* value;
-
-    public:
-        STK_FUNCTION
-        JoinOp (value_type& value_) : value (&value_) {}
-
-        STK_FUNCTION
-        void join (value_type& dest, const value_type& src) const {
-            ReductionOp() (dest, src);
-        }
-
-        STK_FUNCTION
-        void join (volatile value_type& dest, const volatile value_type& src) const {
-            ReductionOp() (dest, src);
-        }
-
-        STK_FUNCTION
-        void init (value_type& val) const {
-            ReductionOp()(val, *value);
-        }
-
-        STK_FUNCTION
-        value_type& reference() const {
-          return *value;
-        }
-
-        STK_FUNCTION
-        result_view_type view () const {
-            return result_view_type (value);
-        }
-    };
 
     STK_FUNCTION
     ReductionTeamFunctor(const Mesh m, Field f, stk::Vector<unsigned> b, FieldData i) : mesh(m), field(f), bucketIds(b), initialValue(i) { }
@@ -124,8 +85,8 @@ struct ReductionTeamFunctor
         unsigned numElements = bucket.size();
         FieldData localUpdate = initialValue;
         Kokkos::parallel_reduce(Kokkos::TeamThreadRange(team, 0u, numElements),
-                                FieldAccessFunctor<Mesh, Field, ReductionOp>(&bucket, field),
-                                JoinOp(localUpdate));
+                                FieldAccessFunctor<Mesh, Field>(&bucket, field),
+                                ReductionOp(), localUpdate);
         Kokkos::single(Kokkos::PerTeam(team), [&](){join(update, localUpdate);});
     }
 

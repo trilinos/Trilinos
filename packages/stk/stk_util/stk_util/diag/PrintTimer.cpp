@@ -134,6 +134,16 @@ Percent::operator()(
   return os << strout.str();
 }
 
+
+/**
+ * Member function <b>operator&lt;&lt;</b> ...
+ *
+ * @param os      a <b>std::ostream</b> variable ...
+ *
+ * @param p      a <b>TimerImpl::Percent</b> variable ...
+ *
+ * @return      a <b>std::ostream</b> ...
+ */
 inline std::ostream &operator<<(std::ostream &os, const Percent &p) {
   return p(os);
 }
@@ -744,6 +754,12 @@ std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask m
     printTimeToPrintTable(os, durationToPrintTable);
   return os;
 }
+
+
+// std::ostream &printXML(std::ostream &os, MPI_Comm mpi_comm, MetricsMask metrics_mask) const;
+std::ostream &printXML(std::ostream &os, MetricsMask metrics_mask, bool timer_checkpoint);
+
+std::ostream &printSubXML(std::ostream &os, MetricsMask metrics_mask, int depth, bool timer_checkpoint);
 
 } // namespace diag
 

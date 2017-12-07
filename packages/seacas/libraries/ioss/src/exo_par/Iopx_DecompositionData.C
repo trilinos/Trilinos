@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -673,7 +673,7 @@ namespace Iopx {
                 break;
               }
             }
-            Ioss::Utils::clear(df);
+            std::vector<double>().swap(df);
             if (df_valcon[3 * i + 1] == 1.0) { // df are constant.
               df_valcon[3 * i + 2] = 0.0;
             }
@@ -1523,7 +1523,8 @@ namespace Iopx {
       // communicate with a comp count of set.distributionFactorValsPerEntity.
       std::vector<T> file_data;
       if (m_processor == set.root_) {
-        file_data.resize(set.distributionFactorValsPerEntity * set.fileCount);
+        assert(set.distributionFactorValsPerEntity * set.fileCount == set.distributionFactorCount);
+        file_data.resize(set.distributionFactorCount);
 
         ex_set set_param[1];
         set_param[0].id                       = id;

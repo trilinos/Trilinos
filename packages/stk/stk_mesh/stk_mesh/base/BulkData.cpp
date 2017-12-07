@@ -6949,6 +6949,9 @@ void BulkData::make_mesh_parallel_consistent_after_skinning(const std::vector<sh
 
         m_modSummary.write_summary(m_meshModification.synchronized_count(), false);
 
+        if(parallel_size() > 1)
+            check_mesh_consistency();
+
         internal_finish_modification_end(impl::MeshModification::MOD_END_SORT);
     }
 }

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -33,7 +33,7 @@
 #include <exo_fac/Ioex_IOFactory.h> // for Ioex IOFactory
 
 #include <exo_fpp/Iofx_DatabaseIO.h> // for Iofx DatabaseIO
-#if defined(SEACAS_HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 #include <exo_par/Iopx_DatabaseIO.h> // for Iopx DatabaseIO
 #endif
 #include <tokenize.h>
@@ -49,7 +49,7 @@ namespace Ioss {
   class DatabaseIO;
 } // namespace Ioss
 
-#if defined(SEACAS_HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
   std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
                                            Ioss::DatabaseUsage db_usage);
@@ -71,7 +71,7 @@ namespace Ioex {
     Ioss::IOFactory::alias("exodus", "exodusii");
     Ioss::IOFactory::alias("exodus", "exodusII");
     Ioss::IOFactory::alias("exodus", "genesis");
-#if defined(SEACAS_HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
     Ioss::IOFactory::alias("exodus", "dof_exodus");
     Ioss::IOFactory::alias("exodus", "dof");
 #endif
@@ -81,7 +81,7 @@ namespace Ioex {
                                        MPI_Comm                     communicator,
                                        const Ioss::PropertyManager &properties) const
   {
-#if defined(SEACAS_HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
     // The "exodus" and "parallel_exodus" databases can both be accessed
     // from this factory.  The "parallel_exodus" is returned only if the following
     // are true:
@@ -120,7 +120,7 @@ namespace Ioex {
   }
 } // namespace Ioex
 
-#if defined(SEACAS_HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
+#if defined(HAVE_MPI) && !defined(NO_DOF_EXODUS_SUPPORT)
 namespace {
   std::string check_decomposition_property(MPI_Comm comm, const Ioss::PropertyManager &properties,
                                            Ioss::DatabaseUsage db_usage)

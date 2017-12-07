@@ -31,8 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef STK_UTIL_DIAG_STRING_H
-#define STK_UTIL_DIAG_STRING_H
+#ifndef STK_UTIL_DIAG_String_h
+#define STK_UTIL_DIAG_String_h
 
 #include <string.h>
 
@@ -431,7 +431,7 @@ StringBase<CT>::StringBase( It l_begin, It l_end )
 template<class CT>
 StringBase<CT>::StringBase( const char * cs )
 {
-  if (cs != nullptr) {
+  if(cs != nullptr) {
     const size_type n = strlen(cs);
     traits_type::convert( data.mem(cs, n), n );
   }
@@ -455,10 +455,11 @@ StringBase<CT>::assign( const char * cs, const typename StringBase<CT>::size_typ
 
 template<class CT>
 StringBase<CT> & StringBase<CT>::assign( const char * cs ) { 
-  if ( cs == nullptr ) {
+  if(cs == nullptr) {
     return assign( nullptr, 0 ); 
+  } else {
+    return assign( cs, strlen(cs) ); 
   }
-  return assign( cs, strlen(cs) ); 
 }
 
 template<class CT>
@@ -488,10 +489,11 @@ StringBase<CT>::operator= ( const StringBase<CT2> & cs ) {
 template<class CT>
 StringBase<CT>&
 StringBase<CT>::operator= ( const char * cs ) { 
-  if (cs == nullptr) {
+  if(cs == nullptr) {
     return assign( nullptr, 0 ); 
+  } else {
+    return assign( cs, strlen(cs) ); 
   }
-  return assign( cs, strlen(cs) ); 
 }
 
 template<class CT>
@@ -519,8 +521,9 @@ inline
 StringBase<char_label_traits> &
 StringBase<char_label_traits>::append( const char * cs, const StringBase<char_label_traits>::size_type n )
 {
+  std::string t;
+
   if (n != 0) {
-    std::string t;
     t.reserve(data.len() + n + 1);
     t.append(data.c_str())
      .append(data.len() == 0 ? "" : "_")
@@ -531,8 +534,12 @@ StringBase<char_label_traits>::append( const char * cs, const StringBase<char_la
 }
 
 template<class CT>
-StringBase<CT> & StringBase<CT>::append( const char * cs ) {
-  return ( cs == nullptr ) ? *this : append( cs, strlen(cs) );
+StringBase<CT> & StringBase<CT>::append( const char * cs ){ 
+  if(cs == nullptr) {
+    return *this;
+  } else {
+    return append( cs, strlen(cs) ); 
+  }
 }
 
 template<class CT>
@@ -553,8 +560,12 @@ StringBase<CT>::operator+= ( const StringBase<CT2> & cs )
 
 template<class CT>
 StringBase<CT>&
-StringBase<CT>::operator+= ( const char * cs ) {
-  return (cs == nullptr) ? *this : append( cs, strlen(cs) ); 
+StringBase<CT>::operator+= ( const char * cs ){ 
+  if(cs == nullptr) {
+    return *this;
+  } else {
+    return append( cs, strlen(cs) ); 
+  }
 }
 
 template<class CT>
@@ -785,4 +796,4 @@ std::string operator+(const std::string & lhs, const StringBase<CT> & rhs ) {
 
 #endif // USE_CISTRING
 
-#endif // STK_UTIL_DIAG_STRING_H
+#endif // STK_UTIL_DIAG_String_h

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2017 National Technology & Engineering Solutions
+// Copyright(C) 1999-2010 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -42,7 +42,7 @@ using namespace Ioxf;
 Block::Block(const Ioss::ElementBlock &other)
 {
   id                  = other.get_property("id").get_int();
-  elementCount        = other.entity_count();
+  elementCount        = other.get_property("entity_count").get_int();
   nodesPerElement     = other.get_property("topology_node_count").get_int();
   attributeCount      = other.get_property("attribute_count").get_int();
   offset_             = other.get_offset();
@@ -89,7 +89,7 @@ bool Block::operator==(const Block &other) const
 NodeSet::NodeSet(const Ioss::NodeSet &other)
 {
   id        = other.get_property("id").get_int();
-  nodeCount = other.entity_count();
+  nodeCount = other.get_property("entity_count").get_int();
   dfCount   = other.get_property("distribution_factor_count").get_int();
 
   std::string io_name = other.name();
@@ -106,7 +106,7 @@ bool NodeSet::operator==(const NodeSet &other) const
 SideSet::SideSet(const Ioss::SideBlock &other)
 {
   id                  = other.get_property("id").get_int();
-  sideCount           = other.entity_count();
+  sideCount           = other.get_property("entity_count").get_int();
   dfCount             = other.get_property("distribution_factor_count").get_int();
   std::string io_name = other.name();
   std::strncpy(name, io_name.c_str(), MAX_STR_LENGTH);

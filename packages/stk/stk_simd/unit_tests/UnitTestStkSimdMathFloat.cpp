@@ -8,6 +8,7 @@
 
 TEST(StkSimd, SimdAddSubtractMultDivideFloat) 
 {
+
   int N = 400000;
   double t0; // timing variable
 
@@ -26,7 +27,7 @@ TEST(StkSimd, SimdAddSubtractMultDivideFloat)
   for (int n=0; n < N; n+=stk::simd::nfloats) {
     const stk::simd::Float a = stk::simd::load(&x[n]);
     const stk::simd::Float b = stk::simd::load(&y[n]);
-    const stk::simd::Float c = ( b*(a-b) )/a + 1;
+    const stk::simd::Float c = ( a+b*(a-b) )/a;
     stk::simd::store(&out1[n],c);
   }
   t0 += stk::get_time_in_seconds();
@@ -36,7 +37,7 @@ TEST(StkSimd, SimdAddSubtractMultDivideFloat)
   for (int n=0; n < N; ++n) {
     const float a = x[n];
     const float b = y[n];
-    out2[n] = ( b*(a-b) )/a + 1;
+    out2[n] = ( a+b*(a-b) )/a;
   }
   t0 += stk::get_time_in_seconds();
   std::cout << "Real ADD,SUB,MUL,DIV took " << t0 << " seconds" <<  std::endl;
@@ -47,7 +48,7 @@ TEST(StkSimd, SimdAddSubtractMultDivideFloat)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  ASSERT_EQ( maxerr, 0.0 );
+  ASSERT_EQ( maxerr, 0.0 );  
 }
 
 TEST(StkSimd, SimdMiscSelfAddSubEtcFloat) 
@@ -74,7 +75,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtcFloat)
     const stk::simd::Float a = stk::simd::load(&x[n]);
     const stk::simd::Float b = stk::simd::load(&y[n]);
     stk::simd::Float c = 3.0f;
-    c *= -b + a + stk::Traits<stk::simd::Float>::TWO/5;
+    c *= -b*a+stk::Traits<stk::simd::Float>::TWO/5;
     stk::simd::store(&out1[n],c);
   }
   
@@ -82,7 +83,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtcFloat)
     const float a = x[n];
     const float b = y[n];
     out2[n] = 3.0f;
-    out2[n] *= -b + a + stk::Traits<float>::TWO/5;
+    out2[n] *= -b*a+stk::Traits<float>::TWO/5;
   }
  
   maxerr = 0.0;
@@ -97,7 +98,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtcFloat)
     const stk::simd::Float a = stk::simd::load(&x[n]);
     const stk::simd::Float b = stk::simd::load(&y[n]);
     stk::simd::Float c = 3.2f;
-    c /= -b+a+5.6f*c;
+    c /= -(b*a+5.6f*c);
     stk::simd::store(&out1[n],c);
   }
   
@@ -105,7 +106,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtcFloat)
     const float a = x[n];
     const float b = y[n];
     out2[n] = 3.2f;
-    out2[n] /= -b+a+5.6f*out2[n];
+    out2[n] /= -(b*a+5.6f*out2[n]);
   }
  
   maxerr = 0.0;
@@ -120,7 +121,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtcFloat)
     const stk::simd::Float a = stk::simd::load(&x[n]);
     const stk::simd::Float b = stk::simd::load(&y[n]);
     stk::simd::Float c = stk::Traits<stk::simd::Float>::THIRD;
-    c += -(b/(1.0f-a)+(c+5.2f));
+    c += -(b/(1.0f-a)+((c*3)+5.2f));
     stk::simd::store(&out1[n],c);
   }
   
@@ -128,8 +129,8 @@ TEST(StkSimd, SimdMiscSelfAddSubEtcFloat)
     const float a = x[n];
     const float b = y[n];
     float c = 1.0/3.0;
-    c += -(b/(1.0f-a)+(c+5.2f));
-    out2[n] = c;
+    c += -(b/(1.0f-a)+((c*3)+5.2f));
+    out2[n] = c; 
   }
  
   maxerr = 0.0;
@@ -138,7 +139,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtcFloat)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  ASSERT_EQ( maxerr, 0.0);
+  ASSERT_EQ( maxerr, 0.0 );
 
   for (int n=0; n < N; n+=stk::simd::nfloats) {
     const stk::simd::Float a = stk::simd::load(&x[n]);
@@ -185,6 +186,7 @@ TEST(StkSimd, SimdMiscSelfAddSubEtcFloat)
   }
 
   ASSERT_EQ( maxerr, 0.0 );
+
 }
 
 TEST(StkSimd, Simd_fmaddFloat)
@@ -279,6 +281,7 @@ TEST(StkSimd, SimdSqrtFloat)
   }
 
   ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  
 }
 
 TEST(StkSimd, SimdLogFloat) 
@@ -320,6 +323,7 @@ TEST(StkSimd, SimdLogFloat)
   }
 
   ASSERT_NEAR( maxerr, 0.0, 1.0e-6 );
+  
 }
 
 TEST(StkSimd, SimdExpFloat) 
@@ -361,6 +365,7 @@ TEST(StkSimd, SimdExpFloat)
   }
 
   ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  
 }
 
 TEST(StkSimd, SimdPowAFloat) 
@@ -410,6 +415,7 @@ TEST(StkSimd, SimdPowAFloat)
   }
 
   ASSERT_NEAR( maxerr, 0.0, 0.0 );
+  
 }
 
 TEST(StkSimd, SimdPowBFloat) 
@@ -478,16 +484,22 @@ TEST(StkSimd, SimdCbrtFloat)
 
   t0 = -stk::get_time_in_seconds();
   for (int n=0; n < N; n+=stk::simd::nfloats) {
+
     const stk::simd::Float xl = stk::simd::load(&x[n]);
+    // compute cbrt?
     const stk::simd::Float d = stk::math::cbrt(xl);
+    
     stk::simd::store(&out1[n],d);
+
   }
   t0 += stk::get_time_in_seconds();
   std::cout << "SIMD cbrt took " << t0 << " seconds" <<  std::endl;
 
   t0 = -stk::get_time_in_seconds();
   for (int n=0; n < N; ++n) {
+   
     out2[n] = std::cbrt(x[n]);
+
   }
   t0 += stk::get_time_in_seconds();
   std::cout << "Real cbrt took " << t0 << " seconds" <<  std::endl;
@@ -499,6 +511,7 @@ TEST(StkSimd, SimdCbrtFloat)
   }
 
   ASSERT_NEAR( maxerr, 0.0, 2.5e-7 );  
+
 }
 
 TEST(StkSimd, SimdTimeLoadStoreDataLayoutFloat)
@@ -622,7 +635,7 @@ TEST(StkSimd, SimdTimeLoadStoreDataLayoutFloat)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  //printf("maxerror = %g\n",maxerr);
+  printf("maxerror = %g\n",maxerr);
   
   ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
   
@@ -633,7 +646,7 @@ TEST(StkSimd, SimdTimeLoadStoreDataLayoutFloat)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  //printf("maxerror = %g\n",maxerr);
+  printf("maxerror = %g\n",maxerr);
   
   ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
 
@@ -660,6 +673,8 @@ TEST(StkSimd, SimdTimeLoadStoreInnerProductFloat)
 
   float* X = x.data();
   float* Y = y.data();
+
+  // stk::simd::Float a[sz];
 
   t0 = -stk::get_time_in_seconds();
   for (int n=0; n < N; n+=stk::simd::nfloats, X+=sz*stk::simd::nfloats, Y+=stk::simd::nfloats) {
@@ -763,7 +778,7 @@ TEST(StkSimd, SimdTimeLoadStoreInnerProductFloat)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  //printf("maxerror = %g\n",maxerr);
+  printf("maxerror = %g\n",maxerr);
   
   ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
   
@@ -774,7 +789,7 @@ TEST(StkSimd, SimdTimeLoadStoreInnerProductFloat)
     maxerr = stk::math::max(err,maxerr);
   }
 
-  //printf("maxerror = %g\n",maxerr);
+  printf("maxerror = %g\n",maxerr);
   
   ASSERT_NEAR( maxerr, 0.0, 1.0e-16 );
 
@@ -1114,6 +1129,7 @@ TEST(StkSimd, SimdIfThenBoolFloat)
 
 #if defined(StkSimd_SIMD) // these don't make sense for non-simd
 
+  // any (partial)
 
   for (int n=0; n < N; n+=stk::simd::nfloats) {
     bool anyl=false;

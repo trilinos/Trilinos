@@ -37,15 +37,16 @@
 #include <omp.h>
 #endif
 
+#include <stk_search/OctTreeOps.hpp>
 #include "stk_util/environment/WallTime.hpp"
-#include "stk_util/parallel/CommSparse.hpp"
-#include "stk_util/parallel/ParallelComm.hpp"
 #include "stk_search/KDTree_BoundingBox.hpp"
 #include "stk_search/KDTree.hpp"
 #include "mpi.h"
 
 namespace stk {
   namespace search {
+
+
 
    template <typename DomainBox>
     inline void GlobalBoxCombine(DomainBox &box_array, MPI_Comm &communicator)
@@ -264,72 +265,9 @@ namespace stk {
 #endif
 
     }
-
-template <typename DomainKey, typename RangeKey>
-void communicateVector(
-  stk::ParallelMachine arg_comm ,
-  const std::vector< std::pair< DomainKey, RangeKey> > & send_relation ,
-        std::vector< std::pair< DomainKey, RangeKey> > & recv_relation ,
-        bool communicateRangeBoxInfo = true )
-{
-  typedef std::pair<DomainKey, RangeKey> ValueType ;
-
-  CommSparse commSparse( arg_comm );
-
-  const int p_rank = commSparse.parallel_rank();
-  const int p_size = commSparse.parallel_size();
-
-  typename std::vector< ValueType >::const_iterator i ; 
-
-  for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) { 
-    const ValueType & val = *i ;
-    if ( static_cast<int>(val.first.proc()) == p_rank || ( communicateRangeBoxInfo && static_cast<int>(val.second.proc()) == p_rank) )
-    {   
-      recv_relation.push_back( val );
-    }   
-    if ( static_cast<int>(val.first.proc()) != p_rank ) { 
-      CommBuffer & buf = commSparse.send_buffer( val.first.proc() );
-      buf.skip<ValueType>( 1 );
-    }   
-    if ( communicateRangeBoxInfo )
-    {   
-        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) { 
-          CommBuffer & buf = commSparse.send_buffer( val.second.proc() );
-          buf.skip<ValueType>( 1 );
-        }
-    }   
   }
 
-  commSparse.allocate_buffers();
 
-  for ( i = send_relation.begin() ; i != send_relation.end() ; ++i ) { 
-    const ValueType & val = *i ;
-    if ( static_cast<int>(val.first.proc()) != p_rank ) { 
-      CommBuffer & buf = commSparse.send_buffer( val.first.proc() );
-      buf.pack<ValueType>( val );
-    }   
-    if ( communicateRangeBoxInfo )
-    {   
-        if ( static_cast<int>(val.second.proc()) != p_rank && val.second.proc() != val.first.proc() ) { 
-          CommBuffer & buf = commSparse.send_buffer( val.second.proc() );
-          buf.pack<ValueType>( val );
-        }
-    }   
-  }
-
-  commSparse.communicate();
-
-  for ( int p = 0 ; p < p_size ; ++p ) { 
-    CommBuffer & buf = commSparse.recv_buffer( p );
-    while ( buf.remaining() ) { 
-      ValueType val ;
-      buf.unpack<ValueType>( val );
-      recv_relation.push_back( val );
-    }   
-  }
 }
 
-  } // end namespace search
-} // end namespace stk
-
-#endif
+#endif /* GEOMETRY_TOOLKIT_INCLUDE_GEOM_COARSESEARCHMULTIALG_IMPL_H_ */

@@ -249,6 +249,15 @@ public:
     return *this;
   }
 
+  /**
+   * @brief Member function <b>getFlags</b> returns the flags bitmask.
+   *
+   * @return      an <b>int</b> of the flags bitmask.
+   */
+  int getFlags() {
+    return m_flags;
+  }
+
   int getDepth() const {
     return m_lineMaskStack.getDepth();
   }

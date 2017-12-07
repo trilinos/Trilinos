@@ -259,7 +259,7 @@ NOX::Epetra::Vector::createMultiVector(
 {
   if (numVecs < 0) {
     std::cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector"
-     << " must have postive number of columns!" << std::endl;
+     << " must have positive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
@@ -290,7 +290,7 @@ NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
 {
   if (numVecs <= 0) {
     std::cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector"
-     << " must have postive number of columns!" << std::endl;
+     << " must have positive number of columns!" << std::endl;
     throw "NOX Error";
   }
 
