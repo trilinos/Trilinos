@@ -7,11 +7,11 @@ execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 # parallel valgrind tests run every night except Sunday
 # coverage tests run on Saturday night
 
-if(${DAYOFWEEK} MATCHES "Sunday")
+if(${DAYOFWEEK} MATCHES "Saturday")
   SET(RUN_HEAVY_MEMORY_TESTS ON)
   SET(RUN_COVERAGE_TESTS OFF)
   SET(RUN_CUDA_OLD_TESTS ON)
-elseif(${DAYOFWEEK} MATCHES "Saturday")
+elseif(${DAYOFWEEK} MATCHES "Sunday")
   SET(RUN_HEAVY_MEMORY_TESTS OFF)
   SET(RUN_COVERAGE_TESTS ON)
   SET(RUN_CUDA_OLD_TESTS OFF)
@@ -97,15 +97,6 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
-    )
-
-  # Refactor (kokkos) tests
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_OpenMP
-    ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_openmp_geminga.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 420
     )
 
   # Misc tests

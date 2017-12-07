@@ -338,7 +338,8 @@ GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
 GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
 
-IF (Tpetra_ENABLE_Cuda) 
+ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
+IF (Tpetra_ENABLE_CUDA) 
   # If you bothered to build with CUDA enabled, then we assume you
   # only want CUDA.
   GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT ON)  
@@ -362,7 +363,7 @@ ELSE()
       ENDIF()  # Kokkos_ENABLE_Pthread
     ENDIF() # Kokkos_ENABLE_Serial
   ENDIF() # Kokkos_ENABLE_OpenMP
-ENDIF() # Tpetra_ENABLE_Cuda
+ENDIF() # Tpetra_ENABLE_CUDA
 
 # Don't turn on both Serial and Threads by default.  Prefer Serial,
 # because Threads is a last resort.  Of course, users may still

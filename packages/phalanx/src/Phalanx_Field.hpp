@@ -111,7 +111,7 @@ namespace PHX {
     typedef DataT& reference_type;
 
     typedef typename KokkosDimType<DataT,Rank>::type kokkos_data_type;
-    typedef typename Kokkos::View <kokkos_data_type, PHX::Device> array_type;
+    typedef typename PHX::View<kokkos_data_type> array_type;
     typedef typename array_type::array_layout layout_type;
     typedef typename array_type::device_type device_type;
     typedef typename PHX::Device::size_type size_type;
@@ -174,10 +174,10 @@ namespace PHX {
     void print(std::ostream& os, bool printValues = false) const;
 
     KOKKOS_INLINE_FUNCTION
-    Kokkos::DynRankView<DataT,PHX::Device> get_view();
+    Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device> get_view();
 
     KOKKOS_INLINE_FUNCTION
-    const Kokkos::DynRankView<DataT,PHX::Device> get_view() const;
+    const Kokkos::DynRankView<DataT,typename PHX::DevLayout<DataT>::type,PHX::Device> get_view() const;
 
     //! Returns a static view of the underlying kokkos static view.
     KOKKOS_INLINE_FUNCTION

@@ -61,8 +61,8 @@ class ZeroContributedField : public PHX::EvaluatorWithBaseImpl<Traits>,
 
 public:
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
-    Kokkos::DynRankView<ScalarT,PHX::Device> field_;
-    KOKKOS_FUNCTION MyDevEval(const Kokkos::DynRankView<ScalarT,PHX::Device>& field) : field_(field) {} 
+    Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> field_;
+    KOKKOS_FUNCTION MyDevEval(const Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>& field) : field_(field) {} 
     KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
     KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
                                   typename Traits::EvalData workset) override;

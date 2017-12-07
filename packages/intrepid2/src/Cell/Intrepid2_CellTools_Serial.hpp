@@ -50,6 +50,8 @@
 
 #include "Intrepid2_ConfigDefs.hpp"
 
+#include "Shards_CellTopology.hpp"
+
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"
 #include "Intrepid2_Kernels.hpp"

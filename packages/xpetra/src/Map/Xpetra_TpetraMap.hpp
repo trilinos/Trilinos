@@ -531,7 +531,7 @@ namespace Xpetra {
     using local_map_type = typename Map<LocalOrdinal, GlobalOrdinal, Node>::local_map_type;
     /// \brief Get the local Map for Kokkos kernels.
     local_map_type getLocalMap () const {
-      return map_->getLocalMap();
+      return local_map_type();
     }
 #endif
 #endif

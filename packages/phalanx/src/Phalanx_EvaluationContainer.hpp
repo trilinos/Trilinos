@@ -94,7 +94,10 @@ namespace PHX {
 
     void evaluateFields(typename Traits::EvalData d);
 
-    void evaluateFieldsDeviceDag(const int& work_size, typename Traits::EvalData d);
+    void evaluateFieldsDeviceDag(const int& work_size,
+				 const int& team_size,
+				 const int& vector_size,
+				 typename Traits::EvalData d);
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
     /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
