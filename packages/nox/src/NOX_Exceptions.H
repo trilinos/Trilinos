@@ -1,6 +1,3 @@
-// $Id$
-// $Source$
-
 //@HEADER
 // ************************************************************************
 //
@@ -39,59 +36,29 @@
 //
 // Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
-// ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
-// ************************************************************************
 //@HEADER
 
-#include "NOX_Abstract_Vector.H"
+#ifndef   NOX_EXCEPTIONS_H
+#define   NOX_EXCEPTIONS_H
 
-// Included multivector declarations
-#include "NOX_MultiVector.H"
+namespace NOX {
+namespace Exceptions {
 
-void NOX::Abstract::Vector::print(std::ostream& stream) const
-{
-  return;
-}
+  /*!
+    \brief A generic exception class denoting a solver failure.
 
-Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::Abstract::Vector::createMultiVector(
-                    const NOX::Abstract::Vector* const* vecs,
-                    int numVecs, NOX::CopyType type) const
-{
-  if (numVecs < 0) {
-    std::cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector"
-     << " must have positive number of columns!" << std::endl;
-    throw "NOX Error";
-  }
+    This class is a member of namespace NOX::Exceptions.
+  */
+  class SolverFailure : public std::logic_error {
 
-  const NOX::Abstract::Vector** tmp =
-    new const NOX::Abstract::Vector*[numVecs+1];
+  public:
 
-  tmp[0] = this;
-  for (int i=0; i<numVecs; i++)
-    tmp[i+1] = vecs[i];
+    //! Constructor.
+    SolverFailure(const std::string& what) : std::logic_error(what) {};
 
-  Teuchos::RCP<NOX::MultiVector> mv =
-    Teuchos::rcp(new NOX::MultiVector(tmp, numVecs+1, type));
+  }; // end of class SolverFailure
 
-  delete [] tmp;
+} // end of namespace Exceptions
+} // end of namespace NOX
 
-  return mv;
-}
-
-Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
-{
-  if (numVecs <= 0) {
-    std::cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector"
-     << " must have positive number of columns!" << std::endl;
-    throw "NOX Error";
-  }
-
-  return Teuchos::rcp(new NOX::MultiVector(*this, numVecs, type));
-}
+#endif // NOX_EXCEPTIONS_H

@@ -309,7 +309,7 @@ applyImplBlockCrs (HostViewLocal& X,
     else { // beta != 0
       for(size_t i = 0; i < numRows; i++)
         for(size_t j = 0; j < numVecs; j++)
-          Y(i, j) *= beta;
+          Y(i, j) = beta * (local_impl_scalar_type) Y(i, j);
     }
   }
   else { // alpha != 0; must solve the linear system
@@ -352,7 +352,7 @@ applyImplBlockCrs (HostViewLocal& X,
       {
         for(size_t j = 0; j < Y.dimension_1(); j++)
         {
-          Y(i, j) *= beta;
+          Y(i, j) = beta * (local_impl_scalar_type) Y(i, j);
           Y(i, j) += alpha * (*Y_tmp)(i, j);
         }
       }
@@ -416,7 +416,7 @@ applyImpl (HostViewLocal& X,
       for(size_t i = 0; i < Y.dimension_0(); i++)
       {
         for(size_t j = 0; j < Y.dimension_1(); j++)
-          Y(i, j) *= beta;
+          Y(i, j) = beta * (local_impl_scalar_type) Y(i, j);
       }
   }
   else { // alpha != 0; must solve the linear system
