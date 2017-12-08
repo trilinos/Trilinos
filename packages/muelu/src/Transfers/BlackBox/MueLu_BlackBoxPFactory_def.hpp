@@ -141,14 +141,14 @@ namespace MueLu {
                                                                            Level& coarseLevel)const{
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    // // Print from all processes
-    // RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    // fancy->setShowAllFrontMatter(false).setShowProcRank(true);
-    // Teuchos::FancyOStream& out  = *fancy;
-    // Print from a particular rank
-    const int procRank = Teuchos::GlobalMPISession::getRank();
-    Teuchos::oblackholestream blackhole;
-    std::ostream& out = ( procRank == 3 ? std::cout : blackhole );
+    // Print from all processes
+    RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    fancy->setShowAllFrontMatter(false).setShowProcRank(true);
+    Teuchos::FancyOStream& out  = *fancy;
+    // // Print from a particular rank
+    // const int procRank = Teuchos::GlobalMPISession::getRank();
+    // Teuchos::oblackholestream blackhole;
+    // std::ostream& out = ( procRank == 0 ? std::cout : blackhole );
     // // Do not print anything
     // Teuchos::oblackholestream blackhole;
     // std::ostream& out = blackhole;
@@ -463,15 +463,19 @@ namespace MueLu {
     RCP<const Map> stridedDomainMapP = Xpetra::StridedMapFactory<LO,GO,NO>::Build(domainMapP,
                                                                                   strideInfo);
 
-    GO nnzP = 0;
+    GO gnnzP = 0;
+    LO lnnzP = 0;
     // coarse points have one nnz per row
-    nnzP += gNumCoarseNodes;
+    gnnzP += gNumCoarseNodes;
+    lnnzP += lNumCoarseNodes;
     // add all other points multiplying by 2^numDimensions
-    nnzP += (gNumFineNodes - gNumCoarseNodes)*std::pow(2, numDimensions);
+    gnnzP += (gNumFineNodes - gNumCoarseNodes)*std::pow(2, numDimensions);
+    lnnzP += (lNumFineNodes - lNumCoarseNodes)*std::pow(2, numDimensions);
     // finally multiply by the number of dofs per node
-    nnzP = nnzP*BlkSize;
+    gnnzP = gnnzP*BlkSize;
+    lnnzP = lnnzP*BlkSize;
 
-    out << "nnzP=" << nnzP << std::endl;
+    out << "nnzP=" << gnnzP << std::endl;
 
     // Create the matrix itself using the above maps
     RCP<Matrix> P;
@@ -482,7 +486,7 @@ namespace MueLu {
     ArrayRCP<LO>      jaP;
     ArrayRCP<SC>     valP;
 
-    PCrs->allocateAllValues(nnzP, iaP, jaP, valP);
+    PCrs->allocateAllValues(lnnzP, iaP, jaP, valP);
 
     ArrayView<size_t> ia  = iaP();
     ArrayView<LO>     ja  = jaP();
@@ -517,6 +521,7 @@ namespace MueLu {
     for(elemInds[2] = 0; elemInds[2] < lCoarseElementsPerDir[2]; ++elemInds[2]) {
       for(elemInds[1] = 0; elemInds[1] < lCoarseElementsPerDir[1]; ++elemInds[1]) {
         for(elemInds[0] = 0; elemInds[0] < lCoarseElementsPerDir[0]; ++elemInds[0]) {
+          elementFlags[0] = 0; elementFlags[1] = 0; elementFlags[2] = 0;
           for(int dim = 0; dim < 3; ++dim) {
             // Detect boundary conditions on the element and set corresponding flags.
             if(elemInds[dim] == 0 && elemInds[dim] == lCoarseElementsPerDir[dim] - 1) {
@@ -583,6 +588,8 @@ namespace MueLu {
                               lCoarseNodesPerDir, ghostInterface, elementFlags, stencilType,
                               blockStrategy, elementNodesPerDir, numNodesInElement, colGIDs,
                               Pi, Pf, Pe, dofType, lDofInd);
+
+          out << "Clearing the local prolongator routine..." << std::endl;
 
           // Find ghosted LID associated with nodes in the element and eventually which of these
           // nodes are ghosts, this information is used to fill the local prolongator.
@@ -666,13 +673,16 @@ namespace MueLu {
                     for(int dof = 0; dof < BlkSize; ++dof) {
 
                       // Now we loop over the stencil and fill the column indices and row values
+                      int cornerInd = 0;
                       out << "dofType: " << dofType[nodeElementInd*BlkSize + dof]
                           << ", lDofInd: " << lDofInd[nodeElementInd*BlkSize + dof] << " [";
                       switch(dofType[nodeElementInd*BlkSize + dof]) {
                       case 0: // Corner node
+                        if(nodeInd[2] == elementNodesPerDir[2] - 1) {cornerInd += 4;}
+                        if(nodeInd[1] == elementNodesPerDir[1] - 1) {cornerInd += 2;}
+                        if(nodeInd[0] == elementNodesPerDir[0] - 1) {cornerInd += 1;}
                         ia[lNodeLIDs[nodeElementInd]*BlkSize + dof + 1] = rowPtr + dof + 1;
-                        ja[rowPtr + dof]
-                          = colGIDs[glElementCoarseNodeCG[nodeElementInd]*BlkSize + dof];
+                        ja[rowPtr + dof] = colGIDs[glElementCoarseNodeCG[cornerInd]*BlkSize + dof];
                         val[rowPtr + dof] = 1.0;
 
                         // Debug printouts
@@ -780,6 +790,7 @@ namespace MueLu {
     }
 
     out << "rowPtr: " << ia << std::endl;
+    out << "colInd.size()= " << ja.size() << std::endl;
     out << "colInd: " << ja << std::endl;
 
     // Sort all row's column indicies and entries by LID
@@ -1941,6 +1952,7 @@ namespace MueLu {
       // Create a mask array to automate mesh boundary processing
       Array<int> mask(7);
       int stencilSize = rowValues.size();
+      std::cout << "stencilSize= " << stencilSize << std::endl;
       if(collapseFlags[0] + collapseFlags[1] + collapseFlags[2] > 0) {
         if(stencilSize == 1) {
           // The assumption is made that if only one non-zero exists in the row
@@ -1949,6 +1961,8 @@ namespace MueLu {
           mask[0] = 1; mask[1] = 1; mask[2] = 1;
           mask[4] = 1; mask[5] = 1; mask[6] = 1;
         } else {
+          // Here we are looking at Neumann like BC where only a flux is prescribed
+          // and less non-zeros will be present in the corresponding row.
           if(collapseFlags[2] == 1 || collapseFlags[2] == 3) {
             mask[0] = 1;
           }
@@ -1971,7 +1985,10 @@ namespace MueLu {
       }
 
       int offset = 0;
+      std::cout << "(ie,je,ke)=(" << ie << ", " << je << ", " << ke << ")" << std::endl;
+      std::cout << "mask: " << mask << std::endl;
       for(int ind = 0; ind < 7; ++ind) {
+        std::cout << "ind= " << ind << ",  offset= " << offset << ", (ind - offset)= " << (ind - offset) << std::endl;
         if(mask[ind] == 1) {
           for(int dof = 0; dof < BlkSize; ++dof) {
             stencil[BlkSize*fullStencilInds[ind] + dof] = 0.0;
@@ -1983,6 +2000,7 @@ namespace MueLu {
           }
         }
       }
+      std::cout << "Cleared the BC treatment loop" << std::endl;
     } else if(stencilType == "full") {
       // Create a mask array to automate mesh boundary processing
       Array<int> mask(27);
