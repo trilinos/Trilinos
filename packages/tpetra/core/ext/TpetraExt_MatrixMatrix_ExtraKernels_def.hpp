@@ -121,8 +121,6 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   typedef NO::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
 
-  //  int MyPID = C.getRowMap()->getComm()->getRank();//DEBUG
-
   // All of the invalid guys
   const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
@@ -149,22 +147,32 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   RCP<const map_type> Ccolmap = C.getColMap();
   size_t m = Aview.origMatrix->getNodeNumRows();
   size_t n = Ccolmap->getNodeNumElements();
-  size_t Cest_nnz_per_row = C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
+  size_t Cest_nnz_per_row = 2*C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
+
 
   // Get my node / thread info (right from openmp)
-  size_t thread_max = omp_get_num_threads();
+  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+  //  thread_max = 1; //HAQ HAQ HAQ
+  //  printf("CMS: thread_max = %d\n",(int)thread_max);
 
-  if(thread_max > 128) printf("WARNING: You probably don't want to run this kernel with %d threads\n",(int)thread_max);
 
   // Thread-local memory
-  Kokkos::View<u_lno_view_t> tl_rowptr("top_rowptr",thread_max);
-  Kokkos::View<u_lno_nnz_view_t> tl_colind("top_colind",thread_max);
-  Kokkos::View<u_scalar_view_t> tl_values("top_values",thread_max);
+  Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr",thread_max);
+  Kokkos::View<u_lno_nnz_view_t*> tl_colind("top_colind",thread_max);
+  Kokkos::View<u_scalar_view_t*> tl_values("top_values",thread_max);
 
   double thread_chunk = (double)(m) / thread_max;
 
+#define CMS_USE_KOKKOS
+
+
   // Run chunks of the matrix independently 
-  Kokkos::parallel_for(range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid) {
+#ifdef CMS_USE_KOKKOS
+  Kokkos::parallel_for("LTG::ThreadLocal",range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid)
+#else
+  for(size_t tid=0; tid<thread_max; tid++)
+#endif
+    {
       // Thread coordiation stuff
       size_t my_thread_start =  tid * thread_chunk;
       size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
@@ -239,7 +247,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
                 Ccolind(CSR_ip) = Cij;
                 Cvals(CSR_ip)   = Aval*Ivals(j);
                 CSR_ip++;
-                
+
               } else {
                 Cvals(c_status[Cij]) += Aval*Ivals(j);
               }
@@ -260,45 +268,63 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       tl_colind(tid) = Ccolind;
       tl_values(tid) = Cvals;      
       Crowptr(my_thread_m) = CSR_ip;
-    });
-
+  }
+#ifdef CMS_USE_KOKKOS
+);
+#endif
 
   // Generate the starting nnz number per thread
   size_t c_nnz_size=0;
   lno_view_t row_mapC("non_const_lnow_row", m + 1);
   lno_view_t thread_start_nnz("thread_nnz",thread_max+1);
-  Kokkos::parallel_scan(range_type(0,thread_max).set_chunk_size(1), [=] (const size_t i, size_t& update, const bool final) {
+#ifdef CMS_USE_KOKKOS
+  Kokkos::parallel_scan("LTG::Scan",range_type(0,thread_max).set_chunk_size(1), [=] (const size_t i, size_t& update, const bool final) {
       size_t mynnz = tl_rowptr(i)(tl_rowptr(i).dimension(0)-1);
       if(final) thread_start_nnz(i) = update;
       update+=mynnz;
       if(final && i+1==thread_max) thread_start_nnz(i+1)=update;
     });
   c_nnz_size = thread_start_nnz(thread_max);
+#else
+  thread_start_nnz(0) = 0;
+  for(size_t i=0; i<thread_max; i++)
+    thread_start_nnz(i+1) = thread_start_nnz(i) + tl_rowptr(i)(tl_rowptr(i).dimension(0)-1);
+  c_nnz_size = thread_start_nnz(thread_max);
+#endif
 
   // Allocate output
   lno_nnz_view_t  entriesC(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
   scalar_view_t   valuesC(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
 
   // Copy out
-  Kokkos::parallel_for(range_type (0, m),[=](const size_t i) {
-      size_t tid = i / thread_chunk;
-      size_t ii = i- tid * thread_chunk;
-      size_t thread_start = thread_start_nnz(tid);
+#ifdef CMS_USE_KOKKOS
+  Kokkos::parallel_for("LTG::CopyOut", range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid)
+#else
+  for(size_t tid=0; tid<thread_max; tid++)
+#endif
+    {
+      size_t my_thread_start =  tid * thread_chunk;
+      size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
+      size_t nnz_thread_start = thread_start_nnz(tid);
 
-      // Rowptr
-      row_mapC(i) = thread_start + tl_rowptr(tid)(ii);
-      if (i==m-1) {
-        row_mapC(m) = thread_start + tl_rowptr(tid)(ii+1);
+      for (size_t i = my_thread_start; i < my_thread_stop; i++) {
+        size_t ii = i - my_thread_start;
+        // Rowptr
+        row_mapC(i) = nnz_thread_start + tl_rowptr(tid)(ii);
+        if (i==m-1) {
+          row_mapC(m) = nnz_thread_start + tl_rowptr(tid)(ii+1);
+        }
+        
+        // Colind / Values
+        for(size_t j = tl_rowptr(tid)(ii); j<tl_rowptr(tid)(ii+1); j++) {
+          entriesC(nnz_thread_start + j) = tl_colind(tid)(j);
+          valuesC(nnz_thread_start + j)  = tl_values(tid)(j);        
+        }
       }
-
-      else row_mapC(i) = thread_start + tl_rowptr(tid)(ii);
-              
-      // Colind / Values
-      for(size_t j = tl_rowptr(tid)(ii); j<tl_rowptr(tid)(ii+1); j++) {
-        entriesC(thread_start + j) = tl_colind(tid)(j);
-        valuesC(thread_start + j)  = tl_values(tid)(j);        
-      }
-    });
+  }
+#ifdef CMS_USE_KOKKOS
+);
+#endif
 
 
   //DEBUG
