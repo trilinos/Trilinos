@@ -21,28 +21,31 @@ namespace Tempus {
 /**
  * This class wraps a given ModelEvalutor encapsulating f(x_dot,x,p) and creates
  * a new "residual" for the adjoint sensitivity equations:
- *        F(y) = d/dt( df/dx_dot^T*y ) - df/dx^T*y = 0
+ *        F(y) = d/dt( df/dx_dot^T*y ) - df/dx^T*y + dg/dx^T = 0
  * where y is the adjoint variable.  Nominally y is a multi-vector belonging
- * to the vector space of the residual f and a given number of columns.  To
- * satisfy the model evaluator interface, y is converted to a product vector
- * formed by its columns.  This is the form of the adjoint equations suitable
- * for computing sensitivities of a response function g(x(T),p).
+ * to the vector space of the residual f with number of columns equal to the
+ * dimension of g.  To satisfy the model evaluator interface, y is converted
+ * to a product vector formed by its columns.  This is the form of the adjoint
+ * equations suitable for computing pseudotransientsensitivities of a response
+ * function g(x(T),p) or adjoint sensitivities for a time-integrated response
+ * function \int_0^T g(x(t),p).
  *
  * To compute adjoint sensitivities, the equations f(x_dot,x,p) = 0 are
  * integrated forward in time to some final time T, with the adjoint equations
  * above integrated backward in time starting at T.  Since the tempus
  * integrator can only integrate forward in time, we define tau = T - t and
  * transform the adjoint equations to:
- *        F(y) = d/dtau( df/dx_dot^T*y ) + df/dx^T*y = 0.
- * The initial conditions at t = T for y are
- *        y(T) = df/dx_dot(x_dot(T),x(T),p)^{-T} * dg/dx(x(T),p)^T.
- * The sensitivity of g(T) is then
- *        dg/dp(T) - int_{0}^T(df/dp^T*y)dt + dx/dp(0)^T*df/dx_dot(0)^T*y(0).
+ *        F(y) = d/dtau( df/dx_dot^T*y ) + df/dx^T*y - dg/dx^T = 0.
+ * The initial conditions for y are y(T) = 0. The sensitivity of g(T) is then
+ *        int_0^T(dg/dp(T) - df/dp^T*y)dt + dx/dp(0)^T*df/dx_dot(0)^T*y(0)
+ * for transient adjoint sensitivites and is
+ *        dg/dp(T) - df/dp^T*y
+ * for pseudotransient.
  *
  * This model evaluator supports both implicit and explict forms of the
  * governing equations.  However it assumes df/dx_dot is constant with respect
  * to x_dot, x, and t so that the adjoint equations become
- *        F(y) = df/dxdot^T*y_dot + df/dx^T*y = 0.
+ *        F(y) = df/dxdot^T*y_dot + df/dx^T*y - dg/dx^T = 0.
  * Moving beyond this assumption will require modifications to the steppers
  * in how they generate time-derivative terms.
  */
@@ -75,6 +78,7 @@ public:
   AdjointSensitivityModelEvaluator(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
     const Scalar& t_final,
+    const bool is_pseudotransient,
     const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null);
 
   //! Get the underlying model 'f'
@@ -133,6 +137,7 @@ private:
   Teuchos::RCP<const DMVPVS> response_space_;
   Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > sh_;
   Scalar t_final_;
+  bool is_pseudotransient_;
   bool mass_matrix_is_constant_;
   bool mass_matrix_is_identity_;
   int p_index_;
@@ -140,10 +145,12 @@ private:
   int num_adjoint_;
 
   mutable bool mass_matrix_is_computed_;
+  mutable Teuchos::RCP<Thyra::VectorBase<Scalar> > my_x_dot_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdx_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdot_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdp_op_;
   mutable Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > my_dfdp_mv_;
+  mutable Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > my_dgdx_mv_;
   mutable Teuchos::RCP<Tempus::SolutionState<Scalar> > forward_state_;
   mutable Scalar t_interp_;
 };

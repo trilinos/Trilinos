@@ -266,7 +266,11 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // interpolation if possible
   TEUCHOS_ASSERT(sh_ != Teuchos::null);
   const Scalar t = inArgs.get_t();
-  if (!is_pseudotransient_) {
+  Scalar forward_t;
+  if (is_pseudotransient_)
+    forward_t = forward_state_->getTime();
+  else {
+    forward_t = t;
     if (forward_state_ == Teuchos::null || t_interp_ != t) {
       if (forward_state_ == Teuchos::null)
         forward_state_ = sh_->interpolateState(t);
@@ -291,8 +295,11 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       if (use_dfdp_as_tangent_)
         me_inArgs.set_p(xdot_tangent_index_, inArgs.get_x_dot());
     }
-    else // clear out xdot if it was set in nominalValues
+    else {
+      // clear out xdot if it was set in nominalValues to get to ensure we
+      // get the explicit form
       me_inArgs.set_x_dot(Teuchos::null);
+    }
   }
   if (me_inArgs.supports(MEB::IN_ARG_x_dot_dot)) {
     if (inArgs.get_x_dot_dot() != Teuchos::null) {
@@ -306,7 +313,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       me_inArgs.set_x_dot_dot(Teuchos::null);
   }
   if (me_inArgs.supports(MEB::IN_ARG_t))
-    me_inArgs.set_t(inArgs.get_t());
+    me_inArgs.set_t(forward_t);
   if (me_inArgs.supports(MEB::IN_ARG_alpha))
     me_inArgs.set_alpha(inArgs.get_alpha());
   if (me_inArgs.supports(MEB::IN_ARG_beta))
@@ -346,7 +353,9 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // Compute (df/dx) * (dx/dp) + (df/dxdot) * (dxdot/dp) + (df/dxdotdot) * (dxdotdot/dp) + (df/dp)
   // if the underlying ME doesn't already do this.  This requires computing
-  // df/dx, df/dxdot, df/dxdotdot as separate operators
+  // df/dx, df/dxdot, df/dxdotdot as separate operators.
+  // For pseudo-transient, we would like to reuse these operators, but this is
+  // complicated when steppers use both implicit and explicit forms.
   if (!use_dfdp_as_tangent_) {
     if (dxdp != Teuchos::null && dfdp != Teuchos::null) {
       if (my_dfdx_ == Teuchos::null)

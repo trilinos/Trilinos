@@ -23,8 +23,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  DIRK_Pseudotransient_FSA
-  SOURCES Tempus_DIRK_Pseudotransient_FSA.cpp Tempus_DIRK_FSA.hpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  DIRK_PseudoTransient_SA
+  SOURCES Tempus_DIRK_PseudoTransient_SA.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models
   NUM_MPI_PROCS 1
   )

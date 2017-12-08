@@ -23,8 +23,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  BDF2_Pseudotransient_FSA
-  SOURCES Tempus_BDF2_Pseudotransient_FSA.cpp Tempus_BDF2_FSA.hpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  BDF2_PseudoTransient_SA
+  SOURCES Tempus_BDF2_PseudoTransient_SA.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models
   NUM_MPI_PROCS 1
   )

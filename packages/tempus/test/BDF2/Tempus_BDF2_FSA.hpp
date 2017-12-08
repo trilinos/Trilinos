@@ -14,13 +14,11 @@
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_IntegratorForwardSensitivity.hpp"
-#include "Tempus_IntegratorPseudoTransientForwardSensitivity.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
-#include "../TestModels/SteadyQuadraticModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
@@ -218,55 +216,6 @@ void test_sincos_fsa(const bool use_combined_method,
     ftmp.close();
   }
 
-}
-
-// ************************************************************
-// ************************************************************
-void test_pseudotransient_fsa(const bool use_dfdp_as_tangent,
-                              Teuchos::FancyOStream &out, bool &success)
-{
-  // Read params from .xml file
-  RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_BDF2_SteadyQuadratic.xml");
-
-  // Setup the SteadyQuadraticModel
-  RCP<ParameterList> scm_pl = sublist(pList, "SteadyQuadraticModel", true);
-  scm_pl->set("Use DfDp as Tangent", use_dfdp_as_tangent);
-  RCP<SteadyQuadraticModel<double> > model =
-    Teuchos::rcp(new SteadyQuadraticModel<double>(scm_pl));
-
-  // Setup sensitivities
-  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-  ParameterList& sens_pl = pl->sublist("Sensitivities");
-  sens_pl.set("Use DfDp as Tangent", use_dfdp_as_tangent);
-  sens_pl.set("Reuse State Linear Solver", true);
-  sens_pl.set("Force W Update", true); // Have to do this because for this
-  // model the solver seems to be overwriting the matrix
-
-  // Setup the Integrator
-  RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<double> > integrator =
-    Tempus::integratorPseudoTransientForwardSensitivity<double>(pl, model);
-
-  // Integrate to timeMax
-  bool integratorStatus = integrator->advanceTime();
-  TEST_ASSERT(integratorStatus);
-
-  // Test if at 'Final Time'
-  double time = integrator->getTime();
-  double timeFinal =pl->sublist("Default Integrator")
-    .sublist("Time Step Control").get<double>("Final Time");
-  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
-
-  // Time-integrated solution and the exact solution
-  RCP<const Thyra::VectorBase<double> > x_vec = integrator->getX();
-  RCP<const Thyra::MultiVectorBase<double> > DxDp_vec = integrator->getDxDp();
-  const double x = Thyra::get_ele(*x_vec, 0);
-  const double dxdb = Thyra::get_ele(*(DxDp_vec->col(0)), 0);
-  const double x_exact = model->getSteadyStateSolution();
-  const double dxdb_exact = model->getSteadyStateSolutionSensitivity();
-
-  TEST_FLOATING_EQUALITY( x,    x_exact,    1.0e-6 );
-  TEST_FLOATING_EQUALITY( dxdb, dxdb_exact, 1.0e-6 );
 }
 
 } // namespace Tempus_Test
