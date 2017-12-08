@@ -75,14 +75,13 @@ public:
   virtual void value(ROL::Vector<Real> &c,
              const ROL::Vector<Real> &u_old,
              const ROL::Vector<Real> &u_new,
-             const ROL::Vector<Real> &z_old,
-             const ROL::Vector<Real> &z_new,
+             const ROL::Vector<Real> &z,
              Real &tol) override
   {
     auto & c_data = getVector(c);
     auto & uo_data = getVector(u_old);
     auto & un_data = getVector(u_new);
-    auto & zn_data = getVector(z_new);
+    auto & z_data = getVector(z);
 
     // solving (u,v are states, z is control)
     // 
@@ -93,38 +92,36 @@ public:
     //
     // using backward euler
     
-    c_data[0] = un_data[0]-uo_data[0] - timestep_*(un_data[1] + zn_data[0]);
+    c_data[0] = un_data[0]-uo_data[0] - timestep_*(un_data[1] + z_data[0]);
     c_data[1] = un_data[1]-uo_data[1] + timestep_*omega_*omega_*un_data[0];
   }
 
   virtual void solve(ROL::Vector<Real> &c,
-                     const ROL::Vector<Real> &u_old,
-                     ROL::Vector<Real> &u_new,
-                     const ROL::Vector<Real> &z_old,
-                     const ROL::Vector<Real> &z_new,
+                     const ROL::Vector<Real> &u_old, ROL::Vector<Real> &u_new,
+                     const ROL::Vector<Real> &z,
                      Real &tol) override
   {
     auto & uo_data = getVector(u_old);
     auto & un_data = getVector(u_new);
-    auto & zn_data = getVector(z_new);
+    auto & z_data = getVector(z);
 
     Real a = omega_*omega_*timestep_;
     Real b = timestep_;
     Real gamma = 1.0/(a*b+1.0);
 
-    Real rhs_0 = uo_data[0]+timestep_*zn_data[0];
+    Real rhs_0 = uo_data[0]+timestep_*z_data[0];
     Real rhs_1 = uo_data[1];
 
     un_data[0] = gamma*(1.0 * rhs_0 +   b * rhs_1);
     un_data[1] = gamma*( -a * rhs_0 + 1.0 * rhs_1);
 
-    value(c,u_old,u_new,z_old,z_new,tol);
+    value(c,u_old,u_new,z,tol);
   }
 
   virtual void applyJacobian_1_old(ROL::Vector<Real> &jv,
                                    const ROL::Vector<Real> &v_old,
                                    const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                   const ROL::Vector<Real> &z_old, const ROL::Vector<Real> &z_new,
+                                   const ROL::Vector<Real> &z,
                                    Real &tol) override {
     auto & jv_data = getVector(jv);
     auto & vo_data = getVector(v_old);
@@ -136,7 +133,7 @@ public:
   virtual void applyJacobian_1_new(ROL::Vector<Real> &jv,
                                    const ROL::Vector<Real> &v_new,
                                    const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                   const ROL::Vector<Real> &z_old, const ROL::Vector<Real> &z_new,
+                                   const ROL::Vector<Real> &z,
                                    Real &tol) override {
     auto & jv_data = getVector(jv);
     auto & vn_data = getVector(v_new);
@@ -151,7 +148,7 @@ public:
   virtual void applyInverseJacobian_1_new(ROL::Vector<Real> &ijv,
                                           const ROL::Vector<Real> &v_new,
                                           const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                          const ROL::Vector<Real> &z_old, const ROL::Vector<Real> &z_new,
+                                          const ROL::Vector<Real> &z,
                                           Real &tol) override {
     auto & ijv_data = getVector(ijv);
     auto & v_data = getVector(v_new); 
@@ -164,21 +161,10 @@ public:
     ijv_data[1] = gamma*( -a * v_data[0] + 1.0 * v_data[1]);
   }
 
-  virtual void applyJacobian_2_old(ROL::Vector<Real> &jv,
-                                   const ROL::Vector<Real> &v_old,
-                                   const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                   const ROL::Vector<Real> &z_old, const ROL::Vector<Real> &z_new,
-                                   Real &tol) override {
-    auto & jv_data = getVector(jv);
-
-    jv_data[0] = 0.0; // no dependence of z old!
-    jv_data[1] = 0.0;
-  }
-
-  virtual void applyJacobian_2_new(ROL::Vector<Real> &jv,
+  virtual void applyJacobian_2(ROL::Vector<Real> &jv,
                                    const ROL::Vector<Real> &v_new,
                                    const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                   const ROL::Vector<Real> &z_old, const ROL::Vector<Real> &z_new,
+                                   const ROL::Vector<Real> &z,
                                    Real &tol) override {
     auto & jv_data = getVector(jv);
     auto & vn_data = getVector(v_new);
@@ -190,7 +176,7 @@ public:
   virtual void applyAdjointJacobian_1_old(ROL::Vector<Real> &ajv_old,
                                       const ROL::Vector<Real> &dualv,
                                       const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                      const ROL::Vector<Real> &z_old, const ROL::Vector<Real> &z_new,
+                                      const ROL::Vector<Real> &z,
                                       Real &tol) override {
     auto & ajv_data = getVector(ajv_old);
     auto & v_data = getVector(dualv);
@@ -202,7 +188,7 @@ public:
   virtual void applyAdjointJacobian_1_new(ROL::Vector<Real> &ajv_new,
                                       const ROL::Vector<Real> &dualv,
                                       const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                      const ROL::Vector<Real> &z_old, const ROL::Vector<Real> &z_new,
+                                      const ROL::Vector<Real> &z,
                                       Real &tol) override {
 
     auto & ajv_data = getVector(ajv_new);
@@ -212,24 +198,12 @@ public:
     ajv_data[1] = v_data[1] - timestep_*v_data[0];
   }
 
-  virtual void applyAdjointJacobian_2_old(ROL::Vector<Real> &ajv_old,
+  virtual void applyAdjointJacobian_2_time(ROL::Vector<Real> &ajv,
                                       const ROL::Vector<Real> &dualv,
                                       const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                      const ROL::Vector<Real> &z_old, const ROL::Vector<Real> &z_new,
+                                      const ROL::Vector<Real> &z,
                                       Real &tol) override {
-
-    auto & ajv_data = getVector(ajv_old);
-
-    ajv_data[0] = 0.0; // no dependence of z old!
-    ajv_data[1] = 0.0;
-  }
-
-  virtual void applyAdjointJacobian_2_new(ROL::Vector<Real> &ajv_new,
-                                      const ROL::Vector<Real> &dualv,
-                                      const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                      const ROL::Vector<Real> &z_old, const ROL::Vector<Real> &z_new,
-                                      Real &tol) override {
-    auto & ajv_data = getVector(ajv_new);
+    auto & ajv_data = getVector(ajv);
     auto & v_data = getVector(dualv);
 
     ajv_data[0] = -timestep_*v_data[0];
@@ -239,7 +213,7 @@ public:
   virtual void applyInverseAdjointJacobian_1_new(ROL::Vector<Real> &iajv,
                                                  const ROL::Vector<Real> &v_new,
                                                  const ROL::Vector<Real> &u_old, const ROL::Vector<Real> &u_new,
-                                                 const ROL::Vector<Real> &z_old, const ROL::Vector<Real> &z_new,
+                                                 const ROL::Vector<Real> &z,
                                                  Real &tol) override {
     auto & iajv_data = getVector(iajv);
     auto & v_data = getVector(v_new); 
@@ -285,10 +259,8 @@ int main(int argc, char* argv[]) {
 
 
     // allocate control vector
-    std::vector<RealT> zo_data(1), zn_data(1);
-    PtrVector zo_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(zo_data));
-    PtrVector zn_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(zn_data));
-    PtrVector z = ROL::makePtr<ROL::PartitionedVector<RealT>>(std::vector<PtrVector>({zn_vec,zo_vec}));
+    std::vector<RealT> z_data(1);
+    PtrVector z = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(z_data));
     CPtrVector cz = z;
     PtrVector v_z = z->clone();
 
@@ -341,7 +313,7 @@ int main(int argc, char* argv[]) {
 
       PtrVector ijv = v_un.clone();
       constraint->applyInverseJacobian_1_new(*ijv,*jv,*uo_vec,*un_vec,
-                                                      *zo_vec,*zn_vec,tol);
+                                                      *z,tol);
 
       ijv->axpy(-1.0,v_un);
 
@@ -376,12 +348,12 @@ int main(int argc, char* argv[]) {
 
       constraint->applyAdjointJacobian_1_new(*jv,*v_c,
                                          *uo_vec,*un_vec,
-                                         *zo_vec,*zn_vec,tol);
+                                         *z,tol);
 
       PtrVector iajv = c->clone();
       constraint->applyInverseAdjointJacobian_1_new(*iajv,*jv,
                                                     *uo_vec,*un_vec,
-                                                    *zo_vec,*zn_vec,tol);
+                                                    *z,tol);
 
       iajv->axpy(-1.0,*v_c);
 
