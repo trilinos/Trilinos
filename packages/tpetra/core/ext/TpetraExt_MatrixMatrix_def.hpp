@@ -2283,6 +2283,10 @@ void mult_A_B_newmatrix(
     }
   }
 
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM=Teuchos::null;
+#endif
+
   // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
   // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
   KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_kernel_wrapper(Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
@@ -2312,6 +2316,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore"))));
+  Teuchos::RCP<Teuchos::TimeMonitor> MM2;
 #endif
 
   using Teuchos::Array;
@@ -2319,6 +2324,14 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  // Lots and lots of typedefs
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename KCRS::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
+  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename KCRS::values_type::non_const_type scalar_view_t;
 
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;
@@ -2334,40 +2347,26 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   size_t m = Aview.origMatrix->getNodeNumRows();
   size_t n = Ccolmap->getNodeNumElements();
 
-  // Get Data Pointers
-  ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP;
-  ArrayRCP<size_t> Crowptr_RCP;
-  ArrayRCP<const LO> Acolind_RCP, Bcolind_RCP, Icolind_RCP;
-  ArrayRCP<LO> Ccolind_RCP;
-  ArrayRCP<const Scalar> Avals_RCP, Bvals_RCP, Ivals_RCP;
-  ArrayRCP<SC> Cvals_RCP;
+  // Grab the  Kokkos::SparseCrsMatrices & inner stuff
+  const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
+  const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
 
-  // mfh 27 Sep 2016: "getAllValues" just gets the three CSR arrays
-  // out of the CrsMatrix.  This code computes A * (B_local +
-  // B_remote), where B_local contains the locally owned rows of B,
-  // and B_remote the (previously Import'ed) remote rows of B.
+  c_lno_view_t Arowptr = Ak.graph.row_map, Browptr = Bk.graph.row_map;
+  const lno_nnz_view_t Acolind = Ak.graph.entries, Bcolind = Bk.graph.entries;
+  const scalar_view_t Avals = Ak.values, Bvals = Bk.values;
 
-  Aview.origMatrix->getAllValues(Arowptr_RCP, Acolind_RCP, Avals_RCP);
-  Bview.origMatrix->getAllValues(Browptr_RCP, Bcolind_RCP, Bvals_RCP);
-  if (!Bview.importMatrix.is_null())
-    Bview.importMatrix->getAllValues(Irowptr_RCP, Icolind_RCP, Ivals_RCP);
-
-  // mfh 27 Sep 2016: Remark below "For efficiency" refers to an issue
-  // where Teuchos::ArrayRCP::operator[] may be slower than
-  // Teuchos::ArrayView::operator[].
-
-  // For efficiency
-  ArrayView<const size_t>   Arowptr, Browptr, Irowptr;
-  ArrayView<const LO>       Acolind, Bcolind, Icolind;
-  ArrayView<const SC>       Avals, Bvals, Ivals;
-  ArrayView<size_t>         Crowptr;
-  ArrayView<LO> Ccolind;
-  ArrayView<SC> Cvals;
-  Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
-  Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
-  if (!Bview.importMatrix.is_null()) {
-    Irowptr = Irowptr_RCP(); Icolind = Icolind_RCP(); Ivals = Ivals_RCP();
+  c_lno_view_t  Irowptr;
+  lno_nnz_view_t  Icolind;
+  scalar_view_t  Ivals;
+  if(!Bview.importMatrix.is_null()) {
+    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
+    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
+    Ivals   = Bview.importMatrix->getLocalMatrix().values;
   }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore - Compare"))));
+#endif
 
   // Classic csr assembly (low memory edition)
   //
@@ -2377,10 +2376,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   // ML; for the non-threaded case, ML found it faster to spend less
   // effort on estimation and risk an occasional reallocation.
   size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Bview.origMatrix), n);
-  Crowptr_RCP.resize(m+1);       Crowptr = Crowptr_RCP();
-  Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
-  Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
-
+  lno_view_t Crowptr("Crowptr",m+1);
+  lno_nnz_view_t Ccolind("Ccolind",CSR_alloc);
+  scalar_view_t Cvals("Cvals",CSR_alloc);
 
   // mfh 27 Sep 2016: The c_status array is an implementation detail
   // of the local sparse matrix-matrix multiply routine.
@@ -2391,7 +2389,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   // We start with this filled with INVALID's indicating that there are no entries yet.
   // Sadly, this complicates the code due to the fact that size_t's are unsigned.
   size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
-  Array<size_t> c_status(n, ST_INVALID);
+  std::vector<size_t> c_status(n, ST_INVALID);
 
   // mfh 27 Sep 2016: Here is the local sparse matrix-matrix multiply
   // routine.  The routine computes C := A * (B_local + B_remote).
@@ -2458,7 +2456,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
             Ccolind[CSR_ip] = Cij;
             Cvals[CSR_ip]   = Aval*Ivals[j];
             CSR_ip++;
-
           } else {
             Cvals[c_status[Cij]] += Aval*Ivals[j];
           }
@@ -2469,8 +2466,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
     // Resize for next pass if needed
     if (CSR_ip + n > CSR_alloc) {
       CSR_alloc *= 2;
-      Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
-      Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
+      Kokkos::resize(Ccolind,CSR_alloc);
+      Kokkos::resize(Cvals,CSR_alloc);
     }
     OLD_ip = CSR_ip;
   }
@@ -2478,27 +2475,19 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   Crowptr[m] = CSR_ip;
 
   // Downward resize
-  Cvals_RCP  .resize(CSR_ip);
-  Ccolind_RCP.resize(CSR_ip);
+  Kokkos::resize(Ccolind,CSR_ip);
+  Kokkos::resize(Cvals,CSR_ip);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix Final Sort"))));
+  MM2 = Teuchos::null;
 #endif
 
-  // Replace the column map
-  //
-  // mfh 27 Sep 2016: We do this because C was originally created
-  // without a column Map.  Now we have its column Map.
-  C.replaceColMap(Ccolmap);
-
   // Final sort & set of CRS arrays
-  //
-  // TODO (mfh 27 Sep 2016) Will the thread-parallel "local" sparse
-  // matrix-matrix multiply routine sort the entries for us?
   if (params.is_null() || params->get("sort entries",true))
-    Import_Util::sortCrsEntries(Crowptr_RCP(), Ccolind_RCP(), Cvals_RCP());
-  // mfh 27 Sep 2016: This just sets pointers.
-  C.setAllValues(Crowptr_RCP, Ccolind_RCP, Cvals_RCP);
+    Import_Util::sortCrsEntries(Crowptr,Ccolind, Cvals);
+  C.setAllValues(Crowptr,Ccolind, Cvals);
+
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix ESFC"))));
@@ -2579,6 +2568,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
   std::string myalg("SPGEMM_KK_MEMORY");
+  //  std::string myalg("LTG");
   if(!params.is_null()) {
     if(params->isParameter("openmp: algorithm"))
       myalg = params->get("openmp: algorithm",myalg);
@@ -3255,7 +3245,6 @@ void jacobi_A_B_newmatrix(
   using Teuchos::ArrayView;
   using Teuchos::RCP;
   using Teuchos::rcp;
-  //CMSCMS
   //  typedef Scalar            SC;
   typedef LocalOrdinal      LO;
   typedef GlobalOrdinal     GO;
