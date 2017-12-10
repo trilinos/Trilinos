@@ -284,7 +284,7 @@ int main(int argc, char* argv[]) {
 
     // check the solve
     *outStream << "Checking solve" << std::endl;
-    constraint->checkSolve(*u,*z,*c,*outStream);
+    constraint->checkSolve(*u,*z,*c,true,*outStream);
 
     // check the Jacobian_1
     *outStream << "Checking apply Jacobian 1" << std::endl;
