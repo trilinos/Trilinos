@@ -2348,12 +2348,12 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   size_t n = Ccolmap->getNodeNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
 
-  c_lno_view_t Arowptr = Ak.graph.row_map, Browptr = Bk.graph.row_map;
-  const lno_nnz_view_t Acolind = Ak.graph.entries, Bcolind = Bk.graph.entries;
-  const scalar_view_t Avals = Ak.values, Bvals = Bk.values;
+  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
+  const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
+  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
