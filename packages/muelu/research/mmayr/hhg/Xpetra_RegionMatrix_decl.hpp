@@ -51,9 +51,6 @@ class RegionMatrix //: public Matrix<SC, LO, GO, NO> {
   //! @name Construction/Destruction
   //@{
 
-  //! Constructor (empty)
-  RegionMatrix();
-
   //! Constructor (read matrix entries from MatrixMarket file)
   RegionMatrix(
       const std::string& matrixFileName, ///< file name of MatrixMarket file with matrix entries
@@ -69,6 +66,19 @@ class RegionMatrix //: public Matrix<SC, LO, GO, NO> {
   //! Access routines
   //@{
 
+  //! Matrix of region \c regID has been initialized?
+  virtual const bool hasRegionMatrix(const GO regID) const;
+
+  //@}
+
+  //! Print routines
+  //@{
+
+  //! Print the composite matrix
+  virtual void printCompositeMatrix(Teuchos::FancyOStream& out, ///< output stream
+      Teuchos::EVerbosityLevel verbosity ///< verbosity level
+      ) const;
+
   //@}
 
   protected:
@@ -78,36 +88,31 @@ class RegionMatrix //: public Matrix<SC, LO, GO, NO> {
   //! @name Setup
   //@{
 
-  //! Create the composite matrix
+  /*! \brief Create the composite matrix
+   *
+   *  The composite matrix is read form the file \c matrixFileName. It will use
+   *  the RegionManager's \c compositeMap_.
+   */
   virtual void setupCompositeMatrix(const std::string& matrixFileName);
 
   /*! \brief Create call region matrices
    *
-   *  \todo ToDo (mayr.mt) Move creation of Maps to Xpetra::RegionHandler
    */
   virtual void setupRegionMatrices();
 
-  /*! \brief Create a single region matrix
-   *
-   *  If the template parameter is set to collapse by the user, then interface entries of the region matrix are modified to collapse
-   *  information coming from adjacent regions. If the collapsing is not done, then the splitting is calculated
-   */
-  virtual void setupSingleRegionMatrix(const GO regionID ///< ID of region to be treated
-      );
+//  virtual void initializeRegionMatrices(const GO regionID, ///< ID of region to be treated
+//      Teuchos::RCP<Matrix>& regionMatrix, ///< matrix associated with region \c regionID
+//      Teuchos::RCP<Ifpack2::OverlappingRowMatrix<TpetraRowMatrix> > enlargedMatrix ///< full matrix with duplicated interface DOFs
+//      );
 
-  virtual void initializeRegionMatrices(const GO regionID, ///< ID of region to be treated
-      Teuchos::RCP<Matrix>& regionMatrix, ///< matrix associated with region \c regionID
-      Teuchos::RCP<Ifpack2::OverlappingRowMatrix<TpetraRowMatrix> > enlargedMatrix ///< full matrix with duplicated interface DOFs
-      );
+//  //! Extract region matrix by a \i collapse approach
+//  virtual void extractRegionByCollapsing(GO regionID, ///< ID of region to be treated
+//      Teuchos::RCP<Matrix>& regionMatrix, // ToDo (mayr.mt) Reference to RCP?
+//      Teuchos::RCP<Ifpack2::OverlappingRowMatrix<TpetraRowMatrix> > enlargedMatrix ///< full matrix with duplicated interface DOFs
+//      );
 
-  //! Collapse of external neighboring nodes information on region matrices
-  virtual void regionCollapse(GO regionID, ///< ID of region to be treated
-      Teuchos::RCP<Matrix>& regionMatrix, // ToDo (mayr.mt) Reference to RCP?
-      Teuchos::RCP<Ifpack2::OverlappingRowMatrix<TpetraRowMatrix> > enlargedMatrix ///< full matrix with duplicated interface DOFs
-      );
-
-  //! Creation of Region Splitting
-  virtual void regionSplitting(GO regionID, ///< ID of region to be treated
+  //! Extract region matrix by a \i splitting approach
+  virtual void extractRegionBySplitting(GO regionID, ///< ID of region to be treated
       Teuchos::RCP<Matrix>& region_matrix, // ToDo (mayr.mt) Reference to RCP?
       Teuchos::RCP<Ifpack2::OverlappingRowMatrix<TpetraRowMatrix> > enlargedMatrix ///< full matrix with duplicated interface DOFs
       );
@@ -123,11 +128,11 @@ class RegionMatrix //: public Matrix<SC, LO, GO, NO> {
   //! @name Region matrices
   //@{
 
-  /*! \brief Indicate whether a certain region matrix has been initialized
-   *
-   *  \todo ToDo (mayr.mt) This can be removed when we have switched to the Xpetra::BlockedCrsMatrix.
-   */
-  Teuchos::Array<bool> regionMatricesInitialized_;
+//  /*! \brief Indicate whether a certain region matrix has been initialized
+//   *
+//   *  \todo ToDo (mayr.mt) This can be removed when we have switched to the Xpetra::BlockedCrsMatrix.
+//   */
+//  Teuchos::Array<bool> regionMatricesInitialized_;
 
   //! The composite (non-splitted) matrix
   Teuchos::RCP<Matrix> compositeMatrix_;
