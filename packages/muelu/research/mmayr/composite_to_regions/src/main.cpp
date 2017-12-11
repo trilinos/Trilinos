@@ -793,6 +793,29 @@ int main(int argc, char *argv[]) {
         regCoarseMatPerGrp[j]->FillComplete();
       }
 
+      // transform composite vectors to regional layout
+      compositeToRegional(compX, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+          revisedRowMapPerGrp, rowImportPerGrp);
+      std::vector<Epetra_Vector*> quasiRegRes(maxRegPerProc);
+      std::vector<Epetra_Vector*> regRes(maxRegPerProc);
+      compositeToRegional(compRes, quasiRegRes, regRes, maxRegPerProc, rowMapPerGrp,
+          revisedRowMapPerGrp, rowImportPerGrp);
+
+//      // pre-smoothing on fine level
+//      const int maxIter = 3;
+//      for (int iter = 0; iter < maxIter; ++iter) {
+//        for (int j = 0; j < maxRegPerProc; j++) {
+//          Epetra_Vector* diag = new Epetra_Vector(regionGrpMats[j]->RowMap(), true);
+//          Epetra_Vector* invDiag = new Epetra_Vector(regionGrpMats[j]->RowMap(), true);
+//          regionGrpMats[j]->ExtractDiagonalCopy(diag);
+//          diag->Reciprocal(invDiag);
+//          for (int i = 0; i < regX[j]->MyLength(); ++i) {
+//
+//          }
+//        }
+//      }
+
+
     }
     else if (strcmp(command,"PrintCompositeVectorX") == 0) {
       sleep(myRank);
