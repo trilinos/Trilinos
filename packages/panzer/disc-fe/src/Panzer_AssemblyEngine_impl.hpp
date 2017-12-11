@@ -76,7 +76,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
 
     in.fillGlobalEvaluationDataContainer(gedc);
     gedc.initialize(); // make sure all ghosted data is ready to go
-    gedc.globalToGhost(LOC::X | LOC::DxDt);
+    gedc.ownedToGhosted(LOC::X | LOC::DxDt);
 
     // Push solution, x and dxdt into ghosted domain
     m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_,LOC::X | LOC::DxDt);
@@ -119,7 +119,7 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
     m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
     m_lin_obj_factory->beginFill(*in.container_);
-    gedc.ghostToGlobal(LOC::F | LOC::Mat);
+    gedc.ghostedToOwned(LOC::F | LOC::Mat);
     m_lin_obj_factory->endFill(*in.container_);
 
     m_lin_obj_factory->endFill(*in.ghostedContainer_);
@@ -142,7 +142,7 @@ evaluateOnlyDirichletBCs(const panzer::AssemblyEngineInArgs& in)
   GlobalEvaluationDataContainer gedc;
   in.fillGlobalEvaluationDataContainer(gedc);
   gedc.initialize(); // make sure all ghosted data is ready to go
-  gedc.globalToGhost(LOC::X | LOC::DxDt);
+  gedc.ownedToGhosted(LOC::X | LOC::DxDt);
 
   // Push solution, x and dxdt into ghosted domain
   m_lin_obj_factory->globalToGhostContainer(*in.container_,*in.ghostedContainer_,LOC::X | LOC::DxDt);
@@ -154,7 +154,7 @@ evaluateOnlyDirichletBCs(const panzer::AssemblyEngineInArgs& in)
   m_lin_obj_factory->ghostToGlobalContainer(*in.ghostedContainer_,*in.container_,LOC::F | LOC::Mat);
 
   m_lin_obj_factory->beginFill(*in.container_);
-  gedc.ghostToGlobal(LOC::F | LOC::Mat);
+  gedc.ghostedToOwned(LOC::F | LOC::Mat);
   m_lin_obj_factory->endFill(*in.container_);
 
   m_lin_obj_factory->endFill(*in.ghostedContainer_);

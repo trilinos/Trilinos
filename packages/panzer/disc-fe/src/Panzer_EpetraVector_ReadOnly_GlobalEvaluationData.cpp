@@ -143,19 +143,19 @@ namespace panzer
 
   /////////////////////////////////////////////////////////////////////////////
   //
-  //  globalToGhost()
+  //  ownedToGhosted()
   //
   /////////////////////////////////////////////////////////////////////////////
   void
   EpetraVector_ReadOnly_GlobalEvaluationData::
-  globalToGhost(
+  ownedToGhosted(
     int /* mem */)
   {
     using std::logic_error;
     using Teuchos::RCP;
     using Thyra::get_Epetra_Vector;
     TEUCHOS_TEST_FOR_EXCEPTION(ownedVector_.is_null(), logic_error,
-      "EpetraVector_ReadOnly_GlobalEvaluationData::globalToGhost():  Owned "  \
+      "EpetraVector_ReadOnly_GlobalEvaluationData::ownedToGhosted():  Owned " \
       "vector has not been set; can't perform the halo exchange!")
 
     // Initialize the ghosted data, zeroing out things, and filling in
@@ -166,7 +166,7 @@ namespace panzer
 
     // Do the global distribution.
     ghostedVector_->Import(*ownedVector_ep, *importer_, Insert);
-  } // end of globalToGhost()
+  } // end of ownedToGhosted()
 
   /////////////////////////////////////////////////////////////////////////////
   //
@@ -196,15 +196,15 @@ namespace panzer
 
   /////////////////////////////////////////////////////////////////////////////
   //
-  //  ghostToGlobal()
+  //  ghostedToOwned()
   //
   /////////////////////////////////////////////////////////////////////////////
   void
   EpetraVector_ReadOnly_GlobalEvaluationData::
-  ghostToGlobal(
+  ghostedToOwned(
     int /* mem = 0 */)
   {
-  } // end of ghostToGlobal()
+  } // end of ghostedToOwned()
 
   /////////////////////////////////////////////////////////////////////////////
   //

@@ -200,7 +200,7 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, basic)
 
   // actually do something...
   ged.initializeData();
-  ged.globalToGhost(0);
+  ged.ownedToGhosted(0);
 
   {
     const Epetra_Vector & ghostedVecE = *ged.getGhostedVector_Epetra();
@@ -333,7 +333,7 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, blocked)
   ged.setOwnedVector(ownedVec);
 
   ged.initializeData();
-  ged.globalToGhost(0);
+  ged.ownedToGhosted(0);
 
   {
     RCP<Thyra::ProductVectorBase<double> > ghostedVec = Thyra::castOrCreateNonconstProductVectorBase(ged.getGhostedVector());
@@ -448,7 +448,7 @@ TEUCHOS_UNIT_TEST(tEpetra_GlbEvalData, filtered_dofs)
 
   // actually do something...
   ged.initializeData();
-  ged.globalToGhost(0);
+  ged.ownedToGhosted(0);
 
   // check values making sure that the constants are there
   {

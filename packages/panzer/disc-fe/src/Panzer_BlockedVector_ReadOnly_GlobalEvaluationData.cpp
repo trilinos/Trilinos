@@ -133,22 +133,22 @@ namespace panzer
 
   /////////////////////////////////////////////////////////////////////////////
   //
-  //  globalToGhost()
+  //  ownedToGhosted()
   //
   /////////////////////////////////////////////////////////////////////////////
   void
   BlockedVector_ReadOnly_GlobalEvaluationData::
-  globalToGhost(
+  ownedToGhosted(
     int mem)
   {
     using std::logic_error;
     using std::size_t;
     TEUCHOS_TEST_FOR_EXCEPTION(not isInitialized_, logic_error,
       "BlockedVector_ReadOnly_GlobalEvaluationData has not been "             \
-      "initialized; cannot call \"globalToGhost()\"!");
+      "initialized; cannot call \"ownedToGhosted()\"!");
     for (size_t i(0); i < gedBlocks_.size(); ++i)
-      gedBlocks_[i]->globalToGhost(mem);
-  } // end of globalToGhost()
+      gedBlocks_[i]->ownedToGhosted(mem);
+  } // end of ownedToGhosted()
 
   /////////////////////////////////////////////////////////////////////////////
   //

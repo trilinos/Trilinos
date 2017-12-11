@@ -148,7 +148,7 @@ namespace panzer
        *                 `GlobalEvaluationData` interface.
        */
       virtual void
-      ghostToGlobal(
+      ghostedToOwned(
         int mem);
 
       /**

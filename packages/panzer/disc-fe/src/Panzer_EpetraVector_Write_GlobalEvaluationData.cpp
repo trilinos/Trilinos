@@ -101,12 +101,12 @@ namespace panzer
   
   /////////////////////////////////////////////////////////////////////////////
   //
-  //  ghostToGlobal()
+  //  ghostedToOwned()
   //
   /////////////////////////////////////////////////////////////////////////////
   void 
   EpetraVector_Write_GlobalEvaluationData::
-  ghostToGlobal(
+  ghostedToOwned(
     int /* mem */)
   {
     using std::invalid_argument;
@@ -114,7 +114,7 @@ namespace panzer
     using Teuchos::RCP;
     using Thyra::get_Epetra_Vector;
     TEUCHOS_TEST_FOR_EXCEPTION(ownedVector_.is_null(), logic_error,
-      "EpetraVector_Write_GlobalEvaluationData::ghostToGlobal():  Owned "     \
+      "EpetraVector_Write_GlobalEvaluationData::ghostedToOwned():  Owned "    \
       "vector has not been set; can't perform the halo exchange!")
   
     // Set different combine modes.
@@ -135,7 +135,7 @@ namespace panzer
         break;
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, invalid_argument,
-          "EpetraVector_Write_GlobalEvaluationData::ghostToGlobal():  "       \
+          "EpetraVector_Write_GlobalEvaluationData::ghostedToOwned():  "      \
           "Invalid CombineMode.  Valid modes are CM_Sum, CM_Max, CM_Min, "    \
           "and CM_Insert.")
     }; // end switch (getCombineMode())
@@ -144,7 +144,7 @@ namespace panzer
     RCP<Epetra_Vector> ownedVector_ep = get_Epetra_Vector(*ownedMap_,
       ownedVector_);
     ownedVector_ep->Export(*ghostedVector_, *exporter_, cm);
-  } // end of ghostToGlobal()
+  } // end of ghostedToOwned()
   
   /////////////////////////////////////////////////////////////////////////////
   //

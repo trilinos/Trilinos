@@ -70,11 +70,11 @@ public:
   /** For this class, this method does the halo exchange for the
     * vector.
     */
-  virtual void globalToGhost(int mem) = 0;
+  virtual void ownedToGhosted(int mem) = 0;
 
   /** For this class, this method does nothing.
     */
-  virtual void ghostToGlobal(int /* mem */) {}
+  virtual void ghostedToOwned(int /* mem */) {}
 
   //! Set the owned vector
   virtual void setOwnedVector(const Teuchos::RCP<const Thyra::VectorBase<double> > & ownedVector) = 0;

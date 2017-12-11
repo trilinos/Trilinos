@@ -100,17 +100,17 @@ Teuchos::RCP<GlobalEvaluationData> GlobalEvaluationDataContainer::getDataObject(
 }
 
 //! Call ghost to global on all the containers
-void GlobalEvaluationDataContainer::ghostToGlobal(int p)
+void GlobalEvaluationDataContainer::ghostedToOwned(int p)
 {
    for(iterator itr=begin();itr!=end();++itr)
-     itr->second->ghostToGlobal(p);
+     itr->second->ghostedToOwned(p);
 }
 
 //! Call global to ghost on all the containers
-void GlobalEvaluationDataContainer::globalToGhost(int p)
+void GlobalEvaluationDataContainer::ownedToGhosted(int p)
 {
    for(iterator itr=begin();itr!=end();++itr)
-     itr->second->globalToGhost(p);
+     itr->second->ownedToGhosted(p);
 }
 
 //! Call global to ghost on all the containers

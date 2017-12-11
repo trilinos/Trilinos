@@ -56,8 +56,8 @@ class GlobalEvaluationData {
 public:
    virtual ~GlobalEvaluationData() = 0;
 
-   virtual void ghostToGlobal(int mem) = 0;
-   virtual void globalToGhost(int mem) = 0;
+   virtual void ghostedToOwned(int mem) = 0;
+   virtual void ownedToGhosted(int mem) = 0;
 
    virtual bool requiresDirichletAdjustment() const = 0;
 
@@ -77,8 +77,8 @@ public:
    GlobalEvaluationData_Default(const GlobalEvaluationData_Default & s) 
    { requiresDirichletAdjustment_ = s.requiresDirichletAdjustment(); }
 
-   virtual void ghostToGlobal(int /* mem */) {}
-   virtual void globalToGhost(int /* mem */) {}
+   virtual void ghostedToOwned(int /* mem */) {}
+   virtual void ownedToGhosted(int /* mem */) {}
    virtual void initializeData() {}
 
    void setRequiresDirichletAdjustment(bool b) { requiresDirichletAdjustment_ = b; }
