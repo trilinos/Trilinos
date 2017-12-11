@@ -8,13 +8,6 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   TIMEOUT_MINUTES 330
 )
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_RELEASE_Teuchos_YAML
-  ctest_linux_nightly_mpi_release_teuchos_yaml_dorksaber.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 330
-)
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_RELEASE_MueLu_KokkosKernels_Experimental
@@ -23,6 +16,15 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   RUN_SERIAL
   TIMEOUT_MINUTES 330
 )
+
+# Refactor (kokkos) tests
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_OpenMP
+  ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_openmp_dorksaber.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 420
+  )
 
 
 

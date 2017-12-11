@@ -208,7 +208,7 @@ Operator GetRecirc2D(const int NX, const int NY, const double conv,
                      const double diff)
 {
   double LX = 1.0;    // length of the X-axis
-  double LY = 1.0;    // lenght of the Y-axis
+  double LY = 1.0;    // length of the Y-axis
 
   Space FineSpace(NX * NY);
 

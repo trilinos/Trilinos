@@ -79,7 +79,7 @@ namespace PHX {
       // correctly cast the any object to the Kokkos::View, need to
       // pull the const off the scalar type if this MDField has a
       // const scalar type.
-      typedef Kokkos::View<typename FieldType::non_const_data_type,PHX::Device> non_const_view;
+      typedef PHX::View<typename FieldType::non_const_data_type> non_const_view;
       try {
         non_const_view tmp = PHX::any_cast<non_const_view>(f);
         *ptr_ = tmp;
@@ -304,16 +304,16 @@ addDependentField(const PHX::Field<const DataT,Rank>& f)
 
 //**********************************************************************
 // needed for function below
-namespace PHX {
-  template<typename T> 
-  struct remove_all_pointers {
-    typedef T type;
-  };
-  template<typename T>
-  struct remove_all_pointers<T*> {
-    typedef typename remove_all_pointers<T>::type type;
-  };
-}
+// namespace PHX {
+//   template<typename T> 
+//   struct remove_all_pointers {
+//     typedef T type;
+//   };
+//   template<typename T>
+//   struct remove_all_pointers<T*> {
+//     typedef typename remove_all_pointers<T>::type type;
+//   };
+// }
 
 //**********************************************************************
 template<typename Traits>
@@ -425,7 +425,7 @@ createDeviceEvaluator() const
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
                              "Error - The evalautor \""<< this->getName() <<"\" does not have a derived method for createDeviceEvalautor() that is required when using Device DAG support.  Please implement the createDeviceEvaluator() method in this Evalautor.");
   // Suppress cuda warning for unreachable code
-#ifndef __CUDA_ARCH__
+#ifndef KOKKOS_HAVE_CUDA
   return nullptr;
 #endif
 }

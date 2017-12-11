@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -64,7 +64,7 @@ namespace Thyra {
  * <tt>ModelEvaluatorBase::InArgs</tt> and
  * <tt>ModelEvaluatorBase::OutArgs</tt> classes should not require any changes
  * here.
- * 
+ *
  * The only functions that a client must override in order to create a
  * concrete subcalss is the <tt>evalModel()</tt> function.  All other
  * functions have implementations here that simply delegate to the model
@@ -115,7 +115,7 @@ public:
 
   //@}
 
-  /** \name Virtual functions that can overriden */
+  /** \name Virtual functions that can overridden */
   //@{
 
   /** \brief . */
@@ -180,7 +180,7 @@ protected:
 
   /** \brief Read the local verbosity level parameter. */
   Teuchos::EVerbosityLevel readLocalVerbosityLevelValidatedParameter(
-    ParameterList &paramList 
+    ParameterList &paramList
     ) const;
 
   //@}
@@ -216,7 +216,7 @@ private: // Data members
   static const std::string LocalVerbosityLevel_name_;
   static const Teuchos::EVerbosityLevel LocalVerbosityLevel_enum_default_;
   static const std::string LocalVerbosityLevel_default_;
-  
+
 };
 
 
@@ -365,7 +365,7 @@ void ModelEvaluatorDelegatorBase<Scalar>::uninitialize()
 }
 
 
-// Virtual functions that can overriden
+// Virtual functions that can overridden
 
 
 template<class Scalar>
@@ -549,7 +549,7 @@ void ModelEvaluatorDelegatorBase<Scalar>::setLocalVerbosityLevelValidatedParamet
 template<class Scalar>
 Teuchos::EVerbosityLevel
 ModelEvaluatorDelegatorBase<Scalar>::readLocalVerbosityLevelValidatedParameter(
-  ParameterList &paramList 
+  ParameterList &paramList
   ) const
 {
   return LocalVerbosityLevel_validator_->getIntegralValue(

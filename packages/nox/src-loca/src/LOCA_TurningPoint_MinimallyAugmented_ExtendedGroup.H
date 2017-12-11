@@ -173,7 +173,7 @@ namespace LOCA {
        *    <li> "Default" (LOCA::TurningPoint::MinimallyAugmented::Constraint)
        *         Default method described above.
        *    <li> "Modified"
-       *         (LOCA::TurningPoint::MinimallyAugmented::ModifedConstraint)
+       *         (LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint)
        *          A modified method that computes updates to the null vectors
        *          every nonlinear interation, instead of directly solving
        *          for them

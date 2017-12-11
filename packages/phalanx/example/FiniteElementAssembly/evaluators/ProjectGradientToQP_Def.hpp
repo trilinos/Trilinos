@@ -61,7 +61,7 @@ template<typename EvalT, typename Traits>
 void ProjectGradientToQP<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   grad_basis_view = workset.grad_basis_real_;
-  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,Kokkos::AUTO()),*this);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),*this);
 }
 
 //**********************************************************************

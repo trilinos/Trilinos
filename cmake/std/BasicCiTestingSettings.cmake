@@ -35,7 +35,7 @@ TRIL_SET_BOOL_CACHE_VAR_FOR_CI(TPL_ENABLE_SuperLU ON)
 # problems.
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Trilinos_TRACE_ADD_TEST ON)
 
-# Disable long-failing Pir test until it can be fixed (#826)
+# Disable long-failing Piro test until it can be fixed (#826)
 TRIL_SET_BOOL_CACHE_VAR_FOR_CI(Piro_EpetraSolver_MPI_4_DISABLE ON)
 
 # Disable test that was enabled when Scotch TPL was enabled (#2051, #2052)

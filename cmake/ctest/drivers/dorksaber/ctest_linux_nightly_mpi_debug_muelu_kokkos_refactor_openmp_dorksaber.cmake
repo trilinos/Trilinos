@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.dorksaber.gcc.cmake")
 
 #
 # Set the options specific to this build case
@@ -85,10 +85,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
 
   ### TPLS ###
-  "-DTPL_ENABLE_SuperLU:BOOL=ON"
-      "-DSuperLU_INCLUDE_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/include"
-      "-DSuperLU_LIBRARY_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/lib"
-      "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
+  "-DTPL_ENABLE_SuperLU:BOOL=OFF"
   "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
   "-DTPL_ENABLE_HWLOC:BOOL=OFF"
 

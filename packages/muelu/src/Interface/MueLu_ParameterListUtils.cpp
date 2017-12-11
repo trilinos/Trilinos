@@ -171,7 +171,7 @@ namespace MueLu {
     return subList;
   }
 
-  // replace all string occurences "from" with "to" in "str"
+  // replace all string occurrences "from" with "to" in "str"
   void replaceAll(std::string& str, const std::string& from, const std::string& to) {
     if(from.empty())
       return;
@@ -181,5 +181,5 @@ namespace MueLu {
       start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
     }
   }
-   
+
 } // namespace MueLu
