@@ -89,7 +89,7 @@
 %
 !rm -f myData_* 
 
-file='caseThree'; % mkRegionFile(file);
+file='caseFour'; % mkRegionFile(file);
 
 %
 %  read in some of header type information 
