@@ -40,7 +40,7 @@ namespace { // (anonymous)
   void
   split(const std::string& s,
         std::function<void(const std::string&)> f,
-        const char sep=':')
+        const char sep=',')
   {
     typedef std::string::size_type size_type;
     size_type cur_pos, last_pos=0, length=s.length();
