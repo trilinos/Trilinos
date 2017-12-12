@@ -12,6 +12,8 @@
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 
+#include "Tempus_SolutionHistory.hpp"
+
 namespace Tempus {
 
 /** \brief Transform a ModelEvaluator's sensitivity equations to its residual
@@ -73,6 +75,7 @@ public:
    */
   StaggeredForwardSensitivityModelEvaluator(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
+    const bool is_pseudotransient,
     const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null,
     const Teuchos::RCP<MultiVector>& dxdp_init = Teuchos::null,
     const Teuchos::RCP<MultiVector>& dx_dotdp_init = Teuchos::null,
@@ -82,17 +85,9 @@ public:
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const
   { return model_; }
 
-  //! Set the x vector corresponding to the underlying model
-  void setModelX(const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x)
-  { x_ = x; }
-
-  //! Set the x_dot vector corresponding to the underlying model
-  void setModelXDot(const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x_dot)
-  { x_dot_ = x_dot; }
-
-  //! Set the x_dot_dot vector corresponding to the underlying model
-  void setModelXDotDot(const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x_dot_dot)
-  { x_dot_dot_ = x_dot_dot; }
+  //! Set solution history from forward state evaluation
+  void setForwardSolutionHistory(
+    const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh);
 
   //! Set the LO (W) of the underlying model if you want to reuse it
   void setLO(const Teuchos::RCP<Thyra::LinearOpBase<Scalar> >& lo)
@@ -139,6 +134,7 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+  bool is_pseudotransient_;
   Teuchos::RCP<MultiVector> dxdp_init_;
   Teuchos::RCP<MultiVector> dx_dotdp_init_;
   Teuchos::RCP<MultiVector> dx_dotdotdp_init_;
@@ -151,9 +147,7 @@ private:
   int num_param_;
   Teuchos::RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > dxdp_space_;
   Teuchos::RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> > dfdp_space_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_dot_;
-  Teuchos::RCP<const Thyra::VectorBase<Scalar> > x_dot_dot_;
+  Teuchos::RCP<const Tempus::SolutionHistory<Scalar> > sh_;
 
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > lo_;
   Teuchos::RCP<Thyra::PreconditionerBase<Scalar> > po_;
@@ -161,6 +155,8 @@ private:
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdx_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdot_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdotdot_;
+  mutable Teuchos::RCP<Tempus::SolutionState<Scalar> > forward_state_;
+  mutable Scalar t_interp_;
 };
 
 } // namespace Tempus

@@ -6,17 +6,17 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_IntegratorPseudoTransientForwardSensitivity_decl_hpp
-#define Tempus_IntegratorPseudoTransientForwardSensitivity_decl_hpp
+#ifndef Tempus_IntegratorPseudoTransientAdjointSensitivity_decl_hpp
+#define Tempus_IntegratorPseudoTransientAdjointSensitivity_decl_hpp
 
 // Tempus
 #include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_StaggeredForwardSensitivityModelEvaluator.hpp"
+#include "Tempus_AdjointSensitivityModelEvaluator.hpp"
 
 namespace Tempus {
 
 
-/** \brief Time integrator suitable for pseudotransient forward sensitivity
+/** \brief Time integrator suitable for pseudotransient adjoint sensitivity
  * analysis */
 /**
  * For some problems, time integrators are used to compute steady-state
@@ -24,29 +24,31 @@ namespace Tempus {
  * sensitivities, it is not necessary in these cases to propagate sensitivities
  * all the way through the forward time integration.  Instead the steady-state
  * is first computed as usual, and then the sensitivities are computed using
- * a similar pseudo-transient time integration applied to the sensitivity
- * equations with the state frozen to the computed steady-state.  This
- * integrator specializes the transient sensitivity methods implemented by
- * Tempus::IntegratorForwardSensitivity to this case.
+ * a similar pseudo-transient time integration applied to the adjoint
+ * sensitivity equations with the state frozen to the computed steady-state.
+ * This integrator specializes the transient sensitivity methods implemented by
+ * Tempus::IntegratorAdjointSensitivity to this case.
  *
  * Consider an implicit ODE f(x_dot,x,p) = 0 with a stable steady-state solution
  * x = x^s, x_dot = 0 where f(0,x^s,p) = 0 and all of the eigenvalues of
  * df/dx(0,x^s,p) are in the right half-plane (for an explicit ODE, the
  * eigenvalues must be in the left half-plane).  In the pseudo-transient method
  * a time-integrator is applied to f(x_dot,x,p) = 0 until x_dot is sufficiently
- * small.  Now consider the forward sensitivity equations:
- *       df/dx_dot*z_dot + df/dx*z + df/dp = 0
- * where z = dx/dp.  For pseudo-transient forward sensitivities, the above is
- * integrated from z(0) = 0 until z_dot is sufficiently small, in which case
- *       z^s = -(df/dx)^{-1}*(df/dp).
+ * small.  Now consider the adjoint sensitivity equations for some response
+ * function g(x,p):
+ *       df/dx_dot^T*y_dot + df/dx^T*y - dg/dx^T = 0
+ * after the transformation tau = T - t has been applied, where T is the final
+ * time.  For pseudo-transient adjoint sensitivities, the above is integrated
+ * from y(0) = 0 until y_dot is sufficiently small, in which case
+ *       y^s = (df/dx)^{-T}*(dg/dx)^T.
  * Then the final sensitivity of g is
- *       dg/dp + dg/dx*z^s.
- * One can see that z^s is the only steady-state solution of the sensitivity
- * equations, since df/dx and df/dp are constant, and must be linearly stable
- * since it has the same Jacobian matrix as the forward equations.
+ *       dg/dp^T - df/dp^T*y^s.
+ * One can see that y^s is the only steady-state solution of the adjoint
+ * equations, since df/dx and dg/dx are constant, and must be linearly stable
+ * (since the eigenvalues of df/dx^T are the same as df/dx).
  */
 template<class Scalar>
-class IntegratorPseudoTransientForwardSensitivity :
+class IntegratorPseudoTransientAdjointSensitivity :
     virtual public Tempus::Integrator<Scalar>
 {
 public:
@@ -58,48 +60,32 @@ public:
    * parameter list supports the following options contained within a sublist
    * "Sensitivities" from the top-level parameter list:
    * <ul>
-   *   <li> "Reuse State Linear Solver" (default: false) Whether to reuse the
-   *        model's W matrix, solver, and preconditioner when solving the
-   *        sensitivity equations.  If they can be reused, substantial savings
-   *        in compute time are possible.
-   *   <li> "Force W Update" (default: false) When reusing the solver as above
-   *        whether to force recomputation of W.  This can be necessary when
-   *        the solver overwrites it during the solve-phase (e.g., by a
-   *        factorization).
-   *   <li> "Use DfDp as Tangent" (default:  false) Reinterpret the df/dp
-   *        out-arg as the tangent vector (df/dx)(x,p) * dx/dp + df/dp(x,p)
-   *        as described in the Tempus::CombinedForwardSensitivityModelEvaluator
-   *        documentation.
-   *   <li> "Sensitivity Parameter Index" (default: 0) Model evaluator
-   *        parameter index for which sensitivities will be computed.
-   *   <li> "Sensitivity X Tangent Index" (default: 1) If "Use DfDp as Tangent"
-   *        is true, the model evaluator parameter index for passing dx/dp
-   *        as a Thyra::DefaultMultiVectorProductVector.
-   *   <li> "Sensitivity X-Dot Tangent Index" (default: 2) If
-   *        "Use DfDp as Tangent" is true, the model evaluator parameter index
-   *        for passing dx_dot/dp as a Thyra::DefaultMultiVectorProductVector.
-   *   <li> "Sensitivity X-Dot-Dot Tangent Index" (default: 3) If
-   *        "Use DfDp as Tangent" is true, the model evaluator parameter index
-   *        for passing dx_dot_dot/dp as a
-   *        Thyra::DefaultMultiVectorProductVector (if the model supports
-   *        x_dot_dot).
+   *    <li> "Sensitivity Parameter Index", (default: 0) The model evaluator
+   *          parameter index for which sensitivities will be computed.
+   *    <li> "Response Function Index", (default: 0) The model evaluator
+   *         response index for which sensitivities will be computed.
+   *    <li> "Mass Matrix Is Constant" (default: true) Whether the mass matrix
+   *         df/dx_dot is a constant matrix.  As describe above, this is
+   *         currently required to be true.
+   *    <li> "Mass Matrix Is Identity" (default: false) Whether the mass matrix
+   *         is the identity matrix, in which some computations can be skipped.
    * </ul>
    */
-  IntegratorPseudoTransientForwardSensitivity(
+  IntegratorPseudoTransientAdjointSensitivity(
     Teuchos::RCP<Teuchos::ParameterList>                pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
   /** \brief Constructor with model and "Stepper Type" and is fully initialized with default settings. */
-  IntegratorPseudoTransientForwardSensitivity(
+  IntegratorPseudoTransientAdjointSensitivity(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
     std::string stepperType);
 
   /// Destructor
   /** \brief Constructor that requires a subsequent setParameterList, setStepper, and initialize calls. */
-  IntegratorPseudoTransientForwardSensitivity();
+  IntegratorPseudoTransientAdjointSensitivity();
 
   /// Destructor
-  virtual ~IntegratorPseudoTransientForwardSensitivity() {}
+  virtual ~IntegratorPseudoTransientAdjointSensitivity() {}
 
   /// \name Basic integrator methods
   //@{
@@ -132,19 +118,19 @@ public:
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > x0,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdot0 = Teuchos::null,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xdotdot0 = Teuchos::null,
-    Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxDp0 = Teuchos::null,
-    Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotDp0 = Teuchos::null,
-    Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > DxdotdotDp0 = Teuchos::null);
+    Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > y0 = Teuchos::null,
+    Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > ydot0 = Teuchos::null,
+    Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > ydotdot0 = Teuchos::null);
 
   /// Get current the solution, x
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const;
-  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDxDp() const;
   /// Get current the time derivative of the solution, xdot
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXdot() const;
-  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDxdotDp() const;
   /// Get current the second time derivative of the solution, xdotdot
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getXdotdot() const;
-  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDxdotdotDp() const;
+
+  /// Return adjoint sensitivity stored in gradient format
+  virtual Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> > getDgDp() const;
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
   //@{
@@ -165,9 +151,10 @@ public:
   //@}
 
 protected:
+  typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
   // Create sensitivity model evaluator from application model
-  Teuchos::RCP<StaggeredForwardSensitivityModelEvaluator<Scalar> >
+  Teuchos::RCP<AdjointSensitivityModelEvaluator<Scalar> >
   createSensitivityModel(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
     const Teuchos::RCP<Teuchos::ParameterList>& inputPL);
@@ -175,33 +162,32 @@ protected:
   void buildSolutionHistory();
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<StaggeredForwardSensitivityModelEvaluator<Scalar> > sens_model_;
+  Teuchos::RCP<AdjointSensitivityModelEvaluator<Scalar> > sens_model_;
   Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
   Teuchos::RCP<IntegratorBasic<Scalar> > sens_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
-  bool reuse_solver_;
-  bool force_W_update_;
+  Teuchos::RCP<DMVPV> dgdp_;
 };
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
-integratorPseudoTransientForwardSensitivity(
+Teuchos::RCP<Tempus::IntegratorPseudoTransientAdjointSensitivity<Scalar> >
+integratorPseudoTransientAdjointSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
-integratorPseudoTransientForwardSensitivity(
+Teuchos::RCP<Tempus::IntegratorPseudoTransientAdjointSensitivity<Scalar> >
+integratorPseudoTransientAdjointSensitivity(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
   std::string stepperType);
 
 /// Non-member constructor
 template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<Scalar> >
-integratorPseudoTransientForwardSensitivity();
+Teuchos::RCP<Tempus::IntegratorPseudoTransientAdjointSensitivity<Scalar> >
+integratorPseudoTransientAdjointSensitivity();
 
 } // namespace Tempus
 
-#endif // Tempus_IntegratorPseudoTransientForwardSensitivity_decl_hpp
+#endif // Tempus_IntegratorPseudoTransientAdjointSensitivity_decl_hpp

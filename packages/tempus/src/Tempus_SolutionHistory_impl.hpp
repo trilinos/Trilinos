@@ -16,6 +16,7 @@
 
 // Tempus
 #include "Tempus_SolutionStateMetaData.hpp"
+#include "Tempus_InterpolatorFactory.hpp"
 
 //#include "Thyra_VectorStdOps.hpp"
 
@@ -168,11 +169,13 @@ SolutionHistory<Scalar>::findState(const Scalar time) const
     "        [Min, Max] = [" << minTime() << ", " << maxTime() << "]\n"
     "        time = "<< time <<"\n");
 
-  const Scalar relTol = 1.0e-14;
-  auto state_it = history_->begin();
+  // Use last step in solution history as the scale for comparing times
+  const Scalar scale =
+    history_->size() > 0 ? (*history_)[history_->size()-1]->getTime() : Scalar(1.0);
   // Linear search
+  auto state_it = history_->begin();
   for ( ; state_it < history_->end(); ++state_it) {
-    if (std::abs((*state_it)->getTime()-time)/((*state_it)->getTime()) < relTol)
+    if (floating_compare_equals((*state_it)->getTime(),time,scale))
       break;
   }
 
@@ -188,17 +191,19 @@ template<class Scalar>
 Teuchos::RCP<SolutionState<Scalar> >
 SolutionHistory<Scalar>::interpolateState(const Scalar time) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    !(minTime() <= time and time <= maxTime()), std::logic_error,
-    "Error - SolutionHistory::getTime() Requested time out of range!\n"
-    "        [Min, Max] = [" << minTime() << ", " << maxTime() << "]\n"
-    "        time = "<< time <<"\n");
+  Teuchos::RCP<SolutionState<Scalar> > state_out =
+    currentState_->clone();
+  interpolate<Scalar>(*interpolator_, history_, time, state_out.get());
+  return state_out;
+}
 
-  // Interpolate the state.
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-    "Error - Implement interpolation.\n");
-  //SolutionState<Scalar> state_out;
-  //interpolate<Scalar>(*interpolator, history_, time_vec, &state_out);
+
+template<class Scalar>
+void
+SolutionHistory<Scalar>::interpolateState(
+  const Scalar time, SolutionState<Scalar>* state_out) const
+{
+  interpolate<Scalar>(*interpolator_, history_, time, state_out);
 }
 
 
@@ -359,6 +364,9 @@ void SolutionHistory<Scalar>::setParameterList(
   }
   }
   setStorageLimit(storage_limit);
+
+  interpolator_ = InterpolatorFactory<Scalar>::createInterpolator(
+    Teuchos::sublist(shPL_, "Interpolator"));
 }
 
 
@@ -378,6 +386,9 @@ SolutionHistory<Scalar>::getValidParameters() const
 
   pl->set(StorageLimit_name, StorageLimit_default,
     "Storage limit for the solution history.");
+
+  // Interpolator
+  pl->sublist("Interpolator",false,"").disableRecursiveValidation();
 
   return pl;
 }
@@ -409,44 +420,45 @@ Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory(
   return sh;
 }
 
-//template<class Scalar>
-//void SolutionHistory<Scalar>::setInterpolator(
-//  const Teuchos::RCP<InterpolatorBase<Scalar> >& interpolator_)
-//{
-//  if (interpolator_ == Teuchos::null) {
-//    interpolator = linearInterpolator<Scalar>();
-//  } else {
-//    interpolator = interpolator_;
-//  }
-//  if (Teuchos::as<int>(this->getVerbLevel()) >=
-//      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
-//    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-//    Teuchos::OSTab ostab(out,1,"SolutionHistory::setInterpolator");
-//    *out << "interpolator = " << interpolator_->description() << std::endl;
-//  }
-//}
-//
-//template<class Scalar>
-//Teuchos::RCP<InterpolatorBase<Scalar> >
-//  SolutionHistory<Scalar>::getNonconstInterpolator()
-//{
-//  return interpolator;
-//}
-//
-//template<class Scalar>
-//Teuchos::RCP<const InterpolatorBase<Scalar> >
-//  SolutionHistory<Scalar>::getInterpolator() const
-//{
-//  return interpolator;
-//}
-//
-//template<class Scalar>
-//Teuchos::RCP<InterpolatorBase<Scalar> > SolutionHistory<Scalar>::unSetInterpolator()
-//{
-//  Teuchos::RCP<InterpolatorBase<Scalar> > old_interpolator = interpolator;
-//  interpolator = linearInterpolator<Scalar>();
-//  return old_interpolator;
-//}
+template<class Scalar>
+void SolutionHistory<Scalar>::setInterpolator(
+ const Teuchos::RCP<Interpolator<Scalar> >& interpolator)
+{
+ if (interpolator == Teuchos::null) {
+   interpolator_ = InterpolatorFactory<Scalar>::createInterpolator();
+ } else {
+   interpolator_ = interpolator;
+ }
+ if (Teuchos::as<int>(this->getVerbLevel()) >=
+     Teuchos::as<int>(Teuchos::VERB_HIGH)) {
+   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+   Teuchos::OSTab ostab(out,1,"SolutionHistory::setInterpolator");
+   *out << "interpolator = " << interpolator_->description() << std::endl;
+ }
+}
+
+template<class Scalar>
+Teuchos::RCP<Interpolator<Scalar> >
+SolutionHistory<Scalar>::getNonconstInterpolator()
+{
+ return interpolator_;
+}
+
+template<class Scalar>
+Teuchos::RCP<const Interpolator<Scalar> >
+SolutionHistory<Scalar>::getInterpolator() const
+{
+ return interpolator_;
+}
+
+template<class Scalar>
+Teuchos::RCP<Interpolator<Scalar> >
+SolutionHistory<Scalar>::unSetInterpolator()
+{
+ Teuchos::RCP<Interpolator<Scalar> > old_interpolator = interpolator_;
+ interpolator_ = lagrangeInterpolator<Scalar>();
+ return old_interpolator;
+}
 
 
 } // namespace Tempus

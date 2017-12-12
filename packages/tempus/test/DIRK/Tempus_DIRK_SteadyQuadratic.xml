@@ -1,13 +1,6 @@
-<ParameterList name="BackwardEuler_SinCos">
-  <ParameterList name="SinCosModel">
-    <Parameter name="Accept model parameters"    type="bool" value="true"/>
-    <Parameter name="Provide nominal values"     type="bool" value="true"/>
-    <Parameter name="Coeff a" type="double" value="0.0"/>
-    <Parameter name="Coeff f" type="double" value="1.0"/>
-    <Parameter name="Coeff L" type="double" value="1.0"/>
-    <Parameter name="IC x0"   type="double" value="0.0"/>
-    <Parameter name="IC x1"   type="double" value="1.0"/>
-    <Parameter name="IC t0"   type="double" value="0.0"/>
+<ParameterList name="ExplicitRK_SinCos">
+  <ParameterList name="SteadyQuadraticModel">
+    <Parameter name="Coeff b" type="double" value="1.0"/>
   </ParameterList>
   <ParameterList name="Tempus">
     <Parameter name="Integrator Name" type="string" value="Default Integrator"/>
@@ -23,15 +16,15 @@
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
-        <Parameter name="Final Time"             type="double" value="1.0"/>
+        <Parameter name="Final Time"             type="double" value="20.0"/>
         <Parameter name="Initial Time Index"     type="int"    value="0"/>
         <Parameter name="Final Time Index"       type="int"    value="10000"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
-        <Parameter name="Initial Time Step"      type="double" value="0.1"/>
-        <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
-        <Parameter name="Minimum Order"          type="int" value="0"/>
-        <Parameter name="Initial Order"          type="int"    value="0"/>
-        <Parameter name="Maximum Order"          type="int" value="0"/>
+        <Parameter name="Initial Time Step"      type="double" value="1.0"/>
+        <Parameter name="Maximum Time Step"      type="double" value="1.0"/>
+        <Parameter name="Minimum Order"          type="int"    value="1"/>
+        <Parameter name="Initial Order"          type="int"    value="1"/>
+        <Parameter name="Maximum Order"          type="int"    value="10"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
@@ -45,8 +38,7 @@
     </ParameterList>
 
     <ParameterList name="Default Stepper">
-
-      <Parameter name="Stepper Type"   type="string" value="fill-in"/>
+      <Parameter name="Stepper Type" type="string" value="SDIRK 5 Stage 5th order"/>
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
 
       <ParameterList name="Default Solver">
@@ -98,7 +90,6 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
-
     </ParameterList>
 
   </ParameterList>

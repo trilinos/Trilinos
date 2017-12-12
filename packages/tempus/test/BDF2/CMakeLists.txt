@@ -8,14 +8,35 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-#TRIBITS_ADD_EXECUTABLE(
-#  BDF2
-#  SOURCES Tempus_BDF2Test.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN} 
-#  TESTONLYLIBS tempus_test_models
-#  COMM serial mpi 
-#)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BDF2_Combined_FSA
+  SOURCES Tempus_BDF2_Combined_FSA.cpp Tempus_BDF2_FSA.hpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BDF2_Staggered_FSA
+  SOURCES Tempus_BDF2_Staggered_FSA.cpp Tempus_BDF2_FSA.hpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BDF2_PseudoTransient_SA
+  SOURCES Tempus_BDF2_PseudoTransient_SA.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  BDF2_ASA
+  SOURCES Tempus_BDF2_ASA.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_CopyFiles
-  DEST_FILES Tempus_BDF2_SinCos.xml Tempus_BDF2_CDR.xml Tempus_BDF2_VanDerPol.xml Tempus_BDF2_SteadyQuadratic.xml
+  DEST_FILES Tempus_BDF2_SinCos.xml Tempus_BDF2_SinCos_SA.xml Tempus_BDF2_CDR.xml Tempus_BDF2_VanDerPol.xml Tempus_BDF2_SteadyQuadratic.xml
   EXEDEPS BDF2
   )
