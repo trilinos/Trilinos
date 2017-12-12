@@ -267,8 +267,6 @@ namespace MueLuTests {
       myCoordinates[2] = myZCoords();
     }
 
-    std::cout << "p=" << comm->getRank() << " | myGIDs: " << myGIDs() << std::endl;
-
     // Create the map and store coordinates using the above array views
     map         = MapFactory::Build(lib, gNumPoints, myGIDs(), 0, comm);
     Coordinates = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(map, myCoordinates(),
@@ -342,10 +340,6 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
 
-    // RCP<Teuchos::FancyOStream> fancy = getFancyOStream(rcpFromRef(std::cout));
-    // fancy->setShowAllFrontMatter(false).setShowProcRank(true);
-    // Teuchos::FancyOStream& out2 = *fancy;
-
     out << "version: " << MueLu::Version() << std::endl;
 
     RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -363,7 +357,6 @@ namespace MueLuTests {
     Array<LO> lNodesPerDim(3);
     GetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, stencilType, Op, coordinates, map,
                                 gNodesPerDim, lNodesPerDim);
-    std::cout << "Generating problem data: done" << std::endl;
 
     Array<LO> coarseRate(3);
     coarseRate[0] = 2;
@@ -387,7 +380,6 @@ namespace MueLuTests {
       fineNodes[dim] = coordinates->getData(dim)();
     }
 
-    std::cout << "Running the BlackBox geometry kernel" << std::endl;
     factTester.TestGetGeometricData(coordinates, coarseRate, gNodesPerDim, lNodesPerDim, 1,
                                     gIndices, gCoarseNodesPerDir, ghostGIDs, coarseNodesGIDs,
                                     colGIDs, gNumCoarseNodes, myOffset, lCoarseNodesPerDir,
@@ -511,7 +503,6 @@ namespace MueLuTests {
                                     8, 4, 5, 9, 6, 0, 1, 7, 8, 2, 3, 9, 10, 10, 11, 11,
                                     4, 12, 13, 5, 14, 12, 13, 15, 16, 14, 15, 17, 6, 18, 19, 7};
 
-    std::cout << std::endl;
     LO currentIndex;
     for(LO k = 0; k < elementNodesPerDir[2]; ++k) {
       for(LO j = 0; j < elementNodesPerDir[1]; ++j) {
@@ -520,9 +511,6 @@ namespace MueLuTests {
           factTester.TestGetNodeInfo(i, j, k, elementNodesPerDir, &nodeType, nodeIndex);
           if((nodeTypes[currentIndex] != nodeType) || (nodeIndices[currentIndex] != nodeIndex)) {
             checkResult = false;
-            if(!checkResult) {
-              std::cout << "There is a problem at point " << currentIndex << std::endl;
-            }
           }
         }
       }
@@ -536,10 +524,6 @@ namespace MueLuTests {
 #   include "MueLu_UseShortNames.hpp"
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-
-    // RCP<Teuchos::FancyOStream> fancy = getFancyOStream(rcpFromRef(std::cout));
-    // fancy->setShowAllFrontMatter(false).setShowProcRank(true);
-    // Teuchos::FancyOStream& out2 = *fancy;
 
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -556,11 +540,8 @@ namespace MueLuTests {
     RCP<Map> map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
-    out << "Problem Data Generation" << std::endl;
     GetProblemData(comm, lib, numDimensions, stencilType, A, coordinates, map, gNodesPerDim,
                    lNodesPerDim);
-
-    out << "Problem Data Generated" << std::endl;
 
     // Creater tester factory
     BlackBoxPFactoryTester<SC,LO,GO,Node> factTester;
@@ -582,9 +563,6 @@ namespace MueLuTests {
                                     colGIDs, gNumCoarseNodes, myOffset, lCoarseNodesPerDir,
                                     glCoarseNodesPerDir, endRate, lNumCoarseNodes, ghostInterface,
                                     coarseNodes, boundaryFlags);
-
-    out << "boundaryFlags: " << boundaryFlags << std::endl;
-    out << "Geometric Data Generated" << std::endl;
 
     // From A on local rank, let us construct Aghost
     Array<GO> ghostRowGIDs, ghostColGIDs, nodeSteps(3);
@@ -620,8 +598,6 @@ namespace MueLuTests {
         }
       }
     }
-    std::cout << "p=" << comm->getRank() << " | "
-              << "startingGID for ghostedRowMap: " << startingGID << std::endl;
 
     // Looking at the above loops it is easy to find startingGID for the ghostColGIDs
     Array<GO> startingGlobalIndices(numDimensions), dimStride(numDimensions);
@@ -661,16 +637,6 @@ namespace MueLuTests {
         }
       }
     }
-    std::cout << "p=" << comm->getRank() << " | "
-              << "startingColIndices: " << startingColIndices << std::endl;
-    std::cout << "p=" << comm->getRank() << " | "
-              << "finishingColIndices: " << finishingColIndices << std::endl;
-    std::cout << "p=" << comm->getRank() << " | "
-              << "colRange: " << colRange << std::endl;
-    std::cout << "p=" << comm->getRank() << " | "
-              << "colMinGID: " << colMinGID << std::endl;
-    std::cout << "p=" << comm->getRank() << " | "
-              << "ghostColGIDs: " << ghostColGIDs << std::endl;
 
     RCP<const Map> ghostedRowMap = Xpetra::MapFactory<LO,GO,NO>::Build(A->getRowMap()->lib(),
                                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
@@ -688,15 +654,9 @@ namespace MueLuTests {
                                                                                 ghostedRowMap,
                                                                                 ghostedColMap);
 
-    out << "Ghost Matrix Generated" << std::endl;
-
     if(comm->getRank() == 0) {
       // Pick on which coarse element the algorithm is tested
       Array<LO> elemInds(3), elementNodesPerDir(3);
-
-      out << "***************************************" << std::endl;
-      out << "    Test on ie = 1, je = 1, ke = 1     " << std::endl;
-      out << "***************************************" << std::endl;
 
       elemInds[0] = 1;
       elemInds[1] = 1;
@@ -729,8 +689,6 @@ namespace MueLuTests {
       }
       LO numNodesInElement = elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2];
 
-      out << "elementFlags: " << elementFlags << std::endl;
-
       Teuchos::SerialDenseMatrix<LO,SC> Pi, Pf, Pe;
       Array<LO> dofType(numNodesInElement*BlkSize), lDofInd(numNodesInElement*BlkSize);
       factTester.TestComputeLocalEntries(Aghost, coarseRate, endRate, BlkSize, elemInds,
@@ -738,10 +696,6 @@ namespace MueLuTests {
                                          gIndices, lCoarseNodesPerDir, ghostInterface,
                                          elementFlags, "reduced", "coupled", elementNodesPerDir,
                                          numNodesInElement, colGIDs, Pi, Pf, Pe, dofType, lDofInd);
-
-      out << "***************************************" << std::endl;
-      out << "    Test on ie = 0, je = 0, ke = 0     " << std::endl;
-      out << "***************************************" << std::endl;
 
       elemInds[0] = 0;
       elemInds[1] = 0;
@@ -774,8 +728,6 @@ namespace MueLuTests {
       }
       numNodesInElement = elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2];
 
-      out << "elementFlags: " << elementFlags << std::endl;
-
       dofType.resize(numNodesInElement*BlkSize); lDofInd.resize(numNodesInElement*BlkSize);
       factTester.TestComputeLocalEntries(Aghost, coarseRate, endRate, BlkSize, elemInds,
                                          lCoarseElementsPerDir, numDimensions, range, gNodesPerDim,
@@ -783,8 +735,6 @@ namespace MueLuTests {
                                          elementFlags, "reduced", "coupled", elementNodesPerDir,
                                          numNodesInElement, colGIDs, Pi, Pf, Pe, dofType, lDofInd);
     }
-
-    out << "Local P operator computed" << std::endl;
 
   } // Prolongator
 
