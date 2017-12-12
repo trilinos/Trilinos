@@ -56,7 +56,7 @@ void Kokkos_resize_1DView(ViewType & v, const size_t N) {
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
 
   ViewType newv("newv",N);
-  Kokkos::parallel_for(range_type(0,N), KOKKOS_LAMBDA(const size_t i) {
+  Kokkos::parallel_for(range_type(0,std::min(N,v.extent(0))), KOKKOS_LAMBDA(const size_t i) {
       newv(i) = v(i);
     });
   v = newv;// This is a shallow copy
