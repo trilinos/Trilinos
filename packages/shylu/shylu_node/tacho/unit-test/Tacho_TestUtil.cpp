@@ -6,9 +6,9 @@
 using namespace Tacho::Experimental;
 
 TEST( Util, is_complex_type ) {
-  EXPECT_FALSE(is_complex_type<double>::value); 
-  EXPECT_TRUE(is_complex_type<std::complex<double> >::value); 
-  EXPECT_TRUE(is_complex_type<Kokkos::complex<double> >::value); 
+  EXPECT_FALSE(int(is_complex_type<double>::value));
+  EXPECT_TRUE(int(is_complex_type<std::complex<double> >::value));
+  EXPECT_TRUE(int(is_complex_type<Kokkos::complex<double> >::value));
 }
 
 TEST( Util, coo ) {
@@ -41,24 +41,24 @@ TEST( util, tag ) {
   // EXPECT_TRUE(is_valid_partition_tag<Partition::BottomLeft>::value);
   // EXPECT_TRUE(is_valid_partition_tag<Partition::BottomRight>::value);
 
-  EXPECT_TRUE(is_valid_uplo_tag<Uplo::Upper>::value);
-  EXPECT_TRUE(is_valid_uplo_tag<Uplo::Lower>::value);
+  EXPECT_TRUE(int(is_valid_uplo_tag<Uplo::Upper>::value));
+  EXPECT_TRUE(int(is_valid_uplo_tag<Uplo::Lower>::value));
 
-  EXPECT_TRUE(is_valid_side_tag<Side::Left>::value);
-  EXPECT_TRUE(is_valid_side_tag<Side::Right>::value);
+  EXPECT_TRUE(int(is_valid_side_tag<Side::Left>::value));
+  EXPECT_TRUE(int(is_valid_side_tag<Side::Right>::value));
 
-  EXPECT_TRUE(is_valid_diag_tag<Diag::Unit>::value);
-  EXPECT_TRUE(is_valid_diag_tag<Diag::NonUnit>::value);
+  EXPECT_TRUE(int(is_valid_diag_tag<Diag::Unit>::value));
+  EXPECT_TRUE(int(is_valid_diag_tag<Diag::NonUnit>::value));
 
-  EXPECT_TRUE(is_valid_trans_tag<Trans::Transpose>::value);
-  EXPECT_TRUE(is_valid_trans_tag<Trans::ConjTranspose>::value);
-  EXPECT_TRUE(is_valid_trans_tag<Trans::NoTranspose>::value);
+  EXPECT_TRUE(int(is_valid_trans_tag<Trans::Transpose>::value));
+  EXPECT_TRUE(int(is_valid_trans_tag<Trans::ConjTranspose>::value));
+  EXPECT_TRUE(int(is_valid_trans_tag<Trans::NoTranspose>::value));
 
   // EXPECT_FALSE(is_valid_partition_tag<NullTag>::value);
-  EXPECT_FALSE(is_valid_uplo_tag<NullTag>::value);
-  EXPECT_FALSE(is_valid_side_tag<NullTag>::value);
-  EXPECT_FALSE(is_valid_diag_tag<NullTag>::value);
-  EXPECT_FALSE(is_valid_trans_tag<NullTag>::value);
+  EXPECT_FALSE(int(is_valid_uplo_tag<NullTag>::value));
+  EXPECT_FALSE(int(is_valid_side_tag<NullTag>::value));
+  EXPECT_FALSE(int(is_valid_diag_tag<NullTag>::value));
+  EXPECT_FALSE(int(is_valid_trans_tag<NullTag>::value));
 }
 
 int main (int argc, char *argv[]) {
