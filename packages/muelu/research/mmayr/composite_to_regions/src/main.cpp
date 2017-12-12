@@ -569,6 +569,10 @@ int main(int argc, char *argv[]) {
           revisedRowMapPerGrp, rowImportPerGrp);
     }
     else if (strcmp(command,"MakeRegionMatrices") == 0) {
+      /* This delivers region matrices that already account for the basic splitting.
+       * I don't know why, but these are the facts.
+       */
+
       // We work on a copy. Just for safety.
       for (int j = 0; j < maxRegPerProc; j++) {
         // create empty matrix with correct row and column map
