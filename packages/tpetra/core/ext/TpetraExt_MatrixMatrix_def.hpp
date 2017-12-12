@@ -2466,8 +2466,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
     // Resize for next pass if needed
     if (CSR_ip + n > CSR_alloc) {
       CSR_alloc *= 2;
-      Kokkos::resize(Ccolind,CSR_alloc);
-      Kokkos::resize(Cvals,CSR_alloc);
+      Kokkos_resize_1DView(Ccolind,CSR_alloc);
+      Kokkos_resize_1DView(Cvals,CSR_alloc);
     }
     OLD_ip = CSR_ip;
   }
@@ -2475,8 +2475,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::mult_A_B_newmatrix_
   Crowptr[m] = CSR_ip;
 
   // Downward resize
-  Kokkos::resize(Ccolind,CSR_ip);
-  Kokkos::resize(Cvals,CSR_ip);
+  Kokkos_resize_1DView(Ccolind,CSR_ip);
+  Kokkos_resize_1DView(Cvals,CSR_ip);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix Final Sort"))));
