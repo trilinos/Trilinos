@@ -651,8 +651,8 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
         Epetra_SerialDenseMatrix* Mmod = NULL;
 
         // get the normal at slave nodes
-        const double* n0 = snodes[0]->N();
-        const double* n1 = snodes[1]->N();
+        const double* n0 = snodes[0]->Normal();
+        const double* n1 = snodes[1]->Normal();
 
         // build the tangential orthogonal to the normal
         double t[2][2];
@@ -779,35 +779,35 @@ bool MOERTEL::Interface::QuickOverlapTest_2D(MOERTEL::Segment& sseg, MOERTEL::Se
   mdiam = sdiam = 0;
 
   for (int i=0; i<nmnode; ++i){
-    mcen[0] += mnode[i]->X()[0];
-    mcen[1] += mnode[i]->X()[1];
-    mcen[2] += mnode[i]->X()[2];
+    mcen[0] += mnode[i]->XCoords()[0];
+    mcen[1] += mnode[i]->XCoords()[1];
+    mcen[2] += mnode[i]->XCoords()[2];
   }
   mcen[0] /= (double)nmnode;
   mcen[1] /= (double)nmnode;
   mcen[2] /= (double)nmnode;
 
   for (int i=0; i<nsnode; ++i){
-    scen[0] += snode[i]->X()[0];
-    scen[1] += snode[i]->X()[1];
-    scen[2] += snode[i]->X()[2];
+    scen[0] += snode[i]->XCoords()[0];
+    scen[1] += snode[i]->XCoords()[1];
+    scen[2] += snode[i]->XCoords()[2];
   }
   scen[0] /= (double)nsnode;
   scen[1] /= (double)nsnode;
   scen[2] /= (double)nsnode;
 
   for (int i=0; i<nmnode; ++i){
-    mrad[0] = mnode[i]->X()[0] - mcen[0];
-    mrad[1] = mnode[i]->X()[1] - mcen[1];
-    mrad[2] = mnode[i]->X()[2] - mcen[2];
+    mrad[0] = mnode[i]->XCoords()[0] - mcen[0];
+    mrad[1] = mnode[i]->XCoords()[1] - mcen[1];
+    mrad[2] = mnode[i]->XCoords()[2] - mcen[2];
     length = MOERTEL::length(mrad,3);
     if (mdiam < length) mdiam = length;
   }
 
   for (int i=0; i<nsnode; ++i){
-    srad[0] = snode[i]->X()[0] - scen[0];
-    srad[1] = snode[i]->X()[1] - scen[1];
-    srad[2] = snode[i]->X()[2] - scen[2];
+    srad[0] = snode[i]->XCoords()[0] - scen[0];
+    srad[1] = snode[i]->XCoords()[1] - scen[1];
+    srad[2] = snode[i]->XCoords()[2] - scen[2];
     length = MOERTEL::length(srad,3);
     if (sdiam < length) sdiam = length;
   }
@@ -1217,8 +1217,8 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
         Epetra_SerialDenseMatrix* Mmod = NULL;
 
         // get the normal at slave nodes
-        const double* n0 = snodes[0]->N();
-        const double* n1 = snodes[1]->N();
+        const double* n0 = snodes[0]->Normal();
+        const double* n1 = snodes[1]->Normal();
 
         // build the tangential orthogonal to the normal
         double t[2][2];

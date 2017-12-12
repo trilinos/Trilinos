@@ -61,7 +61,7 @@
 // external package headers
 #include "Teuchos_RCP.hpp"
 #include <Epetra_Comm.h>   // Epetra_Comm.h defines std:: as a global namespace
-#ifdef HAVE_MPI
+#ifdef HAVE_MOERTEL_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>

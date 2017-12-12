@@ -4,6 +4,10 @@ echo
 echo "Starting nightly Trilinos development testing on enigma: `date`"
 echo
 
+# Undefine the next line while making/testing local driver changes.  Otherwise, the nightly
+# testing system will pull a fresh version of Trilinos and wipe out your changes.
+# export TDD_IN_TESTING_MODE=1
+
 #
 # TrilinosDriver settings:
 #
@@ -47,7 +51,10 @@ export OMP_NUM_THREADS=2
 # would first run old cron_driver.sh and only then pull
 
 # load OpenMPI 1.6.4 (standard in RHEL 7)
-module load mpi/openmpi-x86_64
+#module load mpi/openmpi-x86_64
+module load sems-env
+module load sems-gcc/4.8.4
+module load sems-openmpi/1.10.1
 
 env
 

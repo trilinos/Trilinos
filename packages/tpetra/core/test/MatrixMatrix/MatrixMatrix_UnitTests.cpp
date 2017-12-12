@@ -467,9 +467,8 @@ mult_test_results multiply_test_autofc(
     name+"_calculated.mtx", computedC);
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_real.mtx", C);
-
 #endif
-  if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
+    if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
   }
 
   // Check importer validity

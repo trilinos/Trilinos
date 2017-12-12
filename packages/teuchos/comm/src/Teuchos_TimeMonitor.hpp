@@ -135,7 +135,7 @@ namespace Teuchos {
 /// Value: each entry in the vector is a timing and call count for
 ///   that timer, corresponding to a particular statistic (e.g.,
 ///   minimum, arithmetic mean, or maximum).  What statistic that is
-///   depends on an auxillary array "statNames" which has the same
+///   depends on an auxiliary array "statNames" which has the same
 ///   ordering as the entries in this vector.  See the documentation
 ///   of \c TimeMonitor::computeGlobalTimerStatistics().
 typedef std::map<std::string, std::vector<std::pair<double, double> > > stat_map_type;

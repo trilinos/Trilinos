@@ -70,6 +70,12 @@ MOERTEL::Segment(id,nnode,nodeId,out)
   stype_ = MOERTEL::Segment::seg_Linear1D;
 }
 
+MOERTEL::Segment_Linear1D::Segment_Linear1D(int id, const std::vector<int>& nodev, int out) :
+MOERTEL::Segment(id, nodev, out)
+{
+  stype_ = MOERTEL::Segment::seg_Linear1D;
+}
+
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 07/05|
  |  This constructor should not be used by the user, it is used         |
@@ -216,8 +222,8 @@ double MOERTEL::Segment_Linear1D::Metric(double* xi, double g[], double G[][3])
 { 
   // get nodal coordinates
   const double* x[2];
-  x[0] = nodeptr_[0]->X();
-  x[1] = nodeptr_[1]->X();
+  x[0] = nodeptr_[0]->XCoords();
+  x[1] = nodeptr_[1]->XCoords();
   
   // get shape functions
   double val[2];
@@ -282,8 +288,8 @@ double MOERTEL::Segment_Linear1D::Area()
 { 
   // get nodal coordinates
   const double* x[2];
-  x[0] = nodeptr_[0]->X();
-  x[1] = nodeptr_[1]->X();
+  x[0] = nodeptr_[0]->XCoords();
+  x[1] = nodeptr_[1]->XCoords();
 
   // build vector from x[0] to x[1]
   double tangent[2];

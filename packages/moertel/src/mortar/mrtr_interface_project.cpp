@@ -237,7 +237,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     if (NodePID(snode->Id()) != lComm()->MyPID())
       continue;
     
-    const double* sx = snode->X();
+    const double* sx = snode->XCoords();
     double mindist = 1.0e+20;
 	Teuchos::RCP<MOERTEL::Node> closenode = Teuchos::null;
     
@@ -246,9 +246,9 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_NormalField()
     for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
     {
 	  Teuchos::RCP<MOERTEL::Node> mnode = mcurr->second;
-      const double* mx = mnode->X();
+      const double* mx = mnode->XCoords();
       
-      // build distance | mnode->X() - snode->X() |
+      // build distance | mnode->XCoords() - snode->XCoords() |
       double dist = 0.0;
       for (int i=0; i<3; ++i) dist += (mx[i]-sx[i])*(mx[i]-sx[i]);
       dist = sqrt(dist);
@@ -525,7 +525,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
     if (NodePID(mnode->Id()) != lComm()->MyPID())
       continue;
     
-    const double* mx = mnode->X();
+    const double* mx = mnode->XCoords();
     double mindist = 1.0e+20;
 	Teuchos::RCP<MOERTEL::Node> closenode = Teuchos::null;
     
@@ -534,9 +534,9 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
     for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
     {
 	  Teuchos::RCP<MOERTEL::Node> snode = scurr->second;
-      const double* sx = snode->X();
+      const double* sx = snode->XCoords();
       
-      // build distance | snode->X() - mnode->X() |
+      // build distance | snode->XCoords() - mnode->XCoords() |
       double dist = 0.0;
       for (int i=0; i<3; ++i) dist += (mx[i]-sx[i])*(mx[i]-sx[i]);
       dist = sqrt(dist);
@@ -644,7 +644,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
       double NN[3]; NN[0] = NN[1] = NN[2] = 0.0;
       for (int i=0; i<nsnode; ++i)
       {
-        const double* N = snodes[i]->N();
+        const double* N = snodes[i]->Normal();
         for (int j=0; j<3; ++j)
           NN[j] -= val[i]*N[j];
       }
@@ -680,7 +680,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_NormalField()
 		Teuchos::RCP<MOERTEL::ProjectedNode> pnode = mnode->GetProjectedNode();
         if (pnode == Teuchos::null) continue; // this node does not have a projection
         const double* xi = pnode->Xi();
-        const double* N  = mnode->N();
+        const double* N  = mnode->Normal();
         bcast[blength] = (double)pnode->Id();
         ++blength;
         if (pnode->Segment())
@@ -804,7 +804,7 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     if (NodePID(mnode->Id()) != lComm()->MyPID())
       continue;
       
-    const double* mx = mnode->X();
+    const double* mx = mnode->XCoords();
     double mindist = 1.0e+20;
 	Teuchos::RCP<MOERTEL::Node> closenode = Teuchos::null;
     
@@ -813,9 +813,9 @@ bool MOERTEL::Interface::ProjectNodes_MastertoSlave_Orthogonal()
     for (scurr=rnode_[sside].begin(); scurr!=rnode_[sside].end(); ++scurr)
     {
 	  Teuchos::RCP<MOERTEL::Node> snode = scurr->second;
-      const double* sx = snode->X();
+      const double* sx = snode->XCoords();
       
-      // build distance | snode->X() - mnode->X() |
+      // build distance | snode->XCoords() - mnode->XCoords() |
       double dist = 0.0;
       for (int i=0; i<3; ++i) dist += (mx[i]-sx[i])*(mx[i]-sx[i]);
       dist = sqrt(dist);
@@ -1013,7 +1013,7 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     if (NodePID(snode->Id()) != lComm()->MyPID())
       continue;
     
-    const double* sx = snode->X();
+    const double* sx = snode->XCoords();
     double mindist = 1.0e+20;
 	Teuchos::RCP<MOERTEL::Node> closenode = Teuchos::null;
     
@@ -1022,9 +1022,9 @@ bool MOERTEL::Interface::ProjectNodes_SlavetoMaster_Orthogonal()
     for (mcurr=rnode_[mside].begin(); mcurr!=rnode_[mside].end(); ++mcurr)
     {
 	  Teuchos::RCP<MOERTEL::Node> mnode = mcurr->second;
-      const double* mx = mnode->X();
+      const double* mx = mnode->XCoords();
       
-      // build distance | mnode->X() - snode->X() |
+      // build distance | mnode->XCoords() - snode->XCoords() |
       double dist = 0.0;
       for (int i=0; i<3; ++i) dist += (mx[i]-sx[i])*(mx[i]-sx[i]);
       dist = sqrt(dist);

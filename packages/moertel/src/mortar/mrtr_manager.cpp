@@ -795,7 +795,10 @@ bool MOERTEL::Manager::Build_MD_3D()
   //-------------------------------------------------------------------
   // call FillComplete() on M_ and D_ 
   D_->FillComplete(*saddlemap_,*saddlemap_);
-  D_ = Teuchos::rcp(MOERTEL::StripZeros(*D_,1.e-4));
+  // GAH - found by kimliegeois
+  // when remeshing, the size of elements can become so small that all the entries, or part 
+  // of the meaning entries, are below the threshold and therefore dropped. 
+  // D_ = Teuchos::rcp(MOERTEL::StripZeros(*D_,1.e-4));
   D_->OptimizeStorage();
   M_->FillComplete(*saddlemap_,*saddlemap_);
   M_->OptimizeStorage();

@@ -1808,6 +1808,18 @@ MACRO(TRIBITS_SETUP_ENV)
     ENABLE_LANGUAGE(Fortran)
   ENDIF()
 
+  # Do some project-specific tweaks for compiler options, etc.
+  SET(PROJECT_COMPILER_CONFIG_FILE
+    # Can be used for things like Kokkos.
+    "${${PROJECT_NAME}_SOURCE_DIR}/cmake/ProjectCompilerPostConfig.cmake"
+    CACHE FILEPATH
+    "Allow for project-specific compiler settings."
+   )
+  IF (EXISTS "${PROJECT_COMPILER_CONFIG_FILE}")
+    TRIBITS_TRACE_FILE_PROCESSING(PROJECT  INCLUDE  "${PROJECT_COMPILER_CONFIG_FILE}")
+    INCLUDE("${PROJECT_COMPILER_CONFIG_FILE}")
+  ENDIF()
+
   # Set up for strong compiler warnings and warnings as errors
 
   INCLUDE(TribitsSetupBasicCompileLinkFlags)
