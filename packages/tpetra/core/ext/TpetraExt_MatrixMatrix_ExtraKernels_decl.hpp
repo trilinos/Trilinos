@@ -41,14 +41,36 @@
 
 #ifndef TPETRA_MATRIXMATRIX_EXTRAKERNELS_DECL_HPP
 #define TPETRA_MATRIXMATRIX_EXTRAKERNELS_DECL_HPP
+#include "TpetraExt_MatrixMatrix_decl.hpp"
 
-#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
-#include "KokkosSparse_spgemm.hpp"
-#endif
+
 namespace Tpetra {
 
 namespace MatrixMatrix {
 
+  // This is a placeholder function until Kokkos Issue #1270 is resolved and pushed into Trilinos
+  template<class ViewType>
+  void Kokkos_resize_1DView(ViewType & v, const size_t N);
+
+  namespace ExtraKernels {
+
+    template<class CrsMatrixType>
+    size_t C_estimate_nnz_per_row(CrsMatrixType & A, CrsMatrixType &B);
+
+#ifdef HAVE_TPETRA_INST_OPENMP
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
+    static inline void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
+                                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+                                                                   const Teuchos::Array<LocalOrdinal> & targetMapToOrigRow,
+                                                                   const Teuchos::Array<LocalOrdinal> & targetMapToImportRow,
+                                                                   const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
+                                                                   const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
+                                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
+                                                                   Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
+                                                                   const std::string& label,
+                                                                   const Teuchos::RCP<Teuchos::ParameterList>& params);
+#endif
+  }// ExtraKernels
 }//MatrixMatrix
 }//Tpetra
 

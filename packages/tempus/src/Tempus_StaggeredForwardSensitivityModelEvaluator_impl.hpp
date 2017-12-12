@@ -22,11 +22,13 @@ template <typename Scalar>
 StaggeredForwardSensitivityModelEvaluator<Scalar>::
 StaggeredForwardSensitivityModelEvaluator(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
+  const bool is_pseudotransient,
   const Teuchos::RCP<const Teuchos::ParameterList>& pList,
   const Teuchos::RCP<MultiVector>& dxdp_init,
   const Teuchos::RCP<MultiVector>& dx_dotdp_init,
   const Teuchos::RCP<MultiVector>& dx_dotdotdp_init) :
   model_(model),
+  is_pseudotransient_(is_pseudotransient),
   dxdp_init_(dxdp_init),
   dx_dotdp_init_(dx_dotdp_init),
   dx_dotdotdp_init_(dx_dotdotdp_init),
@@ -34,7 +36,8 @@ StaggeredForwardSensitivityModelEvaluator(
   x_tangent_index_(1),
   xdot_tangent_index_(2),
   xdotdot_tangent_index_(3),
-  use_dfdp_as_tangent_(false)
+  use_dfdp_as_tangent_(false),
+  t_interp_(Teuchos::ScalarTraits<Scalar>::rmax())
 {
   typedef Thyra::ModelEvaluatorBase MEB;
 
@@ -86,6 +89,21 @@ StaggeredForwardSensitivityModelEvaluator(
   TEUCHOS_ASSERT(me_outArgs.supports(MEB::OUT_ARG_DfDp, p_index_).supports(MEB::DERIV_MV_JACOBIAN_FORM));
   if (!use_dfdp_as_tangent_)
     TEUCHOS_ASSERT(me_outArgs.supports(MEB::OUT_ARG_W_op));
+}
+
+template <typename Scalar>
+void
+StaggeredForwardSensitivityModelEvaluator<Scalar>::
+setForwardSolutionHistory(
+  const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh)
+{
+  sh_ = sh;
+  if (is_pseudotransient_)
+    forward_state_ = sh_->getCurrentState();
+  else {
+    t_interp_ = Teuchos::ScalarTraits<Scalar>::rmax();
+    forward_state_ = Teuchos::null;
+  }
 }
 
 template <typename Scalar>
@@ -244,32 +262,50 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
+  // Interpolate forward solution at supplied time, reusing previous
+  // interpolation if possible
+  TEUCHOS_ASSERT(sh_ != Teuchos::null);
+  const Scalar t = inArgs.get_t();
+  Scalar forward_t;
+  if (is_pseudotransient_)
+    forward_t = forward_state_->getTime();
+  else {
+    forward_t = t;
+    if (forward_state_ == Teuchos::null || t_interp_ != t) {
+      if (forward_state_ == Teuchos::null)
+        forward_state_ = sh_->interpolateState(t);
+      else
+        sh_->interpolateState(t, forward_state_.get());
+      t_interp_ = t;
+    }
+  }
+
   // setup input arguments for model
   RCP< const Thyra::MultiVectorBase<Scalar> > dxdp, dxdotdp, dxdotdotdp;
   MEB::InArgs<Scalar> me_inArgs = model_->getNominalValues();
   dxdp = rcp_dynamic_cast<const DMVPV>(inArgs.get_x())->getMultiVector();
-  TEUCHOS_ASSERT(x_ != Teuchos::null);
-  me_inArgs.set_x(x_);
+  me_inArgs.set_x(forward_state_->getX());
   if (use_dfdp_as_tangent_)
     me_inArgs.set_p(x_tangent_index_, inArgs.get_x());
   if (me_inArgs.supports(MEB::IN_ARG_x_dot)) {
     if (inArgs.get_x_dot() != Teuchos::null) {
       dxdotdp =
         rcp_dynamic_cast<const DMVPV>(inArgs.get_x_dot())->getMultiVector();
-      TEUCHOS_ASSERT(x_dot_ != Teuchos::null);
-      me_inArgs.set_x_dot(x_dot_);
+      me_inArgs.set_x_dot(forward_state_->getXDot());
       if (use_dfdp_as_tangent_)
         me_inArgs.set_p(xdot_tangent_index_, inArgs.get_x_dot());
     }
-    else // clear out xdot if it was set in nominalValues
+    else {
+      // clear out xdot if it was set in nominalValues to get to ensure we
+      // get the explicit form
       me_inArgs.set_x_dot(Teuchos::null);
+    }
   }
   if (me_inArgs.supports(MEB::IN_ARG_x_dot_dot)) {
     if (inArgs.get_x_dot_dot() != Teuchos::null) {
       dxdotdotdp =
         rcp_dynamic_cast<const DMVPV>(inArgs.get_x_dot_dot())->getMultiVector();
-      TEUCHOS_ASSERT(x_dot_dot_ != Teuchos::null);
-      me_inArgs.set_x_dot_dot(x_dot_dot_);
+      me_inArgs.set_x_dot_dot(forward_state_->getXDotDot());
       if (use_dfdp_as_tangent_)
         me_inArgs.set_p(xdotdot_tangent_index_, inArgs.get_x_dot_dot());
     }
@@ -277,7 +313,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       me_inArgs.set_x_dot_dot(Teuchos::null);
   }
   if (me_inArgs.supports(MEB::IN_ARG_t))
-    me_inArgs.set_t(inArgs.get_t());
+    me_inArgs.set_t(forward_t);
   if (me_inArgs.supports(MEB::IN_ARG_alpha))
     me_inArgs.set_alpha(inArgs.get_alpha());
   if (me_inArgs.supports(MEB::IN_ARG_beta))
@@ -306,9 +342,9 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     me_outArgs.set_DfDp(p_index_, dfdp);
   }
   if (lo_ == Teuchos::null && outArgs.get_W_op() != Teuchos::null) {
-    RCP<Thyra::LinearOpBase<double> > op = outArgs.get_W_op();
-    RCP<Thyra::MultiVectorLinearOp<double> > mv_op =
-      rcp_dynamic_cast<Thyra::MultiVectorLinearOp<double> >(op);
+    RCP<Thyra::LinearOpBase<Scalar> > op = outArgs.get_W_op();
+    RCP<Thyra::MultiVectorLinearOp<Scalar> > mv_op =
+      rcp_dynamic_cast<Thyra::MultiVectorLinearOp<Scalar> >(op);
     me_outArgs.set_W_op(mv_op->getNonconstLinearOp());
   }
 
@@ -317,7 +353,9 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // Compute (df/dx) * (dx/dp) + (df/dxdot) * (dxdot/dp) + (df/dxdotdot) * (dxdotdot/dp) + (df/dp)
   // if the underlying ME doesn't already do this.  This requires computing
-  // df/dx, df/dxdot, df/dxdotdot as separate operators
+  // df/dx, df/dxdot, df/dxdotdot as separate operators.
+  // For pseudo-transient, we would like to reuse these operators, but this is
+  // complicated when steppers use both implicit and explicit forms.
   if (!use_dfdp_as_tangent_) {
     if (dxdp != Teuchos::null && dfdp != Teuchos::null) {
       if (my_dfdx_ == Teuchos::null)

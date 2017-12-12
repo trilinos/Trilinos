@@ -58,6 +58,19 @@ IntegratorBasic<Scalar>::IntegratorBasic()
 
 
 template<class Scalar>
+IntegratorBasic<Scalar>::IntegratorBasic(
+  Teuchos::RCP<Teuchos::ParameterList>                inputPL,
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models)
+    : integratorObserver_(Teuchos::null),
+      integratorStatus_(WORKING), isInitialized_(false)
+{
+  this->setTempusParameterList(inputPL);
+  this->setStepper(models);
+  this->initialize();
+}
+
+
+template<class Scalar>
 void IntegratorBasic<Scalar>::setStepper(
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model)
 {
@@ -73,6 +86,26 @@ void IntegratorBasic<Scalar>::setStepper(
     stepper_ = sf->createStepper(model, stepperPL);
   } else {
     stepper_->setModel(model);
+  }
+}
+
+
+template<class Scalar>
+void IntegratorBasic<Scalar>::setStepper(
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models)
+{
+  using Teuchos::RCP;
+  using Teuchos::ParameterList;
+
+  if (stepper_ == Teuchos::null) {
+    // Construct from Integrator ParameterList
+    RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
+    std::string stepperName = integratorPL_->get<std::string>("Stepper Name");
+
+    RCP<ParameterList> stepperPL = Teuchos::sublist(tempusPL_,stepperName,true);
+    stepper_ = sf->createStepper(models, stepperPL);
+  } else {
+    stepper_->createSubSteppers(models);
   }
 }
 
@@ -235,28 +268,27 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
 
   if (tsc == Teuchos::null) {
     // Construct from Integrator ParameterList
-    RCP<ParameterList> tscPL =
-      Teuchos::sublist(integratorPL_,"Time Step Control",true);
-    timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL));
-
-    if (timeStepControl_->getMinOrder() == 0)
-      timeStepControl_->setMinOrder(stepper_->getOrderMin());
-    if (timeStepControl_->getMaxOrder() == 0)
-      timeStepControl_->setMaxOrder(stepper_->getOrderMax());
-    if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
-    if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
+      RCP<ParameterList> tscPL =
+          Teuchos::sublist(integratorPL_,"Time Step Control",true);
+      timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL));
 
   } else {
     // Make integratorPL_ consistent with new TimeStepControl.
     RCP<ParameterList> tscPL = tsc->getNonconstParameterList();
     integratorPL_->set("Time Step Control", tscPL->name());
     integratorPL_->set(tscPL->name(), tscPL);
-
-    timeStepControl_ = Teuchos::null;
     timeStepControl_ = tsc;
   }
+
+  if (timeStepControl_->getMinOrder() == 0)
+      timeStepControl_->setMinOrder(stepper_->getOrderMin());
+  if (timeStepControl_->getMaxOrder() == 0)
+      timeStepControl_->setMaxOrder(stepper_->getOrderMax());
+  if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
+      timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
+  if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
+      timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
+
 }
 
 
@@ -513,7 +545,7 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
   if ((csmd->getOutputScreen() == true) or
       (csmd->getOutput() == true) or
       (csmd->getTime() == timeStepControl_->getFinalTime())) {
-    const double steppertime = stepperTimer_->totalElapsedTime();
+    const Scalar steppertime = stepperTimer_->totalElapsedTime();
     stepperTimer_->reset();
     RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,0,"ScreenOutput");
@@ -549,7 +581,7 @@ void IntegratorBasic<Scalar>::endIntegrator()
   }
 
   integratorTimer_->stop();
-  const double runtime = integratorTimer_->totalElapsedTime();
+  const Scalar runtime = integratorTimer_->totalElapsedTime();
   std::time_t end = std::time(nullptr);
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,0,"ScreenOutput");
@@ -727,6 +759,17 @@ Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic()
 {
   Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
     Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>());
+  return(integrator);
+}
+
+/// Non-member constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+  Teuchos::RCP<Teuchos::ParameterList>                     pList,
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models)
+{
+  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
+    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, models));
   return(integrator);
 }
 

@@ -816,7 +816,7 @@ void KokkosSPGEMM
     MyExecSpace::fence();
     sszm_compressMatrix.memory_space = m_space;
 #endif
-    Kokkos::parallel_for( gpu_team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+    Kokkos::parallel_for("KokkosSparse_spgemm_compression", gpu_team_policy_t(n / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
   }
   else {
 
@@ -857,9 +857,9 @@ void KokkosSPGEMM
       }
       Kokkos::Impl::Timer timer_count;
       if(use_unordered_compress)
-        Kokkos::parallel_for( team_count2_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+        Kokkos::parallel_for("KokkosSparse_spgemm_compression", team_count2_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
       else
-        Kokkos::parallel_for( team_count_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+        Kokkos::parallel_for("KokkosSparse_spgemm_compression", team_count_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
       MyExecSpace::fence();
       if (KOKKOSKERNELS_VERBOSE){
         std::cout << "\t\tCompression Count Kernel:" <<  timer_count.seconds() << std::endl;
@@ -883,13 +883,13 @@ void KokkosSPGEMM
       sszm_compressMatrix.pset_index_entries = out_nnz_indices.data();
       sszm_compressMatrix.pset_entries = out_nnz_sets.data();
       if(use_unordered_compress)
-        Kokkos::parallel_for( team_fill2_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+        Kokkos::parallel_for("KokkosSparse_spgemm_compression", team_fill2_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
       else
-        Kokkos::parallel_for( team_fill_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+        Kokkos::parallel_for("KokkosSparse_spgemm_compression", team_fill_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
     }
     else {
     //USING DYNAMIC SCHEDULE HERE SLOWS DOWN SIGNIFICANTLY WITH HYPERTHREADS
-      Kokkos::parallel_for( multicore_team_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
+      Kokkos::parallel_for("KokkosSparse_spgemm_compression", multicore_team_policy_t(n / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sszm_compressMatrix);
 
     }
   }

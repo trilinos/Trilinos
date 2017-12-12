@@ -18,6 +18,7 @@
 #include "Thyra_DefaultMultiVectorLinearOpWithSolve.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 
 #include <iostream>
@@ -34,7 +35,7 @@ SinCosModel(Teuchos::RCP<Teuchos::ParameterList> pList_)
   Np_ = 3; // Number of parameter vectors (p, dx/dp, dx_dot/dp)
   np_ = 3; // Number of parameters in this vector (3)
   Ng_ = 1; // Number of observation functions (1)
-  ng_ = 1; // Number of elements in this observation function (1)
+  ng_ = dim_; // Number of elements in this observation function ( == x )
   acceptModelParams_ = false;
   useDfDpAsTangent_ = false;
   haveIC_ = true;
@@ -414,6 +415,28 @@ evalModelImpl(
       }
     }
   }
+
+  // Responses:  g = x
+  if (acceptModelParams_) {
+    RCP<VectorBase<Scalar> > g_out = outArgs.get_g(0);
+    if (g_out != Teuchos::null)
+      Thyra::assign(g_out.ptr(), *x_in);
+
+    RCP<Thyra::MultiVectorBase<Scalar> > DgDp_out =
+      outArgs.get_DgDp(0,0).getMultiVector();
+    if (DgDp_out != Teuchos::null)
+      Thyra::assign(DgDp_out.ptr(), Scalar(0.0));
+
+    RCP<Thyra::MultiVectorBase<Scalar> > DgDx_out =
+      outArgs.get_DgDx(0).getMultiVector();
+    if (DgDx_out != Teuchos::null) {
+      Thyra::DetachedMultiVectorView<Scalar> DgDx_out_view( *DgDx_out );
+      DgDx_out_view(0,0) = 1.0;
+      DgDx_out_view(0,1) = 0.0;
+      DgDx_out_view(1,0) = 0.0;
+      DgDx_out_view(1,1) = 1.0;
+    }
+  }
 }
 
 template<class Scalar>
@@ -500,6 +523,10 @@ setupInOutArgs_() const
       outArgs.set_Np_Ng(Np_,Ng_);
       outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,0,
                            Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
+      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDp,0,0,
+                           Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL );
+      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_DgDx,0,
+                           Thyra::ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW );
     }
     outArgs_ = outArgs;
   }

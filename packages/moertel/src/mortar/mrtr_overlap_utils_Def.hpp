@@ -44,7 +44,7 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#include "mrtr_overlap.H"
+#include "mrtr_overlap.hpp"
 #include "mrtr_projector.H"
 #include "mrtr_node.H"
 #include "mrtr_pnode.H"
@@ -56,7 +56,9 @@
 /*----------------------------------------------------------------------*
  |  copy a polygon of points (private)                       mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::CopyPointPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& from, std::map<int,Teuchos::RCP<MOERTEL::Point> >& to)
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::CopyPointPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& from, 
+      std::map<int,Teuchos::RCP<MOERTEL::Point> >& to)
 {
   std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator pcurr;
   for (pcurr=from.begin(); pcurr != from.end(); ++pcurr)
@@ -72,7 +74,8 @@ bool MOERTEL::Overlap::CopyPointPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point
  |  find intersection (private)                              mwgee 10/05|
  *----------------------------------------------------------------------*/
 
-bool MOERTEL::Overlap::Clip_Intersect(const double* N, const double* PE,
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::Clip_Intersect(const double* N, const double* PE,
 	const double* P0, const double* P1, double* xi){
 
 /*
@@ -92,10 +95,7 @@ bool MOERTEL::Overlap::Clip_Intersect(const double* N, const double* PE,
   
   // if the denom is zero, then lines are parallel, no intersection
 
-  // GAH - EPSILON test here
-  // Failing here probably should be fatal
-
-  if (fabs(denom)<1.0e-10)
+  if (fabs(denom) <= std::numeric_limits<double>::min())
 
     return false;
     
@@ -123,7 +123,8 @@ bool MOERTEL::Overlap::Clip_Intersect(const double* N, const double* PE,
   return true;
 }
 
-bool MOERTEL::Overlap::Guarded_Clip_Intersect(const double* N, const double* PE,
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::Guarded_Clip_Intersect(const double* N, const double* PE,
 	const double* P0, const double* P1, double* xi){
 
 /*
@@ -146,10 +147,7 @@ bool MOERTEL::Overlap::Guarded_Clip_Intersect(const double* N, const double* PE,
   
   // if the denom is zero, then lines are parallel, no intersection
 
-  // GAH - EPSILON test here
-  // Failing here probably should be fatal
-
-  if (fabs(denom)<1.0e-10)
+  if (fabs(denom) <= std::numeric_limits<double>::min())
 
     return false;
     
@@ -172,7 +170,8 @@ bool MOERTEL::Overlap::Guarded_Clip_Intersect(const double* N, const double* PE,
 /*----------------------------------------------------------------------*
  |  test point (private)                                     mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::Clip_TestPoint(const double* N, const double* PE, 
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::Clip_TestPoint(const double* N, const double* PE, 
                                    const double* P, double eps)
 {
   double PPE[2];
@@ -201,7 +200,8 @@ bool MOERTEL::Overlap::Clip_TestPoint(const double* N, const double* PE,
 /*----------------------------------------------------------------------*
  |  find parameterization alpha for point on line (private)  mwgee 10/05|
  *----------------------------------------------------------------------*/
-double MOERTEL::Overlap::Clip_ParameterPointOnLine(const double* P0,const double* P1,const double* P)
+template <class IFace>
+double MOERTEL::Overlap<IFace>::Clip_ParameterPointOnLine(const double* P0,const double* P1,const double* P)
 {
   double dist1 = sqrt( (P[0]-P0[0])*(P[0]-P0[0])+(P[1]-P0[1])*(P[1]-P0[1]) );
   double dist2 = sqrt( (P1[0]-P0[0])*(P1[0]-P0[0])+(P1[1]-P0[1])*(P1[1]-P0[1]) );
@@ -219,7 +219,8 @@ double MOERTEL::Overlap::Clip_ParameterPointOnLine(const double* P0,const double
 /*----------------------------------------------------------------------*
  |  add segment (private)                                    mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::AddSegment(int id, MOERTEL::Segment* seg)
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::AddSegment(int id, MOERTEL::Segment* seg)
 {
   Teuchos::RCP<MOERTEL::Segment> tmp = Teuchos::rcp(seg);
   s_.insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(id,tmp));
@@ -229,7 +230,8 @@ bool MOERTEL::Overlap::AddSegment(int id, MOERTEL::Segment* seg)
 /*----------------------------------------------------------------------*
  |  add point (private)                                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::AddPointtoPolygon(const int id,const double* P)
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::AddPointtoPolygon(const int id,const double* P)
 {
   // check whether this point is already in there
   std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = p_.find(id);
@@ -256,7 +258,8 @@ bool MOERTEL::Overlap::AddPointtoPolygon(const int id,const double* P)
 /*----------------------------------------------------------------------*
  |  add point (private)                                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::AddPointtoPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::AddPointtoPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,
 			const int id,const double* P) {
 
   Teuchos::RCP<MOERTEL::Point> point = Teuchos::rcp(new MOERTEL::Point(id,P,OutLevel()));
@@ -268,7 +271,8 @@ bool MOERTEL::Overlap::AddPointtoPolygon(std::map<int,Teuchos::RCP<MOERTEL::Poin
 /*----------------------------------------------------------------------*
  |  remove point (private)                                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::RemovePointfromPolygon(const int id,const double* P)
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::RemovePointfromPolygon(const int id,const double* P)
 {
   // check whether this point is in there
   std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = p_.find(id);
@@ -289,7 +293,8 @@ bool MOERTEL::Overlap::RemovePointfromPolygon(const int id,const double* P)
 /*----------------------------------------------------------------------*
  |  get point view (private)                                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::PointView(std::vector<Teuchos::RCP<MOERTEL::Point> >& points)
+template <class IFace>
+void MOERTEL::Overlap<IFace>::PointView(std::vector<Teuchos::RCP<MOERTEL::Point> >& points)
 {
   // allocate vector of ptrs
   points.resize(SizePointPolygon());
@@ -316,7 +321,8 @@ void MOERTEL::Overlap::PointView(std::vector<Teuchos::RCP<MOERTEL::Point> >& poi
 /*----------------------------------------------------------------------*
  |  get segment view (protected)                             mwgee 11/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::SegmentView(std::vector<Teuchos::RCP<MOERTEL::Segment> >& segs)
+template <class IFace>
+void MOERTEL::Overlap<IFace>::SegmentView(std::vector<Teuchos::RCP<MOERTEL::Segment> >& segs)
 {
   // allocate vector of ptrs
   segs.resize(Nseg());
@@ -343,7 +349,8 @@ void MOERTEL::Overlap::SegmentView(std::vector<Teuchos::RCP<MOERTEL::Segment> >&
 /*----------------------------------------------------------------------*
  |  get point view (private)                                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::PointView(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,
+template <class IFace>
+void MOERTEL::Overlap<IFace>::PointView(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,
                                        std::vector<Teuchos::RCP<MOERTEL::Point> >& points)
 {
   // allocate vector of ptrs
@@ -372,7 +379,8 @@ void MOERTEL::Overlap::PointView(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,
 /*----------------------------------------------------------------------*
  |  get point view (private)                                 mwgee 11/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::PointView(std::vector<MOERTEL::Point*>& p,const int* nodeids,const int np)
+template <class IFace>
+void MOERTEL::Overlap<IFace>::PointView(std::vector<MOERTEL::Point*>& p,const int* nodeids,const int np)
 {
   p.resize(np);
   
@@ -408,7 +416,8 @@ void MOERTEL::Overlap::PointView(std::vector<MOERTEL::Point*>& p,const int* node
 	GAH
 */
 
-bool MOERTEL::Overlap::QuickOverlapTest()
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::QuickOverlapTest()
 {
   MOERTEL::Node** snode = sseg_.Nodes();
   MOERTEL::Node** mnode = mseg_.Nodes();
@@ -418,13 +427,13 @@ bool MOERTEL::Overlap::QuickOverlapTest()
   double dmin[3];
   double minlength;
   for (int i=0; i<3; ++i)
-    dmin[i] = snode[0]->X()[i] - mnode[0]->X()[i];
+    dmin[i] = snode[0]->XCoords()[i] - mnode[0]->XCoords()[i];
   minlength = MOERTEL::length(dmin,3);
   for (int slave=1; slave<nsnode; ++slave)
     for (int master=0; master<nmnode; ++master)
     {
       for (int i=0; i<3; ++i)
-        dmin[i] = snode[slave]->X()[i] - mnode[master]->X()[i];
+        dmin[i] = snode[slave]->XCoords()[i] - mnode[master]->XCoords()[i];
       double length = MOERTEL::length(dmin,3);
       if (length<minlength) minlength = length;
     }
@@ -435,13 +444,13 @@ bool MOERTEL::Overlap::QuickOverlapTest()
   if (nmnode==4)
   {
     double d1[3];
-    d1[0] = mnode[0]->X()[0] - mnode[2]->X()[0];
-    d1[1] = mnode[0]->X()[1] - mnode[2]->X()[1];
-    d1[2] = mnode[0]->X()[2] - mnode[2]->X()[2];
+    d1[0] = mnode[0]->XCoords()[0] - mnode[2]->XCoords()[0];
+    d1[1] = mnode[0]->XCoords()[1] - mnode[2]->XCoords()[1];
+    d1[2] = mnode[0]->XCoords()[2] - mnode[2]->XCoords()[2];
     double d2[3];
-    d2[0] = mnode[1]->X()[0] - mnode[3]->X()[0];
-    d2[1] = mnode[1]->X()[1] - mnode[3]->X()[1];
-    d2[2] = mnode[1]->X()[2] - mnode[3]->X()[2];
+    d2[0] = mnode[1]->XCoords()[0] - mnode[3]->XCoords()[0];
+    d2[1] = mnode[1]->XCoords()[1] - mnode[3]->XCoords()[1];
+    d2[2] = mnode[1]->XCoords()[2] - mnode[3]->XCoords()[2];
     double length1 = MOERTEL::length(d1,3);
     double length2 = MOERTEL::length(d2,3);
     if (length1>=length2) mdiam = length1;
@@ -450,17 +459,17 @@ bool MOERTEL::Overlap::QuickOverlapTest()
   else
   {
     double d1[3];
-    d1[0] = mnode[0]->X()[0] - mnode[1]->X()[0];
-    d1[1] = mnode[0]->X()[1] - mnode[1]->X()[1];
-    d1[2] = mnode[0]->X()[2] - mnode[1]->X()[2];
+    d1[0] = mnode[0]->XCoords()[0] - mnode[1]->XCoords()[0];
+    d1[1] = mnode[0]->XCoords()[1] - mnode[1]->XCoords()[1];
+    d1[2] = mnode[0]->XCoords()[2] - mnode[1]->XCoords()[2];
     double d2[3];
-    d2[0] = mnode[0]->X()[0] - mnode[2]->X()[0];
-    d2[1] = mnode[0]->X()[1] - mnode[2]->X()[1];
-    d2[2] = mnode[0]->X()[2] - mnode[2]->X()[2];
+    d2[0] = mnode[0]->XCoords()[0] - mnode[2]->XCoords()[0];
+    d2[1] = mnode[0]->XCoords()[1] - mnode[2]->XCoords()[1];
+    d2[2] = mnode[0]->XCoords()[2] - mnode[2]->XCoords()[2];
     double d3[3];
-    d3[0] = mnode[1]->X()[0] - mnode[2]->X()[0];
-    d3[1] = mnode[1]->X()[1] - mnode[2]->X()[1];
-    d3[2] = mnode[1]->X()[2] - mnode[2]->X()[2];
+    d3[0] = mnode[1]->XCoords()[0] - mnode[2]->XCoords()[0];
+    d3[1] = mnode[1]->XCoords()[1] - mnode[2]->XCoords()[1];
+    d3[2] = mnode[1]->XCoords()[2] - mnode[2]->XCoords()[2];
     double length1 = MOERTEL::length(d1,3);
     double length2 = MOERTEL::length(d2,3);
     double length3 = MOERTEL::length(d3,3);
@@ -472,13 +481,13 @@ bool MOERTEL::Overlap::QuickOverlapTest()
   if (nsnode==4)
   {
     double d1[3];
-    d1[0] = snode[0]->X()[0] - snode[2]->X()[0];
-    d1[1] = snode[0]->X()[1] - snode[2]->X()[1];
-    d1[2] = snode[0]->X()[2] - snode[2]->X()[2];
+    d1[0] = snode[0]->XCoords()[0] - snode[2]->XCoords()[0];
+    d1[1] = snode[0]->XCoords()[1] - snode[2]->XCoords()[1];
+    d1[2] = snode[0]->XCoords()[2] - snode[2]->XCoords()[2];
     double d2[3];
-    d2[0] = snode[1]->X()[0] - snode[3]->X()[0];
-    d2[1] = snode[1]->X()[1] - snode[3]->X()[1];
-    d2[2] = snode[1]->X()[2] - snode[3]->X()[2];
+    d2[0] = snode[1]->XCoords()[0] - snode[3]->XCoords()[0];
+    d2[1] = snode[1]->XCoords()[1] - snode[3]->XCoords()[1];
+    d2[2] = snode[1]->XCoords()[2] - snode[3]->XCoords()[2];
     double length1 = MOERTEL::length(d1,3);
     double length2 = MOERTEL::length(d2,3);
     if (length1>=length2) sdiam = length1;
@@ -487,17 +496,17 @@ bool MOERTEL::Overlap::QuickOverlapTest()
   else
   {
     double d1[3];
-    d1[0] = snode[0]->X()[0] - snode[1]->X()[0];
-    d1[1] = snode[0]->X()[1] - snode[1]->X()[1];
-    d1[2] = snode[0]->X()[2] - snode[1]->X()[2];
+    d1[0] = snode[0]->XCoords()[0] - snode[1]->XCoords()[0];
+    d1[1] = snode[0]->XCoords()[1] - snode[1]->XCoords()[1];
+    d1[2] = snode[0]->XCoords()[2] - snode[1]->XCoords()[2];
     double d2[3];
-    d2[0] = snode[0]->X()[0] - snode[2]->X()[0];
-    d2[1] = snode[0]->X()[1] - snode[2]->X()[1];
-    d2[2] = snode[0]->X()[2] - snode[2]->X()[2];
+    d2[0] = snode[0]->XCoords()[0] - snode[2]->XCoords()[0];
+    d2[1] = snode[0]->XCoords()[1] - snode[2]->XCoords()[1];
+    d2[2] = snode[0]->XCoords()[2] - snode[2]->XCoords()[2];
     double d3[3];
-    d3[0] = snode[1]->X()[0] - snode[2]->X()[0];
-    d3[1] = snode[1]->X()[1] - snode[2]->X()[1];
-    d3[2] = snode[1]->X()[2] - snode[2]->X()[2];
+    d3[0] = snode[1]->XCoords()[0] - snode[2]->XCoords()[0];
+    d3[1] = snode[1]->XCoords()[1] - snode[2]->XCoords()[1];
+    d3[2] = snode[1]->XCoords()[2] - snode[2]->XCoords()[2];
     double length1 = MOERTEL::length(d1,3);
     double length2 = MOERTEL::length(d2,3);
     double length3 = MOERTEL::length(d3,3);
@@ -509,11 +518,9 @@ bool MOERTEL::Overlap::QuickOverlapTest()
   
 // std::cerr << "minlength " << minlength << " sdiam " << sdiam << " mdiam " << mdiam;
 
-   // GAH EPSILON - max distance between mseg and sseg for contact purposes
+  // Max distance between mseg and sseg for contact purposes
   
-   double maxdia = 2.5;
-
-  if (minlength > maxdia * (sdiam + mdiam)) 
+  if (minlength > Rough_Search_Radius * (sdiam + mdiam)) 
   {
     // std::cerr << " test NOT passed\n";
     return false;
@@ -580,7 +587,8 @@ bool MOERTEL::Overlap::QuickOverlapTest()
 /*----------------------------------------------------------------------*
  |  perform a quick search (protected)                        mwgee 4/06|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::Centroid(
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::Centroid(
                       double xi[], 
                       const std::vector<Teuchos::RCP<MOERTEL::Point> >& points, 
                       const int np)
@@ -599,9 +607,8 @@ bool MOERTEL::Overlap::Centroid(
   const double* xi_ip1 = points[0]->Xi();
   A     += xi_ip1[0]*xi_i[1] - xi_i[0]*xi_ip1[1];
 
-// GAH - EPSILON check for zero area
-
-  if(fabs(A) < 1.0e-10) // bail - we do not have a polygon
+  // bail - if we do not have a polygon
+  if (fabs(A) <= std::numeric_limits<double>::min())
 	  return false;
 
   xi[0] += (xi_i[0]+xi_ip1[0])*(xi_ip1[0]*xi_i[1]-xi_i[0]*xi_ip1[1]);

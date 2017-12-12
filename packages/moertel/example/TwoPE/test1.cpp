@@ -45,7 +45,7 @@
 
 #include "Teuchos_StandardCatchMacros.hpp"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_MOERTEL_MPI
 #include "mpi.h"
 #include <assert.h>
 #include "Epetra_MpiComm.h"
@@ -60,7 +60,7 @@
 int main(int argc, char *argv[])
 {
 
-#ifdef HAVE_MPI
+#ifdef HAVE_MOERTEL_MPI
   bool success = false;
   bool verbose = false;
   try {

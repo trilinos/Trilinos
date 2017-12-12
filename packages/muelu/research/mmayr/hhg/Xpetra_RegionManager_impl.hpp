@@ -42,7 +42,7 @@ void Xpetra::RegionNode<GO>::appendRegionID(const GO regionID)
 }
 
 template<class GO>
-const bool Xpetra::RegionNode<GO>::IsInterfaceNode() const
+const bool Xpetra::RegionNode<GO>::isInterfaceNode() const
 {
   if (regions_.size() > 1)
     return true;
@@ -123,9 +123,9 @@ const bool Xpetra::RegionNodes<GO>::hasNode(const GO nodeID) const
 }
 
 template<class GO>
-const Xpetra::RegionNode<GO>& Xpetra::RegionNodes<GO>::getNode(const GO nodeID) const
+const Xpetra::RegionNode<GO>& Xpetra::RegionNodes<GO>::getNode(const GO globalNodeID) const
 {
-  return *nodes_[nodeID];
+  return *nodes_[globalNodeID];
 }
 
 template<class GO>
@@ -196,6 +196,22 @@ Teuchos::RCP<const Teuchos::Array<GO> > Xpetra::RegionNodes<GO>::getNodeGIDsPerP
 }
 
 template<class GO>
+Teuchos::RCP<const Teuchos::Array<GO> > Xpetra::RegionNodes<GO>::getNodeGIDsPerRegion(
+    const GO regionID) const
+{
+  Teuchos::RCP<Teuchos::Array<GO> > myNodeGIDs = Teuchos::rcp(new Teuchos::Array<GO>());
+  myNodeGIDs->clear();
+
+  typename Teuchos::Array<GO>::const_iterator it;
+  for (it = nodesPerRegion_[regionID].begin(); it < nodesPerRegion_[regionID].end(); ++it)
+    myNodeGIDs->push_back(*it);
+
+  std::cout << "Region " << regionID << ": " << *myNodeGIDs << std::endl;
+
+  return myNodeGIDs;
+}
+
+template<class GO>
 Teuchos::RCP<const Teuchos::Array<GO> > Xpetra::RegionNodes<GO>::getNodeGIDsPerRegionAndProc(
     const GO regionID, const int myRank) const
 {
@@ -216,6 +232,21 @@ Teuchos::RCP<const Teuchos::Array<GO> > Xpetra::RegionNodes<GO>::getNodeGIDsPerR
   return myNodeGIDs;
 }
 
+template<class GO>
+Teuchos::Array<std::tuple<int,Teuchos::Array<GO> > > Xpetra::RegionNodes<GO>::getMappingInterfaceNodesToRegions() const
+{
+  Teuchos::Array<std::tuple<int,Teuchos::Array<GO> > > intNodesToRegions;
+  intNodesToRegions.clear();
+
+  for (GO i = 0; i < nodes_.size(); ++i)
+  {
+    if (nodes_[i]->isInterfaceNode())
+      intNodesToRegions.push_back(std::make_tuple(nodes_[i]->getNodeID(), nodes_[i]->getRegions()));
+  }
+
+  return intNodesToRegions;
+}
+
 template<class SC, class LO, class GO, class NO>
 Xpetra::RegionManager<SC,LO,GO,NO>::RegionManager(
     const std::string& mappingFileName,
@@ -233,6 +264,12 @@ Xpetra::RegionManager<SC,LO,GO,NO>::RegionManager(
   readMappingFromFile(mappingFileName);
   if (comm_->getRank() == 0)
     nodes_->printAllNodes(*out);
+
+  setupMappingNodesPerRegion();
+  if (comm_->getRank() == 0)
+    nodes_->printRegionData(*out);
+
+  setupRowMaps();
 
   setupMappingNodesPerRegion();
   if (comm_->getRank() == 0)
@@ -331,6 +368,11 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupMappingNodesPerRegion()
 {
   nodes_->setupMappingNodesPerRegion(numRegions_);
 
+  for (GO regID = 0; regID < numRegions_; ++regID)
+  {
+
+  }
+
   return;
 }
 
@@ -395,6 +437,36 @@ void Xpetra::RegionManager<SC,LO,GO,NO>::setupRegionRowMaps()
   }
 
   return;
+}
+
+template<class SC, class LO, class GO, class NO>
+const GO Xpetra::RegionManager<SC,LO,GO,NO>::getNumNodesPerRegion(
+    const GO regID) const
+{
+  return regionMaps_[regID]->getGlobalNumElements();
+}
+
+template<class SC, class LO, class GO, class NO>
+Teuchos::Array<std::tuple<GO,GO> > Xpetra::RegionManager<SC,LO,GO,NO>::getRegionToAll(
+    const GO regID) const
+{
+  const Teuchos::Array<GO> nodesPerRegion = *nodes_->getNodeGIDsPerRegion(regID);
+
+  Teuchos::Array<std::tuple<GO,GO> > regionToAll;
+  regionToAll.clear();
+  regionToAll.resize(nodes_->getNumNodesPerRegion(regID));
+
+  for (int i = 0; i < nodesPerRegion.size(); ++i)
+    regionToAll[i] = std::make_tuple(i, nodesPerRegion[i]);
+
+  return regionToAll;
+}
+
+template<class SC, class LO, class GO, class NO>
+Teuchos::Array<std::tuple<int,Teuchos::Array<GO> > > Xpetra::RegionManager<SC,
+    LO,GO,NO>::getInterfaceNodesToRegions() const
+{
+  return nodes_->getMappingInterfaceNodesToRegions();
 }
 
 #endif /* XPETRA_REGION_MANAGER_IMPL_HPP_ */

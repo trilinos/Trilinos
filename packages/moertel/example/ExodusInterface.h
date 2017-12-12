@@ -89,8 +89,8 @@ public:
 	   num_nodes, num_elem, num_elem_blk, 
 	   num_node_sets, num_side_sets);
 
-    vector<double> coord(3);
-    vector<int>    vertices(data.NumVerticesPerElement());
+    std::vector<double> coord(3);
+    std::vector<int>    vertices(data.NumVerticesPerElement());
 
     const Epetra_Map& RowMap = data.RowMap();
 //    const Epetra_Map& VertexMap = data.VertexMap();

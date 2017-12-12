@@ -8,6 +8,9 @@
     <ParameterList id="7" name="Solution History">
       <Parameter docString="" id="5" isDefault="true" isUsed="true" name="Storage Type" type="string" value="Unlimited"/>
       <Parameter docString="" id="6" isDefault="true" isUsed="true" name="Storage Limit" type="int" value="2"/>
+      <ParameterList name="Interpolator">
+        <Parameter name="Interpolator Type" type="string" value="Lagrange"/>
+      </ParameterList>
     </ParameterList>
     <ParameterList id="31" name="Time Step Control">
       <Parameter docString="" id="8" isDefault="true" isUsed="true" name="Initial Time" type="double" value="0.00000000000000000e+00"/>

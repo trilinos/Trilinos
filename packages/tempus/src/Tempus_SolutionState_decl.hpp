@@ -14,6 +14,7 @@
 #include "Teuchos_Describable.hpp"
 // Thrya
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_ModelEvaluator.hpp"
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionStateMetaData.hpp"
@@ -48,9 +49,6 @@ class SolutionState :
 {
 public:
 
-  /// Destructor
-  virtual ~SolutionState() {};
-
   SolutionState(
     const Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
@@ -78,6 +76,10 @@ public:
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
     const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState);
 
+  SolutionState(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState);
+
   /// This is a shallow copy constructor, use clone for a deep copy constructor
   SolutionState(const SolutionState<Scalar>& ss);
 
@@ -87,50 +89,41 @@ public:
   /// This is a deep copy
   virtual void copy(Teuchos::RCP<SolutionState<Scalar> > ss);
 
+  /// This is a deep copy of the solution and stepper state
+  virtual void copySolutionStepperState(Teuchos::RCP<SolutionState<Scalar> >s);
+
+  /// Destructor
+  virtual ~SolutionState() {};
+
   /// \name Accessor methods
   //@{
-    /// Get time
     virtual Scalar getTime() const {return metaData_->getTime();}
-
-    /// Get index
     virtual Scalar getIndex() const {return metaData_->getIStep();}
-
-    /// Get time step
     virtual Scalar getTimeStep() const {return metaData_->getDt();}
 
-    /// Get order
     virtual Scalar getOrder() const {return metaData_->getOrder();}
-
-    /// Set order
     virtual void setOrder(Scalar order) {metaData_->setOrder(order);}
 
-    /// Return the Solution status
     virtual Status getSolutionStatus() const
       {return metaData_->getSolutionStatus();};
 
-    /// Get IsSynced
     virtual bool getOutput() const {return metaData_->getOutput();}
-
-    /// Set IsSynced
     virtual void setOutput(bool output) {metaData_->setOutput(output);}
 
-    /// Get IsSynced
     virtual bool getIsSynced() const {return metaData_->getIsSynced();}
-
-    /// Set IsSynced
     virtual void setIsSynced(bool isSynced) {metaData_->setIsSynced(isSynced);}
 
-    /// Return the Stepper status
     virtual Status getStepperStatus() const
       {return stepperState_->stepperStatus_;}
+    virtual void setStepperStatus(Status status)
+      {stepperState_->stepperStatus_ = status;}
 
-    /// Return Meta Data
     virtual Teuchos::RCP<SolutionStateMetaData<Scalar> > getMetaData()
       { return metaData_; }
-
-    /// Return Meta Data
-    virtual Teuchos::RCP<const SolutionStateMetaData<Scalar> > getMetaData() const
-      { return metaData_; }
+    virtual Teuchos::RCP<const SolutionStateMetaData<Scalar> >
+      getMetaData() const { return metaData_; }
+    virtual void setMetaData(Teuchos::RCP<SolutionStateMetaData<Scalar> > md)
+      {metaData_ = md;}
 
     /// Get the current solution, x.
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() {return x_;}
@@ -161,7 +154,6 @@ public:
     /// Get the StepperState
     virtual Teuchos::RCP<const Tempus::StepperState<Scalar> > getStepperState() const
       { return stepperState_; }
-
   //@}
 
 

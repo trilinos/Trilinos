@@ -398,16 +398,18 @@ void TimeStepControl<Scalar>::setParameterList(
     outputTimes_.clear();
     std::string str = tscPL_->get<std::string>("Output Time List");
     std::string delimiters(",");
+    // Skip delimiters at the beginning
     std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
+    // Find the first delimiter
     std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
     while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
+      // Found a token, add it to the vector
       std::string token = str.substr(lastPos,pos-lastPos);
       outputTimes_.push_back(Scalar(std::stod(token)));
-      if(pos==std::string::npos)
-        break;
+      if(pos==std::string::npos) break;
 
-      lastPos = str.find_first_not_of(delimiters, pos);
-      pos = str.find_first_of(delimiters, lastPos);
+      lastPos = str.find_first_not_of(delimiters, pos); // Skip delimiters
+      pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
     }
 
     Scalar outputTimeInterval = tscPL_->get<double>("Output Time Interval");
@@ -431,8 +433,7 @@ void TimeStepControl<Scalar>::setParameterList(
     while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
       std::string token = str.substr(lastPos,pos-lastPos);
       outputIndices_.push_back(int(std::stoi(token)));
-      if(pos==std::string::npos)
-        break;
+      if(pos==std::string::npos) break;
 
       lastPos = str.find_first_not_of(delimiters, pos);
       pos = str.find_first_of(delimiters, lastPos);

@@ -57,7 +57,7 @@ setModel(
   spl->remove("Force W Update");
   fsa_model_ =
     rcp(new StaggeredForwardSensitivityModelEvaluator<Scalar>(
-          appModel, spl));
+          appModel, false, spl));
 
   // Create state and sensitivity steppers
   RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
@@ -203,23 +203,38 @@ takeStep(
     sensSolutionHistory_->addState(sens_state);
   }
 
+  // Get our working state
+  RCP<SolutionState<Scalar> > prod_state = solutionHistory->getWorkingState();
+  RCP<DMVPV> X, XDot, XDotDot;
+  X = rcp_dynamic_cast<DMVPV>(prod_state->getX());
+  XDot = rcp_dynamic_cast<DMVPV>(prod_state->getXDot());
+  if (prod_state->getXDotDot() != Teuchos::null)
+    XDotDot = rcp_dynamic_cast<DMVPV>(prod_state->getXDotDot());
+
   // Take step for state equations
   stateSolutionHistory_->initWorkingState();
-  stateSolutionHistory_->getWorkingState()->getMetaData()->copy(
-    solutionHistory->getWorkingState()->getMetaData());
+  RCP<SolutionState<Scalar> > state = stateSolutionHistory_->getWorkingState();
+  state->getMetaData()->copy(prod_state->getMetaData());
   stateStepper_->takeStep(stateSolutionHistory_);
 
-  // Get current state and set in sensitivity model evaluator
-   RCP<SolutionState<Scalar> > state =
-     stateSolutionHistory_->getWorkingState();
-  RCP<const VectorBase<Scalar> > x = state->getX();
-  RCP<const VectorBase<Scalar> > xdot = state->getXDot();
-  RCP<const VectorBase<Scalar> > xdotdot = state->getXDotDot();
-  fsa_model_->setModelX(x);
-  fsa_model_->setModelXDot(xdot);
-  fsa_model_->setModelXDotDot(xdotdot);
+  // Set state components of product state
+  assign(X->getNonconstMultiVector()->col(0).ptr(), *(state->getX()));
+  assign(XDot->getNonconstMultiVector()->col(0).ptr(), *(state->getXDot()));
+  if (XDotDot != Teuchos::null)
+    assign(XDotDot->getNonconstMultiVector()->col(0).ptr(),
+           *(state->getXDotDot()));
+  prod_state->setOrder(state->getOrder());
 
-  // Reuse state solver if requested
+  // If step passed promote the state, otherwise fail and stop
+  if (state->getStepperStatus() == Status::FAILED ||
+      state->getSolutionStatus() == Status::FAILED) {
+    prod_state->getStepperState()->stepperStatus_ = Status::FAILED;
+    return;
+  }
+  stateSolutionHistory_->promoteWorkingState();
+
+  // Get forward state in sensitivity model evaluator
+  fsa_model_->setForwardSolutionHistory(stateSolutionHistory_);
   if (reuse_solver_ && stateStepper_->getSolver() != Teuchos::null) {
     RCP<Thyra::NOXNonlinearSolver> nox_solver =
       rcp_dynamic_cast<Thyra::NOXNonlinearSolver>(stateStepper_->getSolver());
@@ -229,64 +244,36 @@ takeStep(
 
   // Take step in senstivity equations
   sensSolutionHistory_->initWorkingState();
-  sensSolutionHistory_->getWorkingState()->getMetaData()->copy(
-    solutionHistory->getWorkingState()->getMetaData());
-  sensitivityStepper_->takeStep(sensSolutionHistory_);
-
-  // Get current sensitivities
-  RCP<const MultiVectorBase<Scalar> > dxdp, dxdotdp, dxdotdotdp;
   RCP<SolutionState<Scalar> > sens_state =
     sensSolutionHistory_->getWorkingState();
-  dxdp = rcp_dynamic_cast<const DMVPV>(
-    sens_state->getX())->getMultiVector();
-  dxdotdp = rcp_dynamic_cast<const DMVPV>(
-    sens_state->getXDot())->getMultiVector();
-  if (sens_state->getXDotDot() != Teuchos::null)
-    dxdotdotdp = rcp_dynamic_cast<const DMVPV>(
-      sens_state->getXDotDot())->getMultiVector();
+  sens_state->getMetaData()->copy(prod_state->getMetaData());
+  sensitivityStepper_->takeStep(sensSolutionHistory_);
 
+  // Set sensitivity components of product state
+  RCP<const MultiVectorBase<Scalar> > dxdp =
+    rcp_dynamic_cast<const DMVPV>(sens_state->getX())->getMultiVector();
   const int num_param = dxdp->domain()->dim();
   const Teuchos::Range1D rng(1,num_param);
-
-  // Form product solutions
-  RCP<DMVPV> X, XDot, XDotDot;
-  RCP<const Thyra::VectorSpaceBase<Scalar> > prod_space =
-    multiVectorProductVectorSpace(dxdp->range(), num_param+1);
-  X = rcp_dynamic_cast<DMVPV>(createMember(prod_space));
-  assign(X->getNonconstMultiVector()->col(0).ptr(), *x);
   assign(X->getNonconstMultiVector()->subView(rng).ptr(), *dxdp);
-  XDot = rcp_dynamic_cast<DMVPV>(createMember(prod_space));
-  assign(XDot->getNonconstMultiVector()->col(0).ptr(), *xdot);
+  RCP<const MultiVectorBase<Scalar> > dxdotdp =
+    rcp_dynamic_cast<const DMVPV>(sens_state->getXDot())->getMultiVector();
   assign(XDot->getNonconstMultiVector()->subView(rng).ptr(), *dxdotdp);
-  if (xdotdot != Teuchos::null) {
-    XDotDot = rcp_dynamic_cast<DMVPV>(createMember(prod_space));
-    assign(XDotDot->getNonconstMultiVector()->col(0).ptr(), *xdot);
+  if (sens_state->getXDotDot() != Teuchos::null) {
+    RCP<const MultiVectorBase<Scalar> > dxdotdotdp =
+      rcp_dynamic_cast<const DMVPV>(sens_state->getXDotDot())->getMultiVector();
     assign(XDotDot->getNonconstMultiVector()->subView(rng).ptr(), *dxdotdotdp);
   }
-
-  // Add step to solution history
-  RCP<SolutionState<Scalar> > prod_state = solutionHistory->getWorkingState();
-  assign(prod_state->getX().ptr(), *X);
-  assign(prod_state->getXDot().ptr(), *XDot);
-  if (XDotDot != Teuchos::null)
-    assign(prod_state->getXDotDot().ptr(), *XDotDot);
   prod_state->setOrder(std::min(state->getOrder(), sens_state->getOrder()));
 
-  // Determine whether step passed or failed
-  bool passed = true;
-  if (state->getStepperStatus() == Status::FAILED ||
-      state->getSolutionStatus() == Status::FAILED ||
-      sens_state->getStepperStatus() == Status::FAILED ||
-      sens_state->getSolutionStatus() == Status::FAILED)
-    passed = false;
-
-  if (passed) {
-    prod_state->getStepperState()->stepperStatus_ = Status::PASSED;
-    stateSolutionHistory_->promoteWorkingState();
-    sensSolutionHistory_->promoteWorkingState();
+  // If step passed promote the state, otherwise fail and stop
+  if (sens_state->getStepperStatus() == Status::FAILED ||
+      sens_state->getSolutionStatus() == Status::FAILED) {
+    prod_state->getStepperState()->stepperStatus_ = Status::FAILED;
   }
-  else
-     prod_state->getStepperState()->stepperStatus_ = Status::FAILED;
+  else {
+    sensSolutionHistory_->promoteWorkingState();
+    prod_state->getStepperState()->stepperStatus_ = Status::PASSED;
+  }
 }
 
 
@@ -330,10 +317,12 @@ void StepperStaggeredForwardSensitivity<Scalar>::
 setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  if (pList == Teuchos::null)
-    stepperPL_ = this->getDefaultParameters();
-  else
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  } else {
     stepperPL_ = pList;
+  }
   // Can not validate because of optional Parameters (e.g., Solver Name).
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 }

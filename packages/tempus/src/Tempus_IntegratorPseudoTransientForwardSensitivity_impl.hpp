@@ -64,14 +64,10 @@ advanceTime()
 
   // Run state integrator and get solution
   bool state_status = state_integrator_->advanceTime();
-  RCP<VectorBase<Scalar> > x = state_integrator_->getX();
-  RCP<VectorBase<Scalar> > x_dot = state_integrator_->getXdot();
-  RCP<VectorBase<Scalar> > x_dot_dot = state_integrator_->getXdotdot();
 
   // Set solution in sensitivity ME
-  sens_model_->setModelX(x);
-  sens_model_->setModelXDot(x_dot);
-  sens_model_->setModelXDotDot(x_dot_dot);
+  sens_model_->setForwardSolutionHistory(
+    state_integrator_->getSolutionHistory());
 
   // Reuse state solver if requested
   if (reuse_solver_ &&
@@ -101,14 +97,10 @@ advanceTime(const Scalar timeFinal)
 
   // Run state integrator and get solution
   bool state_status = state_integrator_->advanceTime(timeFinal);
-  RCP<VectorBase<Scalar> > x = state_integrator_->getX();
-  RCP<VectorBase<Scalar> > x_dot = state_integrator_->getXdot();
-  RCP<VectorBase<Scalar> > x_dot_dot = state_integrator_->getXdotdot();
 
   // Set solution in sensitivity ME
-  sens_model_->setModelX(x);
-  sens_model_->setModelXDot(x_dot);
-  sens_model_->setModelXDotDot(x_dot_dot);
+  sens_model_->setForwardSolutionHistory(
+    state_integrator_->getSolutionHistory());
 
   // Reuse state solver if requested
   if (reuse_solver_ &&
@@ -424,7 +416,8 @@ createSensitivityModel(
   force_W_update_ = pl->get("Force W Update", true);
   pl->remove("Reuse State Linear Solver");
   pl->remove("Force W Update");
-  return rcp(new StaggeredForwardSensitivityModelEvaluator<Scalar>(model, pl));
+  return rcp(new StaggeredForwardSensitivityModelEvaluator<Scalar>(
+               model, true, pl));
 }
 
 template<class Scalar>
@@ -538,11 +531,6 @@ buildSolutionHistory()
                                     state->getStepperState()->clone()));
     solutionHistory_->addState(prod_state);
   }
-
-  // Set current state to the last added state
-  RCP<SolutionState<Scalar> > last_state =
-    (*solutionHistory_)[solutionHistory_->getNumStates()-1];
-  solutionHistory_->setCurrentState(last_state);
 }
 
 /// Non-member constructor

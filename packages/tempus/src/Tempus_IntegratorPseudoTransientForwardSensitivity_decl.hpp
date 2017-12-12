@@ -28,6 +28,22 @@ namespace Tempus {
  * equations with the state frozen to the computed steady-state.  This
  * integrator specializes the transient sensitivity methods implemented by
  * Tempus::IntegratorForwardSensitivity to this case.
+ *
+ * Consider an implicit ODE f(x_dot,x,p) = 0 with a stable steady-state solution
+ * x = x^s, x_dot = 0 where f(0,x^s,p) = 0 and all of the eigenvalues of
+ * df/dx(0,x^s,p) are in the right half-plane (for an explicit ODE, the
+ * eigenvalues must be in the left half-plane).  In the pseudo-transient method
+ * a time-integrator is applied to f(x_dot,x,p) = 0 until x_dot is sufficiently
+ * small.  Now consider the forward sensitivity equations:
+ *       df/dx_dot*z_dot + df/dx*z + df/dp = 0
+ * where z = dx/dp.  For pseudo-transient forward sensitivities, the above is
+ * integrated from z(0) = 0 until z_dot is sufficiently small, in which case
+ *       z^s = -(df/dx)^{-1}*(df/dp).
+ * Then the final sensitivity of g is
+ *       dg/dp + dg/dx*z^s.
+ * One can see that z^s is the only steady-state solution of the sensitivity
+ * equations, since df/dx and df/dp are constant, and must be linearly stable
+ * since it has the same Jacobian matrix as the forward equations.
  */
 template<class Scalar>
 class IntegratorPseudoTransientForwardSensitivity :

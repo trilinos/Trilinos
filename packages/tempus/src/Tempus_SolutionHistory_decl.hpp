@@ -16,6 +16,7 @@
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionState.hpp"
+#include "Tempus_Interpolator.hpp"
 
 
 namespace Tempus {
@@ -29,7 +30,7 @@ enum StorageType {
 };
 
 
-/** \brief SolutionHistory is bascially a container of SolutionStates.
+/** \brief SolutionHistory is basically a container of SolutionStates.
  *  SolutionHistory maintains a collection of SolutionStates for later
  *  retrival and reuse, such as checkpointing, restart, and undo
  *  operations.
@@ -49,6 +50,12 @@ enum StorageType {
  *   - Interpolating between SolutionStates
  *     - Interpolated SolutionStates may not be suitable for adjoint
  *       solutions, restart, or undo operations (see SolutionState).
+ *
+ *  Rules of thumb for the minimum storage limit:
+ *   - Explicit one-step methods can update the solution state in-place
+ *     --> StorageLimit_ = 1.
+ *   - Implicit one-step methods need two solution states --> StorageLimit_ = 2.
+ *   - MultiStep methods require k past solution states --> StorageLimit_ = k+1.
  */
 template<class Scalar>
 class SolutionHistory
@@ -70,6 +77,9 @@ public:
     /// Add solution state to history
     void addState(const Teuchos::RCP<SolutionState<Scalar> >& state);
 
+    /// Add a working solution state to history
+    void addWorkingState(const Teuchos::RCP<SolutionState<Scalar> >& state);
+
     /// Remove solution state
     void removeState(const Teuchos::RCP<SolutionState<Scalar> >& state);
 
@@ -82,12 +92,17 @@ public:
     /// Generate and interpolate a new solution state at requested time
     Teuchos::RCP<SolutionState<Scalar> > interpolateState(const Scalar time) const;
 
+    /// Interpolate solution state at requested time and store in supplied state
+    void interpolateState(const Scalar time,
+                          SolutionState<Scalar>* state_out) const;
+
     /// Initialize the working state
     void initWorkingState();
 
     /// Promote the working state to current state
     void promoteWorkingState();
 
+    void clear() {history_->clear();}
   //@}
 
   /// \name Accessor methods
@@ -118,11 +133,11 @@ public:
 
     /// Return the current state, i.e., the last accepted state
     Teuchos::RCP<SolutionState<Scalar> > getCurrentState() const
-      { return currentState_; }
-
-    /// Set the current state, i.e., the last accepted state
-    void setCurrentState(const Teuchos::RCP<SolutionState<Scalar> >& state)
-      { currentState_ = state; }
+    {
+      const int n = history_->size();
+      return (workingState_ == Teuchos::null or n == 1) ? (*history_)[n-1]
+                                                        : (*history_)[n-2];
+    }
 
     /// Return the working state
     Teuchos::RCP<SolutionState<Scalar> > getWorkingState() const
@@ -141,9 +156,10 @@ public:
     void setStorageLimit(int storage_limit);
 
     /// Get the maximum storage of this history
-    int getStorageLimit() const {return storageLimit;}
+    int getStorageLimit() const {return storageLimit_;}
 
-    StorageType getStorageType() {return storageType;}
+    void setStorageType(StorageType st) {storageType_ = st;}
+    StorageType getStorageType() {return storageType_;}
 
     /// Return the current minimum time of the SolutionStates
     Scalar minTime() const {return (history_->front())->getTime();}
@@ -167,31 +183,28 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-//  /// \name Interpolation Methods
-//  //@{
-//    /// Set the interpolator for this history
-//    void setInterpolator(const Teuchos::RCP<InterpolatorBase<Scalar> >& interpolator);
-//    Teuchos::RCP<InterpolatorBase<Scalar> > getNonconstInterpolator();
-//    Teuchos::RCP<const InterpolatorBase<Scalar> > getInterpolator() const;
-//    /// Unset the interpolator for this history
-//    Teuchos::RCP<InterpolatorBase<Scalar> > unSetInterpolator();
-//  //@}
+ /// \name Interpolation Methods
+ //@{
+   /// Set the interpolator for this history
+   void setInterpolator(const Teuchos::RCP<Interpolator<Scalar> >& interpolator);
+   Teuchos::RCP<Interpolator<Scalar> > getNonconstInterpolator();
+   Teuchos::RCP<const Interpolator<Scalar> > getInterpolator() const;
+   /// Unset the interpolator for this history
+   Teuchos::RCP<Interpolator<Scalar> > unSetInterpolator();
+ //@}
 
 protected:
 
   Teuchos::RCP<Teuchos::ParameterList>      shPL_;
   Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history_;
-  //Teuchos::RCP<InterpolatorBase<Scalar> >   interpolator;
-  StorageType                               storageType;
-  int                                       storageLimit;
+  Teuchos::RCP<Interpolator<Scalar> >       interpolator_;
+  StorageType                               storageType_;
+  int                                       storageLimit_;
 
-  Teuchos::RCP<SolutionState<Scalar> > currentState_; ///< The last accepted state
   Teuchos::RCP<SolutionState<Scalar> > workingState_; ///< The state being worked on
 };
 
-/** \brief Nonmember constructor
- * \relates SolutionHistory
- */
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> >
 solutionHistory(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);

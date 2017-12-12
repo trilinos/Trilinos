@@ -23,6 +23,7 @@
 #include "EpetraExt_MultiVectorIn.h"
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_BlockMapIn.h"
+#include "EpetraExt_MatrixMatrix.h"
 
 #include "Teuchos_Assert.hpp"
 
@@ -41,6 +42,40 @@ struct widget {
 
 void stripTrailingJunk(char *command);
 void printGrpMaps(std::vector < Epetra_Map* > &mapPerGrp, int maxRegPerProc, char *str);
+
+void compositeToRegional(Epetra_Vector* compVec,
+    std::vector<Epetra_Vector*>& quasiRegVecs,
+    std::vector<Epetra_Vector*>& regVecs, const int maxRegPerProc,
+    std::vector<Epetra_Map*> rowMapPerGrp,
+    std::vector<Epetra_Map*> revisedRowMapPerGrp,
+    std::vector<Epetra_Import*> rowImportPerGrp)
+{
+  // quasiRegional layout
+  for (int j = 0; j < maxRegPerProc; j++) {
+    // create empty vectors and fill it by extracting data from composite vector
+    quasiRegVecs[j] = new Epetra_Vector(*(rowMapPerGrp[j]), true);
+    int err = quasiRegVecs[j]->Import(*compVec, *(rowImportPerGrp[j]), Insert);
+    TEUCHOS_ASSERT(err == 0);
+  }
+
+  // regional layout
+  for (int j = 0; j < maxRegPerProc; j++) {
+    // create regVecs vector (copy from quasiRegVecs and swap the map)
+    regVecs[j] = new Epetra_Vector(*(quasiRegVecs[j]));
+    int err = regVecs[j]->ReplaceMap(*(revisedRowMapPerGrp[j]));
+    TEUCHOS_ASSERT(err == 0);
+  }
+
+  return;
+}
+
+void createRegionalVector(std::vector<Epetra_Vector*>& regVecs,
+    const int maxRegPerProc, std::vector<Epetra_Map*> revisedRowMapPerGrp)
+{
+  for (int j = 0; j < maxRegPerProc; j++)
+    regVecs[j] = new Epetra_Vector(*(revisedRowMapPerGrp[j]), true);
+  return;
+}
 
 // Interact with a Matlab program through a bunch of myData_procID files.
 // Basically, the matlab program issues a bunch of commands associated with
@@ -98,14 +133,13 @@ int main(int argc, char *argv[]) {
   // ******************************************************************
 
 
-  std::vector<int>  myRegions;      // regions that myRank owns
-  Epetra_CrsMatrix* AComp = NULL;   // composite form of matrix
-  Epetra_CrsMatrix* ACompSplit = NULL;   // composite form of matrix
-  Epetra_Map*       mapComp= NULL;  // composite map used to build AComp
+  std::vector<int> myRegions; // regions that myRank owns
+  Epetra_CrsMatrix* AComp = NULL; // composite form of matrix
+  Epetra_CrsMatrix* ACompSplit = NULL; // composite form of matrix
+  Epetra_Map* mapComp= NULL; // composite map used to build AComp
 
   // regionsPerGIDWithGhosts[i] lists all regions that share the ith composite GID
   // associated with myRank's composite matrix col Map.
-
   Epetra_MultiVector *regionsPerGIDWithGhosts = NULL;
 
   /* rowMapPerGrp[i] and colMapPerGrp[i] are based on the composite maps, i.e.
@@ -125,28 +159,30 @@ int main(int argc, char *argv[]) {
    *   never used for actual calculations.
    */
 
-  // rowMapPerGrp[i] gives the row map associated with myRank's ith region
+  std::vector < Epetra_Map* > rowMapPerGrp(maxRegPerProc); // row map associated with myRank's ith region in composite layout
+  std::vector < Epetra_Map* > colMapPerGrp(maxRegPerProc); // column map associated with myRank's ith region in composite layout
+  std::vector < Epetra_Map* > revisedRowMapPerGrp(maxRegPerProc); // revised row map associated with myRank's ith region for regional layout
+  std::vector < Epetra_Map* > revisedColMapPerGrp(maxRegPerProc); // revised column map associated with myRank's ith region for regional layout
 
-  std::vector < Epetra_Map* > rowMapPerGrp(maxRegPerProc);
-  std::vector < Epetra_Map* > colMapPerGrp(maxRegPerProc);
-  std::vector < Epetra_Map* > revisedRowMapPerGrp(maxRegPerProc);
-  std::vector < Epetra_Map* > revisedColMapPerGrp(maxRegPerProc);
+  std::vector< Epetra_Import* > rowImportPerGrp(maxRegPerProc); // row importers per group
+  std::vector< Epetra_Import* > colImportPerGrp(maxRegPerProc); // column importers per group
+  std::vector< Epetra_Export* > rowExportPerGrp(maxRegPerProc); // row exporters per group
 
-  std::vector< Epetra_Import* > rowImportPerGrp(maxRegPerProc);
-  std::vector< Epetra_Import* > colImportPerGrp(maxRegPerProc);
-  std::vector< Epetra_Export* > rowExportPerGrp(maxRegPerProc);
+  std::vector< Epetra_CrsMatrix * > quasiRegionGrpMats(maxRegPerProc); // region-wise matrices with quasiRegion maps (= composite GIDs)
+  std::vector< Epetra_CrsMatrix * > regionGrpMats(maxRegPerProc); // region-wise matrices in true region layout with unique GIDs for replicated interface DOFs
 
-  std::vector< Epetra_CrsMatrix * > quasiRegionGrpMats(maxRegPerProc);
-  std::vector< Epetra_CrsMatrix * > regionGrpMats(maxRegPerProc);
+  std::vector< Epetra_Map* > coarseRowMapPerGrp(maxRegPerProc); // region-wise row map in true region layout with unique GIDs for replicated interface DOFs
+  std::vector< Epetra_Map* > coarseColMapPerGrp(maxRegPerProc); // region-wise columns map in true region layout with unique GIDs for replicated interface DOFs
+  std::vector< Epetra_CrsMatrix * > regionGrpProlong(maxRegPerProc); // region-wise prolongator in true region layout with unique GIDs for replicated interface DOFs
 
-  Epetra_Vector* compX = NULL;
-  Epetra_Vector* compY = NULL;
-  Epetra_Vector* regYComp = NULL;
+  Epetra_Vector* compX = NULL; // initial guess for truly composite calculations
+  Epetra_Vector* compY = NULL; // result vector for truly composite calculations
+  Epetra_Vector* regYComp = NULL; // result vector in composite layout, but computed via regional operations
 
-  std::vector<Epetra_Vector*> quasiRegX(maxRegPerProc);
-  std::vector<Epetra_Vector*> quasiRegY(maxRegPerProc);
-  std::vector<Epetra_Vector*> regX(maxRegPerProc);
-  std::vector<Epetra_Vector*> regY(maxRegPerProc);
+  std::vector<Epetra_Vector*> quasiRegX(maxRegPerProc); // initial guess associated with myRank's ith region in quasiRegional layout
+  std::vector<Epetra_Vector*> quasiRegY(maxRegPerProc); // result vector associated with myRank's ith region in quasiRegional layout
+  std::vector<Epetra_Vector*> regX(maxRegPerProc); // initial guess associated with myRank's ith region in regional layout
+  std::vector<Epetra_Vector*> regY(maxRegPerProc); // result vector associated with myRank's ith region in regional layout
 
   std::vector<int> intIDs; // LIDs of interface DOFs
 
@@ -561,37 +597,10 @@ int main(int argc, char *argv[]) {
       // perform matvec in composite layout
       AComp->Apply(*compX, *compY);
 
-      /* Create input and result vector in regional layout
-       *
-       * For the input vector, we follow a similar path as for the matrix:
-       * 1. Create a quasiRegion vector by Import() of compX to quasiRegX
-       * 2. Create regX with revisedDomain map and copy raw data from quasiRegX to regX
-       *
-       * The result vector can be created using the revisedDomain map.
-       *
-       * Remember: assume that vector map = row map = range map = domain map
-       */
-
-      // quasiRegional layout
-      for (int j = 0; j < maxRegPerProc; j++) {
-        // create empty vectors
-        quasiRegX[j] = new Epetra_Vector(*(rowMapPerGrp[j]), true);
-
-        // extract data from composite vector
-        int err = quasiRegX[j]->Import(*compX, *(rowImportPerGrp[j]), Insert);
-        TEUCHOS_ASSERT(err == 0);
-      }
-
-      // regional layout
-      for (int j = 0; j < maxRegPerProc; j++) {
-        // create empty result vectors
-        regY[j] = new Epetra_Vector(*(revisedRowMapPerGrp[j]), true);
-
-        // create input vector (copy from quasiRegX and swap the map)
-        regX[j] = new Epetra_Vector(*(quasiRegX[j]));
-        int err = regX[j]->ReplaceMap(*(revisedRowMapPerGrp[j]));
-        TEUCHOS_ASSERT(err == 0);
-      }
+      // transform composite vector to regional layout
+      compositeToRegional(compX, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+          revisedRowMapPerGrp, rowImportPerGrp);
+      createRegionalVector(regY, maxRegPerProc, revisedRowMapPerGrp);
 
       // perform matvec
       for (int j = 0; j < maxRegPerProc; j++) {
@@ -617,6 +626,195 @@ int main(int argc, char *argv[]) {
       diffY->Norm2(&diffNormTwo);
       diffY->NormInf(&diffNormInf);
       std::cout << myRank << ": diffNormTwo: " << diffNormTwo << "\tdiffNormInf: " << diffNormInf << std::endl;
+
+    }
+    else if (strcmp(command,"MakeRegionTransferOperators") == 0) {
+      /* Populate a fine grid vector with 1 at coarse nodes and 0 at fine nodes.
+       * Then, transform to regional layout and find GIDs with entry 1
+       */
+      int numNodes = mapComp->NumGlobalPoints() / 3 + 1;
+      double vals[numNodes];
+      int ind[numNodes];
+      for (int i = 0; i < numNodes; ++i)
+      {
+        vals[i] = 1.0;
+        ind[i] = 3*i;
+      }
+      Epetra_Vector* coarseGridToggle = new Epetra_Vector(*mapComp, true);
+      coarseGridToggle->ReplaceGlobalValues(numNodes, vals, ind);
+
+      // transform composite vector to regional layout
+      std::vector<Epetra_Vector*> quasiRegCoarseGridToggle(maxRegPerProc);
+      std::vector<Epetra_Vector*> regCoarseGridToggle(maxRegPerProc);
+      compositeToRegional(coarseGridToggle, quasiRegCoarseGridToggle,
+          regCoarseGridToggle, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp,
+          rowImportPerGrp);
+
+      // Print regCoarseGridToggle
+//      sleep(myRank);
+//      for (int j = 0; j < maxRegPerProc; j++) {
+//        printf("%d: regCoarseGridToggle %d\n", myRank, j);
+//        regCoarseGridToggle[j]->Print(std::cout);
+//      }
+
+      // create coarse grid row maps in region layout
+      for (int j = 0; j < maxRegPerProc; j++) {
+        std::vector<int> coarseRowGIDsReg;
+        for (int i = 0; i < regCoarseGridToggle[j]->Map().NumMyElements(); ++i) {
+          if ((*regCoarseGridToggle[j])[i] == 1.0)
+            coarseRowGIDsReg.push_back(regCoarseGridToggle[j]->Map().GID(i));
+        }
+
+        coarseRowMapPerGrp[j] = new Epetra_Map(-1, coarseRowGIDsReg.size(), coarseRowGIDsReg.data(), 0, Comm);
+//        printf("%d: coarseRowMapPerGrp %d\n", myRank, j);
+//        coarseRowMapPerGrp[j]->Print(std::cout);
+      }
+
+      // create coarse grid column map
+      Epetra_Vector* compGIDVec = new Epetra_Vector(*mapComp, true);
+      for (int i = 0; i < mapComp->NumMyElements(); ++i)
+      {
+        int myGID = mapComp->GID(i);
+        if (myGID % 3 == 0) // that is the coarse point
+          (*compGIDVec)[i] = myGID;
+        else if (myGID % 3 == 1) // this node is right of a coarse point
+          (*compGIDVec)[i] = myGID - 1;
+        else if (myGID % 3 == 2) // this node is left of a coarse point
+          (*compGIDVec)[i] = myGID + 1;
+        else
+          TEUCHOS_ASSERT(false)
+      }
+//      compGIDVec->Print(std::cout);
+
+      // transform composite vector to regional layout
+      std::vector<Epetra_Vector*> quasiRegGIDVec(maxRegPerProc);
+      std::vector<Epetra_Vector*> regGIDVec(maxRegPerProc);
+      compositeToRegional(compGIDVec, quasiRegGIDVec, regGIDVec, maxRegPerProc,
+          rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
+      // deal with duplicated nodes and replace with new GID when necessary
+      for (int j = 0; j < maxRegPerProc; j++) {
+        for (int i = 0; i < regGIDVec[j]->MyLength(); ++i) {
+          if (regGIDVec[j]->Map().GID(i) >= mapComp->NumGlobalElements()) {
+            // replace 'aggregate ID' with duplicated 'aggregate ID'
+            (*regGIDVec[j])[i] = (revisedRowMapPerGrp[j])->GID(i);
+
+            // look for other nodes with the same fine grid aggregate ID that needs to be replaced with the duplicated one
+            for (int k = 0; k < regGIDVec[j]->MyLength(); ++k) {
+              if ((*regGIDVec[j])[k] == (rowMapPerGrp[j])->GID(i))
+                (*regGIDVec[j])[k] = (revisedRowMapPerGrp[j])->GID(i);
+            }
+          }
+        }
+      }
+
+//      // Print regGIDVec
+//      sleep(myRank);
+//      for (int j = 0; j < maxRegPerProc; j++) {
+//        printf("%d: regGIDVec %d\n", myRank, j);
+//        regGIDVec[j]->Print(std::cout);
+//      }
+
+      for (int j = 0; j < maxRegPerProc; j++) {
+        std::vector<int> regColGIDs;
+        for (int i = 0; i < revisedRowMapPerGrp[j]->NumMyElements(); ++i) {
+          const int currGID = revisedRowMapPerGrp[j]->GID(i);
+
+          // loop over existing regColGIDs and see if current GID is already in that list
+          bool found = false;
+          for (int k = 0; k < regColGIDs.size(); ++k) {
+            if ((*regGIDVec[j])[regGIDVec[j]->Map().LID(currGID)] == regColGIDs[k]) {
+              found = true;
+              break;
+            }
+          }
+
+          if (not found)
+            regColGIDs.push_back((*regGIDVec[j])[regGIDVec[j]->Map().LID(currGID)]);
+        }
+
+        coarseColMapPerGrp[j] = new Epetra_Map(-1, regColGIDs.size(), regColGIDs.data(), 0, Comm);
+      }
+
+//      sleep(myRank);
+//      for (int j = 0; j < maxRegPerProc; j++) {
+//        printf("%d: coarseColMapPerGrp %d\n", myRank, j);
+//        coarseColMapPerGrp[j]->Print(std::cout);
+//      }
+
+      // Build the actual prolongator
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regionGrpProlong[j] = new Epetra_CrsMatrix(Copy, *revisedRowMapPerGrp[j], *coarseColMapPerGrp[j], 1, false);
+        for (int c = 0; c < regionGrpProlong[j]->NumMyCols(); ++c) {
+          for (int r = 0; r < regionGrpProlong[j]->NumMyRows(); ++r) {
+            if (regionGrpProlong[j]->ColMap().GID(c) == (*regGIDVec[j])[r]) {
+              double vals[1];
+              int inds[1];
+              vals[0] = 1.0/3.0;
+              inds[0] = c;
+              regionGrpProlong[j]->InsertMyValues(r, 1, &*vals, &*inds);
+            }
+          }
+        }
+        regionGrpProlong[j]->FillComplete();
+//        regionGrpProlong[j]->Print(std::cout);
+      }
+    }
+    else if (strcmp(command,"RunTwoLevelMethod") == 0) {
+      // intial guess for solution
+      compX = new Epetra_Vector(*mapComp, true);
+
+      // forcing vector
+      Epetra_Vector* compB = new Epetra_Vector(*mapComp, true);
+      compB->ReplaceGlobalValue(compB->GlobalLength() - 1, 0, 1.0);
+
+      // residual vector
+      Epetra_Vector* compRes = new Epetra_Vector(*mapComp, true);
+      AComp->Multiply(false, *compX, *compRes);
+      compRes->Update(1.0, *compB, -1.0);
+
+      // -----------------------------------------------------------------------
+      // Compute coarse grid operators (RAP) in region layout
+      // -----------------------------------------------------------------------
+      // Compute P'*A*P
+      std::vector<Epetra_CrsMatrix*> regCoarseMatPerGrp(maxRegPerProc); // store coarse RAP
+      std::vector<Epetra_CrsMatrix*> regCoarseTmpMatPerGrp(maxRegPerProc); // store intermediate result P'*A
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regCoarseTmpMatPerGrp[j] = new Epetra_CrsMatrix(Copy, regionGrpProlong[j]->RowMap(), regionGrpMats[j]->ColMap(), 3, false);
+
+        int err = EpetraExt::MatrixMatrix::Multiply(*regionGrpProlong[j], true, *regionGrpMats[j], false, *regCoarseTmpMatPerGrp[j], false);
+        TEUCHOS_ASSERT(err == 0);
+        regCoarseTmpMatPerGrp[j]->FillComplete();
+
+        regCoarseMatPerGrp[j] = new Epetra_CrsMatrix(Copy, regCoarseTmpMatPerGrp[j]->RowMap(), regionGrpProlong[j]->ColMap(), 3, false);
+
+        err = EpetraExt::MatrixMatrix::Multiply(*regCoarseTmpMatPerGrp[j], false, *regionGrpProlong[j], false, *regCoarseMatPerGrp[j], false);
+        TEUCHOS_ASSERT(err == 0);
+        regCoarseMatPerGrp[j]->FillComplete();
+      }
+
+      // transform composite vectors to regional layout
+      compositeToRegional(compX, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
+          revisedRowMapPerGrp, rowImportPerGrp);
+      std::vector<Epetra_Vector*> quasiRegRes(maxRegPerProc);
+      std::vector<Epetra_Vector*> regRes(maxRegPerProc);
+      compositeToRegional(compRes, quasiRegRes, regRes, maxRegPerProc, rowMapPerGrp,
+          revisedRowMapPerGrp, rowImportPerGrp);
+
+//      // pre-smoothing on fine level
+//      const int maxIter = 3;
+//      for (int iter = 0; iter < maxIter; ++iter) {
+//        for (int j = 0; j < maxRegPerProc; j++) {
+//          Epetra_Vector* diag = new Epetra_Vector(regionGrpMats[j]->RowMap(), true);
+//          Epetra_Vector* invDiag = new Epetra_Vector(regionGrpMats[j]->RowMap(), true);
+//          regionGrpMats[j]->ExtractDiagonalCopy(diag);
+//          diag->Reciprocal(invDiag);
+//          for (int i = 0; i < regX[j]->MyLength(); ++i) {
+//
+//          }
+//        }
+//      }
+
 
     }
     else if (strcmp(command,"PrintCompositeVectorX") == 0) {

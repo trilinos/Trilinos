@@ -816,15 +816,13 @@ Thyra::get_Epetra_MultiVector(
   using Teuchos::ptr_dynamic_cast;
   using Teuchos::outArg;
 
-  double* rawMvData = NULL;
-  Ordinal mvLeadingDim = 0;
-
   Ptr<SpmdMultiVectorBase<double> > mvSpmdMv =
     ptr_dynamic_cast<SpmdMultiVectorBase<double> >(ptrFromRef(mv));
+
   ArrayRCP<double> mvData;
+  Ordinal mvLeadingDim = 0;
   if (nonnull(mvSpmdMv)) {
     mvSpmdMv->getNonconstLocalData(outArg(mvData), outArg(mvLeadingDim));
-    rawMvData = mvData.getRawPtr();
   }
 
   return rcpWithEmbeddedObj(
@@ -847,20 +845,18 @@ Thyra::get_Epetra_MultiVector(
   using Teuchos::ptr_dynamic_cast;
   using Teuchos::outArg;
 
-  double* rawMvData = NULL;
-  Ordinal mvLeadingDim = 0;
-
   Ptr<const SpmdMultiVectorBase<double> > mvSpmdMv =
     ptr_dynamic_cast<const SpmdMultiVectorBase<double> >(ptrFromRef(mv));
+
   ArrayRCP<const double> mvData;
+  Ordinal mvLeadingDim = 0;
   if (nonnull(mvSpmdMv)) {
     mvSpmdMv->getLocalData(outArg(mvData), outArg(mvLeadingDim));
-    rawMvData = const_cast<double*> (mvData.getRawPtr ());
   }
 
   return rcpWithEmbeddedObj(
     new Epetra_MultiVector(
-        ::View, map, rawMvData, mvLeadingDim, mv.domain()->dim()
+      ::View, map, const_cast<double*>(mvData.getRawPtr()), mvLeadingDim, mv.domain()->dim()
       ),
     mvData
     );

@@ -63,8 +63,8 @@ namespace {
 
 TEUCHOS_STATIC_SETUP()
 {
-  setenv("TPETRA_DEBUG", "Dbg1:Dbg2", 1);
-  setenv("TPETRA_VERBOSE", "Verb1:Verb2", 1);
+  setenv("TPETRA_DEBUG", "Dbg1,Dbg2", 1);
+  setenv("TPETRA_VERBOSE", "Verb1,Verb2", 1);
 }
 
 TEUCHOS_UNIT_TEST(Behavior, Named)
@@ -75,6 +75,10 @@ TEUCHOS_UNIT_TEST(Behavior, Named)
 #else
   bool debug_default = false;
 #endif
+
+  // TPETRA_DEBUG was set globally in TEUCHOS_STATIC_SETUP to a named value, so
+  // any query on TPETRA_DEBUG should evaluate to the default value, unless the
+  // query is performed on one of the named values.
   bool dbg = Tpetra::Details::Behavior::debug();
   TEUCHOS_TEST_ASSERT(dbg==debug_default, out, success);
   bool dbg_1 = Tpetra::Details::Behavior::debug("Dbg1");
@@ -84,6 +88,9 @@ TEUCHOS_UNIT_TEST(Behavior, Named)
   bool dbg_3 = Tpetra::Details::Behavior::debug("Dbg3");
   TEUCHOS_TEST_ASSERT(dbg_3==debug_default, out, success);
 
+  // TPETRA_VERBOSE was set globally in TEUCHOS_STATIC_SETUP to a named value,
+  // so any query on TPETRA_VERBOSE should evaluate to false, unless the query
+  // is performed on one of the named values.
   bool verbose_default = false;
   bool verb = Tpetra::Details::Behavior::verbose();
   TEUCHOS_TEST_ASSERT(verb==verbose_default, out, success);

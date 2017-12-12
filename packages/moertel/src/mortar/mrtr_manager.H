@@ -65,7 +65,7 @@
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Vector.h>
-#ifdef HAVE_MPI
+#ifdef HAVE_MOERTEL_MPI
 #include <Epetra_MpiComm.h>
 #else
 #include <Epetra_SerialComm.h>

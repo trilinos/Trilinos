@@ -162,7 +162,7 @@ public:
   return NULL
   
   */
-  inline const double* X() { if (node_ != Teuchos::null) return node_->X(); else return NULL; }
+  inline const double* XCoords() { if (node_ != Teuchos::null) return node_->XCoords(); else return NULL; }
 
   /*!
   \brief Return view of Node

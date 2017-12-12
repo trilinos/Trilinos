@@ -58,12 +58,13 @@
 #ifndef MOERTEL_OVERLAP_H
 #define MOERTEL_OVERLAP_H
 
+#include "Moertel_config.h"
+
 #include <ctime>
 #include <iostream>
 #include <iomanip>
 #include <map>
 
-#include <Epetra_SerialComm.h>
 #include "Teuchos_RefCountPtr.hpp"
 
 
@@ -89,14 +90,30 @@ Use at least the following lines in the configure of Trilinos:<br>
 \endcode
 
 */
+#ifdef HAVE_MOERTEL_TPETRA
+
+namespace MoertelT
+{
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+class InterfaceT;
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+class IntegratorT;
+}
+#endif
 namespace MOERTEL
 {
 
 // forward declarations
 class Interface;
+class Integrator;
 class Segment;
 class Node;
-class Integrator;
 
 /*!
 \class Overlap
@@ -118,15 +135,23 @@ triangulation of the overlap polygon.
 \author Glen Hansen (gahanse@sandia.gov)
 
 */
+template <class IFace>
 class  Overlap 
 {
 public:
 
   //! the Interface class is a friend to this class
-  friend class Interface;
+  friend IFace;
   
   //! the Integrator class is a friend to this class
   friend class Integrator;
+#ifdef HAVE_MOERTEL_TPETRA
+template <class ST,
+          class LO,
+          class GO,
+          class N >
+friend class MoertelT::IntegratorT;
+#endif
   
   // @{ \name Constructors and destructors
 
@@ -137,13 +162,13 @@ public:
   Note that this is \b not a collective call as overlaps are computed in parallel by
   individual processes.
   
-  \param sseg : slave Segment to overlap with
+  t\param sseg : slave Segment to overlap with
   \param mseg : mortar Segment to overlap with
   \param inter : Interface both segments are part of
   \param outlevel : Level of output information written to stdout ( 0 - 10 )
   */
   explicit Overlap(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
-                   MOERTEL::Interface& inter, bool exactvalues, int outlevel);
+                   IFace& inter, bool exactvalues, int outlevel);
   
   /*!
   \brief Destructor
@@ -170,9 +195,9 @@ public:
     
 private:  
   // don't want = operator
-  Overlap operator = (const Overlap& old);
+  Overlap operator = (const Overlap<IFace>& old);
   // don't want copy-ctor
-  Overlap(MOERTEL::Overlap& old);
+  Overlap(MOERTEL::Overlap<IFace>& old);
 
 private:
 
@@ -257,9 +282,9 @@ protected:
 
 private:
 
-MOERTEL::Interface&                     inter_;
-MOERTEL::Segment&                       sseg_;
-MOERTEL::Segment&                       mseg_;
+IFace&                               inter_;
+MOERTEL::Segment&                    sseg_;
+MOERTEL::Segment&                    mseg_;
 int                                  outputlevel_;
 
 bool                                 overlap_;   // true if segments overlap
@@ -294,4 +319,11 @@ std::map<int,Teuchos::RCP<MOERTEL::Segment> > s_;       // map holding segments 
 }; // class Overlap
 
 } // namespace MOERTEL
+
+#ifndef HAVE_MOERTEL_EXPLICIT_INSTANTIATION
+#include "mrtr_overlap_Def.hpp"
+#include "mrtr_overlap_utils_Def.hpp"
+#include "mrtr_convexhull_Def.hpp"
+#endif
+
 #endif // MOERTEL_OVERLAP_H

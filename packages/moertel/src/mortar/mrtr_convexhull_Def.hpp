@@ -44,7 +44,7 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
-#include "mrtr_overlap.H"
+#include "mrtr_overlap.hpp"
 #include "mrtr_projector.H"
 #include "mrtr_node.H"
 #include "mrtr_segment.H"
@@ -54,7 +54,8 @@
 /*----------------------------------------------------------------------*
  |  create a convexhull of a set of points (private)         mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::ConvexHull(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p)
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::ConvexHull(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p)
 {
   // # points
   int np = p.size();
@@ -222,7 +223,8 @@ bool MOERTEL::Overlap::ConvexHull(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::MakeRightTurnUpper(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::MakeRightTurnUpper(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
@@ -267,7 +269,8 @@ bool MOERTEL::Overlap::MakeRightTurnUpper(int i,std::map<int,Teuchos::RCP<MOERTE
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::MakeRightTurnLower(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::MakeRightTurnLower(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
@@ -313,7 +316,8 @@ bool MOERTEL::Overlap::MakeRightTurnLower(int i,std::map<int,Teuchos::RCP<MOERTE
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::RemovePointBefore(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
+template <class IFace>
+void MOERTEL::Overlap<IFace>::RemovePointBefore(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
@@ -338,7 +342,8 @@ void MOERTEL::Overlap::RemovePointBefore(int i,std::map<int,Teuchos::RCP<MOERTEL
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::RemovePointAfter(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
+template <class IFace>
+void MOERTEL::Overlap<IFace>::RemovePointAfter(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
@@ -364,7 +369,8 @@ void MOERTEL::Overlap::RemovePointAfter(int i,std::map<int,Teuchos::RCP<MOERTEL:
 /*----------------------------------------------------------------------*
  |  collapse points that are really close to one point       mwgee 11/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::CollapsePoints(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,
+template <class IFace>
+bool MOERTEL::Overlap<IFace>::CollapsePoints(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,
                                    const double eps)
 {
   // we don't want to collapse on a polygon that has just three or less points

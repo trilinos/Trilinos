@@ -13,24 +13,22 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_IntegratorForwardSensitivity.hpp"
-#include "Tempus_IntegratorPseudoTransientForwardSensitivity.hpp"
+#include "Tempus_IntegratorAdjointSensitivity.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
-#include "../TestModels/SteadyQuadraticModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 
-#include <vector>
 #include <fstream>
-#include <sstream>
 #include <limits>
+#include <sstream>
+#include <vector>
 
 namespace Tempus_Test {
 
@@ -45,9 +43,7 @@ using Tempus::SolutionState;
 
 // ************************************************************
 // ************************************************************
-void test_sincos_fsa(const bool use_combined_method,
-                     const bool use_dfdp_as_tangent,
-                     Teuchos::FancyOStream &out, bool &success)
+TEUCHOS_UNIT_TEST(BDF2, SinCos_ASA)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
@@ -64,11 +60,10 @@ void test_sincos_fsa(const bool use_combined_method,
 
     // Read params from .xml file
     RCP<ParameterList> pList =
-      getParametersFromXmlFile("Tempus_BackwardEuler_SinCos.xml");
+      getParametersFromXmlFile("Tempus_BDF2_SinCos_SA.xml");
 
     // Setup the SinCosModel
     RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-    scm_pl->set("Use DfDp as Tangent", use_dfdp_as_tangent);
     RCP<SinCosModel<double> > model =
       Teuchos::rcp(new SinCosModel<double>(scm_pl));
 
@@ -76,20 +71,17 @@ void test_sincos_fsa(const bool use_combined_method,
 
     // Setup sensitivities
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-    ParameterList& sens_pl = pl->sublist("Sensitivities");
-    if (use_combined_method)
-      sens_pl.set("Sensitivity Method", "Combined");
-    else {
-      sens_pl.set("Sensitivity Method", "Staggered");
-      sens_pl.set("Reuse State Linear Solver", true);
-    }
-    sens_pl.set("Use DfDp as Tangent", use_dfdp_as_tangent);
+    //ParameterList& sens_pl = pl->sublist("Sensitivities");
+    ParameterList& interp_pl =
+      pl->sublist("Default Integrator").sublist("Solution History").sublist("Interpolator");
+    interp_pl.set("Interpolator Type", "Lagrange");
+    interp_pl.set("Order", 1);
 
     // Setup the Integrator and reset initial time step
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    RCP<Tempus::IntegratorForwardSensitivity<double> > integrator =
-      Tempus::integratorForwardSensitivity<double>(pl, model);
+    RCP<Tempus::IntegratorAdjointSensitivity<double> > integrator =
+      Tempus::integratorAdjointSensitivity<double>(pl, model);
     order = integrator->getStepper()->getOrder();
 
     // Initial Conditions
@@ -116,9 +108,21 @@ void test_sincos_fsa(const bool use_combined_method,
        .sublist("Time Step Control").get<double>("Final Time");
     TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
 
-    // Time-integrated solution and the exact solution
+    // Time-integrated solution and the exact solution along with
+    // sensitivities (relying on response g(x) = x).  Note we must transpose
+    // dg/dp since the integrator returns it in gradient form.
     RCP<const Thyra::VectorBase<double> > x = integrator->getX();
-    RCP<const Thyra::MultiVectorBase<double> > DxDp = integrator->getDxDp();
+    RCP<const Thyra::MultiVectorBase<double> > DgDp = integrator->getDgDp();
+    RCP<Thyra::MultiVectorBase<double> > DxDp =
+      Thyra::createMembers(model->get_x_space(), num_param);
+    {
+      Thyra::ConstDetachedMultiVectorView<double> dgdp_view(*DgDp);
+      Thyra::DetachedMultiVectorView<double> dxdp_view(*DxDp);
+      const int num_g = DgDp->domain()->dim();
+      for (int i=0; i<num_g; ++i)
+        for (int j=0; j<num_param; ++j)
+          dxdp_view(i,j) = dgdp_view(j,i);
+    }
     RCP<const Thyra::VectorBase<double> > x_exact =
       model->getExactSolution(time).get_x();
     RCP<Thyra::MultiVectorBase<double> > DxDp_exact =
@@ -129,40 +133,36 @@ void test_sincos_fsa(const bool use_combined_method,
 
     // Plot sample solution and exact solution
     if (comm->getRank() == 0 && n == nTimeStepSizes-1) {
+      typedef Thyra::DefaultProductVector<double> DPV;
       typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
 
-      std::ofstream ftmp("Tempus_BackwardEuler_SinCos_Sens.dat");
+      std::ofstream ftmp("Tempus_BDF2_SinCos_AdjSens.dat");
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
-      RCP< Thyra::MultiVectorBase<double> > DxDp_exact_plot =
-        Thyra::createMembers(model->get_x_space(), num_param);
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
-        double time = solutionState->getTime();
-        RCP<const DMVPV> x_prod_plot =
-          Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());
+        const double time = solutionState->getTime();
+        RCP<const DPV> x_prod_plot =
+          Teuchos::rcp_dynamic_cast<const DPV>(solutionState->getX());
         RCP<const Thyra::VectorBase<double> > x_plot =
-          x_prod_plot->getMultiVector()->col(0);
-        RCP<const Thyra::MultiVectorBase<double> > DxDp_plot =
-          x_prod_plot->getMultiVector()->subView(Teuchos::Range1D(1,num_param));
+          x_prod_plot->getVectorBlock(0);
+        RCP<const DMVPV > adjoint_prod_plot =
+          Teuchos::rcp_dynamic_cast<const DMVPV>(x_prod_plot->getVectorBlock(1));
+        RCP<const Thyra::MultiVectorBase<double> > adjoint_plot =
+          adjoint_prod_plot->getMultiVector();
         RCP<const Thyra::VectorBase<double> > x_exact_plot =
           model->getExactSolution(time).get_x();
-        for (int j=0; j<num_param; ++j)
-          Thyra::assign(DxDp_exact_plot->col(j).ptr(),
-                        *(model->getExactSensSolution(j, time).get_x()));
         ftmp << std::fixed << std::setprecision(7)
              << time
              << std::setw(11) << get_ele(*(x_plot), 0)
-             << std::setw(11) << get_ele(*(x_plot), 1);
-        for (int j=0; j<num_param; ++j)
-          ftmp << std::setw(11) << get_ele(*(DxDp_plot->col(j)), 0)
-               << std::setw(11) << get_ele(*(DxDp_plot->col(j)), 1);
-        ftmp << std::setw(11) << get_ele(*(x_exact_plot), 0)
-             << std::setw(11) << get_ele(*(x_exact_plot), 1);
-        for (int j=0; j<num_param; ++j)
-          ftmp << std::setw(11) << get_ele(*(DxDp_exact_plot->col(j)), 0)
-               << std::setw(11) << get_ele(*(DxDp_exact_plot->col(j)), 1);
-        ftmp << std::endl;
+             << std::setw(11) << get_ele(*(x_plot), 1)
+             << std::setw(11) << get_ele(*(adjoint_plot->col(0)), 0)
+             << std::setw(11) << get_ele(*(adjoint_plot->col(0)), 1)
+             << std::setw(11) << get_ele(*(adjoint_plot->col(1)), 0)
+             << std::setw(11) << get_ele(*(adjoint_plot->col(1)), 1)
+             << std::setw(11) << get_ele(*(x_exact_plot), 0)
+             << std::setw(11) << get_ele(*(x_exact_plot), 1)
+             << std::endl;
       }
       ftmp.close();
     }
@@ -189,16 +189,16 @@ void test_sincos_fsa(const bool use_combined_method,
 
   // Check the order and intercept
   double slope = computeLinearRegressionLogLog<double>(StepSize, ErrorNorm);
-  *my_out << "  Stepper = BackwardEuler" << std::endl;
+  *my_out << "  Stepper = BDF2" << std::endl;
   *my_out << "  =========================" << std::endl;
   *my_out << "  Expected order: " << order << std::endl;
   *my_out << "  Observed order: " << slope << std::endl;
   *my_out << "  =========================" << std::endl;
   TEST_FLOATING_EQUALITY( slope, order, 0.015 );
-  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.163653, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0378652, 1.0e-4 );
 
   if (comm->getRank() == 0) {
-    std::ofstream ftmp("Tempus_BackwardEuler_SinCos_Sens-Error.dat");
+    std::ofstream ftmp("Tempus_BDF2_SinCos_AdjSens-Error.dat");
     double error0 = 0.8*ErrorNorm[0];
     for (int n=0; n<nTimeStepSizes; n++) {
       ftmp << StepSize[n]  << "   " << ErrorNorm[n] << "   "
@@ -207,85 +207,6 @@ void test_sincos_fsa(const bool use_combined_method,
     ftmp.close();
   }
 
-}
-
-TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_Combined_FSA)
-{
-  test_sincos_fsa(true, false, out, success);
-}
-
-TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_Combined_FSA_Tangent)
-{
-  test_sincos_fsa(true, true, out, success);
-}
-
-TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_Staggered_FSA)
-{
-  test_sincos_fsa(false, false, out, success);
-}
-
-TEUCHOS_UNIT_TEST(BackwardEuler, SinCos_Staggered_FSA_Tangent)
-{
-  test_sincos_fsa(false, true, out, success);
-}
-
-// ************************************************************
-// ************************************************************
-void test_pseudotransient_fsa(const bool use_dfdp_as_tangent,
-                              Teuchos::FancyOStream &out, bool &success)
-{
-  // Read params from .xml file
-  RCP<ParameterList> pList =
-    getParametersFromXmlFile("Tempus_BackwardEuler_SteadyQuadratic.xml");
-
-  // Setup the SteadyQuadraticModel
-  RCP<ParameterList> scm_pl = sublist(pList, "SteadyQuadraticModel", true);
-  scm_pl->set("Use DfDp as Tangent", use_dfdp_as_tangent);
-  RCP<SteadyQuadraticModel<double> > model =
-    Teuchos::rcp(new SteadyQuadraticModel<double>(scm_pl));
-
-  // Setup sensitivities
-  RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-  ParameterList& sens_pl = pl->sublist("Sensitivities");
-  sens_pl.set("Use DfDp as Tangent", use_dfdp_as_tangent);
-  sens_pl.set("Reuse State Linear Solver", true);
-  sens_pl.set("Force W Update", true); // Have to do this because for this
-  // model the solver seems to be overwriting the matrix
-
-  // Setup the Integrator
-  RCP<Tempus::IntegratorPseudoTransientForwardSensitivity<double> > integrator =
-    Tempus::integratorPseudoTransientForwardSensitivity<double>(pl, model);
-
-  // Integrate to timeMax
-  bool integratorStatus = integrator->advanceTime();
-  TEST_ASSERT(integratorStatus);
-
-  // Test if at 'Final Time'
-  double time = integrator->getTime();
-  double timeFinal =pl->sublist("Default Integrator")
-    .sublist("Time Step Control").get<double>("Final Time");
-  TEST_FLOATING_EQUALITY(time, timeFinal, 1.0e-14);
-
-  // Time-integrated solution and the exact solution
-  RCP<const Thyra::VectorBase<double> > x_vec = integrator->getX();
-  RCP<const Thyra::MultiVectorBase<double> > DxDp_vec = integrator->getDxDp();
-  const double x = Thyra::get_ele(*x_vec, 0);
-  const double dxdb = Thyra::get_ele(*(DxDp_vec->col(0)), 0);
-  const double x_exact = model->getSteadyStateSolution();
-  const double dxdb_exact = model->getSteadyStateSolutionSensitivity();
-
-  TEST_FLOATING_EQUALITY( x,    x_exact,    1.0e-6 );
-  TEST_FLOATING_EQUALITY( dxdb, dxdb_exact, 1.0e-6 );
-}
-
-TEUCHOS_UNIT_TEST(BackwardEuler, SteadyQuadratic_PseudoTransient_FSA)
-{
-  test_pseudotransient_fsa(false, out, success);
-}
-
-TEUCHOS_UNIT_TEST(BackwardEuler, SteadyQuadratic_PseudoTransient_FSA_Tangent)
-{
-  test_pseudotransient_fsa(true, out, success);
 }
 
 } // namespace Tempus_Test
