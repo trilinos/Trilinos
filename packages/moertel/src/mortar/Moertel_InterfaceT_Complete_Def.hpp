@@ -48,6 +48,12 @@
 #include "Moertel_UtilsT.hpp"
 #include "mrtr_utils.H"
 
+#ifdef HAVE_MOERTEL_MPI
+#include <Teuchos_DefaultMpiComm.hpp>
+#else
+#include <Teuchos_DefaultSerialComm.hpp>
+#endif
+
 /*----------------------------------------------------------------------*
  |  finalize construction of this interface                             |
  *----------------------------------------------------------------------*/
@@ -259,7 +265,7 @@ bool MoertelT::InterfaceT<ST, LO, GO, N>::Complete()
 
     
 #else  // the easy serial case
-    Teuchos::SerialComm* serialcomm = dynamic_cast<Teuchos::SerialComm*>(gcomm_->get());
+    const Teuchos::SerialComm<LO>* serialcomm = dynamic_cast<const Teuchos::SerialComm<LO>*>(gcomm_->get());
     if (!serialcomm)
     {
 	  std::stringstream oss;
@@ -268,7 +274,7 @@ bool MoertelT::InterfaceT<ST, LO, GO, N>::Complete()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       throw MOERTEL::ReportError(oss);
     }
-    lcomm_ = Teuchos::rcp(new Teuchos::SerialComm(*serialcomm));
+    lcomm_ = Teuchos::rcp(new Teuchos::SerialComm<LO>(*serialcomm));
 #endif // end of #ifdef PARALLEL    
   }
   

@@ -54,6 +54,8 @@
 #include "mrtr_segment.H"
 #include "Moertel_IntegratorT.hpp"
 
+#include "Moertel_Tolerances.hpp"
+
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_Time.hpp"
 
@@ -845,11 +847,9 @@ MoertelT::InterfaceT<ST, LO, GO, N>::QuickOverlapTest_2D(MOERTEL::Segment& sseg,
   vec[2] = mcen[2] - scen[2];
   length = MOERTEL::length(vec,3);
 
-  // GAH EPSILON - max distance between mseg and sseg for contact purposes
+  // Max distance between mseg and sseg for contact purposes
 
-  double maxdia = 2.5;
-
-  if (length > maxdia * (sdiam + mdiam)){
+  if (length > MOERTEL::Rough_Search_Radius * (sdiam + mdiam)){
 
     // std::cerr << " test NOT passed\n";
     return false;
