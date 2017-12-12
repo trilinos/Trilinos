@@ -550,11 +550,11 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveImpl(
     *this, M_trans, *X_inout, &B_in
     );
   TEUCHOS_TEST_FOR_EXCEPT(!this->solveSupportsImpl(M_trans));
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    nonnull(solveCriteria) && !solveCriteria->solveMeasureType.useDefault(),
-    std::logic_error,
-    "Error, we can't handle any non-default solve criteria yet!"
-    );
+  // TEUCHOS_TEST_FOR_EXCEPTION(
+  //   nonnull(solveCriteria) && !solveCriteria->solveMeasureType.useDefault(),
+  //   std::logic_error,
+  //   "Error, we can't handle any non-default solve criteria yet!"
+  //   );
   // ToDo: If solve criteria is to be handled, then we will have to be very
   // carefull how it it interpreted in terms of the individual period solves!
 #endif // THYRA_DEBUG  
@@ -573,18 +573,26 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveImpl(
     &B = dyn_cast<const ProductMultiVectorBase<Scalar> >(B_in);
   ProductMultiVectorBase<Scalar>
     &X = dyn_cast<ProductMultiVectorBase<Scalar> >(*X_inout);
-  
+
+  bool converged = true;
   for ( int i = 0; i < numDiagBlocks_; ++ i ) {
     const RCP<const LinearOpWithSolveBase<Scalar> >
       Op_k = diagonalBlocks_[i].getConstObj();
     Op_k->setOStream(this->getOStream());
     Op_k->setVerbLevel(this->getVerbLevel());
-    Thyra::solve( *Op_k, M_trans, *B.getMultiVectorBlock(i),
-      X.getNonconstMultiVectorBlock(i).ptr() );
+     SolveStatus<Scalar> status =
+       Thyra::solve( *Op_k, M_trans, *B.getMultiVectorBlock(i),
+                     X.getNonconstMultiVectorBlock(i).ptr(), solveCriteria );
+     if (status.solveStatus != SOLVE_STATUS_CONVERGED)
+       converged = false;
     // ToDo: Pass in solve criteria when needed!
   }
 
-  return SolveStatus<Scalar>();
+   SolveStatus<Scalar> solveStatus;
+   solveStatus.solveStatus =
+     converged ? SOLVE_STATUS_CONVERGED : SOLVE_STATUS_UNCONVERGED;
+
+  return solveStatus;
 
 }
 

@@ -16,6 +16,7 @@
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionState.hpp"
+#include "Tempus_Interpolator.hpp"
 
 
 namespace Tempus {
@@ -81,6 +82,10 @@ public:
 
     /// Generate and interpolate a new solution state at requested time
     Teuchos::RCP<SolutionState<Scalar> > interpolateState(const Scalar time) const;
+
+    /// Interpolate solution state at requested time and store in supplied state
+    void interpolateState(const Scalar time,
+                          SolutionState<Scalar>* state_out) const;
 
     /// Initialize the working state
     void initWorkingState();
@@ -167,21 +172,21 @@ public:
                           const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-//  /// \name Interpolation Methods
-//  //@{
-//    /// Set the interpolator for this history
-//    void setInterpolator(const Teuchos::RCP<InterpolatorBase<Scalar> >& interpolator);
-//    Teuchos::RCP<InterpolatorBase<Scalar> > getNonconstInterpolator();
-//    Teuchos::RCP<const InterpolatorBase<Scalar> > getInterpolator() const;
-//    /// Unset the interpolator for this history
-//    Teuchos::RCP<InterpolatorBase<Scalar> > unSetInterpolator();
-//  //@}
+ /// \name Interpolation Methods
+ //@{
+   /// Set the interpolator for this history
+   void setInterpolator(const Teuchos::RCP<Interpolator<Scalar> >& interpolator);
+   Teuchos::RCP<Interpolator<Scalar> > getNonconstInterpolator();
+   Teuchos::RCP<const Interpolator<Scalar> > getInterpolator() const;
+   /// Unset the interpolator for this history
+   Teuchos::RCP<Interpolator<Scalar> > unSetInterpolator();
+ //@}
 
 protected:
 
   Teuchos::RCP<Teuchos::ParameterList>      shPL_;
   Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history_;
-  //Teuchos::RCP<InterpolatorBase<Scalar> >   interpolator;
+  Teuchos::RCP<Interpolator<Scalar> >       interpolator_;
   StorageType                               storageType_;
   int                                       storageLimit_;
 

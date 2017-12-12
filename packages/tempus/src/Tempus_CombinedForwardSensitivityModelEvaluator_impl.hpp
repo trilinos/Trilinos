@@ -338,9 +338,9 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     me_outArgs.set_DfDp(p_index_, dfdp);
   }
   if (outArgs.get_W_op() != Teuchos::null) {
-    RCP< Thyra::LinearOpBase<double> > op = outArgs.get_W_op();
-    RCP< Thyra::MultiVectorLinearOp<double> > mv_op =
-      rcp_dynamic_cast< Thyra::MultiVectorLinearOp<double> >(op);
+    RCP< Thyra::LinearOpBase<Scalar> > op = outArgs.get_W_op();
+    RCP< Thyra::MultiVectorLinearOp<Scalar> > mv_op =
+      rcp_dynamic_cast< Thyra::MultiVectorLinearOp<Scalar> >(op);
     me_outArgs.set_W_op(mv_op->getNonconstLinearOp());
   }
 
