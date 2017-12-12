@@ -97,6 +97,18 @@ public:
     virtual Scalar getOrder() const {return stateStepper_->getOrder();}
     virtual Scalar getOrderMin() const {return stateStepper_->getOrderMin();}
     virtual Scalar getOrderMax() const {return stateStepper_->getOrderMax();}
+
+    virtual bool isExplicit()         const
+      {return stateStepper_->isExplicit() or sensitivityStepper_->isExplicit();}
+    virtual bool isImplicit()         const
+      {return stateStepper_->isImplicit() or sensitivityStepper_->isImplicit();}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+
+    virtual bool isOneStepMethod()   const
+      {return stateStepper_->isOneStepMethod() and
+              sensitivityStepper_->isOneStepMethod();}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// \name ParameterList methods

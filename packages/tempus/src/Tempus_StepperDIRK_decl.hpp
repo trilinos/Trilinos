@@ -123,9 +123,23 @@ public:
 
     /// Get a default (initial) StepperState
     virtual Teuchos::RCP<Tempus::StepperState<Scalar> >getDefaultStepperState();
-    virtual Scalar getOrder() const{return DIRK_ButcherTableau_->order();}
+    virtual Scalar getOrder()    const{return DIRK_ButcherTableau_->order();}
     virtual Scalar getOrderMin() const{return DIRK_ButcherTableau_->orderMin();}
     virtual Scalar getOrderMax() const{return DIRK_ButcherTableau_->orderMax();}
+
+    virtual bool isExplicit() const
+    {
+      const int numStages = DIRK_ButcherTableau_->numStages();
+      Teuchos::SerialDenseMatrix<int,Scalar> A = DIRK_ButcherTableau_->A();
+      bool isExplicit = false;
+      for (int i=0; i<numStages; ++i) if (A(i,i) == 0.0) isExplicit = true;
+      return isExplicit;
+    }
+    virtual bool isImplicit()         const {return true;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// \name ParameterList methods

@@ -20,17 +20,21 @@ namespace Tempus {
  *
  *  For the implicit ODE system, \f$f(\dot{x},x,t) = 0\f$,
  *  the solution, \f$\dot{x}\f$ and \f$x\f$, is determined using a
- *  solver (e.g., a non-linear solver, like NOX).  This stepper allows 
+ *  solver (e.g., a non-linear solver, like NOX).  This stepper allows
  *  for a variable time-step \f$dt\f$.  It is a 3-step method.
  *
  *  <b> Algorithm </b>
  *   - Select initial guess \f$x_n\f$ for \f$n\f$.
- *   - Compute \f$x_n\f$ for n=1 using some time-integration scheme, e.g., Backward Euler or RK4.
- *   - Solve 
+ *   - Compute \f$x_n\f$ for n=1 using some time-integration scheme,
+ *     e.g., Backward Euler or RK4.
+ *   - Solve
  *   \f[
- *   f\left(\dot{x}=\frac{x_{n-1}-x_{n-2}}{\tau_{n-1}} + \left(\frac{1}{\tau_{n-1}-\tau_n} \right) 
- *   \left(\frac{x_n-x_{n-1}}{\tau_{n-1} + \tau_n} - \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right)(2\tau_n + \tau_{n-1}), x_n, t_n\right)=0
- *   \f] 
+ *   f\left(\dot{x} = \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}
+ *                 + \left(\frac{1}{\tau_{n-1}-\tau_n} \right)
+ *                   \left(\frac{x_n-x_{n-1}}{\tau_{n-1} + \tau_n}
+ *                         - \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right)
+ *                  (2\tau_n + \tau_{n-1}), x_n, t_n\right) = 0
+ *   \f]
  *   for \f$x_n\f$ (n > 1) where
  *   \f[
  *   \tau_n = t_n - t_{n-1}.
@@ -65,7 +69,7 @@ public:
     virtual void setObserver(
       Teuchos::RCP<StepperBDF2Observer<Scalar> > obs = Teuchos::null);
 
-    /// Set the stepper to use in first step 
+    /// Set the stepper to use in first step
     void setStartUpStepper(std::string startupStepperName);
     void setStartUpStepper(Teuchos::RCP<Teuchos::ParameterList>startUpStepperPL=Teuchos::null);
 
@@ -81,12 +85,19 @@ public:
     virtual Scalar getOrder() const {return order_;}
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 2.0;}
+
+    virtual bool isExplicit()         const {return false;}
+    virtual bool isImplicit()         const {return true;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return false;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// Compute the first time step given the supplied startup stepper
   virtual void computeStartUp(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
-  
+
   /// \name ParameterList methods
   //@{
     void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
@@ -116,20 +127,23 @@ private:
   Teuchos::RCP<Stepper<Scalar> >                     startUpStepper_;
 
   Teuchos::RCP<StepperBDF2Observer<Scalar> > stepperBDF2Observer_;
-  Scalar                                             order_; 
+  Scalar                                             order_;
 };
 
 /** \brief Time-derivative interface for BDF2.
  *
  *  Given the state \f$x\f$, compute the BDF2 time-derivative,
  *  \f[
- *    \dot{x}_{n} = \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}} + \left(\frac{1}{\tau_{n-1}-\tau_n} \right) 
- *   \left(\frac{x_n-x_{n-1}}{\tau_{n-1} + \tau_n} - \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right)(2\tau_n + \tau_{n-1})
+ *    \dot{x}_{n} = \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}
+ *                + \left(\frac{1}{\tau_{n-1}-\tau_n} \right)
+ *                  \left(\frac{x_n-x_{n-1}}{\tau_{n-1} + \tau_n}
+ *                        - \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right)
+ *                  (2\tau_n + \tau_{n-1})
  *  \f]
  *  where
  *  \f[
  *   \tau_n = t_n - t_{n-1}.
- *   \f] 
+ *   \f]
  *  \f$\ddot{x}\f$ is not used and set to null.
  */
 template <typename Scalar>
@@ -140,7 +154,7 @@ public:
 
   /// Constructor
   StepperBDF2TimeDerivative(
-    Scalar dt, Scalar dtOld, Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld, 
+    Scalar dt, Scalar dtOld, Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOldOld)
   { initialize(dt, dtOld, xOld, xOldOld); }
 
@@ -164,10 +178,10 @@ public:
     //tmp = b*(x_{n-1} - x_{n-2})
     Thyra::V_StVpStV(tmp.ptr(),b,*xOld_,-b,*xOldOld_);
     //xDot = xDot - tmp;
-    Thyra::Vp_StV(xDot.ptr(), -1.0, *tmp); 
+    Thyra::Vp_StV(xDot.ptr(), -1.0, *tmp);
   }
 
-  virtual void initialize(Scalar dt, Scalar dtOld, 
+  virtual void initialize(Scalar dt, Scalar dtOld,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld,
     Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOldOld)
   { dt_ = dt; dtOld_ = dtOld; xOld_ = xOld; xOldOld_ = xOldOld;}

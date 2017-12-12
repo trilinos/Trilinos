@@ -71,7 +71,7 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos_ASA)
 
     // Setup sensitivities
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-    ParameterList& sens_pl = pl->sublist("Sensitivities");
+    //ParameterList& sens_pl = pl->sublist("Sensitivities");
     ParameterList& interp_pl =
       pl->sublist("Default Integrator").sublist("Solution History").sublist("Interpolator");
     interp_pl.set("Interpolator Type", "Lagrange");

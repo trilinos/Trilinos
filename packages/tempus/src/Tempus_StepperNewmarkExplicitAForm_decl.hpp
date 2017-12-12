@@ -15,7 +15,7 @@
 namespace Tempus {
 
 
-/** \brief Newmark Explicit time stepper.  This is the specific case of the 
+/** \brief Newmark Explicit time stepper.  This is the specific case of the
  *  more general Newmark time stepper in the case this stepper is explicit (beta = 0).
  *  Newmark Explicit is hence an explicit time stepper (i.e., no solver used).
  */
@@ -61,6 +61,13 @@ public:
     }
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 2.0;}
+
+    virtual bool isExplicit()         const {return true;}
+    virtual bool isImplicit()         const {return false;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// \name ParameterList methods
@@ -113,8 +120,8 @@ protected:
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
-   
-  Scalar gamma_; 
+
+  Scalar gamma_;
 
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 
