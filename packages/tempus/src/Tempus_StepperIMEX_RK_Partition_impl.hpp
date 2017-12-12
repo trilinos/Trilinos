@@ -508,7 +508,7 @@ void StepperIMEX_RK_Partition<Scalar>::takeStep(
     const SerialDenseVector<int,Scalar> & c    = implicitTableau_->c();
 
     bool pass = true;
-    Thyra::SolveStatus<double> sStatus;
+    Thyra::SolveStatus<Scalar> sStatus;
     stageZ_ = workingState->getX();
     Thyra::assign(stageZ_.ptr(), *(currentState->getX()));
     RCP<Thyra::VectorBase<Scalar> > stageY =

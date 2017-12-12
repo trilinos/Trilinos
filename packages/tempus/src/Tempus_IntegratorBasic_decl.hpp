@@ -35,19 +35,23 @@ class IntegratorBasic : virtual public Tempus::Integrator<Scalar>
 {
 public:
 
-  /** \brief Constructor with ParameterList and model, and will be fully initialized. */
+  /// Constructor with ParameterList and model, and will be fully initialized.
   IntegratorBasic(
     Teuchos::RCP<Teuchos::ParameterList>                pList,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
-  /** \brief Constructor with model and "Stepper Type" and is fully initialized with default settings. */
+  /// Constructor with model and "Stepper Type" and is fully initialized with default settings.
   IntegratorBasic(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
     std::string stepperType);
 
-  /// Destructor
-  /** \brief Constructor that requires a subsequent setParameterList, setStepper, and initialize calls. */
+  /// Constructor that requires a subsequent setParameterList, setStepper, and initialize calls.
   IntegratorBasic();
+
+  /// Constructor with ParameterList and models, and will be fully initialized.
+  IntegratorBasic(
+    Teuchos::RCP<Teuchos::ParameterList>                pList,
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
 
   /// Destructor
   virtual ~IntegratorBasic() {}
@@ -67,9 +71,10 @@ public:
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
     /// Return a copy of the Tempus ParameterList
-    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList() override
-    { return tempusPL_; }
-    virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override
+    virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()
+      override { return tempusPL_; }
+    virtual void setTempusParameterList(
+      Teuchos::RCP<Teuchos::ParameterList> pl) override
     {
       if (tempusPL_==Teuchos::null) tempusPL_=Teuchos::parameterList("Tempus");
       if (pl != Teuchos::null) *tempusPL_ = *pl;
@@ -93,6 +98,9 @@ public:
     {return stepper_;}
     /// Set the Stepper
     virtual void setStepper(Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model);
+    /// Set the Stepper
+    virtual void setStepper(
+      std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
     /// Set the Stepper
     virtual void setStepperWStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
     /// Set the initial state which has the initial conditions
@@ -126,13 +134,13 @@ public:
 
 
     /// Get current the solution, x
-    virtual Teuchos::RCP<Thyra::VectorBase<double> > getX() const
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() const
       {return solutionHistory_->getCurrentState()->getX();}
     /// Get current the time derivative of the solution, xdot
-    virtual Teuchos::RCP<Thyra::VectorBase<double> > getXdot() const
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXdot() const
       {return solutionHistory_->getCurrentState()->getXDot();}
     /// Get current the second time derivative of the solution, xdotdot
-    virtual Teuchos::RCP<Thyra::VectorBase<double> > getXdotdot() const
+    virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getXdotdot() const
       {return solutionHistory_->getCurrentState()->getXDotDot();}
 
     /// Get current state
@@ -200,6 +208,13 @@ Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
 /// Non-member constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic();
+
+/// Non-member constructor
+template<class Scalar>
+Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
+  Teuchos::RCP<Teuchos::ParameterList>                pList,
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
+
 
 } // namespace Tempus
 

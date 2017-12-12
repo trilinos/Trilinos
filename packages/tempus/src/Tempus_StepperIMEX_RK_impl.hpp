@@ -510,7 +510,7 @@ void StepperIMEX_RK<Scalar>::takeStep(
     const SerialDenseVector<int,Scalar> & c    = implicitTableau_->c();
 
     bool pass = true;
-    Thyra::SolveStatus<double> sStatus;
+    Thyra::SolveStatus<Scalar> sStatus;
     stageX_ = workingState->getX();
     Thyra::assign(stageX_.ptr(), *(currentState->getX()));
 

@@ -106,6 +106,13 @@ public:
     virtual Scalar getOrder() const {return ERK_ButcherTableau_->order();}
     virtual Scalar getOrderMin() const {return ERK_ButcherTableau_->orderMin();}
     virtual Scalar getOrderMax() const {return ERK_ButcherTableau_->orderMax();}
+
+    virtual bool isExplicit()         const {return true;}
+    virtual bool isImplicit()         const {return false;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// \name ParameterList methods

@@ -311,7 +311,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
       Thyra::copy(*v_old, v_init.ptr());
       Thyra::put_scalar(0.0, a_init.ptr());
       wrapperModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
-      const Thyra::SolveStatus<double> sStatus =
+      const Thyra::SolveStatus<Scalar> sStatus =
         this->solveNonLinear(wrapperModel_, *solver_, a_init);
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;

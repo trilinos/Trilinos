@@ -30,7 +30,7 @@ enum StorageType {
 };
 
 
-/** \brief SolutionHistory is bascially a container of SolutionStates.
+/** \brief SolutionHistory is basically a container of SolutionStates.
  *  SolutionHistory maintains a collection of SolutionStates for later
  *  retrival and reuse, such as checkpointing, restart, and undo
  *  operations.
@@ -50,6 +50,12 @@ enum StorageType {
  *   - Interpolating between SolutionStates
  *     - Interpolated SolutionStates may not be suitable for adjoint
  *       solutions, restart, or undo operations (see SolutionState).
+ *
+ *  Rules of thumb for the minimum storage limit:
+ *   - Explicit one-step methods can update the solution state in-place
+ *     --> StorageLimit_ = 1.
+ *   - Implicit one-step methods need two solution states --> StorageLimit_ = 2.
+ *   - MultiStep methods require k past solution states --> StorageLimit_ = k+1.
  */
 template<class Scalar>
 class SolutionHistory
@@ -70,6 +76,9 @@ public:
   //@{
     /// Add solution state to history
     void addState(const Teuchos::RCP<SolutionState<Scalar> >& state);
+
+    /// Add a working solution state to history
+    void addWorkingState(const Teuchos::RCP<SolutionState<Scalar> >& state);
 
     /// Remove solution state
     void removeState(const Teuchos::RCP<SolutionState<Scalar> >& state);
@@ -93,6 +102,7 @@ public:
     /// Promote the working state to current state
     void promoteWorkingState();
 
+    void clear() {history_->clear();}
   //@}
 
   /// \name Accessor methods
@@ -123,11 +133,11 @@ public:
 
     /// Return the current state, i.e., the last accepted state
     Teuchos::RCP<SolutionState<Scalar> > getCurrentState() const
-      { return currentState_; }
-
-    /// Set the current state, i.e., the last accepted state
-    void setCurrentState(const Teuchos::RCP<SolutionState<Scalar> >& state)
-      { currentState_ = state; }
+    {
+      const int n = history_->size();
+      return (workingState_ == Teuchos::null or n == 1) ? (*history_)[n-1]
+                                                        : (*history_)[n-2];
+    }
 
     /// Return the working state
     Teuchos::RCP<SolutionState<Scalar> > getWorkingState() const
@@ -148,6 +158,7 @@ public:
     /// Get the maximum storage of this history
     int getStorageLimit() const {return storageLimit_;}
 
+    void setStorageType(StorageType st) {storageType_ = st;}
     StorageType getStorageType() {return storageType_;}
 
     /// Return the current minimum time of the SolutionStates
@@ -190,13 +201,10 @@ protected:
   StorageType                               storageType_;
   int                                       storageLimit_;
 
-  Teuchos::RCP<SolutionState<Scalar> > currentState_; ///< The last accepted state
   Teuchos::RCP<SolutionState<Scalar> > workingState_; ///< The state being worked on
 };
 
-/** \brief Nonmember constructor
- * \relates SolutionHistory
- */
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> >
 solutionHistory(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);

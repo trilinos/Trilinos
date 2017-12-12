@@ -299,6 +299,13 @@ public:
     virtual Scalar getOrder()const { return order_; }
     virtual Scalar getOrderMin()const { return order_; }
     virtual Scalar getOrderMax()const { return order_; }
+
+    virtual bool isExplicit()         const {return true;}
+    virtual bool isImplicit()         const {return true;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// \name ParameterList methods

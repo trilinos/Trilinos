@@ -290,7 +290,7 @@ void StepperBDF2<Scalar>::takeStep(
 
     stepperBDF2Observer_->observeBeforeSolve(solutionHistory, *this);
 
-    const Thyra::SolveStatus<double> sStatus =
+    const Thyra::SolveStatus<Scalar> sStatus =
       this->solveNonLinear(wrapperModel_, *solver_, x);
 
     stepperBDF2Observer_->observeAfterSolve(solutionHistory, *this);

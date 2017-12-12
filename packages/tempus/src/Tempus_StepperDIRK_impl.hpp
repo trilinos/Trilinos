@@ -205,7 +205,7 @@ void StepperDIRK<Scalar>::takeStep(
 
     // Compute stage solutions
     bool pass = true;
-    Thyra::SolveStatus<double> sStatus;
+    Thyra::SolveStatus<Scalar> sStatus;
     for (int i=0; i < numStages; ++i) {
       stepperDIRKObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));

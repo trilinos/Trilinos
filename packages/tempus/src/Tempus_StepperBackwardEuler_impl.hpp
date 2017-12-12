@@ -258,7 +258,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
 
     stepperBEObserver_->observeBeforeSolve(solutionHistory, *this);
 
-    const Thyra::SolveStatus<double> sStatus =
+    const Thyra::SolveStatus<Scalar> sStatus =
       this->solveNonLinear(wrapperModel_, *solver_, x);
 
     stepperBEObserver_->observeAfterSolve(solutionHistory, *this);

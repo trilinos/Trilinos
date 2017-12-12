@@ -18,7 +18,7 @@ namespace Tempus {
 
 /** \brief Backward Euler time stepper.
  *
- *  For the implicit ODE system, \f$/mathcal{F}(\dot{x},x,t) = 0\f$,
+ *  For the implicit ODE system, \f$\mathcal{F}(\dot{x},x,t) = 0\f$,
  *  the solution, \f$\dot{x}\f$ and \f$x\f$, is determined using a
  *  solver (e.g., a non-linear solver, like NOX).
  *
@@ -73,6 +73,13 @@ public:
     virtual Scalar getOrder() const {return 1.0;}
     virtual Scalar getOrderMin() const {return 1.0;}
     virtual Scalar getOrderMax() const {return 1.0;}
+
+    virtual bool isExplicit()         const {return false;}
+    virtual bool isImplicit()         const {return true;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   /// Compute predictor given the supplied stepper

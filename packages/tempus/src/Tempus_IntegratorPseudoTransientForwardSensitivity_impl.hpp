@@ -531,11 +531,6 @@ buildSolutionHistory()
                                     state->getStepperState()->clone()));
     solutionHistory_->addState(prod_state);
   }
-
-  // Set current state to the last added state
-  RCP<SolutionState<Scalar> > last_state =
-    (*solutionHistory_)[solutionHistory_->getNumStates()-1];
-  solutionHistory_->setCurrentState(last_state);
 }
 
 /// Non-member constructor
