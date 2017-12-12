@@ -345,10 +345,10 @@ protected:
 
   int                                       Id_;         // this segments unique id
   int                                       outputlevel_;
+  SegmentType                               stype_;      // segment type
   std::vector<int>                               nodeId_;     // vector of unique node ids 
   std::vector<MOERTEL::Node*>                    nodeptr_;    // vector with ptrs to nodes adj to me
 
-  SegmentType                               stype_;      // segment type
   std::map< int,Teuchos::RCP<MOERTEL::Function> > functions_;  // functions that live on this segment
 
 };
