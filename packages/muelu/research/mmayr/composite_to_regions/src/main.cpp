@@ -103,6 +103,30 @@ void createRegionalVector(std::vector<Epetra_Vector*>& regVecs,
   return;
 }
 
+void printRegionalVector(const std::string vectorName, ///< string to be used for screen output
+    const std::vector<Epetra_Vector*> regVecs, ///< regional vector to be printed to screen
+    const int myRank ///< rank of calling proc
+    )
+{
+  sleep(myRank);
+  for (int j = 0; j < regVecs.size(); j++) {
+    printf("%d: %s %d\n", myRank, vectorName.c_str(), j);
+    regVecs[j]->Print(std::cout);
+  }
+}
+
+void printRegionalMap(const std::string mapName, ///< string to be used for screen output
+    const std::vector<Epetra_Map*> regMaps, ///< regional map to be printed to screen
+    const int myRank ///< rank of calling proc
+    )
+{
+  sleep(myRank);
+  for (int j = 0; j < regMaps.size(); j++) {
+    printf("%d: %s %d\n", myRank, mapName.c_str(), j);
+    regMaps[j]->Print(std::cout);
+  }
+}
+
 // Interact with a Matlab program through a bunch of myData_procID files.
 // Basically, the matlab program issues a bunch of commands associated with
 // either composite or regional things (via the files). This program reads
@@ -695,12 +719,7 @@ int main(int argc, char *argv[]) {
           regCoarseGridToggle, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp,
           rowImportPerGrp);
 
-      // Print regCoarseGridToggle
-//      sleep(myRank);
-//      for (int j = 0; j < maxRegPerProc; j++) {
-//        printf("%d: regCoarseGridToggle %d\n", myRank, j);
-//        regCoarseGridToggle[j]->Print(std::cout);
-//      }
+//      printRegionalVector("regCoarseGridToggle", regCoarseGridToggle, myRank);
 
       // create coarse grid row maps in region layout
       for (int j = 0; j < maxRegPerProc; j++) {
@@ -753,12 +772,7 @@ int main(int argc, char *argv[]) {
         }
       }
 
-//      // Print regGIDVec
-//      sleep(myRank);
-//      for (int j = 0; j < maxRegPerProc; j++) {
-//        printf("%d: regGIDVec %d\n", myRank, j);
-//        regGIDVec[j]->Print(std::cout);
-//      }
+//      printRegionalVector("regGIDVec", regGIDVec, myRank);
 
       for (int j = 0; j < maxRegPerProc; j++) {
         std::vector<int> regColGIDs;
@@ -781,11 +795,7 @@ int main(int argc, char *argv[]) {
         coarseColMapPerGrp[j] = new Epetra_Map(-1, regColGIDs.size(), regColGIDs.data(), 0, Comm);
       }
 
-//      sleep(myRank);
-//      for (int j = 0; j < maxRegPerProc; j++) {
-//        printf("%d: coarseColMapPerGrp %d\n", myRank, j);
-//        coarseColMapPerGrp[j]->Print(std::cout);
-//      }
+//      printRegionalMap("coarseColMapPerGrp", coarseColMapPerGrp, myRank);
 
       // Build the actual prolongator
       for (int j = 0; j < maxRegPerProc; j++) {
