@@ -201,6 +201,8 @@ int main(int argc, char *argv[]) {
   std::vector< Epetra_Map* > coarseColMapPerGrp(maxRegPerProc); // region-wise columns map in true region layout with unique GIDs for replicated interface DOFs
   std::vector< Epetra_CrsMatrix * > regionGrpProlong(maxRegPerProc); // region-wise prolongator in true region layout with unique GIDs for replicated interface DOFs
 
+  std::vector< Epetra_Vector* > regionInterfaceScaling(maxRegPerProc);
+
   Epetra_Vector* compX = NULL; // initial guess for truly composite calculations
   Epetra_Vector* compY = NULL; // result vector for truly composite calculations
   Epetra_Vector* regYComp = NULL; // result vector in composite layout, but computed via regional operations
@@ -546,6 +548,26 @@ int main(int argc, char *argv[]) {
         std::cout << *(quasiRegionGrpMats[j]) << std::endl;
       }
     }
+    else if (strcmp(command,"MakeInterfaceScalingFactors") == 0) {
+      // initialize region vector with all ones.
+      for (int j = 0; j < maxRegPerProc; j++) {
+        regionInterfaceScaling[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
+        regionInterfaceScaling[j]->PutScalar(1.0);
+      }
+
+      // transform to composite layout while adding interface values via the Export() combine mode
+      Epetra_Vector* compInterfaceScalingSum = new Epetra_Vector(*mapComp, true);
+      regionalToComposite(regionInterfaceScaling, compInterfaceScalingSum,
+          maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Epetra_AddLocalAlso);
+
+      /* transform composite layout back to regional layout. Now, GIDs associated
+       * with region interface should carry a scaling factor (!= 1).
+       */
+      std::vector<Epetra_Vector*> quasiRegInterfaceScaling(maxRegPerProc);
+      compositeToRegional(compInterfaceScalingSum, quasiRegInterfaceScaling,
+          regionInterfaceScaling, maxRegPerProc, rowMapPerGrp,
+          revisedRowMapPerGrp, rowImportPerGrp);
+    }
     else if (strcmp(command,"MakeRegionMatrices") == 0) {
       // We work on a copy. Just for safety.
       for (int j = 0; j < maxRegPerProc; j++) {
@@ -866,6 +888,13 @@ int main(int argc, char *argv[]) {
     else if (strcmp(command,"PrintRegVectorYComp") == 0) {
       sleep(myRank);
       regYComp->Print(std::cout);
+    }
+    else if (strcmp(command,"PrintRegVectorInterfaceScaling") == 0) {
+      sleep(myRank);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        printf("%d: region vector regionInterfaceScaling Grp %d\n", myRank, j);
+        regionInterfaceScaling[j]->Print(std::cout);
+      }
     }
     else if (strcmp(command,"Terminate") == 0) {
       sprintf(command,"/bin/rm -f %s",fileName); system(command); exit(1);
