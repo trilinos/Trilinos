@@ -141,18 +141,6 @@ namespace MueLu {
                                                                            Level& coarseLevel)const{
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    // Print from all processes
-    RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    fancy->setShowAllFrontMatter(false).setShowProcRank(true);
-    Teuchos::FancyOStream& out  = *fancy;
-    // // Print from a particular rank
-    // const int procRank = Teuchos::GlobalMPISession::getRank();
-    // Teuchos::oblackholestream blackhole;
-    // std::ostream& out = ( procRank == 0 ? std::cout : blackhole );
-    // // Do not print anything
-    // Teuchos::oblackholestream blackhole;
-    // std::ostream& out = blackhole;
-
     // Get parameter list
     const ParameterList& pL = GetParameterList();
 
@@ -261,9 +249,6 @@ namespace MueLu {
                      lCoarseNodesPerDir, glCoarseNodesPerDir, ghostGIDs, coarseNodesGIDs, colGIDs,
                      gNumCoarseNodes, lNumCoarseNodes, coarseNodes, boundaryFlags,
                      ghostedCoarseNodes);
-
-    out << "boundaryFlags: " << boundaryFlags << std::endl;
-    out << "Creating maps" << std::endl;
 
     // Create the MultiVector of coarse coordinates
     Xpetra::UnderlyingLib lib = coordinates->getMap()->lib();
@@ -387,7 +372,6 @@ namespace MueLu {
       }
     }
 
-    std::cout << "p=" << A->getRowMap()->getComm()->getRank() << " | ghostRowGIDs: " << ghostRowGIDs << std::endl;
     RCP<const Map> ghostedRowMap = Xpetra::MapFactory<LO,GO,NO>::Build(A->getRowMap()->lib(),
                                            Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
                                            ghostRowGIDs(),
@@ -475,8 +459,6 @@ namespace MueLu {
     gnnzP = gnnzP*BlkSize;
     lnnzP = lnnzP*BlkSize;
 
-    out << "nnzP=" << gnnzP << std::endl;
-
     // Create the matrix itself using the above maps
     RCP<Matrix> P;
     P = rcp(new CrsMatrixWrap(rowMapP, colMapP, 0, Xpetra::StaticProfile));
@@ -506,10 +488,6 @@ namespace MueLu {
     for(LO dim = numDimensions; dim < 3; ++dim) {
       lCoarseElementsPerDir[dim] = 1;
     }
-
-    out << "numCoarseElements=" << numCoarseElements << std::endl;
-    out << "lCoarseElementsPerDir=(" << lCoarseElementsPerDir[0] << ", " << lCoarseElementsPerDir[1]
-        << ", " << lCoarseElementsPerDir[2] << ")" << std::endl;
 
     // Loop over the coarse elements
     Array<int> elementFlags(3);
@@ -551,7 +529,6 @@ namespace MueLu {
             glElementRefTuple[dim]   = elemInds[dim]*coarseRate[dim];
             glElementRefTupleCG[dim] = elemInds[dim];
           }
-          out << "glElementRefTuple: " << glElementRefTuple << std::endl;
 
           // Now get the column map indices corresponding to the dofs associated with the current
           // element's coarse nodes.
@@ -574,7 +551,6 @@ namespace MueLu {
           glElementCoarseNodeCG[3] += 1;
           glElementCoarseNodeCG[5] += 1;
           glElementCoarseNodeCG[7] += 1;
-          out << "glElementCoarseNodeCG: " << glElementCoarseNodeCG << std::endl;
 
           LO numNodesInElement = elementNodesPerDir[0]*elementNodesPerDir[1]*elementNodesPerDir[2];
           LO elementOffset = elemInds[2]*coarseRate[2]*glFineNodesPerDir[1]*glFineNodesPerDir[0]
@@ -589,14 +565,10 @@ namespace MueLu {
                               blockStrategy, elementNodesPerDir, numNodesInElement, colGIDs,
                               Pi, Pf, Pe, dofType, lDofInd);
 
-          out << "Clearing the local prolongator routine..." << std::endl;
-
           // Find ghosted LID associated with nodes in the element and eventually which of these
           // nodes are ghosts, this information is used to fill the local prolongator.
           Array<LO> lNodeLIDs(numNodesInElement);
           {
-            out << "Final local prolongator:" << std::endl;
-            out << std::endl;
             Array<LO> lNodeTuple(3), nodeInd(3);
             for(nodeInd[2] = 0; nodeInd[2] < elementNodesPerDir[2]; ++nodeInd[2]) {
               for(nodeInd[1] = 0; nodeInd[1] < elementNodesPerDir[1]; ++nodeInd[1]) {
@@ -674,26 +646,14 @@ namespace MueLu {
 
                       // Now we loop over the stencil and fill the column indices and row values
                       int cornerInd = 0;
-                      out << "dofType: " << dofType[nodeElementInd*BlkSize + dof]
-                          << ", lDofInd: " << lDofInd[nodeElementInd*BlkSize + dof] << " [";
                       switch(dofType[nodeElementInd*BlkSize + dof]) {
                       case 0: // Corner node
                         if(nodeInd[2] == elementNodesPerDir[2] - 1) {cornerInd += 4;}
                         if(nodeInd[1] == elementNodesPerDir[1] - 1) {cornerInd += 2;}
                         if(nodeInd[0] == elementNodesPerDir[0] - 1) {cornerInd += 1;}
                         ia[lNodeLIDs[nodeElementInd]*BlkSize + dof + 1] = rowPtr + dof + 1;
-                        ja[rowPtr + dof] = colGIDs[glElementCoarseNodeCG[cornerInd]*BlkSize + dof];
+                        ja[rowPtr + dof] = ghostedCoarseNodes->colInds[glElementCoarseNodeCG[cornerInd]]*BlkSize + dof;
                         val[rowPtr + dof] = 1.0;
-
-                        // Debug printouts
-                        for(int ind = 0; ind < std::pow(2.0, numDimensions)*BlkSize; ++ind) {
-                          if(ind == lDofInd[nodeElementInd*BlkSize + dof]) {
-                            out << "1.0 ";
-                          } else {
-                            out << "0.0 ";
-                          }
-                        }
-                        out << "]" << std::endl;
                         break;
 
                       case 1: // Edge node
@@ -704,23 +664,18 @@ namespace MueLu {
                             for(int ind2 = 0; ind2 < BlkSize; ++ind2) {
                               size_t lRowPtr = rowPtr + dof*numCoarseNodesInElement*nnzPerCoarseNode
                                 + ind1*BlkSize + ind2;
-                              ja [lRowPtr] = colGIDs[glElementCoarseNodeCG[ind1]*BlkSize + ind2];
+                              ja[lRowPtr]  = ghostedCoarseNodes->colInds[glElementCoarseNodeCG[ind1]]*BlkSize + ind2;
                               val[lRowPtr] = Pe(lDofInd[nodeElementInd*BlkSize + dof],
                                                 ind1*BlkSize + ind2);
-                              out << Pe(lDofInd[nodeElementInd*BlkSize + dof], ind1*BlkSize + ind2)
-                                  << " ";
                             }
                           } else if(blockStrategy == "uncoupled") {
                             size_t lRowPtr = rowPtr + dof*numCoarseNodesInElement*nnzPerCoarseNode
                               + ind1;
-                            ja [lRowPtr] = colGIDs[glElementCoarseNodeCG[ind1]*BlkSize + dof];
+                            ja[rowPtr + dof] = ghostedCoarseNodes->colInds[glElementCoarseNodeCG[ind1]]*BlkSize + dof;
                             val[lRowPtr] = Pe(lDofInd[nodeElementInd*BlkSize + dof],
                                               ind1*BlkSize + dof);
-                            out << Pe(lDofInd[nodeElementInd*BlkSize + dof], ind1*BlkSize + dof)
-                                << " ";
                           }
                         }
-                        out << "]" << std::endl;
                         break;
 
                       case 2: // Face node
@@ -731,23 +686,19 @@ namespace MueLu {
                             for(int ind2 = 0; ind2 < BlkSize; ++ind2) {
                               size_t lRowPtr = rowPtr + dof*numCoarseNodesInElement*nnzPerCoarseNode
                                 + ind1*BlkSize + ind2;
-                              ja [lRowPtr] = colGIDs[glElementCoarseNodeCG[ind1]*BlkSize + ind2];
+                              ja [lRowPtr] = ghostedCoarseNodes->colInds[glElementCoarseNodeCG[ind1]]*BlkSize + ind2;
                               val[lRowPtr] = Pf(lDofInd[nodeElementInd*BlkSize + dof],
                                                 ind1*BlkSize + ind2);
-                              out << Pf(lDofInd[nodeElementInd*BlkSize + dof], ind1*BlkSize + ind2)
-                                  << " ";
                             }
                           } else if(blockStrategy == "uncoupled") {
                             size_t lRowPtr = rowPtr + dof*numCoarseNodesInElement*nnzPerCoarseNode
                               + ind1;
-                            ja [lRowPtr] = colGIDs[glElementCoarseNodeCG[ind1]*BlkSize + dof];
+                            // ja [lRowPtr] = colGIDs[glElementCoarseNodeCG[ind1]*BlkSize + dof];
+                            ja [lRowPtr] = ghostedCoarseNodes->colInds[glElementCoarseNodeCG[ind1]]*BlkSize + dof;
                             val[lRowPtr] = Pf(lDofInd[nodeElementInd*BlkSize + dof],
                                               ind1*BlkSize + dof);
-                            out << Pf(lDofInd[nodeElementInd*BlkSize + dof], ind1*BlkSize + dof)
-                                << " ";
                           }
                         }
-                        out << "]" << std::endl;
                         break;
 
                       case 3: // Interior node
@@ -758,23 +709,18 @@ namespace MueLu {
                             for(int ind2 = 0; ind2 < BlkSize; ++ind2) {
                               size_t lRowPtr = rowPtr + dof*numCoarseNodesInElement*nnzPerCoarseNode
                                 + ind1*BlkSize + ind2;
-                              ja [lRowPtr] = colGIDs[glElementCoarseNodeCG[ind1]*BlkSize + ind2];
+                              ja [lRowPtr] = ghostedCoarseNodes->colInds[glElementCoarseNodeCG[ind1]]*BlkSize + ind2;
                               val[lRowPtr] = Pi(lDofInd[nodeElementInd*BlkSize + dof],
                                                 ind1*BlkSize + ind2);
-                              out << Pi(lDofInd[nodeElementInd*BlkSize + dof], ind1*BlkSize + ind2)
-                                  << " ";
                             }
                           } else if(blockStrategy == "uncoupled") {
                             size_t lRowPtr = rowPtr + dof*numCoarseNodesInElement*nnzPerCoarseNode
                               + ind1;
-                            ja [lRowPtr] = colGIDs[glElementCoarseNodeCG[ind1]*BlkSize + dof];
+                            ja [lRowPtr] = ghostedCoarseNodes->colInds[glElementCoarseNodeCG[ind1]]*BlkSize + dof;
                             val[lRowPtr] = Pi(lDofInd[nodeElementInd*BlkSize + dof],
                                               ind1*BlkSize + dof);
-                            out << Pi(lDofInd[nodeElementInd*BlkSize + dof], ind1*BlkSize + dof)
-                                << " ";
                           }
                         }
-                        out << "]" << std::endl;
                         break;
                       }
                     }
@@ -783,26 +729,12 @@ namespace MueLu {
               }
             }
           } // End of scopt for lNodeTuple and nodeInd
-          LO elementID = elemInds[2]*lCoarseElementsPerDir[1]*lCoarseElementsPerDir[0]
-            + elemInds[1]*lCoarseElementsPerDir[0] + elemInds[0];
         }
       }
     }
 
-    out << "rowPtr: " << ia << std::endl;
-    out << "colInd.size()= " << ja.size() << std::endl;
-    out << "colInd: " << ja << std::endl;
-
     // Sort all row's column indicies and entries by LID
     Xpetra::CrsMatrixUtils<SC,LO,GO,NO>::sortCrsEntries(ia, ja, val, rowMapP->lib());
-
-    // if (rowMapP->lib() == Xpetra::UseTpetra) {
-    //   // - Cannot resize for Epetra, as it checks for same pointers
-    //   // - Need to resize for Tpetra, as it check ().size() == ia[numRows]
-    //   // NOTE: these invalidate ja and val views
-    //   jaP .resize(tStencil);
-    //   valP.resize(tStencil);
-    // }
 
     // Set the values of the prolongation operators into the CrsMatrix P and call FillComplete
     PCrs->setAllValues(iaP, jaP, valP);
@@ -817,6 +749,9 @@ namespace MueLu {
 
     // store the transfer operator and node coordinates on coarse level
     Set(coarseLevel, "P", P);
+    Set(coarseLevel, "coarseCoordinates", coarseCoordinates);
+    Set<Array<GO> >(coarseLevel, "gCoarseNodesPerDim", gCoarseNodesPerDir);
+    Set<Array<LO> >(coarseLevel, "lCoarseNodesPerDim", lCoarseNodesPerDir);
 
   }
 
@@ -861,9 +796,6 @@ namespace MueLu {
       myOffset[1] = gIndices[1] % coarseRate[1];
       myOffset[0] = gIndices[0] % coarseRate[0];
     }
-
-    std::cout << "p=" << coordinatesMap->getComm()->getRank()
-              << " | gIndices: " << gIndices << std::endl;
 
     for(int dim = 0; dim < 3; ++dim) {
       if(gIndices[dim] == 0) {
@@ -957,8 +889,6 @@ namespace MueLu {
         tmp = 0;
       }
     } // end of scope for tmp and complementaryIndices
-    std::cout << "p=" << coordinatesMap->getComm()->getRank()
-              << " | glCoarseNodesPerDir: " << glCoarseNodesPerDir << std::endl;
 
     const LO lNumGhostedNodes = glCoarseNodesPerDir[0]*glCoarseNodesPerDir[1]
       *glCoarseNodesPerDir[2];
@@ -1013,16 +943,6 @@ namespace MueLu {
             + coarseNodeCoarseIndices[2]*gCoarseNodesPerDir[1]*gCoarseNodesPerDir[0];
           ghostedCoarseNodes->GIDs[currentIndex] = myGID;
           ghostedCoarseNodes->coarseGIDs[currentIndex] = myCoarseGID;
-          // if((!ghostInterface[0] || ijk[0] != 0)
-          //    && (!ghostInterface[2] || ijk[1] != 0)
-          //    && (!ghostInterface[4] || ijk[2] != 0)
-          //    && (!ghostInterface[1] || ijk[0] != glCoarseNodesPerDir[0] - 1)
-          //    && (!ghostInterface[3] || ijk[1] != glCoarseNodesPerDir[1] - 1)
-          //    && (!ghostInterface[5] || ijk[2] != glCoarseNodesPerDir[2] - 1)){
-          //   lCoarseNodesGIDs[0][countCoarseNodes] = myCoarseGID;
-          //   lCoarseNodesGIDs[1][countCoarseNodes] = myGID;
-          //   ++countCoarseNodes;
-          // }
         }
       }
     }
@@ -1451,18 +1371,6 @@ namespace MueLu {
                       Teuchos::SerialDenseMatrix<LO,SC>& Pe, Array<LO>& dofType,
                       Array<LO>& lDofInd) const {
 
-    // Print from all processes
-    RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-    fancy->setShowAllFrontMatter(false).setShowProcRank(true);
-    Teuchos::FancyOStream& out  = *fancy;
-    // // Print from a particular rank
-    // const int procRank = Teuchos::GlobalMPISession::getRank();
-    // Teuchos::oblackholestream blackhole;
-    // std::ostream& out = ( procRank == 0 ? std::cout : blackhole );
-    // // Do not print anything
-    // Teuchos::oblackholestream blackhole;
-    // std::ostream& out = blackhole;
-
     // First extract data from Aghost and move it to the corresponding dense matrix
     // This step requires to compute the number of nodes (resp dofs) in the current
     // coarse element, then allocate storage for local dense matrices, finally loop
@@ -1553,14 +1461,6 @@ namespace MueLu {
       }
     }
 
-    out << "Number of entries in local matrices computed" << std::endl;
-    out << "Interior Nodes: " << countInterior << std::endl;
-    out << "Face Nodes:     " << countFace << std::endl;
-    out << "Edge Nodes:     " << countEdge << std::endl;
-    out << "Corner Nodes:   " << countCorner << std::endl;
-    out << "dofType: " << dofType << std::endl;
-    out << "lDofInd: " << lDofInd << std::endl;
-
     LO numInteriorNodes = 0, numFaceNodes = 0, numEdgeNodes = 0, numCornerNodes = 8;
     numInteriorNodes = (elementNodesPerDir[0] - 2)*(elementNodesPerDir[1] - 2)
       *(elementNodesPerDir[2] - 2);
@@ -1584,12 +1484,6 @@ namespace MueLu {
     Pi.shape( BlkSize*numInteriorNodes, BlkSize*numCornerNodes);
     Pf.shape( BlkSize*numFaceNodes,     BlkSize*numCornerNodes);
     Pe.shape( BlkSize*numEdgeNodes,     BlkSize*numCornerNodes);
-
-    out << "Local matrices initialized" << std::endl;
-    out << "Aii: " << Aii.numRows() << "x" << Aii.numCols() << std::endl;
-    out << "Aff: " << Aff.numRows() << "x" << Aff.numCols() << std::endl;
-    out << "Aee: " << Aee.numRows() << "x" << Aee.numCols() << std::endl;
-    out << "Aec: " << Aec.numRows() << "x" << Aec.numCols() << std::endl;
 
     ArrayView<const LO> rowIndices;
     ArrayView<const SC> rowValues;
@@ -1625,10 +1519,6 @@ namespace MueLu {
             collapseFlags[2] += 2;
           }
 
-          out << "Hello (ie, je, ke)=(" << ie << ", " << je << ", " << ke << ")" << std::endl;
-          out << "elementFlags: " << elementFlags << std::endl;
-          out << "collapseFlags: {" << collapseFlags[0] << ", " << collapseFlags[1]
-              << ", " << collapseFlags[2] << "}" << std::endl;
           // Based on (ie, je, ke) we detect the type of node we are dealing with
           GetNodeInfo(ie, je, ke, elementNodesPerDir, &iType, iInd, &orientation);
           for(LO dof0 = 0; dof0 < BlkSize; ++dof0) {
@@ -1639,13 +1529,8 @@ namespace MueLu {
             Aghost->getLocalRowView(idof, rowIndices, rowValues);
             FormatStencil(BlkSize, ghostInterface, ie, je, ke, rowValues,
                           elementNodesPerDir, collapseFlags, stencilType, stencil);
-            out << "stencil formatted as: [";
-            for(LO tmp = 0; tmp < stencil.size() - 1; ++tmp) { out << stencil[tmp] << ", ";}
-            out << stencil[stencil.size() - 1] << "]" << std::endl;
             LO io, jo, ko;
             if(iType == 3) {// interior node, no stencil collapse needed
-              if(iInd*BlkSize + dof0 > numInteriorNodes - 1)
-                {out << "Ai*: iInd*BlkSize + dof0 = " << iInd*BlkSize + dof0 << std::endl;}
               for(LO interactingNode = 0; interactingNode < 27; ++interactingNode) {
                 // Find (if, jf, kf) the indices associated with the interacting node
                 ko = ke + (interactingNode / 9 - 1);
@@ -1659,31 +1544,17 @@ namespace MueLu {
                 if((io > -1 && io < elementNodesPerDir[0]) &&
                    (jo > -1 && jo < elementNodesPerDir[1]) &&
                    (ko > -1 && ko < elementNodesPerDir[2])) {
-                  // out << "interactingNode = " << interactingNode << ", iType = " << iType
-                  //     << ", iInd = " << iInd << ", jType = " << jType << ", jInd = " << jInd
-                  //     << std::endl;
                   for(LO dof1 = 0; dof1 < BlkSize; ++dof1) {
-                    if(interactingNode*BlkSize + dof1 > stencil.size() - 1)
-                      {out << "Ai*: interactingNode*BlkSize + dof1 = "
-                           << interactingNode*BlkSize + dof1 << std::endl;}
                     if (jType == 3) {
-                      if(jInd*BlkSize + dof1 > numInteriorNodes - 1)
-                        {out << "Aii: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
                       Aii(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
                         stencil[interactingNode*BlkSize + dof1];
                     } else if(jType == 2) {
-                      if(jInd*BlkSize + dof1 > numFaceNodes - 1)
-                        {out << "Aif: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
                       Aif(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
                         stencil[interactingNode*BlkSize + dof1];
                     } else if(jType == 1) {
-                      if(jInd*BlkSize + dof1 > numEdgeNodes - 1)
-                        {out << "Aie: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
                       Aie(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
                         stencil[interactingNode*BlkSize + dof1];
                     } else if(jType == 0) {
-                      if(jInd*BlkSize + dof1 > numCornerNodes - 1)
-                        {out << "Aic: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
                       Aic(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
                         -stencil[interactingNode*BlkSize + dof1];
                     }
@@ -1691,8 +1562,6 @@ namespace MueLu {
                 }
               }
             } else if(iType == 2) {// Face node, collapse stencil along face normal (*orientation)
-              if(iInd*BlkSize + dof0 > numFaceNodes - 1)
-                {out << "Af*: iInd*BlkSize + dof0 = " << iInd*BlkSize + dof0 << std::endl;}
               CollapseStencil(2, orientation, collapseFlags, stencil);
               for(LO interactingNode = 0; interactingNode < 27; ++interactingNode) {
                 // Find (if, jf, kf) the indices associated with the interacting node
@@ -1707,28 +1576,14 @@ namespace MueLu {
                 if((io > -1 && io < elementNodesPerDir[0]) &&
                    (jo > -1 && jo < elementNodesPerDir[1]) &&
                    (ko > -1 && ko < elementNodesPerDir[2])) {
-                  // out << "interactingNode = " << interactingNode << ", iType = " << iType
-                  //     << ", iInd = " << iInd << ", jType = " << jType << ", jInd = " << jInd
-                  //     << std::endl;
                   for(LO dof1 = 0; dof1 < BlkSize; ++dof1) {
-                    if(interactingNode*BlkSize + dof1 > stencil.size() - 1) {
-                      out << "Af*: interactingNode*BlkSize + dof1 = "
-                          << interactingNode*BlkSize + dof1 << std::endl;
-                    }
                     if(jType == 2) {
-                      if(jInd*BlkSize + dof1 > numFaceNodes - 1) {
-                        out << "Aff: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;
-                      }
                       Aff(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
                         stencil[interactingNode*BlkSize + dof1];
                     } else if(jType == 1) {
-                      if(jInd*BlkSize + dof1 > numEdgeNodes - 1)
-                        {out << "Afe: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
                       Afe(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
                         stencil[interactingNode*BlkSize + dof1];
                     } else if(jType == 0) {
-                      if(jInd*BlkSize + dof1 > numCornerNodes - 1)
-                        {out << "Afc: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
                       Afc(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
                         -stencil[interactingNode*BlkSize + dof1];
                     }
@@ -1750,24 +1605,11 @@ namespace MueLu {
                 if((io > -1 && io < elementNodesPerDir[0]) &&
                    (jo > -1 && jo < elementNodesPerDir[1]) &&
                    (ko > -1 && ko < elementNodesPerDir[2])) {
-                  // out << "interactingNode = " << interactingNode << ", iType = " << iType
-                  //     << ", iInd = " << iInd << ", jType = " << jType << ", jInd = " << jInd
-                  //     << std::endl;
-                  if(iInd*BlkSize + dof0 > numEdgeNodes - 1)
-                    {out << "Ae*: iInd*BlkSize + dof0 = " << iInd*BlkSize + dof0 << std::endl;}
                   for(LO dof1 = 0; dof1 < BlkSize; ++dof1) {
-                    if(interactingNode*BlkSize + dof1 > stencil.size() - 1) {
-                      out << "Ae*: interactingNode*BlkSize + dof1 = "
-                          << interactingNode*BlkSize + dof1 << std::endl;
-                    }
                     if(jType == 1) {
-                      if(jInd*BlkSize + dof1 > numEdgeNodes - 1)
-                        {out << "Aee: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
                       Aee(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
                         stencil[interactingNode*BlkSize + dof1];
                     } else if(jType == 0) {
-                      if(jInd*BlkSize + dof1 > numCornerNodes - 1)
-                        {out << "Aec: jInd*BlkSize + dof1 = " << iInd*BlkSize + dof0 << std::endl;}
                       Aec(iInd*BlkSize + dof0, jInd*BlkSize + dof1) =
                         -stencil[interactingNode*BlkSize + dof1];
                     }
@@ -1779,25 +1621,6 @@ namespace MueLu {
         } // Loop over i
       } // Loop over j
     } // Loop over k
-
-    out << "Local matrices filled" << std::endl;
-    out << "Aee: " << std::endl;
-    Aee.print(out);
-
-    out << "Aec: " << std::endl;
-    Aec.print(out);
-
-    out << "Aff: " << std::endl;
-    Aff.print(out);
-
-    out << "Afe: " << std::endl;
-    Afe.print(out);
-
-    out << "Aii: " << std::endl;
-    Aii.print(out);
-
-    out << "Aif: " << std::endl;
-    Aif.print(out);
 
     // Compute the projection operators for edge and interior nodes
     //
@@ -1817,9 +1640,6 @@ namespace MueLu {
       problem.unequilibrateLHS();
     }
 
-    out << "Pe is computed" << std::endl;
-    Pe.print(out);
-
     { // Compute P_f
       // We need to solve for P_f in: A_{ff}*P_f + A_{fe}*P_e = A_{fc}
       // Step one: A_{fc} = 1.0*A_{fc} + (-1.0)*A_{fe}*P_e
@@ -1832,9 +1652,6 @@ namespace MueLu {
       problem.solve();
       problem.unequilibrateLHS();
     }
-
-    out << "Pf is computed" << std::endl;
-    Pf.print(out);
 
     { // Compute P_i
       // We need to solve for P_i in: A_{ii}*P_i + A_{if}*P_f + A_{ie}*P_e = A_{ic}
@@ -1851,10 +1668,7 @@ namespace MueLu {
       problem.unequilibrateLHS();
     }
 
-    out << "Pi is computed" << std::endl;
-    Pi.print(out);
-
-  }
+  } // ComputeLocalEntries()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -1952,7 +1766,6 @@ namespace MueLu {
       // Create a mask array to automate mesh boundary processing
       Array<int> mask(7);
       int stencilSize = rowValues.size();
-      std::cout << "stencilSize= " << stencilSize << std::endl;
       if(collapseFlags[0] + collapseFlags[1] + collapseFlags[2] > 0) {
         if(stencilSize == 1) {
           // The assumption is made that if only one non-zero exists in the row
@@ -1985,10 +1798,7 @@ namespace MueLu {
       }
 
       int offset = 0;
-      std::cout << "(ie,je,ke)=(" << ie << ", " << je << ", " << ke << ")" << std::endl;
-      std::cout << "mask: " << mask << std::endl;
       for(int ind = 0; ind < 7; ++ind) {
-        std::cout << "ind= " << ind << ",  offset= " << offset << ", (ind - offset)= " << (ind - offset) << std::endl;
         if(mask[ind] == 1) {
           for(int dof = 0; dof < BlkSize; ++dof) {
             stencil[BlkSize*fullStencilInds[ind] + dof] = 0.0;
@@ -2000,7 +1810,6 @@ namespace MueLu {
           }
         }
       }
-      std::cout << "Cleared the BC treatment loop" << std::endl;
     } else if(stencilType == "full") {
       // Create a mask array to automate mesh boundary processing
       Array<int> mask(27);
@@ -2054,7 +1863,7 @@ namespace MueLu {
         }
       }
     } // stencilTpye
-  } // ReorderStencil()
+  } // FormatStencil()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetNodeInfo(
