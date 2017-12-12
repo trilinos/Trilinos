@@ -390,6 +390,8 @@ int main(int argc, char *argv[]) {
   std::vector< Epetra_Vector* > regionInterfaceScaling(maxRegPerProc);
   std::vector< Epetra_Vector* > coarseRegionInterfaceScaling(maxRegPerProc);
 
+  std::vector< Epetra_Vector* > regionInterfaceScaling(maxRegPerProc);
+
   Epetra_Vector* compX = NULL; // initial guess for truly composite calculations
   Epetra_Vector* compY = NULL; // result vector for truly composite calculations
   Epetra_Vector* regYComp = NULL; // result vector in composite layout, but computed via regional operations
