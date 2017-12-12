@@ -95,10 +95,7 @@ bool MOERTEL::Overlap<IFace>::Clip_Intersect(const double* N, const double* PE,
   
   // if the denom is zero, then lines are parallel, no intersection
 
-  // GAH - EPSILON test here
-  // Failing here probably should be fatal
-
-  if (fabs(denom)<1.0e-10)
+  if (fabs(denom) <= std::numeric_limits<double>::min())
 
     return false;
     
@@ -150,10 +147,7 @@ bool MOERTEL::Overlap<IFace>::Guarded_Clip_Intersect(const double* N, const doub
   
   // if the denom is zero, then lines are parallel, no intersection
 
-  // GAH - EPSILON test here
-  // Failing here probably should be fatal
-
-  if (fabs(denom)<1.0e-10)
+  if (fabs(denom) <= std::numeric_limits<double>::min())
 
     return false;
     
@@ -524,11 +518,9 @@ bool MOERTEL::Overlap<IFace>::QuickOverlapTest()
   
 // std::cerr << "minlength " << minlength << " sdiam " << sdiam << " mdiam " << mdiam;
 
-   // GAH EPSILON - max distance between mseg and sseg for contact purposes
+  // Max distance between mseg and sseg for contact purposes
   
-   double maxdia = 2.5;
-
-  if (minlength > maxdia * (sdiam + mdiam)) 
+  if (minlength > Rough_Search_Radius * (sdiam + mdiam)) 
   {
     // std::cerr << " test NOT passed\n";
     return false;
@@ -615,9 +607,8 @@ bool MOERTEL::Overlap<IFace>::Centroid(
   const double* xi_ip1 = points[0]->Xi();
   A     += xi_ip1[0]*xi_i[1] - xi_i[0]*xi_ip1[1];
 
-// GAH - EPSILON check for zero area
-
-  if(fabs(A) < 1.0e-10) // bail - we do not have a polygon
+  // bail - if we do not have a polygon
+  if (fabs(A) <= std::numeric_limits<double>::min())
 	  return false;
 
   xi[0] += (xi_i[0]+xi_ip1[0])*(xi_ip1[0]*xi_i[1]-xi_i[0]*xi_ip1[1]);

@@ -66,11 +66,6 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Teuchos_Comm.hpp>
-//#ifdef HAVE_MOERTEL_MPI
-//#include <Teuchos_MpiComm.hpp>
-//#else
-//#include <Teuchos_SerialComm.hpp>
-//#endif
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 

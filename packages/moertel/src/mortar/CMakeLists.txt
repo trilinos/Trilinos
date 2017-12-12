@@ -30,6 +30,7 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+  Moertel_Tolerances.hpp
   mrtr_pnode.H
   mrtr_function.H
   mrtr_point.H

@@ -53,6 +53,8 @@
 #include "mrtr_interface.H"
 #include "mrtr_utils.H"
 
+#include "Moertel_Tolerances.hpp"
+
 /*----------------------------------------------------------------------*
   |  ctor (public)                                            mwgee 10/05|
  *----------------------------------------------------------------------*/
@@ -677,10 +679,11 @@ bool MOERTEL::Overlap<IFace>::Clipelements() {
         double* N = &sn_[clipedge][0];
 
         // clip point P against this edge
-        // GAH - EPSILON P must be epsilon (in a cos(theta) sense) in front of the clip edge (on the normal side)
+
+        // P must be Nodes_Identical_Epsilon (in a cos(theta) sense) in front of the clip edge (on the normal side)
         //          to be removed from the polygon.
 
-        ok = Clip_TestPoint(N,PE,P,1.0e-10);
+        ok = Clip_TestPoint(N,PE,P,Nodes_Identical_Epsilon);
 
         if (ok) {
 
@@ -733,9 +736,10 @@ bool MOERTEL::Overlap<IFace>::Clipelements() {
         double* N = &mn_[clipedge][0];
 
         // clip point P against this edge
-        // GAH - EPSILON clip test point
-        // GAH - EPSILON P must be epsilon (in a cos(theta) sense) in front of the clip edge (on the normal side)
-        ok = Clip_TestPoint(N,PE,P,1.0e-5);
+
+        // P must be Nodes_Identical_Epsilon (in a cos(theta) sense) in front of the clip edge (on the normal side)
+
+        ok = Clip_TestPoint(N,PE,P,Nodes_Identical_Epsilon);
         // put point in
         if (ok) continue;
         else
@@ -800,8 +804,8 @@ bool MOERTEL::Overlap<IFace>::Clipelements() {
         double* N = &mn_[clipedge][0];
 
         // clip point P against this edge
-        // GAH - EPSILON P must be epsilon (in a cos(theta) sense) in front of the clip edge (on the normal side)
-        ok = Clip_TestPoint(N,PE,P,1.0e-5);
+        // P must be Nodes_Identical_Epsilon (in a cos(theta) sense) in front of the clip edge (on the normal side)
+        ok = Clip_TestPoint(N,PE,P,Nodes_Identical_Epsilon);
         // put point in
         if (ok) continue;
         else
@@ -906,7 +910,6 @@ bool MOERTEL::Overlap<IFace>::buildPoly(std::vector<double>& source_xi, std::vec
 
   bool s_in, p_in;
   double point_s[2], point_p[2];
-  double eps = 1.0e-10; // GAH EPSILON
   int index = -1;
   bool ok;
 
@@ -924,7 +927,7 @@ bool MOERTEL::Overlap<IFace>::buildPoly(std::vector<double>& source_xi, std::vec
     point_s[0] = source_xi[i];
     point_s[1] = source_eta[i];
 
-    s_in = Clip_TestPoint(N, PE, point_s, eps); // true if point is inside edge
+    s_in = Clip_TestPoint(N, PE, point_s, Nodes_Identical_Epsilon); // true if point is inside edge
 
     if(s_in){ // if point s is inside the clipedge
 
@@ -951,7 +954,7 @@ bool MOERTEL::Overlap<IFace>::buildPoly(std::vector<double>& source_xi, std::vec
     point_p[0] = source_xi[slot];
     point_p[1] = source_eta[slot];
 
-    p_in = Clip_TestPoint(N, PE, point_p, eps); // true if point is inside edge
+    p_in = Clip_TestPoint(N, PE, point_p, Nodes_Identical_Epsilon); // true if point is inside edge
 
     if(s_in && p_in){  // both s and p are in polygon
 
@@ -1024,7 +1027,7 @@ bool MOERTEL::Overlap<IFace>::buildPoly(std::vector<double>& source_xi, std::vec
     point_p[0] = source_xi[i + 1];
     point_p[1] = source_eta[i + 1];
 
-    p_in = Clip_TestPoint(N, PE, point_p, eps); // true if point is inside edge
+    p_in = Clip_TestPoint(N, PE, point_p, Nodes_Identical_Epsilon); // true if point is inside edge
 
     if(s_in && p_in){  // both s and p are in polygon
 
@@ -1108,7 +1111,6 @@ bool MOERTEL::Overlap<IFace>::ClipelementsSH() {
   const int nmnode = mseg_.Nnode();
   const int nsnode = sseg_.Nnode();
   bool ok = true;
-  double eps = 1.0e-10; // GAH EPSILON
 
 
   // I am reading http://cs.fit.edu/~wds/classes/graphics/Clip/clip/clip.html and
@@ -1175,7 +1177,7 @@ bool MOERTEL::Overlap<IFace>::ClipelementsSH() {
 
       double dist = MOERTEL::length(xi, 2);
 
-      if(dist <= eps){ // remove the point p
+      if(dist <= Nodes_Identical_Epsilon){ // remove the point p
 
         t_poly_xi.erase(t_poly_xi.begin() + p);
         t_poly_eta.erase(t_poly_eta.begin() + p);
@@ -1192,7 +1194,7 @@ bool MOERTEL::Overlap<IFace>::ClipelementsSH() {
 
       double dist = MOERTEL::length(xi, 2);
 
-      if(dist <= eps){ // remove the point p
+      if(dist <= Nodes_Identical_Epsilon){ // remove the point p
 
         t_poly_xi.erase(t_poly_xi.end() - 1);
         t_poly_eta.erase(t_poly_eta.end() - 1);
@@ -1265,8 +1267,8 @@ bool MOERTEL::Overlap<IFace>::ClipelementsSH() {
       double* N = &mn_[clipedge][0];
 
       // clip point P against this edge
-      // GAH - EPSILON clip test point
-      ok = Clip_TestPoint(N,PE,P,1.0e-5);
+
+      ok = Clip_TestPoint(N,PE,P,Nodes_Identical_Epsilon);
 
       // put point in
       if (ok)
@@ -1425,9 +1427,36 @@ bool MOERTEL::Overlap<IFace>::Triangulation()
     double mxi[2];
     double gap;
     MOERTEL::Projector projector(inter_.IsOneDimensional(),OutLevel());
+
     for (int i=0; i<np; ++i)
     {
       Teuchos::RCP<MOERTEL::Node> node = points[i]->Node();
+
+      //-----------------
+      // 
+      // GAH - found by kimliegeois
+      // Moertel occasionally trys to project a slave segment on a master segment which can be perpendicular. 
+      // Compute the dot product of the normal of both segments and do not do the projection if its absolute value 
+      //  is below a tolerance.
+      // FIXME: The below is valid only for planar segments!
+
+      {
+
+        double xi[2]; 
+        xi[0] = xi[1] = 0.;
+
+        const double * node_norm = node->Normal();
+        const double * seg_norm = mseg_.BuildNormal(xi);
+
+        double mag_projection = fabs(MOERTEL::dot(node_norm,seg_norm,3));
+
+        if(mag_projection <= Projection_Length_Epsilon)
+
+          return false;
+
+      }
+      //-----------------
+
       projector.ProjectNodetoSegment_NodalNormal(*node,mseg_,mxi,gap);
       // create a projected node and set it in node
       MOERTEL::ProjectedNode* pnode = new MOERTEL::ProjectedNode(*node,mxi,&mseg_);

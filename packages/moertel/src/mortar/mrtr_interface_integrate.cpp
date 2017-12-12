@@ -53,6 +53,8 @@
 #include "mrtr_segment.H"
 #include "mrtr_integrator.H"
 
+#include "Moertel_Tolerances.hpp"
+
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_Time.h"
 
@@ -817,11 +819,9 @@ bool MOERTEL::Interface::QuickOverlapTest_2D(MOERTEL::Segment& sseg, MOERTEL::Se
   vec[2] = mcen[2] - scen[2];
   length = MOERTEL::length(vec,3);
 
-  // GAH EPSILON - max distance between mseg and sseg for contact purposes
+  // Max distance between mseg and sseg for contact purposes
 
-  double maxdia = 2.5;
-
-  if (length > maxdia * (sdiam + mdiam)){
+  if (length > Rough_Search_Radius * (sdiam + mdiam)){
 
     // std::cerr << " test NOT passed\n";
     return false;
