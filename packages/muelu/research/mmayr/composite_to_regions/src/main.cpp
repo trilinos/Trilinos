@@ -43,12 +43,16 @@ struct widget {
 void stripTrailingJunk(char *command);
 void printGrpMaps(std::vector < Epetra_Map* > &mapPerGrp, int maxRegPerProc, char *str);
 
-void compositeToRegional(Epetra_Vector* compVec,
-    std::vector<Epetra_Vector*>& quasiRegVecs,
-    std::vector<Epetra_Vector*>& regVecs, const int maxRegPerProc,
-    std::vector<Epetra_Map*> rowMapPerGrp,
-    std::vector<Epetra_Map*> revisedRowMapPerGrp,
-    std::vector<Epetra_Import*> rowImportPerGrp)
+/*! \brief Transform composite vector to regional layout
+ */
+void compositeToRegional(Epetra_Vector* compVec, ///< Vector in composite layout [in]
+    std::vector<Epetra_Vector*>& quasiRegVecs, ///< Vector in quasiRegional layout [in/out]
+    std::vector<Epetra_Vector*>& regVecs, ///< Vector in regional layout [in/out]
+    const int maxRegPerProc, ///< max number of regions per proc [in]
+    std::vector<Epetra_Map*> rowMapPerGrp, ///< row maps in region layout [in]
+    std::vector<Epetra_Map*> revisedRowMapPerGrp, ///< revised row maps in region layout [in]
+    std::vector<Epetra_Import*> rowImportPerGrp ///< row importer in region layout [in]
+    )
 {
   // quasiRegional layout
   for (int j = 0; j < maxRegPerProc; j++) {
@@ -67,6 +71,28 @@ void compositeToRegional(Epetra_Vector* compVec,
   }
 
   return;
+}
+
+/*! \brief Transform regional vector to composite layout
+ */
+void regionalToComposite(std::vector<Epetra_Vector*> regVec, ///< Vector in region layout [in]
+    Epetra_Vector* compVec, ///< Vector in composite layout [in/out]
+    const int maxRegPerProc, ///< max number of regions per proc
+    std::vector<Epetra_Map*> rowMapPerGrp, ///< row maps in region layout [in]
+    std::vector<Epetra_Import*> rowImportPerGrp, ///< row importer in region layout [in]
+    const Epetra_CombineMode combineMode ///< Combine mode for import/export [in]
+    )
+{
+  std::vector<Epetra_Vector*> quasiRegVec(maxRegPerProc);
+  for (int j = 0; j < maxRegPerProc; j++) {
+    // copy vector and replace map
+    quasiRegVec[j] = new Epetra_Vector(*(regVec[j]));
+    quasiRegVec[j]->ReplaceMap(*(rowMapPerGrp[j]));
+
+    int err = compVec->Export(*quasiRegVec[j], *(rowImportPerGrp[j]), Epetra_AddLocalAlso);
+    TEUCHOS_ASSERT(err == 0);
+  }
+
 }
 
 void createRegionalVector(std::vector<Epetra_Vector*>& regVecs,
@@ -610,14 +636,7 @@ int main(int argc, char *argv[]) {
 
       // transform regY back to composite layout
       regYComp = new Epetra_Vector(*mapComp, true);
-      for (int j = 0; j < maxRegPerProc; j++) {
-        // copy vector and replace map
-        quasiRegY[j] = new Epetra_Vector(*(regY[j]));
-        quasiRegY[j]->ReplaceMap(*(rowMapPerGrp[j]));
-
-        int err = regYComp->Export(*quasiRegY[j], *(rowImportPerGrp[j]), Epetra_AddLocalAlso);
-        TEUCHOS_ASSERT(err == 0);
-      }
+      regionalToComposite(regY, regYComp, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Epetra_AddLocalAlso);
 
       Epetra_Vector* diffY = new Epetra_Vector(*mapComp, true);
       diffY->Update(1.0, *compY, -1.0, *regYComp, 0.0);
