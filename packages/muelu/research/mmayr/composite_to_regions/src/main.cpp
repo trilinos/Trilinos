@@ -148,6 +148,70 @@ void printRegionalMap(const std::string mapName, ///< string to be used for scre
   }
 }
 
+void jacobiIterate(const int maxIter,
+    const double omega,
+    std::vector<Epetra_Vector*>& regX,
+    std::vector<Epetra_Vector*>& regRes,
+    std::vector<Epetra_Vector*>& regB,
+    std::vector<Epetra_CrsMatrix*> regionGrpMats,
+    std::vector<Epetra_Vector*> regionInterfaceScaling,
+    const int maxRegPerProc, ///< max number of regions per proc [in]
+    Epetra_Map* mapComp, ///< composite map
+    std::vector<Epetra_Map*> rowMapPerGrp,///< row maps in region layout [in]
+    std::vector<Epetra_Map*> revisedRowMapPerGrp,///< revised row maps in region layout [in]
+    std::vector<Epetra_Import*> rowImportPerGrp ///< row importer in region layout [in])
+    )
+{
+  // extract diagonal from region matrices and recover true diagonal values
+  std::vector<Epetra_Vector*> diag(maxRegPerProc);
+  for (int j = 0; j < maxRegPerProc; j++) {
+    // extract inverse of diagonal from matrix
+    diag[j] = new Epetra_Vector(regionGrpMats[j]->RowMap(), true);
+    regionGrpMats[j]->ExtractDiagonalCopy(*diag[j]);
+    for (int i = 0; i < diag[j]->MyLength(); ++i) // ToDo: replace this by an Epetra_Vector routine
+      (*diag[j])[i] *= (*regionInterfaceScaling[j])[i]; // Scale to obtain the true diagonal
+  }
+
+  for (int iter = 0; iter < maxIter; ++iter) {
+
+    /* Update the residual vector
+     * 1. Compute tmp = A * regX in each region
+     * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
+     * 3. Compute r = B - tmp
+     */
+    for (int j = 0; j < maxRegPerProc; j++) // step 1
+      regionGrpMats[j]->Multiply(false, *regX[j], *regRes[j]);
+
+    sumInterfaceValues(regRes, mapComp, maxRegPerProc, rowMapPerGrp,
+        revisedRowMapPerGrp, rowImportPerGrp);
+
+    for (int j = 0; j < maxRegPerProc; j++) // step 3
+      regRes[j]->Update(1.0, *regB[j], -1.0);
+
+    // check for convergence
+    {
+      Epetra_Vector* compRes = new Epetra_Vector(*mapComp, true);
+      regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
+          rowImportPerGrp, Add);
+      double normRes = 0.0;
+      compRes->Norm2(&normRes);
+      if (normRes < 1.0e-10) {
+        std::cout << compRes->Comm().MyPID() << ": Jacobi method converged after " << iter << " iterations." << std::endl;
+        return;
+      }
+    }
+
+    for (int j = 0; j < maxRegPerProc; j++) {
+      // update solution according to Jacobi's method
+      for (int i = 0; i < regX[j]->MyLength(); ++i) {
+        (*regX[j])[i] += omega / (*diag[j])[i] * (*regRes[j])[i];
+      }
+    }
+  }
+
+  return;
+}
+
 // Interact with a Matlab program through a bunch of myData_procID files.
 // Basically, the matlab program issues a bunch of commands associated with
 // either composite or regional things (via the files). This program reads
@@ -837,7 +901,7 @@ int main(int argc, char *argv[]) {
       }
     }
     else if (strcmp(command,"RunTwoLevelMethod") == 0) {
-      // intial guess for solution
+      // initial guess for solution
       compX = new Epetra_Vector(*mapComp, true);
 
       // forcing vector
@@ -893,41 +957,19 @@ int main(int argc, char *argv[]) {
       compositeToRegional(compB, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
           revisedRowMapPerGrp, rowImportPerGrp);
 
-      compX->Comm().Barrier();
-      printRegionalVector("regRes before iteration loop", regRes, myRank);
-      compX->Comm().Barrier();
-      sleep(1);
+//      compX->Comm().Barrier();
+//      printRegionalVector("regRes before iteration loop", regRes, myRank);
+//      compX->Comm().Barrier();
+//      sleep(1);
 
+      // -----------------------------------------------------------------------
       // pre-smoothing on fine level
+      // -----------------------------------------------------------------------
       const int maxIter = 80;
       const double omega = 0.9;
-      for (int iter = 0; iter < maxIter; ++iter) {
-
-        compX->Comm().Barrier();
-        std::cout << myRank << ": Iteration " << iter << std::endl;
-
-        /* Update the residual vector
-         * 1. Compute tmp = A * regX in each region
-         * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
-         * 3. Compute r = B - tmp
-         */
-        for (int j = 0; j < maxRegPerProc; j++) // step 1
-          regionGrpMats[j]->Multiply(false, *regX[j], *regRes[j]);
-
-        sumInterfaceValues(regRes, mapComp, maxRegPerProc, rowMapPerGrp,
-            revisedRowMapPerGrp, rowImportPerGrp);
-
-        for (int j = 0; j < maxRegPerProc; j++) // step 3
-          regRes[j]->Update(1.0, *regB[j], -1.0);
-
-        std::vector<Epetra_Vector*> diag(maxRegPerProc);
-        for (int j = 0; j < maxRegPerProc; j++) {
-          // extract inverse of diagonal from matrix
-         diag[j] = new Epetra_Vector(regionGrpMats[j]->RowMap(), true);
-          regionGrpMats[j]->ExtractDiagonalCopy(*diag[j]);
-          for (int i = 0; i < diag[j]->MyLength(); ++i) // ToDo: replace this by an Epetra_Vector routine
-            (*diag[j])[i] *= (*regionInterfaceScaling[j])[i]; // Scale to obtain the true diagonal
-        }
+      jacobiIterate(maxIter, omega, regX, regRes, regB, regionGrpMats,
+          regionInterfaceScaling, maxRegPerProc, mapComp, rowMapPerGrp,
+          revisedRowMapPerGrp, rowImportPerGrp);
 
         for (int j = 0; j < maxRegPerProc; j++) {
           // update solution according to Jacobi's method
@@ -946,10 +988,20 @@ int main(int argc, char *argv[]) {
       compX->Comm().Barrier();
       sleep(1);
 
-      std::stringstream ssX;
-      ssX << "regX after " << maxIter << " iterations";
-      printRegionalVector(ssX.str(), regX, myRank);
 
+//      sleep(1);
+//
+//      std::stringstream ssRes;
+//      ssRes << "regRes after " << maxIter << " iterations";
+//      printRegionalVector(ssRes.str(), regRes, myRank);
+//
+//      compX->Comm().Barrier();
+//      sleep(1);
+//
+//      std::stringstream ssX;
+//      ssX << "regX after " << maxIter << " iterations";
+//      printRegionalVector(ssX.str(), regX, myRank);
+//
       compX->Comm().Barrier();
       sleep(1);
 
