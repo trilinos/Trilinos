@@ -357,11 +357,11 @@ namespace KokkosBatched {
       //   a_44 = A[4*_as0+4*_as1];
 
       const ValueType           
-	inv_a_00 = 1.0/A[0*_as0+0*_as1],
-	inv_a_11 = 1.0/A[1*_as0+1*_as1],
-	inv_a_22 = 1.0/A[2*_as0+2*_as1],
-	inv_a_33 = 1.0/A[3*_as0+3*_as1],
-	inv_a_44 = 1.0/A[4*_as0+4*_as1];
+	inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1],
+	inv_a_11 = static_cast<ValueType>(1.0)/A[1*_as0+1*_as1],
+	inv_a_22 = static_cast<ValueType>(1.0)/A[2*_as0+2*_as1],
+	inv_a_33 = static_cast<ValueType>(1.0)/A[3*_as0+3*_as1],
+	inv_a_44 = static_cast<ValueType>(1.0)/A[4*_as0+4*_as1];
       
       auto trsv = [&](const int p,
 		      ValueType &b_0p, 
@@ -443,10 +443,10 @@ namespace KokkosBatched {
       //   a_33 = A[3*_as0+3*_as1];
 
       const ValueType           
-	inv_a_00 = 1.0/A[0*_as0+0*_as1],
-	inv_a_11 = 1.0/A[1*_as0+1*_as1],
-	inv_a_22 = 1.0/A[2*_as0+2*_as1],
-	inv_a_33 = 1.0/A[3*_as0+3*_as1];
+	inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1],
+	inv_a_11 = static_cast<ValueType>(1.0)/A[1*_as0+1*_as1],
+	inv_a_22 = static_cast<ValueType>(1.0)/A[2*_as0+2*_as1],
+	inv_a_33 = static_cast<ValueType>(1.0)/A[3*_as0+3*_as1];
       
       auto trsv = [&](const int p,
 		      ValueType &b_0p, 
@@ -517,9 +517,9 @@ namespace KokkosBatched {
       //   a_22 = A[2*_as0+2*_as1];
 
       const ValueType           
-	inv_a_00 = 1.0/A[0*_as0+0*_as1],
-	inv_a_11 = 1.0/A[1*_as0+1*_as1],
-	inv_a_22 = 1.0/A[2*_as0+2*_as1];
+	inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1],
+	inv_a_11 = static_cast<ValueType>(1.0)/A[1*_as0+1*_as1],
+	inv_a_22 = static_cast<ValueType>(1.0)/A[2*_as0+2*_as1];
       
       auto trsv = [&](const int p,
 		      ValueType &b_0p, 
@@ -578,8 +578,8 @@ namespace KokkosBatched {
       //   a_11 = A[1*_as0+1*_as1];
 
       const ValueType           
-	inv_a_00 = 1.0/A[0*_as0+0*_as1],
-	inv_a_11 = 1.0/A[1*_as0+1*_as1];
+	inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1],
+	inv_a_11 = static_cast<ValueType>(1.0)/A[1*_as0+1*_as1];
       
       auto trsv = [&](const int p,
 		      ValueType &b_0p, 
@@ -627,7 +627,7 @@ namespace KokkosBatched {
       //   a_00 = A[0*_as0+0*_as1];
 
       const ValueType           
-	inv_a_00 = 1.0/A[0*_as0+0*_as1];
+	inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1];
       
       auto trsv = [&](const int p,
 		      ValueType &b_0p) {
@@ -1091,11 +1091,11 @@ namespace KokkosBatched {
       //   a_44 = A[4*_as0+4*_as1];
 
       const ValueType           
-	inv_a_00 = 1.0/A[0*_as0+0*_as1],
-	inv_a_11 = 1.0/A[1*_as0+1*_as1],
-	inv_a_22 = 1.0/A[2*_as0+2*_as1],
-	inv_a_33 = 1.0/A[3*_as0+3*_as1],
-	inv_a_44 = 1.0/A[4*_as0+4*_as1];
+	inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1],
+	inv_a_11 = static_cast<ValueType>(1.0)/A[1*_as0+1*_as1],
+	inv_a_22 = static_cast<ValueType>(1.0)/A[2*_as0+2*_as1],
+	inv_a_33 = static_cast<ValueType>(1.0)/A[3*_as0+3*_as1],
+	inv_a_44 = static_cast<ValueType>(1.0)/A[4*_as0+4*_as1];
 
       auto trsv = [&](const int p,
 		      ValueType &b_0p, 
@@ -1179,10 +1179,10 @@ namespace KokkosBatched {
       //   a_33 = A[3*_as0+3*_as1];
 
       const ValueType           
-	inv_a_00 = 1.0/A[0*_as0+0*_as1],
-	inv_a_11 = 1.0/A[1*_as0+1*_as1],
-	inv_a_22 = 1.0/A[2*_as0+2*_as1],
-	inv_a_33 = 1.0/A[3*_as0+3*_as1];
+	inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1],
+	inv_a_11 = static_cast<ValueType>(1.0)/A[1*_as0+1*_as1],
+	inv_a_22 = static_cast<ValueType>(1.0)/A[2*_as0+2*_as1],
+	inv_a_33 = static_cast<ValueType>(1.0)/A[3*_as0+3*_as1];
 
       auto trsv = [&](const int p,
 		      ValueType &b_0p, 
@@ -1254,9 +1254,9 @@ namespace KokkosBatched {
       //   a_22 = A[2*_as0+2*_as1];
 
       const ValueType           
-	inv_a_00 = 1.0/A[0*_as0+0*_as1],
-	inv_a_11 = 1.0/A[1*_as0+1*_as1],
-	inv_a_22 = 1.0/A[2*_as0+2*_as1];
+	inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1],
+	inv_a_11 = static_cast<ValueType>(1.0)/A[1*_as0+1*_as1],
+	inv_a_22 = static_cast<ValueType>(1.0)/A[2*_as0+2*_as1];
 
       auto trsv = [&](const int p,
 		      ValueType &b_0p, 
@@ -1315,8 +1315,8 @@ namespace KokkosBatched {
       //   a_11 = A[1*_as0+1*_as1];
 
       const ValueType           
-	inv_a_00 = 1.0/A[0*_as0+0*_as1],
-	inv_a_11 = 1.0/A[1*_as0+1*_as1];
+	inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1],
+	inv_a_11 = static_cast<ValueType>(1.0)/A[1*_as0+1*_as1];
 
       auto trsv = [&](const int p,
 		      ValueType &b_0p, 
@@ -1364,7 +1364,7 @@ namespace KokkosBatched {
       //   a_00 = A[0*_as0+0*_as1];
 
       const ValueType           
-	inv_a_00 = 1.0/A[0*_as0+0*_as1];
+	inv_a_00 = static_cast<ValueType>(1.0)/A[0*_as0+0*_as1];
 
       auto trsv = [&](const int p,
 		      ValueType &b_0p) {
