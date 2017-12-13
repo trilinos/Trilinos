@@ -9,8 +9,10 @@
 #ifndef Tempus_StaggeredForwardSensitivityModelEvaluator_decl_hpp
 #define Tempus_StaggeredForwardSensitivityModelEvaluator_decl_hpp
 
+#include "Tempus_SensitivityModelEvaluatorBase.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
+#include "NOX_Thyra.H"
 
 #include "Tempus_SolutionHistory.hpp"
 
@@ -44,7 +46,8 @@ namespace Tempus {
  */
 template <typename Scalar>
 class StaggeredForwardSensitivityModelEvaluator :
-    public Thyra::StateFuncModelEvaluatorBase<Scalar> {
+  public Thyra::StateFuncModelEvaluatorBase<Scalar>,
+  public SensitivityModelEvaluatorBase<Scalar> {
 public:
   typedef Thyra::VectorBase<Scalar>  Vector;
   typedef Thyra::MultiVectorBase<Scalar>  MultiVector;
@@ -75,27 +78,37 @@ public:
    */
   StaggeredForwardSensitivityModelEvaluator(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
-    const bool is_pseudotransient,
     const Teuchos::RCP<const Teuchos::ParameterList>& pList = Teuchos::null,
     const Teuchos::RCP<MultiVector>& dxdp_init = Teuchos::null,
     const Teuchos::RCP<MultiVector>& dx_dotdp_init = Teuchos::null,
     const Teuchos::RCP<MultiVector>& dx_dotdot_dp_init = Teuchos::null);
 
+  /** \name Public functions overridden from SensitivityModelEvaulator. */
+  //@{
+
   //! Get the underlying model 'f'
-  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const
+  Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getForwardModel() const
   { return model_; }
 
-  //! Set solution history from forward state evaluation
+  //! Set solution history from forward state evaluation (for interpolation)
   void setForwardSolutionHistory(
     const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh);
 
-  //! Set the LO (W) of the underlying model if you want to reuse it
-  void setLO(const Teuchos::RCP<Thyra::LinearOpBase<Scalar> >& lo)
-  { lo_ = lo; }
+  //! Set solution state from forward state evaluation (for frozen state)
+  virtual void setForwardSolutionState(
+    const Teuchos::RCP<const Tempus::SolutionState<Scalar> >& s);
 
-  //! Set the preconditioner of the underlying model if you want to reuse it
-  void setPO(const Teuchos::RCP<Thyra::PreconditionerBase<Scalar> >& po)
-  { po_ = po; }
+  //! Set the solver of the underlying model if you want to reuse it
+  virtual void setSolver(
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    const bool force_W_update) {
+    Teuchos::RCP<Thyra::NOXNonlinearSolver> nox_solver =
+      Teuchos::rcp_dynamic_cast<Thyra::NOXNonlinearSolver>(solver,true);
+    lo_ = nox_solver->get_nonconst_W_op(force_W_update);
+    po_ = nox_solver->get_nonconst_prec_op();
+  }
+
+  //@}
 
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
@@ -108,7 +121,17 @@ public:
 
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
 
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
+
+  Teuchos::ArrayView<const std::string> get_g_names(int j) const;
+
   Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDx_dot_op(int j) const;
+
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDx_op(int j) const;
+
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_DgDp_op(int j, int l) const;
 
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
   get_W_factory() const;
@@ -134,7 +157,6 @@ private:
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> prototypeOutArgs_;
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
-  bool is_pseudotransient_;
   Teuchos::RCP<MultiVector> dxdp_init_;
   Teuchos::RCP<MultiVector> dx_dotdp_init_;
   Teuchos::RCP<MultiVector> dx_dotdotdp_init_;
@@ -155,7 +177,8 @@ private:
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdx_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdot_;
   mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > my_dfdxdotdot_;
-  mutable Teuchos::RCP<Tempus::SolutionState<Scalar> > forward_state_;
+  mutable Teuchos::RCP<const Tempus::SolutionState<Scalar> > forward_state_;
+  mutable Teuchos::RCP<Tempus::SolutionState<Scalar> > nc_forward_state_;
   mutable Scalar t_interp_;
 };
 
