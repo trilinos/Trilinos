@@ -49,7 +49,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosSolverFactory.hpp"
-#include "createEpetraProblem.hpp"
+#include "BelosEpetraUtils.h"
 #include "Trilinos_Util.h"
 #include "Epetra_Comm.h"
 #include "Epetra_CrsMatrix.h"
@@ -81,7 +81,7 @@ main (int argc, char *argv[])
   bool success = false;
   bool verbose = false;
   try {
-    const int MyPID = comm->MyPID ();
+    int MyPID = comm->MyPID ();
 
     //
     // Parameters to read from command-line processor
@@ -122,7 +122,7 @@ main (int argc, char *argv[])
     try {
       // This might change the number of right-hand sides, if we read in
       // a right-hand side from the Harwell-Boeing file.
-      Belos::createEpetraProblem (comm, filename, rowMap, A, B, X, numRHS);
+      Belos::Util::createEpetraProblem (filename, &rowMap, &A, &B, &X, &MyPID, numRHS);
     } catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION (true, std::runtime_error,
           "Failed to create Epetra problem for matrix "

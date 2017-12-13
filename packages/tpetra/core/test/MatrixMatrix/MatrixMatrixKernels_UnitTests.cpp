@@ -339,7 +339,7 @@ mult_test_results multiply_test_kernel(
   RCP<const Map_t> map = C->getRowMap();
   LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
-  SC one = Teuchos::ScalarTraits<SC>::one();
+  // SC one = Teuchos::ScalarTraits<SC>::one();
   mult_test_results results;
 
   // Transposes
@@ -811,12 +811,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMatKernels, operations_test,SC,LO, G
     double epsilon = currentSystem.get<double> ("epsilon", defaultEpsilon);
     std::string op = currentSystem.get<std::string> ("op");
 
-    RCP<Matrix_t> A = Reader<Matrix_t>::readSparseFile (A_file, comm);
-    RCP<Matrix_t> B = Reader<Matrix_t>::readSparseFile (B_file, comm);
-    RCP<Matrix_t> C = Reader<Matrix_t>::readSparseFile (C_file, comm);
+    RCP<Matrix_t> A, B, C;
+    if (A_file != "")
+      A = Reader<Matrix_t>::readSparseFile (A_file, comm);
+    if (B_file != "")
+      B = Reader<Matrix_t>::readSparseFile (B_file, comm);
+    if (C_file != "")
+      C = Reader<Matrix_t>::readSparseFile (C_file, comm);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add", std::runtime_error,
-      "Unrecognized Matrix Operation: " << op);
+    TEUCHOS_TEST_FOR_EXCEPTION(op != "multiply" && op != "add" && op != "RAP", std::runtime_error,
+                               "Unrecognized Matrix Operation: " << op);
 
     if (op == "multiply") {
       if (verbose)

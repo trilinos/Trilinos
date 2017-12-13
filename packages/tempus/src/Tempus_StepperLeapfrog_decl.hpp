@@ -91,6 +91,8 @@ public:
       Teuchos::RCP<Teuchos::ParameterList> solverPL=Teuchos::null);
     virtual void setSolver(
         Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver);
+    virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
+      { return Teuchos::null; }
     virtual void setObserver(
       Teuchos::RCP<StepperLeapfrogObserver<Scalar> > obs = Teuchos::null);
 
@@ -106,6 +108,13 @@ public:
     virtual Scalar getOrder() const {return 2.0;}
     virtual Scalar getOrderMin() const {return 2.0;}
     virtual Scalar getOrderMax() const {return 2.0;}
+
+    virtual bool isExplicit()         const {return true;}
+    virtual bool isImplicit()         const {return false;}
+    virtual bool isExplicitImplicit() const
+      {return isExplicit() and isImplicit();}
+    virtual bool isOneStepMethod()   const {return true;}
+    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   //@}
 
   virtual void setIsXDotXDotInitialized(bool tf)

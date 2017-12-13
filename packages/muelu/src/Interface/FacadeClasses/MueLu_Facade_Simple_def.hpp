@@ -67,7 +67,7 @@ namespace MueLu {
 
     // obtain ParameterList with default input parameters for this facade class
     // Note all parameters are of type string (we use it for string replacement)
-    std::string defaultString = 
+    std::string defaultString =
 "<ParameterList name=\"Input\">"
 "<Parameter name=\"MueLu preconditioner\" type=\"string\" value=\"undefined\"/>"
 "<Parameter name=\"Block 1: dofs per node\" type=\"int\" value=\"1\"/>"
@@ -114,7 +114,7 @@ namespace MueLu {
 "      <Parameter name=\"aggregation: max selected neighbors\" type=\"int\" value=\"1\"/>"
 "    </ParameterList>"
 ""
-"    <!-- tell the tenative prolongator that we have 2 DOFs per node on the coarse levels -->"
+"    <!-- tell the tentative prolongator that we have 2 DOFs per node on the coarse levels -->"
 "    <ParameterList name=\"myCoarseMap1\">"
 "      <Parameter name=\"factory\" type=\"string\" value=\"CoarseMapFactory\"/>"
 "      <Parameter name=\"Striding info\" type=\"string\" value=\"{ XXXBlock 1: dofs per nodeYYY }\"/>"
@@ -157,7 +157,7 @@ namespace MueLu {
 "      <Parameter name=\"Domain map: Striding info\" type=\"string\"  value=\"{ XXXBlock 2: dofs per nodeYYY }\"/>"
 "    </ParameterList>"
 ""
-"    <!-- tell the tenative prolongator that we have 2 DOFs per node on the coarse levels -->"
+"    <!-- tell the tentative prolongator that we have 2 DOFs per node on the coarse levels -->"
 "    <ParameterList name=\"myCoarseMap2\">"
 "      <Parameter name=\"factory\" type=\"string\" value=\"CoarseMapFactory\"/>"
 "      <Parameter name=\"Striding info\" type=\"string\" value=\"{ XXXBlock 2: dofs per nodeYYY }\"/>"
@@ -329,7 +329,7 @@ namespace MueLu {
 
     // logical code for more complicated distinctions
 
-    
+
     std::string smoother1 = inputParameters.get<std::string>("Block 1: smoother");
     if(smoother1 == "ILU") {
       this->ReplaceString(finalString, "XYZSmoother1XYZ", "mySmooILUFact1");
@@ -347,7 +347,7 @@ namespace MueLu {
     } else {
       this->GetOStream(Errors) << "Invalid smoother type for block 1: " << smoother1 << ". Valid options are: \"SGS\", \"GS\", \"Jacobi\", \"ILU\" or \"Direct\"." << std::endl;
     }
-    
+
     std::string smoother2 = inputParameters.get<std::string>("Block 2: smoother");
     if(smoother2 == "ILU") {
       this->ReplaceString(finalString, "XYZSmoother2XYZ", "mySmooILUFact2");
@@ -365,7 +365,7 @@ namespace MueLu {
     } else {
       this->GetOStream(Errors) << "Invalid smoother type for block 2: " << smoother2 << ". Valid options are: \"SGS\", \"GS\", \"Jacobi\", \"ILU\" or \"Direct\"." << std::endl;
     }
-    
+
     if(inputParameters.get<bool>("Block 1: transfer smoothing") == true) {
       this->ReplaceString(finalString, "XXXBlock 1: prolongatorYYY", "myPFact1");
       this->ReplaceString(finalString, "XXXBlock 1: restrictor YYY", "myRFact1");
@@ -380,7 +380,7 @@ namespace MueLu {
       this->ReplaceString(finalString, "XXXBlock 2: prolongatorYYY", "myTentativePFact2");
       this->ReplaceString(finalString, "XXXBlock 2: restrictor YYY", "myTransPFact2");
     }
-  
+
     // end logical code
 
     // loop over all input parameters

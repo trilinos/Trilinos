@@ -6,7 +6,7 @@ USAGE="sendTestSummary.sh [-d] <logfile>"
 while getopts d OPT; do
     case "$OPT" in
         d)
-            # debug mode, don't send email summary
+            # debug mode, send email summary to me only
             DEBUGMODE=1
             ;;
         \?)
@@ -27,21 +27,44 @@ if [ $# -eq 0 ]; then
 fi
 ### end parsing ###
 
-cd /home/nightlyTesting
+#########################################################################
+# Variables you might want to modify.
+#########################################################################
 
+#Perl script to produce prettified HTML
+HTMLPERLSCRIPT="/home/nightlyTesting/Trilinos/cmake/ctest/drivers/dorksaber/drakify-email.pl"
+#root of cdash testing directory
+TESTLOCATION="/home/nightlyTesting"
+LOGBACKUPDIRECTORY="/home/nightlyTesting/logs"
+
+#packages to be summarized
+PATTERN="(Xpetra|MueLu)"
+
+#variables to be passed to the perl script
+MACHINENAME=`hostname -s`
+USER=`whoami`
+
+#who gets the email summary
+if [[ $DEBUGMODE == 1 ]]; then
+  RECIPIENTS=(
+    "${USER}@sandia.gov"
+  )
+else
+  RECIPIENTS=(
+    "muelu-regression@software.sandia.gov"
+  )
+fi
+#suffix for all the log files
 timeStamp="$(date +%F_%R)"
 
 #cron driver log file
 INFILE=$1
-#packages to be summarized
-PATTERN="(Xpetra|MueLu)"
 #root of file to be emailed.  The correct suffix must be appended whenever you use this.
 OUTFILE="test-summary-${timeStamp}"
 MAILCOMMAND="/usr/sbin/sendmail"
-RECIPIENTS=(
-"csiefer@sandia.gov"
-"jhu@sandia.gov"
-)
+#########################################################################
+
+cd ${TESTLOCATION}
 
 backupFile="cron_driver.log.$timeStamp"
 cp cron_driver.log $backupFile
@@ -102,13 +125,16 @@ BEGIN {
     dashBoardPattern="Test [ ]*#[0-9]*: " dashboardName
   }
 
-  # Record whether this dashboard is "Nightly" or "Experimental"
-  if (FOUND && $0 ~ "-- CTEST_TEST_TYPE=")
+# Record the "track" for this dashboard, which could be "Nightly", "Experimental", or "Specialized"
+  if (FOUND && $0 ~ "-- Trilinos_TRACK=")
   {
     thisLine=$0 
-    sub(/^[0-9]*: -- CTEST_TEST_TYPE=\x27/,"",thisLine)
+    sub(/^[0-9]*: -- Trilinos_TRACK=\x27/,"",thisLine)
     sub(/\x27/,"",thisLine)
-    dashboardType[dashboardName] = thisLine
+    if (length(thisLine) > 0) {
+      dashboardTrack[dashboardName] = thisLine
+      trackTypes[thisLine]++
+    }
   }
 
   if (FOUND && $0 ~ dashBoardPattern)
@@ -119,7 +145,7 @@ BEGIN {
       dashBoardSummary[dashboardName] = "passed"
     else
       dashBoardSummary[dashboardName] = "FAILED"
-    match(thisLine,"[0-9]*.[0-9]* sec$")
+    match(thisLine,"[0-9]*\\.[0-9]* sec$")
     timeSummary[dashboardName] = substr(thisLine,RSTART,RLENGTH)
     #done with this dashboard, reset error flag
     dashboardErrors=0
@@ -182,6 +208,11 @@ BEGIN {
     getTestSummary=1
   }
 
+  if (getTestSummary && $0 ~ "No tests were found!!!")
+  {
+    getTestSummary=0
+  }
+
   #Calculate the number of failing, passing, and total tests.
   if (getTestSummary && $0 ~ "tests failed out of")
   {
@@ -224,23 +255,28 @@ END {
     print "\n *** git update FAILED ***\n" > summaryFile
   }
 
-  printf("\n---------------------------------- Summary ----------------------------------\n") > summaryFile
-  printf("  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  printf("  ++ Nightly ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  printf("  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  for (i in listOfDashboardNames) {
-    db=listOfDashboardNames[i]
-    if (dashboardType[db] == "Nightly")
-      printf("  %61-s  ... %s\n",db,dashBoardSummary[db]) > summaryFile;
-  }
+  # do some nice formatting
+  numPlusses=73
+  thePluses="  "
+  while (jj++<numPlusses)
+    thePluses = thePluses "+"
 
-  printf("  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  printf("  ++ Experimental +++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  printf("  +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") > summaryFile
-  for (i in listOfDashboardNames) {
-    db=listOfDashboardNames[i]
-    if (dashboardType[db] == "Experimental")
-      printf("  %61-s  ... %s\n",db,dashBoardSummary[db]) > summaryFile;
+  printf("\n---------------------------------- Summary ----------------------------------\n") > summaryFile
+  for (track in trackTypes) {
+    printf("%s\n",thePluses) > summaryFile
+    trackNameLength = length(track)
+    numPlussesToTheRight = numPlusses - trackNameLength - 4
+    plussesToTheRight=""
+    kk = 0
+    while (kk++<numPlussesToTheRight)
+      plussesToTheRight = plussesToTheRight "+"
+    printf("  ++ %*-s %s\n",trackNameLength,track,plussesToTheRight) > summaryFile
+    printf("%s\n",thePluses) > summaryFile
+    for (i in listOfDashboardNames) {
+      db=listOfDashboardNames[i]
+      if (dashboardTrack[db] == track)
+        printf("  %61-s  ... %s\n",db,dashBoardSummary[db]) > summaryFile;
+    }
   }
   printf("-----------------------------------------------------------------------------\n\n") > summaryFile
 
@@ -277,16 +313,14 @@ END {
 
 date2=`echo $(date) | sed "s/ /_/g"`
 cdashDate="$(date +%F)"
-cat ${OUTFILE}.txt | perl /home/nightlyTesting/Trilinos/cmake/ctest/drivers/dorksaber/drakify-email.pl ${date2} ${cdashDate} > ${OUTFILE}.html
+cat ${OUTFILE}.txt | perl ${HTMLPERLSCRIPT} ${date2} ${cdashDate} ${MACHINENAME} ${USER} > ${OUTFILE}.html
 
-if [[ $DEBUGMODE == 1 ]]; then
-  mailCommand="cat ${OUTFILE}.html | ${MAILCOMMAND} ${RECIPIENTS[@]}"
-  echo "mail command: $mailCommand"
-  echo "Debug mode, mail not sent."
-else
-    cat ${OUTFILE}.html | ${MAILCOMMAND} ${RECIPIENTS[@]}
-fi
+${MAILCOMMAND} -it <<END_MESSAGE
+To: ${RECIPIENTS[@]}
+$(cat ${OUTFILE}.html)
+END_MESSAGE
 
 #clean up
 bzip2 --best $backupFile
-mv ${backupFile}.bz2 ${OUTFILE}.txt /home/nightlyTesting/logs
+mv ${backupFile}.bz2 ${OUTFILE}.txt ${LOGBACKUPDIRECTORY}
+rm -f ${OUTFILE}.html

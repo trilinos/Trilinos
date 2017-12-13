@@ -418,19 +418,19 @@ setFieldData(const PHX::any& a)
 
   try {
     if (m_tag->dataLayout().rank() == 1)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*,PHX::Device>>(a);
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
     else if (m_tag->dataLayout().rank() == 2)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT**,PHX::Device>>(a);
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT**,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
     else if (m_tag->dataLayout().rank() == 3)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT***,PHX::Device>>(a);
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT***,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
     else if (m_tag->dataLayout().rank() == 4)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT****,PHX::Device>>(a);
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT****,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
     else if (m_tag->dataLayout().rank() == 5)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*****,PHX::Device>>(a);
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*****,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
     else if (m_tag->dataLayout().rank() == 6)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT******,PHX::Device>>(a);
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT******,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
     else if (m_tag->dataLayout().rank() == 7)
-      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*******,PHX::Device>>(a);
+      m_field_data =  PHX::any_cast<Kokkos::View<NonConstDataT*******,typename PHX::DevLayout<NonConstDataT>::type,PHX::Device>>(a);
     else {
       throw std::runtime_error("ERROR - PHX::MDField::setFieldData (DynRank) - Invalid rank!");
     }

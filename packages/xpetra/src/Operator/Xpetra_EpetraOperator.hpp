@@ -48,7 +48,8 @@
 
 #include "Xpetra_EpetraConfigDefs.hpp"
 
-#include <Epetra_Operator.hpp>
+#include <Epetra_Operator.h>
+#include <Epetra_Map.h>
 
 #include "Xpetra_Map.hpp"
 #include "Xpetra_EpetraMap.hpp"
@@ -60,13 +61,12 @@
 
 namespace Xpetra {
 
-  template<class EpetraGlobalOrdinal>
-  class EpetraOperator : public Operator<double, int, EpetraGlobalOrdinal>
+  template<class EpetraGlobalOrdinal, class Node>
+  class EpetraOperator : public Operator<double, int, EpetraGlobalOrdinal,Node>
   {
     typedef double                                                      Scalar;
     typedef int                                                         LocalOrdinal;
     typedef EpetraGlobalOrdinal                                         GlobalOrdinal;
-    typedef typename Operator<double, int, GlobalOrdinal>::node_type    Node;
 
   public:
     //@{
@@ -74,13 +74,13 @@ namespace Xpetra {
     //! The Map associated with the domain of this operator, which must be compatible with X.getMap().
     virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const {
       XPETRA_MONITOR("EpetraOperator::getDomainMap()");
-      return toXpetra(op_->OperatorDomainMap());
+      return toXpetra<GlobalOrdinal,Node>(op_->OperatorDomainMap());
     }
 
     //! The Map associated with the range of this operator, which must be compatible with Y.getMap().
     virtual Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const {
       XPETRA_MONITOR("EpetraOperator::getRangeMap()");
-      return toXpetra(op_->OperatorRangeMap());
+      return toXpetra<GlobalOrdinal,Node>(op_->OperatorRangeMap());
     }
 
     //! \brief Computes the operator-multivector application.
@@ -97,12 +97,12 @@ namespace Xpetra {
            Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const {
       XPETRA_MONITOR("EpetraOperator::apply");
 
-      XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT<GlobalOrdinal>, X, eX, "Xpetra::EpetraOperator->apply(): cannot cast input to Xpetra::EpetraMultiVectorT");
-      XPETRA_DYNAMIC_CAST(      EpetraMultiVectorT<GlobalOrdinal>, Y, eY, "Xpetra::EpetraOperator->apply(): cannot cast input to Xpetra::EpetraMultiVectorT");
+      XPETRA_DYNAMIC_CAST(const EpetraMultiVectorT<GlobalOrdinal XPETRA_COMMA Node>, X, eX, "Xpetra::EpetraOperator->apply(): cannot cast input to Xpetra::EpetraMultiVectorT");
+      XPETRA_DYNAMIC_CAST(      EpetraMultiVectorT<GlobalOrdinal XPETRA_COMMA Node>, Y, eY, "Xpetra::EpetraOperator->apply(): cannot cast input to Xpetra::EpetraMultiVectorT");
 
       TEUCHOS_TEST_FOR_EXCEPTION((mode != Teuchos::NO_TRANS) && (mode != Teuchos::TRANS), Exceptions::NotImplemented,
                                  "Xpetra::EpetraOperator->apply(): can only accept mode == NO_TRANS or mode == TRANS");
-      TEUCHOS_TEST_FOR_EXCEPTION(mode == Teuchos::TRANS && !hasTransposeApply, Exceptions::RuntimeError,
+      TEUCHOS_TEST_FOR_EXCEPTION(mode == Teuchos::TRANS && !hasTransposeApply(), Exceptions::RuntimeError,
                                  "Xpetra::EpetraOperator->apply(): cannot apply transpose as underlying Epetra operator does not support it");
 
       // Helper vector for string A*X
@@ -110,10 +110,8 @@ namespace Xpetra {
       RCP<Epetra_MultiVector> tmp = Teuchos::rcp(new Epetra_MultiVector(*epY));
       tmp->PutScalar(0.0);
 
-      bool curTranspose = op_->UseTranspose();
       op_->SetUseTranspose(mode == Teuchos::TRANS);
-      XPETRA_ERR_CHECK(op_->Multiply(*eX.getEpetra_MultiVector(), *tmp));
-      op_->setUseTranspose(curTranspose);
+      XPETRA_ERR_CHECK(op_->Apply(*eX.getEpetra_MultiVector(), *tmp));
 
       // calculate alpha * A * x + beta * y
       XPETRA_ERR_CHECK(eY.getEpetra_MultiVector()->Update(alpha, *tmp, beta));
@@ -121,13 +119,9 @@ namespace Xpetra {
 
     /// \brief Whether this operator supports applying the transpose or conjugate transpose.
     virtual bool hasTransposeApply() const {
-      if (op_->UseTransepose()) {
-        // If current setting is to use transpose, then obviously we can use it
-        return true;
-      }
       // We do not currently use transpose, try setting it
       int err = op_->SetUseTranspose(true);
-      SetUseTranspose(false);
+      op_->SetUseTranspose(false);
       return (err == 0);
     }
 

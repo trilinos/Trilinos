@@ -12,6 +12,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperBackwardEuler.hpp"
+#include "Tempus_StepperBDF2.hpp"
 #include "Tempus_StepperNewmarkImplicitAForm.hpp"
 #include "Tempus_StepperNewmarkImplicitDForm.hpp"
 #include "Tempus_StepperNewmarkExplicitAForm.hpp"
@@ -21,6 +22,7 @@
 #include "Tempus_StepperIMEX_RK.hpp"
 #include "Tempus_StepperIMEX_RK_Partition.hpp"
 #include "Tempus_StepperLeapfrog.hpp"
+#include "Tempus_StepperOperatorSplit.hpp"
 
 
 namespace Tempus {
@@ -59,6 +61,15 @@ public:
     return this->createStepper(model, stepperType, stepperPL);
   }
 
+  /// Create stepper from ParameterList with its details.
+  Teuchos::RCP<Stepper<Scalar> > createStepper(
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    std::string stepperType = stepperPL->get<std::string>("Stepper Type");
+    return this->createStepper(models, stepperType, stepperPL);
+  }
+
 private:
   /// Very simple factory method
   Teuchos::RCP<Stepper<Scalar> > createStepper(
@@ -71,6 +82,8 @@ private:
       return rcp(new StepperForwardEuler<Scalar>(model, stepperPL));
     else if (stepperType == "Backward Euler")
       return rcp(new StepperBackwardEuler<Scalar>(model, stepperPL));
+    else if (stepperType == "BDF2")
+      return rcp(new StepperBDF2<Scalar>(model, stepperPL));
     else if (stepperType == "Newmark Implicit a-Form")
       return rcp(new StepperNewmarkImplicitAForm<Scalar>(model, stepperPL));
     else if (stepperType == "Newmark Implicit d-Form")
@@ -146,6 +159,19 @@ private:
                         model, stepperType, stepperPL));
     else if (stepperType == "Leapfrog")
       return rcp(new StepperLeapfrog<Scalar>(model, stepperPL));
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Unknown 'Stepper Type' = " << stepperType);
+    }
+  }
+
+  Teuchos::RCP<Stepper<Scalar> > createStepper(
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models,
+    std::string stepperType,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    if (stepperType == "Operator Split")
+      return rcp(new StepperOperatorSplit<Scalar>(models, stepperPL));
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Unknown 'Stepper Type' = " << stepperType);

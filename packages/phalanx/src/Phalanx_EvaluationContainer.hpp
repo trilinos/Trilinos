@@ -89,9 +89,15 @@ namespace PHX {
     void bindField(const PHX::FieldTag& f, const PHX::any& a);
 
     void postRegistrationSetup(typename Traits::SetupData d,
-			       PHX::FieldManager<Traits>& fm);
+			       PHX::FieldManager<Traits>& fm,
+                               const bool& buildDeviceDAG);
 
     void evaluateFields(typename Traits::EvalData d);
+
+    void evaluateFieldsDeviceDag(const int& work_size,
+				 const int& team_size,
+				 const int& vector_size,
+				 typename Traits::EvalData d);
 
 #ifdef PHX_ENABLE_KOKKOS_AMT
     /*! \brief Evaluate the fields using hybrid functional (asynchronous multi-tasking) and data parallelism.
@@ -151,6 +157,8 @@ namespace PHX {
     std::unordered_map<std::string,std::string> aliased_fields_;
     
     std::vector<PHX::index_size_type> kokkos_extended_data_type_dimensions_;
+
+    bool build_device_dag_;
   };
   
 } 

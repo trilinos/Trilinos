@@ -311,7 +311,7 @@ void StepperHHTAlpha<Scalar>::takeStep(
       Thyra::copy(*v_old, v_init.ptr());
       Thyra::put_scalar(0.0, a_init.ptr());
       wrapperModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
-      const Thyra::SolveStatus<double> sStatus =
+      const Thyra::SolveStatus<Scalar> sStatus =
         this->solveNonLinear(wrapperModel_, *solver_, a_init);
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -413,8 +413,12 @@ void StepperHHTAlpha<Scalar>::setParameterList(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  if (pList == Teuchos::null) stepperPL_ = this->getDefaultParameters();
-  else stepperPL_ = pList;
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  } else {
+    stepperPL_ = pList;
+  }
   // Can not validate because of optional Parameters.
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
   //Get beta and gamma from parameter list

@@ -180,11 +180,11 @@ namespace MueLu {
         Set(coarseLevel, "Constraint0", X);
       }
 
-      if (IsPrint(Statistics1)) {
+      if (IsPrint(Statistics2)) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
-        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
+        GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*P, "P", params);
       }
 
     } else {
@@ -198,11 +198,11 @@ namespace MueLu {
 
       Set(coarseLevel, "R", R);
 
-      if (IsPrint(Statistics1)) {
+      if (IsPrint(Statistics2)) {
         RCP<ParameterList> params = rcp(new ParameterList());
         params->set("printLoadBalancingInfo", true);
         params->set("printCommInfo",          true);
-        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "R", params);
+        GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*R, "R", params);
       }
     }
   }

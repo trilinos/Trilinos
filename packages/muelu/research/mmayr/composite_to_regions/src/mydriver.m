@@ -89,7 +89,7 @@
 %
 !rm -f myData_* 
 
-file='caseOne'; % mkRegionFile(file);
+file='caseFour'; % mkRegionFile(file);
 
 %
 %  read in some of header type information 
@@ -100,9 +100,9 @@ whichCase = fgets(fp,16); fclose(fp);
 %
 % make a global tridiagonal matrix corresponding to the discretization
 %
-A = spdiags(rand(nNodes,3), -1:1, nNodes, nNodes);
-% A = spdiags(ones(nNodes,3), -1:1, nNodes, nNodes);
-
+% A = spdiags(rand(nNodes,3), -1:1, nNodes, nNodes);
+% A = spdiags(-1*ones(nNodes,3), -1:1, nNodes, nNodes);
+A = oneDimensionalLaplace(nNodes);
 
 % Each 'processor' reads regional file. 
 
@@ -226,7 +226,9 @@ send('MakeRegionMatrices',nProcs);
 % send('PrintRegionMatrixColMap',nProcs);
 % send('PrintRegionMatrixRangeMap',nProcs);
 % send('PrintRegionMatrixDomainMap',nProcs);
-send('ComputeMatVecs',nProcs);
+send('MakeRegionTransferOperators',nProcs);
+send('RunTwoLevelMethod',nProcs);
+% send('ComputeMatVecs',nProcs);
 % send('PrintCompositeVectorX',nProcs);
 % send('PrintCompositeVectorY',nProcs);
 % send('PrintQuasiRegVectorX',nProcs);

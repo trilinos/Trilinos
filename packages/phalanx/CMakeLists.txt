@@ -98,11 +98,27 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors wrapped around each evaluator."
   "${${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR}" )
 
+# Experimental device dag support
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEVICE_DAG
+  PHX_ENABLE_DEVICE_DAG
+  "The DAG is traversed on device from a single parallel_for call. Requires relocatable device code for CUDA builds."
+  OFF )
+MESSAGE(STATUS "Experimental Device DAG support: ${PHX_ENABLE_DEVICE_DAG}")
+
+# Enforce that if device type is cuda and device dag enabled then relocatable device code must be enabled
+IF(${PACKAGE_NAME}_ENABLE_DEVICE_DAG)
+  IF(PHX_KOKKOS_DEVICE_TYPE_CUDA)
+    IF(NOT Kokkos_ENABLE_Cuda_RDC)
+      MESSAGE(FATAL_ERROR, " Enabling ${PACKAGE_NAME}_ENABLE_DEVICE_DAG support with a CUDA device type in Phalanx requires compilation with relocatable device code! Please reconfigure with Kokkos_ENABLE_Cuda_RDC=ON and add --relocatable-device-code=true to the CMAKE_CXX_FLAGS.")
+    ENDIF()
+  ENDIF()
+ENDIF()
+
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT
   PHX_ENABLE_KOKKOS_AMT
   "Enable the Kokkos Asynchronous Multi-tasking capability. Default is off."
   OFF )
-MESSAGE(STATUS "Kokkos AMT support: ${PHX_ENABLE_KOKKOS_AMT}")
+MESSAGE(STATUS "Experimental Kokkos AMT support: ${PHX_ENABLE_KOKKOS_AMT}")
 IF(${PACKAGE_NAME}_ENABLE_KOKKOS_AMT)
   IF(PHX_KOKKOS_DEVICE_TYPE_THREAD)
   MESSAGE(FATAL_ERROR "Phalanx configure ERROR: Kokkos AMT support is enabled but is not implemented for Pthreads execution space. Please change your execution space or disable AMT support in Phalanx.")

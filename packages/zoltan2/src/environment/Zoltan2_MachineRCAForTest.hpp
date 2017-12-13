@@ -5,6 +5,7 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Zoltan2_Machine.hpp>
 #include <cstdlib>     /* srand, rand */
+#include <fstream>
 #include <string>
 
 namespace Zoltan2{
@@ -157,7 +158,7 @@ public:
           int zordinal = this->actual_procCoords[2][i];
           procCoords[2][i] = zordinal * 5 + (zordinal / 8) * 3;
         }
-       	int mx = this->machine_extent[0];
+        int mx = this->machine_extent[0];
         int my = this->machine_extent[1];
         int mz = this->machine_extent[2];
 
@@ -267,7 +268,7 @@ public:
     }
   }
 
-  
+
 
 
   virtual ~MachineRCATest() {
@@ -315,9 +316,9 @@ public:
 
   void printAllocation(){
     if(this->myRank == 0){
-      for (int i = 0; i < this->numRanks; ++i){ 
+      for (int i = 0; i < this->numRanks; ++i){
         std::cout << "Rank:" << i << " " << procCoords[0][i] << " " << procCoords[1][i] << " " << procCoords[2][i] << std::endl;
-      } 
+      }
       std::cout << "Machine Extent:" << " " << this->machine_extent[0] << " " << this->machine_extent[1] << " " << this->machine_extent[2] << std::endl;
     }
   }

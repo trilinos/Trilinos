@@ -353,6 +353,12 @@ namespace Tacho {
 
       inline
       void
+      setFrontUpdateMode(const ordinal_type front_update_mode) {
+        _info.front_update_mode = front_update_mode;
+      }
+
+      inline
+      void
       setSerialThresholdSize(const ordinal_type serial_thres_size) {
         _info.serial_thres_size = serial_thres_size;
       }

@@ -458,7 +458,7 @@ Generally, this simplifies the implementation because the required
 replication of any region interface node must occur across processors.
 That is, each version of a replicated node will lie on different
 processors within a group. This appears to be a key assumption to employ various
-Trilinos Import()/Export() capabilities as these have
+Trilinos {\sf Import()}/{\sf Export()} capabilities as these have
 some `one-to-one' (or non-overlappng) restrictions that we
 do not completely understand.
 Specifically, the replication of matrix rows/columns more closely
@@ -494,13 +494,23 @@ correct. The conversion of vectors or matrices from the
 composite representation to the regional representation can be viewed as
 first as a conversion from composite to quasiRegional  followed by
 a second conversion from quasiRegional to regional.
-The first conversion revolves around an import between the original
-composite maps and the quasi maps. These quasi maps have the same GIDs
-as the composite map. The quasi row map is similar to the composite
-map with the exception that some interface entries are replicated.
-The true regional map, however, has new GIDs to represent replicated
-values. The second conversion from quasiRegional to regional corresponds
-only to changing the maps and not making any changes to the data layout.
+\begin{enumerate}
+ \item {\bf composite to quasiRegional:} This conversion uses an {\sf Import()} operation
+ to extract the regional data from composite matrix/vector objects, but uses quasi maps
+ for the regional objects. These quasi maps have the same GIDs
+ as the composite map. The quasi row map is similar to the composite
+ map with the exception that some interface entries are replicated.
+ \item {\bf quasiRegional to regional:} This conversion from quasiRegional to regional corresponds
+ only to changing the maps and not making any changes to the data layout and the data itself.
+ It keeps the data from the quasiRegional objects,
+ but forms objects based on true regional maps.
+ The true regional map, however, has new GIDs to represent replicated values.
+\end{enumerate}
+We also need to transform vectors from the regional layout back to the composite layout. Therefore, we just reverse the aforementioned process, i.e. we
+\begin{enumerate}
+ \item replace the vector's map with the quasiRegional map, but keep its data.
+ \item perform an {\sf Export()} operation to the composite map layout using the {\sf CombineMode = Epetra\_AddLocalAlso}.
+\end{enumerate}
 
 \section{Future Direction Thoughts}
 Basically, the tasks that have to happen next include

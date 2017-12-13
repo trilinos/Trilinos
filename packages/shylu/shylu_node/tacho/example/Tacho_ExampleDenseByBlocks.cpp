@@ -36,8 +36,8 @@ using namespace Tacho::Experimental;
   printf("       byblocks/reference (speedup):                   %10.6f\n", t_reference/t_byblocks); \
   printf("\n");                                                         
 
-  // for (ordinal_type i=0;i<nthreads;++i)                                 \
-  //    printf("  time for external blas lapack (diff from avg):       %10.6f s, %10.6f s\n", g_time_per_thread[i]/niter, fabs(g_time_per_thread[i] - t_avg)/niter); \
+  // for (ordinal_type i=0;i<nthreads;++i)                                 
+  //    printf("  time for external blas lapack (diff from avg):       %10.6f s, %10.6f s\n", g_time_per_thread[i]/niter, fabs(g_time_per_thread[i] - t_avg)/niter); 
 
 
 int main (int argc, char *argv[]) {

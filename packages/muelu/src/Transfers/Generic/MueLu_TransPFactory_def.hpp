@@ -101,11 +101,12 @@ namespace MueLu {
 
     RCP<Matrix> R = Utilities::Transpose(*P, true,label,Tparams);
 
-    RCP<ParameterList> params = rcp(new ParameterList());;
-    params->set("printLoadBalancingInfo", true);
-    params->set("printCommInfo",          true);
-    if (IsPrint(Statistics1))
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "R", params);
+    if (IsPrint(Statistics2)) {
+      RCP<ParameterList> params = rcp(new ParameterList());
+      params->set("printLoadBalancingInfo", true);
+      params->set("printCommInfo",          true);
+      GetOStream(Statistics2) << PerfUtils::PrintMatrixInfo(*R, "R", params);
+    }
 
     Set(coarseLevel, "R", R);
 

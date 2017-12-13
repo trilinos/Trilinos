@@ -24,12 +24,11 @@ template<class Scalar>
  *     information that is required to restart from a checkpoint.
  *   - The StepperState should be held by the SolutionState so that it has
  *     all the information needed to restart the solution.
- *   - Many time integrators will simply need this base class, because
+ *   - Many Steppers will simply need this base class, because
  *     they do not have any other additional state information.
  *   - StepperState can be inherited to expand the state information.
  *   - Examples of other information that could be included in derived
  *     StepperStates:
- *     - Theta value for a theta method
  *     - Metadata and SolutionHistory for a BDF method
  *   - The base class currently has the Stepper name so the Stepper can
  *     check if the StepperState is usable.

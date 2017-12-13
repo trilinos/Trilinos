@@ -48,7 +48,7 @@
  * \date Last update do Doxygen: 20-March-06
  *
  */
-#ifdef HAVE_MPI
+#ifdef HAVE_MOERTEL_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
@@ -63,7 +63,7 @@
 #include "Galeri_Utils.h"
 #include "Galeri_FiniteElements.h"
 
-#ifdef MOERTEL_HAVE_EXODUS
+#ifdef HAVE_MOERTEL_SEACAS
 #include "ExodusInterface.h"
 #endif
 
@@ -123,12 +123,16 @@ double BoundaryValue(const double& x, const double& y,
 
 int main(int argc, char *argv[])
 {
-#ifdef HAVE_MPI
+#ifdef HAVE_MOERTEL_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
+
+  int status = 0; // return status
+
+  try {
 
     // this example is in serial only
     if (Comm.NumProc()>1) exit(0);
@@ -139,7 +143,7 @@ int main(int argc, char *argv[])
     // we have 4 interfaces here with each 2 sides:
     // with tags 1/2, 11/12, 21/22, 31/32
     const int ninter = 4;
-    vector<map<int,int> > nodes(ninter*2);
+    std::vector<std::map<int,int> > nodes(ninter*2);
     for (int i=0; i<Grid.NumMyBoundaryFaces(); ++i)
     {
       int tag;
@@ -194,7 +198,7 @@ int main(int argc, char *argv[])
     // ------------------------------------------------------------- //
     int printlevel = 3; // ( moertel takes values 0 - 10 )
     //int printlevel = 8; // ( moertel takes values 0 - 10 ) // GAH gives info about intersection root finding
-    vector<RefCountPtr<MOERTEL::Interface> > interfaces(ninter);
+    std::vector<RefCountPtr<MOERTEL::Interface> > interfaces(ninter);
     for (int i=0; i<ninter; ++i) 
       interfaces[i] = rcp(new MOERTEL::Interface(i,false,Comm,printlevel));
 
@@ -205,7 +209,7 @@ int main(int argc, char *argv[])
     // ------------------------------------------------------------- //
     for (int i=0; i<ninter; ++i)
     {
-      map<int,int>::iterator curr;
+      std::map<int,int>::iterator curr;
       for (int j=0; j<2; ++j)
         for (curr = nodes[i*2+j].begin(); curr != nodes[i*2+j].end(); ++curr)
         {
@@ -474,7 +478,7 @@ int main(int argc, char *argv[])
     //manager.SetInputMatrix(&A,false);
     //manager.Solve(list,LHS,RHS);
 	
-#ifdef MOERTEL_HAVE_EXODUS
+#ifdef HAVE_MOERTEL_SEACAS
 
     // ==================    //
     // Output using ExodusII //
@@ -488,11 +492,35 @@ int main(int argc, char *argv[])
     MEDITInterface MEDIT(Comm);
     MEDIT.Write(Grid, "hex_output", LHS);
 #endif
-	
 
-#ifdef HAVE_MPI
+  }
+  catch (int e) {
+    cerr << "Caught exception, value = " << e << endl;
+    status = 1;
+  }
+  catch (Galeri::Exception& rhs) {
+
+            cerr << "Caught Galeri exception: ";
+            rhs.Print();
+    status = 1;
+  }
+  catch (...) {
+    cerr << "Caught generic exception" << endl;
+    status = 1;
+  }
+	
+#ifdef HAVE_MOERTEL_MPI
   MPI_Finalize();
 #endif
 
-  return(0);
+    if (status == 0)
+      std::cout << "\nTest passed!" << endl;
+    else
+      std::cout << "\nTest Failed!" << endl;
+
+
+ // Final return value (0 = successfull, non-zero = failure)
+
+  return status;
+
 }

@@ -1,5 +1,6 @@
 
 #include <iterator>
+#include <set>
 #include <Epetra_CrsMatrix.h>
 
 #include <Xpetra_Map.hpp>

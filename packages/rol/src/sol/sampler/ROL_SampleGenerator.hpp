@@ -47,10 +47,11 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_Vector.hpp"
+#include <fstream>
 
 namespace ROL {
 
-template<class Real> 
+template<class Real>
 class SampleGenerator {
 private:
   int begin_;
@@ -72,13 +73,13 @@ public:
   virtual ~SampleGenerator() {}
   SampleGenerator(const Teuchos::RCP<BatchManager<Real> > &bman)
     : begin_(0), bman_(bman) {}
-  SampleGenerator(const SampleGenerator<Real> &sampler) 
+  SampleGenerator(const SampleGenerator<Real> &sampler)
     : begin_(sampler.begin_), bman_(sampler.bman_),
       points_(sampler.points_), weights_(sampler.weights_) {}
 
   virtual void update(const Vector<Real> &x) {
     begin_ = 0;
-  } 
+  }
 
   virtual int start(void) {
     return begin_;
@@ -104,7 +105,7 @@ public:
 
   virtual std::vector<Real> getMyPoint(const int i) const {
     return points_[i];
-  }  
+  }
 
   virtual Real getMyWeight(const int i) const {
     return weights_[i];

@@ -94,7 +94,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   ### PACKAGES CONFIGURATION ###
   "-DMueLu_ENABLE_Experimental:BOOL=ON"
   "-DXpetra_ENABLE_Experimental:BOOL=ON"
-  "-DMueLu_ENABLE_Epetra:BOOL=OFF"
+  "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
 
 )
 

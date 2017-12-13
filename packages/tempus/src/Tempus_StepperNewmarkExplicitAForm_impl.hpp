@@ -134,15 +134,15 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
 
-    //Get values of d, v and a from previous step 
+    //Get values of d, v and a from previous step
     RCP<const Thyra::VectorBase<Scalar> > d_old = currentState->getX();
     RCP<const Thyra::VectorBase<Scalar> > v_old = currentState->getXDot();
     RCP<Thyra::VectorBase<Scalar> > a_old = currentState->getXDotDot();
-    
-    //Get dt and time 
+
+    //Get dt and time
     const Scalar dt = workingState->getTimeStep();
     const Scalar time = workingState->getTime();
-    
+
     typedef Thyra::ModelEvaluatorBase MEB;
 
 #ifdef DEBUG_OUTPUT
@@ -150,14 +150,14 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
     *out_ << "IKT v_old = " << Thyra::max(*v_old) << "\n";
     *out_ << "IKT a_old prescribed = " << Thyra::max(*a_old) << "\n";
 #endif
-    
+
     //Compute initial acceleration, a_old, using initial displacement (d_old) and initial
-    //velocity (v_old) if in 1st time step 
-    //allocate a_init 
+    //velocity (v_old) if in 1st time step
+    //allocate a_init
     RCP<Thyra::VectorBase<Scalar> > a_init = Thyra::createMember(d_old->space());
     Thyra::put_scalar(0.0, a_init.ptr());
     if (time == solutionHistory->minTime()) {
-      //Set x and x_dot in inArgs_ to be initial d and v, respectively 
+      //Set x and x_dot in inArgs_ to be initial d and v, respectively
       inArgs_.set_x(d_old);
       inArgs_.set_x_dot(v_old);
       if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(time);
@@ -176,25 +176,25 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
     }
 
 
-    //New d, v and a to be computed here 
+    //New d, v and a to be computed here
     RCP<Thyra::VectorBase<Scalar> > d_new = workingState->getX();
     RCP<Thyra::VectorBase<Scalar> > v_new = workingState->getXDot();
     RCP<Thyra::VectorBase<Scalar> > a_new = workingState->getXDotDot();
 
-    //allocate d and v predictors 
+    //allocate d and v predictors
     RCP<Thyra::VectorBase<Scalar> > d_pred =Thyra::createMember(d_old->space());
     RCP<Thyra::VectorBase<Scalar> > v_pred =Thyra::createMember(v_old->space());
 
-    //compute displacement and velocity predictors 
+    //compute displacement and velocity predictors
     predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
     predictVelocity(*v_pred, *v_old, *a_old, dt);
-    
+
 #ifdef DEBUG_OUTPUT
     *out_ << "IKT d_pred = " << Thyra::max(*d_pred) << "\n";
     *out_ << "IKT v_pred = " << Thyra::max(*v_pred) << "\n";
 #endif
 
-    //Set x and x_dot in inArgs_ to be d and v predictors, respectively 
+    //Set x and x_dot in inArgs_ to be d and v predictors, respectively
     inArgs_.set_x(d_pred);
     inArgs_.set_x_dot(v_pred);
     if (inArgs_.supports(MEB::IN_ARG_t)) inArgs_.set_t(currentState->getTime());
@@ -211,19 +211,19 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
 
     Thyra::copy(*(outArgs_.get_f()), a_new.ptr());
 #ifdef DEBUG_OUTPUT
-    *out_ << "IKT a_new = " << Thyra::max(*(workingState()->getXDotDot())) << "\n"; 
+    *out_ << "IKT a_new = " << Thyra::max(*(workingState()->getXDotDot())) << "\n";
 #endif
 
     //Set x in workingState to displacement predictor
-    Thyra::copy(*d_pred, d_new.ptr()); 
-    
-    //set xdot in workingState to velocity corrector 
-    correctVelocity(*v_new, *v_pred, *a_new, dt); 
+    Thyra::copy(*d_pred, d_new.ptr());
+
+    //set xdot in workingState to velocity corrector
+    correctVelocity(*v_new, *v_pred, *a_new, dt);
 #ifdef DEBUG_OUTPUT
     *out_ << "IKT d_new = " << Thyra::max(*(workingState()->getX())) << "\n";
     *out_ << "IKT v_new = " << Thyra::max(*(workingState()->getXDot())) << "\n";
 #endif
- 
+
     workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     workingState->setOrder(this->getOrder());
   }
@@ -269,8 +269,12 @@ template <class Scalar>
 void StepperNewmarkExplicitAForm<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
-  if (pList == Teuchos::null) stepperPL_ = this->getDefaultParameters();
-  else stepperPL_ = pList;
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  } else {
+    stepperPL_ = pList;
+  }
   stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
   std::string stepperType = stepperPL_->get<std::string>("Stepper Type");

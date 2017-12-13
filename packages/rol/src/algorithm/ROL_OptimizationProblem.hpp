@@ -1007,6 +1007,13 @@ public:
     return 0;
   }
 
+  void reset(void) {
+    initialize(INTERMEDIATE_obj_,INTERMEDIATE_sol_,INTERMEDIATE_bnd_,
+               INTERMEDIATE_econ_,INTERMEDIATE_emul_,
+               INTERMEDIATE_icon_,INTERMEDIATE_imul_,INTERMEDIATE_ibnd_);
+    conManager_->resetSlackVariables();
+  }
+
   // Check derivatives, and consistency 
   void checkSolutionVector( Vector<Real> &x, // Optimization space
                             Vector<Real> &y, // Optimization space

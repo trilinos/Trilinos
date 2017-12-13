@@ -370,7 +370,7 @@ applyImpl (HostViewLocal& X,
     else { // beta != 0
       for(size_t j = 0; j < Y.dimension_0(); j++)
         for(size_t i = 0; i < Y.dimension_1(); i++)
-          Y(i, j) *= beta;
+          Y(i, j) = beta * (local_impl_scalar_type) Y(i, j);
     }
   }
   else { // alpha != 0; must solve the linear system

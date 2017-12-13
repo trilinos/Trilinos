@@ -163,7 +163,7 @@ reset(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
       dirParams.get("Use Modified Bouaricha", true);
     if (useModifiedMethod  &&
     utilsPtr->isPrintType(NOX::Utils::Parameters))
-      utilsPtr->out() << "Using Modifed Bouaricha method" << std::endl;
+      utilsPtr->out() << "Using Modified Bouaricha method" << std::endl;
   }
 
 

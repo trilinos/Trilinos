@@ -533,6 +533,7 @@ void
 
     timer1.reset();
     Kokkos::parallel_for(
+                         "KokkosSparse_spgemm_speed",
         gpu_team_policy_t(
             a_row_cnt / team_row_chunk_size + 1 ,
             suggested_team_size ,
@@ -601,10 +602,10 @@ void
     timer1.reset();
 
     if (use_dynamic_schedule){
-      Kokkos::parallel_for( dynamic_multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      Kokkos::parallel_for("KokkosSparse_spgemm_speed", dynamic_multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
     else {
-      Kokkos::parallel_for( multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      Kokkos::parallel_for("KokkosSparse_spgemm_speed", multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
 
     MyExecSpace::fence();
@@ -622,4 +623,3 @@ void
 }
 }
 }
-

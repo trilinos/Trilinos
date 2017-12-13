@@ -71,7 +71,6 @@ namespace Xpetra {
   //const RCP< const Map<int, GlobalOrdinal> > toXpetra(const RCP< const Epetra_Map > &);
   template<class GlobalOrdinal, class Node>
   const RCP< const Map<int, GlobalOrdinal, Node> > toXpetra(const Epetra_BlockMap &);
-  //
 
   // stub implementation for EpetraMapT
   template<class GlobalOrdinal, class Node>
@@ -261,7 +260,7 @@ namespace Xpetra {
     local_map_type getLocalMap () const {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "Xpetra::EpetraMap only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
-      return local_map_type();
+      TEUCHOS_UNREACHABLE_RETURN(local_map_type());
     }
 #else
 #ifdef __GNUC__

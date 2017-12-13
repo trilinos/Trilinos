@@ -1,14 +1,14 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -51,6 +51,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include <iterator>
+#include <set>
 
 namespace ProductBasisUtilsUnitTest {
 
@@ -59,14 +60,14 @@ namespace ProductBasisUtilsUnitTest {
   struct UnitTestSetup {
     ValueType rtol, atol;
     OrdinalType sz,p,d;
-    
+
     UnitTestSetup() {
       rtol = 1e-12;
       atol = 1e-12;
       d = 3;
       p = 5;
     }
-    
+
   };
 
   typedef int ordinal_type;
@@ -109,8 +110,8 @@ namespace ProductBasisUtilsUnitTest {
     v1 = Stokhos::n_choose_k(n,k);
     v2 = factorial(n)/(factorial(k)*factorial(n-k));
     if (v1 != v2) {
-      out << "For n  =" << n << ", k = " << k << ", n_choose_k = " << v1 
-	  << " != " << v2 << std::endl;
+      out << "For n  =" << n << ", k = " << k << ", n_choose_k = " << v1
+          << " != " << v2 << std::endl;
       success = false;
     }
 
@@ -118,11 +119,11 @@ namespace ProductBasisUtilsUnitTest {
     v1 = Stokhos::n_choose_k(n,k);
     v2 = factorial(n)/(factorial(k)*factorial(n-k));
     if (v1 != v2) {
-      out << "For n  =" << n << ", k = " << k << ", n_choose_k = " << v1 
-	  << " != " << v2 << std::endl;
+      out << "For n  =" << n << ", k = " << k << ", n_choose_k = " << v1
+          << " != " << v2 << std::endl;
       success = false;
     }
-    
+
   }
 
   TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, TotalOrderLess ) {
@@ -136,12 +137,12 @@ namespace ProductBasisUtilsUnitTest {
     typedef multiindex_set::iterator iterator;
     index_set_type indexSet(setup.d, 0, setup.p);
     multiindex_set sortedIndexSet(indexSet.begin(), indexSet.end());
-    
+
     // Print sorted index set
     std::ostream_iterator<multiindex_type> out_iterator(out, "\n");
     out << std::endl << "Sorted total order index set (dimension = " << setup.d
-	<< ", order = " << setup.p << "):" << std::endl;
-    std::copy(sortedIndexSet.begin(), sortedIndexSet.end(), out_iterator);  
+        << ", order = " << setup.p << "):" << std::endl;
+    std::copy(sortedIndexSet.begin(), sortedIndexSet.end(), out_iterator);
 
     // Ensure orders of each index are increasing
     iterator prev = sortedIndexSet.begin();
@@ -151,14 +152,14 @@ namespace ProductBasisUtilsUnitTest {
       ordinal_type order_curr = curr->order();
       ordinal_type i = 0;
       while (i < setup.d && order_prev == order_curr) {
-	order_prev -= (*prev)[i];
-	order_curr -= (*curr)[i];
-	++i;
+        order_prev -= (*prev)[i];
+        order_curr -= (*curr)[i];
+        ++i;
       }
       if (order_prev >= order_curr) {
-	out << "previous index " << *prev << " and current index "
-	    << *curr << " are out of order" << std::endl;
-	success = false;
+        out << "previous index " << *prev << " and current index "
+            << *curr << " are out of order" << std::endl;
+        success = false;
       }
       prev = curr;
       ++curr;
@@ -176,12 +177,12 @@ namespace ProductBasisUtilsUnitTest {
     typedef multiindex_set::iterator iterator;
     index_set_type indexSet(setup.d, 0, setup.p);
     multiindex_set sortedIndexSet(indexSet.begin(), indexSet.end());
-    
+
     // Print sorted index set
     std::ostream_iterator<multiindex_type> out_iterator(out, "\n");
-    out << std::endl << "Sorted lexicographic index set (dimension = " 
-	<< setup.d << ", order = " << setup.p << "):" << std::endl;
-    std::copy(sortedIndexSet.begin(), sortedIndexSet.end(), out_iterator);  
+    out << std::endl << "Sorted lexicographic index set (dimension = "
+        << setup.d << ", order = " << setup.p << "):" << std::endl;
+    std::copy(sortedIndexSet.begin(), sortedIndexSet.end(), out_iterator);
 
     // Ensure orders of each index are increasing
     iterator prev = sortedIndexSet.begin();
@@ -190,9 +191,9 @@ namespace ProductBasisUtilsUnitTest {
       ordinal_type i = 0;
       while (i < setup.d && (*prev)[i] == (*curr)[i]) ++i;
       if (i == setup.d || (*prev)[i] >= (*curr)[i]) {
-	out << "previous index " << *prev << " and current index "
-	    << *curr << " are out of order" << std::endl;
-	success = false;
+        out << "previous index " << *prev << " and current index "
+            << *curr << " are out of order" << std::endl;
+        success = false;
       }
       prev = curr;
       ++curr;
@@ -216,7 +217,7 @@ namespace ProductBasisUtilsUnitTest {
 
   TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, LexographicFloatingPointLess ) {
     success = true;
-    
+
     typedef Stokhos::TensorProductElement<ordinal_type,value_type> term_type;
     typedef Stokhos::FloatingPointLess<value_type> comp_type;
     term_type a(2), b(2);
@@ -239,19 +240,19 @@ namespace ProductBasisUtilsUnitTest {
 
     // Print index set
     out << std::endl << "Total order index set (dimension = " << setup.d
-	<< ", order = " << setup.p << "):" << std::endl;
+        << ", order = " << setup.p << "):" << std::endl;
     std::ostream_iterator<multiindex_type> out_iterator(out, "\n");
     std::copy(indexSet.begin(), indexSet.end(), out_iterator);
 
     // Verify each index lies appropriatly in the set
     for (iterator i=indexSet.begin(); i!=indexSet.end(); ++i) {
       if (i->order() < 0 || i->order() > setup.p) {
-	out << "index " << *i << " does not lie in total order set! "
-	    << std::endl;
-	success = false; 
+        out << "index " << *i << " does not lie in total order set! "
+            << std::endl;
+        success = false;
       }
     }
-    
+
     // Put indices in sorted container -- this will ensure there are no
     // duplicates, if we get the right size
     typedef Stokhos::TotalOrderLess<multiindex_type> less_type;
@@ -259,15 +260,15 @@ namespace ProductBasisUtilsUnitTest {
     multiindex_set sortedIndexSet(indexSet.begin(), indexSet.end());
 
     out << "sorted index set size = " << sortedIndexSet.size() << std::endl;
-    out << "expected index set size = " 
-	<< Stokhos::n_choose_k(setup.p+setup.d,setup.d) << std::endl;
-    if (static_cast<ordinal_type>(sortedIndexSet.size()) != 
-	Stokhos::n_choose_k(setup.p+setup.d,setup.d))
+    out << "expected index set size = "
+        << Stokhos::n_choose_k(setup.p+setup.d,setup.d) << std::endl;
+    if (static_cast<ordinal_type>(sortedIndexSet.size()) !=
+        Stokhos::n_choose_k(setup.p+setup.d,setup.d))
       success = false;
   }
 
-  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils, 
-		     AnisotropicTotalOrderIndexSet ) {
+  TEUCHOS_UNIT_TEST( Stokhos_ProductBasisUtils,
+                     AnisotropicTotalOrderIndexSet ) {
     success = true;
 
     // Build index set of dimension d and order p
@@ -280,21 +281,21 @@ namespace ProductBasisUtilsUnitTest {
     index_set_type indexSet(setup.p, upper);
 
     // Print index set
-    out << std::endl << "Anisotropic total order index set (dimension = " 
-	<< setup.d << ", order = " << setup.p << ", and component orders = "
-	<< upper << "):" << std::endl;
+    out << std::endl << "Anisotropic total order index set (dimension = "
+        << setup.d << ", order = " << setup.p << ", and component orders = "
+        << upper << "):" << std::endl;
     std::ostream_iterator<multiindex_type> out_iterator(out, "\n");
     std::copy(indexSet.begin(), indexSet.end(), out_iterator);
 
     // Verify each index lies appropriatly in the set
     for (iterator i=indexSet.begin(); i!=indexSet.end(); ++i) {
       if (i->order() < 0 || i->order() > setup.p || !i->termWiseLEQ(upper)) {
-	out << "index " << *i << " does not lie in total order set! "
-	    << std::endl;
-	success = false; 
+        out << "index " << *i << " does not lie in total order set! "
+            << std::endl;
+        success = false;
       }
     }
-    
+
     // Need to figure out how to compute the size of such an index set
     /*
     // Put indices in sorted container -- this will ensure there are no
@@ -304,10 +305,10 @@ namespace ProductBasisUtilsUnitTest {
     multiindex_set sortedIndexSet(indexSet.begin(), indexSet.end());
 
     out << "sorted index set size = " << sortedIndexSet.size() << std::endl;
-    out << "expected index set size = " 
-	<< Stokhos::n_choose_k(setup.p+setup.d,setup.d) << std::endl;
-    if (static_cast<ordinal_type>(sortedIndexSet.size()) != 
-	Stokhos::n_choose_k(setup.p+setup.d,setup.d))
+    out << "expected index set size = "
+        << Stokhos::n_choose_k(setup.p+setup.d,setup.d) << std::endl;
+    if (static_cast<ordinal_type>(sortedIndexSet.size()) !=
+        Stokhos::n_choose_k(setup.p+setup.d,setup.d))
       success = false;
     */
   }
@@ -337,14 +338,14 @@ namespace ProductBasisUtilsUnitTest {
       compute_terms(setup.p, setup.d, sz, terms, num_terms);
 
     // Check sizes
-    TEUCHOS_TEST_EQUALITY(static_cast<ordinal_type>(basis_set.size()), 
-			  static_cast<ordinal_type>(basis_map.size()), 
-			  out, success);
-    TEUCHOS_TEST_EQUALITY(static_cast<ordinal_type>(basis_set.size()), 
-			  static_cast<ordinal_type>(terms.size()), 
-			  out, success);
-    TEUCHOS_TEST_EQUALITY(sz, static_cast<ordinal_type>(terms.size()), 
-			  out, success);
+    TEUCHOS_TEST_EQUALITY(static_cast<ordinal_type>(basis_set.size()),
+                          static_cast<ordinal_type>(basis_map.size()),
+                          out, success);
+    TEUCHOS_TEST_EQUALITY(static_cast<ordinal_type>(basis_set.size()),
+                          static_cast<ordinal_type>(terms.size()),
+                          out, success);
+    TEUCHOS_TEST_EQUALITY(sz, static_cast<ordinal_type>(terms.size()),
+                          out, success);
 
     std::ostream_iterator<ordinal_type> out_iterator(out, " ");
     for (ordinal_type i=0; i<sz; i++) {
@@ -353,12 +354,12 @@ namespace ProductBasisUtilsUnitTest {
       out << "term " << basis_map[i] << " == " << terms[i] << " : ";
       bool is_equal = true;
       for (ordinal_type j=0; j<setup.d; j++)
-	is_equal = is_equal && terms[i][j] == basis_map[i][j];
+        is_equal = is_equal && terms[i][j] == basis_map[i][j];
       if (is_equal)
-	out << "passed" << std::endl;
+        out << "passed" << std::endl;
       else {
-	out << "failed" << std::endl;
-	success = false; 
+        out << "failed" << std::endl;
+        success = false;
       }
 
       // Verify global index mapping matches
@@ -390,11 +391,11 @@ namespace ProductBasisUtilsUnitTest {
       sz *= setup.p+1;
 
     // Check sizes
-    TEUCHOS_TEST_EQUALITY(static_cast<ordinal_type>(basis_set.size()), 
-			  static_cast<ordinal_type>(basis_map.size()), 
-			  out, success);
-    TEUCHOS_TEST_EQUALITY(sz, static_cast<ordinal_type>(basis_set.size()), 
-			  out, success);
+    TEUCHOS_TEST_EQUALITY(static_cast<ordinal_type>(basis_set.size()),
+                          static_cast<ordinal_type>(basis_map.size()),
+                          out, success);
+    TEUCHOS_TEST_EQUALITY(sz, static_cast<ordinal_type>(basis_set.size()),
+                          out, success);
 
     std::ostream_iterator<ordinal_type> out_iterator(out, " ");
     for (ordinal_type i=0; i<sz; i++) {
@@ -403,12 +404,12 @@ namespace ProductBasisUtilsUnitTest {
       out << "term " << basis_map[i] << " <= " << setup.p << " : ";
       bool is_less = true;
       for (ordinal_type j=0; j<setup.d; j++)
-	is_less = is_less && basis_map[i][j] <= setup.p;
+        is_less = is_less && basis_map[i][j] <= setup.p;
       if (is_less)
-	out << "passed" << std::endl;
+        out << "passed" << std::endl;
       else {
-	out << "failed" << std::endl;
-	success = false; 
+        out << "failed" << std::endl;
+        success = false;
       }
 
       // Verify global index mapping matches
@@ -428,7 +429,7 @@ namespace ProductBasisUtilsUnitTest {
     bool operator() (const term_type& term) const {
       ordinal_type sum = 0;
       for (ordinal_type i=0; i<dim; ++i)
-	sum += term[i];
+        sum += term[i];
       return sum <= order;
     }
 
@@ -484,37 +485,37 @@ namespace ProductBasisUtilsUnitTest {
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
     Teuchos::RCP<Cijk_type> Cijk2 =
       basis->computeTripleProductTensor();
-    
+
     // Check sizes
     TEUCHOS_TEST_EQUALITY(Cijk->num_k(), Cijk2->num_k(), out, success);
     TEUCHOS_TEST_EQUALITY(Cijk->num_entries(), Cijk2->num_entries(), out, success);
-    
+
     // Check tensors match
-    for (Cijk_type::k_iterator k_it=Cijk2->k_begin(); 
-	 k_it!=Cijk2->k_end(); ++k_it) {
+    for (Cijk_type::k_iterator k_it=Cijk2->k_begin();
+         k_it!=Cijk2->k_end(); ++k_it) {
       int k = Stokhos::index(k_it);
-      for (Cijk_type::kj_iterator j_it = Cijk2->j_begin(k_it); 
-	   j_it != Cijk2->j_end(k_it); ++j_it) {
-	int j = Stokhos::index(j_it);
-	for (Cijk_type::kji_iterator i_it = Cijk2->i_begin(j_it);
-	     i_it != Cijk2->i_end(j_it); ++i_it) {
-	  int i = Stokhos::index(i_it);
-	  double c = Cijk->getValue(i,j,k);
-	  double c2 = Stokhos::value(i_it);
-	  double tol = setup.atol + c2*setup.rtol;
-	  double err = std::abs(c-c2);
-	  bool s = err < tol;
-	  if (!s) {
-	    out << std::endl
-		<< "Check: rel_err( C(" << i << "," << j << "," << k << ") )"
-		<< " = " << "rel_err( " << c << ", " << c2 << " ) = " << err 
-		<< " <= " << tol << " : ";
-	    if (s) out << "Passed.";
-	    else out << "Failed!";
-	    out << std::endl;
-	  }
-	  success = success && s;
-	}
+      for (Cijk_type::kj_iterator j_it = Cijk2->j_begin(k_it);
+           j_it != Cijk2->j_end(k_it); ++j_it) {
+        int j = Stokhos::index(j_it);
+        for (Cijk_type::kji_iterator i_it = Cijk2->i_begin(j_it);
+             i_it != Cijk2->i_end(j_it); ++i_it) {
+          int i = Stokhos::index(i_it);
+          double c = Cijk->getValue(i,j,k);
+          double c2 = Stokhos::value(i_it);
+          double tol = setup.atol + c2*setup.rtol;
+          double err = std::abs(c-c2);
+          bool s = err < tol;
+          if (!s) {
+            out << std::endl
+                << "Check: rel_err( C(" << i << "," << j << "," << k << ") )"
+                << " = " << "rel_err( " << c << ", " << c2 << " ) = " << err
+                << " <= " << tol << " : ";
+            if (s) out << "Passed.";
+            else out << "Failed!";
+            out << std::endl;
+          }
+          success = success && s;
+        }
       }
     }
   }
@@ -556,37 +557,37 @@ namespace ProductBasisUtilsUnitTest {
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<ordinal_type,value_type> > basis = Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
     Teuchos::RCP<Cijk_type> Cijk2 =
       basis->computeTripleProductTensor();
-    
+
     // Check sizes
     TEUCHOS_TEST_EQUALITY(Cijk->num_k(), Cijk2->num_k(), out, success);
     TEUCHOS_TEST_EQUALITY(Cijk->num_entries(), Cijk2->num_entries(), out, success);
-    
+
     // Check tensors match
-    for (Cijk_type::k_iterator k_it=Cijk2->k_begin(); 
-	 k_it!=Cijk2->k_end(); ++k_it) {
+    for (Cijk_type::k_iterator k_it=Cijk2->k_begin();
+         k_it!=Cijk2->k_end(); ++k_it) {
       int k = Stokhos::index(k_it);
-      for (Cijk_type::kj_iterator j_it = Cijk2->j_begin(k_it); 
-	   j_it != Cijk2->j_end(k_it); ++j_it) {
-	int j = Stokhos::index(j_it);
-	for (Cijk_type::kji_iterator i_it = Cijk2->i_begin(j_it);
-	     i_it != Cijk2->i_end(j_it); ++i_it) {
-	  int i = Stokhos::index(i_it);
-	  double c = Cijk->getValue(i,j,k);
-	  double c2 = Stokhos::value(i_it);
-	  double tol = setup.atol + c2*setup.rtol;
-	  double err = std::abs(c-c2);
-	  bool s = err < tol;
-	  if (!s) {
-	    out << std::endl
-		<< "Check: rel_err( C(" << i << "," << j << "," << k << ") )"
-		<< " = " << "rel_err( " << c << ", " << c2 << " ) = " << err 
-		<< " <= " << tol << " : ";
-	    if (s) out << "Passed.";
-	    else out << "Failed!";
-	    out << std::endl;
-	  }
-	  success = success && s;
-	}
+      for (Cijk_type::kj_iterator j_it = Cijk2->j_begin(k_it);
+           j_it != Cijk2->j_end(k_it); ++j_it) {
+        int j = Stokhos::index(j_it);
+        for (Cijk_type::kji_iterator i_it = Cijk2->i_begin(j_it);
+             i_it != Cijk2->i_end(j_it); ++i_it) {
+          int i = Stokhos::index(i_it);
+          double c = Cijk->getValue(i,j,k);
+          double c2 = Stokhos::value(i_it);
+          double tol = setup.atol + c2*setup.rtol;
+          double err = std::abs(c-c2);
+          bool s = err < tol;
+          if (!s) {
+            out << std::endl
+                << "Check: rel_err( C(" << i << "," << j << "," << k << ") )"
+                << " = " << "rel_err( " << c << ", " << c2 << " ) = " << err
+                << " <= " << tol << " : ";
+            if (s) out << "Passed.";
+            else out << "Failed!";
+            out << std::endl;
+          }
+          success = success && s;
+        }
       }
     }
   }
@@ -617,37 +618,37 @@ namespace ProductBasisUtilsUnitTest {
     // Build Cijk tensor using original approach
     Teuchos::RCP<Cijk_type> Cijk2 =
       basis.computeTripleProductTensor();
-    
+
     // Check sizes
     TEUCHOS_TEST_EQUALITY(Cijk->num_k(), Cijk2->num_k(), out, success);
     TEUCHOS_TEST_EQUALITY(Cijk->num_entries(), Cijk2->num_entries(), out, success);
-    
+
     // Check tensors match
-    for (Cijk_type::k_iterator k_it=Cijk2->k_begin(); 
-	 k_it!=Cijk2->k_end(); ++k_it) {
+    for (Cijk_type::k_iterator k_it=Cijk2->k_begin();
+         k_it!=Cijk2->k_end(); ++k_it) {
       int k = Stokhos::index(k_it);
-      for (Cijk_type::kj_iterator j_it = Cijk2->j_begin(k_it); 
-	   j_it != Cijk2->j_end(k_it); ++j_it) {
-	int j = Stokhos::index(j_it);
-	for (Cijk_type::kji_iterator i_it = Cijk2->i_begin(j_it);
-	     i_it != Cijk2->i_end(j_it); ++i_it) {
-	  int i = Stokhos::index(i_it);
-	  double c = Cijk->getValue(i,j,k);
-	  double c2 = Stokhos::value(i_it);
-	  double tol = setup.atol + c2*setup.rtol;
-	  double err = std::abs(c-c2);
-	  bool s = err < tol;
-	  if (!s) {
-	    out << std::endl
-		<< "Check: rel_err( C(" << i << "," << j << "," << k << ") )"
-		<< " = " << "rel_err( " << c << ", " << c2 << " ) = " << err 
-		<< " <= " << tol << " : ";
-	    if (s) out << "Passed.";
-	    else out << "Failed!";
-	    out << std::endl;
-	  }
-	  success = success && s;
-	}
+      for (Cijk_type::kj_iterator j_it = Cijk2->j_begin(k_it);
+           j_it != Cijk2->j_end(k_it); ++j_it) {
+        int j = Stokhos::index(j_it);
+        for (Cijk_type::kji_iterator i_it = Cijk2->i_begin(j_it);
+             i_it != Cijk2->i_end(j_it); ++i_it) {
+          int i = Stokhos::index(i_it);
+          double c = Cijk->getValue(i,j,k);
+          double c2 = Stokhos::value(i_it);
+          double tol = setup.atol + c2*setup.rtol;
+          double err = std::abs(c-c2);
+          bool s = err < tol;
+          if (!s) {
+            out << std::endl
+                << "Check: rel_err( C(" << i << "," << j << "," << k << ") )"
+                << " = " << "rel_err( " << c << ", " << c2 << " ) = " << err
+                << " <= " << tol << " : ";
+            if (s) out << "Passed.";
+            else out << "Failed!";
+            out << std::endl;
+          }
+          success = success && s;
+        }
       }
     }
   }
@@ -664,19 +665,19 @@ namespace ProductBasisUtilsUnitTest {
     index_set_type indexSet(setup.d, 0, setup.p);
     multiindex_set sortedIndexSet(indexSet.begin(), indexSet.end());
 
-    // Loop over each index set element and test if mapping 
+    // Loop over each index set element and test if mapping
     // computes proper global index
-    iterator i = sortedIndexSet.begin(); 
+    iterator i = sortedIndexSet.begin();
     ordinal_type idx = 0;
     while (i != sortedIndexSet.end()) {
       ordinal_type idx_mapping = totalOrderMapping(*i);
-      out << *i << ":  index = " << idx << " mapped index = " << idx_mapping 
-	  << ":  ";
+      out << *i << ":  index = " << idx << " mapped index = " << idx_mapping
+          << ":  ";
       if (idx == idx_mapping)
-	out << "passed";
+        out << "passed";
       else {
-	out << "failed";
-	success = false;
+        out << "failed";
+        success = false;
       }
       out << std::endl;
       ++i;
@@ -696,19 +697,19 @@ namespace ProductBasisUtilsUnitTest {
     index_set_type indexSet(setup.d, 0, setup.p);
     multiindex_set sortedIndexSet(indexSet.begin(), indexSet.end());
 
-    // Loop over each index set element and test if mapping 
+    // Loop over each index set element and test if mapping
     // computes proper global index
-    iterator i = sortedIndexSet.begin(); 
+    iterator i = sortedIndexSet.begin();
     ordinal_type idx = 0;
     while (i != sortedIndexSet.end()) {
       ordinal_type idx_mapping = lexicographicMapping(*i,setup.p);
-      out << *i << ":  index = " << idx << " mapped index = " << idx_mapping 
-	  << ":  ";
+      out << *i << ":  index = " << idx << " mapped index = " << idx_mapping
+          << ":  ";
       if (idx == idx_mapping)
-	out << "passed";
+        out << "passed";
       else {
-	out << "failed";
-	success = false;
+        out << "failed";
+        success = false;
       }
       out << std::endl;
       ++i;
@@ -741,36 +742,36 @@ namespace ProductBasisUtilsUnitTest {
       ordinal_type dim = d-1;
       ++index[dim];
       while (dim > 0 && index[dim] > orders[dim]) {
-	index[dim] = 0;
-	--dim;
-	++index[dim];
+        index[dim] = 0;
+        --dim;
+        ++index[dim];
       }
       for (ordinal_type i=dim+1; i<d; ++i)
-	orders[i] = orders[i-1] - index[i-1];
+        orders[i] = orders[i-1] - index[i-1];
 
-      if (index[dim] > orders[dim]) 
-	stop = true;
+      if (index[dim] > orders[dim])
+        stop = true;
       else {
-	// Update num_terms:  num_terms[dim] = number of terms with 
-	// order < index[dim] and dimension d-dim-1
-	num_terms[dim] += Stokhos::n_choose_k(orders[dim]-index[dim]+d-dim,
-					      d-dim-1);
-	for (ordinal_type i=dim+1; i<d; ++i)
-	  num_terms[i] = 0;
+        // Update num_terms:  num_terms[dim] = number of terms with
+        // order < index[dim] and dimension d-dim-1
+        num_terms[dim] += Stokhos::n_choose_k(orders[dim]-index[dim]+d-dim,
+                                              d-dim-1);
+        for (ordinal_type i=dim+1; i<d; ++i)
+          num_terms[i] = 0;
 
-	// Compute global index
-	ordinal_type I = num_terms.order();
-	//ordinal_type I = lexicographicMapping(index, p);
+        // Compute global index
+        ordinal_type I = num_terms.order();
+        //ordinal_type I = lexicographicMapping(index, p);
 
-	out << index << ":  index = " << idx << " mapped index = " << I
-	    << ":  ";
-	if (idx == I)
-	  out << "passed";
-	else {
-	  out << "failed";
-	  success = false;
-	}
-	out << std::endl;
+        out << index << ":  index = " << idx << " mapped index = " << I
+            << ":  ";
+        if (idx == I)
+          out << "passed";
+        else {
+          out << "failed";
+          success = false;
+        }
+        out << std::endl;
       }
 
       ++idx;

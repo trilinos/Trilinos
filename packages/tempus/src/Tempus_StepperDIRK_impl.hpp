@@ -205,7 +205,7 @@ void StepperDIRK<Scalar>::takeStep(
 
     // Compute stage solutions
     bool pass = true;
-    Thyra::SolveStatus<double> sStatus;
+    Thyra::SolveStatus<Scalar> sStatus;
     for (int i=0; i < numStages; ++i) {
       stepperDIRKObserver_->observeBeginStage(solutionHistory, *this);
       Thyra::assign(xTilde_.ptr(), *(currentState->getX()));
@@ -333,7 +333,8 @@ void StepperDIRK<Scalar>::setParameterList(
   const Teuchos::RCP<Teuchos::ParameterList> & pList)
 {
   if (pList == Teuchos::null) {
-    stepperPL_ = this->getDefaultParameters();
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
   } else {
     stepperPL_ = pList;
   }
@@ -346,16 +347,6 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperDIRK<Scalar>::getValidParameters() const
 {
-  //std::stringstream Description;
-  //Description << "'Stepper Type' sets the stepper method.\n"
-  //            << "For DIRK the following methods are valid:\n"
-  //            << "  SDIRK 1 Stage 1st order\n"
-  //            << "  SDIRK 2 Stage 2nd order\n"
-  //            << "  SDIRK 2 Stage 3rd order\n"
-  //            << "  SDIRK 3 Stage 4th order\n"
-  //            << "  SDIRK 5 Stage 4th order\n"
-  //            << "  SDIRK 5 Stage 5th order\n";
-
   return DIRK_ButcherTableau_->getValidParameters();
 }
 

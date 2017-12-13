@@ -222,6 +222,14 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Enable the C compiler and related code"
     ${${PROJECT_NAME}_ENABLE_C_DEFAULT} )
 
+  IF ("${${PROJECT_NAME}_C_Standard_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_C_Standard_DEFAULT c99)
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_C_Standard
+    ${${PROJECT_NAME}_C_Standard_DEFAULT}
+    CACHE STRING
+    "The standard <cstd> to use in --std=<cstd> for GCC compilers." )
+
   IF ("${${PROJECT_NAME}_ENABLE_CXX_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_ENABLE_CXX_DEFAULT ON)
   ENDIF()
@@ -1798,6 +1806,18 @@ MACRO(TRIBITS_SETUP_ENV)
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Fortran)
   IF (${PROJECT_NAME}_ENABLE_Fortran)
     ENABLE_LANGUAGE(Fortran)
+  ENDIF()
+
+  # Do some project-specific tweaks for compiler options, etc.
+  SET(PROJECT_COMPILER_CONFIG_FILE
+    # Can be used for things like Kokkos.
+    "${${PROJECT_NAME}_SOURCE_DIR}/cmake/ProjectCompilerPostConfig.cmake"
+    CACHE FILEPATH
+    "Allow for project-specific compiler settings."
+   )
+  IF (EXISTS "${PROJECT_COMPILER_CONFIG_FILE}")
+    TRIBITS_TRACE_FILE_PROCESSING(PROJECT  INCLUDE  "${PROJECT_COMPILER_CONFIG_FILE}")
+    INCLUDE("${PROJECT_COMPILER_CONFIG_FILE}")
   ENDIF()
 
   # Set up for strong compiler warnings and warnings as errors

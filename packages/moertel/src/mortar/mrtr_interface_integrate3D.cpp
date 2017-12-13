@@ -53,7 +53,7 @@
 #include "mrtr_segment.H"
 #include "mrtr_integrator.H"
 #include "mrtr_projector.H"
-#include "mrtr_overlap.H"
+#include "mrtr_overlap.hpp"
 
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_Time.h"
@@ -259,7 +259,7 @@ bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg,
   // first determine whether there is an overlap between sseg and mseg
   // for this purpose, the 'overlapper' class is used
   // It also builds a triangulation of the overlap polygon if there is any
-  MOERTEL::Overlap overlap(sseg,mseg,*this,exactvalues,OutLevel());
+  MOERTEL::Overlap<MOERTEL::Interface> overlap(sseg,mseg,*this,exactvalues,OutLevel());
 
   // determine the overlap triangulation if any
   bool ok = overlap.ComputeOverlap();

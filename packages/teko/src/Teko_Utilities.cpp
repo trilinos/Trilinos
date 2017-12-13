@@ -2042,10 +2042,8 @@ double frobeniusNorm(const LinearOp & op_in)
 double oneNorm(const LinearOp & op)
 {
   if(Teko::TpetraHelpers::isTpetraLinearOp(op)){
-    //const RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
-    //const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
-    //return crsOp->getOneNorm();
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"One norm not currently implemented for Tpetra matrices");
+    
   } else {
     const RCP<const Epetra_Operator> epOp = Thyra::get_Epetra_Operator(*op);
     const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(epOp,true);
@@ -2056,10 +2054,30 @@ double oneNorm(const LinearOp & op)
 double infNorm(const LinearOp & op)
 {
   if(Teko::TpetraHelpers::isTpetraLinearOp(op)){
-    //const RCP<const Thyra::TpetraLinearOp<ST,LO,GO,NT> > tOp = rcp_dynamic_cast<const Thyra::TpetraLinearOp<ST,LO,GO,NT> >(op);
-    //const RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > crsOp = rcp_dynamic_cast<const Tpetra::CrsMatrix<ST,LO,GO,NT> >(tOp->getConstTpetraOperator(),true);
-    //return crsOp->getInfNorm();
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Infinity norm not currently implemented for Tpetra matrices");
+    ST scalar = 0.0;
+    bool transp = false;
+    RCP<const Tpetra::CrsMatrix<ST,LO,GO,NT> > tCrsOp = Teko::TpetraHelpers::getTpetraCrsMatrix(op, &scalar, &transp);
+
+    // extract diagonal
+    const RCP<Tpetra::Vector<ST,LO,GO,NT> > ptrDiag = Tpetra::createVector<ST,LO,GO,NT>(tCrsOp->getRowMap());
+    Tpetra::Vector<ST,LO,GO,NT> & diag = *ptrDiag;
+
+    // compute absolute value row sum
+    diag.putScalar(0.0);
+    for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
+       LO numEntries = tCrsOp->getNumEntriesInLocalRow (i);
+       std::vector<LO> indices(numEntries);
+       std::vector<ST> values(numEntries);
+       Teuchos::ArrayView<const LO> indices_av(indices);
+       Teuchos::ArrayView<const ST> values_av(values);
+       tCrsOp->getLocalRowView(i,indices_av,values_av);
+
+       // build abs value row sum
+       for(LO j=0;j<numEntries;j++)
+          diag.sumIntoLocalValue(i,std::abs(values_av[j]));
+    }
+    return diag.normInf()*scalar;    
+
   } else {
     const RCP<const Epetra_Operator> epOp = Thyra::get_Epetra_Operator(*op);
     const RCP<const Epetra_CrsMatrix> crsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(epOp,true);
