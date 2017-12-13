@@ -2567,8 +2567,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
-  std::string myalg("SPGEMM_KK_MEMORY");
-  //  std::string myalg("LTG");
+  //std::string myalg("SPGEMM_KK_MEMORY");
+  std::string myalg("LTG");
   if(!params.is_null()) {
     if(params->isParameter("openmp: algorithm"))
       myalg = params->get("openmp: algorithm",myalg);

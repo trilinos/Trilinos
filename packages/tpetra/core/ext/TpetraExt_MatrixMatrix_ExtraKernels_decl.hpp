@@ -65,6 +65,12 @@ namespace MatrixMatrix {
     template<class CrsMatrixType>
     size_t C_estimate_nnz_per_row(CrsMatrixType & A, CrsMatrixType &B);
 
+    template<class InRowptrArrayType, class InColindArrayType, class InValsArrayType,
+             class OutRowptrType, class OutColindType, class OutValsType>
+    void copy_out_from_thread_memory(const InRowptrArrayType & Inrowptr, const InColindArrayType &Incolind, const InValsArrayType & Invals,
+                                       size_t m, size_t thread_chunk,
+                                       OutRowptrType & Outrowptr, OutColindType &Outcolind, OutValsType & Outvals);
+
 #ifdef HAVE_TPETRA_INST_OPENMP
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
     static void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
