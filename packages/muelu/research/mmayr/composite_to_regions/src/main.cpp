@@ -89,7 +89,7 @@ void regionalToComposite(std::vector<Epetra_Vector*> regVec, ///< Vector in regi
     quasiRegVec[j] = new Epetra_Vector(*(regVec[j]));
     quasiRegVec[j]->ReplaceMap(*(rowMapPerGrp[j]));
 
-    int err = compVec->Export(*quasiRegVec[j], *(rowImportPerGrp[j]), Epetra_AddLocalAlso);
+    int err = compVec->Export(*quasiRegVec[j], *(rowImportPerGrp[j]), combineMode);
     TEUCHOS_ASSERT(err == 0);
   }
 
@@ -108,7 +108,7 @@ void printRegionalVector(const std::string vectorName, ///< string to be used fo
     const int myRank ///< rank of calling proc
     )
 {
-  sleep(myRank);
+//  sleep(myRank);
   for (int j = 0; j < regVecs.size(); j++) {
     printf("%d: %s %d\n", myRank, vectorName.c_str(), j);
     regVecs[j]->Print(std::cout);
@@ -821,7 +821,19 @@ int main(int argc, char *argv[]) {
 
       // forcing vector
       Epetra_Vector* compB = new Epetra_Vector(*mapComp, true);
-      compB->ReplaceGlobalValue(compB->GlobalLength() - 1, 0, 1.0);
+      {
+        compB->ReplaceGlobalValue(compB->GlobalLength() - 1, 0, 1.0);
+      }
+//      {
+//      compB->PutScalar(1.0);
+//      compB->ReplaceGlobalValue(0, 0, 0.0);
+//      }
+//      {
+//        compB->ReplaceGlobalValue(15, 0, 1.0);
+//      }
+//      {
+//        compB->ReplaceGlobalValue(16, 0, 1.0);
+//      }
 
       // residual vector
       Epetra_Vector* compRes = new Epetra_Vector(*mapComp, true);
@@ -855,20 +867,108 @@ int main(int argc, char *argv[]) {
       std::vector<Epetra_Vector*> regRes(maxRegPerProc);
       compositeToRegional(compRes, quasiRegRes, regRes, maxRegPerProc, rowMapPerGrp,
           revisedRowMapPerGrp, rowImportPerGrp);
+      std::vector<Epetra_Vector*> quasiRegB(maxRegPerProc);
+      std::vector<Epetra_Vector*> regB(maxRegPerProc);
+      compositeToRegional(compB, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
+          revisedRowMapPerGrp, rowImportPerGrp);
 
-//      // pre-smoothing on fine level
-//      const int maxIter = 3;
-//      for (int iter = 0; iter < maxIter; ++iter) {
-//        for (int j = 0; j < maxRegPerProc; j++) {
-//          Epetra_Vector* diag = new Epetra_Vector(regionGrpMats[j]->RowMap(), true);
-//          Epetra_Vector* invDiag = new Epetra_Vector(regionGrpMats[j]->RowMap(), true);
-//          regionGrpMats[j]->ExtractDiagonalCopy(diag);
-//          diag->Reciprocal(invDiag);
-//          for (int i = 0; i < regX[j]->MyLength(); ++i) {
-//
-//          }
+      compX->Comm().Barrier();
+      printRegionalVector("regRes before iteration loop", regRes, myRank);
+      compX->Comm().Barrier();
+      sleep(1);
+
+      // pre-smoothing on fine level
+      const int maxIter = 80;
+      const double omega = 0.9;
+      for (int iter = 0; iter < maxIter; ++iter) {
+
+        compX->Comm().Barrier();
+        std::cout << myRank << ": Iteration " << iter << std::endl;
+
+        /* Update the residual vector
+         * 1. Compute tmp = A * regX in each region
+         * 2. Sum interface values in tmp due to duplication (We fake this by scaling to reverse the basic splitting)
+         * 3. Compute r = B - tmp
+         */
+        for (int j = 0; j < maxRegPerProc; j++) // step 1
+          regionGrpMats[j]->Multiply(false, *regX[j], *regRes[j]);
+//        for (int j = 0; j < maxRegPerProc; j++) { // step 2
+//          for (int i = 0; i < regRes[j]->MyLength(); ++i) // ToDo: replace this by an Epetra_Vector routine
+//            (*regRes[j])[i] *= (*regionInterfaceScaling[j])[i];
 //        }
-//      }
+
+//        compX->Comm().Barrier();
+//        printRegionalVector("regRes before regionalToComposite()", regRes, myRank);
+//        compX->Comm().Barrier();
+//        sleep(1);
+
+        compRes->PutScalar(0.0);
+        regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
+            rowImportPerGrp, Add);
+
+//        compX->Comm().Barrier();
+//        std::cout << myRank << ": compRes after regionalToComposite" << std::endl;
+//        compRes->Print(std::cout);
+//        compX->Comm().Barrier();
+//        sleep(1);
+
+        compositeToRegional(compRes, quasiRegRes, regRes, maxRegPerProc,
+            rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
+//        compX->Comm().Barrier();
+//        printRegionalVector("regRes after compositeToRegional()", regRes, myRank);
+//        compX->Comm().Barrier();
+//        sleep(1);
+
+        for (int j = 0; j < maxRegPerProc; j++) // step 3
+          regRes[j]->Update(1.0, *regB[j], -1.0);
+
+//        compX->Comm().Barrier();
+//        std::stringstream ssResTmp;
+//        ssResTmp << "regRes in " << maxIter << " iterations";
+//        printRegionalVector(ssResTmp.str(), regRes, myRank);
+//        compX->Comm().Barrier();
+//        sleep(1);
+
+        std::vector<Epetra_Vector*> diag(maxRegPerProc);
+        for (int j = 0; j < maxRegPerProc; j++) {
+          // extract inverse of diagonal from matrix
+         diag[j] = new Epetra_Vector(regionGrpMats[j]->RowMap(), true);
+          regionGrpMats[j]->ExtractDiagonalCopy(*diag[j]);
+          for (int i = 0; i < diag[j]->MyLength(); ++i) // ToDo: replace this by an Epetra_Vector routine
+            (*diag[j])[i] *= (*regionInterfaceScaling[j])[i]; // Scale to obtain the true diagonal
+        }
+
+        for (int j = 0; j < maxRegPerProc; j++) {
+          // update solution according to Jacobi's method
+          for (int i = 0; i < regX[j]->MyLength(); ++i) {
+            (*regX[j])[i] += omega / (*diag[j])[i] * (*regRes[j])[i];
+          }
+        }
+//        regionalToComposite(regX, compX, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Zero);
+//        compositeToRegional(compX, quasiRegX, regX, maxRegPerProc, rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
+      }
+
+      sleep(1);
+
+      std::stringstream ssRes;
+      ssRes << "regRes after " << maxIter << " iterations";
+      printRegionalVector(ssRes.str(), regRes, myRank);
+
+      compX->Comm().Barrier();
+      sleep(1);
+
+      std::stringstream ssX;
+      ssX << "regX after " << maxIter << " iterations";
+      printRegionalVector(ssX.str(), regX, myRank);
+
+      compX->Comm().Barrier();
+      sleep(1);
+
+      regionalToComposite(regX, compX, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Average);
+      std::cout << "compX after " << maxIter << " iterations" << std::endl;
+      compX->Print(std::cout);
     }
     else if (strcmp(command,"PrintCompositeVectorX") == 0) {
       sleep(myRank);
