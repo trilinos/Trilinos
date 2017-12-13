@@ -121,9 +121,9 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
 
   // Unmanaged versions of the above
-  typedef Kokkos::View<typename lno_view_t::data_type, typename lno_view_t::array_layout, typename lno_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > u_lno_view_t;
-  typedef Kokkos::View<typename lno_nnz_view_t::data_type, typename lno_nnz_view_t::array_layout, typename lno_nnz_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > u_lno_nnz_view_t;
-  typedef Kokkos::View<typename scalar_view_t::data_type, typename scalar_view_t::array_layout, typename scalar_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > u_scalar_view_t;
+  typedef UnmanagedView<lno_view_t> u_lno_view_t;
+  typedef UnmanagedView<lno_nnz_view_t> u_lno_nnz_view_t;
+  typedef UnmanagedView<scalar_view_t> u_scalar_view_t;
 
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;

@@ -48,6 +48,14 @@ namespace Tpetra {
 
 namespace MatrixMatrix {
 
+  // This guy allows us to easily get an Unmanaged Kokkos View from a ManagedOne
+  template <typename View>
+  using UnmanagedView = Kokkos::View< typename View::data_type
+                                      , typename View::array_layout
+                                      , typename View::device_type
+                                      , typename Kokkos::MemoryTraits< Kokkos::Unmanaged>
+                                      >;
+
   // This is a placeholder function until Kokkos Issue #1270 is resolved and pushed into Trilinos
   template<class ViewType>
   void Kokkos_resize_1DView(ViewType & v, const size_t N);
@@ -59,16 +67,18 @@ namespace MatrixMatrix {
 
 #ifdef HAVE_TPETRA_INST_OPENMP
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
-    static inline void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
-                                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
-                                                                   const Teuchos::Array<LocalOrdinal> & targetMapToOrigRow,
-                                                                   const Teuchos::Array<LocalOrdinal> & targetMapToImportRow,
-                                                                   const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
-                                                                   const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
-                                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
-                                                                   Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
-                                                                   const std::string& label,
-                                                                   const Teuchos::RCP<Teuchos::ParameterList>& params);
+    static void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
+                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+                                                            const Teuchos::Array<LocalOrdinal> & targetMapToOrigRow,
+                                                            const Teuchos::Array<LocalOrdinal> & targetMapToImportRow,
+                                                            const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
+                                                            const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
+                                                            CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
+                                                            Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
+                                                            const std::string& label,
+                                                            const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+
 #endif
   }// ExtraKernels
 }//MatrixMatrix
