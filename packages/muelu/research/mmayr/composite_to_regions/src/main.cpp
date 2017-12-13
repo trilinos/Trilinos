@@ -1280,6 +1280,10 @@ int main(int argc, char *argv[]) {
       std::vector<Epetra_Vector*> regB(maxRegPerProc);
       compositeToRegional(compB, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
           revisedRowMapPerGrp, rowImportPerGrp);
+      std::vector<Epetra_Vector*> quasiRegB(maxRegPerProc);
+      std::vector<Epetra_Vector*> regB(maxRegPerProc);
+      compositeToRegional(compB, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
+          revisedRowMapPerGrp, rowImportPerGrp);
 
 //      compX->Comm().Barrier();
 //      printRegionalVector("regRes before iteration loop", regRes, myRank);
