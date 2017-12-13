@@ -73,7 +73,6 @@ typedef Tpetra::CrsMatrix<z2TestScalar, z2TestLO, z2TestGO> SparseMatrix_t;
 typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> Vector;
 typedef Vector::node_type Node;
 
-//typedef Tpetra::MultiVector<z2TestScalar, z2TestLO, z2TestGO, znode_t> tMVector_t;
 typedef Tpetra::MultiVector<z2TestScalar, z2TestLO, z2TestGO,znode_t> tMVector_t;
 
 
@@ -82,10 +81,10 @@ typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix_t,tMVector_t> SparseMatrixA
 
 typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> MultiVectorAdapter_t;
 
-
-
-
 #define epsilon 0.00000001
+
+int testNDwithRCB(RCP<SparseMatrix_t> &origMatrix,RCP<tMVector_t> &coords, int numParts, int me);
+int testNDwithPHG(RCP<SparseMatrix_t> &origMatrix,int numParts, int me);
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -182,7 +181,29 @@ int main(int argc, char** argv)
   }
   //////////////////////////////////////////////////////////////////////
 
-  //MMW add weights later
+  //////////////////////////////////////////////////////////////////////
+  // Test ND ordering with RCB to compute the separator
+  //////////////////////////////////////////////////////////////////////
+  testNDwithRCB(origMatrix,coords,numParts,me);
+  //////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////
+  // Test ND ordering with PHG to compute the separator
+  //////////////////////////////////////////////////////////////////////
+  testNDwithPHG(origMatrix,numParts,me);
+  //////////////////////////////////////////////////////////////////////
+
+
+
+  return success;
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+int testNDwithRCB(RCP<SparseMatrix_t> &origMatrix,RCP<tMVector_t> &coords, int numParts, int me)
+{
+  int success=0;
 
   //////////////////////////////////////////////////////////////////////
   ////// Specify problem parameters
@@ -190,10 +211,9 @@ int main(int argc, char** argv)
   Teuchos::ParameterList params;
 
   params.set("num_global_parts", numParts);
-  //  params.set("partitioning_approach", "partition");
   params.set("order_method", "nd");
+  params.set("edge_separator_method", "rcb");
   //////////////////////////////////////////////////////////////////////
-
 
   //////////////////////////////////////////////////////////////////////
   ////// Create an input adapter for the Tpetra matrix.
@@ -271,3 +291,76 @@ int main(int argc, char** argv)
 }
 ////////////////////////////////////////////////////////////////////////////////
 
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+int testNDwithPHG(RCP<SparseMatrix_t> &origMatrix,int numParts, int me)
+{
+  int success=0;
+
+  //////////////////////////////////////////////////////////////////////
+  ////// Specify problem parameters
+  //////////////////////////////////////////////////////////////////////
+  Teuchos::ParameterList params;
+
+  params.set("num_global_parts", numParts);
+  params.set("order_method", "nd");
+  params.set("edge_separator_method", "phg");
+  //////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////
+  ////// Create an input adapter for the Tpetra matrix.
+  //////////////////////////////////////////////////////////////////////
+  SparseMatrixAdapter_t matAdapter(origMatrix);
+  //////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////
+  ////// Create and solve partitioning problem
+  //////////////////////////////////////////////////////////////////////
+  Zoltan2::OrderingProblem<SparseMatrixAdapter_t> problem(&matAdapter, &params);
+
+
+  try
+  {
+    if (me == 0) cout << "Calling solve() " << endl;
+    problem.solve();
+    if (me == 0) cout << "Done solve() " << endl;
+  }
+  catch (std::runtime_error &e)
+  {
+    cout << "Runtime exception returned from solve(): " << e.what();
+    if (!strncmp(e.what(), "BUILD ERROR", 11)) {
+      // Catching build errors as exceptions is OK in the tests
+      cout << " PASS" << endl;
+      return 0;
+    }
+    else {
+      // All other runtime_errors are failures
+      cout << " FAIL" << endl;
+      return -1;
+    }
+  }
+  catch (std::logic_error &e)
+  {
+    cout << "Logic exception returned from solve(): " << e.what()
+         << " FAIL" << endl;
+    return -1;
+  }
+  catch (std::bad_alloc &e)
+  {
+    cout << "Bad_alloc exception returned from solve(): " << e.what()
+         << " FAIL" << endl;
+    return -1;
+  }
+  catch (std::exception &e)
+  {
+    cout << "Unknown exception returned from solve(). " << e.what()
+         << " FAIL" << endl;
+    return -1;
+  }
+  //////////////////////////////////////////////////////////////////////
+
+  std::cout << "PASS" << std::endl;
+  return success;
+}
+////////////////////////////////////////////////////////////////////////////////

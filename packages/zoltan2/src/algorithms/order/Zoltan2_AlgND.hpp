@@ -96,6 +96,8 @@ private:
   const RCP<const Environment> mEnv;
   const RCP<const Comm<int> > mProblemComm;
 
+  std::string mPartitionMethod;
+
   const RCP<GraphModel<typename Adapter::base_adapter_t> > mGraphModel;
   const RCP<CoordinateModel<typename Adapter::base_adapter_t> > mIds;
 
@@ -137,7 +139,8 @@ public:
 	const RCP<CoordinateModel<typename Adapter::base_adapter_t> > &cModel_,
 	const RCP<const typename Adapter::base_adapter_t> baseInputAdapter_
        )
-    :mEnv(env_), mProblemComm(problemComm_), mGraphModel(gModel_), 
+    :mEnv(env_), mProblemComm(problemComm_), mPartitionMethod("rcb"),
+     mGraphModel(gModel_), 
      mIds(cModel_), mBaseInputAdapter(baseInputAdapter_)
   {
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
@@ -153,11 +156,34 @@ public:
       Z2_THROW_SERIAL("Zoltan2 AlgND is strictly serial!");
     }
 
+
+    const Teuchos::ParameterList &pl = mEnv->getParameters();
+    const Teuchos::ParameterEntry *pe;
+
+
+    pe = pl.getEntryPtr("edge_separator_method");
+    
+    if (pe)
+    {
+      mPartitionMethod = pe->getValue<std::string>(&mPartitionMethod);
+    }
+
   }
 
   // Ordering method
   int localOrder(const RCP<LocalOrderingSolution<lno_t> > &solution_);
   int globalOrder(const RCP<GlobalOrderingSolution<gno_t> > &solution_);
+
+  /*! \brief Set up validators specific to this algorithm                                                                                                                                                   
+   */
+  static void getValidParameters(ParameterList & pl)
+  {
+
+    RCP<Teuchos::StringValidator> es_method_Validator =
+      Teuchos::rcp( new Teuchos::StringValidator(Teuchos::tuple<std::string>( "rcb", "phg")));
+
+    pl.set("edge_separator_method", "rcb", "ND ordering - Edge separator method", es_method_Validator);
+  }
 
 };
 ////////////////////////////////////////////////////////////////////////////////
@@ -203,7 +229,7 @@ int AlgND<Adapter>::localOrder(const RCP<LocalOrderingSolution<lno_t> > &solutio
 
     // Set Zoltan parameter lists
     Teuchos::ParameterList &zparams = partParams.sublist("zoltan_parameters",false);
-    zparams.set("LB_METHOD", "rcb");
+    zparams.set("LB_METHOD", mPartitionMethod);
     /////////////////////////////////////////////////////////////////
 
     /////////////////////////////////////////////////////////////////
