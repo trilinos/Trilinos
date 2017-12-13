@@ -46,7 +46,7 @@ else
       ENABLE_SHYLU="OFF"
     else
       ENABLE_SHYLU="ON"
-    endif
+    fi
   fi
 fi
   
