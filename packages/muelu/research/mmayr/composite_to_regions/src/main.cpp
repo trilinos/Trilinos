@@ -94,6 +94,37 @@ void regionalToComposite(std::vector<Epetra_Vector*> regVec, ///< Vector in regi
     TEUCHOS_ASSERT(err == 0);
   }
 
+<<<<<<< HEAD
+=======
+  return;
+}
+
+/*! \brief Sum region interface values
+ */
+void sumInterfaceValues(std::vector<Epetra_Vector*>& regVec,
+    Epetra_Map* compMap,
+    const int maxRegPerProc, ///< max number of regions per proc [in]
+    std::vector<Epetra_Map*> rowMapPerGrp,///< row maps in region layout [in]
+    std::vector<Epetra_Map*> revisedRowMapPerGrp,///< revised row maps in region layout [in]
+    std::vector<Epetra_Import*> rowImportPerGrp ///< row importer in region layout [in])
+    )
+{
+  Epetra_Vector* compVec = new Epetra_Vector(*compMap, true);
+  std::vector<Epetra_Vector*> quasiRegVec(maxRegPerProc);
+  regionalToComposite(regVec, compVec, maxRegPerProc, rowMapPerGrp,
+      rowImportPerGrp, Add);
+  compositeToRegional(compVec, quasiRegVec, regVec, maxRegPerProc,
+      rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
+  return;
+}
+
+void createRegionalVector(std::vector<Epetra_Vector*>& regVecs,
+    const int maxRegPerProc, std::vector<Epetra_Map*> revisedRowMapPerGrp)
+{
+  for (int j = 0; j < maxRegPerProc; j++)
+    regVecs[j] = new Epetra_Vector(*(revisedRowMapPerGrp[j]), true);
+>>>>>>> MueLu/HHG: move summing of interface values for true residual calculation to function
   return;
 }
 
@@ -1453,6 +1484,7 @@ int main(int argc, char *argv[]) {
               coarseRowMapPerGrp, coarseRowImportPerGrp);
 
           printRegionalVector("coarseRegX after jacobi" , coarseRegX, myRank);
+
 
           std::cout << "... and back to the fine level." << std::endl;
 
