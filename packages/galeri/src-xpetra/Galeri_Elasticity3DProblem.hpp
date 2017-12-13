@@ -402,28 +402,25 @@ namespace Galeri {
       Teuchos::ArrayRCP<SC> R0 = this->Nullspace_->getDataNonConst(3), R1 = this->Nullspace_->getDataNonConst(4), R2 = this->Nullspace_->getDataNonConst(5);
       for (size_t i = 0; i < numDofs; i += nDim_) {
         // Rotate in Y-Z Plane (around Z axis): [ -y; x]
-        R0[i+0] = -(y[i]-cy);
-        R0[i+1] =  (x[i]-cx);
+        R0[i+0] = -(y[i] - cy);
+        R0[i+1] =  (x[i] - cx);
 
         // Rotate in Y-Z Plane (around Z axis): [ -z; y]
-        R1[i+1] = -(z[i]-cz);
-        R1[i+2] =  (y[i]-cy);
+        R1[i+1] = -(z[i] - cz);
+        R1[i+2] =  (y[i] - cy);
 
         // Rotate in Y-Z Plane (around Z axis): [ z; -x]
-        R2[i+0] =  (z[i]-cz);
-        R2[i+2] = -(x[i]-cx);
+        R2[i+0] =  (z[i] - cz);
+        R2[i+2] = -(x[i] - cx);
       }
 
       // Equalize norms of all vectors to that of the first one
       // We do not normalize them as a vector of ones seems nice
       Teuchos::Array<typename TST::magnitudeType> norms2(numVectors);
-      for (int i = 1; i < numVectors; i++)
-        norms2[i] = norms2[0] / norms2[i];
-      norms2[0] = TST::magnitude(TST::one());
       this->Nullspace_->norm2(norms2);
-      Teuchos::Array<Scalar> norms2scalar(numVectors);
-      for (int i = 1; i < numVectors; i++)
-        norms2scalar[i] = norms2[i];
+      Teuchos::Array<SC> norms2scalar(numVectors);
+      for (int i = 0; i < numVectors; i++)
+        norms2scalar[i] = norms2[0] / norms2[i];
       this->Nullspace_->scale(norms2scalar);
 
       return this->Nullspace_;
