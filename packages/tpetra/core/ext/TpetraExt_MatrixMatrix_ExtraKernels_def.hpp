@@ -165,12 +165,8 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   size_t n = Ccolmap->getNodeNumElements();
   size_t Cest_nnz_per_row = 2*C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
 
-
   // Get my node / thread info (right from openmp)
   size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
-  //  thread_max = 1; //HAQ HAQ HAQ
-  //  printf("CMS: thread_max = %d\n",(int)thread_max);
-
 
   // Thread-local memory
   Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr",thread_max);
@@ -179,17 +175,10 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
 
   double thread_chunk = (double)(m) / thread_max;
 
-#define CMS_USE_KOKKOS
-
-
   // Run chunks of the matrix independently 
-#ifdef CMS_USE_KOKKOS
   Kokkos::parallel_for("LTG::ThreadLocal",range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid)
-#else
-  for(size_t tid=0; tid<thread_max; tid++)
-#endif
     {
-      // Thread coordiation stuff
+      // Thread coordination stuff
       size_t my_thread_start =  tid * thread_chunk;
       size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
       size_t my_thread_m     = my_thread_stop - my_thread_start;
@@ -284,16 +273,12 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       tl_colind(tid) = Ccolind;
       tl_values(tid) = Cvals;      
       Crowptr(my_thread_m) = CSR_ip;
-  }
-#ifdef CMS_USE_KOKKOS
-);
-#endif
+  });
 
   // Generate the starting nnz number per thread
   size_t c_nnz_size=0;
   lno_view_t row_mapC("non_const_lnow_row", m + 1);
   lno_view_t thread_start_nnz("thread_nnz",thread_max+1);
-#ifdef CMS_USE_KOKKOS
   Kokkos::parallel_scan("LTG::Scan",range_type(0,thread_max).set_chunk_size(1), [=] (const size_t i, size_t& update, const bool final) {
       size_t mynnz = tl_rowptr(i)(tl_rowptr(i).dimension(0)-1);
       if(final) thread_start_nnz(i) = update;
@@ -301,23 +286,13 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       if(final && i+1==thread_max) thread_start_nnz(i+1)=update;
     });
   c_nnz_size = thread_start_nnz(thread_max);
-#else
-  thread_start_nnz(0) = 0;
-  for(size_t i=0; i<thread_max; i++)
-    thread_start_nnz(i+1) = thread_start_nnz(i) + tl_rowptr(i)(tl_rowptr(i).dimension(0)-1);
-  c_nnz_size = thread_start_nnz(thread_max);
-#endif
 
   // Allocate output
   lno_nnz_view_t  entriesC(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
   scalar_view_t   valuesC(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
 
   // Copy out
-#ifdef CMS_USE_KOKKOS
   Kokkos::parallel_for("LTG::CopyOut", range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid)
-#else
-  for(size_t tid=0; tid<thread_max; tid++)
-#endif
     {
       size_t my_thread_start =  tid * thread_chunk;
       size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
@@ -337,26 +312,7 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
           valuesC(nnz_thread_start + j)  = tl_values(tid)(j);        
         }
       }
-  }
-#ifdef CMS_USE_KOKKOS
-);
-#endif
-
-
-  //DEBUG
-#if 0
-  for(size_t i=0; i<thread_max; i++) {
-    printf("[%d] CMS: thread[0]::rowptr = ",MyPID);
-    for(size_t j=0; j<tl_rowptr(i).dimension(0); j++)
-      printf("%d ",(int)tl_rowptr(i)(j));
-    printf("\n");
-    printf("[%d] CMS: final::rowptr     = ",MyPID);
-    for(size_t j=0; j<row_mapC.dimension(0); j++)
-      printf("%d ",(int)row_mapC(j));
-    printf("\n");
-  }
-#endif
-
+  });
 
   //Free the unamanged views
   for(size_t i=0; i<thread_max; i++) {
