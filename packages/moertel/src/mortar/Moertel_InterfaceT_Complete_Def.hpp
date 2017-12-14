@@ -179,7 +179,7 @@ bool MoertelT::InterfaceT<ST, LO, GO, N>::Complete()
         foundit.clear();
         gfoundit.clear();
       } // for (int size=0; side<2; ++side)
-    } // for (int proc=0; proc<gcomm_.NumProc(); ++proc)
+    } // for (int proc=0; proc<gcomm_->NumProc(); ++proc)
   }
 #endif  
   //-------------------------------------------------------------------
@@ -245,27 +245,27 @@ bool MoertelT::InterfaceT<ST, LO, GO, N>::Complete()
       MPI_Comm_rank(*mpi_local_comm,&lrank);
     else
       lrank = -1;
-    for (int proc=0; proc<gcomm_.NumProc(); ++proc)
+    for (int proc=0; proc<gcomm_->NumProc(); ++proc)
     {
-      if (proc==gcomm_.MyPID())
+      if (proc==gcomm_->MyPID())
       std::cout << "using mpi    comms: I am global rank " << grank << " and local rank " << lrank << std::endl;
-      gcomm_.Barrier();
+      gcomm_->Barrier();
     }
     // test this stuff on the epetra level
     if (lComm())
       for (int proc=0; proc<lcomm_->NumProc(); ++proc)
       {
         if (proc==lcomm_->MyPID())
-        std::cout << "using epetra comms: I am global rank " << gcomm_.MyPID() << " and local rank " << lcomm_->MyPID() << std::endl;
+        std::cout << "using epetra comms: I am global rank " << gcomm_->MyPID() << " and local rank " << lcomm_->MyPID() << std::endl;
         lcomm_->Barrier();
       }
-    gcomm_.Barrier();
+    gcomm_->Barrier();
 #endif
 
 
     
 #else  // the easy serial case
-    const Teuchos::SerialComm<LO>* serialcomm = dynamic_cast<const Teuchos::SerialComm<LO>*>(gcomm_->get());
+    const Teuchos::SerialComm<LO>* serialcomm = dynamic_cast<const Teuchos::SerialComm<LO>*>(gcomm_.get());
     if (!serialcomm)
     {
 	  std::stringstream oss;
