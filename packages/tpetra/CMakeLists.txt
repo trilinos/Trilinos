@@ -338,6 +338,13 @@ GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)  
 GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)  
 
+ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
+ASSERT_DEFINED(Kokkos_ENABLE_Pthread)
+ASSERT_DEFINED(Kokkos_ENABLE_Serial)
+
+# We already have a separate Tpetra_ENABLE_CUDA option that we defined
+# above, so we don't have to check Kokkos_ENABLE_Cuda here.
+
 ASSERT_DEFINED (Tpetra_ENABLE_CUDA)
 IF (Tpetra_ENABLE_CUDA) 
   # If you bothered to build with CUDA enabled, then we assume you
@@ -475,6 +482,15 @@ ELSE () # NOT Tpetra_INST_CUDA
     MESSAGE(STATUS "NOTE: Kokkos::Cuda is ON (the CMake option Kokkos_ENABLE_Cuda is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, please also set the CMake option Tpetra_INST_CUDA:BOOL=ON.  If you use the Kokkos::Cuda version of Tpetra without doing this, you will get link errors!")
   ENDIF ()
 ENDIF () # Tpetra_INST_CUDA
+
+#
+# Check that users did not attempt to enable both the OpenMP and
+# Pthreads back-ends.
+#
+
+IF (Tpetra_INST_OPENMP AND TPETRA_INST_PTHREAD)
+  MESSAGE (FATAL_ERROR "You set both Tpetra_INST_OPENMP=ON and Tpetra_INST_PTHREAD=ON.  This is not allowed, because Kokkos (as of Dec 2017) forbids users from enabling both the OpenMP and Pthreads back-ends.")
+ENDIF ()
 
 #
 # Construct the list of enabled Device and Node types.
