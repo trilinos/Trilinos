@@ -965,29 +965,53 @@ int main(int argc, char *argv[]) {
       // -----------------------------------------------------------------------
       // pre-smoothing on fine level
       // -----------------------------------------------------------------------
-      const int maxIter = 80;
+      const int maxIter = 40;
       const double omega = 0.9;
       jacobiIterate(maxIter, omega, regX, regRes, regB, regionGrpMats,
           regionInterfaceScaling, maxRegPerProc, mapComp, rowMapPerGrp,
           revisedRowMapPerGrp, rowImportPerGrp);
 
-        for (int j = 0; j < maxRegPerProc; j++) {
-          // update solution according to Jacobi's method
-          for (int i = 0; i < regX[j]->MyLength(); ++i) {
-            (*regX[j])[i] += omega / (*diag[j])[i] * (*regRes[j])[i];
-          }
-        }
+      // -----------------------------------------------------------------------
+      // Transfer to coarse level
+      // -----------------------------------------------------------------------
+      std::vector<Epetra_Vector*> coarseRegRes(maxRegPerProc);
+      std::vector<Epetra_Vector*> coarseRegX(maxRegPerProc);
+      for (int j = 0; j < maxRegPerProc; j++) {
+        coarseRegRes[j] = new Epetra_Vector(*coarseRowMapPerGrp[j], true);
+        coarseRegX[j] = new Epetra_Vector(*coarseRowMapPerGrp[j], true);
+
+        regionGrpProlong[j]->Multiply(true, *regRes[j], *coarseRegRes[j]);
       }
 
-      sleep(1);
+      // -----------------------------------------------------------------------
+      // Perform region-wise direct solve on coarse level
+      // -----------------------------------------------------------------------
+      Epetra_Map* coarseCompMap = NULL;
+      {
+      }
 
-      std::stringstream ssRes;
-      ssRes << "regRes after " << maxIter << " iterations";
-      printRegionalVector(ssRes.str(), regRes, myRank);
 
-      compX->Comm().Barrier();
-      sleep(1);
+      // -----------------------------------------------------------------------
+      // Transfer to fine level
+      // -----------------------------------------------------------------------
+//      std::vector<Epetra_Vector*> regCorrection(maxRegPerProc);
+//      for (int j = 0; j < maxRegPerProc; j++) {
+//        regCorrection[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
+//
+//        regionGrpProlong[j]->Multiply(false, *coarseRegX[j], *regCorrection[j]);
+////        regCorrection[j]
+//       }
 
+      // -----------------------------------------------------------------------
+      // post-smoothing on fine level
+      // -----------------------------------------------------------------------
+      jacobiIterate(maxIter, omega, regX, regRes, regB, regionGrpMats,
+          regionInterfaceScaling, maxRegPerProc, mapComp, rowMapPerGrp,
+          revisedRowMapPerGrp, rowImportPerGrp);
+
+      // -----------------------------------------------------------------------
+      // Print fine-level solution
+      // -----------------------------------------------------------------------
 
 //      sleep(1);
 //
