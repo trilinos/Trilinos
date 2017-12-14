@@ -65,7 +65,7 @@ void mexFunction
     /*printf("lnnz=%d unnz=%d\n", lnnz, unnz);*/
 
    
-    Basker::Basker <mwIndex, double> mybasker;
+    BaskerClassicNS::BaskerClassic <mwIndex, double> mybasker;
     mybasker.factor(anrow, ancol, lnnz, Ap, Ai, Ax);
     mybasker.returnL(&anrow, &lnnz, &Lp, &Li, &Lx);
     mybasker.returnU(&anrow, &unnz, &Up, &Ui, &Ux);

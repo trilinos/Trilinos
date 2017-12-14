@@ -37,7 +37,7 @@
 #define ASSERT(a) mxAssert(a,"")
 #define REALLOC(ptr,size) mxRealloc(ptr, size)
 #define CALLOC(num, size) mxCalloc(num, size)
-#define FREE(ptr)
+#define BASKERFREE(ptr)
 
 #else
 #include <assert.h>
@@ -46,7 +46,7 @@
 #define ASSERT(a) assert(a)
 #define REALLOC(ptr, size) realloc(ptr, size)
 #define CALLOC(num, size)  calloc(num,size)
-#define FREE(ptr)          free(ptr)
+#define BASKERFREE(ptr)          free(ptr)
 
 #endif
 
