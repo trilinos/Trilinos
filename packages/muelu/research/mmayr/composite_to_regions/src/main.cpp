@@ -38,6 +38,7 @@ struct widget {
    Epetra_Map *colMap;
    int maxRegPerGID;
    Epetra_MultiVector *regionsPerGIDWithGhosts;
+   int *gDim, *lDim, *lowInd;
 };
 
 void stripTrailingJunk(char *command);
@@ -151,15 +152,15 @@ void printRegionalMap(const std::string mapName, ///< string to be used for scre
 void jacobiIterate(const int maxIter,
     const double omega,
     std::vector<Epetra_Vector*>& regX,
-    std::vector<Epetra_Vector*>& regRes,
+    std::vector<Epetra_Vector*>& regRes, // ToDo: remove
     std::vector<Epetra_Vector*>& regB,
     std::vector<Epetra_CrsMatrix*> regionGrpMats,
-    std::vector<Epetra_Vector*> regionInterfaceScaling,
+    std::vector<Epetra_Vector*> regionInterfaceScaling, // recreate on coarse grid by import Add on region vector of ones
     const int maxRegPerProc, ///< max number of regions per proc [in]
-    Epetra_Map* mapComp, ///< composite map
-    std::vector<Epetra_Map*> rowMapPerGrp,///< row maps in region layout [in]
-    std::vector<Epetra_Map*> revisedRowMapPerGrp,///< revised row maps in region layout [in]
-    std::vector<Epetra_Import*> rowImportPerGrp ///< row importer in region layout [in])
+    Epetra_Map* mapComp, ///< composite map, computed by removing GIDs > numDofs in revisedRowMapPerGrp
+    std::vector<Epetra_Map*> rowMapPerGrp, ///< row maps in region layout [in] requires the mapping of GIDs on fine mesh to "filter GIDs"
+    std::vector<Epetra_Map*> revisedRowMapPerGrp, ///< revised row maps in region layout [in] (actually extracted from regionGrpMats)
+    std::vector<Epetra_Import*> rowImportPerGrp ///< row importer in region layout [in]
     )
 {
   // extract diagonal from region matrices and recover true diagonal values
@@ -308,7 +309,9 @@ int main(int argc, char *argv[]) {
 
   std::vector< Epetra_Map* > coarseRowMapPerGrp(maxRegPerProc); // region-wise row map in true region layout with unique GIDs for replicated interface DOFs
   std::vector< Epetra_Map* > coarseColMapPerGrp(maxRegPerProc); // region-wise columns map in true region layout with unique GIDs for replicated interface DOFs
+  std::vector< Epetra_Map* > coarseAltColMapPerGrp(maxRegPerProc); // region-wise columns map in true region layout with unique GIDs for replicated interface DOFs
   std::vector< Epetra_CrsMatrix * > regionGrpProlong(maxRegPerProc); // region-wise prolongator in true region layout with unique GIDs for replicated interface DOFs
+  std::vector< Epetra_CrsMatrix * > regionAltGrpProlong(maxRegPerProc); // region-wise prolongator in true region layout with unique GIDs for replicated interface DOFs
 
   std::vector< Epetra_Vector* > regionInterfaceScaling(maxRegPerProc);
 
@@ -415,6 +418,14 @@ int main(int argc, char *argv[]) {
         fscanf(fp,"%d%d",&minGID,&maxGID);
         minGIDComp[i] = minGID;
         maxGIDComp[i] = maxGID;
+      }
+      appData.gDim = (int *) malloc(sizeof(int)*3*myRegions.size());
+      appData.lDim = (int *) malloc(sizeof(int)*3*myRegions.size());
+      appData.lowInd= (int *) malloc(sizeof(int)*3*myRegions.size());
+      for (int i = 0; i < (int) myRegions.size(); i++) {
+        fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
+        fscanf(fp,"%d%d%d",&(appData.lDim[3*i]),&(appData.lDim[3*i+1]),&(appData.lDim[3*i+2]));
+        fscanf(fp,"%d%d%d",&(appData.lowInd[3*i]),&(appData.lowInd[3*i+1]),&(appData.lowInd[3*i+2]));
       }
       appData.minGIDComp   = minGIDComp.data();
       appData.maxGIDComp   = maxGIDComp.data();
@@ -882,6 +893,30 @@ int main(int argc, char *argv[]) {
 
 //      printRegionalMap("coarseColMapPerGrp", coarseColMapPerGrp, myRank);
 
+      for (int j = 0; j < maxRegPerProc; j++) {
+        std::vector<int> regAltColGIDs;
+        int *colGIDs = regionGrpMats[j]->ColMap().MyGlobalElements();
+        if (regionGrpMats[j]->ColMap().NumMyElements() > 0) {
+
+          // check if leftmost point is next to a cpt to the left in which case 1st ghost point is a cpt
+          if ( (appData.lowInd[3*j]%3) == 1 ) {
+           int NIOwn = regionGrpMats[j]->RowMap().NumMyElements();
+           regAltColGIDs.push_back(colGIDs[NIOwn]);
+          }
+          int start = 3 - (appData.lowInd[3*j]%3);
+          if (start == 3) start = 0;
+          for (int i = start; i < appData.lDim[3*j] ; i += 3)
+            regAltColGIDs.push_back(colGIDs[i]);
+
+          // check if pt to the right of rightmost point is is cpt, i.e. last ghost is a cpt
+          if ( ((appData.lowInd[3*j]+appData.lDim[3*j])%3) == 0 ) {
+            int NLast = regionGrpMats[j]->ColMap().NumMyElements()-1;
+            regAltColGIDs.push_back(colGIDs[NLast]);
+          }
+        }
+        coarseAltColMapPerGrp[j] = new Epetra_Map(-1, regAltColGIDs.size(), regAltColGIDs.data(), 0, Comm);
+      }
+
       // Build the actual prolongator
       for (int j = 0; j < maxRegPerProc; j++) {
         regionGrpProlong[j] = new Epetra_CrsMatrix(Copy, *revisedRowMapPerGrp[j], *coarseColMapPerGrp[j], 1, false);
@@ -898,6 +933,43 @@ int main(int argc, char *argv[]) {
         }
         regionGrpProlong[j]->FillComplete();
 //        regionGrpProlong[j]->Print(std::cout);
+      }
+      for (int j = 0; j < maxRegPerProc; j++) {
+        double vals[1];
+        int inds[1];
+        vals[0] = 1.0/3.0;
+        regionAltGrpProlong[j] = new Epetra_CrsMatrix(Copy, *revisedRowMapPerGrp[j], *coarseAltColMapPerGrp[j], 1, false);
+        int *coarseCol = coarseAltColMapPerGrp[j]->MyGlobalElements();
+        int NccSize    = coarseAltColMapPerGrp[j]->NumMyElements();
+        int *fineRow   = revisedRowMapPerGrp[j]->MyGlobalElements();
+        int NfrSize    = revisedRowMapPerGrp[j]->NumMyElements();
+        if (NfrSize > 0) {
+          int fstart = 3 - (appData.lowInd[3*j]%3);
+          if (fstart == 3) fstart = 0;
+          int cstart = 0;
+          if (fstart == 2) cstart = 1;
+
+          // need to add 1st prolongator row as this is not addressed by loop below
+          if (cstart == 1) {
+            inds[0] = 0;
+            regionAltGrpProlong[j]->InsertMyValues(0, 1, &*vals, &*inds);
+          }
+          int i;
+          for (i = fstart; i < appData.lDim[3*j] ; i += 3) {
+            inds[0] = cstart;
+            regionAltGrpProlong[j]->InsertMyValues(i, 1, &*vals, &*inds);
+            if (i > 0)         regionAltGrpProlong[j]->InsertMyValues(i-1, 1, &*vals, &*inds);
+            if (i < NfrSize-1) regionAltGrpProlong[j]->InsertMyValues(i+1, 1, &*vals, &*inds);
+            cstart++;
+          }
+          // last cpoint hasn't been addressed because someone else owns it
+          if (cstart < NccSize) {
+            inds[0] = cstart;
+            regionAltGrpProlong[j]->InsertMyValues(NfrSize-1, 1, &*vals, &*inds);
+          }
+        }
+        regionAltGrpProlong[j]->FillComplete();
+//        regionAltGrpProlong[j]->Print(std::cout);
       }
     }
     else if (strcmp(command,"RunTwoLevelMethod") == 0) {
@@ -986,9 +1058,15 @@ int main(int argc, char *argv[]) {
       // -----------------------------------------------------------------------
       // Perform region-wise direct solve on coarse level
       // -----------------------------------------------------------------------
-      Epetra_Map* coarseCompMap = NULL;
-      {
-      }
+//      Epetra_Map* coarseCompMap = NULL;
+//      {
+//      }
+//
+//      std::vector<Epetra_Map*> coarseQuasiRowMapPerGrp(maxRegPerProc);
+//      {
+//
+//      }
+
 
 
       // -----------------------------------------------------------------------
@@ -1032,6 +1110,8 @@ int main(int argc, char *argv[]) {
       regionalToComposite(regX, compX, maxRegPerProc, rowMapPerGrp, rowImportPerGrp, Average);
       std::cout << "compX after " << maxIter << " iterations" << std::endl;
       compX->Print(std::cout);
+      sleep(2);
+      std::cout << myRank << ": We're done with all computations." << std::endl;
     }
     else if (strcmp(command,"PrintCompositeVectorX") == 0) {
       sleep(myRank);
