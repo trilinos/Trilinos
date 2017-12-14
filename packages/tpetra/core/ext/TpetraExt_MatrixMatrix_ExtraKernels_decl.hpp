@@ -68,7 +68,7 @@ namespace MatrixMatrix {
     template<class InRowptrArrayType, class InColindArrayType, class InValsArrayType,
              class OutRowptrType, class OutColindType, class OutValsType>
     void copy_out_from_thread_memory(const InRowptrArrayType & Inrowptr, const InColindArrayType &Incolind, const InValsArrayType & Invals,
-                                       size_t m, size_t thread_chunk,
+                                       size_t m, double thread_chunk,
                                        OutRowptrType & Outrowptr, OutColindType &Outcolind, OutValsType & Outvals);
 
 #ifdef HAVE_TPETRA_INST_OPENMP
