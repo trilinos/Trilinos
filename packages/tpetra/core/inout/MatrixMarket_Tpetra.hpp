@@ -1649,7 +1649,7 @@ namespace Tpetra {
                            const bool tolerant=false,
                            const bool debug=false)
       {
-        return readSparseGraph (filename, pComm, Teuchos::null, callFillComplete, tolerant, debug);
+        return readSparseGraphFile (filename, pComm, Teuchos::null, callFillComplete, tolerant, debug);
       }
 
       //! Variant of readSparseGraph that takes a Node object.
@@ -1716,9 +1716,9 @@ namespace Tpetra {
                        const bool tolerant=false,
                        const bool debug=false)
       {
-        return readSparseGraph (filename, pComm, Teuchos::null,
-                                constructorParams, fillCompleteParams,
-                                tolerant, debug);
+        return readSparseGraphFile (filename, pComm, Teuchos::null,
+                                    constructorParams, fillCompleteParams,
+                                    tolerant, debug);
       }
 
       //! Variant of readSparseFile above that takes a Node object.
@@ -1866,9 +1866,11 @@ namespace Tpetra {
                   const bool tolerant=false,
                   const bool debug=false)
       {
-        Teuchos::RCP<sparse_graph_type> graph = readSparseGraphHelper(in, pComm, pNode, Teuchos::null, Teuchos::null, Teuchos::null,tolerant,debug);
+        Teuchos::RCP<const map_type> rowMap;
+        Teuchos::RCP<const map_type> colMap;
+        Teuchos::RCP<sparse_graph_type> graph = readSparseGraphHelper(in, pComm, pNode, rowMap, colMap, Teuchos::null,tolerant,debug);
         if(callFillComplete)
-          graph->FillComplete();
+          graph->fillComplete();
         return graph;
       }
 
@@ -1922,9 +1924,11 @@ namespace Tpetra {
                   const bool tolerant=false,
                   const bool debug=false)
       {
+        Teuchos::RCP<const map_type> rowMap;
+        Teuchos::RCP<const map_type> colMap;
         Teuchos::RCP<sparse_graph_type> graph = readSparseGraphHelper(in, pComm, pNode,
-            Teuchos::null, Teuchos::null, constructorParams, tolerant, debug);
-        graph->FillComplete(fillCompleteParams);
+            rowMap, colMap, constructorParams, tolerant, debug);
+        graph->fillComplete(fillCompleteParams);
         return graph;
       }
 
