@@ -83,16 +83,13 @@ evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
          typename Traits::EvalData workset)
 {
   const int cell = team.league_rank();
-  auto basis_view = workset.basis_;
-  auto weights = workset.weights_;
-  auto cell_measure = workset.det_jac_;
+  const auto& basis_view = workset.basis_;
+  const auto& weights = workset.weights_;
+  const auto& cell_measure = workset.det_jac_;
 
-  // Make residual atomic so that AMT mode can sum diffusion and source terms at same time
-  Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual_atomic = residual;
-
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,basis_view.extent(1)), [=] (const int& basis) {
-      for (int qp = 0; qp < static_cast<int>(basis_view.extent(0)); ++qp)
-        residual_atomic(cell,basis) +=  basis_view(qp,basis) * source(cell,qp) * weights(qp) * cell_measure(cell,qp);
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,basis_view.extent(1)), [&] (const int& basis) {
+    for (int qp = 0; qp < static_cast<int>(basis_view.extent(0)); ++qp)
+      residual(cell,basis) +=  basis_view(qp,basis) * source(cell,qp) * weights(qp) * cell_measure(cell,qp);
   });
 }
 
