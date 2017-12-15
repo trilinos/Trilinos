@@ -67,6 +67,7 @@ struct Parameters{
   int use_threads;
   int use_openmp;
   int use_cuda;
+  int use_serial;
   int a_mem_space, b_mem_space, c_mem_space, work_mem_space;
 
 
@@ -109,6 +110,7 @@ struct Parameters{
     use_threads = 0;
     use_openmp = 0;
     use_cuda = 0;
+    use_serial = 0;
     a_mem_space = b_mem_space = c_mem_space = work_mem_space = 1;
     a_mtx_bin_file = b_mtx_bin_file = c_mtx_bin_file = NULL;
     compression2step = true;

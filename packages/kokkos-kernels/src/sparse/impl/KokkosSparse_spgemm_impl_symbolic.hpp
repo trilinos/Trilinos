@@ -206,7 +206,7 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_QTHREADS:
       return Kokkos::Qthread::hardware_thread_id();
 #endif
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif
@@ -943,7 +943,7 @@ suggested_vector_size = 4;
   }
 
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
 
     size_t free_byte ;
@@ -1007,7 +1007,7 @@ suggested_vector_size = 4;
   timer1.reset();
 
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
-    Kokkos::parallel_for("KokkosSparse_spgemm_symbolic",  gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
+    Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
   }
   else {
     if (( spgemm_algorithm == SPGEMM_KK_MEMSPEED  &&
@@ -1015,18 +1015,18 @@ suggested_vector_size = 4;
         spgemm_algorithm == SPGEMM_KK_SPEED){
 
       if (use_dynamic_schedule){
-        Kokkos::parallel_for("KokkosSparse_spgemm_symbolic",  dynamic_multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        Kokkos::parallel_for( dynamic_multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
       }
       else {
-        Kokkos::parallel_for("KokkosSparse_spgemm_symbolic",  multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        Kokkos::parallel_for( multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
       }
     }
     else {
       if (use_dynamic_schedule){
-        Kokkos::parallel_for("KokkosSparse_spgemm_symbolic",  dynamic_multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        Kokkos::parallel_for( dynamic_multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
       }
       else {
-        Kokkos::parallel_for("KokkosSparse_spgemm_symbolic",  multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+        Kokkos::parallel_for( multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
       }
     }
   }
@@ -1092,14 +1092,14 @@ suggested_vector_size = 4;
       my_exec_space);
 
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
-    Kokkos::parallel_for("KokkosSparse_spgemm_symbolic_nonzeros", gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), nnzc_);
+    Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), nnzc_);
   }
   else {
     if (use_dynamic_schedule){
-      Kokkos::parallel_for("KokkosSparse_spgemm_symbolic_nonzeros",  dynamic_multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), nnzc_);
+      Kokkos::parallel_for( dynamic_multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), nnzc_);
     }
     else {
-      Kokkos::parallel_for("KokkosSparse_spgemm_symbolic_nonzeros",  multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), nnzc_);
+      Kokkos::parallel_for( multicore_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), nnzc_);
     }
   }
 
@@ -1466,7 +1466,7 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_QTHREADS:
       return Kokkos::Qthread::hardware_thread_id();
 #endif
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif

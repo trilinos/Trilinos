@@ -55,7 +55,9 @@ enum ConflictList{COLORING_NOCONFLICT, COLORING_ATOMIC, COLORING_PPS};
 
 enum ColoringType {Distance1, Distance2};
 
-template <class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
+template <
+	  class size_type_, class color_t_, class lno_t_,
+	  //class lno_row_view_t_, class nonconst_color_view_t_, class lno_nnz_view_t_,
       class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
 class GraphColoringHandle{
 
@@ -65,95 +67,28 @@ public:
   typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
 
-  typedef lno_row_view_t_ in_lno_row_view_t;
-  //typedef row_index_view_type_ idx_array_type;
+  typedef typename std::remove_const<size_type_>::type  size_type;
+  typedef const size_type const_size_type;
 
-  //typedef nonzero_index_view_type_ idx_edge_array_type;
-  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
+  typedef typename std::remove_const<lno_t_>::type  nnz_lno_t;
+  typedef const nnz_lno_t const_nnz_lno_t;
 
-  //typedef typename row_index_view_type::value_type idx;
-  //typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
-  typedef typename in_lno_row_view_t::non_const_value_type size_type;
-
-  //typedef typename row_index_view_type::array_layout idx_array_layout;
-  typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
-
-  //typedef typename row_index_view_type::device_type idx_device_type;
-  typedef typename in_lno_row_view_t::device_type row_lno_view_device_t;
-
-  //typedef typename row_index_view_type::memory_traits idx_memory_traits;
-  typedef typename in_lno_row_view_t::memory_traits row_lno_view_memory_traits;
-
-  //typedef typename row_index_view_type::HostMirror host_view_type;
-  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
-  //typedef typename idx_memory_traits::MemorySpace MyMemorySpace;
-
-  //typedef typename nonzero_index_view_type::non_const_value_type idx_edge;
-  typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
-
-  //typedef typename nonzero_index_view_type::array_layout idx_edge_array_layout;
-  typedef typename in_lno_nnz_view_t::array_layout nnz_lno_view_array_layout;
-
-  //typedef typename nonzero_index_view_type::device_type idx_edge_device_type;
-  typedef typename in_lno_nnz_view_t::device_type nnz_lno_view_device_t;
-
-  //typedef typename nonzero_index_view_type::memory_traits idx_edge_memory_traits;
-  typedef typename in_lno_nnz_view_t::memory_traits nnz_lno_view_memory_traits;
-
-  //typedef typename nonzero_index_view_type::HostMirror host_edge_view_type; //Host view type
-  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
+  typedef typename std::remove_const<color_t_>::type  color_t;
+  typedef const color_t const_color_t;
 
 
 
-  typedef nonconst_color_view_t_ color_view_t;
+  typedef typename Kokkos::View<color_t *, HandlePersistentMemorySpace> color_view_t;
 
-  typedef typename color_view_t::non_const_value_type color_t;
   typedef typename color_view_t::array_layout color_view_array_layout;
   typedef typename color_view_t::device_type color_view_device_t;
   typedef typename color_view_t::memory_traits color_view_memory_traits;
   typedef typename color_view_t::HostMirror color_host_view_t; //Host view type
 
 
-
-  //typedef typename in_lno_row_view_t::const_value_type const_row_lno_t;
-  typedef typename in_lno_row_view_t::const_value_type const_size_type;
-  //typedef typename in_lno_row_view_t::non_const_value_type non_const_row_lno_t;
-  //typedef typename in_row_index_view_type::memory_space row_view_memory_space;
-  //typedef typename Kokkos::View<const_row_lno_t, row_view_array_layout,
-  //    row_view_device_t, row_view_memory_traits> const_row_index_view_type;
-
-  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
-
-  //typedef typename Kokkos::View<non_const_row_lno_t, row_view_array_layout,
-  //    row_view_device_t, row_view_memory_traits> non_const_row_index_view_type;
-  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
-
-
-
-  typedef typename in_lno_nnz_view_t::const_value_type const_nnz_lno_t;
-  //typedef typename in_lno_nnz_view_t::non_const_value_type non_const_nnz_lno_t;
-  //typedef typename in_nonzero_index_view_type::memory_space nonzero_index_view_memory_space;
-  //typedef typename Kokkos::View<const_nnz_lno_t, nnz_lno_view_array_layout,
-  //    nnz_lno_view_device_t, nnz_lno_view_memory_traits> const_nonzero_index_view_type;
-
-  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
-
-  //typedef typename Kokkos::View<non_const_nnz_lno_t, nnz_lno_view_array_layout,
-  //    nnz_lno_view_device_t, nnz_lno_view_memory_traits> non_const_nonzero_index_view_type;
-  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
-
-
-
-
-  //typedef typename Kokkos::View<row_index_type *, HandleTempMemorySpace> idx_temp_work_array_type;
-  //typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> size_type_temp_work_view_t;
-  //typedef typename row_index_persistent_work_view_type idx_persistent_work_array_type;
-  //typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> size_type_persistent_work_view_t;
 
-  //typedef typename row_index_persistent_work_view_type::HostMirror host_idx_persistent_view_type; //Host view type
-  //typedef typename row_lno_persistent_work_view_t::HostMirror row_lno_persistent_work_host_view_t; //Host view type
   typedef typename size_type_persistent_work_view_t::HostMirror size_type_persistent_work_host_view_t; //Host view type
 
   typedef typename Kokkos::View<nnz_lno_t *, HandleTempMemorySpace> nnz_lno_temp_work_view_t;
@@ -294,7 +229,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
       this->coloring_algorithm_type = COLORING_EB;
 #ifdef VERBOSE
@@ -525,7 +460,7 @@ private:
 
 
       if (
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
           Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value ||
 #endif
           0){

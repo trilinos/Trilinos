@@ -8,7 +8,7 @@ KokkosKernelsPath=$5
 
 ScalarList="double float Kokkos::complex<double> Kokkos::complex<float>"
 LayoutList="LayoutLeft LayoutRight"
-ExecMemSpaceList="Cuda,CudaSpace Cuda,CudaUVMSpace OpenMP,HostSpace Threads,HostSpace Serial,HostSpace"
+ExecMemSpaceList="Cuda,CudaSpace Cuda,CudaUVMSpace OpenMP,HostSpace Threads,HostSpace Serial,HostSpace OpenMP,Experimental::HBWSpace Threads,Experimental::HBWSpace Serial,Experimental::HBWSpace"
 
 mkdir generated_specializations_hpp
 mkdir generated_specializations_cpp/${Function}
@@ -42,7 +42,7 @@ for ExecMemSpace in ${ExecMemSpaceList}; do
    ExecSpace=${ExecMemSpaceArray[0]}
    MemSpace=${ExecMemSpaceArray[1]}
    echo "Generate: " ${FunctionExtended} " " ${Scalar} " " ${Layout} " " ${ExecSpace} " " ${MemSpace}
-   ${KokkosKernelsPath}/scripts/generate_specialization_type2.bash ${Function} ${FunctionExtended} ${Scalar} ${Layout} ${ExecSpace} ${MemSpace} ${MasterHeader} ${NameSpace} ${KokkosKernelsPath}
+   ${KokkosKernelsPath}/scripts/generate_specialization_type.bash ${Function} ${FunctionExtended} ${Scalar} ${Layout} ${ExecSpace} ${MemSpace} ${MasterHeader} ${NameSpace} ${KokkosKernelsPath}
 done
 done
 done

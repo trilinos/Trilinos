@@ -61,6 +61,7 @@ TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/blas/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/sparse/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/graph/*.hpp)
 TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/common/*.hpp)
+TEST_HEADERS += $(wildcard $(KOKKOSKERNELS_SRC_PATH)/unit_test/batched/*.hpp)
 
 
 
@@ -101,6 +102,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Blas1_sum.o
   OBJ_OPENMP += Test_OpenMP_Blas1_update.o
   OBJ_OPENMP += Test_OpenMP_Blas2_gemv.o
+  OBJ_OPENMP += Test_OpenMP_Blas3_gemm.o
   OBJ_OPENMP += Test_OpenMP_Sparse_spmv.o
   OBJ_OPENMP += Test_OpenMP_Sparse_trsv.o
   OBJ_OPENMP += Test_OpenMP_Sparse_spgemm.o
@@ -113,7 +115,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Common_ArithTraits.o
   OBJ_OPENMP += Test_OpenMP_Common_set_bit_count.o
 #  OBJ_OPENMP += Test_OpenMP_Common_float128.o
-  # Real 
+ # Real 
   OBJ_OPENMP += Test_OpenMP_Batched_SerialMatUtil_Real.o
   OBJ_OPENMP += Test_OpenMP_Batched_SerialGemm_Real.o
   OBJ_OPENMP += Test_OpenMP_Batched_SerialTrsm_Real.o
@@ -126,7 +128,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_OPENMP), 1)
   OBJ_OPENMP += Test_OpenMP_Batched_TeamLU_Real.o
   OBJ_OPENMP += Test_OpenMP_Batched_TeamGemv_Real.o
   OBJ_OPENMP += Test_OpenMP_Batched_TeamTrsv_Real.o
-  # Complex
+ # Complex
   OBJ_OPENMP += Test_OpenMP_Batched_SerialMatUtil_Complex.o
   OBJ_OPENMP += Test_OpenMP_Batched_SerialGemm_Complex.o
   OBJ_OPENMP += Test_OpenMP_Batched_SerialTrsm_Complex.o
@@ -184,12 +186,13 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_CUDA), 1)
   OBJ_CUDA += Test_Cuda_Blas1_sum.o
   OBJ_CUDA += Test_Cuda_Blas1_update.o
   OBJ_CUDA += Test_Cuda_Blas2_gemv.o
-  OBJ_CUDA += Test_Cuda_Sparse_spmv.o
+  OBJ_CUDA += Test_Cuda_Blas3_gemm.o #Not yet ready need to figure out how to handle CUBLAS
+  #OBJ_CUDA += Test_Cuda_Sparse_spmv.o
   #OBJ_CUDA += Test_Cuda_Sparse_trsv.o #removing trsv from cuda unit test as it runs only sequential.
   OBJ_CUDA += Test_Cuda_Sparse_spgemm.o
   OBJ_CUDA += Test_Cuda_Sparse_gauss_seidel.o
   OBJ_CUDA += Test_Cuda_Sparse_CrsMatrix.o
-  #OBJ_CUDA += Test_Cuda_Sparse_findRelOffset.o #removing findRelOffset from cuda test as the implementation is sequential.
+ #OBJ_CUDA += Test_Cuda_Sparse_findRelOffset.o #removing findRelOffset from cuda test as the implementation is sequential.
   OBJ_CUDA += Test_Cuda_Sparse_replaceSumIntoLonger.o
   OBJ_CUDA += Test_Cuda_Sparse_replaceSumInto.o
   OBJ_CUDA += Test_Cuda_Graph_graph_color.o
@@ -266,6 +269,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_SERIAL), 1)
   OBJ_SERIAL += Test_Serial_Blas1_sum.o
   OBJ_SERIAL += Test_Serial_Blas1_update.o
   OBJ_SERIAL += Test_Serial_Blas2_gemv.o
+  OBJ_SERIAL += Test_Serial_Blas3_gemm.o
   OBJ_SERIAL += Test_Serial_Sparse_spmv.o
   OBJ_SERIAL += Test_Serial_Sparse_trsv.o
   OBJ_SERIAL += Test_Serial_Sparse_spgemm.o
@@ -349,6 +353,7 @@ ifeq ($(KOKKOSKERNELS_INTERNAL_TEST_THREADS), 1)
   OBJ_THREADS += Test_Threads_Blas1_sum.o
   OBJ_THREADS += Test_Threads_Blas1_update.o
   OBJ_THREADS += Test_Threads_Blas2_gemv.o
+  OBJ_THREADS += Test_Threads_Blas3_gemm.o
   OBJ_THREADS += Test_Threads_Sparse_spmv.o
   OBJ_THREADS += Test_Threads_Sparse_trsv.o
   OBJ_THREADS += Test_Threads_Sparse_spgemm.o
