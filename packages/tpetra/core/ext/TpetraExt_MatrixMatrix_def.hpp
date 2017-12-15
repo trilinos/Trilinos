@@ -2586,7 +2586,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPWrapper"))));
 #endif
     // KokkosKernelsHandle
-    typedef KokkosKernels::Experimental::KokkosKernelsHandle<lno_view_t,lno_nnz_view_t, scalar_view_t, typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
+    typedef KokkosKernels::Experimental::KokkosKernelsHandle<
+       typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type, 
+       typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
     // Grab the  Kokkos::SparseCrsMatrices
     const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
@@ -2918,7 +2920,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   }
 
   // KokkosKernelsHandle
-  typedef KokkosKernels::Experimental::KokkosKernelsHandle<lno_view_t,lno_nnz_view_t, scalar_view_t, typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
+  typedef KokkosKernels::Experimental::KokkosKernelsHandle<
+       typename lno_view_t::const_value_type,typename lno_nnz_view_t::const_value_type, typename scalar_view_t::const_value_type, 
+       typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
   // Grab the  Kokkos::SparseCrsMatrices
   const KCRS & Ak = Aview.origMatrix->getLocalMatrix();

@@ -215,7 +215,7 @@ namespace KokkosBatched {
     //                        !std::is_same<SpT,Kokkos::OpenMP>::value,
     //                        "KokkosKernels:: Invalid AVX<> exec space." );
 
-    // #if defined(KOKKOS_HAVE_CUDA)
+    // #if defined(KOKKOS_ENABLE_CUDA)
     //         static_assert( std::is_same<SpT,Kokkos::Cuda>::value,
     //                        "KokkosKernels:: Invalid SIMT<> exec space." );
     // #endif
@@ -275,7 +275,7 @@ namespace KokkosBatched {
 	  // - team policy (smaller) or range policy (bigger)
 	  // - space (cuda vs host)
 	  // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 	  template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
 	  typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
 	  ::type mb() { return 2; }
@@ -305,7 +305,7 @@ namespace KokkosBatched {
 	  // - team policy (smaller) or range policy (bigger)
 	  // - space (cuda vs host)
 	  // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
 	  template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
 	  typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
 	  ::type mb() { return 1; }
@@ -330,7 +330,7 @@ namespace KokkosBatched {
       //             // - team policy (smaller) or range policy (bigger)
       //             // - space (cuda vs host)
       //             // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
-      // #if defined(KOKKOS_HAVE_CUDA)
+      // #if defined(KOKKOS_ENABLE_CUDA)
       //             template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
       //             typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
       //             ::type mb() { return 4; }

@@ -136,7 +136,7 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_QTHREADS:
       return Kokkos::Qthread::hardware_thread_id();
 #endif
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif
@@ -203,7 +203,8 @@ typename a_row_view_t_, typename a_lno_nnz_view_t_, typename a_scalar_nnz_view_t
 typename b_lno_row_view_t_, typename b_lno_nnz_view_t_, typename b_scalar_nnz_view_t_  >
 template <typename a_row_view_t__, typename a_nnz_view_t__, typename a_scalar_view_t__,
           typename b_row_view_t__, typename b_nnz_view_t__, typename b_scalar_view_t__,
-          typename c_row_view_t__, typename c_nnz_view_t__, typename c_scalar_view_t__>
+          typename c_row_view_t__, typename c_nnz_view_t__, typename c_scalar_view_t__,
+          typename c_nnz_tmp_view_t>
 
 struct KokkosSPGEMM
   <HandleType, a_row_view_t_, a_lno_nnz_view_t_, a_scalar_nnz_view_t_,
@@ -223,8 +224,8 @@ struct KokkosSPGEMM
   c_nnz_view_t__ entriesC;
   c_scalar_view_t__ valuesC;
 
-  c_nnz_view_t__ beginsC;
-  c_nnz_view_t__ nextsC;
+  c_nnz_tmp_view_t beginsC;
+  c_nnz_tmp_view_t nextsC;
 
   nnz_lno_t *pbeginsC, *pnextsC, *pEntriesC;
   scalar_t *pvaluesC;
@@ -256,8 +257,8 @@ struct KokkosSPGEMM
       c_nnz_view_t__ entriesC_,
       c_scalar_view_t__ valuesC_,
 
-      c_nnz_view_t__ beginsC_,
-      c_nnz_view_t__ nextsC_,
+      c_nnz_tmp_view_t beginsC_,
+      c_nnz_tmp_view_t nextsC_,
 
       const size_type sharedMemorySize_,
       const int suggested_vector_size,
@@ -489,9 +490,9 @@ void
 
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
     //allocate memory for begins and next to be used by the hashmap
-    c_lno_nnz_view_t beginsC
+    nnz_lno_temp_work_view_t beginsC
     (Kokkos::ViewAllocateWithoutInitializing("C keys"), valuesC_.dimension_0());
-    c_lno_nnz_view_t nextsC
+    nnz_lno_temp_work_view_t nextsC
     (Kokkos::ViewAllocateWithoutInitializing("C nexts"), valuesC_.dimension_0());
     Kokkos::deep_copy(beginsC, -1);
 
@@ -499,7 +500,7 @@ void
     NumericCMEM<
     const_a_lno_row_view_t, const_a_lno_nnz_view_t, const_a_scalar_nnz_view_t,
     const_b_lno_row_view_t, const_b_lno_nnz_view_t, const_b_scalar_nnz_view_t,
-    c_row_view_t, c_lno_nnz_view_t, c_scalar_nnz_view_t>
+    c_row_view_t, c_lno_nnz_view_t, c_scalar_nnz_view_t, nnz_lno_temp_work_view_t>
     sc(
         a_row_cnt,
         row_mapA,
@@ -533,7 +534,6 @@ void
 
     timer1.reset();
     Kokkos::parallel_for(
-                         "KokkosSparse_spgemm_speed",
         gpu_team_policy_t(
             a_row_cnt / team_row_chunk_size + 1 ,
             suggested_team_size ,
@@ -602,10 +602,10 @@ void
     timer1.reset();
 
     if (use_dynamic_schedule){
-      Kokkos::parallel_for("KokkosSparse_spgemm_speed", dynamic_multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      Kokkos::parallel_for( dynamic_multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
     else {
-      Kokkos::parallel_for("KokkosSparse_spgemm_speed", multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      Kokkos::parallel_for( multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
 
     MyExecSpace::fence();
@@ -623,3 +623,4 @@ void
 }
 }
 }
+

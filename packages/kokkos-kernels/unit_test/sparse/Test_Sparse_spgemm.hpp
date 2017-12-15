@@ -83,8 +83,14 @@ int run_spgemm(crsMat_t input_mat, crsMat_t input_mat2, KokkosSparse::SPGEMMAlgo
   typedef typename graph_t::entries_type::non_const_type   lno_nnz_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
+
+
+  typedef typename lno_view_t::value_type size_type;
+  typedef typename lno_nnz_view_t::value_type lno_t;
+  typedef typename scalar_view_t::value_type scalar_t;
+
   typedef KokkosKernels::Experimental::KokkosKernelsHandle
-      <lno_view_t,lno_nnz_view_t, scalar_view_t,
+      <size_type,lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 
   KernelHandle kh;
@@ -287,7 +293,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
 
     SPGEMMAlgorithm spgemm_algorithm = algorithms[ii];
 
-    const int max_integer = 2147483647;
+    const uint64_t max_integer = 2147483647;
     std::string algo = "UNKNOWN";
     bool is_expected_to_fail = false;
 
@@ -315,7 +321,7 @@ void test_spgemm(lno_t numRows, size_type nnz, lno_t bandwidth, lno_t row_size_v
       }
       //if size_type is larger than int, mkl casts it to int.
       //it will fail if casting cause overflow.
-      if (input_mat.values.dimension_0() > max_integer){
+      if (input_mat.values.extent(0) > max_integer){
         is_expected_to_fail = true;
       }
 

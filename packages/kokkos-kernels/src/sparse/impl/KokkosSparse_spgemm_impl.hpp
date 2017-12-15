@@ -189,12 +189,12 @@ public:
 
   typedef Kokkos::TeamPolicy<GPUTag, MyExecSpace> gpu_team_policy_t ;
   typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count_policy_t ;
-  typedef Kokkos::TeamPolicy<CountTag, MyExecSpace> team_count2_policy_t ;
+  typedef Kokkos::TeamPolicy<CountTag2, MyExecSpace> team_count2_policy_t ;
 
   typedef Kokkos::TeamPolicy<GPUCountTag, MyExecSpace> team_gpucount_policy_t ;
 
   typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill_policy_t ;
-  typedef Kokkos::TeamPolicy<FillTag, MyExecSpace> team_fill2_policy_t ;
+  typedef Kokkos::TeamPolicy<FillTag2, MyExecSpace> team_fill2_policy_t ;
 
   typedef Kokkos::TeamPolicy<Numeric1Tag, MyExecSpace> team_numeric1_policy_t ;
   typedef Kokkos::TeamPolicy<Numeric2Tag, MyExecSpace> team_numeric2_policy_t ;
@@ -352,7 +352,8 @@ public:
 
   template <typename a_row_view_t__, typename a_nnz_view_t__, typename a_scalar_view_t__,
             typename b_row_view_t__, typename b_nnz_view_t__, typename b_scalar_view_t__,
-            typename c_row_view_t__, typename c_nnz_view_t__, typename c_scalar_view_t__>
+            typename c_row_view_t__, typename c_nnz_view_t__, typename c_scalar_view_t__,
+            typename c_nnz_tmp_view_t>
   struct NumericCMEM;
 private:
   /**

@@ -802,6 +802,15 @@ cache variable::
 
   -D <Project>_CXX11_FLAGS="<compiler flags>"
 
+In order to enable C++11 but not have the default system set any flags for
+C++11, use::
+
+  -D <Project>_ENABLE_CXX11=ON
+  -D <Project>_CXX11_FLAGS=" "
+
+The empty space " " will result in the system assuming that no flags needs to
+be set.
+
 
 Enabling explicit template instantiation for C++
 ------------------------------------------------
@@ -1095,6 +1104,17 @@ To enable OpenMP support, one must set::
 
 Note that if you enable OpenMP directly through a compiler option (e.g.,
 ``-fopenmp``), you will NOT enable OpenMP inside <Project> source code.
+
+To skip adding flags for OpenMP for ``<LANG>`` = ``C``, ``CXX``, or
+``Fortran``, use::
+
+  -D OpenMP_<LANG>_FLAGS_OVERRIDE=" "
+
+The single space " " will result in no flags getting added.  This is needed
+since one can't set the flags ``OpenMP_<LANG>_FLAGS`` to an empty string or
+the ``FIND_PACKAGE(OpenMP)`` command will fail.  Setting the variable
+``-DOpenMP_<LANG>_FLAGS_OVERRIDE= " "`` is the only way to enable OpenMP but
+skip adding the OpenMP flags provided by ``FIND_PACKAGE(OpenMP)``.
 
 .. _BUILD_SHARED_LIBS:
 

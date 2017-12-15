@@ -304,8 +304,8 @@ namespace MueLu {
     typedef Kokkos::View<LocalOrdinal*, Kokkos::HostSpace> host_colinds_view;
     //note: just using colinds_view in place of scalar_view_t type (it won't be used at all by symbolic SPGEMM)
     typedef KokkosKernels::Experimental::KokkosKernelsHandle<
-      rowptrs_view, colinds_view, colinds_view, execution_space,
-      memory_space, memory_space> KernelHandle;
+      typename rowptrs_view::const_value_type, typename colinds_view::const_value_type, typename colinds_view::const_value_type, 
+      execution_space, memory_space, memory_space> KernelHandle;
 
     KernelHandle kh;
     //leave gc algorithm choice as the default

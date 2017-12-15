@@ -181,7 +181,7 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_QTHREADS:
       return Kokkos::Qthread::hardware_thread_id();
 #endif
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif
@@ -707,17 +707,17 @@ num_chunks = env_num_chunks;
 
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
     //TODO CLEAN GPU CODE
-    Kokkos::parallel_for("KokkosSparse_spgemm_PortableNumericCHash", gpu_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+    Kokkos::parallel_for( gpu_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     MyExecSpace::fence();
   }
   else {
     if (use_dynamic_schedule){
 
-      Kokkos::parallel_for("KokkosSparse_spgemm_PortableNumericCHash", dynamic_multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      Kokkos::parallel_for( dynamic_multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
     else {
 
-      Kokkos::parallel_for("KokkosSparse_spgemm_PortableNumericCHash", multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      Kokkos::parallel_for( multicore_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
     MyExecSpace::fence();
   }
@@ -825,17 +825,17 @@ void
 
   if (my_exec_space == KokkosKernels::Impl::Exec_CUDA){
     //TODO CLEAN GPU CODE
-    Kokkos::parallel_for("KokkosSparse_spgemm_PortableNumericCHash", gpu_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+    Kokkos::parallel_for( gpu_team_policy_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     MyExecSpace::fence();
   }
   else {
     if (use_dynamic_schedule){
 
-      Kokkos::parallel_for("KokkosSparse_spgemm_PortableNumericCHash", dynamic_multicore_team_policy2_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      Kokkos::parallel_for( dynamic_multicore_team_policy2_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
     else {
 
-      Kokkos::parallel_for("KokkosSparse_spgemm_PortableNumericCHash", multicore_team_policy2_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+      Kokkos::parallel_for( multicore_team_policy2_t(a_row_cnt / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
     }
     MyExecSpace::fence();
   }
