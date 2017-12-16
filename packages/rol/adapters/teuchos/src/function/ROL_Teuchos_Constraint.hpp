@@ -59,43 +59,46 @@ namespace ROL {
 template <class Ordinal, class Real>
 class TeuchosConstraint : public Constraint<Real> {
 
-  template <typename T> using ROL::Ptr = ROL::Ptr<T>;
+  using SerialDenseVector = Teuchos::SerialDenseVector<Ordinal,Real>;
 
-  typedef Teuchos::SerialDenseVector<Ordinal,Real> SDV;
-  typedef TeuchosVector<Ordinal,Real>              TV;
+  const SerialDenseVector& getVector( const Vector<Real>& x ) {
+    return dynamic_cast<const TeuchosVector<Ordinal,Real>&>(x).getVector();
+  }
+    
+  SerialDenseVector& getVector( Vector<Real>& x ) {
+    return dynamic_cast<TeuchosVector<Ordinal,Real>&>(x).getVector();
+  }
 
 public:
 
   virtual ~TeuchosConstraint() {}
 
-
   using Constraint<Real>::update;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    auto xp = getVector(x);
     update(*xp,flag,true);
   }
 
-  virtual void update( const SDV &x, Real &tol ) {}  
+  virtual void update( const SerialDenseVector &x, Real &tol ) {}  
 
 
   using Constraint<Real>::value;
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    ROL::Ptr<SDV> cp = dynamic_cast<TV&>(c).getVector();
-    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
-
+    auto cp = getVector(c);
+    auto xp = getVector(x);
     value(*cp,*xp,tol);
   }
 
-  virtual void value( SDV &c, const SDV &x, Real &tol ) = 0;
+  virtual void value( SerialDenseVector &c, const SerialDenseVector &x, Real &tol ) = 0;
 
 
   using Constraint<Real>::applyJacobian;
   void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, 
-                             const Vector<Real> &x, Real &tol) {
+                     const Vector<Real> &x, Real &tol) {
 
-    ROL::Ptr<SDV> jvp = dynamic_cast<TV&>(jv).getVector();
-    ROL::Ptr<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
-    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    auto jvp = getVector(jv);
+    auto vp  = getVector(v);
+    auto xp  = getVector(x);
     try {
       applyJacobian(*jvp,*vp,*xp,tol);      
     } 
@@ -104,8 +107,8 @@ public:
     }
   }
 
-  virtual void applyJacobian( SDV &jv, const SDV v, 
-                              const SDV &x, Real &tol ) {
+  virtual void applyJacobian( SerialDenseVector &jv, const SerialDenseVector v, 
+                              const SerialDenseVector &x, Real &tol ) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::TeuchosConstraint): applyJacobian not implemented!");
   }
@@ -115,20 +118,20 @@ public:
   void applyAdjointJacobian(Vector<Real> &ajv,     const Vector<Real> &v,
                                     const Vector<Real> &x, Real &tol) {
 
-    ROL::Ptr<SDV> ajvp = dynamic_cast<TV&>(ajv).getVector();
-    ROL::Ptr<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
-    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    auto ajvp = getVector(ajv);
+    auto vp   = getVector(v);
+    auto xp   = getVector(x);
 
     try {
-       applyJacobian(*ajvp,*vp,*xp,tol);      
+      applyJacobian(*ajvp,*vp,*xp,tol);      
     } 
     catch (std::exception &e ){
       Constraint<Real>::applyAdjointJacobian(ajv,v,x,tol);
     }
   }
 
-   virtual void applyAdjointJacobian( SDV &ajv, const SDV v, 
-                                      const SDV &x, Real &tol ) {
+   virtual void applyAdjointJacobian( SerialDenseVector &ajv, const SerialDenseVector v, 
+                                      const SerialDenseVector &x, Real &tol ) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
       ">>> ERROR (ROL::TeuchosConstraint): applyAdjointJacobian not implemented!");
   }
@@ -138,10 +141,10 @@ public:
   void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v,
                            const Vector<Real> &x, Real &tol) {
 
-    ROL::Ptr<SDV> ahuvp = dynamic_cast<TV&>(ahuv).getVector();
-    ROL::Ptr<const SDV> up = dynamic_cast<const TV&>(u).getVector();
-    ROL::Ptr<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
-    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    auto ahuvp = getVector(ahuv);
+    auto up    = getVector(u);
+    auto vp    = getVector(v);
+    auto xp    = getVector(x);
 
     try {
       applyAdjointHessian( *ahuvp, *up, *vp, *xp, tol );
@@ -152,8 +155,8 @@ public:
 
   }
 
-  virtual void applyAdjointHessian( SDV &ahuv, const SDV &u,
-                                    const SDV &v, const SDV &x,
+  virtual void applyAdjointHessian( SerialDenseVector &ahuv, const SerialDenseVector &u,
+                                    const SerialDenseVector &v, const SerialDenseVector &x,
                                     Real &tol ) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
       ">>> ERROR (ROL::TeuchosConstraint) : applyAdjointHessian not implemented!");
@@ -161,15 +164,14 @@ public:
 
 
   using Constraint<Real>::solveAugmentedSystem;
-  SDV solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2,
+  SerialDenseVector solveAugmentedSystem(Vector<Real> &v1, Vector<Real> &v2,
                                          const Vector<Real> &b1, const Vector<Real> &b2,
                                          const Vector<Real> &x, Real &tol) {
-
-    ROL::Ptr<SDV> v1p = dynamic_cast<TV&>(v1).getVector();
-    ROL::Ptr<SDV> v2p = dynamic_cast<TV&>(v2).getVector();
-    ROL::Ptr<const SDV> b1p = dynamic_cast<const TV&>(b1).getVector();
-    ROL::Ptr<const SDV> b2p = dynamic_cast<const TV&>(b2).getVector();
-    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    auto v1p = getVector(v1);
+    auto v2p = getVector(v2);
+    auto b1p = getVector(b1);
+    auto b2p = getVector(b2);
+    auto xp  = getVector(x);
 
     try {
       solveAugmentedSystem( *v1p, *v2p, *b1p, *b2p, tol );
@@ -179,21 +181,19 @@ public:
     }
   }
 
-  virtual SDV solveAugmentedSystem( SDV &v1, SDV &v2,
-                                                  const SDV &b1, const SDV &b2,
-                                                  const SDV &x, Real tol ) {
+  virtual SerialDenseVector solveAugmentedSystem( SerialDenseVector &v1, SerialDenseVector &v2,
+                                                  const SerialDenseVector &b1, const SerialDenseVector &b2,
+                                                  const SerialDenseVector &x, Real tol ) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
       ">>> ERROR (ROL::TeuchosConstraint) : solveAugmentedSystem not implemented!");
   }
 
-
   using Constraint<Real>::applyPreconditioner;
   void applyPreconditioner(Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x,
                            const Vector<Real> &g, Real &tol) {
-
-    ROL::Ptr<SDV> Pvp = dynamic_cast<TV&>(Pv).getVector();
-    ROL::Ptr<const SDV> vp = dynamic_cast<const TV&>(v).getVector();
-    ROL::Ptr<const SDV> xp = dynamic_cast<const TV&>(x).getVector();
+    auto Pvp = getVector(Pv);
+    auto vp  = getVector(v);
+    auto xp  = getVector(x);
 
     try {
       applyPreconditioner( *Pvp, *vp, *xp, *gp, tol );
@@ -203,12 +203,11 @@ public:
     }
   }
 
-  virtual void applyPreconditioner( SDV &pv, const SDV &v,
-                                    const SDV &x, const SDV &g, Real &tol ) {
+  virtual void applyPreconditioner( SerialDenseVector &pv, const SerialDenseVector &v,
+                                    const SerialDenseVector &x, const SerialDenseVector &g, Real &tol ) {
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, 
       ">>> ERROR (ROL::TeuchosConstraint) : applyPreconditioner not implemented!");
   }
-
 
 }; // class TeuchosConstraint
 
