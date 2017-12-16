@@ -194,9 +194,9 @@ MoertelT::StripZeros(const Tpetra::CrsMatrix<ST, LO, GO, N>& A, double eps)
   Teuchos::RCP<Tpetra::CrsMatrix<ST, LO, GO, N> > out 
       = Teuchos::rcp(new Tpetra::CrsMatrix<ST, LO, GO, N>(A.getRowMap(),10));
       // Same as Epetra RowMap()
-  for (int lrow=0; lrow<A.getNodeNumRows(); ++lrow) // Same as Epetra NumMyRows()
+  for (size_t lrow=0; lrow<A.getNodeNumRows(); ++lrow) // Same as Epetra NumMyRows()
   {
-    int grow = A.getRowMap()->getGlobalElement(lrow); // Same as Epetra GRID()
+    GO grow = A.getRowMap()->getGlobalElement(lrow); // Same as Epetra GRID()
     if (grow<0)
     {
       std::cout << "***ERR*** MoertelT::StripZeros:\n"
@@ -209,7 +209,7 @@ MoertelT::StripZeros(const Tpetra::CrsMatrix<ST, LO, GO, N>& A, double eps)
     const int* lindices;
     const double* values;
 //    int err  = A.ExtractMyRowView(lrow,numentries,values,lindices);
-    int err  = A.getLocalRowViewRaw(lrow,numentries,lindices,values);
+    LO err  = A.getLocalRowViewRaw(lrow,numentries,lindices,values);
     if (err)
     {
       std::cout << "***ERR*** MoertelT::StripZeros:\n"

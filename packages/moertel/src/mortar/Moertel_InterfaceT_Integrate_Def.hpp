@@ -132,7 +132,7 @@ MoertelT::InterfaceT<OrdinalType>::Mortar_Integrate(Tpetra_CrsMatrix& D,
   //-------------------------------------------------------------------
   if (!IsOneDimensional())
   {
-    if (gcomm_.MyPID()==0)
+    if (gcomm_->MyPID()==0)
       std::cout << "***ERR*** MoertelT::Interface::Mortar_Integrate:\n"
         << "***ERR*** This is not a 2D problem, we're in the wrong method here!!!\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -143,7 +143,7 @@ MoertelT::InterfaceT<OrdinalType>::Mortar_Integrate(Tpetra_CrsMatrix& D,
   // interface needs to be complete
   if (!IsComplete())
   {
-    if (gcomm_.MyPID()==0)
+    if (gcomm_->MyPID()==0)
       std::cout << "***ERR*** MoertelT::Interface::Mortar_Integrate:\n"
         << "***ERR*** Complete() not called on interface " << Id_ << "\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -158,7 +158,7 @@ MoertelT::InterfaceT<OrdinalType>::Mortar_Integrate(Tpetra_CrsMatrix& D,
   // interface needs to have a mortar side assigned
   if (MortarSide()==-1)
   {
-    if (gcomm_.MyPID()==0)
+    if (gcomm_->MyPID()==0)
       std::cout << "***ERR*** MoertelT::Interface::Mortar_Integrate:\n"
         << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
@@ -392,7 +392,7 @@ bool MoertelT::Interface::Integrate_2D(Tpetra_CrsMatrix& M,
 {
   if (!IsComplete())
   {
-    if (gcomm_.MyPID()==0)
+    if (gcomm_->MyPID()==0)
       std::cout << "***ERR*** MoertelT::Interface::Integrate_2D:\n"
         << "***ERR*** Complete() not called on interface " << Id_ << "\n"
         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";

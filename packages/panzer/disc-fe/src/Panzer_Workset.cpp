@@ -278,7 +278,7 @@ WorksetDetails::getBasisValues(const panzer::BasisDescriptor & basis_description
   const auto & integration_map = itr->second;
   const auto itr2 = integration_map.find(integration_description.getKey());
   TEUCHOS_TEST_FOR_EXCEPT_MSG(itr2 == integration_map.end(),
-                              "Workset::getBasisValues: Can't find basis " + std::to_string(integration_description.getType()) + " " 
+                              "Workset::getBasisValues: Can't find integration " + std::to_string(integration_description.getType()) + " " 
                               "of order " + std::to_string(integration_description.getOrder()));
   return *(itr2->second);
 }

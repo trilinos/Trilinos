@@ -94,11 +94,16 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
     Kokkos::fill_random(a, random, value_type(1.0));
+
+    Kokkos::fence();
+
     Kokkos::deep_copy(b, a);
 
     /// test body
     Functor_TestBatchedSerialMatUtil<DeviceType,ViewType,ScalarType,NaiveTag,       TestID>(alpha, a).run();
     Functor_TestBatchedSerialMatUtil<DeviceType,ViewType,ScalarType,KokkosKernelTag,TestID>(alpha, b).run();
+
+    Kokkos::fence();
 
     /// for comparison send it to host
     typename ViewType::HostMirror a_host = Kokkos::create_mirror_view(a);

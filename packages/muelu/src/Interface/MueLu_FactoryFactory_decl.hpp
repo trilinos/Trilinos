@@ -69,6 +69,7 @@
 
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_BlackBoxPFactory.hpp"
 #include "MueLu_BlockedCoarseMapFactory.hpp"
 #include "MueLu_BlockedDirectSolver.hpp"
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"

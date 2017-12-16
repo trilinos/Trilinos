@@ -33,6 +33,23 @@ then
   CXX11_FLAGS_STRING="--expt-extended-lambda -std=c++11"
 fi
 
+if [ ${CUDA} == "ON" ]
+then
+  ENABLE_SHYLU="OFF"
+else
+  if [ ${OPENMP} == "ON" ]
+  then
+    ENABLE_SHYLU="ON"
+  else
+    if [ ${PTHREAD} == "ON" ]
+    then
+      ENABLE_SHYLU="OFF"
+    else
+      ENABLE_SHYLU="ON"
+    fi
+  fi
+fi
+  
 if [ ${PTHREAD} == "ON" ]
 then
   EXTRA_ARGS="$EXTRA_ARGS -DPhalanx_KOKKOS_DEVICE_TYPE="THREAD""
@@ -121,7 +138,7 @@ cmake \
 -D Trilinos_ENABLE_Amesos2=ON \
   -D Amesos2_ENABLE_TESTS:BOOL=${TESTS} \
   -D Amesos2_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
--D Trilinos_ENABLE_ShyLU_NodeTacho=ON \
+-D Trilinos_ENABLE_ShyLU_NodeTacho=${ENABLE_SHYLU} \
   -D ShyLU_NodeTacho_ENABLE_TESTS:BOOL=${TESTS} \
   -D ShyLU_NodeTacho_ENABLE_EXAMPLES:BOOL=${EXAMPLES} \
 -D Trilinos_ENABLE_Anasazi=ON \

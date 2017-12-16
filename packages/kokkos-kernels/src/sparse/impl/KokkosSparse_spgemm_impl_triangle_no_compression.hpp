@@ -211,7 +211,7 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_QTHREADS:
       return Kokkos::Qthread::hardware_thread_id();
 #endif
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif
@@ -1290,7 +1290,7 @@ void KokkosSPGEMM
   }
 
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   size_t free_byte ;
   size_t total_byte ;
   cudaMemGetInfo( &free_byte, &total_byte ) ;
@@ -1360,7 +1360,7 @@ void KokkosSPGEMM
   //nnz_lno_t runcuda = atoi(getenv("runcuda"));
 
   if (/*runcuda ||*/ MyEnumExecSpace == KokkosKernels::Impl::Exec_CUDA) {
-    Kokkos::parallel_for("KokkosSparse_spgemm_TriangleCount_No_Compression", gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
+    Kokkos::parallel_for( gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
   }
   else {
     if (use_dense_accumulator){
@@ -1368,19 +1368,19 @@ void KokkosSPGEMM
           spgemm_algorithm == SPGEMM_KK_TRIANGLE_DENSE ||
           spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM){
         if (use_dynamic_schedule){
-          Kokkos::parallel_for("KokkosSparse_spgemm_TriangleCount_No_Compression", dynamic_multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+          Kokkos::parallel_for( dynamic_multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
         }
         else {
-          Kokkos::parallel_for("KokkosSparse_spgemm_TriangleCount_No_Compression", multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+          Kokkos::parallel_for( multicore_dense_team_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
         }
       }
       else {
         if (use_dynamic_schedule){
-          Kokkos::parallel_for("KokkosSparse_spgemm_TriangleCount_No_Compression", dynamic_multicore_dense_team2_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+          Kokkos::parallel_for( dynamic_multicore_dense_team2_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
 
         }
         else {
-          Kokkos::parallel_for("KokkosSparse_spgemm_TriangleCount_No_Compression", multicore_dense_team2_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+          Kokkos::parallel_for( multicore_dense_team2_count_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
         }
       }
     }
@@ -1391,17 +1391,17 @@ void KokkosSPGEMM
           spgemm_algorithm == SPGEMM_KK_TRIANGLE_DENSE ||
           spgemm_algorithm == SPGEMM_KK_TRIANGLE_MEM){
         if (use_dynamic_schedule){
-            Kokkos::parallel_for("KokkosSparse_spgemm_TriangleCount_No_Compression", dynamic_multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+            Kokkos::parallel_for( dynamic_multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
           }
           else {
-            Kokkos::parallel_for("KokkosSparse_spgemm_TriangleCount_No_Compression", multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+            Kokkos::parallel_for( multicore_team_policy_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
           }}
       else {
         if (use_dynamic_schedule){
-          Kokkos::parallel_for("KokkosSparse_spgemm_TriangleCount_No_Compression", dynamic_multicore_team_policy2_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+          Kokkos::parallel_for( dynamic_multicore_team_policy2_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
         }
         else {
-          Kokkos::parallel_for("KokkosSparse_spgemm_TriangleCount_No_Compression", multicore_team_policy2_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
+          Kokkos::parallel_for( multicore_team_policy2_t(m / team_row_chunk_size + 1 , suggested_team_size, suggested_vector_size), sc);
         }
       }
 

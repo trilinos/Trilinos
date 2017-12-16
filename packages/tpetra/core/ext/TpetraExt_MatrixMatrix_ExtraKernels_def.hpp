@@ -121,9 +121,9 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
 
   // Unmanaged versions of the above
-  typedef Kokkos::View<typename lno_view_t::data_type, typename lno_view_t::array_layout, typename lno_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > u_lno_view_t;
-  typedef Kokkos::View<typename lno_nnz_view_t::data_type, typename lno_nnz_view_t::array_layout, typename lno_nnz_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > u_lno_nnz_view_t;
-  typedef Kokkos::View<typename scalar_view_t::data_type, typename scalar_view_t::array_layout, typename scalar_view_t::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged> > u_scalar_view_t;
+  typedef UnmanagedView<lno_view_t> u_lno_view_t;
+  typedef UnmanagedView<lno_nnz_view_t> u_lno_nnz_view_t;
+  typedef UnmanagedView<scalar_view_t> u_scalar_view_t;
 
   typedef Scalar            SC;
   typedef LocalOrdinal      LO;
@@ -143,12 +143,12 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
   
   // Grab the  Kokkos::SparseCrsMatrices & inner cstuff
-  const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
 
-  c_lno_view_t Arowptr = Ak.graph.row_map, Browptr = Bk.graph.row_map;
-  const lno_nnz_view_t Acolind = Ak.graph.entries, Bcolind = Bk.graph.entries;
-  const scalar_view_t Avals = Ak.values, Bvals = Bk.values;
+  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
+  const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
+  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
@@ -165,12 +165,8 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
   size_t n = Ccolmap->getNodeNumElements();
   size_t Cest_nnz_per_row = 2*C_estimate_nnz_per_row(*Aview.origMatrix,*Bview.origMatrix);
 
-
   // Get my node / thread info (right from openmp)
   size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
-  //  thread_max = 1; //HAQ HAQ HAQ
-  //  printf("CMS: thread_max = %d\n",(int)thread_max);
-
 
   // Thread-local memory
   Kokkos::View<u_lno_view_t*> tl_rowptr("top_rowptr",thread_max);
@@ -179,17 +175,10 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
 
   double thread_chunk = (double)(m) / thread_max;
 
-#define CMS_USE_KOKKOS
-
-
   // Run chunks of the matrix independently 
-#ifdef CMS_USE_KOKKOS
   Kokkos::parallel_for("LTG::ThreadLocal",range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid)
-#else
-  for(size_t tid=0; tid<thread_max; tid++)
-#endif
     {
-      // Thread coordiation stuff
+      // Thread coordination stuff
       size_t my_thread_start =  tid * thread_chunk;
       size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
       size_t my_thread_m     = my_thread_stop - my_thread_start;
@@ -284,79 +273,13 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
       tl_colind(tid) = Ccolind;
       tl_values(tid) = Cvals;      
       Crowptr(my_thread_m) = CSR_ip;
-  }
-#ifdef CMS_USE_KOKKOS
-);
-#endif
-
-  // Generate the starting nnz number per thread
-  size_t c_nnz_size=0;
+  });
+  
+  // Do the copy out
   lno_view_t row_mapC("non_const_lnow_row", m + 1);
-  lno_view_t thread_start_nnz("thread_nnz",thread_max+1);
-#ifdef CMS_USE_KOKKOS
-  Kokkos::parallel_scan("LTG::Scan",range_type(0,thread_max).set_chunk_size(1), [=] (const size_t i, size_t& update, const bool final) {
-      size_t mynnz = tl_rowptr(i)(tl_rowptr(i).dimension(0)-1);
-      if(final) thread_start_nnz(i) = update;
-      update+=mynnz;
-      if(final && i+1==thread_max) thread_start_nnz(i+1)=update;
-    });
-  c_nnz_size = thread_start_nnz(thread_max);
-#else
-  thread_start_nnz(0) = 0;
-  for(size_t i=0; i<thread_max; i++)
-    thread_start_nnz(i+1) = thread_start_nnz(i) + tl_rowptr(i)(tl_rowptr(i).dimension(0)-1);
-  c_nnz_size = thread_start_nnz(thread_max);
-#endif
-
-  // Allocate output
-  lno_nnz_view_t  entriesC(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-  scalar_view_t   valuesC(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
-
-  // Copy out
-#ifdef CMS_USE_KOKKOS
-  Kokkos::parallel_for("LTG::CopyOut", range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid)
-#else
-  for(size_t tid=0; tid<thread_max; tid++)
-#endif
-    {
-      size_t my_thread_start =  tid * thread_chunk;
-      size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
-      size_t nnz_thread_start = thread_start_nnz(tid);
-
-      for (size_t i = my_thread_start; i < my_thread_stop; i++) {
-        size_t ii = i - my_thread_start;
-        // Rowptr
-        row_mapC(i) = nnz_thread_start + tl_rowptr(tid)(ii);
-        if (i==m-1) {
-          row_mapC(m) = nnz_thread_start + tl_rowptr(tid)(ii+1);
-        }
-        
-        // Colind / Values
-        for(size_t j = tl_rowptr(tid)(ii); j<tl_rowptr(tid)(ii+1); j++) {
-          entriesC(nnz_thread_start + j) = tl_colind(tid)(j);
-          valuesC(nnz_thread_start + j)  = tl_values(tid)(j);        
-        }
-      }
-  }
-#ifdef CMS_USE_KOKKOS
-);
-#endif
-
-
-  //DEBUG
-#if 0
-  for(size_t i=0; i<thread_max; i++) {
-    printf("[%d] CMS: thread[0]::rowptr = ",MyPID);
-    for(size_t j=0; j<tl_rowptr(i).dimension(0); j++)
-      printf("%d ",(int)tl_rowptr(i)(j));
-    printf("\n");
-    printf("[%d] CMS: final::rowptr     = ",MyPID);
-    for(size_t j=0; j<row_mapC.dimension(0); j++)
-      printf("%d ",(int)row_mapC(j));
-    printf("\n");
-  }
-#endif
-
+  lno_nnz_view_t  entriesC;
+  scalar_view_t   valuesC;
+  copy_out_from_thread_memory(tl_rowptr,tl_colind,tl_values,m,thread_chunk,row_mapC,entriesC,valuesC);
 
   //Free the unamanged views
   for(size_t i=0; i<thread_max; i++) {
@@ -373,6 +296,57 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
     C.setAllValues(row_mapC,entriesC,valuesC);
 
 }
+
+
+template<class InRowptrArrayType, class InColindArrayType, class InValsArrayType,
+         class OutRowptrType, class OutColindType, class OutValsType>
+void copy_out_from_thread_memory(const InRowptrArrayType & Inrowptr, const InColindArrayType &Incolind, const InValsArrayType & Invalues,
+                                   size_t m, double thread_chunk,
+                                   OutRowptrType & row_mapC, OutColindType &entriesC, OutValsType & valuesC ) {
+  typedef OutRowptrType lno_view_t;
+  typedef OutColindType lno_nnz_view_t;
+  typedef OutValsType scalar_view_t;
+  typedef typename lno_view_t::execution_space execution_space;
+  typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+
+  // Generate the starting nnz number per thread
+  size_t thread_max =  Inrowptr.size();
+  size_t c_nnz_size=0;
+  lno_view_t thread_start_nnz("thread_nnz",thread_max+1);
+  Kokkos::parallel_scan("LTG::Scan",range_type(0,thread_max).set_chunk_size(1), [=] (const size_t i, size_t& update, const bool final) {
+      size_t mynnz = Inrowptr(i)(Inrowptr(i).dimension(0)-1);
+      if(final) thread_start_nnz(i) = update;
+      update+=mynnz;
+      if(final && i+1==thread_max) thread_start_nnz(i+1)=update;
+    });
+  c_nnz_size = thread_start_nnz(thread_max);
+
+  // Allocate output
+  lno_nnz_view_t  entriesC_(Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size); entriesC = entriesC_;
+  scalar_view_t   valuesC_(Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);  valuesC = valuesC_;
+  
+  // Copy out
+  Kokkos::parallel_for("LTG::CopyOut", range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid) {
+      size_t my_thread_start =  tid * thread_chunk;
+      size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
+      size_t nnz_thread_start = thread_start_nnz(tid);
+      
+      for (size_t i = my_thread_start; i < my_thread_stop; i++) {
+        size_t ii = i - my_thread_start;
+        // Rowptr
+        row_mapC(i) = nnz_thread_start + Inrowptr(tid)(ii);
+        if (i==m-1) {
+          row_mapC(m) = nnz_thread_start + Inrowptr(tid)(ii+1);
+        }
+        
+        // Colind / Values
+        for(size_t j = Inrowptr(tid)(ii); j<Inrowptr(tid)(ii+1); j++) {
+          entriesC(nnz_thread_start + j) = Incolind(tid)(j);
+          valuesC(nnz_thread_start + j)  = Invalues(tid)(j);        
+        }
+      }
+    });
+}//end copy_out
 
 #endif // OpenMP
 

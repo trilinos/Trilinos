@@ -107,7 +107,7 @@ struct ML_Wrapper{
 template<class GlobalOrdinal>
 struct ML_Wrapper<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> {
   static void Generate_ML_MultiLevelPreconditioner(Teuchos::RCP<Xpetra::Matrix<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& A,Teuchos::ParameterList & mueluList,
-                                                   Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {  
+                                                   Teuchos::RCP<Xpetra::Operator<double,int,GlobalOrdinal,Kokkos::Compat::KokkosSerialWrapperNode> >& mlopX) {
     typedef double SC;
     typedef int LO;
     typedef GlobalOrdinal GO;
@@ -436,15 +436,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
           aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO> >(tH);
 #endif
-        } 
+        }
         else if(useML) {
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
           mueluList.remove("use external multigrid package");
           ML_Wrapper<SC, LO, GO, NO>::Generate_ML_MultiLevelPreconditioner(A,mueluList,mlopX);
-#endif        
+#endif
         }
         else {
-          H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates);
+          H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates, nullspace);
         }
       }
 
@@ -496,11 +496,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 #if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
           belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(aH)); // Turns a MueLu::Hierarchy object into a Belos operator
 #endif
-        } 
+        }
         else if(useML) {
 #if defined(HAVE_MUELU_ML) and defined(HAVE_MUELU_EPETRA)
           belosPrec = Teuchos::rcp(new Belos::XpetraOp <SC, LO, GO, NO>(mlopX)); // Turns an Xpetra::Operator object into a Belos operator
-#endif  
+#endif
         }
         else {
           H->IsPreconditioner(true);

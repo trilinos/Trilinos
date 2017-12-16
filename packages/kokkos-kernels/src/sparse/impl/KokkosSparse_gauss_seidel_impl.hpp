@@ -79,14 +79,14 @@ public:
   typedef typename HandleType::nnz_scalar_t nnz_scalar_t;
 
 
-  typedef typename HandleType::const_lno_row_view_t const_lno_row_view_t;
-  typedef typename HandleType::non_const_lno_row_view_t non_const_lno_row_view_t;
+  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
+  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
 
-  typedef typename HandleType::const_lno_nnz_view_t const_lno_nnz_view_t;
-  typedef typename HandleType::non_const_lno_nnz_view_t non_const_lno_nnz_view_t;
+  typedef typename lno_nnz_view_t_::const_type const_lno_nnz_view_t;
+  typedef typename lno_nnz_view_t_::non_const_type non_const_lno_nnz_view_t;
 
-  typedef typename HandleType::const_scalar_nnz_view_t const_scalar_nnz_view_t;
-  typedef typename HandleType::non_const_scalar_nnz_view_t non_const_scalar_nnz_view_t;
+  typedef typename scalar_nnz_view_t_::const_type const_scalar_nnz_view_t;
+  typedef typename scalar_nnz_view_t_::non_const_type non_const_scalar_nnz_view_t;
 
 
 
@@ -356,7 +356,7 @@ public:
 #endif
 
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if (Kokkos::Impl::is_same<Kokkos::Cuda, MyExecSpace >::value){
       for (nnz_lno_t i = 0; i < numColors; ++i){
         nnz_lno_t color_index_begin = h_color_xadj(i);

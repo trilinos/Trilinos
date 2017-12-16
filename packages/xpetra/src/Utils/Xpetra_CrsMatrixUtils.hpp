@@ -48,6 +48,8 @@
 #define PACKAGES_XPETRA_CRSMATRIX_UTILS_HPP_
 
 #include "Xpetra_ConfigDefs.hpp"
+#include "Xpetra_Exceptions.hpp"
+#include "Xpetra_Map.hpp"          // definition of UnderlyingLib
 
 #ifdef HAVE_XPETRA_EPETRA
 #include "Epetra_Util.h"
