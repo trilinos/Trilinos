@@ -59,17 +59,21 @@ namespace ROL {
 template <class Ordinal,  class Real>
 class TeuchosObjective : public Objective<Real> {
 
+  template<class T> using RCP = Teuchos::RCP<T>;
+
   using SerialDenseVector = Teuchos::SerialDenseVector<Ordinal,Real>;
 
-  const SerialDenseVector& getVector( const Vector<Real>& x ) {
+  RCP<const SerialDenseVector> getVector( const Vector<Real>& x ) {
     return dynamic_cast<const TeuchosVector<Ordinal,Real>&>(x).getVector();
   }
     
-  SerialDenseVector& getVector( Vector<Real>& x ) {
+  RCP<SerialDenseVector> getVector( Vector<Real>& x ) {
     return dynamic_cast<TeuchosVector<Ordinal,Real>&>(x).getVector();
   }
 
 public:
+
+  virtual ~TeuchosObjective() {}
 
   virtual void update( const SerialDenseVector &x, bool flag = true, int iter = -1 ) {}
 
@@ -83,7 +87,7 @@ public:
 
   using Objective<Real>::value;
   Real value( const Vector<Real> &x, Real &tol ) {
-    Ptr<const SerialDenseVector> xp = dynamic_cast<const TV&>(x).getVector();
+    auto xp = getVector(x);
     return value(*xp,tol);
   }
 
@@ -158,7 +162,7 @@ public:
 
   virtual void precond( SerialDenseVector &Pv, const SerialDenseVector &v, 
                         const SerialDenseVector &x, Real &tol ) {
-    Pv.assign(v.begin(),v.end());
+    Pv.assign(v);
   }
 
   using Objective<Real>::precond;
