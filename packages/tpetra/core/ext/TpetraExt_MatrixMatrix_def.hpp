@@ -2182,7 +2182,7 @@ void mult_A_B_newmatrix(
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename NO::execution_space execution_space;
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-  typedef Kokkos::View<LO, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
+  typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
 
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -2198,9 +2198,10 @@ void mult_A_B_newmatrix(
   RCP<const import_type> Bimport = Bview.origMatrix->getGraph()->getImporter();
   RCP<const import_type> Iimport = Bview.importMatrix.is_null() ?
       Teuchos::null : Bview.importMatrix->getGraph()->getImporter();
-  local_map_type Acolmap_local = Aview.origMatrix->getColMap()->getLocalMap();
+  local_map_type Acolmap_local = Aview.colMap->getLocalMap();
+  local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
+  local_map_type Irowmap_local;  if(!Bview.importMatrix.is_null()) Irowmap_local = Bview.importMatrix->getRowMap()->getLocalMap();
   local_map_type Bcolmap_local = Bview.origMatrix->getColMap()->getLocalMap();
-  local_map_type Ccolmap_local = Ccolmap->getLocalMap();
   local_map_type Icolmap_local;  if(!Bview.importMatrix.is_null()) Icolmap_local = Bview.importMatrix->getColMap()->getLocalMap();
 
   // mfh 27 Sep 2016: Bcol2Ccol is a table that maps from local column
@@ -2253,7 +2254,7 @@ void mult_A_B_newmatrix(
     // setUnion operation on Import objects could also compute these
     // local index - to - local index look-up tables.
     Tpetra::MatrixMatrix::Kokkos_resize_1DView(Icol2Ccol,Bview.importMatrix->getColMap()->getNodeNumElements());
-
+    local_map_type Ccolmap_local = Ccolmap->getLocalMap();
     Kokkos::parallel_for(range_type(0,Bview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
         Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(i));
       });
@@ -2284,17 +2285,20 @@ void mult_A_B_newmatrix(
   // (a flag value).
 
   // Run through all the hash table lookups once and for all
-  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements()); Kokkos::deep_copy(targetMapToOrigRow,LO_INVALID);
-  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements()); Kokkos::deep_copy(targetMapToImportRow,LO_INVALID);
-
+  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
+  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
   Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
+  //  Kokkos::parallel_for(range_type(0,Acolmap_local.getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
-      LO B_LID = Bcolmap_local.getLocalElement(aidx);
+      LO B_LID = Browmap_local.getLocalElement(aidx);
       if (B_LID != LO_INVALID) {
-        targetMapToOrigRow(i) = B_LID;
+        targetMapToOrigRow(i)   = B_LID;
+        targetMapToImportRow(i) = LO_INVALID;
       } else {
-        LO I_LID = Icolmap_local.getLocalElement(aidx);
+        LO I_LID = Irowmap_local.getLocalElement(aidx);
+        targetMapToOrigRow(i)   = LO_INVALID;
         targetMapToImportRow(i) = I_LID;
+        
       }
     });
 
