@@ -208,7 +208,8 @@ for myRank=0:nProcs-1
 end
 
 waitForRmDataFiles(nProcs);
-mkAppData(allMyNodes,allMyRegions,nProcs);
+mkAppData(allMyNodes,allMyRegions,nProcs,whichCase);
+!cat myData_*
 waitForRmDataFiles(nProcs);
 
 send('MakeGrpRegRowMaps',nProcs);
@@ -220,17 +221,16 @@ send('MakeExtendedGrpRegMaps',nProcs);
 % send('PrintRevisedRowMaps',nProcs);
 % send('PrintRevisedColMaps',nProcs);
 % send('PrintGrpRegColMaps',nProcs);
-send('MakeInterfaceScalingFactors',nProcs);
-send('PrintRegVectorInterfaceScaling',nProcs);
-% send('MakeRegionMatrices',nProcs);
-% send('MakeBasicSplitting',nProcs);
+% send('PrintRegVectorInterfaceScaling',nProcs);
+send('MakeRegionMatrices',nProcs);
 % send('PrintRegionMatrices',nProcs);
 % send('PrintRegionMatrixRowMap',nProcs);
 % send('PrintRegionMatrixColMap',nProcs);
 % send('PrintRegionMatrixRangeMap',nProcs);
 % send('PrintRegionMatrixDomainMap',nProcs);
-% send('MakeRegionTransferOperators',nProcs);
-% send('RunTwoLevelMethod',nProcs);
+send('MakeRegionTransferOperators',nProcs);
+send('MakeInterfaceScalingFactors',nProcs);
+send('RunTwoLevelMethod',nProcs);
 % send('ComputeMatVecs',nProcs);
 % send('PrintCompositeVectorX',nProcs);
 % send('PrintCompositeVectorY',nProcs);
