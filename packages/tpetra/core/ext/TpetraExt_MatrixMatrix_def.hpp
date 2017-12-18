@@ -66,7 +66,6 @@
 #include "KokkosSparse_spgemm.hpp"
 #endif
 
-
 /*! \file TpetraExt_MatrixMatrix_def.hpp
 
     The implementations for the members of class Tpetra::MatrixMatrixMultiply and related non-member constructors.
@@ -2184,7 +2183,6 @@ void mult_A_B_newmatrix(
   typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
   typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
 
-
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
@@ -2219,6 +2217,7 @@ void mult_A_B_newmatrix(
     Kokkos::parallel_for(range_type(0,Bview.colMap->getNodeNumElements()),KOKKOS_LAMBDA(const size_t i) {
         Bcol2Ccol(i) = Teuchos::as<LO>(i);
       });
+
   } else {
     // mfh 27 Sep 2016: B has "remotes," so we need to build the
     // column Map of C, as well as C's Import object (from its domain
@@ -2261,6 +2260,7 @@ void mult_A_B_newmatrix(
     Kokkos::parallel_for(range_type(0,Bview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
         Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
       });
+
   }
   
   // Replace the column map
@@ -2288,7 +2288,6 @@ void mult_A_B_newmatrix(
   lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
   lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
   Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
-  //  Kokkos::parallel_for(range_type(0,Acolmap_local.getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
       GO aidx = Acolmap_local.getGlobalElement(i);
       LO B_LID = Browmap_local.getLocalElement(aidx);
       if (B_LID != LO_INVALID) {
@@ -2323,7 +2322,7 @@ template<class Scalar,
          class Node,
          class LocalOrdinalViewType>
 void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
-                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,\
+                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
                                                                                                const LocalOrdinalViewType & targetMapToOrigRow,
                                                                                                const LocalOrdinalViewType & targetMapToImportRow,
                                                                                                const LocalOrdinalViewType & Bcol2Ccol,
@@ -2645,7 +2644,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
       Kokkos::parallel_scan ("Tpetra_MatrixMatrix_buildRowptrBmerged", range_type (0, merge_numrows),
         [=] (const size_t i, size_t& update, const bool final) {
              if(final) Mrowptr(i) = update;
-
              // Get the row count
              size_t ct=0;
              if(Acol2Brow(i)!=LO_INVALID)
@@ -2689,6 +2687,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
             }
           }
         });
+
       Bmerged = Teuchos::rcp(new KCRS("CrsMatrix",merge_numrows,C.getColMap()->getNodeNumElements(),merge_nnz,Mvalues,Mrowptr,Mcolind));
 
     }
@@ -2780,16 +2779,16 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 // AB NewMatrix Kernel wrappers (KokkosKernels/CUDA Version)
 #if defined(HAVE_KOKKOSKERNELS_EXPERIMENTAL) && defined (HAVE_TPETRA_INST_CUDA)
 template<class Scalar,
-           class LocalOrdinal,
+         class LocalOrdinal,
          class GlobalOrdinal,
-         class LocalOrdinalViewTyp>
+         class LocalOrdinalViewType>
 struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> {
     static inline void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
                                                   const LocalOrdinalViewType & Acol2Brow,
                                                   const LocalOrdinalViewType & Acol2Irow,
                                                   const LocalOrdinalViewType & Bcol2Ccol,
-                                                  const LocalOrdinalViewType & Icol2Ccol,          
+                                                  const LocalOrdinalViewType & Icol2Ccol,rr
                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
                                                   Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
                                                   const std::string& label = std::string(),
