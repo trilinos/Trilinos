@@ -74,6 +74,16 @@ struct is_pointer<ROL::Ptr<T>> : public std::true_type { };
 
 namespace ROL {
 
+// Special case handling until C++14 (auto type deduction) is required
+// because template type deduction does not work for initializer_list here. 
+
+template<class T, class U>
+inline
+Ptr<T> makePtr( std::initializer_list<U>&& u ) {
+  return Teuchos::rcp( new T(std::forward<std::initializer_list<U>>(u)) );
+}
+
+
 template<class T, class... Args>
 inline 
 Ptr<T> makePtr( Args&&... args ) {
