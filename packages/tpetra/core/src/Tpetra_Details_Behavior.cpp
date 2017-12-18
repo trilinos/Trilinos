@@ -290,7 +290,7 @@ bool Behavior::assumeMpiIsCudaAware ()
 bool Behavior::debug (const char name[])
 {
   constexpr char envVarName[] = "TPETRA_DEBUG";
-  constexpr bool defaultValue = debugDefault();
+  constexpr bool defaultValue = false;
 
   static std::once_flag flag_;
   static bool initialized_ = false;
@@ -304,7 +304,7 @@ bool Behavior::debug (const char name[])
 bool Behavior::verbose (const char name[])
 {
   constexpr char envVarName[] = "TPETRA_VERBOSE";
-  constexpr bool defaultValue = verboseDefault();
+  constexpr bool defaultValue = false;
 
   static std::once_flag flag_;
   static bool initialized_ = false;

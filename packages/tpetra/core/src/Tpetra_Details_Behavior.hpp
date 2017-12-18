@@ -66,9 +66,15 @@ namespace Details {
 /// The environment variables are understood to be "on" or "off" and recognized
 /// if specified in one of two ways.  The first is to specify the variable
 /// unconditionally ON or OFF.  e.g., TPETRA_VERBOSE=ON or TPETRA_VERBOSE=OFF.
+/// The default value of TPETRA_VERBOSE is always OFF.  The default value for
+/// TPETRA_DEBUG is ON if Tpetra is configured with Tpetra_ENABLE_DEBUG,
+/// otherwise it is OFF
+///
 /// The second is to specify the variable on a per class/object basis, e.g.,
-/// TPETRA_VERBOSE=CrsGraph:CrsMatrix:Distributor means that verbose output
-/// will be enabled for CrsGraph, CrsMatrix, and Distributor classes.
+/// TPETRA_VERBOSE=CrsGraph,CrsMatrix,Distributor means that verbose output
+/// will be enabled for CrsGraph, CrsMatrix, and Distributor classes.  For this
+/// second method, the default values of both TPETRA_VERBOSE and TPETRA_DEBUG
+/// is OFF.
 class Behavior {
 public:
   /// \brief Whether Tpetra is in debug mode.
@@ -83,7 +89,7 @@ public:
   ///
   /// \param name [in] Name of the Tpetra object.  Typically, the object would
   ///        be a class name, e.g., "CrsGraph" or method, e.g.,
-  ///        "CrsGraph.insertLocalIndices".
+  ///        "CrsGraph::insertLocalIndices".
   static bool debug (const char name[]);
 
   /// \brief Whether Tpetra is in verbose mode.
@@ -97,7 +103,7 @@ public:
   ///
   /// \param name [in] Name of the Tpetra object.  Typically, the object would
   ///        be a class name, e.g., "CrsGraph" or method, e.g.,
-  ///        "CrsGraph.insertLocalIndices".
+  ///        "CrsGraph::insertLocalIndices".
   static bool verbose (const char name[]);
 
   /// \brief Whether to assume that MPI is CUDA aware.
