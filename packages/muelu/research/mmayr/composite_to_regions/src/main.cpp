@@ -1454,7 +1454,6 @@ int main(int argc, char *argv[]) {
 
           printRegionalVector("coarseRegX after jacobi" , coarseRegX, myRank);
 
-
           std::cout << "... and back to the fine level." << std::endl;
 
           // -----------------------------------------------------------------------
