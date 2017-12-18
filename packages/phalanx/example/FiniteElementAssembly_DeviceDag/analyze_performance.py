@@ -156,7 +156,9 @@ def main():
             plt.ylabel("Time (s)")
             title = "nel=%i,neq=%i,nderiv=%i,ts=%i,vs=%i" % (nx*ny*nz,ne,8*ne,ts,vs)
             plt.title(title)
-            plt.legend(bbox_to_anchor=(1,1))
+            #plt.legend(bbox_to_anchor=(1,1))
+            #plt.legend(loc=1, prop={'size': 10})
+            plt.legend(loc='upper center', bbox_to_anchor=(0.5,1.0),ncol=3,fancybox=True,shadow=True, prop={'size': 10})
             plt.grid()
             fig.savefig("jac_evaluator_timings.png")
             
