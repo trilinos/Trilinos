@@ -3,7 +3,7 @@
 \usepackage{amsmath}
 
 \usepackage[usenames,svgnames,table]{xcolor}
-\usepackage{algorithm}
+\usepackage{algorithm,algorithmicx,algpseudocode}
 
 \usepackage{listings}
 \definecolor{hellgelb} {rgb}{1.0,1.0,0.8}
@@ -417,16 +417,16 @@ We use three data layouts which can be transferred from one into each other.
 It is usually used by the application and the matrix as well as the right-hand side and initial guess are provided using this layout.
 The outer Krylov solver operates on this layout. Hence, this layout is passed to the preconditioner and needs to be returned from the preconditioner
 to the Krylov solver despite the layout used internally by the preconditioner.
-\item {\bf regional layout:} In this layout, every region is represented by a unique set of GIDs.
+\item {\bf regional layout:} In this layout, every region is represented by a unique set of GIDs. 
 This required duplicated, but unique DOFs at interfaces between regions.
-\item {\bf quasiRegional layout:} This auxiliary layout uses duplicated DOFs at region interfaces,
+\item {\bf quasiRegional layout:} This auxiliary layout uses duplicated DOFs at region interfaces, 
 but still only the original GIDs of the composite layout.
 It is never used for computations, just as an intermediate step to transfer matrices and vectors from the composite to the regional layout.
-Specifically, the quasiRegional form refers to matrices and vectors
+Specifically, the quasiRegional form refers to matrices and vectors 
 where the local representation of the data is correct for
 regional computations, but the maps are not correct in terms of
 representing shared nodes distinctly. That is, data is replicated properly
-to represent a regional matrix, but the GIDs in the maps still refer to the composite form of the data,
+to represent a regional matrix, but the GIDs in the maps still refer to the composite form of the data, 
 implying that the maps are not correct.
 \end{itemize}
 
@@ -466,26 +466,26 @@ Applying a Jacobi smoother in region layout exhibits two major difficulties, nam
 \subsubsection{Recovery of true diagonal matrix entries}
 \label{sec:RecoveryTrueDiagonal}
 
-At region interfaces, matrix entries associated with nodes on the interface
-have been obtained by some form of splitting operation. This is especially true for the diagonal element~$a^{reg}_{ii}$ of interface nodes.
-To recover mathematical equivalence of a region-wise Jacobi method with one applied in a composite layout,
+At region interfaces, matrix entries associated with nodes on the interface 
+have been obtained by some form of splitting operation. This is especially true for the diagonal element~$a^{reg}_{ii}$ of interface nodes. 
+To recover mathematical equivalence of a region-wise Jacobi method with one applied in a composite layout, 
 the true diagonal values (as in the composite problem) needs to be recovered.
 
-For general cases, true diagonal values need to be recovered by summation of the diagonal entries of all duplicated rows
-that are associated with a particular node in the composite layout.
-This might require communication if the region interface coincides with a processor interface
+For general cases, true diagonal values need to be recovered by summation of the diagonal entries of all duplicated rows 
+that are associated with a particular node in the composite layout. 
+This might require communication if the region interface coincides with a processor interface 
 and, thus, duplicated GIDs reside on different processors.
 
 In case of the basic splitting, i.e. dividing matrix entries by the number~$n_{reg}$ of adjacent regions to this node, it is guaranteed
-that the diagonal element in each duplicated row has the same value~$a^{reg}_{ii} = \frac{1}{n_{reg}}a^{comp}_{ii}$.
-The true diagonal value can then be recovered via multiplication with~$n_{reg}$.
+that the diagonal element in each duplicated row has the same value~$a^{reg}_{ii} = \frac{1}{n_{reg}}a^{comp}_{ii}$. 
+The true diagonal value can then be recovered via multiplication with~$n_{reg}$. 
 Implementation-wise, this can be realized by tracking the necessary scaling factors in a region vector {\sf regScaling},
 which is obtained as follows:
 \begin{enumerate}
 \item Create vector {\sf regScaling} in region layout and populate with~$1.0$ in every entry.
-\item Transfer {\sf regScaling} back to the composite layout and use an appropriate {\sf Add} operation as combine mode in the {\sf Export()} operation.
+\item Transfer {\sf regScaling} back to the composite layout and use an appropriate {\sf Add} operation as combine mode in the {\sf Export()} operation. 
 This will not affect region-interior nodes, but will result in entries of value~$n_{reg}$ for every DOF on the region interface.
-\item Transfer the result from the composite layout back to the region layout. This will not change the vector's values,
+\item Transfer the result from the composite layout back to the region layout. This will not change the vector's values, 
 but will copy the interface-related entries into the interface-related DOFs in the region layout.
 \end{enumerate}
 The true diagonal values can now be recovered an element-wise multiplication of the diagonal with {\sf regScaling}.
@@ -493,8 +493,8 @@ The true diagonal values can now be recovered an element-wise multiplication of 
 \subsubsection{Matrix-vector multiplication in region layout}
 \label{sec:RegionalMatVec}
 
-The matrix-vector multiplication in the residual is performed region-wise.
-Hence, the interface DOFs are multiplied with the 'splitted' values only, i.e. the true residual value needs to be recovered
+The matrix-vector multiplication in the residual is performed region-wise. 
+Hence, the interface DOFs are multiplied with the 'splitted' values only, i.e. the true residual value needs to be recovered 
 by exchanging these values between the duplicated DOFs and adding them into each of them.
 
 There are multiple ways to do that:
@@ -506,43 +506,61 @@ There are multiple ways to do that:
 \subsubsection{An exemplary implementation of Jacobi in a region layout}
 
 \begin{lstlisting}[language=c++]
-	Xpetra::Vector regScaling = ... // scaling factors per DOF that are
+	Xpetra::Vector regScaling = ... // scaling factors per DOF that are 
 	                                // required to recover the true diagonal
 
   function RegionJacobi(regA, regB, regU, regScaling, omega, maxIters) {
-    // We assume that the initial solution is zero
+    // We assume that the initial solution is zero 
     // and that the initial composite residual is known
-
+    
     Xpetra::Vector regInvDiag = regA->getDiag(); // Extract diagonal
     for(int dof = 0; dof < regInvDiag.size() ++dof) {
       // Invert and rescale diagonal
       regInvDiag[dof] = 1.0 / (regInvDiag[dof]*regScaling[dof]);
     }
-
+    
     // Create work vectors
     Xpetra::Vector regRes(regB);
     Xpetra::Vector regAU(regB);
     Xpetra::Vector regUIncrement(regB);
     for(int iter = 0; iter < maxIters; ++iter) { // Iteration loop
-
+      
       // Compute A*U
       regAU->setScalar(0.0);  // Reset A*U vector
       regA->apply(regU, regAU); // Multiply regA with regU
       regAU->synchronize(); // Synchronize regAU to update interface
-
+      
       // Compute residual
       regRes->add(1.0, regB, -1.0, regAU);
-
+      
       // Compute solution increment
       for(int dof = 0; dof < regInvDiag.size() ++dof) {
         regUIncrement[dof] = regInvDiag[dof]*regRes[dof];
       }
-
+      
       // Update solution
       regU->add(omega, regUIncrement, 1.0, regU);
     }
   }
 \end{lstlisting}
+
+\section{Aspects related to domain decomposition}
+
+\subsection{Direct solve on coarse level}
+
+The composite matrix as provided by the application is well-posed since Dirichlet boundary conditions have been applied to it. 
+When extracting regional matrices, only those sub-matrices associated with Dirichlet boundary conditions are non-singular
+in the region layout. In particular, matrices from the interior of the domain are very likely to be free-floating and singular. 
+This prevents a direct solver on the coarse level. Possible remedies are:
+\begin{itemize}
+\item Merge coarse level region matrices into a composite matrix and apply direct solver to the composite matrix. 
+Drawback: merging into composite layout is expensive and requires a dual setup of the hierarchy, 
+i.e. also composite maps need to be provided on coarse levels.
+\item Use ILU on region matrices
+\item Use relaxation-based smoothers on coarse level
+\end{itemize}
+So far, no clear strategy to use a direct solver on the coarse level came to mind. 
+We maybe can use projection methods to deal with rigid body modes.
 
 \section{Future Direction Thoughts}
 Basically, the tasks that have to happen next include
