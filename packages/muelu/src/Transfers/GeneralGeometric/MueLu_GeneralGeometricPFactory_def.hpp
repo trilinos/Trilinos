@@ -1124,6 +1124,481 @@ namespace MueLu {
     PCrs->expertStaticFillComplete(domainMapP,rowMapP);
   } // End MakeGeneralGeometricP
 
+  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  // void BlackBoxPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetGeometricData(
+  //                       RCP<Xpetra::MultiVector<double,LO,GO,NO> >& coordinates, const Array<LO> coarseRate,
+  //                       const Array<GO> gFineNodesPerDir, const Array<LO> lFineNodesPerDir, const LO BlkSize,
+  //                       Array<GO>& gIndices, Array<LO>& myOffset, Array<bool>& ghostInterface, Array<LO>& endRate,
+  //                       Array<GO>& gCoarseNodesPerDir, Array<LO>& lCoarseNodesPerDir, Array<GO>& ghostGIDs,
+  //                       Array<GO>& coarseNodesGIDs, Array<GO>& colGIDs, GO& gNumCoarseNodes, LO& lNumCoarseNodes,
+  //                       ArrayRCP<Array<double> > coarseNodes) const {
+
+  //   RCP<const Map> coordinatesMap = coordinates->getMap();
+  //   LO numDimensions  = coordinates->getNumVectors();
+
+  //   // Using the coarsening rate and the fine level data,
+  //   // compute coarse level data
+
+  //   //                              Phase 1                               //
+  //   // ------------------------------------------------------------------ //
+  //   // We first start by finding small informations on the mesh such as   //
+  //   // the number of coarse nodes (local and global) and the number of    //
+  //   // ghost nodes / the end rate of coarsening.                          //
+  //   // ------------------------------------------------------------------ //
+  //   GO minGlobalIndex = coordinatesMap->getMinGlobalIndex();
+  //   {
+  //     GO tmp;
+  //     gIndices[2] = minGlobalIndex / (gFineNodesPerDir[1]*gFineNodesPerDir[0]);
+  //     tmp         = minGlobalIndex % (gFineNodesPerDir[1]*gFineNodesPerDir[0]);
+  //     gIndices[1] = tmp / gFineNodesPerDir[0];
+  //     gIndices[0] = tmp % gFineNodesPerDir[0];
+
+  //     myOffset[2] = gIndices[2] % coarseRate[2];
+  //     myOffset[1] = gIndices[1] % coarseRate[1];
+  //     myOffset[0] = gIndices[0] % coarseRate[0];
+  //   }
+
+  //   // Check whether ghost nodes are needed in each direction
+  //   for(LO i=0; i < numDimensions; ++i) {
+  //     if((gIndices[i] != 0) && (gIndices[i] % coarseRate[i] > 0)) {
+  //       ghostInterface[2*i] = true;
+  //     }
+  //     if(((gIndices[i] + lFineNodesPerDir[i]) != gFineNodesPerDir[i]) && ((gIndices[i] + lFineNodesPerDir[i] - 1) % coarseRate[i] > 0)) {
+  //       ghostInterface[2*i + 1] = true;
+  //     }
+  //   }
+
+  //   for(LO i = 0; i < 3; ++i) {
+  //     if(i < numDimensions) {
+  //       lCoarseNodesPerDir[i] = (lFineNodesPerDir[i] + myOffset[i] - 1) / coarseRate[i];
+  //       if(myOffset[i] == 0) { ++lCoarseNodesPerDir[i]; }
+  //       gCoarseNodesPerDir[i] = (gFineNodesPerDir[i] - 1) / coarseRate[i];
+  //       endRate[i]            = (gFineNodesPerDir[i] - 1) % coarseRate[i];
+  //       if(endRate[i] == 0) {
+  //         ++gCoarseNodesPerDir[i];
+  //         endRate[i] = coarseRate[i];
+  //       }
+  //     } else {
+  //       // Most quantities need to be set to 1 for extra dimensions
+  //       // this is rather logical, an x-y plane is like a single layer
+  //       // of nodes in the z direction...
+  //       gCoarseNodesPerDir[i] = 1;
+  //       lCoarseNodesPerDir[i] = 1;
+  //       endRate[i]            = 1;
+  //     }
+  //   }
+
+  //   gNumCoarseNodes = gCoarseNodesPerDir[0]*gCoarseNodesPerDir[1]*gCoarseNodesPerDir[2];
+  //   lNumCoarseNodes = lCoarseNodesPerDir[0]*lCoarseNodesPerDir[1]*lCoarseNodesPerDir[2];
+
+  //   // For each direction, determine how many ghost points are required.
+  //   LO lNumGhostNodes = 0;
+  //   {
+  //     const int complementaryIndices[3][2] = {{1,2}, {0,2}, {0,1}};
+  //     LO tmp = 0;
+  //     for(LO i = 0; i < 3; ++i) {
+  //       // Check whether a face in direction i needs ghost nodes
+  //       if(ghostInterface[2*i] || ghostInterface[2*i+1]) {
+  //         if(i == 0) {tmp = lCoarseNodesPerDir[1]*lCoarseNodesPerDir[2];}
+  //         if(i == 1) {tmp = lCoarseNodesPerDir[0]*lCoarseNodesPerDir[2];}
+  //         if(i == 2) {tmp = lCoarseNodesPerDir[0]*lCoarseNodesPerDir[1];}
+  //       }
+  //       // If both faces in direction i need nodes, double the number of ghost nodes
+  //       if(ghostInterface[2*i] && ghostInterface[2*i+1]) {tmp = 2*tmp;}
+  //       lNumGhostNodes += tmp;
+
+  //       // The corners and edges need to be checked in 2D / 3D to add more ghosts nodes
+  //       for(LO j = 0; j < 2; ++j) {
+  //         for(LO k = 0; k < 2; ++k) {
+  //           // Check if two adjoining faces need ghost nodes and then add their common edge
+  //           if(ghostInterface[2*complementaryIndices[i][0]+j] && ghostInterface[2*complementaryIndices[i][1]+k]) {
+  //             lNumGhostNodes += lCoarseNodesPerDir[i];
+  //             // Add corners if three adjoining faces need ghost nodes,
+  //             // but add them only once! Hence when i == 0.
+  //             if(ghostInterface[2*i] && (i == 0)) { lNumGhostNodes += 1; }
+  //             if(ghostInterface[2*i+1] && (i == 0)) { lNumGhostNodes += 1; }
+  //           }
+  //         }
+  //       }
+  //       tmp = 0;
+  //     }
+  //   } // end of scope for tmp and complementaryIndices
+
+  //   //                              Phase 2                               //
+  //   // ------------------------------------------------------------------ //
+  //   // Build a list of GIDs to import the required ghost nodes.           //
+  //   // The ordering of the ghosts nodes will be as natural as possible,   //
+  //   // i.e. it should follow the GID ordering of the mesh.                //
+  //   // ------------------------------------------------------------------ //
+
+  //   // Saddly we have to more or less redo what was just done to figure out the value of lNumGhostNodes,
+  //   // there might be some optimization possibility here...
+  //   ghostGIDs.resize(lNumGhostNodes);
+  //   LO countGhosts = 0;
+  //   // Get the GID of the first point on the current partition.
+  //   GO startingGID = minGlobalIndex;
+  //   Array<GO> startingIndices(3);
+  //   // We still want ghost nodes even if have with a 0 offset,
+  //   // except when we are on a boundary
+  //   if(ghostInterface[4] && (myOffset[2] == 0)) {
+  //     if(gIndices[2] + coarseRate[2] > gFineNodesPerDir[2]) {
+  //       startingGID -= endRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+  //     } else {
+  //       startingGID -= coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+  //     }
+  //   } else {
+  //     startingGID -= myOffset[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+  //   }
+  //   if(ghostInterface[2] && (myOffset[1] == 0)) {
+  //     if(gIndices[1] + coarseRate[1] > gFineNodesPerDir[1]) {
+  //       startingGID -= endRate[1]*gFineNodesPerDir[0];
+  //     } else {
+  //       startingGID -= coarseRate[1]*gFineNodesPerDir[0];
+  //     }
+  //   } else {
+  //     startingGID -= myOffset[1]*gFineNodesPerDir[0];
+  //   }
+  //   if(ghostInterface[0] && (myOffset[0] == 0)) {
+  //     if(gIndices[0] + coarseRate[0] > gFineNodesPerDir[0]) {
+  //       startingGID -= endRate[0];
+  //     } else {
+  //       startingGID -= coarseRate[0];
+  //     }
+  //   } else {
+  //     startingGID -= myOffset[0];
+  //   }
+
+  //   { // scope for tmp
+  //     GO tmp;
+  //     startingIndices[2] = startingGID / (gFineNodesPerDir[1]*gFineNodesPerDir[0]);
+  //     tmp = startingGID % (gFineNodesPerDir[1]*gFineNodesPerDir[0]);
+  //     startingIndices[1] = tmp / gFineNodesPerDir[0];
+  //     startingIndices[0] = tmp % gFineNodesPerDir[0];
+  //   }
+
+  //   GO ghostOffset[3] = {0, 0, 0};
+  //   LO lengthZero  = lCoarseNodesPerDir[0];
+  //   LO lengthOne   = lCoarseNodesPerDir[1];
+  //   LO lengthTwo   = lCoarseNodesPerDir[2];
+  //   if(ghostInterface[0]) {++lengthZero;}
+  //   if(ghostInterface[1]) {++lengthZero;}
+  //   if(ghostInterface[2]) {++lengthOne;}
+  //   if(ghostInterface[3]) {++lengthOne;}
+  //   if(ghostInterface[4]) {++lengthTwo;}
+  //   if(ghostInterface[5]) {++lengthTwo;}
+
+  //   // First check the bottom face as it will have the lowest GIDs
+  //   if(ghostInterface[4]) {
+  //     ghostOffset[2] = startingGID;
+  //     for(LO j = 0; j < lengthOne; ++j) {
+  //       if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
+  //         ghostOffset[1] = ((j-1)*coarseRate[1] + endRate[1])*gFineNodesPerDir[0];
+  //       } else {
+  //         ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
+  //       }
+  //       for(LO k = 0; k < lengthZero; ++k) {
+  //         if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
+  //           ghostOffset[0] = (k-1)*coarseRate[0] + endRate[0];
+  //         } else {
+  //           ghostOffset[0] = k*coarseRate[0];
+  //         }
+  //         // If the partition includes a changed rate at the edge, ghost nodes need to be picked carefully.
+  //         // This if statement is repeated each time a ghost node is selected.
+  //         ghostGIDs[countGhosts] = ghostOffset[2] + ghostOffset[1] + ghostOffset[0];
+  //         ++countGhosts;
+  //       }
+  //     }
+  //   }
+
+  //   // Sweep over the lCoarseNodesPerDir[2] coarse layers in direction 2 and gather necessary ghost nodes
+  //   // located on these layers.
+  //   for(LO i = 0; i < lengthTwo; ++i) {
+  //     // Exclude the cases where ghost nodes exists on the faces in directions 2, these faces are swept
+  //     // seperatly for efficiency.
+  //     if( !((i == lengthTwo-1) && ghostInterface[5]) && !((i == 0) && ghostInterface[4]) ) {
+  //       // Set the ghostOffset in direction 2 taking into account a possible endRate different
+  //       // from the regular coarseRate.
+  //       if( (i == lengthTwo-1) && !ghostInterface[5] ) {
+  //         ghostOffset[2] = startingGID + ((i-1)*coarseRate[2] + endRate[2])*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+  //       } else {
+  //         ghostOffset[2] = startingGID + i*coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+  //       }
+  //       for(LO j = 0; j < lengthOne; ++j) {
+  //         if( (j == 0) && ghostInterface[2] ) {
+  //           for(LO k = 0; k < lengthZero; ++k) {
+  //             if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
+  //               if(k == 0) {
+  //                 ghostOffset[0] = endRate[0];
+  //               } else {
+  //                 ghostOffset[0] = (k-1)*coarseRate[0] + endRate[0];
+  //               }
+  //             } else {
+  //               ghostOffset[0] = k*coarseRate[0];
+  //             }
+  //             // In this case j == 0 so ghostOffset[1] is zero and can be ignored
+  //             ghostGIDs[countGhosts] = ghostOffset[2] + ghostOffset[0];
+  //             ++countGhosts;
+  //           }
+  //         } else if( (j == lengthOne-1) && ghostInterface[3] ) {
+  //           // Set the ghostOffset in direction 1 taking into account a possible endRate different
+  //           // from the regular coarseRate.
+  //           if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
+  //             ghostOffset[1] = ((j-1)*coarseRate[1] + endRate[1])*gFineNodesPerDir[0];
+  //           } else {
+  //             ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
+  //           }
+  //           for(LO k = 0; k < lengthZero; ++k) {
+  //             if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
+  //               ghostOffset[0] = (k-1)*coarseRate[0] + endRate[0];
+  //             } else {
+  //               ghostOffset[0] = k*coarseRate[0];
+  //             }
+  //             ghostGIDs[countGhosts] = ghostOffset[2] + ghostOffset[1] + ghostOffset[0];
+  //             ++countGhosts;
+  //           }
+  //         } else {
+  //           // Set ghostOffset[1] for side faces sweep
+  //           if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) {
+  //             ghostOffset[1] = ( (j-1)*coarseRate[1] + endRate[1] )*gFineNodesPerDir[0];
+  //           } else {
+  //             ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
+  //           }
+
+  //           // Set ghostOffset[0], ghostGIDs and countGhosts
+  //           if(ghostInterface[0]) { // In that case ghostOffset[0]==0, so we can ignore it
+  //             ghostGIDs[countGhosts] = ghostOffset[2] + ghostOffset[1];
+  //             ++countGhosts;
+  //           }
+  //           if(ghostInterface[1]) { // Grab ghost point at the end of direction 0.
+  //             if( (startingIndices[0] + (lengthZero-1)*coarseRate[0]) > gFineNodesPerDir[0] - 1 ) {
+  //               if(lengthZero > 2) {
+  //                 ghostOffset[0] = (lengthZero-2)*coarseRate[0] + endRate[0];
+  //               } else {
+  //                 ghostOffset[0] = endRate[0];
+  //               }
+  //             } else {
+  //               ghostOffset[0] = (lengthZero-1)*coarseRate[0];
+  //             }
+  //             ghostGIDs[countGhosts] = ghostOffset[2] + ghostOffset[1] + ghostOffset[0];
+  //             ++countGhosts;
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+
+  //   // Finally check the top face
+  //   if(ghostInterface[5]) {
+  //     if( startingIndices[2] + (lengthTwo-1)*coarseRate[2] + 1 > gFineNodesPerDir[2] ) {
+  //       ghostOffset[2] = startingGID + ((lengthTwo-2)*coarseRate[2] + endRate[2])*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+  //     } else {
+  //       ghostOffset[2] = startingGID + (lengthTwo-1)*coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+  //     }
+  //     for(LO j = 0; j < lengthOne; ++j) {
+  //       if( (j == lengthOne-1) && (startingIndices[1] + j*coarseRate[1] + 1 > gFineNodesPerDir[1]) ) { // && !ghostInterface[3] ) {
+  //         ghostOffset[1] = ( (j-1)*coarseRate[1] + endRate[1] )*gFineNodesPerDir[0];
+  //       } else {
+  //         ghostOffset[1] = j*coarseRate[1]*gFineNodesPerDir[0];
+  //       }
+  //       for(LO k = 0; k < lengthZero; ++k) {
+  //         if( (k == lengthZero-1) && (startingIndices[0] + k*coarseRate[0] + 1 > gFineNodesPerDir[0]) ) {
+  //           ghostOffset[0] = (k-1)*coarseRate[0] + endRate[0];
+  //         } else {
+  //           ghostOffset[0] = k*coarseRate[0];
+  //         }
+  //         ghostGIDs[countGhosts] = ghostOffset[2] + ghostOffset[1] + ghostOffset[0];
+  //         ++countGhosts;
+  //       }
+  //     }
+  //   }
+
+  //   //                              Phase 3                               //
+  //   // ------------------------------------------------------------------ //
+  //   // Final phase of this function, lists are being built to create the  //
+  //   // column and domain maps of the projection as well as the map and    //
+  //   // arrays for the coarse coordinates multivector.                     //
+  //   // ------------------------------------------------------------------ //
+
+  //   Array<GO> gCoarseNodesGIDs(lNumCoarseNodes);
+  //   LO currentNode, offset2, offset1, offset0;
+  //   // Find the GIDs of the coarse nodes on the partition.
+  //   for(LO ind2 = 0; ind2 < lCoarseNodesPerDir[2]; ++ind2) {
+  //     if(myOffset[2] == 0) {
+  //       offset2 = startingIndices[2] + myOffset[2];
+  //     } else {
+  //       if(startingIndices[2] + endRate[2] == gFineNodesPerDir[2] - 1) {
+  //         offset2 = startingIndices[2] + endRate[2];
+  //       } else {
+  //         offset2 = startingIndices[2] + coarseRate[2];
+  //       }
+  //     }
+  //     if(offset2 + ind2*coarseRate[2] > gFineNodesPerDir[2] - 1) {
+  //       offset2 += (ind2 - 1)*coarseRate[2] + endRate[2];
+  //     } else {
+  //       offset2 += ind2*coarseRate[2];
+  //     }
+  //     offset2 = offset2*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+
+  //     for(LO ind1 = 0; ind1 < lCoarseNodesPerDir[1]; ++ind1) {
+  //       if(myOffset[1] == 0) {
+  //         offset1 = startingIndices[1] + myOffset[1];
+  //       } else {
+  //         if(startingIndices[1] + endRate[1] == gFineNodesPerDir[1] - 1) {
+  //           offset1 = startingIndices[1] + endRate[1];
+  //         } else {
+  //           offset1 = startingIndices[1] + coarseRate[1];
+  //         }
+  //       }
+  //       if(offset1 + ind1*coarseRate[1] > gFineNodesPerDir[1] - 1) {
+  //         offset1 += (ind1 - 1)*coarseRate[1] + endRate[1];
+  //       } else {
+  //         offset1 += ind1*coarseRate[1];
+  //       }
+  //       offset1 = offset1*gFineNodesPerDir[0];
+  //       for(LO ind0 = 0; ind0 < lCoarseNodesPerDir[0]; ++ind0) {
+  //         offset0 = startingIndices[0];
+  //         if(myOffset[0] == 0) {
+  //           offset0 += ind0*coarseRate[0];
+  //         } else {
+  //           offset0 += (ind0 + 1)*coarseRate[0];
+  //         }
+  //         if(offset0 > gFineNodesPerDir[0] - 1) {offset0 += endRate[0] - coarseRate[0];}
+
+  //         currentNode = ind2*lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]
+  //                     + ind1*lCoarseNodesPerDir[0]
+  //                     + ind0;
+  //         gCoarseNodesGIDs[currentNode] = offset2 + offset1 + offset0;
+  //       }
+  //     }
+  //   }
+
+  //   // Actual loop over all the coarse/ghost nodes to find their index on the coarse mesh
+  //   // and the corresponding dofs that will need to be added to colMapP.
+  //   colGIDs.resize(BlkSize*(lNumCoarseNodes+lNumGhostNodes));
+  //   coarseNodesGIDs.resize(lNumCoarseNodes);
+  //   for(LO i = 0; i < numDimensions; ++i) {coarseNodes[i].resize(lNumCoarseNodes);}
+  //   GO fineNodesPerCoarseSlab    = coarseRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+  //   GO fineNodesEndCoarseSlab    = endRate[2]*gFineNodesPerDir[1]*gFineNodesPerDir[0];
+  //   GO fineNodesPerCoarsePlane   = coarseRate[1]*gFineNodesPerDir[0];
+  //   GO fineNodesEndCoarsePlane   = endRate[1]*gFineNodesPerDir[0];
+  //   GO coarseNodesPerCoarseLayer = gCoarseNodesPerDir[1]*gCoarseNodesPerDir[0];
+  //   GO gCoarseNodeOnCoarseGridGID;
+  //   LO gInd[3], lCol;
+  //   Array<int> ghostPIDs  (lNumGhostNodes);
+  //   Array<LO>  ghostLIDs  (lNumGhostNodes);
+  //   Array<LO>  ghostPermut(lNumGhostNodes);
+  //   for(LO k = 0; k < lNumGhostNodes; ++k) {ghostPermut[k] = k;}
+  //   coordinatesMap->getRemoteIndexList(ghostGIDs, ghostPIDs, ghostLIDs);
+  //   sh_sort_permute(ghostPIDs.begin(),ghostPIDs.end(), ghostPermut.begin(),ghostPermut.end());
+
+  //   { // scope for tmpInds, tmpVars and tmp.
+  //     GO tmpInds[3], tmpVars[2];
+  //     LO tmp;
+  //     // Loop over the coarse nodes of the partition and add them to colGIDs
+  //     // that will be used to construct the column and domain maps of P as well
+  //     // as to construct the coarse coordinates map.
+  //     // for(LO col = 0; col < lNumCoarseNodes; ++col) { // This should most likely be replaced by loops of lCoarseNodesPerDir[] to simplify arithmetics
+  //     LO col = 0;
+  //     LO firstCoarseNodeInds[3], currentCoarseNode;
+  //     for(LO dim = 0; dim < 3; ++dim) {
+  //       if(myOffset[dim] == 0) {
+  //         firstCoarseNodeInds[dim] = 0;
+  //       } else {
+  //         firstCoarseNodeInds[dim] = coarseRate[dim] - myOffset[dim];
+  //       }
+  //     }
+  //     Array<ArrayRCP<const double> > fineNodes(numDimensions);
+  //     for(LO dim = 0; dim < numDimensions; ++dim) {fineNodes[dim] = coordinates->getData(dim);}
+  //     for(LO k = 0; k < lCoarseNodesPerDir[2]; ++k) {
+  //       for(LO j = 0; j < lCoarseNodesPerDir[1]; ++j) {
+  //         for(LO i = 0; i < lCoarseNodesPerDir[0]; ++i) {
+  //           col = k*lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0] + j*lCoarseNodesPerDir[0] + i;
+
+  //           // Check for endRate
+  //           currentCoarseNode = 0;
+  //           if(firstCoarseNodeInds[0] + i*coarseRate[0] > lFineNodesPerDir[0] - 1) {
+  //             currentCoarseNode += firstCoarseNodeInds[0] + (i-1)*coarseRate[0] + endRate[0];
+  //           } else {
+  //             currentCoarseNode += firstCoarseNodeInds[0] + i*coarseRate[0];
+  //           }
+  //           if(firstCoarseNodeInds[1] + j*coarseRate[1] > lFineNodesPerDir[1] - 1) {
+  //             currentCoarseNode += (firstCoarseNodeInds[1] + (j-1)*coarseRate[1] + endRate[1])*lFineNodesPerDir[0];
+  //           } else {
+  //             currentCoarseNode += (firstCoarseNodeInds[1] + j*coarseRate[1])*lFineNodesPerDir[0];
+  //           }
+  //           if(firstCoarseNodeInds[2] + k*coarseRate[2] > lFineNodesPerDir[2] - 1) {
+  //             currentCoarseNode += (firstCoarseNodeInds[2] + (k-1)*coarseRate[2] + endRate[2])*lFineNodesPerDir[1]*lFineNodesPerDir[0];
+  //           } else {
+  //             currentCoarseNode += (firstCoarseNodeInds[2] + k*coarseRate[2])*lFineNodesPerDir[1]*lFineNodesPerDir[0];
+  //           }
+  //           // Load coordinates
+  //           for(LO dim = 0; dim < numDimensions; ++dim) {
+  //             coarseNodes[dim][col] = fineNodes[dim][currentCoarseNode];
+  //           }
+
+  //           if((endRate[2] != coarseRate[2]) && (gCoarseNodesGIDs[col] > (gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)) {
+  //             tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab + 1;
+  //             tmpVars[0] = gCoarseNodesGIDs[col] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;
+  //           } else {
+  //             tmpInds[2] = gCoarseNodesGIDs[col] / fineNodesPerCoarseSlab;
+  //             tmpVars[0] = gCoarseNodesGIDs[col] % fineNodesPerCoarseSlab;
+  //           }
+  //           if((endRate[1] != coarseRate[1]) && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)*fineNodesPerCoarsePlane + fineNodesEndCoarsePlane - 1)) {
+  //             tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane + 1;
+  //             tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane - fineNodesEndCoarsePlane;
+  //           } else {
+  //             tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane;
+  //             tmpVars[1] = tmpVars[0] % fineNodesPerCoarsePlane;
+  //           }
+  //           if(tmpVars[1] == gFineNodesPerDir[0] - 1) {
+  //             tmpInds[0] = gCoarseNodesPerDir[0] - 1;
+  //           } else {
+  //             tmpInds[0] = tmpVars[1] / coarseRate[0];
+  //           }
+  //           gInd[2] = col / (lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]);
+  //           tmp     = col % (lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]);
+  //           gInd[1] = tmp / lCoarseNodesPerDir[0];
+  //           gInd[0] = tmp % lCoarseNodesPerDir[0];
+  //           lCol = gInd[2]*(lCoarseNodesPerDir[1]*lCoarseNodesPerDir[0]) + gInd[1]*lCoarseNodesPerDir[0] + gInd[0];
+  //           gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
+  //           coarseNodesGIDs[lCol] = gCoarseNodeOnCoarseGridGID;
+  //           for(LO dof = 0; dof < BlkSize; ++dof) {
+  //             colGIDs[BlkSize*lCol + dof] = BlkSize*gCoarseNodeOnCoarseGridGID + dof;
+  //           }
+  //         }
+  //       }
+  //     }
+  //     // Now loop over the ghost nodes of the partition to add them to colGIDs
+  //     // since they will need to be included in the column map of P
+  //     for(col = lNumCoarseNodes; col < lNumCoarseNodes + lNumGhostNodes; ++col) {
+  //       if((endRate[2] != coarseRate[2]) && (ghostGIDs[ghostPermut[col - lNumCoarseNodes]] > (gCoarseNodesPerDir[2] - 2)*fineNodesPerCoarseSlab + fineNodesEndCoarseSlab - 1)) {
+  //         tmpInds[2] = ghostGIDs[ghostPermut[col - lNumCoarseNodes]] / fineNodesPerCoarseSlab + 1;
+  //         tmpVars[0] = ghostGIDs[ghostPermut[col - lNumCoarseNodes]] - (tmpInds[2] - 1)*fineNodesPerCoarseSlab - fineNodesEndCoarseSlab;
+  //       } else {
+  //         tmpInds[2] = ghostGIDs[ghostPermut[col - lNumCoarseNodes]] / fineNodesPerCoarseSlab;
+  //         tmpVars[0] = ghostGIDs[ghostPermut[col - lNumCoarseNodes]] % fineNodesPerCoarseSlab;
+  //       }
+  //       if((endRate[1] != coarseRate[1]) && (tmpVars[0] > (gCoarseNodesPerDir[1] - 2)*fineNodesPerCoarsePlane + fineNodesEndCoarsePlane - 1)) {
+  //         tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane + 1;
+  //         tmpVars[1] = tmpVars[0] - (tmpInds[1] - 1)*fineNodesPerCoarsePlane - fineNodesEndCoarsePlane;
+  //       } else {
+  //         tmpInds[1] = tmpVars[0] / fineNodesPerCoarsePlane;
+  //         tmpVars[1] = tmpVars[0] % fineNodesPerCoarsePlane;
+  //       }
+  //       if(tmpVars[1] == gFineNodesPerDir[0] - 1) {
+  //         tmpInds[0] = gCoarseNodesPerDir[0] - 1;
+  //       } else {
+  //         tmpInds[0] = tmpVars[1] / coarseRate[0];
+  //       }
+  //       gCoarseNodeOnCoarseGridGID = tmpInds[2]*coarseNodesPerCoarseLayer + tmpInds[1]*gCoarseNodesPerDir[0] + tmpInds[0];
+  //       for(LO dof = 0; dof < BlkSize; ++dof) {
+  //         colGIDs[BlkSize*col + dof] = BlkSize*gCoarseNodeOnCoarseGridGID + dof;
+  //       }
+  //     }
+  //   } // End of scope for tmpInds, tmpVars and tmp
+
+  // } // GetGeometricData()
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void GeneralGeometricPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeStencil(
                                 const LO numDimensions, const Array<GO> currentNodeIndices,

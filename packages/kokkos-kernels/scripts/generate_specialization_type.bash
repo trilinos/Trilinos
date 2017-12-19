@@ -14,9 +14,13 @@ Scalar_UpperCase=`echo ${Scalar} | awk '{print toupper($0)}' | sed 's|\:\:|\_|g'
 Scalar_FileName=`echo ${Scalar} | sed 's|\:\:|\_|g' | sed 's|<|_|g' | sed 's|>|_|g'`
 Layout_UpperCase=`echo ${Layout} | awk '{print toupper($0)}'`
 ExecSpace_UpperCase=`echo ${ExecSpace} | awk '{print toupper($0)}'`
-MemSpace_UpperCase=`echo ${MemSpace} | awk '{print toupper($0)}'`
 
-filename_cpp=generated_specializations_cpp/${Function}/${FunctionExtended}_eti_spec_inst_${Scalar_FileName}_${Layout}_${ExecSpace}_${MemSpace}.cpp
+prefix="Experimental::"
+MemSpace_UpperCase=`echo ${MemSpace#$prefix} | awk '{print toupper($0)}'`
+
+#MemSpace_UpperCase=`echo ${MemSpace} | awk '{print toupper($0)}'`
+
+filename_cpp=generated_specializations_cpp/${Function}/${FunctionExtended}_eti_spec_inst_${Scalar_FileName}_${Layout}_${ExecSpace}_${MemSpace#$prefix}.cpp
 filename_spec_avail_hpp=generated_specializations_hpp/${FunctionExtended}_eti_spec_avail.hpp
 filename_spec_decl_hpp=generated_specializations_hpp/${FunctionExtended}_eti_spec_decl.hpp
 

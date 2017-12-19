@@ -1951,10 +1951,10 @@ MACRO(TRIBITS_SETUP_ENV)
   IF(${PROJECT_NAME}_ENABLE_OpenMP)
     FIND_PACKAGE(OpenMP)
     IF(OPENMP_FOUND)
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-      SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+      TRIBITS_SET_OPENMP_FLAGS(CXX)
+      TRIBITS_SET_OPENMP_FLAGS(C)
       IF(OpenMP_Fortran_FLAGS)
-        SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
+        TRIBITS_SET_OPENMP_FLAGS(Fortran)
       ELSE()
       # Older versions of FindOpenMP.cmake don't find Fortran flags.  Mike H said this is safe.
         SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_C_FLAGS}")
@@ -2011,6 +2011,16 @@ MACRO(TRIBITS_SETUP_ENV)
   ENDIF()
 
 ENDMACRO()
+
+
+MACRO(TRIBITS_SET_OPENMP_FLAGS  LANG)
+  IF (NOT "${OpenMP_${LANG}_FLAGS_OVERRIDE}" STREQUAL "")
+    SET(CMAKE_${LANG}_FLAGS "${CMAKE_${LANG}_FLAGS} ${OpenMP_${LANG}_FLAGS_OVERRIDE}")
+  ELSE()
+    SET(CMAKE_${LANG}_FLAGS "${CMAKE_${LANG}_FLAGS} ${OpenMP_${LANG}_FLAGS}")
+  ENDIF()
+ENDMACRO()
+
 
 #
 # Set mapping of labels to subprojects (i.e. TriBITS packages) for local CTest

@@ -2,6 +2,33 @@
 \usepackage{amsfonts}
 \usepackage{amsmath}
 
+\usepackage[usenames,svgnames,table]{xcolor}
+\usepackage{algorithm}
+
+\usepackage{listings}
+\definecolor{hellgelb} {rgb}{1.0,1.0,0.8}
+\definecolor{darkgreen}{rgb}{0.0,0.2,0.13}
+\lstset{%
+  backgroundcolor=\color{hellgelb},
+  basicstyle=\bf\ttfamily\small,
+  breakautoindent=true,
+  breaklines=true,
+  captionpos=b,
+  commentstyle=\color{orange},
+  escapechar=|,
+  extendedchars=true,
+  float=hbp,
+  frame=single,
+  identifierstyle=\color{black},
+  keywordstyle=\color{blue},
+  numbers=left,
+  numberstyle=\tiny,
+  showspaces=false,
+  showstringspaces=false,
+  stringstyle=\color{purple},
+  tabsize=2,
+}
+
 \oddsidemargin    0.1in
 \evensidemargin   0.1in
 \textwidth        6.5in
@@ -10,14 +37,15 @@
 #1}}{\parbox[t]{3.9in}{#2}} \\[1.1em]}
 
 
+\title{Using Trilinos Capabilities for Composite-To-Regional Transitions}
+\author{Matthias Mayr, Luc Berger-Vergiat, Raymond S. Tuminaro}
+\date{\today}
 
 \begin{document}
-\phantom{.}
-\vspace{-1in}
-\begin{center}\large
-{\bf Using Trilinos Capabilities for Composite-To-Regional Transitions}
-\end{center}
-\vspace{.4in}
+\maketitle
+
+\section{DOFs vs. GIDs for region problems}
+\label{sec:ProblemDescription}
 
 We assume that an application has a standard Trilinos-style matrix without any
 notion of regions and shared interfaces within the CRS data structure. However,
@@ -338,6 +366,238 @@ has a ghost GID that associated with the one region that it owns but
 this ghost GID does not have a {\sf myRegionalLID()} because it is owned
 by another processor (that also owns my one region).
 
+\section{Algorithmic building blocks and implementation}
+\subsection{Groups}
+The notion of a group is introduced primarily to handle the case when
+processors are assigned multiple regions (and so no region spans
+across multiple processors). In particular, the number of groups is
+equal to the maximum number of regions that can be assigned to
+any processor. Only one region per processor is assigned to a group.
+In this way, both cases ({\sf regionsSpanProcs} and
+{\sf multipleRegionsPerProc}) correspond to a processor owning (perhaps only
+partially) at most one region within a group.
+Generally, this simplifies the implementation because the required
+replication of any region interface node must occur across processors.
+That is, each version of a replicated node will lie on different
+processors within a group. This appears to be a key assumption to employ various
+Trilinos {\sf Import()}/{\sf Export()} capabilities as these have
+some `one-to-one' (or non-overlappng) restrictions that we
+do not completely understand.
+Specifically, the replication of matrix rows/columns more closely
+resembles what occurs in overlapping Schwarz. Each processor
+receives rows from neighbors associated with some of its ghost
+unknowns. The main difference between the {\sf regionsSpanProcs} and
+{\sf multipleRegionsPerProc} cases is in the regional column maps.
+When each processor owns an entire region (as must always
+be true for the {\sf multipleRegionsPerProc} case and is sometimes
+true in the {\sf regionsSpanProcs} case), the regional column map is equal
+to the regional row map as there is no communication across regions, implying
+no communication between processors. When processors own a piece of
+a region, then communication must occur within a region and so
+the regional column map should include the ghost nodes that correspond
+to the same region.
+
+\subsection{Data layouts}
+\label{sec:DataLayouts}
+
+Employing Trilinos {\sf Import()}/{\sf Export()} capabilities is extremely convenient
+in minimizing the coding effort. However, there are some tricky aspects
+of working with overlapping maps. With an overlapping map, some GIDs
+might appear more than once within the map (though any repeated GIDs
+will appear on different processors). When performing regional
+operations, however, we often need a replicated node to act as
+a set of distinct degrees-of-freedom (e.g., different vector values within
+different regions for the same node during most multigrid operations).
+For this reason, we will need to introduce new GID numbers to handle
+this case. A scheme to insert these new GIDs has been outlined in section~\ref{sec:ProblemDescription}
+
+We use three data layouts which can be transferred from one into each other.
+\begin{itemize}
+\item {\bf composite layout:} In this layout, every DOF has been assigned a unique GID and is represented in the global system of equations only once.
+It is usually used by the application and the matrix as well as the right-hand side and initial guess are provided using this layout.
+The outer Krylov solver operates on this layout. Hence, this layout is passed to the preconditioner and needs to be returned from the preconditioner
+to the Krylov solver despite the layout used internally by the preconditioner.
+\item {\bf regional layout:} In this layout, every region is represented by a unique set of GIDs.
+This required duplicated, but unique DOFs at interfaces between regions.
+\item {\bf quasiRegional layout:} This auxiliary layout uses duplicated DOFs at region interfaces,
+but still only the original GIDs of the composite layout.
+It is never used for computations, just as an intermediate step to transfer matrices and vectors from the composite to the regional layout.
+Specifically, the quasiRegional form refers to matrices and vectors
+where the local representation of the data is correct for
+regional computations, but the maps are not correct in terms of
+representing shared nodes distinctly. That is, data is replicated properly
+to represent a regional matrix, but the GIDs in the maps still refer to the composite form of the data,
+implying that the maps are not correct.
+\end{itemize}
+
+\subsection{Transferring data between data layouts}
+\label{sec:TransferDataLayouts}
+
+The conversion of vectors or matrices from the
+composite representation to the regional representation can be viewed as
+first as a conversion from composite to quasiRegional  followed by
+a second conversion from quasiRegional to regional.
+\begin{enumerate}
+ \item {\bf composite to quasiRegional:} This conversion uses an {\sf Import()} operation
+ to extract the regional data from composite matrix/vector objects, but uses quasi maps
+ for the regional objects. These quasi maps have the same GIDs
+ as the composite map. The quasi row map is similar to the composite
+ map with the exception that some interface entries are replicated.
+ \item {\bf quasiRegional to regional:} This conversion from quasiRegional to regional corresponds
+ only to changing the maps and not making any changes to the data layout and the data itself.
+ It keeps the data from the quasiRegional objects,
+ but forms objects based on true regional maps.
+ The true regional map, however, has new GIDs to represent replicated values.
+\end{enumerate}
+We also need to transform vectors from the regional layout back to the composite layout. Therefore, we just reverse the aforementioned process, i.e. we
+\begin{enumerate}
+ \item replace the vector's map with the quasiRegional map, but keep its data.
+ \item perform an {\sf Export()} operation to the composite map layout using the {\sf CombineMode = Epetra\_AddLocalAlso}.
+\end{enumerate}
+
+\subsection{Jacobi for region layouts}
+
+Applying a Jacobi smoother in region layout exhibits two major difficulties, namely
+\begin{itemize}
+\item the recovery of true diagonal matrix entries (c.f. Section~\ref{sec:RecoveryTrueDiagonal})
+\item the Matrix-vector multiplication in region layout (c.f. Section~\ref{sec:RegionalMatVec})
+\end{itemize}
+
+\subsubsection{Recovery of true diagonal matrix entries}
+\label{sec:RecoveryTrueDiagonal}
+
+At region interfaces, matrix entries associated with nodes on the interface
+have been obtained by some form of splitting operation. This is especially true for the diagonal element~$a^{reg}_{ii}$ of interface nodes.
+To recover mathematical equivalence of a region-wise Jacobi method with one applied in a composite layout,
+the true diagonal values (as in the composite problem) needs to be recovered.
+
+For general cases, true diagonal values need to be recovered by summation of the diagonal entries of all duplicated rows
+that are associated with a particular node in the composite layout.
+This might require communication if the region interface coincides with a processor interface
+and, thus, duplicated GIDs reside on different processors.
+
+In case of the basic splitting, i.e. dividing matrix entries by the number~$n_{reg}$ of adjacent regions to this node, it is guaranteed
+that the diagonal element in each duplicated row has the same value~$a^{reg}_{ii} = \frac{1}{n_{reg}}a^{comp}_{ii}$.
+The true diagonal value can then be recovered via multiplication with~$n_{reg}$.
+Implementation-wise, this can be realized by tracking the necessary scaling factors in a region vector {\sf regScaling},
+which is obtained as follows:
+\begin{enumerate}
+\item Create vector {\sf regScaling} in region layout and populate with~$1.0$ in every entry.
+\item Transfer {\sf regScaling} back to the composite layout and use an appropriate {\sf Add} operation as combine mode in the {\sf Export()} operation.
+This will not affect region-interior nodes, but will result in entries of value~$n_{reg}$ for every DOF on the region interface.
+\item Transfer the result from the composite layout back to the region layout. This will not change the vector's values,
+but will copy the interface-related entries into the interface-related DOFs in the region layout.
+\end{enumerate}
+The true diagonal values can now be recovered an element-wise multiplication of the diagonal with {\sf regScaling}.
+
+\subsubsection{Matrix-vector multiplication in region layout}
+\label{sec:RegionalMatVec}
+
+The matrix-vector multiplication in the residual is performed region-wise.
+Hence, the interface DOFs are multiplied with the 'splitted' values only, i.e. the true residual value needs to be recovered
+by exchanging these values between the duplicated DOFs and adding them into each of them.
+
+There are multiple ways to do that:
+\begin{itemize}
+\item {\bf Using {\sf Export()} to composite layout:} First, the matrix vector product {\sf vectorAX = matrixA $\cdot$ vectorX} is computed in the region layout. Then, the vector~{\sf vectorAX} is transferred to the composite layout. This includes an {\sf Export()} operation with a {\sf combineMode} that adds interface values. Finally, moving it back to the region layout transfers the summed values into the interface entries, yielding the 'true' residual. The major drawback of this approach is copying the full region vector to the composite layout and back, although operations are only necessary on the interface entries. Details on transferring data back and forth between regional and composite layouts are given in section~\ref{sec:TransferDataLayouts}.
+\item {\bf Using a data manager:} Using a data manager, that keeps track of interface and non-interface nodes as well as the duplication of interface nodes, could enable a targeted exchange of information, reducing the communication to only those values necessary.
+\end{itemize}
+
+\subsubsection{An exemplary implementation of Jacobi in a region layout}
+
+\begin{lstlisting}[language=c++]
+	Xpetra::Vector regScaling = ... // scaling factors per DOF that are
+	                                // required to recover the true diagonal
+
+  function RegionJacobi(regA, regB, regU, regScaling, omega, maxIters) {
+    // We assume that the initial solution is zero
+    // and that the initial composite residual is known
+
+    Xpetra::Vector regInvDiag = regA->getDiag(); // Extract diagonal
+    for(int dof = 0; dof < regInvDiag.size() ++dof) {
+      // Invert and rescale diagonal
+      regInvDiag[dof] = 1.0 / (regInvDiag[dof]*regScaling[dof]);
+    }
+
+    // Create work vectors
+    Xpetra::Vector regRes(regB);
+    Xpetra::Vector regAU(regB);
+    Xpetra::Vector regUIncrement(regB);
+    for(int iter = 0; iter < maxIters; ++iter) { // Iteration loop
+
+      // Compute A*U
+      regAU->setScalar(0.0);  // Reset A*U vector
+      regA->apply(regU, regAU); // Multiply regA with regU
+      regAU->synchronize(); // Synchronize regAU to update interface
+
+      // Compute residual
+      regRes->add(1.0, regB, -1.0, regAU);
+
+      // Compute solution increment
+      for(int dof = 0; dof < regInvDiag.size() ++dof) {
+        regUIncrement[dof] = regInvDiag[dof]*regRes[dof];
+      }
+
+      // Update solution
+      regU->add(omega, regUIncrement, 1.0, regU);
+    }
+  }
+\end{lstlisting}
+
+\section{Future Direction Thoughts}
+Basically, the tasks that have to happen next include
+\begin{itemize}
+%% Done. 12/18/17 mayr.mt
+%\item Add the four main functions needed to perform a regional matvec:
+%     {\sf composite2Regional()}, {\sf regional2Composite()}, {\sf quasiRegional2Regional()},
+%     and {\sf scaleMatrixInterfaceEntries()}. One great thing about doing this
+%     first is that we can easily test code correctness by comparing regional
+%     matvecs with composite matvecs. {\sf quasiRegional2Regional()} would
+%     employ the {\sf expertStaticFillComplete()} with the proper revised
+%     row and column maps that are currently being computed.  I believe the
+%     {\sf composite2Regional()} should be a pretty trivial piece of code
+%     as it correspond to the vector version of the matrix conversion
+%     between composite and regional. Here, we employ an import with
+%     the quasi-regional maps to get the proper data but the regional
+%     maps are stuffed into the resulting vector. {\sf regional2Composite()}
+%     is probably similar, but might use {\sf Export()}  and might have some
+%     other minor differences. {\sf scaleMatrixInterfaceEntries()} should
+%     be pretty easy in the 1D case (basically dividing some entries
+%     by two). This could perhaps be generalized using the {\sf regionsPerGID}
+%     data. The main thing here is that the sum of the regional matrices
+%     must add up to the original composite matrix.
+\item Make a 2D example and test/debug/update code for this case. Theoretically,
+      most of the code should be the same, but there might be debugging
+      as 2D will stress some code aspects.
+\item Convert existing code from non-RCP/Epetra pointers to something
+      more consistent with current needs (RCP/Tpetra).
+%% Done. 12/18/17 mayr.mt
+%\item Make a regional Jacobi and compare this to a composite form of Jacobi.
+\item Apply separate {\sf MueLu} invocations for each group and perhaps
+      for each region? on the 1D problem to make a 2 level solver. Not sure
+      if we should try to use
+      Luc's geometric or SA or if we should write our own simple 1D interpolator
+      to test the idea. There might be issues using Luc's code with one
+      invocation that contains multiple disconnected matrices? We should
+      probably discuss this with him.
+\item Try to do some simple two level MG with {\sf MueLu} where basically we are
+      not using MueLu's V cycle but are instead doing our own. This avoids
+      worrying about things like blocked operators at this point.
+\end{itemize}
+
+\section{Random Thoughts}
+Overall, I'm leaning towards requiring that applications either supply
+the regional form of the matrix ... or ... we are allowed to modify
+their matrix to change entries to perform the simple splitting. There
+is a chance that we could scale the matrix back after we are finished
+so that it appears to the application as unmodified. It might also be
+nice if we could optionally remove the application composite matrix once
+we have formed the regional matrices (to save on space). Thus, we would
+need to use the regional matvec in conjunction with {\sf region2Composite()}
+and {\sf composite2Region()} when performing matvecs within the Krylov solver.
+
+\appendix
+
 \section{Matlab interaction}
 To test Trilinos functionality, a combination of Matlab and a Trilinos
 C++ driver was constructed. The basic idea is to use Matlab for ``hard''
@@ -443,126 +703,6 @@ initialize vectors, convert from composite to regional views, and do matvecs ...
 version (that was based on a different composite/region philosophy that
 was deemed not scalable).
 }
-
-\section{Description Thoughts}
-\subsection{Groups}
-The notion of a group is introduced primarily to handle the case when
-processors are assigned multiple regions (and so no region spans
-across multiple processors). In particular, the number of groups is
-equal to the maximum number of regions that can be assigned to
-any processor. Only one region per processor is assigned to a group.
-In this way, both cases ({\sf regionsSpanProcs} and
-{\sf multipleRegionsPerProc}) correspond to a processor owning (perhaps only
-partially) at most one region within a group.
-Generally, this simplifies the implementation because the required
-replication of any region interface node must occur across processors.
-That is, each version of a replicated node will lie on different
-processors within a group. This appears to be a key assumption to employ various
-Trilinos {\sf Import()}/{\sf Export()} capabilities as these have
-some `one-to-one' (or non-overlappng) restrictions that we
-do not completely understand.
-Specifically, the replication of matrix rows/columns more closely
-resembles what occurs in overlapping Schwarz. Each processor
-receives rows from neighbors associated with some of its ghost
-unknowns. The main difference between the {\sf regionsSpanProcs} and
-{\sf multipleRegionsPerProc} cases is in the regional column maps.
-When each processor owns an entire region (as must always
-be true for the {\sf multipleRegionsPerProc} case and is sometimes
-true in the {\sf regionsSpanProcs} case), the regional column map is equal
-to the regional row map as there is no communication across regions, implying
-no communication between processors. When processors own a piece of
-a region, then communication must occur within a region and so
-the regional column map should include the ghost nodes that correspond
-to the same region.
-
-\subsection{quasiRegional matrices}
-Employing Trilinos {\sf Import()}/{\sf Export()} capabilities is extremely convenient
-in minimizing the coding effort. However, there are some tricky aspects
-of working with overlapping maps. With an overlapping map, some GIDs
-might appear more than once within the map (though any repeated GIDs
-will appear on different processors). When performing regional
-operations, however, we often need a replicated node to act as
-a set of distinct degrees-of-freedom (e.g., different vector values within
-different regions for the same node during most multigrid operations).
-For this reason, we will need to introduce new GID numbers to handle
-this case. To make this distinction clear, we introduce a notion of a
-quasiRegional matrix and vector. Specifically, the quasiRegional form refers to matrices and vectors where the local representation of the data is correct for
-regional computations, but the maps are not correct in terms of
-representing shared nodes distinctly. That is, data is replicated properly
-to represent a regional matrix, but the GIDs in the maps still refer to the composite form of the data, implying that the maps are not
-correct. The conversion of vectors or matrices from the
-composite representation to the regional representation can be viewed as
-first as a conversion from composite to quasiRegional  followed by
-a second conversion from quasiRegional to regional.
-\begin{enumerate}
- \item {\bf composite to quasiRegional:} This conversion uses an {\sf Import()} operation
- to extract the regional data from composite matrix/vector objects, but uses quasi maps
- for the regional objects. These quasi maps have the same GIDs
- as the composite map. The quasi row map is similar to the composite
- map with the exception that some interface entries are replicated.
- \item {\bf quasiRegional to regional:} This conversion from quasiRegional to regional corresponds
- only to changing the maps and not making any changes to the data layout and the data itself.
- It keeps the data from the quasiRegional objects,
- but forms objects based on true regional maps.
- The true regional map, however, has new GIDs to represent replicated values.
-\end{enumerate}
-We also need to transform vectors from the regional layout back to the composite layout. Therefore, we just reverse the aforementioned process, i.e. we
-\begin{enumerate}
- \item replace the vector's map with the quasiRegional map, but keep its data.
- \item perform an {\sf Export()} operation to the composite map layout using the {\sf CombineMode = Epetra\_AddLocalAlso}.
-\end{enumerate}
-
-\section{Future Direction Thoughts}
-Basically, the tasks that have to happen next include
-\begin{itemize}
-\item Add the four main functions needed to perform a regional matvec:
-     {\sf composite2Regional()}, {\sf regional2Composite()}, {\sf quasiRegional2Regional()},
-     and {\sf scaleMatrixInterfaceEntries()}. One great thing about doing this
-     first is that we can easily test code correctness by comparing regional
-     matvecs with composite matvecs. {\sf quasiRegional2Regional()} would
-     employ the {\sf expertStaticFillComplete()} with the proper revised
-     row and column maps that are currently being computed.  I believe the
-     {\sf composite2Regional()} should be a pretty trivial piece of code
-     as it correspond to the vector version of the matrix conversion
-     between composite and regional. Here, we employ an import with
-     the quasi-regional maps to get the proper data but the regional
-     maps are stuffed into the resulting vector. {\sf regional2Composite()}
-     is probably similar, but might use {\sf Export()}  and might have some
-     other minor differences. {\sf scaleMatrixInterfaceEntries()} should
-     be pretty easy in the 1D case (basically dividing some entries
-     by two). This could perhaps be generalized using the {\sf regionsPerGID}
-     data. The main thing here is that the sum of the regional matrices
-     must add up to the original composite matrix.
-\item Make a 2D example and test/debug/update code for this case. Theoretically,
-      most of the code should be the same, but there might be debugging
-      as 2D will stress some code aspects.
-\item Convert existing code from non-RCP/Epetra pointers to something
-      more consistent with current needs (RCP/Tpetra).
-\item Make a regional Jacobi and compare this to a composite form of Jacobi.
-\item Apply separate {\sf MueLu} invocations for each group and perhaps
-      for each region? on the 1D problem to make a 2 level solver. Not sure
-      if we should try to use
-      Luc's geometric or SA or if we should write our own simple 1D interpolator
-      to test the idea. There might be issues using Luc's code with one
-      invocation that contains multiple disconnected matrices? We should
-      probably discuss this with him.
-\item Try to do some simple two level MG with {\sf MueLu} where basically we are
-      not using MueLu's V cycle but are instead doing our own. This avoids
-      worrying about things like blocked operators at this point.
-\end{itemize}
-
-\section{Random Thoughts}
-Overall, I'm leaning towards requiring that applications either supply
-the regional form of the matrix ... or ... we are allowed to modify
-their matrix to change entries to perform the simple splitting. There
-is a chance that we could scale the matrix back after we are finished
-so that it appears to the application as unmodified. It might also be
-nice if we could optionally remove the application composite matrix once
-we have formed the regional matrices (to save on space). Thus, we would
-need to use the regional matvec in conjunction with {\sf region2Composite()}
-and {\sf composite2Region()} when performing matvecs within the Krylov solver.
-
-
 
 
 

@@ -66,7 +66,7 @@ namespace KokkosBatched {
             
         Kokkos::parallel_for(Kokkos::TeamThreadRange(member,0,m*n),[&](const int &ij) {
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
             const int i = ij%m, j = ij/m;
 #else
@@ -138,7 +138,7 @@ namespace KokkosBatched {
           (Kokkos::TeamThreadRange(member, mq*nq ),
            [&](const int &ij) {
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
             const int i = ij%mq*mb, j = ij/mq*nb;
 #else

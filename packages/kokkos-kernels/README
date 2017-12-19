@@ -1,3 +1,6 @@
+Kokkos C++ Performance Portability Programming EcoSystem: Math Kernels -
+Provides BLAS, Sparse BLAS and Graph Kernels 
+
 KokkosKernels implements local computational kernels for linear
 algebra and graph operations, using the Kokkos shared-memory parallel
 programming model.  "Local" means not using MPI, or running within a
@@ -19,7 +22,7 @@ Computational kernels in this subpackage include the following:
   - Gauss-Seidel with coloring (generalization of red-black)
   - Other linear algebra and graph operations
 
-Kokkos is licensed under standard 3-clause BSD terms of use.  For
+KokkosKernels is licensed under standard 3-clause BSD terms of use.  For
 specifics, please refer to the LICENSE file contained in the
 repository or distribution.
 
@@ -43,7 +46,9 @@ We organize this directory as follows:
   3. Correctness tests live in the unit_test/ subdirectory, and
      performance tests live in the perf_test/ subdirectory
 
-  4. Compact batched BLAS: Refer the README in src/stage/batched/.
+  4. Simple example scripts to build Kokkoskernels are in
+     example/buildlib/
+
 
 Do NOT use or rely on anything in the KokkosBlas::Impl namespace, or
 on anything in the impl/ subdirectory.
@@ -59,6 +64,12 @@ for certain template parameter combinations.  It also improves
 performance, since compilers have an easier time optimizing code in
 shorter .cpp files.
 
+Building Kokkoskernels
+----------------------
 
-
+  1. Modify example/buildlib/compileKokkosKernelsSimple.sh or
+     example/buildlib/compileKokkosKernels.sh for your environment
+     and run it to generate the required makefiles. 
+     
+  2. Run "make build-test" to compile the tests.
 

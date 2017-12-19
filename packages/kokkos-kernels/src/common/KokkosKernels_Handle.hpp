@@ -51,56 +51,121 @@ namespace KokkosKernels{
 
 namespace Experimental{
 
-template <class lno_row_view_t_, class lno_nnz_view_t_, class scalar_nnz_view_t_,
+template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace, class TemporaryMemorySpace, class PersistentMemorySpace>
 class KokkosKernelsHandle{
 public:
 
-  typedef ExecutionSpace HandleExecSpace;
-  typedef TemporaryMemorySpace HandleTempMemorySpace;
-  typedef PersistentMemorySpace HandlePersistentMemorySpace;
+  typedef typename ExecutionSpace::execution_space HandleExecSpace;
+  typedef typename TemporaryMemorySpace::memory_space HandleTempMemorySpace;
+  typedef typename PersistentMemorySpace::memory_space HandlePersistentMemorySpace;
+  //typedef Kokkos::Device<ExecutionSpace::execution_space,ExecutionSpace::memory_space>  HandleExecSpace;
+  //typedef Kokkos::Device<TemporaryMemorySpace::execution_space,TemporaryMemorySpace::memory_space> HandleTempMemorySpace;
+  //typedef Kokkos::Device<PersistentMemorySpace::execution_space,PersistentMemorySpace::memory_space> HandlePersistentMemorySpace;
 
-  typedef lno_row_view_t_ in_lno_row_view_t;
-  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
-  typedef scalar_nnz_view_t_ in_scalar_nnz_view_t;
 
-  typedef typename in_lno_row_view_t::non_const_value_type size_type;
-  typedef typename in_lno_row_view_t::array_layout row_lno_view_array_layout;
-  typedef typename in_lno_row_view_t::device_type row_lno_view_device_t;
-  typedef typename in_lno_row_view_t::memory_traits row_lno_view_memory_traits;
-  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
-  typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
-  typedef typename in_lno_nnz_view_t::array_layout nnz_lno_view_array_layout;
-  typedef typename in_lno_nnz_view_t::device_type nnz_lno_view_device_t;
-  typedef typename in_lno_nnz_view_t::memory_traits nnz_lno_view_memory_traits;
-  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
-  typedef typename in_scalar_nnz_view_t::non_const_value_type nnz_scalar_t;
-  typedef typename in_scalar_nnz_view_t::array_layout nnz_scalar_view_array_layout;
-  typedef typename in_scalar_nnz_view_t::device_type nnz_scalar_view_device_t;
-  typedef typename in_scalar_nnz_view_t::memory_traits nnz_scalar_view_memory_traits;
-  typedef typename in_scalar_nnz_view_t::HostMirror nnz_scalar_view_t; //Host view type
-  typedef typename in_lno_row_view_t::const_value_type const_row_lno_t;
-  typedef typename in_lno_row_view_t::const_value_type const_size_type;
-  typedef typename in_lno_row_view_t::non_const_value_type non_const_row_lno_t;
-  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
-  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
-  typedef typename in_lno_nnz_view_t::const_value_type const_nnz_lno_t;
-  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
-  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
-  typedef typename in_scalar_nnz_view_t::const_data_type const_nnz_scalar_t; //nnz_scalar_t
-  typedef typename in_scalar_nnz_view_t::non_const_data_type non_const_nnz_scalar_t;
-  typedef typename in_scalar_nnz_view_t::const_type const_scalar_nnz_view_t;
-  typedef typename in_scalar_nnz_view_t::non_const_type non_const_scalar_nnz_view_t;
+  typedef typename std::remove_const<size_type_>::type  size_type;
+  typedef const size_type const_size_type;
+
+  typedef typename std::remove_const<lno_t_>::type  nnz_lno_t;
+  typedef const nnz_lno_t const_nnz_lno_t;
+
+  typedef typename std::remove_const<scalar_t_>::type  nnz_scalar_t;
+  typedef const nnz_scalar_t const_nnz_scalar_t;
+
+  template <  typename right_size_type_, typename right_lno_t_, typename right_scalar_t_,
+  	  	  	  typename right_ExecutionSpace, typename right_TemporaryMemorySpace, typename right_PersistentMemorySpace>
+  //KokkosKernelsHandle<const_size_type,const_nnz_lno_t, const_nnz_scalar_t, HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> &operator=
+  KokkosKernelsHandle
+  	  (KokkosKernelsHandle<right_size_type_, right_lno_t_, right_scalar_t_,
+	  	  	  right_ExecutionSpace, right_TemporaryMemorySpace, right_PersistentMemorySpace> & right_side_handle){
+
+	  static_assert (std::is_same<size_type_,  const_size_type>::value,
+			  "Kernel handle left hand side should have const size type in assignment");
+	  static_assert (std::is_same<lno_t_,  const_nnz_lno_t>::value,
+			  "Kernel handle left hand side should have const lno type in assignment");
+	  static_assert (std::is_same<scalar_t_,  const_nnz_scalar_t>::value,
+			  "Kernel handle left hand side should have const scalar type in assignment");
+
+	  static_assert (std::is_same<ExecutionSpace,  HandleExecSpace>::value,
+			  "Kernel handle left hand side should have execution space in assignment");
+	  static_assert (std::is_same<TemporaryMemorySpace,  HandleTempMemorySpace>::value,
+			  "Kernel handle left hand side should have temp memory space in assignment");
+	  static_assert (std::is_same<PersistentMemorySpace,  HandlePersistentMemorySpace>::value,
+			  "Kernel handle left hand side should have persistent memory space in assignment");
+
+	  typedef typename  std::remove_const<right_size_type_>::type  nonconst_right_size_type;
+	  typedef const nonconst_right_size_type const_right_size_type;
+
+	  typedef typename  std::remove_const<right_lno_t_>::type  nonconst_right_lno_t;
+	  typedef const nonconst_right_lno_t const_right_lno_t;
+
+	  typedef typename  std::remove_const<right_scalar_t_>::type  nonconst_right_scalar_t;
+	  typedef const nonconst_right_scalar_t const_right_scalar_t;
+
+
+
+
+	  static_assert (std::is_same<size_type_,  const_right_size_type>::value,
+			  "Kernel handle left and right sides should have same size type in assignment");
+	  static_assert (std::is_same<lno_t_,  const_right_lno_t>::value,
+			  "Kernel handle left and right sides should have same lno type in assignment");
+	  static_assert (std::is_same<scalar_t_,  const_right_scalar_t>::value,
+			  "Kernel handle left and right sides should have same scalar type in assignment");
+
+
+
+	  static_assert (std::is_same<typename ExecutionSpace::execution_space,  typename right_ExecutionSpace::execution_space>::value,
+			  "Kernel handle left and right sides should have same execution_space in assignment");
+	  /*
+	  static_assert (std::is_same<typename TemporaryMemorySpace::execution_space, typename right_TemporaryMemorySpace::execution_space>::value,
+			  "Kernel handle left and right sides should have same TemporaryMemorySpace in assignment");
+	  static_assert (std::is_same<typename PersistentMemorySpace::execution_space, typename right_PersistentMemorySpace::execution_space>::value,
+			  "Kernel handle left and right sides should have same PersistentMemorySpace in assignment");
+      */
+	  static_assert (std::is_same<typename ExecutionSpace::memory_space, typename right_ExecutionSpace::memory_space>::value,
+			  "Kernel handle left and right sides should have same ExecutionSpace in assignment");
+	  static_assert (std::is_same<typename TemporaryMemorySpace::memory_space, typename right_TemporaryMemorySpace::memory_space>::value,
+			  "Kernel handle left and right sides should have same TemporaryMemorySpace in assignment");
+	  static_assert (std::is_same<typename PersistentMemorySpace::memory_space, typename right_PersistentMemorySpace::memory_space>::value,
+			  "Kernel handle left and right sides should have same PersistentMemorySpace in assignment");
+
+
+	  this->gcHandle = right_side_handle.get_graph_coloring_handle();
+	  this->gsHandle = right_side_handle.get_gs_handle();
+	  this->spgemmHandle = right_side_handle.get_spgemm_handle();
+
+
+	  this->team_work_size = right_side_handle.get_set_team_work_size();
+	  this->shared_memory_size = right_side_handle.get_shmem_size();
+	  this->suggested_team_size = right_side_handle.get_set_suggested_team_size();
+
+	  this->my_exec_space = right_side_handle.get_handle_exec_space();
+	  this->use_dynamic_scheduling = right_side_handle.is_dynamic_scheduling();
+	  this->KKVERBOSE = right_side_handle.get_verbose();
+	  this->vector_size = right_side_handle.get_set_suggested_vector_size();
+
+	  is_owner_of_the_gc_handle = false;
+	  is_owner_of_the_gs_handle = false;
+	  is_owner_of_the_spgemm_handle = false;
+	  //return *this;
+  }
+
+
   typedef typename KokkosGraph::GraphColoringHandle
-      <in_lno_row_view_t, non_const_lno_nnz_view_t, in_lno_nnz_view_t,
-      ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> GraphColoringHandleType;
+      <const_size_type, const_nnz_lno_t, const_nnz_lno_t,
+	  HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> GraphColoringHandleType;
   typedef typename KokkosSparse::GaussSeidelHandle
-      <in_lno_row_view_t, in_lno_nnz_view_t, in_scalar_nnz_view_t,
-      ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> GaussSeidelHandleType;
+      <const_size_type, const_nnz_lno_t, const_nnz_scalar_t,
+	  HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> GaussSeidelHandleType;
 
   typedef typename KokkosSparse::SPGEMMHandle
-      <in_lno_row_view_t, in_lno_nnz_view_t, in_scalar_nnz_view_t,
-      ExecutionSpace, TemporaryMemorySpace, PersistentMemorySpace> SPGEMMHandleType;
+      <const_size_type, const_nnz_lno_t, const_nnz_scalar_t,
+	  HandleExecSpace, HandleTempMemorySpace, HandlePersistentMemorySpace> SPGEMMHandleType;
+
+
+  typedef typename Kokkos::View<nnz_scalar_t *, HandleTempMemorySpace> in_scalar_nnz_view_t;
+
 
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> size_type_temp_work_view_t;
@@ -117,9 +182,11 @@ public:
   typedef typename Kokkos::View<bool *, HandleTempMemorySpace> bool_temp_view_t;
 
 private:
+
   GraphColoringHandleType *gcHandle;
   GaussSeidelHandleType *gsHandle;
   SPGEMMHandleType *spgemmHandle;
+
   int team_work_size;
   size_t shared_memory_size;
   int suggested_team_size;
@@ -128,6 +195,12 @@ private:
   bool use_dynamic_scheduling;
   bool KKVERBOSE;
   int vector_size;
+
+  bool is_owner_of_the_gc_handle;
+  bool is_owner_of_the_gs_handle;
+  bool is_owner_of_the_spgemm_handle;
+
+
 public:
 
 
@@ -137,7 +210,8 @@ public:
       team_work_size (-1), shared_memory_size(16128),
       suggested_team_size(-1),
       my_exec_space(KokkosKernels::Impl::kk_get_exec_space_type<HandleExecSpace>()),
-      use_dynamic_scheduling(true), KKVERBOSE(false),vector_size(-1){}
+      use_dynamic_scheduling(true), KKVERBOSE(false),vector_size(-1),
+	  is_owner_of_the_gc_handle(true), is_owner_of_the_gs_handle(true), is_owner_of_the_spgemm_handle(true){}
 
   ~KokkosKernelsHandle(){
     this->destroy_gs_handle();
@@ -168,7 +242,9 @@ public:
   void set_team_work_size(const int team_work_size_){
     this->team_work_size = team_work_size_;
   }
-
+  int get_set_team_work_size(){
+    return this->team_work_size;
+  }
   /**
    * \brief Returns the enum type for the execution space.
    */
@@ -252,6 +328,9 @@ public:
     this->vector_size = vector_size_;
   }
 
+  int get_set_suggested_vector_size(){
+    return this->vector_size;
+  }
   /**
    * \brief Sets the team size to be used by the kernels. On GPUs and CPUs
    * usually the defaults are fine. But on CPUs with hyperthreads it might be
@@ -262,6 +341,9 @@ public:
     this->suggested_team_size = suggested_team_size_;
   }
 
+  int get_set_suggested_team_size(){
+    return this->suggested_team_size;
+  }
 
 
   /**
@@ -286,11 +368,12 @@ public:
 
   void create_spgemm_handle(KokkosSparse::SPGEMMAlgorithm spgemm_algo = KokkosSparse::SPGEMM_DEFAULT){
     this->destroy_spgemm_handle();
+    this->is_owner_of_the_spgemm_handle = true;
     this->spgemmHandle = new SPGEMMHandleType(spgemm_algo);
-
   }
+
   void destroy_spgemm_handle(){
-    if (this->spgemmHandle != NULL){
+    if (is_owner_of_the_spgemm_handle && this->spgemmHandle != NULL){
       delete this->spgemmHandle;
       this->spgemmHandle = NULL;
     }
@@ -301,11 +384,12 @@ public:
   }
   void create_graph_coloring_handle(KokkosGraph::ColoringAlgorithm coloring_type = KokkosGraph::COLORING_DEFAULT){
     this->destroy_graph_coloring_handle();
+    this->is_owner_of_the_gc_handle = true;
     this->gcHandle = new GraphColoringHandleType();
     this->gcHandle->set_algorithm(coloring_type, true);
   }
   void destroy_graph_coloring_handle(){
-    if (this->gcHandle != NULL){
+    if (is_owner_of_the_gc_handle &&  this->gcHandle != NULL){
       delete this->gcHandle;
       this->gcHandle = NULL;
     }
@@ -318,10 +402,11 @@ public:
   void create_gs_handle(
     KokkosSparse::GSAlgorithm gs_algorithm = KokkosSparse::GS_DEFAULT){
     this->destroy_gs_handle();
+    this->is_owner_of_the_gs_handle = true;
     this->gsHandle = new GaussSeidelHandleType(gs_algorithm);
   }
   void destroy_gs_handle(){
-    if (this->gsHandle != NULL){
+    if (is_owner_of_the_gs_handle && this->gsHandle != NULL){
       if (this->gsHandle->is_owner_of_coloring()){
         this->destroy_graph_coloring_handle();
       }

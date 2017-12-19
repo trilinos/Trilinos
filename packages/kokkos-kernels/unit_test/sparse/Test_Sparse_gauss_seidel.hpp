@@ -83,8 +83,14 @@ int run_gauss_seidel_1(
   typedef typename graph_t::entries_type   lno_nnz_view_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
 
+
+
+  typedef typename lno_view_t::value_type size_type;
+  typedef typename lno_nnz_view_t::value_type lno_t;
+  typedef typename scalar_view_t::value_type scalar_t;
+
   typedef KokkosKernelsHandle
-      <lno_view_t,lno_nnz_view_t, scalar_view_t,
+      <size_type,lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 
 

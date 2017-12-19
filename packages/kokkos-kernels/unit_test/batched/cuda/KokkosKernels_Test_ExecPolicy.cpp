@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   std::cout << "\n\n Testing Cuda Range, Team, Vector Policy double \n";
-#if defined(KOKKOS_HAVE_CUDA)
+#if defined(KOKKOS_ENABLE_CUDA)
   KokkosKernels::Test::ExecPolicy<Kokkos::Cuda,double,0>();
   KokkosKernels::Test::ExecPolicy<Kokkos::Cuda,double,1>();
   KokkosKernels::Test::ExecPolicy<Kokkos::Cuda,double,2>();
