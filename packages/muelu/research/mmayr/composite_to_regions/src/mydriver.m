@@ -212,6 +212,7 @@ mkAppData(allMyNodes,allMyRegions,nProcs,whichCase);
 !cat myData_*
 waitForRmDataFiles(nProcs);
 
+% send('PrintCompositeMatrix',nProcs);
 send('MakeGrpRegRowMaps',nProcs);
 send('MakeGrpRegColMaps',nProcs);
 send('MakeQuasiRegionMatrices',nProcs);

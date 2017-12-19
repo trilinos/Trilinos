@@ -447,6 +447,9 @@ int main(int argc, char *argv[]) {
     else if (strcmp(command,"ReadMatrix") == 0) {
        EpetraExt::MatrixMarketFileToCrsMatrix("Amat.mm", *mapComp, AComp);
     }
+    else if (strcmp(command,"PrintCompositeMatrix") == 0) {
+      AComp->Print(std::cout);
+    }
     else if (strcmp(command,"LoadAndCommRegAssignments") == 0) {
 
       Epetra_MultiVector *regionsPerGID= new Epetra_MultiVector(AComp->RowMap(),maxRegPerGID);
