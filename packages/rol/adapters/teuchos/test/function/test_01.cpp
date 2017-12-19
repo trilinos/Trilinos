@@ -268,10 +268,10 @@ int main( int argc, char *argv[] ) {
 
     problem.check(*outStream);
 
-    //Teuchos::ParameterList emptyList;
+    Teuchos::ParameterList emptyList;
 
-    //ROL::OptimizationSolver<RealT> solver(problem,emptyList);
-    //solver.solve(*outStream);
+    ROL::OptimizationSolver<RealT> solver(problem,emptyList);
+    solver.solve(*outStream);
 
 
   }
