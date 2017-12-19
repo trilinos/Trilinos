@@ -83,17 +83,14 @@ evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
          typename Traits::EvalData workset)
 {
   const int cell = team.league_rank();
-  auto grad_basis = workset.grad_basis_real_;
-  auto weights = workset.weights_;
-  auto cell_measure = workset.det_jac_;
-  
-  // Make residual atomic so that AMT mode can sum diffusion and source terms at same time
-  Kokkos::View<ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>> residual_atomic = residual;
+  const auto& grad_basis = workset.grad_basis_real_;
+  const auto& weights = workset.weights_;
+  const auto& cell_measure = workset.det_jac_;
 
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis.extent(2)), [=] (const int& basis) {
-      for (int qp = 0; qp < static_cast<int>(grad_basis.extent(1)); ++qp)
-        for (int dim = 0; dim < static_cast<int>(grad_basis.extent(3)); ++dim)
-          residual_atomic(cell,basis) +=  - grad_basis(cell,qp,basis,dim) * flux(cell,qp,dim) * weights(qp) * cell_measure(cell,qp);
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_basis.extent(2)), [&] (const int& basis) {
+    for (int qp = 0; qp < static_cast<int>(grad_basis.extent(1)); ++qp)
+      for (int dim = 0; dim < static_cast<int>(grad_basis.extent(3)); ++dim)
+	residual(cell,basis) +=  - grad_basis(cell,qp,basis,dim) * flux(cell,qp,dim) * weights(qp) * cell_measure(cell,qp);
   });
 }
 
