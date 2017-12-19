@@ -44,8 +44,8 @@ namespace phx_example {
       print_residual_(false),
       print_jacobian_(false),
       print_to_file_(false),
-      team_size_(-1), // value for Kokkos::AUTO
-      vector_size_(1), // default for Kokkos
+      team_size_(1),
+      vector_size_(1),
       do_graph_analysis_(true)
     {
       // Set better defaults for team/vector size based on arcitecture
