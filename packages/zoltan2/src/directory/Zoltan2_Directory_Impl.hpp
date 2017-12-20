@@ -389,6 +389,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     case Update_Mode::Aggregate:
       throw std::logic_error("Tpetra mode won't support Aggregate.");
       break;
+    case Update_Mode::AggregateAdd:
+      throw std::logic_error("Tpetra mode won't support AggregateAdd.");
+      break;
   }
 
 #else
@@ -774,6 +777,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
             *puser += *user;
             break;
           case Update_Mode::Aggregate:
+            throw std::logic_error("Aggregate doesn't have meaning for single type.");
+            break;
+          case Update_Mode::AggregateAdd:
             throw std::logic_error("Aggregate doesn't have meaning for single type.");
             break;
         }

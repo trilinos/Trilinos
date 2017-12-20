@@ -52,6 +52,7 @@
 #include <Zoltan2_EvaluatePartition.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <stdlib.h>
 #include <vector>
 
@@ -66,9 +67,35 @@ using namespace std;
 using std::endl;
 using std::cout;
 
-
+template<class idInput_t>
 void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   int nWeights, int numLocalParts, bool givePartSizes);
+
+typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> user_t;
+
+// for testing basic input adapter
+typedef Zoltan2::BasicIdentifierAdapter<user_t> basic_idInput_t;
+
+// for testing graph adapter
+typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tcrsGraph_t;
+typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, user_t> graph_idInput_t;
+
+// creates this so we can run the test suite over BasicIdentifierAdapter
+// and XpetraCrsGraphAdapter
+template<class idInput_t> void runTestSuite(RCP<const Comm<int> > comm) {
+  doTest<idInput_t>(comm, 10, 0, -1, false);
+  doTest<idInput_t>(comm, 10, 0,  1, false);
+  doTest<idInput_t>(comm, 10, 0,  1, true);
+  doTest<idInput_t>(comm, 10, 1,  1, false);
+  doTest<idInput_t>(comm, 10, 1,  1, true);
+  doTest<idInput_t>(comm, 10, 2,  1, false);
+  doTest<idInput_t>(comm, 10, 2,  1, true);
+  doTest<idInput_t>(comm, 10, 1,  2, true);
+  doTest<idInput_t>(comm, 10, 1,  2, false);
+  doTest<idInput_t>(comm, 10, 1, -1, false);
+  doTest<idInput_t>(comm, 10, 1, -1, true);
+  doTest<idInput_t>(comm, 10, 2, -1, false);
+}
 
 int main(int argc, char *argv[])
 {
@@ -76,32 +103,221 @@ int main(int argc, char *argv[])
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   int rank = comm->getRank();
 
-  doTest(comm, 10, 0, -1, false);
-  doTest(comm, 10, 0, 1, false);
-  doTest(comm, 10, 0, 1, true);
-  doTest(comm, 10, 1, 1, false);
-  doTest(comm, 10, 1, 1, true);
-  doTest(comm, 10, 2, 1, false);
-  doTest(comm, 10, 2, 1, true);
-  doTest(comm, 10, 1, 2, true);
-  doTest(comm, 10, 1, 2, false);
-  doTest(comm, 10, 1, -1, false);
-  doTest(comm, 10, 1, -1, true);
-  doTest(comm, 10, 2, -1, false);
+  // do some tests with BasicIdentifierAdapter
+  runTestSuite<basic_idInput_t>(comm);
 
+  // now some tests with XpetraCrsGraphAdapter
+  // Note that right now these are all going to produce the same graph
+  // metrics but could be developed further
+  runTestSuite<graph_idInput_t>(comm);
+  
   if (rank==0)
     cout << "PASS" << endl;
 }
 
-// Assumes numLocalObj is the same on every process.
+template<class idInput_t>
+int evaluate_result(RCP<const Comm<int> > comm,
+  RCP<Zoltan2::EvaluatePartition<idInput_t>> metric,
+  int numLocalObjs, int numGlobalParts) {
+    throw std::logic_error("evaluate_result not implemented.");
+}
 
+template<>
+int evaluate_result<graph_idInput_t>(RCP<const Comm<int> > comm,
+  RCP<Zoltan2::EvaluatePartition<graph_idInput_t>> metric,
+  int numLocalObjs, int numGlobalParts) {
+
+  int fail = 0;
+
+  // first just confirm we can read getTotalEdgeCut()
+  if(comm->getRank() == 0) { // getTotalEdgeCut() is global, just check rank 0
+    int total_edge_cut;
+    try{
+      // TODO: the unweighted getTotalEdgeCut is an integer
+      // maybe the API should be changed for this and other similar cases
+      total_edge_cut = static_cast<int>(metric->getTotalEdgeCut());
+      cout << "Total Edge Cut: " << total_edge_cut << endl;
+    }
+    catch (std::exception &e){
+      fail=1;
+    }
+
+    int max_edge_cut;
+    try{
+      max_edge_cut = static_cast<int>(metric->getMaxEdgeCut());
+      cout << "Max Edge Cut: " << max_edge_cut << endl;
+    }
+    catch (std::exception &e){
+      fail=1;
+    }
+
+    int total_messages;
+    try{
+      total_messages = static_cast<int>(metric->getTotalMessages());
+      cout << "Total Messages: " << total_messages << endl;
+    }
+    catch (std::exception &e){
+      fail=1;
+    }
+
+    int max_messages;
+    try{
+      max_messages = static_cast<int>(metric->getMaxMessages());
+      cout << "Max Messages: " << max_messages << endl;
+    }
+    catch (std::exception &e){
+      fail=1;
+    }
+
+    // Now let's check our numbers
+    // Here we do a calculation of what getTotalEdgeCut should return based on
+    // how we set things up in create_adapter.
+    // Currently the algorithm simply has every object create two links, one
+    // to the first global id and one to the last.
+    // Two of the procs will contain one of those global ids so they only have
+    // edge cuts equal to numLocalObjs to send to the other.
+    // So that is the (2 * numLocalObjs) term.
+    // All other procs will contain neither of those global ids so they have
+    // to send their objects to two procs.
+    // So that is the ((num_procs-2) * numLocalObjs * 2 term.
+    int num_procs = comm->getSize();
+    // also handle edge case of num_procs less than 2 - no edge cuts then
+    int expected_total_edge_cuts = (num_procs == 1) ? 0 :
+      (2 * numLocalObjs) + ((num_procs-2) * numLocalObjs * 2);
+
+    // now we validate
+    if(total_edge_cut != expected_total_edge_cuts) {
+      printf("We expected total edge cuts to be %d but got %d. ",
+        expected_total_edge_cuts, total_edge_cut);
+      fail = 1;
+    }
+
+    // we can also calculate max edge cuts
+    // if num_procs 1, then it's 0
+    // if num_procs 2, then it's numLocalObjs
+    // otherwise it's 2 * numLocalObjs because at least one proc is sending
+    // to two other procs
+    int expected_max_edge_cuts = (num_procs == 1) ? 0 :
+      (num_procs == 2) ? numLocalObjs : numLocalObjs * 2;
+
+    // now we validate
+    if(max_edge_cut != expected_max_edge_cuts) {
+      printf("We expected max edge cuts to be %d but got %d. ",
+        expected_total_edge_cuts, total_edge_cut);
+      fail = 1;
+    }
+
+    // now check total messages - in present form we can simply divide but in
+    // future things could be generalized
+    int expected_total_messages = expected_total_edge_cuts / numLocalObjs;
+    // now we validate
+    if(total_messages != expected_total_messages) {
+      printf("We expected total messages to be %d but got %d. ",
+        expected_total_messages, total_messages);
+      fail = 1;
+    }
+
+    // now check max messages - in present form we can simply divide but in
+    // future things could be more generalized
+    int expected_max_messages = expected_max_edge_cuts / numLocalObjs;
+    // now we validate
+    if(max_messages != expected_max_messages) {
+      printf("We expected max messages to be %d but got %d. ",
+        expected_max_messages, max_messages);
+      fail = 1;
+    }
+  }
+  
+  return fail;
+}
+
+template<>
+int evaluate_result<basic_idInput_t>(RCP<const Comm<int> > comm,
+  RCP<Zoltan2::EvaluatePartition<basic_idInput_t>> metric,
+  int numLocalObjs, int numGlobalParts) {
+
+  // TODO - I set evaluate_result up to implement some validation of the
+  // graph metrics utility methods. However we could extend this to imbalance
+  // metrics. Just want to review the setup before going to far.
+  return 0;
+}
+
+template<class idInput_t>
+idInput_t * create_adapter(RCP<const Comm<int> > comm,
+  int numLocalObj, zgno_t *myGids,
+  std::vector<const zscalar_t *> & weights,
+  std::vector<int> & strides) {
+    throw std::logic_error("create_adapter not implemented.");
+}
+
+template<>
+graph_idInput_t * create_adapter<graph_idInput_t>(RCP<const Comm<int> > comm,
+  int numLocalObj, zgno_t *myGids,
+  std::vector<const zscalar_t *> & weights,
+  std::vector<int> & strides) {
+
+  typedef Tpetra::Map<zlno_t, zgno_t> map_t;
+  typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t> matrix_t;
+
+  const zgno_t gNvtx = numLocalObj * comm->getSize();
+  const Teuchos::ArrayView<const zgno_t> indexList(myGids, numLocalObj);
+  Teuchos::RCP<const map_t> map = rcp(new map_t(gNvtx, indexList, 0, comm));
+
+  // Make some stuff in the graph
+  size_t maxRowLen = 1;
+  Teuchos::RCP<matrix_t> matrix = rcp(new matrix_t(map, maxRowLen));
+  
+  // TODO: Need to decide what a good test graph is
+  // Something we can easily calculate the final result for as we'd like to
+  // validate this but not end up rewriting the algorithm we are testing.
+  // For starters I simply have each graph element create two links to the
+  // first global index and last. That means two procs will have edge cuts
+  // equal to their numLocalObj while the rest will have 2 * numLocalObj
+  //
+  // Two of the procs will have only 1 message to send
+  // The other procs will have 2 messages to send
+  // Message max is 2
+  // Message total is going to be (2)*2 + (numProcs-2)*2
+  Teuchos::Array<zgno_t> col(2);
+  Teuchos::Array<zscalar_t> val(2); val[0] = 1.; val[1] = 1.;
+  zgno_t first_id = map->getMinAllGlobalIndex();
+  zgno_t last_id = map->getMaxAllGlobalIndex();
+  for (zlno_t i = 0; i < numLocalObj; i++) { 
+    zgno_t id = map->getGlobalElement(i);
+    col[0] = first_id;
+    col[1] = last_id;
+    matrix->insertGlobalValues(id, col(), val());
+  }
+
+  matrix->fillComplete(map, map);
+  
+  size_t nVwgts = weights.size();
+  graph_idInput_t * adapter = new graph_idInput_t(matrix->getCrsGraph(), nVwgts);
+  
+  // Set the weights
+  for (size_t j = 0; j < nVwgts; j++) {
+    adapter->setWeights(weights[j], 1, j);    
+  }
+
+  return adapter;
+}
+
+template<>
+basic_idInput_t * create_adapter<basic_idInput_t>(RCP<const Comm<int> > comm,
+  int numLocalObj, zgno_t *myGids,
+  std::vector<const zscalar_t *> & weights,
+  std::vector<int> & strides) {
+  return new basic_idInput_t(numLocalObj, myGids, weights, strides);
+}
+
+// Assumes numLocalObj is the same on every process.
+template<class idInput_t>
 void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   int nWeights, int numLocalParts, bool givePartSizes)
 {
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> user_t;
-  typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
   typedef Zoltan2::EvaluatePartition<idInput_t> quality_t;
-  typedef idInput_t::part_t part_t;
+
+  typedef typename idInput_t::part_t part_t;
 
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -199,8 +415,8 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
   idInput_t *ia = NULL;
 
-  try{
-    ia = new idInput_t(numLocalObj, myGids, weights, strides);
+  try {
+    ia = create_adapter<idInput_t>(comm, numLocalObj, myGids, weights, strides);
   }
   catch (std::exception &e){
     fail=1;
@@ -296,5 +512,14 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   }
 
   TEST_FAIL_AND_EXIT(*comm, fail==0, "print metrics", 1);
+  
+  // Now evaluate the result for precision of the results
+  // TODO: I'd like to discuss these ideas further before continuing
+  // To prototype this, I'll just validate the graph adapter getMaxEdgeCut()
+  // method.
+  fail = evaluate_result<idInput_t>(comm, metricObject,
+    numLocalObj, numGlobalParts);
+  TEST_FAIL_AND_EXIT(*comm, fail==0, "evaluate_result", 1);
+
   delete ia;
 }

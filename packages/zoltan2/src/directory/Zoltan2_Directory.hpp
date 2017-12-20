@@ -178,8 +178,15 @@ class Zoltan2_Directory {
     enum Update_Mode {
       Replace = 0, /*!< \brief The new value replaces the original value. */
       Add, /*!< \brief All values from different procs are summed. */
-      Aggregate /*!< \brief For std::vector user data, aggregates all data
+      Aggregate, /*!< \brief For std::vector user data, aggregates all data
                             so for example [1,2,5] and [3,5] becomes [1,2,3,5]*/
+      AggregateAdd /*!< \brief In progress and needs discussion. Currently this
+                         mode will use operator== to determine if two items match
+                         and then user operator += to aggregate them together,
+                         which allows a custom struct user data type to define
+                         how aggregation works. Did this for graph metrics work.
+                         Note that this mode currently won't worry about sorting
+                         the order but that could be handled through operator>.*/
     };
 
     /*! \brief Construct Zoltan2_Directory (abstract class). */
@@ -241,6 +248,24 @@ class Zoltan2_Directory {
     bool is_use_lid() const { return use_lid; }
 
   #ifdef CONVERT_DIRECTORY_KOKKOS
+    void get_locally_managed_gids(std::vector<gid_t> & local_gids) const {
+      // resize
+      local_gids.resize(node_map.size());
+
+      // fill
+      size_t cnt = 0;
+      for(size_t n = 0; n < node_map.capacity(); ++n) {
+        if(node_map.value_at(n).free == 0) {
+          local_gids[cnt++] = node_map.key_at(n);
+        }
+      }
+
+      if(cnt != node_map.size()) {
+        throw std::logic_error("Unexpected counts. Internal error with the"
+          " node_map behavior.");
+      }
+    }
+
     void remap_user_data_as_unique_gids() {
       // This process follows the pattern of the original unique ids setup
       // It assumes we have updated the directory with keys (as the gid_t) and
@@ -452,6 +477,10 @@ class Zoltan2_Directory_Simple : public Zoltan2_Directory<gid_t, lid_t, user_t> 
           throw std::logic_error("Aggregate doesn't mean anything for single "
             "types. Must use Zoltan2_Directory_Vector class.");
           break;
+        case Zoltan2_Directory<gid_t,lid_t,user_t>::Update_Mode::AggregateAdd:
+          throw std::logic_error("AggregateAdd doesn't mean anything for single "
+            "types. Must use Zoltan2_Directory_Vector class.");
+          break;
       }
     }
 
@@ -580,15 +609,17 @@ class Zoltan2_Directory_Vector : public Zoltan2_Directory<gid_t, lid_t, user_t> 
           //   [1,4,5,6,7,10]
           for(size_t i = 0; i < read_array_length; ++i) {
             // handle the cases of dst no size or adding past last element
-            if(dst.size() == 0 ||
-              (*pRead) > dst[dst.size()-1]) {
-              user_val_t theValue = (*pRead);
-              dst.push_back(theValue); // add first element or at end
+            if(dst.size() == 0 || (*pRead) > dst[dst.size()-1]) {
+              dst.push_back(*pRead); // add first element or at end
             }
             else {
               // otherwise we are going to insert unless it's not unique
               for(auto itr = dst.begin(); itr != dst.end(); ++itr) {
                 if((*itr) == (*pRead)) { // do they match
+                  if(this->mode == Zoltan2_Directory<gid_t,lid_t,user_t>::
+                  Update_Mode::AggregateAdd) {
+                    (*itr) += (*pRead); // do the AggregateAdd action using +=
+                  }
                   break; // break because it's already in there - do nothing
                 }
                 else if((*itr) > (*pRead)) { // is scanned element larger?
@@ -601,6 +632,62 @@ class Zoltan2_Directory_Vector : public Zoltan2_Directory<gid_t, lid_t, user_t> 
           }
         }
         break;
+        case Zoltan2_Directory<gid_t,lid_t,user_t>::Update_Mode::AggregateAdd: {
+          // AggregateAdd is similar to Aggregate except that when two items
+          // match through the operator==, they are combined using operator+=
+          // instead of excluding the duplicate. This reliance on operator==
+          // and operator+= allows the user to define the behavior for the
+          // struct but needs design discussion. This example struct was taken
+          // from Zoltan2_GraphMetricsUtility.hpp which was the origina reason
+          // for adding this mode.
+          /*
+              struct part_info {
+                part_info() : sum_weights(0) {
+                }
+                const part_info & operator+=(const part_info & src) {
+                  sum_weights += src.sum_weights;
+                  return *this;   // return old value
+                }
+                bool operator>(const part_info & src) {
+                  return (target_part > src.target_part);
+                }
+                bool operator==(const part_info & src) {
+                  return (target_part == src.target_part);
+                }
+                part_t target_part;     // the part this part_info refers to
+                t_scalar_t sum_weights; // the sum of weights
+              };
+          */
+          // Then if we use AggregateAdd the following example shows how the
+          // struct with part_t 1 will have sum_weights combined:
+          //
+          //                    Proc 1          Proc 2        Result
+          //  part_t           0      1         1    3       0     1     3
+          //  sum_weights     1.0    1.0       2.0  2.0     1.0   3.0   2.0
+          //
+          // TODO: We could make this almost identical to above Aggregate and
+          // preserve ordering. Then the only difference is that Aggregate just
+          // does nothing when two elements are the same while AggregateAdd will
+          // combine them with += operator. Did not implement yet since
+          // Zoltan2_GraphMetricsUtility.hpp didn't have parts ordered and I
+          // wasn't sure yet if we'd want to make that a requirement.
+          for(size_t i = 0; i < read_array_length; ++i) {
+            bool bMatch = false;
+            for(auto itr = dst.begin(); itr != dst.end(); ++itr) {
+              if((*itr) == (*pRead)) { // determine if they go together using ==
+                (*itr) += (*pRead); // do the AggregateAdd action using +=
+                bMatch = true;
+                break;
+              }
+            }
+            if(!bMatch) {
+              dst.push_back(*pRead); // add first element or at end
+            }
+            ++pRead; // get the next incoming array element (*pRead)
+          }
+        }
+        break;
+
       }
     }
 

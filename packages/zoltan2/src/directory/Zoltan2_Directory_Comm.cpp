@@ -412,11 +412,8 @@ int Zoltan2_Directory_Comm::invert_map(
   }
 
   // TODO: Teuchos::MpiComm<Ordinal>::broadcast(...)
-#ifdef HAVE_MPI
-  MPI_Bcast(&max_nrecvs, 1, MPI_INT, 0, Teuchos::getRawMpiComm(*comm));
-#else
-  MPI_Bcast(&max_nrecvs, 1, MPI_INT, 0, MPI_COMM_WORLD);
-#endif
+
+  MPI_Bcast(&max_nrecvs, 1, MPI_INT, 0, getRawComm());
 
   if(nrecvs > 0) {
     lengths_from.resize(nrecvs);   /* number of items I'm receiving */
