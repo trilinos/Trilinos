@@ -81,9 +81,11 @@ void GatherSolution<PHX::MyTraits::Residual,Traits>::
 operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,field.extent(1)), [=] (const int& node) {
+  if (team.team_rank() == 0) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,field.extent(1)), [&] (const int& node) {
       field(cell,node) = x( gids(cell_global_offset_index+cell,node) * num_equations + field_index);
-  });
+    });
+  }
 }
 
 // **********************************************************************
@@ -122,10 +124,12 @@ void GatherSolution<PHX::MyTraits::Jacobian,Traits>::
 operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,field.extent(1)), [=] (const int& node) {
+  if (team.team_rank() == 0) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,field.extent(1)), [&] (const int& node) {
       field(cell,node).val() = x(gids(cell_global_offset_index+cell,node) * num_equations + field_index);
       field(cell,node).fastAccessDx(num_equations * node + field_index) = 1.0;
-  });
+    });
+  }
 }
 
 /*

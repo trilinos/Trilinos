@@ -28,6 +28,7 @@
 #include "Teuchos_Assert.hpp"
 
 int LIDregion(void *ptr, int LIDcomp, int whichGrp);
+int LID2Dregion(void *ptr, int LIDcomp, int whichGrp);
 
 // this little widget handles application specific data
 // used to implement LIDregion()
@@ -39,6 +40,14 @@ struct widget {
    int maxRegPerGID;
    Epetra_MultiVector *regionsPerGIDWithGhosts;
    int *gDim, *lDim, *lowInd;
+   int       *trueCornerx; // global coords of region 
+   int       *trueCornery; // corner within entire 2D mesh
+   int       *relcornerx;  // coords of corner relative
+   int       *relcornery;  // to region corner
+   int       *lDimx;
+   int       *lDimy;
+   int        nx;
+int myRank;
 };
 
 void stripTrailingJunk(char *command);
@@ -155,7 +164,9 @@ void createRegionalVector(std::vector<Epetra_Vector*>& regVecs,
   return;
 }
 
-std::vector<Epetra_Vector*> computeResidual(const std::vector<Epetra_Vector*> regX, ///< left-hand side (solution)
+std::vector<Epetra_Vector*> computeResidual(
+    std::vector<Epetra_Vector*>& regRes, ///< residual (to be evaluated)
+    const std::vector<Epetra_Vector*> regX, ///< left-hand side (solution)
     const std::vector<Epetra_Vector*> regB, ///< right-hand side (forcing term)
     std::vector<Epetra_CrsMatrix*> regionGrpMats,
     Epetra_Map* mapComp, ///< composite map, computed by removing GIDs > numDofs in revisedRowMapPerGrp
@@ -165,10 +176,6 @@ std::vector<Epetra_Vector*> computeResidual(const std::vector<Epetra_Vector*> re
     )
 {
   const int maxRegPerProc = regX.size();
-  std::vector<Epetra_Vector*> regRes(maxRegPerProc);
-  for (int j = 0; j < maxRegPerProc; j++) { // step 1
-    regRes[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
-  }
 
   /* Update the residual vector
    * 1. Compute tmp = A * regX in each region
@@ -305,6 +312,8 @@ int main(int argc, char *argv[]) {
   FILE *fp;
   char fileName[20];
   char command[40];
+  bool doing1D = false;
+  int  globalNx, globalNy;
 
   myRank = Comm.MyPID();
 
@@ -323,12 +332,23 @@ int main(int argc, char *argv[]) {
   while ( command[iii] != ' ') iii++;
   sscanf(&(command[iii+1]),"%d",&maxRegPerProc);
   while ( command[iii] == ' ') iii++;
-  iii++;
+  while ( command[iii] != ' ') iii++;
+  sscanf(&(command[iii+1]),"%d",&globalNx);
+  while ( command[iii] == ' ') iii++;
+  while ( command[iii] != ' ') iii++;
+  sscanf(&(command[iii+1]),"%d",&globalNy);
+  while ( command[iii] == ' ') iii++;
   while ( command[iii] != ' ') iii++;
   if      (command[iii+1] == 'M') whichCase = MultipleRegionsPerProc;
   else if (command[iii+1] == 'R') whichCase = RegionsSpanProcs;
   else {fprintf(stderr,"%d: head messed up %s\n",myRank,command); exit(1);}
   sprintf(command,"/bin/rm -f myData_%d",myRank); system(command); sleep(1);
+
+  // check for 1D or 2D problem
+  if (globalNy == 1)
+    doing1D = true;
+  else
+    doing1D = false;
 
   // ******************************************************************
   // Application Specific Data for LIDregion()
@@ -447,6 +467,9 @@ int main(int argc, char *argv[]) {
     else if (strcmp(command,"ReadMatrix") == 0) {
        EpetraExt::MatrixMarketFileToCrsMatrix("Amat.mm", *mapComp, AComp);
     }
+    else if (strcmp(command,"PrintCompositeMatrix") == 0) {
+      AComp->Print(std::cout);
+    }
     else if (strcmp(command,"LoadAndCommRegAssignments") == 0) {
 
       Epetra_MultiVector *regionsPerGID= new Epetra_MultiVector(AComp->RowMap(),maxRegPerGID);
@@ -488,26 +511,46 @@ int main(int argc, char *argv[]) {
       }
     }
     else if (strcmp(command,"LoadAppDataForLIDregion()") == 0) {
-      int minGID,maxGID;
-      for (int i = 0; i < (int) myRegions.size(); i++) {
-        fscanf(fp,"%d%d",&minGID,&maxGID);
-        minGIDComp[i] = minGID;
-        maxGIDComp[i] = maxGID;
+      if (doing1D) {
+        int minGID,maxGID;
+        for (int i = 0; i < (int) myRegions.size(); i++) {
+          fscanf(fp,"%d%d",&minGID,&maxGID);
+          minGIDComp[i] = minGID;
+          maxGIDComp[i] = maxGID;
+        }
+        appData.gDim = (int *) malloc(sizeof(int)*3*myRegions.size());
+        appData.lDim = (int *) malloc(sizeof(int)*3*myRegions.size());
+        appData.lowInd= (int *) malloc(sizeof(int)*3*myRegions.size());
+        for (int i = 0; i < (int) myRegions.size(); i++) {
+          fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
+          fscanf(fp,"%d%d%d",&(appData.lDim[3*i]),&(appData.lDim[3*i+1]),&(appData.lDim[3*i+2]));
+          fscanf(fp,"%d%d%d",&(appData.lowInd[3*i]),&(appData.lowInd[3*i+1]),&(appData.lowInd[3*i+2]));
+        }
+        appData.minGIDComp   = minGIDComp.data();
+        appData.maxGIDComp   = maxGIDComp.data();
       }
-      appData.gDim = (int *) malloc(sizeof(int)*3*myRegions.size());
-      appData.lDim = (int *) malloc(sizeof(int)*3*myRegions.size());
-      appData.lowInd= (int *) malloc(sizeof(int)*3*myRegions.size());
-      for (int i = 0; i < (int) myRegions.size(); i++) {
-        fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
-        fscanf(fp,"%d%d%d",&(appData.lDim[3*i]),&(appData.lDim[3*i+1]),&(appData.lDim[3*i+2]));
-        fscanf(fp,"%d%d%d",&(appData.lowInd[3*i]),&(appData.lowInd[3*i+1]),&(appData.lowInd[3*i+2]));
+      else {
+        appData.nx = globalNx;
+        appData.gDim = (int *) malloc(sizeof(int)*3*myRegions.size());
+        appData.lDimx= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.lDimy= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.trueCornerx= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.trueCornery= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.relcornerx= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.relcornery= (int *) malloc(sizeof(int)*myRegions.size());
+        int garbage;
+        for (int i = 0; i < (int) myRegions.size(); i++) {
+          fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
+          fscanf(fp,"%d%d%d",&(appData.lDimx[i]),&(appData.lDimy[i]),&garbage);
+          fscanf(fp,"%d%d%d",&(appData.relcornerx[i]),&(appData.relcornery[i]),&garbage);
+          fscanf(fp,"%d%d%d",&(appData.trueCornerx[i]),&(appData.trueCornery[i]),&garbage);
+        }
       }
-      appData.minGIDComp   = minGIDComp.data();
-      appData.maxGIDComp   = maxGIDComp.data();
+      appData.maxRegPerGID = maxRegPerGID;
       appData.myRegions    = myRegions.data();
       appData.colMap       = (Epetra_Map *) &(AComp->ColMap());
-      appData.maxRegPerGID = maxRegPerGID;
       appData.regionsPerGIDWithGhosts = regionsPerGIDWithGhosts;
+      appData.myRank = myRank;
     }
     else if (strcmp(command,"MakeGrpRegColMaps") == 0) {
       if (whichCase == MultipleRegionsPerProc) {
@@ -535,7 +578,8 @@ int main(int argc, char *argv[]) {
         double *jthRegions;
         int *colGIDsComp =  AComp->ColMap().MyGlobalElements();
         for (int i = 0; i < AComp->ColMap().NumMyElements(); i++) {
-          LID = LIDregion(&appData, i, 0);
+          if (doing1D) LID = LIDregion(&appData, i, 0);
+          else LID = LID2Dregion(&appData, i, 0);
           if (LID == -1) {
             for (int j = 0; j < maxRegPerGID; j++) {
               jthRegions = (*regionsPerGIDWithGhosts)[j];
@@ -611,8 +655,12 @@ int main(int argc, char *argv[]) {
 
         // must put revisedGIDs in application-provided order by
         // invoking LIDregion() and sorting
-        for (int i = 0; i < nExtended; i++)
-          tempRegIDs[i] = LIDregion(&appData, i, k);
+        for (int i = 0; i < nExtended; i++) {
+          if (doing1D)
+            tempRegIDs[i] = LIDregion(&appData, i, k);
+          else
+            tempRegIDs[i] = LID2Dregion(&appData, i, k);
+        }
         std::vector<int> idx(tempRegIDs.size());
         std::iota(idx.begin(),idx.end(),0);
         sort(idx.begin(),idx.end(),[tempRegIDs](int i1,int i2){return tempRegIDs[i1] < tempRegIDs[i2];});
@@ -676,8 +724,10 @@ int main(int argc, char *argv[]) {
       for (int k = 0; k < (int) myRegions.size(); k++) {
         rowGIDsReg.resize(0);
         std::vector<int> tempRegIDs(AComp->ColMap().NumMyElements());
-        for (int i = 0; i < AComp->ColMap().NumMyElements(); i++)
-          tempRegIDs[i] = LIDregion(&appData, i, k);
+        for (int i = 0; i < AComp->ColMap().NumMyElements(); i++) {
+          if (doing1D) tempRegIDs[i] = LIDregion(&appData, i, k);
+          else tempRegIDs[i] = LID2Dregion(&appData, i, k);
+        }
 
         std::vector<int> idx(tempRegIDs.size());
         std::iota(idx.begin(), idx.end(), 0);
@@ -720,6 +770,35 @@ int main(int argc, char *argv[]) {
       ACompSplit = new Epetra_CrsMatrix(*AComp);
       Epetra_Vector* diagAComp = new Epetra_Vector(*mapComp, true);
       ACompSplit->ExtractDiagonalCopy(*diagAComp);
+      // Could instead do the following:
+      //     1) make a region vector of all 1's
+      //     2) do a region-to-composite transfer and scale this
+      //        composite vector 'scaleRecip'
+      //     3) grap the matrix pointers from ACompSplit and go through
+      //        each entry. If scaleRecip[row] ~= 1, then scale by
+      //        1/min(scaleRecip[row],scaleRecip[col]). 
+      //
+      //  Note: this algorithm does not quite work in general (though
+      //        it should work for our test case). Here is an example
+      //        where the scaling is wrong for some of the off-diagonals
+      //
+      //                   |
+      //                   |
+      //                   |---------
+      //          ---------|
+      //                   |
+      //                   |
+      //        If we look at the scaling for (row,col) where row corresponds
+      //        to one of the degree 3 vertices and col corresponds to the 
+      //        other degree 3 vertex, the algorithm above would decide that
+      //        we need to scale this off-diag by 3, though it should really
+      //        be two. The reason for the error is that these two vertices
+      //        have only two regions in common (not 3), which determines
+      //        the proper scaling. Don't know an easy fix for this. Perhaps
+      //        we just want to exclude this case? We could compare matvecs
+      //        (region vs. composite) and print an error later on to warn
+      //        anyone who ends up in this case.
+      //        xxxxxx
 
       for (int i = 0; i < intIDs.size(); ++i)
         (*diagAComp)[intIDs[i]] *= 0.5;
@@ -871,14 +950,17 @@ int main(int argc, char *argv[]) {
 //      compX->PutScalar(myRank);
 
       // perform matvec in composite layout
-      AComp->Apply(*compX, *compY);
+      {
+        int err = AComp->Apply(*compX, *compY);
+        TEUCHOS_ASSERT(err == 0);
+      }
 
       // transform composite vector to regional layout
       compositeToRegional(compX, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
           revisedRowMapPerGrp, rowImportPerGrp);
       createRegionalVector(regY, maxRegPerProc, revisedRowMapPerGrp);
 
-      // perform matvec
+      // perform matvec in regional layout
       for (int j = 0; j < maxRegPerProc; j++) {
         int err = regionGrpMats[j]->Apply(*(regX[j]), *(regY[j]));
         TEUCHOS_ASSERT(err == 0);
@@ -1122,10 +1204,12 @@ int main(int argc, char *argv[]) {
 
       // residual vector
       Epetra_Vector* compRes = new Epetra_Vector(*mapComp, true);
-      int err = AComp->Multiply(false, *compX, *compRes);
-      TEUCHOS_ASSERT(err == 0);
-      err = compRes->Update(1.0, *compB, -1.0);
-      TEUCHOS_ASSERT(err == 0);
+      {
+        int err = AComp->Multiply(false, *compX, *compRes);
+        TEUCHOS_ASSERT(err == 0);
+        err = compRes->Update(1.0, *compB, -1.0);
+        TEUCHOS_ASSERT(err == 0);
+      }
 
 //      for (int j = 0; j < maxRegPerProc; j++) {
 //        regionGrpProlong[j]->ColMap().Print(std::cout);
@@ -1241,7 +1325,6 @@ int main(int argc, char *argv[]) {
         regCoarseColMapPerGrp[0] = new Epetra_Map(-1, coarseMapGIDs.size(), coarseMapGIDs.data(), 0, Comm);
   //      regCoarseColMapPerGrp[0]->Print(std::cout);
       }
-//      exit(0);
 
       // -----------------------------------------------------------------------
       // Compute coarse grid operators (RAP) in region layout
@@ -1279,149 +1362,47 @@ int main(int argc, char *argv[]) {
       compositeToRegional(compB, quasiRegB, regB, maxRegPerProc, rowMapPerGrp,
           revisedRowMapPerGrp, rowImportPerGrp);
 
-//      compX->Comm().Barrier();
-//      printRegionalVector("regRes before iteration loop", regRes, myRank);
-//      compX->Comm().Barrier();
-//      sleep(1);
-
       // define max iteration counts
-      const int maxVCycle = 2;
+      const int maxVCycle = 1;
       const int maxFineIter = 1;
       const int maxCoarseIter = 1;
       const double omega = 0.67;
 
-      std::vector<Epetra_Vector*> regDeltaX(maxRegPerProc);
-      std::vector<Epetra_Vector*> regDeltaRes(maxRegPerProc);
       for (int j = 0; j < maxRegPerProc; j++) { // step 1
-        regDeltaX[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
-        regDeltaRes[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
+        regRes[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
       }
 
-//      for (int cycle = 0; cycle < maxVCycle; ++cycle) {
-//
-////        std::vector<Epetra_Vector*> regDeltaX(maxRegPerProc);
-////        std::vector<Epetra_Vector*> regDeltaRes(maxRegPerProc);
-////        for (int j = 0; j < maxRegPerProc; j++) { // step 1
-////          regDeltaX[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
-////          regDeltaRes[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
-////        }
-//
-//        regRes = computeResidual(regX, regB, regionGrpMats, mapComp,
-//            rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
-//
-//        std::cout << "Start V-Cycle iteration " << cycle << std::endl;
-//
-//        // V-Cycle
-//        {
-//          regDeltaRes = computeResidual(regDeltaX, regRes, regionGrpMats, mapComp,
-//              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
-//
-//          // -----------------------------------------------------------------------
-//          // pre-smoothing on fine level
-//          // -----------------------------------------------------------------------
-//          jacobiIterate(maxFineIter, omega, regDeltaX, regDeltaRes, regionGrpMats,
-//              regionInterfaceScaling, maxRegPerProc, mapComp, rowMapPerGrp,
-//              revisedRowMapPerGrp, rowImportPerGrp);
-//
-//          regDeltaRes = computeResidual(regDeltaX, regDeltaRes, regionGrpMats, mapComp,
-//              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
-//
-//  //        sleep(1);
-//  //        std::cout << "moving to coarse level ..." << std::endl;
-//
-//          // -----------------------------------------------------------------------
-//          // Transfer to coarse level
-//          // -----------------------------------------------------------------------
-//          std::vector<Epetra_Vector*> coarseRegRes(maxRegPerProc);
-//          std::vector<Epetra_Vector*> coarseRegX(maxRegPerProc);
-//          std::vector<Epetra_Vector*> coarseRegB(maxRegPerProc);
-//          for (int j = 0; j < maxRegPerProc; j++) {
-//            coarseRegRes[j] = new Epetra_Vector(*coarseRowMapPerGrp[j], true);
-//            coarseRegX[j] = new Epetra_Vector(*coarseRowMapPerGrp[j], true);
-//
-//            int err = regionGrpProlong[j]->Multiply(true, *regDeltaRes[j], *coarseRegRes[j]);
-//            TEUCHOS_ASSERT(err == 0);
-//          }
-//
-//          // -----------------------------------------------------------------------
-//          // Perform region-wise Jacobi on coarse level
-//          // -----------------------------------------------------------------------
-//          jacobiIterate(maxCoarseIter, omega, coarseRegX, coarseRegRes, regCoarseMatPerGrp,
-//              coarseRegionInterfaceScaling, maxRegPerProc, coarseCompRowMap, coarseQuasiRowMapPerGrp,
-//              coarseRowMapPerGrp, coarseRowImportPerGrp);
-//
-//          std::cout << "... and back to the fine level." << std::endl;
-//
-//          // -----------------------------------------------------------------------
-//          // Transfer to fine level
-//          // -----------------------------------------------------------------------
-//          std::vector<Epetra_Vector*> regCorrection(maxRegPerProc);
-//          for (int j = 0; j < maxRegPerProc; j++) {
-//            regCorrection[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
-//            int err = regionGrpProlong[j]->Multiply(false, *coarseRegX[j], *regCorrection[j]);
-//            TEUCHOS_ASSERT(err == 0);
-//          }
-//
-//          // apply coarse grid correction
-//          for (int j = 0; j < maxRegPerProc; j++) {
-//            int err = regDeltaX[j]->Update(0.0, *regCorrection[j], 1.0);
-//            TEUCHOS_ASSERT(err == 0);
-//          }
-//
-//          // evaluate residual
-//          regDeltaRes = computeResidual(regDeltaX, regDeltaRes, regionGrpMats, mapComp,
-//              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
-//
-//          // -----------------------------------------------------------------------
-//          // post-smoothing on fine level
-//          // -----------------------------------------------------------------------
-//          jacobiIterate(maxFineIter, omega, regDeltaX, regDeltaRes, regionGrpMats,
-//              regionInterfaceScaling, maxRegPerProc, mapComp, rowMapPerGrp,
-//              revisedRowMapPerGrp, rowImportPerGrp);
-//        }
-//
-//        for (int j = 0; j < maxRegPerProc; j++) {
-//          int err = regX[j]->Update(1.0, *regDeltaX[j], 1.0);
-//          TEUCHOS_ASSERT(err == 0);
-//        }
-//
-//        // check for convergence
-//        {
-//          regRes = computeResidual(regX, regB, regionGrpMats, mapComp,
-//              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
-//
-//          Epetra_Vector* compRes = new Epetra_Vector(*mapComp, true);
-//          regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
-//              rowImportPerGrp, Add);
-//          double normRes = 0.0;
-//          compRes->Norm2(&normRes);
-//
-//          if (normRes < 1.0e-12)
-//            break;
-//        }
-//
-//        std::cout << "End of V-Cycle iteration " << cycle << std::endl;
-//      }
-
+      // Richardson iterations
       for (int cycle = 0; cycle < maxVCycle; ++cycle) {
+
+        computeResidual(regRes, regX, regB, regionGrpMats, mapComp,
+            rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
+        std::vector<Epetra_Vector*> regDeltaX(maxRegPerProc);
+        std::vector<Epetra_Vector*> regDeltaRes(maxRegPerProc);
+        for (int j = 0; j < maxRegPerProc; j++) { // step 1
+          regDeltaX[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
+          regDeltaRes[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
+        }
 
         std::cout << "Start V-Cycle iteration " << cycle << std::endl;
 
-        // V-Cycle
+        // a single 2-level V-Cycle
         {
+
+          computeResidual(regDeltaRes, regDeltaX, regRes, regionGrpMats, mapComp,
+              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+
           // -----------------------------------------------------------------------
           // pre-smoothing on fine level
           // -----------------------------------------------------------------------
-          jacobiIterate(maxFineIter, omega, regX, regB, regionGrpMats,
+          jacobiIterate(maxFineIter, omega, regDeltaX, regDeltaRes, regionGrpMats,
               regionInterfaceScaling, maxRegPerProc, mapComp, rowMapPerGrp,
               revisedRowMapPerGrp, rowImportPerGrp);
 
-          regRes = computeResidual(regX, regB, regionGrpMats, mapComp,
+          computeResidual(regDeltaRes, regDeltaX, regRes, regionGrpMats, mapComp,
               rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 
-          printRegionalVector("regX after pre-smoothing" , regX, myRank);
-
-  //        sleep(1);
           std::cout << "moving to coarse level ..." << std::endl;
 
           // -----------------------------------------------------------------------
@@ -1429,15 +1410,14 @@ int main(int argc, char *argv[]) {
           // -----------------------------------------------------------------------
           std::vector<Epetra_Vector*> coarseRegRes(maxRegPerProc);
           std::vector<Epetra_Vector*> coarseRegX(maxRegPerProc);
+          std::vector<Epetra_Vector*> coarseRegB(maxRegPerProc);
           for (int j = 0; j < maxRegPerProc; j++) {
             coarseRegRes[j] = new Epetra_Vector(*coarseRowMapPerGrp[j], true);
             coarseRegX[j] = new Epetra_Vector(*coarseRowMapPerGrp[j], true);
 
-            int err = regionGrpProlong[j]->Multiply(true, *regRes[j], *coarseRegRes[j]);
+            int err = regionGrpProlong[j]->Multiply(true, *regDeltaRes[j], *coarseRegRes[j]);
             TEUCHOS_ASSERT(err == 0);
           }
-
-          printRegionalVector("coarseRegX before jacobi" , coarseRegX, myRank);
 
           // -----------------------------------------------------------------------
           // Perform region-wise Jacobi on coarse level
@@ -1445,8 +1425,6 @@ int main(int argc, char *argv[]) {
           jacobiIterate(maxCoarseIter, omega, coarseRegX, coarseRegRes, regCoarseMatPerGrp,
               coarseRegionInterfaceScaling, maxRegPerProc, coarseCompRowMap, coarseQuasiRowMapPerGrp,
               coarseRowMapPerGrp, coarseRowImportPerGrp);
-
-          printRegionalVector("coarseRegX after jacobi" , coarseRegX, myRank);
 
           std::cout << "... and back to the fine level." << std::endl;
 
@@ -1456,41 +1434,32 @@ int main(int argc, char *argv[]) {
           std::vector<Epetra_Vector*> regCorrection(maxRegPerProc);
           for (int j = 0; j < maxRegPerProc; j++) {
             regCorrection[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
-          }
-          for (int j = 0; j < maxRegPerProc; j++) {
             int err = regionGrpProlong[j]->Multiply(false, *coarseRegX[j], *regCorrection[j]);
             TEUCHOS_ASSERT(err == 0);
           }
 
-          printRegionalVector("regCorrection" , regCorrection, myRank);
-
-//          printRegionalVector("coarseRegX", coarseRegX, myRank);
-//          printRegionalVector("regCorrection", regCorrection, myRank);
-
+          // apply coarse grid correction
           for (int j = 0; j < maxRegPerProc; j++) {
-            int err = regX[j]->Update(1.0, *regCorrection[j], 1.0);
+            int err = regDeltaX[j]->Update(1.0, *regCorrection[j], 1.0);
             TEUCHOS_ASSERT(err == 0);
           }
-
-          printRegionalVector("regX after coarse grid correction" , regX, myRank);
 
           // -----------------------------------------------------------------------
           // post-smoothing on fine level
           // -----------------------------------------------------------------------
-          jacobiIterate(maxFineIter, omega, regX, regB, regionGrpMats,
+          jacobiIterate(maxFineIter, omega, regDeltaX, regDeltaRes, regionGrpMats,
               regionInterfaceScaling, maxRegPerProc, mapComp, rowMapPerGrp,
               revisedRowMapPerGrp, rowImportPerGrp);
-
-          printRegionalVector("regX after post-smoothing" , regX, myRank);
         }
 
-        // enforce Dirichlet boundary condition
-        if (myRank == 0)
-          (*regX[0])[0] = 0.0;
+        for (int j = 0; j < maxRegPerProc; j++) {
+          int err = regX[j]->Update(1.0, *regDeltaX[j], 1.0);
+          TEUCHOS_ASSERT(err == 0);
+        }
 
 //        // check for convergence
 //        {
-//          regRes = computeResidual(regX, regB, regionGrpMats, mapComp,
+//          computeResidual(regRes, regX, regB, regionGrpMats, mapComp,
 //              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
 //
 //          Epetra_Vector* compRes = new Epetra_Vector(*mapComp, true);
@@ -1505,6 +1474,109 @@ int main(int argc, char *argv[]) {
 
         std::cout << "End of V-Cycle iteration " << cycle << std::endl;
       }
+
+//      for (int cycle = 0; cycle < maxVCycle; ++cycle) {
+//
+//        std::cout << "Start V-Cycle iteration " << cycle << std::endl;
+//
+//        // V-Cycle
+//        {
+//          // -----------------------------------------------------------------------
+//          // pre-smoothing on fine level
+//          // -----------------------------------------------------------------------
+//          jacobiIterate(maxFineIter, omega, regX, regB, regionGrpMats,
+//              regionInterfaceScaling, maxRegPerProc, mapComp, rowMapPerGrp,
+//              revisedRowMapPerGrp, rowImportPerGrp);
+//
+//          computeResidual(regRes, regX, regB, regionGrpMats, mapComp,
+//              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+//
+////          printRegionalVector("regX after pre-smoothing" , regX, myRank);
+//
+//  //        sleep(1);
+//          std::cout << "moving to coarse level ..." << std::endl;
+//
+//          // -----------------------------------------------------------------------
+//          // Transfer to coarse level
+//          // -----------------------------------------------------------------------
+//          std::vector<Epetra_Vector*> coarseRegRes(maxRegPerProc);
+//          std::vector<Epetra_Vector*> coarseRegX(maxRegPerProc);
+//          for (int j = 0; j < maxRegPerProc; j++) {
+//            coarseRegRes[j] = new Epetra_Vector(*coarseRowMapPerGrp[j], true);
+//            coarseRegX[j] = new Epetra_Vector(*coarseRowMapPerGrp[j], true);
+//
+//            int err = regionGrpProlong[j]->Multiply(true, *regRes[j], *coarseRegRes[j]);
+//            TEUCHOS_ASSERT(err == 0);
+//          }
+//
+////          printRegionalVector("coarseRegX before jacobi" , coarseRegX, myRank);
+//
+//          // -----------------------------------------------------------------------
+//          // Perform region-wise Jacobi on coarse level
+//          // -----------------------------------------------------------------------
+//          jacobiIterate(maxCoarseIter, omega, coarseRegX, coarseRegRes, regCoarseMatPerGrp,
+//              coarseRegionInterfaceScaling, maxRegPerProc, coarseCompRowMap, coarseQuasiRowMapPerGrp,
+//              coarseRowMapPerGrp, coarseRowImportPerGrp);
+//
+////          printRegionalVector("coarseRegX after jacobi" , coarseRegX, myRank);
+//
+//          std::cout << "... and back to the fine level." << std::endl;
+//
+//          // -----------------------------------------------------------------------
+//          // Transfer to fine level
+//          // -----------------------------------------------------------------------
+//          std::vector<Epetra_Vector*> regCorrection(maxRegPerProc);
+//          for (int j = 0; j < maxRegPerProc; j++) {
+//            regCorrection[j] = new Epetra_Vector(*revisedRowMapPerGrp[j], true);
+//          }
+//          for (int j = 0; j < maxRegPerProc; j++) {
+//            int err = regionGrpProlong[j]->Multiply(false, *coarseRegX[j], *regCorrection[j]);
+//            TEUCHOS_ASSERT(err == 0);
+//          }
+//
+////          printRegionalVector("regCorrection" , regCorrection, myRank);
+//
+////          printRegionalVector("coarseRegX", coarseRegX, myRank);
+////          printRegionalVector("regCorrection", regCorrection, myRank);
+//
+//          for (int j = 0; j < maxRegPerProc; j++) {
+//            int err = regX[j]->Update(1.0, *regCorrection[j], 1.0);
+//            TEUCHOS_ASSERT(err == 0);
+//          }
+//
+////          printRegionalVector("regX after coarse grid correction" , regX, myRank);
+//
+//          // -----------------------------------------------------------------------
+//          // post-smoothing on fine level
+//          // -----------------------------------------------------------------------
+//          jacobiIterate(maxFineIter, omega, regX, regB, regionGrpMats,
+//              regionInterfaceScaling, maxRegPerProc, mapComp, rowMapPerGrp,
+//              revisedRowMapPerGrp, rowImportPerGrp);
+//
+////          printRegionalVector("regX after post-smoothing" , regX, myRank);
+//        }
+//
+//        // enforce Dirichlet boundary condition
+//        if (myRank == 0)
+//          (*regX[0])[0] = 0.0;
+//
+////        // check for convergence
+////        {
+////          computeResidual(regRes, regX, regB, regionGrpMats, mapComp,
+////              rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
+////
+////          Epetra_Vector* compRes = new Epetra_Vector(*mapComp, true);
+////          regionalToComposite(regRes, compRes, maxRegPerProc, rowMapPerGrp,
+////              rowImportPerGrp, Add);
+////          double normRes = 0.0;
+////          compRes->Norm2(&normRes);
+////
+////          if (normRes < 1.0e-12)
+////            break;
+////        }
+//
+//        std::cout << "End of V-Cycle iteration " << cycle << std::endl;
+//      }
 
       // -----------------------------------------------------------------------
       // Print fine-level solution
@@ -1616,6 +1688,52 @@ int LIDregion(void *ptr, int LIDcomp, int whichGrp)
    if (found == false) return(-1);
 
    return( colGIDsComp[LIDcomp] - minGIDComp[whichGrp] );
+}
+int LID2Dregion(void *ptr, int LIDcomp, int whichGrp)
+{
+   struct widget * myWidget = (struct widget *) ptr;
+
+   int        *minGIDComp  = myWidget->minGIDComp;
+   int        *maxGIDComp  = myWidget->maxGIDComp;
+   int        *myRegions   = myWidget->myRegions;
+   Epetra_Map *colMap      = myWidget->colMap;
+   int        maxRegPerGID = myWidget->maxRegPerGID;
+   int       *trueCornerx  = myWidget->trueCornerx; // global coords of region 
+   int       *trueCornery  = myWidget->trueCornery; // corner within entire 2D mesh
+                                                    // across all regions/procs
+   int       *relcornerx   = myWidget->relcornerx;  // coords of corner relative
+   int       *relcornery   = myWidget->relcornery;  // to region corner
+   int       *lDimx        = myWidget->lDimx;
+   int       *lDimy        = myWidget->lDimy;
+   Epetra_MultiVector *regionsPerGIDWithGhosts = myWidget->regionsPerGIDWithGhosts;
+
+   int curRegion = myRegions[whichGrp];
+   if (LIDcomp >=  colMap->NumMyElements()) return(-1);
+
+   double *jthRegions;
+   const int *colGIDsComp = colMap->MyGlobalElements();
+
+   int xGIDComp =  colGIDsComp[LIDcomp]%(myWidget->nx);
+   int yGIDComp = (colGIDsComp[LIDcomp] - xGIDComp)/myWidget->nx;
+
+   if (xGIDComp < trueCornerx[whichGrp]+relcornerx[whichGrp]) return(-1);
+   if (yGIDComp < trueCornery[whichGrp]+relcornery[whichGrp]) return(-1);
+   if (xGIDComp > trueCornerx[whichGrp]+relcornerx[whichGrp]+lDimx[whichGrp]-1) return(-1);
+   if (yGIDComp > trueCornery[whichGrp]+relcornery[whichGrp]+lDimy[whichGrp]-1) return(-1);
+
+
+   bool found = false;
+   for (int j = 0; j <  maxRegPerGID; j++) {
+      jthRegions = (*regionsPerGIDWithGhosts)[j];
+      if  ( ((int) jthRegions[LIDcomp]) == curRegion ) {
+         found = true;
+         break;
+      }
+   }
+   if (found == false) return(-1);
+
+   return( 
+    (yGIDComp - relcornery[whichGrp]-trueCornery[whichGrp])*lDimx[whichGrp]+ (xGIDComp - relcornerx[whichGrp]-trueCornerx[whichGrp]));
 }
 
 

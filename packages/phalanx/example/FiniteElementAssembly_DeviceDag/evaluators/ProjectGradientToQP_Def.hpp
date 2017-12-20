@@ -44,8 +44,12 @@
 #include "Phalanx_CreateDeviceEvaluator.hpp"
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-ProjectGradientToQP<EvalT,Traits>::
+// Residual Specialization
+//**********************************************************************
+
+//**********************************************************************
+template<typename Traits>
+ProjectGradientToQP<PHX::MyTraits::Residual,Traits>::
 ProjectGradientToQP(const std::string& field_name,
                     const Teuchos::RCP<PHX::DataLayout>& basis_layout,
                     const Teuchos::RCP<PHX::DataLayout>& grad_qp_layout) :
@@ -58,26 +62,85 @@ ProjectGradientToQP(const std::string& field_name,
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
+template<typename Traits>
 PHX::DeviceEvaluator<Traits>*
-ProjectGradientToQP<EvalT,Traits>::createDeviceEvaluator() const
+ProjectGradientToQP<PHX::MyTraits::Residual,Traits>::createDeviceEvaluator() const
 {
   return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>(field_at_basis.get_static_view(),
                                                                                      grad_field_at_qp.get_static_view());
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
-void ProjectGradientToQP<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
+template<typename Traits>
+void ProjectGradientToQP<PHX::MyTraits::Residual,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
   auto e = PHX::make_dev_eval(MyDevEval(field_at_basis.get_static_view(), grad_field_at_qp.get_static_view()),workset);
   Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
+template<typename Traits>
 KOKKOS_INLINE_FUNCTION
-void ProjectGradientToQP<EvalT,Traits>::MyDevEval::
+void ProjectGradientToQP<PHX::MyTraits::Residual,Traits>::MyDevEval::
+evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
+         typename Traits::EvalData workset)
+{
+#if (__GNUC__ == 5) || (__GNUC__ == 6)
+  int cell = team.league_rank(); // remove const for gcc 5/6 bug in nested lambdas
+#else
+  const int cell = team.league_rank();
+#endif
+  auto grad_basis_view = workset.grad_basis_real_;
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,grad_field_at_qp.extent(1)), [&] (const int& qp) {
+      grad_field_at_qp(cell,qp,0) = 0.0;
+      grad_field_at_qp(cell,qp,1) = 0.0;
+      grad_field_at_qp(cell,qp,2) = 0.0;
+      Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,field_at_basis.extent(1)), [&] (const int& basis) {
+        for (int dim = 0; dim < static_cast<int>(grad_field_at_qp.extent(2)); ++dim)
+          grad_field_at_qp(cell,qp,dim) += field_at_basis(cell,basis) * grad_basis_view(cell,qp,basis,dim);
+      });
+  });
+}
+
+//**********************************************************************
+// Jacobian Specialization
+//**********************************************************************
+
+//**********************************************************************
+template<typename Traits>
+ProjectGradientToQP<PHX::MyTraits::Jacobian,Traits>::
+ProjectGradientToQP(const std::string& field_name,
+                    const Teuchos::RCP<PHX::DataLayout>& basis_layout,
+                    const Teuchos::RCP<PHX::DataLayout>& grad_qp_layout) :
+  field_at_basis(field_name,basis_layout),
+  grad_field_at_qp(field_name,grad_qp_layout)
+{
+  this->addEvaluatedField(grad_field_at_qp);
+  this->addDependentField(field_at_basis);
+  this->setName("ProjectGradientToQP: "+field_name);
+}
+
+//**********************************************************************
+template<typename Traits>
+PHX::DeviceEvaluator<Traits>*
+ProjectGradientToQP<PHX::MyTraits::Jacobian,Traits>::createDeviceEvaluator() const
+{
+  return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>(field_at_basis.get_static_view(),
+                                                                                     grad_field_at_qp.get_static_view());
+}
+
+//**********************************************************************
+template<typename Traits>
+void ProjectGradientToQP<PHX::MyTraits::Jacobian,Traits>::evaluateFields(typename Traits::EvalData workset)
+{
+  auto e = PHX::make_dev_eval(MyDevEval(field_at_basis.get_static_view(), grad_field_at_qp.get_static_view()),workset);
+  Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
+}
+
+//**********************************************************************
+template<typename Traits>
+KOKKOS_INLINE_FUNCTION
+void ProjectGradientToQP<PHX::MyTraits::Jacobian,Traits>::MyDevEval::
 evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
          typename Traits::EvalData workset)
 {

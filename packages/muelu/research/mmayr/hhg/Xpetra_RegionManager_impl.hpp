@@ -272,6 +272,7 @@ Xpetra::RegionManager<SC,LO,GO,NO>::RegionManager(
   setupRowMaps();
 
   setupMappingNodesPerRegion();
+
   if (comm_->getRank() == 0)
     nodes_->printRegionData(*out);
 

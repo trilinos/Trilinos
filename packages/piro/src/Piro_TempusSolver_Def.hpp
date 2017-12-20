@@ -953,6 +953,19 @@ getSolutionHistory() const
   Teuchos::RCP<Tempus::SolutionHistory<Scalar> > soln_history = Teuchos::rcp_const_cast<Tempus::SolutionHistory<Scalar> >(soln_history_const); 
   return soln_history;
 }
+  
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > Piro::TempusSolver<Scalar>::
+#endif
+getSolver() const
+{
+  return fwdStateStepper->getSolver(); 
+}
 
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
