@@ -312,6 +312,9 @@ void Reader::read_string(any& result, std::string const& string, std::string con
 
 void Reader::read_file(any& result, std::string const& file_name) {
   std::ifstream stream(file_name.c_str());
+  TEUCHOS_TEST_FOR_EXCEPTION(!stream.is_open(),
+      ParserFail,
+      "Could not open file " << file_name);
   read_stream(result, stream, file_name);
 }
 
