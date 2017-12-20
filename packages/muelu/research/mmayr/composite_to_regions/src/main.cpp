@@ -28,6 +28,7 @@
 #include "Teuchos_Assert.hpp"
 
 int LIDregion(void *ptr, int LIDcomp, int whichGrp);
+int LID2Dregion(void *ptr, int LIDcomp, int whichGrp);
 
 // this little widget handles application specific data
 // used to implement LIDregion()
@@ -39,6 +40,14 @@ struct widget {
    int maxRegPerGID;
    Epetra_MultiVector *regionsPerGIDWithGhosts;
    int *gDim, *lDim, *lowInd;
+   int       *trueCornerx; // global coords of region 
+   int       *trueCornery; // corner within entire 2D mesh
+   int       *relcornerx;  // coords of corner relative
+   int       *relcornery;  // to region corner
+   int       *lDimx;
+   int       *lDimy;
+   int        nx;
+int myRank;
 };
 
 void stripTrailingJunk(char *command);
@@ -303,6 +312,8 @@ int main(int argc, char *argv[]) {
   FILE *fp;
   char fileName[20];
   char command[40];
+  bool doing1D = false;
+  int  globalNx, globalNy;
 
   myRank = Comm.MyPID();
 
@@ -321,12 +332,23 @@ int main(int argc, char *argv[]) {
   while ( command[iii] != ' ') iii++;
   sscanf(&(command[iii+1]),"%d",&maxRegPerProc);
   while ( command[iii] == ' ') iii++;
-  iii++;
+  while ( command[iii] != ' ') iii++;
+  sscanf(&(command[iii+1]),"%d",&globalNx);
+  while ( command[iii] == ' ') iii++;
+  while ( command[iii] != ' ') iii++;
+  sscanf(&(command[iii+1]),"%d",&globalNy);
+  while ( command[iii] == ' ') iii++;
   while ( command[iii] != ' ') iii++;
   if      (command[iii+1] == 'M') whichCase = MultipleRegionsPerProc;
   else if (command[iii+1] == 'R') whichCase = RegionsSpanProcs;
   else {fprintf(stderr,"%d: head messed up %s\n",myRank,command); exit(1);}
   sprintf(command,"/bin/rm -f myData_%d",myRank); system(command); sleep(1);
+
+  // check for 1D or 2D problem
+  if (globalNy == 1)
+    doing1D = true;
+  else
+    doing1D = false;
 
   // ******************************************************************
   // Application Specific Data for LIDregion()
@@ -489,26 +511,46 @@ int main(int argc, char *argv[]) {
       }
     }
     else if (strcmp(command,"LoadAppDataForLIDregion()") == 0) {
-      int minGID,maxGID;
-      for (int i = 0; i < (int) myRegions.size(); i++) {
-        fscanf(fp,"%d%d",&minGID,&maxGID);
-        minGIDComp[i] = minGID;
-        maxGIDComp[i] = maxGID;
+      if (doing1D) {
+        int minGID,maxGID;
+        for (int i = 0; i < (int) myRegions.size(); i++) {
+          fscanf(fp,"%d%d",&minGID,&maxGID);
+          minGIDComp[i] = minGID;
+          maxGIDComp[i] = maxGID;
+        }
+        appData.gDim = (int *) malloc(sizeof(int)*3*myRegions.size());
+        appData.lDim = (int *) malloc(sizeof(int)*3*myRegions.size());
+        appData.lowInd= (int *) malloc(sizeof(int)*3*myRegions.size());
+        for (int i = 0; i < (int) myRegions.size(); i++) {
+          fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
+          fscanf(fp,"%d%d%d",&(appData.lDim[3*i]),&(appData.lDim[3*i+1]),&(appData.lDim[3*i+2]));
+          fscanf(fp,"%d%d%d",&(appData.lowInd[3*i]),&(appData.lowInd[3*i+1]),&(appData.lowInd[3*i+2]));
+        }
+        appData.minGIDComp   = minGIDComp.data();
+        appData.maxGIDComp   = maxGIDComp.data();
       }
-      appData.gDim = (int *) malloc(sizeof(int)*3*myRegions.size());
-      appData.lDim = (int *) malloc(sizeof(int)*3*myRegions.size());
-      appData.lowInd= (int *) malloc(sizeof(int)*3*myRegions.size());
-      for (int i = 0; i < (int) myRegions.size(); i++) {
-        fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
-        fscanf(fp,"%d%d%d",&(appData.lDim[3*i]),&(appData.lDim[3*i+1]),&(appData.lDim[3*i+2]));
-        fscanf(fp,"%d%d%d",&(appData.lowInd[3*i]),&(appData.lowInd[3*i+1]),&(appData.lowInd[3*i+2]));
+      else {
+        appData.nx = globalNx;
+        appData.gDim = (int *) malloc(sizeof(int)*3*myRegions.size());
+        appData.lDimx= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.lDimy= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.trueCornerx= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.trueCornery= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.relcornerx= (int *) malloc(sizeof(int)*myRegions.size());
+        appData.relcornery= (int *) malloc(sizeof(int)*myRegions.size());
+        int garbage;
+        for (int i = 0; i < (int) myRegions.size(); i++) {
+          fscanf(fp,"%d%d%d",&(appData.gDim[3*i]),&(appData.gDim[3*i+1]),&(appData.gDim[3*i+2]));
+          fscanf(fp,"%d%d%d",&(appData.lDimx[i]),&(appData.lDimy[i]),&garbage);
+          fscanf(fp,"%d%d%d",&(appData.relcornerx[i]),&(appData.relcornery[i]),&garbage);
+          fscanf(fp,"%d%d%d",&(appData.trueCornerx[i]),&(appData.trueCornery[i]),&garbage);
+        }
       }
-      appData.minGIDComp   = minGIDComp.data();
-      appData.maxGIDComp   = maxGIDComp.data();
+      appData.maxRegPerGID = maxRegPerGID;
       appData.myRegions    = myRegions.data();
       appData.colMap       = (Epetra_Map *) &(AComp->ColMap());
-      appData.maxRegPerGID = maxRegPerGID;
       appData.regionsPerGIDWithGhosts = regionsPerGIDWithGhosts;
+      appData.myRank = myRank;
     }
     else if (strcmp(command,"MakeGrpRegColMaps") == 0) {
       if (whichCase == MultipleRegionsPerProc) {
@@ -536,7 +578,8 @@ int main(int argc, char *argv[]) {
         double *jthRegions;
         int *colGIDsComp =  AComp->ColMap().MyGlobalElements();
         for (int i = 0; i < AComp->ColMap().NumMyElements(); i++) {
-          LID = LIDregion(&appData, i, 0);
+          if (doing1D) LID = LIDregion(&appData, i, 0);
+          else LID = LID2Dregion(&appData, i, 0);
           if (LID == -1) {
             for (int j = 0; j < maxRegPerGID; j++) {
               jthRegions = (*regionsPerGIDWithGhosts)[j];
@@ -612,8 +655,12 @@ int main(int argc, char *argv[]) {
 
         // must put revisedGIDs in application-provided order by
         // invoking LIDregion() and sorting
-        for (int i = 0; i < nExtended; i++)
-          tempRegIDs[i] = LIDregion(&appData, i, k);
+        for (int i = 0; i < nExtended; i++) {
+          if (doing1D)
+            tempRegIDs[i] = LIDregion(&appData, i, k);
+          else
+            tempRegIDs[i] = LID2Dregion(&appData, i, k);
+        }
         std::vector<int> idx(tempRegIDs.size());
         std::iota(idx.begin(),idx.end(),0);
         sort(idx.begin(),idx.end(),[tempRegIDs](int i1,int i2){return tempRegIDs[i1] < tempRegIDs[i2];});
@@ -677,8 +724,10 @@ int main(int argc, char *argv[]) {
       for (int k = 0; k < (int) myRegions.size(); k++) {
         rowGIDsReg.resize(0);
         std::vector<int> tempRegIDs(AComp->ColMap().NumMyElements());
-        for (int i = 0; i < AComp->ColMap().NumMyElements(); i++)
-          tempRegIDs[i] = LIDregion(&appData, i, k);
+        for (int i = 0; i < AComp->ColMap().NumMyElements(); i++) {
+          if (doing1D) tempRegIDs[i] = LIDregion(&appData, i, k);
+          else tempRegIDs[i] = LID2Dregion(&appData, i, k);
+        }
 
         std::vector<int> idx(tempRegIDs.size());
         std::iota(idx.begin(), idx.end(), 0);
@@ -721,6 +770,35 @@ int main(int argc, char *argv[]) {
       ACompSplit = new Epetra_CrsMatrix(*AComp);
       Epetra_Vector* diagAComp = new Epetra_Vector(*mapComp, true);
       ACompSplit->ExtractDiagonalCopy(*diagAComp);
+      // Could instead do the following:
+      //     1) make a region vector of all 1's
+      //     2) do a region-to-composite transfer and scale this
+      //        composite vector 'scaleRecip'
+      //     3) grap the matrix pointers from ACompSplit and go through
+      //        each entry. If scaleRecip[row] ~= 1, then scale by
+      //        1/min(scaleRecip[row],scaleRecip[col]). 
+      //
+      //  Note: this algorithm does not quite work in general (though
+      //        it should work for our test case). Here is an example
+      //        where the scaling is wrong for some of the off-diagonals
+      //
+      //                   |
+      //                   |
+      //                   |---------
+      //          ---------|
+      //                   |
+      //                   |
+      //        If we look at the scaling for (row,col) where row corresponds
+      //        to one of the degree 3 vertices and col corresponds to the 
+      //        other degree 3 vertex, the algorithm above would decide that
+      //        we need to scale this off-diag by 3, though it should really
+      //        be two. The reason for the error is that these two vertices
+      //        have only two regions in common (not 3), which determines
+      //        the proper scaling. Don't know an easy fix for this. Perhaps
+      //        we just want to exclude this case? We could compare matvecs
+      //        (region vs. composite) and print an error later on to warn
+      //        anyone who ends up in this case.
+      //        xxxxxx
 
       for (int i = 0; i < intIDs.size(); ++i)
         (*diagAComp)[intIDs[i]] *= 0.5;
@@ -872,14 +950,17 @@ int main(int argc, char *argv[]) {
 //      compX->PutScalar(myRank);
 
       // perform matvec in composite layout
-      AComp->Apply(*compX, *compY);
+      {
+        int err = AComp->Apply(*compX, *compY);
+        TEUCHOS_ASSERT(err == 0);
+      }
 
       // transform composite vector to regional layout
       compositeToRegional(compX, quasiRegX, regX, maxRegPerProc, rowMapPerGrp,
           revisedRowMapPerGrp, rowImportPerGrp);
       createRegionalVector(regY, maxRegPerProc, revisedRowMapPerGrp);
 
-      // perform matvec
+      // perform matvec in regional layout
       for (int j = 0; j < maxRegPerProc; j++) {
         int err = regionGrpMats[j]->Apply(*(regX[j]), *(regY[j]));
         TEUCHOS_ASSERT(err == 0);
@@ -1123,10 +1204,12 @@ int main(int argc, char *argv[]) {
 
       // residual vector
       Epetra_Vector* compRes = new Epetra_Vector(*mapComp, true);
-      int err = AComp->Multiply(false, *compX, *compRes);
-      TEUCHOS_ASSERT(err == 0);
-      err = compRes->Update(1.0, *compB, -1.0);
-      TEUCHOS_ASSERT(err == 0);
+      {
+        int err = AComp->Multiply(false, *compX, *compRes);
+        TEUCHOS_ASSERT(err == 0);
+        err = compRes->Update(1.0, *compB, -1.0);
+        TEUCHOS_ASSERT(err == 0);
+      }
 
 //      for (int j = 0; j < maxRegPerProc; j++) {
 //        regionGrpProlong[j]->ColMap().Print(std::cout);
@@ -1280,7 +1363,7 @@ int main(int argc, char *argv[]) {
           revisedRowMapPerGrp, rowImportPerGrp);
 
       // define max iteration counts
-      const int maxVCycle = 2;
+      const int maxVCycle = 1;
       const int maxFineIter = 1;
       const int maxCoarseIter = 1;
       const double omega = 0.67;
@@ -1605,6 +1688,52 @@ int LIDregion(void *ptr, int LIDcomp, int whichGrp)
    if (found == false) return(-1);
 
    return( colGIDsComp[LIDcomp] - minGIDComp[whichGrp] );
+}
+int LID2Dregion(void *ptr, int LIDcomp, int whichGrp)
+{
+   struct widget * myWidget = (struct widget *) ptr;
+
+   int        *minGIDComp  = myWidget->minGIDComp;
+   int        *maxGIDComp  = myWidget->maxGIDComp;
+   int        *myRegions   = myWidget->myRegions;
+   Epetra_Map *colMap      = myWidget->colMap;
+   int        maxRegPerGID = myWidget->maxRegPerGID;
+   int       *trueCornerx  = myWidget->trueCornerx; // global coords of region 
+   int       *trueCornery  = myWidget->trueCornery; // corner within entire 2D mesh
+                                                    // across all regions/procs
+   int       *relcornerx   = myWidget->relcornerx;  // coords of corner relative
+   int       *relcornery   = myWidget->relcornery;  // to region corner
+   int       *lDimx        = myWidget->lDimx;
+   int       *lDimy        = myWidget->lDimy;
+   Epetra_MultiVector *regionsPerGIDWithGhosts = myWidget->regionsPerGIDWithGhosts;
+
+   int curRegion = myRegions[whichGrp];
+   if (LIDcomp >=  colMap->NumMyElements()) return(-1);
+
+   double *jthRegions;
+   const int *colGIDsComp = colMap->MyGlobalElements();
+
+   int xGIDComp =  colGIDsComp[LIDcomp]%(myWidget->nx);
+   int yGIDComp = (colGIDsComp[LIDcomp] - xGIDComp)/myWidget->nx;
+
+   if (xGIDComp < trueCornerx[whichGrp]+relcornerx[whichGrp]) return(-1);
+   if (yGIDComp < trueCornery[whichGrp]+relcornery[whichGrp]) return(-1);
+   if (xGIDComp > trueCornerx[whichGrp]+relcornerx[whichGrp]+lDimx[whichGrp]-1) return(-1);
+   if (yGIDComp > trueCornery[whichGrp]+relcornery[whichGrp]+lDimy[whichGrp]-1) return(-1);
+
+
+   bool found = false;
+   for (int j = 0; j <  maxRegPerGID; j++) {
+      jthRegions = (*regionsPerGIDWithGhosts)[j];
+      if  ( ((int) jthRegions[LIDcomp]) == curRegion ) {
+         found = true;
+         break;
+      }
+   }
+   if (found == false) return(-1);
+
+   return( 
+    (yGIDComp - relcornery[whichGrp]-trueCornery[whichGrp])*lDimx[whichGrp]+ (xGIDComp - relcornerx[whichGrp]-trueCornerx[whichGrp]));
 }
 
 
