@@ -81,9 +81,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     "-DTrilinos_ENABLE_Fortran=OFF"
 
-    "-DSuperLU_INCLUDE_DIRS=/home/aprokop/local/opt/superlu-4.3/include"
-    "-DSuperLU_LIBRARY_DIRS=/home/aprokop/local/opt/superlu-4.3/lib"
-    "-DSuperLU_LIBRARY_NAMES=superlu_4.3"
+    "-DSuperLU_INCLUDE_DIRS=${SEMS_SUPERLU_INCLUDE_PATH}"
+    "-DSuperLU_LIBRARY_DIRS=${SEMS_SUPERLU_LIBRARY_PATH}"
+    "-DSuperLU_LIBRARY_NAMES=superlu"
 
     ### PACKAGE CONFIGURATION ###
 
@@ -91,7 +91,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-5.2.0")
+  SET_DEFAULT(COMPILER_VERSION "$ENV{SEMS_COMPILER_NAME}-$ENV{SEMS_COMPILER_VERSION}")
 
   # Ensure that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
@@ -99,7 +99,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
         "-DTPL_ENABLE_MPI=ON"
-            "-DMPI_BASE_DIR=/home/aprokop/local/opt/openmpi-1.10.0"
+            "-DMPI_BASE_DIR:PATH=$ENV{SEMS_OPENMPI_ROOT}"
             "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=--bind-to\\\;socket\\\;--map-by\\\;socket"
        )
 
@@ -110,8 +110,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/gcc-5.2.0/bin/g++"
-      "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/gcc-5.2.0/bin/gcc"
+      "-DCMAKE_CXX_COMPILER=${SEMS_COMPILER_ROOT}/bin/g++"
+      "-DCMAKE_C_COMPILER=${SEMS_COMPILER_ROOT}/bin/gcc"
       )
 
   ENDIF()
