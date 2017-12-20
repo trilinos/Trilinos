@@ -967,6 +967,20 @@ getSolver() const
   return fwdStateStepper->getSolver(); 
 }
 
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Tempus::Status Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+Tempus::Status Piro::TempusSolver<Scalar>::
+#endif
+getTempusIntegratorStatus() const
+{
+  return fwdStateIntegrator->getStatus(); 
+}
+
+
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
 Teuchos::RCP<Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
