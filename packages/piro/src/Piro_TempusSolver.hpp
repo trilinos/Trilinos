@@ -173,7 +173,10 @@ public:
   //! Return RCP to Tempus::SolutionHistory
   Teuchos::RCP<Tempus::SolutionHistory<Scalar> > 
   getSolutionHistory() const; 
-  
+ 
+  //! Return Thyra nonlinear solver underlying Tempus::Stepper object  
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > 
+  getSolver() const;
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
