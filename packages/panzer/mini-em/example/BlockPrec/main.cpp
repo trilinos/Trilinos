@@ -164,11 +164,11 @@ int main(int argc,char * argv[])
       pl->set("Z Procs",z_procs);
   
       // periodic boundaries
-      Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
-      per_pl.set("Count", 3);
-      per_pl.set("Periodic Condition 1", "xy-all 1e-8: front;back");
-      per_pl.set("Periodic Condition 2", "xz-all 1e-8: top;bottom");
-      per_pl.set("Periodic Condition 3", "yz-all 1e-8: left;right");
+      //      Teuchos::ParameterList& per_pl = pl->sublist("Periodic BCs");
+      //      per_pl.set("Count", 3);
+      //      per_pl.set("Periodic Condition 1", "xy-all 1e-8: front;back");
+      //      per_pl.set("Periodic Condition 2", "xz-all 1e-8: top;bottom");
+      //      per_pl.set("Periodic Condition 3", "yz-all 1e-8: left;right");
   
       mesh_factory.setParameterList(pl);
   
@@ -188,7 +188,7 @@ int main(int argc,char * argv[])
   
       // define physics block parameter list and boundary conditions
       Teuchos::RCP<Teuchos::ParameterList> physicsBlock_pl = maxwellParameterList(basis_order);
-      std::vector<panzer::BC> bcs;// = homogeneousBoundaries();
+      std::vector<panzer::BC> bcs = homogeneousBoundaries();
       std::vector<panzer::BC> aux_bcs;// = auxiliaryBoundaries();
   
       // build the physics blocks objects
