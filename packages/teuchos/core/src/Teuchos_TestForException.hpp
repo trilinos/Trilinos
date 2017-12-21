@@ -361,6 +361,21 @@ catch(const std::exception &except) { \
   throw std::runtime_error(omsg.str()); \
 }
 
+/** \brief This macro is to be used instead of
+ * <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt> to report an error in situations
+ * where an exception can't be throw (like in an destructor).
+ *
+ * \param terminate_test [in] See <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt>.
+ *
+ * \param msg [in] See <tt>TEUCHOS_TEST_FOR_EXCEPTION()</tt>.
+ *
+ * If the termination test evaluates to <tt>true</tt>, then
+ * <tt>std::terminate()</tt> is called (which should bring down an entire
+ * multi-process MPI program even if only one process calls
+ * <tt>std::terminate()</tt> with most MPI implementation).
+ *
+ * \ingroup TestForException_grp
+ */
 #define TEUCHOS_TEST_FOR_TERMINATION(terminate_test, msg) \
 { \
   const bool call_terminate = (terminate_test); \

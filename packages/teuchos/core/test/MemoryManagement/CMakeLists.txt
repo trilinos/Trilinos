@@ -371,6 +371,41 @@ ENDIF()
 
 
 #
+# Test TEUCHOS_TEST_FOR_TERMINATION()
+#
+# This aborts the program so the only way to test it is to run a program.
+#
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST( testTeuchosTestForTermination
+  SOURCES testTeuchosTestForTermination.cpp
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION
+    "Bingo, we are terminating on procid == terminate_on_procid = 0"
+  )
+
+
+SET(testTeuchosTestForTermination_NP 4)
+MATH(EXPR testTeuchosTestForTermination_NP_m_1
+  "${testTeuchosTestForTermination_NP}-1")
+FOREACH(PID RANGE ${testTeuchosTestForTermination_NP_m_1})
+  TRIBITS_ADD_ADVANCED_TEST(
+    testTeuchosTestForTermination_${PID}_MPI_${testTeuchosTestForTermination_NP}
+    COMM mpi
+    TEST_0
+      MESSAGE "Call TEUCHOS_TEST_FOR_TERMINATION(true) only on PID=${PID} which should terminate all processes"
+      EXEC testTeuchosTestForTermination
+      ARGS --terminate-on-procid=${PID}
+      NUM_MPI_PROCS ${testTeuchosTestForTermination_NP}
+      PASS_REGULAR_EXPRESSION_ALL
+      "p=${PID}: .*/testTeuchosTestForTermination.cpp"
+      "Bingo, we are terminating on procid == terminate_on_procid = ${PID}"
+    )
+  # NOTE: If each of these tests does not terminate right away, then that is a
+  # sign that std::terminate() on a single process does not
+ENDFOREACH()
+
+
+#
 # RCP Beginners Guide example code
 #
 SET(EXAMPLE_RAW_CPP_POINTERS_CPP
