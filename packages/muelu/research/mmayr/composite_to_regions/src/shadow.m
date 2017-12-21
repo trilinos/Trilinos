@@ -1,3 +1,10 @@
+% Do a 2-level V-cycle in composite form for caseFour
+%
+% Perform all operations in composite form to allow for comparison to the region
+% algorithm. For simplicity, we skip postsmooting.
+%
+% Note: Initial guess and forcing vector need to be hard-coded in main.cpp.
+%
 fineA = mmread('Amat.mm');
 finex = [0 1 4 9 0 1 4 0 1 4 9 16 25 36 49 64 0 1 4 0 1 0 1 0 1]';
 fineb = zeros(25,1);
