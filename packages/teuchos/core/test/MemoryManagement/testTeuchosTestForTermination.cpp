@@ -1,3 +1,4 @@
+/*
 // @HEADER
 // ***********************************************************************
 //
@@ -38,84 +39,29 @@
 //
 // ***********************************************************************
 // @HEADER
+*/
 
-#include "Teuchos_TestForException.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_TestForException.hpp"
 
-#include <iostream>
-
-//
-// ToDo: Make these functions thread-safe!
-//
-
-
-namespace {
-
-
-int throwNumber = 0;
-
-
-bool& loc_enableStackTrace()
+int main(int argc, char* argv[])
 {
-  static bool static_enableStackTrace =
-#ifdef HAVE_TEUCHOS_DEFAULT_STACKTRACE
-    true
-#else
-    false
-#endif
-    ;
-  return static_enableStackTrace;
-}
 
+  using Teuchos::GlobalMPISession;
+  GlobalMPISession mpiSession(&argc,&argv);
 
-} // namespace
+  Teuchos::CommandLineProcessor clp;
+  int terminate_on_procid = 0;
+  clp.setOption("terminate-on-procid", &terminate_on_procid);
+  (void)clp.parse(argc, argv);
 
+  TEUCHOS_TEST_FOR_TERMINATION(
+    GlobalMPISession::getRank() == terminate_on_procid,
+    "Bingo, we are terminating on procid == "
+    "terminate_on_procid = "<<GlobalMPISession::getRank()<<"!"
+    );
 
-void Teuchos::TestForException_incrThrowNumber()
-{
-  ++throwNumber;
-}
+  return 1; // Will never be called!
 
-
-int Teuchos::TestForException_getThrowNumber()
-{
-  return throwNumber;
-}
-
-
-void Teuchos::TestForException_break( const std::string &errorMsg )
-{
-  size_t break_on_me;
-  break_on_me = errorMsg.length(); // Use errMsg to avoid compiler warning.
-  if (break_on_me)
-    ; // Avoid 'used var' warning
-  // Above is just some statement for the debugger to break on.  Note: now is
-  // a good time to examine the stack trace and look at the error message in
-  // 'errorMsg' to see what happened.  In GDB just type 'where' or you can go
-  // up by typing 'up' and moving up in the stack trace to see where you are
-  // and how you got to this point in the code where you are throwning this
-  // exception!  Typing in a 'p errorMsg' will show you what the error message
-  // is.  Also, you should consider adding a conditional breakpoint in this
-  // function based on a specific value of 'throwNumber' if the exception you
-  // want to examine is not the first exception thrown.
-}
-
-
-void Teuchos::TestForException_setEnableStacktrace(bool enableStrackTrace)
-{
-  loc_enableStackTrace() = enableStrackTrace;
-}
-
-
-bool Teuchos::TestForException_getEnableStacktrace()
-{
-  return loc_enableStackTrace();
-}
-
-void Teuchos::TestForTermination_terminate(const std::string &msg) {
-  if (GlobalMPISession::getNProc() > 1) {
-    std::cerr << "p="<<GlobalMPISession::getRank()<<": ";
-  }
-  std::cerr << msg << "\n";
-  std::terminate();
 }
