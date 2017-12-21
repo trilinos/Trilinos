@@ -16,6 +16,9 @@ export TDD_PARALLEL_LEVEL=2
 # Submission mode for the *TrilinosDriver* dashboard
 export TDD_CTEST_TEST_TYPE=Nightly
 
+# enable this to avoid clobbering any local changes you're making
+#export TDD_IN_TESTING_MODE=ON
+
 export TDD_DEBUG_VERBOSE=1
 export TDD_FORCE_CMAKE_INSTALL=0
 export TRIBITS_TDD_USE_SYSTEM_CTEST=1
@@ -38,9 +41,10 @@ export https_proxy="https://sonproxy.sandia.gov:80"
 
 # ===========================================================================
 export CTEST_CONFIGURATION="default"
-module load openmpi/1.10.0
-module load gcc/5.2.0
-module load valgrind/3.10.1
+module load sems-cmake/3.5.2
+module load sems-gcc/5.3.0
+module load sems-openmpi/1.10.1
+module load sems-superlu/4.3/base
 
 # Remove colors (-fdiagnostics-color) from OMPI flags
 # It may result in non-XML characters on the Dashboard
@@ -56,32 +60,10 @@ export OMP_NUM_THREADS=2
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py
 
-module unload valgrind
-module unload gcc
-module unload openmpi
-# ===========================================================================
-export CTEST_CONFIGURATION="broken"
-module load openmpi/1.10.0
-module load gcc/5.2.0
-module load valgrind/3.10.1
-
-# Remove colors (-fdiagnostics-color) from OMPI flags
-# It may result in non-XML characters on the Dashboard
-export OMPI_CFLAGS=`echo $OMPI_CFLAGS | sed 's/-fdiagnostics-color//'`
-export OMPI_CXXFLAGS=`echo $OMPI_CXXFLAGS | sed 's/-fdiagnostics-color//'`
-
-echo "Configuration = $CTEST_CONFIGURATION"
-env
-
-export OMP_NUM_THREADS=2
-
-# Machine independent cron_driver:
-SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
-$SCRIPT_DIR/../cron_driver.py
-
-module unload valgrind
-module unload gcc
-module unload openmpi
+module unload sems-superlu/4.3/base
+module unload sems-openmpi/1.10.1
+module unload sems-gcc/5.3.0
+module unload sems-cmake/3.5.2
 # ===========================================================================
 export CTEST_CONFIGURATION="nvcc_wrapper"
 #module load openmpi/1.10.0

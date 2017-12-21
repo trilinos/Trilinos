@@ -178,6 +178,9 @@ public:
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > 
   getSolver() const;
 
+  Tempus::Status 
+  getTempusIntegratorStatus() const;
+
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
   //@{

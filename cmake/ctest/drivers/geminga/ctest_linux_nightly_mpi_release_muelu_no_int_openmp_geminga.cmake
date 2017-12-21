@@ -63,7 +63,8 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.geminga.gcc.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME OPENMPI_1.10.0_RELEASE_DEV_MueLu_NO_INT_OPENMP)
+string(TOUPPER $ENV{SEMS_MPI_NAME} UC_MPI_NAME)
+SET(BUILD_DIR_NAME ${UC_MPI_NAME}_$ENV{SEMS_MPI_VERSION}_${BUILD_TYPE}_DEV_MueLu_NO_INT_OPENMP)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(Trilinos_TRACK  Specialized)     # Set the CDash track
@@ -87,9 +88,6 @@ SET(EXTRA_CONFIGURE_OPTIONS
 
   ### TPLS ###
   "-DTPL_ENABLE_SuperLU:BOOL=ON"
-      "-DSuperLU_INCLUDE_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/include"
-      "-DSuperLU_LIBRARY_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/lib"
-      "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
   "-DTrilinos_ENABLE_OpenMP:BOOL=ON"
   "-DTPL_ENABLE_HWLOC:BOOL=OFF"
 

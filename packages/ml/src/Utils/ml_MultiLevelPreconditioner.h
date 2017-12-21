@@ -1051,7 +1051,7 @@ template <class T> void MLVec<T>::wrap(T *start, T *end, bool okToChangePtr,
 
 template <class T> MLVec<T>::~MLVec()              { 
    if (data_ != NULL) {
-      TEUCHOS_TEST_FOR_EXCEPTION(size_ == 0,std::logic_error,
+      TEUCHOS_TEST_FOR_TERMINATION(size_ == 0,
       "MLVec error, data pointer should be null for 0 length vectors\n");
       if (okToChangePtr_ && (freeType_ == useFree))   ML_free(data_); 
       if (okToChangePtr_ && (freeType_ == useDelete)) delete data_;
