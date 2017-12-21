@@ -405,6 +405,17 @@ FOREACH(PID RANGE ${testTeuchosTestForTermination_NP_m_1})
 ENDFOREACH()
 
 
+# Test call to terminate on bad destructor call
+IF (${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST( testTeuchosRCPNodeImplDestructTerminate
+    SOURCES testTeuchosRCPNodeImplDestructTerminate.cpp
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION
+      "Error, the underlying object must be explicitly deleted before deleting the node object"
+    )
+ENDIF()
+
+
 #
 # RCP Beginners Guide example code
 #
