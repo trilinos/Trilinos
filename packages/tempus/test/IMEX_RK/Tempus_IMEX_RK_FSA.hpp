@@ -9,14 +9,20 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_DefaultMultiVectorProductVector.hpp"
+#include "Thyra_DefaultProductVector.hpp"
 
 #include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_WrapperModelEvaluatorPairPartIMEX_Basic.hpp"
+#include "Tempus_IntegratorForwardSensitivity.hpp"
+#include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
 
+#include "../TestModels/VanDerPolModel.hpp"
 #include "../TestModels/VanDerPol_IMEX_ExplicitModel.hpp"
-#include "../TestModels/VanDerPol_IMEXPart_ImplicitModel.hpp"
+#include "../TestModels/VanDerPol_IMEX_ImplicitModel.hpp"
 #include "../TestUtils/Tempus_ConvergenceTestUtils.hpp"
 
 #include <fstream>
@@ -36,31 +42,52 @@ using Tempus::SolutionState;
 
 // ************************************************************
 // ************************************************************
-TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
+void test_vdp_fsa(const bool use_combined_method,
+                  const bool use_dfdp_as_tangent,
+                  Teuchos::FancyOStream &out, bool &success)
 {
   std::vector<std::string> stepperTypes;
-  stepperTypes.push_back("Partitioned IMEX RK 1st order");
-  stepperTypes.push_back("Partitioned IMEX RK SSP2"     );
-  stepperTypes.push_back("Partitioned IMEX RK ARS 233"  );
-  stepperTypes.push_back("General Partitioned IMEX RK"  );
+  stepperTypes.push_back("IMEX RK 1st order");
+  stepperTypes.push_back("IMEX RK SSP2"     );
+  stepperTypes.push_back("IMEX RK ARS 233"  );
+  stepperTypes.push_back("General IMEX RK"  );
 
   std::vector<double> stepperOrders;
-  stepperOrders.push_back(1.07964);
-  stepperOrders.push_back(2.00408);
-  stepperOrders.push_back(2.70655);
-  stepperOrders.push_back(2.00211);
-
   std::vector<double> stepperErrors;
-  stepperErrors.push_back(0.0046423);
-  stepperErrors.push_back(0.0154534);
-  stepperErrors.push_back(0.000298908);
-  stepperErrors.push_back(0.0071546);
+  if (use_combined_method) {
+    stepperOrders.push_back(1.1198);
+    stepperOrders.push_back(1.98931);
+    stepperOrders.push_back(2.60509);
+    stepperOrders.push_back(1.992);
 
+    stepperErrors.push_back(0.00619674);
+    stepperErrors.push_back(0.294989);
+    stepperErrors.push_back(0.0062125);
+    stepperErrors.push_back(0.142489);
+  }
+  else {
+    stepperOrders.push_back(1.1198);
+    stepperOrders.push_back(2.05232);
+    stepperOrders.push_back(2.43013);
+    stepperOrders.push_back(2.07975);
+
+    stepperErrors.push_back(0.00619674);
+    stepperErrors.push_back(0.0534172);
+    stepperErrors.push_back(0.00224533);
+    stepperErrors.push_back(0.032632);
+  }
   std::vector<double> stepperInitDt;
   stepperInitDt.push_back(0.0125);
   stepperInitDt.push_back(0.05);
   stepperInitDt.push_back(0.05);
   stepperInitDt.push_back(0.05);
+
+  Teuchos::RCP<const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
+  Teuchos::RCP<Teuchos::FancyOStream> my_out =
+    Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  my_out->setProcRankAndSize(comm->getRank(), comm->getSize());
+  my_out->setOutputToRootOnly(0);
 
   std::vector<std::string>::size_type m;
   for(m = 0; m != stepperTypes.size(); m++) {
@@ -71,6 +98,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
     std::replace(stepperName.begin(), stepperName.end(), '/', '.');
 
     std::vector<RCP<Thyra::VectorBase<double>>> solutions;
+    std::vector<RCP<Thyra::VectorBase<double>>> sensitivities;
     std::vector<double> StepSize;
     std::vector<double> ErrorNorm;
     const int nTimeStepSizes = 3;  // 6 for error plot
@@ -80,32 +108,40 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
 
       // Read params from .xml file
       RCP<ParameterList> pList =
-        getParametersFromXmlFile("Tempus_IMEX_RK_VanDerPol.xml");
+          getParametersFromXmlFile("Tempus_IMEX_RK_VanDerPol.xml");
 
       // Setup the explicit VanDerPol ModelEvaluator
       RCP<ParameterList> vdpmPL = sublist(pList, "VanDerPolModel", true);
-      const bool useProductVector = true;
+      vdpmPL->set("Use DfDp as Tangent", use_dfdp_as_tangent);
       RCP<VanDerPol_IMEX_ExplicitModel<double> > explicitModel =
-        Teuchos::rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL,
-          useProductVector));
+        Teuchos::rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
 
       // Setup the implicit VanDerPol ModelEvaluator (reuse vdpmPL)
-      RCP<VanDerPol_IMEXPart_ImplicitModel<double> > implicitModel =
-        Teuchos::rcp(new VanDerPol_IMEXPart_ImplicitModel<double>(vdpmPL));
+      RCP<VanDerPol_IMEX_ImplicitModel<double> > implicitModel =
+        Teuchos::rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
 
       // Setup the IMEX Pair ModelEvaluator
-      const int numExplicitBlocks = 1;
-      const int parameterIndex = 4;
-      RCP<Tempus::WrapperModelEvaluatorPairPartIMEX_Basic<double> > model =
-          Teuchos::rcp(
-            new Tempus::WrapperModelEvaluatorPairPartIMEX_Basic<double>(
-                             explicitModel, implicitModel,
-                             numExplicitBlocks, parameterIndex));
+      RCP<Tempus::WrapperModelEvaluatorPairIMEX_Basic<double> > model =
+          Teuchos::rcp(new Tempus::WrapperModelEvaluatorPairIMEX_Basic<double>(
+                                                 explicitModel, implicitModel));
+
+      // Setup sensitivities
+      RCP<ParameterList> pl = sublist(pList, "Tempus", true);
+      ParameterList& sens_pl = pl->sublist("Sensitivities");
+      if (use_combined_method)
+        sens_pl.set("Sensitivity Method", "Combined");
+      else {
+        sens_pl.set("Sensitivity Method", "Staggered");
+        sens_pl.set("Reuse State Linear Solver", true);
+      }
+      sens_pl.set("Use DfDp as Tangent", use_dfdp_as_tangent);
+      ParameterList& interp_pl =
+        pl->sublist("Default Integrator").sublist("Solution History").sublist("Interpolator");
+      interp_pl.set("Interpolator Type", "Lagrange");
+      interp_pl.set("Order", 2); // All RK methods here are at most 3rd order
 
       // Set the Stepper
-      RCP<ParameterList> pl = sublist(pList, "Tempus", true);
-
-      if (stepperType == "General Partitioned IMEX RK"){
+      if (stepperType == "General IMEX RK"){
           // use the appropriate stepper sublist
           pl->sublist("Default Integrator").set("Stepper Name", "General IMEX RK");
       }  else {
@@ -119,8 +155,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
       // Setup the Integrator and reset initial time step
       pl->sublist("Default Integrator")
          .sublist("Time Step Control").set("Initial Time Step", dt);
-      RCP<Tempus::IntegratorBasic<double> > integrator =
-        Tempus::integratorBasic<double>(pl, model);
+      RCP<Tempus::IntegratorForwardSensitivity<double> > integrator =
+        Tempus::integratorForwardSensitivity<double>(pl, model);
       order = integrator->getStepper()->getOrder();
 
       // Integrate to timeMax
@@ -136,15 +172,19 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
 
       // Store off the final solution and step size
       auto solution = Thyra::createMember(model->get_x_space());
+      auto sensitivity = Thyra::createMember(model->get_x_space());
       Thyra::copy(*(integrator->getX()),solution.ptr());
+      Thyra::copy(*(integrator->getDxDp()->col(0)),sensitivity.ptr());
       solutions.push_back(solution);
+      sensitivities.push_back(sensitivity);
       StepSize.push_back(dt);
 
       // Output finest temporal solution for plotting
-      // This only works for ONE MPI process
-      if ((n == 0) or (n == nTimeStepSizes-1)) {
-        std::string fname = "Tempus_"+stepperName+"_VanDerPol-Ref.dat";
-        if (n == 0) fname = "Tempus_"+stepperName+"_VanDerPol.dat";
+      if (comm->getRank() == 0 and ((n == 0) or (n == nTimeStepSizes-1))) {
+        typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
+
+        std::string fname = "Tempus_"+stepperName+"_VanDerPol_Sens-Ref.dat";
+        if (n == 0) fname = "Tempus_"+stepperName+"_VanDerPol_Sens.dat";
         std::ofstream ftmp(fname);
         RCP<const SolutionHistory<double> > solutionHistory =
           integrator->getSolutionHistory();
@@ -152,9 +192,19 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
         for (int i=0; i<nStates; i++) {
           RCP<const SolutionState<double> > solutionState =
             (*solutionHistory)[i];
-          RCP<const Thyra::VectorBase<double> > x = solutionState->getX();
+          RCP<const DMVPV> x_prod =
+            Teuchos::rcp_dynamic_cast<const DMVPV>(solutionState->getX());
+          RCP<const Thyra::VectorBase<double> > x =
+            x_prod->getMultiVector()->col(0);
+          RCP<const Thyra::VectorBase<double> > dxdp =
+            x_prod->getMultiVector()->col(1);
           double ttime = solutionState->getTime();
-          ftmp << ttime << "   " << get_ele(*x, 0) << "   " << get_ele(*x, 1)
+          ftmp << std::fixed << std::setprecision(7)
+               << ttime << "   "
+               << std::setw(11) << get_ele(*x, 0) << "   "
+               << std::setw(11) << get_ele(*x, 1) << "   "
+               << std::setw(11) << get_ele(*dxdp, 0) << "   "
+               << std::setw(11) << get_ele(*dxdp, 1)
                << std::endl;
         }
         ftmp.close();
@@ -164,13 +214,22 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
     // Calculate the error - use the most temporally refined mesh for
     // the reference solution.
     auto ref_solution = solutions[solutions.size()-1];
+    auto ref_sensitivity = sensitivities[solutions.size()-1];
     std::vector<double> StepSizeCheck;
     for (std::size_t i=0; i < (solutions.size()-1); ++i) {
-      auto tmp = solutions[i];
-      Thyra::Vp_StV(tmp.ptr(), -1.0, *ref_solution);
-      const double L2norm = Thyra::norm_2(*tmp);
+      auto sol = solutions[i];
+      auto sen = sensitivities[i];
+      Thyra::Vp_StV(sol.ptr(), -1.0, *ref_solution);
+      Thyra::Vp_StV(sen.ptr(), -1.0, *ref_sensitivity);
+      const double L2norm_sol = Thyra::norm_2(*sol);
+      const double L2norm_sen = Thyra::norm_2(*sen);
+      const double L2norm =
+        std::sqrt(L2norm_sol*L2norm_sol + L2norm_sen*L2norm_sen);
       StepSizeCheck.push_back(StepSize[i]);
       ErrorNorm.push_back(L2norm);
+
+      *my_out << " n = " << i << " dt = " << StepSize[i]
+              << " error = " << L2norm << std::endl;
     }
 
     // Check the order and intercept
@@ -185,7 +244,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
 
     // Write error data
     {
-      std::ofstream ftmp("Tempus_"+stepperName+"_VanDerPol-Error.dat");
+      std::ofstream ftmp("Tempus_"+stepperName+"_VanDerPol_Sens-Error.dat");
       double error0 = 0.8*ErrorNorm[0];
       for (std::size_t n = 0; n < StepSizeCheck.size(); n++) {
         ftmp << StepSizeCheck[n]  << "   " << ErrorNorm[n] << "   "

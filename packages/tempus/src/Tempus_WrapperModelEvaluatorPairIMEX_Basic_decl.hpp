@@ -140,9 +140,20 @@ public:
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> & out) const;
   //@}
 
-private:
-  /// Default constructor - not allowed
+protected:
+
+  /// Default constructor -- only allowed for derived classes
   WrapperModelEvaluatorPairIMEX_Basic(){}
+
+  /// Setup ME when using default constructor -- for derived classes
+  void setup(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel)
+  {
+    setExplicitModel(explicitModel);
+    setImplicitModel(implicitModel);
+    initialize();
+  }
 
 protected:
 

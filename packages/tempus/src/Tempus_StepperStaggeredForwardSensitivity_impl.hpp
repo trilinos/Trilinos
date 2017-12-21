@@ -11,12 +11,12 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperFactory.hpp"
-#include "Tempus_StaggeredForwardSensitivityModelEvaluator.hpp"
+#include "Tempus_WrapStaggeredFSAModelEvaluator.hpp"
+#include "Tempus_WrapCombinedFSAModelEvaluator.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
-#include "NOX_Thyra.H"
 
 namespace Tempus {
 
@@ -55,9 +55,13 @@ setModel(
   *spl = *sensPL_;
   spl->remove("Reuse State Linear Solver");
   spl->remove("Force W Update");
-  fsa_model_ =
-    rcp(new StaggeredForwardSensitivityModelEvaluator<Scalar>(
-          appModel, false, spl));
+  fsa_model_ = wrapStaggeredFSAModelEvaluator(appModel, spl);
+
+  // Create combined FSA ME which serves as "the" ME for this stepper,
+  // so that getModel() has a ME consistent the FSA problem (including both
+  // state and sensitivity components), e.g., the integrator may call
+  // getModel()->getNominalValues(), which needs to be consistent.
+  combined_fsa_model_ = wrapCombinedFSAModelEvaluator(appModel, spl);
 
   // Create state and sensitivity steppers
   RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
@@ -94,7 +98,7 @@ Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 StepperStaggeredForwardSensitivity<Scalar>::
 getModel()
 {
-  return stateStepper_->getModel();
+  return combined_fsa_model_;
 }
 
 
@@ -154,10 +158,10 @@ takeStep(
     // Get product X, XDot, XDotDot
     RCP<SolutionState<Scalar> > state = solutionHistory->getCurrentState();
     RCP<DMVPV> X, XDot, XDotDot;
-    X = rcp_dynamic_cast<DMVPV>(state->getX());
-    XDot = rcp_dynamic_cast<DMVPV>(state->getXDot());
+    X = rcp_dynamic_cast<DMVPV>(state->getX(),true);
+    XDot = rcp_dynamic_cast<DMVPV>(state->getXDot(),true);
     if (state->getXDotDot() != Teuchos::null)
-      XDotDot = rcp_dynamic_cast<DMVPV>(state->getXDotDot());
+      XDotDot = rcp_dynamic_cast<DMVPV>(state->getXDotDot(),true);
 
     // Pull out state components (has to be non-const because of SolutionState
     // constructor)
@@ -176,6 +180,7 @@ takeStep(
     stateSolutionHistory_->addState(state_state);
 
     const int num_param = X->getMultiVector()->domain()->dim()-1;
+    TEUCHOS_ASSERT(num_param > 0);
     const Teuchos::Range1D rng(1,num_param);
 
     // Pull out sensitivity components
@@ -186,7 +191,7 @@ takeStep(
       dxdotdotdp = XDotDot->getNonconstMultiVector()->subView(rng);
 
     // Create sensitivity product vectors
-    RCP<DMVPV> dxdp_vec, dxdotdp_vec, dxdotdotdp_vec;
+    RCP<VectorBase<Scalar> > dxdp_vec, dxdotdp_vec, dxdotdotdp_vec;
     RCP<const DMVPVS> prod_space =
       multiVectorProductVectorSpace(X->getMultiVector()->range(), num_param);
     dxdp_vec = multiVectorProductVector(prod_space, dxdp);
@@ -206,10 +211,10 @@ takeStep(
   // Get our working state
   RCP<SolutionState<Scalar> > prod_state = solutionHistory->getWorkingState();
   RCP<DMVPV> X, XDot, XDotDot;
-  X = rcp_dynamic_cast<DMVPV>(prod_state->getX());
-  XDot = rcp_dynamic_cast<DMVPV>(prod_state->getXDot());
+  X = rcp_dynamic_cast<DMVPV>(prod_state->getX(),true);
+  XDot = rcp_dynamic_cast<DMVPV>(prod_state->getXDot(),true);
   if (prod_state->getXDotDot() != Teuchos::null)
-    XDotDot = rcp_dynamic_cast<DMVPV>(prod_state->getXDotDot());
+    XDotDot = rcp_dynamic_cast<DMVPV>(prod_state->getXDotDot(),true);
 
   // Take step for state equations
   stateSolutionHistory_->initWorkingState();
@@ -235,12 +240,8 @@ takeStep(
 
   // Get forward state in sensitivity model evaluator
   fsa_model_->setForwardSolutionHistory(stateSolutionHistory_);
-  if (reuse_solver_ && stateStepper_->getSolver() != Teuchos::null) {
-    RCP<Thyra::NOXNonlinearSolver> nox_solver =
-      rcp_dynamic_cast<Thyra::NOXNonlinearSolver>(stateStepper_->getSolver());
-    fsa_model_->setLO(nox_solver->get_nonconst_W_op(force_W_update_));
-    fsa_model_->setPO(nox_solver->get_nonconst_prec_op());
-  }
+  if (reuse_solver_ && stateStepper_->getSolver() != Teuchos::null)
+    fsa_model_->setSolver(stateStepper_->getSolver(), force_W_update_);
 
   // Take step in senstivity equations
   sensSolutionHistory_->initWorkingState();
@@ -251,16 +252,16 @@ takeStep(
 
   // Set sensitivity components of product state
   RCP<const MultiVectorBase<Scalar> > dxdp =
-    rcp_dynamic_cast<const DMVPV>(sens_state->getX())->getMultiVector();
+    rcp_dynamic_cast<const DMVPV>(sens_state->getX(),true)->getMultiVector();
   const int num_param = dxdp->domain()->dim();
   const Teuchos::Range1D rng(1,num_param);
   assign(X->getNonconstMultiVector()->subView(rng).ptr(), *dxdp);
   RCP<const MultiVectorBase<Scalar> > dxdotdp =
-    rcp_dynamic_cast<const DMVPV>(sens_state->getXDot())->getMultiVector();
+    rcp_dynamic_cast<const DMVPV>(sens_state->getXDot(),true)->getMultiVector();
   assign(XDot->getNonconstMultiVector()->subView(rng).ptr(), *dxdotdp);
   if (sens_state->getXDotDot() != Teuchos::null) {
     RCP<const MultiVectorBase<Scalar> > dxdotdotdp =
-      rcp_dynamic_cast<const DMVPV>(sens_state->getXDotDot())->getMultiVector();
+      rcp_dynamic_cast<const DMVPV>(sens_state->getXDotDot(),true)->getMultiVector();
     assign(XDotDot->getNonconstMultiVector()->subView(rng).ptr(), *dxdotdotdp);
   }
   prod_state->setOrder(std::min(state->getOrder(), sens_state->getOrder()));
@@ -402,7 +403,7 @@ get_x_space() const
   RCP<const Thyra::VectorSpaceBase<Scalar> > x_space =
     stateStepper_->getModel()->get_x_space();
   RCP<const DMVPVS> dxdp_space =
-    rcp_dynamic_cast<const DMVPVS>(sensitivityStepper_->getModel()->get_x_space());
+    rcp_dynamic_cast<const DMVPVS>(sensitivityStepper_->getModel()->get_x_space(),true);
   const int num_param = dxdp_space->numBlocks();
   RCP<const Thyra::VectorSpaceBase<Scalar> > prod_space =
     multiVectorProductVectorSpace(x_space, num_param+1);

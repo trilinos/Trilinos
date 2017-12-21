@@ -180,6 +180,9 @@ get_W_factory() const
   typedef Thyra::LinearOpWithSolveFactoryBase<Scalar> LOWSFB;
 
   RCP<const LOWSFB> factory = model_->get_W_factory();
+  if (factory == Teuchos::null)
+    return Teuchos::null; // model_ doesn't support W_factory
+
   RCP<const LOWSFB> alowsfb = Thyra::adjointLinearOpWithSolveFactory(factory);
   return Thyra::multiVectorLinearOpWithSolveFactory(
     alowsfb, residual_space_, adjoint_space_);
@@ -305,10 +308,10 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       me_inArgs.set_beta(inArgs.get_beta());
 
     RCP<Thyra::MultiVectorLinearOp<Scalar> > mv_adjoint_op =
-      rcp_dynamic_cast<Thyra::MultiVectorLinearOp<Scalar> >(op);
+      rcp_dynamic_cast<Thyra::MultiVectorLinearOp<Scalar> >(op,true);
     RCP<Thyra::DefaultScaledAdjointLinearOp<Scalar> > adjoint_op =
       rcp_dynamic_cast<Thyra::DefaultScaledAdjointLinearOp<Scalar> >(
-        mv_adjoint_op->getNonconstLinearOp());
+        mv_adjoint_op->getNonconstLinearOp(),true);
     MEB::OutArgs<Scalar> me_outArgs = model_->createOutArgs();
     me_outArgs.set_W_op(adjoint_op->getNonconstOp());
     model_->evalModel(me_inArgs, me_outArgs);
@@ -320,7 +323,8 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   if (adjoint_f != Teuchos::null || adjoint_g != Teuchos::null) {
     RCP<const Thyra::VectorBase<Scalar> > adjoint_x =
       inArgs.get_x().assert_not_null();
-    adjoint_x_mv = rcp_dynamic_cast<const DMVPV>(adjoint_x)->getMultiVector();
+    adjoint_x_mv =
+      rcp_dynamic_cast<const DMVPV>(adjoint_x,true)->getMultiVector();
   }
 
   // Compute adjoint residual F(y):
@@ -330,7 +334,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // so the residual becomes F(y) = df/dx_dot^T*y_dot + df/dx^T*y - dg/dx^T
   if (adjoint_f != Teuchos::null) {
     RCP<Thyra::MultiVectorBase<Scalar> > adjoint_f_mv =
-      rcp_dynamic_cast<DMVPV>(adjoint_f)->getNonconstMultiVector();
+      rcp_dynamic_cast<DMVPV>(adjoint_f,true)->getNonconstMultiVector();
 
     MEB::OutArgs<Scalar> me_outArgs = model_->createOutArgs();
 
@@ -372,7 +376,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
       RCP<const Thyra::VectorBase<Scalar> > adjoint_x_dot = inArgs.get_x_dot();
       if (adjoint_x_dot != Teuchos::null) {
         RCP<const Thyra::MultiVectorBase<Scalar> > adjoint_x_dot_mv =
-          rcp_dynamic_cast<const DMVPV>(adjoint_x_dot)->getMultiVector();
+          rcp_dynamic_cast<const DMVPV>(adjoint_x_dot,true)->getMultiVector();
         if (mass_matrix_is_identity_) {
           // F = -F + y_dot
           Thyra::V_StVpV(adjoint_f_mv.ptr(), Scalar(-1.0), *adjoint_f_mv,
@@ -403,7 +407,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   // evaluated once in that case anyway.
   if (adjoint_g != Teuchos::null) {
     RCP<Thyra::MultiVectorBase<Scalar> > adjoint_g_mv =
-      rcp_dynamic_cast<DMVPV>(adjoint_g)->getNonconstMultiVector();
+      rcp_dynamic_cast<DMVPV>(adjoint_g,true)->getNonconstMultiVector();
 
     MEB::OutArgs<Scalar> me_outArgs = model_->createOutArgs();
 

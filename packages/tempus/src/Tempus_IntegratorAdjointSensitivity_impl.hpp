@@ -477,6 +477,7 @@ buildSolutionHistory(
       rcp_dynamic_cast<const DPV>(adjoint_state->getX())->getVectorBlock(0);
     assign(x->getNonconstVectorBlock(0).ptr(), *(forward_state->getX()));
     assign(x->getNonconstVectorBlock(1).ptr(), *(adjoint_x));
+    RCP<VectorBase<Scalar> > x_b = x;
 
     // X-Dot
     RCP<DPV> x_dot = Thyra::defaultProductVector(prod_space);
@@ -484,6 +485,7 @@ buildSolutionHistory(
       rcp_dynamic_cast<const DPV>(adjoint_state->getXDot())->getVectorBlock(0);
     assign(x_dot->getNonconstVectorBlock(0).ptr(), *(forward_state->getXDot()));
     assign(x_dot->getNonconstVectorBlock(1).ptr(), *(adjoint_x_dot));
+    RCP<VectorBase<Scalar> > x_dot_b = x_dot;
 
     // X-Dot-Dot
     RCP<DPV> x_dot_dot;
@@ -497,10 +499,11 @@ buildSolutionHistory(
        assign(x_dot_dot->getNonconstVectorBlock(1).ptr(),
               *(adjoint_x_dot_dot));
     }
+    RCP<VectorBase<Scalar> > x_dot_dot_b = x_dot_dot;
 
     RCP<SolutionState<Scalar> > prod_state =
       rcp(new SolutionState<Scalar>(forward_state->getMetaData()->clone(),
-                                    x, x_dot, x_dot_dot,
+                                    x_b, x_dot_b, x_dot_dot_b,
                                     forward_state->getStepperState()->clone()));
     solutionHistory_->addState(prod_state);
   }

@@ -109,7 +109,7 @@ Teuchos::RCP<SolutionStateMetaData<Scalar> > SolutionStateMetaData<Scalar>::clon
 
 template<class Scalar>
 void SolutionStateMetaData<Scalar>::
-copy(Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd)
+copy(const Teuchos::RCP<const SolutionStateMetaData<Scalar> >& ssmd)
 {
   time_           = ssmd->time_;
   iStep_          = ssmd->iStep_;

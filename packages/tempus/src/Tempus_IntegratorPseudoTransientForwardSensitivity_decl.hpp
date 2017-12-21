@@ -11,7 +11,7 @@
 
 // Tempus
 #include "Tempus_IntegratorBasic.hpp"
-#include "Tempus_StaggeredForwardSensitivityModelEvaluator.hpp"
+#include "Tempus_SensitivityModelEvaluatorBase.hpp"
 
 namespace Tempus {
 
@@ -167,7 +167,7 @@ public:
 protected:
 
   // Create sensitivity model evaluator from application model
-  Teuchos::RCP<StaggeredForwardSensitivityModelEvaluator<Scalar> >
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> >
   createSensitivityModel(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
     const Teuchos::RCP<Teuchos::ParameterList>& inputPL);
@@ -175,7 +175,7 @@ protected:
   void buildSolutionHistory();
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<StaggeredForwardSensitivityModelEvaluator<Scalar> > sens_model_;
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > sens_model_;
   Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
   Teuchos::RCP<IntegratorBasic<Scalar> > sens_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;

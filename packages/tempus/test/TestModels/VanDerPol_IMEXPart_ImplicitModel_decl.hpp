@@ -150,7 +150,7 @@ private:
   int Ng_;          ///< Number of observation functions (0)
   int ng_;          ///< Number of elements in this observation function (0)
   bool haveIC_;     ///< false => no nominal values are provided (default=true)
-  bool acceptModelParams_; ///< Changes inArgs to require parameters
+  bool useDfDpAsTangent_; ///< Treat DfDp OutArg as tangent (df/dx*dx/dp+df/dp)
   mutable bool isInitialized_;
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  inArgs_;
   mutable Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
@@ -158,6 +158,9 @@ private:
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > y_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > dxdp_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > dydp_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
 
   // Parameters for the model:
