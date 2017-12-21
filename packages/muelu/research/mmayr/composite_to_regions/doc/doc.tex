@@ -456,6 +456,7 @@ We also need to transform vectors from the regional layout back to the composite
 \end{enumerate}
 
 \subsection{Jacobi for region layouts}
+\label{sec:RegionJacobi}
 
 Applying a Jacobi smoother in region layout exhibits two major difficulties, namely
 \begin{itemize}
@@ -543,6 +544,37 @@ There are multiple ways to do that:
     }
   }
 \end{lstlisting}
+
+\subsection{Multigrid for region layouts}
+
+\subsubsection{Setup of the hierarchy}
+
+We want to use multigrid V-cycles as preconditioners in an outer Krylov method. Starting from the composite matrix,
+we first generate region matrices by the {\em basic splitting} approach. 
+This duplicates all interface DOFs and assigns unique GIDs. 
+Then, the multigrid hierarchy is constructed in a region-oriented fashion, i.e. by computing transfer operators for each region. 
+We exploit the fact that a region-wise~$RAP$ is mathematically equivalent to the composite~$RAP$ 
+if the transfer operators match on the region interfaces.
+
+\subsubsection{V-cycle algorithm}
+
+The V-cycle algorithm is the usual with only one exception: 
+During the restriction of the fine grid residual one needs to account for duplicated nodes due to the region layout.
+
+We assume the existence of region-wise restriction operator~$R^{(r)}$ and a fine-grid vector~$v^{(r)}_f$ in region layout. 
+We refer to the result of the restriction as~$v^{(r)}_c$ being a coarse-grid vector in region-layout.
+Restriction operations are performed as follows:
+\begin{enumerate}
+\item In anticipation of the duplication of interface values, scale all vector entries~$v^{(r)}_{f,\Gamma}$ 
+associated with region-interface nodes by $1/n_r$ with $n_r$ being the number of regions that share this particular node.
+\item Perform restriction~$v^{(r)}_c = R^{(r)} v^{(r)}_f$ separately for each region.
+\item Exchange and add region-interface entries~$v^{(r)}_{c,\Gamma}$.
+\end{enumerate}
+
+Note that the prolongation of a vector uses a region-wise prolongation operator~$P^{(r)}$ 
+and is performed without any special interface treatments, i.e. $v^{(r)}_f = P^{(r)}v^{(r)}_c$.
+
+Level smoothers as well as residual calculations require special techniques due to the region layout, cf. section~\ref{sec:RegionJacobi}.
 
 \section{Aspects related to domain decomposition}
 
