@@ -17,7 +17,7 @@ export TDD_PARALLEL_LEVEL=2
 export TDD_CTEST_TEST_TYPE=Nightly
 
 # enable this to avoid clobbering any local changes you're making
-#export TDD_IN_TESTING_MODE=ON
+export TDD_IN_TESTING_MODE=ON
 
 export TDD_DEBUG_VERBOSE=1
 export TDD_FORCE_CMAKE_INSTALL=0
