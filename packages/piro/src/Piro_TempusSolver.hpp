@@ -231,6 +231,9 @@ private:
   //! Set observer
   void setObserver(); 
 
+  //! Boolean to tell TempusSolver whether or not to abort if a transient solve fails 
+  bool abort_on_failure_; 
+
 };
 
 /** \brief Non-member constructor function */
