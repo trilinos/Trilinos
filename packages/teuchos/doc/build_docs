@@ -23,12 +23,20 @@ echo
 echo "Generating RefCountPtrBeginnersGuideSAND.pdf file ..."
 echo
 
-pushd ../../../doc/RefCountPtr/beginners; make pdf ; popd
-cp ../../../doc/RefCountPtr/beginners/RefCountPtrBeginnersGuideSAND.pdf html/.
+if [ -e ../../../doc/RefCountPtr/beginners ] ; then
+  pushd ../../../doc/RefCountPtr/beginners; make pdf ; popd
+  cp ../../../doc/RefCountPtr/beginners/RefCountPtrBeginnersGuideSAND.pdf html/.
+else
+  echo "Skipping building RefCountPtrBeginnersGuideSAND.pdf because source directory does not exist!"
+fi
 
 echo
 echo "Generating TeuchosMemoryManagementSAND.pdf file ..."
 echo
 
-pushd ../../../doc/TeuchosMemoryManagementSAND; make; popd
-cp ../../../doc/TeuchosMemoryManagementSAND/TeuchosMemoryManagementSAND.pdf html/.
+if [ -e ../../../doc/TeuchosMemoryManagementSAND ] ; then
+  pushd ../../../doc/TeuchosMemoryManagementSAND; make; popd
+  cp ../../../doc/TeuchosMemoryManagementSAND/TeuchosMemoryManagementSAND.pdf html/.
+else
+  echo "Skipping building TeuchosMemoryManagementSAND.pdf because directory does not exist!"
+fi
