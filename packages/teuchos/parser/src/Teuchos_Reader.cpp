@@ -341,7 +341,6 @@ void DebugReader::at_shift(any& result, int token, std::string& text) {
     }
   }
   os << "SHIFT (" << at(grammar->symbol_names, token) << ")[" << text_escaped << "]\n";
-  os << "symbol_indentation_stack.back() " << symbol_indentation_stack.back() << '\n';
 }
 
 void DebugReader::at_reduce(any& result, int prod_i, std::vector<any>& rhs) {
@@ -356,7 +355,6 @@ void DebugReader::at_reduce(any& result, int prod_i, std::vector<any>& rhs) {
   }
   const std::string& lhs_name = at(grammar->symbol_names, prod.lhs);
   os << " -> (" << lhs_name << ")[" << lhs_text << "]\n";
-  os << "symbol_indentation_stack.back() " << symbol_indentation_stack.back() << '\n';
 }
 
 }  // namespace Teuchos
