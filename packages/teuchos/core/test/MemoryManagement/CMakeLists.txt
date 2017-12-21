@@ -373,7 +373,7 @@ ENDIF()
 #
 # Test TEUCHOS_TEST_FOR_TERMINATION()
 #
-# This aborts the program so the only way to test it is to run a program.
+# This macro aborts the program so the only way to test it is to run a program.
 #
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST( testTeuchosTestForTermination
@@ -401,7 +401,8 @@ FOREACH(PID RANGE ${testTeuchosTestForTermination_NP_m_1})
       "Bingo, we are terminating on procid == terminate_on_procid = ${PID}"
     )
   # NOTE: If each of these tests does not terminate right away, then that is a
-  # sign that std::terminate() on a single process does not
+  # sign that std::terminate() on a single MPI process does not cause all other
+  # processes to also terminate.
 ENDFOREACH()
 
 

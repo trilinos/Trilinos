@@ -372,7 +372,7 @@ catch(const std::exception &except) { \
  * If the termination test evaluates to <tt>true</tt>, then
  * <tt>std::terminate()</tt> is called (which should bring down an entire
  * multi-process MPI program even if only one process calls
- * <tt>std::terminate()</tt> with most MPI implementation).
+ * <tt>std::terminate()</tt> with most MPI implementations).
  *
  * \ingroup TestForException_grp
  */
