@@ -47,6 +47,8 @@
 
 #include <ostream>
 
+#include "mpi.h"
+
 #include "ROL_Vector.hpp"
 #include "ROL_PartitionedVector.hpp"
 #include "ROL_StdVector.hpp"
@@ -116,7 +118,7 @@ public:
   {
     const std::vector<Real> & std_source = *dynamic_cast<const StdVector<Real>&>(source).getVector();
 
-    MPI_Send(&std_source[0],int(std_source.size()),MPI_DOUBLE,rank,0,comm);
+    MPI_Send(const_cast<Real*>(&std_source[0]),int(std_source.size()),MPI_DOUBLE,rank,0,comm);
   }
 
   void recv(MPI_Comm comm,int rank,Vector<Real> & dest) const
