@@ -5,8 +5,10 @@
 %
 function [ A ] = twoDimensionalLaplace(nNodes)
 
-nx = sqrt(nNodes); ny = nx;
+nx = sqrt(nNodes); 
+ny = nx;
 
+%% create matrix
 A = zeros(nNodes,nNodes);
 for j=1:ny, for i=1:nx,
      me = (j-1)*nx + i;
@@ -29,7 +31,30 @@ end;end;
 %nzsPerRow = spones(A)*ones(nNodes,1);
 %Dirs = find(nzsPerRow == 1);
 %A(Dirs,Dirs) = speye(length(Dirs),length(Dirs));
-     
+
+%% impose Dirichlet boundary conditions
+
+% top
+inds = 1:nx;
+A(inds,:) = zeros(length(inds), size(A,2));
+A(inds,inds) = eye(length(inds));
+
+% left
+inds = 1:nx:nNodes;
+A(inds,:) = zeros(length(inds), size(A,2));
+A(inds,inds) = eye(length(inds));
+
+% right
+inds = nx:nx:nNodes;
+A(inds,:) = zeros(length(inds), size(A,2));
+A(inds,inds) = eye(length(inds));
+
+% bottom
+inds = nNodes-nx:nNodes;
+A(inds,:) = zeros(length(inds), size(A,2));
+A(inds,inds) = eye(length(inds));
+
+%% Convert to sparse format    
 A = sparse(A);
 
 end

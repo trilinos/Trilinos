@@ -22,13 +22,11 @@ template <typename Scalar>
 StaggeredForwardSensitivityModelEvaluator<Scalar>::
 StaggeredForwardSensitivityModelEvaluator(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & model,
-  const bool is_pseudotransient,
   const Teuchos::RCP<const Teuchos::ParameterList>& pList,
   const Teuchos::RCP<MultiVector>& dxdp_init,
   const Teuchos::RCP<MultiVector>& dx_dotdp_init,
   const Teuchos::RCP<MultiVector>& dx_dotdotdp_init) :
   model_(model),
-  is_pseudotransient_(is_pseudotransient),
   dxdp_init_(dxdp_init),
   dx_dotdp_init_(dx_dotdp_init),
   dx_dotdotdp_init_(dx_dotdotdp_init),
@@ -81,9 +79,19 @@ StaggeredForwardSensitivityModelEvaluator(
   MEB::OutArgs<Scalar> me_outArgs = model_->createOutArgs();
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(me_inArgs.Np(),0);
+  outArgs.set_Np_Ng(me_inArgs.Np(),me_outArgs.Ng());
   outArgs.setSupports(MEB::OUT_ARG_f);
   outArgs.setSupports(MEB::OUT_ARG_W_op);
+  for (int j=0; j<me_outArgs.Ng(); ++j) {
+    outArgs.setSupports(MEB::OUT_ARG_DgDx_dot, j,
+                        me_outArgs.supports(MEB::OUT_ARG_DgDx_dot, j));
+    outArgs.setSupports(MEB::OUT_ARG_DgDx, j,
+                        me_outArgs.supports(MEB::OUT_ARG_DgDx, j));
+    for (int l=0; l<me_outArgs.Np(); ++l) {
+      outArgs.setSupports(MEB::OUT_ARG_DgDp, j, l,
+                          me_outArgs.supports(MEB::OUT_ARG_DgDp, j, l));
+    }
+  }
   prototypeOutArgs_ = outArgs;
 
   TEUCHOS_ASSERT(me_outArgs.supports(MEB::OUT_ARG_DfDp, p_index_).supports(MEB::DERIV_MV_JACOBIAN_FORM));
@@ -98,12 +106,17 @@ setForwardSolutionHistory(
   const Teuchos::RCP<const Tempus::SolutionHistory<Scalar> >& sh)
 {
   sh_ = sh;
-  if (is_pseudotransient_)
-    forward_state_ = sh_->getCurrentState();
-  else {
-    t_interp_ = Teuchos::ScalarTraits<Scalar>::rmax();
-    forward_state_ = Teuchos::null;
-  }
+  t_interp_ = Teuchos::ScalarTraits<Scalar>::rmax();
+}
+
+template <typename Scalar>
+void
+StaggeredForwardSensitivityModelEvaluator<Scalar>::
+setForwardSolutionState(
+  const Teuchos::RCP<const Tempus::SolutionState<Scalar> >& s)
+{
+  sh_ = Teuchos::null;
+  forward_state_ = s;
 }
 
 template <typename Scalar>
@@ -141,6 +154,22 @@ get_f_space() const
 }
 
 template <typename Scalar>
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
+StaggeredForwardSensitivityModelEvaluator<Scalar>::
+get_g_space(int j) const
+{
+  return model_->get_g_space(j);
+}
+
+template <typename Scalar>
+Teuchos::ArrayView<const std::string>
+StaggeredForwardSensitivityModelEvaluator<Scalar>::
+get_g_names(int j) const
+{
+  return model_->get_g_names(j);
+}
+
+template <typename Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 StaggeredForwardSensitivityModelEvaluator<Scalar>::
 create_W_op() const
@@ -154,31 +183,51 @@ create_W_op() const
 }
 
 template <typename Scalar>
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+StaggeredForwardSensitivityModelEvaluator<Scalar>::
+create_DgDx_dot_op(int j) const
+{
+  return model_->create_DgDx_dot_op(j);
+}
+
+template <typename Scalar>
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+StaggeredForwardSensitivityModelEvaluator<Scalar>::
+create_DgDx_op(int j) const
+{
+  return model_->create_DgDx_op(j);
+}
+
+template <typename Scalar>
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+StaggeredForwardSensitivityModelEvaluator<Scalar>::
+create_DgDp_op(int j, int l) const
+{
+  return model_->create_DgDp_op(j,l);
+}
+
+template <typename Scalar>
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 StaggeredForwardSensitivityModelEvaluator<Scalar>::
 get_W_factory() const
 {
-  typedef Thyra::DefaultMultiVectorProductVectorSpace<Scalar> DMVPVS;
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
 
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > factory;
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > model_factory
     = model_->get_W_factory();
+  if (model_factory == Teuchos::null)
+    return Teuchos::null; // model_ doesn't support W_factory
   if (po_ != Teuchos::null) {
     factory =
       Thyra::reuseLinearOpWithSolveFactory<Scalar>(model_factory, po_);
   }
   else
     factory = model_factory;
-  RCP<Thyra::LinearOpBase<Scalar> > mv_op = this->create_W_op();
-  RCP<const DMVPVS> mv_domain =
-    rcp_dynamic_cast<const DMVPVS>(mv_op->domain());
-  RCP<const DMVPVS> mv_range =
-    rcp_dynamic_cast<const DMVPVS>(mv_op->range());
   return Thyra::multiVectorLinearOpWithSolveFactory(factory,
-                                                    mv_range,
-                                                    mv_domain);
+                                                    dfdp_space_,
+                                                    dxdp_space_);
 }
 
 template <typename Scalar>
@@ -206,7 +255,7 @@ getNominalValues() const
 
   // Set initial x.  If dxdp_init == null, set initial dx/dp = 0
   RCP< Thyra::VectorBase<Scalar> > x = Thyra::createMember(*dxdp_space_);
-  RCP<DMVPV> dxdp = rcp_dynamic_cast<DMVPV>(x);
+  RCP<DMVPV> dxdp = rcp_dynamic_cast<DMVPV>(x,true);
   if (dxdp_init_ == Teuchos::null)
     Thyra::assign(dxdp->getNonconstMultiVector().ptr(), zero);
   else
@@ -216,7 +265,7 @@ getNominalValues() const
   // Set initial xdot.  If dx_dotdp_init == null, set initial dxdot/dp = 0
   if (me_nominal.supports(MEB::IN_ARG_x_dot)) {
     RCP< Thyra::VectorBase<Scalar> > xdot = Thyra::createMember(*dxdp_space_);
-    RCP<DMVPV> dxdotdp = rcp_dynamic_cast<DMVPV>(xdot);
+    RCP<DMVPV> dxdotdp = rcp_dynamic_cast<DMVPV>(xdot,true);
     if (dx_dotdp_init_ == Teuchos::null)
       Thyra::assign(dxdotdp->getNonconstMultiVector().ptr(), zero);
     else
@@ -228,7 +277,7 @@ getNominalValues() const
   if (me_nominal.supports(MEB::IN_ARG_x_dot_dot)) {
     RCP< Thyra::VectorBase<Scalar> > xdotdot =
       Thyra::createMember(*dxdp_space_);
-    RCP<DMVPV> dxdotdotdp = rcp_dynamic_cast<DMVPV>(xdotdot);
+    RCP<DMVPV> dxdotdotdp = rcp_dynamic_cast<DMVPV>(xdotdot,true);
     if (dx_dotdotdp_init_ == Teuchos::null)
       Thyra::assign(dxdotdotdp->getNonconstMultiVector().ptr(), zero);
     else
@@ -264,33 +313,34 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // Interpolate forward solution at supplied time, reusing previous
   // interpolation if possible
-  TEUCHOS_ASSERT(sh_ != Teuchos::null);
-  const Scalar t = inArgs.get_t();
   Scalar forward_t;
-  if (is_pseudotransient_)
-    forward_t = forward_state_->getTime();
-  else {
-    forward_t = t;
-    if (forward_state_ == Teuchos::null || t_interp_ != t) {
-      if (forward_state_ == Teuchos::null)
-        forward_state_ = sh_->interpolateState(t);
+  if (sh_ != Teuchos::null) {
+    forward_t = inArgs.get_t();
+    if (t_interp_ != forward_t) {
+      if (nc_forward_state_ == Teuchos::null)
+        nc_forward_state_ = sh_->interpolateState(forward_t);
       else
-        sh_->interpolateState(t, forward_state_.get());
-      t_interp_ = t;
+        sh_->interpolateState(forward_t, nc_forward_state_.get());
+      forward_state_ = nc_forward_state_;
+      t_interp_ = forward_t;
     }
+  }
+  else {
+    TEUCHOS_ASSERT(forward_state_ != Teuchos::null);
+    forward_t = forward_state_->getTime();
   }
 
   // setup input arguments for model
   RCP< const Thyra::MultiVectorBase<Scalar> > dxdp, dxdotdp, dxdotdotdp;
   MEB::InArgs<Scalar> me_inArgs = model_->getNominalValues();
-  dxdp = rcp_dynamic_cast<const DMVPV>(inArgs.get_x())->getMultiVector();
+  dxdp = rcp_dynamic_cast<const DMVPV>(inArgs.get_x(),true)->getMultiVector();
   me_inArgs.set_x(forward_state_->getX());
   if (use_dfdp_as_tangent_)
     me_inArgs.set_p(x_tangent_index_, inArgs.get_x());
   if (me_inArgs.supports(MEB::IN_ARG_x_dot)) {
     if (inArgs.get_x_dot() != Teuchos::null) {
       dxdotdp =
-        rcp_dynamic_cast<const DMVPV>(inArgs.get_x_dot())->getMultiVector();
+        rcp_dynamic_cast<const DMVPV>(inArgs.get_x_dot(),true)->getMultiVector();
       me_inArgs.set_x_dot(forward_state_->getXDot());
       if (use_dfdp_as_tangent_)
         me_inArgs.set_p(xdot_tangent_index_, inArgs.get_x_dot());
@@ -304,7 +354,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   if (me_inArgs.supports(MEB::IN_ARG_x_dot_dot)) {
     if (inArgs.get_x_dot_dot() != Teuchos::null) {
       dxdotdotdp =
-        rcp_dynamic_cast<const DMVPV>(inArgs.get_x_dot_dot())->getMultiVector();
+        rcp_dynamic_cast<const DMVPV>(inArgs.get_x_dot_dot(),true)->getMultiVector();
       me_inArgs.set_x_dot_dot(forward_state_->getXDotDot());
       if (use_dfdp_as_tangent_)
         me_inArgs.set_p(xdotdot_tangent_index_, inArgs.get_x_dot_dot());
@@ -338,14 +388,23 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   RCP< Thyra::MultiVectorBase<Scalar> > dfdp;
   MEB::OutArgs<Scalar> me_outArgs = model_->createOutArgs();
   if (outArgs.get_f() != Teuchos::null) {
-    dfdp = rcp_dynamic_cast<DMVPV>(outArgs.get_f())->getNonconstMultiVector();
+    dfdp = rcp_dynamic_cast<DMVPV>(outArgs.get_f(),true)->getNonconstMultiVector();
     me_outArgs.set_DfDp(p_index_, dfdp);
   }
   if (lo_ == Teuchos::null && outArgs.get_W_op() != Teuchos::null) {
     RCP<Thyra::LinearOpBase<Scalar> > op = outArgs.get_W_op();
     RCP<Thyra::MultiVectorLinearOp<Scalar> > mv_op =
-      rcp_dynamic_cast<Thyra::MultiVectorLinearOp<Scalar> >(op);
+      rcp_dynamic_cast<Thyra::MultiVectorLinearOp<Scalar> >(op,true);
     me_outArgs.set_W_op(mv_op->getNonconstLinearOp());
+  }
+  for (int j=0; j<outArgs.Ng(); ++j) {
+    if (!me_outArgs.supports(MEB::OUT_ARG_DgDx_dot,j).none())
+      me_outArgs.set_DgDx_dot(j, outArgs.get_DgDx_dot(j));
+    if (!me_outArgs.supports(MEB::OUT_ARG_DgDx,j).none())
+      me_outArgs.set_DgDx(j, outArgs.get_DgDx(j));
+    for (int l=0; l<outArgs.Np(); ++l)
+      if (!me_outArgs.supports(MEB::OUT_ARG_DgDp,j,l).none())
+        me_outArgs.set_DgDp(j, l, outArgs.get_DgDp(j,l));
   }
 
   // build residual and jacobian

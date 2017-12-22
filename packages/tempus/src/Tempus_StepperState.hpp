@@ -55,7 +55,7 @@ public:
   }
 
   /// This is a deep copy
-  virtual void copy(Teuchos::RCP<StepperState<Scalar> >  ss)
+  virtual void copy(const Teuchos::RCP<const StepperState<Scalar> >&  ss)
   {
      stepperName_   = ss->stepperName_;
      stepperStatus_ = ss->stepperStatus_;

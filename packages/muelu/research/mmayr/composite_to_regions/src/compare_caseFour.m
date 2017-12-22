@@ -1,4 +1,6 @@
 % Compute coarse level operator for caseFour.
+%
+% This mimics a 2-level V-cycle using the smme data as shadow.m.
 
 %% Define region-wise quantities
 % prolongator for region 1
@@ -9,7 +11,6 @@ regP1 = [1 0 0;
          0 1 0;
          0 0 1;
          0 0 1];
-% regP1(end,end) = 0.5;
        
 % prolongator for region 2
 regP2 = [1 0 0 0;
@@ -22,8 +23,6 @@ regP2 = [1 0 0 0;
          0 0 1 0;
          0 0 0 1;
          0 0 0 1];
-% regP2(1,1) = 0.5;
-% regP2(end,end) = 0.5;
 
 % prolongator for region 3       
 regP3 = [1 0 0 0;
@@ -36,7 +35,6 @@ regP3 = [1 0 0 0;
          0 0 1 0;
          0 0 0 1;
          0 0 0 1];
-% regP3(1,1) = 0.5;
 
 % matrix for region 1
 regA1 = full(oneDimensionalLaplace(7));
@@ -60,6 +58,9 @@ regA = [regA1 zeros(size(regA1,1),size(regA2,2)) zeros(size(regA1,1),size(regA3,
       
 regRA = regP' * regA;
 regRAP = regRA * regP;
+
+
+%% Construct fine level residual
 
 fRegRes1 = [0
             1.3300
@@ -88,8 +89,16 @@ fRegRes3 = [-3.6250
             0.6800
            -0.6793
             0.3403];
+
+% scale interface values
+fRegRes1(end) = fRegRes1(end) / 2;
+fRegRes2(1) = fRegRes2(1) / 2;
+fRegRes2(end) = fRegRes2(end) / 2;
+fRegRes3(1) = fRegRes3(1) / 2;
           
 fRegRes = [fRegRes1; fRegRes2; fRegRes3];
+
+%% Perform restriction
 
 cRegB = regP' * fRegRes;
 

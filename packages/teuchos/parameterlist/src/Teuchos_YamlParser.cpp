@@ -808,6 +808,7 @@ class Reader : public Teuchos::Reader {
           "bug in YAMLParameterList::Reader: unexpected type for next sequence item");
     }
   }
+  /* block scalars are a super complicated mess, this function handles that mess */
   void handle_block_scalar(
       std::size_t parent_indent_level,
       std::string const& header,
@@ -815,6 +816,7 @@ class Reader : public Teuchos::Reader {
       std::string const& rest,
       std::string& content,
       std::string& comment) {
+    /* read the header, resulting in: block style, chomping indicator, and indentation indicator */
     char style;
     char chomping_indicator;
     std::size_t indentation_indicator = 0;
@@ -822,9 +824,12 @@ class Reader : public Teuchos::Reader {
     std::stringstream ss(header.substr(1,std::string::npos));
     if (header.size() > 1 && my_isdigit(header[1])) {
       ss >> indentation_indicator;
+      // indentation indicator is given as a relative number, but we need it in absolute terms
       indentation_indicator += parent_indent_level;
     }
     if (!(ss >> chomping_indicator)) chomping_indicator = '\0';
+    /* get information about newlines, indentation level, and comment from
+       the leading_empties_or_comments string */
     std::size_t first_newline = leading_empties_or_comments.find_first_of("\r\n");
     std::string newline;
     if (first_newline > 0 && leading_empties_or_comments[first_newline - 1] == '\r') {
@@ -841,25 +846,52 @@ class Reader : public Teuchos::Reader {
     if (content_beg == std::string::npos) content_beg = leading_empties_or_comments.size();
     std::size_t newline_before_content = leading_empties_or_comments.rfind("\n", content_beg);
     std::size_t num_indent_spaces = (content_beg - newline_before_content) - 1;
+    /* indentation indicator overrides the derived level of indentation, in case the
+       user wants to keep some of that indentation as content */
     if (indentation_indicator > 0) {
       TEUCHOS_TEST_FOR_EXCEPTION(num_indent_spaces < indentation_indicator,
           Teuchos::ParserFail,
           "Indentation indicator " << indentation_indicator << " > leading spaces " << num_indent_spaces);
       num_indent_spaces = indentation_indicator;
     }
+    /* prepend the content from the leading_empties_or_comments to the rest */
     content = leading_empties_or_comments.substr(keep_beg, std::string::npos);
     content += rest;
+    /* per Trilinos issue #2090, there can be trailing comments after the block
+       scalar which are less indented than it, but they will be included in the
+       final NEWLINE token.
+       this code removes all contiguous trailing lines which are less indented 
+       than the content.
+     */
+    while (true) {
+      auto last_newline = content.find_last_of("\n", content.size() - 2);
+      if (last_newline == std::string::npos) break;
+      std::size_t num_spaces = 0;
+      for (auto ispace = last_newline + 1;
+           ispace < content.size() && content[ispace] == ' ';
+           ++ispace) {
+        ++num_spaces;
+      }
+      if (num_spaces >= num_indent_spaces) break;
+      content.erase(content.begin() + last_newline + 1, content.end());
+    }
+    /* remove both indentation and newlines as dictated by header information */
     std::size_t unindent_pos = 0;
     while (true) {
       std::size_t next_newline = content.find_first_of("\n", unindent_pos);
       if (next_newline == std::string::npos) break;
       std::size_t start_cut = next_newline + 1;
+      /* folding block scalars remove newlines */
       if (style == '>') start_cut -= newline.size();
       std::size_t end_cut = next_newline + 1;
-      // this scanning and min are needed for trailing lines that are less indented
-      while (end_cut < content.size() && content[end_cut] == ' ')
+      /* the actual amount of indentation in the content varies, start by
+         marking it all for removal */
+      while (end_cut < content.size() && content[end_cut] == ' ') {
         ++end_cut;
-      end_cut = std::min(end_cut, next_newline + 1 + num_indent_spaces);
+      }
+      /* but don't remove more than the actual indent number */
+      end_cut = std::min(next_newline + 1 + num_indent_spaces, end_cut);
+      /* cut this (newline?)+indentation out of the content */
       content = content.substr(0, start_cut) +
         content.substr(end_cut, std::string::npos);
       unindent_pos = start_cut;

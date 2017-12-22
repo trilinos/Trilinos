@@ -11,6 +11,7 @@
 
 // Tempus
 #include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_SensitivityModelEvaluatorBase.hpp"
 #include "Tempus_StepperStaggeredForwardSensitivity.hpp"
 
 namespace Tempus {
@@ -227,7 +228,7 @@ protected:
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
-  Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > sens_model_;
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > sens_model_;
   Teuchos::RCP<StepperStaggeredForwardSensitivity<Scalar> > sens_stepper_;
   Teuchos::RCP<IntegratorBasic<Scalar> > integrator_;
   Teuchos::RCP<Teuchos::ParameterList> tempus_pl_;
