@@ -17,6 +17,13 @@ namespace Tempus {
 
 template <typename Scalar>
 WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
+WrapperModelEvaluatorPairPartIMEX_Basic()
+  : timeDer_(Teuchos::null), numExplicitOnlyBlocks_(0),
+    parameterIndex_(-1), useImplicitModel_(false)
+{}
+
+template <typename Scalar>
+WrapperModelEvaluatorPairPartIMEX_Basic<Scalar>::
 WrapperModelEvaluatorPairPartIMEX_Basic(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel,

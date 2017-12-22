@@ -39,6 +39,9 @@ class WrapperModelEvaluatorPairPartIMEX_Basic
 {
 public:
 
+  /// Default constructor -- Still requires setting the models and running initialize.
+  WrapperModelEvaluatorPairPartIMEX_Basic();
+
   /// Constructor
   WrapperModelEvaluatorPairPartIMEX_Basic(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
@@ -165,9 +168,6 @@ public:
   //@}
 
 protected:
-
-  /// Default constructor -- only allowed for derived classes
-  WrapperModelEvaluatorPairPartIMEX_Basic() {}
 
   /// Setup ME when using default constructor -- for derived classes
   void setup(
