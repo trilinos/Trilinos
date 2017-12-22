@@ -3,7 +3,7 @@ function [globalDims,localDims,relCorner,regionCorner] = mk2RegionFile(filename)
 %  writes mapping to a file based on information below.
 %
 
-if filename(7) == 'v',  % caseFive
+if (strcmp(filename, 'caseFive') == true)  % caseFive
 % case 5 : regions may cross processors but no processor owns a piece of more
 %          than one region
 % 
@@ -49,7 +49,7 @@ if filename(7) == 'v',  % caseFive
    pyProcChange         = [4  7 16 19 ];   % at region interfaces where two procs share
                                            % a node. In general, we give the location
                                            % of the new processor's first non-shared point
-else
+elseif (strcmp(filename, 'caseSix') == true)  % caseSix
 
 %px:0   0   0   0   0   0   0   0   0   1   1   1   1   1   2   2   2   2   3   3   3   3   3   3   3
 %px:                                1                       1               2
@@ -95,6 +95,27 @@ else
                                          % a node. In general, we give the location
                                          % of the new processor's first non-shared point
 
+elseif(strcmp(filename, 'caseTest') == true)  % caseTest
+  
+%px:0   0   0   0   1   1   1   1
+%px:            1                
+%   |- rx=0 ----<-rx=1 -<- rx=2 |         py  py
+%   |           |       |       |
+%   0   1   2   3   4   5   6   7     0   0
+%   8   9  10  11  12  13  14  15     1   0
+%  16  17  18  19  20  21  22  23     2   0
+%--24--25--26--27--28--29--30--31--<  3   0   1
+%  32  33  34  35  36  37  38  39     4   1
+%--40--41--42--43--44--45--46--47--<  5   1
+%  48  49  50  51  52  53  54  55     6   1
+%--56--57--58--59--60--61--62--63--<  7   1
+  
+   whichCase = 'MultipleRegionsPerProc';
+   rxInterfaceLocations = [3 5 7];   
+   ryInterfaceLocations = [3 5 7];   
+   pxProcChange         = [3];
+   pyProcChange         = [3];
+                                
 end
 
 nrx = length(rxInterfaceLocations);
