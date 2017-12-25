@@ -20,8 +20,8 @@
       <Parameter name="Stepper Name"       type="string" value="Default Stepper"/>
       <ParameterList name="Solution History">
         <Parameter name="Storage Type"  type="string" value="Static"/>
-        <!--IKT the following can be as low as 3; setting it to 11 to write sull Tempus_BDF2_SinCos.dat file-->
-        <Parameter name="Storage Limit" type="int"    value="11"/>
+        <!--IKT the following can be as low as 3; setting it to 12 to write full Tempus_BDF2_SinCos.dat file-->
+        <Parameter name="Storage Limit" type="int"    value="12"/>
       </ParameterList>
       <ParameterList name="Time Step Control">
         <Parameter name="Initial Time"           type="double" value="0.0"/>
@@ -37,7 +37,7 @@
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
         <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
-        <Parameter name="Output Time List"       type="string" value=""/>
+        <Parameter name="Output Time List"       type="string" value="0.31"/>
         <Parameter name="Output Index List"      type="string" value=""/>
         <Parameter name="Output Time Interval"   type="double" value="10.0"/>
         <Parameter name="Output Index Interval"  type="int"    value="1000"/>
