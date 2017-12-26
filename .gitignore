@@ -148,3 +148,7 @@ rsync.*
 
 # VIM YCM
 .ycm_extra_conf.py
+
+# Ignore some KDevelop project/session files
+
+/*.kdev*
