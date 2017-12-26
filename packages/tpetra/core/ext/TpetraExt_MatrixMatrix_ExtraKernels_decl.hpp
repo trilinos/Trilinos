@@ -72,19 +72,17 @@ namespace MatrixMatrix {
                                        OutRowptrType & Outrowptr, OutColindType &Outcolind, OutValsType & Outvals);
 
 #ifdef HAVE_TPETRA_INST_OPENMP
-    template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
-    static void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
-                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
-                                                            const Teuchos::Array<LocalOrdinal> & targetMapToOrigRow,
-                                                            const Teuchos::Array<LocalOrdinal> & targetMapToImportRow,
-                                                            const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
-                                                            const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
-                                                            CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
-                                                            Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
-                                                            const std::string& label,
-                                                            const Teuchos::RCP<Teuchos::ParameterList>& params);
-
-
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class LocalOrdinalViewType>
+    static inline void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
+                                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+                                                                   const LocalOrdinalViewType & Acol2Brow,
+                                                                   const LocalOrdinalViewType & Acol2Irow,
+                                                                   const LocalOrdinalViewType & Bcol2Ccol,
+                                                                   const LocalOrdinalViewType & Icol2Ccol,
+                                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
+                                                                   Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
+                                                                   const std::string& label,
+                                                                   const Teuchos::RCP<Teuchos::ParameterList>& params);
 #endif
   }// ExtraKernels
 }//MatrixMatrix

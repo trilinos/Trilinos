@@ -8,6 +8,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  IMEX_RK_Partitioned_Combined_FSA
+  SOURCES Tempus_IMEX_RK_Partitioned_Combined_FSA.cpp Tempus_IMEX_RK_Partitioned_FSA.hpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  IMEX_RK_Partitioned_Staggered_FSA
+  SOURCES Tempus_IMEX_RK_Partitioned_Staggered_FSA.cpp Tempus_IMEX_RK_Partitioned_FSA.hpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_IMEX_RK_Partitioned_CopyFiles
   DEST_FILES Tempus_IMEX_RK_VanDerPol.xml
   EXEDEPS IMEX_RK_Partitioned

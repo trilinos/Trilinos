@@ -97,9 +97,12 @@ evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
 {
   const int cell = team.league_rank();
   const int cell_global_offset_index = workset.first_cell_global_index_;
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,field.extent(1)), [=] (const int& node) {
-      field(cell,node) = x( gids(cell_global_offset_index+cell,node) * num_equations + field_index);
-  });
+  if (team.team_rank() == 0) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,field.extent(1)), [&] (const int& node) {
+	field(cell,node) = x( gids(cell_global_offset_index+cell,node) * num_equations + field_index);
+    });
+  }
+  //team.team_barrier();
 }
 
 // **********************************************************************
@@ -154,10 +157,13 @@ evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
 {
   const int cell = team.league_rank();
   const int cell_global_offset_index = workset.first_cell_global_index_;
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,field.extent(1)), [=] (const int& node) {
-      field(cell,node).val() = x(gids(cell_global_offset_index+cell,node) * num_equations + field_index);
-      field(cell,node).fastAccessDx(num_equations * node + field_index) = 1.0;
-  });
+  if (team.team_rank() == 0) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,field.extent(1)), [&] (const int& node) {
+	field(cell,node).val() = x(gids(cell_global_offset_index+cell,node) * num_equations + field_index);
+	field(cell,node).fastAccessDx(num_equations * node + field_index) = 1.0;
+    });
+  }
+  //team.team_barrier();
 }
 
 /*

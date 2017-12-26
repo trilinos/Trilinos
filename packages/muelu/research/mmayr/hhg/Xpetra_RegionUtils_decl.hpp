@@ -7,6 +7,7 @@
 // forward declarations
 namespace Teuchos
 {
+  template<>
   class Comm<std::size_t>;
 }
 

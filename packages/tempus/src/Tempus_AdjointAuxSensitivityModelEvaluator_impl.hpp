@@ -179,6 +179,9 @@ get_W_factory() const
   typedef Thyra::LinearOpWithSolveFactoryBase<Scalar> LOWSFB;
 
   RCP<const LOWSFB > factory = model_->get_W_factory();
+  if (factory == Teuchos::null)
+    return Teuchos::null; // model_ doesn't support W_factory
+
   RCP<const LOWSFB > alowsfb = Thyra::adjointLinearOpWithSolveFactory(factory);
   RCP<const LOWSFB > mv_alowsfb =
     Thyra::multiVectorLinearOpWithSolveFactory(alowsfb, residual_space_,
@@ -288,13 +291,13 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
     // Adjoint W
     RCP<Thyra::DefaultBlockedLinearOp<Scalar> > block_op =
-      rcp_dynamic_cast<Thyra::DefaultBlockedLinearOp<Scalar> >(op);
+      rcp_dynamic_cast<Thyra::DefaultBlockedLinearOp<Scalar> >(op,true);
     RCP<Thyra::MultiVectorLinearOp<Scalar> > mv_adjoint_op =
       rcp_dynamic_cast<Thyra::MultiVectorLinearOp<Scalar> >(
-        block_op->getNonconstBlock(0,0));
+        block_op->getNonconstBlock(0,0),true);
     RCP<Thyra::DefaultScaledAdjointLinearOp<Scalar> > adjoint_op =
       rcp_dynamic_cast<Thyra::DefaultScaledAdjointLinearOp<Scalar> >(
-        mv_adjoint_op->getNonconstLinearOp());
+        mv_adjoint_op->getNonconstLinearOp(),true);
     MEB::OutArgs<Scalar> me_outArgs = model_->createOutArgs();
     me_outArgs.set_W_op(adjoint_op->getNonconstOp());
     model_->evalModel(me_inArgs, me_outArgs);
@@ -302,7 +305,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     // g W
     RCP<Thyra::ScaledIdentityLinearOpWithSolve<Scalar> > si_op =
       rcp_dynamic_cast<Thyra::ScaledIdentityLinearOpWithSolve<Scalar> >(
-        block_op->getNonconstBlock(1,1));
+        block_op->getNonconstBlock(1,1),true);
     si_op->setScale(inArgs.get_alpha());
   }
 
@@ -314,16 +317,16 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
   RCP<Thyra::VectorBase<Scalar> > f = outArgs.get_f();
   if (f != Teuchos::null) {
     RCP<const Thyra::VectorBase<Scalar> > x = inArgs.get_x().assert_not_null();
-    RCP<const DPV> prod_x = rcp_dynamic_cast<const DPV>(x);
+    RCP<const DPV> prod_x = rcp_dynamic_cast<const DPV>(x,true);
     RCP<const Thyra::VectorBase<Scalar> > adjoint_x = prod_x->getVectorBlock(0);
     RCP<const Thyra::MultiVectorBase<Scalar> >adjoint_x_mv =
-      rcp_dynamic_cast<const DMVPV>(adjoint_x)->getMultiVector();
+      rcp_dynamic_cast<const DMVPV>(adjoint_x,true)->getMultiVector();
 
-    RCP<DPV> prod_f = rcp_dynamic_cast<DPV>(f);
+    RCP<DPV> prod_f = rcp_dynamic_cast<DPV>(f,true);
     RCP<Thyra::VectorBase<Scalar> > adjoint_f =
       prod_f->getNonconstVectorBlock(0);
     RCP<Thyra::MultiVectorBase<Scalar> > adjoint_f_mv =
-      rcp_dynamic_cast<DMVPV>(adjoint_f)->getNonconstMultiVector();
+      rcp_dynamic_cast<DMVPV>(adjoint_f,true)->getNonconstMultiVector();
 
     MEB::OutArgs<Scalar> me_outArgs = model_->createOutArgs();
 
@@ -347,11 +350,11 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     if (me_inArgs.supports(MEB::IN_ARG_x_dot)) {
       RCP<const Thyra::VectorBase<Scalar> > x_dot = inArgs.get_x_dot();
       if (x_dot != Teuchos::null) {
-         prod_x_dot = rcp_dynamic_cast<const DPV>(x_dot);
-         RCP<const Thyra::VectorBase<Scalar> > adjoint_x_dot =
-           prod_x_dot->getVectorBlock(0);
+        prod_x_dot = rcp_dynamic_cast<const DPV>(x_dot,true);
+        RCP<const Thyra::VectorBase<Scalar> > adjoint_x_dot =
+          prod_x_dot->getVectorBlock(0);
         RCP<const Thyra::MultiVectorBase<Scalar> > adjoint_x_dot_mv =
-          rcp_dynamic_cast<const DMVPV>(adjoint_x_dot)->getMultiVector();
+          rcp_dynamic_cast<const DMVPV>(adjoint_x_dot,true)->getMultiVector();
         if (mass_matrix_is_identity_) {
           // F = -F + y_dot
           Thyra::V_StVpV(adjoint_f_mv.ptr(), Scalar(-1.0), *adjoint_f_mv,
@@ -379,7 +382,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
     RCP<Thyra::VectorBase<Scalar> > adjoint_g =
       prod_f->getNonconstVectorBlock(1);
     RCP<Thyra::MultiVectorBase<Scalar> > adjoint_g_mv =
-      rcp_dynamic_cast<DMVPV>(adjoint_g)->getNonconstMultiVector();
+      rcp_dynamic_cast<DMVPV>(adjoint_g,true)->getNonconstMultiVector();
 
     MEB::OutArgs<Scalar> me_outArgs2 = model_->createOutArgs();
     MEB::DerivativeSupport dfdp_support =
@@ -422,7 +425,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
      RCP<const Thyra::VectorBase<Scalar> > z_dot =
        prod_x_dot->getVectorBlock(1);
      RCP<const Thyra::MultiVectorBase<Scalar> > z_dot_mv =
-       rcp_dynamic_cast<const DMVPV>(z_dot)->getMultiVector();
+       rcp_dynamic_cast<const DMVPV>(z_dot,true)->getMultiVector();
      Thyra::V_VmV(adjoint_g_mv.ptr(), *z_dot_mv, *adjoint_g_mv);
     }
   }

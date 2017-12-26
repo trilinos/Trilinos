@@ -152,7 +152,7 @@ namespace MueLuTests {
                       const LocalOrdinal numDimensions, const std::string stencilType,
                       RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
                       RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >&Coordinates,
-                      RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal> >& map,
+                      RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
                       Array<GlobalOrdinal>& gNodesPerDim, Array<LocalOrdinal>& lNodesPerDim) {
 #include "MueLu_UseShortNames.hpp"
 

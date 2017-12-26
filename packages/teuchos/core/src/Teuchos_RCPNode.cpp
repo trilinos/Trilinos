@@ -70,7 +70,7 @@ namespace {
 
 
 struct RCPNodeInfo {
-  RCPNodeInfo() : nodePtr(0) {}
+  RCPNodeInfo() = delete;
   RCPNodeInfo(const std::string &info_in, Teuchos::RCPNode* nodePtr_in)
     : info(info_in), nodePtr(nodePtr_in)
     {}
@@ -494,7 +494,7 @@ void RCPNodeTracer::addNewRCPNode( RCPNode* rcp_node, const std::string &info )
     // creates an owning RCP to an object already owned by another RCPNode.
 
     // Add the new RCP node keyed as described above.
-    (*rcp_node_list()).insert(
+    (*rcp_node_list()).emplace_hint(
       itr_itr.second,
       std::make_pair(map_key_void_ptr, RCPNodeInfo(info, rcp_node))
       );
@@ -691,7 +691,7 @@ ActiveRCPNodesSetup::~ActiveRCPNodesSetup()
     std::cerr << "\nPrint active nodes!\n";
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
     std::cout << std::flush;
-    TEUCHOS_TEST_FOR_EXCEPT(0==rcp_node_list());
+    TEUCHOS_TEST_FOR_TERMINATION(nullptr==rcp_node_list(), "rcp_node_list() is null in ~ActiveRCPNodesSetup");
     RCPNodeTracer::RCPNodeStatistics rcpNodeStatistics =
       RCPNodeTracer::getRCPNodeStatistics();
     if (rcpNodeStatistics.maxNumRCPNodes

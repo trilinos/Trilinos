@@ -51,11 +51,48 @@
 #include "Dimension.hpp"
 
 //! Project field values from basis to qp.
-template<typename EvalT, typename Traits>
-class ProjectGradientToQP : public PHX::EvaluatorWithBaseImpl<Traits>,
-                            public PHX::EvaluatorDerived<EvalT, Traits>  {
+template<typename EvalT, typename Traits> class ProjectGradientToQP;
 
-  using ScalarT = typename EvalT::ScalarT;
+// ***********************
+// Residual Specialization
+// ***********************
+
+template<typename Traits>
+class ProjectGradientToQP<PHX::MyTraits::Residual,Traits> : public PHX::EvaluatorWithBaseImpl<Traits>,
+							    public PHX::EvaluatorDerived<PHX::MyTraits::Residual, Traits>  {
+
+  using ScalarT = typename PHX::MyTraits::Residual::ScalarT;
+  PHX::MDField<const ScalarT,CELL,BASIS> field_at_basis;
+  PHX::MDField<ScalarT,CELL,QP,DIM> grad_field_at_qp;
+
+public:
+  struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
+    PHX::View<const ScalarT**> field_at_basis;
+    PHX::View<ScalarT***> grad_field_at_qp;
+    KOKKOS_FUNCTION MyDevEval(const PHX::View<const ScalarT**>& in_field_at_basis,
+			      const PHX::View<ScalarT***>& in_grad_field_at_qp) :
+      field_at_basis(in_field_at_basis), grad_field_at_qp(in_grad_field_at_qp) {}
+    KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
+    KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
+                                  typename Traits::EvalData workset) override;
+  };
+  
+  ProjectGradientToQP(const std::string& field_name,
+                      const Teuchos::RCP<PHX::DataLayout>& basis_layout,
+                      const Teuchos::RCP<PHX::DataLayout>& grad_qp_layout);
+  PHX::DeviceEvaluator<Traits>* createDeviceEvaluator() const override;
+  void evaluateFields(typename Traits::EvalData workset) override;
+};
+
+// ***********************
+// Jacobian Specialization
+// ***********************
+
+template<typename Traits>
+class ProjectGradientToQP<PHX::MyTraits::Jacobian,Traits> : public PHX::EvaluatorWithBaseImpl<Traits>,
+							    public PHX::EvaluatorDerived<PHX::MyTraits::Jacobian, Traits>  {
+
+  using ScalarT = typename PHX::MyTraits::Jacobian::ScalarT;
   PHX::MDField<const ScalarT,CELL,BASIS> field_at_basis;
   PHX::MDField<ScalarT,CELL,QP,DIM> grad_field_at_qp;
 

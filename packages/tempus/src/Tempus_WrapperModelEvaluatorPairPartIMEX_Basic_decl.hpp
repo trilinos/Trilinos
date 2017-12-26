@@ -39,6 +39,9 @@ class WrapperModelEvaluatorPairPartIMEX_Basic
 {
 public:
 
+  /// Default constructor -- Still requires setting the models and running initialize.
+  WrapperModelEvaluatorPairPartIMEX_Basic();
+
   /// Constructor
   WrapperModelEvaluatorPairPartIMEX_Basic(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
@@ -121,28 +124,27 @@ public:
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getIMEXVector(
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & full) const;
 
+    /// Extract IMEX vector for reading
+    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getIMEXVector(
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const;
+
     /// Extract explicit-only vector from a full solution vector
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getExplicitOnlyVector(
       const Teuchos::RCP<Thyra::VectorBase<Scalar> > & full) const;
 
-    /// Extract IMEX vector for reading
-    virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getIMEXVector(
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const
-    { return getIMEXVector(
-                Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(full)); }
     /// Extract explicit-only vector for reading
     virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> >getExplicitOnlyVector(
-      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const
-    { return getExplicitOnlyVector(
-                Teuchos::rcp_const_cast<Thyra::VectorBase<Scalar> >(full)); }
+      const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & full) const;
 
     /// Set the parameter index for explicit-only vector
     virtual void setParameterIndex(int parameterIndex = -1);
     /// Get the parameter index for explicit-only vector
-    virtual int getParameterIndex() { return parameterIndex_; }
+    virtual int getParameterIndex() const { return parameterIndex_; }
 
     /// Set parameter to switch wrapperME base functions between explicit and implicit functions.
     virtual void setUseImplicitModel(bool tf) { useImplicitModel_ = tf; }
+   /// Get parameter to switch wrapperME base functions between explicit and implicit functions.
+    virtual bool getUseImplicitModel() const { return useImplicitModel_; }
   //@}
 
   /// \name Overridden from Thyra::StateFuncModelEvaluatorBase
@@ -165,11 +167,13 @@ public:
       const Thyra::ModelEvaluatorBase::OutArgs<Scalar> & out) const;
   //@}
 
-//private:
-  /// Default constructor - not allowed
-  WrapperModelEvaluatorPairPartIMEX_Basic(){}
-
 protected:
+
+  /// Setup ME when using default constructor -- for derived classes
+  void setup(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& explicitModel,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& implicitModel,
+    int numExplicitOnlyBlocks = 0, int parameterIndex = -1);
 
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > explicitModel_;
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > implicitModel_;

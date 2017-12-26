@@ -86,13 +86,14 @@ size_t C_estimate_nnz_per_row(CrsMatrixType & A, CrsMatrixType &B){
 /*********************************************************************************************************/
 template<class Scalar,
          class LocalOrdinal,
-         class GlobalOrdinal>
+         class GlobalOrdinal,
+         class LocalOrdinalViewType>
 void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
-                                                 const Teuchos::Array<LocalOrdinal> & targetMapToOrigRow,
-                                                 const Teuchos::Array<LocalOrdinal> & targetMapToImportRow,
-                                                 const Teuchos::Array<LocalOrdinal> & Bcol2Ccol,
-                                                 const Teuchos::Array<LocalOrdinal> & Icol2Ccol,
+                                                 const LocalOrdinalViewType & targetMapToOrigRow,
+                                                 const LocalOrdinalViewType & targetMapToImportRow,
+                                                 const LocalOrdinalViewType & Bcol2Ccol,
+                                                 const LocalOrdinalViewType & Icol2Ccol,
                                                  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
                                                  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
                                                  const std::string& label,
@@ -208,19 +209,19 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
           if (Aval == SC_ZERO)
             continue; // skip explicitly stored zero values in A
           
-          if (targetMapToOrigRow[Aik] != LO_INVALID) {
+          if (targetMapToOrigRow(Aik) != LO_INVALID) {
             // mfh 27 Sep 2016: If the entry of targetMapToOrigRow
             // corresponding to the current entry of A is populated, then
             // the corresponding row of B is in B_local (i.e., it lives on
             // the calling process).
             
             // Local matrix
-            size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow[Aik]);
+            size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow(Aik));
             
             // mfh 27 Sep 2016: Go through all entries in that row of B_local.
             for (size_t j = Browptr(Bk); j < Browptr(Bk+1); ++j) {
               LO Bkj = Bcolind(j);
-              LO Cij = Bcol2Ccol[Bkj];
+              LO Cij = Bcol2Ccol(Bkj);
               
               if (c_status[Cij] == INVALID || c_status[Cij] < OLD_ip) {
                 // New entry
@@ -241,10 +242,10 @@ void mult_A_B_newmatrix_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOr
             // in B_local (i.e., it lives on the calling process).
             
             // Remote matrix
-            size_t Ik = Teuchos::as<size_t>(targetMapToImportRow[Aik]);
+            size_t Ik = Teuchos::as<size_t>(targetMapToImportRow(Aik));
             for (size_t j = Irowptr(Ik); j < Irowptr(Ik+1); ++j) {
               LO Ikj = Icolind(j);
-              LO Cij = Icol2Ccol[Ikj];
+              LO Cij = Icol2Ccol(Ikj);
               
               if (c_status[Cij] == INVALID || c_status[Cij] < OLD_ip){
                 // New entry

@@ -10,7 +10,7 @@
 #define Tempus_StepperStaggeredForwardSensitivity_decl_hpp
 
 #include "Tempus_Stepper.hpp"
-#include "Tempus_StaggeredForwardSensitivityModelEvaluator.hpp"
+#include "Tempus_SensitivityModelEvaluatorBase.hpp"
 
 namespace Tempus {
 
@@ -143,7 +143,8 @@ private:
   Teuchos::RCP<Teuchos::ParameterList>               sensPL_;
   Teuchos::RCP<Stepper<Scalar> >                     stateStepper_;
   Teuchos::RCP<Stepper<Scalar> >                     sensitivityStepper_;
-  Teuchos::RCP<StaggeredForwardSensitivityModelEvaluator<Scalar> > fsa_model_;
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > combined_fsa_model_;
+  Teuchos::RCP<SensitivityModelEvaluatorBase<Scalar> > fsa_model_;
   Teuchos::RCP<SolutionHistory<Scalar> > stateSolutionHistory_;
   Teuchos::RCP<SolutionHistory<Scalar> > sensSolutionHistory_;
   bool reuse_solver_;

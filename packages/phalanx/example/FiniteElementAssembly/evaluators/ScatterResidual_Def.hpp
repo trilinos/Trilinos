@@ -85,10 +85,12 @@ void ScatterResidual<PHX::MyTraits::Residual,Traits>::
 operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int local_cell = team.league_rank();
-  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,residual_contribution.extent(1)), [=] (const int& node) {
-    const int residual_index = gids(cell_global_offset_index+local_cell,node) * num_equations + equation_index;
-    global_residual_atomic(residual_index) += residual_contribution(local_cell,node);
-  });
+  if (team.team_rank() == 0) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,residual_contribution.extent(1)), [&] (const int& node) {
+      const int residual_index = gids(cell_global_offset_index+local_cell,node) * num_equations + equation_index;
+      global_residual_atomic(residual_index) += residual_contribution(local_cell,node);
+    });
+  }
 }
 
 // **********************************************************************
@@ -133,11 +135,17 @@ operator()(const Kokkos::TeamPolicy<PHX::exec_space>::member_type& team) const
 {
   const int cell = team.league_rank();
   const int num_nodes = residual_contribution.extent(1);
+
+  if (team.team_rank() == 0) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,num_nodes), [&] (const int& node) {
+      const int global_row_index = gids(cell_global_offset_index+cell,node) * num_equations + equation_index;
+      global_residual_atomic(global_row_index) += residual_contribution(cell,node).val();
+    });
+  }
+
   Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,num_nodes), [&] (const int& node) {
 
-    // Residual
     const int global_row_index = gids(cell_global_offset_index+cell,node) * num_equations + equation_index;
-    global_residual_atomic(global_row_index) += residual_contribution(cell,node).val();
 
     // loop over nodes
     for (int col_node=0; col_node < num_nodes; ++col_node) {

@@ -360,10 +360,12 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
     case POLYNOMIAL:
       return(new Ifpack_Polynomial(Matrix));
     case KRYLOV:
-      if (serial && !overrideSerialDefault)
-        return(new Ifpack_Krylov(Matrix));
-      else
-        return(new Ifpack_AdditiveSchwarz<Ifpack_Krylov>(Matrix, Overlap));
+      return(new Ifpack_Krylov(Matrix));
+      // local krylov
+      //      if (serial && !overrideSerialDefault)
+      //        return(new Ifpack_Krylov(Matrix));
+      //      else
+      //        return(new Ifpack_AdditiveSchwarz<Ifpack_Krylov>(Matrix, Overlap));
 #ifdef HAVE_IFPACK_EPETRAEXT
     case IHSS:
       return(new Ifpack_IHSS(Matrix));

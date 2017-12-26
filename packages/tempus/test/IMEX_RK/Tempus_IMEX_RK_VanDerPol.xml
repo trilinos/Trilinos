@@ -1,6 +1,6 @@
 <ParameterList name="IMEX_RK_VanDerPol">
   <ParameterList name="VanDerPolModel">
-    <Parameter name="Accept model parameters"    type="bool" value="false"/>
+    <Parameter name="Accept model parameters"    type="bool" value="true"/>
     <Parameter name="Provide nominal values"     type="bool" value="true"/>
     <Parameter name="Coeff epsilon" type="double" value="0.1"/>
     <Parameter name="IC x0"   type="double" value="2.0"/>

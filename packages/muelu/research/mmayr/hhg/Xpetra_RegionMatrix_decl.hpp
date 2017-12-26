@@ -31,11 +31,11 @@ enum ESplittingMethodHHG {
  *  \author mayr.mt \date 09/2017
  */
 template <class SC = Operator<>::scalar_type,
-    class LO = Operator<>::local_ordinal_type,
-    class GO = typename Operator<LO>::global_ordinal_type,
-    class NO = typename Operator<LO, GO>::node_type,
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra,
-    Xpetra::ESplittingMethodHHG splitMethod = false>
+          class LO = Operator<>::local_ordinal_type,
+          class GO = typename Operator<LO>::global_ordinal_type,
+          class NO = typename Operator<LO, GO>::node_type,
+          Xpetra::UnderlyingLib lib = Xpetra::UseEpetra,
+          Xpetra::ESplittingMethodHHG splitMethod = region_split> // lbv: what should be the default value here?
 class RegionMatrix //: public Matrix<SC, LO, GO, NO> {
 {
   typedef Xpetra::CrsMatrix<SC,LO,GO,NO> CrsMatrix;

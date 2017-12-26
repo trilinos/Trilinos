@@ -77,8 +77,9 @@ TEUCHOS_UNIT_TEST(Behavior, Named)
 #endif
 
   // TPETRA_DEBUG was set globally in TEUCHOS_STATIC_SETUP to a named value, so
-  // any query on TPETRA_DEBUG should evaluate to the default value, unless the
-  // query is performed on one of the named values.
+  // any named query on TPETRA_DEBUG should evaluate to false, unless the
+  // query is performed on one of the named values.  Unnamed queries should
+  // return the default value.
   bool dbg = Tpetra::Details::Behavior::debug();
   TEUCHOS_TEST_ASSERT(dbg==debug_default, out, success);
   bool dbg_1 = Tpetra::Details::Behavior::debug("Dbg1");
@@ -86,7 +87,7 @@ TEUCHOS_UNIT_TEST(Behavior, Named)
   bool dbg_2 = Tpetra::Details::Behavior::debug("Dbg2");
   TEUCHOS_TEST_ASSERT(dbg_2, out, success);
   bool dbg_3 = Tpetra::Details::Behavior::debug("Dbg3");
-  TEUCHOS_TEST_ASSERT(dbg_3==debug_default, out, success);
+  TEUCHOS_TEST_ASSERT(!dbg_3, out, success);
 
   // TPETRA_VERBOSE was set globally in TEUCHOS_STATIC_SETUP to a named value,
   // so any query on TPETRA_VERBOSE should evaluate to false, unless the query

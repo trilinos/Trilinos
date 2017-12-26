@@ -89,7 +89,11 @@
 %
 !rm -f myData_* 
 
-file='caseFour'; % mkRegionFile(file);
+nDims = 1; file='caseFour'; 
+
+if (nDims == 2)
+  [globalDims,localDims,relcorners,abscorners]=mk2DRegionFile(file);
+end
 
 %
 %  read in some of header type information 
@@ -102,7 +106,14 @@ whichCase = fgets(fp,16); fclose(fp);
 %
 % A = spdiags(rand(nNodes,3), -1:1, nNodes, nNodes);
 % A = spdiags(-1*ones(nNodes,3), -1:1, nNodes, nNodes);
-A = oneDimensionalLaplace(nNodes);
+if (nDims == 1)
+  A = oneDimensionalLaplace(nNodes);
+elseif (nDims == 2)
+  A = twoDimensionalLaplace(nNodes);
+else
+  error('nDims is wrong\n');
+end
+
 
 % Each 'processor' reads regional file. 
 
@@ -132,7 +143,13 @@ end
 %
 for myRank=0:nProcs-1
    fp=fopen(sprintf('myData_%d',myRank),'w');
-   fprintf(fp,'%d %d %s\n',maxRegPerGID,maxRegPerProc,whichCase);
+   if (nDims == 1)
+     fprintf(fp,'%d %d %d %d %s\n',maxRegPerGID,maxRegPerProc, nNodes, 1, whichCase);
+   elseif (nDims == 2)
+     fprintf(fp,'%d %d %d %d %s\n',maxRegPerGID,maxRegPerProc,sqrt(nNodes),sqrt(nNodes),whichCase);
+   else
+     error("Problems of spatial dimension %d are not implemented, yet.", nDims);
+   end
    fclose(fp); 
 end
 waitForRmDataFiles(nProcs);
@@ -208,27 +225,36 @@ for myRank=0:nProcs-1
 end
 
 waitForRmDataFiles(nProcs);
-mkAppData(allMyNodes,allMyRegions,nProcs);
+if (nDims == 1)
+  mkAppData(allMyNodes,allMyRegions,nProcs,whichCase);
+elseif (nDims == 2)
+  mk2DAppData(allMyNodes,allMyRegions,nProcs,whichCase,globalDims,localDims,relcorners,abscorners);
+else
+  error("Problems of spatial dimension %d are not implemented, yet.", nDims);
+end
 waitForRmDataFiles(nProcs);
 
+% send('PrintCompositeMatrix',nProcs);
 send('MakeGrpRegRowMaps',nProcs);
 send('MakeGrpRegColMaps',nProcs);
+send('MakeExtendedGrpRegMaps',nProcs);
 send('MakeQuasiRegionMatrices',nProcs);
 % send('PrintQuasiRegionMatrices',nProcs);
-send('MakeExtendedGrpRegMaps',nProcs);
 % send('PrintGrpRegDomMaps',nProcs);
 % send('PrintRevisedRowMaps',nProcs);
 % send('PrintRevisedColMaps',nProcs);
 % send('PrintGrpRegColMaps',nProcs);
+% send('PrintRegVectorInterfaceScaling',nProcs);
 send('MakeRegionMatrices',nProcs);
 % send('PrintRegionMatrices',nProcs);
 % send('PrintRegionMatrixRowMap',nProcs);
 % send('PrintRegionMatrixColMap',nProcs);
 % send('PrintRegionMatrixRangeMap',nProcs);
 % send('PrintRegionMatrixDomainMap',nProcs);
-send('MakeRegionTransferOperators',nProcs);
-send('RunTwoLevelMethod',nProcs);
 % send('ComputeMatVecs',nProcs);
+send('MakeRegionTransferOperators',nProcs);
+send('MakeInterfaceScalingFactors',nProcs);
+send('RunTwoLevelMethod',nProcs);
 % send('PrintCompositeVectorX',nProcs);
 % send('PrintCompositeVectorY',nProcs);
 % send('PrintQuasiRegVectorX',nProcs);

@@ -95,7 +95,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK_Partitioned, VanDerPol)
 
       // Setup the IMEX Pair ModelEvaluator
       const int numExplicitBlocks = 1;
-      const int parameterIndex = 0;
+      const int parameterIndex = 4;
       RCP<Tempus::WrapperModelEvaluatorPairPartIMEX_Basic<double> > model =
           Teuchos::rcp(
             new Tempus::WrapperModelEvaluatorPairPartIMEX_Basic<double>(
