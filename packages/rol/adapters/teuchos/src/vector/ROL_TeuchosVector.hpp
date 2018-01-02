@@ -131,7 +131,7 @@ public:
     return vec_;
   }
   
-  void print( std::ostream &outStream ) const {
+  void print( std::ostream &outStream ) const override {
     vec_->print(outStream);
   }
 
