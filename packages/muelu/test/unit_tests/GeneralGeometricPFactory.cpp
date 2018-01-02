@@ -98,12 +98,12 @@ namespace MueLuTests {
   };
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void GetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib,
-                      const LocalOrdinal numDimensions, const std::string mode,
-                      RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
-                      RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >&Coordinates,
-                      RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
-                      Array<GlobalOrdinal>& gNodesPerDim, Array<LocalOrdinal>& lNodesPerDim) {
+  void GGGetProblemData(RCP<const Teuchos::Comm<int> >& comm, const Xpetra::UnderlyingLib lib,
+                        const LocalOrdinal numDimensions, const std::string mode,
+                        RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Op,
+                        RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> >&Coordinates,
+                        RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >& map,
+                        Array<GlobalOrdinal>& gNodesPerDim, Array<LocalOrdinal>& lNodesPerDim) {
 #include "MueLu_UseShortNames.hpp"
 
     GO nx = 9;
@@ -793,8 +793,10 @@ namespace MueLuTests {
     RCP<Map> map;
     Array<GO> gNodesPerDim(3);
     Array<LO> lNodesPerDim(3);
-    GetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, "Local Lexicographic", Op,
-                                coordinates, map, gNodesPerDim, lNodesPerDim);
+    GGGetProblemData<SC,LO,GO,NO>(comm, lib, numDimensions, "Local Lexicographic", Op,
+                                  coordinates, map, gNodesPerDim, lNodesPerDim);
+
+    TEST_EQUALITY(Op != Teuchos::null, true);
 
     Array<Array<GO> > indsBounds(4);
     Array<GO> minGID(4);
