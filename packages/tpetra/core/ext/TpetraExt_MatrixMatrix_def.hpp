@@ -3655,6 +3655,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
 /*********************************************************************************************************/
 // AB NewMatrix Kernel wrappers (KokkosKernels/OpenMP Version)
 #ifdef HAVE_TPETRA_INST_OPENMP
+
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal, class LocalOrdinalViewType>
@@ -3699,13 +3700,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
 #endif
 
   // Node-specific code
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
   std::string nodename("OpenMP");
-
-  // Lots and lots of typedefs
   using Teuchos::RCP;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
-  typedef typename KCRS::StaticCrsGraphType graph_t;
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
@@ -3719,7 +3715,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
 
   if(myalg == "LTG") {
     // Use the LTG kernel if requested
-    ::Tpetra::MatrixMatrix::ExtraKernels::mult_A_B_newmatrix_LowThreadGustavsonKernel(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
+    ::Tpetra::MatrixMatrix::ExtraKernels::jacobi_A_B_newmatrix_LowThreadGustavsonKernel(omega,Dinv,Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
   } 
   else {
     throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi unknown kernel");
@@ -3736,7 +3732,35 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > dummyExport;
   C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
 
+
+#if 0
+  {
+    Teuchos::ArrayRCP< const size_t > Crowptr;
+    Teuchos::ArrayRCP< const LocalOrdinal > Ccolind;
+    Teuchos::ArrayRCP< const Scalar > Cvalues;
+    C.getAllValues(Crowptr,Ccolind,Cvalues);
+
+    // DEBUG
+    int MyPID = C->getComm()->getRank();
+    printf("[%d] Crowptr = ",MyPID);
+    for(size_t i=0; i<(size_t) Crowptr.size(); i++) {
+      printf("%3d ",(int)Crowptr.getConst()[i]);
+    }
+    printf("\n");
+    printf("[%d] Ccolind = ",MyPID);
+    for(size_t i=0; i<(size_t)Ccolind.size(); i++) {
+      printf("%3d ",(int)Ccolind.getConst()[i]);
+    }
+    printf("\n");
+    fflush(stdout);
+    // END DEBUG
+  }
+#endif
+
+
+
 }
+
 #endif //OpenMP
 
 

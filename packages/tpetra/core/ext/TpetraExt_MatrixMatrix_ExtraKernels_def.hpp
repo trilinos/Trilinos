@@ -308,8 +308,8 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
                                                    const Vector<Scalar,LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> & Dinv,
                                                    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
                                                    CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
-                                                   const LocalOrdinalViewType & Acol2Brow,
-                                                   const LocalOrdinalViewType & Acol2Irow,
+                                                   const LocalOrdinalViewType & targetMapToOrigRow,
+                                                   const LocalOrdinalViewType & targetMapToImportRow,
                                                    const LocalOrdinalViewType & Bcol2Ccol,
                                                    const LocalOrdinalViewType & Icol2Ccol,
                                                    CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
@@ -363,7 +363,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
   const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
   
-  // Grab the  Kokkos::SparseCrsMatrices & inner ctuff
+  // Grab the  Kokkos::SparseCrsMatrices & inner stuff
   const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
   const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
 
@@ -424,7 +424,8 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
         // mfh 27 Sep 2016: m is the number of rows in the input matrix A
         // on the calling process.
         Crowptr(i-my_thread_start) = CSR_ip;        
-        SC minusOmegaDval = -omega*Dvals(i);
+        // NOTE: Vector::getLocalView returns a rank 2 view here
+        SC minusOmegaDval = -omega*Dvals(i,0);
 
         // Entries of B
         for (size_t j = Browptr(i); j < Browptr(i+1); j++) {
