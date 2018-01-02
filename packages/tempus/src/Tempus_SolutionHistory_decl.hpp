@@ -70,7 +70,7 @@ public:
   SolutionHistory(Teuchos::RCP<Teuchos::ParameterList> shPL = Teuchos::null);
 
   /// Destructor
-  ~SolutionHistory() {};
+  ~SolutionHistory() {}
 
   /// \name Basic SolutionHistory Methods
   //@{

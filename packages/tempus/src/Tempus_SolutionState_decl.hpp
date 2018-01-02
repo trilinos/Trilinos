@@ -19,6 +19,7 @@
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_StepperState.hpp"
+#include "Tempus_PhysicsState.hpp"
 
 namespace Tempus {
 
@@ -54,14 +55,16 @@ public:
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-    const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState);
+    const Teuchos::RCP<StepperState<Scalar> >& stepperState,
+    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
 
   SolutionState(
     const Teuchos::RCP<const SolutionStateMetaData<Scalar> > ssmd,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot,
-    const Teuchos::RCP<const Tempus::StepperState<Scalar> >& stepperState);
+    const Teuchos::RCP<const StepperState<Scalar> >& stepperState,
+    const Teuchos::RCP<const PhysicsState<Scalar> >& physicsSt = Teuchos::null);
 
   SolutionState(
     const Scalar time,
@@ -81,7 +84,8 @@ public:
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot,
-    const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState);
+    const Teuchos::RCP<StepperState<Scalar> >& stepperState,
+    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
 
   SolutionState(
     const Scalar time,
@@ -101,11 +105,13 @@ public:
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
     const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot,
-    const Teuchos::RCP<const Tempus::StepperState<Scalar> >& stepperState);
+    const Teuchos::RCP<const StepperState<Scalar> >& stepperState,
+    const Teuchos::RCP<const PhysicsState<Scalar> >& physicsSt = Teuchos::null);
 
   SolutionState(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-    const Teuchos::RCP<Tempus::StepperState<Scalar> >& stepperState);
+    const Teuchos::RCP<StepperState<Scalar> >& stepperState,
+    const Teuchos::RCP<PhysicsState<Scalar> >& physicsState = Teuchos::null);
 
   /// This is a shallow copy constructor, use clone for a deep copy constructor
   SolutionState(const SolutionState<Scalar>& ss);
@@ -121,7 +127,7 @@ public:
     const Teuchos::RCP<const SolutionState<Scalar> >& s);
 
   /// Destructor
-  virtual ~SolutionState() {};
+  virtual ~SolutionState() {}
 
   /// \name Accessor methods
   //@{
@@ -191,13 +197,22 @@ public:
       { return xdotdot_; }
 
     /// Get the StepperState
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getStepperState()
+    virtual Teuchos::RCP<StepperState<Scalar> > getStepperState()
       { TEUCHOS_ASSERT(stepperState_nc_ != Teuchos::null);
         return stepperState_nc_; }
 
     /// Get the StepperState
-    virtual Teuchos::RCP<const Tempus::StepperState<Scalar> > getStepperState() const
-      { return stepperState_; }
+    virtual Teuchos::RCP<const StepperState<Scalar> >
+      getStepperState() const { return stepperState_; }
+
+    /// Get the PhysicsState
+    virtual Teuchos::RCP<PhysicsState<Scalar> > getPhysicsState()
+      { return physicsState_nc_; }
+    virtual Teuchos::RCP<const PhysicsState<Scalar> > getPhysicsState() const
+      { return physicsState_; }
+
+    virtual void setPhysicsState(const Teuchos::RCP<PhysicsState<Scalar> >& ps)
+      { physicsState_nc_ = ps; physicsState_ = physicsState_nc_; }
   //@}
 
 
@@ -263,6 +278,10 @@ private:
   /// StepperState for this SolutionState
   Teuchos::RCP<const Tempus::StepperState<Scalar> > stepperState_;
   Teuchos::RCP<Tempus::StepperState<Scalar> > stepperState_nc_;
+
+  /// PhysicsState for this SolutionState
+  Teuchos::RCP<const Tempus::PhysicsState<Scalar> > physicsState_;
+  Teuchos::RCP<Tempus::PhysicsState<Scalar> > physicsState_nc_;
 
 };
 } // namespace Tempus
