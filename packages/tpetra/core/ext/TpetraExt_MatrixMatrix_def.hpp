@@ -2531,7 +2531,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 
 /*********************************************************************************************************/
 // AB NewMatrix Kernel wrappers (KokkosKernels/OpenMP Version)
-#if defined(HAVE_KOKKOSKERNELS_EXPERIMENTAL) && defined (HAVE_TPETRA_INST_OPENMP)
+#ifdef HAVE_TPETRA_INST_OPENMP
 template<class Scalar,
          class LocalOrdinal,
          class GlobalOrdinal, class LocalOrdinalViewType>
@@ -2587,8 +2587,11 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
+#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
   std::string myalg("SPGEMM_KK_MEMORY");
-  //std::string myalg("LTG");
+#else
+  std::string myalg("LTG");
+#endif
   if(!params.is_null()) {
     if(params->isParameter("openmp: algorithm"))
       myalg = params->get("openmp: algorithm",myalg);
@@ -2600,6 +2603,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     // Use the LTG kernel if requested
     ::Tpetra::MatrixMatrix::ExtraKernels::mult_A_B_newmatrix_LowThreadGustavsonKernel(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
   }
+#ifdef HAVE_KOKKOSKERNELS_EXPERIMENTAL
   else {
     // Use the Kokkos-Kernels OpenMP Kernel
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -2730,7 +2734,13 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
       Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
     C.setAllValues(row_mapC,entriesC,valuesC);
 
-  }// end OMP Loopage
+  }// end OMP KokkosKernels loop
+#else
+  // Error Case: We've asked for some option that isn't available (because it is a KokkosKernels kernel and we don't have HAVE_KOKKOSKERNELS_EXPERIMENTAL)
+  else {
+    throw std::runtime_error("Tpetra::MatrixMatrix::Multiply unknown kernel");
+  }
+#endif
 
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
