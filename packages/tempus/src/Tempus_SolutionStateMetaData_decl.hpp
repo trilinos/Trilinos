@@ -57,7 +57,7 @@ public:
   void copy(const Teuchos::RCP<const SolutionStateMetaData<Scalar> >& ssmd);
 
   /// Destructor
-  virtual ~SolutionStateMetaData() {};
+  virtual ~SolutionStateMetaData() {}
 
   /// \name Accessor methods
   //@{

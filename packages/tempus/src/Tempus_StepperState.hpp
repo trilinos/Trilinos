@@ -55,7 +55,7 @@ public:
   }
 
   /// This is a deep copy
-  virtual void copy(const Teuchos::RCP<const StepperState<Scalar> >&  ss)
+  virtual void copy(const Teuchos::RCP<const StepperState<Scalar> >& ss)
   {
      stepperName_   = ss->stepperName_;
      stepperStatus_ = ss->stepperStatus_;
@@ -63,11 +63,8 @@ public:
 
   /// \name Overridden from Teuchos::Describable
   //@{
-    virtual std::string description() const
-    {
-      std::string name = "Tempus::StepperState";
-      return(name);
-    }
+    virtual std::string description() const { return "Tempus::StepperState"; }
+
     virtual void describe(Teuchos::FancyOStream        & out,
                           const Teuchos::EVerbosityLevel verbLevel) const
     {
@@ -79,10 +76,7 @@ public:
 
   std::string stepperName_;    ///< Name of the creating Stepper.
 
-  /** The stepperStatus is used to indicate whether the Stepper has PASSED or
-   FAILED.  WORKING is used for prior and during the Stepper.
-   */
-  Status      stepperStatus_;
+  Status      stepperStatus_;  ///< The stepperStatus is used to indicate whether the Stepper has PASSED or FAILED.  WORKING is used for prior and during the Stepper.
 
 };
 } // namespace Tempus
