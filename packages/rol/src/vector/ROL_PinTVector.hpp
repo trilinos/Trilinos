@@ -279,6 +279,15 @@ public:
     */
   int numOwnedSteps() const { return stepVectors_->numVectors(); }
 
+  /** What is the stencil used to build this vector?
+ 
+      This accessor is directly based on what the user intiializes the
+      vector with. Its used by ROL algorithms and constraints to ensure
+      the communication patterns are understood.
+    */
+  const std::vector<int> & stencil() { return stencil_; }
+
+
   /** Determine if an index is valid including the stencil.
       An index is valid if is in [min(stencil),max(stencil)+numOwnedSteps()-1]
    */
