@@ -86,7 +86,7 @@ namespace MueLuTests {
     GlobalOrdinal minGColId = domainmap->getMinAllGlobalIndex();  // minimum over all procs
     GlobalOrdinal maxGColId = domainmap->getMaxAllGlobalIndex();  // maximum over all procs
     GlobalOrdinal numGColElements = domainmap->getGlobalNumElements();
-    std::cout << maxGColId << " " << minGColId << " " << numGColElements <<std::endl;
+    //std::cout << maxGColId << " " << minGColId << " " << numGColElements <<std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION(maxGColId-minGColId!=numGColElements-1,MueLu::Exceptions::RuntimeError,"GenerateProblemMatrix: incosistent number of map elements.");
 
     GlobalOrdinal minGRowId = rangemap->getMinAllGlobalIndex(); // minimum over all procs
