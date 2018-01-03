@@ -40,12 +40,11 @@
 // @HEADER
 #ifndef TPETRA_MATRIXMATRIX_DEF_HPP
 #define TPETRA_MATRIXMATRIX_DEF_HPP
-
+#include "Tpetra_ConfigDefs.hpp"
 #include "TpetraExt_MatrixMatrix_decl.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Array.hpp"
 #include "Tpetra_Util.hpp"
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "TpetraExt_MMHelpers_def.hpp"
 #include "Tpetra_RowMatrixTransposer.hpp"

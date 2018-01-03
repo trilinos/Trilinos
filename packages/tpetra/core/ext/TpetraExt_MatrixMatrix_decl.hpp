@@ -540,6 +540,7 @@ void setMaxNumEntriesPerRow(
   };
 
 
+#ifdef HAVE_TPETRA_INST_OPENMP
   // MMM KernelWrappers for Partial Specialization to OpenMP
 template<class Scalar,
          class LocalOrdinal,
@@ -587,7 +588,7 @@ struct KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosO
                                                            const std::string& label = std::string(),
                                                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 };
-
+#endif
 
 
 }//end namespace MMdetails
