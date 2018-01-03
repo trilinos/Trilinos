@@ -55,6 +55,7 @@ export OMP_NUM_THREADS=2
 module load sems-env
 module load sems-gcc/4.8.4
 module load sems-openmpi/1.10.1
+module load sems-superlu/4.3
 
 env
 
