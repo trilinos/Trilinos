@@ -3848,8 +3848,9 @@ void import_and_extract_views(
 
 
 /*********************************************************************************************************/
-// Include the kernel partial specializations here
-//#include "TpetraExt_MatrixMatrix_OpenMP_def.hpp"
+// Include the architecture-specific kernel partial specializations here
+// NOTE: This needs to be outside all namespaces
+#include "TpetraExt_MatrixMatrix_OpenMP_def.hpp"
 
 
 
