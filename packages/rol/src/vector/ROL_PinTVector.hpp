@@ -87,6 +87,9 @@ public:
 
     MPI_Comm_size(timeComm_, &timeSize_);
     MPI_Comm_rank(timeComm_, &timeRank_);
+
+    MPI_Comm_size(spaceComm_, &spaceSize_);
+    MPI_Comm_rank(spaceComm_, &spaceRank_);
   }
 
   // cleanup
@@ -101,6 +104,9 @@ public:
    int getTimeRank() const { return timeRank_; }
    int getTimeSize() const { return timeSize_; }
 
+   int getSpaceRank() const { return spaceRank_; }
+   int getSpaceSize() const { return spaceSize_; }
+
 private:
 
   MPI_Comm parentComm_;
@@ -109,6 +115,8 @@ private:
   MPI_Comm timeComm_;
   int timeSize_;
   int timeRank_;
+  int spaceSize_;
+  int spaceRank_;
 };
 
 template <class Real> 
@@ -118,12 +126,18 @@ public:
   {
     const std::vector<Real> & std_source = *dynamic_cast<const StdVector<Real>&>(source).getVector();
 
+    // int myRank = -1;
+    // MPI_Comm_rank(comm, &myRank);
+
     MPI_Send(const_cast<Real*>(&std_source[0]),int(std_source.size()),MPI_DOUBLE,rank,0,comm);
   }
 
   void recv(MPI_Comm comm,int rank,Vector<Real> & dest) const
   {
     std::vector<Real> & std_dest = *dynamic_cast<StdVector<Real>&>(dest).getVector();
+
+    // int myRank = -1;
+    // MPI_Comm_rank(comm, &myRank);
 
     MPI_Recv(&std_dest[0],int(std_dest.size()),MPI_DOUBLE,rank,0,comm,MPI_STATUS_IGNORE);
   }
@@ -216,6 +230,8 @@ protected:
   }
 
 public:
+  
+  typedef enum {SEND_AND_RECV, SEND_ONLY, RECV_ONLY} ESendRecv;
 
   PinTVector()
     : isInitialized_(false)
@@ -223,15 +239,7 @@ public:
 
   PinTVector(const PinTVector & v)
   {
-    isInitialized_ = v.isInitialized_;
-    communicators_ = v.communicators_;
-    localVector_   = v.localVector_;
-    steps_         = v.steps_;
-    stencil_       = v.stencil_;
-    vectorComm_    = v.vectorComm_;
-    stepVectors_   = dynamicPtrCast<PartitionedVector<Real>>(v.stepVectors_->clone());
-
-    computeStepStartEnd(steps_);
+    initialize(v.communicators_,v.localVector_,v.steps_,v.stencil_);
   }
 
   PinTVector(const Ptr<const PinTCommunicators> & comm,
@@ -254,7 +262,7 @@ public:
     localVector_   = localVector;
     steps_         = steps;
     stencil_       = stencil;
-    vectorComm_  = makePtr<PinTVectorCommunication<Real>>();
+    vectorComm_    = makePtr<PinTVectorCommunication<Real>>();
 
     computeStepStartEnd(steps_);
     allocateBoundaryExchangeVectors();
@@ -285,7 +293,11 @@ public:
       vector with. Its used by ROL algorithms and constraints to ensure
       the communication patterns are understood.
     */
-  const std::vector<int> & stencil() { return stencil_; }
+  const std::vector<int> & stencil() const { return stencil_; }
+
+  /** What is the communicators object used to build this vector?
+    */
+  const PinTCommunicators & communicators() const { return *communicators_; }
 
 
   /** Determine if an index is valid including the stencil.
@@ -332,17 +344,32 @@ public:
       
       Using the stencil information, do global communication with time neighbor
       processors.
+
+      \note This method is const because it doesn't change the behavior
+            of the vector. It does allow access to important components.
   */
-  void boundaryExchange()
+  void boundaryExchange(ESendRecv send_recv=SEND_AND_RECV) const
   {
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
 
-    bool sendToRight   = stepEnd_ < steps_-1;
-    bool recvFromRight = stepEnd_ < steps_-1;
+    bool sendToRight   = stepEnd_ < steps_;
+    bool recvFromRight = stepEnd_ < steps_;
 
     bool sendToLeft   = stepStart_ > 0;
     bool recvFromLeft = stepStart_ > 0;
+
+    // this allows finer granularity of control of send recieve
+    // and will permit some blocking communication
+    if(send_recv==SEND_ONLY) {
+     recvFromRight = false;
+     recvFromLeft = false;
+    }
+    if(send_recv==RECV_ONLY) {
+     sendToRight = false;
+     sendToLeft = false;
+    }
+    // do nothing if(send_recv==SEND_AND_RECV) 
     
     // send from left to right
     for(std::size_t i=0;i<stencil_.size();i++) {
@@ -419,9 +446,11 @@ public:
 
     // this won't work for Real!=double...oh well!
     Real subdot = stepVectors_->dot(*xs.stepVectors_);
-    if(communicators_->getTimeRank()!=0) 
+    if(communicators_->getSpaceRank()!=0)  // the space vectors compute the right 'dot', but we need to get rid of them
       subdot = 0.0;
 
+    // NOTE: it might be cheaper to use the TimeCommunicator on the all reduce and then
+    //       broadcast to the space communicator
     Real dot = 0;
     MPI_Allreduce(&subdot,&dot,1,MPI_DOUBLE,MPI_SUM,communicators_->getParentCommunicator());
 
@@ -456,6 +485,10 @@ public:
   virtual void print( std::ostream &outStream) const override
   {
     stepVectors_->print(outStream);
+  }
+
+  virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+    stepVectors_->applyUnary(f);
   }
 
 #if 0
