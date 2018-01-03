@@ -51,7 +51,7 @@ public:
   TimeStepControl(const TimeStepControl<Scalar>& tsc);
 
   /// Destructor
-  virtual ~TimeStepControl() {};
+  virtual ~TimeStepControl() {}
 
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(
