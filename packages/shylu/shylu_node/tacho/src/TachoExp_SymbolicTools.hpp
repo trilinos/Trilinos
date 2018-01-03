@@ -243,8 +243,8 @@ namespace Tacho {
           memset(a.data(), 0, cnt*sizeof(typename ordinal_type_array::value_type));
         };
 
-        auto colmap_per_supernode = [](const size_type_array &ap,
-                                       const ordinal_type_array &aj,
+        auto colmap_per_supernode = [](const size_type_array &ap_,
+                                       const ordinal_type_array &aj_,
                                        const ordinal_type sbeg, 
                                        const ordinal_type send,
                                        const ordinal_type_array &cid,
