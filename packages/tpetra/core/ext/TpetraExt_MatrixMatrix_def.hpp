@@ -2986,7 +2986,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
-  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values, Cvals = Cmat.values;
+  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+  scalar_view_t Cvals = Cmat.values;
 
   c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;

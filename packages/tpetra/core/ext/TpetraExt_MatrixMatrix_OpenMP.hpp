@@ -288,13 +288,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Lots and lots of typedefs
   using Teuchos::RCP;
-  typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
-  typedef typename KCRS::device_type device_t;
-  typedef typename KCRS::StaticCrsGraphType graph_t;
-  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
-  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
-  typedef typename KCRS::values_type::non_const_type scalar_view_t;
 
   // Options
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
@@ -317,13 +310,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse OpenMPESFC"))));
 #endif
-
-  // Final Fillcomplete
-  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
-  labelList->set("Timer Label",label);
-  if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
-  RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > dummyExport;
-  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
+  C.fillComplete(C.getDomainMap(), C.getRangeMap());
 }
 
 
