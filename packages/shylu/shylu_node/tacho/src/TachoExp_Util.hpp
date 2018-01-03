@@ -589,6 +589,28 @@ namespace Tacho {
     template<>           struct conj_transpose_trans_tag<Trans::ConjTranspose>  { typedef Trans::NoTranspose type; };
     template<>           struct conj_transpose_trans_tag<Trans::NoTranspose>    { typedef Trans::ConjTranspose type; };
 
+    struct Conjugate {
+      enum : int { tag = 801 };
+      
+      KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
+      KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
+      inline std::complex<float> operator()(const std::complex<float> &v) const { return std::conj(v); }
+      inline std::complex<double> operator()(const std::complex<double> &v) const { return std::conj(v); }
+      KOKKOS_FORCEINLINE_FUNCTION Kokkos::complex<float> operator()(const Kokkos::complex<float> &v) const { return Kokkos::conj(v); }
+      KOKKOS_FORCEINLINE_FUNCTION Kokkos::complex<double> operator()(const Kokkos::complex<double> &v) const { return Kokkos::conj(v); }
+    };
+    
+    struct NoConjugate {
+      enum : int {tag = 802 };
+      
+      KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
+      KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
+      inline std::complex<float> operator()(const std::complex<float> &v) const { return v; }
+      inline std::complex<double> operator()(const std::complex<double> &v) const { return v; }
+      KOKKOS_FORCEINLINE_FUNCTION Kokkos::complex<float> operator()(const Kokkos::complex<float> &v) const { return v; }
+      KOKKOS_FORCEINLINE_FUNCTION Kokkos::complex<double> operator()(const Kokkos::complex<double> &v) const { return v; }
+    };
+
     struct Algo {
       struct External { enum : int { tag = 1001 }; };
       struct Internal { enum : int { tag = 1002 }; };
