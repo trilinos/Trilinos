@@ -41,7 +41,7 @@
 
 #ifndef TPETRA_MATRIXMATRIX_OPENMP_DEF_HPP
 #define TPETRA_MATRIXMATRIX_OPENMP_DEF_HPP
-#include "TpetraExt_MatrixMatrix_OpenMP_def.hpp"
+#include "TpetraExt_MatrixMatrix_decl.hpp"
 
 #ifdef HAVE_TPETRA_INST_OPENMP
 namespace Tpetra {
@@ -280,8 +280,52 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
                                                                                                const std::string& label,
                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
-  throw std::runtime_error("FIXME");
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+    using Teuchos::TimeMonitor;
+    Teuchos::RCP<TimeMonitor> MM;
+#endif
+
+  // Lots and lots of typedefs
+  using Teuchos::RCP;
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename KCRS::device_type device_t;
+  typedef typename KCRS::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename KCRS::values_type::non_const_type scalar_view_t;
+
+  // Options
+  int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
+  std::string myalg("LTG");
+  if(!params.is_null()) {
+    if(params->isParameter("openmp: algorithm"))
+      myalg = params->get("openmp: algorithm",myalg);
+    if(params->isParameter("openmp: team work size"))
+      team_work_size = params->get("openmp: team work size",team_work_size);
+  }
+
+  if(myalg == "LTG") {
+    // Use the LTG kernel if requested
+    ::Tpetra::MatrixMatrix::ExtraKernels::mult_A_B_reuse_LowThreadGustavsonKernel(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
+  }
+  else {
+    throw std::runtime_error("Tpetra::MatrixMatrix::MMM reuse unknown kernel");
+  }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse OpenMPESFC"))));
+#endif
+
+  // Final Fillcomplete
+  RCP<Teuchos::ParameterList> labelList = rcp(new Teuchos::ParameterList);
+  labelList->set("Timer Label",label);
+  if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
+  RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > dummyExport;
+  C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
 }
+
 
 /*********************************************************************************************************/
 template<class Scalar,
@@ -308,7 +352,6 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
 #endif
 
   // Node-specific code
-  std::string nodename("OpenMP");
   using Teuchos::RCP;
 
   // Options
@@ -326,7 +369,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
     ::Tpetra::MatrixMatrix::ExtraKernels::jacobi_A_B_newmatrix_LowThreadGustavsonKernel(omega,Dinv,Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
   } 
   else {
-    throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi unknown kernel");
+    throw std::runtime_error("Tpetra::MatrixMatrix::Jacobi newmatrix unknown kernel");
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -339,31 +382,6 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   if(!params.is_null()) labelList->set("compute global constants",params->get("compute global constants",true));
   RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > dummyExport;
   C.expertStaticFillComplete(Bview.origMatrix->getDomainMap(), Aview.origMatrix->getRangeMap(), Cimport,dummyExport,labelList);
-
-
-#if 0
-  {
-    Teuchos::ArrayRCP< const size_t > Crowptr;
-    Teuchos::ArrayRCP< const LocalOrdinal > Ccolind;
-    Teuchos::ArrayRCP< const Scalar > Cvalues;
-    C.getAllValues(Crowptr,Ccolind,Cvalues);
-
-    // DEBUG
-    int MyPID = C->getComm()->getRank();
-    printf("[%d] Crowptr = ",MyPID);
-    for(size_t i=0; i<(size_t) Crowptr.size(); i++) {
-      printf("%3d ",(int)Crowptr.getConst()[i]);
-    }
-    printf("\n");
-    printf("[%d] Ccolind = ",MyPID);
-    for(size_t i=0; i<(size_t)Ccolind.size(); i++) {
-      printf("%3d ",(int)Ccolind.getConst()[i]);
-    }
-    printf("\n");
-    fflush(stdout);
-    // END DEBUG
-  }
-#endif
 }
 
 
