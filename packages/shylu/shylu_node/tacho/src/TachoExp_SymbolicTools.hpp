@@ -260,8 +260,8 @@ namespace Tacho {
           
           // visit each super node row (off diagonal block)
           for (ordinal_type i=sbeg;i<send;++i) {
-            for (size_type j=ap(i);j<ap(i+1);++j) {
-              const ordinal_type col = aj(j);
+            for (size_type j=ap_(i);j<ap_(i+1);++j) {
+              const ordinal_type col = aj_(j);
               if (flag(col)) {
                 // already visited; pass on
               } else {
