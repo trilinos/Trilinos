@@ -46,6 +46,7 @@
 
 #include <cassert>
 
+#include "ROL_PinTVector.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
 
 /** @ingroup func_group
@@ -97,36 +98,95 @@
 
 namespace ROL {
 
+
+/** This helper method builds a pint vector for use in the 
+    Constraint_PinTSimOpt class. Notice no difference is made between
+    the state and contraint vectors.
+
+    \param[in] communicators Structure with objects required for parallel-in-time communication.
+                             (hint: this can be used to properly allocate the state and control vectors)
+    \param[in] steps Number of steps 
+    \param[in] stencil Stencil for each time step.
+    \param[in] localVector Spatial vector for a single time step.
+  */
+template <class Real>
+Ptr<PinTVector<Real>>
+buildPinTVector(const Ptr<const PinTCommunicators> & communicators,
+                int steps,
+                const std::vector<int> & stencil,
+                const Ptr<Vector<Real>> & localVector)
+{ return makePtr<PinTVector<Real>>(communicators,localVector,steps,stencil); }
+
 template <class Real>
 class Constraint_PinTSimOpt : public Constraint_SimOpt<Real> {
 private:
-  // user input
-  MPI_Comm comm_;
- 
-  Ptr<ROL::Constraint_TimeSimOpt<Real>> stepConstraint_;
-  int steps_;
-
-  Ptr<ROL::Vector<Real>> stepState_;
-  Ptr<ROL::Vector<Real>> stepControl_;
-
-  std::vector<int> stateStencil_;
-  std::vector<int> controlStencil_;
+  Ptr<Constraint_TimeSimOpt<Real>> stepConstraint_;
 
   // internal state members
   
   bool isInitialized_;
-  
-  int stepStart_;
-  int stepEnd_;
 
+  //! Enumeration to define which components of a a vector are required.
+  typedef enum {PAST,CURRENT,FUTURE,ALL} ETimeAccessor;
+
+  /** \brief Build a vector composed of all vectors required by accessor
+   
+      Build a vector composed of all vectors require by accessor. If this
+      is only one vector, that vector is returned directly. If there is more
+      than one vector than a partioned vector is returned with each entry.
+   */
+  Ptr<const Vector<Real>> getVector(const PinTVector<double> & src,
+                                    int step,
+                                    ETimeAccessor accessor)
+  {
+    return getNonconstVector(src,step,accessor);
+  }
+
+  /** \brief Build a vector composed of all vectors required by accessor
+   
+      Build a vector composed of all vectors require by accessor. If this
+      is only one vector, that vector is returned directly. If there is more
+      than one vector than a partioned vector is returned with each entry.
+   */
+  Ptr<Vector<Real>> getNonconstVector(const PinTVector<double> & src,
+                                      int step,
+                                      ETimeAccessor accessor)
+  {
+    const std::vector<int> & stencil = src.stencil();
+
+    std::vector<Ptr<Vector<Real>>> vecs;
+    for(std::size_t i=0;i<stencil.size();i++) {
+
+      // make sure this aligns with the accesor
+      bool valid = false;
+      if(accessor==PAST    && stencil[i]<0)       
+        valid = true;
+      if(accessor==CURRENT && stencil[i]==0)
+        valid = true;
+      if(accessor==FUTURE  && stencil[i]>0)
+        valid = true;
+      if(accessor==ALL)
+        valid = true;
+        
+      // stencil entry matches with the accessor
+      if(valid)
+        vecs.push_back(src.getVectorPtr(step+stencil[i]));
+    }
+
+    TEUCHOS_ASSERT(vecs.size()>0);
+
+    if(vecs.size()==1) 
+      return vecs[0];
+
+    return makePtr<PartitionedVector<Real>>(vecs);
+  }
+  
 public:
 
   //! Default constructor
   Constraint_PinTSimOpt()
     : Constraint_SimOpt<Real>()
     , isInitialized_(false)
-    , stepStart_(-1)
-    , stepEnd_(-1)
   { }
 
   /**
@@ -142,96 +202,23 @@ public:
    * \param[in] controlState Control vector step value, also the initial condition
    * \param[in] controlStencil Stencil for control parallel stepping.
    */
-  Constraint_PinTSimOpt(MPI_Comm comm,
-                        const Ptr<ROL::Constraint_TimeSimOpt<Real>> & stepConstraint,
-                        int steps,
-                        const Ptr<ROL::Vector<Real>> & stepState,
-                        const std::vector<int> & stateStencil,
-                        const Ptr<ROL::Vector<Real>> & stepControl,
-                        const std::vector<int> & controlStencil)
+  Constraint_PinTSimOpt(const Ptr<Constraint_TimeSimOpt<Real>> & stepConstraint)
     : Constraint_SimOpt<Real>()
     , isInitialized_(false)
-    , stepStart_(-1)
-    , stepEnd_(-1)
   { 
-    initialize(comm,stepConstraint,steps,stepState,stateStencil,stepControl,controlStencil);
+    initialize(stepConstraint);
   }
-
-  /** What step to start at on this processor (inclusive).
-   */
-  int stepStart() const { return stepStart_; }
-
-  /** What step to stop before on this processor (non inclusive).
-   */
-  int stepEnd() const { return stepEnd_; }
 
   /** \brief Initialize this class, setting up parallel distribution.
    
    */
-  void initialize(MPI_Comm comm,
-                  const Ptr<ROL::Constraint_TimeSimOpt<Real>> & stepConstraint,
-                  int steps,
-                  const Ptr<ROL::Vector<Real>> & stepState,
-                  const std::vector<int> & stateStencil,
-                  const Ptr<ROL::Vector<Real>> & stepControl,
-                  const std::vector<int> & controlStencil) 
+  void initialize(const Ptr<Constraint_TimeSimOpt<Real>> & stepConstraint)
   {
     // initialize user member variables
-    comm_           = comm;
-    steps_          = steps;
     stepConstraint_ = stepConstraint;
-    stepState_      = stepState;
-    stepControl_    = stepControl;
-    stateStencil_   = stateStencil;
-    controlStencil_ = controlStencil;
-
-    // initialize the parallel variables
-    
-    int numRanks = -1;
-    int myRank = -1;
-
-    MPI_Comm_size(MPI_COMM_WORLD, &numRanks);
-    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
-
-    // determine which steps are owned by this processor
-    {
-      int stepsPerRank = steps_ / numRanks;
-      int remainder    = steps_ % numRanks; 
-
-      stepStart_ = 0;
-
-      if(myRank<remainder) {
-        stepStart_ = myRank*(stepsPerRank+1);
-        stepEnd_   = (myRank+1)*(stepsPerRank+1);
-      }
-      else if(myRank==remainder) {
-        stepStart_ = myRank*(stepsPerRank+1);
-        stepEnd_   = (myRank+1)*stepsPerRank + myRank;
-      }
-      else if(myRank>remainder) {
-        stepStart_ = myRank*stepsPerRank + remainder;
-        stepEnd_   = (myRank+1)*stepsPerRank + remainder;
-      }
-    }
 
     isInitialized_ = true;
   }
-
-  /*
-  ROL::Ptr<ROL::Vector<Real>> buildStateVector() const
-  {
-    assert(isInitialized_);
-
-    return ROL::makePtr<PinTVector<Real>>(stepStart_,stepStop_,stateStencil_);
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildControlVector() const
-  {
-    assert(isInitialized_);
-
-    return ROL::makePtr<PinTVector<Real>>(stepStart_,stepStop_,controlStencil_);
-  }
-  */
 
   /** \brief Update constraint functions with respect to Opt variable.
                 u is the state variable, 
@@ -251,14 +238,66 @@ public:
                      const Vector<Real> &u,
                      const Vector<Real> &z,
                      Real &tol) override {
-    TEUCHOS_ASSERT(false);
+
+    PinTVector<Real>       & pint_c = dynamic_cast<PinTVector<Real>&>(c);
+    const PinTVector<Real> & pint_u = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+ 
+    TEUCHOS_ASSERT(pint_c.numOwnedSteps()==pint_u.numOwnedSteps());
+
+    // communicate neighbors, these are block calls
+    pint_u.boundaryExchange();
+    pint_z.boundaryExchange();
+
+    for(int i=0;i<pint_c.numOwnedSteps();i++) {
+      Ptr<const Vector<Real>> u_old = getVector(pint_u,i,PAST);
+      Ptr<const Vector<Real>> u_now = getVector(pint_u,i,CURRENT);
+      Ptr<const Vector<Real>> z_all = getVector(pint_z,i,ALL);
+
+      Ptr<Vector<Real>> c_now = getNonconstVector(pint_c,i,CURRENT);
+
+      stepConstraint_->value(*c_now,*u_old,*u_now,*z_all,tol);
+    }
   } 
 
   virtual void solve(Vector<Real> &c,
                      Vector<Real> &u, 
                      const Vector<Real> &z,
                      Real &tol) override {
-    TEUCHOS_ASSERT(false);
+    // solve is weird because it serializes in time. But we want to get it
+    // working so that we can test, but it won't be a performant way to do this. 
+    // We could do a parallel in time solve here but thats not really the focus.
+    
+    PinTVector<Real>       & pint_c = dynamic_cast<PinTVector<Real>&>(c);
+    PinTVector<Real>       & pint_u = dynamic_cast<PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+       
+    int timeRank = pint_u.communicators().getTimeRank();
+ 
+    TEUCHOS_ASSERT(pint_c.numOwnedSteps()==pint_u.numOwnedSteps());
+
+    pint_z.boundaryExchange();
+    pint_u.boundaryExchange(PinTVector<Real>::RECV_ONLY); // this is going to block
+
+    for(int i=0;i<pint_c.numOwnedSteps();i++) {
+      Ptr<const Vector<Real>> z_all = getVector(pint_z,i,ALL);
+
+      Ptr<Vector<Real>> u_old = getNonconstVector(pint_u,i,PAST);
+      Ptr<Vector<Real>> u_now = getNonconstVector(pint_u,i,CURRENT);
+      Ptr<Vector<Real>> c_now = getNonconstVector(pint_c,i,CURRENT);
+
+      // we solve for u_now
+      stepConstraint_->solve(*c_now,*u_old,*u_now,*z_all,tol);
+    }
+
+    pint_u.boundaryExchange(PinTVector<Real>::SEND_ONLY);
+
+    // // synchronize before value is called
+    // // MPI_Barrier(pint_u.communicators().getParentCommunicator());
+
+    // // value(c,u,z,tol);
   }
 
   virtual void applyJacobian_1(Vector<Real> &jv,

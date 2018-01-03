@@ -88,10 +88,12 @@ public:
 
     // solving (u,v are states, z is control)
     // 
-    //    u' = v, v'=-omega^2 * u + z
+    //    u' = v + z, v'=-omega^2 * u
     //    u(0) = 0
+    //    v(0) = omega 
     //
     //    u(t) = sin(omega*t)
+    //    v(t) = omega*cos(omega*t)
     //
     // using backward euler
     
@@ -110,13 +112,13 @@ public:
 
     Real a = omega_*omega_*timestep_;
     Real b = timestep_;
-    Real gamma = 1.0/(a*b+1.0);
+    Real gamma = (a*b+1.0);
 
     Real rhs_0 = uo_data[0]+timestep_*z_data[0];
     Real rhs_1 = uo_data[1];
 
-    un_data[0] = gamma*(1.0 * rhs_0 +   b * rhs_1);
-    un_data[1] = gamma*( -a * rhs_0 + 1.0 * rhs_1);
+    un_data[0] = (1.0 * rhs_0 +   b * rhs_1)/gamma;
+    un_data[1] = ( -a * rhs_0 + 1.0 * rhs_1)/gamma;
 
     value(c,u_old,u_new,z,tol);
   }

@@ -48,14 +48,16 @@
 
 #include "ROL_Constraint_PinTSimOpt.hpp"
 
-typedef double RealT;
+typedef double Real;
+
+/**
+ * Run the test using a different communicator. This returns the last value of
+ * the last step for the 'u' variable defined in the ODEConstraint_TimeSimOpt class.
+ */
+double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numSteps);
 
 int main(int argc, char* argv[]) 
 {
-
-  typedef ROL::Ptr<ROL::Vector<RealT>> PtrVector;
-  typedef ROL::Ptr<const ROL::Vector<RealT>> CPtrVector;
-
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
@@ -67,85 +69,61 @@ int main(int argc, char* argv[])
   else
     outStream = ROL::makePtrFromRef(bhs);
 
-  int errorFlag  = 0;
-
   int numRanks = -1;
   int myRank = -1;
 
   MPI_Comm_size(MPI_COMM_WORLD, &numRanks);
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
-  *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
+  MPI_Comm subComm;
+
+  // split the comm so if three processors are used you can run a 3, 2 and 1 processor
+  // case all at once
+  if(numRanks!=3) {
+    *outStream << "WARNING: This test is most effective with three processors" << std::endl;
+  }
+  else {
+    MPI_Comm_split(MPI_COMM_WORLD,myRank==0,myRank,&subComm); 
+  }
+ 
+  int numSteps = 9;
+  int errorFlag  = 0;
 
   try {
-    double dt = 0.1;
-    double tol = 1e-15;
+    double all_final = run_test(MPI_COMM_WORLD, outStream,numSteps);
 
-    if(numRanks!=3) {
-      throw std::logic_error("Three processors are required to run this test!");
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // run the serial and 2 processor cases as well
+    if(numRanks==3) {
+
+      // because of the splitting this actually runs two jobs at once
+      double sub_final = run_test(subComm, outStream,numSteps);
+
+      *outStream << "ALL processors result = " << all_final << std::endl;
+      *outStream << "SUB processors result = " << sub_final << std::endl;
+
+      if(sub_final!=all_final) {
+        int subRanks = 0;
+        MPI_Comm_size(subComm, &subRanks);
+
+        std::stringstream ss;
+        ss << "ALL processors result does not match SUB(p=" << subRanks << ") result: " << all_final << " != " << sub_final;
+        throw std::logic_error(ss.str());
+      }
     }
-
-    // allocate state vector
-    std::vector<RealT> uo_data(2), un_data(2);
-    PtrVector uo_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(uo_data));
-    PtrVector un_vec = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(un_data));
-    PtrVector u = ROL::makePtr<ROL::PartitionedVector<RealT>>(std::vector<PtrVector>({un_vec,uo_vec}));
-    CPtrVector cu = u;
-    PtrVector v_u = u->clone();
-
-    // allocate control vector
-    std::vector<RealT> z_data(1);
-    PtrVector z = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(z_data));
-    CPtrVector cz = z;
-    PtrVector v_z = z->clone();
-
-    // allocate constraint vector
-    std::vector<RealT> c_data(2);
-    PtrVector c = ROL::makePtr<ROL::StdVector<RealT>>(ROL::makePtrFromRef(c_data));
-    CPtrVector cc = c;
-    PtrVector jv = c->clone();
-    PtrVector w = c->clone();
-    PtrVector v_c = c->clone();
-
-    ROL::Ptr<ROL::Constraint_TimeSimOpt<RealT>> step_constraint = ROL::makePtr<ODE_Constraint<RealT>>(dt,2.0*M_PI);
-
-    std::vector<std::vector<int>> sizes = { {6, 0},    // int(number of steps/3), remainder 
-                                            {6, 1},
-                                            {6, 2} };
-    for(auto size : sizes) {
-      ROL::Ptr<ROL::Constraint_PinTSimOpt<RealT>> pint_constraint 
-        = ROL::makePtr<ROL::Constraint_PinTSimOpt<RealT>>(MPI_COMM_WORLD, 
-                                                          step_constraint,
-                                                          size[0]*3+size[1], // this is a "hard" number!
-                                                          uo_vec, std::vector<int>({-1,0}),  
-                                                          z,      std::vector<int>({0}));
-
-      std::stringstream ss ;
-      ss << "\n  Testing size = { " << size[0] << ", " << size[1] << " }" << std::endl;
-      if(myRank==0) {
-        if(pint_constraint->stepStart()!=0) 
-          throw std::logic_error("Rank 0 step start is incorrect " + std::to_string(pint_constraint->stepStart())+ss.str());
-        if(pint_constraint->stepEnd()!=size[0]+(size[1]>0 ? 1 : 0)) 
-          throw std::logic_error("Rank 0 step end is incorrect " + std::to_string(pint_constraint->stepEnd())+ss.str());
-      }
-      else if(myRank==1) {
-        if(pint_constraint->stepStart()!=size[0]+(size[1]>0 ? 1 : 0)) 
-          throw std::logic_error("Rank 1 step start is incorrect " + std::to_string(pint_constraint->stepStart())+ss.str());
-        if(pint_constraint->stepEnd()!=2*size[0]+ size[1])
-          throw std::logic_error("Rank 1 step end is incorrect " + std::to_string(pint_constraint->stepEnd())+ss.str());
-      }
-      else if(myRank==2) {
-        if(pint_constraint->stepStart()!=2*size[0]+size[1])
-          throw std::logic_error("Rank 2 step start is incorrect " + std::to_string(pint_constraint->stepStart())+ss.str());
-        if(pint_constraint->stepEnd()!=3*size[0]+size[1]) 
-          throw std::logic_error("Rank 2 step end is incorrect " + std::to_string(pint_constraint->stepEnd())+ss.str());
-      }
+    else {
+      *outStream << "ALL processors result = " << all_final << std::endl;
     }
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
   }; // end try
+
+  // cleanup split comm
+  if(numRanks==3)
+    MPI_Comm_free(&subComm); // cleanup
 
   int errors = std::abs(errorFlag);
   MPI_Allreduce(&errors,&errorFlag,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
@@ -156,4 +134,108 @@ int main(int argc, char* argv[])
     std::cout << "End Result: TEST PASSED\n";
 
   return 0;
+}
+
+double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numSteps)
+{
+  typedef ROL::Ptr<ROL::Vector<Real>> PtrVector;
+  typedef ROL::Ptr<const ROL::Vector<Real>> CPtrVector;
+
+  int numRanks = -1;
+  int myRank = -1;
+
+  MPI_Comm_size(comm, &numRanks);
+  MPI_Comm_rank(comm, &myRank);
+
+  *outStream << "Proc " << myRank << "/" << numRanks << std::endl;
+
+  double totaltime = 1.75; // we will do 1.75 periods, this way the final result is non-trivial
+  double dt = totaltime/numSteps;
+  double omega = 2.0*M_PI;
+  double tol = 1e-15;
+
+  ROL::Ptr<const ROL::PinTCommunicators> communicators = ROL::makePtr<ROL::PinTCommunicators>(comm,1);
+
+  ROL::Ptr< ROL::PinTVector<Real>> state;
+  ROL::Ptr< ROL::PinTVector<Real>> control, control_unit;
+
+  {
+    // allocate local state vector
+    ROL::Ptr<std::vector<Real>> u_data_ptr = ROL::makePtr<std::vector<Real>>(2);
+    std::vector<Real> & u_data = *u_data_ptr;
+    u_data[0] = 0.0;
+    u_data[1] = omega;
+    PtrVector u = ROL::makePtr<ROL::StdVector<Real>>(u_data_ptr);
+      // this requirement to use a copy constructor tripped me up for a while
+
+    // allocate control vector
+    std::vector<Real> z_data(1);
+    z_data[0] = 1.0;
+    PtrVector z = ROL::makePtr<ROL::StdVector<Real>>(ROL::makePtr<std::vector<Real>>(z_data));
+
+    state        = buildPinTVector(communicators,numSteps,{-1,0}   /* state stencil */,u);
+    control      = buildPinTVector(communicators,numSteps,{0}    /* control stencil */,z);
+    control_unit = buildPinTVector(communicators,numSteps,{0}    /* control stencil */,z);
+
+    state->getVectorPtr(-1)->set(*u);   // set the initial condition
+  }
+
+  ROL::Ptr<ROL::Constraint_TimeSimOpt<Real>> step_constraint = ROL::makePtr<ODE_Constraint<Real>>(dt,omega);
+
+  ROL::Ptr<ROL::Constraint_PinTSimOpt<Real>> pint_constraint = ROL::makePtr<ROL::Constraint_PinTSimOpt<Real>>(step_constraint);
+
+  PtrVector u = state;
+  PtrVector c = state->clone();
+  PtrVector z = control->clone();
+
+  ROL::RandomizeVector<RealT>(*u); // this randomization doesn't really matter here as 'u' is complete determine by the solve
+  ROL::RandomizeVector<RealT>(*z); 
+  z->scale(1.0);
+
+  // check the solve
+  //////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking solve" << std::endl;
+
+    double solveNorm = pint_constraint->checkSolve(*u,*z,*c,true,*outStream);
+
+    if(solveNorm>tol) {
+      std::stringstream ss;
+      ss << "Solve failed on problem with " << numRanks << " processors and " << numSteps << ": residual = " << solveNorm
+                                            << " > " << tol << std::endl;
+      throw std::logic_error(ss.str());
+    }
+    else if(myRank==0) {
+      *outStream << "Solve checked out for p=" << numRanks << " with residual = " << solveNorm << std::endl; 
+    }
+  }
+
+  // This computes and returns the last value of the 'u' component and shares
+  // it with all processors.
+  /////////////////////////////////////////////////////////////////////////////
+  double final_result = 0.0;
+  {
+    PtrVector z_unit = control_unit->clone();
+    z->scale(0.0); // z can't be random as the different processor counts won't give the same values
+    z->axpy(3.0,*z_unit); 
+ 
+    *outStream << "ZNORM = " << z->norm() << std::endl;
+  
+    pint_constraint->solve(*c,*u,*z,tol);
+  
+    // pull out the last value
+    if(myRank==numRanks-1) {
+      PtrVector final_state = state->getVectorPtr(state->numOwnedSteps()-1);
+      *outStream << "Final state = " << final_state << std::endl;
+      final_state->print(*outStream);
+  
+      const std::vector<Real> & fs_stdvec = *dynamic_cast<const ROL::StdVector<Real>&>(*final_state).getVector();
+      final_result = fs_stdvec[0];
+    }
+  
+    MPI_Bcast(&final_result,1,MPI_DOUBLE,numRanks-1,comm);
+  }
+
+  return final_result;
 }
