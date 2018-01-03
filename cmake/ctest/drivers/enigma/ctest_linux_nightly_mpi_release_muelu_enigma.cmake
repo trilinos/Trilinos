@@ -82,6 +82,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_Amesos2:BOOL=ON"
   "-DXpetra_ENABLE_Experimental:BOOL=OFF"
   "-DMueLu_ENABLE_Experimental:BOOL=OFF"
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
 )
 
 #"-DAmesos2_ENABLE_KLU2:BOOL=ON"
