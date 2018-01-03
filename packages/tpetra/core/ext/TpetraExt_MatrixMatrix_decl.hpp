@@ -485,7 +485,7 @@ void setMaxNumEntriesPerRow(
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Mview);
 
 
-  // Kernel wrappers struct
+  // MMM Kernel wrappers struct
   // Because C++ doesn't support partial template specialization of functions.
   template<class Scalar,
 	   class LocalOrdinal,
@@ -504,7 +504,20 @@ void setMaxNumEntriesPerRow(
                                                          const std::string& label = std::string(),
 							 const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
+    static inline void mult_A_B_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                                     const LocalOrdinalViewType & Acol2Brow,
+                                                     const LocalOrdinalViewType & Acol2Irow,
+                                                     const LocalOrdinalViewType & Bcol2Ccol,
+                                                     const LocalOrdinalViewType & Icol2Ccol,
+                                                     CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                                     Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                     const std::string& label = std::string(),
+                                                     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
   };
+
+  // Jacobi Kernel wrappers struct
+  // Because C++ doesn't support partial template specialization of functions.
 
   template<class Scalar,
 	   class LocalOrdinal,
