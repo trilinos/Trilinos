@@ -541,7 +541,8 @@ void setMaxNumEntriesPerRow(
 
 
 
-
+template<class CrsMatrixType>
+size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B);
 
 }//end namespace MMdetails
 
