@@ -515,7 +515,7 @@ namespace ColMapFunctors
     const GView gids;
     LView lids;
   };
-}
+}//end ColMapFunctors
 
 //Build the minimal (sorted) column map for the given set of global columns
 //Then convert gids and store them in lids (gids is not modified)

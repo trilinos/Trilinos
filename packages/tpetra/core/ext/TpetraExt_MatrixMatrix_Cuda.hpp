@@ -77,7 +77,7 @@ struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCu
                                                   const std::string& label = std::string(),
                                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-  };
+};
 
 
 /*********************************************************************************************************/
@@ -133,15 +133,15 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
        typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
   // Grab the  Kokkos::SparseCrsMatrices
-  const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
   RCP<const KCRS> Bmerged;
 
-  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
+  lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
   const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
 
-  c_lno_view_t  Irowptr;
+  lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
@@ -165,7 +165,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
     // NOTE: We're going merge Borig and Bimport into a single matrix and reindex the columns *before* we multiply.
     // This option was chosen because we know we don't have any duplicate entries, so we can allocate once.
 
-    size_t merge_numrows =  Ak.numCols();
+    size_t merge_numrows =  Amat.numCols();
     lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
 
     const LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
@@ -214,21 +214,21 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
             Mvalues(j) = Ivals(j - Mrowptr(i) + start);
             Mcolind(j) = Icol2Ccol(Icolind(j - Mrowptr(i) + start));
           }
-        }
-    execution_space::fence();
-    Bmerged = Teuchos::rcp(new KCRS("CrsMatrix",merge_numrows,C.getColMap()->getNodeNumElements(),merge_nnz,Mvalues,Mrowptr,Mcolind));
+        });
+      execution_space::fence();
+      Bmerged = Teuchos::rcp(new KCRS("CrsMatrix",merge_numrows,C.getColMap()->getNodeNumElements(),merge_nnz,Mvalues,Mrowptr,Mcolind));
+      }
+    else {
+      // We don't have a Bimport (the easy case)
+      Bmerged = Teuchos::rcpFromRef(Bmat);
+    }      
   }
-  else {
-    // We don't have a Bimport (the easy case)
-    Bmerged = Teuchos::rcpFromRef(Bk);
-  }
-
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaCore"))));
 #endif
 
   // Do the multiply on whatever we've got
-  typename KernelHandle::nnz_lno_t AnumRows = Ak.numRows();
+  typename KernelHandle::nnz_lno_t AnumRows = Amat.numRows();
   typename KernelHandle::nnz_lno_t BnumRows = Bmerged->numRows();
   typename KernelHandle::nnz_lno_t BnumCols = Bmerged->numCols();
 
@@ -239,14 +239,14 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   kh.create_spgemm_handle(alg_enum);
   kh.set_team_work_size(team_work_size);
 
-  KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bmerged->graph.row_map,Bmerged->graph.entries,false,row_mapC);
+  KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,false,Bmerged->graph.row_map,Bmerged->graph.entries,false,row_mapC);
 
   size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
   if (c_nnz_size){
     entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
     valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
   }
-  KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bmerged->graph.row_map,Bmerged->graph.entries,Bmerged->values,false,row_mapC,entriesC,valuesC);
+  KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Amat.graph.row_map,Amat.graph.entries,Amat.values,false,Bmerged->graph.row_map,Bmerged->graph.entries,Bmerged->values,false,row_mapC,entriesC,valuesC);
   kh.destroy_spgemm_handle();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -292,7 +292,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
 }
 
 
-}//MMdetails
+  }//MMdetails
 }//Tpetra
 
 #endif//CUDA
