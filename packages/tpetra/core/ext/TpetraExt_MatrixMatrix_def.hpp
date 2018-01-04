@@ -69,6 +69,15 @@
     The implementations for the members of class Tpetra::MatrixMatrixMultiply and related non-member constructors.
  */
 
+
+
+/*********************************************************************************************************/
+// Include the architecture-specific kernel partial specializations here
+// NOTE: This needs to be outside all namespaces
+#include "TpetraExt_MatrixMatrix_OpenMP.hpp"
+#include "TpetraExt_MatrixMatrix_CUDA.hpp"
+
+
 namespace Tpetra {
 
 namespace MatrixMatrix{
@@ -3545,15 +3554,6 @@ void import_and_extract_views(
 } //End namepsace MMdetails
 
 } //End namespace Tpetra
-
-
-/*********************************************************************************************************/
-// Include the architecture-specific kernel partial specializations here
-// NOTE: This needs to be outside all namespaces
-#include "TpetraExt_MatrixMatrix_OpenMP.hpp"
-#include "TpetraExt_MatrixMatrix_CUDA.hpp"
-
-
 
 /*********************************************************************************************************/
 //

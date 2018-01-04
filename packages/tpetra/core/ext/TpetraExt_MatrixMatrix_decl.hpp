@@ -622,47 +622,6 @@ struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCu
                                                   const std::string& label = std::string(),
                                                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
-
-    //Define functors
-    template<typename lno_view_t, typename lno_nnz_view_t>
-    struct MrowptrFunctor
-    {
-      typedef typename lno_nnz_view_t::non_const_value_type lno_nnz_t;
-      typedef typename lno_view_t::const_type const_lno_view_t;
-      MrowptrFunctor(lno_view_t MrowptrsIn, const lno_nnz_view_t Acol2BrowIn, const lno_nnz_view_t Acol2IrowIn,
-                     const const_lno_view_t BkRowMapIn, const const_lno_view_t IkRowMapIn, size_t merge_numrowsIn);
-
-      KOKKOS_INLINE_FUNCTION void operator()(const size_t i, size_t& update, const bool final) const;
-    };
-
-    template<typename lno_view_t, typename lno_nnz_view_t, typename scalar_view_t>
-    struct MColindValuesFunctor
-    {
-      typedef typename lno_nnz_view_t::non_const_value_type lno_nnz_t;
-      typedef typename lno_view_t::const_type const_lno_view_t;
-      typedef typename lno_nnz_view_t::const_type const_lno_nnz_view_t;
-      typedef typename scalar_view_t::const_type const_scalar_view_t;
-      MColindValuesFunctor(scalar_view_t MvaluesIn, lno_view_t MrowptrsIn, lno_nnz_view_t McolindsIn,
-          const lno_nnz_view_t Acol2BrowIn, const lno_nnz_view_t Acol2IrowIn, const lno_nnz_view_t Bcol2CcolIn, const lno_nnz_view_t Icol2CcolIn,
-          const const_scalar_view_t BkValuesIn, const const_lno_view_t BkRowptrsIn, const const_lno_nnz_view_t BkColindsIn,
-                           const const_scalar_view_t IkValuesIn, const const_lno_view_t IkRowptrsIn, const const_lno_nnz_view_t IkColindsIn);
-      KOKKOS_INLINE_FUNCTION void operator()(const size_t i) const;
-
-      scalar_view_t Mvalues;
-      lno_view_t Mrowptrs;
-      lno_nnz_view_t Mcolinds;
-      const lno_nnz_view_t Acol2Brow;
-      const lno_nnz_view_t Acol2Irow;
-      const lno_nnz_view_t Bcol2Ccol;
-      const lno_nnz_view_t Icol2Ccol;
-      const const_scalar_view_t  BkValues;
-      const const_lno_view_t     BkRowptrs;
-      const const_lno_nnz_view_t BkColinds;
-      const const_scalar_view_t  IkValues;
-      const const_lno_view_t     IkRowptrs;
-      const const_lno_nnz_view_t IkColinds;
-      const lno_nnz_t      LO_INVALID;
-    };
   };
 #endif
 
