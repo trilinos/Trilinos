@@ -9,9 +9,18 @@ Compiling for Device DAG:
 * Tests also need lambda support enabled on cuda. Both a kokkos flag
   and the correct CMAKE_CXX_FLAGS need be set.
 
+  For new KOKKOS_ARCH flag:
+
+-D Phalanx_ENABLE_DEVICE_DAG:BOOL=ON \
+-D KOKKOS_ARCH="Pascal60"
+-D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON \
+-D Kokkos_ENABLE_Cuda_Relocatable_Device_Code:BOOL=ON \
+
+  For Kokkos legacy tribits mode:
+
 -D Phalanx_ENABLE_DEVICE_DAG:BOOL=ON \
 -D Kokkos_ENABLE_Cuda_Lambda:BOOL=ON \
--D Kokkos_ENABLE_Cuda_RDC:BOOL=ON \
+-D Kokkos_ENABLE_Cuda_Relocatable_Device_Code:BOOL=ON \
 -D CMAKE_CXX_FLAGS:STRING="--expt-extended-lambda --relocatable-device-code=true -std=c++11 -arch=sm_37" \
 
 =============
