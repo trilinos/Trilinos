@@ -44,10 +44,9 @@
 #ifndef _KOKKOSSPGEMMMKL_HPP
 #define _KOKKOSSPGEMMMKL_HPP
 
-//#define HAVE_KOKKOSKERNELS_MKL
 
 
-#ifdef HAVE_KOKKOSKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL_DISABLED
 #include "mkl_spblas.h"
 #include "mkl.h"
 #endif
@@ -83,7 +82,7 @@ void mkl_symbolic(
     cin_row_index_view_type row_mapC,
     bool verbose = false){
 
-#ifdef HAVE_KOKKOSKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL_DISABLED
 
   typedef typename KernelHandle::nnz_lno_t idx;
   typedef typename KernelHandle::size_type size_type;
@@ -388,7 +387,7 @@ void mkl_symbolic(
       cin_nonzero_value_view_type valuesC,
       bool verbose = false){
 
-#ifdef HAVE_KOKKOSKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL_DISABLED
 
     typedef typename KernelHandle::nnz_lno_t idx;
     typedef typename KernelHandle::size_type size_type;
