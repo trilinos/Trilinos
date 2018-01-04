@@ -734,17 +734,6 @@ Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
 /// Non-member constructor
 template<class Scalar>
 Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
-  Teuchos::RCP<Teuchos::ParameterList>                     pList,
-  const Teuchos::RCP<Stepper<Scalar> >&                    stepper)
-{
-  Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integrator =
-    Teuchos::rcp(new Tempus::IntegratorBasic<Scalar>(pList, stepper));
-  return(integrator);
-}
-
-/// Non-member constructor
-template<class Scalar>
-Teuchos::RCP<Tempus::IntegratorBasic<Scalar> > integratorBasic(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
   std::string stepperType)
 {

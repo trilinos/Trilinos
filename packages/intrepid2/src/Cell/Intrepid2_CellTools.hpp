@@ -77,7 +77,7 @@
 
 #include "Intrepid2_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid2_HGRAD_TET_C2_FEM.hpp"
-//#include "Intrepid2_HGRAD_TET_COMP12_FEM.hpp"
+#include "Intrepid2_HGRAD_TET_COMP12_FEM.hpp"
 
 #include "Intrepid2_HGRAD_WEDGE_C2_FEM.hpp"
 //#include "Intrepid2_HGRAD_WEDGE_I2_FEM.hpp"
@@ -177,7 +177,7 @@ namespace Intrepid2 {
       case shards::Triangle<6>::key:      r_val = Teuchos::rcp(new Basis_HGRAD_TRI_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
       case shards::Quadrilateral<9>::key: r_val = Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM   <ExecSpaceType,outputValueType,pointValueType>()); break;
       case shards::Tetrahedron<10>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
-        //case shards::Tetrahedron<11>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_COMP12_FEM<ExecSpaceType,outputValueType,pointValueType>()); break;
+      case shards::Tetrahedron<11>::key:  r_val = Teuchos::rcp(new Basis_HGRAD_TET_COMP12_FEM<ExecSpaceType,outputValueType,pointValueType>()); break;
         //case shards::Hexahedron<20>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_I2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
       case shards::Hexahedron<27>::key:   r_val = Teuchos::rcp(new Basis_HGRAD_HEX_C2_FEM    <ExecSpaceType,outputValueType,pointValueType>()); break;
         //case shards::Wedge<15>::key:        r_val = Teuchos::rcp(new Basis_HGRAD_WEDGE_I2_FEM  <ExecSpaceType,outputValueType,pointValueType>()); break;

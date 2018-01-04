@@ -57,7 +57,7 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Platform/compiler specific options for typhon using gcc
+# Platform/compiler specific options for enigma using gcc
 #
 
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
@@ -90,19 +90,12 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
     "-DCMAKE_AR=/usr/bin/ar"
 
-    "-DTPL_ENABLE_SuperLU:BOOL=ON"
-    "-DAmesos2_ENABLE_KLU2:BOOL=OFF"
-
     "-DSuperLU_INCLUDE_DIRS=$ENV{SEMS_SUPERLU_INCLUDE_PATH}"
     "-DSuperLU_LIBRARY_DIRS=$ENV{SEMS_SUPERLU_LIBRARY_PATH}"
     "-DSuperLU_LIBRARY_NAMES=superlu"
   )
 
   SET_DEFAULT(COMPILER_VERSION "$ENV{SEMS_COMPILER_NAME}-$ENV{SEMS_COMPILER_VERSION}")
-
-  # paramters not accepted?
-  #  "-DTPL_SuperLU_LIBRARIES=/home/tawiesn/software/SuperLU_4.3/lib/libsuperlu_4.3.a"
-  #  "-DTPL_SuperLU_INCLUDE_DIRS=/home/tawiesn/software/SuperLU_4.3/SRC"
 
   # no CUDA on this machine, yet...
   #  "-DCUDA_TOOLKIT_ROOT_DIR=/opt/nvidia/cuda/6.5.14"

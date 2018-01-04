@@ -82,7 +82,7 @@ class AggregateGenerator {
       RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
-      std::cout << "Phase2a=" << bPhase2a << std::endl;
+      //std::cout << "Phase2a=" << bPhase2a << std::endl;
 
       // Setup aggregation factory (use default factory for graph)
       RCP<UncoupledAggregationFactory> aggFact = rcp(new UncoupledAggregationFactory());
@@ -118,6 +118,7 @@ class AggregateGenerator {
       level.Set("A", A);
 
       RCP<AmalgamationFactory> amalgFact = rcp(new AmalgamationFactory());
+      amalgFact->SetDefaultVerbLevel(MueLu::None);
       RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
       dropFact->SetFactory("UnAmalgamationInfo", amalgFact);
 
