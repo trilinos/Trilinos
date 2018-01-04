@@ -113,6 +113,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename graph_t::row_map_type::const_type  c_lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
   //typedef typename graph_t::row_map_type::const_type lno_view_t_const;
@@ -137,11 +138,11 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
   RCP<const KCRS> Bmerged;
 
-  lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
+  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
   const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
 
-  lno_view_t  Irowptr;
+  c_lno_view_t  Irowptr;
   lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
@@ -202,7 +203,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
           size_t start = Browptr(row);
           for(size_t j = Mrowptr(i); j < Mrowptr(i + 1); j++) {            
             Mvalues(j) = Bvals(j - Mrowptr(i) + start);
-            Mcolind(j) = Bcol2Ccol(colind(j - Mrowptr(i) + start));
+            Mcolind(j) = Bcol2Ccol(Bcolind(j - Mrowptr(i) + start));
           }
         }
         else {
