@@ -50,8 +50,31 @@
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF Gradient values
-PANZER_EVALUATOR_CLASS(DOFGradient)
+template <typename EvalT, typename TRAITS>                   
+class DOFGradient : public panzer::EvaluatorWithBaseImpl<TRAITS>,      
+                    public PHX::EvaluatorDerived<EvalT, TRAITS>  {   
+public:
+
+  DOFGradient(const Teuchos::ParameterList& p);
+
+  DOFGradient(const PHX::Tag<typename EvalT::ScalarT> & input,
+              const PHX::Tag<typename EvalT::ScalarT> & output,
+              const panzer::BasisDescriptor & bd,
+              const panzer::IntegrationDescriptor & id);
+
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+                             PHX::FieldManager<TRAITS>& fm);
+
+  void evaluateFields(typename TRAITS::EvalData d);
   
+private:
+
+  typedef typename EvalT::ScalarT ScalarT;
+
+  bool use_descriptors_;
+  panzer::BasisDescriptor bd_;
+  panzer::IntegrationDescriptor id_;
+
   // <cell,point>
   PHX::MDField<const ScalarT,Cell,Point> dof_value;
   // <cell,point,dim>
@@ -59,8 +82,7 @@ PANZER_EVALUATOR_CLASS(DOFGradient)
 
   std::string basis_name;
   std::size_t basis_index;
-
-PANZER_EVALUATOR_CLASS_END
+};
 
 }
 
