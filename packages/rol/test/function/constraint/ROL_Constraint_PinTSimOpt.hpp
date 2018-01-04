@@ -180,6 +180,18 @@ private:
 
     return makePtr<PartitionedVector<Real>>(vecs);
   }
+
+  Ptr<Vector<Real>> getStateVector(const PinTVector<double> & src,int step)
+  {
+      Ptr<Vector<Real>> u_old = getNonconstVector(src,step,PAST);
+      Ptr<Vector<Real>> u_now = getNonconstVector(src,step,CURRENT);
+    
+      // this is specified by the Constraint_TimeSimOpt class
+      std::vector<Ptr<Vector<Real>>> vecs;
+      vecs.push_back(u_old);
+      vecs.push_back(u_now);
+      return makePtr<PartitionedVector<Real>>(vecs);
+  }
   
 public:
 
@@ -251,13 +263,12 @@ public:
     pint_z.boundaryExchange();
 
     for(int i=0;i<pint_c.numOwnedSteps();i++) {
-      Ptr<const Vector<Real>> u_old = getVector(pint_u,i,PAST);
-      Ptr<const Vector<Real>> u_now = getVector(pint_u,i,CURRENT);
+      Ptr<const Vector<Real>> u_state = getStateVector(pint_u,i);
       Ptr<const Vector<Real>> z_all = getVector(pint_z,i,ALL);
 
       Ptr<Vector<Real>> c_now = getNonconstVector(pint_c,i,CURRENT);
 
-      stepConstraint_->value(*c_now,*u_old,*u_now,*z_all,tol);
+      stepConstraint_->value(*c_now,*u_state,*z_all,tol);
     }
   } 
 
@@ -293,11 +304,6 @@ public:
     }
 
     pint_u.boundaryExchange(PinTVector<Real>::SEND_ONLY);
-
-    // // synchronize before value is called
-    // // MPI_Barrier(pint_u.communicators().getParentCommunicator());
-
-    // // value(c,u,z,tol);
   }
 
   virtual void applyJacobian_1(Vector<Real> &jv,
@@ -305,7 +311,30 @@ public:
                                const Vector<Real> &u,
                                const Vector<Real> &z,
                                Real &tol) override {
-    TEUCHOS_ASSERT(false);
+    PinTVector<Real>       & pint_jv = dynamic_cast<PinTVector<Real>&>(jv);
+    const PinTVector<Real> & pint_v  = dynamic_cast<const PinTVector<Real>&>(v);
+    const PinTVector<Real> & pint_u  = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z  = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+ 
+    TEUCHOS_ASSERT(pint_jv.numOwnedSteps()==pint_u.numOwnedSteps());
+    TEUCHOS_ASSERT(pint_jv.numOwnedSteps()==pint_v.numOwnedSteps());
+
+    // communicate neighbors, these are block calls
+    pint_v.boundaryExchange();
+    pint_u.boundaryExchange();
+    pint_z.boundaryExchange();
+
+    for(int i=0;i<pint_jv.numOwnedSteps();i++) {
+      // pull out all the time steps required
+      Ptr<const Vector<Real>> v_state = getStateVector(pint_v,i);
+      Ptr<const Vector<Real>> u_state = getStateVector(pint_u,i);
+      Ptr<const Vector<Real>> z_all = getVector(pint_z,i,ALL);
+
+      Ptr<Vector<Real>> jv_now = getNonconstVector(pint_jv,i,CURRENT);
+
+      stepConstraint_->applyJacobian_1(*jv_now,*v_state,*u_state,*z_all,tol);
+    }
   }
 
   virtual void applyInverseJacobian_1(Vector<Real> &ijv,

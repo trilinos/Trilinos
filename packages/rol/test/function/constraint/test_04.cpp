@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
     MPI_Comm_split(MPI_COMM_WORLD,myRank==0,myRank,&subComm); 
   }
  
-  int numSteps = 9;
+  int numSteps = 10;
   int errorFlag  = 0;
 
   try {
@@ -152,11 +152,11 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
   double totaltime = 1.75; // we will do 1.75 periods, this way the final result is non-trivial
   double dt = totaltime/numSteps;
   double omega = 2.0*M_PI;
-  double tol = 1e-15;
+  double tol = 1e-14;
 
   ROL::Ptr<const ROL::PinTCommunicators> communicators = ROL::makePtr<ROL::PinTCommunicators>(comm,1);
 
-  ROL::Ptr< ROL::PinTVector<Real>> state;
+  ROL::Ptr< ROL::PinTVector<Real>> state, state_unit;
   ROL::Ptr< ROL::PinTVector<Real>> control, control_unit;
 
   {
@@ -166,6 +166,12 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     u_data[0] = 0.0;
     u_data[1] = omega;
     PtrVector u = ROL::makePtr<ROL::StdVector<Real>>(u_data_ptr);
+
+    ROL::Ptr<std::vector<Real>> u_data_unit_ptr = ROL::makePtr<std::vector<Real>>(2);
+    std::vector<Real> & u_data_unit = *u_data_unit_ptr;
+    u_data_unit[0] = 1.0;
+    u_data_unit[1] = 1.0;
+    PtrVector u_unit = ROL::makePtr<ROL::StdVector<Real>>(u_data_unit_ptr);
       // this requirement to use a copy constructor tripped me up for a while
 
     // allocate control vector
@@ -174,23 +180,29 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     PtrVector z = ROL::makePtr<ROL::StdVector<Real>>(ROL::makePtr<std::vector<Real>>(z_data));
 
     state        = buildPinTVector(communicators,numSteps,{-1,0}   /* state stencil */,u);
+    state_unit   = buildPinTVector(communicators,numSteps,{-1,0}   /* state stencil */,u_unit);
     control      = buildPinTVector(communicators,numSteps,{0}    /* control stencil */,z);
     control_unit = buildPinTVector(communicators,numSteps,{0}    /* control stencil */,z);
 
     state->getVectorPtr(-1)->set(*u);   // set the initial condition
+    state_unit->getVectorPtr(-1)->zero();   // set the initial condition: because this is used as a perturbation, we have to be careful!
   }
 
   ROL::Ptr<ROL::Constraint_TimeSimOpt<Real>> step_constraint = ROL::makePtr<ODE_Constraint<Real>>(dt,omega);
 
   ROL::Ptr<ROL::Constraint_PinTSimOpt<Real>> pint_constraint = ROL::makePtr<ROL::Constraint_PinTSimOpt<Real>>(step_constraint);
 
-  PtrVector u = state;
-  PtrVector c = state->clone();
-  PtrVector z = control->clone();
+  PtrVector u   = state;
+  PtrVector z   = control->clone();
+  PtrVector c   = state->clone();
+  PtrVector jv  = c->clone();
+  PtrVector v_u = state_unit->clone();
 
   ROL::RandomizeVector<RealT>(*u); // this randomization doesn't really matter here as 'u' is complete determine by the solve
   ROL::RandomizeVector<RealT>(*z); 
-  z->scale(1.0);
+  ROL::RandomizeVector<RealT>(*v_u); 
+ 
+  // v_u->scale(3.0); 
 
   // check the solve
   //////////////////////////////////////////////////////////////////////
@@ -210,6 +222,18 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
       *outStream << "Solve checked out for p=" << numRanks << " with residual = " << solveNorm << std::endl; 
     }
   }
+
+  // check the Jacobian_1
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Jacobian 1" << std::endl;
+
+    auto errors = pint_constraint->checkApplyJacobian_1(*u,*z,*v_u,*jv,true,*outStream);
+    if(errors[6][3] >= 1e-8)
+      throw std::logic_error("Constraint apply jacobian 1 is incorrect");
+  }
+
 
   // This computes and returns the last value of the 'u' component and shares
   // it with all processors.

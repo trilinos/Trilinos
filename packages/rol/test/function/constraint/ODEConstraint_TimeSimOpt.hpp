@@ -145,7 +145,6 @@ public:
 
     jv_data[0] = vn_data[0] - timestep_*vn_data[1];
     jv_data[1] = vn_data[1] + timestep_*omega_*omega_*vn_data[0];
-
              // [      1,   -dt ]
              // [ dt*w*w,     1 ]
   }

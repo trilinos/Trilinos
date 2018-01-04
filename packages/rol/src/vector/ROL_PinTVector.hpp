@@ -218,14 +218,14 @@ protected:
     leftVectors_.resize(numLeft);
     for(int i=0;i<numLeft;i++) {
       leftVectors_[i]  = localVector_->clone();
-      leftVectors_[i]->scale(0.0);      // make sure each subvector is initialized
+      leftVectors_[i]->set(*localVector_);      // make sure each subvector is initialized
     }
 
     // there is a slight over allocation here if the stencil is sparse
     rightVectors_.resize(numRight);
     for(int i=0;i<numRight;i++) {
       rightVectors_[i]  = localVector_->clone();
-      rightVectors_[i]->scale(0.0);      // make sure each subvector is initialized
+      rightVectors_[i]->set(*localVector_);      // make sure each subvector is initialized
     }
   }
 
@@ -240,6 +240,14 @@ public:
   PinTVector(const PinTVector & v)
   {
     initialize(v.communicators_,v.localVector_,v.steps_,v.stencil_);
+
+    // make sure you copy boundary exchange "end points" - handles initial conditions
+    for(std::size_t i=0;i<leftVectors_.size();i++)
+      leftVectors_[i]->set(*v.leftVectors_[i]);     
+
+    // make sure you copy boundary exchange "end points" - handles initial conditions
+    for(std::size_t i=0;i<rightVectors_.size();i++)
+      rightVectors_[i]->set(*v.rightVectors_[i]);  
   }
 
   PinTVector(const Ptr<const PinTCommunicators> & comm,
@@ -487,11 +495,27 @@ public:
     stepVectors_->print(outStream);
   }
 
-  virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+  virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) override {
     stepVectors_->applyUnary(f);
   }
 
-#if 0
+  /** \brief Set \f$y \leftarrow x\f$ where \f$y = \mathtt{*this}\f$.
+
+             @param[in]      x     is a vector.
+
+             On return \f$\mathtt{*this} = x\f$.
+             Uses #zero and #plus methods for the computation.
+             Please overload if a more efficient implementation is needed.
+
+             ---
+  */
+  virtual void set( const Vector<Real> &x ) override {
+    typedef PinTVector<Real> PinTVector; 
+    const PinTVector &xs = dynamic_cast<const PinTVector&>(x);
+
+    stepVectors_->set(*xs.stepVectors_);
+  }
+
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mathtt{*this}\f$.
 
              @param[in]      alpha is the scaling of @b x.
@@ -503,8 +527,14 @@ public:
 
              ---
   */
-  virtual void axpy( const Real alpha, const Vector<Real> &x );
+  virtual void axpy( const Real alpha, const Vector<Real> &x ) override {
+    typedef PinTVector<Real> PinTVector; 
+    const PinTVector &xs = dynamic_cast<const PinTVector&>(x);
 
+    stepVectors_->axpy(alpha,*xs.stepVectors_);
+  }
+
+#if 0
   /** \brief Set to zero vector.
 
              Uses #scale by zero for the computation.
@@ -523,19 +553,6 @@ public:
              ---
   */
   virtual int dimension() const;
-
-
-  /** \brief Set \f$y \leftarrow x\f$ where \f$y = \mathtt{*this}\f$.
-
-             @param[in]      x     is a vector.
-
-             On return \f$\mathtt{*this} = x\f$.
-             Uses #zero and #plus methods for the computation.
-             Please overload if a more efficient implementation is needed.
-
-             ---
-  */
-  virtual void set( const Vector<Real> &x );
 #endif
 
 }; // class Vector
