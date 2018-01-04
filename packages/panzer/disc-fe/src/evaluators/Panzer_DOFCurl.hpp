@@ -57,6 +57,12 @@ public:
 
   DOFCurl(const Teuchos::ParameterList& p);
 
+  DOFCurl(const PHX::Tag<typename EvalT::ScalarT> & input,
+          const PHX::Tag<typename EvalT::ScalarT> & output,
+          const panzer::BasisDescriptor & bd,
+          const panzer::IntegrationDescriptor & id,
+          int basis_dim);
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& fm);
 
@@ -65,6 +71,10 @@ public:
 private:
 
   typedef typename EvalT::ScalarT ScalarT;
+
+  bool use_descriptors_;
+  panzer::BasisDescriptor bd_;
+  panzer::IntegrationDescriptor id_;
 
   PHX::MDField<const ScalarT,Cell,Point> dof_value;
 
@@ -85,6 +95,12 @@ public:
 
   DOFCurl(const Teuchos::ParameterList& p);
 
+  DOFCurl(const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & input,
+          const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & output,
+          const panzer::BasisDescriptor & bd,
+          const panzer::IntegrationDescriptor & id,
+          int basis_dim);
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& fm);
 
@@ -93,6 +109,10 @@ public:
 private:
 
   typedef panzer::Traits::Jacobian::ScalarT ScalarT;
+
+  bool use_descriptors_;
+  panzer::BasisDescriptor bd_;
+  panzer::IntegrationDescriptor id_;
 
   PHX::MDField<const ScalarT,Cell,Point> dof_value;
 
