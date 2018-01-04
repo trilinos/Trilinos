@@ -674,6 +674,7 @@ ${PROJECT_SOURCE_DIR}``) are::
      cmake/
        NativeRepositoriesList.cmake    # [Optional] Rarely used
        ExtraRepositoriesList.cmake     # [Optional] Lists repos and VC URLs 
+       ProjectCompilerPostConfig.cmake # [Optional] Override/tweak build flags
        ProjectDependenciesSetup.cmake  # [Optional] Project deps overrides
        CallbackDefineProjectPackaging.cmake  # [Optional] CPack settings
        tribits/    # [Optional] Or provide ${PROJECT_NAME}_TRIBITS_DIR
@@ -689,6 +690,7 @@ These TriBITS Project files are documented in more detail below:
 * `<projectDir>/project-checkin-test-config.py`_
 * `<projectDir>/cmake/NativeRepositoriesList.cmake`_
 * `<projectDir>/cmake/ExtraRepositoriesList.cmake`_
+* `<projectDir>/cmake/ProjectCompilerPostConfig.cmake`_
 * `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_
 * `<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_
 * `<projectDir>/cmake/tribits/`_
@@ -922,6 +924,47 @@ NOTE: This file can be overridden by setting the cache variable
 .. looks like only the selected repos will be cloned.  I need to add some unit
 .. tests that really show what the real behavior is and then document that
 .. behavior here.
+
+
+.. _<projectDir>/cmake/ProjectCompilerPostConfig.cmake:
+
+**<projectDir>/cmake/ProjectCompilerPostConfig.cmake**: [Optional] If present,
+then this file is read using ``INCLUDE()`` at the top-level CMakeLists.txt
+file scope right after the compilers for the languages ``<LANG>`` = ``C``,
+``CXX``, and ``Fortran`` are determined and checked using
+``ENABLE_LANGUAGE(<LANG>)`` but before any other checks are performed.  This
+file can contain logic for the project to adjust the flags set in
+``CMAKE_<LANG>_FLAGS`` and changes to other aspects of the build flags
+(including link flags, etc.).
+
+One example of the usage of this file is the Trilinos project where this file
+is (or was) used to apply specialized logic implemented in the Kokkos build
+system to select compiler options and to determine how C++11 and OpenMP flags
+are set.  This file in Trilinos looked like::
+
+  IF (${Trilinos_ENABLE_Kokkos})
+
+    ...
+
+    include(${Kokkos_GEN_DIR}/kokkos_generated_settings.cmake)
+  
+    IF (NOT KOKKOS_ARCH STREQUAL "None")
+    
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${KOKKOS_CXX_FLAGS}")
+    
+      MESSAGE("-- " "Skip adding flags for C++11 because Kokkos flags does that ...")
+      SET(${PROJECT_NAME}_CXX11_FLAGS " ")
+    
+      MESSAGE("-- " "Skip adding flags for OpenMP because Kokkos flags does that ...")
+      SET(OpenMP_CXX_FLAGS_OVERRIDE " ")
+    
+    ENDIF()
+  
+  ENDIF()
+
+The exact context where this file is processed (if it exists) is described in
+`Full Processing of TriBITS Project Files`_ and `TriBITS Environment Probing
+and Setup`_.
 
 
 .. _<projectDir>/cmake/ProjectDependenciesSetup.cmake:
@@ -2258,7 +2301,7 @@ proceeds through the call to `TRIBITS_PROJECT()`_.
 | 3.  Call `TRIBITS_PROJECT()`_:
 |   1)  Set `PROJECT_SOURCE_DIR`_ and `PROJECT_BINARY_DIR`_
 |   2)  For each ``<optFile>`` in ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE`_}
-|         ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_}
+|         then in ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE_APPEND`_}
         :
 |       * ``INCLUDE(<optFile>)``
 |   3)  Set variables ``CMAKE_HOST_SYSTEM_NAME`` and ``${PROJECT_NAME}_HOSTNAME``
@@ -2288,6 +2331,7 @@ proceeds through the call to `TRIBITS_PROJECT()`_.
 |       (see `Package Dependencies and Enable/Disable Logic`_)
 |   11) `Probe and set up the environment`_ (finds MPI, compilers, etc.)
 |       (see `TriBITS Environment Probing and Setup`_)
+|       * ``INCLUDE(`` `<projectDir>/cmake/ProjectCompilerPostConfig.cmake`_ ``)``
 |   12) For each ``<tplName>`` in the set of enabled TPLs:
 |       * ``INCLUDE(${<tplName>_FINDMOD})`` (see `TriBITS TPL`_)
 |   13) For each ``<repoDir>`` in all defined TriBITS repositories:
@@ -4210,7 +4254,7 @@ More detailed descriptions of the test groups are given below.
 
 .. _ST:
 
-* **Secondary Tested (PT)** Code is still very important code for the project
+* **Secondary Tested (ST)** Code is still very important code for the project
   and represents important capability to maintain but is excluded from the
   ``PT`` set of code for one of a few different reasons.  First, code may be
   marked as ``ST`` if is not critical to drive most day-to-day development
@@ -6247,18 +6291,21 @@ Processing of TriBITS Project Files`_.  This is executed by the TriBITS macro
 
 **Probe and set up the environment:**
 
-* Set ``CMAKE_BUILD_TYPE``
+* Set ``CMAKE_BUILD_TYPE`` default (if not already set)
 * Set up for MPI (MPI compilers, etc.)
-* Set up C, C++, and Fortran compilers
+* Set up C, C++, and Fortran compilers using ``ENABLE_LANGUAGE(<LANG>)``
+* ``INCLUDE(`` `<projectDir>/cmake/ProjectCompilerPostConfig.cmake`_ ``)``
 * Find Perl (sets ``PERL_EXECUTABLE``)
 * Determine mixed language C/Fortran linking
-* Set up C++11, OpenMP, and Windows support
+* Set up C++11 (`${PROJECT_NAME}_ENABLE_CXX11`_)
+* Set up OpenMP (with ``FIND_PACKAGE(OpenMP)``)
+* Set up optional Windows support
 * Find Doxygen (sets ``DOXYGEN_EXECUTABLE``)
-* Perform some other configure-time tests (see ``cmake`` output)
+* Perform some other configure-time tests (see ``cmake`` configure output)
 
 At the completion of this part of the processing, the TriBITS CMake project is
 ready to compile code.  All of the major variables set as part of this process
-are printed to the ``cmake`` stdout.
+are printed to the ``cmake`` stdout when the project is configured.
 
 
 RPATH Handling
