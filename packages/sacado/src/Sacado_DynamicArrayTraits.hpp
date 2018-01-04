@@ -89,7 +89,7 @@ namespace Sacado {
 
     extern const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_host;
     extern const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_device;
-#ifdef KOKKOS_HAVE_CUDA_RDC
+#ifdef KOKKOS_CUDA_USE_RELOCATABLE_DEVICE_CODE
     extern __device__ const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_on_device;
 #else
     __device__ const Kokkos::MemoryPool<Kokkos::Cuda>* global_sacado_cuda_memory_pool_on_device = 0;
