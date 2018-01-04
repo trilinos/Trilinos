@@ -205,23 +205,21 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
             Mcolind(j) = Bcol2Ccol(colind(j - Mrowptr(i) + start));
           }
         }
-        else
-        {
+        else {
           size_t row = Acol2Irow(i);
           size_t start = Irowptr(row);
-          for(size_t j = Mrowptr(i); j < Mrowptr(i + 1); j++)
-          {
+          for(size_t j = Mrowptr(i); j < Mrowptr(i + 1); j++) {
             Mvalues(j) = Ivals(j - Mrowptr(i) + start);
             Mcolind(j) = Icol2Ccol(Icolind(j - Mrowptr(i) + start));
           }
-        });
-      execution_space::fence();
-      Bmerged = Teuchos::rcp(new KCRS("CrsMatrix",merge_numrows,C.getColMap()->getNodeNumElements(),merge_nnz,Mvalues,Mrowptr,Mcolind));
-      }
-    else {
-      // We don't have a Bimport (the easy case)
-      Bmerged = Teuchos::rcpFromRef(Bmat);
-    }      
+        }
+      });
+    execution_space::fence();
+    Bmerged = Teuchos::rcp(new KCRS("CrsMatrix",merge_numrows,C.getColMap()->getNodeNumElements(),merge_nnz,Mvalues,Mrowptr,Mcolind));
+  }
+  else {
+    // We don't have a Bimport (the easy case)
+    Bmerged = Teuchos::rcpFromRef(Bmat);
   }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaCore"))));
