@@ -75,7 +75,7 @@
 // Include the architecture-specific kernel partial specializations here
 // NOTE: This needs to be outside all namespaces
 #include "TpetraExt_MatrixMatrix_OpenMP.hpp"
-#include "TpetraExt_MatrixMatrix_CUDA.hpp"
+#include "TpetraExt_MatrixMatrix_Cuda.hpp"
 
 
 namespace Tpetra {
@@ -2348,6 +2348,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore"))));
   Teuchos::RCP<Teuchos::TimeMonitor> MM2;
 #endif
+printf("CMS: Using Default kernel\n");
+
 
   using Teuchos::Array;
   using Teuchos::ArrayRCP;

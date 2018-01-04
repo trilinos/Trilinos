@@ -41,11 +41,60 @@
 
 #ifndef TPETRA_MATRIXMATRIX_OPENMP_DEF_HPP
 #define TPETRA_MATRIXMATRIX_OPENMP_DEF_HPP
-#include "TpetraExt_MatrixMatrix_decl.hpp"
 
 #ifdef HAVE_TPETRA_INST_OPENMP
 namespace Tpetra {
 namespace MMdetails { 
+
+/*********************************************************************************************************/  
+// MMM KernelWrappers for Partial Specialization to OpenMP
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal, class LocalOrdinalViewType>
+struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode,LocalOrdinalViewType> {
+    static inline void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+                                                  const LocalOrdinalViewType & Acol2Brow,
+                                                  const LocalOrdinalViewType & Acol2Irow,
+                                                  const LocalOrdinalViewType & Bcol2Ccol,
+                                                  const LocalOrdinalViewType & Icol2Ccol,
+                                                  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
+                                                  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
+                                                  const std::string& label = std::string(),
+                                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    static inline void mult_A_B_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+                                                  const LocalOrdinalViewType & Acol2Brow,
+                                                  const LocalOrdinalViewType & Acol2Irow,
+                                                  const LocalOrdinalViewType & Bcol2Ccol,
+                                                  const LocalOrdinalViewType & Icol2Ccol,
+                                                  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
+                                                  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
+                                                  const std::string& label = std::string(),
+                                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+};
+
+
+  // Jacobi KernelWrappers for Partial Specialization to OpenMP
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal, class LocalOrdinalViewType>
+struct KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode,LocalOrdinalViewType> {
+    static inline void jacobi_A_B_newmatrix_kernel_wrapper(Scalar omega,
+                                                           const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> & Dinv,
+                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
+                                                           CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+                                                           const LocalOrdinalViewType & Acol2Brow,
+                                                           const LocalOrdinalViewType & Acol2Irow,
+                                                           const LocalOrdinalViewType & Bcol2Ccol,
+                                                           const LocalOrdinalViewType & Icol2Ccol,
+                                                           CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
+                                                           Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
+                                                           const std::string& label = std::string(),
+                                                           const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+};
+
 
 /*********************************************************************************************************/
 template<class Scalar,
@@ -68,7 +117,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     using Teuchos::TimeMonitor;
     Teuchos::RCP<TimeMonitor> MM;
 #endif
-
+    printf("CMS: Using OpenMP kernel\n");
   // Node-specific code
   std::string nodename("OpenMP");
 

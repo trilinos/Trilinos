@@ -39,12 +39,46 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef TPETRA_MATRIXMATRIX_OPENMP_DEF_HPP
-#define TPETRA_MATRIXMATRIX_OPENMP_DEF_HPP
-#include "TpetraExt_MatrixMatrix_decl.hpp"
+#ifndef TPETRA_MATRIXMATRIX_CUDA_DEF_HPP
+#define TPETRA_MATRIXMATRIX_CUDA_DEF_HPP
+
 #ifdef HAVE_TPETRA_INST_CUDA
 namespace Tpetra {
 namespace MMdetails { 
+
+/*********************************************************************************************************/
+// MMM KernelWrappers for Partial Specialization to CUDA
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class LocalOrdinalViewType>
+struct KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType> {
+    static inline void mult_A_B_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
+                                                  const LocalOrdinalViewType & Acol2Brow,
+                                                  const LocalOrdinalViewType & Acol2Irow,
+                                                  const LocalOrdinalViewType & Bcol2Ccol,
+                                                  const LocalOrdinalViewType & Icol2Ccol,
+                                                  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
+                                                  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
+                                                  const std::string& label = std::string(),
+                                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+
+  
+   static inline void mult_A_B_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
+                                                  CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
+                                                  const LocalOrdinalViewType & Acol2Brow,
+                                                  const LocalOrdinalViewType & Acol2Irow,
+                                                  const LocalOrdinalViewType & Bcol2Ccol,
+                                                  const LocalOrdinalViewType & Icol2Ccol,
+                                                  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
+                                                  Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
+                                                  const std::string& label = std::string(),
+                                                  const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+  };
+
 
 /*********************************************************************************************************/
 // AB NewMatrix Kernel wrappers (KokkosKernels/CUDA Version)
@@ -63,6 +97,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
                                                                                                const std::string& label,
                                                                                                const Teuchos::RCP<Teuchos::ParameterList>& params) {
 
+  printf("CMS: Using CUDA kernel\n");
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
