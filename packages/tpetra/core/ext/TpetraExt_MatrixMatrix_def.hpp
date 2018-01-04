@@ -520,18 +520,18 @@ namespace ColMapFunctors
 //Build the minimal (sorted) column map for the given set of global columns
 //Then convert gids and store them in lids (gids is not modified)
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>> Details::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > AddDetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 makeColMapAndConvertGids(GlobalOrdinal ncols,
-                   const typename Details::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_col_inds_array& gids,
-                   typename Details::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::col_inds_array& lids,
+                   const typename AddDetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_col_inds_array& gids,
+                   typename AddDetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::col_inds_array& lids,
                    const Teuchos::RCP<const Teuchos::Comm<int>>& comm)
 {
   using namespace ColMapFunctors;
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef Kokkos::View<char*, device_type> ByteView;
-  typedef typename Details::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_col_inds_array GView;
-  typedef typename Details::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::col_inds_array LView;
+  typedef typename AddDetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::global_col_inds_array GView;
+  typedef typename AddDetails::AddKernels<Scalar, LocalOrdinal, GlobalOrdinal, Node>::col_inds_array LView;
   //Functors (explained in the procedural code below)
   auto nentries = gids.dimension_0();
   //each entry of entryUnion is 0 unless there is a local entry in that column (then it is 1)
@@ -540,7 +540,7 @@ makeColMapAndConvertGids(GlobalOrdinal ncols,
   Kokkos::parallel_for("Tpetra_MatrixMatrix_unionEntries", range_type(0, nentries), ue);
   //turn entryUnion into prefix sum gtol (where gtol(i) gives the new local col for global col i)
   LView gtol("global col -> local col", ncols + 1);
-  Tpetra::Details::computeOffsetsFromCounts<decltype(gtol), decltype(entryUnion)>(gtol, entryUnion);
+  ::Tpetra::Details::computeOffsetsFromCounts<decltype(gtol), decltype(entryUnion)>(gtol, entryUnion);
   //convert gids to local ids and put them in lids (implicitly sorted as long as input gids is sorted per row)
   ConvertGlobalToLocal<LView, GView> cgtl(gtol, gids, lids);
   Kokkos::parallel_for("Tpetra_MatrixMatrix_convertGlobalToLocal", range_type(0, gids.dimension_0()), cgtl);
@@ -591,7 +591,7 @@ add (const Scalar& alpha,
   typedef RowMatrixTransposer<SC,LO,GO,NO>  transposer_type;
   typedef Import<LO,GO,NO>                  import_type;
   typedef Export<LO,GO,NO>                  export_type;
-  typedef Details::AddKernels<SC,LO,GO,NO>           AddKern;
+  typedef AddDetails::AddKernels<SC,LO,GO,NO>           AddKern;
   const char* prefix_mmm = "TpetraExt::MatrixMatrix::add: ";
   constexpr bool debug = false;
 
@@ -1271,19 +1271,19 @@ struct SumFunctor
 }
 
 template<typename SC, typename LO, typename GO, typename NO>
-void Details::AddKernels<SC, LO, GO, NO>::
+void AddDetails::AddKernels<SC, LO, GO, NO>::
 addSorted(
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Avals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Acolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
-  typename Details::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
-  typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
-  typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Avals,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Acolinds,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
 {
   using namespace AddSortedFunctors;
   using Teuchos::RCP;
@@ -1300,7 +1300,7 @@ addSorted(
     EntryCountingFunctor<LO, row_ptrs_array, col_inds_array> entCount(Arowptrs, Acolinds, Browptrs, Bcolinds, Crowcounts);
     Kokkos::parallel_for("Tpetra_MatrixMatrix_entryCounting", range_type(0, nrows), entCount);
     //Count C nonzeros in each row in parallel
-    Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(Crowptrs, Crowcounts);
+    ::Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(Crowptrs, Crowcounts);
   }
   execution_space::fence();
   auto nnz = Crowptrs(nrows);
@@ -1341,19 +1341,19 @@ struct ConvertColIndsFunctor
 };
 
 template<typename SC, typename LO, typename GO, typename NO>
-void Details::AddKernels<SC, LO, GO, NO>::
+void AddDetails::AddKernels<SC, LO, GO, NO>::
 convertToGlobalAndAdd(
-  const typename Details::AddKernels<SC, LO, GO, NO>::KCRS& A,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
-  const typename Details::AddKernels<SC, LO, GO, NO>::KCRS& B,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
-  const typename Details::AddKernels<SC, LO, GO, NO>::local_map_type& AcolMap,
-  const typename Details::AddKernels<SC, LO, GO, NO>::local_map_type& BcolMap,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::KCRS& A,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::KCRS& B,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::local_map_type& AcolMap,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::local_map_type& BcolMap,
   GO minGlobalCol,
   GO numGlobalCols,
-  typename Details::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
-  typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
-  typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
 {
   using namespace AddSortedFunctors;
   using Teuchos::RCP;
@@ -1512,7 +1512,7 @@ struct SortAndMergeFunctor
     Ordinal rowStart = CrowptrTemp(i);
     Ordinal rowEnd = CrowptrTemp(i + 1);
     Ordinal rowNum = rowEnd - rowStart;
-    Tpetra::Details::radixSortKeysAndValues(CcolindOver.ptr_on_device() + rowStart, CcolindAux.ptr_on_device() + rowStart, CvalsOver.ptr_on_device() + rowStart, CvalsAux.ptr_on_device() + rowStart, (size_t) rowNum, (size_t) ncols);
+    ::Tpetra::Details::radixSortKeysAndValues(CcolindOver.ptr_on_device() + rowStart, CcolindAux.ptr_on_device() + rowStart, CvalsOver.ptr_on_device() + rowStart, CvalsAux.ptr_on_device() + rowStart, (size_t) rowNum, (size_t) ncols);
     //now that they are sorted, can sweep through and gather together values in same column
     Ordinal finalPos = 0;
     Ordinal overPos = 0;
@@ -1579,20 +1579,20 @@ struct CondenseArraysFunctor
 }
 
 template<typename SC, typename LO, typename GO, typename NO>
-void Details::AddKernels<SC, LO, GO, NO>::
+void AddDetails::AddKernels<SC, LO, GO, NO>::
 addUnsorted(
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Avals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Acolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Avals,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Acolinds,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Bcolinds,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
   GO numGlobalCols,
-  typename Details::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
-  typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
-  typename Details::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::col_inds_array& Ccolinds)
 {
   using namespace AddUnsortedFunctors;
   using Teuchos::RCP;
@@ -1626,7 +1626,7 @@ addUnsorted(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("nnz upper bound"))));
 #endif
-    Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(CrowptrTemp, rowCounts);
+    ::Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(CrowptrTemp, rowCounts);
   }
   auto nnz = CrowptrTemp(nrows);
   col_ind_type CcolindOver("C indices", nnz + 1);
@@ -1652,7 +1652,7 @@ addUnsorted(
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("getting rowptr prefix sum"))));
 #endif
     Crowptrs = row_ptrs_array("C row pointers", nrows + 1);
-    Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(Crowptrs, Crowcounts);
+    ::Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(Crowptrs, Crowcounts);
   }
   execution_space::fence();
   nnz = Crowptrs(nrows);
@@ -1668,20 +1668,20 @@ addUnsorted(
 }
 
 template<typename SC, typename LO, typename GO, typename NO>
-void Details::AddKernels<SC, LO, GO, NO>::
+void AddDetails::AddKernels<SC, LO, GO, NO>::
 addUnsortedGlobalCols(
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Avals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Acolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
-  const typename Details::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
-  const typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
-  const typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Bcolinds,
-  const typename Details::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Avals,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Arowptrs,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Acolinds,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarA,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Bvals,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array_const& Browptrs,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Bcolinds,
+  const typename AddDetails::AddKernels<SC, LO, GO, NO>::impl_scalar_type scalarB,
   GO numGlobalCols,
-  typename Details::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
-  typename Details::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
-  typename Details::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::values_array& Cvals,
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::row_ptrs_array& Crowptrs,
+  typename AddDetails::AddKernels<SC, LO, GO, NO>::global_col_inds_array& Ccolinds)
 {
   using namespace AddUnsortedFunctors;
   typedef global_col_inds_array col_ind_type;
@@ -1720,7 +1720,7 @@ addUnsortedGlobalCols(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("nnz upper bound"))));
 #endif
-    Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(CrowptrTemp, rowCounts);
+    ::Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(CrowptrTemp, rowCounts);
   }
   auto nnz = CrowptrTemp(nrows);
   col_ind_type CcolindOver("C indices", nnz + 1);
@@ -1746,7 +1746,7 @@ addUnsortedGlobalCols(
   MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt::MatrixMatrix::add() unsorted kernel: " + std::string("getting rowptr prefix sum"))));
 #endif
     Crowptrs = row_ptrs_array("C row pointers", nrows + 1);
-    Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(Crowptrs, Crowcounts);
+    ::Tpetra::Details::computeOffsetsFromCounts<row_ptrs_array, row_ptrs_array>(Crowptrs, Crowcounts);
   }
   execution_space::fence();
   nnz = Crowptrs(nrows);
@@ -2348,8 +2348,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix SerialCore"))));
   Teuchos::RCP<Teuchos::TimeMonitor> MM2;
 #endif
-printf("CMS: Using Default kernel\n");
-
 
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -3619,7 +3617,7 @@ template \
                      const Teuchos::RCP<const Map<LO, GO, NODE> >& rangeMap, \
                      const Teuchos::RCP<Teuchos::ParameterList>& params); \
 \
-  template struct MatrixMatrix::Details::AddKernels<SCALAR, LO, GO, NODE>;
+  template struct MatrixMatrix::AddDetails::AddKernels<SCALAR, LO, GO, NODE>;
 
 } //End namespace Tpetra
 

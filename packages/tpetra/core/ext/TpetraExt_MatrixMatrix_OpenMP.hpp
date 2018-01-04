@@ -117,7 +117,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     using Teuchos::TimeMonitor;
     Teuchos::RCP<TimeMonitor> MM;
 #endif
-    printf("CMS: Using OpenMP kernel\n");
+
   // Node-specific code
   std::string nodename("OpenMP");
 

@@ -165,42 +165,11 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
     // NOTE: We're going merge Borig and Bimport into a single matrix and reindex the columns *before* we multiply.
     // This option was chosen because we know we don't have any duplicate entries, so we can allocate once.
 
-    typename scalar_view_t::const_type IkValues;
-    typename lno_view_t::const_type IkRowPtrs;
-    typename lno_nnz_view_t::const_type IkEntries;
-    if(!Bview.importMatrix.is_null())
-    {
-      auto Ik = Teuchos::rcpFromRef<const KCRS>(Bview.importMatrix->getLocalMatrix());
-      IkValues = Ik->values;
-      IkRowPtrs = Ik->graph.row_map;
-      IkEntries = Ik->graph.entries;
-    }
     size_t merge_numrows =  Ak.numCols();
     lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
 
     const LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
 
-    // NOTE: This needs to get streamlined
-    lno_nnz_view_t Acol2BrowDev("Acol2Brow", Acol2Brow.size());
-    lno_nnz_view_t Acol2IrowDev("Acol2Irow", Acol2Irow.size());
-    lno_nnz_view_t Bcol2CcolDev("Bcol2Ccol", Bcol2Ccol.size());
-    lno_nnz_view_t Icol2CcolDev("Icol2Ccol", Icol2Ccol.size());
-    {
-      auto Acol2BrowHost = Kokkos::create_mirror_view(Acol2BrowDev);
-      auto Acol2IrowHost = Kokkos::create_mirror_view(Acol2IrowDev);
-      auto Bcol2CcolHost = Kokkos::create_mirror_view(Bcol2CcolDev);
-      auto Icol2CcolHost = Kokkos::create_mirror_view(Icol2CcolDev);
-      // use the raw pointers out of the Teuchos::Array's to avoid the Teuchos::Array+Kokkos+DEBUG problems
-      // copy all four arrays to host Views, then copy those to device
-      memcpy(Acol2BrowHost.ptr_on_device(), Acol2Brow.getRawPtr(), Acol2Brow.size() * sizeof(LocalOrdinal));
-      memcpy(Acol2IrowHost.ptr_on_device(), Acol2Irow.getRawPtr(), Acol2Irow.size() * sizeof(LocalOrdinal));
-      memcpy(Bcol2CcolHost.ptr_on_device(), Bcol2Ccol.getRawPtr(), Bcol2Ccol.size() * sizeof(LocalOrdinal));
-      memcpy(Icol2CcolHost.ptr_on_device(), Icol2Ccol.getRawPtr(), Icol2Ccol.size() * sizeof(LocalOrdinal));
-      Kokkos::deep_copy(Acol2BrowDev, Acol2BrowHost);
-      Kokkos::deep_copy(Acol2IrowDev, Acol2IrowHost);
-      Kokkos::deep_copy(Bcol2CcolDev, Bcol2CcolHost);
-      Kokkos::deep_copy(Icol2CcolDev, Icol2CcolHost);
-    }
     // Use a Kokkos::parallel_scan to build the rowptr
     typedef Node::execution_space execution_space;
     typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
@@ -209,10 +178,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
           Mrowptr(i) = update;
         // Get the row count
         size_t ct = 0;
-        if(Acol2BrowDev(i) != LO_INVALID)
-          ct = Browptr(Acol2BrowDev(i) + 1) - Browptr(Acol2BrowDev(i));
+        if(Acol2Brow(i) != LO_INVALID)
+          ct = Browptr(Acol2Brow(i) + 1) - Browptr(Acol2Brow(i));
         else
-          ct = Irowptr(Acol2IrowDev(i) + 1) - Irowptr(Acol2IrowDev(i));
+          ct = Irowptr(Acol2Irow(i) + 1) - Irowptr(Acol2Irow(i));
         update += ct;
         if(final && (i + 1 == merge_numrows))
           Mrowptr(i + 1) = update;
@@ -227,22 +196,13 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
 
     // Use a Kokkos::parallel_for to fill the rowptr/colind arrays
     typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-
-    
-    /*    MColindValuesFunctor<lno_view_t, lno_nnz_view_t, scalar_view_t>
-    funct2(Mvalues, Mrowptr, Mcolind,
-           Acol2BrowDev, Acol2IrowDev, Bcol2CcolDev, Icol2CcolDev,
-           Bk.values, Bk.graph.row_map, Bk.graph.entries,
-           IkValues, IkRowPtrs, IkEntries);
-
-           Kokkos::parallel_for("Tpetra_MatrixMatrix_buildColindValuesBmerged", range_type (0, merge_numrows), funct2);*/
     Kokkos::parallel_for("Tpetra_MatrixMatrix_buildColindValuesBmerged", range_type (0, merge_numrows), KOKKOS_LAMBDA(const size_t i) {
-        if(Acol2BrowDev(i) != LO_INVALID) {
-          size_t row = Acol2BrowDev(i);
+        if(Acol2Brow(i) != LO_INVALID) {
+          size_t row = Acol2Brow(i);
           size_t start = Browptr(row);
           for(size_t j = Mrowptr(i); j < Mrowptr(i + 1); j++) {            
             Mvalues(j) = Bvals(j - Mrowptr(i) + start);
-            Mcolind(j) = Bcol2CcolDev(colind(j - Mrowptr(i) + start));
+            Mcolind(j) = Bcol2Ccol(colind(j - Mrowptr(i) + start));
           }
         }
         else
@@ -252,7 +212,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
           for(size_t j = Mrowptr(i); j < Mrowptr(i + 1); j++)
           {
             Mvalues(j) = Ivals(j - Mrowptr(i) + start);
-            Mcolind(j) = Icol2CcolDev(Icolind(j - Mrowptr(i) + start));
+            Mcolind(j) = Icol2Ccol(Icolind(j - Mrowptr(i) + start));
           }
         }
     execution_space::fence();

@@ -128,7 +128,7 @@ void Add(
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& B,
   Scalar scalarB );
 
-namespace Details
+namespace AddDetails
 {
 
 template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
@@ -256,7 +256,7 @@ struct AddKernels
 
   static Teuchos::RCP<map_type> makeColMapAndConvertGids(GlobalOrdinal ncols, const global_col_inds_array& gids, col_inds_array& lids, const Teuchos::RCP<const Teuchos::Comm<int>>& comm);
 };
-}
+}//end AddDetails
 
 /// \brief Compute the sparse matrix sum <tt>C = scalarA * Op(A) +
 ///   scalarB * Op(B)</tt>, where Op(X) is either X or its transpose.
