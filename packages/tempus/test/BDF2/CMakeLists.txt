@@ -37,6 +37,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Test_BDF2_CopyFiles
-  DEST_FILES Tempus_BDF2_SinCos.xml Tempus_BDF2_SinCos_AdaptDt.xml Tempus_BDF2_SinCos_SA.xml Tempus_BDF2_CDR.xml Tempus_BDF2_VanDerPol.xml Tempus_BDF2_SteadyQuadratic.xml
+  DEST_FILES Tempus_BDF2_SinCos.xml Tempus_BDF2_SinCos_AdaptDt.xml Tempus_BDF2_SinCos_SA.xml Tempus_BDF2_CDR.xml Tempus_BDF2_VanDerPol.xml Tempus_BDF2_SteadyQuadratic.xml Tempus_BDF2_SinCos_AdaptDt_gold.dat 
   EXEDEPS BDF2
   )
