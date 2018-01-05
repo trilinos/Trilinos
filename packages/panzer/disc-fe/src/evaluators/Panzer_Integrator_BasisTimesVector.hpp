@@ -177,6 +177,51 @@ namespace panzer
         const Teuchos::ParameterList& p);
 
       /**
+       *  \brief Descriptor Constructor.
+       *
+       *  Creates an `Evaluator` to evaluate the integral
+       *  \f[
+            Ma(x)b(x)\cdots\int\vec{s}(x)\cdot\vec{\phi}(x)\,dx,
+          \f]
+       *  where \f$ M \f$ is some constant, \f$ a(x) \f$, \f$ b(x) \f$, etc.,
+       *  are some fields that depend on position, \f$ \vec{s} \f$ is some
+       *  vector-valued function, and \f$ \vec{\phi} \f$ is some vector basis.
+       *
+       *  \param[in] evalStyle  An `enum` declaring the behavior of this
+       *                        `Evaluator`, which is to either:
+       *                        - compute and contribute (`CONTRIBUTES`), or
+       *                        - compute and store (`EVALUATES`).
+       *  \param[in] resTag    The tag of either the contributed or evaluated
+       *                        field, depending on `evalStyle`.
+       *  \param[in] valTag    The tag of the vector value being integrated
+       *                        (\f$ \vec{s} \f$).
+       *  \param[in] bd      The vector basisdescripotr that you'd like to use (\f$
+                                \vec{\phi} \f$).
+       *  \param[in] id      The integration descriptor that you'd like to use.
+       *  \param[in] multiplier    The scalar multiplier out in front of the
+       *                        integral you're computing (\f$ M \f$).  If not
+       *                        specified, this defaults to 1.
+       *  \param[in] multipleirs    A list of names of fields that are multipliers
+       *                            out in front of the integral you're computing
+       *                            (\f$ a(x) \f$, \f$ b(x) \f$, etc.).  If not
+       *                            specified, this defaults to an empty `vector`.
+       *
+       *  \throws std::invalid_argument If any of the inputs are invalid.
+       *  \throws std::logic_error      If the `basis` supplied is not a vector
+       *                                basis, or if it doesn't require
+       *                                orientations.
+       */
+      Integrator_BasisTimesVector(
+        const panzer::EvaluatorStyle&   evalStyle,
+        const PHX::Tag<typename EvalT::ScalarT> &       resTag,
+        const PHX::Tag<typename EvalT::ScalarT> &       valTag,
+        const BasisDescriptor&  bd,
+        const IntegrationDescriptor&  id,
+        const double &                   multiplier = 1,
+        const std::vector<PHX::Tag<typename EvalT::ScalarT>> & multipliers =
+          std::vector<PHX::Tag<typename EvalT::ScalarT>>());
+
+      /**
        *  \brief Post-Registration Setup.
        *
        *  Sets the `Kokkos::View`s for all the of the field multipliers, sets
@@ -265,6 +310,21 @@ namespace panzer
        *  - EVALUATES:    save it under a specified name for future use.
        */
       const panzer::EvaluatorStyle evalStyle_;
+
+      /**
+       *  \brief Use the descriptor interface.
+       */
+      bool useDescriptors_;
+
+      /**
+       *  \brief Basis descriptor for basis to use
+       */
+      BasisDescriptor bd_;
+
+      /**
+       *  \brief Integration descriptor for quadrature to use
+       */
+      IntegrationDescriptor id_;
 
       /**
        *  \brief A field to which we'll contribute, or in which we'll store,

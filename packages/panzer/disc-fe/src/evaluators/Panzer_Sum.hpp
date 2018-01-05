@@ -118,6 +118,20 @@ class SumStatic<EvalT,TRAITS,Tag0,Tag1,void> : public panzer::EvaluatorWithBaseI
                                          public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
   SumStatic(const Teuchos::ParameterList& p);
+
+  /**
+   * \brief Tag only Constructor
+   *
+   * Perform a linear combination of fields using only input tags and double vectors.
+   *
+   * \param[in] inputs Tags associated with rank 2 arrays to be summed
+   * \param[in] scalar_values Vector of length inputs.size() or zero. If the length is equal
+   *                          to inputs.size() each entry is scaled. Otherwise 1.0 is assumed.
+   * \param[in] output Destination array tag for the summation.
+   */
+  SumStatic(const std::vector<PHX::Tag<typename EvalT::ScalarT>> & inputs,
+            const std::vector<double> & scalar_values,
+            const PHX::Tag<typename EvalT::ScalarT> & output);
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& fm);
   void evaluateFields(typename TRAITS::EvalData d);
