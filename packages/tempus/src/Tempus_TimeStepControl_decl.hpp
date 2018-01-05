@@ -105,6 +105,22 @@ public:
       { return tscPL_->get<int>   ("Initial Order"); }
     virtual int getMaxOrder() const
       { return tscPL_->get<int>   ("Maximum Order"); }
+    virtual Scalar getAmplFactor() const { 
+      Scalar rho = tscPL_->get<double>("Amplification Factor"); 
+      TEUCHOS_TEST_FOR_EXCEPTION(rho <= 1.0, std::out_of_range,
+          "Error - Invalid valid of Amplification Factor = " << rho << "!  \n" 
+          << "Amplification Factor must be > 1.0.\n"); 
+      return rho; }
+    virtual Scalar getReductFactor() const {
+      Scalar sigma = tscPL_->get<double>("Reduction Factor");  
+      TEUCHOS_TEST_FOR_EXCEPTION(sigma >= 1.0, std::out_of_range,
+          "Error - Invalid valid of Reduction Factor = " << sigma << "!  \n" 
+          << "Reduction Factor must be < 1.0.\n"); 
+      return sigma; }
+    virtual Scalar getMinEta() const
+      { return tscPL_->get<double>   ("Minimum Value Monitoring Function"); }
+    virtual Scalar getMaxEta() const
+      { return tscPL_->get<double>   ("Maximum Value Monitoring Function"); }
     virtual std::string getStepType() const
       { return tscPL_->get<std::string>("Integrator Step Type"); }
     virtual std::vector<int> getOutputIndices() const
@@ -158,6 +174,7 @@ public:
       { tscPL_->set<int>
         ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
     virtual void setNumTimeSteps(int numTimeSteps);
+    virtual Scalar computeEta(const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory); 
   //@}
 
 private:

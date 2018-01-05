@@ -15,6 +15,9 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+//Thyra
+#include "Thyra_VectorStdOps.hpp"
+
 
 namespace Tempus {
 
@@ -51,6 +54,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
   Status & integratorStatus)
 {
   using Teuchos::RCP;
+  const Teuchos::EVerbosityLevel verbLevel = solutionHistory->getVerbLevel(); 
 
   TEMPUS_FUNC_TIME_MONITOR("Tempus::TimeStepControl::getNextTimeStep()");
   {
@@ -172,16 +176,43 @@ void TimeStepControl<Scalar>::getNextTimeStep(
         <<getMaxOrder()<< "]\n"
         "    order = " << order << "\n");
 
-    } else { // VARIABLE_STEP_SIZE
+    } 
 
-      // \todo The following controls should be generalized to plugable options.
-      Scalar dt_adjustment_factor = 0.5; 
-      if (stepperState->stepperStatus_ == Status::FAILED) dt *= dt_adjustment_factor;
-      if (errorAbs > getMaxAbsError()) dt *= dt_adjustment_factor;
-      if (errorRel > getMaxRelError()) dt *= dt_adjustment_factor;
-      if (order < getMinOrder()) dt /= dt_adjustment_factor;
-      if (order > getMaxOrder()) dt *= dt_adjustment_factor;
+    else if (getStepType() == "Variable")  
+    {
+      //Section 2.2.1 / Algorithm 2.4 of A. Denner, "Experiments on 
+      //Temporal Variable Step BDF2 Algorithms", Masters Thesis, U Wisconsin-Madison, 2014.
+      Scalar rho    = getAmplFactor(); 
+      Scalar sigma  = getReductFactor();
+      RCP<Teuchos::FancyOStream> out = this->getOStream();
+      Scalar eta = computeEta(solutionHistory); 
 
+      if (stepperState->stepperStatus_ == Status::FAILED) { //Stepper failed, reduce dt
+        *out << "Stepper failed!  Reducing time-step: old dt = " << dt 
+             << ", new dt = " << dt*sigma << "\n"; 
+        dt *= sigma;
+      }
+      else { //Stepper passed
+        if (eta < getMinEta()) { // increase dt
+          if (Teuchos::as<int>(verbLevel) != Teuchos::as<int>(Teuchos::VERB_NONE)) {
+            *out << "  eta = " << eta << " < eta_min = " << getMinEta() << "! \n" 
+                 << "    Increasing time-step: old dt = " << dt << ", new dt = " << dt*rho << "\n"; 
+          }
+          dt *= rho; 
+        }
+        else if (eta > getMaxEta()) { //reduce dt 
+          if (Teuchos::as<int>(verbLevel) != Teuchos::as<int>(Teuchos::VERB_NONE)) {
+            *out << "  eta = " << eta << " > eta_max = " << getMaxEta() << "! \n" 
+                 << "    Reducing time-step: old dt = " << dt << ", new dt = " << dt*sigma << "\n"; 
+          }
+          dt *= sigma; 
+        }
+      }
+      //Checks from 'Step Type' = 'Variable'
+      if (errorAbs > getMaxAbsError()) dt *= sigma; //error too high, reduce dt
+      if (errorRel > getMaxRelError()) dt *= sigma; //error too high, reduce dt 
+      if (order < getMinOrder()) dt *= rho; //order too low, increase dt
+      if (order > getMaxOrder()) dt *= sigma; // order to high, reduce dt 
       if (dt < getMinTimeStep()) dt = getMinTimeStep();
       if (dt > getMaxTimeStep()) dt = getMaxTimeStep();
     }
@@ -261,6 +292,52 @@ template<class Scalar>
 bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
   bool iir = (getInitIndex() <= iStep and iStep < getFinalIndex());
   return iir;
+}
+
+template<class Scalar>
+Scalar TimeStepControl<Scalar>::computeEta(const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory) 
+{
+  using Teuchos::RCP;
+  Scalar eta; 
+  const double eps = 1.0e4*std::numeric_limits<double>::epsilon();
+  RCP<Teuchos::FancyOStream> out = this->getOStream();
+  int numStates = solutionHistory->getNumStates();
+  //Compute eta
+  if (numStates < 3) {
+    eta = getMinEta(); 
+    return eta;  
+  }
+  RCP<const Thyra::VectorBase<Scalar> > xOld = (*solutionHistory)[numStates-3]->getX();
+  RCP<const Thyra::VectorBase<Scalar> > x = (*solutionHistory)[numStates-1]->getX();
+//IKT: uncomment the following to get some debug output
+//#define VERBOSE_DEBUG_OUTPUT
+#ifdef VERBOSE_DEBUG_OUTPUT
+  Teuchos::Range1D range;
+  *out << "\n*** xOld ***\n";
+  RTOpPack::ConstSubVectorView<Scalar> xOldv;
+  xOld->acquireDetachedView(range, &xOldv);
+  auto xoa = xOldv.values();
+  for (auto i = 0; i < xoa.size(); ++i) *out << xoa[i] << " ";
+  *out << "\n*** xOld ***\n";
+  *out << "\n*** x ***\n";
+  RTOpPack::ConstSubVectorView<Scalar> xv;
+  x->acquireDetachedView(range, &xv);
+  auto xa = xv.values();
+  for (auto i = 0; i < xa.size(); ++i) *out << xa[i] << " ";
+  *out << "\n*** x ***\n";
+#endif
+  //xDiff = x - xOld 
+  RCP<Thyra::VectorBase<Scalar> > xDiff = Thyra::createMember(x->space()); 
+  Thyra::V_VmV(xDiff.ptr(), *x, *xOld);
+  Scalar xDiffNorm = Thyra::norm(*xDiff); 
+  Scalar xOldNorm = Thyra::norm(*xOld);  
+  //eta = ||x^(n+1)-x^n||/(||x^n||+eps)
+  eta = xDiffNorm/(xOldNorm + eps);
+#ifdef VERBOSE_DEBUG_OUTPUT
+  *out << "IKT xDiffNorm, xOldNorm, eta = " << xDiffNorm << ", " << xOldNorm 
+       << ", " << eta << "\n";  
+#endif
+  return eta;  
 }
 
 template<class Scalar>
@@ -462,13 +539,19 @@ TimeStepControl<Scalar>::getValidParameters() const
 
   const double stdMin = std::numeric_limits<double>::epsilon();
   const double stdMax = std::numeric_limits<double>::max();
-  pl->set<double>("Initial Time"      , 0.0    , "Initial time");
-  pl->set<double>("Final Time"        , stdMax , "Final time");
-  pl->set<int>   ("Initial Time Index", 0      , "Initial time index");
-  pl->set<int>   ("Final Time Index"  , 1000000, "Final time index");
-  pl->set<double>("Minimum Time Step" , stdMin , "Minimum time step size");
-  pl->set<double>("Initial Time Step" , stdMin , "Initial time step size");
-  pl->set<double>("Maximum Time Step" , stdMax , "Maximum time step size");
+  pl->set<double>("Initial Time"         , 0.0    , "Initial time");
+  pl->set<double>("Final Time"           , stdMax , "Final time");
+  pl->set<int>   ("Initial Time Index"   , 0      , "Initial time index");
+  pl->set<int>   ("Final Time Index"     , 1000000, "Final time index");
+  pl->set<double>("Minimum Time Step"    , stdMin , "Minimum time step size");
+  pl->set<double>("Initial Time Step"    , stdMin , "Initial time step size");
+  pl->set<double>("Maximum Time Step"    , stdMax , "Maximum time step size");
+  //From (Denner, 2014), amplification factor can be at most 1.91 for stability. 
+  pl->set<double>("Amplification Factor" , 1.75   , "Amplification factor");
+  pl->set<double>("Reduction Factor"     , 0.5    , "Reduction factor");
+  //FIXME? may need to modify default values of monitoring function 
+  pl->set<double>("Minimum Value Monitoring Function" , 1.0e-6      , "Min value eta");
+  pl->set<double>("Maximum Value Monitoring Function" , 1.0e-1      , "Max value eta");
   pl->set<int>   ("Minimum Order", 0,
     "Minimum time-integration order.  If set to zero (default), the\n"
     "Stepper minimum order is used.");
@@ -485,7 +568,7 @@ TimeStepControl<Scalar>::getValidParameters() const
     "'Integrator Step Type' indicates whether the Integrator will allow "
     "the time step to be modified.\n"
     "  'Constant' - Integrator will take constant time step sizes.\n"
-    "  'Variable' - Integrator will allow changes to the time step size.\n");
+    "  'Variable' - Integrator will allow changes to the time step size.\n"); 
 
   pl->set<std::string>("Output Time List", "",
     "Comma deliminated list of output times");
