@@ -603,8 +603,10 @@ namespace MueLu {
             {
               SubFactoryMonitor m1(*this, "Import construction", currentLevel);
               if (blkSize == 1 && A->getCrsGraph()->getImporter() != Teuchos::null) {
+                GetOStream(Warnings1) << "Using existing importer from matrix graph" << std::endl;
                 importer = A->getCrsGraph()->getImporter();
               } else {
+                GetOStream(Warnings0) << "Constructing new importer instance" << std::endl;
                 importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
               }
             } //subtimer
