@@ -243,7 +243,7 @@ takeStep(
   if (reuse_solver_ && stateStepper_->getSolver() != Teuchos::null)
     fsa_model_->setSolver(stateStepper_->getSolver(), force_W_update_);
 
-  // Take step in senstivity equations
+  // Take step in sensitivity equations
   sensSolutionHistory_->initWorkingState();
   RCP<SolutionState<Scalar> > sens_state =
     sensSolutionHistory_->getWorkingState();
