@@ -57,6 +57,13 @@ public:
 
   DOFDiv(const Teuchos::ParameterList& p);
 
+  /** \brief Ctor
+    *
+    * \param[in] input Tag that corresponds to the input DOF field (sized according to bd)
+    * \param[in] output Tag that corresponds to the output field (sized according the id)
+    * \param[in] bd Basis being used
+    * \param[in] id Integration rule used
+    */
   DOFDiv(const PHX::Tag<typename EvalT::ScalarT> & input,
          const PHX::Tag<typename EvalT::ScalarT> & output,
          const panzer::BasisDescriptor & bd,

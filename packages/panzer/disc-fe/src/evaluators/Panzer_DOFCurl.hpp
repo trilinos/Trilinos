@@ -57,6 +57,14 @@ public:
 
   DOFCurl(const Teuchos::ParameterList& p);
 
+  /** \brief Ctor
+    *
+    * \param[in] input Tag that corresponds to the input DOF field (sized according to bd)
+    * \param[in] output Tag that corresponds to the output field (sized according to bd and the basis_dim)
+    * \param[in] bd Basis being differentiated
+    * \param[in] id Integration rule used
+    * \param[in] basis_dim Spatial dimension, used to choose the rank of the output field
+    */
   DOFCurl(const PHX::Tag<typename EvalT::ScalarT> & input,
           const PHX::Tag<typename EvalT::ScalarT> & output,
           const panzer::BasisDescriptor & bd,
