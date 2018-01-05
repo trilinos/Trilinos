@@ -610,6 +610,7 @@ getValidParameters() const
     pl->set("Accept model parameters", false);
     pl->set("Provide nominal values", true);
     pl->set("Use DfDp as Tangent", false);
+    pl->set<std::string>("Output File Name", "Tempus_BDF2_SinCos");
     Teuchos::setDoubleParameter(
         "Coeff a", 0.0, "Coefficient a in model", &*pl);
     Teuchos::setDoubleParameter(
