@@ -283,12 +283,20 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     // Plot sample solution and exact solution
     if (n == 0) {
       std::ofstream ftmp(output_file_name);
+      //Warning: the following assumes serial run 
+      FILE *gold_file = fopen("Tempus_BDF2_SinCos_AdaptDt_gold.dat", "r");
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
+        char time_gold_char[100];
+        fgets(time_gold_char, 100, gold_file); 
+        double time_gold; 
+        sscanf(time_gold_char, "%lf", &time_gold);
         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
+        //Throw error if time does not match time in gold file to specified tolerance
+        TEST_ASSERT(abs(time-time_gold) < 1e-5); 
         RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
         x_exact_plot = model->getExactSolution(time).get_x();
         ftmp << time << "   "
