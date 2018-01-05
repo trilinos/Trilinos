@@ -469,6 +469,19 @@ void TimeStepControl<Scalar>::setParameterList(
     << "  'Constant' - Integrator will take constant time step sizes.\n"
     << "  'Variable' - Integrator will allow changes to the time step size.\n"
     << "  stepType = " << getStepType()  << "\n");
+      
+  TEUCHOS_TEST_FOR_EXCEPTION(getAmplFactor() <= 1.0, std::out_of_range,
+        "Error - Invalid value of Amplification Factor = " << getAmplFactor() << "!  \n" 
+        << "Amplification Factor must be > 1.0.\n"); 
+      
+  TEUCHOS_TEST_FOR_EXCEPTION(getReductFactor() >= 1.0, std::out_of_range,
+        "Error - Invalid value of Reduction Factor = " << getReductFactor() << "!  \n" 
+        << "Reduction Factor must be < 1.0.\n"); 
+   
+  TEUCHOS_TEST_FOR_EXCEPTION(getMinEta() > getMaxEta(), std::out_of_range,
+        "Error - Invalid values of 'Minimum Value Monitoring Function' = " 
+        << getMinEta() << "\n and 'Maximum Value Monitoring Function' = " 
+        << getMaxEta() <<"! \n Mininum Value cannot be > Maximum Value! \n");
 
   // Parse output times
   {
@@ -549,7 +562,9 @@ TimeStepControl<Scalar>::getValidParameters() const
   //From (Denner, 2014), amplification factor can be at most 1.91 for stability. 
   pl->set<double>("Amplification Factor" , 1.75   , "Amplification factor");
   pl->set<double>("Reduction Factor"     , 0.5    , "Reduction factor");
-  //FIXME? may need to modify default values of monitoring function 
+  //FIXME? may need to modify default values of monitoring function
+  //IKT, 1/5/17: from (Denner, 2014), it seems a reasonable choice for eta_min is 0.1*eta_max
+  //Numerical tests confirm this. TODO: Change default value of eta_min to 1.0e-2? 
   pl->set<double>("Minimum Value Monitoring Function" , 1.0e-6      , "Min value eta");
   pl->set<double>("Maximum Value Monitoring Function" , 1.0e-1      , "Max value eta");
   pl->set<int>   ("Minimum Order", 0,

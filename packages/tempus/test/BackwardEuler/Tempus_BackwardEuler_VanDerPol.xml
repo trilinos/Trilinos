@@ -41,7 +41,7 @@
         <Parameter name="Integrator Step Type"  type="string" value="Variable"/>
         <Parameter name="Reduction Factor" type="double" value="0.5"/>
         <Parameter name="Amplification Factor" type="double" value="1.75"/>
-        <Parameter name="Minimum Value Monitoring Function" type="double" value="1.0e-6"/>
+        <Parameter name="Minimum Value Monitoring Function" type="double" value="5.0e-2"/>
         <Parameter name="Maximum Value Monitoring Function" type="double" value="5.0e-1"/>
       </ParameterList>
     </ParameterList>
