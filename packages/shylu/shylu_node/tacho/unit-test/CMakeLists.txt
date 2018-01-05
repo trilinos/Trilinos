@@ -50,8 +50,34 @@ IF(Kokkos_ENABLE_OpenMP)
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "  FAILED  "
   )
+
+  # TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  #   Tacho_TestOpenMP_dcomplex
+  #   NOEXEPREFIX
+  #   SOURCES Tacho_TestOpenMP_dcomplex.cpp
+  #   ARGS PrintItAll
+  #   NUM_MPI_PROCS 1
+  #   FAIL_REGULAR_EXPRESSION "  FAILED  "
+  # )
+
 ENDIF()
 
 IF(Kokkos_ENABLE_Cuda)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tacho_TestCuda_double
+    NOEXEPREFIX
+    SOURCES Tacho_TestCuda_double.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    FAIL_REGULAR_EXPRESSION "  FAILED  "
+  )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tacho_TestCuda_dcomplex
+    NOEXEPREFIX
+    SOURCES Tacho_TestCuda_dcomplex.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    FAIL_REGULAR_EXPRESSION "  FAILED  "
+  )
 ENDIF()

@@ -4,15 +4,26 @@
 #include <impl/Kokkos_Timer.hpp>
 
 typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
-typedef Kokkos::Serial DeviceSpaceType;
+typedef Kokkos::Cuda DeviceSpaceType;
 typedef double ValueType;
 typedef double MagnitudeType;
 
 static const std::string MM_TEST_FILE="test_double";
 
-#define __TACHO_TEST_SERIAL__
+#define __TACHO_TEST_CUDA__
 #include "ShyLU_NodeTacho_config.h"
-#include "Tacho_Test.hpp"
+//#include "Tacho_Test.hpp"
+
+//#include "Tacho_TestCrsMatrixBase.hpp"
+//#include "Tacho_TestGraph.hpp"
+//#include "Tacho_TestSymbolic.hpp"
+//#include "Tacho_TestNumeric.hpp"
+//#include "Tacho_TestTaskFunctor.hpp"
+
+//#include "Tacho_TestDenseMatrixView.hpp"
+//#include "Tacho_TestDenseByBlocks.hpp"
+
+#include "Tacho_TestDenseLinearAlgebra.hpp"
 
 using namespace Tacho::Experimental;
 
