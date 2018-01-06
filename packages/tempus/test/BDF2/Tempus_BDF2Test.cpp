@@ -33,7 +33,7 @@
 #include <sstream>
 #include <vector>
 
-//IKT, 11/20/17: comment out any of the following 
+//IKT, 11/20/17: comment out any of the following
 //if you wish not to build/run all the test cases.
 #define TEST_CDR
 #define TEST_SINCOS
@@ -102,7 +102,7 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
-   
+
   // Read params from .xml file
   RCP<ParameterList> pList = getParametersFromXmlFile("Tempus_BDF2_SinCos.xml");
   //Set initial time step = 2*dt specified in input file (for convergence study)
@@ -114,11 +114,11 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
 
   // Setup the SinCosModel
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-  const int nTimeStepSizes = scm_pl->get<int>("Number of Time Step Sizes", 7); 
-  std::string output_file_string = 
+  const int nTimeStepSizes = scm_pl->get<int>("Number of Time Step Sizes", 7);
+  std::string output_file_string =
                     scm_pl->get<std::string>("Output File Name", "Tempus_BDF2_SinCos");
-  std::string output_file_name = output_file_string + ".dat";  
-  std::string err_out_file_name = output_file_string + "-Error.dat"; 
+  std::string output_file_name = output_file_string + ".dat";
+  std::string err_out_file_name = output_file_string + "-Error.dat";
   double order = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {
 
@@ -200,8 +200,7 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos)
     std::cout << "  =========================" << std::endl;
     TEST_FLOATING_EQUALITY( slope, order, 0.01 );
   }
-  //IKT, FIXME: check what the following should be for BDF2 and reactivate! 
-  //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.00778269, 1.0e-4 );
 
   std::ofstream ftmp(err_out_file_name);
   double error0 = 0.8*ErrorNorm[0];
@@ -220,11 +219,11 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
 {
   std::vector<double> StepSize;
   std::vector<double> ErrorNorm;
-   
+
   // Read params from .xml file
-  RCP<ParameterList> pList = getParametersFromXmlFile("Tempus_BDF2_SinCos_AdaptDt.xml");
+  RCP<ParameterList> pList =
+    getParametersFromXmlFile("Tempus_BDF2_SinCos_AdaptDt.xml");
   //Set initial time step = 2*dt specified in input file (for convergence study)
-  //
   RCP<ParameterList> pl = sublist(pList, "Tempus", true);
   double dt = pl->sublist("Default Integrator")
        .sublist("Time Step Control").get<double>("Initial Time Step");
@@ -232,11 +231,11 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
 
   // Setup the SinCosModel
   RCP<ParameterList> scm_pl = sublist(pList, "SinCosModel", true);
-  const int nTimeStepSizes = scm_pl->get<int>("Number of Time Step Sizes", 7); 
-  std::string output_file_string = 
-                    scm_pl->get<std::string>("Output File Name", "Tempus_BDF2_SinCos");
-  std::string output_file_name = output_file_string + ".dat";  
-  std::string err_out_file_name = output_file_string + "-Error.dat"; 
+  const int nTimeStepSizes = scm_pl->get<int>("Number of Time Step Sizes", 7);
+  std::string output_file_string =
+    scm_pl->get<std::string>("Output File Name", "Tempus_BDF2_SinCos");
+  std::string output_file_name = output_file_string + ".dat";
+  std::string err_out_file_name = output_file_string + "-Error.dat";
   double order = 0.0;
   for (int n=0; n<nTimeStepSizes; n++) {
 
@@ -252,7 +251,18 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Default Integrator")
-       .sublist("Time Step Control").set("Initial Time Step", dt);
+       .sublist("Time Step Control").set("Initial Time Step", dt/4.0);
+    // Ensure time step does not get larger than the initial time step size,
+    // as that would mess up the convergence rates.
+    pl->sublist("Default Integrator")
+       .sublist("Time Step Control").set("Maximum Time Step", dt);
+    // Ensure time step does not get too small and therefore too many steps.
+    pl->sublist("Default Integrator")
+       .sublist("Time Step Control").set("Minimum Time Step", dt/4.0);
+    // For the SinCos problem eta is directly related to dt
+    pl->sublist("Default Integrator")
+       .sublist("Time Step Control")
+       .set("Minimum Value Monitoring Function", dt*0.99);
     RCP<Tempus::IntegratorBasic<double> > integrator =
        Tempus::integratorBasic<double>(pl, model);
     order = integrator->getStepper()->getOrder();
@@ -283,20 +293,20 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     // Plot sample solution and exact solution
     if (n == 0) {
       std::ofstream ftmp(output_file_name);
-      //Warning: the following assumes serial run 
+      //Warning: the following assumes serial run
       FILE *gold_file = fopen("Tempus_BDF2_SinCos_AdaptDt_gold.dat", "r");
       RCP<const SolutionHistory<double> > solutionHistory =
         integrator->getSolutionHistory();
       RCP<const Thyra::VectorBase<double> > x_exact_plot;
       for (int i=0; i<solutionHistory->getNumStates(); i++) {
         char time_gold_char[100];
-        fgets(time_gold_char, 100, gold_file); 
-        double time_gold; 
+        fgets(time_gold_char, 100, gold_file);
+        double time_gold;
         sscanf(time_gold_char, "%lf", &time_gold);
         RCP<const SolutionState<double> > solutionState = (*solutionHistory)[i];
         double time = solutionState->getTime();
         //Throw error if time does not match time in gold file to specified tolerance
-        TEST_ASSERT(abs(time-time_gold) < 1e-5); 
+        TEST_FLOATING_EQUALITY( time, time_gold, 1.0e-5 );
         RCP<const Thyra::VectorBase<double> > x_plot = solutionState->getX();
         x_exact_plot = model->getExactSolution(time).get_x();
         ftmp << time << "   "
@@ -324,10 +334,9 @@ TEUCHOS_UNIT_TEST(BDF2, SinCosAdapt)
     std::cout << "  Expected order: " << order << std::endl;
     std::cout << "  Observed order: " << slope << std::endl;
     std::cout << "  =========================" << std::endl;
-    TEST_FLOATING_EQUALITY( slope, order, 0.01 );
+    TEST_FLOATING_EQUALITY( slope, 1.95089, 0.01 );
   }
-  //IKT, FIXME: check what the following should be for BDF2 and reactivate! 
-  //TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0486418, 1.0e-4 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.000197325, 1.0e-4 );
 
   std::ofstream ftmp(err_out_file_name);
   double error0 = 0.8*ErrorNorm[0];
@@ -366,7 +375,7 @@ TEUCHOS_UNIT_TEST(BDF2, CDR)
   dt *= 2.0;
   RCP<ParameterList> model_pl = sublist(pList, "CDR Model", true);
 
-  const int nTimeStepSizes = model_pl->get<int>("Number of Time Step Sizes", 5); 
+  const int nTimeStepSizes = model_pl->get<int>("Number of Time Step Sizes", 5);
   double order = 0.0;
 
   for (int n=0; n<nTimeStepSizes; n++) {
@@ -540,7 +549,7 @@ TEUCHOS_UNIT_TEST(BDF2, VanDerPol)
   dt *= 2.0;
 
   RCP<ParameterList> vdpm_pl = sublist(pList, "VanDerPolModel", true);
-  const int nTimeStepSizes = vdpm_pl->get<int>("Number of Time Step Sizes", 3); 
+  const int nTimeStepSizes = vdpm_pl->get<int>("Number of Time Step Sizes", 3);
   //const int nTimeStepSizes = 5;
   double order = 0.0;
 

@@ -141,7 +141,7 @@ public:
         metaData_nc_->setOrder(order); }
 
     virtual Status getSolutionStatus() const
-      {return metaData_->getSolutionStatus();};
+      { return metaData_->getSolutionStatus(); }
 
     virtual bool getOutput() const {return metaData_->getOutput();}
     virtual void setOutput(bool output)

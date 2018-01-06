@@ -454,7 +454,7 @@ void IntegratorBasic<Scalar>::startTimeStep()
   std::vector<int>::const_iterator it =
     std::find(outputScreenIndices_.begin(),
               outputScreenIndices_.end(),
-              wsmd->getIStep()+1);
+              wsmd->getIStep());
   if (it == outputScreenIndices_.end())
     wsmd->setOutputScreen(false);
   else

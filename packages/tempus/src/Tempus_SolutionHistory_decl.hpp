@@ -22,7 +22,7 @@
 namespace Tempus {
 
 enum StorageType {
-  STORAGE_TYPE_INVALID     = 0,  ///< Invalid storgae type
+  STORAGE_TYPE_INVALID     = 0,  ///< Invalid storage type
   STORAGE_TYPE_KEEP_NEWEST = 1,  ///< Keep the single newest state
   STORAGE_TYPE_UNDO        = 2,  ///< Keep the 2 newest states for undo
   STORAGE_TYPE_STATIC      = 3,  ///< Keep a fix number of states
@@ -51,11 +51,73 @@ enum StorageType {
  *     - Interpolated SolutionStates may not be suitable for adjoint
  *       solutions, restart, or undo operations (see SolutionState).
  *
- *  Rules of thumb for the minimum storage limit:
+ *  There are two sets of indices associated with SolutionHistory:
+ *  timestep index and the SolutionHistory index.  Users are interested
+ *  in the timestep index as it indicates the solution increment, e.g.,
+ *  \f$[x^0, ... , x^{n-2}, x^{n-1}, x^{n}]\f$, where \f$n\f$ is the timestep
+ *  index.  While developers can also be interested in the SolutionHistory
+ *  index to access the correct SolutionState in the SolutionHistory, e.g.,
+ *  \f$[S^0, ... , S^{M-1}]\f$, where \f$M\f$ is the number of SolutionStates
+ *  in the SolutionHistory (1 \f$\le M \le\f$ StorageLimit_).
+ *
+ *  SolutionHistory will hold upto the StorageLimit_ number of states.
+ *  Rules of thumb for the <b>minimum</b> storage limit:
  *   - Explicit one-step methods can update the solution state in-place
  *     --> StorageLimit_ = 1.
  *   - Implicit one-step methods need two solution states --> StorageLimit_ = 2.
  *   - MultiStep methods require k past solution states --> StorageLimit_ = k+1.
+ *
+ *  The states contained in the SolutionHistory will often be the last
+ *  \f$M\f$ states for forward time integration, e.g.,
+ *  \f$[S^0(x^{n-M+1}), ... , S^{M-3}(x^{n-2}), S^{M-2}(x^{n-1}),
+ *      S^{M-1}(x^{n})]\f$, but this is not guaranteed.
+ *  For example, during transient adjoint sensitivity calculations, not
+ *  all the forward states can be stored and therefore will be recalculated.
+ *  Thus intermediate states are kept to reduce recomputation costs, i.e.,
+ *  so one does not recalculate from the initial conditions to the desired time.
+ *  This means the states in the SolutionHistory may not have consecutive
+ *  timestep indices, e.g., \f$[..., S^{M-4}(x^{n-200}), S^{M-3}(x^{n-100}),
+ *  S^{M-2}(x^{n-1}), S^{M-1}(x^{n})]\f$.
+ *
+ *  The SolutionHistory is kept in chronological order, starting with the
+ *  oldest state and ending with the latest.
+ *
+ *  The "current" state is the latest solution that has been successfully
+ *  solved.  The solution from the last successful time step or the initial
+ *  conditions.
+ *
+ *  The "working" state is the state which is being worked on.  It is valid
+ *  from initialization (e.g., copied from the "current" state), during the
+ *  the timestep, and until it is accepted and promoted to the new "current"
+ *  state.  Between the promotion and the initialization, the workingState_
+ *  is invalid (i.e., Teuchos::null).  If the timestep fails, the
+ *  workingState_ is maintained, and the timestep is retried until the
+ *  Integrator declares a successful timestep or the time integration is a
+ *  failure.  The SolutionHistory indices associated with the currentState_
+ *  and the workingState_ vary during the time step loop, and are
+ *  <table>
+ *  <tr><th> Loop Portion <th> currentState_ <th> workingState_
+ *  <tr><td> Before initializing working state
+ *      <td> PASS -> \f$M\f$-1 <br>
+ *           FAIL -> \f$M\f$-2
+ *      <td> PASS -> Invalid <br>
+ *           FAIL -> \f$M\f$-1
+ *  <tr><td> After initializing working state <br>
+ *           During timestep <br>
+ *           Before accepting timestep
+ *      <td> \f$M\f$-2
+ *      <td> \f$M\f$-1
+ *  <tr><td> After accepting timestep
+ *      <td> PASS -> \f$M\f$-1 <br>
+ *           FAIL -> \f$M\f$-2
+ *      <td> PASS -> Invalid <br>
+ *           FAIL -> \f$M\f$-1
+ *  </table>
+ *  Initial conditions are considered PASSing, which sets up the loop.
+ *  The difference between the currentState_ timestep index and the
+ *  workingState_ timestep index is guaranteed to be one (except for when
+ *  StorageLimit_ = 1, i.e., explicit one-step methods that can update
+ *  the solution in-place).
  */
 template<class Scalar>
 class SolutionHistory
@@ -107,6 +169,12 @@ public:
 
   /// \name Accessor methods
   //@{
+    /// Get this SolutionHistory's name
+    std::string getName() const {return name_;}
+
+    /// Set this SolutionHistory's name
+    void setName(std::string name) {name_ = name;}
+
     /// Get underlining history
     Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > >
       getHistory() const {return history_;}
@@ -134,9 +202,9 @@ public:
     /// Return the current state, i.e., the last accepted state
     Teuchos::RCP<SolutionState<Scalar> > getCurrentState() const
     {
-      const int n = history_->size();
-      return (workingState_ == Teuchos::null or n == 1) ? (*history_)[n-1]
-                                                        : (*history_)[n-2];
+      const int m = history_->size();
+      return (workingState_ == Teuchos::null or m == 1) ? (*history_)[m-1]
+                                                        : (*history_)[m-2];
     }
 
     /// Return the working state
@@ -149,7 +217,7 @@ public:
     /// Get the current time
     Scalar getCurrentTime() const {return getCurrentState()->getTime();}
 
-    /// Get the current index
+    /// Get the current timestep index
     int getCurrentIndex() const {return getCurrentState()->getIndex();}
 
     /// Set the maximum storage of this history
@@ -166,6 +234,18 @@ public:
 
     /// Return the current maximum time of the SolutionStates
     Scalar maxTime() const {return (history_->back())->getTime();}
+
+    /// Get the state with timestep index equal to n
+    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexN() const;
+
+    /// Get the state with timestep index equal to n-1
+    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexNM1() const;
+
+    /// Get the state with timestep index equal to n-2
+    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexNM2() const;
+
+    /// Get the state with timestep index equal to "index"
+    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndex(int index) const;
   //@}
 
   /// \name Overridden from Teuchos::ParameterListAcceptor
@@ -195,6 +275,7 @@ public:
 
 protected:
 
+  std::string                               name_;
   Teuchos::RCP<Teuchos::ParameterList>      shPL_;
   Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history_;
   Teuchos::RCP<Interpolator<Scalar> >       interpolator_;

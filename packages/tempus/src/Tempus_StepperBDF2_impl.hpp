@@ -262,11 +262,8 @@ void StepperBDF2<Scalar>::takeStep(
     const Scalar dt    = workingState->getTimeStep();
     const Scalar dtOld = currentState->getTimeStep();
 
-    //IKT, FIXME: the following should be changed once CO adds
-    //methods to obtain past SolutionStates, e.g., getNM1State().
-    //get previous 2 states
-    xOld = (*solutionHistory)[numStates-2]->getX();
-    xOldOld = (*solutionHistory)[numStates-3]->getX();
+    xOld    = solutionHistory->getStateTimeIndexNM1()->getX();
+    xOldOld = solutionHistory->getStateTimeIndexNM2()->getX();
     order_ = 2.0;
 
     const Scalar alpha = (1.0/(dt + dtOld))*(1.0/dt)*(2.0*dt + dtOld);
