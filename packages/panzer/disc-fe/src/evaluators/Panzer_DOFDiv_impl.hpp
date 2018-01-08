@@ -117,8 +117,8 @@ DOFDiv(const Teuchos::ParameterList & p) :
 //**********************************************************************
 template<typename EvalT, typename TRAITS>                   
 DOFDiv<EvalT, TRAITS>::
-DOFDiv(const PHX::Tag<typename EvalT::ScalarT> & input,
-       const PHX::Tag<typename EvalT::ScalarT> & output,
+DOFDiv(const PHX::FieldTag & input,
+       const PHX::FieldTag & output,
        const panzer::BasisDescriptor & bd,
        const panzer::IntegrationDescriptor & id)
   : use_descriptors_(true)
@@ -212,8 +212,8 @@ DOFDiv(const Teuchos::ParameterList & p) :
 //**********************************************************************
 template<typename TRAITS>                   
 DOFDiv<panzer::Traits::Jacobian, TRAITS>::
-DOFDiv(const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & input,
-       const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & output,
+DOFDiv(const PHX::FieldTag & input,
+       const PHX::FieldTag & output,
        const panzer::BasisDescriptor & bd,
        const panzer::IntegrationDescriptor & id)
   : use_descriptors_(true)

@@ -64,9 +64,9 @@ namespace panzer {
 PANZER_EVALUATOR_CLASS(Integrator_CurlBasisDotVector)
 public:
 
-  Integrator_CurlBasisDotVector(const PHX::Tag<typename EvalT::ScalarT> & input,
-                                const PHX::Tag<typename EvalT::ScalarT> & output,
-                                const std::vector<PHX::Tag<typename EvalT::ScalarT>> & multipliers,
+  Integrator_CurlBasisDotVector(const PHX::FieldTag & input,
+                                const PHX::FieldTag & output,
+                                const std::vector<PHX::FieldTag> & multipliers,
                                 double multiplier,
                                 const panzer::BasisDescriptor & bd,
                                 const panzer::IntegrationDescriptor & id,

@@ -100,8 +100,8 @@ DOF(const Teuchos::ParameterList & p) :
 //**********************************************************************
 template<typename EvalT, typename TRAITS>                   
 DOF<EvalT, TRAITS>::
-DOF(const PHX::Tag<typename EvalT::ScalarT> & input,
-    const PHX::Tag<typename EvalT::ScalarT> & output,
+DOF(const PHX::FieldTag & input,
+    const PHX::FieldTag & output,
     const panzer::BasisDescriptor & bd,
     const panzer::IntegrationDescriptor & id)
   : use_descriptors_(true)
@@ -236,8 +236,8 @@ DOF(const Teuchos::ParameterList & p) :
 //**********************************************************************
 template<typename TRAITS>                   
 DOF<typename TRAITS::Jacobian, TRAITS>::
-DOF(const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & input,
-    const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & output,
+DOF(const PHX::FieldTag & input,
+    const PHX::FieldTag & output,
     const panzer::BasisDescriptor & bd,
     const panzer::IntegrationDescriptor & id)
   : use_descriptors_(true)
