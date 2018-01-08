@@ -64,8 +64,8 @@ public:
     * \param[in] bd Basis being used
     * \param[in] id Integration rule used
     */
-  DOFDiv(const PHX::Tag<typename EvalT::ScalarT> & input,
-         const PHX::Tag<typename EvalT::ScalarT> & output,
+  DOFDiv(const PHX::FieldTag & input,
+         const PHX::FieldTag & output,
          const panzer::BasisDescriptor & bd,
          const panzer::IntegrationDescriptor & id);
 
@@ -98,8 +98,8 @@ public:
 
   DOFDiv(const Teuchos::ParameterList& p);
 
-  DOFDiv(const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & input,
-         const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & output,
+  DOFDiv(const PHX::FieldTag & input,
+         const PHX::FieldTag & output,
          const panzer::BasisDescriptor & bd,
          const panzer::IntegrationDescriptor & id);
 

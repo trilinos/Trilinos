@@ -110,8 +110,8 @@ PHX_EVALUATOR_CTOR(DOFGradient,p) :
 //**********************************************************************
 template<typename EvalT, typename TRAITS>                   
 DOFGradient<EvalT, TRAITS>::
-DOFGradient(const PHX::Tag<typename EvalT::ScalarT> & input,
-            const PHX::Tag<typename EvalT::ScalarT> & output,
+DOFGradient(const PHX::FieldTag & input,
+            const PHX::FieldTag & output,
             const panzer::BasisDescriptor & bd,
             const panzer::IntegrationDescriptor & id)
   : use_descriptors_(true)

@@ -356,8 +356,8 @@ DOFCurl(const Teuchos::ParameterList & p) :
 //**********************************************************************
 template<typename EvalT, typename TRAITS>                   
 DOFCurl<EvalT, TRAITS>::
-DOFCurl(const PHX::Tag<typename EvalT::ScalarT> & input,
-        const PHX::Tag<typename EvalT::ScalarT> & output,
+DOFCurl(const PHX::FieldTag & input,
+        const PHX::FieldTag & output,
         const panzer::BasisDescriptor & bd,
         const panzer::IntegrationDescriptor & id,
         int basis_dim)
@@ -489,8 +489,8 @@ DOFCurl(const Teuchos::ParameterList & p) :
 //**********************************************************************
 template<typename TRAITS>                   
 DOFCurl<typename TRAITS::Jacobian, TRAITS>::
-DOFCurl(const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & input,
-        const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & output,
+DOFCurl(const PHX::FieldTag & input,
+        const PHX::FieldTag & output,
         const panzer::BasisDescriptor & bd,
         const panzer::IntegrationDescriptor & id,
         int basis_dim)

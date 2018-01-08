@@ -65,8 +65,8 @@ public:
     * \param[in] id Integration rule used
     * \param[in] basis_dim Spatial dimension, used to choose the rank of the output field
     */
-  DOFCurl(const PHX::Tag<typename EvalT::ScalarT> & input,
-          const PHX::Tag<typename EvalT::ScalarT> & output,
+  DOFCurl(const PHX::FieldTag & input,
+          const PHX::FieldTag & output,
           const panzer::BasisDescriptor & bd,
           const panzer::IntegrationDescriptor & id,
           int basis_dim);
@@ -103,8 +103,8 @@ public:
 
   DOFCurl(const Teuchos::ParameterList& p);
 
-  DOFCurl(const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & input,
-          const PHX::Tag<panzer::Traits::Jacobian::ScalarT> & output,
+  DOFCurl(const PHX::FieldTag & input,
+          const PHX::FieldTag & output,
           const panzer::BasisDescriptor & bd,
           const panzer::IntegrationDescriptor & id,
           int basis_dim);

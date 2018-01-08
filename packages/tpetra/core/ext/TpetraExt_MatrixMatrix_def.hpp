@@ -2773,6 +2773,11 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
     }
   }
 
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM2= Teuchos::null; 
+  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Reuse ESFC"))));
+#endif
+
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
 }
 
@@ -3209,7 +3214,6 @@ void jacobi_A_B_reuse(
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef Scalar            SC;
   typedef LocalOrdinal      LO;
   typedef GlobalOrdinal     GO;
   typedef Node              NO;
@@ -3217,98 +3221,161 @@ void jacobi_A_B_reuse(
   typedef Import<LO,GO,NO>  import_type;
   typedef Map<LO,GO,NO>     map_type;
 
+  // Kokkos typedefs
+  typedef typename map_type::local_map_type local_map_type;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename KCRS::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::non_const_type lno_view_t;
+  typedef typename NO::execution_space execution_space;
+  typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+  typedef Kokkos::View<LO*, typename lno_view_t::array_layout, typename lno_view_t::device_type> lo_view_t;
+
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
   using Teuchos::TimeMonitor;
   RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse Cmap"))));
 #endif
-  size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
-  // Build the final importer / column map, hash table lookups for C
+  // Grab all the maps
   RCP<const import_type> Cimport = C.getGraph()->getImporter();
   RCP<const map_type>    Ccolmap = C.getColMap();
+  local_map_type Acolmap_local = Aview.colMap->getLocalMap();
+  local_map_type Browmap_local = Bview.origMatrix->getRowMap()->getLocalMap();
+  local_map_type Irowmap_local;  if(!Bview.importMatrix.is_null()) Irowmap_local = Bview.importMatrix->getRowMap()->getLocalMap();
+  local_map_type Bcolmap_local = Bview.origMatrix->getColMap()->getLocalMap();
+  local_map_type Icolmap_local;  if(!Bview.importMatrix.is_null()) Icolmap_local = Bview.importMatrix->getColMap()->getLocalMap();
+  local_map_type Ccolmap_local = Ccolmap->getLocalMap();
 
-  Array<LO> Bcol2Ccol(Bview.colMap->getNodeNumElements()), Icol2Ccol;
-
-  if (Bview.importMatrix.is_null()) {
-    // Bcol2Ccol is trivial
-    // This is possible. This situation is different from mult_A_B_reuse, as we
-    // always add B
-    for (size_t i = 0; i < Bview.colMap->getNodeNumElements(); i++)
-      Bcol2Ccol[i] = Teuchos::as<LO>(i);
-
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
-      std::runtime_error, "Tpetra:Jacobi Import setUnion messed with the DomainMap in an unfortunate way");
-
-    // NOTE: This is not efficient and should be folded into setUnion
-    Icol2Ccol.resize(Bview.importMatrix->getColMap()->getNodeNumElements());
-    ArrayView<const GO> Bgid = Bview.origMatrix->getColMap()->getNodeElementList();
-    ArrayView<const GO> Igid = Bview.importMatrix->getColMap()->getNodeElementList();
-
-    for (size_t i = 0; i < Bview.origMatrix->getColMap()->getNodeNumElements(); i++)
-      Bcol2Ccol[i] = Ccolmap->getLocalElement(Bgid[i]);
-    for (size_t i = 0; i < Bview.importMatrix->getColMap()->getNodeNumElements(); i++)
-      Icol2Ccol[i] = Ccolmap->getLocalElement(Igid[i]);
-  }
-
-#ifdef HAVE_TPETRA_MMM_TIMINGS
-  MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse SerialCore"))));
-#endif
-
-  // Sizes
-  size_t m = Aview.origMatrix->getNodeNumRows();
-  size_t n = Ccolmap->getNodeNumElements();
-
-  // Get Data Pointers
-  ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP, Crowptr_RCP;
-  ArrayRCP<const LO>     Acolind_RCP, Bcolind_RCP, Icolind_RCP, Ccolind_RCP;
-  ArrayRCP<const SC>     Avals_RCP,   Bvals_RCP,   Ivals_RCP,   Cvals_RCP,   Dvals_RCP;
-
-  Aview.origMatrix->getAllValues(Arowptr_RCP, Acolind_RCP, Avals_RCP);
-  Bview.origMatrix->getAllValues(Browptr_RCP, Bcolind_RCP, Bvals_RCP);
-  if (!Bview.importMatrix.is_null())
-    Bview.importMatrix->getAllValues(Irowptr_RCP, Icolind_RCP, Ivals_RCP);
-  C.getAllValues(Crowptr_RCP, Ccolind_RCP, Cvals_RCP);
-  Dvals_RCP = Dinv.getData();
-
-  // For efficiency
-  ArrayView<const size_t>   Arowptr, Browptr, Irowptr, Crowptr;
-  ArrayView<const LO>       Acolind, Bcolind, Icolind, Ccolind;
-  ArrayView<const SC>       Avals, Bvals, Ivals;
-  ArrayView<SC>             Cvals;
-  ArrayView<const SC>       Dvals;
-  Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
-  Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
-  if (!Bview.importMatrix.is_null()) {
-    Irowptr = Irowptr_RCP(); Icolind = Icolind_RCP(); Ivals = Ivals_RCP();
-  }
-  Crowptr = Crowptr_RCP();  Ccolind = Ccolind_RCP();  Cvals = (Teuchos::arcp_const_cast<SC>(Cvals_RCP))();
-  Dvals = Dvals_RCP();
-
-  // Run through all the hash table lookups once and for all
-  Array<LO> targetMapToOrigRow  (Aview.colMap->getNodeNumElements(), LO_INVALID);
-  Array<LO> targetMapToImportRow(Aview.colMap->getNodeNumElements(), LO_INVALID);
-
-  for (LO i = Aview.colMap->getMinLocalIndex(); i <= Aview.colMap->getMaxLocalIndex(); i++) {
-    LO B_LID = Bview.origMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-    if (B_LID != LO_INVALID) {
-      targetMapToOrigRow[i] = B_LID;
-    } else {
-      LO I_LID = Bview.importMatrix->getRowMap()->getLocalElement(Aview.colMap->getGlobalElement(i));
-      targetMapToImportRow[i] = I_LID;
+  // Build the final importer / column map, hash table lookups for C
+  lo_view_t Bcol2Ccol(Kokkos::ViewAllocateWithoutInitializing("Bcol2Ccol"),Bview.colMap->getNodeNumElements()), Icol2Ccol;
+  {
+    // Bcol2Col may not be trivial, as Ccolmap is compressed during fillComplete in newmatrix
+    // So, column map of C may be a strict subset of the column map of B
+    Kokkos::parallel_for(range_type(0,Bview.origMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+        Bcol2Ccol(i) = Ccolmap_local.getLocalElement(Bcolmap_local.getGlobalElement(i));
+      });
+    
+    if (!Bview.importMatrix.is_null()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(!Cimport->getSourceMap()->isSameAs(*Bview.origMatrix->getDomainMap()),
+                                 std::runtime_error, "Tpetra::Jacobi: Import setUnion messed with the DomainMap in an unfortunate way");
+      
+      Tpetra::MatrixMatrix::Kokkos_resize_1DView(Icol2Ccol,Bview.importMatrix->getColMap()->getNodeNumElements());
+      Kokkos::parallel_for(range_type(0,Bview.importMatrix->getColMap()->getNodeNumElements()),KOKKOS_LAMBDA(const LO i) {
+          Icol2Ccol(i) = Ccolmap_local.getLocalElement(Icolmap_local.getGlobalElement(i));
+        });
     }
   }
 
+  // Run through all the hash table lookups once and for all
+  lo_view_t targetMapToOrigRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToOrigRow"),Aview.colMap->getNodeNumElements());
+  lo_view_t targetMapToImportRow(Kokkos::ViewAllocateWithoutInitializing("targetMapToImportRow"),Aview.colMap->getNodeNumElements());
+  Kokkos::parallel_for(range_type(Aview.colMap->getMinLocalIndex(), Aview.colMap->getMaxLocalIndex()+1),KOKKOS_LAMBDA(const LO i) {
+      GO aidx = Acolmap_local.getGlobalElement(i);
+      LO B_LID = Browmap_local.getLocalElement(aidx);
+      if (B_LID != LO_INVALID) {
+        targetMapToOrigRow(i)   = B_LID;
+        targetMapToImportRow(i) = LO_INVALID;
+      } else {
+        LO I_LID = Irowmap_local.getLocalElement(aidx);
+        targetMapToOrigRow(i)   = LO_INVALID;
+        targetMapToImportRow(i) = I_LID;
+        
+      }
+    });
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM = Teuchos::null;
+#endif
+
+  // Call the actual kernel.  We'll rely on partial template specialization to call the correct one ---
+  // Either the straight-up Tpetra code (SerialNode) or the KokkosKernels one (other NGP node types)
+  KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,lo_view_t>::jacobi_A_B_reuse_kernel_wrapper(omega,Dinv,Aview,Bview,targetMapToOrigRow,targetMapToImportRow,Bcol2Ccol,Icol2Ccol,C,Cimport,label,params);
+}
+
+
+
+/*********************************************************************************************************/
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node,
+         class LocalOrdinalViewType>
+void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::jacobi_A_B_reuse_kernel_wrapper(Scalar omega,
+                                                                                               const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Dinv,
+                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                                                                                               CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                                                                                               const LocalOrdinalViewType & targetMapToOrigRow,
+                                                                                               const LocalOrdinalViewType & targetMapToImportRow,
+                                                                                               const LocalOrdinalViewType & Bcol2Ccol,
+                                                                                               const LocalOrdinalViewType & Icol2Ccol,
+                                                                                               CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C,
+                                                                                               Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Cimport,
+                                                                                               const std::string& label,
+                                                                                               const Teuchos::RCP<Teuchos::ParameterList>& params) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse SerialCore"))));
+  Teuchos::RCP<Teuchos::TimeMonitor> MM2;
+#endif
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  // Lots and lots of typedefs
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename KCRS::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
+  typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
+  typedef typename KCRS::values_type::non_const_type scalar_view_t;
+  typedef typename scalar_view_t::memory_space scalar_memory_space;
+
+  typedef Scalar            SC;
+  typedef LocalOrdinal      LO;
+  typedef GlobalOrdinal     GO;
+  typedef Node              NO;
+  typedef Map<LO,GO,NO>     map_type;
+  const size_t ST_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+
+  // Sizes
+  RCP<const map_type> Ccolmap = C.getColMap();
+  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t n = Ccolmap->getNodeNumElements();
+
+  // Grab the  Kokkos::SparseCrsMatrices & inner stuff
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Cmat = C.getLocalMatrix();
+
+  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
+  const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
+  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+  scalar_view_t Cvals = Cmat.values;
+
+  c_lno_view_t  Irowptr;
+  lno_nnz_view_t  Icolind;
+  scalar_view_t  Ivals;
+  if(!Bview.importMatrix.is_null()) {
+    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
+    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
+    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+  }
+
+  // Jacobi-specific inner stuff
+  auto Dvals = Dinv.template getLocalView<scalar_memory_space>();
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse SerialCore - Compare"))));
+#endif
 
   // The status array will contain the index into colind where this entry was last deposited.
   //   c_status[i] <  CSR_ip - not in the row yet
   //   c_status[i] >= CSR_ip - this is the entry where you can find the data
   // We start with this filled with INVALID's indicating that there are no entries yet.
   // Sadly, this complicates the code due to the fact that size_t's are unsigned.
-  Array<size_t> c_status(n, ST_INVALID);
+  std::vector<size_t> c_status(n, ST_INVALID);
 
   // For each row of A/C
   size_t CSR_ip = 0, OLD_ip = 0;
@@ -3325,7 +3392,7 @@ void jacobi_A_B_reuse(
       Cvals[k] = SC_ZERO;
     }
 
-    SC Dval = Dvals[i];
+    SC minusOmegaDval = -omega*Dvals(i,0);
 
     // Entries of B
     for (size_t j = Browptr[i]; j < Browptr[i+1]; j++) {
@@ -3359,7 +3426,7 @@ void jacobi_A_B_reuse(
           TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
             std::runtime_error, "Trying to insert a new entry into a static graph");
 
-          Cvals[c_status[Cij]] -= omega * Dval* Aval * Bvals[j];
+          Cvals[c_status[Cij]] += minusOmegaDval * Aval * Bvals[j];
         }
 
       } else {
@@ -3372,11 +3439,16 @@ void jacobi_A_B_reuse(
           TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
             std::runtime_error, "Trying to insert a new entry into a static graph");
 
-          Cvals[c_status[Cij]] -= omega * Dval* Aval * Ivals[j];
+          Cvals[c_status[Cij]] += minusOmegaDval * Aval * Ivals[j];
         }
       }
     }
   }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  MM2= Teuchos::null; 
+  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse ESFC"))));
+#endif
 
   C.fillComplete(C.getDomainMap(), C.getRangeMap());
 }
