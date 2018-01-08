@@ -147,13 +147,14 @@ namespace panzer
   template<typename EvalT, typename Traits>
   Integrator_BasisTimesVector<EvalT, Traits>::
   Integrator_BasisTimesVector(
-    const panzer::EvaluatorStyle&   evalStyle,
-    const PHX::Tag<typename EvalT::ScalarT> &       resTag,
-    const PHX::Tag<typename EvalT::ScalarT> &       valTag,
-    const BasisDescriptor&  bd,
-    const IntegrationDescriptor&  id,
-    const double &                   multiplier,
-    const std::vector<PHX::Tag<typename EvalT::ScalarT>> & multipliers)
+    const panzer::EvaluatorStyle&                         evalStyle,
+    const PHX::Tag<typename EvalT::ScalarT>&              resTag,
+    const PHX::Tag<typename EvalT::ScalarT>&              valTag,
+    const BasisDescriptor&                                bd,
+    const IntegrationDescriptor&                          id,
+    const double&                                         multiplier, /* = 1 */
+    const std::vector<PHX::Tag<typename EvalT::ScalarT>>& multipliers /* =
+      std::vector<PHX::Tag<typename EvalT::ScalarT>>() */)
     :
     evalStyle_(evalStyle),
     useDescriptors_(true),
@@ -175,9 +176,10 @@ namespace panzer
     using Teuchos::RCP;
 
     // Ensure the input makes sense.
-    TEUCHOS_TEST_FOR_EXCEPTION(not (bd_.getType()=="HCurl" && bd_.getType()=="HDiv"), logic_error,
-      "Error:  Integrator_BasisTimesVector:  Basis of type \""
-      << bd_.getType() << "\" is not a vector basis.");
+    TEUCHOS_TEST_FOR_EXCEPTION(not ((bd_.getType() == "HCurl") or
+      (bd_.getType() == "HDiv")), logic_error, "Error:  "                     \
+      "Integrator_BasisTimesVector:  Basis of type \"" << bd_.getType()
+      << "\" is not a vector basis.")
 
     // Create the field for the vector-valued quantity we're integrating.
     vector_ = valTag;
@@ -268,7 +270,7 @@ namespace panzer
     numDim_ = vector_.extent(2);
 
     // Determine the index in the Workset bases for our particular basis name.
-    if(not useDescriptors_)
+    if (not useDescriptors_)
       basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
   } // end of postRegistrationSetup()
 
@@ -365,10 +367,10 @@ namespace panzer
     using Kokkos::parallel_for;
     using Kokkos::RangePolicy;
 
-    const panzer::BasisValues2<double> & bv = useDescriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
-                                                              : *this->wda(workset).bases[basisIndex_];
-
     // Grab the basis information.
+    const panzer::BasisValues2<double>& bv = useDescriptors_ ?
+      this->wda(workset).getBasisValues(bd_,id_) :
+      *this->wda(workset).bases[basisIndex_];
     basis_ = bv.weighted_basis_vector;
 
     // The following if-block is for the sake of optimization depending on the
