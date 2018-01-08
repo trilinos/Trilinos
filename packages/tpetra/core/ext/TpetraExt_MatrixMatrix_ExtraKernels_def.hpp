@@ -819,6 +819,20 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
           Cvals(k) = SC_ZERO;
         }
 
+        // Entries of B
+        for (size_t j = Browptr(i); j < Browptr(i+1); j++) {
+          const SC Bval = Bvals(j);
+          if (Bval == SC_ZERO)
+            continue;
+          LO Bij = Bcolind(j);
+          LO Cij = Bcol2Ccol(Bij);
+          
+          // Assume no repeated entries in B
+          Cvals(c_status[Cij]) += Bvals(j);
+          CSR_ip++;
+        }
+        
+
         for (size_t k = Arowptr(i); k < Arowptr(i+1); k++) {
           LO Aik  = Acolind(k);
           const SC Aval = Avals(k);
