@@ -132,8 +132,10 @@ public:
   /// \name Accessor methods
   //@{
     virtual Scalar getTime() const {return metaData_->getTime();}
+    virtual void setTime(Scalar time) {metaData_nc_->setTime(time);}
     virtual Scalar getIndex() const {return metaData_->getIStep();}
     virtual Scalar getTimeStep() const {return metaData_->getDt();}
+    virtual void setTimeStep(Scalar dt) {metaData_nc_->setDt(dt);}
 
     virtual Scalar getOrder() const {return metaData_->getOrder();}
     virtual void setOrder(Scalar order)

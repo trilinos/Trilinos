@@ -258,7 +258,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar> > a_new = workingState->getXDotDot();
 
     //Get time and dt
-    const Scalar time = workingState->getTime();
+    const Scalar time = currentState->getTime();
     const Scalar dt = workingState->getTimeStep();
     //Update time
     Scalar t = time+dt;

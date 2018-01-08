@@ -279,7 +279,7 @@ void StepperBDF2<Scalar>::takeStep(
     MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
     inArgs.set_x(x);
     if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
-    if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time+dt);
+    if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time);
     if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
     if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
     if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (beta);

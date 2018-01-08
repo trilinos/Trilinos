@@ -140,7 +140,8 @@ public:
     void addState(const Teuchos::RCP<SolutionState<Scalar> >& state);
 
     /// Add a working solution state to history
-    void addWorkingState(const Teuchos::RCP<SolutionState<Scalar> >& state);
+    void addWorkingState(const Teuchos::RCP<SolutionState<Scalar> >& state,
+                         const bool updateTime = true);
 
     /// Remove solution state
     void removeState(const Teuchos::RCP<SolutionState<Scalar> >& state);

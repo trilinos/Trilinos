@@ -61,6 +61,9 @@ void TimeStepControl<Scalar>::getNextTimeStep(
     Teuchos::OSTab ostab(out,1,"getNextTimeStep");
     bool printChanges = solutionHistory->getVerbLevel() !=
                         Teuchos::as<int>(Teuchos::VERB_NONE);
+    bool printChangesHi = solutionHistory->getVerbLevel() >=
+                          Teuchos::as<int>(Teuchos::VERB_HIGH);
+
     auto changeDT = [] (Scalar dt_old, Scalar dt_new, std::string reason) {
       std::stringstream message;
       message <<
@@ -80,7 +83,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
-    const Scalar time = metaData->getTime();
+    const Scalar lastTime = solutionHistory->getCurrentState()->getTime();
     const int iStep = metaData->getIStep();
     const Scalar errorAbs = metaData->getErrorAbs();
     const Scalar errorRel = metaData->getErrorRel();
@@ -249,71 +252,75 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       }
     }
 
-    // Adjust time step to hit final time or correct for small
-    // numerical differences.
-    Scalar reltol = 1.0e-6;
-    if ((time + dt > getFinalTime() ) ||
-        (std::abs((time+dt-getFinalTime())/(time+dt)) < reltol)) {
-      if (printChanges) *out << changeDT(dt, getFinalTime() - time,
-        "Adjusting dt to hit the final time.");
-      dt = getFinalTime() - time;
-    }
-
     // Check if we need to output this step index
     std::vector<int>::const_iterator it =
       std::find(outputIndices_.begin(), outputIndices_.end(), iStep);
     if (it != outputIndices_.end()) output = true;
 
     // Adjust time step to hit output times.
+    Scalar reltol = 1.0e-6;
     for (size_t i=0; i < outputTimes_.size(); ++i) {
       const Scalar oTime = outputTimes_[i];
-      if (time < oTime && oTime <= time+dt+getMinTimeStep()) {
-        output = true;
-        outputAdjustedDt_ = true;
-        dtAfterOutput_ = dt;
-        if (time < oTime && oTime <= time+dt-getMinTimeStep()) {
-          if (printChanges) *out << changeDT(dt, oTime - time,
+      if (lastTime < oTime && oTime <= lastTime+dt+getMinTimeStep()) {
+        if (std::abs((lastTime+dt-oTime)/(lastTime+dt)) < reltol) {
+          if (printChangesHi) *out << changeDT(dt, oTime - lastTime,
+            "Adjusting dt for numerical roundoff to hit the next output time.");
+          // Next output time IS VERY near next time (<reltol away from it),
+          // e.g., adjust for numerical roundoff.
+          output = true;
+          outputAdjustedDt_ = true;
+          dtAfterOutput_ = dt;
+          dt = oTime - lastTime;
+        } else if (lastTime*(1.0+reltol) < oTime &&
+                   oTime < (lastTime+dt-getMinTimeStep())*(1.0+reltol)) {
+          if (printChanges) *out << changeDT(dt, oTime - lastTime,
             "Adjusting dt to hit the next output time.");
           // Next output time is not near next time
           // (>getMinTimeStep() away from it).
           // Take time step to hit output time.
-          dt = oTime - time;
-        } else if (std::abs((time+dt-oTime)/(time+dt)) < reltol) {
-          if (printChanges) *out << changeDT(dt, oTime - time,
-            "Adjusting dt for numerical roundoff to hit the next output time.");
-          // Next output time IS VERY near next time (<reltol away from it),
-          // e.g., adjust for numerical roundoff.
-          dt = oTime - time;
-        } else if (time+dt-getMinTimeStep() < oTime &&
-                   oTime <= time+dt+getMinTimeStep()) {
-          if (printChanges) *out << changeDT(dt, (oTime - time)/2.0,
-            "The next output time is NEAR the next time.  "
+          output = true;
+          outputAdjustedDt_ = true;
+          dtAfterOutput_ = dt;
+          dt = oTime - lastTime;
+        } else {
+          if (printChanges) *out << changeDT(dt, (oTime - lastTime)/2.0,
+            "The next output time is within the minimum dt of the next time.  "
             "Adjusting dt to take two steps.");
           // Next output time IS near next time (<getMinTimeStep() away from it)
           // Take two time steps to get to next output time.
-          dt = (oTime - time)/2.0;
+          dt = (oTime - lastTime)/2.0;
         }
         break;
       }
     }
 
+    // Adjust time step to hit final time or correct for small
+    // numerical differences.
+    if ((lastTime + dt > getFinalTime() ) ||
+        (std::abs((lastTime+dt-getFinalTime())/(lastTime+dt)) < reltol)) {
+      if (printChangesHi) *out << changeDT(dt, getFinalTime() - lastTime,
+        "Adjusting dt to hit the final time.");
+      dt = getFinalTime() - lastTime;
+    }
+
     // Time step always needs to keep time within range.
     TEUCHOS_TEST_FOR_EXCEPTION(
-      (time + dt < getInitTime()), std::out_of_range,
+      (lastTime + dt < getInitTime()), std::out_of_range,
       "Error - Time step does not move time INTO time range.\n"
       "    [timeMin, timeMax] = [" << getInitTime() << ", "
       << getFinalTime() << "]\n"
-      "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
+      "    T + dt = " << lastTime <<" + "<< dt <<" = " << lastTime + dt <<"\n");
 
     TEUCHOS_TEST_FOR_EXCEPTION(
-      (time + dt > getFinalTime()), std::out_of_range,
+      (lastTime + dt > getFinalTime()), std::out_of_range,
       "Error - Time step move time OUT OF time range.\n"
       "    [timeMin, timeMax] = [" << getInitTime() << ", "
       << getFinalTime() << "]\n"
-      "    T + dt = " << time <<" + "<< dt <<" = " << time + dt << "\n");
+      "    T + dt = " << lastTime <<" + "<< dt <<" = " << lastTime + dt <<"\n");
 
     metaData->setOrder(order);
     metaData->setDt(dt);
+    metaData->setTime(lastTime + dt);
     metaData->setOutput(output);
   }
   return;
@@ -592,8 +599,8 @@ TimeStepControl<Scalar>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
 
-  const double stdMin = std::numeric_limits<double>::epsilon();
-  const double stdMax = std::numeric_limits<double>::max();
+  const double stdMin = 1.0e+04*std::numeric_limits<double>::epsilon();
+  const double stdMax =         std::numeric_limits<double>::max();
   pl->set<double>("Initial Time"         , 0.0    , "Initial time");
   pl->set<double>("Final Time"           , stdMax , "Final time");
   pl->set<int>   ("Initial Time Index"   , 0      , "Initial time index");

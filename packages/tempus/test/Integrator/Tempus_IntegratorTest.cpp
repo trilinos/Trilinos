@@ -90,9 +90,6 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, Construction)
   RCP<ParameterList> referencePL =
     getParametersFromXmlFile("Tempus_IntegratorBasic_ref2.xml");
 
-  //std::cout << *testPL << std::endl;
-  //std::cout << *referencePL << std::endl;
-
   TEST_ASSERT(haveSameValues(*testPL,*referencePL))
 }
 
