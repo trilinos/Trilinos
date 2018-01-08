@@ -105,7 +105,7 @@ void StepperLeapfrog<Scalar>::takeStep(
     stepperLFObserver_->observeBeginTakeStep(solutionHistory, *this);
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
-    const Scalar time = workingState->getTime();
+    const Scalar time = currentState->getTime();
     const Scalar dt   = workingState->getTimeStep();
 
     // Perform half-step startup if working state is synced

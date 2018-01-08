@@ -206,7 +206,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
     // Create OperatorSplit SolutionHistory to pass to subSteppers.
     tempState_->copy(solutionHistory->getCurrentState());
     OpSpSolnHistory_->addState(tempState_);
-    OpSpSolnHistory_->addWorkingState(workingState);
+    OpSpSolnHistory_->addWorkingState(workingState, false);
 
     RCP<SolutionState<Scalar> > currentSubState =
       OpSpSolnHistory_->getCurrentState();

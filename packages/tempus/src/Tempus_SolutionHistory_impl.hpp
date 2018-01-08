@@ -130,7 +130,7 @@ void SolutionHistory<Scalar>::addState(
 
 template<class Scalar>
 void SolutionHistory<Scalar>::addWorkingState(
-  const Teuchos::RCP<SolutionState<Scalar> >& state)
+  const Teuchos::RCP<SolutionState<Scalar> >& state, const bool updateTime)
 {
   using Teuchos::RCP;
 
@@ -140,7 +140,10 @@ void SolutionHistory<Scalar>::addWorkingState(
   RCP<SolutionStateMetaData<Scalar> > wsmd = workingState_    ->getMetaData();
   wsmd->setSolutionStatus(Status::WORKING);
   wsmd->setIStep(csmd->getIStep()+1);
-  //md->setTime(md->getTime() + md->getDt());
+  if (updateTime) {
+    wsmd->setTime(csmd->getTime() + csmd->getDt());
+    wsmd->setDt(csmd->getDt());
+  }
 }
 
 template<class Scalar>
@@ -260,8 +263,6 @@ void SolutionHistory<Scalar>::promoteWorkingState()
 {
   Teuchos::RCP<SolutionStateMetaData<Scalar> > md =
     getWorkingState()->getMetaData();
-  md->setTime(md->getTime() + md->getDt());
-  //md->setIStep(md->getIStep()+1);
   md->setNFailures(std::max(0,md->getNFailures()-1));
   md->setNConsecutiveFailures(0);
   md->setSolutionStatus(Status::PASSED);

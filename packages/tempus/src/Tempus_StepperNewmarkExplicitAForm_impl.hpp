@@ -141,7 +141,7 @@ void StepperNewmarkExplicitAForm<Scalar>::takeStep(
 
     //Get dt and time
     const Scalar dt = workingState->getTimeStep();
-    const Scalar time = workingState->getTime();
+    const Scalar time = currentState->getTime();
 
     typedef Thyra::ModelEvaluatorBase MEB;
 

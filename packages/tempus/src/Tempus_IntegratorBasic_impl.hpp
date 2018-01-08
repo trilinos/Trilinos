@@ -500,7 +500,7 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
        ((timeStepControl_->getStepType() == "Constant") and
         (wsmd->getDt() != timeStepControl_->getInitTimeStep()) and
         (wsmd->getOutput() != true) and
-        (wsmd->getTime()+wsmd->getDt() != timeStepControl_->getFinalTime())
+        (wsmd->getTime() != timeStepControl_->getFinalTime())
        )
      )
   {
