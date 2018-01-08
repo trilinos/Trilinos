@@ -214,13 +214,13 @@ namespace panzer
        */
       Integrator_BasisTimesVector(
         const panzer::EvaluatorStyle&                         evalStyle,
-        const PHX::Tag<typename EvalT::ScalarT>&              resTag,
-        const PHX::Tag<typename EvalT::ScalarT>&              valTag,
+        const PHX::FieldTag&                                  resTag,
+        const PHX::FieldTag&                                  valTag,
         const BasisDescriptor&                                bd,
         const IntegrationDescriptor&                          id,
         const double&                                         multiplier  = 1,
-        const std::vector<PHX::Tag<typename EvalT::ScalarT>>& multipliers =
-          std::vector<PHX::Tag<typename EvalT::ScalarT>>());
+        const std::vector<PHX::FieldTag>& multipliers =
+          std::vector<PHX::FieldTag>());
 
       /**
        *  \brief Post-Registration Setup.

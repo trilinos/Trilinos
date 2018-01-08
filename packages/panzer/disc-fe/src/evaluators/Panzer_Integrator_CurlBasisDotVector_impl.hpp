@@ -117,9 +117,9 @@ PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
 //**********************************************************************
 template<typename EvalT, typename TRAITS>                   
 Integrator_CurlBasisDotVector<EvalT, TRAITS>::
-Integrator_CurlBasisDotVector(const PHX::Tag<typename EvalT::ScalarT> & input,
-                              const PHX::Tag<typename EvalT::ScalarT> & output,
-                              const std::vector<PHX::Tag<typename EvalT::ScalarT>> & multipliers,
+Integrator_CurlBasisDotVector(const PHX::FieldTag & input,
+                              const PHX::FieldTag & output,
+                              const std::vector<PHX::FieldTag> & multipliers,
                               double mult,
                               const panzer::BasisDescriptor & bd,
                               const panzer::IntegrationDescriptor & id,
