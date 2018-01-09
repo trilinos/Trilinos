@@ -314,21 +314,20 @@ namespace Tpetra {
     Import<LocalOrdinal,GlobalOrdinal,Node>&
     operator= (const Import<LocalOrdinal,GlobalOrdinal,Node>& Source);
 
-    /// \brief Build the target map for the union of two Import objects
+    /// \brief Find the union of the target IDs from two Import objects.
     ///
-    /// This procedure assumes that you have already preprocessed
-    /// all the GIDs to identify remotes.  This involves using the two
-    /// input Import objects, namely converting their permute and remote
-    /// LID lists to GIDs.  You'll also need to extract PIDs from the
-    /// Imports in order to build pids_map.
+    /// On return, the target IDs are ordered as [{same}, {permute}, {remote}].
+    /// {same} is ordered identically to the target map with most "same"
+    /// indices.  {permute} is ordered from smallest ID to largest.  {remote} is
+    /// ordered by remote process ID and ID, respectively.
     void
     findUnionTargetGIDs(Teuchos::Array<GlobalOrdinal>& unionTgtGIDs,
                         typename Teuchos::Array<GlobalOrdinal>::size_type& numSameGIDs,
                         typename Teuchos::Array<GlobalOrdinal>::size_type& numPermuteGIDs,
                         typename Teuchos::Array<GlobalOrdinal>::size_type& numRemoteGIDs,
-                        const Teuchos::ArrayView<const GlobalOrdinal>& tgtGIDs1In,
+                        const Teuchos::ArrayView<const GlobalOrdinal>& tgtGIDs1,
                         const typename Teuchos::Array<GlobalOrdinal>::size_type numSameGIDs1,
-                        const Teuchos::ArrayView<const GlobalOrdinal>& tgtGIDs2In,
+                        const Teuchos::ArrayView<const GlobalOrdinal>& tgtGIDs2,
                         const typename Teuchos::Array<GlobalOrdinal>::size_type numSameGIDs2,
                         std::map<GlobalOrdinal,int>& remoteGIDProc) const;
 

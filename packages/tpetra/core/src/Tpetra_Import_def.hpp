@@ -49,6 +49,7 @@
 #include <Tpetra_Util.hpp>
 #include <Tpetra_Import_Util.hpp>
 #include <Tpetra_Export.hpp>
+#include <Tpetra_Details_Behavior.hpp>
 #include <Teuchos_as.hpp>
 
 
@@ -830,7 +831,8 @@ namespace Tpetra {
     // push_back operations.
     unionTgtGIDs.reserve(tgtGIDs1.size() + tgtGIDs2.size());
 
-    // Array of GIDs that are not one of the "same" GIDs
+    // Array of GIDs that are not one of the "same" GIDs.  These arrays must be
+    // ordered for further manipulation by std::set_union
     Teuchos::Array<GO> notSame1(tgtGIDs1.size()-numSameGIDs1);
     std::copy(tgtGIDs1.begin()+numSameGIDs1, tgtGIDs1.end(), notSame1.begin());
     std::sort(notSame1.begin(), notSame1.end());
@@ -841,23 +843,32 @@ namespace Tpetra {
 
     // The input map is *not* necessarily sorted, but the "same" GIDs
     // are still guaranteed to be at the beginning.  Copy the same GIDs to the
-    // unionTgtGIDs vector.
+    // unionTgtGIDs vector.  Cases for numSameGIDs1 != numSameGIDs2 must be
+    // treated separately.
     if (numSameGIDs1 > numSameGIDs2) {
+
       numSameGIDs = numSameGIDs1;
-      std::copy(tgtGIDs1.begin(), tgtGIDs1.begin()+numSameGIDs, std::back_inserter(unionTgtGIDs));
+
+      // Copy the same GIDs from tgtGIDs to the union
+      std::copy(tgtGIDs1.begin(), tgtGIDs1.begin()+numSameGIDs1,
+                std::back_inserter(unionTgtGIDs));
+
       // Shift GIDs in notSame2 already in unionTgtGIDs to end and remove them.
-      // See comments below about usage of stable_partition
       auto it = std::stable_partition(notSame2.begin(), notSame2.end(),
         [&](GO GID){
           return !std::binary_search(unionTgtGIDs.begin(), unionTgtGIDs.end(), GID);
         }
       );
       notSame2.erase(it, notSame2.end());
+
     } else {
+
       numSameGIDs = numSameGIDs2;
+
+      // Copy the same GIDs from tgtGIDs to the union
       std::copy(tgtGIDs2.begin(), tgtGIDs2.begin()+numSameGIDs, std::back_inserter(unionTgtGIDs));
+
       // Shift GIDs in notSame1 already in unionTgtGIDs to end and remove them.
-      // See comments below about usage of stable_partition
       auto it = std::stable_partition(notSame1.begin(), notSame1.end(),
         [&](GO GID){
           return !std::binary_search(unionTgtGIDs.begin(), unionTgtGIDs.end(), GID);
@@ -871,42 +882,43 @@ namespace Tpetra {
                    notSame2.begin(), notSame2.end(),
                    std::back_inserter(unionTgtGIDs));
 
-    // unionTgtGIDs is still not correct: it must be ordered as same, permuted,
-    // remote.  The same GIDs are already in the front in the right order.  The
-    // remote GIDs can be moved to the back of unionTgtGIDs with a simple
-    // application of stable_partition.  To use stable_partition, we must first
-    // get a list of remote GIDs to move to the end.
+    // unionTgtGIDs is still not correct: it must be ordered as {same},
+    // {permute}, {remote}.  {same} GIDs are already in the front in the right
+    // order.  {remote} GIDs can be moved to the back of unionTgtGIDs with
+    // a simple application of stable_partition.  {permute} GIDs will naturally
+    // fall between the two (in their currently sorted order).
+
+    // To use stable_partition, we must first get a list of remote GIDs to move
+    // to the end.
     numRemoteGIDs = remoteGIDProc.size();
     Teuchos::Array<GO> remotes;
     remotes.reserve(numRemoteGIDs);
     for (const auto& x : remoteGIDProc) remotes.push_back(x.first);
     std::sort(remotes.begin(), remotes.end());
 
-    // Shift remotes to end of unionTgtGIDs.  *If* the remotes were contiguous,
-    // we could use std::rotate here instead of std::stable_partition.
-    // stable_partition actually moves items matching the predicate to the
-    // beginning of the iterable, so the predicate used below is a negation
-    // type, so that all non-remotes are moved to the beginning of the set.  The
-    // return value from stable_partition is an iterator pointing to the end of
-    // the shifted values, which is the first remote value.  Since remotes is
-    // already sorted, we use a binary_search in the predicate, instead of
-    // std::find.
+    // Shift remotes to end of unionTgtGIDs.
+    // std::stable_partition moves items matching the predicate to the beginning
+    // of the iterable, so the predicate used below is a negation type, so that
+    // all non-remotes are moved to the beginning of the set.  The return value
+    // from stable_partition is an iterator pointing to the end of the shifted
+    // values, which is the first remote value.  Since remotes is already
+    // sorted, we use a binary_search in the predicate, instead of std::find.
     auto p = std::stable_partition(unionTgtGIDs.begin()+numSameGIDs, unionTgtGIDs.end(),
-        [&](int x){
-          bool isRemote = std::binary_search(remotes.begin(), remotes.end(), x);
+        [&](int GID){
+          bool isRemote = std::binary_search(remotes.begin(), remotes.end(), GID);
           return (!isRemote);
         }
       );
 
     // Sort the remote GIDs by PID.  Use stable_sort so that ordering of GIDs
-    // (which are now sorted) is not lost.
+    // (which are already sorted) is not lost.
     std::stable_sort(p, unionTgtGIDs.end(),
         [&](const int& GID1, const int& GID2){
           return remoteGIDProc[GID1] < remoteGIDProc[GID2];
         }
       );
 
-    // Compute the number of permute GIDs (output quantity)
+    // Compute the number of permute GIDs (output only quantity)
     numPermuteGIDs = unionTgtGIDs.size() - numSameGIDs - numRemoteGIDs;
 
     return;
@@ -937,16 +949,18 @@ namespace Tpetra {
     RCP<const map_type> tgtMap2 = rhs.getTargetMap ();
     RCP<const Comm<int> > comm = srcMap->getComm ();
 
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! srcMap->isSameAs (* (rhs.getSourceMap ())), std::invalid_argument,
-      "Tpetra::Import::setUnion: The source Map of the input Import must be the "
-      "same as (in the sense of Map::isSameAs) the source Map of this Import.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! Details::congruent (* (tgtMap1->getComm ()), * (tgtMap2->getComm ())),
-      std::invalid_argument, "Tpetra::Import::setUnion: "
-      "The target Maps must have congruent communicators.");
-#endif // HAVE_TPETRA_DEBUG
+    const bool debug = Details::Behavior::debug("Tpetra::Import::setUnion");
+
+    if (debug) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          ! srcMap->isSameAs (* (rhs.getSourceMap ())), std::invalid_argument,
+          "Tpetra::Import::setUnion: The source Map of the input Import must be the "
+          "same as (in the sense of Map::isSameAs) the source Map of this Import.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          ! Details::congruent (* (tgtMap1->getComm ()), * (tgtMap2->getComm ())),
+          std::invalid_argument, "Tpetra::Import::setUnion: "
+          "The target Maps must have congruent communicators.");
+    }
 
     // It's probably worth the one all-reduce to check whether the two
     // Maps are the same.  If so, we can just return a copy of *this.
@@ -976,6 +990,17 @@ namespace Tpetra {
       GO GID = rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]);
       // If GID is already in remoteGIDProc it will just be overwritten which
       // okay since the PID will be the same.
+      if (debug) {
+        auto iter = remoteGIDProc.find(GID);
+        if (iter != remoteGIDProc.end()) {
+          // Remote GID already registered in map
+          TEUCHOS_TEST_FOR_EXCEPTION(iter->second!=remotePIDs2[k],
+              std::logic_error,
+              "Expected PID for remote GID " << GID <<
+              " to be " << iter->second <<
+              " got " << remotePIDs2[k] << " instead.");
+        }
+      }
       remoteGIDProc[GID] = remotePIDs2[k];
     }
 
