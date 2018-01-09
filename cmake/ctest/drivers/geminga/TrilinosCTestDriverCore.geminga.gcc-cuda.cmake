@@ -91,7 +91,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       ### COMPILERS AND FLAGS ###
       "-DTrilinos_ENABLE_CXX11:BOOL=ON"
       "-DTrilinos_CXX11_FLAGS:STRING='-std=c++11 -expt-extended-lambda'"
-      "-DCMAKE_CXX_FLAGS:STRING='-Wall -DKOKKOS_CUDA_USE_LAMBDA=1 -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-inline -Wshadow'"
+      # JHU 2018-01-08 removed -DKOKKOS_CUDA_USE_LAMBDA=1-DKOKKOS_CUDA_USE_LAMBDA=1 because
+      # it's already defined in KokkosCore_config.h (build-generated file).
+      "-DCMAKE_CXX_FLAGS:STRING='-Wall -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-inline -Wshadow'"
       "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
 
       ### TPLS ###
