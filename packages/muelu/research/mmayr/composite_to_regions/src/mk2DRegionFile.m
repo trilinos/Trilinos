@@ -95,7 +95,7 @@ elseif (strcmp(filename, 'caseSix') == true)  % caseSix
                                          % a node. In general, we give the location
                                          % of the new processor's first non-shared point
 
-elseif(strcmp(filename, 'caseTest') == true)  % caseTest
+elseif(strcmp(filename, 'caseSeven') == true)  % caseSeven
   
 %px:0   0   0   0   1   1   1   1
 %px:            1                
@@ -115,7 +115,30 @@ elseif(strcmp(filename, 'caseTest') == true)  % caseTest
    ryInterfaceLocations = [3 5 7];   
    pxProcChange         = [3];
    pyProcChange         = [3];
-                                
+
+elseif(strcmp(filename, 'caseEight') == true)  % caseEight
+  
+  % This is supposed to be the RegionsSpanProcs counterpart to caseSeven.
+  error('Not implemented, yet.');
+   
+elseif(strcmp(filename, 'caseNine') == true)  % caseTest
+
+%px:0   0   0   1   1
+%px:        1                
+%   |- rx=0 <-rx=1  |         py  py
+%   |       |       |
+%   0   1   2   3   4     0   0
+%   5   6   7   8   9     1   0
+%--10--11--12--13--14--<  2   0   1
+%  15  16  17  18  19     3   1
+%  20  21  22  23  24     4   1
+
+  whichCase = 'MultipleRegionsPerProc';
+  rxInterfaceLocations = [2 4];   
+  ryInterfaceLocations = [2 4];   
+  pxProcChange         = [2];
+  pyProcChange         = [2];
+
 end
 
 nrx = length(rxInterfaceLocations);
