@@ -231,7 +231,7 @@ namespace Tacho {
           if (m <= 0) return;
 
           const bool use_unit_diag = diag == 'U'|| diag == 'u';
-          T *__restrict__ b0 = b;
+          //T *__restrict__ b0 = b;
           for (int p=0;p<m;++p) {
             const int iend = m-p-1;
             
