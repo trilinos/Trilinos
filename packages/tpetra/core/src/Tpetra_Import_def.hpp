@@ -866,7 +866,8 @@ namespace Tpetra {
       numSameGIDs = numSameGIDs2;
 
       // Copy the same GIDs from tgtGIDs to the union
-      std::copy(tgtGIDs2.begin(), tgtGIDs2.begin()+numSameGIDs, std::back_inserter(unionTgtGIDs));
+      std::copy(tgtGIDs2.begin(), tgtGIDs2.begin()+numSameGIDs2,
+                std::back_inserter(unionTgtGIDs));
 
       // Shift GIDs in notSame1 already in unionTgtGIDs to end and remove them.
       auto it = std::stable_partition(notSame1.begin(), notSame1.end(),
