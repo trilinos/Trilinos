@@ -86,6 +86,7 @@ struct evaluateGrad_withSens {
 
 //**********************************************************************
 PHX_EVALUATOR_CTOR(DOFGradient,p) :
+  use_descriptors_(false),
   dof_value( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   dof_gradient( p.get<std::string>("Gradient Name"), 
@@ -107,28 +108,51 @@ PHX_EVALUATOR_CTOR(DOFGradient,p) :
 }
 
 //**********************************************************************
+template<typename EvalT, typename TRAITS>                   
+DOFGradient<EvalT, TRAITS>::
+DOFGradient(const PHX::FieldTag & input,
+            const PHX::FieldTag & output,
+            const panzer::BasisDescriptor & bd,
+            const panzer::IntegrationDescriptor & id)
+  : use_descriptors_(true)
+  , bd_(bd) 
+  , id_(id) 
+  , dof_value(input)
+  , dof_gradient(output)
+{
+  // Verify that this basis supports the gradient operation
+  TEUCHOS_TEST_FOR_EXCEPTION(bd_.getType()=="HGrad",std::logic_error,
+                             "DOFGradient: Basis of type \"" << bd_.getType() << "\" does not support GRAD");
+
+  this->addEvaluatedField(dof_gradient);
+  this->addDependentField(dof_value);
+  
+  std::string n = "DOFGradient: " + dof_gradient.fieldTag().name() + " ("+PHX::typeAsString<EvalT>()+")";
+  this->setName(n);
+}
+
+//**********************************************************************
 PHX_POST_REGISTRATION_SETUP(DOFGradient,sd,fm)
 {
   this->utils.setFieldData(dof_value,fm);
   this->utils.setFieldData(dof_gradient,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
+  if(not use_descriptors_)
+    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(DOFGradient,workset)
 { 
-/*
-  // Zero out arrays (probably don't need this anymore)
-  dof_gradient.deep_copy(ScalarT(0.0));
-
-  if(workset.num_cells>0)
-    Intrepid2::FunctionSpaceTools::evaluate<ScalarT>(dof_gradient,dof_value,(this->wda(workset).bases[basis_index])->grad_basis);
-*/
   if (workset.num_cells == 0 )
     return;
-  typedef decltype(this->wda(workset).bases[basis_index]->grad_basis) ArrayT;
-  evaluateGrad_withSens<ScalarT, ArrayT> eval(dof_gradient,dof_value,this->wda(workset).bases[basis_index]->grad_basis);
+
+  const panzer::BasisValues2<double> & basisValues = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
+                                                                      : *this->wda(workset).bases[basis_index];
+
+  typedef decltype(basisValues.grad_basis) ArrayT;
+
+  evaluateGrad_withSens<ScalarT, ArrayT> eval(dof_gradient,dof_value,basisValues.grad_basis);
   Kokkos::parallel_for(workset.num_cells, eval);
 }
 

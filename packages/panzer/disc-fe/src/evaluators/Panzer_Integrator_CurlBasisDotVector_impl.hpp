@@ -54,6 +54,7 @@ namespace panzer {
 
 //**********************************************************************
 PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
+  use_descriptors_(false),
   residual( p.get<std::string>("Residual Name"), 
 	    p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->functional),
   basis_name(p.get< Teuchos::RCP<panzer::BasisIRLayout> >("Basis")->name())
@@ -114,6 +115,54 @@ PHX_EVALUATOR_CTOR(Integrator_CurlBasisDotVector,p) :
 }
 
 //**********************************************************************
+template<typename EvalT, typename TRAITS>                   
+Integrator_CurlBasisDotVector<EvalT, TRAITS>::
+Integrator_CurlBasisDotVector(const PHX::FieldTag & input,
+                              const PHX::FieldTag & output,
+                              const std::vector<PHX::FieldTag> & multipliers,
+                              double mult,
+                              const panzer::BasisDescriptor & bd,
+                              const panzer::IntegrationDescriptor & id,
+                              int space_dim)
+  : use_descriptors_(true)
+  , bd_(bd)
+  , id_(id)
+  , residual(output)
+  , multiplier(mult)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(bd_.getType()!="HCurl",std::logic_error,
+                             "Integrator_CurlBasisDotVector: Basis of type \"" << bd_.getType() << "\" does not support CURL.");
+  // use a scalar field only if dimension is 2D
+  useScalarField = (space_dim==2);
+
+  if(not useScalarField) {
+    flux_vector = input;
+    this->addDependentField(flux_vector);
+  }
+  else {
+    flux_scalar = input;
+    this->addDependentField(flux_scalar);
+  }
+
+  this->addEvaluatedField(residual);
+
+  // setup multipliers
+  for(std::size_t i=0;i<multipliers.size();i++) {
+    PHX::MDField<const ScalarT,Cell,IP> tmp_field = multipliers[i];
+    field_multipliers.push_back(tmp_field);
+  }
+
+  for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+       field != field_multipliers.end(); ++field)
+    this->addDependentField(*field);
+
+  std::string n = 
+    "Integrator_CurlBasisDotVector: " + residual.fieldTag().name();
+
+  this->setName(n);
+}
+
+//**********************************************************************
 PHX_POST_REGISTRATION_SETUP(Integrator_CurlBasisDotVector,sd,fm)
 {
   // setup the output field
@@ -133,7 +182,8 @@ PHX_POST_REGISTRATION_SETUP(Integrator_CurlBasisDotVector,sd,fm)
     num_qp = flux_vector.dimension(1);
     num_dim = 3;
 
-    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
+    if(not use_descriptors_)
+      basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
     scratch_vector = af.buildStaticArray<ScalarT,Cell,IP,Dim>("btv_scratch",flux_vector.dimension(0),num_qp,num_dim);
   }
@@ -144,7 +194,8 @@ PHX_POST_REGISTRATION_SETUP(Integrator_CurlBasisDotVector,sd,fm)
     num_qp = flux_scalar.dimension(1);
     num_dim = 2;
 
-    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
+    if(not use_descriptors_)
+      basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
     scratch_scalar = af.buildStaticArray<ScalarT,Cell,IP>("btv_scratch",flux_scalar.dimension(0),num_qp);
   }
@@ -265,7 +316,8 @@ public:
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
 { 
-  const BasisValues2<double> & bv = *this->wda(workset).bases[basis_index];
+  const panzer::BasisValues2<double> & bv = use_descriptors_ ?  this->wda(workset).getBasisValues(bd_,id_)
+                                                             : *this->wda(workset).bases[basis_index];
 
   if(!useScalarField) {
     typedef FillScratchVector<ScalarT> FillScratch;

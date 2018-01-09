@@ -449,7 +449,7 @@ void mult_A_B_reuse_LowThreadGustavsonKernel(CrsMatrixStruct<Scalar, LocalOrdina
       }
     });
 
-  // NOTE: No copy out or "set" of data is needed her, since we're working directly with Kokkos::View's
+  // NOTE: No copy out or "set" of data is needed here, since we're working directly with Kokkos::Views
 }
 
 /*********************************************************************************************************/
@@ -690,7 +690,7 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   }   
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPSort"))));
+    MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Newmatrix OpenMPSort"))));
 #endif    
     // Sort & set values
     Import_Util::sortCrsEntries(row_mapC, entriesC, valuesC);
@@ -698,6 +698,182 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
 
 }
   
+
+
+/*********************************************************************************************************/
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class LocalOrdinalViewType>
+void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
+                                                   const Vector<Scalar,LocalOrdinal,GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode> & Dinv,
+                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Aview,
+                                                   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& Bview,
+                                                   const LocalOrdinalViewType & targetMapToOrigRow,
+                                                   const LocalOrdinalViewType & targetMapToImportRow,
+                                                   const LocalOrdinalViewType & Bcol2Ccol,
+                                                   const LocalOrdinalViewType & Icol2Ccol,
+                                                   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosOpenMPWrapperNode>& C,
+                                                   Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode> > Cimport,
+                                                   const std::string& label,
+                                                   const Teuchos::RCP<Teuchos::ParameterList>& params) {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+  std::string prefix_mmm = std::string("TpetraExt ") + label + std::string(": ");
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix_mmm + std::string("Jacobi Reuse LTGCore"))));
+#endif
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  // Lots and lots of typedefs
+  typedef typename Kokkos::Compat::KokkosOpenMPWrapperNode Node;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  //  typedef typename KCRS::device_type device_t;
+  typedef typename KCRS::StaticCrsGraphType graph_t;
+  typedef typename graph_t::row_map_type::const_type c_lno_view_t;
+  typedef typename graph_t::entries_type::const_type c_lno_nnz_view_t;
+  typedef typename KCRS::values_type::non_const_type scalar_view_t;
+
+  // Jacobi-specific
+  typedef typename scalar_view_t::memory_space scalar_memory_space;
+
+  typedef Scalar            SC;
+  typedef LocalOrdinal      LO;
+  typedef GlobalOrdinal     GO;
+  typedef Node              NO;
+  typedef Map<LO,GO,NO>                     map_type;
+
+  // NOTE (mfh 15 Sep 2017) This is specifically only for
+  // execution_space = Kokkos::OpenMP, so we neither need nor want
+  // KOKKOS_LAMBDA (with its mandatory __device__ marking).
+  typedef NO::execution_space execution_space;
+  typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
+
+  // All of the invalid guys
+  const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+  const size_t INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
+  
+  // Grab the  Kokkos::SparseCrsMatrices & inner stuff
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Cmat = C.getLocalMatrix();
+
+  c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
+  const c_lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
+  const scalar_view_t Avals = Amat.values, Bvals = Bmat.values;
+  scalar_view_t Cvals = Cmat.values;
+
+  c_lno_view_t  Irowptr;
+  c_lno_nnz_view_t  Icolind;
+  scalar_view_t  Ivals;
+  if(!Bview.importMatrix.is_null()) {
+    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
+    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
+    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+  }
+
+  // Jacobi-specific inner stuff
+  auto Dvals = Dinv.template getLocalView<scalar_memory_space>();
+
+  // Sizes
+  RCP<const map_type> Ccolmap = C.getColMap();
+  size_t m = Aview.origMatrix->getNodeNumRows();
+  size_t n = Ccolmap->getNodeNumElements();
+
+  // Get my node / thread info (right from openmp or parameter list)
+  size_t thread_max =  Kokkos::Compat::KokkosOpenMPWrapperNode::execution_space::concurrency();
+  if(!params.is_null()) {
+    if(params->isParameter("openmp: ltg thread max"))
+      thread_max = std::max((size_t)1,std::min(thread_max,params->get("openmp: ltg thread max",thread_max)));    
+  }
+
+  double thread_chunk = (double)(m) / thread_max;
+
+  // Run chunks of the matrix independently 
+  Kokkos::parallel_for("Jacobi::LTG::Reuse::ThreadLocal",range_type(0, thread_max).set_chunk_size(1),[=](const size_t tid)
+    {
+      // Thread coordination stuff
+      size_t my_thread_start =  tid * thread_chunk;
+      size_t my_thread_stop  = tid == thread_max-1 ? m : (tid+1)*thread_chunk;
+
+      // Allocations
+      std::vector<size_t> c_status(n,INVALID);
+      
+      // For each row of A/C
+      size_t CSR_ip = 0, OLD_ip = 0;
+      for (size_t i = my_thread_start; i < my_thread_stop; i++) {
+        // First fill the c_status array w/ locations where we're allowed to
+        // generate nonzeros for this row
+        OLD_ip = Crowptr(i);
+        CSR_ip = Crowptr(i+1);
+        // NOTE: Vector::getLocalView returns a rank 2 view here
+        SC minusOmegaDval = -omega*Dvals(i,0);
+
+        for (size_t k = OLD_ip; k < CSR_ip; k++) {
+          c_status[Ccolind(k)] = k;     
+          // Reset values in the row of C
+          Cvals(k) = SC_ZERO;
+        }
+
+        // Entries of B
+        for (size_t j = Browptr(i); j < Browptr(i+1); j++) {
+          const SC Bval = Bvals(j);
+          if (Bval == SC_ZERO)
+            continue;
+          LO Bij = Bcolind(j);
+          LO Cij = Bcol2Ccol(Bij);
+          
+          // Assume no repeated entries in B
+          Cvals(c_status[Cij]) += Bvals(j);
+          CSR_ip++;
+        }
+        
+
+        for (size_t k = Arowptr(i); k < Arowptr(i+1); k++) {
+          LO Aik  = Acolind(k);
+          const SC Aval = Avals(k);
+          if (Aval == SC_ZERO)
+            continue;
+
+          if (targetMapToOrigRow(Aik) != LO_INVALID) {
+            // Local matrix
+            size_t Bk = Teuchos::as<size_t>(targetMapToOrigRow(Aik));
+
+            for (size_t j = Browptr(Bk); j < Browptr(Bk+1); ++j) {
+              LO Bkj = Bcolind(j);
+              LO Cij = Bcol2Ccol(Bkj);
+
+              TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+                                         std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph " <<
+                                         "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
+
+              Cvals(c_status[Cij]) += minusOmegaDval * Aval * Bvals(j);
+            }
+          } else {
+            // Remote matrix
+            size_t Ik = Teuchos::as<size_t>(targetMapToImportRow(Aik));
+            for (size_t j = Irowptr(Ik); j < Irowptr(Ik+1); ++j) {
+              LO Ikj = Icolind(j);
+              LO Cij = Icol2Ccol(Ikj);
+              
+              TEUCHOS_TEST_FOR_EXCEPTION(c_status[Cij] < OLD_ip || c_status[Cij] >= CSR_ip,
+                                         std::runtime_error, "Trying to insert a new entry (" << i << "," << Cij << ") into a static graph " <<
+                                         "(c_status = " << c_status[Cij] << " of [" << OLD_ip << "," << CSR_ip << "))");
+
+              Cvals(c_status[Cij]) += minusOmegaDval * Aval * Ivals(j);
+            }
+          }
+        }
+      }
+    });
+
+  // NOTE: No copy out or "set" of data is needed here, since we're working directly with Kokkos::Views
+}
+
 
 /*********************************************************************************************************/
 template<class InRowptrArrayType, class InColindArrayType, class InValsArrayType,

@@ -79,7 +79,7 @@ void test_sincos_fsa(const bool use_combined_method,
       sens_pl.set("Sensitivity Method", "Combined");
     else {
       sens_pl.set("Sensitivity Method", "Staggered");
-      sens_pl.set("Reuse State Linear Solver", true);
+      //sens_pl.set("Reuse State Linear Solver", true);
     }
     sens_pl.set("Use DfDp as Tangent", use_dfdp_as_tangent);
     ParameterList& interp_pl =
@@ -196,15 +196,8 @@ void test_sincos_fsa(const bool use_combined_method,
   *my_out << "  Expected order: " << order << std::endl;
   *my_out << "  Observed order: " << slope << std::endl;
   *my_out << "  =========================" << std::endl;
-  if (use_combined_method) {
-    TEST_FLOATING_EQUALITY( slope, order, 0.015 );
-    TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0344598, 1.0e-4 );
-  }
-  else {
-    // Need to resolve for why we only get 1st order with staggered method
-    TEST_FLOATING_EQUALITY( slope, 1.0, 0.015 );
-    TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.309789, 1.0e-4 );
-  }
+  TEST_FLOATING_EQUALITY( slope, order, 0.015 );
+  TEST_FLOATING_EQUALITY( ErrorNorm[0], 0.0344598, 1.0e-4 );
 
   if (comm->getRank() == 0) {
     std::ofstream ftmp("Tempus_BDF2_SinCos_Sens-Error.dat");

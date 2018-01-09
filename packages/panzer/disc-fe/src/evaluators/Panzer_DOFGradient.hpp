@@ -40,54 +40,56 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_CURLBASISDOTVECTOR_DECL_HPP
-#define PANZER_EVALUATOR_CURLBASISDOTVECTOR_DECL_HPP
+#ifndef PANZER_EVALUATOR_DOF_GRADIENT_DECL_HPP
+#define PANZER_EVALUATOR_DOF_GRADIENT_DECL_HPP
 
-#include <string>
-#include "Panzer_Dimension.hpp"
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
-#include "Kokkos_DynRankView.hpp"
-
 #include "Panzer_Evaluator_Macros.hpp"
 
 namespace panzer {
     
-/** In 3D this computes
-  * 
-  *  \f$\int \nabla\times \phi \cdot v \f$
-  *
-  * however the name can be misleading. The curl of a vector
-  * in 2D is simply a scalar, here the evaluators handles
-  * both cases.
-  */
-PANZER_EVALUATOR_CLASS(Integrator_CurlBasisDotVector)
+//! Interpolates basis DOF values to IP DOF Gradient values
+template <typename EvalT, typename TRAITS>                   
+class DOFGradient : public panzer::EvaluatorWithBaseImpl<TRAITS>,      
+                    public PHX::EvaluatorDerived<EvalT, TRAITS>  {   
+public:
+
+  DOFGradient(const Teuchos::ParameterList& p);
+
+  /** \brief Ctor
+    *
+    * \param[in] input Tag that corresponds to the input DOF field (sized according to bd)
+    * \param[in] output Tag that corresponds to the output field (sized according the id, and the dimension)
+    * \param[in] bd Basis being used
+    * \param[in] id Integration rule used
+    */
+  DOFGradient(const PHX::FieldTag & input,
+              const PHX::FieldTag & output,
+              const panzer::BasisDescriptor & bd,
+              const panzer::IntegrationDescriptor & id);
+
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+                             PHX::FieldManager<TRAITS>& fm);
+
+  void evaluateFields(typename TRAITS::EvalData d);
   
-  PHX::MDField<ScalarT,Cell,BASIS> residual;
-    
-  PHX::MDField<const ScalarT,Cell,IP>     flux_scalar; // note that this is used for scalar fields
-  PHX::MDField<const ScalarT,Cell,IP,Dim> flux_vector; // note that this is used for vector fields
-    
-  std::vector<PHX::MDField<const ScalarT,Cell,IP> > field_multipliers;
+private:
 
-  std::size_t num_nodes;
-  std::size_t num_qp;
-  std::size_t num_dim;
+  typedef typename EvalT::ScalarT ScalarT;
 
-  double multiplier;
+  bool use_descriptors_;
+  panzer::BasisDescriptor bd_;
+  panzer::IntegrationDescriptor id_;
+
+  // <cell,point>
+  PHX::MDField<const ScalarT,Cell,Point> dof_value;
+  // <cell,point,dim>
+  PHX::MDField<ScalarT> dof_gradient;
 
   std::string basis_name;
   std::size_t basis_index;
-
-  bool useScalarField;
-
-  // scratch space
-  PHX::MDField<ScalarT,Cell,IP>     scratch_scalar;
-  PHX::MDField<ScalarT,Cell,IP,Dim> scratch_vector;
-
-private:
-  Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
-PANZER_EVALUATOR_CLASS_END
+};
 
 }
 

@@ -132,7 +132,8 @@ void StepperBDF2<Scalar>::setSolver(
 }
 
 
-/** \brief Set the startup stepper to a pre-defined stepper in the ParameterList.
+/** \brief Set the startup stepper to a pre-defined stepper in the ParameterList
+ *
  *  The startup stepper is set to stepperName sublist in the Stepper's
  *  ParameterList.  The stepperName sublist should already be defined
  *  in the Stepper's ParameterList.  Otherwise it will fail.
@@ -143,17 +144,20 @@ void StepperBDF2<Scalar>::setStartUpStepper(std::string startupStepperName)
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
-  RCP<ParameterList> startupStepperPL = Teuchos::sublist(stepperPL_, startupStepperName, true);
+  RCP<ParameterList> startupStepperPL =
+    Teuchos::sublist(stepperPL_, startupStepperName, true);
   stepperPL_->set("Start Up Stepper Name", startupStepperName);
-  if (startUpStepper_ != Teuchos::null) startUpStepper_ = Teuchos::null;
   RCP<StepperFactory<Scalar> > sf = Teuchos::rcp(new StepperFactory<Scalar>());
+  startUpStepper_ =
+    sf->createStepper(wrapperModel_->getAppModel(), startupStepperPL);
 }
 
 
 /** \brief Set the start up stepper to the supplied Parameter sublist.
- *  This adds a new start up stepper Parameter sublist to the Stepper's ParameterList.
- *  If the start up stepper sublist is null, it tests if the stepper sublist is set in
- *  the Stepper's ParameterList.
+ *
+ *  This adds a new start up stepper Parameter sublist to the Stepper's
+ *  ParameterList.  If the start up stepper sublist is null, it tests if
+ *  the stepper sublist is set in the Stepper's ParameterList.
  */
 template<class Scalar>
 void StepperBDF2<Scalar>::setStartUpStepper(
@@ -176,13 +180,13 @@ void StepperBDF2<Scalar>::setStartUpStepper(
   } else {
     TEUCHOS_TEST_FOR_EXCEPTION( startupStepperName == startupStepperPL->name(),
       std::logic_error,
-         "Error - Trying to add a startup stepper that is already in ParameterList!\n"
+         "Error - Trying to add a startup stepper that is already in "
+      << "ParameterList!\n"
       << "  Stepper Type = "<< stepperPL_->get<std::string>("Stepper Type")
       << "\n" << "  Start Up Stepper Name  = "<<startupStepperName<<"\n");
     startupStepperName = startupStepperPL->name();
     stepperPL_->set("Start Up Stepper Name", startupStepperName);
-    stepperPL_->set(startupStepperName, startupStepperPL);           // Add sublist
-    if (startUpStepper_ != Teuchos::null) startUpStepper_ = Teuchos::null;
+    stepperPL_->set(startupStepperName, startupStepperPL);       // Add sublist
     RCP<StepperFactory<Scalar> > sf =
       Teuchos::rcp(new StepperFactory<Scalar>());
     startUpStepper_ =
@@ -230,20 +234,17 @@ void StepperBDF2<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar> > xOld;
     RCP<Thyra::VectorBase<Scalar> > xOldOld;
 
-    //If we are on first time step, call startup stepper
-    //There is test of exception in computeStartUp that start up stepper
-    //did not fail, so no need to check for failure here.
+    // If there are less than 3 states (e.g., first time step), call
+    // startup stepper and return.
     if (numStates < 3) {
       computeStartUp(solutionHistory);
-      numStates = solutionHistory->getNumStates();
+      return;
     }
-    if (numStates < 3) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error in Tempus::StepperBDF2::takeStep(): numStates after \n"
-          << "startup stepper must be at least 3, whereas numStates = "
-          << numStates <<"!\n" << "If running with Storage Type = Static, "
-          << "make sure Storage Limit > 2.\n");
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION( (numStates < 3), std::logic_error,
+      "Error in Tempus::StepperBDF2::takeStep(): numStates after \n"
+        << "startup stepper must be at least 3, whereas numStates = "
+        << numStates <<"!\n" << "If running with Storage Type = Static, "
+        << "make sure Storage Limit > 2.\n");
 
     //IKT, FIXME: add error checking regarding states being consecutive and
     //whether interpolated states are OK to use.
@@ -261,11 +262,8 @@ void StepperBDF2<Scalar>::takeStep(
     const Scalar dt    = workingState->getTimeStep();
     const Scalar dtOld = currentState->getTimeStep();
 
-    //IKT, FIXME: the following should be changed once CO adds
-    //methods to obtain past SolutionStates, e.g., getNM1State().
-    //get previous 2 states
-    xOld = (*solutionHistory)[numStates-2]->getX();
-    xOldOld = (*solutionHistory)[numStates-3]->getX();
+    xOld    = solutionHistory->getStateTimeIndexNM1()->getX();
+    xOldOld = solutionHistory->getStateTimeIndexNM2()->getX();
     order_ = 2.0;
 
     const Scalar alpha = (1.0/(dt + dtOld))*(1.0/dt)*(2.0*dt + dtOld);
@@ -281,7 +279,7 @@ void StepperBDF2<Scalar>::takeStep(
     MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
     inArgs.set_x(x);
     if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
-    if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time+dt);
+    if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time);
     if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
     if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (alpha);
     if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (beta);
@@ -311,30 +309,16 @@ template<class Scalar>
 void StepperBDF2<Scalar>::computeStartUp(
       const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  if (startUpStepper_ == Teuchos::null) return;
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"StepperBDF2::computeStartUp()");
+  *out << "Warning -- Taking a startup step for BDF2 using '"
+       << startUpStepper_->description()<<"'!" << std::endl;
 
   //Take one step using startUpStepper_
   startUpStepper_->takeStep(solutionHistory);
 
   order_ = startUpStepper_->getOrder();
-
-  Status & stepperStatus =
-    solutionHistory->getWorkingState()->getStepperState()->stepperStatus_;
-
-  //If startUpStepper_ failed, abort; otherwise, augment solutionHistory with newly-
-  //computed state
-  if (stepperStatus == Status::FAILED) {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,
-      std::logic_error,
-       "Error: Start Up Stepper Failed'!\n");
-  }
-  else {
-    solutionHistory->promoteWorkingState();
-    solutionHistory->initWorkingState();
-  }
 }
-
-
 
 /** \brief Provide a StepperState to the SolutionState.
  *  This Stepper does not have any special state data,

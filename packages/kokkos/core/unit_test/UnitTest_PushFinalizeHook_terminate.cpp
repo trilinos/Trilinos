@@ -1,9 +1,9 @@
-// @HEADER
-// ***********************************************************************
+/*
+//@HEADER
+// ************************************************************************
 //
-//           Panzer: A partial differential equation assembly
-//       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -35,33 +35,52 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
-// ***********************************************************************
-// @HEADER
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+*/
 
-#ifndef PANZER_EVALUATOR_DOF_GRADIENT_DECL_HPP
-#define PANZER_EVALUATOR_DOF_GRADIENT_DECL_HPP
+#include <cstdlib>
+#include <iostream>
+#include <exception>
+#include <Kokkos_Core.hpp>
 
-#include "Phalanx_Evaluator_Macros.hpp"
-#include "Phalanx_MDField.hpp"
-#include "Panzer_Evaluator_Macros.hpp"
+// If any of the finalize hooks given to Kokkos::push_finalize_hook
+// throws but does not catch an exception, make sure that
+// Kokkos::finalize calls std::terminate.
 
-namespace panzer {
-    
-//! Interpolates basis DOF values to IP DOF Gradient values
-PANZER_EVALUATOR_CLASS(DOFGradient)
-  
-  // <cell,point>
-  PHX::MDField<const ScalarT,Cell,Point> dof_value;
-  // <cell,point,dim>
-  PHX::MDField<ScalarT> dof_gradient;
+namespace { // (anonymous)
 
-  std::string basis_name;
-  std::size_t basis_index;
+// If you change this, change CMakeLists.txt in this directory too!
+// I verified that changing this string makes the test fail.
+const char my_terminate_str[] = "PASSED: I am the custom std::terminate handler.";
 
-PANZER_EVALUATOR_CLASS_END
-
+void my_terminate_handler ()
+{
+  std::cerr << my_terminate_str << std::endl;
+  std::abort(); // terminate handlers normally would end by calling this
 }
 
-#endif
+} // namespace (anonymous)
+
+
+int main(int argc, char *argv[])
+{
+  std::set_terminate (my_terminate_handler);
+
+
+  Kokkos::initialize(argc, argv);
+  Kokkos::push_finalize_hook([] {
+      throw std::runtime_error ("I am an uncaught exception!");
+    });
+
+  // This should call std::terminate, which in turn will call
+  // my_terminate_handler above.  That will print the message that
+  // makes this test count as passed.
+  Kokkos::finalize();
+
+  // The test actually failed if we got to this point.
+  std::cerr << "FAILED to call std::terminate!" << std::endl;
+  return EXIT_FAILURE;
+}

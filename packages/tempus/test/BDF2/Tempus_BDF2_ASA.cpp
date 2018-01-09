@@ -73,7 +73,8 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos_ASA)
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     //ParameterList& sens_pl = pl->sublist("Sensitivities");
     ParameterList& interp_pl =
-      pl->sublist("Default Integrator").sublist("Solution History").sublist("Interpolator");
+      pl->sublist("Default Integrator").sublist("Solution History")
+                                       .sublist("Interpolator");
     interp_pl.set("Interpolator Type", "Lagrange");
     interp_pl.set("Order", 1);
 
@@ -182,9 +183,8 @@ TEUCHOS_UNIT_TEST(BDF2, SinCos_ASA)
     L2norm = std::sqrt(L2norm);
     ErrorNorm.push_back(L2norm);
 
-    *my_out << " n = " << n << " dt = " << dt << " error = " << L2norm
-            << std::endl;
-
+    //*my_out << " n = " << n << " dt = " << dt << " error = " << L2norm
+    //        << std::endl;
   }
 
   // Check the order and intercept

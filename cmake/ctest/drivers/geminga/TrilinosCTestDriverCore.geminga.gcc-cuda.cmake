@@ -82,15 +82,18 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
 
-      #JHU: 2018/1/4 disabling pending resolution of github issue #2115
-      #"-DTrilinos_ENABLE_COMPLEX:BOOL=ON"
+      "-DTrilinos_ENABLE_COMPLEX:BOOL=ON"
+      # Adding the following as a possible fix for github issue #2115.
+      "-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON"
 
       "-DBUILD_SHARED_LIBS:BOOL=ON"
 
       ### COMPILERS AND FLAGS ###
       "-DTrilinos_ENABLE_CXX11:BOOL=ON"
       "-DTrilinos_CXX11_FLAGS:STRING='-std=c++11 -expt-extended-lambda'"
-      "-DCMAKE_CXX_FLAGS:STRING='-Wall -DKOKKOS_CUDA_USE_LAMBDA=1 -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-inline -Wshadow'"
+      # JHU 2018-01-08 removed -DKOKKOS_CUDA_USE_LAMBDA=1-DKOKKOS_CUDA_USE_LAMBDA=1 because
+      # it's already defined in KokkosCore_config.h (build-generated file).
+      "-DCMAKE_CXX_FLAGS:STRING='-Wall -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-inline -Wshadow'"
       "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
 
       ### TPLS ###

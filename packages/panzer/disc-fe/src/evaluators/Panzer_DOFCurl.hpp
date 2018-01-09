@@ -57,6 +57,20 @@ public:
 
   DOFCurl(const Teuchos::ParameterList& p);
 
+  /** \brief Ctor
+    *
+    * \param[in] input Tag that corresponds to the input DOF field (sized according to bd)
+    * \param[in] output Tag that corresponds to the output field (sized according to bd and the basis_dim)
+    * \param[in] bd Basis being differentiated
+    * \param[in] id Integration rule used
+    * \param[in] basis_dim Spatial dimension, used to choose the rank of the output field
+    */
+  DOFCurl(const PHX::FieldTag & input,
+          const PHX::FieldTag & output,
+          const panzer::BasisDescriptor & bd,
+          const panzer::IntegrationDescriptor & id,
+          int basis_dim);
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& fm);
 
@@ -65,6 +79,10 @@ public:
 private:
 
   typedef typename EvalT::ScalarT ScalarT;
+
+  bool use_descriptors_;
+  panzer::BasisDescriptor bd_;
+  panzer::IntegrationDescriptor id_;
 
   PHX::MDField<const ScalarT,Cell,Point> dof_value;
 
@@ -85,6 +103,12 @@ public:
 
   DOFCurl(const Teuchos::ParameterList& p);
 
+  DOFCurl(const PHX::FieldTag & input,
+          const PHX::FieldTag & output,
+          const panzer::BasisDescriptor & bd,
+          const panzer::IntegrationDescriptor & id,
+          int basis_dim);
+
   void postRegistrationSetup(typename TRAITS::SetupData d,
                              PHX::FieldManager<TRAITS>& fm);
 
@@ -93,6 +117,10 @@ public:
 private:
 
   typedef panzer::Traits::Jacobian::ScalarT ScalarT;
+
+  bool use_descriptors_;
+  panzer::BasisDescriptor bd_;
+  panzer::IntegrationDescriptor id_;
 
   PHX::MDField<const ScalarT,Cell,Point> dof_value;
 
