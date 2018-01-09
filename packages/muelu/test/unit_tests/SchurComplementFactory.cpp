@@ -182,7 +182,8 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     if(comm->getSize() == 2) localEntries = 299;
     if(comm->getSize() == 1) localEntries = 298;
     TEST_EQUALITY(sOp->getNodeNumEntries(), localEntries);
-    TEST_EQUALITY(sOp->getGlobalNumEntries(), Teuchos::as<size_t>(comm->getSize() * 300 - 2));
+    TEST_EQUALITY(sOp->getGlobalNumEntries(), 
+ Teuchos::as<size_t>(comm->getSize() * 300 - 2));
 
     RCP<Vector> v = VectorFactory::Build(sOp->getRangeMap(),true);
     sOp->getLocalDiagCopy(*v);
@@ -210,6 +211,7 @@ Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
     else localEntries = 300;
     if(comm->getSize() == 2) localEntries = 299;
     if(comm->getSize() == 1) localEntries = 298;
+
     TEST_EQUALITY(sOp->getNodeNumEntries(), localEntries);
     TEST_EQUALITY(sOp->getGlobalNumEntries(), Teuchos::as<size_t>(comm->getSize() * 300 - 2));
 
