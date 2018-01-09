@@ -1021,7 +1021,7 @@ namespace Test {
     auto B1_host = Kokkos::create_mirror_view(B1);                      \
     Kokkos::deep_copy(B1_host, B1);                                     \
                                                                         \
-    const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 50000; \
+    const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 100000; \
     for (int i=0;i<m;++i)                                               \
       for (int j=0;j<n;++j)                                             \
         EXPECT_NEAR(::abs(B1_host(i,j)), ::abs(B2(i,j)), eps*::abs(B2(i,j))); \
