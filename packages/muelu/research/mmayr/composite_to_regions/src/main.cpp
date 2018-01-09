@@ -1185,59 +1185,6 @@ int main(int argc, char *argv[]) {
         coarseAltColMapPerGrp[j] = new Epetra_Map(-1, regAltColGIDs.size(), regAltColGIDs.data(), 0, Comm);
       }
 
-      std::vector<Epetra_Map*> regCoarseColMapPerGrp(maxRegPerProc);
-       {
-         std::vector<int> coarseMapGIDs;
-         switch (myRank)
-         {
-         case 0:
-         {
-           coarseMapGIDs.push_back(0);
-           coarseMapGIDs.push_back(3);
-           coarseMapGIDs.push_back(6);
-           break;
-         }
-         case 1:
-         {
-           coarseMapGIDs.push_back(6);
-           coarseMapGIDs.push_back(3);
-           break;
-         }
-         case 2:
-         {
-           coarseMapGIDs.push_back(9);
-           coarseMapGIDs.push_back(12);
-           coarseMapGIDs.push_back(15);
-           coarseMapGIDs.push_back(26);
-           break;
-         }
-         case 3:
-         {
-           coarseMapGIDs.push_back(18);
-           coarseMapGIDs.push_back(27);
-           coarseMapGIDs.push_back(21);
-           break;
-         }
-         case 4:
-           break;
-         case 5:
-         {
-           coarseMapGIDs.push_back(18);
-           coarseMapGIDs.push_back(21);
-           coarseMapGIDs.push_back(24);
-           break;
-         }
-         case 6:
-         {
-           coarseMapGIDs.push_back(24);
-           coarseMapGIDs.push_back(21);
-           break;
-         }
-         }
-         regCoarseColMapPerGrp[0] = new Epetra_Map(-1, coarseMapGIDs.size(), coarseMapGIDs.data(), 0, Comm);
-   //      regCoarseColMapPerGrp[0]->Print(std::cout);
-       }
-
       // Build the actual prolongator
       for (int j = 0; j < maxRegPerProc; j++) {
         regionGrpProlong[j] = new Epetra_CrsMatrix(Copy, *revisedRowMapPerGrp[j], *coarseColMapPerGrp[j], 1, false);
