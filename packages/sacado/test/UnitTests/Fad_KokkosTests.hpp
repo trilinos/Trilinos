@@ -999,7 +999,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
 
   // Create subview of first column
   size_type col = 1;
-  auto s = Kokkos::Experimental::subdynrankview(v, Kokkos::ALL(), col);
+  auto s = Kokkos::subdynrankview(v, Kokkos::ALL(), col);
 
   // Copy back
   typedef decltype(s) SubviewType;
