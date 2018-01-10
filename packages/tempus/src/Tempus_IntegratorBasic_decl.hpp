@@ -22,6 +22,7 @@
 #include "Tempus_Integrator.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_IntegratorObserverBasic.hpp"
+#include "Tempus_IntegratorObserverComposite.hpp"
 
 #include <string>
 
@@ -131,7 +132,10 @@ public:
       Teuchos::RCP<IntegratorObserver<Scalar> > obs = Teuchos::null);
     /// Initializes the Integrator after set* function calls
     virtual void initialize();
-
+    //TODO: finish this
+    /// Returns the IntegratorTimer_ for this Integrator
+    virtual Teuchos::RCP<Teuchos::Time> getRunTime()
+    { return integratorTimer_;}
 
     /// Get current the solution, x
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() const
@@ -149,6 +153,9 @@ public:
 
     Teuchos::RCP<Teuchos::ParameterList> getIntegratorParameterList()
       { return integratorPL_; }
+    
+    //virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const 
+      //{return integratorTimer_;}
   //@}
 
   /// Parse when screen output should be executed
@@ -177,11 +184,12 @@ protected:
   Teuchos::RCP<Teuchos::ParameterList>      integratorPL_;
   Teuchos::RCP<SolutionHistory<Scalar> >    solutionHistory_;
   Teuchos::RCP<TimeStepControl<Scalar> >    timeStepControl_;
-  Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver_;
+  Teuchos::RCP<IntegratorObserverComposite<Scalar> > integratorObserver_;
   Teuchos::RCP<Stepper<Scalar> >            stepper_;
 
   Teuchos::RCP<Teuchos::Time> integratorTimer_;
   Teuchos::RCP<Teuchos::Time> stepperTimer_;
+  Scalar runtime_;
 
   std::vector<int> outputScreenIndices_;  ///< Vector of screen output indices.
 

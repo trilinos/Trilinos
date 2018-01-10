@@ -9,6 +9,7 @@
 #ifndef Tempus_IntegratorObserverBasic_impl_hpp
 #define Tempus_IntegratorObserverBasic_impl_hpp
 
+#include "Tempus_Stepper.hpp"
 
 namespace Tempus {
 
@@ -20,31 +21,82 @@ IntegratorObserverBasic<Scalar>::~IntegratorObserverBasic(){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeStartIntegrator(const Integrator<Scalar>& ){}
+observeStartIntegrator(const Integrator<Scalar>& integrator){
+
+  std::time_t begin = std::time(nullptr);
+  const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+  Teuchos::OSTab ostab(out,0,"ScreenOutput");
+  *out << "\nTempus - IntegratorBasic\n"
+       << std::asctime(std::localtime(&begin)) << "\n"
+       << "  Stepper = " << integrator.getStepper()->description() << "\n"
+       << "  Simulation Time Range  [" << integrator.getTimeStepControl()->getInitTime()
+       << ", " << integrator.getTimeStepControl()->getFinalTime() << "]\n"
+       << "  Simulation Index Range [" << integrator.getTimeStepControl()->getInitIndex()
+       << ", " << integrator.getTimeStepControl()->getFinalIndex() << "]\n"
+       << "============================================================================\n"
+       << "  Step       Time         dt  Abs Error  Rel Error  Order  nFail  dCompTime"
+       << std::endl;
+}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeStartTimeStep(const Integrator<Scalar>& ){}
+observeStartTimeStep(const Integrator<Scalar>& integrator){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeNextTimeStep(const Integrator<Scalar>& ){}
+observeNextTimeStep(const Integrator<Scalar>& integrator){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeBeforeTakeStep(const Integrator<Scalar>& ){}
+observeBeforeTakeStep(const Integrator<Scalar>& integrator){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeAfterTakeStep(const Integrator<Scalar>& ){}
+observeAfterTakeStep(const Integrator<Scalar>& integrator){}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeAcceptedTimeStep(const Integrator<Scalar>& ){}
+observeAcceptedTimeStep(const Integrator<Scalar>& integrator){
+
+  using Teuchos::RCP;
+  RCP<SolutionStateMetaData<Scalar> > csmd =
+    integrator.getSolutionHistory()->getCurrentState()->getMetaData();
+
+  const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+  Teuchos::OSTab ostab(out,0,"ScreenOutput");
+  *out<<std::scientific<<std::setw( 6)<<std::setprecision(3)<<csmd->getIStep()
+      <<std::setw(11)<<std::setprecision(3)<<csmd->getTime()
+      <<std::setw(11)<<std::setprecision(3)<<csmd->getDt()
+      <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorAbs()
+      <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorRel()
+      <<std::fixed     <<std::setw( 7)<<std::setprecision(1)<<csmd->getOrder()
+      <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<csmd->getNFailures()
+      <<std::endl;
+      //<<std::setw(11)<<std::setprecision(3)<<steppertime
+}
 
 template<class Scalar>
 void IntegratorObserverBasic<Scalar>::
-observeEndIntegrator(const Integrator<Scalar>& ){}
+observeEndIntegrator(const Integrator<Scalar>& integrator){
+
+  std::string exitStatus;
+  //const Scalar runtime = integrator.getIntegratorTimer()->totalElapsedTime();
+  if (integrator.getSolutionHistory()->getCurrentState()->getSolutionStatus() ==
+      Status::FAILED or integrator.getStatus() == Status::FAILED) {
+    exitStatus = "Time integration FAILURE!";
+  } else {
+    exitStatus = "Time integration complete.";
+  }
+  std::time_t end = std::time(nullptr);
+  const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+  Teuchos::OSTab ostab(out,0,"ScreenOutput");
+  *out << "============================================================================\n"
+       << std::asctime(std::localtime(&end))
+       << exitStatus << "\n"
+       << std::endl;
+       //<< "  Total runtime = " << runtime << " sec = "
+       //<< runtime/60.0 << " min\n"
+}
 
 } // namespace Tempus
 #endif // Tempus_IntegratorObserverBasic_impl_hpp
