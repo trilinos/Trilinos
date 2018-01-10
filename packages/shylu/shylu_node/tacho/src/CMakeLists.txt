@@ -39,7 +39,10 @@ LIST( APPEND HEADERS_PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
 
 
 APPEND_SET(SOURCES
-  TachoExp_Util.cpp)
+  TachoExp_Util.cpp
+  TachoExp_Blas_External.cpp
+  TachoExp_Lapack_External.cpp
+)
 
 #-----------------------------------------------------------------------------
 

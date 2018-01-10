@@ -82,9 +82,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
 
-      "-DTrilinos_ENABLE_COMPLEX:BOOL=ON"
-      # Adding the following as a possible fix for github issue #2115.
-      "-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON"
+      #JHU: 2018/1/4 disabling pending resolution of github issue #2115
+      #"-DTrilinos_ENABLE_COMPLEX:BOOL=ON"
 
       "-DBUILD_SHARED_LIBS:BOOL=ON"
 
