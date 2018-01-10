@@ -125,7 +125,7 @@ public:
     virtual void setTimeStepControl(
       Teuchos::RCP<TimeStepControl<Scalar> > tsc = Teuchos::null);
     /// Get the Observer
-    virtual Teuchos::RCP<IntegratorObserver<Scalar> > getObserver()
+    virtual Teuchos::RCP<IntegratorObserverComposite<Scalar> > getObserver()
       {return integratorObserver_;}
     /// Set the Observer
     virtual void setObserver(
