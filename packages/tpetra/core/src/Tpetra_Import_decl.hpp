@@ -368,6 +368,7 @@ namespace Tpetra {
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     setUnion (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
 
+    // The old version will go away after performance checking.
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     setUnionOld (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
 
