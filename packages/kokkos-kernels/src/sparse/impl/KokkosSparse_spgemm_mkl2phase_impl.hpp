@@ -47,7 +47,7 @@
 //#define HAVE_KOKKOSKERNELS_MKL
 
 
-#ifdef HAVE_KOKKOSKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL_DISABLED
 #include "mkl.h"
 #endif
 
@@ -81,7 +81,7 @@ void mkl2phase_symbolic(
     cin_row_index_view_type row_mapC,
     bool verbose = false){
 
-#ifdef HAVE_KOKKOSKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL_DISABLED
 
   typedef typename KernelHandle::nnz_lno_t idx;
   
@@ -216,7 +216,7 @@ void mkl2phase_symbolic(
       cin_nonzero_value_view_type &valuesC,
       bool verbose = false){
 
-#ifdef HAVE_KOKKOSKERNELS_MKL
+#ifdef HAVE_KOKKOSKERNELS_MKL_DISABLED
 
     typedef typename KernelHandle::nnz_lno_t idx;
     
