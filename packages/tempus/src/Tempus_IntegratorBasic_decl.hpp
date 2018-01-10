@@ -134,8 +134,10 @@ public:
     virtual void initialize();
     //TODO: finish this
     /// Returns the IntegratorTimer_ for this Integrator
-    virtual Teuchos::RCP<Teuchos::Time> getRunTime()
+    virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
     { return integratorTimer_;}
+    virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const override
+    { return stepperTimer_;}
 
     /// Get current the solution, x
     virtual Teuchos::RCP<Thyra::VectorBase<Scalar> > getX() const
