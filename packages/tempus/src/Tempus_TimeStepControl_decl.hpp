@@ -105,11 +105,11 @@ public:
       { return tscPL_->get<int>   ("Initial Order"); }
     virtual int getMaxOrder() const
       { return tscPL_->get<int>   ("Maximum Order"); }
-    virtual Scalar getAmplFactor() const 
+    virtual Scalar getAmplFactor() const
       { return tscPL_->get<double>("Amplification Factor"); }
-    virtual Scalar getReductFactor() const 
-      { return tscPL_->get<double>("Reduction Factor");}  
-    virtual Scalar getMinEta() const 
+    virtual Scalar getReductFactor() const
+      { return tscPL_->get<double>("Reduction Factor");}
+    virtual Scalar getMinEta() const
       { return tscPL_->get<double>   ("Minimum Value Monitoring Function"); }
     virtual Scalar getMaxEta() const
       { return tscPL_->get<double>   ("Maximum Value Monitoring Function"); }
@@ -157,16 +157,28 @@ public:
     virtual void setStepType(std::string StepType)
       { tscPL_->set<std::string>("Integrator Step Type", StepType    ); }
     virtual void setOutputIndices(std::vector<int> OutputIndices)
-      { outputIndices_ = OutputIndices; }
+      { outputIndices_ = OutputIndices;
+        std::ostringstream ss;
+        std::copy(OutputIndices.begin(), OutputIndices.end()-1,
+                  std::ostream_iterator<int>(ss, ","));
+        ss << OutputIndices.back();
+        tscPL_->set<std::string>("Output Index List", ss.str());
+      }
     virtual void setOutputTimes(std::vector<Scalar> OutputTimes)
-      { outputTimes_ = OutputTimes; }
+      { outputTimes_ = OutputTimes;
+        std::ostringstream ss;
+        std::copy(OutputTimes.begin(), OutputTimes.end()-1,
+                  std::ostream_iterator<Scalar>(ss, ","));
+        ss << OutputTimes.back();
+        tscPL_->set<std::string>("Output Time List", ss.str());
+      }
     virtual void setMaxFailures(int MaxFailures)
       { tscPL_->set<int>("Maximum Number of Stepper Failures", MaxFailures); }
     virtual void setMaxConsecFailures(int MaxConsecFailures)
       { tscPL_->set<int>
         ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
     virtual void setNumTimeSteps(int numTimeSteps);
-    virtual Scalar computeEta(const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory); 
+    virtual Scalar computeEta(const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory);
   //@}
 
 private:
