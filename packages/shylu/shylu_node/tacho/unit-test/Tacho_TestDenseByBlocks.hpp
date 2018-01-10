@@ -58,10 +58,10 @@ TEST( DenseByBlocks, chol ) {
 
   // temporary testing ldl as dummy
   {
-    double a[10][10], work[10][10];
+    double aa[10][10], work[10][10];
     int ipiv[10], info;
-    Lapack<double>::sytrf('U', 10, &a[0][0], 10, &ipiv[0], &work[0][0], 100, &info);
-    printf("ldl tested\n");
+    Lapack<double>::sytrf('U', 10, &aa[0][0], 10, &ipiv[0], &work[0][0], 100, &info);
+    //printf("ldl tested\n");
   }
 
   // test: chol by blocks with attached base buffer
@@ -180,9 +180,9 @@ TEST( DenseByBlocks, gemm ) {
 
     Random<ValueType> random;
     auto randomize = [&](const DenseMatrixViewHostType &mat) {
-      const ordinal_type m = mat.dimension_0(), n = mat.dimension_1();
-      for (ordinal_type j=0;j<n;++j)
-        for (ordinal_type i=0;i<m;++i)
+      const ordinal_type mm = mat.dimension_0(), nn = mat.dimension_1();
+      for (ordinal_type j=0;j<nn;++j)
+        for (ordinal_type i=0;i<mm;++i)
           mat(i,j) = random.value();
     };
     randomize(A);
@@ -298,9 +298,9 @@ TEST( DenseByBlocks, herk ) {
 
     Random<ValueType> random;
     auto randomize = [&](const DenseMatrixViewHostType &mat) {
-      const ordinal_type m = mat.dimension_0(), n = mat.dimension_1();
-      for (ordinal_type j=0;j<n;++j)
-        for (ordinal_type i=0;i<m;++i)
+      const ordinal_type mm = mat.dimension_0(), nn = mat.dimension_1();
+      for (ordinal_type j=0;j<nn;++j)
+        for (ordinal_type i=0;i<mm;++i)
           mat(i,j) = random.value();
     };
     randomize(A);
@@ -401,9 +401,9 @@ TEST( DenseByBlocks, trsm ) {
 
     Random<ValueType> random;
     auto randomize = [&](const DenseMatrixViewHostType &mat) {
-      const ordinal_type m = mat.dimension_0(), n = mat.dimension_1();
-      for (ordinal_type j=0;j<n;++j)
-        for (ordinal_type i=0;i<m;++i)
+      const ordinal_type mm = mat.dimension_0(), nn = mat.dimension_1();
+      for (ordinal_type j=0;j<nn;++j)
+        for (ordinal_type i=0;i<mm;++i)
           mat(i,j) = random.value();
     };
     randomize(A);
