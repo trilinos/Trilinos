@@ -83,5 +83,9 @@ addObserver(const Teuchos::RCP<IntegratorObserver<Scalar> > &observer)
   observers_.push_back(observer);
 }
 
+template<class Scalar>
+void IntegratorObserverComposite<Scalar>::
+clearObservers() { observers_.clear();}
+
 } // namespace Tempus
 #endif // Tempus_IntegratorObserverComposite_impl_hpp

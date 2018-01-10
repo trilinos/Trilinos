@@ -74,6 +74,9 @@ observeAcceptedTimeStep(const Integrator<Scalar>& integrator){
       <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<csmd->getNFailures()
       <<std::setw(11)<<std::setprecision(3)<<steppertime
       <<std::endl;
+
+  // reset the stepper timer
+  integrator.getStepperTimer()->reset();
 }
 
 template<class Scalar>

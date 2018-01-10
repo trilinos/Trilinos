@@ -302,18 +302,15 @@ void IntegratorBasic<Scalar>::setObserver(
     if (integratorObserver_ == Teuchos::null) {
       integratorObserver_ =
         Teuchos::rcp(new IntegratorObserverComposite<Scalar>);
-        //Teuchos::rcp(new IntegratorObserverBasic<Scalar>);
+      // add obsever to output integrator time step info
       Teuchos::RCP<IntegratorObserverBasic<Scalar> > outputObs = 
           Teuchos::rcp(new IntegratorObserverBasic<Scalar>);
       integratorObserver_->addObserver(outputObs);
     }
   } else {
-    //integratorObserver_ = obs;
     integratorObserver_->addObserver(obs);
   }
 
-  // set the output observer
-  //setOutputObserver();
 }
 
 
@@ -542,11 +539,6 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
   if ((csmd->getOutputScreen() == true) or
       (csmd->getOutput() == true) or
       (csmd->getTime() == timeStepControl_->getFinalTime())) {
-    const Scalar steppertime = stepperTimer_->totalElapsedTime();
-    stepperTimer_->reset();
-    //RCP<Teuchos::FancyOStream> out = this->getOStream();
-    //Teuchos::OSTab ostab(out,0,"ScreenOutput");
-    //outputObserver_->observeAcceptedTimeStep(*this, out, steppertime);
   }
 
   // Output and screen output
