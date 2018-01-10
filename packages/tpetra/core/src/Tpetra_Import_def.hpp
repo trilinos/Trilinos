@@ -951,7 +951,7 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
-    std::string label = std::string("Tpetra : Import : setUnion");
+    std::string label = std::string("Tpetra : Import::setUnion");
     RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
 #endif
 
@@ -1173,7 +1173,7 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     using Teuchos::TimeMonitor;
-    std::string label = std::string("Tpetra : Import : setUnionOld");
+    std::string label = std::string("Tpetra : Import::setUnionOld");
     RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
 #endif
 
