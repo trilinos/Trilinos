@@ -51,6 +51,16 @@ class SolutionState :
 public:
 
   SolutionState(
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot  = Teuchos::null,
+    const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xddot = Teuchos::null);
+
+  SolutionState(
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot  =Teuchos::null,
+    const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xddot =Teuchos::null);
+
+  SolutionState(
     const Teuchos::RCP<SolutionStateMetaData<Scalar> > ssmd,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
     const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
