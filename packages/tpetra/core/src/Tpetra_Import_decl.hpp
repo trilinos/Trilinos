@@ -43,6 +43,7 @@
 #define TPETRA_IMPORT_DECL_HPP
 
 #include <Tpetra_Details_Transfer.hpp>
+#include <unordered_map>
 
 namespace Tpetra {
   //
@@ -329,7 +330,7 @@ namespace Tpetra {
                         const typename Teuchos::Array<GlobalOrdinal>::size_type numSameGIDs1,
                         const Teuchos::ArrayView<const GlobalOrdinal>& tgtGIDs2,
                         const typename Teuchos::Array<GlobalOrdinal>::size_type numSameGIDs2,
-                        std::map<GlobalOrdinal,int>& remoteGIDProc) const;
+                        std::unordered_map<GlobalOrdinal,int>& remoteGIDProc) const;
 
     /// \brief Return the union of this Import and \c rhs.
     ///
@@ -366,6 +367,9 @@ namespace Tpetra {
     /// the left-hand side of the + expression be a reference).
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     setUnion (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
+
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    setUnionOld (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
 
     /// \brief Return the union of this Import this->getSourceMap()
     ///
