@@ -183,6 +183,18 @@ RILUK<MatrixType>::getU () const
 
 
 template<class MatrixType>
+size_t RILUK<MatrixType>::getNodeSmootherComplexity() const {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    A_.is_null (), std::runtime_error, "Ifpack2::RILUK::getNodeSmootherComplexity: "
+    "The input matrix A is null.  Please call setMatrix() with a nonnull "
+    "input matrix, then call compute(), before calling this method.");
+  // RILUK methods cost roughly one apply + the nnz in the upper+lower triangles
+  return A_->getNodeNumEntries() + L_->getNodeNumEntries() + U_->getNodeNumEntries();
+}
+
+
+
+template<class MatrixType>
 Teuchos::RCP<const Tpetra::Map<typename RILUK<MatrixType>::local_ordinal_type,
                                typename RILUK<MatrixType>::global_ordinal_type,
                                typename RILUK<MatrixType>::node_type> >
