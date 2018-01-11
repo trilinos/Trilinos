@@ -155,7 +155,7 @@ IF (TPL_ENABLE_MPI)
   SEMS_SELECT_TPL_ROOT_DIR(SCOTCH Scotch_ROOT)
   SET(TPL_Scotch_INCLUDE_DIRS "${Scotch_ROOT}/include"
     CACHE PATH "Set in SEMSDevEnv.cmake")
-  SET(Scotch_LIBRARY_DIRS "${Scotch_ROOT}/lib}"
+  SET(Scotch_LIBRARY_DIRS "${Scotch_ROOT}/lib"
     CACHE PATH "Set in SEMSDevEnv.cmake")
 ENDIF()
 
