@@ -210,6 +210,10 @@ void StepperBackwardEuler<Scalar>::setObserver(
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperBackwardEuler::initialize()\n");
+
   this->setSolver();
   this->setPredictor();
   this->setObserver();

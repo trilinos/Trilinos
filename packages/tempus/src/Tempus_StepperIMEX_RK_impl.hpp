@@ -408,6 +408,17 @@ void StepperIMEX_RK<Scalar>::setObserver(
 template<class Scalar>
 void StepperIMEX_RK<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (explicitTableau_ == Teuchos::null) || (implicitTableau_ == Teuchos::null),
+    std::logic_error,
+    "Error - Need to set the Butcher Tableaus, setTableaus(), before calling "
+    "StepperIMEX_RK::initialize()\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModelPairIMEX_ == Teuchos::null,
+    std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperIMEX_RK::initialize()\n");
+
   // Initialize the stage vectors
   const int numStages = explicitTableau_->numStages();
   stageF_.resize(numStages);

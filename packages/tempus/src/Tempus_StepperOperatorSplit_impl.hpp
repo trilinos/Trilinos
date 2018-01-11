@@ -168,6 +168,10 @@ void StepperOperatorSplit<Scalar>::createSubSteppers(
 template<class Scalar>
 void StepperOperatorSplit<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( subStepperList_.size() == 0, std::logic_error,
+    "Error - Need to set the subSteppers, createSubSteppers(), before calling "
+    "StepperOperatorSplit::initialize()\n");
+
   OpSpSolnHistory_ = rcp(new SolutionHistory<Scalar>());
   OpSpSolnHistory_->setStorageLimit(2);
   OpSpSolnHistory_->setStorageType(Tempus::STORAGE_TYPE_STATIC);
