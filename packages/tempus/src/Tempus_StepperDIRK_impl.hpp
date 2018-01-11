@@ -172,6 +172,15 @@ void StepperDIRK<Scalar>::setObserver(
 template<class Scalar>
 void StepperDIRK<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( DIRK_ButcherTableau_ == Teuchos::null,
+    std::logic_error,
+    "Error - Need to set the Butcher Tableau, setTableau(), before calling "
+    "StepperDIRK::initialize()\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperDIRK::initialize()\n");
+
   // Initialize the stage vectors
   const int numStages = DIRK_ButcherTableau_->numStages();
   stageX_    = wrapperModel_->getNominalValues().get_x()->clone_v();
