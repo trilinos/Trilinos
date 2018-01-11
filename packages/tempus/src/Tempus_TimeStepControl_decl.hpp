@@ -17,6 +17,11 @@
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
+#include <iostream>
+#include <iterator>
+#include <sstream>
+
+
 namespace Tempus {
 
 /** \brief TimeStepControl manages the time step size.
