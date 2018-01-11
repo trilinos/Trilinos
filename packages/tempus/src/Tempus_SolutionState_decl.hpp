@@ -209,6 +209,8 @@ public:
     virtual void setOrder(Scalar order)
       { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
         metaData_nc_->setOrder(order); }
+    virtual void setSolutionStatus(Status s)
+      { return metaData_nc_->setSolutionStatus(s); }
     virtual void setOutput(bool output)
       { TEUCHOS_ASSERT(metaData_nc_ != Teuchos::null);
         metaData_nc_->setOutput(output); }

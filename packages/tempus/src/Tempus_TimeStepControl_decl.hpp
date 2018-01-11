@@ -46,11 +46,8 @@ class TimeStepControl
 {
 public:
 
-  /** \brief Default constructor. */
-  TimeStepControl();
-
-  /** \brief Construct from ParameterList */
-  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList);
+  /// Constructor
+  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
 
   /// This is a copy constructor
   TimeStepControl(const TimeStepControl<Scalar>& tsc);
