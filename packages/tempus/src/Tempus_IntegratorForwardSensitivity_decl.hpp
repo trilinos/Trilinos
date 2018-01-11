@@ -182,6 +182,10 @@ public:
   /// Initializes the Integrator after set* function calls
   virtual void initialize()
     { integrator_->initialize(); }
+  virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override
+    { return integrator_->getIntegratorTimer(); }
+  virtual Teuchos::RCP<Teuchos::Time> getStepperTimer() const override
+    { return integrator_->getStepperTimer(); }
 
   /// Get current the solution, x
   virtual Teuchos::RCP<const Thyra::VectorBase<Scalar> > getX() const;

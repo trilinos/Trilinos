@@ -296,15 +296,21 @@ template<class Scalar>
 void IntegratorBasic<Scalar>::setObserver(
   Teuchos::RCP<IntegratorObserver<Scalar> > obs)
 {
+
   if (obs == Teuchos::null) {
     // Create default IntegratorObserverBasic, otherwise keep current observer.
     if (integratorObserver_ == Teuchos::null) {
       integratorObserver_ =
-        Teuchos::rcp(new IntegratorObserverBasic<Scalar>);
+        Teuchos::rcp(new IntegratorObserverComposite<Scalar>);
+      // add obsever to output integrator time step info
+      Teuchos::RCP<IntegratorObserverBasic<Scalar> > outputObs = 
+          Teuchos::rcp(new IntegratorObserverBasic<Scalar>);
+      integratorObserver_->addObserver(outputObs);
     }
   } else {
-    integratorObserver_ = obs;
+    integratorObserver_->addObserver(obs);
   }
+
 }
 
 
@@ -382,19 +388,7 @@ void IntegratorBasic<Scalar>::startIntegrator()
     integratorStatus_ = FAILED;
     return;
   }
-  std::time_t begin = std::time(nullptr);
   integratorTimer_->start();
-  Teuchos::OSTab ostab(out,0,"ScreenOutput");
-  *out << "\nTempus - IntegratorBasic\n"
-       << std::asctime(std::localtime(&begin)) << "\n"
-       << "  Stepper = " << stepper_->description() << "\n"
-       << "  Simulation Time Range  [" << timeStepControl_->getInitTime()
-       << ", " << timeStepControl_->getFinalTime() << "]\n"
-       << "  Simulation Index Range [" << timeStepControl_->getInitIndex()
-       << ", " << timeStepControl_->getFinalIndex() << "]\n"
-       << "============================================================================\n"
-       << "  Step       Time         dt  Abs Error  Rel Error  Order  nFail  dCompTime"
-       << std::endl;
   integratorStatus_ = WORKING;
 }
 
@@ -545,20 +539,6 @@ void IntegratorBasic<Scalar>::acceptTimeStep()
   if ((csmd->getOutputScreen() == true) or
       (csmd->getOutput() == true) or
       (csmd->getTime() == timeStepControl_->getFinalTime())) {
-    const Scalar steppertime = stepperTimer_->totalElapsedTime();
-    stepperTimer_->reset();
-    RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,0,"ScreenOutput");
-    *out
-    <<std::scientific<<std::setw( 6)<<std::setprecision(3)<<csmd->getIStep()
-                     <<std::setw(11)<<std::setprecision(3)<<csmd->getTime()
-                     <<std::setw(11)<<std::setprecision(3)<<csmd->getDt()
-                     <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorAbs()
-                     <<std::setw(11)<<std::setprecision(3)<<csmd->getErrorRel()
-    <<std::fixed     <<std::setw( 7)<<std::setprecision(1)<<csmd->getOrder()
-    <<std::scientific<<std::setw( 7)<<std::setprecision(3)<<csmd->getNFailures()
-                     <<std::setw(11)<<std::setprecision(3)<<steppertime
-    <<std::endl;
   }
 
   // Output and screen output
@@ -581,16 +561,10 @@ void IntegratorBasic<Scalar>::endIntegrator()
   }
 
   integratorTimer_->stop();
-  const Scalar runtime = integratorTimer_->totalElapsedTime();
-  std::time_t end = std::time(nullptr);
+  runtime_ = integratorTimer_->totalElapsedTime();
+
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,0,"ScreenOutput");
-  *out << "============================================================================\n"
-       << "  Total runtime = " << runtime << " sec = "
-       << runtime/60.0 << " min\n"
-       << std::asctime(std::localtime(&end))
-       << exitStatus << "\n"
-       << std::endl;
+  //outputObserver_->observeEndIntegrator(*this, out, runtime);
 }
 
 

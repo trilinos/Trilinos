@@ -33,6 +33,7 @@ IF (ROL_ENABLE_Thyra)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/vector)
   APPEND_SET(HEADERS
     vector/ROL_ThyraVector.hpp
+    vector/ROL_ScaledThyraVector.hpp
   )
 ENDIF()
 

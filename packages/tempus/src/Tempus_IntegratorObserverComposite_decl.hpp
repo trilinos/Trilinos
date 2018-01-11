@@ -54,6 +54,9 @@ public:
 
     // add observer to the composite observer list
     void addObserver(const Teuchos::RCP<IntegratorObserver<Scalar> > &observer);
+
+    // clear all observer from the composite observer list
+    void clearObservers();
   //@}
 
 private:
