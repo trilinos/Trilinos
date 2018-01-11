@@ -120,8 +120,7 @@ cleanUp()
 message()
 {
   if $showStatus; then
-    echo -en "\e[2K\r"
-    echo -n $1
+    echo -en "\e[2K\r$1"
   fi
 }
 
