@@ -189,7 +189,10 @@ size_t RILUK<MatrixType>::getNodeSmootherComplexity() const {
     "The input matrix A is null.  Please call setMatrix() with a nonnull "
     "input matrix, then call compute(), before calling this method.");
   // RILUK methods cost roughly one apply + the nnz in the upper+lower triangles
-  return A_->getNodeNumEntries() + L_->getNodeNumEntries() + U_->getNodeNumEntries();
+  if(!L_.is_null() && !U_.is_null())
+    return A_->getNodeNumEntries() + L_->getNodeNumEntries() + U_->getNodeNumEntries();
+  else 
+    return 0;
 }
 
 
