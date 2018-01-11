@@ -60,10 +60,19 @@ class ZeroContributedField : public PHX::EvaluatorWithBaseImpl<Traits>,
   PHX::MDField<ScalarT> field;
 
 public:
-  struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
+
+  struct MyDevEvalResidual : public PHX::DeviceEvaluator<Traits> {
     Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> field_;
-    KOKKOS_FUNCTION MyDevEval(const Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>& field) : field_(field) {} 
-    KOKKOS_FUNCTION MyDevEval(const MyDevEval& src) = default;
+    KOKKOS_FUNCTION MyDevEvalResidual(const Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>& field) : field_(field) {} 
+    KOKKOS_FUNCTION MyDevEvalResidual(const MyDevEvalResidual& src) = default;
+    KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
+                                  typename Traits::EvalData workset) override;
+  };
+
+  struct MyDevEvalJacobian : public PHX::DeviceEvaluator<Traits> {
+    Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> field_;
+    KOKKOS_FUNCTION MyDevEvalJacobian(const Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device>& field) : field_(field) {} 
+    KOKKOS_FUNCTION MyDevEvalJacobian(const MyDevEvalJacobian& src) = default;
     KOKKOS_FUNCTION void evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
                                   typename Traits::EvalData workset) override;
   };

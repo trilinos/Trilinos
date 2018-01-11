@@ -104,7 +104,7 @@ evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
   const int local_cell = team.league_rank();
   const int cell_global_offset_index = workset.first_cell_global_index_;
   if (team.team_rank() == 0) {
-    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,residual_contribution.extent(1)), [=,&workset] (const int& node) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,residual_contribution.extent(1)), [&] (const int& node) {
       const int residual_index = gids(cell_global_offset_index+local_cell,node) * num_equations + equation_index;
       workset.global_residual_atomic_(residual_index) += residual_contribution(local_cell,node);
     });

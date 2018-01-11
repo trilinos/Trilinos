@@ -470,6 +470,7 @@ namespace PHX {
       for (int e=0; e < num_evaluators; ++e) {
         evaluators_(e).ptr->prepareForRecompute(team,data_);
         evaluators_(e).ptr->evaluate(team,data_);
+	team.team_barrier();
       }
     }
    
