@@ -63,6 +63,7 @@ template<typename EvalT, typename Traits>
 PHX::DeviceEvaluator<Traits>*
 IntegrateSourceTerm<EvalT,Traits>::createDeviceEvaluator() const
 {
+  using MyDevEval = typename std::conditional<std::is_same<EvalT,PHX::MyTraits::Residual>::value,MyDevEvalResidual,MyDevEvalJacobian>::type;
   return PHX::createDeviceEvaluator<MyDevEval,Traits,PHX::exec_space,PHX::mem_space>(source.get_static_view(),
                                                                                      residual.get_static_view());
 }
@@ -71,6 +72,7 @@ IntegrateSourceTerm<EvalT,Traits>::createDeviceEvaluator() const
 template<typename EvalT, typename Traits>
 void IntegrateSourceTerm<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 {
+  using MyDevEval = typename std::conditional<std::is_same<EvalT,PHX::MyTraits::Residual>::value,MyDevEvalResidual,MyDevEvalJacobian>::type;
   auto e = PHX::make_dev_eval(MyDevEval(source.get_static_view(),residual.get_static_view()),workset);
   Kokkos::parallel_for(Kokkos::TeamPolicy<PHX::exec_space>(workset.num_cells_,workset.team_size_,workset.vector_size_),e);
 }
@@ -78,7 +80,28 @@ void IntegrateSourceTerm<EvalT,Traits>::evaluateFields(typename Traits::EvalData
 //**********************************************************************
 template<typename EvalT, typename Traits>
 KOKKOS_INLINE_FUNCTION
-void IntegrateSourceTerm<EvalT,Traits>::MyDevEval::
+void IntegrateSourceTerm<EvalT,Traits>::MyDevEvalResidual::
+evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
+         typename Traits::EvalData workset)
+{
+  const int cell = team.league_rank();
+  const auto& basis_view = workset.basis_;
+  const auto& weights = workset.weights_;
+  const auto& cell_measure = workset.det_jac_;
+
+  Kokkos::parallel_for(Kokkos::TeamThreadRange(team,0,basis_view.extent(1)), [&] (const int& basis) {
+    Kokkos::parallel_for(Kokkos::ThreadVectorRange(team,basis_view.extent(0)), [&] (const int& qp) {
+      //for (int qp = 0; qp < static_cast<int>(basis_view.extent(0)); ++qp)
+      residual(cell,basis) +=  basis_view(qp,basis) * source(cell,qp) * weights(qp) * cell_measure(cell,qp);
+    });
+  });
+  team.team_barrier();
+}
+
+//**********************************************************************
+template<typename EvalT, typename Traits>
+KOKKOS_INLINE_FUNCTION
+void IntegrateSourceTerm<EvalT,Traits>::MyDevEvalJacobian::
 evaluate(const typename PHX::DeviceEvaluator<Traits>::member_type& team,
          typename Traits::EvalData workset)
 {
