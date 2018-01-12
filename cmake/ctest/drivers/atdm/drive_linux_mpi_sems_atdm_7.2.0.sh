@@ -8,7 +8,8 @@
 # Just run this script from the base location where you want to create create
 # the directories and that is all.
 
-DRIVER_SCRIPT_DIR=`echo $0 | sed "s/\(.*\)\/.*\.sh/\1/g"`
+DRIVER_SCRIPT_DIR_REL=`echo $0 | sed "s/\(.*\)\/.*\.sh/\1/g"`
+DRIVER_SCRIPT_DIR=`readlink -f ${DRIVER_SCRIPT_DIR_REL}`
 echo "DRIVER_SCRIPT_DIR = '$DRIVER_SCRIPT_DIR'"
 
 TRILINOS_DIR=`readlink -f ${DRIVER_SCRIPT_DIR}/../../../..`
