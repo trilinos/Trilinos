@@ -36,6 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Andy Wantuch      (acwantu@sandia.gov)
 //                    Erik Boman        (egboman@sandia.gov)
 //                    Siva Rajamanickam (srajama@sandia.gov)
 //
@@ -43,9 +44,11 @@
 //
 // @HEADER
 //
-// Basic testing of Zoltan2::BasicIdentifierAdapter 
+// Basic testing of Zoltan2::BasicKokkosIdentifierAdapter 
 
-#include <Zoltan2_BasicIdentifierAdapter.hpp>
+#include <Kokkos_Core.hpp>
+
+#include <Zoltan2_BasicKokkosIdentifierAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <Teuchos_GlobalMPISession.hpp>
@@ -67,71 +70,71 @@ int main(int argc, char *argv[]) {
   // Create global identifiers with weights
 
   zlno_t numLocalIds = 10;
-  int nWeights = 2;
+  const int nWeights = 2;
 
-  zgno_t *myIds = new zgno_t[numLocalIds];
-  zscalar_t *weights = new zscalar_t [numLocalIds*nWeights];
+  Kokkos::View<zgno_t*> myIds("myIds", numLocalIds);
   zgno_t myFirstId = rank * numLocalIds * numLocalIds;
 
-  for (zlno_t i=0; i < numLocalIds; i++){
-    myIds[i] = zgno_t(myFirstId+i);
-    weights[i*nWeights] = 1.0;
-    weights[i*nWeights + 1] = (nprocs-rank) / (i+1);
+  Kokkos::View<zscalar_t **> weights("weights", numLocalIds, nWeights);
+  for (zlno_t i=0; i < numLocalIds; i++) {
+    myIds(i) = zgno_t(myFirstId+i);
+    // Fill in 2D array
+    weights(i, 0) = 1.0;
+    weights(i, 1) = (nprocs-rank) / (i+1);
   }
 
+  // Create a Zoltan2::BasicIdentifierAdapter object
+  // and verify that it is correct
+
+  // These types are from /home/acwantu/UUR_git/Trilinos/packages/zoltan2/test/helpers/Zoltan2_TestHelpers.hpp
   typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
-  std::vector<const zscalar_t *> weightValues;
-  std::vector<int> strides;
 
-  weightValues.push_back(weights);
-  weightValues.push_back(weights + 1);
-  strides.push_back(2);
-  strides.push_back(2);
+  // The new Kokkos adapter will take in 2 args instead of 4 because it doesn't need to do striding.
+  // The Kokkos::View stores a 2D array of data, so the indexing method is already known.
+  // With the old method, there were different ways to do striding because 1D arrays were used.
+  Zoltan2::BasicKokkosIdentifierAdapter<userTypes_t> ia(myIds, weights); // TODO: Will need to use new adapter
+  //Zoltan2::BasicIdentifierAdapter<userTypes_t> ia(numLocalIds, myIds,
+  //  weightValues, strides);
 
-  Zoltan2::BasicIdentifierAdapter<userTypes_t> ia(numLocalIds, myIds,
-    weightValues, strides);
-
-  if (!fail && ia.getLocalNumIDs() != size_t(numLocalIds)){
+  if (!fail && ia.getLocalNumIDs() != size_t(numLocalIds)) {
     fail = 4;
   }
 
-  if (!fail && ia.getNumWeightsPerID() != nWeights)
+  if (!fail && ia.getNumWeightsPerID() != nWeights) {
     fail = 5;
-
-  const zgno_t *globalIdsIn;
-  zscalar_t const *weightsIn[2];
-  int weightStridesIn[2];
-
-  ia.getIDsView(globalIdsIn);
-
-  for (int w=0; !fail && w < nWeights; w++)
-    ia.getWeightsView(weightsIn[w], weightStridesIn[w], w);
-
-  const zscalar_t *w1 = weightsIn[0];
-  const zscalar_t *w2 = weightsIn[1];
-  int incr1 = weightStridesIn[0];
-  int incr2 = weightStridesIn[1];
-
-  for (zlno_t i=0; !fail && i < numLocalIds; i++){
-
-    if (globalIdsIn[i] != zgno_t(myFirstId+i))
-      fail = 8;
-    
-    if (!fail && w1[i*incr1] != 1.0)
-      fail = 9;
-    
-    if (!fail && w2[i*incr2] != weights[i*nWeights+1])
-      fail = 10;
   }
 
-  delete [] myIds;
-  delete [] weights;
+  Kokkos::View<zgno_t *> globalIdsIn; // Pointer which will later point to the IDs
+  Kokkos::View<zscalar_t *> weightsIn[nWeights]; // Pointer which will later point to the weights
+
+  // In the old implementation, Views were pointers to memory containing C arrays.
+  ia.getIDsKokkosView(globalIdsIn); // Make the function mutate globalIdsIn to point to a Kokkos::View
+
+  for (int w=0; !fail && w < nWeights; w++) {
+    ia.getWeightsView(weightsIn[w], w); // This function will need to use the correct Kokkos subview method to get a portion of the view when it's implemented in the adapter.
+  }
+
+  Kokkos::View<zscalar_t *> w0 = weightsIn[0];
+  Kokkos::View<zscalar_t *> w1 = weightsIn[1];
+
+  for (zlno_t i=0; !fail && i < numLocalIds; i++){
+    if (globalIdsIn(i) != zgno_t(myFirstId+i)) {
+      fail = 8;
+    }
+    if (!fail && w0(i) != 1.0) {
+      fail = 9;
+    }
+    if (!fail && w1(i) != weights(i, 1)) {
+      fail = 10;
+    }
+  }
 
   gfail = globalFail(comm, fail);
-  if (gfail)
+  if (gfail) {
     printFailureCode(comm, fail);   // will exit(1)
-
-  if (rank == 0)
+  }
+  if (rank == 0) {
     std::cout << "PASS" << std::endl;
+  }
 }
 

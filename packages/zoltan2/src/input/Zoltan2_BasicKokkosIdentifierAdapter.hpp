@@ -36,6 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Andy Wantuch      (acwantu@sandia.gov)
 //                    Erik Boman        (egboman@sandia.gov)
 //                    Siva Rajamanickam (srajama@sandia.gov)
 //
@@ -43,12 +44,12 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_BasicIdentifierAdapter.hpp
-    \brief Defines the BasicIdentifierAdapter class.
+/*! \file Zoltan2_BasicKokkosIdentifierAdapter.hpp
+    \brief Defines the BasicKokkosIdentifierAdapter class.
 */
 
-#ifndef _ZOLTAN2_BASICIDENTIFIERADAPTER_HPP_
-#define _ZOLTAN2_BASICIDENTIFIERADAPTER_HPP_
+#ifndef _ZOLTAN2_BASICKOKKOSIDENTIFIERADAPTER_HPP_
+#define _ZOLTAN2_BASICKOKKOSIDENTIFIERADAPTER_HPP_
 
 #include <Zoltan2_IdentifierAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
@@ -80,7 +81,7 @@ namespace Zoltan2 {
  */
 
 template <typename User>
-  class BasicIdentifierAdapter: public IdentifierAdapter<User> {
+  class BasicKokkosIdentifierAdapter: public IdentifierAdapter<User> {
 
 public:
 
@@ -106,7 +107,7 @@ public:
    *  lifetime of this Adapter.
    */
 
-  BasicIdentifierAdapter( lno_t numIds, const gno_t *idPtr, 
+  BasicKokkosIdentifierAdapter( lno_t numIds, const gno_t *idPtr, 
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   ////////////////////////////////////////////////////////////////
@@ -143,7 +144,7 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-  BasicIdentifierAdapter<User>::BasicIdentifierAdapter(
+  BasicKokkosIdentifierAdapter<User>::BasicKokkosIdentifierAdapter(
     lno_t numIds, const gno_t *idPtr,
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       numIds_(numIds), idList_(idPtr), weights_()

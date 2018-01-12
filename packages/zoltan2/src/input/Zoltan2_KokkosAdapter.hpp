@@ -36,6 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Karen Devine      (kddevin@sandia.gov)
+//                    Andy Wantuch      (acwantu@sandia.gov)
 //                    Erik Boman        (egboman@sandia.gov)
 //                    Siva Rajamanickam (srajama@sandia.gov)
 //
@@ -43,14 +44,14 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_BaseAdapter.hpp
+/*! \file Zoltan2_BaseKokkosAdapter.hpp
     \brief Defines the Adapter interface for accessing user data.
 */
 
 #include <Kokkos_Core.hpp>
 
-#ifndef _ZOLTAN2_ADAPTER_HPP_
-#define _ZOLTAN2_ADAPTER_HPP_
+#ifndef _ZOLTAN2_KOKKOSADAPTER_HPP_
+#define _ZOLTAN2_KOKKOSADAPTER_HPP_
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_InputTraits.hpp>
@@ -71,18 +72,18 @@ enum BaseAdapterType {
 };
 
 
-/*! \brief BaseAdapter defines methods required by all Adapters
+/*! \brief BaseKokkosAdapter defines methods required by all Kokkos Adapters
 
-    Adapters provide access from Zoltan2 to the user's data.  The
+    Kokkos Adapters provide access from Zoltan2 to the user's data.  The
     methods in the interface must be defined by users.  Many built-in
     adapters are already defined for common data structures, such as
     Tpetra and Epetra objects and C-language pointers to arrays.
 
  */
 
-class BaseAdapterRoot {
+class BaseKokkosAdapterRoot {
 public:
-  virtual ~BaseAdapterRoot() {}; // required virtual declaration
+  virtual ~BaseKokkosAdapterRoot() {}; // required virtual declaration
 
   /*! \brief Returns the number of objects on this process
    *
@@ -100,7 +101,7 @@ public:
 };
 
 template <typename User>
-  class BaseAdapter : public BaseAdapterRoot {
+  class BaseKokkosAdapter : public BaseKokkosAdapterRoot {
 
 public:
   typedef typename InputTraits<User>::lno_t lno_t;
@@ -111,18 +112,18 @@ public:
 
   /*! \brief Returns the type of adapter.
    */
-  virtual enum BaseAdapterType adapterType() const = 0;
+  virtual enum BaseKokkosAdapterType adapterType() const = 0;
 
   /*! \brief Destructor
    */
-  virtual ~BaseAdapter() {};
+  virtual ~BaseKokkosAdapter() {};
 
   /*! \brief Provide a pointer to this process' identifiers.
 
       \param Ids will on return point to the list of the global Ids for 
         this process.
    */
-  virtual void getIDsView(const gno_t *&Ids) const = 0; // TODO: Note: 'const = 0' means it's required
+  virtual void getIDsView(const gno_t *&Ids) const = 0;
 
   ///*! \brief Provide pointer to a weight array with stride.
   // *    \param wgt on return a pointer to the weights for this idx
@@ -134,7 +135,7 @@ public:
   // *   This function should not be called if getNumWeightsPerID is zero.
   // */ 
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
-                              int idx = 0) const { // TODO: Note: being const but not 'const = 0', 
+                              int idx = 0) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
