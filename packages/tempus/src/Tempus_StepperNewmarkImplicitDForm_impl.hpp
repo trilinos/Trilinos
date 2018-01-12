@@ -214,7 +214,12 @@ StepperNewmarkImplicitDForm<Scalar>::setSolver(
 
 template <class Scalar>
 void
-StepperNewmarkImplicitDForm<Scalar>::initialize() {
+StepperNewmarkImplicitDForm<Scalar>::initialize()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperNewmarkImplicitDForm::initialize()\n");
+
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif

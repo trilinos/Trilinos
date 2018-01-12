@@ -141,10 +141,7 @@ namespace MueLu {
       if (!bIsBlocked) {
         TEUCHOS_TEST_FOR_EXCEPTION(T->getRangeMap()->isSameAs(*(A10->getDomainMap())) == false, Exceptions::RuntimeError,
                                    "MueLu::SchurComplementFactory::Build: RangeMap of A01 and domain map of A10 are not the same.");
-        // NOTE: Forcing use of the LTG kernel here since using the default OpenMP kernel will cause the unit test to fail,
-        // because KK algorithms generate more hard zeros than the LTG does. 
         RCP<ParameterList> myparams = rcp(new ParameterList);
-        myparams->set("openmp: algorithm","LTG");
         S = Xpetra::MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Multiply(*A10, false, *T, false, GetOStream(Statistics2),true,true,std::string("SchurComplementFactory"),myparams);
 
       } else {

@@ -267,10 +267,21 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
   using Teuchos::ParameterList;
 
   if (tsc == Teuchos::null) {
-    // Construct from Integrator ParameterList
-      RCP<ParameterList> tscPL =
+    // Create timeStepControl_ if null, otherwise keep current parameters.
+    if (timeStepControl_ == Teuchos::null) {
+      if (integratorPL_->isSublist("Time Step Control")) {
+        // Construct from Integrator ParameterList
+        RCP<ParameterList> tscPL =
           Teuchos::sublist(integratorPL_,"Time Step Control",true);
-      timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL));
+        timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL));
+      } else {
+        // Construct default TimeStepControl
+        timeStepControl_ = rcp(new TimeStepControl<Scalar>());
+        RCP<ParameterList> tscPL = timeStepControl_->getNonconstParameterList();
+        integratorPL_->set("Time Step Control", tscPL->name());
+        integratorPL_->set(tscPL->name(), tscPL);
+      }
+    }
 
   } else {
     // Make integratorPL_ consistent with new TimeStepControl.
@@ -279,15 +290,6 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
     integratorPL_->set(tscPL->name(), tscPL);
     timeStepControl_ = tsc;
   }
-
-  if (timeStepControl_->getMinOrder() == 0)
-      timeStepControl_->setMinOrder(stepper_->getOrderMin());
-  if (timeStepControl_->getMaxOrder() == 0)
-      timeStepControl_->setMaxOrder(stepper_->getOrderMax());
-  if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
-  if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
 
 }
 
@@ -303,7 +305,7 @@ void IntegratorBasic<Scalar>::setObserver(
       integratorObserver_ =
         Teuchos::rcp(new IntegratorObserverComposite<Scalar>);
       // add obsever to output integrator time step info
-      Teuchos::RCP<IntegratorObserverBasic<Scalar> > outputObs = 
+      Teuchos::RCP<IntegratorObserverBasic<Scalar> > outputObs =
           Teuchos::rcp(new IntegratorObserverBasic<Scalar>);
       integratorObserver_->addObserver(outputObs);
     }
@@ -317,10 +319,23 @@ void IntegratorBasic<Scalar>::setObserver(
 template<class Scalar>
 void IntegratorBasic<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( stepper_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the Stepper, setStepper(), before calling "
+    "IntegratorBasic::initialize()\n");
+
   this->setTimeStepControl();
   this->parseScreenOutput();
   this->setSolutionHistory();
   this->setObserver();
+
+  if (timeStepControl_->getMinOrder() == 0)
+      timeStepControl_->setMinOrder(stepper_->getOrderMin());
+  if (timeStepControl_->getMaxOrder() == 0)
+      timeStepControl_->setMaxOrder(stepper_->getOrderMax());
+  if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
+      timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
+  if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
+      timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
 
   if (integratorTimer_ == Teuchos::null)
     integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));

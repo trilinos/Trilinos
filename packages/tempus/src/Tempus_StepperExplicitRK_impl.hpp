@@ -123,6 +123,15 @@ void StepperExplicitRK<Scalar>::setObserver(
 template<class Scalar>
 void StepperExplicitRK<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( ERK_ButcherTableau_ == Teuchos::null,
+    std::logic_error,
+    "Error - Need to set the Butcher Tableau, setTableau(), before calling "
+    "StepperExplicitRK::initialize()\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION( appModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperExplicitRK::initialize()\n");
+
   // Initialize the stage vectors
   int numStages = ERK_ButcherTableau_->numStages();
   stageX_ = Thyra::createMember(appModel_->get_f_space());

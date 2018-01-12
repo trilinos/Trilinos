@@ -23,8 +23,8 @@ usage()
   echo "┃                        the terminal.                                        ┃"
   echo "┃     -s, --status:      If present, output status information to the         ┃"
   echo "┃                        terminal, giving an indication of how the script is  ┃"
-  echo "┃                        progrssing.  If you use this option, you likely want ┃"
-  echo "┃                        to specify an --output file.                         ┃"
+  echo "┃                        progressing.  If you use this option, you likely     ┃"
+  echo "┃                        want to specify an --output file.                    ┃"
   echo "┃     -r, --run-time:    Sort the Evaluators based on the total run time.     ┃"
   echo "┃     -c, --num-calls:   Sort the Evaluators based on the total number of     ┃"
   echo "┃                        calls.                                               ┃"
@@ -120,8 +120,7 @@ cleanUp()
 message()
 {
   if $showStatus; then
-    echo -en "\e[2K\r"
-    echo -n $1
+    echo -en "\e[2K\r$1"
   fi
 }
 

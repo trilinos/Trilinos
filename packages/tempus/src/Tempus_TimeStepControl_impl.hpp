@@ -21,15 +21,6 @@
 
 namespace Tempus {
 
-// TimeStepControl definitions:
-template<class Scalar>
-TimeStepControl<Scalar>::TimeStepControl()
-  : outputAdjustedDt_(false), dtAfterOutput_(0.0)
-{
-  tscPL_->validateParametersAndSetDefaults(*this->getValidParameters());
-  this->setParameterList(tscPL_);
-}
-
 template<class Scalar>
 TimeStepControl<Scalar>::TimeStepControl(
   Teuchos::RCP<Teuchos::ParameterList> pList)
@@ -402,7 +393,7 @@ void TimeStepControl<Scalar>::setNumTimeSteps(int numTimeSteps) {
     tscPL_->set<std::string>("Integrator Step Type", "Constant");
 
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"setParameterList");
+    Teuchos::OSTab ostab(out,1,"setNumTimeSteps");
     *out << "Warning - Found 'Number of Time Steps' = " << getNumTimeSteps()
          << "  Set the following parameters: \n"
          << "  'Final Time Index'     = " << getFinalIndex() << "\n"
@@ -436,10 +427,16 @@ template <class Scalar>
 void TimeStepControl<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  TEUCHOS_TEST_FOR_EXCEPT(is_null(pList));
-  pList->validateParameters(*this->getValidParameters());
-  pList->validateParametersAndSetDefaults(*this->getValidParameters());
-  tscPL_ = pList;
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (tscPL_ == Teuchos::null) {
+      tscPL_ = Teuchos::parameterList("TimeStepControl");
+      *tscPL_ = *(this->getValidParameters());
+    }
+  } else {
+    tscPL_ = pList;
+  }
+  tscPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
   // Override parameters
   setNumTimeSteps(getNumTimeSteps());
