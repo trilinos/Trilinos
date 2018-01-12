@@ -21,4 +21,4 @@ fi
 # D) Remember the loaded SEMS Dev Env
 #
 
-export TRILINOS_SEMS_DEV_ENV_LOADED=1
+export TRILINOS_SEMS_DEV_ENV_LOADED="$TRILINOS_SEMS_DEV_ENV_TO_LOAD"
