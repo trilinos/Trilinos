@@ -70,7 +70,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_CONFIGURE_OPTIONS_FILE:STRING=cmake/std/sems/atdm/SEMSATDMSettings.cmake,cmake/std/MpiReleaseDebugSharedPtSettings.cmake,cmake/std/BasicCiTestingSettings.cmake"
   "-DTrilinos_ENABLE_CONFIGURE_TIMING=ON"
   )
-
-SET(CTEST_TEST_TYPE Specialized)
+SET(CTEST_TEST_TYPE Nightly)
+SET(Trilinos_TRACK Specialized)
 
 TRIBITS_CTEST_DRIVER()
