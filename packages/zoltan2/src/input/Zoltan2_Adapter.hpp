@@ -38,6 +38,7 @@
 // Questions? Contact Karen Devine      (kddevin@sandia.gov)
 //                    Erik Boman        (egboman@sandia.gov)
 //                    Siva Rajamanickam (srajama@sandia.gov)
+//                    Andy Wantuch      (acwantu@sandia.gov)
 //
 // ***********************************************************************
 //
@@ -47,10 +48,10 @@
     \brief Defines the Adapter interface for accessing user data.
 */
 
-#include <Kokkos_Core.hpp>
-
 #ifndef _ZOLTAN2_ADAPTER_HPP_
 #define _ZOLTAN2_ADAPTER_HPP_
+
+#include <Kokkos_Core.hpp>
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_InputTraits.hpp>
@@ -69,7 +70,6 @@ enum BaseAdapterType {
   GraphAdapterType,       /*!< \brief graph data */
   MeshAdapterType         /*!< \brief mesh data */
 };
-
 
 /*! \brief BaseAdapter defines methods required by all Adapters
 
@@ -111,7 +111,7 @@ public:
 
   /*! \brief Returns the type of adapter.
    */
-  virtual enum BaseAdapterType adapterType() const = 0;
+  virtual enum BaseAdapterType adapterType() const = 0; // TODO: Note: 'const = 0' means it's required
 
   /*! \brief Destructor
    */
@@ -122,7 +122,18 @@ public:
       \param Ids will on return point to the list of the global Ids for 
         this process.
    */
-  virtual void getIDsView(const gno_t *&Ids) const = 0; // TODO: Note: 'const = 0' means it's required
+  virtual void getIDsView(const gno_t *&Ids) const {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  /*! \brief Provide a pointer to this process' identifiers.
+
+      \param Ids will on return point to the list of the global Ids for 
+        this process.
+   */
+  virtual void getIDsView(Kokos::View<gno_t *> Ids) const {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
 
   ///*! \brief Provide pointer to a weight array with stride.
   // *    \param wgt on return a pointer to the weights for this idx
@@ -134,7 +145,7 @@ public:
   // *   This function should not be called if getNumWeightsPerID is zero.
   // */ 
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
-                              int idx = 0) const { // TODO: Note: being const but not 'const = 0', 
+                              int idx = 0) const { // TODO: Note: being const but not 'const = 0' means it doesn't need to be overridden. If it is, it won't throw the exception when used.
     Z2_THROW_NOT_IMPLEMENTED
   }
 

@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     weights(i, 1) = (nprocs-rank) / (i+1);
   }
 
-  // Create a Zoltan2::BasicIdentifierAdapter object
+  // Create a Zoltan2::BasicKokkosIdentifierAdapter object
   // and verify that it is correct
 
   // These types are from /home/acwantu/UUR_git/Trilinos/packages/zoltan2/test/helpers/Zoltan2_TestHelpers.hpp
@@ -93,8 +93,7 @@ int main(int argc, char *argv[]) {
   // The Kokkos::View stores a 2D array of data, so the indexing method is already known.
   // With the old method, there were different ways to do striding because 1D arrays were used.
   Zoltan2::BasicKokkosIdentifierAdapter<userTypes_t> ia(myIds, weights); // TODO: Will need to use new adapter
-  //Zoltan2::BasicIdentifierAdapter<userTypes_t> ia(numLocalIds, myIds,
-  //  weightValues, strides);
+  //Zoltan2::BasicIdentifierAdapter<userTypes_t> ia(numLocalIds, myIds, weightValues, strides);
 
   if (!fail && ia.getLocalNumIDs() != size_t(numLocalIds)) {
     fail = 4;
@@ -108,7 +107,7 @@ int main(int argc, char *argv[]) {
   Kokkos::View<zscalar_t *> weightsIn[nWeights]; // Pointer which will later point to the weights
 
   // In the old implementation, Views were pointers to memory containing C arrays.
-  ia.getIDsKokkosView(globalIdsIn); // Make the function mutate globalIdsIn to point to a Kokkos::View
+  ia.getIDsView(globalIdsIn); // Make the function mutate globalIdsIn to point to a Kokkos::View
 
   for (int w=0; !fail && w < nWeights; w++) {
     ia.getWeightsView(weightsIn[w], w); // This function will need to use the correct Kokkos subview method to get a portion of the view when it's implemented in the adapter.

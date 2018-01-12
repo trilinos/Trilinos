@@ -36,9 +36,9 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Karen Devine      (kddevin@sandia.gov)
-//                    Andy Wantuch      (acwantu@sandia.gov)
 //                    Erik Boman        (egboman@sandia.gov)
 //                    Siva Rajamanickam (srajama@sandia.gov)
+//                    Andy Wantuch      (acwantu@sandia.gov)
 //
 // ***********************************************************************
 //
@@ -50,6 +50,8 @@
 
 #ifndef _ZOLTAN2_BASICKOKKOSIDENTIFIERADAPTER_HPP_
 #define _ZOLTAN2_BASICKOKKOSIDENTIFIERADAPTER_HPP_
+
+#include <Kokkos_Core.hpp>
 
 #include <Zoltan2_IdentifierAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>

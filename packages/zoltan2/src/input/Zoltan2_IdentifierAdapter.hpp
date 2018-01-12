@@ -47,7 +47,6 @@
     \brief Defines the IdentifierAdapter interface.
 */
 
-
 #ifndef _ZOLTAN2_IDENTIFIERADAPTER_HPP_
 #define _ZOLTAN2_IDENTIFIERADAPTER_HPP_
 
