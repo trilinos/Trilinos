@@ -1,3 +1,5 @@
+module purge
+
 module load sems-env
 module load atdm-env
 module load sems-python/2.7.9
