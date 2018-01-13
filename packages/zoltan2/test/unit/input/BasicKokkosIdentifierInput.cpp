@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
   RCP<const Comm<int> > comm = DefaultComm<int>::getComm();
   int rank = comm->getRank();
   int nprocs = comm->getSize();
-  int fail = 0, gfail=0;
+  int fail = 0, gfail = 0;
 
   // Create global identifiers with weights
 
@@ -76,11 +76,11 @@ int main(int argc, char *argv[]) {
   zgno_t myFirstId = rank * numLocalIds * numLocalIds;
 
   Kokkos::View<zscalar_t **> weights("weights", numLocalIds, nWeights);
-  for (zlno_t i=0; i < numLocalIds; i++) {
-    myIds(i) = zgno_t(myFirstId+i);
+  for (zlno_t i = 0; i < numLocalIds; i++) {
+    myIds(i) = zgno_t(myFirstId + i);
     // Fill in 2D array
     weights(i, 0) = 1.0;
-    weights(i, 1) = (nprocs-rank) / (i+1);
+    weights(i, 1) = (nprocs - rank) / (i + 1);
   }
 
   // Create a Zoltan2::BasicKokkosIdentifierAdapter object
@@ -103,21 +103,21 @@ int main(int argc, char *argv[]) {
     fail = 5;
   }
 
-  Kokkos::View<zgno_t *> globalIdsIn; // Pointer which will later point to the IDs
-  Kokkos::View<zscalar_t *> weightsIn[nWeights]; // Pointer which will later point to the weights
+  Kokkos::View<zgno_t *> globalIdsIn; // Pointer which will later point to the IDs // TODO: 1/12/18 Ask Karen, is this actually a pointer? Bug? Make it *globalIdsIn?
+  Kokkos::View<zscalar_t *> weightsIn[nWeights]; // Pointer which will later point to the weights // It's an array of Views.
 
   // In the old implementation, Views were pointers to memory containing C arrays.
   ia.getIDsView(globalIdsIn); // Make the function mutate globalIdsIn to point to a Kokkos::View
 
-  for (int w=0; !fail && w < nWeights; w++) {
+  for (int w = 0; !fail && w < nWeights; w++) {
     ia.getWeightsView(weightsIn[w], w); // This function will need to use the correct Kokkos subview method to get a portion of the view when it's implemented in the adapter.
   }
 
   Kokkos::View<zscalar_t *> w0 = weightsIn[0];
   Kokkos::View<zscalar_t *> w1 = weightsIn[1];
 
-  for (zlno_t i=0; !fail && i < numLocalIds; i++){
-    if (globalIdsIn(i) != zgno_t(myFirstId+i)) {
+  for (zlno_t i = 0; !fail && i < numLocalIds; i++){
+    if (globalIdsIn(i) != zgno_t(myFirstId + i)) {
       fail = 8;
     }
     if (!fail && w0(i) != 1.0) {

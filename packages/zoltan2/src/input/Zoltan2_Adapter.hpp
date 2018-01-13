@@ -122,7 +122,7 @@ public:
       \param Ids will on return point to the list of the global Ids for 
         this process.
    */
-  virtual void getIDsView(const gno_t *&Ids) const {
+  virtual void getIDsView(const gno_t *&ids) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -131,7 +131,8 @@ public:
       \param Ids will on return point to the list of the global Ids for 
         this process.
    */
-  virtual void getIDsView(Kokos::View<gno_t *> Ids) const {
+// TODO: Question: Is this correct? Parameter in the reference to the View pointer, which contains pointers to global numbers, because the view will be mutated?
+  virtual void getIDsView(Kokos::View<gno_t *> &ids) const {
     Z2_THROW_NOT_IMPLEMENTED
   }
 
@@ -145,6 +146,21 @@ public:
   // *   This function should not be called if getNumWeightsPerID is zero.
   // */ 
   virtual void getWeightsView(const scalar_t *&wgt, int &stride,
+                              int idx = 0) const {
+    Z2_THROW_NOT_IMPLEMENTED
+  }
+
+  ///*! \brief Provide pointer to a weight array with stride.
+  // *    \param wgt on return a pointer to the weights for this idx
+  // *    \param stride on return, the value such that
+  // *       the \t nth weight should be found at <tt> wgt[n*stride] </tt>.
+  // *    \param idx  the weight index, zero or greater
+  // *   This function must be implemented in derived adapter if
+  // *   getNumWeightsPerID > 0.
+  // *   This function should not be called if getNumWeightsPerID is zero.
+  // */ 
+// TODO: Implement this one for Kokkos::View.
+  virtual void getWeightsView(Kokkos::View<scalar_t *> &wgt, 
                               int idx = 0) const { // TODO: Note: being const but not 'const = 0' means it doesn't need to be overridden. If it is, it won't throw the exception when used.
     Z2_THROW_NOT_IMPLEMENTED
   }
@@ -158,7 +174,7 @@ public:
    *         the rank 
    *    \param inputPart on return a pointer to input part numbers
    */ 
-  void getPartsView(const part_t *&inputPart) const {
+  void getPartsView(const part_t *&inputPart) const { // TODO: What does this mean? Ask Karen
     // Default behavior:  return NULL for inputPart array;
     // assume input part == rank
     inputPart = NULL;
