@@ -76,7 +76,6 @@ namespace Zoltan2 {
     (like Tpetra::CrsGraph) do not.  For such objects, the scalar type is
     set by Zoltan2 to \c float.  If you wish to change it to double, set
     the second template parameter to \c double.
-
  */
 
 template <typename User>
@@ -84,7 +83,7 @@ template <typename User>
 
 public:
 
-  typedef typename InputTraits<User>::scalar_t    scalar_t;
+  typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::part_t   part_t;
@@ -106,21 +105,20 @@ public:
    *  lifetime of this Adapter.
    */
 
-  BasicIdentifierAdapter( lno_t numIds, const gno_t *idPtr, 
+  BasicIdentifierAdapter(lno_t numIds, const gno_t *idPtr, 
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   ////////////////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumIDs() const { return numIds_;}
+  size_t getLocalNumIDs() const { return numIds_; }
 
   void getIDsView(const gno_t *&Ids) const { Ids = idList_; }
 
   int getNumWeightsPerID() const { return weights_.size(); }
 
-  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const
-  {
+  void getWeightsView(const scalar_t *&weights, int &stride, int idx) const {
     if (idx < 0 || idx >= weights_.size()) {
       std::ostringstream emsg;
       emsg << __FILE__ << ":" << __LINE__
@@ -148,16 +146,16 @@ template <typename User>
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       numIds_(numIds), idList_(idPtr), weights_()
 {
-  typedef StridedData<lno_t,scalar_t> input_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
   size_t numWeights = weights.size();
 
   if (numWeights > 0){
     weights_ = arcp(new input_t [numWeights], 0, numWeights, true);
 
     if (numIds > 0){
-      for (size_t i=0; i < numWeights; i++){
+      for (size_t i = 0; i < numWeights; i++){
         int stride = weightStrides.size() ? weightStrides[i] : 1;
-        ArrayRCP<const scalar_t> wgtV(weights[i], 0, stride*numIds, false);
+        ArrayRCP<const scalar_t> wgtV(weights[i], 0, stride * numIds, false);
         weights_[i] = input_t(wgtV, stride);
       }
     }
