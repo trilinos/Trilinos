@@ -26,7 +26,7 @@ echo "Some of the set env vars:"
 set | grep "SEMS_.*_ROOT"
 set | grep TRILINOS_SEMS_DEV_ENV_LOADED
 
-TEST_DIR=GCC-7.2.0-MPI_RELEASE_ADTM
+TEST_DIR=GCC-7.2.0-MPI_RELEASE_ATDM
 if [ ! -e $TEST_DIR ] ; then
   echo "Creating $TEST_DIR"
   mkdir $TEST_DIR
