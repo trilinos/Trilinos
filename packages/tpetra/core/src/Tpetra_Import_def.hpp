@@ -888,10 +888,10 @@ namespace Tpetra {
                    std::back_inserter(unionTgtGIDs));
 
     // Sort the PID,GID pairs and find the unique set
-    // Get rhs' remote GIDs and associated PIDs
     Teuchos::Array<std::pair<int,GO>> remotePGIDs1(remoteGIDs1.size());
     for (size_type k=0; k<remoteGIDs1.size(); k++)
       remotePGIDs1[k] = std::make_pair(remotePIDs1[k], remoteGIDs1[k]);
+
     Teuchos::Array<std::pair<int,GO>> remotePGIDs2(remoteGIDs2.size());
     for (size_type k=0; k<remoteGIDs2.size(); k++)
       remotePGIDs2[k] = std::make_pair(remotePIDs2[k], remoteGIDs2[k]);
