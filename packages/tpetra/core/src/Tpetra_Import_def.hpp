@@ -825,8 +825,10 @@ namespace Tpetra {
                       const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs2,
                       Teuchos::Array<GlobalOrdinal>& permuteGIDs1,
                       Teuchos::Array<GlobalOrdinal>& permuteGIDs2,
-                      Teuchos::Array<std::pair<int,GlobalOrdinal>>& remotePGIDs1,
-                      Teuchos::Array<std::pair<int,GlobalOrdinal>>& remotePGIDs2) const
+                      Teuchos::Array<GlobalOrdinal>& remoteGIDs1,
+                      Teuchos::Array<GlobalOrdinal>& remoteGIDs2,
+                      Teuchos::Array<int>& remotePIDs1,
+                      Teuchos::Array<int>& remotePIDs2) const
   {
 
     typedef GlobalOrdinal GO;
@@ -844,7 +846,7 @@ namespace Tpetra {
     // push_back operations.
     unionTgtGIDs.reserve(numSameGIDs1 + numSameGIDs2 +
                          permuteGIDs1.size() + permuteGIDs2.size() +
-                         remotePGIDs1.size() + remotePGIDs2.size());
+                         remoteGIDs1.size() + remoteGIDs2.size());
 
     // Copy the same GIDs to unionTgtGIDs.  Cases for numSameGIDs1 !=
     // numSameGIDs2 must be treated separately.
@@ -886,6 +888,14 @@ namespace Tpetra {
                    std::back_inserter(unionTgtGIDs));
 
     // Sort the PID,GID pairs and find the unique set
+    // Get rhs' remote GIDs and associated PIDs
+    Teuchos::Array<std::pair<int,GO>> remotePGIDs1(remoteGIDs1.size());
+    for (size_type k=0; k<remoteGIDs1.size(); k++)
+      remotePGIDs1[k] = std::make_pair(remotePIDs1[k], remoteGIDs1[k]);
+    Teuchos::Array<std::pair<int,GO>> remotePGIDs2(remoteGIDs2.size());
+    for (size_type k=0; k<remoteGIDs2.size(); k++)
+      remotePGIDs2[k] = std::make_pair(remotePIDs2[k], remoteGIDs2[k]);
+
     remotePGIDs.reserve(remotePGIDs1.size()+remotePGIDs2.size());
     std::sort(remotePGIDs1.begin(), remotePGIDs1.end());
     std::sort(remotePGIDs2.begin(), remotePGIDs2.end());
@@ -964,53 +974,52 @@ namespace Tpetra {
     // Alas, the two target Maps are not the same.  That means we have
     // to compute their union, and the union Import object.
 
-    // Get this' permute GIDs
+    // Get the same GIDs (same GIDs are a subview of the first numSame target
+    // GIDs)
+    const size_type numSameGIDs1 = this->getNumSameIDs();
+    ArrayView<const GO> sameGIDs1 = (tgtMap1->getNodeElementList())(0,numSameGIDs1);
+
+    const size_type numSameGIDs2 = rhs.getNumSameIDs();
+    ArrayView<const GO> sameGIDs2 = (tgtMap2->getNodeElementList())(0,numSameGIDs2);
+
+    // Get permute GIDs
     ArrayView<const LO> permuteToLIDs1 = this->getPermuteToLIDs();
-    const size_type numPermuteIDs1 = this->getNumPermuteIDs();
-    Array<GO> permuteGIDs1(numPermuteIDs1);
-    for (size_type k=0; k<numPermuteIDs1; k++)
+    Array<GO> permuteGIDs1(permuteToLIDs1.size());
+    for (size_type k=0; k<permuteGIDs1.size(); k++)
       permuteGIDs1[k] = tgtMap1->getGlobalElement(permuteToLIDs1[k]);
 
-    // Get rhs' permute GIDs
     ArrayView<const LO> permuteToLIDs2 = rhs.getPermuteToLIDs();
-    const size_type numPermuteIDs2 = rhs.getNumPermuteIDs();
-    Array<GO> permuteGIDs2(numPermuteIDs2);
-    for (size_type k=0; k<numPermuteIDs2; k++)
-        permuteGIDs2[k] = tgtMap2->getGlobalElement(permuteToLIDs2[k]);
+    Array<GO> permuteGIDs2(permuteToLIDs2.size());
+    for (size_type k=0; k<permuteGIDs2.size(); k++)
+      permuteGIDs2[k] = tgtMap2->getGlobalElement(permuteToLIDs2[k]);
 
-    // Get this' remote GIDs and associated PIDs
+    // Get remote GIDs
     ArrayView<const LO> remoteLIDs1 = this->getRemoteLIDs();
+    Array<GO> remoteGIDs1(remoteLIDs1.size());
+    for (size_type k=0; k<remoteLIDs1.size(); k++)
+      remoteGIDs1[k] = this->getTargetMap()->getGlobalElement(remoteLIDs1[k]);
+
+    ArrayView<const LO> remoteLIDs2 = rhs.getRemoteLIDs();
+    Array<GO> remoteGIDs2(remoteLIDs2.size());
+    for (size_type k=0; k<remoteLIDs2.size(); k++)
+      remoteGIDs2[k] = rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]);
+
+    // Get remote PIDs
     Array<int> remotePIDs1;
     Tpetra::Import_Util::getRemotePIDs(*this, remotePIDs1);
-    Teuchos::Array<std::pair<int,GO>> remotePGIDs1(remotePIDs1.size());
-    for (size_type k=0; k<remotePIDs1.size(); k++) {
-      GO GID = this->getTargetMap()->getGlobalElement(remoteLIDs1[k]);
-      remotePGIDs1[k] = std::make_pair(remotePIDs1[k], GID);
-    }
 
-    // Get rhs' remote GIDs and associated PIDs
-    ArrayView<const LO> remoteLIDs2 = rhs.getRemoteLIDs();
     Array<int> remotePIDs2;
     Tpetra::Import_Util::getRemotePIDs(rhs, remotePIDs2);
-    Teuchos::Array<std::pair<int,GO>> remotePGIDs2(remotePIDs2.size());
-    for (size_type k=0; k<remotePIDs2.size(); k++) {
-      GO GID = rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]);
-      remotePGIDs2[k] = std::make_pair(remotePIDs2[k], GID);
-    }
 
     // Get the union of the target GIDs
     Array<GO> unionTgtGIDs;
     Array<std::pair<int,GO>> remotePGIDs;
     size_type numSameIDsUnion, numPermuteIDsUnion, numRemoteIDsUnion;
-    const size_type numSameGIDs1 = this->getNumSameIDs ();
-    ArrayView<const GO> tgtGIDs1 = tgtMap1->getNodeElementList ();
-    const size_type numSameGIDs2 = rhs.getNumSameIDs ();
-    ArrayView<const GO> tgtGIDs2 = tgtMap2->getNodeElementList ();
 
     findUnionTargetGIDs(unionTgtGIDs, remotePGIDs,
                         numSameIDsUnion, numPermuteIDsUnion, numRemoteIDsUnion,
-                        tgtGIDs1(0,numSameGIDs1), tgtGIDs2(0,numSameGIDs2),
-                        permuteGIDs1, permuteGIDs2, remotePGIDs1, remotePGIDs2);
+                        sameGIDs1, sameGIDs2, permuteGIDs1, permuteGIDs2,
+                        remoteGIDs1, remoteGIDs2, remotePIDs1, remotePIDs2);
 
     // Extract GIDs and compute LIDS, PIDs for the remotes in the union
     Array<LO> remoteLIDsUnion(numRemoteIDsUnion);

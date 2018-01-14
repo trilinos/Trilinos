@@ -43,7 +43,6 @@
 #define TPETRA_IMPORT_DECL_HPP
 
 #include <Tpetra_Details_Transfer.hpp>
-#include <unordered_map>
 
 namespace Tpetra {
   //
@@ -333,8 +332,10 @@ namespace Tpetra {
                         const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs2,
                         Teuchos::Array<GlobalOrdinal>& permuteGIDs1,
                         Teuchos::Array<GlobalOrdinal>& permuteGIDs2,
-                        Teuchos::Array<std::pair<int,GlobalOrdinal>>& remotePGIDs1,
-                        Teuchos::Array<std::pair<int,GlobalOrdinal>>& remotePGIDs2) const;
+                        Teuchos::Array<GlobalOrdinal>& remoteGIDs1,
+                        Teuchos::Array<GlobalOrdinal>& remoteGIDs2,
+                        Teuchos::Array<int>& remotePIDs1,
+                        Teuchos::Array<int>& remotePIDs2) const;
 
     /// \brief Return the union of this Import and \c rhs.
     ///
