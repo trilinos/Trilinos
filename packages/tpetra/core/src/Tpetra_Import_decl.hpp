@@ -317,20 +317,24 @@ namespace Tpetra {
 
     /// \brief Find the union of the target IDs from two Import objects.
     ///
-    /// On return, the target IDs are ordered as [{same}, {permute}, {remote}].
+    /// On return, the input arrays permuteGIDs[1,2] and remotePGIDs[1,2] will
+    /// be ordered.  unionTgtGIDs are ordered as [{same}, {permute}, {remote}].
     /// {same} is ordered identically to the target map with most "same"
     /// indices.  {permute} is ordered from smallest ID to largest.  {remote} is
-    /// ordered by remote process ID and ID, respectively.
+    /// ordered by remote process ID and ID, respectively.  remotePGIDs are
+    /// ordered the same as {remote}.
     void
     findUnionTargetGIDs(Teuchos::Array<GlobalOrdinal>& unionTgtGIDs,
+                        Teuchos::Array<std::pair<int,GlobalOrdinal>>& remotePGIDs,
                         typename Teuchos::Array<GlobalOrdinal>::size_type& numSameGIDs,
                         typename Teuchos::Array<GlobalOrdinal>::size_type& numPermuteGIDs,
                         typename Teuchos::Array<GlobalOrdinal>::size_type& numRemoteGIDs,
-                        const Teuchos::ArrayView<const GlobalOrdinal>& tgtGIDs1,
-                        const typename Teuchos::Array<GlobalOrdinal>::size_type numSameGIDs1,
-                        const Teuchos::ArrayView<const GlobalOrdinal>& tgtGIDs2,
-                        const typename Teuchos::Array<GlobalOrdinal>::size_type numSameGIDs2,
-                        std::unordered_map<GlobalOrdinal,int>& remoteGIDProc) const;
+                        const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs1,
+                        const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs2,
+                        Teuchos::Array<GlobalOrdinal>& permuteGIDs1,
+                        Teuchos::Array<GlobalOrdinal>& permuteGIDs2,
+                        Teuchos::Array<std::pair<int,GlobalOrdinal>>& remotePGIDs1,
+                        Teuchos::Array<std::pair<int,GlobalOrdinal>>& remotePGIDs2) const;
 
     /// \brief Return the union of this Import and \c rhs.
     ///
@@ -367,10 +371,6 @@ namespace Tpetra {
     /// the left-hand side of the + expression be a reference).
     Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
     setUnion (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
-
-    // The old version will go away after performance checking.
-    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
-    setUnionOld (const Import<LocalOrdinal, GlobalOrdinal, Node>& rhs) const;
 
     /// \brief Return the union of this Import this->getSourceMap()
     ///
