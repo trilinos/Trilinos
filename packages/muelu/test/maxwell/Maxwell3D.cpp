@@ -85,13 +85,246 @@
 #include <Stratimikos_MueLuHelpers.hpp>
 #endif
 
+// Main wrappers struct
+// Because C++ doesn't support partial template specialization of functions.
+// By default, do not try to run Stratimikos, since that only works for Scalar=double.
+template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+struct MainWrappers {
+static int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]);
+};
+
+
+// Partial template specialization on SC=double
+// This code branch gives the option to run with Stratimikos.
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+struct MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node> {
+  static int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]);
+};
+
+
+// By default, do not try to run Stratimikos, since that only works for Scalar=double.
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+int MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
-#if defined(HAVE_TPETRA_INST_INT_INT)
+#include <MueLu_UseShortNames.hpp>
+
+  using Teuchos::RCP; using Teuchos::rcp;
+  using Teuchos::TimeMonitor;
+
+  bool success = false;
+  bool verbose = true;
+  try {
+    RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setOutputToRootOnly(0);
+
+    bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
+    std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
+    double scaling                = 1.0;               clp.setOption("scaling",               &scaling,           "scale mass term");
+    std::string solverName = "Belos";                  clp.setOption("solverName",            &solverName, "Name of iterative linear solver "
+                                                                     "to use for solving the linear system. "
+                                                                     "(\"Belos\")");
+
+    clp.recogniseAllOptions(true);
+    switch (clp.parse(argc, argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    }
+
+    comm->barrier();
+    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: S - Global Time")));
+    RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 1 - Read and Build Matrices")));
+
+    // Read matrices in from files
+    Xpetra::global_size_t nedges=540, nnodes=216;
+    // maps for nodal and edge matrices
+    RCP<Map> edge_map = MapFactory::Build(lib,nedges,0,comm);
+    RCP<Map> node_map = MapFactory::Build(lib,nnodes,0,comm);
+    RCP<Matrix> S_Matrix, M1_Matrix, M0_Matrix, D0_Matrix;
+    if (!TYPE_EQUAL(SC, std::complex<double>)) {
+      // edge stiffness matrix
+      S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("S.txt", edge_map);
+      // edge mass matrix
+      M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M1.txt", edge_map);
+      // nodal mass matrix
+      M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M0.txt", node_map);
+      // gradient matrix
+      D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0.txt", edge_map, Teuchos::null, node_map, edge_map);
+    } else {
+      // edge stiffness matrix
+      S_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("S_complex.txt", edge_map);
+      // edge mass matrix
+      M1_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M1_complex.txt", edge_map);
+      // nodal mass matrix
+      M0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("M0_complex.txt", node_map);
+      // gradient matrix
+      D0_Matrix = Xpetra::IO<SC, LO, GO, NO>::Read("D0_complex.txt", edge_map, Teuchos::null, node_map, edge_map);
+    }
+    // coordinates
+    RCP<Xpetra::MultiVector<double, LO, GO, NO> > coords = Xpetra::IO<double, LO, GO, NO>::ReadMultiVector("coords.txt", node_map);
+
+    // build lumped mass matrix inverse (M0inv_Matrix)
+    RCP<Vector> diag = Utilities::GetLumpedMatrixDiagonal(M0_Matrix);
+    RCP<CrsMatrixWrap> M0inv_MatrixWrap = Teuchos::rcp(new CrsMatrixWrap(node_map, node_map, 0, Xpetra::StaticProfile));
+    RCP<CrsMatrix> M0inv_CrsMatrix = M0inv_MatrixWrap->getCrsMatrix();
+    Teuchos::ArrayRCP<size_t> rowPtr;
+    Teuchos::ArrayRCP<LO> colInd;
+    Teuchos::ArrayRCP<SC> values;
+    Teuchos::ArrayRCP<const SC> diags = diag->getData(0);
+    size_t nodeNumElements = node_map->getNodeNumElements();
+    M0inv_CrsMatrix->allocateAllValues(nodeNumElements, rowPtr, colInd, values);
+    SC ONE = (SC)1.0;
+    for (size_t i = 0; i < nodeNumElements; i++) {
+      rowPtr[i] = i;  colInd[i] = i;  values[i] = ONE / diags[i];
+    }
+    rowPtr[nodeNumElements] = nodeNumElements;
+    M0inv_CrsMatrix->setAllValues(rowPtr, colInd, values);
+    M0inv_CrsMatrix->expertStaticFillComplete(node_map, node_map);
+    RCP<Matrix> M0inv_Matrix = Teuchos::rcp_dynamic_cast<Matrix>(M0inv_MatrixWrap);
+
+    // build stiffness plus mass matrix (SM_Matrix)
+    RCP<Matrix> SM_Matrix;
+    Xpetra::MatrixMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::TwoMatrixAdd(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,scaling,SM_Matrix,*out);
+    SM_Matrix->fillComplete();
+
+    // set parameters
+    Teuchos::ParameterList params, params11, params22, smoother;
+    params.set("refmaxwell: disable addon",false);
+    params.set("refmaxwell: max coarse size",25);
+    params.set("refmaxwell: max levels",4);
+    if (!TYPE_EQUAL(SC, std::complex<double>))
+      params.set("smoother: type","CHEBYSHEV");
+    else {
+      params.set("smoother: type", "RELAXATION");
+      smoother.set("relaxation: type", "Symmetric Gauss-Seidel");
+      smoother.set("relaxation: sweeps", 2);
+      params.set("smoother: params", smoother);
+      params11.set("relaxation: type", "Symmetric Gauss-Seidel");
+      params11.set("relaxation: sweeps", 2);
+      params22.set("relaxation: type", "Symmetric Gauss-Seidel");
+      params22.set("relaxation: sweeps", 2);
+    }
+    params.set("refmaxwell: 11 list",params11);
+    params.set("refmaxwell: 22 list",params22);
+
+    // setup LHS, RHS
+    RCP<MultiVector> vec = MultiVectorFactory::Build(edge_map,1);
+    vec -> putScalar((SC)1.0);
+    RCP<MultiVector> B = MultiVectorFactory::Build(edge_map,1);
+    SM_Matrix->apply(*vec,*B);
+    RCP<MultiVector> X = MultiVectorFactory::Build(edge_map,1);
+    X -> putScalar((SC)0.0);
+
+    comm->barrier();
+    tm = Teuchos::null;
+
+    if (solverName == "Belos") {
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 2 - Build Belos solver etc")));
+
+      // construct preconditioner
+      RCP<MueLu::RefMaxwell<SC,LO,GO,NO> > preconditioner
+        = rcp( new MueLu::RefMaxwell<SC,LO,GO,NO>(SM_Matrix,D0_Matrix,M0inv_Matrix,
+                                                  M1_Matrix,Teuchos::null,coords,params) );
+
+      // Belos linear problem
+#ifdef HAVE_MUELU_BELOS
+      typedef MultiVector          MV;
+      typedef Belos::OperatorT<MV> OP;
+      Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(SM_Matrix)); // Turns a Xpetra::Matrix object into a Belos operator
+
+      RCP<Belos::LinearProblem<SC, MV, OP> > problem = rcp( new Belos::LinearProblem<SC, MV, OP>() );
+      problem -> setOperator( belosOp );
+      Teuchos::RCP<OP> belosPrecOp = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(preconditioner)); // Turns a Xpetra::Matrix object into a Belos operator
+      problem -> setRightPrec( belosPrecOp );
+
+      problem -> setProblem( X, B );
+
+      bool set = problem->setProblem();
+      if (set == false) {
+        *out << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+        return EXIT_FAILURE;
+      }
+
+      // Belos solver
+      RCP< Belos::SolverManager<SC, MV, OP> > solver;
+      RCP< Belos::SolverFactory<SC, MV,OP> > factory = rcp( new  Belos::SolverFactory<SC,MV,OP>() );
+      RCP<Teuchos::ParameterList> belosParams
+        = rcp( new Teuchos::ParameterList() );
+      belosParams->set("Maximum Iterations", 100);
+      belosParams->set("Convergence Tolerance",1e-4);
+      belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+      belosParams->set("Output Frequency",1);
+      belosParams->set("Output Style",Belos::Brief);
+      solver = factory->create("Block CG",belosParams);
+
+      comm->barrier();
+      tm = Teuchos::null;
+
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Maxwell: 3 - Solve")));
+
+      // set problem and solve
+      solver -> setProblem( problem );
+      Belos::ReturnType status = solver -> solve();
+      int iters = solver -> getNumIters();
+      success = (iters<50 && status == Belos::Converged);
+      if (success)
+        *out << "SUCCESS! Belos converged in " << iters << " iterations." << std::endl;
+      else
+        *out << "FAILURE! Belos did not converge fast enough." << std::endl;
+
+    }
+    comm->barrier();
+    tm = Teuchos::null;
+    globalTimeMonitor = Teuchos::null;
+
+    if (printTimings) {
+      RCP<Teuchos::ParameterList> reportParams = rcp(new Teuchos::ParameterList);
+      if (timingsFormat == "yaml") {
+        reportParams->set("Report format",             "YAML");            // "Table" or "YAML"
+        reportParams->set("YAML style",                "compact");         // "spacious" or "compact"
+      }
+      reportParams->set("How to merge timer sets",   "Union");
+      reportParams->set("alwaysWriteLocal",          false);
+      reportParams->set("writeGlobalStats",          true);
+      reportParams->set("writeZeroTimers",           false);
+      // FIXME: no "ignoreZeroTimers"
+
+      const std::string filter = "";
+
+      std::ios_base::fmtflags ff(out->flags());
+      if (timingsFormat == "table-fixed") *out << std::fixed;
+      else * out << std::scientific;
+      TimeMonitor::report(comm.ptr(), *out, filter, reportParams);
+       *out << std::setiosflags(ff);
+    }
+
+    TimeMonitor::clearCounters();
+#endif // #ifdef HAVE_MUELU_BELOS
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
+#else
+  return EXIT_SUCCESS;
+#endif
+} // main
+
+
+// This code branch gives the option to run with Stratimikos.
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+  typedef double Scalar;
+#include <MueLu_UseShortNames.hpp>
+
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+
+// #if defined(HAVE_TPETRA_INST_INT_INT)
 
 #include <MueLu_UseShortNames.hpp>
 
@@ -347,11 +580,15 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 #else
   return EXIT_SUCCESS;
-#endif // HAVE_TPETRA_INST_INT_INT
+// #endif // HAVE_TPETRA_INST_INT_INT
 #endif
 } // main
 
 
+template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int argc, char *argv[]) {
+  return MainWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::main_(clp, lib, argc, argv);
+}
 
 //- -- --------------------------------------------------------
 #define MUELU_AUTOMATIC_TEST_ETI_NAME main_
