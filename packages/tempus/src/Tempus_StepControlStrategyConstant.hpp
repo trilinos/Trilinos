@@ -33,22 +33,16 @@ public:
   /// Destructor
   virtual ~StepControlStrategyConstant(){}
 
-  /// Observe Stepper at beginning of takeStep.
-  virtual void getNextTimeStep(TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory) override {
-
-     //TODO: take care of integratorStatus
-     //asm("int $3");
-     //std::cout << "SIDAFA: got here!!" << std::endl;
+  /** \brief Determine the time step size.*/
+  virtual void getNextTimeStep(TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory, 
+        Status & integratorStatus) override {
 
      Teuchos::RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
      Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
-     const Scalar lastTime = solutionHistory->getCurrentState()->getTime();
-     const int iStep = metaData->getIStep();
      const Scalar errorAbs = metaData->getErrorAbs();
      const Scalar errorRel = metaData->getErrorRel();
      int order = metaData->getOrder();
      Scalar dt = metaData->getDt();
-     bool output = metaData->getOutput();
      Teuchos::RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
      bool printChanges = solutionHistory->getVerbLevel() !=
                         Teuchos::as<int>(Teuchos::VERB_NONE);
@@ -58,13 +52,13 @@ public:
      Teuchos::RCP<Teuchos::FancyOStream> out = tsc.getOStream();
     Teuchos::OSTab ostab(out,1,"getNextTimeStep");
 
-     //TODO: prevent redefining this
+    //TODO: prevent redefining this
     auto changeOrder = [] (int order_old, int order_new, std::string reason) {
-      std::stringstream message;
-      message << "     (order = " << std::setw(2) << order_old
-              <<       ", new = " << std::setw(2) << order_new
-              << ")  " << reason << std::endl;
-      return message.str();
+       std::stringstream message;
+       message << "     (order = " << std::setw(2) << order_old
+          <<       ", new = " << std::setw(2) << order_new
+          << ")  " << reason << std::endl;
+       return message.str();
     };
 
       // Stepper failure
@@ -78,8 +72,7 @@ public:
                << "or order!\n"
                << "    Time step type == CONSTANT_STEP_SIZE\n"
                << "    order = " << order << std::endl;
-          //TODO: 
-          //integratorStatus = FAILED;
+          integratorStatus = FAILED;
           return;
         }
       }
@@ -99,8 +92,7 @@ public:
             << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="
             << tsc.getMaxAbsError()<<")"
             << std::endl;
-          //TODO:
-          //integratorStatus = FAILED;
+          integratorStatus = FAILED;
           return;
         }
       }
@@ -120,8 +112,7 @@ public:
             << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="
             << tsc.getMaxRelError()<<")"
             << std::endl;
-           //TODO
-          //integratorStatus = FAILED;
+          integratorStatus = FAILED;
           return;
         }
       }
@@ -137,6 +128,8 @@ public:
         "    order = " << order << "\n");
 /*
 */
+      metaData->setOrder(order);
+      metaData->setDt(dt);
     }
 
 };

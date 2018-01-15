@@ -17,6 +17,8 @@
 
 //Step control strategy
 #include "Tempus_StepControlStrategyConstant.hpp"
+#include "Tempus_StepControlStrategyComposite.hpp"
+#include "Tempus_StepControlStrategyVSBDF2.hpp"
 
 //Thyra
 #include "Thyra_VectorStdOps.hpp"
@@ -67,20 +69,10 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       return message.str();
     };
 
-    auto changeOrder = [] (int order_old, int order_new, std::string reason) {
-      std::stringstream message;
-      message << "     (order = " << std::setw(2) << order_old
-              <<       ", new = " << std::setw(2) << order_new
-              << ")  " << reason << std::endl;
-      return message.str();
-    };
-
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionStateMetaData<Scalar> > metaData = workingState->getMetaData();
     const Scalar lastTime = solutionHistory->getCurrentState()->getTime();
     const int iStep = metaData->getIStep();
-    const Scalar errorAbs = metaData->getErrorAbs();
-    const Scalar errorRel = metaData->getErrorRel();
     int order = metaData->getOrder();
     Scalar dt = metaData->getDt();
     bool output = metaData->getOutput();
@@ -98,181 +90,21 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       dtAfterOutput_ = 0.0;
     }
 
-    if (dt <= 0.0) {
-      if (printChanges) *out << changeDT(dt, getInitTimeStep(),
-        "Reset dt to initial dt.");
-      dt = getInitTimeStep();
-    }
-
     if (dt < getMinTimeStep()) {
       if (printChanges) *out << changeDT(dt, getMinTimeStep(),
         "Reset dt to minimum dt.");
       dt = getMinTimeStep();
     }
 
-    if (getStepType() == "Constant") {
+    // update dt in metaData for the step control strategy to be informed
+    metaData->setDt(dt);
 
-       stepControlStategy_->getNextTimeStep(*this, solutionHistory);
-       /*
+    // call the step control strategy (to update order/dt if needed)
+    stepControlStategy_->getNextTimeStep(*this, solutionHistory, integratorStatus);
 
-      dt = getInitTimeStep();
-
-      if (order < getMinOrder()) {
-        if (printChanges) *out << changeOrder(order, getMinOrder(),
-          "Order below minimum. Reset to minimum order.");
-        order = getMinOrder();
-      }
-
-      if (order > getMaxOrder()) {
-        if (printChanges) *out << changeOrder(order, getMaxOrder(),
-          "Order above maximum. Reset to maximum order.");
-        order = getMaxOrder();
-      }
-
-      // Stepper failure
-      if (stepperState->stepperStatus_ == Status::FAILED) {
-        if (order+1 <= getMaxOrder()) {
-          if (printChanges) *out << changeOrder(order, order+1,
-            "Stepper failure, increasing order.");
-          order++;
-        } else {
-          *out << "Failure - Stepper failed and can not change time step size "
-               << "or order!\n"
-               << "    Time step type == CONSTANT_STEP_SIZE\n"
-               << "    [order_min, order_max] = ["
-               << getMinOrder()<< ", " <<getMaxOrder()<< "]\n"
-               << "    order = " << order << std::endl;
-          integratorStatus = FAILED;
-          return;
-        }
-      }
-
-      // Absolute error failure
-      if (errorAbs > getMaxAbsError()) {
-        if (order+1 <= getMaxOrder()) {
-          if (printChanges) *out << changeOrder(order, order+1,
-            "Absolute error is too large.  Increasing order.");
-          order++;
-        } else {
-          *out
-            << "Failure - Absolute error failed and can not change time step "
-            << "size or order!\n"
-            << "  Time step type == CONSTANT_STEP_SIZE\n"
-            << "    [order_min, order_max] = ["
-            << getMinOrder()<< ", " <<getMaxOrder()<< "]\n"
-            << "  order = " << order
-            << "  (errorAbs ="<<errorAbs<<") > (errorMaxAbs ="
-            << getMaxAbsError()<<")"
-            << std::endl;
-          integratorStatus = FAILED;
-          return;
-        }
-      }
-
-      // Relative error failure
-      if (errorRel > getMaxRelError()) {
-        if (order+1 <= getMaxOrder()) {
-          if (printChanges) *out << changeOrder(order, order+1,
-            "Relative error is too large.  Increasing order.");
-          order++;
-        } else {
-          *out
-            << "Failure - Relative error failed and can not change time step "
-            << "size or order!\n"
-            << "  Time step type == CONSTANT_STEP_SIZE\n"
-            << "    [order_min, order_max] = ["
-            << getMinOrder()<< ", " <<getMaxOrder()<< "]\n"
-            << "  order = " << order
-            << "  (errorRel ="<<errorRel<<") > (errorMaxRel ="
-            << getMaxRelError()<<")"
-            << std::endl;
-          integratorStatus = FAILED;
-          return;
-        }
-      }
-
-      // Consistency checks
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        (order < getMinOrder() || order > getMaxOrder()), std::out_of_range,
-        "Error - Solution order is out of range and can not change "
-        "time step size!\n"
-        "    Time step type == CONSTANT_STEP_SIZE\n"
-        "    [order_min, order_max] = [" <<getMinOrder()<< ", "
-        <<getMaxOrder()<< "]\n"
-        "    order = " << order << "\n");
-      */
-    }
-
-    else if (getStepType() == "Variable") {
-      // Section 2.2.1 / Algorithm 2.4 of A. Denner, "Experiments on
-      // Temporal Variable Step BDF2 Algorithms", Masters Thesis,
-      // U Wisconsin-Madison, 2014.
-      Scalar rho   = getAmplFactor();
-      Scalar sigma = getReductFactor();
-      Scalar eta   = computeEta(solutionHistory);
-
-      // General rule: only increase/decrease dt once for any given reason.
-      if (stepperState->stepperStatus_ == Status::FAILED) {
-        if (printChanges) *out << changeDT(dt, dt*sigma,
-          "Stepper failure - Decreasing dt.");
-        dt *= sigma;
-      }
-      else { //Stepper passed
-        if (eta < getMinEta()) { // increase dt
-          if (printChanges) *out << changeDT(dt, dt*rho,
-            "Monitoring Value (eta) is too small ("
-            + std::to_string(eta) + " < " + std::to_string(getMinEta())
-            + ").  Increasing dt.");
-          dt *= rho;
-        }
-        else if (eta > getMaxEta()) { // reduce dt
-          if (printChanges) *out << changeDT(dt, dt*sigma,
-            "Monitoring Value (eta) is too large ("
-            + std::to_string(eta) + " > " + std::to_string(getMaxEta())
-            + ").  Decreasing dt.");
-          dt *= sigma;
-        }
-        else if (errorAbs > getMaxAbsError()) { // reduce dt
-          if (printChanges) *out << changeDT(dt, dt*sigma,
-            "Absolute error is too large ("
-            + std::to_string(errorAbs) +" > "+ std::to_string(getMaxAbsError())
-            + ").  Decreasing dt.");
-          dt *= sigma;
-        }
-        else if (errorRel > getMaxRelError()) { // reduce dt
-          if (printChanges) *out << changeDT(dt, dt*sigma,
-            "Relative error is too large ("
-            + std::to_string(errorRel) +" > "+ std::to_string(getMaxRelError())
-            + ").  Decreasing dt.");
-          dt *= sigma;
-        }
-        else if (order < getMinOrder()) { // order too low, increase dt
-          if (printChanges) *out << changeDT(dt, dt*rho,
-            "Order is too small ("
-            + std::to_string(order) + " < " + std::to_string(getMinOrder())
-            + ").  Increasing dt.");
-          dt *= rho;
-        }
-        else if (order > getMaxOrder()) { // order too high, reduce dt
-          if (printChanges) *out << changeDT(dt, dt*sigma,
-            "Order is too large ("
-            + std::to_string(order) + " > " + std::to_string(getMaxOrder())
-            + ").  Decreasing dt.");
-          dt *= sigma;
-        }
-      }
-
-      if (dt < getMinTimeStep()) { // decreased below minimum dt
-        if (printChanges) *out << changeDT(dt, getMinTimeStep(),
-          "dt is too small.  Resetting to minimum dt.");
-        dt = getMinTimeStep();
-      }
-      if (dt > getMaxTimeStep()) { // increased above maximum dt
-        if (printChanges) *out << changeDT(dt, getMaxTimeStep(),
-          "dt is too large.  Resetting to maximum dt.");
-        dt = getMaxTimeStep();
-      }
-    }
+    // get the order and dt (probably have changed by stepControlStategy_)
+    order = metaData->getOrder();
+    dt = metaData->getDt();
 
     // Check if we need to output this step index
     std::vector<int>::const_iterator it =
@@ -618,8 +450,14 @@ void TimeStepControl<Scalar>::setParameterList(
   }
 
   // set the step control strategy
-  if (getStepType() == "Constant")
-     stepControlStategy_ = Teuchos::rcp(new StepControlStrategyConstant<Scalar>());
+  stepControlStategy_ = Teuchos::rcp(new StepControlStrategyComposite<Scalar>());
+  if (getStepType() == "Constant"){
+      stepControlStategy_->addStrategy( 
+         Teuchos::rcp(new StepControlStrategyConstant<Scalar>()));
+  } else { //VARIABLE
+      stepControlStategy_->addStrategy( 
+         Teuchos::rcp(new StepControlStrategyVSBDF2<Scalar>()));
+  }
 
   return;
 }

@@ -31,7 +31,8 @@ public:
   virtual ~StepControlStrategy(){}
 
   /// Observe Stepper at beginning of takeStep.
-  virtual void getNextTimeStep(TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > sh ){}
+  virtual void getNextTimeStep(TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > sh ,
+        Status & integratorStatus){}
 
 };
 } // namespace Tempus

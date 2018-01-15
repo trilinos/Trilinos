@@ -21,7 +21,7 @@ template<class Scalar> class TimeStepControl;
  *
  */
 template<class Scalar>
-class StepControlStrategyComposite 
+class StepControlStrategyComposite : virtual public StepControlStrategy<Scalar>
 {
 public:
 
@@ -31,14 +31,15 @@ public:
   /// Destructor
   virtual ~StepControlStrategyComposite(){}
 
-  /// Observe Stepper at beginning of takeStep.
-  virtual void getNextTimeStep(TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > sh ){
+  /** \brief Determine the time step size.*/
+  virtual void getNextTimeStep(TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > sh ,
+        Status & integratorStatus) override {
      for(auto& s : strategies_)  
-        o->getNextTimeStep(tsc, sh);
+        s->getNextTimeStep(tsc, sh, integratorStatus);
   }
 
-  // add observer to the composite observer list
-  void addObserver(const Teuchos::RCP<StepControlStrategy<Scalar> > &strategy){
+  // add strategy to the composite strategy list
+  void addStrategy(const Teuchos::RCP<StepControlStrategy<Scalar> > &strategy){
   strategies_.push_back(strategy);
   }
 

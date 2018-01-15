@@ -16,7 +16,7 @@
 // Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepControlStrategy.hpp"
+#include "Tempus_StepControlStrategyComposite.hpp"
 
 #include <iostream>
 #include <iterator>
@@ -194,7 +194,7 @@ protected:
   bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
   Scalar dtAfterOutput_;  ///< dt to reinstate after output step.
 
-  Teuchos::RCP<StepControlStrategy<Scalar>> stepControlStategy_;
+  Teuchos::RCP<StepControlStrategyComposite<Scalar>> stepControlStategy_;
 
 };
 } // namespace Tempus
