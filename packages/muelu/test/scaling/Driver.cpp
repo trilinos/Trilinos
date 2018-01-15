@@ -85,6 +85,13 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
 
+
+#ifdef HAVE_MUELU_CUDA
+#include "cuda_profiler_api.h"
+#endif
+
+
+
 #include <MueLu_CreateXpetraPreconditioner.hpp>
 
 
@@ -167,6 +174,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
   int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
   bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
+#ifdef HAVE_MUELU_CUDA
+  bool profileSetup = false;                         clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
+  bool profileSolve = false;                         clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
+#endif
 
   clp.recogniseAllOptions(true);
   switch (clp.parse(argc, argv)) {
@@ -418,6 +429,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       // Preconditioner construction
       // =========================================================================
       comm->barrier();
+#ifdef HAVE_MUELU_CUDA
+      if(profileSetup) cudaProfilerStart();
+#endif
+
       tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
       bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
       bool useML = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "ml");
@@ -448,6 +463,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           H = MueLu::CreateXpetraPreconditioner(A, mueluList, coordinates, nullspace);
         }
       }
+#ifdef HAVE_MUELU_CUDA
+      if(profileSetup) cudaProfilerStop();
+#endif
 
       comm->barrier();
       tm = Teuchos::null;
@@ -485,7 +503,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       } else if (solveType == "cg" || solveType == "gmres" || solveType == "bicgstab") {
 #ifdef HAVE_MUELU_BELOS
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
-
+#ifdef HAVE_MUELU_CUDA
+	if(profileSolve) cudaProfilerStart();
+#endif
         // Operator and Multivector type that will be used with Belos
         typedef MultiVector          MV;
         typedef Belos::OperatorT<MV> OP;
@@ -554,6 +574,9 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
           out << std::endl << "ERROR:  Belos did not converge! " << std::endl;
         else
           out << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+#ifdef HAVE_MUELU_CUDA
+	if(profileSolve) cudaProfilerStop();
+#endif
 #endif //ifdef HAVE_MUELU_BELOS
       } else {
         throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");
