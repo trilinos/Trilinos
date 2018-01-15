@@ -33,18 +33,10 @@ namespace Tacho {
         if (m > 0) {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-#if defined( TACHO_PROFILE_TIME_PER_THREAD )
-            Kokkos::Impl::Timer timer; 
-            timer.reset();
-#endif
             Lapack<value_type>::potrf(ArgUplo::param,
                                       m,
                                       A.data(), A.stride_1(),
                                       &r_val);
-
-#if defined( TACHO_PROFILE_TIME_PER_THREAD )
-            g_time_per_thread[omp_get_thread_num()] += timer.seconds();
-#endif
             TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error, 
                                      "LAPACK (potrf) returns non-zero error code.");
 #else

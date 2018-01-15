@@ -1,8 +1,8 @@
-#ifndef __TACHOEXP_HERK_EXTERNAL_HPP__
-#define __TACHOEXP_HERK_EXTERNAL_HPP__
+#ifndef __TACHOEXP_HERK_INTERNAL_HPP__
+#define __TACHOEXP_HERK_INTERNAL_HPP__
 
 
-/// \file  Tacho_Herk_External.hpp
+/// \file  Tacho_Herk_Internal.hpp
 /// \brief BLAS hermitian rank-k update
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -13,13 +13,13 @@ namespace Tacho {
   namespace Experimental {
 
     template<typename ArgUplo, typename ArgTrans>
-    struct Herk<ArgUplo,ArgTrans,Algo::External> {
+    struct Herk<ArgUplo,ArgTrans,Algo::Internal> {
       template<typename SchedType,
                typename MemberType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeC>
-      inline
+      KOKKOS_INLINE_FUNCTION
       static int
       invoke(const SchedType &sched,
              const MemberType &member,
@@ -40,21 +40,15 @@ namespace Tacho {
         const ordinal_type 
           n = C.dimension_0(), 
           k = (std::is_same<ArgTrans,Trans::NoTranspose>::value ? A.dimension_1() : A.dimension_0());
-        if (n > 0 && k > 0) {
-          if (get_team_rank(member) == 0) {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-            Blas<value_type>::herk(ArgUplo::param,
-                                   ArgTrans::param,
-                                   n, k,
-                                   value_type(alpha),
-                                   A.data(), A.stride_1(),
-                                   value_type(beta),
-                                   C.data(), C.stride_1());
-#else
-            TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
-#endif
-          }
-        }
+        if (n > 0 && k > 0) 
+          BlasTeam<value_type>::herk(member,
+                                     ArgUplo::param,
+                                     ArgTrans::param,
+                                     n, k,
+                                     value_type(alpha),
+                                     A.data(), A.stride_1(),
+                                     value_type(beta),
+                                     C.data(), C.stride_1());
         return 0;
       }
     };
