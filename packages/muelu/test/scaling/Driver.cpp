@@ -235,24 +235,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   comm->barrier();
   tm = Teuchos::null;
 
-#if 0
-Teuchos::RCP<const Teuchos::Comm<int> > &comm,  Xpetra::UnderlyingLib& lib,
-                bool binaryFormat,const std::string & matrixFile, const std::string & rhsFile, 
-                const std::string & rowMapFile, 
-                const std::string & colMapFile, 
-                const std::string & domainMapFile, 
-                const std::string & rangeMapFile, 
-                const std::string & coordFile, const std::string &nullFile,
-                Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >          & map, 
-                Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >      & A, 
-                Teuchos::RCP<Xpetra::MultiVector<double,LocalOrdinal,GlobalOrdinal,Node> > & coordinates,
-                Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & nullspace,
-                Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & X, 
-                Teuchos::RCP<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > & B,
-                Galeri::Xpetra::Parameters<GlobalOrdinal> & galeriParameters,  Xpetra::Parameters & xpetraParameters, 
-                std::ostringstream & galeriStream) {
-#endif
-
   int numReruns = 1;
   if (paramList.isParameter("number of reruns"))
     numReruns = paramList.get<int>("number of reruns");
