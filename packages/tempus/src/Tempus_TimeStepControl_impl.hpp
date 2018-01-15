@@ -15,6 +15,9 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+//Step control strategy
+#include "Tempus_StepControlStrategyConstant.hpp"
+
 //Thyra
 #include "Thyra_VectorStdOps.hpp"
 
@@ -109,6 +112,9 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
     if (getStepType() == "Constant") {
 
+       stepControlStategy_->getNextTimeStep(*this, solutionHistory);
+       /*
+
       dt = getInitTimeStep();
 
       if (order < getMinOrder()) {
@@ -194,6 +200,7 @@ void TimeStepControl<Scalar>::getNextTimeStep(
         "    [order_min, order_max] = [" <<getMinOrder()<< ", "
         <<getMaxOrder()<< "]\n"
         "    order = " << order << "\n");
+      */
     }
 
     else if (getStepType() == "Variable") {
@@ -609,6 +616,10 @@ void TimeStepControl<Scalar>::setParameterList(
     // order output indices
     std::sort(outputIndices_.begin(),outputIndices_.end());
   }
+
+  // set the step control strategy
+  if (getStepType() == "Constant")
+     stepControlStategy_ = Teuchos::rcp(new StepControlStrategyConstant<Scalar>());
 
   return;
 }
