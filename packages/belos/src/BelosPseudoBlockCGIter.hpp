@@ -441,16 +441,16 @@ namespace Belos {
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
     //
-    while (stest_->checkStatus(this) != Passed) { //13 Nrm2 on residual, not 100% clear where 15 is happening...
+    while (stest_->checkStatus(this) != Passed) {
 
       // Increment the iteration
       iter_++;
 
       // Multiply the current direction std::vector by A and store in AP_
-      lp_->applyOp( *P_, *AP_ );  //1) SPMV
+      lp_->applyOp( *P_, *AP_ );
 
       // Compute alpha := <R_,Z_> / <P_,AP_>
-      MVT::MvDot( *P_, *AP_, pAp );//3) Dot
+      MVT::MvDot( *P_, *AP_, pAp );
 
       for (i=0; i<numRHS_; ++i) {
         if ( assertPositiveDefiniteness_ )
@@ -465,7 +465,7 @@ namespace Belos {
       //
       // Update the solution std::vector x := x + alpha * P_
       //
-      MVT::MvTimesMatAddMv( one, *P_, alpha, one, *cur_soln_vec ); //5)axpby
+      MVT::MvTimesMatAddMv( one, *P_, alpha, one, *cur_soln_vec );
       lp_->updateSolution();// what does this do?
       //
       // Save the denominator of beta before residual is updated [ old <R_, Z_> ]
@@ -476,7 +476,7 @@ namespace Belos {
       //
       // Compute the new residual R_ := R_ - alpha * AP_
       //
-      MVT::MvTimesMatAddMv( -one, *AP_, alpha, one, *R_ ); //7)axpby
+      MVT::MvTimesMatAddMv( -one, *AP_, alpha, one, *R_ )
       //
       // Compute beta := [ new <R_, Z_> ] / [ old <R_, Z_> ],
       // and the new direction std::vector p.
@@ -496,7 +496,7 @@ namespace Belos {
         Z_ = R_;
       }
       //
-      MVT::MvDot( *R_, *Z_, rHz );//9) Dot
+      MVT::MvDot( *R_, *Z_, rHz );
       if ( assertPositiveDefiniteness_ )
           for (i=0; i<numRHS_; ++i)
               TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(rHz[i]) < zero,
@@ -509,7 +509,7 @@ namespace Belos {
         index[0] = i;
         Teuchos::RCP<const MV> Z_i = MVT::CloneView( *Z_, index );
         Teuchos::RCP<MV> P_i = MVT::CloneViewNonConst( *P_, index );
-        MVT::MvAddMv( one, *Z_i, beta(i,i), *P_i, *P_i );//11) Update
+        MVT::MvAddMv( one, *Z_i, beta(i,i), *P_i, *P_i );       
       }
 
       // Condition estimate (if needed)
