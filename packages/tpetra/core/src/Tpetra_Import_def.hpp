@@ -891,14 +891,14 @@ namespace Tpetra {
     Teuchos::Array<std::pair<int,GO>> remotePGIDs1(remoteGIDs1.size());
     for (size_type k=0; k<remoteGIDs1.size(); k++)
       remotePGIDs1[k] = std::make_pair(remotePIDs1[k], remoteGIDs1[k]);
+    std::sort(remotePGIDs1.begin(), remotePGIDs1.end());
 
     Teuchos::Array<std::pair<int,GO>> remotePGIDs2(remoteGIDs2.size());
     for (size_type k=0; k<remoteGIDs2.size(); k++)
       remotePGIDs2[k] = std::make_pair(remotePIDs2[k], remoteGIDs2[k]);
+    std::sort(remotePGIDs2.begin(), remotePGIDs2.end());
 
     remotePGIDs.reserve(remotePGIDs1.size()+remotePGIDs2.size());
-    std::sort(remotePGIDs1.begin(), remotePGIDs1.end());
-    std::sort(remotePGIDs2.begin(), remotePGIDs2.end());
     std::merge(remotePGIDs1.begin(), remotePGIDs1.end(),
                remotePGIDs2.begin(), remotePGIDs2.end(),
                std::back_inserter(remotePGIDs));
@@ -906,9 +906,9 @@ namespace Tpetra {
     remotePGIDs.resize(std::distance(remotePGIDs.begin(), it));
 
     // Finally, insert remote GIDs
-    const size_type start = unionTgtGIDs.size();
-    unionTgtGIDs.resize(start+remotePGIDs.size());
-    for (size_type k=0; k<remotePGIDs.size(); k++)
+    const size_type oldSize = unionTgtGIDs.size();
+    unionTgtGIDs.resize(oldSize+remotePGIDs.size());
+    for (size_type start=oldSize, k=0; k<remotePGIDs.size(); k++)
       unionTgtGIDs[start+k] = remotePGIDs[k].second;
 
     // Compute output only quantities
