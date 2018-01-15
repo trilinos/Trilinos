@@ -476,7 +476,7 @@ namespace Belos {
       //
       // Compute the new residual R_ := R_ - alpha * AP_
       //
-      MVT::MvTimesMatAddMv( -one, *AP_, alpha, one, *R_ )
+      MVT::MvTimesMatAddMv( -one, *AP_, alpha, one, *R_ );
       //
       // Compute beta := [ new <R_, Z_> ] / [ old <R_, Z_> ],
       // and the new direction std::vector p.
