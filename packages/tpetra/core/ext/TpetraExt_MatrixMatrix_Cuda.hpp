@@ -158,70 +158,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   if(!params.is_null() && params->isParameter(alg)) myalg = params->get(alg,myalg);
   KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
-  // We need to do this dance if either (a) We have Bimport or (b) We don't A's colMap is not the same as B's rowMap
-  if(!Bview.importMatrix.is_null() ||
-    (Bview.importMatrix.is_null() && (&*Aview.origMatrix->getGraph()->getColMap() != &*Bview.origMatrix->getGraph()->getRowMap())))
-  {
-    // We do have a Bimport
-    // NOTE: We're going merge Borig and Bimport into a single matrix and reindex the columns *before* we multiply.
-    // This option was chosen because we know we don't have any duplicate entries, so we can allocate once.
+  // Merge the B and Bimport matrices
+  Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getNodeNumElements(),Bmerged);
 
-    size_t merge_numrows =  Amat.numCols();
-    lno_view_t Mrowptr("Mrowptr", merge_numrows + 1);
-
-    const LocalOrdinal LO_INVALID = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-
-    // Use a Kokkos::parallel_scan to build the rowptr
-    typedef Node::execution_space execution_space;
-    typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-    Kokkos::parallel_scan("Tpetra_MatrixMatrix_buildRowptrBmerged", range_type (0, merge_numrows), KOKKOS_LAMBDA(const size_t i, size_t& update, const bool final) {
-        if(final)
-          Mrowptr(i) = update;
-        // Get the row count
-        size_t ct = 0;
-        if(Acol2Brow(i) != LO_INVALID)
-          ct = Browptr(Acol2Brow(i) + 1) - Browptr(Acol2Brow(i));
-        else
-          ct = Irowptr(Acol2Irow(i) + 1) - Irowptr(Acol2Irow(i));
-        update += ct;
-        if(final && (i + 1 == merge_numrows))
-          Mrowptr(i + 1) = update;
-      });
-
-    execution_space::fence();
-
-    // Allocate nnz
-    size_t merge_nnz = Mrowptr(merge_numrows);
-    lno_nnz_view_t Mcolind("Mcolind", merge_nnz);
-    scalar_view_t Mvalues("Mvals", merge_nnz);
-
-    // Use a Kokkos::parallel_for to fill the rowptr/colind arrays
-    typedef Kokkos::RangePolicy<execution_space, size_t> range_type;
-    Kokkos::parallel_for("Tpetra_MatrixMatrix_buildColindValuesBmerged", range_type (0, merge_numrows), KOKKOS_LAMBDA(const size_t i) {
-        if(Acol2Brow(i) != LO_INVALID) {
-          size_t row = Acol2Brow(i);
-          size_t start = Browptr(row);
-          for(size_t j = Mrowptr(i); j < Mrowptr(i + 1); j++) {            
-            Mvalues(j) = Bvals(j - Mrowptr(i) + start);
-            Mcolind(j) = Bcol2Ccol(Bcolind(j - Mrowptr(i) + start));
-          }
-        }
-        else {
-          size_t row = Acol2Irow(i);
-          size_t start = Irowptr(row);
-          for(size_t j = Mrowptr(i); j < Mrowptr(i + 1); j++) {
-            Mvalues(j) = Ivals(j - Mrowptr(i) + start);
-            Mcolind(j) = Icol2Ccol(Icolind(j - Mrowptr(i) + start));
-          }
-        }
-      });
-    execution_space::fence();
-    Bmerged = Teuchos::rcp(new KCRS("CrsMatrix",merge_numrows,C.getColMap()->getNodeNumElements(),merge_nnz,Mvalues,Mrowptr,Mcolind));
-  }
-  else {
-    // We don't have a Bimport (the easy case)
-    Bmerged = Teuchos::rcpFromRef(Bmat);
-  }
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix CudaCore"))));
 #endif

@@ -553,6 +553,18 @@ void setMaxNumEntriesPerRow(
   };
 
 
+  // This only merges matrices that look like B & Bimport, aka, they have no overlapping rows
+  template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalOrdinalViewType>
+  inline void merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+                             CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
+                             const LocalOrdinalViewType & Acol2Brow,
+                             const LocalOrdinalViewType & Acol2Irow,
+                             const LocalOrdinalViewType & Bcol2Ccol,
+                             const LocalOrdinalViewType & Icol2Ccol,  
+                             const size_t mergedNodeNumCols,
+                             Teuchos::RCP<const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type> &Bmerged);
+
+
 
 template<class CrsMatrixType>
 size_t C_estimate_nnz(CrsMatrixType & A, CrsMatrixType &B);
