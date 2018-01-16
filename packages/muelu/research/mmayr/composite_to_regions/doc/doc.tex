@@ -461,7 +461,7 @@ We also need to transform vectors from the regional layout back to the composite
 Applying a Jacobi smoother in region layout exhibits two major difficulties, namely
 \begin{itemize}
 \item the recovery of true diagonal matrix entries (c.f. Section~\ref{sec:RecoveryTrueDiagonal})
-\item the Matrix-vector multiplication in region layout (c.f. Section~\ref{sec:RegionalMatVec})
+\item the residual calculation in region layout (c.f. Section~\ref{sec:CalcRegionalResidual})
 \end{itemize}
 
 \subsubsection{Recovery of true diagonal matrix entries}
@@ -491,17 +491,30 @@ but will copy the interface-related entries into the interface-related DOFs in t
 \end{enumerate}
 The true diagonal values can now be recovered an element-wise multiplication of the diagonal with {\sf regScaling}.
 
-\subsubsection{Matrix-vector multiplication in region layout}
-\label{sec:RegionalMatVec}
+\subsubsection{Residual evaluation in region layout}
+\label{sec:CalcRegionalResidual}
 
-The matrix-vector multiplication in the residual is performed region-wise. 
+The matrix-vector multiplication in the residual calculation is performed region-wise. 
 Hence, the interface DOFs are multiplied with the 'splitted' values only, i.e. the true residual value needs to be recovered 
 by exchanging these values between the duplicated DOFs and adding them into each of them.
 
 There are multiple ways to do that:
 \begin{itemize}
-\item {\bf Using {\sf Export()} to composite layout:} First, the matrix vector product {\sf vectorAX = matrixA $\cdot$ vectorX} is computed in the region layout. Then, the vector~{\sf vectorAX} is transferred to the composite layout. This includes an {\sf Export()} operation with a {\sf combineMode} that adds interface values. Finally, moving it back to the region layout transfers the summed values into the interface entries, yielding the 'true' residual. The major drawback of this approach is copying the full region vector to the composite layout and back, although operations are only necessary on the interface entries. Details on transferring data back and forth between regional and composite layouts are given in section~\ref{sec:TransferDataLayouts}.
-\item {\bf Using a data manager:} Using a data manager, that keeps track of interface and non-interface nodes as well as the duplication of interface nodes, could enable a targeted exchange of information, reducing the communication to only those values necessary.
+\item {\bf Using {\sf Export()} to composite layout:} 
+\begin{enumerate}
+ \item The matrix vector product {\sf vectorAX = matrixA $\cdot$ vectorX} is computed in the region layout. 
+ \item The vector~{\sf vectorAX} is transferred to the composite layout. This includes an {\sf Export()} operation with a {\sf combineMode} 
+ that adds interface values. To allow for the scneario {\sf MultipleRegionsPerProc}, the {\sf combineMode} has to be chosen 
+ as {\sf Epetra\_AddLocalAlso} such that the values of the duplicated interface nodes, that reside in the interior of a processor's subdomain, 
+ are also summed.
+ \item Moving back to the region layout transfers the summed values into the interface entries, yielding the 'true' residual. 
+\end{enumerate}
+
+The major drawback of this approach is copying the full region vector to the composite layout and back, 
+although operations are only necessary on the interface entries. 
+Details on transferring data back and forth between regional and composite layouts are given in section~\ref{sec:TransferDataLayouts}.
+\item {\bf Using a data manager:} Using a data manager, that keeps track of interface and non-interface nodes as well as the duplication of interface nodes,
+could enable a targeted exchange of information, reducing the communication to only those values necessary.
 \end{itemize}
 
 \subsubsection{An exemplary implementation of Jacobi in a region layout}
@@ -568,7 +581,7 @@ Restriction operations are performed as follows:
 \item In anticipation of the duplication of interface values, scale all vector entries~$v^{(r)}_{f,\Gamma}$ 
 associated with region-interface nodes by $1/n_r$ with $n_r$ being the number of regions that share this particular node.
 \item Perform restriction~$v^{(r)}_c = R^{(r)} v^{(r)}_f$ separately for each region.
-\item Exchange and add region-interface entries~$v^{(r)}_{c,\Gamma}$.
+\item Exchange and add region-interface entries~$v^{(r)}_{c,\Gamma}$. Note: Use a {\sf combineMode} that also sums local values to account for cases where region interfaces reside in the interior of processor subdomains, i.e. the scenario {\sf MultipleRegionsPerProc}.
 \end{enumerate}
 
 Note that the prolongation of a vector uses a region-wise prolongation operator~$P^{(r)}$ 

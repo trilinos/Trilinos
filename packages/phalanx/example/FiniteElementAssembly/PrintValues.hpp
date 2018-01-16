@@ -27,10 +27,15 @@ namespace phx_example {
       os = &ofs;
     }
 
+    std::ios::fmtflags os_flags( os->flags() );
+    os->precision(10);
+
     if (description != "")
       *os << description << std::endl;
     for (int i=0; i < static_cast<int>(host_f.extent(0)); ++i)
-      *os << "f(" << i << ") = " << host_f(i) << std::endl;
+      *os << "f(" << i << ") = " << std::fixed << host_f(i) << std::endl;
+
+    os->flags(os_flags);
 
     if (print_to_file)
       ofs.close();

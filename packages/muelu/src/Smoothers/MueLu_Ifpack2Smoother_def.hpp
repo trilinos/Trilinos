@@ -700,6 +700,9 @@ namespace MueLu {
     RCP<Ifpack2::ILUT<MatrixType> > pi            = rcp_dynamic_cast<Ifpack2::ILUT<MatrixType> >(prec_);
     if(!pi.is_null()) return pi->getNodeSmootherComplexity();
 
+    RCP<Ifpack2::RILUK<MatrixType> > pk            = rcp_dynamic_cast<Ifpack2::RILUK<MatrixType> >(prec_);
+    if(!pk.is_null()) return pk->getNodeSmootherComplexity();
+
 
     return Teuchos::OrdinalTraits<size_t>::invalid();
   }

@@ -103,6 +103,9 @@ namespace PHX {
 
   template<typename DataType>
   using View = Kokkos::View<DataType,typename PHX::DevLayout<DataType>::type,PHX::Device>;
+
+  template<typename DataType>
+  using AtomicView = Kokkos::View<DataType,typename PHX::DevLayout<DataType>::type,PHX::Device,Kokkos::MemoryTraits<Kokkos::Atomic>>;
 }
 
 #endif

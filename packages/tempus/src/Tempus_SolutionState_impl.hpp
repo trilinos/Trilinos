@@ -13,7 +13,48 @@
 
 namespace Tempus {
 
-// SolutionState definitions:
+
+template<class Scalar>
+SolutionState<Scalar>::SolutionState(
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& x,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdot,
+  const Teuchos::RCP<Thyra::VectorBase<Scalar> >& xdotdot)
+  : x_              (x),
+    x_nc_           (x),
+    xdot_           (xdot),
+    xdot_nc_        (xdot),
+    xdotdot_        (xdotdot),
+    xdotdot_nc_     (xdotdot),
+    stepperState_   (Teuchos::null),
+    stepperState_nc_(Teuchos::null),
+    physicsState_   (Teuchos::null),
+    physicsState_nc_(Teuchos::null)
+{
+  metaData_nc_ = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
+  metaData_ = metaData_nc_;
+}
+
+template<class Scalar>
+SolutionState<Scalar>::SolutionState(
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& x,
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdot,
+  const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& xdotdot)
+  : x_              (x),
+    x_nc_           (Teuchos::null),
+    xdot_           (xdot),
+    xdot_nc_        (Teuchos::null),
+    xdotdot_        (xdotdot),
+    xdotdot_nc_     (Teuchos::null),
+    stepperState_   (Teuchos::null),
+    stepperState_nc_(Teuchos::null),
+    physicsState_   (Teuchos::null),
+    physicsState_nc_(Teuchos::null)
+{
+  metaData_nc_ = Teuchos::rcp(new SolutionStateMetaData<Scalar>());
+  metaData_ = metaData_nc_;
+}
+
+
 template<class Scalar>
 SolutionState<Scalar>::SolutionState(
   const Teuchos::RCP<SolutionStateMetaData<Scalar> > metaData,
