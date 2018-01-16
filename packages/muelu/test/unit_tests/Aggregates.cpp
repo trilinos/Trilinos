@@ -52,6 +52,7 @@
 #include <MueLu_FactoryManagerBase.hpp>
 #include <MueLu_CoalesceDropFactory.hpp>
 #include <MueLu_CoupledAggregationFactory.hpp>
+#include <MueLu_StructuredAggregationFactory.hpp>
 #include <MueLu_UncoupledAggregationFactory.hpp>
 #include <MueLu_AmalgamationFactory.hpp>
 #include <MueLu_AmalgamationInfo.hpp>
@@ -70,8 +71,8 @@ class AggregateGenerator {
     public:
 
     // Little utility to generate uncoupled aggregates.
-    RCP<Aggregates>
-    static gimmeUncoupledAggregates(const RCP<Matrix> & A, RCP<AmalgamationInfo> & amalgInfo, bool bPhase1 = true, bool bPhase2a = true, bool bPhase2b = true, bool bPhase3 = true)
+    static RCP<Aggregates>
+    gimmeUncoupledAggregates(const RCP<Matrix> & A, RCP<AmalgamationInfo> & amalgInfo, bool bPhase1 = true, bool bPhase2a = true, bool bPhase2b = true, bool bPhase3 = true)
   //  RCP<MueLu::Aggregates> gimmeUncoupledAggregates(const RCP<xpetra_matrix_type> & A, RCP<AmalgamationInfo> & amalgInfo, bool bPhase1 = true, bool bPhase2a = true, bool bPhase2b = true, bool bPhase3 = true)
     {
       Level level;
@@ -141,6 +142,35 @@ class AggregateGenerator {
       level.Release("Aggregates", aggFact.get());
       return aggregates;
     }  // gimmeCoupledAggregates
+
+    // Little utility to generate uncoupled aggregates.
+    static RCP<Aggregates>
+    gimmeStructuredAggregates(const RCP<const Xpetra::MultiVector<double,LO,GO,NO> >& Coordinates,
+                              Array<GO> gNodesPerDir, Array<LO> lNodesPerDir, LO numDimensions)
+    {
+      Level level;
+      TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(level);
+      level.Set("Coordinates", Coordinates);
+      level.Set("gNodesPerDim", gNodesPerDir);
+      level.Set("lNodesPerDim", lNodesPerDir);
+
+      // Setup aggregation factory (use default factory for graph)
+      RCP<StructuredAggregationFactory> aggFact = rcp(new StructuredAggregationFactory());
+      aggFact->SetParameter("aggregation: number of spatial dimensions",
+                            Teuchos::ParameterEntry(numDimensions));
+      aggFact->SetParameter("aggregation: coarsening rate",
+                            Teuchos::ParameterEntry(std::string("{3}")));
+
+      level.Request("Aggregates", aggFact.get());
+
+      level.Request(*aggFact);
+      aggFact->Build(level);
+
+      RCP<Aggregates> aggregates = level.Get<RCP<Aggregates> >("Aggregates",aggFact.get()); // fix me
+      level.Release("Aggregates", aggFact.get());
+
+      return aggregates;
+    }  // gimmeStructuredAggregates
 };
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, JustAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
@@ -505,6 +535,43 @@ class AggregateGenerator {
 
   } //UncoupledPhase3
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Aggregates, JustStructuredAggregation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    out << "version: " << MueLu::Version() << std::endl;
+
+    typedef typename Xpetra::MultiVector<double, LO, GO, NO> xdMV;
+
+    // Get MPI parameters
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    LO numRanks = comm->getSize();
+    LO myRank   = comm->getRank();
+
+    // Set global geometric data
+    LO numDimensions = 2;
+    Array<LO> lNodesPerDir(3);
+    Array<GO> gNodesPerDir(3);
+    for(int dim = 0; dim < 3; ++dim) {
+      if(dim < numDimensions) {
+        // Use more nodes in 1D to have a reasonable number of nodes per procs
+        gNodesPerDir[dim] = ( (numDimensions == 1) ? 15 : 6 );
+      } else {
+        gNodesPerDir[dim] = 1;
+      }
+    }
+
+    RCP<const Xpetra::MultiVector<double,LO,GO,NO> > Coordinates =
+      TestHelpers::TestFactory<SC,LO,GO,NO>::BuildGeoCoordinates(numDimensions, gNodesPerDir,
+                                                                 lNodesPerDir);
+
+    RCP<Aggregates> aggregates = AggregateGenerator<SC,LO,GO,NO>::
+      gimmeStructuredAggregates(Coordinates, gNodesPerDir, lNodesPerDir, numDimensions);
+
+    TEST_EQUALITY(aggregates != Teuchos::null, true);
+  }
+
 #define MUELU_ETI_GROUP(Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,JustAggregation,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,GetNumAggregates,Scalar,LO,GO,Node) \
@@ -512,7 +579,8 @@ class AggregateGenerator {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,GetNumUncoupledAggregates,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,UncoupledPhase1,Scalar,LO,GO,Node) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,UncoupledPhase2,Scalar,LO,GO,Node) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,UncoupledPhase3,Scalar,LO,GO,Node)
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,UncoupledPhase3,Scalar,LO,GO,Node) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Aggregates,JustStructuredAggregation,Scalar,LO,GO,Node)
 
 #include <MueLu_ETI_4arg.hpp>
 
