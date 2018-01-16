@@ -132,6 +132,14 @@ public:
     MPI_Send(const_cast<Real*>(&std_source[0]),int(std_source.size()),MPI_DOUBLE,rank,0,comm);
   }
 
+  void recv(MPI_Comm comm,int rank,Vector<Real> & dest,bool sumInto) const
+  {
+    if(sumInto)
+      recvSumInto(comm,rank,dest);
+    else
+      recv(comm,rank,dest);
+  }
+
   void recv(MPI_Comm comm,int rank,Vector<Real> & dest) const
   {
     std::vector<Real> & std_dest = *dynamic_cast<StdVector<Real>&>(dest).getVector();
@@ -140,6 +148,20 @@ public:
     // MPI_Comm_rank(comm, &myRank);
 
     MPI_Recv(&std_dest[0],int(std_dest.size()),MPI_DOUBLE,rank,0,comm,MPI_STATUS_IGNORE);
+  }
+
+  void recvSumInto(MPI_Comm comm,int rank,Vector<Real> & dest) const
+  {
+    std::vector<Real> & std_dest = *dynamic_cast<StdVector<Real>&>(dest).getVector();
+    std::vector<Real> buffer(std_dest.size(),0.0);
+
+    int myRank = -1;
+    MPI_Comm_rank(comm, &myRank);
+
+    MPI_Recv(&buffer[0],int(buffer.size()),MPI_DOUBLE,rank,0,comm,MPI_STATUS_IGNORE);
+
+    for(size_t i=0;i<std_dest.size();i++)
+      std_dest[i] += buffer[i];
   }
 };
 
@@ -162,6 +184,8 @@ protected:
   // parallel distribution information
   int stepStart_;
   int stepEnd_;
+
+  mutable Ptr<PinTVector<Real>> dual_;
 
   Ptr<PartitionedVector<Real>> stepVectors_;
   std::vector<Ptr<Vector<Real>>> leftVectors_;
@@ -354,9 +378,9 @@ public:
       processors.
 
       \note This method is const because it doesn't change the behavior
-            of the vector. It does allow access to important components.
+            of the vector. It does ensure the components are correct on processor.
   */
-  void boundaryExchange(ESendRecv send_recv=SEND_AND_RECV) const
+  void boundaryExchange(ESendRecv   send_recv=SEND_AND_RECV) const
   {
     MPI_Comm timeComm = communicators_->getTimeCommunicator();
     int      myRank   = communicators_->getTimeRank();
@@ -389,7 +413,7 @@ public:
         vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedSteps()+offset)); // this is "owned"
       
       if(recvFromLeft)
-        vectorComm_->recv(timeComm,myRank-1,*getVectorPtr(offset));                  
+        vectorComm_->recv(timeComm,myRank-1,*getVectorPtr(offset),false);                  
     }
 
     // send from right to left
@@ -402,7 +426,55 @@ public:
         vectorComm_->send(timeComm,myRank-1,*getVectorPtr(offset-1)); // this is "owned"
       
       if(recvFromRight)
-        vectorComm_->recv(timeComm,myRank+1,*getVectorPtr(numOwnedSteps()+offset-1));
+        vectorComm_->recv(timeComm,myRank+1,*getVectorPtr(numOwnedSteps()+offset-1),false);
+    }
+  }
+
+  /** \brief Exchange unknowns with neighboring processors using summation.
+      
+      Using the stencil information, do global communication with time neighbor
+      processors. This sums in the the reverse direction.
+
+      \note This method is not const because it does change the behavior
+            of the vector.
+  */
+  void boundaryExchangeSumInto()
+  {
+    MPI_Comm timeComm = communicators_->getTimeCommunicator();
+    int      myRank   = communicators_->getTimeRank();
+
+    bool sendToRight   = stepEnd_ < steps_;
+    bool recvFromRight = stepEnd_ < steps_;
+
+    bool sendToLeft   = stepStart_ > 0;
+    bool recvFromLeft = stepStart_ > 0;
+
+    // send from left to right
+    for(std::size_t i=0;i<stencil_.size();i++) {
+      int offset = stencil_[i];
+      if(offset >= 0)
+        continue;
+
+      if(recvFromRight) {
+        vectorComm_->recv(timeComm,myRank+1,*getVectorPtr(numOwnedSteps()+offset),true); // this is "owned"
+      }
+      
+      if(sendToLeft) {
+        vectorComm_->send(timeComm,myRank-1,*getVectorPtr(offset));                  
+      }
+    }
+
+    // send from right to left
+    for(std::size_t i=0;i<stencil_.size();i++) {
+      int offset = stencil_[i];
+      if(offset <= 0)
+        continue;
+
+      if(recvFromLeft)
+        vectorComm_->recv(timeComm,myRank-1,*getVectorPtr(offset-1),true); // this is "owned"
+      
+      if(sendToRight)
+        vectorComm_->send(timeComm,myRank+1,*getVectorPtr(numOwnedSteps()+offset-1));
     }
   }
 
@@ -532,6 +604,21 @@ public:
     const PinTVector &xs = dynamic_cast<const PinTVector&>(x);
 
     stepVectors_->axpy(alpha,*xs.stepVectors_);
+  }
+
+  /** \brief Zeros all entries of the vector, including boundary exchange fields.
+   */
+  virtual void zeroAll() 
+  {
+    stepVectors_->zero();
+
+    // make sure you copy boundary exchange "end points" - handles initial conditions
+    for(std::size_t i=0;i<leftVectors_.size();i++)
+      leftVectors_[i]->zero();
+
+    // make sure you copy boundary exchange "end points" - handles initial conditions
+    for(std::size_t i=0;i<rightVectors_.size();i++)
+      rightVectors_[i]->zero();
   }
 
 #if 0

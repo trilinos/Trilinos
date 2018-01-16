@@ -152,7 +152,7 @@ private:
                                       int step,
                                       ETimeAccessor accessor)
   {
-    const std::vector<int> & stencil = src.stencil();
+    const std::vector<int> stencil = src.stencil();
 
     std::vector<Ptr<Vector<Real>>> vecs;
     for(std::size_t i=0;i<stencil.size();i++) {
@@ -192,7 +192,7 @@ private:
       vecs.push_back(u_now);
       return makePtr<PartitionedVector<Real>>(vecs);
   }
-  
+
 public:
 
   //! Default constructor
@@ -337,6 +337,37 @@ public:
     }
   }
 
+  virtual void applyJacobian_2(Vector<Real> &jv,
+                               const Vector<Real> &v,
+                               const Vector<Real> &u,
+                               const Vector<Real> &z,
+                               Real &tol) override {
+    PinTVector<Real>       & pint_jv = dynamic_cast<PinTVector<Real>&>(jv);
+    const PinTVector<Real> & pint_v  = dynamic_cast<const PinTVector<Real>&>(v);
+    const PinTVector<Real> & pint_u  = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z  = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+ 
+    TEUCHOS_ASSERT(pint_jv.numOwnedSteps()==pint_u.numOwnedSteps());
+    TEUCHOS_ASSERT(pint_jv.numOwnedSteps()==pint_v.numOwnedSteps());
+
+    // communicate neighbors, these are block calls
+    pint_v.boundaryExchange();
+    pint_u.boundaryExchange();
+    pint_z.boundaryExchange();
+
+    for(int i=0;i<pint_jv.numOwnedSteps();i++) {
+      // pull out all the time steps required
+      Ptr<const Vector<Real>> u_state   = getStateVector(pint_u,i);
+      Ptr<const Vector<Real>> v_control = getVector(pint_v,i,ALL);
+      Ptr<const Vector<Real>> z_all     = getVector(pint_z,i,ALL);
+
+      Ptr<Vector<Real>> jv_now = getNonconstVector(pint_jv,i,CURRENT);
+
+      stepConstraint_->applyJacobian_2(*jv_now,*v_control,*u_state,*z_all,tol);
+    }
+  }
+
   virtual void applyInverseJacobian_1(Vector<Real> &ijv,
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
@@ -350,16 +381,51 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      const Vector<Real> &dualv,
                                       Real &tol) override {
-    TEUCHOS_ASSERT(false);
+
+    PinTVector<Real>       & pint_ajv = dynamic_cast<PinTVector<Real>&>(ajv);
+    const PinTVector<Real> & pint_v   = dynamic_cast<const PinTVector<Real>&>(v);
+    const PinTVector<Real> & pint_u   = dynamic_cast<const PinTVector<Real>&>(u);
+    const PinTVector<Real> & pint_z   = dynamic_cast<const PinTVector<Real>&>(z);
+       // its possible we won't always want to cast to a PinT vector here
+      
+    TEUCHOS_ASSERT(pint_v.numOwnedSteps()==pint_u.numOwnedSteps());
+    TEUCHOS_ASSERT(pint_ajv.numOwnedSteps()==pint_u.numOwnedSteps());
+
+    // we need to make sure this has all zeros to begin with (this includes boundary exchange components)
+    pint_ajv.zeroAll();
+
+    // communicate neighbors, these are block calls
+    pint_v.boundaryExchange();
+    pint_u.boundaryExchange();
+    pint_z.boundaryExchange();
+
+    Ptr<Vector<Real>> scratch;
+    for(int i=0;i<pint_ajv.numOwnedSteps();i++) {
+      // pull out all the time steps required
+      Ptr<const Vector<Real>> v_dual = getVector(pint_v,i,CURRENT);
+      Ptr<const Vector<Real>> u_state = getStateVector(pint_u,i);
+      Ptr<const Vector<Real>> z_all = getVector(pint_z,i,ALL);
+
+      Ptr<Vector<Real>> ajv_now = getStateVector(pint_ajv,i);
+
+      // this will lead to problems if problem size changes in time
+      if(scratch==ROL::nullPtr) {
+        scratch = ajv_now->clone();
+      }
+
+      stepConstraint_->applyAdjointJacobian_1(*scratch,*v_dual,*u_state,*z_all,tol);
+
+      ajv_now->axpy(1.0,*scratch);   
+    }
+
+    pint_ajv.boundaryExchangeSumInto();
   }
 
   virtual void applyAdjointJacobian_2(Vector<Real> &ajv,
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      const Vector<Real> &dualv,
                                       Real &tol) override {
     TEUCHOS_ASSERT(false);
   }

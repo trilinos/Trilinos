@@ -336,27 +336,25 @@ public:
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      const Vector<Real> &dualv,
                                       Real &tol) override {
     Vector<Real> & ajv_old = getOldVector(ajv);
     Vector<Real> & ajv_new = getNewVector(ajv);
     const Vector<Real> & u_old = getOldVector(u);
     const Vector<Real> & u_new = getNewVector(u);
     
-    applyAdjointJacobian_1_old(ajv_old,dualv,u_old,u_new,z,tol);
-    applyAdjointJacobian_1_new(ajv_new,dualv,u_old,u_new,z,tol);
+    applyAdjointJacobian_1_old(ajv_old,v,u_old,u_new,z,tol);
+    applyAdjointJacobian_1_new(ajv_new,v,u_old,u_new,z,tol);
   }
 
   virtual void applyAdjointJacobian_2(Vector<Real> &ajv,
                                       const Vector<Real> &v,
                                       const Vector<Real> &u,
                                       const Vector<Real> &z,
-                                      const Vector<Real> &dualv,
                                       Real &tol) override {
     const Vector<Real> & u_old = getOldVector(u);
     const Vector<Real> & u_new = getNewVector(u);
     
-    applyAdjointJacobian_2_time(ajv,dualv,u_old,u_new,z,tol);
+    applyAdjointJacobian_2_time(ajv,v,u_old,u_new,z,tol);
   }
 
   virtual void applyInverseAdjointJacobian_1(Vector<Real> &iajv,

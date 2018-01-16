@@ -192,15 +192,19 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
 
   ROL::Ptr<ROL::Constraint_PinTSimOpt<Real>> pint_constraint = ROL::makePtr<ROL::Constraint_PinTSimOpt<Real>>(step_constraint);
 
-  PtrVector u   = state;
-  PtrVector z   = control->clone();
+  PtrVector u   = state_unit;
+  PtrVector z   = control_unit->clone();
   PtrVector c   = state->clone();
   PtrVector jv  = c->clone();
   PtrVector v_u = state_unit->clone();
+  PtrVector v_z = control_unit->clone();
+  PtrVector w   = state->dual().clone();
 
   ROL::RandomizeVector<RealT>(*u); // this randomization doesn't really matter here as 'u' is complete determine by the solve
   ROL::RandomizeVector<RealT>(*z); 
   ROL::RandomizeVector<RealT>(*v_u); 
+  // u->zero();
+  ROL::RandomizeVector<RealT>(*w); 
  
   // v_u->scale(3.0); 
 
@@ -234,6 +238,27 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
       throw std::logic_error("Constraint apply jacobian 1 is incorrect");
   }
 
+  // check the Jacobian_2
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Jacobian 2" << std::endl;
+
+    auto errors = pint_constraint->checkApplyJacobian_2(*u,*z,*v_z,*jv,true,*outStream);
+    if(errors[6][3] >= 1e-8)
+      throw std::logic_error("Constraint apply jacobian 2 is incorrect");
+  }
+
+  // check the Adjoint Jacobian_1
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Adjoint Jacobian 1" << std::endl;
+
+    auto error = pint_constraint->checkAdjointConsistencyJacobian_1(*w,*v_u,*u,*z,true,*outStream);
+    if(error >= 1e-8)
+      throw std::logic_error("Constraint apply adjoint jacobian 1 is incorrect");
+  }
 
   // This computes and returns the last value of the 'u' component and shares
   // it with all processors.
@@ -251,8 +276,8 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     // pull out the last value
     if(myRank==numRanks-1) {
       PtrVector final_state = state->getVectorPtr(state->numOwnedSteps()-1);
-      *outStream << "Final state = " << final_state << std::endl;
-      final_state->print(*outStream);
+      // *outStream << "Final state = " << final_state << std::endl;
+      // final_state->print(*outStream);
   
       const std::vector<Real> & fs_stdvec = *dynamic_cast<const ROL::StdVector<Real>&>(*final_state).getVector();
       final_result = fs_stdvec[0];
