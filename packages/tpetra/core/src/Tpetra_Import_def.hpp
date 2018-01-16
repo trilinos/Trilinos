@@ -49,7 +49,11 @@
 #include <Tpetra_Util.hpp>
 #include <Tpetra_Import_Util.hpp>
 #include <Tpetra_Export.hpp>
+#include <Tpetra_Details_Behavior.hpp>
 #include <Teuchos_as.hpp>
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+#include <Teuchos_TimeMonitor.hpp>
+#endif
 
 
 namespace {
@@ -809,6 +813,110 @@ namespace Tpetra {
     }
   }
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  Import<LocalOrdinal,GlobalOrdinal,Node>::
+  findUnionTargetGIDs(Teuchos::Array<GlobalOrdinal>& unionTgtGIDs,
+                      Teuchos::Array<std::pair<int,GlobalOrdinal>>& remotePGIDs,
+                      typename Teuchos::Array<GlobalOrdinal>::size_type& numSameGIDs,
+                      typename Teuchos::Array<GlobalOrdinal>::size_type& numPermuteGIDs,
+                      typename Teuchos::Array<GlobalOrdinal>::size_type& numRemoteGIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs1,
+                      const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs2,
+                      Teuchos::Array<GlobalOrdinal>& permuteGIDs1,
+                      Teuchos::Array<GlobalOrdinal>& permuteGIDs2,
+                      Teuchos::Array<GlobalOrdinal>& remoteGIDs1,
+                      Teuchos::Array<GlobalOrdinal>& remoteGIDs2,
+                      Teuchos::Array<int>& remotePIDs1,
+                      Teuchos::Array<int>& remotePIDs2) const
+  {
+
+    typedef GlobalOrdinal GO;
+    typedef typename Teuchos::Array<GO>::size_type size_type;
+
+    const size_type numSameGIDs1 = sameGIDs1.size();
+    const size_type numSameGIDs2 = sameGIDs2.size();
+
+    // Sort the permute GIDs
+    std::sort(permuteGIDs1.begin(), permuteGIDs1.end());
+    std::sort(permuteGIDs2.begin(), permuteGIDs2.end());
+
+    // Get the union of the two target maps
+    // Reserve the maximum possible size to guard against reallocations from
+    // push_back operations.
+    unionTgtGIDs.reserve(numSameGIDs1 + numSameGIDs2 +
+                         permuteGIDs1.size() + permuteGIDs2.size() +
+                         remoteGIDs1.size() + remoteGIDs2.size());
+
+    // Copy the same GIDs to unionTgtGIDs.  Cases for numSameGIDs1 !=
+    // numSameGIDs2 must be treated separately.
+    typename Teuchos::Array<GO>::iterator permuteGIDs1_end;
+    typename Teuchos::Array<GO>::iterator permuteGIDs2_end;
+    if (numSameGIDs2 > numSameGIDs1) {
+
+      numSameGIDs = numSameGIDs2;
+      permuteGIDs2_end = permuteGIDs2.end();
+
+      // Copy the same GIDs from tgtGIDs to the union
+      std::copy(sameGIDs2.begin(), sameGIDs2.end(), std::back_inserter(unionTgtGIDs));
+
+      // Remove GIDs from permuteGIDs1 that have already been copied in to unionTgtGIDs
+      // set_difference allows the last (output) argument to alias the first.
+      permuteGIDs1_end = std::set_difference(permuteGIDs1.begin(), permuteGIDs1.end(),
+          unionTgtGIDs.begin()+numSameGIDs1, unionTgtGIDs.end(),
+          permuteGIDs1.begin());
+
+    } else {
+
+      numSameGIDs = numSameGIDs1;
+      permuteGIDs1_end = permuteGIDs1.end();
+
+      // Copy the same GIDs from tgtGIDs to the union
+      std::copy(sameGIDs1.begin(), sameGIDs1.end(), std::back_inserter(unionTgtGIDs));
+
+      // Remove GIDs from permuteGIDs2 that have already been copied in to unionTgtGIDs
+      // set_difference allows the last (output) argument to alias the first.
+      permuteGIDs2_end = std::set_difference(permuteGIDs2.begin(), permuteGIDs2.end(),
+          unionTgtGIDs.begin()+numSameGIDs2, unionTgtGIDs.end(),
+          permuteGIDs2.begin());
+
+    }
+
+    // Get the union of the permute GIDs and push it back on unionTgtGIDs
+    std::set_union(permuteGIDs1.begin(), permuteGIDs1_end,
+                   permuteGIDs2.begin(), permuteGIDs2_end,
+                   std::back_inserter(unionTgtGIDs));
+
+    // Sort the PID,GID pairs and find the unique set
+    Teuchos::Array<std::pair<int,GO>> remotePGIDs1(remoteGIDs1.size());
+    for (size_type k=0; k<remoteGIDs1.size(); k++)
+      remotePGIDs1[k] = std::make_pair(remotePIDs1[k], remoteGIDs1[k]);
+    std::sort(remotePGIDs1.begin(), remotePGIDs1.end());
+
+    Teuchos::Array<std::pair<int,GO>> remotePGIDs2(remoteGIDs2.size());
+    for (size_type k=0; k<remoteGIDs2.size(); k++)
+      remotePGIDs2[k] = std::make_pair(remotePIDs2[k], remoteGIDs2[k]);
+    std::sort(remotePGIDs2.begin(), remotePGIDs2.end());
+
+    remotePGIDs.reserve(remotePGIDs1.size()+remotePGIDs2.size());
+    std::merge(remotePGIDs1.begin(), remotePGIDs1.end(),
+               remotePGIDs2.begin(), remotePGIDs2.end(),
+               std::back_inserter(remotePGIDs));
+    auto it = std::unique(remotePGIDs.begin(), remotePGIDs.end());
+    remotePGIDs.resize(std::distance(remotePGIDs.begin(), it));
+
+    // Finally, insert remote GIDs
+    const size_type oldSize = unionTgtGIDs.size();
+    unionTgtGIDs.resize(oldSize+remotePGIDs.size());
+    for (size_type start=oldSize, k=0; k<remotePGIDs.size(); k++)
+      unionTgtGIDs[start+k] = remotePGIDs[k].second;
+
+    // Compute output only quantities
+    numRemoteGIDs = remotePGIDs.size();
+    numPermuteGIDs = unionTgtGIDs.size() - numSameGIDs - numRemoteGIDs;
+
+    return;
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
@@ -830,31 +938,31 @@ namespace Tpetra {
     typedef Import<LO, GO, Node> import_type;
     typedef typename Array<GO>::size_type size_type;
 
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    using Teuchos::toString;
-    using std::cerr;
-    using std::endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    using Teuchos::TimeMonitor;
+    std::string label = std::string("Tpetra::Import::setUnion");
+    RCP<TimeMonitor> MM = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
+    label = "Tpetra::Import::setUnion : Union GIDs";
+    RCP<TimeMonitor> MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
+#endif
 
     RCP<const map_type> srcMap = this->getSourceMap ();
     RCP<const map_type> tgtMap1 = this->getTargetMap ();
     RCP<const map_type> tgtMap2 = rhs.getTargetMap ();
     RCP<const Comm<int> > comm = srcMap->getComm ();
 
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    const int myRank = comm->getRank ();
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+    const bool debug = Details::Behavior::debug("Tpetra::Import::setUnion");
 
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! srcMap->isSameAs (* (rhs.getSourceMap ())), std::invalid_argument,
-      "Tpetra::Import::setUnion: The source Map of the input Import must be the "
-      "same as (in the sense of Map::isSameAs) the source Map of this Import.");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      ! Details::congruent (* (tgtMap1->getComm ()), * (tgtMap2->getComm ())),
-      std::invalid_argument, "Tpetra::Import::setUnion: "
-      "The target Maps must have congruent communicators.");
-#endif // HAVE_TPETRA_DEBUG
+    if (debug) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          ! srcMap->isSameAs (* (rhs.getSourceMap ())), std::invalid_argument,
+          "Tpetra::Import::setUnion: The source Map of the input Import must be the "
+          "same as (in the sense of Map::isSameAs) the source Map of this Import.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          ! Details::congruent (* (tgtMap1->getComm ()), * (tgtMap2->getComm ())),
+          std::invalid_argument, "Tpetra::Import::setUnion: "
+          "The target Maps must have congruent communicators.");
+    }
 
     // It's probably worth the one all-reduce to check whether the two
     // Maps are the same.  If so, we can just return a copy of *this.
@@ -862,434 +970,95 @@ namespace Tpetra {
     if (tgtMap1->isSameAs (*tgtMap2)) {
       return rcp (new import_type (*this));
     }
+
     // Alas, the two target Maps are not the same.  That means we have
     // to compute their union, and the union Import object.
 
-    ArrayView<const GO> srcGIDs = srcMap->getNodeElementList ();
-    ArrayView<const GO> tgtGIDs1 = tgtMap1->getNodeElementList ();
-    ArrayView<const GO> tgtGIDs2 = tgtMap2->getNodeElementList ();
+    // Get the same GIDs (same GIDs are a subview of the first numSame target
+    // GIDs)
+    const size_type numSameGIDs1 = this->getNumSameIDs();
+    ArrayView<const GO> sameGIDs1 = (tgtMap1->getNodeElementList())(0,numSameGIDs1);
 
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    comm->barrier ();
-    {
-      std::ostringstream os;
-      os << myRank << ": srcGIDs: " << toString (srcGIDs) << endl;
-      os << myRank << ": tgtGIDs1: " << toString (tgtGIDs1) << endl;
-      os << myRank << ": tgtGIDs2: " << toString (tgtGIDs2) << endl;
-      cerr << os.str ();
-    }
-    comm->barrier ();
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+    const size_type numSameGIDs2 = rhs.getNumSameIDs();
+    ArrayView<const GO> sameGIDs2 = (tgtMap2->getNodeElementList())(0,numSameGIDs2);
 
+    // Get permute GIDs
+    ArrayView<const LO> permuteToLIDs1 = this->getPermuteToLIDs();
+    Array<GO> permuteGIDs1(permuteToLIDs1.size());
+    for (size_type k=0; k<permuteGIDs1.size(); k++)
+      permuteGIDs1[k] = tgtMap1->getGlobalElement(permuteToLIDs1[k]);
 
-    // Fill this as we go with the union target Map's GIDs, in the
-    // desired order.  We'll need them for the Map constructor.
+    ArrayView<const LO> permuteToLIDs2 = rhs.getPermuteToLIDs();
+    Array<GO> permuteGIDs2(permuteToLIDs2.size());
+    for (size_type k=0; k<permuteGIDs2.size(); k++)
+      permuteGIDs2[k] = tgtMap2->getGlobalElement(permuteToLIDs2[k]);
+
+    // Get remote GIDs
+    ArrayView<const LO> remoteLIDs1 = this->getRemoteLIDs();
+    Array<GO> remoteGIDs1(remoteLIDs1.size());
+    for (size_type k=0; k<remoteLIDs1.size(); k++)
+      remoteGIDs1[k] = this->getTargetMap()->getGlobalElement(remoteLIDs1[k]);
+
+    ArrayView<const LO> remoteLIDs2 = rhs.getRemoteLIDs();
+    Array<GO> remoteGIDs2(remoteLIDs2.size());
+    for (size_type k=0; k<remoteLIDs2.size(); k++)
+      remoteGIDs2[k] = rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]);
+
+    // Get remote PIDs
+    Array<int> remotePIDs1;
+    Tpetra::Import_Util::getRemotePIDs(*this, remotePIDs1);
+
+    Array<int> remotePIDs2;
+    Tpetra::Import_Util::getRemotePIDs(rhs, remotePIDs2);
+
+    // Get the union of the target GIDs
     Array<GO> unionTgtGIDs;
-    // Upper bound on the number of union target Map GIDs.  This
-    // happens to be strict, but doesn't have to be.  Setting some
-    // reasonable upper bound avoids reallocation in loops that do
-    // push_back operations.
-    unionTgtGIDs.reserve (tgtGIDs1.size () + tgtGIDs2.size ());
+    Array<std::pair<int,GO>> remotePGIDs;
+    size_type numSameIDsUnion, numPermuteIDsUnion, numRemoteIDsUnion;
 
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    if (myRank == 0) {
-      cerr << endl;
-    }
-    comm->barrier ();
-    comm->barrier ();
-    comm->barrier ();
-    cerr << myRank << ": Computing \"same\" GIDs" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+    findUnionTargetGIDs(unionTgtGIDs, remotePGIDs,
+                        numSameIDsUnion, numPermuteIDsUnion, numRemoteIDsUnion,
+                        sameGIDs1, sameGIDs2, permuteGIDs1, permuteGIDs2,
+                        remoteGIDs1, remoteGIDs2, remotePIDs1, remotePIDs2);
 
-    // Compute the initial sequence of "same" GIDs in the union
-    // import.  The number of "same" GIDs in the union is the maximum
-    // of the lengths of this in the two inputs.
-
-    const size_type numSameGIDs1 = this->getNumSameIDs ();
-    const size_type numSameGIDs2 = rhs.getNumSameIDs ();
-    ArrayView<const GO> sameGIDs1 = tgtGIDs1 (0, numSameGIDs1);
-    ArrayView<const GO> sameGIDs2 = tgtGIDs2 (0, numSameGIDs2);
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    {
-      std::ostringstream os;
-      os << myRank << ": same IDs for target Map 1: " << toString (sameGIDs1) << endl;
-      os << myRank << ": same IDs for target Map 2: " << toString (sameGIDs2) << endl;
-      cerr << os.str ();
-    }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    // For the input target Map with fewer "same" GIDs, that Map's
-    // permute IDs could include some of the other input target Map's
-    // "same" GIDs.  We have to make sure not to include them twice.
-    // To do so, keep a view of them for now, and remove them (via set
-    // intersection) from the permute ID list.  Keeping track of which
-    // GID set had the max number of "same" IDs avoids unnecessary set
-    // intersection operations later.
-    ArrayView<const GO> doubleCountedSameGIDs;
-    size_type numSameIDsUnion;
-    bool tgtMap1HadMaxSameGIDs;
-    if (numSameGIDs1 >= numSameGIDs2) {
-      tgtMap1HadMaxSameGIDs = true;
-      numSameIDsUnion = numSameGIDs1;
-      std::copy (sameGIDs1.begin (), sameGIDs1.end (), std::back_inserter (unionTgtGIDs));
-      // There could be GIDs in target Map 2 that are not included in
-      // the "same" IDs, but are included in Import 2's permute IDs.
-      // Keep track of them so we don't double-count them when
-      // building the list of permute IDs.
-      doubleCountedSameGIDs = tgtGIDs1 (numSameGIDs2, numSameGIDs1 - numSameGIDs2);
-    } else {
-      tgtMap1HadMaxSameGIDs = false;
-      numSameIDsUnion = numSameGIDs2;
-      std::copy (sameGIDs2.begin (), sameGIDs2.end (), std::back_inserter (unionTgtGIDs));
-      // There could be GIDs in target Map 1 that are not included in
-      // the "same" IDs, but are included in Import 1's permute IDs.
-      // Keep track of them so we don't double-count them when
-      // building the list of permute IDs.
-      doubleCountedSameGIDs = tgtGIDs2 (numSameGIDs1, numSameGIDs2 - numSameGIDs1);
+    // Extract GIDs and compute LIDS, PIDs for the remotes in the union
+    Array<LO> remoteLIDsUnion(numRemoteIDsUnion);
+    Array<GO> remoteGIDsUnion(numRemoteIDsUnion);
+    Array<int> remotePIDsUnion(numRemoteIDsUnion);
+    const size_type unionRemoteIDsStart = numSameIDsUnion + numPermuteIDsUnion;
+    for (size_type k = 0; k < numRemoteIDsUnion; ++k) {
+      remoteLIDsUnion[k] = unionRemoteIDsStart + k;
+      remotePIDsUnion[k] = remotePGIDs[k].first;
+      remoteGIDsUnion[k] = remotePGIDs[k].second;
     }
 
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    {
-      std::ostringstream os;
-      os << myRank << ": union Map's same GIDs: " << toString (unionTgtGIDs ()) << endl;
-      os << myRank << ": doubleCountedSameGIDs: " << toString (doubleCountedSameGIDs) << endl;
-      cerr << os.str ();
+    // Compute the permute-to LIDs (in the union target Map).
+    // Convert the permute GIDs to permute-from LIDs in the source Map.
+    Array<LO> permuteToLIDsUnion(numPermuteIDsUnion);
+    Array<LO> permuteFromLIDsUnion(numPermuteIDsUnion);
+    for (size_type k = 0; k < numPermuteIDsUnion; ++k) {
+      size_type idx = numSameIDsUnion + k;
+      permuteToLIDsUnion[k] = static_cast<LO>(idx);
+      permuteFromLIDsUnion[k] = srcMap->getLocalElement(unionTgtGIDs[idx]);
     }
-    if (myRank == 0) {
-      cerr << endl;
-    }
-    comm->barrier ();
-    comm->barrier ();
-    comm->barrier ();
-    cerr << myRank << ": Computing permute IDs" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
 
-    // Each input Import knows its permute-from LIDs (in the source
-    // Map) and permute-to LIDs (in its target Map).  We will have to
-    // reassign LIDs in the union target Map, but we can use these
-    // permute-to LIDs to construct the union Import's permute-to IDs.
-    Array<LO> permuteFromLIDsUnion;
-    Array<LO> permuteToLIDsUnion;
-    LO curTgtLid = as<LO> (numSameIDsUnion);
-    {
-      // Permute-to LIDs in the two input target Maps.
-      ArrayView<const LO> permuteToLIDs1 = this->getPermuteToLIDs ();
-      ArrayView<const LO> permuteToLIDs2 = rhs.getPermuteToLIDs ();
-      const size_type numPermuteIDs1 = this->getNumPermuteIDs ();
-      const size_type numPermuteIDs2 = rhs.getNumPermuteIDs ();
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      cerr << myRank << ": Converting permute-to LIDs to GIDs" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-      // Convert the permute-to LID lists to GIDs, so that we can
-      // later reassign LIDs for the (output) union target Map.
-      Array<GO> permuteGIDs1 (numPermuteIDs1);
-      for (size_type k = 0; k < numPermuteIDs1; ++k) {
-        permuteGIDs1[k] = tgtMap1->getGlobalElement (permuteToLIDs1[k]);
-      }
-      Array<GO> permuteGIDs2 (numPermuteIDs2);
-      for (size_type k = 0; k < numPermuteIDs2; ++k) {
-        permuteGIDs2[k] = tgtMap2->getGlobalElement (permuteToLIDs2[k]);
-      }
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      {
-        std::ostringstream os;
-        os << myRank << ": permuteGIDs1: " << toString (permuteGIDs1) << endl;
-        os << myRank << ": permuteGIDs2: " << toString (permuteGIDs2) << endl;
-        cerr << os.str ();
-      }
-      cerr << myRank << ": Sorting and merging permute GID lists" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-      // Sort the two permute GID lists, remove the GIDs that we don't
-      // want to double-count, and merge the result into the global
-      // list of GIDs in the target union Map.
-      std::sort (permuteGIDs1.begin (), permuteGIDs1.end ());
-      std::sort (permuteGIDs2.begin (), permuteGIDs2.end ());
-
-      typename Array<GO>::iterator permuteGIDs1_beg = permuteGIDs1.begin ();
-      typename Array<GO>::iterator permuteGIDs1_end = permuteGIDs1.end ();
-      typename Array<GO>::iterator permuteGIDs2_beg = permuteGIDs2.begin ();
-      typename Array<GO>::iterator permuteGIDs2_end = permuteGIDs2.end ();
-      if (tgtMap1HadMaxSameGIDs) {
-        // This operation allows the last (output) argument to alias the first.
-        permuteGIDs2_end =
-          std::set_difference(permuteGIDs2_beg,
-                              permuteGIDs2_end,
-                              doubleCountedSameGIDs.begin (),
-                              doubleCountedSameGIDs.end (),
-                              permuteGIDs2_beg);
-
-
-      } else {
-        // This operation allows the last (output) argument to alias the first.
-        permuteGIDs1_end =
-          std::set_difference(permuteGIDs1_beg,
-                              permuteGIDs1_end,
-                              doubleCountedSameGIDs.begin (),
-                              doubleCountedSameGIDs.end (),
-                              permuteGIDs1_beg);
-
-      }
-      std::set_union (permuteGIDs1_beg, permuteGIDs1_end,
-                      permuteGIDs2_beg, permuteGIDs2_end,
-                      std::back_inserter (unionTgtGIDs));
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      {
-        std::ostringstream os;
-        if(tgtMap1HadMaxSameGIDs) os << myRank << ": tgtMap1HadMaxSameGIDs == true"<<endl;
-        else os << myRank << ": tgtMap1HadMaxSameGIDs == false"<<endl;
-
-        os << myRank << ": reduced permuteGIDs1: {";
-        for(typename Array<GO>::iterator k = permuteGIDs1_beg;  k != permuteGIDs1_end; k++)
-          os<<*k<<", ";
-        os<<"}"<<endl;
-        os << myRank << ": reduced permuteGIDs2: {";
-        for(typename Array<GO>::iterator k = permuteGIDs2_beg;  k != permuteGIDs2_end; k++)
-          os<<*k<<", ";
-        os<<"}"<<endl;
-        cerr << os.str ();
-      }
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM2 = Teuchos::null;
+    label = "Tpetra::Import::setUnion : Construct Tgt Map";
+    MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
 #endif
-      const size_type numPermuteIDsUnion =
-        unionTgtGIDs.size () - numSameIDsUnion;
-      ArrayView<const GO> permuteGIDsUnion =
-        unionTgtGIDs (numSameIDsUnion, numPermuteIDsUnion).getConst ();
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      {
-        std::ostringstream os;
-        os << myRank << ": permuteGIDsUnion: " << toString (permuteGIDsUnion) << endl;
-        cerr << os.str ();
-      }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      comm->barrier ();
-      cerr << myRank << ": Computing permute-to LIDs" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-      // Compute the permute-to LIDs (in the union target Map).
-      permuteToLIDsUnion.resize (numPermuteIDsUnion);
-      for (size_type k = 0; k < numPermuteIDsUnion; ++k) {
-        permuteToLIDsUnion[k] = curTgtLid++;
-      }
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      {
-        std::ostringstream os;
-        os << myRank << ": permuteToLIDsUnion: " << toString (permuteToLIDsUnion) << endl;
-        cerr << os.str ();
-      }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      comm->barrier ();
-      cerr << myRank << ": Computing permute-from LIDs" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-      // Convert the permute GIDs to permute-from LIDs in the source Map.
-      permuteFromLIDsUnion.resize (numPermuteIDsUnion);
-      for (size_type k = 0; k < numPermuteIDsUnion; ++k) {
-        permuteFromLIDsUnion[k] = srcMap->getLocalElement (permuteGIDsUnion[k]);
-      }
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      {
-        std::ostringstream os;
-        os << myRank << ": permuteFromLIDsUnion: " << toString (permuteFromLIDsUnion) << endl;
-        cerr << os.str ();
-      }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    }// end permutes
-
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    {
-      std::ostringstream os;
-      os << myRank << ": unionTgtGIDs after permutes: "
-         << toString (unionTgtGIDs ()) << endl;
-      cerr << os.str ();
-    }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-    // Thus far, we have computed the following in the union Import:
-    //   - getNumSameIDs()
-    //   - getNumPermuteIDs()
-    //   - getPermuteFromLIDs ()
-    //   - getPermuteToLIDs ()
-    //
-    // Now it's time to compute the remote IDs.  By definition, none
-    // of these IDs are in the source Map (on the calling process), so
-    // they can't possibly overlap with any of the "same" or permute
-    // IDs in either target Map.
-    //
-    // After the first numSameIDsUnion IDs, we get to control the
-    // order of GIDs in the union target Map.  We'll put the permute
-    // IDs first (which we already did above) and the remote IDs last
-    // (which we are about to do).  We'll sort the remote IDs by
-    // process rank, so that Distributor doesn't have to pack buffers.
-    // (That way, doPosts() will always take the "fast path" on all
-    // processes.)
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    if (myRank == 0) {
-      cerr << endl;
-    }
-    comm->barrier ();
-    comm->barrier ();
-    comm->barrier ();
-    cerr << myRank << ": Computing remote IDs" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-    Array<GO> remoteGIDsUnion;
-    Array<int> remotePIDsUnion;
-    Array<LO> remoteLIDsUnion;
-    size_type numRemoteIDsUnion = 0;
-    {
-      // Distributor::createFromRecvs takes remote IDs and PIDs as
-      // input, and computes exportIDs and exportPIDs.  The easiest
-      // way to get the remote PIDs is to imitate setupExport by using
-      // getRemoteIndexList().  We could try to get them out of the
-      // Distributor via getImagesFrom(), but Distributor reorders
-      // them in some not entirely transparent way.
-
-      // Grab the remoteLIDs
-      ArrayView<const LO> remoteLIDs1 = this->getRemoteLIDs();
-      ArrayView<const LO> remoteLIDs2 = rhs.getRemoteLIDs();
-
-      // Grab the remotePIDs
-      Array<int> remotePIDs1, remotePIDs2;
-      Tpetra::Import_Util::getRemotePIDs(*this,remotePIDs1);
-      Tpetra::Import_Util::getRemotePIDs(rhs,remotePIDs2);
-
-      // Put the (PID,GID) into std:pairs to make for easier sorting
-      Array<std::pair<int,GO> > remotePGIDs1, remotePGIDs2,remotePGUnion;
-      remotePGIDs1.resize(remotePIDs1.size());
-      remotePGIDs2.resize(remotePIDs2.size());
-
-      for(size_type k=0; k < remotePIDs1.size(); k++)
-        remotePGIDs1[k] = std::pair<int,GO>(remotePIDs1[k],this->getTargetMap()->getGlobalElement(remoteLIDs1[k]));
-
-      for(size_type k=0; k < remotePIDs2.size(); k++)
-        remotePGIDs2[k] = std::pair<int,GO>(remotePIDs2[k],rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]));
-
-
-      // Sort and merge the (PID,GID) pairs (with the LIDs along for the ride at least for the sort)
-      std::sort(remotePGIDs1.begin(), remotePGIDs1.end());
-      std::sort(remotePGIDs2.begin(), remotePGIDs2.end());
-      std::merge(remotePGIDs1.begin(), remotePGIDs1.end(),
-                 remotePGIDs2.begin(), remotePGIDs2.end(),
-                 std::back_inserter(remotePGUnion));
-      typename Array<std::pair<int,GO> >::iterator it = std::unique(remotePGUnion.begin(),remotePGUnion.end());
-      remotePGUnion.resize(std::distance(remotePGUnion.begin(),it));
-
-      // Assign the remote LIDs in order; copy out
-      numRemoteIDsUnion = remotePGUnion.size();
-      remoteLIDsUnion.resize(numRemoteIDsUnion);
-      remotePIDsUnion.resize(numRemoteIDsUnion);
-      remoteGIDsUnion.resize(numRemoteIDsUnion);
-
-      for (size_type k = 0; k < numRemoteIDsUnion; ++k) {
-        remoteLIDsUnion[k] = curTgtLid++;
-        remotePIDsUnion[k] = remotePGUnion[k].first;
-        remoteGIDsUnion[k] = remotePGUnion[k].second;
-      }
-
-      // Update the unionTgtGIDs
-      const size_type oldSize = unionTgtGIDs.size();
-      unionTgtGIDs.resize(oldSize + numRemoteIDsUnion);
-      for(size_type k=0; k<numRemoteIDsUnion; k++)
-        unionTgtGIDs[oldSize+k] = remoteGIDsUnion[k];
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      {
-        // For debugging purposes only
-        Array<GO> remoteGIDs1(remotePIDs1.size());
-        Array<GO> remoteGIDs2(remotePIDs2.size());
-        for(size_type k=0; k < remotePIDs1.size(); k++)
-          remoteGIDs1[k] = this->getTargetMap()->getGlobalElement(remoteLIDs1[k]);
-        for(size_type k=0; k < remotePIDs2.size(); k++)
-          remoteGIDs2[k] = rhs.getTargetMap()->getGlobalElement(remoteLIDs2[k]);
-
-        std::ostringstream os;
-        os << myRank << ": remoteGIDs1           : " << toString (remoteGIDs1 ()) << endl;
-        os << myRank << ": remotePIDs1           : " << toString (remotePIDs1 ()) << endl;
-        os << myRank << ": remoteGIDs2           : " << toString (remoteGIDs2 ()) << endl;
-        os << myRank << ": remotePIDs2           : " << toString (remotePIDs2 ()) << endl;
-        cerr << os.str ();
-      }
-#endif
-    }//end remotes
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-      {
-        std::ostringstream os;
-        os << myRank << ": remoteGIDsUnion sorted: " << toString (remoteGIDsUnion ()) << endl;
-        os << myRank << ": remotePIDsUnion sorted: " << toString (remotePIDsUnion ()) << endl;
-        os << myRank << ": remoteLIDsUnion sorted: " << toString (remoteLIDsUnion ()) << endl;
-        cerr << os.str ();
-      }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    {
-      std::ostringstream os;
-      os << myRank << ": unionTgtGIDs after remotes: "
-         << toString (unionTgtGIDs ()) << endl;
-      cerr << os.str ();
-    }
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
-    // Find the union target Map's index base, which must also be the
-    // union target Map's global min GID.  Thus, by definition, it
-    // must be the minimum of the two input target Maps' index bases.
-    // We already know these, so we don't have to do another
-    // all-reduce to find it.
-    const GO indexBaseUnion =
-      std::min (tgtMap1->getIndexBase (), tgtMap2->getIndexBase ());
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    cerr << myRank << "Creating union target Map" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
 
     // Create the union target Map.
-    //
-    // mfh 01 May 2013, 28 Feb 2014: It might be handy to have a Map
-    // constructor that takes the global min and max GIDs; that would
-    // obviate the need for Map to compute them.  On the other hand,
-    // for signed GlobalOrdinal, this version of Map's constructor
-    // already computes as few all-reduces as possible (not including
-    // optimizations that might be possible if one were to fold in
-    // Directory construction).  The constructor must do two
-    // all-reduces:
-    //
-    //   1. Get the global number of GIDs (since the first argument is
-    //      INVALID, we're asking Map to compute this for us)
-    //
-    //   2. Figure out three things: global min and max GID, and
-    //      whether the Map is distributed or locally replicated.
-    //
-    // #2 above happens in one all-reduce (of three integers).
-    // #Figuring out whether the Map is distributed or locally
-    // #replicated requires knowing the global number of GIDs.
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+    const GO indexBaseUnion = std::min(tgtMap1->getIndexBase(), tgtMap2->getIndexBase());
     RCP<const map_type> unionTgtMap =
-      rcp (new map_type (INVALID, unionTgtGIDs (), indexBaseUnion,
-                         comm, srcMap->getNode ()));
+      rcp(new map_type(INVALID, unionTgtGIDs(), indexBaseUnion, comm, srcMap->getNode()));
 
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    if (myRank == 0) {
-      cerr << endl;
-    }
-    comm->barrier ();
-    comm->barrier ();
-    comm->barrier ();
-    cerr << myRank << ": Computing export IDs and Distributor" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM2 = Teuchos::null;
+    label = "Tpetra::Import::setUnion : Export GIDs";
+    MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
+#endif
 
     // Thus far, we have computed the following in the union Import:
     //   - numSameIDs
@@ -1375,8 +1144,8 @@ namespace Tpetra {
     // communication plan.  remoteGIDsUnion and remotePIDsUnion are
     // input; exportGIDsUnion and exportPIDsUnion are output arrays
     // which are allocated by createFromRecvs().
-    distributor.createFromRecvs (remoteGIDsUnion().getConst (),
-                                 remotePIDsUnion ().getConst (),
+    distributor.createFromRecvs (remoteGIDsUnion().getConst(),
+                                 remotePIDsUnion().getConst(),
                                  exportGIDsUnion, exportPIDsUnion);
 
     // Find the (source Map) LIDs corresponding to the export GIDs.
@@ -1387,34 +1156,21 @@ namespace Tpetra {
     }
 #endif // TPETRA_IMPORT_SETUNION_USE_CREATE_FROM_SENDS
 
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    {
-      std::ostringstream os;
-      os << myRank << ": exportGIDsUnion: " << toString (exportGIDsUnion ()) << endl;
-      os << myRank << ": exportPIDsUnion: " << toString (exportPIDsUnion ()) << endl;
-      os << myRank << ": exportLIDsUnion: " << toString (exportLIDsUnion ()) << endl;
-      cerr << os.str ();
-    }
-    comm->barrier ();
-    cerr << "Creating union Import" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-
     // Create and return the union Import. This uses the "expert" constructor
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM2 = Teuchos::null;
+    label = "Tpetra::Import::setUnion : Construct Import";
+    MM2 = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(label)));
+#endif
     RCP<const import_type> unionImport =
       rcp (new import_type (srcMap, unionTgtMap,
                             as<size_t> (numSameIDsUnion),
                             permuteToLIDsUnion, permuteFromLIDsUnion,
                             remoteLIDsUnion, exportLIDsUnion,
                             exportPIDsUnion, distributor, this->out_));
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    comm->barrier ();
-    cerr << "Created union Import; done!" << endl;
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
 
     return unionImport;
   }
-
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
@@ -1436,10 +1192,6 @@ namespace Tpetra {
     RCP<const map_type> srcMap = this->getSourceMap ();
     RCP<const map_type> tgtMap = this->getTargetMap ();
     RCP<const Comm<int> > comm = srcMap->getComm ();
-
-#ifdef HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
-    const int myRank = comm->getRank ();
-#endif // HAVE_TPETRA_IMPORT_SETUNION_EXTRA_DEBUG_OUTPUT
 
     ArrayView<const GO> srcGIDs = srcMap->getNodeElementList ();
     ArrayView<const GO> tgtGIDs = tgtMap->getNodeElementList ();
