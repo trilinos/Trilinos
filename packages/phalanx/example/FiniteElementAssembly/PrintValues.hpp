@@ -28,7 +28,7 @@ namespace phx_example {
     }
 
     std::ios::fmtflags os_flags( os->flags() );
-    os->precision(12);
+    os->precision(10);
 
     if (description != "")
       *os << description << std::endl;
