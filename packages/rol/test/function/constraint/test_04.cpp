@@ -198,16 +198,15 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
   PtrVector jv  = c->clone();
   PtrVector v_u = state_unit->clone();
   PtrVector v_z = control_unit->clone();
-  PtrVector w   = state->dual().clone();
+  PtrVector w_u = state->dual().clone();
+  PtrVector w_z = control->dual().clone();
 
   ROL::RandomizeVector<RealT>(*u); // this randomization doesn't really matter here as 'u' is complete determine by the solve
   ROL::RandomizeVector<RealT>(*z); 
   ROL::RandomizeVector<RealT>(*v_u); 
-  // u->zero();
-  ROL::RandomizeVector<RealT>(*w); 
+  ROL::RandomizeVector<RealT>(*w_u); 
+  ROL::RandomizeVector<RealT>(*w_z); 
  
-  // v_u->scale(3.0); 
-
   // check the solve
   //////////////////////////////////////////////////////////////////////
   {
@@ -255,9 +254,20 @@ double run_test(MPI_Comm comm, const ROL::Ptr<std::ostream> & outStream,int numS
     if(myRank==0)
       *outStream << "Checking apply Adjoint Jacobian 1" << std::endl;
 
-    auto error = pint_constraint->checkAdjointConsistencyJacobian_1(*w,*v_u,*u,*z,true,*outStream);
+    auto error = pint_constraint->checkAdjointConsistencyJacobian_1(*w_u,*v_u,*u,*z,true,*outStream);
     if(error >= 1e-8)
       throw std::logic_error("Constraint apply adjoint jacobian 1 is incorrect");
+  }
+
+  // check the Adjoint Jacobian_2
+  /////////////////////////////////////////////////////////////////////////////
+  {
+    if(myRank==0)
+      *outStream << "Checking apply Adjoint Jacobian 2" << std::endl;
+
+    auto error = pint_constraint->checkAdjointConsistencyJacobian_2(*w_u,*v_z,*u,*z,true,*outStream);
+    if(error >= 1e-8)
+      throw std::logic_error("Constraint apply adjoint jacobian 2 is incorrect");
   }
 
   // This computes and returns the last value of the 'u' component and shares
