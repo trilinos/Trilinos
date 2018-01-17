@@ -415,13 +415,6 @@ namespace MueLuTests {
           }
         }
 
-        std::cout << "p=" << myRank << " | gNodesPerDir: " << gNodesPerDir << std::endl;
-        std::cout << "p=" << myRank << " | gNumNodes: " << gNumNodes << std::endl;
-        std::cout << "p=" << myRank << " | lNodesPerDir: " << lNodesPerDir << std::endl;
-        std::cout << "p=" << myRank << " | lNumNodes: " << lNumNodes << std::endl;
-        std::cout << "p=" << myRank << " | myGIDOffset: " << myGIDOffset << std::endl;
-        std::cout << "p=" << myRank << " | myLowestTuple: " << myLowestTuple << std::endl;
-
         ////////////////////////////////////
         //                                //
         //    Step 2: Compute map GIDs    //
@@ -442,7 +435,6 @@ namespace MueLuTests {
             myGIDs[nodeIdx] = myGIDOffset + nodeIdx;
           }
         }
-        std::cout << "p=" << myRank << " | myGIDs: " << myGIDs << std::endl;
 
         RCP<const Map> coordMap = MapFactory::Build(lib, gNumNodes, myGIDs(0, lNumNodes), 0, comm);
 

@@ -170,6 +170,7 @@ private:
       int numDimensions;
       LO lNumFineNodes = -1, lNumCoarseNodes = -1, lNumGhostNodes = -1,lNumGhostedNodes  = -1;
       LO myBlock = -1, numBlocks = -1, lNumFineNodes10 = -1, lNumCoarseNodes10 = -1;
+      LO numGhostedCoarseNodes = -1, numGhostedCoarseNodes10 = -1;
       GO gNumFineNodes = -1, gNumCoarseNodes = -1, gNumFineNodes10 = -1, gNumCoarseNodes10 = -1;
       GO minGlobalIndex = -1;
       Array<int> coarseRate, endRate;
@@ -248,6 +249,62 @@ private:
       }
 
       void getCoarseNodeLID(const LO i, const LO j, const LO k, LO& myLID) const {
+        myLID = k*lNumCoarseNodes10 + j*lCoarseNodesPerDir[0] + i;
+      }
+
+      void getCoarseNodeGhostedLID(const LO i, const LO j, const LO k, LO& myLID) const {
+        myLID = k*numGhostedCoarseNodes10 + j*ghostedCoarseNodesPerDir[0] + i;
+      }
+
+      void getCoarseNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
+        myLID = 0;
+        if(k*coarseRate[2] < lFineNodesPerDir[2]) {
+          myLID += k*coarseRate[2]*lNumCoarseNodes10;
+        } else {
+          myLID += (lFineNodesPerDir[2] - 1)*lNumCoarseNodes10;
+        }
+
+        if(j*coarseRate[1] < lFineNodesPerDir[1]) {
+          myLID += j*coarseRate[1]*lFineNodesPerDir[0];
+        } else {
+          myLID += (lFineNodesPerDir[1] - 1)*lFineNodesPerDir[1];
+        }
+
+        if(i*coarseRate[0] < lFineNodesPerDir[0]) {
+          myLID += i*coarseRate[0];
+        } else {
+          myLID += lFineNodesPerDir[0] - 1;
+        }
+      }
+
+      void getGhostedNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
+        LO itmp = i - offsets[0];
+        LO jtmp = j - offsets[1];
+        LO ktmp = k - offsets[2];
+        myLID = 0;
+        if(ktmp*coarseRate[2] < lFineNodesPerDir[2]) {
+          myLID += ktmp*coarseRate[2]*lNumCoarseNodes10;
+        } else {
+          myLID += (lFineNodesPerDir[2] - 1)*lNumCoarseNodes10;
+        }
+
+        if(jtmp*coarseRate[1] < lFineNodesPerDir[1]) {
+          myLID += jtmp*coarseRate[1]*lFineNodesPerDir[0];
+        } else {
+          myLID += (lFineNodesPerDir[1] - 1)*lFineNodesPerDir[1];
+        }
+
+        if(itmp*coarseRate[0] < lFineNodesPerDir[0]) {
+          myLID += itmp*coarseRate[0];
+        } else {
+          myLID += lFineNodesPerDir[0] - 1;
+        }
+      }
+
+      void getGhostedNodeCoarseLID(const LO i, const LO j, const LO k, LO& myLID) const {
+        LO itmp = i - offsets[0];
+        LO jtmp = j - offsets[1];
+        LO ktmp = k - offsets[2];
         myLID = k*lNumCoarseNodes10 + j*lCoarseNodesPerDir[0] + i;
       }
 

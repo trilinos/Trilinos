@@ -550,7 +550,7 @@ class AggregateGenerator {
     LO myRank   = comm->getRank();
 
     // Set global geometric data
-    LO numDimensions = 2;
+    LO numDimensions = 3;
     Array<LO> lNodesPerDir(3);
     Array<GO> gNodesPerDir(3);
     for(int dim = 0; dim < 3; ++dim) {

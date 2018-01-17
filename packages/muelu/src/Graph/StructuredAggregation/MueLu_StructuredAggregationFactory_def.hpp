@@ -236,14 +236,6 @@ namespace MueLu {
     // construct aggStat information
     std::vector<unsigned> aggStat(numLocalNodes, READY);
 
-
-    // const RCP<const Teuchos::Comm<int> > comm = nodeMap->getComm();
-    // GO numGlobalRows = 0;
-    // if (IsPrint(Statistics1))
-    //   MueLu_sumAll(comm, as<GO>(numLocalNodes), numGlobalRows);
-
-    std::cout << "Use global lexicographic layout" << std::endl;
-
     LO numNonAggregatedNodes = numLocalNodes;
     GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
     if(geoData->meshLayout == "Global Lexicographic") {
@@ -253,14 +245,8 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(numNonAggregatedNodes, Exceptions::RuntimeError,
                                "MueLu::StructuredAggregationFactory::Build: Leftover nodes found! Error!");
 
-    std::cout << "p=" << coordMap->getComm()->getRank()
-              << " | Recomputing the size of the aggregates." << std::endl;
-
     // aggregates->AggregatesCrossProcessors(false);
     aggregates->ComputeAggregateSizes(true/*forceRecompute*/);
-
-    std::cout << "p=" << coordMap->getComm()->getRank()
-              << " | Aggregate sizes recomputed!" << std::endl;
 
     Set(currentLevel, "Aggregates", aggregates);
 
@@ -272,11 +258,6 @@ namespace MueLu {
   GlobalLexicographicLayout(const RCP<const Map> coordMap, RCP<GeometricData> geoData,
                             RCP<Aggregates> aggregates, std::vector<unsigned>& aggStat,
                             LO& numNonAggregatedNodes) const {
-
-    std::cout << "p=" << coordMap->getComm()->getRank()
-              << " | gFineNodesPerDir: " << geoData->gFineNodesPerDir << std::endl;
-    std::cout << "p=" << coordMap->getComm()->getRank()
-              << " | coarseRate: " << geoData->coarseRate << std::endl;
 
     {
       GO tmp = 0;
@@ -317,24 +298,6 @@ namespace MueLu {
       }
     }
 
-    std::cout << "p=" << coordMap->getComm()->getRank() << " | ";
-    std::cout << "Geometric data:" << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   coarseRate:         " << geoData->coarseRate << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   gFineNodesPerDir:   " << geoData->gFineNodesPerDir << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   lFineNodesPerDir:   " << geoData->lFineNodesPerDir << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   startIndices:       " << geoData->startIndices << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   offsets:            " << geoData->offsets << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   ghostInterface:     {" << geoData->ghostInterface[0] << ", "
-              << geoData->ghostInterface[1] << ", " << geoData->ghostInterface[2] << ", "
-              << geoData->ghostInterface[3] << ", " << geoData->ghostInterface[4] << ", "
-              << geoData->ghostInterface[5] << "}"<< std::endl;
-
     // Here one element can represent either the degenerate case of one node or the more general
     // case of two nodes, i.e. x---x is a 1D element with two nodes and x is a 1D element with one
     // node. This helps generating a 3D space from tensorial products...
@@ -371,13 +334,6 @@ namespace MueLu {
       *geoData->gCoarseNodesPerDir[2];
     geoData->gNumCoarseNodes10 = geoData->gCoarseNodesPerDir[0]*geoData->gCoarseNodesPerDir[1];
 
-    std::cout << "p=" << coordMap->getComm()->getRank() << " | ";
-    std::cout << "   endRate:            " << geoData->endRate << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   gCoarseNodesPerDir: " << geoData->gCoarseNodesPerDir << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   gNumCoarseNodes:    " << geoData->gNumCoarseNodes << std::endl;
-
     for(LO dim = 0; dim < 3; ++dim) {
       if(dim < geoData->numDimensions) {
         // Check whether the partition includes the "end" of the mesh which means that endRate will
@@ -404,11 +360,6 @@ namespace MueLu {
     geoData->lNumCoarseNodes = geoData->lCoarseNodesPerDir[0]*geoData->lCoarseNodesPerDir[1]
       *geoData->lCoarseNodesPerDir[2];
     geoData->lNumCoarseNodes10 = geoData->lCoarseNodesPerDir[0]*geoData->lCoarseNodesPerDir[1];
-
-    std::cout << "p=" << coordMap->getComm()->getRank() << " | ";
-    std::cout << "   lCoarseNodesPerDir: " << geoData->lCoarseNodesPerDir << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   lNumCoarseNodes:    " << geoData->lNumCoarseNodes << std::endl;
 
     // For each direction, determine how many points (including ghosts) are required.
     bool ghostedDir[6] = {false};
@@ -441,34 +392,22 @@ namespace MueLu {
         geoData->ghostedCoarseNodesPerDir[dim] = 1;
       }
     }
-
-    LO numGhostedCoarseNodes = geoData->ghostedCoarseNodesPerDir[0]
-      *geoData->ghostedCoarseNodesPerDir[1]*geoData->ghostedCoarseNodesPerDir[2];
-
-    std::cout << "p=" << coordMap->getComm()->getRank() << " | ";
-    std::cout << "   ghostedDir:         {" << ghostedDir[0] << ", " << ghostedDir[1] << ", "
-              << ghostedDir[2] << ", " << ghostedDir[3] << ", "
-              << ghostedDir[4] << ", " << ghostedDir[5] << "}" << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   ghostedCoarseNodesPerDir: " << geoData->ghostedCoarseNodesPerDir << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   numGhostedCoarseNodes: " << numGhostedCoarseNodes << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "   startGhostedCoarseNode:   " << geoData->startGhostedCoarseNode << std::endl;
+    geoData->numGhostedCoarseNodes10 = geoData->ghostedCoarseNodesPerDir[0]
+      *geoData->ghostedCoarseNodesPerDir[1];
+    geoData->numGhostedCoarseNodes = geoData->numGhostedCoarseNodes10
+      *geoData->ghostedCoarseNodesPerDir[2];
 
     // aggregates->SetNumAggregates(geoData->lNumCoarseNodes);
-    aggregates->SetNumAggregates(numGhostedCoarseNodes);
+    aggregates->SetNumAggregates(geoData->numGhostedCoarseNodes);
 
     // Find the GIDs, LIDs and PIDs of the coarse points on the fine mesh and coarse
     // mesh as this data will be used to fill vertex2AggId and procWinner vectors.
-    LO lNumGhostedCoarseNodes = geoData->ghostedCoarseNodesPerDir[2]*
-      geoData->ghostedCoarseNodesPerDir[1]*geoData->ghostedCoarseNodesPerDir[0];
     Array<GO> lCoarseNodeCoarseGIDs(geoData->lNumCoarseNodes),
       lCoarseNodeFineGIDs(geoData->lNumCoarseNodes);
-    Array<GO> ghostedCoarseNodeCoarseGIDs(lNumGhostedCoarseNodes),
-      ghostedCoarseNodeFineGIDs(lNumGhostedCoarseNodes);
+    Array<GO> ghostedCoarseNodeCoarseGIDs(geoData->numGhostedCoarseNodes),
+      ghostedCoarseNodeFineGIDs(geoData->numGhostedCoarseNodes);
     Array<LO> ghostedCoarseNodeCoarseIndices(3), ghostedCoarseNodeFineIndices(3), ijk(3);
-    LO currentIndex = -1, countCoarseNodes = 0;
+    LO currentIndex = -1, coarseNodeFineLID = -1, computedCoarseNode = -1;
     for(ijk[2] = 0; ijk[2] < geoData->ghostedCoarseNodesPerDir[2]; ++ijk[2]) {
       for(ijk[1] = 0; ijk[1] < geoData->ghostedCoarseNodesPerDir[1]; ++ijk[1]) {
         for(ijk[0] = 0; ijk[0] < geoData->ghostedCoarseNodesPerDir[0]; ++ijk[0]) {
@@ -505,10 +444,13 @@ namespace MueLu {
              && (!ghostedDir[4] || ijk[2] != 0)
              && (!ghostedDir[1] || ijk[0] != geoData->ghostedCoarseNodesPerDir[0] - 1)
              && (!ghostedDir[3] || ijk[1] != geoData->ghostedCoarseNodesPerDir[1] - 1)
-             && (!ghostedDir[5] || ijk[2] != geoData->ghostedCoarseNodesPerDir[2] - 1)){
-            lCoarseNodeCoarseGIDs[countCoarseNodes] = myCoarseGID;
-            lCoarseNodeFineGIDs[countCoarseNodes]   = myGID;
-            ++countCoarseNodes;
+             && (!ghostedDir[5] || ijk[2] != geoData->ghostedCoarseNodesPerDir[2] - 1)) {
+            geoData->getGhostedNodeFineLID(ijk[0], ijk[1], ijk[2], coarseNodeFineLID);
+            geoData->getGhostedNodeCoarseLID(ijk[0], ijk[1], ijk[2], computedCoarseNode);
+
+            aggregates->SetIsRoot(coarseNodeFineLID);
+            lCoarseNodeCoarseGIDs[computedCoarseNode] = myCoarseGID;
+            lCoarseNodeFineGIDs[computedCoarseNode]   = myGID;
           }
           ghostedCoarseNodeFineGIDs[currentIndex] = myGID;
         }
@@ -521,25 +463,11 @@ namespace MueLu {
                                                        coordMap->getComm());
 
 
-    Array<int> ghostedCoarseNodeCoarsePIDs(lNumGhostedCoarseNodes);
-    Array<LO>  ghostedCoarseNodeCoarseLIDs(lNumGhostedCoarseNodes);
+    Array<int> ghostedCoarseNodeCoarsePIDs(geoData->numGhostedCoarseNodes);
+    Array<LO>  ghostedCoarseNodeCoarseLIDs(geoData->numGhostedCoarseNodes);
     coarseCoordMap->getRemoteIndexList(ghostedCoarseNodeCoarseGIDs(),
                                        ghostedCoarseNodeCoarsePIDs(),
                                        ghostedCoarseNodeCoarseLIDs());
-
-    // // Set all root nodes on the local processor
-    // for(LO nodeIdx = 0; nodeIdx < geoData->lNumCoarseNodes; ++nodeIdx) {
-    //       aggregates->SetIsRoot(lCoarseNodeFineLIDs[nodeIdx]);
-    // }
-
-    std::cout << "p=" << coordMap->getComm()->getRank() << " | "
-              << "ghostedCoarseNodeCoarseGIDs: " << ghostedCoarseNodeCoarseGIDs << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "ghostedCoarseNodeCoarseLIDs: " << ghostedCoarseNodeCoarseLIDs << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "ghostedCoarseNodeFinePIDs:   " << ghostedCoarseNodeCoarsePIDs << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "lCoarseNodeCoarseGIDs:   " << lCoarseNodeCoarseGIDs << std::endl;
 
     // Now we are ready for the big loop over the fine node that will assign each
     // node on the fine grid to an aggregate and a processor.
@@ -559,7 +487,7 @@ namespace MueLu {
       kCoarse = kGhosted / geoData->coarseRate[2];
       kRem    = kGhosted % geoData->coarseRate[2];
       if(kRem > (geoData->coarseRate[2] / 2)) { ++kCoarse; }
-      geoData->getCoarseNodeLID(iCoarse, jCoarse, kCoarse, ghostedCoarseNodeCoarseLID);
+      geoData->getCoarseNodeGhostedLID(iCoarse, jCoarse, kCoarse, ghostedCoarseNodeCoarseLID);
 
       aggId                 = ghostedCoarseNodeCoarseLIDs[ghostedCoarseNodeCoarseLID];
       vertex2AggId[nodeIdx] = aggId;
@@ -567,11 +495,6 @@ namespace MueLu {
       aggStat[nodeIdx]      = AGGREGATED;
       --numNonAggregatedNodes;
     }
-
-    std::cout << "p=" << coordMap->getComm()->getRank() << " | ";
-    std::cout << "vertex2AggId: " << vertex2AggId() << std::endl
-              << "p=" << coordMap->getComm()->getRank() << " | "
-              << "procWinner:   " << procWinner() << std::endl;
 
   } // GlobalLexicographicLayout
 
