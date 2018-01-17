@@ -207,26 +207,29 @@ class Zoltan2_Directory {
 
     /*! \brief update is called by user to submit new data. */
     int update(
-      const std::vector<gid_t>& gid,           /*! \brief gids being updated. */
-      const std::vector<lid_t>& lid,                 /*! \brief lids if used. */
-      const std::vector<user_t>& user,          /*! \brief user data if used. */
-      const std::vector<int>& partition,   /*! \brief partition data if used. */
+      size_t length,                                        /* number of gids */
+      const gid_t * gid,                       /*! \brief gids being updated. */
+      const lid_t * lid,                             /*! \brief lids if used. */
+      const user_t * user,                      /*! \brief user data if used. */
+      const int * partition,               /*! \brief partition data if used. */
       Update_Mode update_mode); /*! \brief Can be Replace, Add, or Aggregate. */
 
     /*! \brief find is called by user to get data back from directory. */
     int find(
-      const std::vector<gid_t>& gid,                 /*! \brief gids to find. */
-      std::vector<lid_t>& lid,         /*! \brief lids to find if being used. */
-      std::vector<user_t>& user,  /*! \brief user data to find if being used. */
-      std::vector<int>& partition, /*! \brief partition data to find if used. */
-      std::vector<int>& owner,         /*! \brief owner data to find if used. */
+      size_t length,                                        /* number of gids */
+      const gid_t * gid,                             /*! \brief gids to find. */
+      lid_t * lid,                     /*! \brief lids to find if being used. */
+      user_t * user,              /*! \brief user data to find if being used. */
+      int * partition,             /*! \brief partition data to find if used. */
+      int * owner,                   /*! \brief owner data to find if used. */
       bool throw_if_missing = true); /*! \brief if true will throw if a gid is
         not found. This is used by the unit tests to properly assess if remove
         has worked. */
 
     /*! \brief remove eliminates these gids from the directory . */
     int remove(
-      const std::vector<gid_t>& gid); /*! \brief gids to remove. */
+      size_t length,                                        /* number of gids */
+      const gid_t * gid);                          /*! \brief gids to remove. */
 
     /*! \brief print output. New Kokkos mode needs further development. */
     int print() const;

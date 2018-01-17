@@ -81,16 +81,13 @@ size_t findUniqueGids(
 
   directory_t directory(comm, bUseLocalIDs, debug_level);
 
-  std::vector<int> ignore_int; // TODO: decide how to best handle this API
-  std::vector<lno_t> ignore_lids; // TODO: how to best handle this API
-  
-  directory.update(keys, ignore_lids, gids, ignore_int,
+  directory.update(keys.size(), &keys[0], NULL, &gids[0], NULL,
     directory_t::Update_Mode::Replace);
 
   directory.remap_user_data_as_unique_gids();
 
   // Retrieve the global numbers and put in the result gids vector
-  directory.find(keys, ignore_lids, gids, ignore_int, ignore_int, false);
+  directory.find(keys.size(), &keys[0], NULL, &gids[0], NULL, NULL, false);
 
   // using ssize_t can be long* on clang and I get warnings here or in the original
   // findUniqueGids - using long long specifically is ok. Can we do an MPI type

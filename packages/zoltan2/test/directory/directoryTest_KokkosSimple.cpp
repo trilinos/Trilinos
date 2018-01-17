@@ -119,9 +119,7 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   }
 
   // call update on the directory
-  std::vector<lid_t> ignore_lid; // TODO: decide how to best handle this API
-  std::vector<int> ignore_int;   // TODO: decide how to best handle this API
-  directory.update(writeGIDs, ignore_lid, writeUser, ignore_int,
+  directory.update(writeGIDs.size(), &writeGIDs[0], NULL, &writeUser[0], NULL,
     directory_t::Replace);
 
   // now pick some gids to find
@@ -142,7 +140,7 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   // However maybe it's better to change this so the simple test example
   // doesn't have this complication ... to do.
   try {
-    directory.find(findIds, ignore_lid, findUser, ignore_int, ignore_int);
+    directory.find(findIds.size(), &findIds[0], NULL, &findUser[0], NULL, NULL);
 
     // now check element 0 in the array - make sure it matches writeUser above
     // all procs except 0 sent this one
@@ -189,7 +187,7 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   }
 
   // call update on the directory (this will be the second round)
-  directory.update(writeGIDs2, ignore_lid, writeUser2, ignore_int,
+  directory.update(writeGIDs2.size(), &writeGIDs2[0], NULL, &writeUser2[0], NULL,
     directory_t::Replace);
 
   // now pick some gids to find
@@ -197,7 +195,7 @@ int test_simple_replace(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
 
   // now create a user space to accept the values
   std::vector<user_t> findUser2(findIds2.size());
-  directory.find(findIds2, ignore_lid, findUser2, ignore_int, ignore_int);
+  directory.find(findIds2.size(), &findIds2[0], NULL, &findUser2[0], NULL, NULL);
 
   // validate the results
   // index 0 (gid 1) was updated on the first round (not second)
@@ -270,9 +268,7 @@ int test_aggregate(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   }
 
   // call update on the directory
-  std::vector<lid_t> ignore_lid; // TODO: decide how to best handle this API
-  std::vector<int> ignore_int;   // TODO: decide how to best handle this API
-  directory.update(writeGIDs, ignore_lid, writeUser, ignore_int,
+  directory.update(writeGIDs.size(), &writeGIDs[0], NULL, &writeUser[0], NULL,
     directory_t::Aggregate);
 
   // now pick some gids to find - could make this rank specific
@@ -287,7 +283,7 @@ int test_aggregate(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   std::vector<user_t> findUser(findIds.size());
 
   // now call find which will fill findUser
-  directory.find(findIds, ignore_lid, findUser, ignore_int, ignore_int);
+  directory.find(findIds.size(), &findIds[0], NULL, &findUser[0], NULL, NULL);
 
   // now check element 0 in findUser
   // that was for gid = 3 so from the above we expect the following:
@@ -366,9 +362,7 @@ int test_multiple_gid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   }
 
   // call update on the directory using add mode
-  std::vector<lid_t> ignore_lid; // TODO: decide how to best handle this API
-  std::vector<int> ignore_int;   // TODO: decide how to best handle this API
-  directory.update(writeGIDs, ignore_lid, writeUser, ignore_int,
+  directory.update(writeGIDs.size(), &writeGIDs[0], NULL, &writeUser[0], NULL,
     directory_t::Add);
 
   // now check them on all ranks - this could be different for different ranks
@@ -381,7 +375,7 @@ int test_multiple_gid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   std::vector<user_t> findUser(findIds.size());
 
   // now call find which will fill findUser
-  directory.find(findIds, ignore_lid, findUser, ignore_int, ignore_int);
+  directory.find(findIds.size(), &findIds[0], NULL, &findUser[0], NULL, NULL);
 
   // now check element 0 in the array which should have value 1
   if(findUser[0] != 1) {
@@ -450,10 +444,8 @@ int test_multiple_lid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   }
 
   // call update on the directory using add mode
-  std::vector<user_t> ignore_user; // TODO: decide how to best handle this API
-  std::vector<int> ignore_int;   // TODO: decide how to best handle this API
-  directory.update(writeGIDs, writeLIDs, writeUser, ignore_int,
-    directory_t::Replace);
+  directory.update(writeGIDs.size(), &writeGIDs[0], &writeLIDs[0], &writeUser[0],
+    NULL, directory_t::Replace);
 
   // now check them on all ranks - this could be different for different ranks
   std::vector<gid_t> findGIDs = { gid1, gid2 };
@@ -462,7 +454,7 @@ int test_multiple_lid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
   std::vector<lid_t> findLIDs(findGIDs.size());
 
   // now call find which will fill findLIDs
-  directory.find(findGIDs, findLIDs, ignore_user, ignore_int, ignore_int);
+  directory.find(findGIDs.size(), &findGIDs[0], &findLIDs[0], NULL, NULL, NULL);
 
   // now check element 0 in the array is matched to lid1
   if(findLIDs[0].val[0] != lid1.val[0] || findLIDs[0].val[1] != lid1.val[1]) {
@@ -476,17 +468,12 @@ int test_multiple_lid(Teuchos::RCP<const Teuchos::Comm<int> > comm) {
     ++err;
   }
 
-  // make sure user data still empty
-  if(ignore_user.size()) {
-    std::cout << "User data was requested to be ignored ut filled it." << std::endl;
-    ++err;
-  }
-
   // create user space to accept the user values
   std::vector<user_t> findUser(findGIDs.size());
 
   // now call find which will fill findLIDs and findUser
-  directory.find(findGIDs, findLIDs, findUser, ignore_int, ignore_int);
+  directory.find(findGIDs.size(), &findGIDs[0], &findLIDs[0], &findUser[0],
+    NULL, NULL);
 
   // now check element 0 in the array which should have value 1
   if(findUser[0] != 1) {

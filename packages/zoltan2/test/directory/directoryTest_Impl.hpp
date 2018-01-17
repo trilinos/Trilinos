@@ -703,29 +703,25 @@ class IDs {
           break;
       }
 
-      // perhaps change this back to a ptr so NULL can be considered off
-      std::vector<int> ignore_int; // TODO: decide how to best handle this API
-      std::vector<lid_t> ignore_lids; // TODO: how to best handle this API
-
       // now create the directory data with update - this will proces Replace,
       // Add, or Aggregate, depending on the directoryMode.
-      zz.update(update_gids,
-        bUseLocalIDs ? update_lids : ignore_lids,
-        update_user, ignore_int, directoryMode);
+      zz.update(update_gids.size(), &update_gids[0],
+        bUseLocalIDs ? &update_lids[0] : NULL,
+        &update_user[0], NULL, directoryMode);
 
       // tpetra was never implemented to call remove and it will throw if
       // that is tried, so block it here. The remove_gids is setup to be empty
       // for Tpetra so that the validation step will still work and it can pass.
       // TODO: Fix this special case to make performance comparions easier.
       #ifndef CONVERT_DIRECTORY_TPETRA
-      zz.remove(remove_gids);
+      zz.remove(remove_gids.size(), &remove_gids[0]);
       #endif
 
       // Now call find which will fill find_user with the correct data.
       // Some of the tests use lids and will also fill find_lids with lid values.
-      zz.find(find_gids,
-        bUseLocalIDs ? find_lids : ignore_lids,
-        find_user, ignore_int, ignore_int, false);
+      zz.find(find_gids.size(), &find_gids[0],
+        bUseLocalIDs ? &find_lids[0] : NULL,
+        &find_user[0], NULL, NULL, false);
 #endif
     }
 

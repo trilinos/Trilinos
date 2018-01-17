@@ -287,8 +287,8 @@ public:
 
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
-  const std::vector<gid_t>& gid, const std::vector<lid_t>& lid,
-  const std::vector<user_t>& user, const std::vector<int>& partition,
+  size_t count, const gid_t * gid, const lid_t * lid,
+  const user_t * user, const int * partition,
   Update_Mode update_mode)
 {
   // for conveniece store but maybe this should be a construct property
@@ -338,20 +338,11 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   int err = 0;
 
 #ifdef CONVERT_DIRECTORY_TPETRA
-
-  // The purpose of this code was to implement a Tpetra form of the directory
-  // so we could do some performance comparisons. The Tpetra mode will support
-  // Add and Replace (not Aggregate) and can be run using the same API calls.
-
-  // Compute global indexBase
-  gid_t minId = gid.size() ?
-    (*std::min_element(std::begin(gid), std::end(gid))) : 0;
-  gid_t indexBase;
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &minId, &indexBase);
-
   // Build Tpetra::Map for the given local ids
+  gid_t indexBase = 0;
   size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  rcp_map_t idMap = Teuchos::rcp(new map_t(dummy, gid, indexBase, comm), true);
+  std::vector<gid_t> gid_vector(gid, gid + count); // make std::vector from ptr
+  rcp_map_t idMap = Teuchos::rcp(new map_t(dummy, gid_vector, indexBase, comm), true);
 
   // Create Vector using this map.
   rcp_vector_t idVec = Teuchos::rcp(new vector_t(idMap, 0.));
@@ -406,23 +397,23 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
 
   // allocate memory for list of processors to contact
   Teuchos::ArrayRCP<int> procs;
-  if(gid.size() > 0) {
-    procs = Teuchos::arcp(new int[gid.size()], 0, gid.size(), true);
+  if(count > 0) {
+    procs = Teuchos::arcp(new int[count], 0, count, true);
   }
 
   // set up the msg sizes for vector mode only
   Teuchos::ArrayRCP<int> msg_sizes;
   int sum_msg_size = 0;
-  if(is_Zoltan2_Directory_Vector() && gid.size() > 0) {
-    msg_sizes = Teuchos::arcp(new int[gid.size()], 0, gid.size(), true);
-    for (size_t i = 0; i < gid.size(); i++) {
+  if(is_Zoltan2_Directory_Vector() && count > 0) {
+    msg_sizes = Teuchos::arcp(new int[count], 0, count, true);
+    for (size_t i = 0; i < count; i++) {
       size_t msg_size = get_update_msg_size(user[i]);
       sum_msg_size += msg_size;
       msg_sizes[i] = msg_size;
     }
   }
   else {
-    sum_msg_size = update_msg_size * gid.size(); // simple case
+    sum_msg_size = update_msg_size * count; // simple case
   }
 
   update_alloc_clock.complete();
@@ -443,7 +434,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
   // build update messages
   int track_offset = 0;
   char * trackptr = sbuff.getRawPtr();
-  for (size_t i = 0; i < gid.size(); i++) {
+  for (size_t i = 0; i < count; i++) {
     // hash the gid to determine which proc will own it
     procs[i] = hash_proc(gid[i]);
 
@@ -452,10 +443,10 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     msg_t *ptr = reinterpret_cast<msg_t*>(trackptr);
 
     // write in all my info
-    ptr->lid_flag       = (lid.size())  ? 1 : 0;
-    ptr->user_flag      = (user.size()) ? 1 : 0;
-    ptr->partition_flag = (partition.size()) ? 1 : 0;
-    ptr->partition      = (partition.size()) ? partition[i] :  -1;
+    ptr->lid_flag       = lid ? 1 : 0;
+    ptr->user_flag      = user ? 1 : 0;
+    ptr->partition_flag = partition ? 1 : 0;
+    ptr->partition      = partition ? partition[i] :  -1;
     ptr->owner          = comm->getRank();
 
     // now deal with the gid
@@ -464,7 +455,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
 
     // optionally write the lid if we are using that
     if(use_lid) {
-      if(!lid.size()) {
+      if(!lid) {
         throw std::logic_error(
           "Did not pass lid values but directory was created to use them!");
       }
@@ -472,7 +463,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
       *plid = lid[i];
     }
     else {
-      if(lid.size()) {
+      if(lid) {
         throw std::logic_error(
           "Passed lid values but directory was created not to use them!");
       }
@@ -486,7 +477,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
     // write in the user data - for Zoltan2_Directory_Simple this is a trival
     // copy but for Zoltan2_Directory_Vector we write length and then write all
     // of the elements in the vector.
-    if (user.size()) {
+    if (user) {
       user_to_raw(user[i], puser);
     }
     else {
@@ -521,14 +512,14 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
 
 #ifdef CONVERT_DIRECTORY_KOKKOS
   // Kokkos mode uses the new refactored C++ communicator class
-  Zoltan2_Directory_Comm directoryComm(gid.size(), procs, comm,
+  Zoltan2_Directory_Comm directoryComm(count, procs, comm,
     ZOLTAN2_DD_UPDATE_MSG_TAG);
   int nrec = directoryComm.getNRec();
 #else
   // The relic mode will be working with the original zoltan code
   ZOLTAN_COMM_OBJ *plan  = NULL;   // for efficient MPI communication
   int nrec = 0;       // number of receives to expect
-  err = Zoltan_Comm_Create (&plan, gid.size(), procs.getRawPtr(),
+  err = Zoltan_Comm_Create (&plan, count, procs.getRawPtr(),
     getRawComm(), ZOLTAN2_DD_UPDATE_MSG_TAG, &nrec);
 #endif
 
@@ -703,7 +694,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update(
 
   if (debug_level)  {
     char str[100];      // used to build message string
-    sprintf (str, "Processed %lu GIDs (%d local), %d GID errors", gid.size(),
+    sprintf (str, "Processed %lu GIDs (%d local), %d GID errors", count,
 #ifdef CONVERT_DIRECTORY_RELIC
       nrec,
 #else
@@ -948,11 +939,12 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::update_local(
 
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
- const std::vector<gid_t>& gid, /* Incoming list of GIDs to get owners proc   */
- std::vector<lid_t>& lid,       /* Outgoing corresponding list of LIDs        */
- std::vector<user_t>& user,     /* Outgoing optional corresponding user data  */
- std::vector<int>& partition,   /* Outgoing optional partition information    */
- std::vector<int>& owner,       /* Outgoing optional list of data owners      */
+ size_t count,
+ const gid_t * gid, /* Incoming list of GIDs to get owners proc   */
+ lid_t * lid,       /* Outgoing corresponding list of LIDs        */
+ user_t * user,     /* Outgoing optional corresponding user data  */
+ int * partition,   /* Outgoing optional partition information    */
+ int * owner,       /* Outgoing optional list of data owners      */
  bool throw_if_missing)         /* default true - throw if gid is not found.  */
 {
   Zoltan2_Directory_Clock clock("find");
@@ -968,15 +960,12 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   int err = 0;
 
 #ifdef CONVERT_DIRECTORY_TPETRA
-  // Compute global indexBase
-  gid_t minId =
-    gid.size() ? (*std::min_element(std::begin(gid), std::end(gid))) : 0;
-  gid_t indexBase;
-  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &minId, &indexBase);
-
   // Build Tpetra::Map for the given ids
+  gid_t indexBase = 0;
   size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  rcp_map_t idMap = Teuchos::rcp(new map_t(dummy, gid, indexBase, comm), true);
+  std::vector<gid_t> gid_vector(gid, gid + count); // make std::vector from ptr
+  rcp_map_t idMap = Teuchos::rcp(
+    new map_t(dummy, gid_vector, indexBase, comm), true);
 
   // Create Vector using this map.
   // This vector will store number of occurrences of each id across procs
@@ -995,13 +984,13 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
 #else
   /* allocate memory for processors to contact for directory info */
   Teuchos::ArrayRCP<int> procs;
-  if(gid.size() > 0) {
+  if(count > 0) {
     procs = Teuchos::arcp(
-      new int[gid.size()], 0, gid.size(), true); // processors to contact
+      new int[count], 0, count, true); // processors to contact
   }
 
   /* Setup procs list */
-  for (size_t i = 0; i < gid.size(); i++) {
+  for (size_t i = 0; i < count; i++) {
     procs[i] = hash_proc(gid[i]); // determines the owner
   }
 
@@ -1010,15 +999,15 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   ZOLTAN_COMM_OBJ *plan  = NULL;     // efficient MPI communication
   int nrec;                          // number of messages to receive
 #ifdef HAVE_MPI
-  err = Zoltan_Comm_Create (&plan, gid.size(), procs.getRawPtr(),
+  err = Zoltan_Comm_Create (&plan, count, procs.getRawPtr(),
     Teuchos::getRawMpiComm(*comm), ZOLTAN2_DD_FIND_MSG_TAG, &nrec);
 #else
-  err = Zoltan_Comm_Create (&plan, gid.size(), procs.getRawPtr(),
+  err = Zoltan_Comm_Create (&plan, count, procs.getRawPtr(),
     MPI_COMM_WORLD, ZOLTAN2_DD_FIND_MSG_TAG, &nrec);
 #endif
 
 #else
-  Zoltan2_Directory_Comm directoryComm(gid.size(), procs, comm,
+  Zoltan2_Directory_Comm directoryComm(count, procs, comm,
     ZOLTAN2_DD_FIND_MSG_TAG);
   int nrec = directoryComm.getNRec();
 #endif
@@ -1036,9 +1025,9 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   Zoltan2_Directory_Clock find_sbuff_alloc_clock("  find_sbuff_alloc");
 
   Teuchos::ArrayRCP<char> sbuff;
-  if(gid.size() > 0) {
-    sbuff = Teuchos::arcp(new char[find_msg_size*gid.size()],
-      0, find_msg_size*gid.size(), true); // send buffer
+  if(count > 0) {
+    sbuff = Teuchos::arcp(new char[find_msg_size*count],
+      0, find_msg_size*count, true); // send buffer
   }
   find_sbuff_alloc_clock.complete();
 
@@ -1048,7 +1037,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
 
   /* for each GID, fill DD_Find_Msg buffer and contact list */
   char *trackptr = sbuff.getRawPtr();
-  for (size_t i = 0; i < gid.size(); i++)  {
+  for (size_t i = 0; i < count; i++)  {
     msg_t *ptr = reinterpret_cast<msg_t*>(trackptr);
     ptr->index = i;
     ptr->proc  = procs[i];
@@ -1225,21 +1214,21 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
 
   // it's not going to be in order... so don't use gid[i]
   char * trackptr_resized = sbuff_resized.getRawPtr();
-  for (size_t i = 0; i < gid.size(); i++) {
+  for (size_t i = 0; i < count; i++) {
 
     if(track_offset_resized >= sbuff_resized.size()) {
       printf( "%d has gid.size() %d track_offset_resized: %d sbuff_resized: %d\n", comm->getRank(),
-        (int) gid.size(), (int) track_offset_resized, (int) sbuff_resized.size());
+        (int) count, (int) track_offset_resized, (int) sbuff_resized.size());
       throw std::logic_error("Bad buffer overflow! Internal error.");
     }
 
     msg_t *ptr = reinterpret_cast<msg_t*>(trackptr_resized);
 
-    if (owner.size())
+    if (owner)
       owner[ptr->index] = ptr->proc;
-    if (partition.size())
+    if (partition)
       partition[ptr->index] = ptr->partition ;
-    if (lid.size()) {
+    if (lid) {
       lid[ptr->index] = *(reinterpret_cast<lid_t*>(ptr->adjData));
     }
 
@@ -1252,7 +1241,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
     // this the test overrides with an optional flag on find() and says do not
     // throw - and expects the data to remain untouched - then validates the
     // data is not changed.
-    if(ptr->proc != -1  && user.size()) {
+    if(ptr->proc != -1  && user) {
       raw_to_user(pRead, user[ptr->index]);
     }
 
@@ -1282,7 +1271,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::find(
   // if at least one GID was not found, potentially notify caller of error
   if (debug_level > 0) {
     char str[100];      /* diagnostic message string */
-    sprintf(str, "Processed %lu GIDs, GIDs not found: %d", gid.size(), errcount);
+    sprintf(str, "Processed %lu GIDs, GIDs not found: %d", count, errcount);
     ZOLTAN2_PRINT_INFO (comm->getRank(), yo, str);
   }
 
@@ -1608,7 +1597,8 @@ void Zoltan2_Directory<gid_t,lid_t,user_t>::stats() const
 
 template <typename gid_t,typename lid_t,typename user_t>
 int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
-  const std::vector<gid_t>& gid)   /* Incoming list of GIDs to remove */
+  size_t count,
+  const gid_t * gid)   /* Incoming list of GIDs to remove */
 {
   Zoltan2_Directory_Clock clock("remove");
 
@@ -1627,18 +1617,18 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   // allocate memory for processor contact list
   Teuchos::ArrayRCP<int> procs;
   Teuchos::ArrayRCP<char> sbuff;
-  if(gid.size() > 0) {
+  if(count > 0) {
     procs = Teuchos::arcp( // list of processors to contact
-      new int[gid.size()], 0, gid.size(), true);
+      new int[count], 0, count, true);
     sbuff = Teuchos::arcp( // send buffer
-      new char[gid.size()*remove_msg_size], 0, gid.size()*remove_msg_size, true);
+      new char[count*remove_msg_size], 0, count*remove_msg_size, true);
   }
 
   typedef Zoltan2_DD_Remove_Msg<gid_t,lid_t> msg_t;
 
   // for each GID, fill in contact list and then message structure
   char * trackptr = sbuff.getRawPtr();
-  for (size_t i = 0; i < gid.size(); i++)  {
+  for (size_t i = 0; i < count; i++)  {
     procs[i] = hash_proc(gid[i]);
     msg_t *ptr = reinterpret_cast<msg_t*>(trackptr);
     ptr->owner = comm->getRank();
@@ -1648,13 +1638,13 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
 
   // now create efficient communication plan
 #ifdef CONVERT_DIRECTORY_KOKKOS
-  Zoltan2_Directory_Comm directoryComm(gid.size(), procs, comm,
+  Zoltan2_Directory_Comm directoryComm(count, procs, comm,
     ZOLTAN2_DD_UPDATE_MSG_TAG);
   int nrec = directoryComm.getNRec();
 #else
   ZOLTAN_COMM_OBJ *plan  = NULL;   // for efficient MPI communication
   int nrec;       // number of receives to expect
-  err = Zoltan_Comm_Create (&plan, gid.size(), procs.getRawPtr(),
+  err = Zoltan_Comm_Create (&plan, count, procs.getRawPtr(),
     getRawComm(), ZOLTAN2_DD_REMOVE_MSG_TAG, &nrec);
 #endif
 
@@ -1724,7 +1714,7 @@ int Zoltan2_Directory<gid_t,lid_t,user_t>::remove(
   if (debug_level) {
     char str[100];      // used to build message string
     sprintf (str, "Processed %zu GIDs (%d local), %d GIDs not found",
-      gid.size(), nrec, errcount);
+      count, nrec, errcount);
     ZOLTAN2_PRINT_INFO (comm->getRank(), yo, str);
     err = (errcount) ? 1 : 0;
   }

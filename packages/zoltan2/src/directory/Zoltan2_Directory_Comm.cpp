@@ -135,8 +135,8 @@ Zoltan2_Directory_Comm::Zoltan2_Directory_Comm(
   const Teuchos::ArrayRCP<int>  &assign,  /* processor assignment for all my values */
   Teuchos::RCP<const Teuchos::Comm<int> > comm,               /* communicator */
   int       tag) :  	                               /* message tag I can use */
-  plan_forward(NULL),
-  comm_(comm)
+  comm_(comm),
+  plan_forward(NULL)
 {
   if (comm == Teuchos::null){
     throw std::logic_error("Invalid communicator: MPI_COMM_NULL.");
