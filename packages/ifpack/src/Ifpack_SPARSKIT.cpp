@@ -311,6 +311,7 @@ double Ifpack_SPARSKIT::Condest(const Ifpack_CondestType CT,
 std::ostream&
 Ifpack_SPARSKIT::Print(std::ostream& os) const
 {
+  using std::endl;
   if (!Comm().MyPID()) {
     os << endl;
     os << "================================================================================" << endl;
