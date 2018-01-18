@@ -1,26 +1,26 @@
-#ifndef __TACHOEXP_TRSM_EXTERNAL_HPP__
-#define __TACHOEXP_TRSM_EXTERNAL_HPP__
+#ifndef __TACHOEXP_TRSM_INTERNAL_HPP__
+#define __TACHOEXP_TRSM_INTERNAL_HPP__
 
 
-/// \file  Tacho_Trsm_External.hpp
+/// \file  Tacho_Trsm_Internal.hpp
 /// \brief BLAS triangular solve matrix
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "TachoExp_Blas_External.hpp"
+#include "TachoExp_Blas_Team.hpp"
 
 namespace Tacho {
   
   namespace Experimental {
     
     template<typename ArgSide, typename ArgUplo, typename ArgTransA>
-    struct Trsm<ArgSide,ArgUplo,ArgTransA,Algo::External> {      
+    struct Trsm<ArgSide,ArgUplo,ArgTransA,Algo::Internal> {      
       template<typename PolicyType,
                typename MemberType,
                typename DiagType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeB>
-      inline
+      KOKKOS_INLINE_FUNCTION
       static int
       invoke(const PolicyType &policy,
              const MemberType &member,
@@ -39,22 +39,16 @@ namespace Tacho {
         
         const ordinal_type m = B.dimension_0(), n = B.dimension_1();
         
-        if (m > 0 && n > 0) {
-          if (get_team_rank(member) == 0) {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-            Blas<value_type>::trsm(ArgSide::param, 
-                                   ArgUplo::param, 
-                                   ArgTransA::param, 
-                                   diagA.param,
-                                   m, n,
-                                   value_type(alpha),
-                                   A.data(), A.stride_1(),
-                                   B.data(), B.stride_1());
-#else
-            TACHO_TEST_FOR_ABORT( true, "This function is only allowed in host space.");
-#endif
-          }
-        }
+        if (m > 0 && n > 0) 
+          BlasTeam<value_type>::trsm(member,
+                                     ArgSide::param, 
+                                     ArgUplo::param, 
+                                     ArgTransA::param, 
+                                     diagA.param,
+                                     m, n,
+                                     value_type(alpha),
+                                     A.data(), A.stride_1(),
+                                     B.data(), B.stride_1());
         return 0;
       }
     };

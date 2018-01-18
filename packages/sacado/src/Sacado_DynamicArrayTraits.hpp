@@ -495,11 +495,9 @@ namespace Sacado {
     //! Copy array from \c src to \c dest of length \c sz
     KOKKOS_INLINE_FUNCTION
     static void strided_copy(const T* src, int src_stride,
-                                    T* dest, int dest_stride, int sz) {
+                             T* dest, int dest_stride, int sz) {
       for (int i=threadIdx.x; i<sz; i+=blockDim.x) {
-        *(dest) = *(src);
-        dest += dest_stride;
-        src += src_stride;
+        dest[i*dest_stride] = src[i*src_stride];
       }
     }
 
@@ -515,8 +513,7 @@ namespace Sacado {
     KOKKOS_INLINE_FUNCTION
     static void strided_zero(T* dest, int stride, int sz) {
       for (int i=threadIdx.x; i<sz; i+=blockDim.x) {
-        *(dest) = T(0.);
-        dest += stride;
+        dest[i*stride] = T(0.);
       }
     }
 

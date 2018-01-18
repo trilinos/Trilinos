@@ -12,7 +12,7 @@
 #define TACHO_ITT_RESUME
 #endif
 
-#if defined( TACHO_HAVE_MKL )
+#if defined( __INTEL_MKL__ )
 #include "mkl_service.h"
 #include "Tacho_Pardiso.hpp"
 #endif
@@ -59,7 +59,7 @@ int main (int argc, char *argv[]) {
 
   // testing flags
   opts.set_option<bool>("test-tacho", "Flag for testing Tacho", &test_tacho);
-#if defined( TACHO_HAVE_MKL )
+#if defined( __INTEL_MKL__ )
   opts.set_option<bool>("test-pardiso", "Flag for testing Pardiso", &test_pardiso);
 #endif
 #if defined( TACHO_HAVE_SUITESPARSE )
@@ -138,7 +138,7 @@ int main (int argc, char *argv[]) {
 
     // -----------------------------------------------------------------
     if (test_pardiso) {
-#if defined( TACHO_HAVE_MKL )
+#if defined( __INTEL_MKL__ )
       flush.run();
 
       Kokkos::Impl::Timer timer;

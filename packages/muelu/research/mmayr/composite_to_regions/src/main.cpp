@@ -256,12 +256,8 @@ void jacobiIterate(const int maxIter,
       double normRes = 0.0;
       compRes->Norm2(&normRes);
 
-//      std::cout << compRes->Comm().MyPID() << ": |r| = " << normRes << "\tin iteration " << iter << std::endl;
-
-      if (normRes < 1.0e-12) {
-//        std::cout << compRes->Comm().MyPID() << ": Jacobi method converged after " << iter << " iterations." << std::endl;
+      if (normRes < 1.0e-12)
         return;
-      }
     }
 
     for (int j = 0; j < maxRegPerProc; j++) {
@@ -909,8 +905,6 @@ int main(int argc, char *argv[]) {
         compositeToRegional(compInterfaceScalingSum, quasiRegInterfaceScaling,
             regionInterfaceScaling, maxRegPerProc, rowMapPerGrp,
             revisedRowMapPerGrp, rowImportPerGrp);
-
-//        printRegionalVector("regionInterfaceScaling", regionInterfaceScaling, myRank);
       }
 
       // Coarse level
@@ -933,8 +927,6 @@ int main(int argc, char *argv[]) {
         compositeToRegional(compInterfaceScalingSum, quasiRegInterfaceScaling,
             coarseRegionInterfaceScaling, maxRegPerProc, coarseQuasiRowMapPerGrp,
             coarseRowMapPerGrp, coarseRowImportPerGrp);
-
-//        printRegionalVector("coarseRegionInterfaceScaling", coarseRegionInterfaceScaling, myRank);
       }
     }
     else if (strcmp(command,"MakeRegionMatrices") == 0) {
@@ -1328,8 +1320,6 @@ int main(int argc, char *argv[]) {
       // Richardson iterations
       for (int cycle = 0; cycle < maxVCycle; ++cycle) {
 
-//        std::cout << "Start V-Cycle iteration " << cycle << std::endl;
-
         // a single 2-level V-Cycle
         {
           // -----------------------------------------------------------------------
@@ -1341,8 +1331,6 @@ int main(int argc, char *argv[]) {
 
           computeResidual(regRes, regX, regB, regionGrpMats, mapComp,
               rowMapPerGrp, revisedRowMapPerGrp, rowImportPerGrp);
-
-//          std::cout << "moving to coarse level ..." << std::endl;
 
           // -----------------------------------------------------------------------
           // Transfer to coarse level
@@ -1371,8 +1359,6 @@ int main(int argc, char *argv[]) {
           jacobiIterate(maxCoarseIter, omega, coarseRegX, coarseRegB, regCoarseMatPerGrp,
               coarseRegionInterfaceScaling, maxRegPerProc, coarseCompRowMap, coarseQuasiRowMapPerGrp,
               coarseRowMapPerGrp, coarseRowImportPerGrp);
-
-//          std::cout << "... and back to the fine level." << std::endl;
 
           // -----------------------------------------------------------------------
           // Transfer to fine level
@@ -1414,8 +1400,6 @@ int main(int argc, char *argv[]) {
           if (normRes < 1.0e-12)
             break;
         }
-
-//        std::cout << "End of V-Cycle iteration " << cycle << std::endl;
       }
 
       // -----------------------------------------------------------------------

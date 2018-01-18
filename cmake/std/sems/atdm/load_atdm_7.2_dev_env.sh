@@ -1,8 +1,9 @@
+module purge
+
 module load sems-env
 module load atdm-env
 module load sems-python/2.7.9
-#module load atdm-cmake/3.10.1  # Currently does not find SCOTCH libs!
-module load sems-cmake/3.5.2
+module load atdm-cmake/3.10.1
 module load sems-git/2.10.1
 module load atdm-gcc/7.2.0
 module load atdm-openmpi/1.6.5/atdm
@@ -22,4 +23,4 @@ fi
 # D) Remember the loaded SEMS Dev Env
 #
 
-export TRILINOS_SEMS_DEV_ENV_LOADED="$TRILINOS_SEMS_DEV_ENV_TO_LOAD"
+export TRILINOS_SEMS_DEV_ENV_LOADED=1

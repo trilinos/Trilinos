@@ -1,26 +1,26 @@
-#ifndef __TACHOEXP_GEMM_EXTERNAL_HPP__
-#define __TACHOEXP_GEMM_EXTERNAL_HPP__
+#ifndef __TACHOEXP_GEMM_INTERNAL_HPP__
+#define __TACHOEXP_GEMM_INTERNAL_HPP__
 
 
-/// \file  Tacho_Gemm_External.hpp
+/// \file  Tacho_Gemm_Internal.hpp
 /// \brief BLAS general matrix matrix multiplication
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "TachoExp_Blas_External.hpp"
+#include "TachoExp_Blas_Team.hpp"
 
 namespace Tacho {
 
   namespace Experimental {
 
     template<typename ArgTransA, typename ArgTransB>
-    struct Gemm<ArgTransA,ArgTransB,Algo::External> {
+    struct Gemm<ArgTransA,ArgTransB,Algo::Internal> {
       template<typename PolicyType,
                typename MemberType,
                typename ScalarType,
                typename ViewTypeA,
                typename ViewTypeB,
                typename ViewTypeC>
-      inline
+      KOKKOS_INLINE_FUNCTION
       static int
       invoke(const PolicyType &policy,
              const MemberType &member,
@@ -47,21 +47,16 @@ namespace Tacho {
           n = C.dimension_1(),
           k = (std::is_same<ArgTransB,Trans::NoTranspose>::value ? B.dimension_0() : B.dimension_1());
         
-        if (m > 0 && n > 0 && k > 0) {
-          if (get_team_rank(member) == 0) {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-            Blas<value_type>::gemm(ArgTransA::param, ArgTransB::param,
-                                   m, n, k,
-                                   value_type(alpha),
-                                   A.data(), A.stride_1(),
-                                   B.data(), B.stride_1(),
-                                   value_type(beta),
-                                   C.data(), C.stride_1());
-#else
-            TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
-#endif
-          }
-        }
+        if (m > 0 && n > 0 && k > 0) 
+          BlasTeam<value_type>::gemm(member,
+                                     ArgTransA::param, ArgTransB::param,
+                                     m, n, k,
+                                     value_type(alpha),
+                                     A.data(), A.stride_1(),
+                                     B.data(), B.stride_1(),
+                                     value_type(beta),
+                                     C.data(), C.stride_1());
+
         return 0;
       }
     };

@@ -183,7 +183,7 @@ public:
     virtual Scalar computeEta(const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory);
   //@}
 
-private:
+protected:
 
   Teuchos::RCP<Teuchos::ParameterList> tscPL_;
 
