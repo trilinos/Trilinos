@@ -1,3 +1,4 @@
+# Always built.
 ADD_SUBDIRECTORY(rosenbrock)
 ADD_SUBDIRECTORY(burgers-control)
 ADD_SUBDIRECTORY(poisson-control)
@@ -23,3 +24,8 @@ ADD_SUBDIRECTORY(paraboloid-circle)
 ADD_SUBDIRECTORY(putting)
 ADD_SUBDIRECTORY(tensor-opt)
 ADD_SUBDIRECTORY(PDE-OPT)
+
+# Conditionally built examples.
+IF(${PROJECT_NAME}_ENABLE_Tempus)
+  ADD_SUBDIRECTORY(tempus)
+ENDIF()
