@@ -35,6 +35,9 @@ def main():
     parser.add_argument('-a', '--analyze', action='store_true', help='Analyze the data from files generated with --run.')
     parser.add_argument('-p', '--prefix', help='Add a prefix string to all output filenames.')
     parser.add_argument('-v', '--verbose', action='store_true', help='Print more data to screen.')
+    parser.add_argument('-ne', '--num-eqns', type=int, default=16, help='Number of equations to solve for.')
+    parser.add_argument('-ts', '--team-size', type=int, required=True, help='Team size for hierarchic parallelism.')
+    parser.add_argument('-vs', '--vector-size', type=int, required=True, help='Vector size for hierarchic parallelism.')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-b', '--base-exe', action='store_true', default=False, help="Use the Base executable")
     group.add_argument('-m', '--mixed-exe', action='store_true', default=False, help="Use the Mixed Field Type executable")
@@ -44,11 +47,10 @@ def main():
     nx = 20
     ny = 20
     nz = 20
-    ne = 16
-    ts = 8
-    vs = 32
-    #ts = 256
-    #vs = 1
+    ne = args.num_eqns
+    ts = args.team_size
+    vs = args.vector_size
+    print "number of equations = %d, team size = %d, vector size = %d\n" % (ne, vs, vs)
 
     executable = "./Phalanx_example_finite_element_assembly.exe"
     if args.mixed_exe:
@@ -84,7 +86,7 @@ def main():
         timings["[PHX::MyTraits::Jacobian] Scatter Jacobian"] = np.zeros(len(workset_range),dtype=np.float64)
         timings["[PHX::MyTraits::Residual] Scatter Residual"] = np.zeros(len(workset_range),dtype=np.float64)
 
-    print dir(np)
+    #print dir(np)
         
     for i in range(len(workset_range)):
 
@@ -137,7 +139,8 @@ def main():
         plt.title(title)
         plt.legend(bbox_to_anchor=(1,1))
         plt.grid()
-        fig.savefig("dag_timings.png")
+        dag_timings_filename = "dag_timings_nx_%i_ny_%i_nz_%i_ne_%i_ts_%i_vs_%i.png" % (nx, ny, nz ,ne, ts, vs)
+        fig.savefig(dag_timings_filename)
         #plt.show()
 
         if do_jac:
@@ -160,7 +163,8 @@ def main():
             #plt.legend(loc=1, prop={'size': 10})
             plt.legend(loc='upper center', bbox_to_anchor=(0.5,1.0),ncol=3,fancybox=True,shadow=True, prop={'size': 10})
             plt.grid()
-            fig.savefig("jac_evaluator_timings.png")
+            jac_evaluator_timings_filename = "jac_evalautor_timings_nx_%i_ny_%i_nz_%i_ne_%i_ts_%i_vs_%i.png" % (nx, ny, nz ,ne, ts, vs)
+            fig.savefig(jac_evaluator_timings_filename)
             
         fig = plt.figure(3)
         #plt.clf()
@@ -180,7 +184,8 @@ def main():
         #plt.legend(bbox_to_anchor=(1,1))
         plt.axis([0,2000,1.0e-3,1])
         plt.grid()
-        fig.savefig("res_evaluator_timings.png")
+        res_evaluator_timings_filename = "res_evalautor_timings_nx_%i_ny_%i_nz_%i_ne_%i_ts_%i_vs_%i.png" % (nx, ny, nz ,ne, ts, vs)
+        fig.savefig(res_evaluator_timings_filename)
 
         print dir(plt)
         

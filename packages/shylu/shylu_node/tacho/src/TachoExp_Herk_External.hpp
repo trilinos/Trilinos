@@ -43,10 +43,6 @@ namespace Tacho {
         if (n > 0 && k > 0) {
           if (get_team_rank(member) == 0) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-#if defined( TACHO_PROFILE_TIME_PER_THREAD )
-            Kokkos::Impl::Timer timer;
-            timer.reset();
-#endif
             Blas<value_type>::herk(ArgUplo::param,
                                    ArgTrans::param,
                                    n, k,
@@ -54,9 +50,6 @@ namespace Tacho {
                                    A.data(), A.stride_1(),
                                    value_type(beta),
                                    C.data(), C.stride_1());
-#if defined( TACHO_PROFILE_TIME_PER_THREAD )
-            g_time_per_thread[omp_get_thread_num()] += timer.seconds();
-#endif
 #else
             TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space.");
 #endif

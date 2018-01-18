@@ -84,7 +84,7 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
                    Xpetra::UnderlyingLib lib, Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                    Teuchos::RCP<Xpetra::Matrix      <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A,
                    Teuchos::RCP<const Xpetra::Map   <LocalOrdinal,GlobalOrdinal, Node> >&       map,
-                   Teuchos::RCP<Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& coordinates,
+                   Teuchos::RCP<Xpetra::MultiVector <double,LocalOrdinal,GlobalOrdinal,Node> >& coordinates,
                    Teuchos::RCP<Xpetra::MultiVector <Scalar,LocalOrdinal,GlobalOrdinal,Node> >& nullspace) {
 #include <MueLu_UseShortNames.hpp>
   using Teuchos::RCP;
@@ -92,6 +92,8 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
+  typedef typename RealValuedMultiVector::scalar_type Real;
+
 
   // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
   //                                 d1  d2  d3
@@ -108,16 +110,16 @@ void ConstructData(const std::string& matrixType, Teuchos::ParameterList& galeri
   // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
   if (matrixType == "Laplace1D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian1D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
   } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
              matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian2D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
 
   } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
     map = Galeri::Xpetra::CreateMap<LO, GO, Node>(lib, "Cartesian3D", comm, galeriList);
-    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
+    coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
   }
 
   // Expand map to do multiple DOF per node for block problems
@@ -200,9 +202,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
   // For comments, see Driver.cpp
   out << "========================================================\n" << xpetraParameters << galeriParameters;
   std::string matrixType = galeriParameters.GetMatrixType();
-  RCP<Matrix>       A, B;
-  RCP<const Map>    map;
-  RCP<MultiVector>  coordinates, nullspace;
+  RCP<Matrix>           A, B;
+  RCP<const Map>        map;
+  RCP<RealValuedMultiVector>  coordinates;
+  RCP<MultiVector>      nullspace;
   ConstructData(matrixType, galeriList, lib, comm, A, map, coordinates, nullspace);
 
   if (modify) {
@@ -348,5 +351,3 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib &lib, int ar
 int main(int argc, char *argv[]) {
   return Automatic_Test_ETI(argc,argv);
 }
-
-

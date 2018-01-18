@@ -11,6 +11,9 @@
 #include "TachoExp_Blas_Team.hpp"
 #include "TachoExp_Blas_External.hpp"
 
+#include "TachoExp_Lapack_Team.hpp"
+#include "TachoExp_Lapack_External.hpp"
+
 using namespace Tacho::Experimental;
 using std::abs;
 using Kokkos::abs;
@@ -1021,7 +1024,7 @@ namespace Test {
     auto B1_host = Kokkos::create_mirror_view(B1);                      \
     Kokkos::deep_copy(B1_host, B1);                                     \
                                                                         \
-    const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 50000; \
+    const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 100000; \
     for (int i=0;i<m;++i)                                               \
       for (int j=0;j<n;++j)                                             \
         EXPECT_NEAR(::abs(B1_host(i,j)), ::abs(B2(i,j)), eps*::abs(B2(i,j))); \
@@ -1168,6 +1171,74 @@ TEST( DenseLinearAlgebra, team_trsm_llcn ) {
   const ValueType alpha = 1.2;
 
   TEAM_TRSM_TEST_BODY;
+}
+
+namespace Test {
+  struct Functor_TeamChol {
+    char _uplo;
+    int _m;
+    matrix_type_device _A;
+
+    Functor_TeamChol(const char uplo,
+                     const int m, 
+                     const matrix_type_device &A) 
+      : _uplo(uplo),
+        _m(m),
+        _A(A) {}
+    
+    template<typename MemberType>
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const MemberType &member) const {
+      int r_val = 0;
+      ::LapackTeam<ValueType>::potrf(member,
+                                     _uplo,
+                                     _m,
+                                     (ValueType*)_A.data(), (int)_A.stride_1(),
+                                     &r_val);
+    }
+    
+    inline
+    void run() {
+      Kokkos::parallel_for(Kokkos::TeamPolicy<DeviceSpaceType>(1, Kokkos::AUTO), *this);
+    }
+  };
+}
+
+
+TEST( DenseLinearAlgebra, team_chol_u ) {
+  const ordinal_type m = 20;
+  const char uplo = 'U';
+  
+  matrix_type_device A1("A1", m, m);
+  matrix_type_host   A2("A2", m, m);
+
+  for (int i=0;i<m;++i) 
+    A2(i,i) = 4.0;
+  for (int i=0;i<(m-1);++i) {
+    A2(i,i+1) = -1.0;
+    A2(i+1,i) = -1.0;
+  }
+  
+  Kokkos::deep_copy(A1, A2);
+  
+  ::Test::Functor_TeamChol test(uplo,
+                                m, 
+                                A1);
+  test.run();
+  
+  int r_val = 0;
+  Lapack<ValueType>::potrf(uplo,
+                           m, 
+                           (ValueType*)A2.data(), (int)A2.stride_1(),
+                           &r_val);
+  
+  auto A1_host = Kokkos::create_mirror_view(A1);
+  Kokkos::deep_copy(A1_host, A1);
+
+  const MagnitudeType eps = std::numeric_limits<MagnitudeType>::epsilon() * 1000;
+  for (int i=0;i<m;++i)
+    for (int j=0;j<m;++j) 
+      EXPECT_NEAR(::abs(A1_host(i,j)), ::abs(A2(i,j)), eps);
 }
 
 

@@ -396,9 +396,15 @@ template <class Scalar>
 void SolutionHistory<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  if (shPL_==Teuchos::null) shPL_ = Teuchos::parameterList("Solution History");
-  if (pList == Teuchos::null) *shPL_ = *(this->getValidParameters());
-  else shPL_ = pList;
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (shPL_ == Teuchos::null) {
+      shPL_ = Teuchos::parameterList("Solution History");
+      *shPL_ = *(this->getValidParameters());
+    }
+  } else {
+    shPL_ = pList;
+  }
   shPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 
   name_ = shPL_->name();

@@ -6,9 +6,9 @@
 using namespace Tacho::Experimental;
 
 TEST( Util, is_complex_type ) {
-  EXPECT_FALSE(int(is_complex_type<double>::value));
-  EXPECT_TRUE(int(is_complex_type<std::complex<double> >::value));
-  EXPECT_TRUE(int(is_complex_type<Kokkos::complex<double> >::value));
+  EXPECT_FALSE(int(ArithTraits<double>::is_complex));
+  EXPECT_TRUE(int(ArithTraits<std::complex<double> >::is_complex));
+  EXPECT_TRUE(int(ArithTraits<Kokkos::complex<double> >::is_complex));
 }
 
 TEST( Util, coo ) {

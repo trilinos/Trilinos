@@ -231,7 +231,7 @@ namespace Tacho {
           if (m <= 0) return;
 
           const bool use_unit_diag = diag == 'U'|| diag == 'u';
-          T *__restrict__ b0 = b;
+          //T *__restrict__ b0 = b;
           for (int p=0;p<m;++p) {
             const int iend = m-p-1;
             
@@ -270,7 +270,7 @@ namespace Tacho {
                   const T beta,
                   /* */ T *C, const int cs0, const int cs1) {
           const T one(1), zero(0);
-          
+
           if      (beta == zero) set  (member, m, n, zero, C, cs0, cs1);
           else if (beta != one ) scale(member, m, n, beta, C, cs0, cs1);
           
@@ -596,6 +596,7 @@ namespace Tacho {
                 const T *b, int ldb,
                 const T beta,
                 /* */ T *c, int ldc) {
+
         if (transa == 'N' || transa == 'n') {
           const NoConjugate cjA;
           switch (transb) {

@@ -155,7 +155,7 @@ IF (TPL_ENABLE_MPI)
   SEMS_SELECT_TPL_ROOT_DIR(SCOTCH Scotch_ROOT)
   SET(TPL_Scotch_INCLUDE_DIRS "${Scotch_ROOT}/include"
     CACHE PATH "Set in SEMSDevEnv.cmake")
-  SET(Scotch_LIBRARY_DIRS "${Scotch_ROOT}/lib}"
+  SET(Scotch_LIBRARY_DIRS "${Scotch_ROOT}/lib"
     CACHE PATH "Set in SEMSDevEnv.cmake")
 ENDIF()
 
@@ -165,10 +165,8 @@ IF (TPL_ENABLE_MPI)
   #PRINT_VAR(ParMETIS_ROOT)
   SET(TPL_ParMETIS_INCLUDE_DIRS "${ParMETIS_ROOT}/include"
     CACHE PATH "Set in SEMSDevEnv.cmake")
-  SET(TPL_ParMETIS_LIBRARIES "${ParMETIS_ROOT}/lib/libparmetis.a;${ParMETIS_ROOT}/lib/libmetis.a"
-    CACHE FILEPATH "Set in SEMSDevEnv.cmake")
-  # NOTE: With some versions of CMake (3.7.0) and GCC (4.7.2), CMake will
-  # refuse to find the ParMETIS libraries.
+  SET(ParMETIS_LIBRARY_DIRS "${ParMETIS_ROOT}/lib"
+    CACHE PATH "Set in SEMSDevEnv.cmake")
 ENDIF()
 
 # Zlib
