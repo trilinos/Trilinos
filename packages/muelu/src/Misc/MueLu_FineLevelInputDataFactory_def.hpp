@@ -68,7 +68,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Coarse level factory", Teuchos::null, "Generating factory for data on all coarse levels (except the finest)");
 
     // Type of variable (see source code for a complete list of all available types)
-    validParamList->set<std::string> ("Variable type", std::string("Matrix"), "Type of varible");
+    validParamList->set<std::string> ("Variable type", std::string("Matrix"), "Type of variable");
 
     return validParamList;
   }

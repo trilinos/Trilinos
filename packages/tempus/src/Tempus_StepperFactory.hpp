@@ -22,6 +22,7 @@
 #include "Tempus_StepperIMEX_RK.hpp"
 #include "Tempus_StepperIMEX_RK_Partition.hpp"
 #include "Tempus_StepperLeapfrog.hpp"
+#include "Tempus_StepperOperatorSplit.hpp"
 
 
 namespace Tempus {
@@ -58,6 +59,15 @@ public:
   {
     std::string stepperType = stepperPL->get<std::string>("Stepper Type");
     return this->createStepper(model, stepperType, stepperPL);
+  }
+
+  /// Create stepper from ParameterList with its details.
+  Teuchos::RCP<Stepper<Scalar> > createStepper(
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    std::string stepperType = stepperPL->get<std::string>("Stepper Type");
+    return this->createStepper(models, stepperType, stepperPL);
   }
 
 private:
@@ -149,6 +159,19 @@ private:
                         model, stepperType, stepperPL));
     else if (stepperType == "Leapfrog")
       return rcp(new StepperLeapfrog<Scalar>(model, stepperPL));
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+        "Unknown 'Stepper Type' = " << stepperType);
+    }
+  }
+
+  Teuchos::RCP<Stepper<Scalar> > createStepper(
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models,
+    std::string stepperType,
+    Teuchos::RCP<Teuchos::ParameterList> stepperPL)
+  {
+    if (stepperType == "Operator Split")
+      return rcp(new StepperOperatorSplit<Scalar>(models, stepperPL));
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
         "Unknown 'Stepper Type' = " << stepperType);

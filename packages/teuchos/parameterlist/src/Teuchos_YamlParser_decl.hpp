@@ -151,7 +151,7 @@ std::string convertXmlToYaml(const std::string& xmlFileName); //returns filename
 void convertXmlToYaml(const std::string& xmlFileName, const std::string& yamlFileName); //writes to given filename
 void convertXmlToYaml(std::istream& xmlStream, std::ostream& yamlStream);
 
-//Class modeled after Teuchos::XMLParameterListReader
+//Functions modeled after Teuchos::XMLParameterListReader
 namespace YAMLParameterList
 {
   Teuchos::RCP<Teuchos::ParameterList> parseYamlText(const std::string& text,

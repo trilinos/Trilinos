@@ -138,7 +138,7 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >  build_map_for
 
   if(Nproc==1 ) return oldMap;
   int ideal_new_unknowns_per_proc = N / (Nproc / 9.0);
-  
+
 
   int start= ideal_new_unknowns_per_proc*MyPID < N ? ideal_new_unknowns_per_proc*MyPID : 0;
   int stop = ideal_new_unknowns_per_proc*MyPID < N ? std::min(N,ideal_new_unknowns_per_proc*(MyPID+1)):0;
@@ -157,7 +157,7 @@ Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >  build_map_for
   printf("\n");
   fflush(stdout);
 #endif
-  
+
   int i_am_active= (elems.size()>0);
   int num_active=0;
   Teuchos::reduce(&i_am_active,&num_active,1,Teuchos::REDUCE_SUM,0,*oldMap->getComm());
@@ -242,7 +242,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   GO nx = 200, ny = 200, nz = 10;
   Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
   Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
-  
+
   std::string xmlFileName       = "import.xml";     clp.setOption("xml",                   &xmlFileName,       "read parameters from a file");
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
   std::string timingsFormat     = "table-fixed";     clp.setOption("time-format",           &timingsFormat,     "timings format (table-fixed | table-scientific | yaml)");
@@ -285,7 +285,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 
   RCP<Xpetra::Matrix<Scalar,LO,GO,Node> >      A;
   RCP<const Map>   map;
-  RCP<MultiVector> coordinates;
+  RCP<RealValuedMultiVector> coordinates;
+  typedef typename RealValuedMultiVector::scalar_type Real;
   RCP<MultiVector> nullspace;
   galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
 
@@ -305,16 +306,16 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
     if (matrixType == "Laplace1D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("1D", map, galeriList);
 
     } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
                matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("2D", map, galeriList);
 
     } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
       map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("3D", map, galeriList);
+      coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<Real,LO,GO,Map,RealValuedMultiVector>("3D", map, galeriList);
     }
 
     // Expand map to do multiple DOF per node for block problems
@@ -341,7 +342,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), map, galeriList);
     A = Pr->BuildMatrix();
 
- 
+
   comm->barrier();
   tm = Teuchos::null;
 
@@ -390,18 +391,18 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       out.setOutputToRootOnly(0);
       out << galeriStream.str();
 
- 
+
       // Build the target map for the importing
       Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >  importMap;
-      if(mapmode=="small") importMap=build_map_for_transfer<Scalar,LO,GO,Node>(A->getRowMap()); 
-      else if(mapmode=="repartition") importMap=build_map_for_transfer_repartition<Scalar,LO,GO,Node>(A->getRowMap()); 
+      if(mapmode=="small") importMap=build_map_for_transfer<Scalar,LO,GO,Node>(A->getRowMap());
+      else if(mapmode=="repartition") importMap=build_map_for_transfer_repartition<Scalar,LO,GO,Node>(A->getRowMap());
       else throw std::runtime_error("Invalid map mode");
 
       Teuchos::RCP<Xpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer = Xpetra::ImportFactory<LO,GO,Node>::Build(A->getRowMap(),importMap);
 
       for(int i=0; i<numImports; i++) {
         // =========================================================================
-        // Optimized transfer & fill complete loop 
+        // Optimized transfer & fill complete loop
         // =========================================================================
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - TransferAndFillComplete")));
 	TestTransferAndFillComplete<Scalar,LO,GO,Node>(A,importer);
@@ -468,4 +469,3 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
 int main(int argc, char *argv[]) {
   return Automatic_Test_ETI(argc,argv);
 }
-

@@ -70,16 +70,18 @@ public:
 
   typedef lno_row_view_t_ in_lno_row_view_t;
   typedef lno_nnz_view_t_ in_lno_nnz_view_t;
+
   typedef typename HandleType::color_t color_t;
   typedef typename HandleType::color_view_t color_view_t;
 
   typedef typename HandleType::size_type size_type;
-
-  typedef typename HandleType::row_lno_host_view_t row_lno_host_view_t; //Host view type
-
-
   typedef typename HandleType::nnz_lno_t nnz_lno_t;
-  typedef typename HandleType::nnz_lno_host_view_t nnz_lno_host_view_t; //Host view type
+
+
+  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
+
+
+  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
 
   typedef typename HandleType::color_host_view_t color_host_view_t; //Host view type
 
@@ -319,7 +321,8 @@ public:
 
     for (nnz_lno_t i = 0; i < this->nv; ++i) {
       col_d1_max_cs[i] = col_d1_forbid_colors[i] =  col_d1forbid_cs[i] = 0;
-      colors(i) = vertex_cs[i] = 0;
+      colors(i) = 0;
+      vertex_cs[i] = 0;
     }
 
     //std::cout << "coloring now" << std::endl;
@@ -461,11 +464,14 @@ public:
 
 
   typedef typename HandleType::size_type size_type;
-  typedef typename HandleType::row_lno_host_view_t row_lno_host_view_t; //Host view type
+  typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
+
+
+  typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
+
 
 
   typedef typename HandleType::nnz_lno_t nnz_lno_t;
-  typedef typename HandleType::nnz_lno_host_view_t nnz_lno_host_view_t; //Host view type
   //typedef typename idx_edge_memory_traits::MemorySpace MyEdgeMemorySpace;
 
 
@@ -738,7 +744,7 @@ public:
 
 
   typedef typename HandleType::size_type size_type;
-  typedef typename HandleType::row_lno_view_device_t row_lno_view_device_t;
+  typedef typename lno_row_view_t_::device_type row_lno_view_device_t;
 
   typedef typename HandleType::nnz_lno_t nnz_lno_t;
 
@@ -876,12 +882,12 @@ public:
 
     //if the edge filtering is selected, then we do swaps on the adj array.
     //to not to touch the given one, we copy the adj array.
-    non_const_lno_nnz_view_t adj_copy;
+    nnz_lno_temp_work_view_t adj_copy;
 
     //if we use edge-filtering, we perform swaps.
     //We need to copy the adjacency array so that we dont harm the original one.
     if (this->_edge_filtering){
-      adj_copy = non_const_lno_nnz_view_t(Kokkos::ViewAllocateWithoutInitializing("adj copy"), this->ne);
+      adj_copy = nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("adj copy"), this->ne);
       Kokkos::deep_copy(adj_copy, this->adj);
     }
 
@@ -1011,19 +1017,33 @@ public:
     }
     if (numUncolored > 0){
 
-      // Resolve conflicts by recoloring in serial
-      this->resolveConflicts(
-          this->nv,
-          this->xadj, adj_copy,
-          colors,
-          current_vertexList, current_vertexListLength
-      );
-      MyExecSpace::fence();
-      if (_ticToc){
-        t = timer.seconds();
-        total += t;
-        std::cout << "\tTime serial conflict resolution: " << t << std::endl;
-      }
+    	if (this->_edge_filtering)
+    	{
+    		// Resolve conflicts by recoloring in serial
+    		this->resolveConflicts(
+    				this->nv,
+					this->xadj, adj_copy,
+					colors,
+					current_vertexList, current_vertexListLength
+    		);
+    	}
+    	else {
+    		// Resolve conflicts by recoloring in serial
+    		this->resolveConflicts(
+    				this->nv,
+					this->xadj, this->adj,
+					colors,
+					current_vertexList, current_vertexListLength
+    		);
+
+
+    	}
+    	MyExecSpace::fence();
+    	if (_ticToc){
+    		t = timer.seconds();
+    		total += t;
+    		std::cout << "\tTime serial conflict resolution: " << t << std::endl;
+    	}
     }
     num_loops = iter;
   }
@@ -1098,7 +1118,7 @@ private:
    */
   void  colorGreedyEF(
       const_lno_row_view_t xadj_,
-      non_const_lno_nnz_view_t adj_,
+	  nnz_lno_temp_work_view_t adj_,
       color_view_type vertex_colors_,
       nnz_lno_temp_work_view_t vertex_color_set,
       nnz_lno_temp_work_view_t current_vertexList_,
@@ -1157,10 +1177,11 @@ private:
    *  \param next_iteration_recolorListLength_: size of current conflictlist
    *  \param pps_work_view: size of current conflictlist
    */
+  template <typename adj_view_t>
   nnz_lno_t findConflicts(
       bool &swap_work_arrays,
       const_lno_row_view_t xadj_,
-      const_lno_nnz_view_t adj_,
+	  adj_view_t adj_,
       color_view_type vertex_colors_,
       nnz_lno_temp_work_view_t vertex_color_set_,
       nnz_lno_temp_work_view_t current_vertexList_,
@@ -1173,22 +1194,22 @@ private:
     nnz_lno_t numUncolored = 0;
     if (this->_conflictlist == 0){
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
-        functorFindConflicts_No_Conflist conf( this->nv, xadj_, adj_, vertex_colors_);
+        functorFindConflicts_No_Conflist<adj_view_t> conf( this->nv, xadj_, adj_, vertex_colors_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
       else {
-        functorFindConflicts_No_Conflist_IMP conf(this->nv, xadj_, adj_,vertex_colors_, vertex_color_set_);
+        functorFindConflicts_No_Conflist_IMP<adj_view_t> conf(this->nv, xadj_, adj_,vertex_colors_, vertex_color_set_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
     }
     else if (this->_conflictlist == 2){ //IF PPS
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
         // Check for conflicts. Compute numUncolored == numConflicts.
-        functorFindConflicts_PPS conf(this->nv, xadj_, adj_,vertex_colors_,current_vertexList_,next_iteration_recolorList_);
+        functorFindConflicts_PPS<adj_view_t> conf(this->nv, xadj_, adj_,vertex_colors_,current_vertexList_,next_iteration_recolorList_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
       else {
-        functorFindConflicts_PPS_IMP conf(this->nv,
+        functorFindConflicts_PPS_IMP<adj_view_t> conf(this->nv,
             xadj_, adj_,vertex_colors_, vertex_color_set_,
             current_vertexList_,next_iteration_recolorList_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
@@ -1220,13 +1241,13 @@ private:
     else { //IF ATOMIC
       if (this->_use_color_set == 0 || this->_use_color_set == 2){
         // Check for conflicts. Compute numUncolored == numConflicts.
-        functorFindConflicts_Atomic conf(this->nv,
+        functorFindConflicts_Atomic<adj_view_t> conf(this->nv,
             xadj_, adj_,vertex_colors_,current_vertexList_,
             next_iteration_recolorList_, next_iteration_recolorListLength_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
       }
       else {
-        functorFindConflicts_Atomic_IMP conf(this->nv,
+        functorFindConflicts_Atomic_IMP<adj_view_t> conf(this->nv,
             xadj_, adj_,vertex_colors_, vertex_color_set_,
             current_vertexList_,next_iteration_recolorList_, next_iteration_recolorListLength_);
         Kokkos::parallel_reduce(my_exec_space(0, current_vertexListLength_), conf, numUncolored);
@@ -1246,10 +1267,11 @@ private:
    *  \param current_vertexList_: current conflictlist
    *  \param current_vertexListLength_: size of current conflictlist
    */
+  template <typename adj_view_t>
   void  resolveConflicts(
       nnz_lno_t _nv,
       const_lno_row_view_t xadj_,
-      const_lno_nnz_view_t adj_,
+	  adj_view_t adj_,
       color_view_type vertex_colors_,
       nnz_lno_temp_work_view_t current_vertexList_,
       size_type current_vertexListLength_) {
@@ -1266,7 +1288,7 @@ private:
     }
     color_host_view_t h_colors = Kokkos::create_mirror_view (vertex_colors_);
     typename const_lno_row_view_t::HostMirror h_idx = Kokkos::create_mirror_view (xadj_);
-    typename const_lno_nnz_view_t::HostMirror h_adj = Kokkos::create_mirror_view (adj_);
+    typename adj_view_t::HostMirror h_adj = Kokkos::create_mirror_view (adj_);
 
 
     Kokkos::deep_copy (h_colors, vertex_colors_);
@@ -1304,7 +1326,7 @@ public:
   struct functorGreedyColor_IMPLOG_EF {
     nnz_lno_t nv;
     const_lno_row_view_t _idx; //rowmap
-    non_const_lno_nnz_view_t _adj; //entries
+    nnz_lno_temp_work_view_t _adj; //entries
     color_view_type _colors; // vertex colors
     nnz_lno_temp_work_view_t _vertexList; // conflictlist
     nnz_lno_t _vertexListLength;
@@ -1313,7 +1335,7 @@ public:
     functorGreedyColor_IMPLOG_EF(
         nnz_lno_t nv_,
         const_lno_row_view_t xadj_,
-        non_const_lno_nnz_view_t adj_,
+		nnz_lno_temp_work_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_t vertexListLength,
@@ -1494,7 +1516,7 @@ public:
 
     nnz_lno_t nv;
     const_lno_row_view_t _xadj;
-    non_const_lno_nnz_view_t _adj;
+    nnz_lno_temp_work_view_t _adj;
     color_view_type _colors;
     nnz_lno_temp_work_view_t _color_set ;
     nnz_lno_temp_work_view_t _vertexList;
@@ -1504,7 +1526,7 @@ public:
     functorGreedyColor_IMP_EF(
         nnz_lno_t nv_,
         const_lno_row_view_t xadj_,
-        non_const_lno_nnz_view_t adj_,
+		nnz_lno_temp_work_view_t adj_,
         color_view_type colors, nnz_lno_temp_work_view_t color_set,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_t vertexListLength,
@@ -1651,7 +1673,7 @@ public:
   struct functorGreedyColor_EF {
     nnz_lno_t nv;
     const_lno_row_view_t _idx;
-    non_const_lno_nnz_view_t _adj;
+    nnz_lno_temp_work_view_t _adj;
     color_view_type _colors;
     nnz_lno_temp_work_view_t _vertexList;
     nnz_lno_t _vertexListLength;
@@ -1660,7 +1682,7 @@ public:
     functorGreedyColor_EF(
         nnz_lno_t nv_,
         const_lno_row_view_t xadj_,
-        non_const_lno_nnz_view_t adj_,
+		nnz_lno_temp_work_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_t vertexListLength,
@@ -1847,17 +1869,18 @@ public:
   /**
    * Finds conflicts without creating a new worklist
    */
+  template <typename adj_view_t>
   struct functorFindConflicts_No_Conflist {
 
     nnz_lno_t nv;
     const_lno_row_view_t _idx;
-    const_lno_nnz_view_t _adj;
+    adj_view_t _adj;
     color_view_type _colors;
 
     functorFindConflicts_No_Conflist(
         nnz_lno_t nv_,
         const_lno_row_view_t xadj_,
-        const_lno_nnz_view_t adj_,
+		adj_view_t adj_,
         color_view_type colors) : nv (nv_),
           _idx(xadj_), _adj(adj_),_colors(colors)
     {
@@ -1898,10 +1921,11 @@ public:
   /**
    * Finds conflicts by marking the work vertices to be used later for creation of new worklist with PPS
    */
+  template <typename adj_view_t>
   struct functorFindConflicts_PPS {
     nnz_lno_t nv;
     const_lno_row_view_t _idx;
-    const_lno_nnz_view_t _adj;
+    adj_view_t _adj;
     color_view_type _colors;
     nnz_lno_temp_work_view_t _vertexList;
     nnz_lno_temp_work_view_t _recolorList;
@@ -1911,7 +1935,7 @@ public:
     functorFindConflicts_PPS(
         nnz_lno_t nv_,
         const_lno_row_view_t xadj_,
-        const_lno_nnz_view_t adj_,
+		adj_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_temp_work_view_t recolorList) :
@@ -1957,10 +1981,11 @@ public:
   /**
    * Finds conflicts and creates new worklist using atomic operations.
    */
+  template <typename adj_view_t>
   struct functorFindConflicts_Atomic {
     nnz_lno_t nv;
     const_lno_row_view_t _idx;
-    const_lno_nnz_view_t _adj;
+    adj_view_t _adj;
     color_view_type _colors;
     nnz_lno_temp_work_view_t _vertexList;
     nnz_lno_temp_work_view_t _recolorList;
@@ -1970,7 +1995,7 @@ public:
     functorFindConflicts_Atomic(
         nnz_lno_t nv_,
         const_lno_row_view_t xadj_,
-        const_lno_nnz_view_t adj_,
+		adj_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t vertexList,
         nnz_lno_temp_work_view_t recolorList,
@@ -2020,11 +2045,13 @@ public:
   /**
    * VBCS:  Finds conflicts without creating a new worklist
    */
+  template <typename adj_view_t>
+
   struct functorFindConflicts_No_Conflist_IMP {
 
     nnz_lno_t nv;
     const_lno_row_view_t _xadj;
-    const_lno_nnz_view_t _adj;
+    adj_view_t _adj;
     color_view_type _colors;
     nnz_lno_temp_work_view_t _color_sets;
 
@@ -2032,7 +2059,7 @@ public:
     functorFindConflicts_No_Conflist_IMP(
         nnz_lno_t nv_,
         const_lno_row_view_t xadj_,
-        const_lno_nnz_view_t adj_,
+		adj_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t color_sets
     ) : nv (nv_),
@@ -2082,10 +2109,11 @@ public:
   /**
    * VBCS: Finds conflicts by marking the work vertices to be used later for creation of new worklist with PPS
    */
+  template <typename adj_view_t>
   struct functorFindConflicts_PPS_IMP {
     nnz_lno_t nv;
     const_lno_row_view_t _xadj;
-    const_lno_nnz_view_t _adj;
+    adj_view_t _adj;
     color_view_type _colors;
     nnz_lno_temp_work_view_t _color_sets;
     nnz_lno_temp_work_view_t _vertexList;
@@ -2094,7 +2122,7 @@ public:
     functorFindConflicts_PPS_IMP(
         nnz_lno_t nv_,
         const_lno_row_view_t xadj_,
-        const_lno_nnz_view_t adj_,
+		adj_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t color_sets,
         nnz_lno_temp_work_view_t vertexList,
@@ -2149,11 +2177,12 @@ public:
   /**
    * VBCS:Finds conflicts and creates new worklist using atomic operations.
    */
+  template <typename adj_view_t>
   struct functorFindConflicts_Atomic_IMP {
 
     nnz_lno_t nv;
     const_lno_row_view_t _xadj;
-    const_lno_nnz_view_t _adj;
+    adj_view_t _adj;
     color_view_type _colors;
     nnz_lno_temp_work_view_t _color_sets;
     nnz_lno_temp_work_view_t _vertexList;
@@ -2164,7 +2193,7 @@ public:
     functorFindConflicts_Atomic_IMP(
         nnz_lno_t nv_,
         const_lno_row_view_t xadj_,
-        const_lno_nnz_view_t adj_,
+		adj_view_t adj_,
         color_view_type colors,
         nnz_lno_temp_work_view_t color_sets,
         nnz_lno_temp_work_view_t vertexList,
@@ -2346,7 +2375,7 @@ public:
 
 
   typedef typename HandleType::size_type size_type;
-  typedef typename HandleType::row_lno_view_device_t row_lno_view_device_t;
+  typedef typename in_row_index_view_type_::device_type row_lno_view_device_t;
 
 
   typedef typename HandleType::nnz_lno_t nnz_lno_t;

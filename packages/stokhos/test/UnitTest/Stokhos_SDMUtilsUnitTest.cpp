@@ -239,18 +239,6 @@ namespace SDMUtilsUnitTest {
     success = test_QR(Stokhos::QR_Householder, m, n, rtol, atol, out);
   }
 
-  TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, CPQR_Householder_TallSkinny ) {
-    ordinal_type m = 100;
-    ordinal_type n = 35;
-    success = test_CPQR(Stokhos::CPQR_Householder, m, n, rtol, atol, out);
-  }
-
-  TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, CPQR_Householder_ShortFat ) {
-    ordinal_type n = 100;
-    ordinal_type m = 35;
-    success = test_CPQR(Stokhos::CPQR_Householder, m, n, rtol, atol, out);
-  }
-
   TEUCHOS_UNIT_TEST( Stokhos_SDMUtils, CPQR_Householder3_TallSkinny ) {
     ordinal_type m = 100;
     ordinal_type n = 35;

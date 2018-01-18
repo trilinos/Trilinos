@@ -51,12 +51,10 @@
 #define TEUCHOS_DETAILS_ALLOCATOR
 
 #include <Teuchos_ConfigDefs.hpp>
-//#include <memory> // Teuchos_ConfigDefs.hpp includes it
-//#include <iostream> // Teuchos_ConfigDefs.hpp includes it
-//#include <limits> // Ditto; for std::numeric_limits<size_type>::max()
-#ifdef HAVE_TEUCHOSCORE_CXX11
-#  include <type_traits>
-#endif // HAVE_TEUCHOSCORE_CXX11
+#include <iostream>
+#include <limits>
+#include <type_traits>
+#include <typeinfo>
 
 namespace Teuchos {
 namespace Details {

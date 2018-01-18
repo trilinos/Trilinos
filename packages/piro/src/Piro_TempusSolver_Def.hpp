@@ -160,6 +160,7 @@ void Piro::TempusSolver<Scalar>::initialize(
 
   if (appParams->isSublist("Tempus")) {
     RCP<Teuchos::ParameterList> tempusPL = sublist(appParams, "Tempus", true);
+    abort_on_failure_ = tempusPL->get<bool>("Abort on Failure", true);
     //*out << "tempusPL = " << *tempusPL << "\n";
     RCP<Teuchos::ParameterList> integratorPL = sublist(tempusPL, "Tempus Integrator", true);
     //*out << "integratorPL = " << *integratorPL << "\n";
@@ -672,12 +673,20 @@ void Piro::TempusSolver<Scalar>::evalModelImpl(
     *out << "T final actual: " << time << "\n";
 
     if (abs(time-t_final) > 1.0e-10) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true,
-        Teuchos::Exceptions::InvalidParameter,
-        "\n Error! Piro::TempusSolver: time-integrator did not make it to final time " <<
-        "specified in Input File.  Final time in input file is " << t_final <<
-        ", whereas actual final time is " << time << "\n" );
+      if (abort_on_failure_ == true) {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true,
+          Teuchos::Exceptions::InvalidParameter,
+          "\n Error! Piro::TempusSolver: time-integrator did not make it to final time " <<
+          "specified in Input File.  Final time in input file is " << t_final <<
+          ", whereas actual final time is " << time << ".  If you'd like to " <<
+          "suppress this exception, run with 'Abort on Failure' set to 'false' in " << 
+          "Tempus sublist.\n" );
+      }
+      else {
+         *out << "\n WARNING: Piro::TempusSolver did not make it to final time, but "
+              << "solver will not abort since you have specified 'Abort on Failure' = 'false'.\n"; 
+      }
     }
 
     finalSolution = fwdStateIntegrator->getX();
@@ -778,6 +787,7 @@ Piro::TempusSolver<Scalar>::getValidTempusParameters() const
   //validPL->set<std::string>("Verbosity Level", "", "");
   validPL->set<bool>("Invert Mass Matrix", false, "");
   validPL->set<bool>("Lump Mass Matrix", false, "");
+  validPL->set<bool>("Abort on Failure", true, "");
   validPL->set<std::string>("Integrator Name", "Tempus Integrator", "");
   validPL->sublist("Tempus Integrator", false, "");
   validPL->sublist("Tempus Stepper", false, "");
@@ -953,6 +963,33 @@ getSolutionHistory() const
   Teuchos::RCP<Tempus::SolutionHistory<Scalar> > soln_history = Teuchos::rcp_const_cast<Tempus::SolutionHistory<Scalar> >(soln_history_const); 
   return soln_history;
 }
+  
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > Piro::TempusSolver<Scalar>::
+#endif
+getSolver() const
+{
+  return fwdStateStepper->getSolver(); 
+}
+
+
+#ifdef ALBANY_BUILD
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+Tempus::Status Piro::TempusSolver<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+#else
+template <typename Scalar>
+Tempus::Status Piro::TempusSolver<Scalar>::
+#endif
+getTempusIntegratorStatus() const
+{
+  return fwdStateIntegrator->getStatus(); 
+}
+
 
 #ifdef ALBANY_BUILD
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>

@@ -45,7 +45,7 @@
 #define KOKKOSKERNELS_SPMV_HPP_
 
 #ifdef MAKE_BUILD
-#ifdef KOKKOS_HAVE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
   #define KOKKOSKERNELS_ETI_MANGLING_TYPEDEFS()  \
         typedef Kokkos::Device<Kokkos::Cuda, Kokkos::Cuda::memory_space> Kokkos_Device0Kokkos_Cuda_Kokkos_CudaSpace0; \
         typedef Kokkos::complex<double> Kokkos_complex0double0; \

@@ -52,9 +52,7 @@ namespace KokkosSparse{
 
 enum GSAlgorithm{GS_DEFAULT, GS_PERMUTED, GS_TEAM};
 
-template <class lno_row_view_t_,
-          class lno_nnz_view_t_,
-          class scalar_nnz_view_t_,
+template <class size_type_, class lno_t_, class scalar_t_,
           class ExecutionSpace,
           class TemporaryMemorySpace,
           class PersistentMemorySpace>
@@ -64,31 +62,15 @@ public:
   typedef TemporaryMemorySpace HandleTempMemorySpace;
   typedef PersistentMemorySpace HandlePersistentMemorySpace;
 
-  typedef lno_row_view_t_ in_lno_row_view_t;
-  typedef lno_nnz_view_t_ in_lno_nnz_view_t;
-  typedef scalar_nnz_view_t_ in_scalar_nnz_view_t;
+  typedef typename std::remove_const<size_type_>::type  size_type;
+  typedef const size_type const_size_type;
 
-  //typedef typename in_lno_row_view_t::non_const_value_type row_lno_t;
-  typedef typename in_lno_row_view_t::non_const_value_type size_type;
+  typedef typename std::remove_const<lno_t_>::type  nnz_lno_t;
+  typedef const nnz_lno_t const_nnz_lno_t;
 
+  typedef typename std::remove_const<scalar_t_>::type  nnz_scalar_t;
+  typedef const nnz_scalar_t const_nnz_scalar_t;
 
-  //typedef typename in_lno_row_view_t::HostMirror row_lno_host_view_t; //Host view type
-
-  typedef typename in_lno_nnz_view_t::non_const_value_type nnz_lno_t;
-  //typedef typename in_lno_nnz_view_t::HostMirror nnz_lno_host_view_t; //Host view type
-
-  typedef typename in_scalar_nnz_view_t::non_const_value_type nnz_scalar_t;
-  //typedef typename in_scalar_nnz_view_t::HostMirror nnz_scalar_view_t; //Host view type
-
-
-  typedef typename in_lno_row_view_t::const_type const_lno_row_view_t;
-  typedef typename in_lno_row_view_t::non_const_type non_const_lno_row_view_t;
-
-  typedef typename in_lno_nnz_view_t::const_type const_lno_nnz_view_t;
-  typedef typename in_lno_nnz_view_t::non_const_type non_const_lno_nnz_view_t;
-
-  typedef typename in_scalar_nnz_view_t::const_type const_scalar_nnz_view_t;
-  typedef typename in_scalar_nnz_view_t::non_const_type non_const_scalar_nnz_view_t;
 
   typedef typename Kokkos::View<size_type *, HandleTempMemorySpace> row_lno_temp_work_view_t;
   typedef typename Kokkos::View<size_type *, HandlePersistentMemorySpace> row_lno_persistent_work_view_t;
@@ -177,7 +159,7 @@ private:
     }
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if (Kokkos::Impl::is_same<Kokkos::Cuda, ExecutionSpace >::value){
       this->algorithm_type = GS_TEAM;
 #ifdef VERBOSE

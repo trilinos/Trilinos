@@ -217,6 +217,10 @@ void StepperNewmarkImplicitAForm<Scalar>::setSolver(
 template<class Scalar>
 void StepperNewmarkImplicitAForm<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperNewmarkImplicitAForm::initialize()\n");
+
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
@@ -258,7 +262,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar> > a_new = workingState->getXDotDot();
 
     //Get time and dt
-    const Scalar time = workingState->getTime();
+    const Scalar time = currentState->getTime();
     const Scalar dt = workingState->getTimeStep();
     //Update time
     Scalar t = time+dt;
@@ -273,7 +277,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
       Thyra::copy(*v_old, v_init.ptr());
       Thyra::put_scalar(0.0, a_init.ptr());
       wrapperModel_->initializeNewmark(a_init,v_init,d_init,0.0,time,beta_,gamma_);
-      const Thyra::SolveStatus<double> sStatus =
+      const Thyra::SolveStatus<Scalar> sStatus =
         this->solveNonLinear(wrapperModel_, *solver_, a_init);
       if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
         workingState->getStepperState()->stepperStatus_ = Status::PASSED;
@@ -300,7 +304,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
 
     //Solve for new acceleration
     //IKT, 3/13/17: check how solveNonLinear works.
-    const Thyra::SolveStatus<double> sStatus =
+    const Thyra::SolveStatus<Scalar> sStatus =
       this->solveNonLinear(wrapperModel_, *solver_, a_old);
 
     if (sStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED )
@@ -370,8 +374,12 @@ void StepperNewmarkImplicitAForm<Scalar>::setParameterList(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  if (pList == Teuchos::null) stepperPL_ = this->getDefaultParameters();
-  else stepperPL_ = pList;
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  } else {
+    stepperPL_ = pList;
+  }
   // Can not validate because of optional Parameters.
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
   //Get beta and gamma from parameter list

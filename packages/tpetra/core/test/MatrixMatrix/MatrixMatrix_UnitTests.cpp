@@ -467,9 +467,8 @@ mult_test_results multiply_test_autofc(
     name+"_calculated.mtx", computedC);
   Tpetra::MatrixMarket::Writer<Matrix_t>::writeSparseFile(
     name+"_real.mtx", C);
-
 #endif
-  if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
+    if(!comm->getRank()) printf("ERROR: TEST %s FAILED\n",name.c_str());
   }
 
   // Check importer validity
@@ -1471,8 +1470,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   //now run the threaded addition on mats[0] and mats[1]
   ISC zero(0);
   ISC one(1);
-  Tpetra::MatrixMatrix::Details::AddKernels<SC, LO, GO, NT>::
-    addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
   TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");
@@ -1586,8 +1584,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   //now run the threaded addition on mats[0] and mats[1]
   ISC zero(0);
   ISC one(1);
-  Tpetra::MatrixMatrix::Details::AddKernels<SC, LO, GO, NT>::
-    addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  Tpetra::MatrixMatrix::AddDetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
   TEUCHOS_TEST_FOR_EXCEPTION(rowptrsCRS[0].dimension_0() != rowptrsCRS[2].dimension_0(), std::logic_error,
       "Threaded addition of sorted Kokkos::CrsMatrix returned a matrix with the wrong number of rows.");

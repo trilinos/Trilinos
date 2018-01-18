@@ -35,7 +35,7 @@ namespace KokkosBatched {
     public:
       KOKKOS_INLINE_FUNCTION Vector() {
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
         Kokkos::parallel_for
           (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
@@ -59,7 +59,7 @@ namespace KokkosBatched {
       template<typename ArgValueType>
       KOKKOS_INLINE_FUNCTION Vector(const ArgValueType val) {
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
         Kokkos::parallel_for
           (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
@@ -82,7 +82,7 @@ namespace KokkosBatched {
       }
       KOKKOS_INLINE_FUNCTION Vector(const type &b) {
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
         Kokkos::parallel_for
           (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
@@ -107,7 +107,7 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       type& loadAligned(value_type const *p) {
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
         Kokkos::parallel_for
           (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
@@ -142,7 +142,7 @@ namespace KokkosBatched {
       KOKKOS_INLINE_FUNCTION
       void storeAligned(value_type *p) const {
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
         Kokkos::parallel_for
           (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,member_type>(vector_length),
@@ -187,7 +187,7 @@ namespace KokkosBatched {
     operator + (Vector<VectorTag<SIMD<T,SpT>,l> > const & a,  Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
       Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
       Kokkos::parallel_for
         (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
@@ -330,7 +330,7 @@ namespace KokkosBatched {
     operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
       Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
       Kokkos::parallel_for
         (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
@@ -359,7 +359,7 @@ namespace KokkosBatched {
     Vector<VectorTag<SIMD<T,SpT>,l> > 
     operator - (Vector<VectorTag<SIMD<T,SpT>,l> > const & a) {
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
       Kokkos::parallel_for
         (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
@@ -502,7 +502,7 @@ namespace KokkosBatched {
     operator * (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
       Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
       Kokkos::parallel_for
         (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),
@@ -627,7 +627,7 @@ namespace KokkosBatched {
     operator / (Vector<VectorTag<SIMD<T,SpT>,l> > const & a, Vector<VectorTag<SIMD<T,SpT>,l> > const & b) {
       Vector<VectorTag<SIMD<T,SpT>,l> > r_val;
 #if                                                     \
-  defined (KOKKOS_HAVE_CUDA) &&                         \
+  defined (KOKKOS_ENABLE_CUDA) &&                         \
   defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA)
       Kokkos::parallel_for
         (Kokkos::Impl::ThreadVectorRangeBoundariesStruct<int,typename VectorTag<SIMD<T,SpT>,l>::member_type>(l),

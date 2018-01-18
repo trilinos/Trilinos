@@ -72,7 +72,7 @@ do
   key="$1"
 
   case $key in
-    --kokkos-kernels-path*)
+    --kokkoskernels-path*)
       KOKKOSKERNELS_PATH="${key#*=}"
       ;;
     --kokkos-path*)
@@ -113,6 +113,9 @@ do
       ;;
     --with-cuda-options*)
       KOKKOS_CUDA_OPTIONS="--with-cuda-options=${key#*=}"
+      ;;
+    --with-tpls*)
+      KOKKOSKERNELS_ENABLE_TPLS="${key#*=}"
       ;;
     --help*)
       PRINT_HELP=True
@@ -202,7 +205,7 @@ elif [ "$MACHINE" = "white" ]; then
   # Format: (compiler module-list build-list exe-name warning-flag)
   COMPILERS=("gcc/5.4.0 $BASE_MODULE_LIST $IBM_BUILD_LIST g++ $GCC_WARNING_FLAGS"
              "ibm/13.1.5 $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
-             "ibm/14.1.0-BETA $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
+             "ibm/13.1.6-BETA $IBM_MODULE_LIST $IBM_BUILD_LIST xlC $IBM_WARNING_FLAGS"
              "cuda/8.0.44 $CUDA_MODULE_LIST $CUDA_IBM_BUILD_LIST ${KOKKOS_PATH}/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
   )
 
@@ -253,12 +256,14 @@ elif [ "$MACHINE" = "shepard" ]; then
   SKIP_HWLOC=True
   export SLURM_TASKS_PER_NODE=32
 
-  INTEL_MODULE_LIST="<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
-  GCC_MODULE_LIST="<COMPILER_NAME>/compilers/<COMPILER_VERSION>"
+  INTEL_MODULE_LIST="<COMPILER_NAME>/compilers/<COMPILER_VERSION>,openblas"
+  GCC_MODULE_LIST="<COMPILER_NAME>/<COMPILER_VERSION>,openblas"
+
+  BLAS_PATH=${BLAS_ROOT}
 
   # Format: (compiler module-list build-list exe-name warning-flag)
-  COMPILERS=("gcc/4.9.3 $BASE_MODULE_LIST $GCC_BUILD_LIST icpc $GCC_WARNING_FLAGS"
-             "intel/17.4.196 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
+  COMPILERS=("gcc/4.9.3 $GCC_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+             "intel/17.4.196 $INTEL_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
   )
 
   if [ -z "$ARCH_FLAG" ]; then
@@ -291,30 +296,29 @@ elif [ "$MACHINE" = "apollo" ]; then
 
   if [ "$SPOT_CHECK" = "True" ]; then
     # Format: (compiler module-list build-list exe-name warning-flag)
-    COMPILERS=("gcc/4.7.2 $BASE_MODULE_LIST "OpenMP,Pthread" g++ $GCC_WARNING_FLAGS"
-               "gcc/5.1.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
-               "intel/16.0.1 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
+    COMPILERS=("gcc/4.9.3 $BASE_MODULE_LIST "OpenMP,Pthread" g++ $GCC_WARNING_FLAGS"
+               "gcc/5.3.0 $BASE_MODULE_LIST "Serial" g++ $GCC_WARNING_FLAGS"
+               "intel/17.0.1 $BASE_MODULE_LIST "OpenMP" icpc $INTEL_WARNING_FLAGS"
                "clang/3.9.0 $BASE_MODULE_LIST "Pthread_Serial" clang++ $CLANG_WARNING_FLAGS"
                "clang/4.0.0 $CLANG_MODULE_LIST "Cuda_Pthread" clang++ $CUDA_WARNING_FLAGS"
-               "cuda/8.0.44 $CUDA_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/8.0.44 $CUDA8_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   else
     # Format: (compiler module-list build-list exe-name warning-flag)
     COMPILERS=("cuda/8.0.44 $CUDA8_MODULE_LIST $BUILD_LIST_CUDA_NVCC $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
                "clang/4.0.0 $CLANG_MODULE_LIST $BUILD_LIST_CUDA_CLANG clang++ $CUDA_WARNING_FLAGS"
                "clang/3.9.0 $CLANG_MODULE_LIST $BUILD_LIST_CLANG clang++ $CLANG_WARNING_FLAGS"
-               "gcc/4.7.2 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/4.8.4 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "gcc/4.9.2 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
+               "gcc/4.9.3 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/5.3.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
                "gcc/6.1.0 $BASE_MODULE_LIST $GCC_BUILD_LIST g++ $GCC_WARNING_FLAGS"
-               "intel/14.0.4 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-               "intel/15.0.2 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
                "intel/16.0.1 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
-               "clang/3.5.2 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+               "intel/17.0.1 $BASE_MODULE_LIST $INTEL_BUILD_LIST icpc $INTEL_WARNING_FLAGS"
                "clang/3.6.1 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
-               "cuda/7.0.28 $CUDA_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "clang/3.9.0 $BASE_MODULE_LIST $CLANG_BUILD_LIST clang++ $CLANG_WARNING_FLAGS"
+               "clang/4.0.0 $CLANG_MODULE_LIST "Cuda_Pthread" clang++ $CLANG_WARNING_FLAGS"
                "cuda/7.5.18 $CUDA_MODULE_LIST $CUDA_BUILD_LIST $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
+               "cuda/8.0.44 $CUDA8_MODULE_LIST "Cuda_OpenMP" $KOKKOS_PATH/bin/nvcc_wrapper $CUDA_WARNING_FLAGS"
     )
   fi
 
@@ -337,7 +341,7 @@ RESULT_ROOT_PREFIX=TestAll
 
 if [ "$PRINT_HELP" = "True" ]; then
   echo "test_all_sandia <ARGS> <OPTIONS>:"
-  echo "--kokkos-kernels-path=/Path/To/Kokkos: Path to the KokkosKernels root directory"
+  echo "--kokkoskernels-path=/Path/To/Kokkos: Path to the KokkosKernels root directory"
   echo "    Defaults to root repo containing this script"
   echo "--kokkos-path=/Path/To/Kokkos: Path to the Kokkos root directory"
   echo "    Defaults to KokkosKernelsPath/../kokkos"
@@ -599,7 +603,7 @@ single_build_and_test() {
       run_cmd ls fake_problem >& ${desc}.configure.log || { report_and_log_test_result 1 $desc configure && return 0; }
     fi
   else
-    run_cmd ${KOKKOSKERNELS_PATH}/scripts/generate_makefile.bash --with-devices=$build $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" $extra_args &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
+    run_cmd ${KOKKOSKERNELS_PATH}/scripts/generate_makefile.bash --with-devices=$build $ARCH_FLAG --compiler=$(which $compiler_exe) --cxxflags=\"$cxxflags\" $extra_args --kokkos-path=${KOKKOS_PATH} --kokkoskernels-path=${KOKKOSKERNELS_PATH} --with-tpls=${KOKKOSKERNELS_ENABLE_TPLS} &>> ${desc}.configure.log || { report_and_log_test_result 1 ${desc} configure && return 0; }
     local -i build_start_time=$(date +%s)
     run_cmd make -j 32 build-test >& ${desc}.build.log || { report_and_log_test_result 1 ${desc} build && return 0; }
     local -i build_end_time=$(date +%s)

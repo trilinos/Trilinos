@@ -47,6 +47,7 @@
 */
 
 #include "Epetra_config.h"
+#include "Belos_config.h"
 
 #ifdef EPETRA_MPI
 #include "mpi.h"
@@ -66,6 +67,8 @@ namespace Belos {
 
   namespace Util {
 
+#ifdef HAVE_BELOS_TRIUTILS
+
   int createEpetraProblem(
       std::string              &filename
       ,RCP<Epetra_Map>         *rowMap
@@ -84,6 +87,8 @@ namespace Belos {
       ,RCP<Epetra_MultiVector> *X
       ,int                     *MyPID
       );
+
+#endif
 
   int rebalanceEpetraProblem(
       RCP<Epetra_Map>         &rowMap

@@ -10,7 +10,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
-# Must glob the binary dir last to get all of the 
+# Must glob the binary dir last to get all of the
 # auto-generated ETI headers
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})

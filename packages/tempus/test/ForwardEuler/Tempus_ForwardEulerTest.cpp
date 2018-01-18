@@ -123,6 +123,11 @@ TEUCHOS_UNIT_TEST(ForwardEuler, SinCos)
     bool integratorStatus = integrator->advanceTime();
     TEST_ASSERT(integratorStatus)
 
+    // Test PhysicsState
+    Teuchos::RCP<Tempus::PhysicsState<double> > physicsState =
+      integrator->getSolutionHistory()->getCurrentState()->getPhysicsState();
+    TEST_EQUALITY(physicsState->getName(), "Tempus::PhysicsState");
+
     // Test if at 'Final Time'
     double time = integrator->getTime();
     double timeFinal = pl->sublist("Demo Integrator")
@@ -314,10 +319,16 @@ TEUCHOS_UNIT_TEST(ForwardEuler, NumberTimeSteps)
     // Setup the Integrator and reset initial time step
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
 
-    dt = pl->sublist("Demo Integrator").sublist("Time Step Control").get<double>("Initial Time Step");
-    const int numTimeSteps = pl->sublist("Demo Integrator").sublist("Time Step Control").get<int>("Number of Time Steps");
-    const std::string integratorStepperType = pl->sublist("Demo Integrator").sublist("Time Step Control").get<std::string>("Integrator Step Type");
-    std::cout << dt << std::endl;
+    dt = pl->sublist("Demo Integrator")
+            .sublist("Time Step Control")
+            .get<double>("Initial Time Step");
+    const int numTimeSteps = pl->sublist("Demo Integrator")
+                                .sublist("Time Step Control")
+                                .get<int>("Number of Time Steps");
+    const std::string integratorStepperType =
+      pl->sublist("Demo Integrator")
+         .sublist("Time Step Control")
+         .get<std::string>("Integrator Step Type");
 
     RCP<Tempus::IntegratorBasic<double> > integrator =
       Tempus::integratorBasic<double>(pl, model);
@@ -326,8 +337,8 @@ TEUCHOS_UNIT_TEST(ForwardEuler, NumberTimeSteps)
     bool integratorStatus = integrator->advanceTime();
     TEST_ASSERT(integratorStatus)
 
-        //check that the number of time steps taken is whats is set in the parameter list
-        std::cout << "SIDAFA: index = " << integrator->getIndex() << std::endl;
+    // check that the number of time steps taken is whats is set
+    // in the parameter list
     TEST_EQUALITY(numTimeSteps, integrator->getIndex());
 }
 

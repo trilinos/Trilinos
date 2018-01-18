@@ -1,4 +1,18 @@
 TRIBITS_SUBPACKAGE(Tacho)
+IF (Kokkos_ENABLE_Cuda)
+  # Shylu/Tacho requires CUDA >= 8.0.
+  IF (DEFINED CUDA_VERSION AND (CUDA_VERSION VERSION_LESS "8.0"))
+    MESSAGE(FATAL_ERROR "ShyLu/Tacho requires CUDA 8 if CUDA is enabled")
+  ENDIF()
+  IF (NOT Kokkos_ENABLE_Cuda_Relocatable_Device_Code)
+    MESSAGE(FATAL_ERROR "ShyLu/Tacho requires CUDA relocatable device code to be enabled if CUDA is enabled. Set: Kokkos_ENABLE_Cuda_Relocatable_Device_Code=ON ")
+  ENDIF()
+ENDIF()
+IF (Kokkos_ENABLE_Pthread)
+  IF (NOT Kokkos_ENABLE_OpenMP)
+    MESSAGE(FATAL_ERROR "ShyLu/Tacho can not be build with Pthreads as the Kokkos Host Backend.")
+  ENDIF()
+ENDIF()
 
 ADD_SUBDIRECTORY(src)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)

@@ -82,11 +82,11 @@ class ScatterResidual<PHX::MyTraits::Residual,Traits>
 
 public:  
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
-    Kokkos::View<const ScalarT**,PHX::Device> residual_contribution;
+    PHX::View<const ScalarT**> residual_contribution;
     Kokkos::View<const int**,PHX::Device> gids;
     const int equation_index;
     const int num_equations;
-    KOKKOS_FUNCTION MyDevEval(const Kokkos::View<const ScalarT**,PHX::Device>& in_residual_contribution,
+    KOKKOS_FUNCTION MyDevEval(const PHX::View<const ScalarT**>& in_residual_contribution,
                               const Kokkos::View<const int**,PHX::Device>& in_gids,
                               const int in_equation_index,
                               const int in_num_equations) :
@@ -124,11 +124,11 @@ class ScatterResidual<PHX::MyTraits::Jacobian,Traits>
 
 public:  
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
-    Kokkos::View<const ScalarT**,PHX::Device> residual_contribution;
+    PHX::View<const ScalarT**> residual_contribution;
     Kokkos::View<const int**,PHX::Device> gids;
     const int equation_index;
     const int num_equations;
-    KOKKOS_FUNCTION MyDevEval(const Kokkos::View<const ScalarT**,PHX::Device>& in_residual_contribution,
+    KOKKOS_FUNCTION MyDevEval(const PHX::View<const ScalarT**>& in_residual_contribution,
                               const Kokkos::View<const int**,PHX::Device>& in_gids,
                               const int in_equation_index,
                               const int in_num_equations) :

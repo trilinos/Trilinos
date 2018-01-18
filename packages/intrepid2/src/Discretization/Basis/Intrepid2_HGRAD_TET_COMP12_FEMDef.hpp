@@ -169,9 +169,9 @@ namespace Intrepid2 {
                const inputPointViewType  input ) {
       switch (opType) {
       case OPERATOR_VALUE: {
-        const auto r = input(0);
-        const auto s = input(1);
-        const auto t = input(2);
+        const typename inputPointViewType::value_type r = input(0);
+        const typename inputPointViewType::value_type s = input(1);
+        const typename inputPointViewType::value_type t = input(2);
 
         // initialize output 
         for (auto i=0;i<10;++i) 
@@ -264,9 +264,9 @@ namespace Intrepid2 {
         break;
       }
       case OPERATOR_GRAD: {
-        const auto r = input(0);
-        const auto s = input(1);
-        const auto t = input(2);
+        const typename inputPointViewType::value_type r = input(0);
+        const typename inputPointViewType::value_type s = input(1);
+        const typename inputPointViewType::value_type t = input(2);
         
         output(0,0) = (-17 + 20*r + 20*s + 20*t)/8.;
         output(0,1) = (-17 + 20*r + 20*s + 20*t)/8.;

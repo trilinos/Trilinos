@@ -79,7 +79,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_INST_SERIAL:BOOL=ON"
   "-DTpetra_INST_OPENMP:BOOL=ON"
   "-DKokkosKernels_ENABLE_Experimental:BOOL=ON"
-  "-DMATLAB_ARCH:STRING=glnxa64"
+  "-DML_ENABLE_Zoltan:BOOL=OFF"
   "-DCMAKE_CXX_FLAGS:STRING='-g -fno-var-tracking'"
   "-DCMAKE_C_FLAGS:STRING='-g'"
   "-DCMAKE_Fortran_FLAGS:STRING='-g'"

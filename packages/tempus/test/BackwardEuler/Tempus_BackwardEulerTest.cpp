@@ -9,6 +9,7 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
 #include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"

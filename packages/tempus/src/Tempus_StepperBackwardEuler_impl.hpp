@@ -210,6 +210,10 @@ void StepperBackwardEuler<Scalar>::setObserver(
 template<class Scalar>
 void StepperBackwardEuler<Scalar>::initialize()
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperBackwardEuler::initialize()\n");
+
   this->setSolver();
   this->setPredictor();
   this->setObserver();
@@ -249,7 +253,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
     MEB::OutArgs<Scalar> outArgs = wrapperModel_->getOutArgs();
     inArgs.set_x(x);
     if (inArgs.supports(MEB::IN_ARG_x_dot    )) inArgs.set_x_dot    (xDot);
-    if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time+dt);
+    if (inArgs.supports(MEB::IN_ARG_t        )) inArgs.set_t        (time);
     if (inArgs.supports(MEB::IN_ARG_step_size)) inArgs.set_step_size(dt);
     if (inArgs.supports(MEB::IN_ARG_alpha    )) inArgs.set_alpha    (1.0/dt);
     if (inArgs.supports(MEB::IN_ARG_beta     )) inArgs.set_beta     (1.0);
@@ -258,7 +262,7 @@ void StepperBackwardEuler<Scalar>::takeStep(
 
     stepperBEObserver_->observeBeforeSolve(solutionHistory, *this);
 
-    const Thyra::SolveStatus<double> sStatus =
+    const Thyra::SolveStatus<Scalar> sStatus =
       this->solveNonLinear(wrapperModel_, *solver_, x);
 
     stepperBEObserver_->observeAfterSolve(solutionHistory, *this);
@@ -335,8 +339,12 @@ template <class Scalar>
 void StepperBackwardEuler<Scalar>::setParameterList(
   Teuchos::RCP<Teuchos::ParameterList> const& pList)
 {
-  if (pList == Teuchos::null) stepperPL_ = this->getDefaultParameters();
-  else stepperPL_ = pList;
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  } else {
+    stepperPL_ = pList;
+  }
   // Can not validate because of optional Parameters (e.g., Solver Name).
   //stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
 

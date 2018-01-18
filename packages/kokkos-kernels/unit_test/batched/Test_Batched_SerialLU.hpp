@@ -56,10 +56,14 @@ namespace Test {
     Kokkos::Random_XorShift64_Pool<typename DeviceType::execution_space> random(13718);
     Kokkos::fill_random(a0, random, value_type(1.0));
 
+    Kokkos::fence();
+
     Kokkos::deep_copy(a1, a0);
 
     Functor_TestBatchedSerialLU<DeviceType,ViewType,Algo::LU::Unblocked>(a0).run();
     Functor_TestBatchedSerialLU<DeviceType,ViewType,AlgoTagType>(a1).run();
+
+    Kokkos::fence();
 
     /// for comparison send it to host
     typename ViewType::HostMirror a0_host = Kokkos::create_mirror_view(a0);

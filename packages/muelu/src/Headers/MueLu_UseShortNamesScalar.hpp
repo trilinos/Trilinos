@@ -17,6 +17,9 @@ typedef MueLu::AMGXOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> AMGXOperator
 #ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> AlgebraicPermutationStrategy;
 #endif
+#ifdef MUELU_BLACKBOXPFACTORY_SHORT
+typedef MueLu::BlackBoxPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlackBoxPFactory;
+#endif
 #ifdef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
 typedef MueLu::BlockedCoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> BlockedCoarseMapFactory;
 #endif
@@ -76,6 +79,9 @@ typedef MueLu::CoordinatesTransferFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdin
 #endif
 #ifdef MUELU_COUPLEDRBMFACTORY_SHORT
 typedef MueLu::CoupledRBMFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoupledRBMFactory;
+#endif
+#ifdef MUELU_CREATEXPETRAPRECONDITIONER_SHORT
+typedef MueLu::CreateXpetraPreconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> CreateXpetraPreconditioner;
 #endif
 #ifdef MUELU_DEMOFACTORY_SHORT
 typedef MueLu::DemoFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> DemoFactory;

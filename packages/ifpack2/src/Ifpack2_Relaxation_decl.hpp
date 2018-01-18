@@ -609,7 +609,7 @@ private:
   typedef typename local_matrix_type::StaticCrsGraphType::device_type PersistentWorkSpace;
   typedef typename local_matrix_type::StaticCrsGraphType::execution_space MyExecSpace;
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
-      <lno_row_view_t,lno_nonzero_view_t, scalar_nonzero_view_t,
+      <typename lno_row_view_t::const_value_type, local_ordinal_type,typename scalar_nonzero_view_t::value_type,
       MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > mt_kernel_handle_type;
   Teuchos::RCP<mt_kernel_handle_type> mtKernelHandle_;
 #endif // HAVE_IFPACK2_EXPERIMENTAL_KOKKOSKERNELS_FEATURES

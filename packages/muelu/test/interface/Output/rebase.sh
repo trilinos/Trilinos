@@ -2,7 +2,6 @@
 
 # To use:
 # 1) Make sure you've compiled with the CreateOperator tests and that they run.
-#    JHU: 2017-May-19  this means compiling with MueLu_ENABLE_BROKEN_TESTS:BOOL=ON
 # 2) Run ctest
 # 3) cd $BUILDDIR/packages/muelu/test/interface/Output
 # 4) Run: $SOURCEDIR/packages/muelu/test/interface/Output/rebase.sh

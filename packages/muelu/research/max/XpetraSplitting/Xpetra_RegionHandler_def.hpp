@@ -585,6 +585,26 @@ void RegionHandler<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateRowMaps()
   maps_.composite_map_ = elements;
   maps_.region_maps_ = elements_per_region;
   maps_.regionToAll_ = regionToAll;
+
+  for (int i = 0; i < comm_->getSize(); ++i)
+  {
+    comm_->barrier();
+
+    if (comm_->getRank() == i)
+    {
+      std::cout << "Proc " << i << std::endl;
+      for (int i = 0; i < regionToAll.size(); ++i)
+      {
+        Teuchos::Array<std::tuple<GlobalOrdinal,GlobalOrdinal> > currArray = regionToAll[i];
+        for (int j = 0; j < currArray.size(); ++j)
+        {
+          std::cout << std::get<0>(currArray[j]) << "\t" << std::get<1>(currArray[j]) << std::endl;
+        }
+      }
+    }
+
+    comm_->barrier();
+  }
 }
 
 

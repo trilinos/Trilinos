@@ -314,6 +314,29 @@ namespace Tpetra {
     Import<LocalOrdinal,GlobalOrdinal,Node>&
     operator= (const Import<LocalOrdinal,GlobalOrdinal,Node>& Source);
 
+    /// \brief Find the union of the target IDs from two Import objects.
+    ///
+    /// On return, the input arrays permuteGIDs[1,2] and remotePGIDs[1,2] will
+    /// be ordered.  unionTgtGIDs are ordered as [{same}, {permute}, {remote}].
+    /// {same} is ordered identically to the target map with most "same"
+    /// indices.  {permute} is ordered from smallest ID to largest.  {remote} is
+    /// ordered by remote process ID and ID, respectively.  remotePGIDs are
+    /// ordered the same as {remote}.
+    void
+    findUnionTargetGIDs(Teuchos::Array<GlobalOrdinal>& unionTgtGIDs,
+                        Teuchos::Array<std::pair<int,GlobalOrdinal>>& remotePGIDs,
+                        typename Teuchos::Array<GlobalOrdinal>::size_type& numSameGIDs,
+                        typename Teuchos::Array<GlobalOrdinal>::size_type& numPermuteGIDs,
+                        typename Teuchos::Array<GlobalOrdinal>::size_type& numRemoteGIDs,
+                        const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs1,
+                        const Teuchos::ArrayView<const GlobalOrdinal>& sameGIDs2,
+                        Teuchos::Array<GlobalOrdinal>& permuteGIDs1,
+                        Teuchos::Array<GlobalOrdinal>& permuteGIDs2,
+                        Teuchos::Array<GlobalOrdinal>& remoteGIDs1,
+                        Teuchos::Array<GlobalOrdinal>& remoteGIDs2,
+                        Teuchos::Array<int>& remotePIDs1,
+                        Teuchos::Array<int>& remotePIDs2) const;
+
     /// \brief Return the union of this Import and \c rhs.
     ///
     /// The "union" of two Import objects is the Import whose source

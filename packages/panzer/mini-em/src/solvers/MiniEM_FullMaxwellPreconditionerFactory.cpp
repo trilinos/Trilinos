@@ -99,7 +99,14 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
      return(Teko::createBlockUpperTriInverseOp(U,diag));
    }
    else // refMaxwell
-     TEUCHOS_ASSERT(false);
+   {
+     // grab the discrete gradient matrix and check that curl * grad is approximately zero
+     Teko::LinearOp T = getRequestHandler()->request<Teko::LinearOp>(Teko::RequestMesg("Discrete Gradient"));
+     Teko::LinearOp KT = Teko::explicitMultiply(K,T);
+     TEUCHOS_ASSERT(Teko::infNorm(KT) < 1.0e-14 * Teko::infNorm(T) * Teko::infNorm(K));
+ 
+     TEUCHOS_ASSERT(false); // TODO: refMaxwell not hooked in yet
+   }
 
 }
 

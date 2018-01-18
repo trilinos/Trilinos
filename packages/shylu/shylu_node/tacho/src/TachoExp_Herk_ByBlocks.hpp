@@ -9,9 +9,11 @@
 #include "TachoExp_Partition.hpp"
 
 #include "TachoExp_Herk.hpp"
+#include "TachoExp_Herk_Internal.hpp"
 #include "TachoExp_Herk_External.hpp"
 
 #include "TachoExp_Gemm.hpp"
+#include "TachoExp_Gemm_Internal.hpp"
 #include "TachoExp_Gemm_External.hpp"
 
 namespace Tacho {
@@ -24,7 +26,7 @@ namespace Tacho {
                typename MemberType,
                typename ScalarType,
                typename MatrixOfDenseBlocksType>
-      inline
+      KOKKOS_INLINE_FUNCTION
       static int
       invoke(const SchedType &sched,
              const MemberType &member,
@@ -35,8 +37,15 @@ namespace Tacho {
         typedef SchedType sched_type;
         typedef ScalarType scalar_type;
         typedef typename MatrixOfDenseBlocksType::value_type dense_block_type;
-        //typedef typename dense_block_type::value_type value_type;
         typedef typename dense_block_type::future_type future_type;
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+          Algo::External,Algo::Internal>::type HerkAlgoType;
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+          Algo::External,Algo::Internal>::type GemmAlgoType;
 
         if (get_team_rank(member) == 0) {
           const ordinal_type pend = A.dimension_0();
@@ -53,7 +62,8 @@ namespace Tacho {
                     Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 2), Kokkos::TaskPriority::High),
                                        TaskFunctor_Herk
                                        <sched_type,scalar_type,dense_block_type,
-                                       Uplo::Upper,Trans::ConjTranspose,Algo::External>
+                                       Uplo::Upper,Trans::ConjTranspose,
+                                       HerkAlgoType>
                                        (sched, alpha, aa, beta_select, cc));
                   TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
                   cc.set_future(f);
@@ -64,7 +74,8 @@ namespace Tacho {
                     Kokkos::task_spawn(Kokkos::TaskTeam(sched, Kokkos::when_all(dep, 3), Kokkos::TaskPriority::High),
                                        TaskFunctor_Gemm
                                        <sched_type,scalar_type,dense_block_type,
-                                       Trans::ConjTranspose,Trans::NoTranspose,Algo::External>
+                                       Trans::ConjTranspose,Trans::NoTranspose,
+                                       GemmAlgoType>
                                        (sched, alpha, aa, bb, beta_select, cc));
                   TACHO_TEST_FOR_ABORT(f.is_null(), "task_spawn return a null future");
                   cc.set_future(f);
@@ -76,6 +87,7 @@ namespace Tacho {
         return 0;
       }
     };
+
   }
 }
 #endif

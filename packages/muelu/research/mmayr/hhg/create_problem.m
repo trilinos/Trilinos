@@ -8,7 +8,7 @@ nregion_nodes_x = 4;
 nregion_nodes_y = 4;
 
 %number of intervals splitting the x dicretion of the domain
-nintervals_x = 1;
+nintervals_x = 2;
 
 %number of intervals splitting the y direction of the domain
 nintervals_y = 1;

@@ -120,6 +120,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetraCore_ENABLE_TSQR:BOOL=ON"
   "-DTrilinos_ENABLE_TpetraTSQR:BOOL=ON" 
   "-DTrilinos_ENABLE_Tpetra:BOOL=ON" 
+  -"DKokkos_ENABLE_Cuda_Lambda:BOOL=$ENV{JENKINS_DO_COMPLEX}"
 
   "-DMueLu_ENABLE_Epetra=OFF"
   "-DMueLu_ENABLE_Tpetra=ON"
@@ -131,7 +132,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DCMAKE_C_FLAGS:STRING=$ENV{JENKINS_C_FLAGS}"
   "-DCMAKE_Fortran_FLAGS=$ENV{JENKINS_Fortran_FLAGS}"
 
-  "-DTrilinos_C_Standard=c11"
+  "-DTrilinos_C_Standard=gnu11"
 
 )
 

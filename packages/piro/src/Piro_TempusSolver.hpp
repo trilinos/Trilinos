@@ -173,7 +173,13 @@ public:
   //! Return RCP to Tempus::SolutionHistory
   Teuchos::RCP<Tempus::SolutionHistory<Scalar> > 
   getSolutionHistory() const; 
-  
+ 
+  //! Return Thyra nonlinear solver underlying Tempus::Stepper object  
+  Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > 
+  getSolver() const;
+
+  Tempus::Status 
+  getTempusIntegratorStatus() const;
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
@@ -224,6 +230,9 @@ private:
  
   //! Set observer
   void setObserver(); 
+
+  //! Boolean to tell TempusSolver whether or not to abort if a transient solve fails 
+  bool abort_on_failure_; 
 
 };
 

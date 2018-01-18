@@ -123,7 +123,7 @@ module load $sems_zlib_and_version_default
 module load $sems_hdf5_and_version_default
 module load $sems_netcdf_and_version_default
 module load $sems_parmetis_and_version_default
-#module load $sems_scotch_and_version_default
+module load $sems_scotch_and_version_default
 module load $sems_superlu_and_version_default
 
 if [ "${TRILINOS_SEMS_DEV_ENV_VERBOSE}" == "1" ] ; then

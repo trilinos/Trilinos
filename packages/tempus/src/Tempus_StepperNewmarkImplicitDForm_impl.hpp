@@ -214,7 +214,12 @@ StepperNewmarkImplicitDForm<Scalar>::setSolver(
 
 template <class Scalar>
 void
-StepperNewmarkImplicitDForm<Scalar>::initialize() {
+StepperNewmarkImplicitDForm<Scalar>::initialize()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( wrapperModel_ == Teuchos::null, std::logic_error,
+    "Error - Need to set the model, setModel(), before calling "
+    "StepperNewmarkImplicitDForm::initialize()\n");
+
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
@@ -238,7 +243,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
         solutionHistory->getCurrentState();
 
     // Get values of d, v and a from previous step
-    RCP<Thyra::VectorBase<Scalar>> d_old = currentState->getX();
+    RCP<const Thyra::VectorBase<Scalar>> d_old = currentState->getX();
     RCP<Thyra::VectorBase<Scalar>> v_old = currentState->getXDot();
     RCP<Thyra::VectorBase<Scalar>> a_old = currentState->getXDotDot();
 
@@ -249,8 +254,8 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar>> a_new = workingState->getXDotDot();
 
     // Get time and dt
-    const Scalar time = workingState->getTime();
-    const Scalar dt = workingState->getTimeStep();
+    const Scalar time = currentState->getTime();
+    const Scalar dt   = workingState->getTimeStep();
     // Update time
     Scalar t = time + dt;
 
@@ -299,7 +304,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
       wrapperModel_->initializeNewmark(
           a_init, v_init, d_init, dt, time, beta_, gamma_);
 
-      const Thyra::SolveStatus<double>
+      const Thyra::SolveStatus<Scalar>
       status = this->solveNonLinear(wrapperModel_, *solver_, d_init, inArgs_);
 
       if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED ) {
@@ -342,8 +347,12 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     RCP<Thyra::VectorBase<Scalar>> d_pred = Thyra::createMember(d_old->space());
     RCP<Thyra::VectorBase<Scalar>> v_pred = Thyra::createMember(v_old->space());
 
+    // create copies of d_old, so as not to modify d_old in working state
+    RCP<Thyra::VectorBase<Scalar>> d_old_copy = Thyra::createMember(d_old->space());
+    Thyra::copy(*d_old, d_old_copy.ptr());
+
     // compute displacement and velocity predictors
-    predictDisplacement(*d_pred, *d_old, *v_old, *a_old, dt);
+    predictDisplacement(*d_pred, *d_old_copy, *v_old, *a_old, dt);
     predictVelocity(*v_pred, *v_old, *a_old, dt);
 
 #ifdef DEBUG_OUTPUT
@@ -368,15 +377,15 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 
     // Solve for new displacement
     // IKT, 3/13/17: check how solveNonLinear works.
-    const Thyra::SolveStatus<double> status =
-        this->solveNonLinear(wrapperModel_, *solver_, d_old);
+    const Thyra::SolveStatus<Scalar> status =
+        this->solveNonLinear(wrapperModel_, *solver_, d_old_copy);
 
     if (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED)
       workingState->getStepperState()->stepperStatus_ = Status::PASSED;
     else
       workingState->getStepperState()->stepperStatus_ = Status::FAILED;
 
-    Thyra::copy(*d_old, d_new.ptr());
+    Thyra::copy(*d_old_copy, d_new.ptr());
     correctAcceleration(*a_new, *d_pred, *d_new, dt);
     correctVelocity(*v_new, *v_pred, *a_new, dt);
 
@@ -454,10 +463,12 @@ StepperNewmarkImplicitDForm<Scalar>::setParameterList(
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  if (pList == Teuchos::null)
-    stepperPL_ = this->getDefaultParameters();
-  else
+  if (pList == Teuchos::null) {
+    // Create default parameters if null, otherwise keep current parameters.
+    if (stepperPL_ == Teuchos::null) stepperPL_ = this->getDefaultParameters();
+  } else {
     stepperPL_ = pList;
+  }
   // Can not validate because of optional Parameters.
   // stepperPL_->validateParametersAndSetDefaults(*this->getValidParameters());
   // Get beta and gamma from parameter list

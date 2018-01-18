@@ -85,12 +85,12 @@ class GatherSolution<PHX::MyTraits::Residual,Traits>
 
 public:
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
-    Kokkos::View<ScalarT**,PHX::Device> field;
+    PHX::View<ScalarT**> field;
     const int num_equations;
     const int field_index;
     const Kokkos::View<const double*,PHX::Device> x;
     Kokkos::View<const int**,PHX::Device> gids;
-    KOKKOS_FUNCTION MyDevEval(const Kokkos::View<ScalarT**,PHX::Device>& in_field,
+    KOKKOS_FUNCTION MyDevEval(const PHX::View<ScalarT**>& in_field,
                               const int in_num_equations,
                               const int in_field_index,
                               const Kokkos::View<const double*,PHX::Device>& in_x,
@@ -128,12 +128,12 @@ class GatherSolution<PHX::MyTraits::Jacobian,Traits>
 
 public:
   struct MyDevEval : public PHX::DeviceEvaluator<Traits> {
-    Kokkos::View<ScalarT**,PHX::Device> field;
+    PHX::View<ScalarT**> field;
     const int num_equations;
     const int field_index;
     const Kokkos::View<const double*,PHX::Device> x;
     const Kokkos::View<const int**,PHX::Device> gids;
-    KOKKOS_FUNCTION MyDevEval(const Kokkos::View<ScalarT**,PHX::Device>& in_field,
+    KOKKOS_FUNCTION MyDevEval(const PHX::View<ScalarT**>& in_field,
                               const int in_num_equations,
                               const int in_field_index,
                               const Kokkos::View<const double*,PHX::Device>& in_x,
