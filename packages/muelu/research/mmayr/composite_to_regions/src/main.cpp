@@ -112,7 +112,7 @@ void printRegionalVector(const std::string vectorName, ///< string to be used fo
     )
 {
 //  sleep(myRank);
-  for (int j = 0; j < regVecs.size(); j++) {
+  for (int j = 0; j < (int) regVecs.size(); j++) {
     printf("%d: %s %d\n", myRank, vectorName.c_str(), j);
     regVecs[j]->Print(std::cout);
   }
@@ -124,7 +124,7 @@ void printRegionalMap(const std::string mapName, ///< string to be used for scre
     )
 {
   sleep(myRank);
-  for (int j = 0; j < regMaps.size(); j++) {
+  for (int j = 0; j < (int) regMaps.size(); j++) {
     printf("%d: %s %d\n", myRank, mapName.c_str(), j);
     regMaps[j]->Print(std::cout);
   }
@@ -807,7 +807,7 @@ int main(int argc, char *argv[]) {
       //        anyone who ends up in this case.
       //        xxxxxx
 
-      for (int i = 0; i < intIDs.size(); ++i)
+      for (std::size_t i = 0; i < intIDs.size(); ++i)
         (*diagAComp)[intIDs[i]] *= 0.5;
 
       ACompSplit->ReplaceDiagonalValues(*diagAComp);
@@ -841,13 +841,13 @@ int main(int argc, char *argv[]) {
         compScaleImported->Import(*compScale, *ACompSplit->Importer(), Insert);
 
         std::cout << myRank << ": intIDs --- ";
-        for (int k = 0; k < intIDs.size(); ++k)
+        for (std::size_t k = 0; k < intIDs.size(); ++k)
           std::cout << intIDs[k] << " - ";
         std::cout << " |" << std::endl;
 
         // modify the composite matrix by scaling its interface entries
         for (int row = 0; row < ACompSplit->NumMyRows(); ++row) {
-//        for (int j = 0; j < intIDs.size(); ++j) {
+//        for (std::size_t j = 0; j < intIDs.size(); ++j) {
 //          int row = intIDs[j];
           int numEntries;
           double* vals;
@@ -857,7 +857,7 @@ int main(int argc, char *argv[]) {
 
           std::vector<bool> isIntInds = findInterfaceEntries(inds, numEntries, intIDs);
           std::cout << myRank << ": row " << row << " --";
-          for (int k = 0; k < isIntInds.size(); ++k)
+          for (std::size_t k = 0; k < isIntInds.size(); ++k)
             std::cout << "- " << inds[k] << "/" << isIntInds[k];
           std::cout << std::endl;
 
@@ -1139,7 +1139,7 @@ int main(int argc, char *argv[]) {
 
           // loop over existing regColGIDs and see if current GID is already in that list
           bool found = false;
-          for (int k = 0; k < regColGIDs.size(); ++k) {
+          for (std::size_t k = 0; k < regColGIDs.size(); ++k) {
             if ((*regGIDVec[j])[regGIDVec[j]->Map().LID(currGID)] == regColGIDs[k]) {
               found = true;
               break;
@@ -1201,9 +1201,9 @@ int main(int argc, char *argv[]) {
         int inds[1];
         vals[0] = 1.0/3.0;
         regionAltGrpProlong[j] = new Epetra_CrsMatrix(Copy, *revisedRowMapPerGrp[j], *coarseAltColMapPerGrp[j], 1, false);
-        int *coarseCol = coarseAltColMapPerGrp[j]->MyGlobalElements();
+//        int *coarseCol = coarseAltColMapPerGrp[j]->MyGlobalElements();
         int NccSize    = coarseAltColMapPerGrp[j]->NumMyElements();
-        int *fineRow   = revisedRowMapPerGrp[j]->MyGlobalElements();
+//        int *fineRow   = revisedRowMapPerGrp[j]->MyGlobalElements();
         int NfrSize    = revisedRowMapPerGrp[j]->NumMyElements();
         if (NfrSize > 0) {
           int fstart = 3 - (appData.lowInd[3*j]%3);
@@ -1504,8 +1504,8 @@ int LID2Dregion(void *ptr, int LIDcomp, int whichGrp)
 {
    struct widget * myWidget = (struct widget *) ptr;
 
-   int        *minGIDComp  = myWidget->minGIDComp;
-   int        *maxGIDComp  = myWidget->maxGIDComp;
+//   int        *minGIDComp  = myWidget->minGIDComp;
+//   int        *maxGIDComp  = myWidget->maxGIDComp;
    int        *myRegions   = myWidget->myRegions;
    Epetra_Map *colMap      = myWidget->colMap;
    int        maxRegPerGID = myWidget->maxRegPerGID;
