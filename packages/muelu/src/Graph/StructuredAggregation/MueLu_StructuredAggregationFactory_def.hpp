@@ -397,8 +397,7 @@ namespace MueLu {
     geoData->numGhostedCoarseNodes = geoData->numGhostedCoarseNodes10
       *geoData->ghostedCoarseNodesPerDir[2];
 
-    // aggregates->SetNumAggregates(geoData->lNumCoarseNodes);
-    aggregates->SetNumAggregates(geoData->numGhostedCoarseNodes);
+    aggregates->SetNumAggregates(geoData->lNumCoarseNodes);
 
     // Find the GIDs, LIDs and PIDs of the coarse points on the fine mesh and coarse
     // mesh as this data will be used to fill vertex2AggId and procWinner vectors.
@@ -456,6 +455,7 @@ namespace MueLu {
         }
       }
     }
+
     RCP<const Map> coarseCoordMap = MapFactory::Build (coordMap->lib(),
                                                        geoData->gNumCoarseNodes,
                                                        lCoarseNodeCoarseGIDs(),

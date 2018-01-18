@@ -278,9 +278,9 @@ private:
       }
 
       void getGhostedNodeFineLID(const LO i, const LO j, const LO k, LO& myLID) const {
-        LO itmp = i - offsets[0];
-        LO jtmp = j - offsets[1];
-        LO ktmp = k - offsets[2];
+        LO itmp = i - (offsets[0] > 0 ? 1 : 0);
+        LO jtmp = j - (offsets[1] > 0 ? 1 : 0);
+        LO ktmp = k - (offsets[2] > 0 ? 1 : 0);
         myLID = 0;
         if(ktmp*coarseRate[2] < lFineNodesPerDir[2]) {
           myLID += ktmp*coarseRate[2]*lNumCoarseNodes10;
@@ -302,10 +302,10 @@ private:
       }
 
       void getGhostedNodeCoarseLID(const LO i, const LO j, const LO k, LO& myLID) const {
-        LO itmp = i - offsets[0];
-        LO jtmp = j - offsets[1];
-        LO ktmp = k - offsets[2];
-        myLID = k*lNumCoarseNodes10 + j*lCoarseNodesPerDir[0] + i;
+        LO itmp = i - (offsets[0] > 0 ? 1 : 0);
+        LO jtmp = j - (offsets[1] > 0 ? 1 : 0);
+        LO ktmp = k - (offsets[2] > 0 ? 1 : 0);
+        myLID = ktmp*lNumCoarseNodes10 + jtmp*lCoarseNodesPerDir[0] + itmp;
       }
 
     };
