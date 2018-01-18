@@ -39,15 +39,18 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Epetra)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
+  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/aztecoo)
 
   APPEND_SET(HEADERS
     epetra/MueLu_EpetraOperator.hpp
     epetra/MueLu_CreateEpetraPreconditioner.hpp
+    aztecoo/MueLu_AztecEpetraOperator.hpp
     )
 
   APPEND_SET(SOURCES
     epetra/MueLu_EpetraOperator.cpp
     epetra/MueLu_CreateEpetraPreconditioner.cpp
+    aztecoo/MueLu_AztecEpetraOperator.cpp
     )
 
 ENDIF()
@@ -68,8 +71,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
    IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND Tpetra_INST_INT_INT)
 
      APPEND_SET(HEADERS
-       tpetra/MueLu_RefMaxwell_decl.hpp
-       tpetra/MueLu_RefMaxwell_def.hpp
        tpetra/MueLu_ShiftedLaplacian_decl.hpp
        tpetra/MueLu_ShiftedLaplacian_def.hpp
        tpetra/MueLu_ShiftedLaplacianOperator_decl.hpp
@@ -93,6 +94,8 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/xpetra)
 APPEND_SET(HEADERS
   ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_XpetraOperator_decl.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_CreateXpetraPreconditioner.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_RefMaxwell_decl.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/xpetra/MueLu_RefMaxwell_def.hpp
 )
 
 #
@@ -100,7 +103,7 @@ APPEND_SET(HEADERS
 #
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
-  
+
   APPEND_SET(SOURCES
     ${DIR}/Stratimikos_MueLuHelpers.cpp
     )
@@ -113,6 +116,9 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     ${DIR}/Thyra_MueLuPreconditionerFactory_decl.hpp
     ${DIR}/Thyra_MueLuPreconditionerFactory_def.hpp
     ${DIR}/Thyra_MueLuPreconditionerFactory.hpp
+    ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory_decl.hpp
+    ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory_def.hpp
+    ${DIR}/Thyra_MueLuRefMaxwellPreconditionerFactory.hpp
     ${DIR}/Thyra_XpetraLinearOp_decl.hpp
     ${DIR}/Thyra_XpetraLinearOp_def.hpp
     ${DIR}/Thyra_XpetraLinearOp.hpp
@@ -177,6 +183,11 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
     APPEND_SET(MUELUADAPTERS_ETI_CLASSES
       MueLu::RefMaxwell
       )
+    IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
+      APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
+        Thyra::MueLuRefMaxwellPreconditionerFactory
+      )
+    ENDIF()
   ENDIF()
   IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
