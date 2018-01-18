@@ -33,6 +33,11 @@
 
 clear;
 
+%% User's choices
+
+% nullspaceScheme = 'exact preservation';
+nullspaceScheme = 'preserve violation';
+
 %% composite quantities
 A = full(twoDimensionalLaplace(25));
 
@@ -44,6 +49,9 @@ z = A * x;
 
 
 %% Define region-wise quantities as extraction from global matrix
+
+% work on a copy of the composite matrix for scaling
+scaledA = A;
 
 indReg0 = [1:15];
 indReg1 = [11 12 13 16 17 18 21 22 23];
@@ -88,8 +96,8 @@ nodesToRegion(25,:) = [3 -1 -1];
 
 % We first process the off-diagonals. For convenience of GID access, this is
 % done in the composite matrix.
-for r = 1:size(A,1) % loop over all rows
-  row = A(r,:); % grep a single row
+for r = 1:size(scaledA,1) % loop over all rows
+  row = scaledA(r,:); % grep a single row
   [~, nnzInds, ~] = find(row); % identify nonzeros in this row
   for c = nnzInds % loop over all nonzeros in this row
     if r ~= c % skip the diagonal element
@@ -97,9 +105,9 @@ for r = 1:size(A,1) % loop over all rows
       numCommonRegs = length(commonRegs);
       
       if numCommonRegs == 2
-        A(r,c) = A(r,c) / 2;
+        scaledA(r,c) = scaledA(r,c) / 2;
       elseif numCommonRegs == 0 || numCommonRegs == 1
-        % ddo nothing
+        % do nothing
       else
         error('Search for common region assignments produced weird result.');
       end
@@ -108,46 +116,83 @@ for r = 1:size(A,1) % loop over all rows
 end
 
 % extract region matrices
-regA0 = A(indReg0, indReg0);
-regA1 = A(indReg1, indReg1);
-regA2 = A(indReg2, indReg2);
+regA0 = scaledA(indReg0, indReg0);
+regA1 = scaledA(indReg1, indReg1);
+regA2 = scaledA(indReg2, indReg2);
 
 %% Fix diagonal values
 
-% Modify diagonal entries to preserve nullspace. Since we want to preserve the
-% nullspace in the region layout, this is done region by region.
-regX0 = ones(15,1); % nullspace vector
-tmp = regA0 * regX0; % compute action of matrix on nullspace vector
-for i = nonDBC0 % only process non-DBC nodes
-  regA0(i,i) = regA0(i,i) - tmp(i); % correct diagonal entry
-end
-
-regX1 = ones(9,1);
-tmp = regA1 * regX1;
-for i = nonDBC1
-  regA1(i,i) = regA1(i,i) - tmp(i);
-end
-
-regX2 = ones(9,1);
-tmp = regA2 * regX2;
-for i = nonDBC2
-  regA2(i,i) = regA2(i,i) - tmp(i);
-end
-
-for i = lid0
-  if regA0(i,i) == 1
-    regA0(i,i) = 0.5;
+if (strcmp(nullspaceScheme, 'exact preservation') == true)
+  % Modify diagonal entries to preserve nullspace. Since we want to preserve the
+  % nullspace in the region layout, this is done region by region.
+  regX0 = ones(15,1); % nullspace vector
+  tmp = regA0 * regX0; % compute action of matrix on nullspace vector
+  for i = nonDBC0 % only process non-DBC nodes
+    regA0(i,i) = regA0(i,i) - tmp(i); % correct diagonal entry
   end
-end
-for i = lid1
-  if regA1(i,i) == 1
-    regA1(i,i) = 0.5;
+
+  regX1 = ones(9,1);
+  tmp = regA1 * regX1;
+  for i = nonDBC1
+    regA1(i,i) = regA1(i,i) - tmp(i);
   end
-end
-for i = lid2
-  if regA2(i,i) == 1
-    regA2(i,i) = 0.5;
+
+  regX2 = ones(9,1);
+  tmp = regA2 * regX2;
+  for i = nonDBC2
+    regA2(i,i) = regA2(i,i) - tmp(i);
   end
+
+  for i = lid0
+    if regA0(i,i) == 1
+      regA0(i,i) = 0.5;
+    end
+  end
+  for i = lid1
+    if regA1(i,i) == 1
+      regA1(i,i) = 0.5;
+    end
+  end
+  for i = lid2
+    if regA2(i,i) == 1
+      regA2(i,i) = 0.5;
+    end
+  end
+  
+elseif (strcmp(nullspaceScheme, 'preserve violation') == true)
+  % compute violation of nullspace preservation in the composite layout
+  compNsp = ones(size(x));
+  compViolation = A * compNsp;
+  
+  % extract region-wise violation
+  nspViolationReg0 = compViolation(indReg0);
+  nspViolationReg1 = compViolation(indReg1);
+  nspViolationReg2 = compViolation(indReg2);
+    
+  nspViolationReg0(lid0) = nspViolationReg0(lid0) / 2;
+  nspViolationReg1(lid1) = nspViolationReg1(lid1) / 2;
+  nspViolationReg2(lid2) = nspViolationReg2(lid2) / 2;
+  
+  regX0 = ones(15,1); % nullspace vector
+  tmp = regA0 * regX0; % compute action of matrix on nullspace vector
+  for i = 1:15 % process all diagonal entries
+    regA0(i,i) = regA0(i,i) - tmp(i) + nspViolationReg0(i); % correct diagonal entry
+  end
+    
+  regX1 = ones(9,1);
+  tmp = regA1 * regX1;
+  for i = 1:9
+    regA1(i,i) = regA1(i,i) - tmp(i) + nspViolationReg1(i);
+  end
+  
+  regX2 = ones(9,1);
+  tmp = regA2 * regX2;
+  for i = 1:9
+    regA2(i,i) = regA2(i,i) - tmp(i) + nspViolationReg2(i);
+  end
+   
+else
+  error('Unknown nullspace scheme "%s".', nullspaceScheme);
 end
 
 %% Build global, but regional matrices and vectors
