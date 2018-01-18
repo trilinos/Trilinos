@@ -80,12 +80,10 @@ namespace Zoltan2 {
     set by Zoltan2 to \c float.  If you wish to change it to double, set
     the second template parameter to \c double.
  */
-
 template <typename User>
   class BasicKokkosIdentifierAdapter: public IdentifierAdapter<User> {
 
 public:
-
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
@@ -107,15 +105,16 @@ public:
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this Adapter.
    */
-
-  BasicKokkosIdentifierAdapter(lno_t numIds, const gno_t *idPtr, 
-    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
+  BasicKokkosIdentifierAdapter(Kokkos::View<gno_t*> ids, 
+    Kokkos::View<scalar_t**> weights); // ** instead of * because it's 2D because of stride
+//lno_t numIds, const gno_t *idPtr, 
+//    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   ////////////////////////////////////////////////////////////////
   // The Adapter interface.
   ////////////////////////////////////////////////////////////////
 
-  size_t getLocalNumIDs() const { return numIds_;}
+  size_t getLocalNumIDs() const { return numIds_;} // Get num elements in Kokkos::View
 
   void getIDsView(const gno_t *&Ids) const { Ids = idList_; }
 
@@ -133,7 +132,6 @@ public:
   }
 
 private:
-
   lno_t numIds_;
   const gno_t *idList_;
   ArrayRCP<StridedData<lno_t, scalar_t> > weights_;

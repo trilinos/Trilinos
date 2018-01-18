@@ -82,7 +82,6 @@ template <typename User>
   class BasicIdentifierAdapter: public IdentifierAdapter<User> {
 
 public:
-
   typedef typename InputTraits<User>::scalar_t scalar_t;
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
@@ -104,7 +103,6 @@ public:
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this Adapter.
    */
-
   BasicIdentifierAdapter(lno_t numIds, const gno_t *idPtr, 
     std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
@@ -130,7 +128,6 @@ public:
   }
 
 private:
-
   lno_t numIds_;
   const gno_t *idList_;
   ArrayRCP<StridedData<lno_t, scalar_t> > weights_;

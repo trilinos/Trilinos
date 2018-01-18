@@ -68,14 +68,13 @@ int main(int argc, char *argv[]) {
   int fail = 0, gfail = 0;
 
   // Create global identifiers with weights
-
   zlno_t numLocalIds = 10;
   const int nWeights = 2;
 
   Kokkos::View<zgno_t*> myIds("myIds", numLocalIds);
   zgno_t myFirstId = rank * numLocalIds * numLocalIds;
-
   Kokkos::View<zscalar_t **> weights("weights", numLocalIds, nWeights);
+
   for (zlno_t i = 0; i < numLocalIds; i++) {
     myIds(i) = zgno_t(myFirstId + i);
     // Fill in 2D array
@@ -83,22 +82,14 @@ int main(int argc, char *argv[]) {
     weights(i, 1) = (nprocs - rank) / (i + 1);
   }
 
-  // Create a Zoltan2::BasicKokkosIdentifierAdapter object
-  // and verify that it is correct
-
   // These types are from /home/acwantu/UUR_git/Trilinos/packages/zoltan2/test/helpers/Zoltan2_TestHelpers.hpp
   typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
 
-  // The new Kokkos adapter will take in 2 args instead of 4 because it doesn't need to do striding.
-  // The Kokkos::View stores a 2D array of data, so the indexing method is already known.
-  // With the old method, there were different ways to do striding because 1D arrays were used.
   Zoltan2::BasicKokkosIdentifierAdapter<userTypes_t> ia(myIds, weights); // TODO: Will need to use new adapter
-  //Zoltan2::BasicIdentifierAdapter<userTypes_t> ia(numLocalIds, myIds, weightValues, strides);
 
   if (!fail && ia.getLocalNumIDs() != size_t(numLocalIds)) {
     fail = 4;
   }
-
   if (!fail && ia.getNumWeightsPerID() != nWeights) {
     fail = 5;
   }

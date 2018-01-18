@@ -115,7 +115,6 @@ public:
   enum BaseAdapterType adapterType() const {return IdentifierAdapterType;}
 };
 
-
 }  //namespace Zoltan2
 
 #endif
