@@ -338,10 +338,8 @@ APPEND_GLOB(HEADERS */*.hpp)
 APPEND_GLOB(HEADERS */*/*.hpp)
 APPEND_GLOB(HEADERS */*/*/*.hpp)
 
-# Remove everything in the interface directory and add it to a list for muelu-interface instead
-# NOTE: Because of the funny way the glob mactros work, the use of two slashses for the APPEND_GLOB is critical
 SET(HEADERS_INTERFACE "")
-APPEND_GLOB(HEADERS_INTERFACE Interface//*.hpp)
+APPEND_GLOB(HEADERS_INTERFACE Interface/*.hpp)
 APPEND_GLOB(HEADERS_INTERFACE Interface/FacadeClasses/*.hpp)
 LIST(REMOVE_ITEM HEADERS ${HEADERS_INTERFACE})
 
