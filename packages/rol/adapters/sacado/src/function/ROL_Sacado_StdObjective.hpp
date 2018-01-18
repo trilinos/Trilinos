@@ -78,7 +78,7 @@ public:
   /* Evaluate the objective function at x */
   using Objective<Real>::value;
   Real value( const V &x, Real &tol ) {
-    const SV xs  = Teuchos::dyn_cast<const SV>(x);
+    const SV xs  = dynamic_cast<const SV&>(x);
     return value(*(xs.getVector()), tol);            
   }
 
@@ -89,8 +89,8 @@ public:
   /* Evaluate the gradient at x */
   using Objective<Real>::gradient; 
   void gradient( V &g, const V &x, Real &tol ) {
-    SV gs  = Teuchos::dyn_cast<SV>(g);
-    const SV xs  = Teuchos::dyn_cast<const SV>(x);
+    SV gs  = dynamic_cast<SV&>(g);
+    const SV xs  = dynamic_cast<const SV&>(x);
     this->gradient(*(gs.getVector()),*(xs.getVector()),tol);
   }
 
@@ -101,9 +101,9 @@ public:
   /* Compute the action of the Hessian evaluated at x on a vector v */
   using Objective<Real>::hessVec;
   void hessVec( V &hv, const V &v, const V &x, Real &tol ) {
-    SV hvs = Teuchos::dyn_cast<SV>(hv);
-    const SV vs = Teuchos::dyn_cast<const SV>(v);
-    const SV xs = Teuchos::dyn_cast<const SV>(x);
+    SV hvs = dynamic_cast<SV&>(hv);
+    const SV vs = dynamic_cast<const SV&>(v);
+    const SV xs = dynamic_cast<const SV&>(x);
     hessVec(*(hvs.getVector()),*(vs.getVector()),*(xs.getVector()),tol);
   }
 
@@ -126,7 +126,7 @@ void Sacado_StdObjective<Real,Obj>::gradientAD(vector<ScalarT> &g, const vector<
     int n = x.size();
 
     // Create a vector of independent variables
-    Teuchos::RCP<Fadvector> x_fad = Teuchos::rcp(new Fadvector);
+    ROL::Ptr<Fadvector> x_fad = ROL::makePtr<Fadvector>();
 
     x_fad->reserve(n);   
 
@@ -158,7 +158,7 @@ void Sacado_StdObjective<Real,Obj>::hessVecAD( vector<ScalarT> &hv, const vector
     int n = x.size();
    
     // Create a vector of independent variables
-    Teuchos::RCP<Fadvector> x_fad = Teuchos::rcp( new Fadvector );
+    ROL::Ptr<Fadvector> x_fad = ROL::makePtr<Fadvector>();
 
     x_fad->reserve(n); 
 

@@ -58,7 +58,7 @@ typedef double RealT;
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int> > comm
     = Teuchos::DefaultComm<int>::getComm();
 
   int iprint = argc - 1;
@@ -71,64 +71,64 @@ int main(int argc, char *argv[]) {
 
   try {
     // Batch manager
-    Teuchos::RCP<ROL::BatchManager<RealT> > bman =
-      Teuchos::rcp(new ROL::TeuchosBatchManager<RealT,int>(comm));
+    ROL::Ptr<ROL::BatchManager<RealT> > bman =
+      ROL::makePtr<ROL::TeuchosBatchManager<RealT,int>>(comm);
 
     // Dimension of the optimization vector
     int dimension = 5, numMyAtoms = 10;
     int size = dimension*numMyAtoms;
 
     // Create batch std vectors 
-    Teuchos::RCP<std::vector<RealT> > b1_rcp = Teuchos::rcp( new std::vector<RealT>(size) );
-    Teuchos::RCP<std::vector<RealT> > b2_rcp = Teuchos::rcp( new std::vector<RealT>(size) );
-    Teuchos::RCP<std::vector<RealT> > b3_rcp = Teuchos::rcp( new std::vector<RealT>(size) );
+    ROL::Ptr<std::vector<RealT> > b1_ptr = ROL::makePtr<std::vector<RealT>>(size);
+    ROL::Ptr<std::vector<RealT> > b2_ptr = ROL::makePtr<std::vector<RealT>>(size);
+    ROL::Ptr<std::vector<RealT> > b3_ptr = ROL::makePtr<std::vector<RealT>>(size);
     for (int i = 0; i < size; ++i) {
-      (*b1_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-      (*b2_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-      (*b3_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      (*b1_ptr)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      (*b2_ptr)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      (*b3_ptr)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
     }
-    Teuchos::RCP<ROL::BatchStdVector<RealT> > b1
-      = Teuchos::rcp(new ROL::BatchStdVector<RealT>(b1_rcp,bman));
-    Teuchos::RCP<ROL::BatchStdVector<RealT> > b2
-      = Teuchos::rcp(new ROL::BatchStdVector<RealT>(b2_rcp,bman));
-    Teuchos::RCP<ROL::BatchStdVector<RealT> > b3
-      = Teuchos::rcp(new ROL::BatchStdVector<RealT>(b3_rcp,bman));
+    ROL::Ptr<ROL::BatchStdVector<RealT> > b1
+      = ROL::makePtr<ROL::BatchStdVector<RealT>>(b1_ptr,bman);
+    ROL::Ptr<ROL::BatchStdVector<RealT> > b2
+      = ROL::makePtr<ROL::BatchStdVector<RealT>>(b2_ptr,bman);
+    ROL::Ptr<ROL::BatchStdVector<RealT> > b3
+      = ROL::makePtr<ROL::BatchStdVector<RealT>>(b3_ptr,bman);
 
     // Create atom vectors 
-    Teuchos::RCP<std::vector<RealT> > a1_rcp = Teuchos::rcp( new std::vector<RealT>(size) );
-    Teuchos::RCP<std::vector<RealT> > a2_rcp = Teuchos::rcp( new std::vector<RealT>(size) );
-    Teuchos::RCP<std::vector<RealT> > a3_rcp = Teuchos::rcp( new std::vector<RealT>(size) );
-    Teuchos::RCP<std::vector<RealT> > aW_rcp = Teuchos::rcp( new std::vector<RealT>(size) );
+    ROL::Ptr<std::vector<RealT> > a1_ptr = ROL::makePtr<std::vector<RealT>>(size);
+    ROL::Ptr<std::vector<RealT> > a2_ptr = ROL::makePtr<std::vector<RealT>>(size);
+    ROL::Ptr<std::vector<RealT> > a3_ptr = ROL::makePtr<std::vector<RealT>>(size);
+    ROL::Ptr<std::vector<RealT> > aW_ptr = ROL::makePtr<std::vector<RealT>>(size);
     for (int i = 0; i < size; ++i) {
-      (*a1_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-      (*a2_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-      (*a3_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-      (*aW_rcp)[i] = static_cast<RealT>(2);
+      (*a1_ptr)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      (*a2_ptr)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      (*a3_ptr)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      (*aW_ptr)[i] = static_cast<RealT>(2);
     }
-    Teuchos::RCP<ROL::PrimalAtomVector<RealT> > a1
-      = Teuchos::rcp(new ROL::PrimalAtomVector<RealT>(a1_rcp,bman,numMyAtoms,dimension,aW_rcp));
-    Teuchos::RCP<ROL::PrimalAtomVector<RealT> > a2
-      = Teuchos::rcp(new ROL::PrimalAtomVector<RealT>(a2_rcp,bman,numMyAtoms,dimension,aW_rcp));
-    Teuchos::RCP<ROL::PrimalAtomVector<RealT> > a3
-      = Teuchos::rcp(new ROL::PrimalAtomVector<RealT>(a3_rcp,bman,numMyAtoms,dimension,aW_rcp));
+    ROL::Ptr<ROL::PrimalAtomVector<RealT> > a1
+      = ROL::makePtr<ROL::PrimalAtomVector<RealT>>(a1_ptr,bman,numMyAtoms,dimension,aW_ptr);
+    ROL::Ptr<ROL::PrimalAtomVector<RealT> > a2
+      = ROL::makePtr<ROL::PrimalAtomVector<RealT>>(a2_ptr,bman,numMyAtoms,dimension,aW_ptr);
+    ROL::Ptr<ROL::PrimalAtomVector<RealT> > a3
+      = ROL::makePtr<ROL::PrimalAtomVector<RealT>>(a3_ptr,bman,numMyAtoms,dimension,aW_ptr);
 
     // Create probability vectors
-    Teuchos::RCP<std::vector<RealT> > p1_rcp = Teuchos::rcp( new std::vector<RealT>(numMyAtoms) );
-    Teuchos::RCP<std::vector<RealT> > p2_rcp = Teuchos::rcp( new std::vector<RealT>(numMyAtoms) );
-    Teuchos::RCP<std::vector<RealT> > p3_rcp = Teuchos::rcp( new std::vector<RealT>(numMyAtoms) );
-    Teuchos::RCP<std::vector<RealT> > pW_rcp = Teuchos::rcp( new std::vector<RealT>(numMyAtoms) );
+    ROL::Ptr<std::vector<RealT> > p1_ptr = ROL::makePtr<std::vector<RealT>>(numMyAtoms);
+    ROL::Ptr<std::vector<RealT> > p2_ptr = ROL::makePtr<std::vector<RealT>>(numMyAtoms);
+    ROL::Ptr<std::vector<RealT> > p3_ptr = ROL::makePtr<std::vector<RealT>>(numMyAtoms);
+    ROL::Ptr<std::vector<RealT> > pW_ptr = ROL::makePtr<std::vector<RealT>>(numMyAtoms);
     for (int i = 0; i < numMyAtoms; ++i) {
-      (*p1_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-      (*p2_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-      (*p3_rcp)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
-      (*pW_rcp)[i] = static_cast<RealT>(2);
+      (*p1_ptr)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      (*p2_ptr)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      (*p3_ptr)[i] = static_cast<RealT>(rand())/static_cast<RealT>(RAND_MAX);
+      (*pW_ptr)[i] = static_cast<RealT>(2);
     }
-    Teuchos::RCP<ROL::PrimalProbabilityVector<RealT> > p1
-      = Teuchos::rcp(new ROL::PrimalProbabilityVector<RealT>(p1_rcp,bman,pW_rcp));
-    Teuchos::RCP<ROL::PrimalProbabilityVector<RealT> > p2
-      = Teuchos::rcp(new ROL::PrimalProbabilityVector<RealT>(p2_rcp,bman,pW_rcp));
-    Teuchos::RCP<ROL::PrimalProbabilityVector<RealT> > p3
-      = Teuchos::rcp(new ROL::PrimalProbabilityVector<RealT>(p3_rcp,bman,pW_rcp));
+    ROL::Ptr<ROL::PrimalProbabilityVector<RealT> > p1
+      = ROL::makePtr<ROL::PrimalProbabilityVector<RealT>>(p1_ptr,bman,pW_ptr);
+    ROL::Ptr<ROL::PrimalProbabilityVector<RealT> > p2
+      = ROL::makePtr<ROL::PrimalProbabilityVector<RealT>>(p2_ptr,bman,pW_ptr);
+    ROL::Ptr<ROL::PrimalProbabilityVector<RealT> > p3
+      = ROL::makePtr<ROL::PrimalProbabilityVector<RealT>>(p3_ptr,bman,pW_ptr);
 
     // Create SROM vectors
     ROL::SROMVector<RealT> x1(p1,a1);
@@ -137,22 +137,22 @@ int main(int argc, char *argv[]) {
 
     // Standard tests.
     std::vector<RealT> consistencyBMAN = b1->checkVector(*b2, *b3, true, outStream);
-    ROL::StdVector<RealT> checkvecBMAN(Teuchos::rcp(&consistencyBMAN, false));
+    ROL::StdVector<RealT> checkvecBMAN( ROL::makePtrFromRef(consistencyBMAN) );
     if (checkvecBMAN.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }
     std::vector<RealT> consistencyAtom = a1->checkVector(*a2, *a3, true, outStream);
-    ROL::StdVector<RealT> checkvecAtom(Teuchos::rcp(&consistencyAtom, false));
+    ROL::StdVector<RealT> checkvecAtom( ROL::makePtrFromRef(consistencyAtom) );
     if (checkvecAtom.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }
     std::vector<RealT> consistencyProb = p1->checkVector(*p2, *p3, true, outStream);
-    ROL::StdVector<RealT> checkvecProb(Teuchos::rcp(&consistencyProb, false));
+    ROL::StdVector<RealT> checkvecProb( ROL::makePtrFromRef(consistencyProb) );
     if (checkvecProb.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }
     std::vector<RealT> consistencySROM = x1.checkVector(x2, x3, true, outStream);
-    ROL::StdVector<RealT> checkvecSROM(Teuchos::rcp(&consistencySROM, false));
+    ROL::StdVector<RealT> checkvecSROM( ROL::makePtrFromRef(consistencySROM) );
     if (checkvecSROM.norm() > std::sqrt(errtol)) {
       errorFlag++;
     }
@@ -163,9 +163,9 @@ int main(int argc, char *argv[]) {
     RealT sqrt2 = static_cast<RealT>(std::sqrt(2.));
 
     // Create batch std vectors 
-    Teuchos::RCP<std::vector<RealT> > b_rcp = Teuchos::rcp( new std::vector<RealT>(size,1) );
-    Teuchos::RCP<ROL::BatchStdVector<RealT> > b
-      = Teuchos::rcp(new ROL::BatchStdVector<RealT>(b_rcp,bman));
+    ROL::Ptr<std::vector<RealT> > b_ptr = ROL::makePtr<std::vector<RealT>>(size,1);
+    ROL::Ptr<ROL::BatchStdVector<RealT> > b
+      = ROL::makePtr<ROL::BatchStdVector<RealT>>(b_ptr,bman);
     RealT bnorm = b->norm();
     outStream << "BatchStdVector Norm Error:          "
               << std::abs(bnorm - anorm) << std::endl;
@@ -174,18 +174,18 @@ int main(int argc, char *argv[]) {
     }
 
     // Create atom vectors 
-    Teuchos::RCP<std::vector<RealT> > ap_rcp = Teuchos::rcp( new std::vector<RealT>(size,1) );
-    Teuchos::RCP<ROL::PrimalAtomVector<RealT> > ap
-      = Teuchos::rcp(new ROL::PrimalAtomVector<RealT>(ap_rcp,bman,numMyAtoms,dimension,aW_rcp));
+    ROL::Ptr<std::vector<RealT> > ap_ptr = ROL::makePtr<std::vector<RealT>>(size,1);
+    ROL::Ptr<ROL::PrimalAtomVector<RealT> > ap
+      = ROL::makePtr<ROL::PrimalAtomVector<RealT>>(ap_ptr,bman,numMyAtoms,dimension,aW_ptr);
     RealT apnorm = ap->norm();
     outStream << "PrimalAtomVector Norm Error:        "
               << std::abs(apnorm - sqrt2*anorm) << std::endl;
     if ( std::abs(apnorm - sqrt2*anorm) > std::sqrt(errtol) ) {
       errorFlag++;
     }
-    Teuchos::RCP<std::vector<RealT> > ad_rcp = Teuchos::rcp( new std::vector<RealT>(size,1) );
-    Teuchos::RCP<ROL::DualAtomVector<RealT> > ad
-      = Teuchos::rcp(new ROL::DualAtomVector<RealT>(ad_rcp,bman,numMyAtoms,dimension,aW_rcp));
+    ROL::Ptr<std::vector<RealT> > ad_ptr = ROL::makePtr<std::vector<RealT>>(size,1);
+    ROL::Ptr<ROL::DualAtomVector<RealT> > ad
+      = ROL::makePtr<ROL::DualAtomVector<RealT>>(ad_ptr,bman,numMyAtoms,dimension,aW_ptr);
     RealT adnorm = ad->norm();
     outStream << "DualAtomVector Norm Error:          "
               << std::abs(adnorm - anorm/sqrt2) << std::endl;
@@ -194,18 +194,18 @@ int main(int argc, char *argv[]) {
     }
 
     // Create probability vectors
-    Teuchos::RCP<std::vector<RealT> > pp_rcp = Teuchos::rcp( new std::vector<RealT>(numMyAtoms,1) );
-    Teuchos::RCP<ROL::PrimalProbabilityVector<RealT> > pp
-      = Teuchos::rcp(new ROL::PrimalProbabilityVector<RealT>(pp_rcp,bman,pW_rcp));
+    ROL::Ptr<std::vector<RealT> > pp_ptr = ROL::makePtr<std::vector<RealT>>(numMyAtoms,1);
+    ROL::Ptr<ROL::PrimalProbabilityVector<RealT> > pp
+      = ROL::makePtr<ROL::PrimalProbabilityVector<RealT>>(pp_ptr,bman,pW_ptr);
     RealT ppnorm = pp->norm();
     outStream << "PrimalProbabilityVector Norm Error: "
               << std::abs(ppnorm - sqrt2*pnorm) << std::endl;
     if ( std::abs(ppnorm - sqrt2*pnorm) > std::sqrt(errtol) ) {
       errorFlag++;
     }
-    Teuchos::RCP<std::vector<RealT> > pd_rcp = Teuchos::rcp( new std::vector<RealT>(numMyAtoms,1) );
-    Teuchos::RCP<ROL::DualProbabilityVector<RealT> > pd
-      = Teuchos::rcp(new ROL::DualProbabilityVector<RealT>(pd_rcp,bman,pW_rcp));
+    ROL::Ptr<std::vector<RealT> > pd_ptr = ROL::makePtr<std::vector<RealT>>(numMyAtoms,1);
+    ROL::Ptr<ROL::DualProbabilityVector<RealT> > pd
+      = ROL::makePtr<ROL::DualProbabilityVector<RealT>>(pd_ptr,bman,pW_ptr);
     RealT pdnorm = pd->norm();
     outStream << "DualProbabilityVector Norm Error:   "
               << std::abs(pdnorm - pnorm/sqrt2) << std::endl;

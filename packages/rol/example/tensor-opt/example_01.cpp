@@ -258,9 +258,9 @@ private:
       }
     }
 
-    Teuchos::RCP<ROL::Vector<DT2_>> clone() const override
+    ROL::Ptr<ROL::Vector<DT2_>> clone() const override
     {
-      auto tmp = Teuchos::rcp(new VectorWrapper());
+      auto tmp = ROL::makePtr<VectorWrapper>();
       tmp->zero(); // TODO: necessary?
       return tmp;
     }
@@ -490,9 +490,9 @@ private:
     }
 
   public:
-    static Teuchos::RCP<VectorWrapper<DT2_, dim2_>> imul()
+    static ROL::Ptr<VectorWrapper<DT2_, dim2_>> imul()
     {
-      auto x = Teuchos::rcp(new VectorWrapper<DT2_, dim2_>);
+      auto x = ROL::makePtr<VectorWrapper<DT2_, dim2_>>();
       x->zero();
       return x;
     }
@@ -636,20 +636,20 @@ private:
   const std::string                                    _parfile;
   const Teuchos::RCP<Teuchos::ParameterList>           _parlist;
 
-  const Teuchos::RCP<VectorWrapper<DT_, dim_>>         _lower,  _upper;
-  const Teuchos::RCP<VectorWrapper<DT_, dim_>>         _x;
+  const ROL::Ptr<VectorWrapper<DT_, dim_>>         _lower,  _upper;
+  const ROL::Ptr<VectorWrapper<DT_, dim_>>         _x;
 
-  const Teuchos::RCP<ROL::BoundConstraint<DT_>>        _bnd;
+  const ROL::Ptr<ROL::BoundConstraint<DT_>>        _bnd;
 
-  const Teuchos::RCP<ROL::BoundConstraint<DT_>>        _ibnd_local;
+  const ROL::Ptr<ROL::BoundConstraint<DT_>>        _ibnd_local;
 
-  std::vector<Teuchos::RCP<ROL::Constraint<DT_>>>      _icon;
-  std::vector<Teuchos::RCP<ROL::Vector<DT_>>>          _imul;
-  std::vector<Teuchos::RCP<ROL::BoundConstraint<DT_>>> _ibnd;
+  std::vector<ROL::Ptr<ROL::Constraint<DT_>>>      _icon;
+  std::vector<ROL::Ptr<ROL::Vector<DT_>>>          _imul;
+  std::vector<ROL::Ptr<ROL::BoundConstraint<DT_>>> _ibnd;
 
-  const Teuchos::RCP<MyObjective<DT_, dim_>>           _obj;
-  Teuchos::RCP<ROL::OptimizationProblem<DT_>>          _problem;
-  Teuchos::RCP<ROL::OptimizationSolver<DT_>>           _solver;
+  const ROL::Ptr<MyObjective<DT_, dim_>>           _obj;
+  ROL::Ptr<ROL::OptimizationProblem<DT_>>          _problem;
+  ROL::Ptr<ROL::OptimizationSolver<DT_>>           _solver;
 
   DT_ _A_i_up[6];
   DT_ _A_i_lo[6];
@@ -662,19 +662,19 @@ public:
   /// Constructor
   SemidefiniteProgramming() :
     _parfile("example_01.xml"),
-    _parlist(   Teuchos::rcp(new Teuchos::ParameterList)),
-    _lower(     Teuchos::rcp(new VectorWrapper<DT_, dim_>(DT_(0)))),
-    _upper(     Teuchos::rcp(new VectorWrapper<DT_, dim_>(DT_(1)))),
-    _x(         Teuchos::rcp(new VectorWrapper<DT_, dim_>)),
-    _bnd(       Teuchos::rcp(new ROL::Bounds<DT_>(_lower, _upper))),
-    _ibnd_local(Teuchos::rcp(new ROL::Bounds<DT_>(* _lower, /*isLower =*/ true))),
-    _obj(       Teuchos::rcp(new MyObjective<DT_, dim_>(DT_(2))))
+    _parlist(   Teuchos::rcp( new Teuchos::ParameterList() )),
+    _lower(     ROL::makePtr<VectorWrapper<DT_, dim_>>(DT_(0))),
+    _upper(     ROL::makePtr<VectorWrapper<DT_, dim_>>(DT_(1))),
+    _x(         ROL::makePtr<VectorWrapper<DT_, dim_>>()),
+    _bnd(       ROL::makePtr<ROL::Bounds<DT_>>(_lower, _upper)),
+    _ibnd_local(ROL::makePtr<ROL::Bounds<DT_>>(* _lower, /*isLower =*/ true)),
+    _obj(       ROL::makePtr<MyObjective<DT_, dim_>>(DT_(2)))
   {
     Teuchos::updateParametersFromXmlFile(_parfile, _parlist.ptr());
 
     for (int i(0); i < 4; ++i)
     {
-      _icon.push_back(Teuchos::rcp(new MyConstraint<DT_, dim_>));
+      _icon.push_back(ROL::makePtr<MyConstraint<DT_, dim_>>());
       _imul.push_back(MyConstraint<DT_, dim_>::imul());
       _ibnd.push_back(_ibnd_local);
     }
@@ -691,8 +691,8 @@ public:
     my_cast<MyConstraint<DT_, dim_> &>(* _icon[3]).set_A(_A_j_lo);
     my_cast<MyConstraint<DT_, dim_> &>(* _icon[3]).set_F(_F_n);
 
-    _problem = Teuchos::rcp(new ROL::OptimizationProblem<DT_>(_obj, _x, _bnd, _icon, _imul, _ibnd));
-    _solver = Teuchos::rcp(new ROL::OptimizationSolver<DT_>(* _problem, * _parlist));
+    _problem = ROL::makePtr<ROL::OptimizationProblem<DT_>>(_obj, _x, _bnd, _icon, _imul, _ibnd);
+    _solver = ROL::makePtr<ROL::OptimizationSolver<DT_>>(* _problem, * _parlist);
     _x->zero();
   }
 
@@ -825,12 +825,12 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
 

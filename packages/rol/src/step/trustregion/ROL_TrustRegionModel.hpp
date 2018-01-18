@@ -66,10 +66,10 @@ namespace ROL {
 template <class Real>
 class TrustRegionModel : public Objective<Real> {
 private:
-  Teuchos::RCP<Objective<Real> > obj_;
-  Teuchos::RCP<const Vector<Real> > x_, g_;
-  Teuchos::RCP<Vector<Real> > dual_;
-  Teuchos::RCP<Secant<Real> > secant_;
+  ROL::Ptr<Objective<Real> > obj_;
+  ROL::Ptr<const Vector<Real> > x_, g_;
+  ROL::Ptr<Vector<Real> > dual_;
+  ROL::Ptr<Secant<Real> > secant_;
 
   const bool useSecantPrecond_;
   const bool useSecantHessVec_;
@@ -79,22 +79,22 @@ public:
   virtual ~TrustRegionModel() {}
 
   TrustRegionModel(Objective<Real> &obj, const Vector<Real> &x, const Vector<Real> &g, const bool init = true)
-    : secant_(Teuchos::null), useSecantPrecond_(false), useSecantHessVec_(false) {
-    obj_  = Teuchos::rcpFromRef(obj);
-    x_    = Teuchos::rcpFromRef(x);
-    g_    = Teuchos::rcpFromRef(g);
+    : secant_(ROL::nullPtr), useSecantPrecond_(false), useSecantHessVec_(false) {
+    obj_  = ROL::makePtrFromRef(obj);
+    x_    = ROL::makePtrFromRef(x);
+    g_    = ROL::makePtrFromRef(g);
     if ( init ) {
       dual_ = g.clone();
     }
   }
 
   TrustRegionModel(Objective<Real> &obj, const Vector<Real> &x, const Vector<Real> &g,
-                   const Teuchos::RCP<Secant<Real> > &secant,
+                   const ROL::Ptr<Secant<Real> > &secant,
                    const bool useSecantPrecond, const bool useSecantHessVec)
     : secant_(secant), useSecantPrecond_(useSecantPrecond), useSecantHessVec_(useSecantHessVec) {
-    obj_  = Teuchos::rcpFromRef(obj);
-    x_    = Teuchos::rcpFromRef(x);
-    g_    = Teuchos::rcpFromRef(g);
+    obj_  = ROL::makePtrFromRef(obj);
+    x_    = ROL::makePtrFromRef(x);
+    g_    = ROL::makePtrFromRef(g);
     dual_ = g.clone();
   }
 
@@ -159,20 +159,20 @@ public:
 
   virtual void updateActualReduction(Real &ared, const Vector<Real> &s) {}
 
-  virtual const Teuchos::RCP<const Vector<Real> > getGradient(void) const {
+  virtual const ROL::Ptr<const Vector<Real> > getGradient(void) const {
     return g_;
   }
 
-  virtual const Teuchos::RCP<const Vector<Real> > getIterate(void) const {
+  virtual const ROL::Ptr<const Vector<Real> > getIterate(void) const {
     return x_;
   }
 
-  virtual const Teuchos::RCP<Objective<Real> > getObjective(void) const {
+  virtual const ROL::Ptr<Objective<Real> > getObjective(void) const {
     return obj_;
   }
 
-  virtual const Teuchos::RCP<BoundConstraint<Real> > getBoundConstraint(void) const {
-    return Teuchos::null;
+  virtual const ROL::Ptr<BoundConstraint<Real> > getBoundConstraint(void) const {
+    return ROL::nullPtr;
   }
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}

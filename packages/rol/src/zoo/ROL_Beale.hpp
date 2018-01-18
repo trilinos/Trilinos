@@ -75,8 +75,8 @@ namespace ZOO {
     }
 
     Real value( const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > ex
-        = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+      ROL::Ptr<const std::vector<Real> > ex
+        = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
       Real f1 = 1.5-(*ex)[0]*(1.0-(*ex)[1]);
       Real f2 = 2.25-(*ex)[0]*(1.0-pow((*ex)[1],2));
@@ -86,10 +86,10 @@ namespace ZOO {
     }
 
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<std::vector<Real> > eg
-        = Teuchos::dyn_cast<StdVector<Real> >(g).getVector();
-      Teuchos::RCP<const std::vector<Real> > ex
-        = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+      ROL::Ptr<std::vector<Real> > eg
+        = dynamic_cast<StdVector<Real>&>(g).getVector();
+      ROL::Ptr<const std::vector<Real> > ex
+        = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
       Real f1 = 1.5-(*ex)[0]*(1.0-(*ex)[1]);
       Real f2 = 2.25-(*ex)[0]*(1.0-pow((*ex)[1],2));
@@ -106,12 +106,12 @@ namespace ZOO {
     }
 #if USE_HESSVEC
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<std::vector<Real> > ehv
-        = Teuchos::dyn_cast<StdVector<Real> >(hv).getVector();
-      Teuchos::RCP<const std::vector<Real> > ev
-        = Teuchos::dyn_cast<const StdVector<Real> >(v).getVector();
-      Teuchos::RCP<const std::vector<Real> > ex
-        = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+      ROL::Ptr<std::vector<Real> > ehv
+        = dynamic_cast<StdVector<Real>&>(hv).getVector();
+      ROL::Ptr<const std::vector<Real> > ev
+        = dynamic_cast<const StdVector<Real>&>(v).getVector();
+      ROL::Ptr<const std::vector<Real> > ex
+        = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
       Real f1 = 1.5-(*ex)[0]*(1.0-(*ex)[1]);
       Real f2 = 2.25-(*ex)[0]*(1.0-pow((*ex)[1],2));
@@ -144,12 +144,12 @@ namespace ZOO {
     }
 #endif
     void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<std::vector<Real> > ehv
-        = Teuchos::dyn_cast<StdVector<Real> >(hv).getVector();
-      Teuchos::RCP<const std::vector<Real> > ev
-        = Teuchos::dyn_cast<const StdVector<Real> >(v).getVector();
-      Teuchos::RCP<const std::vector<Real> > ex
-        = Teuchos::dyn_cast<const StdVector<Real> >(x).getVector();
+      ROL::Ptr<std::vector<Real> > ehv
+        = dynamic_cast<StdVector<Real>&>(hv).getVector();
+      ROL::Ptr<const std::vector<Real> > ev
+        = dynamic_cast<const StdVector<Real>&>(v).getVector();
+      ROL::Ptr<const std::vector<Real> > ex
+        = dynamic_cast<const StdVector<Real>&>(x).getVector();
 
       Real f1 = 1.5-(*ex)[0]*(1.0-(*ex)[1]);
       Real f2 = 2.25-(*ex)[0]*(1.0-pow((*ex)[1],2));
@@ -183,28 +183,28 @@ namespace ZOO {
   };
 
   template<class Real>
-  void getBeale( Teuchos::RCP<Objective<Real> > &obj,
-                 Teuchos::RCP<Vector<Real> >    &x0,
-                 Teuchos::RCP<Vector<Real> >    &x ) {
+  void getBeale( ROL::Ptr<Objective<Real> > &obj,
+                 ROL::Ptr<Vector<Real> >    &x0,
+                 ROL::Ptr<Vector<Real> >    &x ) {
     // Problem dimension
     int n = 2;
 
     // Build scale
-    Teuchos::RCP<std::vector<Real> > scale = Teuchos::rcp(new std::vector<Real>(n,0.0));
+    ROL::Ptr<std::vector<Real> > scale = ROL::makePtr<std::vector<Real>>(n,0.0);
     (*scale)[0] = 1.e-1; (*scale)[1] = 1.e1;
 
     // Get Initial Guess
-    Teuchos::RCP<std::vector<Real> > x0p = Teuchos::rcp(new std::vector<Real>(n,0.0)); 
+    ROL::Ptr<std::vector<Real> > x0p = ROL::makePtr<std::vector<Real>>(n,0.0); 
     (*x0p)[0] = 1.0; (*x0p)[1] = 1.0;
-    x0 = Teuchos::rcp(new PrimalScaledStdVector<Real>(x0p,scale));
+    x0 = ROL::makePtr<PrimalScaledStdVector<Real>>(x0p,scale);
 
     // Get Solution
-    Teuchos::RCP<std::vector<Real> > xp  = Teuchos::rcp(new std::vector<Real>(n,0.0));
+    ROL::Ptr<std::vector<Real> > xp  = ROL::makePtr<std::vector<Real>>(n,0.0);
     (*xp)[0] = 3.0; (*xp)[1] = 0.5;
-    x = Teuchos::rcp(new PrimalScaledStdVector<Real>(xp,scale));
+    x = ROL::makePtr<PrimalScaledStdVector<Real>>(xp,scale);
 
     // Instantiate Objective Function
-    obj = Teuchos::rcp(new Objective_Beale<Real>);
+    obj = ROL::makePtr<Objective_Beale<Real>>();
   }
 
 }// End ZOO Namespace

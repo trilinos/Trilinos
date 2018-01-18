@@ -48,7 +48,7 @@
 #include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include <iostream>
 
 /** @ingroup func_group
@@ -91,18 +91,18 @@ template <class Real>
 class QuadraticPenalty_SimOpt : public Objective_SimOpt<Real> {
 private:
   // Required for quadratic penalty definition
-  const Teuchos::RCP<Constraint_SimOpt<Real> > con_;
-  Teuchos::RCP<Vector<Real> > multiplier_;
+  const ROL::Ptr<Constraint_SimOpt<Real> > con_;
+  ROL::Ptr<Vector<Real> > multiplier_;
   Real penaltyParameter_;
 
   // Auxiliary storage
-  Teuchos::RCP<Vector<Real> > primalMultiplierVector_;
-  Teuchos::RCP<Vector<Real> > dualSimVector_;
-  Teuchos::RCP<Vector<Real> > dualOptVector_;
-  Teuchos::RCP<Vector<Real> > primalConVector_;
+  ROL::Ptr<Vector<Real> > primalMultiplierVector_;
+  ROL::Ptr<Vector<Real> > dualSimVector_;
+  ROL::Ptr<Vector<Real> > dualOptVector_;
+  ROL::Ptr<Vector<Real> > primalConVector_;
 
   // Constraint evaluations
-  Teuchos::RCP<Vector<Real> > conValue_;
+  ROL::Ptr<Vector<Real> > conValue_;
 
   // Evaluation counters
   int ncval_;
@@ -123,7 +123,7 @@ private:
   }
 
 public:
-  QuadraticPenalty_SimOpt(const Teuchos::RCP<Constraint_SimOpt<Real> > &con,
+  QuadraticPenalty_SimOpt(const ROL::Ptr<Constraint_SimOpt<Real> > &con,
                           const Vector<Real> &multiplier,
                           const Real penaltyParameter,
                           const Vector<Real> &simVec,

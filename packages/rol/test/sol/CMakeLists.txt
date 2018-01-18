@@ -1,4 +1,3 @@
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   solInterface
   SOURCES test_01.cpp

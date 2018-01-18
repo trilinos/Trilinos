@@ -49,7 +49,7 @@
 #include "ROL_QuadraticPenalty.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include <iostream>
 
 /** @ingroup func_group
@@ -86,16 +86,16 @@ template <class Real>
 class AugmentedLagrangian : public Objective<Real> {
 private:
   // Required for Augmented Lagrangian definition
-  const Teuchos::RCP<Objective<Real> > obj_;
-  Teuchos::RCP<QuadraticPenalty<Real> > pen_;
+  const ROL::Ptr<Objective<Real> > obj_;
+  ROL::Ptr<QuadraticPenalty<Real> > pen_;
   Real penaltyParameter_;
 
   // Auxiliary storage
-  Teuchos::RCP<Vector<Real> > dualOptVector_;
+  ROL::Ptr<Vector<Real> > dualOptVector_;
 
   // Objective and constraint evaluations
   Real fval_;
-  Teuchos::RCP<Vector<Real> > gradient_;
+  ROL::Ptr<Vector<Real> > gradient_;
 
   // Evaluation counters
   int nfval_;
@@ -120,8 +120,8 @@ public:
       @param[in]          conVec           is a constraint space vector.
       @param[in]          parlist          is a parameter list.
   */
-  AugmentedLagrangian(const Teuchos::RCP<Objective<Real> > &obj,
-                      const Teuchos::RCP<Constraint<Real> > &con,
+  AugmentedLagrangian(const ROL::Ptr<Objective<Real> > &obj,
+                      const ROL::Ptr<Constraint<Real> > &con,
                       const Vector<Real> &multiplier,
                       const Real penaltyParameter,
                       const Vector<Real> &optVec,
@@ -137,7 +137,7 @@ public:
     scaleLagrangian_  = sublist.get("Use Scaled Augmented Lagrangian", false);
     int HessianApprox = sublist.get("Level of Hessian Approximation",  0);
 
-    pen_ = Teuchos::rcp(new QuadraticPenalty<Real>(con,multiplier,penaltyParameter,optVec,conVec,scaleLagrangian_,HessianApprox));
+    pen_ = ROL::makePtr<QuadraticPenalty<Real>>(con,multiplier,penaltyParameter,optVec,conVec,scaleLagrangian_,HessianApprox);
   }
 
   /** \brief Null constructor.
@@ -146,8 +146,8 @@ public:
       valid AugmentedLagrangian object.  Do not use.
   */
   AugmentedLagrangian()
-   : obj_(Teuchos::null), pen_(Teuchos::null), dualOptVector_(Teuchos::null),
-     fval_(0), gradient_(Teuchos::null), nfval_(0), ngval_(0),
+   : obj_(ROL::nullPtr), pen_(ROL::nullPtr), dualOptVector_(ROL::nullPtr),
+     fval_(0), gradient_(ROL::nullPtr), nfval_(0), ngval_(0),
      scaleLagrangian_(false), isValueComputed_(false), isGradientComputed_(false) {}
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {

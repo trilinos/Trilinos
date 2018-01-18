@@ -101,7 +101,7 @@ public:
        @param[in,out]      x is the optimization variable.
   */
   virtual void project( Vector<Real> &x ) {
-	  ThyraVector<Real>  & thyra_x = Teuchos::dyn_cast<ThyraVector<Real> >(x);
+	  ThyraVector<Real>  & thyra_x = dynamic_cast<ThyraVector<Real>&>(x);
     Thyra::ele_wise_bound(*thyra_x_lo_, *thyra_x_up_, thyra_x.getVector().ptr() );
   }
 
@@ -120,8 +120,8 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
-	  const ThyraVector<Real>  & thyra_x = Teuchos::dyn_cast<const ThyraVector<Real> >(x);
-	  ThyraVector<Real>  & thyra_v = Teuchos::dyn_cast<ThyraVector<Real> >(v);
+	  const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(x);
+	  ThyraVector<Real>  & thyra_v = dynamic_cast<ThyraVector<Real>&>(v);
 
 	  Real epsn = std::min(eps,min_diff_);
     Thyra::ele_wise_prune_upper(*thyra_x.getVector(), *thyra_x_up_, thyra_v.getVector().ptr(), epsn );
@@ -142,9 +142,9 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
-	const ThyraVector<Real>  & thyra_x = Teuchos::dyn_cast<const ThyraVector<Real> >(x);
-	ThyraVector<Real>  & thyra_v = Teuchos::dyn_cast<ThyraVector<Real> >(v);
-	const ThyraVector<Real>  & thyra_g = Teuchos::dyn_cast<const ThyraVector<Real> >(g);
+	const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(x);
+	ThyraVector<Real>  & thyra_v = dynamic_cast<ThyraVector<Real>&>(v);
+	const ThyraVector<Real>  & thyra_g = dynamic_cast<const ThyraVector<Real>&>(g);
 
 	Real epsn = std::min(eps,min_diff_);
 
@@ -164,8 +164,8 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
-	const ThyraVector<Real>  & thyra_x = Teuchos::dyn_cast<const ThyraVector<Real> >(x);
-  ThyraVector<Real>  & thyra_v = Teuchos::dyn_cast<ThyraVector<Real> >(v);
+	const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(x);
+  ThyraVector<Real>  & thyra_v = dynamic_cast<ThyraVector<Real>&>(v);
 
 	Real epsn = std::min(eps,min_diff_);
 
@@ -187,9 +187,9 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
-	const ThyraVector<Real>  & thyra_x = Teuchos::dyn_cast<const ThyraVector<Real> >(x);
-  ThyraVector<Real>  & thyra_v = Teuchos::dyn_cast<ThyraVector<Real> >(v);
-	const ThyraVector<Real>  & thyra_g = Teuchos::dyn_cast<const ThyraVector<Real> >(g);
+	const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(x);
+  ThyraVector<Real>  & thyra_v = dynamic_cast<ThyraVector<Real>&>(v);
+	const ThyraVector<Real>  & thyra_g = dynamic_cast<const ThyraVector<Real>&>(g);
 
 	Real epsn = std::min(eps,min_diff_);
 
@@ -202,7 +202,7 @@ public:
       @param[out]    u   is the vector to be set to the upper bound.
   */
   virtual void setVectorToUpperBound( Vector<Real> &u ) {
-	  ThyraVector<Real>  & thyra_up = Teuchos::dyn_cast<ThyraVector<Real> >(u);
+	  ThyraVector<Real>  & thyra_up = dynamic_cast<ThyraVector<Real>&>(u);
 	  thyra_up.set(ThyraVector<Real>(thyra_x_up_));
   }
 
@@ -212,7 +212,7 @@ public:
       @param[out]    l   is the vector to be set to the lower bound.
   */
   virtual void setVectorToLowerBound( Vector<Real> &l ) {
-	  ThyraVector<Real>  & thyra_lo = Teuchos::dyn_cast<ThyraVector<Real> >(l);
+	  ThyraVector<Real>  & thyra_lo = dynamic_cast<ThyraVector<Real>&>(l);
 	  thyra_lo.set(ThyraVector<Real>(thyra_x_lo_));
   }
 

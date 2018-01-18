@@ -81,7 +81,7 @@ namespace { // (anonymous)
     Teuchos::RCP<const Teuchos::ParameterList>
     getValidParameters () const
     {
-      return Teuchos::rcp (new Teuchos::ParameterList ());
+      return Teuchos::rcp(new Teuchos::ParameterList>());
     }
 
     void

@@ -48,7 +48,7 @@
 #include "ROL_Constraint.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_Types.hpp"
-#include "Teuchos_RCP.hpp"
+#include "ROL_Ptr.hpp"
 #include <iostream>
 
 /** @ingroup func_group
@@ -84,17 +84,17 @@ template <class Real>
 class QuadraticPenalty : public Objective<Real> {
 private:
   // Required for quadratic penalty definition
-  const Teuchos::RCP<Constraint<Real> > con_;
-  Teuchos::RCP<Vector<Real> > multiplier_;
+  const ROL::Ptr<Constraint<Real> > con_;
+  ROL::Ptr<Vector<Real> > multiplier_;
   Real penaltyParameter_;
 
   // Auxiliary storage
-  Teuchos::RCP<Vector<Real> > primalMultiplierVector_;
-  Teuchos::RCP<Vector<Real> > dualOptVector_;
-  Teuchos::RCP<Vector<Real> > primalConVector_;
+  ROL::Ptr<Vector<Real> > primalMultiplierVector_;
+  ROL::Ptr<Vector<Real> > dualOptVector_;
+  ROL::Ptr<Vector<Real> > primalConVector_;
 
   // Constraint evaluations
-  Teuchos::RCP<Vector<Real> > conValue_;
+  ROL::Ptr<Vector<Real> > conValue_;
 
   // Evaluation counters
   int ncval_;
@@ -115,7 +115,7 @@ private:
   }
 
 public:
-  QuadraticPenalty(const Teuchos::RCP<Constraint<Real> > &con,
+  QuadraticPenalty(const ROL::Ptr<Constraint<Real> > &con,
                    const Vector<Real> &multiplier,
                    const Real penaltyParameter,
                    const Vector<Real> &optVec,

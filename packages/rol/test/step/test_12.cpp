@@ -60,17 +60,17 @@ int main(int argc, char *argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
-  Teuchos::RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = Teuchos::rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = Teuchos::rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag  = 0;
-  Teuchos::RCP<ROL::Vector<RealT> > x0, x;
-  Teuchos::RCP<ROL::Objective<RealT> > obj;
-  Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd;
+  ROL::Ptr<ROL::Vector<RealT> > x0, x;
+  ROL::Ptr<ROL::Objective<RealT> > obj;
+  ROL::Ptr<ROL::BoundConstraint<RealT> > bnd;
   ROL::getTestObjectives<RealT>(obj,bnd,x0,x,ROL::TESTOPTPROBLEM_HS1);
   ROL::AlgorithmState<RealT> algo_state;
 

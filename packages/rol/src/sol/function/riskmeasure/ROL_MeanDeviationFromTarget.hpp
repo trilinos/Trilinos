@@ -78,12 +78,12 @@ template<class Real>
 class MeanDeviationFromTarget : public RiskMeasure<Real> {
   typedef typename std::vector<Real>::size_type uint;
 private:
-  Teuchos::RCP<PositiveFunction<Real> > positiveFunction_;
+  ROL::Ptr<PositiveFunction<Real> > positiveFunction_;
 
-  Teuchos::RCP<Vector<Real> > dualVector1_;
-  Teuchos::RCP<Vector<Real> > dualVector2_;
-  Teuchos::RCP<Vector<Real> > dualVector3_;
-  Teuchos::RCP<Vector<Real> > dualVector4_;
+  ROL::Ptr<Vector<Real> > dualVector1_;
+  ROL::Ptr<Vector<Real> > dualVector2_;
+  ROL::Ptr<Vector<Real> > dualVector3_;
+  ROL::Ptr<Vector<Real> > dualVector4_;
 
   std::vector<Real> target_;
   std::vector<Real> order_;
@@ -93,9 +93,9 @@ private:
   std::vector<Real> pval_; 
   std::vector<Real> pgv_; 
 
-  std::vector<Teuchos::RCP<Vector<Real> > > pg0_;
-  std::vector<Teuchos::RCP<Vector<Real> > > pg_;
-  std::vector<Teuchos::RCP<Vector<Real> > > phv_;
+  std::vector<ROL::Ptr<Vector<Real> > > pg0_;
+  std::vector<ROL::Ptr<Vector<Real> > > pg_;
+  std::vector<ROL::Ptr<Vector<Real> > > phv_;
 
   bool firstReset_;
 
@@ -122,7 +122,7 @@ private:
       TEUCHOS_TEST_FOR_EXCEPTION((coeff_[i] < zero), std::invalid_argument,
         ">>> ERROR (ROL::MeanDeviationFromTarget): Element of coefficient array out of range!");
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == Teuchos::null, std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(positiveFunction_ == ROL::nullPtr, std::invalid_argument,
       ">>> ERROR (ROL::MeanDeviationFromTarget): PositiveFunction pointer is null!");
   }
 
@@ -138,7 +138,7 @@ public:
       with a single deviation.
   */
   MeanDeviationFromTarget( const Real target, const Real order, const Real coeff,
-                           const Teuchos::RCP<PositiveFunction<Real> > &pf )
+                           const ROL::Ptr<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
     order_.clear();  order_.push_back(order);
     coeff_.clear();  coeff_.push_back(coeff);
@@ -161,7 +161,7 @@ public:
   MeanDeviationFromTarget( const std::vector<Real> &target,
                            const std::vector<Real> &order,
                            const std::vector<Real> &coeff, 
-                           const Teuchos::RCP<PositiveFunction<Real> > &pf )
+                           const ROL::Ptr<PositiveFunction<Real> > &pf )
     : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
     target_.clear(); order_.clear(); coeff_.clear();
     for ( uint i = 0; i < target.size(); i++ ) {
@@ -207,10 +207,10 @@ public:
     // Build (approximate) positive function
     std::string type = list.get<std::string>("Deviation Type");
     if ( type == "Upper" ) {
-      positiveFunction_ = Teuchos::rcp(new PlusFunction<Real>(list));
+      positiveFunction_ = ROL::makePtr<PlusFunction<Real>>(list);
     }
     else if ( type == "Absolute" ) {
-      positiveFunction_ = Teuchos::rcp(new AbsoluteValue<Real>(list));
+      positiveFunction_ = ROL::makePtr<AbsoluteValue<Real>>(list);
     }
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
@@ -222,7 +222,7 @@ public:
     initialize();
   }
 
-  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x) {
     Real zero(0);
     RiskMeasure<Real>::reset(x0,x);
     if (firstReset_) {
@@ -245,11 +245,11 @@ public:
     dualVector3_->zero(); dualVector4_->zero();
   }
     
-  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
-             Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
+  void reset(ROL::Ptr<Vector<Real> > &x0, const Vector<Real> &x,
+             ROL::Ptr<Vector<Real> > &v0, const Vector<Real> &v) {
     reset(x0,x);
-    v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const RiskVector<Real> >(
-           Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
+    v0 = ROL::constPtrCast<Vector<Real> >(dynamic_cast<const RiskVector<Real>&>(
+           dynamic_cast<const Vector<Real>&>(v)).getVector());
   }
   
   void update(const Real val, const Real weight) {
@@ -314,7 +314,7 @@ public:
     sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector1_);
     std::vector<Real> pval_sum(NumMoments_);
     sampler.sumAll(&(pval_)[0],&pval_sum[0],NumMoments_);
-    Teuchos::RCP<Vector<Real> > pg;
+    ROL::Ptr<Vector<Real> > pg;
     for ( uint p = 0; p < NumMoments_; p++ ) {
       if ( pval_sum[p] > zero ) {
         pg = (pg_[p])->clone();
@@ -323,7 +323,7 @@ public:
       }
     }
     // Set RiskVector
-    (Teuchos::dyn_cast<RiskVector<Real> >(g)).setVector(*dualVector1_);
+    (dynamic_cast<RiskVector<Real>&>(g)).setVector(*dualVector1_);
   }
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
@@ -347,7 +347,7 @@ public:
       }
     }
     // Set RiskVector
-    (Teuchos::dyn_cast<RiskVector<Real> >(hv)).setVector(*dualVector1_);
+    (dynamic_cast<RiskVector<Real>&>(hv)).setVector(*dualVector1_);
   }
 };
 

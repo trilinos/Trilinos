@@ -52,8 +52,8 @@
 
 int main(int argc, char *argv[]) {
 
-  using Teuchos::RCP;
-  using Teuchos::rcp; 
+  
+   
 
   typedef double RealT;
 
@@ -62,31 +62,31 @@ int main(int argc, char *argv[]) {
   typedef ROL::Objective<RealT>            OBJ;
   typedef ROL::InequalityConstraint<RealT> INEQ; 
 
-  using Teuchos::RCP; 
+   
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
+  ROL::Ptr<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
   if (iprint > 0)
-    outStream = rcp(&std::cout, false);
+    outStream = ROL::makePtrFromRef(std::cout);
   else
-    outStream = rcp(&bhs, false);
+    outStream = ROL::makePtrFromRef(bhs);
 
   int errorFlag = 0;
 
   try { 
 
-    RCP<V>    x     = ROL::ZOO::getInitialGuess_HS24<RealT>();
-    RCP<V>    xs    = ROL::ZOO::getSolution_HS24<RealT>();
-    RCP<V>    inmul = ROL::ZOO::getInequalityMultiplier_HS24<RealT>();    
+    ROL::Ptr<V>    x     = ROL::ZOO::getInitialGuess_HS24<RealT>();
+    ROL::Ptr<V>    xs    = ROL::ZOO::getSolution_HS24<RealT>();
+    ROL::Ptr<V>    inmul = ROL::ZOO::getInequalityMultiplier_HS24<RealT>();    
 
-    RCP<BC>   bnd   = ROL::ZOO::getBoundConstraint_HS24<RealT>();
-    RCP<OBJ>  obj   = ROL::ZOO::getObjective_HS24<RealT>();
-    RCP<INEQ> incon = ROL::ZOO::getInequalityConstraint_HS24<RealT>();
+    ROL::Ptr<BC>   bnd   = ROL::ZOO::getBoundConstraint_HS24<RealT>();
+    ROL::Ptr<OBJ>  obj   = ROL::ZOO::getObjective_HS24<RealT>();
+    ROL::Ptr<INEQ> incon = ROL::ZOO::getInequalityConstraint_HS24<RealT>();
    
-    RCP<Teuchos::ParameterList> parlist = rcp( new Teuchos::ParameterList );
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
 
     std::string stepname = "Interior Point";
 
@@ -113,15 +113,15 @@ int main(int argc, char *argv[]) {
     // Define Optimization Problem 
     ROL::OptimizationProblem<RealT> problem( obj, x, bnd, incon, inmul, parlist );
 
-    RCP<V> d = x->clone();
+    ROL::Ptr<V> d = x->clone();
     RandomizeVector(*d);
 
 //    problem.checkObjectiveGradient(*d); 
 //    problem.checkObjectiveHessVec(*d); 
 
     // Define algorithm.
-    RCP<ROL::Algorithm<RealT> > algo;    
-    algo = rcp( new ROL::Algorithm<RealT>(stepname,*parlist) );
+    ROL::Ptr<ROL::Algorithm<RealT> > algo;    
+    algo = ROL::makePtr<ROL::Algorithm<RealT>>(stepname,*parlist);
 
     algo->run(problem,true,*outStream);   
 
