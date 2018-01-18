@@ -126,6 +126,7 @@ int main(int argc,char * argv[])
       bool use_ilu = false;
       bool use_refmaxwell = false;
       bool print_diagnostics = false;
+      int numTimeSteps = 1;
       Teuchos::CommandLineProcessor clp;
       clp.setOption("x-elements",&x_elements);
       clp.setOption("y-elements",&y_elements);
@@ -141,6 +142,7 @@ int main(int argc,char * argv[])
       clp.setOption("use-ilu","no-ilu",&use_ilu);
       clp.setOption("use-refmaxwell","use-augmentation",&use_refmaxwell);
       clp.setOption("subsolve-diagnostics","no-subsolve-diagnostics",&print_diagnostics);
+      clp.setOption("numTimeSteps",&numTimeSteps);
   
       // parse command-line argument
       TEUCHOS_ASSERT(clp.parse(argc,argv)==Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL);
@@ -391,13 +393,13 @@ int main(int argc,char * argv[])
       physics->evalModel(inArgs,outArgs);
       outArgs.set_W(RCP<Thyra::LinearOpWithSolveBase<double> >(NULL));
   
-      // take 20 time-steps with Backward Euler
+      // take time-steps with Backward Euler
       if (exodus_output)
         writeToExodus(0,solution_vec,*physics,*stkIOResponseLibrary,*mesh);
 
       {
         Teuchos::RCP<Teuchos::TimeMonitor> tM = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("Mini-EM: timestepper"))));
-        for(int ts = 1; ts < 201; ts++)
+        for(int ts = 1; ts < numTimeSteps+1; ts++)
         {
           RCP<Thyra::VectorBase<double> > x_old = solution_vec->clone_v();
     
