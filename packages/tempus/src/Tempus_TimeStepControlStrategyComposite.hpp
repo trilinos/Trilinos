@@ -6,10 +6,10 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_StepControlStrategyComposite_hpp
-#define Tempus_StepControlStrategyComposite_hpp
+#ifndef Tempus_TimeStepControlStrategyComposite_hpp
+#define Tempus_TimeStepControlStrategyComposite_hpp
 
-#include "Tempus_StepControlStrategy.hpp"
+#include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 
@@ -21,15 +21,15 @@ template<class Scalar> class TimeStepControl;
  *
  */
 template<class Scalar>
-class StepControlStrategyComposite : virtual public StepControlStrategy<Scalar>
+class TimeStepControlStrategyComposite : virtual public TimeStepControlStrategy<Scalar>
 {
 public:
 
   /// Constructor
-  StepControlStrategyComposite(){}
+  TimeStepControlStrategyComposite(){}
 
   /// Destructor
-  virtual ~StepControlStrategyComposite(){}
+  virtual ~TimeStepControlStrategyComposite(){}
 
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > sh ,
@@ -39,7 +39,7 @@ public:
   }
 
   // add strategy to the composite strategy list
-  void addStrategy(const Teuchos::RCP<StepControlStrategy<Scalar> > &strategy){
+  void addStrategy(const Teuchos::RCP<TimeStepControlStrategy<Scalar> > &strategy){
   strategies_.push_back(strategy);
   }
 
@@ -48,8 +48,8 @@ public:
   }
 
 private:
-  std::vector<Teuchos::RCP<StepControlStrategy<Scalar > > > strategies_;
+  std::vector<Teuchos::RCP<TimeStepControlStrategy<Scalar > > > strategies_;
 
 };
 } // namespace Tempus
-#endif // Tempus_StepControlStrategy_hpp
+#endif // Tempus_TimeStepControlStrategy_hpp

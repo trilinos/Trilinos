@@ -6,8 +6,8 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_StepControlStrategy_hpp
-#define Tempus_StepControlStrategy_hpp
+#ifndef Tempus_TimeStepControlStrategy_hpp
+#define Tempus_TimeStepControlStrategy_hpp
 
 #include "Tempus_SolutionHistory.hpp"
 
@@ -20,15 +20,15 @@ template<class Scalar> class TimeStepControl;
  *
  */
 template<class Scalar>
-class StepControlStrategy
+class TimeStepControlStrategy
 {
 public:
 
   /// Constructor
-  StepControlStrategy(){}
+  TimeStepControlStrategy(){}
 
   /// Destructor
-  virtual ~StepControlStrategy(){}
+  virtual ~TimeStepControlStrategy(){}
 
   /// Observe Stepper at beginning of takeStep.
   virtual void getNextTimeStep(TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > sh ,
@@ -36,4 +36,4 @@ public:
 
 };
 } // namespace Tempus
-#endif // Tempus_StepControlStrategy_hpp
+#endif // Tempus_TimeStepControlStrategy_hpp

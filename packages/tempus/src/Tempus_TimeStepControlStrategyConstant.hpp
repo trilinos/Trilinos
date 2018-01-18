@@ -6,11 +6,11 @@
 // ****************************************************************************
 // @HEADER
 
-#ifndef Tempus_StepControlStrategy_Constant_hpp
-#define Tempus_StepControlStrategy_Constant_hpp
+#ifndef Tempus_TimeStepControlStrategy_Constant_hpp
+#define Tempus_TimeStepControlStrategy_Constant_hpp
 
 #include "Tempus_TimeStepControl.hpp"
-#include "Tempus_StepControlStrategy.hpp"
+#include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionState.hpp"
 #include "Tempus_SolutionStateMetaData.hpp"
 #include "Tempus_SolutionHistory.hpp"
@@ -23,15 +23,15 @@ namespace Tempus {
  *
  */
 template<class Scalar>
-class StepControlStrategyConstant : virtual public StepControlStrategy<Scalar>
+class TimeStepControlStrategyConstant : virtual public TimeStepControlStrategy<Scalar>
 {
 public:
 
   /// Constructor
-  StepControlStrategyConstant(){}
+  TimeStepControlStrategyConstant(){}
 
   /// Destructor
-  virtual ~StepControlStrategyConstant(){}
+  virtual ~TimeStepControlStrategyConstant(){}
 
   /** \brief Determine the time step size.*/
   virtual void getNextTimeStep(TimeStepControl<Scalar> tsc, Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory, 
@@ -134,4 +134,4 @@ public:
 
 };
 } // namespace Tempus
-#endif // Tempus_StepControlStrategy_Constant_hpp
+#endif // Tempus_TimeStepControlStrategy_Constant_hpp

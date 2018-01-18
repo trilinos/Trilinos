@@ -16,9 +16,9 @@
 #include "Teuchos_TimeMonitor.hpp"
 
 //Step control strategy
-#include "Tempus_StepControlStrategyConstant.hpp"
-#include "Tempus_StepControlStrategyComposite.hpp"
-#include "Tempus_StepControlStrategyVSBDF2.hpp"
+#include "Tempus_TimeStepControlStrategyConstant.hpp"
+#include "Tempus_TimeStepControlStrategyComposite.hpp"
+#include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 
 //Thyra
 #include "Thyra_VectorStdOps.hpp"
@@ -450,13 +450,13 @@ void TimeStepControl<Scalar>::setParameterList(
   }
 
   // set the step control strategy
-  stepControlStategy_ = Teuchos::rcp(new StepControlStrategyComposite<Scalar>());
+  stepControlStategy_ = Teuchos::rcp(new TimeStepControlStrategyComposite<Scalar>());
   if (getStepType() == "Constant"){
       stepControlStategy_->addStrategy( 
-         Teuchos::rcp(new StepControlStrategyConstant<Scalar>()));
+         Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
   } else { //VARIABLE
       stepControlStategy_->addStrategy( 
-         Teuchos::rcp(new StepControlStrategyVSBDF2<Scalar>()));
+         Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>()));
   }
 
   return;
