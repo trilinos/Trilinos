@@ -294,6 +294,8 @@ public:
     // these are "neighbor" unowned vectors (right)
     if(numOwnedSteps() <= i && i<numOwnedSteps()+rightVectors_.size())
       return true;
+
+    return false;
   }
 
   /** Get a vector pointer. This range is valid from i in [min(stencil),max(stencil)+numOwnedSteps()-1]

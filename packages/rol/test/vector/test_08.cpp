@@ -52,7 +52,6 @@ int main(int argc, char* argv[])
 {
 
   typedef ROL::Ptr<ROL::Vector<RealT>> PtrVector;
-  typedef ROL::Ptr<const ROL::Vector<RealT>> CPtrVector;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -82,9 +81,6 @@ int main(int argc, char* argv[])
     int spatialProcs = 1;
     ROL::Ptr<ROL::PinTCommunicators> pintComm = ROL::makePtr<ROL::PinTCommunicators>(MPI_COMM_WORLD,spatialProcs);
  
-    double dt = 0.1;
-    double tol = 1e-15;
-
     // if(numRanks!=3) {
     //   throw std::logic_error("Three processors are required to run this test!");
     // }
