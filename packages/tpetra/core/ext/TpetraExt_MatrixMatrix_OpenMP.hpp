@@ -172,7 +172,6 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     // Grab the  Kokkos::SparseCrsMatrices
     const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
     const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
-    RCP<const KCRS> Bmerged;
 
     // Get the algorithm mode
     std::string alg = nodename+std::string(" algorithm");
@@ -181,7 +180,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     KokkosSparse::SPGEMMAlgorithm alg_enum = KokkosSparse::StringToSPGEMMAlgorithm(myalg);
 
     // Merge the B and Bimport matrices
-    Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getNodeNumElements(),Bmerged);
+    const KCRS Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getNodeNumElements());
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("MMM Newmatrix OpenMPCore"))));
@@ -189,8 +188,11 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
     // Do the multiply on whatever we've got
     typename KernelHandle::nnz_lno_t AnumRows = Ak.numRows();
-    typename KernelHandle::nnz_lno_t BnumRows = Bmerged->numRows();
-    typename KernelHandle::nnz_lno_t BnumCols = Bmerged->numCols();
+                                                          //    typename KernelHandle::nnz_lno_t BnumRows = Bmerged->numRows();
+                                                          //    typename KernelHandle::nnz_lno_t BnumCols = Bmerged->numCols();
+    typename KernelHandle::nnz_lno_t BnumRows = Bmerged.numRows();
+    typename KernelHandle::nnz_lno_t BnumCols = Bmerged.numCols();
+
 
     lno_view_t      row_mapC ("non_const_lnow_row", AnumRows + 1);
     lno_nnz_view_t  entriesC;
@@ -198,15 +200,16 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
     KernelHandle kh;
     kh.create_spgemm_handle(alg_enum);
     kh.set_team_work_size(team_work_size);
-
-    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bmerged->graph.row_map,Bmerged->graph.entries,false,row_mapC);
+                                                          //    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bmerged->graph.row_map,Bmerged->graph.entries,false,row_mapC);
+    KokkosSparse::Experimental::spgemm_symbolic(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,false,Bmerged.graph.row_map,Bmerged.graph.entries,false,row_mapC);
 
     size_t c_nnz_size = kh.get_spgemm_handle()->get_c_nnz();
     if (c_nnz_size){
       entriesC = lno_nnz_view_t (Kokkos::ViewAllocateWithoutInitializing("entriesC"), c_nnz_size);
       valuesC = scalar_view_t (Kokkos::ViewAllocateWithoutInitializing("valuesC"), c_nnz_size);
     }
-    KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bmerged->graph.row_map,Bmerged->graph.entries,Bmerged->values,false,row_mapC,entriesC,valuesC);
+                                                          //    KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bmerged->graph.row_map,Bmerged->graph.entries,Bmerged->values,false,row_mapC,entriesC,valuesC);
+    KokkosSparse::Experimental::spgemm_numeric(&kh,AnumRows,BnumRows,BnumCols,Ak.graph.row_map,Ak.graph.entries,Ak.values,false,Bmerged.graph.row_map,Bmerged.graph.entries,Bmerged.values,false,row_mapC,entriesC,valuesC);
     kh.destroy_spgemm_handle();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS

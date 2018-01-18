@@ -3630,14 +3630,14 @@ void import_and_extract_views(
 /*********************************************************************************************************/
  // This only merges matrices that look like B & Bimport, aka, they have no overlapping rows
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalOrdinalViewType>
-void merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
+const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type
+merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
                     const LocalOrdinalViewType & Acol2Brow,
                     const LocalOrdinalViewType & Acol2Irow,
                     const LocalOrdinalViewType & Bcol2Ccol,
                     const LocalOrdinalViewType & Icol2Ccol,   
-                    const size_t mergedNodeNumCols,
-                    Teuchos::RCP<const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type> &Bmerged) {
+                    const size_t mergedNodeNumCols) {
 
   using Teuchos::RCP;
   typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
@@ -3704,13 +3704,15 @@ void merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& 
           }
         });
 
-      Bmerged = Teuchos::rcp(new KCRS("CrsMatrix",merge_numrows,mergedNodeNumCols,merge_nnz,Mvalues,Mrowptr,Mcolind));
-
+      KCRS newmat("CrsMatrix",merge_numrows,mergedNodeNumCols,merge_nnz,Mvalues,Mrowptr,Mcolind);
+      return newmat;
     }
     else {
       // We don't have a Bimport (the easy case)
-      Bmerged = Teuchos::rcpFromRef(Bk);
-    }   
+      return Bk;
+    }
+
+
 }//end merge_matrices
 
 
