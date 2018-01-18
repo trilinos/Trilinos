@@ -211,7 +211,6 @@ public:
     auto & v_data = getVector(dualv);
 
     ajv_data[0] = -timestep_*v_data[0];
-    ajv_data[1] = 0.0;
   }
 
   virtual void applyInverseAdjointJacobian_1_new(ROL::Vector<Real> &iajv,
