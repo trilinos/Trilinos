@@ -203,21 +203,38 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
   //! States whether the solver has been initialized or not.
   bool isInitialized() { return initialized_; }
   
-  //! Sets whether or not to store the diagonal for condition estimation (NOT IMPLEMENTED)
-  void setDoCondEst(bool val){/*ignored*/}
 
-  //! Gets the diagonal for condition estimation (NOT_IMPLEMENTED)
-  Teuchos::ArrayView<MagnitudeType> getDiag() { 
-    Teuchos::ArrayView<MagnitudeType> temp;
-    return temp;
-  }
-
-  //! Gets the off-diagonal for condition estimation (NOT_IMPLEMENTED)
+  //! Sets whether or not to store the diagonal for condition estimation
+  void setDoCondEst(bool val){doCondEst_=val;}
+  
+  //! Gets the diagonal for condition estimation
+  Teuchos::ArrayView<MagnitudeType> getDiag() {
+    // NOTE (mfh 30 Jul 2015) See note on getOffDiag() below.
+    // getDiag() didn't actually throw for me in that case, but why
+    // not be cautious?
+    typedef typename Teuchos::ArrayView<MagnitudeType>::size_type size_type;
+    if (static_cast<size_type> (iter_) >= diag_.size ()) {
+      return diag_ ();
+    } else {
+      return diag_ (0, iter_);
+    }
+    }
+  
+  //! Gets the off-diagonal for condition estimation
   Teuchos::ArrayView<MagnitudeType> getOffDiag() {
-    Teuchos::ArrayView<MagnitudeType> temp;
-    return temp;
+    // NOTE (mfh 30 Jul 2015) The implementation as I found it
+    // returned "offdiag(0,iter_)".  This breaks (Teuchos throws in
+    // debug mode) when the maximum number of iterations has been
+    // reached, because iter_ == offdiag_.size() in that case.  The
+    // new logic fixes this.
+    typedef typename Teuchos::ArrayView<MagnitudeType>::size_type size_type;
+    if (static_cast<size_type> (iter_) >= offdiag_.size ()) {
+      return offdiag_ ();
+    } else {
+      return offdiag_ (0, iter_);
+    }
   }
-
+  
   //@}
 
   private:
@@ -253,6 +270,13 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   // Assert that the matrix is positive definite
   bool assertPositiveDefiniteness_;
+
+  // Tridiagonal system for condition estimation (if needed)
+  Teuchos::ArrayRCP<MagnitudeType> diag_, offdiag_;
+  int numEntriesForCondEst_;
+  bool doCondEst_;
+
+ 
   
   // 
   // State Storage
@@ -284,7 +308,8 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     initialized_(false),
     stateStorageInitialized_(false),
     iter_(0),
-    assertPositiveDefiniteness_( params.get("Assert Positive Definiteness", true) )
+    assertPositiveDefiniteness_( params.get("Assert Positive Definiteness", true) ),
+    numEntriesForCondEst_(params.get("Max Size For Condest",0) )
   {
   }
 
@@ -316,7 +341,13 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 	  P_ = MVT::Clone( *tmp, 1 );
 	  AP_ = MVT::Clone( *tmp, 1 );
 	}
-	
+
+        // Tracking information for condition number estimation
+        if(numEntriesForCondEst_ > 0) {
+          diag_.resize(numEntriesForCondEst_);
+          offdiag_.resize(numEntriesForCondEst_-1);
+        }
+        	
 	// State storage has now been initialized.
 	stateStorageInitialized_ = true;
       }
