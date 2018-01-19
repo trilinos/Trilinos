@@ -4,6 +4,7 @@
 #include <string.h>
 #include <vector>
 #include <iostream>
+#include <numeric>
 
 #define RegionsSpanProcs  1
 #define MultipleRegionsPerProc  2
