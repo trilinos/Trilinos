@@ -813,10 +813,10 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
   Teuchos::RCP<CGIteration<ScalarType,MV,OP> > block_cg_iter;
   if (numRHS2Solve == 1) {
     block_cg_iter =
-      rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));                                           
+      Teuchos::rcp (new CGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));                                           
   } else {
     block_cg_iter =
-      rcp (new PseudoBlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));                                              
+      Teuchos::rcp (new PseudoBlockCGIter<ScalarType,MV,OP> (problem_, printer_, outputTest_, plist));                                              
   }
 
 
