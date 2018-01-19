@@ -54,6 +54,7 @@
 // Stratimikos needs Thyra, so we don't need special guards for Thyra here
 #include "Thyra_DefaultPreconditioner.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
+#include "Thyra_DiagonalLinearOpBase.hpp"
 #include "Thyra_XpetraLinearOp.hpp"
 #ifdef HAVE_MUELU_TPETRA
 #include "Thyra_TpetraLinearOp.hpp"
