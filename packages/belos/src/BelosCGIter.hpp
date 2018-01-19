@@ -250,6 +250,9 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
 
   // Current number of iterations performed.
   int iter_;
+
+  // Assert that the matrix is positive definite
+  bool assertPositiveDefiniteness_;
   
   // 
   // State Storage
@@ -280,7 +283,8 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
     stest_(tester),
     initialized_(false),
     stateStorageInitialized_(false),
-    iter_(0)
+    iter_(0),
+    assertPositiveDefiniteness_( params.get("Assert Positive Definiteness", true) )
   {
   }
 
@@ -430,8 +434,9 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
       alpha(0,0) = rHz(0,0) / pAp(0,0);
       
       // Check that alpha is a positive number!
-      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha(0,0)) <= zero, CGIterateFailure,
-			  "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
+      if(assertPositiveDefiniteness_)
+        TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(alpha(0,0)) <= zero, CGIterateFailure,
+                                    "Belos::CGIter::iterate(): non-positive value for p^H*A*p encountered!" );
       //
       // Update the solution vector x := x + alpha * P_
       //
