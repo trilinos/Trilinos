@@ -20,8 +20,8 @@ namespace Tacho {
                typename ViewTypeA>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const SchedType &sched,
-             const MemberType &member,
+      invoke(SchedType &sched,
+             MemberType &member,
              const ViewTypeA &A) {
         typedef typename ViewTypeA::non_const_value_type value_type;
         

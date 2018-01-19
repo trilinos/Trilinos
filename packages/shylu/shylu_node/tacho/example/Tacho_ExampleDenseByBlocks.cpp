@@ -54,19 +54,20 @@ int main (int argc, char *argv[]) {
   typedef double value_type;
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   typedef Kokkos::DefaultExecutionSpace exec_space;
+  //typedef Kokkos::DefaultHostExecutionSpace exec_space;
   typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
 
   printExecSpaceConfiguration<host_exec_space>("Default HostSpace");
   printExecSpaceConfiguration<     exec_space>("Default DeviceSpace");
-  
-  int r_val = 0;
-  
-  {
-    typedef DenseMatrixView<value_type,exec_space>                   DenseMatrixViewType;
-    typedef DenseMatrixView<DenseMatrixViewType,exec_space>          DenseMatrixOfBlocksType;
 
-    typedef DenseMatrixView<value_type,host_exec_space>              DenseMatrixViewHostType;
-    typedef DenseMatrixView<DenseMatrixViewHostType,host_exec_space> DenseMatrixOfBlocksHostType;
+  int r_val = 0;
+  const double eps = std::numeric_limits<double>::epsilon()*10000;  
+  {
+    typedef DenseMatrixView<value_type,exec_space>               DenseMatrixViewType;
+    typedef DenseMatrixView<DenseMatrixViewType,exec_space>      DenseMatrixOfBlocksType;
+
+    typedef DenseMatrixView<value_type,host_exec_space>          DenseMatrixViewHostType;
+    typedef DenseMatrixView<DenseMatrixViewType,host_exec_space> DenseMatrixOfBlocksHostType;
 
     Kokkos::Impl::Timer timer;
 
@@ -90,22 +91,29 @@ int main (int argc, char *argv[]) {
     Kokkos::DualView<DenseMatrixViewType*,exec_space> 
       ha("ha", bmend*bmend), hb("hb", bmend*bmend), hc("hc", bmend*bmend);
 
-    {
+    {    
       const ordinal_type
-        task_queue_capacity = bmend*bmend*bmend*max_functor_size,
+        task_queue_capacity_tmp = bmend*bmend*bmend*max_functor_size,
         min_block_size  = 16,
         max_block_size  = 4*max_functor_size,
         num_superblock  = 4,
-        superblock_size = task_queue_capacity/num_superblock;
+        superblock_size = std::max(task_queue_capacity_tmp/num_superblock,max_block_size),
+        task_queue_capacity = std::max(task_queue_capacity_tmp,superblock_size*num_superblock);
       
-      sched = sched_type(typename exec_space::memory_space(),
-                         task_queue_capacity,
-                         min_block_size,
-                         max_block_size,
-                         superblock_size);
+      std::cout << "capacity = " << task_queue_capacity << "\n";
+      std::cout << "min_block_size = " << min_block_size << "\n";
+      std::cout << "max_block_size = " << max_block_size << "\n";
+      std::cout << "superblock_size = " << superblock_size << "\n";
+      
+      sched = sched_type(typename sched_type::memory_space(),
+                         (size_t)task_queue_capacity,
+                         (unsigned)min_block_size,
+                         (unsigned)max_block_size,
+                         (unsigned)superblock_size);
     }
 
     const ordinal_type dry = -2, niter = 3;
+    //const ordinal_type dry = 0, niter = 1;
 
     double t_reference = 0, t_byblocks = 0;
 
@@ -116,7 +124,7 @@ int main (int argc, char *argv[]) {
         for (ordinal_type i=0;i<m;++i)
           mat(i,j) = random.value();
     };
-
+#if 1
     ///
     /// Chol
     ///
@@ -128,7 +136,7 @@ int main (int argc, char *argv[]) {
       
       // test matrix generation
       {
-        sub_a.template modify<host_exec_space>();
+        sub_a.modify<host_exec_space>();
 
         Kokkos::deep_copy(sub_a.h_view, 0);
         DenseMatrixViewHostType A;
@@ -148,8 +156,8 @@ int main (int argc, char *argv[]) {
       {
         int dummy = 0;
 
-        sub_a. template sync  <host_exec_space>();
-        sub_a1.template modify<host_exec_space>();
+        sub_a. sync  <host_exec_space>();
+        sub_a1.modify<host_exec_space>();
         
         DenseMatrixViewHostType A;
         A.set_view(m, m);
@@ -166,8 +174,8 @@ int main (int argc, char *argv[]) {
       
       // dense by blocks
       {
-        sub_a. template sync  <exec_space>();
-        sub_a2.template modify<exec_space>();
+        sub_a. sync  <exec_space>();
+        sub_a2.modify<exec_space>();
 
         DenseMatrixViewType A;
         A.set_view(m, m);
@@ -179,45 +187,44 @@ int main (int argc, char *argv[]) {
         HA.set_view(bm, bm);
         HA.attach_buffer(1, bm, ha.h_view.data());
         
-        DenseMatrixOfBlocksHostType DA;
+        DenseMatrixOfBlocksType DA;
         DA.set_view(bm, bm);
         DA.attach_buffer(1, bm, ha.d_view.data());
         
         {          
-          ha.template modify<host_exec_space>();
+          ha.modify<host_exec_space>();
           
           setMatrixOfBlocks(HA, m, m, mb);
           attachBaseBuffer(HA, A.data(), A.stride_0(), A.stride_1());
 
-          ha.template sync<exec_space>();
+          ha.sync<exec_space>();
           
           for (ordinal_type iter=dry;iter<niter;++iter) {
             Kokkos::deep_copy(sub_a2.d_view, sub_a.d_view);
 
             timer.reset();
-            Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
+            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
                                task_functor_chol(sched, DA));
             Kokkos::wait(sched);
             t_byblocks += (iter >=0)*timer.seconds();
-            
-            clearFutureOfBlocks(DA);
           }
           t_byblocks /= niter;
+          //clearFutureOfBlocks(HA);
         }
       }
 
       {
-        a1.template sync<host_exec_space>();
-        a2.template sync<host_exec_space>();
+        a1.sync<host_exec_space>();
+        a2.sync<host_exec_space>();
 
         double diff = 0.0, norm = 0.0;
         for (ordinal_type p=0;p<(m*m);++p) {
           norm += a1.h_view(p)*a1.h_view(p);
           diff += (a1.h_view(p) - a2.h_view(p))*(a1.h_view(p) - a2.h_view(p));
         }
-        const double relerr = sqrt(diff/norm), eps = std::numeric_limits<double>::epsilon()*1000;
+        const double relerr = sqrt(diff/norm);
 
-        if (sqrt(diff/norm) > eps) {
+        if (relerr > eps) {
           printf("******* chol problem %d fails, reltaive error against reference is %10.4f\n", 
                  m, relerr);
           r_val = -1;
@@ -233,11 +240,12 @@ int main (int argc, char *argv[]) {
       }
     }
     printf("\n\n");
-
+#endif
     ///
     /// Trsm
     ///
     
+#if 1
     for (ordinal_type m=mbeg;m<=mend;m+=step) {
       t_reference = 0; t_byblocks = 0;
       auto sub_a  = Kokkos::subview(a,  range_type(0,m*m));
@@ -245,8 +253,8 @@ int main (int argc, char *argv[]) {
       auto sub_a2 = Kokkos::subview(a2, range_type(0,m*m));
 
       {
-        sub_a. template modify<host_exec_space>();
-        sub_a1.template modify<host_exec_space>();
+        sub_a. modify<host_exec_space>();
+        sub_a1.modify<host_exec_space>();
 
         DenseMatrixViewHostType A, B;
         A.set_view(m, m);
@@ -258,7 +266,7 @@ int main (int argc, char *argv[]) {
         randomize(A);
         randomize(B);
 
-        sub_a2.template modify<exec_space>();
+        sub_a2.modify<exec_space>();
         Kokkos::deep_copy(sub_a2.d_view, sub_a1.h_view);
       }
 
@@ -266,9 +274,9 @@ int main (int argc, char *argv[]) {
       {
         int dummy = 0;
         
-        sub_a. template sync  <host_exec_space>();
-        sub_a1.template sync  <host_exec_space>();
-        sub_a1.template modify<host_exec_space>();
+        sub_a. sync  <host_exec_space>();
+        sub_a1.sync  <host_exec_space>();
+        sub_a1.modify<host_exec_space>();
 
         DenseMatrixViewHostType A, B;
         A.set_view(m, m);
@@ -289,9 +297,9 @@ int main (int argc, char *argv[]) {
       
       // dense by blocks
       {
-        sub_a. template sync  <exec_space>();
-        sub_a2.template sync  <exec_space>();
-        sub_a2.template modify<exec_space>();
+        sub_a. sync  <exec_space>();
+        sub_a2.sync  <exec_space>();
+        sub_a2.modify<exec_space>();
 
         DenseMatrixViewType A, B;
         A.set_view(m, m);
@@ -302,8 +310,8 @@ int main (int argc, char *argv[]) {
 
         const ordinal_type bm = (m/mb) + (m%mb>0);
 
-        ha.template modify<host_exec_space>();
-        hb.template modify<host_exec_space>();
+        ha.modify<host_exec_space>();
+        hb.modify<host_exec_space>();
 
         DenseMatrixOfBlocksHostType HA, HB;
 
@@ -319,8 +327,8 @@ int main (int argc, char *argv[]) {
         setMatrixOfBlocks(HB, m, m, mb);
         attachBaseBuffer(HB, B.data(), B.stride_0(), B.stride_1());
         
-        ha.template sync<exec_space>();
-        hb.template sync<exec_space>();
+        ha.sync<exec_space>();
+        hb.sync<exec_space>();
 
         DenseMatrixOfBlocksType DA, DB;
         
@@ -334,29 +342,28 @@ int main (int argc, char *argv[]) {
           const double alpha = -1.0;
           for (ordinal_type iter=dry;iter<niter;++iter) {
             timer.reset();
-            Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
-                               task_functor_trsm(sched, alpha, DA, DB));
+            auto ff = Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+                                         task_functor_trsm(sched, alpha, DA, DB));
             Kokkos::wait(sched);
             t_byblocks += (iter >=0)*timer.seconds();
-
-            clearFutureOfBlocks(DB);
           }
           t_byblocks /= niter;
+          //clearFutureOfBlocks(HB);
         }
       }
       
       {
-        a1.template sync<host_exec_space>();
-        a2.template sync<host_exec_space>();
+        a1.sync<host_exec_space>();
+        a2.sync<host_exec_space>();
 
         double diff = 0.0, norm = 0.0;
         for (ordinal_type p=0;p<(m*m);++p) {
           norm += a1.h_view(p)*a1.h_view(p);
           diff += (a1.h_view(p) - a2.h_view(p))*(a1.h_view(p) - a2.h_view(p));
         }
-        const double relerr = sqrt(diff/norm), eps = std::numeric_limits<double>::epsilon()*1000;
+        const double relerr = sqrt(diff/norm);
 
-        if (sqrt(diff/norm) > eps) 
+        if (relerr > eps) 
           printf("******* trsm problem %d fails, reltaive error against reference is %10.4f\n", 
                  m, relerr);
       }
@@ -369,11 +376,12 @@ int main (int argc, char *argv[]) {
       }
     }
     printf("\n\n");
+#endif
 
     ///
     /// Gemm
     ///
-    
+#if 1
     for (ordinal_type m=mbeg;m<=mend;m+=step) {
       t_reference = 0; t_byblocks = 0;
       auto sub_a  = Kokkos::subview(a,  range_type(0,m*m));
@@ -382,9 +390,9 @@ int main (int argc, char *argv[]) {
       auto sub_a2 = Kokkos::subview(a2, range_type(0,m*m));
 
       {
-        sub_a. template modify<host_exec_space>();
-        sub_b. template modify<host_exec_space>();
-        sub_a1.template modify<host_exec_space>();
+        sub_a. modify<host_exec_space>();
+        sub_b. modify<host_exec_space>();
+        sub_a1.modify<host_exec_space>();
         
         DenseMatrixViewHostType A, B, C;
         A.set_view(m, m);
@@ -400,7 +408,7 @@ int main (int argc, char *argv[]) {
         randomize(B);
         randomize(C);
 
-        sub_a2.template modify<exec_space>();
+        sub_a2.modify<exec_space>();
         Kokkos::deep_copy(sub_a2.d_view, sub_a1.h_view);
       }
 
@@ -408,10 +416,10 @@ int main (int argc, char *argv[]) {
       {
         int dummy = 0;
         
-        sub_a. template sync  <host_exec_space>();
-        sub_b. template sync  <host_exec_space>();
-        sub_a1.template sync  <host_exec_space>();
-        sub_a1.template modify<host_exec_space>();
+        sub_a. sync  <host_exec_space>();
+        sub_b. sync  <host_exec_space>();
+        sub_a1.sync  <host_exec_space>();
+        sub_a1.modify<host_exec_space>();
 
         DenseMatrixViewType A, B, C;
         A.set_view(m, m);
@@ -436,10 +444,10 @@ int main (int argc, char *argv[]) {
       
       // dense by blocks
       {
-        sub_a. template sync  <exec_space>();
-        sub_b. template sync  <exec_space>();
-        sub_a2.template sync  <exec_space>();
-        sub_a2.template modify<exec_space>();
+        sub_a. sync  <exec_space>();
+        sub_b. sync  <exec_space>();
+        sub_a2.sync  <exec_space>();
+        sub_a2.modify<exec_space>();
 
         DenseMatrixViewType A, B, C;
         A.set_view(m, m);
@@ -453,9 +461,9 @@ int main (int argc, char *argv[]) {
 
         const ordinal_type bm = (m/mb) + (m%mb>0);
 
-        ha.template modify<host_exec_space>();
-        hb.template modify<host_exec_space>();
-        hc.template modify<host_exec_space>();
+        ha.modify<host_exec_space>();
+        hb.modify<host_exec_space>();
+        hc.modify<host_exec_space>();
 
         DenseMatrixOfBlocksHostType HA, HB, HC;
 
@@ -477,9 +485,9 @@ int main (int argc, char *argv[]) {
         setMatrixOfBlocks(HC, m, m, mb);
         attachBaseBuffer(HC, C.data(), C.stride_0(), C.stride_1());
 
-        ha.template sync<exec_space>();
-        hb.template sync<exec_space>();
-        hc.template sync<exec_space>();
+        ha.sync<exec_space>();
+        hb.sync<exec_space>();
+        hc.sync<exec_space>();
         
         DenseMatrixOfBlocksType DA, DB, DC;
         
@@ -496,30 +504,28 @@ int main (int argc, char *argv[]) {
           const double alpha = -1.0, beta = 1.0;
           for (ordinal_type iter=dry;iter<niter;++iter) {
             timer.reset();
-            Kokkos::host_spawn(Kokkos::TaskTeam(sched, Kokkos::TaskPriority::High),
+            Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
                                task_functor_gemm(sched, alpha, DA, DB, beta, DC));
             Kokkos::wait(sched);
             t_byblocks += (iter >=0)*timer.seconds();
-
-            clearFutureOfBlocks(HC);
           }
           t_byblocks /= niter;
+          //clearFutureOfBlocks(HC);
         }
       }
       
       {
-        a1.template sync<host_exec_space>();
-        a2.template sync<host_exec_space>();
+        a1.sync<host_exec_space>();
+        a2.sync<host_exec_space>();
 
         double diff = 0.0, norm = 0.0;
         for (ordinal_type p=0;p<(m*m);++p) {
           norm += a1.h_view(p)*a1.h_view(p);
           diff += (a1.h_view(p) - a2.h_view(p))*(a1.h_view(p) - a2.h_view(p));
         }
-        const double relerr = sqrt(diff/norm), eps = std::numeric_limits<double>::epsilon()*1000;
-
-        if (sqrt(diff/norm) > eps) 
-          printf("******* gemm problem %d fails, reltaive error against reference is %10.4f\n", 
+        const double relerr = sqrt(diff/norm);
+        if (relerr > eps) 
+          printf("******* gemm problem %d fails, reltaive error against reference is %10.8e\n", 
                  m, relerr);
       }
       
@@ -531,6 +537,7 @@ int main (int argc, char *argv[]) {
       }
     }
     printf("\n\n");
+#endif
   }
   Kokkos::finalize();
 

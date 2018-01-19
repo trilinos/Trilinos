@@ -25,16 +25,19 @@
 
 using namespace Tacho::Experimental;
 
-typedef CrsMatrixBase<ValueType,HostSpaceType> CrsMatrixBaseHostType;
-typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
+typedef CrsMatrixBase<ValueType,HostSpaceType>   CrsMatrixBaseHostType;
+
+// we do not test for device space
+//typedef CrsMatrixBase<ValueType,DeviceSpaceType> CrsMatrixBaseDeviceType;
 
 TEST( Symbolic, constructor ) {
+  TEST_BEGIN;
   const ordinal_type
     m = 4,
     n = 4,
     nnz = 16;
 
-  CrsMatrixBaseHostType A("A", m, n, nnz);
+  CrsMatrixBaseHostType A(m, n, nnz);
 
   ordinal_type cnt = 0;
   for (ordinal_type i=0;i<m;++i) {
@@ -55,12 +58,14 @@ TEST( Symbolic, constructor ) {
   /// construction of symbolic tools
   ///
   SymbolicTools S(m, A.RowPtr(), A.Cols(), idx, idx);
+  TEST_END;
 }
 
 TEST( Symbolic, functions ) {
+  TEST_BEGIN;
   std::string inputfilename = MM_TEST_FILE + ".mtx";
-  CrsMatrixBaseHostType A("A");
-  A = MatrixMarket<ValueType>::read(inputfilename);
+  CrsMatrixBaseHostType A;
+  MatrixMarket<ValueType>::read(inputfilename, A);
 
   Graph G(A);
 
@@ -139,13 +144,15 @@ TEST( Symbolic, functions ) {
   //     printf("  %d", blk_super_panel_colidx(j));
   //   printf("\n");
   // }
+  TEST_END;
 }
 
 TEST( Symbolic, interface ) {
+  TEST_BEGIN;
   std::string inputfilename = MM_TEST_FILE + ".mtx";
 
-  CrsMatrixBaseHostType A("A");
-  A = MatrixMarket<ValueType>::read(inputfilename);
+  CrsMatrixBaseHostType A;
+  MatrixMarket<ValueType>::read(inputfilename, A);
 
   Graph G(A);
 
@@ -171,6 +178,7 @@ TEST( Symbolic, interface ) {
     SymbolicTools S(A, T);
     S.symbolicFactorize();
   }
+  TEST_END;
 }
 
 

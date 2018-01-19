@@ -10,6 +10,9 @@ typedef double MagnitudeType;
 
 static const std::string MM_TEST_FILE="test_dcomplex";
 
+#define TEST_BEGIN
+#define TEST_END
+
 #define __TACHO_TEST_SERIAL__
 #include "ShyLU_NodeTacho_config.h"
 #include "Tacho_Test.hpp"
@@ -18,11 +21,11 @@ using namespace Tacho::Experimental;
 
 int main (int argc, char *argv[]) {
 
+  Kokkos::initialize(argc, argv);
+
   const bool detail = false;
   printExecSpaceConfiguration<DeviceSpaceType>("DeviceSpace", detail);
   printExecSpaceConfiguration<HostSpaceType>  ("HostSpace",   detail);
-  
-  Kokkos::initialize(argc, argv);
 
   ::testing::InitGoogleTest(&argc, argv);
   const int r_val = RUN_ALL_TESTS();

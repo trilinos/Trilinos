@@ -22,8 +22,8 @@ namespace Tacho {
                typename ViewTypeC>
       KOKKOS_INLINE_FUNCTION
       static int
-      invoke(const PolicyType &policy,
-             const MemberType &member,
+      invoke(PolicyType &policy,
+             MemberType &member,
              const ScalarType alpha,
              const ViewTypeA &A,
              const ViewTypeB &B,

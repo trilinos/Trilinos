@@ -55,10 +55,10 @@ namespace Tacho {
         const int ierr = Chol<ArgUplo,ArgAlgo>
           ::invoke(_sched, member, _A);
 
-        if (member.team_rank() == 0) {
-          _A.set_future();
-          r_val = ierr;
-        }
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            _A.set_future();
+            r_val = ierr;
+          });
       }
     };
 

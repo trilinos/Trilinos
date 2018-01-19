@@ -64,11 +64,11 @@ namespace Tacho {
       void operator()(member_type &member, value_type &r_val) {
         const int ierr = Gemv<ArgTrans,ArgAlgo>
           ::invoke(_sched, member, _alpha, _A, _B, _beta, _C);
-
-        if (member.team_rank() == 0) {
-          _C.set_future();
-          r_val = ierr;
-        }
+        
+        Kokkos::single(Kokkos::PerTeam(member), [&]() {
+            _C.set_future();
+            r_val = ierr;
+          });
       }
     };
 

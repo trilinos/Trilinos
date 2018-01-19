@@ -18,7 +18,7 @@ namespace Tacho {
         template<typename MemberType>
         static 
         KOKKOS_INLINE_FUNCTION
-        void potrf_upper(const MemberType &member, 
+        void potrf_upper(MemberType &member, 
                          const int m, 
                          T *A, const int as0, const int as1,
                          int *info) {
@@ -32,16 +32,15 @@ namespace Tacho {
               *__restrict__ a12t    = A+(p  )*as0+(p+1)*as1,
               *__restrict__ A22     = A+(p+1)*as0+(p+1)*as1;
             
-            if (member.team_rank() == 0) 
-              *alpha11 = sqrt(ats::real(*alpha11));
-            member.team_barrier();
-
+            Kokkos::single(Kokkos::PerTeam(member), [&] (){
+                *alpha11 = sqrt(ats::real(*alpha11));                
+              });
+            
             const auto alpha = ats::real(*alpha11);
             Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
-                a12t[j*as1] /= alpha;
-              });
-
-            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,jend),[&](const int &j) {
+                Kokkos::single(Kokkos::PerThread(member), [&] () {
+                    a12t[j*as1] /= alpha;
+                  });
                 const T aa = ats::conj(a12t[j*as1]);
                 Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,j+1),[&](const int &i) {
                     const T bb = a12t[i*as1];
@@ -56,7 +55,7 @@ namespace Tacho {
         // template<typename MemberType>
         // static 
         // KOKKOS_INLINE_FUNCTION
-        // int potrf_lower(const MemberType &member, 
+        // int potrf_lower(MemberType &member, 
         //                 const int m, 
         //                 const T *A, const int as0, const int as1) {
         //   if (m <= 0) return 0;
@@ -95,7 +94,7 @@ namespace Tacho {
       template<typename MemberType>
       static 
       KOKKOS_INLINE_FUNCTION
-      void potrf(const MemberType &member,
+      void potrf(MemberType &member,
                  const char uplo,
                  const int m, 
                  /* */ T *A, const int lda,

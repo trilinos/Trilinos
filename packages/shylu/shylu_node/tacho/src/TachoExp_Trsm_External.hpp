@@ -22,12 +22,13 @@ namespace Tacho {
                typename ViewTypeB>
       inline
       static int
-      invoke(const PolicyType &policy,
-             const MemberType &member,
+      invoke(PolicyType &policy,
+             MemberType &member,
              const DiagType diagA,
              const ScalarType alpha,
              const ViewTypeA &A,
              const ViewTypeB &B) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
         typedef typename ViewTypeA::non_const_value_type value_type;
         typedef typename ViewTypeB::non_const_value_type value_type_b;
         
@@ -40,8 +41,8 @@ namespace Tacho {
         const ordinal_type m = B.dimension_0(), n = B.dimension_1();
         
         if (m > 0 && n > 0) {
+
           if (get_team_rank(member) == 0) {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
             Blas<value_type>::trsm(ArgSide::param, 
                                    ArgUplo::param, 
                                    ArgTransA::param, 
@@ -50,11 +51,11 @@ namespace Tacho {
                                    value_type(alpha),
                                    A.data(), A.stride_1(),
                                    B.data(), B.stride_1());
+          }
+        }
 #else
             TACHO_TEST_FOR_ABORT( true, "This function is only allowed in host space.");
 #endif
-          }
-        }
         return 0;
       }
     };

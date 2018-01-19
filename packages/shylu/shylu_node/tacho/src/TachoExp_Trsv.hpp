@@ -61,10 +61,10 @@ namespace Tacho {
         const int ierr = Trsv<ArgUplo,ArgTrans,ArgAlgo>
           ::invoke(_sched, member, ArgDiag(),_A, _B);
 
-        if (member.team_rank() == 0) {
-          _B.set_future();
-          r_val = ierr;
-        }
+        Kokkos::single(Kokkos::PerTeam(member), [&] () {
+            _B.set_future();
+            r_val = ierr;
+          });
       }
     };
     

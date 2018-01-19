@@ -53,43 +53,28 @@ namespace Tacho {
       typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
 
       ///
-      /// host space typedefs
-      ///
-      typedef Kokkos::DefaultHostExecutionSpace host_exec_space;
-      typedef SupernodeInfo<value_type,host_exec_space> supernode_info_type_host;
-      typedef typename supernode_info_type_host::crs_matrix_type crs_matrix_type_host;
-
-      typedef typename supernode_info_type_host::ordinal_type_array ordinal_type_array_host;
-      typedef typename supernode_info_type_host::size_type_array size_type_array_host;
-      typedef typename supernode_info_type_host::value_type_array value_type_array_host;
-
-      typedef typename supernode_info_type_host::ordinal_pair_type_array ordinal_pair_type_array_host;
-      typedef typename supernode_info_type_host::value_type_matrix value_type_matrix_host;
-      typedef typename supernode_info_type_host::supernode_type_array supernode_type_array_host;
-
-      typedef typename supernode_info_type_host::dense_block_type dense_block_type_host;
-      typedef typename supernode_info_type_host::dense_matrix_of_blocks_type dense_matrix_of_blocks_type_host;
-
-      typedef Kokkos::TaskScheduler<host_exec_space> sched_type_host;
-      typedef Kokkos::MemoryPool<host_exec_space> memory_pool_type_host;
-
-      ///
       /// device space typedefs
       ///
-      typedef ExecSpace device_exec_space;
-      typedef SupernodeInfo<value_type,device_exec_space> supernode_info_type_device;
-      typedef typename supernode_info_type_device::crs_matrix_type crs_matrix_type_device;
+      typedef ExecSpace exec_space;
+      typedef SupernodeInfo<value_type,exec_space> supernode_info_type;
+      typedef typename supernode_info_type::crs_matrix_type crs_matrix_type;
 
-      typedef typename supernode_info_type_device::ordinal_type_array ordinal_type_array_device;
-      typedef typename supernode_info_type_device::size_type_array size_type_array_device;
-      typedef typename supernode_info_type_device::value_type_array value_type_array_device;
+      typedef typename supernode_info_type::ordinal_type_array ordinal_type_array;
+      typedef typename supernode_info_type::size_type_array size_type_array;
+      typedef typename supernode_info_type::value_type_array value_type_array;
 
-      typedef typename supernode_info_type_device::ordinal_pair_type_array ordinal_pair_type_array_device;
-      typedef typename supernode_info_type_device::value_type_matrix value_type_matrix_device;
-      typedef typename supernode_info_type_device::supernode_type_array supernode_type_array_device;
+      typedef typename supernode_info_type::ordinal_pair_type_array ordinal_pair_type_array;
+      typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+      typedef typename supernode_info_type::supernode_type_array supernode_type_array;
 
-      typedef Kokkos::TaskScheduler<device_exec_space> sched_type_device;
-      typedef Kokkos::MemoryPool<device_exec_space> memory_pool_type_device;
+      typedef typename supernode_info_type::dense_block_type dense_block_type;
+      typedef typename supernode_info_type::dense_matrix_of_blocks_type dense_matrix_of_blocks_type;
+
+      typedef Kokkos::TaskScheduler<exec_space> sched_type;
+      typedef Kokkos::MemoryPool<exec_space> memory_pool_type;
+
+      typedef Kokkos::DefaultHostExecutionSpace host_space;
+      typedef Kokkos::View<ordinal_type*,host_space> ordinal_type_array_host;
 
     private:
 
@@ -100,34 +85,34 @@ namespace Tacho {
 
       // matrix input
       ordinal_type _m;
-      size_type_array_host _ap;
-      ordinal_type_array_host _aj;
-      value_type_array_host _ax;
+      size_type_array _ap;
+      ordinal_type_array _aj;
+      value_type_array _ax;
 
       // graph ordering input
-      ordinal_type_array_host _perm, _peri;
-
+      ordinal_type_array _perm, _peri;
+      
       // supernodes       
       ordinal_type _nsupernodes;
-      supernode_type_array_host _supernodes;
+      supernode_type_array _supernodes;
 
       // dof mapping to sparse matrix
-      ordinal_type_array_host _gid_colidx;
+      ordinal_type_array _gid_colidx;
 
       // supernode map and panel size configuration (sid and column blksize)
-      ordinal_pair_type_array_host _sid_block_colidx;
+      ordinal_pair_type_array _sid_block_colidx;
 
       // supernode tree
       ordinal_type_array_host _stree_roots;
 
       // output : factors
-      value_type_array_host _superpanel_buf;
+      value_type_array _superpanel_buf;
 
       ///
       /// supernode info: supernode data structure with "unamanged" view
       /// this is passed into computation algorithm without reference counting
       ///
-      supernode_info_type_host _info;
+      supernode_info_type _info;
 
       ///
       /// bufpool # of superblocks
@@ -135,10 +120,10 @@ namespace Tacho {
       ordinal_type _max_num_superblocks;
 
       /// 
-      /// solve phase memoyr pool (reused when it repeat solve)
+      /// solve phase memory pool (reused when it repeat solve)
       ///   - pool capacity returns garbage.
-      sched_type_host _sched_solve; size_t _sched_solve_capacity;
-      memory_pool_type_host _bufpool_solve; size_t _bufpool_solve_capacity;
+      sched_type _sched_solve; size_t _sched_solve_capacity;
+      memory_pool_type _bufpool_solve; size_t _bufpool_solve_capacity;
       
       ///
       /// statistics
@@ -253,22 +238,22 @@ namespace Tacho {
       ///
       NumericTools(// input matrix A
                    const ordinal_type m,
-                   const size_type_array_host &ap,
-                   const ordinal_type_array_host &aj,
+                   const    size_type_array &ap,
+                   const ordinal_type_array &aj,
                    // input permutation
-                   const ordinal_type_array_host &perm,
-                   const ordinal_type_array_host &peri,
+                   const ordinal_type_array &perm,
+                   const ordinal_type_array &peri,
                    // supernodes
                    const ordinal_type nsupernodes,
-                   const ordinal_type_array_host &supernodes,
-                   const size_type_array_host &gid_ptr,
-                   const ordinal_type_array_host &gid_colidx,
-                   const size_type_array_host &sid_ptr,
-                   const ordinal_type_array_host &sid_colidx,
-                   const ordinal_type_array_host &blk_colidx,
-                   const ordinal_type_array_host &stree_parent,
-                   const size_type_array_host &stree_ptr,
-                   const ordinal_type_array_host &stree_children,
+                   const ordinal_type_array &supernodes,
+                   const    size_type_array &gid_ptr,
+                   const ordinal_type_array &gid_colidx,
+                   const    size_type_array &sid_ptr,
+                   const ordinal_type_array &sid_colidx,
+                   const ordinal_type_array &blk_colidx,
+                   const ordinal_type_array &stree_parent,
+                   const    size_type_array &stree_ptr,
+                   const ordinal_type_array &stree_children,
                    const ordinal_type_array_host &stree_roots)
       : _m(m), _ap(ap), _aj(aj),
         _perm(perm), _peri(peri),
@@ -313,18 +298,18 @@ namespace Tacho {
         // release bufpool for solve
         if (_bufpool_solve_capacity) {
           track_free(_bufpool_solve_capacity);
-          _bufpool_solve = memory_pool_type_host();
+          _bufpool_solve = memory_pool_type();
         }
 
         // release scheduler for solve
         if (_sched_solve_capacity) {
           track_free(_sched_solve_capacity);
-          _sched_solve = sched_type_host();
+          _sched_solve = sched_type();
         }
 
         // release supernode buffer
         track_free(_superpanel_buf.span()*sizeof(value_type));
-        _superpanel_buf = value_type_array_host();
+        _superpanel_buf = value_type_array();
 
         if (verbose) {
           printf("Summary: NumericTools (Release)\n");
@@ -369,10 +354,21 @@ namespace Tacho {
       /// Serial
       /// ------
 
+      ///
+      /// This cannot be called for both host and gpus as nvcc compiles twice and
+      /// it should match the interface
+      /// 
+
+#if !defined (KOKKOS_ENABLE_CUDA)
       inline
       void
-      factorizeCholesky_Serial(const value_type_array_host &ax,
+      factorizeCholesky_Serial(const value_type_array &ax,
                                const ordinal_type verbose = 0) {
+        if (!std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+          printf("factorizeCholesky_Serial cannot be executed on non-host devices\n");          
+          return;
+        }
+
         Kokkos::Impl::Timer timer;
         {
           timer.reset();
@@ -385,10 +381,10 @@ namespace Tacho {
           }
           stat.t_copy = timer.seconds();
         }
-
+          
         timer.reset();
         {
-          value_type_array_host buf("buf", _info.max_schur_size*(_info.max_schur_size + 1));
+          value_type_array buf("buf", _info.max_schur_size*(_info.max_schur_size + 1));
           const size_t bufsize = buf.span()*sizeof(value_type);
           track_alloc(bufsize);
           
@@ -401,20 +397,26 @@ namespace Tacho {
           track_free(bufsize);
         }
         stat.t_factor = timer.seconds();
-        
+          
         if (verbose) {
           printf("Summary: NumericTools (SerialFactorization)\n");
           printf("===========================================\n");
-
+          
           print_stat_factor();
         }
       }
 
+
       inline
       void
-      factorizeCholesky_SerialPanel(const value_type_array_host &ax,
+      factorizeCholesky_SerialPanel(const value_type_array &ax,
                                     const ordinal_type panelsize,
                                     const ordinal_type verbose = 0) {
+        if (!std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+          printf("factorizeCholesky_SerialPanel cannot be executed on non-host devices\n");          
+          return;
+        }
+
         Kokkos::Impl::Timer timer;
         {
           timer.reset();
@@ -431,7 +433,7 @@ namespace Tacho {
         const ordinal_type nb = panelsize > 0 ? panelsize : _info.max_schur_size;
         timer.reset();
         {
-          value_type_array_host buf("buf", _info.max_schur_size*(nb + 1));
+          value_type_array buf("buf", _info.max_schur_size*(nb + 1));
           const size_t bufsize = buf.span()*sizeof(value_type);
           track_alloc(bufsize);
           
@@ -457,10 +459,15 @@ namespace Tacho {
 
       inline
       void
-      solveCholesky_Serial(const value_type_matrix_host &x,   // solution
-                           const value_type_matrix_host &b,   // right hand side
-                           const value_type_matrix_host &t,
-                           const ordinal_type verbose = 0) { // temporary workspace (store permuted vectors)
+      solveCholesky_Serial(const value_type_matrix &x,   // solution
+                           const value_type_matrix &b,   // right hand side
+                           const value_type_matrix &t,   // temporary workspace (store permuted vectors)
+                           const ordinal_type verbose = 0) {
+        if (!std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+          printf("solveCholesky_Serial cannot be executed on non-host devices\n");          
+          return;
+        }
+
         TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
                                  x.dimension_1() != b.dimension_1() ||
                                  x.dimension_0() != t.dimension_0() ||
@@ -483,7 +490,7 @@ namespace Tacho {
         
         timer.reset();
         {
-          value_type_array_host buf("buf", _info.max_schur_size*x.dimension_1());
+          value_type_array buf("buf", _info.max_schur_size*x.dimension_1());
           const size_t bufsize = buf.span()*sizeof(value_type);
           track_alloc(bufsize);
           
@@ -512,6 +519,7 @@ namespace Tacho {
           print_stat_solve();
         }
       }
+#endif
 
       ///
       /// Kokkos Tasking
@@ -519,16 +527,16 @@ namespace Tacho {
 
       inline
       void
-      factorizeCholesky_Parallel(const value_type_array_host &ax,
+      factorizeCholesky_Parallel(const value_type_array &ax,
                                  const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
 
         timer.reset();
-        typedef typename sched_type_host::memory_space memory_space;
-        typedef TaskFunctor_FactorizeChol<value_type,host_exec_space> functor_type;
-        //typedef Kokkos::Future<int,host_exec_space> future_type;
+
+        typedef TaskFunctor_FactorizeChol<value_type,exec_space> functor_type;
+        //typedef Kokkos::Future<int,exec_space> future_type;
         
-        sched_type_host sched;
+        sched_type sched;
         {
           const size_t max_functor_size = sizeof(functor_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
@@ -540,21 +548,21 @@ namespace Tacho {
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
-          sched = sched_type_host(memory_space(),
-                                  task_queue_capacity,
-                                  min_block_size,
-                                  max_block_size,
-                                  superblock_size);
+          sched = sched_type(typename sched_type::memory_space(),
+                             task_queue_capacity,
+                             min_block_size,
+                             max_block_size,
+                             superblock_size);
           
           track_alloc(sched.memory()->capacity());
         }
-
+        
         stat.s_min_block_size  = sched.memory()->min_block_size();
         stat.s_max_block_size  = sched.memory()->max_block_size();
         stat.s_capacity        = sched.memory()->capacity();
         stat.s_num_superblocks = sched.memory()->capacity()/sched.memory()->max_block_size();
         
-        memory_pool_type_host bufpool;
+        memory_pool_type bufpool;
         {
           const size_t
             min_block_size  = 1,
@@ -566,17 +574,25 @@ namespace Tacho {
           size_t superblock_size = 1;
           for ( ;superblock_size<max_block_size;superblock_size <<= 1,++ishift);
 
-          const size_t  // allows max 2 GB 
+          size_t num_superblock_device = 0;
+          if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+            // host space 
+            num_superblock_device = host_space::thread_pool_size(0);
+          } else {
+            // cuda space (what would be best number)
+            num_superblock_device = _max_num_superblocks;
+          }
+
+          const size_t  
             max_num_superblocks = _max_num_superblocks, //min(1ul << (ishift > 31 ? 0 : 31 - ishift), _max_num_superblocks),
-            //const size_t num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-            num_superblock  = min(host_exec_space::thread_pool_size(0), max_num_superblocks),
+            num_superblock  = min(num_superblock_device, max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
           
-          bufpool = memory_pool_type_host(memory_space(),
-                                          memory_capacity,
-                                          min_block_size,
-                                          max_block_size,
-                                          superblock_size);
+          bufpool = memory_pool_type(typename exec_space::memory_space(),
+                                     memory_capacity,
+                                     min_block_size,
+                                     max_block_size,
+                                     superblock_size);
           
           track_alloc(bufpool.capacity());
         }
@@ -598,11 +614,11 @@ namespace Tacho {
         stat.t_copy = timer.seconds();
 
         timer.reset();
-        const ordinal_type nroots = _stree_roots.dimension_0();
-        for (ordinal_type i=0;i<nroots;++i)
-          Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                             functor_type(sched, bufpool, _info, _stree_roots(i)));
-        Kokkos::wait(sched);
+        // const ordinal_type nroots = _stree_roots.dimension_0();
+        // for (ordinal_type i=0;i<nroots;++i)
+        //   Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+        //                      functor_type(sched, bufpool, _info, _stree_roots(i)));
+        // Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
         
         track_free(bufpool.capacity());
@@ -622,17 +638,17 @@ namespace Tacho {
 
       inline
       void
-      factorizeCholesky_ParallelPanel(const value_type_array_host &ax,
+      factorizeCholesky_ParallelPanel(const value_type_array &ax,
                                       const ordinal_type panelsize, 
                                       const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
 
         timer.reset();
-        typedef typename sched_type_host::memory_space memory_space;
-        typedef TaskFunctor_FactorizeCholPanel<value_type,host_exec_space> functor_type;
-        //typedef Kokkos::Future<int,host_exec_space> future_type;
+
+        typedef TaskFunctor_FactorizeCholPanel<value_type,exec_space> functor_type;
+        //typedef Kokkos::Future<int,exec_space> future_type;
         
-        sched_type_host sched;
+        sched_type sched;
         {
           const size_t max_functor_size = sizeof(functor_type);
           const size_t estimate_max_numtasks = _sid_block_colidx.dimension_0() >> 3;
@@ -644,11 +660,11 @@ namespace Tacho {
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
-          sched = sched_type_host(memory_space(),
-                                  task_queue_capacity,
-                                  min_block_size,
-                                  max_block_size,
-                                  superblock_size);
+          sched = sched_type(typename sched_type::memory_space(),
+                             task_queue_capacity,
+                             min_block_size,
+                             max_block_size,
+                             superblock_size);
           
           track_alloc(sched.memory()->capacity());
         }
@@ -658,7 +674,7 @@ namespace Tacho {
         stat.s_capacity        = sched.memory()->capacity();
         stat.s_num_superblocks = sched.memory()->capacity()/sched.memory()->max_block_size();
         
-        memory_pool_type_host bufpool;
+        memory_pool_type bufpool;
         const ordinal_type nb = panelsize > 0 ? panelsize : _info.max_schur_size;
         {
           const size_t
@@ -669,17 +685,25 @@ namespace Tacho {
           size_t superblock_size = 1;
           for ( ;superblock_size<max_block_size;superblock_size <<= 1,++ishift);
 
-          const size_t  // allows max 2 GB 
+          size_t num_superblock_device = 0;
+          if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+            // host space 
+            num_superblock_device = host_space::thread_pool_size(0);
+          } else {
+            // cuda space (what would be best number)
+            num_superblock_device = _max_num_superblocks;
+          }
+
+          const size_t  
             max_num_superblocks = _max_num_superblocks, 
-            //const size_t num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-            num_superblock  = min(host_exec_space::thread_pool_size(0), max_num_superblocks),
+            num_superblock  = min(num_superblock_device, max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
           
-          bufpool = memory_pool_type_host(memory_space(),
-                                          memory_capacity,
-                                          min_block_size,
-                                          max_block_size,
-                                          superblock_size);
+          bufpool = memory_pool_type(typename exec_space::memory_space(),
+                                     memory_capacity,
+                                     min_block_size,
+                                     max_block_size,
+                                     superblock_size);
           
           track_alloc(bufpool.capacity());
         }
@@ -699,12 +723,12 @@ namespace Tacho {
           _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
         }
         stat.t_copy = timer.seconds();
-
+        
         timer.reset();
-        const ordinal_type nroots = _stree_roots.dimension_0();
-        for (ordinal_type i=0;i<nroots;++i)
-          Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                             functor_type(sched, bufpool, _info, _stree_roots(i), nb));
+        //const ordinal_type nroots = _stree_roots.dimension_0();
+        // for (ordinal_type i=0;i<nroots;++i)
+        //   Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+        //                      functor_type(sched, bufpool, _info, _stree_roots(i), nb));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
         
@@ -725,9 +749,9 @@ namespace Tacho {
 
       inline
       void
-      solveCholesky_Parallel(const value_type_matrix_host &x,   // solution
-                             const value_type_matrix_host &b,   // right hand side
-                             const value_type_matrix_host &t,
+      solveCholesky_Parallel(const value_type_matrix &x,   // solution
+                             const value_type_matrix &b,   // right hand side
+                             const value_type_matrix &t,
                              const ordinal_type verbose = 0) { // temporary workspace (store permuted vectors)
         TACHO_TEST_FOR_EXCEPTION(x.dimension_0() != b.dimension_0() ||
                                  x.dimension_1() != b.dimension_1() ||
@@ -751,10 +775,10 @@ namespace Tacho {
 
         {
           timer.reset();
-          typedef typename sched_type_host::memory_space memory_space;
-          typedef TaskFunctor_SolveLowerChol<value_type,host_exec_space> functor_lower_type;
-          typedef TaskFunctor_SolveUpperChol<value_type,host_exec_space> functor_upper_type;
-          //typedef Kokkos::Future<int,host_exec_space> future_type;
+
+          typedef TaskFunctor_SolveLowerChol<value_type,exec_space> functor_lower_type;
+          typedef TaskFunctor_SolveUpperChol<value_type,exec_space> functor_upper_type;
+          //typedef Kokkos::Future<int,exec_space> future_type;
           
           {
             const size_t max_functor_size = max(sizeof(functor_lower_type), sizeof(functor_upper_type));
@@ -768,11 +792,11 @@ namespace Tacho {
               superblock_size = task_queue_capacity/num_superblock;
 
             if (_sched_solve_capacity < task_queue_capacity) {
-              _sched_solve = sched_type_host(memory_space(),
-                                             task_queue_capacity,
-                                             min_block_size,
-                                             max_block_size,
-                                             superblock_size);
+              _sched_solve = sched_type(typename sched_type::memory_space(),
+                                        task_queue_capacity,
+                                        min_block_size,
+                                        max_block_size,
+                                        superblock_size);
               _sched_solve_capacity = _sched_solve.memory()->capacity();
               track_alloc(_sched_solve_capacity);
             }
@@ -785,18 +809,26 @@ namespace Tacho {
             
             size_t superblock_size = 1;
             for ( ;superblock_size<max_block_size;superblock_size*=2);
+
+            size_t num_superblock_device = 0;
+            if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+              // host space 
+              num_superblock_device = host_space::thread_pool_size(0);
+            } else {
+              // cuda space (what would be best number)
+              num_superblock_device = _max_num_superblocks;
+            }
             
             const size_t
-              //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-              num_superblock  = min(host_exec_space::thread_pool_size(0), _max_num_superblocks),
+              num_superblock  = min(num_superblock_device, _max_num_superblocks),
               memory_capacity = num_superblock*superblock_size;
             
             if (_bufpool_solve_capacity < memory_capacity) {
-              _bufpool_solve = memory_pool_type_host(memory_space(),
-                                                     memory_capacity,
-                                                     min_block_size,
-                                                     max_block_size,
-                                                     superblock_size);
+              _bufpool_solve = memory_pool_type(typename exec_space::memory_space(),
+                                                memory_capacity,
+                                                min_block_size,
+                                                max_block_size,
+                                                superblock_size);
               _bufpool_solve_capacity = _bufpool_solve.capacity();
               track_alloc(_bufpool_solve_capacity);
             }
@@ -804,13 +836,13 @@ namespace Tacho {
           stat.t_extra += timer.seconds();
           
           timer.reset();
-          const ordinal_type nroots = _stree_roots.dimension_0();
-          for (ordinal_type i=0;i<nroots;++i) {
-            auto fl = Kokkos::host_spawn(Kokkos::TaskSingle(_sched_solve, Kokkos::TaskPriority::High),
-                                         functor_lower_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
-            auto fu = Kokkos::host_spawn(Kokkos::TaskSingle(fl,           Kokkos::TaskPriority::High),
-                                         functor_upper_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
-          }
+          // const ordinal_type nroots = _stree_roots.dimension_0();
+          // for (ordinal_type i=0;i<nroots;++i) {
+          //   auto fl = Kokkos::host_spawn(Kokkos::TaskSingle(_sched_solve, Kokkos::TaskPriority::High),
+          //                                functor_lower_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
+          //   auto fu = Kokkos::host_spawn(Kokkos::TaskSingle(fl,           Kokkos::TaskPriority::High),
+          //                                functor_upper_type(_sched_solve, _bufpool_solve, _info, _stree_roots(i)));
+          // }
           Kokkos::wait(_sched_solve);
           stat.t_solve = timer.seconds();
         }
@@ -819,7 +851,7 @@ namespace Tacho {
         timer.reset();
         applyRowPermutation_Device(x, t, _perm);
         stat.t_extra += timer.seconds();
-
+        
         if (verbose) {
           printf("Summary: NumericTools (ParallelSolve: %3d)\n", ordinal_type(x.dimension_1()));
           printf("==========================================\n");
@@ -834,21 +866,21 @@ namespace Tacho {
 
       inline
       void
-      factorizeCholesky_ParallelByBlocks(const value_type_array_host &ax,
+      factorizeCholesky_ParallelByBlocks(const value_type_array &ax,
                                          const ordinal_type blksize,
                                          const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
 
         timer.reset();
-        typedef typename sched_type_host::memory_space memory_space;
-        typedef TaskFunctor_FactorizeCholByBlocks<value_type,host_exec_space> functor_type;
-        typedef Kokkos::Future<int,host_exec_space> future_type;
+
+        typedef TaskFunctor_FactorizeCholByBlocks<value_type,exec_space> functor_type;
+        typedef Kokkos::Future<int,exec_space> future_type;
         
         const size_t 
           max_nrows_of_blocks = _info.max_supernode_size/blksize + 1,
           max_ncols_of_blocks = _info.max_schur_size/blksize + 1;
         
-        sched_type_host sched;
+        sched_type sched;
         {
           const size_t max_dep_future_size = max_ncols_of_blocks*max_ncols_of_blocks*sizeof(future_type);
           const size_t max_functor_size = sizeof(functor_type);
@@ -861,11 +893,11 @@ namespace Tacho {
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
-          sched = sched_type_host(memory_space(),
-                                  task_queue_capacity,
-                                  min_block_size,
-                                  max_block_size,
-                                  superblock_size);
+          sched = sched_type(typename sched_type::memory_space(),
+                             task_queue_capacity,
+                             min_block_size,
+                             max_block_size,
+                             superblock_size);
           
           track_alloc(sched.memory()->capacity());
         }
@@ -875,7 +907,7 @@ namespace Tacho {
         stat.s_capacity        = sched.memory()->capacity();
         stat.s_num_superblocks = sched.memory()->capacity()/sched.memory()->max_block_size();
         
-        memory_pool_type_host bufpool;
+        memory_pool_type bufpool;
         {
           const size_t
             min_block_size  = 1,
@@ -883,24 +915,32 @@ namespace Tacho {
                                      _info.max_schur_size)*sizeof(value_type) +
                                     (max_nrows_of_blocks*max_nrows_of_blocks +
                                      max_nrows_of_blocks*max_ncols_of_blocks +
-                                     max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(dense_block_type_host) ),
+                                     max_ncols_of_blocks*max_ncols_of_blocks)*sizeof(dense_block_type) ),
                                   _m*sizeof(ordinal_type));
                                   
           ordinal_type ishift = 0;
           size_t superblock_size = 1;
           for ( ;superblock_size<max_block_size;superblock_size <<= 1,++ishift);
 
-          const size_t // max 2 GB allows
+          size_t num_superblock_device = 0;
+          if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+            // host space 
+            num_superblock_device = host_space::thread_pool_size(0);
+          } else {
+            // cuda space (what would be best number)
+            num_superblock_device = _max_num_superblocks;
+          }
+          
+          const size_t 
             max_num_superblocks = _max_num_superblocks, //min(1ul << (ishift > 31 ? 0 : 31 - ishift), _max_num_superblocks),
-            //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-            num_superblock  = min(host_exec_space::thread_pool_size(0), max_num_superblocks),
+            num_superblock  = min(num_superblock_device, max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
 
-          bufpool = memory_pool_type_host(memory_space(),
-                                          memory_capacity,
-                                          min_block_size,
-                                          max_block_size,
-                                          superblock_size);
+          bufpool = memory_pool_type(typename exec_space::memory_space(),
+                                     memory_capacity,
+                                     min_block_size,
+                                     max_block_size,
+                                     superblock_size);
           
           track_alloc(bufpool.capacity());
         }
@@ -923,9 +963,9 @@ namespace Tacho {
 
         timer.reset();
         const ordinal_type nroots = _stree_roots.dimension_0();
-        for (ordinal_type i=0;i<nroots;++i)
-          Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                             functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
+        // for (ordinal_type i=0;i<nroots;++i)
+        //   Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+        //                      functor_type(sched, bufpool, _info, _stree_roots(i), blksize));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
         
@@ -946,22 +986,22 @@ namespace Tacho {
 
       inline
       void
-      factorizeCholesky_ParallelByBlocksPanel(const value_type_array_host &ax,
+      factorizeCholesky_ParallelByBlocksPanel(const value_type_array &ax,
                                               const ordinal_type blksize,
                                               const ordinal_type panelsize,
                                               const ordinal_type verbose = 0) {
         Kokkos::Impl::Timer timer;
 
         timer.reset();
-        typedef typename sched_type_host::memory_space memory_space;
-        typedef TaskFunctor_FactorizeCholByBlocksPanel<value_type,host_exec_space> functor_type;
-        typedef Kokkos::Future<int,host_exec_space> future_type;
+
+        typedef TaskFunctor_FactorizeCholByBlocksPanel<value_type,exec_space> functor_type;
+        typedef Kokkos::Future<int,exec_space> future_type;
         
         const size_t 
           max_nrows_of_blocks = _info.max_supernode_size/blksize + 1,
           max_ncols_of_blocks = _info.max_schur_size/blksize + 1;
         
-        sched_type_host sched;
+        sched_type sched;
         {
           const size_t max_dep_future_size = max_nrows_of_blocks*max_ncols_of_blocks*sizeof(future_type);
           const size_t max_functor_size = sizeof(functor_type);
@@ -974,11 +1014,11 @@ namespace Tacho {
             num_superblock  = 32, // various small size blocks
             superblock_size = task_queue_capacity/num_superblock;
           
-          sched = sched_type_host(memory_space(),
-                                  task_queue_capacity,
-                                  min_block_size,
-                                  max_block_size,
-                                  superblock_size);
+          sched = sched_type(typename sched_type::memory_space(),
+                             task_queue_capacity,
+                             min_block_size,
+                             max_block_size,
+                             superblock_size);
           
           track_alloc(sched.memory()->capacity());
         }
@@ -988,29 +1028,37 @@ namespace Tacho {
         stat.s_capacity        = sched.memory()->capacity();
         stat.s_num_superblocks = sched.memory()->capacity()/sched.memory()->max_block_size();
         
-        memory_pool_type_host bufpool;
+        memory_pool_type bufpool;
         {
           const size_t
             min_block_size  = 1,
             max_block_size  = max(_info.max_schur_size*(min(panelsize,_info.max_schur_size) + 1)*sizeof(value_type) +
-                                  max_nrows_of_blocks*max_ncols_of_blocks*sizeof(dense_block_type_host),
+                                  max_nrows_of_blocks*max_ncols_of_blocks*sizeof(dense_block_type),
                                   _m*sizeof(ordinal_type));
 
           ordinal_type ishift = 0;
           size_t superblock_size = 1;
           for ( ;superblock_size<max_block_size;superblock_size <<= 1,++ishift);
 
+          size_t num_superblock_device = 0;
+          if (std::is_same<typename exec_space::memory_space,Kokkos::HostSpace>::value) {
+            // host space 
+            num_superblock_device = host_space::thread_pool_size(0);
+          } else {
+            // cuda space (what would be best number)
+            num_superblock_device = _max_num_superblocks;
+          }
+
           const size_t // max 2 GB allows
             max_num_superblocks = _max_num_superblocks, 
-            //num_superblock  = host_exec_space::thread_pool_size(0), // # of threads is safe number
-            num_superblock  = min(host_exec_space::thread_pool_size(0), max_num_superblocks),
+            num_superblock  = min(num_superblock_device, max_num_superblocks),
             memory_capacity = num_superblock*superblock_size;
 
-          bufpool = memory_pool_type_host(memory_space(),
-                                          memory_capacity,
-                                          min_block_size,
-                                          max_block_size,
-                                          superblock_size);
+          bufpool = memory_pool_type(typename exec_space::memory_space(),
+                                     memory_capacity,
+                                     min_block_size,
+                                     max_block_size,
+                                     superblock_size);
           
           track_alloc(bufpool.capacity());
         }
@@ -1033,9 +1081,9 @@ namespace Tacho {
 
         timer.reset();
         const ordinal_type nroots = _stree_roots.dimension_0();
-        for (ordinal_type i=0;i<nroots;++i)
-          Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
-                             functor_type(sched, bufpool, _info, _stree_roots(i), blksize, panelsize));
+        // for (ordinal_type i=0;i<nroots;++i)
+        //   Kokkos::host_spawn(Kokkos::TaskSingle(sched, Kokkos::TaskPriority::High),
+        //                      functor_type(sched, bufpool, _info, _stree_roots(i), blksize, panelsize));
         Kokkos::wait(sched);
         stat.t_factor = timer.seconds();
         
@@ -1056,32 +1104,52 @@ namespace Tacho {
 
 
       ///
-      /// utility
+      /// Utility on device
+      ///
+      inline
+      void
+      exportFactorsToCrsMatrix(crs_matrix_type &A,
+                               const bool replace_value_with_one = false) {
+        /// this only avail after factorization is done
+        // TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL ||
+        //                          _info.super_panel_buf.data() == NULL, std::logic_error,
+        //                          "info's super_panel_ptr/buf is not allocated (factorization is not performed)");
+        _info.createCrsMatrix(A, replace_value_with_one);
+      }
+
+      ///
+      /// Utility on host with deep copy
       ///
       static
       inline
       double
-      computeRelativeResidual(const crs_matrix_type_host &A,
-                              const value_type_matrix_host &x,
-                              const value_type_matrix_host &b) {
-        TACHO_TEST_FOR_EXCEPTION(A.NumRows() != A.NumCols() ||
-                                 A.NumRows() != b.dimension_0() ||
-                                 x.dimension_0() != b.dimension_0() ||
-                                 x.dimension_1() != b.dimension_1(), std::logic_error,
+      computeRelativeResidual(const crs_matrix_type &A,
+                              const value_type_matrix &x,
+                              const value_type_matrix &b) {
+        TACHO_TEST_FOR_EXCEPTION(size_t(A.NumRows()) != size_t(A.NumCols()) ||
+                                 size_t(A.NumRows()) != size_t(b.dimension_0()) ||
+                                 size_t(x.dimension_0()) != size_t(b.dimension_0()) ||
+                                 size_t(x.dimension_1()) != size_t(b.dimension_1()), std::logic_error,
                                  "A,x and b dimensions are not compatible");
+        CrsMatrixBase<value_type,host_space> h_A;
+        h_A.createMirror(A); h_A.copy(A);
+
+        auto h_x = Kokkos::create_mirror_view(x); Kokkos::deep_copy(h_x, x);
+        auto h_b = Kokkos::create_mirror_view(b); Kokkos::deep_copy(h_b, b);
+
         typedef ArithTraits<value_type> ats;
-        const ordinal_type m = A.NumRows(), k = b.dimension_1();
+        const ordinal_type m = h_A.NumRows(), k = h_b.dimension_1();
         double diff = 0, norm = 0;
-        for (ordinal_type p=0;p<k;++p) {
-          for (ordinal_type i=0;i<m;++i) {
+        for (ordinal_type i=0;i<m;++i) {
+          for (ordinal_type p=0;p<k;++p) {
             value_type s = 0;
-            const ordinal_type jbeg = A.RowPtrBegin(i), jend = A.RowPtrEnd(i);
+            const ordinal_type jbeg = h_A.RowPtrBegin(i), jend = h_A.RowPtrEnd(i);
             for (ordinal_type j=jbeg;j<jend;++j) {
-              const ordinal_type col = A.Col(j);
-              s += A.Value(j)*x(col,p);
+              const ordinal_type col = h_A.Col(j);
+              s += h_A.Value(j)*h_x(col,p);
             }
-            norm += ats::real(b(i,p)*ats::conj(b(i,p)));
-            diff += ats::real((b(i,p) - s)*ats::conj(b(i,p) - s));
+            norm += ats::real(h_b(i,p)*ats::conj(h_b(i,p)));
+            diff += ats::real((h_b(i,p) - s)*ats::conj(h_b(i,p) - s));
           }
         }
         return sqrt(diff/norm);
@@ -1089,24 +1157,13 @@ namespace Tacho {
 
       inline
       double
-      computeRelativeResidual(const value_type_matrix_host &x,
-                              const value_type_matrix_host &b) {
-        crs_matrix_type_host A;
+      computeRelativeResidual(const value_type_matrix &x,
+                              const value_type_matrix &b) {
+        crs_matrix_type A;
         A.setExternalMatrix(_m, _m, _ap(_m),
                             _ap, _aj, _ax);
 
         return computeRelativeResidual(A, x, b);
-      }
-
-      inline
-      crs_matrix_type_host
-      exportFactorsToCrsMatrix(const bool replace_value_with_one = false) {
-        /// this only avail after factorization is done
-        // TACHO_TEST_FOR_EXCEPTION(_info.super_panel_ptr.data() == NULL ||
-        //                          _info.super_panel_buf.data() == NULL, std::logic_error,
-        //                          "info's super_panel_ptr/buf is not allocated (factorization is not performed)");
-
-        return _info.createCrsMatrix(replace_value_with_one);
       }
 
     };

@@ -17,8 +17,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      factorize(const SchedulerType &sched,
-                const MemberType &member,
+      factorize(SchedulerType &sched,
+                MemberType &member,
                 const SupernodeInfoType &info,
                 const typename SupernodeInfoType::value_type_matrix &ABR,
                 const ordinal_type sid) {
@@ -26,6 +26,19 @@ namespace Tacho {
 
         typedef typename supernode_info_type::value_type value_type;
         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+
+        // algorithm choice
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type CholAlgoType;
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type TrsmAlgoType;
+
+        typedef typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type HerkAlgoType;
 
         // get current supernode
         const auto &s = info.supernodes(sid);
@@ -39,18 +52,18 @@ namespace Tacho {
         // m and n are available, then factorize the supernode block
         if (m > 0) {
           UnmanagedViewType<value_type_matrix> ATL(ptr, m, m); ptr += m*m;
-          Chol<Uplo::Upper,Algo::External>
+          Chol<Uplo::Upper,CholAlgoType>
             ::invoke(sched, member, ATL);
 
           if (n > 0) {
             UnmanagedViewType<value_type_matrix> ATR(ptr, m, n); // ptr += m*n;
-            Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
+            Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
               ::invoke(sched, member, Diag::NonUnit(), 1.0, ATL, ATR);
 
             TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.dimension_0()) != n ||
                                  static_cast<ordinal_type>(ABR.dimension_1()) != n,
                                  "ABR dimension does not match to supernodes");
-            Herk<Uplo::Upper,Trans::ConjTranspose,Algo::External>
+            Herk<Uplo::Upper,Trans::ConjTranspose,HerkAlgoType>
               ::invoke(sched, member, -1.0, ATR, 0.0, ABR);
           }
         }
@@ -62,8 +75,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      update(const SchedulerType &sched,
-             const MemberType &member,
+      update(SchedulerType &sched,
+             MemberType &member,
              const SupernodeInfoType &info,
              const typename SupernodeInfoType::value_type_matrix &ABR,
              const ordinal_type sid,
@@ -97,10 +110,11 @@ namespace Tacho {
             /* */ value_type *tgt = s.buf;
             const value_type *src = (value_type*)ABR.data();
 
+#if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
             // lock
             while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
-            Kokkos::store_fence();            
-
+            Kokkos::store_fence();
+            
             for (ordinal_type j=0;j<srcsize;++j) {
               const value_type *__restrict__ ss = src + j*srcsize;
               /* */ value_type *__restrict__ tt = tgt + j*srcsize;
@@ -114,7 +128,18 @@ namespace Tacho {
             // unlock
             s.lock = 0;
             Kokkos::load_fence();
-              
+#else
+            Kokkos::parallel_for
+              (Kokkos::TeamThreadRange(member, srcsize), [&](const ordinal_type &j) {
+                const value_type *__restrict__ ss = src + j*srcsize;
+                /* */ value_type *__restrict__ tt = tgt + j*srcsize;
+                Kokkos::parallel_for
+                  (Kokkos::ThreadVectorRange(member, j+1), [&](const ordinal_type &i) {
+                    Kokkos::atomic_add(&tt[i], ss[i]);
+                  });
+              });
+#endif
+
             return 0;
           }
         } 
@@ -127,6 +152,7 @@ namespace Tacho {
 
         // loop over target
         const ordinal_type *s_colidx = sbeg < send ? &info.gid_colidx(cur.gid_col_begin + srcbeg) : NULL;
+#if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
         for (ordinal_type i=sbeg;i<send;++i) {
           const auto &s = info.supernodes(info.sid_block_colidx(i).first);
           {
@@ -171,6 +197,48 @@ namespace Tacho {
             Kokkos::load_fence();
           }
         }
+#else
+        Kokkos::parallel_for(Kokkos::TeamThreadRange(member, sbeg, send), [&](const ordinal_type &i) {
+            const auto &s = info.supernodes(info.sid_block_colidx(i).first);
+            {
+              const ordinal_type 
+                tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
+                tgtend  = info.sid_block_colidx(s.sid_col_end-1).second,
+                tgtsize = tgtend - tgtbeg;
+              
+              const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
+              Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize), [&](const ordinal_type &k) {
+                  s2t[k] = -1;
+                  for (ordinal_type l=0;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
+                    if (s_colidx[k] == t_colidx[l]) {
+                      s2t[k] = l; 
+                      break;
+                    }
+                });
+            }
+            
+            {
+              A.set_view(s.m, s.n);
+              A.attach_buffer(1, s.m, s.buf);
+            
+              ordinal_type ijbeg = 0;
+              Kokkos::single
+                (Kokkos::PerThread(member), [&]() {
+                  for (;s2t[ijbeg] == -1; ++ijbeg);
+                });
+              
+              Kokkos::parallel_for
+                (Kokkos::ThreadVectorRange(member, srcsize-ijbeg), [&](const ordinal_type &jjj) {
+                  const ordinal_type jj = jjj + ijbeg;
+                  for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
+                    const ordinal_type row = s2t[ii];
+                    if (row < s.m) A(row, s2t[jj]) += ABR(ii, jj);
+                    else break;
+                  }
+                });
+            }
+          });
+#endif
         return 0;
       }
 
@@ -179,8 +247,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      solve_lower(const SchedulerType &sched,
-                  const MemberType &member,
+      solve_lower(SchedulerType &sched,
+                  MemberType &member,
                   const SupernodeInfoType &info,
                   const typename SupernodeInfoType::value_type_matrix &xB,
                   const ordinal_type sid) {
@@ -230,8 +298,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      update_solve_lower(const SchedulerType &sched,
-                         const MemberType &member,
+      update_solve_lower(SchedulerType &sched,
+                         MemberType &member,
                          const SupernodeInfoType &info,
                          const typename SupernodeInfoType::value_type_matrix &xB,
                          const ordinal_type sid) {
@@ -275,8 +343,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      solve_upper(const SchedulerType &sched,
-                  const MemberType &member,
+      solve_upper(SchedulerType &sched,
+                  MemberType &member,
                   const SupernodeInfoType &info,
                   const typename SupernodeInfoType::value_type_matrix &xB,
                   const ordinal_type sid) {
@@ -327,8 +395,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      update_solve_upper(const SchedulerType &sched,
-                         const MemberType &member,
+      update_solve_upper(SchedulerType &sched,
+                         MemberType &member,
                          const SupernodeInfoType &info,
                          const typename SupernodeInfoType::value_type_matrix &xB,
                          const ordinal_type sid) {
@@ -355,8 +423,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      factorize_recursive_serial(const SchedulerType &sched,
-                                 const MemberType &member,
+      factorize_recursive_serial(SchedulerType &sched,
+                                 MemberType &member,
                                  const SupernodeInfoType &info,
                                  const ordinal_type sid,
                                  const bool final,
@@ -401,8 +469,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      solve_lower_recursive_serial(const SchedulerType &sched,
-                                   const MemberType &member,
+      solve_lower_recursive_serial(SchedulerType &sched,
+                                   MemberType &member,
                                    const SupernodeInfoType &info,
                                    const ordinal_type sid,
                                    const bool final,
@@ -446,8 +514,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      solve_upper_recursive_serial(const SchedulerType &sched,
-                                   const MemberType &member,
+      solve_upper_recursive_serial(SchedulerType &sched,
+                                   MemberType &member,
                                    const SupernodeInfoType &info,
                                    const ordinal_type sid,
                                    const bool final,

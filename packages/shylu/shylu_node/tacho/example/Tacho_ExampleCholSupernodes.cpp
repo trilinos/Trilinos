@@ -50,6 +50,14 @@ int main (int argc, char *argv[]) {
   opts.set_option<int>("serial-thres", "Serialization threshold size", &serial_thres_size);
   opts.set_option<int>("mb", "Blocksize", &mb);
 
+#if !defined (KOKKOS_ENABLE_CUDA)
+  // override serial flag
+  if (serial) {
+    std::cout << "CUDA is enabled and serial code cannot be instanciated\n";
+    serial = false;
+  }
+#endif
+
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; // print help return
 
@@ -63,14 +71,14 @@ int main (int argc, char *argv[]) {
   
   {
     typedef double value_type;
-    typedef CrsMatrixBase<value_type> CrsMatrixBaseType;
+    typedef CrsMatrixBase<value_type,Kokkos::DefaultHostExecutionSpace> CrsMatrixBaseType;
     typedef Kokkos::View<value_type**,Kokkos::LayoutLeft,Kokkos::DefaultHostExecutionSpace> DenseMatrixBaseType;
     
     Kokkos::Impl::Timer timer;
     double t = 0.0;
 
     std::cout << "CholSupernodes:: import input file = " << file << std::endl;
-    CrsMatrixBaseType A("A");
+    CrsMatrixBaseType A;
     timer.reset();
     {
       {
@@ -81,7 +89,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      A = MatrixMarket<value_type>::read(file);
+      MatrixMarket<value_type>::read(file, A);
     }
     Graph G(A);
     t = timer.seconds();
@@ -115,7 +123,9 @@ int main (int argc, char *argv[]) {
     std::cout << "CholSupernodes:: factorize matrix" << std::endl;
     timer.reset();    
     if (serial) {
+#if !defined (KOKKOS_ENABLE_CUDA)
       N.factorizeCholesky_Serial(A.Values(), verbose);
+#endif
     } else {
       if (mb > 0) 
         N.factorizeCholesky_ParallelByBlocks(A.Values(), mb, verbose);
@@ -141,7 +151,9 @@ int main (int argc, char *argv[]) {
     std::cout << "CholSupernodes:: solve matrix" << std::endl;
     timer.reset();    
     if (serial) {
+#if !defined (KOKKOS_ENABLE_CUDA)
       N.solveCholesky_Serial(X, B, Y, verbose);
+#endif
     } else {
       N.solveCholesky_Parallel(X, B, Y, verbose);
     }

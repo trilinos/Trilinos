@@ -17,8 +17,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      factorize(const SchedulerType &sched,
-                const MemberType &member,
+      factorize(SchedulerType &sched,
+                MemberType &member,
                 const SupernodeInfoType &info,
                 const ordinal_type sid) {
         typedef SupernodeInfoType supernode_info_type;
@@ -55,8 +55,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      update(const SchedulerType &sched,
-             const MemberType &member,
+      update(SchedulerType &sched,
+             MemberType &member,
              const SupernodeInfoType &info,
              const ordinal_type offn, // ATR and ABR panel offset
              const ordinal_type np,   // ATR and ABR panel width
@@ -234,8 +234,8 @@ namespace Tacho {
                typename SupernodeInfoType>
       KOKKOS_INLINE_FUNCTION
       static int
-      factorize_recursive_serial(const SchedulerType &sched,
-                                 const MemberType &member,
+      factorize_recursive_serial(SchedulerType &sched,
+                                 MemberType &member,
                                  const SupernodeInfoType &info,
                                  const ordinal_type sid,
                                  const bool final,

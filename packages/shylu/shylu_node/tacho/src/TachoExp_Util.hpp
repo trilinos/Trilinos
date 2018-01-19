@@ -113,11 +113,10 @@ namespace Tacho {
     /// label size used to identify object name
     ///
     enum : int { 
-      LabelSize = 64,
       MaxDependenceSize = 8,
-      ThresholdSolvePhaseUsingBlas3 = 12 
+      ThresholdSolvePhaseUsingBlas3 = 12,
+      CudaVectorSize = 4
     };
-
 
     ///
     /// later, this would be replaced with Kokkos::ArithTraits
@@ -131,6 +130,7 @@ namespace Tacho {
       typedef float mag_type;
 
       enum : bool { is_complex = false };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return x > 0 ? x : -x; }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x; }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x; }
       static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return x; }
@@ -142,6 +142,7 @@ namespace Tacho {
       typedef double mag_type;
 
       enum : bool { is_complex = false };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return x > 0 ? x : -x; }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x; }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x; }
       static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return x; }
@@ -153,6 +154,7 @@ namespace Tacho {
       typedef float mag_type;
 
       enum : bool { is_complex = true };
+      static inline mag_type abs (const val_type& x) { return std::abs(x); }
       static inline mag_type real(const val_type& x) { return x.real(); }
       static inline mag_type imag(const val_type& x) { return x.imag(); }
       static inline val_type conj(const val_type& x) { return std::conj(x); }
@@ -164,6 +166,7 @@ namespace Tacho {
       typedef double mag_type;
 
       enum : bool { is_complex = true };
+      static inline mag_type abs (const val_type& x) { return std::abs(x); }
       static inline mag_type real(const val_type& x) { return x.real(); }
       static inline mag_type imag(const val_type& x) { return x.imag(); }
       static inline val_type conj(const val_type& x) { return std::conj(x); }
@@ -175,6 +178,7 @@ namespace Tacho {
       typedef float mag_type;
 
       enum : bool { is_complex = true };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return Kokkos::abs(x); }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x.real(); }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x.imag(); }
       static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return Kokkos::conj(x); }
@@ -186,6 +190,7 @@ namespace Tacho {
       typedef double mag_type;
 
       enum : bool { is_complex = true };
+      static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return Kokkos::abs(x); }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x.real(); }
       static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x.imag(); }
       static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return Kokkos::conj(x); }
@@ -462,8 +467,8 @@ namespace Tacho {
     struct Conjugate {
       enum : int { tag = 801 };
       
-      Conjugate() {} 
-      Conjugate(const Conjugate &b) {} 
+      KOKKOS_FORCEINLINE_FUNCTION Conjugate() {} 
+      KOKKOS_FORCEINLINE_FUNCTION Conjugate(const Conjugate &b) {} 
 
       KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
       KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }
@@ -476,8 +481,8 @@ namespace Tacho {
     struct NoConjugate {
       enum : int {tag = 802 };
 
-      NoConjugate() {}
-      NoConjugate(const NoConjugate &b) {}
+      KOKKOS_FORCEINLINE_FUNCTION NoConjugate() {}
+      KOKKOS_FORCEINLINE_FUNCTION NoConjugate(const NoConjugate &b) {}
       
       KOKKOS_FORCEINLINE_FUNCTION float operator()(const float &v) const { return v; }
       KOKKOS_FORCEINLINE_FUNCTION double operator()(const double &v) const { return v; }

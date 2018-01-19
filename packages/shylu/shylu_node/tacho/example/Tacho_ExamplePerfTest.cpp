@@ -104,7 +104,7 @@ int main (int argc, char *argv[]) {
           return -1;
         }
       }
-      A = Tacho::Experimental::MatrixMarket<value_type>::read(file, verbose);
+      Tacho::Experimental::MatrixMarket<value_type>::read(file, A, verbose);
     }
 
     DenseMultiVectorType

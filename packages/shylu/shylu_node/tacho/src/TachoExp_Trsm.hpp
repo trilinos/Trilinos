@@ -65,11 +65,11 @@ namespace Tacho {
       void operator()(member_type &member, value_type &r_val) {
         const int ierr = Trsm<ArgSide,ArgUplo,ArgTrans,ArgAlgo>
           ::invoke(_sched, member, ArgDiag(), _alpha, _A, _B);
-
-        if (member.team_rank() == 0) {
-          _B.set_future();
-          r_val = ierr;
-        }
+ 
+        Kokkos::single(Kokkos::PerTeam(member), [&] () {
+            _B.set_future();
+            r_val = ierr;
+          });
       }
     };
     
