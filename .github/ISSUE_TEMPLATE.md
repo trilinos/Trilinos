@@ -52,7 +52,7 @@ useful in the real world.
 
 ## Definition of Done
 <!---
-Tell us what needs to happen.  If necessary, give us a task lisk along the
+Tell us what needs to happen.  If necessary, give us a task list along the
 lines of:                                                   
 - [ ] First do this.
 - [ ] Then do that.
